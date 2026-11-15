@@ -9,26 +9,46 @@ import { describe, it } from "node:test";
 import { renderToString } from "react-dom/server";
 import { TreatmentPlanActSignatures } from "../TreatmentPlanActSignatures";
 import { TreatmentPlanSignatureModal } from "../TreatmentPlanSignatureModal";
-import type { DigitalSignatureAgreementData, TreatmentPlanTier } from "../types";
+import type { CompletedWorksActAndWriteOffData, DigitalSignatureAgreementData, TreatmentPlanTier } from "../types";
+import { BRAND_COLOR_PALETTES } from "../../../store/documentBrandingStore";
 import { expect, sampleSignatureTier } from "./helpers/signatureTestHelpers";
 
 describe("TreatmentPlanActSignatures & Doctor Autonomy with Clinical Conflicts", () => {
-	const samplePalette = {
-		primaryDark: "#0f172a",
-		accentBorder: "#cbd5e1",
-		softBg: "#f8fafc",
-	} as any;
+	const samplePalette = BRAND_COLOR_PALETTES.medical_navy;
+
+	const baseActData: CompletedWorksActAndWriteOffData = {
+		actNumber: "АКТ-2026-01",
+		actDate: "13.10.2026",
+		contractNumber: "ДОГ-2026-01",
+		patientId: "PAT-001",
+		patientName: "Иванова Анна Сергеевна",
+		doctorFullName: "Д-р Воронова М.А.",
+		clinicName: 'ООО "Стоматология ДЕНТЕ"',
+		stageNumber: 1,
+		stageTitle: "Терапевтический этап",
+		completedProcedures: [],
+		writtenOffMaterials: [],
+		totalServiceRub: 10000,
+		totalServiceKopecks: 1000000,
+		totalMaterialCostRub: 2000,
+		totalMaterialCostKopecks: 200000,
+		marginRub: 8000,
+		marginPercent: 80,
+		status: "draft",
+		createdAtIso: "2026-10-13T10:00:00.000Z",
+	};
 
 	it("renders clean human Russian verification labels and paper signature fallback lines with М.П.", () => {
 		const htmlDraft = renderToString(
 			<TreatmentPlanActSignatures
 				actData={{
+					...baseActData,
 					actNumber: "АКТ-2026-01",
 					actDate: "13.10.2026",
 					patientName: "Иванова Анна Сергеевна",
 					doctorFullName: "Д-р Воронова М.А.",
 					status: "draft",
-				} as any}
+				}}
 				palette={samplePalette}
 				legalName='ООО "Стоматология ДЕНТЕ"'
 				showDoctorStampFrame={true}
@@ -44,13 +64,14 @@ describe("TreatmentPlanActSignatures & Doctor Autonomy with Clinical Conflicts",
 		const htmlPep = renderToString(
 			<TreatmentPlanActSignatures
 				actData={{
+					...baseActData,
 					actNumber: "АКТ-2026-02",
 					actDate: "13.10.2026",
 					patientName: "Иванова Анна Сергеевна",
 					doctorFullName: "Д-р Воронова М.А.",
 					status: "signed",
 					signingMethod: "pep_sms",
-				} as any}
+				}}
 				palette={samplePalette}
 				legalName='ООО "Стоматология ДЕНТЕ"'
 				showDoctorStampFrame={true}
@@ -70,12 +91,20 @@ describe("TreatmentPlanActSignatures & Doctor Autonomy with Clinical Conflicts",
 			stages: [
 				{
 					id: "stage-conflicts",
+					stageNumber: 1,
+					stageKind: "stage_2_surgery",
 					title: "Хирургический этап",
+					subtitle: "Удаление и протезирование",
+					clinicalGoal: "Разрешение клинических конфликтов",
 					items: [
-						{ id: "item-ext", name: "Удаление зуба сложное", code804n: "A16.07.001.001", category: "SURGERY", priceRub: 5000, quantity: 1, toothNumber: 16, isDraft: false },
-						{ id: "item-crown", name: "Восстановление зуба коронкой постоянной", code804n: "A16.07.004.001", category: "PROSTHETICS", priceRub: 25000, quantity: 1, toothNumber: 16, isDraft: false },
+						{ id: "item-ext", name: "Удаление зуба сложное", code804n: "A16.07.001.001", category: "SURGERY", priceRub: 5000, unitPriceRub: 5000, discountRub: 0, quantity: 1, toothNumber: 16, isDraft: false, stageKind: "stage_2_surgery" },
+						{ id: "item-crown", name: "Восстановление зуба коронкой постоянной", code804n: "A16.07.004.001", category: "PROSTHETICS", priceRub: 25000, unitPriceRub: 25000, discountRub: 0, quantity: 1, toothNumber: 16, isDraft: false, stageKind: "stage_2_surgery" },
 					],
-				} as any,
+					totalRub: 30000,
+					totalKopecks: 3000000,
+					estimatedVisits: 2,
+					estimatedWeeks: 2,
+				},
 			],
 		};
 

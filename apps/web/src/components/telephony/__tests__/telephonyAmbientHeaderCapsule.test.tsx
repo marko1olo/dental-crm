@@ -19,17 +19,18 @@ describe("Telephony Ambient Header Capsule & Dynamic Island Suite (Mandates 8e, 
 
 	it("2. TelephonyHeaderCapsule displays active call with timer without blocking UI", () => {
 		const mockCall = {
-			id: "call-1", phone: "+7 (999) 000-11-22", patientName: "Иванов И.И.",
+			id: "call-1", patientId: null, phone: "+7 (999) 000-11-22", patientName: "Иванов И.И.",
 			status: "answered" as const, callStartedAt: Date.now() - 35000,
 		};
 		const html = renderToString(<TelephonyHeaderCapsule activeCall={mockCall} />);
 		assert.ok(html.includes("border-emerald-500"), "Must show call highlight styling");
 		assert.ok(html.includes("00:35") || html.includes("Иванов") || html.includes("animate-pulse"), "Must show active call duration or info");
+		assert.ok(html.includes('data-testid="header-capsule-end-btn"'), "Must provide 1-click end call button when answered");
 	});
 
 	it("2b. TelephonyHeaderCapsule provides 1-click answer & reject buttons on incoming ringing call", () => {
 		const ringingCall = {
-			id: "call-ringing-1", phone: "+7 (999) 777-66-55", patientName: "Смирнова Е.В.",
+			id: "call-ringing-1", patientId: null, phone: "+7 (999) 777-66-55", patientName: "Смирнова Е.В.",
 			status: "ringing" as const,
 		};
 		const html = renderToString(<TelephonyHeaderCapsule activeCall={ringingCall} />);

@@ -7,7 +7,7 @@ export const sampleTeethWave49: ToothData[] = [
 	{ id: 46, toothNumber: 46, state: "Pulpitis", systemicNotes: "Острый пульпит" } as ToothData,
 ];
 
-export const mockAppContextWave49 = {
+export const mockAppContextWave49: Partial<AppLogicContextType> = {
 	dashboard: {
 		patients: [
 			{
@@ -29,4 +29,4 @@ export const mockAppContextWave49 = {
 		},
 	},
 	auth: {},
-} as unknown as AppLogicContextType;
+};

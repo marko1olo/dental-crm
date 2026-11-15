@@ -69,7 +69,8 @@ describe("TreatmentPlanSignatureModal — Paper-First Autonomy & Doctor Freedom 
 		onSignedSuccess(agreementPayload);
 
 		expect(receivedAgreement).not.toBeNull();
-		const agreement = receivedAgreement as unknown as DigitalSignatureAgreementData;
+		if (!receivedAgreement) throw new Error("Expected receivedAgreement to be non-null");
+		const agreement: DigitalSignatureAgreementData = receivedAgreement;
 		expect(agreement.patientId).toBe("PAT-2026-1042");
 		expect(agreement.patientName).toBe("Иванова Анна Сергеевна");
 		expect(agreement.planTierId).toBe("standard");

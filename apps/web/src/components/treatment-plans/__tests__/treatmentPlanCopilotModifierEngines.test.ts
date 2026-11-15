@@ -17,9 +17,9 @@ import type { ToothData } from "../../odontogram/ToothChart";
 
 describe("AI Copilot Modifier Engines (treatmentPlanCopilot.ts)", () => {
 	const sampleTeeth: ToothData[] = [
-		{ id: 16, toothNumber: 16, state: "Caries" } as any,
-		{ id: 36, toothNumber: 36, state: "Missing" } as any,
-		{ id: 46, toothNumber: 46, state: "Pulpitis" } as any,
+		{ toothNumber: 16, state: "Caries" },
+		{ toothNumber: 36, state: "Missing" },
+		{ toothNumber: 46, state: "Pulpitis" },
 	];
 
 	const initialStages = generateTreatmentPlanStages(sampleTeeth);

@@ -4,6 +4,7 @@ import type { useAppLogic } from "../useAppLogic";
 // Define the shape of our global AppLogic context
 // We expose the entire hook return value as the context type
 export type AppLogicContextType = ReturnType<typeof useAppLogic>;
+export type AppLogicContextValue = AppLogicContextType;
 
 const AppLogicContext = createContext<AppLogicContextType | null>(null);
 
@@ -23,7 +24,7 @@ export function clearTabTeardownCallbacks(): void {
 
 export interface AppLogicProviderProps {
 	children?: React.ReactNode;
-	value: AppLogicContextType;
+	value: AppLogicContextType | Partial<AppLogicContextType>;
 }
 
 export function AppLogicProvider({

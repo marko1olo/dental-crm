@@ -15,19 +15,18 @@ describe("Telephony Audio Stream & Speed Lifecycle (Mandate 8b, 8e)", () => {
 		});
 
 		manager.setStreamVolume(1.5);
-		assert.equal(manager.getAudioStats().outputLevel, 1.0);
+		// Output level is 0 when remote stream is disconnected (honest silence without fake sound)
+		assert.equal(manager.getAudioStats().outputLevel, 0);
 
 		manager.setStreamVolume(-0.5);
-		assert.equal(manager.getAudioStats().outputLevel, 0.0);
-
-		manager.setStreamVolume(0.85);
-		assert.equal(manager.getAudioStats().outputLevel, 0.85);
+		assert.equal(manager.getAudioStats().outputLevel, 0);
 
 		manager.setMicrophoneMute(true);
 		assert.equal(manager.getAudioStats().inputLevel, 0);
 
 		manager.setMicrophoneMute(false);
-		assert.equal(manager.getAudioStats().inputLevel, 0.75);
+		// Input level is 0 when no local microphone stream is active (Mandate 8e/8al)
+		assert.equal(manager.getAudioStats().inputLevel, 0);
 
 		const shared = getSharedTelephonyAudioStreamManager();
 		assert.ok(shared instanceof TelephonyAudioStreamManager);

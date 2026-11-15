@@ -15,7 +15,7 @@ import { mockCashierAppContext, mockSampleTeeth } from "./helpers/cashierExportT
 describe("TreatmentPlanModule — 1-Click Cashier Export Toolbar & Options Menu", () => {
 	it("renders 1-click cashier export button 'tp-quick-cashier-btn' in toolbar with Send icon", () => {
 		const html = renderToString(
-			<AppLogicProvider value={mockCashierAppContext as any}>
+			<AppLogicProvider value={mockCashierAppContext}>
 				<TreatmentPlanModule
 					patientId="PAT-WAVE62"
 					patientName="Волков Дмитрий Андреевич"
@@ -31,7 +31,7 @@ describe("TreatmentPlanModule — 1-Click Cashier Export Toolbar & Options Menu"
 
 	it("renders 1-click export action 'options-menu-export-cashier-btn' in options dropdown", () => {
 		const html = renderToString(
-			<AppLogicProvider value={mockCashierAppContext as any}>
+			<AppLogicProvider value={mockCashierAppContext}>
 				<TreatmentPlanModule
 					patientId="PAT-WAVE62"
 					patientName="Волков Дмитрий Андреевич"
@@ -47,7 +47,7 @@ describe("TreatmentPlanModule — 1-Click Cashier Export Toolbar & Options Menu"
 
 	it("guarantees Apple HIG touch target compliance (>= 44px touch, >= 38px desktop)", () => {
 		const html = renderToString(
-			<AppLogicProvider value={mockCashierAppContext as any}>
+			<AppLogicProvider value={mockCashierAppContext}>
 				<TreatmentPlanModule
 					patientId="PAT-WAVE62"
 					patientName="Волков Дмитрий Андреевич"
@@ -61,7 +61,7 @@ describe("TreatmentPlanModule — 1-Click Cashier Export Toolbar & Options Menu"
 
 	it("guarantees 0 cartoon emojis in treatment plan toolbar and menus (Mandate 8d)", () => {
 		const html = renderToString(
-			<AppLogicProvider value={mockCashierAppContext as any}>
+			<AppLogicProvider value={mockCashierAppContext}>
 				<TreatmentPlanModule
 					patientId="PAT-WAVE62"
 					patientName="Волков Дмитрий Андреевич"
@@ -78,7 +78,7 @@ describe("TreatmentPlanModule — 1-Click Cashier Export Toolbar & Options Menu"
 	it("accepts onExportToCashier prop and passes it cleanly without type errors", () => {
 		let exportedData: CashierInvoiceExportData | null = null;
 		const html = renderToString(
-			<AppLogicProvider value={mockCashierAppContext as any}>
+			<AppLogicProvider value={mockCashierAppContext}>
 				<TreatmentPlanModule
 					patientId="PAT-WAVE62"
 					patientName="Волков Дмитрий Андреевич"

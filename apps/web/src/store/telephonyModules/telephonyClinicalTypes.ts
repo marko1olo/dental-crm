@@ -65,12 +65,12 @@ export interface TelephonyAudioStreamConfig {
 export interface TelephonyAudioStreamStats {
 	inputLevel: number;
 	outputLevel: number;
-	packetsLost?: number;
-	jitterMs?: number;
-	roundTripTimeMs?: number;
-	codecName?: string;
-	connectionState?: RTCPeerConnectionState | "uninitialized";
-	audioLevelsHistory?: number[];
+	packetsLost?: number | undefined;
+	jitterMs?: number | undefined;
+	roundTripTimeMs?: number | undefined;
+	codecName?: string | undefined;
+	connectionState?: RTCPeerConnectionState | "uninitialized" | undefined;
+	audioLevelsHistory?: number[] | undefined;
 }
 
 /**

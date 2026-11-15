@@ -26,9 +26,9 @@ export const StageItemLabOrderButtons: React.FC<StageItemLabOrderButtonsProps> =
 					onOpenLabOrder(itemTeeth, {
 						selectedTeeth: itemTeeth,
 						itemName: item.name,
-						priceRub: (item as any).totalPriceRub || item.unitPriceRub,
-						doctorId: (item as any).assignedDoctorId,
-						doctorName: (item as any).assignedDoctorName,
+						priceRub: item.totalPriceRub || item.unitPriceRub || item.priceRub,
+						doctorId: item.assignedDoctorId ?? item.doctorId,
+						doctorName: item.assignedDoctorName ?? item.doctorName,
 					});
 				}}
 				className="h-7 min-h-[28px] max-h-[28px] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:max-h-[44px] px-2.5 py-1 rounded-md text-[11px] font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal)]/20 border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation flex items-center gap-1.5"

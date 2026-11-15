@@ -1,19 +1,20 @@
 import assert from "node:assert/strict";
 import type { TreatmentPlanTier } from "../../types";
 
-export function expect(actual: any) {
+export function expect(actual: unknown) {
+	const num = typeof actual === "number" ? actual : Number(actual);
 	return {
-		toBe(expected: any) {
+		toBe(expected: unknown) {
 			assert.equal(actual, expected);
 		},
-		toEqual(expected: any) {
+		toEqual(expected: unknown) {
 			assert.deepEqual(actual, expected);
 		},
 		toBeLessThanOrEqual(n: number) {
-			assert.ok(actual <= n, `Expected ${actual} <= ${n}`);
+			assert.ok(num <= n, `Expected ${actual} <= ${n}`);
 		},
 		toBeGreaterThan(n: number) {
-			assert.ok(actual > n, `Expected ${actual} > ${n}`);
+			assert.ok(num > n, `Expected ${actual} > ${n}`);
 		},
 		toBeTruthy() {
 			assert.ok(Boolean(actual), `Expected truthy, got ${actual}`);
@@ -40,18 +41,20 @@ export function expect(actual: any) {
 			assert.ok(String(actual).includes(str), `Expected to contain ${str}`);
 		},
 		toHaveBeenCalled() {
-			assert.ok(actual.mock.calls.length > 0, "Expected mock to have been called");
+			const mock = actual as { mock?: { calls: unknown[][] } };
+			assert.ok(Boolean(mock.mock && mock.mock.calls.length > 0), "Expected mock to have been called");
 		},
 		toHaveBeenCalledTimes(n: number) {
-			assert.equal(actual.mock.calls.length, n);
+			const mock = actual as { mock?: { calls: unknown[][] } };
+			assert.equal(mock.mock?.calls.length, n);
 		},
 	};
 }
 
 export const vi = {
 	fn() {
-		const calls: any[][] = [];
-		const mockFn = (...args: any[]) => {
+		const calls: unknown[][] = [];
+		const mockFn = (...args: unknown[]) => {
 			calls.push(args);
 		};
 		mockFn.mock = { calls };
@@ -68,7 +71,7 @@ export const sampleSignatureTier: TreatmentPlanTier = {
 	borderClass: "border-teal",
 	isRecommended: true,
 	totalRub: 125000,
-	totalKopecks: 12500000 as any,
+	totalKopecks: 12500000,
 	durationWeeks: 4,
 	durationVisits: 5,
 	warrantyYears: 3,
@@ -80,6 +83,4 @@ export const sampleSignatureTier: TreatmentPlanTier = {
 	ndflRefundRub: 16250,
 	priceWithNdflRefundRub: 108750,
 	monthlyInstallment12Rub: 10416,
-	installments: {} as any,
-	ndflDetails: {} as any,
 };

@@ -2,10 +2,11 @@ import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { patients } from "../../db/schema.js";
+import { crmLeads, patients } from "../../db/schema.js";
 import { MissedCallService } from "../../services/telephony/missedCallService.js";
 import {
 	authenticatePbxWebhook,
+	detectMarketingAttribution,
 	normalizePhoneNumber,
 } from "../../services/telephony/telephonySecurity.js";
 import {
@@ -76,10 +77,80 @@ export async function telephonyWebhookHandler(
 				data, detectedProvider, callId, recordingUrl, transcriptionSnippet,
 			});
 		}
+		if (event === "answered") {
+			// Создание постоянного лида при ответе на звонок (event: "answered")
+			if (callerPhone.national10.length >= 7) {
+				const searchPatient = await db.select({ id: patients.id }).from(patients).where(
+					and(
+						eq(patients.organizationId, resolvedOrgId),
+						or(
+							eq(patients.phone, callerPhone.e164),
+							ilike(patients.phone, `%${callerPhone.national10}%`),
+							sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
+						),
+					),
+				).limit(1);
+
+				if (searchPatient.length === 0) {
+					try {
+						await db.transaction(async (tx) => {
+							await tx.execute(
+								sql`SELECT pg_advisory_xact_lock(hashtext(${`telephony:lead:${resolvedOrgId}:${callerPhone.national10}`}))`,
+							);
+							const existing = await tx.select().from(crmLeads).where(
+								and(
+									eq(crmLeads.organizationId, resolvedOrgId),
+									or(
+										eq(crmLeads.phone, callerPhone.e164),
+										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+									),
+								),
+							).limit(1);
+							if (existing.length === 0) {
+								const attribution = detectMarketingAttribution({
+									utm_source: data.utm_source,
+									utm_campaign: data.utm_campaign,
+									utm_medium: data.utm_medium,
+									advertising_channel: data.advertising_channel,
+									targetRaw,
+								});
+								const virtualTrunkNumber = targetPhone.e164 || targetRaw || "";
+								await tx.insert(crmLeads).values({
+									organizationId: resolvedOrgId,
+									name: `Входящий звонок ${callerPhone.e164}`,
+									patientName: `Звонок ${callerPhone.e164}`,
+									phone: callerPhone.e164,
+									source: attribution.channel,
+									status: "new",
+									notes: `Лид из принятого входящего звонка (${detectedProvider}). Канал: ${attribution.channelLabel}.${virtualTrunkNumber ? ` Номер: ${virtualTrunkNumber}.` : ""} ${callId ? `call_id: ${callId}` : ""}`,
+									audioRecordUrl: recordingUrl || null,
+									transcriptionSnippet,
+									stageEnteredAt: new Date(),
+									priority: "normal",
+								});
+							}
+						});
+					} catch (leadErr) {
+						request.log.warn({ leadErr, orgId: resolvedOrgId }, "[Telephony] Answered lead creation warning");
+					}
+				}
+			}
+			return { success: true, event: "answered" };
+		}
 		if (event === "missed" || (event === "ended" && durationSeconds === 0)) {
+			const rawWait = data.wait_time ?? data.waiting_duration ?? data.duration ?? data.duration_seconds;
+			const waitSec = rawWait != null ? Number(rawWait) : undefined;
+			const isShortSpam = waitSec !== undefined && !Number.isNaN(waitSec) && waitSec > 0 && waitSec < 5;
+
+			if (isShortSpam) {
+				request.log.info({ callerPhone: callerPhone.e164, waitSec }, "[Telephony] Suppressing spam lead for short dropped call (<5s)");
+				return { success: true, event: "missed", skippedSpam: true };
+			}
+
 			const missed = await MissedCallService.handleMissedCall({
 				organizationId: resolvedOrgId, phone: callerPhone.e164, rawPhone: callerPhone.raw,
 				callId: callId || null, provider: detectedProvider, reason: event === "missed" ? "missed" : "zero_duration_hangup",
+				waitDurationSeconds: waitSec,
 			});
 			return { success: true, event: "missed", taskId: missed.taskId, patientId: missed.patientId, isNewLead: missed.isNewLead };
 		}

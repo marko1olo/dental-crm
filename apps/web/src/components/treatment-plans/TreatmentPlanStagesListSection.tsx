@@ -76,6 +76,10 @@ export const TreatmentPlanStagesListSection: React.FC<TreatmentPlanStagesListSec
 		);
 	}
 
+	const inventoryItems = (dashboard && "inventoryItems" in dashboard && Array.isArray(dashboard.inventoryItems) && dashboard.inventoryItems.length > 0)
+		? (dashboard.inventoryItems as InventoryItemLookup[])
+		: undefined;
+
 	return (
 		<div className="flex flex-col gap-4">
 			{visibleStages.map((stage) => (
@@ -83,7 +87,7 @@ export const TreatmentPlanStagesListSection: React.FC<TreatmentPlanStagesListSec
 					key={stage.stageNumber}
 					stage={stage}
 					defaultExpanded={true}
-					{...(Array.isArray(dashboard?.inventoryItems) && dashboard.inventoryItems.length > 0 ? { inventoryItems: dashboard.inventoryItems as InventoryItemLookup[] } : {})}
+					{...(inventoryItems ? { inventoryItems } : {})}
 					doctors={doctorOptions}
 					onAssignStageDoctor={onAssignDoctorToStage}
 					onAssignItemDoctor={onAssignDoctorToItem}

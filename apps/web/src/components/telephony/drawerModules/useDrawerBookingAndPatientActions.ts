@@ -1,14 +1,19 @@
 import type { Dashboard } from "@dental/shared";
 import type { IncomingCallPayload } from "../../../store/telephonyTypes";
 import type { UseIncomingCallDataResult } from "../useIncomingCallData";
-import type { AppLogicContextValue } from "../../../contexts/AppLogicContext";
+import type { AppLogicContextType } from "../../../contexts/AppLogicContext";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { useScheduleStore } from "../../../store/scheduleStore";
 import { useTelephonyStore } from "../../../store/telephonyStore";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { showToast } from "../../GlobalToast";
-import type { QuickSlotType } from "../IncomingCallQuickBooking";
+import { computeQuickBookingSlots, type QuickSlotType } from "../IncomingCallQuickBooking";
+import {
+	QUICK_BOOKING_REASON_BY_SLOT,
+	QUICK_BOOKING_TOAST_LABEL_BY_SLOT,
+} from "../incomingCallPopupModules/incomingCallConstants";
+import { buildQuickBookingComment } from "../incomingCallPopupModules/incomingCallUtils";
 import { useDrawerConfirmationActions } from "./useDrawerConfirmationActions";
 import { useDrawerPatientIntake } from "./useDrawerPatientIntake";
 
@@ -16,7 +21,7 @@ export function useDrawerBookingAndPatientActions(params: {
 	currentCall: IncomingCallPayload | null;
 	callData: UseIncomingCallDataResult;
 	dashboard: Dashboard | null | undefined;
-	ctx: AppLogicContextValue | null | undefined;
+	ctx: AppLogicContextType | null | undefined;
 	handleClose: () => void;
 	isCallAnswered: boolean;
 }) {
@@ -54,47 +59,91 @@ export function useDrawerBookingAndPatientActions(params: {
 	};
 
 	const handleQuickBook = (slotType: QuickSlotType) => {
-		const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
-		const defaultDoctorId = dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id || "";
-		const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
-		let targetDate = todayIso;
-		const startTime = slotType === "today_urgent" ? "10:00:00" : slotType === "tomorrow" ? "11:00:00" : "14:30:00";
-		const endTime = slotType === "today_urgent" ? "10:30:00" : slotType === "tomorrow" ? "11:30:00" : "15:00:00";
-		const reason = slotType === "today_urgent" ? "Острая боль / Экстренный приём" : slotType === "tomorrow" ? "Плановый визит по звонку" : "Первичная консультация и диагностика";
-		if (slotType === "tomorrow") {
-			const d = new Date(todayIso); d.setDate(d.getDate() + 1); targetDate = d.toISOString().split("T")[0]!;
-		}
+		const { slots: quickSlots, getSlotInterval } = computeQuickBookingSlots(
+			dashboard,
+			callData.resolvedPatient?.id,
+		);
+		const { startsAt, endsAt } = getSlotInterval(slotType);
+
+		const defaultDoctorId =
+			dashboard?.clinicSettings?.staff?.find((s) => s.active && (s.role === "doctor" || s.role === "owner"))?.id ||
+			dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor" || s.role === "owner")?.id ||
+			dashboard?.clinicSettings?.staff?.[0]?.id ||
+			"";
+		const defaultChairId =
+			dashboard?.clinicSettings?.chairs?.find((c) => c.active)?.id ||
+			dashboard?.clinicSettings?.chairs?.[0]?.id ||
+			"";
+
+		const reason =
+			QUICK_BOOKING_REASON_BY_SLOT[slotType] ||
+			(slotType === "today_urgent"
+				? "Острая боль / Экстренный приём"
+				: slotType === "tomorrow"
+				? "Плановый визит по звонку"
+				: "Первичная консультация и диагностика");
+
+		const comment = buildQuickBookingComment(slotType, callData.formattedPhone);
 
 		if (callData.resolvedPatient) {
 			setSelectedPatientId(callData.resolvedPatient.id);
 			setNewAppointmentDraft({
-				patientId: callData.resolvedPatient.id, doctorUserId: defaultDoctorId, assistantUserId: "",
-				chairId: defaultChairId, startsAt: `${targetDate}T${startTime}`, endsAt: `${targetDate}T${endTime}`,
-				status: "planned", reason, comment: `Запись по входящему звонку (${callData.formattedPhone})`,
+				patientId: callData.resolvedPatient.id,
+				doctorUserId: defaultDoctorId,
+				assistantUserId: "",
+				chairId: defaultChairId,
+				startsAt,
+				endsAt,
+				status: "planned",
+				reason,
+				comment,
+				notes: comment,
 			});
 		} else if (currentCall?.phone) {
 			setNewPatientPhone(currentCall.phone);
 			setNewAppointmentDraft({
-				patientId: null, doctorUserId: defaultDoctorId, assistantUserId: "",
-				chairId: defaultChairId, startsAt: `${targetDate}T${startTime}`, endsAt: `${targetDate}T${endTime}`,
-				status: "planned", reason, comment: `Новый пациент с телефона ${callData.formattedPhone}`,
+				patientId: null,
+				doctorUserId: defaultDoctorId,
+				assistantUserId: "",
+				chairId: defaultChairId,
+				startsAt,
+				endsAt,
+				status: "planned",
+				reason,
+				comment,
+				notes: comment,
 			});
 		}
 
 		const slotInfo = {
 			patientId: callData.resolvedPatient?.id || null,
-			patientName: callData.resolvedPatient?.fullName || (callData.callerName && callData.callerName !== "Неизвестный номер" ? callData.callerName : ""),
-			patientPhone: currentCall?.phone || "", doctorUserId: defaultDoctorId || null, chairId: defaultChairId || null,
-			startsAt: `${targetDate}T${startTime}`, endsAt: `${targetDate}T${endTime}`, reason, isCitoEmergency: slotType === "today_cito",
+			patientName:
+				callData.resolvedPatient?.fullName ||
+				(callData.callerName && callData.callerName !== "Неизвестный номер" ? callData.callerName : ""),
+			patientPhone: currentCall?.phone || "",
+			doctorUserId: defaultDoctorId || null,
+			chairId: defaultChairId || null,
+			startsAt,
+			endsAt,
+			reason,
+			isCitoEmergency: slotType === "today_cito",
 		};
 		useScheduleStore.getState().setPendingStageBooking(slotInfo);
 		if (typeof window !== "undefined") {
-			try { window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slotInfo })); } catch {}
+			try {
+				window.dispatchEvent(new CustomEvent("dente-book-stage-appointment", { detail: slotInfo }));
+			} catch {}
 		}
 		if (activeCall && activeCall.status === "ringing") answerCall();
 		if (useAppStore.getState().currentView !== "schedule") useAppStore.getState().setCurrentView("schedule");
 		useUiSurfaceStore.getState().openDrawer("quick_booking");
-		showToast(`Создана запись: ${callData.isKnownPatient ? callData.resolvedPatient?.fullName : callData.formattedPhone} (${reason})`, "info");
+
+		// 1-Click instant schedule reservation: record booked outcome in CTI store
+		useTelephonyStore.getState().recordCallOutcome("booked");
+
+		const targetSlot = quickSlots.find((s) => s.type === slotType);
+		const slotLabel = targetSlot?.title || QUICK_BOOKING_TOAST_LABEL_BY_SLOT[slotType] || "Слот зарезервирован";
+		showToast(`Создана запись: ${slotLabel}. Слот зарезервирован в расписании.`, "success");
 	};
 
 	return {

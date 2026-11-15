@@ -10,21 +10,33 @@ import { exportPlanToCashier } from "../treatmentPlanNetworkSync.js";
 import type { TreatmentPlanStage } from "../types.js";
 import { buildMockTier } from "./helpers/cashierExportTestHelpers.js";
 
+interface TestGlobal {
+	window?: {
+		dispatchEvent: (ev: Event | { type: string }) => boolean;
+		addEventListener?: (type: string, listener: () => void) => void;
+		removeEventListener?: (type: string, listener: () => void) => void;
+	};
+	fetch?: typeof fetch | undefined;
+}
+
 describe("exportPlanToCashier — Net Price Mapping with Doctor Discounts", () => {
 	it("maps discounted line items to net unit prices preserving exact invoice total parity", async () => {
-		if (typeof (globalThis as any).window === "undefined") {
-			(globalThis as any).window = {
+		const g = globalThis as TestGlobal;
+		if (typeof g.window === "undefined") {
+			g.window = {
 				dispatchEvent: () => true,
 				addEventListener: () => {},
 				removeEventListener: () => {},
 			};
 		}
 		const dispatchedEvents: string[] = [];
-		const originalDispatch = (globalThis as any).window?.dispatchEvent;
-		(globalThis as any).window.dispatchEvent = (ev: any) => {
-			if (ev?.type) dispatchedEvents.push(ev.type);
-			return true;
-		};
+		const originalDispatch = g.window?.dispatchEvent;
+		if (g.window) {
+			g.window.dispatchEvent = (ev: Event | { type: string }) => {
+				if ("type" in ev && ev.type) dispatchedEvents.push(ev.type);
+				return true;
+			};
+		}
 
 		const stages: TreatmentPlanStage[] = [
 			{
@@ -65,19 +77,20 @@ describe("exportPlanToCashier — Net Price Mapping with Doctor Discounts", () =
 			netPayableRub: 8000,
 		};
 
-		const originalFetch = (globalThis as any).fetch;
-		(globalThis as any).fetch = async (url: string) => {
-			if (url.includes("/api/invoices/generate-from-plan")) {
+		const originalFetch = g.fetch;
+		g.fetch = (async (url: RequestInfo | URL) => {
+			const urlStr = String(url);
+			if (urlStr.includes("/api/invoices/generate-from-plan")) {
 				return {
 					ok: true,
 					json: async () => ({
 						success: true,
 						invoice: { id: "11111111-2222-3333-4444-555555555555", totalAmountRub: 8000, status: "issued" },
 					}),
-				};
+				} as Response;
 			}
-			return { ok: true, json: async () => ({}) };
-		};
+			return { ok: true, json: async () => ({}) } as Response;
+		}) as typeof fetch;
 
 		try {
 			const exported = await exportPlanToCashier({
@@ -92,14 +105,18 @@ describe("exportPlanToCashier — Net Price Mapping with Doctor Discounts", () =
 			assert.equal(exported.totalAmountRub, 8000);
 			assert.equal(exported.status, "issued");
 			assert.equal(exported.items.length, 1);
-			assert.equal(exported.items[0]!.priceRub, 8000, "Line item must reflect net unit price after discount");
+			const firstItem = exported.items[0];
+			assert.ok(firstItem);
+			assert.equal(firstItem.priceRub, 8000, "Line item must reflect net unit price after discount");
 			const lineSum = exported.items.reduce((sum, item) => sum + item.quantity * item.priceRub, 0);
 			assert.equal(lineSum, exported.totalAmountRub, "Sum of line items must strictly equal invoice total amount");
 			assert.ok(dispatchedEvents.includes("dente-cashbox-refresh"), "Must trigger cashbox refresh event");
 			assert.ok(dispatchedEvents.includes("dente-invoices-updated"), "Must trigger invoices updated event");
 		} finally {
-			(globalThis as any).fetch = originalFetch;
-			(globalThis as any).window.dispatchEvent = originalDispatch;
+			g.fetch = originalFetch;
+			if (g.window && originalDispatch) {
+				g.window.dispatchEvent = originalDispatch;
+			}
 		}
 	});
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { TreatmentPlanPhased4StageView } from "../TreatmentPlanPhased4StageView.js";
-import type { TreatmentPlanStage } from "../types.js";
+import type { TreatmentPlanStage, TreatmentPlanStageStatus } from "../types.js";
 import { showToast } from "../../GlobalToast.js";
 
 export interface Phased4StageViewWrapperProps {
@@ -14,7 +14,7 @@ export interface Phased4StageViewWrapperProps {
 	readonly onOpenInstallmentModal: () => void;
 	readonly onOpenSignModal: () => void;
 	readonly onOpenContractPrint: () => void;
-	readonly onChangeStageStatus?: ((stage: TreatmentPlanStage, newStatus: any) => void) | undefined;
+	readonly onChangeStageStatus?: ((stage: TreatmentPlanStage, newStatus: TreatmentPlanStageStatus) => void) | undefined;
 }
 
 export const Phased4StageViewWrapper: React.FC<Phased4StageViewWrapperProps> = ({

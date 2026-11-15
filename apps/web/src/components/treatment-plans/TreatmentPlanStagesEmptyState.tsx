@@ -1,10 +1,12 @@
 import React from "react";
 import { Layers, Sparkles } from "lucide-react";
+import type { ClinicalBundleId } from "./bundlesPresets/types";
+import type { TreatmentPlanSpecialtyFilter } from "./types";
 
 export interface TreatmentPlanStagesEmptyStateProps {
-	readonly specialtyFilter: string;
-	readonly onSetSpecialtyFilter: (filter: any) => void;
-	readonly onApplyClinicalBundle: (bundleId: any, toothNumber?: number) => void;
+	readonly specialtyFilter: TreatmentPlanSpecialtyFilter;
+	readonly onSetSpecialtyFilter: (filter: TreatmentPlanSpecialtyFilter) => void;
+	readonly onApplyClinicalBundle: (bundleId: ClinicalBundleId, toothNumber?: number) => void;
 	readonly onOpenCreateStageModal: () => void;
 }
 

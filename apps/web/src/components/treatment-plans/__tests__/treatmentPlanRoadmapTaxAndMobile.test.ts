@@ -41,20 +41,22 @@ describe("TreatmentPlanRoadmap — Tax Deduction & Mobile Styling", () => {
 			estimatedVisitsCount: 2,
 		};
 
-		let bookedStage: any = null;
-		let selectedStage: any = null;
+		let bookedStage: typeof mockStage | null = null;
+		let selectedStage: typeof mockStage | null = null;
 		let bookedSlotNumber: number | null = null;
 
-		const onBookStage = (s: any) => { bookedStage = s; };
-		const onSelectStage = (s: any) => { selectedStage = s; };
-		const onBookStageSlot = (num: number, _s: any) => { bookedSlotNumber = num; };
+		const onBookStage = (s: typeof mockStage) => { bookedStage = s; };
+		const onSelectStage = (s: typeof mockStage) => { selectedStage = s; };
+		const onBookStageSlot = (num: number, _s: typeof mockStage) => { bookedSlotNumber = num; };
 
 		onBookStage(mockStage);
 		onSelectStage(mockStage);
 		onBookStageSlot(mockStage.stageNumber, mockStage);
 
-		assert.equal(bookedStage?.stageNumber, 2);
-		assert.equal(selectedStage?.stageKind, "stage_2_therapy");
+		assert.ok(bookedStage);
+		assert.equal(bookedStage.stageNumber, 2);
+		assert.ok(selectedStage);
+		assert.equal(selectedStage.stageKind, "stage_2_therapy");
 		assert.equal(bookedSlotNumber, 2);
 	});
 
@@ -66,7 +68,7 @@ describe("TreatmentPlanRoadmap — Tax Deduction & Mobile Styling", () => {
 			path.resolve(process.cwd(), "src/components/treatment-plans/treatmentPlanRoadmap.css"),
 			path.resolve(process.cwd(), "apps/web/src/components/treatment-plans/treatmentPlanRoadmap.css"),
 		];
-		const cssPath = candidatePaths.find((p) => fs.existsSync(p)) || candidatePaths[0]!;
+		const cssPath = candidatePaths.find((p) => fs.existsSync(p)) ?? candidatePaths[0] ?? "";
 		assert.ok(fs.existsSync(cssPath), `treatmentPlanRoadmap.css must exist at ${cssPath}`);
 
 		const css = fs.readFileSync(cssPath, "utf8");

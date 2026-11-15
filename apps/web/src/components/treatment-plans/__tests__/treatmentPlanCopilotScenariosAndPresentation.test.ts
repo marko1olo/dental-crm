@@ -19,8 +19,8 @@ import { sampleItemPriced } from "./helpers/copilotTestHelpers";
 
 describe("AI Copilot Scenarios & Chairside Presentation", () => {
 	const initialStages = generateTreatmentPlanStages([
-		{ id: 16, toothNumber: 16, state: "Caries" } as any,
-		{ id: 36, toothNumber: 36, state: "Missing" } as any,
+		{ toothNumber: 16, state: "Caries" },
+		{ toothNumber: 36, state: "Missing" },
 	]);
 
 	it("1. requestTreatmentPlanAiValidationAndComment returns validation and commentary", async () => {
@@ -83,7 +83,7 @@ describe("AI Copilot Scenarios & Chairside Presentation", () => {
 				},
 			],
 			totalRub: 4500 + 100,
-			totalKopecks: 460000 as any,
+			totalKopecks: 460000,
 			estimatedVisits: 1,
 			estimatedWeeks: 1,
 			order804nCodes: ["A16.07.002.001"],

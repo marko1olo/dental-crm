@@ -373,10 +373,10 @@ export class TelephonyAudioStreamManager {
 
 	/**
 	 * Calculates real-time microphone input volume level (0.0 to 1.0) via AnalyserNode.
-	 * Returns 0 if muted; falls back to 0.75 in headless testing environments.
+	 * Returns 0 if muted, disconnected, or stream is absent (pure silence without synthetic mocks).
 	 */
 	public calculateInputLevel(): number {
-		if (this.isMuted) return 0;
+		if (this.isMuted || !this.localStream) return 0;
 		if (this.inputAnalyser) {
 			try {
 				const bufferLength = this.inputAnalyser.frequencyBinCount;
@@ -384,21 +384,23 @@ export class TelephonyAudioStreamManager {
 				this.inputAnalyser.getByteFrequencyData(dataArray);
 				let sum = 0;
 				for (let i = 0; i < bufferLength; i++) {
-					sum += dataArray[i];
+					sum += dataArray[i] ?? 0;
 				}
 				const avg = sum / (bufferLength * 255);
 				return Math.min(1.0, Math.round(avg * 100) / 100);
 			} catch {
-				return 0.75;
+				return 0;
 			}
 		}
-		return 0.75;
+		return 0;
 	}
 
 	/**
 	 * Calculates real-time speaker output volume level (0.0 to 1.0) via AnalyserNode.
+	 * Returns 0 if remote stream is absent (pure silence without fake synthetic sound).
 	 */
 	public calculateOutputLevel(): number {
+		if (!this.remoteStream) return 0;
 		if (this.outputAnalyser) {
 			try {
 				const bufferLength = this.outputAnalyser.frequencyBinCount;
@@ -406,23 +408,24 @@ export class TelephonyAudioStreamManager {
 				this.outputAnalyser.getByteFrequencyData(dataArray);
 				let sum = 0;
 				for (let i = 0; i < bufferLength; i++) {
-					sum += dataArray[i];
+					sum += dataArray[i] ?? 0;
 				}
 				const avg = (sum / (bufferLength * 255)) * this.volume;
 				return Math.min(1.0, Math.round(avg * 100) / 100);
 			} catch {
-				return this.volume;
+				return 0;
 			}
 		}
-		return this.volume;
+		return 0;
 	}
 
 	/**
 	 * Generates real-time audio waveform distribution bars for live speech visualizer.
+	 * Returns pure silence (zeros) when no active audio stream is attached (Mandates 8e, 8al).
 	 */
 	public getAudioWaveform(barCount = 12): number[] {
 		const targetAnalyser = this.outputAnalyser || this.inputAnalyser;
-		if (targetAnalyser) {
+		if (targetAnalyser && (this.remoteStream || this.localStream)) {
 			try {
 				const bufferLength = targetAnalyser.frequencyBinCount;
 				const dataArray = new Uint8Array(bufferLength);
@@ -432,19 +435,15 @@ export class TelephonyAudioStreamManager {
 				const bars: number[] = [];
 				for (let i = 0; i < barCount; i++) {
 					const idx = Math.min(bufferLength - 1, i * step);
-					const normalized = dataArray[idx] / 255;
-					bars.push(Math.max(0.08, Math.min(1.0, Math.round(normalized * 100) / 100)));
+					const normalized = (dataArray[idx] ?? 0) / 255;
+					bars.push(Math.min(1.0, Math.round(normalized * 100) / 100));
 				}
 				return bars;
 			} catch {}
 		}
 
-		// Fallback deterministic pulse based on active input/output level
-		const activeLevel = Math.max(this.calculateInputLevel(), this.calculateOutputLevel());
-		return Array.from({ length: barCount }, (_, i) => {
-			const sine = Math.sin((i / barCount) * Math.PI);
-			return Math.max(0.08, Math.min(1.0, Math.round((activeLevel * 0.7 + sine * 0.3) * 100) / 100));
-		});
+		// When no audio stream is active, return pure silence (zeros) without artificial synthetic sine waves
+		return Array(barCount).fill(0);
 	}
 
 	/**

@@ -60,6 +60,57 @@ export async function handleAnswerCall(
 		},
 	});
 
+	// Постоянный лид регистрируется при ответе на звонок (event: "answered"), исключая спам первого гудка
+	if (callerPhone.isValid && callerPhone.national10.length >= 7) {
+		const targetOrgId = resolvedOrgId;
+		void withTenantCtx(targetOrgId, async () => {
+			try {
+				let targetPatientId: string | null = body.patientId || null;
+				if (!targetPatientId) {
+					const searchPatient = await db.select({ id: patients.id }).from(patients).where(
+						and(
+							eq(patients.organizationId, targetOrgId),
+							or(
+								eq(patients.phone, callerPhone.e164),
+								ilike(patients.phone, `%${callerPhone.national10}%`),
+								sql`regexp_replace(coalesce(${patients.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${callerPhone.national10}%`}`,
+							),
+						),
+					).limit(1);
+					targetPatientId = searchPatient[0]?.id || null;
+				}
+
+				if (!targetPatientId) {
+					const existingLead = await db.select({ id: crmLeads.id }).from(crmLeads).where(
+						and(
+							eq(crmLeads.organizationId, targetOrgId),
+							or(
+								eq(crmLeads.phone, callerPhone.e164),
+								ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+							),
+						),
+					).limit(1);
+
+					if (existingLead.length === 0) {
+						await db.insert(crmLeads).values({
+							organizationId: targetOrgId,
+							name: `Входящий звонок ${callerPhone.e164}`,
+							patientName: `Звонок ${callerPhone.e164}`,
+							phone: callerPhone.e164,
+							source: "telephony",
+							status: "new",
+							notes: `Лид из принятого входящего звонка (call_id: ${callId})`,
+							stageEnteredAt: new Date(),
+							priority: "normal",
+						});
+					}
+				}
+			} catch (err) {
+				request.log.warn({ err, orgId: targetOrgId }, "[Telephony] Answer call lead creation warning");
+			}
+		}).catch(() => {});
+	}
+
 	return reply.status(200).send({
 		success: true,
 		callId,

@@ -13,4 +13,5 @@ export type { ClinicalBundleDefinition, ClinicalBundleId } from "./bundlesPreset
 export type { CompletedWorksActResult, InventoryItemLookup } from "./treatmentPlanMaterialEngine";
 export type { CopilotCommandType } from "../../services/ai/treatmentPlanCopilot";
 export type { ToothData } from "../odontogram/ToothChart";
+export type { TreatmentPlanSpecialtyFilter } from "./planLogicModules/types/planCoreTypes";
 

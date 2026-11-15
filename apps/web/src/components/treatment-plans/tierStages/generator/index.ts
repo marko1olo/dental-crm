@@ -78,7 +78,14 @@ export function generateTierPlanStages(
 	const missingLower: number[] = [];
 
 	for (const tooth of effectiveTeeth) {
-		const num = tooth.toothNumber ?? (tooth as any).id ?? (tooth as any).number;
+		const rawTooth = tooth as ToothData & { id?: unknown; number?: unknown };
+		const num = typeof rawTooth.toothNumber === "number"
+			? rawTooth.toothNumber
+			: typeof rawTooth.id === "number"
+				? rawTooth.id
+				: typeof rawTooth.number === "number"
+					? rawTooth.number
+					: undefined;
 		if (typeof num !== "number" || !Number.isFinite(num)) continue;
 		const state: ToothState = normalizeToothState(tooth.state);
 

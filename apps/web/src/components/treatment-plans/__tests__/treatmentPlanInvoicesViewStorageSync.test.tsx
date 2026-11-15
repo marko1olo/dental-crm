@@ -16,15 +16,16 @@ import {
 import { MockLocalStorage } from "./helpers/cashierExportTestHelpers.js";
 
 const mockStorage = new MockLocalStorage();
-if (typeof (globalThis as any).window === "undefined") {
-	(globalThis as any).window = {
+const g = globalThis as { window?: unknown };
+if (typeof g.window === "undefined") {
+	g.window = {
 		localStorage: mockStorage,
 		dispatchEvent: () => true,
 		addEventListener: () => {},
 		removeEventListener: () => {},
 	};
 } else {
-	(globalThis as any).window.localStorage = mockStorage;
+	(g.window as { localStorage: Storage }).localStorage = mockStorage;
 }
 
 describe("InvoicesView & Two-Tier Invoices Persistence Sync", () => {

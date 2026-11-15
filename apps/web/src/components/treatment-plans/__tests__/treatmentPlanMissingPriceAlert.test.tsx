@@ -45,7 +45,7 @@ describe("MissingPriceAlert Suite — Спокойный инлайн-инпут
 			clinicalGoal: "Ликвидация очагов инфекции",
 			items: [sampleItemMissingPrice, sampleItemPriced],
 			totalRub: 4500,
-			totalKopecks: 450000 as any,
+			totalKopecks: 450000,
 			estimatedVisits: 1,
 			estimatedWeeks: 1,
 			order804nCodes: ["A16.07.002.099", "A16.07.002.001"],

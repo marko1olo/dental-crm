@@ -91,6 +91,8 @@ export interface TreatmentPlanStage {
 	readonly doctorId?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;
 	readonly doctorSpecialty?: string | null | undefined;
+	readonly assignedDoctorId?: string | null | undefined;
+	readonly assignedDoctorName?: string | null | undefined;
 }
 
 export type TreatmentPlanStageItem = TreatmentPlanItem;

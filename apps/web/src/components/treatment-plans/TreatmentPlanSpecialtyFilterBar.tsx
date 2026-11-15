@@ -1,12 +1,12 @@
 import React from "react";
 import { Columns, Layers, LayoutGrid, Plus } from "lucide-react";
-import type { TreatmentPlanStage } from "./types";
+import type { TreatmentPlanStage, TreatmentPlanSpecialtyFilter } from "./types";
 
 export interface TreatmentPlanSpecialtyFilterBarProps {
 	readonly stages: readonly TreatmentPlanStage[];
 	readonly visibleStages: readonly TreatmentPlanStage[];
-	readonly specialtyFilter: string;
-	readonly onSetSpecialtyFilter: (filter: any) => void;
+	readonly specialtyFilter: TreatmentPlanSpecialtyFilter;
+	readonly onSetSpecialtyFilter: (filter: TreatmentPlanSpecialtyFilter) => void;
 	readonly onOpenAddCatalogService: () => void;
 	readonly onOpenCreateStageModal: () => void;
 	readonly isSplitMode?: boolean | undefined;

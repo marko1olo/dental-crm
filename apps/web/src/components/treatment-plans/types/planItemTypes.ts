@@ -40,6 +40,8 @@ export interface TreatmentPlanItem {
 	readonly category?: string | undefined;
 	readonly priceRub: number;
 	readonly unitPriceRub?: number | undefined;
+	readonly totalPriceRub?: number | undefined;
+	readonly priceKopecks?: number | undefined;
 	readonly discountRub: number;
 	readonly quantity: number;
 	readonly phase?: number | undefined;
@@ -70,6 +72,8 @@ export interface TreatmentPlanItem {
 	readonly doctorId?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;
 	readonly doctorSpecialty?: string | null | undefined;
+	readonly assignedDoctorId?: string | null | undefined;
+	readonly assignedDoctorName?: string | null | undefined;
 	readonly isCompleted?: boolean | undefined;
 	readonly status?: "planned" | "completed" | "in_progress" | string | undefined;
 	readonly completedAtIso?: string | null | undefined;

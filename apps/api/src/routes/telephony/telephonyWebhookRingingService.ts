@@ -55,39 +55,21 @@ export async function handleRingingEvent(p: HandleRingingParams) {
 
 	if (!matchedPatient && p.callerPhone.national10.length >= 7) {
 		try {
-			matchedLead = await db.transaction(async (tx) => {
-				await tx.execute(
-					sql`SELECT pg_advisory_xact_lock(hashtext(${`telephony:lead:${p.resolvedOrgId}:${p.callerPhone.national10}`}))`,
-				);
-				const existing = await tx.select().from(crmLeads).where(
-					and(
-						eq(crmLeads.organizationId, p.resolvedOrgId),
-						or(
-							eq(crmLeads.phone, p.callerPhone.e164),
-							ilike(crmLeads.phone, `%${p.callerPhone.national10}%`),
-							sql`regexp_replace(coalesce(${crmLeads.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${p.callerPhone.national10}%`}`,
-						),
+			const existing = await db.select().from(crmLeads).where(
+				and(
+					eq(crmLeads.organizationId, p.resolvedOrgId),
+					or(
+						eq(crmLeads.phone, p.callerPhone.e164),
+						ilike(crmLeads.phone, `%${p.callerPhone.national10}%`),
+						sql`regexp_replace(coalesce(${crmLeads.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${p.callerPhone.national10}%`}`,
 					),
-				).limit(1);
-				if (existing.length > 0) return existing[0] ?? null;
-
-				const inserted = await tx.insert(crmLeads).values({
-					organizationId: p.resolvedOrgId,
-					name: `Входящий звонок ${p.callerPhone.e164}`,
-					patientName: `Звонок ${p.callerPhone.e164}`,
-					phone: p.callerPhone.e164,
-					source: attribution.channel,
-					status: "new",
-					notes: `Автоматический лид из входящего звонка ВАТС (${p.detectedProvider}). Канал: ${attribution.channelLabel}.${virtualTrunkNumber ? ` Номер ВАТС: ${virtualTrunkNumber}.` : ""}${utmDetailStr ? ` UTM: [${utmDetailStr}].` : ""} ${p.callId ? `call_id: ${p.callId}` : "прямой вызов"}`,
-					audioRecordUrl: p.recordingUrl || null,
-					transcriptionSnippet: p.transcriptionSnippet || null,
-					stageEnteredAt: new Date(),
-					priority: "normal",
-				}).returning();
-				return inserted[0] ?? null;
-			});
+				),
+			).limit(1);
+			if (existing.length > 0) {
+				matchedLead = existing[0] ?? null;
+			}
 		} catch (leadErr) {
-			p.request.log.warn({ leadErr, orgId: p.resolvedOrgId }, "[Telephony] Lead lock resolution warning");
+			p.request.log.warn({ leadErr, orgId: p.resolvedOrgId }, "[Telephony] Lead lookup warning");
 		}
 	}
 

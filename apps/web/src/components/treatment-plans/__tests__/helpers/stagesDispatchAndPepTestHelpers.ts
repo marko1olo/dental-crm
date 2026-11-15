@@ -39,7 +39,7 @@ export const sampleTier: TreatmentPlanTier = {
 	borderClass: "border-teal",
 	isRecommended: true,
 	totalRub: 6500,
-	totalKopecks: 650000 as any,
+	totalKopecks: 650000,
 	durationWeeks: 1,
 	durationVisits: 1,
 	warrantyYears: 2,
@@ -51,8 +51,6 @@ export const sampleTier: TreatmentPlanTier = {
 	ndflRefundRub: 845,
 	priceWithNdflRefundRub: 5655,
 	monthlyInstallment12Rub: 541,
-	installments: {} as any,
-	ndflDetails: {} as any,
 };
 
 export const sampleRoadmapStage: RoadmapStageData = {

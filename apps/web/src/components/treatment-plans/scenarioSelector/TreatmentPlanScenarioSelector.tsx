@@ -8,6 +8,7 @@ import { TreatmentPlan3TierComparison } from "../TreatmentPlan3TierComparison.js
 import { TreatmentPlanRoadmap } from "../roadmap/index.js";
 import type {
 	TreatmentPlanStage,
+	TreatmentPlanStageStatus,
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
 } from "../types.js";
@@ -35,7 +36,7 @@ export interface TreatmentPlanScenarioSelectorProps {
 	readonly onOpenInstallmentModal: () => void;
 	readonly onOpenSignModal: () => void;
 	readonly onOpenContractPrint: () => void;
-	readonly onChangeStageStatus?: ((stage: TreatmentPlanStage, newStatus: any) => void) | undefined;
+	readonly onChangeStageStatus?: ((stage: TreatmentPlanStage, newStatus: TreatmentPlanStageStatus) => void) | undefined;
 	readonly children?: React.ReactNode | undefined;
 }
 

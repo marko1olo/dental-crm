@@ -10,6 +10,10 @@ import { exportPlanToCashier } from "../treatmentPlanNetworkSync.js";
 import type { TreatmentPlanStage } from "../types.js";
 import { buildMockTier } from "./helpers/cashierExportTestHelpers.js";
 
+interface GlobalWithFetch {
+	fetch?: typeof globalThis.fetch | undefined;
+}
+
 describe("exportPlanToCashier — 100% Warranty Autonomy with 0 ₽ Price", () => {
 	it("exports 100% clinical warranty plan with status 'warranty_100' and 0 ₽ prices", async () => {
 		const stages: TreatmentPlanStage[] = [
@@ -58,8 +62,10 @@ describe("exportPlanToCashier — 100% Warranty Autonomy with 0 ₽ Price", () =
 			netPayableRub: 0,
 		};
 
-		const originalFetch = (globalThis as any).fetch;
-		(globalThis as any).fetch = async (url: string) => {
+		const globalObj = globalThis as GlobalWithFetch;
+		const originalFetch = globalObj.fetch;
+		globalObj.fetch = (async (input: RequestInfo | URL) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 			if (url.includes("/api/invoices/generate-from-plan")) {
 				return {
 					ok: true,
@@ -67,10 +73,10 @@ describe("exportPlanToCashier — 100% Warranty Autonomy with 0 ₽ Price", () =
 						success: true,
 						invoice: { id: "22222222-3333-4444-5555-666666666666", totalAmountRub: 0, status: "warranty_100" },
 					}),
-				};
+				} as Response;
 			}
-			return { ok: true, json: async () => ({}) };
-		};
+			return { ok: true, json: async () => ({}) } as Response;
+		}) as typeof globalThis.fetch;
 
 		try {
 			const exported = await exportPlanToCashier({
@@ -84,9 +90,11 @@ describe("exportPlanToCashier — 100% Warranty Autonomy with 0 ₽ Price", () =
 			assert.ok(exported, "exportPlanToCashier must return exported warranty invoice data");
 			assert.equal(exported.totalAmountRub, 0);
 			assert.equal(exported.status, "warranty_100");
-			assert.equal(exported.items[0]!.priceRub, 0);
+			const firstItem = exported.items[0];
+			assert.ok(firstItem);
+			assert.equal(firstItem.priceRub, 0);
 		} finally {
-			(globalThis as any).fetch = originalFetch;
+			globalObj.fetch = originalFetch;
 		}
 	});
 });

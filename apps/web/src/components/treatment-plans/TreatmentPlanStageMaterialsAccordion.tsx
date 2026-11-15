@@ -1,11 +1,12 @@
 import React from "react";
 import { ChevronDown, ChevronUp, Package, TrendingUp } from "lucide-react";
+import type { PlanStageMaterialRequirement, StageMaterialCostSummary } from "./types";
 
 export interface TreatmentPlanStageMaterialsAccordionProps {
 	readonly showMaterials: boolean;
 	readonly setShowMaterials: React.Dispatch<React.SetStateAction<boolean>>;
-	readonly presentationMaterials: readonly any[];
-	readonly materialSummary: any;
+	readonly presentationMaterials: readonly PlanStageMaterialRequirement[];
+	readonly materialSummary: StageMaterialCostSummary;
 }
 
 export const TreatmentPlanStageMaterialsAccordion: React.FC<TreatmentPlanStageMaterialsAccordionProps> = ({

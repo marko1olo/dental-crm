@@ -29,6 +29,7 @@ export function TelephonyHeaderCapsule({
 	const activeLineId = useTelephonyStore((s) => s.activeLineId);
 	const answerCall = useTelephonyStore((s) => s.answerCall);
 	const rejectCall = useTelephonyStore((s) => s.rejectCall);
+	const endCall = useTelephonyStore((s) => s.endCall);
 
 	useEffect(() => {
 		const handleHashChange = () => setHash(window.location.hash);
@@ -161,7 +162,7 @@ export function TelephonyHeaderCapsule({
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
-								rejectCall();
+								endCall();
 							}}
 							data-testid="header-capsule-end-btn"
 							className="p-1 rounded-md text-rose-500 hover:bg-rose-500/10 cursor-pointer transition-colors"

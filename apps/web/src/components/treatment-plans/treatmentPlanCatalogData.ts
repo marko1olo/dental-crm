@@ -937,58 +937,70 @@ export function resolveTierService(
 	}
 
 	if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.006")!;
-		return {
-			name: tierId === "economy"
-				? `Протезирование на имплантате ${toothPrefix}металлокерамической коронкой`
-				: `Протезирование на имплантате ${toothPrefix}(индивидуальный абатмент Ti-Base + керамическая коронка)`,
-			priceRub: entry[tierId].priceRub,
-		};
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.006");
+		if (entry) {
+			return {
+				name: tierId === "economy"
+					? `Протезирование на имплантате ${toothPrefix}металлокерамической коронкой`
+					: `Протезирование на имплантате ${toothPrefix}(индивидуальный абатмент Ti-Base + керамическая коронка)`,
+				priceRub: entry[tierId].priceRub,
+			};
+		}
 	}
 	if (/имплант/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.054.001")!;
-		return {
-			name: tierId === "economy"
-				? `Дентальная имплантация ${toothPrefix}(базовая система)`
-				: `Премиальная имплантация ${toothPrefix}с гидрофильной поверхностью + 3D-шаблон`,
-			priceRub: entry[tierId].priceRub,
-		};
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.054.001");
+		if (entry) {
+			return {
+				name: tierId === "economy"
+					? `Дентальная имплантация ${toothPrefix}(базовая система)`
+					: `Премиальная имплантация ${toothPrefix}с гидрофильной поверхностью + 3D-шаблон`,
+				priceRub: entry[tierId].priceRub,
+			};
+		}
 	}
 	if (/коронк/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.004")!;
-		return {
-			name: tierId === "economy"
-				? `Восстановление ${toothPrefix}металлокерамической коронкой Co-Cr`
-				: `Восстановление ${toothPrefix}керамической коронкой с индивидуальной эстетической раскраской`,
-			priceRub: entry[tierId].priceRub,
-		};
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.004");
+		if (entry) {
+			return {
+				name: tierId === "economy"
+					? `Восстановление ${toothPrefix}металлокерамической коронкой Co-Cr`
+					: `Восстановление ${toothPrefix}керамической коронкой с индивидуальной эстетической раскраской`,
+				priceRub: entry[tierId].priceRub,
+			};
+		}
 	}
 	if (/вкладк/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.003.001")!;
-		return {
-			name: tierId === "economy"
-				? `Восстановление ${toothPrefix}литой культевой вкладкой`
-				: `Восстановление ${toothPrefix}прессованной керамической накладкой Inlay`,
-			priceRub: entry[tierId].priceRub,
-		};
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.003.001");
+		if (entry) {
+			return {
+				name: tierId === "economy"
+					? `Восстановление ${toothPrefix}литой культевой вкладкой`
+					: `Восстановление ${toothPrefix}прессованной керамической накладкой Inlay`,
+				priceRub: entry[tierId].priceRub,
+			};
+		}
 	}
 	if (/эндодонт|канал/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.008.002")!;
-		return {
-			name: tierId === "economy"
-				? `Эндодонтическое лечение ${toothPrefix}(стандартная обработка и пломбирование)`
-				: `Прецизионная микроскопная эндодонтия ${toothPrefix}с биокерамикой`,
-			priceRub: entry[tierId].priceRub,
-		};
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.008.002");
+		if (entry) {
+			return {
+				name: tierId === "economy"
+					? `Эндодонтическое лечение ${toothPrefix}(стандартная обработка и пломбирование)`
+					: `Прецизионная микроскопная эндодонтия ${toothPrefix}с биокерамикой`,
+				priceRub: entry[tierId].priceRub,
+			};
+		}
 	}
 	if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.002")!;
-		return {
-			name: tierId === "economy"
-				? `Восстановление ${toothPrefix}пломбой световой полимеризации`
-				: `Восстановление ${toothPrefix}прессованной керамической накладкой / вкладкой`,
-			priceRub: entry[tierId].priceRub,
-		};
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.002");
+		if (entry) {
+			return {
+				name: tierId === "economy"
+					? `Восстановление ${toothPrefix}пломбой световой полимеризации`
+					: `Восстановление ${toothPrefix}прессованной керамической накладкой / вкладкой`,
+				priceRub: entry[tierId].priceRub,
+			};
+		}
 	}
 
 	const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;

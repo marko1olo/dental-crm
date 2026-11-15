@@ -9,9 +9,9 @@ import {
 	detectMutuallyExclusiveToothProcedures,
 	validateTreatmentPlanStarProtocols,
 } from "../starProtocolValidationEngine";
-import type { TreatmentPlanItem, TreatmentPlanStage } from "../types";
+import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageKind } from "../types";
 
-function createItem(id: string, tooth: number, code: string, name: string, cat: string, price: number, stage: any): TreatmentPlanItem {
+function createItem(id: string, tooth: number, code: string, name: string, cat: string, price: number, stage: TreatmentPlanStageKind): TreatmentPlanItem {
 	return { id, toothNumber: tooth, code804n: code, name, category: cat, unitPriceRub: price, priceRub: price, discountRub: 0, quantity: 1, stageKind: stage };
 }
 
@@ -49,7 +49,7 @@ describe("starProtocolValidationEngine — Автономия врача при 
 				createItem("rest-16", 16, "A16.07.004.001", "Восстановление зуба коронкой цельнокерамической", "Ортопедия", 28000, "stage_1_therapy"),
 			],
 			totalRub: 32500,
-			totalKopecks: 3250000 as any,
+			totalKopecks: 3250000,
 			estimatedVisits: 2,
 			estimatedWeeks: 2,
 			order804nCodes: ["A16.07.001.001", "A16.07.004.001"],

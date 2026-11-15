@@ -4,7 +4,7 @@ export const DEFAULT_TELEPHONY_WS_URL = "ws://localhost:4100/api/ws/telephony";
 
 export const DEFAULT_CLINIC_BRAND_NAME = "DENTE";
 
-export const DEFAULT_DOCTOR_FALLBACK_ID = "doc-1";
+export const DEFAULT_DOCTOR_FALLBACK_ID = "";
 
 export const QUICK_BOOKING_REASON_BY_SLOT: Record<QuickSlotType, string> = {
 	today_cito: "Неотложный приём CITO / Острая боль",

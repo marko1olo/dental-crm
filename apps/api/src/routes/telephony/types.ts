@@ -63,6 +63,8 @@ export const telephonyWebhookPayloadSchema = z.object({
 	link: z.string().optional(),
 	duration: z.union([z.number(), z.string()]).optional(),
 	duration_seconds: z.union([z.number(), z.string()]).optional(),
+	wait_time: z.union([z.number(), z.string()]).optional(),
+	waiting_duration: z.union([z.number(), z.string()]).optional(),
 	billsec: z.union([z.number(), z.string()]).optional(),
 	talk_time: z.union([z.number(), z.string()]).optional(),
 	timestamp: z.union([z.number(), z.string()]).optional(),

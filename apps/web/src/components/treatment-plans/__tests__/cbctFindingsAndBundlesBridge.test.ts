@@ -42,10 +42,10 @@ describe("cbctAutoPlanIntegrationBridge — Находки КЛКТ и клин�
 
 	test("реестр пакетов КЛКТ содержит 3 специализированных пакета", () => {
 		assert.equal(CBCT_CLINICAL_BUNDLES.length, 3);
-		const ids = CBCT_CLINICAL_BUNDLES.map((b) => b.id);
-		assert.ok(ids.includes("sinus_lift_closed_turnkey" as any));
-		assert.ok(ids.includes("sinus_lift_open_turnkey" as any));
-		assert.ok(ids.includes("crown_implant_zirconia_turnkey" as any));
+		const ids: readonly string[] = CBCT_CLINICAL_BUNDLES.map((b) => b.id);
+		assert.ok(ids.includes("sinus_lift_closed_turnkey"));
+		assert.ok(ids.includes("sinus_lift_open_turnkey"));
+		assert.ok(ids.includes("crown_implant_zirconia_turnkey"));
 	});
 
 	test("getCbctBundleById находит пакеты по идентификаторам", () => {
@@ -66,7 +66,7 @@ describe("cbctAutoPlanIntegrationBridge — Находки КЛКТ и клин�
 	});
 
 	test("calculateBundlePrice рассчитывает стоимость пакета КЛКТ с исключением опций", () => {
-		const breakdown = calculateBundlePrice("sinus_lift_closed_turnkey" as any, ["closed_lift", "bio_oss"]);
+		const breakdown = calculateBundlePrice("sinus_lift_closed_turnkey", ["closed_lift", "bio_oss"]);
 		assert.equal(breakdown.totalRub, 32000);
 		assert.equal(breakdown.excludedItems.length, 1);
 		assert.equal(breakdown.excludedItems[0]!.id, "anesthesia");
@@ -82,7 +82,7 @@ describe("cbctAutoPlanIntegrationBridge — Находки КЛКТ и клин�
 				clinicalGoal: "Лечение кариеса",
 				items: [],
 				totalRub: 0,
-				totalKopecks: 0 as any,
+				totalKopecks: 0,
 				estimatedVisits: 1,
 				estimatedWeeks: 1,
 				order804nCodes: [],
@@ -92,7 +92,7 @@ describe("cbctAutoPlanIntegrationBridge — Находки КЛКТ и клин�
 
 		const updatedStages = applyClinicalBundleToStages(
 			initialStages,
-			"sinus_lift_open_turnkey" as any,
+			"sinus_lift_open_turnkey",
 			{ toothNumber: 16 },
 		);
 

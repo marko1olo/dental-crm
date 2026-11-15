@@ -45,7 +45,7 @@ export const TreatmentPlanStageItemsList: React.FC<TreatmentPlanStageItemsListPr
 			{displayItems.map((item, idx) => (
 				<TreatmentPlanStageItemRow
 					key={item.id || idx} item={item} doctors={doctors} onAssignDoctor={onAssignItemDoctor}
-					onOpenLabOrder={onOpenLabOrder ? (teeth, opts) => onOpenLabOrder(teeth, { stageId: stage.id, stageNumber: stage.stageNumber, stageTitle: stage.title, doctorId: (stage as any).assignedDoctorId, doctorName: (stage as any).assignedDoctorName, ...opts }) : undefined}
+					onOpenLabOrder={onOpenLabOrder ? (teeth, opts) => onOpenLabOrder(teeth, { stageId: stage.id, stageNumber: stage.stageNumber, stageTitle: stage.title, doctorId: stage.assignedDoctorId ?? stage.doctorId, doctorName: stage.assignedDoctorName ?? stage.doctorName, ...opts }) : undefined}
 					onOneClickLabOrder={onOneClickLabOrder} onUpdateItemQuantity={onUpdateItemQuantity} onUpdateItemPrice={onUpdateItemPrice} onUpdateItem={onUpdateItem} onRemoveItem={onRemoveItem}
 				/>
 			))}

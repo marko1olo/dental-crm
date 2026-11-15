@@ -37,7 +37,10 @@ export function useIncomingCallBookingActions({
 	const handleQuickBook = (slotType: QuickSlotType = "today_standard") => {
 		const defaultDoctorId =
 			dashboard?.clinicSettings?.staff?.find((s) => s.active && (s.role === "doctor" || s.role === "owner"))?.id ||
-			dashboard?.clinicSettings?.staff?.[0]?.id || DEFAULT_DOCTOR_FALLBACK_ID;
+			dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor" || s.role === "owner")?.id ||
+			dashboard?.clinicSettings?.staff?.[0]?.id ||
+			DEFAULT_DOCTOR_FALLBACK_ID ||
+			"";
 		const defaultChairId =
 			dashboard?.clinicSettings?.chairs?.find((c) => c.active)?.id ||
 			dashboard?.clinicSettings?.chairs?.[0]?.id || "";

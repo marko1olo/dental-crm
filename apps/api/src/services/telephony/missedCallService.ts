@@ -29,6 +29,7 @@ export interface MissedCallEventParams {
 	provider?: string | undefined;
 	reason?: string | undefined;
 	timestamp?: Date | string | undefined;
+	waitDurationSeconds?: number | undefined;
 }
 
 export interface MissedCallResult {

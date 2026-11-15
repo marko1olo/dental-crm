@@ -42,8 +42,8 @@ export const StageFooterLabOrderButtons: React.FC<StageFooterLabOrderButtonsProp
 							stageNumber: stage.stageNumber,
 							stageTitle: stage.title,
 							priceRub: stage.totalRub,
-							doctorId: (stage as any).assignedDoctorId,
-							doctorName: (stage as any).assignedDoctorName,
+							doctorId: stage.assignedDoctorId ?? stage.doctorId,
+							doctorName: stage.assignedDoctorName ?? stage.doctorName,
 						});
 					}}
 					className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors flex items-center gap-2 cursor-pointer touch-manipulation h-8"

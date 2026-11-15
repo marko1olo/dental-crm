@@ -2,9 +2,9 @@ import { parseKopecks, type Kopecks } from "@dental/shared";
 import type { ToothData } from "../../../odontogram/ToothChart";
 
 export const sampleTeethPresentation: ToothData[] = [
-	{ id: 16, toothNumber: 16, state: "Caries", systemicNotes: "Глубокий кариес жевательной поверхности" } as any,
-	{ id: 21, toothNumber: 21, state: "Fractured", systemicNotes: "Скол коронковой части зуба" } as any,
-	{ id: 36, toothNumber: 36, state: "Missing", systemicNotes: "Адентия 36, показана имплантация" } as any,
+	{ toothNumber: 16, state: "Caries", notes: "Глубокий кариес жевательной поверхности" },
+	{ toothNumber: 21, state: "Defective_Restoration", notes: "Скол коронковой части зуба" },
+	{ toothNumber: 36, state: "Missing", notes: "Адентия 36, показана имплантация" },
 ];
 
 export function createPlanItem(
