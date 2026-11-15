@@ -1,12 +1,19 @@
 import React from "react";
 import { FileText, ShieldCheck } from "lucide-react";
-import { PatientAdministrativeForm } from "../PatientAdministrativeForm";
+import {
+	PatientAdministrativeForm,
+	type PatientAdministrativeProfileDraft,
+	type WeekdayOption,
+} from "../PatientAdministrativeForm";
 
 export interface PatientPassportCollapsibleProps {
-	readonly patientAdministrativeProfileDraft: any;
-	readonly updatePatientAdministrativeProfileDraft: any;
-	readonly weekdayOptions: any[];
-	readonly normalizeOptionalWorkingDaysDraft: any;
+	readonly patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft;
+	readonly updatePatientAdministrativeProfileDraft: (
+		field: keyof PatientAdministrativeProfileDraft,
+		value: string | number[],
+	) => void;
+	readonly weekdayOptions: WeekdayOption[];
+	readonly normalizeOptionalWorkingDaysDraft?: ((days: number[]) => number[]) | undefined;
 	readonly savePatientAdministrativeProfile: () => void;
 	readonly patientAdministrativeProfileSaveState: string;
 	readonly patientAdministrativeSaveGuidance: string | null;

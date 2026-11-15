@@ -9,20 +9,14 @@ const __dirname = path.dirname(__filename);
 const webSrcRoot = path.resolve(__dirname, "../../..");
 
 describe("Red Team Inquisition: Human Clinical Language (Part 3: Protocols, Templates, Imaging)", () => {
-	it("11. VisitProtocolView.tsx: free of 'Форма 043/у', '(Subjective)', '(Status localis)'", () => {
-		const filePath = path.join(webSrcRoot, "components/patients/VisitProtocolView.tsx");
+	it("11. MedicalRecordStudioModal.tsx: free of bureaucratic 'Форма 043/у', uses human clinical terms", () => {
+		const filePath = path.join(webSrcRoot, "components/emr/MedicalRecordStudioModal.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
 
-		assert.ok(!content.includes("Протокол визита (Форма 043/у)"));
-		assert.ok(!content.includes("Жалобы пациента (Subjective):"));
-		assert.ok(!content.includes("Данные объективного осмотра (Status localis):"));
-		assert.ok(!content.includes("Клинический диагноз по МКБ-10:"));
-		assert.ok(!content.includes("Медицинская документация Форма 043/у"));
-
-		assert.ok(content.includes("Протокол приёма"));
-		assert.ok(content.includes("Жалобы пациента:"));
-		assert.ok(content.includes("Осмотр и зубная формула:"));
-		assert.ok(content.includes("Клинический диагноз:"));
+		assert.ok(!content.includes("Форма 043/у"));
+		assert.ok(!content.includes("(Subjective)"));
+		assert.ok(!content.includes("(Status localis)"));
+		assert.ok(content.includes("Канонический SSOT-модуль медицинской карты приёма"));
 	});
 
 	it("12. Doctor Settings: Templates & Materials Catalog free of bureaucratic 043/у bloat", () => {

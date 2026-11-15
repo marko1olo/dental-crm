@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../../safetyMath";
 import type { PatientClinicalSafetyProfile } from "../../safetyMath";
-import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn, PatientVisitHistoryItem } from "./types";
+import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 import { usePatientFamilyLoader } from "../../overview/usePatientFamilyLoader";
 import { computePassportSummary, computeInsuranceSummary, computeNotesSummary } from "./generalInfoSummaries";
 
@@ -40,7 +40,6 @@ export function usePatientGeneralInfoTabLogic({
 		}
 	}, [patient?.dmsInsuranceCompany, patient?.dmsPolicyNumber, patient?.snils]);
 
-	const [viewingProtocolVisit, setViewingProtocolVisit] = useState<PatientVisitHistoryItem | null>(null);
 	const { familyData, familyLoadFailure, loadFamily } = usePatientFamilyLoader(patient?.id, null);
 
 	const toggleAccordion = useCallback((key: "passport" | "insurance" | "notes") => {
@@ -94,6 +93,5 @@ export function usePatientGeneralInfoTabLogic({
 		insuranceSummary, notesSummary, handleToggleAllergy,
 		handleToggleServiceTag, handleAppendDoctorTag,
 		familyData, familyLoadFailure, loadFamily,
-		viewingProtocolVisit, setViewingProtocolVisit,
 	};
 }

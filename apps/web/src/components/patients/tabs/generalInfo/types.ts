@@ -7,8 +7,6 @@ import type { PatientClinicalSafetyProfile } from "../../safetyMath";
 export type {
 	RepresentativeRelationshipType,
 	RepresentativeRelationshipMeta,
-	RepresentativeRelationshipType as StomxRepresentativeType,
-	RepresentativeRelationshipMeta as StomxRepresentativeTypeMeta,
 };
 
 export type IdentityDocType = "passport_rf" | "birth_certificate" | "foreign_passport" | "residence_permit" | "other";

@@ -7,8 +7,6 @@ import type {
 	PatientVisitHistoryItem,
 	RepresentativeRelationshipType,
 	RepresentativeRelationshipMeta,
-	StomxRepresentativeType,
-	StomxRepresentativeTypeMeta,
 } from "./generalInfo/types";
 
 import {
@@ -22,7 +20,6 @@ import {
 } from "./generalInfo/constants";
 
 export const PATIENT_LEGAL_REPRESENTATIVE_CATALOG = DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG;
-export const STOMX_REPRESENTATIVE_CATALOG = DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG;
 export type LegalRepresentativeType = RepresentativeRelationshipType;
 export type LegalRepresentativeTypeMeta = RepresentativeRelationshipMeta;
 
@@ -39,8 +36,6 @@ export {
 export type {
 	RepresentativeRelationshipType,
 	RepresentativeRelationshipMeta,
-	StomxRepresentativeType,
-	StomxRepresentativeTypeMeta,
 	IdentityDocType,
 	PatientVisitHistoryItem,
 	PatientGeneralInfo,

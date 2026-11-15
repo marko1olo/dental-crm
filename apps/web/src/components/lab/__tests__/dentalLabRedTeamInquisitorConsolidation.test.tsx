@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { DentalLabStudioModal } from "../DentalLabStudioModal";
 import { DentalLabFinancialGate } from "../DentalLabFinancialGate";
 import { checkDentalLabFinancialGate } from "../dentalLabFinancialGateEngine";
-import { VisitProtocolView } from "../../patients/VisitProtocolView";
+import { VisitHeaderQuickTools } from "../../visit/view/visitHeaderModules/VisitHeaderQuickTools";
 import { parseFdiTeethString, calculateZtlWageFinancials } from "../dentalLabOrderEngine";
 
 describe("RED TEAM INQUISITOR — Dental Lab & ZTL Orders Consolidation & Mandate 8e/8n/8x Audit", () => {
@@ -54,20 +54,18 @@ describe("RED TEAM INQUISITOR — Dental Lab & ZTL Orders Consolidation & Mandat
 		);
 	});
 
-	it("3. VisitProtocolView бесшовно связан с нарядом ЗТЛ у кресла врача", () => {
+	it("3. Приём врача бесшовно связан с нарядом ЗТЛ у кресла врача", () => {
 		const html = renderToString(
-			<VisitProtocolView
-				isOpen={true}
-				patientId="pat-protocol-42"
-				patientName="Смирнова Елена"
-				doctorName="Д-р Воронова"
-				initialTooth={26}
+			<VisitHeaderQuickTools
+				activePatient={null}
+				handleOpenLabOrder={() => {}}
+				setIsQueueCockpitForced={() => {}}
 			/>,
 		);
 
 		assert.ok(
-			html.includes("btn-visit-lab-order"),
-			"VisitProtocolView содержит кнопку быстрого перехода в наряд ЗТЛ у кресла врача",
+			html.includes("btn-visit-lab-order-fast"),
+			"VisitHeaderQuickTools содержит кнопку быстрого перехода в наряд ЗТЛ у кресла врача",
 		);
 		assert.ok(
 			html.includes("Наряд ЗТЛ"),

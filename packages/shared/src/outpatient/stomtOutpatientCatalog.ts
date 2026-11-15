@@ -108,6 +108,7 @@ export interface StomxOutpatientTemplateMetadata {
 
 /** Алиас для обратной совместимости */
 export type StomxTemplateMetadata = StomxOutpatientTemplateMetadata;
+export type OutpatientTemplateMetadata = StomxOutpatientTemplateMetadata;
 
 /**
  * Узел дерева рубрик шаблонов StomX

@@ -97,12 +97,8 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 				? path.join(webSrc, "components/visit/view/visitHeader/PatientAlertBadgesBar.tsx")
 				: path.join(webSrc, "components/visit/view/VisitHeaderMonolith.tsx");
 			const monolithContent = fs.readFileSync(monolithPath, "utf-8");
-			const visitViewContent = fs.readFileSync(
-				path.join(webSrc, "VisitView.tsx"),
-				"utf-8",
-			);
 
-			// Check VisitHeaderMonolith
+			// Check VisitHeaderMonolith / PatientAlertBadgesBar
 			assert.ok(
 				monolithContent.includes('data-testid="visit-focus-allergy-alert"'),
 				"VisitHeaderMonolith must have alert allergy badge",
@@ -114,20 +110,6 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 			assert.ok(
 				monolithContent.includes("Аллергии не выявлены"),
 				"VisitHeaderMonolith must render 'Аллергии не выявлены'",
-			);
-
-			// Check VisitView
-			assert.ok(
-				visitViewContent.includes('data-testid="visit-focus-allergy-alert"'),
-				"VisitView must have alert allergy badge",
-			);
-			assert.ok(
-				visitViewContent.includes('data-testid="visit-focus-allergy-clean"'),
-				"VisitView must have clean allergy badge branch",
-			);
-			assert.ok(
-				visitViewContent.includes("Аллергии не выявлены"),
-				"VisitView must render 'Аллергии не выявлены'",
 			);
 		});
 
@@ -186,9 +168,9 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 			assert.strictEqual(isSomaticProfilePhysiologicalNorm(norm), true);
 		});
 
-		it("PatientAnamnesisModal and PatientCardModal have zero disabled save buttons", () => {
-			const anamnesisModalContent = fs.readFileSync(
-				path.join(webSrc, "components/patients/PatientAnamnesisModal.tsx"),
+		it("SomaticAnamnesisCard and PatientCardModal have zero disabled save buttons", () => {
+			const somaticNotesContent = fs.readFileSync(
+				path.join(webSrc, "components/clinical/somaticCard/SomaticNotesAndActions.tsx"),
 				"utf-8",
 			);
 			const patientCardModalContent = fs.readFileSync(
@@ -196,13 +178,13 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 				"utf-8",
 			);
 
-			// Anamnesis modal save button
+			// Somatic save button
 			assert.ok(
-				anamnesisModalContent.includes("Сохранить анкету"),
-				"Must have 'Сохранить анкету' button",
+				somaticNotesContent.includes("Сохранить статус"),
+				"Must have 'Сохранить статус' button",
 			);
 			assert.ok(
-				!anamnesisModalContent.includes("disabled={!"),
+				!somaticNotesContent.includes("disabled={!"),
 				"Must not block save button with artificial validation barriers",
 			);
 

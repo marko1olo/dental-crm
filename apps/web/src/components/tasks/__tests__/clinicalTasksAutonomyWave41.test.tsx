@@ -38,7 +38,7 @@ import {
 	type ClinicalTask,
 } from "../../../ClinicalTasksPanel";
 import { WorkspaceContinuityStrip } from "../../../workspaceContinuityStrip";
-import { PatientAnamnesisModal } from "../../patients/PatientAnamnesisModal";
+import { SomaticAnamnesisCard } from "../../clinical/SomaticAnamnesisCard";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -333,19 +333,17 @@ describe("Wave 41 — Clinical Tasks Presets, Non-Blocking Sync & Somatic Norm A
 		});
 	});
 
-	describe("3. PatientAnamnesisModal Somatic Healthy Norm (Mandates 8e, 8k, 8n)", () => {
-		it("renders PatientAnamnesisModal with 1-click 'Соматически здоров / норма' button", () => {
+	describe("3. Somatic Anamnesis Healthy Norm (Mandates 8e, 8k, 8n)", () => {
+		it("renders SomaticAnamnesisCard with 1-click 'Соматически здоров / норма' button", () => {
 			const html = renderToString(
-				<PatientAnamnesisModal
-					isOpen={true}
-					onClose={() => {}}
+				<SomaticAnamnesisCard
 					patientId="pat-wave41"
 					patientName="Семенов С.С."
 				/>,
 			);
 
 			assert.ok(
-				html.includes('data-testid="btn-somatic-healthy-norm"'),
+				html.includes('data-testid="mark-somatic-norm-btn"'),
 				"Must render 1-click somatic healthy norm button",
 			);
 			assert.ok(
@@ -353,7 +351,7 @@ describe("Wave 41 — Clinical Tasks Presets, Non-Blocking Sync & Somatic Norm A
 				"Button must display 'Соматически здоров / норма' text",
 			);
 			assert.ok(
-				html.includes("Анкета здоровья и клинические стоп-факторы"),
+				html.includes("Соматический анамнез и факторы риска"),
 				"Must render somatic safety and risk header",
 			);
 		});

@@ -6,7 +6,16 @@
  */
 
 export * from "./medicalCardCatalogData";
-export * from "./MedicalRecordStudioModal";
+export {
+	MedicalRecordStudioModal,
+	type MedicalRecordStudioModalProps,
+	type RecordTabType,
+	type ExtendedMedicalRecordInitialData,
+	DEFAULT_CLINICAL_RECORD_DATA,
+	type ClinicalRecordPrintModalProps,
+	ClinicalRecordPrintModal,
+	type Form043PrintModalProps,
+} from "./MedicalRecordStudioModal";
 export * from "./types/recordDataTypes";
 export * from "./types/recordConfigTypes";
 export * from "./clinicalDiaryMath";

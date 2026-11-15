@@ -1,5 +1,4 @@
 import React from "react";
-import { VisitProtocolView } from "../VisitProtocolView";
 import { PatientFamilyAndInsuranceWidget } from "../PatientFamilyAndInsuranceWidget";
 import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../safetyMath";
 import type { PatientGeneralInfoTabProps } from "./generalInfoTabTypes";
@@ -90,20 +89,6 @@ export const PatientGeneralInfoTab: React.FC<PatientGeneralInfoTabProps> = React
 							mode="full"
 						/>
 					</div>
-				)}
-
-				{logic.viewingProtocolVisit && (
-					<VisitProtocolView
-						isOpen={true}
-						onClose={() => logic.setViewingProtocolVisit(null)}
-						visitId={logic.viewingProtocolVisit.id}
-						patientId={patient?.id}
-						patientName={patient?.fullName}
-						doctorName={logic.viewingProtocolVisit.doctorName}
-						initialTooth={logic.viewingProtocolVisit.toothNumber}
-						initialDate={logic.viewingProtocolVisit.date}
-						initialDiagnosis={logic.viewingProtocolVisit.services}
-					/>
 				)}
 			</div>
 		);

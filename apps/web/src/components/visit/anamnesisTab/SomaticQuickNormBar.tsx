@@ -33,7 +33,6 @@ export const SomaticQuickNormBar: React.FC<SomaticQuickNormBarProps> = ({
 }) => {
 	const openTemplates = onOpenClinicalTemplates ?? onOpenStomxTemplates ?? (() => {
 		window.dispatchEvent(new CustomEvent("dente-open-clinical-templates"));
-		window.dispatchEvent(new CustomEvent("dente-open-stomx-templates"));
 	});
 
 	const hasAlerts = selectedRisks.length > 0 || selectedAllergyCount > 0;

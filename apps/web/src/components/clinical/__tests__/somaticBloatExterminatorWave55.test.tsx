@@ -29,7 +29,7 @@ import {
 	parseSafetyProfileFromText,
 } from "../../patients/safetyMath";
 import { SomaticAnamnesisCard } from "../SomaticAnamnesisCard";
-import { PatientAnamnesisModal } from "../../patients/PatientAnamnesisModal";
+import { PatientSafetyBanner } from "../../patients/tabs/generalInfo/PatientSafetyBanner";
 import { validatePatientIntakeQuestionnaire } from "../../../documentValidators";
 import { executeApplySomaticNormAutonomy } from "../../../VisitView";
 
@@ -296,17 +296,17 @@ describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 			);
 		});
 
-		it("PatientAnamnesisModal and SomaticAnamnesisCard have 0 disabled buttons", () => {
-			const anamnesisModalPath = path.join(
+		it("PatientSafetyBanner and SomaticAnamnesisCard have 0 disabled buttons", () => {
+			const bannerPath = path.join(
 				webSrcRoot,
-				"components/patients/PatientAnamnesisModal.tsx",
+				"components/patients/tabs/generalInfo/PatientSafetyBanner.tsx",
 			);
-			const anamnesisModalSource = fs.readFileSync(anamnesisModalPath, "utf8");
+			const bannerSource = fs.readFileSync(bannerPath, "utf8");
 
 			assert.strictEqual(
-				anamnesisModalSource.includes("disabled={true}"),
+				bannerSource.includes("disabled={true}"),
 				false,
-				"PatientAnamnesisModal must never hardcode disabled={true}",
+				"PatientSafetyBanner must never hardcode disabled={true}",
 			);
 
 			const somaticCardSource = getSomaticCardSource();
@@ -333,9 +333,9 @@ describe("Wave 55: Somatic & Anamnesis Bloat Exterminator", () => {
 			assert.strictEqual(hasCartoonEmojis(content), false);
 		});
 
-		it("PatientAnamnesisModal.tsx contains zero cartoon emojis", () => {
+		it("PatientSafetyBanner.tsx contains zero cartoon emojis", () => {
 			const content = fs.readFileSync(
-				path.join(webSrcRoot, "components/patients/PatientAnamnesisModal.tsx"),
+				path.join(webSrcRoot, "components/patients/tabs/generalInfo/PatientSafetyBanner.tsx"),
 				"utf8",
 			);
 			assert.strictEqual(hasCartoonEmojis(content), false);

@@ -90,9 +90,9 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 			}
 		});
 
-		it("1.2. PatientAnamnesisModal.tsx предоставляет 1-клик пресет нормы и не блокирует сохранение", () => {
+		it("1.2. PatientSafetyBanner.tsx предоставляет 1-клик пресет нормы и не блокирует сохранение", () => {
 			const modalContent = fs.readFileSync(
-				path.join(patientsDir, "PatientAnamnesisModal.tsx"),
+				path.join(patientsDir, "tabs/generalInfo/PatientSafetyBanner.tsx"),
 				"utf-8",
 			);
 

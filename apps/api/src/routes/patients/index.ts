@@ -10,6 +10,7 @@ import { registerPatientReclamationRoutes } from "./reclamationRoutes.js";
 import { registerPatientTicketRoutes } from "./ticketRoutes.js";
 import { registerPatientTimelineRoutes } from "./timelineRoutes.js";
 import { registerPatientPhotoRoutes } from "./photoRoutes.js";
+import { registerPatientRiskRoutes } from "./patientRiskRoutes.js";
 
 export {
 	patientArchiveRowsBlockBooking,
@@ -29,4 +30,5 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 	registerPatientTicketRoutes(app);
 	registerPatientTimelineRoutes(app);
 	registerPatientPhotoRoutes(app);
+	registerPatientRiskRoutes(app);
 }
