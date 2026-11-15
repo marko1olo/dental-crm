@@ -21,7 +21,10 @@ import {
 	fetchActiveDoctorProfiles,
 	fetchClosedPayrollStatements,
 	fetchDoctorPayrollDataset,
+	type PayrollOrderDto,
+	type ClosedPayrollPeriodDto,
 } from "./doctorPayrollDbQueries.js";
+import { handleGetDoctorMyEarnings } from "./doctorMyEarningsHandler.js";
 
 const payrollCalculationsQuerySchema = z.object({
 	doctorId: z.string().optional(),
@@ -106,6 +109,109 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
 		const rawDocId = q.doctorId || identity.userId || "";
 
+		const fromStr = q.from || q.startDate || q.startDateIso || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+		const toStr = q.to || q.endDate || q.endDateIso || new Date().toISOString().slice(0, 10);
+		const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
+		const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
+
+		if (rawDocId === "all") {
+			const activeDoctors = await fetchActiveDoctorProfiles(orgId);
+			const allOrders: PayrollOrderDto[] = [];
+			const allClosedPeriods: ClosedPayrollPeriodDto[] = [];
+			let totalClinicShifts = 0;
+			let totalClinicGrossKop = 0;
+			let totalClinicLabKop = 0;
+			let totalClinicMaterialKop = 0;
+			let totalClinicNetBaseKop = 0;
+			let totalClinicAccruedKop = 0;
+			let totalClinicPayoutKop = 0;
+
+			const doctorSummaries: Record<string, unknown> = {};
+
+			for (const doc of activeDoctors) {
+				const { shiftsCount, orders, completedServices } = await fetchDoctorPayrollDataset({
+					orgId,
+					resolvedDocId: doc.id,
+					fromStr,
+					toStr,
+					fromDate,
+					toDate,
+				});
+
+				const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
+				const isRental = docPayoutModel === "chair_rental";
+
+				const payrollResult = calculateDoctorPeriodPayroll({
+					doctorId: doc.id,
+					doctorName: doc.name,
+					specialtyId: doc.specialtyId,
+					periodStartIso: fromStr.slice(0, 10),
+					periodEndIso: toStr.slice(0, 10),
+					services: completedServices,
+					customBasePercentage: doc.commissionPercent,
+					payoutModel: docPayoutModel,
+					chairRentalKop: isRental ? Math.round(shiftsCount * doc.defaultShiftRateKop) : 0,
+					advancePayoutKop: 0,
+					taxRegime: doc.taxRegime,
+				});
+
+				const { closedPeriods } = await fetchClosedPayrollStatements(orgId, doc.id, doc.name);
+				allClosedPeriods.push(...closedPeriods);
+				allOrders.push(...orders);
+
+				totalClinicShifts += shiftsCount;
+				totalClinicGrossKop += payrollResult.totalGrossRevenueKop;
+				totalClinicLabKop += payrollResult.totalLabDeductionsKop;
+				totalClinicMaterialKop += payrollResult.totalMaterialDeductionsKop;
+				totalClinicNetBaseKop += payrollResult.totalNetBaseKop;
+				totalClinicAccruedKop += payrollResult.grossPayoutBeforeTaxKop;
+				totalClinicPayoutKop += (payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop);
+
+				doctorSummaries[doc.id] = {
+					doctorId: doc.id,
+					doctorName: doc.name,
+					schemeType: isRental ? "chair_rental" : "net_percentage",
+					totalGrossKopecks: payrollResult.totalGrossRevenueKop,
+					totalLabCostKopecks: payrollResult.totalLabDeductionsKop,
+					totalMaterialCostKopecks: payrollResult.totalMaterialDeductionsKop,
+					totalNetBaseKopecks: payrollResult.totalNetBaseKop,
+					doctorAccruedKopecks: payrollResult.grossPayoutBeforeTaxKop,
+					chairRentalKopecks: payrollResult.chairRentalKop || 0,
+					advanceKopecks: payrollResult.advancePayoutKop || 0,
+					ndfl13TaxKopecks: payrollResult.ndfl13TaxKop || 0,
+					payoutKopecks: payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop,
+					payoutStatus: "accrued",
+					servicesCount: orders.length,
+					minimumGuaranteeApplied: payrollResult.minimumGuaranteeApplied,
+				};
+			}
+
+			return reply.send({
+				ok: true,
+				shiftsCount: totalClinicShifts,
+				summary: {
+					doctorId: "all",
+					doctorName: "Все врачи клиники",
+					schemeType: "clinic_consolidated",
+					totalGrossKopecks: totalClinicGrossKop,
+					totalLabCostKopecks: totalClinicLabKop,
+					totalMaterialCostKopecks: totalClinicMaterialKop,
+					totalNetBaseKopecks: totalClinicNetBaseKop,
+					doctorAccruedKopecks: totalClinicAccruedKop,
+					chairRentalKopecks: 0,
+					advanceKopecks: 0,
+					ndfl13TaxKopecks: 0,
+					payoutKopecks: totalClinicPayoutKop,
+					payoutStatus: "accrued",
+					servicesCount: allOrders.length,
+					minimumGuaranteeApplied: false,
+				},
+				doctorSummaries,
+				orders: allOrders,
+				closedPeriods: allClosedPeriods,
+			});
+		}
+
 		const resolvedDocId = await resolveDoctorUserUuid(orgId, rawDocId, identity.userId ?? undefined);
 		if (!resolvedDocId) {
 			return reply.code(404).send({ error: "DoctorNotFound", message: "Врач не найден" });
@@ -148,11 +254,6 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 		const resolvedPct = activeComm?.commissionPct || activeComm?.commissionPercent;
 		const basePercent = Number(q.percent) || (resolvedPct ? Number(resolvedPct) : 25);
-
-		const fromStr = q.from || q.startDate || q.startDateIso || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-		const toStr = q.to || q.endDate || q.endDateIso || new Date().toISOString().slice(0, 10);
-		const fromDate = new Date(`${fromStr.slice(0, 10)}T00:00:00.000Z`);
-		const toDate = new Date(`${toStr.slice(0, 10)}T23:59:59.999Z`);
 
 		// Сбор клинического датасета (смены, приемы, оплаты, услуги, ЗТЛ, материалы)
 		const { shiftsCount, orders, completedServices } = await fetchDoctorPayrollDataset({
@@ -329,6 +430,11 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	app.post("/api/v1/payroll/reopen-settlement", reopenSettlementHandler);
 	app.post("/api/payroll/reopen-settlement", reopenSettlementHandler);
 	app.post("/api/doctor/settlement-period/reopen", reopenSettlementHandler);
+
+	// Мобильный кошелек начислений врача (SSOT)
+	app.get("/api/doctor/my-earnings", handleGetDoctorMyEarnings);
+	app.get("/api/v1/doctor/my-earnings", handleGetDoctorMyEarnings);
+	app.get("/api/my-earnings", handleGetDoctorMyEarnings);
 }
 
 export default registerPayrollRoutes;

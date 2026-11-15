@@ -16,6 +16,7 @@ import {
 	canonicalPayrollToWalletReport,
 	type CanonicalPayrollApiResponse,
 } from "./canonicalPayrollAdapter";
+import { showToast } from "../../GlobalToast";
 
 function getMonthBounds(monthStr: string): { from: string; to: string } {
 	const [year, month] = monthStr.split("-").map(Number);
@@ -176,7 +177,7 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 							canEditRates={false}
 							isLoading={isLoading}
 							onRequestPayout={(doc, amountKop) => {
-								alert(`Запрос на выплату: ${doc.doctorName}, ${(amountKop / 100).toLocaleString("ru-RU")} ₽`);
+								showToast(`Запрос на выплату: ${doc.doctorName}, ${(amountKop / 100).toLocaleString("ru-RU")} ₽`, "success");
 							}}
 						/>
 					</Suspense>

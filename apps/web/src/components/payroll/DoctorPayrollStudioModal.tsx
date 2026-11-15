@@ -78,18 +78,26 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	}, [isDemo, isOpen, doctorsList]);
 
 	useEffect(() => {
-		if (isDemo || !isOpen || !activeDoctorId) return;
+		if (isDemo || !isOpen) return;
 		let cancelled = false;
-		const query = new URLSearchParams({ doctorId: activeDoctorId, from: periodDates.startIso, to: periodDates.endIso, payoutModel: selectedDoctor?.payoutModel || "percentage" });
+		const query = new URLSearchParams({
+			doctorId: "all",
+			from: periodDates.startIso,
+			to: periodDates.endIso,
+		});
 		void fetch(`/api/v1/payroll/calculations?${query.toString()}`).then((r) => r.ok ? r.json() : null).then((data) => {
 			if (cancelled || !data) return;
 			if (Array.isArray(data.orders)) setApiOrders(data.orders);
 			if (Array.isArray(data.closedPeriods)) setApiClosedPeriods(data.closedPeriods);
 			if (typeof data.shiftsCount === "number") setShiftsCount(data.shiftsCount);
-			if (data.summary && typeof data.summary === "object") setApiSummary(data.summary);
+			if (data.doctorSummaries && selectedDoctor && data.doctorSummaries[selectedDoctor.id]) {
+				setApiSummary(data.doctorSummaries[selectedDoctor.id]);
+			} else if (data.summary && typeof data.summary === "object" && data.summary.doctorId !== "all") {
+				setApiSummary(data.summary);
+			}
 		}).catch(() => {});
 		return () => { cancelled = true; };
-	}, [isDemo, isOpen, activeDoctorId, periodDates, selectedDoctor]);
+	}, [isDemo, isOpen, periodDates, selectedDoctor]);
 
 	const summary: DoctorPayrollSummary = useMemo(() => {
 		if (!selectedDoctor) return EMPTY_DOCTOR_PAYROLL_SUMMARY;

@@ -8,8 +8,8 @@
 import React, { useEffect, useState } from "react";
 import { DoctorPayrollStudioModal } from "./DoctorPayrollStudioModal";
 
-const HASH_REGEX = /#(?:payroll|doctor-payroll|salary|commissions|executive-payroll|doctor-payroll-report)/;
-const QUERY_REGEX = /(?:payroll|doctor-payroll|doctor_payroll|executive_payroll|salary|commissions)=1/;
+const HASH_REGEX = /#(?:payroll|doctor-payroll|salary|commissions)/;
+const QUERY_REGEX = /(?:payroll|doctor-payroll|doctor_payroll|salary|commissions)=(?:1|true)|stand(?:alone)?=payroll/;
 
 const shouldOpen = (): boolean => {
 	if (typeof window === "undefined") return false;
@@ -49,7 +49,7 @@ export const DirectPayrollLauncher: React.FC = () => {
 		setIsOpen(false);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
-			const params = ["payroll", "doctor-payroll", "doctor_payroll", "executive_payroll", "salary", "commissions"];
+			const params = ["payroll", "doctor-payroll", "doctor_payroll", "salary", "commissions"];
 			params.forEach((param) => url.searchParams.delete(param));
 			const cleanHash = window.location.hash.replace(HASH_REGEX, "");
 			const newUrl = url.pathname + (url.search || "") + cleanHash;
