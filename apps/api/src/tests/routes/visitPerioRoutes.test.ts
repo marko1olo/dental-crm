@@ -1,6 +1,6 @@
-import assert from "node:assert";
-import { afterEach, beforeEach, describe, it, mock } from "node:test";
-import Fastify from "fastify";
+import assert from "node:assert/strict";
+import Fastify, { type FastifyInstance } from "fastify";
+import { afterEach, beforeEach, describe, it, vi } from "vitest";
 import { TOKEN_SECRET } from "../../routes/auth.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -8,10 +8,9 @@ import { db } from "../../db/client.js";
 
 const ORG_ID = "123e4567-e89b-12d3-a456-4266141740ff";
 const VISIT_ID = "123e4567-e89b-12d3-a456-426614174000";
-const PATIENT_ID = "123e4567-e89b-12d3-a456-426614174001";
 
 describe("visitPerioRoutes integration", () => {
-	let app: any;
+	let app: FastifyInstance;
 	let clinicHeaders: Record<string, string>;
 	const originalEnv = process.env;
 
@@ -31,7 +30,7 @@ describe("visitPerioRoutes integration", () => {
 	afterEach(async () => {
 		await app.close();
 		process.env = originalEnv;
-		mock.restoreAll();
+		vi.restoreAllMocks();
 	});
 
 	it("1. GET /api/visits/:visitId/perio rejects unauthenticated call (401)", async () => {
@@ -49,18 +48,20 @@ describe("visitPerioRoutes integration", () => {
 			headers: clinicHeaders,
 		});
 		assert.strictEqual(res.statusCode, 400);
-		const json = JSON.parse(res.body);
+		const json = JSON.parse(res.body) as { error?: string };
 		assert.strictEqual(json.error, "InvalidVisitId");
 	});
 
 	it("3. GET /api/visits/:visitId/perio returns 404 if visit does not exist", async () => {
-		mock.method(db, "select", () => ({
-			from: () => ({
-				where: () => ({
-					limit: () => Promise.resolve([]),
+		vi.spyOn(db, "select").mockImplementation(() => {
+			return {
+				from: () => ({
+					where: () => ({
+						limit: () => Promise.resolve([]),
+					}),
 				}),
-			}),
-		}));
+			} as ReturnType<typeof db.select>;
+		});
 
 		const res = await app.inject({
 			method: "GET",
@@ -68,7 +69,7 @@ describe("visitPerioRoutes integration", () => {
 			headers: clinicHeaders,
 		});
 		assert.strictEqual(res.statusCode, 404);
-		const json = JSON.parse(res.body);
+		const json = JSON.parse(res.body) as { error?: string };
 		assert.strictEqual(json.error, "VisitNotFound");
 	});
 
@@ -80,7 +81,7 @@ describe("visitPerioRoutes integration", () => {
 			payload: { teeth: [] },
 		});
 		assert.strictEqual(res.statusCode, 400);
-		const json = JSON.parse(res.body);
+		const json = JSON.parse(res.body) as { error?: string };
 		assert.strictEqual(json.error, "InvalidVisitId");
 	});
 });
