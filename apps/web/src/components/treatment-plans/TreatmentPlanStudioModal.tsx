@@ -474,7 +474,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								stageOrder: stg.stageNumber || stgIdx + 1,
 								stageName: stg.title || `Этап ${stgIdx + 1}`,
 								completionPercentage: 0,
-								items: stg.items.map((it, itIdx) => {
+								items: stg.items.map((it) => {
 									const isSynthetic =
 										!it.id ||
 										it.id.startsWith("bundle-item-") ||
@@ -484,17 +484,33 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 									const resolvedPriceId =
 										(it.priceId && !it.priceId.startsWith("bundle-item-") && !it.priceId.startsWith("item-") ? it.priceId : null) ||
 										(it.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.id) ? it.id : null) ||
-										(it.code804n?.trim() || null) ||
 										(it.serviceCode?.trim() || null) ||
+										(it.code804n?.trim() || null) ||
 										(!isSynthetic ? it.id : null) ||
-										`item-${stgIdx + 1}-${itIdx + 1}`;
+										null;
+
+									const unitPriceRub =
+										it.unitPriceRub ?? (it.quantity > 0 ? it.priceRub / it.quantity : it.priceRub) ?? 0;
+									const unitPriceKopecks =
+										typeof it.amountKopecks === "bigint"
+											? Number(it.amountKopecks)
+											: typeof it.amountKopecks === "number" && it.amountKopecks > 0
+												? Math.round(it.amountKopecks)
+												: Math.round(unitPriceRub * 100);
+									const quantity = it.quantity || 1;
+									const discountRub = it.discountRub || 0;
+									const discountKopecks = Math.round(discountRub * 100);
+									const totalPriceKopecks = Math.max(0, unitPriceKopecks * quantity - discountKopecks);
 
 									return {
 										priceId: resolvedPriceId,
-										name: it.name || "Услуга",
-										price: it.priceRub || 0,
-										quantity: it.quantity || 1,
-										discount: it.discountRub || 0,
+										isCustom: !resolvedPriceId,
+										name: it.name || "Индивидуальная услуга",
+										price: unitPriceKopecks / 100,
+										quantity,
+										discount: discountKopecks / 100,
+										unitPriceKopecks,
+										totalPriceKopecks,
 										toothNumber: it.toothNumber ?? null,
 									};
 								}),

@@ -21,17 +21,45 @@ export async function savePlanToPostgres({
 
 	try {
 		const allItems = stages.flatMap((s) => s.items);
-		const itemsForApi = allItems.map((it) => ({
-			toothNumber: it.toothNumber ?? null,
-			priceId: it.priceId || it.code804n,
-			name: it.name,
-			quantity: it.quantity || 1,
-			price: it.unitPriceRub || 0,
-			discount: it.discountRub || 0,
-			phase: it.phase,
-			isAuto: it.isAuto ?? true,
-			doctorId: it.doctorId ?? null,
-		}));
+		const itemsForApi = allItems.map((it) => {
+			const unitPriceRub =
+				it.unitPriceRub ?? (it.quantity > 0 ? it.priceRub / it.quantity : it.priceRub) ?? 0;
+			const unitPriceKopecks =
+				typeof it.amountKopecks === "bigint"
+					? Number(it.amountKopecks)
+					: typeof it.amountKopecks === "number" && it.amountKopecks > 0
+						? Math.round(it.amountKopecks)
+						: Math.round(unitPriceRub * 100);
+			const quantity = it.quantity || 1;
+			const discountRub = it.discountRub || 0;
+			const discountKopecks = Math.round(discountRub * 100);
+			const totalPriceKopecks = Math.max(0, unitPriceKopecks * quantity - discountKopecks);
+			const priceInRub = unitPriceKopecks / 100;
+			const discountInRub = discountKopecks / 100;
+
+			const resolvedPriceId =
+				(it.priceId && !it.priceId.startsWith("bundle-item-") && !it.priceId.startsWith("item-")
+					? it.priceId
+					: null) ||
+				(it.serviceCode?.trim() || null) ||
+				(it.code804n?.trim() || null) ||
+				null;
+
+			return {
+				toothNumber: it.toothNumber ?? null,
+				priceId: resolvedPriceId,
+				isCustom: !resolvedPriceId,
+				name: it.name || "Индивидуальная услуга",
+				quantity,
+				price: priceInRub,
+				discount: discountInRub,
+				unitPriceKopecks,
+				totalPriceKopecks,
+				phase: it.phase || 1,
+				isAuto: it.isAuto ?? true,
+				doctorId: it.doctorId ?? null,
+			};
+		});
 
 		const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/treatment-plans`, {
 			method: "POST",

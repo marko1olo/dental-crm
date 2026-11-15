@@ -21,7 +21,9 @@ export interface TreatmentPlanItemInputForTotals {
 	price: number;
 	quantity: number;
 	discount: number;
-	priceId?: string | undefined;
+	unitPriceKopecks?: number | undefined;
+	totalPriceKopecks?: number | undefined;
+	priceId?: string | null | undefined;
 	name?: string | undefined;
 }
 
@@ -89,15 +91,22 @@ export function calculateTreatmentPlanTotals(
 	patientId: string,
 	items: TreatmentPlanItemInputForTotals[],
 ): CalculatedPlanTotals {
-	const lineKopecks = items.map((item) =>
-		chargeLineKopecks({
+	const lineKopecks = items.map((item) => {
+		if (item.totalPriceKopecks !== undefined && item.totalPriceKopecks >= 0) {
+			return item.totalPriceKopecks;
+		}
+		if (item.unitPriceKopecks !== undefined && item.unitPriceKopecks >= 0) {
+			const discountKop = Math.round((item.discount || 0) * 100);
+			return Math.max(0, item.unitPriceKopecks * (item.quantity || 1) - discountKop);
+		}
+		return chargeLineKopecks({
 			patientId,
 			status: "proposed",
 			unitPriceRub: item.price,
 			quantity: item.quantity,
 			discountRub: item.discount,
-		}),
-	);
+		});
+	});
 
 	const totalPriceKopecks = sumKopecks(lineKopecks);
 	const totalPriceRub = numeric(rublesFromKopecks(totalPriceKopecks));

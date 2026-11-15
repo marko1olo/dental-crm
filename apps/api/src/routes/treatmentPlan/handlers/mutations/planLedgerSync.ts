@@ -12,14 +12,17 @@ import {
 } from "../../../odontogram/types.js";
 
 export interface SyncPlanLedgerItemInput {
-	priceId: string;
+	priceId?: string | null | undefined;
 	name?: string | null | undefined;
 	toothNumber?: number | null | undefined;
 	quantity: number;
 	price: number;
 	discount: number;
+	unitPriceKopecks?: number | undefined;
+	totalPriceKopecks?: number | undefined;
 	phase?: number | undefined;
 	isAuto?: boolean | undefined;
+	isCustom?: boolean | undefined;
 	doctorId?: string | null | undefined;
 }
 
@@ -102,14 +105,14 @@ export async function syncUpsertPlanLedgerItems(
 		...new Set(
 			items
 				.map((item) => item.priceId)
-				.filter((priceId) => UUID_SHAPE.test(priceId)),
+				.filter((priceId): priceId is string => Boolean(priceId && UUID_SHAPE.test(priceId))),
 		),
 	];
 	const codeCandidates = [
 		...new Set(
 			items
 				.map((item) => item.priceId)
-				.filter((id) => !UUID_SHAPE.test(id) && id && id.length > 0),
+				.filter((id): id is string => Boolean(id && !UUID_SHAPE.test(id) && id.length > 0)),
 		),
 	];
 	const titleCandidates = [
@@ -239,9 +242,9 @@ export async function syncUpsertPlanLedgerItems(
 			}),
 		);
 		const resolvedServiceId =
-			serviceLookup.get(item.priceId?.toLowerCase()) ||
+			(item.priceId ? serviceLookup.get(item.priceId.toLowerCase()) : null) ||
 			(item.name ? serviceLookup.get(item.name.trim().toLowerCase()) : null) ||
-			(knownServiceIds.has(item.priceId) ? item.priceId : null);
+			(item.priceId && knownServiceIds.has(item.priceId) ? item.priceId : null);
 
 		return {
 			id,
@@ -253,7 +256,7 @@ export async function syncUpsertPlanLedgerItems(
 				item.toothNumber === null || item.toothNumber === undefined
 					? null
 					: String(item.toothNumber),
-			title: item.name?.trim() || item.priceId,
+			title: item.name?.trim() || item.priceId || "Индивидуальная услуга",
 			quantity: String(item.quantity),
 			priceRub: lineTotalRub,
 			unitPriceRub,

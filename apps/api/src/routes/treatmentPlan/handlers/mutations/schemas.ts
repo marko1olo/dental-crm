@@ -23,12 +23,15 @@ export const createTreatmentPlanSchema = z.object({
 				items: z
 					.array(
 						z.object({
-							priceId: z.string().trim().min(1),
+							priceId: z.string().trim().min(1).optional().nullable(),
+							isCustom: z.boolean().optional().default(false),
 							name: z.string().trim().optional(),
 							toothNumber: z.number().int().optional().nullable(),
 							quantity: z.number().int().positive().default(1),
 							price: z.number().nonnegative().default(0),
 							discount: z.number().nonnegative().default(0),
+							unitPriceKopecks: z.number().int().nonnegative().optional(),
+							totalPriceKopecks: z.number().int().nonnegative().optional(),
 							isBundle: z.boolean().default(false),
 							doctorId: z.string().uuid().optional().nullable(),
 						}),

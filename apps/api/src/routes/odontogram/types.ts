@@ -154,11 +154,14 @@ export const treatmentPlanMoneyRubSchema = nonNegativeMoneyRubSchema.refine(
 
 export const treatmentPlanItemSchema = z.object({
 	toothNumber: fdiToothNumberSchema.optional().nullable(),
-	priceId: z.string().trim().min(1).max(200),
+	priceId: z.string().trim().min(1).max(200).optional().nullable(),
+	isCustom: z.boolean().optional().default(false),
 	name: z.string().trim().max(500).optional(),
 	quantity: z.number().int().min(1).max(999).default(1),
 	price: treatmentPlanMoneyRubSchema,
 	discount: treatmentPlanMoneyRubSchema.default(0),
+	unitPriceKopecks: z.number().int().nonnegative().optional(),
+	totalPriceKopecks: z.number().int().nonnegative().optional(),
 	phase: z.number().int().min(1).max(12).default(1),
 	isAuto: z.boolean().optional(),
 	doctorId: z.string().uuid().optional().nullable(),

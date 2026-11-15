@@ -84,12 +84,15 @@ export async function handleCreateTreatmentPlan(
 		const createdStages: Array<typeof treatmentPlanStages.$inferSelect> = [];
 		const createdItems: Array<typeof treatmentPlanItemsNew.$inferSelect> = [];
 		const allItemsFlat: Array<{
-			priceId: string;
+			priceId?: string | null | undefined;
+			isCustom?: boolean | undefined;
 			name?: string | undefined;
 			toothNumber?: number | null | undefined;
 			quantity: number;
 			price: number;
 			discount: number;
+			unitPriceKopecks?: number | undefined;
+			totalPriceKopecks?: number | undefined;
 			doctorId?: string | null | undefined;
 		}> = [];
 
@@ -115,7 +118,7 @@ export async function handleCreateTreatmentPlan(
 						planId: newPlan.id,
 						stageId: createdStage?.id ?? null,
 						toothNumber: item.toothNumber ?? null,
-						priceId: item.priceId,
+						priceId: item.priceId || (item.isCustom ? "custom" : "service-item"),
 						name: item.name ?? null,
 						quantity: item.quantity,
 						price: item.price.toFixed(2),
@@ -135,10 +138,10 @@ export async function handleCreateTreatmentPlan(
 		if (allItemsFlat.length > 0) {
 			const uuidCandidates = allItemsFlat
 				.map((i) => i.priceId)
-				.filter((id) => UUID_SHAPE.test(id));
+				.filter((id): id is string => Boolean(id && UUID_SHAPE.test(id)));
 			const codeCandidates = allItemsFlat
 				.map((i) => i.priceId)
-				.filter((id) => !UUID_SHAPE.test(id) && id && id.length > 0);
+				.filter((id): id is string => Boolean(id && !UUID_SHAPE.test(id) && id.length > 0));
 			const titleCandidates = allItemsFlat
 				.map((i) => i.name?.trim())
 				.filter((t): t is string => Boolean(t && t.length > 0));
@@ -188,9 +191,9 @@ export async function handleCreateTreatmentPlan(
 				const lineTotalRub = Number(Math.max(0, item.price * item.quantity - item.discount).toFixed(2));
 				const discountRub = Number(item.discount.toFixed(2));
 				const resolvedServiceId =
-					serviceLookup.get(item.priceId?.toLowerCase()) ||
+					(item.priceId ? serviceLookup.get(item.priceId.toLowerCase()) : null) ||
 					(item.name ? serviceLookup.get(item.name.trim().toLowerCase()) : null) ||
-					(UUID_SHAPE.test(item.priceId) ? item.priceId : null);
+					(item.priceId && UUID_SHAPE.test(item.priceId) ? item.priceId : null);
 
 				return {
 					id,
@@ -199,7 +202,7 @@ export async function handleCreateTreatmentPlan(
 					visitId: null,
 					serviceId: resolvedServiceId,
 					toothCode: item.toothNumber ? String(item.toothNumber) : null,
-					title: item.name?.trim() || item.priceId,
+					title: item.name?.trim() || item.priceId || "Индивидуальная услуга",
 					quantity: String(item.quantity),
 					priceRub: lineTotalRub,
 					unitPriceRub,

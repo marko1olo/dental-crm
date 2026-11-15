@@ -3,6 +3,7 @@
  */
 
 export * from "./types";
+export type { ToothData } from "./types";
 export {
 	treatmentPlanItemSchema,
 	treatmentPlanStageSchema,
@@ -30,7 +31,6 @@ export { isMicroConsumable } from "./treatmentPlanConsumables";
 export * from "./roadmap";
 export * from "./TreatmentPlanModule";
 export * from "./treatmentPlanBundlesEngine";
-export * from "./ClinicalBundlesPanel";
 export * from "./planPricing";
 export * from "./treatmentPlanTherapyNorms";
 export * from "./treatmentPlanSurgicalNorms";
@@ -41,6 +41,5 @@ export * from "./TreatmentPlanActSignatures";
 export * from "./TreatmentPlanStageItemRow";
 export * from "./TreatmentPlanStageFooter";
 export * from "./treatmentPlanMath";
-export * from "./TreatmentPlanPrintView";
 export * from "./TreatmentPlanStudioModal";
 export * from "./treatmentPlanCatalogData";

@@ -56,7 +56,7 @@ export interface ClinicalBundleDefinition {
 	readonly description: string;
 	readonly category: ClinicalBundleCategory;
 	readonly categoryLabel: string;
-	readonly categoryName: string;
+	readonly categoryName?: string | undefined;
 	readonly stageKind: TreatmentPlanStageKind | string;
 	readonly stageNumber: 1 | 2 | 3 | number;
 	readonly totalPriceRub: number;

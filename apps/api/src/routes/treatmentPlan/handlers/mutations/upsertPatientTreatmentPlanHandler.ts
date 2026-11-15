@@ -320,7 +320,7 @@ export async function handleUpsertPatientTreatmentPlan(
 							planId: savedPlanId,
 							stageId: stageMap.get(phaseNum) ?? null,
 							toothNumber: item.toothNumber ?? null,
-							priceId: item.priceId,
+							priceId: item.priceId || (item.isCustom ? "custom" : "service-item"),
 							name: item.name ?? null,
 							quantity: item.quantity,
 							price: item.price.toString(),

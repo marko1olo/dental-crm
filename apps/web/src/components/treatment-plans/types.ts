@@ -12,4 +12,5 @@ export type { CatalogServiceLookupItem } from "./pricingEngine/pricingCatalogMat
 export type { ClinicalBundleDefinition, ClinicalBundleId } from "./bundlesPresets/types";
 export type { CompletedWorksActResult, InventoryItemLookup } from "./treatmentPlanMaterialEngine";
 export type { CopilotCommandType } from "../../services/ai/treatmentPlanCopilot";
+export type { ToothData } from "../odontogram/ToothChart";
 

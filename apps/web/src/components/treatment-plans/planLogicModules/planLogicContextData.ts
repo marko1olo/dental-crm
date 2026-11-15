@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Dashboard, Patient } from "@dental/shared";
-import type { InventoryItemLookup } from "../../treatmentPlanMaterialEngine.js";
+import type { InventoryItemLookup } from "../treatmentPlanMaterialEngine.js";
 import {
 	buildStageCompletedActData,
 	buildTreatmentPlanValidationPayload,
