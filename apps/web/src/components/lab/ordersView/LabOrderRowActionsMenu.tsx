@@ -31,7 +31,7 @@ export function LabOrderRowActionsMenu(props: LabOrderRowActionsMenuProps): Reac
 		onOpenPrintOrder, onRepeatFitting, onReclamation, onOpenEditOrder, copyPortalLink,
 	} = props;
 	const isScan = order.attachedImageUrl && is3DScanUrl(order.attachedImageUrl);
-	const isPaid = Boolean((order as unknown as { paidFromCashOperationId?: string }).paidFromCashOperationId);
+	const isPaid = Boolean(order.paidFromCashOperationId);
 	const canInstall = order.status !== "installed" && order.status !== "completed";
 
 	return (
@@ -102,7 +102,7 @@ export function LabOrderRowActionsMenu(props: LabOrderRowActionsMenuProps): Reac
 						<ExternalLink className="w-3.5 h-3.5" />
 						<span>Редактировать параметры</span>
 					</button>
-					<button type="button" onClick={() => copyPortalLink((order as unknown as { portalToken?: string }).portalToken || order.id)} className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]">
+					<button type="button" onClick={() => copyPortalLink(order.portalToken || order.id)} className="w-full px-3 py-1.5 hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[11px]">
 						<Link className="w-3.5 h-3.5" />
 						<span>Ссылка для техника</span>
 					</button>

@@ -10,10 +10,10 @@ export interface LabOrderCardDetailsProps {
 }
 
 export function LabOrderCardDetails({ order }: LabOrderCardDetailsProps): React.JSX.Element {
-	const construction = order.constructionType || (order as unknown as { workType?: string }).workType;
+	const construction = order.constructionType || order.workType;
 	const is3DScan = Boolean(order.attachedImageUrl && is3DScanUrl(order.attachedImageUrl));
-	const isPaid = Boolean((order as unknown as { paidFromCashOperationId?: string }).paidFromCashOperationId);
-	const isLocked = Boolean((order as unknown as { isLockedInstalled?: boolean }).isLockedInstalled);
+	const isPaid = Boolean(order.paidFromCashOperationId);
+	const isLocked = Boolean(order.isLockedInstalled);
 
 	return (
 		<div className="space-y-2">

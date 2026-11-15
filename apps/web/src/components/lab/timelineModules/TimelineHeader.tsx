@@ -8,7 +8,7 @@ export interface TimelineHeaderProps {
 }
 
 export function TimelineHeader({ order, collision }: TimelineHeaderProps): React.JSX.Element {
-	const orderNum = (order as unknown as { orderNumber?: string }).orderNumber || (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ");
+	const orderNum = order.orderNumber ? String(order.orderNumber) : (order.id ? `#${order.id.slice(0, 8)}` : "ЗТЛ");
 
 	return (
 		<>

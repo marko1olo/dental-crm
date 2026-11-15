@@ -28,7 +28,7 @@ export function LabOrderCardDropdownMenu({
 	copyPortalLink, onCloseMenu,
 }: LabOrderCardDropdownMenuProps): React.JSX.Element {
 	const is3D = Boolean(order.attachedImageUrl && is3DScanUrl(order.attachedImageUrl));
-	const isPaid = Boolean((order as unknown as { paidFromCashOperationId?: string }).paidFromCashOperationId);
+	const isPaid = Boolean(order.paidFromCashOperationId);
 
 	return (
 		<div className="absolute right-0 bottom-full mb-1 z-50 w-56 p-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs">
@@ -74,7 +74,7 @@ export function LabOrderCardDropdownMenu({
 				<DentalLabOrder className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" /><span>Подробные параметры</span>
 			</button>
 			{order.secureToken && (
-				<button type="button" onClick={() => { onCloseMenu(); copyPortalLink(order.secureToken!); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer">
+				<button type="button" onClick={() => { onCloseMenu(); if (order.secureToken) copyPortalLink(order.secureToken); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer">
 					<Link className="w-3.5 h-3.5 text-emerald-500" /><span>Копировать ссылку</span>
 				</button>
 			)}

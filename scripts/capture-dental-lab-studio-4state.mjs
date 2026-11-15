@@ -126,9 +126,10 @@ async function capture() {
 			timeout: 30000,
 		});
 
-		// Wait for DentalLabStudioModal to mount
-		await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { timeout: 30000 });
-		await page.waitForTimeout(1000);
+		// Wait for boot screen to detach and DentalLabStudioModal to mount and be visible
+		await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
+		await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { state: "visible", timeout: 30000 });
+		await page.waitForTimeout(1500);
 
 		// Suppress any tour banners
 		await page.evaluate(({ theme }) => {

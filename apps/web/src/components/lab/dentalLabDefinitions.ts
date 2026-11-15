@@ -20,6 +20,7 @@ export {
 } from "./labMath";
 
 export type { CanonicalOrthopedic6StageId as Orthopedic6StageKey } from "./labMath";
+export type { DentalLabWorkflowOrder } from "./dentalLabWorkflowModel";
 
 export {
 	CANONICAL_LAB_WORK_TYPES,

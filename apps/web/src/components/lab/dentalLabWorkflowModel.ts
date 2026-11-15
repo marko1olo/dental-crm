@@ -45,7 +45,7 @@ export interface LabStlScanAttachment {
 
 export interface DentalLabWorkflowOrder {
 	readonly id: string;
-	readonly orderNumber: string;
+	readonly orderNumber?: string | number | undefined;
 	readonly organizationId?: string | undefined;
 	readonly clinicName: string;
 	readonly clinicPhone?: string | undefined;
@@ -58,6 +58,7 @@ export interface DentalLabWorkflowOrder {
 	readonly doctorName: string;
 	readonly doctorPhone?: string | undefined;
 	readonly workTypeId: OrthopedicWorkTypeId;
+	readonly workType?: string | null | undefined;
 	readonly materialName: string;
 	readonly selectedTeeth: readonly number[];
 	readonly shadeSystem: "classical" | "3d_master" | "bleach";
@@ -115,6 +116,9 @@ export interface DentalLabWorkflowOrder {
 	readonly costPerUnitRub?: number | undefined;
 	readonly totalPriceRub?: number | undefined;
 	readonly totalLabCostRub?: number | undefined;
+	readonly paidFromCashOperationId?: string | null | undefined;
+	readonly isLockedInstalled?: boolean | undefined;
+	readonly portalToken?: string | null | undefined;
 	readonly createdAtIso: string;
 	readonly updatedAtIso: string;
 }

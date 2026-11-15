@@ -196,7 +196,7 @@ export const CLINIC_LABORATORIES: readonly string[] = Object.freeze([
 
 export interface DentalLabOrderEntry {
 	readonly id: string;
-	readonly orderNumber: string;
+	readonly orderNumber?: string | number | undefined;
 	readonly patientName: string;
 	readonly doctorName: string;
 	readonly teeth: readonly number[];
@@ -210,6 +210,10 @@ export interface DentalLabOrderEntry {
 	readonly dueDate: string;
 	readonly notes?: string | undefined;
 	readonly isUrgent?: boolean | undefined;
+	readonly paidFromCashOperationId?: string | null | undefined;
+	readonly isLockedInstalled?: boolean | undefined;
+	readonly portalToken?: string | null | undefined;
+	readonly workType?: string | null | undefined;
 }
 
 /** Экспресс-расчет контрольных дат с учетом рабочих дней ЗТЛ в РФ (без сб и вс) */

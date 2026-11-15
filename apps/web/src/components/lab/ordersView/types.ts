@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
 import type { DentalLabOrderData } from "../labMath";
 import type { DentalLabWorkflowOrder, LabWorkflowStatus } from "../dentalLabWorkflowEngine";
+import type { DentalLabOrderEntry } from "../dentalLabCatalogData";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import type { ReadyInClinicLabOrder } from "../DentalLabReadyInClinicModal";
 import type { LabPromptDialogState } from "../LabActionPromptModal";
+
+export type { DentalLabWorkflowOrder, DentalLabOrderEntry, LabWorkflowStatus };
 
 export type LabOrdersViewMode = "table" | "cards" | "kanban";
 

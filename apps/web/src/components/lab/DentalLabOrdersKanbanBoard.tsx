@@ -6,7 +6,7 @@ import { KanbanColumn } from "./kanbanBoardModules/KanbanColumn";
 import { KanbanMobileStageSelector } from "./kanbanBoardModules/KanbanMobileStageSelector";
 
 export interface DentalLabOrdersKanbanBoardProps {
-	readonly ordersByStage?: Record<LabWorkflowStatus, DentalLabWorkflowOrder[]>;
+	readonly ordersByStage?: Record<string, DentalLabWorkflowOrder[]> | undefined;
 	readonly orders?: readonly DentalLabWorkflowOrder[];
 	readonly stageLimits?: Record<string, number>;
 	readonly setStageLimits?: React.Dispatch<React.SetStateAction<Record<string, number>>>;

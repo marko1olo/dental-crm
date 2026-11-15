@@ -5,7 +5,7 @@ export type JawScope = "upper" | "lower" | "both";
 
 export interface DentalLabOrderData {
 	id?: string;
-	orderNumber?: string;
+	orderNumber?: string | number;
 	patientId: string;
 	patientName?: string;
 	doctorId?: string | null;
@@ -18,6 +18,7 @@ export interface DentalLabOrderData {
 	portalToken?: string | null | undefined;
 	toothFdi?: string | null;
 	selectedTeeth?: number[];
+	teeth?: number[];
 	jawScope?: JawScope | null;
 	constructionType?: string;
 	workType?: string | null | undefined;

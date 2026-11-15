@@ -66,16 +66,8 @@ export function useLabOrdersFiltering(orders: DentalLabOrderData[]) {
 		return Array.from(set).sort();
 	}, [orders]);
 
-	const kanbanOrdersByStage = useMemo(() => {
-		const map: {
-			draft: DentalLabWorkflowOrder[];
-			sent_to_lab: DentalLabWorkflowOrder[];
-			in_progress: DentalLabWorkflowOrder[];
-			fitting_scheduled: DentalLabWorkflowOrder[];
-			installed_completed: DentalLabWorkflowOrder[];
-			warranty_rework: DentalLabWorkflowOrder[];
-			[key: string]: DentalLabWorkflowOrder[] | undefined;
-		} = {
+	const kanbanOrdersByStage = useMemo((): Record<string, DentalLabWorkflowOrder[]> => {
+		const map: Record<string, DentalLabWorkflowOrder[]> = {
 			draft: [],
 			sent_to_lab: [],
 			in_progress: [],
@@ -87,14 +79,14 @@ export function useLabOrdersFiltering(orders: DentalLabOrderData[]) {
 			const wf = mapRawApiOrderToWorkflowOrder(raw, idx, raw.patientId, raw.patientName, raw.doctorName ?? undefined);
 			const stage = wf.currentStage as string;
 			if (["in_progress", "framework_fitting", "cad_modeling", "milling_casting"].includes(stage)) {
-				map.in_progress.push(wf);
-			} else if (map[stage]) {
-				map[stage]!.push(wf);
+				map.in_progress?.push(wf);
+			} else if (stage in map && map[stage]) {
+				map[stage]?.push(wf);
 			} else {
-				map.draft.push(wf);
+				map.draft?.push(wf);
 			}
 		});
-		return map as unknown as Record<LabWorkflowStatus, DentalLabWorkflowOrder[]>;
+		return map;
 	}, [filteredOrders]);
 
 	return {
