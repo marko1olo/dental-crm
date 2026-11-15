@@ -15,6 +15,12 @@ interface ToothDrawerRvgAccordionProps {
 	onUpdateTooth?: ((num: number, updates: Partial<ToothData>) => void) | undefined;
 }
 
+interface ToothClinicalRvgData {
+	readonly rvgScanUrl?: string | undefined;
+	readonly updatedAt?: string | undefined;
+	readonly [key: string]: unknown;
+}
+
 export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = ({
 	toothNumber,
 	patientId,
@@ -26,6 +32,8 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 	onUpdateTooth,
 }) => {
 	const isExpanded = activeSection === "rvg_xray";
+	const rvgData = toothData?.clinicalData as ToothClinicalRvgData | undefined;
+	const scanImageUrl = typeof rvgData?.rvgScanUrl === "string" ? rvgData.rvgScanUrl : undefined;
 
 	return (
 		<section className="dente-accordion-item">
@@ -53,14 +61,15 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 					<ToothRvgThumbnail
 						toothNumber={toothNumber}
 						patientId={patientId}
-						scanImageUrl={(toothData?.clinicalData as { rvgScanUrl?: string } | undefined)?.rvgScanUrl}
+						scanImageUrl={scanImageUrl}
 						onOpenFullRadiology={onOpenFullRadiology}
 						onInsertToProtocol={onInsertToProtocol}
 						onAttachScan={(file) => {
 							const objectUrl = URL.createObjectURL(file);
+							const currentClinical = toothData?.clinicalData ?? {};
 							onUpdateTooth?.(toothNumber, {
 								clinicalData: {
-									...(toothData?.clinicalData as Record<string, unknown> | undefined),
+									...currentClinical,
 									rvgScanUrl: objectUrl,
 									updatedAt: new Date().toISOString(),
 								},

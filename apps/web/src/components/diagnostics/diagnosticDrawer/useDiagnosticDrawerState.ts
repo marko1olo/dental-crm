@@ -65,7 +65,9 @@ export function useDiagnosticDrawerState({
 			await navigator.clipboard.writeText(id);
 			setCopiedCorrelationId(id);
 			setTimeout(() => setCopiedCorrelationId(null), 2000);
-		} catch {}
+		} catch (err) {
+			console.warn("[DiagnosticDrawer] Failed to copy correlation ID to clipboard:", err);
+		}
 	};
 
 	const handleClearLogs = () => {

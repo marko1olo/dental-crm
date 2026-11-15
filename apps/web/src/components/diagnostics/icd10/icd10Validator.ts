@@ -1,12 +1,17 @@
 import {
 	DENTAL_ICD10_MAP,
 	DENTAL_ICD10_RUBRIC_MAP,
+	type DentalIcd10Item,
 } from "../icd10DentalCatalog";
 import type { Icd10ValidationResult } from "./icd10Types";
 import { isValidFdiTooth, normalizeCode } from "./icd10Normalization";
 import { parseQuery } from "./icd10QueryParser";
 
-function extractTeeth(toothInput: unknown, normalized: string, item: unknown): { teeth?: number[]; error?: Icd10ValidationResult } {
+function extractTeeth(
+	toothInput: unknown,
+	normalized: string,
+	item?: DentalIcd10Item | undefined,
+): { teeth?: number[]; error?: Icd10ValidationResult } {
 	if (toothInput == null) return {};
 
 	if (typeof toothInput === "number") {
@@ -19,7 +24,7 @@ function extractTeeth(toothInput: unknown, normalized: string, item: unknown): {
 				errorCode: "ToothInvalid",
 				errorMessage: `Недопустимый номер зуба FDI: ${toothInput}. Допустимы 11–48 и 51–85.`,
 				normalizedCode: normalized,
-				item: item as any,
+				item,
 			},
 		};
 	}
@@ -43,7 +48,7 @@ function extractTeeth(toothInput: unknown, normalized: string, item: unknown): {
 			errorCode: "ToothInvalid",
 			errorMessage: `Недопустимый номер зуба «${strTooth}». Требуется двухзначный номер FDI (11–48, 51–85).`,
 			normalizedCode: normalized,
-			item: item as any,
+			item,
 		},
 	};
 }

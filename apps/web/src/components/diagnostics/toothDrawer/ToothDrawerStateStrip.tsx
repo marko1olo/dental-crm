@@ -6,7 +6,7 @@ interface ToothDrawerStateStripProps {
 	onQuickStateSelect: (state: ToothState) => void;
 }
 
-const TOOTH_STATE_OPTIONS = [
+const TOOTH_STATE_OPTIONS: readonly { readonly state: ToothState; readonly label: string }[] = [
 	{ state: "Healthy", label: "Здоров" },
 	{ state: "Caries", label: "Кариес" },
 	{ state: "Filled", label: "Пломба" },
@@ -16,7 +16,7 @@ const TOOTH_STATE_OPTIONS = [
 	{ state: "Implant", label: "Имплант" },
 	{ state: "Planned_Implant", label: "Имплант (план)" },
 	{ state: "Missing", label: "Отсутствует" },
-] as const;
+];
 
 export const ToothDrawerStateStrip: React.FC<ToothDrawerStateStripProps> = ({
 	currentState,
@@ -30,7 +30,7 @@ export const ToothDrawerStateStrip: React.FC<ToothDrawerStateStripProps> = ({
 					<button
 						key={opt.state}
 						type="button"
-						onClick={() => onQuickStateSelect(opt.state as ToothState)}
+						onClick={() => onQuickStateSelect(opt.state)}
 						className={`dente-state-quick-chip ${isSelected ? "active" : ""}`}
 						data-testid={`tooth-card-state-${opt.state}`}
 						title={opt.label}

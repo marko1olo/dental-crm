@@ -160,14 +160,16 @@ async function run() {
 
 		// Pre-seed storage
 		await page.addInitScript(({ th, services }) => {
-			localStorage.setItem("dente_clinic_token", "live-clinic-token");
-			localStorage.setItem("dente_staff_token", "live-staff-token");
-			localStorage.setItem("dente_demo_showcase", "true");
-			localStorage.setItem("dente_demo_mode", "true");
-			localStorage.setItem("dente_theme", th);
-			localStorage.setItem("dente_theme_mode", th);
-			localStorage.setItem("dente_canonical_pricelist_v3", JSON.stringify(services));
-			localStorage.setItem("dente_onboarding_dismissed", "true");
+			try {
+				localStorage.setItem("dente_clinic_token", "live-clinic-token");
+				localStorage.setItem("dente_staff_token", "live-staff-token");
+				localStorage.setItem("dente_demo_showcase", "true");
+				localStorage.setItem("dente_demo_mode", "true");
+				localStorage.setItem("dente_theme", th);
+				localStorage.setItem("dente_theme_mode", th);
+				localStorage.setItem("dente_canonical_pricelist_v3", JSON.stringify(services));
+				localStorage.setItem("dente_onboarding_dismissed", "true");
+			} catch (e) {}
 		}, { th: theme, services: sampleServices });
 
 		return { context, page };
@@ -192,95 +194,93 @@ async function run() {
 		}
 	}
 
+	async function openPricelistModal(page, theme) {
+		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {});
+		await wait(2500);
+
+		await page.evaluate((th) => {
+			window.dispatchEvent(new CustomEvent("dente-open-pricelist"));
+			if (th === "dark") {
+				document.documentElement.classList.add("dark");
+				document.documentElement.setAttribute("data-theme", "dark");
+			} else {
+				document.documentElement.classList.remove("dark");
+				document.documentElement.setAttribute("data-theme", "light");
+			}
+		}, theme);
+
+		await page.waitForSelector('[data-testid="service-pricelist-studio-modal"], .pricelist-studio-modal', { timeout: 15000 }).catch(() => {});
+		await wait(1200);
+	}
+
+	const { context, page } = await setupContextAndPage(false, "light");
+	await openPricelistModal(page, "light");
+
 	console.log("=== 1. PC Light (1440x900) ===");
 	{
-		const { context, page } = await setupContextAndPage(false, "light");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
-		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
-		await wait(1000);
-
 		await page.evaluate(() => {
 			document.documentElement.classList.remove("dark");
 			document.documentElement.setAttribute("data-theme", "light");
 		});
-		await wait(500);
-
+		await wait(600);
 		const buf = await page.screenshot({ fullPage: false });
 		saveProof("01_pricelist_studio_pc_light_1440x900.png", buf);
-		await context.close();
 	}
 
 	console.log("=== 2. PC Dark (1440x900) ===");
 	{
-		const { context, page } = await setupContextAndPage(false, "dark");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
-		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
-		await wait(1000);
-
 		await page.evaluate(() => {
 			document.documentElement.classList.add("dark");
 			document.documentElement.setAttribute("data-theme", "dark");
 		});
-		await wait(500);
-
+		await wait(600);
 		const buf = await page.screenshot({ fullPage: false });
 		saveProof("02_pricelist_studio_pc_dark_1440x900.png", buf);
-		await context.close();
 	}
 
 	console.log("=== 3. Mobile Light (390x844) ===");
 	{
-		const { context, page } = await setupContextAndPage(true, "light");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
-		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
-		await wait(1000);
-
+		await page.setViewportSize({ width: 390, height: 844 });
 		await page.evaluate(() => {
 			document.documentElement.classList.remove("dark");
 			document.documentElement.setAttribute("data-theme", "light");
 		});
-		await wait(500);
-
+		await wait(600);
 		const buf = await page.screenshot({ fullPage: false });
 		saveProof("03_pricelist_studio_mobile_light_390x844.png", buf);
-		await context.close();
 	}
 
 	console.log("=== 4. Mobile Dark (390x844) ===");
 	{
-		const { context, page } = await setupContextAndPage(true, "dark");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
-		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
-		await wait(1000);
-
 		await page.evaluate(() => {
 			document.documentElement.classList.add("dark");
 			document.documentElement.setAttribute("data-theme", "dark");
 		});
-		await wait(500);
-
+		await wait(600);
 		const buf = await page.screenshot({ fullPage: false });
 		saveProof("04_pricelist_studio_mobile_dark_390x844.png", buf);
-		await context.close();
 	}
 
 	console.log("=== 5. PC Light with New Service Drawer (1440x900) ===");
 	{
-		const { context, page } = await setupContextAndPage(false, "light");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
-		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
-		await wait(1000);
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.evaluate(() => {
+			document.documentElement.classList.remove("dark");
+			document.documentElement.setAttribute("data-theme", "light");
+		});
+		await wait(600);
 
-		const addBtn = await page.$("button:has-text('Добавить услугу')");
+		const addBtn = await page.$("button:has-text('Добавить услугу'), .pricelist-btn-primary");
 		if (addBtn) {
 			await addBtn.click();
-			await wait(800);
+			await wait(1000);
 		}
 
 		const buf = await page.screenshot({ fullPage: false });
 		saveProof("05_pricelist_drawer_pc_light_1440x900.png", buf);
-		await context.close();
 	}
+
+	await context.close();
 
 	await browser.close();
 	console.log("All 5 proofs captured successfully!");

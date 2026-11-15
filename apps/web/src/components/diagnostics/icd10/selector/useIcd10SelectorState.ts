@@ -83,7 +83,9 @@ export function useIcd10SelectorState({
 			await navigator.clipboard.writeText(code);
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
-		} catch { /* fallback */ }
+		} catch (err) {
+			console.warn("[Icd10Selector] Failed to copy code to clipboard:", err);
+		}
 	}, []);
 
 	return {

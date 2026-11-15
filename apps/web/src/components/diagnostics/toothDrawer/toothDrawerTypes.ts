@@ -34,7 +34,8 @@ export type WarmAccordionSection =
 	| "surfaces_endo"
 	| "anesthesia"
 	| "rvg_xray"
-	| "pediatric";
+	| "pediatric"
+	| null;
 
 export interface ToothContextDrawerProps {
 	readonly isOpen: boolean;

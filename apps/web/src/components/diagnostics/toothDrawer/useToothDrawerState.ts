@@ -9,6 +9,17 @@ import {
 	type ToothContextDrawerProps,
 } from "./toothDrawerTypes";
 
+interface OdontogramEventDetailItem {
+	readonly toothNumber?: number | string | undefined;
+	readonly state?: ToothState | undefined;
+}
+
+interface OdontogramEventDetail {
+	readonly states?: readonly OdontogramEventDetailItem[] | undefined;
+	readonly toothNumber?: number | string | undefined;
+	readonly state?: ToothState | undefined;
+}
+
 export function useToothDrawerState({
 	isOpen,
 	onClose,
@@ -29,11 +40,12 @@ export function useToothDrawerState({
 
 	useEffect(() => {
 		const handleOdontogramEvent = (e: Event) => {
-			const detail = (e as CustomEvent)?.detail;
+			if (!(e instanceof CustomEvent)) return;
+			const detail = e.detail as OdontogramEventDetail | undefined;
 			if (!detail) return;
-			const states = detail.states || [detail];
-			const match = states.find((s: any) => Number(s.toothNumber) === toothNumber);
-			if (match && match.state) {
+			const states: readonly OdontogramEventDetailItem[] = detail.states ?? [detail];
+			const match = states.find((s) => Number(s.toothNumber) === toothNumber);
+			if (match?.state) {
 				setCurrentState(match.state);
 				onUpdateTooth?.(toothNumber, { state: match.state });
 				onUpdateToothStatus?.(toothNumber, match.state);
@@ -82,7 +94,7 @@ export function useToothDrawerState({
 	const folkAndAnatomical = useMemo(() => getToothFolkAndAnatomicalNameRu(toothNumber), [toothNumber]);
 
 	const toggleSection = (section: WarmAccordionSection) => {
-		setActiveSection((prev) => (prev === section ? ("" as WarmAccordionSection) : section));
+		setActiveSection((prev) => (prev === section ? null : section));
 	};
 
 	return {

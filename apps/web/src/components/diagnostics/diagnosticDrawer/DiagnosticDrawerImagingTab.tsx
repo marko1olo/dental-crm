@@ -36,9 +36,10 @@ export const DiagnosticDrawerImagingTab: React.FC = () => {
 				setSensorStatus("Датчик не обнаружен (USB / Hot Folder)");
 				showToast("Аппаратный датчик визиографа не обнаружен", "info", 3000);
 			}
-		} catch {
+		} catch (err) {
 			setIsCheckingSensors(false);
 			setSensorStatus("Датчик не обнаружен");
+			console.warn("[DiagnosticDrawerImagingTab] Sensor detection failed:", err);
 			showToast("Ошибка опроса оборудования", "warning", 3000);
 		}
 	};

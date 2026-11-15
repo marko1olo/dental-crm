@@ -48,8 +48,8 @@ export function useToothPediatricState(
 		const mobilityDegree: 0 | 1 | 2 | 3 =
 			next === 100 ? 3 : next === 75 ? 2 : next === 50 ? 1 : 0;
 		onUpdateTooth?.({
-			rootResorptionStage: next as RootResorptionStage,
-			rootResorption: next as RootResorptionStage,
+			rootResorptionStage: next,
+			rootResorption: next,
 			mobility: mobilityDegree,
 		});
 		const stageItem = next !== undefined ? RESORPTION_STAGES.find((s) => s.stage === next) : undefined;
@@ -61,7 +61,7 @@ export function useToothPediatricState(
 		);
 	};
 
-	const handleInsertResorptionProtocol = () => {
+	const handleInsertResorptionProtocol = async () => {
 		const currentStageItem = selectedResorption !== undefined ? RESORPTION_STAGES.find((s) => s.stage === selectedResorption) : undefined;
 		const stageName = currentStageItem?.stageName || "Физиологическая резорбция корней";
 		const percent = currentStageItem?.percent ?? (selectedResorption ?? 0);
@@ -74,24 +74,26 @@ export function useToothPediatricState(
 			showToast(`Запись о резорбции зуба #${toothNumber} внесена в карту!`, "success");
 		} else {
 			try {
-				navigator.clipboard.writeText(text);
+				await navigator.clipboard.writeText(text);
 				showToast("Протокол резорбции скопирован", "success");
-			} catch {
+			} catch (err) {
+				console.warn("[ToothPediatric] Failed to copy resorption protocol:", err);
 				showToast("Не удалось скопировать", "error");
 			}
 		}
 	};
 
-	const handleInsertPsychologicalProtocol = () => {
+	const handleInsertPsychologicalProtocol = async () => {
 		const text = `Психоэмоциональный статус ребенка (Шкала Франкла): ${activeFranklDef.symbol} (${activeFranklDef.nameRu}). Применены техники психологической адаптации Tell-Show-Do («Сказать-Показать-Сделать»). Контакт установлен продуктивно.`;
 		if (onInsertToProtocol) {
 			onInsertToProtocol(text);
 			showToast(`Психологический статус Франкла внесен в карту!`, "success");
 		} else {
 			try {
-				navigator.clipboard.writeText(text);
+				await navigator.clipboard.writeText(text);
 				showToast("Протокол адаптации скопирован", "success");
-			} catch {
+			} catch (err) {
+				console.warn("[ToothPediatric] Failed to copy psychological protocol:", err);
 				showToast("Не удалось скопировать", "error");
 			}
 		}

@@ -9,14 +9,18 @@ export interface UseToothSurfacesStateProps {
 	onUpdateTooth?: ((updates: Partial<ToothData>) => void) | undefined;
 }
 
+function isSurfaceKey(key: string): key is SurfaceKey {
+	return key === "M" || key === "O" || key === "D" || key === "V" || key === "L";
+}
+
 export function useToothSurfacesState({ toothData, onUpdateTooth }: UseToothSurfacesStateProps) {
 	const currentSurfaces = useMemo<SurfaceKey[]>(() => {
 		const raw = toothData?.surfaces ?? [];
 		const set = new Set<SurfaceKey>();
 		for (const s of raw) {
 			const upper = s.toUpperCase();
-			if (upper === "M" || upper === "O" || upper === "D" || upper === "V" || upper === "L") {
-				set.add(upper as SurfaceKey);
+			if (isSurfaceKey(upper)) {
+				set.add(upper);
 			} else if (upper === "B") {
 				set.add("V");
 			} else if (upper === "P") {

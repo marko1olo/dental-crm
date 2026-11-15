@@ -48,16 +48,17 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 		setIsZoomedApex(false);
 	};
 
-	const handleCopyXrayReport = () => {
+	const handleCopyXrayReport = async () => {
 		const text = `Визиографический контроль зуба #${toothNumber}: периодонтальная щель прослеживается, деструкции костной ткани в периапикальной области не выявлено. Корневые каналы обтурированы до физиологического апекса.`;
 		if (onInsertToProtocol) {
 			onInsertToProtocol(text);
 			showToast(`Заключение визиографа зуба #${toothNumber} внесено в медицинскую карту!`, "success");
 		} else {
 			try {
-				navigator.clipboard.writeText(text);
+				await navigator.clipboard.writeText(text);
 				showToast("Заключение скопировано в буфер", "success");
-			} catch {
+			} catch (err) {
+				console.warn("[ToothRvgThumbnail] Clipboard write error:", err);
 				showToast("Не удалось скопировать", "error");
 			}
 		}
