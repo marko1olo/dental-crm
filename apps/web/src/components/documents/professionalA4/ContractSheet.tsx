@@ -3,12 +3,12 @@ import type { A4DocumentContractData } from "@dental/shared";
 import { ContractSheetPage1 } from "./ContractSheetPage1";
 import { ContractSheetPage2 } from "./ContractSheetPage2";
 import { ContractSheetPage3 } from "./ContractSheetPage3";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export interface ContractSheetProps {
 	zoomClass: string;
 	contractData: A4DocumentContractData;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
+	cl: A4ClinicRequisites;
 }
 
 export const ContractSheet: React.FC<ContractSheetProps> = ({

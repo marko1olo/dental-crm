@@ -1,8 +1,8 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { informedConsentBlockersReview } from "../informedConsentBlockers";
-import { taxApplicationBlockersReview } from "../taxApplicationBlockers";
-import { photoVideoConsentBlockersReview } from "../photoVideoConsentBlockers";
+import { informedConsentBlockersReview } from "../informedConsentGuiding";
+import { taxApplicationBlockersReview } from "../taxApplicationGuiding";
+import { photoVideoConsentBlockersReview } from "../photoVideoConsentGuiding";
 import { paidContractRequiredFieldsReview } from "../paidContractRequiredFields";
 
 describe("Statutory Consent & Legal Document Blockers", () => {

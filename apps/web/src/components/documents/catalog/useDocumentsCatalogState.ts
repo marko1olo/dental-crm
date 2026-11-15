@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { DocumentKind } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
-import type { TaxDeductionTab } from "../../finance/taxDeduction/types";
+import type { TaxDeductionTab } from "../taxCertificateEngine";
 import { showToast } from "../../GlobalToast";
 import { getAllCatalogItems } from "./catalogItems";
 import { executeFastPrintPrimaryIntake } from "./intakePackagePrintHelper";

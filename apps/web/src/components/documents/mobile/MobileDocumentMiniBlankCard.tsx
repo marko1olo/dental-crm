@@ -67,7 +67,14 @@ export function MobileDocumentMiniBlankCard({
 				<div>
 					<div className="text-[11px] text-[var(--muted)]">Дата создания:</div>
 					<div className="font-medium text-[var(--ink)]">
-						{formatDate(document.issuedAt || (document as any).createdAt)}
+						{formatDate(
+							document.issuedAt ||
+								(
+									document as GeneratedDocument & {
+										createdAt?: string | null | undefined;
+									}
+								).createdAt,
+						)}
 					</div>
 				</div>
 				<div>

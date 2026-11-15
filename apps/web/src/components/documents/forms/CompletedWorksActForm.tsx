@@ -3,10 +3,11 @@ import { Edit3 } from "lucide-react";
 import type { GeneratedDocument } from "@dental/shared";
 import { kopecksToWordsRu, parseKopecks } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
+import type { DocumentFormSwitchDashboardHints } from "../tabs/formSwitch/documentFormSwitchTypes";
 
 export interface CompletedWorksActFormProps {
 	activeDoctorFullName?: string | null | undefined;
-	dashboard?: any;
+	dashboard?: DocumentFormSwitchDashboardHints | undefined;
 	money?: ((val: number | null | undefined) => string) | undefined;
 	treatmentAcceptancePlannedTotalRub?: (() => number) | undefined;
 	completedActPaidRubValue?: (() => number) | undefined;

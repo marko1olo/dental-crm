@@ -3,15 +3,14 @@ import { formatAmountInWordsRu, formatRubles } from "@dental/shared";
 import type { A4DocumentTreatmentPlanData } from "@dental/shared";
 import { TreatmentPlanSignGrid } from "./TreatmentPlanSignGrid";
 import { TreatmentPlanStagesTable } from "./TreatmentPlanStagesTable";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export function TreatmentPlanSheetPage2({
 	treatmentPlanData,
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
 	cl,
 }: {
 	treatmentPlanData: A4DocumentTreatmentPlanData;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
+	cl: A4ClinicRequisites;
 }): React.JSX.Element {
 	return (
 		<section className="pro-a4-page-sheet">

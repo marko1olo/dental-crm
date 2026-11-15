@@ -2,20 +2,31 @@ import React from "react";
 import type { A4DocumentPersonalDataConsentData } from "@dental/shared";
 import { PersonalDataSheetHeader } from "./PersonalDataSheetHeader";
 import { PersonalDataSignGrid } from "./PersonalDataSignGrid";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export interface PersonalDataSheetProps {
 	zoomClass: string;
 	effectivePersonalDataConsent: A4DocumentPersonalDataConsentData | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
+	cl: A4ClinicRequisites;
 }
 
 export const PersonalDataSheet: React.FC<PersonalDataSheetProps> = ({
 	effectivePersonalDataConsent,
 	cl,
 }) => {
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	const pt = effectivePersonalDataConsent?.patient ?? ({} as any);
+	const pt = effectivePersonalDataConsent?.patient ?? {
+		fullName: "____________________________________",
+		birthDate: "",
+		address: "",
+		phone: "",
+		registrationAddress: "",
+		snils: "",
+		passportSeries: "",
+		passportNumber: "",
+		passportIssuedBy: "",
+		passportIssuedDate: "",
+		passportDepartmentCode: "",
+	};
 	const contractDate =
 		effectivePersonalDataConsent?.consentDate ??
 		new Date().toLocaleDateString("ru-RU");

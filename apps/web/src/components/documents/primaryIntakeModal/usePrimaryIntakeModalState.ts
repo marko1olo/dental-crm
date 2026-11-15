@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
 import { useDocumentStore } from "../../../store/documentStore";
 import { showToast } from "../../GlobalToast";
 import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
@@ -10,7 +11,7 @@ interface UsePrimaryIntakeModalStateProps {
 	existingDocuments: GeneratedDocument[];
 	onCreateDocument: (kind: DocumentKind) => void;
 	doctorFullName?: string | null | undefined;
-	clinicProfileDraft?: any | undefined;
+	clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 }
 
 export function usePrimaryIntakeModalState({

@@ -2,14 +2,13 @@ import React from "react";
 import type { A4DocumentMedicalCardData } from "@dental/shared";
 import { MedicalCardSheetPage1 } from "./MedicalCardSheetPage1";
 import { MedicalCardSheetPage2 } from "./MedicalCardSheetPage2";
+import type { A4ClinicRequisites, A4PatientRequisites } from "./a4ClinicPatientDefaults";
 
 export interface MedicalCardSheetProps {
 	zoomClass: string;
 	medicalCardData: A4DocumentMedicalCardData;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	pt: any;
+	cl: A4ClinicRequisites;
+	pt: A4PatientRequisites;
 	doctor: string;
 }
 

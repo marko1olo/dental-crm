@@ -60,9 +60,24 @@ export function buildSurgicalClinic(draft: ClinicProfileDraft | null | undefined
 	};
 }
 
+interface PatientWithAdminExt extends Partial<Patient> {
+	administrativeProfile?: {
+		snils?: string | null;
+		registrationAddress?: string | null;
+		passportSeries?: string | null;
+		passportNumber?: string | null;
+		passportIssuedBy?: string | null;
+		passportIssuedDate?: string | null;
+		passportDepartmentCode?: string | null;
+	} | null;
+	snils?: string | null;
+	address?: string | null;
+	gender?: string | null;
+}
+
 export function buildSurgicalPatient(patient: Patient | null | undefined) {
 	if (!patient) return null;
-	const p = patient as any;
+	const p = patient as PatientWithAdminExt;
 	return {
 		fullName: patient.fullName,
 		birthDate: patient.birthDate,

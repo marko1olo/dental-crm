@@ -1,18 +1,28 @@
 import React from "react";
 import type { A4DocumentInformedConsentData } from "@dental/shared";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export interface ConsentSheetPage2Props {
 	effectiveConsentData: A4DocumentInformedConsentData | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinicRequisites
-	cl: any;
+	cl: A4ClinicRequisites;
 }
 
 export function ConsentSheetPage2({
 	effectiveConsentData,
 	cl,
 }: ConsentSheetPage2Props): React.JSX.Element {
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	const pt = effectiveConsentData?.patient ?? ({} as any);
+	const pt = effectiveConsentData?.patient ?? {
+		fullName: "____________________________________",
+		birthDate: "",
+		address: "",
+		phone: "",
+		registrationAddress: "",
+		passportSeries: "",
+		passportNumber: "",
+		passportIssuedBy: "",
+		passportIssuedDate: "",
+		passportDepartmentCode: "",
+	};
 	const doctor = effectiveConsentData?.doctorFullName ?? "Лечащий врач";
 
 	return (

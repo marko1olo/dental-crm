@@ -1,4 +1,4 @@
-import type { A4DocumentTreatmentPlanData } from "@dental/shared";
+import type { A4DocumentTreatmentPlanData, GeneratedDocument } from "@dental/shared";
 import type {
 	buildA4ClinicRequisites,
 	buildA4PatientRequisites,
@@ -13,8 +13,13 @@ export function buildA4TreatmentPlanData(
 	doctor: string,
 	todayRu: string,
 	customTreatmentPlanData?: Partial<A4DocumentTreatmentPlanData>,
-	// biome-ignore lint/suspicious/noExplicitAny: existing document record
-	latestPlanDoc?: any,
+	latestPlanDoc?:
+		| (Partial<GeneratedDocument> & {
+				summary?: string | null;
+				notes?: string | null;
+		  })
+		| null
+		| undefined,
 ): A4DocumentTreatmentPlanData {
 	const livePlanSummary = latestPlanDoc?.summary || latestPlanDoc?.notes;
 	return {

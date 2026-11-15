@@ -1,6 +1,7 @@
 import React from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
-import type { TaxDeductionTab } from "../../finance/taxDeduction/types";
+import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
+import type { TaxDeductionTab } from "../taxCertificateEngine";
 import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
 import type { TaxPaymentRecord } from "../taxCertificateEngine";
 import { CatalogPrimaryModals } from "./CatalogPrimaryModals";
@@ -13,8 +14,7 @@ export interface CatalogModalsProps {
 	patientAgeYears?: number | null | undefined;
 	doctorName?: string | undefined;
 	clinicName?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinicProfileDraft
-	clinicProfileDraft?: any | undefined;
+	clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 	existingDocuments?: readonly GeneratedDocument[] | undefined;
 	mappedTaxPayments?: TaxPaymentRecord[] | undefined;
 	isDiplomaModalOpen: boolean;

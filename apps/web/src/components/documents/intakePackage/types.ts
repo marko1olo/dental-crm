@@ -10,6 +10,8 @@
 
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import type React from "react";
+import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
+import type { EligibleTaxPaymentInput } from "../catalog/types";
 import {
 	ClipboardCheck,
 	FileDown,
@@ -40,10 +42,8 @@ export interface ClinicalVisitPackageModalProps {
 	readonly onCreateDocument?: ((kind: DocumentKind) => void) | undefined;
 	readonly onOpenDocument?: ((documentId: string) => void) | undefined;
 	readonly onSelectDocumentKind?: ((kind: DocumentKind) => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinicProfileDraft
-	readonly clinicProfileDraft?: any | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: payments from cash register
-	readonly payments?: readonly any[] | undefined;
+	readonly clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
+	readonly payments?: readonly EligibleTaxPaymentInput[] | readonly Record<string, unknown>[] | undefined;
 	readonly initialTab?: ClinicalPackageTab | undefined;
 }
 

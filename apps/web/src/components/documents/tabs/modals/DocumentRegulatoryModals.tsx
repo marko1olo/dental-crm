@@ -1,6 +1,6 @@
 import React from "react";
 import { SanpinStudioModal } from "../../../sanpin/SanpinStudioModal";
-import { TaxDeductionCertificateModal } from "../../../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../../DocumentsStudioModal";
 import { EgiszRemdHubModal } from "../../../egisz/EgiszRemdHubModal";
 import { SickLeaveElnModal } from "../../sickLeave/SickLeaveElnModal";
 import type { DocumentModalsContainerProps } from "./types";
@@ -32,6 +32,28 @@ export const DocumentRegulatoryModals: React.FC<DocumentModalsContainerProps> = 
 			setIsTaxAccountingOpen?.(false);
 			setIsFnsNdflXmlOpen?.(false);
 		};
+
+		const patientSnils =
+			activePatient?.administrativeProfile?.snils ||
+			("snils" in (activePatient ?? {})
+				? (activePatient as { snils?: string | null })?.snils
+				: undefined) ||
+			undefined;
+
+		const patientGender: "male" | "female" | undefined =
+			activePatient?.gender === "male" || activePatient?.gender === "female"
+				? activePatient.gender
+				: undefined;
+
+		const doctorSpecialty =
+			activeDoctor?.role ||
+			(activeDoctor?.specialties?.[0]
+				? String(activeDoctor.specialties[0])
+				: undefined) ||
+			("specialty" in (activeDoctor ?? {})
+				? String((activeDoctor as { specialty?: unknown })?.specialty ?? "")
+				: undefined) ||
+			undefined;
 
 		return (
 			<>
@@ -82,10 +104,10 @@ export const DocumentRegulatoryModals: React.FC<DocumentModalsContainerProps> = 
 						onClose={() => setIsSickLeaveElnOpen(false)}
 						initialPatientName={activePatient?.fullName}
 						initialPatientBirthDate={activePatient?.birthDate || undefined}
-						initialPatientSnils={(activePatient as any)?.snils || (activePatient as any)?.administrativeProfile?.snils}
-						initialPatientGender={activePatient?.gender as any}
+						initialPatientSnils={patientSnils}
+						initialPatientGender={patientGender}
 						initialDoctorFio={activeDoctor?.fullName}
-						initialDoctorSpecialty={(activeDoctor as any)?.role || (activeDoctor as any)?.specialty}
+						initialDoctorSpecialty={doctorSpecialty}
 					/>
 				)}
 			</>

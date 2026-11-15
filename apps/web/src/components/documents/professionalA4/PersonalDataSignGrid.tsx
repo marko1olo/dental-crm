@@ -1,15 +1,12 @@
 import React from "react";
+import type { A4ClinicRequisites, A4PatientRequisites } from "./a4ClinicPatientDefaults";
 
 export function PersonalDataSignGrid({
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
 	cl,
-	// biome-ignore lint/suspicious/noExplicitAny: patient
 	pt,
 }: {
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	pt: any;
+	cl: A4ClinicRequisites;
+	pt: A4PatientRequisites | { fullName: string };
 }): React.JSX.Element {
 	return (
 		<div className="a4-sign-grid" style={{ marginTop: "40px" }}>

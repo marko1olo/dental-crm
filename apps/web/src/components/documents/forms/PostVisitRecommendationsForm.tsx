@@ -2,6 +2,7 @@ import React from "react";
 import { Edit3 } from "lucide-react";
 import type { PostVisitCareTopic } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
+import type { DocumentFormSwitchDashboardHints } from "../tabs/formSwitch/documentFormSwitchTypes";
 
 export interface PostVisitRecommendationsFormProps {
 	typedPostVisitCareTopicOptions?: Array<{
@@ -18,7 +19,7 @@ export interface PostVisitRecommendationsFormProps {
 	) => void) | undefined;
 	postVisitPresetFeedback?: string | null | undefined;
 	postVisitManualEdited?: boolean | undefined;
-	dashboard?: any;
+	dashboard?: DocumentFormSwitchDashboardHints | undefined;
 	inferredTreatmentArea?: string | null | undefined;
 }
 

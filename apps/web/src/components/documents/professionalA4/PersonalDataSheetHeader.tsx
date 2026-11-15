@@ -1,17 +1,26 @@
 import React from "react";
 import { formatPassportString } from "@dental/shared";
+import type { A4ClinicRequisites, A4PatientRequisites } from "./a4ClinicPatientDefaults";
 
 export function PersonalDataSheetHeader({
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
 	cl,
-	// biome-ignore lint/suspicious/noExplicitAny: patient
 	pt,
 	contractDate,
 }: {
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	pt: any;
+	cl: A4ClinicRequisites;
+	pt: A4PatientRequisites | {
+		fullName: string;
+		birthDate?: string;
+		address?: string;
+		registrationAddress?: string;
+		phone?: string;
+		snils?: string;
+		passportSeries?: string;
+		passportNumber?: string;
+		passportIssuedBy?: string;
+		passportIssuedDate?: string;
+		passportDepartmentCode?: string;
+	};
 	contractDate: string;
 }): React.JSX.Element {
 	return (

@@ -1,7 +1,24 @@
 import React from "react";
 
+export interface InformedConsentInterventionStoreSlice {
+	informedConsentIntervention: string;
+	setInformedConsentIntervention: (val: string) => void;
+	informedConsentToothOrArea: string;
+	setInformedConsentToothOrArea: (val: string) => void;
+	informedConsentDoctorFullName: string;
+	setInformedConsentDoctorFullName: (val: string) => void;
+	informedConsentDiagnosisOrIndication: string;
+	setInformedConsentDiagnosisOrIndication: (val: string) => void;
+	informedConsentExpectedBenefit: string;
+	setInformedConsentExpectedBenefit: (val: string) => void;
+	informedConsentAnesthesia: string;
+	setInformedConsentAnesthesia: (val: string) => void;
+	informedConsentConfirmedAt: string;
+	setInformedConsentConfirmedAt: (val: string) => void;
+}
+
 export interface InformedConsentInterventionSectionProps {
-	docStore: any;
+	docStore: InformedConsentInterventionStoreSlice;
 	inferredTreatmentArea?: string | null | undefined;
 	activeDoctorFullName?: string | null | undefined;
 	activeVisitComplaint?: string | null | undefined;

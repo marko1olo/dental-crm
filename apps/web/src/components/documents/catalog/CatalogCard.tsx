@@ -6,7 +6,7 @@ import type { DocumentCatalogItem } from "./types";
 
 export interface CatalogCardProps {
 	item: DocumentCatalogItem;
-	patientDoc?: GeneratedDocument | undefined;
+	patientDoc?: (GeneratedDocument & { signedAt?: string | null; createdAt?: string | null }) | undefined;
 	onOpenFocusEditor?: ((kind: DocumentKind) => void) | undefined;
 }
 
@@ -16,17 +16,15 @@ export function CatalogCard({
 	onOpenFocusEditor,
 }: CatalogCardProps) {
 	const ItemIcon = item.icon;
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic signedAt check
 	const isSigned = Boolean(
 		patientDoc?.doctorSignedAt ||
-			(patientDoc as any)?.signedAt ||
-			(patientDoc?.status as string) === "issued" ||
-			(patientDoc as any)?.signatureAttestation,
+			patientDoc?.signedAt ||
+			patientDoc?.status === "issued" ||
+			patientDoc?.signatureAttestation,
 	);
 	const isDraft = patientDoc?.status === "draft";
 	const isIssued = patientDoc?.status === "issued";
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic createdAt fallback
-	const docDateStr = patientDoc?.issuedAt || (patientDoc as any)?.createdAt;
+	const docDateStr = patientDoc?.issuedAt || patientDoc?.createdAt || patientDoc?.issuedSnapshotCreatedAt || undefined;
 
 	return (
 		<div

@@ -8,6 +8,9 @@ import type {
 	GeneratedDocument,
 	Patient,
 } from "@dental/shared";
+import type { A4ClinicRequisites, A4PatientRequisites } from "./a4ClinicPatientDefaults";
+
+export type { A4ClinicRequisites, A4PatientRequisites };
 
 export type ProfessionalA4DocumentTab =
 	| "contract"
@@ -39,8 +42,7 @@ export interface ProfessionalDocumentA4SheetProps {
 export interface UseA4PreviewDataOptions {
 	readonly patient?: Patient | null;
 	readonly doctorFullName?: string | null | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic profile draft
-	readonly clinicProfileDraft?: any;
+	readonly clinicProfileDraft?: Partial<A4ClinicRequisites> | Record<string, unknown> | null | undefined;
 	readonly existingDocuments?: readonly GeneratedDocument[] | undefined;
 	readonly contractData?: Partial<A4DocumentContractData>;
 	readonly actData?: Partial<A4DocumentActData>;

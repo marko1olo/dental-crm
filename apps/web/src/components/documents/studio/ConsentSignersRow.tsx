@@ -46,7 +46,7 @@ export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
 	return (
 		<div className="space-y-3">
 			{/* Интерактивная подпись пальцем/стилусом на Canvas */}
-			<div className="dente-signature-pad-box">
+			<div className="dente-signature-pad-box" data-testid="consent-signature-pad">
 				<div className="flex items-center justify-between">
 					<span className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 						<PenTool size={14} className="text-[var(--teal,#0d9488)]" />

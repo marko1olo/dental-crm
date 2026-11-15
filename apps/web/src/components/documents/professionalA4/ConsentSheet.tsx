@@ -2,12 +2,12 @@ import React from "react";
 import type { A4DocumentInformedConsentData } from "@dental/shared";
 import { ConsentSheetPage1 } from "./ConsentSheetPage1";
 import { ConsentSheetPage2 } from "./ConsentSheetPage2";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export interface ConsentSheetProps {
 	zoomClass: string;
 	effectiveConsentData: A4DocumentInformedConsentData | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinicRequisites
-	cl: any;
+	cl: A4ClinicRequisites;
 }
 
 export const ConsentSheet: React.FC<ConsentSheetProps> = ({

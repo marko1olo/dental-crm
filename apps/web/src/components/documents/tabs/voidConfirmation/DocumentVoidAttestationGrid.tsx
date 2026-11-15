@@ -5,8 +5,8 @@ import { CANONICAL_DOCUMENT_STATUS_LABELS } from "../../documentAutonomy";
 export interface DocumentVoidAttestationGridProps {
 	documentId: string;
 	documentVoidReasonCode: DocumentVoidAttestation["reasonCode"];
-	setDocumentVoidReasonCode: (code: any) => void;
-	normalizedDocumentVoidReasonCode: (val: string) => any;
+	setDocumentVoidReasonCode: (code: DocumentVoidAttestation["reasonCode"]) => void;
+	normalizedDocumentVoidReasonCode: (val: string) => DocumentVoidAttestation["reasonCode"];
 	documentVoidReasonLabels: Record<string, string>;
 	documentVoidStaffFullName: string;
 	setDocumentVoidStaffFullName: (val: string) => void;

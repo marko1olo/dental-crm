@@ -1,9 +1,10 @@
 import React from "react";
+import type { DocumentAuditFacts } from "@dental/shared";
 import { AlertCircle, CheckCheck, FileSignature, ShieldCheck, Smartphone } from "lucide-react";
 import { DocumentUkepSignButton } from "../../DocumentUkepSignButton";
 
 export interface DocumentAuditSignatureSectionProps {
-	facts: any;
+	facts: DocumentAuditFacts;
 	documentSourceStatusLabels?: Record<string, string> | undefined;
 	documentIssueSignatureModeLabels: Record<string, string>;
 	formatShortDate?: ((date: string | null | undefined) => string) | undefined;

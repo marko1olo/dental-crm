@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import type { PhotoVideoConsentMaterial, ProcedureSpecificConsentProcedure } from "@dental/shared";
 import { useDocumentStore } from "../../../../store/documentStore";
 import { AnesthesiaConsentLogForm } from "../../forms/AnesthesiaConsentLogForm";
 import { InformedConsentForm } from "../../forms/InformedConsentForm";
@@ -26,10 +27,10 @@ export const ConsentDocumentForms: React.FC<DocumentFormSwitchProps> = React.mem
 				{selectedDocumentKind === "informed_consent" && (
 					<InformedConsentForm activeDoctorFullName={props.activeDoctor?.fullName ?? null} />
 				)}
-				{((selectedDocumentKind as any) === "procedure_specific_consent_packet" || (selectedDocumentKind as any) === "procedure_specific_consent") && (
+				{(selectedDocumentKind === "procedure_specific_consent_packet" || selectedDocumentKind === "procedure_specific_consent") && (
 					<ProcedureSpecificConsentForm
 						procedureOptions={props.procedureSpecificConsentProcedureOptions ?? []}
-						normalizeProcedure={props.normalizedProcedureSpecificConsentProcedure ?? ((v) => v as any)}
+						normalizeProcedure={props.normalizedProcedureSpecificConsentProcedure ?? ((v: string): ProcedureSpecificConsentProcedure => v as ProcedureSpecificConsentProcedure)}
 						renderToothRowsEditor={props.renderClinicalToothRowsEditor ?? (() => null)}
 						activeDoctorFullName={props.activeDoctor?.fullName ?? null}
 						inferredTreatmentArea={props.inferredTreatmentArea ?? null}
@@ -50,7 +51,7 @@ export const ConsentDocumentForms: React.FC<DocumentFormSwitchProps> = React.mem
 				{selectedDocumentKind === "photo_video_consent" && (
 					<PhotoVideoConsentForm
 						materialOptions={props.photoVideoMaterialOptions ?? []}
-						toggleMaterial={props.togglePhotoVideoMaterial ?? ((mat: any) => {
+						toggleMaterial={props.togglePhotoVideoMaterial ?? ((mat: PhotoVideoConsentMaterial) => {
 							const store = useDocumentStore.getState();
 							const current = store.photoVideoMaterials || [];
 							const next = current.includes(mat) ? current.filter((m) => m !== mat) : [...current, mat];
@@ -59,7 +60,7 @@ export const ConsentDocumentForms: React.FC<DocumentFormSwitchProps> = React.mem
 					/>
 				)}
 				{selectedDocumentKind === "personal_data_processing_consent" && (
-					<PersonalDataProcessingConsentForm clinicProfileDraft={props.clinicProfileDraft} />
+					<PersonalDataProcessingConsentForm clinicProfileDraft={props.clinicProfileDraft ?? undefined} />
 				)}
 				{selectedDocumentKind === "medical_intervention_refusal" && (
 					<MedicalInterventionRefusalForm activeDoctorFullName={props.activeDoctor?.fullName} activeVisitComplaint={props.dashboard?.activeVisit?.complaint} inferredTreatmentArea={props.inferredTreatmentArea} />
@@ -71,7 +72,7 @@ export const ConsentDocumentForms: React.FC<DocumentFormSwitchProps> = React.mem
 					<MedicalRecordCopyRequestForm documentPatient={props.documentPatient ?? props.activePatient ?? null} />
 				)}
 				{selectedDocumentKind === "medical_document_release_receipt" && (
-					<MedicalDocumentReleaseReceiptForm documentPatient={props.documentPatient ?? props.activePatient ?? null} issuedMedicalCopyRequestDocuments={props.typedIssuedMedicalCopyRequestDocuments} releaseProtectionNote={props.releaseProtectionNote} setReleaseProtectionNote={props.setReleaseProtectionNote} />
+					<MedicalDocumentReleaseReceiptForm documentPatient={props.documentPatient ?? props.activePatient ?? null} issuedMedicalCopyRequestDocuments={props.typedIssuedMedicalCopyRequestDocuments ? [...props.typedIssuedMedicalCopyRequestDocuments] : undefined} releaseProtectionNote={props.releaseProtectionNote} setReleaseProtectionNote={props.setReleaseProtectionNote} />
 				)}
 			</>
 		);

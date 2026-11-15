@@ -1,12 +1,11 @@
 import React from "react";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export function ConsentSheetHeader({
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
 	cl,
 	contractDate,
 }: {
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
+	cl: A4ClinicRequisites;
 	contractDate: string;
 }): React.JSX.Element {
 	return (

@@ -1,4 +1,4 @@
-import type { A4DocumentActData } from "@dental/shared";
+import type { A4DocumentActData, GeneratedDocument } from "@dental/shared";
 import type {
 	buildA4ClinicRequisites,
 	buildA4PatientRequisites,
@@ -15,8 +15,14 @@ export function buildA4ActData(
 	contractNumber: string,
 	contractDate: string,
 	customActData?: Partial<A4DocumentActData>,
-	// biome-ignore lint/suspicious/noExplicitAny: existing document record
-	latestActDoc?: any,
+	latestActDoc?:
+		| (Partial<GeneratedDocument> & {
+				documentNumber?: string | null;
+				amountRub?: number | null;
+				totalAmountRub?: number | null;
+		  })
+		| null
+		| undefined,
 ): A4DocumentActData {
 	const liveActNum = latestActDoc?.documentNumber as string | undefined;
 	const rawActAmount = latestActDoc?.amountRub ?? latestActDoc?.totalAmountRub;

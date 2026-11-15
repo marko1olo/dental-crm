@@ -23,6 +23,8 @@ export * from "./taxCertificate/renderSections";
 export * from "./taxCertificate/htmlGenerator";
 export * from "./taxCertificate/printRunner";
 
+export type TaxDeductionTab = "form" | "checks" | "family" | "xml" | "registry";
+
 /**
  * Генерирует HTML справки для налогового вычета в ФНС (КНД 1151156)
  */

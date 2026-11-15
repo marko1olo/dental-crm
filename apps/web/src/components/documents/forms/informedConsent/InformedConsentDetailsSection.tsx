@@ -1,7 +1,26 @@
 import React from "react";
 
+export interface InformedConsentDetailsStoreSlice {
+	informedConsentMaterialNotes: string;
+	setInformedConsentMaterialNotes: (val: string) => void;
+	informedConsentTrustedContact: string;
+	setInformedConsentTrustedContact: (val: string) => void;
+	informedConsentRisks: string;
+	setInformedConsentRisks: (val: string) => void;
+	informedConsentAlternatives: string;
+	setInformedConsentAlternatives: (val: string) => void;
+	informedConsentAftercare: string;
+	setInformedConsentAftercare: (val: string) => void;
+	informedConsentQuestionsAnswered: boolean;
+	setInformedConsentQuestionsAnswered: (val: boolean) => void;
+	informedConsentRisksUnderstood: boolean;
+	setInformedConsentRisksUnderstood: (val: boolean) => void;
+	informedConsentWithdrawUnderstood: boolean;
+	setInformedConsentWithdrawUnderstood: (val: boolean) => void;
+}
+
 export interface InformedConsentDetailsSectionProps {
-	docStore: any;
+	docStore: InformedConsentDetailsStoreSlice;
 }
 
 export const InformedConsentDetailsSection: React.FC<InformedConsentDetailsSectionProps> = React.memo(

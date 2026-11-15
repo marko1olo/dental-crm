@@ -1,8 +1,7 @@
 import React from "react";
 import { PrimaryIntakePackageModal } from "../../PrimaryIntakePackageModal";
 import { SurgicalPackageModal } from "../../SurgicalPackageModal";
-import { ClinicalVisitPackageModal } from "../../ClinicalVisitPackageModal";
-import { ConsentStudioModal } from "../../../consents/ConsentStudioModal";
+import { ConsentStudioModal } from "../../DocumentsStudioModal";
 import type { DocumentModalsContainerProps } from "./types";
 
 export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = React.memo(
@@ -12,8 +11,6 @@ export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = Re
 			setIsPrimaryIntakeOpen,
 			isSurgicalPackageOpen,
 			setIsSurgicalPackageOpen,
-			isClinicalVisitOpen,
-			setIsClinicalVisitOpen,
 			activePatient,
 			activeDoctor,
 			clinicProfileDraft,
@@ -43,20 +40,6 @@ export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = Re
 					<SurgicalPackageModal
 						isOpen={isSurgicalPackageOpen}
 						onClose={() => setIsSurgicalPackageOpen(false)}
-						patient={activePatient ?? null}
-						doctorFullName={activeDoctor?.fullName ?? null}
-						existingDocuments={typedActiveDocuments ?? []}
-						onCreateDocument={(kind) => void createDocument(kind)}
-						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
-						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-						clinicProfileDraft={clinicProfileDraft}
-					/>
-				)}
-
-				{isClinicalVisitOpen && (
-					<ClinicalVisitPackageModal
-						isOpen={isClinicalVisitOpen}
-						onClose={() => setIsClinicalVisitOpen(false)}
 						patient={activePatient ?? null}
 						doctorFullName={activeDoctor?.fullName ?? null}
 						existingDocuments={typedActiveDocuments ?? []}

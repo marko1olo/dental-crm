@@ -2,15 +2,14 @@ import React from "react";
 import { formatAmountInWordsRu } from "@dental/shared";
 import type { A4DocumentContractData } from "@dental/shared";
 import { ContractServicesTable } from "./ContractServicesTable";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export function ContractSheetPage2({
 	contractData,
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
 	cl,
 }: {
 	contractData: A4DocumentContractData;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
+	cl: A4ClinicRequisites;
 }): React.JSX.Element {
 	return (
 		<section className="pro-a4-page-sheet">

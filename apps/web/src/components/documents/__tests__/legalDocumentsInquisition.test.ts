@@ -4,17 +4,17 @@ import {
 	informedConsentBlockersReview,
 	INFORMED_CONSENT_SAFE_DEFAULTS,
 	resolveInformedConsentSafeDefaults,
-} from "../informedConsentBlockers";
+} from "../informedConsentGuiding";
 import {
 	taxApplicationBlockersReview,
 	TAX_APPLICATION_SAFE_DEFAULTS,
 	resolveTaxApplicationSafeDefaults,
-} from "../taxApplicationBlockers";
+} from "../taxApplicationGuiding";
 import {
 	photoVideoConsentBlockersReview,
 	PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS,
 	resolvePhotoVideoConsentSafeDefaults,
-} from "../photoVideoConsentBlockers";
+} from "../photoVideoConsentGuiding";
 import { PrescriptionModal } from "../../prescriptions/PrescriptionModal";
 import { getIntakeAndClinicalItems } from "../catalog/intakeAndClinicalItems";
 import type { ProfessionalA4DocumentTab } from "../professionalA4/types";

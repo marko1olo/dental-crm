@@ -1,15 +1,19 @@
 import React from "react";
+import type { DocumentAuditFacts } from "@dental/shared";
 import { AlertCircle, Calendar, FileCheck } from "lucide-react";
 import { humanizeDocumentAuditText } from "../../documentAutonomy";
 import { isoDateLabel } from "../../../../AppHelpers";
 
 export interface DocumentAuditClinicalLinksSectionProps {
-	facts: any;
+	facts: DocumentAuditFacts;
 }
 
 export const DocumentAuditClinicalLinksSection: React.FC<DocumentAuditClinicalLinksSectionProps> = React.memo(
 	function DocumentAuditClinicalLinksSection({ facts }) {
-		const blockersOrWarnings = [...(facts?.blockers ?? []), ...(facts?.warnings ?? [])];
+		const blockersOrWarnings: readonly string[] = [
+			...(facts?.blockers ?? []),
+			...(facts?.warnings ?? []),
+		];
 
 		return (
 			<>
@@ -53,7 +57,7 @@ export const DocumentAuditClinicalLinksSection: React.FC<DocumentAuditClinicalLi
 
 				{blockersOrWarnings.length > 0 && (
 					<div className="flex flex-col gap-1.5">
-						{blockersOrWarnings.map((note: any) => (
+						{blockersOrWarnings.map((note) => (
 							<div key={String(note)} className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 p-2 px-3 rounded-lg border border-amber-500/30">
 								<AlertCircle className="w-3.5 h-3.5 shrink-0" />
 								<span>{humanizeDocumentAuditText(String(note))}</span>

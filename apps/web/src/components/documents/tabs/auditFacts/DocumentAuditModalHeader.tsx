@@ -1,9 +1,10 @@
 import React from "react";
+import type { DocumentAuditFacts } from "@dental/shared";
 import { ShieldCheck, X } from "lucide-react";
 import { CANONICAL_DOCUMENT_STATUS_LABELS } from "../../documentAutonomy";
 
 export interface DocumentAuditModalHeaderProps {
-	facts: any;
+	facts: DocumentAuditFacts;
 	documentLabels?: Record<string, string> | undefined;
 	documentStatusLabels?: Record<string, string> | undefined;
 	onClose: () => void;

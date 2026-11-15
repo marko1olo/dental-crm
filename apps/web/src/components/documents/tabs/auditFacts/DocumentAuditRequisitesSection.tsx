@@ -1,9 +1,10 @@
 import React from "react";
+import type { DocumentAuditFacts } from "@dental/shared";
 import { Hash } from "lucide-react";
 import { CANONICAL_DOCUMENT_STATUS_LABELS } from "../../documentAutonomy";
 
 export interface DocumentAuditRequisitesSectionProps {
-	facts: any;
+	facts: DocumentAuditFacts;
 	documentLabels?: Record<string, string> | undefined;
 	documentStatusLabels?: Record<string, string> | undefined;
 	formatShortDate?: ((date: string | null | undefined) => string) | undefined;

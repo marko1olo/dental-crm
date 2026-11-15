@@ -3,13 +3,17 @@ import type { A4DocumentMedicalCardData } from "@dental/shared";
 import { DentalFormulaRowTable } from "./DentalFormulaRowTable";
 import { MedicalCardPrintDentalArchSvg } from "./MedicalCardPrintDentalArchSvg";
 
+interface MedicalCardFormulaPayload extends A4DocumentMedicalCardData {
+	readonly initialTeethFormulaMap?: Record<string, string> | null | undefined;
+	readonly sanitizedTeethFormulaMap?: Record<string, string> | null | undefined;
+}
+
 export function MedicalCardDentalFormulaTable({
 	medicalCardData,
 }: {
 	medicalCardData: A4DocumentMedicalCardData;
 }): React.JSX.Element {
-	// biome-ignore lint/suspicious/noExplicitAny: formula maps
-	const mc = medicalCardData as any;
+	const mc = medicalCardData as MedicalCardFormulaPayload;
 
 	const initialMap =
 		mc.initialTeethFormulaMap || mc.teethFormulaMap || undefined;

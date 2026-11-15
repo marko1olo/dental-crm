@@ -1,5 +1,6 @@
 import React from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
 import { DocumentA4PrintPreviewModal } from "../DocumentA4PrintPreviewModal";
 import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal";
 import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
@@ -8,8 +9,7 @@ import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
 export interface CatalogPrimaryModalsProps {
 	patient?: Patient | null | undefined;
 	doctorName?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinicProfileDraft
-	clinicProfileDraft?: any | undefined;
+	clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 	existingDocuments?: readonly GeneratedDocument[] | undefined;
 	isLocalIntakeModalOpen: boolean;
 	setIsLocalIntakeModalOpen: (open: boolean) => void;

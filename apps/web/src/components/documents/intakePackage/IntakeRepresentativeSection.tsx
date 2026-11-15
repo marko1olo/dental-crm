@@ -28,8 +28,13 @@ export function IntakeRepresentativeSection({
 	onToggleNorm,
 	activeTab,
 }: IntakeRepresentativeSectionProps): React.JSX.Element {
-	// biome-ignore lint/suspicious/noExplicitAny: admin profile
-	const adminProfile = (patient as any)?.administrativeProfile;
+	const adminProfile = (patient as (Patient & {
+		administrativeProfile?: {
+			legalRepresentativeFullName?: string | null;
+			legalRepresentativeRelationship?: string | null;
+			legalRepresentativePhone?: string | null;
+		} | null;
+	}) | null)?.administrativeProfile;
 	const repFullName = adminProfile?.legalRepresentativeFullName?.trim();
 	const repRelationship = adminProfile?.legalRepresentativeRelationship?.trim() || "Законный представитель";
 	const repPhone = adminProfile?.legalRepresentativePhone?.trim();

@@ -20,7 +20,7 @@ import {
 	DocumentsView,
 	executeOpenLatestDocumentAutonomy,
 } from "../../../DocumentsView";
-import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../DocumentsStudioModal";
 import { documentSourceStatusClassNames } from "../../../workspaceUiLabels";
 
 type MockFn = {

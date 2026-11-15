@@ -1,15 +1,14 @@
 import React from "react";
 import { formatPassportString } from "@dental/shared";
 import type { A4DocumentContractData } from "@dental/shared";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export function ContractSheetPage3({
 	contractData,
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
 	cl,
 }: {
 	contractData: A4DocumentContractData;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
+	cl: A4ClinicRequisites;
 }): React.JSX.Element {
 	return (
 		<section className="pro-a4-page-sheet">

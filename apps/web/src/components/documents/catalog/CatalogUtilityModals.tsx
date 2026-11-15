@@ -1,8 +1,8 @@
 import React from "react";
 import type { Patient } from "@dental/shared";
-import { ConsentStudioModal } from "../../consents/ConsentStudioModal";
-import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
-import type { TaxDeductionTab } from "../../finance/taxDeduction/types";
+import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
+import { ConsentStudioModal, TaxDeductionCertificateModal } from "../DocumentsStudioModal";
+import type { TaxDeductionTab } from "../taxCertificateEngine";
 import { PediatricBraveryDiplomaModal } from "../../pediatric/PediatricBraveryDiplomaModal";
 import type { TaxPaymentRecord } from "../taxCertificateEngine";
 
@@ -12,8 +12,7 @@ export interface CatalogUtilityModalsProps {
 	patientAgeYears?: number | null | undefined;
 	doctorName?: string | undefined;
 	clinicName?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinicProfileDraft
-	clinicProfileDraft?: any | undefined;
+	clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 	mappedTaxPayments?: TaxPaymentRecord[] | undefined;
 	effectivePatientInn?: string | undefined;
 	effectivePatientSnils?: string | undefined;
@@ -104,7 +103,23 @@ export function CatalogUtilityModals({
 					}
 					clinicAddress={clinicProfileDraft?.address || ""}
 					chiefDoctorName={doctorName || ""}
-					payments={(sanitizedPayments ?? mappedTaxPayments) as any}
+					payments={
+						(sanitizedPayments ?? mappedTaxPayments)?.map((p) => ({
+							id: p.id,
+							dateIso: p.dateIso,
+							receiptNumber: p.receiptNumber ?? "",
+							fiscalDocumentNumber: p.fiscalDocumentNumber ?? "",
+							fiscalSign: p.fiscalSign ?? "",
+							serviceName: p.serviceName,
+							code804n: p.code804n,
+							amountRub: p.amountRub,
+							amountKopecks: p.amountKopecks,
+							taxCode: p.taxCode,
+							isRefund: p.isRefund,
+							isReturn: p.isReturn,
+							status: p.status,
+						}))
+					}
 				/>
 			)}
 		</>

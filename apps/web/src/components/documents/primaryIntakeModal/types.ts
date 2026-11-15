@@ -1,4 +1,5 @@
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
 
 export interface PrimaryIntakePackageModalProps {
 	readonly isOpen: boolean;
@@ -9,7 +10,7 @@ export interface PrimaryIntakePackageModalProps {
 	readonly onOpenDocument: (documentId: string) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
 	readonly doctorFullName?: string | null | undefined;
-	readonly clinicProfileDraft?: any | undefined;
+	readonly clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 }
 
 export interface StatutoryIntakeItem {

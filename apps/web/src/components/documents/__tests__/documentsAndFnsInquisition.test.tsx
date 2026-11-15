@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { FnsTaxCertificateModal } from "../../finance/TaxDeductionCertificateModal.js";
+import { FnsTaxCertificateModal } from "../DocumentsStudioModal.js";
 import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal.js";
 import { DocumentNavTabs } from "../DocumentNavTabs.js";
 import {

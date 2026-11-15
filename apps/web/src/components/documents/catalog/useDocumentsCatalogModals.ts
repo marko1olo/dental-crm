@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { TaxDeductionTab } from "../../finance/taxDeduction/types";
+import type { TaxDeductionTab } from "../taxCertificateEngine";
 import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
 
 export function useDocumentsCatalogModals() {

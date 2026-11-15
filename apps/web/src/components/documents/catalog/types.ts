@@ -1,5 +1,26 @@
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import type React from "react";
+import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
+
+export interface EligibleTaxPaymentInput {
+	readonly id?: string | undefined;
+	readonly amountRub?: number | string | undefined;
+	readonly amount?: number | string | undefined;
+	readonly code804n?: string | null | undefined;
+	readonly description?: string | null | undefined;
+	readonly serviceName?: string | null | undefined;
+	readonly taxServiceCode?: string | null | undefined;
+	readonly taxCode?: string | null | undefined;
+	readonly isExpensiveTreatment?: boolean | null | undefined;
+	readonly paidAt?: string | null | undefined;
+	readonly createdAt?: string | null | undefined;
+	readonly dateIso?: string | null | undefined;
+	readonly receiptNumber?: string | null | undefined;
+	readonly fiscalDocumentNumber?: string | null | undefined;
+	readonly fiscalSign?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly isRefund?: boolean | null | undefined;
+}
 
 export type DocumentCatalogCategory =
 	| "all"
@@ -31,11 +52,9 @@ export interface DocumentsCatalogViewProps {
 	readonly patientAgeYears?: number | undefined;
 	readonly doctorName?: string | undefined;
 	readonly clinicName?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: clinicProfileDraft
-	readonly clinicProfileDraft?: any | undefined;
+	readonly clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 	readonly existingDocuments?: readonly GeneratedDocument[] | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: eligibleTaxPayments
-	readonly eligibleTaxPayments?: readonly any[] | undefined;
+	readonly eligibleTaxPayments?: readonly EligibleTaxPaymentInput[] | undefined;
 	readonly onCreateDocument?:
 		| ((kind: DocumentKind) => void | Promise<void>)
 		| undefined;

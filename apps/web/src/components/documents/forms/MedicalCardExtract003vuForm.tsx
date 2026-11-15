@@ -16,7 +16,11 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 		const defaultDoctor = initialPayload?.attendingDoctorFullName?.trim() || "Врач-стоматолог";
 		const [initialConsultationDiagnosis, setInitialConsultationDiagnosis] = useState(
 			initialPayload?.initialConsultationDiagnosis ??
-			(initialPayload as any)?.diagnosisOnAdmission ??
+			(
+				initialPayload as (Partial<MedicalCardExtract003vuPayload> & {
+					diagnosisOnAdmission?: string | null;
+				}) | null | undefined
+			)?.diagnosisOnAdmission ??
 			(isDemoShowcaseMode() ? "K04.0 Начальный пульпит зуба 2.6" : ""),
 		);
 		const [clinicalDiagnosis, setClinicalDiagnosis] = useState(

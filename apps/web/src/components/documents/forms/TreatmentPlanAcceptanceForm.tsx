@@ -1,10 +1,11 @@
 import React from "react";
 import { Edit3 } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
+import type { DocumentFormSwitchDashboardHints } from "../tabs/formSwitch/documentFormSwitchTypes";
 
 export interface TreatmentPlanAcceptanceFormProps {
-	normalizedTreatmentPlanAcceptanceVariant?: ((val: string) => any) | undefined;
-	dashboard?: any;
+	normalizedTreatmentPlanAcceptanceVariant?: ((val: string) => string) | undefined;
+	dashboard?: DocumentFormSwitchDashboardHints | undefined;
 	inferredTreatmentArea?: string | null | undefined;
 	renderClinicalToothRowsEditor?: (() => React.ReactNode) | undefined;
 	treatmentAcceptancePlannedTotalRub?: (() => number) | undefined;

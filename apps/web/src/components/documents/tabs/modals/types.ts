@@ -17,8 +17,8 @@ export interface DocumentModalsContainerProps {
 	setIsPatientConsentSignDrawerOpen?: (open: boolean) => void;
 	isSurgicalPackageOpen: boolean;
 	setIsSurgicalPackageOpen: (open: boolean) => void;
-	isClinicalVisitOpen: boolean;
-	setIsClinicalVisitOpen: (open: boolean) => void;
+	isClinicalVisitOpen?: boolean;
+	setIsClinicalVisitOpen?: (open: boolean) => void;
 	isTaxAccountingOpen: boolean;
 	setIsTaxAccountingOpen: (open: boolean) => void;
 	isSanpinRegistryOpen: boolean;
@@ -27,8 +27,6 @@ export interface DocumentModalsContainerProps {
 	setIsAutoclaveLogOpen: (open: boolean) => void;
 	/** Семантический обработчик открытия журнала автоклавирования (Мандат 8ap) */
 	onOpenAutoclaveLog?: () => void;
-	/** @deprecated Обратная совместимость с устаревшими вызовами */
-	onOpenAutoclaveLog257?: () => void;
 	isFnsNdflXmlOpen: boolean;
 	setIsFnsNdflXmlOpen: (open: boolean) => void;
 	isEgiszRemdOpen: boolean;

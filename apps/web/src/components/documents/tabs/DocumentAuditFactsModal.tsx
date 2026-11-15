@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import type { DocumentKind, DocumentSourceStatus, DocumentStatus } from "@dental/shared";
+import type { DocumentAuditFacts, DocumentKind, DocumentSourceStatus, DocumentStatus } from "@dental/shared";
 import { DocumentAuditModalHeader } from "./auditFacts/DocumentAuditModalHeader";
 import { DocumentAuditRequisitesSection } from "./auditFacts/DocumentAuditRequisitesSection";
 import { DocumentAuditSignatureSection } from "./auditFacts/DocumentAuditSignatureSection";
@@ -8,7 +8,7 @@ import { DocumentAuditClinicalLinksSection } from "./auditFacts/DocumentAuditCli
 import { DocumentAuditModalFooter } from "./auditFacts/DocumentAuditModalFooter";
 
 export interface DocumentAuditFactsModalProps {
-	documentAuditFacts: any;
+	documentAuditFacts: DocumentAuditFacts | null;
 	documentLabels?: Record<DocumentKind, string>;
 	documentStatusLabels?: Record<DocumentStatus, string>;
 	formatShortDate?: (date: string | null | undefined) => string;
@@ -17,7 +17,7 @@ export interface DocumentAuditFactsModalProps {
 	documentIssueSignatureModeLabels: Record<string, string>;
 	documentVoidReasonLabels: Record<string, string>;
 	loadDocumentAuditFacts: (id: string) => Promise<void> | void;
-	setDocumentAuditFacts: (facts: any) => void;
+	setDocumentAuditFacts: (facts: DocumentAuditFacts | null) => void;
 	openIssuedDocumentHtml: (id: string) => Promise<void> | void;
 	downloadIssuedDocumentHtml: (id: string) => Promise<void> | void;
 	downloadIssuedDocumentPdf: (id: string) => Promise<void> | void;

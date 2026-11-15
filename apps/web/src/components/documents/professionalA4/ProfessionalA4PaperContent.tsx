@@ -1,32 +1,33 @@
 import React from "react";
+import type {
+	A4DocumentActData,
+	A4DocumentContractData,
+	A4DocumentInformedConsentData,
+	A4DocumentMedicalCardData,
+	A4DocumentPersonalDataConsentData,
+	A4DocumentTreatmentPlanData,
+} from "@dental/shared";
 import { ActSheet } from "./ActSheet";
 import { ConsentSheet } from "./ConsentSheet";
 import { ContractSheet } from "./ContractSheet";
 import { MedicalCardSheet } from "./MedicalCardSheet";
 import { PersonalDataSheet } from "./PersonalDataSheet";
 import { TreatmentPlanSheet } from "./TreatmentPlanSheet";
+import type { A4ClinicRequisites, A4PatientRequisites } from "./a4ClinicPatientDefaults";
 import type { ProfessionalA4DocumentTab } from "./types";
 
 export interface ProfessionalA4PaperContentProps {
 	activeTab: ProfessionalA4DocumentTab;
-	// biome-ignore lint/suspicious/noExplicitAny: polymorphic doc sheets
-	contractData?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: polymorphic doc sheets
-	actData?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: polymorphic doc sheets
-	treatmentPlanData?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: polymorphic doc sheets
-	medicalCardData?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: polymorphic doc sheets
-	effectiveConsentData?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: polymorphic doc sheets
-	effectivePersonalDataConsent?: any;
+	contractData?: A4DocumentContractData | undefined;
+	actData?: A4DocumentActData | undefined;
+	treatmentPlanData?: A4DocumentTreatmentPlanData | undefined;
+	medicalCardData?: A4DocumentMedicalCardData | undefined;
+	effectiveConsentData?: A4DocumentInformedConsentData | undefined;
+	effectivePersonalDataConsent?: A4DocumentPersonalDataConsentData | undefined;
 	isInformedConsentTab: boolean;
 	zoomClass: string;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic requisites
-	cl: any;
-	// biome-ignore lint/suspicious/noExplicitAny: patient requisites
-	pt: any;
+	cl: A4ClinicRequisites;
+	pt: A4PatientRequisites;
 	doctor: string;
 }
 

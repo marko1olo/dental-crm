@@ -2,12 +2,12 @@ import React from "react";
 import type { A4DocumentTreatmentPlanData } from "@dental/shared";
 import { TreatmentPlanSheetPage1 } from "./TreatmentPlanSheetPage1";
 import { TreatmentPlanSheetPage2 } from "./TreatmentPlanSheetPage2";
+import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export interface TreatmentPlanSheetProps {
 	zoomClass: string;
 	treatmentPlanData: A4DocumentTreatmentPlanData;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic
-	cl: any;
+	cl: A4ClinicRequisites;
 }
 
 export const TreatmentPlanSheet: React.FC<TreatmentPlanSheetProps> = ({

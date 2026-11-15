@@ -6,7 +6,7 @@ import type {
 import React, { useMemo, useState } from "react";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
-import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../DocumentsStudioModal";
 import { taxApplicationGuidanceReview } from "../taxApplicationGuiding";
 import type { DocumentSelectOption } from "./documentFormTypes";
 
@@ -36,7 +36,7 @@ export interface TaxDeductionApplicationFormProps {
  * Сверху карточки — перечень невыполненных условий. Разбор и три ловушки, которые
  * по виду экрана угадать нельзя (ИНН обязателен не всегда, полномочия
  * представителя становятся обязательными по родству, контакт обязателен без
- * подсказки), записаны в taxApplicationBlockers.ts.
+ * подсказки), записаны в taxApplicationGuiding.ts.
  */
 export function TaxDeductionApplicationForm({
 	deliveryChannelOptions,

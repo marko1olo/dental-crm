@@ -63,7 +63,8 @@ export function filterDocumentsForRegistry(params: {
 	}
 	if (params.registryEdsFilter !== "all") {
 		list = list.filter((doc) => {
-			const isSignedEds = Boolean(doc.doctorSignedAt || (doc as any).signedAt);
+			const docWithSignedAt = doc as GeneratedDocument & { signedAt?: string | null | undefined };
+			const isSignedEds = Boolean(doc.doctorSignedAt || docWithSignedAt.signedAt);
 			const isSignedPaper = Boolean(doc.signatureAttestation && !isSignedEds);
 			if (params.registryEdsFilter === "signed_eds") return isSignedEds;
 			if (params.registryEdsFilter === "signed_paper") return isSignedPaper;

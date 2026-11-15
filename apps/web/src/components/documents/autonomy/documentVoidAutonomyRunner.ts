@@ -30,7 +30,7 @@ export interface DocumentVoidAutonomyParams {
 	updateDocumentStatus?: (
 		id: string,
 		action: "issue" | "void",
-		payload: any,
+		payload: VoidDocumentInput | Record<string, unknown>,
 	) => Promise<boolean>;
 	documentVoidConfirmation?: Partial<GeneratedDocument> | { id: string } | null;
 	documentVoidReady?: boolean;

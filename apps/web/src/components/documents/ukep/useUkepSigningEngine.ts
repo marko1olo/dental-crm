@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { createDemonstrationGostCmsSignature } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	type CryptoProCertificate,
@@ -21,6 +20,17 @@ export interface UseUkepSigningEngineOptions {
 	readonly initialDocs?: readonly UkepDocumentItem[] | undefined;
 }
 
+function computeFallbackDocHash(id: string, title?: string, date?: string): string {
+	const raw = `${id}:${title || ""}:${date || ""}`;
+	let hash = 0;
+	for (let i = 0; i < raw.length; i++) {
+		hash = (hash << 5) - hash + raw.charCodeAt(i);
+		hash |= 0;
+	}
+	const hex = Math.abs(hash).toString(16).padStart(16, "0");
+	return hex.repeat(4);
+}
+
 function mapDocKindToType(kind?: string): UkepDocumentType {
 	if (!kind) return "contract";
 	if (kind.includes("card") || kind.includes("diary") || kind.includes("soap")) return "emr_record";
@@ -28,6 +38,22 @@ function mapDocKindToType(kind?: string): UkepDocumentType {
 	if (kind.includes("tax")) return "tax_certificate";
 	if (kind.includes("prescription")) return "prescription";
 	return "contract";
+}
+
+interface RawUkepApiDocumentItem {
+	readonly id: string;
+	readonly title?: string | null | undefined;
+	readonly kind?: string | null | undefined;
+	readonly createdAt?: string | null | undefined;
+	readonly issuedSnapshotSha256?: string | null | undefined;
+	readonly cryptoSignaturePkcs7?: string | null | undefined;
+	readonly signatureAttestation?: {
+		readonly staffFullName?: string | null | undefined;
+	} | null | undefined;
+	readonly doctorSignedAt?: string | null | undefined;
+	readonly issuedAt?: string | null | undefined;
+	readonly doctorCertSubject?: string | null | undefined;
+	readonly doctorCertSerial?: string | null | undefined;
 }
 
 export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | readonly UkepDocumentItem[]) {
@@ -88,14 +114,14 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 			if (!res.ok) return;
 			const data = await res.json();
 			if (data && Array.isArray(data.documents)) {
-				const mapped: UkepDocumentItem[] = data.documents.map((d: any) => ({
+				const mapped: UkepDocumentItem[] = data.documents.map((d: RawUkepApiDocumentItem) => ({
 					id: d.id,
 					title: d.title || "Медицинский документ",
-					type: mapDocKindToType(d.kind),
+					type: mapDocKindToType(d.kind || undefined),
 					patientFullName: patientFullName || (patientId ? "Пациент клиники" : "Пациент"),
 					date: d.createdAt ? new Date(d.createdAt).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU"),
 					documentNumber: d.id.slice(0, 8),
-					hashHex: d.issuedSnapshotSha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+					hashHex: d.issuedSnapshotSha256 || computeFallbackDocHash(d.id, d.title || undefined, d.createdAt || undefined),
 					status: d.cryptoSignaturePkcs7 ? "signed_ukep" : (d.signatureAttestation ? "signed_pep" : "draft"),
 					signedAt: d.doctorSignedAt || d.issuedAt || undefined,
 					signerFullName: d.doctorCertSubject || d.signatureAttestation?.staffFullName || undefined,
@@ -106,7 +132,7 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 					setSelectedDocId((prev) => {
 						if (prev && mapped.some((m) => m.id === prev)) return prev;
 						const firstDraft = mapped.find((m) => m.status === "draft");
-						return firstDraft ? firstDraft.id : mapped[0].id;
+						return firstDraft ? firstDraft.id : (mapped[0]?.id ?? "");
 					});
 				}
 			}
@@ -126,25 +152,27 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 		setStatusMessage(null);
 
 		try {
-			const dataToSign = btoa(selectedDoc.hashHex);
-			let signature = "";
-			try {
-				signature = await signBase64WithCertificate(
-					dataToSign,
-					selectedThumbprint || (selectedCert?.thumbprint ?? ""),
+			if (!hasPlugin) {
+				throw new Error(
+					"Криптопровайдер не обнаружен на данном ПК. Подключите Рутокен/КриптоПро CSP, либо подпишите документ ПЭП или распечатайте бумажную версию для живой подписи.",
 				);
-			} catch (_cryptoErr) {
-				const genuineSig = createDemonstrationGostCmsSignature({
-					documentId: selectedDoc.id,
-					documentKind: selectedDoc.type,
-					documentHashHex: selectedDoc.hashHex,
-					doctorFullName: selectedCert?.subjectName || "Врач-стоматолог",
-				});
-				signature = genuineSig.signatureBase64;
 			}
 
-			const certSubject = selectedCert?.subjectName || "Врач-стоматолог";
-			const certSerial = selectedCert?.serialNumber || "00E4A28B104429A9";
+			if (!selectedCert) {
+				throw new Error(
+					"Не выбран личный сертификат врача. Проверьте установленные сертификаты в хранилище КриптоПро или используйте альтернативный способ заверения.",
+				);
+			}
+
+			const dataToSign = btoa(selectedDoc.hashHex);
+			const signature = await signBase64WithCertificate(
+				dataToSign,
+				selectedThumbprint || selectedCert.thumbprint,
+			);
+
+			const certSubject = selectedCert.subjectName || selectedCert.name || "Врач-стоматолог";
+			const certSerial = selectedCert.serialNumber || selectedCert.thumbprint;
+			const certIssuer = selectedCert.issuerName || "Удостоверяющий центр";
 			const res = await fetch(`/api/documents/${encodeURIComponent(selectedDoc.id)}/sign-ukep`, {
 				method: "POST",
 				headers: {
@@ -155,9 +183,9 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 					pkcs7Signature: signature,
 					certificateSerialNumber: certSerial,
 					certificateSubject: certSubject,
-					certificateIssuer: selectedCert?.issuerName || "Головной УЦ Минцифры России",
-					validFrom: selectedCert?.validFrom || new Date().toISOString(),
-					validTo: selectedCert?.validTo || new Date(Date.now() + 31536000000).toISOString(),
+					certificateIssuer: certIssuer,
+					validFrom: selectedCert.validFrom || new Date().toISOString(),
+					validTo: selectedCert.validTo || new Date(Date.now() + 31536000000).toISOString(),
 					signedAt: new Date().toISOString(),
 					signatureType: "ukep",
 				}),
@@ -176,7 +204,7 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 								status: "signed_ukep",
 								signedAt: new Date().toISOString(),
 								signerFullName: certSubject,
-								certThumbprint: selectedCert?.thumbprint,
+								certThumbprint: selectedCert.thumbprint,
 								certSerial,
 						  }
 						: doc,

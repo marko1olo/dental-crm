@@ -1,11 +1,35 @@
 import type { Patient } from "@dental/shared";
+import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
 import { useDocumentStore } from "../../../store/documentStore";
 import { showToast } from "../../GlobalToast";
 import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
 
+interface PatientAdministrativeProfile {
+	readonly snils?: string | null | undefined;
+	readonly registrationAddress?: string | null | undefined;
+	readonly passportSeries?: string | null | undefined;
+	readonly passportNumber?: string | null | undefined;
+	readonly passportIssuedBy?: string | null | undefined;
+	readonly passportIssuedDate?: string | null | undefined;
+	readonly passportDepartmentCode?: string | null | undefined;
+	readonly legalRepresentativeFullName?: string | null | undefined;
+	readonly legalRepresentativeRelationship?: string | null | undefined;
+	readonly legalRepresentativePhone?: string | null | undefined;
+	readonly legalRepresentativeIdentityDocument?: string | null | undefined;
+	readonly legalRepresentativeBasisDocument?: string | null | undefined;
+}
+
+interface PatientWithAdminFields extends Partial<Patient> {
+	readonly administrativeProfile?: PatientAdministrativeProfile | null | undefined;
+	readonly snils?: string | null | undefined;
+	readonly address?: string | null | undefined;
+	readonly gender?: string | null | undefined;
+	readonly cardNumber?: string | null | undefined;
+}
+
 export interface FastPrintIntakeParams {
 	patient?: Patient | null | undefined;
-	clinicProfileDraft?: any;
+	clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 	clinicName?: string | undefined;
 	doctorName?: string | undefined;
 }
@@ -17,8 +41,7 @@ export function executeFastPrintPrimaryIntake({
 	doctorName,
 }: FastPrintIntakeParams): void {
 	const docStore = useDocumentStore.getState();
-	// biome-ignore lint/suspicious/noExplicitAny: patient profile
-	const p = patient as any;
+	const p = patient as PatientWithAdminFields | undefined;
 	const adminProfile = p?.administrativeProfile;
 	const repFullName =
 		adminProfile?.legalRepresentativeFullName ||

@@ -61,7 +61,13 @@ export function MobileDocumentItemCard({
 						{docLabel}
 					</div>
 					<div className="text-[12px] text-[var(--muted)] flex items-center gap-1.5 flex-wrap mt-0.5">
-						<span>{formatDate(doc.issuedAt || (doc as any).createdAt)}</span>
+						<span>
+							{formatDate(
+								doc.issuedAt ||
+									(doc as GeneratedDocument & { createdAt?: string | null | undefined })
+										.createdAt,
+							)}
+						</span>
 						{doc.totalAmountRub != null && doc.totalAmountRub > 0 && (
 							<>
 								<span>·</span>

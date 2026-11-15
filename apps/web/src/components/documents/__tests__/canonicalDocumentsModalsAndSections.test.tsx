@@ -7,8 +7,7 @@ import "../../../../testCssStub.mjs";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal.js";
-import { ConsentStudioModal } from "../../consents/ConsentStudioModal.js";
-import { FnsTaxCertificateModal } from "../../finance/TaxDeductionCertificateModal.js";
+import { ConsentStudioModal, FnsTaxCertificateModal } from "../DocumentsStudioModal.js";
 import type { Patient, GeneratedDocument } from "@dental/shared";
 import { PrescriptionModal } from "../../prescriptions/PrescriptionModal.js";
 
