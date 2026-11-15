@@ -1,4 +1,4 @@
 /**
  * Canonical re-export bridge for implantCatalog per Mandate 8bf (Single SSOT in components/implants).
  */
-export * from "../../../implantCatalog";
+export * from "../../../../implants/implantCatalogData.js";

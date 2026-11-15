@@ -106,7 +106,7 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 						</div>
 					</>
 				) : (
-					<button className="photo-touch-btn primary" style={{ width: '100%' }} onClick={onUploadClick}>
+					<button className="photo-touch-btn secondary" style={{ width: '100%' }} onClick={onUploadClick}>
 						<Camera size={15} /> Загрузить кадр
 					</button>
 				)}

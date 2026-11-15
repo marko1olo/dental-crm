@@ -69,7 +69,7 @@ export const StandaloneRvgHost: React.FC<{ onClose: () => void }> = ({ onClose }
 		>
 			<div className="w-full max-w-5xl h-full max-h-[850px] shadow-2xl rounded-2xl overflow-hidden">
 				<SensorStudyViewer
-					patientName={patientName || "Захаров Иван Дмитриевич"}
+					patientName={patientName || "Пациент"}
 					toothFdiCode="16"
 					onClose={onClose}
 				/>

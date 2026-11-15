@@ -45,7 +45,7 @@ export const DicomViewerModalHeader: React.FC<DicomViewerModalHeaderProps> = ({
 				<div className="flex items-center gap-0.5 bg-slate-900 rounded-lg p-0.5 border border-slate-700">
 					<button type="button" onClick={() => onSwitchViewMode("2d")} className={`h-6 px-2 text-[11px] font-bold rounded cursor-pointer ${viewMode === "2d" ? "bg-teal-900 text-teal-300" : "text-slate-400"}`}>2D Срез</button>
 					<button type="button" data-testid="btn-dicom-switch-mpr" onClick={() => onSwitchViewMode("3d_mpr")} className={`h-6 px-2 text-[11px] font-bold rounded cursor-pointer inline-flex items-center gap-1 ${viewMode === "3d_mpr" ? "bg-teal-900 text-teal-300" : "text-slate-400"}`}><Layers size={11} /> 4-MPR</button>
-					<button type="button" data-testid="btn-dicom-switch-sectioning" onClick={() => onSwitchViewMode("sectioning")} className={`h-6 px-2 text-[11px] font-bold rounded cursor-pointer ${viewMode === "sectioning" ? "bg-teal-900 text-teal-300" : "text-slate-400"}`}>РАЗДЕЛ</button>
+					<button type="button" data-testid="btn-dicom-switch-sectioning" onClick={() => onSwitchViewMode("sectioning")} className={`h-6 px-2 text-[11px] font-bold rounded cursor-pointer ${viewMode === "sectioning" ? "bg-teal-900 text-teal-300" : "text-slate-400"}`}>Раздел</button>
 				</div>
 				<div className="hidden sm:flex flex-col ml-1 max-w-[200px]">
 					<div className="text-[11px] font-bold text-slate-100 truncate">{title} {toothFdiCode ? `· Зуб ${toothFdiCode}` : ""}</div>

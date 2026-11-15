@@ -59,7 +59,7 @@ export function ImagingExportModal(props: ImagingExportModalProps) {
 						</div>
 						<div>
 							<h3 id="imaging-export-modal-title" className="text-sm sm:text-base font-bold m-0 leading-tight">
-								Экспорт и передача снимков (152-ФЗ)
+								Экспорт и передача снимков
 							</h3>
 							<p className="text-[11px] text-[var(--muted,#94a3b8)] m-0 leading-tight">
 								Юридическая фиксация, экспорт на накопитель, в архив, печать или Telegram

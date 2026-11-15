@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import type { ImplantWorkspaceProps } from "./implantWorkspaceTypes";
 import {
-	getZakharovRidgeMeasurement,
-	buildZakharov043SoapProtocol,
-	type ZakharovEdentulousToothFdi,
-} from "../../../../zakharovRidgeAutomation";
+	getAlveolarRidgeMeasurement,
+	buildAlveolarRidgeSoapProtocol,
+	type EdentulousToothFdi,
+} from "../../../../alveolarRidgeMorphometry.js";
 import {
 	type ClinicalImplantBrandKey,
 	type ClinicalImplantSpec,
@@ -64,18 +64,18 @@ export function useImplantWorkspaceState(props: ImplantWorkspaceProps) {
 		depthMm: currentDepthMm, xOffsetMm: currentXOffsetMm, angulationDeg: currentAngulationDeg,
 	}), [currentDepthMm, currentXOffsetMm, currentAngulationDeg]);
 
-	const [edentulousTooth, setEdentulousTooth] = useState<ZakharovEdentulousToothFdi>(26);
-	const edentulousData = useMemo(() => getZakharovRidgeMeasurement(edentulousTooth, volume ?? undefined, archCurve), [edentulousTooth, volume, archCurve]);
+	const [edentulousTooth, setEdentulousTooth] = useState<EdentulousToothFdi>(26);
+	const edentulousData = useMemo(() => getAlveolarRidgeMeasurement(edentulousTooth, volume ?? undefined, archCurve), [edentulousTooth, volume, archCurve]);
 	const resolvedPatient = patientDisplayName || "Пациент КЛКТ";
 
 	const [isEditing043, setIsEditing043] = useState<boolean>(false);
 	const [edited043Text, setEdited043Text] = useState<string>(() => {
-		const soap = buildZakharov043SoapProtocol(edentulousData, resolvedPatient);
+		const soap = buildAlveolarRidgeSoapProtocol(edentulousData, resolvedPatient);
 		return `${soap.statusLocalis}\n\n${soap.treatmentDescription}`;
 	});
 
 	useEffect(() => {
-		const soap = buildZakharov043SoapProtocol(edentulousData, resolvedPatient);
+		const soap = buildAlveolarRidgeSoapProtocol(edentulousData, resolvedPatient);
 		setEdited043Text(`${soap.statusLocalis}\n\n${soap.treatmentDescription}`);
 	}, [edentulousData, resolvedPatient]);
 

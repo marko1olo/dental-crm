@@ -35,15 +35,19 @@ export function renderImplantologyLaunchers(props: StandaloneLaunchersProps): Re
 	if (typeof window === "undefined") return null;
 
 	if (hasUrlToken(["dicom", "dicom_viewer", "dicom-viewer"])) {
+		const searchParams = new URLSearchParams(window.location.search);
+		const patientName = searchParams.get("patientName") || searchParams.get("patient") || "";
+		const patientId = searchParams.get("patientId") || "";
+		const toothCode = searchParams.get("tooth") || searchParams.get("toothFdi") || "16";
 		return (
 			<Suspense fallback={<AppLoadingState message="Загрузка просмотрщика DICOM..." />}>
 				<DicomViewerModal
 					isOpen={true}
 					onClose={() => clearUrlTokens(["dicom", "dicom_viewer", "dicom-viewer"])}
 					imageSrc="/radiology/sample_rvg_tooth16.jpg"
-					patientName="Захаров Иван Дмитриевич"
-					patientId="pat-sample-16"
-					toothFdiCode="16"
+					patientName={patientName}
+					patientId={patientId}
+					toothFdiCode={toothCode}
 				/>
 			</Suspense>
 		);

@@ -35,7 +35,7 @@ const DirectRvgCaptureModal = lazyWithRetry(() =>
 	import("../components/radiology/DirectRvgCaptureModal").then((m) => ({ default: m.DirectRvgCaptureModal })),
 );
 const ConsentStudioModal = lazyWithRetry(() =>
-	import("../components/consents/ConsentStudioModal").then((m) => ({ default: m.ConsentStudioModal })),
+	import("../components/documents/DocumentsStudioModal").then((m) => ({ default: m.ConsentStudioModal })),
 );
 
 export interface SpecialtyModalsAppLogic {
@@ -68,8 +68,8 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<ClinicalPhotoProtocolModal
 						isOpen={true}
 						onClose={() => routing.setIsOrthoPhotoDirectModalOpen(false)}
-						patientName="Воронов Дмитрий Игоревич"
-						patientId="pat-demo-01"
+						patientName={patient?.fullName || patient?.name || "Пациент"}
+						patientId={patient?.id || "pat-demo-01"}
 						initialPresetId="orthodontic_8"
 					/>
 				</Suspense>
@@ -117,7 +117,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						}}
 						initialData={{
 							passport: {
-								patientFullName: patient?.fullName || patient?.name || "Смирнова Екатерина Андреевна",
+								patientFullName: patient?.fullName || patient?.name || "Пациент",
 								patientBirthDate: patient?.birthDate || "1990-05-14",
 								medicalCardNumber: patient?.cardNumber || patient?.cardId || "pat-demo-01",
 							},
@@ -147,7 +147,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<CtSelectorModal
 						isOpen={true}
 						onClose={() => routing.setIsCtSelectorDirectModalOpen(false)}
-						patientName={patient?.fullName || patient?.name || "Захаров Иван Дмитриевич"}
+						patientName={patient?.fullName || patient?.name || "Пациент"}
 						cardNumber={patient?.cardNumber || patient?.cardId || "КТ-2026-0814"}
 					/>
 				</Suspense>
@@ -157,9 +157,9 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<DirectRvgCaptureModal
 						isOpen={true}
 						onClose={() => routing.setIsVisiographDirectModalOpen(false)}
-						patientName={patient?.fullName || patient?.name || "Захаров Иван Дмитриевич"}
+						patientName={patient?.fullName || patient?.name || "Пациент"}
 						patientCardNumber={patient?.cardNumber || "ЭМК №2026/891"}
-						doctorName={staffUser?.fullName || activeDoctor?.fullName || "Д-р Захаров А. В."}
+						doctorName={staffUser?.fullName || activeDoctor?.fullName || "Лечащий врач"}
 						initialToothFdi="16"
 					/>
 				</Suspense>
@@ -174,7 +174,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						patientContext={{
 							patientName: patient?.fullName || patient?.name || "Иванов Иван Иванович",
 							birthDate: patient?.birthDate || "12.04.1988",
-							doctorName: staffUser?.fullName || activeDoctor?.fullName || "Д-р Смирнова Е. С.",
+							doctorName: staffUser?.fullName || activeDoctor?.fullName || "Лечащий врач",
 							clinicName: "Клиника «DENTE»",
 						}}
 					/>

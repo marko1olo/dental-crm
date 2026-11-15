@@ -75,7 +75,7 @@ export const SensorStudyViewerLayout: React.FC<SensorStudyViewerLayoutProps> = (
 			{/* Main Canvas Viewport Area */}
 			<ViewerCanvasViewport state={state} props={props} />
 
-			{/* Bottom EzDent-i Filmstrip Dock (Hidden in 100% fullscreen HUD mode) */}
+			{/* Bottom Filmstrip Dock (Hidden in 100% fullscreen HUD mode) */}
 			{!isFullscreen && (
 				!isMobile ? (
 					<RadiologyFilmstripDock

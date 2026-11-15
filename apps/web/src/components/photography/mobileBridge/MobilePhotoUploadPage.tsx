@@ -343,7 +343,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 							<span className="text-green-600 dark:text-green-400 font-semibold text-[11px]">Мгновенно синхронизировано</span>
 						</div>
 						<div className="flex gap-2 overflow-x-auto py-1">
-							{CHAIRSIDE_MOBILE_SLOTS.filter((s) => uploadedSlots[s.id]).map((s) => (
+							{effectiveSlots.filter((s) => uploadedSlots[s.id]).map((s) => (
 								<div
 									key={s.id}
 									onClick={() => setSelectedSlotId(s.id)}
@@ -370,7 +370,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 					type="button"
 					onClick={triggerCamera}
 					aria-disabled={isUploading}
-					className="w-full h-14 rounded-2xl bg-[#0d9488] hover:bg-[#0f766e] active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-md cursor-pointer transition-all"
+					className="w-full h-14 rounded-2xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] active:scale-[0.98] text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-md cursor-pointer transition-all"
 					data-testid="btn-mobile-take-photo"
 				>
 					{isUploading ? (

@@ -8,7 +8,7 @@
 
 import type React from "react";
 import { useMemo } from "react";
-import { InformedConsentModal } from "../../../../consents/InformedConsentModal";
+import { InformedConsentModal } from "../../../../documents/DocumentsStudioModal";
 import { ClinicalPhotoProtocolModal } from "../../../../photography/ClinicalPhotoProtocolModal";
 import { ChairsideAnesthesiaQuickBar } from "../../../../anesthesia/AnesthesiaQuickBar";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
@@ -16,7 +16,7 @@ import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPati
 
 export const StandaloneAnesthesiaHost: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
 	const patientId = useMemo(() => readPatientIdFromUrl(), []);
-	const patientName = useLauncherPatientName(patientId) || "Смирнова Екатерина Васильевна";
+	const patientName = useLauncherPatientName(patientId) || "Пациент";
 	return (
 		<div className="w-full min-h-screen bg-[var(--paper-soft)] p-4 sm:p-6" data-testid="anesthesia-standalone-host">
 			<div className="max-w-5xl mx-auto bg-[var(--paper)] rounded-2xl shadow-sm border border-[var(--line)] overflow-hidden p-6">
@@ -88,6 +88,6 @@ export const StandalonePhotoProtocolHost: React.FC<{ onClose: () => void }> = ({
 			/>
 		);
 	}
-	const effectiveName = patientName || "Смирнова Екатерина Васильевна";
+	const effectiveName = patientName || "Пациент";
 	return <ClinicalPhotoProtocolModal isOpen={true} onClose={onClose} patientId={patientId} patientName={effectiveName} />;
 };

@@ -38,17 +38,17 @@ export interface DsdPatientPhotoOption {
 export interface DsdAestheticStudioModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	patientId?: string;
-	patientName?: string;
-	doctorName?: string;
-	clinicName?: string;
-	visitId?: string;
-	initialPhotoUrl?: string;
-	patientPhotos?: DsdPatientPhotoOption[];
-	slotId?: string;
-	initialLandmarks?: Partial<DsdFacialLandmarks>;
-	initialCalibration?: Partial<DsdCalibrationState>;
-	onApplySuccess?: (analysis: Partial<DsdAnalysisData>) => void;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	doctorName?: string | undefined;
+	clinicName?: string | undefined;
+	visitId?: string | undefined;
+	initialPhotoUrl?: string | undefined;
+	patientPhotos?: DsdPatientPhotoOption[] | undefined;
+	slotId?: string | undefined;
+	initialLandmarks?: Partial<DsdFacialLandmarks> | undefined;
+	initialCalibration?: Partial<DsdCalibrationState> | undefined;
+	onApplySuccess?: ((analysis: Partial<DsdAnalysisData>) => void) | undefined;
 }
 
 export const DEFAULT_DSD_LANDMARKS: DsdFacialLandmarks = {
@@ -150,7 +150,9 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 						return { ...DEFAULT_LANDMARKS, ...parsed };
 					}
 				}
-			} catch {}
+			} catch (storageErr) {
+				console.warn('[DSD] Failed reading cached landmarks:', storageErr);
+			}
 		}
 		return { ...DEFAULT_LANDMARKS, ...initialLandmarks };
 	});
@@ -162,7 +164,9 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 			if (typeof window !== 'undefined' && patientId) {
 				try {
 					localStorage.setItem(`dente_dsd_landmarks_${patientId}`, JSON.stringify(nextLandmarks));
-				} catch {}
+				} catch (storageErr) {
+					console.warn('[DSD] Failed saving landmarks:', storageErr);
+				}
 			}
 		},
 		[patientId],
@@ -179,7 +183,9 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 						return { ...DEFAULT_CALIBRATION, ...parsed };
 					}
 				}
-			} catch {}
+			} catch (storageErr) {
+				console.warn('[DSD] Failed reading cached calibration:', storageErr);
+			}
 		}
 		return { ...DEFAULT_CALIBRATION, ...initialCalibration };
 	});
@@ -190,7 +196,9 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 			if (typeof window !== 'undefined' && patientId) {
 				try {
 					localStorage.setItem(`dente_dsd_calibration_${patientId}`, JSON.stringify(nextCalib));
-				} catch {}
+				} catch (storageErr) {
+					console.warn('[DSD] Failed saving calibration:', storageErr);
+				}
 			}
 		},
 		[patientId],
@@ -222,7 +230,9 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 			try {
 				localStorage.removeItem(`dente_dsd_landmarks_${patientId}`);
 				localStorage.removeItem(`dente_dsd_calibration_${patientId}`);
-			} catch {}
+			} catch (storageErr) {
+				console.warn('[DSD] Failed resetting stored landmarks:', storageErr);
+			}
 		}
 		showToast('Направляющие DSD возвращены к канонической норме Wheeler', 'info');
 	}, [patientId]);
@@ -284,13 +294,15 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 					if (visitId) {
 						localStorage.setItem(`dente_visit_dsd_${visitId}`, JSON.stringify(fullAnalysisPayload));
 					}
-				} catch {}
+				} catch (storageErr) {
+					console.warn('[DSD] Failed caching analysis:', storageErr);
+				}
 			}
 
 			// 1. Отправляем на бэкенд в фотопротокол пациента
-			try {
-				if (patientId && patientId !== 'chairside') {
-					await fetch(`/api/patients/${patientId}/photo-protocol`, {
+			if (patientId && patientId !== 'chairside') {
+				try {
+					const res = await fetch(`/api/patients/${patientId}/photo-protocol`, {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({
@@ -300,9 +312,20 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 							notes: `DSD анализ: материал ${fullAnalysisPayload.recommendedMaterial}, оттенок ${fullAnalysisPayload.recommendedVitaShade}, дуга ${fullAnalysisPayload.smileArcCurvature}`,
 							dsdAnalysis: fullAnalysisPayload,
 						}),
-					}).catch(() => null);
+					});
+
+					if (!res.ok) {
+						const errData = await res.json().catch(() => ({}));
+						const errMsg = (errData as { message?: string })?.message || `Ошибка сохранения фотопротокола (${res.status})`;
+						showToast(errMsg, 'error');
+						return;
+					}
+				} catch (networkErr: unknown) {
+					const msg = networkErr instanceof Error ? networkErr.message : 'Сетевой сбой при отправке данных DSD на сервер';
+					showToast(msg, 'error');
+					return;
 				}
-			} catch {}
+			}
 
 			// 2. Диспатчим канонические события в CRM (наряд ЗТЛ + план лечения)
 			if (typeof window !== 'undefined') {
@@ -322,7 +345,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				window.dispatchEvent(new CustomEvent('dente-apply-dsd-to-treatment-plan', { detail: labDetail }));
 			}
 
-			showToast('Параметры DSD успешно перенесены в заказ-наряд лаборатории и план лечения!', 'success');
+			showToast('Параметры DSD успешно перенесены в заказ-наряд лаборатории и план лечения', 'success');
 			onApplySuccess?.(fullAnalysisPayload);
 			onClose();
 		},

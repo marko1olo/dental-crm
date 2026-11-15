@@ -91,3 +91,9 @@ export interface AnesthesiaPkuSummaryLedger {
 	readonly records: readonly AnesthesiaPkuDisposalRecord[];
 	readonly generatedAtIso: string;
 }
+
+export const CLASS_B_WEIGHT_ESTIMATES = {
+	carpuleGlassKg: 0.005,
+	sharpsNeedleKg: 0.002,
+} as const;
+

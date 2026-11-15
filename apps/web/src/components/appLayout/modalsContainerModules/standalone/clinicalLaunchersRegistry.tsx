@@ -31,6 +31,7 @@ import { DirectPediatricLauncher } from "../../../pediatric/DirectPediatricLaunc
 import { DirectWarrantyLauncher } from "../../../warranty/DirectWarrantyLauncher";
 import { ChairsideCopilotHUD } from "../../../copilot/ChairsideCopilotHUD";
 import { DemoCaseViewerModal } from "../../../demo/DemoCaseViewerModal";
+import { ClinicalPhotoProtocolModal } from "../../../photography/ClinicalPhotoProtocolModal";
 import { renderSpecializedClinicalLaunchers } from "./SpecializedClinicalLaunchers";
 import { usePatientStore } from "../../../../store/patientStore";
 import { useVisitStore } from "../../../../store/visitStore";
@@ -227,7 +228,7 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				const appState = useAppStore.getState();
 				const patientName =
 					patientState.patientCoreDraft?.fullName?.trim() ||
-					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Воронов Алексей Владимирович");
+					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Пациент");
 				return (
 					<IntraoralScan3DViewerModal
 						isOpen={true}
@@ -253,7 +254,7 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				const patientState = usePatientStore.getState();
 				const patientName =
 					patientState.patientCoreDraft?.fullName?.trim() ||
-					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Захаров Иван Дмитриевич");
+					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Пациент");
 				return (
 					<DicomViewerModal
 						isOpen={true}
@@ -262,6 +263,32 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 						patientName={patientName}
 						toothFdiCode="16"
 						title="Прицельная радиовизиография RVG #16"
+					/>
+				);
+			},
+		},
+
+		// 7e. Клинический фотопротокол (ClinicalPhotoProtocolModal)
+		{
+			id: "clinical-photo-protocol",
+			title: "Клинический фотопротокол (6 слотов, DSD, QR-мост)",
+			criteria: {
+				tokens: ["photo", "photo-protocol", "clinical-photo", "photo_protocol"],
+				exactHashes: ["#photo", "#photo-protocol", "#photo_protocol"],
+				searchIncludes: ["photo=1", "photo-protocol=1", "stand=photo"],
+			},
+			render: () => {
+				const patientState = usePatientStore.getState();
+				const patientName =
+					patientState.patientCoreDraft?.fullName?.trim() ||
+					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Пациент");
+				const patientId = patientState.selectedPatientId || "pat-demo-01";
+				return (
+					<ClinicalPhotoProtocolModal
+						isOpen={true}
+						onClose={() => clearUrlTokens(["photo", "photo-protocol", "clinical-photo", "photo_protocol"])}
+						patientName={patientName}
+						patientId={patientId}
 					/>
 				);
 			},
@@ -469,7 +496,7 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 							<ChairsideCopilotHUD
 								initialOpen={true}
 								initialDocked={true}
-								initialPresetIndex={null}
+								initialPresetIndex={undefined}
 								patientId={patientState.selectedPatientId || undefined}
 								patientName={patientName}
 								patientAllergies={[]}

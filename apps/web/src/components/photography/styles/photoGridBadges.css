@@ -26,11 +26,11 @@
 }
 
 .photo-mini-badge.shade-badge {
-	background: var(--brand-500, #2563eb);
+	background: var(--teal, #0d9488);
 }
 
 .photo-mini-badge.tooth-badge {
-	background: rgba(37, 99, 235, 0.9);
+	background: var(--teal, #0d9488);
 	color: #ffffff;
 }
 

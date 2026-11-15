@@ -25,7 +25,7 @@
 }
 
 .photo-slot-card:hover .photo-silhouette-svg {
-	stroke: var(--brand-500, #2563eb);
+	stroke: var(--teal, #0d9488);
 	opacity: 1;
 	transform: scale(1.05);
 }
@@ -79,19 +79,19 @@
 }
 
 .photo-touch-btn:hover {
-	border-color: var(--brand-500, #2563eb);
-	color: var(--brand-500, #2563eb);
-	background: rgba(37, 99, 235, 0.04);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.08));
 }
 
 .photo-touch-btn.primary {
-	background: var(--brand-500, #2563eb);
+	background: var(--teal, #0d9488);
 	color: var(--paper, #ffffff);
-	border-color: var(--brand-500, #2563eb);
+	border-color: var(--teal, #0d9488);
 }
 
 .photo-touch-btn.primary:hover {
-	background: var(--brand-600, #1d4ed8);
+	background: var(--teal-dark, #0f766e);
 }
 
 .photo-touch-btn.danger {

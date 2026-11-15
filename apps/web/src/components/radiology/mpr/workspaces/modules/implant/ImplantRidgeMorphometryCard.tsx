@@ -1,6 +1,6 @@
 import React from "react";
 import { Activity, FileText } from "lucide-react";
-import { exportZakharovRidgeTo043Emr, type ZakharovEdentulousToothFdi } from "../../../../zakharovRidgeAutomation";
+import { exportAlveolarRidgeToEmr, type EdentulousToothFdi } from "../../../../alveolarRidgeMorphometry.js";
 
 export interface ImplantRidgeMorphometryCardProps {
 	readonly ridgeWidths: {
@@ -8,8 +8,8 @@ export interface ImplantRidgeMorphometryCardProps {
 	};
 	readonly selectedDiameterMm: number;
 	readonly selectedLengthMm: number;
-	readonly edentulousTooth: ZakharovEdentulousToothFdi;
-	readonly setEdentulousTooth: (tooth: ZakharovEdentulousToothFdi) => void;
+	readonly edentulousTooth: EdentulousToothFdi;
+	readonly setEdentulousTooth: (tooth: EdentulousToothFdi) => void;
 	readonly activeCrossSection?: { nearestToothFdi?: string | null } | null | undefined;
 	readonly isEditing043: boolean;
 	readonly setIsEditing043: React.Dispatch<React.SetStateAction<boolean>>;
@@ -26,7 +26,7 @@ export const ImplantRidgeMorphometryCard: React.FC<ImplantRidgeMorphometryCardPr
 	edentulousData, resolvedPatient, handleExportToEmr,
 }) => {
 	const handleExport043 = () => {
-		exportZakharovRidgeTo043Emr(edentulousData, resolvedPatient, handleExportToEmr);
+		exportAlveolarRidgeToEmr(edentulousData, resolvedPatient, handleExportToEmr);
 		if (isEditing043 && edited043Text) {
 			try {
 				window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
@@ -37,7 +37,7 @@ export const ImplantRidgeMorphometryCard: React.FC<ImplantRidgeMorphometryCardPr
 	};
 
 	return (
-		<div className="p-2 rounded-lg bg-zinc-950/80 border border-zinc-800/80 flex flex-col gap-1.5" data-testid="cbct-zakharov-ridge-automation">
+		<div className="p-2 rounded-lg bg-zinc-950/80 border border-zinc-800/80 flex flex-col gap-1.5" data-testid="cbct-alveolar-ridge-automation">
 			<div className="flex items-center justify-between text-xs">
 				<span className="font-bold text-zinc-300 flex items-center gap-1">
 					<Activity className="w-3.5 h-3.5 text-amber-400" />
