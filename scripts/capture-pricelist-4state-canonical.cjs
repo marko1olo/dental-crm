@@ -158,33 +158,6 @@ async function run() {
 			console.error("[Browser UNCAUGHT]", err.message);
 		});
 
-		// Intercept only API calls (and never Vite source / @fs scripts)
-		await page.route("http://127.0.0.1:5173/api/**", async (route) => {
-			const url = route.request().url();
-			if (url.includes("/@fs/") || url.includes("/src/")) return route.continue();
-			if (url.includes("/api/pricelist") || url.includes("/api/pricelists")) {
-				return route.fulfill({
-					status: 200,
-					contentType: "application/json",
-					body: JSON.stringify({
-						items: sampleServices,
-						categories: [
-							{ key: "therapy", title: "Терапия", count: 2 },
-							{ key: "surgery", title: "Хирургия", count: 1 },
-							{ key: "hygiene", title: "Гигиена", count: 1 },
-							{ key: "implantology", title: "Имплантация", count: 1 },
-							{ key: "orthopedics", title: "Ортопедия", count: 1 },
-						],
-					}),
-				});
-			}
-			return route.fulfill({
-				status: 200,
-				contentType: "application/json",
-				body: JSON.stringify({ ok: true, items: [] }),
-			});
-		});
-
 		// Pre-seed storage
 		await page.addInitScript(({ th, services }) => {
 			localStorage.setItem("dente_clinic_token", "live-clinic-token");
@@ -222,8 +195,8 @@ async function run() {
 	console.log("=== 1. PC Light (1440x900) ===");
 	{
 		const { context, page } = await setupContextAndPage(false, "light");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "commit" });
-		await page.waitForSelector('[data-testid="service-pricelist-studio-modal"]', { timeout: 10000 }).catch(() => {});
+		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
+		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
 		await wait(1000);
 
 		await page.evaluate(() => {
@@ -240,8 +213,8 @@ async function run() {
 	console.log("=== 2. PC Dark (1440x900) ===");
 	{
 		const { context, page } = await setupContextAndPage(false, "dark");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "commit" });
-		await page.waitForSelector('[data-testid="service-pricelist-studio-modal"]', { timeout: 10000 }).catch(() => {});
+		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
+		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
 		await wait(1000);
 
 		await page.evaluate(() => {
@@ -258,8 +231,8 @@ async function run() {
 	console.log("=== 3. Mobile Light (390x844) ===");
 	{
 		const { context, page } = await setupContextAndPage(true, "light");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "commit" });
-		await page.waitForSelector('[data-testid="service-pricelist-studio-modal"]', { timeout: 10000 }).catch(() => {});
+		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
+		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
 		await wait(1000);
 
 		await page.evaluate(() => {
@@ -276,8 +249,8 @@ async function run() {
 	console.log("=== 4. Mobile Dark (390x844) ===");
 	{
 		const { context, page } = await setupContextAndPage(true, "dark");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "commit" });
-		await page.waitForSelector('[data-testid="service-pricelist-studio-modal"]', { timeout: 10000 }).catch(() => {});
+		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
+		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
 		await wait(1000);
 
 		await page.evaluate(() => {
@@ -294,8 +267,8 @@ async function run() {
 	console.log("=== 5. PC Light with New Service Drawer (1440x900) ===");
 	{
 		const { context, page } = await setupContextAndPage(false, "light");
-		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "commit" });
-		await page.waitForSelector('[data-testid="service-pricelist-studio-modal"]', { timeout: 10000 }).catch(() => {});
+		await page.goto("http://127.0.0.1:5173/?demo=true&pricelist=1", { waitUntil: "networkidle", timeout: 15000 }).catch(() => {});
+		await page.waitForSelector('text=Прейскурант услуг клиники', { timeout: 15000 }).catch(() => {});
 		await wait(1000);
 
 		const addBtn = await page.$("button:has-text('Добавить услугу')");

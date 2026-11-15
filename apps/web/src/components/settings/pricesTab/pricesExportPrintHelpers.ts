@@ -14,28 +14,111 @@ import {
 	type ServicePricelistItem,
 } from "../../catalog/pricelist/servicePricelistPresets";
 import { showToast } from "../../GlobalToast";
-import type { ExistingCatalogReference } from "../../catalog/mappingDiff/PriceListMappingDiffView";
+import type {
+	ExistingCatalogReference,
+	IngestedMappingItem,
+	MappingConfidenceKind,
+	SuggestedAction,
+} from "../../catalog/mappingDiff/types";
+
+function extractCatalogItemPriceRub(item: ServiceCatalogItem): number {
+	const legacy = item as ServiceCatalogItem & {
+		readonly priceRub?: number | undefined;
+	};
+	const rawPrice =
+		item.basePriceRub ??
+		legacy.priceRub ??
+		(item.priceKopecks != null ? item.priceKopecks / 100 : 0);
+	return Number.isFinite(rawPrice) ? Math.round(rawPrice * 100) / 100 : 0;
+}
+
+function toPricelistCategory(category: string | undefined): Order804nCategory {
+	switch (category) {
+		case "therapy":
+		case "surgery":
+		case "orthopedics":
+		case "orthodontics":
+		case "pediatric":
+		case "radiology":
+		case "hygiene":
+		case "periodontics":
+		case "anesthesia":
+		case "consultation":
+		case "package":
+		case "other":
+			return category;
+		case "prosthetics":
+			return "orthopedics";
+		case "periodontology":
+			return "periodontics";
+		case "imaging":
+			return "radiology";
+		default:
+			return "therapy";
+	}
+}
+
+function toDoctorSpecialty(specialty: string | undefined): DoctorSpecialty {
+	switch (specialty) {
+		case "therapist":
+		case "surgeon":
+		case "orthopedist":
+		case "orthodontist":
+		case "pediatric":
+		case "hygienist":
+		case "radiologist":
+		case "anesthesiologist":
+		case "general":
+			return specialty;
+		case "universal":
+			return "general";
+		case "periodontist":
+			return "therapist";
+		case "implantologist":
+			return "surgeon";
+		default:
+			return "therapist";
+	}
+}
+
+function toMappingConfidenceKind(
+	kind: string | undefined,
+	hasCode804n: boolean,
+): MappingConfidenceKind {
+	switch (kind) {
+		case "exact_code":
+		case "high_keyword":
+		case "medium_category":
+		case "low_unmatched":
+			return kind;
+		default:
+			return hasCode804n ? "exact_code" : "medium_category";
+	}
+}
+
+function toSuggestedAction(action: string | undefined): SuggestedAction {
+	switch (action) {
+		case "create_new":
+		case "update_existing":
+		case "link_existing":
+			return action;
+		case "identical":
+			return "link_existing";
+		default:
+			return "create_new";
+	}
+}
 
 export function buildExistingCatalogReferences(
 	catalog: readonly ServiceCatalogItem[],
 ): readonly ExistingCatalogReference[] {
-	return catalog.map((s) => {
-		const rawPrice =
-			s.basePriceRub ??
-			(s as unknown as { priceRub?: number }).priceRub ??
-			((s as unknown as { priceKopecks?: number }).priceKopecks
-				? (s as unknown as { priceKopecks: number }).priceKopecks / 100
-				: 0);
-		const basePriceRub = Number.isFinite(rawPrice)
-			? Math.round(rawPrice * 100) / 100
-			: 0;
-		return {
-			id: s.id,
-			code: s.code || "",
-			title: s.title,
-			basePriceRub,
-		};
-	});
+	return catalog.map((s) => ({
+		id: s.id,
+		code: s.code || "",
+		title: s.title,
+		basePriceRub: extractCatalogItemPriceRub(s),
+		category: s.category || "",
+	}));
 }
 
 export function buildModalInitialItems(
@@ -45,20 +128,12 @@ export function buildModalInitialItems(
 		return STATUTORY_ORDER_804N_PRESETS;
 	}
 	return catalog.map((s) => {
-		const rawPrice =
-			s.basePriceRub ??
-			(s as unknown as { priceRub?: number }).priceRub ??
-			((s as unknown as { priceKopecks?: number }).priceKopecks
-				? (s as unknown as { priceKopecks: number }).priceKopecks / 100
-				: 0);
-		const basePriceRub = Number.isFinite(rawPrice)
-			? Math.round(rawPrice * 100) / 100
-			: 0;
+		const basePriceRub = extractCatalogItemPriceRub(s);
 		const code804n = (s.code || "").trim() || "A16.07.002";
 		const category =
-			(s.category as Order804nCategory) ||
+			toPricelistCategory(s.category) ||
 			detectCategoryFrom804nCode(code804n, s.title);
-		const specialty = (s.specialty as DoctorSpecialty) || "therapist";
+		const specialty = toDoctorSpecialty(s.specialty);
 		return {
 			id: s.id,
 			code804n,
@@ -83,20 +158,14 @@ export function buildModalInitialItems(
 
 export function exportCatalogToCsvDownload(catalog: readonly ServiceCatalogItem[]): void {
 	const items: ServicePricelistItem[] = catalog.map((s) => {
-		const raw =
-			s.basePriceRub ??
-			(s as any).priceRub ??
-			((s as any).priceKopecks ? (s as any).priceKopecks / 100 : 0);
-		const basePriceRub = Number.isFinite(raw) ? Math.round(raw * 100) / 100 : 0;
+		const basePriceRub = extractCatalogItemPriceRub(s);
 		return {
 			id: s.id,
 			code804n: s.code || "",
 			commercialTitle: s.title,
 			statutoryTitle804n: s.title,
-			// biome-ignore lint/suspicious/noExplicitAny: category cast
-			category: (s.category || "therapy") as any,
-			// biome-ignore lint/suspicious/noExplicitAny: specialty cast
-			specialty: (s.specialty || "therapist") as any,
+			category: toPricelistCategory(s.category),
+			specialty: toDoctorSpecialty(s.specialty),
 			basePriceRub,
 			basePriceKopecks: rublesToKopecks(basePriceRub),
 			materialCostRub: 0,
@@ -145,7 +214,7 @@ export function printPricelistA4(
 			chiefDoctorName: clinicSettings?.chiefDoctor || "",
 			effectiveDateRu: new Date().toLocaleDateString("ru-RU"),
 		},
-		items as any,
+		items,
 	);
 	const printWin = window.open("", "_blank");
 	if (printWin) {
@@ -170,28 +239,57 @@ export async function parseAndImportCsvText(
 	return result.validItems.length;
 }
 
+export interface ScannedItemPayload {
+	readonly id?: string | undefined;
+	readonly sourceLineNumber?: number | undefined;
+	readonly rowNumber?: number | undefined;
+	readonly rawLine?: string | undefined;
+	readonly rawInput?: string | undefined;
+	readonly cleanedTitle?: string | undefined;
+	readonly code804n?: string | undefined;
+	readonly statutoryTitle804n?: string | undefined;
+	readonly category?: string | undefined;
+	readonly specialty?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly priceKopecks?: number | undefined;
+	readonly confidence?: number | undefined;
+	readonly confidenceKind?: string | undefined;
+	readonly validationStatus?: string | undefined;
+	readonly suggestedAction?: string | undefined;
+	readonly matchedExistingServiceId?: string | null | undefined;
+	readonly matchedExistingTitle?: string | null | undefined;
+	readonly matchedExistingPriceRub?: number | null | undefined;
+	readonly isApproved?: boolean | undefined;
+}
+
 export function mapScanItemsToDiffItems(
-	// biome-ignore lint/suspicious/noExplicitAny: scanner response payload
-	itemsList: any[],
-): import("../../catalog/mappingDiff/PriceListMappingDiffView").IngestedMappingItem[] {
-	return itemsList.map((it: any, idx: number) => ({
-		id: it.id || `scan-${idx}-${Date.now()}`,
-		sourceLineNumber: it.sourceLineNumber || idx + 1,
-		rawLine: it.rawLine || it.cleanedTitle,
-		cleanedTitle: it.cleanedTitle,
-		code804n: it.code804n || "A16.07.002",
-		statutoryTitle804n: it.statutoryTitle804n || it.cleanedTitle,
-		category: it.category || "therapy",
-		specialty: it.specialty || "therapist",
-		priceRub: it.priceRub,
-		priceKopecks: it.priceKopecks ?? Math.round(it.priceRub * 100),
-		confidence: it.confidence ?? (it.code804n ? 0.95 : 0.75),
-		confidenceKind:
-			it.confidenceKind ?? (it.code804n ? "exact_code" : "medium_keyword"),
-		suggestedAction: it.suggestedAction || "create_new",
-		matchedExistingServiceId: it.matchedExistingServiceId,
-		matchedExistingTitle: it.matchedExistingTitle,
-		matchedExistingPriceRub: it.matchedExistingPriceRub,
-		isApproved: it.isApproved ?? it.validationStatus !== "error",
-	}));
+	itemsList: readonly ScannedItemPayload[],
+): IngestedMappingItem[] {
+	return itemsList.map((it, idx) => {
+		const priceRub = Number.isFinite(it.priceRub) ? Number(it.priceRub) : 0;
+		const priceKopecks = it.priceKopecks ?? Math.round(priceRub * 100);
+		const rawLine = it.rawLine || it.rawInput || it.cleanedTitle || "";
+		const cleanedTitle = it.cleanedTitle || rawLine || `Услуга ${idx + 1}`;
+		const hasCode = Boolean(it.code804n);
+
+		return {
+			id: it.id || `scan-${idx}-${Date.now()}`,
+			sourceLineNumber: it.sourceLineNumber || it.rowNumber || idx + 1,
+			rawLine,
+			cleanedTitle,
+			code804n: it.code804n || "A16.07.002",
+			statutoryTitle804n: it.statutoryTitle804n || cleanedTitle,
+			category: it.category || "therapy",
+			specialty: it.specialty || "therapist",
+			priceRub,
+			priceKopecks,
+			confidence: it.confidence ?? (hasCode ? 0.95 : 0.75),
+			confidenceKind: toMappingConfidenceKind(it.confidenceKind, hasCode),
+			suggestedAction: toSuggestedAction(it.suggestedAction),
+			matchedExistingServiceId: it.matchedExistingServiceId ?? undefined,
+			matchedExistingTitle: it.matchedExistingTitle ?? undefined,
+			matchedExistingPriceRub: it.matchedExistingPriceRub ?? undefined,
+			isApproved: it.isApproved ?? it.validationStatus !== "error",
+		};
+	});
 }
