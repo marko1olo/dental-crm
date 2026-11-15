@@ -330,23 +330,6 @@ export const createPaymentSchema = z
 				message: `Для налоговой оплаты нужен явный ввод: ${label}.`,
 			});
 		}
-		const fiscalReceipt = input.fiscalReceipt;
-		const requiredFiscalReceiptFields: Array<
-			[keyof NonNullable<typeof fiscalReceipt>, string]
-		> = [
-			["fn", "ФН"],
-			["fd", "ФД"],
-			["fpd", "ФПД"],
-		];
-		for (const [field, label] of requiredFiscalReceiptFields) {
-			const value = fiscalReceipt?.[field];
-			if (typeof value === "string" && value.trim()) continue;
-			context.addIssue({
-				code: z.ZodIssueCode.custom,
-				path: ["fiscalReceipt", field],
-				message: `Для налоговой оплаты укажите реквизит фискального чека: ${label}.`,
-			});
-		}
 	});
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;

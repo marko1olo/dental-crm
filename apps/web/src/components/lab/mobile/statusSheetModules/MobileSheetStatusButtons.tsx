@@ -13,6 +13,8 @@ export interface MobileSheetStatusButtonsProps {
 export function MobileSheetStatusButtons({
 	order, currentStatus, onStatusChange, onReclamation, onClose,
 }: MobileSheetStatusButtonsProps): React.JSX.Element {
+	const orderId = order.id;
+
 	return (
 		<div className="space-y-1.5">
 			<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] px-1">
@@ -21,7 +23,7 @@ export function MobileSheetStatusButtons({
 			<div className="mobile-lab-status-grid">
 				<button
 					type="button"
-					onClick={() => { onStatusChange(order.id!, "ready_in_clinic"); onClose(); }}
+					onClick={() => { if (orderId) onStatusChange(orderId, "ready_in_clinic"); onClose(); }}
 					className={`mobile-lab-status-action-btn variant-ready ${
 						currentStatus === "ready" || currentStatus === "ready_in_clinic" || currentStatus === "shipped"
 							? "is-active ring-2 ring-[var(--teal,#0d9488)] font-black" : ""
@@ -37,7 +39,7 @@ export function MobileSheetStatusButtons({
 
 				<button
 					type="button"
-					onClick={() => { onStatusChange(order.id!, "fitting"); onClose(); }}
+					onClick={() => { if (orderId) onStatusChange(orderId, "fitting"); onClose(); }}
 					className={`mobile-lab-status-action-btn variant-fitting ${
 						currentStatus === "fitting" || currentStatus === "try_in"
 							? "is-active ring-2 ring-[var(--teal,#0d9488)] font-black" : ""
@@ -66,7 +68,7 @@ export function MobileSheetStatusButtons({
 
 				<button
 					type="button"
-					onClick={() => { onStatusChange(order.id!, "completed"); onClose(); }}
+					onClick={() => { if (orderId) onStatusChange(orderId, "completed"); onClose(); }}
 					className={`mobile-lab-status-action-btn variant-completed ${
 						currentStatus === "completed" ? "is-active ring-2 ring-[var(--teal,#0d9488)] font-black" : ""
 					}`}

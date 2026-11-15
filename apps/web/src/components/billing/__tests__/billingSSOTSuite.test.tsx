@@ -19,134 +19,120 @@ import { renderToString } from "react-dom/server";
 import {
 	rublesToKopecks,
 	kopecksToRubles,
-	formatKopecks,
 	formatRubles,
-	calculateCashChangeKopecks,
-	validateSplitAllocation,
-	getQuickCashTenderOptions,
-	BILLING_PAYMENT_METHODS,
-	BILLING_PAYER_TYPES,
-	BILLING_DOCTOR_DISCOUNTS,
-	BILLING_VAT_RATES,
-	getBillingDemoInvoice,
-} from "../billingCatalogData.js";
+	formatKopecksRu,
+	splitKopecks,
+	FFD12_TAG_1199_VAT_CODES,
+} from "@dental/shared";
+import {
+	rubToKopecks,
+	kopecksToRub,
+	formatKopecksToRubles,
+	calculateExactCashChange,
+	CASHBOX_TENDER_PRESETS,
+	PAYER_TYPE_PRESETS,
+	DOCTOR_DISCOUNT_PRESETS,
+	QUICK_CASH_PRESET_BILLS,
+	CASH_DENOMINATIONS,
+} from "../../cashbox/cashRegisterCatalogData.js";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 
 describe("Red Team Billing SSOT: Integer Kopeck Arithmetic & Zero Float Drift", () => {
 	it("converts rubles to integer kopecks safely without floating-point errors", () => {
-		assert.equal(rublesToKopecks(0.01), 1n);
-		assert.equal(rublesToKopecks(1.0), 100n);
-		assert.equal(rublesToKopecks(4500), 450000n);
-		assert.equal(rublesToKopecks(7500.5), 750050n);
-		assert.equal(rublesToKopecks(99999.99), 9999999n);
+		assert.equal(rublesToKopecks(0.01), 1);
+		assert.equal(rublesToKopecks(1.0), 100);
+		assert.equal(rublesToKopecks(4500), 450000);
+		assert.equal(rublesToKopecks(7500.5), 750050);
+		assert.equal(rublesToKopecks(99999.99), 9999999);
 
-		// Guard invalid values
-		assert.equal(rublesToKopecks(-100), 0n);
-		assert.equal(rublesToKopecks(Number.NaN), 0n);
-		assert.equal(rublesToKopecks(Number.POSITIVE_INFINITY), 0n);
+		// BigInt helper in cashRegisterCatalogData guards invalid values
+		assert.equal(rubToKopecks(0.01), 1n);
+		assert.equal(rubToKopecks(4500), 450000n);
+		assert.equal(rubToKopecks(-100), 0n);
+		assert.equal(rubToKopecks(Number.NaN), 0n);
+		assert.equal(rubToKopecks(Number.POSITIVE_INFINITY), 0n);
 	});
 
 	it("converts kopecks to rubles accurately", () => {
-		assert.equal(kopecksToRubles(100n), 1.0);
-		assert.equal(kopecksToRubles(450000n), 4500.0);
-		assert.equal(kopecksToRubles(750050n), 7500.5);
-		assert.equal(kopecksToRubles(0n), 0);
+		assert.equal(kopecksToRubles(100), 1.0);
+		assert.equal(kopecksToRubles(450000), 4500.0);
+		assert.equal(kopecksToRubles(750050), 7500.5);
+		assert.equal(kopecksToRubles(0), 0);
+		assert.equal(kopecksToRub(100n), 1.0);
 	});
 
 	it("formats rubles and kopecks into clean Russian currency strings", () => {
 		const str1 = formatRubles(4500);
 		assert.ok(str1.includes("4") && str1.includes("500") && str1.includes("₽"), `Expected "4 500 ₽", got ${str1}`);
 
-		const str2 = formatKopecks(750000n);
+		const str2 = formatKopecksRu(750000);
 		assert.ok(str2.includes("7") && str2.includes("500") && str2.includes("₽"), `Expected "7 500 ₽", got ${str2}`);
 
 		const str3 = formatRubles(1234.5);
 		assert.ok(str3.includes("1") && str3.includes("234,5") && str3.includes("₽"), `Expected fractional formatting, got ${str3}`);
+
+		const str4 = formatKopecksToRubles(750000);
+		assert.ok(str4.includes("7") && str4.includes("500") && str4.includes("₽"), `Expected "7 500 ₽", got ${str4}`);
 	});
 
 	it("computes exact cash change and detects underpayment shortage", () => {
 		// Exact payment: 4500 received for 4500 bill
-		const exact = calculateCashChangeKopecks(450000n, 450000n);
+		const exact = calculateExactCashChange(4500, 4500);
 		assert.equal(exact.isShortage, false);
 		assert.equal(exact.changeKopecks, 0n);
-		assert.equal(exact.changeRubles, 0);
+		assert.equal(exact.changeRub, 0);
 
 		// Overpayment: 5000 received for 4500 bill -> 500 change
-		const over = calculateCashChangeKopecks(450000n, 500000n);
+		const over = calculateExactCashChange(5000, 4500);
 		assert.equal(over.isShortage, false);
 		assert.equal(over.changeKopecks, 50000n);
-		assert.equal(over.changeRubles, 500);
+		assert.equal(over.changeRub, 500);
 
 		// Underpayment: 3000 received for 4500 bill -> 1500 shortage
-		const under = calculateCashChangeKopecks(450000n, 300000n);
+		const under = calculateExactCashChange(3000, 4500);
 		assert.equal(under.isShortage, true);
-		assert.equal(under.shortageKopecks, 150000n);
-		assert.equal(under.shortageRubles, 1500);
+		assert.equal(under.isExact, false);
 		assert.equal(under.changeKopecks, 0n);
+		assert.equal(under.changeRub, 0);
 	});
 
-	it("validates split tender allocations with zero drift", () => {
-		const totalDue = 750000n; // 7 500 ₽
+	it("validates split kopeck division without losing single kopecks", () => {
+		const split1 = splitKopecks(750000, 2);
+		assert.equal(split1[0] + (split1[1] ?? 0), 750000);
+		assert.equal(split1.length, 2);
 
-		// Perfect split: 3000 card + 4500 cash
-		const balanced = validateSplitAllocation(totalDue, {
-			card: 300000n,
-			cash: 450000n,
-			sbp: 0n,
-			deposit: 0n,
-		});
-		assert.equal(balanced.isFullyAllocated, true);
-		assert.equal(balanced.isOverAllocated, false);
-		assert.equal(balanced.remainingKopecks, 0n);
-		assert.equal(balanced.diffRubles, 0);
-
-		// Under-allocated split: 3000 card + 2000 cash = 5000 (2500 remaining)
-		const under = validateSplitAllocation(totalDue, {
-			card: 300000n,
-			cash: 200000n,
-		});
-		assert.equal(under.isFullyAllocated, false);
-		assert.equal(under.isOverAllocated, false);
-		assert.equal(under.remainingKopecks, 250000n);
-		assert.equal(under.diffRubles, 2500);
-
-		// Over-allocated split: 5000 card + 5000 cash = 10000 (2500 excess)
-		const over = validateSplitAllocation(totalDue, {
-			card: 500000n,
-			cash: 500000n,
-		});
-		assert.equal(over.isFullyAllocated, false);
-		assert.equal(over.isOverAllocated, true);
-		assert.equal(over.remainingKopecks, -250000n);
-		assert.equal(over.diffRubles, 2500);
+		const split2 = splitKopecks(100, 3);
+		assert.equal(split2.length, 3);
+		assert.equal(split2[0] + (split2[1] ?? 0) + (split2[2] ?? 0), 100);
+		assert.equal(split2[0], 34); // first part gets the remainder
 	});
 
-	it("generates intelligent quick cash tender options", () => {
-		const options = getQuickCashTenderOptions(4250);
-		assert.ok(options.includes(4250), "Must include exact amount");
-		assert.ok(options.includes(4300) || options.includes(4500), "Must include rounded options");
-		assert.ok(options.includes(5000), "Must include standard banknote 5000");
+	it("provides intelligent quick cash tender banknote presets", () => {
+		assert.ok(QUICK_CASH_PRESET_BILLS.includes(1000), "Must include 1000 ₽");
+		assert.ok(QUICK_CASH_PRESET_BILLS.includes(2000), "Must include 2000 ₽");
+		assert.ok(QUICK_CASH_PRESET_BILLS.includes(5000), "Must include 5000 ₽");
+		assert.ok(CASH_DENOMINATIONS.some((b) => b.nominalRub === 500), "Must include 500 ₽ banknote");
 	});
 });
 
 describe("Red Team Mandate 8n & 8e: Sovereign Autonomy & Zero Forced Citizen INN", () => {
 	it("guarantees physical persons NEVER require an INN (Mandate 8n)", () => {
-		const physicalPerson = BILLING_PAYER_TYPES.find((p) => p.id === "physical_person");
+		const physicalPerson = PAYER_TYPE_PRESETS.find((p) => p.id === "physical_person");
 		assert.ok(physicalPerson, "Physical person preset must exist");
 		assert.equal(physicalPerson.isInnRequired, false, "Physical persons must NEVER be blocked by INN");
 
-		const legalEntity = BILLING_PAYER_TYPES.find((p) => p.id === "legal_entity");
+		const legalEntity = PAYER_TYPE_PRESETS.find((p) => p.id === "legal_entity");
 		assert.ok(legalEntity);
 		assert.equal(legalEntity.isInnRequired, true);
 		assert.equal(legalEntity.innLength, 10);
 	});
 
 	it("guarantees doctor discount presets and 100% warranty case (Mandate 8e)", () => {
-		const warranty = BILLING_DOCTOR_DISCOUNTS.find((d) => d.percent === 100);
+		const warranty = DOCTOR_DISCOUNT_PRESETS.find((d) => d.percent === 100);
 		assert.ok(warranty, "100% warranty preset must exist");
 		assert.equal(warranty.isWarranty, true);
 
-		const discounts = BILLING_DOCTOR_DISCOUNTS.map((d) => d.percent);
+		const discounts = DOCTOR_DISCOUNT_PRESETS.map((d) => d.percent);
 		assert.ok(discounts.includes(0));
 		assert.ok(discounts.includes(5));
 		assert.ok(discounts.includes(10));
@@ -156,11 +142,7 @@ describe("Red Team Mandate 8n & 8e: Sovereign Autonomy & Zero Forced Citizen INN
 	});
 
 	it("includes official medical VAT exemption (subclause 2 clause 2 art 149 Tax Code RF)", () => {
-		const vatNone = BILLING_VAT_RATES.find((r) => r.id === "vat_none");
-		assert.ok(vatNone);
-		assert.equal(vatNone.code, 6);
-		assert.equal(vatNone.ratePercent, 0);
-		assert.ok(vatNone.legalBasis.includes("149 НК РФ"));
+		assert.equal(FFD12_TAG_1199_VAT_CODES.vat_none, 6);
 	});
 });
 

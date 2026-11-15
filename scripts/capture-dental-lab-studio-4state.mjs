@@ -167,6 +167,10 @@ async function capture() {
 		if (cfg.altName) {
 			fs.copyFileSync(outPath, path.join(LAB_DIR, `${cfg.altName}.png`));
 		}
+		// Also save with _orders_ name
+		const ordersName = cfg.name.replace("_studio_", "_orders_");
+		fs.copyFileSync(outPath, path.join(PROOFS_DIR, `${ordersName}.png`));
+		fs.copyFileSync(outPath, path.join(LAB_DIR, `${ordersName}.png`));
 		const size = fs.statSync(outPath).size;
 		console.log(`✓ Saved ${cfg.name}.png (${(size / 1024).toFixed(1)} KB)`);
 

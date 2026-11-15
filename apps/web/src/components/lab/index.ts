@@ -34,6 +34,7 @@ export {
 	type DentalLabOrdersHubModalProps,
 	DentalLabOrderModal,
 	DentalLabOrdersModal,
+	DentalLabOrderCreationModal,
 	DentalLabOrderModal as DentalLabWorkOrderModal,
 	type DentalLabOrderModalProps,
 	type DentalLabOrderModalProps as DentalLabWorkOrderModalProps,

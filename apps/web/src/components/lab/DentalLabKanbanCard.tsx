@@ -76,7 +76,7 @@ export function KanbanCardHeader({ order }: KanbanCardHeaderProps) {
 				<div style={{ marginTop: "4px", fontSize: "10.5px", color: "var(--bad-fg, #e11d48)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
 					<RotateCcw size={11} />
 					<span className="truncate">
-						ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 руб){order.originalOrderNumber ? ` • исх. № ${order.originalOrderNumber}` : ""}
+						Гарантийная переделка (0 ₽){order.originalOrderNumber ? ` • исх. № ${order.originalOrderNumber}` : ""}
 					</span>
 				</div>
 			)}
@@ -159,11 +159,11 @@ export function KanbanCardBody({ order, fittingUrgency, onRescheduleAppointment 
 			<div className="ztl-card-price-row flex items-center justify-between gap-2">
 				<span style={order.isWarrantyRework ? { color: "var(--teal, #10b981)", fontWeight: 700 } : undefined} className="shrink-0">
 					{order.isWarrantyRework
-						? "0 руб. (Гарантия)"
-						: `${(order.financials?.patientPriceTotalRub ?? order.priceRub ?? 0).toLocaleString("ru-RU")} руб.`}
+						? "0 ₽ (Гарантия)"
+						: `${(order.financials?.patientPriceTotalRub ?? order.priceRub ?? 0).toLocaleString("ru-RU")} ₽`}
 				</span>
 				<span style={{ color: "var(--muted, #64748b)", fontSize: "10.5px" }} className="shrink-0">
-					• Себест: {(order.financials?.labCostTotalRub ?? Math.round((order.priceRub ?? 0) * 0.4)).toLocaleString("ru-RU")} руб.
+					• Себест: {(order.financials?.labCostTotalRub ?? Math.round((order.priceRub ?? 0) * 0.4)).toLocaleString("ru-RU")} ₽
 				</span>
 			</div>
 		</>

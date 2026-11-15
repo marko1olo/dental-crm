@@ -69,6 +69,18 @@ export const SCAN_MIME_TYPES: Record<string, string> = {
 	zip: "application/zip",
 };
 
+export function createMockStorageSignature(params: {
+	readonly storageKey: string;
+	readonly action: "upload" | "download";
+	readonly expiresAtSeconds: number;
+}): string {
+	const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET || "dente-mock-storage-fallback-secret-2026";
+	return crypto
+		.createHmac("sha256", secret)
+		.update(`${params.action}:${params.storageKey}:${params.expiresAtSeconds}`)
+		.digest("hex");
+}
+
 /**
  * Чтение настроек S3 из переменных окружения.
  */
@@ -322,8 +334,20 @@ export function getLabScanUploadPresignedUrl(params: {
 
 	if (!config) {
 		// Mock-fallback режим для локальной разработки или при отсутствии ключей облака
-		const mockUploadUrl = `/api/portal/mock-storage/upload?key=${encodeURIComponent(storageKey)}`;
-		const mockDownloadUrl = `/api/portal/mock-storage/download?key=${encodeURIComponent(storageKey)}`;
+		const expiresAtSeconds = Math.floor(Date.now() / 1000) + expiresInSeconds;
+		const uploadSig = createMockStorageSignature({
+			storageKey,
+			action: "upload",
+			expiresAtSeconds,
+		});
+		const downloadExpiresAtSeconds = Math.floor(Date.now() / 1000) + 86400 * 7;
+		const downloadSig = createMockStorageSignature({
+			storageKey,
+			action: "download",
+			expiresAtSeconds: downloadExpiresAtSeconds,
+		});
+		const mockUploadUrl = `/api/portal/mock-storage/upload?key=${encodeURIComponent(storageKey)}&exp=${expiresAtSeconds}&sig=${uploadSig}`;
+		const mockDownloadUrl = `/api/portal/mock-storage/download?key=${encodeURIComponent(storageKey)}&exp=${downloadExpiresAtSeconds}&sig=${downloadSig}`;
 		return {
 			uploadUrl: mockUploadUrl,
 			storageKey,
@@ -386,8 +410,14 @@ export function getLabScanDownloadPresignedUrl(params: {
 	const config = params.configOverride || getS3ConfigFromEnv();
 
 	if (!config) {
+		const expiresAtSeconds = Math.floor(Date.now() / 1000) + expiresInSeconds;
+		const downloadSig = createMockStorageSignature({
+			storageKey: params.storageKey,
+			action: "download",
+			expiresAtSeconds,
+		});
 		return {
-			downloadUrl: `/api/portal/mock-storage/download?key=${encodeURIComponent(params.storageKey)}`,
+			downloadUrl: `/api/portal/mock-storage/download?key=${encodeURIComponent(params.storageKey)}&exp=${expiresAtSeconds}&sig=${downloadSig}`,
 			storageKey: params.storageKey,
 			expiresAt,
 			expiresInSeconds,

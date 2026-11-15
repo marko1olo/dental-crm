@@ -43,6 +43,7 @@ async function capture() {
 		{
 			filename: "01_dental_lab_studio_pc_light_1440x900.png",
 			aliases: [
+				"01_dental_lab_orders_pc_light_1440x900.png",
 				"01_dental_lab_pc_light_1440x900.png",
 				"01_lab_orders_pc_light_1440x900.png",
 				"lab_orders_kanban_pc_light.png",
@@ -56,6 +57,7 @@ async function capture() {
 		{
 			filename: "02_dental_lab_studio_pc_dark_1440x900.png",
 			aliases: [
+				"02_dental_lab_orders_pc_dark_1440x900.png",
 				"02_dental_lab_pc_dark_1440x900.png",
 				"02_lab_orders_pc_dark_1440x900.png",
 				"lab_orders_kanban_pc_dark.png",
@@ -69,6 +71,7 @@ async function capture() {
 		{
 			filename: "03_dental_lab_studio_mobile_light_390x844.png",
 			aliases: [
+				"03_dental_lab_orders_mobile_light_390x844.png",
 				"03_dental_lab_mobile_light_390x844.png",
 				"03_lab_orders_mobile_light_390x844.png",
 				"lab_order_drawer_mobile_light.png",
@@ -82,6 +85,7 @@ async function capture() {
 		{
 			filename: "04_dental_lab_studio_mobile_dark_390x844.png",
 			aliases: [
+				"04_dental_lab_orders_mobile_dark_390x844.png",
 				"04_dental_lab_mobile_dark_390x844.png",
 				"04_lab_orders_mobile_dark_390x844.png",
 				"lab_order_drawer_mobile_dark.png",
@@ -176,7 +180,7 @@ async function capture() {
 			try {
 				await page.goto("http://127.0.0.1:5173/?demo=true&lab=1#lab", {
 					waitUntil: "domcontentloaded",
-					timeout: 30000,
+					timeout: 60000,
 				});
 				await page.waitForSelector('.boot-state', { state: "detached", timeout: 25000 }).catch(() => {});
 				await page.waitForTimeout(2000);

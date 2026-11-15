@@ -6,12 +6,14 @@ export interface BankInstallmentFooterProps {
 	readonly isApprovedState: boolean;
 	readonly stageAmountKopecks: Kopecks;
 	readonly onClose: () => void;
+	readonly onApprove?: () => void;
 }
 
 export const BankInstallmentFooter: React.FC<BankInstallmentFooterProps> = ({
 	isApprovedState,
 	stageAmountKopecks,
 	onClose,
+	onApprove,
 }) => {
 	if (isApprovedState) {
 		return (
@@ -49,13 +51,25 @@ export const BankInstallmentFooter: React.FC<BankInstallmentFooterProps> = ({
 				</span>
 			</div>
 
-			<button
-				type="button"
-				onClick={onClose}
-				className="min-h-[44px] flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--border,#cbd5e1)] transition cursor-pointer"
-			>
-				Закрыть
-			</button>
+			<div className="flex items-center gap-2">
+				{onApprove && (
+					<button
+						type="button"
+						onClick={onApprove}
+						data-testid="approve-installment-btn"
+						className="min-h-[44px] flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] shadow-sm transition cursor-pointer"
+					>
+						Подтвердить одобрение банком
+					</button>
+				)}
+				<button
+					type="button"
+					onClick={onClose}
+					className="min-h-[44px] flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--border,#cbd5e1)] transition cursor-pointer"
+				>
+					Закрыть
+				</button>
+			</div>
 		</div>
 	);
 };

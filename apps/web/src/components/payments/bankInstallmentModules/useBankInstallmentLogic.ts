@@ -89,13 +89,39 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 	};
 
 	const handleSendSms = () => {
+		const cleanPhone = patientPhone?.trim() ?? "";
+		if (!cleanPhone) {
+			showToast(
+				"Укажите номер телефона пациента в карточке для отправки СМС",
+				"warning",
+				3500,
+			);
+			return;
+		}
 		setIsSmsSent(true);
 		showToast(
-			`СМС со ссылкой на оформление рассрочки успешно отправлено на номер ${patientPhone}!`,
+			`СМС со ссылкой на оформление рассрочки отправлено на номер ${cleanPhone}`,
 			"success",
 			4000,
 		);
 		setTimeout(() => setIsSmsSent(false), 4000);
+	};
+
+	const handleApproveInstallment = () => {
+		setIsApprovedState(true);
+		if (props.onInstallmentApproved) {
+			props.onInstallmentApproved({
+				providerId: selectedProvider,
+				approvalId: `INST-${Date.now().toString(36).toUpperCase()}`,
+				approvedAmountKopecks: stageAmountKopecks,
+				monthlyPaymentRub: calculation.monthlyRub,
+			});
+		}
+		showToast(
+			`Рассрочка от ${activeProviderConfig.name} одобрена! Наряд разблокирован.`,
+			"success",
+			3500,
+		);
 	};
 
 	return {
@@ -112,5 +138,6 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 		handleProviderChange,
 		handleCopyLink,
 		handleSendSms,
+		handleApproveInstallment,
 	};
 };

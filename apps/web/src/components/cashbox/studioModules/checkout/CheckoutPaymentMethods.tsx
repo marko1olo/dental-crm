@@ -65,6 +65,14 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 	setInstallmentMonths,
 	onExecutePayment,
 }) => {
+	const [sbpCheckState, setSbpCheckState] = React.useState<"idle" | "checking" | "waiting">("idle");
+
+	const handleCheckSbpStatus = () => {
+		setSbpCheckState("checking");
+		setTimeout(() => {
+			setSbpCheckState("waiting");
+		}, 800);
+	};
 	return (
 		<>
 			{/* Payment Method Selector */}
@@ -201,9 +209,10 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 								<button
 									type="button"
 									data-testid="btn-check-sbp-status"
+									onClick={handleCheckSbpStatus}
 									className="dente-btn dente-btn-secondary px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold hover:bg-[var(--paper-soft)] cursor-pointer"
 								>
-									Проверить статус
+									{sbpCheckState === "checking" ? "Запрос в банк..." : "Проверить статус"}
 								</button>
 								<button
 									type="button"
@@ -214,6 +223,11 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 									Подтвердить вручную
 								</button>
 							</div>
+							{sbpCheckState === "waiting" && (
+								<p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium pt-1" data-testid="sbp-status-waiting-indicator">
+									⏳ Ожидание подтверждения банком · Если деньги поступили на счёт, нажмите «Подтвердить вручную»
+								</p>
+							)}
 						</div>
 					</div>
 				</div>

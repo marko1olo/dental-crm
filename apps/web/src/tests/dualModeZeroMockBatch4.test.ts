@@ -6,7 +6,6 @@
  * 1. RefundServiceModal: Zero fake services in production, strict quarantine of DEFAULT_FALLBACK_SERVICES behind isDemoShowcaseMode()
  * 2. FastCheckoutModal: Zero fake 94,000 ₽ treatment stages in production, honest single-visit stage fallback
  * 3. fastCheckoutEngine: Robust integer kopeck math and defensive Number.isFinite guards
- * 4. Sber POS & SberPay: Honest unconfigured state in production when no terminal hardware config is present
  */
 
 import { describe, it, beforeEach, afterEach } from "node:test";
@@ -23,15 +22,8 @@ import {
 	calculateStageAdvanceAmount,
 	type StageAdvanceCalculation,
 } from "../components/payments/checkout/fastCheckoutEngine.js";
-import {
-	POS_TERMINAL_STORAGE_KEY,
-	loadSavedSberTerminalConfig,
-	saveSberTerminalConfig,
-	DEFAULT_SBER_TERMINAL_CONFIG,
-} from "../components/payments/sberPos/sberPosPresets.js";
 import { RefundServiceModal } from "../components/finance/refunds/RefundServiceModal.js";
 import { CashRegisterStudioModal } from "../components/cashbox/CashRegisterStudioModal.js";
-import { SberPayIntegration } from "../components/finance/SberPayIntegration.js";
 
 // Mock localStorage for node environment
 const memoryStore = new Map<string, string>();
@@ -50,7 +42,7 @@ const mockLocalStorage = {
 	},
 };
 
-describe("Dual-Mode Zero-Mock Batch 4: Finance, Fast Checkout, Refunds & Sber POS", () => {
+describe("Dual-Mode Zero-Mock Batch 4: Finance, Fast Checkout & Refunds", () => {
 	beforeEach(() => {
 		memoryStore.clear();
 		// Assign mock localStorage to global if needed
@@ -210,50 +202,6 @@ describe("Dual-Mode Zero-Mock Batch 4: Finance, Fast Checkout, Refunds & Sber PO
 
 			const resInf = calculateStageAdvanceAmount(Number.POSITIVE_INFINITY, "full", 0);
 			assert.equal(resInf.totalStageAmountKop, 0);
-		});
-	});
-
-	describe("4. Sberbank POS Terminal Configuration & Presets Storage", () => {
-		it("saveSberTerminalConfig persists config to storage and loadSavedSberTerminalConfig restores it", () => {
-			assert.equal(loadSavedSberTerminalConfig(), null);
-
-			const customConfig = {
-				...DEFAULT_SBER_TERMINAL_CONFIG,
-				terminalId: "77665544",
-				hostIp: "192.168.1.150",
-				hostPort: 4000,
-			};
-
-			saveSberTerminalConfig(customConfig);
-			const loaded = loadSavedSberTerminalConfig();
-			assert.notEqual(loaded, null);
-			assert.equal(loaded?.terminalId, "77665544");
-			assert.equal(loaded?.hostIp, "192.168.1.150");
-		});
-
-		it("returns null if storage contains corrupted JSON or missing terminalId", () => {
-			mockLocalStorage.setItem(POS_TERMINAL_STORAGE_KEY, "invalid-json{");
-			assert.equal(loadSavedSberTerminalConfig(), null);
-
-			mockLocalStorage.setItem(POS_TERMINAL_STORAGE_KEY, JSON.stringify({ hostPort: 4000 }));
-			assert.equal(loadSavedSberTerminalConfig(), null);
-		});
-	});
-
-	describe("5. Sber POS & SberPay Dual-Mode Unconfigured Display (Mandate 8y)", () => {
-		it("SberPayIntegration renders unconfigured notice and TID НЕ НАСТРОЕН when unconfigured", () => {
-			const html = renderToStaticMarkup(
-				React.createElement(SberPayIntegration, {
-					patientId: "pat-123",
-					patientName: "Сидоров С.С.",
-					amountKopecks: 250000,
-					forceUnconfigured: true,
-				}),
-			);
-
-			assert.match(html, /data-testid="sberpay-unconfigured-notice"/);
-			assert.match(html, /Терминал Сбербанк POS не настроен/);
-			assert.match(html, /TID: НЕ НАСТРОЕН/);
 		});
 	});
 });

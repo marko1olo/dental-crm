@@ -51,6 +51,8 @@ export type LabStudioModalProps = DentalLabStudioModalProps; export type DentalL
 export type DentalLabOrderModalProps = DentalLabStudioModalProps; export type DentalLabOrderDrawerProps = DentalLabStudioModalProps; export type ExtendedDentalLabOrderModalProps = DentalLabStudioModalProps;
 export type { DentalLabOrderData } from "./labMath";
 
+const getLabApiBaseUrl = () => typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null" && window.location.origin.startsWith("http") ? window.location.origin : "http://127.0.0.1:5173";
+
 export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	isOpen, onClose, initialToothFdi = "16", patientName, doctorName, patientId, doctorId, initialTab = "new_order",
 	onOrderCreated, onOrderSaved, onSaveOrder, initialTeeth, currentToothNumber,
@@ -118,9 +120,17 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
+		try {
+			const saved = localStorage.getItem("dente_active_lab_shade_preset");
+			if (saved) {
+				const p = JSON.parse(saved);
+				const s = p?.shade || p?.afterShade || p?.shadeCode || p?.color;
+				if (s) setSelectedShade(String(s));
+			}
+		} catch {}
 		const handleShadeEvent = (e: Event) => {
 			const detail = (e as CustomEvent)?.detail;
-			const shade = detail?.shade || detail?.shadeCode || detail?.color;
+			const shade = detail?.shade || detail?.afterShade || detail?.shadeCode || detail?.color;
 			if (shade) setSelectedShade(String(shade));
 		};
 		window.addEventListener("dente-apply-lab-shade", handleShadeEvent);
@@ -142,8 +152,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		let isCancelled = false;
 		async function loadLiveOrders() {
 			try {
-				const origin = typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null" && window.location.origin.startsWith("http") ? "" : "http://127.0.0.1:5173";
-				const res = await fetch(`${origin}/api/lab/orders`, { headers: denteAdminSecretRequestHeaders() });
+				const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, { headers: denteAdminSecretRequestHeaders() });
 				if (!res.ok) return;
 				const data = await res.json();
 				const list = Array.isArray(data) ? data : data?.orders;
@@ -214,17 +223,12 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				notes: notes.trim() || undefined, status: "sent",
 			};
 			const reqOpts = { method: "POST", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(payload) };
-			const res = await fetch("/api/lab/orders", reqOpts);
+			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, reqOpts);
 			if (res.ok) {
-				const responseData = await res.json().catch((err: unknown) => {
-					console.warn("Failed to parse lab order creation JSON response:", err);
-					return null;
-				});
+				const responseData = await res.json().catch(() => null);
 				const realId = responseData?.order?.id || responseData?.id;
 				const effectiveSavedId = String(realId || newEntry.id);
-				if (realId) {
-					setOrders((prev) => prev.map((ord) => (ord.orderNumber === newEntry.orderNumber ? { ...ord, id: String(realId) } : ord)));
-				}
+				if (realId) setOrders((prev) => prev.map((ord) => (ord.orderNumber === newEntry.orderNumber ? { ...ord, id: String(realId) } : ord)));
 				if (typeof window !== "undefined") {
 					const eventDetail = { ...payload, id: effectiveSavedId };
 					window.dispatchEvent(new CustomEvent("dente:lab:order-created", { detail: eventDetail }));
@@ -259,10 +263,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		}
 		try {
 			const reqOpts = { method: "PATCH", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: STAGE_TO_DB_STATUS[nextStage] || "in_progress", stage: nextStage }) };
-			const res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
-			if (!res.ok) {
-				console.warn(`Failed to advance lab order status on server: ${res.status}`);
-			}
+			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders/${orderId}/status`, reqOpts);
+			if (!res.ok) console.warn(`Failed to advance lab order status on server: ${res.status}`);
 		} catch (err) {
 			console.error("Error advancing stage:", err);
 		}
@@ -279,10 +281,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		}
 		try {
 			const reqOpts = { method: "PATCH", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ status: "received", stage: "in_clinic" }) };
-			const res = await fetch(`/api/lab/orders/${orderId}/status`, reqOpts);
-			if (!res.ok) {
-				console.warn(`Failed to mark lab order in clinic on server: ${res.status}`);
-			}
+			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders/${orderId}/status`, reqOpts);
+			if (!res.ok) console.warn(`Failed to mark lab order in clinic on server: ${res.status}`);
 		} catch (err) {
 			console.error("Error marking in clinic:", err);
 		}
@@ -335,7 +335,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		<div data-testid="dental-lab-studio-modal-root" className="dental-lab-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}>
 			<div className="dental-lab-modal-container max-sm:rounded-t-[24px]" data-testid="dental-lab-order-drawer">
 				<div className="sm:hidden flex justify-center pt-2">
-					<div className="w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)]" />
+					<div className="dental-lab-drag-handle w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)]" />
 				</div>
 				<header className="dental-lab-header">
 					<div className="flex items-center justify-between w-full">
@@ -470,5 +470,5 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 
 export const DentalLabOrderModal = DentalLabStudioModal; export const DentalLabOrdersModal = DentalLabStudioModal;
 export const DentalLabHubModal = DentalLabStudioModal; export const DentalLabOrdersHubModal = DentalLabStudioModal;
-export const DentalLabOrderDrawer = DentalLabStudioModal;
+export const DentalLabOrderDrawer = DentalLabStudioModal; export const DentalLabOrderCreationModal = DentalLabStudioModal; export const DentalLabOrdersCreationModal = DentalLabStudioModal;
 export default DentalLabStudioModal;

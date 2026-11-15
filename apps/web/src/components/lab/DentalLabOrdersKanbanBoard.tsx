@@ -46,11 +46,11 @@ export const CANONICAL_5_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
 ] as const;
 
 export const CANONICAL_4_KANBAN_COLUMNS: readonly CanonicalKanbanColumnDef[] = [
-	CANONICAL_5_KANBAN_COLUMNS[0]!,
-	CANONICAL_5_KANBAN_COLUMNS[1]!,
-	CANONICAL_5_KANBAN_COLUMNS[2]!,
-	CANONICAL_5_KANBAN_COLUMNS[4]!,
-];
+	CANONICAL_5_KANBAN_COLUMNS[0],
+	CANONICAL_5_KANBAN_COLUMNS[1],
+	CANONICAL_5_KANBAN_COLUMNS[2],
+	CANONICAL_5_KANBAN_COLUMNS[4],
+].filter((col): col is CanonicalKanbanColumnDef => Boolean(col));
 
 /**
  * 5-колоночная каноническая канбан-доска ЗТЛ (Мандат 8b: <= 140 строк).
@@ -81,8 +81,10 @@ export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProp
 		if (props.orders) {
 			for (const o of props.orders) {
 				const st = (o.currentStage || "sent_to_lab") as string;
-				if (st in map) map[st]!.push(o);
-				else map.sent_to_lab!.push(o);
+				const targetCol = map[st] ?? map.sent_to_lab;
+				if (targetCol) {
+					targetCol.push(o);
+				}
 			}
 		}
 		return map;

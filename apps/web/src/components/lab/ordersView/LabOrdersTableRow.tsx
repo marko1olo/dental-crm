@@ -25,7 +25,8 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 		onOpenReadyInClinicPrompt, onOpenPrintOrder, onOpenTracking, onView3DScan,
 		getStatusBadge, isSelected = false, onToggleSelect, ...menuHandlers
 	} = props;
-	const rawIdClean = order.id ? order.id.replace(/^lab-?/i, "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
+	const orderId = order.id;
+	const rawIdClean = orderId ? orderId.replace(/^lab-?/i, "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
 	const num = order.orderNumber || (rawIdClean ? `ЗТЛ-${rawIdClean.slice(-4)}` : "ЗТЛ");
 	const swatchBg = SHADE_SWATCH_MAP[order.colorVita?.toUpperCase() ?? ""]?.bg || "#f4eedb";
 	const title = formatLabConstructionTitle(order.constructionType, order.material ?? undefined);
@@ -38,14 +39,14 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 			key={order.id}
 			className={`h-9 min-h-[36px] hover:bg-[var(--paper-soft)] transition-colors text-xs text-[var(--ink)] cursor-pointer ${isSelected ? "bg-teal-500/10" : ""}`}
 			data-testid={`lab-order-table-row-${order.id}`}
-			onClick={() => { if (order.id) onSelectTimelineOrder(order.id); }}
+			onClick={() => { if (orderId) onSelectTimelineOrder(orderId); }}
 		>
 			<td className="px-2 py-1.5 whitespace-nowrap align-middle w-[36px] text-center" onClick={(e) => e.stopPropagation()}>
-				{onToggleSelect && order.id ? (
+				{onToggleSelect && orderId ? (
 					<input
 						type="checkbox"
 						checked={isSelected}
-						onChange={() => onToggleSelect(order.id!)}
+						onChange={() => onToggleSelect(orderId)}
 						aria-label={`Выбрать наряд ${num}`}
 						className="rounded border-[var(--line)] text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] cursor-pointer w-3.5 h-3.5"
 					/>

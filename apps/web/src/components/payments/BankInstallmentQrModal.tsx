@@ -33,6 +33,7 @@ export const BankInstallmentQrModal: React.FC<BankInstallmentQrModalProps> = (
 		handleProviderChange,
 		handleCopyLink,
 		handleSendSms,
+		handleApproveInstallment,
 	} = useBankInstallmentLogic(props);
 
 	if (!isOpen) return null;
@@ -83,6 +84,7 @@ export const BankInstallmentQrModal: React.FC<BankInstallmentQrModalProps> = (
 						isApprovedState={isApprovedState}
 						stageAmountKopecks={stageAmountKopecks}
 						onClose={onClose}
+						onApprove={handleApproveInstallment}
 					/>
 				</div>
 			</div>

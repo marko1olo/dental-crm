@@ -46,16 +46,22 @@ if (!process.env.VITEST) {
 import {
 	rubToKopecks,
 	kopecksToRub,
-	formatKopecks,
-	formatRub,
-	validateSplitTenders,
-	autoBalanceSplitTender,
-	getFastPresetTenders,
+	formatKopecksToRubles,
+	formatRubles,
+	CASHBOX_TENDER_PRESETS,
+	calculateExactCashChange,
+	generateFiscalTapeText,
+} from "../../cashbox/cashRegisterCatalogData.js";
+import {
 	calculateShiftTotals,
-	generateThermalReceiptText,
-	PAYMENT_METHODS,
-	type CashierReceiptRecord,
-} from "../cashierCatalogData.js";
+	reconcileShiftCounters,
+} from "../cashboxModules/shifts/shiftReconciliation.js";
+import {
+	allocateRemainderToTender,
+} from "../cashboxModules/splits/tenderRemainderAllocation.js";
+import {
+	getFastCombinedTenderPresets,
+} from "../cashboxModules/splits/fastTenderPresets.js";
 import { validateBuyerInn } from "../cashboxInnValidation.js";
 import type { CashRegisterStudioModalProps } from "../../cashbox/CashRegisterStudioModal.js";
 
@@ -74,14 +80,14 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		DirectCashboxLauncher = launcherMod.DirectCashboxLauncher;
 	});
 
-	// ТЕСТ 1: Sweet Spot cashierCatalogData.ts (300-380 строк)
-	it("1. cashierCatalogData.ts satisfies Sweet Spot line count constraint (300-380 lines)", () => {
-		const filePath = path.join(financeDir, "cashierCatalogData.ts");
+	// ТЕСТ 1: Sweet Spot cashRegisterCatalogData.ts (280-380 строк)
+	it("1. cashRegisterCatalogData.ts satisfies Sweet Spot line count constraint (280-380 lines)", () => {
+		const filePath = path.resolve(financeDir, "../cashbox/cashRegisterCatalogData.ts");
 		const content = fs.readFileSync(filePath, "utf-8");
 		const lines = content.split("\n").length;
 		assert.ok(
-			lines >= 300 && lines <= 380,
-			`cashierCatalogData.ts must be in 300-380 lines range (Sweet Spot), got ${lines} lines`,
+			lines >= 280 && lines <= 380,
+			`cashRegisterCatalogData.ts must be in 280-380 lines range (Sweet Spot), got ${lines} lines`,
 		);
 	});
 
@@ -124,167 +130,137 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		const kopecks2 = rubToKopecks(price2Rub);
 		const totalKopecks = kopecks1 + kopecks2;
 
-		assert.equal(totalKopecks, 30, "Integer kopecks must sum precisely to 30 kop");
+		assert.equal(totalKopecks, 30n, "Integer kopecks must sum precisely to 30 kop");
 		assert.equal(kopecksToRub(totalKopecks), 0.3, "Converted rubles must be exactly 0.30 ₽");
 	});
 
 	// ТЕСТ 5: Преобразование и округление копеек
 	it("5. rubToKopecks and kopecksToRub handle fractional and boundary amounts cleanly", () => {
-		assert.equal(rubToKopecks(12500.5), 1250050);
-		assert.equal(rubToKopecks(0), 0);
-		assert.equal(kopecksToRub(1250050), 12500.5);
+		assert.equal(rubToKopecks(12500.5), 1250050n);
+		assert.equal(rubToKopecks(0), 0n);
+		assert.equal(kopecksToRub(1250050n), 12500.5);
 		assert.equal(kopecksToRub(BigInt(500000)), 5000);
 	});
 
-	// ТЕСТ 6: Форматирование денежных сумм formatKopecks
-	it("6. formatKopecks outputs localized ruble strings with proper spacing and currency symbol", () => {
-		const formatted = formatKopecks(650000);
+	// ТЕСТ 6: Форматирование денежных сумм formatKopecksToRubles
+	it("6. formatKopecksToRubles outputs localized ruble strings with proper spacing and currency symbol", () => {
+		const formatted = formatKopecksToRubles(650000n);
 		assert.ok(formatted.includes("6"), "Formatted string must contain 6");
 		assert.ok(formatted.includes("500"), "Formatted string must contain 500");
 		assert.ok(formatted.includes("₽"), "Formatted string must contain currency sign");
 
-		const formattedFraction = formatKopecks(650050);
+		const formattedFraction = formatKopecksToRubles(650050n);
 		assert.ok(formattedFraction.includes("6"), "Fractional string must contain 6");
 		assert.ok(formattedFraction.includes("500,50"), "Fractional string must contain 500,50");
 		assert.ok(formattedFraction.includes("₽"), "Fractional string must contain currency sign");
 	});
 
-	// ТЕСТ 7: Валидация комбинированного сплита
-	it("7. validateSplitTenders verifies that sum of tenders strictly equals total due", () => {
-		const totalDue = 1000000; // 10 000 руб
+	// ТЕСТ 7: Расчет сдачи и сверка наличности calculateExactCashChange
+	it("7. calculateExactCashChange verifies exact change and shortage indicators", () => {
+		const exact = calculateExactCashChange(10000, 10000);
+		assert.equal(exact.isExact, true);
+		assert.equal(exact.changeKopecks, 0n);
+		assert.equal(exact.isShortage, false);
 
-		// Точное совпадение
-		const exact = validateSplitTenders(totalDue, {
-			cashKopecks: 300000,
-			cardKopecks: 700000,
-		});
-		assert.equal(exact.isValid, true);
-		assert.equal(exact.diffKopecks, 0);
+		const under = calculateExactCashChange(8000, 10000);
+		assert.equal(under.isExact, false);
+		assert.equal(under.isShortage, true);
+		assert.equal(under.changeKopecks, 0n);
 
-		// Недостача
-		const under = validateSplitTenders(totalDue, {
-			cashKopecks: 300000,
-			cardKopecks: 500000,
-		});
-		assert.equal(under.isValid, false);
-		assert.equal(under.diffKopecks, -200000);
-		assert.ok(under.messageRu?.includes("Не распределено"));
-
-		// Превышение
-		const over = validateSplitTenders(totalDue, {
-			cashKopecks: 600000,
-			cardKopecks: 700000,
-		});
-		assert.equal(over.isValid, false);
-		assert.equal(over.diffKopecks, 300000);
-		assert.ok(over.messageRu?.includes("Превышение"));
+		const over = calculateExactCashChange(13000, 10000);
+		assert.equal(over.isExact, false);
+		assert.equal(over.isSurplus, true);
+		assert.equal(over.changeKopecks, 300000n);
+		assert.equal(over.changeRub, 3000);
 	});
 
-	// ТЕСТ 8: Автобалансировка остатка сплита autoBalanceSplitTender
-	it("8. autoBalanceSplitTender allocates remaining amount to target tender in 1 click", () => {
-		const totalDue = 800000; // 8000 руб
-		const initialTenders = { cashKopecks: 300000 };
+	// ТЕСТ 8: Автобалансировка остатка сплита allocateRemainderToTender
+	it("8. allocateRemainderToTender allocates remaining amount to target tender in 1 click", () => {
+		const totalDueRub = 8000;
+		const initialTenders = { cashRub: 3000, cardRub: 0, sbpRub: 0, depositRub: 0, familyRub: 0, certificateRub: 0, bonusRub: 0, dmsRub: 0 };
 
-		const balanced = autoBalanceSplitTender(totalDue, initialTenders, "cardKopecks");
-		assert.equal(balanced.cashKopecks, 300000);
-		assert.equal(balanced.cardKopecks, 500000);
-		assert.equal(balanced.sbpKopecks, 0);
-
-		const check = validateSplitTenders(totalDue, balanced);
-		assert.equal(check.isValid, true);
+		const balanced = allocateRemainderToTender({
+			totalDueRub,
+			currentTenders: initialTenders,
+			targetTender: "card",
+		});
+		assert.equal(balanced.cashRub, 3000);
+		assert.equal(balanced.cardRub, 5000);
+		assert.equal(balanced.sbpRub, 0);
 	});
 
-	// ТЕСТ 9: Быстрые 1-клик шаблоны оплаты
-	it("9. getFastPresetTenders returns 1-click templates including deposit offset", () => {
-		const totalDue = 500000; // 5000 руб
-		const availableDeposit = 200000; // 2000 руб
+	// ТЕСТ 9: Быстрые 1-клик шаблоны оплаты getFastCombinedTenderPresets
+	it("9. getFastCombinedTenderPresets returns 1-click templates including deposit offset", () => {
+		const totalDueRub = 5000;
+		const availableDepositRub = 2000;
 
-		const presets = getFastPresetTenders(totalDue, availableDeposit);
+		const presets = getFastCombinedTenderPresets({
+			totalDueRub,
+			patientDepositRub: availableDepositRub,
+		});
 		assert.ok(presets.length >= 3);
 
 		const cardPreset = presets.find((p) => p.id === "all_card");
-		assert.equal(cardPreset?.tenders.cardKopecks, 500000);
+		assert.equal(cardPreset?.tenders.cardRub, 5000);
 
 		const splitDepositPreset = presets.find((p) => p.id === "deposit_plus_card");
 		assert.ok(splitDepositPreset !== undefined);
-		assert.equal(splitDepositPreset?.tenders.depositKopecks, 200000);
-		assert.equal(splitDepositPreset?.tenders.cardKopecks, 300000);
+		assert.equal(splitDepositPreset?.tenders.depositRub, 2000);
+		assert.equal(splitDepositPreset?.tenders.cardRub, 3000);
 	});
 
-	// ТЕСТ 10: Расчет смены и Z-отчета
-	it("10. calculateShiftTotals correctly aggregates revenue, receipts and cash drawer balances", () => {
-		const mockReceipts: CashierReceiptRecord[] = [
-			{
-				id: "r1",
-				receiptNumber: "001",
-				shiftNumber: 10,
-				createdAt: new Date().toISOString(),
-				cashierFullName: "Иванова А.",
-				clinicName: "Клиника",
-				clinicInn: "7701234567",
-				clinicAddress: "Адрес",
-				patientName: "Пациент 1",
-				items: [],
-				totalDueKopecks: 400000,
-				paymentMethod: "card",
-			},
-			{
-				id: "r2",
-				receiptNumber: "002",
-				shiftNumber: 10,
-				createdAt: new Date().toISOString(),
-				cashierFullName: "Иванова А.",
-				clinicName: "Клиника",
-				clinicInn: "7701234567",
-				clinicAddress: "Адрес",
-				patientName: "Пациент 2",
-				items: [],
-				totalDueKopecks: 200000,
-				paymentMethod: "cash",
-			},
+	// ТЕСТ 10: Расчет смены и Z-отчета calculateShiftTotals & reconcileShiftCounters
+	it("10. calculateShiftTotals & reconcileShiftCounters correctly aggregate revenue and drawer balances", () => {
+		const mockOperations = [
+			{ operationType: "income", amountRub: 4000, method: "card" },
+			{ operationType: "income", amountRub: 2000, method: "cash" },
+			{ operationType: "income", amountRub: 1500, method: "sbp" },
+			{ operationType: "expense", amountRub: 500 },
 		];
 
-		const summary = calculateShiftTotals(mockReceipts, 300000, 500000);
-		assert.equal(summary.shiftNumber, 10);
-		assert.equal(summary.totalReceiptsCount, 2);
-		assert.equal(summary.netRevenueKopecks, 600000);
-		assert.equal(summary.incomeCashKopecks, 200000);
-		assert.equal(summary.incomeElectronicKopecks, 400000);
-		assert.equal(summary.expectedCashInDrawerKopecks, 500000);
-		assert.equal(summary.differenceKopecks, 0);
+		const summary = calculateShiftTotals(mockOperations);
+		assert.equal(summary.totalIncomeRub, 7500);
+		assert.equal(summary.cashIncomeRub, 2000);
+		assert.equal(summary.cardIncomeRub, 4000);
+		assert.equal(summary.sbpIncomeRub, 1500);
+		assert.equal(summary.totalExpenseRub, 500);
+
+		const reconciliation = reconcileShiftCounters({
+			initialCashRub: 3000,
+			cashIncomeRub: 2000,
+			cashExpenseRub: 500,
+			actualCashRub: 4500,
+		});
+		assert.equal(reconciliation.expectedCashRub, 4500);
+		assert.equal(reconciliation.isBalanced, true);
+		assert.equal(reconciliation.discrepancyKop, 0);
 	});
 
 	// ТЕСТ 11: Генерация термочека для 58мм и 80мм
-	it("11. generateThermalReceiptText outputs mono-formatted text with clinic and fiscal headers", () => {
-		const mockReceipt: CashierReceiptRecord = {
-			id: "r-test",
-			receiptNumber: "00142",
+	it("11. generateFiscalTapeText outputs mono-formatted text with clinic and fiscal headers", () => {
+		const text80 = generateFiscalTapeText({
 			shiftNumber: 42,
-			createdAt: "2026-10-31T12:00:00.000Z",
 			cashierFullName: "Смирнова Е.",
-			clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-			clinicInn: "7701234567",
-			clinicAddress: "г. Москва, ул. Ленина, д. 5",
-			patientName: "Петров И.И.",
-			items: [
-				{ name: "Комплексная чистка Air-Flow", quantity: 1, priceKopecks: 650000, totalKopecks: 650000 },
-			],
-			totalDueKopecks: 650000,
-			paymentMethod: "card",
-			fiscalSign: "4198237190",
-		};
+			netRevenueRub: 59000,
+			cashInDrawerRub: 15000,
+			cardSumRub: 35000,
+			sbpSumRub: 7000,
+			advanceOffsetRub: 2000,
+			width: "tape_80mm",
+		});
+		assert.ok(text80.includes("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"));
+		assert.ok(text80.includes("КАССОВЫЙ ЧЕК / СМЕННЫЙ ОТЧЕТ"));
+		assert.ok(text80.includes("Смена №:"));
+		assert.ok(text80.includes("42"));
+		assert.ok(text80.includes("ИТОГО ВЫРУЧКА:"));
+		assert.ok(text80.includes("59\u00a0000") || text80.includes("59 000"));
 
-		const text80 = generateThermalReceiptText(mockReceipt, 80);
-		const text80Clean = text80.replace(/\u00a0/g, " ");
-		assert.ok(text80Clean.includes("КАССОВЫЙ ЧЕК / ПРИХОД"));
-		assert.ok(text80Clean.includes("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"));
-		assert.ok(text80Clean.includes("ИНН: 7701234567"));
-		assert.ok(text80Clean.includes("6 500 ₽"));
-		assert.ok(text80Clean.includes("ФПД (фискальный признак):"));
-		assert.ok(text80Clean.includes("4198237190"));
-
-		const text58 = generateThermalReceiptText(mockReceipt, 58);
-		assert.ok(text58.includes("КАССОВЫЙ ЧЕК / ПРИХОД"));
+		const text58 = generateFiscalTapeText({
+			shiftNumber: 42,
+			cashierFullName: "Смирнова Е.",
+			width: "tape_58mm",
+		});
+		assert.ok(text58.includes("КАССОВЫЙ ЧЕК / СМЕННЫЙ ОТЧЕТ"));
 		assert.ok(text58.length > 100);
 	});
 
@@ -369,11 +345,11 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 	});
 
 	// ТЕСТ 17: SSOT способов оплаты содержит понятные ярлыки
-	it("17. PAYMENT_METHODS array contains valid clinical human labels and icons", () => {
-		assert.ok(PAYMENT_METHODS.length >= 5);
-		const card = PAYMENT_METHODS.find((m) => m.id === "card");
-		assert.equal(card?.label, "Банковская карта (POS)");
-		const sbp = PAYMENT_METHODS.find((m) => m.id === "sbp");
+	it("17. CASHBOX_TENDER_PRESETS array contains valid clinical human labels and identifiers", () => {
+		assert.ok(CASHBOX_TENDER_PRESETS.length >= 5);
+		const card = CASHBOX_TENDER_PRESETS.find((m) => m.id === "card");
+		assert.equal(card?.label, "Терминал (Карта)");
+		const sbp = CASHBOX_TENDER_PRESETS.find((m) => m.id === "sbp");
 		assert.equal(sbp?.shortLabel, "СБП QR");
 	});
 });

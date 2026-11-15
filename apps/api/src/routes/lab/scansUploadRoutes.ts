@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { MAX_SCAN_FILE_SIZE_BYTES } from "../../services/labScanDirectUpload.js";
 import {
 	handleMockStorageDownload,
 	handleMockStorageUpload,
@@ -10,6 +11,26 @@ import {
 } from "./scansUploadHandlers.js";
 
 export async function registerLabScansUploadRoutes(app: FastifyInstance) {
+	// Enable raw payload streaming for binary scan files to prevent RAM buffering / OOM
+	const parsersToAdd: string[] = [];
+	for (const ct of [
+		"application/octet-stream",
+		"model/stl",
+		"model/ply",
+		"model/obj",
+		"application/dicom",
+		"application/zip",
+	]) {
+		if (!app.hasContentTypeParser(ct)) {
+			parsersToAdd.push(ct);
+		}
+	}
+	if (parsersToAdd.length > 0) {
+		app.addContentTypeParser(parsersToAdd, (_req, payload, done) => {
+			done(null, payload);
+		});
+	}
+
 	/**
 	 * POST /api/lab/orders/:id/scans/upload-url
 	 * Генерация Presigned URL для прямой загрузки тяжелых 3D сканов (STL/PLY/OBJ) в S3 бакет.
@@ -30,9 +51,15 @@ export async function registerLabScansUploadRoutes(app: FastifyInstance) {
 
 	/**
 	 * PUT /api/portal/mock-storage/upload
-	 * Локальное хранилище сканов клиники при отсутствии S3 (защита от path traversal).
+	 * Локальное хранилище сканов клиники при отсутствии S3 (защита от path traversal, потоковый стриминг на диск).
 	 */
-	app.put("/api/portal/mock-storage/upload", handleMockStorageUpload);
+	app.put(
+		"/api/portal/mock-storage/upload",
+		{
+			bodyLimit: MAX_SCAN_FILE_SIZE_BYTES + 1024 * 1024,
+		},
+		handleMockStorageUpload,
+	);
 
 	/**
 	 * GET /api/portal/mock-storage/download
