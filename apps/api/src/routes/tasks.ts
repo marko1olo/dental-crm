@@ -46,7 +46,7 @@ export const CANONICAL_DENTAL_TASK_PRESETS: readonly TaskPresetDto[] = [
 		taskType: "orthodontics_recall",
 		slaDays: 21,
 		priority: "normal",
-		hint: "1 клик: контроль брекетов/элайнеров через 3 недели",
+		hint: "Контроль брекетов/элайнеров через 3 недели",
 	},
 	{
 		id: "preset-implant-check",
@@ -57,7 +57,7 @@ export const CANONICAL_DENTAL_TASK_PRESETS: readonly TaskPresetDto[] = [
 		taskType: "implant_check",
 		slaDays: 10,
 		priority: "high",
-		hint: "1 клик: контрольный осмотр после имплантации через 10 дней",
+		hint: "Контрольный осмотр после имплантации через 10 дней",
 	},
 	{
 		id: "preset-ztl-ready",
@@ -68,18 +68,18 @@ export const CANONICAL_DENTAL_TASK_PRESETS: readonly TaskPresetDto[] = [
 		taskType: "ztl_ready",
 		slaDays: 7,
 		priority: "normal",
-		hint: "1 клик: отследить готовность работы в лаборатории через 7 дней",
+		hint: "Отследить готовность работы в лаборатории через 7 дней",
 	},
 	{
 		id: "preset-recall-6m",
 		title: "Напоминание о профгигиене через 6 мес",
 		label: "Напоминание о профгигиене через 6 мес",
 		description:
-			"Плановый звонок/сообщение о наступлении срока профгигиены полости рта и диспансерного осмотра.",
+			"Плановый звонок/сообщение о наступлении срока профгигиены полости рта и контрольного профосмотра.",
 		taskType: "recall_hygiene_6m",
 		slaDays: 180,
 		priority: "normal",
-		hint: "1 клик: запланировать звонок о профгигиене через 6 месяцев",
+		hint: "Запланировать звонок о профгигиене через 6 месяцев",
 	},
 	{
 		id: "preset-ct-planning",
@@ -90,7 +90,7 @@ export const CANONICAL_DENTAL_TASK_PRESETS: readonly TaskPresetDto[] = [
 		taskType: "ct_planning",
 		slaDays: 3,
 		priority: "high",
-		hint: "1 клик: задача на анализ КТ и 3D-планирование за 3 дня",
+		hint: "Задача на анализ КТ и 3D-планирование за 3 дня",
 	},
 ];
 

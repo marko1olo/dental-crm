@@ -46,12 +46,12 @@ export const PatientRecallsKanbanDropdownMenu: React.FC<PatientRecallsKanbanDrop
 			<button type="button" className="recall-dropdown-item" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", fontSize: "0.75rem", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", width: "100%" }} onClick={() => { onPostpone ? onPostpone(candidate, "1_month") : onStatusUpdate(candidate.id, "declined"); onClose(); }} data-testid={`kanban-postpone-1m-btn-${candidate.id}`}>
 				<Clock size={12} /> <span>Отложить на 1 месяц</span>
 			</button>
-			<button type="button" className="recall-dropdown-item" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", fontSize: "0.75rem", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", width: "100%", color: "var(--color-success, #059669)" }} onClick={() => { onStatusUpdate(candidate.id, "scheduled"); onClose(); }} data-testid={`kanban-fast-scheduled-btn-${candidate.id}`}>
+			<button type="button" className="recall-dropdown-item" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 8px", fontSize: "0.75rem", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", width: "100%", color: "var(--success, #059669)" }} onClick={() => { onStatusUpdate(candidate.id, "scheduled"); onClose(); }} data-testid={`kanban-fast-scheduled-btn-${candidate.id}`}>
 				<Check size={12} /> <span>Пометить: Записан</span>
 			</button>
 			<div style={{ height: "1px", background: "var(--line, #e2e8f0)", margin: "2px 0" }} />
 			<div style={{ padding: "4px 8px" }}>
-				<div style={{ fontSize: "0.7rem", color: "var(--muted, #64748b)", marginBottom: "3px" }}>Статус канбана:</div>
+				<div style={{ fontSize: "0.7rem", color: "var(--ink-muted, #64748b)", marginBottom: "3px" }}>Статус канбана:</div>
 				<select
 					style={{ width: "100%", padding: "3px 4px", borderRadius: "4px", border: "1px solid var(--line, #e2e8f0)", background: "var(--paper-soft, #f8fafc)", fontSize: "0.72rem" }}
 					value={toCanonicalRecallStatus(candidate.status)}

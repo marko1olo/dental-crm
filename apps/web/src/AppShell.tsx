@@ -31,6 +31,7 @@ import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
+import { DirectDoctorPayrollReportLauncher } from "./components/analytics/DirectDoctorPayrollReportLauncher";
 import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramModuleLauncher } from "./components/odontogram/DirectOdontogramModuleLauncher";
@@ -42,7 +43,6 @@ import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthop
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
-import { DirectChairsideHudLauncher } from "./components/copilot/DirectChairsideHudLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { useAppStore } from "./store/appStore";
@@ -389,6 +389,7 @@ export function AppShell() {
 			<DirectRecallLauncher />
 			<DirectOrthodonticsLauncher />
 			<DirectPayrollLauncher />
+			<DirectDoctorPayrollReportLauncher />
 			<DirectDoctorWalletLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramModuleLauncher />
@@ -400,7 +401,6 @@ export function AppShell() {
 			<DirectSurgeryLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
-			<DirectChairsideHudLauncher />
 			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />
 			)}

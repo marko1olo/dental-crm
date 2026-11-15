@@ -13,6 +13,12 @@ export const WHATSAPP_TEMPLATES: Record<RecallCycleType, string> = {
 	caries_high_risk: "Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Рекомендована плановая ремотерапия эмали и ревизия пломб у доктора {{DOCTOR_NAME}}.\n\nЗапись:\n{{BOOKING_URL}}",
 	prosthetic_check: "Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Срок контрольного осмотра коронок у доктора {{DOCTOR_NAME}} для гарантии.\n\nЗапись:\n{{BOOKING_URL}}",
 	endodontic_check: "Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} напоминает: прошел 1 месяц после лечения каналов. Ждем на контрольный снимок.\n\nЗапись:\n{{BOOKING_URL}}",
+	hygiene: "Здравствуйте, {{PATIENT_FIRST_NAME}}! Стоматология «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} напоминает: прошло 6 месяцев с прошлого визита ({{LAST_VISIT_DATE}}). Подошел срок плановой профгигиены Air-Flow и осмотра для сохранения здоровья зубов и гарантии.\n\nЗаписаться на приём:\n{{BOOKING_URL}}",
+	orthodontics: "Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} ждет Вас на плановую активацию брекетов и смену дуг (визит {{LAST_VISIT_DATE}}).\n\nВыбрать слот онлайн:\n{{BOOKING_URL}}",
+	orthodontic_adjustment: "Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Доктор {{DOCTOR_NAME}} ждет Вас на плановую активацию брекетов и смену дуг (визит {{LAST_VISIT_DATE}}).\n\nВыбрать слот онлайн:\n{{BOOKING_URL}}",
+	pediatric_checkup: "Здравствуйте! Детская стоматология «{{CLINIC_NAME}}». Прошло {{INTERVAL_DESC}} с визита {{PATIENT_FIRST_NAME}}. Доктор {{DOCTOR_NAME}} приглашает на минерализацию эмали!\n\nЗапись:\n{{BOOKING_URL}}",
+	pediatric: "Здравствуйте! Детская стоматология «{{CLINIC_NAME}}». Прошло {{INTERVAL_DESC}} с визита {{PATIENT_FIRST_NAME}}. Доктор {{DOCTOR_NAME}} приглашает на минерализацию эмали!\n\nЗапись:\n{{BOOKING_URL}}",
+	implants: "Здравствуйте, {{PATIENT_FIRST_NAME}}! «{{CLINIC_NAME}}». Подошел срок контрольного осмотра имплантатов у доктора {{DOCTOR_NAME}} (прошлый визит {{LAST_VISIT_DATE}}).\n\nЗаписаться к доктору:\n{{BOOKING_URL}}",
 };
 
 export const SMS_TEMPLATES: Record<RecallCycleType, string> = {
@@ -26,6 +32,12 @@ export const SMS_TEMPLATES: Record<RecallCycleType, string> = {
 	caries_high_risk: "{{PATIENT_FIRST_NAME}}, плановый осмотр и ремотерапия эмали в {{CLINIC_NAME}}: {{BOOKING_URL}}",
 	prosthetic_check: "{{PATIENT_FIRST_NAME}}, гарантийный осмотр коронок в {{CLINIC_NAME}}: {{BOOKING_URL}}",
 	endodontic_check: "{{PATIENT_FIRST_NAME}}, контрольный рентген-осмотр после эндодонтии в {{CLINIC_NAME}} (д-р {{DOCTOR_NAME}}): {{BOOKING_URL}}",
+	hygiene: "{{PATIENT_FIRST_NAME}}, прошло 6 мес с визита в {{CLINIC_NAME}}. Пора на профгигиену для сохранения гарантии: {{BOOKING_URL}}",
+	orthodontics: "{{PATIENT_FIRST_NAME}}, плановая активация брекетов в {{CLINIC_NAME}} (д-р {{DOCTOR_NAME}}). Запись: {{BOOKING_URL}}",
+	orthodontic_adjustment: "{{PATIENT_FIRST_NAME}}, плановая активация брекетов в {{CLINIC_NAME}} (д-р {{DOCTOR_NAME}}). Запись: {{BOOKING_URL}}",
+	pediatric_checkup: "Осмотр и фторирование зубов для {{PATIENT_FIRST_NAME}} в {{CLINIC_NAME}} (д-р {{DOCTOR_NAME}}): {{BOOKING_URL}}",
+	pediatric: "Осмотр и фторирование зубов для {{PATIENT_FIRST_NAME}} в {{CLINIC_NAME}} (д-р {{DOCTOR_NAME}}): {{BOOKING_URL}}",
+	implants: "{{PATIENT_FIRST_NAME}}, плановый рентген-контроль имплантов в {{CLINIC_NAME}} (д-р {{DOCTOR_NAME}}). Запись: {{BOOKING_URL}}",
 };
 
 export function generateWhatsAppRecallMessage(candidate: PatientRecallRecord, options: { readonly clinicName?: string | undefined; readonly baseUrl?: string | undefined } = {}): string {

@@ -26,6 +26,12 @@ export function calculateRecallMetrics(
 		caries_high_risk: 0,
 		prosthetic_check: 0,
 		endodontic_check: 0,
+		hygiene: 0,
+		orthodontics: 0,
+		orthodontic_adjustment: 0,
+		pediatric_checkup: 0,
+		pediatric: 0,
+		implants: 0,
 	};
 
 	for (const candidate of candidates) {

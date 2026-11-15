@@ -7,10 +7,35 @@ import {
 	type RecallUrgencyStatus,
 } from "./patientRecallEngine";
 
-export function mapRecallCandidateToRecord(candidate: RecallCandidate): PatientRecallRecord {
+export function mapRecallCandidateToRecord(candidate: {
+	patientId?: string | null | undefined;
+	id?: string | null | undefined;
+	fullName?: string | null | undefined;
+	phone?: string | null | undefined;
+	email?: string | null | undefined;
+	lastCompletedAt?: string | Date | null | undefined;
+	monthsSinceLastVisit?: number | null | undefined;
+	band?: string | null | undefined;
+	reason?: string | null | undefined;
+	suggestedIntervalMonths?: number | null | undefined;
+	cohortType?: string | null | undefined;
+	cycleType?: string | null | undefined;
+	status?: string | null | undefined;
+	notes?: string | null | undefined;
+	lastContactChannel?: string | null | undefined;
+	attendingDoctorId?: string | null | undefined;
+	attendingDoctorName?: string | null | undefined;
+	lastProcedureCategory?: string | null | undefined;
+	historicalRevenueRub?: number | null | undefined;
+	dueDate?: string | null | undefined;
+	daysOverdue?: number | null | undefined;
+}): PatientRecallRecord {
+	const patientId = candidate.patientId || candidate.id || "pat_unknown";
+	const fullName = candidate.fullName || "Пациент";
 	const months = candidate.monthsSinceLastVisit ?? 6;
 	const interval = candidate.suggestedIntervalMonths ?? 6;
-	const daysOverdue = Math.max(0, (months - interval) * 30);
+	const calculatedDaysOverdue = Math.max(0, (months - interval) * 30);
+	const daysOverdue = candidate.daysOverdue ?? calculatedDaysOverdue;
 
 	let urgencyStatus: RecallUrgencyStatus = "due_now";
 	if (candidate.band === "probably_lost") {
@@ -25,30 +50,39 @@ export function mapRecallCandidateToRecord(candidate: RecallCandidate): PatientR
 		? formatIsoDateOnly(new Date(candidate.lastCompletedAt))
 		: formatIsoDateOnly(addCalendarMonthsSafe(new Date(), -months));
 
-	const dueDateTime = candidate.lastCompletedAt
-		? addCalendarMonthsSafe(new Date(candidate.lastCompletedAt), interval)
-		: new Date();
-	const dueDate = formatIsoDateOnly(dueDateTime);
+	const dueDateTime = candidate.dueDate
+		? new Date(candidate.dueDate)
+		: (candidate.lastCompletedAt
+			? addCalendarMonthsSafe(new Date(candidate.lastCompletedAt), interval)
+			: new Date());
+	const dueDate = candidate.dueDate ?? formatIsoDateOnly(dueDateTime);
 
 	let cycleType: RecallCycleType = "standard_prophylaxis";
-	if (candidate.cohortType === "implant") {
+	const cohortOrCycle = candidate.cohortType || candidate.cycleType;
+	if (cohortOrCycle === "implant" || cohortOrCycle === "implant_monitoring") {
 		cycleType = "implant_monitoring";
-	} else if (candidate.cohortType === "orthodontic_retention") {
+	} else if (cohortOrCycle === "orthodontic_retention") {
 		cycleType = "orthodontic_retention";
-	} else if (candidate.cohortType === "periodontal") {
+	} else if (cohortOrCycle === "periodontal" || cohortOrCycle === "periodontal_maintenance") {
 		cycleType = "periodontal_maintenance";
-	} else if (candidate.cohortType === "endodontic") {
+	} else if (cohortOrCycle === "endodontic" || cohortOrCycle === "endodontic_check") {
 		cycleType = "endodontic_check";
-	} else if (candidate.cohortType === "hygiene_therapy") {
-		cycleType = "standard_prophylaxis";
+	} else if (cohortOrCycle === "pediatric_fluoridation" || cohortOrCycle === "pediatric") {
+		cycleType = "pediatric_fluoridation";
+	} else if (cohortOrCycle === "orthodontic_braces" || cohortOrCycle === "orthodontics") {
+		cycleType = "orthodontic_braces";
 	}
 
+	const validChannel = candidate.lastContactChannel && ["whatsapp", "telegram", "sms", "phone"].includes(candidate.lastContactChannel)
+		? (candidate.lastContactChannel as "whatsapp" | "telegram" | "sms" | "phone")
+		: undefined;
+
 	return {
-		id: candidate.patientId,
-		patientId: candidate.patientId,
-		fullName: candidate.fullName,
+		id: patientId,
+		patientId,
+		fullName,
 		phone: candidate.phone ?? null,
-		email: candidate.email ?? null,
+		email: candidate.email ?? undefined,
 		cycleType,
 		attendingDoctorId: candidate.attendingDoctorId ?? undefined,
 		attendingDoctorName: candidate.attendingDoctorName ?? undefined,
@@ -56,9 +90,10 @@ export function mapRecallCandidateToRecord(candidate: RecallCandidate): PatientR
 		dueDate,
 		daysOverdue,
 		urgencyStatus,
-		status: "due_now",
-		clinicalNotes: candidate.reason,
-		historicalRevenueRub: (candidate as { historicalRevenueRub?: number }).historicalRevenueRub ?? 0,
+		status: (candidate.status as PatientRecallRecord["status"]) ?? "due_now",
+		clinicalNotes: candidate.notes ?? candidate.reason ?? undefined,
+		lastContactChannel: validChannel,
+		historicalRevenueRub: candidate.historicalRevenueRub ?? 0,
 		visitsCount: candidate.lastCompletedAt ? 1 : 0,
 	};
 }

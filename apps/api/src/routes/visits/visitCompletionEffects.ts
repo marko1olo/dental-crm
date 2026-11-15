@@ -1,10 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { db as database } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { appointments } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { TelegramPostOpCarePipeline } from "../../services/telegram/TelegramPostOpCarePipeline.js";
-import { syncRecallOnAppointmentCompleted, syncRecallOnVisitCompleted } from "../../services/patients/recallSyncService.js";
+import { syncRecallOnVisitCompleted } from "../../services/patients/recallSyncService.js";
 import { executeAutoBomWriteoff } from "../../services/treatmentConsumables/autoBomWriteoffService.js";
 
 export interface VisitCompletionPayload {
@@ -72,11 +73,16 @@ export async function executeVisitCompletionSideEffects({
 		},
 	});
 
+	void withTenantCtx(orgId, async () => {
+		await syncRecallOnVisitCompleted(orgId, visit.id);
+	}).catch((err) => {
+		log.warn(
+			{ error: err, visitId: visit.id },
+			"Фоновая синхронизация recall завершилась с ошибкой (не блокирует подписание)",
+		);
+	});
+
 	try {
-		void syncRecallOnVisitCompleted(orgId, visit.id);
-		if (visit.appointmentId) {
-			void syncRecallOnAppointmentCompleted(orgId, visit.appointmentId);
-		}
 		if (visit.patientId) {
 			await TelegramPostOpCarePipeline.schedulePostVisitSurveyIfNeeded({
 				organizationId: orgId,

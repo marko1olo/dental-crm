@@ -45,6 +45,7 @@ export interface PatientRecallRecord {
 	readonly birthDate?: string | null | undefined;
 	readonly age?: number | undefined;
 	readonly cycleType: RecallCycleType;
+	readonly cycleLabel?: string | undefined;
 	readonly clinicalTriggerType?: ClinicalRecallTriggerType | undefined;
 	readonly customIntervalValue?: number | undefined;
 	readonly lastVisitDate: string; // ISO YYYY-MM-DD

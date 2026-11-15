@@ -31,6 +31,17 @@ export const recallCohortSchema = z.enum([
 export type RecallCohort = z.infer<typeof recallCohortSchema>;
 
 /**
+ * Канонический статус обработки кандидата на профосмотр в канбан-панели.
+ */
+export const recallCandidateStatusSchema = z.enum([
+	"due_now",
+	"contacted",
+	"scheduled",
+	"declined",
+]);
+export type RecallCandidateStatus = z.infer<typeof recallCandidateStatusSchema>;
+
+/**
  * Кандидат на возврат/профосмотр.
  * Совместим с SQL-запросом к PostgreSQL 18 на бэкенде
  * и с интерфейсом экрана «Пора пригласить» (RecallListPanel / PatientRecallsHubModal).
@@ -54,6 +65,9 @@ export const recallCandidateSchema = z.object({
 	reason: z.string(),
 	cohortType: recallCohortSchema.optional(),
 	suggestedIntervalMonths: z.number().int().positive().optional(),
+	status: recallCandidateStatusSchema.optional(),
+	notes: z.string().nullable().optional(),
+	lastContactChannel: z.string().nullable().optional(),
 	attendingDoctorId: z.string().uuid().nullable().optional(),
 	attendingDoctorName: z.string().nullable().optional(),
 	lastProcedureCategory: z.string().nullable().optional(),

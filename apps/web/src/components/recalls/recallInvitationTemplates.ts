@@ -108,6 +108,42 @@ export const INVITATION_TEMPLATES: Readonly<Record<RecallCycleType, RecallInvita
 		clinicalContext: "Прицельный снимок для подтверждения регенерации периапикальных тканей.",
 		callToAction: "Записаться на снимок", objections: [],
 	},
+	hygiene: {
+		cycleType: "hygiene", title: "Шаблон приглашения: Плановая гигиена 6 мес.",
+		greeting: "Здравствуйте! Доктор напоминает о плановом осмотре.",
+		clinicalContext: "Снятие зубных отложений (УЗ + Air-Flow), онкоскрининг и сохранение здоровья зубов и гарантии.",
+		callToAction: "Записаться на удобное время", objections: STANDARD_OBJECTIONS,
+	},
+	orthodontics: {
+		cycleType: "orthodontics", title: "Шаблон приглашения: Активация брекетов 4 нед.",
+		greeting: "Здравствуйте! Ждем на плановую активацию брекетов.",
+		clinicalContext: "Плановая замена дуг и лигатур для непрерывного перемещения зубов.",
+		callToAction: "Записаться на активацию", objections: [],
+	},
+	orthodontic_adjustment: {
+		cycleType: "orthodontic_adjustment", title: "Шаблон приглашения: Активация брекетов 4 нед.",
+		greeting: "Здравствуйте! Ждем на плановую активацию брекетов.",
+		clinicalContext: "Плановая замена дуг и лигатур для непрерывного перемещения зубов.",
+		callToAction: "Записаться на активацию", objections: [],
+	},
+	pediatric_checkup: {
+		cycleType: "pediatric_checkup", title: "Шаблон приглашения: Детская минерализация",
+		greeting: "Здравствуйте! Ждем маленького пациента на укрепление эмали.",
+		clinicalContext: "Фторирование и герметизация фиссур для защиты от бутылочного кариеса.",
+		callToAction: "Выбрать удобное время для ребёнка", objections: [],
+	},
+	pediatric: {
+		cycleType: "pediatric", title: "Шаблон приглашения: Детская минерализация",
+		greeting: "Здравствуйте! Ждем маленького пациента на укрепление эмали.",
+		clinicalContext: "Фторирование и герметизация фиссур для защиты от бутылочного кариеса.",
+		callToAction: "Выбрать удобное время для ребёнка", objections: [],
+	},
+	implants: {
+		cycleType: "implants", title: "Шаблон приглашения: Контроль имплантатов",
+		greeting: "Здравствуйте! Подошел срок контрольного осмотра имплантатов.",
+		clinicalContext: "Контроль остеоинтеграции и маргинальной кости для сохранения гарантии.",
+		callToAction: "Выбрать время осмотра", objections: [],
+	},
 };
 
 export const CLINICAL_CALLING_SCRIPTS = INVITATION_TEMPLATES;

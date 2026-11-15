@@ -16,10 +16,10 @@ export type CanonicalRecallWorkflowStatus =
 export const CANONICAL_RECALL_STATUS_CONFIG: Readonly<
 	Record<CanonicalRecallWorkflowStatus, { readonly id: CanonicalRecallWorkflowStatus; readonly label: string; readonly badgeColorToken: string }>
 > = {
-	not_called: { id: "not_called", label: "Не звонили", badgeColorToken: "warning" },
-	reached: { id: "reached", label: "Дозвонились", badgeColorToken: "info" },
-	declined: { id: "declined", label: "Отказ", badgeColorToken: "danger" },
-	scheduled: { id: "scheduled", label: "Записан", badgeColorToken: "success" },
+	not_called: { id: "not_called", label: "Пора приглашать", badgeColorToken: "warning" },
+	reached: { id: "reached", label: "Приглашение отправлено (WhatsApp/СМС)", badgeColorToken: "info" },
+	declined: { id: "declined", label: "Отказ / Перенос", badgeColorToken: "danger" },
+	scheduled: { id: "scheduled", label: "Записан на приём", badgeColorToken: "success" },
 };
 
 export function toCanonicalRecallStatus(status: RecallContactStatus): CanonicalRecallWorkflowStatus {

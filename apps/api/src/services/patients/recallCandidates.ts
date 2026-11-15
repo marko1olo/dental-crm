@@ -42,6 +42,7 @@ import { db } from "../../db/client.js";
 import {
 	appointments,
 	patientImplantInstallations,
+	patientRecalls,
 	patients,
 	users,
 } from "../../db/schema.js";
@@ -81,6 +82,18 @@ function monthsBetween(from: Date, to: Date): number {
 		0,
 		to.getDate() < from.getDate() ? wholeMonths - 1 : wholeMonths,
 	);
+}
+
+function normalizeRecallStatus(
+	rawStatus: string | null | undefined,
+): "due_now" | "contacted" | "scheduled" | "declined" | undefined {
+	if (!rawStatus) return undefined;
+	const s = rawStatus.toLowerCase();
+	if (s === "scheduled" || s === "completed") return "scheduled";
+	if (s === "contacted" || s === "reached" || s === "invited") return "contacted";
+	if (s === "declined" || s === "cancelled") return "declined";
+	if (s === "due_now" || s === "pending" || s === "not_called") return "due_now";
+	return undefined;
 }
 
 function bandFor(
@@ -164,6 +177,21 @@ export async function findRecallCandidates(
 	const anyAppointment = sql<number>`(
 		SELECT count(*) FROM ${appointments} a WHERE a.patient_id = ${patients}."id"
 	)`;
+	const lastRecallStatus = sql<string | null>`(
+		SELECT pr.status FROM ${patientRecalls} pr
+		WHERE pr.patient_id = ${patients}."id" AND pr.organization_id = ${patients}."organization_id"
+		ORDER BY pr.created_at DESC LIMIT 1
+	)`;
+	const lastRecallNotes = sql<string | null>`(
+		SELECT pr.notes FROM ${patientRecalls} pr
+		WHERE pr.patient_id = ${patients}."id" AND pr.organization_id = ${patients}."organization_id"
+		ORDER BY pr.created_at DESC LIMIT 1
+	)`;
+	const lastRecallChannel = sql<string | null>`(
+		SELECT pr.channel FROM ${patientRecalls} pr
+		WHERE pr.patient_id = ${patients}."id" AND pr.organization_id = ${patients}."organization_id"
+		ORDER BY pr.created_at DESC LIMIT 1
+	)`;
 
 	const rows = await db
 		.select({
@@ -181,6 +209,9 @@ export async function findRecallCandidates(
 			implantCount: implantCount.as("implant_count"),
 			futureAppointments: futureCount.as("future_appointments"),
 			totalAppointments: anyAppointment.as("total_appointments"),
+			lastRecallStatus: lastRecallStatus.as("last_recall_status"),
+			lastRecallNotes: lastRecallNotes.as("last_recall_notes"),
+			lastRecallChannel: lastRecallChannel.as("last_recall_channel"),
 		})
 		.from(patients)
 		.where(
@@ -189,8 +220,11 @@ export async function findRecallCandidates(
 				eq(patients.status, "active"),
 				// Объединённая карточка — это ссылка на другую, звать по ней некого.
 				isNull(patients.mergedIntoPatientId),
-				// Кто уже записан — не «потерянный»: его ждут.
-				sql`${futureCount} = 0`,
+				// Кто уже записан — не «потерянный»: его ждут (но если статус реколла 'scheduled', показываем его в колонке «Записан на приём» Канбана!).
+				or(
+					sql`${futureCount} = 0`,
+					sql`${lastRecallStatus} IN ('scheduled', 'completed')`,
+				),
 				// Либо завершённых приёмов не было вовсе, либо последний давно.
 				or(
 					sql`${lastCompleted} IS NULL`,
@@ -270,7 +304,7 @@ export async function findRecallCandidates(
 			cohortType = "periodontal";
 			suggestedIntervalMonths = 3;
 			clinicalReason =
-				"Диспансерный пародонтологический осмотр и поддерживающая терапия (3 мес).";
+				"Контрольный пародонтологический осмотр и поддерживающая терапия (3 мес).";
 		} else if (hasImplants) {
 			cohortType = "implant";
 			if (monthsSince <= 2) {
@@ -288,7 +322,7 @@ export async function findRecallCandidates(
 			} else {
 				suggestedIntervalMonths = 12;
 				clinicalReason =
-					"Годовой диспансерный рентген-контроль стабильности костной ткани вокруг имплантата (12 мес).";
+					"Годовой контрольный рентген-осмотр стабильности костной ткани вокруг имплантата (12 мес).";
 			}
 		} else if (isOrtho) {
 			cohortType = "orthodontic_retention";
@@ -309,6 +343,8 @@ export async function findRecallCandidates(
 		byBand[band] = (byBand[band] ?? 0) + 1;
 		if (targetBand && band !== targetBand) continue;
 
+		const savedStatus = normalizeRecallStatus(row.lastRecallStatus);
+
 		candidates.push({
 			patientId: row.patientId,
 			fullName: row.fullName,
@@ -320,6 +356,9 @@ export async function findRecallCandidates(
 			reason: clinicalReason,
 			cohortType,
 			suggestedIntervalMonths,
+			status: savedStatus ?? "due_now",
+			notes: row.lastRecallNotes ?? null,
+			lastContactChannel: row.lastRecallChannel ?? null,
 			attendingDoctorId: row.lastDoctorId ?? null,
 			attendingDoctorName: row.lastDoctorId
 				? (doctorById.get(row.lastDoctorId) ?? null)

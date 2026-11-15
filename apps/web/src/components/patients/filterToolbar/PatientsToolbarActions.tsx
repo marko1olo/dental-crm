@@ -24,7 +24,7 @@ export const PatientsToolbarActions: React.FC<PatientsToolbarActionsProps> = ({
 				type="button"
 				className="secondary-button shrink-0 min-w-0 text-xs sm:text-[13px] h-9 min-h-[36px] px-2.5 rounded-xl font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 				onClick={onOpenRecallsHub}
-				title="Профосмотры и диспансерный учет (Recall, гигиена, импланты)"
+				title="Профосмотры и периодический контроль (гигиена, импланты, осмотры)"
 				data-testid="btn-recalls-hub"
 				data-legacy-testid="btn-patients-recalls-hub"
 			>
