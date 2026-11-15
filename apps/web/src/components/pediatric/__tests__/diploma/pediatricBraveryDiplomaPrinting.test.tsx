@@ -33,8 +33,6 @@ describe("1-Tap Bravery Diploma Printing in Pediatric Workspace", () => {
 		}));
 		assert.ok(html.includes('data-testid="btn-modal-print-diploma"'));
 		assert.ok(html.includes("Распечатать диплом (Enter)"));
-		assert.ok(html.includes('data-testid="btn-print-bravery-diploma"'));
-		assert.ok(html.includes("Распечатать (Enter)"));
 		assert.ok(html.includes("Герой: Ваня"));
 		assert.ok(html.includes("Доктор: Иванов А. С."));
 		assert.ok(html.includes('data-testid="diploma-certificate-preview"'));

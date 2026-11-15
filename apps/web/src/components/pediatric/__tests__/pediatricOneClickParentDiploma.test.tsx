@@ -259,14 +259,6 @@ describe("Pediatric 1-Click Parent Binding, Anti-Bloat Human Russian & Bravery D
 				html.includes("Распечатать диплом (Enter)"),
 				"Modal print button must specify (Enter) hotkey trigger",
 			);
-			assert.ok(
-				html.includes('data-testid="btn-print-bravery-diploma"'),
-				"Must render top quick print button",
-			);
-			assert.ok(
-				html.includes("Распечатать (Enter)"),
-				"Top quick print button must specify (Enter) hotkey trigger",
-			);
 
 			// Formatted hero and doctor names
 			assert.ok(

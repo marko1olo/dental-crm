@@ -1,7 +1,7 @@
 import React from "react";
 import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
 import { PediatricParentMemoModal } from "../PediatricParentMemoModal";
-import { PediatricRewardsModal } from "./PediatricRewardsModal";
+import { PediatricBraveryDiplomaModal } from "../PediatricBraveryDiplomaModal";
 import type { PediatricProtocolId } from "./types";
 
 interface PediatricProtocolWidgetModalsProps {
@@ -55,10 +55,11 @@ export const PediatricProtocolWidgetModals: React.FC<PediatricProtocolWidgetModa
 			)}
 
 			{isDiplomaModalOpen && (
-				<PediatricRewardsModal
+				<PediatricBraveryDiplomaModal
 					isOpen={isDiplomaModalOpen}
 					onClose={() => setIsDiplomaModalOpen(false)}
 					patientName={patientName}
+					patientPhone={patientPhone}
 					patientAgeYears={patientAgeYears}
 					doctorName={doctorName}
 					clinicName={clinicName}

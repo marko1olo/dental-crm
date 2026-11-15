@@ -1,13 +1,14 @@
 /**
- * apps/web/src/components/odontogram/gost/gostPathologyCodes.ts
+ * apps/web/src/components/odontogram/clinical/clinicalToothStates.ts
  *
- * DENTE Dental CRM — GOST Pathology Abbreviations, Descriptors & Hotkeys.
+ * DENTE Dental CRM — Clinical Tooth States, Abbreviations, Descriptors & Chairside Hotkeys.
+ * Complies with Mandates 8x, 8ap (Clean Clinical Language) & 8e (Doctor Autonomy).
  */
 
 import type { CrmToothState, GostToothAbbreviation } from "@dental/shared";
 import type { ToothState } from "../chart/toothChartTypes";
 
-export interface GostStateDescriptor {
+export interface ClinicalStateDescriptor {
 	abbr: GostToothAbbreviation;
 	nameRu: string;
 	descriptionRu: string;
@@ -17,8 +18,10 @@ export interface GostStateDescriptor {
 	badgeBorder: string;
 }
 
-export const GOST_TOOTH_STATES: Record<CrmToothState, GostStateDescriptor> &
-	Partial<Record<ToothState, GostStateDescriptor>> = {
+export type GostStateDescriptor = ClinicalStateDescriptor;
+
+export const CLINICAL_TOOTH_STATES: Record<CrmToothState, ClinicalStateDescriptor> &
+	Partial<Record<ToothState, ClinicalStateDescriptor>> = {
 	Healthy: {
 		abbr: "Зд",
 		nameRu: "Здоров",
@@ -129,7 +132,9 @@ export const GOST_TOOTH_STATES: Record<CrmToothState, GostStateDescriptor> &
 	},
 };
 
-export const GOST_ABBREVIATIONS: Record<string, ToothState> = {
+export const GOST_TOOTH_STATES = CLINICAL_TOOTH_STATES;
+
+export const CLINICAL_STATE_ABBREVIATIONS: Record<string, ToothState> = {
 	К: "Caries",
 	П: "Filled",
 	Пт: "Pulpitis",
@@ -143,6 +148,8 @@ export const GOST_ABBREVIATIONS: Record<string, ToothState> = {
 	Р: "Retained",
 	R: "Root",
 };
+
+export const GOST_ABBREVIATIONS = CLINICAL_STATE_ABBREVIATIONS;
 
 export function getToothStateFromHotkey(
 	key: string,

@@ -23,7 +23,7 @@ import {
 	createIdealOhiSTeethScores,
 	computeCanonicalOhiS,
 } from "../components/hygiene/hygieneCatalogData";
-import { calculateDmft } from "../components/odontogram/gost/gostHistoryTypes";
+import { calculateDmft } from "../components/odontogram/clinical/dmftIndices";
 
 describe("Red Team Pediatric & Hygiene Inquisition (PED-02..PED-06)", () => {
 	it("[PED-02]: physiological root resorption stage coexists with caries/pulpitis without resetting crown", () => {

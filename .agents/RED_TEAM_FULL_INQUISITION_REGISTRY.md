@@ -3494,7 +3494,7 @@
 - **Файлы:**
   - [`apps/web/src/components/odontogram/ClassicGostHeader.tsx#L80-L93`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ClassicGostHeader.tsx#L80-L93)
   - [`packages/shared/src/documents/forms043u.ts#L282-L301`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/documents/forms043u.ts#L282-L301)
-  - [`apps/web/src/components/odontogram/gost/gostHistoryTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gost/gostHistoryTypes.ts)
+  - [`apps/web/src/components/odontogram/clinical/dmftIndices.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/clinical/dmftIndices.ts)
 - **Суть бага:** В шапке одонтограммы даже в детском режиме считался взрослый КПУ по зубам 11–48. Для ребенка с 10 кариозными молочными зубами шапка показывала: `Индекс КПУ: 0 (К=0, П=0, У=0)`. А формула тяжести Минздрава в `forms043u.ts` присваивала ребенку категорию «Очень низкий кариес (0–1.5)».
 - **Статус исправления:** [ИСПРАВЛЕНО] В `forms043u.ts` функция `calculateDmftFromOdontogram` дополнена распознаванием типа прикуса: для молочного прикуса рассчитывается индекс «кп» и его ВОЗ-градация (0 — очень низкий, 1–2 — низкий, 3–4 — средний, 5–7 — высокий, $\ge 8$ — очень высокий); для сменного прикуса — «КПУ+кп». В `ClassicGostHeader.tsx` шапка отображает честный «Индекс кп:» или «Индекс КПУ+кп:», исключая позорный ложный `КПУ: 0` у детей. Проверено тестами `pediatricInquisitionPed02Ped06.test.ts`.
 

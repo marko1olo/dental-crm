@@ -138,8 +138,9 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 				mode="interactive"
 				onToothClick={onToothClick ? ((e, num) => {
 					if (typeof onToothClick === "function") {
-						const n = typeof e === "number" ? e : num ?? 11;
-						(onToothClick as any)(n);
+						const n = typeof e === "number" ? e : (num ?? 11);
+						const clickCallback = onToothClick as (toothNumber: number) => void;
+						clickCallback(n);
 					}
 				}) : undefined}
 				onQuickStateChange={onQuickStateChange}

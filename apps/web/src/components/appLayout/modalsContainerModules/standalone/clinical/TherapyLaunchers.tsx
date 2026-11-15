@@ -105,7 +105,7 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		);
 	}
 
-	if (hasUrlToken(["pediatric", "children", "pedodontics"])) {
+	if (hasUrlToken(["pediatric", "children", "pedodontics"]) && !hasUrlToken(["diploma", "bravery"])) {
 		return (
 			<PediatricMixedDentitionModal
 				isOpen={true}

@@ -1,46 +1,30 @@
 /**
- * apps/web/src/components/odontogram/gost/gostFormulaSymbols.ts
+ * apps/web/src/components/odontogram/navigation/toothKeyboardNavigation.ts
  *
- * DENTE Dental CRM — GOST Formula Tooth Symbols, Sets and Keyboard Traversal.
+ * DENTE Dental CRM — Keyboard Traversal and Spatial Navigation for Teeth.
+ * Complies with Mandates 8e (Doctor Autonomy) & 8b (Clean Modular Architecture).
  */
 
 import {
-	ALL_ADULT_TEETH,
-	ALL_PEDIATRIC_TEETH,
-	BOTTOM_TEETH_MIXED,
-	type GostToothAbbreviation,
 	LOWER_TEETH_ADULT,
 	LOWER_TEETH_PEDIATRIC,
-	TOP_TEETH_MIXED,
 	UPPER_TEETH_ADULT,
 	UPPER_TEETH_PEDIATRIC,
-	getGostAbbreviation,
 } from "@dental/shared";
 
-export {
-	type GostToothAbbreviation,
-	UPPER_TEETH_ADULT,
-	LOWER_TEETH_ADULT,
-	ALL_ADULT_TEETH,
-	UPPER_TEETH_PEDIATRIC,
-	LOWER_TEETH_PEDIATRIC,
-	ALL_PEDIATRIC_TEETH,
-	TOP_TEETH_MIXED,
-	BOTTOM_TEETH_MIXED,
-	getGostAbbreviation,
-};
+export type ToothNavigationDirection =
+	| "left"
+	| "right"
+	| "up"
+	| "down"
+	| "home"
+	| "end"
+	| "tab"
+	| "shift-tab";
 
 export function getNextFocusedTooth(
 	currentTooth: number,
-	direction:
-		| "left"
-		| "right"
-		| "up"
-		| "down"
-		| "home"
-		| "end"
-		| "tab"
-		| "shift-tab",
+	direction: ToothNavigationDirection,
 	isPediatric = false,
 ): number {
 	const topRow: readonly number[] = isPediatric ? UPPER_TEETH_PEDIATRIC : UPPER_TEETH_ADULT;

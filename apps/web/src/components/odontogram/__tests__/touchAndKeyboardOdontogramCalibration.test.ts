@@ -3,11 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import test, { describe } from "node:test";
 import { fileURLToPath } from "node:url";
-import { getNextFocusedTooth } from "../gost/gostFormulaSymbols";
+import { getNextFocusedTooth } from "../navigation/toothKeyboardNavigation";
 import {
 	getToothStateFromHotkey,
 	GOST_TOOTH_STATES,
-} from "../gost/gostPathologyCodes";
+} from "../clinical/clinicalToothStates";
 import type { ToothState } from "../ToothChart";
 
 const __filename = fileURLToPath(import.meta.url);

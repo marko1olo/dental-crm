@@ -1,7 +1,8 @@
 /**
- * apps/web/src/components/odontogram/gost/gostHistoryTypes.ts
+ * apps/web/src/components/odontogram/clinical/dmftIndices.ts
  *
- * DENTE Dental CRM — DMFT (КПУ/кпу) Clinical Indices and Clinical Record Export.
+ * DENTE Dental CRM — DMFT (КПУ/кпу) Clinical Indices and Clinical Protocol Export.
+ * Complies with Mandates 8x, 8ap (Clean Clinical Language) & 8e (Doctor Autonomy).
  */
 
 import {
@@ -220,5 +221,3 @@ export function formatOdontogramToClinicalProtocolText(
 		`Индекс КПУ = ${dmft.dmftTotal} (К:${dmft.decayed}, П:${dmft.filled}, У:${dmft.missing}) — ${dmft.severityLabel}`,
 	].join("\n");
 }
-
-export const formatOdontogramTo043ProtocolText = formatOdontogramToClinicalProtocolText;

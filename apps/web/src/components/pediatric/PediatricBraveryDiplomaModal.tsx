@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Award, Copy, Printer, Send, MessageCircle, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
-import { resolveBraveryDiplomaRequisites } from "../../utils/pediatric/braveryDiplomaGenerator.js";
+import { resolveBraveryDiplomaRequisites } from "../../utils/pediatric/braveryDiplomaGenerator";
 import { printBraveryDiploma } from "./diploma/diplomaPrint";
 import { PediatricBraveryDiplomaPreview } from "./diploma/PediatricBraveryDiplomaPreview";
 
@@ -125,25 +125,14 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<Award className="h-5 w-5 text-[var(--primary,#0d9488)] shrink-0" />
 						<h3 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">Диплом за храбрость</h3>
 					</div>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={handlePrint}
-							className="min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-transparent bg-transparent hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
-							data-testid="btn-print-bravery-diploma"
-						>
-							<Printer className="h-4 w-4 shrink-0" />
-							<span>Распечатать (Enter)</span>
-						</button>
-						<button
-							type="button"
-							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] h-8 w-8 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer"
-							aria-label="Закрыть"
-						>
-							<X className="h-5 w-5" />
-						</button>
-					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] h-8 w-8 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer"
+						aria-label="Закрыть"
+					>
+						<X className="h-5 w-5" />
+					</button>
 				</div>
 
 				<PediatricBraveryDiplomaPreview

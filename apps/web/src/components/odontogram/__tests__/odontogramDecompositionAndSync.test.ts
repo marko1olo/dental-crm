@@ -41,15 +41,13 @@ import {
 	GOST_ABBREVIATIONS,
 	GOST_TOOTH_STATES,
 	getToothStateFromHotkey,
-} from "../gost/gostPathologyCodes";
-import {
-	getNextFocusedTooth,
-	getGostAbbreviation,
-} from "../gost/gostFormulaSymbols";
+} from "../clinical/clinicalToothStates";
+import { getNextFocusedTooth } from "../navigation/toothKeyboardNavigation";
+import { getGostAbbreviation } from "@dental/shared";
 import {
 	calculateDmft,
 	formatOdontogramToClinicalProtocolText,
-} from "../gost/gostHistoryTypes";
+} from "../clinical/dmftIndices";
 import {
 	mergeTeethWithLocalCache,
 } from "../syncModules/odontogramIndexedDbSync";

@@ -36,7 +36,7 @@ export { PediatricBehaviorCard } from "./PediatricBehaviorCard";
 export { PediatricPrimaryTeethCard } from "./PediatricPrimaryTeethCard";
 export { PediatricSedationProtocol } from "./PediatricSedationProtocol";
 export { PediatricTreatmentSteps } from "./PediatricTreatmentSteps";
-export { PediatricRewardsModal } from "./PediatricRewardsModal";
+export { PediatricBraveryDiplomaModal } from "../PediatricBraveryDiplomaModal";
 export { PediatricProtocolDetailsAccordion } from "./PediatricProtocolDetailsAccordion";
 export {
 	PediatricProtocolTopBar,

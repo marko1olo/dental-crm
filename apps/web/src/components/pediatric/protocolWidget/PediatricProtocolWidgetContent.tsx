@@ -60,12 +60,10 @@ export const PediatricProtocolWidgetContent: React.FC<VisitPediatricProtocolWidg
 					showToast(`Выбран зуб #${t} (${PEDIATRIC_TEETH_NAMES[t] ?? t})`, "info", 1500);
 				}}
 				fullClinicalNoteText={clinicalCalculation.fullClinicalNoteText}
-				fullProtocolText043={clinicalCalculation.fullProtocolText043}
 			/>
 
 			<PediatricProtocolDesktopActionBar
 				onInsertToClinicalNote={actions.handleInsertToClinicalNote}
-				onInsertToForm043={actions.handleInsertToClinicalNote}
 				onAddServicesToInvoice={actions.handleAddServicesToInvoice}
 				onOpenMemoModal={() => state.setIsMemoModalOpen(true)}
 				onOpenDiplomaModal={() => state.setIsDiplomaModalOpen(true)}
@@ -80,7 +78,6 @@ export const PediatricProtocolWidgetContent: React.FC<VisitPediatricProtocolWidg
 				diagnosisIcd10={clinicalCalculation.diagnosisIcd10}
 				servicesCount={clinicalCalculation.services804n.length}
 				onInsertToClinicalNote={actions.handleInsertToClinicalNote}
-				onInsertToForm043={actions.handleInsertToClinicalNote}
 				onAddServicesToInvoice={actions.handleAddServicesToInvoice}
 				onOpenMemoModal={() => state.setIsMemoModalOpen(true)}
 				onOpenDiplomaModal={() => state.setIsDiplomaModalOpen(true)}

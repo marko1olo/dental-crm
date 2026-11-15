@@ -45,13 +45,13 @@ export const PediatricMobileBottomBar: React.FC<
 				</span>
 			</div>
 
-			{/* Главная кнопка действия (Primary CTA): ровно ОДНА Primary CTA кнопка (высота >= 52px, Мандат 8am/8ze), изумрудный цвет */}
+			{/* Главная кнопка действия (Primary CTA): ровно ОДНА Primary CTA кнопка (высота >= 52px, Мандат 8am/8ze), благородный тиловый Noble Teal #0d9488 */}
 			<button
 				type="button"
 				onClick={handleApply}
-				className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-extrabold shadow-md transition active:scale-[0.98] cursor-pointer touch-manipulation select-none bg-emerald-600 hover:bg-emerald-700 text-white"
+				className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-extrabold shadow-md transition active:scale-[0.98] cursor-pointer touch-manipulation select-none bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white"
 				style={{
-					boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
+					boxShadow: "0 4px 14px rgba(13, 148, 136, 0.3)",
 				}}
 				data-testid="pediatric-mobile-btn-apply"
 				title="Внести протокол в медицинскую карту"

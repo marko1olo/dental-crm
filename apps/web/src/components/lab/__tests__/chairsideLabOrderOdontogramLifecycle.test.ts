@@ -18,7 +18,7 @@ import {
 import type { ToothState } from "../../odontogram/chart/types/toothStateUnion";
 import { getAnatomicalToothColors } from "../../odontogram/AnatomicalToothColors";
 import { getToothColors } from "../../odontogram/chart/ToothColors";
-import { GOST_ABBREVIATIONS, GOST_TOOTH_STATES, getToothStateFromHotkey } from "../../odontogram/gost/gostPathologyCodes";
+import { GOST_ABBREVIATIONS, GOST_TOOTH_STATES, getToothStateFromHotkey } from "../../odontogram/clinical/clinicalToothStates";
 import { TOOTH_STATE_LABELS } from "../../odontogram/chart/toothChartTypes";
 describe("Chairside Lab Order & Orthopedic Odontogram Lifecycle Inquisitor", () => {
 	describe("1. Канонический статус Planned_Crown (Коронка в изготовлении ЗТЛ)", () => {

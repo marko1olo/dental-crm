@@ -36,7 +36,7 @@ export {
 	PediatricPrimaryTeethCard,
 	PediatricSedationProtocol,
 	PediatricTreatmentSteps,
-	PediatricRewardsModal,
+	PediatricBraveryDiplomaModal,
 	PediatricProtocolDetailsAccordion,
 	PediatricProtocolTopBar,
 	PediatricProtocolDesktopActionBar,

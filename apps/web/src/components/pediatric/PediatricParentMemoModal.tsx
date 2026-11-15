@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Printer, X, Copy } from "lucide-react";
+import { X } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type {
 	FranklRating,
@@ -91,20 +91,9 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 			<div className="relative w-full max-w-2xl rounded-3xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-5 sm:p-6 shadow-2xl flex flex-col max-h-[92dvh] overflow-y-auto">
 				<div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--line,#e2e8f0)]">
 					<h3 className="text-base sm:text-lg font-black text-[var(--ink,#0f172a)]">Памятка родителям после приёма</h3>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={handlePrint}
-							className="h-9 px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
-							data-testid="btn-print-parent-memo"
-						>
-							<Printer className="h-4 w-4 text-[var(--muted,#64748b)]" />
-							<span>Печать</span>
-						</button>
-						<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] h-11 w-11 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer" aria-label="Закрыть">
-							<X className="h-5 w-5" />
-						</button>
-					</div>
+					<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] h-11 w-11 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition cursor-pointer" aria-label="Закрыть">
+						<X className="h-5 w-5" />
+					</button>
 				</div>
 				<PediatricParentMemoForm frankl={frankl} setFrankl={setFrankl} hasAnesthesia={hasAnesthesia} setHasAnesthesia={setHasAnesthesia} hasPulpotomy={hasPulpotomy} setHasPulpotomy={setHasPulpotomy} pulpotomyTooth={pulpotomyTooth} setPulpotomyTooth={setPulpotomyTooth} hasFissureSealing={hasFissureSealing} setHasFissureSealing={setHasFissureSealing} fissureTeeth={fissureTeeth} setFissureTeeth={setFissureTeeth} hasSilvering={hasSilvering} setHasSilvering={setHasSilvering} silveringTeeth={silveringTeeth} setSilveringTeeth={setSilveringTeeth} customNotes={customNotes} setCustomNotes={setCustomNotes} />
 				<PediatricParentMemoFooter onCopy={handleCopy} onWhatsApp={handleWhatsApp} onTelegram={handleTelegram} onPrint={handlePrint} />
