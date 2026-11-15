@@ -33,6 +33,7 @@ export async function calculateLeadPipelineMetrics(
 		showed_up: 0,
 		no_answer: 0,
 		trash: 0,
+		converted: 0,
 	};
 
 	let slaBreachedCount = 0;
@@ -82,6 +83,7 @@ export async function calculateLeadPipelineMetrics(
 		showed_up: [],
 		no_answer: [],
 		trash: [],
+		converted: [],
 	};
 
 	for (const h of historyRecords) {
@@ -120,10 +122,13 @@ export async function calculateLeadPipelineMetrics(
 	const countContacted = stageCounts.contacted || 0;
 	const countBooked = stageCounts.consult_booked || 0;
 	const countShowed = stageCounts.showed_up || 0;
+	const countConverted = stageCounts.converted || 0;
 
-	const reachedContactedOrBeyond = countContacted + countBooked + countShowed;
-	const reachedBookedOrBeyond = countBooked + countShowed;
-	const reachedShowedOrBeyond = countShowed;
+	const reachedContactedOrBeyond =
+		countContacted + countBooked + countShowed + countConverted;
+	const reachedBookedOrBeyond =
+		countBooked + countShowed + countConverted;
+	const reachedShowedOrBeyond = countShowed + countConverted;
 	const basePool = Math.max(1, totalLeads);
 
 	const stageConversionRates: Record<string, number> = {

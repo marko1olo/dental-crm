@@ -5,6 +5,7 @@
 
 import type { Lead } from "../../../store/leadsStore";
 import type { BookableChair, BookableDoctor } from "../leadsKanbanTypes";
+export type { PendingBookingInfo } from "./useLeadBookingNavigation";
 import type { PendingBookingInfo } from "./useLeadBookingNavigation";
 
 export interface ConvertSubmitOptions {

@@ -80,8 +80,8 @@ describe("8. Zero Attribution Loss & UTM Preservation", () => {
 		assert.equal(record.consents.marketingPromotions, false);
 		assert.ok(record.administrativeProfile.preferredAppointmentNote.startsWith("src:2ГИС Карты"));
 		assert.ok(record.administrativeProfile.preferredAppointmentNote.includes("Запрос: Профгигиена Air-Flow"));
-		assert.ok(record.administrativeProfile.dataProcessingBasisNote.includes("152-ФЗ: Обработка персданных для медпомощи — согласие получено"));
-		assert.ok(record.administrativeProfile.dataProcessingBasisNote.includes("Рекламные рассылки и SMS (ФЗ-38) — отказ / исключён из рассылок"));
+		assert.ok(record.administrativeProfile.dataProcessingBasisNote.includes("Согласие на медицинскую помощь получено"));
+		assert.ok(record.administrativeProfile.dataProcessingBasisNote.includes("Маркетинговые рассылки отключены"));
 	});
 });
 

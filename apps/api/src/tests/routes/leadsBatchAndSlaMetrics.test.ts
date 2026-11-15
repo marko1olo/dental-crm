@@ -51,6 +51,7 @@ const LEAD_2_ID = fixtureUuid(NAMESPACE, 11);
 const LEAD_3_ID = fixtureUuid(NAMESPACE, 12);
 const LEAD_SLA_BREACH_ID = fixtureUuid(NAMESPACE, 13);
 const LEAD_CONSULT_ID = fixtureUuid(NAMESPACE, 14);
+const LEAD_CONVERTED_ID = fixtureUuid(NAMESPACE, 15);
 
 describe("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)", () => {
 	let app: FastifyInstance;
@@ -211,6 +212,19 @@ describe("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)
 				status: "consult_booked",
 				priority: "high",
 				expectedRevenue: "50000.00",
+				stageEnteredAt: now,
+			});
+
+			// Lead Converted: Successfully converted to patient
+			await tx.insert(crmLeads).values({
+				id: LEAD_CONVERTED_ID,
+				organizationId: ORG_1_ID,
+				name: "Пациент Сконвертированный",
+				phone: "+79990006666",
+				source: "prodoctorov",
+				status: "converted",
+				priority: "normal",
+				expectedRevenue: "35000.00",
 				stageEnteredAt: now,
 			});
 		});
@@ -376,12 +390,13 @@ describe("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)
 			assert.strictEqual(res.statusCode, 200);
 			const metrics = JSON.parse(res.body);
 
-			assert.strictEqual(metrics.totalLeads, 5);
+			assert.strictEqual(metrics.totalLeads, 6);
 			assert.ok(typeof metrics.stageCounts === "object");
-			// LEAD_1 and LEAD_2 are 'contacted', LEAD_3 is 'consult_booked', LEAD_SLA_BREACH is 'new', LEAD_CONSULT is 'consult_booked'
+			// LEAD_1 and LEAD_2 are 'contacted', LEAD_3 is 'consult_booked', LEAD_SLA_BREACH is 'new', LEAD_CONSULT is 'consult_booked', LEAD_CONVERTED is 'converted'
 			assert.strictEqual(metrics.stageCounts.contacted, 2);
 			assert.strictEqual(metrics.stageCounts.new, 1);
 			assert.strictEqual(metrics.stageCounts.consult_booked, 2);
+			assert.strictEqual(metrics.stageCounts.converted, 1);
 
 			// SLA breached count: LEAD_SLA_BREACH was entered 2h ago (>60m)
 			assert.ok(metrics.slaBreachedCount >= 1);
@@ -389,12 +404,14 @@ describe("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)
 			// Urgent count: LEAD_SLA_BREACH and LEAD_3 are urgent
 			assert.ok(metrics.urgentCount >= 2);
 
-			// Revenue: 25000 + 40000 + 15000 + 120000 + 50000 = 250000
-			assert.strictEqual(metrics.pipelineExpectedRevenueRub, 250000);
+			// Revenue: 25000 + 40000 + 15000 + 120000 + 50000 + 35000 = 285000
+			assert.strictEqual(metrics.pipelineExpectedRevenueRub, 285000);
 
 			// Stage conversions
 			assert.ok(metrics.stageConversionRates);
 			assert.ok(metrics.stageConversionRates.new_to_contacted > 0);
+			// Overall conversion: (showed_up [0] + converted [1]) / totalLeads [6] = 1 / 6 = 16.7%
+			assert.strictEqual(metrics.stageConversionRates.overall_conversion, 16.7);
 			assert.ok(typeof metrics.averageDurationSecondsByStage === "object");
 		},
 	);
@@ -417,7 +434,7 @@ describe("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)
 						"dev-local-webhook-secret-change-me",
 				},
 				payload: {
-					event: "ringing",
+					event: "answered",
 					from: callerPhone,
 					to: "+74951112233",
 					call_id: "mango_call_9901",

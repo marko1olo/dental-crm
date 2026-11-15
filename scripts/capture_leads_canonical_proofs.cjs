@@ -1,3 +1,9 @@
+delete process.env.HTTP_PROXY;
+delete process.env.http_proxy;
+delete process.env.HTTPS_PROXY;
+delete process.env.https_proxy;
+process.env.NO_PROXY = "127.0.0.1,localhost";
+
 /**
  * scripts/capture_leads_canonical_proofs.cjs
  * RED TEAM INQUISITION: 4-State Visual Proof for Leads Kanban CRM
@@ -239,7 +245,24 @@ async function applyTheme(page, theme) {
 async function saveProof(page, filename) {
   const filePath = path.join(proofDir, filename);
   await page.screenshot({ path: filePath, fullPage: false, animations: "disabled" });
-  console.log(`[PROOF CAPTURED]: ${filePath}`);
+  console.log(`[PROOF CAPTURED]: ${filePath} (${fs.statSync(filePath).size} bytes)`);
+  if (filename === "leads_kanban_live_pc_light.png") {
+    fs.copyFileSync(filePath, path.join(proofDir, "01_leads_kanban_pc_light_1440x900.png"));
+    fs.copyFileSync(filePath, path.join(proofDir, "leads_kanban_pc_light_1440x900.png"));
+  } else if (filename === "leads_kanban_live_pc_dark.png") {
+    fs.copyFileSync(filePath, path.join(proofDir, "02_leads_kanban_pc_dark_1440x900.png"));
+    fs.copyFileSync(filePath, path.join(proofDir, "leads_kanban_pc_dark_1440x900.png"));
+  } else if (filename === "leads_mobile_live_light.png") {
+    fs.copyFileSync(filePath, path.join(proofDir, "03_leads_mobile_feed_light_390x844.png"));
+    fs.copyFileSync(filePath, path.join(proofDir, "leads_kanban_mobile_light_390x844.png"));
+  } else if (filename === "leads_mobile_live_dark.png") {
+    fs.copyFileSync(filePath, path.join(proofDir, "04_leads_mobile_feed_dark_390x844.png"));
+    fs.copyFileSync(filePath, path.join(proofDir, "leads_kanban_mobile_dark_390x844.png"));
+  } else if (filename === "leads_convert_modal_pc_light.png") {
+    fs.copyFileSync(filePath, path.join(proofDir, "leads_convert_modal_pc_light_1440x900.png"));
+  } else if (filename === "leads_convert_modal_pc_dark.png") {
+    fs.copyFileSync(filePath, path.join(proofDir, "leads_convert_modal_pc_dark_1440x900.png"));
+  }
 }
 
 async function run() {
@@ -248,7 +271,14 @@ async function run() {
   const browser = await chromium.launch({
     headless: true,
     executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+      "--proxy-server=direct://",
+      "--proxy-bypass-list=*",
+    ],
   });
 
   // ================= 1. PC CONTEXT (1440x900) =================

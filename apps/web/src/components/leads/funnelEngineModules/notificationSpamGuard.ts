@@ -1,5 +1,5 @@
 /**
- * DENTE Dental CRM — Notification Spam Collision Guard & 152-FZ Consent Filtering
+ * DENTE Dental CRM — Notification Spam Collision Guard & Consent Filtering
  */
 
 import {
@@ -60,7 +60,7 @@ export function checkNotificationSpamCollision(
 			allowed: false,
 			suppressionType: "no_marketing_consent",
 			reason:
-				"Отправка отклонена: отсутствует согласие на рекламные рассылки (152-ФЗ и ст. 18 ч. 1 ФЗ «О рекламе»).",
+				"Отправка отклонена: пациент не дал согласие на получение информационных и рекламных рассылок.",
 		};
 	}
 

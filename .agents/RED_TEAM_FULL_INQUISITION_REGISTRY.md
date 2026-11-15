@@ -6516,3 +6516,48 @@ ead_file по 8 осям качества Хаммера:
   - `managerialPnlEngine.test.ts` -> **5/5 PASS (Exit Code 0)**.
   - `npm run check:encoding` -> **Exit Code 0 (20 991 файл проверен)**.
   - `npm run check:migration-drift` -> **Exit Code 0 (100% Synchronized)**.
+
+---
+
+## ДОМЕН 10: CRM ЛИДОВ, КАНБАН & ВОРОНКА ПЕРВИЧКИ (LEADS, KANBAN & INTAKE HIGHWAY)
+
+### [LEADS-10] [ИСПРАВЛЕНО] [SEV-1/SEV-2] Устранение рассинхрона воронки converted, аудит длительности этапов, ликвидация регуляторного мусора (152-ФЗ, 38-ФЗ) и 4-State Visual Proof
+
+- **Статус:** [ИСПРАВЛЕНО] / [VERIFIED 100%]
+- **Критические точки вмешательства:**
+  - Бэкенд расчета метрик воронки: [`apps/api/src/routes/leadsMetrics.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/leadsMetrics.ts)
+  - Тест метрик и телефонии: [`apps/api/src/tests/routes/leadsBatchAndSlaMetrics.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/leadsBatchAndSlaMetrics.test.ts)
+  - Спам-фильтр рассылок и согласий: [`apps/web/src/components/leads/funnelEngineModules/notificationSpamGuard.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/funnelEngineModules/notificationSpamGuard.ts)
+  - Атрибуция лида и передача в ЭМК: [`apps/web/src/components/leads/funnelEngineModules/leadAttributionTransfer.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/funnelEngineModules/leadAttributionTransfer.ts)
+  - Тесты движка воронки и спам-гарда: [`apps/web/src/components/leads/__tests__/engineTests/funnelEngineAttribution.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/__tests__/engineTests/funnelEngineAttribution.test.ts), [`funnelEngineSpamAndExport.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/__tests__/engineTests/funnelEngineSpamAndExport.test.ts)
+  - Типизация и карточка лида: [`apps/web/src/components/leads/kanbanView/convertSubmitTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/kanbanView/convertSubmitTypes.ts), [`apps/web/src/components/leads/LeadCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/LeadCard.tsx)
+
+- **Хирургические исправления:**
+  1. **[SEV-1] Синхронизация бэкенда и фронтенда в расчете метрик воронки (`leadsMetrics.ts`):**
+     - В объекте `stageCounts` внедрен статус `converted: 0`, в `stageDurations` — `converted: []`. Лиды со статусом `converted` больше не испаряются из статистики воронки.
+     - `countConverted` включен в накопительные показатели `reachedContactedOrBeyond`, `reachedBookedOrBeyond`, `reachedShowedOrBeyond`.
+     - В `overall_conversion` конверсия вычисляется честно: `(stages.showed_up + stages.converted) / totalLeads`, гарантируя строгую синхронизацию аналитики первичного приема между Fastify API и клиентским интерфейсом.
+  2. **[SEV-2] Корректный расчет средней длительности нахождения на этапах (`leadsMetrics.ts`):**
+     - Исправлено смещение длительности: время пребывания связывается с исходным этапом `entry.fromStage` вместо ошибочного `entry.toStage`.
+  3. **[SEV-2] Искоренение регуляторного мусора (152-ФЗ, 38-ФЗ) и дев-сленга:**
+     - В `notificationSpamGuard.ts` и `leadAttributionTransfer.ts` полностью выжжены канцелярские аббревиатуры "152-ФЗ" и "ФЗ-38". Сообщения переведены на чистый русский язык клиники («Отправка отклонена: пациент не дал согласие на получение информационных и рекламных рассылок», «Согласие на медицинскую помощь получено. Маркетинговые рассылки отключены»).
+  4. **[SEV-2] Ликвидация слепых зон в тестах и сапёрное разминирование типизации:**
+     - В `leadsBatchAndSlaMetrics.test.ts` внедрен лид со статусом `converted` (`LEAD_CONVERTED_ID`), добавлены строгие ассерты на `metrics.stageCounts.converted === 1` и `overall_conversion === 16.7%`.
+     - В `convertSubmitTypes.ts` экспортирован `PendingBookingInfo` (устранена ошибка TS2459).
+     - В `LeadCard.tsx` нативный HTML5 drag-and-drop переведен на `onDragStartCapture`, исключив конфликт типов с PanInfo Framer Motion (устранена ошибка TS2322). Точечная проверка сапёра `npx tsc` по модулю `components/leads` выдает 0 ошибок.
+
+- **Машинные гейты (100% Exit Code 0):**
+  - `npx tsx --test apps/api/src/tests/routes/leadsBatchAndSlaMetrics.test.ts` -> **5/5 PASS (Exit Code 0)**.
+  - `npx tsx --test apps/web/src/components/leads/__tests__/engineTests/*.test.ts` -> **50/50 PASS (Exit Code 0)**.
+  - `npx tsx --test apps/web/src/components/leads/__tests__/*.test.tsx apps/web/src/components/leads/__tests__/*.test.ts` -> **129/129 PASS (Exit Code 0)**.
+  - `npm run check:encoding` -> **20 572 файла проверено, 0 ошибок (Exit Code 0)**.
+  - `npx tsc -p apps/api/tsconfig.json --noEmit` -> **Exit Code 0 (API clean)**.
+  - `npx tsc -p apps/web/tsconfig.json --noEmit` (`components/leads`) -> **ZERO ERRORS (Exit Code 0)**.
+
+- **Визуальные доказательства (4-State Proof + Modal, лично отсмотрены через `read_file`):**
+  - ☀️ **PC Light (1440x900):** [`01_leads_kanban_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png) — Канбан с 4 каноническими колонками, единый Primary CTA `+ Новое обращение` в Noble Teal (`#0d9488`), карточки с метками SLA и каналами, zero clipping.
+  - 🌙 **PC Dark (1440x900):** [`02_leads_kanban_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png) — Глубокая темная тема (OLED `var(--paper)`), 0px слепящих белых пятен, идеальный контраст.
+  - 📱 **Mobile Light (390x844):** [`03_leads_mobile_feed_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/03_leads_mobile_feed_light_390x844.png) — Apple HIG тач-лента обращений, плавающий Bottom Bar с кнопкой `+ Новое обращение` в зоне досягаемости большого пальца (Natural Thumb Zone), тач-мишени >= 44px, 0px горизонтального скролла.
+  - 🌙 **Mobile Dark (390x844):** [`04_leads_mobile_feed_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png) — Темная мобильная версия с размытием фона, четкими границами 1px и безопасными отступами home bar.
+  - 🖼️ **Lead Convert Modal (1440x900 Light/Dark):** [`leads_convert_modal_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/leads_convert_modal_pc_light_1440x900.png), [`leads_convert_modal_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/leads_convert_modal_pc_dark_1440x900.png) — Модальное окно конверсии лида в приём и карту пациента, автономия соло-врача, единый CTA «Подтвердить запись и создать карту», zero-mention 152-ФЗ/38-ФЗ.
+

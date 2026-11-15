@@ -102,7 +102,7 @@ describe("11. Notification Spam Collision & Rate Limiting Guard", () => {
 		});
 		assert.equal(res.allowed, false);
 		assert.equal(res.suppressionType, "no_marketing_consent");
-		assert.ok(res.reason?.includes("отсутствует согласие на рекламные рассылки"));
+		assert.ok(res.reason?.includes("пациент не дал согласие на получение информационных и рекламных рассылок"));
 	});
 
 	it("11.3. Suppresses marketing and recall when patient has service appointment today", () => {

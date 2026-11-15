@@ -75,7 +75,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 			animate={{ opacity: 1, y: 0 }}
 			exit={{ opacity: 0, scale: 0.95 }}
 			draggable
-			onDragStart={(e: React.DragEvent<HTMLDivElement>) => onDragStart(e, lead.id)}
+			onDragStartCapture={(e: React.DragEvent<HTMLDivElement>) => onDragStart(e, lead.id)}
 			onClick={handleCardClick}
 			title={targetPatientId ? "Открыть медицинскую карту пациента" : "Открыть детали обращения"}
 			style={computeLeadCardStyle({ cardBg, borderColor, sla, isDragged })}

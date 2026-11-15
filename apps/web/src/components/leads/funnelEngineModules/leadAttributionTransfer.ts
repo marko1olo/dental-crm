@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Lead Attribution and Transfer to Patient EHR
- * Zero Attribution Loss across Marketing Channels (152-FZ & 38-FZ)
+ * Zero Attribution Loss across Marketing Channels & Patient Consents
  * Mandate 8b (<= 120 lines)
  */
 
@@ -38,11 +38,13 @@ export function createPatientAttributionRecord(
 		: "";
 	const inquirySuffix = attr.primaryInquiry ? ` | Запрос: ${attr.primaryInquiry}` : "";
 	const preferredAppointmentNote = `src:${attr.channelLabel}${utmSuffix}${inquirySuffix}`;
-	const medConsentStr = medicalCareProcessing ? "согласие получено" : "согласие не получено";
+	const medConsentStr = medicalCareProcessing
+		? "Согласие на медицинскую помощь получено"
+		: "Согласие на медицинскую помощь не получено";
 	const mktConsentStr = marketingPromotions
-		? "согласие получено"
-		: "отказ / исключён из рассылок";
-	const dataProcessingBasisNote = `152-ФЗ: Обработка персданных для медпомощи — ${medConsentStr}. Рекламные рассылки и SMS (ФЗ-38) — ${mktConsentStr}. Источник: ${attr.channelLabel}.`;
+		? "Маркетинговые рассылки разрешены"
+		: "Маркетинговые рассылки отключены";
+	const dataProcessingBasisNote = `${medConsentStr}. ${mktConsentStr}. Источник: ${attr.channelLabel}.`;
 
 	return {
 		patientName,
