@@ -56,7 +56,8 @@ export type FamilyWalletTab =
 	| "topup"
 	| "spend"
 	| "history"
-	| "overview";
+	| "overview"
+	| "tax";
 
 export type TopupPaymentMethod = "cash" | "card" | "sbp";
 

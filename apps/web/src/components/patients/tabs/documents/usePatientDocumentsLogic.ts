@@ -31,6 +31,13 @@ export function usePatientDocumentsLogic(patient: Patient) {
 	const [isFastPrintOpen, setIsFastPrintOpen] = useState(false);
 	const [fastPrintDocType, setFastPrintDocType] = useState<FastPrintDocType>("medical_card");
 	const [tabletSignDoc, setTabletSignDoc] = useState<GeneratedDocument | null>(null);
+	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
+	const [taxModalInitialTab, setTaxModalInitialTab] = useState<"form" | "checks" | "family" | "xml" | "registry">("form");
+
+	const handleOpenTaxCert = (tab: "form" | "checks" | "family" | "xml" | "registry" = "form") => {
+		setTaxModalInitialTab(tab);
+		setIsTaxModalOpen(true);
+	};
 
 	const handleTabletSignatureConfirm = async (sigData: TabletSignatureData) => {
 		if (!tabletSignDoc) return;
@@ -75,5 +82,10 @@ export function usePatientDocumentsLogic(patient: Patient) {
 		handleTabletSignatureConfirm,
 		patientDocs,
 		activeIssueDoc,
+		isTaxModalOpen,
+		setIsTaxModalOpen,
+		taxModalInitialTab,
+		setTaxModalInitialTab,
+		handleOpenTaxCert,
 	};
 }

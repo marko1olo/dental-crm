@@ -6,6 +6,7 @@
 
 import {
 	ArrowDownRight,
+	FileText,
 	Plus,
 	RefreshCw,
 	Wallet,
@@ -67,6 +68,16 @@ export const FamilyWalletNavTabs: React.FC<FamilyWalletNavTabsProps> =
 				>
 					<RefreshCw className="w-3.5 h-3.5 shrink-0" />
 					<span>История</span>
+				</button>
+				<button
+					type="button"
+					data-testid="tab-family-wallet-tax"
+					onClick={() => setActiveTab("tax")}
+					className={`${TAB_BTN_BASE} ${activeTab === "tax" ? TAB_ACTIVE : TAB_INACTIVE}`}
+				>
+					<FileText className="w-3.5 h-3.5 shrink-0" />
+					<span className="hidden sm:inline">Справки ФНС</span>
+					<span className="sm:hidden inline">ФНС 13%</span>
 				</button>
 			</div>
 		);

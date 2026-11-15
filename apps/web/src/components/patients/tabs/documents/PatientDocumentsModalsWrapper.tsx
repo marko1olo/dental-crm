@@ -4,6 +4,7 @@ import { DocumentAuditFactsModal } from "../../../documents/tabs/DocumentAuditFa
 import { DocumentIssueConfirmationModal } from "../../../documents/tabs/DocumentIssueConfirmationModal";
 import { DigitalSignatureTabletModal } from "../../../documents/DigitalSignatureTabletModal";
 import { FastClinicalPrintEngine, type FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
+import { TaxDeductionCertificateModal } from "../../../finance/TaxDeductionCertificateModal";
 
 interface PatientDocumentsModalsWrapperProps {
 	patient: Patient;
@@ -16,11 +17,15 @@ interface PatientDocumentsModalsWrapperProps {
 	setTabletSignDoc: (doc: GeneratedDocument | null) => void;
 	activeIssueDoc: GeneratedDocument | null;
 	onTabletSignatureConfirm: (sigData: any) => Promise<void>;
+	isTaxModalOpen?: boolean | undefined;
+	setIsTaxModalOpen?: ((open: boolean) => void) | undefined;
+	taxModalInitialTab?: ("form" | "checks" | "family" | "xml" | "registry") | undefined;
 }
 
 export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapperProps> = ({
 	patient, appLogic, docStore, isFastPrintOpen, setIsFastPrintOpen,
 	fastPrintDocType, tabletSignDoc, setTabletSignDoc, activeIssueDoc, onTabletSignatureConfirm,
+	isTaxModalOpen, setIsTaxModalOpen, taxModalInitialTab,
 }) => {
 	const dashboard = appLogic.dashboard;
 	const adminProfile = patient.administrativeProfile;
@@ -123,6 +128,20 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 					clinicName={dashboard?.clinicSettings?.profile?.clinicName || dashboard?.organization?.name || "Стоматологическая клиника"}
 					onConfirmSignature={onTabletSignatureConfirm}
 					onPrintArchiveA4={() => void appLogic.downloadIssuedDocumentPdf(tabletSignDoc.id)}
+				/>
+			)}
+
+			{isTaxModalOpen && (
+				<TaxDeductionCertificateModal
+					isOpen={isTaxModalOpen}
+					onClose={() => setIsTaxModalOpen?.(false)}
+					initialTab={taxModalInitialTab || "form"}
+					patientId={patient.id || undefined}
+					patientName={patient.fullName || ""}
+					patientBirthDate={patient.birthDate || ""}
+					patientInn={adminProfile?.taxpayerInn || (adminProfile as any)?.inn || ""}
+					patientSnils={adminProfile?.snils || ""}
+					autoFetchPayments={true}
 				/>
 			)}
 		</>

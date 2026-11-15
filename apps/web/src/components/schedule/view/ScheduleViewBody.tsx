@@ -387,10 +387,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
       openScheduleSuggestion={openScheduleSuggestion}
       formatTime={formatTime}
       patientName={patientName}
-      openAppointmentEditor={(app) => {
-        handleOpenAppointmentInQuickBooking(app);
-        openAppointmentEditor(app);
-      }}
+      openAppointmentEditor={handleOpenAppointmentInQuickBooking}
       repeatAppointment={repeatAppointment}
       copyAppointmentToBuffer={copyAppointmentToBuffer}
       closeAppointmentEditor={closeAppointmentEditor}

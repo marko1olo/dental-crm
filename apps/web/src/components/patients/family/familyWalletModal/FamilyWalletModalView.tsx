@@ -42,10 +42,10 @@ export const FamilyWalletModalView: React.FC<FamilyWalletModalViewProps> =
 				onClick={(e) => e.stopPropagation()}
 				onKeyDown={(e) => e.stopPropagation()}
 			>
-				{/* Mobile Drag Handle (Apple HIG Bottom Sheet) */}
+				{/* Mobile Drag Handle (Apple HIG Bottom Sheet: 36x5px) */}
 				<div
 					data-testid="family-wallet-mobile-handle"
-					className="w-9 h-1 bg-[var(--line-strong,#94a3b8)] rounded-full mx-auto my-2 sm:hidden shrink-0 opacity-60"
+					className="w-[36px] h-[5px] bg-[var(--line-strong,#94a3b8)] rounded-full mx-auto my-2.5 sm:hidden shrink-0 opacity-60"
 				/>
 
 				<FamilyWalletModalHeader

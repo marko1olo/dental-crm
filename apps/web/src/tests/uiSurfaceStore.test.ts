@@ -22,9 +22,9 @@ describe("uiSurfaceStore - Exclusive Surface Coordinator", () => {
 		expect(useUiSurfaceStore.getState().isSurfaceOccupied).toBe(true);
 
 		// Opening primary modal clears drawers to prevent modal + drawer pileup
-		store.openPrimaryModal("appointment_modal", { appointmentId: "app_1" });
+		store.openPrimaryModal("patient_editor", { patientId: "pat_1" });
 		const next = useUiSurfaceStore.getState();
-		expect(next.primaryModal?.id).toBe("appointment_modal");
+		expect(next.primaryModal?.id).toBe("patient_editor");
 		expect(next.hasPrimaryModal).toBe(true);
 		expect(next.activeDrawer).toBeNull();
 		expect(next.hasActiveDrawer).toBe(false);

@@ -270,4 +270,26 @@ describe("Family Deposit Atomic Deduction & History Route Integrity", () => {
 		assert.equal(data.success, true);
 		assert.equal(data.totalNetRub, 3500);
 	});
+
+	it("GET /api/finance/family/:familyGroupId/tax-certificates returns statutory FNS certificates", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/finance/family/${FAMILY_ID}/tax-certificates?taxYear=${new Date().getFullYear()}`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": staffToken,
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const data = res.json();
+		assert.equal(data.familyGroupId, FAMILY_ID);
+		assert.ok(Array.isArray(data.certificates));
+		assert.ok(data.certificates.length >= 1, "Должна быть как минимум 1 справка на члена семьи");
+		const cert = data.certificates[0];
+		assert.ok(cert.certificateNumber.startsWith("FNS-"));
+		assert.equal(cert.payerFullName, "Иванов Иван Иванович");
+		assert.ok(cert.xmlPayload.includes("КНД=\"1184043\"") || cert.xmlPayload.includes("КНД=\"1151156\""));
+		assert.ok(cert.estimated13PercentRefundRub > 0);
+	});
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import type { Patient } from "@dental/shared";
-import { FileText, Printer, Share2, ShieldCheck } from "lucide-react";
+import { FileText, Printer, Receipt, Share2, ShieldCheck, Users } from "lucide-react";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../../blankContractPrint";
 import { printPatientBranchTransferAct } from "../../transfer/branchTransferEngine";
 import type { FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
@@ -10,10 +10,11 @@ interface PatientDocumentsBlanksMenuProps {
 	onClose: () => void;
 	onPrintOutpatientCard?: (() => void) | undefined;
 	onOpenFastPrint: (docType: FastPrintDocType) => void;
+	onOpenTaxCert?: ((tab?: "form" | "checks" | "family" | "xml" | "registry") => void) | undefined;
 }
 
 export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProps> = ({
-	patient, onClose, onPrintOutpatientCard, onOpenFastPrint,
+	patient, onClose, onPrintOutpatientCard, onOpenFastPrint, onOpenTaxCert,
 }) => {
 	return (
 		<div
@@ -72,6 +73,34 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 				<Share2 size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
 				<span className="truncate">Акт перевода в филиал</span>
 			</button>
+			<button
+				type="button"
+				onClick={() => {
+					onClose();
+					if (onOpenTaxCert) onOpenTaxCert("form");
+					else onOpenFastPrint("act_and_receipt");
+				}}
+				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+				data-testid="btn-print-tax-certificate"
+			>
+				<Receipt size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<span className="truncate">Справка для налогового вычета (13% НДФЛ)</span>
+			</button>
+			{Boolean(patient.familyGroupId) && (
+				<button
+					type="button"
+					onClick={() => {
+						onClose();
+						if (onOpenTaxCert) onOpenTaxCert("family");
+						else onOpenFastPrint("act_and_receipt");
+					}}
+					className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+					data-testid="btn-print-family-tax-certificates"
+				>
+					<Users size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<span className="truncate">Семейный пакет вычетов (13% НДФЛ)</span>
+				</button>
+			)}
 		</div>
 	);
 };

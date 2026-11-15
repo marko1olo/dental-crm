@@ -407,8 +407,8 @@ describe("useAppStore & uiSurfaceStore Coordination Tests (Anti-Matryoshka)", ()
 		assert.equal(surface.hasPrimaryModal, false);
 
 		// Open first modal
-		surface.openPrimaryModal("appointment_modal", { appointmentId: "appt-1" });
-		assert.equal(useUiSurfaceStore.getState().primaryModal?.id, "appointment_modal");
+		surface.openPrimaryModal("doctor_free_slots");
+		assert.equal(useUiSurfaceStore.getState().primaryModal?.id, "doctor_free_slots");
 		assert.equal(useUiSurfaceStore.getState().hasPrimaryModal, true);
 
 		// Open second modal -> replaces first modal, never nests (Anti-Matryoshka)

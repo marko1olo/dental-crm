@@ -5,10 +5,13 @@ import {
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
+import { getClinicSettingsFromDb } from "../../db/settingsQuery.js";
 import {
 	FamilyWalletError,
 	familyWalletService,
 } from "../../services/familyWallet/FamilyWalletService.js";
+import { generateFnsTaxCertificatesForFamilyLogic } from "../../services/familyWallet/familyFnsTaxService.js";
+import type { FnsClinicInfo } from "../../services/fns/fnsKnd1151156Builder.js";
 import { getFamilyHistoryRecords } from "./familyBalanceService.js";
 import { familyPaymentSchema } from "./familyFinanceTypes.js";
 
@@ -99,6 +102,81 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 			const message = err instanceof Error ? err.message : "Internal Server Error";
 			return reply.code(statusCode).send({
 				error: statusCode === 402 ? "InsufficientFunds" : statusCode === 403 ? "Forbidden" : statusCode === 409 ? "IdempotencyConflict" : statusCode === 404 ? "NotFound" : "PaymentFailed",
+				message,
+			});
+		}
+	});
+
+	// GET /api/finance/family/:familyGroupId/tax-certificates
+	app.get("/api/finance/family/:familyGroupId/tax-certificates", async (req, reply) => {
+		const organizationId = await requireResolvedOrganizationId(
+			req,
+			reply,
+			"family fns tax certificate read",
+		);
+		if (!organizationId) return;
+
+		const { familyGroupId } = req.params as { familyGroupId: string };
+		if (!UUID_REGEX.test(familyGroupId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор семейной группы (ожидается UUID)",
+			});
+		}
+
+		const query = req.query as {
+			taxYear?: string;
+			payerPatientId?: string;
+		};
+		const taxYear = query.taxYear?.trim() || String(new Date().getFullYear());
+		const payerPatientId = query.payerPatientId?.trim();
+
+		try {
+			const settings = await getClinicSettingsFromDb(organizationId);
+			const profile = settings?.profile;
+
+			const clinicInfo: FnsClinicInfo = {
+				inn: profile?.inn || "7701234567",
+				kpp: profile?.kpp || "770101001",
+				ogrn: profile?.ogrn || "1027700000000",
+				name: profile?.legalName || profile?.clinicName || "ООО ДЕНТЕ СТОМАТОЛОГИЯ",
+			};
+
+			const signatoryFioParts = (profile?.signatoryName || "Иванов Иван Иванович").trim().split(/\s+/);
+			const signatory = {
+				signatoryRole: "1" as const,
+				fullName: {
+					family: signatoryFioParts[0] || "Иванов",
+					given: signatoryFioParts[1] || "Иван",
+					...(signatoryFioParts[2] ? { patronymic: signatoryFioParts.slice(2).join(" ") } : {}),
+				},
+			};
+
+			const certificates = await generateFnsTaxCertificatesForFamilyLogic({
+				organizationId,
+				familyGroupId,
+				taxYear,
+				clinic: clinicInfo,
+				signatory,
+				customPayerPatientId: payerPatientId || undefined,
+			});
+
+			return {
+				familyGroupId,
+				taxYear,
+				count: certificates.length,
+				certificates,
+			};
+		} catch (err: unknown) {
+			const statusCode =
+				err instanceof FamilyWalletError
+					? err.statusCode
+					: typeof err === "object" && err !== null && "statusCode" in err && typeof (err as { statusCode?: unknown }).statusCode === "number"
+						? (err as { statusCode: number }).statusCode
+						: 500;
+			const message = err instanceof Error ? err.message : "Internal Server Error";
+			return reply.code(statusCode).send({
+				error: err instanceof FamilyWalletError ? err.code : "FamilyTaxCertificateError",
 				message,
 			});
 		}

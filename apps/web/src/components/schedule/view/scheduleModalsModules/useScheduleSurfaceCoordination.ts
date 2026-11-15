@@ -37,31 +37,7 @@ export function useScheduleSurfaceCoordination({
   | "isCalendarSyncModalOpen"
   | "isTomorrowRemindersOpen"
 >) {
-  // 1. AppointmentModal (Primary Modal)
-  React.useEffect(() => {
-    if (modalAppointment !== null) {
-      useUiSurfaceStore
-        .getState()
-        .openPrimaryModal("appointment_modal", { appointmentId: modalAppointment.id });
-      if (quickBookingOpen) setQuickBookingOpen(false);
-      if (waitlistOpen) setWaitlistOpen(false);
-      if (waitlistQuickFillSlot !== null) setWaitlistQuickFillSlot(null);
-    } else if (
-      useUiSurfaceStore.getState().primaryModal?.id === "appointment_modal"
-    ) {
-      useUiSurfaceStore.getState().closePrimaryModal("appointment_modal");
-    }
-  }, [
-    modalAppointment,
-    quickBookingOpen,
-    setQuickBookingOpen,
-    waitlistOpen,
-    setWaitlistOpen,
-    waitlistQuickFillSlot,
-    setWaitlistQuickFillSlot,
-  ]);
-
-  // 2. DoctorFreeSlotsModal
+  // 1. DoctorFreeSlotsModal
   React.useEffect(() => {
     if (doctorFreeSlotsOpen) {
       useUiSurfaceStore.getState().openPrimaryModal("doctor_free_slots");

@@ -8,6 +8,7 @@ import { FamilyDepositTopupSection } from "./FamilyDepositTopupSection";
 import { FamilyMembersBalanceList } from "./FamilyMembersBalanceList";
 import { FamilyWalletHistoryTable } from "./FamilyWalletHistoryTable";
 import { FamilyWalletSpendSection } from "./FamilyWalletSpendSection";
+import { FamilyWalletTaxSection } from "./FamilyWalletTaxSection";
 import type { FamilyWalletLogic } from "./useFamilyWalletLogic";
 
 export interface FamilyWalletTabBodyProps {
@@ -67,6 +68,13 @@ export const FamilyWalletTabBody: React.FC<FamilyWalletTabBodyProps> =
 
 				{activeTab === "history" && (
 					<FamilyWalletHistoryTable transactions={logic.transactions} />
+				)}
+
+				{activeTab === "tax" && (
+					<FamilyWalletTaxSection
+						familyData={logic.familyData}
+						patientId={patientId}
+					/>
 				)}
 			</div>
 		);

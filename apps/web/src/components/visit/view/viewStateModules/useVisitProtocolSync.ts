@@ -164,12 +164,12 @@ export function useVisitProtocolSync({
 			return;
 		}
 
-		// 2. Визит со статусом in_chair / in_progress на сегодня
+		// 2. Визит со статусом in_treatment / in_chair / in_progress на сегодня
 		const todayIso = (dashboard as { todayIso?: string })?.todayIso || new Date().toISOString().slice(0, 10);
 		const inProgressApp = (dashboard?.appointments || []).find((a) => {
 			const st = String(a.status || "").toLowerCase();
 			const dt = (a.startsAt || "").slice(0, 10);
-			return (!dt || dt === todayIso) && (st === "in_chair" || st === "in_progress");
+			return (!dt || dt === todayIso) && (st === "in_treatment" || st === "in_chair" || st === "in_progress");
 		});
 		if (inProgressApp?.patientId) {
 			selectFn(inProgressApp.patientId);

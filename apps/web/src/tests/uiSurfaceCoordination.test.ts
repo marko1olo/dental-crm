@@ -31,17 +31,17 @@ describe("UI Surface Coordination & Anti-Clutter Invariants (Mandates 8b, 8d, 8e
 		expect(useTelephonyStore.getState().isCallDrawerOpen).toBe(false);
 	});
 
-	it("Invariant 2: Single Primary Modal — Opening AppointmentModal closes all side drawers", () => {
+	it("Invariant 2: Single Primary Modal — Opening Primary Modal closes all side drawers", () => {
 		const surface = useUiSurfaceStore.getState();
 
 		// User has quick booking open
 		surface.openDrawer("quick_booking");
 		expect(useUiSurfaceStore.getState().activeDrawer).toBe("quick_booking");
 
-		// Open AppointmentModal: side drawers are closed immediately
-		surface.openPrimaryModal("appointment_modal", { appointmentId: "appt_test_1" });
+		// Open doctor_free_slots: side drawers are closed immediately
+		surface.openPrimaryModal("doctor_free_slots");
 		expect(useUiSurfaceStore.getState().hasPrimaryModal).toBe(true);
-		expect(useUiSurfaceStore.getState().primaryModal?.id).toBe("appointment_modal");
+		expect(useUiSurfaceStore.getState().primaryModal?.id).toBe("doctor_free_slots");
 		expect(useUiSurfaceStore.getState().activeDrawer).toBeNull();
 		expect(useUiSurfaceStore.getState().hasActiveDrawer).toBe(false);
 		expect(useTelephonyStore.getState().isCallDrawerOpen).toBe(false);
@@ -81,12 +81,12 @@ describe("UI Surface Coordination & Anti-Clutter Invariants (Mandates 8b, 8d, 8e
 		expect(useUiSurfaceStore.getState().isSurfaceOccupied).toBe(false);
 
 		// When primary modal opens, surface is marked occupied
-		useUiSurfaceStore.getState().openPrimaryModal("appointment_modal");
+		useUiSurfaceStore.getState().openPrimaryModal("doctor_free_slots");
 		expect(useUiSurfaceStore.getState().isSurfaceOccupied).toBe(true);
 		expect(useUiSurfaceStore.getState().hasPrimaryModal).toBe(true);
 
 		// When closed, surface frees up
-		useUiSurfaceStore.getState().closePrimaryModal("appointment_modal");
+		useUiSurfaceStore.getState().closePrimaryModal("doctor_free_slots");
 		expect(useUiSurfaceStore.getState().isSurfaceOccupied).toBe(false);
 
 		// When drawer opens, surface also marks occupied

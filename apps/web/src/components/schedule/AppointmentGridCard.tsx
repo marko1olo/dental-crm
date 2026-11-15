@@ -21,6 +21,7 @@ import {
 	formatRussianAge,
 	getNormalizedAppointmentStatusLabel,
 } from "./appointmentCardHelpers";
+import { openVisitWithBackendSync } from "./appointmentCardActions/visitSyncHelper";
 import { GridAppointmentHoverHud } from "./GridAppointmentHoverHud";
 import { dragGhostManager, setEmptyDragImage } from "./grid/DecoupledDragGhost";
 import type { GridAppointmentCardProps } from "./appointmentCardModules/appointmentCardTypes";
@@ -124,12 +125,10 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 	const handleOpenVisitRecord = useCallback((e: React.MouseEvent) => {
 		e.stopPropagation();
 		if (a.patientId) {
-			usePatientStore.getState().setSelectedPatientId(a.patientId);
-			if (typeof window !== "undefined") window.location.hash = "#visit";
-			useAppStore.getState().setCurrentView("visit");
+			void openVisitWithBackendSync(a, patObj);
 			showToast(`Открыта карта приёма: ${pName}`, "info");
 		}
-	}, [a.patientId, pName]);
+	}, [a, patObj, pName]);
 
 	const handle1ClickTransition = useCallback((e: React.MouseEvent) => {
 		e.stopPropagation();
@@ -221,9 +220,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 					if (onAppointmentDoubleClick) {
 						onAppointmentDoubleClick(a);
 					} else if (a.patientId) {
-						usePatientStore.getState().setSelectedPatientId(a.patientId);
-						if (typeof window !== "undefined") window.location.hash = "#visit";
-						useAppStore.getState().setCurrentView("visit");
+						void openVisitWithBackendSync(a, patObj);
 						showToast(`Открыта карта приёма: ${pName}`, "info");
 					}
 				}}

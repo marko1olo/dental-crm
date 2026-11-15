@@ -5,7 +5,6 @@ import { useTelephonyStore } from "./telephonyStore";
  * Идентификаторы известных модальных поверхностей первого уровня.
  */
 export type PrimaryModalId =
-	| "appointment_modal"
 	| "patient_editor"
 	| "doctor_free_slots"
 	| "preventive_inspection"

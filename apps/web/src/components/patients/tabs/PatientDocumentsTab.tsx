@@ -13,12 +13,26 @@ export interface PatientDocumentsTabProps {
 	patient: Patient;
 	/** Печать: Вкладыш в амбулаторную карту */
 	onPrintOutpatientCard?: (() => void) | undefined;
+	/** Открытие справки для налогового вычета 13% */
+	onOpenTaxCertificate?: (() => void) | undefined;
+	/** Открытие семейного пакета налоговых вычетов */
+	onOpenFamilyTaxCertificate?: (() => void) | undefined;
 }
 
 export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.memo(
-	function PatientDocumentsTab({ patient, onPrintOutpatientCard }) {
+	function PatientDocumentsTab({ patient, onPrintOutpatientCard, onOpenTaxCertificate, onOpenFamilyTaxCertificate }) {
 		const logic = usePatientDocumentsLogic(patient);
 		const { appLogic, docStore, patientDocs } = logic;
+
+		const handleOpenTaxCert = (tab?: "form" | "checks" | "family" | "xml" | "registry") => {
+			if (tab === "family" && onOpenFamilyTaxCertificate) {
+				onOpenFamilyTaxCertificate();
+			} else if (tab === "form" && onOpenTaxCertificate) {
+				onOpenTaxCertificate();
+			} else {
+				logic.handleOpenTaxCert(tab ?? "form");
+			}
+		};
 
 		return (
 			<div
@@ -32,6 +46,7 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 						logic.setFastPrintDocType(type);
 						logic.setIsFastPrintOpen(true);
 					}}
+					onOpenTaxCert={handleOpenTaxCert}
 				/>
 
 				{patientDocs.length > 0 ? (
@@ -95,6 +110,9 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 					setTabletSignDoc={logic.setTabletSignDoc}
 					activeIssueDoc={logic.activeIssueDoc}
 					onTabletSignatureConfirm={logic.handleTabletSignatureConfirm}
+					isTaxModalOpen={logic.isTaxModalOpen}
+					setIsTaxModalOpen={logic.setIsTaxModalOpen}
+					taxModalInitialTab={logic.taxModalInitialTab}
 				/>
 			</div>
 		);

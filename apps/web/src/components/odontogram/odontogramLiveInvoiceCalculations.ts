@@ -7,6 +7,7 @@ export interface LiveInvoiceItem {
 	title: string;
 	category: string;
 	price: number;
+	amountKopecks: number;
 	quantity: number;
 	discountRub?: number | undefined;
 }
@@ -18,6 +19,9 @@ export interface LiveInvoiceCashierExport {
 	grossTotalRub: number;
 	discountRub: number;
 	netTotalRub: number;
+	grossTotalKopecks?: number;
+	discountKopecks?: number;
+	netTotalKopecks?: number;
 	discountPercent: number;
 	createdAtIso: string;
 }
@@ -26,22 +30,25 @@ export interface LiveInvoiceCashierExport {
  * Каталог медицинских услуг стоматологии
  * с поддержкой взрослой терапии, эндодонтии (обработка и обтурация корневых каналов),
  * пародонтологии, детской стоматологии, имплантации и костной пластики.
+ * Цены указаны в рублях и точных целочисленных копейках (amountKopecks).
  */
 export const ORDER_804N_PROCEDURES: Record<
 	string,
-	{ code: string; title: string; price: number; category: string }
+	{ code: string; title: string; price: number; amountKopecks: number; category: string }
 > = {
 	// Терапия
 	Caries: {
 		code: "A16.07.002.001",
 		title: "Восстановление зуба пломбой (лечение кариеса фотополимером)",
 		price: 4500,
+		amountKopecks: 450000,
 		category: "Терапия",
 	},
 	Crown: {
 		code: "A16.07.004.001",
 		title: "Восстановление зуба коронкой из диоксида циркония / E.max",
 		price: 24000,
+		amountKopecks: 2400000,
 		category: "Ортопедия",
 	},
 
@@ -50,24 +57,28 @@ export const ORDER_804N_PROCEDURES: Record<
 		code: "A16.07.030.001",
 		title: "Инструментальная и медикаментозная обработка корневого канала (1-канальный зуб)",
 		price: 3500,
+		amountKopecks: 350000,
 		category: "Эндодонтия",
 	},
 	EndoPrep2Canals: {
 		code: "A16.07.030.002",
 		title: "Инструментальная и медикаментозная обработка корневых каналов (2-канальный зуб)",
 		price: 5500,
+		amountKopecks: 550000,
 		category: "Эндодонтия",
 	},
 	EndoPrep3Canals: {
 		code: "A16.07.030.003",
 		title: "Инструментальная и медикаментозная обработка корневых каналов (3-канальный зуб)",
 		price: 7500,
+		amountKopecks: 750000,
 		category: "Эндодонтия",
 	},
 	EndoPrep4Canals: {
 		code: "A16.07.030.004",
 		title: "Инструментальная и медикаментозная обработка корневых каналов (4-канальный зуб)",
 		price: 9500,
+		amountKopecks: 950000,
 		category: "Эндодонтия",
 	},
 
@@ -76,24 +87,28 @@ export const ORDER_804N_PROCEDURES: Record<
 		code: "A16.07.008.001",
 		title: "Пломбирование корневого канала зуба (1-канальный зуб)",
 		price: 3000,
+		amountKopecks: 300000,
 		category: "Эндодонтия",
 	},
 	EndoObturation2Canals: {
 		code: "A16.07.008.002",
 		title: "Пломбирование корневых каналов зуба (2-канальный зуб)",
 		price: 5000,
+		amountKopecks: 500000,
 		category: "Эндодонтия",
 	},
 	EndoObturation3Canals: {
 		code: "A16.07.008.003",
 		title: "Пломбирование корневых каналов зуба (3-канальный зуб)",
 		price: 7000,
+		amountKopecks: 700000,
 		category: "Эндодонтия",
 	},
 	EndoObturation4Canals: {
 		code: "A16.07.008.004",
 		title: "Пломбирование корневых каналов зуба (4-канальный зуб)",
 		price: 9000,
+		amountKopecks: 900000,
 		category: "Эндодонтия",
 	},
 
@@ -102,12 +117,14 @@ export const ORDER_804N_PROCEDURES: Record<
 		code: "A16.07.091",
 		title: "Временное пломбирование лекарственным препаратом корневого канала (Ca(OH)2)",
 		price: 2000,
+		amountKopecks: 200000,
 		category: "Эндодонтия",
 	},
 	EndoUnsealing: {
 		code: "A16.07.082",
 		title: "Распломбирование корневого канала зуба",
 		price: 2500,
+		amountKopecks: 250000,
 		category: "Эндодонтия",
 	},
 
@@ -116,12 +133,14 @@ export const ORDER_804N_PROCEDURES: Record<
 		code: "A16.07.008.002",
 		title: "Эндодонтическое лечение пульпита (обработка и обтурация каналов)",
 		price: 10500,
+		amountKopecks: 1050000,
 		category: "Эндодонтия",
 	},
 	Periodontitis: {
 		code: "A16.07.009.001",
 		title: "Лечение апикального периодонтита (распломбирование, дезинфекция и обтурация)",
 		price: 12500,
+		amountKopecks: 1250000,
 		category: "Эндодонтия",
 	},
 
@@ -130,48 +149,56 @@ export const ORDER_804N_PROCEDURES: Record<
 		code: "A16.07.054.001",
 		title: "Внутрикостная дентальная имплантация + формирователь десны",
 		price: 42000,
+		amountKopecks: 4200000,
 		category: "Хирургия",
 	},
 	Planned_Implant: {
 		code: "A16.07.054.001",
 		title: "Дентальная имплантация (планируемый этап) + формирователь десны",
 		price: 42000,
+		amountKopecks: 4200000,
 		category: "Хирургия",
 	},
 	Missing: {
 		code: "A16.07.054.001",
 		title: "Дентальная имплантация (восстановление отсутствующего зуба)",
 		price: 35000,
+		amountKopecks: 3500000,
 		category: "Хирургия",
 	},
 	Root: {
 		code: "A16.07.001.002",
 		title: "Удаление фрагмента / разрушенного корня зуба",
 		price: 4000,
+		amountKopecks: 400000,
 		category: "Хирургия",
 	},
 	Retained: {
 		code: "A16.07.001.003",
 		title: "Сложное удаление ретинированного / дистопированного зуба",
 		price: 8500,
+		amountKopecks: 850000,
 		category: "Хирургия",
 	},
 	Impacted: {
 		code: "A16.07.001.003",
 		title: "Сложное удаление ретинированного / дистопированного зуба",
 		price: 8500,
+		amountKopecks: 850000,
 		category: "Хирургия",
 	},
 	BoneGrafting: {
 		code: "A16.07.041",
 		title: "Костная пластика челюстно-лицевой области (НКР / синус-лифтинг)",
 		price: 28000,
+		amountKopecks: 2800000,
 		category: "Хирургия",
 	},
 	ImplantProsthetics: {
 		code: "A16.07.006",
 		title: "Протезирование на имплантате (абатмент + циркониевая коронка)",
 		price: 34000,
+		amountKopecks: 3400000,
 		category: "Ортопедия",
 	},
 
@@ -180,24 +207,28 @@ export const ORDER_804N_PROCEDURES: Record<
 		code: "A16.07.051",
 		title: "Скейлинг и сглаживание корней при заболеваниях пародонта (SRP)",
 		price: 2500,
+		amountKopecks: 250000,
 		category: "Пародонтология",
 	},
 	PeriodontalHygiene: {
 		code: "A16.07.050",
 		title: "Профессиональная гигиена полости рта (Air-Flow + УЗ-скейлинг)",
 		price: 5500,
+		amountKopecks: 550000,
 		category: "Гигиена",
 	},
 	PeriodontalCurettage: {
 		code: "A16.07.039",
 		title: "Закрытый кюретаж пародонтального кармана",
 		price: 1800,
+		amountKopecks: 180000,
 		category: "Пародонтология",
 	},
 	PeriodontalSplinting: {
 		code: "A16.07.019",
 		title: "Временное шинирование подвижных зубов (лента Ribbond)",
 		price: 4500,
+		amountKopecks: 450000,
 		category: "Пародонтология",
 	},
 
@@ -206,30 +237,35 @@ export const ORDER_804N_PROCEDURES: Record<
 		code: "A16.07.002.001",
 		title: "Восстановление временного зуба пломбой (лечение кариеса)",
 		price: 3200,
+		amountKopecks: 320000,
 		category: "Детская терапия",
 	},
 	PediatricPulpitis: {
 		code: "A16.07.008.001",
 		title: "Пульпотомия временного зуба с биоактивной герметизацией",
 		price: 5800,
+		amountKopecks: 580000,
 		category: "Детская терапия",
 	},
 	PediatricExtraction: {
 		code: "A16.07.001",
 		title: "Удаление временного зуба с анестезией",
 		price: 1800,
+		amountKopecks: 180000,
 		category: "Детская хирургия",
 	},
 	PediatricCrown: {
 		code: "A16.07.004.003",
 		title: "Восстановление временного зуба защитной коронкой SSC",
 		price: 4900,
+		amountKopecks: 490000,
 		category: "Детская ортопедия",
 	},
 	PediatricFissureSeal: {
 		code: "A16.07.057",
 		title: "Запечатывание фиссуры зуба герметиком (Clinpro)",
 		price: 2200,
+		amountKopecks: 220000,
 		category: "Профилактика",
 	},
 };
@@ -313,16 +349,38 @@ export interface EndodonticCompositeCalculation {
 	toothNumber: number;
 	isMultiRooted: boolean;
 	canalsCount: number;
-	prepProcedure: { code: string; title: string; price: number; category: string };
-	obturationProcedure: { code: string; title: string; price: number; category: string };
-	medicationProcedure?: { code: string; title: string; price: number; category: string } | undefined;
+	prepProcedure: {
+		code: string;
+		title: string;
+		price: number;
+		amountKopecks: number;
+		category: string;
+	};
+	obturationProcedure: {
+		code: string;
+		title: string;
+		price: number;
+		amountKopecks: number;
+		category: string;
+	};
+	medicationProcedure?:
+		| {
+				code: string;
+				title: string;
+				price: number;
+				amountKopecks: number;
+				category: string;
+		  }
+		| undefined;
 	totalCompositePrice: number;
+	totalCompositeKopecks: number;
 }
 
 /**
  * Вычисляет композитную стоимость эндодонтического лечения зуба
  * (инструментальная обработка A16.07.030 + обтурация A16.07.008 + опционально Ca(OH)2 A16.07.091)
  * для многокорневых (16, 17, 26, 27, 36, 37, 46, 47) и однокорневых зубов.
+ * Расчет ведется в точных целочисленных копейках (totalCompositeKopecks).
  */
 export function calculateEndodonticCompositePrice(
 	toothNumber: number,
@@ -337,10 +395,12 @@ export function calculateEndodonticCompositePrice(
 		? ORDER_804N_PROCEDURES.EndoMedicationCaOH2
 		: undefined;
 
-	const totalCompositePrice =
-		prepProcedure.price +
-		obturationProcedure.price +
-		(medicationProcedure ? medicationProcedure.price : 0);
+	const totalCompositeKopecks =
+		prepProcedure.amountKopecks +
+		obturationProcedure.amountKopecks +
+		(medicationProcedure ? medicationProcedure.amountKopecks : 0);
+
+	const totalCompositePrice = Math.round(totalCompositeKopecks / 100);
 
 	return {
 		toothNumber,
@@ -350,6 +410,7 @@ export function calculateEndodonticCompositePrice(
 		obturationProcedure,
 		medicationProcedure,
 		totalCompositePrice,
+		totalCompositeKopecks,
 	};
 }
 
@@ -360,18 +421,22 @@ export function getEndoPreparationProcedure(canalsCount: number): {
 	code: string;
 	title: string;
 	price: number;
+	amountKopecks: number;
 	category: string;
 } {
 	const clamped = Math.min(4, Math.max(1, Math.round(canalsCount)));
 	const key = `EndoPrep${clamped}Canal${clamped > 1 ? "s" : ""}`;
-	return (
-		ORDER_804N_PROCEDURES[key] ?? {
-			code: `A16.07.030.00${clamped}`,
-			title: `Инструментальная и медикаментозная обработка корневых каналов (${clamped}-канальный зуб)`,
-			price: 3500 + (clamped - 1) * 2000,
-			category: "Эндодонтия",
-		}
-	);
+	const base = ORDER_804N_PROCEDURES[key];
+	if (base) return base;
+
+	const price = 3500 + (clamped - 1) * 2000;
+	return {
+		code: `A16.07.030.00${clamped}`,
+		title: `Инструментальная и медикаментозная обработка корневых каналов (${clamped}-канальный зуб)`,
+		price,
+		amountKopecks: price * 100,
+		category: "Эндодонтия",
+	};
 }
 
 /**
@@ -381,18 +446,22 @@ export function getEndoObturationProcedure(canalsCount: number): {
 	code: string;
 	title: string;
 	price: number;
+	amountKopecks: number;
 	category: string;
 } {
 	const clamped = Math.min(4, Math.max(1, Math.round(canalsCount)));
 	const key = `EndoObturation${clamped}Canal${clamped > 1 ? "s" : ""}`;
-	return (
-		ORDER_804N_PROCEDURES[key] ?? {
-			code: `A16.07.008.00${clamped}`,
-			title: `Пломбирование корневых каналов зуба (${clamped}-канальный зуб)`,
-			price: 3000 + (clamped - 1) * 2000,
-			category: "Эндодонтия",
-		}
-	);
+	const base = ORDER_804N_PROCEDURES[key];
+	if (base) return base;
+
+	const price = 3000 + (clamped - 1) * 2000;
+	return {
+		code: `A16.07.008.00${clamped}`,
+		title: `Пломбирование корневых каналов зуба (${clamped}-канальный зуб)`,
+		price,
+		amountKopecks: price * 100,
+		category: "Эндодонтия",
+	};
 }
 
 /**
@@ -427,16 +496,20 @@ export function calculateLiveInvoiceItems(
 			const srpKey = `${num}-${prSrp.code}`;
 			if (!excludedKeys.has(srpKey)) {
 				const qty = quantities[srpKey] ?? 1;
-				const disc =
+				const grossKopecks = prSrp.amountKopecks * qty;
+				const discKopecks =
 					discountPercent > 0
-						? Math.round((prSrp.price * qty * discountPercent) / 100)
+						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
+				const netKopecks = grossKopecks - discKopecks;
+				const disc = Math.round(discKopecks / 100);
 				items.push({
 					toothNumber: num,
 					code: prSrp.code,
 					title: `Зуб ${num}: ${prSrp.title}`,
 					category: prSrp.category,
 					price: prSrp.price,
+					amountKopecks: netKopecks,
 					quantity: qty,
 					discountRub: disc,
 				});
@@ -447,16 +520,20 @@ export function calculateLiveInvoiceItems(
 				const curKey = `${num}-${prCur.code}`;
 				if (!excludedKeys.has(curKey)) {
 					const qty = quantities[curKey] ?? 1;
-					const disc =
+					const grossKopecks = prCur.amountKopecks * qty;
+					const discKopecks =
 						discountPercent > 0
-							? Math.round((prCur.price * qty * discountPercent) / 100)
+							? Math.round((grossKopecks * discountPercent) / 100)
 							: 0;
+					const netKopecks = grossKopecks - discKopecks;
+					const disc = Math.round(discKopecks / 100);
 					items.push({
 						toothNumber: num,
 						code: prCur.code,
 						title: `Зуб ${num}: ${prCur.title}`,
 						category: prCur.category,
 						price: prCur.price,
+						amountKopecks: netKopecks,
 						quantity: qty,
 						discountRub: disc,
 					});
@@ -468,16 +545,20 @@ export function calculateLiveInvoiceItems(
 				const splintKey = `${num}-${prSplint.code}`;
 				if (!excludedKeys.has(splintKey)) {
 					const qty = quantities[splintKey] ?? 1;
-					const disc =
+					const grossKopecks = prSplint.amountKopecks * qty;
+					const discKopecks =
 						discountPercent > 0
-							? Math.round((prSplint.price * qty * discountPercent) / 100)
+							? Math.round((grossKopecks * discountPercent) / 100)
 							: 0;
+					const netKopecks = grossKopecks - discKopecks;
+					const disc = Math.round(discKopecks / 100);
 					items.push({
 						toothNumber: num,
 						code: prSplint.code,
 						title: `Зуб ${num}: ${prSplint.title}`,
 						category: prSplint.category,
 						price: prSplint.price,
+						amountKopecks: netKopecks,
 						quantity: qty,
 						discountRub: disc,
 					});
@@ -504,16 +585,20 @@ export function calculateLiveInvoiceItems(
 			const pedKey = `${num}-${pedPr.code}`;
 			if (!excludedKeys.has(pedKey)) {
 				const qty = quantities[pedKey] ?? 1;
-				const disc =
+				const grossKopecks = pedPr.amountKopecks * qty;
+				const discKopecks =
 					discountPercent > 0
-						? Math.round((pedPr.price * qty * discountPercent) / 100)
+						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
+				const netKopecks = grossKopecks - discKopecks;
+				const disc = Math.round(discKopecks / 100);
 				items.push({
 					toothNumber: num,
 					code: pedPr.code,
 					title: `Временный зуб ${num}: ${pedPr.title}`,
 					category: pedPr.category,
 					price: pedPr.price,
+					amountKopecks: netKopecks,
 					quantity: qty,
 					discountRub: disc,
 				});
@@ -539,16 +624,20 @@ export function calculateLiveInvoiceItems(
 			const prepKey = `${num}-${prepProc.code}`;
 			if (!excludedKeys.has(prepKey)) {
 				const qty = quantities[prepKey] ?? 1;
-				const disc =
+				const grossKopecks = prepProc.amountKopecks * qty;
+				const discKopecks =
 					discountPercent > 0
-						? Math.round((prepProc.price * qty * discountPercent) / 100)
+						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
+				const netKopecks = grossKopecks - discKopecks;
+				const disc = Math.round(discKopecks / 100);
 				items.push({
 					toothNumber: num,
 					code: prepProc.code,
 					title: `Зуб ${num}: ${prepProc.title}`,
 					category: prepProc.category,
 					price: prepProc.price,
+					amountKopecks: netKopecks,
 					quantity: qty,
 					discountRub: disc,
 				});
@@ -558,16 +647,20 @@ export function calculateLiveInvoiceItems(
 			const obtKey = `${num}-${obtProc.code}`;
 			if (!excludedKeys.has(obtKey)) {
 				const qty = quantities[obtKey] ?? 1;
-				const disc =
+				const grossKopecks = obtProc.amountKopecks * qty;
+				const discKopecks =
 					discountPercent > 0
-						? Math.round((obtProc.price * qty * discountPercent) / 100)
+						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
+				const netKopecks = grossKopecks - discKopecks;
+				const disc = Math.round(discKopecks / 100);
 				items.push({
 					toothNumber: num,
 					code: obtProc.code,
 					title: `Зуб ${num}: ${obtProc.title}`,
 					category: obtProc.category,
 					price: obtProc.price,
+					amountKopecks: netKopecks,
 					quantity: qty,
 					discountRub: disc,
 				});
@@ -584,10 +677,13 @@ export function calculateLiveInvoiceItems(
 
 			if (!excludedKeys.has(itemKey)) {
 				const itemPrice = pr.price;
-				const itemDiscount =
+				const grossKopecks = pr.amountKopecks * qty;
+				const discKopecks =
 					discountPercent > 0
-						? Math.round((itemPrice * qty * discountPercent) / 100)
+						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
+				const netKopecks = grossKopecks - discKopecks;
+				const itemDiscount = Math.round(discKopecks / 100);
 
 				items.push({
 					toothNumber: num,
@@ -595,6 +691,7 @@ export function calculateLiveInvoiceItems(
 					title: `Зуб ${num}: ${pr.title}`,
 					category: pr.category,
 					price: itemPrice,
+					amountKopecks: netKopecks,
 					quantity: qty,
 					discountRub: itemDiscount,
 				});
@@ -608,16 +705,20 @@ export function calculateLiveInvoiceItems(
 				const graftKey = `${num}-${prGraft.code}`;
 				if (!excludedKeys.has(graftKey)) {
 					const qty = quantities[graftKey] ?? 1;
-					const disc =
+					const grossKopecks = prGraft.amountKopecks * qty;
+					const discKopecks =
 						discountPercent > 0
-							? Math.round((prGraft.price * qty * discountPercent) / 100)
+							? Math.round((grossKopecks * discountPercent) / 100)
 							: 0;
+					const netKopecks = grossKopecks - discKopecks;
+					const disc = Math.round(discKopecks / 100);
 					items.push({
 						toothNumber: num,
 						code: prGraft.code,
 						title: `Зуб ${num}: ${prGraft.title}`,
 						category: prGraft.category,
 						price: prGraft.price,
+						amountKopecks: netKopecks,
 						quantity: qty,
 						discountRub: disc,
 					});
@@ -628,16 +729,20 @@ export function calculateLiveInvoiceItems(
 			const prosthKey = `${num}-${prProsth.code}`;
 			if (!excludedKeys.has(prosthKey)) {
 				const qty = quantities[prosthKey] ?? 1;
-				const disc =
+				const grossKopecks = prProsth.amountKopecks * qty;
+				const discKopecks =
 					discountPercent > 0
-						? Math.round((prProsth.price * qty * discountPercent) / 100)
+						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
+				const netKopecks = grossKopecks - discKopecks;
+				const disc = Math.round(discKopecks / 100);
 				items.push({
 					toothNumber: num,
 					code: prProsth.code,
 					title: `Зуб ${num}: ${prProsth.title}`,
 					category: prProsth.category,
 					price: prProsth.price,
+					amountKopecks: netKopecks,
 					quantity: qty,
 					discountRub: disc,
 				});

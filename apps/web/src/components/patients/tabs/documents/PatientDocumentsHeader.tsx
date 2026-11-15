@@ -8,10 +8,11 @@ interface PatientDocumentsHeaderProps {
 	patient: Patient;
 	onPrintOutpatientCard?: (() => void) | undefined;
 	onOpenFastPrint: (docType: FastPrintDocType) => void;
+	onOpenTaxCert?: ((tab?: "form" | "checks" | "family" | "xml" | "registry") => void) | undefined;
 }
 
 export const PatientDocumentsHeader: React.FC<PatientDocumentsHeaderProps> = ({
-	patient, onPrintOutpatientCard, onOpenFastPrint,
+	patient, onPrintOutpatientCard, onOpenFastPrint, onOpenTaxCert,
 }) => {
 	const [isBlanksMenuOpen, setIsBlanksMenuOpen] = useState(false);
 	const blanksMenuRef = useRef<HTMLDivElement>(null);
@@ -80,6 +81,7 @@ export const PatientDocumentsHeader: React.FC<PatientDocumentsHeaderProps> = ({
 							onClose={() => setIsBlanksMenuOpen(false)}
 							onPrintOutpatientCard={onPrintOutpatientCard}
 							onOpenFastPrint={onOpenFastPrint}
+							onOpenTaxCert={onOpenTaxCert}
 						/>
 					)}
 				</div>
