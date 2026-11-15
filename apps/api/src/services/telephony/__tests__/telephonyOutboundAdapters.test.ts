@@ -36,7 +36,10 @@ describe("TelephonyGatewayService: Real Provider Adapters & Outbound Call", () =
 			});
 
 			assert.equal(result.dispatched, false);
-			assert.equal(result.error, "АТС телефонии не подключена в клинике");
+			assert.equal(
+				result.error,
+				"АТС телефонии не подключена в клинике. Настройте локальный Asterisk или облачную АТС в панели управления.",
+			);
 			assert.ok(result.callId.startsWith("outbound-"));
 		} finally {
 			console.warn = originalWarn;

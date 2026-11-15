@@ -68,7 +68,6 @@ summary,
 	.app-bottom-nav,
 	.mobile-actions-bar,
 	.floating-bottom-bar,
-	.telephony-floating-widget,
 	.bottom-sheet,
 	.mobile-drawer-footer {
 		padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);

@@ -4,9 +4,7 @@
    ============================================================ */
 
 body:has([role="dialog"]) .dnt-telephony-island-container,
-body:has([role="dialog"]) .telephony-floating-widget,
-body:has([aria-modal="true"]) .dnt-telephony-island-container,
-body:has([aria-modal="true"]) .telephony-floating-widget {
+body:has([aria-modal="true"]) .dnt-telephony-island-container {
 	top: 12px;
 	left: 50%;
 	right: auto;
@@ -42,7 +40,6 @@ body:has(.floating-bottom-bar) .telephony-floating-softphone {
 }
 
 .dnt-telephony-island-container > *,
-.telephony-floating-widget > *,
 .dnt-incoming-call-badge-container > * {
 	pointer-events: auto;
 }
@@ -55,15 +52,13 @@ body:has(.dnt-telephony-island-expanded) .dnt-incoming-call-badge-container {
 /* Suppress background island pill when incoming call popup or capsule is actively displayed (No duplicate widgets) */
 body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-pill,
 body:has([data-testid="incoming-call-capsule"]) .dnt-telephony-island-pill,
-body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-container:not(:has(.dnt-telephony-island-expanded)),
-body:has([data-testid="incoming-call-popup"]) .telephony-floating-widget:not(:has(.dnt-telephony-island-expanded)) {
+body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-container:not(:has(.dnt-telephony-island-expanded)) {
 	display: none !important;
 }
 
 /* On mobile viewports (<= 768px), suppress background island pill when incoming call popup is actively displayed */
 @media (max-width: 768px) {
-	body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-container,
-	body:has([data-testid="incoming-call-popup"]) .telephony-floating-widget {
+	body:has([data-testid="incoming-call-popup"]) .dnt-telephony-island-container {
 		display: none !important;
 	}
 }

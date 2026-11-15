@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { showToast } from "../../../components/GlobalToast";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -159,8 +160,8 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 
 		startCallTransfer: (targetExtension: string, transferType: CallTransferType = "blind") => {
 			const { activeCall, callHistory, activeLineId, line1, line2 } = get();
+			const updatedCallId = activeCall?.id || activeCall?.callId;
 			if (transferType === "blind") {
-				const updatedCallId = activeCall?.id || activeCall?.callId;
 				const updatedHistory = callHistory.map((item) =>
 					(updatedCallId && (item.id === updatedCallId || item.callId === updatedCallId)) ||
 					(activeCall && item.phone === activeCall.phone)
@@ -187,6 +188,41 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 						failureReason: undefined,
 					},
 				});
+
+				// Dispatch real SIP blind transfer to backend API
+				try {
+					const staffToken = readDenteStaffToken();
+					const clinicToken = readDenteClinicToken();
+					void fetch("/api/telephony/sip/transfer", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+						},
+						body: JSON.stringify({
+							callId: updatedCallId || `call-${Date.now()}`,
+							targetExtensionOrPhone: targetExtension,
+							transferType: "blind",
+						}),
+					})
+						.then(async (res) => {
+							if (!res.ok) {
+								const errData = (await res.json().catch(() => ({}))) as { message?: string };
+								const errMsg = errData.message || `Ошибка перевода звонка (${res.status})`;
+								console.warn("[Telephony] SIP transfer error:", errMsg);
+								showToast(errMsg, "error");
+							} else {
+								showToast(`Звонок успешно переведён на ${targetExtension}`, "success");
+							}
+						})
+						.catch((err) => {
+							console.warn("[Telephony] SIP transfer network error:", err);
+							showToast("Сетевая ошибка при переводе звонка", "error");
+						});
+				} catch (err) {
+					console.warn("[Telephony] SIP transfer dispatch error:", err);
+				}
 				return;
 			}
 
@@ -203,8 +239,45 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 
 		completeCallTransfer: () => {
 			const { activeCall, transferState } = get();
+			const callId = activeCall?.id || activeCall?.callId;
+			const targetExtension = transferState.targetExtension;
 			if (activeCall) {
-				get().recordCallOutcome("transferred", `Переведён на доб. ${transferState.targetExtension}`);
+				get().recordCallOutcome("transferred", `Переведён на доб. ${targetExtension}`);
+			}
+			if (targetExtension) {
+				try {
+					const staffToken = readDenteStaffToken();
+					const clinicToken = readDenteClinicToken();
+					void fetch("/api/telephony/sip/transfer", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+						},
+						body: JSON.stringify({
+							callId: callId || `call-${Date.now()}`,
+							targetExtensionOrPhone: targetExtension,
+							transferType: "attended",
+						}),
+					})
+						.then(async (res) => {
+							if (!res.ok) {
+								const errData = (await res.json().catch(() => ({}))) as { message?: string };
+								const errMsg = errData.message || `Ошибка перевода звонка (${res.status})`;
+								console.warn("[Telephony] Attended SIP transfer error:", errMsg);
+								showToast(errMsg, "error");
+							} else {
+								showToast(`Звонок переведён на ${targetExtension}`, "success");
+							}
+						})
+						.catch((err) => {
+							console.warn("[Telephony] Attended SIP transfer network error:", err);
+							showToast("Сетевая ошибка при переводе звонка", "error");
+						});
+				} catch (err) {
+					console.warn("[Telephony] Attended SIP transfer dispatch error:", err);
+				}
 			}
 			set({
 				transferState: {

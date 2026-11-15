@@ -78,7 +78,7 @@ export function CallAudioTranscriptView({
 											? "bg-[var(--teal-surface)] border-[var(--teal-soft)] shadow-xs"
 											: "bg-[var(--paper-strong,#ffffff)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 									}`}
-									title="Кликните для перехода к реплике"
+									title="Перейти к реплике"
 								>
 									<div className="flex items-center justify-between text-[11px] mb-1">
 										<div className="flex items-center gap-1.5 font-bold">
