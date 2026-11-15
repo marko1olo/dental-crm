@@ -56,3 +56,47 @@ export function rubAmountInputMissingStep(
 	if (!stepKopecks) return false;
 	return kopecks % stepKopecks !== 0;
 }
+
+/**
+ * Сумма в рублях -> целые копейки. `null`, если это не деньги.
+ */
+export function toKopecks(
+	value: number | string | null | undefined,
+): number | null {
+	if (value === null || value === undefined) return null;
+
+	if (typeof value === "number") {
+		if (!Number.isFinite(value) || Math.abs(value) > MAX_SAFE_RUB) return null;
+		return Math.round(value * 100);
+	}
+
+	const compact = value.replace(/[\s ]/g, "").replace(",", ".");
+	if (!compact) return null;
+	if (!/^-?\d+(\.\d+)?$/.test(compact)) return null;
+
+	const amountRub = Number(compact);
+	if (!Number.isFinite(amountRub) || Math.abs(amountRub) > MAX_SAFE_RUB)
+		return null;
+	return Math.round(amountRub * 100);
+}
+
+/** Целые копейки -> рубли */
+export function fromKopecks(kopecks: number): number {
+	return Math.round(kopecks) / 100;
+}
+
+/**
+ * Текст для поля «Сумма к оплате», в точности как его разбирает
+ * `normalizeRubAmountInput`: запятая, без разделителей разрядов, копейки только
+ * когда они есть.
+ */
+export function rubAmountForInput(
+	value: number | string | null | undefined,
+): string {
+	const kopecks = toKopecks(value);
+	if (kopecks === null || kopecks <= 0) return "";
+	const rub = Math.floor(kopecks / 100);
+	const kop = kopecks % 100;
+	if (kop === 0) return String(rub);
+	return `${rub},${String(kop).padStart(2, "0")}`;
+}

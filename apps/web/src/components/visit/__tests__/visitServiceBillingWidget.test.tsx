@@ -24,6 +24,8 @@ import {
 import {
 	validateBuyerInn54Fz,
 	validate54FzBuyerInn,
+} from "../../finance/cashboxInnValidation.js";
+import {
 	calculateCashChange,
 	createExactCashTenders,
 	createFullCardTenders,
@@ -31,11 +33,9 @@ import {
 	allocateRemainderToTender,
 	process100PercentDiscountCheckout,
 	calculatePaymentDiscount,
-} from "../../finance/cashboxOperations.js";
-import {
 	applyQuickCheckoutPreset,
 	paymentsToSplitState,
-} from "../../payments/checkout/fastCheckoutEngine.js";
+} from "../../cashbox/cashRegisterCatalogData.js";
 
 describe("VisitServiceBillingWidget — Chairside Billing & Inline Price Editing", () => {
 	it("renders services list with initial prices and codes", () => {

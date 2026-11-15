@@ -10,12 +10,12 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { validateBuyerInn54Fz } from "../components/finance/cashboxInnValidation.js";
 import {
-	validateBuyerInn54Fz,
 	process100PercentDiscountCheckout,
 	allocateRemainderToTender,
 	getFastCombinedTenderPresets,
-} from "../components/finance/cashboxOperations";
+} from "../components/cashbox/cashRegisterCatalogData.js";
 
 describe("Cashbox Operations — Mandate 8e & 54-FZ Invariants", () => {
 	describe("1. validateBuyerInn54Fz (Mandate 8e Item 9: 54-FZ without obstacles)", () => {

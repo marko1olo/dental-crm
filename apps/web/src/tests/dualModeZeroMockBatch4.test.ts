@@ -21,7 +21,7 @@ import {
 import {
 	calculateStageAdvanceAmount,
 	type StageAdvanceCalculation,
-} from "../components/payments/checkout/fastCheckoutEngine.js";
+} from "../components/cashbox/cashRegisterCatalogData.js";
 import { RefundServiceModal } from "../components/finance/refunds/RefundServiceModal.js";
 import { CashRegisterStudioModal } from "../components/cashbox/CashRegisterStudioModal.js";
 

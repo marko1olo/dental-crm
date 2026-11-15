@@ -347,3 +347,10 @@ export function generateFiscalTapeText(params: {
 		div,
 	].join("\n");
 }
+
+/* ========================================================================= */
+/* 3. RECONCILIATION, SPLIT ALLOCATION & TENDER PRESETS (CANONICAL SSOT)      */
+/* ========================================================================= */
+
+export * from "./cashRegisterSplitsData.js";
+

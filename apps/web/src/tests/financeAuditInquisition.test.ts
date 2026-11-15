@@ -22,6 +22,11 @@ import {
 	rubToKopecks,
 } from "@dental/shared";
 import {
+	validate54FzBuyerInn,
+	validateBuyerInn54Fz,
+	validateBuyerInn,
+} from "../components/finance/cashboxInnValidation.js";
+import {
 	allocateRemainderToTender,
 	calculateCashChange,
 	calculateCombinedFamilyCashCardSplit,
@@ -32,19 +37,14 @@ import {
 	createExactCashTenders,
 	createFullCardTenders,
 	process100PercentDiscountCheckout,
-	validate54FzBuyerInn,
-	validateBuyerInn54Fz,
-} from "../components/finance/cashboxOperations";
-import {
 	applyQuickCheckoutPreset,
 	balanceRemainderToSplitMethod,
 	calculateCashChangeKop,
 	calculateSplitRemainingKop,
 	generate54FzFiscalPayload,
-	validateBuyerInn,
 	validateCheckoutSplit,
 	type CheckoutSplitItem,
-} from "../components/payments/checkout/fastCheckoutEngine";
+} from "../components/cashbox/cashRegisterCatalogData.js";
 import { formatMoneyRu } from "../components/finance/cashFlowModalModules/types";
 
 describe("FINANCIAL INQUISITION: Total Transactional & 54-FZ Cashbox Audit", () => {

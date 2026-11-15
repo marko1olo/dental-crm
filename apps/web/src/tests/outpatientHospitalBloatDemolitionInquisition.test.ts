@@ -20,7 +20,7 @@ import { describe, it } from "node:test";
 import {
 	process100PercentDiscountCheckout,
 	calculatePaymentDiscount,
-} from "../components/finance/cashboxOperations.js";
+} from "../components/cashbox/cashRegisterCatalogData.js";
 
 import {
 	PHYSIOLOGICAL_NORM_PRESET,

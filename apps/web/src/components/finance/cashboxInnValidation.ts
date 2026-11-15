@@ -20,16 +20,17 @@ export interface BuyerInnValidationResult {
  */
 export function validateBuyerInn(params: {
 	readonly payerType?: PayerType | PayerLegalType | undefined;
+	readonly clientType?: PayerType | PayerLegalType | undefined;
 	readonly buyerInn?: string | undefined;
 }): BuyerInnValidationResult {
-	const rawType = params.payerType ?? "physical_person";
+	const rawType = params.clientType ?? params.payerType ?? "physical_person";
 	const cleanInn = (params.buyerInn ?? "").trim().replace(/\D/g, "");
 	const isPhysical = rawType === "physical" || rawType === "physical_person";
 
 	if (isPhysical) {
 		if (!cleanInn) return { isValid: true, isRequired: false };
 		const isStd = cleanInn.length === 12;
-		const hint = isStd ? undefined : "ИНН физлица обычно содержит 12 цифр (для 54-ФЗ поле опционально и не блокирует чек)";
+		const hint = isStd ? undefined : "ИНН физлица обычно содержит 12 цифр (для 54-ФЗ поле опционально и не блокирует чек и не блокирует оплату)";
 		return { isValid: true, isRequired: false, cleanInn, errorRu: hint, errorMessage: hint };
 	}
 

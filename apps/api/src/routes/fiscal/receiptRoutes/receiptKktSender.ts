@@ -101,17 +101,15 @@ export async function checkExistingIdempotentReceipt(
 			replayed: true,
 			queueId: existingRow.id,
 			status: existingRow.status,
-			fnSerial: (storedPayload["fnSerial"] as string) || "9960440301234567",
-			fiscalDocumentNumber: (storedPayload["fiscalDocumentNumber"] as string) || (isZeroAct ? "0" : "1001"),
-			fiscalSign: (storedPayload["fiscalSign"] as string) || (isZeroAct ? "0000000000" : "1234567890"),
+			fnSerial: (storedPayload["fnSerial"] as string) || null,
+			fiscalDocumentNumber: (storedPayload["fiscalDocumentNumber"] as string) || (isZeroAct ? "0" : null),
+			fiscalSign: (storedPayload["fiscalSign"] as string) || (isZeroAct ? "0000000000" : null),
 			receiptIssuedAt: existingRow.printedAt
 				? existingRow.printedAt.toISOString()
-				: existingRow.createdAt.toISOString(),
+				: null,
 			ofdVerificationUrl:
 				(storedPayload["ofdVerificationUrl"] as string) ||
-				(isZeroAct
-					? ""
-					: `https://ofd.ru/check?fn=9960440301234567&fd=1001&fpd=1234567890&s=${kopecksToNumericString(data.totalKopecks)}&n=1`),
+				(isZeroAct ? "" : null),
 			qrString: (storedPayload["qrString"] as string) || undefined,
 			compiledReceipt: storedPayload,
 			hardwareWarning: existingRow.lastError,

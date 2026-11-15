@@ -17,13 +17,13 @@ import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import fs from "node:fs";
 import path from "node:path";
+import { validate54FzBuyerInn } from "../cashboxInnValidation.js";
 import {
-	validate54FzBuyerInn,
 	calculateCashChange,
 	allocateRemainderToTender,
 	createCertificateAndCardComboTenders,
 	createBonusAndCardComboTenders,
-} from "../cashboxOperations.js";
+} from "../../cashbox/cashRegisterCatalogData.js";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 import { InvoicesView, type BillingInvoice } from "../../billing/InvoicesView.js";
 

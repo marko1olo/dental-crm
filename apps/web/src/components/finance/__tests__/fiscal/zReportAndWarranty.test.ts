@@ -8,7 +8,7 @@ import {
 	calculateDenominationsTotalRub,
 	generateFiscalReceipt54Fz,
 } from "../../fiscalReceiptEngine.js";
-import { DEFAULT_TREATMENT_STAGES, generateFiscalReceiptPayload, validateCheckoutSplit } from "../../../payments/checkout/fastCheckoutEngine.js";
+import { DEFAULT_TREATMENT_STAGES, generateFiscalReceiptPayload, validateCheckoutSplit } from "../../../cashbox/cashRegisterCatalogData.js";
 import type { TreatmentPlanItem } from "../../../treatment-plans/types.js";
 
 describe("Fiscal Receipt Engine — Stages & Warranty", () => {

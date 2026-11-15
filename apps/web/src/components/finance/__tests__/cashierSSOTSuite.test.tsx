@@ -51,17 +51,11 @@ import {
 	CASHBOX_TENDER_PRESETS,
 	calculateExactCashChange,
 	generateFiscalTapeText,
-} from "../../cashbox/cashRegisterCatalogData.js";
-import {
 	calculateShiftTotals,
 	reconcileShiftCounters,
-} from "../cashboxModules/shifts/shiftReconciliation.js";
-import {
 	allocateRemainderToTender,
-} from "../cashboxModules/splits/tenderRemainderAllocation.js";
-import {
 	getFastCombinedTenderPresets,
-} from "../cashboxModules/splits/fastTenderPresets.js";
+} from "../../cashbox/cashRegisterCatalogData.js";
 import { validateBuyerInn } from "../cashboxInnValidation.js";
 import type { CashRegisterStudioModalProps } from "../../cashbox/CashRegisterStudioModal.js";
 

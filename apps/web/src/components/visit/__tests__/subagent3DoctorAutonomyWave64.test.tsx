@@ -17,10 +17,8 @@ import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-	validate54FzBuyerInn,
-	process100PercentDiscountCheckout,
-} from "../../finance/cashboxOperations.js";
+import { validate54FzBuyerInn } from "../../finance/cashboxInnValidation.js";
+import { process100PercentDiscountCheckout } from "../../cashbox/cashRegisterCatalogData.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

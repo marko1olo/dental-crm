@@ -24,7 +24,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 	};
 
 	return (
-		<div className="finance-cashbox-container pb-28 sm:pb-24" data-testid="finance-cashbox-section">
+		<div className="finance-cashbox-container pb-28 sm:pb-24" data-testid="cash-shift-panel-container">
 			<CashboxQuickCard
 				summaryAmount={summaryAmount}
 				patientName={patientName}

@@ -121,7 +121,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						<button
 							type="button"
 							onClick={() => setPayerType("legal_entity")}
-							className="text-xs text-[var(--teal,#0d9488)] hover:underline font-medium cursor-pointer"
+							className="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.1))] hover:bg-[var(--teal-subtle,rgba(13,148,136,0.2))] border border-[var(--teal,#0d9488)]/25 transition-colors cursor-pointer"
 							data-testid="toggle-corporate-payer"
 						>
 							Организация / ИП &rarr;
@@ -130,7 +130,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						<button
 							type="button"
 							onClick={() => setPayerType("physical_person")}
-							className="text-xs text-[var(--muted)] hover:text-[var(--ink)] hover:underline font-medium cursor-pointer"
+							className="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper-soft)] border border-[var(--line)] transition-colors cursor-pointer"
 							data-testid="toggle-physical-payer"
 						>
 							&larr; Пациент (физлицо)

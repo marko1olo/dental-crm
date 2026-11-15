@@ -1,11 +1,11 @@
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { validateBuyerInn } from "../components/finance/cashboxInnValidation.js";
 import {
 	validateCheckoutSplit,
 	generate54FzFiscalPayload,
-	validateBuyerInn,
 	applyQuickCheckoutPreset,
-} from "../components/payments/checkout/fastCheckoutEngine.js";
+} from "../components/cashbox/cashRegisterCatalogData.js";
 import { KktLanPrinterService } from "../services/hardware/kktLanPrinter.js";
 import { FiscalReceiptQueueManager } from "../services/hardware/fiscalReceiptQueueManager.js";
 

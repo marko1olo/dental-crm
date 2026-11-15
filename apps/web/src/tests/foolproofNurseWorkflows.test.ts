@@ -31,7 +31,7 @@ import {
 	calculateSplitRemainingKop,
 	splitStateToCheckoutPayments,
 	validateCheckoutSplit,
-} from "../components/payments/checkout/fastCheckoutEngine";
+} from "../components/cashbox/cashRegisterCatalogData.js";
 
 const COMMON_DENTAL_SERVICES = [
 	{ id: "consult", titleRu: "Осмотр и консультация", durationMin: 30, icon: "Stethoscope" },

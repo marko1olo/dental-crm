@@ -14,7 +14,7 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 		stageTitle = "Комплексный этап лечения",
 		stageNumber,
 		stageAmountKopecks,
-		patientId = "pat-1001",
+		patientId = "",
 		patientName = "",
 		patientPhone = "",
 		clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
@@ -114,7 +114,7 @@ export const useBankInstallmentLogic = (props: BankInstallmentQrModalProps) => {
 				providerId: selectedProvider,
 				approvalId: `INST-${Date.now().toString(36).toUpperCase()}`,
 				approvedAmountKopecks: stageAmountKopecks,
-				monthlyPaymentRub: calculation.monthlyRub,
+				monthlyPaymentRub: calculation.monthlyPaymentRub,
 			});
 		}
 		showToast(

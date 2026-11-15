@@ -23,7 +23,7 @@ if (typeof window !== "undefined") {
 export type { PatientInstallmentsModalProps };
 
 export const PatientInstallmentsModal: React.FC<PatientInstallmentsModalProps> = (props) => {
-	const { isOpen, onClose, patientName = "Смирнова Елена Васильевна", onOpenBankInstallment } = props;
+	const { isOpen, onClose, patientName = "", onOpenBankInstallment } = props;
 	const {
 		plan, activeSubView, setActiveSubView, selectedPaymentItemId, setSelectedPaymentItemId,
 		selectedPaymentMethod, setSelectedPaymentMethod, customPayAmountRub, setCustomPayAmountRub,

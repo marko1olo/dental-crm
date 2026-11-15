@@ -17,6 +17,8 @@ import {
 	validateBuyerInn,
 	validateBuyerInn54Fz,
 	validate54FzBuyerInn,
+} from "../cashboxInnValidation.js";
+import {
 	calculateCashChange,
 	createExactCashTenders,
 	createFullCardTenders,
@@ -24,7 +26,7 @@ import {
 	getFastCombinedTenderPresets,
 	allocateRemainderToTender,
 	process100PercentDiscountCheckout,
-} from "../cashboxOperations.js";
+} from "../../cashbox/cashRegisterCatalogData.js";
 import { generateFiscalReceipt } from "../fiscalReceiptEngine.js";
 import {
 	applyDoctorDiscountToTiers,

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { money as formatMoney } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { motionSafeScrollIntoView } from "../../motionPreference";
-import { rubAmountForInput } from "../../components/payments/cashDeskAmounts.js";
+import { rubAmountForInput } from "../../rubAmountInput.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	type FinanceViewComponentProps, type PendingCheckout, type TreatmentPlanItem,

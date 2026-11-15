@@ -11,7 +11,7 @@ describe("RED TEAM INQUISITION: Finance POS & Pending Checkout Data Continuity",
 	const indexPath = path.resolve(__dirname, "../index.tsx");
 	const hookPath = path.resolve(__dirname, "../useFinanceView.ts");
 	const logicPath = path.resolve(__dirname, "../../../hooks/domains/useFinanceLogic.ts");
-	const checkoutBarPath = path.resolve(__dirname, "../../../PaymentCheckoutBar.tsx");
+	const cashboxFooterPath = path.resolve(__dirname, "../../../components/cashbox/studioModules/CashRegisterStudioFooter.tsx");
 
 	it("1. FinanceView index.tsx is purged of ClinicalRulePanel, ClinicalAiPersonalizePanel, and clinical accordion", () => {
 		const source = fs.readFileSync(indexPath, "utf8");
@@ -104,15 +104,15 @@ describe("RED TEAM INQUISITION: Finance POS & Pending Checkout Data Continuity",
 		);
 	});
 
-	it("5. PaymentCheckoutBar provides Apple HIG 52px sticky touch target on mobile", () => {
-		const source = fs.readFileSync(checkoutBarPath, "utf8");
+	it("5. CashRegisterStudioFooter provides Apple HIG touch target on mobile and safe-area padding", () => {
+		const source = fs.readFileSync(cashboxFooterPath, "utf8");
 		assert.ok(
-			source.includes("min-h-[52px]"),
-			"PaymentCheckoutBar primary button must have min-h-[52px] for mobile touch ergonomics",
+			source.includes("min-h-[44px]"),
+			"CashRegisterStudioFooter primary buttons must have min-h-[44px] for Apple HIG touch ergonomics",
 		);
 		assert.ok(
 			source.includes("env(safe-area-inset-bottom)"),
-			"PaymentCheckoutBar must support safe-area-inset-bottom for modern smartphones",
+			"CashRegisterStudioFooter must support safe-area-inset-bottom for modern smartphones",
 		);
 	});
 });

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dashboard, Patient } from "@dental/shared";
-import { rubAmountForInput } from "../../../components/payments/cashDeskAmounts.js";
+import { rubAmountForInput } from "../../../rubAmountInput.js";
 import type { PendingCheckout } from "../types.js";
 import {
 	resolveEffectiveBillingSummary,

@@ -16,7 +16,7 @@ import {
 	rubToKopecks,
 	kopecksToRub,
 } from "@dental/shared";
-import { validate54FzBuyerInn } from "../components/finance/cashboxOperations.js";
+import { validate54FzBuyerInn } from "../components/finance/cashboxInnValidation.js";
 import {
 	calculateCanonicalSplit,
 	validateTenderParity,

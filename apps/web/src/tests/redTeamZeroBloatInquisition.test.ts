@@ -28,7 +28,7 @@ import {
 import {
 	process100PercentDiscountCheckout,
 	calculatePaymentDiscount,
-} from "../components/finance/cashboxOperations.js";
+} from "../components/cashbox/cashRegisterCatalogData.js";
 import {
 	createForm043PhysiologicalNorm,
 	createIntactOdontogramRecords,

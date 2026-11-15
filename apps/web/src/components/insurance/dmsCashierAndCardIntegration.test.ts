@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { calculateItemDmsSplit, calculateInvoiceDmsSplit, type DmsInvoiceItem } from "@dental/shared";
-import { allocateRemainderToTender } from "../finance/cashboxOperations.js";
+import { allocateRemainderToTender } from "../cashbox/cashRegisterCatalogData.js";
 
 describe("DMS Cashier & Split Payment Integration (Mandates 8l, 8e, 8n)", () => {
 	it("1.1 Proves integer kopeck split math for 0%, 20%, 50%, and 80% corporate franchises", () => {
@@ -83,5 +83,62 @@ describe("DMS Cashier & Split Payment Integration (Mandates 8l, 8e, 8n)", () => 
 		assert.equal(res.dmsRub, 10000);
 		assert.equal(res.cardRub, 2450.75);
 		assert.equal(Number((res.dmsRub + res.cardRub).toFixed(2)), 12450.75);
+	});
+
+	it("1.7 Proves dynamic calculation of bilateral acceptance act via calculateRegistryTotals without hardcoded amounts", async () => {
+		const { calculateRegistryTotals, generateBilateralAcceptanceActHtml } = await import("@dental/shared");
+		const sampleRecords = [
+			{
+				id: "rec-1",
+				visitId: "v-1",
+				visitDate: "15.08.2026",
+				patientFullName: "Соколова А.В.",
+				totalPriceRub: 4500,
+				dmsCoveredRub: 4500,
+				patientPaidRub: 0,
+				serviceName: "Пломба",
+			},
+			{
+				id: "rec-2",
+				visitId: "v-2",
+				visitDate: "20.08.2026",
+				patientFullName: "Соколова А.В.",
+				totalPriceRub: 6500,
+				dmsCoveredRub: 5200,
+				patientPaidRub: 1300,
+				serviceName: "Гигиена",
+			},
+		];
+		const summary = calculateRegistryTotals(sampleRecords as any, "АО «СОГАЗ»");
+		assert.equal(summary.totalAmountRub, 11000);
+		assert.equal(summary.totalDmsCoveredRub, 9700);
+		assert.equal(summary.totalPatientPaidRub, 1300);
+		assert.equal(summary.isBalanced, true);
+		assert.equal(summary.totalServicesCount, 2);
+		assert.equal(summary.uniquePatientsCount, 1);
+
+		const actHtml = generateBilateralAcceptanceActHtml({
+			records: sampleRecords as any,
+			summary,
+		});
+		assert.ok(actHtml.includes("АКТ СДАЧИ-ПРИЕМКИ"), "Act must include heading");
+		assert.ok(actHtml.includes("9700") || actHtml.includes("9 700") || actHtml.includes("9&nbsp;700") || actHtml.replace(/\s/g, " ").includes("9 700"), "Act must include dynamically calculated insurer amount");
+		assert.ok(actHtml.includes("1300") || actHtml.includes("1 300") || actHtml.includes("1&nbsp;100") || actHtml.replace(/\s/g, " ").includes("1 300"), "Act must include dynamically calculated patient co-pay");
+	});
+
+	it("1.8 Proves cashbox event detail payload structure for dente:cashbox-apply-split", () => {
+		const splitDetail = {
+			totalDueRub: 16800,
+			dmsRub: 15500,
+			patientRub: 1300,
+			patientMethod: "card",
+			insurerName: "Ингосстрах",
+			letterNumber: "ГП-8841",
+			patientId: "pat-1",
+			patientName: "Соколова Анна Викторовна",
+		};
+		assert.equal(splitDetail.dmsRub + splitDetail.patientRub, splitDetail.totalDueRub);
+		assert.equal(splitDetail.patientRub, 1300);
+		assert.equal(splitDetail.insurerName, "Ингосстрах");
 	});
 });

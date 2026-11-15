@@ -10,14 +10,14 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { validateBuyerInn } from "../components/finance/cashboxInnValidation.js";
 import {
-	validateBuyerInn,
 	validateCheckoutSplit,
 	applyQuickCheckoutPreset,
 	splitStateToCheckoutPayments,
 	calculateCashChangeKop,
 	type FastCheckoutInput,
-} from "../components/payments/checkout/fastCheckoutEngine.js";
+} from "../components/cashbox/cashRegisterCatalogData.js";
 
 describe("Doctor Autonomy & Chairside Flow (Mandate 8e Inquisition)", () => {
 	describe("1. Express Schedule Booking (<=5s, Zero Roadblocks)", () => {
