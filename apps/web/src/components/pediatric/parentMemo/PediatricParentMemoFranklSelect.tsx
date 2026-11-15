@@ -13,7 +13,7 @@ export const PediatricParentMemoFranklSelect: React.FC<PediatricParentMemoFrankl
 }) => {
 	return (
 		<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3">
-			<div className="text-xs font-bold text-[var(--ink,#0f172a)] mb-2 uppercase tracking-wide">
+			<div className="text-xs font-bold text-[var(--ink,#0f172a)] mb-2">
 				Шкала поведения Франкла:
 			</div>
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5" data-testid="memo-frankl-selector">
@@ -25,9 +25,9 @@ export const PediatricParentMemoFranklSelect: React.FC<PediatricParentMemoFrankl
 							key={r}
 							type="button"
 							onClick={() => setFrankl(r)}
-							className={`h-8 px-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1 cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[36px] px-2 py-1.5 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1 cursor-pointer touch-manipulation select-none active:scale-95 ${
 								isSelected
-									? "bg-teal-600 text-white border-teal-600 shadow-xs ring-2 ring-teal-500/20"
+									? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs ring-2 ring-[var(--teal,#0d9488)]/20"
 									: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 							}`}
 							data-testid={`memo-frankl-btn-${r}`}

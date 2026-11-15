@@ -18,7 +18,7 @@ export const PediatricToothSurfacesCard: React.FC<PediatricToothSurfacesCardProp
 				<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 					Поверхности зуба:
 				</span>
-				<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
+				<span className="text-xs font-mono font-bold text-[var(--teal,#0d9488)]">
 					[{selectedSurfaces.join(", ") || "O"}]
 				</span>
 			</div>
@@ -35,7 +35,7 @@ export const PediatricToothSurfacesCard: React.FC<PediatricToothSurfacesCardProp
 							onClick={() => onApplySurfacePreset(preset.surfaces)}
 							className={`min-h-[48px] px-3 rounded-xl text-xs font-mono font-bold border transition cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 								isMatch
-									? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+									? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs scale-105"
 									: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 							title={preset.descriptionRu}
@@ -60,7 +60,7 @@ export const PediatricToothSurfacesCard: React.FC<PediatricToothSurfacesCardProp
 							onClick={() => onToggleSurface(surf)}
 							className={`min-h-[48px] min-w-[48px] px-2.5 rounded-xl text-xs font-mono font-bold border transition cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 								isActive
-									? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+									? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs scale-105"
 									: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 							title={`Поверхность ${surf}`}

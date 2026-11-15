@@ -21,8 +21,8 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 		<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3 space-y-2.5">
 			<div className="flex items-center justify-between gap-2">
 				<div className="flex items-center gap-1.5">
-					<UserCheck className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="text-xs font-black uppercase text-[var(--ink,#0f172a)]">
+					<UserCheck className="h-4 w-4 text-[var(--teal,#0d9488)] shrink-0" />
+					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 						Родитель / Законный представитель:
 					</span>
 				</div>
@@ -47,7 +47,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 							onClick={() => setRepresentative((prev) => ({ ...prev, role: r }))}
 							className={`min-h-[44px] sm:min-h-[28px] h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer active:scale-95 ${
 								isSelected
-									? "bg-teal-600 text-white shadow-xs"
+									? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 							}`}
 							data-testid={`chip-rep-role-${r.toLowerCase()}`}
@@ -108,7 +108,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 					<button
 						type="button"
 						onClick={() => setRepresentative((prev) => ({ ...prev, consentSigned: true }))}
-						className="min-h-[44px] sm:min-h-[28px] px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs shrink-0 cursor-pointer active:scale-95 transition"
+						className="min-h-[44px] sm:min-h-[28px] px-3 py-1 bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-lg font-bold text-xs shrink-0 cursor-pointer active:scale-95 transition"
 						data-testid="btn-one-click-sign-consent"
 					>
 						Подтвердить согласие

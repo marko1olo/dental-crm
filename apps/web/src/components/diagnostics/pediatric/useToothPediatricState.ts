@@ -47,11 +47,11 @@ export function useToothPediatricState(
 		setSelectedResorption(next);
 		const mobilityDegree: 0 | 1 | 2 | 3 =
 			next === 100 ? 3 : next === 75 ? 2 : next === 50 ? 1 : 0;
-		onUpdateTooth?.({
-			rootResorptionStage: next,
-			rootResorption: next,
+		const updates: Partial<ToothData> = {
 			mobility: mobilityDegree,
-		});
+			...(next !== undefined ? { rootResorptionStage: next, rootResorption: next } : {}),
+		};
+		onUpdateTooth?.(updates);
 		const stageItem = next !== undefined ? RESORPTION_STAGES.find((s) => s.stage === next) : undefined;
 		showToast(
 			next !== undefined

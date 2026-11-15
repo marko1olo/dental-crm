@@ -40,7 +40,7 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 	return (
 		<div className="mt-3 pt-2.5 border-t border-[var(--line,#e2e8f0)] flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between" data-testid="pediatric-active-tooth-toolbar">
 			<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center min-w-0">
-				<span className="text-[11px] font-black uppercase text-[var(--muted,#64748b)] shrink-0">Зуб {activeTooth}:</span>
+				<span className="text-[11px] font-bold text-[var(--muted,#64748b)] shrink-0">Зуб {activeTooth}:</span>
 				{onToothFindingChange && (
 					<div className="flex flex-wrap items-center gap-1.5" data-testid="active-tooth-findings-group">
 						{FINDINGS.map((st) => (
@@ -48,9 +48,9 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 								key={st.id}
 								type="button"
 								onClick={() => onToothFindingChange(activeTooth, st.id)}
-								className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer select-none active:scale-95 flex items-center justify-center shrink-0 ${
+								className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer select-none touch-manipulation active:scale-95 flex items-center justify-center shrink-0 ${
 									currentFinding === st.id
-										? "bg-teal-600 text-white shadow-xs"
+										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								data-testid={`active-tooth-finding-${st.id}`}
@@ -101,7 +101,7 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 									type="button"
 									onClick={() => onResorptionChange(activeTooth, r)}
 									className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-6 px-2 rounded-xl sm:rounded text-xs font-mono font-bold border cursor-pointer ${
-										isCurrent ? "bg-rose-600 text-white border-rose-600 shadow-xs" : "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)]"
+										isCurrent ? "bg-[var(--danger,#ef4444)] text-white border-[var(--danger,#ef4444)] shadow-xs" : "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)]"
 									}`}
 									data-testid={`active-tooth-resorption-${r}`}
 								>

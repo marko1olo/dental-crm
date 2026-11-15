@@ -20,15 +20,15 @@ export const PediatricSomaticNormSection: React.FC<PediatricSomaticNormSectionPr
 		<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3">
 			<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
 				<div className="flex items-center gap-1.5">
-					<Heart className="h-4 w-4 text-rose-500 shrink-0" />
-					<span className="text-xs font-black uppercase text-[var(--ink,#0f172a)]">
+					<Heart className="h-4 w-4 text-[var(--danger,#ef4444)] shrink-0" />
+					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 						Соматический статус ребенка:
 					</span>
 				</div>
 				<button
 					type="button"
 					onClick={handleSetNorm}
-					className={`h-7 px-2.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer ${
+					className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-3 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer touch-manipulation ${
 						somaticStatus.isNormal
 							? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/40 shadow-xs"
 							: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
@@ -58,7 +58,7 @@ export const PediatricSomaticNormSection: React.FC<PediatricSomaticNormSectionPr
 							type="text"
 							value={somaticStatus.allergiesRu}
 							onChange={(e) => setSomaticStatus((prev) => ({ ...prev, allergiesRu: e.target.value, isNormal: false }))}
-							className="w-full h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)]"
+							className="w-full min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)]"
 						/>
 					</div>
 					<div>
@@ -70,7 +70,7 @@ export const PediatricSomaticNormSection: React.FC<PediatricSomaticNormSectionPr
 							type="text"
 							value={somaticStatus.chronicDiseasesRu}
 							onChange={(e) => setSomaticStatus((prev) => ({ ...prev, chronicDiseasesRu: e.target.value, isNormal: false }))}
-							className="w-full h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)]"
+							className="w-full min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)]"
 						/>
 					</div>
 				</div>

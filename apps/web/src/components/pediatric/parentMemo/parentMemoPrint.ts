@@ -5,6 +5,7 @@ export interface PrintParentMemoOptions {
 	readonly memoText: string;
 	readonly clinicName: string;
 	readonly doctorName: string;
+	readonly clinicPhone?: string | undefined;
 }
 
 export function printParentMemo({
@@ -12,6 +13,7 @@ export function printParentMemo({
 	memoText,
 	clinicName,
 	doctorName,
+	clinicPhone,
 }: PrintParentMemoOptions): void {
 	const printWindow = window.open("", "_blank");
 	if (!printWindow) {
@@ -58,7 +60,7 @@ export function printParentMemo({
 			<div class="content">${memoText}</div>
 			<div class="footer">
 				<div>Лечащий врач: ${doctorName}</div>
-				<div>Телефон клиники для экстренной связи: +7 (495) 123-45-67</div>
+				<div>Телефон клиники для экстренной связи: ${clinicPhone && clinicPhone.trim() ? clinicPhone.trim() : "Уточните телефон на стойке администратора"}</div>
 			</div>
 			<script>
 				window.onload = function() {

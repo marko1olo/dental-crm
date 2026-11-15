@@ -7,6 +7,18 @@ import type { PediatricAnesthesiaCalculationResult } from "../PediatricAnesthesi
 import { DEFAULT_SEDATION_STATE, FRANKL_EXPRESS_ITEMS, PEDIATRIC_PROTOCOL_PRESETS, PEDIATRIC_TEETH_NAMES, isValidFdiTooth } from "./constants";
 import type { FranklExpressItem, PediatricProtocolDefinition, PediatricProtocolId, PediatricSedationState, VisitPediatricProtocolWidgetProps } from "./types";
 
+const VALID_LEGAL_REP_ROLES: readonly LegalRepresentativeData["role"][] = [
+	"Мать",
+	"Отец",
+	"Опекун",
+	"Усыновитель",
+	"Родитель",
+];
+
+function isLegalRepresentativeRole(role: string): role is LegalRepresentativeData["role"] {
+	return (VALID_LEGAL_REP_ROLES as readonly string[]).includes(role);
+}
+
 export function usePediatricWidgetState(props: VisitPediatricProtocolWidgetProps) {
 	const { activeTooth = 54, activeSurfaces, initialFranklRating = 3, patientAgeYears = 6, patientWeightKg, representativeFullName, representativePhone, patientPhone, representativeRole, initialShowDetails = false } = props;
 
@@ -29,7 +41,7 @@ export function usePediatricWidgetState(props: VisitPediatricProtocolWidgetProps
 		...DEFAULT_LEGAL_REPRESENTATIVE,
 		fullName: representativeFullName || "",
 		phone: representativePhone || patientPhone || "",
-		...(representativeRole ? { role: representativeRole as any } : {}),
+		...(representativeRole && isLegalRepresentativeRole(representativeRole) ? { role: representativeRole } : {}),
 	}));
 	const [representativeText, setRepresentativeText] = useState<string>("");
 

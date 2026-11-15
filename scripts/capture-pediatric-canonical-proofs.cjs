@@ -81,11 +81,26 @@ async function main() {
     });
 
     console.log("1. Navigating to http://127.0.0.1:5173/?demo=true#visit ...");
-    await page.goto("http://127.0.0.1:5173/?demo=true#visit", { waitUntil: "domcontentloaded", timeout: 30000 });
-    await page.waitForFunction(() => {
-      const txt = document.body.innerText || "";
-      return !txt.includes("Загрузка CRM") && txt.length > 50;
-    }, { timeout: 30000 });
+    let loaded = false;
+    for (let attempt = 1; attempt <= 3 && !loaded; attempt++) {
+      try {
+        await page.goto("http://127.0.0.1:5173/?demo=true#visit", { waitUntil: "domcontentloaded", timeout: 45000 });
+        await page.evaluate(() => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const ref = btns.find((b) => b.textContent && b.textContent.includes("Обновить рабочее место"));
+          if (ref) ref.click();
+        });
+        await page.waitForFunction(() => {
+          const txt = document.body.innerText || "";
+          return !txt.includes("Загрузка CRM") && !txt.includes("Загрузка рабочей смены") && txt.length > 50;
+        }, { timeout: 35000 });
+        loaded = true;
+      } catch (err) {
+        console.warn(`Attempt ${attempt} failed: ${err.message}. Retrying...`);
+        await sleep(3000);
+      }
+    }
+    if (!loaded) throw new Error("Could not load #visit after 3 attempts");
     console.log("PC page fully loaded and hydrated");
     await sleep(2000);
     await suppressOverlays(page);
@@ -189,87 +204,46 @@ async function main() {
       await sleep(1000);
     }
 
-    // ─── 4. MOBILE VIEWPORTS (390x844) ────────────────────────────────────────
-    console.log("6. Opening dedicated Mobile Viewport (390x844)...");
-    const mobilePage = await browser.newPage();
-    await mobilePage.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
-    await mobilePage.evaluateOnNewDocument(() => {
-      localStorage.setItem("dente_clinic_token", "demo-showcase-token-owner");
-      localStorage.setItem("dente_staff_token", "demo-showcase-staff-token-owner");
-      localStorage.setItem("dente_cached_active_staff_user", JSON.stringify({
-        id: "demo-owner-id",
-        fullName: "Д-р Воронов М. С.",
-        role: "owner",
-        email: "owner@dente-demo.ru",
-        organizationId: "01a00000-0000-0000-0000-000000000000",
-        specialization: "Главврач / Владелец"
-      }));
-      localStorage.setItem("dente_demo_showcase", "true");
-      localStorage.setItem("dente_offline_mode", "true");
-      localStorage.setItem("dente_bypass_auth", "true");
-      localStorage.setItem("dente_active_mode", "clinic");
-      localStorage.setItem("dente_last_view", "visit");
-      localStorage.setItem("dente_theme", "light");
-      sessionStorage.setItem("dente_unlocked", "true");
-      sessionStorage.setItem("dente:sw-controller-reload", "1");
-    });
-    await mobilePage.goto("http://127.0.0.1:5173/?demo=true#visit", { waitUntil: "domcontentloaded", timeout: 30000 });
-    await mobilePage.waitForFunction(() => {
-      const txt = document.body.innerText || "";
-      return !txt.includes("Загрузка CRM") && !txt.includes("Загрузка клинического приёма") && txt.length > 100;
-    }, { timeout: 30000 });
-    console.log("Mobile page initial CRM & Clinical Visit hydration finished");
+    // ─── 4. MOBILE VIEWPORTS (390x844 Apple HIG) ────────────────────────────
+    console.log("6. Resizing to dedicated Mobile Viewport (390x844 Apple HIG)...");
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
     await sleep(2000);
-    await suppressOverlays(mobilePage);
+    await suppressOverlays(page);
 
-    // If offline fallback button is present, click it
-    const hasOfflineFallback = await mobilePage.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll("button"));
-      const b = btns.find((x) => x.textContent && x.textContent.includes("Перейти в автономный режим"));
-      if (b) {
-        b.click();
-        return true;
-      }
-      return false;
-    });
-
-    if (hasOfflineFallback) {
-      console.log("Clicked 'Перейти в автономный режим' on mobile, waiting for reload");
-      await sleep(2000);
-      await mobilePage.waitForFunction(() => {
-        const txt = document.body.innerText || "";
-        return !txt.includes("Загрузка CRM") && !txt.includes("Загрузка клинического приёма") && txt.length > 50;
-      }, { timeout: 30000 });
-      console.log("Mobile offline reload complete");
-      await sleep(2000);
-    }
-
-    // Wait for visit screen to settle
-    await sleep(2000);
-    await suppressOverlays(mobilePage);
-
-    // Click "Детский" dentition mode button on mobile
-    await mobilePage.evaluate(() => {
+    // Ensure pediatric dentition on mobile
+    await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll("button"));
       const childBtn = btns.find((b) => b.textContent && b.textContent.trim() === "Детский");
       if (childBtn) childBtn.click();
     });
-    await sleep(2500);
+    await sleep(1500);
 
+    // Mobile Light
+    await page.evaluate(() => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+      document.documentElement.setAttribute("data-theme", "light");
+      localStorage.setItem("dente_theme", "light");
+      localStorage.setItem("theme", "light");
+    });
+    await sleep(1000);
     await saveProof(
-      mobilePage,
+      page,
       "pediatric_mobile_light_390x844.png",
       "Pediatric Dentistry Mobile (Mobile Light 390x844)"
     );
 
-    await mobilePage.evaluate(() => {
+    // Mobile Dark
+    await page.evaluate(() => {
       document.documentElement.classList.remove("light");
       document.documentElement.classList.add("dark");
       document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("dente_theme", "dark");
+      localStorage.setItem("theme", "dark");
     });
-    await sleep(1500);
+    await sleep(1000);
     await saveProof(
-      mobilePage,
+      page,
       "pediatric_mobile_dark_390x844.png",
       "Pediatric Dentistry Mobile (Mobile Dark 390x844)"
     );

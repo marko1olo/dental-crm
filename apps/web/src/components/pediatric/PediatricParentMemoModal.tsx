@@ -21,6 +21,7 @@ export interface PediatricParentMemoModalProps {
 	patientAgeYears?: number | undefined;
 	doctorName?: string | undefined;
 	clinicName?: string | undefined;
+	clinicPhone?: string | undefined;
 	initialFrankl?: FranklRating | undefined;
 	initialSilvering?: PediatricSilveringOptions | undefined;
 	initialFissureSealing?: PediatricFissureSealingOptions | undefined;
@@ -37,6 +38,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	patientAgeYears = 7,
 	doctorName = "Врач-стоматолог детский",
 	clinicName = "Стоматологическая клиника",
+	clinicPhone,
 	initialFrankl = 3,
 	initialSilvering,
 	initialFissureSealing,
@@ -80,9 +82,9 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	}, [memoText]);
 
 	const handlePrint = useCallback(() => {
-		printParentMemo({ patientName, memoText, clinicName, doctorName });
+		printParentMemo({ patientName, memoText, clinicName, doctorName, clinicPhone });
 		if (onApplyFrankl) onApplyFrankl(frankl);
-	}, [clinicName, doctorName, frankl, memoText, onApplyFrankl, patientName]);
+	}, [clinicName, clinicPhone, doctorName, frankl, memoText, onApplyFrankl, patientName]);
 
 	if (!isOpen) return null;
 

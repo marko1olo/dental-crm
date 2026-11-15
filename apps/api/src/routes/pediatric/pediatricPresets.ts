@@ -12,6 +12,8 @@ export interface PediatricPresetDto {
 	readonly subtitleRu: string;
 	readonly diagnosisIcd10: string;
 	readonly diagnosisNameRu: string;
+	readonly serviceCode: string;
+	readonly serviceName: string;
 	readonly serviceCode804n: string;
 	readonly serviceName804n: string;
 	readonly materials: readonly string[];
@@ -29,6 +31,8 @@ export const CANONICAL_PEDIATRIC_PRESETS: readonly PediatricPresetDto[] = [
 		subtitleRu: "Знакомство с кабинетом, зеркальце, «ветерок», чистка зубок щеточкой, грамота за храбрость",
 		diagnosisIcd10: "Z01.2",
 		diagnosisNameRu: "Стоматологическое обследование / адаптационный прием",
+		serviceCode: "A01.07.001",
+		serviceName: "Прием (осмотр, консультация) врача-стоматолога детского первичный",
 		serviceCode804n: "A01.07.001",
 		serviceName804n: "Прием (осмотр, консультация) врача-стоматолога детского первичный",
 		materials: ["Циркулярная щеточка со сладкой пастой", "Защитный реминерализующий лак", "Диплом за храбрость"],
@@ -44,6 +48,8 @@ export const CANONICAL_PEDIATRIC_PRESETS: readonly PediatricPresetDto[] = [
 		subtitleRu: "Неинвазивная / инвазивная герметизация моляров светоотверждаемым герметиком",
 		diagnosisIcd10: "K02.0",
 		diagnosisNameRu: "Профилактика кариеса ямок и фиссур (K02.0 / Z29.8)",
+		serviceCode: "A16.07.057",
+		serviceName: "Запечатывание фиссуры зуба герметиком (Fissurit FX / Helioseal)",
 		serviceCode804n: "A16.07.057",
 		serviceName804n: "Запечатывание фиссуры зуба герметиком (Fissurit FX / Helioseal)",
 		materials: ["Fissurit FX (VOCO)", "Helioseal F (Ivoclar)", "Clinpro Sealant (3M)"],
@@ -59,6 +65,8 @@ export const CANONICAL_PEDIATRIC_PRESETS: readonly PediatricPresetDto[] = [
 		subtitleRu: "Препарирование, медикаментозная обработка, СИЦ Fuji IX / SDR Flow / Twinky Star",
 		diagnosisIcd10: "K02.1",
 		diagnosisNameRu: "Кариес дентина временного зуба (K02.1)",
+		serviceCode: "A16.07.002.001",
+		serviceName: "Восстановление зуба пломбой I, V, VI класс с использованием материалов из фотополимеров / СИЦ",
 		serviceCode804n: "A16.07.002.001",
 		serviceName804n: "Восстановление зуба пломбой I, V, VI класс с использованием материалов из фотополимеров / СИЦ",
 		materials: ["СИЦ Fuji IX (GC)", "Twinky Star (цветной компомер VOCO)", "SDR Flow + Filtek Ultimate", "Ketac Molar Easymix (3M)"],
@@ -74,6 +82,8 @@ export const CANONICAL_PEDIATRIC_PRESETS: readonly PediatricPresetDto[] = [
 		subtitleRu: "Ампутация коронковой пульпы, гемостаз, Pulpotec / Biodentine / MTA, герметичная реставрация",
 		diagnosisIcd10: "K04.0",
 		diagnosisNameRu: "Пульпит временного зуба обратимый (K04.0)",
+		serviceCode: "A16.07.030.001",
+		serviceName: "Пульпотомия (ампутация коронковой пульпы временного зуба)",
 		serviceCode804n: "A16.07.030.001",
 		serviceName804n: "Пульпотомия (ампутация коронковой пульпы временного зуба)",
 		materials: ["Pulpotec (Septodont)", "Biodentine (Septodont)", "MTA ProRoot (Dentsply)"],
@@ -89,6 +99,8 @@ export const CANONICAL_PEDIATRIC_PRESETS: readonly PediatricPresetDto[] = [
 		subtitleRu: "Глубокое фторирование эмали и дентина / серебрение (Сафорайд/Аргенат)",
 		diagnosisIcd10: "K02.0",
 		diagnosisNameRu: "Кариес эмали / стадия пятна (K02.0)",
+		serviceCode: "A11.07.012",
+		serviceName: "Глубокое фторирование твердых тканей зубов / серебрение временных зубов",
 		serviceCode804n: "A11.07.012",
 		serviceName804n: "Глубокое фторирование твердых тканей зубов / серебрение временных зубов",
 		materials: ["Сафорайд 38% (Saforide)", "Глуфторед (Gluftored)", "Тифенфлюорид (Tiefenfluorid)", "Аргенат 30%"],

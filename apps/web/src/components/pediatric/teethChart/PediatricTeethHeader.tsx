@@ -25,10 +25,10 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 		<div className="mb-3 flex flex-col gap-2.5 border-b border-[var(--line,#e2e8f0)] pb-2.5">
 			<div className="flex flex-wrap items-center justify-between gap-2 min-w-0 w-full">
 				<div className="flex items-center gap-2 min-w-0">
-					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)]">
+					<span className="text-xs font-bold text-[var(--muted,#64748b)]">
 						Зубная формула (FDI):
 					</span>
-					<span className="rounded-md bg-teal-500/10 px-2 py-0.5 text-xs font-bold font-mono text-teal-700 dark:text-teal-300">
+					<span className="rounded-md bg-[var(--teal,#0d9488)]/10 px-2 py-0.5 text-xs font-bold font-mono text-[var(--teal,#0d9488)]">
 						{isPermanent ? "Подростки (32)" : isMixed ? "Сменный (24)" : "Молочный (20)"}
 					</span>
 				</div>
@@ -79,7 +79,7 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 						type="button"
 						onClick={() => onModeChange?.("primary")}
 						className={`flex-1 sm:flex-initial min-h-[44px] sm:min-h-[32px] sm:h-7 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center whitespace-nowrap ${
-							mode === "primary" ? "bg-teal-600 text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							mode === "primary" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 						data-testid="btn-mode-primary"
 						data-legacy-testid="mode-primary-btn"
@@ -90,7 +90,7 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 						type="button"
 						onClick={() => onModeChange?.("mixed")}
 						className={`flex-1 sm:flex-initial min-h-[44px] sm:min-h-[32px] sm:h-7 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center whitespace-nowrap ${
-							mode === "mixed" ? "bg-sky-600 text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							mode === "mixed" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 						data-testid="btn-mode-mixed"
 						data-legacy-testid="mode-mixed-btn"
@@ -101,7 +101,7 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 						type="button"
 						onClick={() => onModeChange?.("permanent")}
 						className={`flex-1 sm:flex-initial min-h-[44px] sm:min-h-[32px] sm:h-7 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center whitespace-nowrap ${
-							mode === "permanent" ? "bg-indigo-600 text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							mode === "permanent" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 						data-testid="mode-permanent-btn"
 					>

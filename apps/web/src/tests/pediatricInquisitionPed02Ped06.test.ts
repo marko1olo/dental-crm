@@ -152,7 +152,7 @@ describe("Red Team Pediatric & Hygiene Inquisition (PED-02..PED-06)", () => {
 		assert.equal(dmftResult.deciduousFilled, 1);
 		assert.equal(dmftResult.totalDft, 5);
 		assert.equal(dmftResult.intensityLevel, "high", "5 affected deciduous teeth must have HIGH intensity, NOT very_low!");
-		assert.ok(dmftResult.displayKpuText.includes("Индекс кп: 5"));
+		assert.ok(dmftResult.displayKpuText?.includes("Индекс кп: 5"));
 
 		// In Classic Gost Odontogram
 		const gostDmft = calculateDmft(

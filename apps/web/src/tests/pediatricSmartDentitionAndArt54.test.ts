@@ -111,7 +111,7 @@ describe("Pediatric Smart Dentition & Federal Law No. 323-FZ Art. 54", () => {
 			assert.ok(textSigned.includes("Согласие на лечение получено"));
 
 			const textUnsigned = formatPediatricRepresentativeText({ ...rep, consentSigned: false }, 7);
-			assert.ok(textUnsigned.includes("ВНИМАНИЕ: требуется подписание согласия родителем"));
+			assert.ok(textUnsigned.includes("Внимание: требуется подписание согласия родителем"));
 		});
 
 		it("formats consent for minor 15+ years old per Art. 54 Part 2 323-FZ (independent signature right)", () => {

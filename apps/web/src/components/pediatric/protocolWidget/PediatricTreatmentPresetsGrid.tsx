@@ -39,7 +39,7 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 						<button
 							type="button"
 							onClick={handleConsent}
-							className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
+							className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
 							data-testid="pediatric-btn-sign-consent"
 						>
 							<span data-testid="pediatric-btn-sign-consent-323fz">Согласие оформлено</span>
@@ -49,7 +49,7 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 			)}
 
 			<div>
-				<div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+				<div className="mb-2 text-xs font-bold text-[var(--muted,#64748b)]">
 					Клинические протоколы у кресла:
 				</div>
 				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

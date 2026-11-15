@@ -41,7 +41,7 @@ export const PediatricProtocolDetailsAccordion: React.FC<
 								onClick={() => onSelectTooth(t)}
 								className={`min-h-[48px] min-w-[48px] px-2.5 rounded-xl font-mono text-xs font-bold border transition cursor-pointer select-none flex items-center justify-center ${
 									isSelected
-										? "bg-amber-600 text-white border-amber-600 shadow-xs scale-105"
+										? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs scale-105"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								data-testid={`pediatric-tooth-chip-${t}`}

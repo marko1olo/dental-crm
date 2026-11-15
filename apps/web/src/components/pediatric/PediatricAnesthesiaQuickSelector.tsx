@@ -33,7 +33,7 @@ export const PediatricAnesthesiaQuickSelector: React.FC<PediatricAnesthesiaQuick
 						<button
 							key={id} type="button" onClick={() => onSelectDrugId(id)}
 							className={`min-h-[44px] flex items-center justify-between p-2.5 rounded-xl border text-left transition cursor-pointer active:scale-[0.98] ${
-								isSelected ? "border-teal-500 bg-teal-500/10 text-[var(--ink,#0f172a)] ring-1 ring-teal-500/40"
+								isSelected ? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--ink,#0f172a)] ring-1 ring-[var(--teal,#0d9488)]/40"
 									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 							}`}
 							data-testid={`pediatric-drug-${id === "articaine_4" ? "articaine" : "mepivacaine"}`}
@@ -43,10 +43,10 @@ export const PediatricAnesthesiaQuickSelector: React.FC<PediatricAnesthesiaQuick
 								<div className="text-[10px] text-[var(--muted,#64748b)] truncate">{item.tradeNamesRu}</div>
 							</div>
 							{isContra ? (
-								<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-500/15 text-rose-700 dark:text-rose-300 shrink-0 flex items-center gap-1">
+								<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--danger-soft,rgba(239,68,68,0.15))] text-[var(--danger,#ef4444)] shrink-0 flex items-center gap-1">
 									<AlertTriangle className="h-3 w-3" /><span>Аллергия</span>
 								</span>
-							) : isSelected ? <Check className="h-4 w-4 text-teal-600 shrink-0" /> : null}
+							) : isSelected ? <Check className="h-4 w-4 text-[var(--teal,#0d9488)] shrink-0" /> : null}
 						</button>
 					);
 				})}
@@ -59,7 +59,7 @@ export const PediatricAnesthesiaQuickSelector: React.FC<PediatricAnesthesiaQuick
 						<button
 							key={d} type="button" onClick={() => onSelectCarpules(d)}
 							className={`min-h-[44px] sm:min-h-[30px] px-2.5 rounded-lg border text-xs font-bold transition cursor-pointer active:scale-95 ${
-								carpules === d ? "border-teal-500 bg-teal-600 text-white shadow-2xs"
+								carpules === d ? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] ring-1 ring-[var(--teal,#0d9488)]/30 font-black shadow-2xs"
 									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 							}`}
 							data-testid={`btn-pediatric-carpules-${d}`}
@@ -93,17 +93,17 @@ export const PediatricAnesthesiaQuickSelector: React.FC<PediatricAnesthesiaQuick
 					{calculation.isOverdose && (
 						<button
 							type="button" onClick={onSetMaxSafeDose}
-							className="min-h-[44px] sm:min-h-[30px] px-2 rounded-lg border border-teal-300 bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer active:scale-95"
+							className="min-h-[44px] sm:min-h-[30px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition flex items-center gap-1 cursor-pointer active:scale-95"
 							data-testid="btn-reduce-to-safe-dose"
 						>
-							<Sparkles className="h-3.5 w-3.5 text-teal-600" /><span>Снизить до нормы</span>
+							<Sparkles className="h-3.5 w-3.5 text-[var(--teal,#0d9488)]" /><span>Снизить до нормы</span>
 						</button>
 					)}
 				</div>
 
 				<button
 					type="button" onClick={onApplyAnesthesia}
-					className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+					className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
 					data-testid="btn-apply-anesthesia-protocol"
 				>
 					<Check className="h-3.5 w-3.5" /><span>Внести анестезию в протокол</span>

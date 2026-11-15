@@ -57,7 +57,7 @@ export function formatPediatricRepresentativeText(
 
 	const consentPart = rep.consentSigned
 		? "Согласие на лечение получено"
-		: "ВНИМАНИЕ: требуется подписание согласия родителем";
+		: "Внимание: требуется подписание согласия родителем";
 
 	return details
 		? `Родитель: ${repRole} (${details}). ${consentPart}.`

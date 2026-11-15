@@ -20,6 +20,16 @@ interface PediatricTeethMobileQuadrantProps {
 	readonly isPermanent: boolean;
 }
 
+export const FINDING_LABELS_RU: Readonly<Record<ToothClinicalFinding, string>> = {
+	Healthy: "Здоров",
+	Caries: "Кариес",
+	Filled: "Пломба",
+	EndoTreated: "Эндо",
+	Watch: "Фтор",
+	Crown: "Коронка",
+	Extracted: "Удален",
+};
+
 export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrantProps> = ({
 	activeTooth,
 	onSelectTooth,
@@ -66,7 +76,7 @@ export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrant
 								if (first && onSelectTooth) onSelectTooth(first);
 							}}
 							className={`min-h-[44px] h-[44px] px-2 rounded-xl border text-[11px] font-bold transition flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98] ${
-								isQActive ? "bg-teal-600 text-white border-teal-600 shadow-sm" : "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+								isQActive ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 							}`}
 							data-testid={`pediatric-quadrant-btn-${q.key}`}
 						>
@@ -92,20 +102,24 @@ export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrant
 								onClick={() => onSelectTooth?.(t.toothNumber)}
 								className={`relative flex flex-col items-center justify-center rounded-xl border transition-all select-none cursor-pointer touch-manipulation active:scale-95 min-w-[50px] min-h-[56px] py-1.5 px-1 ${
 									isSelected
-										? "border-teal-600 bg-teal-50/90 text-teal-950 ring-2 ring-teal-500/40 font-extrabold"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-teal-400"
+										? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--ink,#0f172a)] ring-2 ring-[var(--teal,#0d9488)]/30 font-extrabold"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)]"
 								}`}
 								data-testid={`pediatric-tooth-btn-${t.toothNumber}`}
 							>
 								{!t.isPrimary && (
-									<span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded bg-sky-600 px-1 text-[8px] font-black uppercase text-white tracking-tighter">
+									<span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded bg-[var(--line-strong,#475569)] px-1 text-[8px] font-black uppercase text-white tracking-tighter">
 										Пост
 									</span>
 								)}
 								<span className="font-mono font-black text-sm">{t.label}</span>
-								{finding !== "Healthy" && <span className="text-[8px] font-bold truncate">{finding}</span>}
+								{finding !== "Healthy" && (
+									<span className="text-[8px] font-bold truncate">
+										{FINDING_LABELS_RU[finding] ?? finding}
+									</span>
+								)}
 								{t.isPrimary && typeof res === "number" && res > 0 && (
-									<span className="text-[8px] font-mono text-rose-600 font-bold" data-testid={`tooth-resorption-badge-${t.toothNumber}`}>{`R${res}%`}</span>
+									<span className="text-[8px] font-mono text-[var(--danger,#ef4444)] font-bold" data-testid={`tooth-resorption-badge-${t.toothNumber}`}>{`R${res}%`}</span>
 								)}
 							</button>
 						);
