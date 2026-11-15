@@ -251,10 +251,18 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
    - 10 тестов к Постановлению №659 и файл `decree659Audit.ts`
    - Тесты и каталоги бренда StomX
 15. **4-State Visual Proof [ЗАКРЫТО]**: Сняты реальные скриншоты живого приложения и лично отсмотрены через `read_file`:
-   - ☀️ PC Light 1440x900 (`01_cashbox_studio_pc_light_1440x900.png` — 80.5 KB)
-   - 🌙 PC Dark 1440x900 (`02_cashbox_studio_pc_dark_1440x900.png` — 79.9 KB)
-   - 📱 Mobile Light 390x844 (`03_cashbox_studio_mobile_light_390x844.png` — 128.7 KB)
-   - 📱 Mobile Dark 390x844 (`04_cashbox_studio_mobile_dark_390x844.png` — 130.4 KB)
+   - ☀️ PC Light 1440x900 (`01_cashbox_studio_pc_light_1440x900.png` — 71.6 KB)
+   - 🌙 PC Dark 1440x900 (`02_cashbox_studio_pc_dark_1440x900.png` — 70.8 KB)
+   - 📱 Mobile Light 390x844 (`03_cashbox_studio_mobile_light_390x844.png` — 117.4 KB)
+   - 📱 Mobile Dark 390x844 (`04_cashbox_studio_mobile_dark_390x844.png` — 114.1 KB)
+16. **DEF-FIN-16 [ЗАКРЫТО] (Red Team Демайнинг и Анти-Any по Мандатам 8be/8bk)**:
+   - В `apps/web/src/components/cashbox/studioModules/useCashRegisterStudioState.ts` устранен скрытый двойной каст `(netErr as unknown as { status: number })` при обработке сбоев сети 502/503/504. Реализован строгий типизированный класс `CashRegisterNetworkError` с безопасным `instanceof` guard.
+   - Во всем модуле кассы и фискального стека (`CashRegisterStudioModal.tsx`, `useCashRegisterStudioState.ts`, `studioModules/`, `cashboxPaymentProcessor.ts`, `fiscal/`) гарантировано 0 вхождений `as any`, `as unknown as`, `as never` и non-null assertions `!`.
+   - Все финансовые расчеты ведутся строго в целочисленных копейках `amountKopecks` (BIGINT) с защитой от float-ошибок.
+   - Внедрен 0px визуальный шум для нормы: пациент-физлицо по умолчанию (без требования ИНН, без 3 гигантских плиток). Вторичный переключатель «Организация / ИП →» аккуратно открывает сегментированный выбор с валидацией 10/12 цифр ИНН только для юрлиц/ИП.
+   - Автономия врача (Мандат 8e): скидки до 100% (гарантийная переделка 0 ₽ без фискального чека), 0 заблокированных кнопок на Primary CTA.
+   - Сплит-оплата: атомарный мульти-тендер (нал + терминал + СБП QR + семейный депозит/аванс) с авто-расчетом остатка в 1 клик.
+   - Машинные гейты (Exit Code 0): `check:encoding`, `check:react-hooks`, `check:buttons`, unit-тесты (11/11 web, 76/76 fiscal, 18/18 api).
 
 ---
 

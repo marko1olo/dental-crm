@@ -28,6 +28,15 @@ import {
 } from "../cashRegisterCatalogData.js";
 import type { CashRegisterStudioModalProps } from "../CashRegisterStudioModal.js";
 
+class CashRegisterNetworkError extends Error {
+	readonly status: number;
+	constructor(message: string, status: number) {
+		super(message);
+		this.name = "CashRegisterNetworkError";
+		this.status = status;
+	}
+}
+
 function resolveOfflinePaymentType(
 	tender: CashboxTenderType,
 	isWarranty: boolean,
@@ -315,9 +324,10 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			});
 			if (!res.ok) {
 				if ([502, 503, 504].includes(res.status)) {
-					const netErr = new Error(`Сервер кассы временно недоступен (код ${res.status})`);
-					(netErr as unknown as { status: number }).status = res.status;
-					throw netErr;
+					throw new CashRegisterNetworkError(
+						`Сервер кассы временно недоступен (код ${res.status})`,
+						res.status,
+					);
 				}
 				const errorJson = await res.json().catch(() => null);
 				const errorText =
@@ -348,7 +358,12 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			if (props.onConfirmPayment) props.onConfirmPayment(paymentResult);
 			onClose();
 		} catch (err: unknown) {
-			const status = (err as { status?: number })?.status;
+			const status =
+				err instanceof CashRegisterNetworkError
+					? err.status
+					: typeof err === "object" && err !== null && "status" in err && typeof (err as { status?: unknown }).status === "number"
+						? (err as { status: number }).status
+						: undefined;
 			if (isNetworkFailure(err, status)) {
 				// Resilient Offline Queue (Mandates 8e & 8n: Solo Doctor & Small Clinic Resilience)
 				try {
