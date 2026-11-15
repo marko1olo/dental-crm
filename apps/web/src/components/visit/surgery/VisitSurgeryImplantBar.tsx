@@ -26,9 +26,17 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 	implantBrand,
 	setImplantBrand,
 	implantDiameter,
+	setImplantDiameter,
 	implantLength,
+	setImplantLength,
 	implantTorque,
+	setImplantTorque,
+	implantIsq,
+	setImplantIsq,
 	implantCap,
+	setImplantCap,
+	implantSuture,
+	setImplantSuture,
 	onApplyPreset,
 }) => {
 	return (
@@ -66,6 +74,64 @@ export const VisitSurgeryImplantBar: React.FC<VisitSurgeryImplantBarProps> = ({
 					implantCap={implantCap}
 					onApplyPreset={onApplyPreset}
 				/>
+			</div>
+
+			{/* Индивидуальная настройка стабильности ISQ и шовного материала */}
+			<div className="pt-2 border-t border-[var(--line)] grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+				<div className="flex items-center gap-2 flex-wrap">
+					<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">Стабильность ISQ (55–85):</span>
+					<div className="flex items-center gap-1">
+						<input
+							type="number"
+							min={55}
+							max={85}
+							value={implantIsq || 72}
+							onChange={(e) => {
+								const val = Number(e.target.value);
+								if (!Number.isNaN(val)) setImplantIsq(val);
+							}}
+							className="w-16 h-8 px-2 rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] font-mono text-xs font-bold text-center focus:border-[var(--teal,#0d9488)] outline-none"
+							data-testid="input-implant-isq"
+							title="Коэффициент первичной стабильности имплантата ISQ (шкала Остелл 55–85)"
+						/>
+						{[65, 72, 75, 80].map((presetIsq) => (
+							<button
+								key={presetIsq}
+								type="button"
+								onClick={() => setImplantIsq(presetIsq)}
+								className={`h-8 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+									implantIsq === presetIsq
+										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+										: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] hover:text-[var(--ink)]"
+								}`}
+								data-testid={`btn-preset-isq-${presetIsq}`}
+							>
+								{presetIsq}
+							</button>
+						))}
+					</div>
+				</div>
+
+				<div className="flex items-center gap-2 flex-wrap">
+					<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">Шовный материал:</span>
+					<div className="flex items-center gap-1 flex-wrap">
+						{["Prolene 4-0", "Vicryl 4-0", "Glycolon 5-0", "ПГА 4-0"].map((suture) => (
+							<button
+								key={suture}
+								type="button"
+								onClick={() => setImplantSuture(suture)}
+								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+									implantSuture === suture
+										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+								}`}
+								data-testid={`btn-suture-${suture.replace(/\s+/g, "_")}`}
+							>
+								{suture}
+							</button>
+						))}
+					</div>
+				</div>
 			</div>
 		</div>
 	);

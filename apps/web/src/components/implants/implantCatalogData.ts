@@ -4,7 +4,14 @@
  * для рентгенологии/DICOM, диапазоны торка, отвертки, Ti-Base и гарантийные паспорта (Мандаты 8s, 8e, 8n, 8b, 8bf).
  */
 
+import {
+	type CanonicalImplantSystemId,
+	NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS,
+} from "@dental/shared";
 import { CANONICAL_IMPLANT_SYSTEMS as DICOM_CANONICAL_IMPLANT_SYSTEMS } from "../dicom/implantCatalog";
+
+export type { CanonicalImplantSystemId };
+export { SHARED_NORMALIZED_IMPLANT_SYSTEMS };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. BRAND IDENTIFIERS & METADATA
@@ -18,14 +25,6 @@ export type NormalizedBrandId =
 	| "astra_tech"
 	| "anyridge"
 	| "ankylos";
-
-export type CanonicalImplantSystemId =
-	| "osstem"
-	| "straumann"
-	| "dentium"
-	| "nobel_biocare"
-	| "astra_tech"
-	| "anyridge";
 
 export type ImplantBrand =
 	| "straumann"

@@ -1,4 +1,6 @@
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+import type { ClinicProfileDraft } from "../../../utils/clinicProfileUtils";
+export type { ClinicProfileDraft };
 export { SURGICAL_STATUTORY_ITEMS } from "./constants";
 
 export interface SurgicalPackageModalProps {
@@ -10,8 +12,7 @@ export interface SurgicalPackageModalProps {
 	readonly onCreateDocument: (kind: DocumentKind) => void;
 	readonly onOpenDocument: (documentId: string) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: clinic profile settings draft
-	readonly clinicProfileDraft?: any;
+	readonly clinicProfileDraft?: ClinicProfileDraft | undefined;
 }
 
 export interface SurgicalItem {

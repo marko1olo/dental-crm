@@ -81,7 +81,7 @@ export const CopilotSurgeryPassportCard: React.FC<CopilotSurgeryPassportCardProp
 		<div
 			className={`p-3.5 rounded-xl border transition-all text-xs shadow-xs ${
 				applied
-					? "border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/20"
+					? "border-[var(--teal,#0d9488)]/40 bg-[var(--teal-soft,rgba(13,148,136,0.08))]"
 					: "border-[var(--teal,#0d9488)]/30 bg-[var(--paper)]"
 			}`}
 			data-testid="copilot-surgery-passport-card"
@@ -104,7 +104,7 @@ export const CopilotSurgeryPassportCard: React.FC<CopilotSurgeryPassportCardProp
 				<span
 					className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${
 						applied
-							? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+							? "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/25"
 							: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)]"
 					}`}
 				>
@@ -137,7 +137,7 @@ export const CopilotSurgeryPassportCard: React.FC<CopilotSurgeryPassportCardProp
 
 			<div className="pt-2.5 flex items-center justify-between gap-2">
 				<div className="text-[10px] text-[var(--muted)] flex items-center gap-1">
-					<ShieldCheck size={11} className="text-emerald-600" />
+					<ShieldCheck size={11} className="text-[var(--teal,#0d9488)]" />
 					<span>Списание со склада в фоне (Soft Stock)</span>
 				</div>
 				<button

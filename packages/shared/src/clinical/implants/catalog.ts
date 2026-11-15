@@ -42,6 +42,14 @@ export type ImplantBrand =
 	| "astra"
 	| "ankylos";
 
+export type CanonicalImplantSystemId =
+	| "osstem"
+	| "straumann"
+	| "dentium"
+	| "nobel_biocare"
+	| "astra_tech"
+	| "anyridge";
+
 export interface ImplantSystemSpec {
 	id: ImplantBrand;
 	name: string;

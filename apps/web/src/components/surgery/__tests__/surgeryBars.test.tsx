@@ -79,5 +79,7 @@ describe("Surgery Clinical Bars (Extraction, Sinus/GBR, Implants)", () => {
 		assert.ok(html.includes("btn-implant-system-Dentium"));
 		assert.ok(html.includes("btn-implant-system-Osstem"));
 		assert.ok(html.includes("btn-implant-system-Straumann"));
+		assert.ok(html.includes("input-implant-isq"));
+		assert.ok(html.includes("btn-suture-Prolene_4-0"));
 	});
 });
