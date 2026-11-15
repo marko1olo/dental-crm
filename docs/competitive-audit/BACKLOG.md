@@ -12406,6 +12406,41 @@
   - 212/212 тестов портала и букинга PASS (148 тестов в `components/portal/`, 64 теста в `components/booking/`);
   - Все машинные гейты DoD (`check:encoding`, `check:buttons`) — PASS (Exit Code 0).
 
+---
+
+### 526. Red Team Инквизиция Домена 4: Публичная Онлайн-Запись (Online Booking Widget), Пациентский Портал и Входящие Коммуникации — Физический Снос 6 Сирот и Дубликатов, Ликвидация Маркетингового Сленга «в 1 клик» (Мандат 8zg), Снятие Disabled с Кнопок Авторизации (Мандат 8e), Динамические Даты Гонки Слотов и Блэклиста, Apple HIG 4-State Visual Proof Gate
+
+- **1. Физический снос 6 сирот и дубликатов через `git rm` (Мандаты 8bd, 8bf, 8bj)**:
+  - `apps/web/src/components/booking/engine/bookingStepEngine.ts`: 0 импортов в монорепо; логика перенесена в `usePublicBookingState.ts`.
+  - `apps/web/src/components/portal/patientCabinet/patientCabinetCalculations.ts`: байт-в-байт дубликат `patientCabinetFormatters.ts`.
+  - `apps/web/src/components/portal/patientCabinet/patientCabinetDefaults.ts`: дубликат `createDefaultCabinetState()` из `patientCabinetSummaryEngine.ts`.
+  - `apps/web/src/components/portal/patientCabinet/patientCabinetBankPresets.ts`: дубликат `SBP_BANKS_DEFAULT_PRESETS` из `patientCabinetSbpEngine.ts`.
+  - `apps/web/src/components/portal/patientCabinet/patientCabinetCrypto.ts`: дубликат `computeSha256Subtle()` из `patientCabinetPepEngine.ts`.
+  - `apps/web/src/components/portal/patientCabinet/patientCabinetProfileTypes.ts`: дубликат типов из `engine/patientCabinetProfileTypes.ts`.
+- **2. Ликвидация маркетингового дев-сленга «в 1 клик» и Zero-Clipping (Мандат 8zg, Мандат 8am)**:
+  - В `apps/web/src/pages/PublicBookingPage.tsx:352`: «Бесплатное подтверждение и перенос в 1 клик» заменено на благородное клиническое «Бесплатное подтверждение и перенос записи».
+  - В строке 282: `truncate` заменен на `break-words` во избежание обрезания наименования клиники многоточием на десктопной витрине.
+- **3. Автономия пользователя: снятие блокировок `disabled` (Мандат 8e)**:
+  - В `apps/web/src/pages/PublicBookingPage.tsx:432, 477`: кнопки отправки SMS OTP и проверки кода освобождены от `disabled` (`aria-busy={isLoading}`).
+  - При клике по кнопке с пустым номером телефона ставится мягкий фокус на инпут и выводится понятная подсказка без блокирования UI.
+- **4. Динамические даты в стресс-тесте гонок и блэклиста (Мандат 8af, Мандат 8wy)**:
+  - В `apps/api/src/tests/routes/prosecutorEleventhWaveScheduleRaceAndBlacklistEvasion.test.ts` захардкоженные даты 2026-10-15 заменены на динамическую функцию `futureIso(2, ...)`.
+  - В векторе 11.6 скорректирован заголовок `doctorHeaders` для роута слияния карт пациентов `/api/patients/duplicates/merge`.
+  - Все 6/6 стресс-тестов PASS (конкуренция слотов в кресле 1x200, 4x409; гонка CRM 1x201, 4x409; обход блэклиста опечаткой 403; латинские гомоглифы 403; архивный пациент 403; слияние карт с сохранением канонического статуса и истории 200).
+- **5. 4-State Visual Proof Gate (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark)**:
+  - 4 канонических скриншота зафиксированы в `docs/proofs/booking/` и лично проверены через `read_file`:
+    - `01_public_booking_pc_light_1440x900.png` (284 KB, PC Light 1440x900);
+    - `02_public_booking_pc_dark_1440x900.png` (430 KB, PC Dark 1440x900);
+    - `03_public_booking_mobile_light_390x844.png` (264 KB, iPhone Mobile Light 390x844);
+    - `04_public_booking_mobile_dark_390x844.png` (285 KB, iPhone Mobile Dark 390x844).
+  - Подтверждено: размер >= 40KB, 0px срезанного текста, ровно 1 Primary CTA noble teal (#0d9488), отсутствие белых пятен в тёмной теме, Apple HIG тач-зоны >= 44x44px.
+- **6. 100% Машинные гейты верификации**:
+  - `check:encoding` — EXIT 0 (20617 файлов).
+  - `check:buttons` — EXIT 0 (4658 файлов, 0 нарушений).
+  - `check:react-hooks` — EXIT 0 (3173 файла, 0 нарушений).
+  - 66/66 тестов виджета букинга в `apps/web/src/components/booking/` — PASS.
+
+
 
 
 

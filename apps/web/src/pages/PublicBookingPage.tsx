@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
 	Calendar,
 	User,
@@ -68,6 +68,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 	const [otpSent, setOtpSent] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [authError, setAuthError] = useState<string | null>(null);
+	const phoneInputRef = useRef<HTMLInputElement | null>(null);
 
 	const [effectiveOrgId, setEffectiveOrgId] = useState<string | null>(organizationId);
 	const [isResolvingClinic, setIsResolvingClinic] = useState(!organizationId);
@@ -138,8 +139,10 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 	}, [effectiveOrgId]);
 
 	const handleSendOtp = async () => {
+		if (isLoading) return;
 		if (!loginPhone.trim()) {
 			setAuthError("Укажите номер телефона");
+			phoneInputRef.current?.focus();
 			return;
 		}
 		setIsLoading(true);
@@ -164,6 +167,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 	};
 
 	const handleVerifyOtp = async () => {
+		if (isLoading) return;
 		if (!otpCode.trim()) {
 			setAuthError("Введите код подтверждения из SMS");
 			return;
@@ -275,7 +279,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 									D
 								</div>
 								<div className="min-w-0">
-									<h2 className="text-base font-bold leading-tight text-[var(--ink)] truncate">
+									<h2 className="text-base font-bold leading-tight text-[var(--ink)] break-words">
 										{clinicInfo.name}
 									</h2>
 									<p className="text-xs text-[var(--ink-muted)] mt-0.5 flex items-center gap-1">
@@ -349,7 +353,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 								</div>
 								<div className="flex items-center gap-2 text-xs text-[var(--ink)]">
 									<CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-									<span>Бесплатное подтверждение и перенос в 1 клик</span>
+									<span>Бесплатное подтверждение и перенос записи</span>
 								</div>
 							</div>
 						</aside>
@@ -416,6 +420,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 									<div className="relative">
 										<Phone className="absolute left-3.5 top-3.5 w-4 h-4 text-[var(--ink-muted)]" />
 										<input
+											ref={phoneInputRef}
 											type="tel"
 											value={loginPhone}
 											onChange={(e) => setLoginPhone(e.target.value)}
@@ -427,8 +432,8 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 								<button
 									type="button"
 									onClick={handleSendOtp}
-									disabled={isLoading || !loginPhone}
-									className="w-full py-3.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 transition-all disabled:opacity-50 cursor-pointer"
+									aria-busy={isLoading}
+									className="w-full py-3.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 transition-all cursor-pointer"
 								>
 									<span>{isLoading ? "Отправка кода..." : "Получить код входа"}</span>
 									<ArrowRight className="w-4 h-4" />
@@ -472,7 +477,7 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 								<button
 									type="button"
 									onClick={handleVerifyOtp}
-									disabled={isLoading}
+									aria-busy={isLoading}
 									className="w-full py-3.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20 transition-all cursor-pointer"
 								>
 									<span>{isLoading ? "Проверка..." : "Войти в кабинет"}</span>

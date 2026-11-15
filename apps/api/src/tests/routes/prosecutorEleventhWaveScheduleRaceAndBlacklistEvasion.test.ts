@@ -56,6 +56,11 @@ const PATIENT_ARCHIVED_ID = fixtureUuid(FIXTURE, 33);
 const BLACKLISTED_NAME = "Хулиганов Хам Хамович";
 const ARCHIVED_NAME = "Архивов Петр Петрович";
 
+function futureIso(daysAhead: number, timeStr: string): string {
+	const d = new Date(Date.now() + 86400000 * daysAhead);
+	return `${d.toISOString().slice(0, 10)}T${timeStr}:00.000Z`;
+}
+
 describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVASION & DENTAL HISTORY)", () => {
 	let app: FastifyInstance;
 	let clinicHeaders: Record<string, string>;
@@ -316,8 +321,8 @@ describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVAS
 	test("ВЕКТОР 11.1 [PUBLIC BOOKING RACE]: 5 одновременных запросов на один слот в кресле", async (t) => {
 		if (!databaseAvailable) return t.skip("База данных недоступна");
 
-		const startsAt = "2026-10-15T10:00:00.000Z";
-		const endsAt = "2026-10-15T10:30:00.000Z";
+		const startsAt = futureIso(2, "10:00");
+		const endsAt = futureIso(2, "10:30");
 
 		// 5 параллельных пациентов штурмуют один слот (10:00 - 10:30) в Операционном кресле №1
 		const concurrentRequests = Array.from({ length: 5 }, (_, i) =>
@@ -382,8 +387,8 @@ describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVAS
 	test("ВЕКТОР 11.2 [CRM SCHEDULE RACE]: 5 одновременных приёмов на один интервал кресла", async (t) => {
 		if (!databaseAvailable) return t.skip("База данных недоступна");
 
-		const startsAt = "2026-10-15T11:00:00.000Z";
-		const endsAt = "2026-10-15T12:00:00.000Z";
+		const startsAt = futureIso(2, "11:00");
+		const endsAt = futureIso(2, "12:00");
 
 		// 5 одновременных запросов от разных администраторов
 		const concurrentCrm = Array.from({ length: 5 }, (_, i) =>
@@ -457,8 +462,8 @@ describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVAS
 			url: `/api/public/booking/${ORG_ID}/book`,
 			payload: {
 				doctorId: DOCTOR_ID,
-				startsAt: "2026-10-15T14:00:00.000Z",
-				endsAt: "2026-10-15T14:30:00.000Z",
+				startsAt: futureIso(2, "14:00"),
+				endsAt: futureIso(2, "14:30"),
 				patientName: "Хулиганов Хам Хамовичь",
 				patientPhone: "+7 (999) 777-11-22",
 			},
@@ -510,8 +515,8 @@ describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVAS
 			url: `/api/public/booking/${ORG_ID}/book`,
 			payload: {
 				doctorId: DOCTOR_ID,
-				startsAt: "2026-10-15T15:00:00.000Z",
-				endsAt: "2026-10-15T15:30:00.000Z",
+				startsAt: futureIso(2, "15:00"),
+				endsAt: futureIso(2, "15:30"),
 				patientName: "Xулиганов Xам Хамович",
 				patientPhone: "+7 (999) 888-22-33",
 			},
@@ -547,8 +552,8 @@ describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVAS
 			url: `/api/public/booking/${ORG_ID}/book`,
 			payload: {
 				doctorId: DOCTOR_ID,
-				startsAt: "2026-10-15T16:00:00.000Z",
-				endsAt: "2026-10-15T16:30:00.000Z",
+				startsAt: futureIso(2, "16:00"),
+				endsAt: futureIso(2, "16:30"),
 				patientName: "Петр Петрович Архивов",
 				patientPhone: "+7 (999) 555-44-33",
 			},
@@ -600,7 +605,7 @@ describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVAS
 		const mergeResponse = await app.inject({
 			method: "POST",
 			url: "/api/patients/duplicates/merge",
-			headers: clinicHeaders,
+			headers: doctorHeaders,
 			payload: {
 				primaryPatientId: PATIENT_PRIMARY_ID,
 				duplicatePatientId: PATIENT_DUPLICATE_ID,
