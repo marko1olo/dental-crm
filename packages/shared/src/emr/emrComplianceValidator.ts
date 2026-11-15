@@ -202,24 +202,24 @@ export function validateForm043uCompliance(
 		if (!d) continue;
 		const diaryPrefix = diariesToCheck.length > 1 ? `[Визит ${i + 1}${d.toothNumber ? ` зуб ${d.toothNumber}` : ""}] ` : "";
 
-		// I: Жалобы и анамнез
+		// I: Жалобы и анамнез (рекомендательный контроль)
 		if (!d.subjectiveComplaints || String(d.subjectiveComplaints).trim().length < 5) {
 			issues.push({
 				blockKey: "complaints",
 				fieldLabel: `${diaryPrefix}I. Жалобы и анамнез`,
-				message: "Блок жалоб не заполнен или содержит менее 5 символов.",
-				severity: "critical",
+				message: "Блок жалоб не заполнен или содержит краткую запись (рекомендуется дополнить).",
+				severity: "warning",
 				statutoryRule: "Приказ Минздрава № 834н (Форма 043/у)",
 			});
 		}
 
-		// II: Status localis
+		// II: Status localis (рекомендательный контроль)
 		if (!d.objectiveStatusLocalis || String(d.objectiveStatusLocalis).trim().length < 10) {
 			issues.push({
 				blockKey: "objective_status",
 				fieldLabel: `${diaryPrefix}II. Объективный статус (Status localis)`,
-				message: "Объективный статус (Status localis) не описан или не содержит данных осмотра.",
-				severity: "critical",
+				message: "Объективный статус (Status localis) не описан или содержит краткую запись осмотра.",
+				severity: "warning",
 				statutoryRule: "Приказ Минздрава № 834н (Форма 043/у)",
 			});
 		}
@@ -258,13 +258,13 @@ export function validateForm043uCompliance(
 			});
 		}
 
-		// IV: Протокол лечения
+		// IV: Протокол лечения (рекомендательный контроль)
 		if (!d.procedureProtocol || String(d.procedureProtocol).trim().length < 20) {
 			issues.push({
 				blockKey: "treatment_protocol",
 				fieldLabel: `${diaryPrefix}IV. Протокол лечения (манипуляции)`,
-				message: "Протокол лечения не содержит подробного описания манипуляций (менее 20 символов).",
-				severity: "critical",
+				message: "Протокол лечения не содержит подробного описания манипуляций (менее 20 символов). Рекомендуется дополнить описание.",
+				severity: "warning",
 				statutoryRule: "Приказ Минздрава № 834н",
 			});
 		}
@@ -290,7 +290,7 @@ export function validateForm043uCompliance(
 					blockKey: "treatment_protocol",
 					fieldLabel: `${diaryPrefix}Соответствие диагнозу эндодонтии`,
 					message: `При диагнозе пульпита/периодонтита (${icdClean}) в протоколе отсутствуют этапы эндодонтического лечения (инструментация, ирригация, обтурация каналов).`,
-					severity: "critical",
+					severity: "warning",
 					statutoryRule: "Клинические рекомендации СтАР «Пульпит» и «Периодонтит»",
 				});
 			}
@@ -345,7 +345,7 @@ export function validateForm043uCompliance(
 					blockKey: "treatment_protocol",
 					fieldLabel: `${diaryPrefix}Хирургический протокол удаления`,
 					message: "В протоколе операции удаления зуба отсутствуют обязательные этапы (синдесмотомия, кюретаж лунки, гемостаз).",
-					severity: "critical",
+					severity: "warning",
 					statutoryRule: "Клинические рекомендации СтАР «Операция удаления зуба»",
 				});
 			}
@@ -377,7 +377,7 @@ export function validateForm043uCompliance(
 
 	const summaryText = isCompliant
 		? `Медицинская документация соответствует требованиям Приказа Минздрава России № 834н (Индекс комплаентности: ${score}%). Критических дефектов не обнаружено.`
-		: `Обнаружены нарушения требований Приказа Минздрава № 834н (Индекс комплаентности: ${score}%). Критических дефектов: ${criticalDefects.length}, замечаний: ${warnings.length}. Требуется устранение дефектов до подписания карты.`;
+		: `Клинические рекомендации по оформлению протокола приёма (Индекс: ${score}%). Замечаний: ${warnings.length}${criticalDefects.length > 0 ? `, критических замечаний: ${criticalDefects.length}` : ""}. Карта доступна для сохранения и подписания врачом (Мандат 8e).`;
 
 	return {
 		isCompliant,

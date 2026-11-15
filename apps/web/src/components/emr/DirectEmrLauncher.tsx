@@ -12,7 +12,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { MedicalRecordStudioModal } from "./MedicalRecordStudioModal";
-import { MedicalCardPrintModal } from "./MedicalCardPrintModal";
 import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalCardCatalogData";
 import type { MedicalRecordData } from "./types/recordDataTypes";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
@@ -133,7 +132,12 @@ export const DirectEmrLauncher: React.FC = () => {
 
 	const initialCardData: MedicalRecordData = useMemo(() => {
 		const isDemo = isDemoShowcaseMode();
-		const patient = dashboard?.patients?.[0] as LauncherPatientRecord | undefined;
+		const activePatientId = dashboard?.activeVisit?.patientId;
+		const patient = (
+			activePatientId
+				? dashboard?.patients?.find((p) => p.id === activePatientId)
+				: undefined
+		) as LauncherPatientRecord | undefined;
 		const staff = dashboard?.clinicSettings?.staff?.[0] as LauncherStaffRecord | undefined;
 		const clinicProfile = dashboard?.clinicSettings?.profile;
 
@@ -187,38 +191,39 @@ export const DirectEmrLauncher: React.FC = () => {
 				console.warn("DirectEmrLauncher: не удалось сохранить черновик в sessionStorage", err);
 			}
 
-			const patientId = dashboard?.patients?.[0]?.id;
 			const visitId = dashboard?.activeVisit?.id;
+			const patientId = dashboard?.activeVisit?.patientId;
 
 			if (patientId && visitId) {
 				try {
-					const mutationId = generateUuidV7();
 					const primaryDiary = updated.visitDiaries?.[0];
 					const complaint = updated.anamnesis?.chiefComplaint || primaryDiary?.subjectiveComplaints || "";
 					const anamnesis = updated.anamnesis?.historyOfPresentIllness || "";
 					const statusLocalis = primaryDiary?.objectiveStatusLocalis || updated.dentalStatus?.oralMucosaStatus || "";
 					const diagnosisIcd10 = updated.passport?.primaryDiagnosisIcd10 || primaryDiary?.assessmentIcd10Code || "Z01.2";
-					const diagnosisTooth = primaryDiary?.toothNumber || "";
 					const treatmentDescription = updated.generalTreatmentPlan || primaryDiary?.procedureProtocol || "";
 
-					const res = await fetch("/api/diaries", {
-						method: "POST",
+					const res = await fetch(`/api/visits/${visitId}/draft/autosave`, {
+						method: "PUT",
 						headers: {
 							"Content-Type": "application/json",
-							"Idempotency-Key": mutationId,
 							...denteAdminSecretRequestHeaders(),
 						},
 						credentials: "same-origin",
 						body: JSON.stringify({
-							visitId,
 							patientId,
-							complaint,
-							anamnesis,
-							statusLocalis,
-							diagnosisIcd10,
-							diagnosisTooth,
-							treatmentDescription,
-							status: "draft",
+							selectedSpecialty: "therapist",
+							transcript: "",
+							draft: {
+								complaint,
+								anamnesis,
+								objectiveStatus: statusLocalis,
+								diagnosis: diagnosisIcd10,
+								treatmentPlan: treatmentDescription,
+								warnings: [],
+							},
+							clientDraftId: `visit-draft-${visitId}`,
+							clientSavedAt: new Date().toISOString(),
 						}),
 					});
 
@@ -228,6 +233,7 @@ export const DirectEmrLauncher: React.FC = () => {
 								new CustomEvent("dente:diary-saved", { detail: { visitId, patientId } }),
 							);
 							window.dispatchEvent(new CustomEvent("dente:emk-updated", { detail: updated }));
+							window.dispatchEvent(new CustomEvent("dente:visit-updated", { detail: { visitId } }));
 						}
 						showToast("Медицинская карта приёма сохранена в базу данных", "success", 4000);
 					}
@@ -241,7 +247,7 @@ export const DirectEmrLauncher: React.FC = () => {
 
 	if (!isOpen) return null;
 
-	const effectivePatientId = dashboard?.patients?.[0]?.id;
+	const effectivePatientId = dashboard?.activeVisit?.patientId;
 	const effectiveVisitId = dashboard?.activeVisit?.id;
 
 	return (
@@ -258,5 +264,5 @@ export const DirectEmrLauncher: React.FC = () => {
 	);
 };
 
-export { MedicalCardPrintModal };
+export { MedicalRecordStudioModal as MedicalCardPrintModal };
 export default DirectEmrLauncher;

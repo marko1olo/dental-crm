@@ -119,8 +119,15 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 	);
 
 	const hasActivePatient = Boolean(activePatient?.id ?? dashboard?.activeVisit?.patientId);
+	const activeVisitWithTooth = dashboard?.activeVisit as
+		| { diagnosisTooth?: string | number | null }
+		| null
+		| undefined;
+	const parsedDiagnosisTooth = activeVisitWithTooth?.diagnosisTooth
+		? parseInt(String(activeVisitWithTooth.diagnosisTooth), 10) || null
+		: null;
 	const effectiveActiveTooth =
-		hasActivePatient ? (selectedInlineTooth ?? dashboard?.activeVisit?.diagnosisTooth ?? 16) : null;
+		hasActivePatient ? (selectedInlineTooth ?? parsedDiagnosisTooth ?? null) : null;
 
 	const {
 		saveState: soloAutosaveState,

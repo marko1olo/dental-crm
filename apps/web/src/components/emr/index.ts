@@ -7,7 +7,6 @@
 
 export * from "./medicalCardCatalogData";
 export * from "./MedicalRecordStudioModal";
-export * from "./MedicalCardPrintModal";
 export * from "./types/recordDataTypes";
 export * from "./types/recordConfigTypes";
 export * from "./clinicalDiaryMath";
@@ -24,6 +23,7 @@ export * from "./record/tabs/RecordEpicrisisTab";
 export {
 	MedicalRecordStudioModal as Form043PrintModal,
 	MedicalRecordStudioModal as ClinicalDiaryPrintModal,
+	MedicalRecordStudioModal as MedicalCardPrintModal,
 } from "./MedicalRecordStudioModal";
 
 // Протоколы и генераторы клинических дневников

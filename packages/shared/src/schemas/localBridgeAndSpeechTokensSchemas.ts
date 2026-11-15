@@ -141,30 +141,17 @@ export const visitDraftAutosaveSchema = z.object({
 
 export type VisitDraftAutosave = z.infer<typeof visitDraftAutosaveSchema>;
 
-export const visitDraftAutosaveRequestSchema = z
-	.object({
-		visitId: z.string().uuid(),
-		patientId: z.string().uuid(),
-		selectedSpecialty: dentalSpecialtySchema,
-		transcript: z.string().max(80_000).default(""),
-		draft: visitNoteDraftSchema,
-		baseRevision: z.number().int().nonnegative().nullable().optional(),
-		clientDraftId: z.string().min(1).max(120).nullable().optional(),
-		clientSavedAt: z.string().nullable().optional(),
-		hygieneIndices: z.record(z.unknown()).nullable().optional(),
-	})
-	.refine(
-		(input) =>
-			Boolean(
-				input.transcript.trim() ||
-					input.draft.complaint?.trim() ||
-					input.draft.anamnesis?.trim() ||
-					input.draft.objectiveStatus?.trim() ||
-					input.draft.diagnosis?.trim() ||
-					input.draft.treatmentPlan?.trim(),
-			),
-		{ message: "Нужно передать текст приема или заполнить поля черновика" },
-	);
+export const visitDraftAutosaveRequestSchema = z.object({
+	visitId: z.string().uuid(),
+	patientId: z.string().uuid(),
+	selectedSpecialty: dentalSpecialtySchema,
+	transcript: z.string().max(80_000).default(""),
+	draft: visitNoteDraftSchema,
+	baseRevision: z.number().int().nonnegative().nullable().optional(),
+	clientDraftId: z.string().min(1).max(120).nullable().optional(),
+	clientSavedAt: z.string().nullable().optional(),
+	hygieneIndices: z.record(z.unknown()).nullable().optional(),
+});
 
 export type VisitDraftAutosaveRequest = z.infer<
 	typeof visitDraftAutosaveRequestSchema
@@ -172,6 +159,9 @@ export type VisitDraftAutosaveRequest = z.infer<
 
 export const visitDraftAutosaveResponseSchema = z.object({
 	serverDraft: visitDraftAutosaveSchema.nullable(),
+	error: z.string().optional(),
+	reason: z.string().optional(),
+	message: z.string().optional(),
 });
 
 export type VisitDraftAutosaveResponse = z.infer<

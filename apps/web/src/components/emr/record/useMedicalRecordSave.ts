@@ -7,7 +7,6 @@
  */
 
 import { useCallback, useState } from "react";
-import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { MedicalRecordData } from "../types/recordDataTypes";
@@ -54,65 +53,38 @@ export function useMedicalRecordSave({
 				null;
 
 			if (effectiveVisitId && effectivePatientId) {
-				const mutationId = generateUuidV7();
 				const primaryDiary = formData.visitDiaries[0];
 				const complaint = formData.anamnesis.chiefComplaint || primaryDiary?.subjectiveComplaints || "";
 				const anamnesis = formData.anamnesis.historyOfPresentIllness || "";
 				const statusLocalis = primaryDiary?.objectiveStatusLocalis || formData.dentalStatus.oralMucosaStatus || "";
 				const diagnosisIcd10 = formData.passport.primaryDiagnosisIcd10 || primaryDiary?.assessmentIcd10Code || "Z01.2";
-				const diagnosisTooth = primaryDiary?.toothNumber || "";
 				const treatmentDescription = formData.generalTreatmentPlan || primaryDiary?.procedureProtocol || "";
 
-				const res = await fetch("/api/diaries", {
-					method: "POST",
+				const res = await fetch(`/api/visits/${effectiveVisitId}/draft/autosave`, {
+					method: "PUT",
 					headers: {
 						"Content-Type": "application/json",
-						"Idempotency-Key": mutationId,
 						...denteAdminSecretRequestHeaders(),
 					},
 					credentials: "same-origin",
 					body: JSON.stringify({
-						visitId: effectiveVisitId,
 						patientId: effectivePatientId,
-						complaint,
-						anamnesis,
-						statusLocalis,
-						diagnosisIcd10,
-						diagnosisTooth,
-						treatmentDescription,
-						status: effectiveIsDraft ? "draft" : "signed",
+						selectedSpecialty: "therapist",
+						transcript: "",
+						draft: {
+							complaint,
+							anamnesis,
+							objectiveStatus: statusLocalis,
+							diagnosis: diagnosisIcd10,
+							treatmentPlan: treatmentDescription,
+							warnings: [],
+						},
+						clientDraftId: `visit-draft-${effectiveVisitId}`,
+						clientSavedAt: new Date().toISOString(),
 					}),
 				});
 
 				if (res.ok) {
-					try {
-						await fetch(`/api/visits/${effectiveVisitId}/draft/autosave`, {
-							method: "PUT",
-							headers: {
-								"Content-Type": "application/json",
-								...denteAdminSecretRequestHeaders(),
-							},
-							credentials: "same-origin",
-							body: JSON.stringify({
-								patientId: effectivePatientId,
-								selectedSpecialty: "therapist",
-								transcript: "",
-								draft: {
-									complaint,
-									anamnesis,
-									objectiveStatus: statusLocalis,
-									diagnosis: diagnosisIcd10,
-									treatmentPlan: treatmentDescription,
-									warnings: [],
-								},
-								clientDraftId: `visit-draft-${effectiveVisitId}`,
-								clientSavedAt: new Date().toISOString(),
-							}),
-						});
-					} catch (autosaveErr) {
-						console.warn("useMedicalRecordSave: некритичная ошибка фонового автосейва черновика", autosaveErr);
-					}
-
 					if (typeof window !== "undefined") {
 						window.dispatchEvent(
 							new CustomEvent("dente:diary-saved", {
@@ -125,7 +97,7 @@ export function useMedicalRecordSave({
 					showToast("Медицинская карта приёма сохранена в базу данных", "success", 4000);
 				} else {
 					const errorPayload = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-					const errorMessage = errorPayload?.error || errorPayload?.message || "Не удалось сохранить дневник";
+					const errorMessage = errorPayload?.error || errorPayload?.message || "Не удалось сохранить медицинскую карту";
 					showToast(errorMessage, "error", 4000);
 				}
 			} else {
