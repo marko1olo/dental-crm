@@ -28,7 +28,7 @@ import {
 import { registerCashInstallmentsRoutes } from "../routes/cashInstallmentsRoutes.js";
 import { registerCrmLeakDetectorRoutes } from "../routes/crmLeakDetector.js";
 import { registerDocumentTemplateRoutes } from "../routes/documentTemplates.js";
-import { registerPeriodontogramRoutes } from "../routes/periodontogram.js";
+import { registerPeriodontogramRoutes } from "../routes/periodontogram/index.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import {

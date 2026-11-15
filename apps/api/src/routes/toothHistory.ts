@@ -16,7 +16,7 @@ import {
 	visits,
 	xrayScans,
 } from "../db/schema.js";
-import { fetchToothPeriodontalEvents } from "./toothHistoryPerio.js";
+import { fetchToothPeriodontalEvents } from "./periodontogram/index.js";
 
 /**
  * Checks if a compound tooth string (e.g. "16, 17", "16-18", "1.6", "зуб 16") contains a specific FDI tooth number.
@@ -249,7 +249,11 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 						}
 					}
 				} catch (err) {
-					console.warn("[toothHistory] Ошибка чтения ревизий дневника:", err);
+					req.log.error(
+						{ err, patientId, toothNum },
+						"[toothHistory] Ошибка чтения ревизий дневника",
+					);
+					throw err;
 				}
 			}
 
@@ -305,7 +309,7 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 							eq(treatmentItems.patientId, patientId),
 							or(
 								eq(treatmentItems.toothCode, String(toothNum)),
-								sql`left(${treatmentItems.toothCode}, 2) = ${String(toothNum)}`,
+								sql`${treatmentItems.toothCode} LIKE ${String(toothNum) + "%"}`,
 							),
 						),
 					);
@@ -322,7 +326,11 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 					});
 				}
 			} catch (err) {
-				console.warn("[toothHistory] Ошибка чтения процедур treatmentItems:", err);
+				req.log.error(
+					{ err, patientId, toothNum },
+					"[toothHistory] Ошибка чтения процедур treatmentItems",
+				);
+				throw err;
 			}
 
 			// 5. Fetch Append-only Tooth State History
@@ -358,7 +366,11 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 					)
 					.orderBy(desc(toothStateHistory.changedAt));
 			} catch (error) {
-				console.warn("[toothHistory] История переходов недоступна:", error);
+				req.log.error(
+					{ error, patientId, toothNum },
+					"[toothHistory] История переходов недоступна",
+				);
+				throw error;
 			}
 
 			if (historyRows.length > 0) {
@@ -499,7 +511,11 @@ export default async function registerToothHistoryRoutes(app: FastifyInstance) {
 					}
 				}
 			} catch (err) {
-				console.warn("[toothHistory] Ошибка чтения рентген-снимков:", err);
+				req.log.error(
+					{ err, patientId, toothNum },
+					"[toothHistory] Ошибка чтения рентген-снимков",
+				);
+				throw err;
 			}
 
 			// 6. Periodontogram snapshot measurements (PD, BOP, mobility, furcations)

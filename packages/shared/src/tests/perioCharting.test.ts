@@ -29,7 +29,7 @@ import {
 	createSeverePeriodontitisSepaPreset,
 	createProHygieneSepaPreset,
 	generateSepaPeriodontalProtocolText,
-	generateSepaProtocol043Text,
+	normalizePerioSiteCode,
 	computeCompletePerioIndices,
 } from "../index.js";
 
@@ -365,37 +365,45 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 		assert.ok(canonicalText.includes("Z01.2"));
 		assert.ok(canonicalText.includes("Интактный пародонт"));
 
-		// Backward-compatible alias check
+		// Canonical periodontal protocol text (Медицинская карта приёма — Мандат 8x)
 		const healthy = createHealthySepaPeriodontiumPreset();
-		const healthyText = generateSepaProtocol043Text(healthy);
+		const healthyText = generateSepaPeriodontalProtocolText(healthy);
 		assert.ok(healthyText.includes("Z01.2"));
 		assert.ok(healthyText.includes("Интактный пародонт"));
 
-		// Gingivitis Form 043 text
+		// Gingivitis EMR protocol text
 		const gingivitis = createCatarrhalGingivitisSepaPreset();
-		const gingivitisText = generateSepaProtocol043Text(gingivitis);
+		const gingivitisText = generateSepaPeriodontalProtocolText(gingivitis);
 		assert.ok(gingivitisText.includes("K05.1"));
 		assert.ok(gingivitisText.includes("Хронический катаральный гингивит"));
 
-		// Mild Periodontitis Form 043 text
+		// Mild Periodontitis EMR protocol text
 		const mild = createMildPeriodontitisSepaPreset();
-		const mildText = generateSepaProtocol043Text(mild);
+		const mildText = generateSepaPeriodontalProtocolText(mild);
 		assert.ok(mildText.includes("K05.30"));
 		assert.ok(mildText.includes("Хронический пародонтит лёгкой степени"));
 
-		// Moderate Periodontitis Form 043 text
+		// Moderate Periodontitis EMR protocol text
 		const moderate = createModeratePeriodontitisSepaPreset();
-		const moderateText = generateSepaProtocol043Text(moderate);
+		const moderateText = generateSepaPeriodontalProtocolText(moderate);
 		assert.ok(moderateText.includes("K05.31"));
 		assert.ok(moderateText.includes("Хронический генерализованный пародонтит средней степени"));
 
-		// Severe Periodontitis Form 043 text
+		// Severe Periodontitis EMR protocol text
 		const severe = createSeverePeriodontitisSepaPreset();
-		const severeText = generateSepaProtocol043Text(severe, undefined, {
+		const severeText = generateSepaPeriodontalProtocolText(severe, undefined, {
 			customNotes: "Шинирование зубов 3.2-4.2",
 		});
 		assert.ok(severeText.includes("K05.32"));
 		assert.ok(severeText.includes("Хронический генерализованный пародонтит тяжёлой степени"));
 		assert.ok(severeText.includes("Шинирование зубов 3.2-4.2"));
+
+		// Probing site code bidirectional normalization (MB/MV, B/V, DB/DV)
+		assert.strictEqual(normalizePerioSiteCode("MB"), "MV");
+		assert.strictEqual(normalizePerioSiteCode("B"), "V");
+		assert.strictEqual(normalizePerioSiteCode("DB"), "DV");
+		assert.strictEqual(normalizePerioSiteCode("ML"), "ML");
+		assert.strictEqual(normalizePerioSiteCode("L"), "L");
+		assert.strictEqual(normalizePerioSiteCode("DL"), "DL");
 	});
 });

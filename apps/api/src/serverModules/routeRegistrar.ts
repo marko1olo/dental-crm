@@ -62,7 +62,7 @@ import { registerPrescriptionRoutes } from "../routes/prescriptions.js";
 import { registerMigrationRoutes } from "../routes/migration.js";
 import { registerMigrationRunRoutes } from "../routes/migrationRuns.js";
 import { registerOdontogramRoutes } from "../routes/odontogram.js";
-import { registerPeriodontogramRoutes } from "../routes/periodontogram.js";
+import { registerPeriodontogramRoutes } from "../routes/periodontogram/index.js";
 import { registerPediatricRoutes as registerPediatricDomainRoutes } from "../routes/pediatric.js";
 import { registerOrthodonticsRoutes } from "../routes/orthodontics/index.js";
 import registerToothHistoryRoutes from "../routes/toothHistory.js";

@@ -219,7 +219,7 @@ export function getHygieneRecommendations(psrCode: number, hasAsterisk = false):
 }
 
 /**
- * Generates unified clinical hygiene text for Form 043 / outpatient notes.
+ * Generates unified clinical hygiene text for EMR / outpatient notes (Медицинская карта приёма — Мандат 8x).
  */
 export function getHygienePlanText(psrCode: number, hasAsterisk = false): string {
 	return getHygieneRecommendations(psrCode, hasAsterisk).join(" ");

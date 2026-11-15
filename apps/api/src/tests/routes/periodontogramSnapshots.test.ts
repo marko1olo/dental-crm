@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, it, mock } from "node:test";
 import { SEPA_PERMANENT_TEETH } from "@dental/shared";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
-import { registerPeriodontogramRoutes } from "../../routes/periodontogram.js";
+import { registerPeriodontogramRoutes } from "../../routes/periodontogram/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import {
 	CLINIC_TOKEN_HEADER,
@@ -14,6 +14,7 @@ import {
 	type SiteRow,
 	type ToothRow,
 } from "../../services/periodontogramIndices.js";
+import { siteItemSchema } from "../../services/periodontogramService.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { organizations, users } from "../../db/schema.js";
 import {
@@ -313,6 +314,36 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(res.statusCode, 400);
 		const json = JSON.parse(res.body);
 		assert.equal(json.error, "InvalidParameters");
+	});
+
+	it("siteItemSchema accepts and normalizes frontend site codes MB, B, DB to MV, V, DV", () => {
+		const parsedMb = siteItemSchema.parse({
+			toothNumber: 11,
+			siteCode: "MB",
+			probingDepthMm: 3,
+		});
+		assert.equal(parsedMb.siteCode, "MV");
+
+		const parsedB = siteItemSchema.parse({
+			toothNumber: 11,
+			site_code: "B",
+			probingDepthMm: 2,
+		});
+		assert.equal(parsedB.site_code, "V");
+
+		const parsedDb = siteItemSchema.parse({
+			toothNumber: 11,
+			siteCode: "DB",
+			probingDepthMm: 4,
+		});
+		assert.equal(parsedDb.siteCode, "DV");
+
+		const parsedLingual = siteItemSchema.parse({
+			toothNumber: 11,
+			siteCode: "ML",
+			probingDepthMm: 2,
+		});
+		assert.equal(parsedLingual.siteCode, "ML");
 	});
 
 	it("POST /api/periodontogram/snapshots/:id/close returns 409 if snapshot already closed", async () => {

@@ -59,11 +59,20 @@ export const patchTeethPayloadSchema = z.union([
 	z.object({ teeth: z.array(patchToothBodySchema) }),
 ]);
 
+export const perioSiteCodeInputSchema = z
+	.enum(["MV", "V", "DV", "ML", "L", "DL", "MB", "B", "DB"])
+	.transform((val) => {
+		if (val === "MB") return "MV";
+		if (val === "B") return "V";
+		if (val === "DB") return "DV";
+		return val;
+	});
+
 export const siteItemSchema = z.object({
 	toothNumber: z.number().int().min(11).max(48).optional(),
 	tooth_number: z.number().int().min(11).max(48).optional(),
-	siteCode: z.enum(["MV", "V", "DV", "ML", "L", "DL"]).optional(),
-	site_code: z.enum(["MV", "V", "DV", "ML", "L", "DL"]).optional(),
+	siteCode: perioSiteCodeInputSchema.optional(),
+	site_code: perioSiteCodeInputSchema.optional(),
 	probingDepthMm: z.number().int().min(0).max(15).nullable().optional(),
 	probing_depth_mm: z.number().int().min(0).max(15).nullable().optional(),
 	gingivalMarginMm: z.number().int().min(-5).max(10).nullable().optional(),
@@ -219,6 +228,12 @@ export async function upsertSingleSiteRecord(
 	siteCode: string,
 	item: SiteItemInput,
 ) {
+	const rawCode = (siteCode || "").toUpperCase();
+	const normalizedSiteCode =
+		rawCode === "MB" ? "MV" :
+		rawCode === "B" ? "V" :
+		rawCode === "DB" ? "DV" : rawCode;
+
 	const pd = item.probingDepthMm ?? item.probing_depth_mm;
 	const gm = item.gingivalMarginMm ?? item.gingival_margin_mm;
 	const bop = item.bleedingOnProbing ?? item.bleeding_on_probing;
@@ -227,7 +242,7 @@ export async function upsertSingleSiteRecord(
 		snapshotId,
 		toothId,
 		toothNumber,
-		siteCode,
+		siteCode: normalizedSiteCode,
 		probingDepthMm: pd !== undefined ? pd : null,
 		gingivalMarginMm: gm !== undefined ? gm : null,
 		bleedingOnProbing: bop !== undefined ? bop : false,

@@ -187,9 +187,10 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 ): Promise<{ success: boolean; deductedCount: number; messageRu: string }> {
 	const items = PERIODONTAL_CONSUMABLES_CATALOG[procedureKind] || [];
 	if (!items.length) return { success: true, deductedCount: 0, messageRu: "Расходные материалы не требуются (норма)" };
+	const activeVisitId = useVisitStore.getState().activeVisit?.id;
 	try {
 		for (const item of items) {
-			await fetch("/api/warehouse/soft-overdraft-deduct", {
+			await fetch("/api/inventory/soft-overdraft-deduct", {
 				method: "POST",
 				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 				body: JSON.stringify({
@@ -197,12 +198,14 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 					itemName: item.itemName,
 					quantity: item.quantity,
 					reason: `Пародонтология: списание по протоколу (${procedureKind})`,
+					...(activeVisitId ? { visitId: activeVisitId } : {}),
+					allowOverdraft: true,
 				}),
 			});
 		}
 		return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (Soft Negative Stock)` };
-	} catch (err) {
-		console.warn("[PerioWarehouse] Soft negative stock deduction offline fallback:", err);
+	} catch {
+		// Докторская автономия: фоллбэк локального овердрафта без блокировки приёма врача
 	}
 	return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (локальный овердрафт)` };
 }

@@ -150,10 +150,16 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 				siteCode: string;
 			};
 			const toothNumber = Number.parseInt(rawTn, 10);
+			const rawSiteCode = (siteCode || "").toUpperCase();
+			const normalizedSiteCode =
+				rawSiteCode === "MB" ? "MV" :
+				rawSiteCode === "B" ? "V" :
+				rawSiteCode === "DB" ? "DV" : rawSiteCode;
+
 			if (
 				!UUID_REGEX.test(id) ||
 				Number.isNaN(toothNumber) ||
-				!SEPA_SITE_CODES.includes(siteCode as SepaSiteCode)
+				!SEPA_SITE_CODES.includes(normalizedSiteCode as SepaSiteCode)
 			) {
 				return reply.code(400).send({
 					error: "InvalidParameters",
@@ -187,7 +193,7 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 				id,
 				tooth?.id ?? null,
 				toothNumber,
-				siteCode,
+				normalizedSiteCode,
 				parsed.data,
 			);
 			return reply.send({ success: true, data: saved });

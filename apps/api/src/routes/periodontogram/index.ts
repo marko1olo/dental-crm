@@ -34,3 +34,14 @@ export async function registerPeriodontogramSubRoutes(
 	registerToothMutationRoutes(app);
 	registerSiteMutationRoutes(app);
 }
+
+/**
+ * Register all periodontogram REST routes (Canonical SSOT).
+ */
+export async function registerPeriodontogramRoutes(
+	app: FastifyInstance,
+): Promise<void> {
+	await registerPeriodontogramSubRoutes(app);
+}
+
+export default registerPeriodontogramRoutes;

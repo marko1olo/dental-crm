@@ -550,7 +550,13 @@ export function generateSepaPeriodontalProtocolText(
 }
 
 /**
- * @deprecated Используйте каноническую функцию generateSepaPeriodontalProtocolText (Мандат 8x).
+ * Нормализует коды точек зондирования (MB/MV, B/V, DB/DV) к каноническому стандарту SEPA (Мандат 8e/8k).
  */
-export const generateSepaProtocol043Text = generateSepaPeriodontalProtocolText;
+export function normalizePerioSiteCode(code: string): SepaSiteCode {
+	const c = (code || "").toUpperCase();
+	if (c === "MB") return "MV";
+	if (c === "B") return "V";
+	if (c === "DB") return "DV";
+	return c as SepaSiteCode;
+}
 

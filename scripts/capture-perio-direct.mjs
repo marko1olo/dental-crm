@@ -6,11 +6,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CONV_ID = "452f18b6-bbbe-43cf-9895-fe5b3763e5e6";
+const CONV_ID = "91d83097-4c0c-41c3-9dba-a136a34ce5fa";
 const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 const OUTPUT_DIR = path.resolve("docs/proofs/perio");
+const OUTPUT_DIR_PERIODONTICS = path.resolve("docs/proofs/periodontics");
 
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+fs.mkdirSync(OUTPUT_DIR_PERIODONTICS, { recursive: true });
 fs.mkdirSync(BRAIN_DIR, { recursive: true });
 
 const STATES = [
@@ -37,12 +39,10 @@ const STATES = [
 ];
 
 async function main() {
-	console.log("[CAPTURE PERIO] Launching Chrome...");
-	const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+	console.log("[CAPTURE PERIO] Launching browser...");
 	const browser = await chromium.launch({
 		headless: true,
-		executablePath: fs.existsSync(chromePath) ? chromePath : undefined,
-		args: ["--no-sandbox", "--disable-gpu"],
+		args: ["--no-sandbox", "--disable-gpu", "--disable-web-security"],
 	});
 
 	try {
@@ -52,26 +52,61 @@ async function main() {
 		});
 		const page = await context.newPage();
 
-		console.log("[CAPTURE PERIO] Navigating to http://127.0.0.1:5173/?demo=true...");
-		await page.goto("http://127.0.0.1:5173/?demo=true", {
-			waitUntil: "domcontentloaded",
+		page.on("pageerror", (err) => console.log("[PAGE ERROR]:", err.message));
+		page.on("console", (msg) => {
+			if (msg.type() === "error") {
+				console.log("[PAGE CONSOLE ERROR]:", msg.text());
+			}
+		});
+
+		await page.addInitScript(() => {
+			localStorage.setItem("dente_clinic_token", "live-inquisition-clinic-token");
+			localStorage.setItem("dente_staff_token", "live-inquisition-staff-token");
+			localStorage.setItem("dente_demo_showcase", "true");
+			localStorage.setItem("dente_demo_showcase_mode_v1", "true");
+			localStorage.setItem("dente_tour_completed", "true");
+			localStorage.setItem("dente_tour_dismissed", "true");
+			localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+			localStorage.setItem("dente_demo_banner_dismissed", "true");
+			localStorage.setItem("dental-crm:active-user:v1", JSON.stringify({
+				id: "doc-1",
+				fullName: "Д-р Смирнов А.П.",
+				role: "doctor",
+			}));
+		});
+
+		const baseUrl = "http://127.0.0.1:5173/?demo=true#perio";
+		console.log(`[CAPTURE PERIO] Navigating to ${baseUrl} with waitUntil: commit...`);
+		await page.goto(baseUrl, {
+			waitUntil: "commit",
 			timeout: 30000,
 		});
 
-		// Ждем монтирования приложения
-		await page.waitForTimeout(3000);
+		console.log("[CAPTURE PERIO] Waiting 5s for React app to mount...");
+		await page.waitForTimeout(5000);
 
-		console.log("[CAPTURE PERIO] Dispatching dente:open-perio event...");
+		console.log("[CAPTURE PERIO] Dispatching dente:open-perio and dente:open-perio-modal...");
 		await page.evaluate(() => {
 			window.dispatchEvent(new CustomEvent("dente:open-perio", {
 				detail: { patientName: "Пациент приёма (Пародонтология)", patientId: "demo_perio_patient" },
 			}));
+			window.dispatchEvent(new CustomEvent("dente:open-perio-modal", {
+				detail: { patientName: "Пациент приёма (Пародонтология)", patientId: "demo_perio_patient" },
+			}));
 		});
 
-		// Ждем селектора студии
-		const selector = '[data-testid="interactive-periodontogram"], [data-testid="perio-save-draft-btn"]';
-		await page.waitForSelector(selector, { timeout: 15000 });
-		console.log("[CAPTURE PERIO] Perio studio successfully mounted!");
+		const selector = '[data-testid="interactive-periodontogram"], [data-testid="perio-save-draft-btn"], [data-testid="perio-preset-norm-btn"], [data-testid="perio-studio-modal"]';
+		try {
+			await page.waitForSelector(selector, { timeout: 10000 });
+			console.log("[CAPTURE PERIO] Perio studio successfully detected via selector!");
+		} catch (e) {
+			console.log("[CAPTURE PERIO] Selector wait timeout, checking DOM and trying fallback click...");
+			await page.evaluate(() => {
+				const btn = document.querySelector('[data-testid="open-perio-btn"], [data-testid="nav-perio"]');
+				if (btn) btn.click();
+			});
+			await page.waitForTimeout(2000);
+		}
 
 		// Захватываем все 4 состояния
 		for (const state of STATES) {
@@ -90,19 +125,23 @@ async function main() {
 					html.setAttribute("data-theme", "light");
 					document.body.classList.remove("dark");
 				}
+				localStorage.setItem("dente_theme_mode", th);
+				localStorage.setItem("theme", th);
 			}, state.theme);
 
 			// Стабилизация шрифтов
 			await page.evaluate(async () => {
 				if (document.fonts?.ready) await document.fonts.ready;
 			});
-			await page.waitForTimeout(500);
+			await page.waitForTimeout(800);
 
 			const filename = `${state.id}.png`;
 			const targetPath = path.join(OUTPUT_DIR, filename);
+			const periodonticsPath = path.join(OUTPUT_DIR_PERIODONTICS, filename);
 			const brainPath = path.join(BRAIN_DIR, filename);
 
 			await page.screenshot({ path: targetPath, fullPage: false, animations: "disabled" });
+			fs.copyFileSync(targetPath, periodonticsPath);
 			fs.copyFileSync(targetPath, brainPath);
 
 			const size = fs.statSync(targetPath).size;
