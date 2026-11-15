@@ -5,7 +5,7 @@ import {
 	createNewStageInPlan,
 	filterStagesBySpecialty,
 	removeItemFromStages,
-} from "../treatmentPlanStageMutations";
+} from "../stageMutations/index.js";
 
 describe("treatmentPlanStageMutations — Lifecycle & Specialties", () => {
 	it("5. Removes item from stage cleanly and recalculates stage totals", () => {

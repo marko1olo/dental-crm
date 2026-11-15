@@ -23,24 +23,138 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 
 	// Определение сервисных сроков по тарифу
 	const serviceLifeYears = activeTier.tierId === "premium" ? 25 : activeTier.tierId === "optimum" ? 10 : 5;
-	const materialStandards =
-		activeTier.tierId === "premium"
-			? [
-					{ name: "Премиальная имплантационная система с гидрофильной поверхностью", cert: "ISO 13485 / CE 0123", warranty: "Пожизненная гарантия завода" },
-					{ name: "Высокотранслюцентный диоксид циркония с многослойным градиентом", cert: "Многослойный градиент прочности 1100 МПа", warranty: "10 лет клинической стойкости" },
-					{ name: "Прессованная керамика из дисиликата лития высокой прочности", cert: "Медицинский дисиликат лития 530 МПа", warranty: "10 лет клинической гарантии" },
-				]
-			: activeTier.tierId === "optimum"
-				? [
-						{ name: "Керамические коронки и виниры из дисиликата лития CAD/CAM", cert: "Дисиликат лития / CAD-CAM фрезерование", warranty: "3 года гарантии клиники" },
-						{ name: "Дентальные имплантаты с микропористой SLA-поверхностью", cert: "SLA поверхность / ISO 13485", warranty: "Гарантия производителя 15 лет" },
-						{ name: "Наногибридный композит светового отверждения повышенной полируемости", cert: "Субмикронный сферический наполнитель 82%", warranty: "3 года гарантии клиники" },
-					]
-				: [
-						{ name: "Светоотверждаемый микрогибридный композит", cert: "ГОСТ Р 56924-2016 / CE", warranty: "1 год клинической гарантии" },
-						{ name: "Металлокерамические коронки на биосовместимом Co-Cr каркасе", cert: "Медицинский сплав Co-Cr", warranty: "1 год клинической гарантии" },
-						{ name: "Стандартная имплантационная система базового класса", cert: "Остеокондуктивная титановая резьба", warranty: "1 год гарантии" },
-					];
+
+	// Динамическое формирование стандартов на основе реальных услуг, входящих в тариф
+	const materialStandards = React.useMemo(() => {
+		const allItems = activeTier.stages?.flatMap((s) => s.items ?? []) ?? [];
+		const materialsList = activeTier.materialsList ?? [];
+
+		const matchesKeywords = (keywords: readonly string[]) => {
+			return allItems.some((it) => {
+				const text = `${it.name ?? ""} ${it.category ?? ""}`.toLowerCase();
+				return keywords.some((kw) => text.includes(kw));
+			}) || materialsList.some((mat) => {
+				const text = mat.toLowerCase();
+				return keywords.some((kw) => text.includes(kw));
+			});
+		};
+
+		const hasImplant = matchesKeywords(["имплант", "имплантат", "абатмент", "синус-лифтинг", "остеопластик", "кость"]);
+		const hasOrthopedics = matchesKeywords(["коронк", "винир", "протез", "вкладк", "накладк", "керамик", "циркони", "e.max", "металлокерамик", "мостовидн"]);
+		const hasTherapy = matchesKeywords(["кариес", "пломб", "реставраци", "композит", "эндодонти", "пульпит", "периодонтит", "канал"]);
+		const hasHygiene = matchesKeywords(["гигиен", "чистк", "air-flow", "air flow", "ультразвук", "фторирован", "отбеливан", "полировк", "gbt"]);
+
+		const standards: Array<{ name: string; cert: string; warranty: string }> = [];
+
+		if (hasImplant) {
+			if (activeTier.tierId === "premium") {
+				standards.push({
+					name: "Премиальная имплантационная система с гидрофильной поверхностью",
+					cert: "ISO 13485 / CE 0123 / ASTM F136",
+					warranty: "Пожизненная гарантия завода",
+				});
+			} else if (activeTier.tierId === "optimum") {
+				standards.push({
+					name: "Дентальные имплантаты с микропористой SLA-поверхностью",
+					cert: "SLA поверхность / ISO 13485",
+					warranty: "Гарантия производителя 15 лет",
+				});
+			} else {
+				standards.push({
+					name: "Стандартная имплантационная система базового класса",
+					cert: "Остеокондуктивная титановая резьба Grade 4",
+					warranty: "Гарантия производителя 5 лет",
+				});
+			}
+		}
+
+		if (hasOrthopedics) {
+			if (activeTier.tierId === "premium") {
+				standards.push(
+					{
+						name: "Высокотранслюцентный диоксид циркония с многослойным градиентом",
+						cert: "Многослойный градиент прочности 1100 МПа",
+						warranty: "10 лет клинической стойкости",
+					},
+					{
+						name: "Прессованная керамика из дисиликата лития высокой прочности",
+						cert: "Медицинский дисиликат лития 530 МПа",
+						warranty: "10 лет клинической гарантии",
+					},
+				);
+			} else if (activeTier.tierId === "optimum") {
+				standards.push({
+					name: "Керамические коронки и виниры из дисиликата лития CAD/CAM",
+					cert: "Дисиликат лития / CAD-CAM фрезерование",
+					warranty: "3 года гарантии клиники",
+				});
+			} else {
+				standards.push({
+					name: "Металлокерамические коронки на биосовместимом Co-Cr каркасе",
+					cert: "Медицинский сплав Co-Cr без никеля",
+					warranty: "1 год клинической гарантии",
+				});
+			}
+		}
+
+		if (hasTherapy) {
+			if (activeTier.tierId === "premium") {
+				standards.push({
+					name: "Нанокомпозитный реставрационный материал премиум-класса с опалесценцией",
+					cert: "Субмикронный наполнитель 84% / ISO 4049",
+					warranty: "5 лет клинической гарантии",
+				});
+			} else if (activeTier.tierId === "optimum") {
+				standards.push({
+					name: "Наногибридный композит светового отверждения повышенной полируемости",
+					cert: "Субмикронный сферический наполнитель 82%",
+					warranty: "3 года гарантии клиники",
+				});
+			} else {
+				standards.push({
+					name: "Светоотверждаемый микрогибридный композит",
+					cert: "ГОСТ Р 56924-2016 / CE",
+					warranty: "1 год клинической гарантии",
+				});
+			}
+		}
+
+		if (hasHygiene) {
+			if (activeTier.tierId === "premium") {
+				standards.push({
+					name: "Протокол бережной гигиены GBT с низкоабразивным эритритолом",
+					cert: "Guided Biofilm Therapy / Швейцарский стандарт",
+					warranty: "Контроль биопленки 6 месяцев",
+				});
+			} else {
+				standards.push({
+					name: "Профессиональная гигиена полости рта (Air-Flow + ультразвук)",
+					cert: "Биосовместимый порошок глицина / ГОСТ",
+					warranty: "Гарантия гигиенической нормы 6 месяцев",
+				});
+			}
+		}
+
+		// Если ни одна категория не определена (пустой план или консультация), возвращаем базовый стандарт тарифа
+		if (standards.length === 0) {
+			if (activeTier.tierId === "premium") {
+				return [
+					{ name: "Премиальные сертифицированные биосовместимые материалы", cert: "ISO 13485 / CE 0123", warranty: "10 лет клинической гарантии" },
+					{ name: "Высокоточная CAD/CAM обработка и индивидуальная эстетика", cert: "Многослойный градиент прочности", warranty: "Повышенная износостойкость" },
+				];
+			}
+			if (activeTier.tierId === "optimum") {
+				return [
+					{ name: "Сертифицированные наногибридные и керамические материалы", cert: "ISO 13485 / ГОСТ Р", warranty: "3 года гарантии клиники" },
+				];
+			}
+			return [
+				{ name: "Базовые сертифицированные стоматологические материалы", cert: "ГОСТ Р 56924-2016 / CE", warranty: "1 год клинической гарантии" },
+			];
+		}
+
+		return standards;
+	}, [activeTier]);
 
 	return (
 		<div className="space-y-5 max-w-3xl mx-auto" data-testid="studio-warranty-passport-tab">
@@ -98,7 +212,7 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 				<div className="text-xs text-[var(--muted)] leading-relaxed">
 					Пациент: <strong className="text-[var(--ink)]">{patientName}</strong> · Лечащий врач:{" "}
 					<strong className="text-[var(--ink)]">{doctorFullName}</strong>.
-					При возникновении любых вопросов по состоянию пломб, коронок или имплантатов гарантийное обслуживание проводится бесплатно в приоритетном порядке.
+					При возникновении любых вопросов по состоянию выполненных работ гарантийное обслуживание проводится бесплатно в приоритетном порядке.
 				</div>
 			</div>
 

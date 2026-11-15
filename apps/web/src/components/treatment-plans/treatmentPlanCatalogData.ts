@@ -7,6 +7,7 @@
  */
 
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./treatmentPlanTypes";
+import type { ToothData } from "./types";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
 import { generatePatientCasePresentation } from "@dental/shared";
 
@@ -550,12 +551,12 @@ export function computeStagesKopecks(stages: readonly TreatmentPlanStage[]): {
  * buildPresenterTiersFromTeeth — Динамический генератор 3 тарифов строго по одонтограмме пациента.
  * Формирует этапы и финансовые сметы для ВСЕХ реальных патологий пациента без хардкода 16/25/46.
  */
-export function buildPresenterTiersFromTeeth(teeth?: unknown): readonly TreatmentPlanTier[] {
-	if (!Array.isArray(teeth) || teeth.length === 0) {
+export function buildPresenterTiersFromTeeth(teeth?: readonly ToothData[] | undefined): readonly TreatmentPlanTier[] {
+	if (!teeth || !Array.isArray(teeth) || teeth.length === 0) {
 		return INTACT_PREVENTION_TIERS;
 	}
 
-	const teethList = teeth as Array<{ toothNumber?: number; number?: number; state?: string; diagnosis?: string }>;
+	const teethList = teeth;
 	const cariesTeeth = [
 		...new Set(
 			teethList

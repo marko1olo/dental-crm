@@ -1,7 +1,7 @@
 import { pushDestructiveActionWithRollback } from "../../../../services/undo/globalUndoRollbackStack.js";
 import { showToast } from "../../../GlobalToast.js";
 import { dispatchStageStartEvents } from "../../treatmentPlanNetworkSync.js";
-import { createNewStageInPlan } from "../../treatmentPlanStageMutations.js";
+import { createNewStageInPlan } from "../../stageMutations/index.js";
 import type {
 	PlanStageMutationContext,
 	TreatmentPlanCreateStagePresetKind,

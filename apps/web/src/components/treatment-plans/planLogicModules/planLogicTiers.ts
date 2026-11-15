@@ -5,7 +5,7 @@ import {
 	generateTreatmentPlanStages,
 	type CatalogServiceLookupItem,
 } from "../treatmentPlanStagesEngine.js";
-import { filterStagesBySpecialty } from "../treatmentPlanStageMutations.js";
+import { filterStagesBySpecialty } from "../stageMutations/index.js";
 import type {
 	ToothData,
 	TreatmentPlanSpecialtyFilter,

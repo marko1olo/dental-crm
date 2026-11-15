@@ -7,7 +7,7 @@ import {
 	updateItemInStages,
 	updateItemPriceInStages,
 	updateItemQuantityInStages,
-} from "../../treatmentPlanStageMutations.js";
+} from "../../stageMutations/index.js";
 import type { PlanStageMutationContext, TreatmentPlanItem, TreatmentPlanStage } from "../types.js";
 import { executeRemovePlanItem } from "./planItemRemoveHelper.js";
 

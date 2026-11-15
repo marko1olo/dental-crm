@@ -73,6 +73,8 @@ export interface ToothData {
 	hasApicoectomy?: boolean;
 	stageBadge?: string | undefined;
 	updatedAt?: string;
+	diagnosis?: string | undefined;
+	number?: number | undefined;
 }
 
 export interface ToothChartProps {

@@ -6,7 +6,7 @@ import {
 	showToast,
 	type ToastEventDetail,
 } from "../GlobalToast";
-import { removeItemFromStages } from "../treatment-plans/treatmentPlanStageMutations";
+import { removeItemFromStages } from "../treatment-plans/stageMutations/index.js";
 import type { TreatmentPlanStage } from "../treatment-plans/types";
 
 describe("Red Team Inquisition: Toast Rollback & Modalless Speed Architecture", () => {

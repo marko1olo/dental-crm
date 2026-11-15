@@ -3,6 +3,8 @@ import { Lock, Trash2 } from "lucide-react";
 import type { TreatmentPlanItem } from "../types";
 import { formatPlanPriceRub } from "../planPricing";
 import { StageItemLabOrderButtons } from "./StageItemLabOrderButtons";
+import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
 export interface StageItemActionsAndPriceProps {
 	readonly item: TreatmentPlanItem;
@@ -27,9 +29,12 @@ export const StageItemActionsAndPrice: React.FC<StageItemActionsAndPriceProps> =
 	onUpdateItemQuantity,
 	onRemoveItem,
 }) => {
+	const { hasDentalLab } = useWorkspaceProfile();
+	const showLabButtons = isLabOrderEligible && (hasDentalLab !== false || isDemoShowcaseMode());
+
 	return (
 		<div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-1 sm:pt-0 flex-wrap sm:flex-nowrap">
-			{isLabOrderEligible && (
+			{showLabButtons && (
 				<StageItemLabOrderButtons
 					item={item}
 					onOpenLabOrder={onOpenLabOrder}

@@ -99,7 +99,83 @@ describe("TreatmentPlanStudioModal — Depth Modes, Warranty Passport & Photo Pr
 		assert.ok(htmlPrem.includes("Пожизненная"), "Пожизненная гарантия завода");
 	});
 
-	it("5. StudioWarrantyPassportTab: наличие кнопки печати паспорта без disabled", () => {
+	it("5. StudioWarrantyPassportTab: динамические стандарты без лишних имплантов для простой терапии", () => {
+		const therapyOnlyTier = {
+			...optimumTier,
+			materialsList: [],
+			stages: [
+				{
+					id: "stage-hygiene",
+					stageNumber: 1,
+					stageKind: "stage_1_therapy",
+					title: "Гигиена",
+					subtitle: "",
+					clinicalGoal: "",
+					totalRub: 4500,
+					totalKopecks: 450000,
+					estimatedVisits: 1,
+					estimatedWeeks: 1,
+					status: "draft" as const,
+					items: [
+						{
+							id: "item-hygiene",
+							name: "Комплексная профессиональная гигиена полости рта",
+							category: "Гигиена",
+							code804n: "A16.07.051",
+							priceRub: 4500,
+							unitPriceRub: 4500,
+							discountRub: 0,
+							quantity: 1,
+							stageKind: "stage_1_therapy",
+							isCompleted: false,
+						},
+					],
+				},
+				{
+					id: "stage-caries",
+					stageNumber: 2,
+					stageKind: "stage_1_therapy",
+					title: "Лечение кариеса",
+					subtitle: "",
+					clinicalGoal: "",
+					totalRub: 6000,
+					totalKopecks: 600000,
+					estimatedVisits: 1,
+					estimatedWeeks: 1,
+					status: "draft" as const,
+					items: [
+						{
+							id: "item-caries",
+							name: "Лечение поверхностного кариеса, наногибридный композит",
+							category: "Терапия",
+							code804n: "A16.07.002",
+							priceRub: 6000,
+							unitPriceRub: 6000,
+							discountRub: 0,
+							quantity: 1,
+							stageKind: "stage_1_therapy",
+							isCompleted: false,
+						},
+					],
+				},
+			],
+		};
+
+		const html = renderToString(
+			<StudioWarrantyPassportTab
+				activeTier={therapyOnlyTier}
+				patientName="Смирнов В.П."
+				doctorFullName="Д-р Орлов А.В."
+			/>
+		);
+
+		assert.ok(html.includes("композит"), "Включает гарантию на композитную реставрацию");
+		assert.ok(html.includes("гигиена") || html.includes("гигиен"), "Включает гарантию на гигиену");
+		assert.ok(!html.includes("имплантат"), "Не содержит прибитых имплантатов");
+		assert.ok(!html.includes("коронк"), "Не содержит прибитых коронок");
+	});
+
+	it("6. StudioWarrantyPassportTab: наличие кнопки печати паспорта без disabled", () => {
 		const html = renderToString(
 			<StudioWarrantyPassportTab
 				activeTier={optimumTier}

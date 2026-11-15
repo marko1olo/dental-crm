@@ -46,16 +46,62 @@ import {
 } from "./pricelistCatalogData";
 import { PriceItemEditModal } from "../settings/pricesTab/PriceItemEditModal";
 import { printPricelistA4 } from "../settings/pricesTab/pricesExportPrintHelpers";
+import type { DentalSpecialty } from "@dental/shared";
 import {
 	STATUTORY_VAT_EXEMPTION_NOTE,
+	type DoctorSpecialty,
+	type ServiceCategory,
 	type ServicePricelistItem,
 } from "./pricelist/servicePricelistPresets";
+
+function mapStudioCategoryToServiceCategory(cat: PricelistCategoryKey): ServiceCategory {
+	switch (cat) {
+		case "implantology":
+			return "surgery";
+		case "diagnostics":
+			return "radiology";
+		default:
+			return cat;
+	}
+}
+
+function mapSpecialtyToDoctorSpecialty(spec: DentalSpecialty): DoctorSpecialty {
+	switch (spec) {
+		case "therapist":
+		case "surgeon":
+		case "orthopedist":
+		case "orthodontist":
+		case "pediatric":
+		case "hygienist":
+		case "radiologist":
+		case "anesthesiologist":
+			return spec;
+		case "periodontist":
+			return "therapist";
+		case "universal":
+		default:
+			return "general";
+	}
+}
+
+export type PricelistInputItem =
+	| PricelistStudioItem
+	| ServicePricelistItem
+	| (Partial<PricelistStudioItem> & {
+			readonly id?: string | undefined;
+			readonly title?: string | undefined;
+			readonly code?: string | undefined;
+			readonly category?: string | undefined;
+			readonly priceRub?: number | undefined;
+			readonly basePriceRub?: number | undefined;
+			readonly durationMin?: number | undefined;
+	  });
 
 export interface PricelistStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialItems?: readonly any[] | undefined;
-	readonly onSaveCatalog?: ((items: readonly any[]) => void) | undefined;
+	readonly initialItems?: readonly PricelistInputItem[] | undefined;
+	readonly onSaveCatalog?: ((items: readonly PricelistStudioItem[]) => void) | undefined;
 	readonly onApplyBundleToVisit?: ((bundle: PricelistClinicalBundle) => void) | undefined;
 	readonly onAddServiceToInvoice?: ((item: PricelistStudioItem) => void) | undefined;
 	readonly clinicName?: string | undefined;
@@ -130,7 +176,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 									? Math.round(item.costRub * 100)
 									: 50000,
 				durationMin: item.durationMin || item.estimatedDurationMin || 30,
-				isActive: (item as any).active !== false && item.isActive !== false,
+				isActive: (item.active !== undefined ? item.active !== false : true) && item.isActive !== false,
 				tags: item.tags || [],
 				isBundle: item.isBundle || false,
 			}));
@@ -347,7 +393,8 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 
 			const importedItems: PricelistStudioItem[] = [];
 			for (let i = 1; i < lines.length; i++) {
-				const line = lines[i]!;
+				const line = lines[i];
+				if (!line) continue;
 				const parts = line.split(/[;,]/).map((p) => p.trim().replace(/^"|"$/g, ""));
 				if (parts.length >= 3) {
 					const code = parts[0] || `ИМП-${i}`;
@@ -389,9 +436,8 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 				code804n: it.regulatoryCode || it.serviceCode || it.code || "A16.07.002",
 				commercialTitle: it.title,
 				statutoryTitle804n: it.title,
-				// biome-ignore lint/suspicious/noExplicitAny: category mapping
-				category: (it.category === "orthopedics" ? "orthopedics" : it.category) as any,
-				specialty: getSpecialtyForCategory(it.category),
+				category: mapStudioCategoryToServiceCategory(it.category),
+				specialty: mapSpecialtyToDoctorSpecialty(getSpecialtyForCategory(it.category)),
 				basePriceRub: priceRub,
 				basePriceKopecks: it.priceKopecks,
 				materialCostRub: Math.round(it.costKopecks) / 100,
@@ -402,7 +448,7 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 				icd10Indications: [],
 				isActive: it.isActive,
 				isArchived: !it.isActive,
-				tags: (it.tags as string[]) || [],
+				tags: it.tags ? [...it.tags] : [],
 			};
 		});
 

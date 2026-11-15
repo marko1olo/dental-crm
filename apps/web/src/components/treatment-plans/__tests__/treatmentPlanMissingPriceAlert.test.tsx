@@ -7,7 +7,7 @@ import React from "react";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import { MissingPriceAlert } from "../MissingPriceAlert";
+import { MissingPriceAlert } from "../MissingPriceAlertHub";
 import { TreatmentPlanStageCard } from "../TreatmentPlanStageCard";
 import { parseKopecksFromRubString } from "../useMissingPriceAlert";
 import type { TreatmentPlanStage } from "../types";

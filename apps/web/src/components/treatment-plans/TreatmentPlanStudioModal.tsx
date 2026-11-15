@@ -16,6 +16,7 @@ import {
 	ShieldCheck, Camera, Save, CreditCard, AlertCircle,
 } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage, TreatmentPlanItem } from "./treatmentPlanTypes";
+import type { ToothData } from "./types";
 import { formatRubles } from "./treatmentPlanTypes";
 import {
 	CANONICAL_CLINICAL_STAGES, buildCanonical3TierPlans,
@@ -56,7 +57,7 @@ export interface TreatmentPlanStudioModalProps {
 	readonly onApproveAndSign?: ((selectedTier: TreatmentPlanTier) => void) | undefined;
 	readonly onSaveDraft?: ((stages: readonly TreatmentPlanStage[], selectedTier: TreatmentPlanTier) => void) | undefined;
 	readonly className?: string | undefined;
-	readonly teeth?: unknown;
+	readonly teeth?: readonly ToothData[] | undefined;
 	readonly isDemoMode?: boolean | undefined;
 	readonly initialActiveTab?: StudioTab | undefined;
 	readonly planId?: string | null | undefined;

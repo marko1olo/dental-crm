@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { TreatmentPlanDoctorOption, TreatmentPlanItem } from "./types";
-import { MissingPriceAlert } from "./MissingPriceAlert";
+import { MissingPriceAlert } from "./MissingPriceAlertHub";
 import { checkIsLabOrderEligible, getItemUnitPrice } from "./stageRow/stageRowHelpers";
 import { StageItemMetaAndDoctor } from "./stageRow/StageItemMetaAndDoctor";
 import { StageItemActionsAndPrice } from "./stageRow/StageItemActionsAndPrice";

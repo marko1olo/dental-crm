@@ -22,7 +22,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 	isSplitMode = true,
 	onToggleSplitMode,
 }) => {
-	const tabs = [
+	const tabs: readonly { readonly id: TreatmentPlanSpecialtyFilter; readonly label: string; readonly count: number }[] = [
 		{ id: "all", label: "Все специалисты", count: stages.length },
 		{ id: "therapy", label: "Терапия", count: stages.filter((s) => s.stageKind === "stage_1_therapy" || s.items.some((i) => (i.category || "").toLowerCase().match(/терап|кариес|эндо/))).length },
 		{ id: "surgery", label: "Хирургия", count: stages.filter((s) => s.stageKind === "stage_2_surgery" || s.items.some((i) => (i.category || "").toLowerCase().match(/хирург|имплант|удал/))).length },

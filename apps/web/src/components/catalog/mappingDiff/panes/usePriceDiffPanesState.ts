@@ -35,9 +35,9 @@ export function calculateItemPriceDiff(item: IngestedMappingItem): ItemPriceDiff
 	const newPriceKopecks = item.priceKopecks ?? Math.round(newPriceRub * 100);
 
 	const hasExisting =
-		item.matchedExistingPriceRub !== undefined &&
-		item.matchedExistingPriceRub !== null;
-	const oldPriceRub = hasExisting ? Math.max(0, item.matchedExistingPriceRub as number) : 0;
+		typeof item.matchedExistingPriceRub === "number" &&
+		Number.isFinite(item.matchedExistingPriceRub);
+	const oldPriceRub = hasExisting ? Math.max(0, item.matchedExistingPriceRub) : 0;
 	const oldPriceKopecks = Math.round(oldPriceRub * 100);
 
 	if (!hasExisting || item.suggestedAction === "create_new") {

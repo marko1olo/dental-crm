@@ -4,7 +4,7 @@ import {
 	addItemToPlanStages,
 	updateItemPriceInStages,
 	updateItemQuantityInStages,
-} from "../treatmentPlanStageMutations";
+} from "../stageMutations/index.js";
 import type { TreatmentPlanStage } from "../types";
 
 describe("treatmentPlanStageMutations — Items & Prices", () => {

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { loadPersistedCustomPlanItems } from "../../ctImplantIntegrationBridge.js";
 import { fetchPatientTreatmentPlans } from "../../treatmentPlanNetworkSync.js";
-import { mergeIncomingPlanItem, mergePersistedPlanItems } from "../../treatmentPlanStageMutations.js";
+import { mergeIncomingPlanItem, mergePersistedPlanItems } from "../../stageMutations/index.js";
 import type { PlanPersistenceEffectsParams, TreatmentPlanItem } from "../types.js";
 
 export function useTreatmentPlanPersistenceEffects({

@@ -1,6 +1,6 @@
 import { StaffActionAuditService } from "../../../../services/audit/staffActionAuditService.js";
 import { pushDestructiveActionWithRollback } from "../../../../services/undo/globalUndoRollbackStack.js";
-import { removeItemFromStages } from "../../treatmentPlanStageMutations.js";
+import { removeItemFromStages } from "../../stageMutations/index.js";
 import type { PlanStageMutationContext, TreatmentPlanItem } from "../types.js";
 
 export function executeRemovePlanItem(

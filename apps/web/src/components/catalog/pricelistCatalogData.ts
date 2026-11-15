@@ -216,6 +216,14 @@ export interface PricelistStudioItem {
 	readonly isActive: boolean;
 	readonly tags?: readonly string[] | undefined;
 	readonly isBundle?: boolean | undefined;
+	readonly active?: boolean | undefined;
+	readonly priceRub?: number | undefined;
+	readonly basePriceRub?: number | undefined;
+	readonly materialCostRub?: number | undefined;
+	readonly materialsCostRub?: number | undefined;
+	readonly costRub?: number | undefined;
+	readonly estimatedDurationMin?: number | undefined;
+	readonly commercialTitle?: string | undefined;
 }
 
 export interface PricelistClinicalBundle {
@@ -602,6 +610,28 @@ export function saveCanonicalPricelist(
 	}
 }
 
+interface RawBackendPricelistItem {
+	readonly id?: string | undefined;
+	readonly code?: string | undefined;
+	readonly order804nCode?: string | undefined;
+	readonly title?: string | undefined;
+	readonly category?: string | undefined;
+	readonly basePriceRub?: number | undefined;
+	readonly priceRub?: number | undefined;
+	readonly priceKopecks?: number | undefined;
+	readonly materialsCostRub?: number | undefined;
+	readonly materialCostRub?: number | undefined;
+	readonly costRub?: number | undefined;
+	readonly costKopecks?: number | undefined;
+	readonly durationMinutes?: number | undefined;
+	readonly durationMin?: number | undefined;
+	readonly active?: boolean | undefined;
+	readonly isActive?: boolean | undefined;
+	readonly tags?: readonly string[] | undefined;
+	readonly aliases?: readonly string[] | undefined;
+	readonly isBundle?: boolean | undefined;
+}
+
 /**
  * Реальная загрузка прейскуранта из базы данных PostgreSQL 18 через Fastify API (DEF-PRICE-01).
  * Ликвидирует зависимость от Potemkin LocalStorage.
@@ -622,18 +652,18 @@ export async function fetchPricelistFromBackend(
 			console.warn(`[pricelist] GET /api/pricelist status ${res.status}, using offline cache`);
 			return loadCanonicalPricelist();
 		}
-		const data = await res.json();
-		const rawItems: any[] = Array.isArray(data.items) ? data.items : [];
+		const data = (await res.json()) as { readonly items?: readonly RawBackendPricelistItem[] | undefined };
+		const rawItems: readonly RawBackendPricelistItem[] = Array.isArray(data.items) ? data.items : [];
 		if (rawItems.length === 0) {
 			return loadCanonicalPricelist();
 		}
 		const mapped: PricelistStudioItem[] = rawItems.map((item, idx) => {
 			const rawPrice = item.basePriceRub ?? item.priceRub ?? 0;
-			const priceKopecks = Number.isFinite(item.priceKopecks)
+			const priceKopecks = typeof item.priceKopecks === "number" && Number.isFinite(item.priceKopecks)
 				? Math.round(item.priceKopecks)
 				: Math.round(Number(rawPrice) * 100);
 			const rawCost = item.materialsCostRub ?? item.materialCostRub ?? item.costRub ?? 0;
-			const costKopecks = Number.isFinite(item.costKopecks)
+			const costKopecks = typeof item.costKopecks === "number" && Number.isFinite(item.costKopecks)
 				? Math.round(item.costKopecks)
 				: Math.round(Number(rawCost) * 100);
 			return {
