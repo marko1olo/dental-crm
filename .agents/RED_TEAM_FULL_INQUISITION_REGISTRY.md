@@ -5367,6 +5367,45 @@ ead_file по 8 осям качества Хаммера:
 
 ---
 
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 15 (ВОЛНА 2) — ОРТОДОНТИЯ, ЭЛАЙНЕРЫ, ТАЙМЛАЙН И ЦЕФАЛОМЕТРИЯ ТРГ [DEF-ORTHO-07..12]
+- **Хирург-чинильщик:** Red Team Ортодонтии, ТРГ и цефалометрии (Orthodontics & TRG Fixer Surgeon).
+- **Мандаты:** 8bd, 8be, 8bf, 8e, 8n, 8x, 8zg, 8am, 8al, 8bi, 8bj, 8az, 8an, 8bk, Закон №0, Решение по Rotten Seeds.
+- **Статус:** **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО — 0 ДЕФЕКТОВ]**.
+- **Модифицированные боевые компоненты и тесты:**
+  1. `apps/web/src/components/orthodontics/AlignerTrackingCard.tsx` — Ликвидация потёмкинской рассрочки на 240 000 ₽ (DEF-ORTHO-07).
+  2. `apps/web/src/components/orthodontics/OrthodonticTimeline.tsx` — Реабилитация таймлайна, адаптивные фазы и динамический расчет дат (DEF-ORTHO-08).
+  3. `apps/web/src/components/orthodontics/OrthodonticsTabsContent.tsx` — Проброс категории аппарата и даты старта в таймлайн.
+  4. `apps/web/src/components/radiology/cephModal/CephalometricAnalysisModalUI.tsx` — Ликвидация дублирующей кнопки, ровно 1 Primary CTA «Сохранить в ЭМК», снятие блокировки с расчета углов, токенизация CSS (DEF-ORTHO-09, DEF-ORTHO-10, DEF-ORTHO-11).
+  5. `apps/web/src/components/radiology/cephModal/CephalometricAnalysisModal.css` — Устранение принудительного `!important` `#020617` в `.ceph-workstation-root`.
+  6. `apps/web/src/components/documents/forms/OrthodonticPatientCardForm.tsx` — Сквозная синхронизация углов ТРГ с `administrativeProfile.orthodonticProgress.cephAnalysis` (DEF-ORTHO-12).
+  7. `apps/web/src/components/documents/tabs/formSwitch/ClinicalDocumentForms.tsx` — Проброс объекта пациента в `OrthodonticPatientCardForm`.
+  8. `apps/web/src/components/orthodontics/__tests__/orthodonticsSSOTSuite.test.tsx` — Добавлены тесты 20–23 на честный пустой стейт, адаптивный таймлайн, единый CTA ТРГ и синхронизацию с ЭМК.
+  9. `apps/web/src/tests/orthoCephTracker.test.tsx` — Обновлен тест на единый Primary CTA «Сохранить в ЭМК».
+  10. `scripts/capture-ortho-redteam-live.mjs` — Канонический Playwright-скрипт захвата 8 визуальных пруфов на живом стенде.
+- **100% Ликвидация дефектов инквизиции:**
+  1. **DEF-ORTHO-07 (Ликвидация потёмкинской рассрочки на 240 000 ₽ в `AlignerTrackingCard.tsx`):** Полностью устранен захардкоженный массив из 4 траншей по 60 000 ₽ с датами 2024 года. Подключен динамический расчет от реальной стоимости сетапа (`totalSetupCostKopecks`) и количества шагов элайнеров. При отсутствии счетов выводится честный клинический пустой стейт: «График платежей формируется на основе плана лечения и выставленных счетов».
+  2. **DEF-ORTHO-08 (Реабилитация адаптивного таймлайна в `OrthodonticTimeline.tsx`):** Устранен статический массив `DEFAULT_BRACKET_STAGES` с фиксированными датами 2024 года. Внедрен генератор фаз `defaultStages`, адаптивный к типу аппаратуры (`brackets`, `aligners`, `plate`), с расчетом плановых дат визитов через `formatPlannedStageDate` от реальной даты старта (`startDate`), и отображением `stage.plannedDate` в UI карточки этапа.
+  3. **DEF-ORTHO-09 (Хирургия шапки модалки ТРГ в `CephalometricAnalysisModalUI.tsx`):** Ликвидирована дублирующая кнопка «В медицинскую карту». Оставлен ровно 1 Primary CTA «Сохранить в ЭМК» (`var(--primary)` `#0d9488` text-white), исполняющий сквозное сохранение в ЭМК, дневник приёма и событие SOAP. Вторичные действия («2-й монитор», «Голос», «Консультация без ТРГ») приведены к компактным нейтральным кнопкам.
+  4. **DEF-ORTHO-10 (Снятие блокировки с вкладки «Расчет углов» — Мандат 8e):** Устранено `disabled={!isImageLoaded}`, удален блокирующий тост и стили `opacity-60 cursor-not-allowed`. Врач имеет суверенное право просматривать нормы углов Steiner/Tweed/Downs/McNamara и ориентиры в любое время без ограничений.
+  5. **DEF-ORTHO-11 (Ликвидация хардкодных цветов и токенизация ТРГ):** В `CephalometricAnalysisModalUI.tsx` и `CephalometricAnalysisModal.css` удален `data-theme="dark"` и инлайновые стили `#020617` / `#0f172a`. Поверхности модалки, заголовки, разделители и сайдбар привязаны к дизайн-токенам `var(--paper)`, `var(--ink)`, `var(--line)`. Холст ТРГ сохранен высококонтрастным рентген-планшетом.
+  6. **DEF-ORTHO-12 (Сквозная синхронизация ТРГ с амбулаторной картой в `OrthodonticPatientCardForm.tsx`):** Углы SNA, SNB, ANB, FMA автоматически подтягиваются из `patient.administrativeProfile.orthodonticProgress.cephAnalysis` (и локального кэша `dente_ceph_*`). Добавлен чип «✓ Синхронизировано с ТРГ» с датой исследования и кнопка ручной ресинхронизации «Обновить».
+- **Машинные гейты Definition of Done (100% Exit Code 0):**
+  - `@dental/shared/orthodontics` (`orthoEngine.test.ts`) -> **22/22 PASSED (100% Green)**.
+  - `apps/web/src/components/orthodontics/__tests__/orthodonticsSSOTSuite.test.tsx` -> **23/23 PASSED (100% Green)**.
+  - `apps/web/src/tests/orthoCephTracker.test.tsx` -> **6/6 PASSED (100% Green)**.
+  - `npx tsc -p apps/web/tsconfig.json --noEmit` -> **Exit Code 0 (0 ошибок в целевых модулях)**.
+- **8-State Visual Proof (Личный визуальный осмотр через `read_file` по 8 осям):**
+  - ☀️ PC Light Studio (1440x900): [`docs/proofs/orthodontics/01_orthodontics_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/01_orthodontics_studio_pc_light_1440x900.png) (138 KB $\ge 20$KB) — Светлая тема ортодонтической студии, выбор аппарата Damon Q2, дуги NiTi .014, ровно 1 Primary CTA «✓ Зафиксировать активацию этапа» (`#0d9488`).
+  - 🌙 PC Dark Studio (1440x900): [`docs/proofs/orthodontics/02_orthodontics_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/02_orthodontics_studio_pc_dark_1440x900.png) (175 KB $\ge 20$KB) — Глубокая тёмная тема, 100% системные токены `var(--paper)`, идеальный контраст текста, отсутствие слепящих белых пятен.
+  - 📱 Mobile Light Studio (390x844): [`docs/proofs/orthodontics/03_orthodontics_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/03_orthodontics_studio_mobile_light_390x844.png) (49 KB $\ge 20$KB) — Мобильный интерфейс Apple HIG, плавающая нижняя панель в зоне большого пальца, 0px горизонтального скролла.
+  - 🌙 Mobile Dark Studio (390x844): [`docs/proofs/orthodontics/04_orthodontics_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/04_orthodontics_studio_mobile_dark_390x844.png) (50 KB $\ge 20$KB) — Тёмный мобильный режим студии, тач-таргеты $\ge 44$px, отсутствие клиппинга.
+  - ☀️ PC Light TRG (1440x900): [`docs/proofs/orthodontics/ortho_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ortho_pc_light_1440x900.png) (741 KB $\ge 20$KB) — Светлая тема цефалометрического анализа, токенизированная шапка, ровно 1 Primary CTA «Сохранить в ЭМК», отсутствие дублирующей кнопки, 16 анатомических ориентиров, векторные плоскости.
+  - 🌙 PC Dark TRG (1440x900): [`docs/proofs/orthodontics/ortho_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ortho_pc_dark_1440x900.png) (745 KB $\ge 20$KB) — Тёмная тема ТРГ анализа, контрастный рентгеновский холст, калибровка ориентиров 100% (16/16), разблокированная вкладка «2. Расчет углов».
+  - 📱 Mobile Light TRG (390x844): [`docs/proofs/orthodontics/ortho_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ortho_mobile_light_390x844.png) (158 KB $\ge 20$KB) — Мобильный интерфейс ТРГ, сенсорные элементы управления панорамированием и зумом, нижний док расчетов углов.
+  - 🌙 Mobile Dark TRG (390x844): [`docs/proofs/orthodontics/ortho_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ortho_mobile_dark_390x844.png) (159 KB $\ge 20$KB) — Тёмный мобильный режим цефалометрии, безупречная верстка и читаемость.
+
+---
+
 ### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ДОМЕН 4 — СКЛАДСКОЙ КОНТУР, FEFO, СПИСАНИЕ ПО ТЕХКАРТАМ И ИНВЕНТАРИЗАЦИЯ [DEF-WARE-01..05]
 - **Хирург-чинильщик:** Supreme Red Team Fixer Surgeon: Warehouse, Supply, Inventory & FEFO [Domain 4].
 - **Мандаты:** 8bd, 8be, 8bf, 8e, 8n, 8x, 8zg, 8am, 8al, 8bi, 8bj, 8az, 8an, Закон №0, Решение по Rotten Seeds.

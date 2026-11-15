@@ -53,10 +53,10 @@ export function CephDesktopControlsStrip({
 						color: "#ffffff",
 						borderColor: "rgba(45, 212, 191, 0.6)",
 					}}
-					title="Анатомический шаблон (норма I класса) / Калибровка точек"
+					title="Применить анатомический шаблон нормы I класса"
 				>
 					<Zap size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 fill-amber-300 shrink-0"} />
-					<span style={{ color: "#ffffff" }}>{isAiInferring ? "Калибровка..." : "Анатомический шаблон (норма I класса)"}</span>
+					<span style={{ color: "#ffffff" }}>{isAiInferring ? "Применение..." : "Применить анатомический шаблон нормы"}</span>
 				</button>
 			</div>
 			<div className="text-xs text-slate-400 font-medium hidden md:flex items-center gap-2 shrink-0 ml-4">
@@ -142,10 +142,10 @@ export function CephTab1TopControls({
 							color: "#ffffff",
 							borderColor: "rgba(45, 212, 191, 0.6)",
 						}}
-						title="Анатомический шаблон (норма I класса) / Калибровка точек"
+						title="Применить анатомический шаблон нормы I класса"
 					>
 						<Zap size={13} className={isAiInferring ? "animate-spin text-amber-300" : "text-amber-300 fill-amber-300 shrink-0"} />
-						<span style={{ color: "#ffffff" }}>{isAiInferring ? "Калибровка..." : "Калибровка точек (Норма I класса)"}</span>
+						<span style={{ color: "#ffffff" }}>{isAiInferring ? "Применение..." : "Применить анатомический шаблон нормы"}</span>
 					</button>
 				</div>
 			</div>

@@ -1,9 +1,10 @@
 import React from "react";
 import { PatientHeaderContactRow } from "./PatientHeaderContactRow";
 import { PatientHeaderDocBadges } from "./PatientHeaderDocBadges";
+import type { PatientHeaderRecord } from "./patientHeaderTypes";
 
 export interface PatientHeaderIdentityProps {
-	readonly resolvedPatient: any;
+	readonly resolvedPatient: PatientHeaderRecord | null | undefined;
 	readonly fullName: string;
 	readonly initials: string;
 	readonly birthDateStr: string;

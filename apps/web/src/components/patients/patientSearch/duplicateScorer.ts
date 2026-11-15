@@ -48,7 +48,7 @@ export function scorePhoneDuplicate(patient: Patient, phoneDigits: string, query
 	if (patDigits.includes(phoneDigits) || (queryNational.length >= 4 && patNational.includes(queryNational))) {
 		return 75;
 	}
-	const repPhone = (patient as any).administrativeProfile?.legalRepresentativePhone;
+	const repPhone = patient.administrativeProfile?.legalRepresentativePhone;
 	if (repPhone) {
 		const repDigits = repPhone.replace(/\D/g, "");
 		const repNational = normalizePhoneToNational(repPhone);

@@ -1,22 +1,25 @@
 import React from "react";
 import type { GeneratedDocument, Patient } from "@dental/shared";
+import type { AppLogicContextType } from "../../../../contexts/AppLogicContext";
+import type { useDocumentStore } from "../../../../store/documentStore";
 import { DocumentAuditFactsModal } from "../../../documents/tabs/DocumentAuditFactsModal";
 import { DocumentIssueConfirmationModal } from "../../../documents/tabs/DocumentIssueConfirmationModal";
 import { DigitalSignatureTabletModal } from "../../../documents/DigitalSignatureTabletModal";
 import { FastClinicalPrintEngine, type FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
-import { TaxDeductionCertificateModal } from "../../../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../../../documents/DocumentsStudioModal";
+import type { TabletSignatureData } from "./usePatientDocumentsLogic";
 
 interface PatientDocumentsModalsWrapperProps {
 	patient: Patient;
-	appLogic: any;
-	docStore: any;
+	appLogic: Partial<AppLogicContextType> | Record<string, unknown>;
+	docStore: ReturnType<typeof useDocumentStore> | Record<string, unknown>;
 	isFastPrintOpen: boolean;
 	setIsFastPrintOpen: (open: boolean) => void;
 	fastPrintDocType: FastPrintDocType;
 	tabletSignDoc: GeneratedDocument | null;
 	setTabletSignDoc: (doc: GeneratedDocument | null) => void;
 	activeIssueDoc: GeneratedDocument | null;
-	onTabletSignatureConfirm: (sigData: any) => Promise<void>;
+	onTabletSignatureConfirm: (sigData: TabletSignatureData) => Promise<void>;
 	isTaxModalOpen?: boolean | undefined;
 	setIsTaxModalOpen?: ((open: boolean) => void) | undefined;
 	taxModalInitialTab?: ("form" | "checks" | "family" | "xml" | "registry") | undefined;
@@ -139,7 +142,7 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 					patientId={patient.id || undefined}
 					patientName={patient.fullName || ""}
 					patientBirthDate={patient.birthDate || ""}
-					patientInn={adminProfile?.taxpayerInn || (adminProfile as any)?.inn || ""}
+					patientInn={adminProfile?.taxpayerInn || (adminProfile && "inn" in adminProfile && typeof (adminProfile as { inn?: unknown }).inn === "string" ? (adminProfile as { inn: string }).inn : "")}
 					patientSnils={adminProfile?.snils || ""}
 					autoFetchPayments={true}
 				/>

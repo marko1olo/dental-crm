@@ -1,5 +1,7 @@
-import { generateAnonymousPatientCode } from "@dental/shared";
+import { generateAnonymousPatientCode, type Patient } from "@dental/shared";
 import { useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { PatientAdministrativeProfileDraft } from "../../../AppConstants";
+import type { PatientDraftValidationResult as ValidationResult } from "../patientFieldRequirementsConfig";
 import { executePatientCreate } from "./executePatientCreate";
 import {
 	handleQuickCreateKeyDownHelper,
@@ -19,16 +21,18 @@ export interface UsePatientCreationActionsParams {
 	readonly parentRole: string;
 	readonly parentName: string;
 	readonly parentPhone: string;
-	readonly createPatient: (options?: { allowDuplicate?: boolean }) => Promise<any>;
+	readonly createPatient: (options?: { allowDuplicate?: boolean }) => Promise<Patient | null | unknown>;
 	readonly onClose: () => void;
-	readonly setDuplicateConflict: (conflict: any) => void;
-	readonly validationResult: any;
-	readonly appLogic: any;
+	readonly setDuplicateConflict: (conflict: { message: string; existingPatientId?: string; isNameOnlyDuplicate?: boolean } | null) => void;
+	readonly validationResult: ValidationResult;
+	readonly appLogic: unknown;
 	readonly setNewPatientName: (name: string) => void;
 	readonly setNewPatientPhone: (phone: string) => void;
 	readonly setNewPatientBirthDate: (date: string) => void;
-	readonly patientAdministrativeProfileDraft: any;
-	readonly setPatientAdministrativeProfileDraft: (draft: any) => void;
+	readonly patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft;
+	readonly setPatientAdministrativeProfileDraft: (
+		draft: PatientAdministrativeProfileDraft | ((prev: PatientAdministrativeProfileDraft) => PatientAdministrativeProfileDraft),
+	) => void;
 }
 
 export function usePatientCreationActions(params: UsePatientCreationActionsParams) {
@@ -96,7 +100,7 @@ export function usePatientCreationActions(params: UsePatientCreationActionsParam
 
 	const handleToggleAnonymous = () => {
 		const nextVal = !patientAdministrativeProfileDraft.isAnonymous;
-		setPatientAdministrativeProfileDraft((prev: any) => ({
+		setPatientAdministrativeProfileDraft((prev) => ({
 			...prev,
 			isAnonymous: nextVal,
 			anonymousCode: nextVal ? generateAnonymousPatientCode() : null,

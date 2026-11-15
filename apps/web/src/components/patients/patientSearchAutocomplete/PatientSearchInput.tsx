@@ -2,7 +2,7 @@ import { Search, X } from "lucide-react";
 import React from "react";
 
 interface PatientSearchInputProps {
-	readonly inputRef: React.RefObject<HTMLInputElement | null>;
+	readonly inputRef: React.Ref<HTMLInputElement>;
 	readonly query: string;
 	readonly placeholder: string;
 	readonly autoFocus: boolean;
@@ -28,7 +28,7 @@ export function PatientSearchInput({
 		<div className="dente-search-wrap">
 			<Search size={14} className="dente-search-icon" aria-hidden="true" />
 			<input
-				ref={inputRef as any}
+				ref={inputRef}
 				type="text"
 				value={query}
 				autoFocus={autoFocus}

@@ -1,5 +1,6 @@
-import { calculateAge } from "@dental/shared";
+import { calculateAge, type Patient } from "@dental/shared";
 import { useEffect, useMemo, useState } from "react";
+import type { PatientAdministrativeProfileDraft } from "../../../AppConstants";
 import { findPotentialDuplicates, type PotentialDuplicateItem } from "../../schedule/patientSearchEngine";
 import { type PatientFieldRequirements, validatePatientDraftWithRequirements } from "../patientFieldRequirementsConfig";
 
@@ -9,13 +10,13 @@ export interface UsePatientCreationValidationParams {
 	readonly newPatientBirthDate: string;
 	readonly initialBirthDate?: string | undefined;
 	readonly advertisingSource: string;
-	readonly patientAdministrativeProfileDraft: any;
+	readonly patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft;
 	readonly fieldRequirements: PatientFieldRequirements;
 	readonly isEmergencyOrPrimary: boolean;
 	readonly isChildManual: boolean;
 	readonly isOpen: boolean;
 	readonly isPatientCreating: boolean;
-	readonly patients: any[];
+	readonly patients: readonly Patient[];
 }
 
 export function usePatientCreationValidation({

@@ -4,9 +4,10 @@ import { usePatientStore } from "../../../store/patientStore";
 import { openWhatsAppChat } from "../../../store/telephonyStore";
 import { showToast } from "../../GlobalToast";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../blankContractPrint";
+import type { PatientHeaderRecord } from "./patientHeaderTypes";
 
 export interface PatientHeaderActionsMenuProps {
-	readonly resolvedPatient: any;
+	readonly resolvedPatient: PatientHeaderRecord | null | undefined;
 	readonly fullName: string;
 	readonly phone: string;
 	readonly clinicLegalName?: string | undefined;

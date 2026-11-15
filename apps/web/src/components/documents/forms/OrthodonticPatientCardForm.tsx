@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { RefreshCw, CheckCircle2 } from "lucide-react";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
 	calculateTonnIndex,
@@ -7,6 +8,7 @@ import {
 	type FacialProfileType,
 	type OrthodonticAppliancePlan,
 } from "@dental/shared";
+import { loadLatestCephalometricStudy } from "../../orthodontics/cephalometricPersistence";
 
 type LipCompetenceType = "competent_closed" | "incompetent_open" | "closed_with_strain";
 
@@ -14,10 +16,43 @@ export interface OrthodonticPatientCardFormProps {
 	initialPayload?: Partial<OrthodonticCard043_1uPayload> | undefined;
 	onChange?: ((payload: OrthodonticCard043_1uPayload) => void) | undefined;
 	disabled?: boolean | undefined;
+	patient?: any;
+}
+
+function extractCephAngles(source: unknown): { sna?: number | undefined; snb?: number | undefined; anb?: number | undefined; fma?: number | undefined; savedAt?: string | undefined } | null {
+	if (!source || typeof source !== "object") return null;
+	const src = source as Record<string, unknown>;
+	const analysis = (src.analysis && typeof src.analysis === "object" ? src.analysis : src) as Record<string, unknown>;
+	const trgValues = (analysis.trgValues && typeof analysis.trgValues === "object" ? analysis.trgValues : {}) as Record<string, unknown>;
+
+	let sna = typeof trgValues.sna === "number" ? trgValues.sna : undefined;
+	let snb = typeof trgValues.snb === "number" ? trgValues.snb : undefined;
+	let anb = typeof trgValues.anb === "number" ? trgValues.anb : undefined;
+	let fma = typeof trgValues.fma === "number" ? trgValues.fma : undefined;
+
+	if (Array.isArray(analysis.measurements)) {
+		for (const m of analysis.measurements) {
+			if (m && typeof m === "object" && typeof (m as { value?: unknown }).value === "number") {
+				const item = m as { id?: string; symbol?: string; value: number };
+				const id = String(item.id || "").toLowerCase();
+				const sym = String(item.symbol || "").toLowerCase();
+				if (id === "sna" || sym === "sna") sna = item.value;
+				if (id === "snb" || sym === "snb") snb = item.value;
+				if (id === "anb" || sym === "anb") anb = item.value;
+				if (id === "fma" || sym === "fma") fma = item.value;
+			}
+		}
+	}
+
+	if (sna !== undefined || snb !== undefined || anb !== undefined) {
+		const savedAt = typeof src.savedAt === "string" ? src.savedAt : undefined;
+		return { sna, snb, anb, fma, savedAt };
+	}
+	return null;
 }
 
 export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProps> = React.memo(
-	function OrthodonticPatientCardForm({ initialPayload, onChange, disabled }) {
+	function OrthodonticPatientCardForm({ initialPayload, onChange, disabled, patient }) {
 		const [activeSection, setActiveSection] = useState<"indices" | "cephalometry" | "anthropometry" | "plan">("indices");
 
 		// Tooth crown width inputs (in mm)
@@ -48,6 +83,44 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 		const [anbAngle, setAnbAngle] = useState<number>(
 			initialPayload?.cephalometry?.anbAngle ?? 2.0,
 		);
+		const [fmaAngle, setFmaAngle] = useState<number>(
+			initialPayload?.cephalometry?.fmaAngle ?? 25.0,
+		);
+
+		const [syncedCephStudy, setSyncedCephStudy] = useState<{
+			date?: string | undefined;
+			sna?: number | undefined;
+			snb?: number | undefined;
+			anb?: number | undefined;
+		} | null>(null);
+
+		const syncFromCephStudy = useCallback(() => {
+			const candidate =
+				patient?.administrativeProfile?.orthodonticProgress?.cephAnalysis ??
+				patient?.orthodonticProgress?.cephAnalysis ??
+				loadLatestCephalometricStudy(patient?.id);
+			const extracted = extractCephAngles(candidate);
+			if (extracted) {
+				setSyncedCephStudy({
+					date: extracted.savedAt,
+					sna: extracted.sna,
+					snb: extracted.snb,
+					anb: extracted.anb,
+				});
+				if (extracted.sna !== undefined) setSnaAngle(extracted.sna);
+				if (extracted.snb !== undefined) setSnbAngle(extracted.snb);
+				if (extracted.anb !== undefined) setAnbAngle(extracted.anb);
+				if (extracted.fma !== undefined) setFmaAngle(extracted.fma);
+				return true;
+			}
+			return false;
+		}, [patient]);
+
+		useEffect(() => {
+			if (!initialPayload?.cephalometry?.snaAngle) {
+				syncFromCephStudy();
+			}
+		}, [syncFromCephStudy, initialPayload?.cephalometry?.snaAngle]);
 
 		// Facial anthropometry
 		const [profileType, setProfileType] = useState<FacialProfileType>(
@@ -126,7 +199,7 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 					snbAngle,
 					anbAngle,
 					witsAppraisalMm: initialPayload?.cephalometry?.witsAppraisalMm ?? 0,
-					fmaAngle: initialPayload?.cephalometry?.fmaAngle ?? 25,
+					fmaAngle,
 					snGoGnAngle: initialPayload?.cephalometry?.snGoGnAngle ?? 32,
 					upperIncisorToNaAngle: initialPayload?.cephalometry?.upperIncisorToNaAngle ?? 22,
 					upperIncisorToNaMm: initialPayload?.cephalometry?.upperIncisorToNaMm ?? 4,
@@ -166,6 +239,7 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 			snaAngle,
 			snbAngle,
 			anbAngle,
+			fmaAngle,
 			profileType,
 			lipCompetence,
 			applianceType,
@@ -298,7 +372,26 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 
 					{activeSection === "cephalometry" && (
 						<div className="ortho-trg-section">
-							<h4>Цефалометрический анализ ТРГ в боковой проекции</h4>
+							<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+								<h4 style={{ margin: 0 }}>Цефалометрический анализ ТРГ в боковой проекции</h4>
+								{syncedCephStudy && (
+									<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+										<span style={{ fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 8px", borderRadius: "6px", background: "var(--teal-subtle, rgba(13,148,136,0.12))", color: "var(--teal, #0d9488)", fontWeight: 600 }}>
+											<CheckCircle2 size={13} />
+											Синхронизировано с ТРГ {syncedCephStudy.date ? `(${new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(syncedCephStudy.date))})` : ""}
+										</span>
+										<button
+											type="button"
+											onClick={syncFromCephStudy}
+											title="Обновить углы из последнего сохраненного ТРГ исследования"
+											style={{ fontSize: "11px", padding: "3px 8px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "6px", color: "var(--ink)" }}
+										>
+											<RefreshCw size={12} />
+											Обновить
+										</button>
+									</div>
+								)}
+							</div>
 							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", margin: "12px 0" }}>
 								<div>
 									<label style={{ fontSize: "12px", fontWeight: 600 }}>Угол SNA (Норма: 82° ± 2°)</label>

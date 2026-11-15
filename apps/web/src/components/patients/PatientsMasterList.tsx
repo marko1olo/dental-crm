@@ -59,7 +59,7 @@ export function PatientsMasterList({
 					? featureDistinguishes(insight.riskLevel, featureSalience.prevailingRiskLevel)
 					: false;
 				const nextActionDistinguishes = insight
-					? featureDistinguishes((insight.nextBestAction as any) ?? null, featureSalience.prevailingNextAction)
+					? featureDistinguishes(insight.nextBestAction, featureSalience.prevailingNextAction)
 					: false;
 
 				return (

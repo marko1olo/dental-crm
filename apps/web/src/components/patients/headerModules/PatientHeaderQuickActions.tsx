@@ -23,7 +23,14 @@ export const PatientHeaderQuickActions: React.FC<PatientHeaderQuickActionsProps>
 
 	const isAwaiting = Boolean(isActiveVisit || (nextAppointment?.startsAt && (nextAppointment.status === "arrived" || nextAppointment.status === "in_treatment" || nextAppointment.status === "confirmed")));
 
-	const renderAction = (isPrimary: boolean, onClick: () => void, Icon: any, label: string, testId: string, title: string) => (
+	const renderAction = (
+		isPrimary: boolean,
+		onClick: () => void,
+		Icon: React.ComponentType<{ size?: number; className?: string }>,
+		label: string,
+		testId: string,
+		title: string,
+	) => (
 		<button
 			type="button"
 			onClick={onClick}

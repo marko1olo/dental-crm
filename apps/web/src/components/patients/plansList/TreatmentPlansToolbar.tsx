@@ -43,7 +43,7 @@ export const TreatmentPlansToolbar: React.FC<TreatmentPlansToolbarProps> = React
 					className={`dente-segmented-item ${statusFilter === "proposed" ? "active" : ""}`}
 					data-testid="filter-plans-proposed"
 				>
-					Черновик ({items.filter((i) => i.status === "proposed" || (i as any).status === "draft").length})
+					Черновик ({items.filter((i) => i.status === "proposed" || (i.status as string) === "draft").length})
 				</button>
 				<button
 					type="button"
@@ -54,7 +54,7 @@ export const TreatmentPlansToolbar: React.FC<TreatmentPlansToolbarProps> = React
 					className={`dente-segmented-item ${statusFilter === "approved" ? "active" : ""}`}
 					data-testid="filter-plans-approved"
 				>
-					На согласовании ({items.filter((i) => i.status === "approved" || (i as any).status === "agreed").length})
+					На согласовании ({items.filter((i) => i.status === "approved" || (i.status as string) === "agreed").length})
 				</button>
 				<button
 					type="button"

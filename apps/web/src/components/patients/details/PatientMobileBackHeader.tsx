@@ -1,9 +1,10 @@
 import React from "react";
+import type { Patient } from "@dental/shared";
 import { ArrowLeft, FileText, ShieldCheck, Stethoscope } from "lucide-react";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../blankContractPrint";
 
 export interface PatientMobileBackHeaderProps {
-	readonly selectedPatient: any;
+	readonly selectedPatient: Patient | null | undefined;
 	readonly onBackToList: () => void;
 	readonly onOpenVisit: () => void;
 }

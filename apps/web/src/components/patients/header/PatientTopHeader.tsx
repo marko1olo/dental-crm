@@ -1,12 +1,13 @@
 import React, { useMemo } from "react";
+import type { PatientCoreDraft } from "../../../AppConstants";
 import { PatientTopHeaderIdentity } from "./PatientTopHeaderIdentity";
 import { PatientTopHeaderActions } from "./PatientTopHeaderActions";
-import { formatPatientBirthAndAge } from "../headerModules/patientHeaderTypes";
+import { formatPatientBirthAndAge, type PatientHeaderRecord } from "../headerModules/patientHeaderTypes";
 
 export interface PatientTopHeaderProps {
-	readonly selectedPatient: any;
+	readonly selectedPatient: PatientHeaderRecord | null | undefined;
 	readonly patientBalance: number;
-	readonly patientCoreDraft: any;
+	readonly patientCoreDraft?: PatientCoreDraft | null | undefined;
 	readonly patientCoreSaveState: string;
 	readonly patientCoreDirty: boolean;
 	readonly onSavePatientCore: () => void;

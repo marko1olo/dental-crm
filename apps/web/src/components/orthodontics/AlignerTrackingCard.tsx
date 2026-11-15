@@ -27,6 +27,7 @@ export interface AlignerTrackingCardProps {
 	readonly onChange: (updater: (prev: AlignerTrackingState) => AlignerTrackingState) => void;
 	readonly onAdvanceStep?: () => void;
 	readonly customTranches?: readonly AlignerInstallmentTranche[];
+	readonly totalSetupCostKopecks?: bigint;
 }
 
 function formatKopecksToRub(kopecks: bigint): string {
@@ -43,51 +44,52 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 	onChange,
 	onAdvanceStep,
 	customTranches,
+	totalSetupCostKopecks,
 }) => {
 	const currentStep = tracking.currentStep || 1;
 	const totalSteps = tracking.totalSteps || 24;
 	const progressPercent = Math.min(100, Math.max(0, Math.round((currentStep / totalSteps) * 100)));
 
-	// Канонический график рассрочки элайнеров (4 транша, строго в копейках)
+	// График рассрочки элайнеров: реальные данные из счетов/планов или динамический расчёт по сетапу
 	const tranches: readonly AlignerInstallmentTranche[] = useMemo(() => {
 		if (customTranches && customTranches.length > 0) return customTranches;
 
-		// Базовый пресет ортодонтической рассрочки: 240 000 руб (24 000 000 копеек)
-		return [
-			{
-				id: "tranche_1",
-				title: "Транш 1: Диагностика и заказ сетапа",
-				stepRange: "Шаги 1–6",
-				amountKopecks: 6000000n, // 60 000 руб
-				status: "paid",
-				dueDateText: "Оплачено при старте",
-			},
-			{
-				id: "tranche_2",
-				title: "Транш 2: Выдача партии 1 (шаги 7–12)",
-				stepRange: "Шаги 7–12",
-				amountKopecks: 6000000n,
-				status: currentStep >= 7 ? "paid" : "due_today",
-				dueDateText: "При выдаче кап 7–12",
-			},
-			{
-				id: "tranche_3",
-				title: "Транш 3: Активация партии 2 (шаги 13–18)",
-				stepRange: "Шаги 13–18",
-				amountKopecks: 6000000n,
-				status: currentStep >= 13 ? "paid" : currentStep >= 7 ? "due_today" : "pending",
-				dueDateText: "Плановый визит",
-			},
-			{
-				id: "tranche_4",
-				title: "Транш 4: Финишная детализация и ретенция",
-				stepRange: "Шаги 19–24",
-				amountKopecks: 6000000n,
-				status: currentStep >= 19 ? "paid" : "pending",
-				dueDateText: "Завершение курса",
-			},
-		];
-	}, [customTranches, currentStep]);
+		// Если передана реальная стоимость сетапа в копейках, формируем адаптивные транши
+		if (totalSetupCostKopecks && totalSetupCostKopecks > 0n) {
+			const trancheCount = 4;
+			const perTrancheKopecks = totalSetupCostKopecks / BigInt(trancheCount);
+			const stepChunk = Math.max(1, Math.ceil(totalSteps / trancheCount));
+
+			return Array.from({ length: trancheCount }, (_, idx) => {
+				const startStep = idx * stepChunk + 1;
+				const endStep = Math.min(totalSteps, (idx + 1) * stepChunk);
+				const isPaid = currentStep > endStep;
+				const isDue = currentStep >= startStep && currentStep <= endStep;
+
+				return {
+					id: `tranche_${idx + 1}`,
+					title: `Транш ${idx + 1}: Шаги ${startStep}–${endStep}`,
+					stepRange: `Шаги ${startStep}–${endStep}`,
+					amountKopecks:
+						idx === trancheCount - 1
+							? totalSetupCostKopecks - perTrancheKopecks * BigInt(trancheCount - 1)
+							: perTrancheKopecks,
+					status: isPaid ? "paid" : isDue ? "due_today" : "pending",
+					dueDateText:
+						idx === 0
+							? "При оформлении сетапа"
+							: idx === 1
+							? "При выдаче партии 1"
+							: idx === 2
+							? "Плановый контроль"
+							: "Завершение курса",
+				};
+			});
+		}
+
+		// При отсутствии счетов выводим честный пустой стейт без потёмкинского хардкода
+		return [];
+	}, [customTranches, totalSetupCostKopecks, currentStep, totalSteps]);
 
 	const totalKopecks = useMemo(() => {
 		return tranches.reduce((acc, t) => acc + t.amountKopecks, 0n);
@@ -235,54 +237,63 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 						<CreditCard className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 						<span>График рассрочки оплаты элайнеров</span>
 					</div>
-					<div className="text-[11px] text-[var(--ink-muted)]">
-						Оплачено: <strong className="text-[var(--teal,#0d9488)]">{formatKopecksToRub(paidKopecks)}</strong> из {formatKopecksToRub(totalKopecks)}
+					{tranches.length > 0 && (
+						<div className="text-[11px] text-[var(--ink-muted)]">
+							Оплачено: <strong className="text-[var(--teal,#0d9488)]">{formatKopecksToRub(paidKopecks)}</strong> из {formatKopecksToRub(totalKopecks)}
+						</div>
+					)}
+				</div>
+
+				{tranches.length === 0 ? (
+					<div className="p-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink-muted)] flex items-center gap-2.5">
+						<Clock className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
+						<span>График платежей формируется на основе плана лечения и выставленных счетов</span>
 					</div>
-				</div>
+				) : (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+						{tranches.map((t) => {
+							const isPaid = t.status === "paid";
+							const isDue = t.status === "due_today";
 
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-					{tranches.map((t) => {
-						const isPaid = t.status === "paid";
-						const isDue = t.status === "due_today";
+							return (
+								<div
+									key={t.id}
+									className={`p-2.5 rounded-lg border flex flex-col justify-between gap-1.5 min-h-[72px] text-xs transition-colors ${
+										isPaid
+											? "bg-[var(--teal-subtle,rgba(13,148,136,0.08))] border-[var(--teal-line,rgba(13,148,136,0.25))]"
+											: isDue
+											? "bg-[var(--warning-surface,rgba(245,158,11,0.08))] border-[var(--warning-line,rgba(245,158,11,0.3))]"
+											: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink-muted)]"
+									}`}
+								>
+									<div className="flex items-center justify-between gap-1">
+										<span className="font-semibold text-[var(--ink)] truncate">{t.stepRange}</span>
+										{isPaid ? (
+											<span className="text-[10px] font-bold text-[var(--teal,#0d9488)] flex items-center gap-0.5">
+												<CheckCircle2 className="w-3 h-3" /> Оплачено
+											</span>
+										) : isDue ? (
+											<span className="text-[10px] font-bold text-[var(--warning-ink,#f59e0b)] flex items-center gap-0.5">
+												<AlertCircle className="w-3 h-3" /> К оплате
+											</span>
+										) : (
+											<span className="text-[10px] text-[var(--ink-muted)] flex items-center gap-0.5">
+												<Clock className="w-3 h-3" /> План
+											</span>
+										)}
+									</div>
 
-						return (
-							<div
-								key={t.id}
-								className={`p-2.5 rounded-lg border flex flex-col justify-between gap-1.5 min-h-[72px] text-xs transition-colors ${
-									isPaid
-										? "bg-[var(--teal-subtle,rgba(13,148,136,0.08))] border-[var(--teal-line,rgba(13,148,136,0.25))]"
-										: isDue
-										? "bg-[var(--warning-surface,rgba(245,158,11,0.08))] border-[var(--warning-line,rgba(245,158,11,0.3))]"
-										: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink-muted)]"
-								}`}
-							>
-								<div className="flex items-center justify-between gap-1">
-									<span className="font-semibold text-[var(--ink)] truncate">{t.stepRange}</span>
-									{isPaid ? (
-										<span className="text-[10px] font-bold text-[var(--teal,#0d9488)] flex items-center gap-0.5">
-											<CheckCircle2 className="w-3 h-3" /> Оплачено
+									<div className="flex items-baseline justify-between">
+										<span className="text-sm font-extrabold text-[var(--ink)]">
+											{formatKopecksToRub(t.amountKopecks)}
 										</span>
-									) : isDue ? (
-										<span className="text-[10px] font-bold text-[var(--warning-ink,#f59e0b)] flex items-center gap-0.5">
-											<AlertCircle className="w-3 h-3" /> К оплате
-										</span>
-									) : (
-										<span className="text-[10px] text-[var(--ink-muted)] flex items-center gap-0.5">
-											<Clock className="w-3 h-3" /> План
-										</span>
-									)}
+										<span className="text-[10px] text-[var(--ink-muted)]">{t.dueDateText}</span>
+									</div>
 								</div>
-
-								<div className="flex items-baseline justify-between">
-									<span className="text-sm font-extrabold text-[var(--ink)]">
-										{formatKopecksToRub(t.amountKopecks)}
-									</span>
-									<span className="text-[10px] text-[var(--ink-muted)]">{t.dueDateText}</span>
-								</div>
-							</div>
-						);
-					})}
-				</div>
+							);
+						})}
+					</div>
+				)}
 			</div>
 		</div>
 	);

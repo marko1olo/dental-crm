@@ -3,10 +3,34 @@
  * (DOMAIN: macOS/iOS Clinical HIG, Patient Profile Header)
  */
 
+import type { Patient } from "@dental/shared";
+
+export interface PatientHeaderAppointment {
+	startsAt?: string | null | undefined;
+	status?: string | null | undefined;
+}
+
+export interface PatientHeaderRecord extends Partial<Patient> {
+	id: string;
+	fullName: string;
+	phone?: string | null | undefined;
+	birthDate?: string | null | undefined;
+	hasSignedContract?: boolean | undefined;
+	contractStatus?: "issued" | "draft" | "none" | string | undefined;
+	hasSignedConsent?: boolean | undefined;
+	consentStatus?: "issued" | "draft" | "none" | string | undefined;
+	cardNumber?: string | number | undefined;
+	medicalCardNumber?: string | number | undefined;
+	allergies?: string | null | undefined;
+	anamnesis?: {
+		allergies?: string | null | undefined;
+		clinicalSafetyProfile?: Record<string, unknown> | null | undefined;
+	} | null | undefined;
+}
+
 export interface PatientHeaderCardProps {
 	patientId?: string | null | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: flexible patient record
-	patient?: any | null | undefined;
+	patient?: PatientHeaderRecord | Patient | null | undefined;
 	onEditPatient?: (() => void) | undefined;
 	onOpenAnamnesis?: (() => void) | undefined;
 	className?: string | undefined;
@@ -21,8 +45,7 @@ export interface SomaticFlagItem {
 }
 
 export interface PatientHeaderQuickActionsProps {
-	// biome-ignore lint/suspicious/noExplicitAny: flexible patient record
-	resolvedPatient: any;
+	resolvedPatient: PatientHeaderRecord | Patient;
 	fullName: string;
 	phone: string;
 	clinicLegalName?: string | undefined;
@@ -30,8 +53,7 @@ export interface PatientHeaderQuickActionsProps {
 	onEditPatient?: (() => void) | undefined;
 	onOpenFamilyWallet: () => void;
 	isActiveVisit: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: flexible appointment record
-	nextAppointment?: any;
+	nextAppointment?: PatientHeaderAppointment | null | undefined;
 }
 
 export function formatPatientBirthAndAge(birthDateIso?: string | null): string {

@@ -325,4 +325,55 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 			"Must support Apple HIG Safe Area in .ortho-footer",
 		);
 	});
+
+	it("20. Verifies AlignerTrackingCard eliminates Potemkin 240 000 ₽ installment hardcode and shows honest empty state", () => {
+		const cardPath = path.join(orthoDir, "AlignerTrackingCard.tsx");
+		const content = fs.readFileSync(cardPath, "utf-8");
+
+		assert.ok(!content.includes("240 000 ₽"), "Must NOT contain hardcoded 240,000 ₽ total price");
+		assert.ok(!content.includes("60 000 ₽"), "Must NOT contain 4 fixed 60,000 ₽ tranches");
+		assert.ok(!content.includes("15.02.2024"), "Must NOT contain hardcoded 2024 installment dates");
+		assert.ok(
+			content.includes("График платежей формируется на основе плана лечения и выставленных счетов"),
+			"Must render honest clinical empty state for installment schedule",
+		);
+	});
+
+	it("21. Verifies OrthodonticTimeline generates adaptive stages and dynamic dates", () => {
+		const timelinePath = path.join(orthoDir, "OrthodonticTimeline.tsx");
+		const content = fs.readFileSync(timelinePath, "utf-8");
+
+		assert.ok(!content.includes("15.01.2024"), "Must NOT contain static 2024 bracket dates");
+		assert.ok(content.includes('applianceCategory === "aligners"'), "Must adapt stages for aligners");
+		assert.ok(content.includes('applianceCategory === "plate"'), "Must adapt stages for removable plates");
+		assert.ok(content.includes("formatPlannedStageDate"), "Must calculate dynamic planned dates");
+		assert.ok(content.includes("stage.plannedDate"), "Must render planned stage dates in UI");
+	});
+
+	it("22. Verifies CephalometricAnalysisModalUI has exactly 1 Primary CTA and unblocked angles calculation", () => {
+		const cephModalPath = path.resolve(webSrcDir, "components/radiology/cephModal/CephalometricAnalysisModalUI.tsx");
+		assert.ok(fs.existsSync(cephModalPath), "CephalometricAnalysisModalUI.tsx must exist");
+		const content = fs.readFileSync(cephModalPath, "utf-8");
+
+		// Header CTA
+		assert.ok(content.includes('data-testid="btn-insert-ceph-protocol"'), "Must have insertion CTA");
+		assert.ok(content.includes("Сохранить в ЭМК"), "Single Primary CTA must be 'Сохранить в ЭМК'");
+		assert.ok(!content.includes("data-theme=\"dark\""), "Must NOT have hardcoded data-theme='dark'");
+		assert.ok(!content.includes("#020617"), "Must NOT have inline #020617 hardcoded style");
+
+		// Tab 2 unblocked
+		assert.ok(!content.includes("disabled={!isImageLoaded}"), "Angles tab must not be disabled without image");
+		assert.ok(!content.includes('showToast("Сначала загрузите снимок ТРГ", "warning")'), "Angles tab click must not show blocking toast");
+	});
+
+	it("23. Verifies OrthodonticPatientCardForm cross-syncs with TRG cephAnalysis", () => {
+		const formPath = path.resolve(webSrcDir, "components/documents/forms/OrthodonticPatientCardForm.tsx");
+		assert.ok(fs.existsSync(formPath), "OrthodonticPatientCardForm.tsx must exist");
+		const content = fs.readFileSync(formPath, "utf-8");
+
+		assert.ok(content.includes("extractCephAngles"), "Must have extractCephAngles helper");
+		assert.ok(content.includes("cephAnalysis"), "Must check patient cephAnalysis");
+		assert.ok(content.includes("Синхронизировано с ТРГ"), "Must display synchronization status with TRG");
+		assert.ok(content.includes("loadLatestCephalometricStudy"), "Must fallback to latest local ceph study");
+	});
 });

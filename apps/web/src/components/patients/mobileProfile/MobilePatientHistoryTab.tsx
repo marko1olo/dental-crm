@@ -7,8 +7,12 @@ import type { Appointment } from "@dental/shared";
 import { Calendar, ChevronRight, Clock, Plus } from "lucide-react";
 import React from "react";
 
+export interface MobileHistoryAppointment extends Appointment {
+	doctorFullName?: string | null | undefined;
+}
+
 export interface MobilePatientHistoryTabProps {
-	patientAppointments: Appointment[];
+	patientAppointments: readonly MobileHistoryAppointment[];
 	onBookAppointment: () => void;
 	onOpenVisit?: ((visitId: string) => void) | undefined;
 	onStartVisit: () => void;
@@ -71,7 +75,7 @@ export const MobilePatientHistoryTab: React.FC<MobilePatientHistoryTabProps> = (
 								{appt.reason && <p className="text-xs text-[var(--ink)] m-0 font-medium line-clamp-2">{appt.reason}</p>}
 
 								<div className="flex items-center justify-between pt-1 border-t border-[var(--line-subtle,#f1f5f9)] text-xs">
-									<span className="text-[var(--muted)] text-[11px]">Врач: {(appt as any).doctorFullName || "Врач клиники"}</span>
+									<span className="text-[var(--muted)] text-[11px]">Врач: {appt.doctorFullName || "Врач клиники"}</span>
 									<button
 										type="button"
 										onClick={() => { if (onOpenVisit) onOpenVisit(appt.id); else onStartVisit(); }}

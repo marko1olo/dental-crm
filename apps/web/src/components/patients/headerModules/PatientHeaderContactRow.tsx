@@ -4,9 +4,10 @@ import { showToast } from "../../GlobalToast";
 import { initiateOutboundCall } from "../../telephony/initiateOutboundCall";
 import { PatientLoyaltyHeader } from "../PatientLoyaltyHeader";
 import { PatientSentimentBadge } from "../PatientSentimentBadge";
+import type { PatientHeaderRecord } from "./patientHeaderTypes";
 
 export interface PatientHeaderContactRowProps {
-	readonly resolvedPatient: any;
+	readonly resolvedPatient: PatientHeaderRecord | null | undefined;
 	readonly fullName: string;
 	readonly birthDateStr: string;
 	readonly phone: string;

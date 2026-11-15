@@ -10,6 +10,16 @@ import { Activity, CheckCircle2, ChevronRight, Clock, Plus } from "lucide-react"
 import React, { useMemo } from "react";
 import { showToast } from "../../GlobalToast";
 
+export interface MobileTreatmentPlanItem {
+	id: string;
+	patientId?: string | null | undefined;
+	title?: string | null | undefined;
+	name?: string | null | undefined;
+	status?: string | null | undefined;
+	totalCostRub?: number | null | undefined;
+	totalRub?: number | null | undefined;
+}
+
 export interface MobilePatientPlansTabProps {
 	patient: Patient;
 	dashboard?: Dashboard | null | undefined;
@@ -26,7 +36,9 @@ export const MobilePatientPlansTab: React.FC<MobilePatientPlansTabProps> = ({
 	onCreatePlan,
 }) => {
 	const patientPlans = useMemo(() => {
-		const all = ((dashboard as any)?.treatmentPlans ?? (dashboard as any)?.plans ?? (dashboard as any)?.treatmentPlanScenarios ?? []) as any[];
+		const rawScenarios = dashboard?.treatmentPlanScenarios ?? [];
+		const container = dashboard as (Dashboard & { treatmentPlans?: MobileTreatmentPlanItem[]; plans?: MobileTreatmentPlanItem[] }) | null | undefined;
+		const all: readonly MobileTreatmentPlanItem[] = container?.treatmentPlans ?? container?.plans ?? rawScenarios;
 		return all.filter((p) => String(p?.patientId) === String(patient.id));
 	}, [dashboard, patient.id]);
 
@@ -62,7 +74,7 @@ export const MobilePatientPlansTab: React.FC<MobilePatientPlansTabProps> = ({
 				</div>
 			) : (
 				<div className="flex flex-col gap-2">
-					{patientPlans.map((plan: any) => {
+					{patientPlans.map((plan) => {
 						const isApproved = plan.status === "approved" || plan.status === "completed";
 						return (
 							<div

@@ -94,24 +94,24 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-hidden" role="dialog" aria-modal="true" aria-label="Ортодонтический цефалометрический анализ ТРГ" data-testid="cephalometric-analysis-modal">
-			<div className="ceph-workstation-root relative w-full max-w-[1410px] h-[92vh] max-h-[92vh] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100" data-theme="dark" style={{ backgroundColor: "#020617", color: "#f8fafc", borderColor: "#1e293b" }}>
-				<header className="flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-900/95 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}>
+		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-md overflow-hidden" role="dialog" aria-modal="true" aria-label="Ортодонтический цефалометрический анализ ТРГ" data-testid="cephalometric-analysis-modal">
+			<div className="ceph-workstation-root relative w-full max-w-[1410px] h-[92vh] max-h-[92vh] bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[var(--ink)]">
+				<header className="flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[var(--line)] bg-[var(--paper-strong)] shrink-0">
 					<div className="flex items-center gap-2.5 sm:gap-3 shrink-0 mr-4">
-						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-950/80 border border-teal-500/50 flex items-center justify-center text-teal-400 shadow-sm shrink-0">
+						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border border-[var(--teal,#0d9488)]/40 flex items-center justify-center text-[var(--teal,#0d9488)] shadow-sm shrink-0">
 							<Activity size={20} className="sm:w-5 sm:h-5" />
 						</div>
 						<div>
 							<div className="flex items-center gap-2 flex-wrap">
-								<h2 className="text-sm sm:text-base font-black tracking-tight text-white m-0 whitespace-nowrap" style={{ color: "#ffffff", margin: 0 }} aria-label="Цефалометрический трекер ТРГ">
+								<h2 className="text-sm sm:text-base font-black tracking-tight text-[var(--ink)] m-0 whitespace-nowrap" aria-label="Цефалометрический трекер ТРГ">
 									Цефалометрический анализ ТРГ
 									<span className="sr-only">Цефалометрический трекер ТРГ</span>
 								</h2>
-								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-teal-950/80 text-teal-300 border border-teal-500/40 px-2 py-0.5 rounded-lg shrink-0 whitespace-nowrap">
+								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 px-2 py-0.5 rounded-lg shrink-0 whitespace-nowrap">
 									Steiner / Tweed / Downs / Ricketts / McNamara
 								</span>
 							</div>
-							<p className="text-xs text-slate-400 m-0 mt-0.5 whitespace-nowrap" style={{ color: "#94a3b8", margin: 0 }}>
+							<p className="text-xs text-[var(--ink-muted)] m-0 mt-0.5 whitespace-nowrap">
 								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} {patientId ? `• ID: ${patientId}` : ""} · Медицинская карта
 							</p>
 						</div>
@@ -120,14 +120,14 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 					<div className="flex items-center gap-2 shrink-0">
 						{isVoiceListening && (
 							<div className="ceph-voice-bar hidden md:inline-flex" title="Идет голосовая диктовка ориентиров">
-								<Mic size={14} className="animate-pulse text-teal-400" />
+								<Mic size={14} className="animate-pulse text-[var(--teal,#0d9488)]" />
 								<span className="max-w-[180px] truncate">{voiceInterimText || "Слушаю («точка Назион», «точка А»)..."}</span>
 							</div>
 						)}
 						<button
 							type="button"
 							onClick={toggleVoiceListening}
-							className={`secondary-button shrink-0 ${isVoiceListening ? "!bg-teal-600/30 !border-teal-500 !text-teal-200 animate-pulse" : ""}`}
+							className={`secondary-button shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors ${isVoiceListening ? "!bg-[var(--teal-subtle,rgba(13,148,136,0.12))] !border-[var(--teal,#0d9488)] !text-[var(--teal,#0d9488)] animate-pulse" : ""}`}
 							title="Голосовая диктовка ориентиров цефалометрии"
 							data-testid="ceph-voice-toggle-btn"
 						>
@@ -137,43 +137,20 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 
 						<button
 							type="button"
-							onClick={handleSaveToEmrOnly}
-							data-testid="save-ceph-to-emr-btn"
-							className="secondary-button shrink-0"
-							title="Зафиксировать исследование и координаты в ЭМК пациента"
-						>
-							<Save size={14} />
-							<span className="hidden xl:inline whitespace-nowrap">Сохранить в ЭМК</span>
-							<span className="xl:hidden whitespace-nowrap">В ЭМК</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleInsertToChart}
-							data-testid="btn-insert-ceph-protocol"
-							className="primary-button shrink-0"
-							title="Перенести расчеты цефалометрии в дневник приёма"
-						>
-							<FileText size={14} />
-							<span className="whitespace-nowrap">В медицинскую карту</span>
-						</button>
-
-						<button
-							type="button"
 							onClick={handleOpenPopoutStudio}
 							data-testid="btn-ceph-popout-window"
-							className="secondary-button !border-teal-500/60 !bg-teal-950/60 hover:!bg-teal-900/80 !text-teal-300 font-bold shrink-0 flex items-center gap-1.5"
+							className="secondary-button shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 							title="Открыть полноэкранную студию цефалометрии на втором мониторе для демонстрации пациенту"
 						>
 							<ExternalLink size={14} />
-							<span className="whitespace-nowrap">2-й монитор / Студия</span>
+							<span className="whitespace-nowrap">2-й монитор</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleSaveConsultationWithoutCeph}
 							data-testid="save-consultation-without-ceph-btn"
-							className="secondary-button shrink-0"
+							className="secondary-button shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
 							title="Сохранить консультацию ортодонта в карту без полного расчерчивания ТРГ"
 						>
 							<Save size={14} />
@@ -181,12 +158,24 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 							<span className="xl:hidden whitespace-nowrap">Без ТРГ</span>
 						</button>
 
+						{/* Ровно 1 Primary CTA в шапке (Мандаты 8b, 8e): сохранение в ЭМК и передача в дневник */}
+						<button
+							type="button"
+							onClick={handleInsertToChart}
+							data-testid="btn-insert-ceph-protocol"
+							className="primary-button shrink-0 flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg bg-[var(--primary,#0d9488)] text-white hover:bg-[var(--primary-strong,#0f766e)] shadow-sm transition-all cursor-pointer"
+							title="Зафиксировать исследование в ЭМК и перенести в дневник приёма"
+						>
+							<FileText size={14} />
+							<span className="whitespace-nowrap">Сохранить в ЭМК</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={onClose}
 							data-testid="ceph-modal-close-btn"
 							aria-label="Закрыть окно цефалометрического анализа"
-							className="secondary-button !w-8 !h-8 !p-0 shrink-0"
+							className="secondary-button !w-8 !h-8 !p-0 shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center rounded-lg transition-colors cursor-pointer"
 						>
 							<X size={16} />
 						</button>
@@ -252,14 +241,13 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 
 					{/* ── Right Column: Interactive Sidebar (5 Cols) ── */}
 					<div
-						className={`lg:col-span-5 flex-col bg-slate-950 border-l border-slate-800 text-slate-100 overflow-hidden ${mobileView !== "canvas" ? "flex flex-1" : "hidden lg:flex"}`}
-						style={{ backgroundColor: "#020617", color: "#f8fafc" }}
+						className={`lg:col-span-5 flex-col bg-[var(--paper)] border-l border-[var(--line)] text-[var(--ink)] overflow-hidden ${mobileView !== "canvas" ? "flex flex-1" : "hidden lg:flex"}`}
 					>
-						<div className="grid grid-cols-3 border-b border-slate-800 bg-slate-900 px-2 pt-1.5 shrink-0 gap-1 w-full">
+						<div className="grid grid-cols-3 border-b border-[var(--line)] bg-[var(--paper-strong)] px-2 pt-1.5 shrink-0 gap-1 w-full">
 							<button
 								type="button"
 								onClick={() => { setActiveTab("landmarks"); setMobileView("landmarks"); }}
-								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "landmarks" ? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs" : "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"}`}
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "landmarks" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--paper)] rounded-t-lg shadow-xs" : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] bg-transparent"}`}
 								title="Ориентиры ТРГ"
 							>
 								<span className="hidden sm:inline whitespace-nowrap">1. Ориентиры ({isImageLoaded ? analysis.placedCount : 0}/16)</span>
@@ -269,21 +257,21 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 							<button
 								type="button"
 								onClick={() => {
-									if (isImageLoaded) { setActiveTab("metrics"); setMobileView("metrics"); }
-									else { showToast("Сначала загрузите снимок ТРГ", "warning"); }
+									setActiveTab("metrics");
+									setMobileView("metrics");
 								}}
-								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "metrics" ? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs" : "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "metrics" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--paper)] rounded-t-lg shadow-xs" : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] bg-transparent"}`}
 								title="Расчет углов (Steiner, Tweed, Downs, McNamara)"
 							>
 								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов</span>
 								<span className="sm:hidden whitespace-nowrap">2. Углы</span>
-								{isImageLoaded && analysis.isComplete && <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />}
+								{isImageLoaded && analysis.isComplete && <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />}
 							</button>
 
 							<button
 								type="button"
 								onClick={() => { setActiveTab("report"); setMobileView("report"); }}
-								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "report" ? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs" : "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"}`}
+								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${activeTab === "report" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--paper)] rounded-t-lg shadow-xs" : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] bg-transparent"}`}
 								title="Ортодонтический протокол ТРГ для карты"
 							>
 								<FileText size={14} className="shrink-0" />
@@ -320,10 +308,13 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 									isImageLoaded={isImageLoaded}
 									activeTargetKey={activeTargetKey}
 									onSelectLandmark={(key) => {
-										if (!isImageLoaded) { showToast("Сначала загрузите снимок ТРГ", "warning"); return; }
 										setActiveTargetKey(key);
 										setMobileView("canvas");
-										showToast(`Укажите точку «${CEPHALOMETRIC_LANDMARKS.find((l) => l.key === key)?.nameRu}» на снимке`, "info");
+										if (!isImageLoaded) {
+											showToast(`Выбран ориентир «${CEPHALOMETRIC_LANDMARKS.find((l) => l.key === key)?.nameRu}». Загрузите снимок для привязки координат`, "info");
+										} else {
+											showToast(`Укажите точку «${CEPHALOMETRIC_LANDMARKS.find((l) => l.key === key)?.nameRu}» на снимке`, "info");
+										}
 									}}
 								/>
 

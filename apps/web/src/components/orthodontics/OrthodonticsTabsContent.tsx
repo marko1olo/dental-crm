@@ -257,6 +257,8 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 					<OrthodonticTimeline
 						currentMonth={protocol.currentMonth}
 						totalMonths={protocol.totalMonths}
+						applianceCategory={protocol.applianceCategory}
+						startDate={protocol.savedAt}
 						onSelectMonth={(m) => setProtocol((p) => ({ ...p, currentMonth: m }))}
 					/>
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

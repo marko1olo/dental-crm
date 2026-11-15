@@ -1,12 +1,12 @@
 import React from "react";
-import { FDI_TEETH_LIST } from "./types";
+import { FDI_TEETH_LIST, type TimelineDatePreset } from "./types";
 
 export interface TimelineDropdownFiltersProps {
 	selectedDateFilter: string;
 	onSelectDateFilter: (date: string) => void;
 	availableDates: readonly string[];
-	selectedDatePreset: string;
-	onSelectDatePreset: (preset: any) => void;
+	selectedDatePreset: TimelineDatePreset | string;
+	onSelectDatePreset: (preset: TimelineDatePreset) => void;
 	selectedToothFilter: string;
 	onSelectToothFilter: (tooth: string) => void;
 	availableTeeth: readonly string[];

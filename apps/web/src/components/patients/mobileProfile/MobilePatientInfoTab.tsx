@@ -5,13 +5,14 @@
 
 import type { Patient } from "@dental/shared";
 import React from "react";
+import type { PatientCoreDraft } from "../../../AppConstants";
 import { formatPhoneNumber } from "../../../utils/inputSanitation";
 import { MobilePatientToothQuadrantSelector } from "./MobilePatientToothQuadrantSelector";
 
 export interface MobilePatientInfoTabProps {
 	patient: Patient;
-	patientCoreDraft?: any;
-	updatePatientCoreDraft?: ((field: any, value: any) => void) | undefined;
+	patientCoreDraft?: PatientCoreDraft | null | undefined;
+	updatePatientCoreDraft?: ((field: keyof PatientCoreDraft, value: string) => void) | undefined;
 	onApplySomaticNorm: () => void;
 }
 
@@ -22,7 +23,8 @@ export const MobilePatientInfoTab: React.FC<MobilePatientInfoTabProps> = ({
 	onApplySomaticNorm,
 }) => {
 	const phone = patient.phone || "";
-	const adminProfile = (patient as any).administrativeProfile;
+	const adminProfile = patient.administrativeProfile;
+	const address = adminProfile?.residentialAddress || adminProfile?.registrationAddress || "";
 
 	return (
 		<div className="flex flex-col gap-3" data-testid="mobile-panel-card">
@@ -47,10 +49,10 @@ export const MobilePatientInfoTab: React.FC<MobilePatientInfoTabProps> = ({
 							<span className="font-mono font-bold text-[var(--ink)]">{adminProfile.snils}</span>
 						</div>
 					)}
-					{adminProfile?.address && (
+					{address && (
 						<div className="flex justify-between items-center p-2 rounded-xl bg-[var(--paper-soft)]">
 							<span className="text-[var(--muted)] font-medium">Адрес:</span>
-							<span className="font-medium text-[var(--ink)] text-right truncate max-w-[200px]">{adminProfile.address}</span>
+							<span className="font-medium text-[var(--ink)] text-right truncate max-w-[200px]">{address}</span>
 						</div>
 					)}
 				</div>

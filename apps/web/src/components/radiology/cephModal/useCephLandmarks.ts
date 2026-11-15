@@ -187,7 +187,7 @@ export function useCephLandmarks({
 			});
 			void SoundFeedbackService.getInstance().playActionSuccess();
 			showToast(
-				`✓ Калиброванный анатомический шаблон: ${count} ориентиров расставлены по норме I класса. Проверьте точки по снимку.`,
+				`✓ Применён анатомический шаблон нормы: ${count} ориентиров расставлены по I классу. Проверьте точки по снимку.`,
 				"success",
 			);
 		} catch (err) {

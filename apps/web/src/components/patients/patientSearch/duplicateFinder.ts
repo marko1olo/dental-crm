@@ -18,7 +18,7 @@ export function findPotentialDuplicates(
 	const results: PotentialDuplicateItem[] = [];
 
 	for (const patient of patients) {
-		if ((patient as any).mergedIntoPatientId || patient.status === "archived") continue;
+		if (patient.mergedIntoPatientId || patient.status === "archived") continue;
 
 		const nameRes = scoreNameDuplicate(patient.fullName, name);
 		const phoneScore = scorePhoneDuplicate(patient, phoneDigits, phone);
@@ -70,7 +70,9 @@ export function findPotentialDuplicates(
 		const phoneHighlights = phoneDigits.length >= 3
 			? highlightSearchMatches(patient.phone, phone)
 			: [{ text: patient.phone || "—", isMatch: false }];
-		const cardNumber = (patient as any).cardNumber ?? undefined;
+		const cardNumber = "cardNumber" in patient && typeof (patient as Record<string, unknown>).cardNumber === "string"
+			? ((patient as Record<string, unknown>).cardNumber as string)
+			: undefined;
 
 		results.push({
 			patient,

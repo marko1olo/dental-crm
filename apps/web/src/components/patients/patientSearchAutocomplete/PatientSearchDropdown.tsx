@@ -8,7 +8,7 @@ import type { SomaticBadgeInfo } from "./types";
 import { PatientSearchDuplicateHint } from "./PatientSearchDuplicateHint";
 
 interface PatientSearchDropdownProps {
-	readonly listRef: React.RefObject<HTMLDivElement | null>;
+	readonly listRef: React.Ref<HTMLDivElement>;
 	readonly searchResults: readonly PatientSearchResultItem[];
 	readonly highlightedIndex: number;
 	readonly canQuickCreate: boolean;
@@ -34,7 +34,7 @@ export function PatientSearchDropdown({
 }: PatientSearchDropdownProps) {
 	return (
 		<div
-			ref={listRef as any}
+			ref={listRef}
 			data-testid="patient-search-autocomplete-list"
 			className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl bg-[var(--paper-strong)] border border-[var(--glass-border)] shadow-xl overflow-hidden max-h-[360px] flex flex-col animate-in fade-in zoom-in-95 duration-100 text-xs text-[var(--ink)]"
 		>

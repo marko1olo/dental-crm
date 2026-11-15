@@ -47,6 +47,7 @@ export const ClinicalDocumentForms: React.FC<DocumentFormSwitchProps> = React.me
 				)}
 				{selectedDocumentKind === "orthodontic_medical_card_043_1u" && (
 					<OrthodonticPatientCardForm
+						patient={props.documentPatient ?? props.activePatient}
 						initialPayload={props.initialPayload ?? (props.activeDoctor?.fullName || props.activePatient?.fullName ? {
 							orthodontistFullName: props.activeDoctor?.fullName ?? "",
 							patientFullName: (props.documentPatient ?? props.activePatient)?.fullName ?? "",

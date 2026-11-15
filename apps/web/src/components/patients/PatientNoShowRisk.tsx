@@ -88,8 +88,27 @@ export function createNewPatientFallbackRisk(considered = 0) {
 
 // ─── 2. ПРЕДСТАВЛЕНИЕ СТАТИСТИКИ ──────────────────────────────────────────────
 
+export interface PatientNoShowRiskData {
+	score?: number | undefined;
+	riskLevel?: string | undefined;
+	recommendedAction?: string | undefined;
+	isNewPatient?: boolean | undefined;
+	history?: {
+		attended: number;
+		noShows: number;
+		cancellations: number;
+		consideredAppointments: number;
+	} | undefined;
+	factors?: Array<{
+		factor: string;
+		impact: string | number;
+		description?: string | undefined;
+	}> | undefined;
+	explanation?: string | undefined;
+}
+
 export interface PatientNoShowRiskStatsProps {
-	readonly riskData: any;
+	readonly riskData: PatientNoShowRiskData | null | undefined;
 }
 
 export function PatientNoShowRiskStats({ riskData }: PatientNoShowRiskStatsProps) {
@@ -165,7 +184,7 @@ export function PatientNoShowRiskStats({ riskData }: PatientNoShowRiskStatsProps
 
 export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId }) => {
 	const [loading, setLoading] = useState(false);
-	const [riskData, setRiskData] = useState<any>(null);
+	const [riskData, setRiskData] = useState<PatientNoShowRiskData | null>(null);
 	const [reloadToken, setReloadToken] = useState(0);
 	const [failure, setFailure] = useState<{ status: number | null } | null>(null);
 
@@ -193,12 +212,12 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 				});
 				if (cancelled) return;
 				if (res.ok) {
-					const data = await res.json().catch((err: any) => {
+					const data = await res.json().catch((err: unknown) => {
 						logger.error(err);
 						return null;
 					});
 					if (cancelled) return;
-					if (data) setRiskData(data);
+					if (data) setRiskData(data as PatientNoShowRiskData);
 					else setFailure({ status: res.status });
 				} else if (res.status === 422) {
 					const data = await res.json().catch(() => null);

@@ -21,6 +21,28 @@ export interface LabOrderPromptState {
 	onCancel: () => void;
 }
 
+export function labOrderToDentalLabOrderData(order: LabOrder): DentalLabOrderData {
+	return {
+		id: order.id,
+		patientId: order.patientId,
+		patientName: order.patientName ?? undefined,
+		doctorId: order.doctorId,
+		doctorName: order.doctorName,
+		orderNumber: order.orderNumber ?? order.gostOrderNumber ?? undefined,
+		secureToken: order.secureToken,
+		toothFdi: order.toothFdi,
+		material: order.material,
+		colorVita: order.colorVita,
+		constructionType: order.constructionType ?? undefined,
+		status: order.status,
+		stage: order.stage ?? undefined,
+		dueDate: order.dueDate,
+		clinicalNotes: order.clinicalNotes,
+		labComments: order.labComments,
+		attachedImageUrl: order.attachedImageUrl,
+	};
+}
+
 export function useLabOrdersPanelLogic(patientId?: string) {
 	const appLogic = useOptionalAppLogicContext();
 	const [orders, setOrders] = useState<LabOrder[]>([]);
@@ -52,8 +74,9 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 			const data = await res.json();
 			const list = Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : [];
 			setOrders(list);
-		} catch (err: any) {
-			setError(err.message || "Ошибка загрузки заказов ЗТЛ");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка загрузки заказов ЗТЛ";
+			setError(msg);
 		} finally {
 			setLoading(false);
 		}
@@ -125,19 +148,19 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 	};
 
 	const handleOpenEditOrder = (order: LabOrder) => {
-		setSelectedOrderForEdit(order as any);
+		setSelectedOrderForEdit(labOrderToDentalLabOrderData(order));
 		setModalInitialTab("main");
 		setIsOrderModalOpen(true);
 	};
 
 	const handleOpenPrintOrder = (order: LabOrder) => {
-		setSelectedOrderForEdit(order as any);
+		setSelectedOrderForEdit(labOrderToDentalLabOrderData(order));
 		setModalInitialTab("print");
 		setIsOrderModalOpen(true);
 	};
 
 	const handleOpenTrackingDrawer = (order: LabOrder) => {
-		setSelectedOrderForTracking(order as any);
+		setSelectedOrderForTracking(labOrderToDentalLabOrderData(order));
 		setIsTrackingDrawerOpen(true);
 	};
 

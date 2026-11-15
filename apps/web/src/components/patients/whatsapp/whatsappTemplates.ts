@@ -1,10 +1,19 @@
 import { generateAppointmentConfirmationMessage } from "../../../store/telephonyStore";
 import type { WhatsappTemplateType } from "./types";
 
+export interface WhatsappUpcomingAppointment {
+	doctorName?: string | null | undefined;
+	isToday?: boolean | undefined;
+	isTomorrow?: boolean | undefined;
+	formattedDate?: string | undefined;
+	formattedTime?: string | undefined;
+	startsAt?: string | undefined;
+}
+
 export interface WhatsappTemplateContext {
 	nameHint: string;
 	clinicName: string;
-	upcomingAppointment: any;
+	upcomingAppointment?: WhatsappUpcomingAppointment | null | undefined;
 }
 
 export function getWhatsappTemplateText(

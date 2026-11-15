@@ -13,11 +13,28 @@ interface PatientSearchResultRowProps {
 	readonly onMouseEnter: () => void;
 }
 
+function getPatientCardNumber(patient: Patient): string | undefined {
+	if ("cardNumber" in patient && typeof (patient as Record<string, unknown>).cardNumber === "string") {
+		return (patient as Record<string, unknown>).cardNumber as string;
+	}
+	return undefined;
+}
+
+function getPatientBalance(patient: Patient): number {
+	if (typeof patient.balanceRub === "number") return patient.balanceRub;
+	if ("balance" in patient) {
+		const raw = (patient as Record<string, unknown>).balance;
+		if (typeof raw === "number" || typeof raw === "string") return Number(raw) || 0;
+	}
+	return 0;
+}
+
 export function PatientSearchResultRow({
 	item, isSelected, somaticBadge, onSelect, onMouseEnter,
 }: PatientSearchResultRowProps) {
 	const p = item.patient;
-	const balance = Number(p.balanceRub ?? (p as any).balance ?? 0);
+	const balance = getPatientBalance(p);
+	const cardNumber = getPatientCardNumber(p);
 
 	return (
 		<div
@@ -75,14 +92,14 @@ export function PatientSearchResultRow({
 								<span>{p.birthDate}</span>
 							</span>
 						)}
-						{((p as any).cardNumber || item.cardHighlights) && (
+						{(cardNumber || item.cardHighlights) && (
 							<span className="inline-flex items-center gap-1 shrink-0 font-mono text-[10px]">
 								<CreditCard size={10} className="shrink-0 text-[var(--muted)]" />
 								<span>
 									{item.cardHighlights ? (
 										<HighlightText parts={item.cardHighlights} />
 									) : (
-										`№${(p as any).cardNumber}`
+										`№${cardNumber}`
 									)}
 								</span>
 							</span>

@@ -5,6 +5,7 @@
 
 import type { Appointment, Dashboard, Patient } from "@dental/shared";
 import { useCallback, useMemo, useState } from "react";
+import type { PatientCoreDraft } from "../../../AppConstants";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
@@ -16,7 +17,7 @@ export interface UseMobilePatientProfileOptions {
 	patient: Patient;
 	propDashboard?: Dashboard | null | undefined;
 	onNewAppointment?: ((patientId: string) => void) | undefined;
-	updatePatientCoreDraft?: ((field: any, value: any) => void) | undefined;
+	updatePatientCoreDraft?: ((field: keyof PatientCoreDraft, value: string) => void) | undefined;
 }
 
 export function useMobilePatientProfile({
@@ -46,12 +47,12 @@ export function useMobilePatientProfile({
 	}, [dashboard?.appointments, patient.id]);
 
 	const patientStudies = useMemo(() => {
-		const all = (dashboard?.imagingStudies ?? []) as any[];
+		const all = dashboard?.imagingStudies ?? [];
 		return all.filter((s) => String(s?.patientId) === String(patient.id));
 	}, [dashboard?.imagingStudies, patient.id]);
 
 	const patientInvoices = useMemo(() => {
-		const all = (dashboard?.invoices ?? []) as any[];
+		const all = dashboard?.invoices ?? [];
 		return all.filter((inv) => String(inv?.patientId) === String(patient.id));
 	}, [dashboard?.invoices, patient.id]);
 

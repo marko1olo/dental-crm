@@ -10,8 +10,12 @@ import {
 	TOAST_PATIENT_CREATED_SCHEDULE,
 	TOAST_SPECIFY_NAME_OR_EMERGENCY,
 } from "./constants";
+import type { UsePatientCreationActionsParams } from "./usePatientCreationActions";
 
-export async function executePatientCreateAndBook(params: any, options?: { allowDuplicate?: boolean }) {
+export async function executePatientCreateAndBook(
+	params: UsePatientCreationActionsParams,
+	options?: { allowDuplicate?: boolean },
+) {
 	const {
 		isPatientCreating,
 		newPatientName,
@@ -57,7 +61,9 @@ export async function executePatientCreateAndBook(params: any, options?: { allow
 		setDuplicateConflict(null);
 		onClose();
 
-		const targetId = typeof created === "object" && created?.id ? created.id : usePatientStore.getState().selectedPatientId;
+		const targetId = typeof created === "object" && created !== null && "id" in created && typeof (created as { id: unknown }).id === "string"
+			? (created as { id: string }).id
+			: usePatientStore.getState().selectedPatientId;
 		if (targetId) {
 			usePatientStore.getState().setSelectedPatientId(targetId);
 			useScheduleStore.getState().setNewAppointmentDraft((prev) => ({
@@ -67,11 +73,16 @@ export async function executePatientCreateAndBook(params: any, options?: { allow
 				...(isEmergencyOrPrimary ? { comment: EMERGENCY_APPOINTMENT_COMMENT } : {}),
 			}));
 		}
-		if (appLogic?.setActiveTab) appLogic.setActiveTab("schedule");
+		const typedAppLogic = appLogic as { setActiveTab?: (tab: string) => void } | null | undefined;
+		if (typedAppLogic?.setActiveTab) typedAppLogic.setActiveTab("schedule");
 		showToast(TOAST_PATIENT_CREATED_SCHEDULE, "success");
-	} catch (err: any) {
-		if (err?.status === 409 || err?.duplicateData) {
-			setDuplicateConflict(err.duplicateData);
+	} catch (err: unknown) {
+		const errorObj = err as {
+			status?: number;
+			duplicateData?: { message: string; existingPatientId?: string; isNameOnlyDuplicate?: boolean };
+		} | null | undefined;
+		if (errorObj?.status === 409 || errorObj?.duplicateData) {
+			setDuplicateConflict(errorObj.duplicateData ?? null);
 		}
 	}
 }

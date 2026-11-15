@@ -3,6 +3,7 @@ import { User, Users } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
+import type { FamilyGroupData } from "../familyWidget/familyWidgetTypes";
 
 export interface MobilePatientFamilySectionProps {
 	readonly patient: Patient;
@@ -19,7 +20,7 @@ export function MobilePatientFamilySection({
 	onSelectPatient,
 	onOpenCardTab,
 }: MobilePatientFamilySectionProps) {
-	const [familyData, setFamilyData] = useState<any>(null);
+	const [familyData, setFamilyData] = useState<FamilyGroupData | null>(null);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -34,7 +35,7 @@ export function MobilePatientFamilySection({
 				if (!isMounted) return;
 				if (res.ok) {
 					const data = await res.json().catch(() => null);
-					setFamilyData(data);
+					setFamilyData(data as FamilyGroupData | null);
 				} else {
 					setFamilyData(null);
 				}
@@ -77,20 +78,22 @@ export function MobilePatientFamilySection({
 						Члены семьи (тап для переключения карты):
 					</span>
 					<div className="mobile-family-members-scroller" role="tablist" data-testid="mobile-family-members-list">
-						{familyData.members.map((m: any) => {
-							const isCurrent = m.id === patient.id;
-							const isHead = m.id === familyData.headPatientId;
+						{familyData.members.map((m) => {
+							const memberId = m.id || m.patientId || "";
+							const isCurrent = memberId === patient.id;
+							const isHead = memberId === familyData.headPatientId;
+							const memberName = m.fullName || m.patientName || "Член семьи";
 							return (
 								<button
-									key={m.id}
+									key={memberId || memberName}
 									type="button"
-									onClick={() => onSelectPatient(m.id)}
+									onClick={() => onSelectPatient(memberId)}
 									className={`mobile-family-member-chip ${isCurrent ? "active" : ""}`}
-									data-testid={`mobile-family-member-${m.id}`}
-									title={`Переключиться на карточку: ${m.fullName}`}
+									data-testid={`mobile-family-member-${memberId}`}
+									title={`Переключиться на карточку: ${memberName}`}
 								>
 									<User size={13} className={isCurrent ? "text-teal-600" : "text-[var(--muted)]"} />
-									<span className="font-bold">{m.fullName}</span>
+									<span className="font-bold">{memberName}</span>
 									<span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">
 										{isHead ? "Родитель / Глава" : "Ребёнок / Член"}
 									</span>

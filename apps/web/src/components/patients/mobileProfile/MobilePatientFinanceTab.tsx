@@ -12,9 +12,19 @@ import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";
 
+export interface MobilePatientFinanceInvoiceItem {
+	id: string;
+	number?: string | null | undefined;
+	createdAt?: string | null | undefined;
+	totalAmountRub?: number | null | undefined;
+	totalRub?: number | null | undefined;
+	amount?: number | null | undefined;
+	status?: string | null | undefined;
+}
+
 export interface MobilePatientFinanceTabProps {
 	patient: Patient;
-	patientInvoices: any[];
+	patientInvoices: readonly MobilePatientFinanceInvoiceItem[];
 	balanceRub: number;
 	money: (amountRub: number) => string;
 	onOpenCashier?: (() => void) | undefined;
@@ -88,7 +98,7 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 						У пациента нет выставленных счетов. Все оказанные услуги закрыты.
 					</div>
 				) : (
-					patientInvoices.map((inv: any) => (
+					patientInvoices.map((inv) => (
 						<div
 							key={inv.id}
 							className="p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between text-xs"

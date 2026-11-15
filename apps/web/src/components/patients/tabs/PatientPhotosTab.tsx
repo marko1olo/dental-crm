@@ -94,8 +94,9 @@ export const PatientPhotosTab: React.FC<PatientPhotosTabProps> = ({
 			}
 
 			setPhotos(combined);
-		} catch (err: any) {
-			setError(err?.message || "Не удалось загрузить галерею снимков");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось загрузить галерею снимков";
+			setError(msg);
 			setPhotos([]);
 		} finally {
 			setIsLoading(false);

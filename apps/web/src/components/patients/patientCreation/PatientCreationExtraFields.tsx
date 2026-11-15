@@ -4,9 +4,10 @@ import { PatientBirthDateRow } from "./PatientBirthDateRow";
 import { PatientChildRepresentativeSection } from "./PatientChildRepresentativeSection";
 import { PatientMedicalFlagsStep } from "./PatientMedicalFlagsStep";
 import { PatientPassportAddressStep } from "./PatientPassportAddressStep";
+import type { UsePatientCreationFormResult } from "./usePatientCreationTypes";
 
 export interface PatientCreationExtraFieldsProps {
-	readonly form: any;
+	readonly form: UsePatientCreationFormResult;
 }
 
 export const PatientCreationExtraFields: React.FC<PatientCreationExtraFieldsProps> = ({ form }) => {
@@ -58,18 +59,18 @@ export const PatientCreationExtraFields: React.FC<PatientCreationExtraFieldsProp
 				showDocFields={form.showDocFields}
 				onToggleDocFields={() => form.setShowDocFields((prev: boolean) => !prev)}
 				snils={form.patientAdministrativeProfileDraft.snils || ""}
-				onSnilsChange={(snils) => form.setPatientAdministrativeProfileDraft((prev: any) => ({ ...prev, snils }))}
+				onSnilsChange={(snils) => form.setPatientAdministrativeProfileDraft((prev) => ({ ...prev, snils }))}
 				insurancePolicyNumber={form.patientAdministrativeProfileDraft.insurancePolicyNumber || ""}
 				onInsurancePolicyNumberChange={(policy) =>
-					form.setPatientAdministrativeProfileDraft((prev: any) => ({ ...prev, insurancePolicyNumber: policy }))
+					form.setPatientAdministrativeProfileDraft((prev) => ({ ...prev, insurancePolicyNumber: policy }))
 				}
 				identityDocument={form.patientAdministrativeProfileDraft.identityDocument || ""}
 				onIdentityDocumentChange={(doc) =>
-					form.setPatientAdministrativeProfileDraft((prev: any) => ({ ...prev, identityDocument: doc }))
+					form.setPatientAdministrativeProfileDraft((prev) => ({ ...prev, identityDocument: doc }))
 				}
 				registrationAddress={form.patientAdministrativeProfileDraft.registrationAddress || ""}
 				onRegistrationAddressChange={(addr) =>
-					form.setPatientAdministrativeProfileDraft((prev: any) => ({ ...prev, registrationAddress: addr }))
+					form.setPatientAdministrativeProfileDraft((prev) => ({ ...prev, registrationAddress: addr }))
 				}
 			/>
 		</div>

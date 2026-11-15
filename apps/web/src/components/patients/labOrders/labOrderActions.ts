@@ -19,8 +19,25 @@ export async function transitionLabOrderStatus(orderId: string, targetStatus: Ca
 	}
 }
 
-export function scheduleLabAppointment(order: LabOrder, appLogic: any) {
-	const draft = buildLabAppointmentDraft(order as any);
+export interface LabAppointmentAppLogic {
+	updateNewAppointmentDraft?: (field: string, value: unknown) => void;
+	setShowCreateForm?: (show: boolean) => void;
+}
+
+export function scheduleLabAppointment(
+	order: LabOrder,
+	appLogic?: LabAppointmentAppLogic | null | undefined,
+) {
+	const draft = buildLabAppointmentDraft({
+		patientId: order.patientId,
+		patientName: order.patientName,
+		doctorId: order.doctorId,
+		doctorName: order.doctorName,
+		toothFdi: order.toothFdi,
+		material: order.material,
+		dueDate: order.dueDate,
+		status: order.status,
+	});
 	if (!draft) return;
 	if (appLogic?.updateNewAppointmentDraft) {
 		appLogic.updateNewAppointmentDraft("patientId", order.patientId);

@@ -1,17 +1,23 @@
 import { useState } from "react";
+import type { Patient } from "@dental/shared";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
 import { LOYALTY_CONFIG, type LoyaltyTier } from "./loyaltyConfig";
 
+interface AdminProfileWithLoyalty {
+	loyaltyTier?: string | undefined;
+	[key: string]: unknown;
+}
+
 export function usePatientLoyalty(patientId: string) {
 	const { dashboard, auth, loadDashboard } = useAppLogicContext();
 	const [isOpen, setIsOpen] = useState(false);
 	const [saving, setSaving] = useState(false);
 
-	const patient = dashboard?.patients?.find((p: any) => p.id === patientId);
-	const adminProfile = (patient?.administrativeProfile as any) || {};
+	const patient = dashboard?.patients?.find((p: Patient) => p.id === patientId);
+	const adminProfile: AdminProfileWithLoyalty = (patient?.administrativeProfile as AdminProfileWithLoyalty | null | undefined) ?? {};
 	const currentTier: LoyaltyTier =
 		adminProfile.loyaltyTier === "silver" ||
 		adminProfile.loyaltyTier === "gold" ||
@@ -33,9 +39,12 @@ export function usePatientLoyalty(patientId: string) {
 			});
 			if (!res.ok) throw new Error("Failed to save loyalty tier");
 
-			const saved = await res.json().catch((err: any) => {
+			const saved = await res.json().catch((err: unknown) => {
 				logger.error(err);
-				showToast(actionFailureToast("Ошибка чтения ответа", (err as { status?: number })?.status ?? null), "error");
+				const status = typeof err === "object" && err !== null && "status" in err && typeof (err as { status?: unknown }).status === "number"
+					? (err as { status: number }).status
+					: null;
+				showToast(actionFailureToast("Ошибка чтения ответа", status), "error");
 				return null;
 			});
 			const savedTier = saved?.administrativeProfile?.loyaltyTier ?? null;

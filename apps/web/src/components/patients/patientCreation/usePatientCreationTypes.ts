@@ -48,7 +48,7 @@ export interface UsePatientCreationFormResult {
 	readonly validationResult: ValidationResult;
 	readonly patientCreateReady: boolean;
 	readonly patientCreateGuidance: string | null;
-	readonly quickIntakeValidationResult?: any;
+	readonly quickIntakeValidationResult?: ValidationResult | undefined;
 	readonly quickActionReady: boolean;
 	readonly handlePrintBlankContract: () => void;
 	readonly handleCreate: (options?: { allowDuplicate?: boolean }) => Promise<void>;

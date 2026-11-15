@@ -21,19 +21,127 @@ export interface OrthodonticTimelineStage {
 export interface OrthodonticTimelineProps {
 	readonly currentMonth: number;
 	readonly totalMonths: number;
-	readonly stages?: readonly OrthodonticTimelineStage[];
-	readonly onSelectMonth?: (month: number) => void;
+	readonly stages?: readonly OrthodonticTimelineStage[] | undefined;
+	readonly applianceCategory?: ("brackets" | "aligners" | "plate") | undefined;
+	readonly startDate?: string | undefined;
+	readonly onSelectMonth?: ((month: number) => void) | undefined;
+}
+
+function formatPlannedStageDate(startDateIso: string | undefined, monthOffset: number): string {
+	const base = startDateIso ? new Date(startDateIso) : new Date();
+	const validBase = isNaN(base.getTime()) ? new Date() : base;
+	const target = new Date(validBase);
+	target.setMonth(target.getMonth() + monthOffset);
+
+	return new Intl.DateTimeFormat("ru-RU", {
+		month: "short",
+		year: "numeric",
+	}).format(target);
 }
 
 export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 	currentMonth,
 	totalMonths,
 	stages,
+	applianceCategory = "brackets",
+	startDate,
 	onSelectMonth,
 }) => {
 	const defaultStages: readonly OrthodonticTimelineStage[] = React.useMemo(() => {
 		if (stages && stages.length > 0) return stages;
 
+		if (applianceCategory === "aligners") {
+			return [
+				{
+					month: 1,
+					title: "Диагностика, 3D-сетап и фиксация аттачментов",
+					archwireSummary: "Каппы серии 1 (шаги 1–4, 22 ч/сутки)",
+					isCompleted: currentMonth > 1,
+					isCurrent: currentMonth === 1,
+					plannedDate: formatPlannedStageDate(startDate, 0),
+				},
+				{
+					month: 3,
+					title: "Контроль трекинга и выдача партии 2",
+					archwireSummary: "Каппы серии 2 (шаги 5–8, смена раз в 14 дней)",
+					isCompleted: currentMonth > 3,
+					isCurrent: currentMonth === 3,
+					plannedDate: formatPlannedStageDate(startDate, 2),
+				},
+				{
+					month: 6,
+					title: "Сепарация (IPR) и партия 3",
+					archwireSummary: "Каппы серии 3 (шаги 9–14, контроль смыкания)",
+					elasticsSummary: "Тяги по показаниям",
+					isCompleted: currentMonth > 6,
+					isCurrent: currentMonth === 6,
+					plannedDate: formatPlannedStageDate(startDate, 5),
+				},
+				{
+					month: 10,
+					title: "Финишная юстировка контактов",
+					archwireSummary: "Каппы серии 4 (шаги 15–20, детализация)",
+					isCompleted: currentMonth > 10,
+					isCurrent: currentMonth === 10,
+					plannedDate: formatPlannedStageDate(startDate, 9),
+				},
+				{
+					month: Math.max(12, totalMonths),
+					title: "Снятие аттачментов и ретенция",
+					archwireSummary: "Ретенционные каппы на ночь + несъемный ретейнер",
+					isCompleted: currentMonth >= totalMonths,
+					isCurrent: currentMonth === totalMonths,
+					plannedDate: formatPlannedStageDate(startDate, Math.max(1, totalMonths - 1)),
+				},
+			];
+		}
+
+		if (applianceCategory === "plate") {
+			return [
+				{
+					month: 1,
+					title: "Припасовка пластинки и активация винта",
+					archwireSummary: "Съемный аппарат с винтом (1/4 оборота в 5–7 дней)",
+					isCompleted: currentMonth > 1,
+					isCurrent: currentMonth === 1,
+					plannedDate: formatPlannedStageDate(startDate, 0),
+				},
+				{
+					month: 2,
+					title: "Контроль трансверзального расширения",
+					archwireSummary: "Контроль прилегания базиса и окклюзионных накладок",
+					isCompleted: currentMonth > 2,
+					isCurrent: currentMonth === 2,
+					plannedDate: formatPlannedStageDate(startDate, 1),
+				},
+				{
+					month: 4,
+					title: "Коррекция вестибулярной дуги",
+					archwireSummary: "Активация кламмеров и пружин аппарата",
+					isCompleted: currentMonth > 4,
+					isCurrent: currentMonth === 4,
+					plannedDate: formatPlannedStageDate(startDate, 3),
+				},
+				{
+					month: 6,
+					title: "Стабилизация ширины зубных рядов",
+					archwireSummary: "Фиксация расширяющего винта композитом",
+					isCompleted: currentMonth > 6,
+					isCurrent: currentMonth === 6,
+					plannedDate: formatPlannedStageDate(startDate, 5),
+				},
+				{
+					month: Math.max(8, totalMonths),
+					title: "Ретенционный период аппарата",
+					archwireSummary: "Ночное ношение пластинки для закрепления результата",
+					isCompleted: currentMonth >= totalMonths,
+					isCurrent: currentMonth === totalMonths,
+					plannedDate: formatPlannedStageDate(startDate, Math.max(1, totalMonths - 1)),
+				},
+			];
+		}
+
+		// Брекет-система (по умолчанию): динамический расчет этапов от даты начала лечения
 		return [
 			{
 				month: 1,
@@ -41,6 +149,7 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 				archwireSummary: "NiTi .014 (ВЧ + НЧ)",
 				isCompleted: currentMonth > 1,
 				isCurrent: currentMonth === 1,
+				plannedDate: formatPlannedStageDate(startDate, 0),
 			},
 			{
 				month: 2,
@@ -48,6 +157,7 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 				archwireSummary: "CuNiTi .016 (ВЧ + НЧ)",
 				isCompleted: currentMonth > 2,
 				isCurrent: currentMonth === 2,
+				plannedDate: formatPlannedStageDate(startDate, 1),
 			},
 			{
 				month: 4,
@@ -56,6 +166,7 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 				elasticsSummary: "Класс II (Fox 3.5 oz)",
 				isCompleted: currentMonth > 4,
 				isCurrent: currentMonth === 4,
+				plannedDate: formatPlannedStageDate(startDate, 3),
 			},
 			{
 				month: 8,
@@ -63,6 +174,7 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 				archwireSummary: "Сталь SS 19×25 + цепочка",
 				isCompleted: currentMonth > 8,
 				isCurrent: currentMonth === 8,
+				plannedDate: formatPlannedStageDate(startDate, 7),
 			},
 			{
 				month: 14,
@@ -71,16 +183,18 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 				elasticsSummary: "Коробочные тяги",
 				isCompleted: currentMonth > 14,
 				isCurrent: currentMonth === 14,
+				plannedDate: formatPlannedStageDate(startDate, 13),
 			},
 			{
-				month: 18,
+				month: Math.max(16, totalMonths),
 				title: "Снятие аппаратуры и ретенция",
 				archwireSummary: "Нереверсивный ретейнер 33–43 + капы",
 				isCompleted: currentMonth >= totalMonths,
 				isCurrent: currentMonth === totalMonths,
+				plannedDate: formatPlannedStageDate(startDate, Math.max(1, totalMonths - 1)),
 			},
 		];
-	}, [stages, currentMonth, totalMonths]);
+	}, [stages, applianceCategory, startDate, currentMonth, totalMonths]);
 
 	return (
 		<div className="ortho-card" data-testid="orthodontic-timeline">
@@ -138,6 +252,11 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 										)}
 									</div>
 									<div className="text-[11px] text-[var(--ink-muted)] flex items-center gap-2 flex-wrap">
+										{stage.plannedDate && (
+											<span className="font-medium text-[var(--ink)] bg-[var(--paper-soft)] px-1.5 py-0.5 rounded border border-[var(--line)]">
+												{stage.plannedDate}
+											</span>
+										)}
 										<span>{stage.archwireSummary}</span>
 										{stage.elasticsSummary && (
 											<span className="text-[var(--teal,#0d9488)] font-medium">· {stage.elasticsSummary}</span>

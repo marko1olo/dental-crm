@@ -5,6 +5,7 @@
 
 import type { Appointment, Dashboard, Patient } from "@dental/shared";
 import React, { useMemo } from "react";
+import type { PatientCoreDraft } from "../../../AppConstants";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { MobilePatientCommGrid } from "./MobilePatientCommGrid";
 import { MobilePatientFamilySection } from "./MobilePatientFamilySection";
@@ -20,9 +21,9 @@ export interface MobilePatientHeaderCardProps {
 	onBack: () => void;
 	onSelectPatient: (patientId: string) => void;
 	money: (amountRub: number) => string;
-	patientCoreDraft?: any;
-	updatePatientCoreDraft?: ((field: any, value: any) => void) | undefined;
-	savePatientCore?: (() => Promise<any> | void) | undefined;
+	patientCoreDraft?: PatientCoreDraft | null | undefined;
+	updatePatientCoreDraft?: ((field: keyof PatientCoreDraft, value: string) => void) | undefined;
+	savePatientCore?: (() => Promise<unknown> | void) | undefined;
 	patientCoreDirty?: boolean | undefined;
 	patientCoreSaveState?: ("idle" | "saving" | "saved" | "error") | undefined;
 	onStartVisit: () => void;
@@ -60,8 +61,11 @@ export const MobilePatientHeaderCard: React.FC<MobilePatientHeaderCardProps> = (
 	const upcomingAppointment = useMemo(() => {
 		const now = Date.now();
 		const list = (dashboard?.appointments ?? []).filter((a: Appointment) => a?.patientId === patient.id);
-		const upcoming = list.filter((a) => a.status !== "cancelled" && a.startsAt && new Date(a.startsAt).getTime() >= now - 3600000);
-		return upcoming.sort((a, b) => new Date(a.startsAt!).getTime() - new Date(b.startsAt!).getTime())[0] || null;
+		const upcoming = list.filter((a): a is Appointment & { startsAt: string } => {
+			if (a.status === "cancelled" || !a.startsAt) return false;
+			return new Date(a.startsAt).getTime() >= now - 3600000;
+		});
+		return upcoming.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0] ?? null;
 	}, [dashboard?.appointments, patient.id]);
 
 	const { allergyText, somaticRiskFlags } = useMobilePatientSafetyAlerts(patient);

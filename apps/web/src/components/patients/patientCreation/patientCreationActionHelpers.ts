@@ -1,17 +1,19 @@
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { PatientAdministrativeProfileDraft } from "../../../AppConstants";
 import { printPrimaryIntakePackage } from "../../documents/primaryIntakePackagePrintEngine";
 import { showToast } from "../../GlobalToast";
 import { TOAST_BLANK_CONTRACT_PRINTED } from "./constants";
 
 export function printBlankContractHelper(
-	appLogic: any,
+	appLogic: unknown,
 	newPatientName: string,
 	newPatientPhone: string,
 	newPatientBirthDate: string,
-	patientAdministrativeProfileDraft: any,
+	patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft,
 	isSomaticNorm: boolean,
 ) {
-	const clinicProfile = appLogic?.dashboard?.clinicSettings?.profile;
+	const dashboard = (appLogic as { dashboard?: { clinicSettings?: { profile?: { address?: string; actualAddress?: string; [key: string]: unknown } } } })?.dashboard;
+	const clinicProfile = dashboard?.clinicSettings?.profile;
 	printPrimaryIntakePackage({
 		patient: {
 			fullName: newPatientName.trim() || undefined,
