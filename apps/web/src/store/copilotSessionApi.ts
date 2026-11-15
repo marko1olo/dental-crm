@@ -67,7 +67,16 @@ export async function fetchRemoteSessions(params?: { patientId?: string; q?: str
 			const patientId = typeof item.patientId === "string" ? item.patientId : undefined;
 			const patientName = typeof item.patientName === "string" ? item.patientName : (patientId ? "Пациент" : undefined);
 			const messageCount = typeof item.messageCount === "number" ? item.messageCount : 0;
-			return { id, title, updatedAt, createdAt, patientId, patientName, messageCount };
+			const thread: CopilotThread = {
+				id,
+				title,
+				updatedAt,
+				createdAt,
+				messageCount,
+				...(patientId !== undefined ? { patientId } : {}),
+				...(patientName !== undefined ? { patientName } : {}),
+			};
+			return thread;
 		});
 	} catch {
 		return null;

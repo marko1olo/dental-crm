@@ -4,15 +4,15 @@ import { CRM_FASTIFY_TOOLS_REGISTRY } from "./copilotCatalogData";
 import { showToast } from "../GlobalToast";
 import { ActiveDiffCard } from "./cards/ActiveDiffCard";
 import { CopilotToolLogsView } from "./cards/CopilotToolLogsView";
-import type { CopilotToolExecutionLog, CopilotActiveDiff } from "../../store/copilotStore";
+import type { ToolExecutionLog, ActiveDiff } from "../../store/copilotStore";
 
 export interface CopilotStudioActionsTabProps {
   activeTooth?: number | null | undefined;
   patientId?: string | null | undefined;
   runtimeMode: string;
-  toolExecutionLogs: CopilotToolExecutionLog[];
-  activeDiff: CopilotActiveDiff | null;
-  setActiveDiff: (diff: CopilotActiveDiff | null) => void;
+  toolExecutionLogs: ToolExecutionLog[];
+  activeDiff: ActiveDiff | null;
+  setActiveDiff: (diff: ActiveDiff | null) => void;
   applyActiveDiff: () => void;
   rejectActiveDiff: () => void;
   executeApiTool: (toolKey: string, payload: Record<string, unknown>) => Promise<void>;

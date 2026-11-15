@@ -71,7 +71,13 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 				const next = typeof action === "function" ? action(prev) : action;
 				const currentThreadId = useCopilotStore.getState().activeThreadId || localConversationId;
 				if (currentThreadId) {
-					saveThreadMessages(currentThreadId, next);
+					const mapped = next.map((m, idx) => ({
+						id: "id" in m && typeof m.id === "string" ? m.id : `msg-${idx}`,
+						role: (m.role === "assistant" || m.role === "system" ? m.role : "user") as "user" | "assistant" | "system",
+						text: "text" in m && typeof m.text === "string" ? m.text : "",
+						content: "text" in m && typeof m.text === "string" ? m.text : "",
+					}));
+					saveThreadMessages(currentThreadId, mapped);
 				}
 				return next;
 			});
@@ -111,7 +117,7 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 				setMessages: (msgs: CopilotUiMessage[]) => setMessages(msgs),
 				setPending: (pend: PendingConfirmation | null) => setPending(pend),
 				setBusy: (b: boolean) => setBusy(b),
-				setPhase: (p: CopilotPhase) => setPhase(p),
+				setPhase: (p: string | null) => setPhase(p as CopilotPhase),
 				setActiveTab: (tab: "chat" | "pending") => setActiveTab(tab),
 				setProactiveAlerts: (alerts: unknown[]) => setProactiveAlerts(alerts as ProactiveAlertCardData[]),
 				setWhatsappHitLCards: (cards: unknown[]) => setWhatsappHitLCards(cards as WhatsAppApprovalCard[]),

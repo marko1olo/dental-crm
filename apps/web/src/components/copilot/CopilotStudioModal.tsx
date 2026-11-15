@@ -65,7 +65,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
   const { runtimeMode, speedMode, showThinkingProcess } = settings;
   const threadKey = activeThreadId || "default-thread";
 
-  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (initialMessages?.length ? parseChatMsgs(initialMessages) : ((threadMessages[threadKey]?.length ? threadMessages[threadKey] : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? (SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[]) : [])))));
+  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (initialMessages?.length ? parseChatMsgs(initialMessages) : (threadMessages[threadKey]?.length ? parseChatMsgs(threadMessages[threadKey]) : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? (SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[]) : []))));
   useEffect(() => { if (initialMessages?.length) setMessages(parseChatMsgs(initialMessages)); }, [initialMessages]);
   const hydrateSession = useCallback(async (sId: string) => {
     try {
@@ -85,7 +85,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
   }, [saveThreadMessages]);
   useEffect(() => {
     const saved = threadMessages[threadKey];
-    if (saved && saved.length > 0) setMessages(saved);
+    if (saved && saved.length > 0) setMessages(parseChatMsgs(saved));
     else if (threadKey && threadKey !== "default-thread") void hydrateSession(threadKey).then((ok) => { if (!ok && !isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]); });
     else if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]);
   }, [threadKey, patientId, hydrateSession]);
@@ -437,7 +437,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         <CopilotSettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} onOpenMemoryTab={() => { setSettingsOpen(false); setActiveTab("memory"); }} />
         <CopilotHistoryDrawer isOpen={isHistoryOpen} onClose={() => setHistoryOpen(false)} onSelectThread={(tId) => {
           selectThread(tId); const saved = threadMessages[tId];
-          if (saved && saved.length > 0) setMessages(saved);
+          if (saved && saved.length > 0) setMessages(parseChatMsgs(saved));
           else { const f = threads.find((t) => t.id === tId); setMessages(f?.previewText ? [{ id: `thread-init-${Date.now()}`, role: "assistant", text: f.previewText, timestamp: f.updatedAt, citation: "Клинический протокол СтАР" }] : []); void hydrateSession(tId); }
           setHistoryOpen(false); setActiveTab("dialog");
         }} />

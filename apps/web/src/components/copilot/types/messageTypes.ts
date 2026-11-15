@@ -100,13 +100,13 @@ export function parseActionProposal(val: unknown): CopilotActionProposal | undef
 	return undefined;
 }
 
-export function parseJsonResponse(raw: unknown): { ok?: boolean; error?: string } {
+export function parseJsonResponse(raw: unknown): { ok?: boolean | undefined; error?: string | undefined } {
 	if (typeof raw === "object" && raw !== null) {
 		const r = raw as Record<string, unknown>;
-		return {
-			ok: typeof r.ok === "boolean" ? r.ok : undefined,
-			error: typeof r.error === "string" ? r.error : undefined,
-		};
+		const res: { ok?: boolean | undefined; error?: string | undefined } = {};
+		if (typeof r.ok === "boolean") res.ok = r.ok;
+		if (typeof r.error === "string") res.error = r.error;
+		return res;
 	}
 	return {};
 }

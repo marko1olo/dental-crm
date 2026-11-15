@@ -44,42 +44,29 @@ export interface AiMemoryFact {
 }
 
 export interface CopilotThread {
-	id: string;
-	title: string;
-	updatedAt: string;
-	createdAt?: string;
-	pinned?: boolean;
-	patientName?: string;
-	patientId?: string;
-	messageCount: number;
-	previewText?: string;
+	id: string; title: string; updatedAt: string; messageCount: number;
+	createdAt?: string | undefined; pinned?: boolean | undefined;
+	patientName?: string | undefined; patientId?: string | undefined; previewText?: string | undefined;
 }
 
 export interface ToolExecutionLog {
-	id: string;
-	toolName: string;
-	category: "clinical" | "workstation" | "financial";
-	status: "success" | "pending" | "running" | "rejected";
-	durationMs?: number;
-	args: Record<string, unknown>;
-	resultSummary: string;
-	timestamp: string;
+	id: string; toolName: string; category: "clinical" | "workstation" | "financial";
+	status: "success" | "pending" | "running" | "rejected"; durationMs?: number | undefined;
+	args: Record<string, unknown>; resultSummary: string; timestamp: string;
 }
 
+export type CopilotToolExecutionLog = ToolExecutionLog;
+
 export interface CopilotMessage {
-	id?: string;
-	role: "user" | "assistant" | "system";
-	text?: string;
-	content?: string;
-	timestamp?: string;
-	createdAt?: string;
-	toolCalls?: unknown;
-	actionProposal?: unknown;
+	id?: string | undefined; role: "user" | "assistant" | "system"; text?: string | undefined; content?: string | undefined;
+	timestamp?: string | undefined; createdAt?: string | undefined; toolCalls?: unknown; actionProposal?: unknown;
 }
 
 export interface ActiveDiff {
-	id: string; title: string; targetEntity: string; beforeText: string; afterText: string; applied?: boolean;
+	id: string; title: string; targetEntity: string; beforeText: string; afterText: string; applied?: boolean | undefined;
 }
+
+export type CopilotActiveDiff = ActiveDiff;
 
 export interface CopilotSettings {
 	trustLevel: AiTrustLevel;
@@ -124,6 +111,7 @@ export interface CopilotStoreState {
 	threadMessages: Record<string, CopilotMessage[]>;
 	isSettingsOpen: boolean;
 	isHistoryOpen: boolean;
+	isStudioOpen: boolean;
 	telemetry: ContextTelemetryData;
 
 	// Actions
@@ -152,6 +140,8 @@ export interface CopilotStoreState {
 	rejectActiveDiff: () => void;
 	setSettingsOpen: (open: boolean) => void;
 	setHistoryOpen: (open: boolean) => void;
+	setIsStudioOpen: (open: boolean) => void;
+	setStudioOpen: (open: boolean) => void;
 }
 
 const initialState = getInitialCopilotState();
@@ -171,6 +161,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	activeDiff: null,
 	isSettingsOpen: false,
 	isHistoryOpen: false,
+	isStudioOpen: false,
 	telemetry: initialState.telemetry,
 
 	updateSettings: (patch) => {
@@ -308,6 +299,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		});
 		if (!isDemoShowcaseMode() && isSessionUuid(threadId) && Array.isArray(messages) && messages.length > 0) {
 			const last = messages[messages.length - 1];
+			if (!last) return;
 			const content = String(last.text || last.content || "").trim();
 			if (content && last.role) {
 				void appendRemoteMessage(threadId, {
@@ -361,13 +353,16 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		try {
 			const remoteMsgs = await fetchRemoteMessages(threadId);
 			if (remoteMsgs && remoteMsgs.length > 0) {
-				const parsed: CopilotMessage[] = remoteMsgs.map((m: { id?: string; role?: "user" | "assistant" | "system"; content?: string; text?: string; createdAt?: string; toolCalls?: unknown }, idx: number): CopilotMessage => ({
-					id: m.id || `msg-${idx}`,
-					role: (m.role === "assistant" || m.role === "system") ? m.role : "user",
-					text: m.content || m.text || "",
-					timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "10:00",
-					toolCalls: m.toolCalls,
-				}));
+				const parsed: CopilotMessage[] = (remoteMsgs as unknown[]).map((raw: unknown, idx: number): CopilotMessage => {
+					const m = (typeof raw === "object" && raw !== null ? raw : {}) as { id?: string; role?: "user" | "assistant" | "system"; content?: string; text?: string; createdAt?: string; toolCalls?: unknown };
+					return {
+						id: m.id || `msg-${idx}`,
+						role: (m.role === "assistant" || m.role === "system") ? m.role : "user",
+						text: m.content || m.text || "",
+						timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "10:00",
+						toolCalls: m.toolCalls,
+					};
+				});
 				set((state) => {
 					const next = { ...state.threadMessages, [threadId]: parsed };
 					safeLocalStorageSetJson("dente_copilot_thread_messages", next);
@@ -421,6 +416,8 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	rejectActiveDiff: () => set({ activeDiff: null }),
 	setSettingsOpen: (open) => set({ isSettingsOpen: open }),
 	setHistoryOpen: (open) => set({ isHistoryOpen: open }),
+	setIsStudioOpen: (open) => set({ isStudioOpen: open }),
+	setStudioOpen: (open) => set({ isStudioOpen: open }),
 }));
 
 if (typeof window !== "undefined") {

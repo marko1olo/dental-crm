@@ -161,7 +161,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
         const sa = preset.safetyAlert;
         return {
           id: sa.id,
-          severity: (sa.severity === "danger" ? "critical" : sa.severity) as "critical" | "warning" | "info",
+          severity: ((sa.severity as string) === "danger" || (sa.severity as string) === "critical" ? "critical" : sa.severity === "warning" ? "warning" : "info") as "critical" | "warning" | "info",
           title: sa.title,
           description: sa.description,
           acknowledged: false,
@@ -364,7 +364,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     setAnestheticProposal(p.anesthetic ? parseChairsideAnesthetic(p.anesthetic) : null);
     setSafetyAlert(p.safetyAlert ? {
       id: p.safetyAlert.id,
-      severity: (p.safetyAlert.severity === "danger" ? "critical" : p.safetyAlert.severity) as "critical" | "warning" | "info",
+      severity: ((p.safetyAlert.severity as string) === "danger" || (p.safetyAlert.severity as string) === "critical" ? "critical" : p.safetyAlert.severity === "warning" ? "warning" : "info") as "critical" | "warning" | "info",
       title: p.safetyAlert.title,
       description: p.safetyAlert.description,
       acknowledged: false,
@@ -520,7 +520,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               onApplyServices={handleApplyServices}
               onApplySoap={handleApplySoap}
               onEditSoap={() => {
-                useCopilotStore.getState().setStudioOpen(true);
+                useCopilotStore.getState().setIsStudioOpen(true);
               }}
               onApplyAll={handleApplyAllActions}
               onDisposeCarpule={onDisposeCarpule}
