@@ -25,6 +25,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = (props) => 
 		onOpenFullRadiology,
 		onOpenFamilyBilling,
 		onOpenParentMemo,
+		onOpenEndo,
 		onApplyAnesthesia,
 		className = "",
 	} = props;
@@ -78,6 +79,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = (props) => 
 					onOpenFullRadiology={onOpenFullRadiology}
 					onOpenFamilyBilling={onOpenFamilyBilling}
 					onOpenParentMemo={onOpenParentMemo}
+					onOpenEndo={onOpenEndo}
 					onApplyAnesthesia={onApplyAnesthesia}
 				/>
 

@@ -6,6 +6,7 @@ import { ToothStateChipsRow } from "./surfaces/ToothStateChipsRow";
 import { ToothSurfacesCrossDiagram } from "./surfaces/ToothSurfacesCrossDiagram";
 import { ToothMaterialSelector } from "./surfaces/ToothMaterialSelector";
 import { useToothSurfacesState } from "./surfaces/useToothSurfacesState";
+import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 
 export * from "./toothSurfacesConstants";
 
@@ -15,6 +16,7 @@ export interface ToothSurfacesAndEndoMatrixProps {
 	patientId?: string | undefined;
 	onUpdateTooth?: ((updates: Partial<ToothData>) => void) | undefined;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
+	onOpenEndoStudio?: (() => void) | undefined;
 }
 
 export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProps> = ({
@@ -23,6 +25,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 	patientId,
 	onUpdateTooth,
 	onInsertToProtocol,
+	onOpenEndoStudio,
 }) => {
 	const {
 		currentSurfaces,
@@ -67,6 +70,12 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 				onInsertToDiary={(soapText) => {
 					onInsertToProtocol?.(soapText);
 				}}
+				onOpenFullModal={
+					onOpenEndoStudio ??
+					(() => {
+						useUiSurfaceStore.getState().openPrimaryModal("endo_canal", { toothNumber });
+					})
+				}
 			/>
 		</div>
 	);

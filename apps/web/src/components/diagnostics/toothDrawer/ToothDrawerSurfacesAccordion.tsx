@@ -13,6 +13,7 @@ interface ToothDrawerSurfacesAccordionProps {
 	toggleSection: (section: WarmAccordionSection) => void;
 	onUpdateTooth?: ((num: number, updates: Partial<ToothData>) => void) | undefined;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
+	onOpenEndo?: ((toothNumber: number) => void) | undefined;
 }
 
 export const ToothDrawerSurfacesAccordion: React.FC<ToothDrawerSurfacesAccordionProps> = ({
@@ -23,6 +24,7 @@ export const ToothDrawerSurfacesAccordion: React.FC<ToothDrawerSurfacesAccordion
 	toggleSection,
 	onUpdateTooth,
 	onInsertToProtocol,
+	onOpenEndo,
 }) => {
 	const isExpanded = activeSection === "surfaces_endo";
 
@@ -55,6 +57,7 @@ export const ToothDrawerSurfacesAccordion: React.FC<ToothDrawerSurfacesAccordion
 						patientId={patientId}
 						onUpdateTooth={(updates) => onUpdateTooth?.(toothNumber, updates)}
 						onInsertToProtocol={onInsertToProtocol}
+						onOpenEndoStudio={onOpenEndo ? () => onOpenEndo(toothNumber) : undefined}
 					/>
 				</div>
 			)}

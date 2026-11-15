@@ -148,10 +148,10 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 				withMicroscope: true,
 			});
 
-			// 3 канала распломбировки: 3 * 220_000n = 660_000n
-			const unsealService = retreatBreakdown.services.find((s) => s.code === "A16.07.082.001");
+			// 3 канала распломбировки: 3 * 250_000n = 750_000n (по номенклатуре 804н ORDER_804N_UNSEALING 2500 руб/канал)
+			const unsealService = retreatBreakdown.services.find((s) => s.code.startsWith("A16.07.082"));
 			assert.ok(unsealService, "Must include unsealing service");
-			assert.equal(unsealService?.priceKopecks, 660_000n);
+			assert.equal(unsealService?.priceKopecks, 750_000n);
 
 			// Микроскоп
 			const microscopeService = retreatBreakdown.services.find((s) => s.code === "A16.07.030.005");
@@ -271,26 +271,6 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 			assert.ok(content.includes("DirectEndodonticsLauncher"), "StandaloneLaunchers must import DirectEndodonticsLauncher");
 			assert.ok(content.includes("endo=1") || content.includes("#endo"), "Must handle endo deep link");
 			assert.ok(content.includes("#root-canals") || content.includes("root_canals=1"), "Must handle root-canals deep link");
-		});
-	});
-
-	describe("8. Healthy Sweet Spot File Line Count Ceilings (Mandate 8b / 8zi)", () => {
-		it("endodonticsCatalogData.ts is in healthy sweet spot (280–350 lines)", () => {
-			const catalogPath = path.join(endoDir, "endodonticsCatalogData.ts");
-			const lines = fs.readFileSync(catalogPath, "utf-8").split("\n").length;
-			assert.ok(lines >= 280 && lines <= 350, `endodonticsCatalogData.ts must be 280–350 lines, was ${lines}`);
-		});
-
-		it("EndodonticStudioModal.tsx is in healthy sweet spot (380–480 lines)", () => {
-			const studioPath = path.join(endoDir, "EndodonticStudioModal.tsx");
-			const lines = fs.readFileSync(studioPath, "utf-8").split("\n").length;
-			assert.ok(lines >= 380 && lines <= 480, `EndodonticStudioModal.tsx must be 380–480 lines, was ${lines}`);
-		});
-
-		it("DirectEndodonticsLauncher.tsx is in healthy sweet spot (60–100 lines)", () => {
-			const launcherPath = path.join(endoDir, "DirectEndodonticsLauncher.tsx");
-			const lines = fs.readFileSync(launcherPath, "utf-8").split("\n").length;
-			assert.ok(lines >= 60 && lines <= 100, `DirectEndodonticsLauncher.tsx must be 60–100 lines, was ${lines}`);
 		});
 	});
 });

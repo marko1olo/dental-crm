@@ -38,6 +38,7 @@ export function EmkEndoSection({
 					(typeof visitNoteForm?.complaint === "string" ? "Пульпит / Лечение каналов" : undefined)
 				}
 				patientId={visitNoteForm?.patientId}
+				visitId={visitNoteForm?.visitId || visitNoteForm?.id}
 				isLocked={isLocked}
 				onInsertToDiary={handleInsertToDiary}
 				onOpenFullModal={onOpenEndoModal}

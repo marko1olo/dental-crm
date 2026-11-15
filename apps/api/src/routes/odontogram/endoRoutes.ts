@@ -403,7 +403,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		if (dbOffline || !patientExists) {
 			const simulatedState = {
 				toothNumber,
-				state: parsed.data.state || (parsed.data.stageStamp === "TEMP_CAOH2" ? "Pulpitis" : "Root_Canal_Treated"),
+				state: parsed.data.state || (parsed.data.stageStamp === "TEMP_CAOH2" ? "Periodontitis" : "Root_Canal_Treated"),
 				surfaces: parsed.data.surfaces || null,
 				notes: clinicalNotesText,
 				canalMeasurements: sanitizedCanals,
@@ -431,15 +431,18 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					)
 					.limit(1);
 
+				// Сохраняем диагноз врача (Periodontitis не ломается на Pulpitis при наложении Ca(OH)2)
 				const targetState =
 					parsed.data.state ||
-					(parsed.data.stageStamp === "TEMP_CAOH2"
-						? "Pulpitis"
-						: "Root_Canal_Treated") ||
 					existing?.state ||
-					"Pulpitis";
+					(parsed.data.stageStamp === "TEMP_CAOH2"
+						? "Periodontitis"
+						: "Root_Canal_Treated");
 
 				const targetSurfaces = parsed.data.surfaces || existing?.surfaces || null;
+
+				// Защита заметок врача: если notes не передан или пустой — сохраняем существующий existing.notes
+				const finalNotesText = clinicalNotesText.trim().length > 0 ? clinicalNotesText : (existing?.notes ?? "");
 
 				await tx
 					.delete(toothStates)
@@ -484,7 +487,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 						toothNumber,
 						state: targetState,
 						surfaces: targetSurfaces,
-						notes: clinicalNotesText,
+						notes: finalNotesText,
 						canalMeasurements: sanitizedCanals,
 						updatedAt: now,
 						isSynced: false,
@@ -498,13 +501,18 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 						canalMeasurements: toothStates.canalMeasurements,
 					});
 
+				const resolvedClinicalData: EndoToothClinicalData = {
+					...clinicalData,
+					notes: finalNotesText,
+				};
+
 				return {
 					toothNumber: insertedRow?.toothNumber ?? toothNumber,
 					state: insertedRow?.state ?? targetState,
 					surfaces: insertedRow?.surfaces ?? targetSurfaces,
-					notes: insertedRow?.notes ?? clinicalNotesText,
+					notes: insertedRow?.notes ?? finalNotesText,
 					canalMeasurements: insertedRow?.canalMeasurements ?? sanitizedCanals,
-					clinicalData,
+					clinicalData: resolvedClinicalData,
 				};
 			});
 
@@ -518,7 +526,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			if (isDbUnavailable(dbErr)) {
 				const fallbackState = {
 					toothNumber,
-					state: parsed.data.state || "Root_Canal_Treated",
+					state: parsed.data.state || (parsed.data.stageStamp === "TEMP_CAOH2" ? "Periodontitis" : "Root_Canal_Treated"),
 					surfaces: parsed.data.surfaces || null,
 					notes: clinicalNotesText,
 					canalMeasurements: sanitizedCanals,

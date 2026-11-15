@@ -54,6 +54,10 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 					}}
 					toothNumber={Number(endoModalToothNumber)}
 					toothState={endoModalToothState}
+					visitId={
+						dashboard?.activeVisit?.id ||
+						(typeof dashboard?.activeVisitId === "string" ? dashboard.activeVisitId : undefined)
+					}
 					patientId={
 						activePatient?.id ||
 						(typeof dashboard?.activeVisit?.patientId === "string"

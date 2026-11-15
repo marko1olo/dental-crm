@@ -19,6 +19,7 @@ interface ToothDrawerAccordionsBodyProps {
 	onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	onOpenFamilyBilling?: (() => void) | undefined;
 	onOpenParentMemo?: (() => void) | undefined;
+	onOpenEndo?: ((toothNumber: number) => void) | undefined;
 	onApplyAnesthesia?: ToothContextDrawerProps["onApplyAnesthesia"];
 }
 
@@ -35,6 +36,7 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 	onOpenFullRadiology,
 	onOpenFamilyBilling,
 	onOpenParentMemo,
+	onOpenEndo,
 	onApplyAnesthesia,
 }) => {
 	return (
@@ -47,6 +49,7 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 				toggleSection={toggleSection}
 				onUpdateTooth={onUpdateTooth}
 				onInsertToProtocol={onInsertToProtocol}
+				onOpenEndo={onOpenEndo}
 			/>
 
 			<ToothDrawerAnesthesiaAccordion

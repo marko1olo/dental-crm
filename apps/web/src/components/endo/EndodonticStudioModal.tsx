@@ -30,6 +30,7 @@ export interface EndodonticStudioModalProps {
 	readonly onClose: () => void;
 	readonly toothNumber?: number | undefined;
 	readonly toothState?: string | undefined;
+	readonly visitId?: string | undefined;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly doctorName?: string | undefined;
@@ -240,14 +241,14 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		const dynamicApexLocator = allApex00 ? "0.0 Apex" : sanitized.map((c) => `${c.canalName}: ${c.apexLocatorReading || "0.0 Apex"}`).join("; ");
 		const clinicalData: EndoToothClinicalData = {
 			toothNumber: activeTooth, canals: sanitized, irrigation, rotarySystem, radiologyControl,
-			apexLocator: dynamicApexLocator, stageStamp, notes: "", updatedAt: new Date().toISOString(),
+			apexLocator: dynamicApexLocator, stageStamp, updatedAt: new Date().toISOString(),
 		};
 
 		try {
+			// Протокол эндодонтического лечения направляется строго в дневник приёма / treatmentPlan (без засорения objectiveStatus)
 			useVisitStore.getState().setVisitNoteForm((prev) => ({
 				...prev,
-				objectiveStatus: prev.objectiveStatus?.trim() ? `${prev.objectiveStatus.trim()}\n\n${generatedProtocolText}` : generatedProtocolText,
-				treatmentPlan: prev.treatmentPlan?.trim() ? `${prev.treatmentPlan.trim()}\nЭндодонтическое лечение #${activeTooth}` : `Эндодонтическое лечение #${activeTooth}`,
+				treatmentPlan: prev.treatmentPlan?.trim() ? `${prev.treatmentPlan.trim()}\n\n${generatedProtocolText}` : generatedProtocolText,
 			}));
 		} catch { /* safe */ }
 
@@ -330,7 +331,16 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		if (props.patientId) {
 			fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
 				method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({ toothNumber: activeTooth, canals: sanitized, irrigation, rotarySystem, radiologyControl, apexLocator: dynamicApexLocator, stageStamp, notes: "" }),
+				body: JSON.stringify({
+					toothNumber: activeTooth,
+					canals: sanitized,
+					irrigation,
+					rotarySystem,
+					radiologyControl,
+					apexLocator: dynamicApexLocator,
+					stageStamp,
+					...(props.visitId ? { visitId: props.visitId } : {}),
+				}),
 			}).catch((err) => {
 				console.error("[EndoStudioModal] Failed to persist endo state to backend:", err);
 				showToast("Сбой фоновой синхронизации каналов с сервером", "warning", 3000);

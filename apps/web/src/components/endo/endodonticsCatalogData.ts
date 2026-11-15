@@ -285,25 +285,8 @@ export function calculateEndoTreatmentCostKopecks(params: {
 	});
 
 	const services: Array<{ code: string; title: string; priceKopecks: bigint; quantity: number }> = [];
-	if (isRetreatment) {
-		services.push({
-			code: "A16.07.082.001",
-			title: `Распломбировка корневого канала зуба #${params.toothNumber} (х${count})`,
-			priceKopecks: 220_000n * BigInt(count),
-			quantity: count,
-		});
-	}
 	for (const s of estimate.services804n) {
-		if (s.code804n.startsWith("A16.07.082")) continue;
 		services.push({ code: s.code804n, title: s.title, priceKopecks: BigInt(s.totalPriceKopecks), quantity: s.quantity });
-	}
-	if (params.protocolId === "periodontitis_temp" || params.protocolId === "retreatment_unsealing") {
-		services.push({
-			code: "A16.07.082.002",
-			title: `Временное пломбирование каналов лечебной пастой Ca(OH)2 (х${count})`,
-			priceKopecks: 150_000n * BigInt(count),
-			quantity: count,
-		});
 	}
 	if (params.withRvg !== false) {
 		services.push({ code: "A06.07.003", title: "Прицельная радиовизиография контрольная (1 снимок)", priceKopecks: 60_000n, quantity: 1 });
