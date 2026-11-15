@@ -3,7 +3,7 @@ import { HardDrive, PhoneCall, Printer } from "lucide-react";
 
 interface Props {
 	kktStatus: string | null;
-	hotFolderStatus?: string;
+	hotFolderStatus?: string | undefined;
 	telephonyStatus: string | null;
 }
 

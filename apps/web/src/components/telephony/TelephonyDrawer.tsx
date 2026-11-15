@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { TelephonyStudioModal } from "./TelephonyStudioModal";
 import { TelephonyDrawerHeader } from "./TelephonyDrawerHeader";
 import { TelephonyActiveCallPanel } from "./drawerModules/TelephonyActiveCallPanel";
-import { TelephonyCallLogList } from "./drawerModules/TelephonyCallLogList";
+import { TelephonyCallLogList } from "./TelephonyCallList";
 import { TelephonyMissedCallsAlertBar } from "./drawerModules/TelephonyMissedCallsAlertBar";
 import { TelephonyDrawerTabs } from "./drawerModules/TelephonyDrawerTabs";
 import { useTelephonyDrawerController } from "./drawerModules/useTelephonyDrawerController";
@@ -15,7 +15,7 @@ if (typeof document !== "undefined") {
 
 export type { TelephonyDrawerProps };
 export * from "./drawerModules/telephonyDrawerTypes";
-export { TelephonyCallLogList } from "./drawerModules/TelephonyCallLogList";
+export { TelephonyCallLogList } from "./TelephonyCallList";
 export { TelephonyMissedCallsAlertBar } from "./drawerModules/TelephonyMissedCallsAlertBar";
 
 export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Element | null {
@@ -27,9 +27,10 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 		handleCopySmsConfirmation, handleOpenFullPatientView, handleCaptureLead,
 		handleQuickBookFromLog, handleCallbackFromLog, handleOpenPatientFromLog,
 		setShowTransferPanel, setShowOutcomePanel, isCapturingLead, smsCopied,
+		isDoctorMode, isSterileClinicalScreen,
 	} = ctrl;
 
-	if (!isDrawerOpen || hasPrimaryModal || isFullScreenStudioActive) {
+	if (!isDrawerOpen || hasPrimaryModal || isFullScreenStudioActive || isDoctorMode || isSterileClinicalScreen) {
 		return null;
 	}
 

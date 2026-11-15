@@ -5,7 +5,7 @@ export interface PatientFastPhoneIndex<T> {
 }
 
 // WeakMap cache for memoized indexed patient maps by list reference
-const patientFastIndexCache = new WeakMap<object, PatientFastPhoneIndex<never>>();
+const patientFastIndexCache = new WeakMap<object, PatientFastPhoneIndex<unknown>>();
 
 export function getOrCreatePatientFastIndex<
 	T extends {
@@ -14,7 +14,7 @@ export function getOrCreatePatientFastIndex<
 		administrativeProfile?: { legalRepresentativePhone?: string | null } | null;
 	},
 >(patientsList: readonly T[]): PatientFastPhoneIndex<T> {
-	const cached = patientFastIndexCache.get(patientsList);
+	const cached = patientFastIndexCache.get(patientsList) as PatientFastPhoneIndex<T> | undefined;
 	if (cached) return cached;
 
 	const byId = new Map<string, T>();
@@ -48,7 +48,7 @@ export function getOrCreatePatientFastIndex<
 		}
 	}
 
-	const index = { byId, byNational10, byCleanDigits };
-	patientFastIndexCache.set(patientsList, index);
+	const index: PatientFastPhoneIndex<T> = { byId, byNational10, byCleanDigits };
+	patientFastIndexCache.set(patientsList, index as PatientFastPhoneIndex<unknown>);
 	return index;
 }

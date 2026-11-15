@@ -9,3 +9,5 @@ export * from "./runtimeRouter.js";
 export { isDesktopApp, isMobileApp, isPwaApp, isWebApp } from "./desktopBridge.js";
 export { CLINICAL_TOUCH_TARGETS, validateClinicalActionButtonErgonomics } from "./mobileBridge.js";
 export type { ClinicalAudioFeedbackType, ParsedGs1DataMatrix } from "./mobileBridge.js";
+export { CallKitBridge, callKitBridge } from "../services/telephony/CallKitBridge.js";
+export type { CallKitBridgeConfig } from "../services/telephony/CallKitBridge.js";

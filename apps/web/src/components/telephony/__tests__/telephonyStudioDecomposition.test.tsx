@@ -69,6 +69,7 @@ describe("Telephony Studio Decomposed Architecture (Wave 26)", () => {
 	describe("3. TelephonyCallHistoryList (Patient, Audio Player, Somatic Alerts)", () => {
 		it("renders call details with patient card, WhatsApp and quick note presets", () => {
 			const call = TELEPHONY_CATALOG_DATA[0];
+			assert.ok(call, "Fixture must exist");
 			const html = renderToString(
 				<TelephonyCallHistoryList
 					selectedCall={call}

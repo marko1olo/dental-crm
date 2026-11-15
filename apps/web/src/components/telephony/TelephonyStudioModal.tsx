@@ -133,11 +133,11 @@ export const TelephonySoftphoneDialpad: React.FC<TelephonySoftphoneDialpadProps>
 };
 
 export interface TelephonyCallHistoryListProps {
-	selectedCall?: TelephonyCatalogCall;
+	selectedCall?: TelephonyCatalogCall | undefined;
 	callNote: string;
 	onCallNoteChange: (note: string) => void;
 	onOpenCard: () => void;
-	onCallPatient?: () => void;
+	onCallPatient?: (() => void) | undefined;
 }
 
 export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> = ({

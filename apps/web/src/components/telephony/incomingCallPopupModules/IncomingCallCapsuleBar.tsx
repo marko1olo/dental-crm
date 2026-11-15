@@ -39,7 +39,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 					{lastVisitText}
 				</span>
 				{hasAcutePain && (
-					<span className="inline-flex items-center gap-1 text-[11px] font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 px-1.5 py-0.5 rounded-full shrink-0" data-testid="capsule-acute-pain-chip" title="Острая боль!">
+					<span className="inline-flex items-center gap-1 text-[11px] font-black text-[var(--danger)] bg-[var(--danger-soft)] border border-[var(--danger-soft)] px-1.5 py-0.5 rounded-full shrink-0" data-testid="capsule-acute-pain-chip" title="Острая боль!">
 						<Zap size={11} className="shrink-0" /><span className="hidden sm:inline">Острая боль</span>
 					</span>
 				)}
@@ -65,7 +65,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 						<button type="button" onClick={handleAnswerCall} className="px-2 sm:px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] sm:text-xs font-bold inline-flex items-center gap-1 min-h-[32px] shadow-xs cursor-pointer active:scale-95" title="Принять вызов" data-testid="capsule-answer-call-btn">
 							<PhoneCall size={12} className="animate-pulse" /><span>Принять</span>
 						</button>
-						<button type="button" onClick={handleReject} className="px-2 sm:px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 dark:text-rose-300 border border-rose-200 text-[11px] sm:text-xs font-bold inline-flex items-center gap-1 min-h-[32px] cursor-pointer" title="Сбросить вызов" data-testid="capsule-reject-call-btn">
+						<button type="button" onClick={handleReject} className="px-2 sm:px-2.5 py-1 rounded-full bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-soft)] text-[11px] sm:text-xs font-bold inline-flex items-center gap-1 min-h-[32px] cursor-pointer" title="Сбросить вызов" data-testid="capsule-reject-call-btn">
 							<PhoneOff size={12} /><span className="hidden sm:inline">Сброс</span>
 						</button>
 					</>
@@ -74,7 +74,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 						<Check size={12} /><span>Закрыть</span>
 					</button>
 				) : (
-					<button type="button" onClick={handleEndCall} className="px-2.5 py-1 rounded-full bg-rose-600 text-white text-[11px] font-bold min-h-[32px] cursor-pointer" data-testid="capsule-hangup-call-btn">
+					<button type="button" onClick={handleEndCall} className="px-2.5 py-1 rounded-full bg-[var(--danger)] text-white text-[11px] font-bold min-h-[32px] cursor-pointer" data-testid="capsule-hangup-call-btn">
 						<PhoneOff size={12} /><span>Завершить</span>
 					</button>
 				)}
@@ -89,7 +89,7 @@ export function IncomingCallCapsuleBar({ ctrl }: IncomingCallHeaderBarProps): Re
 				<button type="button" onClick={() => { closeCallDrawer(); setIsExpanded(true); }} className="min-h-[32px] min-w-[32px] p-1 rounded-full hover:bg-[var(--paper-soft)] text-[var(--muted)] flex items-center justify-center cursor-pointer" title="Развернуть детали" aria-label="Развернуть звонок" data-testid="capsule-expand-btn">
 					<ChevronDown size={16} />
 				</button>
-				<button type="button" onClick={dismissCall} className="min-h-[32px] min-w-[32px] p-1 rounded-full hover:bg-rose-50 text-[var(--muted)] hover:text-rose-600 hidden sm:flex items-center justify-center cursor-pointer" title="Свернуть" aria-label="Свернуть звонок" data-testid="capsule-collapse-btn">
+				<button type="button" onClick={dismissCall} className="min-h-[32px] min-w-[32px] p-1 rounded-full hover:bg-[var(--danger-soft)] text-[var(--muted)] hover:text-[var(--danger)] hidden sm:flex items-center justify-center cursor-pointer" title="Свернуть" aria-label="Свернуть звонок" data-testid="capsule-collapse-btn">
 					<ChevronUp size={15} />
 				</button>
 			</div>

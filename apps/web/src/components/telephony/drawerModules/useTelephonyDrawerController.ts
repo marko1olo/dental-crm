@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useAppStore } from "../../../store/appStore";
 import {
 	type IncomingCallPayload,
 	useTelephonyStore,
@@ -15,6 +16,17 @@ export function useTelephonyDrawerController(
 	propOnClose?: () => void,
 	propCall?: IncomingCallPayload | null,
 ) {
+	const currentView = useAppStore((s) => s.currentView);
+	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
+	const hash = typeof window !== "undefined" ? window.location.hash : "";
+	const isSterileClinicalScreen =
+		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(currentView as string) ||
+		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(hash);
+	const isDoctorMode =
+		selectedWorkspaceRole === "doctor" ||
+		currentView === "visit" ||
+		isSterileClinicalScreen;
+
 	const storeIsOpenHook = useTelephonyStore((s) => s.isCallDrawerOpen);
 	const storeIsOpen = typeof window === "undefined"
 		? useTelephonyStore.getState().isCallDrawerOpen
@@ -29,7 +41,8 @@ export function useTelephonyDrawerController(
 	const startCallTransfer = useTelephonyStore((s) => s.startCallTransfer);
 	const recordCallOutcome = useTelephonyStore((s) => s.recordCallOutcome);
 
-	const isDrawerOpen = propIsOpen !== undefined ? propIsOpen : storeIsOpen;
+	const isDrawerPermitted = !isDoctorMode && !isSterileClinicalScreen;
+	const isDrawerOpen = (propIsOpen !== undefined ? propIsOpen : storeIsOpen) && isDrawerPermitted;
 	const handleClose = propOnClose || closeCallDrawer;
 	const currentCall = propCall !== undefined ? propCall : activeCall;
 	const hasPrimaryModal = useUiSurfaceStore((s) => s.hasPrimaryModal);
@@ -58,12 +71,12 @@ export function useTelephonyDrawerController(
 	}, [isDrawerOpen, handleClose]);
 
 	useEffect(() => {
-		if (isDrawerOpen && !hasPrimaryModal && !isFullScreenStudioActive) {
+		if (isDrawerOpen && !hasPrimaryModal && !isFullScreenStudioActive && isDrawerPermitted) {
 			useUiSurfaceStore.getState().openDrawer("telephony");
 		} else if (useUiSurfaceStore.getState().activeDrawer === "telephony") {
 			useUiSurfaceStore.getState().closeDrawer("telephony");
 		}
-	}, [isDrawerOpen, hasPrimaryModal, isFullScreenStudioActive]);
+	}, [isDrawerOpen, hasPrimaryModal, isFullScreenStudioActive, isDrawerPermitted]);
 
 	const callData = useIncomingCallData(currentCall, dashboard, () => {});
 
@@ -99,5 +112,6 @@ export function useTelephonyDrawerController(
 		handleCallbackFromLog: logActions.handleCallbackFromLog,
 		handleOpenPatientFromLog: logActions.handleOpenPatientFromLog,
 		startCallTransfer, recordCallOutcome,
+		isDoctorMode, isSterileClinicalScreen, isDrawerPermitted,
 	};
 }

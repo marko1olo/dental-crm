@@ -12,9 +12,9 @@ export const IncomingCallerSomaticAlerts: React.FC<IncomingCallerSomaticAlertsPr
 	if (somaticAlerts.length === 0) return null;
 
 	return (
-		<div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-200 space-y-1.5">
-			<div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300">
-				<AlertTriangle size={14} className="text-rose-600" />
+		<div className="p-3 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger-soft)] text-[var(--ink)] space-y-1.5">
+			<div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--danger)]">
+				<AlertTriangle size={14} className="text-[var(--danger)]" />
 				<span>Медицинские предупреждения:</span>
 			</div>
 			<div className="space-y-1">
@@ -35,15 +35,19 @@ export const IncomingCallerSomaticAlerts: React.FC<IncomingCallerSomaticAlertsPr
 												: alert.severity === "info"
 													? "Информация"
 													: "Внимание";
-					const alertText = alert.label || (alert as any).text || "Предупреждение";
+					const alertText =
+						alert.label ||
+						("text" in alert && typeof (alert as Record<string, unknown>).text === "string"
+							? String((alert as Record<string, unknown>).text)
+							: "Предупреждение");
 
 					return (
 						// biome-ignore lint/suspicious/noArrayIndexKey: simple alert items
 						<div key={idx} className="flex items-start gap-1.5 text-xs">
-							<span className="text-rose-500 font-bold">•</span>
+							<span className="text-[var(--danger)] font-bold">•</span>
 							<span>
 								<strong>{alertText}</strong>
-								<span className="text-rose-600/80 dark:text-rose-400/80 ml-1">
+								<span className="text-[var(--ink-muted)] ml-1">
 									({categoryLabel})
 								</span>
 							</span>

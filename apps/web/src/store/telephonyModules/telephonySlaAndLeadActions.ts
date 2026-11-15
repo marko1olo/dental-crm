@@ -175,10 +175,11 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 					status = "answered";
 				} else if (c.status === "needs_call" || c.status === "missed") {
 					status = "missed";
+				} else if (c.status === "held") {
+					status = "connected";
 				} else if (
 					c.status === "ringing" ||
 					c.status === "connected" ||
-					c.status === "held" ||
 					c.status === "rejected"
 				) {
 					status = c.status;

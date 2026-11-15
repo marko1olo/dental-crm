@@ -38,7 +38,7 @@ export function IncomingCallHeaderBar({ ctrl }: IncomingCallHeaderBarProps): Rea
 							<PhoneCall size={13} className="animate-pulse" />
 							<span>Ответить</span>
 						</button>
-						<button type="button" onClick={handleReject} className="min-h-[34px] px-2 sm:px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0" title="Отклонить звонок" data-testid="badge-header-reject-btn">
+						<button type="button" onClick={handleReject} className="min-h-[34px] px-2 sm:px-2.5 rounded-xl bg-[var(--danger-soft)] hover:bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-soft)] text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0" title="Отклонить звонок" data-testid="badge-header-reject-btn">
 							<PhoneOff size={13} />
 							<span>Сброс</span>
 						</button>
@@ -49,7 +49,7 @@ export function IncomingCallHeaderBar({ ctrl }: IncomingCallHeaderBarProps): Rea
 						<span>Закрыть</span>
 					</button>
 				) : (
-					<button type="button" onClick={handleEndCall} className="min-h-[34px] px-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0" title="Завершить разговор" data-testid="badge-header-hangup-btn">
+					<button type="button" onClick={handleEndCall} className="min-h-[34px] px-2.5 rounded-xl bg-[var(--danger)] hover:opacity-90 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0" title="Завершить разговор" data-testid="badge-header-hangup-btn">
 						<PhoneOff size={13} />
 						<span>Завершить</span>
 					</button>
@@ -57,7 +57,7 @@ export function IncomingCallHeaderBar({ ctrl }: IncomingCallHeaderBarProps): Rea
 				<button type="button" onClick={() => setIsExpanded(false)} className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-all cursor-pointer shrink-0" title="Свернуть в компактную капсулу" aria-label="Свернуть в капсулу" data-testid="badge-collapse-btn">
 					<ChevronUp size={15} />
 				</button>
-				<button type="button" onClick={dismissCall} className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 transition-all cursor-pointer shrink-0" title="Свернуть бейдж звонка" aria-label="Закрыть уведомление">
+				<button type="button" onClick={dismissCall} className="min-h-[32px] min-w-[32px] rounded-lg flex items-center justify-center hover:bg-[var(--danger-soft)] text-[var(--muted,#64748b)] hover:text-[var(--danger)] transition-all cursor-pointer shrink-0" title="Свернуть бейдж звонка" aria-label="Закрыть уведомление">
 					<X size={15} />
 				</button>
 			</div>

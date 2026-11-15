@@ -180,13 +180,13 @@ export interface TelephonyCatalogCall {
 	balanceRub: number;
 	lastVisitDate: string | null;
 	attendingDoctor: string | null;
-	clinicalNote?: string;
-	somaticAlert?: string | null;
+	clinicalNote?: string | undefined;
+	somaticAlert?: string | null | undefined;
 	durationSeconds: number;
 	timestampText: string;
 	hasRecording: boolean;
-	recordingUrl?: string;
-	transcriptSnippet?: string;
+	recordingUrl?: string | undefined;
+	transcriptSnippet?: string | undefined;
 }
 
 /**

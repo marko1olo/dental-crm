@@ -8,7 +8,7 @@
  * 4. Связка с SSOT SLA риска (evaluateLabSlaRisk).
  */
 
-import { isValidVitaShade } from "./vitaPalette.js";
+import { isValidVitaShade } from "./labOrders.js";
 
 export type LabSlaRiskLevel = "safe" | "warning_approaching" | "critical_under_24h" | "breached_overdue";
 
@@ -37,8 +37,6 @@ export interface LabOrderValidationResult {
 	readonly warnings: readonly string[];
 	readonly slaRisk: LabSlaRiskLevel;
 }
-
-export { isValidVitaShade };
 
 export function validateLabOrderInput(input: LabOrderValidationInput): LabOrderValidationResult {
 	const errors: string[] = [];

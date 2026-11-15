@@ -22,7 +22,7 @@ export function useDrawerConfirmationActions(params: {
 			patientName: callData.callerName,
 			doctorName: callData.upcomingAppointment.doctorName,
 			appointmentStartsAt: callData.upcomingAppointment.startsAt,
-			clinicName: dashboard?.clinicSettings?.name || "DENTE",
+			clinicName: dashboard?.clinicSettings?.profile?.clinicName || "DENTE",
 		});
 		openWhatsAppChat(currentCall.phone, msg);
 		showToast(`Подтверждение приёма отправлено в WhatsApp (${callData.callerName})`, "success");
@@ -37,7 +37,7 @@ export function useDrawerConfirmationActions(params: {
 			patientName: callData.callerName,
 			doctorName: callData.upcomingAppointment.doctorName,
 			appointmentStartsAt: callData.upcomingAppointment.startsAt,
-			clinicName: dashboard?.clinicSettings?.name || "DENTE",
+			clinicName: dashboard?.clinicSettings?.profile?.clinicName || "DENTE",
 		});
 		navigator.clipboard?.writeText(msg).then(() => {
 			setSmsCopied(true);

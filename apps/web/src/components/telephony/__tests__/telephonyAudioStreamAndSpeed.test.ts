@@ -59,8 +59,8 @@ describe("Telephony Audio Stream & Speed Lifecycle (Mandate 8b, 8e)", () => {
 
 	it("3. TelephonyAudioStreamManager handles RTCPeerConnection negotiation, ICE, and stats polling", async () => {
 		// Mock RTCPeerConnection in node test environment
-		let localDesc: RTCSessionDescriptionInit | null = null;
-		let remoteDesc: RTCSessionDescriptionInit | null = null;
+		let localDesc: { type?: string; sdp?: string } | null = null;
+		let remoteDesc: { type?: string; sdp?: string } | null = null;
 		const candidates: any[] = [];
 
 		class MockRTCPeerConnection {
@@ -133,7 +133,7 @@ describe("Telephony Audio Stream & Speed Lifecycle (Mandate 8b, 8e)", () => {
 		assert.ok(localDesc);
 
 		await manager.setRemoteDescription({ type: "answer", sdp: "v=0..." });
-		assert.equal(remoteDesc?.type, "answer");
+		assert.equal((remoteDesc as { type?: string } | null)?.type, "answer");
 
 		await manager.addIceCandidate({ candidate: "candidate:1 1 UDP ...", sdpMid: "0", sdpMLineIndex: 0 });
 		assert.equal(candidates.length, 1);

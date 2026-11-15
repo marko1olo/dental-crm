@@ -3,16 +3,10 @@ import { clinicalToothRowsSchema } from "./installmentAndLabOrderSchemas.js";
 import { documentDateLikeStringSchema } from "./speechProviderSchemas.js";
 import { nonNegativeMoneyRubSchema } from "../money.js";
 
-export const labOrderStatusSchema = z.enum([
-	"draft",
-	"sent",
-	"in_progress",
-	"shipped",
-	"received",
-	"refitting",
-	"completed",
-	"cancelled",
-]);
+export {
+	labOrderStatusSchema,
+	type LabOrderStatus,
+} from "../lab/labOrders.js";
 
 export const STERILIZATION_PACKAGING_TYPES = {
 	kraft_heat_sealed: {

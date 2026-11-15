@@ -24,16 +24,14 @@ export function LiveCallAudioVisualizer({
 	className = "",
 	showStats = true,
 }: LiveCallAudioVisualizerProps): React.JSX.Element | null {
-	const [waveform, setWaveform] = useState<number[]>([
-		0.1, 0.15, 0.2, 0.35, 0.5, 0.65, 0.5, 0.35, 0.2, 0.15, 0.1, 0.08,
-	]);
+	const [waveform, setWaveform] = useState<number[]>(() => Array(14).fill(0));
 	const [stats, setStats] = useState<TelephonyAudioStreamStats>({
-		inputLevel: 0.75,
-		outputLevel: 1.0,
-		jitterMs: 12,
+		inputLevel: 0,
+		outputLevel: 0,
+		jitterMs: 0,
 		packetsLost: 0,
-		roundTripTimeMs: 25,
-		codecName: "opus/48000/2",
+		roundTripTimeMs: 0,
+		codecName: undefined,
 	});
 	const [micError, setMicError] = useState<string | null>(null);
 	const animFrameRef = useRef<number | null>(null);
@@ -81,7 +79,7 @@ export function LiveCallAudioVisualizer({
 			data-testid="live-call-audio-visualizer"
 		>
 			{micError && (
-				<div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+				<div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-soft)] text-[var(--danger)] text-xs font-semibold">
 					<AlertCircle size={14} className="shrink-0" />
 					<span className="truncate">{micError}</span>
 				</div>
@@ -90,7 +88,7 @@ export function LiveCallAudioVisualizer({
 			<div className="flex items-center justify-between gap-2">
 				<div className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)]">
 					{isMuted ? (
-						<MicOff size={13} className="text-rose-500" />
+						<MicOff size={13} className="text-[var(--danger)]" />
 					) : (
 						<Mic size={13} className="text-[var(--teal,#0d9488)]" />
 					)}
@@ -103,7 +101,7 @@ export function LiveCallAudioVisualizer({
 					<div className="flex items-center gap-2 text-[11px] font-mono text-[var(--ink-muted)] shrink-0">
 						<span className="flex items-center gap-1" title="Задержка RTT">
 							<Wifi size={11} className="text-emerald-500" />
-							<span>{stats.roundTripTimeMs ?? 25} мс</span>
+							<span>{stats.roundTripTimeMs ?? 0} мс</span>
 						</span>
 						<span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-[var(--paper-strong)] border border-[var(--line)] text-[10px]">
 							{formatCodec(stats.codecName)}

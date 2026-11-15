@@ -20,6 +20,18 @@ interface MessagingParams {
 	dashboard: DashboardResponse | null | undefined;
 }
 
+function resolveClinicBrandName(dashboard: DashboardResponse | null | undefined): string {
+	const settings = dashboard?.clinicSettings as Record<string, unknown> | undefined;
+	const profile = settings?.profile as Record<string, unknown> | undefined;
+	if (typeof profile?.clinicName === "string" && profile.clinicName.trim()) {
+		return profile.clinicName.trim();
+	}
+	if (typeof settings?.name === "string" && settings.name.trim()) {
+		return settings.name.trim();
+	}
+	return DEFAULT_CLINIC_BRAND_NAME;
+}
+
 export function useIncomingCallMessagingActions({
 	currentCall, resolvedPatient, upcomingAppointment, callerName, formattedPhone, dashboard,
 }: MessagingParams) {
@@ -30,7 +42,7 @@ export function useIncomingCallMessagingActions({
 		const msg = generateAppointmentConfirmationMessage({
 			patientName: callerName, doctorName: upcomingAppointment?.doctorName || null,
 			appointmentStartsAt: upcomingAppointment?.startsAt || new Date().toISOString(),
-			clinicName: dashboard?.clinicSettings?.profile?.clinicName || (dashboard?.clinicSettings as any)?.name || DEFAULT_CLINIC_BRAND_NAME,
+			clinicName: resolveClinicBrandName(dashboard),
 		});
 		openWhatsAppChat(currentCall.phone, msg);
 		if (resolvedPatient?.id) {
@@ -50,7 +62,7 @@ export function useIncomingCallMessagingActions({
 		const msg = generateAppointmentConfirmationMessage({
 			patientName: callerName, doctorName: upcomingAppointment.doctorName,
 			appointmentStartsAt: upcomingAppointment.startsAt,
-			clinicName: dashboard?.clinicSettings?.profile?.clinicName || (dashboard?.clinicSettings as any)?.name || DEFAULT_CLINIC_BRAND_NAME,
+			clinicName: resolveClinicBrandName(dashboard),
 		});
 		navigator.clipboard?.writeText(msg).then(() => {
 			setSmsCopied(true);

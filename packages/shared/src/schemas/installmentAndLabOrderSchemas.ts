@@ -390,145 +390,18 @@ export const labWorkOrderPayloadSchema = z.object({
 
 export type LabWorkOrderPayload = z.infer<typeof labWorkOrderPayloadSchema>;
 
-export const VITA_CLASSICAL_SHADES = [
-	"A1",
-	"A2",
-	"A3",
-	"A3.5",
-	"A4",
-	"B1",
-	"B2",
-	"B3",
-	"B4",
-	"C1",
-	"C2",
-	"C3",
-	"C4",
-	"D2",
-	"D3",
-	"D4",
-] as const;
-
-export const VITA_BLEACH_SHADES = [
-	"0M1",
-	"0M2",
-	"0M3",
-	"BL1",
-	"BL2",
-	"BL3",
-	"BL4",
-	"OM1",
-	"OM2",
-	"OM3",
-] as const;
-
-export const VITA_3D_MASTER_SHADES = [
-	"1M1",
-	"1M2",
-	"2L1.5",
-	"2L2.5",
-	"2M1",
-	"2M2",
-	"2M3",
-	"2R1.5",
-	"2R2.5",
-	"3L1.5",
-	"3L2.5",
-	"3M1",
-	"3M2",
-	"3M3",
-	"3R1.5",
-	"3R2.5",
-	"4L1.5",
-	"4L2.5",
-	"4M1",
-	"4M2",
-	"4M3",
-	"4R1.5",
-	"4R2.5",
-	"5M1",
-	"5M2",
-	"5M3",
-] as const;
-
-export const ALL_VALID_VITA_SHADES: ReadonlySet<string> = new Set<string>([
-	...VITA_CLASSICAL_SHADES,
-	...VITA_BLEACH_SHADES,
-	...VITA_3D_MASTER_SHADES,
-]);
-
-export function normalizeVitaShade(shade: string): string {
-	if (!shade) return "";
-	let s = shade.trim().toUpperCase();
-
-	// Transliterate Cyrillic homoglyphs using explicit Unicode code points:
-	// \u0410: А -> A, \u0412: В -> B, \u0411: Б -> B, \u0421: С -> C, \u0414: Д -> D,
-	// \u041C: М -> M, \u0420: Р -> R, \u041B: Л -> L, \u041E: О -> O
-	s = s
-		.replace(/\u0410/g, "A")
-		.replace(/\u0412/g, "B")
-		.replace(/\u0411/g, "B")
-		.replace(/\u0421/g, "C")
-		.replace(/\u0414/g, "D")
-		.replace(/\u041C/g, "M")
-		.replace(/\u0420/g, "R")
-		.replace(/\u041B/g, "L")
-		.replace(/\u041E/g, "O");
-
-	// Strip extraneous punctuation, hyphens, and whitespace
-	s = s.replace(/[\s\-_]+/g, "");
-
-	// Normalize decimal comma to dot
-	s = s.replace(/,/g, ".");
-
-	// Canonicalize OM1-OM3 (letter O) to 0M1-0M3 (digit 0)
-	if (/^OM[1-3]$/.test(s)) {
-		s = "0" + s.slice(1);
-	}
-
-	return s;
-}
-
-export function isValidVitaShade(shade?: string | null | undefined): boolean {
-	if (!shade) return false;
-	return ALL_VALID_VITA_SHADES.has(normalizeVitaShade(shade));
-}
-
-export const VITA_SHADE_VALIDATION_MESSAGE =
-	"Недопустимый оттенок зуба. Используйте стандарт VITA Classical (A1–D4), VITA 3D-Master (1M1–5M3) или Bleach (0M1–0M3, BL1–BL4).";
-
-export const vitaShadeSchema = z
-	.string()
-	.trim()
-	.transform((val) => normalizeVitaShade(val))
-	.refine((val) => ALL_VALID_VITA_SHADES.has(val), {
-		message: VITA_SHADE_VALIDATION_MESSAGE,
-	});
-
-export const LAB_ORDER_MATERIALS = {
-	zirconia_multilayer: "Диоксид циркония многослойный (Multi-layer)",
-	zirconia_ht: "Диоксид циркония высокопрозрачный (HT/ST)",
-	emax_cad: "Литий-дисиликатная керамика (IPS e.max CAD)",
-	emax_press: "Пресс-керамика (IPS e.max Press)",
-	pfm: "Металлокерамика (PFM / CoCr/NiCr)",
-	pmma_temp: "Временная пластмасса PMMA (CAD/CAM)",
-	composite: "Композит лабораторный (Nano-hybrid)",
-	titanium_abutment: "Индивидуальный титановый абатмент",
-	cocr_framework: "Литой/фрезерованный бюгельный каркас (CoCr)",
-	peek: "Биополимер PEEK / BioHPP",
-} as const;
-
-export type LabOrderMaterialKey = keyof typeof LAB_ORDER_MATERIALS;
-
-export const LAB_ORDER_STATUS_LABELS = {
-	draft: "Черновик",
-	sent: "Отправлен в лабораторию",
-	in_progress: "В работе у техника",
-	shipped: "Отправлен в клинику",
-	received: "Получен клиникой",
-	refitting: "На примерке / доработке",
-	completed: "Установлен / завершен",
-	cancelled: "Отменен",
-} as const;
-
-export type LabOrderStatusKey = keyof typeof LAB_ORDER_STATUS_LABELS;
+// ─── SSOT RE-EXPORTS FROM CANONICAL LAB MODULE (MANDATE 8bf) ─────────────────
+export {
+	VITA_CLASSICAL_SHADES,
+	VITA_BLEACH_SHADES,
+	VITA_3D_MASTER_SHADES,
+	ALL_VALID_VITA_SHADES,
+	normalizeVitaShade,
+	isValidVitaShade,
+	VITA_SHADE_VALIDATION_MESSAGE,
+	vitaShadeSchema,
+	LAB_ORDER_MATERIALS,
+	type LabOrderMaterialKey,
+	LAB_ORDER_STATUS_LABELS,
+	type LabOrderStatusKey,
+} from "../lab/labOrders.js";

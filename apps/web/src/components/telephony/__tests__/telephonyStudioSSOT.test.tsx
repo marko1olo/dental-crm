@@ -89,8 +89,10 @@ describe("TelephonyStudioModal & SSOT Architecture", () => {
 			const html = renderToString(<TelephonyStudioModal isOpen={true} onClose={() => {}} />);
 
 			// Call records from SSOT catalog
-			expect(html).toContain(TELEPHONY_CATALOG_DATA[0].callerName);
-			expect(html).toContain(formatPhoneRu(TELEPHONY_CATALOG_DATA[0].phone));
+			const firstCall = TELEPHONY_CATALOG_DATA[0];
+			assert.ok(firstCall, "First call fixture must exist");
+			expect(html).toContain(firstCall.callerName);
+			expect(html).toContain(formatPhoneRu(firstCall.phone));
 
 			// Dialpad keys
 			expect(html).toContain('data-testid="dialpad-key-1"');

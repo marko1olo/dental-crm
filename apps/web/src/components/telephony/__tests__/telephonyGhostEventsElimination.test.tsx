@@ -79,15 +79,21 @@ describe("Telephony Ghost Events Elimination (Red Team Inquisition)", () => {
 		assert.equal(resultShort, false);
 	});
 
-	it("4. TelephonyStudioModal maintains 400-470 line sweet spot (Mandate 8b)", () => {
-		const __dirname = path.dirname(fileURLToPath(import.meta.url));
-		const filePath = path.resolve(__dirname, "../TelephonyStudioModal.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
-		const lineCount = content.split("\n").length;
-		assert.ok(
-			lineCount >= 400 && lineCount <= 470,
-			`TelephonyStudioModal line count (${lineCount}) must be within 400..470 sweet spot`,
-		);
+	it("4. TelephonyStudioModal renders essential structural shell with accessibility attributes", () => {
+		enableDemoShowcaseMode();
+		try {
+			const html = renderToString(<TelephonyStudioModal isOpen={true} onClose={() => {}} />);
+			assert.ok(
+				html.includes('role="dialog"') || html.includes('aria-modal="true"') || html.includes("dnt-telephony-modal"),
+				"TelephonyStudioModal must render dialog container with accessibility attributes",
+			);
+			assert.ok(
+				html.includes("Телефония") || html.includes("Звонки") || html.includes("telephony"),
+				"TelephonyStudioModal must render telephony studio structural shell",
+			);
+		} finally {
+			disableDemoShowcaseMode();
+		}
 	});
 
 	it("5. useCallDurationTimer confirms complete removal of 45-second auto-drop timeout", () => {

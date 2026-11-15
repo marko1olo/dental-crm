@@ -83,12 +83,13 @@ export function useTelephonyRealtime() {
 
 	useEffect(() => {
 		const handleMock = (e: Event) => {
+			if (isDoctorMode) return;
 			const custom = e as CustomEvent<IncomingCallPayload>;
 			if (custom.detail) triggerIncomingCall(custom.detail);
 		};
 		window.addEventListener("dente:telephony-mock-incoming", handleMock);
 		return () => window.removeEventListener("dente:telephony-mock-incoming", handleMock);
-	}, [triggerIncomingCall]);
+	}, [triggerIncomingCall, isDoctorMode]);
 
 	return { isConnected };
 }

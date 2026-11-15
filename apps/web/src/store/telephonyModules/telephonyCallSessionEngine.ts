@@ -4,6 +4,7 @@ import type {
 	Patient,
 	PatientInsight,
 	StaffMember,
+	TelephonyPatientLike,
 	TreatmentPlanItem,
 	TreatmentPlanScenario,
 } from "@dental/shared";
@@ -42,7 +43,7 @@ export {
  * Computes structured financial metrics for a patient.
  */
 export function calculatePatientFinancialStatus(
-	patient: Patient | null | undefined,
+	patient: Patient | TelephonyPatientLike | null | undefined,
 	insight?: PatientInsight | null | undefined,
 	insuranceContracts?: InsuranceContract[] | null | undefined,
 ): PatientFinancialSummary {
@@ -76,8 +77,10 @@ export function calculatePatientFinancialStatus(
 		balanceRub > 0 ? `+${formatRub(balanceRub)}` : formatRub(balanceRub);
 	const formattedDebt = formatRub(debtRub);
 
+	const adminProfile = "administrativeProfile" in patient ? patient.administrativeProfile : undefined;
 	const policyNumber =
-		patient.administrativeProfile?.insurancePolicyNumber || null;
+		adminProfile?.insurancePolicyNumber ||
+		("insurancePolicyNumber" in patient && typeof patient.insurancePolicyNumber === "string" ? patient.insurancePolicyNumber : null);
 
 	let insuranceName: string | null = null;
 	if (insuranceContracts && insuranceContracts.length > 0) {
