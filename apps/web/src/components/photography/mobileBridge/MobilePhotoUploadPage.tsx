@@ -37,6 +37,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 	const [sessionData, setSessionData] = useState<{
 		patientInitials: string;
 		expiresAt: number;
+		slots?: MobilePhotoSlot[] | undefined;
 	} | null>(null);
 
 	const [selectedSlotId, setSelectedSlotId] = useState<string>("portrait_smile");
@@ -59,10 +60,25 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				throw new Error(errData.message || "Сессия не найдена или срок действия истек.");
 			}
 			const data = await res.json();
+			const receivedSlots: MobilePhotoSlot[] | undefined = Array.isArray(data.slots) && data.slots.length > 0
+				? data.slots.map((s: { id: string; titleRu?: string; shortLabelRu?: string; descriptionRu?: string; instructionRu?: string }) => ({
+						id: s.id,
+						titleRu: s.titleRu || s.shortLabelRu || s.id,
+						shortLabelRu: s.shortLabelRu || s.titleRu || s.id,
+						instructionRu: s.instructionRu || s.descriptionRu || "Клинический снимок",
+				  }))
+				: undefined;
+
 			setSessionData({
 				patientInitials: data.patientInitials || "Пациент",
 				expiresAt: data.expiresAt,
+				slots: receivedSlots,
 			});
+
+			if (receivedSlots && receivedSlots.length > 0 && receivedSlots[0]) {
+				setSelectedSlotId((prev) => (receivedSlots.some((s) => s.id === prev) ? prev : receivedSlots[0]!.id));
+			}
+
 			if (Array.isArray(data.uploadedPhotos)) {
 				const map: Record<string, { url: string; fileName: string }> = {};
 				for (const p of data.uploadedPhotos) {
@@ -141,15 +157,16 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 				[selectedSlotId]: { url: photoUrl, fileName: safeFilename },
 			}));
 
-			showToast(`Снимок «${CHAIRSIDE_MOBILE_SLOTS.find((s) => s.id === selectedSlotId)?.shortLabelRu}» принят!`, "success", 2500);
+			const effectiveSlotsList = sessionData?.slots && sessionData.slots.length > 0 ? sessionData.slots : CHAIRSIDE_MOBILE_SLOTS;
+			showToast(`Снимок «${effectiveSlotsList.find((s) => s.id === selectedSlotId)?.shortLabelRu}» принят!`, "success", 2500);
 
 			// 3. Zero-Friction: автоматический переход к следующему незаполненному ракурсу
-			const currentIndex = CHAIRSIDE_MOBILE_SLOTS.findIndex((s) => s.id === selectedSlotId);
-			const remainingSlots = CHAIRSIDE_MOBILE_SLOTS.filter(
+			const currentIndex = effectiveSlotsList.findIndex((s) => s.id === selectedSlotId);
+			const remainingSlots = effectiveSlotsList.filter(
 				(s, idx) => idx > currentIndex && !uploadedSlots[s.id] && s.id !== selectedSlotId,
 			);
-			if (remainingSlots.length > 0) {
-				setSelectedSlotId(remainingSlots[0]!.id);
+			if (remainingSlots.length > 0 && remainingSlots[0]) {
+				setSelectedSlotId(remainingSlots[0].id);
 			}
 		} catch (err: any) {
 			console.error("[MobilePhotoUploadPage] Upload failed:", err);
@@ -171,7 +188,9 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 		return `${m}:${s < 10 ? "0" : ""}${s}`;
 	};
 
-	const activeSlot = CHAIRSIDE_MOBILE_SLOTS.find((s) => s.id === selectedSlotId) || CHAIRSIDE_MOBILE_SLOTS[0]!;
+	const effectiveSlots = sessionData?.slots && sessionData.slots.length > 0 ? sessionData.slots : CHAIRSIDE_MOBILE_SLOTS;
+	const totalSlotsCount = effectiveSlots.length;
+	const activeSlot = effectiveSlots.find((s) => s.id === selectedSlotId) || effectiveSlots[0]!;
 	const uploadedCount = Object.keys(uploadedSlots).length;
 
 	if (isLoadingSession) {
@@ -230,7 +249,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 						<div className="text-xs font-bold truncate flex items-center gap-1.5">
 							<span>{sessionData?.patientInitials || "Пациент"}</span>
 							<span className="text-[10px] font-normal text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.2 rounded-full">
-								{uploadedCount}/6
+								{uploadedCount}/{totalSlotsCount}
 							</span>
 						</div>
 						<div className="text-[10px] text-[var(--muted)] font-mono">
@@ -275,7 +294,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 						Выберите клинический ракурс:
 					</div>
 					<div className="grid grid-cols-2 gap-2">
-						{CHAIRSIDE_MOBILE_SLOTS.map((slot) => {
+						{effectiveSlots.map((slot) => {
 							const isSelected = slot.id === selectedSlotId;
 							const isDone = Boolean(uploadedSlots[slot.id]);
 

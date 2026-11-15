@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RotateCw, FlipHorizontal, Sun, Sliders, Check } from 'lucide-react';
 import { PhotoProtocolSlotDefinition, PhotoSlotRecord } from './photoGridPresets';
+import { VitaShadeSelector } from './VitaShadeSelector';
 
 export interface PhotoCalibrationDrawerProps {
 	slotDef: PhotoProtocolSlotDefinition;
@@ -16,7 +17,6 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 	onUpdateRecord,
 }) => {
 	const [selectedShade, setSelectedShade] = useState(record.detectedVitaShade || 'A2');
-	const quickShades = ['A1', 'A2', 'A3', 'A3.5', 'B1', 'B2', 'C1', 'D2', 'BL1', 'BL2'];
 
 	const handleRotate = () => {
 		const nextRot = ((record.rotationDegrees || 0) + 90) % 360;
@@ -104,14 +104,13 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 			</div>
 
 			<div>
-				<div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--ink, #0f172a)' }}>Цвет VITA: {selectedShade}</div>
-				<div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-					{quickShades.map((sh) => (
-						<button key={sh} type="button" className={`photo-touch-btn ${selectedShade === sh ? 'primary' : ''}`} onClick={() => handleShade(sh)} style={{ minHeight: '32px', minWidth: '40px', fontSize: '11px', fontWeight: 700, padding: '2px 6px' }}>
-							{sh}
-						</button>
-					))}
-				</div>
+				<div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--ink, #0f172a)' }}>Шкала VITA (оттенок зуба):</div>
+				<VitaShadeSelector
+					compact
+					afterShadeCode={selectedShade}
+					onAfterShadeChange={(code) => handleShade(code)}
+					onBeforeShadeChange={() => {}}
+				/>
 			</div>
 		</div>
 	);

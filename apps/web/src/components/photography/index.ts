@@ -3,7 +3,23 @@
  */
 
 export * from './photoGridPresets';
-export * from './photoProtocolMath';
+export {
+	clamp,
+	calculateSplitClipPath,
+	calculateSimilarityTransform,
+	calculateWiperWheelDelta,
+	calculateKeyboardWiperDelta,
+	calculatePointerPercent,
+	calculateImageTransformStyle,
+	calculateCollageDimensions,
+	generateCollageWatermarkText,
+	type Point2D,
+	type Transform2D,
+	type CollageFormatType,
+	type CollageDimensionConfig,
+	type SliderPointerOptions,
+	type LayerTransformOptions,
+} from './photoProtocolMath';
 
 export * from './PhotoSlotCard';
 export * from './PhotoGridSixSlots';

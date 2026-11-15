@@ -77,6 +77,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 		activePreset, setActivePreset, slotsData, setSlotsData, activeViewMode, setActiveViewMode,
 		activeFilter, setActiveFilter, selectedSlotForEdit, setSelectedSlotForEdit,
 		dragOverSlotId, setDragOverSlotId, fileInputRef, currentSlotRef,
+		isSaving, hasActiveUploads,
 		updateSlotRecord, uploadPhotoToBackend, handleUpload, handleSaveProtocol,
 	} = usePhotoProtocolUpload(props, createdBlobUrlsRef);
 
@@ -148,7 +149,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 			if (matched) {
 				const foundSlot = activePreset.slots.find(
-					(s) => s.id === matched.id || isSlotMatching(s.id, matched.id),
+					(s) => String(s.id) === String(matched.id) || isSlotMatching(s.id, matched.id),
 				);
 				if (foundSlot && !slotsData[foundSlot.id]?.imageUrl) {
 					matchedSlotId = foundSlot.id;
@@ -191,16 +192,6 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 			/>
 			<div className="photo-protocol-modal" data-testid="clinical-photo-protocol-modal">
 				<div className="photo-mobile-drag-handle" aria-hidden="true" />
-				<button
-					type="button"
-					className="sr-only"
-					data-testid="btn-patient-presentation-popout"
-					onClick={() => openPatientPresentationWindow({ clinicName, patientName, mode: 'split' })}
-					tabIndex={-1}
-					aria-hidden="true"
-				>
-					Экран пациента
-				</button>
 				<ClinicalPhotoProtocolHeader
 					patientName={patientName}
 					patientCardNumber={effectiveCardNumber}
@@ -210,6 +201,8 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 					setActiveViewMode={setActiveViewMode}
 					slotsData={slotsData}
 					activePresetId={activePreset.id}
+					isSaving={isSaving}
+					hasActiveUploads={hasActiveUploads}
 					onSaveProtocol={handleSaveProtocol}
 					onClose={onClose}
 					onOpenQrBridge={() => setIsQrBridgeOpen(true)}
@@ -356,7 +349,7 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 					onPhotoReceived={(photo) => {
 						updateSlotRecord(photo.slotId, {
 							imageUrl: photo.url,
-							uploadedAt: photo.uploadedAt,
+							uploadedAt: photo.uploadedAt || new Date().toISOString(),
 							...(toothCode ? { toothCode } : {}),
 						});
 					}}

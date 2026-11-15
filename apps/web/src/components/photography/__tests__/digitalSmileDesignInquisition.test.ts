@@ -10,7 +10,7 @@ import {
 	WHEELER_AESTHETIC_NORMS,
 	dsdAnalysisDataSchema,
 	calculateWheelerToothMetrics,
-} from '../../../../../../packages/shared/src/clinical/photoProtocol.js';
+} from '@dental/shared';
 import { DsdCanvasOverlay } from '../dsd/DsdCanvasOverlay.js';
 import { DsdMetricsSidebar } from '../dsd/DsdMetricsSidebar.js';
 import { DsdAestheticStudioModal } from '../dsd/DsdAestheticStudioModal.js';
@@ -38,11 +38,17 @@ describe('Digital Smile Design (DSD) Inquisition Suite [PHO-02]', () => {
 		assert.ok(badResult.lateralDeviationPercent > 10);
 
 		// Нормы Wheeler 2.5D
-		assert.strictEqual(WHEELER_AESTHETIC_NORMS[11].widthMm, 8.5);
-		assert.strictEqual(WHEELER_AESTHETIC_NORMS[11].heightMm, 10.5);
-		assert.strictEqual(WHEELER_AESTHETIC_NORMS[11].ratioWH, 0.81);
-		assert.strictEqual(WHEELER_AESTHETIC_NORMS[12].widthMm, 6.5);
-		assert.strictEqual(WHEELER_AESTHETIC_NORMS[13].widthMm, 7.5);
+		const norm11 = WHEELER_AESTHETIC_NORMS[11];
+		const norm12 = WHEELER_AESTHETIC_NORMS[12];
+		const norm13 = WHEELER_AESTHETIC_NORMS[13];
+		assert.ok(norm11);
+		assert.ok(norm12);
+		assert.ok(norm13);
+		assert.strictEqual(norm11.widthMm, 8.5);
+		assert.strictEqual(norm11.heightMm, 10.5);
+		assert.strictEqual(norm11.ratioWH, 0.81);
+		assert.strictEqual(norm12.widthMm, 6.5);
+		assert.strictEqual(norm13.widthMm, 7.5);
 	});
 
 	test('2. Facial Alignment & Smile Arc Curvature', () => {

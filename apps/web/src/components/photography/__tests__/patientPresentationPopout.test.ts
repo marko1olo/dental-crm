@@ -133,7 +133,8 @@ describe('Patient Presentation Pop-out & Memory Overflow Protection Suite', () =
 	});
 
 	it('5. Popout Launcher Buttons: proves presence of data-testid="btn-patient-presentation-popout" in all relevant views', () => {
-		const views = [modalPath, blendViewPath, comparisonViewPath];
+		const headerPath = path.join(photographyDir, 'ClinicalPhotoProtocolHeader.tsx');
+		const views = [headerPath, blendViewPath, comparisonViewPath];
 
 		for (const view of views) {
 			const content = fs.readFileSync(view, 'utf8');

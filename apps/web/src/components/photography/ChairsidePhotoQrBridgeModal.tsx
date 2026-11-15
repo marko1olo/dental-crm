@@ -3,15 +3,16 @@ import { QrCode, Smartphone, CheckCircle, Copy, Clock, X, ExternalLink, RefreshC
 import { generateQrCodeSvg } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { getPresetById } from "./photoGridPresets";
 
 export interface ChairsidePhotoQrBridgeModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	patientId: string;
-	patientName?: string;
-	visitId?: string | null;
-	presetId?: string;
-	onPhotoReceived?: (photo: { id: string; slotId: string; url: string; fileName: string; mimeType: string }) => void;
+	patientName?: string | undefined;
+	visitId?: string | null | undefined;
+	presetId?: string | undefined;
+	onPhotoReceived?: (photo: { id: string; slotId: string; url: string; fileName: string; mimeType: string; uploadedAt?: string | undefined }) => void;
 }
 
 interface PhotoBridgeItem {
@@ -60,6 +61,15 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 		knownPhotoIdsRef.current.clear();
 
 		try {
+			const preset = getPresetById(presetId);
+			const slotsPayload = preset?.slots.map((s) => ({
+				id: s.id,
+				titleRu: s.titleRu,
+				shortLabelRu: s.shortLabelRu,
+				category: s.category,
+				descriptionRu: s.descriptionRu,
+			}));
+
 			const res = await fetch("/api/photo-bridge/session", {
 				method: "POST",
 				headers: {
@@ -70,6 +80,7 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 					patientId,
 					visitId: visitId || null,
 					presetId,
+					slots: slotsPayload,
 				}),
 			});
 

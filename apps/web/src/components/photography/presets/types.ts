@@ -1,3 +1,5 @@
+import type { DsdAnalysisData } from '@dental/shared';
+
 /**
  * Clinical Dental Photography Protocol Presets & Slot Types
  */
@@ -62,6 +64,8 @@ export interface PhotoProtocolPreset {
 export interface PhotoSlotRecord {
 	slotId: string;
 	imageUrl?: string;
+	previewUrl?: string;
+	isUploading?: boolean;
 	storagePath?: string;
 	uploadedAt?: string;
 	toothCode?: string | number | undefined;
@@ -75,6 +79,7 @@ export interface PhotoSlotRecord {
 	exposure?: number; // -100 to 100
 	warmth?: number; // -100 to 100
 	detectedVitaShade?: string;
+	dsdAnalysis?: Partial<DsdAnalysisData> | undefined;
 	landmarks?: Record<string, { x: number; y: number }>;
 	paired_document_id?: string | null;
 	paired_photo_id?: string | null;

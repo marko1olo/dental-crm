@@ -169,13 +169,8 @@ export function useVisitDiaryPhotoUploadState({
 
 	const uploadBlobAttachment = useCallback(
 		async (compressedBlob: Blob, fileName: string) => {
-			if (!diaryId || isLocked) {
-				showToast(
-					isLocked
-						? "Дневник уже подписан"
-						: "Сначала сохраните черновик дневника",
-					"info",
-				);
+			if (isLocked) {
+				showToast("Дневник уже подписан", "info");
 				return;
 			}
 
@@ -184,7 +179,9 @@ export function useVisitDiaryPhotoUploadState({
 				const formData = new FormData();
 				formData.append("file", compressedBlob, fileName || "photo.webp");
 				formData.append("entityType", "diary");
-				formData.append("entityId", diaryId);
+				if (diaryId) {
+					formData.append("entityId", diaryId);
+				}
 				const clinicToken = readDenteClinicToken() || null;
 
 				const res = await fetch(`/api/files/visits/${visitId}/attachments`, {
@@ -199,7 +196,7 @@ export function useVisitDiaryPhotoUploadState({
 					logger.error(
 						`[diary photo upload] ${res.status} ${rawBody.slice(0, 300)}`,
 					);
-					void savePhotoOfflineDraft(compressedBlob, diaryId, visitId);
+					void savePhotoOfflineDraft(compressedBlob, diaryId || "visit_direct", visitId);
 					showToast(
 						`Снимок не загружен: ${requestFailureCause(res.status)}. Повторите загрузку.`,
 						"error",
@@ -225,7 +222,7 @@ export function useVisitDiaryPhotoUploadState({
 				}
 			} catch (err) {
 				logger.error("[diary photo upload] network error", err);
-				void savePhotoOfflineDraft(compressedBlob, diaryId, visitId);
+				void savePhotoOfflineDraft(compressedBlob, diaryId || "visit_direct", visitId);
 				showToast(
 					`Снимок не загружен: ${requestFailureCause(null)}. Проверьте сеть.`,
 					"error",
@@ -239,7 +236,7 @@ export function useVisitDiaryPhotoUploadState({
 	);
 
 	useClipboardPhotoPaste({
-		enabled: !isLocked && Boolean(diaryId),
+		enabled: !isLocked,
 		onPhotoReceived: uploadBlobAttachment,
 	});
 
@@ -247,13 +244,8 @@ export function useVisitDiaryPhotoUploadState({
 		async (e: React.ChangeEvent<HTMLInputElement>) => {
 			const file = e.target.files?.[0];
 			if (!file) return;
-			if (!diaryId || isLocked) {
-				showToast(
-					isLocked
-						? "Дневник уже подписан"
-						: "Сначала сохраните черновик дневника",
-					"info",
-				);
+			if (isLocked) {
+				showToast("Дневник уже подписан", "info");
 				e.target.value = "";
 				return;
 			}

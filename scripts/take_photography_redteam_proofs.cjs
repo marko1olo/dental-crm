@@ -184,51 +184,27 @@ async function run() {
   });
   page.on("pageerror", (err) => console.log(`[Browser PageError] ${err.message}`));
 
-  console.log(`[Browser] Navigating to ${WEB_BASE}/#patients...`);
-  await page.goto(`${WEB_BASE}/#patients`, { waitUntil: "domcontentloaded", timeout: 35000 });
-  console.log("[Browser] domcontentloaded ready!");
+  console.log(`[Browser] Navigating to ${WEB_BASE}/#photo-protocol...`);
+  await page.goto(`${WEB_BASE}/#photo-protocol`, { waitUntil: "commit", timeout: 45000 });
+  console.log("[Browser] commit ready!");
 
-  await page.waitForSelector(".boot-state", { state: "detached", timeout: 35000 }).catch(() => {});
-  await page.waitForSelector(".app-shell", { state: "visible", timeout: 35000 });
-  console.log("[Browser] app-shell visible!");
+  await page.waitForSelector(".boot-state", { state: "detached", timeout: 40000 }).catch(() => {});
+  await page.waitForSelector(".app-shell", { state: "visible", timeout: 40000 }).catch(() => {});
   await page.waitForTimeout(2000);
 
-  // 1. Click patient row to open PatientWorkspaceView
-  console.log("[Browser] Searching for patient row...");
-  await page.waitForSelector('.patient-row-chevron-btn, [data-testid^="patient-row-open-btn-"], article.patient-card-row', { timeout: 20000 });
-  const rowBtn = page.locator('.patient-row-chevron-btn, [data-testid^="patient-row-open-btn-"]').first();
-  console.log("[Browser] Clicking patient row to open PatientWorkspaceView...");
-  await rowBtn.click();
-  await page.waitForTimeout(1500);
-
-  // 2. Open Clinical Photo Protocol Studio Modal via UI or direct event
-  console.log("[Browser] Opening Clinical Photo Protocol Modal via UI...");
-  const menuBtn = page.locator('[data-testid="btn-patient-docs-dms-menu"]');
-  if (await menuBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-    console.log("[Browser] Clicking Docs/DMS menu button...");
-    await menuBtn.click();
-    await page.waitForTimeout(400);
-
-    const photoBtn = page.locator('[data-testid="patient-workspace-open-photo-protocol-btn"]');
-    if (await photoBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      console.log("[Browser] Clicking Photo Protocol item in dropdown...");
-      await photoBtn.click();
-    } else {
-      console.log("[Browser] Dropdown item not visible, dispatching dente-open-photo-protocol-modal...");
-      await page.evaluate(() => {
-        window.dispatchEvent(new CustomEvent("dente-open-photo-protocol-modal"));
-      });
-    }
-  } else {
-    console.log("[Browser] Menu button not visible, dispatching dente-open-photo-protocol-modal...");
+  // If modal is not yet open from URL hash, open it
+  const isAlreadyOpen = await page.locator(".photo-protocol-modal").isVisible({ timeout: 5000 }).catch(() => false);
+  if (!isAlreadyOpen) {
+    console.log("[Browser] Dispatching open event for Photo Protocol modal...");
     await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("dente:open-photo-protocol"));
       window.dispatchEvent(new CustomEvent("dente-open-photo-protocol-modal"));
     });
   }
 
-  // 3. Wait for real photo protocol modal DOM
+  // Wait for real photo protocol modal DOM
   console.log("[Browser] Waiting for .photo-protocol-modal to be visible...");
-  await page.waitForSelector(".photo-protocol-modal", { state: "visible", timeout: 20000 });
+  await page.waitForSelector(".photo-protocol-modal", { state: "visible", timeout: 25000 });
   await page.waitForTimeout(1500);
 
   async function applyTheme(isDark) {
@@ -297,18 +273,22 @@ async function run() {
   // 1. PC Light (1440x900)
   console.log(">>> Capturing PC Light (1440x900)...");
   await captureAndSave("photo_protocol_pc_light.png", { width: 1440, height: 900 }, false);
+  fs.copyFileSync(path.join(PROOF_DIR, "photo_protocol_pc_light.png"), path.join(PROOF_DIR, "01_photo_protocol_pc_light_1440x900.png"));
 
   // 2. PC Dark (1440x900)
   console.log(">>> Capturing PC Dark (1440x900)...");
   await captureAndSave("photo_protocol_pc_dark.png", { width: 1440, height: 900 }, true);
+  fs.copyFileSync(path.join(PROOF_DIR, "photo_protocol_pc_dark.png"), path.join(PROOF_DIR, "02_photo_protocol_pc_dark_1440x900.png"));
 
   // 3. Mobile Light (390x844)
   console.log(">>> Capturing Mobile Light (390x844)...");
   await captureAndSave("photo_protocol_mobile_light.png", { width: 390, height: 844 }, false);
+  fs.copyFileSync(path.join(PROOF_DIR, "photo_protocol_mobile_light.png"), path.join(PROOF_DIR, "03_photo_protocol_mobile_light_390x844.png"));
 
   // 4. Mobile Dark (390x844)
   console.log(">>> Capturing Mobile Dark (390x844)...");
   await captureAndSave("photo_protocol_mobile_dark.png", { width: 390, height: 844 }, true);
+  fs.copyFileSync(path.join(PROOF_DIR, "photo_protocol_mobile_dark.png"), path.join(PROOF_DIR, "04_photo_protocol_mobile_dark_390x844.png"));
 
   await browser.close();
 

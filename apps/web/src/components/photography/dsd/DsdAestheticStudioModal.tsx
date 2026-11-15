@@ -273,7 +273,7 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 				recommendedMaterial: analysis.recommendedMaterial ?? 'emax_lithium_disilicate',
 				recommendedVitaShade: analysis.recommendedVitaShade ?? 'A2',
 				translucencyLevel: analysis.translucencyLevel ?? 'HT',
-				doctorNotes: analysis.doctorNotes,
+				...(analysis.doctorNotes ? { doctorNotes: analysis.doctorNotes } : {}),
 				createdAt: new Date().toISOString(),
 			};
 

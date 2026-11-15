@@ -25,7 +25,8 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 	onDragLeave,
 	onDrop,
 }) => {
-	const hasImage = Boolean(record.imageUrl);
+	const displayImage = record.previewUrl || record.imageUrl;
+	const hasImage = Boolean(displayImage);
 
 	return (
 		<div
@@ -45,7 +46,7 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 				{hasImage ? (
 					<div className="photo-image-container">
 						<img
-							src={record.imageUrl}
+							src={displayImage}
 							alt={slotDef.titleRu}
 							loading="lazy"
 							decoding="async"
@@ -55,6 +56,27 @@ export const PhotoSlotCard: React.FC<PhotoSlotCardProps> = ({
 								filter: `brightness(${100 + (record.brightness || 0)}%) contrast(${100 + (record.contrast || 0)}%)`
 							}}
 						/>
+						{record.isUploading && (
+							<div
+								style={{
+									position: 'absolute',
+									inset: 0,
+									background: 'rgba(15, 23, 42, 0.55)',
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									backdropFilter: 'blur(2px)',
+									color: '#ffffff',
+									fontSize: '11px',
+									fontWeight: 600,
+									gap: '6px',
+									zIndex: 10,
+								}}
+							>
+								<div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#ffffff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+								<span>Загрузка...</span>
+							</div>
+						)}
 						<div className="photo-slot-badges">
 							{record.toothCode && <span className="photo-mini-badge tooth-badge" title={`Привязан к зубу #${record.toothCode}`}>Зуб #{record.toothCode}</span>}
 							{record.flipHorizontal && <span className="photo-mini-badge"><FlipHorizontal size={10} /> Зеркало (H)</span>}

@@ -8,7 +8,7 @@ import {
 	WHEELER_AESTHETIC_NORMS,
 	type DsdPoint2D,
 	type DsdToothMetric,
-} from '../../../../../../packages/shared/src/clinical/photoProtocol';
+} from '@dental/shared';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

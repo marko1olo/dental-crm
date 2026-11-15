@@ -3,6 +3,7 @@ import { Download, Printer, Send } from 'lucide-react';
 import { PhotoProtocolPreset, PhotoSlotRecord } from './photoGridPresets';
 import { showToast } from '../GlobalToast';
 import { exportCollageAsPng, exportCollageAsPdf } from './photoProtocolEngine';
+import { VitaShadeSelector } from './VitaShadeSelector';
 
 export interface LabPhotoExportDrawerProps {
 	preset: PhotoProtocolPreset;
@@ -24,7 +25,6 @@ export const LabPhotoExportDrawer: React.FC<LabPhotoExportDrawerProps> = ({
 }) => {
 	const [selectedShade, setSelectedShade] = useState('A2');
 	const [labComment, setLabComment] = useState('Фронтальная реставрация. Воспроизвести микрорельеф и прозрачный режущий край.');
-	const quickShades = ['A1', 'A2', 'A3', 'A3.5', 'B1', 'B2', 'C1', 'D2', 'BL1', 'BL2'];
 
 	const handleTransferToLab = () => {
 		const payload = { shade: selectedShade, comment: labComment, date: new Date().toISOString() };
@@ -58,15 +58,11 @@ export const LabPhotoExportDrawer: React.FC<LabPhotoExportDrawerProps> = ({
 	return (
 		<div className="lab-export-drawer" style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '960px', margin: '0 auto' }}>
 			<div style={{ background: 'var(--surface, #f8fafc)', border: '1px solid var(--line, #e2e8f0)', borderRadius: '12px', padding: '12px' }}>
-				<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-					<span style={{ fontSize: '13px', fontWeight: 700 }}>Цвет зубов по шкале VITA для лаборатории:</span>
-					<span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary, #0d9488)' }}>Выбран: VITA {selectedShade}</span>
-				</div>
-				<div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-					{quickShades.map((sh) => (
-						<button key={sh} type="button" className={`photo-touch-btn ${selectedShade === sh ? 'primary' : ''}`} onClick={() => setSelectedShade(sh)} style={{ minHeight: '36px', minWidth: '44px', fontSize: '12px', fontWeight: 700 }}>{sh}</button>
-					))}
-				</div>
+				<VitaShadeSelector
+					afterShadeCode={selectedShade}
+					onAfterShadeChange={(c) => setSelectedShade(c)}
+					onBeforeShadeChange={() => {}}
+				/>
 			</div>
 
 			<div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

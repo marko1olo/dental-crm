@@ -21,13 +21,22 @@ export interface PhotoBridgeUploadedItem {
 	uploadedAt: string;
 }
 
+export interface PhotoBridgeSessionSlot {
+	id: string;
+	titleRu: string;
+	shortLabelRu: string;
+	category?: string | undefined;
+	descriptionRu?: string | undefined;
+}
+
 export interface PhotoBridgeSession {
 	token: string;
 	organizationId: string;
 	patientId: string;
 	patientInitials: string;
-	visitId?: string | null;
+	visitId?: string | null | undefined;
 	presetId: string;
+	slots?: PhotoBridgeSessionSlot[] | undefined;
 	createdAt: number;
 	expiresAt: number;
 	photos: PhotoBridgeUploadedItem[];
@@ -98,6 +107,13 @@ const createSessionSchema = z.object({
 	patientId: z.string().min(1),
 	visitId: z.string().optional().nullable(),
 	presetId: z.string().optional().default("express_6_slots"),
+	slots: z.array(z.object({
+		id: z.string(),
+		titleRu: z.string(),
+		shortLabelRu: z.string(),
+		category: z.string().optional(),
+		descriptionRu: z.string().optional(),
+	})).optional(),
 });
 
 interface FastifyMultipartFilePart {
@@ -161,7 +177,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { patientId, visitId, presetId } = parseResult.data;
+		const { patientId, visitId, presetId, slots } = parseResult.data;
 
 		let patientFullName: string | null | undefined;
 
@@ -228,6 +244,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			patientInitials,
 			visitId: visitId || null,
 			presetId,
+			...(slots ? { slots } : {}),
 			createdAt: now,
 			expiresAt,
 			photos: [],
@@ -270,6 +287,7 @@ export function registerPhotoBridgeRoutes(app: FastifyInstance) {
 			patientInitials: session.patientInitials,
 			visitId: session.visitId,
 			presetId: session.presetId,
+			slots: session.slots,
 			expiresAt: session.expiresAt,
 			photosCount: session.photos.length,
 			uploadedPhotos: session.photos,

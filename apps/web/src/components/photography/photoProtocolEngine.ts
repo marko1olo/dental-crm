@@ -9,7 +9,7 @@
 
 export * from '@dental/shared';
 export * from './standard8Angles';
-export * from './collage/collageTypes';
+export type { BeforeAfterCollagePayload } from './collage/collageTypes';
 export * from './collage/printableHtmlTemplate';
 export * from './collage/collageExportActions';
 

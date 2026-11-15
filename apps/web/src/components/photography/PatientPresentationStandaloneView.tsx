@@ -96,7 +96,7 @@ export const PatientPresentationStandaloneView: React.FC<PatientPresentationStan
 						<h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: state.colors.text }}>
 							Снимки для презентации пациенту не загружены
 						</h3>
-						<p style={{ fontSize: '13px', margin: 0, color: state.colors.subText, lineHeight: '1.6' }}>
+						<p style={{ fontSize: '13px', margin: 0, color: state.colors.mutedText, lineHeight: '1.6' }}>
 							Загрузите фотографии в клинический фотопротокол карточки пациента для демонстрации результатов До / После на внешнем экране.
 						</p>
 					</div>

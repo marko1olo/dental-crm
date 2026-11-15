@@ -14,11 +14,15 @@ import { dsdAnalysisDataSchema } from "@dental/shared";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const nonBlobString = z.string().refine((val) => !val.startsWith("blob:"), {
+	message: "Временный blob: URL не может быть сохранен в базу данных",
+});
+
 const photoSlotItemSchema = z.union([
-	z.string(),
+	nonBlobString,
 	z.object({
-		imageUrl: z.string().optional(),
-		url: z.string().optional(),
+		imageUrl: nonBlobString.optional(),
+		url: nonBlobString.optional(),
 		slotId: z.string().optional(),
 		label: z.string().optional(),
 		timestamp: z.string().optional(),
@@ -52,7 +56,7 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 
 		// Защита от краха PostgreSQL 22P02: валидация UUID перед запросом в БД (Мандат 8e / Дефект 2)
 		if (!patientId || !UUID_REGEX.test(patientId)) {
-			if (patientId === "chairside" || patientId === "test" || orgId.startsWith("demo-")) {
+			if (patientId === "chairside" || patientId === "chairside-unassigned" || patientId === "test" || orgId.startsWith("demo-")) {
 				return reply.send({
 					success: true,
 					protocol: null,
@@ -221,6 +225,24 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		}
 
 		const { presetId, slots, visitId, stage, notes, dsdAnalysis } = parseResult.data;
+
+		// Защита от утечки временных blob: URL в PostgreSQL 18 (Дефект 1 / Мандат 8aq)
+		const hasBlobUrl = Object.values(slots).some((item) => {
+			if (typeof item === "string") return item.startsWith("blob:");
+			if (item && typeof item === "object") {
+				const obj = item as Record<string, unknown>;
+				if (typeof obj.imageUrl === "string" && obj.imageUrl.startsWith("blob:")) return true;
+				if (typeof obj.url === "string" && obj.url.startsWith("blob:")) return true;
+			}
+			return false;
+		});
+		if (hasBlobUrl) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Недопустимо сохранение временного blob: URL в базу данных. Дождитесь завершения загрузки файла.",
+			});
+		}
+
 		const effectiveSlots = dsdAnalysis ? { ...slots, dsdAnalysis } : slots;
 
 		// Если передан visitId, проверяем его существование
@@ -365,6 +387,24 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 		}
 
 		const { presetId, slots, stage, notes, dsdAnalysis } = parseResult.data;
+
+		// Защита от утечки временных blob: URL в PostgreSQL 18 (Дефект 1 / Мандат 8aq)
+		const hasBlobUrl = Object.values(slots).some((item) => {
+			if (typeof item === "string") return item.startsWith("blob:");
+			if (item && typeof item === "object") {
+				const obj = item as Record<string, unknown>;
+				if (typeof obj.imageUrl === "string" && obj.imageUrl.startsWith("blob:")) return true;
+				if (typeof obj.url === "string" && obj.url.startsWith("blob:")) return true;
+			}
+			return false;
+		});
+		if (hasBlobUrl) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Недопустимо сохранение временного blob: URL в базу данных. Дождитесь завершения загрузки файла.",
+			});
+		}
+
 		const effectiveSlots = dsdAnalysis ? { ...slots, dsdAnalysis } : slots;
 
 		const [created] = await db

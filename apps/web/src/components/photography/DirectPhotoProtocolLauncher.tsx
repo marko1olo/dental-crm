@@ -41,15 +41,20 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 		return h.includes("dsd") || s.includes("dsd=1") || s.includes("smile-design");
 	});
 
-	const storeActivePatient = useAppStore((st) => {
-		const activeId = st.activePatientId;
+	const activePatientId = useAppStore((st) => st.activePatientId);
+	const activeVisitPatientId = useAppStore((st) => st.dashboard?.activeVisit?.patientId);
+	const dashboardPatients = useAppStore((st) => st.dashboard?.patients);
+
+	const storeActivePatient = useMemo(() => {
+		if (!dashboardPatients || dashboardPatients.length === 0) return null;
 		return (
-			st.dashboard?.patients?.find((p) => p.id === activeId) ||
-			(st.dashboard?.activeVisit?.patientId
-				? st.dashboard?.patients?.find((p) => p.id === st.dashboard?.activeVisit?.patientId)
-				: st.dashboard?.patients?.[0])
+			dashboardPatients.find((p) => p.id === activePatientId) ||
+			(activeVisitPatientId
+				? dashboardPatients.find((p) => p.id === activeVisitPatientId)
+				: dashboardPatients[0]) ||
+			null
 		);
-	});
+	}, [dashboardPatients, activePatientId, activeVisitPatientId]);
 
 	const effectivePatient = useMemo(() => {
 		let urlPatientId = "";
@@ -74,11 +79,18 @@ export const DirectPhotoProtocolLauncher: React.FC = () => {
 			};
 		}
 
+		if (dashboardPatients && dashboardPatients.length > 0 && dashboardPatients[0]) {
+			return {
+				id: dashboardPatients[0].id,
+				fullName: dashboardPatients[0].fullName,
+			};
+		}
+
 		return {
-			id: "",
-			fullName: "Пациент",
+			id: "chairside-unassigned",
+			fullName: "Буфер кабинета (без пациента)",
 		};
-	}, [storeActivePatient]);
+	}, [storeActivePatient, dashboardPatients]);
 
 	const handleOpenEvent = useCallback((e: Event) => {
 		const detail = (e as CustomEvent<{ qrOnly?: boolean; dsd?: boolean }>).detail;
