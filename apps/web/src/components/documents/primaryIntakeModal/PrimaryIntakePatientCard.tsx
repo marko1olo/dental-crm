@@ -55,7 +55,7 @@ export function PrimaryIntakePatientCard({
 					title="Заполнить все 10 пунктов соматической анкеты физиологической нормой: аллергий нет, анестетики переносит, гемостаз в норме"
 				>
 					<Sparkles size={14} aria-hidden="true" />
-					<span>{isNormApplied ? "Анкета: соматически здоров (норма)" : "Заполнить анкету: Соматически здоров / норма"}</span>
+					<span>{isNormApplied ? "Анкета: соматически здоров (норма)" : "Заполнить соматическую норму"}</span>
 				</button>
 				<span className="document-patient-badge">
 					<ShieldCheck size={14} aria-hidden="true" />

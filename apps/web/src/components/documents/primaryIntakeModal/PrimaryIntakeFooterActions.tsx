@@ -60,7 +60,7 @@ export function PrimaryIntakeFooterActions({
 
 				<button
 					type="button"
-					className="secondary-button h-11 sm:h-[34px] min-h-[44px] sm:min-h-[34px] px-3 rounded-xl sm:rounded-lg inline-flex items-center justify-center gap-1.5 text-xs sm:text-[12.5px] font-semibold border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.08))] cursor-pointer w-full sm:w-auto order-3"
+					className="secondary-button h-11 sm:h-[34px] min-h-[44px] sm:min-h-[34px] px-3 rounded-xl sm:rounded-lg inline-flex items-center justify-center gap-1.5 text-xs sm:text-[12.5px] font-semibold border border-[var(--line)] text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-hover)] cursor-pointer w-full sm:w-auto order-3"
 					data-testid="sign-primary-intake-package-btn"
 					onClick={onOpenSignatureTablet}
 					title="Подписание первичного пакета пациентом на экране (Digital Signature Canvas) или через СМС (ПЭП)"

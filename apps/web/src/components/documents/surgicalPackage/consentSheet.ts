@@ -17,14 +17,13 @@ export function renderSurgicalConsentSheet(ctx: SurgicalRequisitesContext): stri
             Лицензия: № ${clinicLicense} • ИНН: ${clinicInn} • ОГРН: ${clinicOgrn}
           </div>
           <div style="text-align: right;">
-            <span class="statutory-badge">ФЗ № 323-ФЗ ст. 20</span><br>
-            <span class="statutory-badge">Приказ МЗ РФ № 1051н</span>
+            <span class="statutory-badge">Информированное добровольное согласие</span>
           </div>
         </div>
       </div>
 
       <h1>Информированное добровольное согласие на хирургическое стоматологическое вмешательство и дентальную имплантацию</h1>
-      <div class="sheet-subtitle">Утверждено в соответствии со ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ</div>
+      <div class="sheet-subtitle">Утверждено в соответствии с ФЗ № 323-ФЗ ст. 20</div>
 
       <div class="parties-block">
         Я, <strong>${ptName}</strong>, дата рождения: <strong>${ptBirthDate}</strong>,
