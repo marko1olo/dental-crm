@@ -293,9 +293,6 @@ export class NdflTaxService {
 			const c1Explicit = payMeta.code1AmountKopecks ?? (payMeta.code1AmountRub != null ? parseKopecks(payMeta.code1AmountRub) : undefined);
 			const c2Explicit = payMeta.code2AmountKopecks ?? (payMeta.code2AmountRub != null ? parseKopecks(payMeta.code2AmountRub) : undefined);
 			const items: ReceiptItemLike[] = payMeta.items || payMeta.positions || payMeta.serviceLines || payMeta.fiscalReceipt?.items || [];
-			const noteText = typeof pay.note === "string" ? pay.note : "";
-			const c2Match = noteText.match(/код\s*2\s*[:=]\s*(\d+(?:[.,]\d+)?)/i);
-			const c1Match = noteText.match(/код\s*1\s*[:=]\s*(\d+(?:[.,]\d+)?)/i);
 
 			if (c1Explicit !== undefined || c2Explicit !== undefined) {
 				// 1. Прямое указание сумм Код 1 и Код 2 в объекте платежа
@@ -388,85 +385,8 @@ export class NdflTaxService {
 						isExcluded: false,
 					});
 				}
-			} else if (c2Match && c2Match[1]) {
-				// 3. Расщепление по примечанию (note)
-				let c2Kop = 0;
-				try {
-					const num = Number(c2Match[1].replace(",", ".").trim());
-					if (Number.isFinite(num) && num > 0) {
-						c2Kop = Math.max(0, Math.min(amountKop, parseKopecks(num)));
-					}
-				} catch {
-					c2Kop = 0;
-				}
-				const c1Kop = Math.max(0, amountKop - c2Kop);
-
-				if (c1Kop > 0) {
-					code1Kopecks += c1Kop;
-					receipts.push({
-						id: `${pay.id}-code1`,
-						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/1`,
-						fiscalDocumentNumber: fiscalDocNum,
-						receiptDate,
-						serviceName: `${serviceName} (Код 1: терапия/гигиена)`,
-						deductionCode: "1",
-						amountRub: rublesFromKopecks(c1Kop),
-						isExcluded: false,
-					});
-				}
-				if (c2Kop > 0) {
-					code2Kopecks += c2Kop;
-					receipts.push({
-						id: `${pay.id}-code2`,
-						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/2`,
-						fiscalDocumentNumber: fiscalDocNum,
-						receiptDate,
-						serviceName: `${serviceName} (Код 2: имплантация/синус-лифтинг ПП РФ №458)`,
-						deductionCode: "2",
-						amountRub: rublesFromKopecks(c2Kop),
-						isExcluded: false,
-					});
-				}
-			} else if (c1Match && c1Match[1]) {
-				let c1Kop = 0;
-				try {
-					const num = Number(c1Match[1].replace(",", ".").trim());
-					if (Number.isFinite(num) && num > 0) {
-						c1Kop = Math.max(0, Math.min(amountKop, parseKopecks(num)));
-					}
-				} catch {
-					c1Kop = 0;
-				}
-				const c2Kop = Math.max(0, amountKop - c1Kop);
-
-				if (c1Kop > 0) {
-					code1Kopecks += c1Kop;
-					receipts.push({
-						id: `${pay.id}-code1`,
-						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/1`,
-						fiscalDocumentNumber: fiscalDocNum,
-						receiptDate,
-						serviceName: `${serviceName} (Код 1: терапия/гигиена)`,
-						deductionCode: "1",
-						amountRub: rublesFromKopecks(c1Kop),
-						isExcluded: false,
-					});
-				}
-				if (c2Kop > 0) {
-					code2Kopecks += c2Kop;
-					receipts.push({
-						id: `${pay.id}-code2`,
-						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/2`,
-						fiscalDocumentNumber: fiscalDocNum,
-						receiptDate,
-						serviceName: `${serviceName} (Код 2: имплантация/синус-лифтинг ПП РФ №458)`,
-						deductionCode: "2",
-						amountRub: rublesFromKopecks(c2Kop),
-						isExcluded: false,
-					});
-				}
 			} else {
-				// 4. Обычная классификация чека целиком
+				// 3. Честная классификация чека целиком по номенклатуре и фискальным признакам (без syntax mining заметок)
 				const deductionCode =
 					pay.taxDeductionCode === "2" ||
 					classifyNdflServiceCode(serviceName, payMeta.code804n) === "2"

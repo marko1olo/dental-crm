@@ -1912,6 +1912,29 @@
   - 🌙 Mobile Dark (390×844 @2x Retina): [`docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png) (144.4 KB)
   Вердикт: **[ПРОВЕРЕНО: ЧИСТО]**.
 
+### [DOC-10] [SEV-1] [ИСПРАВЛЕНО] Ликвидация syntax mining в справках ФНС КНД 1151156, физический снос сирот-дубликатов и нативный Apple HIG A4 Preview
+- **Файлы:**
+  - Бэкенд сервис НДФЛ: [`apps/api/src/services/documents/ndflTaxService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/documents/ndflTaxService.ts)
+  - Тест НДФЛ: [`apps/api/src/services/documents/__tests__/ndflTaxService.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/documents/__tests__/ndflTaxService.test.ts)
+  - Канонический A4 Preview Modal: [`apps/web/src/components/documents/DocumentA4PrintPreviewModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/DocumentA4PrintPreviewModal.tsx)
+  - Футер экспресс-пакета: [`apps/web/src/components/documents/primaryIntakeModal/PrimaryIntakeFooterActions.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/primaryIntakeModal/PrimaryIntakeFooterActions.tsx)
+  - Бланки печати: [`apps/web/src/components/documents/primaryIntakePackage/consentSheet.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/primaryIntakePackage/consentSheet.ts), [`contractSheet.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/primaryIntakePackage/contractSheet.ts), [`clinicalPackage/anesthesiaSheet.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/clinicalPackage/anesthesiaSheet.ts), [`clinicalPackage/consentSheet.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/clinicalPackage/consentSheet.ts), [`surgicalPackage/consentSheet.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/surgicalPackage/consentSheet.ts)
+  - Тесты: [`apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/__tests__/wave115BloatExtermination.test.ts), [`clinicalVisitPackageDecomposition.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/__tests__/clinicalVisitPackageDecomposition.test.tsx), [`contractsAndPrescriptionsMockPurity.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/__tests__/contractsAndPrescriptionsMockPurity.test.ts)
+  - Снесенные токсичные сироты (`git rm`): `ClinicalVisitPackageModal.tsx`, `PremiumDocumentPrintSheet.tsx`, `intakePackage/`, `premiumPrint/`, `informedConsentBlockers.ts`, `taxApplicationBlockers.ts`, `photoVideoConsentBlockers.ts`, `taxCertificate/printRunner.ts`.
+- **Суть задач и выявленных дефектов:**
+  1. **Ликвидация Syntax Mining в НДФЛ 13%:** В `ndflTaxService.ts` искоренен парсинг регулярными выражениями текста комментариев платежа (`pay.note.match(/код\s*2\s*[:=]\s*(\d+)/i)`). Расчет сумм по Коду 1 (стандартные услуги) и Коду 2 (дорогостоящее лечение: имплантация, костная пластика, ПП РФ № 458) переведен на честные фискальные чеки, явные сплиты в копейках `amountKopecks` и номенклатурную классификацию позиций.
+  2. **Физический снос токсичных сирот (`git rm`):** Полностью удалены мертвые шедевры и сироты `ClinicalVisitPackageModal.tsx`, `PremiumDocumentPrintSheet.tsx`, `intakePackage/`, `premiumPrint/` и устаревшие реэкспорты blockers, дублировавшие каноническую архитектуру.
+  3. **Искоренение регуляторного птичьего языка:** Заменены советские и бюрократические шифры («Приказ МЗ РФ № 1051н», «Постановление Правительства РФ № 736», «043/у») на чистый профессиональный русский язык: «Информированное добровольное согласие», «Договор на оказание медицинских услуг», «Медицинская карта приёма». Ассерт в `wave115BloatExtermination.test.ts` актуализирован.
+  4. **Apple HIG & Natural Thumb Zone:** В `DocumentA4PrintPreviewModal.tsx` внедрен нативный мобильный Bottom Sheet для `<=` 768px со скруглением `rounded-t-[24px]`, тактильным Drag Handle `36x5px` по центру, закрытием `>= 44x44px` и sticky-панелью быстрой печати в зоне досягаемости большого пальца. В `PrimaryIntakeFooterActions.tsx` оставлен строго 1 Primary CTA.
+- **Машинные пруфы и верификация:**
+  - 59/59 тестов (10 сюитов) в пакетах `apps/api` и `apps/web` PASSED (100% Green, Exit Code 0).
+  - 4-State Visual Proofs лично осмотрены через `read_file`:
+    * ☀️ PC Light (1440×900): [`docs/proofs/documents/01_documents_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/01_documents_studio_pc_light_1440x900.png)
+    * 🌙 PC Dark (1440×900): [`docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png)
+    * 📱 Mobile Light (390×844): [`docs/proofs/documents/03_documents_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/03_documents_studio_mobile_light_390x844.png)
+    * 🌙 Mobile Dark (390×844): [`docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png)
+  Вердикт: **[ПРОВЕРЕНО: ЧИСТО]**.
+
 
 ## 12. 🔐 АВТОРИЗАЦИЯ, RBAC, БЕЗОПАСНОСТЬ, ПИН-КОДЫ И АУДИТ-ЛОГИ
 

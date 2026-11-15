@@ -23,12 +23,12 @@ describe("Red Team Inquisition: Human Clinical Language (Part 2: Labs, Sick Leav
 		assert.ok(content.includes("Нет оформленных заказов в лабораторию"));
 	});
 
-	it("7. Clinical and Surgical package modals: checklist items do not contain statutory order codes", () => {
-		const clinicalPath = path.join(webSrcRoot, "components/documents/ClinicalVisitPackageModal.tsx");
-		const clinicalContent = fs.readFileSync(clinicalPath, "utf-8");
+	it("7. Primary and Surgical package modals: checklist items do not contain statutory order codes", () => {
+		const primaryPath = path.join(webSrcRoot, "components/documents/PrimaryIntakePackageModal.tsx");
+		const primaryContent = fs.readFileSync(primaryPath, "utf-8");
 
-		assert.ok(!clinicalContent.includes("Приказ Минздрава России от 15.12.2014 № 834н"));
-		assert.ok(!clinicalContent.includes("Приказ Минздрава России от 24.11.2021 № 1094н"));
+		assert.ok(!primaryContent.includes("Приказ Минздрава России от 15.12.2014 № 834н"));
+		assert.ok(!primaryContent.includes("Приказ Минздрава России от 24.11.2021 № 1094н"));
 
 		const surgicalPath = path.join(webSrcRoot, "components/documents/SurgicalPackageModal.tsx");
 		const surgicalContent = fs.readFileSync(surgicalPath, "utf-8");
