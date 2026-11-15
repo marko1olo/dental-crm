@@ -12,7 +12,7 @@ export interface MobileLabOrderCardProps {
 }
 
 export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps): React.JSX.Element {
-	const rawOrderNum = order.orderNumber || (order.id ? (order.id.startsWith("ЗТЛ-") ? order.id : `ЗТЛ-${order.id.replace(/^[#a-zA-Z_-]+/, "") || order.id.slice(0, 6).toUpperCase()}`) : "ЗТЛ");
+	const rawOrderNum = String(order.orderNumber || (order.id ? (order.id.startsWith("ЗТЛ-") ? order.id : `ЗТЛ-${order.id.replace(/^[#a-zA-Z_-]+/, "") || order.id.slice(0, 6).toUpperCase()}`) : "ЗТЛ"));
 	const orderNum = rawOrderNum.startsWith("ЗТЛ-") ? rawOrderNum : `ЗТЛ-${rawOrderNum.replace(/^[#a-zA-Z_-]+/, "")}`;
 	const toothDisplay = order.toothFdi ? `Зуб ${order.toothFdi}` : order.selectedTeeth?.length ? `Зуб ${order.selectedTeeth.join(", ")}` : "Челюсть";
 	const constructionDisplay = formatLabConstructionTitle(order.constructionType, order.material ?? undefined);

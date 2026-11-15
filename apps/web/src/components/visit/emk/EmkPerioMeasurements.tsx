@@ -72,23 +72,31 @@ export function EmkPerioMeasurements({
 			probingDepthMm: pd, gingivalMarginMm: 0, bleedingOnProbing: bop, suppuration: false, plaque: false, calculus: false, calMm: pd,
 		});
 
-		const affectedRecords: PerioToothRecord[] = selectedTeeth.map((num) => ({
-			toothNumber: num, isMissing: false, isImplant: false, mobility: mobilityLevel, furcation: 0,
-			distoBuccal: makeSite(pocketDepthMm, hasBop),
-			midBuccal: makeSite(pocketDepthMm - 1 > 2 ? pocketDepthMm - 1 : 2, hasBop),
-			mesioBuccal: makeSite(pocketDepthMm, hasBop),
-			distoLingual: makeSite(pocketDepthMm, hasBop),
-			midLingual: makeSite(2, false),
-			mesioLingual: makeSite(pocketDepthMm, hasBop),
-		}));
+		const affectedRecords: PerioToothRecord[] = selectedTeeth.map((num) => {
+			const midDepth = pocketDepthMm - 1 > 2 ? pocketDepthMm - 1 : 2;
+			return {
+				toothNumber: num,
+				isMissing: false,
+				isImplant: false,
+				mobility: mobilityLevel,
+				furcation: 0,
+				distoBuccal: makeSite(pocketDepthMm, hasBop),
+				midBuccal: makeSite(midDepth, hasBop),
+				mesioBuccal: makeSite(pocketDepthMm, hasBop),
+				distoLingual: makeSite(pocketDepthMm, hasBop),
+				midLingual: makeSite(midDepth, hasBop),
+				mesioLingual: makeSite(pocketDepthMm, hasBop),
+			};
+		});
 
 		const { planText, prophyService, curettageServices } =
 			buildPeriodontalTreatmentPlanJustification(affectedRecords);
 
 		// 1. Обновляем план лечения в форме
+		const currentTreatmentPlan = typeof visitNoteForm?.treatmentPlan === "string" ? visitNoteForm.treatmentPlan : "";
 		updateVisitNoteField(
 			"treatmentPlan",
-			appendClinicalText(visitNoteForm?.treatmentPlan || "", planText, "\n\n"),
+			appendClinicalText(currentTreatmentPlan, planText, "\n\n"),
 		);
 
 		// 2. Обновляем объективный статус данными о карманах
@@ -100,9 +108,10 @@ export function EmkPerioMeasurements({
 			`с кровоточивостью при зондировании (BOP+), поддесневым зубным камнем${mobilityLevel > 0 ? `, патологическая подвижность ${mobilityLevel} ст.` : ""}. ` +
 			`Клинический диагноз: Хронический генерализованный пародонтит ${severityLabel} (${diagCode}).`;
 
+		const currentObjectiveStatus = typeof visitNoteForm?.objectiveStatus === "string" ? visitNoteForm.objectiveStatus : "";
 		updateVisitNoteField(
 			"objectiveStatus",
-			appendClinicalText(visitNoteForm?.objectiveStatus || "", pathologyStatus, "\n\n"),
+			appendClinicalText(currentObjectiveStatus, pathologyStatus, "\n\n"),
 		);
 
 		const currentDiag = String(visitNoteForm?.diagnosis || "").trim();

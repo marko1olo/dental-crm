@@ -24,7 +24,7 @@ export function OrthopedicsChairsideFooterBar({
 					type="button"
 					onClick={onToggleOverride}
 					className={`min-h-[44px] sm:min-h-[34px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-						overrideActive ? "bg-emerald-700 text-white shadow-xs" : "secondary-button"
+						overrideActive ? "dente-btn-secondary text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/50 bg-[var(--teal,#0d9488)]/10 shadow-xs" : "dente-btn-secondary"
 					}`}
 					data-testid="doctor-clinical-override-toggle"
 					title="Клинический оверрайд врача при авансе < 50% без задержек и согласований"
@@ -59,10 +59,10 @@ export function OrthopedicsChairsideFooterBar({
 				</button>
 				{isWarrantyRework && (
 					<div className="flex items-center rounded-lg border border-rose-300 dark:border-rose-800 overflow-hidden text-xs">
-						<button type="button" onClick={() => onSelectWarrantyLiability("clinic_warranty")} className={`min-h-[44px] sm:min-h-[34px] px-2 font-bold cursor-pointer transition-colors ${warrantyLiabilityType === "clinic_warranty" ? "bg-rose-600 text-white" : "bg-[var(--paper)] text-[var(--ink)]"}`} data-testid="chairside-liability-clinic">
+						<button type="button" onClick={() => onSelectWarrantyLiability("clinic_warranty")} className={`min-h-[44px] sm:min-h-[34px] px-2 font-bold cursor-pointer transition-colors ${warrantyLiabilityType === "clinic_warranty" ? "dente-btn-secondary border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-300" : "dente-btn-secondary"}`} data-testid="chairside-liability-clinic">
 							Гарантия клиники
 						</button>
-						<button type="button" onClick={() => onSelectWarrantyLiability("lab_defect")} className={`min-h-[44px] sm:min-h-[34px] px-2 font-bold cursor-pointer transition-colors border-l border-rose-300 dark:border-rose-800 ${warrantyLiabilityType === "lab_defect" ? "bg-rose-600 text-white" : "bg-[var(--paper)] text-[var(--ink)]"}`} data-testid="chairside-liability-lab">
+						<button type="button" onClick={() => onSelectWarrantyLiability("lab_defect")} className={`min-h-[44px] sm:min-h-[34px] px-2 font-bold cursor-pointer transition-colors border-l border-rose-300 dark:border-rose-800 ${warrantyLiabilityType === "lab_defect" ? "dente-btn-secondary border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-300" : "dente-btn-secondary"}`} data-testid="chairside-liability-lab">
 							Брак ЗТЛ (0 ₽)
 						</button>
 					</div>
@@ -91,7 +91,7 @@ export function OrthopedicsChairsideFooterBar({
 				<button
 					type="button"
 					onClick={onImmediateSendToLab}
-					className="min-h-[44px] sm:min-h-[34px] px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+					className="primary-button min-h-[44px] sm:min-h-[34px] px-4 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
 					data-testid="direct-send-lab-order-btn"
 					title="Отправить заказ-наряд в зуботехническую лабораторию"
 				>

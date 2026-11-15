@@ -762,7 +762,7 @@ export function renderConsentTemplate(
 			id: section.id,
 			title: substitutePlaceholders(section.title, context),
 			content,
-			bullets: section.bullets?.map((b) => substitutePlaceholders(b, context)),
+			...(section.bullets ? { bullets: section.bullets.map((b) => substitutePlaceholders(b, context)) } : {}),
 		};
 	});
 

@@ -15,6 +15,6 @@ export * from "./DigitalSignatureTabletModal";
 export * from "./informedConsentGuiding";
 export * from "./taxApplicationGuiding";
 export * from "./photoVideoConsentGuiding";
-export * from "./documentsCatalogData";
+export * from "../consents/consentCatalogData";
 export * from "./DocumentsStudioModal";
 export * from "./DirectDocumentsLauncher";

@@ -58,7 +58,7 @@ export function useLabOrdersModals() {
 		setOpenMenuOrderId(null);
 		setReadyInClinicOrder({
 			id: order.id || "ztl-order",
-			orderNumber: order.orderNumber || (order.id ? order.id.slice(0, 8) : "ЗТЛ-1"),
+			orderNumber: String(order.orderNumber || (order.id ? order.id.slice(0, 8) : "ЗТЛ-1")),
 			patientId: order.patientId ?? undefined,
 			patientName: order.patientName || "Пациент",
 			doctorName: order.doctorName ?? undefined,

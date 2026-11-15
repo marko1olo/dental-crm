@@ -396,14 +396,15 @@ export function paidAmountRubForDocument(
 	}
 	if (taxPaidDocumentRequiresPaymentSelection(kind)) {
 		const selectedIds = new Set(selectedTaxPaymentIds(input));
-		if (!selectedIds.size) return 0;
-		return payments
-			.filter(
-				(payment) =>
-					selectedIds.has(payment.id) &&
-					paymentMatchesTaxDocumentScope(payment, input),
-			)
-			.reduce((total, payment) => total + payment.amountRub, 0);
+		if (selectedIds.size > 0) {
+			return payments
+				.filter(
+					(payment) =>
+						selectedIds.has(payment.id) &&
+						paymentMatchesTaxDocumentScope(payment, input),
+				)
+				.reduce((total, payment) => total + payment.amountRub, 0);
+		}
 	}
 	if (kind === "payment_receipt" && input.payload?.paymentReceipt) {
 		const selectedIds = new Set(selectedPaymentReceiptIds(input));

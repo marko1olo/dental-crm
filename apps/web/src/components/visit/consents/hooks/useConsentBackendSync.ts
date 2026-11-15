@@ -82,36 +82,81 @@ export function useConsentBackendSync({
 		if (!patientId) return;
 		try {
 			const kind = CONSENT_KEY_TO_DOCUMENT_KIND[key] || "informed_consent";
-			const createRes = await fetch("/api/documents", {
-				method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					patientId, visitId: activeAppointment?.id || undefined, kind, title: itemTitle,
-					payload: {
-						consentKey: key, patientName: substitutionContext.patientName,
-						doctorName: record.doctorName, signedAt: record.signedAt,
-						integrityHash: record.integrityHash, method: record.method, notes: record.notes,
-					},
-				}),
-			});
-			if (!createRes.ok) return;
-			const createData = (await createRes.json()) as { document?: { id?: string }; id?: string };
-			const docId = createData?.document?.id || createData?.id;
-			if (!docId) return;
+			const methodToVerification: Record<string, "paper_signed" | "tablet_stylus" | "sms_otp" | "patient_portal"> = {
+				paper: "paper_signed",
+				tablet: "tablet_stylus",
+				sms: "sms_otp",
+				portal: "patient_portal",
+			};
+			const verificationMethod = methodToVerification[record.method] || "paper_signed";
+			const signatureType = record.method === "tablet" ? "tablet_stylus" : "paper_signed";
 
-			const nowIso = new Date().toISOString();
-			await fetch(`/api/documents/${encodeURIComponent(docId)}/issue`, {
-				method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/consents`, {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
-					signatureAttestation: {
-						mode: "paper_signed", signedAt: nowIso,
-						recipientFullName: substitutionContext.patientName || "Пациент",
-						recipientRole: "patient", staffFullName: record.doctorName || "Врач-стоматолог", staffRole: "doctor",
-						identityChecked: true, documentOpenedAndChecked: true, recipientSigned: true, clinicRepresentativeSigned: true,
-						note: record.notes || "Подписано на бумаге и подшито в медицинскую карту",
+					kind,
+					consentType: key,
+					title: itemTitle,
+					isSigned: true,
+					signedAt: new Date().toISOString(),
+					signatureType,
+					verificationMethod,
+					doctorFullName: record.doctorName || substitutionContext.doctorName || "Врач-стоматолог",
+					visitId: activeAppointment?.id || undefined,
+					integrityHash: record.integrityHash,
+					notes: record.notes || "Подписано и зафиксировано в медицинской карте",
+					payload: {
+						consentKey: key,
+						patientName: substitutionContext.patientName,
+						doctorName: record.doctorName,
+						signedAt: record.signedAt,
+						integrityHash: record.integrityHash,
+						method: record.method,
+						notes: record.notes,
 					},
 				}),
 			});
-		} catch { /* offline fallback */ }
+
+			if (!res.ok) {
+				const errData = await res.json().catch(() => ({}));
+				console.warn("[ConsentBackendSync] Failed to persist consent to backend:", res.status, errData);
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente:toast", {
+							detail: {
+								type: "warning",
+								text: `Согласие сохранено локально. Ошибка синхронизации с сервером (${res.status}).`,
+							},
+						}),
+					);
+				}
+				return;
+			}
+
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente:toast", {
+						detail: {
+							type: "success",
+							text: `Согласие «${itemTitle}» успешно сохранено в базу данных клиники.`,
+						},
+					}),
+				);
+			}
+		} catch (err) {
+			console.error("[ConsentBackendSync] Network error persisting consent:", err);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente:toast", {
+						detail: {
+							type: "warning",
+							text: "Согласие сохранено локально (автономный режим).",
+						},
+					}),
+				);
+			}
+		}
 	}, [activeAppointment?.id, patientId, substitutionContext.doctorName, substitutionContext.patientName]);
 
 	return { persistConsentToBackend };

@@ -1,11 +1,26 @@
 /**
  * apps/web/src/components/consents/consentCatalogData.ts
  *
- * Канонический реестр информированных согласий и договоров DENTE CRM (SSOT).
+ * Канонический реестр информированных согласий, медицинских договоров и справок DENTE CRM (SSOT).
  * 15 базовых бланков Минздрава РФ по клиническим направлениям (Мандаты 8e, 8n, 8x, 8ap).
+ * 4 канонических пакета клиники РФ, шаблоны документов и справка для налогового вычета.
  * 3 статуса: signed_digital, signed_paper, pending.
  * Хэширование целостности подписи и генератор печати бланка А4.
  */
+
+import { type DocumentKind, resolveTaxDeductionCategoryShared } from "@dental/shared";
+import type React from "react";
+import {
+	ClipboardList,
+	FileCheck,
+	FileText,
+	Heart,
+	Receipt,
+	ShieldCheck,
+	Sparkles,
+	UserCheck,
+	Zap,
+} from "lucide-react";
 
 export type ConsentDocumentId =
 	| "therapy"
@@ -305,7 +320,11 @@ export function normalizeConsentDocId(rawId: string): ConsentDocumentId {
 
 export function getConsentDocumentById(id: string): ConsentDocumentItem {
 	const normalized = normalizeConsentDocId(id);
-	return CANONICAL_CONSENT_CATALOG.find((item) => item.id === normalized) || CANONICAL_CONSENT_CATALOG[0];
+	const found = CANONICAL_CONSENT_CATALOG.find((item) => item.id === normalized);
+	if (found) return found;
+	const fallback = CANONICAL_CONSENT_CATALOG[0];
+	if (fallback) return fallback;
+	throw new Error("CANONICAL_CONSENT_CATALOG is empty");
 }
 
 /** Хэширование целостности подписанного документа (Мандат 8e, 8zk) */
@@ -389,3 +408,443 @@ h1 { font-size: 13pt; font-weight: 700; margin: 6px 0 2px; color: #0f172a; }
 <div class="body">${sectionsHtml}</div><div class="sig-box">${stampHtml}</div>
 </body></html>`;
 }
+
+// ---------------------------------------------------------------------------
+// 4 КАНОНИЧЕСКИХ ПАКЕТА КЛИНИКИ РФ, ДОГОВОРЫ И СПРАВКА ФНС (SSOT FIRST PRINCIPLES)
+// ---------------------------------------------------------------------------
+
+export type DocumentPackageKey = "intake" | "informed_consent" | "tax_certificate" | "card_extract";
+export type ConsentSubKind = "therapy" | "surgery" | "implant" | "orthopedics" | "anesthesia";
+
+export interface ClinicRequisites {
+	readonly name: string;
+	readonly inn: string;
+	readonly ogrn: string;
+	readonly address: string;
+	readonly phone: string;
+	readonly license: string;
+}
+
+export interface PatientRequisites {
+	readonly fullName: string;
+	readonly birthDate: string;
+	readonly passport: string;
+	readonly address: string;
+	readonly phone: string;
+	readonly inn?: string | undefined;
+}
+
+export interface DoctorRequisites {
+	readonly fullName: string;
+	readonly specialty: string;
+}
+
+export interface DocumentServiceItem {
+	readonly id: string;
+	readonly title: string;
+	readonly code?: string | undefined;
+	readonly quantity: number;
+	readonly priceKopecks: number;
+	readonly amountKopecks: number;
+}
+
+export interface DocumentLegalContext {
+	readonly clinic: ClinicRequisites;
+	readonly patient: PatientRequisites;
+	readonly doctor: DoctorRequisites;
+	readonly documentNumber: string;
+	readonly documentDate: string;
+	readonly taxYear?: number | undefined;
+	readonly services: readonly DocumentServiceItem[];
+	readonly totalAmountKopecks: number;
+	readonly diagnosisRu?: string | undefined;
+	readonly anamnesisRu?: string | undefined;
+	readonly epicrisisRu?: string | undefined;
+	readonly consentSubKind?: ConsentSubKind | undefined;
+}
+
+export const DEFAULT_CLINIC_REQUISITES: ClinicRequisites = {
+	name: 'ООО "Стоматологическая клиника ДЕНТЕ"',
+	inn: "7701234567",
+	ogrn: "1237700456789",
+	address: "г. Москва, ул. Клиническая, д. 12, стр. 1",
+	phone: "+7 (495) 789-01-23",
+	license: "ЛО41-01137-77/00561234 от 14.02.2021 выдана ДЗМ",
+};
+
+/**
+ * Целочисленное форматирование копеек в рубли (Мандат 8wy, 0 float-ошибок).
+ */
+export function formatKopecksToRubles(kopecks: number): string {
+	const safeKopecks = Math.max(0, Math.round(kopecks || 0));
+	const rubles = Math.floor(safeKopecks / 100);
+	const remainder = safeKopecks % 100;
+	const formattedRubles = rubles.toLocaleString("ru-RU").replace(/\u00A0/g, " ");
+	return remainder > 0 ? `${formattedRubles},${remainder.toString().padStart(2, "0")} ₽` : `${formattedRubles} ₽`;
+}
+
+export function sumKopecks(items: readonly { readonly amountKopecks: number }[]): number {
+	return items.reduce((acc, curr) => acc + (curr.amountKopecks || 0), 0);
+}
+
+export interface ClinicalPackageMeta {
+	readonly id: DocumentPackageKey;
+	readonly titleRu: string;
+	readonly badgeRu: string;
+	readonly descriptionRu: string;
+	readonly includes: readonly string[];
+}
+
+export const CANONICAL_CLINIC_PACKAGES: readonly ClinicalPackageMeta[] = [
+	{
+		id: "intake",
+		titleRu: "Первичный приём",
+		badgeRu: "Пакет пациента",
+		descriptionRu: "Договор на стоматологические услуги, согласие на обработку данных и анкета здоровья",
+		includes: ["Договор на оказание медицинских услуг", "Согласие на обработку персональных данных", "Анкета общего соматического здоровья пациента"],
+	},
+	{
+		id: "informed_consent",
+		titleRu: "Информированное согласие на лечение",
+		badgeRu: "Клиническое ИДС",
+		descriptionRu: "Добровольное согласие на терапию, хирургию, имплантацию, ортопедию и анестезию",
+		includes: ["План терапевтического / хирургического вмешательства", "Информирование о возможных рисках и гарантиях", "Согласие на местное обезболивание"],
+	},
+	{
+		id: "tax_certificate",
+		titleRu: "Справка для налогового вычета",
+		badgeRu: "Налоговый вычет",
+		descriptionRu: "Справка об оплате медицинских услуг для ФНС с расчетом суммы в рублях и копейках",
+		includes: ["Официальная справка для налоговых органов РФ", "Подтверждение расходов на лечение (13% НДФЛ)", "Реквизиты лицензии и плательщика"],
+	},
+	{
+		id: "card_extract",
+		titleRu: "Медицинская карта приёма и выписка",
+		badgeRu: "Клиническая карта",
+		descriptionRu: "Дневник осмотра по стандарту SOAP, выполненные работы и гарантийный талон",
+		includes: ["Клинический дневник осмотра (SOAP)", "Акт выполненных стоматологических работ", "Гарантийный талон и рекомендации врача"],
+	},
+];
+
+export function generateContractTemplate(ctx: DocumentLegalContext): string {
+	const patientName = ctx.patient.fullName.trim() || "________________________________________________";
+	const patientBirthDate = ctx.patient.birthDate.trim() || "«___» _________ _____ г.";
+	const patientPassport = ctx.patient.passport.trim() || "паспорт: серия ____ № ______ выдан ________________________________";
+	const patientPhone = ctx.patient.phone.trim() || "+7 (___) ___-__-__";
+	const patientAddress = ctx.patient.address.trim() || "________________________________________________";
+
+	const costSection = ctx.totalAmountKopecks > 0
+		? `3.1. Предварительная стоимость услуг по согласованному плану лечения составляет: ${formatKopecksToRubles(ctx.totalAmountKopecks)}.`
+		: "3.1. Предварительная стоимость услуг: 0 ₽ (открытая цена по действующему прейскуранту клиники; окончательная сумма согласовывается сторонами в плане лечения). Сметная стоимость: ____________________ руб. (________________________________________).";
+
+	return `ДОГОВОР НА ОКАЗАНИЕ ПЛАТНЫХ МЕДИЦИНСКИХ УСЛУГ № ${ctx.documentNumber}
+
+г. Москва                                                              Дата: ${ctx.documentDate}
+
+1. СТОРОНЫ ДОГОВОРА
+Исполнитель: ${ctx.clinic.name}, ОГРН ${ctx.clinic.ogrn}, ИНН ${ctx.clinic.inn}, адрес: ${ctx.clinic.address}, лицензия: ${ctx.clinic.license}.
+Заказчик (Пациент): ${patientName}, дата рождения: ${patientBirthDate}, ${patientPassport}, телефон: ${patientPhone}, адрес: ${patientAddress}.
+
+2. ПРЕДМЕТ ДОГОВОРА
+2.1. Исполнитель обязуется оказать Пациенту квалифицированные стоматологические услуги в соответствии с медицинскими показаниями и стандартами качества, а Пациент обязуется оплатить оказанные услуги.
+2.2. Лечащий врач: ${ctx.doctor.fullName} (${ctx.doctor.specialty}).
+
+3. СТОИМОСТЬ И ПОРЯДОК ОПЛАТЫ
+${costSection}
+3.2. Оплата производится в кассу или на расчетный счет Исполнителя в день оказания услуг с обязательной выдачей кассового чека.
+
+4. ПОДПИСИ СТОРОН
+Исполнитель: _________________ / ${ctx.doctor.fullName} /          Пациент: _________________ / ${patientName} /`;
+}
+
+export function generateInformedConsentTemplate(
+	ctx: DocumentLegalContext,
+	subKind: ConsentSubKind = "therapy",
+): string {
+	const titles: Record<ConsentSubKind, { label: string; desc: string; risks: string }> = {
+		therapy: { label: "ТЕРАПЕВТИЧЕСКОЕ ЛЕЧЕНИЕ И ПЛОМБИРОВАНИЕ ЗУБОВ", desc: "Препарирование кариозной полости, изоляция рабочего поля, адгезивная подготовка и послойная реставрация светоотверждаемым композитом.", risks: "Кратковременная постпломбировочная чувствительность на температурные раздражители в течение 3–7 дней." },
+		surgery: { label: "ХИРУРГИЧЕСКОЕ ЛЕЧЕНИЕ И УДАЛЕНИЕ ЗУБОВ", desc: "Проведение инфильтрационной/проводниковой анестезии, атравматичное удаление зуба, ревизия лунки, гемостаз и наложение швов.", risks: "Послеоперационный отек мягких тканей до 3 суток, болезненность при открывании рта, формирование кровяного сгустка." },
+		implant: { label: "ДЕНТАЛЬНУЮ ИМПЛАНТАЦИЮ И ОСТЕОПЛАСТИКУ", desc: "Формирование костного ложа с охлаждением физраствором, установка титанового имплантата с заглушкой или формирователем десны.", risks: "Временный отек мягких тканей, необходимость щадящего жевательного режима и антибактериальной терапии." },
+		orthopedics: { label: "ОРТОПЕДИЧЕСКОЕ ЛЕЧЕНИЕ И ПРОТЕЗИРОВАНИЕ", desc: "Препарирование опорных зубов, снятие оптических/силиконовых оттисков, изготовление и постоянная фиксация коронок или виниров.", risks: "Период привыкания к ортопедической конструкции (от 3 до 14 дней), необходимость контрольной коррекции окклюзии." },
+		anesthesia: { label: "МЕСТНОЕ ОБЕЗБОЛИВАНИЕ В СТОМАТОЛОГИИ", desc: "Введение современного карпульного анестетика артикаинового ряда с целью полного устранения болевых ощущений при лечении.", risks: "Онемение мягких тканей губы, щеки и языка на 2–4 часа. Запрещается употребление горячей пищи до полного отхождения анестезии." },
+	};
+	const cur = titles[subKind] || titles.therapy;
+
+	return `ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА ${cur.label}
+К медицинской карте пациента: ${ctx.patient.fullName}
+
+г. Москва                                                              Дата: ${ctx.documentDate}
+
+Я, ${ctx.patient.fullName}, ${ctx.patient.birthDate} г.р., проживающий по адресу: ${ctx.patient.address},
+уполномочиваю клинику «${ctx.clinic.name}» и лечащего врача ${ctx.doctor.fullName} провести стоматологическое вмешательство.
+
+1. СУТЬ И ЦЕЛЬ ВМЕШАТЕЛЬСТВА:
+${cur.desc}
+
+2. ОСВЕДОМЛЕННОСТЬ О ВОЗМОЖНЫХ РИСКАХ И РЕАКЦИЯХ:
+${cur.risks}
+
+3. ОБЯЗАТЕЛЬСТВА ПАЦИЕНТА:
+Я обязуюсь строго выполнять клинические назначения врача, соблюдать рекомендации по уходу и являться на назначенные контрольные осмотры.
+
+Врач: _________________ / ${ctx.doctor.fullName} /          Пациент: _________________ / ${ctx.patient.fullName} /`;
+}
+
+export function generateIntakePackageTemplate(ctx: DocumentLegalContext): string {
+	return `ПАКЕТ ДОКУМЕНТОВ ПЕРВИЧНОГО ПРИЁМА ПАЦИЕНТА
+Клиника: ${ctx.clinic.name}
+Пациент: ${ctx.patient.fullName} (${ctx.patient.birthDate} г.р.)
+Дата оформления: ${ctx.documentDate}
+
+[ДОКУМЕНТ 1: ДОГОВОР НА ОКАЗАНИЕ ПЛАТНЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ]
+Договор регулирует взаимные права и обязанности сторон. Исполнитель оказывает качественную стоматологическую помощь, Пациент производит оплату согласно прейскуранту.
+
+[ДОКУМЕНТ 2: СОГЛАСИЕ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ]
+Пациент разрешает клинике обработку персональных данных для ведения медицинской карты, координации приёма и сервисных напоминаний. Сведения защищены врачебной тайной.
+
+[ДОКУМЕНТ 3: АНКЕТА ОБЩЕГО СОМАТИЧЕСКОГО ЗДОРОВЬЯ]
+Аллергические реакции на препараты: не выявлены.
+Сопутствующие хронические заболевания: отрицает.
+Артериальное давление в норме. Противопоказаний к приёму не установлено.
+
+Подпись пациента: _________________ / ${ctx.patient.fullName} /          Подпись врача: _________________ / ${ctx.doctor.fullName} /`;
+}
+
+export function generateActTemplate(ctx: DocumentLegalContext): string {
+	const itemsRows = ctx.services.length > 0
+		? ctx.services.map((s, idx) => `${idx + 1}. ${s.title} — ${s.quantity} шт. × ${formatKopecksToRubles(s.priceKopecks)} = ${formatKopecksToRubles(s.amountKopecks)}`).join("\n")
+		: (ctx.totalAmountKopecks > 0 ? `1. Стоматологический приём и санация — 1 усл. = ${formatKopecksToRubles(ctx.totalAmountKopecks)}` : "Перечень услуг пуст.");
+
+	return `АКТ ВЫПОЛНЕННЫХ УСЛУГ К ДОГОВОРУ № ${ctx.documentNumber}
+
+г. Москва                                                              Дата: ${ctx.documentDate}
+
+Исполнитель: ${ctx.clinic.name}
+Пациент: ${ctx.patient.fullName} (паспорт: ${ctx.patient.passport})
+Лечащий врач: ${ctx.doctor.fullName}
+
+ПЕРЕЧЕНЬ ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ:
+${itemsRows}
+
+ИТОГО К ОПЛАТЕ: ${formatKopecksToRubles(ctx.totalAmountKopecks)}
+
+Претензий по объёму, срокам и качеству оказанных медицинских услуг Пациент к клинике не имеет.
+Услуги оказаны в полном объёме, надлежащего качества.
+
+Исполнитель: _________________ / ${ctx.doctor.fullName} /          Пациент: _________________ / ${ctx.patient.fullName} /`;
+}
+
+export function generateTaxCertificateTemplate(ctx: DocumentLegalContext): string {
+	const year = ctx.taxYear || new Date().getFullYear();
+
+	let code01Kopecks = 0;
+	let code02Kopecks = 0;
+
+	if (ctx.services && ctx.services.length > 0) {
+		for (const s of ctx.services) {
+			const cat = resolveTaxDeductionCategoryShared(s.code, s.title);
+			if (cat === "2") {
+				code02Kopecks += s.amountKopecks || 0;
+			} else {
+				code01Kopecks += s.amountKopecks || 0;
+			}
+		}
+	} else {
+		code01Kopecks = Math.max(0, Math.round(ctx.totalAmountKopecks || 0));
+		code02Kopecks = 0;
+	}
+
+	const totalKopecks = code01Kopecks + code02Kopecks > 0 ? code01Kopecks + code02Kopecks : Math.max(0, Math.round(ctx.totalAmountKopecks || 0));
+	const eligibleCode01Kopecks = Math.min(code01Kopecks, 15000000);
+	const refund13Kopecks = Math.round((eligibleCode01Kopecks * 0.13) + (code02Kopecks * 0.13));
+
+	return `СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВОГО ВЫЧЕТА (13% НДФЛ)
+Номер справки: ${ctx.documentNumber}
+Отчётный налоговый период: ${year} год
+Штрихкод формы: 1151156 | В соответствии с Приказом ФНС России от 08.11.2023 № ЕА-7-11/824@
+
+1. Сведения о медицинской организации:
+Наименование: ${ctx.clinic.name} | ИНН: ${ctx.clinic.inn} | ОГРН: ${ctx.clinic.ogrn}
+Лицензия на медицинскую деятельность: ${ctx.clinic.license}
+Адрес местонахождения: ${ctx.clinic.address} · Телефон: ${ctx.clinic.phone}
+
+2. Сведения о налогоплательщике и пациенте:
+Пациент: ${ctx.patient.fullName || "________________________________________________"}, дата рождения: ${ctx.patient.birthDate || "«___» _________ _____ г."}
+Документ, удостоверяющий личность: ${ctx.patient.passport || "серия ____ № ______ выдан ________________________________"}
+${ctx.patient.inn ? `ИНН налогоплательщика: ${ctx.patient.inn}` : "ИНН налогоплательщика: не указан (для физических лиц не обязателен)"}
+
+3. Сведения об оплате стоматологических услуг за ${year} год:
+Код услуги 1 (обычное лечение): ${formatKopecksToRubles(code01Kopecks)}
+Код услуги 2 (дорогостоящее лечение): ${formatKopecksToRubles(code02Kopecks)}
+ИТОГО подтверждённая сумма расходов: ${formatKopecksToRubles(totalKopecks)}
+Расчетная сумма социального налогового вычета (13% НДФЛ к возврату): ${formatKopecksToRubles(refund13Kopecks)}
+
+[QR-код верификации ФНС: https://lkfl2.nalog.ru/lkfl/deduction/verify?knd=1151156&year=${year}&inn=${ctx.clinic.inn}&sum=${(totalKopecks / 100).toFixed(2)}]
+
+Справка выдана для предоставления в налоговые органы РФ с целью получения социального налогового вычета.
+Уполномоченное лицо клиники: _________________ / Главный врач / М.П.
+Дата выдачи: ${ctx.documentDate}`;
+}
+
+export function generateCardExtractTemplate(ctx: DocumentLegalContext): string {
+	const diagnosis = ctx.diagnosisRu ? ctx.diagnosisRu : "Не установлен";
+	const anamnesis = ctx.anamnesisRu ? ctx.anamnesisRu : "Не отягощен";
+	const servicesList = ctx.services.length > 0
+		? ctx.services.map((s, i) => `${i + 1}) ${s.title} (${s.quantity} ед.)`).join("\n")
+		: "Услуги не оказывались";
+	const epicrisis = ctx.epicrisisRu ? ctx.epicrisisRu : "Лечение завершено";
+
+	return `ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО ПРИЁМА
+Выписка № ${ctx.documentNumber} к карте пациента
+
+1. Пациент: ${ctx.patient.fullName}, ${ctx.patient.birthDate} г.р.
+2. Лечебное учреждение: ${ctx.clinic.name}
+3. Лечащий врач: ${ctx.doctor.fullName} (${ctx.doctor.specialty})
+4. Клинический диагноз: ${diagnosis}
+5. Анамнез заболевания: ${anamnesis}
+6. Проведенное лечение (дневник SOAP):
+${servicesList}
+7. Исход лечения, гарантия и рекомендации: ${epicrisis}
+
+Врач: _________________ / ${ctx.doctor.fullName} /          М.П. Клиники
+Дата: ${ctx.documentDate}`;
+}
+
+// ---------------------------------------------------------------------------
+// РЕЕСТР ИНДИВИДУАЛЬНЫХ БЛАНКОВ (СОВМЕСТИМОСТЬ И БЫСТРЫЙ ДОСТУП)
+// ---------------------------------------------------------------------------
+
+export type DocumentCatalogCategory = "all" | "intake" | "clinical" | "finance_tax" | "refusal" | "pediatric" | "registry";
+
+export interface DocumentCatalogItem {
+	readonly id: string;
+	readonly kind?: DocumentKind | undefined;
+	readonly titleRu: string;
+	readonly category: DocumentCatalogCategory;
+	readonly descriptionRu: string;
+	readonly badgeRu: string;
+	readonly regulationRu: string;
+	readonly icon: React.ComponentType<{ className?: string; size?: number }>;
+	readonly isPediatric?: boolean | undefined;
+	readonly isStatutory?: boolean | undefined;
+	readonly printSupported: boolean;
+	readonly onQuickAction?: () => void;
+}
+
+export interface DocumentCatalogActionHandlers {
+	readonly onOpenKind?: ((kind: DocumentKind, titleRu?: string) => void) | undefined;
+	readonly onOpenA4Tab?: ((tab: string) => void) | undefined;
+	readonly onOpenTaxModal?: ((tab?: string) => void) | undefined;
+}
+
+export const CATALOG_CATEGORIES: readonly { id: DocumentCatalogCategory; label: string }[] = [
+	{ id: "all", label: "Все документы" },
+	{ id: "intake", label: "Первичный приём" },
+	{ id: "clinical", label: "Клинические" },
+	{ id: "finance_tax", label: "Финансы и НДФЛ" },
+	{ id: "pediatric", label: "Детский приём" },
+	{ id: "refusal", label: "Отказы" },
+	{ id: "registry", label: "Реестры" },
+];
+
+export function getDocumentsCatalogData(handlers: DocumentCatalogActionHandlers = {}): DocumentCatalogItem[] {
+	return [
+		{
+			id: "doc_treatment_contract", kind: "paid_medical_services_contract",
+			titleRu: "Договор платных медицинских услуг", category: "intake",
+			descriptionRu: "Договор с пациентом на оказание стоматологических услуг",
+			badgeRu: "Договор клиники", regulationRu: "Правила платных медицинских услуг",
+			icon: FileText, isStatutory: true, printSupported: true,
+			onQuickAction: () => handlers.onOpenA4Tab?.("contract"),
+		},
+		{
+			id: "doc_treatment_act_completed", kind: "completed_works_act",
+			titleRu: "Акт выполненных стоматологических работ", category: "finance_tax",
+			descriptionRu: "Финансовый акт оказанных услуг с подписями сторон",
+			badgeRu: "Акт услуг", regulationRu: "Акт оказанных услуг",
+			icon: FileCheck, isStatutory: true, printSupported: true,
+			onQuickAction: () => handlers.onOpenA4Tab?.("act"),
+		},
+		{
+			id: "doc_tax_deduction_certificate", kind: "tax_deduction_certificate",
+			titleRu: "Справка для налогового вычета (ФНС)", category: "finance_tax",
+			descriptionRu: "Справка об оплате медуслуг для возврата 13% НДФЛ",
+			badgeRu: "Справка ФНС", regulationRu: "Налоговый вычет на лечение",
+			icon: Zap, isStatutory: true, printSupported: true,
+			onQuickAction: () => handlers.onOpenTaxModal?.("form"),
+		},
+		{
+			id: "doc_medical_card_extract", kind: "dental_medical_card_043u",
+			titleRu: "Выписка из медицинской карты приёма", category: "clinical",
+			descriptionRu: "Выписка диагнозов, анамнеза и проведённого лечения",
+			badgeRu: "Выписка из карты", regulationRu: "Выписка из медицинской карты",
+			icon: ClipboardList, isStatutory: true, printSupported: true,
+			onQuickAction: () => handlers.onOpenA4Tab?.("medical_card"),
+		},
+		{
+			id: "doc_informed_consent_general", kind: "informed_consent",
+			titleRu: "Информированное согласие на лечение", category: "intake",
+			descriptionRu: "Добровольное согласие на осмотр, диагностику и анестезию",
+			badgeRu: "Согласие на лечение", regulationRu: "Клинический стандарт согласия",
+			icon: ShieldCheck, isStatutory: true, printSupported: true,
+			onQuickAction: () => handlers.onOpenA4Tab?.("informed_consent"),
+		},
+		{
+			id: "doc_personal_data_consent", kind: "personal_data_processing_consent",
+			titleRu: "Согласие на обработку персональных данных", category: "intake",
+			descriptionRu: "Согласие на ведение карты и сервисное информирование",
+			badgeRu: "Согласие на обработку персональных данных", regulationRu: "Защита персональных данных",
+			icon: UserCheck, isStatutory: true, printSupported: true,
+			onQuickAction: () => handlers.onOpenA4Tab?.("personal_data"),
+		},
+		{
+			id: "doc_treatment_plan", kind: "treatment_plan",
+			titleRu: "План стоматологического лечения", category: "clinical",
+			descriptionRu: "Поэтапный клинический график и финансовая смета",
+			badgeRu: "План и смета", regulationRu: "План стоматологического лечения",
+			icon: FileText, printSupported: true,
+			onQuickAction: () => handlers.onOpenA4Tab?.("treatment_plan"),
+		},
+		{
+			id: "doc_post_visit_recommendations", kind: "post_visit_recommendations",
+			titleRu: "Рекомендации пациенту после приёма", category: "clinical",
+			descriptionRu: "Памятка по уходу после терапевтического или хирургического визита",
+			badgeRu: "Памятка", regulationRu: "Рекомендации по уходу после приёма",
+			icon: Sparkles, printSupported: true,
+			onQuickAction: () => handlers.onOpenKind?.("post_visit_recommendations", "Рекомендации после приёма"),
+		},
+		{
+			id: "doc_payment_receipt", kind: "payment_receipt",
+			titleRu: "Квитанция и подтверждение оплаты", category: "finance_tax",
+			descriptionRu: "Подтверждение оплаты услуг в кассе клиники",
+			badgeRu: "Касса и чек", regulationRu: "Кассовый чек и оплата",
+			icon: Receipt, printSupported: true,
+			onQuickAction: () => handlers.onOpenKind?.("payment_receipt", "Квитанция об оплате"),
+		},
+		{
+			id: "doc_pediatric_representative_consent", kind: "minor_legal_representative_consent",
+			titleRu: "Согласие законного представителя ребёнка", category: "pediatric",
+			descriptionRu: "Согласие родителя или опекуна на осмотр и лечение ребёнка",
+			badgeRu: "Педиатрия", regulationRu: "Согласие законного представителя",
+			icon: Heart, isPediatric: true, isStatutory: true, printSupported: true,
+			onQuickAction: () => handlers.onOpenA4Tab?.("informed_consent"),
+		},
+	];
+}
+
+export const DEMO_SAMPLE_SERVICES: readonly DocumentServiceItem[] = [
+	{ id: "srv-01", title: "Приём (осмотр, консультация) врача-стоматолога первичный", code: "B01.065.001", quantity: 1, priceKopecks: 150000, amountKopecks: 150000 },
+	{ id: "srv-02", title: "Восстановление зуба 4.6 пломбой световой полимеризации", code: "A16.07.002.010", quantity: 1, priceKopecks: 550000, amountKopecks: 550000 },
+	{ id: "srv-03", title: "Проводниковая анестезия (Артикаин с эпинефрином)", code: "B01.003.004.004", quantity: 1, priceKopecks: 80000, amountKopecks: 80000 },
+];
+
+export const DEMO_SAMPLE_PATIENT: PatientRequisites = {
+	fullName: "Смирнов Алексей Петрович",
+	birthDate: "12.04.1988",
+	passport: "45 12 654321 выдан ОВД г. Москвы",
+	address: "г. Москва, ул. Тверская, д. 14, кв. 8",
+	phone: "+7 (916) 123-45-67",
+};
+
+export const EMPTY_PATIENT_REQUISITES: PatientRequisites = { fullName: "", birthDate: "", passport: "", address: "", phone: "" };
+export const EMPTY_SERVICES: readonly DocumentServiceItem[] = [];

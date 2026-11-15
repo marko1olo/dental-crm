@@ -9,7 +9,7 @@
 
 import React from "react";
 import { Download, Printer, Send, Zap } from "lucide-react";
-import type { DocumentPackageKey } from "../documentsCatalogData";
+import type { DocumentPackageKey } from "../../consents/consentCatalogData";
 
 export interface DocumentsStudioFooterProps {
 	readonly onPrimarySignAndPrint: () => void;

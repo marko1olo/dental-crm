@@ -39,9 +39,10 @@ export function EmkPerioSummary({
 		const normStatusRu =
 			"Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует (BOP 0%), патологических карманов нет, подвижность зубов физиологическая (0 ст.). Скрининг PSR: 0 во всех секстантах.";
 
+		const currentObjectiveStatus = typeof visitNoteForm?.objectiveStatus === "string" ? visitNoteForm.objectiveStatus : "";
 		updateVisitNoteField(
 			"objectiveStatus",
-			appendClinicalText(visitNoteForm?.objectiveStatus || "", normStatusRu, "\n\n"),
+			appendClinicalText(currentObjectiveStatus, normStatusRu, "\n\n"),
 		);
 
 		const currentDiag = String(visitNoteForm?.diagnosis || "").trim();
@@ -100,12 +101,13 @@ export function EmkPerioSummary({
 
 		const planAddition =
 			"• Профессиональная гигиена полости рта (A16.07.051): ультразвуковое удаление над- и поддесневых зубных отложений скейлером, воздушно-абразивная обработка Air-Flow, полировка эмали пастой, глубокое фторирование.";
+		const currentTreatmentPlan = typeof visitNoteForm?.treatmentPlan === "string" ? visitNoteForm.treatmentPlan : "";
 		updateVisitNoteField(
 			"treatmentPlan",
-			appendClinicalText(visitNoteForm?.treatmentPlan || "", planAddition, "\n\n"),
+			appendClinicalText(currentTreatmentPlan, planAddition, "\n\n"),
 		);
 
-		showToast("Профессиональная гигиена (A16.07.051) добавлена в смету и дневник", "success", 3000);
+		showToast("Пародонтологический протокол и гигиена добавлены в смету и дневник", "success", 3000);
 	}, [visitNoteForm?.treatmentPlan, updateVisitNoteField]);
 
 	// 3. Экспресс-индекс гигиены OHI-S в 3 клика
@@ -122,9 +124,10 @@ export function EmkPerioSummary({
 				text = "Индекс гигиены OHI-S: 2.2 (неудовлетворительная гигиена полости рта). Обильные над- и поддесневые зубные отложения, плотный пигментированный налёт курильщика/биоплёнка.";
 			}
 
+			const currentObjectiveStatus = typeof visitNoteForm?.objectiveStatus === "string" ? visitNoteForm.objectiveStatus : "";
 			updateVisitNoteField(
 				"objectiveStatus",
-				appendClinicalText(visitNoteForm?.objectiveStatus || "", text, "\n\n"),
+				appendClinicalText(currentObjectiveStatus, text, "\n\n"),
 			);
 
 			showToast(`Индекс гигиены OHI-S зафиксирован (${level === "good" ? "Хорошая" : level === "fair" ? "Удовлетворительная" : "Неудовлетворительная"})`, "info", 2000);
@@ -160,12 +163,12 @@ export function EmkPerioSummary({
 				<button
 					type="button"
 					onClick={handleAddProphyService}
-					className="secondary-button min-h-[44px] px-3.5 py-2 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-800 dark:text-sky-300 hover:bg-sky-500/20 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+					className="secondary-button min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal,#0d9488)] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
 					data-testid="emk-hygiene-prophy-btn"
-					title="Добавить профессиональную гигиену полости рта (A16.07.051) в смету и дневник"
+					title="Назначить профессиональную гигиену полости рта и пародонтологический протокол"
 				>
-					<Sparkles size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
-					<span>+ Профгигиена в смету (A16.07.051)</span>
+					<Sparkles size={14} className="shrink-0 text-[var(--teal,#0d9488)]" />
+					<span>Назначить пародонтологический протокол</span>
 				</button>
 			</div>
 

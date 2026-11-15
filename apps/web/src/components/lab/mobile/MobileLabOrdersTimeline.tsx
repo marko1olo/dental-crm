@@ -53,7 +53,7 @@ export const MobileLabOrdersTimeline: React.FC<MobileLabOrdersTimelineProps> = R
 					const doc = (o.doctorName || "").toLowerCase();
 					const tooth = (o.toothFdi || "").toLowerCase();
 					const mat = (o.material || "").toLowerCase();
-					const num = (o.orderNumber || o.id || "").toLowerCase();
+					const num = String(o.orderNumber || o.id || "").toLowerCase();
 					return pat.includes(q) || doc.includes(q) || tooth.includes(q) || mat.includes(q) || num.includes(q);
 				}
 				return true;

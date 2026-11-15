@@ -17,7 +17,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
 import { ClinicalVisitPackageModal } from "../ClinicalVisitPackageModal";
-import { getDocumentsCatalogData } from "../documentsCatalogData";
+import { getDocumentsCatalogData } from "../../consents/consentCatalogData";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,14 +86,14 @@ describe("ClinicalVisitPackageModal & documentsCatalogData Red Team Audit", () =
 	it("3. Zero competitor mentions across documents package and catalog", () => {
 		const modalPath = path.resolve(__dirname, "../ClinicalVisitPackageModal.tsx");
 		const modalContent = fs.readFileSync(modalPath, "utf-8");
-		const catalogPath = path.resolve(__dirname, "../documentsCatalogData.ts");
+		const catalogPath = path.resolve(__dirname, "../../consents/consentCatalogData.ts");
 		const catalogContent = fs.readFileSync(catalogPath, "utf-8");
 
 		const competitors = ["stomx", "dentalpro", "ident", "istom"];
 		for (const comp of competitors) {
 			const regex = new RegExp(`\\b${comp}\\b`, "i");
 			assert.ok(!regex.test(modalContent), `ClinicalVisitPackageModal contains competitor ${comp}`);
-			assert.ok(!regex.test(catalogContent), `documentsCatalogData contains competitor ${comp}`);
+			assert.ok(!regex.test(catalogContent), `consentCatalogData contains competitor ${comp}`);
 		}
 	});
 

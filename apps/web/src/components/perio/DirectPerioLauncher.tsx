@@ -78,14 +78,18 @@ export const DirectPerioLauncher: React.FC<DirectPerioLauncherProps> = ({
 
 	useEffect(() => {
 		const handleOpen = (e?: Event) => {
-			const detail = (e as CustomEvent<{ patientId?: unknown; patientName?: unknown }> | undefined)?.detail;
-			setEventPatientId(detail?.patientId ? String(detail.patientId) : undefined);
-			setEventPatientName(detail?.patientName ? String(detail.patientName) : undefined);
+			if (e && "detail" in e) {
+				const customEvt = e as CustomEvent<{ patientId?: unknown; patientName?: unknown }>;
+				const detail = customEvt.detail;
+				setEventPatientId(detail?.patientId ? String(detail.patientId) : undefined);
+				setEventPatientName(detail?.patientName ? String(detail.patientName) : undefined);
+			}
 			setIsOpen(true);
 		};
 
 		window.addEventListener("dente:open-perio", handleOpen);
 		window.addEventListener("dente:open-psr", handleOpen);
+		window.addEventListener("dente:open-perio-modal", handleOpen);
 		window.addEventListener("dente-open-perio-modal", handleOpen);
 
 		const handleState = () => {
@@ -99,6 +103,7 @@ export const DirectPerioLauncher: React.FC<DirectPerioLauncherProps> = ({
 		return () => {
 			window.removeEventListener("dente:open-perio", handleOpen);
 			window.removeEventListener("dente:open-psr", handleOpen);
+			window.removeEventListener("dente:open-perio-modal", handleOpen);
 			window.removeEventListener("dente-open-perio-modal", handleOpen);
 			window.removeEventListener("hashchange", handleState);
 			window.removeEventListener("popstate", handleState);

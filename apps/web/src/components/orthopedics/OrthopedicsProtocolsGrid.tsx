@@ -92,8 +92,8 @@ export function OrthopedicsProtocolsGrid({
 								onClick={() => onApplyProtocol(proto)}
 								className={`min-h-[48px] sm:min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
 									isApplied
-										? "bg-emerald-600 text-white shadow-xs"
-										: "primary-button"
+										? "dente-btn-secondary text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/10"
+										: "primary-button bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white"
 								}`}
 								data-testid={`apply-ortho-protocol-${proto.id}`}
 								title={`Внести протокол «${proto.shortLabel}» в дневник приёма, смету визита и Этап 3 (Ортопедия)`}

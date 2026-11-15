@@ -307,7 +307,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		return orders.filter((ord) => {
 			const query = searchQuery.trim().toLowerCase();
 			const matchesSearch = !query || ord.patientName.toLowerCase().includes(query) ||
-				ord.orderNumber.toLowerCase().includes(query) || ord.laboratoryName.toLowerCase().includes(query);
+				Boolean(ord.orderNumber && String(ord.orderNumber).toLowerCase().includes(query)) || ord.laboratoryName.toLowerCase().includes(query);
 			if (!matchesSearch) return false;
 			if (activeFilter === "in_work") return ord.stage === "scan_sent" || ord.stage === "in_production" || ord.stage === "fitting_ready";
 			if (activeFilter === "in_clinic") return ord.stage === "in_clinic";

@@ -27,10 +27,17 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 				return current;
 			});
 			setError(null);
-			const res = await fetch("/api/lab/orders", {
-				headers: denteAdminSecretRequestHeaders(),
-				signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(2500) : undefined,
-			});
+			const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+			const timeoutId = controller ? setTimeout(() => controller.abort(), 2500) : null;
+			let res: Response;
+			try {
+				res = await fetch("/api/lab/orders", {
+					headers: denteAdminSecretRequestHeaders(),
+					signal: controller?.signal,
+				});
+			} finally {
+				if (timeoutId) clearTimeout(timeoutId);
+			}
 			if (!res.ok) {
 				if (isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true"))) {
 					setOrders([...CANONICAL_DEMO_LAB_ORDERS]);

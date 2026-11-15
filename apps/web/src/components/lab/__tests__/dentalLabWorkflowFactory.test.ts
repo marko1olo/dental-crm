@@ -31,7 +31,7 @@ describe("6. Lab Order Factory & 4-Stage Transitions", () => {
 		});
 
 		assert.ok(order.id.startsWith("ztl-ord-"));
-		assert.ok(order.orderNumber.startsWith("ЗТЛ-"));
+		assert.ok(String(order.orderNumber).startsWith("ЗТЛ-"));
 		assert.equal(order.patientName, "Смирнова Е. А.");
 		assert.equal(order.workTypeId, "crown_emax");
 		assert.deepEqual(order.selectedTeeth, [11, 21]);

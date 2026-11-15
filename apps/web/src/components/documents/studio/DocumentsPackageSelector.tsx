@@ -10,7 +10,7 @@ import {
 	CANONICAL_CLINIC_PACKAGES,
 	type ConsentSubKind,
 	type DocumentPackageKey,
-} from "../documentsCatalogData";
+} from "../../consents/consentCatalogData";
 
 export interface DocumentsPackageSelectorProps {
 	readonly activePackage: DocumentPackageKey;

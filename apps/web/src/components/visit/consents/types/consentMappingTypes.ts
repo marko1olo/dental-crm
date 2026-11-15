@@ -32,6 +32,7 @@ export const CONSENT_KEY_TO_DOCUMENT_KIND: Partial<Record<ConsentTemplateKey, st
 
 export const DOCUMENT_KIND_TO_CONSENT_KEY: Record<string, ConsentTemplateKey> = {
 	informed_consent: "CONSENT_INSPECTION_1051N",
+	procedure_specific_consent_packet: "CONSENT_THERAPY",
 	anesthesia_consent_log: "CONSENT_ANESTHESIA",
 	personal_data_processing_consent: "CONSENT_PERSONAL_DATA",
 	medical_intervention_refusal: "CONSENT_TREATMENT_REFUSAL",
@@ -77,11 +78,20 @@ export function isConsentTemplateKey(val: unknown): val is ConsentTemplateKey {
 
 export function resolveConsentKeyFromDocument(doc: {
 	kind?: string | undefined;
+	title?: string | undefined;
+	consentType?: string | undefined;
 	payload?: Record<string, unknown> | null | undefined;
 }): ConsentTemplateKey | null {
 	const payloadConsentKey = doc.payload?.consentKey;
 	if (isConsentTemplateKey(payloadConsentKey)) {
 		return payloadConsentKey;
+	}
+	if (isConsentTemplateKey(doc.consentType)) {
+		return doc.consentType;
+	}
+	const payloadConsentType = doc.payload?.consentType;
+	if (isConsentTemplateKey(payloadConsentType)) {
+		return payloadConsentType;
 	}
 	const procType =
 		(doc.payload?.procedureType as string | undefined) ||
@@ -89,6 +99,24 @@ export function resolveConsentKeyFromDocument(doc: {
 		((doc.payload?.procedureSpecific as Record<string, unknown> | undefined)?.procedureType as string | undefined);
 	if (typeof procType === "string" && procType in PROCEDURE_TYPE_TO_CONSENT_KEY) {
 		return PROCEDURE_TYPE_TO_CONSENT_KEY[procType] ?? null;
+	}
+	if (doc.title) {
+		const t = doc.title.toLowerCase();
+		if (t.includes("анестези") || t.includes("обезбол")) return "CONSENT_ANESTHESIA";
+		if (t.includes("персональн")) return "CONSENT_PERSONAL_DATA";
+		if (t.includes("имплант")) return "CONSENT_IMPLANTOLOGY";
+		if (t.includes("синус")) return "CONSENT_SINUS_LIFT";
+		if (t.includes("хирург") || t.includes("удалени")) return "CONSENT_SURGERY_EXTRACTION";
+		if (t.includes("ортопед") || t.includes("протез") || t.includes("коронк") || t.includes("винир")) return "CONSENT_ORTHOPEDICS";
+		if (t.includes("ортодонт") || t.includes("брекет") || t.includes("элайн")) return "CONSENT_ORTHODONTICS";
+		if (t.includes("гигиен") || t.includes("отбеливан") || t.includes("чистк")) return "CONSENT_HYGIENE_BLEACHING";
+		if (t.includes("детск") || t.includes("педиатри")) return "CONSENT_PEDIATRIC";
+		if (t.includes("седат")) return "CONSENT_SEDATION";
+		if (t.includes("отказ")) return "CONSENT_TREATMENT_REFUSAL";
+		if (t.includes("фото")) return "CONSENT_PHOTOPROTOCOL";
+		if (t.includes("гаранти")) return "CONSENT_WARRANTY_PASSPORT";
+		if (t.includes("договор")) return "CONSENT_PAID_CONTRACT";
+		if (t.includes("терапевт") || t.includes("кариес") || t.includes("пульпит") || t.includes("пломб") || t.includes("лечени")) return "CONSENT_THERAPY";
 	}
 	if (doc.kind && doc.kind in DOCUMENT_KIND_TO_CONSENT_KEY) {
 		return DOCUMENT_KIND_TO_CONSENT_KEY[doc.kind] ?? null;

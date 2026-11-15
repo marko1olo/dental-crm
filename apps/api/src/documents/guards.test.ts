@@ -53,7 +53,7 @@ describe("taxPaymentSelectionErrorForDocument", () => {
 		assert.strictEqual(error, null);
 	});
 
-	test("returns error if tax document requires payment selection but none selected", () => {
+	test("returns null if tax document has empty payment selection (auto-capture by taxYear enabled)", () => {
 		const error = taxPaymentSelectionErrorForDocument(
 			{
 				...baseInput,
@@ -61,10 +61,7 @@ describe("taxPaymentSelectionErrorForDocument", () => {
 			},
 			basePayments,
 		);
-		assert.strictEqual(
-			error,
-			"Для налогового заявления, справки или реестра нужно явно выбрать фискальные чеки. Автоматический захват всех оплат за год отключен.",
-		);
+		assert.strictEqual(error, null);
 	});
 
 	test("returns null if tax document does not require payment selection and none selected", () => {
@@ -409,7 +406,7 @@ describe("paidAmountRubForDocument", () => {
 		assert.strictEqual(amount, 50); // only payment-3 matches selection and year
 	});
 
-	test("returns 0 for tax documents with payment selection but none selected", () => {
+	test("automatically captures payments for tax documents when selectedPaymentIds is empty", () => {
 		const input: CreateDocumentInput = {
 			patientId: "patient-1",
 			kind: "tax_deduction_certificate",
@@ -424,7 +421,7 @@ describe("paidAmountRubForDocument", () => {
 			input,
 			basePayments,
 		);
-		assert.strictEqual(amount, 0);
+		assert.strictEqual(amount, 50);
 	});
 
 	test("calculates sum for payment_receipt with specific payload", () => {

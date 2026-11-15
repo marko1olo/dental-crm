@@ -60,7 +60,7 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		const allStrokes: SignatureStroke[] = [...strokesRef.current];
 		if (currentStrokeRef.current.length > 0) {
 			allStrokes.push({
-				points: currentStrokeRef.current.map((pt) => ({ x: pt.x, y: pt.y })),
+				points: currentStrokeRef.current.map((pt) => ({ x: pt.x, y: pt.y, time: Date.now() })),
 				color: "#0d9488",
 				width: 2.5,
 			});

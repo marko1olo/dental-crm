@@ -77,6 +77,26 @@ export interface DentalLabOrderData {
 	originalOrderNumber?: string;
 	createdAt?: string;
 	updatedAt?: string;
+	order_number?: string | null;
+	patient_id?: string | null;
+	patient_name?: string | null;
+	doctor_id?: string | null;
+	doctor_name?: string | null;
+	clinicName?: string | null;
+	clinic_name?: string | null;
+	lab_name?: string | null;
+	workTypeId?: string | null;
+	materialName?: string | null;
+	shadeCode?: string | null;
+	stumpShadeCode?: string | null;
+	patientPriceRub?: number | null;
+	patientPriceKopecks?: number | null;
+	priceKopecks?: number | null;
+	orderDateIso?: string | null;
+	expectedLabDateIso?: string | null;
+	scheduledVisitDateIso?: string | null;
+	fittingDateIso?: string | null;
+	appointmentId?: string | null;
 }
 
 export interface DentalLabOrderModalProps {

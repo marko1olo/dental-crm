@@ -127,4 +127,90 @@ describe("Red Team Fixer Surgeon: Documents and Consents SSOT Integrity", () => 
 		const res = renderSignatureElementHtml("data:image/png;base64,abc");
 		expect(res).toContain("<img");
 	});
+
+	it("DEF-DOC-06: resolveConsentKeyFromDocument resolves procedure_specific_consent_packet and title heuristics without amnesia", async () => {
+		const { resolveConsentKeyFromDocument } = await import(
+			"../../visit/consents/types/consentMappingTypes"
+		);
+
+		// procedure_specific_consent_packet with therapy procedure
+		expect(
+			resolveConsentKeyFromDocument({
+				kind: "procedure_specific_consent_packet",
+				payload: { procedureType: "therapy_endo_restoration" },
+			}),
+		).toBe("CONSENT_THERAPY");
+
+		// procedure_specific_consent_packet with implant
+		expect(
+			resolveConsentKeyFromDocument({
+				kind: "procedure_specific_consent_packet",
+				payload: { procedureType: "implantation" },
+			}),
+		).toBe("CONSENT_IMPLANTOLOGY");
+
+		// fallback based on kind
+		expect(
+			resolveConsentKeyFromDocument({
+				kind: "procedure_specific_consent_packet",
+			}),
+		).toBe("CONSENT_THERAPY");
+
+		// fallback based on title heuristic
+		expect(
+			resolveConsentKeyFromDocument({
+				title: "Информированное согласие на местную анестезию",
+			}),
+		).toBe("CONSENT_ANESTHESIA");
+
+		expect(
+			resolveConsentKeyFromDocument({
+				title: "Согласие на удаление зуба и хирургию",
+			}),
+		).toBe("CONSENT_SURGERY_EXTRACTION");
+	});
+
+	it("DEF-DOC-07: Single SSOT in consentCatalogData contains all clinic packages, kopeck utilities, and templates", async () => {
+		const {
+			CANONICAL_CLINIC_PACKAGES,
+			formatKopecksToRubles,
+			sumKopecks,
+			getDocumentsCatalogData,
+			generateContractTemplate,
+			generateTaxCertificateTemplate,
+			DEFAULT_CLINIC_REQUISITES,
+			DEMO_SAMPLE_PATIENT,
+		} = await import("../../consents/consentCatalogData");
+
+		expect(CANONICAL_CLINIC_PACKAGES).toHaveLength(4);
+		expect(formatKopecksToRubles(125000)).toBe("1 250 ₽");
+		expect(sumKopecks([{ amountKopecks: 100 }, { amountKopecks: 250 }])).toBe(350);
+
+		const catalog = getDocumentsCatalogData();
+		expect(catalog.length).toBeGreaterThanOrEqual(10);
+
+		const contract = generateContractTemplate({
+			clinic: DEFAULT_CLINIC_REQUISITES,
+			patient: DEMO_SAMPLE_PATIENT,
+			doctor: { fullName: "Д-р Иванов", specialty: "Стоматолог-терапевт" },
+			documentNumber: "ДОК-01",
+			documentDate: "15.11.2026",
+			services: [],
+			totalAmountKopecks: 0,
+		});
+		expect(contract).toContain("ДОГОВОР НА ОКАЗАНИЕ ПЛАТНЫХ МЕДИЦИНСКИХ УСЛУГ");
+
+		const taxCert = generateTaxCertificateTemplate({
+			clinic: DEFAULT_CLINIC_REQUISITES,
+			patient: DEMO_SAMPLE_PATIENT,
+			doctor: { fullName: "Д-р Иванов", specialty: "Главный врач" },
+			documentNumber: "СПР-01",
+			documentDate: "15.11.2026",
+			taxYear: 2024,
+			services: [],
+			totalAmountKopecks: 5000000,
+		});
+		expect(taxCert).toContain("СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВОГО ВЫЧЕТА");
+		expect(taxCert).toContain("1151156");
+	});
 });

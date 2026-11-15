@@ -304,7 +304,7 @@ export function advanceLabOrderStage(
 		appointmentId: order.appointmentId,
 		currentDate,
 		isInstalledOrCompleted: isInstalled,
-		orderNumber: order.orderNumber,
+		orderNumber: order.orderNumber != null ? String(order.orderNumber) : undefined,
 		patientName: order.patientName,
 		doctorName: order.doctorName,
 		labName: order.labName,
@@ -318,7 +318,7 @@ export function advanceLabOrderStage(
 		currentStage: newStage,
 		isWarrantyRework: isWarranty,
 		originalOrderId: order.originalOrderId || (newStage === "warranty_rework" ? order.id : undefined),
-		originalOrderNumber: order.originalOrderNumber || (newStage === "warranty_rework" ? order.orderNumber : undefined),
+		originalOrderNumber: order.originalOrderNumber || (newStage === "warranty_rework" ? (order.orderNumber != null ? String(order.orderNumber) : undefined) : undefined),
 		stageHistory: [
 			...order.stageHistory,
 			{
@@ -352,7 +352,7 @@ export function sendOrderToWarrantyRework(
 		appointmentId: undefined,
 		currentDate,
 		isInstalledOrCompleted: false,
-		orderNumber: order.orderNumber,
+		orderNumber: order.orderNumber != null ? String(order.orderNumber) : undefined,
 		patientName: order.patientName,
 		doctorName: order.doctorName,
 		labName: order.labName,
@@ -380,7 +380,7 @@ export function sendOrderToWarrantyRework(
 		warrantyLiabilityType,
 		reworkReason,
 		originalOrderId: order.originalOrderId || order.id,
-		originalOrderNumber: order.originalOrderNumber || order.orderNumber,
+		originalOrderNumber: order.originalOrderNumber || (order.orderNumber != null ? String(order.orderNumber) : undefined),
 		financials: warrantyFinancials,
 		expectedLabDateIso: newExpectedIso,
 		stageHistory: [

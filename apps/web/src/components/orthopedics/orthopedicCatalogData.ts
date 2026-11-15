@@ -301,7 +301,14 @@ export function getStumpShadeByCode(code: string): StumpShadeOption | undefined 
 
 export function calculateOrthopedicEconomics(presetId: string, count: number = 1): OrthopedicEconomicsCalculation {
 	const safeCount = Math.max(1, count);
-	const preset = getZtlPresetById(presetId) || STANDARD_ZTL_ORDER_PRESETS[0];
+	const fallbackPreset = STANDARD_ZTL_ORDER_PRESETS[0] ?? {
+		id: "crown_zirconia",
+		name: "Коронка диоксид циркония",
+		pricePatientRub: 25000,
+		costZtlRub: 8000,
+		costMaterialsRub: 1500,
+	};
+	const preset = getZtlPresetById(presetId) ?? fallbackPreset;
 	const grossPriceRub = preset.pricePatientRub * safeCount;
 	const ztlCostRub = preset.costZtlRub * safeCount;
 	const materialsCostRub = preset.costMaterialsRub * safeCount;

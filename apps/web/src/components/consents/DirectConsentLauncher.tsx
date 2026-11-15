@@ -58,13 +58,20 @@ const resolvePatientContext = (): {
 	const patBirthDate = s.get("birthDate");
 
 	if (patName || patId || patPhone || patPassport || patBirthDate) {
-		return {
-			patientId: patId || undefined,
-			patientName: patName || undefined,
-			birthDate: patBirthDate || undefined,
-			passport: patPassport || undefined,
-			phone: patPhone || undefined,
-		};
+		const res: {
+			patientId?: string;
+			patientName?: string;
+			birthDate?: string;
+			passport?: string;
+			phone?: string;
+			doctorName?: string;
+		} = {};
+		if (patId) res.patientId = patId;
+		if (patName) res.patientName = patName;
+		if (patBirthDate) res.birthDate = patBirthDate;
+		if (patPassport) res.passport = patPassport;
+		if (patPhone) res.phone = patPhone;
+		return res;
 	}
 
 	if (isDemoShowcaseMode()) {

@@ -51,6 +51,8 @@ export interface ConsentStudioModalProps {
 		readonly [key: string]: unknown;
 	} | undefined;
 	readonly patientName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly isMinorPatient?: boolean | undefined;
 	readonly initialDocId?: ConsentDocumentId | undefined;
 	readonly initialSelectedIds?: readonly ConsentDocumentId[] | undefined;
 	readonly initialMode?: "single" | "batch" | undefined;
@@ -112,12 +114,15 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 	patientContext,
 	patient,
 	patientName,
-	initialDocId = "therapy",
+	doctorName,
+	isMinorPatient,
+	initialDocId,
 	initialSelectedIds,
 	initialMode = "batch",
 	onDocumentSigned,
 	onConsentSigned,
 }) => {
+	const resolvedInitialDocId = initialDocId || (isMinorPatient ? "pediatric" : "therapy");
 	const effectivePatientName =
 		patientContext?.patientName ||
 		patient?.fullName ||
@@ -137,7 +142,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 		phone: patientContext?.phone || patient?.phone,
 		snils: patientContext?.snils || patient?.snils,
 		clinicName: patientContext?.clinicName || "Клиника «DENTE»",
-		doctorName: patientContext?.doctorName,
+		doctorName: doctorName || patientContext?.doctorName,
 		diagnosisText: patientContext?.diagnosisText,
 		plannedProcedures: patientContext?.plannedProcedures,
 	};
@@ -145,11 +150,11 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 	const defaultSelection: ConsentDocumentId[] = initialSelectedIds
 		? [...initialSelectedIds]
 		: initialMode === "single"
-			? [initialDocId]
+			? [resolvedInitialDocId]
 			: ["therapy", "personal_data", "anesthesia", "paid_contract"];
 
 	const [selectedIds, setSelectedIds] = useState<Set<ConsentDocumentId>>(new Set(defaultSelection));
-	const [activeDocId, setActiveDocId] = useState<ConsentDocumentId>(initialDocId);
+	const [activeDocId, setActiveDocId] = useState<ConsentDocumentId>(resolvedInitialDocId);
 	const [signRecords, setSignRecords] = useState<Record<string, DocumentSignRecord>>({});
 	const [isPaperChecked, setIsPaperChecked] = useState<boolean>(false);
 	const [signatureSvg, setSignatureSvg] = useState<string>("");

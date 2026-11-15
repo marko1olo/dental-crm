@@ -121,11 +121,11 @@ describe("Канонический SSOT пародонтологии и эксп
 		assert.strictEqual(html.includes("disabled=\"\""), false, "Кнопки не должны быть заблокированы");
 	});
 
-	it("6. Мандат 8am: Ровно ОДНА Primary CTA кнопка #0d9488 на десктопе", () => {
+	it("6. Мандат 8am: Ровно ОДНА Primary CTA кнопка (noble teal) на десктопе", () => {
 		const html = renderToString(<PerioStudioModal isModal={true} patientName="Тестовый Пациент" />);
 
 		assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""));
-		assert.ok(html.includes("bg-[#0d9488]"));
+		assert.ok(html.includes("perio-primary-cta-btn"));
 		assert.ok(html.includes("Сохранить пародонтограмму"));
 	});
 

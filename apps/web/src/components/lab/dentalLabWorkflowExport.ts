@@ -189,8 +189,8 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 	const preset = ORTHOPEDIC_WORK_TYPES[order.workTypeId] || ORTHOPEDIC_WORK_TYPES.crown_emax;
 	const stage = LAB_WORKFLOW_STATUSES[order.currentStage] || LAB_WORKFLOW_STATUSES.draft;
 	const teethFormatted = order.selectedTeeth.length > 0 ? [...order.selectedTeeth].sort((a, b) => a - b).join(", ") : "Не указаны";
-	const barcodeSvg = generateBarcodeSvg(order.orderNumber, 230, 48);
-	const qrSvg = generateQrCodeSvg(`DENTE-ZTL:${order.orderNumber}|PATIENT:${order.patientName}|DOCTOR:${order.doctorName}|TEETH:${teethFormatted}|FITTING:${order.fittingDate || "N/A"}`, 85);
+	const barcodeSvg = generateBarcodeSvg(String(order.orderNumber || order.id), 230, 48);
+	const qrSvg = generateQrCodeSvg(`DENTE-ZTL:${String(order.orderNumber || order.id)}|PATIENT:${order.patientName}|DOCTOR:${order.doctorName}|TEETH:${teethFormatted}|FITTING:${order.fittingDate || "N/A"}`, 85);
 	const odontogramSvg = generateOdontogramSvg(order.selectedTeeth);
 	const hasImplants = Boolean(order.implantComponents?.hasImplantComponents || order.workTypeId === "custom_abutment" || order.implantPlatform);
 

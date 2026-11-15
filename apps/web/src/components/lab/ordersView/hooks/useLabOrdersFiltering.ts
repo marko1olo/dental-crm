@@ -39,7 +39,7 @@ export function useLabOrdersFiltering(orders: DentalLabOrderData[]) {
 				const d = (o.doctorName || "").toLowerCase();
 				const t = (o.toothFdi || "").toLowerCase();
 				const m = (o.material || "").toLowerCase();
-				const n = (o.orderNumber || o.id || "").toLowerCase();
+				const n = String(o.orderNumber || o.id || "").toLowerCase();
 				if (!p.includes(q) && !d.includes(q) && !t.includes(q) && !m.includes(q) && !n.includes(q)) return false;
 			}
 			return true;

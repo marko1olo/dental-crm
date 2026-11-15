@@ -117,8 +117,7 @@ export function taxPaymentSelectionErrorForDocument(
 	const selectedIds = selectedTaxPaymentIds(input);
 	const { taxYear, payerInn } = taxDocumentSelectionScope(input);
 	if (!selectedIds.length) {
-		if (!taxPaidDocumentRequiresPaymentSelection(input.kind)) return null;
-		return "Для налогового заявления, справки или реестра нужно явно выбрать фискальные чеки. Автоматический захват всех оплат за год отключен.";
+		return null;
 	}
 
 	const uniqueSelectedIds = new Set(selectedIds);
@@ -194,17 +193,6 @@ export function checkTaxDocumentYearAndScopeErrors(
 			statusCode: 409,
 			error:
 				"Старая налоговая справка поддерживается только для оплат 2021-2023; для оплат с 2024 года используйте КНД 1151156.",
-		};
-	}
-	if (
-		taxPaidDocumentRequiresPaymentSelection(input.kind) &&
-		!selectedTaxPaymentIds(input).length
-	) {
-		return {
-			ok: false,
-			statusCode: 409,
-			error:
-				"Для налогового заявления, справки или реестра нужно явно выбрать фискальные чеки. Автоматический захват всех оплат за год отключен.",
 		};
 	}
 	return null;

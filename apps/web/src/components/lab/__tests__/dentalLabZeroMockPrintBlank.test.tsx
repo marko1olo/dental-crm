@@ -22,7 +22,7 @@ describe("dentalLabZeroMock — Print Blank & Emojis", () => {
 		);
 
 		assert.ok(html.includes("Клинический заказ-наряд в лабораторию"));
-		assert.ok(html.includes(order.orderNumber));
+		assert.ok(html.includes(String(order.orderNumber)));
 		assert.ok(html.includes(order.patientName));
 		assert.ok(html.includes(order.doctorName));
 		assert.ok(html.includes('data-testid="lab-order-printable-blank"'));

@@ -46,7 +46,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 				type="button"
 				onClick={onToggleDetailedExpanded}
 				data-testid="psr-toggle-detailed-btn"
-				className="w-full min-h-[44px] sm:min-h-[36px] flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--paper-soft)] text-left text-xs font-bold text-[var(--ink)] hover:text-[#0d9488] cursor-pointer transition-colors"
+				className="w-full min-h-[44px] sm:min-h-[36px] flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--paper-soft)] text-left text-xs font-bold text-[var(--ink)] hover:text-[var(--teal,#0d9488)] cursor-pointer transition-colors"
 			>
 				<span>Углубленная карта зондирования (по требованию врача)</span>
 				{isDetailedExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -61,7 +61,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 								type="button"
 								onClick={() => onSelectToothNum(t.toothNumber)}
 								data-testid={`perio-tooth-btn-${t.toothNumber}`}
-								className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-1.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all border ${selectedToothNum === t.toothNumber ? "bg-[#0d9488]/15 text-[#0d9488] border-[#0d9488] ring-1 ring-[#0d9488]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[#0d9488]"}`}
+								className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-1.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all border ${selectedToothNum === t.toothNumber ? "bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] ring-1 ring-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"}`}
 							>
 								{t.toothNumber}
 							</button>
@@ -83,7 +83,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 											key={m}
 											type="button"
 											onClick={() => onUpdateMobility(m)}
-											className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-lg text-xs font-bold cursor-pointer transition-colors border flex items-center justify-center ${activeMob ? "bg-[#0d9488]/15 text-[#0d9488] border-[#0d9488] ring-1 ring-[#0d9488]" : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"}`}
+											className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-lg text-xs font-bold cursor-pointer transition-colors border flex items-center justify-center ${activeMob ? "bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] ring-1 ring-[var(--teal,#0d9488)]" : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"}`}
 										>
 											{m === 0 ? "0" : m === 1 ? "I" : m === 2 ? "II" : "III"}
 										</button>
@@ -104,7 +104,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 										type="button"
 										onClick={() => onSelectSiteKey(site.key)}
 										title={site.label}
-										className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1 rounded-lg text-xs cursor-pointer border flex items-center justify-center gap-1 ${selectedSiteKey === site.key ? "bg-[#0d9488]/15 text-[#0d9488] font-bold border-[#0d9488]" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"}`}
+										className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 px-2.5 py-1 rounded-lg text-xs cursor-pointer border flex items-center justify-center gap-1 ${selectedSiteKey === site.key ? "bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] font-bold border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"}`}
 									>
 										<span>{site.short}</span>
 										<span className={`font-bold ${depth >= 4 ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}>{depth}</span>
@@ -122,7 +122,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 										key={d}
 										type="button"
 										onClick={() => onUpdateDepth(d)}
-										className="touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-lg text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[#0d9488] cursor-pointer flex items-center justify-center"
+										className="touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-lg text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] cursor-pointer flex items-center justify-center"
 									>
 										{d}
 									</button>
@@ -133,7 +133,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									type="button"
 									onClick={onToggleBop}
 									aria-pressed={activeSiteBop}
-									className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] px-3 rounded-lg text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${activeSiteBop ? "bg-rose-500/25 text-rose-700 dark:text-rose-200 border-rose-500 ring-1 ring-rose-500" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[#0d9488]"}`}
+									className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] px-3 rounded-lg text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${activeSiteBop ? "bg-rose-500/25 text-rose-700 dark:text-rose-200 border-rose-500 ring-1 ring-rose-500" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"}`}
 								>
 									BOP+
 								</button>
@@ -141,7 +141,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									type="button"
 									onClick={onTogglePlaque}
 									aria-pressed={activeSitePlaque}
-									className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] px-3 rounded-lg text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${activeSitePlaque ? "bg-amber-500/25 text-amber-800 dark:text-amber-200 border-amber-500 ring-1 ring-amber-500" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[#0d9488]"}`}
+									className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] px-3 rounded-lg text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${activeSitePlaque ? "bg-amber-500/25 text-amber-800 dark:text-amber-200 border-amber-500 ring-1 ring-amber-500" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"}`}
 								>
 									Налёт+
 								</button>

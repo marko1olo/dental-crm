@@ -16,6 +16,7 @@ const crypto = require("node:crypto");
 
 const outDirs = [
   path.resolve(__dirname, "../docs/proofs/perio"),
+  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/8597108c-6e88-4271-83fd-ef53bda10ca8/perio"),
   path.resolve("C:/Users/Admin/.gemini/antigravity/brain/bf65e0e2-dc41-4fd6-9d45-7f2467de8793/perio"),
   path.resolve("C:/Users/Admin/.gemini/antigravity/brain/db9b08bb-f60c-443e-9476-9a6478657cb1/perio"),
 ];

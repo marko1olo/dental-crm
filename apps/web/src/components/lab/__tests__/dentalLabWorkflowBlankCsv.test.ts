@@ -31,7 +31,7 @@ describe("8. A4 Printable Blank for Courier & CSV Export", () => {
 		const normalizedHtml = html.replace(/[\u00a0\u202f]/g, " ");
 		assert.ok(html.includes("<!DOCTYPE html>"), "Должен быть DOCTYPE html");
 		assert.ok(html.includes("Наряд-заказ"), "Должен быть заголовок");
-		assert.ok(html.includes(sampleOrder.orderNumber), "Должен содержать номер наряда");
+		assert.ok(html.includes(String(sampleOrder.orderNumber)), "Должен содержать номер наряда");
 		assert.ok(html.includes("Барабаш Сергей Владимирович"), "Должен содержать имя пациента");
 		assert.ok(html.includes("Д-р Ковалев С. П."), "Должен содержать врача");
 		assert.ok(html.includes("CAD/CAM Центр Дентал-Мастер"), "Должен содержать лабораторию");
@@ -47,7 +47,7 @@ describe("8. A4 Printable Blank for Courier & CSV Export", () => {
 		assert.ok(csv.startsWith("\uFEFF"), "Должен начинаться с UTF-8 BOM");
 		assert.ok(csv.includes("Номер наряда;Пациент;№ Медкарты;Врач-ортопед;Лаборатория"));
 		assert.ok(csv.includes("Дата примерки;ID Приема"));
-		assert.ok(csv.includes(sampleOrder.orderNumber));
+		assert.ok(csv.includes(String(sampleOrder.orderNumber)));
 		assert.ok(csv.includes("Барабаш Сергей Владимирович"));
 		assert.ok(csv.includes("CAD/CAM Центр Дентал-Мастер"));
 		assert.ok(csv.includes("48000"));

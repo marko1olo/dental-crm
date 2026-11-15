@@ -71,7 +71,7 @@ describe("Red Team Inquisition: Consents & Legal Documents SSOT", () => {
 	});
 
 	it("1.2. Supports all 3 canonical signature statuses: signed_digital, signed_paper, pending", () => {
-		const doc = CANONICAL_CONSENT_CATALOG[0];
+		const doc = getConsentDocumentById("therapy");
 
 		// Статус pending
 		const pendingHtml = generateConsentPrintHtml(doc, undefined, { status: "pending" });
@@ -98,7 +98,7 @@ describe("Red Team Inquisition: Consents & Legal Documents SSOT", () => {
 	});
 
 	it("1.3. Print HTML generator contains valid A4 print styles and party metadata", () => {
-		const doc = CANONICAL_CONSENT_CATALOG[13]; // Договор
+		const doc = getConsentDocumentById("paid_contract");
 		const html = generateConsentPrintHtml(
 			doc,
 			{

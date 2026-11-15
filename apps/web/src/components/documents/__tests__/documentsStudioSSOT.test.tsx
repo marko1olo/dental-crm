@@ -31,7 +31,7 @@ import {
 	generateIntakePackageTemplate,
 	generateTaxCertificateTemplate,
 	sumKopecks,
-} from "../documentsCatalogData";
+} from "../../consents/consentCatalogData";
 import {
 	disableDemoShowcaseMode,
 	enableDemoShowcaseMode,

@@ -22,7 +22,7 @@ import {
 	generateTaxCertificateTemplate,
 	getDocumentsCatalogData,
 	sumKopecks,
-} from "../documentsCatalogData";
+} from "../../consents/consentCatalogData";
 import { DocumentsStudioModal } from "../DocumentsStudioModal";
 import { DirectDocumentsLauncher } from "../DirectDocumentsLauncher";
 

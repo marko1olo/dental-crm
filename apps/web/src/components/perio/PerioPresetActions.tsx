@@ -24,9 +24,9 @@ export const PerioPresetActions: React.FC<PerioPresetActionsProps> = React.memo(
 	onApplyZeroCalculus,
 }) => {
 	const secondaryPresetClass =
-		"touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:h-9 sm:min-w-0 px-3 sm:px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] font-medium text-xs sm:text-[11.5px] lg:text-xs border border-[var(--line)] hover:border-[#0d9488] hover:bg-[var(--paper-soft)] flex items-center justify-start sm:justify-center gap-1.5 cursor-pointer transition-colors w-full sm:w-auto";
+		"touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:h-9 sm:min-w-0 px-3 sm:px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] font-medium text-xs sm:text-[11.5px] lg:text-xs border border-[var(--line)] hover:border-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] flex items-center justify-start sm:justify-center gap-1.5 cursor-pointer transition-colors w-full sm:w-auto";
 	const pillClass =
-		"touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-0 px-3 sm:px-2.5 rounded-full bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[#0d9488] font-medium text-xs sm:text-[11px] lg:text-xs cursor-pointer transition-colors flex items-center justify-center w-full sm:w-auto";
+		"touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-0 px-3 sm:px-2.5 rounded-full bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] font-medium text-xs sm:text-[11px] lg:text-xs cursor-pointer transition-colors flex items-center justify-center w-full sm:w-auto";
 
 	return (
 		<div className="flex flex-col gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
@@ -36,7 +36,7 @@ export const PerioPresetActions: React.FC<PerioPresetActionsProps> = React.memo(
 					onClick={onSetAllIntact}
 					data-testid="perio-toolbar-norm-btn"
 					data-preset-card="perio-preset-norm-card"
-					className="touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:h-9 sm:min-w-0 px-3 sm:px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs sm:text-[11.5px] lg:text-xs border border-[var(--line)] hover:border-[#0d9488] hover:bg-[var(--paper-soft)] flex items-center justify-start sm:justify-center gap-1.5 cursor-pointer transition-colors w-full sm:w-auto"
+					className="touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:h-9 sm:min-w-0 px-3 sm:px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs sm:text-[11.5px] lg:text-xs border border-[var(--line)] hover:border-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] flex items-center justify-start sm:justify-center gap-1.5 cursor-pointer transition-colors w-full sm:w-auto"
 				>
 					<span data-testid="psr-all-intact-btn" className="flex items-center gap-1.5">
 						<Check className="w-4 h-4 shrink-0" /> Здоровый пародонт (Норма)
