@@ -36,6 +36,46 @@ export type ArchwireSection = z.infer<typeof archwireSectionSchema>;
 export const targetArchSchema = z.enum(["upper", "lower", "both"]);
 export type TargetArch = z.infer<typeof targetArchSchema>;
 
+export const archwireProfileSchema = z.enum(["round", "rectangular"]);
+export type ArchwireProfile = z.infer<typeof archwireProfileSchema>;
+
+export const archwireChangePayloadSchema = z.object({
+	material: z.enum(["NiTi", "CuNiTi", "SS", "TMA", "niti", "cuniti", "ss", "tma"]).transform((m) => {
+		const map: Record<string, ArchwireMaterial> = {
+			niti: "NiTi",
+			cuniti: "CuNiTi",
+			ss: "SS",
+			tma: "TMA",
+			NiTi: "NiTi",
+			CuNiTi: "CuNiTi",
+			SS: "SS",
+			TMA: "TMA",
+		};
+		return map[m] || "NiTi";
+	}),
+	section: z.string().min(1).max(30).optional(),
+	size: z.string().min(1).max(30).optional(),
+	profile: z.enum(["round", "rectangular"]).optional(),
+	arch: targetArchSchema.default("both"),
+	applianceCategory: z.enum(["brackets", "aligners", "plate"]).optional(),
+	isWireChange: z.boolean().default(true),
+	note: z.string().max(300).optional(),
+	visitId: z.string().optional(),
+	soapSummary: z.string().optional(),
+}).transform((data) => {
+	const effectiveSection = data.section || data.size || ".016";
+	const effectiveProfile = data.profile || (effectiveSection.includes("x") ? "rectangular" : "round");
+	return {
+		...data,
+		section: effectiveSection,
+		size: effectiveSection,
+		profile: effectiveProfile,
+	};
+});
+
+export type ArchwireChangePayload = z.infer<typeof archwireChangePayloadSchema>;
+export const ArchwireChangePayloadSchema = archwireChangePayloadSchema;
+
 export interface AngleClassOption {
 	id: AngleClass;
 	label: string;

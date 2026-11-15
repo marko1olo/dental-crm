@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ArchwireChangePayloadSchema, type ArchwireChangePayload } from "@dental/shared";
 
 export const patientParamsSchema = z.object({
 	patientId: z.string().min(1),
@@ -13,28 +14,8 @@ export const issueAlignerSetSchema = z.object({
 	soapSummary: z.string().optional(),
 });
 
-export const archwireChangeSchema = z.object({
-	material: z.enum(["NiTi", "CuNiTi", "SS", "TMA", "niti", "cuniti", "ss", "tma"]).transform((m) => {
-		const map: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
-			niti: "NiTi",
-			cuniti: "CuNiTi",
-			ss: "SS",
-			tma: "TMA",
-			NiTi: "NiTi",
-			CuNiTi: "CuNiTi",
-			SS: "SS",
-			TMA: "TMA",
-		};
-		return map[m] || "NiTi";
-	}),
-	section: z.string().min(1).max(30),
-	arch: z.enum(["upper", "lower", "both"]).default("both"),
-	applianceCategory: z.enum(["brackets", "aligners", "plate"]).optional(),
-	isWireChange: z.boolean().default(true),
-	note: z.string().max(300).optional(),
-	visitId: z.string().optional(),
-	soapSummary: z.string().optional(),
-});
+export const archwireChangeSchema = ArchwireChangePayloadSchema;
+export type { ArchwireChangePayload };
 
 export const ligatureActivateSchema = z.object({
 	powerChain: z.boolean().default(false),

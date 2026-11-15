@@ -179,9 +179,10 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 	});
 
 	it("11. Verifies OrthodonticsStudioModal.tsx clinical contracts and endpoints", () => {
-		const filePath = fs.existsSync(path.join(orthoDir, "OrthodonticsStudioModal.tsx"))
-			? path.join(orthoDir, "OrthodonticsStudioModal.tsx")
-			: path.join(orthoDir, "OrthodonticStudioModal.tsx");
+		const clonePath = path.join(orthoDir, "OrthodonticStudioModal.tsx");
+		assert.ok(!fs.existsSync(clonePath), "Duplicate clone OrthodonticStudioModal.tsx must be purged");
+
+		const filePath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
 		assert.ok(fs.existsSync(filePath), "OrthodonticsStudioModal.tsx must exist");
 
 		const content = fs.readFileSync(filePath, "utf-8");
@@ -193,9 +194,7 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 	});
 
 	it("12. Verifies OrthodonticsStudioModal has exactly ONE Primary CTA #0d9488 (Mandates 8am & 8e)", () => {
-		const filePath = fs.existsSync(path.join(orthoDir, "OrthodonticsStudioModal.tsx"))
-			? path.join(orthoDir, "OrthodonticsStudioModal.tsx")
-			: path.join(orthoDir, "OrthodonticStudioModal.tsx");
+		const filePath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
 
 		assert.ok(
@@ -220,6 +219,12 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 	});
 
 	it("13. Verifies DirectOrthodonticsLauncher functional contract and clean exports", () => {
+		const directOrthoClone = path.join(orthoDir, "directOrtho/DirectOrthoLauncher.tsx");
+		assert.ok(!fs.existsSync(directOrthoClone), "Clone directOrtho/DirectOrthoLauncher.tsx must be purged");
+
+		const cephModalPath = path.join(orthoDir, "CephAnalysisModal.tsx");
+		assert.ok(fs.existsSync(cephModalPath), "Canonical CephAnalysisModal.tsx must exist");
+
 		assert.equal(typeof DirectOrthodonticsLauncher, "function", "DirectOrthodonticsLauncher must be a React component");
 		const html = renderToString(<DirectOrthodonticsLauncher />);
 		assert.ok(html !== undefined, "Launcher renders without errors");

@@ -34,7 +34,7 @@ const ClinicalPhotoProtocolModal = lazyWithRetry(() =>
 	import("../photography/ClinicalPhotoProtocolModal").then((m) => ({ default: m.ClinicalPhotoProtocolModal })),
 );
 const CephalometricAnalysisModal = lazyWithRetry(() =>
-	import("../radiology/cephModal/CephalometricAnalysisModalUI").then((m) => ({ default: m.CephalometricAnalysisModal })),
+	import("./CephAnalysisModal").then((m) => ({ default: m.CephalometricAnalysisModal })),
 );
 
 export interface OrthodonticsStudioModalProps {
@@ -677,7 +677,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						onClose={() => setIsCephModalOpen(false)}
 						patientId={patientId || "pat-ortho-01"}
 						patientName={patientName}
-						initialImageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}
+						initialImageUrl={isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined}
 						onApplyAnalysis={({ trgValues }) => {
 							setProtocol((prev) => ({
 								...prev,

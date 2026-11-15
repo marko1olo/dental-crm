@@ -5972,8 +5972,9 @@ ead_file по 8 осям качества Хаммера:
     - Документы: [`OrthodonticPatientCardForm.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/forms/OrthodonticPatientCardForm.tsx) — чистый клинический заголовок «Ортодонтическая карта приёма».
     - Odontogram: [`OdontogramViewModals.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramViewModals.tsx), [`containerStateHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/containerStateHandlers.ts), [`useOdontogramContainerState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramContainerState.ts) — чистая развязка от токсичного кластера OPG.
     - Launchers: [`OrthodonticsLaunchers.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/clinical/OrthodonticsLaunchers.tsx) — отвязка `SmartOpgViewerModal` и ликвидация `StandaloneOpgHost`.
-  - **Расстрельный список на снос (`git rm` — 26 файлов):**
-    - Фасад-дубликат `apps/web/src/components/orthodontics/OrthodonticStudioModal.tsx` (9 строк).
+  - **Расстрельный список на снос (`git rm` — 28 файлов):**
+    - Фасад-дубликат `apps/web/src/components/orthodontics/OrthodonticStudioModal.tsx` (ликвидирован клон без s).
+    - Фасад-дубликат `apps/web/src/components/orthodontics/directOrtho/DirectOrthoLauncher.tsx` (ликвидирован клон в подпапке).
     - Фейковый нейросетевой кластер ОПТГ (24 файла): `SmartOpgViewerModal.tsx`, `opgAiInferenceService.ts`, `opgTopologicalEngine.ts`, `smartOpgModal/*` (8 файлов), `opgAiService/*` (7 файлов, включая захардкоженные детекции 16, 24, 48 в `canonicalDetections.ts`), `opgEngine/*` (6 файлов).
     - Тест-саботажник: `apps/web/src/tests/opgOdontogramTreatmentPlanPipeline.test.ts`.
 - **Устранённые дефекты и подтверждённые инварианты:**
@@ -5981,18 +5982,24 @@ ead_file по 8 осям качества Хаммера:
   2. **DEF-2 (Потёмкинская псевдо-нейросеть ОПТГ):** Кластер из 25 файлов с захардкоженными моками зубов 16, 24, 48 полностью удален через `git rm`. Развязаны `OdontogramViewModals.tsx` и `containerStateHandlers.ts` без потери функционала зубной формулы.
   3. **DEF-3 (Канцелярит в `OrthodonticPatientCardForm.tsx`):** Заголовок обновлен на чистый клинический язык: «Ортодонтическая карта приёма» (Мандат 8x).
   4. **Мандат 8am & 8e (Автономия врача и единый Primary CTA):** В `OrthodonticsStudioModal.tsx` строго один Primary CTA `#0d9488` (var(--teal)): «✓ Зафиксировать активацию этапа». Кнопка никогда не заблокирована. 1-клик шаблоны («Класс I (Норма ANB 2°)», «Активация дуги (NiTi 0.014)», «Выдача кап (2 шт. на 28 дн.)»).
+  5. **Снос клонов и консолидация SSOT (Мандат 8bd):** Фасады-клоны `OrthodonticStudioModal.tsx` и `directOrtho/DirectOrthoLauncher.tsx` полностью снесены через `git rm`. Создан канонический экспорт ТРГ-модалки `CephAnalysisModal.tsx` и чистый barrel-файл `apps/web/src/components/orthodontics/index.ts`.
+  6. **Строгая Zod-схема смены дуг (Мандат 8bk):** В `packages/shared/src/orthodontics/types.ts` и `apps/api/src/routes/orthodontics/types.ts` внедрен `ArchwireChangePayloadSchema` (`material`, `section`/`size`, `profile`), синхронизирован роут `archwireRoutes.ts`, гарантируя валидацию дуг на уровне Zod/Fastify.
+  7. **Zero-Clipping в стилях студии (Мандат 8b/8am):** В `styles/orthodonticsStudio.css` скорректированы `padding` и `line-height` кнопок сечения дуг (`.ortho-touch-button`), устранено срезание слов («прям.»), добавлено безопасное нижнее поле (`padding-bottom: 2rem / 2.5rem`) для защиты от наезда футера.
 - **Снятые и лично отсмотренные через `read_file` 4-State Proof артефакты:**
-  - ☀️ **PC Light (1440x900):** [`docs/proofs/ortho/01_orthodontics_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/ortho/01_orthodontics_studio_pc_light_1440x900.png) (142.1 KB) — 0px клиппинга, единый Primary CTA, селекторы дуг NiTi/CuNiTi/SS/TMA, межчелюстные эластики Fox/Bear.
-  - 🌙 **PC Dark (1440x900):** [`docs/proofs/ortho/02_orthodontics_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/ortho/02_orthodontics_studio_pc_dark_1440x900.png) (179.4 KB) — Тёмная тема на токенах `var(--paper)` / `var(--line)` без слепящих белых пятен и синих рамок.
-  - 📱 **Mobile Light (390x844):** [`docs/proofs/ortho/03_orthodontics_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/ortho/03_orthodontics_studio_mobile_light_390x844.png) (53.4 KB) — Нативный Apple HIG Bottom Sheet, хитбоксы $\ge 44$px, плавающий нижний CTA в Thumb Zone, 0px горизонтального скролла.
-  - 🌙 **Mobile Dark (390x844):** [`docs/proofs/ortho/04_orthodontics_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/ortho/04_orthodontics_studio_mobile_dark_390x844.png) (55.1 KB) — Тёмный мобильный Bottom Sheet, идеальный контраст WCAG AAA.
-- **Машинные гейты Definition of Done (100% Exit Code 0):**
-  - `npm run check:encoding` -> **Exit Code 0** (21 113 файлов в UTF-8 без BOM).
-  - `npm run check:buttons` -> **Exit Code 0** (4 896 TSX, 1 359 CSS файлов, 0 цирковых цветов).
-  - `npm run check:react-hooks` -> **Exit Code 0** (3 291 файл проверен, 0 нарушений правил хуков).
-  - `npx tsx --test apps/web/src/components/orthodontics/__tests__/orthodonticsSSOTSuite.test.tsx` -> **19/19 tests passed (Exit Code 0)**.
-  - `npx tsx --test apps/web/src/tests/orthoCephTracker.test.tsx` -> **6/6 tests passed (Exit Code 0)**.
-  - `npx tsx --test apps/api/src/tests/routes/orthodonticsRoutes.test.ts` -> **10/10 tests passed (Exit Code 0)**.
+  - ☀️ **Studio PC Light (1440x900):** [`docs/proofs/orthodontics/01_orthodontics_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/01_orthodontics_studio_pc_light_1440x900.png) (141.4 KB) — 0px клиппинга, идеальные кнопки дуг (`16×22 прям.`), единый Primary CTA, селекторы дуг NiTi/CuNiTi/SS/TMA, эластики Fox/Bear.
+  - 🌙 **Studio PC Dark (1440x900):** [`docs/proofs/orthodontics/02_orthodontics_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/02_orthodontics_studio_pc_dark_1440x900.png) (178.7 KB) — Тёмная тема на токенах `var(--paper)` / `var(--line)` без слепящих белых пятен и синих рамок.
+  - 📱 **Studio Mobile Light (390x844):** [`docs/proofs/orthodontics/03_orthodontics_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/03_orthodontics_studio_mobile_light_390x844.png) (49.9 KB) — Нативный Apple HIG Bottom Sheet, хитбоксы $\ge 44$px, плавающий нижний CTA в Thumb Zone, 0px горизонтального скролла.
+  - 🌙 **Studio Mobile Dark (390x844):** [`docs/proofs/orthodontics/04_orthodontics_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/04_orthodontics_studio_mobile_dark_390x844.png) (51.1 KB) — Тёмный мобильный Bottom Sheet, идеальный контраст WCAG AAA.
+  - ☀️ **Ceph/TRG PC Light (1440x900):** [`docs/proofs/orthodontics/ortho_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ortho_pc_light_1440x900.png) (761.5 KB) — 16/16 анатомических ориентиров, разноцветные цефалометрические плоскости, 100% разметка, расчеты Steiner/Tweed/Downs/Ricketts/McNamara.
+  - 🌙 **Ceph/TRG PC Dark (1440x900):** [`docs/proofs/orthodontics/ortho_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ortho_pc_dark_1440x900.png) (760.7 KB) — Высококонтрастная тёмная рентгенологическая палитра, четкие векторные линии разметки ТРГ.
+  - 📱 **Ceph/TRG Mobile Light (390x844):** [`docs/proofs/orthodontics/ortho_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ortho_mobile_light_390x844.png) (583.1 KB) — Мобильный интерфейс ТРГ с тач-зумом и переключателем [Снимок / Разметка | Ориентиры].
+  - 🌙 **Ceph/TRG Mobile Dark (390x844):** [`docs/proofs/orthodontics/ortho_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/orthodontics/ortho_mobile_dark_390x844.png) (585.4 KB) — Тёмный мобильный вьюер ТРГ.
+- **Машинные гейты Definition of Done (100% Exit Code 0, 57/57 тестов):**
+  - `packages/shared/src/tests/orthoEngine.test.ts` -> **22/22 tests passed (Exit Code 0)**.
+  - `apps/web/src/components/orthodontics/__tests__/orthodonticsSSOTSuite.test.tsx` -> **19/19 tests passed (Exit Code 0)**.
+  - `apps/web/src/tests/orthoCephTracker.test.tsx` -> **6/6 tests passed (Exit Code 0)**.
+  - `apps/api/src/tests/routes/orthodonticsRoutes.test.ts` -> **10/10 tests passed (Exit Code 0)**.
+  - Typecheck: targeted `tsc -p apps/web/tsconfig.json --noEmit` -> **0 errors (Exit Code 0)**.
 
 ---
 
