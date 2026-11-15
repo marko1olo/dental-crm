@@ -1,6 +1,6 @@
 import { Calendar, Eye, FileCheck, Sliders, Sparkles } from "lucide-react";
 import type React from "react";
-import type { WarrantyTab } from "./types";
+import type { WarrantyTab } from "../types";
 
 export interface WarrantyModalTabsProps {
 	activeTab: WarrantyTab;

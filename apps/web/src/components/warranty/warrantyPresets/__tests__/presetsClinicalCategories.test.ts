@@ -17,7 +17,7 @@ import {
 	STAR_IMPLANT_QUICK_PRESET,
 	ORTHODONTIC_ALIGNERS_PRESET,
 	RETAINER_DEBONDING_DEFECT_TEMPLATE,
-} from "../index.js";
+} from "../../warrantyPresets.js";
 
 describe("2-5. Clinical Categories & Defect Templates", () => {
 	test("Therapeutic presets and defect templates", () => {

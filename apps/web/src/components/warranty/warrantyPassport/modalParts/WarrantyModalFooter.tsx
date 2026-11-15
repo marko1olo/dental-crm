@@ -9,8 +9,6 @@ export interface WarrantyModalFooterProps {
 	shareMenuProps: React.ComponentProps<typeof WarrantyShareMenu>;
 	onPrint: () => void;
 	onAttachToClinicalNote?: (() => void) | undefined;
-	/** @deprecated Use onAttachToClinicalNote */
-	onAttachTo043u?: (() => void) | undefined;
 	onIssueStandardOneClick?: () => void;
 	attachedStatus: boolean;
 }
@@ -22,7 +20,6 @@ export const WarrantyModalFooter: React.FC<WarrantyModalFooterProps> = ({
 	shareMenuProps,
 	onPrint,
 	onAttachToClinicalNote,
-	onAttachTo043u,
 	onIssueStandardOneClick,
 	attachedStatus,
 }) => {
@@ -63,7 +60,7 @@ export const WarrantyModalFooter: React.FC<WarrantyModalFooterProps> = ({
 				<button
 					type="button"
 					className="warranty-btn-secondary dente-btn-secondary"
-					onClick={onAttachToClinicalNote || onAttachTo043u}
+					onClick={onAttachToClinicalNote}
 					title="Сохранить гарантийный паспорт в медицинскую карту"
 				>
 					{attachedStatus ? <CheckCircle2 size={16} /> : <FileCheck size={16} />}

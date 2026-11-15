@@ -75,7 +75,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 				/>
 
 				<div className="warranty-modal-body">
-					{s.activeTab === "editor" && <WarrantyItemsStep completedStages={completedStages} {...s.itemsStepProps} />}
+					{s.activeTab === "editor" && <WarrantyItemsStep completedStages={completedStages ?? undefined} {...s.itemsStepProps} />}
 					{s.activeTab === "preview" && <WarrantyPreviewPrint certificateHtml={s.certificateHtml} onPrint={s.handlePrint} />}
 					{s.activeTab === "schedule" && <WarrantyConditionsStep mode="schedule" calculation={s.calculation} />}
 					{s.activeTab === "conditions" && <WarrantyConditionsStep mode="conditions" calculation={s.calculation} />}
@@ -85,11 +85,10 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 				<WarrantyModalFooter
 					certificateId={s.certificateId}
 					integrityHash={s.certificateData.integrityHash}
-					patientPhone={patient?.phone}
+					patientPhone={patient?.phone ?? undefined}
 					shareMenuProps={s.shareMenuProps}
 					onPrint={s.handlePrint}
 					onAttachToClinicalNote={s.handleAttachToClinicalNote}
-					onAttachTo043u={s.handleAttachToClinicalNote}
 					onIssueStandardOneClick={handleIssueStandardOneClick}
 					attachedStatus={s.attachedStatus}
 				/>

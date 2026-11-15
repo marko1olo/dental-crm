@@ -29,7 +29,7 @@ export function renderCertificateItemsRows(items: WarrantyItem[], calculation: W
 			const warrantyMonths = item.customWarrantyMonths ?? calculation.adjustedWarrantyMonths;
 			const serviceLifeMonths = item.customServiceLifeMonths ?? calculation.adjustedServiceLifeMonths;
 			const expDate = addMonthsToDate(issueDate, warrantyMonths);
-			const serviceCode = item.serviceCode || item.serviceCode804n || preset.serviceCode || preset.serviceCode804n;
+			const serviceCode = item.serviceCode || item.serviceCode804n || preset.serviceCode804n || preset.code;
 
 			return `
       <tr class="item-row">

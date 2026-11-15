@@ -5,7 +5,7 @@ import {
 	MANDATORY_WARRANTY_CONDITIONS,
 	STAR_QUICK_PRESETS,
 	VITA_SHADES,
-} from "../index.js";
+} from "../../warrantyPresets.js";
 
 describe("Warranty Presets Decomposition: Master Verification", () => {
 	test("verifies core presets and conditions load properly", () => {

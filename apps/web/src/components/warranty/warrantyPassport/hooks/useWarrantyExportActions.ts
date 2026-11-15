@@ -9,13 +9,11 @@ export interface UseWarrantyExportActionsParams {
 	patient?: WarrantyPatientMeta | null | undefined;
 	doctorName?: string | null | undefined;
 	onAttachToClinicalNote?: ((payload: AttachedWarrantyPayload) => void) | undefined;
-	/** @deprecated Use onAttachToClinicalNote */
-	onAttachToForm043u?: ((payload: AttachedWarrantyPayload) => void) | undefined;
 	onCertificateIssued?: ((data: WarrantyCertificateData) => void) | undefined;
 }
 
 export function useWarrantyExportActions({
-	certificateData, certificateHtml, patient, doctorName, onAttachToClinicalNote, onAttachToForm043u, onCertificateIssued,
+	certificateData, certificateHtml, patient, doctorName, onAttachToClinicalNote, onCertificateIssued,
 }: UseWarrantyExportActionsParams) {
 	const [copiedLink, setCopiedLink] = useState(false);
 	const [copiedMemo, setCopiedMemo] = useState(false);
@@ -107,7 +105,7 @@ export function useWarrantyExportActions({
 
 	const handleAttachToClinicalNote = async () => {
 		setAttachedStatus(true);
-		(onAttachToClinicalNote || onAttachToForm043u)?.({
+		onAttachToClinicalNote?.({
 			certificateId: certificateData.certificateId,
 			attachedAt: new Date().toISOString(),
 			fullHtml: certificateHtml,
@@ -121,6 +119,6 @@ export function useWarrantyExportActions({
 	return {
 		copiedLink, copiedMemo, isShareMenuOpen, setIsShareMenuOpen, attachedStatus, setAttachedStatus,
 		handlePrint, handlePrintRemediationAct, handleCopyLink, handleCopyMemo, handleShareWhatsApp,
-		handleShareTelegram, handleAttachToClinicalNote, handleAttachTo043u: handleAttachToClinicalNote,
+		handleShareTelegram, handleAttachToClinicalNote,
 	};
 }

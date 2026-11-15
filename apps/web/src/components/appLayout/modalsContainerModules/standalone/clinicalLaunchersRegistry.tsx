@@ -28,6 +28,7 @@ import { DirectHygieneLauncher } from "../../../hygiene/DirectHygieneLauncher";
 import { DirectPerioLauncher } from "../../../perio/DirectPerioLauncher";
 import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
 import { DirectPediatricLauncher } from "../../../pediatric/DirectPediatricLauncher";
+import { DirectWarrantyLauncher } from "../../../warranty/DirectWarrantyLauncher";
 import { ChairsideCopilotHUD } from "../../../copilot/ChairsideCopilotHUD";
 import { DemoCaseViewerModal } from "../../../demo/DemoCaseViewerModal";
 import { renderSpecializedClinicalLaunchers } from "./SpecializedClinicalLaunchers";
@@ -104,6 +105,16 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 					onClose={() => clearUrlTokens(["protocols", "clinical-templates"])}
 				/>
 			),
+		},
+
+		// 4b. Гарантийный паспорт и сертификат качества СтАР
+		{
+			id: "warranty-passport",
+			title: "Гарантийный паспорт и сертификат качества",
+			criteria: {
+				tokens: ["warranty-passport", "warranty_passport", "warranty-studio", "warranty=1", "warranty=true", "warranty"],
+			},
+			render: () => <DirectWarrantyLauncher />,
 		},
 
 		// 5. Анатомическая одонтограмма Wheeler 2.5D и зубная формула FDI 11–48 / 51–85
@@ -413,14 +424,40 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 			id: "chairside-hud",
 			title: "Кресельный ИИ-Копилот HUD",
 			criteria: {
-				tokens: ["chairside-hud", "hud", "copilot-hud"],
-				searchIncludes: ["hud=open", "chairside-hud=1", "copilot-hud=1"],
-				exactHashes: ["#chairside-hud", "#hud", "#copilot-hud"],
+				tokens: [
+					"chairside-hud",
+					"chairside_hud",
+					"copilot-hud",
+					"copilot_hud",
+					"hud",
+					"chairside",
+					"standalone=hud",
+				],
+				searchIncludes: [
+					"hud=open",
+					"chairside-hud=1",
+					"copilot-hud=1",
+					"standalone=hud",
+				],
+				exactHashes: [
+					"#chairside-hud",
+					"#chairside_hud",
+					"#hud",
+					"#copilot-hud",
+					"#copilot_hud",
+					"#chairside",
+				],
 			},
 			render: () => {
 				const patientState = usePatientStore.getState();
 				const visitState = useVisitStore.getState();
+				const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+				const toothFromQuery = searchParams?.get("tooth") ? Number(searchParams.get("tooth")) : undefined;
+				const effectiveTooth = toothFromQuery ?? visitState.activeToothNumber ?? undefined;
+
+				const patientNameFromQuery = searchParams?.get("patient");
 				const patientName =
+					patientNameFromQuery ||
 					patientState.patientCoreDraft?.fullName?.trim() ||
 					(patientState.selectedPatientId ? `Пациент #${patientState.selectedPatientId.slice(0, 8)}` : "Пациент не выбран");
 				return (
@@ -432,12 +469,22 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 							<ChairsideCopilotHUD
 								initialOpen={true}
 								initialDocked={true}
-								initialPresetIndex={undefined}
+								initialPresetIndex={null}
 								patientId={patientState.selectedPatientId || undefined}
 								patientName={patientName}
 								patientAllergies={[]}
-								activeTooth={visitState.activeToothNumber ?? undefined}
-								onClose={() => clearUrlTokens(["chairside-hud", "hud", "copilot-hud"])}
+								activeTooth={effectiveTooth}
+								onClose={() =>
+									clearUrlTokens([
+										"chairside-hud",
+										"chairside_hud",
+										"copilot-hud",
+										"copilot_hud",
+										"hud",
+										"chairside",
+										"standalone=hud",
+									])
+								}
 							/>
 						</div>
 					</div>

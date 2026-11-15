@@ -74,12 +74,18 @@ export function useWarrantyCertificateBuild({
 
 		return {
 			certificateId, issueDate,
-			patient: { fullName: pName, birthDate: patient?.birthDate, cardNumber: pCard, phone: patient?.phone, snils: patient?.snils },
+			patient: {
+				fullName: pName,
+				birthDate: patient?.birthDate ?? undefined,
+				cardNumber: pCard,
+				phone: patient?.phone ?? undefined,
+				snils: patient?.snils ?? undefined,
+			},
 			doctor: { fullName: doctorName, specialty: doctorSpecialty },
-			clinic: { name: clinicName, legalName: clinicLegalName, licenseNumber: clinicLicenseNumber, address: clinicAddress, phone: clinicPhone, website: clinicWebsite || undefined },
+			clinic: { name: clinicName, legalName: clinicLegalName, licenseNumber: clinicLicenseNumber, address: clinicAddress, phone: clinicPhone, ...(clinicWebsite ? { website: clinicWebsite } : {}) },
 			items, calculation, verificationUrl: vUrl, qrCodeSvg: qr, integrityHash: hash,
 			signedByDoctor: true, signedByChief: true, attachedToForm043u: attachedStatus,
-			remediations: remediations.length > 0 ? remediations : undefined,
+			...(remediations.length > 0 ? { remediations } : {}),
 		};
 	}, [certificateId, issueDate, patient, doctorName, doctorSpecialty, clinicName, clinicLegalName, clinicLicenseNumber, clinicAddress, clinicPhone, clinicWebsite, items, calculation, attachedStatus, remediations]);
 

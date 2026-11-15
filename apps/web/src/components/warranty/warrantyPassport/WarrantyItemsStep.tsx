@@ -1,7 +1,7 @@
 import { CheckCircle2, FileCheck, ShieldAlert } from "lucide-react";
 import type React from "react";
-import type { WarrantyCalculationResult, WarrantyItem, WarrantyRiskFactors } from "../../warrantyEngine.js";
-import type { StarQuickPreset, WarrantyCategory } from "../../warrantyPresets.js";
+import type { WarrantyCalculationResult, WarrantyItem, WarrantyRiskFactors } from "../warrantyEngine.js";
+import type { StarQuickPreset, WarrantyCategory } from "../warrantyPresets.js";
 import type { CompletedTreatmentStage } from "./types";
 import { WarrantyTeethFormula } from "./itemsStep/WarrantyTeethFormula";
 import { WarrantyCategoryPresetsBar } from "./itemsStep/WarrantyCategoryPresetsBar";
@@ -10,9 +10,9 @@ import { WarrantyItemsTable } from "./itemsStep/WarrantyItemsTable";
 import { WarrantyRiskFactorsPanel } from "./itemsStep/WarrantyRiskFactorsPanel";
 
 export interface WarrantyItemsStepProps {
-	completedStages?: CompletedTreatmentStage[];
+	completedStages?: CompletedTreatmentStage[] | undefined;
 	onOpenRemediation: () => void;
-	onImportCompletedStages: () => void;
+	onImportCompletedStages: () => void | 0;
 	selectedTeeth: string[];
 	onToggleTooth: (tooth: string) => void;
 	items: WarrantyItem[];

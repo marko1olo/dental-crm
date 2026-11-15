@@ -13,7 +13,7 @@ import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
 	Activity, AlertOctagon, Award, Calendar, Camera, ClipboardList, ExternalLink,
-	FileCheck, FileText, HeartPulse, History, Plus, Printer, Scan, ShieldCheck,
+	FileCheck, FileText, HeartPulse, History, Plus, Printer, Scan, ShieldAlert, ShieldCheck,
 	Stethoscope, User, Users, Wallet, X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -34,6 +34,7 @@ import { PatientPhotosTab } from "./tabs/PatientPhotosTab";
 import { TreatmentPlansTab } from "./tabs/TreatmentPlansTab";
 import { PatientHistoryTab, DEFAULT_CLINICAL_VISITS } from "./PatientHistoryTab";
 import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
+import { PatientReclamationsHistoryTab } from "./tabs/PatientReclamationsHistoryTab";
 import { PatientCardModalSubModals } from "./patientCardModalModules/PatientCardModalSubModals";
 import { usePatientCardModalState } from "./patientCardModalModules/usePatientCardModalState";
 import { usePatientCreationForm } from "./patientCreation/usePatientCreationForm";
@@ -55,6 +56,7 @@ const TABS = [
 	{ id: "formula", testId: "tab-patient-formula", label: "Формула", Icon: ToothMolar },
 	{ id: "perio", testId: "tab-patient-perio", label: "Пародонтология", Icon: Activity },
 	{ id: "documents", testId: "tab-patient-documents", label: "Документы", Icon: FileCheck },
+	{ id: "reclamations", testId: "tab-patient-reclamations", label: "Рекламации", Icon: ShieldAlert },
 	{ id: "family", testId: "tab-patient-family", label: "Семья", Icon: Users },
 ] as const;
 
@@ -489,6 +491,13 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							dashboard={props.dashboard}
 							onNavigateToVisit={onNavigateToVisit}
 							onNewAppointment={onNewAppointment}
+						/>
+					) : activeTab === "reclamations" ? (
+						<PatientReclamationsHistoryTab
+							patientId={patientData.id}
+							patientName={patientData.fullName}
+							doctorName={props.doctorName}
+							doctorId={props.doctorId}
 						/>
 					) : activeTab === "family" ? (
 						<div className="p-2 sm:p-3 space-y-4">

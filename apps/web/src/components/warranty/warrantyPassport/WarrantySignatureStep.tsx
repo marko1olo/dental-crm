@@ -1,6 +1,6 @@
 import type React from "react";
-import type { WarrantyItem, WarrantyRemediationOrder } from "../../warrantyEngine.js";
-import type { WarrantyDefectType, WarrantyRemediationMaterialItem } from "../../warrantyPresets.js";
+import type { WarrantyItem, WarrantyRemediationOrder } from "../warrantyEngine.js";
+import type { WarrantyDefectType, WarrantyRemediationMaterialItem } from "../warrantyPresets.js";
 import { WarrantyRemediationHeader } from "./remediationStep/WarrantyRemediationHeader";
 import { WarrantyRemediationForm } from "./remediationStep/WarrantyRemediationForm";
 import { WarrantyRemediationsHistory } from "./remediationStep/WarrantyRemediationsHistory";

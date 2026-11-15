@@ -35,6 +35,7 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 	const { activePatient, activeVisitPatient, activeDoctor, activeWorkspaceProfile } = appLogic;
 	const staffUser = sessionAuth.activeStaffUser;
 	const patient = activePatient || activeVisitPatient;
+	const activeDoctorId = staffUser?.id || activeDoctor?.id || undefined;
 	const doctorName = staffUser?.fullName || activeDoctor?.fullName || "Лечащий врач";
 
 	return (
@@ -61,21 +62,18 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 					<WarrantyPassportModal
 						isOpen={true}
 						onClose={() => routing.setIsWarrantyPassportOpen(false)}
-						patient={{
-							id: (patient?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patient.id))
-								? patient.id
-								: (patient?.id || "00000000-0000-0000-0000-000000000001"),
-							fullName: patient?.fullName || "Смирнова Анна Сергеевна",
-							cardNumber: patient?.cardNumber || "К-4819",
-							phone: patient?.phone || "+7 (926) 412-88-99",
-						}}
+						patient={patient ? {
+							id: patient.id,
+							fullName: patient.fullName,
+							cardNumber: patient.cardNumber,
+							phone: patient.phone,
+							birthDate: patient.birthDate,
+							snils: patient.snils,
+						} : undefined}
+						doctorId={activeDoctorId}
 						doctorName={doctorName}
 						clinicName={activeWorkspaceProfile?.title || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}
-						completedStages={[
-							{ id: "srv-comp-1", serviceCode804n: "A16.07.002.001", serviceTitle: "Восстановление зуба пломбой (Filtek Ultimate)", toothNumber: "1.6", price: 5500, completedAt: new Date().toISOString().slice(0, 10) },
-							{ id: "srv-comp-2", serviceCode804n: "A16.07.004", serviceTitle: "Керамическая коронка (IPS e.max Press)", toothNumber: "2.4", price: 28000, completedAt: new Date().toISOString().slice(0, 10) },
-							{ id: "srv-comp-3", serviceCode804n: "A16.07.006", serviceTitle: "Установка имплантата (Straumann BLX)", toothNumber: "4.6", price: 55000, completedAt: new Date().toISOString().slice(0, 10) },
-						]}
+						completedStages={undefined}
 					/>
 				</Suspense>
 			)}
