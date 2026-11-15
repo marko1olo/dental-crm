@@ -88,20 +88,6 @@ export function calculateFinancialSummary(
 }
 
 /**
- * Generates official SBP QR payload for instant payment
- */
-export function generateSbpPaymentQrPayload(
-	invoiceId: string,
-	amountRub: number,
-	purposeRu: string,
-	clinicId = "dente-spb-01",
-): string {
-	const amountKopecks = Math.round(amountRub * 100);
-	const sanitizedPurpose = encodeURIComponent(purposeRu.slice(0, 120));
-	return `https://qr.nspk.ru/AD100049219804218942?type=02&bank=100000000004&sum=${amountKopecks}&cur=RUB&crc=89B2&qrcId=${invoiceId}&cid=${clinicId}&desc=${sanitizedPurpose}`;
-}
-
-/**
  * Validates SMS OTP code entered by patient
  */
 export function verifySmsOtpCode(enteredCode: string, expectedCode: string): boolean {

@@ -71,7 +71,7 @@ import { registerPatientDuplicateRoutes } from "../routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "../routes/patientRecall.js";
 import { registerPatientRoutes } from "../routes/patients.js";
 import { registerPhotoBridgeRoutes } from "../routes/photoBridgeRoutes.js";
-import { portalRoutes } from "../routes/portal.js";
+import { portalRoutes } from "../routes/portal/index.js";
 import { publicBudgetRoutes } from "../routes/publicBudgetRoutes.js";
 import { treatmentPlanRoutes } from "../routes/treatmentPlanRoutes.js";
 import { clinicalBundlesRoutes } from "../routes/clinicalBundlesRoutes.js";

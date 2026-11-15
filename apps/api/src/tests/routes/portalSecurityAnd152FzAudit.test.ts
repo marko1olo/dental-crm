@@ -20,7 +20,7 @@ import {
 	portalRoutes,
 	resetPortalOtpRateLimitsForTesting,
 	resetPortalRevokedTokensForTesting,
-} from "../../routes/portal.js";
+} from "../../routes/portal/index.js";
 import { publicBudgetRoutes } from "../../routes/publicBudgetRoutes.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

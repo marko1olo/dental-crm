@@ -9,13 +9,21 @@ import {
 	X,
 } from "lucide-react";
 
+export type PayerType = "self" | "child" | "spouse";
+
+const PAYER_TYPE_OPTIONS: readonly { readonly id: PayerType; readonly label: string }[] = [
+	{ id: "self", label: "За себя" },
+	{ id: "child", label: "За ребёнка" },
+	{ id: "spouse", label: "За супруга" },
+];
+
 export interface CabinetTaxSheetProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly taxYear: number;
 	readonly onChangeTaxYear: (year: number) => void;
-	readonly payerType: "self" | "child" | "spouse";
-	readonly onChangePayerType: (type: "self" | "child" | "spouse") => void;
+	readonly payerType: PayerType;
+	readonly onChangePayerType: (type: PayerType) => void;
 	readonly payerFullName: string;
 	readonly onChangePayerFullName: (name: string) => void;
 	readonly payerInn: string;
@@ -130,17 +138,13 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 									Кто выступает налогоплательщиком:
 								</label>
 								<div className="flex gap-2">
-									{[
-										{ id: "self", label: "За себя" },
-										{ id: "child", label: "За ребёнка" },
-										{ id: "spouse", label: "За супруга" },
-									].map((opt) => (
+									{PAYER_TYPE_OPTIONS.map((opt) => (
 										<button
 											key={opt.id}
 											type="button"
 											className={`tg-chip-selector-btn ${payerType === opt.id ? "active" : ""}`}
 											onClick={() => {
-												onChangePayerType(opt.id as any);
+												onChangePayerType(opt.id);
 												onTriggerHaptic?.("light");
 											}}
 										>

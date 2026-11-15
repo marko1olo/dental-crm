@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
-import { portalRoutes } from "../../routes/portal.js";
+import { portalRoutes } from "../../routes/portal/index.js";
 import {
 	fixtureUuid,
 	isDatabaseUnavailable,

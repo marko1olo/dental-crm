@@ -4,7 +4,7 @@ import { after, before, describe, it } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { organizations, patients } from "../../db/schema.js";
-import { portalRoutes } from "../../routes/portal.js";
+import { portalRoutes } from "../../routes/portal/index.js";
 import { bookingVerificationEngine } from "../../routes/publicBooking/smsVerificationAndSpamGate.js";
 import {
 	fixtureUuid,

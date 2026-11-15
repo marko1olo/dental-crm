@@ -37,4 +37,6 @@ export const portalRoutes: FastifyPluginAsync = async (
 	await registerPortalAppointmentsRoutes(server);
 };
 
+export const patientPortalRoutes = portalRoutes;
+
 export default portalRoutes;

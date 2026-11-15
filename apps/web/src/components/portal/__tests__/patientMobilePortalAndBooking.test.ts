@@ -5,6 +5,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { generateSbpPaymentQrModel } from "@dental/shared";
 import {
 	calculateBookingPrepayment,
 	calculateFinancialSummary,
@@ -13,7 +14,6 @@ import {
 	formatRussianPhone,
 	generateFnsTaxCertificateData,
 	generateIcsCalendarEvent,
-	generateSbpPaymentQrPayload,
 	generateTimeSlots,
 	verifySmsOtpCode,
 } from "../patientPortalEngine";
@@ -118,13 +118,17 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 		it("filters by surgery specialty correctly", () => {
 			const surgeons = filterAvailableDoctors(SAMPLE_BOOKING_DOCTORS, "branch-central", "surgery");
 			assert.strictEqual(surgeons.length, 1);
-			assert.strictEqual(surgeons[0]!.specialtyCategory, "surgery");
+			const firstSurgeon = surgeons[0];
+			assert.ok(firstSurgeon);
+			assert.strictEqual(firstSurgeon.specialtyCategory, "surgery");
 		});
 
 		it("filters by therapy specialty correctly", () => {
 			const therapists = filterAvailableDoctors(SAMPLE_BOOKING_DOCTORS, "branch-central", "therapy");
 			assert.strictEqual(therapists.length, 1);
-			assert.strictEqual(therapists[0]!.specialtyCategory, "therapy");
+			const firstTherapist = therapists[0];
+			assert.ok(firstTherapist);
+			assert.strictEqual(firstTherapist.specialtyCategory, "therapy");
 		});
 	});
 
@@ -141,22 +145,28 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 			assert.ok(afternoon.length > 0);
 			assert.ok(evening.length > 0);
 
-			assert.strictEqual(morning[0]!.timeRu, "09:00");
-			assert.strictEqual(afternoon[0]!.timeRu, "12:30");
-			assert.strictEqual(evening[0]!.timeRu, "17:30");
+			const firstMorning = morning[0];
+			const firstAfternoon = afternoon[0];
+			const firstEvening = evening[0];
+			assert.ok(firstMorning && firstAfternoon && firstEvening);
+			assert.strictEqual(firstMorning.timeRu, "09:00");
+			assert.strictEqual(firstAfternoon.timeRu, "12:30");
+			assert.strictEqual(firstEvening.timeRu, "17:30");
 		});
 	});
 
 	describe("8. Prepayment Calculation Logic", () => {
 		it("calculates 0 deposit for free consultations", () => {
-			const freeService = SAMPLE_BOOKING_SERVICES.find((s) => s.isFreeConsultation)!;
+			const freeService = SAMPLE_BOOKING_SERVICES.find((s) => s.isFreeConsultation);
+			assert.ok(freeService);
 			const prepayment = calculateBookingPrepayment(freeService, "morning");
 			assert.strictEqual(prepayment.requiresPrepayment, false);
 			assert.strictEqual(prepayment.prepaymentAmountRub, 0);
 		});
 
 		it("calculates 1000 ₽ deposit for surgery services", () => {
-			const surgeryService = SAMPLE_BOOKING_SERVICES.find((s) => s.specialtyCategory === "surgery")!;
+			const surgeryService = SAMPLE_BOOKING_SERVICES.find((s) => s.specialtyCategory === "surgery");
+			assert.ok(surgeryService);
 			const prepayment = calculateBookingPrepayment(surgeryService, "afternoon");
 			assert.strictEqual(prepayment.requiresPrepayment, true);
 			assert.strictEqual(prepayment.prepaymentAmountRub, 1000);
@@ -175,17 +185,27 @@ describe("Patient Mobile Portal & Online Booking Engine (Wave 18)", () => {
 	});
 
 	describe("10. SBP QR Code & Exact Integer Kopecks", () => {
-		it("generates NSPK SBP payment URL with exact integer kopecks (sum parameter)", () => {
-			const payload = generateSbpPaymentQrPayload("inv-101", 12500.5, "Лечение кариеса");
-			assert.ok(payload.startsWith("https://qr.nspk.ru/"));
-			assert.ok(payload.includes("sum=1250050")); // 12500.5 * 100 = 1250050 kopecks without float bugs
-			assert.ok(payload.includes("cur=RUB"));
-			assert.ok(payload.includes("qrcId=inv-101"));
+		it("generates NSPK SBP payment URL with exact integer kopecks via canonical sbpQrEngine", () => {
+			const qrModel = generateSbpPaymentQrModel({
+				orderId: "inv-101",
+				sumKopecks: 1250050, // 12 500.50 ₽
+				purpose: "Лечение кариеса",
+			});
+			assert.ok(qrModel.nspkUrl.startsWith("https://qr.nspk.ru/"));
+			assert.strictEqual(qrModel.sumKopecks, 1250050);
+			assert.ok(qrModel.nspkUrl.includes("sum=1250050"));
+			assert.ok(qrModel.nspkUrl.includes("cur=RUB"));
+			assert.ok(qrModel.nspkUrl.includes("crc="));
+			assert.ok(qrModel.crc16Hex.length === 4);
 		});
 
 		it("generates deterministic crisp SVG QR code containing finder and timing patterns", () => {
-			const payload = generateSbpPaymentQrPayload("inv-102", 5000, "Консультация");
-			const svg = generateQrCodeSvg(payload, { size: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
+			const qrModel = generateSbpPaymentQrModel({
+				orderId: "inv-102",
+				sumKopecks: 500000,
+				purpose: "Консультация",
+			});
+			const svg = generateQrCodeSvg(qrModel.nspkUrl, { size: 160, colorDark: "#0f172a", colorLight: "#ffffff" });
 			assert.ok(svg.includes("<svg"));
 			assert.ok(svg.includes('width="160"') && svg.includes('height="160"'));
 			assert.ok(svg.includes("shape-rendering:crispEdges"));

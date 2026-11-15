@@ -124,6 +124,7 @@ const EmrMedicalRecordStandaloneView = React.lazy(() =>
 	})),
 );
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
+import type { StudioMode } from "./components/radiology/standaloneStudio/types";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
@@ -249,8 +250,26 @@ const publicPortalRoute = publicPortalRouteFromHash(
 );
 const cbctStudioRoute = typeof window !== "undefined" ? parseCbctStudioRoute() : { isCbctStudio: false };
 const cephStudioRoute = typeof window !== "undefined" ? parseCephStudioRoute() : { isCephStudio: false };
-// biome-ignore lint/style/noNonNullAssertion: automated suppression
-const appRoot = createRoot(document.getElementById("root")!);
+
+function resolveCbctStudioMode(mode: string | undefined): StudioMode | undefined {
+	if (
+		mode === "diagnostic" ||
+		mode === "panoramic" ||
+		mode === "volume3d" ||
+		mode === "implant" ||
+		mode === "tmj" ||
+		mode === "endo"
+	) {
+		return mode;
+	}
+	return undefined;
+}
+
+const rootElement = typeof document !== "undefined" ? document.getElementById("root") : null;
+if (!rootElement) {
+	throw new Error("DENTE Startup Failure: #root container element not found in DOM");
+}
+const appRoot = createRoot(rootElement);
 
 if (publicPortalRoute) {
 	// Тему на публичной странице выбирает не клиника, а сам посетитель: у
@@ -352,7 +371,7 @@ if (publicPortalRoute) {
 						studyId={cbctStudioRoute.studyId}
 						patientId={cbctStudioRoute.patientId}
 						patientName={cbctStudioRoute.patientName}
-						initialStudioMode={cbctStudioRoute.mode as any}
+						initialStudioMode={resolveCbctStudioMode(cbctStudioRoute.mode)}
 						autoLoadDemo={cbctStudioRoute.isDemo}
 					/>
 				</React.Suspense>

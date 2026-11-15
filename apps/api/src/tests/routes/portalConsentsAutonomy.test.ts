@@ -9,7 +9,7 @@ import {
 	patientConsents,
 	patients,
 } from "../../db/schema.js";
-import { portalRoutes } from "../../routes/portal.js";
+import { portalRoutes } from "../../routes/portal/index.js";
 import {
 	createSignatureRecord,
 	generateFallbackTextSignatureDataUrl,

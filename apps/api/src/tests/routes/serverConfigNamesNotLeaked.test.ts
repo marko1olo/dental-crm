@@ -3,7 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import test, { describe } from "node:test";
 import Fastify from "fastify";
-import { portalRoutes } from "../../routes/portal.js";
+import { portalRoutes } from "../../routes/portal/index.js";
 
 /**
  * ИМЕНА НАСТРОЕК СЕРВЕРА УХОДИЛИ В ПУБЛИЧНЫЙ ОТВЕТ.

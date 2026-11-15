@@ -47,14 +47,13 @@ export function checkKioskRateLimit(clientIp: string): { allowed: boolean; messa
 export function maskPatientName(fullName: string | null | undefined): string {
 	if (!fullName || typeof fullName !== "string") return "Пациент";
 	const parts = fullName.trim().split(/\s+/).filter(Boolean);
-	if (parts.length === 0) return "Пациент";
-	if (parts.length === 1) return parts[0]!;
-
-	const p0 = parts[0]!;
-	const p1 = parts[1]!;
+	const [p0, p1] = parts;
+	if (!p0) return "Пациент";
+	if (!p1) return p0;
 
 	// В стандартных записях РФ порядок: Фамилия Имя [Отчество] -> "Имя Ф."
-	return `${p1} ${p0[0]?.toUpperCase()}.`;
+	const initial = p0[0]?.toUpperCase() ?? "";
+	return initial ? `${p1} ${initial}.` : p1;
 }
 
 

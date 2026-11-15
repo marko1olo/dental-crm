@@ -14,7 +14,7 @@ import {
 	sberbankTransactions,
 	treatmentPlans,
 } from "../../db/schema.js";
-import { portalRoutes } from "../../routes/portal.js";
+import { portalRoutes } from "../../routes/portal/index.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	fixtureUuid,

@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * DENTE Dental CRM — Patient Shift Queue & Live Operational Board Engine
- * StomX Operational Shift Queue Parity (Мандаты 8c, 8d, 8e, 8n)
+ * Живая операционная очередь смены и статусы приёма пациентов (Мандаты 8c, 8d, 8e, 8n, 8ap)
  *
  * Core Functional Capabilities:
  * 1. Operational Shift Queue Categorization:

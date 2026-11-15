@@ -19,7 +19,7 @@ import {
 	resetPortalOtpRateLimitsForTesting,
 	resetPortalRevokedTokensForTesting,
 	revokedPortalTokens,
-} from "../../routes/portal.js";
+} from "../../routes/portal/index.js";
 import {
 	generateDeterministicQrSvg,
 	generateNumericCode,
@@ -34,11 +34,11 @@ describe("Patient Portal Decomposition & Architecture Verification (Mandate 8b)"
 	const portalFacadePath = path.resolve(process.cwd(), "apps/api/src/routes/portal.ts");
 
 	test("Mandate 8b: All decomposed files in apps/api/src/routes/portal/ are strictly < 800 lines", () => {
-		assert.ok(fs.existsSync(portalFacadePath), "portal.ts facade must exist");
-		const facadeLines = fs.readFileSync(portalFacadePath, "utf-8").split("\n").length;
-		assert.ok(
-			facadeLines <= 200,
-			`portal.ts facade must be <= 200 lines (actual: ${facadeLines} lines)`,
+		// Устаревший фасад portal.ts снесен по Мандатам 8b/8bf в пользу прямого монтирования portal/index.ts
+		assert.strictEqual(
+			fs.existsSync(portalFacadePath),
+			false,
+			"Legacy facade portal.ts must be eliminated in favor of direct portal/index.ts mounting",
 		);
 
 		assert.ok(fs.existsSync(portalDir), "portal directory must exist");
