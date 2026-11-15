@@ -108,7 +108,7 @@ export function useTreatmentPlanLogic(props: UseTreatmentPlanLogicProps) {
 	});
 
 	return {
-		dashboard, auth, patientId: props.patientId, patientName: props.patientName || "Пациент",
+		dashboard, auth, catalog, patientId: props.patientId, patientName: props.patientName || "Пациент",
 		...patientFin, ...core, ...modals, ...tiersComp, ...ctxData,
 		...stageMutations, ...persistenceHandlers,
 	};

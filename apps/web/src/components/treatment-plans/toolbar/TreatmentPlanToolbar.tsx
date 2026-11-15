@@ -29,7 +29,7 @@ export interface TreatmentPlanToolbarProps {
 	readonly onOpenInvoiceModal: () => void;
 	readonly onOpenFiscalModal: () => void;
 	readonly onOpenCuratorModal: () => void;
-	readonly curatorFullName?: string | undefined;
+	readonly curatorFullName?: string | null | undefined;
 	readonly onOpenPresenterModal: () => void;
 	readonly onOpenComparatorModal?: (() => void) | undefined;
 	readonly onOpenStagePaymentModal?: (() => void) | undefined;

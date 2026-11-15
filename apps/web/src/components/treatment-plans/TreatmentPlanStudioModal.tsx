@@ -38,31 +38,31 @@ if (typeof window !== "undefined") {
 export interface TreatmentPlanStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientName?: string | null;
-	readonly patientId?: string | null;
-	readonly patientPhone?: string | null;
-	readonly doctorFullName?: string | null;
-	readonly doctorSpecialty?: string | null;
-	readonly initialSelectedTierId?: TreatmentPlanTierId;
-	readonly initialDepthMode?: "express" | "expert";
-	readonly initialStages?: readonly TreatmentPlanStage[];
+	readonly patientName?: string | null | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly patientPhone?: string | null | undefined;
+	readonly doctorFullName?: string | null | undefined;
+	readonly doctorSpecialty?: string | null | undefined;
+	readonly initialSelectedTierId?: TreatmentPlanTierId | undefined;
+	readonly initialDepthMode?: "express" | "expert" | undefined;
+	readonly initialStages?: readonly TreatmentPlanStage[] | undefined;
 	readonly initialTiers?: readonly TreatmentPlanTier[] | undefined;
 	readonly tiers?: readonly TreatmentPlanTier[] | undefined;
 	readonly contractNumber?: string | undefined;
 	readonly onSelectPlan?: ((plan: TreatmentPlanTier) => void) | undefined;
 	readonly onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
-	readonly onApprovePlan?: (selectedTier: TreatmentPlanTier) => void;
-	readonly onConfirmSelection?: (selectedTier: TreatmentPlanTier) => void;
-	readonly onApproveAndSign?: (selectedTier: TreatmentPlanTier) => void;
-	readonly onSaveDraft?: (stages: readonly TreatmentPlanStage[], selectedTier: TreatmentPlanTier) => void;
-	readonly className?: string;
+	readonly onApprovePlan?: ((selectedTier: TreatmentPlanTier) => void) | undefined;
+	readonly onConfirmSelection?: ((selectedTier: TreatmentPlanTier) => void) | undefined;
+	readonly onApproveAndSign?: ((selectedTier: TreatmentPlanTier) => void) | undefined;
+	readonly onSaveDraft?: ((stages: readonly TreatmentPlanStage[], selectedTier: TreatmentPlanTier) => void) | undefined;
+	readonly className?: string | undefined;
 	readonly teeth?: unknown;
-	readonly isDemoMode?: boolean;
-	readonly initialActiveTab?: StudioTab;
-	readonly planId?: string | null;
-	readonly clinicName?: string | null;
-	readonly clinicAddress?: string | null;
-	readonly patientBirthDate?: string | null;
+	readonly isDemoMode?: boolean | undefined;
+	readonly initialActiveTab?: StudioTab | undefined;
+	readonly planId?: string | null | undefined;
+	readonly clinicName?: string | null | undefined;
+	readonly clinicAddress?: string | null | undefined;
+	readonly patientBirthDate?: string | null | undefined;
 }
 
 const DISCOUNT_PRESETS = [0, 5, 10, 15, 20, 50, 100] as const;
@@ -148,9 +148,27 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				if (isCancelled) return;
 
 				if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
+					type RemotePlanItemLike = {
+						id?: string;
+						phase?: number;
+						toothNumber?: number;
+						priceId?: string;
+						serviceCode?: string;
+						code804n?: string;
+						name?: string;
+						category?: string;
+						price?: number | string;
+						priceRub?: number;
+						unitPriceRub?: number;
+						discount?: number | string;
+						discountRub?: number;
+						quantity?: number;
+						isCompleted?: boolean;
+					};
 					type RemotePlanLike = {
+						id?: string;
 						status?: string | null;
-						items?: TreatmentPlanItem[];
+						items?: RemotePlanItemLike[];
 						stages?: Array<{ id: string; stageName: string; stageOrder: number }>;
 					};
 					// Находим активный, в процессе или самый свежий план лечения
@@ -177,9 +195,9 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								serviceCode: it.serviceCode || it.priceId || "",
 								name: it.name || "Услуга",
 								category: it.category || "Общие",
-								priceRub: Number(it.price || 0),
-								unitPriceRub: Number(it.price || 0),
-								discountRub: Number(it.discount || 0),
+								priceRub: Number(it.priceRub || it.price || 0),
+								unitPriceRub: Number(it.unitPriceRub || it.price || 0),
+								discountRub: Number(it.discountRub || it.discount || 0),
 								quantity: it.quantity || 1,
 								stageKind: phase === 1 ? "stage_1_therapy" : phase === 2 ? "stage_2_surgery" : "stage_3_orthopedics",
 								isCompleted: Boolean(it.isCompleted),

@@ -109,30 +109,29 @@ export const TreatmentPlanExportModals: React.FC<TreatmentPlanExportModalsProps>
 						onClose={() => logic.setIsLabOrderModalOpen(false)}
 						patientId={logic.patientId}
 						patientName={logic.patientName}
-						patientChartNumber={
-							logic.patient?.chartNumber ||
-							logic.patient?.cardNumber ||
-							`К-${logic.patientId.slice(0, 5)}`
-						}
+						patientChartNumber={`К-${logic.patientId.slice(0, 5)}`}
 						doctorId={logic.labOrderPrefill?.doctorId || logic.auth?.currentUser?.id || "doc-01"}
 						doctorName={
 							logic.labOrderPrefill?.doctorName ||
 							logic.auth?.currentUser?.name ||
 							"Лечащий врач"
 						}
-						initialTeeth={initialTeeth}
+						initialTeeth={initialTeeth ? [...initialTeeth] : undefined}
 						treatmentPlanId={logic.currentPlanId || logic.validationPayload?.planId}
 						stageId={logic.labOrderPrefill?.stageId || logic.selectedActStage?.id}
 						stageNumber={logic.labOrderPrefill?.stageNumber ?? logic.selectedActStage?.stageNumber}
 						stageTitle={logic.labOrderPrefill?.stageTitle || logic.selectedActStage?.title}
 						stageTotalRub={logic.labOrderPrefill?.priceRub ?? logic.selectedActStage?.totalRub}
-						onSaveOrder={(order) =>
+						onSaveOrder={(order) => {
+							if (!order) return;
+							const orderNumber = "orderNumber" in order ? order.orderNumber : "";
+							const priceRub = "priceRub" in order && typeof order.priceRub === "number" ? order.priceRub : 0;
 							showToast(
-								`Наряд-заказ №${order.orderNumber || ""} в лабораторию на сумму ${(order.priceRub ?? 0).toLocaleString("ru-RU")} ₽ успешно сохранен!`,
+								`Наряд-заказ №${orderNumber || ""} в лабораторию на сумму ${priceRub.toLocaleString("ru-RU")} ₽ успешно сохранен!`,
 								"success",
 								5000,
-							)
-						}
+							);
+						}}
 					/>
 				</Suspense>
 			)}

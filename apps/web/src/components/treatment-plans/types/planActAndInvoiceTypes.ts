@@ -53,19 +53,19 @@ export interface DigitalSignatureAgreementData {
 
 export interface CashierInvoiceExportData {
 	readonly patientId: string;
-	readonly patientName?: string;
-	readonly invoiceId?: string;
-	readonly invoiceNumber?: string;
+	readonly patientName?: string | undefined;
+	readonly invoiceId?: string | undefined;
+	readonly invoiceNumber?: string | undefined;
 	readonly items: readonly TreatmentPlanItem[];
 	readonly grossTotalRub: number;
 	readonly discountRub: number;
-	readonly bonusPointsUsedRub?: number;
-	readonly bonusPointsUsedKopecks?: Kopecks;
+	readonly bonusPointsUsedRub?: number | undefined;
+	readonly bonusPointsUsedKopecks?: Kopecks | undefined;
 	readonly netTotalRub: number;
 	readonly totalAmountRub?: number | undefined;
 	readonly status?: string | undefined;
 	readonly netTotalKopecks: Kopecks;
-	readonly notes?: string;
+	readonly notes?: string | undefined;
 	readonly createdAtIso: string;
 }
 

@@ -28,7 +28,8 @@ export type ClinicalBundleCategory =
 	| "orthopedics"
 	| "implantation"
 	| "periodontics"
-	| "prevention";
+	| "prevention"
+	| (string & {});
 
 export interface ClinicalBundleItemTemplate {
 	readonly id: string;

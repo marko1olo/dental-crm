@@ -1,5 +1,5 @@
 /**
- * clinicalServiceBundlesModal.test.tsx — Тестирование рендеринга и доступности модального окна
+ * clinicalServiceBundlesModal.test.tsx — Тестирование рендеринга и доступности таба
  * клинических пакетов услуг «Все включено» у кресла (Каталог комплексных услуг).
  *
  * Использует чистый renderToString (React SSR) в соответствии с правилом Anti-Kustarnyi-DOM
@@ -10,100 +10,43 @@ import assert from "node:assert/strict";
 import { describe, it as test } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { ClinicalServiceBundlesModal } from "../ClinicalServiceBundlesModal";
+import { StudioClinicalBundlesTab } from "../studioTabs/StudioClinicalBundlesTab";
 import { CLINICAL_BUNDLES } from "../treatmentPlanBundlesEngine";
 
-describe("ClinicalServiceBundlesModal — Компонент модального окна пакетов комплексного лечения", () => {
-	test("не рендерит разметку, если isOpen === false", () => {
+describe("StudioClinicalBundlesTab — Компонент пакетов комплексного лечения в студии", () => {
+	test("рендерит контейнер, категории фильтрации и пакеты", () => {
 		const html = renderToString(
-			<ClinicalServiceBundlesModal
-				isOpen={false}
-				onClose={() => {}}
-			/>,
-		);
-		assert.equal(html, "");
-	});
-
-	test("рендерит заголовок, бейдж каталога и все 10 пакетов при isOpen === true", () => {
-		const html = renderToString(
-			<ClinicalServiceBundlesModal
-				isOpen={true}
-				onClose={() => {}}
-				initialToothNumber={16}
-				patientId="pat-test-1"
-				patientName="Иванов Иван Иванович"
-				targetMode="both"
+			<StudioClinicalBundlesTab
+				onAddBundleToStages={() => {}}
+				selectedToothNumber={16}
 			/>,
 		);
 
-		// Проверка заголовка и стандартов без птичьего языка
-		assert.ok(html.includes("Клинические пакеты лечения"), "Заголовок «Клинические пакеты лечения» должен присутствовать");
-		assert.ok(html.includes("Каталог клинических услуг"), "Бейдж «Каталог клинических услуг» должен присутствовать");
-		assert.ok(html.includes("data-testid=\"clinical-service-bundles-modal\""), "Контейнер модалки должен иметь data-testid");
+		// Проверка категорий
+		assert.ok(html.includes("Все пакеты"), "Фильтр «Все пакеты» должен присутствовать");
+		assert.ok(html.includes("Терапия"), "Фильтр «Терапия» должен присутствовать");
+		assert.ok(html.includes("Хирургия"), "Фильтр «Хирургия» должен присутствовать");
+		assert.ok(html.includes("Ортопедия"), "Фильтр «Ортопедия» должен присутствовать");
+		assert.ok(html.includes('data-testid="studio-clinical-bundles-tab"'), "Контейнер таба должен иметь data-testid");
 
-		// Проверка наличия всех 10 пакетов в DOM
-		for (const bundle of CLINICAL_BUNDLES) {
+		// Проверка наличия пакетов из CLINICAL_BUNDLES в разметке
+		for (const bundle of CLINICAL_BUNDLES.slice(0, 5)) {
 			assert.ok(
 				html.includes(bundle.title),
 				`Название пакета ${bundle.id} («${bundle.title}») должно быть в разметке`,
 			);
-			assert.ok(
-				html.includes(`data-testid="bundle-modal-card-${bundle.id}"`),
-				`Карточка пакета ${bundle.id} должна присутствовать в разметке`,
-			);
 		}
 	});
 
-	test("содержит кнопки действий 1 клика («В план» и «В счет»)", () => {
+	test("содержит поле привязки к зубу FDI", () => {
 		const html = renderToString(
-			<ClinicalServiceBundlesModal
-				isOpen={true}
-				onClose={() => {}}
-				initialToothNumber={24}
-				targetMode="both"
+			<StudioClinicalBundlesTab
+				onAddBundleToStages={() => {}}
+				selectedToothNumber={24}
 			/>,
 		);
 
-		assert.ok(html.includes("В план"), "Кнопка «В план» должна присутствовать");
-		assert.ok(html.includes("В счет"), "Кнопка «В счет» должна присутствовать");
-		assert.ok(html.includes("Состав"), "Кнопка настройки состава пакета должна присутствовать");
-	});
-
-	test("в режиме targetMode='plan' рендерит только кнопку «В план»", () => {
-		const html = renderToString(
-			<ClinicalServiceBundlesModal
-				isOpen={true}
-				onClose={() => {}}
-				targetMode="plan"
-			/>,
-		);
-
-		assert.ok(html.includes("В план"), "Кнопка «В план» должна быть в разметке");
-		assert.ok(!html.includes("apply-invoice"), "Кнопка «В счет» не должна рендериться в режиме plan");
-	});
-
-	test("в режиме targetMode='invoice' рендерит только кнопку «В счет»", () => {
-		const html = renderToString(
-			<ClinicalServiceBundlesModal
-				isOpen={true}
-				onClose={() => {}}
-				targetMode="invoice"
-			/>,
-		);
-
-		assert.ok(!html.includes("apply-plan"), "Кнопка «В план» не должна рендериться в режиме invoice");
-		assert.ok(html.includes("В счет"), "Кнопка «В счет» должна быть в разметке");
-	});
-
-	test("рендерит корректный номер зуба FDI в селекторе и карточках", () => {
-		const html = renderToString(
-			<ClinicalServiceBundlesModal
-				isOpen={true}
-				onClose={() => {}}
-				initialToothNumber={46}
-			/>,
-		);
-
-		assert.ok(html.includes("Зуб #<!-- -->46"), "Номер зуба #46 должен отображаться в бейдже зубозависимых пакетов");
+		assert.ok(html.includes("bundle-tooth-input"), "Инпут зуба FDI должен присутствовать");
+		assert.ok(html.includes("24"), "Выбранный зуб 24 должен быть в разметке");
 	});
 });

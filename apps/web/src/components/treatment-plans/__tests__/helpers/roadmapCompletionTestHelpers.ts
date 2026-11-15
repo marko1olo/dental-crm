@@ -1,4 +1,4 @@
-import type { RoadmapStageData } from "../../TreatmentPlanRoadmap";
+import type { RoadmapStageData } from "../../roadmap/types";
 
 export const sampleProcedures = [
 	{

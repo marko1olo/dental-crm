@@ -142,7 +142,7 @@ export const StudioClinicalBundlesTab: React.FC<StudioClinicalBundlesTabProps> =
 								</div>
 								<div className="text-right shrink-0">
 									<div className="text-xs sm:text-sm font-black text-[var(--ink)]">{formatRubles(bundle.totalRub || 0)}</div>
-									<div className="text-[10px] text-[var(--muted)]">{formatVisitsCount(bundle.estimatedVisits)}</div>
+									<div className="text-[10px] text-[var(--muted)]">{formatVisitsCount(bundle.estimatedVisits ?? 1)}</div>
 								</div>
 							</div>
 

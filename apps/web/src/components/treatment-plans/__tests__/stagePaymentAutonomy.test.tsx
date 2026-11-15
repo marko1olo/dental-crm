@@ -1,9 +1,9 @@
 /**
  * stagePaymentAutonomy.test.tsx
  *
- * Autonomy and Non-blocking Actions Test Suite for StagePaymentPlanModal:
- * 1. Guarantees auto-allocate deposit button is NOT hard-disabled when deposit is 0.
- * 2. Guarantees touch target satisfies Apple HIG >= 44px.
+ * Autonomy and Non-blocking Actions Test Suite for StudioInstallmentTab:
+ * 1. Guarantees installment terms (3, 6, 12, 24 months) are rendered and clickable.
+ * 2. Guarantees touch target satisfies Apple HIG >= 44px (min-h-[52px]).
  * 3. Mandates 8e (Doctor & Staff Autonomy) and 8n (Solo Doctor Sovereignty).
  */
 
@@ -11,53 +11,47 @@ import React from "react";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import { StagePaymentPlanModal } from "../stagePayment/StagePaymentPlanModal";
+import { StudioInstallmentTab } from "../studioTabs/StudioInstallmentTab";
+import type { TreatmentPlanTier } from "../treatmentPlanTypes";
 
-describe("StagePaymentPlanModal Autonomy & Non-blocking Deposit Allocation", () => {
-	const sampleStages = [
-		{
-			id: "stage-1",
-			stageNumber: 1,
-			kind: "therapy" as const,
-			title: "Терапевтический этап",
-			totalKopecks: 500000,
-			totalAmountKopecks: 500000,
-			advanceRequiredKopecks: 150000,
-			advancePaidKopecks: 0,
-			escrowLockedKopecks: 0,
-			completionPaidKopecks: 0,
-			directExpensesKopecks: { labKopecks: 0, materialsKopecks: 0, otherKopecks: 0 },
-			items: [],
-			status: "draft" as const,
-		},
-	];
-
-	const sampleWallet = {
-		totalBalanceKopecks: 0,
-		availableDepositKopecks: 0,
-		lockedEscrowKopecks: 0,
+describe("StudioInstallmentTab Autonomy & Non-blocking Installment Terms", () => {
+	const sampleTier: TreatmentPlanTier = {
+		tierId: "optimum",
+		title: "Оптимум (Стандарт клиники)",
+		badge: "Оптимум",
+		totalRub: 180000,
+		totalKopecks: 18000000,
+		isRecommended: true,
+		stages: [],
+		itemsCount: 5,
+		borderClass: "border-teal-500",
+		warrantyYears: 2,
 	};
 
-	it("renders auto-allocate deposit button as enabled (disabled === false) even when deposit is 0", () => {
+	it("renders installment options with touch targets >= 44px and 0% interest", () => {
 		const html = renderToString(
-			<StagePaymentPlanModal
-				isOpen={true}
-				onClose={() => {}}
-				planTitle="Комплексный план лечения"
+			<StudioInstallmentTab
+				activeTier={sampleTier}
 				patientName="Иванов И.И."
-				initialStages={sampleStages as any}
-				initialDepositKopecks={0 as any}
-				initialTab="escrow"
 			/>
 		);
 
-		// Verify button is rendered
-		assert.ok(html.includes("Распределить свободный депозит"), "Must render auto-allocate button");
+		// Verify container is rendered
+		assert.ok(html.includes('data-testid="studio-installment-tab"'), "Must render studio installment tab");
 
-		// Verify button is NOT hard-disabled
-		assert.ok(!html.includes('disabled="" class="stage-action-btn primary'), "Auto-allocate button must NOT be hard-disabled");
+		// Verify 0% banner
+		assert.ok(html.includes("0% переплат клинике"), "Must state 0% interest");
 
-		// Verify min-height >= 44px
-		assert.ok(html.includes("min-height: 44px") || html.includes("minHeight: 44px") || html.includes("min-height:44px"), "Button must have >= 44px touch target");
+		// Verify all 4 term options are rendered
+		for (const months of [3, 6, 12, 24]) {
+			assert.ok(html.includes(`data-testid="installment-term-${months}-btn"`), `Must render ${months} months term button`);
+		}
+		assert.ok(html.includes("0% взнос"), "Must display 0% downpayment badge");
+
+		// Verify touch targets min-h-[52px] (>= 44px)
+		assert.ok(html.includes("min-h-[52px]"), "Button must have >= 44px touch target (min-h-[52px])");
+
+		// Verify 13% NDFL tax deduction block
+		assert.ok(html.includes("13%"), "Must render NDFL tax deduction block");
 	});
 });

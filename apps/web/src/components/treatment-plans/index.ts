@@ -29,10 +29,8 @@ export { TreatmentPlanStudioModal as TreatmentPlanPresenterModal } from "./Treat
 export { isMicroConsumable } from "./treatmentPlanConsumables";
 export * from "./roadmap";
 export * from "./TreatmentPlanModule";
-export * from "./CuratorPlanAssignmentModal";
 export * from "./treatmentPlanBundlesEngine";
 export * from "./ClinicalBundlesPanel";
-export * from "./ClinicalServiceBundlesModal";
 export * from "./planPricing";
 export * from "./treatmentPlanTherapyNorms";
 export * from "./treatmentPlanSurgicalNorms";

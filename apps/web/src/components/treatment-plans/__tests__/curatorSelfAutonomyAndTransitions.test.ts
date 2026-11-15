@@ -12,7 +12,7 @@ import {
 import {
 	DOCTOR_SELF_CURATOR_ID,
 	isDoctorSelfCurator,
-} from "../CuratorPlanAssignmentModal";
+} from "../treatmentPlanTypes";
 
 describe("Curator Autonomy — Самокурация и переходы", () => {
 	test("isDoctorSelfCurator корректно определяет самокурацию", () => {

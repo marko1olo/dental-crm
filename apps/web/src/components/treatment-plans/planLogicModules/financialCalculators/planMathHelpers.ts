@@ -25,7 +25,7 @@ export function resolveInitialActiveViewTab(initialViewTab?: TreatmentPlanViewTa
 	) {
 		return "roadmap";
 	}
-	return initialViewTab || "3tier";
+	return initialViewTab || "stages";
 }
 
 export function extractPatientFinancialContext(

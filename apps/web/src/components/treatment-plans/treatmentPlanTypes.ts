@@ -121,3 +121,39 @@ export function isPlanPriceImmutable(status?: string | null): boolean {
 		s === "signed"
 	);
 }
+
+export const DOCTOR_SELF_CURATOR_ID = "doctor_self";
+
+export const isDoctorSelfCurator = (id?: string | null): boolean => {
+	return !id || id === DOCTOR_SELF_CURATOR_ID;
+};
+
+export const CURATOR_ALLOWED_STAFF_ROLES = new Set([
+	"curator",
+	"administrator",
+	"manager",
+	"admin",
+	"owner",
+	"doctor",
+	"therapist",
+	"surgeon",
+	"orthopedist",
+	"orthodontist",
+	"periodontist",
+	"pediatric",
+]);
+
+export const CURATOR_ROLE_LABELS: Record<string, string> = {
+	curator: "Куратор",
+	administrator: "Администратор",
+	manager: "Менеджер",
+	admin: "Управляющий",
+	owner: "Главврач / Владелец",
+	doctor: "Врач-стоматолог",
+	therapist: "Стоматолог-терапевт",
+	surgeon: "Стоматолог-хирург",
+	orthopedist: "Стоматолог-ортопед",
+	orthodontist: "Ортодонт",
+	periodontist: "Пародонтолог",
+	pediatric: "Детский стоматолог",
+};

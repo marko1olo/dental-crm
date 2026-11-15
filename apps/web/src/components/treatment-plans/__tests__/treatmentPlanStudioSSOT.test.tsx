@@ -18,6 +18,7 @@ import {
 	sanitizePatientPresentationStages,
 } from "../treatmentPlanCatalogData";
 import { TreatmentPlanStudioModal } from "../TreatmentPlanStudioModal";
+import { TreatmentPlanPresenterModal } from "../index";
 import type { TreatmentPlanStage } from "../treatmentPlanTypes";
 
 describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
@@ -458,9 +459,8 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 		assert.ok(!html.includes("КНД 1151156"));
 	});
 
-	it("24. Обратная совместимость: экспорт канонического алиаса TreatmentPlanPresenterModal", async () => {
-		const mod = await import("../index");
-		assert.ok(mod.TreatmentPlanPresenterModal, "TreatmentPlanPresenterModal must be exported from index");
-		assert.equal(mod.TreatmentPlanPresenterModal, mod.TreatmentPlanStudioModal, "Presenter must be alias of StudioModal");
+	it("24. Обратная совместимость: экспорт канонического алиаса TreatmentPlanPresenterModal", () => {
+		assert.ok(TreatmentPlanPresenterModal, "TreatmentPlanPresenterModal must be exported from index");
+		assert.equal(TreatmentPlanPresenterModal, TreatmentPlanStudioModal, "Presenter must be alias of StudioModal");
 	});
 });

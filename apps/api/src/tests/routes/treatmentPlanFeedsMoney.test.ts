@@ -60,6 +60,7 @@ import {
 	users,
 } from "../../db/schema.js";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";
+import { treatmentPlanRoutes } from "../../routes/treatmentPlanRoutes.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -306,6 +307,7 @@ describe("сохранённый план лечения виден деньга
 
 		app = createTenantTestApp();
 		await registerOdontogramRoutes(app);
+		await app.register(treatmentPlanRoutes);
 		await app.ready();
 	});
 

@@ -12,7 +12,7 @@ import {
 import {
 	CURATOR_ALLOWED_STAFF_ROLES,
 	CURATOR_ROLE_LABELS,
-} from "../CuratorPlanAssignmentModal";
+} from "../treatmentPlanTypes";
 
 describe("Curator Autonomy — Роли персонала и Zod-схема", () => {
 	test("Все 7 клинических специализаций врачей входят в CURATOR_ALLOWED_STAFF_ROLES", () => {

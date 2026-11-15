@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Dashboard, Patient } from "@dental/shared";
+import type { InventoryItemLookup } from "../../treatmentPlanMaterialEngine.js";
 import {
 	buildStageCompletedActData,
 	buildTreatmentPlanValidationPayload,
@@ -17,7 +18,7 @@ export interface PlanDashboardContext {
 		} | undefined;
 		readonly staff?: readonly PlanStaffMemberInput[] | undefined;
 	} | undefined;
-	readonly inventoryItems?: Dashboard["inventoryItems"] | undefined;
+	readonly inventoryItems?: readonly InventoryItemLookup[] | undefined;
 	readonly patients?: readonly (Patient & { balanceRub?: number | null | undefined })[] | undefined;
 	readonly serviceCatalog?: Dashboard["serviceCatalog"] | undefined;
 }
