@@ -3,7 +3,7 @@
  *
  * DENTE Dental CRM — Каноническая студия ортодонтии и этапов лечения (Мандаты 8b, 8e, 8x, 8am).
  * Ровно ОДНА Primary CTA кнопка #0d9488 (var(--teal)): «✓ Зафиксировать активацию этапа».
- * Автономия врача (0 заблокированных кнопок), 1-клик пресеты активации,
+ * Автономия врача (0 заблокированных кнопок), готовые клинические пресеты активации,
  * контроль этапов элайнеров (шаг X из Y), замена дуг и эластиков, фотопротокол и ТРГ,
  * нативный мобильный Bottom Sheet Apple HIG (390×844) с тач-таргетами >= 44x44px.
  */
@@ -559,9 +559,9 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							<span>Следующий визит через {protocol.nextVisitWeeks} нед.</span>
 						</div>
 					</div>
-					<div className="flex items-center gap-1.5 flex-wrap py-0.5 max-w-full">
+					<div className="ortho-presets-scroll">
 						<span className="text-[11px] font-semibold text-[var(--ink-muted)] shrink-0 flex items-center gap-1">
-							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" /> Клинические шаблоны:
+							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" /> Шаблоны:
 						</span>
 						{ORTHO_ACTIVATION_PRESETS.map((preset) => (
 							<button key={preset.id} type="button" onClick={() => handleApplyPreset(preset)} className="shrink-0 whitespace-nowrap px-2.5 py-1 min-h-[30px] text-[11px] sm:text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all cursor-pointer">
@@ -572,7 +572,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 				</div>
 
 				<div className="ortho-tabs-bar">
-					<div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-1 w-full">
+					<div className="ortho-tabs-scroll">
 						<button type="button" onClick={() => setActiveTab("brackets")} className={`ortho-tab-btn ${activeTab === "brackets" ? "active" : ""}`}>
 							<Layers className="w-3.5 h-3.5 shrink-0" /><span>Брекеты и дуги</span>
 						</button>

@@ -275,8 +275,9 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 
 	it("17. Verifies interactive controls in OrthodonticsTabsContent (IPR, attachments, date, sets)", () => {
 		const tabsPath = path.join(orthoDir, "OrthodonticsTabsContent.tsx");
+		const alignerCardPath = path.join(orthoDir, "AlignerTrackingCard.tsx");
 		assert.ok(fs.existsSync(tabsPath), "OrthodonticsTabsContent.tsx must exist");
-		const content = fs.readFileSync(tabsPath, "utf-8");
+		const content = fs.readFileSync(tabsPath, "utf-8") + (fs.existsSync(alignerCardPath) ? fs.readFileSync(alignerCardPath, "utf-8") : "");
 
 		assert.ok(content.includes('data-testid="toggle-ipr-btn"'), "Must have interactive IPR toggle");
 		assert.ok(content.includes('data-testid="toggle-attachments-btn"'), "Must have interactive attachments toggle");

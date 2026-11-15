@@ -13,6 +13,8 @@ import {
 	TRG_ANGLES_NORMS_SSOT, ORTHO_PATIENT_MEMO_SECTIONS, evaluateTrgAngleStatus,
 	type ArchwireAlloy, type ArchwireSection, type OrthoProtocolState,
 } from "./orthodonticsCatalogData";
+import { AlignerTrackingCard } from "./AlignerTrackingCard";
+import { OrthodonticTimeline } from "./OrthodonticTimeline";
 
 export interface OrthodonticsTabsContentProps {
 	readonly activeTab: "brackets" | "aligners" | "photo_trg" | "diary";
@@ -159,119 +161,11 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 
 			{activeTab === "aligners" && (
 				<div className="flex flex-col gap-4">
-					<div className="ortho-card">
-						<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-							<div>
-								<h4 className="text-sm font-bold text-[var(--ink)]">Контроль этапов элайнеров</h4>
-								<p className="text-xs text-[var(--ink-muted)]">Шаг {protocol.alignerTracking.currentStep} из {protocol.alignerTracking.totalSteps} (смена каждые {protocol.alignerTracking.wearDaysPerStep} дней)</p>
-							</div>
-							<div className="flex items-center gap-2 flex-wrap">
-								<div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)]">
-									<label htmlFor="ortho-current-step-input" className="text-xs text-[var(--ink-muted)] font-medium">Шаг:</label>
-									<input
-										id="ortho-current-step-input"
-										type="number"
-										min={0}
-										max={protocol.alignerTracking.totalSteps}
-										value={protocol.alignerTracking.currentStep}
-										onChange={(e) => {
-											const val = Math.min(protocol.alignerTracking.totalSteps, Math.max(0, parseInt(e.target.value, 10) || 0));
-											setProtocol((p) => ({
-												...p,
-												alignerTracking: { ...p.alignerTracking, currentStep: val },
-											}));
-										}}
-										className="w-12 text-xs font-bold text-center bg-transparent border-none outline-none text-[var(--ink)]"
-									/>
-									<span className="text-xs text-[var(--ink-muted)]">/ {protocol.alignerTracking.totalSteps}</span>
-								</div>
-								<button type="button" onClick={handleAdvanceAlignerStep} className="ortho-touch-button selected">
-									+ Выдать следующий шаг
-								</button>
-							</div>
-						</div>
-						<div className="ortho-aligner-progress-bar">
-							<div className="ortho-aligner-progress-fill" style={{ width: `${Math.round(((protocol.alignerTracking.currentStep || 0) / (protocol.alignerTracking.totalSteps || 24)) * 100)}%` }} />
-						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
-							<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col justify-between min-h-[56px]">
-								<label htmlFor="ortho-issued-sets-input" className="text-[10px] text-[var(--ink-muted)] font-medium">Выдано комплектов</label>
-								<div className="flex items-center gap-1.5 mt-0.5">
-									<input
-										id="ortho-issued-sets-input"
-										type="number"
-										min={1}
-										max={protocol.alignerTracking.totalSteps}
-										value={protocol.alignerTracking.issuedSetsCount || 1}
-										onChange={(e) => {
-											const val = Math.max(1, parseInt(e.target.value, 10) || 1);
-											setProtocol((p) => ({
-												...p,
-												alignerTracking: { ...p.alignerTracking, issuedSetsCount: val },
-											}));
-										}}
-										className="w-14 text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] rounded px-1.5 py-0.5 text-center"
-									/>
-									<span className="text-xs text-[var(--ink-muted)] font-medium">пар</span>
-								</div>
-							</div>
-							<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col justify-between min-h-[56px]">
-								<label htmlFor="ortho-next-date-input" className="text-[10px] text-[var(--ink-muted)] font-medium">Плановая дата визита</label>
-								<input
-									id="ortho-next-date-input"
-									data-testid="next-aligner-date-input"
-									type="date"
-									value={protocol.alignerTracking.nextPlannedDate}
-									onChange={(e) => {
-										const val = e.target.value;
-										setProtocol((p) => ({
-											...p,
-											alignerTracking: { ...p.alignerTracking, nextPlannedDate: val },
-										}));
-									}}
-									className="text-xs font-bold text-[var(--ink)] bg-transparent border-none outline-none p-0 cursor-pointer w-full mt-0.5"
-								/>
-							</div>
-							<button
-								type="button"
-								data-testid="toggle-ipr-btn"
-								onClick={() => setProtocol((p) => ({
-									...p,
-									alignerTracking: { ...p.alignerTracking, iprCompleted: !p.alignerTracking.iprCompleted },
-								}))}
-								className={`p-2.5 rounded-lg border text-left flex flex-col justify-between min-h-[56px] transition-all cursor-pointer ${
-									protocol.alignerTracking.iprCompleted
-										? "bg-[var(--teal-subtle,rgba(13,148,136,0.15))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper)]"
-								}`}
-							>
-								<span className="text-[10px] text-[var(--ink-muted)] font-medium">Сепарация (IPR)</span>
-								<span className="text-xs font-bold flex items-center justify-between w-full">
-									<span>{protocol.alignerTracking.iprCompleted ? "Выполнена ✓" : "Не требуется"}</span>
-									<span className="text-[10px] px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--ink-muted)] font-normal border border-[var(--line)]">изменить</span>
-								</span>
-							</button>
-							<button
-								type="button"
-								data-testid="toggle-attachments-btn"
-								onClick={() => setProtocol((p) => ({
-									...p,
-									alignerTracking: { ...p.alignerTracking, attachmentsVerified: !p.alignerTracking.attachmentsVerified },
-								}))}
-								className={`p-2.5 rounded-lg border text-left flex flex-col justify-between min-h-[56px] transition-all cursor-pointer ${
-									protocol.alignerTracking.attachmentsVerified
-										? "bg-[var(--teal-subtle,rgba(13,148,136,0.15))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper)]"
-								}`}
-							>
-								<span className="text-[10px] text-[var(--ink-muted)] font-medium">Аттачменты</span>
-								<span className="text-xs font-bold flex items-center justify-between w-full">
-									<span>{protocol.alignerTracking.attachmentsVerified ? "В норме ✓" : "Требуется осмотр"}</span>
-									<span className="text-[10px] px-1 py-0.5 rounded bg-[var(--paper)] text-[var(--ink-muted)] font-normal border border-[var(--line)]">изменить</span>
-								</span>
-							</button>
-						</div>
-					</div>
+					<AlignerTrackingCard
+						tracking={protocol.alignerTracking}
+						onChange={(updater) => setProtocol((p) => ({ ...p, alignerTracking: updater(p.alignerTracking) }))}
+						onAdvanceStep={handleAdvanceAlignerStep}
+					/>
 					<div className="ortho-card">
 						<span className="text-sm font-semibold text-[var(--ink)]">Классификация прикуса по Энглю</span>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -359,25 +253,32 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 			)}
 
 			{activeTab === "diary" && (
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-					<div className="ortho-card">
-						<div className="flex items-center justify-between">
-							<span className="text-sm font-semibold text-[var(--ink)]">Дневник приёма (SOAP)</span>
-							<button type="button" onClick={() => handleCopyText(soapSummary, "Дневник скопирован в буфер")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
-								<Copy className="w-3.5 h-3.5" /> В медкарту
-							</button>
+				<div className="flex flex-col gap-4">
+					<OrthodonticTimeline
+						currentMonth={protocol.currentMonth}
+						totalMonths={protocol.totalMonths}
+						onSelectMonth={(m) => setProtocol((p) => ({ ...p, currentMonth: m }))}
+					/>
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+						<div className="ortho-card">
+							<div className="flex items-center justify-between">
+								<span className="text-sm font-semibold text-[var(--ink)]">Дневник приёма (SOAP)</span>
+								<button type="button" onClick={() => handleCopyText(soapSummary, "Дневник скопирован в буфер")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
+									<Copy className="w-3.5 h-3.5" /> В медкарту
+								</button>
+							</div>
+							<pre className="p-3 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">{soapSummary}</pre>
 						</div>
-						<pre className="p-3 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">{soapSummary}</pre>
-					</div>
 
-					<div className="ortho-card">
-						<div className="flex items-center justify-between">
-							<span className="text-sm font-semibold text-[var(--ink)]">Памятка пациенту</span>
-							<button type="button" onClick={() => handleCopyText(memoText, "Памятка скопирована")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
-								<BookOpen className="w-3.5 h-3.5" /> Копировать памятку
-							</button>
+						<div className="ortho-card">
+							<div className="flex items-center justify-between">
+								<span className="text-sm font-semibold text-[var(--ink)]">Памятка пациенту</span>
+								<button type="button" onClick={() => handleCopyText(memoText, "Памятка скопирована")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
+									<BookOpen className="w-3.5 h-3.5" /> Копировать памятку
+								</button>
+							</div>
+							<pre className="p-3 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">{memoText}</pre>
 						</div>
-						<pre className="p-3 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">{memoText}</pre>
 					</div>
 				</div>
 			)}

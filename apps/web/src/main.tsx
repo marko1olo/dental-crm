@@ -103,6 +103,11 @@ const HygieneStudioStandaloneView = React.lazy(() =>
 		default: m.DirectHygieneLauncher,
 	})),
 );
+const OrthodonticStudioStandaloneView = React.lazy(() =>
+	import("./components/orthodontics/DirectOrthodonticsLauncher").then((m) => ({
+		default: m.DirectOrthodonticsLauncher,
+	})),
+);
 const WaitlistStandaloneView = React.lazy(() =>
 	import("./components/schedule/DirectWaitlistMatchesLauncher").then((m) => ({
 		default: m.DirectWaitlistMatchesLauncher,
@@ -121,6 +126,45 @@ const CashboxStandaloneView = React.lazy(() =>
 const EmrMedicalRecordStandaloneView = React.lazy(() =>
 	import("./components/appLayout/modalsContainerModules/standalone/clinical/StandaloneEmrMedicalRecordHost").then((m) => ({
 		default: m.StandaloneEmrMedicalRecordHost,
+	})),
+);
+const PayrollStandaloneStudioView = React.lazy(() =>
+	import("./components/payroll/DirectPayrollLauncher").then((m) => ({
+		default: m.DirectPayrollLauncher,
+	})),
+);
+const DoctorPayrollReportStandaloneView = React.lazy(() =>
+	import("./components/analytics/DirectDoctorPayrollReportLauncher").then((m) => ({
+		default: m.DirectDoctorPayrollReportLauncher,
+	})),
+);
+const ChairsideHudStandaloneView = React.lazy(() =>
+	import("./components/copilot/ChairsideCopilotHUD").then((m) => ({
+		default: () => {
+			const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+			const toothFromQuery = searchParams?.get("tooth") ? Number(searchParams.get("tooth")) : undefined;
+			const patientNameFromQuery = searchParams?.get("patient");
+			return (
+				<div
+					className="direct-chairside-hud-standalone fixed inset-0 z-[9999] flex flex-col items-center justify-end p-3 sm:p-6 bg-[var(--paper)]/85 backdrop-blur-md pointer-events-auto overflow-y-auto"
+					data-testid="chairside-hud-standalone-host"
+				>
+					<div className="w-full max-w-3xl my-auto">
+						<m.ChairsideCopilotHUD
+							initialOpen={true}
+							initialDocked={true}
+							initialPresetIndex={null}
+							activeTooth={toothFromQuery}
+							patientName={patientNameFromQuery || "Пациент не выбран"}
+							patientAllergies={[]}
+							onClose={() => {
+								if (typeof window !== "undefined") window.location.hash = "";
+							}}
+						/>
+					</div>
+				</div>
+			);
+		},
 	})),
 );
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
@@ -568,6 +612,48 @@ if (publicPortalRoute) {
 	);
 } else if (
 	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=ortho") ||
+		window.location.search.includes("standalone=ortho") ||
+		window.location.search.includes("stand=orthodontics") ||
+		window.location.search.includes("standalone=orthodontics") ||
+		window.location.search.includes("ortho=1") ||
+		window.location.search.includes("orthodontics=1") ||
+		window.location.hash === "#ortho" ||
+		window.location.hash === "#orthodontics" ||
+		window.location.hash === "#ortho-protocol" ||
+		window.location.hash === "#ortho-studio" ||
+		window.location.hash.startsWith("#ortho?") ||
+		window.location.hash.startsWith("#orthodontics?") ||
+		window.location.hash.startsWith("#ortho-protocol?") ||
+		window.location.hash.startsWith("#ortho-studio?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка ортодонтической студии...
+						</div>
+					}
+				>
+					<OrthodonticStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
 	(window.location.search.includes("stand=waitlist") ||
 		window.location.search.includes("standalone=waitlist") ||
 		window.location.search.includes("waitlist-matches=true") ||
@@ -741,6 +827,112 @@ if (publicPortalRoute) {
 					}
 				>
 					<EmrMedicalRecordStandaloneView onClose={() => {}} />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=payroll") ||
+		window.location.search.includes("standalone=payroll") ||
+		window.location.search.includes("payroll=1") ||
+		window.location.search.includes("doctor_payroll=1") ||
+		window.location.search.includes("doctor-payroll=1") ||
+		window.location.hash === "#payroll" ||
+		window.location.hash === "#doctor-payroll" ||
+		window.location.hash.startsWith("#payroll?") ||
+		window.location.hash.startsWith("#doctor-payroll?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка ведомости зарплат...
+						</div>
+					}
+				>
+					<PayrollStandaloneStudioView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=doctor-payroll-report") ||
+		window.location.search.includes("standalone=doctor-payroll-report") ||
+		window.location.search.includes("executive_payroll=1") ||
+		window.location.search.includes("assistant_payroll=1") ||
+		window.location.hash === "#doctor-payroll-report" ||
+		window.location.hash === "#executive-payroll" ||
+		window.location.hash === "#assistant-payroll" ||
+		window.location.hash.startsWith("#doctor-payroll-report?") ||
+		window.location.hash.startsWith("#executive-payroll?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка отчета по зарплатам...
+						</div>
+					}
+				>
+					<DoctorPayrollReportStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=chairside-hud") ||
+		window.location.search.includes("standalone=chairside-hud") ||
+		window.location.hash === "#chairside-hud" ||
+		window.location.hash.startsWith("#chairside-hud?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка кресельного ИИ-копилота...
+						</div>
+					}
+				>
+					<ChairsideHudStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
