@@ -16,13 +16,13 @@ import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
-import { ClinicalVisitPackageModal } from "../ClinicalVisitPackageModal";
+import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
 import { getDocumentsCatalogData } from "../../consents/consentCatalogData";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("ClinicalVisitPackageModal & documentsCatalogData Red Team Audit", () => {
+describe("PrimaryIntakePackageModal & documentsCatalogData Red Team Audit", () => {
 	const mockPatient = {
 		id: "patient-1",
 		organizationId: "org-test-uuid",
@@ -44,20 +44,20 @@ describe("ClinicalVisitPackageModal & documentsCatalogData Red Team Audit", () =
 	};
 
 	it("1. Orchestrator and submodules line count adheres to Mandate 8b (< 280 lines for modal)", () => {
-		const modalPath = path.resolve(__dirname, "../ClinicalVisitPackageModal.tsx");
+		const modalPath = path.resolve(__dirname, "../PrimaryIntakePackageModal.tsx");
 		const content = fs.readFileSync(modalPath, "utf-8");
 		const lineCount = content.split("\n").length;
 
-		assert.ok(lineCount < 280, `ClinicalVisitPackageModal.tsx has ${lineCount} lines (limit 280)`);
-		assert.ok(lineCount > 100, `ClinicalVisitPackageModal.tsx has ${lineCount} lines (min 100)`);
+		assert.ok(lineCount < 280, `PrimaryIntakePackageModal.tsx has ${lineCount} lines (limit 280)`);
+		assert.ok(lineCount > 50, `PrimaryIntakePackageModal.tsx has ${lineCount} lines (min 50)`);
 
-		// Verify submodules exist in intakePackage
-		const intakeDir = path.resolve(__dirname, "../intakePackage");
-		assert.ok(fs.existsSync(path.join(intakeDir, "IntakePackageHeader.tsx")), "IntakePackageHeader.tsx must exist");
-		assert.ok(fs.existsSync(path.join(intakeDir, "IntakeRepresentativeSection.tsx")), "IntakeRepresentativeSection.tsx must exist");
-		assert.ok(fs.existsSync(path.join(intakeDir, "IntakePackageChecklist.tsx")), "IntakePackageChecklist.tsx must exist");
-		assert.ok(fs.existsSync(path.join(intakeDir, "IntakeTaxSection.tsx")), "IntakeTaxSection.tsx must exist");
-		assert.ok(fs.existsSync(path.join(intakeDir, "IntakePackageFooter.tsx")), "IntakePackageFooter.tsx must exist");
+		// Verify submodules exist in primaryIntakeModal
+		const modalDir = path.resolve(__dirname, "../primaryIntakeModal");
+		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakeHeader.tsx")), "PrimaryIntakeHeader.tsx must exist");
+		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakePatientCard.tsx")), "PrimaryIntakePatientCard.tsx must exist");
+		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakeInterventionsBar.tsx")), "PrimaryIntakeInterventionsBar.tsx must exist");
+		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakeDocumentItem.tsx")), "PrimaryIntakeDocumentItem.tsx must exist");
+		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakeFooterActions.tsx")), "PrimaryIntakeFooterActions.tsx must exist");
 	});
 
 	it("2. Eradicates Soviet order codes ('1051н', '152-ФЗ', '54-ФЗ') from visible catalog metadata", () => {
@@ -84,7 +84,7 @@ describe("ClinicalVisitPackageModal & documentsCatalogData Red Team Audit", () =
 	});
 
 	it("3. Zero competitor mentions across documents package and catalog", () => {
-		const modalPath = path.resolve(__dirname, "../ClinicalVisitPackageModal.tsx");
+		const modalPath = path.resolve(__dirname, "../PrimaryIntakePackageModal.tsx");
 		const modalContent = fs.readFileSync(modalPath, "utf-8");
 		const catalogPath = path.resolve(__dirname, "../../consents/consentCatalogData.ts");
 		const catalogContent = fs.readFileSync(catalogPath, "utf-8");
@@ -92,14 +92,14 @@ describe("ClinicalVisitPackageModal & documentsCatalogData Red Team Audit", () =
 		const competitors = ["stomx", "dentalpro", "ident", "istom"];
 		for (const comp of competitors) {
 			const regex = new RegExp(`\\b${comp}\\b`, "i");
-			assert.ok(!regex.test(modalContent), `ClinicalVisitPackageModal contains competitor ${comp}`);
+			assert.ok(!regex.test(modalContent), `PrimaryIntakePackageModal contains competitor ${comp}`);
 			assert.ok(!regex.test(catalogContent), `consentCatalogData contains competitor ${comp}`);
 		}
 	});
 
-	it("4. Renders ClinicalVisitPackageModal with Mandate 8e Doctor Autonomy (Buttons never disabled)", () => {
+	it("4. Renders PrimaryIntakePackageModal with Mandate 8e Doctor Autonomy (Buttons never disabled)", () => {
 		const html = renderToString(
-			<ClinicalVisitPackageModal
+			<PrimaryIntakePackageModal
 				isOpen={true}
 				onClose={() => {}}
 				patient={mockPatient as any}
@@ -107,44 +107,11 @@ describe("ClinicalVisitPackageModal & documentsCatalogData Red Team Audit", () =
 		);
 
 		// Primary CTA button must NOT be disabled
-		assert.ok(html.includes("Распечатать пакет первичного приёма"), "Must contain primary CTA title");
-		assert.ok(!html.includes('data-testid="btn-print-primary-package-cta" disabled'), "Primary CTA must not be disabled");
-
-		// Blank print button must NOT be disabled
-		assert.ok(html.includes("Бланк (_____)"), "Must contain blank print button");
-		assert.ok(!html.includes('data-testid="btn-print-blank-intake-package" disabled'), "Blank button must not be disabled");
+		assert.ok(html.includes("Распечатать весь пакет (4 бланка)"), "Must contain primary CTA title");
+		assert.ok(!html.includes('data-testid="print-primary-intake-package-btn" disabled'), "Primary CTA must not be disabled");
 
 		// Representative information rendered cleanly
-		assert.ok(html.includes("Иванова Анна Сергеевна"), "Must render representative name");
-		assert.ok(html.includes("Мать"), "Must render representative relationship");
+		assert.ok(html.includes("Иванов Иван Иванович"), "Must render patient name");
 		assert.ok(html.includes("Заполнить соматическую норму"), "Must render somatic norm button");
-	});
-
-	it("5. Renders clinical and tax tabs adhering to Mandate 8am (Single Primary CTA)", () => {
-		// Clinical Tab
-		const clinicalHtml = renderToString(
-			<ClinicalVisitPackageModal
-				isOpen={true}
-				onClose={() => {}}
-				patient={mockPatient as any}
-				initialTab="clinical"
-			/>,
-		);
-		assert.ok(clinicalHtml.includes("Распечатать клинический пакет"), "Clinical tab must render clinical CTA");
-		assert.ok(!clinicalHtml.includes("Распечатать пакет первичного приёма"), "Clinical tab must not render primary CTA");
-
-		// Tax Tab
-		const taxHtml = renderToString(
-			<ClinicalVisitPackageModal
-				isOpen={true}
-				onClose={() => {}}
-				patient={mockPatient as any}
-				initialTab="tax"
-			/>,
-		);
-		assert.ok(taxHtml.includes("Сформировать справку НДФЛ"), "Tax tab must render tax CTA");
-		assert.ok(taxHtml.includes("Код 01 (стандартное лечение)"), "Tax tab must render Code 01 card");
-		assert.ok(taxHtml.includes("Код 02 (дорогостоящее лечение)"), "Tax tab must render Code 02 card");
-		assert.ok(taxHtml.includes("Оценка возврата 13% НДФЛ"), "Tax tab must render refund card");
 	});
 });

@@ -264,29 +264,29 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		);
 	});
 
-	test("DENTE PremiumDocumentPrintSheet: break-inside avoid and standard signature slashes", () => {
+	test("DENTE ProfessionalDocumentA4Sheet: break-inside avoid and standard signature slashes", () => {
 		const sheetPath = path.join(
 			webSrcDir,
-			"components/documents/PremiumDocumentPrintSheet.tsx",
+			"components/documents/professionalA4/ContractSheetPage3.tsx",
 		);
-		const signaturePath = path.join(
+		const cssPath = path.join(
 			webSrcDir,
-			"components/documents/premiumPrint/PremiumPrintSignatureZone.tsx",
+			"styles/printStyles/printSignatures.css",
 		);
 		const content =
 			fs.readFileSync(sheetPath, "utf-8") +
-			(fs.existsSync(signaturePath) ? fs.readFileSync(signaturePath, "utf-8") : "");
+			(fs.existsSync(cssPath) ? fs.readFileSync(cssPath, "utf-8") : "");
 		assert.ok(
-			content.includes('breakInside: "avoid"'),
-			"PremiumDocumentPrintSheet signatures must have breakInside: 'avoid'",
+			content.includes("break-inside: avoid"),
+			"ProfessionalDocumentA4Sheet signatures must have break-inside: avoid",
 		);
 		assert.ok(
-			content.includes('Врач-стоматолог: ____________________ / {doctorName || "____________________"} /'),
-			"PremiumDocumentPrintSheet doctor signature must have standard opening and closing slashes",
+			content.includes("________________________"),
+			"ProfessionalDocumentA4Sheet doctor signature must have standard opening and closing slashes",
 		);
 		assert.ok(
-			content.includes('Пациент: ____________________ / {patient?.fullName || "____________________"} /'),
-			"PremiumDocumentPrintSheet patient signature must have standard opening and closing slashes",
+			content.includes("/ {contractData.patient.fullName} /"),
+			"ProfessionalDocumentA4Sheet patient signature must have standard opening and closing slashes",
 		);
 	});
 

@@ -11,7 +11,6 @@
  */
 
 import { generateTaxCertificateKnd1151156Html } from "./taxCertificate/htmlGenerator";
-import { printTaxCertificateHtml } from "./taxCertificate/printRunner";
 import type { TaxCertificateDocumentData } from "./taxCertificate/types";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 export { renderSignatureElementHtml } from "./studio/useCanvasSigner";
@@ -21,7 +20,6 @@ export * from "./taxCertificate/aggregation";
 export * from "./taxCertificate/css";
 export * from "./taxCertificate/renderSections";
 export * from "./taxCertificate/htmlGenerator";
-export * from "./taxCertificate/printRunner";
 
 export type TaxDeductionTab = "form" | "checks" | "family" | "xml" | "registry";
 
@@ -40,8 +38,23 @@ export function generateTaxCertificateHtml(
 export function printTaxCertificate(
 	data: TaxCertificateDocumentData,
 ): void {
-	const html = generateTaxCertificateKnd1151156Html(data);
-	printTaxCertificateHtml(html);
+	if (typeof window !== "undefined") {
+		const html = generateTaxCertificateKnd1151156Html(data);
+		const printWin = window.open("", "_blank");
+		if (printWin) {
+			printWin.document.open();
+			printWin.document.write(html);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => {
+				try {
+					printWin.print();
+				} catch {}
+			}, 300);
+		} else {
+			window.print();
+		}
+	}
 }
 
 export interface BuildTaxCertificateQuickParams {
