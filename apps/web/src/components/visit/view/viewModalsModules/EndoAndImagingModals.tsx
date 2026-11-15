@@ -11,6 +11,7 @@ import React from "react";
 import { EndodonticStudioModal } from "../../../endo/EndodonticStudioModal";
 import { VisiographComparisonModal } from "../../../radiology/VisiographComparisonModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
+import type { VisitModalPatientEntity, VisitModalDashboardEntity } from "./visitViewModalsTypes";
 
 export interface EndoAndImagingModalsProps {
 	effectiveActiveModal: string | null;
@@ -21,8 +22,8 @@ export interface EndoAndImagingModalsProps {
 	endoModalToothState?: string | undefined;
 	isVisiographComparisonModalOpen?: boolean | undefined;
 	setIsVisiographComparisonModalOpen?: ((v: boolean) => void) | undefined;
-	activePatient: any;
-	dashboard: any;
+	activePatient: VisitModalPatientEntity | null | undefined;
+	dashboard: VisitModalDashboardEntity | null | undefined;
 	patientAge?: string | null | undefined;
 	appendToEMKField: (field: string, text: string) => void;
 }

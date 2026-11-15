@@ -112,7 +112,7 @@ export function useVisitModalsManager(opts: VisitModalsManagerOptions) {
 			return;
 		}
 
-		useUiSurfaceStore.getState().openPrimaryModal(effectiveActiveModal as any);
+		useUiSurfaceStore.getState().openPrimaryModal(effectiveActiveModal);
 
 		const closers: Record<string, () => void> = {
 			emergency_rescue: () => setIsEmergencyModalOpen(false),

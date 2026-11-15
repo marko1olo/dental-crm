@@ -14,7 +14,7 @@
  * Сохраняет 100% автономию врача (Mandates 8e, 8y): не блокирует интерфейс, только информирует с высоким приоритетом.
  */
 
-import { isNegativeAllergyStatement, parseSafetyProfileFromText } from "../../patients/safetyMath";
+import { isNegativeAllergyStatement, parseSafetyProfileFromText, type PatientClinicalSafetyProfile } from "../../patients/safetyMath";
 
 export interface VisitCriticalBadge {
 	readonly id: string;
@@ -24,12 +24,21 @@ export interface VisitCriticalBadge {
 	readonly fullLabel: string;
 }
 
+export interface PatientAdministrativeProfile {
+	readonly snils?: string | null | undefined;
+	readonly omsPolis?: string | null | undefined;
+	readonly allergies?: string | readonly string[] | null | undefined;
+	readonly preferredAppointmentNote?: string | null | undefined;
+	readonly dataProcessingBasisNote?: string | null | undefined;
+	readonly clinicalSafetyProfile?: Partial<PatientClinicalSafetyProfile> | null | undefined;
+}
+
 export interface PatientForCriticalBadges {
 	readonly allergies?: string | readonly string[] | null | undefined;
 	readonly somaticNotes?: string | null | undefined;
 	readonly concomitantDiseases?: string | null | undefined;
-	readonly administrativeProfile?: any;
-	readonly clinicalSafetyProfile?: any;
+	readonly administrativeProfile?: PatientAdministrativeProfile | null | undefined;
+	readonly clinicalSafetyProfile?: Partial<PatientClinicalSafetyProfile> | null | undefined;
 	readonly notes?: string | null | undefined;
 	readonly anamnesis?: string | null | undefined;
 }
@@ -41,11 +50,11 @@ export function calculateActivePatientCriticalBadges(
 	if (!patient) return [];
 	const badges: VisitCriticalBadge[] = [];
 
-	const rawAllergies = patient.allergies || (patient.administrativeProfile as any)?.allergies || "";
+	const rawAllergies = patient.allergies || patient.administrativeProfile?.allergies || "";
 	let allergyText = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies || "");
 
 	// Extract structured clinical safety profile if present
-	const csp = (patient.clinicalSafetyProfile || (patient.administrativeProfile as any)?.clinicalSafetyProfile) as any;
+	const csp = patient.clinicalSafetyProfile || patient.administrativeProfile?.clinicalSafetyProfile;
 	if (csp) {
 		const cspAllergies: string[] = [];
 		if (csp.hasLidocaineAllergy) cspAllergies.push("Лидокаин");
@@ -85,8 +94,8 @@ export function calculateActivePatientCriticalBadges(
 		});
 	}
 
-	const adminNotes = typeof patient.administrativeProfile === "object" && patient.administrativeProfile !== null
-		? `${(patient.administrativeProfile as any).preferredAppointmentNote || ""} ${(patient.administrativeProfile as any).dataProcessingBasisNote || ""}`
+	const adminNotes = patient.administrativeProfile
+		? `${patient.administrativeProfile.preferredAppointmentNote || ""} ${patient.administrativeProfile.dataProcessingBasisNote || ""}`.trim()
 		: "";
 
 	const combinedMedicalText = `${allergyText} ${patient.somaticNotes || ""} ${patient.concomitantDiseases || ""} ${patient.notes || ""} ${patient.anamnesis || ""} ${adminNotes} ${anamnesisText || ""}`.trim();

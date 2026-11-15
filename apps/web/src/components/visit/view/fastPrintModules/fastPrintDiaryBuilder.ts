@@ -8,29 +8,39 @@
 
 import { formatRuDateShort } from "../../../../utils/dateUtils";
 import type { A4DocumentMedicalCardData } from "@dental/shared";
+import type {
+	FastPrintPatientContext,
+	FastPrintDoctorContext,
+	FastPrintAppointmentContext,
+	FastPrintVisitNoteFormContext,
+	FastPrintDashboardContext,
+	ToothStateRecord,
+	FastPrintClinicRequisites,
+	DmftCalculationResult,
+} from "./fastPrintTypes";
 
 export interface FastPrintClinicalDiaryParams {
-	readonly activePatient?: any;
-	readonly activeDoctor?: any;
-	readonly activeAppointment?: any;
-	readonly visitNoteForm?: any;
-	readonly isClosed?: boolean;
-	readonly watermarkText?: string;
-	readonly dashboard?: any;
-	readonly teethFormula?: Record<string | number, any>;
-	readonly selectedToothForMenu?: any;
+	readonly activePatient?: FastPrintPatientContext | null | undefined;
+	readonly activeDoctor?: FastPrintDoctorContext | null | undefined;
+	readonly activeAppointment?: FastPrintAppointmentContext | null | undefined;
+	readonly visitNoteForm?: FastPrintVisitNoteFormContext | null | undefined;
+	readonly isClosed?: boolean | undefined;
+	readonly watermarkText?: string | undefined;
+	readonly dashboard?: FastPrintDashboardContext | null | undefined;
+	readonly teethFormula?: Record<string | number, ToothStateRecord | undefined> | null | undefined;
+	readonly selectedToothForMenu?: string | number | null | undefined;
 }
 
 export type FastPrint043Params = FastPrintClinicalDiaryParams;
 
 export interface FastPrintDiarySheetParams {
-	readonly activePatient?: any;
-	readonly activeDoctor?: any;
-	readonly visitNoteForm?: any;
-	readonly visitDate?: Date | string;
-	readonly toothNumber?: number | string;
-	readonly isSigned?: boolean;
-	readonly clinicName?: string;
+	readonly activePatient?: FastPrintPatientContext | null | undefined;
+	readonly activeDoctor?: FastPrintDoctorContext | null | undefined;
+	readonly visitNoteForm?: FastPrintVisitNoteFormContext | null | undefined;
+	readonly visitDate?: Date | string | null | undefined;
+	readonly toothNumber?: number | string | null | undefined;
+	readonly isSigned?: boolean | undefined;
+	readonly clinicName?: string | undefined;
 }
 
 export function printHtmlViaIframe(htmlContent: string, documentTitle = "Печать"): void {
@@ -73,7 +83,7 @@ export function printHtmlViaIframe(htmlContent: string, documentTitle = "Печ�
 	};
 }
 
-export function extractClinicRequisites(dashboard: any) {
+export function extractClinicRequisites(dashboard: FastPrintDashboardContext | null | undefined): FastPrintClinicRequisites {
 	const clinicName =
 		dashboard?.organization?.name ||
 		dashboard?.organizationName ||
@@ -111,15 +121,18 @@ export function extractClinicRequisites(dashboard: any) {
 	};
 }
 
-export function normalizeOdontogramForDmft(teethFormula: any) {
+export function normalizeOdontogramForDmft(
+	teethFormula: Record<string | number, ToothStateRecord | { state?: string | undefined; status?: string | undefined } | undefined> | null | undefined,
+): DmftCalculationResult {
 	let decayed = 0;
 	let missing = 0;
 	let filled = 0;
 
 	if (!teethFormula) return { decayed: 0, missing: 0, filled: 0, total: 0 };
 
-	for (const tooth of Object.values(teethFormula) as any[]) {
-		const state = String(tooth?.state || tooth?.status || "").toLowerCase().trim();
+	for (const tooth of Object.values(teethFormula)) {
+		if (!tooth) continue;
+		const state = String(tooth.state || tooth.status || "").toLowerCase().trim();
 		if (
 			state.includes("caries") ||
 			state.includes("кариес") ||
@@ -321,8 +334,8 @@ export function buildMedicalCardDataFromFastPrintParams(params: FastPrintClinica
 		statusLocalis: visitNoteForm?.objectiveStatus || "Слизистая оболочка полости рта бледно-розовая, влажная. Прикус физиологический.",
 		diagnosisIcd10,
 		diagnosisDescription,
-		diagnosisTooth: params.selectedToothForMenu || undefined,
-		teethFormulaMap: params.teethFormula as any,
+		diagnosisTooth: params.selectedToothForMenu != null ? String(params.selectedToothForMenu) : undefined,
+		teethFormulaMap: params.teethFormula,
 		treatmentProtocol: visitNoteForm?.treatmentPlan || "Препарирование кариозной полости, медикаментозная обработка, постановка пломбы светового отверждения.",
 		recommendations: visitNoteForm?.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
 	};

@@ -11,6 +11,7 @@ import React from "react";
 import { TreatmentPlanStudioModal } from "../../../treatment-plans/TreatmentPlanStudioModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { showToast } from "../../../GlobalToast";
+import type { VisitModalPatientEntity, VisitModalDoctorEntity } from "./visitViewModalsTypes";
 
 export interface FinancialAndPlanningModalsProps {
 	effectiveActiveModal: string | null;
@@ -18,10 +19,10 @@ export interface FinancialAndPlanningModalsProps {
 	setIsStagePaymentModalOpen: (v: boolean) => void;
 	isPriceValidatorModalOpen: boolean;
 	setIsPriceValidatorModalOpen: (v: boolean) => void;
-	activePatient: any;
-	activeDoctor: any;
-	priceValidatorPlanPayload: any;
-	priceValidatorCatalogList: any;
+	activePatient: VisitModalPatientEntity | null | undefined;
+	activeDoctor: VisitModalDoctorEntity | null | undefined;
+	priceValidatorPlanPayload?: unknown;
+	priceValidatorCatalogList?: unknown;
 	appendToEMKField: (field: string, text: string) => void;
 }
 

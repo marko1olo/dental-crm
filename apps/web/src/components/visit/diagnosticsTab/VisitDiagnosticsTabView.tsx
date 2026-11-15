@@ -113,23 +113,21 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 			/>
 
 			<DiagnosticsModalsHost
-				{...({
-					activePatient: state.activePatient,
-					visitPatientId: state.visitPatientId,
-					visitPatientName: state.visitPatientName,
-					ctx: state.ctx,
-					dashboard: state.dashboard,
-					initialToothNumber: state.initialToothNumber,
-					patientStudies: state.patientStudies,
-					photoAttachments: state.photoAttachments,
-					setPhotoAttachments: state.setPhotoAttachments,
-					onInsertToProtocol: props?.onInsertToProtocol,
-					isCephModalOpen: state.isCephModalOpen,
-					setIsCephModalOpen: state.setIsCephModalOpen,
-					isRadiologyModalOpen: state.isRadiologyModalOpen,
-					setIsRadiologyModalOpen: state.setIsRadiologyModalOpen,
-					isReportStudioModalOpen: state.isReportStudioModalOpen,
-				} as any)}
+				activePatient={state.activePatient}
+				visitPatientId={state.visitPatientId}
+				visitPatientName={state.visitPatientName}
+				ctx={state.ctx}
+				dashboard={state.dashboard}
+				initialToothNumber={state.initialToothNumber}
+				patientStudies={state.patientStudies}
+				photoAttachments={state.photoAttachments}
+				setPhotoAttachments={state.setPhotoAttachments}
+				onInsertToProtocol={props?.onInsertToProtocol}
+				isCephModalOpen={state.isCephModalOpen}
+				setIsCephModalOpen={state.setIsCephModalOpen}
+				isRadiologyModalOpen={state.isRadiologyModalOpen}
+				setIsRadiologyModalOpen={state.setIsRadiologyModalOpen}
+				isReportStudioModalOpen={state.isReportStudioModalOpen}
 				setIsReportStudioModalOpen={state.setIsReportStudioModalOpen}
 				isPhotoProtocolModalOpen={state.isPhotoProtocolModalOpen}
 				setIsPhotoProtocolModalOpen={state.setIsPhotoProtocolModalOpen}

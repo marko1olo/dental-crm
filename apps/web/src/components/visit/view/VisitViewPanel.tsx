@@ -61,7 +61,7 @@ export function VisitViewPanel({ s }: VisitViewPanelProps) {
 				activeDoctor={s.activeDoctor}
 				visitNoteForm={s.visitNoteForm}
 				updateVisitNoteField={s.updateVisitNoteField}
-				loadedTreatmentPlan={(s.loadedTreatmentPlan || s.activePlan) as any}
+				loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
 				dashboard={s.dashboard}
 				selectedToothForMenu={s.selectedToothForMenu}
 				handlePrintEstimateFast={s.handlePrintEstimateFast}

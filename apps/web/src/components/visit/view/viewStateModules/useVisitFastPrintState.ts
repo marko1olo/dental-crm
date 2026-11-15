@@ -30,7 +30,7 @@ export interface UseVisitFastPrintStateParams {
 	visitNoteForm: VisitViewProps["visitNoteForm"];
 	dashboard: VisitViewProps["dashboard"];
 	toothStateByCode: VisitViewProps["toothStateByCode"];
-	selectedToothForMenu: any;
+	selectedToothForMenu: string | number | null | undefined;
 	updateVisitNoteField: VisitViewProps["updateVisitNoteField"];
 }
 
@@ -110,8 +110,14 @@ export function useVisitFastPrintState({
 			activeAppointment?.status === "closed" ||
 			visitNoteForm?.status === "completed" ||
 			visitNoteForm?.status === "signed";
-		const revisionCount = Number((visitNoteForm as any)?.revisionCount ?? 0);
-		const isRevising = Boolean((visitNoteForm as any)?.isRevising);
+		const revisionCount =
+			typeof visitNoteForm === "object" && visitNoteForm !== null && "revisionCount" in visitNoteForm
+				? Number((visitNoteForm as { revisionCount?: unknown }).revisionCount ?? 0)
+				: 0;
+		const isRevising =
+			typeof visitNoteForm === "object" && visitNoteForm !== null && "isRevising" in visitNoteForm
+				? Boolean((visitNoteForm as { isRevising?: unknown }).isRevising)
+				: false;
 		const watermarkText =
 			revisionCount > 0 || isRevising
 				? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount + (isRevising ? 1 : 0)})`

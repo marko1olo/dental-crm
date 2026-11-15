@@ -25,7 +25,7 @@ export interface UseVisitProtocolSyncParams {
 	flushPendingVisitSaves: VisitViewProps["flushPendingVisitSaves"];
 	isQueueCockpitForced: boolean;
 	setSelectedPatientId?: ((id: string) => void) | undefined;
-	appLogic?: Record<string, any> | undefined;
+	appLogic?: Record<string, unknown> | undefined;
 }
 
 export function useVisitProtocolSync({

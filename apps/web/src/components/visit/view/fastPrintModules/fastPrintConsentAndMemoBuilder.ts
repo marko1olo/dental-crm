@@ -8,50 +8,59 @@
 
 import { formatRuDateShort } from "../../../../utils/dateUtils";
 import { extractClinicRequisites, printHtmlViaIframe } from "./fastPrintDiaryBuilder";
+import type {
+	FastPrintAppointmentContext,
+	FastPrintDashboardContext,
+	FastPrintDoctorContext,
+	FastPrintPatientContext,
+	FastPrintPlanContext,
+	FastPrintPlanItemContext,
+	FastPrintVisitNoteFormContext,
+} from "./fastPrintTypes";
 
 export interface FastPrintConsentParams {
-	readonly activePatient?: any;
-	readonly activeDoctor?: any;
-	readonly activeAppointment?: any;
-	readonly visitNoteForm?: any;
-	readonly dashboard?: any;
-	readonly selectedToothForMenu?: any;
-	readonly interventionType?: string;
+	readonly activePatient?: FastPrintPatientContext | null | undefined;
+	readonly activeDoctor?: FastPrintDoctorContext | null | undefined;
+	readonly activeAppointment?: FastPrintAppointmentContext | null | undefined;
+	readonly visitNoteForm?: FastPrintVisitNoteFormContext | null | undefined;
+	readonly dashboard?: FastPrintDashboardContext | null | undefined;
+	readonly selectedToothForMenu?: number | string | null | undefined;
+	readonly interventionType?: string | undefined;
 }
 
 export interface FastPrintCompletedActParams {
-	readonly activePatient?: any;
-	readonly activeDoctor?: any;
-	readonly activeAppointment?: any;
-	readonly visitNoteForm?: any;
-	readonly dashboard?: any;
-	readonly activePlan?: any;
-	readonly isClosed?: boolean;
+	readonly activePatient?: FastPrintPatientContext | null | undefined;
+	readonly activeDoctor?: FastPrintDoctorContext | null | undefined;
+	readonly activeAppointment?: FastPrintAppointmentContext | null | undefined;
+	readonly visitNoteForm?: FastPrintVisitNoteFormContext | null | undefined;
+	readonly dashboard?: FastPrintDashboardContext | null | undefined;
+	readonly activePlan?: FastPrintPlanContext | null | undefined;
+	readonly isClosed?: boolean | undefined;
 }
 
 export interface FastPrintEstimateParams {
-	readonly activePatient?: any;
-	readonly activeDoctor?: any;
-	readonly activeAppointment?: any;
-	readonly dashboard?: any;
-	readonly activePlan?: any;
+	readonly activePatient?: FastPrintPatientContext | null | undefined;
+	readonly activeDoctor?: FastPrintDoctorContext | null | undefined;
+	readonly activeAppointment?: FastPrintAppointmentContext | null | undefined;
+	readonly dashboard?: FastPrintDashboardContext | null | undefined;
+	readonly activePlan?: FastPrintPlanContext | null | undefined;
 }
 
 export interface FastPrintPatientMemoParams {
-	readonly activePatient?: any;
-	readonly activeDoctor?: any;
+	readonly activePatient?: FastPrintPatientContext | null | undefined;
+	readonly activeDoctor?: FastPrintDoctorContext | null | undefined;
 	readonly interventionType: "therapy" | "surgery_extraction" | "implant" | "hygiene" | "orthopedics";
-	readonly toothNumber?: number | string;
-	readonly clinicName?: string;
-	readonly emergencyPhone?: string;
+	readonly toothNumber?: number | string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly emergencyPhone?: string | undefined;
 }
 
 /**
  * Собирает официальную памятку рекомендаций пациенту после проведенного лечения/удаления.
  */
 export function buildFastPrintPatientMemoHtml(params: FastPrintPatientMemoParams): string {
-	const patientName = params.activePatient?.fullName || "Пациент";
-	const doctorName = params.activeDoctor?.fullName || "Лечащий врач";
+	const patientName = params.activePatient?.fullName || params.activePatient?.name || "Пациент";
+	const doctorName = params.activeDoctor?.fullName || params.activeDoctor?.name || "Лечащий врач";
 	const phone = params.emergencyPhone || "+7 (495) 000-00-00";
 
 	let memoTitle = "Памятка пациенту после стоматологического лечения";
@@ -122,7 +131,7 @@ export function buildFastPrintPatientMemoHtml(params: FastPrintPatientMemoParams
 
 export function executeFastPrintPatientMemo(params: FastPrintPatientMemoParams): void {
 	const html = buildFastPrintPatientMemoHtml(params);
-	printHtmlViaIframe(html, `Памятка_${params.activePatient?.fullName || "Пациент"}`);
+	printHtmlViaIframe(html, `Памятка_${params.activePatient?.fullName || params.activePatient?.name || "Пациент"}`);
 }
 
 export function executeFastPrintInformedConsent({
@@ -135,13 +144,13 @@ export function executeFastPrintInformedConsent({
 	interventionType = "терапевтическое лечение кариеса и его осложнений",
 }: FastPrintConsentParams) {
 	const req = extractClinicRequisites(dashboard);
-	const patientName = activePatient?.fullName || "Пациент";
+	const patientName = activePatient?.fullName || activePatient?.name || "Пациент";
 	const birthDate = activePatient?.birthDate ? formatRuDateShort(activePatient.birthDate) : "—";
 	const passport = activePatient?.passportSeries && activePatient?.passportNumber
 		? `${activePatient.passportSeries} № ${activePatient.passportNumber}`
 		: "Паспортные данные в ЭМК";
-	const doctorName = activeDoctor?.fullName || "Лечащий врач";
-	const specialty = activeDoctor?.specialty || "Стоматолог-терапевт";
+	const doctorName = activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач";
+	const specialty = activeDoctor?.specialty || activeDoctor?.specialtyRu || "Стоматолог-терапевт";
 	const currentDate = activeAppointment?.startsAt ? formatRuDateShort(activeAppointment.startsAt) : new Date().toLocaleDateString("ru-RU");
 	const toothInfo = selectedToothForMenu ? ` (в области зуба № ${selectedToothForMenu})` : "";
 	const diagnosis = visitNoteForm?.diagnosis || "Клинический диагноз по МКБ-10 установлен";
@@ -205,20 +214,18 @@ export function executeFastPrintCompletedAct({
 	activePatient,
 	activeDoctor,
 	activeAppointment,
-	visitNoteForm,
 	dashboard,
 	activePlan,
-	isClosed = false,
 }: FastPrintCompletedActParams) {
 	const req = extractClinicRequisites(dashboard);
-	const patientName = activePatient?.fullName || "Пациент";
-	const cardNumber = activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.id || "001";
-	const doctorName = activeDoctor?.fullName || "Лечащий врач";
+	const patientName = activePatient?.fullName || activePatient?.name || "Пациент";
+	const cardNumber = activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.medCardNumber || activePatient?.id || "001";
+	const doctorName = activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач";
 	const visitDate = activeAppointment?.startsAt ? formatRuDateShort(activeAppointment.startsAt) : new Date().toLocaleDateString("ru-RU");
 
-	const items = Array.isArray(activePlan?.items) ? activePlan.items : [];
+	const items: readonly FastPrintPlanItemContext[] = Array.isArray(activePlan?.items) ? activePlan.items : [];
 
-	const totalSum = items.reduce((acc: number, item: any) => acc + (Number(item.totalRub || item.priceRub || 0) * (Number(item.quantity) || 1)), 0);
+	const totalSum = items.reduce((acc: number, item: FastPrintPlanItemContext) => acc + (Number(item.totalRub || item.priceRub || 0) * (Number(item.quantity) || 1)), 0);
 
 	const html = `<!DOCTYPE html>
 <html lang="ru">
@@ -271,14 +278,14 @@ export function executeFastPrintCompletedAct({
 			</tr>
 		</thead>
 		<tbody>
-			${items.length > 0 ? items.map((item: any, idx: number) => `
+			${items.length > 0 ? items.map((item: FastPrintPlanItemContext, idx: number) => `
 			<tr>
 				<td style="text-align: center;">${idx + 1}</td>
-				<td style="text-align: center; font-family: monospace;">${item.code || "A16.07.002"}</td>
+				<td style="text-align: center; font-family: monospace;">${item.code || item.code804n || "A16.07.002"}</td>
 				<td>${item.name || item.title || "Стоматологическая услуга"}</td>
 				<td style="text-align: center;">${item.quantity || 1}</td>
-				<td style="text-align: right;">${Number(item.priceRub || 0).toLocaleString("ru-RU")}</td>
-				<td style="text-align: right; font-weight: bold;">${(Number(item.priceRub || 0) * (Number(item.quantity) || 1)).toLocaleString("ru-RU")}</td>
+				<td style="text-align: right;">${Number(item.priceRub || item.price || item.unitPriceRub || 0).toLocaleString("ru-RU")}</td>
+				<td style="text-align: right; font-weight: bold;">${(Number(item.priceRub || item.price || item.unitPriceRub || 0) * (Number(item.quantity) || 1)).toLocaleString("ru-RU")}</td>
 			</tr>
 			`).join("") : `
 			<tr>
@@ -319,15 +326,15 @@ export function executeFastPrintTreatmentPlanEstimate({
 	activePlan,
 }: FastPrintEstimateParams) {
 	const req = extractClinicRequisites(dashboard);
-	const patientName = activePatient?.fullName || "Пациент";
-	const cardNumber = activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.id || "001";
-	const doctorName = activeDoctor?.fullName || "Лечащий врач";
+	const patientName = activePatient?.fullName || activePatient?.name || "Пациент";
+	const cardNumber = activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.medCardNumber || activePatient?.id || "001";
+	const doctorName = activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач";
 	const currentDate = activeAppointment?.startsAt ? formatRuDateShort(activeAppointment.startsAt) : new Date().toLocaleDateString("ru-RU");
-	const planName = (activePlan as any)?.title || (activePlan as any)?.name || "Основной план лечения";
+	const planName = activePlan?.title || activePlan?.name || "Основной план лечения";
 
-	const items = Array.isArray(activePlan?.items) ? activePlan.items : [];
+	const items: readonly FastPrintPlanItemContext[] = Array.isArray(activePlan?.items) ? activePlan.items : [];
 
-	const totalSum = items.reduce((acc: number, item: any) => acc + (Number(item.priceRub || 0) * (Number(item.quantity) || 1)), 0);
+	const totalSum = items.reduce((acc: number, item: FastPrintPlanItemContext) => acc + (Number(item.priceRub || item.price || item.unitPriceRub || 0) * (Number(item.quantity) || 1)), 0);
 
 	const html = `<!DOCTYPE html>
 <html lang="ru">
@@ -372,13 +379,13 @@ export function executeFastPrintTreatmentPlanEstimate({
 			</tr>
 		</thead>
 		<tbody>
-			${items.length > 0 ? items.map((item: any, idx: number) => `
+			${items.length > 0 ? items.map((item: FastPrintPlanItemContext, idx: number) => `
 			<tr>
 				<td style="text-align: center;">${idx + 1}</td>
 				<td style="text-align: center; font-weight: bold;">${item.tooth || item.toothNumber || "—"}</td>
 				<td>${item.name || item.title || "Этап лечения"}</td>
 				<td style="text-align: center;">${item.quantity || 1}</td>
-				<td style="text-align: right; font-weight: bold;">${Number(item.priceRub || 0).toLocaleString("ru-RU")}</td>
+				<td style="text-align: right; font-weight: bold;">${Number(item.priceRub || item.price || item.unitPriceRub || 0).toLocaleString("ru-RU")}</td>
 			</tr>
 			`).join("") : `
 			<tr>

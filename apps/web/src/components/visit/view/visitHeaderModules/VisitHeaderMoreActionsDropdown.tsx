@@ -11,7 +11,7 @@ export interface VisitHeaderMoreActionsDropdownProps {
 	headerMoreMenuRef: React.RefObject<HTMLDivElement | null>;
 	setIsQueueCockpitForced: (forced: boolean) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	appLogic?: any;
+	appLogic?: { setSelectedPatientId?: ((id: string | null) => void) | undefined; [key: string]: unknown } | undefined;
 	setIsEmergencyModalOpen: (open: boolean) => void;
 	handlePrintForm043uFast: () => void;
 	handlePrintCompletedActFast: () => void;
@@ -32,7 +32,7 @@ export function VisitHeaderMoreActionsDropdown(props: VisitHeaderMoreActionsDrop
 	const onCloseMenu = () => setIsHeaderMoreMenuOpen(false);
 
 	return (
-		<div className="relative shrink-0" ref={headerMoreMenuRef as any}>
+		<div className="relative shrink-0" ref={headerMoreMenuRef}>
 			<button
 				type="button"
 				onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}

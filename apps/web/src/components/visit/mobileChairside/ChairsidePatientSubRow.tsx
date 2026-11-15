@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { VisitTimer } from "../VisitTimer";
 
 export interface ChairsidePatientSubRowProps {
-	activeAppointment?: { startsAt?: string; [key: string]: any } | undefined;
+	activeAppointment?: { startsAt?: string; [key: string]: unknown } | undefined;
 	consolidatedAllergyChip?: string | null | undefined;
 	testId?: string;
 }

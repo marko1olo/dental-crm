@@ -11,7 +11,7 @@ export function VisitToolbarMoreMenu(props: VisitToolbarMoreMenuProps) {
 	const { isHeaderMoreMenuOpen, setIsHeaderMoreMenuOpen, headerMoreMenuRef } = props;
 
 	return (
-		<div className="relative shrink-0" ref={headerMoreMenuRef as any}>
+		<div className="relative shrink-0" ref={headerMoreMenuRef}>
 			<button
 				type="button"
 				onClick={() => setIsHeaderMoreMenuOpen((prev) => !prev)}

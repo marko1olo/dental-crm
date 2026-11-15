@@ -6,7 +6,7 @@ export interface VisitHeaderMoreActionsNavItemsProps {
 	onCloseMenu: () => void;
 	setIsQueueCockpitForced: (forced: boolean) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	appLogic?: any;
+	appLogic?: { setSelectedPatientId?: ((id: string | null) => void) | undefined; [key: string]: unknown } | undefined;
 	setIsEmergencyModalOpen: (open: boolean) => void;
 	handleOpenLabOrder: () => void;
 	onOpenVisiographComparison?: (() => void) | undefined;

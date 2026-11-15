@@ -5,7 +5,7 @@ export interface SpecialtyFocusBarCompactProps {
 	specialtyName: string;
 	activeTooth: number | null;
 	isProtocolDrawerOpen: boolean;
-	setIsProtocolDrawerOpen: (valOrFn: any) => void;
+	setIsProtocolDrawerOpen: (valOrFn: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 export function SpecialtyFocusBarCompact({

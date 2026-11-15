@@ -304,7 +304,12 @@ export function VisitActionFooter({
 								birthDate: activePatient.birthDate,
 								phone: activePatient.phone,
 								address: activePatient.address,
-								cardNumber: (activePatient as any).cardNumber || (activePatient.id ? `МК-${activePatient.id.slice(0, 8).toUpperCase()}` : "МК-2026-01"),
+								cardNumber:
+									"cardNumber" in activePatient && typeof activePatient.cardNumber === "string"
+										? activePatient.cardNumber
+										: activePatient.id
+											? `МК-${activePatient.id.slice(0, 8).toUpperCase()}`
+											: "МК-2026-01",
 								allergies: activePatient.allergies || activePatient.allergyHistory,
 								somaticNotes: activePatient.somaticHistory || activePatient.chronicDiseases,
 							}

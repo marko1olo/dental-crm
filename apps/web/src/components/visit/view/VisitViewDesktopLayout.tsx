@@ -1,5 +1,6 @@
 import React from "react";
 import { VisitViewPanel } from "./VisitViewPanel";
+import type { ToothState } from "../../odontogram/ToothChart";
 import { ToothContextDrawer } from "../../diagnostics/ToothContextDrawer";
 import { VisitViewModals } from "./VisitViewModals";
 import type { useVisitViewState } from "./useVisitViewState";
@@ -28,12 +29,12 @@ export function VisitViewDesktopLayout({ s }: VisitViewDesktopLayoutProps) {
 				toothNumber={toothNum}
 				toothData={{
 					toothNumber: toothNum,
-					state: rawState as any,
+					state: (rawState as ToothState) || "Healthy",
 				}}
 				patient={s.activePatient}
 				doctorName={s.activeDoctor?.name || "Лечащий врач-стоматолог"}
 				onUpdateTooth={(num, updatedState) => {
-					s.setToothState(String(num), updatedState as any);
+					s.setToothState(String(num), updatedState);
 				}}
 				onInsertToProtocol={(text) => {
 					s.appendToEMKField("objective", text);

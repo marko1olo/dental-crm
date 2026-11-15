@@ -200,10 +200,10 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 
 	const dashboard = ctx?.dashboard;
 	const visitPatientId = realVisitFieldId(dashboard?.activeVisit?.patientId);
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const patients: any[] = Array.isArray(dashboard?.patients)
-		? dashboard.patients
-		: [];
+	const patients: readonly { readonly id?: string | undefined; readonly fullName?: string | undefined }[] =
+		Array.isArray(dashboard?.patients)
+			? (dashboard.patients as readonly { readonly id?: string | undefined; readonly fullName?: string | undefined }[])
+			: [];
 	const nameOf = (patientId: string | null): string | null => {
 		if (!patientId) return null;
 		const found = patients.find((patient) => patient?.id === patientId);
@@ -221,8 +221,7 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 	const effectiveTargetPatientId = activePatient?.id ?? selectedPatientId;
 	const target = imagingWriteTarget(effectiveTargetPatientId, visitPatientId);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const [liveStudies, setLiveStudies] = useState<any[]>([]);
+	const [liveStudies, setLiveStudies] = useState<DiagnosticStudy[]>([]);
 
 	useEffect(() => {
 		const targetId = effectiveTargetPatientId ?? visitPatientId;
@@ -238,7 +237,19 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 					.then((res) => (res.ok ? res.json() : []))
 					.then((scans) =>
 						Array.isArray(scans)
-							? scans.map((s: any) => ({
+							? scans.map((s: {
+									id: string;
+									patientId?: string;
+									visitId?: string;
+									originalFilename?: string;
+									toothCode?: string | null;
+									kind?: string;
+									capturedAt?: string;
+									createdAt?: string;
+									imageDataUri?: string;
+									fileUrl?: string;
+									status?: string;
+								}) => ({
 									id: s.id,
 									patientId: s.patientId,
 									visitId: s.visitId,
@@ -256,7 +267,6 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 										s.fileUrl ||
 										`/api/xray/scans/${s.id}/file`,
 									fileUrl: s.fileUrl || `/api/xray/scans/${s.id}/file`,
-									aiSummary: s.aiSummary,
 									status: s.status,
 								}))
 							: [],
@@ -265,8 +275,8 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 			]).then(([imagingList, xrayList]) => {
 				if (cancelled) return;
 				const seen = new Set<string>();
-				const merged: any[] = [];
-				for (const item of [...imagingList, ...xrayList]) {
+				const merged: DiagnosticStudy[] = [];
+				for (const item of [...(imagingList as DiagnosticStudy[]), ...(xrayList as DiagnosticStudy[])]) {
 					if (item?.id && !seen.has(item.id)) {
 						seen.add(item.id);
 						merged.push(item);
@@ -360,13 +370,13 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 	}, [effectiveTargetPatientId, visitPatientId, props?.onInsertToProtocol]);
 
 	const patientStudies: DiagnosticStudy[] = React.useMemo(() => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const all = ((ctx?.dashboard?.imagingStudies && (ctx.dashboard.imagingStudies as any[]).length > 0)
-			? ctx.dashboard.imagingStudies
-			: liveStudies) as DiagnosticStudy[];
+		const rawImaging = ctx?.dashboard?.imagingStudies;
+		const all: DiagnosticStudy[] =
+			Array.isArray(rawImaging) && rawImaging.length > 0
+				? (rawImaging as DiagnosticStudy[])
+				: liveStudies;
 		const targetId = effectiveTargetPatientId ?? visitPatientId;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const filtered = targetId ? all.filter((s: any) => String(s?.patientId) === String(targetId)) : [];
+		const filtered = targetId ? all.filter((s: DiagnosticStudy) => String(s?.patientId) === String(targetId)) : [];
 		if (filtered.length > 0) return filtered;
 		if (isDemoShowcaseMode() || isDemoPatientId(targetId)) {
 			return [

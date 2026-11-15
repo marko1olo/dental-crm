@@ -131,10 +131,10 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
           <VisitDiaryAnesthesiaBar
             fieldsDisabled={false}
             activePatient={activePatient}
-            diary={visitNoteForm as any}
+            diary={visitNoteForm ?? {}}
             doctorName="Лечащий врач"
             isLocked={false}
-            isRevising={Boolean((visitNoteForm as any)?.isRevising)}
+            isRevising={Boolean(visitNoteForm?.isRevising)}
             beginRevise={() => {
               updateVisitNoteField("isRevising", true);
             }}
@@ -385,7 +385,7 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
                 }`}
                 onClick={() => {
                   triggerHaptic("selection");
-                  setSelectedPaymentMethod(method.id as any);
+                  setSelectedPaymentMethod(method.id);
                 }}
               >
                 <div>

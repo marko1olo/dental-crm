@@ -30,8 +30,9 @@ export function VisitViewMobileLayout({ s }: VisitViewMobileLayoutProps) {
 				setToothState={s.setToothState}
 				loadedTreatmentPlan={s.loadedTreatmentPlan || s.activePlan}
 				onClose={() => {
-					if (typeof (s.props as any).onCloseVisit === "function") {
-						(s.props as any).onCloseVisit();
+					const onCloseVisit = (s.props as { onCloseVisit?: unknown }).onCloseVisit;
+					if (typeof onCloseVisit === "function") {
+						(onCloseVisit as () => void)();
 					} else {
 						window.dispatchEvent(new CustomEvent("dente:navigate-to-schedule"));
 					}

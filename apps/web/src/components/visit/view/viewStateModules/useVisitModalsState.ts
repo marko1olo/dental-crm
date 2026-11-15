@@ -89,9 +89,15 @@ export function useVisitModalsState({
 
 	useEffect(() => {
 		const handleLabOrderEvent = (e: Event) => {
-			const ce = e as CustomEvent<any>;
+			const ce = e as CustomEvent<{
+				items?: readonly { toothNumber?: number | string | null | undefined; toothCode?: string | number | null | undefined }[] | undefined;
+				selectedTeeth?: unknown;
+				teeth?: unknown;
+				toothNumber?: number | string | null | undefined;
+				toothFdi?: number | string | null | undefined;
+			}>;
 			const itemsTeeth = Array.isArray(ce?.detail?.items)
-				? ce.detail.items.map((it: any) => it.toothNumber ?? it.toothCode).filter(Boolean)
+				? ce.detail.items.map((it) => it.toothNumber ?? it.toothCode).filter(Boolean)
 				: undefined;
 			const customTooth = ce?.detail?.selectedTeeth ?? ce?.detail?.teeth ?? ce?.detail?.toothNumber ?? ce?.detail?.toothFdi ?? (itemsTeeth?.length ? itemsTeeth : undefined);
 			handleOpenLabOrder(customTooth);

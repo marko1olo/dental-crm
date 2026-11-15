@@ -18,15 +18,37 @@ import { RadiologyReportStudioModal } from "../../radiology/RadiologyReportStudi
 import { CtSelectorModal } from "../../radiology/CtSelectorModal";
 import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
 import { VisiographComparisonModal } from "../../radiology/VisiographComparisonModal";
+import type { RadiologyFilmstripItem } from "../../radiology/filmstrip/filmstripTypes";
+
+export interface DiagnosticsPatientContext {
+	readonly id?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly name?: string | undefined;
+	readonly cardNumber?: string | undefined;
+	readonly medCardNumber?: string | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface DiagnosticsDashboardContext {
+	readonly activeDoctor?: { fullName?: string | undefined; [key: string]: unknown } | undefined;
+	readonly clinicSettings?: { profile?: { brandName?: string | undefined; [key: string]: unknown } | undefined; [key: string]: unknown } | undefined;
+	readonly activeVisit?: { id?: string | undefined; [key: string]: unknown } | undefined;
+	readonly [key: string]: unknown;
+}
+
+export interface DiagnosticsVisitContext {
+	readonly auth?: { currentUser?: { name?: string | undefined; [key: string]: unknown } | undefined; [key: string]: unknown } | undefined;
+	readonly dashboard?: { activeVisit?: { id?: string | undefined; [key: string]: unknown } | undefined; [key: string]: unknown } | undefined;
+	readonly appendToTranscript?: ((text: string) => void) | undefined;
+	readonly [key: string]: unknown;
+}
 
 export interface DiagnosticsModalsHostProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatient: any;
+	activePatient: DiagnosticsPatientContext | null | undefined;
 	visitPatientId: string | null;
 	visitPatientName: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	ctx: any;
-	dashboard: any;
+	ctx?: DiagnosticsVisitContext | null | undefined;
+	dashboard?: DiagnosticsDashboardContext | null | undefined;
 	initialToothNumber: number;
 	patientStudies: DiagnosticStudy[];
 	photoAttachments: ClinicalPhotoAttachment[];
@@ -188,7 +210,7 @@ export function DiagnosticsModalsHost({
 							modalityLabel: s.kind === "cbct" ? "3D КЛКТ" : s.kind === "cephalometric" ? "ТРГ" : "Рентген RVG",
 							dapDoseDgyCm2: (s.effectiveDoseMicrosv || 2) * 0.05,
 							capturedAt: s.capturedAt,
-						} as any))}
+						}))}
 				/>
 			)}
 
@@ -286,30 +308,42 @@ export function DiagnosticsModalsHost({
 					studies={patientStudies}
 					onSelectStudy={(study, launchMode) => {
 						setIsCtSelectorModalOpen(false);
+						const sId =
+							typeof study === "object" && study !== null && "id" in study
+								? String((study as { id: unknown }).id)
+								: undefined;
 						if (launchMode === "crm_window" || launchMode === "standalone_window") {
 							routeOpenCbctPopout({
 								patientId: visitPatientId ?? activePatient?.id,
 								patientName: visitPatientName ?? activePatient?.fullName,
-								studyId: study?.id,
+								studyId: sId,
 								mode: "mpr",
 							});
 						}
 					}}
 					onOpenCbctStudio={(study) => {
 						setIsCtSelectorModalOpen(false);
+						const sId =
+							typeof study === "object" && study !== null && "id" in study
+								? String((study as { id: unknown }).id)
+								: undefined;
 						routeOpenCbctPopout({
 							patientId: visitPatientId ?? activePatient?.id,
 							patientName: visitPatientName ?? activePatient?.fullName,
-							studyId: study?.id,
+							studyId: sId,
 							mode: "mpr",
 						});
 					}}
 					onImagesLoaded={(_imageIds, studyMeta) => {
 						setIsCtSelectorModalOpen(false);
+						const mId =
+							typeof studyMeta === "object" && studyMeta !== null && "id" in studyMeta
+								? String((studyMeta as { id: unknown }).id)
+								: undefined;
 						routeOpenCbctPopout({
 							patientId: visitPatientId ?? activePatient?.id,
 							patientName: visitPatientName ?? activePatient?.fullName,
-							studyId: studyMeta?.id,
+							studyId: mId,
 							mode: "mpr",
 						});
 					}}
@@ -333,10 +367,44 @@ export function DiagnosticsModalsHost({
 					isOpen={Boolean(isComparisonModalOpen)}
 					onClose={() => setIsComparisonModalOpen?.(false)}
 					patientName={visitPatientName ?? activePatient?.fullName ?? activePatient?.name}
-					patientCardNumber={activePatient?.cardNumber ?? activePatient?.medicalCardNumber}
+					patientCardNumber={activePatient?.cardNumber ?? activePatient?.medCardNumber}
 					activeToothFdi={initialToothNumber}
-					currentStudy={patientStudies?.[0] as any}
-					historyStudies={patientStudies as any}
+					currentStudy={
+						patientStudies[0]
+							? {
+									id: patientStudies[0].id,
+									title: patientStudies[0].title,
+									modality: patientStudies[0].modality || patientStudies[0].kind || "intraoral_rvg",
+									modalityLabel:
+										patientStudies[0].kind === "cbct"
+											? "3D КЛКТ"
+											: patientStudies[0].kind === "cephalometric"
+												? "ТРГ"
+												: "Рентген RVG",
+									studyDate: patientStudies[0].capturedAt || new Date().toISOString(),
+									teethFdi: patientStudies[0].toothCode ? [String(patientStudies[0].toothCode)] : undefined,
+									imageUrl: patientStudies[0].previewUrl || patientStudies[0].viewerUrl,
+									thumbnailUrl: patientStudies[0].previewUrl || patientStudies[0].viewerUrl,
+									effectiveDoseMicrosv: patientStudies[0].effectiveDoseMicrosv,
+								}
+							: undefined
+					}
+					historyStudies={patientStudies.map((s) => ({
+						id: s.id,
+						title: s.title,
+						modality: s.modality || s.kind || "intraoral_rvg",
+						modalityLabel:
+							s.kind === "cbct"
+								? "3D КЛКТ"
+								: s.kind === "cephalometric"
+									? "ТРГ"
+									: "Рентген RVG",
+						studyDate: s.capturedAt || new Date().toISOString(),
+						teethFdi: s.toothCode ? [String(s.toothCode)] : undefined,
+						imageUrl: s.previewUrl || s.viewerUrl,
+						thumbnailUrl: s.previewUrl || s.viewerUrl,
+						effectiveDoseMicrosv: s.effectiveDoseMicrosv,
+					}))}
 					onInsertProtocol={onInsertToProtocol}
 				/>
 			)}

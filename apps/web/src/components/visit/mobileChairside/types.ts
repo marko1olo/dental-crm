@@ -3,6 +3,8 @@
  * DENTE Dental CRM — Sovereign Mobile Chairside Visit Workspace (Layer 0: Types & Constants)
  */
 
+import type { PlanStageItem } from "../visitPlanStageHandoff";
+
 export type MobileChairsideStep =
   | "complaints"
   | "exam"
@@ -19,12 +21,70 @@ export interface MobileChairsideBillingItem {
   toothCode?: string | undefined;
 }
 
+export interface ChairsidePatientEntity {
+  id?: string | undefined;
+  fullName?: string | undefined;
+  name?: string | undefined;
+  birthDate?: string | Date | undefined;
+  cardNumber?: string | undefined;
+  medicalCardNumber?: string | undefined;
+  allergies?: string | readonly string[] | undefined;
+  somaticNotes?: string | undefined;
+  [key: string]: unknown;
+}
+
+export interface ChairsideDoctorEntity {
+  id?: string | undefined;
+  fullName?: string | undefined;
+  name?: string | undefined;
+  specialty?: string | undefined;
+  [key: string]: unknown;
+}
+
+export interface ChairsideAppointmentEntity {
+  id?: string | undefined;
+  startsAt?: string | Date | undefined;
+  date?: string | undefined;
+  patientId?: string | undefined;
+  doctorId?: string | undefined;
+  treatmentPlanId?: string | undefined;
+  stageNumber?: number | undefined;
+  stageTitle?: string | undefined;
+  stageId?: string | undefined;
+  [key: string]: unknown;
+}
+
+export interface ChairsideVisitNoteForm {
+  complaint?: string | null | undefined;
+  anamnesis?: string | null | undefined;
+  objectiveStatus?: string | null | undefined;
+  diagnosis?: string | null | undefined;
+  treatmentPlan?: string | null | undefined;
+  recommendations?: string | null | undefined;
+  [key: string]: unknown;
+}
+
+export interface ChairsideTreatmentPlanStage {
+  stageNumber: number;
+  title: string;
+  items: readonly PlanStageItem[] | PlanStageItem[];
+}
+
+export interface ChairsideTreatmentPlan {
+  id?: string | undefined;
+  name?: string | undefined;
+  title?: string | undefined;
+  items?: readonly PlanStageItem[] | PlanStageItem[] | undefined;
+  stages?: readonly ChairsideTreatmentPlanStage[] | ChairsideTreatmentPlanStage[] | undefined;
+  [key: string]: unknown;
+}
+
 export interface MobileChairsideVisitWorkspaceProps {
-  activePatient: any;
-  activeAppointment?: any;
-  activeDoctor?: any;
-  visitNoteForm?: any;
-  updateVisitNoteField: (field: string, value: any) => void;
+  activePatient: ChairsidePatientEntity | null | undefined;
+  activeAppointment?: ChairsideAppointmentEntity | null | undefined;
+  activeDoctor?: ChairsideDoctorEntity | null | undefined;
+  visitNoteForm?: ChairsideVisitNoteForm | null | undefined;
+  updateVisitNoteField: (field: string, value: unknown) => void;
   flushPendingVisitSaves?: (() => Promise<void> | void) | undefined;
   handleApplySomaticNormQuick?: (() => void) | undefined;
   handleFinishVisitAction?: (() => Promise<void> | void) | undefined;
@@ -38,7 +98,7 @@ export interface MobileChairsideVisitWorkspaceProps {
   setToothState?: ((code: string, state: string) => void) | undefined;
   onClose?: (() => void) | undefined;
   testId?: string | undefined;
-  loadedTreatmentPlan?: any;
+  loadedTreatmentPlan?: ChairsideTreatmentPlan | null | undefined;
   initialStep?: MobileChairsideStep | undefined;
 }
 
@@ -49,8 +109,8 @@ export interface ChairsideStepItem {
 }
 
 export interface ChairsidePatientQuickBarProps {
-  activePatient: any;
-  activeAppointment?: any;
+  activePatient: ChairsidePatientEntity | null | undefined;
+  activeAppointment?: ChairsideAppointmentEntity | null | undefined;
   patientAge?: string | null | undefined;
   consolidatedAllergyChip?: string | null | undefined;
   handlePrintForm043uFast?: (() => void) | undefined;
@@ -66,7 +126,7 @@ export interface ChairsidePatientQuickBarProps {
 export interface ChairsideStepNavProps {
   currentStep: MobileChairsideStep;
   onStepSelect: (step: MobileChairsideStep) => void;
-  visitNoteForm?: any;
+  visitNoteForm?: ChairsideVisitNoteForm | null | undefined;
   billingItemsCount: number;
   testId?: string | undefined;
 }
@@ -90,13 +150,16 @@ export interface ChairsideSmartMicrophoneProps {
 
 export interface ChairsideProtocolsSectionProps {
   currentStep: MobileChairsideStep;
-  visitNoteForm?: any;
-  updateVisitNoteField: (field: string, value: any) => void;
-  activePatient: any;
-  activeAppointment?: any;
-  loadedTreatmentPlan?: any;
+  visitNoteForm?: ChairsideVisitNoteForm | null | undefined;
+  updateVisitNoteField: (field: string, value: unknown) => void;
+  activePatient: ChairsidePatientEntity | null | undefined;
+  activeAppointment?: ChairsideAppointmentEntity | null | undefined;
+  loadedTreatmentPlan?: ChairsideTreatmentPlan | null | undefined;
   isStageTaken: boolean;
-  onTakeStage: (stage: any, items: any[]) => void;
+  onTakeStage: (
+    stage: { title: string; stageNumber: number; items: readonly PlanStageItem[] | PlanStageItem[] },
+    items: readonly PlanStageItem[] | PlanStageItem[],
+  ) => void;
   // Tooth selector props for exam step
   activeQuadrant: 1 | 2 | 3 | 4;
   onQuadrantChange: (quadrant: 1 | 2 | 3 | 4) => void;
@@ -115,7 +178,7 @@ export interface ChairsideProtocolsSectionProps {
 
 export interface ChairsideBottomStickyActionsProps {
   currentStep: MobileChairsideStep;
-  loadedTreatmentPlan?: any;
+  loadedTreatmentPlan?: ChairsideTreatmentPlan | null | undefined;
   isStageTaken: boolean;
   onPrevStep: () => void;
   onNextStep: () => void;

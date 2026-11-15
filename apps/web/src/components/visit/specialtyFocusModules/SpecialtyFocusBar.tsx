@@ -2,20 +2,36 @@ import React from "react";
 import { ChevronDown, FileText } from "lucide-react";
 import { SpecialtyFocusBarCompact } from "./SpecialtyFocusBarCompact";
 
+export interface SpecialtyFocusOption {
+	readonly specialty: string;
+	readonly title: string;
+	readonly hint?: string | undefined;
+}
+
+export interface SpecialtyFocusDoctor {
+	readonly fullName?: string | null | undefined;
+	readonly id?: string | null | undefined;
+}
+
+export interface SpecialtyFocusChair {
+	readonly name?: string | null | undefined;
+	readonly id?: string | null | undefined;
+}
+
 export interface SpecialtyFocusBarProps {
-	compact?: boolean;
+	compact?: boolean | undefined;
 	isChildDentition: boolean;
 	isSurgery: boolean;
 	activeTooth: number | null;
 	isProtocolDrawerOpen: boolean;
-	setIsProtocolDrawerOpen: (valOrFn: any) => void;
+	setIsProtocolDrawerOpen: (valOrFn: boolean | ((prev: boolean) => boolean)) => void;
 	currentSpecialtyLabel: string;
-	activeDoctor?: any;
-	activeChair?: any;
-	focusOptions: any[];
+	activeDoctor?: SpecialtyFocusDoctor | null | undefined;
+	activeChair?: SpecialtyFocusChair | null | undefined;
+	focusOptions: readonly SpecialtyFocusOption[];
 	selectedSpecialty: string;
-	setSelectedSpecialty?: (spec: string) => void;
-	setSelectedProtocolId?: (id: any) => void;
+	setSelectedSpecialty?: ((spec: string) => void) | undefined;
+	setSelectedProtocolId?: ((id: string | null) => void) | undefined;
 }
 
 export function SpecialtyFocusBar({
@@ -57,7 +73,7 @@ export function SpecialtyFocusBar({
 						role="tablist"
 						aria-label="Направления специализаций"
 					>
-						{focusOptions.map((option: any) => {
+						{focusOptions.map((option) => {
 							const isActive = selectedSpecialty === option.specialty;
 							return (
 								<button

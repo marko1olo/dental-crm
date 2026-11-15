@@ -2,14 +2,22 @@ import type { ClinicalPhotoAttachment } from "../../../lib/clinicalProtocols";
 
 export type DiagnosticTabMode = "rvg" | "photo" | "cbct";
 
+export interface DiagnosticsPatient {
+	readonly id?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly name?: string | undefined;
+	readonly cardNumber?: string | undefined;
+	readonly medCardNumber?: string | undefined;
+	readonly birthDate?: string | Date | undefined;
+	readonly [key: string]: unknown;
+}
+
 export interface VisitDiagnosticsTabProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatient?: any;
+	activePatient?: DiagnosticsPatient | null | undefined;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
 }
 
 export interface DiagnosticStudy {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	id: string;
 	patientId?: string;
 	title?: string;

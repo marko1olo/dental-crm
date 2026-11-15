@@ -8,6 +8,7 @@ import { triggerHaptic } from "../../../native/mobileBridge";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { useUnifiedDictation } from "../../../hooks/useUnifiedDictation";
+import type { PlanStageItem } from "../visitPlanStageHandoff";
 import type {
   MobileChairsideBillingItem,
   MobileChairsideStep,
@@ -88,9 +89,9 @@ export function useChairsideVisitWorkspace({
     }
 
     if (loadedTreatmentPlan?.stages?.[0]?.items?.length) {
-      return loadedTreatmentPlan.stages[0].items.map((it: any, idx: number) => ({
+      return loadedTreatmentPlan.stages[0].items.map((it: PlanStageItem, idx: number) => ({
         id: it.id || `stage-item-${idx}`,
-        code804n: it.code || it.code804n || "A16.07.002",
+        code804n: it.serviceCode || it.code804n || "A16.07.002",
         title: it.name || it.title || "Услуга плана",
         priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
         quantity: Number(it.quantity || 1),
@@ -98,9 +99,9 @@ export function useChairsideVisitWorkspace({
       }));
     }
     if (loadedTreatmentPlan?.items?.length) {
-      return loadedTreatmentPlan.items.map((it: any, idx: number) => ({
+      return loadedTreatmentPlan.items.map((it: PlanStageItem, idx: number) => ({
         id: it.id || `plan-item-${idx}`,
-        code804n: it.code || it.code804n || "A16.07.002",
+        code804n: it.serviceCode || it.code804n || "A16.07.002",
         title: it.name || it.title || "Услуга плана",
         priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
         quantity: Number(it.quantity || 1),
@@ -150,7 +151,10 @@ export function useChairsideVisitWorkspace({
 
   // Callback to take treatment plan stage into active visit
   const handleTakeStageFromBanner = useCallback(
-    (stage: any, items: any[]) => {
+    (
+      stage: { title: string; stageNumber: number; items: readonly PlanStageItem[] | PlanStageItem[] },
+      items: readonly PlanStageItem[] | PlanStageItem[],
+    ) => {
       triggerHaptic("success");
       setIsStageTaken(true);
       const stageTitle = stage?.title || "План лечения";
@@ -158,15 +162,15 @@ export function useChairsideVisitWorkspace({
 
       if (updateVisitNoteField && items.length > 0) {
         const stageDiaryText = `Взят в работу этап: «${stageTitle}»:\n${items
-          .map((it: any, idx: number) => `${idx + 1}. ${it.title || it.name || "Услуга"}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`)
+          .map((it: PlanStageItem, idx: number) => `${idx + 1}. ${it.title || it.name || "Услуга"}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`)
           .join("\n")}`;
         const currentPlan = visitNoteForm?.treatmentPlan || "";
         updateVisitNoteField("treatmentPlan", currentPlan ? `${currentPlan}\n\n${stageDiaryText}` : stageDiaryText);
       }
 
-      const newItems: MobileChairsideBillingItem[] = items.map((it: any, idx: number) => ({
+      const newItems: MobileChairsideBillingItem[] = items.map((it: PlanStageItem, idx: number) => ({
         id: `stage-item-${Date.now()}-${idx}`,
-        code804n: it.code || it.code804n || "A16.07.002",
+        code804n: it.serviceCode || it.code804n || "A16.07.002",
         title: it.name || it.title || "Услуга плана",
         priceRub: Number(it.price || it.priceRub || it.unitPriceRub || 0),
         quantity: Number(it.quantity || 1),
