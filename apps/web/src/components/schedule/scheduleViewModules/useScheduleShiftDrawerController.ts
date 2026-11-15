@@ -199,8 +199,8 @@ export function useScheduleShiftDrawerController(props: ScheduleShiftDrawerContr
       chairId: targetChairId,
       shiftPreset: chairRangePreset,
       staffList:
-        (dashboard?.clinicSettings?.staff as any) ||
-        (scheduleDoctors as any),
+        dashboard?.clinicSettings?.staff ||
+        scheduleDoctors,
     });
 
     void handleSaveDoctorShifts(updatedShifts);

@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import type { Dashboard } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import {
   safeLocalStorageSetItem,
@@ -13,15 +14,20 @@ import type {
 import type { MedicalStaffRole } from "../roster/doctorShiftRosterPresets";
 import { buildChairDoctorAssignmentsFromShifts } from "./scheduleViewShifts";
 
+export interface ScheduleOpsAuthContext {
+  readonly denteClinicalMutationHeaders?: (() => Record<string, string>) | undefined;
+}
+
 export interface UseScheduleChairDoctorOpsParams {
   loadDashboard?: () => void | Promise<void>;
-  setDashboard?: any;
+  // biome-ignore lint/suspicious/noExplicitAny: composite client dashboard state updater
+  setDashboard?: ((updater: (prev: any) => any) => void) | undefined;
   setScheduleChairFilterId: (id: string | null) => void;
   setEditingChairData: (data: QuickAddChairData | null) => void;
   setIsQuickAddChairOpen: (open: boolean) => void;
   setSavedDoctorShifts: React.Dispatch<React.SetStateAction<DoctorShift[]>>;
   currentDateKey: string;
-  auth: any;
+  auth?: ScheduleOpsAuthContext | null | undefined;
   showToast: (
     msg: string,
     type?: "success" | "error" | "info" | "warning",
@@ -55,6 +61,7 @@ export function useScheduleChairDoctorOps({
 
       const applyLocalOptimisticChair = () => {
         if (typeof setDashboard === "function") {
+          // biome-ignore lint/suspicious/noExplicitAny: composite client dashboard
           setDashboard((prev: any) => {
             if (!prev?.clinicSettings) return prev;
             if (isUpdate) {
@@ -62,17 +69,17 @@ export function useScheduleChairDoctorOps({
                 ...prev,
                 clinicSettings: {
                   ...prev.clinicSettings,
-                  chairs: (prev.clinicSettings.chairs ?? []).map((c: any) =>
+                  chairs: (prev.clinicSettings.chairs ?? []).map((c) =>
                     c.id === chairData.id
                       ? {
                           ...c,
                           name: chairData.name,
-                          room: chairData.roomNumber || chairData.room,
-                          roomNumber: chairData.roomNumber || chairData.room,
+                          room: chairData.roomNumber || chairData.room || "1",
+                          roomNumber: chairData.roomNumber || chairData.room || "1",
                           specialization: chairData.specialization,
-                          color: chairData.color,
-                          active: chairData.isActive,
-                          isActive: chairData.isActive,
+                          color: chairData.color || "var(--teal)",
+                          active: chairData.isActive ?? true,
+                          isActive: chairData.isActive ?? true,
                         }
                       : c,
                   ),
@@ -82,9 +89,9 @@ export function useScheduleChairDoctorOps({
             const localChair = {
               id: `chair-local-${Date.now()}`,
               name: chairData.name,
-              room: chairData.roomNumber || chairData.room,
+              room: chairData.roomNumber || chairData.room || "1",
               specialization: chairData.specialization,
-              color: chairData.color,
+              color: chairData.color || "var(--teal)",
               active: chairData.isActive ?? true,
               defaultDoctorId: chairData.defaultDoctorId || null,
             };
@@ -152,6 +159,7 @@ export function useScheduleChairDoctorOps({
     async (doctorData: QuickAddDoctorData) => {
       const applyLocalOptimisticDoctor = () => {
         if (typeof setDashboard === "function") {
+          // biome-ignore lint/suspicious/noExplicitAny: composite client dashboard
           setDashboard((prev: any) => {
             if (!prev?.clinicSettings) return prev;
             const newStaff = {
@@ -160,7 +168,7 @@ export function useScheduleChairDoctorOps({
                 prev.clinicSettings?.profile?.organizationId ||
                 undefined,
               fullName: doctorData.fullName,
-              role: "doctor",
+              role: "doctor" as const,
               specialties: [doctorData.specialty],
               phone: doctorData.phone || null,
               email: null,
@@ -288,27 +296,35 @@ export function useScheduleChairDoctorOps({
       ) {
         const multiShifts: DoctorShift[] = assignment.subShifts.map(
           (sub, idx) => {
-            const isEve =
-              idx > 0 ||
-              (sub.startHour ??
-                (Number.parseInt((sub as any).startTime?.slice(0, 2), 10) ||
-                  8)) >= 14;
+            const parsedStart = sub.startTime
+              ? Number.parseInt(sub.startTime.slice(0, 2), 10)
+              : NaN;
+            const parsedEnd = sub.endTime
+              ? Number.parseInt(sub.endTime.slice(0, 2), 10)
+              : NaN;
+            const sH = Number.isFinite(sub.startHour)
+              ? sub.startHour
+              : Number.isFinite(parsedStart)
+                ? parsedStart
+                : idx > 0
+                  ? 14
+                  : 8;
+            const eH = Number.isFinite(sub.endHour)
+              ? sub.endHour
+              : Number.isFinite(parsedEnd)
+                ? parsedEnd
+                : idx > 0
+                  ? 20
+                  : 14;
+            const isEve = idx > 0 || sH >= 14;
             const archetypeId: ShiftArchetypeId = isEve
               ? "evening_shift"
               : "morning_shift";
             const suffix = isEve ? "eve" : "morn";
-            const sH =
-              sub.startHour ??
-              (Number.parseInt((sub as any).startTime?.slice(0, 2), 10) ||
-                (isEve ? 14 : 8));
-            const eH =
-              sub.endHour ??
-              (Number.parseInt((sub as any).endTime?.slice(0, 2), 10) ||
-                (isEve ? 20 : 14));
             const startTime =
-              (sub as any).startTime || `${String(sH).padStart(2, "0")}:00`;
+              sub.startTime || `${String(sH).padStart(2, "0")}:00`;
             const endTime =
-              (sub as any).endTime || `${String(eH).padStart(2, "0")}:00`;
+              sub.endTime || `${String(eH).padStart(2, "0")}:00`;
             const doctorRole: MedicalStaffRole =
               (sub.doctorSpecialty as MedicalStaffRole) || "therapist";
             return {

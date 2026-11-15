@@ -15,6 +15,21 @@ import {
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 
+export type CompatibleRosterStaff =
+	| StaffMember
+	| {
+			id: string;
+			fullName?: string;
+			shortName?: string;
+			role?: string;
+			isDoctor?: boolean;
+			isAssistant?: boolean;
+			preferredAssistantId?: string;
+			defaultAssistantId?: string;
+			specialties?: string[];
+			active?: boolean;
+	  };
+
 /**
  * 1-Click Apply Doctor-to-Chair Weekly Shift Template (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
@@ -27,7 +42,7 @@ export function applyDoctorChairWeeklyTemplate(
 		doctorBId?: string | undefined;
 		chairId: string;
 		cabinetId?: string | undefined;
-		staffList?: StaffMember[] | undefined;
+		staffList?: readonly CompatibleRosterStaff[] | undefined;
 		cabinets?: CabinetDefinition[] | undefined;
 	},
 ): DoctorShift[] {
@@ -80,7 +95,7 @@ export function applyDoctorChairWeeklyTemplate(
 		};
 
 	const asstId =
-		(doc as any).preferredAssistantId || (doc as any).defaultAssistantId;
+		doc.preferredAssistantId || doc.defaultAssistantId;
 	const asst = asstId
 		? staffList.find((s) => s.id === asstId) || null
 		: staffList.find((s) => s.role === "assistant") || null;
@@ -238,7 +253,7 @@ export function generateWeeklyDoctorSchedule(params: {
 	doctorBId?: string | undefined;
 	chairId: string;
 	cabinetId?: string | undefined;
-	staffList?: StaffMember[] | undefined;
+	staffList?: readonly CompatibleRosterStaff[] | undefined;
 	cabinets?: CabinetDefinition[] | undefined;
 }): DoctorShift[] {
 	return applyDoctorChairWeeklyTemplate([], params);

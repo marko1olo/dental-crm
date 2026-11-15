@@ -8,6 +8,10 @@ import { DoctorCalendarSyncModal } from "../../DoctorCalendarSyncModal";
 import { DoctorShiftDrawer } from "../../roster/DoctorShiftDrawer";
 import type { ScheduleViewModalsProps } from "./scheduleModalsTypes";
 
+interface ClinicSettingsWithBranches {
+  branches?: readonly { id: string; name: string }[];
+}
+
 export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
   const {
     isRosterModalOpen,
@@ -70,14 +74,14 @@ export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
         initialData={editingChairData}
         onUpdateChair={handleAddChairFromSchedule}
         existingChairsCount={dashboard?.clinicSettings?.chairs?.length || 0}
-        branches={(dashboard?.clinicSettings as any)?.branches}
+        branches={(dashboard?.clinicSettings as ClinicSettingsWithBranches | undefined)?.branches}
         doctors={scheduleDoctors}
       />
 
       <DoctorCalendarSyncModal
         isOpen={isCalendarSyncModalOpen}
         onClose={() => setIsCalendarSyncModalOpen(false)}
-        dashboard={dashboard as any}
+        dashboard={dashboard ?? null}
         initialDoctorId={scheduleDoctorFilterId}
       />
 

@@ -3,7 +3,7 @@ import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { ChairMaintenanceBlock } from "../../../utils/scheduleCollisionUtils";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 import type { QuickAddDoctorData } from "../QuickAddDoctorModal";
-import type { TargetSlotInfo } from "../waitlist/WaitlistDrawer";
+import type { TargetSlotInfo } from "../waitlist/waitlistTypes";
 
 export interface ChairDoctorSubShift {
   doctorId: string;
@@ -12,6 +12,8 @@ export interface ChairDoctorSubShift {
   startHour: number;
   endHour: number;
   shiftHours: string;
+  startTime?: string | undefined;
+  endTime?: string | undefined;
 }
 
 export interface ChairDoctorShiftAssignment {
@@ -60,7 +62,7 @@ export interface ScheduleGridProps {
   selectedChairId?: string | null | undefined;
   selectedDoctorId?: string | null | undefined;
   onAppointmentMove?:
-    ((appointmentId: string, updates: any) => Promise<any> | void) | undefined;
+    ((appointmentId: string, updates: Partial<Appointment> & { allowOverbooking?: boolean }) => Promise<unknown> | void) | undefined;
   chairDoctorAssignments?:
     Record<string, ChairDoctorShiftAssignment> | undefined;
   onAssignChairDoctor?:
@@ -68,10 +70,10 @@ export interface ScheduleGridProps {
     | undefined;
   onOpenAddChair?: (() => void) | undefined;
   onAddChair?:
-    ((chairData: QuickAddChairData) => Promise<any> | any) | undefined;
+    ((chairData: QuickAddChairData) => Promise<unknown> | unknown) | undefined;
   onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
   onAddDoctor?:
-    ((doctorData: QuickAddDoctorData) => Promise<any> | any) | undefined;
+    ((doctorData: QuickAddDoctorData) => Promise<unknown> | unknown) | undefined;
   gridStepMinutes?: 15 | 30 | 60 | undefined;
   onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
   chairMaintenanceBlocks?: ChairMaintenanceBlock[] | undefined;

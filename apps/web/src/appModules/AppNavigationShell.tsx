@@ -18,9 +18,10 @@ import { getFilteredAppViews } from "../workspaceShell";
 import { useWorkspaceProfile } from "../hooks/useWorkspaceProfile";
 import { viewsHiddenByFeatureFlags } from "../workspaceShellModules/sidebarNavigationData";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
+import type { useAppLogic } from "../useAppLogic";
 
 interface AppNavigationShellProps {
-	appLogic: any;
+	appLogic: ReturnType<typeof useAppLogic>;
 	sessionAuth: AppSessionAuthState;
 	routing: AppHashRoutingState;
 }

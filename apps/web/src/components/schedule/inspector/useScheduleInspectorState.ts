@@ -8,6 +8,15 @@ import {
   formatRussianAge,
 } from "../appointmentCardHelpers";
 
+interface ExtendedInspectorAppointmentState extends Appointment {
+  patient?: {
+    fullName?: string | null;
+    phone?: string | null;
+  } | null;
+  patientName?: string | null;
+  durationMinutes?: number | null;
+}
+
 export function useScheduleInspectorState(
   a: Appointment,
   patientLookupMap: Map<string, Patient>,
@@ -19,16 +28,17 @@ export function useScheduleInspectorState(
 ) {
   const [isCopiedPhone, setIsCopiedPhone] = useState(false);
 
+  const extA = a as ExtendedInspectorAppointmentState;
   const patObj = a.patientId ? patientLookupMap.get(a.patientId) : undefined;
-  const pName = patObj?.fullName || (a as any).patient?.fullName || (a as any).patientName || "Пациент";
-  const pPhone = patObj?.phone || (a as any).patient?.phone || "";
+  const pName = patObj?.fullName || extA.patient?.fullName || extA.patientName || "Пациент";
+  const pPhone = patObj?.phone || extA.patient?.phone || "";
 
   const timeVal = toDateTimeLocalValue ? toDateTimeLocalValue(a.startsAt, timezone) : a.startsAt;
   const timeEndVal = toDateTimeLocalValue ? toDateTimeLocalValue(a.endsAt, timezone) : a.endsAt;
   const aStart = timeVal.slice(11, 16);
   const aEnd = timeEndVal.slice(11, 16);
   const diffMs = Date.parse(a.endsAt) - Date.parse(a.startsAt);
-  const durationMin = (Number.isFinite(diffMs) && diffMs > 0 ? Math.round(diffMs / 60000) : 0) || (a as any).durationMinutes || 30;
+  const durationMin = (Number.isFinite(diffMs) && diffMs > 0 ? Math.round(diffMs / 60000) : 0) || extA.durationMinutes || 30;
 
   const docObj = a.doctorUserId ? staffLookupMap.get(a.doctorUserId) : undefined;
   const doctorSpecialty = docObj?.specialties?.[0] || docObj?.role;

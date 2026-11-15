@@ -36,7 +36,7 @@ export function DoctorPopoverExtendedShifts({
 			const currentShifts = safeLocalStorageGetJson<any[]>("dente_doctor_shifts", []);
 			const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
 				weekStartDateIso: mondayIso, templateId, doctorId: targetDocId, chairId: chair.id,
-				staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+				staffList: dashboard?.clinicSettings?.staff || doctors,
 			});
 			safeLocalStorageSetJson("dente_doctor_shifts", updatedShifts);
 		}

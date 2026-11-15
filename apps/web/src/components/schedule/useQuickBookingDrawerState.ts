@@ -14,7 +14,7 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     isOpen, onClose, initialSlot, editingAppointment: propEditingAppt, dashboard,
     onAppointmentCreated, onAppointmentUpdated, loadDashboard, setDashboard,
     toDateTimeLocalValue, fromDateTimeLocalValue, chairDoctorAssignments,
-    isAppointmentModalFacade, onQuickCreatePatient,
+    onQuickCreatePatient,
   } = props;
 
   const editingAppt = propEditingAppt || initialSlot?.editingAppointment || null;
@@ -104,7 +104,6 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
     ...patientSearch, staff, doctors, assistants, chairs, isSoloClinic, ...slotSync,
     handleSelectDuration: slotSync.setDurationMinutes, collision, ...draft, isEditing,
     editingAppointment: editingAppt, ...submit,
-    isAppointmentModalFacade: Boolean(isAppointmentModalFacade),
   };
 }
 

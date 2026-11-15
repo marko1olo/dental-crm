@@ -38,7 +38,7 @@ export interface QuickAddChairModalProps {
 	readonly onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
 	readonly initialData?: QuickAddChairData | null | undefined;
 	readonly onUpdateChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
-	readonly branches?: any;
+	readonly branches?: readonly { id: string; name: string }[] | undefined;
 	readonly doctors?: Array<{
 		id: string;
 		fullName: string;

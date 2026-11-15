@@ -110,7 +110,10 @@ export function calculateShiftQueueCounts(
           const invoiceId = invoice?.id;
           const matchingPayments = Array.isArray(dashboard?.payments)
             ? dashboard.payments.filter((p) => {
-                const paymentRecord = p as unknown as QueueAppointmentPayment;
+                const paymentRecord = p as typeof p & {
+                  appointmentId?: string | null;
+                  invoiceId?: string | null;
+                };
                 return (
                   (Boolean(paymentRecord.appointmentId) && paymentRecord.appointmentId === appt.id) ||
                   (Boolean(visitId) && p.visitId === visitId) ||

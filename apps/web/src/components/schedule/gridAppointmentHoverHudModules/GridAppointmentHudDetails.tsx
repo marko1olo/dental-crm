@@ -6,9 +6,25 @@ import {
 	resolveAppointmentLabStatus,
 } from "../appointmentCardHelpers";
 
+export interface GridAppointmentHudDoctor {
+	readonly id?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly name?: string | undefined;
+}
+
+export interface ExtendedAppointmentVitaProps {
+	readonly vitaShade?: string | undefined;
+}
+
+export type HudAppointment = Appointment & ExtendedAppointmentVitaProps;
+
+export type DashboardWithLabOrders = Dashboard & {
+	readonly labOrders?: readonly unknown[] | undefined;
+};
+
 interface GridAppointmentHudDetailsProps {
 	appointment: Appointment;
-	docObj?: any;
+	docObj?: GridAppointmentHudDoctor | null | undefined;
 	chair: { id: string; name: string };
 	aStart: string;
 	aEnd: string;
@@ -24,8 +40,9 @@ export function GridAppointmentHudDetails({
 	dashboard,
 }: GridAppointmentHudDetailsProps) {
 	const teeth = extractTeethList(a);
-	const labOrders = (dashboard as any)?.labOrders ?? [];
+	const labOrders = (dashboard as DashboardWithLabOrders).labOrders ?? [];
 	const labStatus = resolveAppointmentLabStatus(a, labOrders);
+	const vitaShade = (a as HudAppointment).vitaShade;
 
 	return (
 		<div className="space-y-1.5 text-xs text-[var(--ink)]">
@@ -53,16 +70,16 @@ export function GridAppointmentHudDetails({
 				</span>
 			</div>
 
-			{(teeth.length > 0 || (a as any).vitaShade || labStatus) && (
+			{(teeth.length > 0 || Boolean(vitaShade) || labStatus) && (
 				<div className="flex flex-wrap items-center gap-1.5 pt-1">
 					{teeth.length > 0 && (
 						<span className="px-1.5 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[10px] font-bold text-[var(--ink)]">
 							Зубы: {teeth.join(", ")}
 						</span>
 					)}
-					{(a as any).vitaShade && (
+					{vitaShade && (
 						<span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-800 dark:text-amber-200">
-							VITA: {(a as any).vitaShade}
+							VITA: {vitaShade}
 						</span>
 					)}
 					{labStatus && (

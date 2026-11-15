@@ -48,9 +48,10 @@ export const RUSSIAN_DAY_NAMES = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт"
 
 export const extractToothBadge = (appt: Appointment): string | null => {
   if (appt.toothNumber) return `Зуб ${appt.toothNumber}`;
-  const labTooth = (appt as unknown as { labOrder?: { toothFdi?: string } }).labOrder?.toothFdi;
+  const labTooth = appt.labOrder?.toothFdi ? String(appt.labOrder.toothFdi) : null;
   if (labTooth) return `Зуб ${labTooth}`;
-  const text = `${appt.reason || ""} ${(appt as unknown as { serviceTitle?: string }).serviceTitle || ""}`;
+  const serviceTitle = "serviceTitle" in appt && typeof appt.serviceTitle === "string" ? appt.serviceTitle : "";
+  const text = `${appt.reason || ""} ${serviceTitle}`;
   const fdiMatch = text.match(/(?:зуб[аеы]?|fdi|#)\s*([1-4][1-8]|[5-8][1-5])/i);
   if (fdiMatch && fdiMatch[1]) return `Зуб ${fdiMatch[1]}`;
   const dottedMatch = text.match(/\b([1-4]\.[1-8]|[5-8]\.[1-5])\b/);

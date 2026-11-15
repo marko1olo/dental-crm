@@ -13,6 +13,7 @@ import {
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 import { addDaysToDateIso } from "./rosterWeekCopyAndRotate";
+import type { CompatibleRosterStaff } from "./rosterChairWeeklyTemplates";
 
 /**
  * Supported shift presets for multi-day date range shift binding (DENTE Architecture, Mandates 8e, 8k, 8n)
@@ -35,7 +36,7 @@ export interface DateRangeShiftBindingParams {
 	shiftPreset: DateRangeShiftPreset;
 	startTime?: string | undefined;
 	endTime?: string | undefined;
-	staffList?: StaffMember[] | undefined;
+	staffList?: readonly CompatibleRosterStaff[] | undefined;
 	cabinets?: CabinetDefinition[] | undefined;
 	includeWeekends?: boolean | undefined;
 }
@@ -91,7 +92,7 @@ export function applyDoctorChairDateRange(
 			avatarColor: "#2563eb",
 		};
 
-	const asstId = (doc as any).preferredAssistantId || (doc as any).defaultAssistantId;
+	const asstId = doc.preferredAssistantId || doc.defaultAssistantId;
 	const asst = asstId
 		? staffList.find((s) => s.id === asstId) || null
 		: staffList.find((s) => s.role === "assistant") || null;

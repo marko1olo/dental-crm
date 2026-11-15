@@ -29,7 +29,7 @@ export function EditorPatientDoctorSection({
 		const doc = (dashboard?.clinicSettings?.staff ?? []).find((m) => m.id === newDocId);
 		if (doc?.specialties?.length) {
 			const matchingChair = (dashboard?.clinicSettings?.chairs ?? []).find(
-				(c) => c.active && c.specialization && doc.specialties!.includes(c.specialization),
+				(c) => c.active && c.specialization && doc.specialties?.includes(c.specialization),
 			);
 			if (matchingChair && matchingChair.id !== appointmentDraft.chairId) {
 				updateAppointmentScheduleDraft(appointment.id, "chairId", matchingChair.id);

@@ -108,7 +108,7 @@ export function useScheduleChairShiftBulkOps({
           doctorId: doc.id,
           chairId,
           staffList:
-            (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+            dashboard?.clinicSettings?.staff || doctors,
         });
         safeLocalStorageSetJson("dente_doctor_shifts", updatedShifts);
       }

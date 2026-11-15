@@ -5,6 +5,7 @@
 import { useMemo } from "react";
 import { MEDICAL_STAFF_ROLES, RUSSIAN_PRODUCTION_CALENDAR_2026, type StaffMember } from "../doctorShiftRosterPresets";
 import { calculateStaffRosterStats, detectRosterConflicts, type DoctorShift } from "../doctorShiftRosterEngine";
+import type { T13RowData } from "../doctorMatrix/types";
 import type { EmployeeInfo } from "./rosterOperationsTypes";
 
 interface UseRosterComputationsParams {
@@ -35,7 +36,7 @@ export function useRosterComputations({
 		return calculateStaffRosterStats(staffList, shifts, selectedYear, selectedMonth);
 	}, [staffList, shifts, selectedYear, selectedMonth]);
 
-	const t13Matrix = useMemo(() => [] as any[], []);
+	const t13Matrix = useMemo<T13RowData[]>(() => [], []);
 
 	const t13Employees: EmployeeInfo[] = useMemo(() => {
 		return staffList.map((s, index) => {

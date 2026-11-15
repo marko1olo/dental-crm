@@ -34,7 +34,7 @@ export interface ScheduleTimelineProps {
 	updateAppointmentScheduleDraft: (
 		appointmentId: string,
 		key: string,
-		value: unknown,
+		value: string | number | boolean | null | undefined,
 	) => void;
 	saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
 	normalizedAppointmentStatus: (value: unknown) => Appointment["status"];
@@ -85,7 +85,7 @@ export interface TimelineDayGroupProps {
 	updateAppointmentScheduleDraft: (
 		appointmentId: string,
 		key: string,
-		value: unknown,
+		value: string | number | boolean | null | undefined,
 	) => void;
 	saveAppointmentSchedule: (appointmentId: string) => Promise<boolean>;
 	normalizedAppointmentStatus: (value: unknown) => Appointment["status"];

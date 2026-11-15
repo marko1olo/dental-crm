@@ -73,7 +73,7 @@ export const TimelineAppointmentRow = React.memo(function TimelineAppointmentRow
 				repeatAppointment={repeatAppointment}
 				{...(copyAppointmentToBuffer ? { copyAppointmentToBuffer } : {})}
 				closeAppointmentEditor={closeAppointmentEditor}
-				updateAppointmentScheduleDraft={updateAppointmentScheduleDraft as any}
+				updateAppointmentScheduleDraft={updateAppointmentScheduleDraft}
 				saveAppointmentSchedule={saveAppointmentSchedule}
 				normalizedAppointmentStatus={normalizedAppointmentStatus}
 				toDateTimeLocalValue={toDateTimeLocalValue}

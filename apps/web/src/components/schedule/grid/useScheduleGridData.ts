@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import {
   type Appointment,
+  type Chair,
   type Dashboard,
   type EmergencyReserveSlot,
   type DoctorShiftSchedule,
+  type StaffMember,
   calculateEmergencyReserveSlots,
   areIntervalsOverlapping,
 } from "@dental/shared";
@@ -14,17 +16,25 @@ import {
 } from "../doctorFreeSlotsEngine";
 import type { ChairMaintenanceBlock } from "../../../utils/scheduleCollisionUtils";
 
+export interface ExtendedAppointmentProps {
+  readonly durationMinutes?: number | undefined;
+  readonly isCito?: boolean | undefined;
+  readonly isEmergency?: boolean | undefined;
+}
+
+export type GridAppointment = Appointment & ExtendedAppointmentProps;
+
 export interface UseScheduleGridDataProps {
   appointments: Appointment[];
   dateKey: string;
   toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
   timezone: string;
   timeSlots: string[];
-  effectiveChairs: Array<any>;
+  effectiveChairs: Chair[];
   gridStep: 15 | 30 | 60;
   effectiveMaintenanceBlocks: ChairMaintenanceBlock[];
   selectedDoctorId?: string | null | undefined;
-  doctors: Array<any>;
+  doctors: StaffMember[];
   dashboard: Dashboard;
 }
 
@@ -62,7 +72,8 @@ export function useScheduleGridData({
       const [sH, sM] = startStr.split(":").map(Number);
       const startMin = (sH ?? 0) * 60 + (sM ?? 0);
 
-      const rawDuration = Number((a as any).durationMinutes) || 0;
+      const ext = a as GridAppointment;
+      const rawDuration = Number(ext.durationMinutes) || 0;
       let endMin: number;
       if (a.endsAt) {
         const endStr = toDateTimeLocalValue
@@ -221,19 +232,22 @@ export function useScheduleGridData({
       ? doctors.filter((d) => d.id === selectedDoctorId)
       : doctors;
 
-    const mappedEmergencyAppts = dayAppointments.map((a) => ({
-      id: a.id,
-      clinicId:
-        dashboard?.clinicSettings?.profile?.organizationId || "clinic-1",
-      doctorId: a.doctorUserId || "doc-1",
-      cabinetId: a.chairId || "chair-1",
-      patientId: a.patientId || "pat-1",
-      startTime: a.startsAt,
-      endTime: a.endsAt,
-      status: (a.status === "cancelled" ? "cancelled" : "scheduled") as
-        "cancelled" | "scheduled",
-      isEmergency: Boolean((a as any)?.isCito || (a as any)?.isEmergency),
-    }));
+    const mappedEmergencyAppts = dayAppointments.map((a) => {
+      const ext = a as GridAppointment;
+      return {
+        id: a.id,
+        clinicId:
+          dashboard?.clinicSettings?.profile?.organizationId || "clinic-1",
+        doctorId: a.doctorUserId || "doc-1",
+        cabinetId: a.chairId || "chair-1",
+        patientId: a.patientId || "pat-1",
+        startTime: a.startsAt,
+        endTime: a.endsAt,
+        status: (a.status === "cancelled" ? "cancelled" : "scheduled") as
+          "cancelled" | "scheduled",
+        isEmergency: Boolean(ext.isCito || ext.isEmergency),
+      };
+    });
 
     const slots: EmergencyReserveSlot[] = [];
     for (const doc of targetDocs) {
@@ -355,14 +369,18 @@ export function useScheduleGridData({
     // Занятость кресел считается против реального рабочего окна клиники из
     // настроек профиля, а не против константы 9:00–20:00.
     const workingWindow = deriveClinicWorkingHours(dashboard);
+    const chairsToPass =
+      dashboard?.clinicSettings?.chairs &&
+      dashboard.clinicSettings.chairs.length > 0
+        ? dashboard.clinicSettings.chairs
+        : effectiveChairs;
+    const staffList = dashboard?.clinicSettings?.staff ?? doctors;
+
     return calculateDailyChairDoctorTally({
       dateKey,
       appointments,
-      chairs: (dashboard?.clinicSettings?.chairs &&
-      dashboard.clinicSettings.chairs.length > 0
-        ? dashboard.clinicSettings.chairs
-        : effectiveChairs) as any,
-      doctors: ((dashboard?.clinicSettings as any)?.staff ?? []) as any[],
+      chairs: chairsToPass,
+      doctors: staffList,
       clinicStartHour: workingWindow.clinicStartHour,
       clinicEndHour: workingWindow.clinicEndHour,
     });
@@ -372,7 +390,8 @@ export function useScheduleGridData({
     dashboard,
     dashboard?.clinicSettings?.chairs,
     effectiveChairs,
-    (dashboard?.clinicSettings as any)?.staff,
+    dashboard?.clinicSettings?.staff,
+    doctors,
   ]);
 
   return {

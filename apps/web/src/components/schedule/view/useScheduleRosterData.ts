@@ -199,8 +199,14 @@ export function useScheduleRosterData({
         shortName = `Д-р ${shortName}`;
       }
 
+      const extStaff = s as typeof s & {
+        tabNumber?: string;
+        preferredChairId?: string;
+        defaultAssistantId?: string;
+      };
+
       const tabNumber =
-        (s as unknown as { tabNumber?: string }).tabNumber ||
+        extStaff.tabNumber ||
         String(101 + index).padStart(5, "0");
 
       return {
@@ -211,10 +217,8 @@ export function useScheduleRosterData({
         tabNumber,
         isDoctor,
         isAssistant,
-        preferredChairId: (s as unknown as { preferredChairId?: string })
-          .preferredChairId,
-        defaultAssistantId: (s as unknown as { defaultAssistantId?: string })
-          .defaultAssistantId,
+        preferredChairId: extStaff.preferredChairId,
+        defaultAssistantId: extStaff.defaultAssistantId,
         weeklyHourLimit: isDoctor ? 33 : 39,
         avatarColor: s.color || (isDoctor ? "#0d9488" : "#64748b"),
       };

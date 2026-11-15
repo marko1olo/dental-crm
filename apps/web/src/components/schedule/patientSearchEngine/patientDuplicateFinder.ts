@@ -14,5 +14,5 @@ export function findPotentialDuplicates(
 	patients: readonly Patient[],
 	criteria: FindPotentialDuplicatesCriteria,
 ): PotentialDuplicateItem[] {
-	return findDuplicatesSSOT(patients, criteria) as unknown as PotentialDuplicateItem[];
+	return findDuplicatesSSOT(patients, criteria);
 }

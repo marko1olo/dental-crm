@@ -28,6 +28,11 @@ export interface ScheduleInspectorAppointmentDetailsProps {
   onEditAppointment?: ((appointment: Appointment) => void) | undefined;
 }
 
+interface ExtendedInspectorAppointment extends Appointment {
+  serviceTitle?: string | null;
+  createdAt?: string | null;
+}
+
 export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppointmentDetailsProps> = ({
   appointment: a,
   onDeselect,
@@ -59,7 +64,8 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
     handleWhatsApp,
   } = useScheduleInspectorState(a, patientLookupMap, staffLookupMap, dashboard, timezone, toDateTimeLocalValue, onOpenVisit);
 
-  const procedureLabel = sanitizeScheduleCardText(a.reason || (a as any).serviceTitle || "Приём") || "Консультация и осмотр";
+  const extendedA = a as ExtendedInspectorAppointment;
+  const procedureLabel = sanitizeScheduleCardText(a.reason || extendedA.serviceTitle || "Приём") || "Консультация и осмотр";
   const cleanComment = sanitizeScheduleCardText(a.comment);
 
   return (
@@ -81,7 +87,7 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
       <ScheduleInspectorActionsAndFooter
         appointmentId={a.id}
         status={a.status}
-        createdAt={(a as any)?.createdAt || a.startsAt}
+        createdAt={extendedA.createdAt || a.startsAt}
         normalizedStatus={getNormalizedAppointmentStatusLabel(a.status, appointmentLabels)}
         onQuickStatusChange={onQuickStatusChange}
         onOpenVisitClick={handleOpenVisitClick}

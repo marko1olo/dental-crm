@@ -1,6 +1,6 @@
 import React from "react";
 import { ClipboardList, FastForward, FileText, HeartPulse } from "lucide-react";
-import type { Appointment, Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard, Patient } from "@dental/shared";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";
@@ -12,7 +12,7 @@ import {
 interface Props {
 	appointment: Appointment;
 	pName: string;
-	patObj?: any;
+	patObj?: Patient | null;
 	dashboard: Dashboard;
 	onCloseMenu: () => void;
 }
@@ -38,6 +38,10 @@ export const GridAppointmentClinicalActions: React.FC<Props> = ({
 
 	const handleNextStage = () => {
 		onCloseMenu();
+		if (!a.patientId) {
+			showToast("Невозможно запланировать этап: у приёма не указан пациент", "warning");
+			return;
+		}
 		const recKey = detectRecommendedProtocol({
 			diagnosisMkb10: a.diagnosisMkb10 ?? null,
 			reason: a.reason ?? null,
@@ -46,7 +50,10 @@ export const GridAppointmentClinicalActions: React.FC<Props> = ({
 		});
 		const allAppts = dashboard?.appointments || [];
 		createSmartSequentialAppointment({
-			parentAppointment: a as any,
+			parentAppointment: {
+				...a,
+				patientId: a.patientId,
+			},
 			protocolKey: recKey,
 			existingAppointments: allAppts,
 		});

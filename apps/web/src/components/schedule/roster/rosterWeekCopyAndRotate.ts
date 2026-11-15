@@ -48,7 +48,7 @@ export function copyWeekShiftsToTargetWeek(
 	const targetDaysSet = new Set(targetDays);
 
 	const getShiftDate = (s: DoctorShift): string =>
-		s.dateIso || (s as unknown as { date?: string }).date || "";
+		s.dateIso || ("date" in s && typeof s.date === "string" ? s.date : "");
 
 	const sourceShifts = currentShifts.filter(
 		(s) => sourceDays.includes(getShiftDate(s)) && s.status !== "cancelled",
@@ -67,7 +67,7 @@ export function copyWeekShiftsToTargetWeek(
 	const newShifts: DoctorShift[] = sourceShifts.map((s, idx) => {
 		const shiftDate = getShiftDate(s);
 		const dayIdx = sourceDays.indexOf(shiftDate);
-		const targetDateIso = targetDays[dayIdx] || targetDays[0]!;
+		const targetDateIso = targetDays[dayIdx] || targetDays[0] || "";
 		return {
 			...s,
 			id: `shift-${targetDateIso}-${s.chairId}-${s.doctorId}-${s.startTime.replace(":", "")}-${s.endTime.replace(":", "")}-${idx}`,
@@ -113,7 +113,7 @@ export function clearWeekShifts(
 	const weekDays = getWeekDaysIso(weekStartDateIso);
 	const weekDaysSet = new Set(weekDays);
 	const getShiftDate = (s: DoctorShift): string =>
-		s.dateIso || (s as unknown as { date?: string }).date || "";
+		s.dateIso || ("date" in s && typeof s.date === "string" ? s.date : "");
 	return currentShifts.filter((s) => !weekDaysSet.has(getShiftDate(s)));
 }
 
@@ -132,7 +132,7 @@ export function rotateWeekShifts(
 	const weekDays = getWeekDaysIso(weekStartDateIso);
 	const weekDaysSet = new Set(weekDays);
 	const getShiftDate = (s: DoctorShift): string =>
-		s.dateIso || (s as unknown as { date?: string }).date || "";
+		s.dateIso || ("date" in s && typeof s.date === "string" ? s.date : "");
 
 	return currentShifts.map((s) => {
 		const shiftDate = getShiftDate(s);

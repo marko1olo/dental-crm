@@ -17,7 +17,7 @@ function isAppointmentDashboardSliceEqual(prev: AppointmentCardProps, next: Appo
 		if (
 			prevPat?.fullName !== nextPat?.fullName ||
 			prevPat?.balanceRub !== nextPat?.balanceRub ||
-			(prevPat as any)?.balance !== (nextPat as any)?.balance ||
+			prevPat?.balanceKopecks !== nextPat?.balanceKopecks ||
 			prevPat?.phone !== nextPat?.phone
 		) {
 			return false;
