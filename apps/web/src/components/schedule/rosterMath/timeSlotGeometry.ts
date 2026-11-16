@@ -226,7 +226,9 @@ export function resolveChairDutyDoctor(
 			if (storedChairDef?.[chairId]) {
 				return { doctorId: storedChairDef[chairId], shiftHours: "08:00–20:00" };
 			}
-		} catch {}
+		} catch (err: unknown) {
+			console.warn("[timeSlotGeometry] Failed to parse default chair doctors:", err);
+		}
 	}
 
 	return { doctorId: null, shiftHours: "08:00–20:00" };
@@ -299,10 +301,11 @@ export async function syncShiftsWithServer(
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ shifts: shiftsToSend }),
+				body: JSON.stringify({ shifts: shiftsToSend, dateIso: targetDateKey }),
 			});
 			return response.ok;
-		} catch {
+		} catch (networkErr: unknown) {
+			console.warn("[timeSlotGeometry] syncShiftsWithServer network error:", networkErr);
 			// Soft fallback per Mandate 8n & 8e (offline / isolated / network degradation)
 			return false;
 		}

@@ -55,7 +55,11 @@ export function useScheduleAppointmentDragDrop({
   useEffect(() => {
     const handleOpenWaitlist = (e: Event) => {
       const customEvent = e as CustomEvent<{ slotInfo?: TargetSlotInfo } | TargetSlotInfo>;
-      const slot = (customEvent.detail as any)?.slotInfo || customEvent.detail;
+      const detail = customEvent.detail;
+      const slot =
+        detail && typeof detail === "object" && "slotInfo" in detail
+          ? detail.slotInfo
+          : (detail as TargetSlotInfo | undefined);
       if (slot && typeof slot === "object" && ("appointmentId" in slot || "startsAt" in slot)) {
         setWaitlistQuickFillSlot(slot);
       }

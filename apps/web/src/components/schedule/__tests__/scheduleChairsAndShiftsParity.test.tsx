@@ -25,10 +25,9 @@ import {
 } from "../ScheduleGrid";
 import {
 	syncShiftsWithServer,
+	applyCellShiftPreset,
 } from "../chairRosterMath";
-import {
-	computeShiftAssignment,
-} from "../scheduleShiftHelpers";
+import { buildChairDoctorAssignmentsFromShifts } from "../view/scheduleViewShifts";
 import { appointmentScheduleMissingFields } from "../../../AppHelpers";
 import { ScheduleShiftAnalytics } from "../ScheduleShiftAnalytics";
 import { ScheduleFilterStrip } from "../ScheduleFilterStrip";
@@ -604,12 +603,15 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 		});
 
 		it("correctly computes 1-click morning shift preset (08:00–14:00)", () => {
-			const assignment = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "morning",
-				targetDoc: mockStaff[0] as any,
-				dateKey: "2026-09-09",
+			const shifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-09",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "morning",
+				doctorId: "doc-1",
+				staffList: mockStaff as any,
 			});
+			const assignment = buildChairDoctorAssignmentsFromShifts(shifts, "2026-09-09")["chair-1"]!;
 
 			assert.equal(assignment.doctorId, "doc-1");
 			assert.equal(assignment.shiftPreset, "morning");
@@ -620,12 +622,15 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 		});
 
 		it("correctly computes 1-click evening shift preset (14:00–20:00)", () => {
-			const assignment = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "evening",
-				targetDoc: mockStaff[1] as any,
-				dateKey: "2026-09-09",
+			const shifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-09",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "evening",
+				doctorId: "doc-2",
+				staffList: mockStaff as any,
 			});
+			const assignment = buildChairDoctorAssignmentsFromShifts(shifts, "2026-09-09")["chair-1"]!;
 
 			assert.equal(assignment.doctorId, "doc-2");
 			assert.equal(assignment.shiftPreset, "evening");
@@ -635,31 +640,34 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 		});
 
 		it("correctly combines morning and evening doctors into dual-shift subShifts (08:00–20:00)", () => {
-			// Step 1: Assign morning doctor
-			const mornAssignment = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "morning",
-				targetDoc: mockStaff[0] as any,
-				dateKey: "2026-09-09",
+			const mornShifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-09",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "morning",
+				doctorId: "doc-1",
+				staffList: mockStaff as any,
 			});
 
-			// Step 2: Assign second doctor to evening shift on same chair
-			const dualAssignment = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "evening",
-				targetDoc: mockStaff[1] as any,
-				existingAssignment: mornAssignment,
-				dateKey: "2026-09-09",
+			const eveShifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-09",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "evening",
+				doctorId: "doc-2",
+				staffList: mockStaff as any,
 			});
+			const dualShifts = [...mornShifts, ...eveShifts];
+			const dualAssignment = buildChairDoctorAssignmentsFromShifts(dualShifts, "2026-09-09")["chair-1"]!;
 
-			assert.equal(dualAssignment.shiftPreset, "two_shifts");
-			assert.equal(dualAssignment.shiftHours, "08:00–20:00");
 			const [sub0, sub1] = dualAssignment.subShifts || [];
 			assert.ok(sub0 && sub1);
 			assert.equal(sub0.doctorId, "doc-1");
 			assert.equal(sub0.shiftHours, "08:00–14:00");
 			assert.equal(sub1.doctorId, "doc-2");
 			assert.equal(sub1.shiftHours, "14:00–20:00");
+			assert.equal(dualAssignment.startHour, 8);
+			assert.equal(dualAssignment.endHour, 20);
 		});
 
 		it("supports quick doctor substitution on chair assignment without altering shift hours", () => {
@@ -699,10 +707,7 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 		});
 
 		it("syncShiftsWithServer handles non-blocking sync payload without throw", async () => {
-			const res = await syncShiftsWithServer({
-				dateKey: "2026-09-09",
-				shifts: [],
-			});
+			const res = await syncShiftsWithServer("2026-09-09", {});
 			assert.ok(res !== undefined);
 		});
 	});

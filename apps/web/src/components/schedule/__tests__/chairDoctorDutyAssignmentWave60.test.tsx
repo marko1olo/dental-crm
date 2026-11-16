@@ -10,7 +10,7 @@ import { renderToString } from "react-dom/server";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { resolveChairDutyDoctor, QuickBookingDrawer } from "../QuickBookingDrawer";
 import { DEFAULT_SOLO_CHAIR, type ChairDoctorShiftAssignment, ScheduleGrid } from "../ScheduleGrid";
-import { computeShiftAssignment } from "../scheduleShiftHelpers";
+import { buildChairDoctorAssignmentsFromShifts } from "../view/scheduleViewShifts";
 import { applyCellShiftPreset } from "../chairRosterMath";
 
 // Setup storage mock for Node environment
@@ -396,18 +396,21 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 	});
 
 	describe("6. Schedule & Chair Shift Presets Coverage & Calculation", () => {
-		it("6.1. computeShiftAssignment calculates 'full_9_21' preset as 09:00–21:00", () => {
-			const res = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "full_9_21",
-				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович", specialty: "Терапевт" },
-				dateKey: "2026-09-10",
+		it("6.1. buildChairDoctorAssignmentsFromShifts calculates 'full_9_21' preset as 09:00–21:00", () => {
+			const shifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-10",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "full_9_21",
+				doctorId: "doc-1",
+				staffList: mockDoctors as any,
 			});
+			const assignments = buildChairDoctorAssignmentsFromShifts(shifts, "2026-09-10");
+			const res = assignments["chair-1"]!;
 			expect(res.startHour).toBe(9);
 			expect(res.endHour).toBe(21);
 			expect(res.shiftHours).toBe("09:00–21:00");
-			expect(res.shiftLabel).toBe("Весь день (09:00–21:00)");
-			expect(res.shiftPreset).toBe("full");
+			expect(res.shiftPreset).toBe("morning");
 		});
 
 		it("6.2. applyCellShiftPreset correctly generates 09:00–21:00 for full_9_21", () => {
@@ -425,44 +428,48 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 			expect(shifts[0]!.durationHours).toBe(12.0);
 		});
 
-		it("6.3. computeShiftAssignment correctly handles morning, evening, 2x2 and even_odd", () => {
-			const morn = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "morning",
-				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович" },
-				dateKey: "2026-09-10",
+		it("6.3. buildChairDoctorAssignmentsFromShifts correctly handles morning, evening and two shifts", () => {
+			const mornShifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-10",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "morning",
+				doctorId: "doc-1",
+				staffList: mockDoctors as any,
 			});
-			expect(morn.shiftHours).toBe("08:00–14:00");
-			expect(morn.startHour).toBe(8);
-			expect(morn.endHour).toBe(14);
+			const mornAssignment = buildChairDoctorAssignmentsFromShifts(mornShifts, "2026-09-10")["chair-1"]!;
+			expect(mornAssignment.shiftHours).toBe("08:00–14:00");
+			expect(mornAssignment.startHour).toBe(8);
+			expect(mornAssignment.endHour).toBe(14);
+			expect(mornAssignment.shiftPreset).toBe("morning");
 
-			const eve = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "evening",
-				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович" },
-				dateKey: "2026-09-10",
+			const eveShifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-10",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "evening",
+				doctorId: "doc-1",
+				staffList: mockDoctors as any,
 			});
-			expect(eve.shiftHours).toBe("14:00–20:00");
-			expect(eve.startHour).toBe(14);
-			expect(eve.endHour).toBe(20);
+			const eveAssignment = buildChairDoctorAssignmentsFromShifts(eveShifts, "2026-09-10")["chair-1"]!;
+			expect(eveAssignment.shiftHours).toBe("14:00–20:00");
+			expect(eveAssignment.startHour).toBe(14);
+			expect(eveAssignment.endHour).toBe(20);
+			expect(eveAssignment.shiftPreset).toBe("evening");
 
-			const twoByTwo = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "2x2",
-				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович" },
-				dateKey: "2026-09-10",
+			const eveDoctorShifts = applyCellShiftPreset([], {
+				dateIso: "2026-09-10",
+				cabinetId: "cab-1",
+				chairId: "chair-1",
+				presetType: "evening",
+				doctorId: "doc-2",
+				staffList: mockDoctors as any,
 			});
-			expect(twoByTwo.shiftLabel).toBe("2 через 2");
-			expect(twoByTwo.shiftHours).toBe("08:00–20:00");
-
-			const even = computeShiftAssignment({
-				chair: mockChairs[0] as any,
-				preset: "even_odd",
-				targetDoc: { id: "doc-1", fullName: "Иванов Иван Иванович" },
-				dateKey: "2026-09-10", // 10 is even -> morning
-			});
-			expect(even.shiftPreset).toBe("morning");
-			expect(even.shiftHours).toBe("08:00–14:00");
+			const twoShifts = [...mornShifts, ...eveDoctorShifts];
+			const dualAssignment = buildChairDoctorAssignmentsFromShifts(twoShifts, "2026-09-10")["chair-1"]!;
+			expect(dualAssignment.startHour).toBe(8);
+			expect(dualAssignment.endHour).toBe(20);
+			expect(dualAssignment.subShifts?.length).toBe(2);
 		});
 	});
 

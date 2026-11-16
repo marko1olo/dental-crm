@@ -58,54 +58,7 @@ export function useScheduleChairDoctorOps({
     async (chairData: QuickAddChairData) => {
       setScheduleChairFilterId(null);
       const isUpdate = Boolean(chairData.id);
-
-      const applyLocalOptimisticChair = () => {
-        if (typeof setDashboard === "function") {
-          // biome-ignore lint/suspicious/noExplicitAny: composite client dashboard
-          setDashboard((prev: any) => {
-            if (!prev?.clinicSettings) return prev;
-            if (isUpdate) {
-              return {
-                ...prev,
-                clinicSettings: {
-                  ...prev.clinicSettings,
-                  chairs: (prev.clinicSettings.chairs ?? []).map((c) =>
-                    c.id === chairData.id
-                      ? {
-                          ...c,
-                          name: chairData.name,
-                          room: chairData.roomNumber || chairData.room || "1",
-                          roomNumber: chairData.roomNumber || chairData.room || "1",
-                          specialization: chairData.specialization,
-                          color: chairData.color || "var(--teal)",
-                          active: chairData.isActive ?? true,
-                          isActive: chairData.isActive ?? true,
-                        }
-                      : c,
-                  ),
-                },
-              };
-            }
-            const localChair = {
-              id: `chair-local-${Date.now()}`,
-              name: chairData.name,
-              room: chairData.roomNumber || chairData.room || "1",
-              specialization: chairData.specialization,
-              color: chairData.color || "var(--teal)",
-              active: chairData.isActive ?? true,
-              defaultDoctorId: chairData.defaultDoctorId || null,
-            };
-            return {
-              ...prev,
-              clinicSettings: {
-                ...prev.clinicSettings,
-                chairs: [...(prev.clinicSettings.chairs ?? []), localChair],
-              },
-            };
-          });
-        }
-      };
-
+      let isSuccess = false;
       try {
         const url = isUpdate
           ? `/api/settings/chairs/${encodeURIComponent(chairData.id!)}`
@@ -131,6 +84,7 @@ export function useScheduleChairDoctorOps({
         if (typeof loadDashboard === "function") {
           await loadDashboard();
         }
+        isSuccess = true;
         showToast(
           isUpdate
             ? `Параметры кресла «${chairData.name}» успешно обновлены`
@@ -139,59 +93,25 @@ export function useScheduleChairDoctorOps({
           3500,
         );
       } catch (err) {
-        console.warn("Failed to add/update chair via QuickAddChairModal:", err);
-        applyLocalOptimisticChair();
+        console.error("Failed to add/update chair via QuickAddChairModal:", err);
         showToast(
           isUpdate
-            ? `Параметры кресла «${chairData.name}» обновлены локально`
-            : `Кресло «${chairData.name}» добавлено локально`,
-          "info",
-          3000,
+            ? `Не удалось обновить параметры кресла «${chairData.name}» на сервере. Проверьте соединение.`
+            : `Не удалось добавить кресло «${chairData.name}» на сервере. Проверьте соединение.`,
+          "error",
+          4000,
         );
       } finally {
-        setEditingChairData(null);
+        if (isSuccess) {
+          setEditingChairData(null);
+        }
       }
     },
-    [loadDashboard, setDashboard, setScheduleChairFilterId, setEditingChairData, showToast],
+    [loadDashboard, setScheduleChairFilterId, setEditingChairData, showToast],
   );
 
   const handleAddDoctorFromSchedule = useCallback(
     async (doctorData: QuickAddDoctorData) => {
-      const applyLocalOptimisticDoctor = () => {
-        if (typeof setDashboard === "function") {
-          // biome-ignore lint/suspicious/noExplicitAny: composite client dashboard
-          setDashboard((prev: any) => {
-            if (!prev?.clinicSettings) return prev;
-            const newStaff = {
-              id: doctorData.id || `doc-local-${Date.now()}`,
-              organizationId:
-                prev.clinicSettings?.profile?.organizationId ||
-                undefined,
-              fullName: doctorData.fullName,
-              role: "doctor" as const,
-              specialties: [doctorData.specialty],
-              phone: doctorData.phone || null,
-              email: null,
-              active: true,
-              canSignMedicalRecords: true,
-              canManageMoney: false,
-              canManageImports: false,
-              color: doctorData.color,
-              preferredChairId: doctorData.preferredChairId || null,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-            return {
-              ...prev,
-              clinicSettings: {
-                ...prev.clinicSettings,
-                staff: [...(prev.clinicSettings.staff ?? []), newStaff],
-              },
-            };
-          });
-        }
-      };
-
       try {
         const res = await fetch("/api/settings/staff", {
           method: "POST",
@@ -221,17 +141,16 @@ export function useScheduleChairDoctorOps({
         );
         return createdData || { id: doctorData.id };
       } catch (err) {
-        console.warn("Failed to add doctor via QuickAddDoctorModal:", err);
-        applyLocalOptimisticDoctor();
+        console.error("Failed to add doctor via QuickAddDoctorModal:", err);
         showToast(
-          `Врач «${doctorData.fullName}» добавлен локально`,
-          "info",
-          3000,
+          `Не удалось добавить врача «${doctorData.fullName}» на сервере. Проверьте права доступа.`,
+          "error",
+          4000,
         );
-        return { id: doctorData.id };
+        return null;
       }
     },
-    [loadDashboard, setDashboard, showToast],
+    [loadDashboard, showToast],
   );
 
   const handleAssignChairDoctor = useCallback(
@@ -267,7 +186,10 @@ export function useScheduleChairDoctorOps({
             fetch("/api/schedule/shifts", {
               method: "POST",
               headers,
-              body: JSON.stringify({ shifts: nextShifts }),
+              body: JSON.stringify({
+                shifts: nextShifts,
+                dateIso: currentDateKey,
+              }),
             }).catch((syncErr: unknown) => {
               console.warn("[ScheduleView] Async shift sync failed:", syncErr);
             });

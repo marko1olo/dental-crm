@@ -41,7 +41,9 @@ export function useQuickBookingDraft({
       };
       safeLocalStorageSetJson("dente_quick_booking_draft", draftData, true);
       showToast("Черновик записи сохранен", "info");
-    } catch {}
+    } catch (err: unknown) {
+      console.warn("[useQuickBookingDraft] Failed to save quick booking draft:", err);
+    }
     onClose();
   }, [appointmentType, patientSearch.patientId, patientSearch.selectedPatient, doctorUserId, assistantUserId, chairId, startsAtLocal, durationMinutes, reason, comment, onClose]);
 

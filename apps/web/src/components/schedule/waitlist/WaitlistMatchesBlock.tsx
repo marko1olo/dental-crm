@@ -84,8 +84,8 @@ export function WaitlistMatchesBlock({
         if (isMounted && Array.isArray(data)) {
           setCandidates(data);
         }
-      } catch {
-        // Ошибки подавляем в инлайн-блоке, не ломая карточку
+      } catch (err: unknown) {
+        console.warn("[WaitlistMatchesBlock] Failed to load waitlist candidates:", err);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -214,8 +214,8 @@ export function WaitlistMatchesBlock({
                             );
                           },
                         });
-                      } catch {
-                        // Handled inside handleBookWaitlistSlot with toast
+                      } catch (bookingErr: unknown) {
+                        console.warn("[WaitlistMatchesBlock] Booking candidate failed:", bookingErr);
                       }
                     }
                   }}

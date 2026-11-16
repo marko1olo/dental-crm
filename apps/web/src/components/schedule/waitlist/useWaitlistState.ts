@@ -64,8 +64,8 @@ export function useWaitlistState(options: UseWaitlistOptions) {
       if (auth?.denteClinicalReadHeaders) {
         Object.assign(headers, auth.denteClinicalReadHeaders());
       } else if (typeof window !== "undefined") {
-        const cTok = localStorage.getItem("dente_clinic_token") || "demo-showcase-clinic-token-owner";
-        const sTok = localStorage.getItem("dente_staff_token") || "demo-showcase-staff-token-owner";
+        const cTok = localStorage.getItem("dente_clinic_token");
+        const sTok = localStorage.getItem("dente_staff_token");
         if (cTok) headers["x-dente-clinic-token"] = cTok;
         if (sTok) headers["x-dente-staff-token"] = sTok;
       }
@@ -152,8 +152,8 @@ export function useWaitlistState(options: UseWaitlistOptions) {
         if (auth?.denteClinicalMutationHeaders) {
           Object.assign(headers, auth.denteClinicalMutationHeaders());
         } else if (typeof window !== "undefined") {
-          const cTok = localStorage.getItem("dente_clinic_token") || "demo-showcase-clinic-token-owner";
-          const sTok = localStorage.getItem("dente_staff_token") || "demo-showcase-staff-token-owner";
+          const cTok = localStorage.getItem("dente_clinic_token");
+          const sTok = localStorage.getItem("dente_staff_token");
           if (cTok) headers["x-dente-clinic-token"] = cTok;
           if (sTok) headers["x-dente-staff-token"] = sTok;
         }

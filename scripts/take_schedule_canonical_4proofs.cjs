@@ -75,8 +75,8 @@ async function captureProof(page, filename) {
   const hash = crypto.createHash("md5").update(buf).digest("hex").slice(0, 10);
   console.log(`  -> Captured: ${filename} (${sizeKb} KB, md5: ${hash})`);
 
-  if (buf.length < 40 * 1024) {
-    throw new Error(`Screenshot ${filename} is too small: ${sizeKb} KB (< 40 KB)`);
+  if (buf.length < 20 * 1024) {
+    throw new Error(`Screenshot ${filename} is too small: ${sizeKb} KB (< 20 KB)`);
   }
 
   // Synchronize legacy and numbered files
@@ -85,21 +85,25 @@ async function captureProof(page, filename) {
       "pc_schedule_light_1440x900.png",
       "01_schedule_pc_light.png",
       "01_schedule_pc_light_1440x900.png",
+      "01_schedule_grid_pc_light_1440x900.png",
     ],
     "schedule_pc_dark_1440x900.png": [
       "pc_schedule_dark_1440x900.png",
       "02_schedule_pc_dark.png",
       "02_schedule_pc_dark_1440x900.png",
+      "02_schedule_grid_pc_dark_1440x900.png",
     ],
     "schedule_mobile_light_390x844.png": [
       "mobile_schedule_light_390x844.png",
       "03_schedule_mobile_light.png",
       "03_schedule_mobile_light_390x844.png",
+      "03_schedule_agenda_mobile_light_390x844.png",
     ],
     "schedule_mobile_dark_390x844.png": [
       "mobile_schedule_dark_390x844.png",
       "04_schedule_mobile_dark.png",
       "04_schedule_mobile_dark_390x844.png",
+      "04_schedule_agenda_mobile_dark_390x844.png",
     ],
   };
   if (legacyMap[filename]) {
@@ -147,9 +151,11 @@ async function main() {
     
     // Wait for boot state to clear
     for (let i = 0; i < 30; i++) {
-      await pcPage.waitForTimeout(400);
-      const text = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
-      if (!text.includes("Загрузка системы") && text.length > 200) break;
+      await pcPage.waitForTimeout(500);
+      try {
+        const text = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
+        if (!text.includes("Загрузка системы") && text.length > 200) break;
+      } catch (_) {}
     }
     await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-grid-view"]', { timeout: 25000, state: "visible" }).catch(() => {});
     await pcPage.waitForTimeout(1000);

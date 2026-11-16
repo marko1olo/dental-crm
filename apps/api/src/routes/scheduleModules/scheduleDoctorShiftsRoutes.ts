@@ -138,11 +138,21 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 		);
 
 		await db.transaction(async (tx) => {
-			const deleteCond =
-				replaceAll !== true && targetDates.length > 0
-					? and(eq(doctorShiftRosters.organizationId, orgId), inArray(doctorShiftRosters.dateIso, targetDates))
-					: eq(doctorShiftRosters.organizationId, orgId);
-			await tx.delete(doctorShiftRosters).where(deleteCond);
+			if (replaceAll === true) {
+				// Явный флаг глобальной перезаписи смен клиники
+				await tx.delete(doctorShiftRosters).where(eq(doctorShiftRosters.organizationId, orgId));
+			} else if (targetDates.length > 0) {
+				// Точечное удаление смен строго за указанные даты
+				await tx.delete(doctorShiftRosters).where(
+					and(
+						eq(doctorShiftRosters.organizationId, orgId),
+						inArray(doctorShiftRosters.dateIso, targetDates),
+					),
+				);
+			} else {
+				// Защита от потери данных: без replaceAll и без дат ничего глобально не удаляем
+				return;
+			}
 
 			if (shifts.length > 0) {
 				const now = new Date();

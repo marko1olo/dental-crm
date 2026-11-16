@@ -153,7 +153,7 @@ export function formatPatientBalanceBadge(
 			label: `Долг: ${absFormatted}`,
 			shortLabel: `-${absFormatted}`,
 			formattedAmount: absFormatted,
-			badgeClass: "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40",
+			badgeClass: "bg-[var(--danger-soft,rgba(239,68,68,0.12))] text-[var(--danger,#ef4444)] border-[var(--danger,#ef4444)]/30",
 			isDebt: true,
 			isDeposit: false,
 		};
@@ -166,7 +166,7 @@ export function formatPatientBalanceBadge(
 			label: `Депозит: ${formatted}`,
 			shortLabel: `+${formatted}`,
 			formattedAmount: formatted,
-			badgeClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40",
+			badgeClass: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/30",
 			isDebt: false,
 			isDeposit: true,
 		};
@@ -178,7 +178,7 @@ export function formatPatientBalanceBadge(
 		label: "Баланс: 0 ₽",
 		shortLabel: "0 ₽",
 		formattedAmount: "0 ₽",
-		badgeClass: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--ink-muted)] border-[var(--line)]",
 		isDebt: false,
 		isDeposit: false,
 	};
@@ -216,7 +216,7 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 			emoji: "new",
 			recommendation: "Первичный прием: запросить паспорт и оформить согласие на лечение.",
 			summary: "История визитов формируется",
-			badgeClass: "bg-sky-500/15 text-sky-800 dark:text-sky-200 border-sky-500/40",
+			badgeClass: "bg-[var(--primary-soft,rgba(37,99,235,0.12))] text-[var(--primary,#2563eb)] border-[var(--primary,#2563eb)]/30",
 			requiresTwoHourConfirmation: false,
 		};
 		return {
@@ -247,7 +247,7 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 			emoji: "high_risk",
 			recommendation: "Рекомендуется контрольный звонок накануне (запись без блокировок)",
 			summary,
-			badgeClass: "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40",
+			badgeClass: "bg-[var(--danger-soft,rgba(239,68,68,0.12))] text-[var(--danger,#ef4444)] border-[var(--danger,#ef4444)]/30",
 			requiresTwoHourConfirmation: false,
 		};
 		return {
@@ -283,7 +283,7 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 			emoji: "attention",
 			recommendation: "Рекомендуется контрольный звонок накануне визита",
 			summary,
-			badgeClass: "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/40",
+			badgeClass: "bg-[var(--warning-soft,rgba(245,158,11,0.12))] text-[var(--warning,#f59e0b)] border-[var(--warning,#f59e0b)]/30",
 			requiresTwoHourConfirmation: false,
 		};
 		return {
@@ -304,7 +304,7 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 		emoji: "reliable",
 		recommendation: "Высокая дисциплина визитов. Стандартная запись.",
 		summary: `${onTimeRatePercent}% визитов вовремя (${completedCount}/${totalFinished}), 0 срывов`,
-		badgeClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40",
+		badgeClass: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/30",
 		requiresTwoHourConfirmation: false,
 	};
 	return { category: "reliable", status: "reliable", score: 100, badge };

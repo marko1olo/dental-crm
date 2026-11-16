@@ -344,7 +344,8 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 				}
 			}
 
-			if (!original.patientId || !doctorUserId || !chairId) {
+			const patientId = original.patientId;
+			if (!patientId || !doctorUserId || !chairId) {
 				return reply.code(409).send({
 					code: "ClipboardPasteRejected",
 					message: clipboardPasteResourcesMissingMessage,
@@ -366,8 +367,7 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 					const newAppt = await createAppointmentInDb(
 						orgId,
 						{
-							// biome-ignore lint/style/noNonNullAssertion: automated suppression
-							patientId: original.patientId!,
+							patientId,
 							doctorUserId,
 							assistantUserId: original.assistantUserId ?? null,
 							chairId,

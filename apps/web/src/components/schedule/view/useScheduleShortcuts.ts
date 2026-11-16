@@ -270,7 +270,9 @@ export function useScheduleShortcuts({
         try {
           const raw = window.localStorage.getItem("dente_schedule_quick_booking_draft");
           if (raw) draft = JSON.parse(raw);
-        } catch {}
+        } catch (err: unknown) {
+          console.warn("[useScheduleShortcuts] Failed to parse quick booking draft from localStorage:", err);
+        }
       }
 
       setQuickBookingSlot({
@@ -281,7 +283,7 @@ export function useScheduleShortcuts({
         durationMinutes: draft?.durationMinutes || 45,
         patientId: draft?.patientId || null,
         patientName: draft?.patientName || null,
-        reason: draft?.title || draft?.reason || "Примерка ортопедии",
+        reason: draft?.title || draft?.reason || "Приём врача",
       });
       setQuickBookingOpen(true);
     };
