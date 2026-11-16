@@ -77,27 +77,37 @@ export const CLOSED_SINUS_LIFT_NORM_TEXT = "Инфильтрационная а�
 export const PERIOSTOTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез слизистой и надкостницы длиной 2 см по переходной складке в проекции корня причинного зуба до кости. Эвакуация гнойного экссудата. Промывание 0.05% хлоргексидином. В рану введен перчаточный резиновый ленточный дренаж-выпускник. Гемостаз полный. Назначена антибиотикотерапия. Контрольный осмотр и смена дренажа завтра.";
 export const APICOECTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Трапециевидный разрез слизистой в проекции верхушки корня, отслоен лоскут. Трепанация кортикальной пластинки шаровидным бором. Резекция верхушки корня на 3 мм под углом 90°. Цистэктомия очага. Ретроградное пломбирование МТА (ProRoot). Контроль гемостаза. Ушивание раны узловыми швами Монофиламент 5-0. Рекомендации даны.";
 export const PERICORONITIS_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Иссечение воспаленного слизистого капюшона над коронкой ретинированного зуба скальпелем. Промывание антисептиками (хлоргексидин 0.05%), йодоформная турунда. Гемостаз полный. Рекомендации даны.";
-export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = Object.values(NORMALIZED_IMPLANT_SYSTEMS).map((sys) => ({
-	id: sys.id,
-	brandName: sys.brandName,
-	unitCostRub: sys.defaultKitPriceRub,
-	popularLines: sys.popularLines,
-	platformName: sys.connectionDetails,
-	screwdriverType: sys.screwdriverType,
-	screwdriverAliasRu: sys.screwdriverAliasRu,
-	minTorqueNcm: sys.minInsertionTorqueNcm,
-	defaultTorqueNcm: sys.defaultTorqueNcm,
-	maxSafeTorqueNcm: sys.maxSafeTorqueNcm,
-	isqOptimalRange: sys.id === "straumann" || sys.id === "nobel_biocare" ? "70–85" : "68–85",
-	standardDiametersMm: sys.standardDiametersMm,
-	standardLengthsMm: sys.standardLengthsMm,
-	defaultDiameterMm: sys.defaultDiameterMm,
-	defaultLengthMm: sys.defaultLengthMm,
-	defaultArticle: sys.defaultArticlePrefix,
-	defaultLotNumber: `24LOT-${sys.id.slice(0, 3).toUpperCase()}`,
-	defaultSerialNumber: `SN-${sys.id.slice(0, 3).toUpperCase()}-01`,
-	defaultExpirationDate: "2029-12-31",
-}));
+export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = Object.values(NORMALIZED_IMPLANT_SYSTEMS).map((sys) => {
+	const stockItem = DEFAULT_CANONICAL_IMPLANT_STOCK.find((item) =>
+		item.name.toLowerCase().includes(sys.brandName.toLowerCase()) ||
+		item.id.toLowerCase().includes(sys.id.toLowerCase()),
+	);
+	const lotNumber = stockItem?.lotNumber || `LOT-${sys.id.slice(0, 3).toUpperCase()}-2024`;
+	const serialNumber = stockItem?.barcode ? stockItem.barcode.slice(-9) : `SN-${sys.id.slice(0, 3).toUpperCase()}-01`;
+	const expirationDate = stockItem?.expirationDate || "2029-12-31";
+
+	return {
+		id: sys.id,
+		brandName: sys.brandName,
+		unitCostRub: sys.defaultKitPriceRub,
+		popularLines: sys.popularLines,
+		platformName: sys.connectionDetails,
+		screwdriverType: sys.screwdriverType,
+		screwdriverAliasRu: sys.screwdriverAliasRu,
+		minTorqueNcm: sys.minInsertionTorqueNcm,
+		defaultTorqueNcm: sys.defaultTorqueNcm,
+		maxSafeTorqueNcm: sys.maxSafeTorqueNcm,
+		isqOptimalRange: sys.id === "straumann" || sys.id === "nobel_biocare" ? "70–85" : "68–85",
+		standardDiametersMm: sys.standardDiametersMm,
+		standardLengthsMm: sys.standardLengthsMm,
+		defaultDiameterMm: sys.defaultDiameterMm,
+		defaultLengthMm: sys.defaultLengthMm,
+		defaultArticle: stockItem?.sku || sys.defaultArticlePrefix,
+		defaultLotNumber: lotNumber,
+		defaultSerialNumber: serialNumber,
+		defaultExpirationDate: expirationDate,
+	};
+});
 
 export const SURGERY_DEFAULT_BATCHES: readonly SurgeryWarehouseBatchItem[] = DEFAULT_CANONICAL_IMPLANT_STOCK.map((item) => {
 	const match = item.name.match(/Ø(\d+(?:\.\d+)?)[xх](\d+(?:\.\d+)?)мм/i);

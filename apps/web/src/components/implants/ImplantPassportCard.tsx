@@ -176,7 +176,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 						<button type="button" onClick={handleShareWhatsApp} className="icon-button min-h-[44px] min-w-[44px] text-[var(--teal,#0d9488)]" title="Поделиться в WhatsApp" data-testid="btn-share-whatsapp">
 							<Share2 size={16} />
 						</button>
-						<button type="button" onClick={handleShareTelegram} className="icon-button min-h-[44px] min-w-[44px] text-[var(--brand-primary,#0ea5e9)]" title="Поделиться в Telegram" data-testid="btn-share-telegram">
+						<button type="button" onClick={handleShareTelegram} className="icon-button min-h-[44px] min-w-[44px] text-[var(--teal,#0d9488)]" title="Поделиться в Telegram" data-testid="btn-share-telegram">
 							<Send size={16} />
 						</button>
 						<button type="button" onClick={handleCopy} className="icon-button min-h-[44px] min-w-[44px] text-[var(--ink)]" title="Скопировать данные паспорта" data-testid="btn-copy-passport-card">

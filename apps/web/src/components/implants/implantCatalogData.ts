@@ -550,12 +550,12 @@ export function getRecommendedTorqueZone(torqueNcm: number): {
 	readonly colorClass: string;
 } {
 	if (torqueNcm < 35) {
-		return { status: "under_torque", labelRu: "Низкий торк (<35 Н·см) — риск микродвижений", colorClass: "text-amber-500" };
+		return { status: "under_torque", labelRu: "Низкий торк (<35 Н·см) — риск микродвижений", colorClass: "text-[var(--warning,#f59e0b)]" };
 	}
 	if (torqueNcm <= 45) {
-		return { status: "optimal_green", labelRu: "Оптимальная первичная стабильность (35–45 Н·см)", colorClass: "text-emerald-500" };
+		return { status: "optimal_green", labelRu: "Оптимальная первичная стабильность (35–45 Н·см)", colorClass: "text-[var(--teal,#0d9488)]" };
 	}
-	return { status: "over_torque", labelRu: "Повышенный торк (>45 Н·см) — риск ишемии кортикала", colorClass: "text-rose-500" };
+	return { status: "over_torque", labelRu: "Повышенный торк (>45 Н·см) — риск ишемии кортикала", colorClass: "text-[var(--danger,#f43f5e)]" };
 }
 
 export function formatKopecksToRubles(kopecks: bigint | number): string {
@@ -1559,7 +1559,7 @@ export function evaluateImplantObstacleClearance(
 			clearanceMm: null,
 			status: "unmeasured",
 			statusLabelRu: "Ориентир не размечен",
-			badgeColorClass: "bg-zinc-800 text-zinc-400 border-zinc-700",
+			badgeColorClass: "bg-[var(--paper-soft)] text-[var(--ink-muted)] border-[var(--line)]",
 		};
 	}
 
@@ -1570,7 +1570,7 @@ export function evaluateImplantObstacleClearance(
 			clearanceMm,
 			status: "danger",
 			statusLabelRu: `ОПАСНО: вторжение в зону канала (${clearanceMm.toFixed(1)} мм < 0.5 мм)`,
-			badgeColorClass: "bg-rose-950/80 text-rose-300 border-rose-500/80 shadow-[0_0_8px_rgba(244,63,94,0.5)]",
+			badgeColorClass: "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger)]/30",
 		};
 	}
 
@@ -1579,7 +1579,7 @@ export function evaluateImplantObstacleClearance(
 			clearanceMm,
 			status: "warning",
 			statusLabelRu: `Внимание: буфер ${clearanceMm.toFixed(1)} мм (менее зоны безопасности ${safetyZoneMm} мм)`,
-			badgeColorClass: "bg-amber-950/80 text-amber-300 border-amber-500/80",
+			badgeColorClass: "bg-[var(--warning-soft)] text-[var(--warning)] border-[var(--warning)]/30",
 		};
 	}
 
@@ -1587,6 +1587,6 @@ export function evaluateImplantObstacleClearance(
 		clearanceMm,
 		status: "safe",
 		statusLabelRu: `Безопасно: ${clearanceMm.toFixed(1)} мм до препятствия (норма >= ${safetyZoneMm} мм)`,
-		badgeColorClass: "bg-emerald-950/80 text-emerald-300 border-emerald-500/80",
+		badgeColorClass: "bg-[var(--teal-subtle,var(--teal-soft))] text-[var(--teal)] border-[var(--teal)]/30",
 	};
 }
