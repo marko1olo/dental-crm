@@ -77,15 +77,15 @@ describe("Telephony & Softphone Red Team Inquisitor Suite (Mandates 8e, 8n, Appl
 	});
 
 	it("5. Solo-Doctor Autonomy: 1-Click Booking without Mandatory Assistant (Mandate 8n)", () => {
-		const quickBookingActionsPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallBookingActions.ts");
-		const quickBookingActions = fs.readFileSync(quickBookingActionsPath, "utf-8");
+		const controllerPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallPopupController.ts");
+		const controllerSource = fs.readFileSync(controllerPath, "utf-8");
 
 		assert.ok(
-			quickBookingActions.includes("assistantUserId: \"\""),
+			controllerSource.includes("assistantUserId: \"\""),
 			"handleQuickBook must set assistantUserId: '' to prevent blocking solo doctors",
 		);
 		assert.ok(
-			quickBookingActions.includes("patientName: resolvedPatient?.fullName || (callerName"),
+			controllerSource.includes("patientName: resolvedPatient?.fullName || (callerName"),
 			"handleQuickBook must automatically prefill patient name from caller",
 		);
 	});

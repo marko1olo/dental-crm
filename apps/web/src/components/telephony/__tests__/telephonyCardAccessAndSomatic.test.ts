@@ -12,24 +12,24 @@ describe("Telephony Patient Card Access & Somatic Alerts (Mandates 8b, 8d, 8e)",
 
 	const drawerPanelPath = path.resolve(srcDir, "components/telephony/drawerModules/TelephonyActiveCallPanel.tsx");
 	const callerCardPath = path.resolve(srcDir, "components/telephony/IncomingCallerCard.tsx");
-	const quickActionsPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallQuickActions.ts");
+	const controllerPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallPopupController.ts");
 
 	it("1. Existing Patient: 1-Click Card Access Without Resetting Active Form 043/u Visit", () => {
-		const quickActionsSource = fs.readFileSync(quickActionsPath, "utf-8");
+		const controllerSource = fs.readFileSync(controllerPath, "utf-8");
 		assert.ok(
-			quickActionsSource.includes("const handleToggleCardDrawer = () => {"),
+			controllerSource.includes("const handleToggleCardDrawer = () => {"),
 			"IncomingCallPopup controller must provide handleToggleCardDrawer",
 		);
 		assert.ok(
-			quickActionsSource.includes("toggleCallDrawer();"),
+			controllerSource.includes("toggleCallDrawer();"),
 			"IncomingCallPopup controller must toggle drawer state without calling setCurrentView('patients')",
 		);
 		assert.ok(
-			quickActionsSource.includes('if (currentView === "visit") {'),
+			controllerSource.includes('if (currentView === "visit") {'),
 			"Must check if currentView === 'visit' before full page navigation",
 		);
 		assert.ok(
-			quickActionsSource.includes("Приём пациента активен. Карта доступна в текущей шторке без сброса визита."),
+			controllerSource.includes("Приём пациента активен. Карта доступна в текущей шторке без сброса визита."),
 			"Must warn doctor that active visit is preserved and card is accessible in current drawer",
 		);
 	});

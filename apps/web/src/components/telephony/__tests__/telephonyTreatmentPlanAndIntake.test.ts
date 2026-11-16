@@ -12,7 +12,7 @@ describe("Telephony Treatment Plan Resolution & Fast Intake (Mandates 8b, 8e, 8n
 
 	const drawerPanelPath = path.resolve(srcDir, "components/telephony/drawerModules/TelephonyActiveCallPanel.tsx");
 	const callerCardPath = path.resolve(srcDir, "components/telephony/IncomingCallerCard.tsx");
-	const quickActionsPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallQuickActions.ts");
+	const controllerPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallPopupController.ts");
 
 	it("3. Existing Patient: Instant Active Treatment Plan Resolution & Progress Bar", () => {
 		const patientId = "pat-202";
@@ -76,9 +76,9 @@ describe("Telephony Treatment Plan Resolution & Fast Intake (Mandates 8b, 8e, 8n
 	});
 
 	it("4. New Patient: 1-Click Fast Intake Without Bureaucratic Red Tape", () => {
-		const quickActionsSource = fs.readFileSync(quickActionsPath, "utf-8");
-		assert.ok(quickActionsSource.includes("const targetName = entered.trim() || `Пациент ${formattedPhone}`;"));
-		assert.ok(quickActionsSource.includes("fullName: targetName,\n\t\t\t\t\tphone: currentCall.phone,"));
+		const controllerSource = fs.readFileSync(controllerPath, "utf-8");
+		assert.ok(controllerSource.includes("const targetName = entered.trim() || `Пациент ${formattedPhone}`;"));
+		assert.ok(controllerSource.includes("fullName: targetName, phone: currentCall.phone"));
 
 		const drawerPanelSource = fs.readFileSync(drawerPanelPath, "utf-8");
 

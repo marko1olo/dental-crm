@@ -8,7 +8,7 @@ describe("Telephony Doctor Sterile Zone & Solo Doctor Autonomy (Mandates 8e, 8n,
 		? path.resolve(process.cwd(), "apps/web/src")
 		: path.resolve(process.cwd(), "src");
 	const popupPath = path.resolve(srcDir, "components/telephony/IncomingCallPopup.tsx");
-	const quickActionsPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallQuickActions.ts");
+	const controllerPath = path.resolve(srcDir, "components/telephony/incomingCallPopupModules/useIncomingCallPopupController.ts");
 	const cssPath = path.resolve(srcDir, "components/telephony/styles/telephonyCapsuleAndDrawer.css");
 
 	it("1. Doctor Sterile Zone & Draft Immunity (Mandate 8e p. 6, 8n)", () => {
@@ -29,11 +29,11 @@ describe("Telephony Doctor Sterile Zone & Solo Doctor Autonomy (Mandates 8e, 8n,
 	});
 
 	it("2. Solo-Doctor & Reception Autonomy: 1-Click Booking without Mandatory Assistant (Mandates 8e & 8n)", () => {
-		const quickActionsSource = fs.readFileSync(quickActionsPath, "utf-8");
+		const controllerSource = fs.readFileSync(controllerPath, "utf-8");
 
 		assert.ok(
-			quickActionsSource.includes('assistantUserId: ""'),
-			"IncomingCallPopup quick actions handleQuickBook must set assistantUserId: ''",
+			controllerSource.includes('assistantUserId: ""'),
+			"IncomingCallPopup controller handleQuickBook must set assistantUserId: ''",
 		);
 	});
 
