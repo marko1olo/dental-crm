@@ -42,21 +42,7 @@ export function useResolvedPatient(
 			if (foundByPhone) return foundByPhone;
 		}
 
-		// Демо-режим инвариант: если в демо-режиме звонящий не опознан,
-		// гарантированно подставляем канонического пациента Смирнова Анна Сергеевна
-		if (isDemoShowcaseMode()) {
-			const demoPatient = dashboard?.patients?.find(
-				(p) =>
-					p.id === "01a00000-0000-0000-0000-000000000001" ||
-					p.fullName === "Смирнова Анна Сергеевна" ||
-					p.phone === "+7 916 234-56-78",
-			);
-			if (demoPatient) return demoPatient;
-
-			const demoList = getDemoShowcasePatients();
-			return demoList[0] || null;
-		}
-
+		// Если абонент не найден в базе — возвращаем null (честный неизвестный абонент, DEF-TEL-01)
 		return null;
 	}, [serverLookup, currentCall, dashboard?.patients]);
 }

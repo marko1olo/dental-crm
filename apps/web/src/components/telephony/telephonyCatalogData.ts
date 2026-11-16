@@ -33,20 +33,23 @@ export function resolveCanonicalCallStatus(
 	apiStatus?: string,
 	durationSeconds?: number,
 ): CallStatus {
-	if (apiStatus === "completed" || apiStatus === "answered") {
-		return "answered";
-	}
-	if (apiStatus === "needs_call" || apiStatus === "missed") {
-		return "missed";
+	if (apiStatus === "ringing" || apiStatus === "connected") {
+		return apiStatus;
 	}
 	if (apiStatus === "held") {
 		return "connected";
 	}
-	if (apiStatus === "ringing" || apiStatus === "connected" || apiStatus === "rejected") {
-		return apiStatus;
+	if (apiStatus === "rejected") {
+		return "rejected";
 	}
 	if (durationSeconds !== undefined && durationSeconds === 0) {
 		return "missed";
+	}
+	if (apiStatus === "needs_call" || apiStatus === "missed") {
+		return "missed";
+	}
+	if (apiStatus === "completed" || apiStatus === "answered") {
+		return "answered";
 	}
 	return "answered";
 }

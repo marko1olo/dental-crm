@@ -98,18 +98,22 @@ async function triggerCall(page) {
       new CustomEvent("dente:telephony-mock-incoming", {
         detail: {
           callId: "call-" + Date.now(),
-          phone: "+7 (926) 555-12-34",
-          patientName: "Смирнова Екатерина Васильевна",
-          patientId: "01a00000-0000-0000-0000-000000000001",
+          phone: "+7 (999) 777-88-99",
+          patientName: "Кузнецов Алексей Петрович",
+          patientId: "pat-kuznetsov-01",
           provider: "mango",
           timestamp: new Date().toISOString(),
           status: "ringing",
+          debtRub: 0,
+          balanceRub: 0,
+          hasDebt: false,
+          hasDms: false,
           acutePain: true,
         },
       })
     );
   });
-  await sleep(1000);
+  await sleep(1500);
 }
 
 async function waitForRealUI(page) {
@@ -151,15 +155,19 @@ async function main() {
     const pcPage = await pcContext.newPage();
     await setupPageSession(pcPage, "administrator");
 
-    console.log("  Navigating PC to http://127.0.0.1:5173/?demo=true#schedule ...");
-    await pcPage.goto("http://127.0.0.1:5173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => {});
-    await sleep(2000);
+    console.log("  Navigating PC to http://127.0.0.1:5173/?demo=true&callExpanded=true#schedule ...");
+    await pcPage.goto("http://127.0.0.1:5173/?demo=true&callExpanded=true#schedule", { waitUntil: "networkidle", timeout: 30000 }).catch(async () => {
+      await pcPage.goto("http://127.0.0.1:5173/?demo=true&callExpanded=true#schedule", { waitUntil: "domcontentloaded", timeout: 20000 });
+    });
+    await sleep(2500);
     await waitForRealUI(pcPage);
-    await sleep(1000);
+    await sleep(1500);
 
     // Trigger Incoming Call
     console.log("  Triggering Incoming Call Event on Desktop...");
     await triggerCall(pcPage);
+    await pcPage.waitForSelector('[data-testid="incoming-call-popup"]', { state: "visible", timeout: 10000 }).catch(() => {});
+    await sleep(1000);
 
     // 01_telephony_incoming_call_pc_light_1440x900.png
     console.log("  Capturing 01_telephony_incoming_call_pc_light_1440x900.png...");
@@ -219,15 +227,19 @@ async function main() {
     const mobilePage = await mobileContext.newPage();
     await setupPageSession(mobilePage, "administrator");
 
-    console.log("  Navigating mobile to http://127.0.0.1:5173/?demo=true#schedule ...");
-    await mobilePage.goto("http://127.0.0.1:5173/?demo=true#schedule", { waitUntil: "commit", timeout: 30000 }).catch(() => {});
-    await sleep(2000);
+    console.log("  Navigating mobile to http://127.0.0.1:5173/?demo=true&callExpanded=true#schedule ...");
+    await mobilePage.goto("http://127.0.0.1:5173/?demo=true&callExpanded=true#schedule", { waitUntil: "networkidle", timeout: 30000 }).catch(async () => {
+      await mobilePage.goto("http://127.0.0.1:5173/?demo=true&callExpanded=true#schedule", { waitUntil: "domcontentloaded", timeout: 20000 });
+    });
+    await sleep(2500);
     await waitForRealUI(mobilePage);
-    await sleep(1000);
+    await sleep(1500);
 
     // Trigger Incoming Call on Mobile
     console.log("  Triggering Incoming Call Event on Mobile...");
     await triggerCall(mobilePage);
+    await mobilePage.waitForSelector('[data-testid="incoming-call-popup"]', { state: "visible", timeout: 10000 }).catch(() => {});
+    await sleep(1000);
 
     // 03_telephony_incoming_call_mobile_light_390x844.png
     console.log("  Capturing 03_telephony_incoming_call_mobile_light_390x844.png...");
@@ -249,10 +261,7 @@ async function main() {
 
     // Studio Mobile Light/Dark
     console.log("  Navigating mobile to telephony hash...");
-    await mobilePage.evaluate(() => {
-      window.location.hash = "#telephony";
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
-    });
+    await mobilePage.goto("http://127.0.0.1:5173/?demo=true#telephony", { waitUntil: "domcontentloaded" });
     await sleep(1500);
     await waitForRealUI(mobilePage);
     await mobilePage.waitForSelector('[data-testid="telephony-studio-modal-root"], [role="dialog"]', { state: "visible", timeout: 15000 }).catch(() => {});
@@ -274,20 +283,38 @@ async function main() {
 
     // Canonical 4-State Proofs copies (Mandate 8aw)
     copyFileSync(
-      path.join(OUT_DIR, "01_telephony_incoming_call_pc_light_1440x900.png"),
+      path.join(OUT_DIR, "01_telephony_studio_pc_light_1440x900.png"),
       path.join(OUT_DIR, "01_telephony_pc_light_1440x900.png")
     );
     copyFileSync(
-      path.join(OUT_DIR, "02_telephony_incoming_call_pc_dark_1440x900.png"),
+      path.join(OUT_DIR, "02_telephony_studio_pc_dark_1440x900.png"),
       path.join(OUT_DIR, "02_telephony_pc_dark_1440x900.png")
     );
     copyFileSync(
-      path.join(OUT_DIR, "03_telephony_incoming_call_mobile_light_390x844.png"),
+      path.join(OUT_DIR, "03_telephony_studio_mobile_light_390x844.png"),
       path.join(OUT_DIR, "03_telephony_mobile_light_390x844.png")
     );
     copyFileSync(
-      path.join(OUT_DIR, "04_telephony_incoming_call_mobile_dark_390x844.png"),
+      path.join(OUT_DIR, "04_telephony_studio_mobile_dark_390x844.png"),
       path.join(OUT_DIR, "04_telephony_mobile_dark_390x844.png")
+    );
+
+    // Popup-specific aliases for Red Team Audit
+    copyFileSync(
+      path.join(OUT_DIR, "01_telephony_incoming_call_pc_light_1440x900.png"),
+      path.join(OUT_DIR, "01_telephony_popup_pc_light_1440x900.png")
+    );
+    copyFileSync(
+      path.join(OUT_DIR, "02_telephony_incoming_call_pc_dark_1440x900.png"),
+      path.join(OUT_DIR, "02_telephony_popup_pc_dark_1440x900.png")
+    );
+    copyFileSync(
+      path.join(OUT_DIR, "03_telephony_incoming_call_mobile_light_390x844.png"),
+      path.join(OUT_DIR, "03_telephony_popup_mobile_light_390x844.png")
+    );
+    copyFileSync(
+      path.join(OUT_DIR, "04_telephony_incoming_call_mobile_dark_390x844.png"),
+      path.join(OUT_DIR, "04_telephony_popup_mobile_dark_390x844.png")
     );
 
     console.log("\n=== ALL TELEPHONY 4-STATE PROOF SCREENSHOTS CAPTURED SUCCESSFULLY ===");

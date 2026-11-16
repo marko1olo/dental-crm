@@ -54,15 +54,15 @@ describe("Telephony Production Purity & Demo Showcase Invariants", () => {
 		assert.ok(!active.patientName || active.patientName === "Неизвестный номер");
 	});
 
-	test("2.1. In demo mode, anonymous incoming call binds to canonical Smirnova Anna", () => {
+	test("2.1. In demo mode, anonymous incoming call preserves unknown caller without synthetic Smirnova (DEF-TEL-01)", () => {
 		enableDemoShowcaseMode();
 		assert.strictEqual(isDemoShowcaseMode(), true);
 		const store = useTelephonyStore.getState();
 		store.triggerIncomingCall({ phone: "", patientId: null, patientName: "", provider: "mango", status: "ringing" });
 		const active = useTelephonyStore.getState().activeCall;
 		assert.ok(active);
-		assert.strictEqual(active.patientName, "Смирнова Анна Сергеевна");
-		assert.strictEqual(active.patientId, "01a00000-0000-0000-0000-000000000001");
+		assert.notStrictEqual(active.patientName, "Смирнова Анна Сергеевна");
+		assert.strictEqual(active.patientId, null);
 		assert.strictEqual(active.phone, "+79162345678");
 	});
 

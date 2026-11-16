@@ -26,10 +26,10 @@ export function useResolvedCallerIdentity(
 
 	const callerName = useMemo(() => {
 		if (resolvedPatient?.fullName) return resolvedPatient.fullName;
-		if (isDemoShowcaseMode()) {
-			return "Смирнова Анна Сергеевна";
+		if (currentCall?.patientName && currentCall.patientName.trim()) {
+			return currentCall.patientName;
 		}
-		return currentCall?.patientName || "Неизвестный номер";
+		return "Неизвестный абонент";
 	}, [resolvedPatient?.fullName, currentCall?.patientName]);
 
 	const formattedPhone = useMemo(() => {

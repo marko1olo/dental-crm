@@ -1,7 +1,7 @@
 /**
  * telephonyCallerLookup.test.ts
  *
- * Fastify route & service integration tests for /api/telephony/lookup-caller:
+ * Fastify route & service integration tests for /api/telephony/lookup:
  * - PostgreSQL 18 tenant-isolated CTI Screen Pop caller lookup (<15ms index resolution)
  * - Returns demographics, debt/balance, upcoming visits, somatic alerts, treatment plans
  * - Graceful fallback for unknown callers (found: false)
@@ -33,7 +33,7 @@ const DOCTOR_A_ID = fixtureUuid(NAMESPACE, 4);
 const PATIENT_A_ID = fixtureUuid(NAMESPACE, 5);
 const APPT_A_ID = fixtureUuid(NAMESPACE, 6);
 
-describe("CTI Telephony /api/telephony/lookup-caller and CallerLookupService", () => {
+describe("CTI Telephony /api/telephony/lookup and CallerLookupService", () => {
 	let app: FastifyInstance;
 	let staffTokenA = "";
 	let databaseReady = true;
@@ -137,12 +137,12 @@ describe("CTI Telephony /api/telephony/lookup-caller and CallerLookupService", (
 		assert.equal(result.somaticAlerts.length, 0);
 	});
 
-	test("2. Successfully resolves caller via /api/telephony/lookup-caller HTTP route", async () => {
+	test("2. Successfully resolves caller via /api/telephony/lookup HTTP route", async () => {
 		if (!databaseReady) return;
 
 		const response = await app.inject({
 			method: "GET",
-			url: "/api/telephony/lookup-caller?phone=%2B79998881122",
+			url: "/api/telephony/lookup?phone=%2B79998881122",
 			headers: {
 				"x-dente-staff-token": staffTokenA,
 			},
@@ -170,12 +170,12 @@ describe("CTI Telephony /api/telephony/lookup-caller and CallerLookupService", (
 		assert.equal(v1Json.patient.id, PATIENT_A_ID);
 	});
 
-	test("3. Resolves caller via parameterized orgId route /api/telephony/:organizationId/lookup-caller", async () => {
+	test("3. Resolves caller via parameterized orgId route /api/telephony/:organizationId/lookup", async () => {
 		if (!databaseReady) return;
 
 		const response = await app.inject({
 			method: "GET",
-			url: `/api/telephony/${ORG_A_ID}/lookup-caller?phone=89998881122`,
+			url: `/api/telephony/${ORG_A_ID}/lookup?phone=89998881122`,
 			headers: {
 				"x-dente-staff-token": staffTokenA,
 			},
@@ -202,7 +202,7 @@ describe("CTI Telephony /api/telephony/lookup-caller and CallerLookupService", (
 
 		const response = await app.inject({
 			method: "GET",
-			url: `/api/telephony/${ORG_B_ID}/lookup-caller?phone=%2B79998881122`,
+			url: `/api/telephony/${ORG_B_ID}/lookup?phone=%2B79998881122`,
 			headers: {
 				"x-dente-staff-token": staffTokenB,
 			},

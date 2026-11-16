@@ -113,7 +113,7 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 			assert.strictEqual(active?.patientId, null);
 		});
 
-		it("demo showcase mode canonically binds to Smirnova Anna Sergeevna on empty trigger", () => {
+		it("demo showcase mode does not inject synthetic Smirnova on empty trigger (DEF-TEL-01)", () => {
 			enableDemoShowcaseMode();
 			assert.strictEqual(isDemoShowcaseMode(), true);
 
@@ -128,7 +128,8 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 
 			const active = useTelephonyStore.getState().activeCall;
 			assert.notStrictEqual(active, null);
-			assert.strictEqual(active?.patientName, "Смирнова Анна Сергеевна");
+			assert.notStrictEqual(active?.patientName, "Смирнова Анна Сергеевна");
+			assert.strictEqual(active?.patientId, null);
 			assert.strictEqual(active?.phone, "+79162345678");
 		});
 

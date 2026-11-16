@@ -2,8 +2,8 @@
  * telephonyCallerLookupRoutes.ts
  *
  * Fastify plugin providing high-performance caller resolution routes for Telephony Screen Pop:
- * - GET /:organizationId/lookup-caller
- * - GET /lookup-caller
+ * - GET /:organizationId/lookup
+ * - GET /lookup
  */
 
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -53,24 +53,4 @@ export const telephonyCallerLookupRoutes: FastifyPluginAsync = async (server) =>
 		Params: { organizationId?: string };
 		Querystring: { phone?: string; patientId?: string; organizationId?: string };
 	}>("/lookup", handleLookupCaller);
-
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { phone?: string; patientId?: string };
-	}>("/:organizationId/lookup-caller", handleLookupCaller);
-
-	server.get<{
-		Params: { organizationId?: string };
-		Querystring: { phone?: string; patientId?: string; organizationId?: string };
-	}>("/lookup-caller", handleLookupCaller);
-
-	server.get<{
-		Params: { organizationId: string };
-		Querystring: { phone?: string; patientId?: string };
-	}>("/:organizationId/caller-lookup", handleLookupCaller);
-
-	server.get<{
-		Params: { organizationId?: string };
-		Querystring: { phone?: string; patientId?: string; organizationId?: string };
-	}>("/caller-lookup", handleLookupCaller);
 };

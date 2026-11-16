@@ -22,8 +22,8 @@ export const TELEPHONY_DEMO_CALLS: TelephonyCatalogCall[] = [
 		somaticAlert: null,
 		durationSeconds: 165,
 		timestampText: "Сегодня, 10:42",
-		hasRecording: true,
-		recordingUrl: "/audio/call-sample.mp3",
+		hasRecording: false,
+		recordingUrl: undefined,
 		transcriptSnippet: "Пациент уточняет время контрольного осмотра после лечения пульпита зуба 36.",
 	},
 	{
@@ -57,8 +57,8 @@ export const TELEPHONY_DEMO_CALLS: TelephonyCatalogCall[] = [
 		somaticAlert: null,
 		durationSeconds: 75,
 		timestampText: "Вчера, 16:30",
-		hasRecording: true,
-		recordingUrl: "/audio/call-sample-2.mp3",
+		hasRecording: false,
+		recordingUrl: undefined,
 		transcriptSnippet: "Администратор подтвердил готовность ортопедической конструкции из лаборатории.",
 	},
 	{
@@ -75,8 +75,8 @@ export const TELEPHONY_DEMO_CALLS: TelephonyCatalogCall[] = [
 		somaticAlert: null,
 		durationSeconds: 200,
 		timestampText: "Вчера, 14:10",
-		hasRecording: true,
-		recordingUrl: "/audio/call-sample-2.mp3",
+		hasRecording: false,
+		recordingUrl: undefined,
 		transcriptSnippet: "Запись на плановую замену эластических лигатур на верхней челюсти.",
 	},
 	{

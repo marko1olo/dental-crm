@@ -41,6 +41,7 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 	className = "",
 }) => {
 	const doctor = upcomingAppointment?.doctorName || lastVisitSummary?.doctorName;
+	const showFinancialTile = hasDebt || (financialSummary.balanceRub || 0) > 0 || hasDms;
 
 	return (
 		<div className={`space-y-2 ${className}`}>
@@ -86,36 +87,34 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 			</div>
 
 			{/* Information Tiles Grid (Apple Health / Grouped Cards Style) */}
-			<div className="grid grid-cols-2 gap-2 text-xs">
-				{/* Tile 1: Financial Balance & Insurance */}
-				<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col justify-between gap-1 shadow-xs">
-					<div className="flex items-center justify-between gap-1">
-						<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
-							<Wallet size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
-							Баланс
-						</span>
-						{hasDms && (
-							<span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center gap-0.5 shrink-0">
-								<Shield size={9} className="text-sky-500" /> ДМС
+			<div className={`grid ${showFinancialTile ? "grid-cols-2" : "grid-cols-1"} gap-2 text-xs`}>
+				{/* Tile 1: Financial Balance & Insurance (0px visual noise for 99% norm when no debt/advance/DMS) */}
+				{showFinancialTile && (
+					<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col justify-between gap-1 shadow-xs">
+						<div className="flex items-center justify-between gap-1">
+							<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
+								<Wallet size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
+								Баланс
 							</span>
-						)}
+							{hasDms && (
+								<span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center gap-0.5 shrink-0">
+									<Shield size={9} className="text-sky-500" /> ДМС
+								</span>
+							)}
+						</div>
+						<div className="pt-0.5">
+							{hasDebt ? (
+								<span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+									Долг: {financialSummary.formattedDebt || `${Math.abs(financialSummary.debtRub || financialSummary.balanceRub || 0)} ₽`}
+								</span>
+							) : (
+								<span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+									Аванс: +{financialSummary.formattedBalance || `${financialSummary.balanceRub || 0} ₽`}
+								</span>
+							)}
+						</div>
 					</div>
-					<div className="pt-0.5">
-						{hasDebt ? (
-							<span className="text-xs font-bold text-rose-600 dark:text-rose-400">
-								Долг: {financialSummary.formattedDebt || `${Math.abs(financialSummary.debtRub || financialSummary.balanceRub || 0)} ₽`}
-							</span>
-						) : (financialSummary.balanceRub || 0) > 0 ? (
-							<span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-								Аванс: +{financialSummary.formattedBalance || `${financialSummary.balanceRub || 0} ₽`}
-							</span>
-						) : (
-							<span className="text-xs font-semibold text-[var(--muted,#64748b)]">
-								0 ₽ (нет долга)
-							</span>
-						)}
-					</div>
-				</div>
+				)}
 
 				{/* Tile 2: Appointment / Last Visit */}
 				<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col justify-between gap-1 shadow-xs">
@@ -140,7 +139,7 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 								data-testid="incoming-caller-doctor"
 							>
 								<User size={10} className="text-[var(--teal,#0d9488)] shrink-0" />
-								<span className="truncate max-w-[80px] sm:max-w-[110px]">{doctor}</span>
+								<span className="truncate max-w-[120px] sm:max-w-[180px]">{doctor}</span>
 							</span>
 						)}
 					</div>

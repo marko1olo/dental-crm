@@ -20,9 +20,11 @@ import {
 	playSafeWebAudioTone,
 	getWhatsAppUrl,
 	getSmsUrl,
+	resolveCanonicalCallStatus,
 	TELEPHONY_CALL_TYPES,
 	TELEPHONY_CATALOG_DATA,
 } from "../telephonyCatalogData";
+import { CallAudioEmptyState } from "../audioPlayer/CallAudioEmptyState";
 import { TelephonyStudioModal } from "../TelephonyStudioModal";
 
 describe("Telephony SSOT & Studio Inquisitor Suite", () => {
@@ -83,14 +85,31 @@ describe("Telephony SSOT & Studio Inquisitor Suite", () => {
 		}
 	});
 
-	it("8. SSOT Call Catalog contains rich clinical cases with somatic alerts & doctor assignments", () => {
+	it("8. SSOT Call Catalog contains rich clinical cases & canonical status sync (DEF-TEL-05, DEF-TEL-07)", () => {
 		assert.ok(TELEPHONY_CATALOG_DATA.length >= 5);
 		const callWithSomatic = TELEPHONY_CATALOG_DATA.find((c) => Boolean(c.somaticAlert));
 		assert.ok(callWithSomatic, "Catalog must contain patients with somatic alerts (allergies)");
 		assert.ok(callWithSomatic?.somaticAlert?.includes("лидокаин"));
 
-		const callWithRecording = TELEPHONY_CATALOG_DATA.find((c) => c.hasRecording);
-		assert.ok(callWithRecording, "Catalog must contain recorded calls with playback samples");
+		// DEF-TEL-05: Call with duration 0s must strictly resolve to 'missed'
+		assert.equal(resolveCanonicalCallStatus("completed", 0), "missed");
+		assert.equal(resolveCanonicalCallStatus("answered", 0), "missed");
+		assert.equal(resolveCanonicalCallStatus("completed", 120), "answered");
+
+		// DEF-TEL-07: Functional test for CallAudioEmptyState rendering without synthetic mp3s
+		const emptyPlayerHtml = renderToStaticMarkup(
+			<CallAudioEmptyState
+				transcriptUtterances={[]}
+				currentTime={0}
+				onSeekToUtterance={() => {}}
+				showTranscript={false}
+				onToggleShowTranscript={() => {}}
+				copiedTranscript={false}
+				onCopyTranscript={() => {}}
+			/>,
+		);
+		assert.ok(emptyPlayerHtml.includes('data-testid="call-audio-player-empty"'));
+		assert.ok(emptyPlayerHtml.includes("Запись разговора недоступна / звонок завершен"));
 	});
 
 	it("9. TelephonyStudioModal renders with exactly 1 Primary CTA button and no disabled locks (Mandates 8am, 8e)", () => {
