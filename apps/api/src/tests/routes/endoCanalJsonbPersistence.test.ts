@@ -2,6 +2,7 @@ import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import Fastify from "fastify";
 import { registerEndoRoutes } from "../../routes/odontogram/endoRoutes.js";
+import { registerStatusRoutes } from "../../routes/odontogram/statusRoutes.js";
 import { db } from "../../db/client.js";
 import { organizations, patients, toothStates, toothStateHistory } from "../../db/schema.js";
 import { and, eq } from "drizzle-orm";
@@ -32,6 +33,7 @@ describe("Red Team Endo JSONB & Wheeler Persistence [END-03..07]", () => {
 		});
 
 		registerEndoRoutes(app);
+		registerStatusRoutes(app);
 		await app.ready();
 
 		// Инициализация тестовой организации и пациента в БД
@@ -144,5 +146,46 @@ describe("Red Team Endo JSONB & Wheeler Persistence [END-03..07]", () => {
 		assert.equal(dbRow.notes, payload.notes);
 		assert.ok(Array.isArray(dbRow.canalMeasurements));
 		assert.equal((dbRow.canalMeasurements as any[]).length, 4);
+	});
+
+	it("[DEF-ENDO-01] POST /api/odontogram/status сохраняет canalMeasurements в toothStates без потерь", async () => {
+		const statusPayload = {
+			patientId: testPatientId,
+			toothNumber: 46, // Нижний моляр
+			toothNumbers: [46],
+			state: "Root_Canal_Treated",
+			canalMeasurements: [
+				{ canalName: "MB", workingLengthMm: 21.5, masterFile: "#25.04", apexLocatorReading: "0.0 (Apex)" },
+				{ canalName: "ML", workingLengthMm: 21.0, masterFile: "#25.04", apexLocatorReading: "0.0 (Apex)" },
+				{ canalName: "D", workingLengthMm: 22.0, masterFile: "#30.04", apexLocatorReading: "0.0 (Apex)" },
+			],
+			notes: "Обтурация каналов зуба 46",
+		};
+
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/odontogram/status",
+			payload: statusPayload,
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = res.json();
+		assert.equal(body.success, true);
+		assert.ok(Array.isArray(body.states));
+		assert.equal(body.states[0]?.toothNumber, 46);
+		assert.ok(Array.isArray(body.states[0]?.canalMeasurements));
+		assert.equal(body.states[0]?.canalMeasurements.length, 3, "canalMeasurements сохранены в statusRoutes.ts");
+
+		// Проверка чтения из БД
+		const [dbRow46] = await db.select().from(toothStates).where(
+			and(
+				eq(toothStates.organizationId, testOrgId),
+				eq(toothStates.patientId, testPatientId),
+				eq(toothStates.toothNumber, 46),
+			),
+		);
+		assert.ok(dbRow46);
+		assert.ok(Array.isArray(dbRow46.canalMeasurements));
+		assert.equal((dbRow46.canalMeasurements as any[]).length, 3);
 	});
 });

@@ -385,17 +385,14 @@ export function exportEndoToDiary(
 			);
 			// [END-07] Persist structured canal measurements into PostgreSQL 18 via Fastify API
 			if (params.patientId && params.patientId !== "cbct-patient") {
-				void fetch("/api/odontogram/status", {
+				void fetch(`/api/patients/${params.patientId}/tooth-states/${params.toothFdi}/endo`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
 					},
 					body: JSON.stringify({
-						patientId: params.patientId,
 						toothNumber: params.toothFdi,
-						toothNumbers: [params.toothFdi],
-						state: "Endo_Treated",
-						canalMeasurements: endoCanals.map((c) => ({
+						canals: endoCanals.map((c) => ({
 							canalName: c.canalName,
 							workingLengthMm: c.workingLengthMm,
 							referencePoint: c.referencePoint || "Режущий край / бугор",
@@ -406,9 +403,33 @@ export function exportEndoToDiary(
 							sealer: c.sealer || "AH Plus",
 							obturationTechnique: c.obturationTechnique || "Латеральная компакция",
 						})),
+						state: "Root_Canal_Treated",
 					}),
 				}).catch(() => {
-					// safe background sync fallback
+					// fallback to odontogram status endpoint
+					void fetch("/api/odontogram/status", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							patientId: params.patientId,
+							toothNumber: params.toothFdi,
+							toothNumbers: [params.toothFdi],
+							state: "Root_Canal_Treated",
+							canalMeasurements: endoCanals.map((c) => ({
+								canalName: c.canalName,
+								workingLengthMm: c.workingLengthMm,
+								referencePoint: c.referencePoint || "Режущий край / бугор",
+								apexLocatorReading: "0.0 (Apex)",
+								masterFile: c.masterApicalFile || "",
+								masterCone: "",
+								taper: c.taper || ".04",
+								sealer: c.sealer || "AH Plus",
+								obturationTechnique: c.obturationTechnique || "Латеральная компакция",
+							})),
+						}),
+					}).catch(() => {});
 				});
 			}
 		} catch {

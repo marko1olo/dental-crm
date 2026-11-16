@@ -13,6 +13,14 @@ import {
 import { getRequestIdentity, type RequestIdentity } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import {
+	areToothStatesSurfaceMergeable,
+	isCariesState,
+	isFillingState,
+	isImplantOrCrownState,
+	isTerminalIrreversibleState,
+	normalizeSurfaces,
+} from "../../services/sync/syncGateway/syncConflictResolver.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { ensurePatientInOrganization } from "./planHelpers.js";
 import {
@@ -49,6 +57,7 @@ async function applyToothStateMutation(
 		state: string;
 		surfaces?: string[] | null | undefined;
 		notes?: string | null | undefined;
+		canalMeasurements?: unknown[] | null | undefined;
 		clinicalData?: Record<string, unknown> | null | undefined;
 		visitId?: string | null | undefined;
 		updatedAt?: string | null | undefined;
@@ -78,6 +87,7 @@ async function applyToothStateMutation(
 				state: toothStates.state,
 				surfaces: toothStates.surfaces,
 				notes: toothStates.notes,
+				canalMeasurements: toothStates.canalMeasurements,
 				updatedAt: toothStates.updatedAt,
 				version: toothStates.version,
 			})
@@ -95,6 +105,7 @@ async function applyToothStateMutation(
 			state: string;
 			surfaces: unknown;
 			notes: string | null;
+			canalMeasurements: unknown | null;
 			updatedAt: Date | null;
 			version: number | null;
 		};
@@ -129,6 +140,12 @@ async function applyToothStateMutation(
 				const prevStateRaw = prev?.state ?? null;
 				const prevStateLower = (prevStateRaw ?? "").toLowerCase();
 
+				const isCompositeBase =
+					prevStateLower === "filled" ||
+					prevStateLower === "filling" ||
+					Boolean(prevClinical?.hasFilling) ||
+					Boolean(prevClinical?.fillingSurfaces);
+
 				const isOrthopedicBase =
 					prevStateLower === "crown" ||
 					prevStateLower === "temporary_crown" ||
@@ -143,7 +160,9 @@ async function applyToothStateMutation(
 					prevStateLower === "root_canal_treated" ||
 					Boolean(prevClinical?.hasCrown) ||
 					Boolean(prevClinical?.hasImplant) ||
-					Boolean(prevClinical?.baseState);
+					(Boolean(prevClinical?.baseState) &&
+						prevClinical?.baseState !== "Filled" &&
+						prevClinical?.baseState !== "filling");
 
 				const incomingLower = data.state.toLowerCase();
 				const isPathologyDefect =
@@ -159,6 +178,8 @@ async function applyToothStateMutation(
 					incomingLower.startsWith("mobility") ||
 					incomingLower.startsWith("furcation");
 
+				let effectiveState = data.state;
+				let effectiveSurfaces = data.surfaces ? normalizeSurfaces(data.surfaces) : null;
 				let effectiveNotes: string | null =
 					serializedClinicalNotes !== undefined
 						? serializedClinicalNotes
@@ -168,6 +189,23 @@ async function applyToothStateMutation(
 				let historyReason = data.clinicalData
 					? "Эндодонтический протокол / обработка каналов"
 					: (data.reason || null);
+
+				const rawPrevSurfaces = prev?.surfaces ? normalizeSurfaces(prev.surfaces) : [];
+				const clinicalFillingSurfaces = Array.isArray(prevClinical?.fillingSurfaces)
+					? normalizeSurfaces(prevClinical.fillingSurfaces as string[])
+					: [];
+				const prevSurfaces = rawPrevSurfaces.length > 0
+					? rawPrevSurfaces
+					: (clinicalFillingSurfaces.length > 0
+						? clinicalFillingSurfaces
+						: (isFillingState(prevStateLower) ? ["occlusal"] : []));
+				const incomingSurfaces = data.surfaces ? normalizeSurfaces(data.surfaces) : [];
+				const isSurfaceMergeable =
+					prev &&
+					!isOrthopedicBase &&
+					areToothStatesSurfaceMergeable(data.state, prevStateLower) &&
+					(incomingSurfaces.length > 0 || isCariesState(incomingLower)) &&
+					prevSurfaces.length > 0;
 
 				if (isOrthopedicBase && isPathologyDefect) {
 					// Наложение сопутствующей патологии на зуб с ортопедическим базисом [CLN-03]
@@ -225,6 +263,62 @@ async function applyToothStateMutation(
 					historyReason =
 						data.reason ||
 						`Выявлена сопутствующая патология: ${data.state} на конструкции ${baseStateName} (базис сохранен)`;
+				} else if (isSurfaceMergeable) {
+					// Surface Union Merge [MODBL]: слияние непересекающихся поверхностей кариеса и пломб
+					const intersection = incomingSurfaces.filter((s) => prevSurfaces.includes(s));
+					const mergedSurfaces = normalizeSurfaces([...prevSurfaces, ...incomingSurfaces]);
+					effectiveSurfaces = mergedSurfaces;
+
+					const prevFillingSurfaces: string[] = Array.isArray(prevClinical?.fillingSurfaces)
+						? (prevClinical.fillingSurfaces as string[])
+						: (isFillingState(prevStateLower) ? prevSurfaces : []);
+					const incomingFillingSurfaces: string[] = isFillingState(incomingLower) ? incomingSurfaces : [];
+					const combinedFillingSurfaces = normalizeSurfaces([
+						...prevFillingSurfaces.filter((s) => !intersection.includes(s)),
+						...incomingFillingSurfaces,
+					]);
+
+					const prevDefectSurfaces: string[] = Array.isArray(prevClinical?.defectSurfaces)
+						? (prevClinical.defectSurfaces as string[])
+						: (isCariesState(prevStateLower) ? prevSurfaces : []);
+					const incomingDefectSurfaces: string[] = isCariesState(incomingLower) ? incomingSurfaces : [];
+					const combinedDefectSurfaces = normalizeSurfaces([
+						...prevDefectSurfaces,
+						...incomingDefectSurfaces,
+					]);
+
+					const hasFilling = combinedFillingSurfaces.length > 0 || isFillingState(prevStateLower) || isFillingState(incomingLower);
+					const hasCaries = combinedDefectSurfaces.length > 0 || isCariesState(prevStateLower) || isCariesState(incomingLower);
+					const hasSecondaryCaries =
+						intersection.length > 0 &&
+						isCariesState(incomingLower) &&
+						(isFillingState(prevStateLower) || prevFillingSurfaces.length > 0);
+
+					if (isCariesState(incomingLower)) {
+						effectiveState = data.state;
+					} else if (isFillingState(incomingLower) && combinedDefectSurfaces.length > 0 && intersection.length === 0) {
+						effectiveState = data.state;
+					}
+
+					const compositeClinicalData = {
+						...(prevClinical || {}),
+						...(data.clinicalData || {}),
+						baseState: isCompositeBase ? "Filled" : (prevClinical?.baseState as string | undefined),
+						fillingSurfaces: combinedFillingSurfaces.length > 0 ? combinedFillingSurfaces : undefined,
+						defectSurfaces: combinedDefectSurfaces.length > 0 ? combinedDefectSurfaces : undefined,
+						hasFilling,
+						hasCaries,
+						hasSecondaryCaries: hasSecondaryCaries || Boolean(prevClinical?.hasSecondaryCaries),
+						compositeCondition: hasSecondaryCaries ? "defective" : (prevClinical?.compositeCondition || "adequate"),
+						lastPathology: isCariesState(incomingLower) ? data.state : prevClinical?.lastPathology,
+						lastPathologyAt: incomingUpdatedAt.toISOString(),
+					};
+
+					effectiveNotes = JSON.stringify(compositeClinicalData);
+					historyNewState = `${prevStateRaw} [${prevSurfaces.join(",")}] + ${data.state} [${incomingSurfaces.join(",")}]`;
+					historyReason =
+						data.reason ||
+						`Surface Union Merge (MODBL): сохранена пломба на [${combinedFillingSurfaces.join(",")}], кариес на [${combinedDefectSurfaces.join(",")}]`;
 				} else if (
 					!isPathologyDefect &&
 					(incomingLower === "crown" ||
@@ -253,6 +347,7 @@ async function applyToothStateMutation(
 						conditions: [],
 						curedConditions: cured,
 						restoredAt: incomingUpdatedAt.toISOString(),
+						fillingSurfaces: incomingLower === "filled" ? incomingSurfaces : undefined,
 					};
 
 					effectiveNotes = JSON.stringify(compositeClinicalData);
@@ -260,6 +355,11 @@ async function applyToothStateMutation(
 						data.reason ||
 						`Восстановление / ортопедическое лечение (${data.state})`;
 				}
+
+				const effectiveCanalMeasurements =
+					data.canalMeasurements !== undefined
+						? data.canalMeasurements
+						: (prev?.canalMeasurements ?? null);
 
 				// 1. Record transition into append-only tooth state history audit log
 				historyToInsert.push({
@@ -270,7 +370,8 @@ async function applyToothStateMutation(
 					previousState: prev?.state ?? null,
 					newState: historyNewState,
 					previousSurfaces: prev?.surfaces ?? null,
-					newSurfaces: data.surfaces || null,
+					newSurfaces: effectiveSurfaces || null,
+					canalMeasurements: effectiveCanalMeasurements,
 					changedByUserId: actorUserId,
 					reason: historyReason,
 					changedAt: incomingUpdatedAt,
@@ -282,14 +383,20 @@ async function applyToothStateMutation(
 					organizationId,
 					patientId,
 					toothNumber,
-					state: data.state,
-					surfaces: data.surfaces || null,
+					state: effectiveState,
+					surfaces: effectiveSurfaces || null,
 					notes: effectiveNotes,
+					canalMeasurements: effectiveCanalMeasurements,
 					updatedAt: incomingUpdatedAt,
 					isSynced: false,
 					version: Math.max(prevVersion + 1, incomingVersion, 1),
 				});
 			} else {
+				const effectiveCanalMeasurements =
+					data.canalMeasurements !== undefined
+						? data.canalMeasurements
+						: (prev?.canalMeasurements ?? null);
+
 				// Stale offline mutation: Server active state is newer and wins (LWW),
 				// but offline mutation transition is STILL appended to toothStateHistory for full 043/u audit trail!
 				historyToInsert.push({
@@ -301,6 +408,7 @@ async function applyToothStateMutation(
 					newState: data.state,
 					previousSurfaces: null,
 					newSurfaces: data.surfaces || null,
+					canalMeasurements: effectiveCanalMeasurements,
 					changedByUserId: actorUserId,
 					reason:
 						data.reason ||
@@ -334,6 +442,7 @@ async function applyToothStateMutation(
 				state: toothStates.state,
 				surfaces: toothStates.surfaces,
 				notes: toothStates.notes,
+				canalMeasurements: toothStates.canalMeasurements,
 				updatedAt: toothStates.updatedAt,
 			})
 			.from(toothStates)
@@ -350,6 +459,7 @@ async function applyToothStateMutation(
 			state: row.state,
 			surfaces: row.surfaces,
 			notes: row.notes,
+			canalMeasurements: row.canalMeasurements ?? null,
 			updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
 			clinicalData: parseClinicalDataFromNotes(row.notes),
 		}));
@@ -427,6 +537,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
 				state: toothStates.state,
 				surfaces: toothStates.surfaces,
 				notes: toothStates.notes,
+				canalMeasurements: toothStates.canalMeasurements,
 				updatedAt: toothStates.updatedAt,
 			})
 			.from(toothStates)
@@ -450,6 +561,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			state: row.state,
 			surfaces: row.surfaces,
 			notes: row.notes,
+			canalMeasurements: row.canalMeasurements ?? null,
 			updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
 			clinicalData: parseClinicalDataFromNotes(row.notes),
 		}));

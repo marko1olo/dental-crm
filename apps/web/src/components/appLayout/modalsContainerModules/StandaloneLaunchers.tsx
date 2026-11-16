@@ -25,7 +25,7 @@ import { DirectAnalyticsLauncher } from "../../analytics/DirectAnalyticsLauncher
 
 // Канонический ре-экспорт для модулей и SSOT-тестов
 export { DirectLoyaltyLauncher } from "../../loyalty/DirectLoyaltyLauncher";
-export { DirectDentalLabLauncher, DirectLabLauncher } from "../../lab/DirectDentalLabLauncher";
+export { DirectDentalLabLauncher, DirectDentalLabOrderLauncher } from "../../lab/DirectDentalLabLauncher";
 export { DirectConsentLauncher } from "../../consents/DirectConsentLauncher";
 export { DirectUkepSigningLauncher } from "../../documents/ukep/DirectUkepSigningLauncher";
 export { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLauncher";
@@ -45,6 +45,10 @@ export function renderStandaloneLaunchers(
 		typeof window !== "undefined" &&
 		(window.location.search.includes("stand=") ||
 			window.location.search.includes("demo=true") ||
+			window.location.search.includes("endo") ||
+			window.location.hash.includes("endo") ||
+			window.location.search.includes("ortho") ||
+			window.location.hash.includes("ortho") ||
 			window.location.search.includes("dicom") ||
 			window.location.hash.includes("capture") ||
 			window.location.hash.includes("rvg") ||

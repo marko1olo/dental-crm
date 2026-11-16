@@ -119,9 +119,42 @@ export function executeChairsideTransferToDiary({
 			}));
 
 			if (billing.materials.length > 0) {
-				fetch("/api/inventory/batch-deduct", {
-					method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({ items: billing.materials.map((m) => ({ itemId: m.itemId, qty: m.quantity, name: m.itemName })), notes: `Эндодонтический протокол зуба #${activeTooth}` }),
+				window.dispatchEvent(new CustomEvent("dente-warehouse-material-deducted", {
+					detail: {
+						toothNumber: activeTooth,
+						stageStamp,
+						materials: billing.materials,
+						allowSoftOverdraft: true,
+						reason: `Обтурация каналов зуба #${activeTooth} (Мандат 8aa Soft Negative Stock)`,
+					},
+				}));
+				window.dispatchEvent(new CustomEvent("dente-inventory-writeoff-batch", {
+					detail: {
+						toothNumber: activeTooth,
+						stageStamp,
+						materials: billing.materials,
+						allowSoftOverdraft: true,
+						reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
+					},
+				}));
+
+				fetch("/api/inventory/soft-overdraft-deduct", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						toothNumber: activeTooth,
+						patientId,
+						stageStamp,
+						allowSoftOverdraft: true,
+						materials: billing.materials.map((m) => ({
+							itemId: m.itemId,
+							itemName: m.itemName,
+							quantity: m.quantity,
+							unit: m.unit,
+							costPriceKopecks: m.costPriceKopecks,
+						})),
+						notes: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
+					}),
 				}).catch(() => {});
 			}
 		}
