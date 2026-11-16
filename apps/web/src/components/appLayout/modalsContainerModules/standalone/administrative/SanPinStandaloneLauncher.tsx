@@ -6,7 +6,6 @@
 
 import React from "react";
 import { DirectSanpinLauncher } from "../../../../sanpin/DirectSanpinLauncher";
-import { DirectSterilizationLauncher } from "../../../../sanpin/DirectSterilizationLauncher";
 
 export function renderSanPinStandaloneLauncher(): React.ReactElement | null {
 	if (typeof window === "undefined") return null;
@@ -14,22 +13,15 @@ export function renderSanPinStandaloneLauncher(): React.ReactElement | null {
 	const h = window.location.hash || "";
 	const search = new URLSearchParams(s);
 
-	const isSterilization =
+	const isSterilizationOrSanPin =
 		search.get("sterilization") === "1" ||
 		search.get("autoclave") === "1" ||
+		search.get("sanpin") === "1" ||
 		h.includes("sterilization") ||
 		h.includes("autoclave") ||
-		h.includes("sanpin-autoclave");
-
-	if (isSterilization) {
-		return <DirectSterilizationLauncher />;
-	}
-
-	const isSanPin =
-		search.get("sanpin") === "1" ||
 		h.includes("sanpin");
 
-	if (!isSanPin) return null;
+	if (!isSterilizationOrSanPin) return null;
 
 	return <DirectSanpinLauncher />;
 }
