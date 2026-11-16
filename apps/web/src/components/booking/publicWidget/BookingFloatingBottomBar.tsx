@@ -40,11 +40,11 @@ export const BookingFloatingBottomBar: React.FC<BookingFloatingBottomBarProps> =
 		>
 			<div className="dbw-floating-bar-inner">
 				<div className="dbw-floating-bar-summary min-w-0 flex-1">
-					<div className="dbw-floating-summary-service truncate text-xs font-bold text-slate-900 dark:text-slate-100">
+					<div className="dbw-floating-summary-service truncate text-xs font-bold text-[var(--text-main)]">
 						{selectedCategory.title}
 					</div>
-					<div className="dbw-floating-summary-meta text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
-						<span className="font-semibold text-teal-600 dark:text-teal-400">
+					<div className="dbw-floating-summary-meta text-[11px] text-[var(--text-muted)] truncate flex items-center gap-1.5">
+						<span className="font-semibold text-[var(--primary)]">
 							{selectedCategory.priceLabel}
 						</span>
 						<span>•</span>

@@ -481,6 +481,7 @@ export class TelegramReferralLoyaltyService {
 					doctorId: resolvedDoctorUserId,
 					startDate: startDateTime,
 					endDate: endDateTime,
+					patientId: targetPatientId,
 					patientName: targetPatient.fullName,
 					patientPhone: targetPatient.phone || "",
 					comment: booking.complaintNotes

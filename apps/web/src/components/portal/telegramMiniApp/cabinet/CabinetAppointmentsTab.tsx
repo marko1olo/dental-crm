@@ -78,7 +78,7 @@ export const CabinetAppointmentsTab: React.FC<CabinetAppointmentsTabProps> = mem
 							<div className="tg-appointment-header">
 								<div>
 									<div className="tg-appointment-datetime">
-										<Calendar size={14} className="text-teal-400" />
+										<Calendar size={14} className="text-[var(--primary)]" />
 										<span>{app.dateStr} в {app.timeStr}</span>
 									</div>
 									<div className="tg-appointment-cabinet">
@@ -122,7 +122,7 @@ export const CabinetAppointmentsTab: React.FC<CabinetAppointmentsTabProps> = mem
 								</div>
 							</div>
 
-							{/* Футер карточки визита с кнопками в 1 тап */}
+							{/* Действия по визиту */}
 							{!app.isPast ? (
 								<div className="tg-appointment-actions">
 									{!app.isConfirmed ? (
@@ -136,7 +136,7 @@ export const CabinetAppointmentsTab: React.FC<CabinetAppointmentsTabProps> = mem
 										</button>
 									) : (
 										<div className="tg-confirmed-note">
-											<ShieldCheck size={14} className="text-teal-400" />
+											<ShieldCheck size={14} className="text-[var(--primary)]" />
 											<span>Вы подтвердили визит. Доктор ожидает вас в клинике!</span>
 										</div>
 									)}

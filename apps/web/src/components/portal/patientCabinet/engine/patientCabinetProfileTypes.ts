@@ -15,10 +15,15 @@ export interface PatientPersonalCabinetData {
 	readonly cardNumber?: string | undefined;
 	readonly cardNumberRu?: string | undefined;
 	readonly inn?: string | undefined;
+	readonly passportSeries?: string | undefined;
+	readonly passportNumber?: string | undefined;
+	readonly passportIssuedDate?: string | undefined;
+	readonly passport?: string | undefined;
 	readonly clinicInfo?: {
 		readonly nameRu?: string | undefined;
 		readonly legalName?: string | undefined;
 		readonly licenseNumber?: string | undefined;
+		readonly licenseDate?: string | undefined;
 		readonly inn?: string | undefined;
 		readonly kpp?: string | undefined;
 		readonly ogrn?: string | undefined;

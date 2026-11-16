@@ -11,7 +11,7 @@
 import React from "react";
 import { RefreshCw, Sparkles, X } from "lucide-react";
 import { formatRubles } from "../patientCabinetEngine.js";
-import { TaxDeductionCertificateModal } from "../../../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../../../documents/DocumentsStudioModal";
 import { MobileSelfCheckinModal } from "../../selfCheckin/index";
 import { OverviewTab, InvoicesTab, DocumentsTab, FamilyTab } from "../tabs/index.js";
 import {

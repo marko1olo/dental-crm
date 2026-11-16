@@ -31,9 +31,23 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 	const selectedCategory: BookingCategoryOption = useMemo(() => CANONICAL_BOOKING_CATEGORIES.find((c) => c.id === selectedCategoryId) || CANONICAL_BOOKING_CATEGORIES[0]!, [selectedCategoryId]);
 
 	const activeDoctors: BookingDoctorData[] = useMemo(() => {
-		if (customDoctors && customDoctors.length > 0) return customDoctors.map((doc: any) => ({ ...doc, categoryIds: doc.categoryIds ?? ["all"], experienceYears: doc.experienceYears ?? 0, rating: doc.rating ?? 0, reviewsCount: doc.reviewsCount ?? 0 }));
+		if (customDoctors && customDoctors.length > 0) {
+			return customDoctors.map((doc: BookingDoctorData) => ({
+				...doc,
+				categoryIds: doc.categoryIds ?? ["all"],
+				experienceYears: doc.experienceYears ?? 0,
+				rating: doc.rating ?? 0,
+				reviewsCount: doc.reviewsCount ?? 0,
+			}));
+		}
 		if (avail.loadedDoctors && avail.loadedDoctors.length > 0) return avail.loadedDoctors;
-		return DEFAULT_DOCTORS_LIST.map((doc: any) => ({ ...doc, categoryIds: doc.categoryIds ?? ["all"], experienceYears: doc.experienceYears ?? 0, rating: doc.rating ?? 0, reviewsCount: doc.reviewsCount ?? 0 }));
+		return DEFAULT_DOCTORS_LIST.map((doc) => ({
+			...doc,
+			categoryIds: doc.categoryIds ?? ["all"],
+			experienceYears: doc.experienceYears ?? 0,
+			rating: doc.rating ?? 0,
+			reviewsCount: doc.reviewsCount ?? 0,
+		}));
 	}, [customDoctors, avail.loadedDoctors]);
 
 	const isSoloDoctor = activeDoctors.length === 1;
@@ -98,8 +112,9 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 			}
 			handleStepChange(5);
 			onSuccess?.(finalData);
-		} catch (err: any) {
-			setSubmitError(err.message || "Сбой связи с сервером клиники");
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Сбой связи с сервером клиники";
+			setSubmitError(message);
 			setIsSubmitting(false);
 		}
 	};

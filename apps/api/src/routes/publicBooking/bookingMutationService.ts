@@ -22,6 +22,7 @@ export interface BookingMutationParams {
 	endDate: Date;
 	patientName: string;
 	patientPhone: string;
+	patientId?: string | undefined;
 	comment?: string | undefined;
 	source?: string | undefined;
 	utmSource?: string | undefined;
@@ -116,23 +117,46 @@ export async function executeBookingTransaction(
 	}
 
 	// 2. Identify and lock/create patient
-	const phoneDigits = normalizePhoneDigits(patientPhone);
-	const [existingByPhone] = await tx
-		.select({ id: patients.id, status: patients.status })
-		.from(patients)
-		.where(
-			and(
-				eq(patients.organizationId, organizationId),
-				or(
-					eq(patients.phone, patientPhone),
-					eq(patients.phone, phoneDigits),
-				),
-			),
-		)
-		.limit(1);
+	let patientId = params.patientId;
+	let patientStatus: string | undefined;
 
-	let patientId = existingByPhone?.id;
-	let patientStatus = existingByPhone?.status;
+	if (patientId) {
+		const [p] = await tx
+			.select({ id: patients.id, status: patients.status })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, organizationId),
+					eq(patients.id, patientId),
+				),
+			)
+			.limit(1);
+		if (p) {
+			patientStatus = p.status;
+		} else {
+			patientId = undefined;
+		}
+	}
+
+	if (!patientId) {
+		const phoneDigits = normalizePhoneDigits(patientPhone);
+		const [existingByPhone] = await tx
+			.select({ id: patients.id, status: patients.status })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, organizationId),
+					or(
+						eq(patients.phone, patientPhone),
+						eq(patients.phone, phoneDigits),
+					),
+				),
+			)
+			.limit(1);
+
+		patientId = existingByPhone?.id;
+		patientStatus = existingByPhone?.status;
+	}
 
 	if (!patientId) {
 		const last10 = phoneDigits.slice(-10);

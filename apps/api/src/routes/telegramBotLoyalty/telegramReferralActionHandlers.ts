@@ -226,7 +226,7 @@ export async function registerTelegramReferralActionRoutes(app: FastifyInstance)
 	});
 
 	/**
-	 * 10. Подтверждение записи ребенка / члена семьи родителем в 1 клик:
+	 * 10. Подтверждение записи члена семьи родителем (семейный профиль):
 	 */
 	const handleFamilyConfirm = async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = familyConfirmSchema.safeParse(request.body);

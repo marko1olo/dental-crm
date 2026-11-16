@@ -12,6 +12,7 @@ import {
 	appointments,
 	clinics,
 	communicationTasks,
+	denteTelegramBotConfigs,
 	patients,
 	visits,
 } from "../../../db/schema.js";
@@ -57,6 +58,20 @@ async function resolveOptimalPostVisitChannel(
 		const tgChatId = await resolveTelegramChatId(organizationId, patientId);
 		if (tgChatId) return "telegram";
 
+		const [tgConfig] = await tx
+			.select({ mode: denteTelegramBotConfigs.mode })
+			.from(denteTelegramBotConfigs)
+			.where(eq(denteTelegramBotConfigs.organizationId, organizationId))
+			.limit(1);
+
+		if (tgConfig?.mode && tgConfig.mode !== "disabled") {
+			return "telegram";
+		}
+
+		if (process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN) {
+			return "telegram";
+		}
+
 		const [p] = await tx
 			.select({ phone: patients.phone })
 			.from(patients)
@@ -70,7 +85,7 @@ async function resolveOptimalPostVisitChannel(
 	} catch {
 		// fallback
 	}
-	return "whatsapp";
+	return "telegram";
 }
 
 export class TelegramPostOpCarePipeline {

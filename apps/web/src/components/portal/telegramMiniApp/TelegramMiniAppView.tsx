@@ -15,12 +15,18 @@ import type { FamilyMember } from "./TelegramMiniAppTopHeader";
 import type { ToothComplaint } from "./TelegramInteractiveToothPicker";
 import { useTelegramMiniAppState } from "./useTelegramMiniAppState";
 
-interface TelegramLinkWindow {
-	Telegram?: {
-		WebApp?: {
-			openTelegramLink?: (url: string) => void;
-		};
-	};
+declare global {
+	interface Window {
+		Telegram?: {
+			readonly WebApp?: {
+				readonly initData?: string | undefined;
+				readonly HapticFeedback?: {
+					readonly impactOccurred?: (style: "light" | "medium" | "heavy") => void;
+				} | undefined;
+				readonly openTelegramLink?: (url: string) => void;
+			} | undefined;
+		} | undefined;
+	}
 }
 
 export type TelegramTab = "teeth" | "odontogram" | "booking" | "emr" | "cabinet" | "appointments" | "imaging" | "tax" | "finance";
@@ -104,9 +110,11 @@ export const TelegramMiniAppView: React.FC<TelegramMiniAppViewProps> = memo(({
 						state.triggerHaptic("medium");
 						const link = `https://t.me/DenteClinicBot?start=ref_${propPatientId || "friend"}`;
 						const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("Дарю 1000 ₽ в DENTE")}`;
-						const tgWin = window as unknown as TelegramLinkWindow;
-						if (tgWin.Telegram?.WebApp?.openTelegramLink) tgWin.Telegram.WebApp.openTelegramLink(url);
-						else window.open(url, "_blank");
+						if (window.Telegram?.WebApp?.openTelegramLink) {
+							window.Telegram.WebApp.openTelegramLink(url);
+						} else {
+							window.open(url, "_blank");
+						}
 					}}
 				/>
 			)}

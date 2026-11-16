@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import type { ToothComplaint } from "../TelegramInteractiveToothPicker";
+import { downloadPatientTaxCertificate1151156 } from "../../patientCabinet/documents/documentsTaxCertificate";
+import type { PatientPersonalCabinetData } from "../../patientCabinet/patientCabinetEngine";
 import {
 	DEMO_APPOINTMENTS,
 	DEMO_FAMILY_MEMBERS,
@@ -285,7 +287,7 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 	const handleShareReferral = useCallback(() => {
 		triggerHaptic("medium");
 		const link = `https://t.me/DenteClinicBot?start=ref_${propPatientId || "ivanov"}`;
-		const shareText = "Дарю сертификат 1 000 ₽ на лечение и чистку в клинике DENTE! Запись онлайн в 1 тап:";
+		const shareText = "Дарю сертификат 1 000 ₽ на лечение и чистку в клинике DENTE! Запись на приём:";
 		const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
 
 		if (window.Telegram?.WebApp?.openTelegramLink) {
@@ -300,11 +302,80 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		setAppointmentFilter("upcoming");
 	}, []);
 
-	const handleDownloadTaxCert = useCallback(() => {
+	const handleDownloadTaxCert = useCallback(async () => {
 		triggerHaptic("medium");
 		setTaxCopiedNotice(true);
-		setTimeout(() => setTaxCopiedNotice(false), 3000);
-	}, [triggerHaptic]);
+
+		const cabinetData: PatientPersonalCabinetData = {
+			patientId: propPatientId || "telegram-patient",
+			fullName: payerFullName.trim() || "Пациент",
+			phone: "",
+			inn: payerInn.trim() || undefined,
+			birthDate: undefined,
+			cardNumber: `TG-${(propPatientId || "PATIENT").slice(0, 6).toUpperCase()}`,
+			curatingDoctor: "Барабаш Сергей Владимирович",
+			loyaltyBonusBalance: bonusBalance,
+			loyaltyTierRu: "Базовый",
+			appointments: appointments.map((app) => ({
+				id: app.id,
+				dateIso: `${taxYear}-06-15T14:00:00.000Z`,
+				dateRu: app.dateStr,
+				time: app.timeStr,
+				doctorName: app.doctorName,
+				doctorSpecialtyRu: app.doctorRole,
+				procedureTitleRu: app.procedureTitle,
+				status: (app.isPast ? "completed" : "scheduled") as const,
+				cabinetRu: app.cabinet,
+				costRub: app.costRub,
+			})),
+			treatmentPlans: [],
+			invoices: appointments.map((app, idx) => {
+				const cost = totalYearExpense > 0 ? Math.round(totalYearExpense / (appointments.length || 1)) : 15000;
+				const title = serviceCode === "2" ? "Дентальная имплантация (дорогостоящее лечение)" : (app.procedureTitle || "Стоматологическое лечение");
+				return {
+					id: `inv-${app.id || idx}`,
+					invoiceNumber: `Ч-${idx + 1}`,
+					issueDateIso: `${taxYear}-06-15`,
+					paidAtIso: `${taxYear}-06-15`,
+					titleRu: title,
+					totalAmountRub: cost,
+					paidAmountRub: cost,
+					remainingAmountRub: 0,
+					status: "paid" as const,
+					fiscalReceiptNumber: `ФД-${1000 + idx}`,
+					items: [{
+						code: serviceCode === "2" ? "A16.07.054.001" : "A16.07.002.001",
+						titleRu: title,
+						quantity: 1,
+						priceRub: cost,
+						totalRub: cost,
+					}],
+				};
+			}),
+			warranties: [],
+			passport: payerPassport.trim() || undefined,
+		};
+
+		try {
+			await downloadPatientTaxCertificate1151156(cabinetData, taxYear);
+			setIsTaxCertGenerated(true);
+		} catch (err: unknown) {
+			console.error("Failed to download tax certificate:", err);
+		} finally {
+			setTimeout(() => setTaxCopiedNotice(false), 3000);
+		}
+	}, [
+		triggerHaptic,
+		propPatientId,
+		payerFullName,
+		payerInn,
+		bonusBalance,
+		appointments,
+		taxYear,
+		totalYearExpense,
+		serviceCode,
+		payerPassport,
+	]);
 
 	return {
 		isDemo,

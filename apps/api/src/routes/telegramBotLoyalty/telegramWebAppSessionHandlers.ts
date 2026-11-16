@@ -14,6 +14,18 @@ import {
 	webAppSessionSchema,
 } from "./telegramLoyaltySchemas.js";
 
+interface TelegramPatientAdministrativeProfile {
+	telegramUserId?: string | undefined;
+	[key: string]: unknown;
+}
+
+function getAdministrativeProfile(profile: unknown): TelegramPatientAdministrativeProfile {
+	if (profile && typeof profile === "object" && !Array.isArray(profile)) {
+		return profile as TelegramPatientAdministrativeProfile;
+	}
+	return {};
+}
+
 /**
  * Регистрация маршрутов сессии и бронирования Telegram WebApp
  */
@@ -74,11 +86,12 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 						.limit(1);
 					if (pByPhone) {
 						authenticatedPatient = pByPhone;
+						const currentProfile = getAdministrativeProfile(pByPhone.administrativeProfile);
 						await db
 							.update(patients)
 							.set({
 								administrativeProfile: {
-									...((pByPhone.administrativeProfile as Record<string, unknown>) || {}),
+									...currentProfile,
 									telegramUserId: String(tgUser.id),
 								},
 							})
@@ -94,7 +107,8 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 						.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
 						.limit(1);
 					if (pById) {
-						const linkedTgId = (pById.administrativeProfile as Record<string, unknown> | null)?.telegramUserId;
+						const currentProfile = getAdministrativeProfile(pById.administrativeProfile);
+						const linkedTgId = currentProfile.telegramUserId;
 						if (linkedTgId && String(linkedTgId) !== String(tgUser.id)) {
 							return reply.status(403).send({
 								error: "Forbidden",
@@ -107,7 +121,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 								.update(patients)
 								.set({
 									administrativeProfile: {
-										...((pById.administrativeProfile as Record<string, unknown>) || {}),
+										...currentProfile,
 										telegramUserId: String(tgUser.id),
 									},
 								})
@@ -215,46 +229,10 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 				});
 			});
 		} catch (err) {
-			if (isDbConnectionError(err) && (process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)) {
-				const guestPatientId = patientId || "test-patient-id";
-				return reply.send({
-					success: true,
-					authenticated: true,
-					patient: {
-						id: guestPatientId,
-						fullName: "Иванов Иван Иванович",
-						phone: phone || "+79001234567",
-						birthDate: "1985-04-10",
-						bonusBalanceRub: 1000,
-					},
-					family: {
-						familyGroupId: "fam-test-1",
-						familyGroupName: "Семья Ивановых",
-						headPatientId: guestPatientId,
-						familyBalanceRub: 1500,
-						members: [
-							{
-								patientId: guestPatientId,
-								fullName: "Иванов Иван Иванович",
-								birthDate: "1985-04-10",
-								phone: "+79001234567",
-								relation: "self",
-								activeBonusPoints: 1000,
-								upcomingAppointmentsCount: 1,
-							},
-							{
-								patientId: "child-test-1",
-								fullName: "Иванов Миша Иванович",
-								birthDate: "2018-05-12",
-								phone: "+79001234567",
-								relation: "child",
-								activeBonusPoints: 500,
-								upcomingAppointmentsCount: 1,
-							},
-						],
-					},
-					upcomingAppointments: [],
-					pastVisits: [],
+			if (isDbConnectionError(err)) {
+				return reply.status(503).send({
+					error: "DB_CONNECTION_FAILED",
+					message: "Сервер базы данных временно недоступен. Пожалуйста, повторите попытку через минуту.",
 				});
 			}
 			throw err;
@@ -362,43 +340,18 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 				return reply.send({ success: true, schedule: weekSlots });
 			});
 		} catch (err) {
-			if (isDbConnectionError(err) && (process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)) {
-				const daysRu = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-				const standardSlots = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00", "18:30"];
-				const weekSlots: Array<{
-					date: string;
-					dayOfWeek: string;
-					doctors: Array<{
-						doctorId: string;
-						doctorName: string;
-						specialty: string | null;
-						slots: string[];
-					}>;
-				}> = [];
-				for (let i = 0; i < 7; i++) {
-					const d = new Date();
-					d.setDate(d.getDate() + i);
-					weekSlots.push({
-						date: d.toISOString().split("T")[0] || "",
-						dayOfWeek: daysRu[d.getDay()] || "",
-						doctors: [
-							{
-								doctorId: "doc-1",
-								doctorName: "Доктор Смирнова Анна Павловна",
-								specialty: "Врач-стоматолог",
-								slots: standardSlots,
-							},
-						],
-					});
-				}
-				return reply.send({ success: true, schedule: weekSlots });
+			if (isDbConnectionError(err)) {
+				return reply.status(503).send({
+					error: "DB_CONNECTION_FAILED",
+					message: "Сервер базы данных временно недоступен. Пожалуйста, повторите попытку через минуту.",
+				});
 			}
 			throw err;
 		}
 	});
 
 	/**
-	 * 4. Запись в 1 тап из Telegram WebApp:
+	 * 4. Запись на приём из Telegram WebApp:
 	 */
 	app.post("/api/telegram/webapp/book", async (request: FastifyRequest, reply: FastifyReply) => {
 		const parsed = webAppBookingSchema.safeParse(request.body);

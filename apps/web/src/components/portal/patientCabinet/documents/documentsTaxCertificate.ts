@@ -1,3 +1,4 @@
+import { DEFAULT_CLINIC_LEGAL_REQUISITES } from "@dental/shared";
 import {
 	generateFnsNdflPrintHtml,
 	type FnsNdflFiscalReceiptItem,
@@ -46,21 +47,21 @@ export function generatePatientTaxCertificate1151156(
 		}
 	}
 
-	const clinicName = data.clinicInfo?.legalName || data.clinicInfo?.nameRu || "ООО «Стоматологическая клиника ДЕНТЕ»";
-	const clinicInn = data.clinicInfo?.inn || "7841098765";
-	const clinicKpp = (data.clinicInfo as any)?.kpp || "784101001";
-	const clinicOgrn = data.clinicInfo?.ogrn || "1217800098765";
-	const clinicLicense = data.clinicInfo?.licenseNumber || "ЛО-78-01-011842 от 15.06.2021";
-	const clinicPhone = data.clinicInfo?.phone || "+7 (812) 345-67-89";
+	const clinicName = data.clinicInfo?.legalName || data.clinicInfo?.nameRu || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicFullName;
+	const clinicInn = data.clinicInfo?.inn || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicInn;
+	const clinicKpp = data.clinicInfo?.kpp || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicKpp;
+	const clinicOgrn = data.clinicInfo?.ogrn || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicOgrn;
+	const clinicLicense = data.clinicInfo?.licenseNumber || DEFAULT_CLINIC_LEGAL_REQUISITES.medicalLicenseNumber;
+	const clinicPhone = data.clinicInfo?.phone || DEFAULT_CLINIC_LEGAL_REQUISITES.clinicPhone;
+	const clinicLicenseDate = data.clinicInfo?.licenseDate || DEFAULT_CLINIC_LEGAL_REQUISITES.medicalLicenseDate;
 
-	const payerInn = (data as { inn?: string }).inn || "";
+	const payerInn = data.inn || "";
 	const payerBirthDate = data.birthDate || data.birthDateIso || "";
 
-	const rawDoc = data as Record<string, any>;
-	const passportSeriesNum = rawDoc.passportSeries && rawDoc.passportNumber
-		? `${rawDoc.passportSeries} ${rawDoc.passportNumber}`
-		: rawDoc.passport
-			? String(rawDoc.passport)
+	const passportSeriesNum = data.passportSeries && data.passportNumber
+		? `${data.passportSeries} ${data.passportNumber}`
+		: data.passport
+			? String(data.passport)
 			: undefined;
 
 	const payload: FnsNdflXmlPayload = {
@@ -72,16 +73,16 @@ export function generatePatientTaxCertificate1151156(
 			inn: clinicInn,
 			kpp: clinicKpp,
 			ogrn: clinicOgrn,
-			license: clinicLicense ? { number: clinicLicense, date: (data.clinicInfo as any)?.licenseDate || "15.06.2021" } : undefined,
+			license: clinicLicense ? { number: clinicLicense, date: clinicLicenseDate } : undefined,
 			phone: clinicPhone,
-			directorName: data.curatingDoctor || "",
+			directorName: data.curatingDoctor || DEFAULT_CLINIC_LEGAL_REQUISITES.chiefDoctorFullName || "",
 		},
 		payer: {
 			fullName: { family, given, patronymic },
 			inn: payerInn || undefined,
 			birthDate: payerBirthDate,
 			identityDocument: passportSeriesNum
-				? { docTypeCode: "21", seriesAndNumber: passportSeriesNum, issueDate: rawDoc.passportIssuedDate || undefined }
+				? { docTypeCode: "21", seriesAndNumber: passportSeriesNum, issueDate: data.passportIssuedDate || undefined }
 				: undefined,
 		},
 		patient: { kinshipCode: "1" },

@@ -182,4 +182,45 @@ describe("TelegramPatientPortalCabinet Decomposed Architecture Test Suite", () =
 		assert.ok(plansHtml.includes((120000).toLocaleString("ru-RU")));
 		assert.ok(plansHtml.includes("Согласован"));
 	});
+
+	it("8. Honest production mode (setRuntimeDemoMode(false)) renders without synthetic demo mock fixtures", () => {
+		setRuntimeDemoMode(false);
+		const html = renderToStaticMarkup(
+			createElement(TelegramPatientPortalCabinet, {
+				patientId: "real-prod-patient-123",
+				organizationId: "org-real-456",
+			}),
+		);
+
+		// Header reflects real 0-state or patient state
+		assert.ok(html.includes("DENTE Pocket Clinic"));
+		assert.ok(html.includes("Кабинет пациента"));
+
+		// Must NOT render hardcoded demo patient name or demo doctor from DEMO_APPOINTMENTS
+		assert.ok(!html.includes("Иванов Александр Сергеевич"));
+
+		// Honest Empty State for appointments when unhydrated
+		assert.ok(html.includes("Нет запланированных визитов"));
+		assert.ok(html.includes("Выберите удобное время для консультации или чистки"));
+		assert.ok(html.includes("+ Записаться"));
+	});
+
+	it("9. Honest production mode for tax deduction tab has no hardcoded demo values when setRuntimeDemoMode(false)", () => {
+		setRuntimeDemoMode(false);
+		const html = renderToStaticMarkup(
+			createElement(TelegramPatientPortalCabinet, {
+				patientId: "real-prod-patient-123",
+				initialTab: "tax",
+				initialTaxSheetOpen: true,
+			}),
+		);
+
+		// Tax Tab
+		assert.ok(html.includes("Налоговый вычет 13% (НДФЛ)"));
+		assert.ok(html.includes("Оформить справку для налоговой"));
+
+		// Must NOT have hardcoded demo INN in production
+		assert.ok(!html.includes("772481928301"));
+		assert.ok(!html.includes("Иванов Александр Сергеевич"));
+	});
 });
