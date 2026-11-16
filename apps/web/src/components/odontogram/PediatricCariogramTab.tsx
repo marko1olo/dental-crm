@@ -67,14 +67,14 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 						data-testid="cariogram-risk-low-btn"
 						className={`relative p-4 rounded-2xl border text-left transition-all min-h-[56px] cursor-pointer flex items-center justify-between gap-3 ${
 							currentLevel === "low"
-								? "bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-500/30 text-emerald-950 dark:text-emerald-100 font-bold"
-								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-emerald-400/50 text-[var(--odontogram-ink,var(--ink,#0f172a))]"
+								? "bg-[var(--success-soft)] border-[var(--success)] ring-2 ring-[var(--success)]/30 text-[var(--success)] font-bold"
+								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-[var(--success)]/50 text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
 						<div className="flex items-center gap-3">
-							<span className="w-4 h-4 rounded-full bg-emerald-500 shrink-0" />
+							<span className="w-4 h-4 rounded-full bg-[var(--success)] shrink-0" />
 							<div>
-								<div className="text-sm font-black text-emerald-800 dark:text-emerald-300">
+								<div className="text-sm font-black text-[var(--success)]">
 									Низкий риск
 								</div>
 								<div className="text-xs text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
@@ -83,7 +83,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 							</div>
 						</div>
 						{currentLevel === "low" && (
-							<Check className="w-5 h-5 text-emerald-600 shrink-0" />
+							<Check className="w-5 h-5 text-[var(--success)] shrink-0" />
 						)}
 					</button>
 
@@ -94,14 +94,14 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 						data-testid="cariogram-risk-moderate-btn"
 						className={`relative p-4 rounded-2xl border text-left transition-all min-h-[56px] cursor-pointer flex items-center justify-between gap-3 ${
 							currentLevel === "moderate"
-								? "bg-amber-500/15 border-amber-500 ring-2 ring-amber-500/30 text-amber-950 dark:text-amber-100 font-bold"
-								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-amber-500/50 text-[var(--odontogram-ink,var(--ink,#0f172a))]"
+								? "bg-[var(--warning-soft)] border-[var(--warning)] ring-2 ring-[var(--warning)]/30 text-[var(--warning)] font-bold"
+								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-[var(--warning)]/50 text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
 						<div className="flex items-center gap-3">
-							<span className="w-4 h-4 rounded-full bg-amber-500 shrink-0" />
+							<span className="w-4 h-4 rounded-full bg-[var(--warning)] shrink-0" />
 							<div>
-								<div className="text-sm font-black text-amber-800 dark:text-amber-300">
+								<div className="text-sm font-black text-[var(--warning)]">
 									Умеренный риск
 								</div>
 								<div className="text-xs text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
@@ -110,7 +110,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 							</div>
 						</div>
 						{currentLevel === "moderate" && (
-							<Check className="w-5 h-5 text-amber-600 shrink-0" />
+							<Check className="w-5 h-5 text-[var(--warning)] shrink-0" />
 						)}
 					</button>
 
@@ -121,14 +121,14 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 						data-testid="cariogram-risk-high-btn"
 						className={`relative p-4 rounded-2xl border text-left transition-all min-h-[56px] cursor-pointer flex items-center justify-between gap-3 ${
 							currentLevel === "high"
-								? "bg-red-500/15 border-red-500 ring-2 ring-red-500/30 text-red-950 dark:text-red-100 font-bold"
-								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-red-400/50 text-[var(--odontogram-ink,var(--ink,#0f172a))]"
+								? "bg-[var(--danger-soft)] border-[var(--danger)] ring-2 ring-[var(--danger)]/30 text-[var(--danger)] font-bold"
+								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-[var(--danger)]/50 text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
 						<div className="flex items-center gap-3">
-							<span className="w-4 h-4 rounded-full bg-red-500 shrink-0" />
+							<span className="w-4 h-4 rounded-full bg-[var(--danger)] shrink-0" />
 							<div>
-								<div className="text-sm font-black text-red-800 dark:text-red-300">
+								<div className="text-sm font-black text-[var(--danger)]">
 									Высокий риск
 								</div>
 								<div className="text-xs text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
@@ -137,7 +137,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 							</div>
 						</div>
 						{currentLevel === "high" && (
-							<Check className="w-5 h-5 text-red-600 shrink-0" />
+							<Check className="w-5 h-5 text-[var(--danger)] shrink-0" />
 						)}
 					</button>
 				</div>
@@ -156,7 +156,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs sm:text-sm text-[var(--odontogram-ink,var(--ink,#0f172a))] font-medium">
 					<div className="p-3.5 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-start gap-3 shadow-xs">
-						<ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+						<ShieldCheck className="w-5 h-5 text-[var(--success)] shrink-0 mt-0.5" />
 						<div>
 							<div className="font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))]">Профессиональная гигиена</div>
 							<div className="text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">{cariogramResult.preventiveProgram.professionalHygieneRu}</div>
@@ -164,7 +164,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-start gap-3 shadow-xs">
-						<Sparkles className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+						<Sparkles className="w-5 h-5 text-[var(--primary)] shrink-0 mt-0.5" />
 						<div>
 							<div className="font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))]">Фторирование и реминерализация</div>
 							<div className="text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">{cariogramResult.preventiveProgram.fluorideVarnishProtocolRu}</div>
@@ -172,7 +172,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-start gap-3 shadow-xs">
-						<Activity className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
+						<Activity className="w-5 h-5 text-[var(--primary)] shrink-0 mt-0.5" />
 						<div>
 							<div className="font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))]">Домашний уход</div>
 							<div className="text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">{cariogramResult.preventiveProgram.homeCareProtocolRu}</div>
@@ -180,7 +180,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-start gap-3 shadow-xs">
-						<Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+						<Info className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
 						<div>
 							<div className="font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))]">Диета и питание</div>
 							<div className="text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">{cariogramResult.preventiveProgram.dietaryGuidanceRu}</div>
@@ -195,7 +195,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 							onClick={handleInsert}
 							className="dente-btn dente-btn-secondary min-h-[44px] px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-2xs"
 						>
-							<Check className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<Check className="w-4 h-4 text-[var(--primary,#0d9488)]" />
 							<span>Вставить протокол Cariogram в карту</span>
 						</button>
 					</div>

@@ -135,7 +135,8 @@ describe("Red Team Inquisition: Pediatric Doctor Autonomy & Hero Diploma", () =>
 			assert.ok(html.includes("Герой: Артём Смирнов"), "Must contain child hero name");
 			assert.ok(html.includes("Клиника DENTE"), "Must contain clinic name");
 			assert.ok(html.includes("Д-р Иванов А.С."), "Must contain doctor name");
-			assert.ok(html.includes("size: A5 landscape"), "Must be styled for A5 landscape printing");
+			assert.ok(html.includes("size: auto"), "Must be styled for auto size adaptive printing");
+			assert.ok(html.includes("margin: 8mm"), "Must have 8mm margin");
 			assert.ok(html.includes("window.print()"), "Must invoke window.print on load");
 		});
 

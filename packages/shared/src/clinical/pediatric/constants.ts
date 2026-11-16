@@ -36,6 +36,13 @@ export const LOWER_PRIMARY_TEETH = PRIMARY_LOWER_TEETH;
 
 export const ALL_PRIMARY_TEETH = DECIDUOUS_TEETH;
 
+/**
+ * Canonical ReadonlySet of all 20 primary teeth (FDI 51..85)
+ * SSOT for fast O(1) membership checking across backend & frontend
+ */
+export const PRIMARY_TEETH_SET: ReadonlySet<number> = new Set<number>(ALL_PRIMARY_TEETH);
+export const PRIMARY_TEETH = PRIMARY_TEETH_SET;
+
 export const primaryToothNumberSchema = z
 	.number()
 	.int()

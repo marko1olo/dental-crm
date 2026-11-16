@@ -48,10 +48,10 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 										key={num}
 										className={`min-h-[44px] sm:min-h-[52px] min-w-[36px] sm:min-w-[48px] px-1 py-1 rounded-xl text-xs sm:text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 sm:gap-1 shadow-xs select-none transition-all ${
 											isErupting
-												? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
+												? "bg-[var(--warning-soft)] text-[var(--warning)] border-[var(--warning)] animate-pulse font-bold"
 												: isPrim
-													? "bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border-amber-400/50 hover:border-amber-500"
-													: "bg-teal-50 dark:bg-teal-950/30 text-teal-900 dark:text-teal-200 border-teal-400/50 hover:border-teal-500"
+													? "bg-[var(--warning-soft)] text-[var(--warning)] border-[var(--line-strong)] hover:border-[var(--warning)]"
+													: "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]/50 hover:border-[var(--primary)]"
 										}`}
 										title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 									>
@@ -81,10 +81,10 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 										key={num}
 										className={`min-h-[44px] sm:min-h-[52px] min-w-[36px] sm:min-w-[48px] px-1 py-1 rounded-xl text-xs sm:text-sm font-mono font-bold border flex flex-col items-center justify-center gap-0.5 sm:gap-1 shadow-xs select-none transition-all ${
 											isErupting
-												? "bg-amber-100 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 border-amber-500/60 animate-pulse font-bold"
+												? "bg-[var(--warning-soft)] text-[var(--warning)] border-[var(--warning)] animate-pulse font-bold"
 												: isPrim
-													? "bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 border-amber-400/50 hover:border-amber-500"
-													: "bg-teal-50 dark:bg-teal-950/30 text-teal-900 dark:text-teal-200 border-teal-400/50 hover:border-teal-500"
+													? "bg-[var(--warning-soft)] text-[var(--warning)] border-[var(--line-strong)] hover:border-[var(--warning)]"
+													: "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]/50 hover:border-[var(--primary)]"
 										}`}
 										title={isPrim ? `Молочный зуб ${num}` : `Постоянный зуб ${num}`}
 									>
@@ -113,7 +113,7 @@ export const PediatricArchVisualizer: React.FC<PediatricArchVisualizerProps> = (
 						}
 						className="dente-btn dente-btn-secondary w-full min-h-[48px] flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl text-sm sm:text-base font-bold transition-all cursor-pointer active:scale-[0.98] shadow-2xs"
 					>
-						<Sparkles className="w-5 h-5 shrink-0 text-[var(--teal,#0d9488)]" />
+						<Sparkles className="w-5 h-5 shrink-0 text-[var(--primary,#0d9488)]" />
 						<span>Применить возрастную формулу ({selectedAge.toFixed(1)} лет) к одонтограмме</span>
 					</button>
 				</div>

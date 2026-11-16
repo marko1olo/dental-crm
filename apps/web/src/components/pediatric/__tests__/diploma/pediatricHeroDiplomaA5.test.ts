@@ -20,7 +20,8 @@ describe("1-Click Hero Diploma Generation (A5 Landscape)", () => {
 		assert.ok(html.includes("Герой: Артём Смирнов"));
 		assert.ok(html.includes("Клиника DENTE"));
 		assert.ok(html.includes("Д-р Иванов А.С."));
-		assert.ok(html.includes("size: A5 landscape"));
+		assert.ok(html.includes("size: auto"));
+		assert.ok(html.includes("margin: 8mm"));
 		assert.ok(html.includes("window.print()"));
 	});
 

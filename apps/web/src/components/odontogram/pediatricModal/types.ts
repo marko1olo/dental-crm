@@ -1,8 +1,8 @@
+import { UPPER_PRIMARY_TEETH, LOWER_PRIMARY_TEETH } from "@dental/shared";
 import type { ToothData } from "../ToothChart";
 import type { ResorptionStagePercent } from "../pediatricDentitionEngine";
 
-export const UPPER_PRIMARY_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65] as const;
-export const LOWER_PRIMARY_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75] as const;
+export { UPPER_PRIMARY_TEETH, LOWER_PRIMARY_TEETH };
 
 export interface PediatricAgePreset {
 	readonly id: "primary" | "early_mixed" | "late_mixed" | "primary_3y" | "first_molar_6y" | "mixed_9y" | "permanent_12y";

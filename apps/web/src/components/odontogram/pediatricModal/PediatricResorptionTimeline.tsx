@@ -38,19 +38,19 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 			<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 space-y-4">
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 					<div>
-						<span className="text-xs sm:text-sm font-bold tracking-wider text-[var(--teal,#0d9488)]">
+						<span className="text-xs sm:text-sm font-bold tracking-wider text-[var(--primary,#0d9488)]">
 							Калькулятор смены зубов
 						</span>
 						<h3 className="text-base sm:text-lg font-black text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100">
 							Возраст ребенка:{" "}
-							<span className="text-[var(--teal,#0d9488)] font-bold">
+							<span className="text-[var(--primary,#0d9488)] font-bold">
 								{selectedAge.toFixed(1)} лет ({Math.round(selectedAge * 12)} мес.)
 							</span>
 						</h3>
 					</div>
 
 					{/* Stage Badge */}
-					<div className="inline-flex items-center gap-2 px-3.5 py-2 min-h-[38px] rounded-xl bg-[var(--teal-surface,rgba(20,184,166,0.12))] text-[var(--teal,#0d9488)] border border-[var(--teal-glow,rgba(20,184,166,0.25))] text-xs sm:text-sm font-bold">
+					<div className="inline-flex items-center gap-2 px-3.5 py-2 min-h-[38px] rounded-xl bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--primary)]/20 text-xs sm:text-sm font-bold">
 						<Clock className="w-4 h-4 shrink-0" />
 						<span>{timelineAnalysis.stageNameRu}</span>
 					</div>
@@ -74,8 +74,8 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 									onClick={() => onSelectAge(preset.targetAge)}
 									className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
 										isSelected
-											? "border-teal-600 bg-teal-500/15 dark:bg-teal-950/30 shadow-sm ring-2 ring-teal-500/20"
-											: "border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-800"
+											? "border-[var(--primary)] bg-[var(--primary-soft)] shadow-2xs ring-2 ring-[var(--primary)]/20"
+											: "border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 hover:border-[var(--primary)]/50 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-800"
 									}`}
 									data-testid={`pediatric-timeline-card-${preset.id}`}
 								>
@@ -84,7 +84,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 											<span className="text-xs sm:text-sm font-black text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100">
 												{preset.labelRu}
 											</span>
-											<span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-teal-500/15 text-teal-700 dark:text-teal-300">
+											<span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-[var(--primary-soft)] text-[var(--primary)]">
 												{preset.ageRangeRu}
 											</span>
 										</div>
@@ -94,7 +94,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 									</div>
 
 									<div className="mt-2.5 pt-2 border-t border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))]/60 dark:border-slate-800 flex items-center justify-between gap-2">
-										<span className="text-[11px] font-mono font-bold text-teal-700 dark:text-teal-300">
+										<span className="text-[11px] font-mono font-bold text-[var(--primary)]">
 											{preset.targetAge.toFixed(1)} лет
 										</span>
 										{onApplyAgeArch && (
@@ -122,7 +122,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 												title={`Применить формулу «${preset.labelRu}»`}
 												data-testid={`pediatric-timeline-apply-${preset.id}`}
 											>
-												<Sparkles className="w-4 h-4 shrink-0 text-[var(--teal,#0d9488)]" />
+												<Sparkles className="w-4 h-4 shrink-0 text-[var(--primary,#0d9488)]" />
 												<span>Применить</span>
 											</button>
 										)}
@@ -142,7 +142,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 						step="0.1"
 						value={selectedAge}
 						onChange={(e) => onSelectAge(Number.parseFloat(e.target.value))}
-						className="pediatric-age-slider w-full h-3 bg-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] rounded-lg appearance-none cursor-pointer accent-[var(--teal,#0d9488)] touch-none select-none"
+						className="pediatric-age-slider w-full h-3 bg-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] rounded-lg appearance-none cursor-pointer accent-[var(--primary,#0d9488)] touch-none select-none"
 						aria-label="Возраст ребенка для расчета смены прикуса"
 					/>
 					<div className="flex justify-between text-[11px] sm:text-xs md:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-mono font-bold select-none">
@@ -180,14 +180,14 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 						{timelineAnalysis.clinicalAlerts.map((alert, idx) => (
 							<div
 								key={idx}
-								className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 flex items-start gap-3"
+								className="p-4 rounded-2xl bg-[var(--warning-soft)] border border-[var(--warning)]/30 flex items-start gap-3"
 							>
-								<AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+								<AlertCircle className="w-5 h-5 text-[var(--warning)] shrink-0 mt-0.5" />
 								<div className="space-y-1">
-									<div className="text-sm font-bold text-amber-900 dark:text-amber-200">
+									<div className="text-sm font-bold text-[var(--warning)]">
 										{alert.titleRu}
 									</div>
-									<div className="text-xs sm:text-sm text-amber-800/85 dark:text-amber-300/85 leading-relaxed font-medium">
+									<div className="text-xs sm:text-sm text-[var(--odontogram-ink,var(--ink,#0f172a))]/85 leading-relaxed font-medium">
 										{alert.textRu}
 									</div>
 								</div>
@@ -221,7 +221,7 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 										key={st.fdiNumber}
 										className="hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))]/60 transition-colors"
 									>
-										<td className="p-3.5 font-mono font-bold text-[var(--teal,#0d9488)] text-sm sm:text-base">
+										<td className="p-3.5 font-mono font-bold text-[var(--primary,#0d9488)] text-sm sm:text-base">
 											Зуб {st.predecessorPrimaryFdi}
 										</td>
 										<td className="p-3.5 font-mono font-bold text-[var(--odontogram-ink,var(--ink,#0f172a))] text-sm sm:text-base">
@@ -234,10 +234,10 @@ export const PediatricResorptionTimeline: React.FC<PediatricResorptionTimelinePr
 											<span
 												className={`px-3 py-1.5 rounded-lg font-bold text-xs sm:text-sm ${
 													st.status === "future_permanent"
-														? "bg-blue-500/15 text-blue-700 dark:text-blue-300"
+														? "bg-[var(--primary-soft)] text-[var(--primary)]"
 														: st.status === "exfoliating" || st.status === "erupting"
-															? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-															: "bg-teal-500/15 text-teal-700 dark:text-teal-300"
+															? "bg-[var(--warning-soft)] text-[var(--warning)]"
+															: "bg-[var(--primary-soft)] text-[var(--primary)]"
 												}`}
 											>
 												{st.labelRu}

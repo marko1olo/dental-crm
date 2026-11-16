@@ -94,6 +94,9 @@ export {
 	LOWER_PRIMARY_TEETH,
 	PRIMARY_UPPER_TEETH,
 	PRIMARY_LOWER_TEETH,
+	ALL_PRIMARY_TEETH,
+	PRIMARY_TEETH_SET,
+	PRIMARY_TEETH,
 } from "./clinical/pediatric/constants.js";
 export { PATHOLOGY_STAMPS, type PathologyStampItem } from "./clinical/dentalFormulaStates.js";
 export { getLocusTransitionDescription } from "./clinical/dentalFormulaFdi.js";

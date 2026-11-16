@@ -16,7 +16,69 @@ import {
 } from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import type { EndoToothClinicalData } from "@dental/shared";
-import type { CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
+import type {
+	CashboxTenderType,
+	CheckoutPaymentMethodType,
+} from "../cashbox/cashRegisterCatalogData";
+
+export interface OdontogramActivePatientContext {
+	readonly id?: string | undefined;
+	readonly name?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly phone?: string | undefined;
+	readonly birthDate?: string | null | undefined;
+}
+
+export interface OdontogramActiveDoctorContext {
+	readonly id?: string | undefined;
+	readonly name?: string | undefined;
+}
+
+export interface OdontogramAuthContext {
+	readonly organizationId?: string | undefined;
+	readonly userId?: string | undefined;
+}
+
+interface DictationSoapPayload {
+	readonly complaint?: string | undefined;
+	readonly anamnesis?: string | undefined;
+	readonly objectiveStatus?: string | undefined;
+	readonly diagnosis?: string | undefined;
+	readonly diagnosisIcd10?: string | undefined;
+	readonly treatmentPlan?: string | undefined;
+	readonly recommendations?: string | undefined;
+}
+
+interface DictationToothUpdatePayload {
+	readonly code?: number | string | undefined;
+	readonly clinicalState?: string | undefined;
+}
+
+interface DictationResponsePayload {
+	readonly emkUpdates?: DictationSoapPayload | undefined;
+	readonly toothUpdates?: readonly DictationToothUpdatePayload[] | undefined;
+	readonly payload?: {
+		readonly emkUpdates?: DictationSoapPayload | undefined;
+		readonly toothUpdates?: readonly DictationToothUpdatePayload[] | undefined;
+	} | undefined;
+}
+
+function toCashboxTenderType(method: CheckoutPaymentMethodType): CashboxTenderType {
+	switch (method) {
+		case "bank_card":
+			return "card";
+		case "cash":
+			return "cash";
+		case "sbp_qr":
+			return "sbp";
+		case "patient_deposit":
+			return "deposit";
+		case "dms_insurance":
+		case "loyalty_points":
+		default:
+			return "card";
+	}
+}
 
 const EndodonticStudioModal = React.lazy(() =>
 	import("../endo/EndodonticStudioModal").then((m) => ({
@@ -67,9 +129,9 @@ export interface OdontogramModalsLayerProps {
 	setIsFastCheckoutOpen: (open: boolean) => void;
 	fastCheckoutMethod: CheckoutPaymentMethodType;
 	liveGrossTotalRub: number;
-	activePatient?: any;
-	activeDoctor?: any;
-	auth?: any;
+	activePatient?: OdontogramActivePatientContext | undefined;
+	activeDoctor?: OdontogramActiveDoctorContext | undefined;
+	auth?: OdontogramAuthContext | undefined;
 	setAiPendingProposal: React.Dispatch<
 		React.SetStateAction<{
 			source: "voice" | "vision" | "sensor";
@@ -273,15 +335,14 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 								const message = dictationApplyMessage(plan);
 
 								// Разбор SOAP дневника 043/у и расширенных клинических статусов
-								let jsonBody: Record<string, unknown> | null = null;
+								let payload: DictationResponsePayload | null = null;
 								try {
-									jsonBody = JSON.parse(rawBody) as Record<string, unknown>;
+									payload = JSON.parse(rawBody) as DictationResponsePayload;
 								} catch {
 									// некритично, используем plan
 								}
 
-								// biome-ignore lint/suspicious/noExplicitAny: dynamic payload inspection
-								const emkUpdates = (jsonBody?.emkUpdates || (jsonBody?.payload as any)?.emkUpdates) as any;
+								const emkUpdates = payload?.emkUpdates ?? payload?.payload?.emkUpdates;
 								if (
 									emkUpdates &&
 									(emkUpdates.complaint ||
@@ -300,7 +361,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 														anamnesis: emkUpdates.anamnesis,
 														statusLocalis: emkUpdates.objectiveStatus,
 														diagnosisIcd10:
-															emkUpdates.diagnosisIcd10 || emkUpdates.diagnosis,
+															emkUpdates.diagnosisIcd10 ?? emkUpdates.diagnosis,
 														treatmentDescription: emkUpdates.treatmentPlan,
 														recommendations: emkUpdates.recommendations,
 													},
@@ -313,14 +374,13 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 								}
 
 								// Извлечение находок для одонтограммы (клинический статус с приоритетом над общим)
-								// biome-ignore lint/suspicious/noExplicitAny: dynamic list
-								const rawTeeth = (jsonBody?.toothUpdates || (jsonBody?.payload as any)?.toothUpdates) as any[];
+								const rawTeeth = payload?.toothUpdates ?? payload?.payload?.toothUpdates;
 								const clinicalFindings: Array<{ toothNumber: number; state: ToothState }> = [];
 
 								if (Array.isArray(rawTeeth)) {
 									for (const item of rawTeeth) {
-										const num = Number(item.code);
-										if (num > 10 && item.clinicalState) {
+										const num = Number(item?.code);
+										if (num > 10 && item?.clinicalState) {
 											clinicalFindings.push({
 												toothNumber: num,
 												state: item.clinicalState as ToothState,
@@ -375,8 +435,8 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 						onClose={() => setIsPediatricModalOpen(false)}
 						teethData={teethData}
 						initialAge={
-							(activePatient as { birthDate?: string | null } | undefined)?.birthDate
-								? calculateAge((activePatient as { birthDate?: string | null }).birthDate!) ?? 7.5
+							activePatient?.birthDate
+								? calculateAge(activePatient.birthDate) ?? 7.5
 								: 7.5
 						}
 						onUpdateToothResorption={(toothNumber, resorptionStage) => {
@@ -426,7 +486,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 						totalDueRub={liveGrossTotalRub}
 						amountRub={liveGrossTotalRub}
 						amountKopecks={Math.round(liveGrossTotalRub * 100)}
-						defaultMethod={fastCheckoutMethod as any}
+						defaultMethod={toCashboxTenderType(fastCheckoutMethod)}
 						patientId={patientId}
 						patientName={activePatient?.fullName || undefined}
 						patientPhone={activePatient?.phone || undefined}

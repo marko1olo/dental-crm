@@ -38,19 +38,25 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 
 			const mappedFromDb: BraveryDiplomaRecord[] = dbDocs.map((doc) => {
 				let payload: Partial<BraveryDiplomaRecord> = {};
-				try { payload = doc.payloadJson ? JSON.parse(doc.payloadJson) : {}; } catch { payload = {}; }
+				if (doc.payloadJson) {
+					try {
+						payload = JSON.parse(doc.payloadJson);
+					} catch (parseErr) {
+						request.log.warn({ parseErr, docId: doc.id }, "Failed to parse bravery diploma payloadJson");
+					}
+				}
 				return {
 					id: doc.id,
 					patientId: doc.patientId,
-					diplomaNumber: payload.diplomaNumber || `ДИПЛОМ-ГЕРОЙ-${doc.id.slice(0, 8).toUpperCase()}`,
-					patientName: payload.patientName || "Юный пациент",
+					diplomaNumber: payload.diplomaNumber ?? `ДИПЛОМ-ГЕРОЙ-${doc.id.slice(0, 8).toUpperCase()}`,
+					patientName: payload.patientName ?? "Юный пациент",
 					patientAgeYears: payload.patientAgeYears,
-					doctorName: payload.doctorName || "Врач-стоматолог",
-					clinicName: payload.clinicName || "DENTE",
-					awardReasonRu: payload.awardReasonRu || "За выдающееся мужество в кресле стоматолога!",
-					awardedDateIso: payload.awardedDateIso || doc.createdAt?.toISOString() || new Date().toISOString(),
-					issueDateRu: payload.issueDateRu || new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }),
-					createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
+					doctorName: payload.doctorName ?? "Врач-стоматолог",
+					clinicName: payload.clinicName ?? "DENTE",
+					awardReasonRu: payload.awardReasonRu ?? "За выдающееся мужество в кресле стоматолога!",
+					awardedDateIso: payload.awardedDateIso ?? doc.createdAt?.toISOString() ?? new Date().toISOString(),
+					issueDateRu: payload.issueDateRu ?? new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }),
+					createdAt: doc.createdAt?.toISOString() ?? new Date().toISOString(),
 				};
 			});
 			return reply.send({ success: true, diplomas: mappedFromDb });
@@ -67,7 +73,7 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		const { patientId } = request.params as { patientId: string };
 		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		const parsed = issueDiplomaSchema.safeParse(request.body || {});
+		const parsed = issueDiplomaSchema.safeParse(request.body ?? {});
 		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });
 
 		const now = new Date();
@@ -84,7 +90,7 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 			doctorName: parsed.data.doctorName,
 			clinicName: parsed.data.clinicName,
 			awardReasonRu: parsed.data.awardReasonRu,
-			awardedDateIso: parsed.data.awardedDateIso || now.toISOString(),
+			awardedDateIso: parsed.data.awardedDateIso ?? now.toISOString(),
 			issueDateRu,
 			createdAt: now.toISOString(),
 		};

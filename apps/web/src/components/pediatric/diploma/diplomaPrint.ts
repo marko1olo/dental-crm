@@ -14,15 +14,15 @@ export interface PrintBraveryDiplomaOptions {
 
 export function generateBraveryDiplomaHtml(options: PrintBraveryDiplomaOptions): string {
 	const heroName = options.heroName || "Юный пациент";
-	const doctor = options.doctorName || options.effectiveDoctorName || "Врач-стоматолог";
-	const clinic = options.clinicName || options.effectiveClinicName || "Детское отделение DENTE";
-	const date = options.visitDate || options.effectiveDate || new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-	const praise = options.praiseText || "Награждается за невероятную храбрость, ослепительную улыбку и дружбу с Зубной Феей на приёме у стоматолога!";
-	const number = options.diplomaNumber || "001";
+	const doctor = options.doctorName ?? options.effectiveDoctorName ?? "Врач-стоматолог";
+	const clinic = options.clinicName ?? options.effectiveClinicName ?? "Детское отделение DENTE";
+	const date = options.visitDate ?? options.effectiveDate ?? new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+	const praise = options.praiseText ?? "Награждается за невероятную храбрость, ослепительную улыбку и дружбу с Зубной Феей на приёме у стоматолога!";
+	const number = options.diplomaNumber ?? "001";
 
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Диплом за храбрость — ${heroName}</title>
 <style>
-@page { size: A5 landscape; margin: 6mm; }
+@page { size: auto; margin: 8mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #ffffff; color: #0f172a; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 8px; }
 .diploma { width: 100%; max-width: 780px; height: 96%; border: 6px double #d97706; border-radius: 20px; padding: 24px; text-align: center; background: radial-gradient(circle at center, #fffbeb 0%, #fef3c7 100%); position: relative; box-shadow: 0 4px 20px rgba(217,119,6,0.15); page-break-inside: avoid; break-inside: avoid; }
