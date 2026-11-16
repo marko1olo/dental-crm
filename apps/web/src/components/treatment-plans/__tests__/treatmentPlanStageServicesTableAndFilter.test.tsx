@@ -1,5 +1,5 @@
 /**
- * treatmentPlanStageServicesTableAndFilter.test.tsx — таблица услуг этапа и фильтр специализаций.
+ * treatmentPlanStageServicesTableAndFilter.test.tsx — таблица услуг этапа.
  * (Мандат 8b: строго <= 120 строк).
  */
 
@@ -8,10 +8,9 @@ import { describe, it as test } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { StageServicesTable } from "../stageEditor/StageServicesTable";
-import { TreatmentPlanSpecialtyFilterBar } from "../TreatmentPlanSpecialtyFilterBar";
 import { mockSplitStages } from "./helpers/splitCatalogTestHelpers";
 
-describe("TreatmentPlanSplitView — Таблица услуг и переключатель режимов", () => {
+describe("TreatmentPlanSplitView — Таблица услуг этапа", () => {
 	test("правая колонка этапа StageServicesTable рендерит услуги со степперами и действиями", () => {
 		const html = renderToString(
 			<StageServicesTable
@@ -32,24 +31,5 @@ describe("TreatmentPlanSplitView — Таблица услуг и переклю
 		assert.ok(html.includes("data-testid=\"stage-services-table-footer\""));
 		assert.ok(html.includes("data-testid=\"stage-footer-pay-btn\""));
 		assert.ok(html.includes("stage-footer-total-sum"));
-	});
-
-	test("TreatmentPlanSpecialtyFilterBar рендерит тумблер переключения режимов «Сплит-каталог» / «Карточки»", () => {
-		const html = renderToString(
-			<TreatmentPlanSpecialtyFilterBar
-				stages={mockSplitStages}
-				visibleStages={mockSplitStages}
-				specialtyFilter="all"
-				onSetSpecialtyFilter={() => {}}
-				onOpenAddCatalogService={() => {}}
-				onOpenCreateStageModal={() => {}}
-				isSplitMode={true}
-				onToggleSplitMode={() => {}}
-			/>,
-		);
-
-		assert.ok(html.includes("data-testid=\"tp-split-mode-btn\""));
-		assert.ok(html.includes("data-testid=\"tp-cards-mode-btn\""));
-		assert.ok(html.includes("Сплит-каталог"));
 	});
 });

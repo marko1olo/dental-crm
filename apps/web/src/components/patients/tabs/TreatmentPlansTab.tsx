@@ -25,8 +25,13 @@ import {
 	RefreshCw,
 	AlertCircle,
 	FolderArchive,
+	X,
 } from "lucide-react";
-import type { TreatmentPlanItem } from "@dental/shared";
+import {
+	splitLaborAndMaterials,
+	PLAN_TIER_CONFIGS,
+	type TreatmentPlanItem,
+} from "@dental/shared";
 import { TreatmentPlansList } from "../TreatmentPlansList";
 import type { PatientGeneralInfo } from "./PatientGeneralInfoTab";
 
@@ -113,6 +118,8 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 
 		const [selectedTier, setSelectedTier] = useState<TierCategory>("optimum");
 		const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
+		const [isDiscountsModalOpen, setIsDiscountsModalOpen] = useState<boolean>(false);
+		const [tempDiscountPercent, setTempDiscountPercent] = useState<number>(0);
 		const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
 		const [copiedFeedback, setCopiedFeedback] = useState(false);
 
@@ -188,6 +195,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 				const grossCostKopecks = Math.round(unitPrice * quantity * 100);
 				const discountKopecks = Math.round(discount * quantity * 100);
 				const netCostKopecks = Math.max(0, grossCostKopecks - discountKopecks);
+				const { laborKopecks, materialsKopecks } = splitLaborAndMaterials(netCostKopecks, "optimum");
 
 				const itemRecord: unknown = {
 					id: it.id,
@@ -210,8 +218,8 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					discountKopecks,
 					discountRub: discount,
 					netCostKopecks,
-					laborKopecks: Math.round(netCostKopecks * 0.6),
-					materialsKopecks: Math.round(netCostKopecks * 0.4),
+					laborKopecks,
+					materialsKopecks,
 					totalCostKopecks: netCostKopecks,
 					status: it.status || (it.isCompleted ? "completed" : "proposed"),
 					doctorName: it.doctorName || null,
@@ -239,23 +247,32 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					0,
 				);
 				const planTitle = activePlan?.name || "Утверждённый план";
+				const baseTotalKopecks = Math.round(baseTotal * 100);
+				const economySplit = splitLaborAndMaterials(Math.round(baseTotalKopecks * 0.85), "economy");
+				const optimumSplit = splitLaborAndMaterials(baseTotalKopecks, "optimum");
+				const premiumSplit = splitLaborAndMaterials(Math.round(baseTotalKopecks * 1.35), "premium");
+
+				const economyRub = Math.round((economySplit.laborKopecks + economySplit.materialsKopecks) / 100);
+				const optimumRub = Math.round((optimumSplit.laborKopecks + optimumSplit.materialsKopecks) / 100);
+				const premiumRub = Math.round((premiumSplit.laborKopecks + premiumSplit.materialsKopecks) / 100);
+
 				return [
 					{
 						id: "economy",
 						title: "Базовый вариант",
-						tagline: "Качественная санация и сертифицированные композитные реставрации",
-						totalRub: Math.round(baseTotal * 0.85),
-						warrantyYears: 1,
+						tagline: PLAN_TIER_CONFIGS.economy.descriptionRu,
+						totalRub: economyRub,
+						warrantyYears: typeof PLAN_TIER_CONFIGS.economy.warrantyYears === "number" ? PLAN_TIER_CONFIGS.economy.warrantyYears : 1,
 						isRecommended: false,
 						accentClass: "border-[var(--line)] bg-[var(--paper-soft)]",
-						badgeText: "Эконом",
+						badgeText: PLAN_TIER_CONFIGS.economy.badgeRu,
 					},
 					{
 						id: "optimum",
 						title: planTitle,
-						tagline: "Согласованный комплекс процедур: цельная пресс-керамика и прецизионный протокол",
-						totalRub: baseTotal,
-						warrantyYears: 3,
+						tagline: PLAN_TIER_CONFIGS.optimum.descriptionRu,
+						totalRub: optimumRub,
+						warrantyYears: typeof PLAN_TIER_CONFIGS.optimum.warrantyYears === "number" ? PLAN_TIER_CONFIGS.optimum.warrantyYears : 3,
 						isRecommended: true,
 						accentClass: "border-[var(--teal,var(--brand-primary))] bg-[var(--teal)]/5 ring-1 ring-[var(--teal)]/30",
 						badgeText: "Рекомендация клиники",
@@ -263,12 +280,12 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					{
 						id: "premium",
 						title: "Премиум VIP",
-						tagline: "CAD/CAM индивидуализация, микроскопное лечение и пожизненная остеоинтеграция",
-						totalRub: Math.round(baseTotal * 1.35),
+						tagline: PLAN_TIER_CONFIGS.premium.descriptionRu,
+						totalRub: premiumRub,
 						warrantyYears: 10,
 						isRecommended: false,
-						accentClass: "border-purple-300 dark:border-purple-800 bg-purple-50/20 dark:bg-purple-950/20",
-						badgeText: "Премиум",
+						accentClass: "border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)]/40",
+						badgeText: PLAN_TIER_CONFIGS.premium.badgeRu,
 					},
 				];
 			}
@@ -482,7 +499,10 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 							<div className="flex items-center gap-2">
 								<button
 									type="button"
-									onClick={() => setIsDiscountsModalOpen(true)}
+									onClick={() => {
+										setTempDiscountPercent(doctorDiscountPercent);
+										setIsDiscountsModalOpen(true);
+									}}
 									className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center gap-1.5 transition-all cursor-pointer"
 									data-testid="btn-open-doctor-discounts"
 									title="Скидка врача от 0% до 100%"
@@ -654,6 +674,127 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 						onNewPlanItem={() => onOpenPlanPresenter && onOpenPlanPresenter()}
 					/>
 				</div>
+
+				{/* 3. МОДАЛКА СКИДОК ЛЕЧАЩЕГО ВРАЧА (0% - 100% С ПРЕСЕТАМИ ГАРАНТИИ ПО МАНДАТУ 8e) */}
+				{isDiscountsModalOpen && (
+					<div
+						className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby="discounts-modal-title"
+						data-testid="doctor-discounts-modal"
+					>
+						<div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xl p-5 space-y-4">
+							<div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
+								<div className="flex items-center gap-2">
+									<div className="p-2 rounded-xl bg-[var(--teal)]/10 text-[var(--teal,var(--brand-primary))]">
+										<Percent className="w-4 h-4" />
+									</div>
+									<div>
+										<h3 id="discounts-modal-title" className="text-sm font-bold m-0 text-[var(--ink)]">
+											Скидка лечащего врача
+										</h3>
+										<p className="text-xs text-[var(--muted)] m-0">
+											Автономия врача: от 0% до 100% без паролей администратора
+										</p>
+									</div>
+								</div>
+								<button
+									type="button"
+									onClick={() => setIsDiscountsModalOpen(false)}
+									className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border-0 bg-transparent cursor-pointer"
+									aria-label="Закрыть"
+								>
+									<X className="w-4 h-4" />
+								</button>
+							</div>
+
+							<div className="space-y-3">
+								<div className="text-xs font-semibold text-[var(--muted)]">
+									Клинические пресеты скидок:
+								</div>
+								<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+									{[
+										{ percent: 0, label: "0% — Базовая" },
+										{ percent: 5, label: "5% — Семейная" },
+										{ percent: 10, label: "10% — Постоянный" },
+										{ percent: 15, label: "15% — Выходной день" },
+										{ percent: 20, label: "20% — Комплекс" },
+										{ percent: 50, label: "50% — Персонал" },
+										{ percent: 100, label: "100% — Гарантия" },
+									].map((preset) => (
+										<button
+											key={preset.percent}
+											type="button"
+											onClick={() => setTempDiscountPercent(preset.percent)}
+											data-testid={`discount-preset-${preset.percent}`}
+											className={`min-h-[40px] px-3 py-2 text-xs font-bold rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-center ${
+												tempDiscountPercent === preset.percent
+													? "border-[var(--teal,var(--brand-primary))] bg-[var(--teal)]/10 text-[var(--ink)] ring-1 ring-[var(--teal)]/40"
+													: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line-subtle)]"
+											}`}
+										>
+											<span>{preset.label}</span>
+										</button>
+									))}
+								</div>
+
+								<div className="pt-2">
+									<label htmlFor="custom-discount-input" className="block text-xs font-semibold text-[var(--muted)] mb-1.5">
+										Произвольный процент скидки:
+									</label>
+									<div className="flex items-center gap-2">
+										<input
+											id="custom-discount-input"
+											type="number"
+											min={0}
+											max={100}
+											value={tempDiscountPercent}
+											onChange={(e) => {
+												const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+												setTempDiscountPercent(val);
+											}}
+											data-testid="input-custom-discount"
+											className="flex-1 min-h-[40px] px-3 text-sm font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										/>
+										<span className="text-sm font-bold text-[var(--muted)]">%</span>
+									</div>
+								</div>
+
+								<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[11px] text-[var(--muted)] leading-relaxed">
+									ℹ️ По <strong>Мандату 8e</strong> врач имеет право применить скидку до 100% на гарантийные переделки и коррекцию работы без задержек и ввода мастер-паролей.
+								</div>
+							</div>
+
+							<div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--line)]">
+								<button
+									type="button"
+									onClick={() => {
+										setDoctorDiscountPercent(0);
+										setTempDiscountPercent(0);
+										setIsDiscountsModalOpen(false);
+									}}
+									className="min-h-[40px] px-4 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+									data-testid="btn-reset-discount"
+								>
+									Сбросить
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setDoctorDiscountPercent(tempDiscountPercent);
+										setIsDiscountsModalOpen(false);
+									}}
+									className="primary-button min-h-[40px] px-5 py-2 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+									data-testid="btn-apply-discount"
+								>
+									<CheckCircle2 className="w-3.5 h-3.5" />
+									<span>Применить ({tempDiscountPercent}%)</span>
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		);
 	},
