@@ -27,6 +27,11 @@ export {
 	isFurcationEligibleTooth, PERIO_SITE_KEYS, type PerioChartSummary,
 	type PerioToothRecord, PSR_SEXTANTS, type PsrSextantResult,
 };
+export {
+	probingDepthTone, probingDepthClinicalTone, probingDepthClasses,
+	probingDepthClinicalClasses, probingDepthHex, probingDepthClinicalHex,
+	TONE_TO_CLASS, TONE_TO_HEX, type HeatmapTone,
+} from "./perioHeatmap";
 
 // 1. ШКАЛА СЕКСТАНТОВ PSR / CPITN (ВОЗ / СтАР)
 export type PsrCode = 0 | 1 | 2 | 3 | 4;
@@ -49,6 +54,9 @@ export const PSR_SEXTANTS_CATALOG: readonly PsrSextantMeta[] = [
 	{ id: "S6", name: "S6", labelRu: "Нижний левый дистальный", teethRange: "34–37", teeth: [34, 35, 36, 37] },
 ] as const;
 
+export const PSR_SEXTANTS_CONFIG = PSR_SEXTANTS_CATALOG;
+export type PsrSextantInfo = PsrSextantMeta;
+
 export interface PsrCodeMeta {
 	readonly code: PsrCode;
 	readonly labelRu: string;
@@ -65,6 +73,21 @@ export const PSR_CODES_CATALOG: Record<PsrCode, PsrCodeMeta> = {
 	3: { code: 3, labelRu: "Код 3: Карман 3.5–5.5 мм", criteriaRu: "Глубина кармана 3.5–5.5 мм, полоса зонда частично скрыта (локальный пародонтит)", actionRu: "Профгигиена + закрытый кюретаж / ультразвуковая полировка корней", colorHex: "#f97316", badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30" },
 	4: { code: 4, labelRu: "Код 4: Карман > 5.5 мм", criteriaRu: "Глубина кармана > 5.5 мм, полоса зонда скрыта полностью (выраженный пародонтит)", actionRu: "Комплексное лечение: скейлинг, кюретаж, шинирование подвижных зубов", colorHex: "#f43f5e", badgeClass: "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40" },
 };
+
+export const PSR_CODE_DEFINITIONS = PSR_CODES_CATALOG;
+export type PsrCodeDefinition = PsrCodeMeta;
+
+export interface PerioSiteDetail {
+	probingDepthMm: number; gingivalMarginMm: number; bleedingOnProbing: boolean;
+	plaque: boolean; calculus: boolean; suppuration: boolean; calMm: number;
+}
+
+export interface DetailedPerioTooth {
+	toothNumber: number; isMissing: boolean; isImplant: boolean;
+	mobility: 0 | 1 | 2 | 3; furcation: 0 | 1 | 2 | 3;
+	distoBuccal: PerioSiteDetail; midBuccal: PerioSiteDetail; mesioBuccal: PerioSiteDetail;
+	distoLingual: PerioSiteDetail; midLingual: PerioSiteDetail; mesioLingual: PerioSiteDetail;
+}
 
 export const PSR_ASTERISK_DESCRIPTION = "Символ *: вовлечение фуркаций корней, подвижность II–III степени, рецессия десны >= 3.5 мм";
 
@@ -184,10 +207,10 @@ export const PERIODONTAL_CONSUMABLES_CATALOG: Record<"hygiene" | "vector" | "spl
 
 export async function deductPeriodontalConsumablesSoftOverdraft(
 	procedureKind: "hygiene" | "vector" | "splinting" | "recession" | "curettage" | "norm",
+	visitId?: string | undefined,
 ): Promise<{ success: boolean; deductedCount: number; messageRu: string }> {
 	const items = PERIODONTAL_CONSUMABLES_CATALOG[procedureKind] || [];
 	if (!items.length) return { success: true, deductedCount: 0, messageRu: "Расходные материалы не требуются (норма)" };
-	const activeVisitId = useVisitStore.getState().activeVisit?.id;
 	try {
 		for (const item of items) {
 			await fetch("/api/inventory/soft-overdraft-deduct", {
@@ -198,7 +221,7 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 					itemName: item.itemName,
 					quantity: item.quantity,
 					reason: `Пародонтология: списание по протоколу (${procedureKind})`,
-					...(activeVisitId ? { visitId: activeVisitId } : {}),
+					...(visitId ? { visitId } : {}),
 					allowOverdraft: true,
 				}),
 			});
@@ -212,15 +235,9 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 
 // 4. МАТЕМАТИЧЕСКИЕ ПРЕСЕТЫ И МАКРО-ПРИМЕНЕНИЕ (LAYER 1/2)
 const makePerioSite = (depth: number, bop = false, gm = 0, plq = false, calc = false, pus = false) => ({
-	probingDepthMm: depth,
-	gingivalMarginMm: gm,
-	bleedingOnProbing: bop,
-	suppuration: pus,
-	plaque: plq,
-	calculus: calc,
+	probingDepthMm: depth, gingivalMarginMm: gm, bleedingOnProbing: bop, suppuration: pus, plaque: plq, calculus: calc,
 	calMm: calculateClinicalAttachmentLevel(depth, gm),
 });
-
 const fillSixSites = (s: ReturnType<typeof makePerioSite>) => ({
 	distoBuccal: s, midBuccal: s, mesioBuccal: s, distoLingual: s, midLingual: s, mesioLingual: s,
 });
@@ -229,17 +246,14 @@ export function applyHealthyPeriodontiumPreset(teeth: readonly PerioToothRecord[
 	const s = makePerioSite(2);
 	return teeth.map((t) => (t.isMissing ? { ...t } : { ...t, mobility: 0, furcation: 0, ...fillSixSites(s) }));
 }
-
 export function applyUpperJawNormPreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	const s = makePerioSite(2);
 	return teeth.map((t) => (t.isMissing || t.toothNumber > 28 ? t : { ...t, mobility: 0, furcation: 0, ...fillSixSites(s) }));
 }
-
 export function applyLowerJawNormPreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	const s = makePerioSite(2);
 	return teeth.map((t) => (t.isMissing || t.toothNumber < 31 ? t : { ...t, mobility: 0, furcation: 0, ...fillSixSites(s) }));
 }
-
 export function applyZeroBopPreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	return teeth.map((t) => {
 		if (t.isMissing) return t;
@@ -251,7 +265,6 @@ export function applyZeroBopPreset(teeth: readonly PerioToothRecord[]): PerioToo
 		return updated;
 	});
 }
-
 export function applyZeroCalculusAndPlaquePreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	return teeth.map((t) => {
 		if (t.isMissing) return t;
@@ -360,54 +373,25 @@ export interface PresetApplyResult {
 export function applyExpressPerioPreset(teeth: readonly PerioToothRecord[], presetId: string): PresetApplyResult {
 	const preset = PERIO_EXPRESS_PRESETS[presetId];
 	if (presetId === "perio_norm_express") {
-		return {
-			updatedTeeth: applyHealthyPeriodontiumPreset(teeth),
-			protocolText: preset?.defaultProtocolRu ?? "Пародонт интактен: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, BOP 0%, PSR 0 во всех 6 секстантах. Диагноз: Здоров (Z01.2).",
-			title: "Здоровый пародонт (Физиологическая норма)",
-		};
+		return { updatedTeeth: applyHealthyPeriodontiumPreset(teeth), protocolText: preset?.defaultProtocolRu ?? "Пародонт интактен: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, BOP 0%, PSR 0 во всех 6 секстантах. Диагноз: Здоров (Z01.2).", title: "Здоровый пародонт (Физиологическая норма)" };
 	}
 	if (presetId === "pro_hygiene_express" || presetId === "prophy_airflow_ultrasound") {
-		return {
-			updatedTeeth: applyHealthyPeriodontiumPreset(teeth),
-			protocolText: preset?.defaultProtocolRu ?? (PERIO_TREATMENT_PROTOCOLS[0]?.protocolTextRu || ""),
-			title: "Профгигиена AirFlow + УЗ",
-			service: { code: "A16.07.051", name: "Комплексная профессиональная гигиена полости рта (УЗ + AirFlow)", price: 5500, category: "hygiene" },
-		};
+		return { updatedTeeth: applyHealthyPeriodontiumPreset(teeth), protocolText: preset?.defaultProtocolRu ?? (PERIO_TREATMENT_PROTOCOLS[0]?.protocolTextRu || ""), title: "Профгигиена AirFlow + УЗ", service: { code: "A16.07.051", name: "Комплексная профессиональная гигиена полости рта (УЗ + AirFlow)", price: 5500, category: "hygiene" } };
 	}
 	if (presetId === "gingivitis_express") {
-		return {
-			updatedTeeth: applyGingivitisPreset(teeth),
-			protocolText: preset?.defaultProtocolRu ?? "Пародонт: десна гиперемирована, валикообразно утолщена, кровоточивость BOP+, ложные карманы < 3.5 мм, зубной камень. Диагноз: Катаральный гингивит (K05.1).",
-			title: "Гингивит (PSR 1–2)",
-		};
+		return { updatedTeeth: applyGingivitisPreset(teeth), protocolText: preset?.defaultProtocolRu ?? "Пародонт: десна гиперемирована, валикообразно утолщена, кровоточивость BOP+, ложные карманы < 3.5 мм, зубной камень. Диагноз: Катаральный гингивит (K05.1).", title: "Гингивит (PSR 1–2)" };
 	}
 	if (presetId === "periodontitis_mild_express") {
-		return {
-			updatedTeeth: applyPeriodontitisMildPreset(teeth),
-			protocolText: preset?.defaultProtocolRu ?? "Пародонт: маргинальная десна отечна, карманы 3.5–4.0 мм (PSR 2-3), над- и поддесневой камень, BOP+, CAL 1-2 мм. Диагноз: Пародонтит легкой степени (K05.30).",
-			title: "Пародонтит легкий (карманы 3.5–4 мм)",
-		};
+		return { updatedTeeth: applyPeriodontitisMildPreset(teeth), protocolText: preset?.defaultProtocolRu ?? "Пародонт: маргинальная десна отечна, карманы 3.5–4.0 мм (PSR 2-3), над- и поддесневой камень, BOP+, CAL 1-2 мм. Диагноз: Пародонтит легкой степени (K05.30).", title: "Пародонтит легкий (карманы 3.5–4 мм)" };
 	}
 	if (presetId === "periodontitis_moderate_express") {
-		return {
-			updatedTeeth: applyPeriodontitisModeratePreset(teeth),
-			protocolText: preset?.defaultProtocolRu ?? "Пародонт: глубина карманов 3.5–5.0 мм (PSR 3*), десна цианотична, выраженный зубной камень, подвижность I ст. Диагноз: Пародонтит средней степени (K05.31).",
-			title: "Пародонтит средний (карманы до 5 мм)",
-		};
+		return { updatedTeeth: applyPeriodontitisModeratePreset(teeth), protocolText: preset?.defaultProtocolRu ?? "Пародонт: глубина карманов 3.5–5.0 мм (PSR 3*), десна цианотична, выраженный зубной камень, подвижность I ст. Диагноз: Пародонтит средней степени (K05.31).", title: "Пародонтит средний (карманы до 5 мм)" };
 	}
 	if (presetId === "periodontitis_severe_express") {
-		return {
-			updatedTeeth: applyPeriodontitisSeverePreset(teeth),
-			protocolText: preset?.defaultProtocolRu ?? "Пародонт: десна цианотична, карманы 6–8 мм (PSR 4*), серозно-гнойный экссудат, вовлечение фуркаций, подвижность II-III ст. Диагноз: Пародонтит тяжелой степени (K05.32).",
-			title: "Пародонтит тяжелый (6-8 мм)",
-		};
+		return { updatedTeeth: applyPeriodontitisSeverePreset(teeth), protocolText: preset?.defaultProtocolRu ?? "Пародонт: десна цианотична, карманы 6–8 мм (PSR 4*), серозно-гнойный экссудат, вовлечение фуркаций, подвижность II-III ст. Диагноз: Пародонтит тяжелой степени (K05.32).", title: "Пародонтит тяжелый (6-8 мм)" };
 	}
 	if (presetId === "recession_express") {
-		return {
-			updatedTeeth: applyGingivalRecessionPreset(teeth),
-			protocolText: preset?.defaultProtocolRu ?? "Пародонт: рецессия десны 2–3 мм преимущественно у клыков и премоляров, карманы 1–2 мм, BOP 0%. Диагноз: Рецессия десны (K06.0).",
-			title: "Рецессия десны (K06.0)",
-		};
+		return { updatedTeeth: applyGingivalRecessionPreset(teeth), protocolText: preset?.defaultProtocolRu ?? "Пародонт: рецессия десны 2–3 мм преимущественно у клыков и премоляров, карманы 1–2 мм, BOP 0%. Диагноз: Рецессия десны (K06.0).", title: "Рецессия десны (K06.0)" };
 	}
 	return { updatedTeeth: [...teeth], protocolText: "", title: presetId };
 }

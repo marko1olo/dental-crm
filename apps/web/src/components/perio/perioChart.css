@@ -55,3 +55,130 @@ body:has([data-testid="perio-chart-modal"]) .copilot-trigger-btn {
 	pointer-events: none !important;
 	visibility: hidden !important;
 }
+
+/* ==========================================================================
+   Мандат 8r & 8am: Профессиональная печатная форма А4 (@media print)
+   ========================================================================== */
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 10mm 12mm;
+	}
+
+	/* Скрытие посторонних элементов интерфейса CRM */
+	body,
+	html {
+		background: #ffffff !important;
+		color: #000000 !important;
+		font-size: 11pt !important;
+		overflow: visible !important;
+	}
+
+	/* Сброс модального позиционирования для бесшовного вывода на A4 */
+	.perio-modal-overlay {
+		position: static !important;
+		background: transparent !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		display: block !important;
+		overflow: visible !important;
+		box-shadow: none !important;
+	}
+
+	.perio-modal-content {
+		max-height: none !important;
+		overflow: visible !important;
+		border: none !important;
+		box-shadow: none !important;
+		border-radius: 0 !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		width: 100% !important;
+		max-width: 100% !important;
+	}
+
+	.interactive-periodontogram {
+		background: #ffffff !important;
+		color: #000000 !important;
+		border: 1px solid #d1d5db !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
+		padding: 0 !important;
+		max-width: 100% !important;
+	}
+
+	/* Скрытие интерактивных кнопок, тулбаров и пресетов при печати */
+	.perio-toolbar-actions,
+	.perio-presets-container,
+	.perio-protocols-panel,
+	.perio-mobile-floating-bar,
+	.perio-insert-btn,
+	.perio-detailed-controls,
+	.perio-site-nav-btn,
+	.perio-depth-btn,
+	.perio-close-btn,
+	button {
+		display: none !important;
+	}
+
+	/* Чистый контрастный заголовок карты */
+	.perio-header-row {
+		border-bottom: 2px solid #000000 !important;
+		padding-bottom: 6px !important;
+		margin-bottom: 10px !important;
+	}
+
+	.perio-header-row h2 {
+		color: #000000 !important;
+		font-size: 14pt !important;
+	}
+
+	.perio-header-row span {
+		border-color: #000000 !important;
+		color: #000000 !important;
+	}
+
+	/* Блоки индексов и заключения */
+	.perio-conclusion-panel {
+		background: #f9fafb !important;
+		border: 1px solid #9ca3af !important;
+		color: #000000 !important;
+		page-break-inside: avoid;
+	}
+
+	.perio-psr-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+		gap: 6px !important;
+		page-break-inside: avoid;
+	}
+
+	.perio-psr-grid > div {
+		background: #ffffff !important;
+		border: 1px solid #9ca3af !important;
+		padding: 6px !important;
+	}
+
+	/* Анатомическая карта дуги ВЧ / НЧ на печатном листе */
+	.perio-detailed-wrapper {
+		display: block !important;
+		page-break-inside: avoid;
+		margin-top: 8px !important;
+	}
+
+	.perio-arch-card {
+		background: #ffffff !important;
+		border: 1px solid #000000 !important;
+		page-break-inside: avoid;
+	}
+
+	/* Подпись врача и штамп клиники */
+	.perio-print-footer {
+		display: flex !important;
+		page-break-inside: avoid;
+		border-top: 1.5px solid #000000 !important;
+		margin-top: 16px !important;
+		padding-top: 10px !important;
+		color: #000000 !important;
+		font-size: 9pt !important;
+	}
+}
