@@ -7,6 +7,8 @@
  * Zero fake tool simulations: honest EBM clinical engine with local database persistence.
  */
 
+import { defaultCopilotActionManager } from "../copilotActionManager.js";
+import { executeDentalTool } from "../dentalTools.js";
 import { estimateTextTokens } from "../tokenCounter.js";
 import type { AgentHarnessParams, AgentHarnessResult } from "./harnessTypes.js";
 
@@ -18,7 +20,7 @@ export async function runDeterministicClinicalFallback(
 	hasCompacted: boolean,
 	currentSummary?: string,
 ): Promise<AgentHarnessResult> {
-	const { messages, onEvent, trustLevel = "balanced" } = params;
+	const { messages, onEvent, trustLevel = "balanced", context } = params;
 
 	const userMsgs = messages.filter((m) => m.role === "user");
 	const lastUserMsg = userMsgs[userMsgs.length - 1];
@@ -34,8 +36,16 @@ export async function runDeterministicClinicalFallback(
 	const toothMatch = promptText.match(/\b([1-4][1-8]|[5-8][1-5])\b/);
 	if (toothMatch?.[1]) {
 		const toothNum = parseInt(toothMatch[1], 10);
-		const status = promptText.toLowerCase().includes("кариес") ? "C1" : "HEALTHY";
-		const toolArgs = { toothNumber: toothNum, status };
+		const state = promptText.toLowerCase().includes("кариес") ? "caries" : "healthy";
+		const isConfirmAll = trustLevel === "confirm_all";
+		const toolArgs: Record<string, unknown> = {
+			toothNumber: toothNum,
+			state,
+			confirmed: !isConfirmAll,
+		};
+		if (context.patientId) {
+			toolArgs.patientId = context.patientId;
+		}
 		const callId = `fallback_tool_update_tooth_${Date.now()}`;
 
 		onEvent?.({
@@ -45,35 +55,42 @@ export async function runDeterministicClinicalFallback(
 			callId,
 		});
 
-		recordedToolCalls.push({
-			tool: "update_tooth_status",
-			args: toolArgs,
-			result: { success: true, toothNumber: toothNum, status },
-		});
+		if (isConfirmAll) {
+			defaultCopilotActionManager.registerPending(
+				params.sessionId || `session_fallback_${Date.now()}`,
+				callId,
+				"update_tooth_status",
+				toolArgs,
+				{ organizationId: context.organizationId, userId: context.userId },
+			);
+		}
 
-		onEvent?.({
-			type: "tool_end",
-			tool: "update_tooth_status",
-			callId,
-			result: { success: true, toothNumber: toothNum, status },
-		});
+		let toolResult: unknown;
+		try {
+			toolResult = await executeDentalTool("update_tooth_status", toolArgs, context);
+		} catch (toolErr) {
+			toolResult = {
+				success: false,
+				code: "FALLBACK_TOOL_EXECUTION_FAILED",
+				error: toolErr instanceof Error ? toolErr.message : String(toolErr),
+			};
+		}
 
-		if (trustLevel === "confirm_all") {
+		recordedToolCalls.push({ tool: "update_tooth_status", args: toolArgs, result: toolResult });
+		onEvent?.({ type: "tool_end", tool: "update_tooth_status", callId, result: toolResult });
+
+		if (isConfirmAll) {
 			onEvent?.({
 				type: "confirmation_required",
 				tool: "update_tooth_status",
 				args: toolArgs,
 				callId,
-				descriptionRu: `Обновление статуса зуба ${toothNum} на ${status}`,
+				descriptionRu: `Обновление статуса зуба ${toothNum} на '${state}'`,
 			});
 		}
 	}
 
-	onEvent?.({
-		type: "token",
-		text: fallbackVerdict,
-	});
-
+	onEvent?.({ type: "token", text: fallbackVerdict });
 	onEvent?.({
 		type: "done",
 		text: fallbackVerdict,

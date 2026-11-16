@@ -179,18 +179,19 @@ describe("Dental Tool Arsenal — Матрица рантаймов web_browser 
 		const webTools = getDentalTools("web_browser");
 		const deskTools = getDentalTools("desktop_native");
 
-		// В браузере 17 инструментов (16 клинических/CRM + manage_task_plan)
-		assert.strictEqual(webTools.length, 17);
+		// В браузере 18 инструментов (17 клинических/CRM + manage_task_plan)
+		assert.strictEqual(webTools.length, 18);
 		assert.ok(webTools.some((t) => t.function.name === "manage_task_plan"));
 		assert.ok(webTools.some((t) => t.function.name === "record_treatment"));
 		assert.ok(webTools.some((t) => t.function.name === "calculate_anesthesia"));
 		assert.ok(webTools.some((t) => t.function.name === "get_patient_emr_and_odontogram"));
 		assert.ok(webTools.some((t) => t.function.name === "create_appointment"));
+		assert.ok(webTools.some((t) => t.function.name === "get_available_slots"));
 		assert.ok(!webTools.some((t) => t.function.name === "launch_workstation_app"));
 		assert.ok(!webTools.some((t) => t.function.name === "read_local_clinical_file"));
 
-		// На десктопе все 32 инструмента доступны (17 веб/CRM/план + 15 нативных десктопных)
-		assert.strictEqual(deskTools.length, 32);
+		// На десктопе все 33 инструмента доступны (18 веб/CRM/план + 15 нативных десктопных)
+		assert.strictEqual(deskTools.length, 33);
 		assert.ok(deskTools.some((t) => t.function.name === "manage_task_plan"));
 		assert.ok(deskTools.some((t) => t.function.name === "launch_workstation_app"));
 		assert.ok(deskTools.some((t) => t.function.name === "open_patient_dropzone_folder"));

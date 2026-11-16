@@ -1,11 +1,4 @@
-import {
-	fetchWithProviderTimeout,
-	keyRetryLimit,
-	recordProviderKeyFailure,
-	recordProviderKeySuccess,
-	selectProviderKey,
-	shouldTryNextProviderKey,
-} from "../speech/keyPool.js";
+import { agentRouterClient } from "./agentRouterClient.js";
 
 export type ParserContext = "schedule" | "patient" | "visit";
 
@@ -42,18 +35,6 @@ export type DictationParseResult =
 	| DictationPatientResult
 	| DictationVisitResult
 	| Record<string, unknown>;
-
-interface OpenAiChatCompletionPayload {
-	choices?: Array<{
-		message?: {
-			content?: string | null;
-		};
-	}>;
-	error?: {
-		message?: string;
-		code?: string | number;
-	};
-}
 
 /**
  * СЕГОДНЯШНЯЯ ДАТА ДЛЯ ПОДСКАЗКИ МОДЕЛИ — ДЕНЬ КЛИНИКИ, А НЕ ДЕНЬ ПО UTC.
@@ -160,94 +141,55 @@ export function buildDictationSystemPrompt(
 	return "";
 }
 
+/**
+ * @deprecated Use canonical agentRouterClient or parseDictationLocally instead.
+ * Parses spoken dictation into structured JSON using canonical LLM AgentRouter.
+ */
 export async function parseDictationWithLLM(
 	transcript: string,
 	context: ParserContext = "schedule",
 	timeZone?: string | null,
 ): Promise<DictationParseResult> {
 	const modelName =
-		process.env.DENTAL_DICTATION_MODEL?.trim() || "qwen/qwen3.8-27b";
-	const baseUrl = "https://api.groq.com/openai/v1";
-	const keyProviderId = "groq_whisper"; // Assuming this key pool has Groq keys
-
+		process.env.DENTAL_DICTATION_MODEL?.trim() || "qwen/qwen3.6-27b";
 	const systemPrompt = buildDictationSystemPrompt(context, timeZone);
 
-	const requestBody = {
-		model: modelName,
-		temperature: 0.1,
-		response_format: { type: "json_object" },
-		messages: [
-			{
-				role: "system",
-				content: systemPrompt,
-			},
-			{
-				role: "user",
-				content: `Текст диктовки: "${transcript}"`,
-			},
-		],
-	};
+	try {
+		const response = await agentRouterClient.createChatCompletion({
+			model: modelName,
+			temperature: 0.1,
+			messages: [
+				{
+					role: "system",
+					content: systemPrompt,
+				},
+				{
+					role: "user",
+					content: `Текст диктовки: "${transcript}"`,
+				},
+			],
+		});
 
-	// 1. Попытка через Groq (qwen/qwen3.8-27b)
-	const groqCandidates = [
-		{ baseUrl: "https://api.groq.com/openai/v1", model: modelName, keyProviderId: "groq_whisper" as const },
-		{ baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.5-flash-lite", keyProviderId: "google_speech" as const },
-	];
+		const content = response.choices?.[0]?.message?.content;
+		if (!content) {
+			throw new Error("Пустой ответ сервиса распознавания диктовки");
+		}
 
-	for (const providerConfig of groqCandidates) {
-		const triedFingerprints = new Set<string>();
-		const maxAttempts = keyRetryLimit(providerConfig.keyProviderId);
-
-		for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-			const keyCandidate = selectProviderKey(providerConfig.keyProviderId, triedFingerprints);
-			if (!keyCandidate) break;
-			triedFingerprints.add(keyCandidate.fingerprint);
-
-			try {
-				const response = await fetchWithProviderTimeout(
-					`${providerConfig.baseUrl}/chat/completions`,
-					{
-						method: "POST",
-						headers: {
-							Authorization: `Bearer ${keyCandidate.value}`,
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({
-							...requestBody,
-							model: providerConfig.model,
-						}),
-					},
-					15000,
-				);
-
-				const payload = (await response
-					.json()
-					.catch(() => ({}))) as OpenAiChatCompletionPayload;
-				if (!response.ok) throw new Error("Ошибка сервиса распознавания диктовки");
-
-				const content = payload.choices?.[0]?.message?.content;
-				if (!content) throw new Error("Пустой ответ сервиса распознавания диктовки");
-
-				let parsed: DictationParseResult;
-				try {
-					parsed = JSON.parse(content.trim()) as DictationParseResult;
-				} catch {
-					const match = content.match(/\{[\s\S]*\}/);
-					if (match?.[0]) {
-						parsed = JSON.parse(match[0]) as DictationParseResult;
-					} else {
-						throw new Error("Некорректный формат JSON в ответе распознавания");
-					}
-				}
-
-				recordProviderKeySuccess(providerConfig.keyProviderId, keyCandidate);
-				return parsed;
-			} catch (error) {
-				recordProviderKeyFailure(providerConfig.keyProviderId, keyCandidate, error);
-				if (!shouldTryNextProviderKey(error)) break;
+		let parsed: DictationParseResult;
+		try {
+			parsed = JSON.parse(content.trim()) as DictationParseResult;
+		} catch {
+			const match = content.match(/\{[\s\S]*\}/);
+			if (match?.[0]) {
+				parsed = JSON.parse(match[0]) as DictationParseResult;
+			} else {
+				throw new Error("Некорректный формат JSON в ответе распознавания");
 			}
 		}
-	}
 
-	throw new Error("Не удалось распарсить диктовку через ИИ (Groq / Gemini).");
+		return parsed;
+	} catch (error) {
+		const msg = error instanceof Error ? error.message : String(error);
+		throw new Error(`Не удалось распарсить диктовку через канонический ИИ-роутер: ${msg}`);
+	}
 }

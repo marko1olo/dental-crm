@@ -13,6 +13,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { type AgentHarnessEvent, buildAgentSystemPrompt, runAgentHarness } from "./agentHarness.js";
+import type { AgentHarnessParams } from "./harness/harnessTypes.js";
+import { runDeterministicClinicalFallback } from "./harness/reactFallbackRunner.js";
 import {
 	type AgentRouterChatParams,
 	type AgentRouterChatResponse,
@@ -591,3 +593,29 @@ test("10. buildAgentSystemPrompt: Injects trustLevel directives (autonomous, bal
 	assert.ok(balancedPrompt.includes("TRUST LEVEL: BALANCED"));
 	assert.ok(balancedPrompt.includes("Сбалансированный режим"));
 });
+
+test("13. runDeterministicClinicalFallback executes real tooth tool and registers pending action on confirm_all", async () => {
+	const events: AgentHarnessEvent[] = [];
+	const recordedToolCalls: Array<{ tool: string; args: Record<string, unknown>; result: unknown }> = [];
+	const params: AgentHarnessParams = {
+		sessionId: "test-sess-fallback",
+		messages: [{ role: "user", content: "У пациента кариес на зубе 16" }],
+		context: dummyContext,
+		trustLevel: "confirm_all",
+		onEvent: (evt) => events.push(evt),
+	};
+	const res = await runDeterministicClinicalFallback(
+		params,
+		"API keys exhausted",
+		recordedToolCalls,
+		undefined,
+		false,
+	);
+	assert.ok(res.text.includes("СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК"));
+	assert.strictEqual(res.toolCalls.length, 1);
+	assert.strictEqual(res.toolCalls[0]?.tool, "update_tooth_status");
+	assert.strictEqual((res.toolCalls[0]?.args as { toothNumber: number })?.toothNumber, 16);
+	assert.strictEqual((res.toolCalls[0]?.args as { state: string })?.state, "caries");
+	assert.ok(events.some((e) => e.type === "confirmation_required"));
+});
+

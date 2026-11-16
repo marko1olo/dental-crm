@@ -75,7 +75,7 @@
 - **`packages/shared/src/ai/dentalStylesAndPhonetics.ts`**: 3 стиля общения врача (`STYLE_PROMPTS`), реакция на критику снимков, фонетический маппинг брендов (`PHONETIC_BRAND_MAP`) и черный список токсичных препаратов (`WITHDRAWN_DRUGS_AND_PRACTICES`).
 - **`packages/shared/src/ai/clinicalCognitiveCore.ts`**: 21 закон Мастер-матрицы клинического мышления, расчет анестезии и протоколы ESE/СтАР.
 - **`apps/web/src/lib/aiOrchestrator.ts`**: Маршрутизатор намерений (`detectIntent`). Проверяет локальные парсеры: `smartBookingParser.ts`, `smartPatientParser.ts`, `smartVisitParser.ts`, `smartPriceParser.ts`.
-- **`apps/api/src/ai/localDictationParser.ts`**: Бэкендовый детерминированный разбор диктовок.
+- **`apps/api/src/ai/dictationParser/index.ts`**: Канонический бэкендовый детерминированный разбор диктовок и речи у кресла.
 - **`apps/api/src/services/agent/geminiMultiKeyPoolFailover.ts`**: Ротационный пул API-ключей Google Gemini с автоматическим обходом лимитов (`429 RateLimit`) и падением в резервные провайдеры.
 
 ---

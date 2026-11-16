@@ -50,16 +50,17 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 
 	// ─── 1. RUNTIMEMODE & DENTAL TOOLS TESTS ───────────────────────────────────
 
-	it("1. Dental tools reflect runtimeMode: 17 tools in web_browser vs 32 in desktop_native", () => {
+	it("1. Dental tools reflect runtimeMode: 18 tools in web_browser vs 33 in desktop_native", () => {
 		const webTools = getDentalTools("web_browser");
 		const desktopTools = getDentalTools("desktop_native");
 
-		assert.equal(webTools.length, 17, "web_browser must have exactly 17 clinical + CRM tools");
-		assert.equal(desktopTools.length, 32, "desktop_native must have 32 tools (17 clinical + 15 workstation hardware tools)");
+		assert.equal(webTools.length, 18, "web_browser must have exactly 18 clinical + CRM tools");
+		assert.equal(desktopTools.length, 33, "desktop_native must have 33 tools (18 clinical + 15 workstation hardware tools)");
 
 		const webToolNames = webTools.map((t) => t.function.name);
 		assert.ok(webToolNames.includes("calculate_anesthesia"));
 		assert.ok(webToolNames.includes("record_treatment"));
+		assert.ok(webToolNames.includes("get_available_slots"));
 		assert.ok(webToolNames.includes("check_somatic_risks_and_contraindications"));
 		assert.ok(!webToolNames.includes("open_patient_dropzone_folder"));
 		assert.ok(!webToolNames.includes("launch_workstation_app"));
@@ -324,7 +325,7 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 
 		assert.equal(authRes.statusCode, 200);
 		const json = authRes.json();
-		assert.equal(json.count, 17);
+		assert.equal(json.count, 18);
 		assert.equal(json.runtimeMode, "web_browser");
 
 		// Authenticated request with x-agent-runtime: desktop_native
@@ -339,7 +340,7 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 
 		assert.equal(nativeRes.statusCode, 200);
 		const nativeJson = nativeRes.json();
-		assert.equal(nativeJson.count, 32);
+		assert.equal(nativeJson.count, 33);
 		assert.equal(nativeJson.runtimeMode, "desktop_native");
 
 		await app.close();

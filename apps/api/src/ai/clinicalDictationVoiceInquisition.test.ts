@@ -28,7 +28,7 @@ import {
 	type SchedulePayload,
 	type SmartActionPayload,
 	type UpdateToothPayload,
-} from "./localDictationParser.js";
+} from "./dictationParser/index.js";
 
 function isUpdateToothPayload(payload: SmartActionPayload | undefined): payload is UpdateToothPayload {
 	return typeof payload === "object" && payload !== null && ("toothUpdates" in payload || "anesthesia" in payload || "procedures" in payload);
