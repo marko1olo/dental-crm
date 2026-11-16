@@ -1,41 +1,45 @@
 import React from "react";
+import type { Appointment, Dashboard, Patient, ScheduleSuggestion } from "@dental/shared";
 import { AppointmentMedicalBadges } from "../AppointmentPaymentBadges";
 import { AppointmentCardPrimaryActions } from "../appointmentCardActions/index";
 import { AppointmentCardContextMenu } from "../appointmentContextMenu/index";
+import type { ScheduleStaffMember } from "./appointmentCardTypes";
 import { CardPatientMetadata } from "./CardPatientMetadata";
 import { CardStatusBadgeContainer } from "./CardStatusBadgeContainer";
 
+export type ScheduleChairMember = NonNullable<Dashboard["clinicSettings"]>["chairs"][number];
+
 export interface CardStandardBodyProps {
-	appointment: any;
-	appointmentPatient: any;
+	appointment: Appointment;
+	appointmentPatient?: Patient | null | undefined;
 	appointmentPatientName: string;
-	appointmentDoctor: any;
-	appointmentChair: any;
+	appointmentDoctor?: ScheduleStaffMember | null | undefined;
+	appointmentChair?: ScheduleChairMember | null | undefined;
 	patientBalance: number | null;
 	isCito: boolean;
-	displayStatus: any;
+	displayStatus: Appointment["status"];
 	isQuickStatusUpdating: boolean;
 	isLockedStatus: boolean;
 	formatTime: (iso: string) => string;
 	onOpenVisit?: (() => void) | null | undefined;
-	openAppointmentEditor: (appt: any) => void;
+	openAppointmentEditor: (appt: Appointment) => void;
 	setIsMobileSheetOpen: (open: boolean) => void;
-	handleQuickStatusChange: (status: any) => Promise<void> | void;
+	handleQuickStatusChange: (status: Appointment["status"]) => Promise<void> | void;
 	handleShiftAppointmentTime: (mins: number) => Promise<void> | void;
 	appointmentLabels?: Record<string, string> | undefined;
-	dashboard: any;
-	appointmentSuggestions?: any[] | undefined;
-	openScheduleSuggestion?: ((s: any) => void) | undefined;
-	repeatAppointment?: ((appt: any) => void) | undefined;
-	copyAppointmentToBuffer?: ((appt: any) => void) | undefined;
-	effectiveOnFreeSlotToWaitlist?: ((appt: any) => void) | undefined;
-	activeScheduleCollision?: any;
+	dashboard: Dashboard;
+	appointmentSuggestions?: ScheduleSuggestion[] | undefined;
+	openScheduleSuggestion?: ((section: string) => void) | undefined;
+	repeatAppointment?: ((appt: Appointment) => void) | undefined;
+	copyAppointmentToBuffer?: ((appt: Appointment) => void) | undefined;
+	effectiveOnFreeSlotToWaitlist?: ((appt: Appointment) => void) | undefined;
+	activeScheduleCollision?: { message?: string | null; [key: string]: unknown } | null | undefined;
 	appointmentHasOpenVisit?: boolean | undefined;
 	appointmentEditing?: boolean | undefined;
 	cardTeeth?: string[] | undefined;
 	allergyAlert?: string | null | undefined;
 	somaticAlert?: string | null | undefined;
-	labReadinessAlert?: any;
+	labReadinessAlert?: string | null | undefined;
 }
 
 export function CardStandardBody({

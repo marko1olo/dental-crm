@@ -25,11 +25,16 @@ export const AppointmentPatientSummary: React.FC<AppointmentPatientSummaryProps>
 		}
 	};
 
-	const hasAllergy = Boolean(
-		patObj?.allergies &&
-			typeof patObj.allergies === "string" &&
-			patObj.allergies.trim().length > 0,
-	);
+	const rawAllergies =
+		patObj && typeof patObj === "object" && "allergies" in patObj
+			? (patObj as { allergies?: unknown }).allergies
+			: undefined;
+	const allergyText = Array.isArray(rawAllergies)
+		? rawAllergies.filter((x): x is string => typeof x === "string").join(", ")
+		: typeof rawAllergies === "string"
+			? rawAllergies
+			: "";
+	const hasAllergy = Boolean(allergyText.trim().length > 0);
 
 	return (
 		<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
@@ -86,7 +91,7 @@ export const AppointmentPatientSummary: React.FC<AppointmentPatientSummaryProps>
 			{hasAllergy && (
 				<span
 					className="text-[9px] font-bold px-1 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 shrink-0 hidden sm:inline-flex items-center gap-0.5"
-					title={`Аллергия у пациента: ${patObj.allergies}`}
+					title={`Аллергия у пациента: ${allergyText}`}
 				>
 					<AlertTriangle size={9} className="text-rose-600 shrink-0" />
 					<span className="truncate max-w-[80px]">Аллергия</span>

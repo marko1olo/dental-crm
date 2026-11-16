@@ -1,5 +1,7 @@
+import type { Dashboard } from "@dental/shared";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
+import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
 
 export interface FormatConfirmationTextParams {
   patientName: string;
@@ -10,6 +12,40 @@ export interface FormatConfirmationTextParams {
   clinicName: string;
   clinicAddress: string;
   clinicPhone?: string;
+}
+
+export interface QuickBookingConfirmationPatientSearch {
+  newPatientFullName?: string | null | undefined;
+  newPatientPhone?: string | null | undefined;
+  searchQuery?: string | null | undefined;
+  selectedPatient?: { fullName?: string | null | undefined } | null | undefined;
+}
+
+export interface QuickBookingDoctorSummary {
+  id: string;
+  fullName: string;
+  [key: string]: unknown;
+}
+
+export interface QuickBookingChairSummary {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+export interface ExecuteCopyConfirmationFlowParams {
+  patientSearch: QuickBookingConfirmationPatientSearch;
+  appointmentType: string;
+  doctors: QuickBookingDoctorSummary[];
+  doctorUserId: string;
+  dutyDoc?: QuickBookingDoctorSummary | null | undefined;
+  chairs: QuickBookingChairSummary[];
+  chairId: string;
+  currentChair?: QuickBookingChairSummary | null | undefined;
+  startsAtLocal: string;
+  durationMinutes: number;
+  dashboard?: Dashboard | null | undefined;
+  initialSlot?: QuickBookingSlotInfo | null | undefined;
 }
 
 export function formatBookingConfirmationText({
@@ -64,20 +100,7 @@ export async function copyBookingConfirmationToClipboard(text: string) {
   showToast("Детали записи скопированы в буфер обмена для отправки пациенту", "success");
 }
 
-export async function executeCopyConfirmationFlow(params: {
-  patientSearch: any;
-  appointmentType: string;
-  doctors: any[];
-  doctorUserId: string;
-  dutyDoc: any;
-  chairs: any[];
-  chairId: string;
-  currentChair: any;
-  startsAtLocal: string;
-  durationMinutes: number;
-  dashboard: any;
-  initialSlot?: any;
-}) {
+export async function executeCopyConfirmationFlow(params: ExecuteCopyConfirmationFlowParams) {
   const { patientSearch, appointmentType, doctors, doctorUserId, dutyDoc, chairs, chairId, currentChair, startsAtLocal, durationMinutes, dashboard, initialSlot } = params;
   const fullName = patientSearch.newPatientFullName?.trim() || patientSearch.selectedPatient?.fullName?.trim() || "";
   const phoneFallback = patientSearch.newPatientPhone?.trim() || initialSlot?.patientPhone?.trim() || "";
@@ -98,8 +121,8 @@ export async function executeCopyConfirmationFlow(params: {
     }
   }
   const patientName = candidateName || "Пациент";
-  const selectedDoc = doctors.find((d: any) => d.id === doctorUserId) || dutyDoc;
-  const selectedChair = chairs.find((c: any) => c.id === chairId) || currentChair;
+  const selectedDoc = doctors.find((d) => d.id === doctorUserId) || dutyDoc;
+  const selectedChair = chairs.find((c) => c.id === chairId) || currentChair;
 
   const text = formatBookingConfirmationText({
     patientName, startsAtLocal, durationMinutes,

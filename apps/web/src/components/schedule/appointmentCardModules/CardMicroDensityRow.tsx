@@ -1,35 +1,37 @@
 import React from "react";
 import { Stethoscope, Zap } from "lucide-react";
+import type { Appointment, Dashboard, Patient, ScheduleSuggestion } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { AppointmentStatusBadgeSelector } from "../AppointmentPaymentBadges";
 import { AppointmentCardContextMenu } from "../appointmentContextMenu/index";
+import type { ScheduleStaffMember } from "./appointmentCardTypes";
 import { CardPatientMetadata } from "./CardPatientMetadata";
 
 export interface CardMicroDensityRowProps {
-	appointment: any;
-	appointmentPatient: any;
+	appointment: Appointment;
+	appointmentPatient?: Patient | null | undefined;
 	appointmentPatientName: string;
-	appointmentDoctor: any;
+	appointmentDoctor?: ScheduleStaffMember | null | undefined;
 	patientBalance: number | null;
 	isCito: boolean;
-	displayStatus: any;
+	displayStatus: Appointment["status"];
 	isQuickStatusUpdating: boolean;
 	isLockedStatus: boolean;
 	formatTime: (iso: string) => string;
 	onOpenVisit?: (() => void) | null | undefined;
-	openAppointmentEditor: (appt: any) => void;
+	openAppointmentEditor: (appt: Appointment) => void;
 	setIsMobileSheetOpen: (open: boolean) => void;
-	handleQuickStatusChange: (status: any) => Promise<void> | void;
+	handleQuickStatusChange: (status: Appointment["status"]) => Promise<void> | void;
 	handleShiftAppointmentTime: (mins: number) => Promise<void> | void;
 	appointmentLabels?: Record<string, string> | undefined;
-	dashboard: any;
-	appointmentSuggestions?: any[] | undefined;
-	openScheduleSuggestion?: ((s: any) => void) | undefined;
-	repeatAppointment?: ((appt: any) => void) | undefined;
-	copyAppointmentToBuffer?: ((appt: any) => void) | undefined;
-	effectiveOnFreeSlotToWaitlist?: ((appt: any) => void) | undefined;
+	dashboard: Dashboard;
+	appointmentSuggestions?: ScheduleSuggestion[] | undefined;
+	openScheduleSuggestion?: ((section: string) => void) | undefined;
+	repeatAppointment?: ((appt: Appointment) => void) | undefined;
+	copyAppointmentToBuffer?: ((appt: Appointment) => void) | undefined;
+	effectiveOnFreeSlotToWaitlist?: ((appt: Appointment) => void) | undefined;
 }
 
 export function CardMicroDensityRow(props: CardMicroDensityRowProps) {

@@ -1,5 +1,15 @@
-import type { Appointment, AppointmentLabStatusInfo, Dashboard } from "@dental/shared";
+import type { Appointment, AppointmentLabStatusInfo, Dashboard, Patient } from "@dental/shared";
 import type { ScheduleDensityMode, DoctorSpecialtyTheme } from "../appointmentCardHelpers";
+
+export type ScheduleStaffMember = NonNullable<Dashboard["clinicSettings"]>["staff"][number];
+
+export interface ScheduleGridCollision {
+	sameDoctor?: boolean | undefined;
+	sameChair?: boolean | undefined;
+	sameAssistant?: boolean | undefined;
+	samePatient?: boolean | undefined;
+	conflictWith?: string | undefined;
+}
 
 export type AppointmentStatusType =
 	| "planned"
@@ -36,11 +46,11 @@ export interface GridAppointmentCardProps {
 	chair: { id: string; name: string };
 	effectiveChairs: Array<{ id: string; name: string; color?: string; colorId?: string | number }>;
 	doctors: Array<{ id: string; fullName: string; specialties?: string[]; role?: string }>;
-	patientLookupMap: Map<string, any>;
-	staffLookupMap: Map<string, any>;
-	collisionMap: Map<string, any>;
-	patientNameFn?: ((patients: any, patientId: string | null) => string) | undefined;
-	getPatientName?: ((patients: any, patientId: string | null) => string) | undefined;
+	patientLookupMap: Map<string, Patient>;
+	staffLookupMap: Map<string, ScheduleStaffMember>;
+	collisionMap: Map<string, ScheduleGridCollision>;
+	patientNameFn?: ((patients: Patient[] | unknown, patientId: string | null) => string) | undefined;
+	getPatientName?: ((patients: Patient[] | unknown, patientId: string | null) => string) | undefined;
 	dashboard: Dashboard;
 	timezone?: string | null;
 	toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
@@ -53,7 +63,7 @@ export interface GridAppointmentCardProps {
 	onAppointmentClick: (appt: Appointment) => void;
 	onAppointmentDoubleClick?: ((appt: Appointment) => void) | undefined;
 	onSelectMobileAppt: (appt: Appointment) => void;
-	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
+	onQuickStatusChange?: ((id: string, status: Appointment["status"]) => void) | undefined;
 	onAdjustDuration: (appt: Appointment, deltaMinutes: number) => void;
 	onShiftLateness: (appt: Appointment, deltaMinutes: number) => void;
 	onReassignChair: (appt: Appointment, chairId: string) => void;
@@ -75,7 +85,7 @@ export interface AppointmentStatusMarkerProps {
 	pName: string;
 	onToggleStatusPicker: (apptId: string) => void;
 	onCloseStatusPicker: () => void;
-	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
+	onQuickStatusChange?: ((id: string, status: Appointment["status"]) => void) | undefined;
 }
 
 export interface AppointmentPatientSummaryProps {
@@ -86,7 +96,7 @@ export interface AppointmentPatientSummaryProps {
 	isCito: boolean;
 	durationMin: number;
 	patientAgeLabel: string | null;
-	patObj?: any;
+	patObj?: Patient | null | undefined;
 }
 
 export interface AppointmentProcedureBadgeProps {
@@ -101,8 +111,8 @@ export interface AppointmentProcedureBadgeProps {
 export interface AppointmentQuickActionsMenuProps {
 	appointment: Appointment;
 	pName: string;
-	patObj?: any;
-	docObj?: any;
+	patObj?: Patient | null | undefined;
+	docObj?: ScheduleStaffMember | null | undefined;
 	effectiveChairs: Array<{ id: string; name: string; color?: string; colorId?: string | number }>;
 	doctors: Array<{ id: string; fullName: string; specialties?: string[]; role?: string }>;
 	dashboard: Dashboard;
@@ -111,7 +121,7 @@ export interface AppointmentQuickActionsMenuProps {
 	onAppointmentClick: (appt: Appointment) => void;
 	onToggleMenu: (apptId: string) => void;
 	onCloseMenu: () => void;
-	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
+	onQuickStatusChange?: ((id: string, status: Appointment["status"]) => void) | undefined;
 	onAdjustDuration: (appt: Appointment, deltaMinutes: number) => void;
 	onShiftLateness: (appt: Appointment, deltaMinutes: number) => void;
 	onReassignChair: (appt: Appointment, chairId: string) => void;
@@ -141,4 +151,3 @@ export function areGridAppointmentCardPropsEqual(
 	if (prev.densityMode !== next.densityMode) return false;
 	return true;
 }
-

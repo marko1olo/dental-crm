@@ -1,4 +1,14 @@
-import type { Appointment, Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard, Patient } from "@dental/shared";
+
+export type ScheduleStaffMember = NonNullable<Dashboard["clinicSettings"]>["staff"][number];
+export type ScheduleChairMember = NonNullable<Dashboard["clinicSettings"]>["chairs"][number];
+
+export interface AppointmentEditorCollision {
+	hasCollision: boolean;
+	conflictType: "doctor" | "chair" | "assistant" | "patient" | null;
+	conflictingAppointment: Appointment | null;
+	message: string | null;
+}
 
 export interface AppointmentCardEditorProps {
 	appointment: Appointment;
@@ -13,20 +23,15 @@ export interface AppointmentCardEditorProps {
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	appointmentLabels: Record<Appointment["status"], string>;
 	appointmentPatientName: string;
-	appointmentPatient: any;
-	appointmentDoctor: any;
-	appointmentChair: any;
-	activePatients: any[];
-	activeDoctors: any[];
-	activeAssistants: any[];
-	activeChairs: any[];
+	appointmentPatient?: Patient | null | undefined;
+	appointmentDoctor?: ScheduleStaffMember | null | undefined;
+	appointmentChair?: ScheduleChairMember | null | undefined;
+	activePatients: Patient[];
+	activeDoctors: ScheduleStaffMember[];
+	activeAssistants: ScheduleStaffMember[];
+	activeChairs: ScheduleChairMember[];
 	useManualSelects: boolean;
-	collision: {
-		hasCollision: boolean;
-		conflictType: any;
-		conflictingAppointment: any;
-		message: string | null;
-	};
+	collision: AppointmentEditorCollision;
 	toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
 	fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
 	updateAppointmentScheduleDraft: (
