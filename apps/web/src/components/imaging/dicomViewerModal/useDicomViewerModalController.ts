@@ -15,6 +15,7 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 	const { isOpen, onClose, imageSrc, title, toothFdiCode, patientName, patientId, studyDate, initialViewMode = "2d", onInsertToProtocol } = props;
 	const [viewMode, setViewMode] = useState(initialViewMode);
 	const [isCtSelectorOpen, setIsCtSelectorOpen] = useState(false);
+	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState(false);
 	const [currentImageSrc, setCurrentImageSrc] = useState<string | null>(imageSrc || null);
 	const [activeStudyId, setActiveStudyId] = useState("study-current");
 	const [viewportState, setViewportState] = useState<DicomViewportState>(DEFAULT_DICOM_VIEWPORT_STATE);
@@ -47,7 +48,13 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 
 	const handleSwitchViewMode = useCallback((mode: "2d" | "3d_mpr" | "sectioning") => {
 		if (mode === "3d_mpr" || mode === "sectioning") {
-			openCbctPopoutWindow({ studyId: "ct-study-current", patientId: patientId || undefined, patientName: patientName || undefined, title: `3D КТ · ${patientName || "Исследование"}` }).then((res) => { if (!res.success) setIsCtSelectorOpen(true); });
+			openCbctPopoutWindow({ studyId: "ct-study-current", patientId: patientId || undefined, patientName: patientName || undefined, title: `3D КТ · ${patientName || "Исследование"}` }).then((res) => {
+				if (!res.success) {
+					setIsCbctStudioOpen(true);
+				}
+			}).catch(() => {
+				setIsCbctStudioOpen(true);
+			});
 			return;
 		}
 		if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
@@ -83,7 +90,7 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 	}, [ai]);
 
 	return {
-		viewMode, isCtSelectorOpen, setIsCtSelectorOpen, currentImageSrc, setCurrentImageSrc,
+		viewMode, isCtSelectorOpen, setIsCtSelectorOpen, isCbctStudioOpen, setIsCbctStudioOpen, currentImageSrc, setCurrentImageSrc,
 		activeStudyId, setActiveStudyId, viewportState, setViewportState, measurements, setMeasurements,
 		isNormaApplied, isProtocolsDropdownOpen, setIsProtocolsDropdownOpen, appliedProtocolId,
 		isDragOver, setIsDragOver, fileInputRef, modalContainerRef, protocolsDropdownRef, ai,

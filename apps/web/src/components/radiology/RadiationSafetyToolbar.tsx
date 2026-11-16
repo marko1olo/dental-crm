@@ -24,10 +24,10 @@ export const RadiationSafetyToolbar: React.FC<RadiationSafetyToolbarProps> = ({
 					onClick={() =>
 						onAddStudy("intraoral_radiovisiography", "Прицельный снимок")
 					}
-					className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-600 transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1"
+					className="h-9 min-h-[36px] px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
 					data-testid="btn-add-rvg-dose"
 				>
-					<Plus className="w-3 h-3" />
+					<Plus className="w-3.5 h-3.5" />
 					<span>Визиография (~2 мкЗв)</span>
 				</button>
 				<button
@@ -35,19 +35,19 @@ export const RadiationSafetyToolbar: React.FC<RadiationSafetyToolbarProps> = ({
 					onClick={() =>
 						onAddStudy("optg_digital_panoramic", "Панорамный обзор")
 					}
-					className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-600 transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1"
+					className="h-9 min-h-[36px] px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
 					data-testid="btn-add-optg-dose"
 				>
-					<Plus className="w-3 h-3" />
+					<Plus className="w-3.5 h-3.5" />
 					<span>ОПТГ (~12 мкЗв)</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => onAddStudy("cbct_segment_5x5", "Сегмент челюсти")}
-					className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-teal-500 hover:text-teal-600 transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1"
+					className="h-9 min-h-[36px] px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
 					data-testid="btn-add-cbct-dose"
 				>
-					<Plus className="w-3 h-3" />
+					<Plus className="w-3.5 h-3.5" />
 					<span>КЛКТ (~35 мкЗв)</span>
 				</button>
 			</div>
@@ -56,17 +56,17 @@ export const RadiationSafetyToolbar: React.FC<RadiationSafetyToolbarProps> = ({
 				<button
 					type="button"
 					onClick={onExportCsv}
-					className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1"
+					className="h-9 min-h-[36px] px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
 					data-testid="btn-export-csv"
 					title="Экспорт журнала лучевой нагрузки в CSV"
 				>
-					<Download className="w-3 h-3" />
+					<Download className="w-3.5 h-3.5" />
 					<span>CSV</span>
 				</button>
 				<button
 					type="button"
 					onClick={onPrintSanpin}
-					className="h-7 px-3 rounded-lg text-xs font-bold bg-teal-600 text-white hover:bg-teal-700 transition-colors shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
+					className="h-9 min-h-[36px] px-3.5 rounded-lg text-xs font-bold bg-[var(--teal,#0d9488)] text-white hover:opacity-90 transition-opacity shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
 					data-testid="btn-print-sanpin-form"
 					title="Печать официального листа лучевой нагрузки для надзорных органов"
 				>

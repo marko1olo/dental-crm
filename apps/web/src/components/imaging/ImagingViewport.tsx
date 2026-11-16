@@ -10,6 +10,7 @@ import { showToast } from "../GlobalToast";
 import { RvgSensorVectorVisualizer } from "./viewport/RvgSensorVectorVisualizer";
 import { CbctStudyActiveCard } from "./viewport/CbctStudyActiveCard";
 import type { ImagingViewportProps } from "./viewport/types";
+import type { ImagingViewerState } from "./types";
 
 export { RvgSensorVectorVisualizer };
 export type { RvgSensorVectorVisualizerProps } from "./viewport/RvgSensorVectorVisualizer";
@@ -38,8 +39,9 @@ export function ImagingViewport({
 				try {
 					const res = await uploadImagingScanFile(file, { patientId, toothCode: selectedImagingStudy?.toothCode ?? null });
 					if (res.success && res.study && onStudyUploaded) onStudyUploaded(res.study);
-				} catch (err: any) {
-					showToast(err?.message || "Ошибка загрузки снимка", "error");
+				} catch (err: unknown) {
+					const msg = err instanceof Error ? err.message : "Ошибка загрузки снимка";
+					showToast(msg, "error");
 				}
 			}
 			window.dispatchEvent(new CustomEvent("dente-radiology-file-dropped", { detail: { file, toothCode: selectedImagingStudy?.toothCode } }));
@@ -50,7 +52,7 @@ export function ImagingViewport({
 		if (isCbctOrLocalArchive) return;
 		e.preventDefault();
 		const delta = e.deltaY < 0 ? 0.1 : -0.1;
-		setImagingViewerState((state: any) => ({
+		setImagingViewerState((state: ImagingViewerState) => ({
 			...state,
 			zoom: Math.min(3.0, Math.max(0.4, Number(((state.zoom || 1) + delta).toFixed(2)))),
 		}));
@@ -58,8 +60,8 @@ export function ImagingViewport({
 
 	return (
 		<div
-			className="imaging-viewer-stage min-h-[460px] max-h-[calc(100vh-220px)] flex-1 w-full flex flex-col bg-[#090d16] rounded-xl border border-[#1e293b] overflow-hidden"
-			style={{ position: "relative", minHeight: "460px", backgroundColor: "#090d16" }}
+			className="imaging-viewer-stage min-h-[460px] max-h-[calc(100vh-220px)] flex-1 w-full flex flex-col bg-[var(--paper-deep,#090d16)] rounded-xl border border-[var(--line,#1e293b)] overflow-hidden"
+			style={{ position: "relative", minHeight: "460px" }}
 			onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
 			onDrop={handleDrop}
 			onWheel={handleWheel}
@@ -85,7 +87,7 @@ export function ImagingViewport({
 					onMeasurementsChange={setRulerMeasurements}
 					isPanActive={isPanActive}
 					pan={imagingViewerState.pan || { x: 0, y: 0 }}
-					onPanChange={(pan) => setImagingViewerState((state: any) => ({ ...state, pan }))}
+					onPanChange={(pan) => setImagingViewerState((state: ImagingViewerState) => ({ ...state, pan }))}
 					studyTitle={selectedImagingStudy?.title}
 					toothCode={selectedImagingStudy?.toothCode}
 				/>

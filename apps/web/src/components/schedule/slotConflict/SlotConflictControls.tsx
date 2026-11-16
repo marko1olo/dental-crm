@@ -100,7 +100,7 @@ export const SlotConflictControls: React.FC<SlotConflictControlsProps> = ({
 							data-testid="move-to-chair-btn"
 							data-chair-id={chair.id}
 							onClick={() => { onMoveToChair(chair.id); onClose(); }}
-							className="secondary-button min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs touch-manipulation select-none active:scale-[0.98]"
+							className="secondary-button min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-[var(--teal)] hover:text-white text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs touch-manipulation select-none active:scale-[0.98]"
 							title={`Перенести приём на ${chair.name}`}
 							aria-label={`Перенести приём на кресло ${chair.name}`}
 						>

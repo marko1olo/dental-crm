@@ -4,6 +4,7 @@ import { RadiologyClinicalHud } from "../../radiology/RadiologyClinicalHud.js";
 import { RadiologyCalibratedScaleRuler } from "../../radiology/RadiologyCalibratedScaleRuler.js";
 import { DicomAiFindingsDrawer } from "../DicomAiFindingsDrawer.js";
 import { RadiologyFilmstripDock, type RadiologyFilmstripItem } from "../../radiology/RadiologyFilmstripDock.js";
+import type { RadiologyStudy } from "../../radiology/types.js";
 import type { CalibratedRulerMeasurement, DicomViewportState } from "../rvgViewerEngine.js";
 import type { planVisiographFindings } from "../visiographFindings.js";
 
@@ -28,7 +29,7 @@ export interface DicomViewerModalBodyProps {
 	readonly onApplyFindingsToChart: () => void;
 	readonly filmstripStudies: readonly RadiologyFilmstripItem[];
 	readonly activeStudyId: string;
-	readonly onSelectFilmstripStudy: (s: RadiologyFilmstripItem) => void;
+	readonly onSelectFilmstripStudy: (s: RadiologyStudy | RadiologyFilmstripItem) => void;
 }
 
 export const DicomViewerModalBody: React.FC<DicomViewerModalBodyProps> = ({

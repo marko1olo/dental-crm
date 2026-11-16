@@ -12,6 +12,7 @@ export * from "./schemas/index.js";
 export type OutpatientMedicalCard025uPayload = DentalMedicalCard043uPayload;
 export type PatientRecord = import("./patients/patientSchemas.js").Patient;
 export type DashboardResponse = import("./schemas/documentChainAndDmsSchemas.js").Dashboard;
+export type User = import("./schemas/speechProviderSchemas.js").StaffMember;
 // Explicit re-exports to resolve wildcard collision between schemas and domain modules (TS2308)
 export {
 	SanPiNSterilizationEngine,

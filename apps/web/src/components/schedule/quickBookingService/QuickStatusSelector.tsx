@@ -38,7 +38,7 @@ export function QuickStatusSelector({
           onClick={() => setStatus("confirmed")}
           className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm transition-all inline-flex items-center gap-2 cursor-pointer select-none active:scale-95 border ${
             status === "confirmed"
-              ? "bg-emerald-600 text-white border-emerald-600 font-semibold shadow-sm"
+              ? "bg-[var(--teal)] text-white border-[var(--teal)] font-semibold shadow-sm"
               : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium"
           }`}
           data-testid="quick-status-btn-confirmed"

@@ -310,7 +310,7 @@ export function AppointmentModalLabSection({
                 <button
                   type="button"
                   onClick={() => handleConfirmFitting(item)}
-                  className="h-6 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
+                  className="h-6 px-2.5 rounded bg-[var(--teal)] hover:opacity-90 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
                   data-testid="appointment-confirm-fitting-btn"
                   title="Подтвердить успешную примерку конструкции"
                 >

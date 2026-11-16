@@ -451,6 +451,7 @@ export const staffMemberSchema = z.object({
 });
 
 export type StaffMember = z.infer<typeof staffMemberSchema>;
+export type User = StaffMember;
 
 export const chairSchema = z.object({
 	id: z.string().uuid(),

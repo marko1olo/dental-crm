@@ -1,4 +1,5 @@
 import React from "react";
+import type { Patient } from "@dental/shared";
 import { AlertTriangle, User } from "lucide-react";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
@@ -7,7 +8,7 @@ import { showToast } from "../../GlobalToast";
 interface GridAppointmentHudHeaderProps {
 	pName: string;
 	pBalance: number | null;
-	patObj?: { id?: string } | null;
+	patObj?: Patient | { id?: string } | null | undefined;
 	pAllergyAlert: string | null;
 }
 

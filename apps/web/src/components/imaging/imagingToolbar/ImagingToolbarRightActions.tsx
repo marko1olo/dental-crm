@@ -5,13 +5,14 @@
 
 import React from "react";
 import { Download, Printer, RefreshCw } from "lucide-react";
+import type { ImagingStudy } from "../types.js";
 import { ImagingToothVisitGroup } from "./ImagingToothVisitGroup.js";
 import { downloadStudyImageAsJpg, printStudyForPatient } from "../imagingExportPrintHelper.js";
 
 interface Props {
-	selectedImagingStudy?: any;
-	activeAppointment?: any;
-	activePatient?: any;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
+	activeAppointment?: { id: string; date?: string; patientName?: string } | null | undefined;
+	activePatient?: { readonly id?: string | undefined; readonly fullName?: string | undefined; readonly name?: string | undefined } | null | undefined;
 	previewSrc?: string | null | undefined;
 	rulerMeasurementsCount: number;
 	onAttachToTooth?: ((toothCode: string) => Promise<void> | void) | undefined;

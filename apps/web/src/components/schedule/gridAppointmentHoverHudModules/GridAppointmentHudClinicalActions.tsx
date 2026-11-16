@@ -1,5 +1,5 @@
 import React from "react";
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Patient } from "@dental/shared";
 import {
 	CalendarPlus,
 	ClipboardList,
@@ -14,7 +14,7 @@ import { showToast } from "../../GlobalToast";
 
 interface GridAppointmentHudClinicalActionsProps {
 	appointment: Appointment;
-	patObj?: any;
+	patObj?: Patient | null | undefined;
 	pName: string;
 	onMouseLeave: () => void;
 	onFreeSlotToWaitlist?: ((appt: Appointment) => void) | undefined;

@@ -1,5 +1,5 @@
 import React from "react";
-import type { Appointment, Dashboard } from "@dental/shared";
+import type { Appointment, AppointmentStatus, Dashboard, Patient, User } from "@dental/shared";
 import type { DoctorSpecialtyTheme } from "./appointmentCardHelpers";
 import {
 	GridAppointmentHudClinicalActions,
@@ -16,8 +16,8 @@ export interface GridAppointmentHoverHudProps {
 	appointment: Appointment;
 	pName: string;
 	pBalance: number | null;
-	patObj?: any;
-	docObj?: any;
+	patObj?: Patient | null | undefined;
+	docObj?: User | null | undefined;
 	docTheme: DoctorSpecialtyTheme | null;
 	pAllergyAlert: string | null;
 	chair: { id: string; name: string };
@@ -27,10 +27,10 @@ export interface GridAppointmentHoverHudProps {
 	isNearRightEdge: boolean;
 	isNearBottom: boolean;
 	dashboard: Dashboard;
-	staffLookupMap: Map<string, any>;
+	staffLookupMap: Map<string, User>;
 	onKeepHovered: (apptId: string) => void;
 	onMouseLeave: () => void;
-	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
+	onQuickStatusChange?: ((id: string, status: AppointmentStatus) => void) | undefined;
 	onAdjustDuration: (appt: Appointment, deltaMinutes: number) => void;
 	onShiftLateness: (appt: Appointment, deltaMinutes: number) => void;
 	onFreeSlotToWaitlist?: ((appt: Appointment) => void) | undefined;

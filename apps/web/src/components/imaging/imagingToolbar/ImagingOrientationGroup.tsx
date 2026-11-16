@@ -4,7 +4,7 @@ import type { ImagingViewerState } from "../types.js";
 
 export interface ImagingOrientationGroupProps {
 	readonly imagingViewerState: ImagingViewerState;
-	readonly setImagingViewerState: (updater: (prev: any) => any) => void;
+	readonly setImagingViewerState: React.Dispatch<React.SetStateAction<ImagingViewerState>>;
 }
 
 export const ImagingOrientationGroup: React.FC<ImagingOrientationGroupProps> = ({
@@ -21,7 +21,7 @@ export const ImagingOrientationGroup: React.FC<ImagingOrientationGroupProps> = (
 				type="button"
 				title="Повернуть влево"
 				aria-label="Повернуть снимок влево"
-				onClick={() => setImagingViewerState((state: any) => ({ ...state, rotationDeg: (state.rotationDeg || 0) - 90 }))}
+				onClick={() => setImagingViewerState((state) => ({ ...state, rotationDeg: (state.rotationDeg || 0) - 90 }))}
 			>
 				<RotateCcw size={14} aria-hidden="true" />
 			</button>
@@ -30,7 +30,7 @@ export const ImagingOrientationGroup: React.FC<ImagingOrientationGroupProps> = (
 				type="button"
 				title="Повернуть вправо"
 				aria-label="Повернуть снимок вправо"
-				onClick={() => setImagingViewerState((state: any) => ({ ...state, rotationDeg: (state.rotationDeg || 0) + 90 }))}
+				onClick={() => setImagingViewerState((state) => ({ ...state, rotationDeg: (state.rotationDeg || 0) + 90 }))}
 			>
 				<RotateCw size={14} aria-hidden="true" />
 			</button>
@@ -40,7 +40,7 @@ export const ImagingOrientationGroup: React.FC<ImagingOrientationGroupProps> = (
 				title="Зеркально"
 				aria-label="Зеркально отразить снимок"
 				aria-pressed={isFlipped}
-				onClick={() => setImagingViewerState((state: any) => ({ ...state, flipHorizontal: !state.flipHorizontal }))}
+				onClick={() => setImagingViewerState((state) => ({ ...state, flipHorizontal: !state.flipHorizontal }))}
 			>
 				<FlipHorizontal size={14} aria-hidden="true" />
 			</button>
@@ -49,7 +49,7 @@ export const ImagingOrientationGroup: React.FC<ImagingOrientationGroupProps> = (
 				type="button"
 				title="Повернуть на 180°"
 				aria-label="Повернуть снимок на 180 градусов"
-				onClick={() => setImagingViewerState((state: any) => ({ ...state, rotationDeg: ((state.rotationDeg || 0) + 180) % 360 }))}
+				onClick={() => setImagingViewerState((state) => ({ ...state, rotationDeg: ((state.rotationDeg || 0) + 180) % 360 }))}
 			>
 				180°
 			</button>

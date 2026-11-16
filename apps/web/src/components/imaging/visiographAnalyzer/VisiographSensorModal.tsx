@@ -1,5 +1,5 @@
 /**
- * VisiographSensorModal.tsx — Модальный портал просмотра 2D сенсора EzDent-i
+ * VisiographSensorModal.tsx — Модальный портал просмотра 2D сенсора визиографа DENTE
  * Mandate 8b: строго <= 120 строк.
  */
 

@@ -3,7 +3,7 @@ import type { ImagingViewerState } from "../types.js";
 
 export interface ImagingBrightnessContrastSlidersProps {
 	readonly imagingViewerState: ImagingViewerState;
-	readonly setImagingViewerState: (updater: (prev: any) => any) => void;
+	readonly setImagingViewerState: React.Dispatch<React.SetStateAction<ImagingViewerState>>;
 }
 
 export const ImagingBrightnessContrastSliders: React.FC<ImagingBrightnessContrastSlidersProps> = ({
@@ -26,7 +26,7 @@ export const ImagingBrightnessContrastSliders: React.FC<ImagingBrightnessContras
 					value={brightness}
 					onChange={(e) => {
 						const val = Number(e.target.value);
-						setImagingViewerState((state: any) => ({ ...state, brightness: val }));
+						setImagingViewerState((state) => ({ ...state, brightness: val }));
 					}}
 				/>
 				<span className="text-xs text-[var(--teal)] font-mono w-9 text-right font-bold">
@@ -44,7 +44,7 @@ export const ImagingBrightnessContrastSliders: React.FC<ImagingBrightnessContras
 					value={contrast}
 					onChange={(e) => {
 						const val = Number(e.target.value);
-						setImagingViewerState((state: any) => ({ ...state, contrast: val }));
+						setImagingViewerState((state) => ({ ...state, contrast: val }));
 					}}
 				/>
 				<span className="text-xs text-[var(--teal)] font-mono w-9 text-right font-bold">

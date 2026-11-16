@@ -212,11 +212,11 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
               onClick={() => onSelectDate(cell.dateIso)}
               className={`h-7 rounded-md flex flex-col items-center justify-center relative cursor-pointer transition-all ${
                 cell.isSelected
-                  ? "bg-sky-600 text-white font-bold shadow-xs hover:bg-sky-500"
+                  ? "bg-[var(--teal)] text-white font-bold shadow-xs hover:opacity-90"
                   : cell.isCurrentMonth
                     ? "bg-transparent hover:bg-[var(--paper)] text-[var(--ink)]"
                     : "bg-transparent text-[var(--muted)]/40 hover:bg-[var(--paper)]/50"
-              } ${cell.isToday && !cell.isSelected ? "ring-1 ring-sky-500/60 font-bold" : ""}`}
+              } ${cell.isToday && !cell.isSelected ? "ring-1 ring-[var(--teal)]/60 font-bold" : ""}`}
               title={`${cell.dateIso}${cell.hasAppointments ? " (есть приёмы)" : ""}`}
               aria-label={`Дата ${cell.dateIso}`}
             >
@@ -224,7 +224,7 @@ export const ScheduleMiniMonthCalendar: React.FC<ScheduleMiniMonthCalendarProps>
               {cell.hasAppointments && (
                 <span
                   className={`w-1 h-1 rounded-full mt-0.5 ${
-                    cell.isSelected ? "bg-white" : "bg-sky-500"
+                    cell.isSelected ? "bg-white" : "bg-[var(--teal)]"
                   }`}
                 />
               )}

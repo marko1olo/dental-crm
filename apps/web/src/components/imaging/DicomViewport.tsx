@@ -23,7 +23,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 	const rawImageRef = useRef<HTMLImageElement | null>(null);
 	const filteredCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const canvasRectRef = useRef<DOMRect | null>(null);
-	const glRef = useRef<WebGLRenderingContext | null>(null);
+	const glRef = useRef<Parameters<typeof disposeWebGlRenderingContext>[0]>(null);
 
 	const { scheduleViewportUpdate, flushViewportUpdate } = useThrottledViewportUpdate(onViewportChange);
 

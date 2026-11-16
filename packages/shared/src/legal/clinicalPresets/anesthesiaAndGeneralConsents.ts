@@ -6,7 +6,7 @@ import type { ClinicalProcedureConsentPreset } from "./types.js";
  * ══════════════════════════════════════════════════════════════════════════════
  */
 export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
-	// 4. ИДС Седация (StomX #72)
+	// 4. ИДС Седация
 	sedation: {
 		procedureType: "sedation",
 		procedureName: "Анестезиологическое пособие: седация с сохраненным сознанием (ЗАКС / внутривенная седация)",
@@ -38,7 +38,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 15. ИДС Общее для несовершеннолетних (представитель) (StomX #64)
+	// 15. ИДС Общее для несовершеннолетних (представитель)
 	minor_general: {
 		procedureType: "minor_general",
 		procedureName: "Стоматологическое лечение несовершеннолетнего пациента (с участием законного представителя)",
@@ -69,7 +69,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 16. ИДС Рентгенологическое исследование и КЛКТ (StomX #71)
+	// 16. ИДС Рентгенологическое исследование и КЛКТ
 	xray_cbct: {
 		procedureType: "xray_cbct",
 		procedureName: "Рентгенологическое исследование: цифровая радиовизиография, ОПТГ, ТРГ, КЛКТ (конусно-лучевая компьютерная томография)",
@@ -94,7 +94,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 17. ИДС Фотопротокол (StomX #77)
+	// 17. ИДС Фотопротокол
 	photoprotocol: {
 		procedureType: "photoprotocol",
 		procedureName: "Проведение клинического дентального фотопротокола лица, полости рта и этапов лечения",
@@ -118,7 +118,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 18. Отказ от передачи данных в ЕГИСЗ (ФЗ-323 ст. 13) (StomX #80)
+	// 18. Отказ от передачи данных в ЕГИСЗ (ФЗ-323 ст. 13)
 	egisz_refusal: {
 		procedureType: "egisz_refusal",
 		procedureName: "Отказ от передачи персональных данных и медицинской документации в ЕГИСЗ Минздрава РФ",
@@ -142,7 +142,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 19. Отказ от медицинского вмешательства (StomX #81)
+	// 19. Отказ от медицинского вмешательства
 	medical_intervention_refusal: {
 		procedureType: "medical_intervention_refusal",
 		procedureName: "Отказ от медицинского вмешательства (или прекращение ранее начатого стоматологического лечения)",
@@ -167,7 +167,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 20. Положение о гарантийных обязательствах и сроках службы (StomX #82)
+	// 20. Положение о гарантийных обязательствах и сроках службы
 	warranty_policy: {
 		procedureType: "warranty_policy",
 		procedureName: "Ознакомление с Положением об установлении гарантийных сроков и сроков службы при оказании стоматологических услуг",
@@ -192,7 +192,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 21. Лист учета дозовых нагрузок пациента (СанПиН 2.6.1.1192-03) (StomX #15)
+	// 21. Лист учета дозовых нагрузок пациента (СанПиН 2.6.1.1192-03)
 	xray_dose_load_sheet: {
 		procedureType: "xray_dose_load_sheet",
 		procedureName: "Лист учета дозовых нагрузок пациента при проведении рентгенологических исследований (Приложение № 4 к СанПиН 2.6.1.1192-03)",
@@ -214,7 +214,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 22. Гарантийный паспорт стоматологического пациента (StomX #54)
+	// 22. Гарантийный паспорт стоматологического пациента
 	warranty_passport: {
 		procedureType: "warranty_passport",
 		procedureName: "Гарантийный паспорт стоматологического пациента (терапия, ортопедия, имплантология)",
@@ -242,7 +242,7 @@ export const ANESTHESIA_AND_GENERAL_CONSENT_PRESETS = {
 		],
 	},
 
-	// 23. Анкета общего состояния здоровья (StomX #53)
+	// 23. Анкета общего состояния здоровья
 	somatic_health_questionnaire: {
 		procedureType: "somatic_health_questionnaire",
 		procedureName: "Анкета общего состояния здоровья и соматического статуса пациента",

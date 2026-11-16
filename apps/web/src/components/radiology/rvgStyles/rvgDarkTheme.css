@@ -12,7 +12,7 @@
 	--line-strong: #475569;
 }
 .rvg-viewport-pane {
-	background: #050811;
+	background: var(--paper-deep, #050811);
 	box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
 }
 .rvg-render-canvas {
@@ -37,13 +37,13 @@
 	margin-bottom: 1.25rem;
 }
 .rvg-hud-card {
-	background: rgba(11, 17, 32, 0.92);
-	border: 1px solid rgba(255, 255, 255, 0.16);
-	color: #f1f5f9;
+	background: var(--paper-soft, rgba(11, 17, 32, 0.92));
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.16));
+	color: var(--ink, #f1f5f9);
 }
 .rvg-toolbar-glass-cluster {
-	background: rgba(11, 17, 32, 0.92);
-	border: 1px solid rgba(255, 255, 255, 0.18);
+	background: var(--paper-soft, rgba(11, 17, 32, 0.92));
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.18));
 }
 .rvg-tool-btn {
 	color: #cbd5e1;
@@ -58,16 +58,16 @@
 	border-color: var(--teal, #14b8a6);
 }
 .rvg-sensor-status-banner {
-	background: rgba(15, 23, 42, 0.96);
-	border-color: #334155;
+	background: var(--paper-soft, rgba(15, 23, 42, 0.96));
+	border-color: var(--line, #334155);
 }
 .rvg-status-badge {
 	color: #f8fafc;
 }
 .rvg-controls-dock {
-	background: #0b1120;
-	border-left-color: #1e293b;
-	color: #f8fafc;
+	background: var(--paper, #0b1120);
+	border-left-color: var(--line, #1e293b);
+	color: var(--ink, #f8fafc);
 }
 .rvg-section-header {
 	color: #ffffff;
@@ -80,23 +80,23 @@
 .rvg-tooth-btn:hover {
 	background: rgba(20, 184, 166, 0.25);
 	color: #ffffff;
-	border-color: #14b8a6;
+	border-color: var(--teal, #14b8a6);
 }
 .rvg-category-btn,
 .rvg-zone-btn,
 .rvg-projection-btn {
 	background: rgba(255, 255, 255, 0.05);
-	border-color: #334155;
-	color: #e2e8f0;
+	border-color: var(--line, #334155);
+	color: var(--ink, #e2e8f0);
 }
 .rvg-category-btn:hover,
 .rvg-zone-btn:hover,
 .rvg-projection-btn:hover {
 	background: rgba(255, 255, 255, 0.1);
-	border-color: #14b8a6;
+	border-color: var(--teal, #14b8a6);
 	color: #ffffff;
 }
 .rvg-capture-footer {
-	background: #070b14;
-	border-top-color: #1e293b;
+	background: var(--paper, #070b14);
+	border-top-color: var(--line, #1e293b);
 }

@@ -10,6 +10,7 @@ import type { Dashboard } from "@dental/shared";
 import { useOptionalAppLogicContext, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 import { showToast } from "../../GlobalToast";
 import type { TargetSlotInfo, WaitlistCandidateItem } from "./waitlistTypes";
+export type { TargetSlotInfo, WaitlistCandidateItem } from "./waitlistTypes";
 import { useWaitlistState } from "./useWaitlistState";
 import type { AppointmentScheduleDraft } from "../view/scheduleViewTypes";
 import { handleBookWaitlistSlot } from "../view/scheduleModalsModules/waitlistSlotBookingHandler";
@@ -64,8 +65,6 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
         onSuccess: () => {
           if (updateNewAppointmentDraft) {
             updateNewAppointmentDraft("patientId", candidate.patientId);
-            updateNewAppointmentDraft("patientName", candidate.patientName);
-            updateNewAppointmentDraft("patientPhone", candidate.patientPhone);
             if (candidate.treatmentCategory) {
               updateNewAppointmentDraft("reason", candidate.treatmentCategory);
             }
@@ -113,8 +112,6 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
   const handleAssignDraft = (candidate: WaitlistCandidateItem) => {
     if (updateNewAppointmentDraft) {
       updateNewAppointmentDraft("patientId", candidate.patientId);
-      updateNewAppointmentDraft("patientName", candidate.patientName);
-      updateNewAppointmentDraft("patientPhone", candidate.patientPhone);
       if (focusNewAppointmentEditor) focusNewAppointmentEditor();
       onClose();
     }

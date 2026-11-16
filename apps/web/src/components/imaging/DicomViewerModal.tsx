@@ -27,6 +27,7 @@ function toImagingActiveTool(tool: string): ImagingActiveTool {
 }
 
 const CtSelectorModal = React.lazy(() => import("../radiology/CtSelectorModal.js").then((m) => ({ default: m.CtSelectorModal })));
+const CbctMprImplantStudioModal = React.lazy(() => import("../radiology/CbctMprImplantStudioModal.js").then((m) => ({ default: m.CbctMprImplantStudioModal })));
 
 export type { DicomViewerModalProps };
 
@@ -124,6 +125,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 			{ctrl.isCtSelectorOpen && (
 				<Suspense fallback={null}>
 					<CtSelectorModal isOpen={ctrl.isCtSelectorOpen} onClose={() => ctrl.setIsCtSelectorOpen(false)} patientId={patientId} patientName={patientName} studies={filmstripStudies} />
+				</Suspense>
+			)}
+
+			{ctrl.isCbctStudioOpen && (
+				<Suspense fallback={null}>
+					<CbctMprImplantStudioModal
+						isOpen={ctrl.isCbctStudioOpen}
+						onClose={() => ctrl.setIsCbctStudioOpen(false)}
+						patientId={patientId || undefined}
+						patientName={patientName || undefined}
+					/>
 				</Suspense>
 			)}
 		</div>

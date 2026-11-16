@@ -10,7 +10,7 @@
  * - AI analysis button: data-testid="btn-run-visiograph-ai" & handleRunAiAnalysis
  * - Chart confirmation button: data-testid="btn-apply-findings-to-chart" & non-blocking toast warning ("Отметьте галочками хотя бы одну находку ИИ")
  * - 1-Click Norma to medical card: data-testid="btn-visiograph-norma-043" & handleApplyNormaTo043 & "Норма: патологии нет ✓" / "✓ Норма в протокол" / "✓ Норма внесена" (внесено в медицинскую карту)
- * - EzDent-i RVG workstation: RadiologyFilmstripDock, filmstripItems, btn-open-ezdent-sensor-viewer, SensorStudyViewer, isSensorViewerOpen
+ * - Цифровая радиовизиография DENTE: RadiologyFilmstripDock, filmstripItems, btn-open-ezdent-sensor-viewer, SensorStudyViewer, isSensorViewerOpen
  * - Patient binding invariants:
  *   readonly patientId?: string | undefined;
  *   const effectivePatientId = patientId ?? selectedPatientId;

@@ -140,7 +140,11 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 				</span>
 
 				{/* Tool Toggle: Pan / Ruler / Curved Canal / Loupe */}
-				<div className="dente-segmented-bar" data-testid="sensor-tools-segmented-bar">
+				<div
+					className="dente-segmented-bar bg-[#0f172a] border-[#1e293b]"
+					style={{ background: "#0f172a", borderColor: "#1e293b" }}
+					data-testid="sensor-tools-segmented-bar"
+				>
 					<button
 						type="button"
 						onClick={() => setActiveTool("pan")}
@@ -224,7 +228,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					<button
 						type="button"
 						onClick={handleClearMeasurements}
-						className="h-7 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-slate-400 hover:text-red-400 hover:border-red-400/50 cursor-pointer transition-colors flex items-center justify-center"
+						className="h-8 px-2 rounded-lg border border-[#334155] bg-[#1e293b] text-slate-400 hover:text-red-400 hover:border-red-400/50 cursor-pointer transition-colors flex items-center justify-center"
 						title="Очистить все линейки и каналы"
 						data-testid="btn-clear-measurements"
 					>
@@ -236,7 +240,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 				<button
 					type="button"
 					onClick={handleResetView}
-					className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-slate-300 hover:text-white text-[11px] font-medium cursor-pointer transition-colors"
+					className="h-8 px-2.5 rounded-lg border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-slate-200 hover:text-white text-xs font-medium cursor-pointer transition-colors shadow-2xs"
 					title="Сбросить масштаб и положение (0)"
 					data-testid="btn-reset-view"
 				>

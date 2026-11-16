@@ -151,14 +151,12 @@ describe("Wave 117: Eradication of Synthetic Mocks in Radiology, Treatment Plans
 		);
 	});
 
-	it("verifies absence of 'Д-р Смирнов А. В.' in TreatmentPlanModule.tsx", () => {
+	it("verifies eradication of legacy duplicate TreatmentPlanModule.tsx (Mandate 8bf)", () => {
 		const planModulePath = path.join(webSrcRoot, "components/treatment-plans/TreatmentPlanModule.tsx");
-		const planModuleContent = fs.readFileSync(planModulePath, "utf8");
-
 		assert.strictEqual(
-			planModuleContent.includes("Д-р Смирнов А. В."),
+			fs.existsSync(planModulePath),
 			false,
-			"TreatmentPlanModule.tsx must not contain 'Д-р Смирнов А. В.'",
+			"TreatmentPlanModule.tsx must be eradicated as duplicate SSOT per Mandate 8bf",
 		);
 	});
 

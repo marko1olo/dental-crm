@@ -20,6 +20,6 @@ export { ScheduleOptionsMobileSection, type ScheduleOptionsMobileSectionProps } 
 export { ScheduleOptionsToolsSection, type ScheduleOptionsToolsSectionProps } from "./ScheduleOptionsToolsSection";
 export { ScheduleOptionsDropdown, type ScheduleOptionsDropdownProps } from "./ScheduleOptionsDropdown";
 export { useScheduleFilters } from "./useScheduleFilters";
-export { ScheduleFilterStripContent } from "./ScheduleFilterStripContent";
+export { ScheduleUnifiedToolbar as ScheduleFilterStripContent } from "../ScheduleUnifiedToolbar";
 
 export { QuickAddChairModal } from "../QuickAddChairModal";

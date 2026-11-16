@@ -4,12 +4,12 @@ import type { ImagingViewerState, ViewerRulerMeasurement } from "../types.js";
 
 export interface ImagingFilterRulerGroupProps {
 	readonly imagingViewerState: ImagingViewerState;
-	readonly setImagingViewerState: (updater: (prev: any) => any) => void;
+	readonly setImagingViewerState: React.Dispatch<React.SetStateAction<ImagingViewerState>>;
 	readonly enhancementOn: boolean;
-	readonly setEnhancementOn: (updater: (prev: boolean) => boolean) => void;
+	readonly setEnhancementOn: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly isRulerActive: boolean;
-	readonly setIsRulerActive: (updater: (prev: boolean) => boolean) => void;
-	readonly setIsPanActive: (active: boolean) => void;
+	readonly setIsRulerActive: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly setIsPanActive: React.Dispatch<React.SetStateAction<boolean>> | ((active: boolean) => void);
 	readonly rulerMeasurements: ViewerRulerMeasurement[];
 	readonly setRulerMeasurements: (m: ViewerRulerMeasurement[]) => void;
 }
@@ -39,7 +39,7 @@ export const ImagingFilterRulerGroup: React.FC<ImagingFilterRulerGroupProps> = (
 				title="Инверсия (Негатив для верхушек корней)"
 				aria-label="Инвертировать снимок в негатив"
 				aria-pressed={isInverted}
-				onClick={() => setImagingViewerState((state: any) => ({ ...state, inverted: !state.inverted }))}
+				onClick={() => setImagingViewerState((state) => ({ ...state, inverted: !state.inverted }))}
 			>
 				<Contrast size={14} aria-hidden="true" />
 				<span>Негатив</span>
@@ -51,7 +51,7 @@ export const ImagingFilterRulerGroup: React.FC<ImagingFilterRulerGroupProps> = (
 				title="Контраст кости (145% контраст для кортикальной пластинки)"
 				aria-label="Пресет контраста костной ткани"
 				aria-pressed={isBoneActive}
-				onClick={() => setImagingViewerState((state: any) => ({
+				onClick={() => setImagingViewerState((state) => ({
 					...state,
 					contrast: isBoneActive ? 1.0 : 1.45,
 					brightness: isBoneActive ? 1.0 : 1.10,
@@ -66,7 +66,7 @@ export const ImagingFilterRulerGroup: React.FC<ImagingFilterRulerGroupProps> = (
 				title="Эндодонтия (Резкость апекса, 160% контраст для каналов)"
 				aria-label="Пресет эндодонтической резкости"
 				aria-pressed={isEndoActive}
-				onClick={() => setImagingViewerState((state: any) => ({
+				onClick={() => setImagingViewerState((state) => ({
 					...state,
 					contrast: isEndoActive ? 1.0 : 1.60,
 					brightness: isEndoActive ? 1.0 : 1.15,

@@ -25,6 +25,23 @@ export interface UseRadiologyDiagnosticSyncControllerProps {
 	readonly setActiveSlot: (slot: ConsultationSlot) => void;
 }
 
+interface StudyTitleProps {
+	readonly title?: string | undefined;
+	readonly studyDescription?: string | undefined;
+}
+
+function extractStudyTitle(
+	study: RadiologyStudy | RadiologyFilmstripItem,
+	fallback: string,
+): string {
+	const ext = study as (RadiologyStudy | RadiologyFilmstripItem) & StudyTitleProps;
+	return (
+		ext.title ||
+		ext.studyDescription ||
+		(study.teethFdi?.[0] ? `Зуб ${study.teethFdi[0]}` : fallback)
+	);
+}
+
 /**
  * Определяет UI-статус зуба в одонтограмме по коду патологии или дисциплине
  */
@@ -82,10 +99,7 @@ export function useRadiologyDiagnosticSyncController({
 	const handleSelectCapturedStudy = useCallback(
 		(study: RadiologyStudy | RadiologyFilmstripItem) => {
 			const imgSrc = study.imageUrl || study.thumbnailUrl || "";
-			const title =
-				(study as any).title ||
-				(study as any).studyDescription ||
-				(study.teethFdi?.[0] ? `Зуб ${study.teethFdi[0]}` : "Рентген визиографа");
+			const title = extractStudyTitle(study, "Рентген визиографа");
 			const dateStr = formatFilmstripDateTime(study.studyDate).dateStr;
 			const targetTooth = study.teethFdi?.[0];
 
@@ -228,10 +242,9 @@ export function useRadiologyDiagnosticSyncController({
 		(study: RadiologyStudy | RadiologyFilmstripItem, slot: ConsultationSlot) => {
 			const imgSrc = study.imageUrl || study.thumbnailUrl || "";
 			const dateStr = formatFilmstripDateTime(study.studyDate).dateStr;
-			const title =
-				(study as any).title ||
-				(study as any).studyDescription ||
-				(slot === "left" ? "Снимок ДО лечения" : "Контроль ПОСЛЕ лечения");
+			const fallbackTitle =
+				slot === "left" ? "Снимок ДО лечения" : "Контроль ПОСЛЕ лечения";
+			const title = extractStudyTitle(study, fallbackTitle);
 			const targetTooth = study.teethFdi?.[0];
 
 			const updater = (prev: ViewportState) => ({

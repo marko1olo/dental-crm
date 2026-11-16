@@ -11,6 +11,17 @@ import { UNIVERSAL_SENSOR_CATALOG } from "./sensorCatalogs";
 import { lookupSensorByUsbVidPid, NON_CONFLICTING_USB_POLICY } from "./twainAndUsbDrivers";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
+interface WebUsbDevice {
+	readonly vendorId: number;
+	readonly productId: number;
+}
+
+interface WebUsbNavigator {
+	readonly usb?: {
+		getDevices: () => Promise<readonly WebUsbDevice[]>;
+	} | undefined;
+}
+
 /**
  * Autonomously checks connected hardware (Passive WebUSB, Desktop Bridge, Hot Folder gateway)
  * and selects the active dental sensor without requiring doctor configuration or conflicting with vendor drivers.
@@ -18,9 +29,10 @@ import { isDemoShowcaseMode } from "../../../lib/demoMode";
  */
 export async function autoDetectConnectedSensor(): Promise<SensorDetectionResult> {
 	// 1. Passive check if physical sensor device VID/PID is present on USB bus
-	if (typeof navigator !== "undefined" && "usb" in navigator && (navigator as any).usb?.getDevices) {
+	const nav = typeof navigator !== "undefined" ? (navigator as Navigator & WebUsbNavigator) : undefined;
+	if (nav?.usb?.getDevices) {
 		try {
-			const usbDevices = await (navigator as any).usb.getDevices();
+			const usbDevices = await nav.usb.getDevices();
 			for (const dev of usbDevices) {
 				const match = lookupSensorByUsbVidPid(dev.vendorId, dev.productId);
 				if (match) {
@@ -148,9 +160,10 @@ export async function testSensorConnection(sensorModelId: string): Promise<Senso
 	}
 
 	// 1. Check if device is physically active on WebUSB
-	if (typeof navigator !== "undefined" && "usb" in navigator && (navigator as any).usb?.getDevices) {
+	const nav = typeof navigator !== "undefined" ? (navigator as Navigator & WebUsbNavigator) : undefined;
+	if (nav?.usb?.getDevices) {
 		try {
-			const usbDevices = await (navigator as any).usb.getDevices();
+			const usbDevices = await nav.usb.getDevices();
 			for (const dev of usbDevices) {
 				const match = lookupSensorByUsbVidPid(dev.vendorId, dev.productId);
 				if (match && (match.defaultModelId === sensor.id || match.brand === sensor.brand)) {

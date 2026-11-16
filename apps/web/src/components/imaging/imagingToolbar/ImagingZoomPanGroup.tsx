@@ -4,10 +4,10 @@ import type { ImagingViewerState } from "../types.js";
 
 export interface ImagingZoomPanGroupProps {
 	readonly imagingViewerState: ImagingViewerState;
-	readonly setImagingViewerState: (updater: (prev: any) => any) => void;
+	readonly setImagingViewerState: React.Dispatch<React.SetStateAction<ImagingViewerState>>;
 	readonly isPanActive: boolean;
-	readonly setIsPanActive: (updater: (prev: boolean) => boolean) => void;
-	readonly setIsRulerActive: (active: boolean) => void;
+	readonly setIsPanActive: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly setIsRulerActive: React.Dispatch<React.SetStateAction<boolean>> | ((active: boolean) => void);
 }
 
 export const ImagingZoomPanGroup: React.FC<ImagingZoomPanGroupProps> = ({
@@ -27,7 +27,7 @@ export const ImagingZoomPanGroup: React.FC<ImagingZoomPanGroupProps> = ({
 				type="button"
 				title="Уменьшить"
 				aria-label="Уменьшить снимок"
-				onClick={() => setImagingViewerState((state: any) => ({ ...state, zoom: Math.max(0.75, Number(((state.zoom || 1) - 0.1).toFixed(2))) }))}
+				onClick={() => setImagingViewerState((state) => ({ ...state, zoom: Math.max(0.75, Number(((state.zoom || 1) - 0.1).toFixed(2))) }))}
 			>
 				<ZoomOut size={14} aria-hidden="true" />
 			</button>
@@ -36,7 +36,7 @@ export const ImagingZoomPanGroup: React.FC<ImagingZoomPanGroupProps> = ({
 				type="button"
 				title="Увеличить"
 				aria-label="Увеличить снимок"
-				onClick={() => setImagingViewerState((state: any) => ({ ...state, zoom: Math.min(2.5, Number(((state.zoom || 1) + 0.1).toFixed(2))) }))}
+				onClick={() => setImagingViewerState((state) => ({ ...state, zoom: Math.min(2.5, Number(((state.zoom || 1) + 0.1).toFixed(2))) }))}
 			>
 				<ZoomIn size={14} aria-hidden="true" />
 			</button>
@@ -45,7 +45,7 @@ export const ImagingZoomPanGroup: React.FC<ImagingZoomPanGroupProps> = ({
 				type="button"
 				title="Сбросить масштаб (100%)"
 				aria-label="Сбросить масштаб до 100%"
-				onClick={() => setImagingViewerState((state: any) => ({ ...state, zoom: 1.0, pan: { x: 0, y: 0 } }))}
+				onClick={() => setImagingViewerState((state) => ({ ...state, zoom: 1.0, pan: { x: 0, y: 0 } }))}
 			>
 				100%
 			</button>

@@ -10,10 +10,10 @@ import { RadiologyReportStudioModal } from "../RadiologyReportStudioModal.js";
 import { HotFolderIntakeModal } from "../HotFolderIntakeModal.js";
 import { CtSelectorModal } from "../CtSelectorModal.js";
 import { RadiologyReferralModal } from "../RadiologyReferralModal.js";
-import { RadiologyPatientSearchModal, type RadiologyTactileFilterState } from "../RadiologyPatientSearchModal.js";
+import { RadiologyPatientSearchModal, DEFAULT_TACTILE_FILTERS, type RadiologyTactileFilterState } from "../RadiologyPatientSearchModal.js";
 import { convertImagingStudyToRadiologyStudy } from "../archive/radiologyStudyAdapter.js";
 import { applyRadiologyProtocolToForm043 } from "../radiologyProtocols.js";
-import type { ImagingStudy } from "@dental/shared";
+import type { ImagingStudy, Patient } from "@dental/shared";
 
 export interface RadiologyModuleModalsProps {
 	modals: {
@@ -33,7 +33,7 @@ export interface RadiologyModuleModalsProps {
 	tactileFilters: RadiologyTactileFilterState;
 	setTactileFilters: (f: RadiologyTactileFilterState) => void;
 	setActiveView: (view: "archive" | "hub") => void;
-	patient: any; patientName: string; cardNum: string; docName: string;
+	patient: (Patient & { name?: string; cardNumber?: string; medicalCardNumber?: string }) | null | undefined; patientName: string; cardNum: string; docName: string;
 	doctorSpecialty?: string | null | undefined; clinicName?: string | null | undefined;
 	activeToothFdi?: string | number | null | undefined;
 	selectedStudyForStudio: ImagingStudy | null; setSelectedStudyForStudio: (s: ImagingStudy | null) => void;
@@ -80,9 +80,29 @@ export function RadiologyModuleModals(p: RadiologyModuleModalsProps) {
 				</div>,
 				document.body
 			)}
-			<RadiologyPatientSearchModal isOpen={modals.showTactileSearch} onClose={() => modals.setShowTactileSearch(false)} initialFilters={p.tactileFilters} onApply={(f) => { p.setTactileFilters(f); p.setActiveView("archive"); }} onReset={() => p.setTactileFilters({} as any)} />
+			<RadiologyPatientSearchModal isOpen={modals.showTactileSearch} onClose={() => modals.setShowTactileSearch(false)} initialFilters={p.tactileFilters} onApply={(f) => { p.setTactileFilters(f); p.setActiveView("archive"); }} onReset={() => p.setTactileFilters(DEFAULT_TACTILE_FILTERS)} />
 			{modals.showCtSelector && (
-				<CtSelectorModal isOpen={modals.showCtSelector} onClose={() => modals.setShowCtSelector(false)} patientId={patient?.id || undefined} patientName={patientName} cardNumber={cardNum} onOpenCbctStudio={(s) => { if (s) p.setSelectedStudyForStudio(s); modals.setShowCtSelector(false); modals.setShow3dStudio(true); }} onImagesLoaded={(_ids, meta) => { if (meta) p.setSelectedStudyForStudio(meta); modals.setShowCtSelector(false); modals.setShow3dStudio(true); }} />
+				<CtSelectorModal
+					isOpen={modals.showCtSelector}
+					onClose={() => modals.setShowCtSelector(false)}
+					patientId={patient?.id || undefined}
+					patientName={patientName}
+					cardNumber={cardNum}
+					onOpenCbctStudio={(s) => {
+						if (s && typeof s === "object" && "id" in s) {
+							p.setSelectedStudyForStudio(s as ImagingStudy);
+						}
+						modals.setShowCtSelector(false);
+						modals.setShow3dStudio(true);
+					}}
+					onImagesLoaded={(_ids, meta) => {
+						if (meta && typeof meta === "object" && "id" in meta) {
+							p.setSelectedStudyForStudio(meta as ImagingStudy);
+						}
+						modals.setShowCtSelector(false);
+						modals.setShow3dStudio(true);
+					}}
+				/>
 			)}
 		</>
 	);

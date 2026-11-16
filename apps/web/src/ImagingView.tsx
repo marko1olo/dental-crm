@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
+import type { ImagingStudy } from "./components/imaging/types.js";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { MobileChairsideRadiologyViewer } from "./components/radiology/MobileChairsideRadiologyViewer.js";
 import { imagingKindLabels as defKindLabels, imagingKindOptions as defKindOptions, imagingSourceLabels as defSourceLabels } from "./imagingUiLabels";
@@ -7,7 +8,7 @@ import { ImagingDesktopWorkspace, ImagingViewModals, useImagingViewController, u
 
 export * from "./views/imagingViewModules";
 
-export function ImagingStudyThumbnail({ study, previewSrc }: { study?: any; previewSrc?: string }) {
+export function ImagingStudyThumbnail({ study, previewSrc }: { study?: ImagingStudy | null; previewSrc?: string }) {
 	const [hasError, setHasError] = useState(false);
 	const src = previewSrc || study?.previewUrl;
 	const isDirectBlob = src?.startsWith("blob:") || src?.startsWith("data:");
@@ -33,7 +34,7 @@ export function ImagingView(props: ImagingViewProps) {
 	const handleSelectStudy = useCallback((id: string) => { setInternalSelectedStudyId(id); setSelectedImagingStudyId?.(id); }, [setSelectedImagingStudyId]);
 	const resolvedStudies = useResolvedImagingStudies(props);
 	const effectiveSelectedStudy = (internalSelectedStudyId ? resolvedStudies.find((s) => s.id === internalSelectedStudyId) : null) ?? selectedImagingStudy ?? resolvedStudies[0] ?? null;
-	const handleStudyUploaded = (study: any) => { if (study?.id) handleSelectStudy(study.id); };
+	const handleStudyUploaded = (study: ImagingStudy) => { if (study?.id) handleSelectStudy(study.id); };
 
 	const controller = useImagingViewController({ ...props, selectedImagingStudy: effectiveSelectedStudy }, appLogic);
 	const { activeModal, setActiveModal, localImageIds, setLocalImageIds, isCapturingCameraPhoto, openPopoutStudio, handleOpenPanoramic, handleCameraPhotoCapture } = controller;

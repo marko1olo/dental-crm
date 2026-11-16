@@ -1,4 +1,4 @@
-import type { Appointment, Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard, Patient, User } from "@dental/shared";
 import { CalendarPlus, MessageSquare, Phone } from "lucide-react";
 import React from "react";
 import { openWhatsAppChat } from "../../../store/telephonyStore";
@@ -7,8 +7,8 @@ import { generateAppointmentWhatsAppMessage } from "../generateAppointmentWhatsA
 
 interface GridAppointmentHudCommunicationProps {
 	appointment: Appointment;
-	patObj?: any;
-	docObj?: any;
+	patObj?: Patient | null | undefined;
+	docObj?: User | null | undefined;
 	chair: { id: string; name: string };
 	aStart: string;
 	dashboard: Dashboard;
@@ -36,7 +36,7 @@ export function GridAppointmentHudCommunication({
 		const text = generateAppointmentWhatsAppMessage({
 			patientName: patObj?.fullName || "Пациент",
 			appointmentStartsAt: a.startsAt || aStart,
-			doctorName: docObj?.fullName || docObj?.name,
+			doctorName: docObj?.fullName,
 			clinicName,
 		});
 		openWhatsAppChat(phone, text);

@@ -15,13 +15,13 @@ import { ImagingToolbarRightActions } from "./imagingToolbar/ImagingToolbarRight
 export interface ImagingToolbarProps {
 	selectedImagingStudy?: ImagingStudy | null | undefined;
 	imagingViewerState: ImagingViewerState;
-	setImagingViewerState: React.Dispatch<React.SetStateAction<ImagingViewerState>> | ((state: any) => void);
+	setImagingViewerState: React.Dispatch<React.SetStateAction<ImagingViewerState>>;
 	enhancementOn: boolean;
-	setEnhancementOn: React.Dispatch<React.SetStateAction<boolean>> | ((on: boolean) => void);
+	setEnhancementOn: React.Dispatch<React.SetStateAction<boolean>>;
 	isRulerActive: boolean;
-	setIsRulerActive: React.Dispatch<React.SetStateAction<boolean>> | ((active: boolean) => void);
+	setIsRulerActive: React.Dispatch<React.SetStateAction<boolean>>;
 	isPanActive: boolean;
-	setIsPanActive: React.Dispatch<React.SetStateAction<boolean>> | ((active: boolean) => void);
+	setIsPanActive: React.Dispatch<React.SetStateAction<boolean>>;
 	rulerMeasurements: ViewerRulerMeasurement[];
 	setRulerMeasurements: (measurements: ViewerRulerMeasurement[]) => void;
 	onReset: () => void;
@@ -38,7 +38,7 @@ export interface ImagingToolbarProps {
 	imagingViewerAnnotations?: Array<{ id: string; label: string; toothCode?: string | null | undefined; updatedAt: string }> | undefined;
 	formatShortDate?: ((date: string) => string) | undefined;
 	activeAppointment?: { id: string; date?: string; patientName?: string } | null | undefined;
-	activePatient?: any;
+	activePatient?: { readonly id?: string | undefined; readonly fullName?: string | undefined; readonly name?: string | undefined } | null | undefined;
 	effectivePreviewUrl?: string | null | undefined;
 	onAttachToTooth?: ((toothCode: string) => Promise<void> | void) | undefined;
 	onAttachToVisit?: ((visitId: string) => Promise<void> | void) | undefined;
@@ -62,9 +62,9 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 		<div className="imaging-viewer-toolbar flex flex-col gap-1.5 p-2 bg-[var(--paper-soft)] border-b border-[var(--line)]" role="toolbar" aria-label="Настройки снимка">
 			<div className="imaging-viewer-tools flex flex-wrap items-center justify-between gap-1.5 min-h-[36px]">
 				<div className="flex items-center gap-1.5 flex-wrap">
-					<ImagingOrientationGroup imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState as any} />
-					<ImagingZoomPanGroup imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState as any} isPanActive={isPanActive} setIsPanActive={setIsPanActive as any} setIsRulerActive={setIsRulerActive as any} />
-					<ImagingFilterRulerGroup imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState as any} enhancementOn={enhancementOn} setEnhancementOn={setEnhancementOn as any} isRulerActive={isRulerActive} setIsRulerActive={setIsRulerActive as any} setIsPanActive={setIsPanActive as any} rulerMeasurements={rulerMeasurements} setRulerMeasurements={setRulerMeasurements} />
+					<ImagingOrientationGroup imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState} />
+					<ImagingZoomPanGroup imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState} isPanActive={isPanActive} setIsPanActive={setIsPanActive} setIsRulerActive={setIsRulerActive} />
+					<ImagingFilterRulerGroup imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState} enhancementOn={enhancementOn} setEnhancementOn={setEnhancementOn} isRulerActive={isRulerActive} setIsRulerActive={setIsRulerActive} setIsPanActive={setIsPanActive} rulerMeasurements={rulerMeasurements} setRulerMeasurements={setRulerMeasurements} />
 				</div>
 
 				<ImagingToolbarRightActions
@@ -79,7 +79,7 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 				/>
 			</div>
 
-			<ImagingBrightnessContrastSliders imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState as any} />
+			<ImagingBrightnessContrastSliders imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState} />
 
 			{showNotes && (
 				<>

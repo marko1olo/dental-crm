@@ -16,13 +16,13 @@ export type ClippingDir = "left" | "right";
 export type DicomTabType = "2D" | "MPR" | "SECTION" | "3D_PANO" | "TMJ";
 
 export type DicomViewportExtended = DicomViewportState & {
-	smooth?: boolean;
-	maxRes?: boolean;
-	mip?: boolean;
-	vr?: boolean;
-	clippingActive?: boolean;
-	clippingPlane?: ClippingPlane;
-	clippingDirection?: ClippingDir;
+	smooth?: boolean | undefined;
+	maxRes?: boolean | undefined;
+	mip?: boolean | undefined;
+	vr?: boolean | undefined;
+	clippingActive?: boolean | undefined;
+	clippingPlane?: ClippingPlane | undefined;
+	clippingDirection?: ClippingDir | undefined;
 };
 
 export interface DicomToolboxRibbonProps {

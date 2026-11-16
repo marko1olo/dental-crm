@@ -1,10 +1,10 @@
 import React from "react";
-import type { Appointment } from "@dental/shared";
+import type { Appointment, AppointmentStatus } from "@dental/shared";
 import { CheckCircle2, User, UserCheck, UserX } from "lucide-react";
 
 interface GridAppointmentHudStatusActionsProps {
 	appointment: Appointment;
-	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
+	onQuickStatusChange?: ((id: string, status: AppointmentStatus) => void) | undefined;
 }
 
 export function GridAppointmentHudStatusActions({

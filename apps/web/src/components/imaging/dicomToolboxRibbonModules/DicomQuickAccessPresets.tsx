@@ -7,11 +7,11 @@ import React from "react";
 import { Crop, Sliders } from "lucide-react";
 import { showToast } from "../../GlobalToast.js";
 import { BONE_PRESET, DENTIN_PRESET, ENAMEL_PRESET, SOFT_TISSUE_PRESET } from "./dicomRibbonConstants.js";
-import type { DicomViewportState } from "./types.js";
+import type { DicomViewportExtended } from "./types.js";
 
 interface DicomQuickAccessPresetsProps {
-	viewportState: DicomViewportState;
-	onViewportChange: (delta: Partial<DicomViewportState>) => void;
+	viewportState: DicomViewportExtended;
+	onViewportChange: (delta: Partial<DicomViewportExtended>) => void;
 	isWindowPanelOpen: boolean;
 	onToggleWindowPanel: () => void;
 	isClippingPanelOpen: boolean;
