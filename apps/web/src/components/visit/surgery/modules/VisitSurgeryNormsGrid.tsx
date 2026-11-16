@@ -28,7 +28,7 @@ export const VisitSurgeryNormsGrid: React.FC<VisitSurgeryNormsGridProps> = ({
 							key={norm.id}
 							type="button"
 							onClick={() => onSelectNorm(norm)}
-							className={`visit-surgery-touch-card bg-[var(--paper-soft)] dark:bg-slate-900 text-[var(--ink)] dark:text-slate-100 border-[var(--line)] dark:border-slate-800 hover:border-[var(--teal,#0d9488)] ${isSel ? "active !bg-teal-900/30 !border-teal-500" : ""}`}
+							className={`visit-surgery-touch-card bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] ${isSel ? "active !bg-[var(--teal-surface,rgba(13,148,136,0.12))] !border-[var(--teal,#0d9488)] shadow-xs" : ""}`}
 							data-testid={`btn-surgery-norm-${norm.id}`}
 						>
 							<div className="flex items-start justify-between gap-1 mb-1">

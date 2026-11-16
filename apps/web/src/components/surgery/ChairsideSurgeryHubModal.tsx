@@ -196,8 +196,8 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 						setStockImplants(data.implants);
 					}
 				}
-			} catch {
-				/* Офлайн фоллбэк на SURGERY_DEFAULT_BATCHES */
+			} catch (err) {
+				console.warn("[ChairsideSurgeryHub] Не удалось загрузить остатки имплантатов из API, используется локальный каталог:", err);
 			}
 		}
 		void loadStock();
@@ -263,8 +263,8 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 				if (matched.lotNumber) setLotNumber(String(matched.lotNumber));
 				if (matched.serialNumber) setSerialNumber(String(matched.serialNumber));
 				if (matched.catalogArticle) setCatalogArticle(String(matched.catalogArticle));
-			} catch {
-				/* Офлайн или первичный визит */
+			} catch (err) {
+				console.warn("[ChairsideSurgeryHub] Ошибка гидратации предыдущих имплантатов пациента:", err);
 			}
 		}
 		void hydratePatientImplants();
@@ -448,16 +448,11 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							sutureMaterial: selectedSuture, operationPriceRub: financials.operationPriceRub, notes: diaryText,
 							idempotencyKey: idempKey,
 						});
-						let apiRes = await fetch("/api/v1/surgery/implants", {
-							method: "POST", headers,
+						const apiRes = await fetch("/api/clinical/implants/installations", {
+							method: "POST",
+							headers,
 							body: implantPayload,
 						});
-						if (!apiRes.ok) {
-							apiRes = await fetch("/api/clinical/implants/installations", {
-								method: "POST", headers,
-								body: implantPayload,
-							});
-						}
 						if (!apiRes.ok) {
 							const errBody = await apiRes.json().catch(() => null);
 							saveError = errBody?.message || errBody?.error || `Ошибка сохранения имплантата (${apiRes.status})`;
@@ -534,7 +529,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		}
 		try {
 			window.print?.();
-		} catch { /* диалог печати */ }
+		} catch (err) {
+			console.warn("[ChairsideSurgeryHub] Не удалось открыть диалог печати:", err);
+		}
 		showToast(`Печать документа операции #${toothFdi}`, "success");
 	}, [activeTab, activeScenario, toothFdi]);
 

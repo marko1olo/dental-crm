@@ -2,6 +2,7 @@ import { useState } from "react";
 import { showToast } from "../../../GlobalToast";
 import {
 	SURGICAL_OPERATION_NORMS,
+	FALLBACK_SURGICAL_NORM,
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	evaluateWarehouseOverdraft,
 	buildStandardImplantationProtocolText,
@@ -50,7 +51,7 @@ export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number
 	useSurgerySyncDiary(protocolText);
 
 	const handleToothSelect = (t: number) => { setSelectedTooth(t); onSelectActiveTooth?.(t); };
-	const currentNorm = SURGICAL_OPERATION_NORMS.find((n) => n.id === selectedNormId) ?? SURGICAL_OPERATION_NORMS[0]!;
+	const currentNorm: SurgicalOperationNorm = SURGICAL_OPERATION_NORMS.find((n) => n.id === selectedNormId) ?? SURGICAL_OPERATION_NORMS[0] ?? FALLBACK_SURGICAL_NORM;
 	const overdraftStatus = evaluateWarehouseOverdraft(currentNorm.requiredMaterials, hasWarehouseDelay);
 
 	const handleNormClick = (norm: SurgicalOperationNorm) => {
@@ -103,7 +104,12 @@ export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number
 	});
 	const handlePrintSurgicalIds = () => executePrintIds(patientName, doctorName, currentNorm.title, effectiveTooth);
 	const handleQuickDeductWarehouseMaterials = async () => {
-		const ok = await executeQuickDeduct({ currentNorm, hasWarehouseDelay, effectiveTooth, implantBrand: currentNorm.category === "implant" ? implantBrand : undefined, implantSuture: currentNorm.category === "implant" ? implantSuture : undefined });
+		const ok = await executeQuickDeduct({
+			currentNorm,
+			hasWarehouseDelay,
+			effectiveTooth,
+			...(currentNorm.category === "implant" ? { implantBrand, implantSuture } : {}),
+		});
 		if (ok) setIsMaterialsDeducted(true);
 	};
 	const handleCopy = () => { navigator.clipboard?.writeText(protocolText); showToast("Протокол операции скопирован", "success"); };
@@ -111,7 +117,7 @@ export function useVisitSurgeryState(params: UseVisitSurgeryStateParams | number
 	return {
 		selectedTooth, setSelectedTooth, effectiveTooth, selectedNormId, currentNorm, protocolText, setProtocolText,
 		isSterileGloveMode, setIsSterileGloveMode, isImplantModalOpen, setIsImplantModalOpen, hasWarehouseDelay, setHasWarehouseDelay,
-		isMaterialsDeducted, implantBrand, setImplantBrand, implantDiameter, setImplantDiameter, implantLength, setImplantLength,
+		isMaterialsDeducted, setIsMaterialsDeducted, implantBrand, setImplantBrand, implantDiameter, setImplantDiameter, implantLength, setImplantLength,
 		implantTorque, setImplantTorque, implantIsq, setImplantIsq, implantCap, setImplantCap, implantSuture, setImplantSuture,
 		overdraftStatus, handleToothSelect, handleNormClick, handleApplyStandardImplantationPreset, handleApplyToVisitDiary,
 		handlePrintProtocol, handlePrintSurgicalIds, handleQuickDeductWarehouseMaterials, handleCopy,

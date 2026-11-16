@@ -165,15 +165,59 @@ export const SURGERY_SCENARIOS: Record<SurgeryScenarioType, SurgeryScenarioDefin
 export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = CANONICAL_SURGICAL_OPERATION_NORMS;
 export const CANONICAL_SURGICAL_OPERATION_NORMS_ALIAS = SURGICAL_OPERATION_NORMS;
 
+export const FALLBACK_SURGICAL_NORM: SurgicalOperationNorm = {
+	id: "surgery_implant_standard",
+	title: "Дентальная имплантация (Норма)",
+	shortBadge: "Имплантация 35 Н·см",
+	category: "implant",
+	icd10: "K08.1",
+	icd10Label: "Потеря зубов вследствие несчастного случая, удаления или локализованного пародонтита",
+	code804n: "A16.07.054",
+	service804nTitle: "Внутрикостная дентальная имплантация",
+	defaultToothFdi: 46,
+	standardProtocolTextRu: DENTAL_IMPLANTATION_NORM_TEXT,
+	anesthesiaDefaultRu: "Инфильтрационная анестезия Артикаин 1:100 000 1.7 мл",
+	postOpRecommendationsRu: "Холод на область операции 15 мин, щадящая диета 3 дня.",
+	requiredMaterials: [
+		{ name: "Дентальный имплантат", unit: "шт.", quantity: 1, isWarehouseCritical: true },
+		{ name: "Шовный материал ПГА 4-0 с иглой", unit: "шт.", quantity: 1, isWarehouseCritical: false },
+		{ name: "Стерильные перчатки хирургические", unit: "пары", quantity: 2, isWarehouseCritical: true },
+	],
+};
+
+const FALLBACK_IMPLANT_SYSTEM: SurgeryImplantSystemSpec = {
+	id: "osstem",
+	brandName: "Osstem",
+	unitCostRub: 12500,
+	popularLines: ["TS III SA"],
+	platformName: "Mini / Regular",
+	screwdriverType: "Torx / Hex 1.2",
+	screwdriverAliasRu: "Шестигранник 1.2 мм",
+	minTorqueNcm: 25,
+	defaultTorqueNcm: 35,
+	maxSafeTorqueNcm: 50,
+	isqOptimalRange: "68–85",
+	standardDiametersMm: [3.5, 4.0, 4.5, 5.0],
+	standardLengthsMm: [7.0, 8.5, 10.0, 11.5, 13.0],
+	defaultDiameterMm: 4.0,
+	defaultLengthMm: 10.0,
+	defaultArticle: "TS3S4010S",
+	defaultLotNumber: "LOT-OSS-2024",
+	defaultSerialNumber: "SN-OSS-01",
+	defaultExpirationDate: "2029-12-31",
+};
+
 export function getImplantSystemById(id: string): SurgeryImplantSystemSpec {
-	return SURGERY_IMPLANT_SYSTEMS.find((s) => s.id === id || s.brandName.toLowerCase() === id.toLowerCase()) || SURGERY_IMPLANT_SYSTEMS[0]!;
+	const found = SURGERY_IMPLANT_SYSTEMS.find((s) => s.id === id || s.brandName.toLowerCase() === id.toLowerCase());
+	return found ?? SURGERY_IMPLANT_SYSTEMS[0] ?? FALLBACK_IMPLANT_SYSTEM;
 }
 
 export function computeOsteointegrationExpectedDate(dateIso = new Date().toISOString(), toothFdi = 46): string {
 	const base = new Date(dateIso);
 	const isMandible = toothFdi >= 31 && toothFdi <= 48;
 	base.setMonth(base.getMonth() + (isMandible ? 3 : 5));
-	return base.toISOString().split("T")[0]!;
+	const datePart = base.toISOString().split("T")[0];
+	return datePart ?? "2025-01-01";
 }
 
 export interface SurgeryFinancialBreakdown {
@@ -265,16 +309,16 @@ export function evaluateSurgerySoftOverdraft(materials: readonly { name: string;
 export const evaluateWarehouseOverdraft = evaluateSurgerySoftOverdraft;
 
 export async function quickDeductSurgicalMaterials(params: {
-	materials: readonly { name: string; unit: string; quantity: number; isWarehouseCritical?: boolean }[];
-	hasWarehouseDelay?: boolean;
-	operationTitle?: string;
-	organizationId?: string;
-	category?: string;
-	protocolId?: string;
-	toothNumber?: number;
-	sutureMaterial?: string;
-	implantBrand?: string;
-	visitId?: string;
+	materials: readonly { name: string; unit: string; quantity: number; isWarehouseCritical?: boolean | undefined }[];
+	hasWarehouseDelay?: boolean | undefined;
+	operationTitle?: string | undefined;
+	organizationId?: string | undefined;
+	category?: string | undefined;
+	protocolId?: string | undefined;
+	toothNumber?: number | undefined;
+	sutureMaterial?: string | undefined;
+	implantBrand?: string | undefined;
+	visitId?: string | undefined;
 }): Promise<SurgicalMaterialDeductionResult> {
 	let isOverdraft = Boolean(params.hasWarehouseDelay);
 	const title = params.operationTitle || "Хирургия";
@@ -511,8 +555,10 @@ export function getSurgicalCatalogServices(norm: SurgicalOperationNorm, toothFdi
 export const getSurgicalServices804n = getSurgicalCatalogServices;
 
 export function dispatchSurgicalServicesToInvoice(params: {
-	norm?: SurgicalOperationNorm; toothFdi?: number; customServices?: readonly SurgicalServiceItem[];
-	onAddToInvoice?: (services: readonly SurgicalServiceItem[]) => void;
+	norm?: SurgicalOperationNorm | undefined;
+	toothFdi?: number | undefined;
+	customServices?: readonly SurgicalServiceItem[] | undefined;
+	onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined;
 }): readonly SurgicalServiceItem[] {
 	const effectiveTooth = params.toothFdi ?? params.norm?.defaultToothFdi;
 	const services = params.customServices && params.customServices.length > 0

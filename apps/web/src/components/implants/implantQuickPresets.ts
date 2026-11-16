@@ -209,7 +209,15 @@ export function createDefaultPassportRecord(params: {
 	consumablesCostRub?: number;
 }): FastImplantPassportData {
 	const tooth = params.toothFdi || 46;
-	const preset = FAST_IMPLANT_SYSTEM_PRESETS.find((p) => p.brand === params.brand) ?? FAST_IMPLANT_SYSTEM_PRESETS[0]!;
+	const defaultPreset: FastImplantSystemPreset = FAST_IMPLANT_SYSTEM_PRESETS[0] ?? {
+		brand: "Osstem",
+		model: "TS III SA",
+		defaultDiameterMm: 4.0,
+		defaultLengthMm: 10.0,
+		defaultTorqueNcm: 35,
+		recommendedDrillRpm: 800,
+	};
+	const preset = FAST_IMPLANT_SYSTEM_PRESETS.find((p) => p.brand === params.brand) ?? defaultPreset;
 	const timestampSuffix = Date.now().toString().slice(-6);
 	const torque = params.torqueNcm ?? 35;
 	const isq = params.isqDay0 ?? 72;

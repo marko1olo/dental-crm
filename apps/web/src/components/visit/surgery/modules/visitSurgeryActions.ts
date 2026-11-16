@@ -33,11 +33,15 @@ export function executeApplyToVisitDiary(protocolText: string, onApplyToDiary?: 
 			const existingObj = prev.objectiveStatus?.trim() || "";
 			return { ...prev, objectiveStatus: existingObj ? `${existingObj}\n\n${protocolText}` : protocolText };
 		});
-	} catch { /* fallback */ }
+	} catch (err) {
+		console.warn("[visitSurgeryActions] Не удалось обновить заметки визита в visitStore:", err);
+	}
 	onApplyToDiary?.(protocolText);
 	try {
 		window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { soap: { treatmentDescription: protocolText }, mode: "smart_append" } }));
-	} catch { /* fallback */ }
+	} catch (err) {
+		console.warn("[visitSurgeryActions] Не удалось отправить событие dente-apply-soap-protocol:", err);
+	}
 	showToast("Хирургический протокол внесён в медицинскую карту", "success");
 }
 
@@ -97,8 +101,8 @@ export async function executeQuickDeduct(params: {
 	currentNorm: SurgicalOperationNorm;
 	hasWarehouseDelay: boolean;
 	effectiveTooth: number;
-	implantBrand?: string;
-	implantSuture?: string;
+	implantBrand?: string | undefined;
+	implantSuture?: string | undefined;
 }) {
 	try {
 		const result = await quickDeductSurgicalMaterials({
@@ -108,8 +112,8 @@ export async function executeQuickDeduct(params: {
 			category: params.currentNorm.category,
 			protocolId: params.currentNorm.id,
 			toothNumber: params.effectiveTooth,
-			sutureMaterial: params.currentNorm.category === "implant" ? params.implantSuture : undefined,
-			implantBrand: params.currentNorm.category === "implant" ? params.implantBrand : undefined,
+			...(params.currentNorm.category === "implant" && params.implantSuture ? { sutureMaterial: params.implantSuture } : {}),
+			...(params.currentNorm.category === "implant" && params.implantBrand ? { implantBrand: params.implantBrand } : {}),
 		});
 		showToast(result.messageRu, result.isOverdraft ? "info" : "success");
 		return true;

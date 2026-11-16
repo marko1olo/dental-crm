@@ -1378,7 +1378,15 @@ export function buildClinicalImplantSpec(
 	diameterMm: number,
 	lengthMm: number,
 ): ClinicalImplantSpec {
-	const brandMeta = CLINICAL_IMPLANT_BRANDS.find((b) => b.key === brand) ?? CLINICAL_IMPLANT_BRANDS[0]!;
+	const defaultBrandMeta: ClinicalImplantBrandMeta = CLINICAL_IMPLANT_BRANDS[0] ?? {
+		key: "osstem",
+		name: "Osstem",
+		country: "Южная Корея",
+		systemFamily: "TS III SA / TS IV SA",
+		descriptionRu: "Золотой стандарт с SA гидрофильной поверхностью и двойной микрорезьбой.",
+		defaultPlatformType: "internal_hex",
+	};
+	const brandMeta = CLINICAL_IMPLANT_BRANDS.find((b) => b.key === brand) ?? defaultBrandMeta;
 	const color = IMPLANT_PLATFORM_COLORS[diameterMm]?.hex ?? "#10b981";
 
 	const apexDiameterMm = Number((diameterMm * 0.68).toFixed(1));
@@ -1417,7 +1425,7 @@ export function buildClinicalImplantSpec(
 		id: `${brand}-d${diamCode}-l${lenCode}`,
 		brand,
 		brandName: brandMeta.name,
-		lineName: brandMeta.systemFamily.split("/")[0]!.trim(),
+		lineName: (brandMeta.systemFamily.split("/")[0] ?? brandMeta.systemFamily).trim(),
 		diameterMm,
 		lengthMm,
 		platformDiameterMm: diameterMm,

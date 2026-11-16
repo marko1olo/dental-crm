@@ -15,9 +15,15 @@ import { VisitSurgeryFooterActions } from "./modules/VisitSurgeryFooterActions";
 import { showToast } from "../../GlobalToast";
 
 export interface VisitSurgeryProtocolTabProps {
-	patientId?: string; patientName?: string; doctorId?: string; doctorName?: string;
-	activeTooth?: number | null; onSelectActiveTooth?: (tooth: number | null) => void;
-	onApplyToDiary?: ((text: string) => void) | undefined; onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined; className?: string | undefined;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	doctorId?: string | undefined;
+	doctorName?: string | undefined;
+	activeTooth?: number | null | undefined;
+	onSelectActiveTooth?: ((tooth: number | null) => void) | undefined;
+	onApplyToDiary?: ((text: string) => void) | undefined;
+	onAddToInvoice?: ((services: readonly SurgicalServiceItem[]) => void) | undefined;
+	className?: string | undefined;
 }
 
 export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = ({
@@ -140,6 +146,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 											{
 												code: "A16.07.054",
 												name: `Операция установки дентального имплантата ${passportData.brand} Ø${passportData.diameterMm}x${passportData.lengthMm}мм (Зуб #${passportData.toothFdi})`,
+												nameRu: `Операция установки дентального имплантата ${passportData.brand} Ø${passportData.diameterMm}x${passportData.lengthMm}мм (Зуб #${passportData.toothFdi})`,
 												priceRub: 45000,
 												quantity: 1,
 											},

@@ -23,7 +23,7 @@ export const ExtractionComplexitySelector: React.FC<ExtractionComplexitySelector
 				<button
 					type="button"
 					onClick={onAddServicesToInvoice}
-					className="btn btn--secondary text-xs font-bold text-[var(--teal,#0d9488)] dark:text-teal-400 bg-[var(--paper-soft)] dark:bg-slate-900 border border-[var(--line)] dark:border-slate-800 flex items-center gap-1 cursor-pointer min-h-[36px] px-2.5 py-1 rounded-lg touch-manipulation"
+					className="btn btn--secondary text-xs font-bold text-[var(--teal,#0d9488)] bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--paper)] flex items-center gap-1 cursor-pointer min-h-[36px] px-2.5 py-1 rounded-lg touch-manipulation"
 					data-testid="btn-extraction-add-to-invoice"
 					title="Добавить хирургические услуги в смету визита"
 				>

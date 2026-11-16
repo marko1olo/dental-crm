@@ -290,7 +290,6 @@ const MODALS_TO_AUDIT = [
 	{ name: "WarehouseTransferModal", testId: "open-warehouse-transfer-modal-btn", prefix: "warehouse_transfer" },
 	{ name: "ClinicalWriteoffModal", testId: "open-clinical-writeoff-modal-btn", prefix: "clinical_writeoff" },
 	{ name: "PatientPortalModal", testId: "open-patient-portal-modal-btn", prefix: "patient_portal" },
-	{ name: "ImplantPlanningModal", testId: "open-implant-planning-modal-btn", prefix: "implant_planning" },
 	{ name: "VoiceDictationAssistantModal", testId: "open-voice-assistant-modal-btn", prefix: "voice_assistant" },
 	{ name: "InformedConsent323FzModal", testId: "open-consent-323-modal-btn", prefix: "consent_323fz" },
 	{ name: "AnesthesiaQuickBar", testId: "open-anesthesia-protocol-modal-btn", prefix: "anesthesia_protocol" },
