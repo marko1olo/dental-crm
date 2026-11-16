@@ -15,7 +15,7 @@ const path = require("node:path");
 
 const WEB_BASE = "http://127.0.0.1:5173";
 const PROOFS_DIR = path.resolve("docs/proofs/payroll");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/142baa46-3ddc-4b34-987a-5d4345ccd94e");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/860de7d7-68e4-40c6-9506-5ccd8ebeb50d");
 
 for (const dir of [PROOFS_DIR, BRAIN_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -150,31 +150,31 @@ async function main() {
     await ctx2.close();
 
     // ----------------------------------------------------
-    // 3. Mobile Light (390x844) - Doctor Payout Wallet
+    // 3. Mobile Light (390x844) - Doctor Payroll Studio
     // ----------------------------------------------------
-    console.log("\n--- 3/4: Mobile Light Doctor Payout Wallet (390x844) ---");
+    console.log("\n--- 3/4: Mobile Light Doctor Payroll Studio (390x844) ---");
     const ctx3 = await initContext(browser, 390, 844, false, true);
     const p3 = await ctx3.newPage();
-    await p3.goto(`${WEB_BASE}/?demo=true#doctor-wallet`, { waitUntil: "domcontentloaded", timeout: 35000 });
-    await p3.waitForSelector('#direct-doctor-wallet-overlay, [data-testid="doctor-wallet-standalone-workspace"], .doctor-wallet-container', { state: "visible", timeout: 25000 });
+    await p3.goto(`${WEB_BASE}/?stand=payroll&demo=true#payroll`, { waitUntil: "domcontentloaded", timeout: 35000 });
+    await p3.waitForSelector('[data-testid="doctor-payroll-studio-modal"]', { state: "visible", timeout: 25000 });
     await setTheme(p3, "light");
     await suppressOverlays(p3);
     await p3.waitForTimeout(800);
-    await saveProof(p3, "03_doctor_payout_wallet_mobile_light_390x844.png");
+    await saveProof(p3, "03_doctor_payroll_studio_mobile_light_390x844.png");
     await ctx3.close();
 
     // ----------------------------------------------------
-    // 4. Mobile Dark (390x844) - Doctor Payout Wallet
+    // 4. Mobile Dark (390x844) - Doctor Payroll Studio
     // ----------------------------------------------------
-    console.log("\n--- 4/4: Mobile Dark Doctor Payout Wallet (390x844) ---");
+    console.log("\n--- 4/4: Mobile Dark Doctor Payroll Studio (390x844) ---");
     const ctx4 = await initContext(browser, 390, 844, true, true);
     const p4 = await ctx4.newPage();
-    await p4.goto(`${WEB_BASE}/?demo=true#doctor-wallet`, { waitUntil: "domcontentloaded", timeout: 35000 });
-    await p4.waitForSelector('#direct-doctor-wallet-overlay, [data-testid="doctor-wallet-standalone-workspace"], .doctor-wallet-container', { state: "visible", timeout: 25000 });
+    await p4.goto(`${WEB_BASE}/?stand=payroll&demo=true#payroll`, { waitUntil: "domcontentloaded", timeout: 35000 });
+    await p4.waitForSelector('[data-testid="doctor-payroll-studio-modal"]', { state: "visible", timeout: 25000 });
     await setTheme(p4, "dark");
     await suppressOverlays(p4);
     await p4.waitForTimeout(800);
-    await saveProof(p4, "04_doctor_payout_wallet_mobile_dark_390x844.png");
+    await saveProof(p4, "04_doctor_payroll_studio_mobile_dark_390x844.png");
     await ctx4.close();
 
     console.log("\n>>> ALL 4 CANONICAL PAYROLL PROOFS CAPTURED SUCCESSFULLY! <<<");

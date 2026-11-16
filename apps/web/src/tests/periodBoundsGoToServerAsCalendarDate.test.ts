@@ -211,7 +211,7 @@ describe("границы периода уходят на сервер кале�
 
 		assert.equal(
 			fromMoscow,
-			"/api/billing/payouts?from=2026-07-01&to=2026-07-31",
+			"/api/v1/payroll/calculations?from=2026-07-01&to=2026-07-31",
 			"экран выплат снова считает границы месяца сам — это зарплата, и граница здесь стоит денег",
 		);
 		assert.equal(

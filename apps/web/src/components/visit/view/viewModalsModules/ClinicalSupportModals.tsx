@@ -19,7 +19,7 @@ import {
 } from "../../../warranty/WarrantyPassportModal";
 import type { WarrantyCertificateData } from "../../../warranty/warrantyRemediationTypes";
 import { DoctorMobileShiftModal } from "../../../doctor-portal/DoctorMobileShiftModal";
-import { InformedConsentModal } from "../../../consents/InformedConsentModal";
+import { InformedConsentModal } from "../../../documents/DocumentsStudioModal";
 import { PrescriptionModal } from "../../../prescriptions/PrescriptionModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../../store/visit";

@@ -31,7 +31,11 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 
 	test("2. Мандат 8e: Автономия врача и отсутствие блокировок при утверждении планов лечения", () => {
 		const studioPath = path.resolve(__dirname, "../../treatment-plans/TreatmentPlanStudioModal.tsx");
-		const studioSource = fs.readFileSync(studioPath, "utf8");
+		const footerPath = path.resolve(__dirname, "../../treatment-plans/studioModules/StudioModalFooter.tsx");
+		const studioFiles = [studioPath, footerPath];
+		const studioSource = studioFiles
+			.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""))
+			.join("\n");
 		assert.ok(studioSource.includes("approve-treatment-plan-btn"), "Кнопка утверждения плана присутствует в StudioModal");
 		assert.ok(!studioSource.includes("disabled={isPlanExpired}"), "План лечения не блокируется по истечении срока");
 	});
@@ -108,12 +112,17 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 		assert.ok(!visitViewSource.includes("disabled={isPlanExpired}"), "Истечение срока плана никогда не дизейблит кнопки в VisitView");
 	});
 
-	test("7. Инспекция исходного кода TreatmentPlanStudioModal: автономия врача и 100% скидки", () => {
+	test("7. Инспекция исходного кода TreatmentPlanStudioModal и VisitBillingDiscount: автономия врача и 100% скидки", () => {
 		const studioPath = path.resolve(__dirname, "../../treatment-plans/TreatmentPlanStudioModal.tsx");
-		const studioSource = fs.readFileSync(studioPath, "utf8");
-		assert.ok(studioSource.includes("doctor-discount-bar"), "Панель скидки врача присутствует");
-		assert.ok(studioSource.includes("DISCOUNT_PRESETS") && studioSource.includes("100"), "Скидка врача доступна до 100% (Мандат 8e)");
-		assert.ok(studioSource.includes("approve-treatment-plan-btn"), "Кнопка утверждения плана присутствует");
+		const footerPath = path.resolve(__dirname, "../../treatment-plans/studioModules/StudioModalFooter.tsx");
+		const discountPopoverPath = path.resolve(__dirname, "../billing/VisitBillingDiscountPopover.tsx");
+		const discountPresetsPath = path.resolve(__dirname, "../visitBillingPresets.ts");
+		const sources = [studioPath, footerPath, discountPopoverPath, discountPresetsPath]
+			.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""))
+			.join("\n");
+		assert.ok(sources.includes("doctor-discount-bar"), "Панель скидки врача присутствует");
+		assert.ok(sources.includes("DOCTOR_DISCOUNT_PRESETS") && sources.includes("100"), "Скидка врача доступна до 100% (Мандат 8e)");
+		assert.ok(sources.includes("approve-treatment-plan-btn"), "Кнопка утверждения плана присутствует");
 	});
 
 	test("8. Мандаты 8e, 8p: Если у пациента нет аллергий — аллергические плашки скрыты, ноль кричащих зеленых баннеров", () => {

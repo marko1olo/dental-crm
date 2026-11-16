@@ -9,14 +9,21 @@
  * Соответствие Мандату 8b (Sweet Spot: 80–130 строк).
  */
 
-import { and, eq, gte, inArray, isNotNull, lte, ne } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, ne, or } from "drizzle-orm";
 import {
 	ASSISTANT_SHIFT_RULE,
 	type AssistantShiftLogItem,
 	calculateAssistantPeriodPayroll,
 } from "@dental/shared";
 import { db } from "../../../db/client.js";
-import { appointments, serviceCatalogItems, treatmentItems, users, visits } from "../../../db/schema.js";
+import {
+	appointments,
+	doctorShiftRosters,
+	serviceCatalogItems,
+	treatmentItems,
+	users,
+	visits,
+} from "../../../db/schema.js";
 import type { ReportScope } from "./types.js";
 
 export type AssistantPayrollRow = {
@@ -61,7 +68,7 @@ export type AssistantPayrollReportData = {
 export async function assistantPayrollReport(
 	scope: ReportScope,
 ): Promise<AssistantPayrollReportData> {
-	// 1. Ассистенты клиники из штатного расписания
+	// 1. Ассистенты и медицинские сестры клиники из штатного расписания
 	const assistantUsers = await db
 		.select({
 			id: users.id,
@@ -72,7 +79,7 @@ export async function assistantPayrollReport(
 		.where(
 			and(
 				eq(users.organizationId, scope.organizationId),
-				eq(users.role, "assistant"),
+				or(eq(users.role, "assistant"), eq(users.role, "nurse")),
 			),
 		);
 
@@ -101,12 +108,45 @@ export async function assistantPayrollReport(
 			),
 		);
 
+	// 3. Смены из графика дежурств и табеля doctor_shift_rosters
+	const fromDateIso = scope.from.toISOString().slice(0, 10);
+	const toDateIso = scope.to.toISOString().slice(0, 10);
+	const rosterShifts = await db
+		.select({
+			doctorId: doctorShiftRosters.doctorId,
+			doctorName: doctorShiftRosters.doctorName,
+			dateIso: doctorShiftRosters.dateIso,
+			startTime: doctorShiftRosters.startTime,
+			endTime: doctorShiftRosters.endTime,
+			role: doctorShiftRosters.role,
+		})
+		.from(doctorShiftRosters)
+		.where(
+			and(
+				eq(doctorShiftRosters.organizationId, scope.organizationId),
+				gte(doctorShiftRosters.dateIso, fromDateIso),
+				lte(doctorShiftRosters.dateIso, toDateIso),
+			),
+		);
+
 	const assistantsMap = new Map<string, { name: string; role: string }>();
 	for (const u of assistantUsers) {
 		assistantsMap.set(u.id, {
 			name: u.fullName || "Ассистент стоматолога",
-			role: "Ассистент стоматолога",
+			role: u.role === "nurse" ? "Медицинская сестра" : "Ассистент стоматолога",
 		});
+	}
+
+	for (const s of rosterShifts) {
+		const isAstRole = s.role === "assistant" || s.role === "nurse";
+		if (isAstRole || assistantsMap.has(s.doctorId)) {
+			if (!assistantsMap.has(s.doctorId)) {
+				assistantsMap.set(s.doctorId, {
+					name: s.doctorName || "Ассистент клиники",
+					role: s.role === "nurse" ? "Медицинская сестра" : "Ассистент стоматолога",
+				});
+			}
+		}
 	}
 
 	const apptsByAssistant = new Map<string, typeof assistantAppointments>();
@@ -248,6 +288,21 @@ export async function assistantPayrollReport(
 			dayData.minutes += durationMin;
 			dayData.radiographs += radCount;
 			dayData.surgeries += surgCount;
+			dayMap.set(dayKey, dayData);
+		}
+
+		// Учет смен из табеля и графика дежурств (doctor_shift_rosters)
+		for (const rShift of rosterShifts) {
+			if (rShift.doctorId !== astId) continue;
+			const dayKey = rShift.dateIso.slice(0, 10);
+			const [shStart, smStart] = (rShift.startTime || "09:00").split(":").map(Number);
+			const [shEnd, smEnd] = (rShift.endTime || "15:00").split(":").map(Number);
+			const startMin = (shStart || 0) * 60 + (smStart || 0);
+			const endMin = (shEnd || 0) * 60 + (smEnd || 0);
+			const shiftDurationMin = Math.max(60, endMin > startMin ? endMin - startMin : 360);
+
+			const dayData = dayMap.get(dayKey) ?? { minutes: 0, radiographs: 0, surgeries: 0 };
+			dayData.minutes = Math.max(dayData.minutes, shiftDurationMin);
 			dayMap.set(dayKey, dayData);
 		}
 

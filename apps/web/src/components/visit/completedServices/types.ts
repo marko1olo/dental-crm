@@ -2,6 +2,7 @@ import {
 	CLINICAL_SERVICE_BUNDLES,
 	type ClinicalServiceBundle,
 } from "../clinicalServiceBundles";
+import type { DiagnosisPackageCatalogItem } from "../useDiagnosisPackage.js";
 import type {
 	ChairsideExpressService,
 	CompletedServicesSummary,
@@ -18,6 +19,7 @@ export {
 	type FilteredCatalogService,
 	type ParsedCompletedServiceLine,
 	type VisitPlanItemLike,
+	type DiagnosisPackageCatalogItem,
 };
 
 export interface CompletedServicesChecklistProps {
@@ -37,7 +39,7 @@ export interface QuickServiceSearchAndPresetsProps {
 	onAddCatalogService: (item: FilteredCatalogService) => void;
 	visitPatientId: string | null;
 	visitId: string | null;
-	effectiveCatalog: readonly unknown[];
+	effectiveCatalog: readonly DiagnosisPackageCatalogItem[];
 	onApplyDiagnosisPackage: (newLines: string[], invoicePayload: unknown) => void;
 	bundlesExpanded: boolean;
 	onToggleBundlesExpanded: () => void;

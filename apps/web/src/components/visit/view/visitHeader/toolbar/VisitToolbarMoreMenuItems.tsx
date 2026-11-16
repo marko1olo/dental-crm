@@ -42,9 +42,9 @@ export function VisitToolbarMoreMenuItems({
 				<ShieldCheck className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" />
 				<div className="flex flex-col"><span className="font-semibold">Выбрать бланк ИДС</span><span className="text-[10px] text-[var(--muted)]">Терапия, хирургия, ортопедия, КТ</span></div>
 			</button>
-			<button type="button" onClick={() => { onClose(); setIsEmergencyModalOpen(true); }} data-testid="visit-more-action-emergency" className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]" role="menuitem">
-				<AlertOctagon className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-				<div className="flex flex-col"><span className="font-semibold text-rose-700 dark:text-rose-300">Экстренная помощь у кресла</span><span className="text-[10px] text-[var(--muted)]">Шпаргалка 112, аптечка первой линии</span></div>
+			<button type="button" onClick={() => { onClose(); setIsEmergencyModalOpen(true); }} data-testid="visit-more-action-emergency" className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--danger-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]" role="menuitem">
+				<AlertOctagon className="w-4 h-4 text-[var(--danger)] shrink-0" />
+				<div className="flex flex-col"><span className="font-semibold text-[var(--danger)]">Экстренная помощь у кресла</span><span className="text-[10px] text-[var(--muted)]">Шпаргалка 112, аптечка первой линии</span></div>
 			</button>
 			<button type="button" onClick={() => { onClose(); setIsWarrantyModalOpen(true); }} data-testid="visit-more-action-warranty-passport" className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]" role="menuitem">
 				<ShieldCheck className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" />

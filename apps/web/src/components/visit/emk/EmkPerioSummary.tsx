@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import { ShieldCheck, Sparkles } from "lucide-react";
+import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
@@ -81,7 +82,7 @@ export function EmkPerioSummary({
 		useVisitStore.getState().addCompletedService(prophyService);
 
 		if (typeof window !== "undefined") {
-			const kopecks = Math.round(prophyService.price * 100);
+			const kopecks = rublesToKopecks(prophyService.price);
 			window.dispatchEvent(
 				new CustomEvent("dente-add-services-to-invoice", {
 					detail: {
@@ -171,11 +172,11 @@ export function EmkPerioSummary({
 				<button
 					type="button"
 					onClick={handleAddProphyService}
-					className="secondary-button min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal,#0d9488)] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+					className="secondary-button min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
 					data-testid="emk-hygiene-prophy-btn"
 					title="Назначить профессиональную гигиену полости рта и пародонтологический протокол"
 				>
-					<Sparkles size={14} className="shrink-0 text-[var(--teal,#0d9488)]" />
+					<Sparkles size={14} className="shrink-0 text-[var(--primary)]" />
 					<span>Назначить пародонтологический протокол</span>
 				</button>
 			</div>

@@ -1,7 +1,7 @@
 /**
  * PayrollStandaloneLauncher — Автономный запуск ведомости врача (Мандат 8b, <= 120 строк).
  *
- * Честный контур: список врачей грузится из /api/settings/staff, заработки за период
+ * Честный контур: список врачей грузится из канонического /api/v1/doctors, заработки за период
  * модалка тянет сама из /api/doctor/my-earnings. Никаких вбитых врачей, пациентов,
  * сумм и процентов — deep-link только открывает ведомость с живыми данными.
  */
@@ -24,33 +24,24 @@ interface PayrollDoctorOption {
 	readonly specialtyId: string;
 }
 
-interface RawStaffItem {
-	readonly id?: string;
-	readonly fullName?: string;
-	readonly role?: string;
-	readonly specialties?: readonly string[];
-}
-
 function useRealDoctors(): PayrollDoctorOption[] {
 	const [doctors, setDoctors] = useState<PayrollDoctorOption[]>([]);
 	useEffect(() => {
 		let cancelled = false;
 		void (async () => {
 			try {
-				const res = await fetch("/api/settings/staff", {
+				const res = await fetch("/api/v1/doctors", {
 					headers: denteAdminSecretRequestHeaders(),
 				});
 				if (!res.ok) return;
-				const data = (await res.json()) as { staff?: readonly RawStaffItem[] } | readonly RawStaffItem[];
-				const staff: readonly RawStaffItem[] = Array.isArray(data)
-					? data
-					: (data && "staff" in data && Array.isArray(data.staff) ? data.staff : []);
-				const mapped: PayrollDoctorOption[] = staff
-					.filter((s): s is RawStaffItem & { id: string; fullName: string } => s?.role === "doctor" && typeof s?.id === "string" && typeof s?.fullName === "string")
-					.map((s) => ({
-						id: s.id,
-						name: s.fullName,
-						specialtyId: Array.isArray(s.specialties) && typeof s.specialties[0] === "string" ? s.specialties[0] : "general_dentist",
+				const data = (await res.json()) as { ok?: boolean; doctors?: readonly PayrollDoctorOption[] };
+				const doctorsList: readonly PayrollDoctorOption[] = Array.isArray(data?.doctors) ? data.doctors : [];
+				const mapped: PayrollDoctorOption[] = doctorsList
+					.filter((d): d is PayrollDoctorOption => Boolean(d?.id && d?.name))
+					.map((d) => ({
+						id: d.id,
+						name: d.name,
+						specialtyId: d.specialtyId || "general_dentist",
 					}));
 				if (!cancelled) setDoctors(mapped);
 			} catch {

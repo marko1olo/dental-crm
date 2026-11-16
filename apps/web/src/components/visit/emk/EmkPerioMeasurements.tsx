@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { Stethoscope } from "lucide-react";
-import type { PerioToothRecord } from "@dental/shared";
+import { rublesToKopecks, type PerioToothRecord } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
@@ -133,7 +133,7 @@ export function EmkPerioMeasurements({
 
 		// 4. Диспатчим событие сметы для кассы и мягкого списания расходников
 		if (typeof window !== "undefined") {
-			const prophyKop = Math.round(prophyService.price * 100);
+			const prophyKop = rublesToKopecks(prophyService.price);
 			const allServices = [
 				{
 					serviceId: prophyService.code804n, name: prophyService.name, title: prophyService.name,
@@ -142,7 +142,7 @@ export function EmkPerioMeasurements({
 					quantity: 1, category: "hygiene", stageKind: "hygiene",
 				},
 				...curettageServices.map((cur) => {
-					const curKop = Math.round(cur.price * 100);
+					const curKop = rublesToKopecks(cur.price);
 					return {
 						serviceId: cur.code804n, name: cur.name, title: cur.name,
 						code: cur.code804n, code804n: cur.code804n, unitPriceRub: cur.price,

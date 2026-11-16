@@ -27,7 +27,7 @@ import {
 	compileShiftMicroclimateLogs,
 	compileShiftWasteLog,
 	executeShiftSanpinAutoClose,
-} from "../../sanpin/autoclaveLog/shiftAutoCloserEngine.js";
+} from "../../sanpin/shiftAutoCloserEngine.js";
 import {
 	performAutoVisitBomDeduction,
 } from "../../inventory/autoBomDeductionEngine.js";

@@ -185,7 +185,7 @@ export function VisitEmkCompletionSection({
 					type="button"
 					onClick={handleCompleteVisitAndGenerateReceipt}
 					disabled={isCompletingVisit}
-					className="primary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+					className="primary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--primary)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
 					data-testid="btn-complete-visit-emk"
 				>
 					<Check size={16} className="shrink-0" />

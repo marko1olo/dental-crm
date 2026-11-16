@@ -119,6 +119,8 @@ export const visitNoteDraftSchema = z.object({
 	objectiveStatus: z.string().nullable(),
 	diagnosis: z.string().nullable(),
 	treatmentPlan: z.string().nullable(),
+	diagnosisTooth: z.union([z.string(), z.number()]).nullable().optional(),
+	toothNumber: z.union([z.string(), z.number()]).nullable().optional(),
 	quality: visitNoteDraftQualitySchema.optional(),
 	warnings: z.array(z.string()),
 });

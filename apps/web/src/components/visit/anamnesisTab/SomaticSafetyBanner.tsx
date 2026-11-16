@@ -28,17 +28,17 @@ export const SomaticSafetyBanner: React.FC<SomaticSafetyBannerProps> = ({
 
 		return (
 			<div
-				className="flex items-center gap-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border-2 border-[#ef4444] text-rose-950 dark:text-rose-100 text-xs shadow-xs select-none"
+				className="flex items-center gap-3 p-3 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger)]/30 text-[var(--ink)] text-xs shadow-xs select-none"
 				data-testid="visit-anamnesis-critical-alert"
 				role="alert"
 				title="Клинические стоп-факторы безопасности у кресла (Медицинская карта приёма)"
 			>
-				<AlertOctagon className="w-5 h-5 text-[#ef4444] shrink-0" />
+				<AlertOctagon className="w-5 h-5 text-[var(--danger)] shrink-0" />
 				<div className="flex flex-col gap-0.5 min-w-0">
-					<span className="font-bold text-[#ef4444]">
+					<span className="font-bold text-[var(--danger)]">
 						Клинические стоп-факторы безопасности у кресла:
 					</span>
-					<span className="text-[11.5px] text-rose-900 dark:text-rose-200">
+					<span className="text-[11.5px] text-[var(--ink-muted)]">
 						{allergyStr}{risksStr}Обязательна коррекция местного анестетика, профилактика анафилаксии, оценка риска кровотечения и остеонекроза челюсти (БОНЧ).
 					</span>
 				</div>

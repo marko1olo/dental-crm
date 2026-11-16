@@ -51,6 +51,17 @@ export async function getVisitDraftAutosaveFromDb(
 		};
 	}
 
+	const [existingDiary] = await db
+		.select({ diagnosisTooth: schema.visitDiaries.diagnosisTooth })
+		.from(schema.visitDiaries)
+		.where(
+			and(
+				eq(schema.visitDiaries.visitId, visitId),
+				eq(schema.visitDiaries.organizationId, organizationId),
+			),
+		)
+		.limit(1);
+
 	// Черновик есть, автосохранения по нему ещё не было: заготовка собирается из полей самого визита
 	return {
 		outcome: "draft",
@@ -66,6 +77,7 @@ export async function getVisitDraftAutosaveFromDb(
 				objectiveStatus: visit.objectiveStatus || "",
 				diagnosis: visit.diagnosis || "",
 				treatmentPlan: visit.treatmentPlan || "",
+				diagnosisTooth: existingDiary?.diagnosisTooth || null,
 			},
 			baseRevision: visit.revision,
 			clientDraftId: null,
@@ -152,6 +164,12 @@ export async function upsertVisitDraftAutosaveInDb(
 		const nextDiagnosis = input.draft.diagnosis?.trim() || visit.diagnosis || null;
 		const nextTreatmentPlan =
 			input.draft.treatmentPlan?.trim() || visit.treatmentPlan || null;
+		const nextTooth =
+			input.draft.diagnosisTooth != null && String(input.draft.diagnosisTooth).trim() !== ""
+				? String(input.draft.diagnosisTooth).trim()
+				: input.draft.toothNumber != null && String(input.draft.toothNumber).trim() !== ""
+					? String(input.draft.toothNumber).trim()
+					: null;
 
 		const [saved] = await tx
 			.update(schema.visits)
@@ -186,7 +204,8 @@ export async function upsertVisitDraftAutosaveInDb(
 			nextAnamnesis ||
 			nextObjectiveStatus ||
 			nextDiagnosis ||
-			nextTreatmentPlan
+			nextTreatmentPlan ||
+			nextTooth
 		) {
 			const [existingDiary] = await tx
 				.select()
@@ -210,6 +229,7 @@ export async function upsertVisitDraftAutosaveInDb(
 						anamnesis: combinedAnamnesis || existingDiary.anamnesis,
 						statusLocalis: nextObjectiveStatus || existingDiary.statusLocalis,
 						diagnosisIcd10: nextDiagnosis || existingDiary.diagnosisIcd10,
+						diagnosisTooth: nextTooth || existingDiary.diagnosisTooth,
 						treatmentDescription:
 							nextTreatmentPlan || existingDiary.treatmentDescription,
 						updatedAt: now,
@@ -229,6 +249,7 @@ export async function upsertVisitDraftAutosaveInDb(
 					anamnesis: combinedAnamnesis || "",
 					statusLocalis: nextObjectiveStatus || "",
 					diagnosisIcd10: nextDiagnosis || "",
+					diagnosisTooth: nextTooth || null,
 					treatmentDescription: nextTreatmentPlan || "",
 					content: "",
 					isLocked: false,

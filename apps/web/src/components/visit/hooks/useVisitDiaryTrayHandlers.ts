@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from "react";
 import type React from "react";
-import { parseAndValidateKraftBarcode } from "@dental/shared";
 import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 import { operatorReadableErrorDetail } from "../../../AppHelpers";
 import {
@@ -333,14 +332,7 @@ export function useVisitDiaryTrayHandlers({
 					setLoadState({ phase: "ready" });
 				}
 				setLastSavedAt(new Date());
-				const parsed = parseAndValidateKraftBarcode(code);
-				showToast(
-					parsed.isExpired
-						? "Внимание: лоток привязан, но расчетный срок стерилизации истёк."
-						: "Лоток привязан к приёму.",
-					parsed.isExpired ? "warning" : "success",
-					5000,
-				);
+				showToast("Лоток привязан к приёму.", "success", 5000);
 			} catch (err) {
 				logger.error("[diary tray assign] запрос не выполнен", err);
 				showToast(

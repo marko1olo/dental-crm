@@ -20,7 +20,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 	const accessHeaders = auth?.settingsAccessHeaders as SettingsAccessHeaders | undefined;
 	const clinicDataLoaded = Boolean(dashboard?.clinicSettings);
 
-	const [isTimesheetT13Open, setIsTimesheetT13Open] = useState(false);
+	const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
 	// biome-ignore lint/suspicious/noExplicitAny: staff row
 	const [selectedStaffForCard, setSelectedStaffForCard] = useState<any | null>(null);
 
@@ -43,7 +43,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 				<StaffActiveList
 					staff={staff}
 					clinicDataLoaded={clinicDataLoaded}
-					onOpenTimesheet={() => setIsTimesheetT13Open(true)}
+					onOpenPayroll={() => setIsPayrollModalOpen(true)}
 					onOpenProfile={(member) => setSelectedStaffForCard(member)}
 					onUpdatePhone={updatePhone}
 					onUpdateCredential={updateCredential}
@@ -67,10 +67,10 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 				/>
 			)}
 
-			{isTimesheetT13Open && (
+			{isPayrollModalOpen && (
 				<DoctorPayrollStudioModal
-					isOpen={isTimesheetT13Open}
-					onClose={() => setIsTimesheetT13Open(false)}
+					isOpen={isPayrollModalOpen}
+					onClose={() => setIsPayrollModalOpen(false)}
 					clinicName={dashboard?.clinicSettings?.name || dashboard?.clinicName}
 					doctorsList={staff.filter((s: any) => s.role === "doctor" || s.role === "owner").map((s: any) => ({
 						id: s.id,

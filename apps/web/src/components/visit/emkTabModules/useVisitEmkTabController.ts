@@ -335,6 +335,11 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		activePatient,
 		visitNoteForm,
 		flushSoloPendingSave,
+		diagnosisTooth: effectiveActiveTooth
+			? String(effectiveActiveTooth)
+			: visitNoteForm?.diagnosisTooth
+				? String(visitNoteForm.diagnosisTooth)
+				: "",
 	});
 
 	const handleApplyCatalogPatch = React.useCallback(

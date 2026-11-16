@@ -89,7 +89,14 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 				protocolText={s.protocolText} onChangeText={s.setProtocolText}
 				onCopy={() => { navigator.clipboard?.writeText(s.protocolText); showToast("Протокол операции скопирован", "success"); }}
 			/>
-			<VisitSurgeryFooterActions s={s} patientName={patientName} doctorName={doctorName} onAddToInvoice={onAddToInvoice} onApplyToDiary={onApplyToDiary} />
+			<VisitSurgeryFooterActions
+				s={s}
+				patientName={patientName}
+				doctorName={doctorName}
+				patientId={patientId}
+				onAddToInvoice={onAddToInvoice}
+				onApplyToDiary={onApplyToDiary}
+			/>
 			{s.isImplantModalOpen && (
 				<div
 					className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs"

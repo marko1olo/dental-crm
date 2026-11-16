@@ -42,10 +42,10 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 	} = params;
 
 	return useCallback(
-		async (opts?: { silent?: boolean; force?: boolean }): Promise<{ success: boolean; error?: string }> => {
+		async (opts?: { silent?: boolean; force?: boolean }): Promise<{ success: boolean; error?: string; reason?: string }> => {
 			const form = currentFormRef.current;
 			const tr = currentTranscriptRef.current;
-			if (!canSave) return { success: true };
+			if (!canSave) return { success: false, reason: "locked", error: "Сохранение заблокировано" };
 
 			const signature = computeSignature(form, tr);
 			if (!opts?.force && signature === lastSavedSignatureRef.current) return { success: true };

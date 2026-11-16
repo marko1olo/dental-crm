@@ -19,7 +19,8 @@ export * from "./fastPrintModules/fastPrintConsentAndMemoBuilder";
 export * from "./fastPrintModules";
 
 import {
-	executeFastPrint043u,
+	executeFastPrintClinicalDiary,
+	executeFastPrintClinicalDiary as executeFastPrint043u,
 	type FastPrintClinicalDiaryParams,
 } from "./fastPrintModules/fastPrintDiaryBuilder";
 
@@ -29,7 +30,7 @@ import {
  */
 export const handlePrintMedicalCardFast = (params?: FastPrintClinicalDiaryParams) => {
 	if (params) {
-		return executeFastPrint043u(params);
+		return executeFastPrintClinicalDiary(params);
 	}
 };
 

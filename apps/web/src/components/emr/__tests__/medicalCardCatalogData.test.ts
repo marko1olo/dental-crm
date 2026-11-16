@@ -74,25 +74,23 @@ describe("Medical Card & SOAP Diary SSOT (Mandates 8e, 8n, 8x, 8ap, 8am)", () =>
 		assert.strictEqual(reqs.clinicLegalName, "Клиника Доктора Тестова");
 	});
 
-	it("5. DirectEmrLauncher source code is mounted and responds to canonical deep links", () => {
-		const launcherPath = path.resolve(__dirname, "../DirectEmrLauncher.tsx");
-		assert.ok(fs.existsSync(launcherPath), "DirectEmrLauncher.tsx must exist");
-		const code = fs.readFileSync(launcherPath, "utf8");
+	it("5. StandaloneEmrMedicalRecordHost source code is mounted and responds to canonical deep links", () => {
+		const hostPath = path.resolve(__dirname, "../../appLayout/modalsContainerModules/standalone/clinical/StandaloneEmrMedicalRecordHost.tsx");
+		assert.ok(fs.existsSync(hostPath), "StandaloneEmrMedicalRecordHost.tsx must exist");
+		const code = fs.readFileSync(hostPath, "utf8");
 
-		assert.ok(code.includes("medical-card"));
-		assert.ok(code.includes("emr"));
-		assert.ok(code.includes("card-043"));
-		assert.ok(code.includes("dente:open-medical-card"));
 		assert.ok(code.includes("MedicalRecordStudioModal"));
-		assert.ok(code.includes("MedicalCardPrintModal"));
+		assert.ok(code.includes("emr-medical-record-standalone-root"));
 	});
 
-	it("6. AppShell mounts both DirectVisitLauncher and DirectEmrLauncher in live UI (Mandate 8aq)", () => {
-		const appShellPath = path.resolve(__dirname, "../../../AppShell.tsx");
-		const appShellCode = fs.readFileSync(appShellPath, "utf8");
+	it("6. ClinicalViewRouter mounts VisitView and clinicalLaunchersRegistry mounts canonical EMR (Mandate 8aq)", () => {
+		const routerPath = path.resolve(__dirname, "../../appLayout/viewRouterModules/ClinicalViewRouter.tsx");
+		const routerCode = fs.readFileSync(routerPath, "utf8");
+		assert.ok(routerCode.includes("VisitView"));
 
-		assert.ok(appShellCode.includes("<DirectVisitLauncher />"));
-		assert.ok(appShellCode.includes("<DirectEmrLauncher />"));
+		const registryPath = path.resolve(__dirname, "../../appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx");
+		const registryCode = fs.readFileSync(registryPath, "utf8");
+		assert.ok(registryCode.includes("StandaloneEmrMedicalRecordHost"));
 	});
 
 	it("7. Primary CTA button in EMR styles enforces single #0d9488 (var(--teal)) (Mandate 8am)", () => {

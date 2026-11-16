@@ -19,6 +19,7 @@ export interface UseVisitCompletionWorkflowOptions {
 	visitNoteForm: Record<string, unknown>;
 	flushSoloPendingSave: () => Promise<void>;
 	acceptDraftToVisit?: (() => Promise<void>) | undefined;
+	diagnosisTooth?: string | number | null | undefined;
 }
 
 export function useVisitCompletionWorkflow({
@@ -28,6 +29,7 @@ export function useVisitCompletionWorkflow({
 	visitNoteForm,
 	flushSoloPendingSave,
 	acceptDraftToVisit,
+	diagnosisTooth,
 }: UseVisitCompletionWorkflowOptions) {
 	const [isCompletingVisit, setIsCompletingVisit] = React.useState<boolean>(false);
 	const [completionResult, setCompletionResult] =
@@ -76,6 +78,15 @@ export function useVisitCompletionWorkflow({
 			const effectiveDoctorName =
 				dashboard?.activeDoctor?.fullName || "Лечащий врач";
 
+			const effectiveDiagnosisTooth =
+				diagnosisTooth != null && String(diagnosisTooth).trim() !== ""
+					? String(diagnosisTooth).trim()
+					: visitNoteForm?.diagnosisTooth != null && String(visitNoteForm.diagnosisTooth).trim() !== ""
+						? String(visitNoteForm.diagnosisTooth).trim()
+						: visitNoteForm?.toothNumber != null && String(visitNoteForm.toothNumber).trim() !== ""
+							? String(visitNoteForm.toothNumber).trim()
+							: "";
+
 			const result = await completeClinicalVisitAndAssembleEstimate({
 				visitId: openVisitId,
 				patientId: effectivePatientId,
@@ -85,6 +96,7 @@ export function useVisitCompletionWorkflow({
 					anamnesis: finalDiary.anamnesis,
 					statusLocalis: finalDiary.objectiveStatus,
 					diagnosisIcd10: finalDiary.diagnosis,
+					diagnosisTooth: effectiveDiagnosisTooth,
 					treatmentDescription: finalDiary.treatmentPlan,
 				},
 				additionalServices,
@@ -99,7 +111,7 @@ export function useVisitCompletionWorkflow({
 					anamnesis: finalDiary.anamnesis,
 					statusLocalis: finalDiary.objectiveStatus,
 					diagnosisIcd10: finalDiary.diagnosis,
-					diagnosisTooth: "",
+					diagnosisTooth: effectiveDiagnosisTooth,
 					treatmentDescription: finalDiary.treatmentPlan,
 				},
 				effectiveCompletedPlan: [],
@@ -202,7 +214,7 @@ export function useVisitCompletionWorkflow({
 		} finally {
 			setIsCompletingVisit(false);
 		}
-	}, [visitNoteForm, openVisitId, activePatient, dashboard, flushSoloPendingSave, acceptDraftToVisit]);
+	}, [visitNoteForm, openVisitId, activePatient, dashboard, flushSoloPendingSave, acceptDraftToVisit, diagnosisTooth]);
 
 	React.useEffect(() => {
 		const handleExternalTrigger = (e: Event) => {

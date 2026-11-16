@@ -12,6 +12,11 @@ import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { MedicalRecordData } from "../types/recordDataTypes";
 
+/** Канонический ключ черновика дневника приёма (Мандаты 8x/8ap) */
+export const RECORD_DIARY_DRAFT = "RECORD_DIARY_DRAFT";
+/** @deprecated Использовать RECORD_DIARY_DRAFT */
+export const DIARY_043_DRAFT = RECORD_DIARY_DRAFT;
+
 export interface UseMedicalRecordSaveParams {
 	formData: MedicalRecordData;
 	onSave?: ((updated: MedicalRecordData) => void | Promise<void>) | undefined;

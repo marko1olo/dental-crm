@@ -32,9 +32,10 @@ import {
 	calculateCpitnIndex,
 	generateMedicalRecordPrintHtml,
 } from "./clinicalDiaryMath";
+import { generateUuidV7 } from "@dental/shared";
 import { useRecordExports } from "./record/useRecordExports";
 import { useMedicalRecordSave } from "./record/useMedicalRecordSave";
-import { EmrProtocolGeneratorModal } from "./protocolGenerator/EmrProtocolGeneratorModal";
+import { ClinicalProtocolsCatalogModal } from "../visit/clinicalCatalog/ClinicalProtocolsCatalogModal";
 import { RecordPassportTab } from "./record/tabs/RecordPassportTab";
 import { RecordAnamnesisTab } from "./record/tabs/RecordAnamnesisTab";
 import { RecordOdontogramTab } from "./record/tabs/RecordOdontogramTab";
@@ -166,33 +167,21 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			});
 		}, [onSave]);
 
-		const handleUpdatePassport = useCallback(
-			(patch: Partial<ClinicalPassportData>) => {
-				setFormData((prev) => {
-					const updated = {
-						...prev,
-						passport: { ...prev.passport, ...patch },
-					};
-					onSave?.(updated);
-					return updated;
-				});
-			},
-			[onSave],
-		);
+		const handleUpdatePassport = useCallback((patch: Partial<ClinicalPassportData>) => {
+			setFormData((prev) => {
+				const updated = { ...prev, passport: { ...prev.passport, ...patch } };
+				onSave?.(updated);
+				return updated;
+			});
+		}, [onSave]);
 
-		const handleUpdateAnamnesis = useCallback(
-			(patch: Partial<ClinicalAnamnesisData>) => {
-				setFormData((prev) => {
-					const updated = {
-						...prev,
-						anamnesis: { ...prev.anamnesis, ...patch },
-					};
-					onSave?.(updated);
-					return updated;
-				});
-			},
-			[onSave],
-		);
+		const handleUpdateAnamnesis = useCallback((patch: Partial<ClinicalAnamnesisData>) => {
+			setFormData((prev) => {
+				const updated = { ...prev, anamnesis: { ...prev.anamnesis, ...patch } };
+				onSave?.(updated);
+				return updated;
+			});
+		}, [onSave]);
 
 		const handleAddDiary = useCallback((newDiary: ClinicalVisitDiaryEntry) => {
 			setFormData((prev) => {
@@ -214,21 +203,25 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 		if (isProtocolGeneratorOpen) {
 			return (
-				<EmrProtocolGeneratorModal
+				<ClinicalProtocolsCatalogModal
 					isOpen={true}
 					onClose={() => setIsProtocolGeneratorOpen(false)}
-					patientFullName={formData.passport.patientFullName}
-					patientBirthDate={formData.passport.patientBirthDate}
-					medicalCardNumber={formData.passport.medicalCardNumber}
-					doctorFullName={formData.passport.attendingDoctorFullName}
-					doctorSpecialty={formData.passport.attendingDoctorSpecialty}
-					odontogramTeeth={formData.dentalStatus.odontogramTeeth}
-					onApplyDiary={(newDiary) => { handleAddDiary(newDiary as ClinicalVisitDiaryEntry); setIsProtocolGeneratorOpen(false); }}
-					onApplyBatchDiaries={(newDiaries) => {
-						setFormData((prev) => {
-							const updated = { ...prev, visitDiaries: [...(newDiaries as ClinicalVisitDiaryEntry[]), ...prev.visitDiaries] };
-							onSave?.(updated);
-							return updated;
+					activeTooth={16}
+					onApplyPatch={(patch) => {
+						handleAddDiary({
+							id: generateUuidV7(),
+							visitDate: new Date().toISOString().split("T")[0],
+							toothNumber: "16",
+							subjectiveComplaints: patch.complaint || "",
+							anamnesisMorbi: patch.anamnesis || "",
+							objectiveStatusLocalis: patch.objectiveStatus || "",
+							assessmentDiagnosisText: patch.diagnosis || "",
+							assessmentIcd10Code: (patch.diagnosis || "").split(" ")[0] || "K02.1",
+							procedureProtocol: patch.treatmentPlan || "",
+							homeCareRecommendations: patch.recommendations || "",
+							nextVisitRecommendations: "",
+							doctorSignature: formData.passport.attendingDoctorFullName || "Лечащий врач",
+							isSigned: false,
 						});
 						setIsProtocolGeneratorOpen(false);
 					}}
@@ -250,7 +243,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						<div className="emr-studio-title-group">
 							<span
 								data-testid="badge-emr-draft-status"
-								data-legacy-testid="badge-043-draft-status"
+								data-legacy-testid="badge-emr-draft-status"
 								className={`px-2 py-0.5 rounded border text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 shrink-0 ${
 									effectiveIsDraft
 										? "border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
@@ -275,23 +268,11 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						<div className="emr-studio-actions">
 							{activeTab === "overview" && (
 								<div className="emr-studio-zoom-toolbar inline-flex items-center gap-1 border border-[var(--glass-border,#cbd5e1)] rounded-md px-1.5 py-0.5 bg-[var(--paper,#f8fafc)] h-8">
-									<button
-										type="button"
-										onClick={() => setZoomScale((v) => Math.max(0.5, Number((v - 0.1).toFixed(1))))}
-										disabled={zoomScale <= 0.5}
-										title="Уменьшить масштаб"
-										className="p-0.5 border-none bg-transparent cursor-pointer disabled:opacity-40"
-									>
+									<button type="button" onClick={() => setZoomScale((v) => Math.max(0.5, Number((v - 0.1).toFixed(1))))} disabled={zoomScale <= 0.5} title="Уменьшить масштаб" className="p-0.5 border-none bg-transparent cursor-pointer disabled:opacity-40">
 										<ZoomOut className="w-3.5 h-3.5" />
 									</button>
 									<span className="text-[11px] font-bold min-w-9 text-center select-none">{Math.round(zoomScale * 100)}%</span>
-									<button
-										type="button"
-										onClick={() => setZoomScale((v) => Math.min(1.5, Number((v + 0.1).toFixed(1))))}
-										disabled={zoomScale >= 1.5}
-										title="Увеличить масштаб"
-										className="p-0.5 border-none bg-transparent cursor-pointer disabled:opacity-40"
-									>
+									<button type="button" onClick={() => setZoomScale((v) => Math.min(1.5, Number((v + 0.1).toFixed(1))))} disabled={zoomScale >= 1.5} title="Увеличить масштаб" className="p-0.5 border-none bg-transparent cursor-pointer disabled:opacity-40">
 										<ZoomIn className="w-3.5 h-3.5" />
 									</button>
 									{zoomScale !== 1.0 && (
@@ -302,42 +283,17 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								</div>
 							)}
 
-							<button
-								type="button"
-								className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary"
-								onClick={handleApplyNorm}
-								disabled={false}
-								data-testid="btn-emr-apply-norm"
-								title="Заполнить физиологической нормой / Интактные зубы"
-							>
-								<Sparkles className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" />
-								<span className="hidden sm:inline">Физиологическая норма</span>
-								<span className="sm:hidden">Норма</span>
+							<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary" onClick={handleApplyNorm} disabled={false} data-testid="btn-emr-apply-norm" title="Заполнить физиологической нормой / Интактные зубы">
+								<Sparkles className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" /><span className="hidden sm:inline">Физиологическая норма</span><span className="sm:hidden">Норма</span>
 							</button>
 
-							<button
-								type="button"
-								className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary"
-								onClick={handlePrint}
-								disabled={false}
-								data-testid="btn-emr-print-card"
-								data-legacy-testid="btn-print-043-card"
-								title="Печать или экспорт в PDF (A4)"
-							>
-								<Printer className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" />
-								<span className="hidden sm:inline">Печать A4</span>
-								<span className="sm:hidden">Печать</span>
+							<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary" onClick={handlePrint} disabled={false} data-testid="btn-emr-print-card" data-legacy-testid="btn-print-medical-record" title="Печать или экспорт в PDF (A4)">
+								<Printer className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" /><span className="hidden sm:inline">Печать A4</span><span className="sm:hidden">Печать</span>
 							</button>
 
 							{/* Меню дополнительных действий */}
 							<div className="relative inline-flex items-center" ref={moreMenuRef}>
-								<button
-									type="button"
-									className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only"
-									onClick={() => setIsMoreMenuOpen((v) => !v)}
-									title="Дополнительные действия"
-									data-testid="btn-emr-more-actions"
-								>
+								<button type="button" className="dente-btn dente-btn-secondary emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only" onClick={() => setIsMoreMenuOpen((v) => !v)} title="Дополнительные действия" data-testid="btn-emr-more-actions">
 									<MoreHorizontal className="w-4 h-4" />
 								</button>
 								{isMoreMenuOpen && (

@@ -54,9 +54,7 @@ export {
 	clinicalSpecialtyKindSchema,
 	localAnesthesiaTypeSchema,
 	anestheticDrugSchema,
-	EmrProtocolGeneratorModal,
 	CORE_1CLICK_PRESETS,
-	type EmrProtocolGeneratorModalProps,
 	type ClinicalDiarySynthesisRequest,
 	type VisitDiaryEntry043,
 	type FdiToothRecord,
@@ -68,4 +66,4 @@ export {
 	type BlackCavityClass,
 	type LocalAnesthesiaType,
 	type AnestheticDrug,
-} from "./protocolGenerator/index";
+} from "@dental/shared";

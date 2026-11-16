@@ -1,9 +1,8 @@
 import { generateQrCodeSvg, generateUuidV7 } from "@dental/shared";
 import { Check, X, Zap } from "lucide-react";
 import React from "react";
-import { InformedConsentModal } from "../../consents/InformedConsentModal";
+import { InformedConsentModal } from "../../documents/DocumentsStudioModal";
 import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal";
-import { EmrProtocolGeneratorModal } from "../../emr/protocolGenerator/EmrProtocolGeneratorModal";
 import { showToast } from "../../GlobalToast";
 import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
 import { appendClinicalText } from "../emk";
@@ -148,105 +147,13 @@ export function VisitEmkModals({
 				</div>
 			)}
 
-			{/* Клинические протоколы СтАР / МКБ-10 (Мандаты 8e, 8n) */}
-			<EmrProtocolGeneratorModal
-				isOpen={isStarProtocolsOpen}
-				onClose={() => setIsStarProtocolsOpen(false)}
-				patientFullName={activePatient?.fullName}
-				patientBirthDate={activePatient?.birthDate}
-				medicalCardNumber={activePatient?.medicalCardNumber || activePatient?.cardNumber || activePatient?.id}
-				doctorFullName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
-				doctorSpecialty={dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт"}
-				initialToothNumber={Number(dashboard?.activeVisit?.diagnosisTooth) || undefined}
-				initialIcd10Code={visitNoteForm?.diagnosis ? String(visitNoteForm.diagnosis).split(" ")[0] : undefined}
-				initialSpecialty={
-					dashboard?.activeVisit?.specialty === "surgery"
-						? "surgery"
-						: dashboard?.activeVisit?.specialty === "orthopedics"
-							? "orthopedics"
-							: dashboard?.activeVisit?.specialty === "periodontics"
-								? "periodontics"
-								: dashboard?.activeVisit?.specialty === "pediatric"
-									? "pediatric"
-									: "therapy"
-				}
-				onApplyDiary={(newDiary) => {
-					if (newDiary.subjectiveComplaints) {
-						updateVisitNoteField(
-							"complaint",
-							appendClinicalText(visitNoteForm?.complaint || "", newDiary.subjectiveComplaints, "\n"),
-						);
-					}
-					if (newDiary.objectiveStatusLocalis) {
-						updateVisitNoteField(
-							"objectiveStatus",
-							appendClinicalText(visitNoteForm?.objectiveStatus || "", newDiary.objectiveStatusLocalis, "\n"),
-						);
-					}
-					if (newDiary.assessmentDiagnosisText || newDiary.assessmentIcd10Code) {
-						const diagText = newDiary.assessmentDiagnosisText
-							? `${newDiary.assessmentIcd10Code ? `${newDiary.assessmentIcd10Code} ` : ""}${newDiary.assessmentDiagnosisText}${newDiary.toothNumber ? ` (зуб ${newDiary.toothNumber})` : ""}`
-							: (newDiary.assessmentIcd10Code || "");
-						updateVisitNoteField("diagnosis", diagText);
-					}
-					if (newDiary.procedureProtocol) {
-						updateVisitNoteField(
-							"treatmentPlan",
-							appendClinicalText(visitNoteForm?.treatmentPlan || "", newDiary.procedureProtocol, "\n"),
-						);
-					}
-					if (newDiary.homeCareRecommendations) {
-						updateVisitNoteField(
-							"recommendations",
-							appendClinicalText(visitNoteForm?.recommendations || "", newDiary.homeCareRecommendations, "\n"),
-						);
-					}
-					setIsStarProtocolsOpen(false);
-					showToast("Клинический протокол применён к приёму", "success", 3000);
-				}}
-				onApplyBatchDiaries={(diaries) => {
-					if (!diaries || diaries.length === 0) return;
-					for (const d of diaries) {
-						if (d.subjectiveComplaints) {
-							updateVisitNoteField(
-								"complaint",
-								appendClinicalText(visitNoteForm?.complaint || "", d.subjectiveComplaints, "\n"),
-							);
-						}
-						if (d.objectiveStatusLocalis) {
-							updateVisitNoteField(
-								"objectiveStatus",
-								appendClinicalText(visitNoteForm?.objectiveStatus || "", d.objectiveStatusLocalis, "\n"),
-							);
-						}
-						if (d.assessmentDiagnosisText || d.assessmentIcd10Code) {
-							const diagText = d.assessmentDiagnosisText
-								? `${d.assessmentIcd10Code ? `${d.assessmentIcd10Code} ` : ""}${d.assessmentDiagnosisText}${d.toothNumber ? ` (зуб ${d.toothNumber})` : ""}`
-								: (d.assessmentIcd10Code || "");
-							updateVisitNoteField("diagnosis", diagText);
-						}
-						if (d.procedureProtocol) {
-							updateVisitNoteField(
-								"treatmentPlan",
-								appendClinicalText(visitNoteForm?.treatmentPlan || "", d.procedureProtocol, "\n"),
-							);
-						}
-						if (d.homeCareRecommendations) {
-							updateVisitNoteField(
-								"recommendations",
-								appendClinicalText(visitNoteForm?.recommendations || "", d.homeCareRecommendations, "\n"),
-							);
-						}
-					}
-					setIsStarProtocolsOpen(false);
-					showToast(`Применено клинических протоколов: ${diaries.length}`, "success", 3000);
-				}}
-			/>
-
 			{/* Полный промышленный каталог клинических протоколов (1 142 шаблона) */}
 			<ClinicalProtocolsCatalogModal
-				isOpen={isSoapTemplatesModalOpen}
-				onClose={() => setIsSoapTemplatesModalOpen(false)}
+				isOpen={isSoapTemplatesModalOpen || isStarProtocolsOpen}
+				onClose={() => {
+					setIsSoapTemplatesModalOpen(false);
+					setIsStarProtocolsOpen(false);
+				}}
 				activeTooth={Number(dashboard?.activeVisit?.diagnosisTooth) || 16}
 				currentNoteForm={visitNoteForm}
 				onApplyPatch={onApplyCatalogPatch}

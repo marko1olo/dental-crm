@@ -147,4 +147,37 @@ describe("useVisitSaveExecutor Autonomy & Resilience (Defect 1 Invariant)", () =
 			globalThis.fetch = originalFetch;
 		}
 	});
+
+	it("returns success: false with reason 'locked' when canSave is false", async () => {
+		const currentFormRef = {
+			current: {
+				complaints: "Тест",
+			} as VisitNoteForm,
+		};
+		const currentTranscriptRef = { current: "" };
+		const lastSavedSignatureRef = { current: "sig-old" };
+		const isMountedRef = { current: true };
+
+		const saveExecutor = renderHookProbe(() =>
+			useVisitSaveExecutor({
+				canSave: false,
+				computeSignature: () => "sig-valid-uuid",
+				lastSavedSignatureRef,
+				currentFormRef,
+				currentTranscriptRef,
+				isMountedRef,
+				visitId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+				patientId: "ffffffff-1111-4222-8333-444444444444",
+				setSaveState: () => {},
+				setLastSavedAt: () => {},
+				setHasUnsavedChanges: () => {},
+				setServerDraftSyncState: () => {},
+				setLastServerDraftSavedAt: () => {},
+			}),
+		);
+
+		const outcome = await saveExecutor({ force: true });
+		assert.equal(outcome.success, false, "Must not return false positive when canSave is false");
+		assert.equal(outcome.reason, "locked", "Must specify reason locked");
+	});
 });

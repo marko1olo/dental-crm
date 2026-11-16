@@ -54,7 +54,7 @@ export const ChairsideToothQuickGroups: React.FC<ChairsideToothQuickGroupsProps>
 				<button
 					type="button"
 					onClick={onClear}
-					className="min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-1 rounded-lg bg-[var(--paper)] text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer text-xs font-medium ml-auto"
+					className="min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-1 rounded-lg bg-[var(--paper)] text-[var(--danger)] border border-[var(--danger)]/30 hover:bg-[var(--danger-soft)] transition-colors cursor-pointer text-xs font-medium ml-auto"
 				>
 					Сбросить
 				</button>

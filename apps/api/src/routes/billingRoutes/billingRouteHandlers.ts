@@ -6,11 +6,9 @@ import { handleRetryAllFiscalQueue } from "./handlers/fiscalQueueRetryAllHandler
 import { handleRetryFiscalQueueItem } from "./handlers/fiscalQueueRetryItemHandler.js";
 import { invoicePayHandler } from "./handlers/invoicePayWrapper.js";
 import { handleCreatePayment } from "./handlers/paymentCreateHandler.js";
-import { handleGetPayouts } from "./handlers/payoutsHandler.js";
 import { handlePartialRefund } from "./handlers/refundReceiptHandler.js";
 
 export {
-	handleGetPayouts,
 	handleCreatePayment,
 	handlePartialRefund,
 	handleGetFiscalQueuePending,
@@ -21,7 +19,6 @@ export {
 };
 
 export async function registerBillingRoutes(app: FastifyInstance): Promise<void> {
-	app.get("/api/billing/payouts", handleGetPayouts);
 	app.get("/api/billing/payments", handleGetBillingPayments);
 	app.get("/api/payments", handleGetBillingPayments);
 	app.get("/api/billing/invoices", handleGetBillingInvoices);

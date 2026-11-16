@@ -1,6 +1,5 @@
 export * from "./EmkTypes";
 export * from "./DebouncedEmkTextarea";
-export * from "./EmkSomaticCard";
 export * from "./EmkComplaintsSection";
 export * from "./EmkObjectiveStatusSection";
 export * from "./EmkDiaryProtocolSection";

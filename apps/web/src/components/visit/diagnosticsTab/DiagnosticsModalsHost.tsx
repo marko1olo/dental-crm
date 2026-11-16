@@ -250,7 +250,7 @@ export function DiagnosticsModalsHost({
 					}}
 					imageSrc={
 						selectedDicomImageSrc ??
-						(isDemoShowcaseMode() || isDemoPatientId(visitPatientId ?? activePatient?.id)
+						(isDemoShowcaseMode()
 							? (initialToothNumber === 16
 								? "/radiology/sample_rvg_tooth16.jpg"
 								: "/radiology/sample_rvg_tooth36_periapical.jpg")

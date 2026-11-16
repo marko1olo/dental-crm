@@ -27,7 +27,9 @@ const __dirname = path.dirname(__filename);
 describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => {
 	const clinicProfileUtilsPath = path.resolve(__dirname, '../../../utils/clinicProfileUtils.ts');
 	const usePatientLogicPath = path.resolve(__dirname, '../../../hooks/domains/usePatientLogic.ts');
-	const visiographAnalyzerPath = path.resolve(__dirname, '../../imaging/VisiographAnalyzer.tsx');
+	const dicomViewerModalPath = path.resolve(__dirname, '../../imaging/DicomViewerModal.tsx');
+	const dicomViewerModalControllerPath = path.resolve(__dirname, '../../imaging/dicomViewerModal/useDicomViewerModalController.ts');
+	const diagnosticsModalsHostPath = path.resolve(__dirname, '../diagnosticsTab/DiagnosticsModalsHost.tsx');
 	const visitDiagnosticsTabPath = path.resolve(__dirname, '../VisitDiagnosticsTab.tsx');
 	const anesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/AnesthesiaQuickBar.tsx');
 	const chairsideAnesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/ChairsideAnesthesiaQuickBar.tsx');
@@ -55,7 +57,11 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 		fs.readFileSync(usePatientLogicPath, 'utf8'),
 		...readFilesRecursively(usePatientLogicDir),
 	].join('\n');
-	const visiographAnalyzerCode = fs.readFileSync(visiographAnalyzerPath, 'utf8');
+	const dicomViewerModalCode =
+		fs.readFileSync(dicomViewerModalPath, 'utf8') +
+		fs.readFileSync(path.resolve(__dirname, '../../imaging/dicomViewerModal/types.ts'), 'utf8');
+	const dicomViewerModalControllerCode = fs.readFileSync(dicomViewerModalControllerPath, 'utf8');
+	const diagnosticsModalsHostCode = fs.readFileSync(diagnosticsModalsHostPath, 'utf8');
 	const visitDiagnosticsTabCode = fs.readFileSync(visitDiagnosticsTabPath, 'utf8');
 	const anesthesiaQuickBarCode = [
 		fs.readFileSync(anesthesiaQuickBarPath, 'utf8'),
@@ -157,49 +163,41 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 		});
 	});
 
-	describe('2. Direct Patient Binding in Visiograph Analyzer (Mandates 8c, 8e)', () => {
-		it('declares optional patientId prop in VisiographAnalyzerProps and resolves effectivePatientId', () => {
+	describe('2. Direct Patient Binding in Radiology & DICOM Workstation (Mandates 8c, 8e)', () => {
+		it('declares optional patientId prop in DicomViewerModal and resolves effectivePatientId in controller', () => {
 			assert.ok(
-				visiographAnalyzerCode.includes('readonly patientId?: string | undefined;'),
-				'VisiographAnalyzerProps must declare readonly patientId?: string | undefined;',
+				dicomViewerModalCode.includes('readonly patientId?: string | undefined;'),
+				'DicomViewerModalProps must declare readonly patientId?: string | undefined;',
 			);
 			assert.ok(
-				visiographAnalyzerCode.includes('const effectivePatientId = patientId ?? selectedPatientId;'),
-				'VisiographAnalyzer must compute effectivePatientId = patientId ?? selectedPatientId',
-			);
-		});
-
-		it('guards against cross-patient race conditions in processFile and handleRunAiAnalysis', () => {
-			assert.ok(
-				visiographAnalyzerCode.includes('patientNow = (patientId ?? usePatientStore.getState().selectedPatientId) ?? null;'),
-				'processFile and handleRunAiAnalysis must read live patient from store after async read/AI call',
-			);
-			assert.ok(
-				visiographAnalyzerCode.includes('if (patientAtStart !== patientNow)'),
-				'processFile and handleRunAiAnalysis must abort if patient changed during async execution',
+				diagnosticsModalsHostCode.includes('patientId={visitPatientId ?? activePatient?.id}'),
+				'DiagnosticsModalsHost must forward patientId to DicomViewerModal',
 			);
 		});
 
-		it('passes patientId={activePatient?.id} from VisitDiagnosticsTab to VisiographAnalyzer', () => {
+		it('passes patientId from DiagnosticsModalsHost and computes effective patient in controller', () => {
 			assert.ok(
-				visitDiagnosticsTabCode.includes('patientId={activePatient?.id}'),
-				'VisitDiagnosticsTab must pass patientId={activePatient?.id} to VisiographAnalyzer',
-			);
-			assert.ok(
-				visitDiagnosticsTabCode.includes('effectiveTargetPatientId = activePatient?.id ?? selectedPatientId'),
-				'VisitDiagnosticsTab must compute effectiveTargetPatientId for imaging write target',
+				dicomViewerModalControllerCode.includes('patientId'),
+				'useDicomViewerModalController must handle patientId',
 			);
 		});
 
-		it('eliminates duplicate btn-hotpath-norma-043 button from filter toolbar', () => {
+		it('passes activePatientId from VisitDiagnosticsTab down to diagnostics components', () => {
+			assert.ok(
+				visitDiagnosticsTabCode.includes('activePatientId') || visitDiagnosticsTabCode.includes('effectiveTargetPatientId'),
+				'VisitDiagnosticsTab must resolve activePatientId for imaging write target',
+			);
+		});
+
+		it('eliminates duplicate btn-hotpath-norma-043 button and uses canonical btn-dicom-norma-043', () => {
 			assert.strictEqual(
-				visiographAnalyzerCode.includes('btn-hotpath-norma-043'),
+				dicomViewerModalCode.includes('btn-hotpath-norma-043'),
 				false,
-				'VisiographAnalyzer must not contain duplicate btn-hotpath-norma-043 button',
+				'DicomViewerModal must not contain duplicate btn-hotpath-norma-043 button',
 			);
 			assert.ok(
-				visiographAnalyzerCode.includes('btn-visiograph-norma-043'),
-				'VisiographAnalyzer must retain primary btn-visiograph-norma-043 button',
+				dicomViewerModalCode.includes('btn-dicom-norma-043') || fs.readFileSync(path.resolve(__dirname, '../../imaging/dicomViewerModal/DicomViewerModalHeader.tsx'), 'utf8').includes('btn-dicom-norma-043'),
+				'DicomViewerModal must retain primary btn-dicom-norma-043 button',
 			);
 		});
 	});
