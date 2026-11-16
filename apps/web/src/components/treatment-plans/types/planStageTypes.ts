@@ -16,6 +16,14 @@ export type TreatmentPlanStageKind =
 	| "stage_custom"
 	| string;
 
+export type TreatmentPlanSpecialtyFilter =
+	| "all"
+	| "therapy"
+	| "surgery"
+	| "orthopedics"
+	| "orthodontics"
+	| "periodontics";
+
 export function romanizeStageNumber(num: number): string {
 	const romanMap: Record<number, string> = {
 		1: "I",

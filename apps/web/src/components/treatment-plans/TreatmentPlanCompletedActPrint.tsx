@@ -45,7 +45,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<
 
 	const modalNode = (
 		<div
-			className="fixed inset-0 z-[100] overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center p-2 sm:p-6 py-6 sm:py-8 print:p-0 print:static print:bg-white print:inset-auto print:overflow-visible print:block"
+			className="fixed inset-0 z-[10060] overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center p-2 sm:p-6 py-6 sm:py-8 print:p-0 print:static print:bg-white print:inset-auto print:overflow-visible print:block"
 			data-testid="treatment-completed-act-print-modal"
 			role="dialog"
 			aria-modal="true"

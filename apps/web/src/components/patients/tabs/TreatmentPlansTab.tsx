@@ -34,6 +34,77 @@ import {
 } from "@dental/shared";
 import { TreatmentPlansList } from "../TreatmentPlansList";
 import type { PatientGeneralInfo } from "./PatientGeneralInfoTab";
+import { buildCanonical3TierPlans } from "../../treatment-plans/treatmentPlanCatalogData";
+import { TreatmentPlan3TierMobileSegmented } from "../../treatment-plans/TreatmentPlan3TierMobileSegmented";
+import { TreatmentPlanContractPrint } from "../../treatment-plans/TreatmentPlanContractPrint";
+import { TreatmentPlanCompletedActPrint } from "../../treatment-plans/TreatmentPlanCompletedActPrint";
+import { generateCompletedWorksActAndWriteOff } from "../../treatment-plans/treatmentPlanMaterialEngine";
+import type { TreatmentPlanStage, TreatmentPlanTier } from "../../treatment-plans/types";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+
+export const DEMO_CANONICAL_TREATMENT_PLAN: PatientTreatmentPlanDto = {
+	id: "plan-demo-canonical-01",
+	patientId: "00000000-0000-0000-0000-000000000001",
+	name: "Комплексный терапевтический план санации полости рта",
+	status: "approved",
+	totalPrice: 34000,
+	createdAt: "2026-11-16T10:00:00.000Z",
+	stages: [
+		{ stageOrder: 1, stageName: "Терапевтическая санация и эндодонтия", completionPercentage: 40 },
+		{ stageOrder: 2, stageName: "Ортопедическая реабилитация", completionPercentage: 0 },
+	],
+	items: [
+		{
+			id: "item-demo-1",
+			toothNumber: 16,
+			priceId: "A16.07.002",
+			name: "Восстановление зуба пломбой (лечение глубокого кариеса жевательной группы)",
+			price: 6500,
+			quantity: 1,
+			phase: 1,
+			status: "proposed",
+			doctorName: "Д-р Орлов А.В.",
+			doctorSpecialty: "Стоматолог-терапевт",
+		},
+		{
+			id: "item-demo-2",
+			toothNumber: 26,
+			priceId: "A16.07.030",
+			name: "Эндодонтическое лечение 3-канального зуба (механическая и медикаментозная обработка)",
+			price: 14500,
+			quantity: 1,
+			phase: 1,
+			status: "proposed",
+			doctorName: "Д-р Орлов А.В.",
+			doctorSpecialty: "Стоматолог-терапевт",
+		},
+		{
+			id: "item-demo-3",
+			toothNumber: 25,
+			priceId: "A16.07.002.001",
+			name: "Пломбирование кариозной полости современным светоотверждаемым композитом",
+			price: 5200,
+			quantity: 1,
+			phase: 1,
+			status: "proposed",
+			doctorName: "Д-р Орлов А.В.",
+			doctorSpecialty: "Стоматолог-терапевт",
+		},
+		{
+			id: "item-demo-4",
+			toothNumber: 46,
+			priceId: "A16.07.004",
+			name: "Анатомическое восстановление коронковой части зуба со штифтом",
+			price: 7800,
+			quantity: 1,
+			phase: 1,
+			status: "proposed",
+			doctorName: "Д-р Орлов А.В.",
+			doctorSpecialty: "Стоматолог-терапевт",
+		},
+	],
+};
 
 export type TierCategory = "economy" | "optimum" | "premium";
 
@@ -85,6 +156,9 @@ export interface PatientTreatmentPlanDto {
 	alternativeStatus?: string;
 }
 
+const EMPTY_PLANS: readonly PatientTreatmentPlanDto[] = [];
+const EMPTY_ITEMS: readonly TreatmentPlanItem[] = [];
+
 export interface TreatmentPlansTabProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	patientId?: string | undefined;
@@ -101,8 +175,8 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 	function TreatmentPlansTab({
 		patient,
 		patientId: propPatientId,
-		items: propItems = [],
-		plans: propPlans = [],
+		items: propItems = EMPTY_ITEMS as TreatmentPlanItem[],
+		plans: propPlans = EMPTY_PLANS as PatientTreatmentPlanDto[],
 		tiers: propTiers,
 		onOpenPlanPresenter,
 		onSendToCheckout,
@@ -122,6 +196,10 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 		const [tempDiscountPercent, setTempDiscountPercent] = useState<number>(0);
 		const [bonusPointsToUseRub, setBonusPointsToUseRub] = useState<number>(0);
 		const [copiedFeedback, setCopiedFeedback] = useState(false);
+		const [isContractPrintOpen, setIsContractPrintOpen] = useState<boolean>(false);
+		const [isActPrintOpen, setIsActPrintOpen] = useState<boolean>(false);
+		const [isPrintDraft, setIsPrintDraft] = useState<boolean>(false);
+		const fetchedPatientIdRef = React.useRef<string | null>(null);
 
 		// Асинхронная гидратация планов лечения пациента из PostgreSQL 18
 		useEffect(() => {
@@ -135,14 +213,21 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 				return;
 			}
 
+			if (fetchedPatientIdRef.current === effectivePatientId && loadedPlans.length > 0 && reloadTrigger === 0) {
+				return;
+			}
+			fetchedPatientIdRef.current = effectivePatientId;
+
 			let isMounted = true;
 			setIsLoading(true);
 			setFetchError(null);
 
-			fetch(`/api/patients/${effectivePatientId}/treatment-plans`)
+			const authHeaders = getDenteAuthHeaders({ "Content-Type": "application/json" });
+
+			fetch(`/api/patients/${effectivePatientId}/treatment-plans`, { headers: authHeaders })
 				.then(async (res) => {
 					if (!res.ok) {
-						const altRes = await fetch(`/api/treatment-plans/patient/${effectivePatientId}`);
+						const altRes = await fetch(`/api/treatment-plans/patient/${effectivePatientId}`, { headers: authHeaders });
 						if (!altRes.ok) {
 							throw new Error(`Ошибка загрузки планов лечения: HTTP ${res.status}`);
 						}
@@ -155,17 +240,27 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					const fetchedPlans: PatientTreatmentPlanDto[] = Array.isArray((data as { plans?: PatientTreatmentPlanDto[] })?.plans)
 						? (data as { plans: PatientTreatmentPlanDto[] }).plans
 						: (Array.isArray(data) ? data : []);
-					setLoadedPlans(fetchedPlans);
 					if (fetchedPlans.length > 0) {
+						setLoadedPlans(fetchedPlans);
 						setSelectedPlanId((prev) => {
 							if (prev && fetchedPlans.some((p) => p.id === prev)) return prev;
 							return fetchedPlans[0]?.id ?? null;
 						});
+					} else if (isDemoShowcaseMode()) {
+						setLoadedPlans([DEMO_CANONICAL_TREATMENT_PLAN]);
+						setSelectedPlanId(DEMO_CANONICAL_TREATMENT_PLAN.id);
+					} else {
+						setLoadedPlans([]);
 					}
 				})
 				.catch((err: unknown) => {
 					if (!isMounted) return;
-					setFetchError(err instanceof Error ? err.message : "Не удалось загрузить планы лечения");
+					if (isDemoShowcaseMode()) {
+						setLoadedPlans([DEMO_CANONICAL_TREATMENT_PLAN]);
+						setSelectedPlanId(DEMO_CANONICAL_TREATMENT_PLAN.id);
+					} else {
+						setFetchError(err instanceof Error ? err.message : "Не удалось загрузить планы лечения");
+					}
 				})
 				.finally(() => {
 					if (isMounted) setIsLoading(false);
@@ -186,9 +281,12 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 			if (propItems && propItems.length > 0) {
 				return propItems;
 			}
-			if (!activePlan || !activePlan.items) return [];
+			const planItems = activePlan?.items && activePlan.items.length > 0
+				? activePlan.items
+				: (isDemoShowcaseMode() ? DEMO_CANONICAL_TREATMENT_PLAN.items : []);
+			if (!planItems || planItems.length === 0) return [];
 
-			return activePlan.items.map((it) => {
+			return planItems.map((it) => {
 				const unitPrice = it.price !== undefined ? Number(it.price) : 0;
 				const discount = it.discount !== undefined ? Number(it.discount) : 0;
 				const quantity = it.quantity || 1;
@@ -199,7 +297,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 
 				const itemRecord: unknown = {
 					id: it.id,
-					planId: activePlan.id,
+					planId: activePlan?.id || "plan-default",
 					toothNumber: it.toothNumber ?? null,
 					surfaces: [],
 					code804n: it.priceId || "A16.07",
@@ -229,7 +327,55 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 			});
 		}, [propItems, activePlan]);
 
-		// Динамический расчет тарифов на основе реальных позиций или переданных тарифов
+		// Базовые клинические этапы плана лечения для канонического 3-уровневого калькулятора и печати
+		const planStages: TreatmentPlanStage[] = useMemo(() => {
+			if (!effectiveItems || effectiveItems.length === 0) return [];
+			const totalKopecks = effectiveItems.reduce(
+				(sum, it) =>
+					sum + Math.round(Math.max(0, (it.unitPriceRub || 0) * (it.quantity || 1) - (it.discountRub || 0)) * 100),
+				0,
+			);
+			const totalRub = Math.round(totalKopecks / 100);
+
+			return [
+				{
+					id: activePlan?.id || "stage-current",
+					stageNumber: 1,
+					stageKind: "stage_1_therapy" as const,
+					title: activePlan?.name || "Комплексный план лечения",
+					subtitle: "Терапевтический и клинический протокол",
+					clinicalGoal: "Комплексная стоматологическая санация и реабилитация",
+					totalRub,
+					totalKopecks,
+					estimatedVisits: 1,
+					estimatedWeeks: 1,
+					status: "draft" as const,
+					items: effectiveItems.map((it, idx) => {
+						const toothNum = it.toothCode ? parseInt(it.toothCode, 10) : undefined;
+						return {
+							id: it.id || `item-${idx}`,
+							toothNumber: toothNum && !Number.isNaN(toothNum) ? toothNum : undefined,
+							code804n: it.serviceId || undefined,
+							name: it.snapshotServiceName || "Стоматологическая процедура",
+							priceRub: it.unitPriceRub || 0,
+							unitPriceRub: it.unitPriceRub || 0,
+							discountRub: it.discountRub || 0,
+							quantity: it.quantity || 1,
+							stageKind: "stage_1_therapy" as const,
+							isCompleted: it.status === "completed",
+						};
+					}),
+				},
+			];
+		}, [effectiveItems, activePlan]);
+
+		// Канонический расчет 3 альтернативных тарифов без синтетических множителей (Мандат 8e)
+		const canonicalTiers: readonly TreatmentPlanTier[] = useMemo(() => {
+			if (planStages.length === 0) return [];
+			return buildCanonical3TierPlans(planStages);
+		}, [planStages]);
+
+		// Динамический расчет тарифов на основе реальных позиций или переданных тарифов (DEF-PLAN-02: ноль фейковых множителей)
 		const effectiveTiers: TreatmentTierOption[] = useMemo(() => {
 			if (propTiers && propTiers.length > 0) {
 				return propTiers.map((t) => ({
@@ -237,31 +383,18 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					tagline: t.tagline.replace(/E\.max/gi, "Премиальная безметалловая керамика"),
 				}));
 			}
-			if (effectiveItems && effectiveItems.length > 0) {
-				const baseTotal = effectiveItems.reduce(
-					(sum, it) => {
-						const itAny = it as unknown as { priceRub?: number; unitPriceRub?: number; unitPriceKopecks?: number; quantity?: number };
-						const price = itAny.priceRub || itAny.unitPriceRub || (itAny.unitPriceKopecks ? itAny.unitPriceKopecks / 100 : 0);
-						return sum + price * (itAny.quantity || 1);
-					},
-					0,
-				);
+			if (canonicalTiers && canonicalTiers.length > 0) {
 				const planTitle = activePlan?.name || "Утверждённый план";
-				const baseTotalKopecks = Math.round(baseTotal * 100);
-				const economySplit = splitLaborAndMaterials(Math.round(baseTotalKopecks * 0.85), "economy");
-				const optimumSplit = splitLaborAndMaterials(baseTotalKopecks, "optimum");
-				const premiumSplit = splitLaborAndMaterials(Math.round(baseTotalKopecks * 1.35), "premium");
-
-				const economyRub = Math.round((economySplit.laborKopecks + economySplit.materialsKopecks) / 100);
-				const optimumRub = Math.round((optimumSplit.laborKopecks + optimumSplit.materialsKopecks) / 100);
-				const premiumRub = Math.round((premiumSplit.laborKopecks + premiumSplit.materialsKopecks) / 100);
+				const economyTier = canonicalTiers.find((t) => t.tierId === "economy");
+				const optimumTier = canonicalTiers.find((t) => t.tierId === "optimum");
+				const premiumTier = canonicalTiers.find((t) => t.tierId === "premium");
 
 				return [
 					{
 						id: "economy",
 						title: "Базовый вариант",
 						tagline: PLAN_TIER_CONFIGS.economy.descriptionRu,
-						totalRub: economyRub,
+						totalRub: economyTier?.totalRub || 0,
 						warrantyYears: typeof PLAN_TIER_CONFIGS.economy.warrantyYears === "number" ? PLAN_TIER_CONFIGS.economy.warrantyYears : 1,
 						isRecommended: false,
 						accentClass: "border-[var(--line)] bg-[var(--paper-soft)]",
@@ -271,7 +404,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 						id: "optimum",
 						title: planTitle,
 						tagline: PLAN_TIER_CONFIGS.optimum.descriptionRu,
-						totalRub: optimumRub,
+						totalRub: optimumTier?.totalRub || 0,
 						warrantyYears: typeof PLAN_TIER_CONFIGS.optimum.warrantyYears === "number" ? PLAN_TIER_CONFIGS.optimum.warrantyYears : 3,
 						isRecommended: true,
 						accentClass: "border-[var(--teal,var(--brand-primary))] bg-[var(--teal)]/5 ring-1 ring-[var(--teal)]/30",
@@ -281,7 +414,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 						id: "premium",
 						title: "Премиум VIP",
 						tagline: PLAN_TIER_CONFIGS.premium.descriptionRu,
-						totalRub: premiumRub,
+						totalRub: premiumTier?.totalRub || 0,
 						warrantyYears: 10,
 						isRecommended: false,
 						accentClass: "border-[var(--line)] bg-[var(--paper-soft)] hover:border-[var(--teal)]/40",
@@ -290,7 +423,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 				];
 			}
 			return [];
-		}, [propTiers, effectiveItems, activePlan]);
+		}, [propTiers, canonicalTiers, activePlan]);
 
 		const hasActivePlans = effectiveTiers.length > 0 || loadedPlans.length > 0;
 
@@ -298,6 +431,54 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 			if (effectiveTiers.length === 0) return null;
 			return effectiveTiers.find((t) => t.id === selectedTier) || effectiveTiers[0]!;
 		}, [effectiveTiers, selectedTier]);
+
+		const activeCanonicalTier: TreatmentPlanTier = useMemo(() => {
+			const found =
+				canonicalTiers.find((t) => t.tierId === selectedTier) ||
+				canonicalTiers.find((t) => t.tierId === "optimum") ||
+				canonicalTiers[0];
+			if (found) return found;
+			return {
+				tierId: selectedTier,
+				title: activeTierData?.title || "План лечения",
+				subtitle: activeTierData?.tagline || "",
+				badge: activeTierData?.badgeText || "",
+				isRecommended: activeTierData?.isRecommended ?? true,
+				totalRub: activeTierData?.totalRub || 0,
+				totalKopecks: (activeTierData?.totalRub || 0) * 100,
+				amountKopecks: BigInt((activeTierData?.totalRub || 0) * 100),
+				warrantyYears: activeTierData?.warrantyYears || 1,
+				keyAdvantages: [],
+				stages: planStages,
+			};
+		}, [canonicalTiers, selectedTier, activeTierData, planStages]);
+
+		// Данные для печатного Акта выполненных работ и списания ТМЦ (Мандат 8aq)
+		const completedActData = useMemo(() => {
+			const targetStage = planStages[0] || {
+				id: activePlan?.id || "stage-1",
+				stageNumber: 1,
+				stageKind: "stage_1_therapy" as const,
+				title: activePlan?.name || "План лечения",
+				subtitle: "Терапевтический протокол",
+				clinicalGoal: "Санация полости рта",
+				totalRub: activeTierData?.totalRub || 0,
+				totalKopecks: (activeTierData?.totalRub || 0) * 100,
+				estimatedVisits: 1,
+				estimatedWeeks: 1,
+				status: "completed" as const,
+				items: [],
+			};
+
+			return generateCompletedWorksActAndWriteOff({
+				stage: targetStage,
+				contractNumber: `D-${new Date().getFullYear()}-${(effectivePatientId || "000000").slice(0, 6).toUpperCase()}`,
+				patientId: effectivePatientId || "",
+				patientName: patient?.fullName || "Пациент",
+				doctorFullName: "Лечащий врач",
+				clinicName: "Клиника DENTE",
+			});
+		}, [planStages, activePlan, activeTierData, effectivePatientId, patient]);
 
 		const discountedTotalRub = useMemo(() => {
 			if (!activeTierData) return 0;
@@ -318,17 +499,17 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 
 		const handlePrint = useCallback(
 			(isDraft: boolean) => {
+				setIsPrintDraft(isDraft);
+				setIsContractPrintOpen(true);
 				if (onPrintPlan) {
 					onPrintPlan(isDraft);
-				} else {
-					window.print();
 				}
 			},
 			[onPrintPlan],
 		);
 
 		// Индикатор загрузки планов лечения
-		if (isLoading) {
+		if (isLoading && loadedPlans.length === 0) {
 			return (
 				<div
 					className={`treatment-plans-tab flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl border border-[var(--line)] bg-[var(--paper)] ${className}`}
@@ -526,7 +707,21 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 							</div>
 						</div>
 
-						{/* Карточки 3-Tier */}
+						{/* DEF-PLAN-03: Apple HIG Сегментный переключатель тарифов на мобильных экранах (<md:) */}
+						{canonicalTiers.length > 0 && (
+							<div className="block md:hidden w-full">
+								<TreatmentPlan3TierMobileSegmented
+									tiers={canonicalTiers}
+									activeTierId={selectedTier}
+									onSelectTier={(t) => setSelectedTier(t.tierId as TierCategory)}
+									getTierShortLabel={(t) =>
+										t.tierId === "economy" ? "Базовый" : t.tierId === "premium" ? "Премиум" : "Оптимум"
+									}
+								/>
+							</div>
+						)}
+
+						{/* Карточки 3-Tier: на мобильных показываем ТОЛЬКО выбранный тариф (0px 2500px простыни), на десктопе — 3 колонки */}
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-3" data-testid="tier-cards-selector">
 							{effectiveTiers.map((tier) => {
 								const isSelected = selectedTier === tier.id;
@@ -536,8 +731,8 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 										onClick={() => setSelectedTier(tier.id)}
 										className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${tier.accentClass} ${
 											isSelected
-												? "ring-2 ring-[var(--teal,var(--brand-primary))] shadow-md"
-												: "opacity-80 hover:opacity-100"
+												? "ring-2 ring-[var(--teal,var(--brand-primary))] shadow-md flex"
+												: "opacity-80 hover:opacity-100 hidden md:flex"
 										}`}
 										data-testid={`tier-option-${tier.id}`}
 									>
@@ -602,7 +797,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 									onClick={() => handlePrint(false)}
 									className="min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center gap-1.5 transition-all cursor-pointer"
 									data-testid="btn-print-treatment-plan"
-									title="Печать плана лечения в любой момент"
+									title="Печать плана лечения и сметы"
 								>
 									<Printer className="w-4 h-4 text-[var(--muted)]" />
 									<span>Печать сметы</span>
@@ -616,6 +811,17 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 									title="Печать со штампом ЧЕРНОВИК"
 								>
 									<span>Черновик</span>
+								</button>
+
+								<button
+									type="button"
+									onClick={() => setIsActPrintOpen(true)}
+									className="min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center gap-1.5 transition-all cursor-pointer"
+									data-testid="btn-print-act"
+									title="Печать акта сдачи-приемки выполненных работ и списания материалов"
+								>
+									<ClipboardList className="w-4 h-4 text-[var(--muted)]" />
+									<span>Акт работ</span>
 								</button>
 
 								{onSendToCheckout && (
@@ -795,6 +1001,28 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 						</div>
 					</div>
 				)}
+
+				{/* 4. DEF-PLAN-04: МОНТИРОВАНИЕ ПЕЧАТНЫХ БЛАНКОВ (МАНДАТ 8aq) */}
+				<TreatmentPlanContractPrint
+					isOpen={isContractPrintOpen}
+					tier={activeCanonicalTier}
+					stages={planStages}
+					patientName={patient?.fullName || "Пациент"}
+					patientId={effectivePatientId || ""}
+					patientPhone={patient?.phone ?? undefined}
+					patientBirthDate={patient?.birthDate ?? undefined}
+					doctorFullName="Лечащий врач"
+					clinicName="Клиника DENTE"
+					contractNumber={`D-${new Date().getFullYear()}-${(effectivePatientId || "000000").slice(0, 6).toUpperCase()}`}
+					discountPercent={doctorDiscountPercent}
+					onClose={() => setIsContractPrintOpen(false)}
+				/>
+
+				<TreatmentPlanCompletedActPrint
+					isOpen={isActPrintOpen}
+					actData={completedActData}
+					onClose={() => setIsActPrintOpen(false)}
+				/>
 			</div>
 		);
 	},

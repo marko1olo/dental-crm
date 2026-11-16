@@ -1005,20 +1005,8 @@ export function resolveTierService(
 	}
 
 	const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;
-	if (tierId === "economy") {
-		const calculatedPrice = Math.max(100, Math.round((basePrice * 0.85) / 50) * 50);
-		return {
-			name: `${item.name} (базовый стандарт)`,
-			priceRub: calculatedPrice,
-		};
-	}
-	if (tierId === "premium") {
-		const calculatedPrice = Math.max(100, Math.round((basePrice * 1.40) / 50) * 50);
-		return {
-			name: `${item.name} (премиум)`,
-			priceRub: calculatedPrice,
-		};
-	}
+	// DEF-PLAN-02: Ликвидация синтетических скалярных множителей (* 0.85 / * 1.40).
+	// Если позиция не имеет технологической альтернативы в каталоге, используется честная базовая цена без накруток.
 	return {
 		name: item.name,
 		priceRub: basePrice,
