@@ -1,10 +1,13 @@
 import React from "react";
 import { ChevronDown, ExternalLink, ShieldCheck } from "lucide-react";
-import type { ClinicProfileDraft } from "./clinicLegalTypes";
+import type {
+	ClinicProfileDraft,
+	UpdateClinicProfileDraftFn,
+} from "./clinicLegalTypes";
 
 interface ClinicBrandingAndSaveBarProps {
 	clinicProfileDraft: ClinicProfileDraft;
-	updateClinicProfileDraft: (field: string, val: any) => void;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 	saveClinicProfileFromDraft: () => Promise<void> | void;
 	clinicProfileSaveState?: string;
 }
@@ -30,7 +33,7 @@ export const ClinicBrandingAndSaveBar: React.FC<ClinicBrandingAndSaveBarProps> =
 						<input
 							type="text"
 							placeholder="https://... или data:image/png;base64,..."
-							value={clinicProfileDraft.logoUrl || ""}
+							value={typeof clinicProfileDraft.logoUrl === "string" ? clinicProfileDraft.logoUrl : ""}
 							data-testid="input-clinic-logo-url"
 							onChange={(e) => updateClinicProfileDraft("logoUrl", e.target.value)}
 						/>
@@ -40,7 +43,7 @@ export const ClinicBrandingAndSaveBar: React.FC<ClinicBrandingAndSaveBarProps> =
 						<input
 							type="text"
 							placeholder="https://... или data:image/png;base64,..."
-							value={clinicProfileDraft.stampUrl || ""}
+							value={typeof clinicProfileDraft.stampUrl === "string" ? clinicProfileDraft.stampUrl : ""}
 							data-testid="input-clinic-stamp-url"
 							onChange={(e) => updateClinicProfileDraft("stampUrl", e.target.value)}
 						/>

@@ -11,11 +11,22 @@ import { SovereignScalePresetsCard } from "../../onboarding/SovereignScalePreset
 import type { ClinicCapabilities } from "../../../hooks/useClinicCapabilities";
 
 export interface ClinicGeneralInfoSectionProps {
-	dashboard?: any;
-	clinicProfileDraft: Record<string, any>;
+	dashboard?: {
+		clinicSettings?: {
+			profile?: {
+				clinicName?: string;
+				legalName?: string;
+				address?: string;
+				timezone?: string;
+				mode?: ClinicMode | string;
+			};
+		};
+		[key: string]: unknown;
+	} | null | undefined;
+	clinicProfileDraft: Record<string, unknown>;
 	capabilities: ClinicCapabilities;
-	changeClinicMode?: (mode: ClinicMode) => void;
-	hideScalePresets?: boolean;
+	changeClinicMode?: ((mode: ClinicMode) => void) | undefined;
+	hideScalePresets?: boolean | undefined;
 }
 
 export const ClinicGeneralInfoSection: React.FC<ClinicGeneralInfoSectionProps> = ({
@@ -32,9 +43,14 @@ export const ClinicGeneralInfoSection: React.FC<ClinicGeneralInfoSectionProps> =
 				? "Многопрофильный центр и сеть DENTE"
 				: "Стоматологическая клиника DENTE (1–3 кресла)";
 
+	const clinicDraftName = typeof clinicProfileDraft?.clinicName === "string" ? clinicProfileDraft.clinicName : "";
+	const clinicDraftLegal = typeof clinicProfileDraft?.legalName === "string" ? clinicProfileDraft.legalName : "";
+	const clinicDraftAddress = typeof clinicProfileDraft?.address === "string" ? clinicProfileDraft.address : "";
+	const clinicDraftTimezone = typeof clinicProfileDraft?.timezone === "string" ? clinicProfileDraft.timezone : "";
+
 	const rawClinicName =
 		dashboard?.clinicSettings?.profile?.clinicName ||
-		clinicProfileDraft?.clinicName ||
+		clinicDraftName ||
 		"";
 
 	const isDefaultPresetName =
@@ -47,6 +63,27 @@ export const ClinicGeneralInfoSection: React.FC<ClinicGeneralInfoSectionProps> =
 	const synchronizedClinicName = isDefaultPresetName
 		? presetDefaultClinicName
 		: rawClinicName;
+
+	const displayedLegalName =
+		dashboard?.clinicSettings?.profile?.legalName ||
+		clinicDraftLegal ||
+		(capabilities.scalePreset === "solo_doctor"
+			? "ИП Врач-стоматолог"
+			: "ООО «Стоматология ДЕНТЕ»");
+
+	const displayedAddress =
+		dashboard?.clinicSettings?.profile?.address ||
+		clinicDraftAddress ||
+		"г. Москва, ул. Клиническая, д. 1";
+
+	const rawTimezone =
+		dashboard?.clinicSettings?.profile?.timezone ||
+		clinicDraftTimezone;
+
+	const displayedTimezone =
+		rawTimezone === "Europe/Moscow" || !rawTimezone
+			? "Москва (МСК, UTC+3)"
+			: rawTimezone;
 
 	return (
 		<div className="space-y-4">
@@ -77,25 +114,7 @@ export const ClinicGeneralInfoSection: React.FC<ClinicGeneralInfoSectionProps> =
 						{synchronizedClinicName}
 					</h2>
 					<p className="text-xs sm:text-sm text-[var(--muted)] leading-normal break-words mt-1 m-0">
-						{dashboard?.clinicSettings?.profile?.legalName ||
-							clinicProfileDraft?.legalName ||
-							(capabilities.scalePreset === "solo_doctor"
-								? "ИП Врач-стоматолог"
-								: "ООО «Стоматология ДЕНТЕ»")}{" "}
-						·{" "}
-						{dashboard?.clinicSettings?.profile?.address ||
-							clinicProfileDraft?.address ||
-							"г. Москва, ул. Клиническая, д. 1"}{" "}
-						·{" "}
-						{(dashboard?.clinicSettings?.profile?.timezone ||
-							clinicProfileDraft?.timezone) === "Europe/Moscow" ||
-						!(
-							dashboard?.clinicSettings?.profile?.timezone ||
-							clinicProfileDraft?.timezone
-						)
-							? "Москва (МСК, UTC+3)"
-							: dashboard?.clinicSettings?.profile?.timezone ||
-								clinicProfileDraft?.timezone}
+						{displayedLegalName} · {displayedAddress} · {displayedTimezone}
 					</p>
 				</div>
 				<div className="flex items-center gap-2">

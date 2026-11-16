@@ -1,12 +1,14 @@
 import React from "react";
+import type { ClinicPublicLookupResponse, ClinicPublicLookupSuggestion } from "@dental/shared";
+import type { ClinicLegalProfile } from "./clinicLegalTypes";
 
 interface ClinicPublicLookupResultsProps {
-	clinicPublicLookup: any;
-	typedSuggestions: any[];
+	clinicPublicLookup: ClinicPublicLookupResponse | null | undefined;
+	typedSuggestions: ClinicPublicLookupSuggestion[];
 	humanizeMigrationText: (txt: string) => string;
-	clinicLookupSuggestionFieldEntries: (fields: any) => [string, any][];
+	clinicLookupSuggestionFieldEntries: (fields: unknown) => [string, unknown][];
 	clinicPublicLookupFieldLabels: Record<string, string>;
-	applyClinicLookupSuggestion: (fields: any) => void;
+	applyClinicLookupSuggestion: (fields: Record<string, unknown> | Partial<ClinicLegalProfile>) => void;
 }
 
 export const ClinicPublicLookupResults: React.FC<ClinicPublicLookupResultsProps> = ({
@@ -30,7 +32,7 @@ export const ClinicPublicLookupResults: React.FC<ClinicPublicLookupResultsProps>
 			</div>
 			{typedSuggestions.length > 0 && (
 				<div className="clinic-public-suggestions">
-					{typedSuggestions.slice(0, 4).map((suggestion: any, index: number) => (
+					{typedSuggestions.slice(0, 4).map((suggestion: ClinicPublicLookupSuggestion, index: number) => (
 						<article key={`${suggestion.source}-${index}`}>
 							<strong>{suggestion.source} · {Math.round((suggestion.confidence || 1) * 100)}%</strong>
 							<p>

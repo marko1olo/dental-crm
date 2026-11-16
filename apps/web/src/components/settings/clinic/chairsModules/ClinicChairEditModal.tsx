@@ -6,7 +6,8 @@
 
 import React, { useState, useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
-import type { ClinicChairEditModalProps } from "./clinicChairsTypes";
+import type { DentalSpecialty } from "@dental/shared";
+import type { ChairUpdatePatch, ClinicChairEditModalProps } from "./clinicChairsTypes";
 import { ClinicChairEditModalHeader } from "./ClinicChairEditModalHeader";
 import { ClinicChairEditFormFields, CHAIR_PALETTE } from "./ClinicChairEditFormFields";
 
@@ -28,11 +29,9 @@ export const ClinicChairEditModal: React.FC<ClinicChairEditModalProps> = ({
 		if (chair) {
 			setName(chair.name || "");
 			setRoom(chair.room || "");
-			// biome-ignore lint/suspicious/noExplicitAny: chair color tag
-			setColor((chair as any).color || CHAIR_PALETTE[0]?.value || "#0d9488");
+			setColor(chair.color || CHAIR_PALETTE[0]?.value || "#0d9488");
 			setSpecialization(chair.specialization || "");
-			// biome-ignore lint/suspicious/noExplicitAny: active flag
-			setIsActive((chair as any).isActive !== false);
+			setIsActive(chair.active !== false);
 		}
 	}, [chair]);
 
@@ -43,13 +42,18 @@ export const ClinicChairEditModal: React.FC<ClinicChairEditModalProps> = ({
 		if (!name.trim()) return;
 		setIsSaving(true);
 		try {
-			await onSave(chair.id, {
+			const patch: ChairUpdatePatch = {
 				name: name.trim(),
-				room: room.trim() || undefined,
-				specialization: specialization || undefined,
-				// biome-ignore lint/suspicious/noExplicitAny: color and isActive properties
-				...({ color, isActive } as any),
-			});
+				color,
+				isActive,
+			};
+			if (room.trim()) {
+				patch.room = room.trim();
+			}
+			if (specialization) {
+				patch.specialization = specialization as DentalSpecialty;
+			}
+			await onSave(chair.id, patch);
 			onClose();
 		} finally {
 			setIsSaving(false);

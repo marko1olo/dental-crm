@@ -40,12 +40,15 @@ export const ClinicChairsAndCabinetsSection: React.FC<ClinicChairsAndCabinetsSec
 	chairScheduleSaveStates = {},
 	chairScheduleDirtyIds = new Set<string>(),
 	chairScheduleSavingId = null,
-	staffScheduleDraftFromWorkingHours = (h: any) => ({
-		start: h?.start || "08:00",
-		end: h?.end || "20:00",
-		workingDays: h?.workingDays || [1, 2, 3, 4, 5, 6],
-		perDay: h?.perDay || {},
-	}),
+	staffScheduleDraftFromWorkingHours = (h: unknown) => {
+		const obj = typeof h === "object" && h !== null ? (h as Record<string, unknown>) : null;
+		return {
+			start: typeof obj?.start === "string" ? obj.start : "08:00",
+			end: typeof obj?.end === "string" ? obj.end : "20:00",
+			workingDays: Array.isArray(obj?.workingDays) ? (obj.workingDays as number[]) : [1, 2, 3, 4, 5, 6],
+			perDay: (typeof obj?.perDay === "object" && obj.perDay !== null ? obj.perDay : {}) as Record<number, { start?: string; end?: string }>,
+		};
+	},
 	updateChairScheduleDraft = () => {},
 	toggleChairWorkingDay = () => {},
 	updateChairScheduleDay = () => {},

@@ -14,15 +14,16 @@ import { ClinicWorkingHoursBlock } from "./scheduleModules/ClinicWorkingHoursBlo
 import { ClinicWorkingDaysBlock } from "./scheduleModules/ClinicWorkingDaysBlock";
 import { ClinicSlotAndSanitaryBlock } from "./scheduleModules/ClinicSlotAndSanitaryBlock";
 
+import type { ClinicProfileDraft, UpdateClinicProfileDraftFn } from "./legalModules/clinicLegalTypes";
+
 type WeekdayOption = { value: number; label: string };
 
 export interface SettingsClinicScheduleSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	clinicProfileDraft: Record<string, any>;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	clinicProfileDraft: ClinicProfileDraft | Record<string, unknown>;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 	toggleClinicWorkingDay: (day: number) => void;
 	typedWeekdayOptions: WeekdayOption[];
-	showToast: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
+	showToast?: ((msg: string, type?: "info" | "success" | "warning" | "error") => void) | undefined;
 }
 
 export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSectionProps> = ({
@@ -35,29 +36,32 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 	const applyHoursPreset = (start: string, end: string, label: string) => {
 		updateClinicProfileDraft("workdayStart", start);
 		updateClinicProfileDraft("workdayEnd", end);
-		showToast(`Установлены часы работы: ${label} (${start}–${end})`, "info");
+		showToast?.(`Установлены часы работы: ${label} (${start}–${end})`, "info");
 	};
 
 	const applyDaysPreset = (days: number[], label: string) => {
 		updateClinicProfileDraft("workingDays", days);
-		showToast(`Установлены рабочие дни: ${label}`, "info");
+		showToast?.(`Установлены рабочие дни: ${label}`, "info");
 	};
 
 	const applyDurationPreset = (minutes: number) => {
 		updateClinicProfileDraft("defaultVisitMinutes", String(minutes));
-		showToast(`Длительность визита по умолчанию: ${minutes} мин`, "info");
+		showToast?.(`Длительность визита по умолчанию: ${minutes} мин`, "info");
 	};
 
 	const applyBufferPreset = (minutes: number) => {
 		updateClinicProfileDraft("appointmentBufferMinutes", String(minutes));
-		showToast(minutes > 0 ? `Санитарная обработка: ${minutes} мин` : "Санитарный интервал отключен", "info");
+		showToast?.(minutes > 0 ? `Санитарная обработка: ${minutes} мин` : "Санитарный интервал отключен", "info");
 	};
 
-	const currentDays: number[] = clinicProfileDraft?.workingDays ?? [1, 2, 3, 4, 5, 6];
-	const currentStart = clinicProfileDraft?.workdayStart || "08:00";
-	const currentEnd = clinicProfileDraft?.workdayEnd || "20:00";
+	const currentDays: number[] = Array.isArray(clinicProfileDraft?.workingDays)
+		? (clinicProfileDraft.workingDays as number[])
+		: [1, 2, 3, 4, 5, 6];
+	const currentStart = typeof clinicProfileDraft?.workdayStart === "string" ? clinicProfileDraft.workdayStart : "08:00";
+	const currentEnd = typeof clinicProfileDraft?.workdayEnd === "string" ? clinicProfileDraft.workdayEnd : "20:00";
 	const currentDuration = Number(clinicProfileDraft?.defaultVisitMinutes || 30);
 	const currentBuffer = Number(clinicProfileDraft?.appointmentBufferMinutes || 10);
+	const currentMode = typeof clinicProfileDraft?.mode === "string" ? clinicProfileDraft.mode : undefined;
 
 	return (
 		<section className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-5" aria-label="График работы клиники и санитарные интервалы">
@@ -77,7 +81,7 @@ export const SettingsClinicScheduleSection: React.FC<SettingsClinicScheduleSecti
 				</div>
 			</div>
 
-			<ClinicOperatingModeSelector mode={clinicProfileDraft.mode} onSelectMode={(m) => updateClinicProfileDraft("mode", m)} />
+			<ClinicOperatingModeSelector mode={currentMode} onSelectMode={(m) => updateClinicProfileDraft("mode", m)} />
 			<ClinicWorkingHoursBlock start={currentStart} end={currentEnd} onStartChange={(v) => updateClinicProfileDraft("workdayStart", v)} onEndChange={(v) => updateClinicProfileDraft("workdayEnd", v)} onApplyPreset={applyHoursPreset} />
 			<ClinicWorkingDaysBlock currentDays={currentDays} typedWeekdayOptions={typedWeekdayOptions} onToggleDay={toggleClinicWorkingDay} onApplyPreset={applyDaysPreset} />
 			<ClinicSlotAndSanitaryBlock currentDuration={currentDuration} currentBuffer={currentBuffer} onApplyDuration={applyDurationPreset} onApplyBuffer={applyBufferPreset} />

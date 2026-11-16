@@ -6,7 +6,7 @@
  */
 
 import type React from "react";
-import type { Chair } from "@dental/shared";
+import type { Chair, DentalSpecialty, StaffWorkingHours } from "@dental/shared";
 
 export type TextInputChangeEvent = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 export type InputChangeEvent = React.ChangeEvent<HTMLInputElement>;
@@ -24,35 +24,41 @@ export interface ChairScheduleDraft {
 	perDay: Record<number, ChairDayHours>;
 }
 
+export interface ChairUpdatePatch {
+	name?: string;
+	room?: string | null;
+	specialization?: DentalSpecialty | null;
+	color?: string | null;
+	active?: boolean;
+	isActive?: boolean;
+	hasXraySensor?: boolean;
+	hasMicroscope?: boolean;
+	hasSurgeryKit?: boolean;
+	notes?: string | null;
+	defaultDoctorId?: string | null;
+	workingHours?: StaffWorkingHours | null;
+}
+
 export interface SettingsClinicChairsSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
 	typedChairs: Chair[];
 	newChairName: string;
 	setNewChairName?: (name: string) => void;
 	handleAddChair: (overrideName?: string) => void;
 	newChairReadyToCreate?: boolean;
 	newChairHasXraySensor: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: state setter
-	setNewChairHasXraySensor: React.Dispatch<React.SetStateAction<boolean>> | ((val: any) => void);
+	setNewChairHasXraySensor: React.Dispatch<React.SetStateAction<boolean>> | ((val: boolean | ((prev: boolean) => boolean)) => void);
 	newChairHasMicroscope: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: state setter
-	setNewChairHasMicroscope: React.Dispatch<React.SetStateAction<boolean>> | ((val: any) => void);
+	setNewChairHasMicroscope: React.Dispatch<React.SetStateAction<boolean>> | ((val: boolean | ((prev: boolean) => boolean)) => void);
 	newChairHasSurgeryKit: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: state setter
-	setNewChairHasSurgeryKit: React.Dispatch<React.SetStateAction<boolean>> | ((val: any) => void);
-	// biome-ignore lint/suspicious/noExplicitAny: drafts record
-	chairScheduleDrafts: Record<string, any>;
+	setNewChairHasSurgeryKit: React.Dispatch<React.SetStateAction<boolean>> | ((val: boolean | ((prev: boolean) => boolean)) => void);
+	chairScheduleDrafts: Record<string, Partial<ChairScheduleDraft> | Record<string, unknown>>;
 	chairScheduleSaveStates: Record<string, string>;
-	// biome-ignore lint/suspicious/noExplicitAny: dirty ids
-	chairScheduleDirtyIds?: Set<string> | any;
+	chairScheduleDirtyIds?: Set<string> | ReadonlySet<string> | string[] | Record<string, boolean> | unknown;
 	chairScheduleSavingId?: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: draft converter
-	staffScheduleDraftFromWorkingHours: (hours: any) => any;
-	// biome-ignore lint/suspicious/noExplicitAny: partial schedule
-	updateChairScheduleDraft: (chairId: string, partial: any) => void;
+	staffScheduleDraftFromWorkingHours: (hours: unknown) => ChairScheduleDraft;
+	updateChairScheduleDraft: (chairId: string, partial: Partial<ChairScheduleDraft> | Partial<Chair>) => void;
 	toggleChairWorkingDay: (chairId: string, day: number) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: hours bag
-	updateChairScheduleDay: (chairId: string, day: number, hours: any) => void;
+	updateChairScheduleDay: (chairId: string, day: number, hours: Partial<ChairDayHours>) => void;
 	saveChairSchedule: (chairId: string) => Promise<void> | void;
 	deleteChair: (chairId: string) => Promise<void> | void;
 	specialtyLabels: Record<string, string>;
@@ -64,19 +70,16 @@ export interface SettingsClinicChairsSectionProps {
 
 export interface ClinicChairCardProps {
 	chair: Chair;
-	// biome-ignore lint/suspicious/noExplicitAny: raw draft
-	rawScheduleDraft: any;
+	rawScheduleDraft: Partial<ChairScheduleDraft> | null | undefined;
 	scheduleSaveState: string;
 	scheduleDirty: boolean;
 	scheduleSaving: boolean;
 	scheduleSaveLabel: string;
 	specialtyLabels: Record<string, string>;
 	typedWeekdayOptions: WeekdayOption[];
-	// biome-ignore lint/suspicious/noExplicitAny: partial schedule
-	updateChairScheduleDraft: (chairId: string, partial: any) => void;
+	updateChairScheduleDraft: (chairId: string, partial: Partial<ChairScheduleDraft> | Partial<Chair>) => void;
 	toggleChairWorkingDay: (chairId: string, day: number) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: hours bag
-	updateChairScheduleDay: (chairId: string, day: number, hours: any) => void;
+	updateChairScheduleDay: (chairId: string, day: number, hours: Partial<ChairDayHours>) => void;
 	setChairPresetDays: (chairId: string, days: number[]) => void;
 	applyChairHoursToAll: (chairId: string) => void;
 	saveChairSchedule: (chairId: string) => Promise<void> | void;
@@ -89,7 +92,6 @@ export interface ClinicChairEditModalProps {
 	isOpen: boolean;
 	chair: Chair | null;
 	onClose: () => void;
-	// biome-ignore lint/suspicious/noExplicitAny: patch bag
-	onSave: (chairId: string, patch: Partial<Chair>) => Promise<void> | void;
+	onSave: (chairId: string, patch: ChairUpdatePatch) => Promise<void> | void;
 	specialtyLabels: Record<string, string>;
 }

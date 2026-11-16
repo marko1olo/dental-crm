@@ -6,7 +6,11 @@
  */
 
 import React from "react";
-import type { ClinicChairCardProps } from "./clinicChairsTypes";
+import type {
+	ChairDayHours,
+	ChairScheduleDraft,
+	ClinicChairCardProps,
+} from "./clinicChairsTypes";
 import { ClinicChairCardHeader } from "./ClinicChairCardHeader";
 import { ClinicChairShiftBar } from "./ClinicChairShiftBar";
 import { ClinicChairDaysBar } from "./ClinicChairDaysBar";
@@ -30,11 +34,11 @@ export const ClinicChairCard: React.FC<ClinicChairCardProps> = ({
 	showToast,
 	onEditChair,
 }) => {
-	const scheduleDraft = rawScheduleDraft || {
-		start: "08:00",
-		end: "20:00",
-		workingDays: [1, 2, 3, 4, 5, 6],
-		perDay: {},
+	const scheduleDraft: ChairScheduleDraft = {
+		start: typeof rawScheduleDraft?.start === "string" ? rawScheduleDraft.start : "08:00",
+		end: typeof rawScheduleDraft?.end === "string" ? rawScheduleDraft.end : "20:00",
+		workingDays: Array.isArray(rawScheduleDraft?.workingDays) ? rawScheduleDraft.workingDays : [1, 2, 3, 4, 5, 6],
+		perDay: (rawScheduleDraft?.perDay ?? {}) as Record<number, ChairDayHours>,
 	};
 
 	const onToggleActive = () => {

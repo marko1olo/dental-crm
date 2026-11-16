@@ -6,14 +6,18 @@
  */
 
 import React from "react";
-import { validateEgiszOid } from "./clinicLegalTypes";
+import {
+	type ClinicProfileDraft,
+	type UpdateClinicProfileDraftFn,
+	validateEgiszOid,
+} from "./clinicLegalTypes";
 import { ClinicEgiszHeader } from "./ClinicEgiszHeader";
 import { ClinicEgiszAutonomousRow } from "./ClinicEgiszAutonomousRow";
 import { ClinicEgiszConnectionParams } from "./ClinicEgiszConnectionParams";
 
 export interface ClinicEgiszBindingCardProps {
-	clinicProfileDraft: Record<string, any>;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	clinicProfileDraft: ClinicProfileDraft | Record<string, unknown>;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 }
 
 export const ClinicEgiszBindingCard: React.FC<ClinicEgiszBindingCardProps> = ({
@@ -24,9 +28,13 @@ export const ClinicEgiszBindingCard: React.FC<ClinicEgiszBindingCardProps> = ({
 	const isAutonomousMode = Boolean(
 		clinicProfileDraft.egiszAutonomousMode ?? !clinicProfileDraft.egiszEnabled,
 	);
-	const oid = clinicProfileDraft.egiszOid || "";
+	const oid = typeof clinicProfileDraft.egiszOid === "string" ? clinicProfileDraft.egiszOid : "";
 	const isTestMode = Boolean(clinicProfileDraft.egiszTestMode);
 	const oidValidation = validateEgiszOid(oid);
+	const certThumbprint =
+		typeof clinicProfileDraft.egiszCertThumbprint === "string"
+			? clinicProfileDraft.egiszCertThumbprint
+			: "";
 
 	return (
 		<article
@@ -49,7 +57,7 @@ export const ClinicEgiszBindingCard: React.FC<ClinicEgiszBindingCardProps> = ({
 					oid={oid}
 					oidValidation={oidValidation}
 					isTestMode={isTestMode}
-					certThumbprint={clinicProfileDraft.egiszCertThumbprint || ""}
+					certThumbprint={certThumbprint}
 					updateClinicProfileDraft={updateClinicProfileDraft}
 				/>
 			)}

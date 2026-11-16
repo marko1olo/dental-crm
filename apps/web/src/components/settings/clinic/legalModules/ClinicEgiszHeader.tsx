@@ -1,10 +1,11 @@
 import React from "react";
 import { Network, ShieldCheck } from "lucide-react";
+import type { UpdateClinicProfileDraftFn } from "./clinicLegalTypes";
 
 interface ClinicEgiszHeaderProps {
 	isEgiszEnabled: boolean;
 	isAutonomousMode: boolean;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 }
 
 export const ClinicEgiszHeader: React.FC<ClinicEgiszHeaderProps> = ({

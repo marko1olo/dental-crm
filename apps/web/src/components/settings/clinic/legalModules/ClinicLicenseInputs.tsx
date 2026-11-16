@@ -1,12 +1,15 @@
 import React from "react";
-import type { LicenseValidationResult } from "./clinicLegalTypes";
+import type {
+	LicenseValidationResult,
+	UpdateClinicProfileDraftFn,
+} from "./clinicLegalTypes";
 
 interface ClinicLicenseInputsProps {
 	licenseNumber: string;
 	licenseValidation: LicenseValidationResult;
 	medicalLicenseIssuedAt: string;
 	medicalLicenseIssuer: string;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 }
 
 export const ClinicLicenseInputs: React.FC<ClinicLicenseInputsProps> = ({

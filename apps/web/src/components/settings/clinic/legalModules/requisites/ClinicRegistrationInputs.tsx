@@ -1,10 +1,16 @@
 import { CheckCircle2 } from "lucide-react";
 import React from "react";
-import { validateInn, validateKpp, validateOgrn } from "../clinicLegalTypes";
+import {
+	type ClinicProfileDraft,
+	type UpdateClinicProfileDraftFn,
+	validateInn,
+	validateKpp,
+	validateOgrn,
+} from "../clinicLegalTypes";
 
 interface ClinicRegistrationInputsProps {
-	clinicProfileDraft: Record<string, any>;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	clinicProfileDraft: ClinicProfileDraft | Record<string, unknown>;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 	isIp: boolean;
 	inn: string;
 	kpp: string;
@@ -17,6 +23,10 @@ export function ClinicRegistrationInputs({
 	const innValidation = validateInn(inn);
 	const kppValidation = validateKpp(kpp, isIp);
 	const ogrnValidation = validateOgrn(ogrn);
+	const legalName =
+		typeof clinicProfileDraft.legalName === "string"
+			? clinicProfileDraft.legalName
+			: "";
 
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -25,7 +35,7 @@ export function ClinicRegistrationInputs({
 				<input
 					type="text" data-testid="input-clinic-legal-name"
 					placeholder={isIp ? "Индивидуальный предприниматель Иванов Иван Иванович" : "Общество с ограниченной ответственностью «ДЕНТЕ»"}
-					value={clinicProfileDraft.legalName || ""} onChange={(e) => updateClinicProfileDraft("legalName", e.target.value)}
+					value={legalName} onChange={(e) => updateClinicProfileDraft("legalName", e.target.value)}
 					className="w-full px-3 py-2 rounded-lg border border-[var(--line)] text-sm bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
 				/>
 				<small className="text-[11px] text-[var(--muted)]">Вносится точно как в выписке ЕГРЮЛ / ЕГРИП</small>
@@ -82,7 +92,8 @@ export function ClinicRegistrationInputs({
 			<label className="flex flex-col gap-1.5 text-xs font-medium text-[var(--ink)]">
 				<span>Официальный Email клиники</span>
 				<input
-					type="email" data-testid="input-clinic-email" placeholder="info@clinic-dente.ru" value={clinicProfileDraft.email || ""}
+					type="email" data-testid="input-clinic-email" placeholder="info@clinic-dente.ru"
+					value={typeof clinicProfileDraft.email === "string" ? clinicProfileDraft.email : ""}
 					onChange={(e) => updateClinicProfileDraft("email", e.target.value)}
 					className="w-full px-3 py-2 rounded-lg border border-[var(--line)] text-sm bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
 				/>

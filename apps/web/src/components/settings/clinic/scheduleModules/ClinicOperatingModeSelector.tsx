@@ -1,7 +1,7 @@
 import React from "react";
 
 interface ClinicOperatingModeSelectorProps {
-	mode?: string;
+	mode?: string | undefined;
 	onSelectMode: (mode: string) => void;
 }
 

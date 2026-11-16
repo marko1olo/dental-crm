@@ -1,10 +1,10 @@
 import React from "react";
 import { Search, X } from "lucide-react";
-import type { ClinicProfileDraft } from "./clinicLegalTypes";
+import type { ClinicProfileDraft, UpdateClinicProfileDraftFn } from "./clinicLegalTypes";
 
 interface ClinicInnSearchBlockProps {
 	clinicProfileDraft: ClinicProfileDraft;
-	updateClinicProfileDraft: (field: string, val: any) => void;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 	lookupClinicPublicProfile: () => Promise<void> | void;
 	isClinicPublicLookupLoading?: boolean;
 }
@@ -66,7 +66,7 @@ export const ClinicInnSearchBlock: React.FC<ClinicInnSearchBlockProps> = ({
 					Название клиники (для пациентов)
 					<input
 						data-testid="input-clinic-name"
-						value={clinicProfileDraft.clinicName || ""}
+						value={typeof clinicProfileDraft.clinicName === "string" ? clinicProfileDraft.clinicName : ""}
 						onChange={(e) => updateClinicProfileDraft("clinicName", e.target.value)}
 					/>
 				</label>
@@ -74,7 +74,7 @@ export const ClinicInnSearchBlock: React.FC<ClinicInnSearchBlockProps> = ({
 					Контактный телефон регистратуры
 					<input
 						data-testid="input-clinic-phone"
-						value={clinicProfileDraft.phone || ""}
+						value={typeof clinicProfileDraft.phone === "string" ? clinicProfileDraft.phone : ""}
 						onChange={(e) => updateClinicProfileDraft("phone", e.target.value)}
 					/>
 				</label>
@@ -82,7 +82,7 @@ export const ClinicInnSearchBlock: React.FC<ClinicInnSearchBlockProps> = ({
 					Фактический адрес клиники
 					<input
 						data-testid="input-clinic-address"
-						value={clinicProfileDraft.address || ""}
+						value={typeof clinicProfileDraft.address === "string" ? clinicProfileDraft.address : ""}
 						onChange={(e) => updateClinicProfileDraft("address", e.target.value)}
 					/>
 				</label>

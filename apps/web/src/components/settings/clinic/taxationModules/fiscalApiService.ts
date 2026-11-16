@@ -1,8 +1,12 @@
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import { normalizeTaxationId } from "./TaxationCardTypes";
 
+export interface FiscalAuthContext {
+	settingsAccessHeaders?: () => Record<string, string>;
+}
+
 export function createFiscalAuthHeaders(
-	auth: any,
+	auth: FiscalAuthContext | null | undefined,
 	extra: Record<string, string> = {},
 ): Record<string, string> {
 	const base = denteAdminSecretRequestHeaders(extra);
@@ -31,7 +35,7 @@ export async function fetchClinicFiscal(headers: Record<string, string>) {
 	};
 }
 
-export async function putClinicFiscal(payload: any, headers: Record<string, string>) {
+export async function putClinicFiscal(payload: Record<string, unknown>, headers: Record<string, string>) {
 	const res = await fetch("/api/settings/clinic/fiscal", {
 		method: "PUT",
 		headers: { ...headers, "Content-Type": "application/json" },

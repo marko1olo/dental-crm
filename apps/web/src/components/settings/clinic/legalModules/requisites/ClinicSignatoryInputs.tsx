@@ -1,15 +1,28 @@
 import { UserCheck } from "lucide-react";
 import React from "react";
+import type {
+	ClinicProfileDraft,
+	UpdateClinicProfileDraftFn,
+} from "../clinicLegalTypes";
 
 interface ClinicSignatoryInputsProps {
-	clinicProfileDraft: Record<string, any>;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	clinicProfileDraft: ClinicProfileDraft | Record<string, unknown>;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 	isIp: boolean;
 }
 
 export function ClinicSignatoryInputs({
 	clinicProfileDraft, updateClinicProfileDraft, isIp,
 }: ClinicSignatoryInputsProps) {
+	const signatoryName =
+		typeof clinicProfileDraft.signatoryName === "string"
+			? clinicProfileDraft.signatoryName
+			: "";
+	const signatoryTitle =
+		typeof clinicProfileDraft.signatoryTitle === "string"
+			? clinicProfileDraft.signatoryTitle
+			: "";
+
 	return (
 		<div className="pt-3 border-t border-[var(--line)] space-y-3">
 			<div className="flex items-center gap-2">
@@ -23,7 +36,7 @@ export function ClinicSignatoryInputs({
 				<label className="flex flex-col gap-1 text-xs font-medium text-[var(--ink)]">
 					<span>ФИО подписанта</span>
 					<input
-						type="text" placeholder="Иванов Михаил Сергеевич" value={clinicProfileDraft.signatoryName || ""}
+						type="text" placeholder="Иванов Михаил Сергеевич" value={signatoryName}
 						onChange={(e) => updateClinicProfileDraft("signatoryName", e.target.value)}
 						className="w-full px-3 py-2 rounded-lg border border-[var(--line)] text-sm bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
 					/>
@@ -34,7 +47,7 @@ export function ClinicSignatoryInputs({
 					<span>Должность подписанта</span>
 					<input
 						type="text" placeholder={isIp ? "Индивидуальный предприниматель" : "Генеральный директор"}
-						value={clinicProfileDraft.signatoryTitle || ""} onChange={(e) => updateClinicProfileDraft("signatoryTitle", e.target.value)}
+						value={signatoryTitle} onChange={(e) => updateClinicProfileDraft("signatoryTitle", e.target.value)}
 						className="w-full px-3 py-2 rounded-lg border border-[var(--line)] text-sm bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
 					/>
 					<small className="text-[10px] text-[var(--muted)]">Действует на основании Устава или листа записи ЕГРИП</small>

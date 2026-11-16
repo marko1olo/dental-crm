@@ -8,25 +8,32 @@
 
 import React from "react";
 import { Building } from "lucide-react";
-import { validateInn } from "./clinicLegalTypes";
+import {
+	type ClinicProfileDraft,
+	type UpdateClinicProfileDraftFn,
+	validateInn,
+} from "./clinicLegalTypes";
 import { ClinicRegistrationInputs } from "./requisites/ClinicRegistrationInputs";
 import { ClinicBankingInputs } from "./requisites/ClinicBankingInputs";
 import { ClinicSignatoryInputs } from "./requisites/ClinicSignatoryInputs";
 
 export interface ClinicRequisitesCardProps {
-	clinicProfileDraft: Record<string, any>;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	clinicProfileDraft: ClinicProfileDraft | Record<string, unknown>;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 }
 
 export const ClinicRequisitesCard: React.FC<ClinicRequisitesCardProps> = ({
 	clinicProfileDraft,
 	updateClinicProfileDraft,
 }) => {
-	const inn = clinicProfileDraft.inn || "";
-	const kpp = clinicProfileDraft.kpp || "";
-	const ogrn = clinicProfileDraft.ogrn || "";
-	const bik = clinicProfileDraft.bik || "";
-	const checkingAccount = clinicProfileDraft.checkingAccount || "";
+	const inn = typeof clinicProfileDraft.inn === "string" ? clinicProfileDraft.inn : "";
+	const kpp = typeof clinicProfileDraft.kpp === "string" ? clinicProfileDraft.kpp : "";
+	const ogrn = typeof clinicProfileDraft.ogrn === "string" ? clinicProfileDraft.ogrn : "";
+	const bik = typeof clinicProfileDraft.bik === "string" ? clinicProfileDraft.bik : "";
+	const checkingAccount =
+		typeof clinicProfileDraft.checkingAccount === "string"
+			? clinicProfileDraft.checkingAccount
+			: "";
 
 	const innValidation = validateInn(inn);
 	const isIp = innValidation.type === "physical" || inn.length === 12;

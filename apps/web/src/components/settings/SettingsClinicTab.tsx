@@ -14,31 +14,31 @@ import { TaxationAndFiscalizationCard } from "./clinic/TaxationAndFiscalizationC
 import { useClinicCapabilities } from "../../hooks/useClinicCapabilities";
 import { ClinicGeneralInfoSection } from "./clinicTabModules/ClinicGeneralInfoSection";
 import { ClinicChairsAndCabinetsSection } from "./clinicTabModules/ClinicChairsAndCabinetsSection";
+import type { ArtSettings, SettingsClinicTabPropsBag } from "./clinicTabModules/clinicChairsAndCabinetsTypes";
 
 export function SettingsClinicTab({
 	props = {},
 	settingsTab,
 }: {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	props?: Record<string, any>;
+	props?: SettingsClinicTabPropsBag | Record<string, unknown>;
 	settingsTab?: string;
 }) {
-	const p = props || {};
+	const p: SettingsClinicTabPropsBag = (props || {}) as SettingsClinicTabPropsBag;
 	const {
 		dashboard,
 		changeClinicMode,
 		clinicProfileDraft: rawClinicProfileDraft,
 		clinicProfileSaveState = "saved",
-		updateClinicProfileDraft,
-		saveClinicProfileFromDraft,
-		toggleClinicWorkingDay,
+		updateClinicProfileDraft = () => {},
+		saveClinicProfileFromDraft = () => {},
+		toggleClinicWorkingDay = () => {},
 		uiLanguage = "ru",
 		setUiLanguage,
 		normalizeUiLanguageInput = (v: string) => v,
-		lookupClinicPublicProfile,
+		lookupClinicPublicProfile = () => {},
 		isClinicPublicLookupLoading = false,
 		clinicPublicLookup,
-		applyClinicLookupSuggestion,
+		applyClinicLookupSuggestion = () => {},
 		newStaffName = "",
 		setNewStaffName,
 		addStaffMember,
@@ -47,12 +47,15 @@ export function SettingsClinicTab({
 		setNewStaffRole,
 		newStaffSpecialty = "therapist",
 		setNewStaffSpecialty,
-		staffScheduleDraftFromWorkingHours = (h: any) => ({
-			start: h?.start || "08:00",
-			end: h?.end || "20:00",
-			workingDays: h?.workingDays || [1, 2, 3, 4, 5, 6],
-			perDay: h?.perDay || {},
-		}),
+		staffScheduleDraftFromWorkingHours = (h: unknown) => {
+			const obj = typeof h === "object" && h !== null ? (h as Record<string, unknown>) : null;
+			return {
+				start: typeof obj?.start === "string" ? obj.start : "08:00",
+				end: typeof obj?.end === "string" ? obj.end : "20:00",
+				workingDays: Array.isArray(obj?.workingDays) ? (obj.workingDays as number[]) : [1, 2, 3, 4, 5, 6],
+				perDay: (typeof obj?.perDay === "object" && obj.perDay !== null ? obj.perDay : {}) as Record<number, { start?: string; end?: string }>,
+			};
+		},
 		newChairName = "",
 		setNewChairName,
 		addChair,
@@ -72,7 +75,8 @@ export function SettingsClinicTab({
 		updateChairScheduleDay = () => {},
 		saveChairSchedule = () => {},
 		humanizeMigrationText = (t: string) => t,
-		clinicLookupSuggestionFieldEntries = (f: any) => Object.entries(f || {}),
+		clinicLookupSuggestionFieldEntries = (f: unknown): [string, unknown][] =>
+			Object.entries((typeof f === "object" && f !== null ? f : {}) as Record<string, unknown>),
 		clinicPublicLookupFieldLabels = {},
 		clinicPublicLookupWarningText = (w: string) => w,
 		clinicLookupSuggestionApplySummary = () => "",
@@ -97,11 +101,7 @@ export function SettingsClinicTab({
 	const odontogramViewMode = useAppStore((state) => state.odontogramViewMode);
 	const setOdontogramViewMode = useAppStore((state) => state.setOdontogramViewMode);
 
-	const [artSettings, setArtSettings] = useState<{
-		enabled: boolean;
-		pack: "nature" | "dental-epic" | "abstract" | "all";
-		dynamicByTimeOfDay: boolean;
-	}>(() => {
+	const [artSettings, setArtSettings] = useState<ArtSettings>(() => {
 		const saved = safeLocalStorageGetItem("dente_auth_art_settings");
 		if (saved) {
 			try {
@@ -112,7 +112,7 @@ export function SettingsClinicTab({
 		return { enabled: true, pack: "nature", dynamicByTimeOfDay: true };
 	});
 
-	const updateArtSettings = (partial: any) => {
+	const updateArtSettings = (partial: Partial<ArtSettings>) => {
 		setArtSettings((prev) => {
 			const next = { ...prev, ...partial };
 			safeLocalStorageSetItem("dente_auth_art_settings", JSON.stringify(next));

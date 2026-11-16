@@ -1,9 +1,10 @@
 import React from "react";
 import { ShieldCheck } from "lucide-react";
+import type { UpdateClinicProfileDraftFn } from "./clinicLegalTypes";
 
 interface ClinicEgiszAutonomousRowProps {
 	isAutonomousMode: boolean;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 }
 
 export const ClinicEgiszAutonomousRow: React.FC<ClinicEgiszAutonomousRowProps> = ({

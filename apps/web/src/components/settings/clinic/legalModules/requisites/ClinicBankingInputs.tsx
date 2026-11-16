@@ -1,10 +1,15 @@
 import { CheckCircle2, CreditCard } from "lucide-react";
 import React from "react";
-import { validateBik, validateCheckingAccount } from "../clinicLegalTypes";
+import {
+	type ClinicProfileDraft,
+	type UpdateClinicProfileDraftFn,
+	validateBik,
+	validateCheckingAccount,
+} from "../clinicLegalTypes";
 
 interface ClinicBankingInputsProps {
-	clinicProfileDraft: Record<string, any>;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	clinicProfileDraft: ClinicProfileDraft | Record<string, unknown>;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 	bik: string;
 	checkingAccount: string;
 }

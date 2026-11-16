@@ -9,23 +9,31 @@
 
 import React, { useId } from "react";
 import { Award, ShieldCheck } from "lucide-react";
-import { validateMedicalLicense } from "./clinicLegalTypes";
+import {
+	type ClinicProfileDraft,
+	type UpdateClinicProfileDraftFn,
+	validateMedicalLicense,
+} from "./clinicLegalTypes";
 import { ClinicLicenseInputs } from "./ClinicLicenseInputs";
 import { ClinicLicenseActivitiesGrid } from "./ClinicLicenseActivitiesGrid";
 
 export interface ClinicLicenseCardProps {
-	clinicProfileDraft: Record<string, any>;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	clinicProfileDraft: ClinicProfileDraft | Record<string, unknown>;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 }
 
 export const ClinicLicenseCard: React.FC<ClinicLicenseCardProps> = ({
 	clinicProfileDraft,
 	updateClinicProfileDraft,
 }) => {
-	const licenseNumber = clinicProfileDraft.medicalLicenseNumber || "";
+	const licenseNumber =
+		typeof clinicProfileDraft.medicalLicenseNumber === "string"
+			? clinicProfileDraft.medicalLicenseNumber
+			: "";
 	const licenseValidation = validateMedicalLicense(licenseNumber);
-	const activeActivities: string[] =
-		clinicProfileDraft.medicalLicenseActivities || [
+	const activeActivities: string[] = Array.isArray(clinicProfileDraft.medicalLicenseActivities)
+		? (clinicProfileDraft.medicalLicenseActivities as string[])
+		: [
 			"therapy",
 			"surgery",
 			"orthopedics",
@@ -82,8 +90,16 @@ export const ClinicLicenseCard: React.FC<ClinicLicenseCardProps> = ({
 			<ClinicLicenseInputs
 				licenseNumber={licenseNumber}
 				licenseValidation={licenseValidation}
-				medicalLicenseIssuedAt={clinicProfileDraft.medicalLicenseIssuedAt || ""}
-				medicalLicenseIssuer={clinicProfileDraft.medicalLicenseIssuer || ""}
+				medicalLicenseIssuedAt={
+					typeof clinicProfileDraft.medicalLicenseIssuedAt === "string"
+						? clinicProfileDraft.medicalLicenseIssuedAt
+						: ""
+				}
+				medicalLicenseIssuer={
+					typeof clinicProfileDraft.medicalLicenseIssuer === "string"
+						? clinicProfileDraft.medicalLicenseIssuer
+						: ""
+				}
 				updateClinicProfileDraft={updateClinicProfileDraft}
 			/>
 

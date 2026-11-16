@@ -4,9 +4,29 @@
  * Types, interfaces, and constants for Russian Federation legal requisites.
  */
 
+import type {
+	ClinicPublicLookupResponse,
+	ClinicPublicLookupSuggestion,
+	OdontogramViewMode,
+} from "@dental/shared";
+import type { UiPreferences, UiPreferencesInput } from "../../../../utils/preferencesUtils";
+
 export type ClinicLegalEntityType = "ooo" | "ip" | "ao" | "self_employed";
 
+export type ClinicProfileDraftValue =
+	| string
+	| number
+	| boolean
+	| string[]
+	| number[]
+	| Record<string, unknown>
+	| null
+	| undefined;
+
 export interface ClinicLegalProfile {
+	clinicName?: string;
+	phone?: string;
+	address?: string;
 	legalName?: string;
 	entityType?: ClinicLegalEntityType;
 	inn?: string;
@@ -14,6 +34,8 @@ export interface ClinicLegalProfile {
 	ogrn?: string;
 	email?: string;
 	website?: string;
+	logoUrl?: string;
+	stampUrl?: string;
 	medicalLicenseNumber?: string;
 	medicalLicenseIssuedAt?: string;
 	medicalLicenseIssuer?: string;
@@ -29,10 +51,16 @@ export interface ClinicLegalProfile {
 	egiszOid?: string;
 	egiszTestMode?: boolean;
 	egiszCertThumbprint?: string;
-	[key: string]: any;
+	egiszAutonomousMode?: boolean;
+	[key: string]: ClinicProfileDraftValue | unknown;
 }
 
 export type ClinicProfileDraft = ClinicLegalProfile;
+
+export type UpdateClinicProfileDraftFn = (
+	field: string,
+	value: ClinicProfileDraftValue | unknown,
+) => void;
 
 export interface RequisiteValidationResult {
 	isValid: boolean;
@@ -43,36 +71,39 @@ export interface RequisiteValidationResult {
 export type LicenseValidationResult = RequisiteValidationResult;
 
 export interface SettingsClinicLegalSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	clinicProfileDraft: Record<string, any>;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	clinicProfileDraft: ClinicProfileDraft | Record<string, unknown>;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 	saveClinicProfileFromDraft: () => Promise<void> | void;
 	clinicProfileSaveState: string;
 	lookupClinicPublicProfile: () => Promise<void> | void;
 	isClinicPublicLookupLoading: boolean;
-	clinicPublicLookup: any;
-	applyClinicLookupSuggestion: (fields: any) => void;
-	legalReadinessPercent?: number;
-	legalMissingFields?: string[];
+	clinicPublicLookup: ClinicPublicLookupResponse | null | undefined;
+	applyClinicLookupSuggestion: (
+		fields: Record<string, unknown> | Partial<ClinicLegalProfile>,
+	) => void;
+	legalReadinessPercent?: number | undefined;
+	legalMissingFields?: string[] | undefined;
 	humanizeMigrationText: (txt: string) => string;
-	clinicLookupSuggestionFieldEntries: (fields: any) => [string, any][];
+	clinicLookupSuggestionFieldEntries: (
+		fields: unknown,
+	) => [string, unknown][];
 	clinicPublicLookupFieldLabels: Record<string, string>;
-	clinicPublicLookupWarningText?: (warning: string) => string;
-	clinicLookupSuggestionApplySummary?: (fields: any) => string;
-	uiLanguage?: string;
-	setUiLanguage?: (lang: string) => void;
-	normalizeUiLanguageInput?: (input: string) => string;
-	typedUiLanguageOptions?: Array<{ value: string; label: string; detail: string }>;
-	selectedUiLanguageOption?: { detail: string };
-	odontogramViewMode?: any;
-	setOdontogramViewMode?: (mode: any) => void;
-	odontogramViewModeOptions?: ReadonlyArray<{ value: any; label: string; detail: string }>;
-	selectedOdontogramOption?: { detail: string };
-	artSettings?: { enabled: boolean; pack: "nature" | "dental-epic" | "abstract" | "all"; dynamicByTimeOfDay: boolean };
-	updateArtSettings?: (partial: Partial<{ enabled: boolean; pack: "nature" | "dental-epic" | "abstract" | "all"; dynamicByTimeOfDay: boolean }>) => void;
-	saveUiPreferences?: (prefs: any) => void;
-	loadUiPreferences?: () => any;
-	showToast?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
+	clinicPublicLookupWarningText?: ((warning: string) => string) | undefined;
+	clinicLookupSuggestionApplySummary?: ((fields: unknown) => string) | undefined;
+	uiLanguage?: string | undefined;
+	setUiLanguage?: ((lang: string) => void) | undefined;
+	normalizeUiLanguageInput?: ((input: string) => string) | undefined;
+	typedUiLanguageOptions?: Array<{ value: string; label: string; detail: string }> | undefined;
+	selectedUiLanguageOption?: { detail: string } | undefined;
+	odontogramViewMode?: OdontogramViewMode | undefined;
+	setOdontogramViewMode?: ((mode: OdontogramViewMode) => void) | undefined;
+	odontogramViewModeOptions?: ReadonlyArray<{ value: OdontogramViewMode; label: string; detail: string }> | undefined;
+	selectedOdontogramOption?: { detail: string } | undefined;
+	artSettings?: { enabled: boolean; pack: "nature" | "dental-epic" | "abstract" | "all"; dynamicByTimeOfDay: boolean } | undefined;
+	updateArtSettings?: ((partial: Partial<{ enabled: boolean; pack: "nature" | "dental-epic" | "abstract" | "all"; dynamicByTimeOfDay: boolean }>) => void) | undefined;
+	saveUiPreferences?: ((prefs: UiPreferencesInput) => UiPreferences | null | void) | ((prefs: Record<string, unknown>) => void) | undefined;
+	loadUiPreferences?: (() => UiPreferences | Record<string, unknown> | null | undefined) | undefined;
+	showToast?: ((msg: string, type?: "info" | "success" | "warning" | "error") => void) | undefined;
 }
 
 export const CLINICAL_LICENSE_ACTIVITIES = [

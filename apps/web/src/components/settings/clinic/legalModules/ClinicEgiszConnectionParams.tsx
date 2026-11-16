@@ -1,13 +1,13 @@
 import React from "react";
 import { ExternalLink, KeyRound, ShieldAlert } from "lucide-react";
-import type { LicenseValidationResult } from "./clinicLegalTypes";
+import type { LicenseValidationResult, UpdateClinicProfileDraftFn } from "./clinicLegalTypes";
 
 interface ClinicEgiszConnectionParamsProps {
 	oid: string;
 	oidValidation: LicenseValidationResult;
 	isTestMode: boolean;
 	certThumbprint: string;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	updateClinicProfileDraft: UpdateClinicProfileDraftFn;
 }
 
 export const ClinicEgiszConnectionParams: React.FC<ClinicEgiszConnectionParamsProps> = ({
