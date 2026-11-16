@@ -12,4 +12,6 @@ export {
 } from "./handlers/sterilizationConsumablesDeduction.js";
 export {
 	resolveConsumablesToDeduct,
+	resolveSterilizationConsumableItems,
+	type SterilizationDeductionItem,
 } from "./handlers/sterilizationConsumablesTypes.js";

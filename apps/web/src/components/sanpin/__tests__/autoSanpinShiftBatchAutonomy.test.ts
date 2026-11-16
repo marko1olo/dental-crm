@@ -300,7 +300,7 @@ describe("Auto-SanPiN & 1-Click Batch Shift Journal Automation (Mandates 8e, 8k,
 			const targetFiles = [
 				"SanpinRegisters.tsx",
 				"SanpinAutoclaveRegisterTab.tsx",
-				"PsoRegisterTab.tsx",
+				"CleaningControlTab.tsx",
 				"RetroactiveBatchTab.tsx",
 				"SterilizerEquipmentModal.tsx",
 				"SterilizerFleetManager.tsx",

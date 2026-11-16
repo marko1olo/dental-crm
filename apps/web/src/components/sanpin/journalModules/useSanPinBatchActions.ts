@@ -79,14 +79,21 @@ export function useSanPinBatchActions(
 				method: "POST",
 				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(body),
-			}).catch(() => null);
+			}).catch((err) => {
+				console.warn("[useSanPinBatchActions] Primary autofill request error:", err);
+				return null;
+			});
 
 			if (!res || !res.ok) {
 				res = await fetch(fallbackUrl, {
 					method: "POST",
 					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify(body),
-				}).catch(() => null);
+				}).catch((err) => {
+					console.warn("[useSanPinBatchActions] Fallback autofill request error:", err);
+					showToast("Ошибка сети при заполнении журнала", "error");
+					return null;
+				});
 			}
 
 			if (res && res.ok) {
@@ -130,13 +137,19 @@ export function useSanPinBatchActions(
 			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
 				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
-			}).catch(() => null);
+			}).catch((err) => {
+				console.warn("[useSanPinBatchActions] Quick batch network error:", err);
+				showToast("Ошибка сети при проведении цикла автоклава", "error");
+				return null;
+			});
 
 			if (res && res.ok) {
 				showToast(`${cycleLabel} проведён (${autoId}): ${tempC}°C / ${pressBar} бар, списано`, "success");
 				await fetchCyclesFromDb(period);
 			} else if (isDemoShowcaseMode()) {
 				showToast(`${cycleLabel} проведён (${autoId}): ${tempC}°C (норма)`, "success");
+			} else if (res && !res.ok) {
+				showToast("Сервер отклонил регистрацию цикла автоклава", "error");
 			}
 		} finally {
 			inFlightRef.current = false;
@@ -152,13 +165,19 @@ export function useSanPinBatchActions(
 			const res = await fetch("/api/sanpin/sterilization/pso/quick-norm", {
 				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({ batchItemCount: 50, testedSampleCount: 5, isAzopyramNegative: true, isPhenolphthaleinNegative: true, detergentBrand: "Биолот 0.5% + Аламинол 1%" }),
-			}).catch(() => null);
+			}).catch((err) => {
+				console.warn("[useSanPinBatchActions] Quick PSO network error:", err);
+				showToast("Ошибка сети при фиксации контроля очистки", "error");
+				return null;
+			});
 
 			if (res && res.ok) {
 				showToast("Предстерилизационная очистка зафиксирована: азопирам и фенолфталеин отрицательно (100% норма)", "success");
 				await fetchCyclesFromDb(period);
-			} else {
+			} else if (isDemoShowcaseMode()) {
 				showToast("Предстерилизационная очистка: норма (азопирам отрицательно)", "success");
+			} else if (res && !res.ok) {
+				showToast("Сервер отклонил регистрацию контроля очистки", "error");
 			}
 		} finally {
 			inFlightRef.current = false;

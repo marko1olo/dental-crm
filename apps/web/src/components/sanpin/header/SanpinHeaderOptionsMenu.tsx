@@ -26,8 +26,9 @@ export interface SanpinHeaderOptionsMenuProps {
 	readonly onAutofillShift: () => void;
 	readonly onOpenRetroactiveBatchModal: () => void;
 	readonly onOpenKraftModal: () => void;
+	readonly onOpenAutoclaveLogModal?: () => void;
 	readonly onOpenSterilizationLogModal?: () => void;
-	/** @deprecated Alias to onOpenSterilizationLogModal */
+	/** @deprecated Alias to onOpenAutoclaveLogModal */
 	readonly onOpenJournal257Modal?: () => void;
 	readonly exportContext: FetchSanpinContext;
 }
@@ -42,11 +43,12 @@ export const SanpinHeaderOptionsMenu: React.FC<SanpinHeaderOptionsMenuProps> = (
 	onAutofillShift,
 	onOpenRetroactiveBatchModal,
 	onOpenKraftModal,
+	onOpenAutoclaveLogModal,
 	onOpenSterilizationLogModal,
 	onOpenJournal257Modal,
 	exportContext,
 }) => {
-	const handleOpenLogModal = onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
+	const handleOpenLogModal = onOpenAutoclaveLogModal || onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 	return (
 		<div className="sanpin-options-dropdown" role="menu">
 			<button type="button" role="menuitem" onClick={() => { onClose(); onRefreshSummary(); }} className="sanpin-dropdown-item">
@@ -96,7 +98,7 @@ export const SanpinHeaderOptionsMenu: React.FC<SanpinHeaderOptionsMenuProps> = (
 				<span>Маркировочный лист партии</span>
 			</button>
 
-			<button type="button" role="menuitem" onClick={() => { onClose(); handleOpenLogModal(); }} className="sanpin-dropdown-item" data-testid="open-journal-257-header-btn">
+			<button type="button" role="menuitem" onClick={() => { onClose(); handleOpenLogModal(); }} className="sanpin-dropdown-item" data-testid="open-autoclave-log-header-btn">
 				<FileSpreadsheet size={15} color="var(--teal)" className="shrink-0" />
 				<span>Журнал работы автоклава</span>
 			</button>

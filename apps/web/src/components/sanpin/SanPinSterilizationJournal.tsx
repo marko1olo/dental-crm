@@ -339,8 +339,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 							onClick={handleShiftBatch1Click}
 							aria-busy={isBatchSubmitting}
 							data-testid="primary-batch-sterilization-btn"
-							style={{ backgroundColor: "#0d9488" }}
-							className="w-full sm:w-auto h-11 min-h-[44px] px-6 rounded-xl font-bold text-sm text-white shadow-md flex items-center justify-center gap-2 cursor-pointer touch-manipulation hover:opacity-95 active:scale-[0.99] transition-all"
+							className="w-full sm:w-auto h-11 min-h-[44px] px-6 rounded-xl font-bold text-sm text-white bg-[var(--primary)] shadow-md flex items-center justify-center gap-2 cursor-pointer touch-manipulation hover:opacity-95 active:scale-[0.99] transition-all"
 							title="Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)"
 						>
 							<CheckCircle2 size={16} className="text-white" />

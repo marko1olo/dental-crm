@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useId, useCallback, useMemo } from "react";
 import { CheckCircle, Printer, X, ShieldCheck, Flame, Box, Tag, CalendarCheck, User, FileText, CheckCircle2 } from "lucide-react";
+import { showToast } from "../GlobalToast";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -100,7 +101,10 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 					itemsDescription: String(item.itemsDescription || "Партия автоклавирования смены"), status: "completed" as const,
 				}));
 				setCycles(mapped);
-			}).catch(() => {});
+			}).catch((err) => {
+				console.warn("[SanpinStudioModal] Failed to load cycles:", err);
+				showToast("Ошибка связи при загрузке журнала стерилизации", "error");
+			});
 		return () => { active = false; };
 	}, [isOpen, isEffectiveDemo, selectedAutoclave, resolvedInitialOperator]);
 

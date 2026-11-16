@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SanPinJournalView } from "../SanPinJournalView";
+import { SanpinRegisters } from "../SanpinRegisters";
 import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../sterilizationModules/sterilizationCycleTypes";
 import { SterilizationBatchCycleModal } from "../SterilizationBatchCycleModal";
 import { SterilizationJournalTable } from "../sterilization/SterilizationJournalTable";
@@ -91,8 +91,8 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 		assert.ok(html.includes("CSV"));
 	});
 
-	it("SanPinJournalView displays clean title without soviet decree numbers", () => {
-		const html = renderToStaticMarkup(<SanPinJournalView />);
+	it("SanpinRegisters displays clean title without soviet decree numbers", () => {
+		const html = renderToStaticMarkup(<SanpinRegisters />);
 
 		// Screen title must be "Журнал стерилизации и автоклава"
 		assert.ok(html.includes("Журнал стерилизации и автоклава"));

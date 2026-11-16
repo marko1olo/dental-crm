@@ -167,7 +167,7 @@ describe("Пакетная стерилизация смены и автомат
 				"SanpinRegistersHeader.tsx",
 				"AutoclaveRegisterTab.tsx",
 				"SanPinSterilizationJournal.tsx",
-				"PsoRegisterTab.tsx",
+				"CleaningControlTab.tsx",
 			];
 
 			for (const file of filesToCheck) {

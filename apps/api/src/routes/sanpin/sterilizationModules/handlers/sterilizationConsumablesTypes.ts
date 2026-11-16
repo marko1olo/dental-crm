@@ -25,11 +25,18 @@ export interface SterilizationDeductionResult {
 	}>;
 }
 
+export interface SterilizationDeductionItem {
+	readonly name: string;
+	readonly qty: number;
+	readonly category: string;
+	readonly unit: string;
+}
+
 export function resolveConsumablesToDeduct(
 	count: number,
 	packagingType?: string | null,
 	indicatorType?: string | null,
-) {
+): SterilizationDeductionItem[] {
 	const isKraftHeatSealed =
 		packagingType?.includes("heat") ||
 		packagingType === "kraft_heat_sealed" ||
@@ -45,6 +52,17 @@ export function resolveConsumablesToDeduct(
 
 	return [
 		{ name: targetPouchName, qty: count, category: "consumable", unit: "шт" },
-		{ name: targetIndicatorName, qty: count, category: "consumable", unit: "шт" },
+		{ name: targetIndicatorName, qty: 1, category: "consumable", unit: "шт" }, // СТРОГО 1 ШТУКА НА КАМЕРУ!
+	];
+}
+
+export function resolveSterilizationConsumableItems(
+	count: number,
+	targetPouchName = "Крафт-пакеты для стерилизации 100х200 мм",
+	targetIndicatorName = "Индикаторы стерилизации 5 класс (пар)",
+): SterilizationDeductionItem[] {
+	return [
+		{ name: targetPouchName, qty: count, category: "consumable", unit: "шт" },
+		{ name: targetIndicatorName, qty: 1, category: "consumable", unit: "шт" }, // СТРОГО 1 ШТУКА НА КАМЕРУ!
 	];
 }

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { SanPiNSterilizationEngine } from "@dental/shared";
+import {
+	resolveConsumablesToDeduct,
+	resolveSterilizationConsumableItems,
+} from "../../routes/sanpin/sterilizationModules/sterilizationStockDeduction.js";
 
 describe("SanPiN 3.3686-21 Central Sterilization & PSO Quality Engine", () => {
 	it("computes minimum sample size for PSO cleaning per SanPiN norms (>= 1% and min 3)", () => {
@@ -95,5 +99,31 @@ describe("SanPiN 3.3686-21 Central Sterilization & PSO Quality Engine", () => {
 			expiryDate: new Date("2026-11-15T12:00:00Z"),
 		});
 		assert.equal(barcode, "DNT-STER-CYC-204-TRAYSURGERY01-20261115");
+	});
+
+	it("deducts exactly 1 indicator per autoclave chamber cycle regardless of batch pouch count", () => {
+		// Shift batch of 12 pouches
+		const items12 = resolveConsumablesToDeduct(12);
+		assert.equal(items12.length, 2);
+		const pouch12 = items12.find((i) => i.name.includes("Крафт-пакеты") || i.name.includes("Пакеты"));
+		const indicator12 = items12.find((i) => i.name.includes("Индикаторы"));
+		assert.ok(pouch12, "Pouch item must be present");
+		assert.ok(indicator12, "Indicator item must be present");
+		assert.equal(pouch12?.qty, 12, "Must deduct exactly 12 pouches");
+		assert.equal(indicator12?.qty, 1, "Must deduct strictly 1 indicator per chamber cycle (no over-deduction)!");
+
+		// Shift batch of 27 pouches
+		const items27 = resolveSterilizationConsumableItems(27);
+		assert.equal(items27.length, 2);
+		const pouch27 = items27[0];
+		const indicator27 = items27[1];
+		assert.equal(pouch27?.qty, 27, "Must deduct 27 pouches for the shift");
+		assert.equal(indicator27?.qty, 1, "Must deduct strictly 1 indicator on chamber load (MANDATE 8v / Soft Stock)");
+
+		// Heat-sealed and Class 6 indicator
+		const itemsHeatSealedClass6 = resolveConsumablesToDeduct(50, "kraft_heat_sealed", "class6_emulator");
+		assert.equal(itemsHeatSealedClass6[0]?.qty, 50);
+		assert.equal(itemsHeatSealedClass6[1]?.qty, 1);
+		assert.ok(itemsHeatSealedClass6[1]?.name.includes("6 класс"));
 	});
 });
