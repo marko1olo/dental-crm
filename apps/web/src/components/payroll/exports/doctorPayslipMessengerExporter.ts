@@ -17,13 +17,15 @@ export function generateDoctorPayslipMessengerText(
 	const isSelfEmployed = payrollResult.taxRegime === "self_employed";
 
 	const lines: string[] = [
+		`[Расчетный листок]`,
 		`РАСЧЕТНЫЙ ЛИСТОК ВРАЧА`,
+		`Расчетный листок врача: ${payrollResult.doctorName}`,
 		`Клиника: ${clinicName}`,
 		`Сотрудник: ${payrollResult.doctorName}`,
 		`Специальность: ${payrollResult.specialtyTitleRu}`,
 		`Период: ${payrollResult.periodLabelRu}`,
 		`─────────────────────────────────`,
-		`• Выручка от приёмов: ${grossRub} ₽ (${payrollResult.serviceCount} услуг)`,
+		`• Кассовая выручка: ${grossRub} ₽ (${payrollResult.serviceCount} услуг)`,
 	];
 
 	if (isChairRental && (payrollResult.chairRentalKop ?? 0) > 0) {
@@ -32,10 +34,10 @@ export function generateDoctorPayslipMessengerText(
 	}
 
 	if (payrollResult.totalLabDeductionsKop > 0) {
-		lines.push(`• Удержание ЗТЛ (лаборатория): -${labRub} ₽`);
+		lines.push(`• ЗТЛ: -${labRub} ₽`);
 	}
 	if (payrollResult.totalMaterialDeductionsKop > 0) {
-		lines.push(`• Удержание за материалы: -${matRub} ₽`);
+		lines.push(`• Материалы: -${matRub} ₽`);
 	}
 	if (payrollResult.totalRefundClawbackKop > 0) {
 		const clawbackRub = (payrollResult.totalRefundClawbackKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 });

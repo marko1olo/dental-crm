@@ -4,6 +4,7 @@
 
 import React, { Suspense, useEffect, useState } from "react";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
+import type { PayrollServiceOrder } from "../../payroll/payrollCatalogData";
 
 const DoctorPayrollStudioModal = lazyWithRetry(() =>
 	import("../../payroll/DoctorPayrollStudioModal").then((module) => ({
@@ -11,12 +12,48 @@ const DoctorPayrollStudioModal = lazyWithRetry(() =>
 	})),
 );
 
-export function GlobalDoctorPayrollModal({ clinicSettings }: { clinicSettings?: any }) {
-	const [globalDoctorPayroll, setGlobalDoctorPayroll] = useState<any>(null);
+interface GlobalDoctorPayrollModalProps {
+	readonly clinicSettings?: { readonly name?: string } | undefined;
+}
+
+interface GlobalDoctorPayrollEventDetail {
+	readonly doctorId?: string;
+	readonly doctor?: {
+		readonly doctorUserId?: string;
+		readonly doctorName?: string;
+		readonly role?: string;
+		readonly specialtyId?: string;
+		readonly visits?: readonly {
+			readonly visitId?: string;
+			readonly orderNumber?: string;
+			readonly closedAt?: string;
+			readonly patientName?: string;
+			readonly patientCardNumber?: string;
+			readonly serviceName?: string;
+			readonly serviceCategory?: PayrollServiceOrder["category"];
+			readonly categoryLabelRu?: string;
+			readonly patientPaidKopecks?: number;
+			readonly grossRevenueKop?: number;
+			readonly patientPaidRub?: number;
+			readonly labCostKopecks?: number;
+			readonly labCostKop?: number;
+			readonly withheldLabRub?: number;
+			readonly materialCostKopecks?: number;
+			readonly materialCostKop?: number;
+			readonly withheldMaterialRub?: number;
+			readonly isPaid54Fz?: boolean;
+		}[];
+	};
+	readonly orders?: readonly PayrollServiceOrder[];
+	readonly services?: readonly PayrollServiceOrder[];
+}
+
+export function GlobalDoctorPayrollModal({ clinicSettings }: GlobalDoctorPayrollModalProps) {
+	const [globalDoctorPayroll, setGlobalDoctorPayroll] = useState<GlobalDoctorPayrollEventDetail | null>(null);
 
 	useEffect(() => {
 		const handleGlobalPayroll = (e: Event) => {
-			const customEvent = e as CustomEvent;
+			const customEvent = e as CustomEvent<GlobalDoctorPayrollEventDetail>;
 			setGlobalDoctorPayroll(customEvent.detail || {});
 		};
 		window.addEventListener("dente:open-doctor-payroll", handleGlobalPayroll);
@@ -26,21 +63,24 @@ export function GlobalDoctorPayrollModal({ clinicSettings }: { clinicSettings?: 
 	if (!globalDoctorPayroll) return null;
 
 	const doc = globalDoctorPayroll.doctor;
-	const initialServices = doc?.visits
-		? doc.visits.map((v: any, idx: number) => ({
+	const initialServices: readonly PayrollServiceOrder[] | undefined = doc?.visits
+		? doc.visits.map((v, idx) => ({
 				id: v.visitId || `srv-${idx}`,
+				orderNumber: v.orderNumber || `ОРТ-${idx + 100}`,
 				dateIso: v.closedAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
 				patientName: v.patientName || "Пациент",
 				medicalCardNumber: v.patientCardNumber || "Карта пациента",
 				serviceNameRu: v.serviceName || "Стоматологическая услуга",
 				category: v.serviceCategory || "therapy",
-				grossRevenueKop: Math.round((v.patientPaidRub || 0) * 100),
-				labCostKop: Math.round((v.withheldLabRub || 0) * 100),
-				materialCostKop: Math.round((v.withheldMaterialRub || 0) * 100),
-				toothCode: v.toothFormula,
-				serviceCode: v.serviceCode,
+				categoryLabelRu: v.categoryLabelRu || "Терапия",
+				grossKopecks: v.patientPaidKopecks ?? v.grossRevenueKop ?? Math.round((v.patientPaidRub || 0) * 100),
+				labCostKopecks: v.labCostKopecks ?? v.labCostKop ?? Math.round((v.withheldLabRub || 0) * 100),
+				materialCostKopecks: v.materialCostKopecks ?? v.materialCostKop ?? Math.round((v.withheldMaterialRub || 0) * 100),
+				isPaid54Fz: Boolean(v.isPaid54Fz ?? true),
+				paidKopecks: v.patientPaidKopecks ?? v.grossRevenueKop ?? Math.round((v.patientPaidRub || 0) * 100),
+				doctorId: doc?.doctorUserId || globalDoctorPayroll.doctorId || "doc-volkov",
 			}))
-		: globalDoctorPayroll.services;
+		: (globalDoctorPayroll.orders ?? globalDoctorPayroll.services);
 
 	const doctorsList = doc
 		? [
@@ -60,6 +100,7 @@ export function GlobalDoctorPayrollModal({ clinicSettings }: { clinicSettings?: 
 				clinicName={clinicSettings?.name || "ООО «Денте Стоматология»"}
 				initialDoctorId={doc?.doctorUserId || globalDoctorPayroll.doctorId}
 				doctorsList={doctorsList}
+				orders={initialServices}
 			/>
 		</Suspense>
 	);

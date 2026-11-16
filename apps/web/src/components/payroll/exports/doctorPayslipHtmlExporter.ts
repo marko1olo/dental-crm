@@ -57,7 +57,7 @@ export function generateDoctorPayslipHtml(
 		.signatures { display: flex; justify-content: space-between; margin-top: 40px; font-size: 10pt; }
 		.signature-line { width: 200px; border-bottom: 1px solid #475569; margin-top: 25px; }
 	</style></head><body>
-	<div class="header"><h1>РАСЧЕТНЫЙ ЛИСТОК ЗА ПЕРИОД</h1><p>${escapeXml(clinicName)} • Ст. 136 ТК РФ</p></div>
+	<div class="header"><h1>РАСЧЕТНЫЙ ЛИСТОК ВРАЧА</h1><p>РАСЧЕТНЫЙ ЛИСТОК ЗА ПЕРИОД • ${escapeXml(clinicName)} • Ст. 136 ТК РФ</p></div>
 	<div class="meta-grid">
 		<div><strong>Сотрудник:</strong> ${escapeXml(payrollResult.doctorName)}</div><div><strong>Период:</strong> ${escapeXml(payrollResult.periodLabelRu)}</div>
 		<div><strong>Специальность:</strong> ${escapeXml(payrollResult.specialtyTitleRu)}</div><div><strong>Модель:</strong> ${isChairRental ? "Аренда кресла (Соло)" : `Сдельная ставка ${payrollResult.baseCommissionPercent}%`}</div>
@@ -84,8 +84,8 @@ export function generateDoctorPayslipHtml(
 	</div>
 	<div class="signatures">
 		<div><div>Главный бухгалтер:</div><div class="signature-line"></div></div>
-		<div><div>Руководитель клиники / Главврач:</div><div class="signature-line"></div></div>
-		<div><div>Врач-специалист (подпись):</div><div class="signature-line"></div></div>
+		<div><div>Руководитель клиники:</div><div class="signature-line"></div></div>
+		<div><div>Врач-специалист:</div><div class="signature-line"></div></div>
 	</div>
 	<script>window.onload = function() { window.print(); };</script></body></html>`;
 }

@@ -63,9 +63,9 @@ export const DoctorShiftActionsDropdown: React.FC<DoctorShiftActionsDropdownProp
 			</button>
 		)}
 		{onOpenT13Timesheet && (
-			<button type="button" role="menuitem" onClick={() => { onClose(); onOpenT13Timesheet(); }} style={itemStyle} className="hover:bg-[var(--paper-soft)]" data-testid="shift-action-t13">
+			<button type="button" role="menuitem" onClick={() => { onClose(); onOpenT13Timesheet(); }} style={itemStyle} className="hover:bg-[var(--paper-soft)]" data-testid="shift-action-timesheet" data-alias="shift-action-t13" aria-label="Табель смен">
 				<Calendar size={13} className="text-[var(--teal)]" />
-				<span>Учёт отработанного времени и часов</span>
+				<span>Табель смен</span>
 			</button>
 		)}
 		<button

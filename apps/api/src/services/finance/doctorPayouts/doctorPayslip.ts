@@ -91,5 +91,7 @@ export function generateDoctorPayslipHtml(
 	return generateDoctorEarningsPayslipHtml(payload);
 }
 
-/** @deprecated Use generateDoctorPayslipHtml (Mandate 8x / 8ap) */
+/** Расчетная ведомость начислений врача (Mandates 8x, 8ap) */
+export const generateDoctorPayrollStatement = generateDoctorPayslipHtml;
+/** @deprecated Use generateDoctorPayrollStatement / generateDoctorPayslipHtml (Mandate 8x / 8ap) */
 export const generateDoctorT51Payslip = generateDoctorPayslipHtml;

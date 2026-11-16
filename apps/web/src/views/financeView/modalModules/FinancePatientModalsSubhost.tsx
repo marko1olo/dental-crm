@@ -1,6 +1,6 @@
 import type React from "react";
 import { CashRegisterStudioModal } from "../../../components/cashbox/CashRegisterStudioModal";
-import { TaxDeductionCertificateModal } from "../../../components/finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../../../components/documents/DocumentsStudioModal";
 import { DoctorPayrollStudioModal } from "../../../components/payroll/DoctorPayrollStudioModal";
 import type { FinanceViewState } from "../useFinanceView";
 
@@ -106,7 +106,7 @@ export const FinancePatientModalsSubhost: React.FC<
 				/>
 			)}
 
-			{/* Табель рабочего времени и Ведомость начисления зарплаты (канонический SSOT) */}
+			{/* Табель смен и Расчетная ведомость начисления зарплаты (канонический SSOT) */}
 			{(isDoctorPayrollOpen || s.isTimesheetT13Open) && (
 				<DoctorPayrollStudioModal
 					isOpen={Boolean(isDoctorPayrollOpen || s.isTimesheetT13Open)}

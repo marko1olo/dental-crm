@@ -40,9 +40,9 @@ export const DoctorShiftControlBar: React.FC<DoctorShiftControlBarProps> = React
 	onCallAssistant,
 	className = "",
 }) => {
-	const cleanDocName = (doctorName || "Барабаш С.В.")
-		.replace(/^(доктор|д-р|врач)\s+/i, "")
-		.trim();
+	const cleanDocName = doctorName
+		? doctorName.replace(/^(доктор|д-р|врач)\s+/i, "").trim()
+		: "Врач не назначен";
 	const isChairRental = financialMode === "chair_rental";
 
 	return (

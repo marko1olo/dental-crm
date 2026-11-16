@@ -81,11 +81,6 @@ export {
 } from "./MobileShiftCockpit";
 
 export {
-	ChairRentalShiftWidget,
-	type ChairRentalShiftWidgetProps,
-} from "./ChairRentalShiftWidget";
-
-export {
 	DoctorShiftEarningsCard,
 	type DoctorShiftEarningsCardProps,
 } from "./cashSection/DoctorShiftEarningsCard";
