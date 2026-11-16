@@ -41,9 +41,9 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 	const activeTierObj = useMemo(() => {
 		if (!data.threeTierModel) return undefined;
 		if (Array.isArray(data.threeTierModel.tiers)) {
-			return data.threeTierModel.tiers.find((t: any) => t.tierId === selectedTier);
+			return data.threeTierModel.tiers.find((t) => t.tierId === selectedTier);
 		}
-		return (data.threeTierModel.tiers as any)?.[selectedTier];
+		return undefined;
 	}, [data.threeTierModel, selectedTier]);
 
 	const currentPlan: PatientTreatmentPlan | undefined = useMemo(() => {
@@ -52,8 +52,8 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 			const tierCost = activeTierObj.totalCostRub || basePlan.totalCostRub;
 			const tierStages = activeTierObj.stages;
 			const paid = tierStages
-				.filter((s: any) => s.status === "completed")
-				.reduce((sum: number, s: any) => sum + (s.costRub || 0), 0);
+				.filter((s) => s.status === "completed")
+				.reduce((sum: number, s) => sum + (s.costRub || 0), 0);
 			return {
 				...basePlan,
 				titleRu: `${basePlan.titleRu}`,
@@ -63,12 +63,12 @@ export const TreatmentPlanTab: React.FC<TreatmentPlanTabProps> = ({
 				progressPercent:
 					tierStages.length > 0
 						? Math.round(
-								(tierStages.filter((s: any) => s.status === "completed").length /
+								(tierStages.filter((s) => s.status === "completed").length /
 									tierStages.length) *
 									100,
 							)
 						: basePlan.progressPercent,
-				stages: tierStages,
+				stages: [...tierStages],
 			};
 		}
 		return basePlan;

@@ -16,6 +16,26 @@ export function generateSha256(inputString: string): string {
 	return sha256Hex(inputString);
 }
 
+export async function sendPortalSmsOtp(
+	phone: string,
+	organizationId?: string,
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		const res = await fetch("/api/portal/auth/send-otp", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ phone, organizationId }),
+		});
+		if (!res.ok) {
+			const json = await res.json().catch(() => null);
+			return { success: false, error: json?.message || "Не удалось отправить SMS-код." };
+		}
+		return { success: true };
+	} catch {
+		return { success: false, error: "Ошибка сети при отправке SMS." };
+	}
+}
+
 function generateSecure6DigitOtp(): string {
 	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
 		const arr = new Uint32Array(1);

@@ -166,6 +166,7 @@ export const patientAdministrativeProfileBaseSchema = z.object({
 	portalSessionRevokedAt: z.string().nullable().optional(),
 	selectedTreatmentTier: z.string().nullable().optional(),
 	treatmentTierSelectedAt: z.string().nullable().optional(),
+	treatmentPlanApprovals: z.record(z.unknown()).nullable().optional(),
 	somaticQuestionnaire: z.record(z.unknown()).nullable().optional(),
 	somaticRiskProfile: z.record(z.unknown()).nullable().optional(),
 	somaticAlerts: z.array(z.unknown()).nullable().optional(),

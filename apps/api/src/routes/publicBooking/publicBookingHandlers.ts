@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
-import { organizations, users } from "../../db/schema.js";
+import { clinics, organizations, users } from "../../db/schema.js";
 import {
 	optionalDoctorIdSchema,
 	sendOtpSchema,
@@ -164,8 +164,11 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				.select({
 					organizationId: organizations.id,
 					name: organizations.name,
+					address: clinics.address,
+					phone: clinics.phone,
 				})
 				.from(organizations)
+				.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
 				.where(eq(organizations.id, "01a00000-0000-0000-0000-000000000000"))
 				.limit(1);
 		});
@@ -180,9 +183,12 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				.select({
 					organizationId: organizations.id,
 					name: organizations.name,
+					address: clinics.address,
+					phone: clinics.phone,
 				})
 				.from(organizations)
 				.innerJoin(users, eq(users.organizationId, organizations.id))
+				.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
 				.where(and(eq(users.role, "doctor"), eq(users.isActive, true)))
 				.limit(1);
 		});
@@ -194,7 +200,31 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		return {
 			organizationId: "01a00000-0000-0000-0000-000000000000",
 			name: "Стоматологическая Клиника DENTE (Демо)",
+			address: "г. Москва, ул. Арбат, д. 24",
+			phone: "+7 (800) 200-55-40",
 		};
+	});
+
+	// 0a-2. Get clinic details by organizationId
+	server.get("/:organizationId/clinic-info", async (request: FastifyRequest<{ Params: { organizationId: string } }>, reply) => {
+		const { organizationId } = request.params;
+		const [clinicRow] = await withSuperuserBypass(async (tx) => {
+			return tx
+				.select({
+					organizationId: organizations.id,
+					name: organizations.name,
+					address: clinics.address,
+					phone: clinics.phone,
+				})
+				.from(organizations)
+				.leftJoin(clinics, eq(clinics.organizationId, organizations.id))
+				.where(eq(organizations.id, organizationId))
+				.limit(1);
+		});
+		if (!clinicRow) {
+			return reply.status(404).send({ error: "ClinicNotFound", message: "Клиника не найдена." });
+		}
+		return clinicRow;
 	});
 
 	// 0b. Direct available-slots query: GET /api/public/booking/available-slots?date=YYYY-MM-DD[&doctorId=UUID][&organizationId=UUID]

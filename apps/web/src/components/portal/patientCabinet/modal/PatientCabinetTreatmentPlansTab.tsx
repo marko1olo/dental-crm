@@ -85,9 +85,19 @@ export const PatientCabinetTreatmentPlansTab: React.FC<PatientCabinetTreatmentPl
 						</button>
 					</div>
 					<PatientPlanView
-						plan={data.treatmentPlans[0] as any}
-						nextAppointment={summary.nextAppointment as any}
-						fullCabinetData={data as any}
+						plan={data.treatmentPlans[0]}
+						nextAppointment={
+							summary.nextAppointment
+								? {
+										id: summary.nextAppointment.id,
+										dateIso: summary.nextAppointment.dateIso,
+										timeRu: summary.nextAppointment.timeRu,
+										doctorName: summary.nextAppointment.doctorName,
+										roomNumber: summary.nextAppointment.roomNumber,
+									}
+								: undefined
+						}
+						fullCabinetData={data}
 						scans={data.scans}
 					/>
 				</div>

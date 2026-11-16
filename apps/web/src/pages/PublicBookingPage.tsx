@@ -55,9 +55,9 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 
 	// Информация о клинике для десктопной витрины
 	const [clinicInfo, setClinicInfo] = useState({
-		name: "Стоматологический центр DENTE",
-		address: "г. Москва, ул. Арбат, д. 24",
-		workHours: "Пн–Сб 08:00 – 20:00, Вс 09:00 – 18:00",
+		name: "Стоматологическая клиника DENTE",
+		address: "Адрес уточняется у администратора",
+		workHours: "Пн–Сб 09:00 – 20:00, Вс 10:00 – 18:00",
 		phone: "+7 (800) 200-55-40",
 		license: "ЛО-77-01-021482",
 	});
@@ -84,26 +84,35 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 	};
 
 	useEffect(() => {
-		if (organizationId) {
-			setEffectiveOrgId(organizationId);
-			setIsResolvingClinic(false);
-			return;
-		}
 		let cancelled = false;
-		fetch("/api/public/booking/default-clinic")
+		const targetUrl = organizationId
+			? `/api/public/booking/${organizationId}/clinic-info`
+			: "/api/public/booking/default-clinic";
+
+		fetch(targetUrl)
 			.then((res) => (res.ok ? res.json() : null))
 			.then((json) => {
 				if (cancelled) return;
 				if (json?.organizationId) {
 					setEffectiveOrgId(json.organizationId);
+				} else if (organizationId) {
+					setEffectiveOrgId(organizationId);
 				}
 				if (json?.name) {
-					setClinicInfo((prev) => ({ ...prev, name: json.name }));
+					setClinicInfo((prev) => ({
+						...prev,
+						name: json.name || prev.name,
+						address: json.address || prev.address,
+						phone: json.phone || prev.phone,
+					}));
 				}
 				setIsResolvingClinic(false);
 			})
 			.catch(() => {
-				if (!cancelled) setIsResolvingClinic(false);
+				if (!cancelled) {
+					if (organizationId) setEffectiveOrgId(organizationId);
+					setIsResolvingClinic(false);
+				}
 			});
 		return () => {
 			cancelled = true;

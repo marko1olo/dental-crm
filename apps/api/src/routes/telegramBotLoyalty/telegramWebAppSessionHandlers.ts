@@ -37,54 +37,87 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		const { initData, organizationId, patientId, phone } = parsed.data;
 		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN || "test_bot_token";
 
-		let tgUser: { id: number; first_name: string; username?: string } | null = null;
-		if (initData) {
-			const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(initData, botToken, {
-				allowDevBypass: process.env.NODE_ENV === "test" || !process.env.TELEGRAM_BOT_TOKEN,
+		const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(initData, botToken, {
+			allowDevBypass: process.env.NODE_ENV === "test" || !process.env.TELEGRAM_BOT_TOKEN,
+		});
+		if (!validation.isValid || !validation.user) {
+			return reply.status(401).send({
+				error: "Unauthorized",
+				message: "Недействительная подпись данных Telegram WebApp (HMAC-SHA256).",
 			});
-			if (validation.isValid && validation.user) {
-				tgUser = validation.user;
-			}
 		}
+		const tgUser = validation.user;
 
 		try {
 			return await withTenantCtx(organizationId, async () => {
-				let patient: typeof patients.$inferSelect | undefined;
+				let authenticatedPatient: typeof patients.$inferSelect | undefined;
 
-				if (patientId) {
-					const [p] = await db
-						.select()
-						.from(patients)
-						.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
-						.limit(1);
-					patient = p;
-				}
+				// 1. Поиск по telegramUserId
+				const [pByTg] = await db
+					.select()
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, organizationId),
+							sql`${patients.administrativeProfile}->>'telegramUserId' = ${String(tgUser.id)}`,
+						),
+					)
+					.limit(1);
+				authenticatedPatient = pByTg;
 
-				if (!patient && phone) {
-					const [p] = await db
+				// 2. Поиск по телефону (если передан)
+				if (!authenticatedPatient && phone) {
+					const [pByPhone] = await db
 						.select()
 						.from(patients)
 						.where(and(eq(patients.organizationId, organizationId), eq(patients.phone, phone.trim())))
 						.limit(1);
-					patient = p;
+					if (pByPhone) {
+						authenticatedPatient = pByPhone;
+						await db
+							.update(patients)
+							.set({
+								administrativeProfile: {
+									...((pByPhone.administrativeProfile as Record<string, unknown>) || {}),
+									telegramUserId: String(tgUser.id),
+								},
+							})
+							.where(eq(patients.id, pByPhone.id));
+					}
 				}
 
-				if (!patient && tgUser?.id) {
-					const [p] = await db
+				// 3. Поиск по patientId с BOLA-проверкой
+				if (!authenticatedPatient && patientId) {
+					const [pById] = await db
 						.select()
 						.from(patients)
-						.where(
-							and(
-								eq(patients.organizationId, organizationId),
-								sql`${patients.administrativeProfile}->>'telegramUserId' = ${String(tgUser.id)}`,
-							),
-						)
+						.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
 						.limit(1);
-					patient = p;
+					if (pById) {
+						const linkedTgId = (pById.administrativeProfile as Record<string, unknown> | null)?.telegramUserId;
+						if (linkedTgId && String(linkedTgId) !== String(tgUser.id)) {
+							return reply.status(403).send({
+								error: "Forbidden",
+								message: "Доступ запрещен: данный профиль пациента привязан к другому Telegram аккаунту.",
+							});
+						}
+						authenticatedPatient = pById;
+						if (!linkedTgId) {
+							await db
+								.update(patients)
+								.set({
+									administrativeProfile: {
+										...((pById.administrativeProfile as Record<string, unknown>) || {}),
+										telegramUserId: String(tgUser.id),
+									},
+								})
+								.where(eq(patients.id, pById.id));
+						}
+					}
 				}
 
-				// Если пациент не найден, но открыт из WebApp с пользователем — создаем/находим гостевой профиль
-				if (!patient) {
+				// 4. Если пациент не найден — создаем гостевой профиль для этого tgUser
+				if (!authenticatedPatient) {
 					const guestName = tgUser?.first_name || "Пациент Telegram";
 					const [created] = await db
 						.insert(patients)
@@ -92,17 +125,40 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 							organizationId,
 							fullName: guestName,
 							phone: phone || null,
+							administrativeProfile: { telegramUserId: String(tgUser.id) },
 						})
 						.returning();
-					patient = created;
+					authenticatedPatient = created;
 				}
 
-				if (!patient) {
+				if (!authenticatedPatient) {
 					return reply.status(404).send({ error: "PatientNotFound", message: "Пациент не найден." });
 				}
 
+				// 5. BOLA защита: переключение на целевой профиль (например, ребенка в семье)
+				let targetPatient = authenticatedPatient;
+				if (patientId && patientId !== authenticatedPatient.id) {
+					const familyProfile = await TelegramReferralLoyaltyService.getFamilyProfile(organizationId, authenticatedPatient.id);
+					const isFamilyMember = familyProfile.members.some((m) => m.patientId === patientId);
+					if (!isFamilyMember) {
+						return reply.status(403).send({
+							error: "Forbidden",
+							message: "Доступ запрещен: запрошенный профиль не принадлежит вам или вашей семейной группе.",
+						});
+					}
+					const [pTarget] = await db
+						.select()
+						.from(patients)
+						.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
+						.limit(1);
+					if (!pTarget) {
+						return reply.status(404).send({ error: "PatientNotFound", message: "Запрошенный пациент не найден." });
+					}
+					targetPatient = pTarget;
+				}
+
 				// Получаем семейный профиль
-				const familyProfile = await TelegramReferralLoyaltyService.getFamilyProfile(organizationId, patient.id);
+				const familyProfile = await TelegramReferralLoyaltyService.getFamilyProfile(organizationId, targetPatient.id);
 
 				// Получаем предстоящие записи
 				const upcomingAppointments = await db
@@ -121,7 +177,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 					.where(
 						and(
 							eq(appointments.organizationId, organizationId),
-							eq(appointments.patientId, patient.id),
+							eq(appointments.patientId, targetPatient.id),
 							sql`${appointments.status} IN ('planned', 'confirmed')`,
 						),
 					)
@@ -139,7 +195,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 						diagnosis: visits.diagnosis,
 					})
 					.from(visits)
-					.where(and(eq(visits.organizationId, organizationId), eq(visits.patientId, patient.id)))
+					.where(and(eq(visits.organizationId, organizationId), eq(visits.patientId, targetPatient.id)))
 					.orderBy(sql`${visits.createdAt} DESC`)
 					.limit(10);
 
@@ -147,11 +203,11 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 					success: true,
 					authenticated: true,
 					patient: {
-						id: patient.id,
-						fullName: patient.fullName,
-						phone: patient.phone,
-						birthDate: patient.birthDate,
-						bonusBalanceRub: familyProfile.members.find((m) => m.patientId === patient?.id)?.activeBonusPoints || 0,
+						id: targetPatient.id,
+						fullName: targetPatient.fullName,
+						phone: targetPatient.phone,
+						birthDate: targetPatient.birthDate,
+						bonusBalanceRub: familyProfile.members.find((m) => m.patientId === targetPatient?.id)?.activeBonusPoints || 0,
 					},
 					family: familyProfile,
 					upcomingAppointments,

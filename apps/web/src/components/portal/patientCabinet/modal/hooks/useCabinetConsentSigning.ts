@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
 	generateSmsOtp,
+	sendPortalSmsOtp,
 	signConsentWithPep,
 	verifySmsOtp,
 	type PatientPersonalCabinetData,
@@ -38,6 +39,11 @@ export function useCabinetConsentSigning(
 		setOtpDigits(["", "", "", "", "", ""]);
 		setOtpError(null);
 		if (mode === "sms_otp") {
+			sendPortalSmsOtp(data.phone).then((res) => {
+				if (!res.success && res.error) {
+					setOtpError(res.error);
+				}
+			});
 			const otp = generateSmsOtp(data.phone);
 			setSentOtp(otp);
 			setOtpCountdown(60);
@@ -57,6 +63,11 @@ export function useCabinetConsentSigning(
 	}, []);
 
 	const handleResendOtp = useCallback(() => {
+		sendPortalSmsOtp(data.phone).then((res) => {
+			if (!res.success && res.error) {
+				setOtpError(res.error);
+			}
+		});
 		const otp = generateSmsOtp(data.phone);
 		setSentOtp(otp);
 		setOtpCountdown(60);
@@ -70,22 +81,12 @@ export function useCabinetConsentSigning(
 			setOtpError("Введите 6-значный SMS-код");
 			return;
 		}
-		if (!sentOtp) {
-			setOtpError("Запросите код подтверждения через SMS");
-			return;
-		}
-		const verifyResult = verifySmsOtp(code, sentOtp.code, sentOtp.sentTimestamp);
-		if (!verifyResult.success) {
-			setOtpError(verifyResult.error || "Неверный код подтверждения из SMS.");
-			return;
-		}
-		const signed = signConsentWithPep(signingConsent, data.phone, code, data.fullName);
 
-		// Реальная отправка на сервер Fastify API
+		// Реальная отправка на сервер Fastify API с проверкой кода ПЭП
 		const effectiveToken = token || (typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null);
 		if (effectiveToken) {
 			try {
-				await fetch(`/api/portal/consents/${encodeURIComponent(signingConsent.id)}/sign`, {
+				const res = await fetch(`/api/portal/consents/${encodeURIComponent(signingConsent.id)}/sign`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -93,15 +94,27 @@ export function useCabinetConsentSigning(
 					},
 					body: JSON.stringify({
 						signatureMethod: "sms_otp",
-						signatureSvg: signed.signatureSvg,
+						pepCode: code,
 						deviceMeta: typeof navigator !== "undefined" ? navigator.userAgent : "PWA Patient Cabinet",
 					}),
 				});
+				if (!res.ok) {
+					const json = await res.json().catch(() => null);
+					setOtpError(json?.message || "Неверный код подтверждения из SMS.");
+					return;
+				}
 			} catch (err) {
 				console.warn("[useCabinetConsentSigning] Fallback to local PEP record:", err);
 			}
+		} else if (sentOtp) {
+			const verifyResult = verifySmsOtp(code, sentOtp.code, sentOtp.sentTimestamp);
+			if (!verifyResult.success) {
+				setOtpError(verifyResult.error || "Неверный код подтверждения из SMS.");
+				return;
+			}
 		}
 
+		const signed = signConsentWithPep(signingConsent, data.phone, code, data.fullName);
 		setData((prev) => ({
 			...prev,
 			consents: (prev.consents || []).map((c) => (c.id === signed.id ? signed : c)),
@@ -126,7 +139,7 @@ export function useCabinetConsentSigning(
 					},
 					body: JSON.stringify({
 						signatureMethod: "portal_pep",
-						signatureSvg: signed.signatureSvg,
+						signatureSvg: signed.signatureAudit?.signatureSvg,
 						deviceMeta: typeof navigator !== "undefined" ? navigator.userAgent : "PWA Patient Cabinet",
 					}),
 				});

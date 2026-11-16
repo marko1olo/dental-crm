@@ -49,13 +49,32 @@ export function useCabinetCalculatedViews(data: PatientPersonalCabinetData, sele
 	const careMemo: PatientCareMemo = useMemo(() => {
 		const nextAppt = data.appointments[0];
 		const interventionType = nextAppt ? detectInterventionTypeFromProcedure(nextAppt.titleRu) : "caries";
+
+		// Извлекаем реальный номер зуба из протокола/названия приёма или одонтограммы
+		const titleMatch = nextAppt?.titleRu?.match(/(?:зуб[а-я]*|fdi|№|\s)([1-4][1-8]|[5-8][1-5])\b/i);
+		let resolvedToothFdi = titleMatch ? titleMatch[1] : undefined;
+
+		if (!resolvedToothFdi && Array.isArray(data.teeth)) {
+			const treatedTooth = data.teeth.find(
+				(t) => t.status && t.status !== "healthy",
+			);
+			if (treatedTooth?.fdiCode) {
+				resolvedToothFdi = String(treatedTooth.fdiCode);
+			}
+		}
+
+		if (!resolvedToothFdi && data.teeth?.[0]?.fdiCode) {
+			resolvedToothFdi = String(data.teeth[0].fdiCode);
+		}
+
 		return generateCareMemo({
 			patientName: data.fullName,
 			patientPhone: data.phone,
-			toothFdi: "16",
+			toothFdi: resolvedToothFdi,
+			procedureName: nextAppt?.titleRu,
 			interventionType,
-			doctorName: data.curatingDoctor,
-			clinicName: "Стоматологическая клиника ДЕНТЕ",
+			doctorName: nextAppt?.doctorName || data.curatingDoctor,
+			clinicName: nextAppt?.clinicName || "Стоматологическая клиника ДЕНТЕ",
 		});
 	}, [data]);
 

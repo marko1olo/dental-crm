@@ -62,6 +62,7 @@ export const bookingRequestSchema = z.object({
 		.regex(russianPhoneRegex, "Неверный формат номера телефона РФ (ожидается +7XXXXXXXXXX)"),
 	comment: z.string().trim().max(500).optional(),
 	verificationCode: z.string().trim().min(4, "Код подтверждения должен быть от 4 до 8 символов").max(8).optional(),
+	telegramInitData: z.string().trim().optional(),
 	source: z.string().trim().max(100).optional(),
 	utm_source: z.string().trim().max(100).optional(),
 	utmSource: z.string().trim().max(100).optional(),

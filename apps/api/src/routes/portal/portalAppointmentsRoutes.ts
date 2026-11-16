@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, lt, notInArray, or } from "drizzle-orm";
+import { and, desc, eq, gt, lt, ne, notInArray, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -467,6 +467,142 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 						comment: appRow.comment
 							? `${appRow.comment} | [Отмена: ${cancelReason}]`
 							: `[Отмена: ${cancelReason}]`,
+					})
+					.where(
+						and(
+							eq(appointments.id, appointmentId),
+							eq(appointments.organizationId, auth.organizationId),
+						),
+					)
+					.returning();
+
+				return { success: true, appointment: updated };
+			});
+		});
+	});
+
+	// 19.1 Reschedule Patient Appointment (Protected)
+	server.patch<{
+		Params: { id: string };
+		Body: {
+			startsAt: string;
+			endsAt?: string;
+			reason?: string;
+		};
+	}>("/appointments/:id/reschedule", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		const appointmentId = request.params.id?.trim();
+		if (!appointmentId || !isValidUuid(appointmentId)) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Идентификатор записи на приём должен быть валидным UUID.",
+			};
+		}
+
+		const startsAtStr = typeof request.body?.startsAt === "string" ? request.body.startsAt.trim() : "";
+		if (!startsAtStr) {
+			reply.status(400);
+			return {
+				error: "MissingRequiredFields",
+				message: "Укажите новое время начала приёма.",
+			};
+		}
+
+		const startDate = new Date(startsAtStr);
+		const endsAtStr = typeof request.body?.endsAt === "string" ? request.body.endsAt.trim() : "";
+		const endDate = endsAtStr ? new Date(endsAtStr) : new Date(startDate.getTime() + 30 * 60 * 1000);
+
+		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
+			reply.status(400);
+			return {
+				error: "InvalidAppointmentTime",
+				message: "Некорректное время приёма.",
+			};
+		}
+
+		if (startDate.getTime() <= Date.now()) {
+			reply.status(400);
+			return {
+				error: "InvalidAppointmentTime",
+				message: "Нельзя перенести запись на прошедшее время.",
+			};
+		}
+
+		const rescheduleReason =
+			typeof request.body?.reason === "string" && request.body.reason.trim()
+				? request.body.reason.trim()
+				: "Перенос пациентом через личный кабинет";
+
+		return withTenantCtx(auth.organizationId, async () => {
+			return db.transaction(async (tx) => {
+				const [appRow] = await tx
+					.select()
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.id, appointmentId),
+							eq(appointments.patientId, auth.patientId),
+							eq(appointments.organizationId, auth.organizationId),
+						),
+					)
+					.limit(1)
+					.for("update");
+
+				if (!appRow) {
+					reply.status(404);
+					return {
+						error: "AppointmentNotFound",
+						message: "Запись на приём не найдена.",
+					};
+				}
+
+				if (appRow.status === "cancelled" || appRow.status === "completed") {
+					reply.status(400);
+					return {
+						error: "CannotReschedule",
+						message: "Нельзя перенести отменённую или уже завершённую запись.",
+					};
+				}
+
+				const collisionConditions = [
+					eq(appointments.organizationId, auth.organizationId),
+					ne(appointments.id, appointmentId),
+					lt(appointments.startsAt, endDate),
+					gt(appointments.endsAt, startDate),
+					notInArray(appointments.status, ["cancelled", "no_show"]),
+				];
+				if (appRow.doctorUserId) {
+					collisionConditions.push(eq(appointments.doctorUserId, appRow.doctorUserId));
+				}
+
+				const [collision] = await tx
+					.select({ id: appointments.id })
+					.from(appointments)
+					.where(and(...collisionConditions))
+					.limit(1);
+
+				if (collision) {
+					reply.status(409);
+					return {
+						error: "SlotConflict",
+						message: "Выбранное время у врача уже занято другой записью. Пожалуйста, выберите другое время.",
+					};
+				}
+
+				const [updated] = await tx
+					.update(appointments)
+					.set({
+						startsAt: startDate,
+						endsAt: endDate,
+						comment: appRow.comment
+							? `${appRow.comment} | [Перенос: ${rescheduleReason}]`
+							: `[Перенос: ${rescheduleReason}]`,
 					})
 					.where(
 						and(

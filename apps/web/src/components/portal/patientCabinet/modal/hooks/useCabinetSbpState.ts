@@ -31,28 +31,33 @@ export function useCabinetSbpState(
 		setIsCheckingSbpStatus(true);
 		setSbpStatusMessage("Запрос подтверждения транзакции в шлюзе НСПК...");
 		try {
-			const orderId = (activeSbpPayload as any)?.orderId || activeSbpPayload?.invoiceNumber || activeSbpInvoice.invoiceNumber || activeSbpInvoice.id;
-			const qrId = activeSbpPayload?.qrId || "";
-			const sumKop = Math.round(activeSbpInvoice.remainingAmountRub * 100);
-			const queryUrl = `/api/fiscal/sbp-status?orderId=${encodeURIComponent(orderId)}&qrId=${encodeURIComponent(qrId)}&invoiceId=${encodeURIComponent(activeSbpInvoice.id)}&sumKop=${sumKop}`;
+			const invoiceId = activeSbpInvoice.id;
+			const invoiceNumber = activeSbpInvoice.invoiceNumber;
+			const queryUrl = `/api/portal/payments/status?invoiceId=${encodeURIComponent(invoiceId)}&invoiceNumber=${encodeURIComponent(invoiceNumber)}`;
 
-			const res = await fetch(queryUrl, { headers: { Accept: "application/json" } });
+			const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
+			const headers: Record<string, string> = { Accept: "application/json" };
+			if (token) headers.Authorization = `Bearer ${token}`;
+
+			const res = await fetch(queryUrl, { headers });
 			if (res.ok) {
 				const statusData = (await res.json().catch(() => null)) as {
+					isPaid?: boolean;
 					paid?: boolean;
 					status?: string;
 					fiscalReceiptId?: string | null;
 					fiscalReceiptNumber?: string | null;
+					paidAtIso?: string | null;
 					paidAt?: string | null;
 				} | null;
 
-				if (statusData && (statusData.paid || statusData.status === "paid")) {
+				if (statusData && (statusData.isPaid || statusData.paid || statusData.status === "paid")) {
 					const updatedInvoice: PatientInvoiceItem = {
 						...activeSbpInvoice,
 						status: "paid",
 						paidAmountRub: activeSbpInvoice.totalAmountRub,
 						remainingAmountRub: 0,
-						paidAtIso: statusData.paidAt || new Date().toISOString(),
+						paidAtIso: statusData.paidAtIso || statusData.paidAt || new Date().toISOString(),
 						paymentMethod: "sbp",
 						fiscalReceiptNumber: statusData.fiscalReceiptNumber || statusData.fiscalReceiptId || `ФД-${activeSbpInvoice.invoiceNumber}`,
 					};

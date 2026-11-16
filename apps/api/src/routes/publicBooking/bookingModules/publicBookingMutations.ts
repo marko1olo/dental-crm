@@ -8,6 +8,7 @@ import {
 	organizations,
 	users,
 } from "../../../db/schema.js";
+import { TelegramReferralLoyaltyService } from "../../../services/telegram/TelegramReferralLoyaltyService.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import {
 	schemaIssuePhrase,
@@ -330,13 +331,30 @@ export async function handleBookAppointment(
 					: undefined);
 			const effectiveIdempotencyKey = parsed.data.idempotencyKey || headerIdempotencyKey;
 
-			// Trust check: OTP verified OR authorized Telegram context
-			const isTelegramAuthorized =
-				effectiveSource === "telegram" ||
-				effectiveSource === "telegram_webapp" ||
-				parsed.data.source === "telegram" ||
-				parsed.data.source === "telegram_webapp" ||
-				parsed.data.utm_source === "telegram";
+			// Trust check: OTP verified OR cryptographically validated Telegram session
+			const rawInitData =
+				(typeof request.headers["x-telegram-init-data"] === "string"
+					? request.headers["x-telegram-init-data"]
+					: undefined) || (parsed.data as { telegramInitData?: string }).telegramInitData;
+
+			let isTelegramAuthorized = false;
+			if (rawInitData) {
+				const botToken =
+					process.env.TELEGRAM_BOT_TOKEN ||
+					process.env.DENTE_TELEGRAM_BOT_TOKEN ||
+					"test_bot_token";
+				const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(
+					rawInitData,
+					botToken,
+					{
+						allowDevBypass:
+							process.env.NODE_ENV === "test" || !process.env.TELEGRAM_BOT_TOKEN,
+					},
+				);
+				if (validation.isValid && validation.user) {
+					isTelegramAuthorized = true;
+				}
+			}
 
 			const isConfirmed = isVerified || isTelegramAuthorized;
 			const bookingStatus = isConfirmed ? "confirmed" : "preliminary";

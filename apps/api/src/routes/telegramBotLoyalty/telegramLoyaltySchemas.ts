@@ -6,7 +6,7 @@ import { z } from "zod";
  */
 
 export const webAppSessionSchema = z.object({
-	initData: z.string().optional(),
+	initData: z.string().min(1, "initData обязателен для авторизации в Telegram WebApp"),
 	organizationId: z.string().min(1),
 	patientId: z.string().optional(),
 	phone: z.string().optional(),

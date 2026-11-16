@@ -12,18 +12,60 @@ export function useCabinetAppointmentsBooking(
 	handleShowCabinetToast: (msg: string) => void,
 	onAppointmentBooked?: (payload: { specialty: string; preferredDate: string; note?: string }) => void,
 ) {
-	const handleRescheduleSubmit = useCallback((req: {
-		appointmentId: string;
-		newDate: string;
-		newTime: string;
-		reason: string;
-	}) => {
-		onAppointmentBooked?.({
-			specialty: "Перенос записи",
-			preferredDate: `${req.newDate} ${req.newTime}`,
-			note: `Перенос визита ${req.appointmentId}. Причина: ${req.reason}`,
-		});
-	}, [onAppointmentBooked]);
+	const handleRescheduleSubmit = useCallback(
+		async (req: {
+			appointmentId: string;
+			newDate: string;
+			newTime: string;
+			reason: string;
+		}) => {
+			if (token) {
+				try {
+					const startDateTime = new Date(`${req.newDate}T${req.newTime}:00`);
+					const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000);
+					const res = await fetch(`/api/portal/appointments/${encodeURIComponent(req.appointmentId)}/reschedule`, {
+						method: "PATCH",
+						headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+						body: JSON.stringify({
+							startsAt: startDateTime.toISOString(),
+							endsAt: endDateTime.toISOString(),
+							reason: req.reason,
+						}),
+					});
+					const json = await res.json().catch(() => null);
+					if (res.ok) {
+						setData((prev) => ({
+							...prev,
+							appointments: prev.appointments.map((a) =>
+								a.id === req.appointmentId
+									? { ...a, dateIso: req.newDate, timeRu: req.newTime, status: "scheduled" }
+									: a,
+							),
+						}));
+						handleShowCabinetToast(`Запись успешно перенесена на ${req.newDate} в ${req.newTime}!`);
+						onAppointmentBooked?.({
+							specialty: "Перенос записи",
+							preferredDate: `${req.newDate} ${req.newTime}`,
+							note: `Перенос визита ${req.appointmentId}. Причина: ${req.reason}`,
+						});
+						return;
+					}
+					handleShowCabinetToast(json?.message || "Не удалось перенести запись на выбранное время.");
+					return;
+				} catch (err) {
+					console.error("[PatientCabinetModal] Failed to reschedule appointment:", err);
+					handleShowCabinetToast("Ошибка сети при переносе записи. Попробуйте позже.");
+					return;
+				}
+			}
+			onAppointmentBooked?.({
+				specialty: "Перенос записи",
+				preferredDate: `${req.newDate} ${req.newTime}`,
+				note: `Перенос визита ${req.appointmentId}. Причина: ${req.reason}`,
+			});
+		},
+		[token, handleShowCabinetToast, onAppointmentBooked, setData],
+	);
 
 	const handleBookingSubmit = useCallback(
 		async (req: {
@@ -53,37 +95,40 @@ export function useCabinetAppointmentsBooking(
 								comment: req.comment || undefined,
 							}),
 						});
-						if (res.ok) {
-							const json = await res.json();
-							if (json?.appointment) {
-								const newApt: PatientAppointment = {
-									id: json.appointment.id,
-									dateIso: req.date,
-									timeRu: req.time,
-									doctorId: targetDocId,
-									doctorName: req.doctorName || matchingDoc?.fullName || "Лечащий врач",
-									doctorSpecialtyRu: matchingDoc?.specialties?.[0] || "Стоматолог-терапевт",
-									roomNumber: "Кабинет 1",
-									clinicName: "Стоматологическая клиника ДЕНТЕ",
-									clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
-									titleRu: req.goalId,
-									status: "scheduled",
-									reminderSent: true,
-									reminderChannel: "sms",
-								};
-								setData((prev) => ({ ...prev, appointments: [newApt, ...prev.appointments] }));
-								handleShowCabinetToast(`Запись подтверждена на ${req.date} в ${req.time}!`);
-								onAppointmentBooked?.({ specialty: req.goalId, preferredDate: `${req.date} ${req.time}`, note: req.comment });
-								return;
-							}
+						const json = await res.json().catch(() => null);
+						if (res.ok && json?.appointment) {
+							const newApt: PatientAppointment = {
+								id: json.appointment.id,
+								dateIso: req.date,
+								timeRu: req.time,
+								doctorId: targetDocId,
+								doctorName: req.doctorName || matchingDoc?.fullName || "Лечащий врач",
+								doctorSpecialtyRu: matchingDoc?.specialties?.[0] || "Стоматолог-терапевт",
+								roomNumber: "Кабинет 1",
+								clinicName: "Стоматологическая клиника ДЕНТЕ",
+								clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
+								titleRu: req.goalId,
+								status: "scheduled",
+								reminderSent: true,
+								reminderChannel: "sms",
+							};
+							setData((prev) => ({ ...prev, appointments: [newApt, ...prev.appointments] }));
+							handleShowCabinetToast(`Запись подтверждена на ${req.date} в ${req.time}!`);
+							onAppointmentBooked?.({ specialty: req.goalId, preferredDate: `${req.date} ${req.time}`, note: req.comment });
+							return;
 						}
+						handleShowCabinetToast(json?.message || "Не удалось создать запись на приём.");
+						return;
 					}
 				} catch (err) {
 					console.error("[PatientCabinetModal] Failed to post /api/portal/appointments:", err);
+					handleShowCabinetToast("Ошибка сети при оформлении записи. Попробуйте позже.");
+					return;
 				}
+			} else {
+				handleShowCabinetToast(`Запись оформлена на ${req.date} в ${req.time}! СМС-подтверждение отправлено.`);
+				onAppointmentBooked?.({ specialty: req.goalId, preferredDate: `${req.date} ${req.time}`, note: req.comment });
 			}
-			handleShowCabinetToast(`Запись оформлена на ${req.date} в ${req.time}! СМС-подтверждение отправлено.`);
-			onAppointmentBooked?.({ specialty: req.goalId, preferredDate: `${req.date} ${req.time}`, note: req.comment });
 		},
 		[token, availableDoctors, handleShowCabinetToast, onAppointmentBooked, setData],
 	);

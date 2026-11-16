@@ -14,11 +14,10 @@ import {
 	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../../db/schema.js";
-import { verifyToken } from "../../utils/cryptoHelper.js";
+import { verifyOtpCode } from "../treatmentPlan/pep/pepOtpService.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
 import { generateSha256Hex } from "./portalUtils.js";
 import {
-	PORTAL_TOKEN_KIND,
 	type SelectTierBody,
 } from "./types.js";
 import { isValidUuid } from "@dental/shared";
@@ -28,30 +27,13 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 	server.get<{ Params: { documentId: string } }>(
 		"/documents/:documentId/html",
 		async (request, reply) => {
-			const authHeader = request.headers.authorization;
-			if (!authHeader?.startsWith("Bearer ")) {
+			const auth = extractPortalPatient(request);
+			if (!auth) {
 				reply.status(401);
 				return { error: "Unauthorized" };
 			}
-
-			const token = authHeader.slice("Bearer ".length).trim();
-			if (!token) {
-				reply.status(401);
-				return { error: "Unauthorized" };
-			}
-
-			const payload = verifyToken(token, requireAuthTokenSecret());
-			if (
-				!payload ||
-				payload.kind !== PORTAL_TOKEN_KIND ||
-				typeof payload.sub !== "string" ||
-				typeof payload.organizationId !== "string"
-			) {
-				reply.status(401);
-				return { error: "Invalid token" };
-			}
-			const patientId = payload.sub;
-			const organizationId = payload.organizationId as string;
+			const patientId = auth.patientId;
+			const organizationId = auth.organizationId;
 
 			const document = await withTenantCtx(organizationId, () =>
 				getDocumentById(organizationId, request.params.documentId),
@@ -188,6 +170,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			signatureMethod?: unknown;
 			consentKind?: unknown;
 			deviceMeta?: unknown;
+			pepCode?: unknown;
 		};
 	}>("/consents/:consentId/sign", async (request, reply) => {
 		const auth = extractPortalPatient(request);
@@ -217,6 +200,21 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					: rawMethod === "touch_screen"
 						? "touch_screen"
 						: "portal_pep";
+
+		const pepCode =
+			typeof request.body?.pepCode === "string" ? request.body.pepCode.trim() : "";
+
+		// Верификация проверочного кода при подписании через SMS-OTP
+		if (signatureMethod === "sms_otp" && pepCode) {
+			const isCodeValid = await verifyOtpCode(consentId, pepCode, auth.organizationId, auth.patientId);
+			if (!isCodeValid) {
+				reply.status(400);
+				return {
+					error: "InvalidPepCode",
+					message: "Неверный или истёкший проверочный код из SMS.",
+				};
+			}
+		}
 
 		const signatureSvg =
 			typeof request.body?.signatureSvg === "string"
@@ -677,6 +675,24 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 			return { error: "ValidationError", message: "Идентификатор плана лечения должен быть валидным UUID." };
 		}
 
+		const pepCode = typeof request.body?.pepCode === "string" ? request.body.pepCode.trim() : "";
+		if (!pepCode) {
+			reply.status(400);
+			return {
+				error: "PepCodeRequired",
+				message: "Для утверждения плана лечения требуется код подтверждения из SMS (ПЭП 63-ФЗ).",
+			};
+		}
+
+		const isCodeValid = await verifyOtpCode(planId, pepCode, auth.organizationId, auth.patientId);
+		if (!isCodeValid) {
+			reply.status(400);
+			return {
+				error: "InvalidPepCode",
+				message: "Неверный или истёкший код подтверждения ПЭП.",
+			};
+		}
+
 		return withTenantCtx(auth.organizationId, async () => {
 			const [planRow] = await db
 				.select({ id: treatmentPlans.id })
@@ -695,7 +711,28 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				return { error: "PlanNotFound", message: "План лечения не найден." };
 			}
 
+			const rawIp =
+				(request.headers["x-forwarded-for"] as string) ||
+				request.ip ||
+				request.socket?.remoteAddress ||
+				"127.0.0.1";
+			const clientIp =
+				typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
 			const now = new Date();
+			const signedAtIso = now.toISOString();
+
+			// Хэш целостности согласования по 63-ФЗ
+			const integrityHash = generateSha256Hex(
+				[
+					planId,
+					auth.patientId,
+					auth.organizationId,
+					signedAtIso,
+					clientIp,
+					"63-FZ_PEP_TREATMENT_PLAN_APPROVAL",
+				].join("|"),
+			);
+
 			await db
 				.update(treatmentPlans)
 				.set({
@@ -709,11 +746,47 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					),
 				);
 
+			// Аудит согласования в профиле пациента
+			const [patientRow] = await db
+				.select({ administrativeProfile: patients.administrativeProfile })
+				.from(patients)
+				.where(and(eq(patients.id, auth.patientId), eq(patients.organizationId, auth.organizationId)))
+				.limit(1);
+
+			const currentProfile = patientRow?.administrativeProfile ?? {};
+			const currentApprovals =
+				((currentProfile as Record<string, unknown>).treatmentPlanApprovals as Record<string, unknown> | undefined) || {};
+
+			await db
+				.update(patients)
+				.set({
+					administrativeProfile: {
+						...currentProfile,
+						treatmentPlanApprovals: {
+							...currentApprovals,
+							[planId]: {
+								planId,
+								status: "Approved",
+								signedAtIso,
+								clientIp,
+								integrityHash,
+								verificationMethod: "sms_otp",
+								signatureLaw: "63-FZ_PEP",
+								deviceMeta: request.headers["user-agent"] || "mobile_touch_device",
+							},
+						},
+					},
+					updatedAt: now,
+				})
+				.where(and(eq(patients.id, auth.patientId), eq(patients.organizationId, auth.organizationId)));
+
 			return {
 				success: true,
 				planId,
 				status: "Approved",
-				approvedAt: now.toISOString(),
+				approvedAt: signedAtIso,
+				integrityHash,
+				signatureLaw: "63-FZ",
 			};
 		});
 	});

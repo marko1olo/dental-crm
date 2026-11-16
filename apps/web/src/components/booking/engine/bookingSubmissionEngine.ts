@@ -87,21 +87,15 @@ export async function submitBookingRequest(params: BookingSubmissionParams): Pro
 		"X-Idempotency-Key": idempotencyKey,
 	};
 
-	let response = await fetch(`${apiBaseUrl}/create`, {
+	const targetUrl = organizationId
+		? `${apiBaseUrl}/${organizationId}/book`
+		: `${apiBaseUrl}/create`;
+
+	const response = await fetch(targetUrl, {
 		method: "POST",
 		headers: requestHeaders,
 		body: JSON.stringify(bookingPayload),
 	}).catch(() => null);
-
-	if (!response || response.status === 404) {
-		if (organizationId) {
-			response = await fetch(`${apiBaseUrl}/${organizationId}/book`, {
-				method: "POST",
-				headers: requestHeaders,
-				body: JSON.stringify(bookingPayload),
-			});
-		}
-	}
 
 	if (!response || !response.ok) {
 		if (response?.status === 409) {
