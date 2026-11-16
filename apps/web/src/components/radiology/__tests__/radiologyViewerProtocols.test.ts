@@ -138,7 +138,7 @@ test("applyRadiologyProtocolToForm043: диспатчит событие dente-a
 });
 
 test("DicomViewerModal: 1-клик Норма, опциональный ИИ без зависаний, отсутствие сырых эмодзи", () => {
-	const source = readSource("components/imaging/DicomViewerModal.tsx");
+	const source = readSource("components/imaging/DicomViewerModal.tsx") + "\n" + readSource("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
 
 	// Проверка кнопки Нормы
 	assert.ok(

@@ -2,7 +2,6 @@ import { Calendar, Copy, Phone } from "lucide-react";
 import React from "react";
 import { showToast } from "../../GlobalToast";
 import { initiateOutboundCall } from "../../telephony/initiateOutboundCall";
-import { PatientLoyaltyHeader } from "../PatientLoyaltyHeader";
 import { PatientSentimentBadge } from "../PatientSentimentBadge";
 import type { PatientHeaderRecord } from "./patientHeaderTypes";
 
@@ -61,7 +60,6 @@ export const PatientHeaderContactRow: React.FC<PatientHeaderContactRowProps> = (
 				<span className="italic shrink-0">Телефон не указан</span>
 			)}
 			<PatientSentimentBadge patient={resolvedPatient} />
-			<PatientLoyaltyHeader patientId={resolvedPatient?.id} />
 		</div>
 	);
 };

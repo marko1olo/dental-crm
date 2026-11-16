@@ -24,7 +24,10 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { countLabel } from "../../../lib/russianPlural.js";
 import { pricelistSourceKindLabels } from "../../../pricelistUiMeta";
-import { telegramVisualCardFields } from "../../../workspaceStaticOptions";
+import {
+	telegramVisualCardFields,
+	treatmentAcceptanceVariantOptions,
+} from "../../../workspaceStaticOptions";
 import {
 	clinicalRuleActionLabels,
 	clinicalRuleSeverityLabels,
@@ -32,7 +35,6 @@ import {
 	recognitionTargetLabels,
 	serviceCategoryLabels,
 } from "../../../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "../../AppointmentHelpers";
 import { normalizedLocalOrganizationId } from "../../AuthOnboardingHelpers";
 import { isBrowserMigrationScanAbortError } from "../../browserScanUtils";
 import {

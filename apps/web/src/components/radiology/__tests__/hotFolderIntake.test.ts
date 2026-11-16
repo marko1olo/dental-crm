@@ -261,12 +261,23 @@ describe("Hot-Folder Intake & Radiology Integration Suite", () => {
 		assert.equal(filtered.length, 1);
 		assert.equal(filtered[0]?.id, "fresh-test-1");
 
-		// Test initial hot folder items fresh filter
-		const freshInitial = filterFreshItems(INITIAL_HOT_FOLDER_ITEMS, 15);
-		assert.ok(freshInitial.length >= 2, "At least 2 initial hot folder items must be fresh within 15 minutes");
-		for (const item of freshInitial) {
-			assert.ok(isItemFresh(item, 15));
-		}
+		// Honest empty state: when hot folder has no incoming files, fresh items list must be empty
+		const emptyFolderItems: HotFolderItem[] = [];
+		const freshEmpty = filterFreshItems(emptyFolderItems, 15);
+		assert.equal(freshEmpty.length, 0, "Honest empty state: empty hot folder must return 0 fresh items");
+
+		// Dynamic fresh item validation (current timestamp):
+		const dynamicFreshItem: HotFolderItem = {
+			...freshSample,
+			id: "dynamic-fresh-1",
+			timestampIso: new Date().toISOString(),
+			relativeTime: "только что",
+			isFresh: true,
+		};
+		const dynamicFreshList = filterFreshItems([dynamicFreshItem, staleSample], 15);
+		assert.equal(dynamicFreshList.length, 1);
+		assert.equal(dynamicFreshList[0]?.id, "dynamic-fresh-1");
+		assert.ok(isItemFresh(dynamicFreshItem, 15));
 	});
 
 	it("verifies WebGL 60 FPS GPU filter presets (Enamel High-Pass, PDL Sharpening, and Inversion)", () => {

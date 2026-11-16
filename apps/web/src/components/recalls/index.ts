@@ -4,7 +4,13 @@
  */
 
 export * from "./patientRecallEngine";
-export * from "./recallTemplates";
+export {
+	INVITATION_TEMPLATES,
+	CLINICAL_CALLING_SCRIPTS,
+	type RecallScriptObjection,
+	type RecallInvitationTemplate,
+	type RecallCallingScript,
+} from "./recallTemplates";
 export {
 	buildRecallMessageContent,
 	type PatientRecallItem,

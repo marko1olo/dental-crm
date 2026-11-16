@@ -119,7 +119,7 @@ describe("1. Anti-Matryoshka Routing & CBCT 3D Studio Autonomy (Mandates 8c, 8d,
 	});
 
 	it("enforces Anti-Matryoshka Law in DicomViewerModal.tsx (no modal over modal in DOM)", () => {
-		const source = readComponentSource("components/imaging/DicomViewerModal.tsx");
+		const source = readComponentSource("components/imaging/DicomViewerModal.tsx") + "\n" + readComponentSource("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
 
 		// DicomViewerModal renders a single clean modal panel with 1-click Norma
 		expect(source).toContain("btn-dicom-norma-043");

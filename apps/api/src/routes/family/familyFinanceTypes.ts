@@ -37,6 +37,7 @@ export const familyTopupSchema = z.object({
 	amountRub: positiveMoneyRubSchema.refine((value) => value <= 10_000_000, {
 		message: "сумма одного пополнения не может превышать 10 000 000 ₽",
 	}),
+	amountKopecks: z.number().int().positive().optional(),
 	patientId: z.string().uuid(),
 	method: z.enum(["cash", "card", "bank_transfer", "online", "other"]).default("cash"),
 	comment: z.string().trim().max(500).optional(),

@@ -25,7 +25,7 @@ async function main() {
 	const browser = await chromium.launch({
 		headless: true,
 		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-		args: ["--no-sandbox", "--disable-gpu"],
+		args: ["--no-sandbox", "--disable-gpu", "--proxy-server=direct://", "--proxy-bypass-list=*"],
 	});
 
 	const context = await browser.newContext({
@@ -54,15 +54,23 @@ async function main() {
 	}, { cTok: auth.clinicToken, sTok: auth.staffToken, user: auth.user });
 
 	const page = await context.newPage();
+	page.on("console", (msg) => console.log("PAGE LOG:", msg.type(), msg.text()));
+	page.on("pageerror", (err) => console.log("PAGE ERROR:", err.message));
 
 	console.log("3. Navigating to http://127.0.0.1:5173/?demo=true#loyalty ...");
-	await page.goto("http://127.0.0.1:5173/?demo=true#loyalty", { waitUntil: "commit", timeout: 25000 });
+	await page.goto("http://127.0.0.1:5173/?demo=true#loyalty", { waitUntil: "domcontentloaded", timeout: 30000 });
 
 	console.log("4. Waiting for hydration...");
 	let mounted = false;
 	for (let i = 0; i < 60; i++) {
 		await page.waitForTimeout(500);
-		const txt = await page.evaluate(() => (document.body ? document.body.innerText : ""));
+		let txt = "";
+		try {
+			txt = await page.evaluate(() => (document.body ? document.body.innerText : ""));
+		} catch {
+			continue;
+		}
+		if (i % 6 === 0) console.log(`[${i * 0.5}s] current innerText: "${txt ? txt.slice(0, 100).replace(/\n/g, ' ') : ''}"`);
 		if (txt && !txt.includes("Загрузка системы") && txt.length > 50) {
 			console.log(`-> Hydrated in ${i * 0.5}s! Text preview:`, txt.slice(0, 60).replace(/\n/g, " "));
 			mounted = true;
@@ -75,6 +83,14 @@ async function main() {
 
 	console.log("5. Ensuring Loyalty Modal is open...");
 	await page.evaluate(() => {
+		if (window.__useUiSurfaceStore) {
+			window.__useUiSurfaceStore.getState().openPrimaryModal("loyalty", {
+				patientId: "01a00000-0000-0000-0000-000000000001",
+				patientName: "Смирнова Анна Сергеевна",
+				initialPointsBalance: 1500,
+				currentInvoiceAmountKop: 500000,
+			});
+		}
 		const modal = document.querySelector(".loyalty-modal-container");
 		if (!modal) {
 			window.dispatchEvent(new CustomEvent("dente-open-loyalty"));
@@ -113,17 +129,19 @@ async function main() {
 	console.log("Capturing PC Light...");
 	await setTheme("light");
 	await page.screenshot({ path: path.join(PROOF_DIR, "loyalty_01_pc_light_1440x900.png") });
+	await page.screenshot({ path: path.join(PROOF_DIR, "01_loyalty_pc_light.png") });
 
 	// 2. PC Dark (1440x900)
 	console.log("Capturing PC Dark...");
 	await setTheme("dark");
 	await page.screenshot({ path: path.join(PROOF_DIR, "loyalty_02_pc_dark_1440x900.png") });
+	await page.screenshot({ path: path.join(PROOF_DIR, "02_loyalty_pc_dark.png") });
 
-	// 3. Tab: Family Wallet ("Семейный кошелек") PC Light
+	// 3. Tab: Family Wallet ("Семейный счет") PC Light
 	console.log("Switching to Family Wallet tab...");
 	await page.evaluate(() => {
 		const btns = Array.from(document.querySelectorAll(".loyalty-tab-btn"));
-		const famBtn = btns.find((b) => b.textContent && b.textContent.includes("Семейный кошелек"));
+		const famBtn = btns.find((b) => b.textContent && b.textContent.includes("Семейный"));
 		if (famBtn) famBtn.click();
 	});
 	await page.waitForTimeout(800);
@@ -143,7 +161,7 @@ async function main() {
 	// Switch back to Balance tab for Mobile proofs
 	await page.evaluate(() => {
 		const btns = Array.from(document.querySelectorAll(".loyalty-tab-btn"));
-		const balBtn = btns.find((b) => b.textContent && b.textContent.includes("Баланс и касса"));
+		const balBtn = btns.find((b) => b.textContent && (b.textContent.includes("Баланс") || b.textContent.includes("бонусы")));
 		if (balBtn) balBtn.click();
 	});
 	await page.waitForTimeout(600);
@@ -157,11 +175,13 @@ async function main() {
 	console.log("Capturing Mobile Dark...");
 	await setTheme("dark");
 	await page.screenshot({ path: path.join(PROOF_DIR, "loyalty_04_mobile_dark_390x844.png") });
+	await page.screenshot({ path: path.join(PROOF_DIR, "04_loyalty_mobile_dark.png") });
 
 	// 7. Mobile Light (390x844)
 	console.log("Capturing Mobile Light...");
 	await setTheme("light");
 	await page.screenshot({ path: path.join(PROOF_DIR, "loyalty_03_mobile_light_390x844.png") });
+	await page.screenshot({ path: path.join(PROOF_DIR, "03_loyalty_mobile_light.png") });
 
 	// 8. Mobile Light Scrolled
 	console.log("Scrolling mobile container to capture CTA and toggle...");

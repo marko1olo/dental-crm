@@ -73,8 +73,8 @@ describe("1. Family Shared Balance (Единый семейный кошелек
 		assert.equal(result.ledgerEntry.patientName, "Иванова София Ивановна");
 		assert.equal(result.ledgerEntry.pointsDeltaRub, -3000);
 		assert.equal(result.ledgerEntry.balanceAfterRub, 2000);
-		assert.match(result.ledgerEntry.noteRu, /Иванова София Ивановна/);
-		assert.match(result.ledgerEntry.noteRu, /Иванов Иван Иванович/);
+		assert.match(result.ledgerEntry.noteRu ?? "", /Иванова София Ивановна/);
+		assert.match(result.ledgerEntry.noteRu ?? "", /Иванов Иван Иванович/);
 	});
 
 	it("1.2 Clamps family bonus redemption to standard 30% coverage limit when requested amount exceeds limit", () => {

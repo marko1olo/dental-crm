@@ -12,11 +12,8 @@ import {
 	dicomStudyIngestService,
 	vatechDirectBridgeService,
 } from "../../services/dicom/index.js";
-import { registerRadiologyCrawlerRoutes } from "./dicomCrawlerRoutes.js";
 
 export async function registerRadiologyDicomRoutes(app: FastifyInstance) {
-	await registerRadiologyCrawlerRoutes(app);
-
 	/**
 	 * GET /api/radiology/dicom/server/status
 	 * Текущее состояние и метрики DICOM C-STORE SCP сервера и Vatech папки.

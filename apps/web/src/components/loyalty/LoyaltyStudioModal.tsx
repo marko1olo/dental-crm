@@ -23,14 +23,30 @@ export interface LoyaltyStudioModalProps {
 	readonly onRedeemSuccess?: ((redeemedPointsRub: number, fiscalSplit: Fiscal54FzSplitResult) => void) | undefined;
 }
 
+interface ApiFamilyMemberResponse {
+	readonly id?: string | undefined; readonly patientId?: string | undefined; readonly fullName?: string | undefined; readonly name?: string | undefined;
+	readonly roleRu?: string | undefined; readonly relation?: string | undefined; readonly balancePoints?: number | undefined;
+	readonly individualPointsBalance?: number | undefined; readonly lifetimeSpentKop?: number | undefined;
+}
+
+interface ApiBonusTransactionResponse {
+	readonly id?: string | undefined; readonly createdAt?: string | Date | undefined; readonly type?: string | undefined;
+	readonly amountPoints?: number | string | undefined; readonly balanceAfterPoints?: number | string | undefined; readonly description?: string | undefined;
+}
+
 const DEFAULT_FAMILY_MEMBERS: readonly FamilyMember[] = [
-	{ patientId: "pat-p1", fullName: "Иванов Иван (Глава семьи)", roleRu: "Глава семьи", individualPointsBalance: 2500, lifetimeSpentKop: 12000000, isBonusSpendingAllowed: true }, { patientId: "pat-p2", fullName: "Иванова Ольга (Супруга)", roleRu: "Супруга", individualPointsBalance: 1200, lifetimeSpentKop: 8500000, isBonusSpendingAllowed: true }, { patientId: "pat-p3", fullName: "Иванов Артем (Сын)", roleRu: "Ребенок", individualPointsBalance: 300, lifetimeSpentKop: 3200000, isBonusSpendingAllowed: true },
+	{ patientId: "pat-p1", fullName: "Иванов Иван (Глава семьи)", roleRu: "Глава семьи", individualPointsBalance: 2500, lifetimeSpentKop: 12000000, isBonusSpendingAllowed: true },
+	{ patientId: "pat-p2", fullName: "Иванова Ольга (Супруга)", roleRu: "Супруга", individualPointsBalance: 1200, lifetimeSpentKop: 8500000, isBonusSpendingAllowed: true },
+	{ patientId: "pat-p3", fullName: "Иванов Артем (Сын)", roleRu: "Ребенок", individualPointsBalance: 300, lifetimeSpentKop: 3200000, isBonusSpendingAllowed: true },
 ];
+
+const postLoyaltyJson = (url: string, body: unknown) =>
+	fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID(), ...denteAdminSecretRequestHeaders() }, body: JSON.stringify(body) });
 
 export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => {
 	const {
-		isOpen, onClose, clinicName = "ООО «Денте Стоматология»", patientId = "pat-demo-1", patientName = "Иванов Иван Иванович",
-		medicalCardNumber = "№ 2026-08", initialPointsBalance = 2500, initialLifetimeSpentKop = 18000000, currentInvoiceAmountKop = 1500000, onRedeemSuccess,
+		isOpen, onClose, clinicName = "ООО «Денте Стоматология»", patientId, patientName = "Пациент",
+		medicalCardNumber = "№ —", initialPointsBalance = 0, initialLifetimeSpentKop = 0, currentInvoiceAmountKop = 0, onRedeemSuccess,
 	} = props;
 
 	const isDemo = isDemoShowcaseMode();
@@ -46,11 +62,12 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 	// 1. Live API Data Sync & Family Ecosystem Sync (Мандат 8wy, zero-mocks)
 	useEffect(() => {
 		if (!isOpen || !patientId) return;
+		const currentPatientId: string = patientId;
 		let isCancelled = false;
 		async function fetchLiveLoyaltyAndFamily() {
 			try {
 				const headers = denteAdminSecretRequestHeaders();
-				const balRes = await fetch(`/api/loyalty/balance/${encodeURIComponent(patientId)}`, { headers });
+				const balRes = await fetch(`/api/loyalty/balance/${encodeURIComponent(currentPatientId)}`, { headers });
 				if (balRes.ok) {
 					const data = await balRes.json();
 					if (!isCancelled) {
@@ -61,33 +78,34 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 						if (typeof data.lifetimeExpiredPoints === "number") setLifetimeExpiredPoints(data.lifetimeExpiredPoints);
 					}
 				}
-				const famRes = await fetch(`/api/finance/family/patient/${encodeURIComponent(patientId)}`, { headers });
+				const famRes = await fetch(`/api/finance/family/patient/${encodeURIComponent(currentPatientId)}`, { headers });
 				if (famRes.ok) {
 					const famData = await famRes.json();
 					if (!isCancelled && famData && Array.isArray(famData.members) && famData.members.length > 0) {
 						setHasFamilyGroup(true);
 						if (famData.name) setFamilyName(famData.name);
-						setFamilyMembers(famData.members.map((m: any) => ({
-							patientId: m.id || m.patientId, fullName: m.fullName || m.name, roleRu: m.roleRu || m.relation || "Член семьи",
-							individualPointsBalance: Number(m.balancePoints ?? m.individualPointsBalance ?? 0),
-							lifetimeSpentKop: Number(m.lifetimeSpentKop ?? 0), isBonusSpendingAllowed: true,
+						setFamilyMembers(famData.members.map((m: ApiFamilyMemberResponse) => ({
+							patientId: m.id || m.patientId || "", fullName: m.fullName || m.name || "Член семьи", roleRu: m.roleRu || m.relation || "Член семьи",
+							individualPointsBalance: Number(m.balancePoints ?? m.individualPointsBalance ?? 0), lifetimeSpentKop: Number(m.lifetimeSpentKop ?? 0), isBonusSpendingAllowed: true,
 						})));
 					} else if (!isCancelled && !isDemoShowcaseMode()) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); }
 				} else if (!isCancelled && !isDemoShowcaseMode()) { setHasFamilyGroup(false); setFamilyMembers([]); setFamilyName(""); }
-				const txRes = await fetch(`/api/loyalty/transactions/${encodeURIComponent(patientId)}`, { headers });
+				const txRes = await fetch(`/api/loyalty/transactions/${encodeURIComponent(currentPatientId)}`, { headers });
 				if (txRes.ok) {
 					const data = await txRes.json();
 					if (!isCancelled && Array.isArray(data.transactions) && data.transactions.length > 0) {
-						setLedger(data.transactions.map((t: any) => ({
+						setLedger(data.transactions.map((t: ApiBonusTransactionResponse) => ({
 							id: t.id || `tx-${Date.now()}`, timestampIso: t.createdAt ? new Date(t.createdAt).toLocaleString("ru-RU") : new Date().toLocaleString("ru-RU"),
-							patientId, patientName, medicalCardNumber, operationType: t.type === "expired" ? "expired" : t.type?.includes("accrual") ? "accrual" : "redemption",
+							patientId: currentPatientId, patientName, medicalCardNumber, operationType: t.type === "expired" ? "expired" : t.type?.includes("accrual") ? "accrual" : "redemption",
 							operationTypeRu: t.type === "expired" ? "Сгорание по сроку" : t.type?.includes("accrual") ? "Начисление бонусов" : "Списание бонусов",
 							invoiceAmountKop: 0, pointsDeltaRub: Number(t.amountPoints) || 0, balanceAfterRub: Number(t.balanceAfterPoints) || 0,
 							paymentMethodRu: "Бонусный счет", staffNameRu: "Система лояльности", noteRu: t.description || "Операция с баллами",
 						})));
 					}
 				}
-			} catch { /* Fallback */ }
+			} catch (err) {
+				console.error("[LoyaltyStudioModal] Failed to fetch live loyalty data:", err);
+			}
 		}
 		void fetchLiveLoyaltyAndFamily();
 		return () => { isCancelled = true; };
@@ -105,10 +123,30 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 
 	const patientReferralLink = useMemo(() => {
 		const origin = typeof window !== "undefined" ? window.location.origin : "https://dente.pro";
-		return `${origin}/invite?ref=${encodeURIComponent(patientId)}`;
+		return `${origin}/invite?ref=${encodeURIComponent(patientId || "")}`;
 	}, [patientId]);
 
 	if (!isOpen) return null;
+	if (!patientId) {
+		return (
+			<div className="loyalty-modal-overlay" onClick={onClose}>
+				<div data-testid="loyalty-studio-modal" className="loyalty-modal-container" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="loyalty-title">
+					<div className="loyalty-modal-drag-handle" />
+					<div className="loyalty-modal-header">
+						<div className="loyalty-modal-title-wrap"><div className="loyalty-modal-icon"><Award size={20} /></div><div><h2 id="loyalty-title" className="loyalty-modal-title">Программа лояльности и скидок</h2><p className="loyalty-modal-subtitle">{clinicName} • Карточка не выбрана</p></div></div>
+						<button type="button" className="loyalty-close-btn" onClick={onClose} aria-label="Закрыть"><X size={18} /></button>
+					</div>
+					<div className="loyalty-modal-body" style={{ alignItems: "center", justifyContent: "center", padding: "4rem 1.5rem" }}>
+						<div className="loyalty-family-empty-state">
+							<div className="loyalty-empty-icon-wrap"><Users size={32} /></div>
+							<div className="loyalty-empty-text-wrap"><h3 className="loyalty-empty-title">Пациент не выбран</h3><p className="loyalty-toggle-desc" style={{ maxWidth: "420px", textAlign: "center" }}>Для просмотра баланса бонусов и семейного счета выберите пациента в расписании или картотеке.</p></div>
+							<button type="button" className="loyalty-secondary-btn" onClick={onClose}>Закрыть окно</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	// 3. Handlers with Doctor Autonomy (Мандат 8e: zero disabled buttons)
 	const handleApplyPoints = () => {
@@ -144,7 +182,10 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 			if (onRedeemSuccess) onRedeemSuccess(redemption.actualRedeemedPointsRub, redemption.fiscal54FzSplit);
 		}
 
-		fetch("/api/loyalty/redeem", { method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() }, body: JSON.stringify({ patientId, invoiceAmountRub: currentInvoiceAmountKop / 100, pointsToRedeem: redemption.actualRedeemedPointsRub, allowFullCoverage: isDoctorOverride }) }).catch(() => {});
+		postLoyaltyJson("/api/loyalty/redeem", {
+			patientId, amountKopecks: currentInvoiceAmountKop, invoiceAmountKopecks: currentInvoiceAmountKop,
+			invoiceAmountRub: Number(formatKopecksToRubles(currentInvoiceAmountKop)), pointsToRedeem: redemption.actualRedeemedPointsRub, allowFullCoverage: isDoctorOverride,
+		}).catch((err) => console.error("[LoyaltyStudioModal] Redeem call failed:", err));
 	};
 
 	const handleAccruePoints = () => {
@@ -153,18 +194,15 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 		setLedger((prev) => [{ id: `acc-${Date.now().toString().slice(-4)}`, timestampIso: new Date().toLocaleString("ru-RU"), patientId, patientName, medicalCardNumber, operationType: "accrual", operationTypeRu: "Начисление бонусов", invoiceAmountKop: 0, pointsDeltaRub: amount, balanceAfterRub: newBal, paymentMethodRu: "Программа лояльности", staffNameRu: "Администратор / Врач", noteRu: `Начислено ${amount} бонусов пациенту ${patientName}` }, ...prev]);
 		showToast(`Начислено ${amount} бонусов! Новый баланс: ${newBal} ₽`, "success");
 		setAccrueInputRub(""); setIsAccrueOpen(false);
-		fetch("/api/loyalty/accrue", { method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() }, body: JSON.stringify({ patientId, amountPoints: amount, description: "Ручное начисление бонусов" }) }).catch(() => {});
+		postLoyaltyJson("/api/loyalty/accrue", { patientId, amountPoints: amount, description: "Ручное начисление бонусов" }).catch((err) => console.error("[LoyaltyStudioModal] Accrue call failed:", err));
 	};
 
 	const handleCreateFamilyGroup = async () => {
 		const gName = newFamilyGroupName.trim() || `Семья ${patientName.split(" ")[0] || "Пациента"}`;
-		try {
-			await fetch("/api/finance/family", { method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() }, body: JSON.stringify({ name: gName, headPatientId: patientId }) });
-		} catch { /* fallback */ }
+		try { await postLoyaltyJson("/api/finance/family", { name: gName, headPatientId: patientId }); } catch (err) { console.error("[LoyaltyStudioModal] Family creation failed:", err); }
 		setFamilyName(gName); setHasFamilyGroup(true);
 		setFamilyMembers([{ patientId, fullName: `${patientName} (Глава)`, roleRu: "Глава семьи", individualPointsBalance: pointsBalance, lifetimeSpentKop, isBonusSpendingAllowed: true }]);
-		setIsCreateFamilyOpen(false);
-		showToast(`Семейный счет «${gName}» активирован`, "success");
+		setIsCreateFamilyOpen(false); showToast(`Семейный счет «${gName}» активирован`, "success");
 	};
 
 	const handleLinkRelative = async () => {
@@ -172,31 +210,23 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 		if (!input) { showToast("Укажите идентификатор или телефон родственника", "warning"); return; }
 		if (input === patientId) { showToast("Нельзя привязать пациента к самому себе", "warning"); return; }
 		try {
-			const res = await fetch("/api/loyalty/family/link", { method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() }, body: JSON.stringify({ primaryPatientId: patientId, relativePatientId: input, relationRole: relativeRoleInput }) });
+			const res = await postLoyaltyJson("/api/loyalty/family/link", { primaryPatientId: patientId, relativePatientId: input, relationRole: relativeRoleInput });
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
 				showToast(err.message || "Пациент не найден в картотеке клиники", "warning"); return;
 			}
 			const data = await res.json(), rel = data.relative;
-			setFamilyMembers((prev) => [...prev, {
-				patientId: rel?.id || input, fullName: rel?.fullName || `Родственник (${input})`,
-				roleRu: relativeRoleInput, individualPointsBalance: Number(rel?.individualPointsBalance || 0),
-				lifetimeSpentKop: 0, isBonusSpendingAllowed: true,
-			}]);
-			setRelativePatientIdInput(""); setIsCreateFamilyOpen(false);
-			showToast(data.message || "Родственник успешно привязан к семейному счету", "success");
+			setFamilyMembers((prev) => [...prev, { patientId: rel?.id || input, fullName: rel?.fullName || `Родственник (${input})`, roleRu: relativeRoleInput, individualPointsBalance: Number(rel?.individualPointsBalance || 0), lifetimeSpentKop: 0, isBonusSpendingAllowed: true }]);
+			setRelativePatientIdInput(""); setIsCreateFamilyOpen(false); showToast(data.message || "Родственник успешно привязан к семейному счету", "success");
 		} catch { showToast("Ошибка привязки родственника к семейному счету", "warning"); }
 	};
 
 	const handleVerifyCertificate = async () => {
 		const serial = certSerial.trim();
 		if (!serial) { showToast("Введите номер подарочного сертификата", "warning"); return; }
-		if (!validateGiftCertificateSerial(serial)) {
-			setCertFeedback("Номер сертификата недействителен (ошибка контрольной суммы)");
-			showToast("Ошибка контрольной суммы сертификата", "warning"); return;
-		}
+		if (!validateGiftCertificateSerial(serial)) { setCertFeedback("Номер сертификата недействителен (ошибка контрольной суммы)"); showToast("Ошибка контрольной суммы сертификата", "warning"); return; }
 		try {
-			const res = await fetch("/api/loyalty/certificates/validate", { method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() }, body: JSON.stringify({ serialNumber: serial }) });
+			const res = await postLoyaltyJson("/api/loyalty/certificates/validate", { serialNumber: serial });
 			if (res.ok) {
 				const certData = await res.json();
 				if (certData.certificate) {
@@ -214,8 +244,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 			const msg = err.message || "Сертификат не найден в базе клиники или аннулирован";
 			setCertFeedback(msg); showToast(msg, "warning");
 		} catch {
-			setCertFeedback("Сертификат не найден в базе клиники или аннулирован");
-			showToast("Сертификат не найден в базе клиники или аннулирован", "warning");
+			setCertFeedback("Сертификат не найден в базе клиники или аннулирован"); showToast("Сертификат не найден в базе клиники или аннулирован", "warning");
 		}
 	};
 
@@ -234,7 +263,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 		setLedger((prev) => [entry, ...prev]); setPointsBalance((b) => b + 1000);
 		showToast("Реферальное приглашение создано. Начислено 1 000 бонусов!", "success");
 		setRefFriendName(""); setRefFriendPhone("");
-		fetch("/api/loyalty/accrue", { method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() }, body: JSON.stringify({ patientId, amountPoints: 1000, description: `Реферальный бонус: ${refFriendName}` }) }).catch(() => {});
+		postLoyaltyJson("/api/loyalty/accrue", { patientId, amountPoints: 1000, description: `Реферальный бонус: ${refFriendName}` }).catch((err) => console.error("[LoyaltyStudioModal] Referral accrue call failed:", err));
 	};
 
 	const handleDownloadCsv = () => {
@@ -249,13 +278,9 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 			<div data-testid="loyalty-studio-modal" className="loyalty-modal-container" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="loyalty-title">
 				<div className="loyalty-modal-drag-handle" />
 				<div className="loyalty-modal-header">
-					<div className="loyalty-modal-title-wrap">
-						<div className="loyalty-modal-icon"><Award size={20} /></div>
-						<div><h2 id="loyalty-title" className="loyalty-modal-title">Программа лояльности и скидок</h2><p className="loyalty-modal-subtitle">{clinicName} • {patientName} • Медкарта {medicalCardNumber}</p></div>
-					</div>
+					<div className="loyalty-modal-title-wrap"><div className="loyalty-modal-icon"><Award size={20} /></div><div><h2 id="loyalty-title" className="loyalty-modal-title">Программа лояльности и скидок</h2><p className="loyalty-modal-subtitle">{clinicName} • {patientName} • Медкарта {medicalCardNumber}</p></div></div>
 					<button type="button" className="loyalty-close-btn" onClick={onClose} aria-label="Закрыть"><X size={18} /></button>
 				</div>
-
 				<div className="loyalty-tabs-nav">
 					<button type="button" className={`loyalty-tab-btn ${activeTab === "balance" ? "active" : ""}`} onClick={() => setActiveTab("balance")}><Sparkles size={16} />Баланс и бонусы</button>
 					<button type="button" className={`loyalty-tab-btn ${activeTab === "family" ? "active" : ""}`} onClick={() => setActiveTab("family")}><Users size={16} />Семейный счет</button>
@@ -268,29 +293,15 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 					{activeTab === "balance" && (
 						<div className="loyalty-grid-2">
 							<div className="loyalty-card">
-								<div className="loyalty-card-title">
-									<span>Текущий баланс и статус</span>
-									<span className="loyalty-tier-badge" style={{ color: progression.currentTier.accentColor }}>{progression.currentTier.badgeLabelRu}</span>
-								</div>
-								<div className="loyalty-hero-balance">
-									<span className="loyalty-hero-points">{pointsBalance.toLocaleString("ru-RU")}</span>
-									<span className="loyalty-hero-unit">бонусов (1 балл = 1 ₽)</span>
-								</div>
-								{nearestExpiringPoints > 0 && daysUntilExpiration !== null && (
-									<div className="loyalty-expiring-badge">
-										<span className="loyalty-expiring-dot" />
-										<span>Сгорит {nearestExpiringPoints} бонусов через {daysUntilExpiration} дн. ({new Date(nearestExpirationDate || "").toLocaleDateString("ru-RU")})</span>
-									</div>
-								)}
+								<div className="loyalty-card-title"><span>Текущий баланс и статус</span><span className="loyalty-tier-badge" style={{ color: progression.currentTier.accentColor }}>{progression.currentTier.badgeLabelRu}</span></div>
+								<div className="loyalty-hero-balance"><span className="loyalty-hero-points">{pointsBalance.toLocaleString("ru-RU")}</span><span className="loyalty-hero-unit">бонусов (1 балл = 1 ₽)</span></div>
+								{nearestExpiringPoints > 0 && daysUntilExpiration !== null && (<div className="loyalty-expiring-badge"><span className="loyalty-expiring-dot" /><span>Сгорит {nearestExpiringPoints} бонусов через {daysUntilExpiration} дн. ({new Date(nearestExpirationDate || "").toLocaleDateString("ru-RU")})</span></div>)}
 								{lifetimeExpiredPoints > 0 && (<div className="loyalty-expired-stat">Сгорело по сроку за всё время: {lifetimeExpiredPoints.toLocaleString("ru-RU")} бонусов</div>)}
 								<p className="loyalty-toggle-desc">{progression.currentTier.descriptionRu}</p>
-								<div style={{ display: "flex", gap: "0.5rem" }}>
-									<button type="button" className="loyalty-secondary-btn" onClick={() => setIsAccrueOpen(!isAccrueOpen)}><Plus size={16} /> Начислить бонусы</button>
-								</div>
+								<div style={{ display: "flex", gap: "0.5rem" }}><button type="button" className="loyalty-secondary-btn" onClick={() => setIsAccrueOpen(!isAccrueOpen)}><Plus size={16} /> Начислить бонусы</button></div>
 								{isAccrueOpen && (
 									<div className="loyalty-input-row" style={{ marginTop: "0.25rem" }}>
-										<input type="number" className="loyalty-input" value={accrueInputRub} onChange={(e) => setAccrueInputRub(e.target.value)} placeholder="Сумма баллов (напр. 500)" />
-										<button type="button" className="loyalty-secondary-btn" onClick={handleAccruePoints}>Начислить</button>
+										<input type="number" className="loyalty-input" value={accrueInputRub} onChange={(e) => setAccrueInputRub(e.target.value)} placeholder="Сумма баллов (напр. 500)" /><button type="button" className="loyalty-secondary-btn" onClick={handleAccruePoints}>Начислить</button>
 									</div>
 								)}
 								{progression.nextTier && (
@@ -308,8 +319,8 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 							<div className="loyalty-card">
 								<div className="loyalty-card-title"><span>Оплата бонусами на кассе</span><span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>Счет: {formatKopecksToRubles(currentInvoiceAmountKop)}</span></div>
 								<div className="loyalty-quick-row">
-									{QUICK_REDEMPTION_PRESETS_RUB.map((amt) => (<button key={amt} type="button" className="loyalty-quick-btn one-click-btn" onClick={() => setRequestedPointsRub(amt)}>{amt} ₽</button>))}
-									<button type="button" className="loyalty-quick-btn one-click-btn" onClick={() => setRequestedPointsRub(redemption.maxAllowedRedemptionRub)}>Максимум</button>
+									{QUICK_REDEMPTION_PRESETS_RUB.map((amt) => (<button key={amt} type="button" className="loyalty-quick-btn" onClick={() => setRequestedPointsRub(amt)}>{amt} ₽</button>))}
+									<button type="button" className="loyalty-quick-btn" onClick={() => setRequestedPointsRub(redemption.maxAllowedRedemptionRub)}>Максимум</button>
 								</div>
 								<div className="loyalty-input-row">
 									<input type="number" className="loyalty-input" value={requestedPointsRub || ""} onChange={(e) => setRequestedPointsRub(Math.max(0, Number(e.target.value)))} placeholder="Сумма баллов" />
@@ -320,9 +331,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 									<div className="loyalty-fiscal-row"><span>Оплата бонусами (Чек кассы):</span><span style={{ color: "var(--teal)", fontWeight: 700 }}>-{redemption.actualRedeemedPointsRub.toLocaleString("ru-RU")} ₽</span></div>
 									<div className="loyalty-fiscal-row total"><span>К оплате картой / наличными:</span><span>{formatKopecksToRubles(redemption.remainingPayableKop)}</span></div>
 								</div>
-								<button type="button" data-testid="loyalty-execute-redemption-btn" className="loyalty-primary-cta" onClick={handleApplyPoints}>
-									<Check size={18} /> Применить бонусы к оплате
-								</button>
+								<button type="button" data-testid="loyalty-execute-redemption-btn" className="loyalty-primary-cta" onClick={handleApplyPoints}><Check size={18} /> Применить бонусы к оплате</button>
 							</div>
 						</div>
 					)}
@@ -331,35 +340,23 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 						<div className="loyalty-card">
 							{hasFamilyGroup && familyMembers.length > 0 ? (
 								<>
-									<div className="loyalty-card-title">
-										<span>Семейный баланс: «{familyPool.familyName}»</span>
-										<span className="loyalty-hero-points" style={{ fontSize: "1.5rem" }}>{familyPool.totalPooledPoints.toLocaleString("ru-RU")} бонусов</span>
-									</div>
+									<div className="loyalty-card-title"><span>Семейный баланс: «{familyPool.familyName}»</span><span className="loyalty-hero-points" style={{ fontSize: "1.5rem" }}>{familyPool.totalPooledPoints.toLocaleString("ru-RU")} бонусов</span></div>
 									<p className="loyalty-toggle-desc">Единый кошелек семьи позволяет оплачивать лечение любого родственника без комиссии.</p>
 									<div className="loyalty-family-list">
 										{familyPool.members.map((m) => (
 											<div key={m.patientId} className={`loyalty-family-item ${selectedFamilyMemberId === m.patientId ? "selected" : ""}`} onClick={() => setSelectedFamilyMemberId(selectedFamilyMemberId === m.patientId ? null : m.patientId)}>
-												<div>
-													<div style={{ fontWeight: 600, color: "var(--ink)" }}>{m.fullName}</div>
-													<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{m.roleRu} • Баланс: {m.individualPointsBalance} ₽</div>
-												</div>
-												<button type="button" className="loyalty-secondary-btn" style={{ height: "36px", fontSize: "0.75rem" }}>
-													{selectedFamilyMemberId === m.patientId ? "Выбран для списания" : "Выбрать для списания"}
-												</button>
+												<div><div style={{ fontWeight: 600, color: "var(--ink)" }}>{m.fullName}</div><div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{m.roleRu} • Баланс: {m.individualPointsBalance} ₽</div></div>
+												<button type="button" className="loyalty-secondary-btn" style={{ height: "36px", fontSize: "0.75rem" }}>{selectedFamilyMemberId === m.patientId ? "Выбран для списания" : "Выбрать для списания"}</button>
 											</div>
 										))}
 									</div>
-									<div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
-										<button type="button" className="loyalty-secondary-btn" onClick={() => setIsCreateFamilyOpen(!isCreateFamilyOpen)}><Plus size={16} /> Привязать родственника</button>
-									</div>
+									<div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}><button type="button" className="loyalty-secondary-btn" onClick={() => setIsCreateFamilyOpen(!isCreateFamilyOpen)}><Plus size={16} /> Привязать родственника</button></div>
 									{isCreateFamilyOpen && (
 										<div className="loyalty-create-family-form">
 											<div className="loyalty-card-title"><span>Привязка родственника</span></div>
 											<div className="loyalty-input-row">
 												<input type="text" className="loyalty-input" value={relativePatientIdInput} onChange={(e) => setRelativePatientIdInput(e.target.value)} placeholder="ID или телефон родственника" />
-												<select className="loyalty-input" style={{ maxWidth: "180px" }} value={relativeRoleInput} onChange={(e) => setRelativeRoleInput(e.target.value)}>
-													<option value="Супруг / Супруга">Супруг / Супруга</option><option value="Ребенок">Ребенок</option><option value="Родитель">Родитель</option><option value="Член семьи">Член семьи</option>
-												</select>
+												<select className="loyalty-input" style={{ maxWidth: "180px" }} value={relativeRoleInput} onChange={(e) => setRelativeRoleInput(e.target.value)}><option value="Супруг / Супруга">Супруг / Супруга</option><option value="Ребенок">Ребенок</option><option value="Родитель">Родитель</option><option value="Член семьи">Член семьи</option></select>
 												<button type="button" className="loyalty-secondary-btn" onClick={handleLinkRelative}>Привязать</button>
 											</div>
 										</div>
@@ -370,7 +367,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 									<div className="loyalty-empty-icon-wrap"><Users size={32} /></div>
 									<div className="loyalty-empty-text-wrap">
 										<h3 className="loyalty-empty-title">Пациент не состоит в семейной группе</h3>
-										<p className="loyalty-toggle-desc" style={{ maxWidth: "480px", textAlign: "center" }}>Объедините родственников в общий семейный счет, чтобы оплачивать лечение близких с единого накопительного баланса с повышенным кэшбэком 6%.</p>
+										<p className="loyalty-toggle-desc" style={{ maxWidth: "480px", textAlign: "center" }}>Объедините родственников в общий семейный счет, чтобы оплачивать лечение близких с единого накопительного баланса с повышенным кэшбэком 7%.</p>
 									</div>
 									{!isCreateFamilyOpen ? (
 										<button type="button" className="loyalty-secondary-btn" onClick={() => setIsCreateFamilyOpen(true)}><Plus size={16} /> Создать семейный счет / Привязать родственника</button>
@@ -403,8 +400,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 								<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 									{GIFT_CERTIFICATE_CATALOG.slice(0, 4).map((c) => (
 										<div key={c.id} className="loyalty-fiscal-row" style={{ padding: "0.5rem", background: "var(--paper)", borderRadius: "8px", border: "1px solid var(--line)" }}>
-											<span style={{ fontWeight: 600, color: "var(--ink)" }}>{c.titleRu}</span>
-											<span style={{ color: "var(--teal)", fontWeight: 700 }}>{formatKopecksToRubles(c.nominalKop)}</span>
+											<span style={{ fontWeight: 600, color: "var(--ink)" }}>{c.titleRu}</span><span style={{ color: "var(--teal)", fontWeight: 700 }}>{formatKopecksToRubles(c.nominalKop)}</span>
 										</div>
 									))}
 								</div>
@@ -457,7 +453,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 											ledger.map((tx) => (
 												<tr key={tx.id}>
 													<td>{tx.timestampIso}</td><td>{tx.operationTypeRu}</td><td>{formatKopecksToRubles(tx.invoiceAmountKop)}</td>
-													<td style={{ fontWeight: 700, color: tx.operationType === "expired" ? "var(--err-fg, #ef4444)" : tx.pointsDeltaRub >= 0 ? "var(--ok-fg)" : "var(--warn-fg)" }}>{tx.pointsDeltaRub >= 0 ? `+${tx.pointsDeltaRub}` : tx.pointsDeltaRub}</td>
+													<td style={{ fontWeight: 700, color: tx.operationType === "expired" ? "var(--danger)" : tx.pointsDeltaRub >= 0 ? "var(--ok-fg)" : "var(--warn-fg)" }}>{tx.pointsDeltaRub >= 0 ? `+${tx.pointsDeltaRub}` : tx.pointsDeltaRub}</td>
 													<td>{tx.balanceAfterRub.toLocaleString("ru-RU")} ₽</td><td>{tx.noteRu}</td>
 												</tr>
 											))

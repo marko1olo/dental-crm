@@ -5,7 +5,7 @@
  * Mandates 8e, 8i, 8ao: strict idempotency key & synchronous double-click protection.
  */
 
-import { createCompositeIdempotencyKey, generateUuidV7 } from "@dental/shared";
+import { createCompositeIdempotencyKey, generateUuidV7, parseKopecks } from "@dental/shared";
 import { useCallback, useRef, useState } from "react";
 import { money } from "../../../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
@@ -41,6 +41,7 @@ export function useFamilyTopupMutation({
 		setSubmitting(true);
 		try {
 			const payerId = topupPayerId || patientId;
+			const amountKopecks = parseKopecks(topupAmount.replace(",", "."));
 			const clientMutationId = createCompositeIdempotencyKey(
 				`fam-topup:${familyData.id}:${payerId}:${generateUuidV7()}`,
 				{ familyGroupId: familyData.id, amountRub: num, method: topupMethod },
@@ -56,6 +57,7 @@ export function useFamilyTopupMutation({
 				body: JSON.stringify({
 					familyGroupId: familyData.id,
 					amountRub: num,
+					amountKopecks,
 					patientId: payerId,
 					method: topupMethod === "sbp" ? "online" : topupMethod,
 					comment: topupComment.trim() || undefined,

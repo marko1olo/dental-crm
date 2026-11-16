@@ -232,13 +232,13 @@
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .loyalty-expiring-badge {
-	background: rgba(234, 88, 12, 0.15);
-	color: #fdba74;
-	border-color: rgba(234, 88, 12, 0.35);
+	background: var(--warning-soft, rgba(234, 88, 12, 0.15));
+	color: var(--warn-fg, #ea580c);
+	border-color: var(--warning-line, rgba(234, 88, 12, 0.35));
 }
 
 :is([data-theme="dark"], [data-theme="night"], .dark) .loyalty-expiring-dot {
-	background: #fdba74;
+	background: var(--warn-fg, #ea580c);
 }
 
 
@@ -364,7 +364,7 @@
 	padding: 0 1.5rem;
 	border-radius: 12px;
 	background: var(--teal, #0d9488);
-	color: #ffffff;
+	color: var(--paper, #ffffff);
 	font-size: 1rem;
 	font-weight: 700;
 	border: none;

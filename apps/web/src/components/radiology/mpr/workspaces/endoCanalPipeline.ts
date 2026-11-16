@@ -605,3 +605,39 @@ export async function runEndoAnalysisForToothAsync(
 	};
 }
 
+/**
+ * Synchronous clinical evaluation for tooth morphology and canals based on
+ * CBCT coordinates and arch curve (pure clinical calculation, zero hardcoding).
+ */
+export function getEndoClinicalDataForTooth(
+	volume: CbctVoxelVolume | null,
+	selectedTooth: number,
+	archCurve?: DentalArchCurve,
+): {
+	clinicalData: EndoCompassClinicalData;
+	report: EndoToothClinicalReport;
+	canals: TracedCanalPath[];
+} {
+	let centroidWorld: Vec3 = [0, 0, 0];
+	if (archCurve && archCurve.splinePointsMm.length > 0) {
+		const totalPts = archCurve.splinePointsMm.length;
+		const orderInQuadrant = selectedTooth % 10;
+		const isRight =
+			(selectedTooth >= 11 && selectedTooth <= 18) ||
+			(selectedTooth >= 41 && selectedTooth <= 48);
+		const tNorm = isRight ? 0.5 - (orderInQuadrant / 8) * 0.45 : 0.5 + (orderInQuadrant / 8) * 0.45;
+		const idx = Math.min(totalPts - 1, Math.max(0, Math.floor(tNorm * totalPts)));
+		const pt = archCurve.splinePointsMm[idx];
+		if (pt) {
+			centroidWorld = [pt.x, pt.y, archCurve.planeZMm ?? 0];
+		}
+	}
+	const anatomicalCanals = buildCalibratedAnatomicalCanals(selectedTooth, centroidWorld);
+	const report = buildEndoToothClinicalReport(anatomicalCanals, selectedTooth);
+	return {
+		clinicalData: formatEndoReportToClinicalData(report, selectedTooth),
+		report,
+		canals: anatomicalCanals,
+	};
+}
+

@@ -13,7 +13,7 @@ export {
 	buildWhatsAppUrl,
 	buildTelegramUrl,
 	type SmsSegmentCalculation,
-} from "./patientRecallEngine";
+} from "./recallSmsAndMessaging";
 
 export type { RecallTemplateVariables } from "./recallCycleCatalog";
 export {

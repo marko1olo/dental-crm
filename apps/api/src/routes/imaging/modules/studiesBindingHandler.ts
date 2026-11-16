@@ -1,8 +1,21 @@
+import { createReadStream } from "node:fs";
+import { access } from "node:fs/promises";
 import { imagingStudySchema, isValidToothFdi } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireClinicalMutationAccess } from "../../../accessGuard.js";
-import { bindPatientToStudyInDb, unbindPatientFromStudyInDb, updateImagingStudyInDb } from "../../../db/imagingQuery.js";
+import {
+	bindPatientToStudyInDb,
+	getImagingStudyById,
+	getImagingStudiesWithFilters,
+	unbindPatientFromStudyInDb,
+	updateImagingStudyInDb,
+} from "../../../db/imagingQuery.js";
+import {
+	LocalPacsStorageService,
+	PathTraversalError,
+	TenantIsolationError,
+} from "../../../services/imaging/localPacsStorageService.js";
 import { autoBindUnassignedStudies } from "../patientFioBindingEngine.js";
 import { getImagingOrganizationId, sendImagingStudyNotFound } from "../imagingHelpers.js";
 
@@ -84,10 +97,33 @@ export async function cbctTunerPatientsHandler(request: FastifyRequest, reply: F
 			patients: [{ id: "sample", name: "Демо Пациент", badge: "CBCT", type: "series", description: "Демонстрационный снимок КТ", available: true }],
 		});
 	}
-	return reply.send({
-		ok: true,
-		patients: [],
-	});
+
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return reply.send({ ok: true, patients: [] });
+
+	try {
+		const studies = await getImagingStudiesWithFilters(orgId, { limit: 50 });
+		const ctStudies = studies.filter(
+			(s) => s.kind === "cbct" || s.kind === "opg" || s.modality === "CT" || s.modality === "CBCT" || s.modality === "PAN",
+		);
+
+		const patientList = ctStudies.map((s) => ({
+			id: s.id,
+			name: s.patientFullName || s.dicomPatientName || "Пациент без имени",
+			badge: s.kind === "cbct" ? "CBCT" : s.kind === "opg" ? "OPG" : "X-RAY",
+			type: s.kind === "cbct" ? "series" : "single",
+			description: s.title || (s.toothCode ? `Зуб #${s.toothCode}` : "3D КЛКТ / Панорама"),
+			available: Boolean(s.storagePath),
+			storagePath: s.storagePath ?? null,
+		}));
+
+		return reply.send({
+			ok: true,
+			patients: patientList,
+		});
+	} catch {
+		return reply.send({ ok: true, patients: [] });
+	}
 }
 
 export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: FastifyReply) {
@@ -107,5 +143,32 @@ export async function cbctTunerVolumeHandler(request: FastifyRequest, reply: Fas
 		return reply.code(400).send({ error: "BadRequest", message: "Параметр id обязателен для получения КТ-объема." });
 	}
 
-	return reply.code(404).send({ error: "NotFound", message: "КТ-исследование не найдено." });
+	const orgId = getImagingOrganizationId(request, reply);
+	if (!orgId) return reply.code(401).send({ error: "Unauthorized", message: "Требуется авторизация." });
+
+	let study;
+	try {
+		study = await getImagingStudyById(orgId, query.id);
+	} catch {
+		return reply.code(404).send({ error: "NotFound", message: "КТ-исследование не найдено." });
+	}
+	if (!study || !study.storagePath) {
+		return reply.code(404).send({ error: "NotFound", message: "КТ-исследование не найдено." });
+	}
+
+	try {
+		const filePath = LocalPacsStorageService.validateAndResolveLocalFilePath(orgId, study.storagePath);
+		await access(filePath);
+
+		reply.header("Content-Type", "application/octet-stream");
+		reply.header("x-cbct-dim-x", "512").header("x-cbct-dim-y", "512").header("x-cbct-dim-z", "1");
+		reply.header("x-cbct-sp-x", "0.25").header("x-cbct-sp-y", "0.25").header("x-cbct-sp-z", "0.25");
+		reply.header("x-cbct-min-hu", "-1000").header("x-cbct-max-hu", "3000");
+		return reply.send(createReadStream(filePath));
+	} catch (err) {
+		if (err instanceof PathTraversalError || err instanceof TenantIsolationError) {
+			return reply.code(403).send({ error: "Forbidden", message: "Доступ к файлу КТ заблокирован." });
+		}
+		return reply.code(404).send({ error: "NotFound", message: "Файл КТ-исследования не найден на диске." });
+	}
 }

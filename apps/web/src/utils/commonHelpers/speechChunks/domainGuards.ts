@@ -23,7 +23,7 @@ import {
 	recognitionTargetLabels,
 	serviceCategoryLabels,
 } from "../../../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "../../AppointmentHelpers";
+import { treatmentAcceptanceVariantOptions } from "../../../workspaceStaticOptions";
 import { normalizedLocalOrganizationId } from "../../AuthOnboardingHelpers";
 import {
 	xrayPregnancyStatusOptions,

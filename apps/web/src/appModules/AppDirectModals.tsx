@@ -4,6 +4,7 @@
  */
 
 import React, { Suspense } from "react";
+import { isDemoShowcaseMode } from "../lib/demoMode";
 import { PrescriptionModal } from "../components/prescriptions/PrescriptionModal";
 import { lazyWithRetry } from "../lib/lazyWithRetry";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
@@ -82,13 +83,13 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 					<LoyaltyStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsLoyaltyProgramOpen(false)}
-						patientId={patient?.id || "pat-demo-01"}
-						patientName={patient?.fullName || "Воронова Светлана Николаевна"}
-						medicalCardNumber={patient?.cardNumber || "№ 4821-Л"}
+						patientId={patient?.id || (isDemoShowcaseMode() ? "pat-demo-01" : undefined)}
+						patientName={patient?.fullName || (isDemoShowcaseMode() ? "Воронова Светлана Николаевна" : undefined)}
+						medicalCardNumber={patient?.cardNumber || (isDemoShowcaseMode() ? "№ 4821-Л" : undefined)}
 						clinicName={activeWorkspaceProfile?.title || "ООО «Денте Стоматология»"}
-						initialPointsBalance={1500}
-						initialLifetimeSpentKop={4500000}
-						currentInvoiceAmountKop={350000}
+						initialPointsBalance={isDemoShowcaseMode() ? 1500 : 0}
+						initialLifetimeSpentKop={isDemoShowcaseMode() ? 4500000 : 0}
+						currentInvoiceAmountKop={isDemoShowcaseMode() ? 350000 : 0}
 					/>
 				</Suspense>
 			)}

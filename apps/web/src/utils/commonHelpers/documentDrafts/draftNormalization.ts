@@ -16,7 +16,7 @@ import {
 	clinicalRuleSeverityLabels,
 	serviceCategoryLabels,
 } from "../../../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "../../AppointmentHelpers";
+import { treatmentAcceptanceVariantOptions } from "../../../workspaceStaticOptions";
 import type { MedicalDocumentReleaseChannel } from "./types";
 import { taxApplicationRelationshipOptions } from "../../DocumentHelpers";
 import {

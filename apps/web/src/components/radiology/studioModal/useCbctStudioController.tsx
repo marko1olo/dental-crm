@@ -12,6 +12,7 @@ import {
 } from "../cbctMprMath";
 import { showToast } from "../../GlobalToast";
 import { exportEndoToDiary, exportEndoToTreatmentPlan } from "../endoClinicalIntegrationBridge";
+import { getEndoClinicalDataForTooth } from "../mpr/workspaces/endoCanalPipeline";
 import { useCbctStudioExports } from "../mpr/useCbctStudioExports";
 import type { StudioMode } from "../mpr/cbctStudioTypes";
 import { getDefaultViewportTransforms } from "../mpr/cbctStudioTypes";
@@ -364,55 +365,77 @@ export function useCbctStudioController({
 
 	const handleExportToEmr = useCallback(() => {
 		if (state.studioMode === "endo") {
-			const toothFdi = state.activeCrossSection?.nearestToothFdi ? Number(state.activeCrossSection.nearestToothFdi) : 36;
+			const toothFdi = state.activeCrossSection?.nearestToothFdi
+				? Number.parseInt(state.activeCrossSection.nearestToothFdi, 10)
+				: (state.currentImplantPose?.targetToothFdi || 36);
+
+			const { clinicalData, report, canals } = getEndoClinicalDataForTooth(
+				state.volume,
+				toothFdi,
+				state.archCurve,
+			);
+
+			let sliceDataUrl: string | null = null;
+			try {
+				if (state.crossSectionBaseCanvasRef?.current) {
+					sliceDataUrl = state.crossSectionBaseCanvasRef.current.toDataURL("image/png");
+				}
+			} catch {
+				// Canvas tainted or unavailable
+			}
+
 			const exported = exportEndoToDiary({
 				patientId,
 				patientDisplayName: patientName,
 				toothFdi,
-				clinicalData: {
-					toothFdi,
-					vertucciType: "I",
-					vertucciNameRu: "Тип I (1-1)",
-					rootCount: 2,
-					canals: [],
-					overallRiskTier: "moderate",
-					recommendedTaper: "0.04",
-					reciprocatingMotion: false,
-					clinicalSummaryRu: "Стандартный эндодонтический доступ",
-				},
+				clinicalData,
+				report,
+				canals,
+				sliceDataUrl,
 			});
 			if (effectiveApplyToDiary) effectiveApplyToDiary(`${exported.statusLocalis}\n\n${exported.treatmentDescription}`);
 			showToast(`Эндодонтический протокол 3D КЛКТ (зуб #${toothFdi}) перенесен в медицинскую карту`, "success");
 			return;
 		}
 		handleImplantExportToEmr();
-	}, [state.studioMode, state.activeCrossSection, patientId, patientName, effectiveApplyToDiary, handleImplantExportToEmr]);
+	}, [state.studioMode, state.activeCrossSection, state.currentImplantPose, state.volume, state.archCurve, state.crossSectionBaseCanvasRef, patientId, patientName, effectiveApplyToDiary, handleImplantExportToEmr]);
 
 	const handleExportToPlan = useCallback(() => {
 		if (state.studioMode === "endo") {
-			const toothFdi = state.activeCrossSection?.nearestToothFdi ? Number(state.activeCrossSection.nearestToothFdi) : 36;
+			const toothFdi = state.activeCrossSection?.nearestToothFdi
+				? Number.parseInt(state.activeCrossSection.nearestToothFdi, 10)
+				: (state.currentImplantPose?.targetToothFdi || 36);
+
+			const { clinicalData, report, canals } = getEndoClinicalDataForTooth(
+				state.volume,
+				toothFdi,
+				state.archCurve,
+			);
+
+			let sliceDataUrl: string | null = null;
+			try {
+				if (state.crossSectionBaseCanvasRef?.current) {
+					sliceDataUrl = state.crossSectionBaseCanvasRef.current.toDataURL("image/png");
+				}
+			} catch {
+				// Canvas tainted or unavailable
+			}
+
 			const exportedItems = exportEndoToTreatmentPlan({
 				patientId,
 				patientDisplayName: patientName,
 				toothFdi,
-				clinicalData: {
-					toothFdi,
-					vertucciType: "I",
-					vertucciNameRu: "Тип I (1-1)",
-					rootCount: 2,
-					canals: [],
-					overallRiskTier: "moderate",
-					recommendedTaper: "0.04",
-					reciprocatingMotion: false,
-					clinicalSummaryRu: "Стандартный эндодонтический доступ",
-				},
+				clinicalData,
+				report,
+				canals,
+				sliceDataUrl,
 			});
 			if (onApplyToPlan) exportedItems.forEach((it) => onApplyToPlan(it));
 			showToast(`Эндодонтические услуги (зуб #${toothFdi}) добавлены в план лечения`, "success");
 			return;
 		}
 		handleImplantExportToPlan();
-	}, [state.studioMode, state.activeCrossSection, patientId, patientName, onApplyToPlan, handleImplantExportToPlan]);
+	}, [state.studioMode, state.activeCrossSection, state.currentImplantPose, state.volume, state.archCurve, state.crossSectionBaseCanvasRef, patientId, patientName, onApplyToPlan, handleImplantExportToPlan]);
 
 	const handleResetNerve = useCallback(() => {
 		if (state.activeNerveSide === "right") state.setNervePoints([]);

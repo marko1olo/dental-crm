@@ -17,7 +17,7 @@ export async function processFamilyTopup(params: FamilyTopupParams): Promise<Fam
 		throw new FamilyWalletError("Ключ операции (clientMutationId) обязателен для защиты от повторных зачислений", 400, "MISSING_IDEMPOTENCY_KEY");
 	}
 
-	const creditKopecks = parseKopecks(amountRub);
+	const creditKopecks = params.amountKopecks !== undefined ? Number(params.amountKopecks) : parseKopecks(amountRub);
 	if (creditKopecks <= 0) throw new FamilyWalletError("Сумма пополнения должна быть больше 0 ₽", 400, "INVALID_AMOUNT");
 	if (creditKopecks > 10_000_000_00) throw new FamilyWalletError("Сумма одного пополнения не может превышать 10 000 000 ₽", 400, "AMOUNT_EXCEEDS_LIMIT");
 
@@ -36,7 +36,19 @@ export async function processFamilyTopup(params: FamilyTopupParams): Promise<Fam
 				throw new FamilyWalletError("Клиентская операция уже записала другое пополнение.", 409, "IDEMPOTENCY_CONFLICT");
 			}
 			const prevBal = parseKopecks(family.balance);
-			return { success: true, payment: existingPayment, previousBalanceRub: kopecksToRub(prevBal), newBalanceRub: kopecksToRub(prevBal), creditedRub: kopecksToRub(parseKopecks(existingPayment.amountRub)), duplicate: true };
+			const prevBalKop = prevBal;
+			const creditedKop = parseKopecks(existingPayment.amountRub);
+			return {
+				success: true,
+				payment: existingPayment,
+				previousBalanceRub: kopecksToRub(prevBal),
+				newBalanceRub: kopecksToRub(prevBal),
+				creditedRub: kopecksToRub(creditedKop),
+				previousBalanceKopecks: prevBalKop,
+				newBalanceKopecks: prevBalKop,
+				creditedKopecks: creditedKop,
+				duplicate: true,
+			};
 		}
 
 		const prevBalanceKop = parseKopecks(family.balance);
@@ -56,6 +68,16 @@ export async function processFamilyTopup(params: FamilyTopupParams): Promise<Fam
 		wsBroker.broadcastToOrganization(organizationId, { type: "FAMILY_BALANCE_UPDATED", payload: { organizationId, familyGroupId, balance: newBalanceStr } });
 		wsBroker.broadcastToOrganization(organizationId, { type: "PAYMENT_CREATED", payload: payment });
 
-		return { success: true, payment, previousBalanceRub: kopecksToRub(prevBalanceKop), newBalanceRub: kopecksToRub(newBalanceKop), creditedRub: kopecksToRub(creditKopecks), duplicate: false };
+		return {
+			success: true,
+			payment,
+			previousBalanceRub: kopecksToRub(prevBalanceKop),
+			newBalanceRub: kopecksToRub(newBalanceKop),
+			creditedRub: kopecksToRub(creditKopecks),
+			previousBalanceKopecks: prevBalanceKop,
+			newBalanceKopecks: newBalanceKop,
+			creditedKopecks: creditKopecks,
+			duplicate: false,
+		};
 	});
 }

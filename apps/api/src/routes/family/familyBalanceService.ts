@@ -1,3 +1,4 @@
+import { kopecksToRub, parseKopecks } from "@dental/shared";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { familyGroups, patients, payments } from "../../db/schema.js";
@@ -85,17 +86,19 @@ export async function getFamilyHistoryRecords(
 		.limit(100);
 
 	return paymentRows.map((p) => {
-		const isRefund = p.status === "refunded" || Number(p.amountRub) < 0;
+		const isRefund = p.status === "refunded" || parseKopecks(p.amountRub) < 0;
 		const isTopup = !isRefund && p.status === "planned";
 		const operationType: "topup" | "spend" | "refund" = isRefund ? "refund" : isTopup ? "topup" : "spend";
 		const patientName = memberMap.get(p.patientId) || p.payerFullName || "Член семьи";
 		const headName = (family.headPatientId && memberMap.get(family.headPatientId)) || "Семейный счёт";
 
+		const amountKop = Math.abs(parseKopecks(p.amountRub));
 		return {
 			id: p.id,
 			date: p.createdAt ? p.createdAt.toISOString() : new Date().toISOString(),
 			operationType,
-			amountRub: Math.abs(Number(p.amountRub)),
+			amountRub: kopecksToRub(amountKop),
+			amountKopecks: amountKop,
 			payerPatientId: isTopup ? p.patientId : family.headPatientId || p.patientId,
 			payerName: isTopup ? patientName : headName,
 			targetPatientId: p.patientId,

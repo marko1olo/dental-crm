@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { LoyaltyStudioModal } from "./LoyaltyStudioModal";
 
 function isLoyaltyRequested(): boolean {
@@ -68,10 +69,16 @@ export const DirectLoyaltyLauncher: React.FC = () => {
 		}
 	};
 
+	const isDemo = isDemoShowcaseMode();
 	return (
 		<LoyaltyStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
+			patientId={isDemo ? "01a00000-0000-0000-0000-000000000001" : undefined}
+			patientName={isDemo ? "Воронова Светлана Николаевна" : undefined}
+			medicalCardNumber={isDemo ? "№ 4821-Л" : undefined}
+			initialPointsBalance={isDemo ? 2500 : 0}
+			currentInvoiceAmountKop={isDemo ? 500000 : 0}
 		/>
 	);
 };

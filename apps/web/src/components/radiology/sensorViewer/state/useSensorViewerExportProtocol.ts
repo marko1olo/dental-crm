@@ -3,6 +3,7 @@ import type React from "react";
 import { renderClinicalExportBlob } from "../../dentalViewerCanvasDraw.js";
 import { RADIOLOGY_STANDARD_PROTOCOLS, applyRadiologyProtocolToForm043 } from "../../radiologyProtocols.js";
 import { useVisitStore } from "../../../../store/visitStore.js";
+import { usePatientStore } from "../../../../store/patientStore.js";
 import { showToast } from "../../../GlobalToast.js";
 import type { RadiologyFilmstripItem } from "../../RadiologyFilmstripDock.js";
 
@@ -89,9 +90,9 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 		}
 	}, [p]);
 
-	const handleProcessUploadedFile = useCallback((file: File) => {
+	const handleProcessUploadedFile = useCallback(async (file: File) => {
 		const objectUrl = URL.createObjectURL(file);
-		const newStudy: RadiologyFilmstripItem = {
+		const initialStudy: RadiologyFilmstripItem = {
 			id: `uploaded-${Date.now()}`,
 			title: file.name.replace(/\.[^/.]+$/, "") || (p.effectiveTooth ? `Снимок зуба ${p.effectiveTooth}` : "Снимок RVG"),
 			modality: "intraoral_rvg", modalityLabel: "IO-СЕНСОР",
@@ -99,9 +100,57 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 			teethFdi: p.effectiveTooth ? [p.effectiveTooth] : [],
 			imageUrl: objectUrl, thumbnailUrl: objectUrl,
 		};
-		p.setActiveStudy(newStudy);
-		p.onSelectStudy?.(newStudy);
-		showToast(`Снимок «${file.name}» успешно загружен`, "success");
+		p.setActiveStudy(initialStudy);
+		p.onSelectStudy?.(initialStudy);
+
+		try {
+			const reader = new FileReader();
+			const dataUrl = await new Promise<string>((resolve, reject) => {
+				reader.onload = () => resolve(reader.result as string);
+				reader.onerror = reject;
+				reader.readAsDataURL(file);
+			});
+
+			let patientId: string | undefined;
+			try {
+				const id = usePatientStore.getState().selectedPatientId;
+				if (id) patientId = id;
+			} catch {}
+
+			const res = await fetch("/api/xray/scans", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
+				},
+				body: JSON.stringify({
+					...(patientId && patientId.length === 36 ? { patientId } : {}),
+					imageBase64: dataUrl,
+					originalFilename: file.name,
+					mimeType: file.type || "image/jpeg",
+					...(p.effectiveTooth ? { toothCode: p.effectiveTooth } : {}),
+					kind: "periapical",
+				}),
+			});
+
+			if (res.ok) {
+				const json = await res.json();
+				const savedScan = json?.data ?? json;
+				const persistedStudy: RadiologyFilmstripItem = {
+					...initialStudy,
+					id: savedScan.id || initialStudy.id,
+					imageUrl: savedScan.fileUrl || objectUrl,
+					thumbnailUrl: savedScan.fileUrl || objectUrl,
+				};
+				p.setActiveStudy(persistedStudy);
+				p.onSelectStudy?.(persistedStudy);
+				showToast(`Снимок «${file.name}» сохранен в хранилище клиники`, "success");
+			} else {
+				showToast(`Снимок «${file.name}» успешно открыт`, "info");
+			}
+		} catch {
+			showToast(`Снимок «${file.name}» открыт локально`, "info");
+		}
 	}, [p]);
 
 	const handleDirectFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

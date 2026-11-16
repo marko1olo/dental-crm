@@ -328,6 +328,45 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 ---
 
+## 🎁 8.2. Реестр устранённых дефектов программы лояльности, сертификатов и семейного баланса (DEF-LOYALTY-01...06, Red Team Fixer Домен 27)
+
+1. **DEF-LOYALTY-01 [ЗАКРЫТО] (Физический снос 4 мертвых сирот через `git rm`, Мандаты 8bf, 8aq)**:
+   - Физически удалены 4 устаревших псевдо-компонента и хука:
+     * `apps/web/src/components/patients/PatientLoyaltyHeader.tsx`
+     * `apps/web/src/components/patients/loyalty/LoyaltyTierDropdown.tsx`
+     * `apps/web/src/components/patients/loyalty/loyaltyConfig.ts`
+     * `apps/web/src/components/patients/loyalty/usePatientLoyalty.ts`
+   - Единым и единственным SSOT закреплены `packages/shared/src/finance/loyaltyProgram.ts` и Студия `apps/web/src/components/loyalty/LoyaltyStudioModal.tsx`.
+2. **DEF-LOYALTY-02 [ЗАКРЫТО] (Синхронизация матрицы грейдов и клинический язык, Мандаты 8ap, 8x)**:
+   - В `loyaltyProgram.ts`, `loyaltyCatalogData.ts` и `loyaltyEngine.test.ts` полностью синхронизирована матрица программы:
+     * **Silver**: 3% кэшбэк, 30% лимит списания;
+     * **Gold**: 5% кэшбэк, 50% лимит списания;
+     * **Platinum**: 10% кэшбэк, 70% лимит списания;
+     * **Family**: 7% кэшбэк, 50% лимит списания.
+   - Устранен корпоративный дев-сленг и лозунги: в привилегиях закреплен чистый клинический язык («Приоритетная связь с лечащим врачом»).
+3. **DEF-LOYALTY-03 [ЗАКРЫТО] (Целочисленные копейки без float drift, Мандат 8bm)**:
+   - Полная ликвидация вычислений с плавающей точкой в балансах, начислениях, списаниях и номиналах сертификатов.
+   - В `bonusBalanceService.ts`, `bonusRedemptionService.ts`, `familyWalletTypes.ts`, `familyPriceGuard.ts`, `familySpendAuthorization.ts` все суммы переведены на `*Kopecks` / `*Kop` (целые числа).
+4. **DEF-LOYALTY-04 [ЗАКРЫТО] (Ликвидация уязвимости `|| orgId` в сертификатах)**:
+   - В `apps/api/src/routes/loyaltyCertificates.ts` устранен опасный fallback `|| orgId` при погашении сертификатов, исключающий утечку и погашение сертификатов чужих организаций и филиалов.
+5. **DEF-LOYALTY-05 [ЗАКРЫТО] (Идемпотентность транзакций и Zero-Leak честный Empty State, Мандаты 8zp, 8zq, 8k)**:
+   - Все POST-запросы начисления и списания снабжены заголовком `"Idempotency-Key": crypto.randomUUID()`.
+   - В `LoyaltyStudioModal.tsx` удален синтетический мок-пациент по умолчанию `pat-demo-01`. При открытии без контекста пациента отображается честный Empty State с выбором пациента.
+6. **DEF-LOYALTY-06 [ЗАКРЫТО] (Соблюдение Sweet Spot строк, Apple HIG и машинные гейты, Мандаты 8b, 8be, 8am)**:
+   - `LoyaltyStudioModal.tsx` декомпозирован и зафиксирован на **471 строке** (норма 380–480 строк).
+   - `loyaltyCatalogData.ts` оптимизирован до **332 строк** (норма 280–350 строк).
+   - `DirectLoyaltyLauncher.tsx` смонтирован в `AppShell.tsx:381`.
+   - Дизайн-токены: ровно 1 Primary CTA `bg-[var(--primary)] text-white`, нейтральный Secondary, sentence case без `uppercase`, тач-таргеты >= 44x44px.
+   - Тесты: 69/69 web unit tests PASS, 31/31 api tests PASS. В домене 27 — 0 ошибок `tsc --noEmit`.
+7. **4-State Visual Proof [ЗАКРЫТО]**:
+   - ☀️ PC Light 1440x900 (`loyalty_01_pc_light_1440x900.png` — 71.6 KB)
+   - 🌙 PC Dark 1440x900 (`loyalty_02_pc_dark_1440x900.png` — 71.1 KB)
+   - 📱 Mobile Light 390x844 (`loyalty_03_mobile_light_390x844.png` — 51.1 KB)
+   - 📱 Mobile Dark 390x844 (`loyalty_04_mobile_dark_390x844.png` — 51.4 KB)
+   - Лично осмотрены через `read_file`: Zero-Clipping, 1 Primary CTA в Noble Teal, 0px горизонтального скролла, нативные Segmented Controls.
+
+---
+
 ## 🔗 9. Связанные документы архитектуры
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Центральный реестр документации проекта.

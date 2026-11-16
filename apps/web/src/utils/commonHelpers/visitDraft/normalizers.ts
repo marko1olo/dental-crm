@@ -11,13 +11,15 @@ import type {
 } from "@dental/shared";
 import { showToast } from "../../../components/GlobalToast";
 import { actionFailureToast } from "../../../lib/panelStateText";
-import { telegramVisualCardFields } from "../../../workspaceStaticOptions";
+import {
+	telegramVisualCardFields,
+	treatmentAcceptanceVariantOptions,
+} from "../../../workspaceStaticOptions";
 import {
 	clinicalRuleActionLabels,
 	clinicalRuleSeverityLabels,
 	serviceCategoryLabels,
 } from "../../../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "../../AppointmentHelpers";
 import { normalizedLocalOrganizationId } from "../../AuthOnboardingHelpers";
 import { isBrowserMigrationScanAbortError } from "../../browserScanUtils";
 import { nullablePatientDraftValue } from "../../clinicProfileUtils";

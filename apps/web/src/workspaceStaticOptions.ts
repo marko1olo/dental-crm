@@ -3,6 +3,7 @@ import type {
 	DenteTelegramPostVisitCheckupDelayHoursByTopic,
 	DenteTelegramVisualCardKey,
 	PostVisitCareTopic,
+	TreatmentPlanAcceptanceVariant,
 } from "@dental/shared";
 
 export const telegramFeatureLabels: Record<DenteTelegramFeature, string> = {
@@ -260,3 +261,7 @@ export const postVisitCareTopicOptions: Array<{
 	{ value: "periodontology", label: "Пародонтология" },
 	{ value: "other", label: "Другое" },
 ];
+
+export const treatmentAcceptanceVariantOptions: readonly TreatmentPlanAcceptanceVariant[] =
+	["urgent", "standard", "optimal", "staged", "maintenance", "other"];
+

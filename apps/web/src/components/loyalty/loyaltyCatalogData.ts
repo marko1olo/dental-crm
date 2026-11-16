@@ -16,29 +16,33 @@ export const DENTAL_LOYALTY_STANDARDS = {
 
 export const LOYALTY_TIER_PRESETS: readonly LoyaltyTierDefinition[] = [
 	{
-		id: "silver", nameRu: "Серебряный", badgeLabelRu: "Базовый 3%", cashbackPercent: 3, maxInvoiceCoveragePercent: 30, minLifetimeSpentKop: 0, pointRateRub: 1.0,
+		id: "silver", nameRu: "Серебряный (Базовый)", badgeLabelRu: "Базовый 3%", cashbackPercent: 3, maxInvoiceCoveragePercent: 30, minLifetimeSpentKop: 0, pointRateRub: 1.0,
 		descriptionRu: "3% кэшбэк бонусами за терапию и гигиену. Оплата баллами до 30% счета.",
 		privilegesRu: ["3% начисление бонусов за каждый визит", "Оплата бонусами до 30% стоимости услуг", "Срок действия бонусов — 365 дней", "Уведомления о плановой гигиене"], accentColor: "var(--muted)",
 	},
 	{
-		id: "gold", nameRu: "Золотой", badgeLabelRu: "Премиум 5%", cashbackPercent: 5, maxInvoiceCoveragePercent: 40, minLifetimeSpentKop: 15000000, pointRateRub: 1.0,
-		descriptionRu: "5% кэшбэк бонусами от 150 000 ₽. Оплата бонусами до 40% чека.",
-		privilegesRu: ["Повышенный кэшбэк 5% со всех услуг", "Оплата бонусами до 40% стоимости чека", "Приоритетное бронирование времени приема", "Приоритетная связь с лечащим врачом"], accentColor: "var(--warn-fg)",
+		id: "gold", nameRu: "Золотой (Постоянный)", badgeLabelRu: "Постоянный 5%", cashbackPercent: 5, maxInvoiceCoveragePercent: 50, minLifetimeSpentKop: 15000000, pointRateRub: 1.0,
+		descriptionRu: "5% кэшбэк бонусами от 150 000 ₽. Оплата бонусами до 50% чека.",
+		privilegesRu: ["Повышенный кэшбэк 5% со всех услуг", "Оплата бонусами до 50% стоимости чека", "Бесплатная ежегодная 3D-диагностика", "Приоритетная запись к ведущим специалистам"], accentColor: "var(--warn-fg)",
 	},
 	{
-		id: "platinum", nameRu: "Платиновый VIP", badgeLabelRu: "VIP 7–10%", cashbackPercent: 7, maxInvoiceCoveragePercent: 50, minLifetimeSpentKop: 40000000, pointRateRub: 1.0,
-		descriptionRu: "7% кэшбэк бонусами от 400 000 ₽. Списание до 50% чека и приоритетная связь с врачом.",
-		privilegesRu: ["Максимальный кэшбэк 7–10% на все услуги", "Оплата бонусами до 50% суммы чека", "Бесплатный радиовизиографический контроль 1 раз в год", "Приоритетная связь с лечащим врачом"], accentColor: "var(--teal-dark)",
+		id: "platinum", nameRu: "Платиновый (VIP)", badgeLabelRu: "VIP 10%", cashbackPercent: 10, maxInvoiceCoveragePercent: 70, minLifetimeSpentKop: 40000000, pointRateRub: 1.0,
+		descriptionRu: "10% кэшбэк бонусами от 400 000 ₽. Списание до 70% чека и приоритетная связь с лечащим врачом.",
+		privilegesRu: ["Максимальный кэшбэк 10% на весь чек", "Оплата бонусами до 70% стоимости лечения", "Приоритетная связь с лечащим врачом", "Бесплатный радиовизиографический контроль"], accentColor: "var(--teal-dark)",
 	},
 	{
-		id: "family", nameRu: "Семейный накопительный", badgeLabelRu: "Семейный 6%", cashbackPercent: 6, maxInvoiceCoveragePercent: 35, minLifetimeSpentKop: 5000000, pointRateRub: 1.0,
-		descriptionRu: "Единый семейный баланс для родителей и детей с кэшбэком 6% со всех визитов.",
-		privilegesRu: ["Единый семейный кошелек баллов без комиссии", "Повышенный кэшбэк 6% за визиты всей семьи", "Оплата до 35% стоимости детского и взрослого лечения", "Скидка 10% на детскую ортодонтию при лечении родителей"], accentColor: "var(--ok-fg)",
+		id: "family", nameRu: "Семейный (Единый пул)", badgeLabelRu: "Семейный 7%", cashbackPercent: 7, maxInvoiceCoveragePercent: 50, minLifetimeSpentKop: 0, pointRateRub: 1.0,
+		descriptionRu: "Единый семейный баланс для родителей и детей с кэшбэком 7% со всех визитов.",
+		privilegesRu: ["Единый семейный кошелек баллов без комиссии", "Повышенный кэшбэк 7% за визиты всей семьи", "Оплата до 50% стоимости детского и взрослого лечения", "Списание баллов детьми и пожилыми родителями"], accentColor: "var(--ok-fg)",
 	},
 ];
 
 export function getTierDefinition(tierId: string): LoyaltyTierDefinition {
-	return LOYALTY_TIER_PRESETS.find((t) => t.id === tierId) ?? LOYALTY_TIER_PRESETS[0]!;
+	const defaultTier = LOYALTY_TIER_PRESETS[0];
+	if (!defaultTier) {
+		throw new Error("LOYALTY_TIER_PRESETS is empty");
+	}
+	return LOYALTY_TIER_PRESETS.find((t) => t.id === tierId) ?? defaultTier;
 }
 
 export function formatKopecksToRubles(kopecks: number): string {
@@ -122,7 +126,7 @@ export type FamilyPool = FamilyPoolBalanceResult;
 export function calculateFamilyPoolBalance(familyGroupId: string, familyName: string, members: readonly FamilyMember[]): FamilyPoolBalanceResult {
 	let totalPooledPoints = 0, totalFamilyLifetimeSpentKop = 0;
 	for (const m of members) { totalPooledPoints += m.individualPointsBalance; totalFamilyLifetimeSpentKop += m.lifetimeSpentKop; }
-	const effectiveTier = totalFamilyLifetimeSpentKop >= 40000000 ? (LOYALTY_TIER_PRESETS.find((t) => t.id === "platinum") ?? LOYALTY_TIER_PRESETS[0]!) : (LOYALTY_TIER_PRESETS.find((t) => t.id === "family") ?? LOYALTY_TIER_PRESETS[0]!);
+	const effectiveTier = totalFamilyLifetimeSpentKop >= 40000000 ? getTierDefinition("platinum") : getTierDefinition("family");
 	return { familyGroupId, familyName, memberCount: members.length, totalPooledPoints, totalFamilyLifetimeSpentKop, totalFamilyLifetimeSpentRub: totalFamilyLifetimeSpentKop / 100, effectiveTier, members };
 }
 
@@ -164,7 +168,7 @@ export function creditFamilySharedBalance(input: CreditFamilySharedBalanceInput)
 }
 
 export interface GiftCertificate {
-	readonly id: string; readonly serialNumber: string; readonly nominalRub: number; readonly initialBalanceKop: number; readonly currentBalanceKop: number; readonly status: "active" | "depleted" | "expired" | "cancelled"; readonly issuedAtIso: string; readonly expiresAtIso: string; readonly recipientName?: string; readonly noteRu?: string;
+	readonly id: string; readonly serialNumber: string; readonly nominalRub?: number; readonly nominalKop?: number; readonly initialBalanceKop: number; readonly currentBalanceKop: number; readonly currentBalanceRub?: number; readonly status: "active" | "depleted" | "expired" | "cancelled"; readonly issuedAtIso: string; readonly expiresAtIso: string; readonly recipientName?: string; readonly noteRu?: string;
 }
 export interface GiftCertificatePreset {
 	readonly id: string; readonly nominalKop: number; readonly nominalRub: number; readonly titleRu: string; readonly validityDays: number; readonly isCustomNominal: boolean; readonly badgeRu: string; readonly descriptionRu: string;
@@ -184,12 +188,16 @@ export function generateGiftCertificateSerial(randomSeed?: number): string {
 		cryptoBytes = new Uint8Array(11); crypto.getRandomValues(cryptoBytes);
 	}
 	for (let i = 0; i < 11; i++) {
-		const rand = randomSeed !== undefined ? (randomSeed * (i + 1) * 7) % 10 : cryptoBytes ? cryptoBytes[i]! % 10 : Math.abs(((Date.now() + i * 17) ^ (i * 31)) % 10);
+		const cryptoByte = cryptoBytes?.[i];
+		const rand = randomSeed !== undefined ? (randomSeed * (i + 1) * 7) % 10 : cryptoByte !== undefined ? cryptoByte % 10 : Math.abs(((Date.now() + i * 17) ^ (i * 31)) % 10);
 		digits += rand.toString();
 	}
 	let sum = 0;
 	for (let i = 0; i < 15; i++) {
-		let d = parseInt(digits[i]!, 10); if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; } sum += d;
+		const char = digits[i];
+		let d = char ? parseInt(char, 10) : 0;
+		if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
+		sum += d;
 	}
 	digits += ((10 - (sum % 10)) % 10).toString();
 	return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8, 12)}-${digits.slice(12, 16)}`;
@@ -200,7 +208,10 @@ export function validateGiftCertificateSerial(formattedSerial: string): boolean 
 	if (!/^\d{16}$/.test(cleaned)) return false;
 	let sum = 0;
 	for (let i = 0; i < 16; i++) {
-		let d = parseInt(cleaned[i]!, 10); if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; } sum += d;
+		const char = cleaned[i];
+		let d = char ? parseInt(char, 10) : 0;
+		if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
+		sum += d;
 	}
 	return sum % 10 === 0;
 }
@@ -235,7 +246,7 @@ export const REFERRAL_PROGRAM_PRESETS: readonly ReferralRewardPreset[] = [
 ];
 
 export interface PatientReferralRecord {
-	readonly id: string; readonly referrerPatientId: string; readonly referrerPatientName?: string; readonly referredPatientName?: string; readonly invitedPatientName?: string; readonly invitedPhone?: string; readonly status: "invited" | "visited" | "reward_credited" | "completed"; readonly statusRu?: string; readonly isRewardCredited?: boolean; readonly rewardedAtIso?: string; readonly rewardRub?: number; readonly rewardPreset?: ReferralRewardPreset; readonly firstVisitInvoiceKop?: number;
+	readonly id: string; readonly referrerPatientId: string; readonly referrerPatientName?: string; readonly referredPatientName?: string; readonly referredPatientPhone?: string; readonly invitedPatientName?: string; readonly invitedPhone?: string; readonly createdAtIso?: string; readonly status: "invited" | "visited" | "reward_credited" | "completed"; readonly statusRu?: string; readonly isRewardCredited?: boolean; readonly rewardedAtIso?: string; readonly rewardRub?: number; readonly rewardPreset?: ReferralRewardPreset; readonly firstVisitInvoiceKop?: number;
 }
 
 export function calculateReferralReward(inputOrKop: { friendInvoicePaidKop: number; minSpendKop?: number; customRewardKop?: number } | number, presetOverride?: ReferralRewardPreset) {

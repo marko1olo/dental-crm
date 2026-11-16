@@ -78,7 +78,7 @@ export function QuickBookingDrawerHeader({
           className={`p-2.5 rounded-xl border shrink-0 transition-all ${
             isEmergencyMode
               ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/50 ring-2 ring-rose-500/40 animate-pulse"
-              : "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal,var(--brand-primary))] border-[var(--teal,var(--brand-primary))]/20"
+              : "bg-[var(--primary-soft,var(--paper-soft))] text-[var(--primary)] border-[var(--primary)]/20"
           }`}
         >
           {isEmergencyMode ? (
@@ -157,7 +157,7 @@ export function QuickBookingDrawerFooter({
         onClick={onSubmit}
         aria-busy={isSubmitting}
         data-testid="quick-drawer-save-btn"
-        className="primary-button dente-btn dente-btn-primary w-full min-h-[44px] h-[52px] sm:h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs"
+        className="primary-button dente-btn dente-btn-primary w-full min-h-[44px] h-[52px] sm:h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs"
       >
         <Plus size={16} className="shrink-0 stroke-[2.5]" />
         <span className="whitespace-nowrap font-bold">
@@ -204,7 +204,7 @@ export function QuickBookingDrawerFooter({
             className="secondary-button min-h-[44px] px-2.5 sm:px-3 inline-flex items-center gap-1.5 text-xs shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
             title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
           >
-            <Copy size={14} className="text-[var(--teal)] shrink-0" />
+            <Copy size={14} className="text-[var(--primary)] shrink-0" />
             <span>Скопировать<span className="hidden sm:inline"> для пациента</span></span>
           </button>
         </div>
@@ -285,14 +285,14 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
     }
     return {
       id: initialSlot?.appointmentId || "draft-booking-lab",
-      patientId: selectedPatient?.id || "",
-      doctorUserId: doctorUserId || "",
-      chairId: chairId || undefined,
+      patientId: selectedPatient?.id || null,
+      doctorUserId: doctorUserId || null,
+      chairId: chairId || null,
       startsAt: startsAtLocal ? new Date(startsAtLocal).toISOString() : new Date().toISOString(),
       endsAt: startsAtLocal
         ? new Date(new Date(startsAtLocal).getTime() + (durationMinutes || 30) * 60000).toISOString()
         : new Date(Date.now() + 1800000).toISOString(),
-      status: status || "planned",
+      status: (status as Appointment["status"]) || "planned",
       reason: reason || "",
       comment: comment || "",
       organizationId: effectiveOrgId,
@@ -335,7 +335,7 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
         doctors={doctors}
         assistants={assistants}
         chairs={chairs}
-        currentChair={currentChair}
+        currentChair={currentChair ? { id: currentChair.id, name: currentChair.name || "Кресло" } : null}
         dutyDoc={dutyDoc}
         dutyDoctorHours={dutyDoctorHours}
         isSoloClinic={isSoloClinic}
@@ -353,11 +353,11 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
         <button
           type="button"
           onClick={() => setIsLabSectionOpen((prev) => !prev)}
-          className="w-full flex items-center justify-between text-xs font-bold text-[var(--ink)] hover:text-[var(--teal)] transition-colors cursor-pointer py-0.5 select-none"
+          className="w-full flex items-center justify-between text-xs font-bold text-[var(--ink)] hover:text-[var(--primary)] transition-colors cursor-pointer py-0.5 select-none"
           data-testid="btn-toggle-quick-booking-lab-section"
         >
           <span className="flex items-center gap-2">
-            <FlaskConical size={14} className="text-[var(--teal)]" />
+            <FlaskConical size={14} className="text-[var(--primary)]" />
             <span>Зуботехническая лаборатория (ЗТЛ)</span>
           </span>
           <span className="text-[11px] text-[var(--muted)] font-normal flex items-center gap-1">

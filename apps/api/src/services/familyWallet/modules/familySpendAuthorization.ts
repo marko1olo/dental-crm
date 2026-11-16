@@ -1,13 +1,16 @@
 import {
+	formatKopecksToRubles,
 	invertRelationshipKind,
 	parseKopecks,
 	validateFamilyWalletSpend,
 	type PatientRelationshipKind,
 } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
-import type { PgTransaction } from "drizzle-orm/pg-core";
+import type { db } from "../../../db/client.js";
 import { patientRelationships, patients } from "../../../db/schema.js";
 import { FamilyWalletError, type FamilyGroupRow } from "../familyWalletTypes.js";
+
+type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * verifyFamilySpendAuthorization
@@ -24,7 +27,7 @@ import { FamilyWalletError, type FamilyGroupRow } from "../familyWalletTypes.js"
  * 3. Client parameter `payerPatientId` CANNOT bypass relationship and spend authorization checks!
  */
 export async function verifyFamilySpendAuthorization(params: {
-	readonly tx: PgTransaction<any, any, any>;
+	readonly tx: DatabaseTransaction;
 	readonly organizationId: string;
 	readonly family: FamilyGroupRow;
 	readonly patientId: string;
@@ -45,7 +48,7 @@ export async function verifyFamilySpendAuthorization(params: {
 	const currentBalKop = parseKopecks(family.balance);
 	if (currentBalKop < debitKopecks) {
 		throw new FamilyWalletError(
-			`Недостаточно средств на семейном кошельке (доступно ${(currentBalKop / 100).toFixed(2)} ₽, требуется ${(debitKopecks / 100).toFixed(2)} ₽)`,
+			`Недостаточно средств на семейном кошельке (доступно ${formatKopecksToRubles(currentBalKop)} ₽, требуется ${formatKopecksToRubles(debitKopecks)} ₽)`,
 			402,
 			"INSUFFICIENT_FAMILY_BALANCE",
 		);
@@ -130,7 +133,7 @@ export async function verifyFamilySpendAuthorization(params: {
 	}
 	if (spendLimitKop !== undefined && spendLimitKop >= 0 && debitKopecks > spendLimitKop) {
 		throw new FamilyWalletError(
-			`Превышен установленный лимит списания с семейного кошелька (лимит: ${(spendLimitKop / 100).toFixed(2)} ₽, запрошено: ${(debitKopecks / 100).toFixed(2)} ₽)`,
+			`Превышен установленный лимит списания с семейного кошелька (лимит: ${formatKopecksToRubles(spendLimitKop)} ₽, запрошено: ${formatKopecksToRubles(debitKopecks)} ₽)`,
 			403,
 			"SPEND_LIMIT_EXCEEDED",
 		);

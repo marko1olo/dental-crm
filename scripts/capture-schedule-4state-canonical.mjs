@@ -19,7 +19,7 @@ import { chromium } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONV_ID = "26262900-83f3-4de0-8f8e-911f41c962d3";
+const CONV_ID = "719f9ef8-d87b-45b9-b4a5-8c0ed04c91fd";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/schedule");
 
@@ -138,6 +138,18 @@ async function setupPageSession(context, page, role = "doctor") {
   );
 }
 
+async function safeGoto(page, url) {
+  for (let i = 0; i < 3; i++) {
+    try {
+      await page.goto(url, { waitUntil: "commit", timeout: 20000 });
+      return;
+    } catch (e) {
+      console.log(`[safeGoto] Attempt ${i + 1} failed: ${e.message}, waiting 1.5s...`);
+      await sleep(1500);
+    }
+  }
+}
+
 async function waitForRealUI(page) {
   console.log("  Waiting for boot splash to clear...");
   await page.waitForSelector('.boot-state, text="Загрузка системы..."', {
@@ -254,10 +266,7 @@ async function main() {
     await setupPageSession(pcContext, pcPage, "doctor");
 
     console.log("Navigating to Schedule: http://127.0.0.1:5173/?demo=true#schedule");
-    await pcPage.goto("http://127.0.0.1:5173/?demo=true#schedule", {
-      waitUntil: "domcontentloaded",
-      timeout: 30000,
-    });
+    await safeGoto(pcPage, "http://127.0.0.1:5173/?demo=true#schedule");
 
     await waitForRealUI(pcPage);
 
@@ -339,10 +348,7 @@ async function main() {
     await setupPageSession(mobileContext, mobilePage, "doctor");
 
     console.log("Navigating Mobile to Schedule: http://127.0.0.1:5173/?demo=true#schedule");
-    await mobilePage.goto("http://127.0.0.1:5173/?demo=true#schedule", {
-      waitUntil: "domcontentloaded",
-      timeout: 30000,
-    });
+    await safeGoto(mobilePage, "http://127.0.0.1:5173/?demo=true#schedule");
 
     await waitForRealUI(mobilePage);
 
@@ -400,6 +406,13 @@ async function main() {
     } catch (e) { console.error("Error capturing Mobile Bottom Sheet:", e.message); }
 
     await mobileContext.close();
+
+    try {
+      copyFileSync(path.join(OUT_DOCS, "schedule_pc_light_1440x900.png"), path.join(OUT_DOCS, "01_schedule_pc_light_1440x900.png"));
+      copyFileSync(path.join(OUT_DOCS, "schedule_pc_dark_1440x900.png"), path.join(OUT_DOCS, "02_schedule_pc_dark_1440x900.png"));
+      copyFileSync(path.join(OUT_DOCS, "schedule_mobile_light_390x844.png"), path.join(OUT_DOCS, "03_schedule_mobile_light_390x844.png"));
+      copyFileSync(path.join(OUT_DOCS, "schedule_mobile_dark_390x844.png"), path.join(OUT_DOCS, "04_schedule_mobile_dark_390x844.png"));
+    } catch (_) {}
 
     console.log("\n=== ALL 8 SCHEDULE & BOOKING PROOF CAPTURES COMPLETED SUCCESSFULLY ===");
   } finally {

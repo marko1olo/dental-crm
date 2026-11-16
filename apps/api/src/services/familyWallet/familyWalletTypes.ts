@@ -25,6 +25,7 @@ export interface FamilyTopupParams {
 	readonly patientId?: string | undefined; // Payer / Head of family
 	readonly payerPatientId?: string | undefined; // Payer / Head of family
 	readonly amountRub: number;
+	readonly amountKopecks?: bigint | number | undefined;
 	readonly method?: "cash" | "card" | "bank_transfer" | "online" | "other" | undefined;
 	readonly clientMutationId: string;
 	readonly notes?: string | undefined;
@@ -36,6 +37,9 @@ export interface FamilyTopupResult {
 	readonly previousBalanceRub: number;
 	readonly newBalanceRub: number;
 	readonly creditedRub: number;
+	readonly previousBalanceKopecks?: bigint | number | undefined;
+	readonly newBalanceKopecks?: bigint | number | undefined;
+	readonly creditedKopecks?: bigint | number | undefined;
 	readonly duplicate: boolean;
 }
 
@@ -44,9 +48,11 @@ export interface FamilyDebitParams {
 	readonly familyGroupId: string;
 	readonly patientId: string; // Patient receiving care (child, spouse, etc.)
 	readonly amountRub: number;
+	readonly amountKopecks?: bigint | number | undefined;
 	readonly serviceId?: string | undefined;
 	readonly catalogItemId?: string | undefined;
 	readonly discountRub?: number | undefined;
+	readonly discountKopecks?: bigint | number | undefined;
 	readonly discountPercent?: number | undefined;
 	readonly clientMutationId: string;
 	readonly documentId?: string | undefined;
@@ -62,6 +68,9 @@ export interface FamilyDebitResult {
 	readonly previousBalanceRub: number;
 	readonly newBalanceRub: number;
 	readonly debitedRub: number;
+	readonly previousBalanceKopecks?: bigint | number | undefined;
+	readonly newBalanceKopecks?: bigint | number | undefined;
+	readonly debitedKopecks?: bigint | number | undefined;
 	readonly duplicate: boolean;
 }
 
@@ -69,6 +78,7 @@ export interface FamilyRefundParams {
 	readonly organizationId: string;
 	readonly familyGroupId: string;
 	readonly amountRub: number;
+	readonly amountKopecks?: bigint | number | undefined;
 	readonly patientId?: string | undefined; // Recipient patient (defaults to head patient)
 	readonly cashBoxId?: string | undefined;
 	readonly operatorId?: string | undefined;
@@ -83,6 +93,9 @@ export interface FamilyRefundResult {
 	readonly previousBalanceRub: number;
 	readonly newBalanceRub: number;
 	readonly refundedRub: number;
+	readonly previousBalanceKopecks?: bigint | number | undefined;
+	readonly newBalanceKopecks?: bigint | number | undefined;
+	readonly refundedKopecks?: bigint | number | undefined;
 	readonly duplicate: boolean;
 	readonly cashOperation?: typeof cashOperations.$inferSelect | undefined;
 }
@@ -100,7 +113,12 @@ export interface FnsTaxCertificateSummary {
 	readonly code01AmountRub: number;
 	readonly code02AmountRub: number;
 	readonly grandTotalRub: number;
+	readonly code01AmountKopecks?: bigint | number | undefined;
+	readonly code02AmountKopecks?: bigint | number | undefined;
+	readonly grandTotalKopecks?: bigint | number | undefined;
 	readonly estimated13PercentRefundRub: number;
+	readonly estimated13PercentRefundKopecks?: bigint | number | undefined;
 	readonly xmlPayload: string;
 	readonly xmlFileName: string;
+	readonly signatoryName?: string | undefined;
 }

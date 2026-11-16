@@ -262,7 +262,38 @@ export function calculateSplitPaymentAllocation(
 		receivedCashRub: input.receivedCashRub,
 	});
 
-	return res as unknown as SplitPaymentAllocation;
+	return {
+		cashRub: res.cashRub,
+		cashKopecks: res.cashKopecks as Kopecks,
+		receivedCashRub: res.receivedCashRub,
+		receivedCashKopecks: res.receivedCashKopecks as Kopecks,
+		changeRub: res.changeRub,
+		changeKopecks: res.changeKopecks as Kopecks,
+		isCashShortage: res.isCashShortage,
+		cashShortageRub: res.cashShortageRub,
+		cardRub: res.cardRub,
+		cardKopecks: res.cardKopecks as Kopecks,
+		sbpRub: res.sbpRub,
+		sbpKopecks: res.sbpKopecks as Kopecks,
+		depositRub: res.depositRub,
+		depositKopecks: res.depositKopecks as Kopecks,
+		advanceOffsetRub: res.advanceOffsetRub,
+		advanceOffsetKopecks: res.advanceOffsetKopecks as Kopecks,
+		familyWalletRub: res.familyWalletRub,
+		familyWalletKopecks: res.familyWalletKopecks as Kopecks,
+		certificateRub: res.certificateRub,
+		certificateKopecks: res.certificateKopecks as Kopecks,
+		insuranceRub: res.insuranceRub,
+		insuranceKopecks: res.insuranceKopecks as Kopecks,
+		patientCoPayRub: res.patientCoPayRub,
+		patientCoPayKopecks: res.patientCoPayKopecks as Kopecks,
+		totalRub: res.totalRub,
+		totalKopecks: res.totalKopecks as Kopecks,
+		allocatedKopecks: res.allocatedKopecks as Kopecks,
+		remainingKopecks: res.remainingKopecks as Kopecks,
+		isFullyAllocated: res.isFullyAllocated,
+		isOverallocated: res.isOverallocated,
+	};
 }
 
 /**

@@ -162,8 +162,14 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 			);
 			const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();
 			const docNum = p.fiscalReceiptNumber ? p.fiscalReceiptNumber.replace(/\D/g, "") : p.id.slice(0, 8);
-			const rawReceipt = p.fiscalReceipt as Record<string, any> | null;
-			const fiscalSign = rawReceipt?.fiscalSign || rawReceipt?.fp || rawReceipt?.fpd || "";
+			const rawReceipt = p.fiscalReceipt as Record<string, unknown> | null;
+			const fiscalSign = typeof rawReceipt?.fiscalSign === "string"
+				? rawReceipt.fiscalSign
+				: typeof rawReceipt?.fp === "string"
+					? rawReceipt.fp
+					: typeof rawReceipt?.fpd === "string"
+						? rawReceipt.fpd
+						: "";
 
 			return {
 				id: p.id,

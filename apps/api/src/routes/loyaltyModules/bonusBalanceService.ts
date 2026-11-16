@@ -1,5 +1,5 @@
 import { and, asc, eq, gt, isNotNull, lte, sql } from "drizzle-orm";
-import { kopecksToNumericString, parseKopecks, sumKopecks } from "@dental/shared";
+import { getLoyaltyTierDefinition, type LoyaltyTierId, kopecksToNumericString, parseKopecks, sumKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import type { TenantDb } from "../../db/rls.js";
 import { bonusTransactions, patientBonusBalances, patients } from "../../db/schema.js";
@@ -208,13 +208,12 @@ export async function processPatientExpiredBonuses(
 		return { expiredPoints: 0, expiredTransactionsCount: 0 };
 	}
 
-	let totalUnspentExpired = 0;
+	let totalUnspentExpiredKop = 0;
 	for (const row of expiredAccruals) {
-		totalUnspentExpired += Number(row.unspentPoints ?? 0);
+		totalUnspentExpiredKop = sumKopecks([totalUnspentExpiredKop, parseKopecks(row.unspentPoints ?? 0)]);
 	}
-	totalUnspentExpired = Number(totalUnspentExpired.toFixed(2));
 
-	if (totalUnspentExpired <= 0) {
+	if (totalUnspentExpiredKop <= 0) {
 		return { expiredPoints: 0, expiredTransactionsCount: 0 };
 	}
 
@@ -225,19 +224,23 @@ export async function processPatientExpiredBonuses(
 		.limit(1)
 		.for("update");
 
-	const currentActive = Number(balance?.activePoints ?? 0);
+	const currentActiveKop = parseKopecks(balance?.activePoints ?? 0);
 	// Red Team Blind-Spot #2: activePoints must never go negative (greatest(0, activePoints - expired))
-	const actualExpired = Math.min(currentActive, totalUnspentExpired);
-	const newActive = Math.max(0, Number((currentActive - actualExpired).toFixed(2)));
-	const currentExpired = Number(balance?.lifetimeExpiredPoints ?? 0);
-	const newLifetimeExpired = Number((currentExpired + actualExpired).toFixed(2));
+	const actualExpiredKop = Math.min(currentActiveKop, totalUnspentExpiredKop);
+	const newActiveKop = Math.max(0, currentActiveKop - actualExpiredKop);
+	const currentExpiredKop = parseKopecks(balance?.lifetimeExpiredPoints ?? 0);
+	const newLifetimeExpiredKop = sumKopecks([currentExpiredKop, actualExpiredKop]);
+
+	const newActiveStr = kopecksToNumericString(newActiveKop);
+	const newLifetimeExpiredStr = kopecksToNumericString(newLifetimeExpiredKop);
+	const actualExpired = Number(kopecksToNumericString(actualExpiredKop));
 
 	if (balance) {
 		await tx
 			.update(patientBonusBalances)
 			.set({
-				activePoints: String(newActive),
-				lifetimeExpiredPoints: String(newLifetimeExpired),
+				activePoints: newActiveStr,
+				lifetimeExpiredPoints: newLifetimeExpiredStr,
 				updatedAt: asOfDate,
 			})
 			.where(and(eq(patientBonusBalances.organizationId, orgId), eq(patientBonusBalances.patientId, patientId)));
@@ -251,12 +254,12 @@ export async function processPatientExpiredBonuses(
 			.where(and(eq(bonusTransactions.organizationId, orgId), eq(bonusTransactions.id, row.id)));
 	}
 
-	if (actualExpired > 0) {
+	if (actualExpiredKop > 0) {
 		await tx.insert(bonusTransactions).values({
 			organizationId: orgId,
 			patientId,
-			amountPoints: String(-actualExpired),
-			balanceAfterPoints: String(newActive),
+			amountPoints: kopecksToNumericString(-actualExpiredKop),
+			balanceAfterPoints: newActiveStr,
 			type: "expired",
 			description: `Истечение срока действия бонусов (${actualExpired} б.)`,
 			createdAt: asOfDate,
@@ -332,7 +335,7 @@ export async function getPatientBonusBalance(params: {
 
 	return db.transaction(async (tx) => {
 		const [patient] = await tx
-			.select({ id: patients.id, fullName: patients.fullName })
+			.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
 			.from(patients)
 			.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
 			.limit(1);
@@ -379,6 +382,21 @@ export async function getPatientBonusBalance(params: {
 			daysUntilNearestExpiration = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 		}
 
+		let tierId: LoyaltyTierId = "silver";
+		if (patient.familyGroupId) {
+			tierId = "family";
+		}
+		const lifetimeSpentKop = parseKopecks(balance?.lifetimeSpentPoints ?? 0);
+		const lifetimeEarnedKop = parseKopecks(balance?.lifetimeEarnedPoints ?? 0);
+		if (lifetimeSpentKop >= 40000000 || lifetimeEarnedKop >= 4000000) {
+			tierId = "platinum";
+		} else if (lifetimeSpentKop >= 15000000 || lifetimeEarnedKop >= 1500000) {
+			if (tierId !== "family") {
+				tierId = "gold";
+			}
+		}
+		const tierDef = getLoyaltyTierDefinition(tierId);
+
 		return {
 			patientId,
 			patientName: patient.fullName,
@@ -390,9 +408,10 @@ export async function getPatientBonusBalance(params: {
 			nearestExpiringPoints,
 			nearestExpirationDate,
 			daysUntilNearestExpiration,
-			tier: "bronze",
-			cashbackPercent: 3.0,
-			maxInvoiceCoveragePercent: 30.0,
+			tier: tierDef.id,
+			tierNameRu: tierDef.nameRu,
+			cashbackPercent: tierDef.cashbackPercent,
+			maxInvoiceCoveragePercent: tierDef.maxInvoiceCoveragePercent,
 			pointRateRub: 1.0,
 		};
 	});

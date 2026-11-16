@@ -36,7 +36,7 @@ export function registerFamilyWalletOperationsRoutes(app: FastifyInstance) {
 		try {
 			const result = await familyWalletService.topup({
 				organizationId, familyGroupId: parsed.data.familyGroupId, patientId: parsed.data.patientId,
-				amountRub: parsed.data.amountRub, method: parsed.data.method, clientMutationId: mutationId, notes: parsed.data.comment,
+				amountRub: parsed.data.amountRub, amountKopecks: parsed.data.amountKopecks, method: parsed.data.method, clientMutationId: mutationId, notes: parsed.data.comment,
 			});
 			return {
 				payment: result.payment,

@@ -36,7 +36,7 @@ export function TimelineEmptyState({
 					<button
 						type="button"
 						onClick={onNewAppointmentClick}
-						className="min-h-[40px] px-4 rounded-xl bg-[var(--teal,#0d9488)] text-white text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+						className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm inline-flex items-center justify-center cursor-pointer"
 					>
 						<Plus className="w-4 h-4" />
 						<span>Новая запись</span>
@@ -48,7 +48,7 @@ export function TimelineEmptyState({
 						<button
 							type="button"
 							onClick={resetScheduleFilters}
-							className="min-h-[40px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer"
+							className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center"
 						>
 							Сбросить фильтры
 						</button>
@@ -57,7 +57,7 @@ export function TimelineEmptyState({
 					<button
 						type="button"
 						onClick={() => setScheduleDateFilter(todayScheduleDate())}
-						className="min-h-[40px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer"
+						className="h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer inline-flex items-center justify-center"
 					>
 						Сегодня ({clinicToday || "текущий день"})
 					</button>

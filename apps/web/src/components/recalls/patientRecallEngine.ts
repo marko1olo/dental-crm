@@ -12,17 +12,26 @@ export * from "./recallProfile";
 export * from "./recallFilterSort";
 export * from "./recallActions";
 export { determineTaskCallTypeForCandidate } from "./recallsCatalogData";
+
+// Explicit disambiguation for star-export collisions between recallsCatalogData and modular submodules
 export {
-	buildTelegramUrl,
 	buildWhatsAppUrl,
+	buildTelegramUrl,
 	generatePdnProtectedRecallMessage,
 	generateWhatsAppRecallMessage,
 	generateTelegramRecallMessage,
 	generateSmsRecallMessage,
 	buildRecallMessageContent,
-	calculateSmsSegments,
-	formatSmsSummary,
 } from "./recallSmsAndMessaging";
+
+export {
+	addCalendarMonthsSafe,
+	addWeeksSafe,
+	addDaysSafe,
+	formatIsoDateOnly,
+	calculateDaysOverdue,
+	resolveUrgencyStatus,
+} from "./recallDateMath";
 
 // Clean aliases for legacy imports
 import { sanitizePhoneNumber, extractFirstName } from "./recallSmsAndMessaging";

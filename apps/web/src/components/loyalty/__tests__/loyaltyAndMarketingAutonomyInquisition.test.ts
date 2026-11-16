@@ -144,7 +144,7 @@ describe("Red Team Constitutional Inquisition — Marketing, Leads & Loyalty Sys
 				discountKop,
 				pointsRedeemedKop: redeemedPointsKop,
 				excludedFromAccrualKop: excludedKop,
-				tierId: "platinum", // 7% cashback
+				tierId: "family", // 7% cashback (Family tier SSOT)
 			});
 
 			// Out-of-pocket: 777777 - 77777 - 100000 = 600000 kop (6,000.00 RUB)
@@ -193,7 +193,7 @@ describe("Red Team Constitutional Inquisition — Marketing, Leads & Loyalty Sys
 				referredPatientName: "Смирнов Денис",
 				referredPatientPhone: "+7 (999) 111-22-33",
 				createdAtIso: "2026-09-01T10:00:00Z",
-				status: "first_visit_completed",
+				status: "visited",
 				firstVisitInvoiceKop: 350000,
 				rewardPreset: DEFAULT_REFERRAL_PRESET,
 				rewardRub: 500,
@@ -215,7 +215,7 @@ describe("Red Team Constitutional Inquisition — Marketing, Leads & Loyalty Sys
 			assert.equal(entry.patientName, "Соколова Марина");
 			assert.equal(entry.pointsDeltaRub, 500);
 			assert.equal(entry.balanceAfterRub, 1700);
-			assert.match(entry.noteRu, /Смирнов Денис/);
+			assert.match(entry.noteRu ?? "", /Смирнов Денис/);
 		});
 
 		it("should verify all referral program presets use exact integer kopecks", () => {

@@ -38,7 +38,7 @@ export function WaitlistCandidateCard({
 	const isUrgent = scoring.urgency === "acute_pain" || scoring.urgency === "urgent";
 
 	return (
-		<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:border-[var(--teal,#0d9488)]/40 transition-all shadow-sm space-y-2.5">
+		<div className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--primary)]/40 transition-all shadow-sm space-y-2.5">
 			{/* Верхняя строка карточки: Пациент, Срочность и Рейтинг */}
 			<div className="flex items-start justify-between gap-2">
 				<div>
@@ -63,7 +63,7 @@ export function WaitlistCandidateCard({
 						{scoring.urgencyLabel}
 					</span>
 					{targetSlot && (
-						<span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-[var(--badge-teal-bg,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)]">
+						<span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary)]">
 							{scoring.score}%
 						</span>
 					)}
@@ -78,7 +78,7 @@ export function WaitlistCandidateCard({
 							key={idx}
 							className="px-2 py-0.5 rounded bg-[var(--paper-subtle,#f1f5f9)] text-[var(--text-muted,#64748b)] inline-flex items-center gap-1"
 						>
-							<Check size={11} className="shrink-0 text-[var(--teal,#0d9488)]" />
+							<Check size={11} className="shrink-0 text-[var(--primary)]" />
 							<span>{reason}</span>
 						</span>
 					))}
@@ -123,7 +123,7 @@ export function WaitlistCandidateCard({
 					>
 						{copiedId === candidate.id ? (
 							<>
-								<Check size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<Check size={14} className="text-[var(--primary)] shrink-0" />
 								<span>Скопировано!</span>
 							</>
 						) : (
@@ -140,7 +140,7 @@ export function WaitlistCandidateCard({
 					<button
 						type="button"
 						onClick={() => onBookCandidate(candidate)}
-						className="w-full sm:w-auto h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+						className="w-full sm:w-auto h-11 sm:h-9 px-4 rounded-xl sm:rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
 					>
 						<span>Записать в окно</span>
 						<span>→</span>
@@ -149,7 +149,7 @@ export function WaitlistCandidateCard({
 					<button
 						type="button"
 						onClick={() => onAssignCandidate?.(candidate)}
-						className="w-full sm:w-auto h-11 sm:h-8 px-4 sm:px-3 rounded-xl sm:rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/10 text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center"
+						className="w-full sm:w-auto h-11 sm:h-8 px-4 sm:px-3 rounded-xl sm:rounded-lg border border-[var(--line)] text-[var(--primary)] hover:bg-[var(--primary-soft)] text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center"
 					>
 						Назначить
 					</button>

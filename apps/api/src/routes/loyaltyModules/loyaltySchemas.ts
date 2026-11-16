@@ -4,6 +4,8 @@ export const redeemPointsBodySchema = z.object({
 	patientId: z.string().uuid(),
 	invoiceId: z.string().uuid().optional().nullable(),
 	invoiceAmountRub: z.number().positive().finite().multipleOf(0.01),
+	invoiceAmountKopecks: z.number().int().positive().optional(),
+	amountKopecks: z.number().int().positive().optional(),
 	pointsToRedeem: z.number().positive().finite().multipleOf(0.01),
 	allowFullCoverage: z.boolean().optional().default(false),
 	clientMutationId: z.string().optional(),

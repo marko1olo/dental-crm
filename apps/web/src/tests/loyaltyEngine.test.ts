@@ -38,7 +38,7 @@ describe("Statutory Dental Loyalty Math Engine", () => {
 			assert.equal(res.cashbackPercent, 3);
 			assert.equal(res.accruedPointsKop, 30000); // 300.00 RUB = 30,000 kop
 			assert.equal(res.accruedPointsRub, 300);
-			assert.equal(res.tierNameRu, "Серебряный");
+			assert.equal(res.tierNameRu, "Серебряный (Базовый)");
 		});
 
 		it("should deduct discounts and redeemed points from accrual base (no cashback on bonus payment)", () => {
@@ -60,20 +60,20 @@ describe("Statutory Dental Loyalty Math Engine", () => {
 			assert.equal(res.accruedPointsRub, 300);
 		});
 
-		it("should calculate 7% cashback for VIP Platinum tier and 6% for Family tier", () => {
+		it("should calculate 10% cashback for VIP Platinum tier and 7% for Family tier", () => {
 			const platRes = calculateLoyaltyAccrual({
 				grossInvoiceKop: 5000000, // 50,000 RUB
 				tierId: "platinum",
 			});
-			assert.equal(platRes.cashbackPercent, 7);
-			assert.equal(platRes.accruedPointsRub, 3500); // 7% of 50k = 3,500 pts
+			assert.equal(platRes.cashbackPercent, 10);
+			assert.equal(platRes.accruedPointsRub, 5000); // 10% of 50k = 5,000 pts
 
 			const famRes = calculateLoyaltyAccrual({
 				grossInvoiceKop: 5000000,
 				tierId: "family",
 			});
-			assert.equal(famRes.cashbackPercent, 6);
-			assert.equal(famRes.accruedPointsRub, 3000); // 6% of 50k = 3,000 pts
+			assert.equal(famRes.cashbackPercent, 7);
+			assert.equal(famRes.accruedPointsRub, 3500); // 7% of 50k = 3,500 pts
 		});
 	});
 
@@ -106,32 +106,32 @@ describe("Statutory Dental Loyalty Math Engine", () => {
 				excludedFromRedemptionKop: 2000000, // 20,000 RUB lab cost for zirconia crown
 				availablePointsBalanceRub: 15000,
 				requestedPointsRub: 15000,
-				tierId: "gold", // max coverage 40%
+				tierId: "gold", // max coverage 50%
 			});
 
 			// Redeemable base: 50,000 - 20,000 = 30,000 RUB (3,000,000 kop)
 			assert.equal(res.redeemableBaseKop, 3000000);
-			// Max allowed: 40% of 30,000 = 12,000 RUB
-			assert.equal(res.maxAllowedRedemptionRub, 12000);
-			assert.equal(res.actualRedeemedPointsRub, 12000);
-			// Remaining payable: 50,000 - 12,000 = 38,000 RUB
-			assert.equal(res.remainingPayableRub, 38000);
+			// Max allowed: 50% of 30,000 = 15,000 RUB
+			assert.equal(res.maxAllowedRedemptionRub, 15000);
+			assert.equal(res.actualRedeemedPointsRub, 15000);
+			// Remaining payable: 50,000 - 15,000 = 35,000 RUB
+			assert.equal(res.remainingPayableRub, 35000);
 			assert.equal(res.isExcludedItemsPresent, true);
 		});
 
-		it("should allow up to 50% invoice payment for Platinum VIP tier", () => {
+		it("should allow up to 70% invoice payment for Platinum VIP tier", () => {
 			const res = calculateLoyaltyRedemption({
 				grossInvoiceKop: 2000000, // 20,000 RUB
 				availablePointsBalanceRub: 15000,
-				requestedPointsRub: 10000,
-				tierId: "platinum", // 50%
+				requestedPointsRub: 14000,
+				tierId: "platinum", // 70%
 			});
 
-			assert.equal(res.maxCoveragePercent, 50);
-			assert.equal(res.maxAllowedRedemptionRub, 10000);
-			assert.equal(res.actualRedeemedPointsRub, 10000);
-			assert.equal(res.remainingPayableRub, 10000);
-			assert.equal(res.remainingPointsBalanceRub, 5000);
+			assert.equal(res.maxCoveragePercent, 70);
+			assert.equal(res.maxAllowedRedemptionRub, 14000);
+			assert.equal(res.actualRedeemedPointsRub, 14000);
+			assert.equal(res.remainingPayableRub, 6000);
+			assert.equal(res.remainingPointsBalanceRub, 1000);
 		});
 
 		it("should allow up to 100% invoice coverage when isDoctorOverride is enabled (Mandates 8e, 8s)", () => {
@@ -294,7 +294,7 @@ describe("Statutory Dental Loyalty Math Engine", () => {
 			assert.equal(pool.totalFamilyLifetimeSpentKop, 20000000); // 200,000 RUB
 			assert.equal(pool.totalFamilyLifetimeSpentRub, 200000);
 			assert.equal(pool.effectiveTier.id, "family");
-			assert.equal(pool.effectiveTier.cashbackPercent, 6);
+			assert.equal(pool.effectiveTier.cashbackPercent, 7);
 		});
 	});
 

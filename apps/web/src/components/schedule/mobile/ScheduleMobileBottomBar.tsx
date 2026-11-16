@@ -20,7 +20,7 @@ export const ScheduleMobileBottomBar: React.FC<ScheduleMobileBottomBarProps> = (
     >
       <button
         type="button"
-        className="primary-button schedule-mobile-primary-action-btn w-full h-[52px] min-h-[44px] rounded-2xl bg-[var(--teal,#0d9488)] text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-teal-700/20 active:scale-[0.98] transition-all cursor-pointer"
+        className="primary-button schedule-mobile-primary-action-btn w-full min-h-[52px] h-[52px] rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] font-semibold text-base flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
         onClick={onAction}
         data-testid="schedule-mobile-add-btn"
       >

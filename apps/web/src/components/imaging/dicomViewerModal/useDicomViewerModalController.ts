@@ -80,14 +80,45 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 
 	const processFile = useCallback((file: File) => {
 		const reader = new FileReader();
-		reader.onload = () => {
-			setCurrentImageSrc(reader.result as string);
+		reader.onload = async () => {
+			const dataUrl = reader.result as string;
+			setCurrentImageSrc(dataUrl);
 			ai.resetAiState();
 			setMeasurements([]);
 			setViewportState(DEFAULT_DICOM_VIEWPORT_STATE);
+
+			const targetPatientId = patientId || selectedPatientId;
+			try {
+				const headers = denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
+				});
+				const res = await fetch("/api/xray/scans", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						...(targetPatientId && targetPatientId.length === 36 ? { patientId: targetPatientId } : {}),
+						imageBase64: dataUrl,
+						originalFilename: file.name,
+						mimeType: file.type || "image/jpeg",
+						...(toothFdiCode ? { toothCode: String(toothFdiCode) } : {}),
+						kind: "periapical",
+					}),
+				});
+				if (res.ok) {
+					const json = await res.json();
+					const scan = json?.data ?? json;
+					if (scan?.id) setActiveStudyId(scan.id);
+					showToast(`Снимок «${file.name}» сохранен в хранилище клиники`, "success");
+				} else {
+					showToast(`Снимок «${file.name}» открыт в просмотрщике`, "info");
+				}
+			} catch {
+				showToast(`Снимок «${file.name}» открыт в просмотрщике`, "info");
+			}
 		};
 		reader.readAsDataURL(file);
-	}, [ai]);
+	}, [ai, patientId, selectedPatientId, toothFdiCode, denteClinicalMutationHeaders]);
 
 	return {
 		viewMode, isCtSelectorOpen, setIsCtSelectorOpen, isCbctStudioOpen, setIsCbctStudioOpen, currentImageSrc, setCurrentImageSrc,

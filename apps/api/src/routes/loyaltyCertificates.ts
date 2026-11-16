@@ -1,6 +1,8 @@
 import {
 	generateLuhn16Certificate,
 	validateLuhn16Certificate,
+	parseKopecks,
+	kopecksToNumericString,
 } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -132,9 +134,9 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 					nominalRub: Number(result.nominalRub),
 					initialBalanceRub: Number(result.initialBalanceRub),
 					currentBalanceRub: Number(result.currentBalanceRub),
-					nominalKop: Math.round(Number(result.nominalRub) * 100),
-					initialBalanceKop: Math.round(Number(result.initialBalanceRub) * 100),
-					currentBalanceKop: Math.round(Number(result.currentBalanceRub) * 100),
+					nominalKop: parseKopecks(result.nominalRub),
+					initialBalanceKop: parseKopecks(result.initialBalanceRub),
+					currentBalanceKop: parseKopecks(result.currentBalanceRub),
 					purchaserPatientId: result.purchaserPatientId,
 					purchaserName: result.purchaserName,
 					recipientPatientId: result.recipientPatientId,
@@ -206,8 +208,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 					serialNumber: canonicalFormatted,
 					nominalRub: Number(cert.nominalRub),
 					currentBalanceRub: Number(cert.currentBalanceRub),
-					nominalKop: Math.round(Number(cert.nominalRub) * 100),
-					currentBalanceKop: Math.round(Number(cert.currentBalanceRub) * 100),
+					nominalKop: parseKopecks(cert.nominalRub),
+					currentBalanceKop: parseKopecks(cert.currentBalanceRub),
 					status: effectiveStatus,
 					issuedAtIso: cert.issuedAt.toISOString(),
 					expiresAtIso: cert.expiresAt.toISOString(),
@@ -279,8 +281,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 					serialNumber: canonicalFormatted,
 					nominalRub: Number(cert.nominalRub),
 					currentBalanceRub: Number(cert.currentBalanceRub),
-					nominalKop: Math.round(Number(cert.nominalRub) * 100),
-					currentBalanceKop: Math.round(Number(cert.currentBalanceRub) * 100),
+					nominalKop: parseKopecks(cert.nominalRub),
+					currentBalanceKop: parseKopecks(cert.currentBalanceRub),
 					status: effectiveStatus,
 					issuedAtIso: cert.issuedAt.toISOString(),
 					expiresAtIso: cert.expiresAt.toISOString(),
@@ -358,20 +360,24 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 					};
 				}
 
-				const currentBalance = Number(cert.currentBalanceRub);
-				if (currentBalance <= 0) {
+				const currentBalanceKop = parseKopecks(cert.currentBalanceRub);
+				if (currentBalanceKop <= 0) {
 					return { error: true as const, message: "Баланс сертификата равен 0 ₽", code: 400 };
 				}
 
-				const requestedDeduction = amountToRedeemRub !== undefined ? amountToRedeemRub : invoiceAmountRub;
-				const redeemedRub = Number(Math.min(currentBalance, requestedDeduction, invoiceAmountRub).toFixed(2));
-				const newBalanceRub = Number((currentBalance - redeemedRub).toFixed(2));
-				const newStatus = newBalanceRub <= 0 ? "depleted" : "active";
+				const invoiceAmountKop = parseKopecks(invoiceAmountRub);
+				const requestedDeductionKop = amountToRedeemRub !== undefined ? parseKopecks(amountToRedeemRub) : invoiceAmountKop;
+				const redeemedKop = Math.min(currentBalanceKop, requestedDeductionKop, invoiceAmountKop);
+				const redeemedRub = Number(kopecksToNumericString(redeemedKop));
+				const newBalanceKop = Math.max(0, currentBalanceKop - redeemedKop);
+				const newBalanceStr = kopecksToNumericString(newBalanceKop);
+				const newBalanceRub = Number(newBalanceStr);
+				const newStatus = newBalanceKop <= 0 ? "depleted" : "active";
 
 				await tx
 					.update(giftCertificates)
 					.set({
-						currentBalanceRub: String(newBalanceRub),
+						currentBalanceRub: newBalanceStr,
 						status: newStatus,
 						updatedAt: new Date(),
 					})
@@ -381,7 +387,26 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 				let invoicePaid = false;
 
 				if (invoiceId) {
-					const targetPatientId = patientId || cert.recipientPatientId || cert.purchaserPatientId || orgId;
+					let targetPatientId = patientId || cert.recipientPatientId || cert.purchaserPatientId || null;
+					if (!targetPatientId) {
+						const [invoice] = await tx
+							.select({ patientId: patientInvoices.patientId })
+							.from(patientInvoices)
+							.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)))
+							.limit(1);
+						if (invoice?.patientId) {
+							targetPatientId = invoice.patientId;
+						}
+					}
+
+					if (!targetPatientId) {
+						return {
+							error: true as const,
+							message: "Не удалось определить пациента для проведения платежа по счёту",
+							code: 400,
+						};
+					}
+
 					const [payRecord] = await tx
 						.insert(payments)
 						.values({
@@ -409,8 +434,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 							),
 						);
 
-					const totalPaid = existingPayments.reduce((acc, p) => acc + Number(p.amountRub), 0);
-					if (totalPaid >= invoiceAmountRub) {
+					const totalPaidKop = existingPayments.reduce((acc, p) => acc + parseKopecks(p.amountRub), 0);
+					if (totalPaidKop >= invoiceAmountKop) {
 						await tx
 							.update(patientInvoices)
 							.set({ status: "paid", paidAt: new Date() })
@@ -419,20 +444,23 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 					}
 				}
 
+				const remainingInvoiceKop = Math.max(0, invoiceAmountKop - redeemedKop);
+				const remainingInvoiceAmountRub = Number(kopecksToNumericString(remainingInvoiceKop));
+
 				return {
 					success: true as const,
 					certificateId: cert.id,
 					serialNumber: cert.serialNumber,
-					previousBalanceRub: currentBalance,
+					previousBalanceRub: Number(kopecksToNumericString(currentBalanceKop)),
 					redeemedAmountRub: redeemedRub,
 					newBalanceRub,
-					remainingInvoiceAmountRub: Number(Math.max(0, invoiceAmountRub - redeemedRub).toFixed(2)),
+					remainingInvoiceAmountRub,
 					status: newStatus,
 					paymentId,
 					invoicePaid,
 					fiscal54FzSplit: {
-						tag1215AdvanceOffsetKop: Math.round(redeemedRub * 100),
-						tag1081ElectronicKop: Math.round(Math.max(0, invoiceAmountRub - redeemedRub) * 100),
+						tag1215AdvanceOffsetKop: redeemedKop,
+						tag1081ElectronicKop: remainingInvoiceKop,
 					},
 				};
 			});
@@ -469,8 +497,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 					serialNumber: r.serialNumber,
 					nominalRub: Number(r.nominalRub),
 					currentBalanceRub: Number(r.currentBalanceRub),
-					nominalKop: Math.round(Number(r.nominalRub) * 100),
-					currentBalanceKop: Math.round(Number(r.currentBalanceRub) * 100),
+					nominalKop: parseKopecks(r.nominalRub),
+					currentBalanceKop: parseKopecks(r.currentBalanceRub),
 					purchaserName: r.purchaserName,
 					recipientName: r.recipientName,
 					recipientPhone: r.recipientPhone,

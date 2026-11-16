@@ -18,7 +18,10 @@ import {
 } from "@dental/shared";
 import { imagingKindLabels, imagingSourceLabels } from "../../../imagingUiLabels";
 import { pricelistSourceKindLabels } from "../../../pricelistUiMeta";
-import { postVisitCareTopicOptions } from "../../../workspaceStaticOptions";
+import {
+	postVisitCareTopicOptions,
+	treatmentAcceptanceVariantOptions,
+} from "../../../workspaceStaticOptions";
 import {
 	appointmentLabels,
 	clinicalRuleActionLabels,
@@ -27,7 +30,6 @@ import {
 	recognitionTargetLabels,
 	serviceCategoryLabels,
 } from "../../../workspaceUiLabels";
-import { treatmentAcceptanceVariantOptions } from "../../AppointmentHelpers";
 import {
 	type OnboardingStep,
 	onboardingStepValues,

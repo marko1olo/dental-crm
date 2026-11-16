@@ -1,4 +1,4 @@
-import { calculateMaxRedeemablePoints } from "@dental/shared";
+import { calculateMaxRedeemablePoints, getLoyaltyTierDefinition, type LoyaltyTierId, kopecksToNumericString, parseKopecks, sumKopecks } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { bonusTransactions, patientBonusBalances, patientInvoices, patients, payments } from "../../db/schema.js";
@@ -10,14 +10,14 @@ export interface ExecuteRedeemParams {
 	readonly invoiceId?: string | null | undefined;
 	readonly invoiceAmountRub: number;
 	readonly pointsToRedeem: number;
-	readonly allowFullCoverage: boolean;
+	readonly allowFullCoverage?: boolean | undefined;
 	readonly clientMutationId?: string | undefined;
 	readonly description: string;
 }
 
 export async function executeBonusRedeem(p: ExecuteRedeemParams) {
 	return db.transaction(async (tx) => {
-		const [patient] = await tx.select({ id: patients.id }).from(patients).where(and(eq(patients.organizationId, p.orgId), eq(patients.id, p.patientId))).limit(1).for("update");
+		const [patient] = await tx.select({ id: patients.id, familyGroupId: patients.familyGroupId }).from(patients).where(and(eq(patients.organizationId, p.orgId), eq(patients.id, p.patientId))).limit(1).for("update");
 		if (!patient) return { notFound: true as const };
 
 		// JIT TTL: expire any overdue bonuses before evaluating redeemable balance
@@ -33,22 +33,42 @@ export async function executeBonusRedeem(p: ExecuteRedeemParams) {
 			effectiveInvoiceAmountRub = Number(invoice.totalRub);
 		}
 
+		let patientTierId: LoyaltyTierId = "silver";
+		if (patient.familyGroupId) {
+			patientTierId = "family";
+		}
+		const lifetimeSpentKop = parseKopecks(balance?.lifetimeSpentPoints ?? 0);
+		const lifetimeEarnedKop = parseKopecks(balance?.lifetimeEarnedPoints ?? 0);
+		if (lifetimeSpentKop >= 40000000 || lifetimeEarnedKop >= 4000000) {
+			patientTierId = "platinum";
+		} else if (lifetimeSpentKop >= 15000000 || lifetimeEarnedKop >= 1500000) {
+			if (patientTierId !== "family") {
+				patientTierId = "gold";
+			}
+		}
+		const tierDef = getLoyaltyTierDefinition(patientTierId);
+		const maxCoverage = p.allowFullCoverage ? 100 : tierDef.maxInvoiceCoveragePercent;
+
 		const activePoints = Number(balance?.activePoints ?? 0);
-		const maxCoverage = p.allowFullCoverage !== false ? 100 : 30;
 		const coverage = calculateMaxRedeemablePoints(effectiveInvoiceAmountRub, activePoints, maxCoverage);
 
 		if (p.pointsToRedeem > coverage.maxAllowedPoints) return { limitExceeded: true as const, maxAllowedPoints: coverage.maxAllowedPoints };
 		if (p.pointsToRedeem > activePoints) return { insufficientPoints: true as const, activePoints };
 
-		const currentLifetimeSpent = Number(balance?.lifetimeSpentPoints ?? 0);
-		const newActivePoints = Number((activePoints - p.pointsToRedeem).toFixed(2));
-		const newLifetimeSpent = Number((currentLifetimeSpent + p.pointsToRedeem).toFixed(2));
+		const activePointsKop = parseKopecks(balance?.activePoints ?? 0);
+		const pointsToRedeemKop = parseKopecks(p.pointsToRedeem);
+		const currentLifetimeSpentKop = parseKopecks(balance?.lifetimeSpentPoints ?? 0);
 
-		await tx.update(patientBonusBalances).set({ activePoints: String(newActivePoints), lifetimeSpentPoints: String(newLifetimeSpent), updatedAt: new Date() }).where(and(eq(patientBonusBalances.organizationId, p.orgId), eq(patientBonusBalances.patientId, p.patientId)));
+		const newActivePointsKop = Math.max(0, activePointsKop - pointsToRedeemKop);
+		const newLifetimeSpentKop = sumKopecks([currentLifetimeSpentKop, pointsToRedeemKop]);
+		const newActivePointsStr = kopecksToNumericString(newActivePointsKop);
+		const newLifetimeSpentStr = kopecksToNumericString(newLifetimeSpentKop);
+		const newActivePoints = Number(newActivePointsStr);
+
+		await tx.update(patientBonusBalances).set({ activePoints: newActivePointsStr, lifetimeSpentPoints: newLifetimeSpentStr, updatedAt: new Date() }).where(and(eq(patientBonusBalances.organizationId, p.orgId), eq(patientBonusBalances.patientId, p.patientId)));
 
 		// FIFO: Deduct from earliest expiring accrual batches first
 		await deductUnspentPointsFifo(tx, { orgId: p.orgId, patientId: p.patientId, pointsToDeduct: p.pointsToRedeem });
-
 
 		let paymentId: string | null = null;
 		let invoiceStatusUpdated = false;
@@ -58,17 +78,22 @@ export async function executeBonusRedeem(p: ExecuteRedeemParams) {
 			paymentId = payment?.id ?? null;
 
 			const existingPayments = await tx.select({ amountRub: payments.amountRub }).from(payments).where(and(eq(payments.organizationId, p.orgId), eq(payments.documentId, p.invoiceId), eq(payments.status, "paid")));
-			const totalPaidRub = existingPayments.reduce((acc, pay) => acc + Number(pay.amountRub), 0);
-			if (totalPaidRub >= effectiveInvoiceAmountRub) {
+			const totalPaidKop = sumKopecks(existingPayments.map((pay) => parseKopecks(pay.amountRub)));
+			const invoiceTargetKop = parseKopecks(effectiveInvoiceAmountRub);
+			if (totalPaidKop >= invoiceTargetKop) {
 				await tx.update(patientInvoices).set({ status: "paid", paidAt: new Date() }).where(and(eq(patientInvoices.organizationId, p.orgId), eq(patientInvoices.id, p.invoiceId)));
 				invoiceStatusUpdated = true;
 			}
 		}
 
-		const [txRecord] = await tx.insert(bonusTransactions).values({ organizationId: p.orgId, patientId: p.patientId, amountPoints: String(-p.pointsToRedeem), balanceAfterPoints: String(newActivePoints), type: "redemption_payment", relatedPaymentId: paymentId || null, relatedInvoiceId: p.invoiceId || null, clientMutationId: p.clientMutationId || null, description: p.description }).returning();
+		const [txRecord] = await tx.insert(bonusTransactions).values({ organizationId: p.orgId, patientId: p.patientId, amountPoints: String(-p.pointsToRedeem), balanceAfterPoints: newActivePointsStr, type: "redemption_payment", relatedPaymentId: paymentId || null, relatedInvoiceId: p.invoiceId || null, clientMutationId: p.clientMutationId || null, description: p.description }).returning();
+
+		const effectiveInvoiceKop = parseKopecks(effectiveInvoiceAmountRub);
+		const remainingInvoicePaymentKop = Math.max(0, effectiveInvoiceKop - pointsToRedeemKop);
+		const remainingInvoicePaymentRub = Number(kopecksToNumericString(remainingInvoicePaymentKop));
 
 		return {
-			success: true as const, redeemedPoints: p.pointsToRedeem, discountRub: p.pointsToRedeem, remainingInvoicePaymentRub: Number(Math.max(0, effectiveInvoiceAmountRub - p.pointsToRedeem).toFixed(2)), newActivePoints, paymentId, invoiceStatusUpdated, transactionId: txRecord?.id || "redemption",
+			success: true as const, redeemedPoints: p.pointsToRedeem, discountRub: p.pointsToRedeem, remainingInvoicePaymentRub, newActivePoints, paymentId, invoiceStatusUpdated, transactionId: txRecord?.id || "redemption",
 		};
 	});
 }
@@ -79,14 +104,14 @@ export interface ExecuteHoldParams {
 	readonly invoiceId?: string | null | undefined;
 	readonly invoiceAmountRub: number;
 	readonly pointsToHold: number;
-	readonly allowFullCoverage: boolean;
+	readonly allowFullCoverage?: boolean | undefined;
 	readonly clientMutationId?: string | undefined;
 	readonly description: string;
 }
 
 export async function executeBonusHold(p: ExecuteHoldParams) {
 	return db.transaction(async (tx) => {
-		const [patient] = await tx.select({ id: patients.id }).from(patients).where(and(eq(patients.organizationId, p.orgId), eq(patients.id, p.patientId))).limit(1).for("update");
+		const [patient] = await tx.select({ id: patients.id, familyGroupId: patients.familyGroupId }).from(patients).where(and(eq(patients.organizationId, p.orgId), eq(patients.id, p.patientId))).limit(1).for("update");
 		if (!patient) return { notFound: true as const };
 
 		// JIT TTL: expire any overdue bonuses before evaluating holdable points
@@ -102,20 +127,42 @@ export async function executeBonusHold(p: ExecuteHoldParams) {
 			effectiveInvoiceAmountRub = Number(invoice.totalRub);
 		}
 
+		let patientTierId: LoyaltyTierId = "silver";
+		if (patient.familyGroupId) {
+			patientTierId = "family";
+		}
+		const lifetimeSpentKop = parseKopecks(balance?.lifetimeSpentPoints ?? 0);
+		const lifetimeEarnedKop = parseKopecks(balance?.lifetimeEarnedPoints ?? 0);
+		if (lifetimeSpentKop >= 40000000 || lifetimeEarnedKop >= 4000000) {
+			patientTierId = "platinum";
+		} else if (lifetimeSpentKop >= 15000000 || lifetimeEarnedKop >= 1500000) {
+			if (patientTierId !== "family") {
+				patientTierId = "gold";
+			}
+		}
+		const tierDef = getLoyaltyTierDefinition(patientTierId);
+		const maxCoverage = p.allowFullCoverage ? 100 : tierDef.maxInvoiceCoveragePercent;
+
 		const activePoints = Number(balance?.activePoints ?? 0);
-		const pendingPoints = Number(balance?.pendingPoints ?? 0);
-		const maxCoverage = p.allowFullCoverage !== false ? 100 : 30;
 		const coverage = calculateMaxRedeemablePoints(effectiveInvoiceAmountRub, activePoints, maxCoverage);
 
 		if (p.pointsToHold > coverage.maxAllowedPoints) return { limitExceeded: true as const, maxAllowedPoints: coverage.maxAllowedPoints };
 		if (p.pointsToHold > activePoints) return { insufficientPoints: true as const, activePoints };
 
-		const newActivePoints = Number((activePoints - p.pointsToHold).toFixed(2));
-		const newPendingPoints = Number((pendingPoints + p.pointsToHold).toFixed(2));
+		const activePointsKop = parseKopecks(balance?.activePoints ?? 0);
+		const pendingPointsKop = parseKopecks(balance?.pendingPoints ?? 0);
+		const pointsToHoldKop = parseKopecks(p.pointsToHold);
+
+		const newActivePointsKop = Math.max(0, activePointsKop - pointsToHoldKop);
+		const newPendingPointsKop = sumKopecks([pendingPointsKop, pointsToHoldKop]);
+		const newActivePointsStr = kopecksToNumericString(newActivePointsKop);
+		const newPendingPointsStr = kopecksToNumericString(newPendingPointsKop);
+		const newActivePoints = Number(newActivePointsStr);
+		const newPendingPoints = Number(newPendingPointsStr);
 
 		await tx.update(patientBonusBalances).set({
-			activePoints: String(newActivePoints),
-			pendingPoints: String(newPendingPoints),
+			activePoints: newActivePointsStr,
+			pendingPoints: newPendingPointsStr,
 			updatedAt: new Date(),
 		}).where(and(eq(patientBonusBalances.organizationId, p.orgId), eq(patientBonusBalances.patientId, p.patientId)));
 
@@ -123,7 +170,7 @@ export async function executeBonusHold(p: ExecuteHoldParams) {
 			organizationId: p.orgId,
 			patientId: p.patientId,
 			amountPoints: String(-p.pointsToHold),
-			balanceAfterPoints: String(newActivePoints),
+			balanceAfterPoints: newActivePointsStr,
 			type: "hold_payment",
 			relatedInvoiceId: p.invoiceId || null,
 			clientMutationId: p.clientMutationId || null,
@@ -171,14 +218,18 @@ export async function executeBonusConfirm(p: ExecuteConfirmHoldParams) {
 			),
 		).limit(1).for("update");
 
-		const pendingPoints = Number(balance?.pendingPoints ?? 0);
-		const lifetimeSpent = Number(balance?.lifetimeSpentPoints ?? 0);
-		const newPending = Math.max(0, Number((pendingPoints - heldPoints).toFixed(2)));
-		const newSpent = Number((lifetimeSpent + heldPoints).toFixed(2));
+		const heldPointsKop = parseKopecks(heldPoints);
+		const pendingPointsKop = parseKopecks(balance?.pendingPoints ?? 0);
+		const lifetimeSpentKop = parseKopecks(balance?.lifetimeSpentPoints ?? 0);
+		const newPendingKop = Math.max(0, pendingPointsKop - heldPointsKop);
+		const newSpentKop = sumKopecks([lifetimeSpentKop, heldPointsKop]);
+		const newPendingStr = kopecksToNumericString(newPendingKop);
+		const newSpentStr = kopecksToNumericString(newSpentKop);
+		const newPending = Number(newPendingStr);
 
 		await tx.update(patientBonusBalances).set({
-			pendingPoints: String(newPending),
-			lifetimeSpentPoints: String(newSpent),
+			pendingPoints: newPendingStr,
+			lifetimeSpentPoints: newSpentStr,
 			updatedAt: new Date(),
 		}).where(
 			and(
@@ -189,7 +240,6 @@ export async function executeBonusConfirm(p: ExecuteConfirmHoldParams) {
 
 		// FIFO: Deduct from earliest expiring accrual batches upon confirm
 		await deductUnspentPointsFifo(tx, { orgId: p.orgId, patientId: holdTx.patientId, pointsToDeduct: heldPoints });
-
 
 		await tx.update(bonusTransactions).set({
 			type: "redemption_payment",
@@ -238,14 +288,19 @@ export async function executeBonusRelease(p: ExecuteReleaseHoldParams) {
 			),
 		).limit(1).for("update");
 
-		const activePoints = Number(balance?.activePoints ?? 0);
-		const pendingPoints = Number(balance?.pendingPoints ?? 0);
-		const newActive = Number((activePoints + heldPoints).toFixed(2));
-		const newPending = Math.max(0, Number((pendingPoints - heldPoints).toFixed(2)));
+		const heldPointsKop = parseKopecks(heldPoints);
+		const activePointsKop = parseKopecks(balance?.activePoints ?? 0);
+		const pendingPointsKop = parseKopecks(balance?.pendingPoints ?? 0);
+		const newActiveKop = sumKopecks([activePointsKop, heldPointsKop]);
+		const newPendingKop = Math.max(0, pendingPointsKop - heldPointsKop);
+		const newActiveStr = kopecksToNumericString(newActiveKop);
+		const newPendingStr = kopecksToNumericString(newPendingKop);
+		const newActive = Number(newActiveStr);
+		const newPending = Number(newPendingStr);
 
 		await tx.update(patientBonusBalances).set({
-			activePoints: String(newActive),
-			pendingPoints: String(newPending),
+			activePoints: newActiveStr,
+			pendingPoints: newPendingStr,
 			updatedAt: new Date(),
 		}).where(
 			and(

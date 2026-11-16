@@ -181,8 +181,8 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
                 onClick={() => state.setActiveTab("smart_match")}
                 className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[44px] sm:min-h-[32px] flex items-center gap-1 whitespace-nowrap cursor-pointer ${
                   state.activeTab === "smart_match"
-                    ? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-sm dark:bg-[var(--paper-soft,#334155)] dark:text-white"
-                    : "text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
+                    ? "bg-[var(--paper)] text-[var(--primary)] shadow-sm font-semibold"
+                    : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
                 }`}
               >
                 <span className="max-sm:hidden">Подбор на окно</span>
@@ -195,8 +195,8 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
               onClick={() => state.setActiveTab("all_patients")}
               className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[44px] sm:min-h-[32px] flex items-center gap-1 whitespace-nowrap cursor-pointer ${
                 state.activeTab === "all_patients"
-                  ? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-sm dark:bg-[var(--paper-soft,#334155)] dark:text-white"
-                  : "text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
+                  ? "bg-[var(--paper)] text-[var(--primary)] shadow-sm font-semibold"
+                  : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
               }`}
             >
               <span className="max-sm:hidden">Все в очереди</span>
@@ -208,10 +208,10 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
           <button
             type="button"
             onClick={() => state.setActiveTab("add_new")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line,#e2e8f0)] transition-all min-h-[44px] sm:min-h-[34px] flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all min-h-[44px] sm:min-h-[34px] flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer ${
               state.activeTab === "add_new"
-                ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
-                : "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)]"
+                ? "bg-[var(--primary)] text-white border-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-sm"
+                : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
             }`}
           >
             <span className="max-sm:hidden">+ Добавить пациента</span>

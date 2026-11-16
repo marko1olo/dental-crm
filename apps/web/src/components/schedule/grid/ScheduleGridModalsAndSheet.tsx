@@ -1,14 +1,18 @@
 import React from "react";
+import type { Dashboard } from "@dental/shared";
+import type { ScheduleGridProps } from "./gridTypes";
+import type { useScheduleChairDuty } from "./useScheduleChairDuty";
+import type { useScheduleAppointmentInteractions } from "./useScheduleAppointmentInteractions";
 import { ScheduleMobileBottomSheet } from "./ScheduleMobileBottomSheet";
 import { ScheduleGridModals } from "./ScheduleGridModals";
 
 export interface ScheduleGridModalsAndSheetProps {
-  props: any;
-  duty: any;
-  interactions: any;
+  props: ScheduleGridProps;
+  duty: ReturnType<typeof useScheduleChairDuty>;
+  interactions: ReturnType<typeof useScheduleAppointmentInteractions>;
   dateKey: string;
   timezone: string;
-  patientName: (patients: any, id: string | null) => string;
+  patientName: (patients: Dashboard["patients"] | undefined, id: string | null) => string;
 }
 
 export function ScheduleGridModalsAndSheet({
