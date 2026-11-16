@@ -15,7 +15,7 @@ export function renderSurgicalAnesthesiaSheet(ctx: SurgicalRequisitesContext): s
             Адрес: ${clinicAddress}${clinicPhone ? ` • Тел: ${clinicPhone}` : ""}
           </div>
           <div style="text-align: right;">
-            <span class="statutory-badge">Приказ МЗ РФ № 1051н</span>
+            <span class="statutory-badge">Информированное согласие</span>
           </div>
         </div>
       </div>

@@ -39,7 +39,9 @@ export const InsuranceDmsTariffTable: React.FC<InsuranceDmsTariffTableProps> = (
 	if (contracts.length === 0) return null;
 
 	const selectedContract =
-		contracts.find((c) => c.id === activeContractId) ?? contracts[0]!;
+		contracts.find((c) => c.id === activeContractId) ?? contracts[0];
+
+	if (!selectedContract) return null;
 
 	return (
 		<div

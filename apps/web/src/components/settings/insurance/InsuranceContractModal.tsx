@@ -184,7 +184,13 @@ export const InsuranceContractModal: React.FC<InsuranceContractModalProps> = ({
 					}}
 				>
 					<div className="flex items-center gap-2.5">
-						<div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+						<div
+							className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+							style={{
+								background: "var(--teal-surface, rgba(13, 148, 136, 0.12))",
+								color: "var(--teal, #0d9488)",
+							}}
+						>
 							<ShieldCheck size={20} />
 						</div>
 						<div>
@@ -386,7 +392,10 @@ export const InsuranceContractModal: React.FC<InsuranceContractModalProps> = ({
 							>
 								Франшиза / Со-платеж пациента (доля пациента)
 							</label>
-							<span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+							<span
+								className="text-[11px] font-mono font-bold"
+								style={{ color: "var(--teal, #0d9488)" }}
+							>
 								{formData.patientFranchisePct}% пациента
 							</span>
 						</div>
@@ -400,11 +409,16 @@ export const InsuranceContractModal: React.FC<InsuranceContractModalProps> = ({
 										onClick={() =>
 											setFormData({ ...formData, patientFranchisePct: opt.value })
 										}
-										className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-											isSelected
-												? "bg-emerald-500/15 border-emerald-500/50 shadow-xs ring-1 ring-emerald-500/30 text-[var(--ink)]"
-												: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:border-emerald-400"
-										}`}
+										className="p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between"
+										style={{
+											background: isSelected
+												? "var(--teal-surface, rgba(13, 148, 136, 0.12))"
+												: "var(--paper-soft)",
+											borderColor: isSelected
+												? "var(--teal, #0d9488)"
+												: "var(--line)",
+											color: isSelected ? "var(--ink)" : "var(--muted)",
+										}}
 									>
 										<span className="font-bold text-xs">{opt.label}</span>
 										<span className="text-[10px] text-[var(--muted)] mt-0.5 leading-tight">
@@ -429,7 +443,11 @@ export const InsuranceContractModal: React.FC<InsuranceContractModalProps> = ({
 						}}
 					>
 						<div className="flex items-center gap-2.5">
-							<FileCheck2 size={16} className="text-blue-500 shrink-0" />
+							<FileCheck2
+								size={16}
+								className="shrink-0"
+								style={{ color: "var(--teal, #0d9488)" }}
+							/>
 							<div>
 								<span className="text-xs font-bold text-[var(--ink)] block">
 									Требуется гарантийное письмо (ГП)
@@ -449,7 +467,8 @@ export const InsuranceContractModal: React.FC<InsuranceContractModalProps> = ({
 									requiresGuaranteeLetter: e.target.checked,
 								})
 							}
-							className="w-4 h-4 rounded cursor-pointer accent-emerald-600"
+							className="w-4 h-4 rounded cursor-pointer"
+							style={{ accentColor: "var(--teal, #0d9488)" }}
 						/>
 					</div>
 

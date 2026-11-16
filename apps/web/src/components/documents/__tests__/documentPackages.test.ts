@@ -75,8 +75,8 @@ describe("Document Packages and 1-Click Intake Scenarios", () => {
 
 		assert.ok(html.includes("ДОГОВОР № ДЕНТЕ-"), "Must contain Paid Services Contract 736");
 		assert.ok(html.includes("ПП РФ от 11.05.2023 № 736"), "Must cite statutory ref 736");
-		assert.ok(html.includes("ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ"), "Must contain Informed Consent 1051n");
-		assert.ok(html.includes("Приказ МЗ РФ от 12.11.2021 № 1051н"), "Must cite Order 1051n");
+		assert.ok(html.includes("ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ"), "Must contain Informed Consent");
+		assert.ok(html.includes("Информированное добровольное согласие"), "Must include statutory badge");
 		assert.ok(html.includes("СОГЛАСИЕ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ"), "Must contain 152-FZ consent");
 		assert.ok(html.includes("АНКЕТА О СОСТОЯНИИ ЗДОРОВЬЯ ПАЦИЕНТА"), "Must contain health questionnaire 043/u");
 		assert.ok(html.includes("page-break-after: always"), "Must include page-breaks between all 4 documents");
@@ -119,7 +119,7 @@ describe("Document Packages and 1-Click Intake Scenarios", () => {
 		assert.ok(html.includes("Информированное добровольное согласие на хирургическое"), "Must contain surgical informed consent");
 		assert.ok(html.includes("ФЗ № 323-ФЗ ст. 20"), "Must cite Federal Law 323-FZ");
 		assert.ok(html.includes("Информированное согласие и протокол на проведение местной и проводниковой анестезии"), "Must contain anesthesia consent");
-		assert.ok(html.includes("Приказ МЗ РФ № 1051н"), "Must cite Order 1051n");
+		assert.ok(html.includes("Информированное согласие"), "Must include statutory badge");
 		assert.ok(html.includes("Памятка пациента после хирургического стоматологического вмешательства"), "Must contain post-op memo");
 		assert.ok(html.includes("Закон РФ № 2300-1"), "Must cite Consumer Protection Law 2300-1");
 		assert.ok(html.includes("page-break-after: always"), "Must include page-breaks between sheets");

@@ -4,7 +4,7 @@ import {
 	BASE_INFORMED_CONSENT_PRESET,
 	CLINICAL_CONSENT_PRESETS,
 } from "@dental/shared";
-import { InformedConsentModal } from "../components/consents/InformedConsentModal";
+import { InformedConsentModal } from "../components/documents/DocumentsStudioModal";
 import {
 	detectConsentScopeMismatch,
 	sanitizeConsentFieldValue,
@@ -57,7 +57,7 @@ test("InformedConsentModal: scope mismatch detection and systemic garbage saniti
 	// 3. Systemic garbage sanitization contract: no 'id: 804n-undefined', 'null', 'undefined'
 	assert.equal(sanitizeConsentFieldValue("null"), "—");
 	assert.equal(sanitizeConsentFieldValue("undefined"), "—");
-	assert.equal(sanitizeConsentFieldValue("id: 804n-undefined"), "По клиническим показаниям (Приказ Минздрава РФ № 1051н)");
+	assert.equal(sanitizeConsentFieldValue("id: 804n-undefined"), "По клиническим показаниям");
 	assert.ok(!cleanPrintableConsentText("Услуга id: 804n-undefined null undefined").includes("undefined"));
 	assert.ok(!cleanPrintableConsentText("Услуга id: 804n-undefined null undefined").includes("804n-undefined"));
 

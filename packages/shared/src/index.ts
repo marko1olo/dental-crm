@@ -4,12 +4,13 @@
  * Decomposed under Mandate 8b: Schemas modularized into packages/shared/src/schemas/.
  */
 
-import type { DentalMedicalCard043uPayload } from "./schemas/index.js";
+import type { DentalMedicalCard043uPayload, DmsSplitLineResult } from "./schemas/index.js";
 
 // --- Core Domain Schemas & DTOs ---
 export * from "./schemas/index.js";
 // ФОРМА 025/у ЛИКВИДИРОВАНА (МАНДАТЫ 8i, 8s): dental_medical_card_043u
 export type OutpatientMedicalCard025uPayload = DentalMedicalCard043uPayload;
+export type DmsGuaranteeLineSplit = DmsSplitLineResult;
 export type PatientRecord = import("./patients/patientSchemas.js").Patient;
 export type DashboardResponse = import("./schemas/documentChainAndDmsSchemas.js").Dashboard;
 export type User = import("./schemas/speechProviderSchemas.js").StaffMember;

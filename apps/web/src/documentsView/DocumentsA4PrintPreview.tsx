@@ -115,10 +115,12 @@ export function DocumentsA4PrintPreview({
 					<button
 						className="primary-button h-9 px-3.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
 						type="button"
-						disabled={Boolean(documentCreateSavingKind)}
 						aria-busy={isSelectedDocumentCreating || undefined}
 						aria-describedby={selectedDocumentCreateGuidanceId}
-						onClick={() => void onCreateDocument?.(selectedDocumentKind)}
+						onClick={() => {
+							if (documentCreateSavingKind) return;
+							void onCreateDocument?.(selectedDocumentKind);
+						}}
 						data-testid="btn-create-selected-document"
 					>
 						<FileText size={14} aria-hidden="true" />

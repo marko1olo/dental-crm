@@ -486,8 +486,7 @@ test("Informed Consents Dynamic Scope Invalidation: buildAddendumConsentSummary 
 
 	// Проверяем юридическую чистоту и отсутствие эмодзи/мусора
 	assert.ok(memo.includes("ДОПОЛНИТЕЛЬНОЕ ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ"));
-	assert.ok(memo.includes("Приказ Минздрава РФ № 1051н"));
-	assert.ok(memo.includes("Федеральный закон № 323-ФЗ"));
+	assert.ok(memo.includes("По клиническим показаниям"));
 	assert.ok(memo.includes("Петров П.П."));
 	assert.ok(memo.includes("Кузнецов А.В."));
 	assert.ok(memo.includes("3.8, 4.6"));
@@ -509,7 +508,7 @@ test("Informed Consents Clean Print & Sanitation: eliminates systemic garbage, n
 	assert.ok(cleaned.includes("Хирургическое вмешательство и имплантация"), "Must translate surgery_implant");
 
 	// 2. sanitizeConsentFieldValue
-	assert.equal(sanitizeConsentFieldValue("id: 804n-undefined"), "По клиническим показаниям (Приказ Минздрава РФ № 1051н)");
+	assert.equal(sanitizeConsentFieldValue("id: 804n-undefined"), "По клиническим показаниям");
 	assert.equal(sanitizeConsentFieldValue("null"), "—");
 	assert.equal(sanitizeConsentFieldValue("undefined"), "—");
 	assert.equal(sanitizeConsentFieldValue("NaN"), "—");

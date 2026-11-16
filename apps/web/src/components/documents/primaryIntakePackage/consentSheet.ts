@@ -15,7 +15,7 @@ export function renderConsentSheet(ctx: IntakeRequisitesContext): string {
             <strong>${clinicName}</strong> · Лицензия № ${clinicLicense}
           </div>
           <div style="text-align: right;">
-            <span class="statutory-badge">Информированное добровольное согласие (Приказ МЗ РФ от 12.11.2021 № 1051н)</span>
+            <span class="statutory-badge">Информированное добровольное согласие</span>
           </div>
         </div>
         <h1>ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ</h1>

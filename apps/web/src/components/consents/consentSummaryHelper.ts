@@ -15,11 +15,19 @@ export const STATUTORY_CONSENT_KEY_LABELS: Record<string, string> = {
 	CONSENT_HYGIENE_BLEACHING: "Информированное добровольное согласие на профессиональную гигиену и отбеливание",
 	CONSENT_PERSONAL_DATA: "Согласие на обработку персональных данных",
 	CONSENT_PEDIATRIC: "Информированное добровольное согласие законного представителя на детское стоматологическое лечение",
+	CONSENT_PHOTOPROTOCOL: "Согласие на проведение фото- и видеопротокола",
+	PACKAGE_PRIMARY_VISIT: "Первичный комплекс согласий",
+	PACKAGE_SURGERY: "Хирургический комплекс согласий",
+	PACKAGE_ORTHOPEDICS: "Ортопедический комплекс согласий",
+	tablet_stylus: "Стилусная touch-подпись на планшете",
+	paper_physical: "Личная подпись на бумажном носителе",
+	sms_otp: "Подтверждение кодом из SMS (электронная подпись)",
 	therapy: "Терапевтическое лечение",
 	surgery: "Хирургическое лечение и имплантация",
 	orthopedics: "Ортопедическое лечение и протезирование",
 	orthodontics: "Ортодонтическое лечение",
 	hygiene: "Профессиональная гигиена",
+	periodontology: "Пародонтологическое лечение",
 };
 
 export interface ConsentScopeMismatchItem {
@@ -123,7 +131,7 @@ export function sanitizeConsentFieldValue(val?: string | null): string {
 		return "—";
 	}
 	if (trimmed.includes("804n-undefined")) {
-		return "По клиническим показаниям (Приказ Минздрава РФ № 1051н)";
+		return "По клиническим показаниям";
 	}
 	if (trimmed === "therapy_general") {
 		return "Терапевтическое лечение (кариес, пульпит, периодонтит)";
@@ -185,7 +193,7 @@ export function buildAddendumConsentSummary(data: {
 	const teeth = data.toothNumbers || "—";
 
 	return `ДОПОЛНИТЕЛЬНОЕ ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ
-(в соответствии с требованиями: Приказ Минздрава РФ № 1051н, Федеральный закон № 323-ФЗ)
+(По клиническим показаниям)
 
 Клиника: ${clinic}
 Пациент: ${patient}

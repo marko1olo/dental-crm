@@ -21,7 +21,7 @@
 .dms-modal-backdrop {
 	position: fixed;
 	inset: 0;
-	z-index: 10060;
+	z-index: 100050;
 	pointer-events: auto;
 	background: rgba(15, 23, 42, 0.65);
 	backdrop-filter: blur(8px);
@@ -497,6 +497,8 @@
 
 /* Подвал модального окна */
 .dms-footer {
+	position: relative;
+	z-index: 100060;
 	padding: 14px 20px;
 	border-top: 1px solid var(--line, #e2e8f0);
 	background: var(--paper-soft, #f8fafc);

@@ -291,6 +291,34 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 ---
 
+## 🏥 8.1. Реестр устранённых дефектов страховой медицины и ДМС (DEF-DMS-01...06, Red Team Fixer Домен 25)
+
+1. **DEF-DMS-01 [ЗАКРЫТО] (Декомпозиция DmsStudioModal.tsx, Мандат 8b)**:
+   - Монолит `DmsStudioModal.tsx` сокращен с 575 до 230 строк (значительно ниже лимита 400 строк).
+   - Стейт табов, загрузка гарантийных писем из Fastify API, расчет сплита франшизы и экспорт реестров вынесены в специализированный хук `apps/web/src/components/insurance/studio/useDmsStudioState.ts` (275 строк).
+2. **DEF-DMS-02 [ЗАКРЫТО] (Ликвидация TS2305 DmsSplitLineResult, Мандат 8be)**:
+   - В `apps/web/src/components/insurance/studio/DmsSplitBillingTab.tsx:4` несуществующий тип `DmsGuaranteeLineSplit` заменен на канонический `DmsSplitLineResult` из `@dental/shared`.
+   - В `packages/shared/src/index.ts` добавлен канонический алиас `export type DmsGuaranteeLineSplit = DmsSplitLineResult;`.
+3. **DEF-DMS-03 [ЗАКРЫТО] (Ликвидация хардкодных цветов Tailwind, Мандаты 8am, 8bh)**:
+   - В `InsuranceContractModal.tsx:187,389,405,432` и `InsuranceGuaranteeLettersList.tsx:37,64` устранены утилиты `bg-emerald-500/15`, `text-emerald-600`, `text-blue-500`, `accent-emerald-600`.
+   - Все контролы и индикаторы переведены на семантические CSS-токены DENTE: `var(--teal)`, `var(--teal-surface)`, `var(--muted)`, `var(--line)`.
+4. **DEF-DMS-04 [ЗАКРЫТО] (Ликвидация non-null assertion '!', Мандат 8be)**:
+   - В `apps/web/src/components/settings/insuranceModules/InsuranceDmsTariffTable.tsx:42` устранен `contracts[0]!`.
+   - Внедрен безопасный fallback и защитный guard-clause `if (!selectedContract) return null;`.
+5. **DEF-DMS-05 [ЗАКРЫТО] (Сквозной ДМС-сплит у кресла и касса, Мандат 8e)**:
+   - В `apps/web/src/components/visit/VisitBillingModals.tsx` добавлен проброс коллбэка `onApplySplitToCashbox` и эвент `dente:dms-split-applied`, мгновенно передающий утвержденный сплит визита в кассовый контур.
+6. **DEF-DMS-06 [ЗАКРЫТО] (Автозакрытие модалки и изоляция z-index футера, Мандат 8am)**:
+   - В `useDmsStudioState.ts:handleApplySplit` добавлено автоматическое закрытие модалки на `onClose()` при подтверждении сплита.
+   - В `apps/web/src/components/insurance/insurance.css` z-index модального бэкдропа установлен в `100050`, а футера модалки — в `100060`. Фоновые тосты (`z-index: 99999`) больше не перекрывают Primary CTA «Утвердить ДМС-сплит».
+7. **4-State Visual Proof [ЗАКРЫТО]**:
+   - ☀️ PC Light 1440x900 (`01_dms_insurance_pc_light_1440x900.png` — 397 KB)
+   - 🌙 PC Dark 1440x900 (`02_dms_insurance_pc_dark_1440x900.png` — 478 KB)
+   - 📱 Mobile Light 390x844 (`03_dms_insurance_mobile_light_390x844.png` — 165 KB)
+   - 📱 Mobile Dark 390x844 (`04_dms_insurance_mobile_dark_390x844.png` — 166 KB)
+   - Лично осмотрены через `read_file`: Zero-Clipping, ровно 1 Primary CTA, 0px горизонтального скролла, отсутствие перекрытия кнопки тостами.
+
+---
+
 ## 🔗 9. Связанные документы архитектуры
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Центральный реестр документации проекта.

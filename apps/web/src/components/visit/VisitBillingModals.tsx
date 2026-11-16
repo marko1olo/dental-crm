@@ -12,7 +12,7 @@ import { PricelistStudioModal } from "../catalog/PricelistStudioModal.js";
 import type { PricelistClinicalBundle, PricelistStudioItem } from "../catalog/pricelistCatalogData.js";
 import { showToast } from "../GlobalToast.js";
 import type { VisitBillingServiceItem, VisitBillingTotals } from "./visitBillingTypes.js";
-import type { DmsGuaranteeLetter } from "@dental/shared";
+import type { DmsGuaranteeLetter, PatientPaymentMethod } from "@dental/shared";
 
 export interface VisitBillingModalsProps {
 	isPaymentModalOpen: boolean;
@@ -48,6 +48,17 @@ export interface VisitBillingModalsProps {
 	onClosePricelist?: (() => void) | undefined;
 	onApplyBundle?: ((bundle: PricelistClinicalBundle) => void) | undefined;
 	onAddPricelistItem?: ((item: PricelistStudioItem) => void) | undefined;
+	onApplySplitToCashbox?: ((splitData: {
+		totalDueRub: number;
+		dmsRub: number;
+		patientRub: number;
+		patientMethod: PatientPaymentMethod;
+		patientCashRub?: number | undefined;
+		patientCardRub?: number | undefined;
+		letterId?: string | undefined;
+		letterNumber?: string | undefined;
+		insurerName?: string | undefined;
+	}) => void) | undefined;
 }
 
 export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
@@ -81,6 +92,7 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 	onClosePricelist,
 	onApplyBundle,
 	onAddPricelistItem,
+	onApplySplitToCashbox,
 }) => {
 	return (
 		<>
@@ -159,6 +171,18 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 					}))}
 					onSave={(savedLetter) => {
 						onSaveDmsLetter(savedLetter);
+					}}
+					onApplySplitToCashbox={(splitData) => {
+						onApplySplitToCashbox?.(splitData);
+						onCloseDmsModal();
+						showToast("ДМС-сплит передан в кассу визита", "success", 2500);
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(
+								new CustomEvent("dente:dms-split-applied", {
+									detail: { visitId, patientId, splitData },
+								})
+							);
+						}
 					}}
 				/>
 			)}

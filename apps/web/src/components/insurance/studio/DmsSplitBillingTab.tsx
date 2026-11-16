@@ -1,7 +1,7 @@
 import React from "react";
 import type {
 	DmsBillableItem,
-	DmsGuaranteeLineSplit,
+	DmsSplitLineResult,
 	PatientPaymentMethod,
 } from "@dental/shared";
 
@@ -13,7 +13,7 @@ export interface DmsSplitBillingTabProps {
 	readonly franchisePercent: number;
 	readonly onSelectFranchisePercent: (pct: number) => void;
 	readonly effectiveBillItems: readonly DmsBillableItem[];
-	readonly lineItems: readonly DmsGuaranteeLineSplit[];
+	readonly lineItems: readonly DmsSplitLineResult[];
 	readonly totalDmsCoveredRub: number;
 	readonly totalPatientCoPayRub: number;
 	readonly paymentMethod: PatientPaymentMethod;

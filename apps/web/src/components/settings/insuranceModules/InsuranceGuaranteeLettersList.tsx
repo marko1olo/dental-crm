@@ -34,7 +34,11 @@ export const InsuranceGuaranteeLettersList: React.FC<InsuranceGuaranteeLettersLi
 						className="m-0 text-sm font-bold flex items-center gap-2"
 						style={{ color: "var(--ink)" }}
 					>
-						<FileCheck2 size={16} className="text-emerald-500 shrink-0" />
+						<FileCheck2
+							size={16}
+							className="shrink-0"
+							style={{ color: "var(--teal, #0d9488)" }}
+						/>
 						<span>Действующие гарантийные письма пациентов ({letters.length})</span>
 					</h3>
 					<p className="m-0 mt-0.5 text-xs" style={{ color: "var(--muted)" }}>
@@ -61,7 +65,7 @@ export const InsuranceGuaranteeLettersList: React.FC<InsuranceGuaranteeLettersLi
 							<div className="min-w-0">
 								<div className="font-semibold" style={{ color: "var(--ink)" }}>
 									{letter.patientFullName} ·{" "}
-									<span className="text-emerald-600 dark:text-emerald-400">
+									<span style={{ color: "var(--teal, #0d9488)" }}>
 										{letter.insurerName}
 									</span>
 								</div>

@@ -2,27 +2,18 @@
  * consentSsotEngine.ts — Re-export facade for backwards compatibility across visit/consents.
  */
 
-export const STATUTORY_CONSENT_KEY_LABELS: Record<string, string> = {
-	CONSENT_INSPECTION_1051N: "Информированное добровольное согласие на первичный осмотр и обследование",
-	CONSENT_ANESTHESIA: "Информированное добровольное согласие на местное обезболивание (анестезию)",
-	CONSENT_THERAPY: "Информированное добровольное согласие на терапевтическое лечение и эндодонтию",
-	CONSENT_SURGERY_IMPLANT: "Информированное добровольное согласие на хирургическое вмешательство, удаление зубов и дентальную имплантацию",
-	CONSENT_ORTHOPEDICS: "Информированное добровольное согласие на ортопедическое лечение и протезирование",
-	CONSENT_ORTHODONTICS: "Информированное добровольное согласие на ортодонтическое лечение",
-	CONSENT_HYGIENE_BLEACHING: "Информированное добровольное согласие на профессиональную гигиену и отбеливание",
-	CONSENT_PERSONAL_DATA: "Согласие на обработку персональных данных",
-	CONSENT_PEDIATRIC: "Информированное добровольное согласие законного представителя на детское стоматологическое лечение",
-	CONSENT_PHOTOPROTOCOL: "Согласие на проведение фото- и видеопротокола",
-	PACKAGE_PRIMARY_VISIT: "Первичный комплекс согласий",
-	PACKAGE_SURGERY: "Хирургический комплекс согласий",
-	PACKAGE_ORTHOPEDICS: "Ортопедический комплекс согласий",
-	tablet_stylus: "Стилусная touch-подпись на планшете",
-	paper_physical: "Личная подпись на бумажном носителе",
-	sms_otp: "Подтверждение кодом из SMS (электронная подпись)",
-	therapy: "Терапевтическое лечение",
-	surgery: "Хирургическое лечение",
-	hygiene: "Профессиональная гигиена",
-	periodontology: "Пародонтологическое лечение",
+import {
+	STATUTORY_CONSENT_KEY_LABELS,
+	detectConsentScopeMismatch,
+	type ConsentScopeMismatchParams,
+	type ConsentScopeMismatchResult,
+} from "./consentSummaryHelper";
+
+export {
+	STATUTORY_CONSENT_KEY_LABELS,
+	detectConsentScopeMismatch,
+	type ConsentScopeMismatchParams,
+	type ConsentScopeMismatchResult,
 };
 
 export const CLINICAL_DOMAIN_KEYWORDS: Record<string, readonly string[]> = {
@@ -70,18 +61,4 @@ export function detectRequiredVisitConsents(params: {
 	return flags;
 }
 
-export function detectConsentScopeMismatch(params: any): any {
-	return {
-		hasMismatch: false,
-		hasSignedConsents: true,
-		isCito: Boolean(params?.isCito),
-		canProceed: true,
-		mismatchedItems: [],
-		uncoveredTemplateKeys: [],
-		uncoveredProcedureNames: [],
-		warningTitle: "",
-		warningMessage: "",
-		legalRiskNotice: "",
-		suggestedActionLabel: "",
-	};
-}
+

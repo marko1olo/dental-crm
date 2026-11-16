@@ -269,6 +269,17 @@ graph LR
      - `docs/proofs/patients/03_patient_card_mobile_light_390x844.png` (116.9 KB) — iPhone 390×844 светлая тема (Apple HIG Bottom Sheet), кнопка «Сохранить» без обрезаний.
      - `docs/proofs/patients/04_patient_card_mobile_dark_390x844.png` (118.9 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
 
+11. **Хирургическая ликвидация сирот студии согласий, потёмкинских стабов и восстановление автономии врача (DEF-DOC-12...15, Мандаты 8bd, 8be, 8bf, 8e, 8x, 8ap):**
+    * **DEF-DOC-12 (Физический снос сирот студии согласий):** Удалены 406 строк мертвого несмонтированного кода в `apps/web/src/components/consents/studio/` (`ConsentBatchSignActions.tsx`, `ConsentDocumentViewer.tsx`, `ConsentSignaturePad.tsx`) через `git rm`. Каноническая работа с соглашениями и документами ведется через `DocumentsStudioModal.tsx`, `documents/studio/` и `ConsentSignersRow.tsx`.
+    * **DEF-DOC-13 (Ликвидация Потёмкинского стаба и дубликатов `consentSsotEngine.ts`):** Фиктивная функция `detectConsentScopeMismatch(params: any): any` и дублированный словарь `STATUTORY_CONSENT_KEY_LABELS` заменены на канонический реэкспорт строго типизированной реализации из `consentSummaryHelper.ts` (`detectConsentScopeMismatch`, `ConsentScopeMismatchParams`, `ConsentScopeMismatchResult`).
+    * **DEF-DOC-14 (Восстановление Автономии врача по Мандату 8e):** В `DocumentsA4PrintPreview.tsx` снят блокирующий атрибут `disabled={Boolean(documentCreateSavingKind)}` с Primary CTA кнопки «Сохранить бланк». Сохранен индикатор `aria-busy` и внедрен неблокирующий guard clause в обработчик `onCreateDocument`.
+    * **DEF-DOC-15 (Искоренение советского канцелярита и номеров приказов по Мандатам 8x и 8ap):** В печатных бланках `anesthesiaSheet.ts` и `consentSheet.ts` сырые ссылки на приказ 1051н заменены на благородный клинический текст «Информированное добровольное согласие» и «Информированное согласие». В `consentSummaryHelper.ts` бюрократические ссылки заменены на «По клиническим показаниям».
+    * **4-State Visual Proof (Live App Студия документов и ИДС):**
+      - `docs/proofs/documents/01_documents_studio_pc_light_1440x900.png` (146 KB) — ПК светлая тема, 1 Primary CTA «Распечатать пакет приёма и подписать», 0px клиппинга, чистый клинический язык.
+      - `docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png` (137 KB) — ПК тёмная тема, 100% тёмные токены `var(--paper)`, WCAG AAA контраст.
+      - `docs/proofs/documents/03_documents_studio_mobile_light_390x844.png` (55 KB) — iPhone 390×844 светлая тема, Bottom Sheet Apple HIG, тач-таргеты >= 44x44px.
+      - `docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png` (47 KB) — iPhone 390×844 тёмная тема, 0px горизонтального скролла.
+
 ---
 
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
