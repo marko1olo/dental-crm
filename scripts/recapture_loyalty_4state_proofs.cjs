@@ -8,12 +8,20 @@ if (!fs.existsSync(PROOF_DIR)) {
 }
 
 async function getTokens() {
-	const res = await fetch("http://127.0.0.1:4100/api/auth/login", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ email: "clinic@example.com", password: "dente2026" }),
-	});
-	return await res.json();
+	for (let i = 0; i < 5; i++) {
+		try {
+			const res = await fetch("http://127.0.0.1:4100/api/auth/login", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email: "clinic@example.com", password: "dente2026" }),
+			});
+			if (res.ok) return await res.json();
+		} catch (e) {
+			console.log(`[getTokens] attempt ${i + 1} failed, retrying in 1s...`);
+			await new Promise((r) => setTimeout(r, 1000));
+		}
+	}
+	throw new Error("Failed to connect to Fastify API after 5 attempts");
 }
 
 async function main() {
@@ -25,7 +33,7 @@ async function main() {
 	const browser = await chromium.launch({
 		headless: true,
 		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-		args: ["--no-sandbox", "--disable-gpu", "--proxy-server=direct://", "--proxy-bypass-list=*"],
+		args: ["--no-sandbox", "--disable-gpu", "--no-proxy-server"],
 	});
 
 	const context = await browser.newContext({
@@ -81,24 +89,24 @@ async function main() {
 		throw new Error("Application failed to hydrate within 30 seconds!");
 	}
 
+	await page.waitForTimeout(2000);
 	console.log("5. Ensuring Loyalty Modal is open...");
-	await page.evaluate(() => {
-		if (window.__useUiSurfaceStore) {
-			window.__useUiSurfaceStore.getState().openPrimaryModal("loyalty", {
-				patientId: "01a00000-0000-0000-0000-000000000001",
-				patientName: "Смирнова Анна Сергеевна",
-				initialPointsBalance: 1500,
-				currentInvoiceAmountKop: 500000,
+	for (let attempt = 0; attempt < 4; attempt++) {
+		try {
+			await page.evaluate(() => {
+				const modal = document.querySelector(".loyalty-modal-container");
+				if (!modal) {
+					window.location.hash = "loyalty";
+					window.dispatchEvent(new HashChangeEvent("hashchange"));
+					window.dispatchEvent(new CustomEvent("dente:open-loyalty"));
+				}
 			});
+			break;
+		} catch (e) {
+			console.log(`[Attempt ${attempt + 1}] Retrying open modal evaluate after nav...`);
+			await page.waitForTimeout(1500);
 		}
-		const modal = document.querySelector(".loyalty-modal-container");
-		if (!modal) {
-			window.dispatchEvent(new CustomEvent("dente-open-loyalty"));
-			window.dispatchEvent(new CustomEvent("dente:open-loyalty"));
-			window.location.hash = "loyalty";
-			window.dispatchEvent(new HashChangeEvent("hashchange"));
-		}
-	});
+	}
 
 	await page.waitForSelector(".loyalty-modal-container", { state: "visible", timeout: 15000 });
 	console.log("-> Loyalty modal visible and active!");
@@ -139,31 +147,19 @@ async function main() {
 
 	// 3. Tab: Family Wallet ("Семейный счет") PC Light
 	console.log("Switching to Family Wallet tab...");
-	await page.evaluate(() => {
-		const btns = Array.from(document.querySelectorAll(".loyalty-tab-btn"));
-		const famBtn = btns.find((b) => b.textContent && b.textContent.includes("Семейный"));
-		if (famBtn) famBtn.click();
-	});
-	await page.waitForTimeout(800);
 	await setTheme("light");
+	await page.locator(".loyalty-tab-btn:has-text('Семейный')").first().click();
+	await page.waitForTimeout(1000);
 	await page.screenshot({ path: path.join(PROOF_DIR, "loyalty_tab_family_pc_light.png") });
 
 	// 4. Tab: Certificates ("Сертификаты") PC Light
 	console.log("Switching to Certificates tab...");
-	await page.evaluate(() => {
-		const btns = Array.from(document.querySelectorAll(".loyalty-tab-btn"));
-		const certBtn = btns.find((b) => b.textContent && b.textContent.includes("Сертификаты"));
-		if (certBtn) certBtn.click();
-	});
-	await page.waitForTimeout(800);
+	await page.locator(".loyalty-tab-btn:has-text('Сертификаты')").first().click();
+	await page.waitForTimeout(1000);
 	await page.screenshot({ path: path.join(PROOF_DIR, "loyalty_tab_certificates_pc_light.png") });
 
 	// Switch back to Balance tab for Mobile proofs
-	await page.evaluate(() => {
-		const btns = Array.from(document.querySelectorAll(".loyalty-tab-btn"));
-		const balBtn = btns.find((b) => b.textContent && (b.textContent.includes("Баланс") || b.textContent.includes("бонусы")));
-		if (balBtn) balBtn.click();
-	});
+	await page.locator(".loyalty-tab-btn:has-text('Баланс')").first().click();
 	await page.waitForTimeout(600);
 
 	// 5. Mobile Viewport Resize (390x844)

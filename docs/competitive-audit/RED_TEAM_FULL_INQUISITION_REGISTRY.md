@@ -673,6 +673,39 @@
      - ☀️ Детский прикус PC Light: `docs/proofs/odontogram/03_odontogram_pediatric_pc_light_1440x900.png` (116.5 KB)
      - 🌙 Детский прикус PC Dark: `docs/proofs/odontogram/06_odontogram_pediatric_pc_dark_1440x900.png` (127.4 KB)
 
+### [CLN-09] [ИСПРАВЛЕНО] [SEV-2] Программа лояльности, подарочные сертификаты и семейный баланс: фикс сериализации NaN->null, ликвидация рассинхрона оптимистичного UI, прямой выпуск сертификатов и снос дубликатов (Мандаты 8b, 8d/8zr, 8e, 8bf, 8al)
+- **Файлы:**
+  - [`apps/web/src/components/loyalty/LoyaltyStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/LoyaltyStudioModal.tsx)
+  - [`apps/web/src/components/loyalty/loyaltyCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/loyaltyCatalogData.ts)
+  - [`apps/web/src/components/finance/fiscal/engine/zReportAndDiscounts.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscal/engine/zReportAndDiscounts.ts)
+  - `apps/web/src/components/finance/fiscal/engine/loyaltyDiscountsDistributor.ts` *(физически удален через git rm)*
+  - `apps/web/src/components/finance/fiscal/engine/calculatePresetKopecks.ts` *(физически удален через git rm)*
+- **Суть дефектов (DEF-LOYAL-01..04):**
+  1. **DEF-LOYAL-01 (Ошибка сериализации NaN -> null при списании бонусов):** В `LoyaltyStudioModal.tsx` вызов `Number(formatKopecksToRubles(currentInvoiceAmountKop))` парсил строку с пробелом и знаком рубля `"5 000 ₽"`, возвращая `NaN`. При JSON-сериализации `NaN` превращался в `null`, что приводило к фатальному падению валидатора Zod на бэкенде (`400 Bad Request`).
+  2. **DEF-LOYAL-02 (Глотание ошибок сети и рассинхрон оптимистичного UI, Мандат 8d/8zr):** В `handleApplyPoints`, `handleAccruePoints`, `handleSendReferralInvite` и `handleCreateFamilyGroup` сетевые запросы вызывались через `postLoyaltyJson(...).catch(console.error)`. При сетевых сбоях кассиру выводился ложный тост об успехе и уменьшался локальный баланс, тогда как в базе данных PostgreSQL операция отсутствовала.
+  3. **DEF-LOYAL-03 (Оформление сертификата из таба «Сертификаты»):** В табе сертификатов карточки номиналов являлись пассивными блоками без возможности прямого оформления продажи или выпуска сертификата через кассу.
+  4. **DEF-LOYAL-04 (Устаревшие дубликаты распределения скидок):** Файлы `loyaltyDiscountsDistributor.ts` и `calculatePresetKopecks.ts` дублировали функционал канонических модулей в `engine54fz/`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Корректная передача суммы счета в рублях (DEF-LOYAL-01):** В `LoyaltyStudioModal.tsx` вызов `Number(formatKopecksToRubles(...))` заменен на строгое целочисленное деление `currentInvoiceAmountKop > 0 ? Math.round(currentInvoiceAmountKop) / 100 : redemption.actualRedeemedPointsRub`, обеспечивающее чистое числовое значение для Zod-схемы без NaN.
+  2. **Честная обработка ошибок сети и откат стейта (DEF-LOYAL-02):** Все вызовы `postLoyaltyJson` обернуты в `try / catch` с проверкой `res.ok`, выводом понятных тостов об ошибках (`showToast(..., "error")`) и гарантированным откатом локального стейта баланса и журнала операций (`setPointsBalance(prevPointsBalance)`, `setLedger(prevLedger)`).
+  3. **Прямое оформление продажи сертификатов (DEF-LOYAL-03):** В `LoyaltyStudioModal.tsx` внедрена функция `handleIssueCertificate`, добавлен номинал 3 000 ₽ (`cert_3k`) в `loyaltyCatalogData.ts`, для каждого номинала в табе «Сертификаты» добавлена активная кнопка «Оформить», вызывающая выпуск сертификата через `POST /api/loyalty/certificates/issue`.
+  4. **Физический снос дубликатов через `git rm` (DEF-LOYAL-04):** Файлы `loyaltyDiscountsDistributor.ts` и `calculatePresetKopecks.ts` физически удалены из репозитория, реэкспорт в `zReportAndDiscounts.ts` переведен на канонический `../engine54fz/loyaltyDiscountDistribution.js`.
+  5. **Машинные гейты и тесты:** 
+     - `loyaltyEngine.test.ts` (21/21 PASS, 100% green);
+     - `loyaltyCertificates.test.ts` (5/5 PASS, 100% green);
+     - `loyaltyAndReferrals.test.ts` (2/2 PASS, 100% green);
+     - `loyaltyBonusTtlExpiration.test.ts` (4/4 PASS, 100% green);
+     - `check:encoding`, `check:dynamic-imports`, `check:buttons` — Exit Code 0.
+  6. **4-State Visual Proofs:** 
+     - ☀️ PC Light: `docs/proofs/loyalty/01_loyalty_pc_light.png` (78.2 KB)
+     - 🌙 PC Dark: `docs/proofs/loyalty/02_loyalty_pc_dark.png` (76.1 KB)
+     - 📱 Mobile Light: `docs/proofs/loyalty/03_loyalty_mobile_light.png` (46.7 KB)
+     - 📱 Mobile Dark: `docs/proofs/loyalty/04_loyalty_mobile_dark.png` (48.2 KB)
+     - ☀️ Certificates Tab: `docs/proofs/loyalty/loyalty_tab_certificates_pc_light.png` (68.5 KB)
+     - ☀️ Family Wallet Tab: `docs/proofs/loyalty/loyalty_tab_family_pc_light.png` (75.2 KB)
+     - 📱 Mobile Light Scrolled (Sticky CTA): `docs/proofs/loyalty/loyalty_03b_mobile_light_scrolled.png` (46.7 KB)
+     - Лично осмотрены через `read_file` по 8 осям: Zero-Clipping, 1 Primary CTA (`var(--teal, #0d9488)`), Apple HIG Bottom Sheet, 0px горизонтального скролла.
+
 ---
 
 ## 5. 📅 РАСПИСАНИЕ И СЕТКА КРЕСЕЛ

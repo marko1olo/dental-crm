@@ -8,6 +8,6 @@ export * from "./incomeReturnDraft.js";
 export * from "../engine54fz/installmentSchedule.js";
 export * from "./fnsReceiptQrString.js";
 export * from "./zReportReceiptTape.js";
-export * from "./loyaltyDiscountsDistributor.js";
+export * from "../engine54fz/loyaltyDiscountDistribution.js";
 export * from "./roundToHundreds.js";
 export * from "./receptionQuickContact.js";

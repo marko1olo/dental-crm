@@ -175,6 +175,7 @@ export interface GiftCertificatePreset {
 }
 
 export const GIFT_CERTIFICATE_CATALOG: readonly GiftCertificatePreset[] = [
+	{ id: "cert_3k", nominalKop: 300000, nominalRub: 3000, titleRu: "Подарочный сертификат 3 000 ₽", validityDays: 365, isCustomNominal: false, badgeRu: "Стартовый подарок", descriptionRu: "Для первичного осмотра и профессиональной чистки." },
 	{ id: "cert_5k", nominalKop: 500000, nominalRub: 5000, titleRu: "Подарочный сертификат 5 000 ₽", validityDays: 365, isCustomNominal: false, badgeRu: "Популярный подарок", descriptionRu: "Для профессиональной гигиены или отбеливания." },
 	{ id: "cert_10k", nominalKop: 1000000, nominalRub: 10000, titleRu: "Подарочный сертификат 10 000 ₽", validityDays: 365, isCustomNominal: false, badgeRu: "Терапия и эстетика", descriptionRu: "Терапевтическое лечение кариеса и реставрация." },
 	{ id: "cert_25k", nominalKop: 2500000, nominalRub: 25000, titleRu: "Подарочный сертификат 25 000 ₽", validityDays: 365, isCustomNominal: false, badgeRu: "Премиум уход", descriptionRu: "Комплексная санация, коронки E.max или ортодонтия." },
