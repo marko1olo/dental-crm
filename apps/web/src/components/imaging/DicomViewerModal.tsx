@@ -35,7 +35,8 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 	const { isOpen, title = "Дентальный снимок (RVG / DICOM)", toothFdiCode, patientName, patientId, studyDate, studiesHistory, onInsertToProtocol, onConnectRvg, onUploadDicom, onReferToRadiology } = props;
 	const ctrl = useDicomViewerModalController(props);
 
-	const defaultScanSrc = props.imageSrc || ((isDemoShowcaseMode() || isDemoPatientId(patientName) || isDemoPatientId(patientId))
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId || patientName);
+	const defaultScanSrc = props.imageSrc || (isDemo
 		? (toothFdiCode === "16" ? "/radiology/sample_rvg_tooth16.jpg" : "/radiology/sample_rvg_tooth36_periapical.jpg") : null);
 
 	const activeImage = ctrl.currentImageSrc || defaultScanSrc;
@@ -112,15 +113,6 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 					filmstripStudies={filmstripStudies} activeStudyId={ctrl.activeStudyId} onSelectFilmstripStudy={(s) => { if (s.imageUrl) ctrl.setCurrentImageSrc(s.imageUrl); ctrl.setActiveStudyId(s.id); }}
 				/>
 			)}
-
-			{/* Test anchor hooks for automated inspection gates */}
-			<div className="hidden" aria-hidden="true">
-				<button type="button" data-testid="btn-dicom-norma-043" onClick={handleInsertNormaTo043}>Норма: патологии нет</button>
-				<button type="button" data-testid="btn-dicom-protocols-menu">Протоколы</button>
-				<button type="button" data-testid="btn-dicom-run-ai" onClick={handleRunAiAnalysis}>ИИ</button>
-				<button type="button" data-testid="btn-dicom-apply-findings" onClick={handleApplyFindingsToChart}>Применить</button>
-				<div data-testid="dicom-ai-findings-drawer" />
-			</div>
 
 			{ctrl.isCtSelectorOpen && (
 				<Suspense fallback={null}>

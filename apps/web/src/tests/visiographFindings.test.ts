@@ -167,25 +167,23 @@ test("пустой ответ модели не даёт ни записи, ни
 });
 
 test("панель пишет находки на живой адрес формулы, а не в мёртвый стор", () => {
-	const analyzer = readSource("components/imaging/VisiographAnalyzer.tsx");
+	const dicomModal = readSource("components/imaging/DicomViewerModal.tsx");
+	const dicomAi = readSource("components/imaging/dicomViewerModal/useDicomViewerModalAi.ts");
+	const source = dicomModal + "\n" + dicomAi;
 
 	assert.ok(
-		analyzer.includes("/tooth-states/batch"),
-		"VisiographAnalyzer больше не обращается к /api/patients/:id/tooth-states/batch. Это ЕДИНСТВЕННЫЙ " +
-			"адрес живой формулы (тот же, что у OdontogramModule): без него экран снова печатает «Внесено в " +
+		source.includes("/tooth-states/batch"),
+		"DicomViewerModal обязан обращаться к /api/patients/:id/tooth-states/batch. Это ЕДИНСТВЕННЫЙ " +
+			"адрес живой формулы (тот же, что у OdontogramModule): без него экран печатает «Внесено в " +
 			"зубную формулу», а в карте пациента не появляется ничего.",
 	);
-	// Проверяется ЗАБОР имени из стора, а не текст `setToothStatus(`: разбор
-	// прежнего дефекта описан в комментариях того же файла, и поиск по подстроке
-	// краснел бы на объяснении вместо кода.
 	assert.ok(
-		!/const \{[^}]*setToothStatus[^}]*\} = usePatientStore/.test(analyzer),
-		"VisiographAnalyzer снова берёт setToothStatus из patientStore. Этот стор не читает ни один " +
-			"смонтированный файл: запись уходит в никуда и исчезает при перезагрузке страницы.",
+		!/const \{[^}]*setToothStatus[^}]*\} = usePatientStore/.test(source),
+		"DicomViewerModal не должен брать setToothStatus из устаревшего стора.",
 	);
 	assert.ok(
 		/denteClinicalMutationHeaders\(\s*\{\s*["']Content-Type["']:\s*["']application\/json["']\s*,?\s*\}\s*\)/.test(
-			analyzer,
+			source,
 		),
 		"запись формулы ушла без заголовков авторизации. Маршрут требует И токен кабинета, И токен " +
 			"сотрудника: голый fetch получит 401, и врач увидит пустоту вместо отказа.",
@@ -193,96 +191,110 @@ test("панель пишет находки на живой адрес форм
 });
 
 test("Мандат 8e: снимок визиографа открывается мгновенно (<50мс), без ожидания ИИ", () => {
-	const analyzer = readSource("components/imaging/VisiographAnalyzer.tsx");
+	const dicomCtrl = readSource("components/imaging/dicomViewerModal/useDicomViewerModalController.ts");
+	const dicomAi = readSource("components/imaging/dicomViewerModal/useDicomViewerModalAi.ts");
+	const dicomModal = readSource("components/imaging/DicomViewerModal.tsx");
+	const dicomHeader = readSource("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
+	const dicomBody = readSource("components/imaging/dicomViewerModal/DicomViewerModalBody.tsx");
+	const dicomDrawer = readSource("components/imaging/aiFindings/DicomAiFindingsFooter.tsx");
+	const source = [dicomCtrl, dicomAi, dicomModal, dicomHeader, dicomBody, dicomDrawer].join("\n");
 
 	// Открытие снимка происходит через FileReader сразу в dataURL без блокировки на AI
 	assert.ok(
-		analyzer.includes("reader.readAsDataURL(file)"),
-		"VisiographAnalyzer должен мгновенно загружать локальный файл через FileReader.readAsDataURL",
+		source.includes("reader.readAsDataURL(file)"),
+		"DicomViewerModalController должен мгновенно загружать локальный файл через FileReader.readAsDataURL",
 	);
 	assert.ok(
-		analyzer.includes("setCurrentImageUrl(dataUrl)"),
-		"VisiographAnalyzer должен сразу отображать превью снимка в setCurrentImageUrl(dataUrl)",
+		source.includes("setCurrentImageSrc(reader.result as string)"),
+		"DicomViewerModalController должен сразу отображать превью снимка в setCurrentImageSrc",
 	);
 
 	// ИИ запускается строго по отдельной кнопке врача
 	assert.ok(
-		analyzer.includes("data-testid=\"btn-run-visiograph-ai\""),
-		"VisiographAnalyzer обязан содержать отдельную явную кнопку запуска ИИ 'btn-run-visiograph-ai'",
+		source.includes("data-testid=\"btn-dicom-run-ai\""),
+		"DicomViewerModal обязан содержать отдельную явную кнопку запуска ИИ 'btn-dicom-run-ai'",
 	);
 	assert.ok(
-		analyzer.includes("handleRunAiAnalysis"),
-		"VisiographAnalyzer обязан запускать анализ ИИ только по отдельному вызову handleRunAiAnalysis",
+		source.includes("handleRunAiAnalysis"),
+		"DicomViewerModal обязан запускать анализ ИИ только по отдельному вызову handleRunAiAnalysis",
 	);
 
 	// Запрещена автоматическая перезапись зубной формулы роботом
 	assert.ok(
-		analyzer.includes("data-testid=\"btn-apply-findings-to-chart\""),
-		"Перезапись формулы должна требовать явного подтверждения врача через 'btn-apply-findings-to-chart'",
+		source.includes("data-testid=\"btn-dicom-apply-findings\""),
+		"Перезапись формулы должна требовать явного подтверждения врача через 'btn-dicom-apply-findings'",
 	);
 
-	// 1-клик действие «Норма: патологии на снимке не выявлено» (043/у)
+	// Действие «Норма: патологии на снимке не выявлено»
 	assert.ok(
-		analyzer.includes("data-testid=\"btn-visiograph-norma-043\""),
-		"VisiographAnalyzer обязан содержать 1-клик действие 'btn-visiograph-norma-043' для внесения нормы в карту",
+		source.includes("data-testid=\"btn-dicom-norma-043\""),
+		"DicomViewerModal обязан содержать действие 'btn-dicom-norma-043' для внесения нормы в карту",
 	);
 	assert.ok(
-		analyzer.includes("handleApplyNormaTo043"),
-		"VisiographAnalyzer обязан иметь обработчик handleApplyNormaTo043",
+		source.includes("handleInsertNormaTo043"),
+		"DicomViewerModal обязан иметь обработчик handleInsertNormaTo043",
 	);
 });
 
 test("Мандат 8e: DicomViewerModal поддерживает 1-клик Норму в 043/у", () => {
-	const dicomModal = readSource("components/imaging/DicomViewerModal.tsx");
+	const dicomHeader = readSource("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
+	const dicomCtrl = readSource("components/imaging/dicomViewerModal/useDicomViewerModalController.ts");
+	const source = dicomHeader + "\n" + dicomCtrl;
 
 	assert.ok(
-		dicomModal.includes("btn-dicom-norma-043"),
+		source.includes("btn-dicom-norma-043"),
 		"DicomViewerModal обязан содержать 1-клик кнопку 'btn-dicom-norma-043' для внесения нормы в карту 043/у",
 	);
 	assert.ok(
-		dicomModal.includes("handleInsertNormaTo043"),
+		source.includes("handleInsertNormaTo043"),
 		"DicomViewerModal обязан иметь функцию handleInsertNormaTo043",
 	);
 });
 
 test("Мандат 8e: DicomViewerModal содержит честную дропзону, запуск ИИ по кнопке врача и подтверждение находок без робо-перезаписи", () => {
 	const dicomModal = readSource("components/imaging/DicomViewerModal.tsx");
+	const dicomDropzone = readSource("components/imaging/dicomViewerModal/DicomViewerModalDropzone.tsx");
+	const dicomHeader = readSource("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
+	const dicomBody = readSource("components/imaging/dicomViewerModal/DicomViewerModalBody.tsx");
+	const dicomAi = readSource("components/imaging/dicomViewerModal/useDicomViewerModalAi.ts");
+	const dicomFooter = readSource("components/imaging/aiFindings/DicomAiFindingsFooter.tsx");
+	const source = [dicomModal, dicomDropzone, dicomHeader, dicomBody, dicomAi, dicomFooter].join("\n");
 
 	// Честная дропзона при отсутствии снимка
 	assert.ok(
-		dicomModal.includes("data-testid=\"dicom-viewer-dropzone\""),
+		source.includes("data-testid=\"dicom-viewer-dropzone\""),
 		"DicomViewerModal обязан содержать честную дропзону 'dicom-viewer-dropzone' для файлов",
 	);
 
 	// ИИ запускается строго по отдельной кнопке врача
 	assert.ok(
-		dicomModal.includes("data-testid=\"btn-dicom-run-ai\""),
+		source.includes("data-testid=\"btn-dicom-run-ai\""),
 		"DicomViewerModal обязан содержать отдельную кнопку запуска ИИ 'btn-dicom-run-ai'",
 	);
 	assert.ok(
-		dicomModal.includes("handleRunAiAnalysis"),
+		source.includes("handleRunAiAnalysis"),
 		"DicomViewerModal обязан запускать анализ ИИ только по отдельному вызову handleRunAiAnalysis",
 	);
 
 	// Запрещена автоматическая перезапись зубной формулы: только по кнопке подтверждения врача
 	assert.ok(
-		dicomModal.includes("data-testid=\"btn-dicom-apply-findings\""),
+		source.includes("data-testid=\"btn-dicom-apply-findings\""),
 		"DicomViewerModal обязан требовать подтверждения находок врачом через 'btn-dicom-apply-findings'",
 	);
 	assert.ok(
-		dicomModal.includes("handleApplyFindingsToChart"),
+		source.includes("handleApplyFindingsToChart"),
 		"DicomViewerModal обязан иметь обработчик подтверждения находок handleApplyFindingsToChart",
 	);
 
 	// Панель находок
 	assert.ok(
-		dicomModal.includes("data-testid=\"dicom-ai-findings-drawer\""),
+		source.includes("data-testid=\"dicom-ai-findings-drawer\""),
 		"DicomViewerModal обязан содержать панель/шторку находок ИИ 'dicom-ai-findings-drawer'",
 	);
 
 	// Маршрут живой формулы
 	assert.ok(
-		dicomModal.includes("/tooth-states/batch"),
+		source.includes("/tooth-states/batch"),
 		"DicomViewerModal обязан обращаться к /api/patients/:id/tooth-states/batch для живой формулы",
 	);
 });

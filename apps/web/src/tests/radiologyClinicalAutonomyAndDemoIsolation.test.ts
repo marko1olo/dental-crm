@@ -57,14 +57,14 @@ describe("Radiology Clinical Autonomy & Demo Isolation Mandate (8c, 8e, 8n)", ()
 		setRuntimeDemoMode(null);
 	});
 
-	it("verifies VisiographAnalyzer source code enforces demoMode isolation and never auto-injects fake caries for real patients", () => {
-		const sourcePath = path.resolve(getWebRoot(), "src/components/imaging/VisiographAnalyzer.tsx");
-		const hookPath = path.resolve(getWebRoot(), "src/components/imaging/visiographAnalyzer/useVisiographAnalyzer.ts");
-		const viewPath = path.resolve(getWebRoot(), "src/components/imaging/visiographAnalyzer/index.tsx");
+	it("verifies DicomViewerModal & DiagnosticsModalsHost source code enforces demoMode isolation and never auto-injects fake caries for real patients", () => {
+		const dicomModalPath = path.resolve(getWebRoot(), "src/components/imaging/DicomViewerModal.tsx");
+		const hostPath = path.resolve(getWebRoot(), "src/components/visit/diagnosticsTab/DiagnosticsModalsHost.tsx");
+		const dropzonePath = path.resolve(getWebRoot(), "src/components/imaging/dicomViewerModal/DicomViewerModalDropzone.tsx");
 		const source = [
-			fs.existsSync(sourcePath) ? fs.readFileSync(sourcePath, "utf-8") : "",
-			fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf-8") : "",
-			fs.existsSync(viewPath) ? fs.readFileSync(viewPath, "utf-8") : "",
+			fs.existsSync(dicomModalPath) ? fs.readFileSync(dicomModalPath, "utf-8") : "",
+			fs.existsSync(hostPath) ? fs.readFileSync(hostPath, "utf-8") : "",
+			fs.existsSync(dropzonePath) ? fs.readFileSync(dropzonePath, "utf-8") : "",
 		].join("\n");
 
 		// Import check
@@ -73,19 +73,13 @@ describe("Radiology Clinical Autonomy & Demo Isolation Mandate (8c, 8e, 8n)", ()
 
 		// Default initial scan must be guarded
 		assert.ok(
-			source.includes("if (isDemoShowcaseMode() || isDemoPatientId(effectivePatientId))"),
-			"defaultInitialScan returns fallback scan only in demo showcase mode or for demo patient",
+			source.includes("isDemoShowcaseMode() || isDemoPatientId("),
+			"fallback sample scan applied only in demo showcase mode or for demo patient",
 		);
 
-		// History loading empty state must be guarded
-		assert.ok(
-			source.includes("setCurrentScan(null)") && source.includes("setCurrentImageUrl(null)"),
-			"Real patient with 0 scans gets honest null currentScan and null currentImageUrl",
-		);
-
-		// Interactive demo scan button exists in DropZone
-		assert.ok(source.includes('data-testid="btn-load-demo-scan"'), "Dropzone includes demo scan action");
-		assert.ok(source.includes("handleLoadDemoScan"), "VisiographAnalyzer defines handleLoadDemoScan");
+		// Dropzone includes interactive demo scan action on demand
+		assert.ok(source.includes('data-testid="btn-dicom-load-demo"'), "Dropzone includes demo scan action");
+		assert.ok(source.includes("onLoadDemoScan"), "DicomViewerModalDropzone defines onLoadDemoScan");
 	});
 
 	it("verifies DicomViewerModal renders honest dropzone for real patients when imageSrc is undefined", async () => {

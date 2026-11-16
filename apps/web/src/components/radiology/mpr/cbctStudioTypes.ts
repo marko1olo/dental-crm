@@ -127,6 +127,7 @@ export interface CbctMprImplantStudioModalProps {
 	readonly study?: RadiologyStudy | ImagingStudy | SharedImagingStudy | null | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientId?: string | null | undefined;
+	readonly onApplyToDiary?: ((diaryText: string) => void) | undefined;
 	readonly onApplyToDiary043?: ((diaryText: string) => void) | undefined;
 	readonly onApplyToPlan?: ((item: TreatmentPlanItem) => void) | undefined;
 	readonly initialStudioMode?: StudioMode | undefined;

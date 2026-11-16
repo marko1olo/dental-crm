@@ -229,33 +229,33 @@ describe("EzDent-i 2D X-Ray & VisioGraphy Workstation — Clean Architecture & E
 			);
 		});
 
-		it("proves RadiologyFilmstripDock is integrated in VisiographAnalyzer for 1-click chairside switching", async () => {
+		it("proves RadiologyFilmstripDock is integrated in SensorStudyViewerLayout for 1-click chairside switching", async () => {
 			const fs = await import("node:fs");
-			const visioCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/imaging/VisiographAnalyzer.tsx"),
+			const layoutCode = fs.readFileSync(
+				await resolveSrcFile("apps/web/src/components/radiology/sensorViewer/SensorStudyViewerLayout.tsx"),
 				"utf8",
 			);
 
 			assert.ok(
-				visioCode.includes("RadiologyFilmstripDock"),
-				"RadiologyFilmstripDock must be imported and rendered in VisiographAnalyzer",
+				layoutCode.includes("RadiologyFilmstripDock"),
+				"RadiologyFilmstripDock must be imported and rendered in SensorStudyViewerLayout",
 			);
 			assert.ok(
-				visioCode.includes("filmstripItems"),
-				"filmstripItems must be mapped from scanHistory in VisiographAnalyzer",
+				layoutCode.includes("effectiveStudiesHistory"),
+				"effectiveStudiesHistory must be passed to RadiologyFilmstripDock",
 			);
 		});
 
-		it("proves RadiologyCalibratedScaleRuler is mounted on VisiographViewport dominant canvas", async () => {
+		it("proves RadiologyCalibratedScaleRuler is mounted on ViewerCanvasViewport dominant canvas", async () => {
 			const fs = await import("node:fs");
 			const viewportCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/imaging/VisiographViewport.tsx"),
+				await resolveSrcFile("apps/web/src/components/radiology/sensorViewer/ViewerCanvasViewport.tsx"),
 				"utf8",
 			);
 
 			assert.ok(
 				viewportCode.includes("RadiologyCalibratedScaleRuler"),
-				"RadiologyCalibratedScaleRuler must be mounted in VisiographViewport",
+				"RadiologyCalibratedScaleRuler must be mounted in ViewerCanvasViewport",
 			);
 			assert.ok(
 				viewportCode.includes("targetLengthMm={5.0}"),
@@ -263,24 +263,20 @@ describe("EzDent-i 2D X-Ray & VisioGraphy Workstation — Clean Architecture & E
 			);
 		});
 
-		it("proves VisiographAnalyzer integrates EzDent-i 2D HUD button and SensorStudyViewer modal", async () => {
+		it("proves DicomViewerModal integrates EzDent-i 2D DICOM viewer and CBCT modal launch", async () => {
 			const fs = await import("node:fs");
-			const visioCode = fs.readFileSync(
-				await resolveSrcFile("apps/web/src/components/imaging/VisiographAnalyzer.tsx"),
+			const dicomCode = fs.readFileSync(
+				await resolveSrcFile("apps/web/src/components/imaging/DicomViewerModal.tsx"),
 				"utf8",
 			);
 
 			assert.ok(
-				visioCode.includes("btn-open-ezdent-sensor-viewer"),
-				"btn-open-ezdent-sensor-viewer must be present in VisiographAnalyzer",
+				dicomCode.includes("btn-dicom-run-ai") || dicomCode.includes("DicomViewerModalHeader"),
+				"DicomViewerModal must integrate canonical header with AI and protocols",
 			);
 			assert.ok(
-				visioCode.includes("SensorStudyViewer"),
-				"SensorStudyViewer modal must be integrated in VisiographAnalyzer",
-			);
-			assert.ok(
-				visioCode.includes("isSensorViewerOpen"),
-				"isSensorViewerOpen state must be controlled in VisiographAnalyzer",
+				dicomCode.includes("CbctMprImplantStudioModal") || dicomCode.includes("openCbctPopoutWindow"),
+				"DicomViewerModal must integrate 3D CBCT studio modal launch",
 			);
 		});
 	});

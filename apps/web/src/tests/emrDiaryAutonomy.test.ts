@@ -294,11 +294,12 @@ describe("EMR SOAP Diary & Doctor Autonomy Suite (Mandates 8e, 8i, 8n, 8zi)", ()
 			);
 		});
 
-		it("3.2. VisiographAnalyzer: Мгновенное открытие снимка (<50мс) без блокировки ИИ (Мандат 8e)", () => {
-			const implPath = path.resolve(__dirname, "../components/imaging/VisiographAnalyzer.tsx");
-			const modulePath = path.resolve(__dirname, "../components/imaging/visiographAnalyzer/useVisiographAnalyzer.ts");
-			assert.ok(fs.existsSync(implPath), "Реализация components/imaging/VisiographAnalyzer.tsx обязана существовать");
-			const source = fs.readFileSync(implPath, "utf-8") + (fs.existsSync(modulePath) ? fs.readFileSync(modulePath, "utf-8") : "");
+		it("3.2. DicomViewerModal: Мгновенное открытие снимка (<50мс) без блокировки ИИ (Мандат 8e)", () => {
+			const implPath = path.resolve(__dirname, "../components/imaging/DicomViewerModal.tsx");
+			const ctrlPath = path.resolve(__dirname, "../components/imaging/dicomViewerModal/useDicomViewerModalController.ts");
+			const aiPath = path.resolve(__dirname, "../components/imaging/dicomViewerModal/useDicomViewerModalAi.ts");
+			assert.ok(fs.existsSync(implPath), "Реализация components/imaging/DicomViewerModal.tsx обязана существовать");
+			const source = fs.readFileSync(implPath, "utf-8") + fs.readFileSync(ctrlPath, "utf-8") + fs.readFileSync(aiPath, "utf-8");
 			assert.ok(source.includes("processFile"), "Снимок должен обрабатываться через мгновенный processFile");
 			assert.ok(source.includes("handleRunAiAnalysis"), "ИИ анализ должен запускаться только врачом через handleRunAiAnalysis");
 		});
@@ -318,12 +319,13 @@ describe("EMR SOAP Diary & Doctor Autonomy Suite (Mandates 8e, 8i, 8n, 8zi)", ()
 			assert.ok(source.includes("tp-quick-cashier-btn"), "Кнопка 'В кассу' обязана присутствовать в тулбаре");
 		});
 
-		it("3.5. VisiographAnalyzer.tsx перенос находок не заблокирован при пустом выделении", () => {
-			const visPath = path.resolve(webSrcDir, "components/imaging/VisiographAnalyzer.tsx");
-			const applyPath = path.resolve(webSrcDir, "components/imaging/visiographAnalyzer/useVisiographAnalyzer/useVisiographAnalyzerFindingsApply.ts");
-			const source = fs.readFileSync(visPath, "utf-8") + (fs.existsSync(applyPath) ? fs.readFileSync(applyPath, "utf-8") : "");
+		it("3.5. DicomAiFindingsDrawer перенос находок не заблокирован мертвым disabled при пустом выделении", () => {
+			const drawerPath = path.resolve(webSrcDir, "components/imaging/DicomAiFindingsDrawer.tsx");
+			const footerPath = path.resolve(webSrcDir, "components/imaging/aiFindings/DicomAiFindingsFooter.tsx");
+			const aiPath = path.resolve(webSrcDir, "components/imaging/dicomViewerModal/useDicomViewerModalAi.ts");
+			const source = fs.readFileSync(drawerPath, "utf-8") + fs.readFileSync(footerPath, "utf-8") + fs.readFileSync(aiPath, "utf-8");
 			assert.ok(!source.includes("disabled={isApplyingToChart || selectedFindingCodes.size === 0}"), "Кнопка переноса находок не должна быть заблокирована по признаку selectedFindingCodes.size === 0");
-			assert.ok(source.includes("Отметьте галочками хотя бы одну находку ИИ"), "Обработчик должен уведомлять врача через тост при пустом выборе");
+			assert.ok(source.includes("Отметьте хотя бы одну находку ИИ для переноса"), "Обработчик должен уведомлять врача через тост при пустом выборе");
 		});
 
 		it("3.6. DicomViewerModal.tsx кнопки анализа и переноса находок не заблокированы мертвым disabled", () => {

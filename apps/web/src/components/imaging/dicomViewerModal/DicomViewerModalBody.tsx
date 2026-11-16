@@ -81,16 +81,6 @@ export const DicomViewerModalBody: React.FC<DicomViewerModalBodyProps> = ({
 					isApplyingToChart={isApplyingToChart}
 					onApplyFindingsToChart={onApplyFindingsToChart}
 				/>
-
-				<button
-					type="button"
-					data-testid="btn-dicom-apply-findings"
-					onClick={onApplyFindingsToChart}
-					style={{ display: "none" }}
-					aria-hidden="true"
-				>
-					Применить к зубной формуле
-				</button>
 			</div>
 
 			<RadiologyFilmstripDock

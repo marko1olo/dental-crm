@@ -1,7 +1,7 @@
 /**
- * DENTE CRM — Standard Radiology Protocols for Outpatient Form 043/y (Mandate 8e, 8i, 8k, 8n)
+ * DENTE CRM — Standard Radiology Protocols for Outpatient Medical Card (Mandate 8e, 8i, 8k, 8n)
  *
- * Provides instantaneous 1-click clinical radiology conclusions:
+ * Provides instantaneous clinical radiology conclusions:
  * 1. Рентген-норма
  * 2. Периодонтит (периапикальный очаг)
  * 3. Контроль обтурации каналов
@@ -15,7 +15,7 @@
  * - ВНЧС (TMJ / Temporomandibular Joints) — оба сустава: привычная окклюзия и открытый рот
  *
  * Features:
- * - Immediate insertion into Form 043/y visit diary via CustomEvent "dente-apply-soap-protocol"
+ * - Immediate insertion into visit diary via CustomEvent "dente-apply-soap-protocol"
  * - Automatic update of visit note form state in visitStore
  * - Direct clipboard write for legacy or desktop external EHRs
  * - Vector SVG Barcode & QR Code generators for external radiology centers (Picasso, 3D Lab)
@@ -114,10 +114,10 @@ export interface ApplyRadiologyProtocolParams {
 }
 
 /**
- * 1-клик вставка стандартного рентген-протокола в дневник Формы 043/у (Мандат 8e п. 11)
+ * Вставка стандартного рентген-протокола в медицинскую карту приёма (Мандат 8e)
  * Не требует всплывающих модалок, сохраняет автономию врача и скорость работы.
  */
-export function applyRadiologyProtocolToForm043(
+export function applyRadiologyProtocolToDiary(
 	params: ApplyRadiologyProtocolParams,
 ): string {
 	const statement = formatRadiologyProtocolStatement(
@@ -187,6 +187,8 @@ export function applyRadiologyProtocolToForm043(
 
 	return statement;
 }
+
+export const applyRadiologyProtocolToForm043 = applyRadiologyProtocolToDiary;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 🛑 КЛИНИЧЕСКИЕ ПРОТОКОЛЫ СКАНИРОВАНИЯ КЛКТ И ЗОНЫ ОБЗОРА (FOV PROTOCOLS)
@@ -474,7 +476,7 @@ export const CBCT_REFERRAL_PARTNERS: readonly CbctReferralPartner[] = [
 ] as const;
 
 /**
- * Генерация текста клинического направления для Формы 043/у или буфера обмена
+ * Генерация текста клинического направления для медицинской карты приёма или буфера обмена
  */
 export function formatCbctReferralSummary(options: {
 	readonly referralNumber: string;

@@ -119,7 +119,7 @@ describe("Dental 2D Radiology Engine — Clean Outpatient Tests", () => {
 	describe("Calibrated Ruler Zoom & Pan Scale Invariance (Mandate 8e, 8n)", () => {
 		// Import extractTransformParams dynamically or from component
 		it("extracts transform params cleanly from CSS transform string", async () => {
-			const { extractTransformParams } = await import("../../imaging/ShadowAnalystImageSlider");
+			const { extractTransformParams } = await import("../../imaging/ClinicalImageViewer");
 			
 			// Default / none
 			const def = extractTransformParams("none");
@@ -138,7 +138,7 @@ describe("Dental 2D Radiology Engine — Clean Outpatient Tests", () => {
 		});
 
 		it("proves measured physical length in mm is 100% invariant under zoom and pan transformations", async () => {
-			const { extractTransformParams } = await import("../../imaging/ShadowAnalystImageSlider");
+			const { extractTransformParams } = await import("../../imaging/ClinicalImageViewer");
 
 			// Simulate container dimensions (1000px x 800px)
 			const rect = { left: 100, top: 50, width: 1000, height: 800 };

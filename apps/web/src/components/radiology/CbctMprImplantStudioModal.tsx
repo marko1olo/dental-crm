@@ -17,6 +17,7 @@ import { CbctMprViewportsGrid } from "./mpr/CbctMprViewportsGrid";
 import { RadiologyConsultationSplit } from "./RadiologyConsultationSplit";
 import { DentalLabStudioModal } from "../lab/DentalLabStudioModal";
 import type { CbctVoxelVolume } from "./cbctMprMath";
+import type { RadiologyStudy } from "./types.js";
 import { useCbctStudioModalState } from "./studioModal/useCbctStudioModalState";
 import { useCbctStudioController } from "./studioModal/useCbctStudioController";
 import { useCbctDicomLoader } from "./mpr/useCbctDicomLoader";
@@ -26,8 +27,6 @@ export type { StudioMode, ViewLayoutMode, CbctMprImplantStudioModalProps };
 export { DEFAULT_IAN_NERVE_POINTS, formatNerveNodesPlural, ROTATE_CURSOR, getTissueNameFromHU };
 export { useCbctDicomLoader, CbctEmptyVolumeDropzone };
 
-// Contract marker: data-testid="cbct-empty-volume-dropzone" (Исследование КЛКТ не загружено)
-
 export const CbctMprImplantStudioModal: React.FC<
 	CbctMprImplantStudioModalProps & {
 		readonly initialViewLayout?: ViewLayoutMode | undefined;
@@ -35,20 +34,21 @@ export const CbctMprImplantStudioModal: React.FC<
 	}
 > = (props) => {
 	const {
-		isOpen, onClose, study, patientName, patientId, onApplyToDiary043, onApplyToPlan,
+		isOpen, onClose, study, patientName, patientId, onApplyToDiary, onApplyToDiary043, onApplyToPlan,
 		initialStudioMode, initialSidebarOpen, initialCaliper, initialViewLayout, initialVolume, initialImageIds, autoLoadDemo,
 		initialTool, initialNervePoints,
 	} = props;
+	const effectiveApplyToDiary = onApplyToDiary ?? onApplyToDiary043;
 	const modalId = "cbct-studio-modal";
 	const modalContainerRef = useRef<HTMLDivElement | null>(null);
 
 	const state = useCbctStudioModalState({
 		initialStudioMode, initialSidebarOpen, initialCaliper, initialViewLayout, initialVolume,
-		initialTool, initialNervePoints, patientName, patientId,
+		initialTool, initialNervePoints, patientName: patientName ?? undefined, patientId: patientId ?? undefined,
 	});
 
 	const ctrl = useCbctStudioController({
-		isOpen, onClose, study, patientName, patientId, onApplyToDiary043, onApplyToPlan,
+		isOpen, onClose, study: (study as RadiologyStudy | null | undefined), patientName: patientName ?? undefined, patientId: patientId ?? undefined, onApplyToDiary: effectiveApplyToDiary, onApplyToDiary043: effectiveApplyToDiary, onApplyToPlan,
 		initialVolume, initialImageIds, autoLoadDemo, state, modalContainerRef,
 	});
 
@@ -111,7 +111,7 @@ export const CbctMprImplantStudioModal: React.FC<
 					onClose={ctrl.handleCloseStudio}
 					onOpenPopoutWindow={ctrl.handleOpenPopoutWindow}
 					studyId={study?.id}
-					patientId={patientId}
+					patientId={patientId ?? undefined}
 					activePresetId={state.activePreset}
 					onSelectPreset={ctrl.handleSelectPreset}
 					crossSectionStepMm={state.crossSectionStepMm}
@@ -162,7 +162,7 @@ export const CbctMprImplantStudioModal: React.FC<
 						isSidebarOpen={state.isSidebarOpen}
 						mobileActiveTab={state.mobileActiveTab}
 						patientDisplayName={state.patientDisplayName}
-						patientId={patientId}
+						patientId={patientId ?? undefined}
 						onSelectMobileTab={state.setMobileActiveTab}
 						volume={state.volume}
 						dicomLoadingStatus={ctrl.dicomLoader.dicomLoadingStatus}
@@ -350,10 +350,10 @@ export const CbctMprImplantStudioModal: React.FC<
 					<div style={{ position: "fixed", inset: 0, zIndex: 999999 }} data-testid="cbct-comparison-split-overlay">
 						<RadiologyConsultationSplit
 							patientName={patientName || state.patientDisplayName}
-							initialLeftStudy={study ?? undefined}
+							initialLeftStudy={(study as any) ?? undefined}
 							initialSplitMode="dynamics"
 							onClose={() => state.setIsComparisonSplitOpen(false)}
-							onInsertProtocol={(note) => { onApplyToDiary043?.(note); }}
+							onInsertProtocol={(note) => { effectiveApplyToDiary?.(note); }}
 						/>
 					</div>
 				)}
@@ -363,10 +363,10 @@ export const CbctMprImplantStudioModal: React.FC<
 						isOpen={ctrl.isLabOrderModalOpen}
 						onClose={() => ctrl.setIsLabOrderModalOpen(false)}
 						initialOrder={ctrl.labOrderDraft}
-						patientId={patientId}
+						patientId={patientId ?? undefined}
 						patientName={state.patientDisplayName}
-						doctorId={study?.doctorId ?? undefined}
-						doctorName={study?.doctorName ?? undefined}
+						doctorId={(study as any)?.doctorId ?? undefined}
+						doctorName={(study as any)?.doctorName ?? undefined}
 						initialToothFdi={ctrl.labOrderDraft.toothFdi ?? undefined}
 						onOrderSaved={() => ctrl.setIsLabOrderModalOpen(false)}
 					/>

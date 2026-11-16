@@ -58,7 +58,10 @@ export function useDicomViewerModalAi(
 	const handleApplyFindingsToChart = async () => {
 		if (!aiToothStates || !selectedPatientId) return;
 		const plan = planVisiographFindings(aiToothStates);
-		if (selectedFindingCodes.size === 0) return;
+		if (selectedFindingCodes.size === 0) {
+			showToast("Отметьте хотя бы одну находку ИИ для переноса в зубную формулу", "info");
+			return;
+		}
 		setIsApplyingToChart(true);
 		setFormulaFailure(null);
 		const appliedCodes: string[] = [];

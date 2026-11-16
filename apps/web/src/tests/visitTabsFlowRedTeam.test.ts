@@ -317,31 +317,35 @@ describe("Red Team: Visit Workspace Flow & Data Integrity Invariant", () => {
 			"Breadcrumb must be 'Приём / Снимки и диагностика' without '3. Вкладка' dev-jargon",
 		);
 
-		const analyzerSrc = fs.readFileSync(
-			resolveWebPath("src/components/imaging/VisiographAnalyzer.tsx"),
+		const rvgSectionSrc = fs.readFileSync(
+			resolveWebPath("src/components/visit/diagnosticsTab/DiagnosticsRvgSection.tsx"),
 			"utf8",
 		);
 		assert.ok(
-			analyzerSrc.includes("✓ Норма в протокол"),
-			"VisiographAnalyzer must label norm button '✓ Норма в протокол'",
+			rvgSectionSrc.includes("SensorStudyViewer"),
+			"DiagnosticsRvgSection must mount canonical SensorStudyViewer SSOT",
 		);
 
-		const headerBarSrc = fs.readFileSync(
-			resolveWebPath("src/components/imaging/VisiographHeaderBar.tsx"),
+		const viewerLayoutSrc = fs.readFileSync(
+			resolveWebPath("src/components/radiology/sensorViewer/SensorStudyViewerLayout.tsx"),
 			"utf8",
 		);
 		assert.ok(
-			headerBarSrc.includes("!hasScanOrImage"),
-			"VisiographHeaderBar must hide false 'Ожидание снимка' alert when scan/image is active",
+			viewerLayoutSrc.includes("ViewerToolbar") && viewerLayoutSrc.includes("ViewerCanvasViewport"),
+			"SensorStudyViewerLayout must compose canonical ViewerToolbar and ViewerCanvasViewport",
 		);
 
-		const viewportSrc = fs.readFileSync(
-			resolveWebPath("src/components/imaging/VisiographViewport.tsx"),
+		const toolbarSrc = fs.readFileSync(
+			resolveWebPath("src/components/radiology/sensorViewer/ViewerToolbar.tsx"),
 			"utf8",
 		);
 		assert.ok(
-			viewportSrc.includes("calc(100vh - 210px)"),
-			"VisiographViewport must give full height calc(100vh - 210px) for crown-to-apex visibility",
+			toolbarSrc.includes("btn-sensor-norma") && toolbarSrc.includes("btn-sensor-protocols"),
+			"ViewerToolbar must provide 1-click Norma and Standard Protocols without bureaucratic barriers",
+		);
+		assert.ok(
+			toolbarSrc.includes("dente-segmented-bar") && toolbarSrc.includes("btn-tool-curved-canal"),
+			"ViewerToolbar must use dente-segmented-bar tokens and provide working length canal tool",
 		);
 
 		const studyCardSrc = fs.readFileSync(
@@ -353,31 +357,13 @@ describe("Red Team: Visit Workspace Flow & Data Integrity Invariant", () => {
 			"DiagnosticsStudyCard must wire card click to onSelectStudy and dedicated Maximize2 icon to modal",
 		);
 
-		const reportViewerSrc = fs.readFileSync(
-			resolveWebPath("src/components/imaging/VisiographReportViewer.tsx"),
+		const dicomModalSrc = fs.readFileSync(
+			resolveWebPath("src/components/imaging/DicomViewerModal.tsx"),
 			"utf8",
 		);
 		assert.ok(
-			reportViewerSrc.includes("btn-transfer-report-to-protocol"),
-			"VisiographReportViewer must provide button to transfer radiology report to protocol (043/u)",
-		);
-
-		const findingsPillsSrc = fs.readFileSync(
-			resolveWebPath("src/components/imaging/VisiographFindingsPills.tsx"),
-			"utf8",
-		);
-		assert.ok(
-			findingsPillsSrc.includes("setActiveToothNumber"),
-			"VisiographFindingsPills must topologically bind active tooth to selected X-ray finding",
-		);
-
-		const presetsSrc = fs.readFileSync(
-			resolveWebPath("src/components/imaging/VisiographCockpitPresets.tsx"),
-			"utf8",
-		);
-		assert.ok(
-			presetsSrc.includes("diag-segmented-bar") && presetsSrc.includes("diag-segmented-item"),
-			"VisiographCockpitPresets must use strict clinical diag-segmented-bar tokens",
+			dicomModalSrc.includes("DicomViewerModalBody") && !dicomModalSrc.includes('aria-hidden="true"'),
+			"DicomViewerModal must use canonical body layout without hidden mock test containers",
 		);
 	});
 });

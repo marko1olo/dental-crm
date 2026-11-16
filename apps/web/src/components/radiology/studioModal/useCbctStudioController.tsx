@@ -35,6 +35,7 @@ export interface UseCbctStudioControllerProps {
 	readonly study?: RadiologyStudy | null | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientId?: string | undefined;
+	readonly onApplyToDiary?: ((diaryText: string) => void) | undefined;
 	readonly onApplyToDiary043?: ((diaryText: string) => void) | undefined;
 	readonly onApplyToPlan?: ((item: TreatmentPlanItem) => void) | undefined;
 	readonly initialVolume?: CbctVoxelVolume | null | undefined;
@@ -50,6 +51,7 @@ export function useCbctStudioController({
 	study,
 	patientName,
 	patientId,
+	onApplyToDiary,
 	onApplyToDiary043,
 	onApplyToPlan,
 	initialVolume,
@@ -58,6 +60,7 @@ export function useCbctStudioController({
 	state,
 	modalContainerRef,
 }: UseCbctStudioControllerProps) {
+	const effectiveApplyToDiary = onApplyToDiary ?? onApplyToDiary043;
 	const [isLabOrderModalOpen, setIsLabOrderModalOpen] = useState<boolean>(false);
 	const [labOrderDraft, setLabOrderDraft] = useState<DentalLabOrderData | null>(null);
 
@@ -378,12 +381,12 @@ export function useCbctStudioController({
 					clinicalSummaryRu: "Стандартный эндодонтический доступ",
 				},
 			});
-			if (onApplyToDiary043) onApplyToDiary043(`${exported.statusLocalis}\n\n${exported.treatmentDescription}`);
+			if (effectiveApplyToDiary) effectiveApplyToDiary(`${exported.statusLocalis}\n\n${exported.treatmentDescription}`);
 			showToast(`Эндодонтический протокол 3D КЛКТ (зуб #${toothFdi}) перенесен в медицинскую карту`, "success");
 			return;
 		}
 		handleImplantExportToEmr();
-	}, [state.studioMode, state.activeCrossSection, patientId, patientName, onApplyToDiary043, handleImplantExportToEmr]);
+	}, [state.studioMode, state.activeCrossSection, patientId, patientName, effectiveApplyToDiary, handleImplantExportToEmr]);
 
 	const handleExportToPlan = useCallback(() => {
 		if (state.studioMode === "endo") {

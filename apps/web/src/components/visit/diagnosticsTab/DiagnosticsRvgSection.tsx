@@ -1,5 +1,6 @@
-import React from "react";
-import { VisiographAnalyzer } from "../../imaging/VisiographAnalyzer";
+import React, { useMemo } from "react";
+import { SensorStudyViewer } from "../../radiology/SensorStudyViewer";
+import type { RadiologyFilmstripItem } from "../../radiology/RadiologyFilmstripDock.js";
 
 import type { DiagnosticStudy } from "./types";
 
@@ -34,21 +35,30 @@ export function DiagnosticsRvgSection({
 	onOpenDicomViewer,
 	onOpenRadiologyReferral,
 }: DiagnosticsRvgSectionProps) {
+	const studyItem = useMemo<RadiologyFilmstripItem | undefined>(() => {
+		if (!selectedStudy) return undefined;
+		return {
+			id: selectedStudy.id,
+			title: selectedStudy.title ?? "Радиовизиография",
+			imageUrl: selectedStudy.viewerUrl ?? selectedStudy.previewUrl ?? "",
+			...(selectedStudy.previewUrl ? { thumbnailUrl: selectedStudy.previewUrl } : {}),
+			teethFdi: selectedStudy.toothCode ? [selectedStudy.toothCode] : (initialToothNumber ? [String(initialToothNumber)] : []),
+			studyDate: selectedStudy.capturedAt ?? new Date().toISOString(),
+			modality: "intraoral_rvg",
+		};
+	}, [selectedStudy, initialToothNumber]);
+
 	return (
 		<div
 			className={isVisible ? "flex flex-col gap-2 visiograph-viewer" : "hidden"}
 			data-testid="visiograph-viewer"
 		>
-			{/* Модуль визиографа и рентген-анализа ИИ */}
-			<VisiographAnalyzer
-				patientId={activePatientId}
-				visitId={activeVisitId}
-				toothCode={initialToothNumber ? String(initialToothNumber) : undefined}
+			<SensorStudyViewer
+				study={studyItem}
+				initialImageUrl={selectedStudy?.viewerUrl ?? selectedStudy?.previewUrl}
+				patientName={selectedPatientName || visitPatientName || undefined}
+				toothFdiCode={initialToothNumber ? String(initialToothNumber) : undefined}
 				onInsertToProtocol={onInsertToProtocol}
-				onConnectRvg={onOpenDirectRvg}
-				onReferToRadiology={onOpenRadiologyReferral}
-				onUploadDicom={onOpenDicomViewer}
-				selectedStudy={selectedStudy}
 			/>
 		</div>
 	);

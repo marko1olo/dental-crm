@@ -59,7 +59,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!sensorCode.includes("Норма (043/у)"), "SensorStudyViewer must not have 'Норма (043/у)' button text");
 		assert.ok(sensorCode.includes('data-testid="btn-sensor-norma"'), "Preserve data-testid for compatibility");
 
-		const dicomCode = readComponent("components/imaging/DicomViewerModal.tsx");
+		const dicomCode =
+			readComponent("components/imaging/DicomViewerModal.tsx") +
+			"\n" +
+			readComponent("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
 		assert.ok(dicomCode.includes("Норма: патологии нет"), "DicomViewerModal must label button 'Норма: патологии нет'");
 		assert.ok(!dicomCode.includes("Норма (043/у)"), "DicomViewerModal must not have 'Норма (043/у)' button text");
 		assert.ok(dicomCode.includes('data-testid="btn-dicom-norma-043"'), "Preserve testid for compatibility");
@@ -73,15 +76,16 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		assert.ok(!hudCode.includes("data-testid=\"hud-dap-dose\""), "RadiologyClinicalHud must not render loud DAP dose badge on screen");
 	});
 
-	it("4. DicomToolboxRibbon & VisiographAnalyzer: clean medical card actions & toast", () => {
+	it("4. DicomToolboxRibbon & DicomViewerModal: clean medical card actions & toast", () => {
 		const ribbonCode = readComponent("components/imaging/DicomToolboxRibbon.tsx");
 		assert.ok(ribbonCode.includes("Норма: патологии нет"), "DicomToolboxRibbon button must be 'Норма: патологии нет'");
 		assert.ok(ribbonCode.includes("Внести в медицинскую карту"), "HU modal must insert into medical card");
 
-		const visCode = readComponent("components/imaging/VisiographAnalyzer.tsx");
-		assert.ok(visCode.includes("Норма: патологии нет ✓"), "VisiographAnalyzer must show 'Норма: патологии нет ✓'");
-		assert.ok(visCode.includes("внесено в медицинскую карту"), "Visiograph toast must mention medical card");
-		assert.ok(!visCode.includes("Норма (043/у)"), "Visiograph button must not say 043/у");
+		const dicomHeaderCode = readComponent("components/imaging/dicomViewerModal/DicomViewerModalHeader.tsx");
+		const dicomCtrlCode = readComponent("components/imaging/dicomViewerModal/useDicomViewerModalController.ts");
+		assert.ok(dicomHeaderCode.includes("Норма: патологии нет"), "DicomViewerModalHeader must show 'Норма: патологии нет'");
+		assert.ok(dicomCtrlCode.includes("внесено в медицинскую карту"), "DicomViewer toast must mention medical card");
+		assert.ok(!dicomHeaderCode.includes("Норма (043/у)"), "DicomViewer button must not say 043/у");
 	});
 
 	it("5. CbctMprImplantStudioModal: eliminated '043/у' from diary buttons", () => {
@@ -111,7 +115,7 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("8. TaxDeductionCertificateModal: purged Soviet ministerial decrees and order numbers", () => {
-		const fnsModalCode = readComponent("components/finance/TaxDeductionCertificateModal.tsx");
+		const fnsModalCode = readComponent("components/documents/DocumentsStudioModal.tsx");
 		assert.ok(!fnsModalCode.includes("1089н"), "Purged decree 1089н");
 		assert.ok(!fnsModalCode.includes("366/у"), "Purged decree 366/у");
 		assert.ok(!fnsModalCode.includes("257/у"), "Purged decree 257/у");
