@@ -44,7 +44,7 @@ export interface CbctTreatmentPlanExportParams {
 	readonly huSamplingResult: HUZoneSampling;
 	readonly mischClassification: MischClassificationResult;
 	readonly onApplyToPlan?: ((item: TreatmentPlanItem) => void) | undefined;
-	readonly onApplyToDiary?: ((summary: any) => void) | undefined;
+	readonly onApplyToDiary?: ((summary: string) => void) | undefined;
 	readonly crossSectionCanvasRef?: React.RefObject<HTMLCanvasElement | null> | undefined;
 }
 
@@ -99,13 +99,13 @@ export function executeExportToPlan(params: CbctTreatmentPlanExportParams): void
 		serviceCode: item.code804n || `IMPLANT-${targetTooth}-${idx}`,
 		code804n: item.code804n,
 		name: item.name,
-		category: item.category as any,
+		category: item.category,
 		priceRub: item.priceRub,
 		unitPriceRub: item.priceRub,
 		discountRub: 0,
 		quantity: 1,
 		phase: item.phase,
-		stageKind: item.stageKind as any,
+		stageKind: item.stageKind,
 		isAuto: false,
 		materials: item.materials,
 		clinicalRationale: item.clinicalRationale,
@@ -285,8 +285,8 @@ export function executeExportToEmr(params: CbctTreatmentPlanExportParams): void 
 			angulationDeg: implantAngulationDeg,
 			ridgeHeightMm: effectiveRidgeHeightMm,
 			ridgeWidthMm: effectiveRidgeWidthMm,
-			ridgeW2Mm: (activeCaliper as any)?.crestWidthMm ?? effectiveRidgeWidthMm,
-			ridgeW6Mm: (activeCaliper as any)?.midWidthMm ?? null,
+			ridgeW2Mm: activeCaliper?.crestWidthMm ?? effectiveRidgeWidthMm,
+			ridgeW6Mm: activeCaliper?.midWidthMm ?? null,
 			sinusLiftRecommendation: sinusRecommendation,
 			mischClass: displayBoneClass,
 			meanHU: Math.round(displayMeanHU ?? huSamplingResult.overallMeanHU),

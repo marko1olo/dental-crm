@@ -8,15 +8,18 @@ import type {
 	ImagingStudy,
 	ImagingViewerState,
 	ViewerRulerMeasurement,
-} from "../types";
+} from "../types.js";
+import type { BrowserPickedImagingFolderPreview } from "../../../AppConstants.js";
 
 export interface ImagingViewportProps {
-	selectedImagingStudy?: ImagingStudy | null;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
 	localImageIds: string[];
 	setLocalImageIds: (ids: string[]) => void;
-	browserPickedImagingFolder?: any;
+	browserPickedImagingFolder?: BrowserPickedImagingFolderPreview | null | undefined;
 	imagingViewerState: ImagingViewerState;
-	setImagingViewerState: (updater: any) => void;
+	setImagingViewerState:
+		| React.Dispatch<React.SetStateAction<ImagingViewerState>>
+		| ((updater: ((prevState: ImagingViewerState) => ImagingViewerState) | ImagingViewerState) => void);
 	computedViewerImageStyle: React.CSSProperties;
 	effectivePreviewUrl: string | null;
 	isPreviewLoading: boolean;
@@ -36,8 +39,8 @@ export interface ImagingViewportProps {
 	onAttachFile: () => void;
 	isAnalyzingAI: boolean;
 	onAnalyzeAI: () => void;
-	selectedStudySummary: string | null;
+	selectedStudySummary: string | null | undefined;
 	pendingAiProposal: AiProposal | null;
 	setPendingAiProposal: (proposal: AiProposal | null) => void;
-	onStudyUploaded?: (study: any) => void;
+	onStudyUploaded?: ((study: ImagingStudy) => void) | undefined;
 }

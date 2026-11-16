@@ -2,6 +2,25 @@ import { isDemoPatientId, isDemoShowcaseMode } from "../../../../lib/demoMode.js
 import type { RadiologyFilmstripItem } from "../../RadiologyFilmstripDock.js";
 import type { RadiologyStudy } from "../../types.js";
 
+function getStudyPatientId(study: RadiologyStudy | RadiologyFilmstripItem | null): string | undefined {
+	if (!study) return undefined;
+	if ("patientId" in study && typeof study.patientId === "string") {
+		return study.patientId;
+	}
+	return undefined;
+}
+
+function getStudyTitle(study: RadiologyStudy | RadiologyFilmstripItem | null): string | undefined {
+	if (!study) return undefined;
+	if ("title" in study && typeof study.title === "string") {
+		return study.title;
+	}
+	if ("anatomicalArea" in study && typeof study.anatomicalArea === "string") {
+		return study.anatomicalArea;
+	}
+	return undefined;
+}
+
 export function resolveActiveImageUrl(
 	activeStudy: RadiologyStudy | RadiologyFilmstripItem | null,
 	initialImageUrl?: string,
@@ -10,7 +29,8 @@ export function resolveActiveImageUrl(
 	if (activeStudy?.imageUrl) return activeStudy.imageUrl;
 	if (activeStudy?.thumbnailUrl) return activeStudy.thumbnailUrl;
 	if (initialImageUrl) return initialImageUrl;
-	if (isDemoShowcaseMode() || isDemoPatientId((activeStudy as any)?.patientId || medicalCardNumber)) {
+	const patientId = getStudyPatientId(activeStudy);
+	if (isDemoShowcaseMode() || isDemoPatientId(patientId || medicalCardNumber)) {
 		return "/radiology/sample_rvg_tooth16.jpg";
 	}
 	return "";
@@ -23,15 +43,17 @@ export function resolveEffectiveStudiesHistory(
 	activeImageUrl: string,
 ): readonly (RadiologyStudy | RadiologyFilmstripItem)[] {
 	if (studiesHistory && studiesHistory.length > 0) return studiesHistory;
-	const isDemo = isDemoShowcaseMode() || isDemoPatientId((activeStudy as any)?.patientId);
+	const patientId = getStudyPatientId(activeStudy);
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+	const defaultTitle = effectiveTooth ? `Прицельный снимок зуба #${effectiveTooth}` : "Прицельный снимок RVG";
+	const currentTitle = getStudyTitle(activeStudy) || defaultTitle;
+
 	if (!isDemo) {
 		if (activeImageUrl || activeStudy) {
 			return [
 				{
 					id: activeStudy?.id || "study-current",
-					title:
-						(activeStudy as any)?.title ||
-						(effectiveTooth ? `Прицельный снимок зуба #${effectiveTooth}` : "Прицельный снимок RVG"),
+					title: currentTitle,
 					modality: "intraoral_rvg",
 					modalityLabel: "IO-СЕНСОР",
 					studyDate: activeStudy?.studyDate || new Date().toLocaleString("ru-RU"),
@@ -47,7 +69,7 @@ export function resolveEffectiveStudiesHistory(
 	return [
 		{
 			id: activeStudy?.id || "study-current",
-			title: (activeStudy as any)?.title || (effectiveTooth ? `Прицельный снимок зуба #${effectiveTooth}` : "Прицельный снимок RVG"),
+			title: currentTitle,
 			modality: "intraoral_rvg",
 			modalityLabel: "IO-СЕНСОР",
 			studyDate: activeStudy?.studyDate || "01.10.2026 10:14:20",

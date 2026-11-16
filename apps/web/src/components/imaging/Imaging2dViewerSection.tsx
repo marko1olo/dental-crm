@@ -10,6 +10,7 @@ import { ClinicalXrayProtocolPanel } from "./ClinicalXrayProtocolPanel.js";
 import { ImagingEmptyStateStage } from "./ImagingEmptyStateStage.js";
 import type { Imaging2dViewerSectionProps } from "./imaging2dViewer/types.js";
 import { Imaging2dToolbarWrapper } from "./imaging2dViewer/Imaging2dToolbarWrapper.js";
+import { defaultImagingViewerState } from "../../constants/imagingConstants.js";
 
 export type { Imaging2dViewerSectionProps };
 
@@ -51,7 +52,7 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 				localImageIds={localImageIds}
 				setLocalImageIds={props.setLocalImageIds}
 				browserPickedImagingFolder={browserPickedImagingFolder}
-				imagingViewerState={props.imagingViewerState}
+				imagingViewerState={props.imagingViewerState ?? props.defaultImagingViewerState ?? defaultImagingViewerState}
 				setImagingViewerState={props.setImagingViewerState}
 				computedViewerImageStyle={computedViewerImageStyle}
 				effectivePreviewUrl={effectivePreviewUrl ?? null}
@@ -98,7 +99,7 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 				<div className="sa-report-column clinical-xray-report-column">
 					<ClinicalXrayProtocolPanel
 						summary={selectedStudySummary}
-						toothUpdates={selectedStudyToothUpdates as any}
+						toothUpdates={selectedStudyToothUpdates}
 						studyTitle={selectedImagingStudy?.title}
 						patientId={selectedImagingStudy?.patientId}
 					/>

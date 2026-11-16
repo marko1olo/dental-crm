@@ -17,6 +17,7 @@ export interface DentalArchCurve {
 	readonly totalArcLengthMm: number;
 	readonly focalTroughThicknessMm: number; // 5..20 mm (default 12 mm)
 	readonly planeZMm?: number;
+	readonly centerZMm?: number;
 }
 
 // ─── DEFAULT ANATOMICAL DENTAL ARCH ANCHORS (ADULT DENTITION) ───────────────

@@ -19,15 +19,19 @@ export function resolveOcclusalCenterZ(
 	if (typeof userCenterZMm === "number" && Number.isFinite(userCenterZMm)) {
 		return userCenterZMm;
 	}
-	if (typeof (archCurve as any).planeZMm === "number" && Number.isFinite((archCurve as any).planeZMm)) {
-		return (archCurve as any).planeZMm;
+	if (typeof archCurve.planeZMm === "number" && Number.isFinite(archCurve.planeZMm)) {
+		return archCurve.planeZMm;
 	}
-	if (typeof (archCurve as any).centerZMm === "number" && Number.isFinite((archCurve as any).centerZMm)) {
-		return (archCurve as any).centerZMm;
+	if (typeof archCurve.centerZMm === "number" && Number.isFinite(archCurve.centerZMm)) {
+		return archCurve.centerZMm;
 	}
 	if (archCurve.anchors && archCurve.anchors.length > 0) {
 		const zList = archCurve.anchors
-			.map((a: any) => a.zMm ?? (typeof a.positionMm?.z === "number" ? a.positionMm.z : undefined))
+			.map((a) => {
+				if (typeof a.zMm === "number") return a.zMm;
+				const pos = a.positionMm as Point2D & { z?: number };
+				return typeof pos.z === "number" ? pos.z : undefined;
+			})
 			.filter((z): z is number => typeof z === "number" && Number.isFinite(z));
 		if (zList.length > 0) {
 			return Number((zList.reduce((sum, val) => sum + val, 0) / zList.length).toFixed(2));
@@ -88,8 +92,9 @@ export function calculateToothMarkersOnPano(
 		let bestArcDistMm = 0;
 
 		for (let i = 0; i < nNodes - 1; i++) {
-			const n0 = vectorField[i]!;
-			const n1 = vectorField[i + 1]!;
+			const n0 = vectorField[i];
+			const n1 = vectorField[i + 1];
+			if (!n0 || !n1) continue;
 			const segDx = n1.point.x - n0.point.x;
 			const segDy = n1.point.y - n0.point.y;
 			const segL2 = segDx * segDx + segDy * segDy;

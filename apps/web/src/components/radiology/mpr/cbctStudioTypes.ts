@@ -118,13 +118,15 @@ export const ROTATE_CURSOR = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w
 
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import type { AlveolarRidgeCaliperMeasurement } from "../cbctCaliperNerveMath";
+import type { ImagingStudy } from "../../imaging/types";
+import type { ImagingStudy as SharedImagingStudy } from "@dental/shared";
 
 export interface CbctMprImplantStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly study?: RadiologyStudy | null | undefined;
+	readonly study?: RadiologyStudy | ImagingStudy | SharedImagingStudy | null | undefined;
 	readonly patientName?: string | undefined;
-	readonly patientId?: string | undefined;
+	readonly patientId?: string | null | undefined;
 	readonly onApplyToDiary043?: ((diaryText: string) => void) | undefined;
 	readonly onApplyToPlan?: ((item: TreatmentPlanItem) => void) | undefined;
 	readonly initialStudioMode?: StudioMode | undefined;

@@ -1,17 +1,27 @@
 import React from "react";
 import { ExternalLink } from "lucide-react";
+import type {
+	DicomViewerWorkbenchManifestResponse,
+	ImagingStudy,
+	ImagingViewerAnnotation,
+} from "@dental/shared";
+import type { ImagingViewerPlan } from "../../../constants/imagingConstants";
 
 export interface ImagingMprHeaderSummaryProps {
-	selectedImagingStudy?: any;
-	imagingViewerHref: (study: any) => string;
-	selectedImagingViewerPlan?: any;
-	dicomViewerWorkbenchManifest?: any;
-	dicomLabel?: any;
-	dicomQualityModeLabels?: any;
-	dicomTextureStrategyLabels?: any;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
+	imagingViewerHref: (study?: ImagingStudy | null) => string;
+	selectedImagingViewerPlan?: ImagingViewerPlan | null | undefined;
+	dicomViewerWorkbenchManifest?: DicomViewerWorkbenchManifestResponse | null | undefined;
+	dicomLabel?: (
+		labels: Record<string, string> | undefined,
+		key: string | undefined,
+		fallback: string,
+	) => string;
+	dicomQualityModeLabels?: Record<string, string> | undefined;
+	dicomTextureStrategyLabels?: Record<string, string> | undefined;
 	imagingViewerSaveTitle: Record<string, string>;
 	imagingViewerSaveState: string;
-	imagingViewerAnnotations?: any[] | undefined;
+	imagingViewerAnnotations?: ImagingViewerAnnotation[] | undefined;
 }
 
 export function ImagingMprHeaderSummary({
@@ -26,6 +36,8 @@ export function ImagingMprHeaderSummary({
 	imagingViewerSaveState,
 	imagingViewerAnnotations,
 }: ImagingMprHeaderSummaryProps) {
+	const studyTitle = selectedImagingStudy?.title ?? "Исследование";
+
 	return (
 		<>
 			<div className="clinical-mpr-head">
@@ -39,8 +51,8 @@ export function ImagingMprHeaderSummary({
 					href={imagingViewerHref(selectedImagingStudy)}
 					target="_blank"
 					rel="noreferrer noopener"
-					aria-label={`Открыть КТ-просмотрщик в новой вкладке: ${selectedImagingStudy?.title}`}
-					title={`Открыть КТ-просмотрщик в новой вкладке: ${selectedImagingStudy?.title}`}
+					aria-label={`Открыть КТ-просмотрщик в новой вкладке: ${studyTitle}`}
+					title={`Открыть КТ-просмотрщик в новой вкладке: ${studyTitle}`}
 				>
 					<ExternalLink aria-hidden="true" /> КТ-просмотрщик
 				</a>
@@ -54,17 +66,33 @@ export function ImagingMprHeaderSummary({
 					<strong>{dicomViewerWorkbenchManifest ? `готовность загрузки ${dicomViewerWorkbenchManifest.readiness.readinessScore}%` : "Рабочее место опционально"}</strong>
 					<span>
 						{dicomViewerWorkbenchManifest
-							? `${dicomLabel(dicomQualityModeLabels, dicomViewerWorkbenchManifest.renderCachePlan.qualityMode, "режим качества")} / ${dicomLabel(
-									dicomTextureStrategyLabels,
-									dicomViewerWorkbenchManifest.renderCachePlan.textureStrategy,
-									"план загрузки",
-								)}`
+							? `${
+									dicomLabel
+										? dicomLabel(
+												dicomQualityModeLabels,
+												dicomViewerWorkbenchManifest.renderCachePlan.qualityMode,
+												"режим качества",
+											)
+										: (dicomQualityModeLabels?.[
+												dicomViewerWorkbenchManifest.renderCachePlan.qualityMode
+											] ?? "режим качества")
+								} / ${
+									dicomLabel
+										? dicomLabel(
+												dicomTextureStrategyLabels,
+												dicomViewerWorkbenchManifest.renderCachePlan.textureStrategy,
+												"план загрузки",
+											)
+										: (dicomTextureStrategyLabels?.[
+												dicomViewerWorkbenchManifest.renderCachePlan.textureStrategy
+											] ?? "план загрузки")
+								}`
 							: "Соберите КТ-пакет в настройках источников; карточка приема останется легкой."}
 					</span>
 				</article>
 				<article>
-					<strong>{imagingViewerSaveTitle[imagingViewerSaveState]}</strong>
-					<span>{imagingViewerAnnotations?.length} разметок; исходные снимки остаются в просмотрщике или исходной папке.</span>
+					<strong>{imagingViewerSaveTitle[imagingViewerSaveState] ?? "Сохранение"}</strong>
+					<span>{imagingViewerAnnotations?.length ?? 0} разметок; исходные снимки остаются в просмотрщике или исходной папке.</span>
 				</article>
 			</section>
 		</>

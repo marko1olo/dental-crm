@@ -1,5 +1,6 @@
 import React, { Suspense, useState } from "react";
 import { UploadCloud, Layers, Maximize2 } from "lucide-react";
+import { imagingViewerToolSchema, type ImagingViewerTool } from "@dental/shared";
 import { DicomArchiveUploader } from "../dicom/DicomArchiveUploader";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { ImagingMprHeaderSummary } from "./imagingMprPanel/ImagingMprHeaderSummary";
@@ -20,10 +21,19 @@ const CbctMprImplantStudioModal = lazyWithRetry(() =>
 	})),
 );
 
+function parseViewerTool(tool: unknown): ImagingViewerTool | null {
+	if (typeof tool !== "string") return null;
+	const parsed = imagingViewerToolSchema.safeParse(tool);
+	return parsed.success ? parsed.data : null;
+}
+
 export function ImagingMprPanel(props: ImagingMprPanelProps) {
 	const {
-		mprControlsAutoOpen, mprControlsReady, setLocalImageIds,
-		selectedImagingViewerPlan, cbctWorkbenchSeries,
+		mprControlsAutoOpen,
+		mprControlsReady,
+		setLocalImageIds,
+		selectedImagingViewerPlan,
+		cbctWorkbenchSeries,
 	} = props;
 	const [isStudioOpen, setIsStudioOpen] = useState(false);
 
@@ -34,22 +44,25 @@ export function ImagingMprPanel(props: ImagingMprPanelProps) {
 			<Suspense fallback={null}>
 				<CtPlanningToolsPanel
 					canPlan={mprControlsReady}
-					activeTool={(props.imagingViewerActiveTool as any) ?? null}
+					activeTool={parseViewerTool(props.imagingViewerActiveTool)}
 					activeQuickActionId={props.ctPlanningActiveQuickActionId}
 					onActivateTool={(action) => {
-						const id = typeof action === "string" ? action : (action as any)?.id;
+						const id = typeof action === "string" ? action : action?.id;
 						if (id) props.applyCtPlanningQuickAction(id);
 					}}
 					selectedImplantId={props.ctPlanningImplantPlan?.itemId ?? null}
 					selectedImplantPlan={props.ctPlanningImplantPlan}
 					onSelectImplant={(implant) => {
-						const id = typeof implant === "string" ? implant : (implant as any)?.id ?? null;
+						const id = typeof implant === "string" ? implant : implant?.id ?? null;
 						props.selectCtPlanningImplant(id);
 					}}
 					localAnnotations={props.imagingViewerAnnotations}
 					annotationRefs={props.ctPlanningAnnotationRefs}
 					onCreateArtifact={props.createCtPlanningArtifact}
-					toolStateBundle={props.dicomViewerWorkbenchManifest?.toolStateBundle ?? props.dicomViewerToolStateBundle}
+					toolStateBundle={
+						props.dicomViewerWorkbenchManifest?.toolStateBundle ??
+						props.dicomViewerToolStateBundle
+					}
 				/>
 			</Suspense>
 			<div className="clinical-mpr-grid my-3" data-testid="mpr-canonical-studio-dock">
@@ -105,7 +118,10 @@ export function ImagingMprPanel(props: ImagingMprPanelProps) {
 					<small>Открывается только для КТ-разбора; обычный прием остается без лишних панелей.</small>
 				</summary>
 				{!mprControlsReady && (
-					<div className="mpr-dropzone-notice p-4 mb-4 rounded-lg border border-teal-200 dark:border-teal-800/60 bg-teal-50/50 dark:bg-teal-950/20" data-testid="mpr-dicom-load-dropzone-notice">
+					<div
+						className="mpr-dropzone-notice p-4 mb-4 rounded-lg border border-teal-200 dark:border-teal-800/60 bg-teal-50/50 dark:bg-teal-950/20"
+						data-testid="mpr-dicom-load-dropzone-notice"
+					>
 						<div className="flex items-center gap-2 mb-2 text-teal-800 dark:text-teal-200">
 							<UploadCloud size={18} />
 							<strong className="text-sm font-semibold">Для управления КТ-срезами и осями загрузите файлы DICOM</strong>
@@ -125,15 +141,18 @@ export function ImagingMprPanel(props: ImagingMprPanelProps) {
 						isOpen={isStudioOpen}
 						onClose={() => setIsStudioOpen(false)}
 						study={props.selectedImagingStudy}
-						patientName={props.selectedImagingStudy?.patientFullName || "Пациент"}
-						patientId={props.selectedImagingStudy?.patientId}
-						initialStudioMode="mpr"
+						patientName={props.selectedImagingStudy?.patientFullName ?? "Пациент"}
+						patientId={props.selectedImagingStudy?.patientId ?? undefined}
+						initialStudioMode="diagnostic"
 					/>
 				</Suspense>
 			)}
 			<div className="clinical-mpr-safety">
 				<span>{selectedImagingViewerPlan?.nextAction ?? "Подготовить серию КЛКТ/КТ к просмотру срезов."}</span>
-				<span>{cbctWorkbenchSeries?.mprReadiness.resourcePolicy.nextAction ?? "Метаданные серии пока не загружены: сначала открываем предпросмотр и внешний просмотр."}</span>
+				<span>
+					{cbctWorkbenchSeries?.mprReadiness?.resourcePolicy?.nextAction ??
+						"Метаданные серии пока не загружены: сначала открываем предпросмотр и внешний просмотр."}
+				</span>
 				<span>ИИ-описание не является диагнозом; врач подтверждает все выводы.</span>
 			</div>
 		</section>
