@@ -78,7 +78,7 @@ export function GlobalDoctorPayrollModal({ clinicSettings }: GlobalDoctorPayroll
 				materialCostKopecks: v.materialCostKopecks ?? v.materialCostKop ?? Math.round((v.withheldMaterialRub || 0) * 100),
 				isPaid54Fz: Boolean(v.isPaid54Fz ?? true),
 				paidKopecks: v.patientPaidKopecks ?? v.grossRevenueKop ?? Math.round((v.patientPaidRub || 0) * 100),
-				doctorId: doc?.doctorUserId || globalDoctorPayroll.doctorId || "doc-volkov",
+				doctorId: doc?.doctorUserId || globalDoctorPayroll.doctorId || "",
 			}))
 		: (globalDoctorPayroll.orders ?? globalDoctorPayroll.services);
 

@@ -296,12 +296,17 @@ export async function financialExecutiveSummary(
 /**
  * Прозрачная ведомость начисления зарплаты врачам (Net Revenue).
  * Полная синхронизация с каноническим калькулятором пакета @dental/shared и /api/v1/payroll/calculations (DEF-PAYROLL-07).
+ * DEF-PAYROLL-02: Поддержка filterDoctorId для врачей со скоупом payroll.read.own.
  */
 export async function doctorPayrollReport(
 	scope: ReportScope,
+	filterDoctorId?: string | undefined,
 ): Promise<DoctorPayrollReportData> {
 	try {
-		const activeDoctors = await fetchActiveDoctorProfiles(scope.organizationId);
+		let activeDoctors = await fetchActiveDoctorProfiles(scope.organizationId);
+		if (filterDoctorId) {
+			activeDoctors = activeDoctors.filter((doc) => doc.id === filterDoctorId);
+		}
 		const fromStr = scope.from.toISOString().slice(0, 10);
 		const toStr = scope.to.toISOString().slice(0, 10);
 
@@ -380,8 +385,10 @@ export async function doctorPayrollReport(
 		// Сортируем врачей по чистой выручке (Net Revenue) по убыванию
 		rows.sort((a, b) => b.netRevenueKopecks - a.netRevenueKopecks);
 
-		// 6. Расчет оплаты труда ассистентов клиники
-		const assistantReport = await assistantPayrollReport(scope);
+		// 6. Расчет оплаты труда ассистентов клиники (скрывается при персональной выгрузке врача)
+		const assistantReport = filterDoctorId
+			? { rows: [], totals: { totalPayoutRub: 0, totalPayoutKopecks: 0 }, isEmpty: true }
+			: await assistantPayrollReport(scope);
 
 		return {
 			period: {

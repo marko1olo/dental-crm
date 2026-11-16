@@ -6,11 +6,13 @@
 import type { FastifyInstance } from "fastify";
 import {
 	assistantPayrollReport,
+	clinicTimeZone,
 	doctorPayrollReport,
 	doctorPerformance,
 	serviceSales,
 } from "../../services/reports/managerReports.js";
-import { scopeForReport } from "./reportsShared.js";
+import { badRequest, periodQuerySchema, resolvePeriod, scopeForReport } from "./reportsShared.js";
+import { requirePayoutAccess } from "../billingRoutes/payoutAccessService.js";
 
 export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstance) {
 	/**
@@ -32,11 +34,47 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 	 * Оказано услуг (руб.), Списано материалов техкарт (руб.), Чистая выручка (Net Revenue),
 	 * Процентная ставка врача (%), Итого к выплате (руб.).
 	 * Все расчёты ведутся в целочисленных копейках без float-погрешностей.
+	 * DEF-PAYROLL-02: Права доступа переведены на requirePayoutAccess (payroll.read / payroll.read.own),
+	 * для врачей с payroll.read.own ведомость фильтруется строго по их doctorId.
 	 */
 	app.get("/api/reports/doctor-payroll", async (request, reply) => {
-		const resolved = await scopeForReport(request, reply, "report doctor payroll");
-		if (!resolved) return;
-		return await doctorPayrollReport(resolved.scope);
+		const payoutAccess = await requirePayoutAccess(request, reply);
+		if (!payoutAccess) return;
+
+		const parsed = periodQuerySchema.safeParse(request.query);
+		if (!parsed.success) {
+			badRequest(
+				reply,
+				"Проверьте параметры отчёта: даты, детализацию и пределы.",
+			);
+			return;
+		}
+
+		const timeZone = await clinicTimeZone(payoutAccess.organizationId);
+		const period = resolvePeriod(parsed.data, timeZone);
+		if (!period.ok) {
+			badRequest(reply, period.message);
+			return;
+		}
+
+		const scope = {
+			organizationId: payoutAccess.organizationId,
+			from: period.from,
+			to: period.to,
+			timeZone,
+		};
+
+		let filterDoctorId: string | undefined;
+		if (payoutAccess.scope === "own") {
+			filterDoctorId = payoutAccess.userId;
+		} else {
+			const queryDoctorId = (request.query as Record<string, unknown>)?.doctorId;
+			if (typeof queryDoctorId === "string" && queryDoctorId !== "all") {
+				filterDoctorId = queryDoctorId;
+			}
+		}
+
+		return await doctorPayrollReport(scope, filterDoctorId);
 	});
 
 	/**

@@ -289,6 +289,15 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
    - 📱 Mobile Dark 390x844 (`04_doctor_payroll_mobile_dark_390x844.png` — 143.1 KB)
    - Лично осмотрены через `read_file`: Zero-Clipping, 1 Primary CTA #0d9488, Segmented Control, 0px горизонтального скролла.
 
+8. **DEF-PAYROLL-FIXER-01...06 [ЗАКРЫТО] (Red Team Fixer Surgeon — Безопасность начислений, ликвидация хардкодов и сдвоенных модалок)**:
+   - **DEF-PAYROLL-01 [ЗАКРЫТО] (Утечка зарплат коллег врачу)**: в `apps/api/src/routes/payroll.ts` внедрен `requirePayoutAccess`. Если у пользователя `payroll.read.own` (роль `doctor`/`assistant`), запрещен просмотр чужих данных и `?doctorId=all` с выдачей 403 `PermissionDenied`. Закрытие и открытие периодов ограничено `payroll.read` (403 для рядовых врачей).
+   - **DEF-PAYROLL-02 [ЗАКРЫТО] (Рассинхрон прав в отчетах)**: в `apps/api/src/routes/reports/doctorPerformancePayrollRoutes.ts` роут `/api/reports/doctor-payroll` переведен с `analytics.read` на `requirePayoutAccess`. В `financialExecutiveReports.ts` добавлена поддержка `filterDoctorId`: для врачей с `payroll.read.own` отдаются строго их строки и исключаются данные коллег и ассистентов.
+   - **DEF-PAYROLL-03 [ЗАКРЫТО] (Хардкод "doc-volkov" в UI)**: в `GlobalDoctorPayrollModal.tsx` удален позорный хардкод `|| "doc-volkov"`. При отсутствии выбранного врача модалка отображает честный пустой стейт / выбор специалиста (Мандат 8k/8bj).
+   - **DEF-PAYROLL-04 [ЗАКРЫТО] (Дублирование открытия модалки)**: из `DirectPayrollLauncher.tsx` удален слушатель `dente:open-doctor-payroll`, исключено параллельное открытие двух окон.
+   - **DEF-PAYROLL-05 [ЗАКРЫТО] (Копеечные DTO и ликвидация делений на 100 в БД)**: в `payrollSettlementDbQueries.ts` сырое деление `/ 100` заменено на канонический `kopecksToRubles` из `@dental/shared`. В `payroll.ts` схема `closeSettlementSchema` унифицирована на целочисленные копейки `*Kopecks: z.number().int()`.
+   - **DEF-PAYROLL-06 [ЗАКРЫТО] (Маскирование ставок комиссии в общем списке)**: в `GET /api/v1/doctors` процентные ставки (`commissionPercent`, `defaultShiftRateKop`, `minGuaranteeMonthlyKop`) маскируются (0%), если у вызывающего нет прав `payroll.read` (и он не смотрит себя).
+   - **Тестовое покрытие и 4-State Visual Proofs**: 8/8 API тестов в `payrollStudioInquisition.test.ts` (100% green), 74/74 Web payroll vitest (100% green). Сняты 4 скриншота в `docs/proofs/payroll/` (`01_payroll_pc_light.png`, `02_payroll_pc_dark.png`, `03_payroll_mobile_light.png`, `04_payroll_mobile_dark.png`) и лично осмотрены через `read_file` по 8 осям визуальной инспекции.
+
 ---
 
 ## 🏥 8.1. Реестр устранённых дефектов страховой медицины и ДМС (DEF-DMS-01...06, Red Team Fixer Домен 25)

@@ -26,7 +26,6 @@ export const DirectPayrollLauncher: React.FC = () => {
 		const events = [
 			"dente-open-payroll",
 			"dente:open-payroll",
-			"dente:open-doctor-payroll",
 			"dente-open-doctor-payroll-report",
 			"dente:open-doctor-payroll-report",
 		];

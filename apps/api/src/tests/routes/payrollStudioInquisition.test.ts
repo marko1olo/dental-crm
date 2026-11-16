@@ -122,14 +122,85 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 		if (res.statusCode !== 200) {
 			console.error("Test 3 error body:", res.body);
 		}
-
-		if (res.statusCode !== 200) {
-			console.error("Test 2 error body:", res.body);
-		}
 		assert.equal(res.statusCode, 200);
 		const data = JSON.parse(res.body);
 		assert.equal(data.ok, true);
 		assert.ok(data.statementId);
 		assert.equal(data.statement.isFinalized, true);
+	});
+
+	test("4. DEF-PAYROLL-01: Врач не может запросить расчеты всех врачей клиники (?doctorId=all -> 403)", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/v1/payroll/calculations?doctorId=all&from=2026-10-01&to=2026-10-31`,
+			headers: authHeaders(DOCTOR_ID, "doctor"),
+		});
+
+		assert.equal(res.statusCode, 403);
+		const data = JSON.parse(res.body);
+		assert.equal(data.error, "PermissionDenied");
+	});
+
+	test("5. DEF-PAYROLL-01: Врач не может запросить начисления чужого врача (?doctorId=other -> 403)", async () => {
+		const OTHER_DOCTOR_ID = "c8000000-0000-4000-8000-00000000d002";
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/v1/payroll/calculations?doctorId=${OTHER_DOCTOR_ID}&from=2026-10-01&to=2026-10-31`,
+			headers: authHeaders(DOCTOR_ID, "doctor"),
+		});
+
+		assert.equal(res.statusCode, 403);
+		const data = JSON.parse(res.body);
+		assert.equal(data.error, "PermissionDenied");
+	});
+
+	test("6. DEF-PAYROLL-01: Врач не может закрывать расчетные ведомости (403)", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/payroll/close-settlement",
+			headers: {
+				...authHeaders(DOCTOR_ID, "doctor"),
+				"Content-Type": "application/json",
+			},
+			payload: {
+				doctorId: DOCTOR_ID,
+				periodStart: "2026-10-01",
+				periodEnd: "2026-10-31",
+			},
+		});
+
+		assert.equal(res.statusCode, 403);
+		const data = JSON.parse(res.body);
+		assert.equal(data.error, "PermissionDenied");
+	});
+
+	test("7. DEF-PAYROLL-06: Администратор ресепшена без payroll.read получает замаскированные ставки (0%)", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/v1/doctors",
+			headers: authHeaders(DOCTOR_ID, "administrator"),
+		});
+
+		assert.equal(res.statusCode, 200);
+		const data = JSON.parse(res.body);
+		assert.equal(data.ok, true);
+		for (const doc of data.doctors) {
+			assert.equal(doc.commissionPercent, 0);
+			assert.equal(doc.defaultShiftRateKop, 0);
+			assert.equal(doc.minGuaranteeMonthlyKop, 0);
+		}
+	});
+
+	test("8. DEF-PAYROLL-06: Управляющий/владелец с payroll.read видит реальные ставки комиссий врачей", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/v1/doctors",
+			headers: authHeaders(DOCTOR_ID, "owner"),
+		});
+
+		assert.equal(res.statusCode, 200);
+		const data = JSON.parse(res.body);
+		assert.equal(data.ok, true);
+		assert.ok(Array.isArray(data.doctors));
 	});
 });

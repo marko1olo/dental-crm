@@ -5,6 +5,7 @@
  */
 
 import { and, eq, gte, lte, or, sql } from "drizzle-orm";
+import { kopecksToRubles } from "@dental/shared";
 import { withTenantCtx } from "../db/rls.js";
 import { appointments, doctorPayrollStatements, users } from "../db/schema.js";
 
@@ -125,17 +126,17 @@ export async function closeSettlementPeriodInDb(params: SettlementPeriodClosePar
 		const ndflKop = params.ndfl13Kopecks ?? Math.round((params.ndfl13Rub ?? 0) * 100);
 		const payoutKop = params.netPayoutKopecks ?? Math.max(0, totalAccruedKop - ndflKop);
 
-		const grossRub = params.grossRevenueRub ?? grossKop / 100;
-		const labRub = params.labCostRub ?? labKop / 100;
-		const matRub = params.materialsCostRub ?? matKop / 100;
-		const netBaseRub = params.netBaseRevenueRub ?? netBaseKop / 100;
-		const pieceworkRub = params.calculatedPieceworkRub ?? pieceworkKop / 100;
-		const fixedSalaryRub = params.fixedSalaryRub ?? fixedSalaryKop / 100;
-		const bonusesRub = params.bonusesTotalRub ?? bonusesKop / 100;
-		const penaltiesRub = params.penaltiesTotalRub ?? penaltiesKop / 100;
-		const totalAccruedRub = params.totalAccruedRub ?? totalAccruedKop / 100;
-		const ndflRub = params.ndfl13Rub ?? ndflKop / 100;
-		const payoutRub = params.netPayoutRub ?? payoutKop / 100;
+		const grossRub = params.grossRevenueRub ?? kopecksToRubles(grossKop);
+		const labRub = params.labCostRub ?? kopecksToRubles(labKop);
+		const matRub = params.materialsCostRub ?? kopecksToRubles(matKop);
+		const netBaseRub = params.netBaseRevenueRub ?? kopecksToRubles(netBaseKop);
+		const pieceworkRub = params.calculatedPieceworkRub ?? kopecksToRubles(pieceworkKop);
+		const fixedSalaryRub = params.fixedSalaryRub ?? kopecksToRubles(fixedSalaryKop);
+		const bonusesRub = params.bonusesTotalRub ?? kopecksToRubles(bonusesKop);
+		const penaltiesRub = params.penaltiesTotalRub ?? kopecksToRubles(penaltiesKop);
+		const totalAccruedRub = params.totalAccruedRub ?? kopecksToRubles(totalAccruedKop);
+		const ndflRub = params.ndfl13Rub ?? kopecksToRubles(ndflKop);
+		const payoutRub = params.netPayoutRub ?? kopecksToRubles(payoutKop);
 
 		if (existingRows.length > 0 && existingRows[0]) {
 			statementId = existingRows[0].id;
@@ -156,7 +157,7 @@ export async function closeSettlementPeriodInDb(params: SettlementPeriodClosePar
 					calculatedPieceworkKopecks: pieceworkKop,
 					fixedSalaryRub: fixedSalaryRub,
 					fixedSalaryKopecks: fixedSalaryKop,
-					serviceSalaryPriceRub: serviceSalaryKop / 100,
+					serviceSalaryPriceRub: kopecksToRubles(serviceSalaryKop),
 					serviceSalaryPriceKopecks: serviceSalaryKop,
 					bonusesTotalRub: bonusesRub,
 					bonusesTotalKopecks: bonusesKop,
@@ -199,7 +200,7 @@ export async function closeSettlementPeriodInDb(params: SettlementPeriodClosePar
 					calculatedPieceworkKopecks: pieceworkKop,
 					fixedSalaryRub: fixedSalaryRub,
 					fixedSalaryKopecks: fixedSalaryKop,
-					serviceSalaryPriceRub: serviceSalaryKop / 100,
+					serviceSalaryPriceRub: kopecksToRubles(serviceSalaryKop),
 					serviceSalaryPriceKopecks: serviceSalaryKop,
 					bonusesTotalRub: bonusesRub,
 					bonusesTotalKopecks: bonusesKop,

@@ -12,6 +12,8 @@ import { db } from "../db/client.js";
 import { doctorCommissions, users } from "../db/schema.js";
 import { calculateDoctorPeriodPayroll } from "@dental/shared";
 import { getRequestIdentity } from "../security/identity.js";
+import { roleHasPermission } from "../security/permissions.js";
+import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
 import {
 	closeSettlementPeriodInDb,
 	reopenSettlementPeriodInDb,
@@ -47,32 +49,42 @@ const closeSettlementSchema = z.object({
 	doctorId: z.string().min(1),
 	periodStart: z.string().min(1),
 	periodEnd: z.string().min(1),
-	grossRevenueKop: z.number().optional(),
 	grossRevenueKopecks: z.number().int().optional(),
+	grossRevenueKop: z.number().int().optional(),
 	grossRevenueRub: z.number().optional(),
-	labCostKop: z.number().optional(),
 	labCostKopecks: z.number().int().optional(),
+	labCostKop: z.number().int().optional(),
 	labCostRub: z.number().optional(),
-	materialCostKop: z.number().optional(),
-	materialsCostKop: z.number().optional(),
 	materialsCostKopecks: z.number().int().optional(),
+	materialsCostKop: z.number().int().optional(),
+	materialCostKop: z.number().int().optional(),
 	materialsCostRub: z.number().optional(),
-	netBaseKop: z.number().optional(),
+	netBaseRevenueKopecks: z.number().int().optional(),
 	netBaseKopecks: z.number().int().optional(),
+	netBaseKop: z.number().int().optional(),
 	netBaseRevenueRub: z.number().optional(),
 	amountKopecks: z.number().int().optional(),
-	netPayoutKop: z.number().optional(),
 	netPayoutKopecks: z.number().int().optional(),
+	netPayoutKop: z.number().int().optional(),
 	netPayoutRub: z.number().optional(),
-	totalAccruedKop: z.number().optional(),
 	totalAccruedKopecks: z.number().int().optional(),
+	totalAccruedKop: z.number().int().optional(),
 	totalAccruedRub: z.number().optional(),
+	calculatedPieceworkKopecks: z.number().int().optional(),
+	calculatedPieceworkRub: z.number().optional(),
+	fixedSalaryKopecks: z.number().int().optional(),
+	fixedSalaryRub: z.number().optional(),
+	serviceSalaryPriceKopecks: z.number().int().optional(),
+	bonusesTotalKopecks: z.number().int().optional(),
+	penaltiesTotalKopecks: z.number().int().optional(),
 	payoutModel: z.enum(["percentage", "chair_rental"]).optional().default("percentage"),
 	categoryPercent: z.number().optional(),
+	chairRentalKopecks: z.number().int().optional(),
 	chairRentalRub: z.number().optional(),
 	rkoNumber: z.string().optional(),
-	ndflKop: z.number().optional(),
+	ndfl13Kopecks: z.number().int().optional(),
 	ndflKopecks: z.number().int().optional(),
+	ndflKop: z.number().int().optional(),
 	ndfl13Rub: z.number().optional(),
 	markPaid: z.boolean().optional().default(true),
 });
@@ -85,7 +97,8 @@ const reopenSettlementSchema = z.object({
 
 export async function registerPayrollRoutes(app: FastifyInstance): Promise<void> {
 	/**
-	 * GET /api/v1/doctors — Список активных докторов клиники с реальными ставками из doctor_commissions
+	 * GET /api/v1/doctors — Список активных докторов клиники с реальными ставками из doctor_commissions.
+	 * DEF-PAYROLL-06: Ставки комиссии маскируются, если у вызывающего нет прав payroll.read.
 	 */
 	app.get("/api/v1/doctors", async (request: FastifyRequest, reply: FastifyReply) => {
 		const identity = getRequestIdentity(request);
@@ -93,7 +106,23 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 		try {
 			const doctors = await fetchActiveDoctorProfiles(orgId);
-			return reply.send({ ok: true, doctors });
+			const hasFullPayrollAccess = identity.role ? roleHasPermission(identity.role, "payroll.read") : false;
+			const hasOwnPayrollAccess = identity.role ? roleHasPermission(identity.role, "payroll.read.own") : false;
+
+			const sanitizedDoctors = doctors.map((doc) => {
+				const isSelf = Boolean(identity.userId && identity.userId === doc.id);
+				const canSeeCommission = hasFullPayrollAccess || (isSelf && hasOwnPayrollAccess);
+				if (canSeeCommission) {
+					return doc;
+				}
+				return {
+					...doc,
+					commissionPercent: 0,
+					defaultShiftRateKop: 0,
+					minGuaranteeMonthlyKop: 0,
+				};
+			});
+			return reply.send({ ok: true, doctors: sanitizedDoctors });
 		} catch (err: unknown) {
 			request.log.error(err, "Failed to fetch doctors list");
 			return reply.send({ ok: true, doctors: [] });
@@ -101,14 +130,39 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	});
 
 	/**
-	 * GET /api/v1/payroll/calculations — Расчет начислений в целочисленных копейках
+	 * GET /api/v1/payroll/calculations — Расчет начислений в целочисленных копейках.
+	 * DEF-PAYROLL-01: Контроль прав через requirePayoutAccess, врачу с payroll.read.own запрещен доступ к коллегам и ?doctorId=all.
 	 */
 	app.get("/api/v1/payroll/calculations", async (request: FastifyRequest, reply: FastifyReply) => {
+		const payoutAccess = await requirePayoutAccess(request, reply);
+		if (!payoutAccess) return;
+
 		const parsedQuery = payrollCalculationsQuerySchema.safeParse(request.query);
 		const q: PayrollCalculationsQuery = parsedQuery.success ? parsedQuery.data : {};
-		const identity = getRequestIdentity(request);
-		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const rawDocId = q.doctorId || identity.userId || "";
+		const orgId = payoutAccess.organizationId;
+		let rawDocId = q.doctorId || payoutAccess.userId || "";
+
+		if (payoutAccess.scope === "own") {
+			if (rawDocId === "all") {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "payroll.read",
+					role: payoutAccess.role,
+					message: "Врач может просматривать расчеты только по собственным начислениям",
+				});
+			}
+
+			const resolvedTargetId = await resolveDoctorUserUuid(orgId, rawDocId, payoutAccess.userId);
+			if (resolvedTargetId && resolvedTargetId !== payoutAccess.userId) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "payroll.read",
+					role: payoutAccess.role,
+					message: "Доступ к начислениям других врачей клиники запрещен",
+				});
+			}
+			rawDocId = payoutAccess.userId;
+		}
 
 		const fromStr = q.from || q.startDate || q.startDateIso || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
 		const toStr = q.to || q.endDate || q.endDateIso || new Date().toISOString().slice(0, 10);
@@ -213,7 +267,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			});
 		}
 
-		const resolvedDocId = await resolveDoctorUserUuid(orgId, rawDocId, identity.userId ?? undefined);
+		const resolvedDocId = await resolveDoctorUserUuid(orgId, rawDocId, payoutAccess.userId ?? undefined);
 		if (!resolvedDocId) {
 			return reply.code(404).send({ error: "DoctorNotFound", message: "Врач не найден" });
 		}
@@ -313,6 +367,17 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	 * POST /api/v1/payroll/close-settlement & /api/payroll/close-settlement — Фиксация закрытия расчетного периода в ACID транзакции
 	 */
 	const closeSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const payoutAccess = await requirePayoutAccess(request, reply);
+		if (!payoutAccess) return;
+		if (payoutAccess.scope !== "all") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "payroll.read",
+				role: payoutAccess.role,
+				message: "Закрытие расчетных периодов доступно только управляющему клиникой",
+			});
+		}
+
 		const parsed = closeSettlementSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -322,8 +387,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			});
 		}
 
-		const identity = getRequestIdentity(request);
-		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
+		const orgId = payoutAccess.organizationId;
 		const body = parsed.data;
 
 		const fromDate = new Date(`${body.periodStart.slice(0, 10)}T00:00:00.000Z`);
@@ -406,7 +470,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			});
 		}
 
-		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, identity.userId ?? undefined);
+		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, payoutAccess.userId ?? undefined);
 		if (!resolvedDocId) {
 			return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
 		}
@@ -478,6 +542,17 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	};
 
 	const reopenSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const payoutAccess = await requirePayoutAccess(request, reply);
+		if (!payoutAccess) return;
+		if (payoutAccess.scope !== "all") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "payroll.read",
+				role: payoutAccess.role,
+				message: "Открытие расчетных периодов доступно только управляющему клиникой",
+			});
+		}
+
 		const parsed = reopenSettlementSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -487,9 +562,8 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			});
 		}
 		const body = parsed.data;
-		const identity = getRequestIdentity(request);
-		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, identity.userId ?? undefined);
+		const orgId = payoutAccess.organizationId;
+		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, payoutAccess.userId ?? undefined);
 		if (!resolvedDocId) {
 			return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
 		}
