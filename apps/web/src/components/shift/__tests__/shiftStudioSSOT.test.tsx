@@ -85,7 +85,7 @@ describe("Shift Studio & Fiscal Z-Report SSOT Suite", () => {
 
 		it("provides Solo Doctor chair rental preset (Mandate 8n)", () => {
 			assert.equal(SOLO_DOCTOR_SHIFT_PRESET.status, "open");
-			assert.equal(SOLO_DOCTOR_SHIFT_PRESET.doctorsEarnings[0].doctorPercent, 100);
+			assert.equal(SOLO_DOCTOR_SHIFT_PRESET.doctorsEarnings[0]?.doctorPercent, 100);
 			assert.equal(SOLO_DOCTOR_SHIFT_PRESET.isBalanced, true);
 		});
 	});

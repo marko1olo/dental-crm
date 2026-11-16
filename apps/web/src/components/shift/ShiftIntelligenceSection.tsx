@@ -1,13 +1,16 @@
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, RoleQueue } from "@dental/shared";
 import React, { useState } from "react";
 import { ShiftIntelligenceHeader } from "./intelligence/ShiftIntelligenceHeader";
-import { ShiftIntelligenceAnalyticsGrid } from "./intelligence/ShiftIntelligenceAnalyticsGrid";
+import {
+	ShiftIntelligenceAnalyticsGrid,
+	type ShiftMostLoadedResource,
+} from "./intelligence/ShiftIntelligenceAnalyticsGrid";
 import { ShiftIntelligenceRoleQueuesGrid } from "./intelligence/ShiftIntelligenceRoleQueuesGrid";
 
 export interface ShiftIntelligenceSectionProps {
 	readonly dashboard?: Dashboard | undefined;
-	readonly mostLoadedResource?: any | undefined;
-	readonly activeQueueRole?: any | undefined;
+	readonly mostLoadedResource?: ShiftMostLoadedResource | null | undefined;
+	readonly activeQueueRole?: RoleQueue["role"] | string | null | undefined;
 	readonly rolesWorthShowing?: boolean | undefined;
 	readonly staffRoleLabels?: Record<string, string> | undefined;
 	readonly className?: string | undefined;

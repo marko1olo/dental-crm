@@ -317,7 +317,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								{isCashMatched ? (
 									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
 										<CheckCircle2 className="w-4 h-4 text-emerald-600" />
-										Сходится
+										Сходится ✓
 									</span>
 								) : (
 									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-semibold">

@@ -1,14 +1,34 @@
+import type { Appointment, Patient, StaffMember } from "@dental/shared";
 import { countLabel } from "../../../lib/russianPlural";
 
+export type ShiftVisitAppointment = Pick<Appointment, "startsAt" | "endsAt"> & {
+	readonly id: string;
+	readonly patientId: string;
+	readonly doctorUserId?: string | null | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly appointmentStatus?: string | null | undefined;
+	readonly state?: string | null | undefined;
+	readonly reason?: string | null | undefined;
+};
+
+export type ShiftVisitPatient = Pick<Patient, "id" | "fullName"> & {
+	readonly phone?: string | null | undefined;
+};
+
+export type ShiftVisitDoctor = Pick<StaffMember, "fullName"> & {
+	readonly id?: string | undefined;
+};
+
 export interface DoctorShiftVisitsKpiSectionProps {
-	readonly todayAppointments: readonly any[];
-	readonly inChairAppointments: readonly any[];
-	readonly waitingAppointments: readonly any[];
-	readonly awaitingPaymentAppointments: readonly any[];
-	readonly patientsById: Map<string, any>;
-	readonly staffById: Map<string, any>;
-	readonly currentPatient?: any | null | undefined;
-	readonly inChairAppointment?: any | null | undefined;
+	readonly todayAppointments: readonly ShiftVisitAppointment[];
+	readonly inChairAppointments: readonly ShiftVisitAppointment[];
+	readonly waitingAppointments: readonly ShiftVisitAppointment[];
+	readonly awaitingPaymentAppointments: readonly ShiftVisitAppointment[];
+	readonly patientsById: ReadonlyMap<string, ShiftVisitPatient>;
+	readonly staffById: ReadonlyMap<string, ShiftVisitDoctor>;
+	readonly currentPatient?: ShiftVisitPatient | null | undefined;
+	readonly inChairAppointment?: ShiftVisitAppointment | null | undefined;
 	readonly manyDoctors?: boolean | undefined;
 	readonly onSelectPatient?: ((patientId: string) => void) | undefined;
 	readonly onOpenAppointmentEmk?: ((patientId: string) => void) | undefined;

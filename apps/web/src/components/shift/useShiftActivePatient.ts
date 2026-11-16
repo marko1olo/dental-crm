@@ -1,17 +1,32 @@
 import { useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, Patient } from "@dental/shared";
 import { NIL_UUID } from "./shiftPrintStatements";
+
+export type ShiftActivePatient = Pick<Patient, "id" | "fullName"> & {
+	readonly phone?: string | null | undefined;
+};
+
+export interface ShiftActiveInChairAppointment {
+	readonly id?: string | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly reason?: string | null | undefined;
+	readonly treatmentDescription?: string | null | undefined;
+	readonly serviceTitle?: string | null | undefined;
+	readonly complaint?: string | null | undefined;
+	readonly complaints?: string | null | undefined;
+	readonly patient?: ShiftActivePatient | null | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly patientPhone?: string | null | undefined;
+}
 
 export interface UseShiftActivePatientParams {
 	dashboard?: Dashboard | null | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: patient map
-	patientsById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: appointment
-	inChairAppointment: any;
+	patientsById: ReadonlyMap<string, ShiftActivePatient>;
+	inChairAppointment?: ShiftActiveInChairAppointment | null | undefined;
 }
 
 export function useShiftActivePatient({ dashboard, patientsById, inChairAppointment }: UseShiftActivePatientParams) {
-	const currentPatient = useMemo(() => {
+	const currentPatient = useMemo<ShiftActivePatient | null>(() => {
 		const visit = dashboard?.activeVisit;
 		if (visit?.id && visit.id !== NIL_UUID && visit.patientId && visit.patientId !== NIL_UUID && visit.status === "draft") {
 			const p = patientsById.get(visit.patientId ?? "");
@@ -21,11 +36,13 @@ export function useShiftActivePatient({ dashboard, patientsById, inChairAppointm
 		if (inChairAppointment?.patientId && inChairAppointment.patientId !== NIL_UUID) {
 			const p = patientsById.get(inChairAppointment.patientId ?? "");
 			if (p) return p;
-			// biome-ignore lint/suspicious/noExplicitAny: patient
-			const inChairAny = inChairAppointment as any;
-			if (inChairAny?.patient) return inChairAny.patient;
-			if (inChairAny?.patientFullName) {
-				return { id: inChairAppointment.patientId, fullName: inChairAny.patientFullName, phone: inChairAny.patientPhone ?? "" };
+			if (inChairAppointment.patient) return inChairAppointment.patient;
+			if (inChairAppointment.patientFullName) {
+				return {
+					id: inChairAppointment.patientId,
+					fullName: inChairAppointment.patientFullName,
+					phone: inChairAppointment.patientPhone ?? "",
+				};
 			}
 		}
 
@@ -37,14 +54,12 @@ export function useShiftActivePatient({ dashboard, patientsById, inChairAppointm
 
 	const currentAppointmentReason = useMemo(() => {
 		if (!inChairAppointment) return "";
-		// biome-ignore lint/suspicious/noExplicitAny: appointment
-		const appAny = inChairAppointment as any;
 		return (
 			inChairAppointment.reason ||
-			appAny.treatmentDescription ||
-			appAny.serviceTitle ||
-			appAny.complaint ||
-			appAny.complaints ||
+			inChairAppointment.treatmentDescription ||
+			inChairAppointment.serviceTitle ||
+			inChairAppointment.complaint ||
+			inChairAppointment.complaints ||
 			""
 		);
 	}, [inChairAppointment]);

@@ -331,7 +331,7 @@ describe("Doctor Shift Closure Reconciliation & Executive Reports Dashboard", ()
 
 		it("2.1 Computes clinic average ticket, patient flow and chair load correctly", () => {
 			const html = renderToString(
-				React.createElement(ReportsDashboard, {
+				React.createElement(ReportsDashboard as React.ComponentType<Record<string, unknown>>, {
 					summary: sampleSummary,
 					scheduleLoad: sampleScheduleLoad,
 					serviceSales: sampleServiceSales,
@@ -368,7 +368,7 @@ describe("Doctor Shift Closure Reconciliation & Executive Reports Dashboard", ()
 
 		it("2.2 Provides zero dead-ends and safe rendering with empty summary", () => {
 			const html = renderToString(
-				React.createElement(ReportsDashboard, {
+				React.createElement(ReportsDashboard as React.ComponentType<Record<string, unknown>>, {
 					summary: null,
 					period: { from: "2026-09-01", to: "2026-09-30" },
 				}),

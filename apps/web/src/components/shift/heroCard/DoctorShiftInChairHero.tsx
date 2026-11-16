@@ -1,10 +1,13 @@
 import React from "react";
 import { Check, ClipboardCheck, Image as ImageIcon, Phone } from "lucide-react";
+import type { Patient } from "@dental/shared";
 import { PatientAvatar } from "../../PatientAvatar";
 import { ShiftCallout } from "../ShiftCallout";
 
+export type ShiftHeroPatient = Pick<Patient, "id" | "fullName"> & { readonly phone?: string | null | undefined };
+
 export interface DoctorShiftInChairHeroProps {
-	readonly currentPatient: any;
+	readonly currentPatient: ShiftHeroPatient;
 	readonly currentPatientHasCallablePhone: boolean;
 	readonly currentPatientCallablePhone: string;
 	readonly currentAppointmentReason: string;

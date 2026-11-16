@@ -42,8 +42,7 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 	} = params;
 
 	const todayLabel = shiftDateLabel || new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
-	// biome-ignore lint/suspicious/noExplicitAny: stats cash breakdown
-	const statsBreakdown = (shiftStats as any)?.cashBreakdown;
+	const statsBreakdown = shiftStats.cashBreakdown;
 	const cashRub = cashSummary?.cashRub ?? statsBreakdown?.cashRub ?? 0;
 	const cardRub = cashSummary?.cardRub ?? statsBreakdown?.cardRub ?? 0;
 	const sbpRub = cashSummary?.sbpRub ?? statsBreakdown?.sbpRub ?? 0;

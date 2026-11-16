@@ -1,7 +1,17 @@
 import React from "react";
 import { Building2, Gauge } from "lucide-react";
+import type { ResourceLoad } from "@dental/shared";
 import { countLabel } from "../../../lib/russianPlural";
 import { minutesLabel } from "../../../AppHelpers";
+
+export type ShiftMostLoadedResource =
+	| ResourceLoad
+	| {
+			readonly title?: string | undefined;
+			readonly utilizationPercent: number;
+			readonly bookedMinutes: number;
+			readonly appointmentCount?: number | undefined;
+	  };
 
 export interface ShiftIntelligenceAnalyticsGridProps {
 	readonly modeFit?: {
@@ -9,7 +19,7 @@ export interface ShiftIntelligenceAnalyticsGridProps {
 		fitScore?: number;
 		lowFrictionNextStep?: string;
 	} | undefined;
-	readonly mostLoadedResource?: any;
+	readonly mostLoadedResource?: ShiftMostLoadedResource | null | undefined;
 }
 
 export const ShiftIntelligenceAnalyticsGrid: React.FC<ShiftIntelligenceAnalyticsGridProps> = ({

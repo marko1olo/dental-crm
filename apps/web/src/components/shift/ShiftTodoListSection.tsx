@@ -1,15 +1,15 @@
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
+import type { Patient, RecommendedAction } from "@dental/shared";
 import { countLabel } from "../../lib/russianPlural";
 
+export type ShiftTodoPatient = Pick<Patient, "fullName">;
+
 export interface ShiftTodoListSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: action entity
-	readonly visibleRecommendedActions?: readonly any[] | undefined;
+	readonly visibleRecommendedActions?: readonly RecommendedAction[] | undefined;
 	readonly recommendedActionPriorityLabels?: Record<string, string> | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: patient map
-	readonly patientsById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: action runner
-	readonly onRunRecommendedAction: (action: any) => void;
+	readonly patientsById: ReadonlyMap<string, ShiftTodoPatient>;
+	readonly onRunRecommendedAction: (action: RecommendedAction) => void;
 }
 
 /**
@@ -36,8 +36,7 @@ export const ShiftTodoListSection: React.FC<ShiftTodoListSectionProps> = ({
 			</div>
 			{actions.length > 0 ? (
 				<ul className="shift-todo-list">
-					{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-					{actions.map((action: any) => {
+					{actions.map((action: RecommendedAction) => {
 						const patient = action.patientId
 							? patientsById.get(action.patientId)
 							: null;

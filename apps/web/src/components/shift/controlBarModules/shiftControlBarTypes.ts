@@ -4,6 +4,13 @@ export type ShiftOperationalState = "open" | "break" | "emergency" | "closed";
 
 export type ChairOperationalStatus = "free" | "in_treatment" | "disinfection" | "quartz";
 
+export interface DoctorShiftCashBreakdown {
+	readonly cashRub?: number | undefined;
+	readonly cardRub?: number | undefined;
+	readonly sbpRub?: number | undefined;
+	readonly depositRub?: number | undefined;
+}
+
 export interface DoctorShiftStats {
 	readonly totalAppointments: number;
 	readonly completedCount: number;
@@ -15,6 +22,7 @@ export interface DoctorShiftStats {
 	readonly chairOccupancyPct?: number;
 	readonly shiftDurationSeconds?: number;
 	readonly shiftStartTimeIso?: string;
+	readonly cashBreakdown?: DoctorShiftCashBreakdown | undefined;
 }
 
 export interface DoctorShiftControlBarProps {

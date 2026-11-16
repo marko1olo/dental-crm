@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { UserCheck } from "lucide-react";
+import type { RoleQueue } from "@dental/shared";
 import { countLabel } from "../../../lib/russianPlural";
 
 export interface ShiftIntelligenceRoleQueuesGridProps {
-	readonly roleQueues?: any[] | undefined;
-	readonly activeQueueRole?: any;
+	readonly roleQueues?: readonly RoleQueue[] | undefined;
+	readonly activeQueueRole?: RoleQueue["role"] | string | null | undefined;
 	readonly staffRoleLabels?: Record<string, string> | undefined;
 }
 
@@ -35,8 +36,8 @@ export const ShiftIntelligenceRoleQueuesGrid: React.FC<ShiftIntelligenceRoleQueu
 
 			<div className="role-queue-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: "12px" }}>
 				{roleQueues
-					.filter((q: any) => q.role === activeQueueRole || showOtherQueues)
-					.map((queue: any) => {
+					.filter((q: RoleQueue) => q.role === activeQueueRole || showOtherQueues)
+					.map((queue: RoleQueue) => {
 						const isActive = queue.role === activeQueueRole;
 						return (
 							<article

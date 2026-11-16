@@ -3,7 +3,10 @@ import { DoctorShiftVisitItem } from "./visitsKpi/DoctorShiftVisitItem";
 import { DoctorShiftVisitsHeader } from "./visitsKpi/DoctorShiftVisitsHeader";
 import { DoctorShiftQueueFilterTabs, type QueueFilterId } from "./visitsKpi/DoctorShiftQueueFilterTabs";
 import { DoctorShiftVisitsEmptyState } from "./visitsKpi/DoctorShiftVisitsEmptyState";
-import type { DoctorShiftVisitsKpiSectionProps } from "./visitsKpi/visitsKpiTypes";
+import type {
+	DoctorShiftVisitsKpiSectionProps,
+	ShiftVisitAppointment,
+} from "./visitsKpi/visitsKpiTypes";
 
 export type { DoctorShiftVisitsKpiSectionProps };
 
@@ -54,14 +57,14 @@ export const DoctorShiftVisitsKpiSection: React.FC<DoctorShiftVisitsKpiSectionPr
 
 			{displayedAppointments.length > 0 ? (
 				<div className="today-schedule-list">
-					{displayedAppointments.map((app: any) => {
+					{displayedAppointments.map((app: ShiftVisitAppointment) => {
 						const patient = patientsById.get(app.patientId);
 						const isCurrent = Boolean(
 							currentPatient &&
 								(currentPatient.id === app.patientId ||
 									(inChairAppointment && inChairAppointment.id === app.id)),
 						);
-						const doctor = staffById.get(app.doctorUserId);
+						const doctor = staffById.get(app.doctorUserId ?? app.doctorId ?? "");
 
 						return (
 							<DoctorShiftVisitItem

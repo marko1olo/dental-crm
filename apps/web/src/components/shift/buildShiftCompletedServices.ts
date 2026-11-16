@@ -1,20 +1,83 @@
 import type { DoctorCompletedServiceItem } from "@dental/shared/payroll";
 
-export interface BuildShiftCompletedServicesOptions {
-	// biome-ignore lint/suspicious/noExplicitAny: appointment
-	todayAppointments: readonly any[];
-	// biome-ignore lint/suspicious/noExplicitAny: patient map
-	patientsById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: patient
-	currentPatient: any;
-	shiftActiveDoctorId?: string | undefined;
-	todayIso: string;
-	// biome-ignore lint/suspicious/noExplicitAny: staff map
-	staffById: Map<string, any>;
+export interface ShiftRawServiceItem {
+	readonly id?: string | number | undefined;
+	readonly name?: string | undefined;
+	readonly title?: string | undefined;
+	readonly serviceNameRu?: string | undefined;
+	readonly category?: DoctorCompletedServiceItem["category"] | string | undefined;
+	readonly priceRub?: number | string | undefined;
+	readonly costRub?: number | string | undefined;
+	readonly amountRub?: number | string | undefined;
+	readonly labCostRub?: number | string | undefined;
+	readonly materialCostRub?: number | string | undefined;
+	readonly performerId?: string | undefined;
 }
 
-function inferCategory(appAny: any, app: any, docId: string | undefined, staffById: Map<string, any>): DoctorCompletedServiceItem["category"] {
-	const catRaw = String(appAny.category || "").toLowerCase();
+export interface ShiftCompletedAppointment {
+	readonly id: string | number;
+	readonly patientId?: string | null | undefined;
+	readonly doctorUserId?: string | null | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly state?: string | null | undefined;
+	readonly reason?: string | null | undefined;
+	readonly title?: string | null | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly medicalCardNumber?: string | null | undefined;
+	readonly category?: string | null | undefined;
+	readonly priceRub?: number | string | undefined;
+	readonly costRub?: number | string | undefined;
+	readonly totalRub?: number | string | undefined;
+	readonly amountRub?: number | string | undefined;
+	readonly labCostRub?: number | string | undefined;
+	readonly materialCostRub?: number | string | undefined;
+	readonly services?: readonly ShiftRawServiceItem[] | undefined;
+	readonly items?: readonly ShiftRawServiceItem[] | undefined;
+	readonly completedServices?: readonly ShiftRawServiceItem[] | undefined;
+}
+
+export interface ShiftCompletedPatient {
+	readonly id: string;
+	readonly fullName: string;
+	readonly medicalCardNumber?: string | null | undefined;
+	readonly cardNumber?: string | null | undefined;
+}
+
+export interface ShiftCompletedStaff {
+	readonly id?: string | undefined;
+	readonly fullName?: string | undefined;
+	readonly specialty?: string | null | undefined;
+	readonly specialtyId?: string | null | undefined;
+}
+
+export interface BuildShiftCompletedServicesOptions {
+	todayAppointments: readonly ShiftCompletedAppointment[];
+	patientsById: ReadonlyMap<string, ShiftCompletedPatient>;
+	currentPatient?: ShiftCompletedPatient | null | undefined;
+	shiftActiveDoctorId?: string | undefined;
+	todayIso: string;
+	staffById: ReadonlyMap<string, ShiftCompletedStaff>;
+}
+
+function sanitizeCategory(
+	cat: string | undefined,
+	fallback: DoctorCompletedServiceItem["category"],
+): DoctorCompletedServiceItem["category"] {
+	if (!cat) return fallback;
+	const c = cat.toLowerCase();
+	if (["therapy", "orthopedics", "surgery", "orthodontics", "hygiene", "retail_hygiene", "pediatric"].includes(c)) {
+		return c as DoctorCompletedServiceItem["category"];
+	}
+	return fallback;
+}
+
+function inferCategory(
+	app: ShiftCompletedAppointment,
+	docId: string | undefined,
+	staffById: ReadonlyMap<string, ShiftCompletedStaff>,
+): DoctorCompletedServiceItem["category"] {
+	const catRaw = String(app.category || "").toLowerCase();
 	if (["orthopedics", "orthopedic", "cad_cam"].includes(catRaw)) return "orthopedics";
 	if (["surgery", "implant", "implantation"].includes(catRaw)) return "surgery";
 	if (["orthodontics", "orthodontic", "aligner"].includes(catRaw)) return "orthodontics";
@@ -44,18 +107,17 @@ export function buildShiftCompletedServices({
 	const items: DoctorCompletedServiceItem[] = [];
 
 	for (const app of todayAppointments) {
-		// biome-ignore lint/suspicious/noExplicitAny: app
-		const appAny = app as any;
 		const patient = patientsById.get(app.patientId ?? "") ?? (app.patientId === currentPatient?.id ? currentPatient : null);
-		const patientName = patient?.fullName || appAny.patientFullName || "Пациент";
-		const medicalCardNumber = patient?.medicalCardNumber || patient?.cardNumber || appAny.medicalCardNumber || "043/у";
-		const docId = appAny.doctorUserId || shiftActiveDoctorId || undefined;
-		const category = inferCategory(appAny, app, docId, staffById);
+		const patientName = patient?.fullName || app.patientFullName || "Пациент";
+		const medicalCardNumber = patient?.medicalCardNumber || patient?.cardNumber || app.medicalCardNumber || "043/у";
+		const docId = app.doctorUserId || shiftActiveDoctorId || undefined;
+		const category = inferCategory(app, docId, staffById);
 
-		const rawServices = appAny.services || appAny.items || appAny.completedServices;
+		const rawServices = app.services || app.items || app.completedServices;
 		if (Array.isArray(rawServices) && rawServices.length > 0) {
 			for (let idx = 0; idx < rawServices.length; idx++) {
 				const srv = rawServices[idx];
+				if (!srv) continue;
 				const srvPrice = Number(srv.priceRub || srv.costRub || srv.amountRub) || 0;
 				items.push({
 					id: String(srv.id || `${app.id}-srv-${idx + 1}`),
@@ -63,7 +125,7 @@ export function buildShiftCompletedServices({
 					patientName,
 					medicalCardNumber,
 					serviceNameRu: String(srv.name || srv.title || srv.serviceNameRu || app.reason || "Стоматологическая процедура"),
-					category: (srv.category as any) || category,
+					category: sanitizeCategory(srv.category, category),
 					grossRevenueKop: Math.round(srvPrice * 100),
 					labCostKop: Math.round((Number(srv.labCostRub) || 0) * 100),
 					materialCostKop: Math.round((Number(srv.materialCostRub) || 0) * 100),
@@ -72,7 +134,7 @@ export function buildShiftCompletedServices({
 				});
 			}
 		} else {
-			const appPrice = Number(appAny.priceRub || appAny.costRub || appAny.totalRub || appAny.amountRub) || 0;
+			const appPrice = Number(app.priceRub || app.costRub || app.totalRub || app.amountRub) || 0;
 			const isCompletedOrActive = ["completed", "done", "in_chair", "in_treatment", "in_progress"].includes(String(app.status || "").toLowerCase());
 			if (isCompletedOrActive || appPrice > 0) {
 				items.push({
@@ -80,11 +142,11 @@ export function buildShiftCompletedServices({
 					dateIso: todayIso,
 					patientName,
 					medicalCardNumber,
-					serviceNameRu: String(app.reason || appAny.title || "Прием врача-стоматолога"),
+					serviceNameRu: String(app.reason || app.title || "Прием врача-стоматолога"),
 					category,
 					grossRevenueKop: Math.round(appPrice * 100),
-					labCostKop: Math.round((Number(appAny.labCostRub) || 0) * 100),
-					materialCostKop: Math.round((Number(appAny.materialCostRub) || 0) * 100),
+					labCostKop: Math.round((Number(app.labCostRub) || 0) * 100),
+					materialCostKop: Math.round((Number(app.materialCostRub) || 0) * 100),
 					doctorId: docId,
 					performerId: docId,
 				});

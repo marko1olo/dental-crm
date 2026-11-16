@@ -1,15 +1,15 @@
 import React from "react";
-import { DoctorShiftInChairHero } from "./heroCard/DoctorShiftInChairHero";
-import { DoctorShiftNextAppointmentHero } from "./heroCard/DoctorShiftNextAppointmentHero";
+import { DoctorShiftInChairHero, type ShiftHeroPatient } from "./heroCard/DoctorShiftInChairHero";
+import { DoctorShiftNextAppointmentHero, type ShiftHeroAppointment } from "./heroCard/DoctorShiftNextAppointmentHero";
 import { DoctorShiftEmptyChairHero } from "./heroCard/DoctorShiftEmptyChairHero";
 
 export interface DoctorShiftHeroCardProps {
-	readonly currentPatient: any | null | undefined;
+	readonly currentPatient: ShiftHeroPatient | null | undefined;
 	readonly currentPatientHasCallablePhone: boolean;
 	readonly currentPatientCallablePhone: string;
 	readonly currentAppointmentReason: string;
-	readonly nextAppointment: any | null | undefined;
-	readonly nextAppointmentPatient: any | null | undefined;
+	readonly nextAppointment: ShiftHeroAppointment | null | undefined;
+	readonly nextAppointmentPatient: ShiftHeroPatient | null | undefined;
 	readonly todayAppointmentsCount: number;
 	readonly formatClockTime: (value: unknown) => string;
 	readonly onOpenVisit: (patientId: string) => void;

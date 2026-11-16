@@ -1,10 +1,14 @@
 import React from "react";
 import { Calendar, ClipboardCheck } from "lucide-react";
+import type { Appointment } from "@dental/shared";
 import { PatientAvatar } from "../../PatientAvatar";
+import type { ShiftHeroPatient } from "./DoctorShiftInChairHero";
+
+export type ShiftHeroAppointment = Pick<Appointment, "startsAt"> & { readonly reason?: string | null | undefined };
 
 export interface DoctorShiftNextAppointmentHeroProps {
-	readonly nextAppointment: any;
-	readonly nextAppointmentPatient: any;
+	readonly nextAppointment: ShiftHeroAppointment;
+	readonly nextAppointmentPatient: ShiftHeroPatient | null | undefined;
 	readonly formatClockTime: (value: unknown) => string;
 	readonly onStartNextAppointment: (patientId: string) => void;
 	readonly onOpenSchedule: () => void;

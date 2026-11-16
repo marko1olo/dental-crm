@@ -1,11 +1,17 @@
 import React from "react";
 import { ClipboardCheck, CreditCard, UserCheck } from "lucide-react";
-import { formatClockTime, STATUS_LABELS } from "./visitsKpiTypes";
+import {
+	formatClockTime,
+	STATUS_LABELS,
+	type ShiftVisitAppointment,
+	type ShiftVisitDoctor,
+	type ShiftVisitPatient,
+} from "./visitsKpiTypes";
 
 export interface DoctorShiftVisitItemProps {
-	readonly app: any;
-	readonly patient: any;
-	readonly doctor?: any;
+	readonly app: ShiftVisitAppointment;
+	readonly patient: ShiftVisitPatient | null | undefined;
+	readonly doctor?: ShiftVisitDoctor | null | undefined;
 	readonly isCurrent: boolean;
 	readonly manyDoctors?: boolean | undefined;
 	readonly onOpenAppointmentEmk?: ((patientId: string) => void) | undefined;

@@ -1,12 +1,30 @@
 import { useMemo } from "react";
 
+export interface ShiftQueuePatient {
+	readonly id: string;
+	readonly fullName: string;
+	readonly phone?: string | null | undefined;
+}
+
+export interface ShiftQueueAppointment {
+	readonly id: string;
+	readonly patientId?: string | null | undefined;
+	readonly startsAt: string;
+	readonly endsAt?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly appointmentStatus?: string | null | undefined;
+	readonly state?: string | null | undefined;
+	readonly reason?: string | null | undefined;
+	readonly patient?: ShiftQueuePatient | null | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly patientName?: string | null | undefined;
+	readonly patientPhone?: string | null | undefined;
+}
+
 export interface UseShiftAppointmentQueuesOptions {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly todayAppointments: readonly any[];
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly inChairAppointment: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly patientsById: Map<string, any>;
+	readonly todayAppointments: readonly ShiftQueueAppointment[];
+	readonly inChairAppointment?: { readonly id?: string | undefined } | null | undefined;
+	readonly patientsById: ReadonlyMap<string, ShiftQueuePatient>;
 }
 
 export function useShiftAppointmentQueues({
@@ -14,9 +32,9 @@ export function useShiftAppointmentQueues({
 	inChairAppointment,
 	patientsById,
 }: UseShiftAppointmentQueuesOptions) {
-	const nextAppointment = useMemo(() => {
+	const nextAppointment = useMemo<ShiftQueueAppointment | null>(() => {
 		const now = Date.now();
-		const isPendingAppointment = (app: any) => {
+		const isPendingAppointment = (app: ShiftQueueAppointment) => {
 			if (inChairAppointment && app.id === inChairAppointment.id) return false;
 			const statusKey = String(
 				app.status || app.appointmentStatus || app.state || "",
@@ -32,7 +50,7 @@ export function useShiftAppointmentQueues({
 			].includes(statusKey);
 		};
 
-		const upcoming = todayAppointments.find((app: any) => {
+		const upcoming = todayAppointments.find((app: ShiftQueueAppointment) => {
 			if (!isPendingAppointment(app)) return false;
 			const ends = new Date(app.endsAt ?? app.startsAt).getTime();
 			return Number.isFinite(ends) && ends >= now;
@@ -41,17 +59,16 @@ export function useShiftAppointmentQueues({
 		return upcoming ?? todayAppointments.find(isPendingAppointment) ?? null;
 	}, [todayAppointments, inChairAppointment]);
 
-	const nextAppointmentPatient = useMemo(() => {
+	const nextAppointmentPatient = useMemo<ShiftQueuePatient | null>(() => {
 		if (!nextAppointment) return null;
 		const fromMap = patientsById.get(nextAppointment.patientId ?? "");
 		if (fromMap) return fromMap;
-		const appAny = nextAppointment as any;
-		if (appAny.patient) return appAny.patient;
-		if (appAny.patientFullName || appAny.patientName) {
+		if (nextAppointment.patient) return nextAppointment.patient;
+		if (nextAppointment.patientFullName || nextAppointment.patientName) {
 			return {
 				id: nextAppointment.patientId ?? "unknown",
-				fullName: appAny.patientFullName || appAny.patientName,
-				phone: appAny.patientPhone ?? "",
+				fullName: nextAppointment.patientFullName || nextAppointment.patientName || "Пациент",
+				phone: nextAppointment.patientPhone ?? "",
 			};
 		}
 		return null;
@@ -59,7 +76,7 @@ export function useShiftAppointmentQueues({
 
 	const inChairAppointments = useMemo(() => {
 		const now = Date.now();
-		return todayAppointments.filter((app: any) => {
+		return todayAppointments.filter((app: ShiftQueueAppointment) => {
 			const statusKey = String(
 				app.status || app.appointmentStatus || app.state || "",
 			).toLowerCase();
@@ -76,8 +93,8 @@ export function useShiftAppointmentQueues({
 	}, [todayAppointments]);
 
 	const waitingAppointments = useMemo(() => {
-		const inChairIds = new Set(inChairAppointments.map((a: any) => a.id));
-		return todayAppointments.filter((app: any) => {
+		const inChairIds = new Set(inChairAppointments.map((a: ShiftQueueAppointment) => a.id));
+		return todayAppointments.filter((app: ShiftQueueAppointment) => {
 			if (inChairIds.has(app.id)) return false;
 			const statusKey = String(
 				app.status || app.appointmentStatus || app.state || "",
@@ -90,7 +107,7 @@ export function useShiftAppointmentQueues({
 	}, [todayAppointments, inChairAppointments]);
 
 	const awaitingPaymentAppointments = useMemo(() => {
-		return todayAppointments.filter((app: any) => {
+		return todayAppointments.filter((app: ShiftQueueAppointment) => {
 			const statusKey = String(
 				app.status || app.appointmentStatus || app.state || "",
 			).toLowerCase();

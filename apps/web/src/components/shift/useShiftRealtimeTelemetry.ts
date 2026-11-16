@@ -2,15 +2,37 @@ import { useMemo } from "react";
 import type { MobileShiftAppointmentSummary } from "./MobileShiftCockpit";
 import { formatClockTime } from "./shiftPrintStatements";
 
+export interface ShiftTelemetryPatient {
+	readonly id: string;
+	readonly fullName: string;
+}
+
+export interface ShiftTelemetryAppointment {
+	readonly id: string | number;
+	readonly patientId?: string | null | undefined;
+	readonly startsAt?: string | null | undefined;
+	readonly endsAt?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly appointmentStatus?: string | null | undefined;
+	readonly state?: string | null | undefined;
+	readonly reason?: string | null | undefined;
+	readonly treatmentDescription?: string | null | undefined;
+	readonly serviceTitle?: string | null | undefined;
+	readonly patientFullName?: string | null | undefined;
+	readonly priceRub?: number | string | undefined;
+	readonly costRub?: number | string | undefined;
+	readonly totalRub?: number | string | undefined;
+	readonly amountRub?: number | string | undefined;
+	readonly protocolCompleted?: boolean | undefined;
+	readonly emrSigned?: boolean | undefined;
+	readonly diaryRecorded?: boolean | undefined;
+}
+
 export interface UseShiftRealtimeTelemetryOptions {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly todayAppointments: readonly any[];
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly inChairAppointments: readonly any[];
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly patientsById: Map<string, any>;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	readonly currentPatient: any;
+	readonly todayAppointments: readonly ShiftTelemetryAppointment[];
+	readonly inChairAppointments?: readonly ShiftTelemetryAppointment[] | undefined;
+	readonly patientsById: ReadonlyMap<string, ShiftTelemetryPatient>;
+	readonly currentPatient?: ShiftTelemetryPatient | null | undefined;
 	readonly todayIso: string;
 }
 
@@ -37,17 +59,17 @@ export function useShiftRealtimeTelemetry({
 	currentPatient,
 }: UseShiftRealtimeTelemetryOptions): ShiftRealtimeTelemetry {
 	const completedCount = useMemo(
-		() => todayAppointments.filter((app: any) => ["completed", "done"].includes(String(app.status || "").toLowerCase())).length,
+		() => todayAppointments.filter((app: ShiftTelemetryAppointment) => ["completed", "done"].includes(String(app.status || "").toLowerCase())).length,
 		[todayAppointments],
 	);
 
 	const inProgressCount = useMemo(
-		() => todayAppointments.filter((app: any) => ["in_chair", "in_treatment", "in_progress"].includes(String(app.status || "").toLowerCase())).length,
+		() => todayAppointments.filter((app: ShiftTelemetryAppointment) => ["in_chair", "in_treatment", "in_progress"].includes(String(app.status || "").toLowerCase())).length,
 		[todayAppointments],
 	);
 
 	const completedProtocolsCount = useMemo(() => {
-		return todayAppointments.filter((app: any) => {
+		return todayAppointments.filter((app: ShiftTelemetryAppointment) => {
 			const isDone = ["completed", "done"].includes(String(app.status || "").toLowerCase());
 			return isDone || Boolean(app.protocolCompleted || app.emrSigned || app.diaryRecorded);
 		}).length;
@@ -61,9 +83,9 @@ export function useShiftRealtimeTelemetry({
 	const hasActiveOvertime = useMemo(() => new Date().getHours() >= 21, []);
 
 	const mobileAppointments = useMemo((): readonly MobileShiftAppointmentSummary[] => {
-		return todayAppointments.map((app: any) => {
+		return todayAppointments.map((app: ShiftTelemetryAppointment) => {
 			const st = resolveStatus(String(app.status || app.appointmentStatus || app.state || "").toLowerCase());
-			const patient = patientsById.get(app.patientId) ?? (app.patientId === currentPatient?.id ? currentPatient : null);
+			const patient = patientsById.get(app.patientId ?? "") ?? (app.patientId === currentPatient?.id ? currentPatient : null);
 			const patientName = patient?.fullName || app.patientFullName || "Пациент";
 			const cost = Number(app.priceRub || app.costRub || app.totalRub || app.amountRub) || 0;
 
