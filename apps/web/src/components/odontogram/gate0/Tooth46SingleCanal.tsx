@@ -1,8 +1,17 @@
 import React from "react";
 import type { Tooth46CanalAnatomy } from "./teeth/tooth46/Tooth46PulpGeometry";
 
+export interface ToothCanalAnatomy {
+	id: string;
+	nameRu?: string | undefined;
+	orifice: { x: number; y: number };
+	apex: { x: number; y: number };
+	centerLine: string;
+	taperedLumen: string;
+}
+
 export interface Tooth46SingleCanalProps {
-	canal: Tooth46CanalAnatomy;
+	canal: Tooth46CanalAnatomy | ToothCanalAnatomy;
 	showGuttaPercha: boolean;
 	isNecrotic: boolean;
 	isUnderfill: boolean;

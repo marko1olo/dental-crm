@@ -8,7 +8,12 @@ import type { ToothData, ToothState } from "./ToothChart";
 export interface UseOdontogramToothClickInterceptParams {
 	readonly teethData: readonly ToothData[];
 	readonly onToothClick?:
-		| ((tooth: number, rect: DOMRect, surface?: string) => void)
+		| ((
+				tooth: number,
+				rect: DOMRect,
+				surface?: string | undefined,
+				event?: React.MouseEvent | undefined,
+		  ) => void)
 		| undefined;
 	readonly onQuickStateChange?:
 		| ((
@@ -74,7 +79,7 @@ export function useOdontogramToothClickIntercept({
 			if (onToothClickRef.current) {
 				const originalEvent =
 					typeof arg1 === "object" && arg1 !== null ? arg1 : undefined;
-				(onToothClickRef.current as any)(
+				onToothClickRef.current(
 					num,
 					safeRect,
 					effectiveSurface,

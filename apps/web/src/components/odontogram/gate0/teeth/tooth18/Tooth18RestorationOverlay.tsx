@@ -25,6 +25,7 @@ export const Tooth18RestorationOverlay: React.FC<Tooth18RestorationOverlayProps>
 	className,
 }) => {
 	const r = TOOTH18_RESTORATION_GEOMETRY;
+	const postCore: { palatalShaft: string; coreStump: string; mesialPin?: string | undefined } = r.postCore;
 
 	const compositeFill = isDark ? "url(#dente-composite-filling-dark)" : "url(#dente-composite-filling)";
 	const ceramicFill = isDark ? "url(#dente-inlay-ceramic-dark)" : "url(#dente-inlay-ceramic)";
@@ -46,8 +47,8 @@ export const Tooth18RestorationOverlay: React.FC<Tooth18RestorationOverlayProps>
 					<path d={r.ferruleCollar} fill="url(#dente-root-dentin-18)" stroke={isDark ? "#64748b" : "#94a3b8"} strokeWidth="0.7" />
 					<path d={r.chamferMarginLine} fill="none" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.6" />
 					<path d={r.postCore.palatalShaft} fill="url(#dente-fiber-post)" stroke="#94a3b8" strokeWidth="0.6" />
-					{(r.postCore as any).mesialPin && (
-						<path d={(r.postCore as any).mesialPin} fill="url(#dente-fiber-post)" stroke="#94a3b8" strokeWidth="0.5" />
+					{postCore.mesialPin && (
+						<path d={postCore.mesialPin} fill="url(#dente-fiber-post)" stroke="#94a3b8" strokeWidth="0.5" />
 					)}
 					<path d={r.postCore.coreStump} fill="url(#dente-core-composite-18)" stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"} strokeWidth="0.75" strokeLinejoin="round" />
 				</g>

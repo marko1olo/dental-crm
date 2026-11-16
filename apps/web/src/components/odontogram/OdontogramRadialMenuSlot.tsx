@@ -1,11 +1,12 @@
 import type React from "react";
 import { dispatchOdontogramSoapAndBundle } from "./odontogramModuleConstants";
+import type { RadialMenuAnchorData } from "./OdontogramViewModals";
 import type { ToothState } from "./ToothChart";
 import { ToothRadialMenu } from "./ToothRadialMenu";
 
 export interface OdontogramRadialMenuSlotProps {
-	readonly radialMenuData: any;
-	readonly setRadialMenuData: (data: any) => void;
+	readonly radialMenuData: RadialMenuAnchorData | null;
+	readonly setRadialMenuData: (data: RadialMenuAnchorData | null) => void;
 	readonly selectedTeeth: readonly number[];
 	readonly updateToothState: (
 		targets: number[],
@@ -37,7 +38,10 @@ export const OdontogramRadialMenuSlot: React.FC<
 	return (
 		<ToothRadialMenu
 			toothNumber={radialMenuData.toothNumber}
-			anchorRect={radialMenuData.anchorRect}
+			anchorRect={
+				radialMenuData.anchorRect ??
+				radialMenuData.rect ?? { x: 0, y: 0, width: 48, height: 90 }
+			}
 			currentState={radialMenuData.currentState}
 			surfaces={radialMenuData.surfaces}
 			selectedTeeth={selectedTeeth}

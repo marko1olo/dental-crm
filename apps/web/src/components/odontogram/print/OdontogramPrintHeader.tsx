@@ -1,8 +1,9 @@
 import React from "react";
+import type { OdontogramActivePatientContext } from "../OdontogramModalsLayer";
 
 export interface OdontogramPrintHeaderProps {
 	isPediatricMode: boolean;
-	activePatient?: any | undefined;
+	activePatient?: OdontogramActivePatientContext | undefined;
 }
 
 export const OdontogramPrintHeader: React.FC<OdontogramPrintHeaderProps> = ({

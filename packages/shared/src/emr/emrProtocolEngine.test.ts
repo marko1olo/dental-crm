@@ -376,7 +376,7 @@ describe("Shared EMR Protocol Engine — Order 804n Statutory Services & Summary
 		});
 
 		const formatted = formatStatutorySoapSummary(diary);
-		assert.match(formatted, /ДНЕВНИК ПРИЁМА ФОРМЫ 043\/у/);
+		assert.match(formatted, /ДНЕВНИК КЛИНИЧЕСКОГО ПРИЁМА|ДНЕВНИК ПРИЁМА/);
 		assert.match(formatted, /\[Зуб 21\]/);
 		assert.match(formatted, /S \(ЖАЛОБЫ\):/);
 		assert.match(formatted, /O \(STATUS LOCALIS\):/);

@@ -6,8 +6,17 @@ import {
 	isNegativeAllergyStatement,
 } from "../patients/safetyMath";
 
+export interface OdontogramPatientSafetyCandidate {
+	readonly id?: string | undefined;
+	readonly birthDate?: string | null | undefined;
+	readonly allergies?: string | null | undefined;
+	readonly anamnesis?: { readonly allergies?: string | null | undefined } | null | undefined;
+	readonly clinicalSafetyProfile?: Parameters<typeof evaluatePatientSafetyFlags>[0] | null | undefined;
+	readonly notes?: string | null | undefined;
+}
+
 export function useOdontogramModulePatientSafety(
-	activePatient: any,
+	activePatient: OdontogramPatientSafetyCandidate | null | undefined,
 	propDentitionMode?: "adult" | "pediatric" | "mixed" | undefined,
 	pediatricMode?: boolean | undefined,
 ) {
@@ -39,6 +48,9 @@ export function useOdontogramModulePatientSafety(
 					.join(", ");
 			}
 			if (
+				typeof pat.clinicalSafetyProfile === "object" &&
+				pat.clinicalSafetyProfile !== null &&
+				"customAllergyNotes" in pat.clinicalSafetyProfile &&
 				pat.clinicalSafetyProfile.customAllergyNotes &&
 				!isNegativeAllergyStatement(
 					String(pat.clinicalSafetyProfile.customAllergyNotes),
@@ -58,8 +70,7 @@ export function useOdontogramModulePatientSafety(
 	}, [activePatient]);
 
 	const patientAge = useMemo(() => {
-		const bDate = (activePatient as { birthDate?: string | null } | undefined)
-			?.birthDate;
+		const bDate = activePatient?.birthDate;
 		if (!bDate) return null;
 		return calculateAge(bDate);
 	}, [activePatient]);

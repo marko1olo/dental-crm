@@ -1,6 +1,7 @@
 import type React from "react";
+import type { RadialMenuAnchorData } from "./OdontogramViewModals";
 import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
-import type { ToothState } from "./ToothChart";
+import type { ToothData, ToothState } from "./ToothChart";
 
 export interface UseOdontogramToothClickHandlerParams {
 	readonly selectedTeeth: number[];
@@ -12,8 +13,8 @@ export interface UseOdontogramToothClickHandlerParams {
 	readonly setMenuConfig?: React.Dispatch<
 		React.SetStateAction<ToothActionMenuConfig | null>
 	> | undefined;
-	readonly setRadialMenuData: (data: any) => void;
-	readonly teethDataRef: React.MutableRefObject<any>;
+	readonly setRadialMenuData: (data: RadialMenuAnchorData | null) => void;
+	readonly teethDataRef: React.MutableRefObject<ToothData[]>;
 	readonly updateToothState: (
 		targets: number[],
 		state: ToothState,

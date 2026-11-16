@@ -41,7 +41,7 @@ export const Tooth48EndoCanals: React.FC<Tooth48EndoCanalsProps> = ({
 					{p.canals.map((canal) => (
 						<Tooth46SingleCanal
 							key={canal.id}
-							canal={canal as any}
+							canal={canal}
 							showGuttaPercha={showGuttaPercha}
 							isNecrotic={isNecrotic}
 							isUnderfill={isUnderfill}

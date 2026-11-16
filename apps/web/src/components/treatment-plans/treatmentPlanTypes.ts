@@ -33,6 +33,7 @@ export interface PlanPriceCatalogItem {
 	readonly active?: boolean | undefined;
 	readonly code?: string | undefined;
 	readonly serviceCode?: string | undefined;
+	readonly code804n?: string | undefined;
 	readonly order804nCode?: string | undefined;
 }
 

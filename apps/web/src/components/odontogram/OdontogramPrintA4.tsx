@@ -3,15 +3,20 @@ import { ToothChart, type ToothData } from "./ToothChart";
 import { OdontogramPrintHeader } from "./print/OdontogramPrintHeader";
 import { OdontogramPrintTable } from "./print/OdontogramPrintTable";
 import { OdontogramPrintFooter } from "./print/OdontogramPrintFooter";
+import type {
+	OdontogramActiveDoctorContext,
+	OdontogramActivePatientContext,
+	OdontogramAuthContext,
+} from "./OdontogramModalsLayer";
 
 export interface OdontogramPrintA4Props {
 	patientId: string;
 	teethData: ToothData[];
 	isPediatricMode: boolean;
 	odontogramUseSurfaces?: boolean | undefined;
-	activePatient?: any | undefined;
-	activeDoctor?: any | undefined;
-	auth?: any | undefined;
+	activePatient?: OdontogramActivePatientContext | undefined;
+	activeDoctor?: OdontogramActiveDoctorContext | undefined;
+	auth?: OdontogramAuthContext | undefined;
 }
 
 export const OdontogramPrintA4: React.FC<OdontogramPrintA4Props> = ({

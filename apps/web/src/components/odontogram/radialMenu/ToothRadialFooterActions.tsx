@@ -1,5 +1,7 @@
 import { Camera, Coins, FlaskConical } from "lucide-react";
 import type React from "react";
+import { useWorkspaceProfile } from "../../../hooks/useWorkspaceProfile";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DentalHandpiece, DentalImplant, EndoFileCanal } from "../../icons/DentalIcons";
 
 export interface ToothRadialFooterActionsProps {
@@ -25,6 +27,8 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 	onOrderLab,
 	onClose,
 }) => {
+	const { hasDentalLab } = useWorkspaceProfile();
+	const showLabAction = hasDentalLab || isDemoShowcaseMode();
 	const handleOrderLab = () => {
 		const num = toothNumber || 16;
 		if (onOrderLab) {
@@ -67,16 +71,18 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 					</span>
 				)}
 			</button>
-			<button
-				type="button"
-				onClick={handleOrderLab}
-				className={secondaryBtnCls}
-				title={`Заказать в ЗТЛ (Katana STML): зуб ${toothNumber || 16}`}
-				data-testid="radial-menu-footer-order-lab-btn"
-			>
-				<FlaskConical size={13} className="shrink-0 text-[var(--ink-muted,#64748b)]" />
-				<span>Заказать в ЗТЛ</span>
-			</button>
+			{showLabAction && (
+				<button
+					type="button"
+					onClick={handleOrderLab}
+					className={secondaryBtnCls}
+					title={`Заказать в ЗТЛ (Katana STML): зуб ${toothNumber || 16}`}
+					data-testid="radial-menu-footer-order-lab-btn"
+				>
+					<FlaskConical size={13} className="shrink-0 text-[var(--ink-muted,#64748b)]" />
+					<span>Заказать в ЗТЛ</span>
+				</button>
+			)}
 			{(currentState === "Implant" || currentState === "implant") && (
 				<button
 					type="button"

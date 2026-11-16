@@ -46,9 +46,11 @@ const OrthopedicsChairsidePanel = React.lazy(() =>
 
 export interface RadialMenuAnchorData {
 	toothNumber: number;
-	rect: { x: number; y: number; width: number; height: number };
+	anchorRect?: { x: number; y: number; width: number; height: number } | undefined;
+	rect?: { x: number; y: number; width: number; height: number } | undefined;
 	currentState?: ToothState | undefined;
-	surfaces?: string[] | undefined;
+	surfaces?: readonly string[] | undefined;
+	iropz?: number | undefined;
 }
 
 export interface OdontogramViewModalsProps {
@@ -116,7 +118,10 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 			{radialMenuData && (
 				<ToothRadialMenu
 					toothNumber={radialMenuData.toothNumber}
-					anchorRect={radialMenuData.rect}
+					anchorRect={
+						radialMenuData.anchorRect ??
+						radialMenuData.rect ?? { x: 0, y: 0, width: 48, height: 90 }
+					}
 					currentState={radialMenuData.currentState}
 					surfaces={radialMenuData.surfaces}
 					onSelectState={onRadialSelectState}

@@ -42,7 +42,7 @@ export interface PlanItem {
 	discount: number;
 	phase: number;
 	isAuto?: boolean;
-	suggestion?: EstimatorSuggestionKey;
+	suggestion?: EstimatorSuggestionKey | undefined;
 	category?: string;
 	issue?: EstimatorPriceIssue | null;
 }

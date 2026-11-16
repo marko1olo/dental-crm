@@ -54,7 +54,7 @@ export function renderStructuredDiary043(text: string): string {
 			.replace(/Н\s+см/gi, "Н·см");
 
 		// Document Title
-		if (cleanLine.includes("ПРОТОКОЛ ОПЕРАЦИИ") || cleanLine.includes("ФОРМА 043/У")) {
+		if (cleanLine.includes("ПРОТОКОЛ ОПЕРАЦИИ") || cleanLine.includes("ФОРМА 043/У") || cleanLine.includes("МЕДИЦИНСКАЯ КАРТА")) {
 			output.push(`<div style="font-weight:800; color:#0f172a; margin-bottom:2px; font-size:9px;">${escapeHtml(cleanLine)}</div>`);
 			continue;
 		}
@@ -264,7 +264,7 @@ export function renderCbctReportHtml(data: CbctReportData, options: CbctReportRe
   <div class="info-bar">
     <div class="info-group">
       <div class="info-item">Пациент: <b>${escapeHtml(patient.patientName)}</b></div>
-      <div class="info-item">Карта: <b>${escapeHtml(patient.cardRecordNumber || "043/у")}</b></div>
+      <div class="info-item">Карта: <b>${escapeHtml(patient.cardRecordNumber || "Медицинская карта")}</b></div>
       <div class="info-item">Врач: <b>${escapeHtml((patient.doctorName || "Лечащий врач").trim().replace(/^Врач[-:\s]*/i, ""))}</b></div>
       <div class="info-item">FOV: <b>${escapeHtml(fovText)}</b></div>
       <div class="info-item">HU: <b>${escapeHtml(wlText)}</b></div>

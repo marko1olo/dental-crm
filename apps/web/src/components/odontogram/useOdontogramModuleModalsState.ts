@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
+import type { CheckoutPaymentMethodType } from "../cashbox/cashRegisterCatalogData";
 import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
 
 export function useOdontogramModuleModalsState() {

@@ -282,6 +282,27 @@ graph LR
 
 ---
 
+12. **Red Team Инквизиция ЭМК, протоколов SOAP и дневников врача (DEF-EMR-01...03, Мандаты 8e, 8n, 8x, 8ap, 8bd):**
+    * **DEF-EMR-01 (`cbctReportHtmlTemplate.ts:267`):** Устранен хардкод «043/у», заменен на нейтральное клиническое наименование «Медицинская карта».
+    * **DEF-EMR-02 (`useMedicalRecordSave.ts`):** Внедрен канонический идентификатор черновика `RECORD_DIARY_DRAFT` (с обратной совместимостью через алиас).
+    * **DEF-EMR-03 (`MedicalRecordStudioModal.tsx:246, 290`):** Устаревшие `data-legacy-testid="btn-print-043-card"` и `"badge-043-draft-status"` переведены на семантические `btn-print-medical-record` и `badge-emr-draft-status`.
+    * **Физический снос 7 файлов мертвых дубликатов (`git rm`):**
+      - `apps/web/src/components/emr/protocolGenerator/EmrProtocolSoapPanels.tsx`
+      - `apps/web/src/components/emr/protocolGenerator/soapPanels/EmrProtocolSoapCards.tsx`
+      - `apps/web/src/components/emr/protocolGenerator/soapPanels/EmrProtocolComplianceAudit.tsx`
+      - `apps/web/src/components/visit/emk/EmkSomaticCard.tsx`
+      - `apps/web/src/components/emr/protocolGenerator/emrProtocolEngine.ts`
+      - `apps/web/src/components/emr/protocolGenerator/protocolGeneratorPresets.ts`
+      - `apps/web/src/components/emr/protocolGenerator/index.ts`
+      Каталог `apps/web/src/components/emr/protocolGenerator` полностью ликвидирован. Единый канонический SSOT клинических протоколов зафиксирован в `@dental/shared/src/emr` (`packages/shared/src/emr/emrProtocolPresets.ts`).
+    * **4-State Visual Proof (Live App ЭМК Студия):**
+      - `docs/proofs/emr/01_emr_studio_pc_light_1440x900.png` (112.6 KB) — ПК светлая тема студии ЭМК, печать А4 с водяным знаком «ЧЕРНОВИК», 1 Primary CTA «✓ Сохранить и подписать карту приёма» (#0d9488), 0px клиппинга.
+      - `docs/proofs/emr/02_emr_studio_pc_dark_1440x900.png` (84.7 KB) — ПК тёмная тема студии ЭМК, вкладка «Паспортная часть», 100% тёмные токены, WCAG AAA.
+      - `docs/proofs/emr/03_emr_studio_mobile_light_390x844.png` (51.5 KB) — iPhone 390×844 светлая тема (Apple HIG Bottom Sheet), тактильный Drag Handle, тач-таргеты >= 44x44px.
+      - `docs/proofs/emr/04_emr_studio_mobile_dark_390x844.png` (59.0 KB) — iPhone 390×844 тёмная тема, вкладка «Жалобы и Анамнез», 0px горизонтального скролла.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

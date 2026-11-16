@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import React from "react";
 (globalThis as any).React = React;
 import { renderToString } from "react-dom/server";
-import { AnatomicalTooth } from "./AnatomicalTooth";
+import { AnatomicalTooth, type AnatomicalToothProps } from "./AnatomicalTooth";
 
 const ALL_32_TEETH = [
 	18, 17, 16, 15, 14, 13, 12, 11,

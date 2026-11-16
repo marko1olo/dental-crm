@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type { RadialMenuAnchorData } from "./OdontogramViewModals";
 import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
 import type { ToothState } from "./ToothChart";
 
@@ -7,8 +8,8 @@ export interface UseOdontogramHotkeysParams {
 	readonly setMenuConfig?: React.Dispatch<
 		React.SetStateAction<ToothActionMenuConfig | null>
 	> | undefined;
-	readonly radialMenuData?: any;
-	readonly setRadialMenuData?: ((data: any) => void) | undefined;
+	readonly radialMenuData?: RadialMenuAnchorData | null | undefined;
+	readonly setRadialMenuData?: ((data: RadialMenuAnchorData | null) => void) | undefined;
 	readonly handleApplyToothState: (state: ToothState) => void;
 }
 

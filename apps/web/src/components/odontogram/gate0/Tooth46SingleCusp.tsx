@@ -1,9 +1,21 @@
 import React from "react";
 import type { Tooth46CuspDef } from "./tooth46CuspGeometry";
 
+export interface ToothCuspDef {
+	id: string;
+	nameRu?: string | undefined;
+	apex: { x: number; y: number };
+	ridgePath: string;
+	mesialSlope: string;
+	distalSlope: string;
+	buccalRidgePath?: string | undefined;
+	buccalMesialSlope?: string | undefined;
+	buccalDistalSlope?: string | undefined;
+}
+
 export interface Tooth46SingleCuspProps {
-	cusp: Tooth46CuspDef;
-	isDark?: boolean;
+	cusp: Tooth46CuspDef | ToothCuspDef;
+	isDark?: boolean | undefined;
 }
 
 /**

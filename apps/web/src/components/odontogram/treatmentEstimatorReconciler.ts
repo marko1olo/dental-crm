@@ -135,8 +135,10 @@ function findCatalogItemForConsumable(
 		const match = activeItems.find(
 			(s) =>
 				s.id === code ||
-				(s as unknown as Record<string, unknown>).code === code ||
-				(s as unknown as Record<string, unknown>).code804n === code,
+				s.code === code ||
+				s.serviceCode === code ||
+				s.code804n === code ||
+				s.order804nCode === code,
 		);
 		if (match) return match;
 	}
@@ -249,7 +251,7 @@ export function detectUnbilledConsumables(
 				type: "anesthesia",
 				name: catalogMatch ? catalogMatch.title : "Анестезия инфильтрационная / проводниковая",
 				code804n: catalogMatch
-					? ((catalogMatch as unknown as Record<string, string>).code804n || CODES_804N.ANESTHESIA_INFILTRATION)
+					? (catalogMatch.code804n || catalogMatch.order804nCode || CODES_804N.ANESTHESIA_INFILTRATION)
 					: CODES_804N.ANESTHESIA_INFILTRATION,
 				priceRub: price,
 				priceId: catalogMatch ? catalogMatch.id : null,
@@ -290,7 +292,7 @@ export function detectUnbilledConsumables(
 				type: "isolation",
 				name: catalogMatch ? catalogMatch.title : "Изоляция рабочего поля (коффердам / оптрагейт)",
 				code804n: catalogMatch
-					? ((catalogMatch as unknown as Record<string, string>).code804n || CODES_804N.ISOLATION_COFFERDAM)
+					? (catalogMatch.code804n || catalogMatch.order804nCode || CODES_804N.ISOLATION_COFFERDAM)
 					: CODES_804N.ISOLATION_COFFERDAM,
 				priceRub: price,
 				priceId: catalogMatch ? catalogMatch.id : null,
@@ -331,7 +333,7 @@ export function detectUnbilledConsumables(
 				type: "radiology",
 				name: catalogMatch ? catalogMatch.title : "Прицельная радиовизиография (рентген-контроль)",
 				code804n: catalogMatch
-					? ((catalogMatch as unknown as Record<string, string>).code804n || CODES_804N.RADIOLOGY_INTRAORAL)
+					? (catalogMatch.code804n || catalogMatch.order804nCode || CODES_804N.RADIOLOGY_INTRAORAL)
 					: CODES_804N.RADIOLOGY_INTRAORAL,
 				priceRub: price,
 				priceId: catalogMatch ? catalogMatch.id : null,
@@ -378,7 +380,7 @@ export function convertUnbilledConsumableToPlanItem(
 		phase: 1,
 		category: item.category,
 		isAuto: false,
-		suggestion: item.type as any,
+		suggestion: item.type,
 		issue: null,
 	};
 }

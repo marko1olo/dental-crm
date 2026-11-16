@@ -1,6 +1,7 @@
 import type React from "react";
 import { useCallback } from "react";
 import { dispatchOdontogramSoapAndBundle } from "./odontogramModuleConstants";
+import type { RadialMenuAnchorData } from "./OdontogramViewModals";
 import type { ToothActionMenuConfig } from "./toothActionMenuTypes";
 import type { ToothState } from "./ToothChart";
 
@@ -13,7 +14,7 @@ export interface UseOdontogramApplyToothStateParams {
 		surfaces: readonly string[],
 	) => Promise<void>;
 	readonly patientId: string;
-	readonly setRadialMenuData?: ((data: any) => void) | undefined;
+	readonly setRadialMenuData?: ((data: RadialMenuAnchorData | null) => void) | undefined;
 	readonly setMenuConfig?: React.Dispatch<
 		React.SetStateAction<ToothActionMenuConfig | null>
 	> | undefined;

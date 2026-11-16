@@ -29,7 +29,7 @@ export interface OdontogramToolbarProps {
 	onSyncAllToDiary?: (() => void) | undefined;
 	liveGrossTotalRub?: number | undefined;
 	onOpenFastCheckout?: (() => void) | undefined;
-	allergyText?: string | undefined;
+	allergyText?: string | null | undefined;
 	selectedTeeth?: number[] | undefined;
 	onOneClickLabOrder?: ((teeth: number[]) => void) | undefined;
 	onToggleEstimator?: (() => void) | undefined;

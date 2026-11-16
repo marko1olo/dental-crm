@@ -27,16 +27,20 @@ export interface OdontogramActivePatientContext {
 	readonly fullName?: string | undefined;
 	readonly phone?: string | undefined;
 	readonly birthDate?: string | null | undefined;
+	readonly cardNumber?: string | undefined;
+	readonly medicalCardNumber?: string | undefined;
 }
 
 export interface OdontogramActiveDoctorContext {
 	readonly id?: string | undefined;
 	readonly name?: string | undefined;
+	readonly fullName?: string | undefined;
 }
 
 export interface OdontogramAuthContext {
 	readonly organizationId?: string | undefined;
 	readonly userId?: string | undefined;
+	readonly currentUser?: { readonly name?: string | undefined } | undefined;
 }
 
 interface DictationSoapPayload {

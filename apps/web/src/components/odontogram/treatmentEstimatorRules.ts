@@ -22,7 +22,10 @@ export type EstimatorSuggestionKey =
 	| "retained"
 	| "implant"
 	| "implantGuide"
-	| "crown";
+	| "crown"
+	| "anesthesia"
+	| "isolation"
+	| "radiology";
 
 /** Правило автоподбора: что искать в прайсе и на какой этап ставить. */
 export interface EstimatorRule {

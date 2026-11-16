@@ -58,7 +58,7 @@ export const Tooth45OcclusalCusps: React.FC<Tooth45OcclusalCuspsProps> = ({
 					/>
 					{/* 3 Cusps: 1 Buccal (B), 2 Lingual (ML, DL) */}
 					{TOOTH45_CUSPS.map((c) => (
-						<Tooth46SingleCusp key={c.id} cusp={c as any} isDark={isDark} />
+						<Tooth46SingleCusp key={c.id} cusp={c} isDark={isDark} />
 					))}
 				</g>
 			)}

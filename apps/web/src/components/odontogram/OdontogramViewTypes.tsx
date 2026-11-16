@@ -97,7 +97,7 @@ export interface OdontogramViewContainerProps {
 	onSyncAllToDiary?: (() => void) | undefined;
 	liveGrossTotalRub?: number | undefined;
 	onOpenFastCheckout?: (() => void) | undefined;
-	allergyText?: string | undefined;
+	allergyText?: string | null | undefined;
 	onOneClickLabOrder?: ((teeth: number[]) => void) | undefined;
 	contextDrawerTooth?: number | null | undefined;
 	setContextDrawerTooth?: ((tooth: number | null) => void) | React.Dispatch<React.SetStateAction<number | null>> | undefined;

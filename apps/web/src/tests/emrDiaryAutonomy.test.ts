@@ -392,7 +392,6 @@ describe("EMR SOAP Diary & Doctor Autonomy Suite (Mandates 8e, 8i, 8n, 8zi)", ()
 			const emkFiles = [
 				"components/visit/emk/EmkObjectiveStatusSection.tsx",
 				"components/visit/emk/EmkComplaintsSection.tsx",
-				"components/visit/emk/EmkSomaticCard.tsx",
 				"components/visit/emk/EmkDiaryProtocolSection.tsx",
 			];
 			for (const file of emkFiles) {

@@ -58,7 +58,7 @@ export const Tooth44OcclusalCusps: React.FC<Tooth44OcclusalCuspsProps> = ({
 					/>
 					{/* 2 Asymmetric Cusps: Dominant B & Diminutive L */}
 					{TOOTH44_CUSPS.map((c) => (
-						<Tooth46SingleCusp key={c.id} cusp={c as any} isDark={isDark} />
+						<Tooth46SingleCusp key={c.id} cusp={c} isDark={isDark} />
 					))}
 					{/* Transverse Ridge (Crista Transversa) connecting B and L cusps */}
 					<path

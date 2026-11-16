@@ -32,8 +32,10 @@ function findCatalogService(
 			const found = activeItems.find(
 				(s) =>
 					s.id === code ||
-					(s as unknown as Record<string, unknown>).code === code ||
-					(s as unknown as Record<string, unknown>).code804n === code,
+					s.code === code ||
+					s.serviceCode === code ||
+					s.code804n === code ||
+					s.order804nCode === code,
 			);
 			if (found) return found;
 		}

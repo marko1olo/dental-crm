@@ -84,8 +84,8 @@ export const Tooth12Container: React.FC<Tooth12ContainerProps> = ({
 				)}
 				{a.caries && !noCrown && (
 					<Tooth12CariesOverlay
-						cariesType={a.cariesType as any ?? "class1"}
-						cariesDepth={a.cariesDepth as any ?? "media"}
+						cariesType={a.cariesType ?? "class1"}
+						cariesDepth={a.cariesDepth ?? "media"}
 						cariesSurface={a.cariesSurface}
 						chronicity={a.cariesChronicity}
 						isDark={isDark}

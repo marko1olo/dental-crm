@@ -29,10 +29,8 @@ import {
 
 import {
 	CORE_1CLICK_PRESETS,
-} from "../components/emr/protocolGenerator/EmrProtocolGeneratorModal.js";
-import {
 	STATUTORY_EMR_PROTOCOL_CATALOG,
-} from "../components/emr/protocolGenerator/emrProtocolEngine.js";
+} from "../../../../packages/shared/src/emr/index.js";
 
 import {
 	SURGICAL_OPERATION_NORMS,

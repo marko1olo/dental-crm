@@ -1,15 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { calculateLiveInvoiceItems } from "./OdontogramLiveInvoice";
-import { useOdontogramModulePatientSafety } from "./useOdontogramModulePatientSafety";
-import { useOdontogramQuickActions } from "./useOdontogramQuickActions";
+import type {
+	OdontogramActiveDoctorContext,
+	OdontogramActivePatientContext,
+} from "./OdontogramModalsLayer";
+import {
+	type OdontogramPatientSafetyCandidate,
+	useOdontogramModulePatientSafety,
+} from "./useOdontogramModulePatientSafety";
+import {
+	type QuickActionDoctor,
+	useOdontogramQuickActions,
+} from "./useOdontogramQuickActions";
 import { useOdontogramSync } from "./useOdontogramSync";
 
 export interface UseOdontogramModuleSyncFacadeParams {
 	readonly patientId: string;
 	readonly pediatricMode?: boolean | undefined;
 	readonly propDentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
-	readonly activePatient: any;
-	readonly activeDoctor: any;
+	readonly activePatient?:
+		| (OdontogramPatientSafetyCandidate & OdontogramActivePatientContext)
+		| null
+		| undefined;
+	readonly activeDoctor?:
+		| (QuickActionDoctor & OdontogramActiveDoctorContext)
+		| null
+		| undefined;
 	readonly onClearMenu: () => void;
 }
 

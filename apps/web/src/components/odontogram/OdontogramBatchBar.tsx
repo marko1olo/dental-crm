@@ -10,7 +10,7 @@
  *    - Frontal Hygiene Sector [Фронт (12)]
  *    - All Teeth [Все (32/20)]
  *    - Invert Selection [Инверт]
- *    - Clear Selection [Снять ✕]
+ *    - Clear Selection [Снять]
  * 2. 1-Click Batch Status Application:
  *    - Applies Healthy, Caries, Filled, Missing, Pulpitis, Periodontitis, Crown, Implant to all selected teeth.
  * 3. Apple HIG Touch Standard:

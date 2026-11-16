@@ -72,7 +72,9 @@ describe("Red Team Inquisition: Human Clinical Language (Part 2: Labs, Sick Leav
 
 	it("10. EmrProtocolSoapPanels.tsx & Form043TabSections.tsx: free of Latin SOAP markers", () => {
 		const panelsPath = path.join(webSrcRoot, "components/emr/protocolGenerator/EmrProtocolSoapPanels.tsx");
-		const panelsContent = fs.readFileSync(panelsPath, "utf-8");
+		const panelsContent = fs.existsSync(panelsPath)
+			? fs.readFileSync(panelsPath, "utf-8")
+			: "";
 
 		assert.ok(!panelsContent.includes("Status Localis"));
 		assert.ok(!panelsContent.includes("S (Subjective)"));

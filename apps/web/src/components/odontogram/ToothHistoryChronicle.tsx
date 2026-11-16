@@ -30,6 +30,36 @@ import {
 	toothHistoryEventsFromResponseBody,
 } from "./toothHistoryEvents";
 
+export interface ChronicleMediaItem extends StoredMediaItem {
+	readonly encryptedPayloadRef?: string | undefined;
+}
+
+interface ImagingStudyDto {
+	readonly id: string;
+	readonly patientId: string;
+	readonly visitId?: string | undefined;
+	readonly toothCode?: string | number | undefined;
+	readonly kind?: string | undefined;
+	readonly capturedAt?: string | undefined;
+	readonly title?: string | undefined;
+	readonly fileSizeBytes?: number | undefined;
+	readonly previewUrl?: string | undefined;
+}
+
+interface XrayScanDto {
+	readonly id: string;
+	readonly patientId: string;
+	readonly visitId?: string | undefined;
+	readonly toothCode?: string | number | undefined;
+	readonly capturedAt?: string | undefined;
+	readonly createdAt?: string | undefined;
+	readonly mimeType?: string | undefined;
+	readonly originalFilename?: string | undefined;
+	readonly fileSizeBytes?: number | undefined;
+	readonly imageDataUri?: string | undefined;
+	readonly fileUrl?: string | undefined;
+}
+
 /**
  * Что видит человек в трёх состояниях панели.
  *
@@ -67,12 +97,12 @@ export function ToothHistoryChronicle({
 	onClose,
 }: Props) {
 	const [events, setEvents] = useState<ToothHistoryEvent[]>([]);
-	const [toothMedia, setToothMedia] = useState<StoredMediaItem[]>([]);
+	const [toothMedia, setToothMedia] = useState<ChronicleMediaItem[]>([]);
 	const [load, setLoad] = useState<HistoryLoadState>({ phase: "loading" });
 	/** Счётчик кнопки «Повторить»: меняется — запрос идёт заново. */
 	const [reloadToken, setReloadToken] = useState(0);
 	const [isDirectRvgOpen, setIsDirectRvgOpen] = useState(false);
-	const [selectedViewerMedia, setSelectedViewerMedia] = useState<StoredMediaItem | null>(null);
+	const [selectedViewerMedia, setSelectedViewerMedia] = useState<ChronicleMediaItem | null>(null);
 
 	useEffect(() => {
 		let active = true;
@@ -104,12 +134,12 @@ export function ToothHistoryChronicle({
 			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(patientId)}`, { headers })
 				.then(async (res) => {
 					if (!res.ok) return [];
-					const studies = await res.json();
+					const studies = (await res.json()) as unknown;
 					if (!Array.isArray(studies)) return [];
 					const toothStr = String(toothNumber).trim();
-					return studies
-						.filter((s: any) => String(s.toothCode ?? "").trim() === toothStr)
-						.map((s: any): StoredMediaItem => ({
+					return (studies as readonly ImagingStudyDto[])
+						.filter((s) => String(s.toothCode ?? "").trim() === toothStr)
+						.map((s): ChronicleMediaItem => ({
 							mediaId: s.id,
 							patientId: s.patientId,
 							visitId: s.visitId,
@@ -136,17 +166,17 @@ export function ToothHistoryChronicle({
 				})
 				.catch((err) => {
 					logger.warn("[tooth history] Ошибка чтения снимков из imaging/studies", err);
-					return [] as StoredMediaItem[];
+					return [] as ChronicleMediaItem[];
 				}),
 			fetch(`/api/xray/scans?patientId=${encodeURIComponent(patientId)}`, { headers })
 				.then(async (res) => {
 					if (!res.ok) return [];
-					const scans = await res.json();
+					const scans = (await res.json()) as unknown;
 					if (!Array.isArray(scans)) return [];
 					const toothStr = String(toothNumber).trim();
-					return scans
-						.filter((s: any) => String(s.toothCode ?? "").trim() === toothStr)
-						.map((s: any): StoredMediaItem => ({
+					return (scans as readonly XrayScanDto[])
+						.filter((s) => String(s.toothCode ?? "").trim() === toothStr)
+						.map((s): ChronicleMediaItem => ({
 							mediaId: s.id,
 							patientId: s.patientId,
 							visitId: s.visitId,
@@ -166,7 +196,7 @@ export function ToothHistoryChronicle({
 				})
 				.catch((err) => {
 					logger.warn("[tooth history] Ошибка чтения снимков из xray/scans", err);
-					return [] as StoredMediaItem[];
+					return [] as ChronicleMediaItem[];
 				}),
 		]).then(([vaultItems, dbItems, xrayItems]) => {
 			if (!active) return;
@@ -451,7 +481,12 @@ export function ToothHistoryChronicle({
 					<DicomViewerModal
 						isOpen={Boolean(selectedViewerMedia)}
 						onClose={() => setSelectedViewerMedia(null)}
-						imageSrc={selectedViewerMedia.thumbnailWebpDataUrl || (selectedViewerMedia as any).encryptedPayloadRef || ""}
+						imageSrc={
+							selectedViewerMedia.thumbnailWebpDataUrl ||
+							selectedViewerMedia.encryptedPayloadRef ||
+							selectedViewerMedia.remoteUrl ||
+							""
+						}
 						toothFdiCode={String(toothNumber)}
 						title={`Снимок зуба #${toothNumber}`}
 					/>

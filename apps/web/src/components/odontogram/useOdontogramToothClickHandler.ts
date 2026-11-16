@@ -7,6 +7,7 @@ import {
 	getSafeBoundingRect,
 } from "./odontogramGeometryUtils";
 import type { UseOdontogramToothClickHandlerParams } from "./toothClickHandlerTypes";
+import type { ToothData } from "./ToothChart";
 import { useOdontogramApplyToothState } from "./useOdontogramApplyToothState";
 
 export * from "./toothClickHandlerTypes";
@@ -94,7 +95,7 @@ export function useOdontogramToothClickHandler({
 				if (setMenuConfig) setMenuConfig(null);
 
 				const currentTooth = teethDataRef.current?.find(
-					(t: any) => t.toothNumber === toothNumber,
+					(t: ToothData) => t.toothNumber === toothNumber,
 				);
 				setRadialMenuData({
 					toothNumber,
