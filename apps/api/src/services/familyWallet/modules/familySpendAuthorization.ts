@@ -81,8 +81,8 @@ export async function verifyFamilySpendAuthorization(params: {
 		)
 		.limit(1);
 
-	// 1. Explicit prohibition check in patient_relationships
-	if (rel && rel.canSpendFamilyWallet === false) {
+	// 1. Authorization check in patient_relationships: spending requires confirmed permission
+	if (!rel || rel.canSpendFamilyWallet !== true) {
 		throw new FamilyWalletError(
 			"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
 			403,

@@ -563,10 +563,8 @@ async function verifyFamilySpendPermission(
 			)
 			.limit(1);
 
-		// [LOY-06] Члены семейной группы по умолчанию имеют право оплачивать лечение из семейного кошелька (Мандат 8n).
-		// Запрещено только если администратор явно выставил флаг запрета (canSpendFamilyWallet === false).
-		const isExplicitlyForbidden = rel && rel.canSpendFamilyWallet === false;
-		if (isExplicitlyForbidden) {
+		// [LOY-06] BOLA/IDOR: non-owner family member must have confirmed permission in patient_relationships
+		if (!rel || rel.canSpendFamilyWallet !== true) {
 			throw new Error(
 				`Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).`,
 			);
