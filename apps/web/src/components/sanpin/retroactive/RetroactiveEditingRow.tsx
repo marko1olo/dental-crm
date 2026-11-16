@@ -14,7 +14,7 @@ export interface RetroactiveEditingRowProps {
 export function RetroactiveEditingRow({
 	day, idx, editFormData, setEditFormData, onSaveEditing, onCancelEditing,
 }: RetroactiveEditingRowProps) {
-	const upd = (field: keyof RetroactiveDayRecord, val: any) =>
+	const upd = <K extends keyof RetroactiveDayRecord>(field: K, val: RetroactiveDayRecord[K]) =>
 		setEditFormData((prev) => ({ ...prev, [field]: val }));
 
 	return (

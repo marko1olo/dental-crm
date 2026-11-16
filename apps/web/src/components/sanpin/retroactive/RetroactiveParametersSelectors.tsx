@@ -2,6 +2,17 @@ import React from "react";
 import { Plus } from "lucide-react";
 import { AUTOCLAVE_REGIME_PRESETS } from "../retroactiveSanpinEngine";
 
+type AutoclaveRegimeId = "steam_134_5min" | "steam_134_20min" | "steam_121_20min" | "dry_heat_180_60min";
+
+function isAutoclaveRegimeId(val: string): val is AutoclaveRegimeId {
+	return (
+		val === "steam_134_5min" ||
+		val === "steam_134_20min" ||
+		val === "steam_121_20min" ||
+		val === "dry_heat_180_60min"
+	);
+}
+
 export interface RetroactiveParametersSelectorsProps {
 	readonly nurseFullName: string;
 	readonly setNurseFullName: (n: string) => void;
@@ -9,8 +20,8 @@ export interface RetroactiveParametersSelectorsProps {
 	readonly setSterilizerModel: (m: string) => void;
 	readonly availableSterilizers: Array<{ id: string; label: string; modelName: string }>;
 	readonly onOpenEquipmentModal: () => void;
-	readonly autoclaveRegimeId: "steam_134_5min" | "steam_134_20min" | "steam_121_20min" | "dry_heat_180_60min";
-	readonly setAutoclaveRegimeId: (r: "steam_134_5min" | "steam_134_20min" | "steam_121_20min" | "dry_heat_180_60min") => void;
+	readonly autoclaveRegimeId: AutoclaveRegimeId;
+	readonly setAutoclaveRegimeId: (r: AutoclaveRegimeId) => void;
 }
 
 export function RetroactiveParametersSelectors({
@@ -79,7 +90,11 @@ export function RetroactiveParametersSelectors({
 				</label>
 				<select
 					value={autoclaveRegimeId}
-					onChange={(e) => setAutoclaveRegimeId(e.target.value as any)}
+					onChange={(e) => {
+						if (isAutoclaveRegimeId(e.target.value)) {
+							setAutoclaveRegimeId(e.target.value);
+						}
+					}}
 					className="sanpin-select"
 					style={{ minHeight: "44px" }}
 				>

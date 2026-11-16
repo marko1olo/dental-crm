@@ -1,5 +1,6 @@
 import React from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import type { SanpinAppLogicContext } from "./sanpinConsolidatedFetcher";
 import { BactericidalAddEquipmentModal } from "./BactericidalAddEquipmentModal";
 import { BactericidalFleetGrid } from "./BactericidalFleetGrid";
 import { BactericidalLogTable } from "./BactericidalLogTable";
@@ -16,7 +17,7 @@ export {
 } from "./bactericidal/bactericidalPresets";
 
 export function BactericidalRegisterTab() {
-	const appLogic = useOptionalAppLogicContext();
+	const appLogic = useOptionalAppLogicContext() as SanpinAppLogicContext | null;
 	const state = useBactericidalState();
 	const equipForm = useNewEquipmentForm({
 		onSuccess: () => {
@@ -71,8 +72,8 @@ export function BactericidalRegisterTab() {
 						selectedEquipId: state.selectedEquipId,
 						logs: state.logs,
 						operatorStaffFullName:
-							(appLogic as any)?.activeDoctor?.fullName ||
-							(appLogic as any)?.activeDoctor?.name ||
+							appLogic?.activeDoctor?.fullName ||
+							appLogic?.activeDoctor?.name ||
 							"Медсестра ЦСО",
 					})
 				}

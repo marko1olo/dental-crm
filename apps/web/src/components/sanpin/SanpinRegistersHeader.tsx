@@ -1,18 +1,22 @@
 import React, { useEffect, useRef } from "react";
 import { CheckCircle2, ChevronDown, MoreVertical, Printer } from "lucide-react";
-import { printConsolidatedBinderAction } from "./sanpinConsolidatedExportHelpers";
+import {
+	printConsolidatedBinderAction,
+	type FetchSanpinContext,
+	type SanpinRegisterSummary,
+} from "./sanpinConsolidatedExportHelpers";
 import { SanpinHeaderTitleKpi } from "./header/SanpinHeaderTitleKpi";
 import { SanpinHeaderOptionsMenu } from "./header/SanpinHeaderOptionsMenu";
 
 export interface SanpinRegistersHeaderProps {
-	readonly summary: any;
+	readonly summary: SanpinRegisterSummary | null;
 	readonly showExpandedKpi: boolean;
 	readonly onToggleExpandedKpi: () => void;
 	readonly autofillPeriod: "day" | "week" | "month";
 	readonly setAutofillPeriod: (period: "day" | "week" | "month") => void;
 	readonly autoFilling: boolean;
 	readonly onAutofillByPeriod: (period: "day" | "week" | "month") => void;
-	readonly exportContext: { auth?: any; appLogic?: any };
+	readonly exportContext: FetchSanpinContext;
 	readonly isExportMenuOpen: boolean;
 	readonly setIsExportMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly onRefreshSummary: () => void;

@@ -8,6 +8,7 @@ import {
 	calculatePsoSampleSize,
 } from "./retroactiveDayCalculators.js";
 import type {
+	AutoclaveRegimeConfig,
 	RetroactiveDayRecord,
 	RetroactiveGenerationOptions,
 } from "./types.js";
@@ -22,7 +23,7 @@ export function buildRetroactiveWorkDay(
 	activeCabCount: number,
 	activeCabinetsList: string,
 	visitsPerCab: number,
-	regime: any,
+	regime: AutoclaveRegimeConfig,
 	options: RetroactiveGenerationOptions,
 ): RetroactiveDayRecord {
 	const isSaturday = dayOfWeekIndex === 6;

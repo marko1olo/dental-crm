@@ -7,11 +7,12 @@
 
 import { showToast } from "../../GlobalToast";
 import { handleGenerateMonthlySterilizationLog } from "../AutoclavePrintHelpers";
+import type { ClinicAutoclaveDeviceLike } from "../autoclaveMonthlyJournalPrint.js";
 import type { SanPinCycleEntry } from "./sanpinJournalTypes";
 
 export function useSanPinPrintExport(
 	selectedAutoclave: string,
-	devices: any[],
+	devices: readonly ClinicAutoclaveDeviceLike[],
 	filteredCycles: readonly SanPinCycleEntry[],
 ) {
 	const handlePrintSterilizationLog = () => {

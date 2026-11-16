@@ -1,8 +1,11 @@
 import React from "react";
-import { BactericidalFleetCard } from "./bactericidal/BactericidalFleetCard";
+import {
+	BactericidalFleetCard,
+	type BactericidalEquipmentCardItem,
+} from "./bactericidal/BactericidalFleetCard";
 
 export interface BactericidalFleetGridProps {
-	readonly equipments: any[];
+	readonly equipments: readonly BactericidalEquipmentCardItem[];
 	readonly onPreShift30Min: (id: string) => void;
 	readonly onReplaceLamps: (id: string, brand: string) => void;
 	readonly submitting: boolean;

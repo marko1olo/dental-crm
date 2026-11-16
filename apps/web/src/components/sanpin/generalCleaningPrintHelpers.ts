@@ -4,8 +4,21 @@ import {
 	generateGeneralCleaningJournalPrintHtml,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
+import type { SanpinAppLogicContext } from "./sanpinConsolidatedExportHelpers";
 
-export function printGeneralCleaningJournal(logs: GeneralCleaningLog[], appLogic?: any): void {
+function normalizeCleaningStatus(
+	val: string | null | undefined,
+): "completed" | "verified_by_inspector" | "rescheduled" {
+	if (val === "verified_by_inspector" || val === "rescheduled") {
+		return val;
+	}
+	return "completed";
+}
+
+export function printGeneralCleaningJournal(
+	logs: GeneralCleaningLog[],
+	appLogic?: SanpinAppLogicContext | null,
+): void {
 	const mappedRecords: GeneralCleaningJournalRecord[] = logs.map((log) => ({
 		id: log.id,
 		roomType: "surgical",
@@ -27,7 +40,7 @@ export function printGeneralCleaningJournal(logs: GeneralCleaningLog[], appLogic
 			"Ассистент стоматолога",
 		inspectorStaffFullName: log.inspectorName || undefined,
 		isInspectorVerified: Boolean(log.inspectorName || log.status === "verified_by_inspector"),
-		status: (log.status as any) || "completed",
+		status: normalizeCleaningStatus(log.status),
 		notes: log.notes || undefined,
 	}));
 

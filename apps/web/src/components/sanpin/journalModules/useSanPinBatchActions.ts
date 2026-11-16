@@ -7,10 +7,11 @@ import { useState, useRef } from "react";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import type { ClinicAutoclaveDeviceLike } from "../autoclaveMonthlyJournalPrint.js";
 import { DEFAULT_CYCLES, type SanPinCycleEntry, type SanPinJournalPeriod } from "./sanpinJournalTypes";
 
 export function useSanPinBatchActions(
-	devices: any[],
+	devices: readonly ClinicAutoclaveDeviceLike[],
 	selectedAutoclave: string,
 	period: SanPinJournalPeriod,
 	fetchCyclesFromDb: (p?: SanPinJournalPeriod) => Promise<void>,

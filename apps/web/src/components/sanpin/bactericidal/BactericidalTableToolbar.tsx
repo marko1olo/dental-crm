@@ -1,8 +1,9 @@
 import React from "react";
 import { Printer } from "lucide-react";
+import type { BactericidalEquipment } from "@dental/shared";
 
 export interface BactericidalTableToolbarProps {
-	readonly equipments: any[];
+	readonly equipments: readonly BactericidalEquipment[];
 	readonly selectedEquipId: string;
 	readonly setSelectedEquipId: (id: string) => void;
 	readonly onPrintJournal: () => void;

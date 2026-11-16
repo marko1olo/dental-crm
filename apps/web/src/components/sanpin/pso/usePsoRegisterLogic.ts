@@ -4,6 +4,7 @@ import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DEFAULT_DOM_PAGE_SIZE, sliceDomList } from "../../../utils/domVirtualizationHelper";
+import type { SanpinAppLogicContext } from "../sanpinConsolidatedExportHelpers";
 import { printPsoJournal } from "./psoPrintHelper";
 
 const DEFAULT_PSO_DEMO_LOGS: PsoCleaningLog[] = [
@@ -60,7 +61,7 @@ const DEFAULT_PSO_DEMO_LOGS: PsoCleaningLog[] = [
 	},
 ];
 
-export function usePsoRegisterLogic(appLogic: any) {
+export function usePsoRegisterLogic(appLogic?: SanpinAppLogicContext | null) {
 	const [logs, setLogs] = useState<PsoCleaningLog[]>(() => isDemoShowcaseMode() ? DEFAULT_PSO_DEMO_LOGS : []);
 	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");

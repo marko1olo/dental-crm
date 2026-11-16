@@ -13,6 +13,7 @@ import {
 import {
 	printConsolidatedBinderAction,
 	exportConsolidatedCsvAction,
+	type FetchSanpinContext,
 } from "../sanpinConsolidatedExportHelpers";
 
 export interface SanpinHeaderOptionsMenuProps {
@@ -28,7 +29,7 @@ export interface SanpinHeaderOptionsMenuProps {
 	readonly onOpenSterilizationLogModal?: () => void;
 	/** @deprecated Alias to onOpenSterilizationLogModal */
 	readonly onOpenJournal257Modal?: () => void;
-	readonly exportContext: { auth?: any; appLogic?: any };
+	readonly exportContext: FetchSanpinContext;
 }
 
 export const SanpinHeaderOptionsMenu: React.FC<SanpinHeaderOptionsMenuProps> = ({

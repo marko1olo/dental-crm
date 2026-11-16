@@ -2,11 +2,25 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { showToast } from "../../GlobalToast";
 import type { SanpinRegisterTab } from "../sanpinNavigationConfig";
 import { generateSanpinShiftAutopilotBundle } from "@dental/shared";
+import type {
+	FetchSanpinContext,
+	SanpinAppLogicContext,
+	SanpinAuthContext,
+	SanpinRegisterSummary,
+} from "../sanpinConsolidatedExportHelpers";
 
-export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: SanpinRegisterTab = "autoclave") {
+function isSanpinRegisterSummary(val: unknown): val is SanpinRegisterSummary {
+	return typeof val === "object" && val !== null;
+}
+
+export function useSanpinRegistersLogic(
+	auth: SanpinAuthContext | null | undefined,
+	appLogic: SanpinAppLogicContext | null | undefined,
+	initialTab: SanpinRegisterTab = "autoclave",
+) {
 	const [activeTab, setActiveTab] = useState<SanpinRegisterTab>(initialTab);
 	const [showExpandedKpi, setShowExpandedKpi] = useState<boolean>(false);
-	const [summary, setSummary] = useState<any>(null);
+	const [summary, setSummary] = useState<SanpinRegisterSummary | null>(null);
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen] = useState(false);
@@ -20,8 +34,10 @@ export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: Sa
 			const headers = auth ? auth.denteClinicalReadHeaders() : { "Content-Type": "application/json" };
 			const res = await fetch("/api/registers/summary", { headers });
 			if (res.ok) {
-				const data = await res.json();
-				setSummary(data);
+				const data: unknown = await res.json();
+				if (isSanpinRegisterSummary(data)) {
+					setSummary(data);
+				}
 			}
 		} catch (err) {
 			console.error("Failed to load SanPiN summary", err);
@@ -61,7 +77,9 @@ export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: Sa
 			const bundle = generateSanpinShiftAutopilotBundle({
 				date: todayIso, operatorFullName: operatorName, headNurseFullName: headNurseName,
 			});
-			const headers = auth ? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const headers = auth && auth.denteClinicalMutationHeaders
+				? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+				: { "Content-Type": "application/json" };
 			await fetch("/api/registers/autofill-shift", {
 				method: "POST", headers, body: JSON.stringify(bundle),
 			}).catch(() => null);
@@ -81,7 +99,9 @@ export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: Sa
 		try {
 			setAutoFilling(true);
 			const now = new Date();
-			const headers = auth ? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
+			const headers = auth && auth.denteClinicalMutationHeaders
+				? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+				: { "Content-Type": "application/json" };
 			await fetch("/api/registers/autofill-month", {
 				method: "POST", headers, body: JSON.stringify({
 					year: now.getFullYear(), month: now.getMonth() + 1,
@@ -99,7 +119,7 @@ export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: Sa
 		}
 	};
 
-	const exportContext = useMemo(() => ({ auth, appLogic }), [auth, appLogic]);
+	const exportContext: FetchSanpinContext = useMemo(() => ({ auth, appLogic }), [auth, appLogic]);
 
 	return {
 		activeTab, setActiveTab, showExpandedKpi, setShowExpandedKpi, summary,

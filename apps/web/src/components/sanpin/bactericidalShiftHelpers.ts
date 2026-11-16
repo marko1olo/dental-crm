@@ -2,6 +2,7 @@
  * BACTERICIDAL SHIFT HELPERS (SanPiN 3.3686-21 / R 3.5.1904-04)
  */
 
+import type { BactericidalEquipment } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 
@@ -19,7 +20,7 @@ function getAuthHeaders(): HeadersInit {
 
 export async function executeShiftAutopilot(
 	durationHours: number,
-	currentEquips: any[],
+	currentEquips: readonly BactericidalEquipment[],
 	fetchAll: () => Promise<void>,
 ): Promise<void> {
 	const durationMinutes = durationHours * 60;
@@ -59,7 +60,7 @@ export async function executeShiftAutopilot(
 
 export async function executePreShift30Min(
 	equipmentId: string | undefined,
-	currentEquips: any[],
+	currentEquips: readonly BactericidalEquipment[],
 	fetchAll: () => Promise<void>,
 ): Promise<void> {
 	const durationMinutes = 30;

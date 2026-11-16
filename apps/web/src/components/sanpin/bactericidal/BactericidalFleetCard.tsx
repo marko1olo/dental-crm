@@ -1,8 +1,14 @@
 import React from "react";
 import { RefreshCw, Zap } from "lucide-react";
+import type { BactericidalEquipment } from "@dental/shared";
+
+export interface BactericidalEquipmentCardItem extends BactericidalEquipment {
+	readonly lampWarningMessage?: string | null | undefined;
+	readonly isLampCritical?: boolean | null | undefined;
+}
 
 export interface BactericidalFleetCardProps {
-	readonly eq: any;
+	readonly eq: BactericidalEquipmentCardItem;
 	readonly onPreShift30Min: (id: string) => void;
 	readonly onReplaceLamps: (id: string, brand: string) => void;
 	readonly submitting: boolean;

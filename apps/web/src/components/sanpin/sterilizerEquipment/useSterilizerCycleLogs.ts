@@ -3,6 +3,21 @@ import { showToast } from "../../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import type { SterilizerCycleLogItem } from "./types.js";
 
+interface RawSterilizationCycleItem {
+	readonly id?: string;
+	readonly autoclaveId?: string;
+	readonly deviceName?: string;
+	readonly cycleNumber?: number;
+	readonly timestamp?: string;
+	readonly cycleMode?: string;
+	readonly temperatureCelsius?: number;
+	readonly pressureBar?: number | string;
+	readonly durationMin?: number;
+	readonly passedIndicator?: boolean;
+	readonly operatorName?: string;
+	readonly barcode?: string;
+}
+
 function getSterilizerHeaders(isJson = false): HeadersInit {
 	const clinicToken = readDenteClinicToken();
 	const staffToken = readDenteStaffToken();
@@ -23,19 +38,28 @@ export function useSterilizerCycleLogs(equipmentId?: string | null, equipmentNam
 			setLoading(true);
 			const res = await fetch("/api/registers/sterilization", { headers: getSterilizerHeaders() }).catch(() => null);
 			if (res && res.ok) {
-				const data = await res.json();
+				const data = (await res.json()) as unknown;
 				if (Array.isArray(data)) {
-					const matched = data
-						.filter((item: any) => !equipmentId || item.autoclaveId === equipmentId || (item.deviceName && item.deviceName.includes(equipmentName || "")))
+					const cycleItems = data.filter(
+						(item): item is RawSterilizationCycleItem => typeof item === "object" && item !== null,
+					);
+					const matched: SterilizerCycleLogItem[] = cycleItems
+						.filter((item) => !equipmentId || item.autoclaveId === equipmentId || (item.deviceName && item.deviceName.includes(equipmentName || "")))
 						.slice(0, 10)
-						.map((item: any, idx: number) => ({
-							id: item.id || `cycle-${idx}`, cycleNumber: item.cycleNumber || idx + 1,
+						.map((item, idx: number) => ({
+							id: item.id || `cycle-${idx}`,
+							cycleNumber: item.cycleNumber || idx + 1,
 							timestamp: item.timestamp ? new Date(item.timestamp).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : new Date().toLocaleString("ru-RU"),
 							regimeName: item.cycleMode || (item.temperatureCelsius === 121 ? "121°C / 1.1 бар / 20 мин (Щадящий)" : "134°C / 2.1 бар / 5 мин (Универсальный)"),
-							tempC: item.temperatureCelsius || 134, pressureBar: Number(item.pressureBar) || 2.1, exposureMin: item.durationMin || 5,
+							tempC: item.temperatureCelsius || 134,
+							pressureBar: Number(item.pressureBar) || 2.1,
+							exposureMin: item.durationMin || 5,
 							indicatorResult: item.passedIndicator ? "КТ-1..КТ-5: 5/5 Норма (5 класс)" : "Не проверено",
-							testType: "class_5_integrator" as const, packsCount: 14, operatorName: item.operatorName || "Медсестра ЦСО",
-							status: "sterile_passed" as const, barcode: item.barcode || undefined,
+							testType: "class_5_integrator" as const,
+							packsCount: 14,
+							operatorName: item.operatorName || "Медсестра ЦСО",
+							status: "sterile_passed" as const,
+							...(item.barcode ? { barcode: item.barcode } : {}),
 						}));
 					setLogs(matched);
 					return;

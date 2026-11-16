@@ -1,4 +1,5 @@
 import {
+	type BactericidalEquipment,
 	type CreateBactericidalEquipmentDto,
 } from "@dental/shared";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
@@ -18,7 +19,7 @@ export const CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET: CreateBactericidalEquipmen
 export async function provisionCanonicalBactericidalEquipment(options?: {
 	customFetch?: typeof fetch;
 	headers?: Record<string, string>;
-}): Promise<any | null> {
+}): Promise<BactericidalEquipment | null> {
 	const fetchFn = options?.customFetch || (typeof fetch !== "undefined" ? fetch : undefined);
 	if (!fetchFn) return null;
 	const clinicToken = readDenteClinicToken();
@@ -37,7 +38,10 @@ export async function provisionCanonicalBactericidalEquipment(options?: {
 	});
 
 	if (res.ok) {
-		return await res.json();
+		const data: unknown = await res.json();
+		if (typeof data === "object" && data !== null) {
+			return data as BactericidalEquipment;
+		}
 	}
 	return null;
 }

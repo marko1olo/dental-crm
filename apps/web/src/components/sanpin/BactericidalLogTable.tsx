@@ -1,11 +1,13 @@
 import React from "react";
+import type { BactericidalEquipment } from "@dental/shared";
+import type { BactericidalLogItem } from "./bactericidal/useBactericidalState";
 import { BactericidalDesktopTable } from "./bactericidal/BactericidalDesktopTable";
 import { BactericidalMobileCards } from "./bactericidal/BactericidalMobileCards";
 import { BactericidalTableToolbar } from "./bactericidal/BactericidalTableToolbar";
 
 export interface BactericidalLogTableProps {
-	readonly logs: any[];
-	readonly equipments: any[];
+	readonly logs: readonly BactericidalLogItem[];
+	readonly equipments: readonly BactericidalEquipment[];
 	readonly selectedEquipId: string;
 	readonly setSelectedEquipId: (id: string) => void;
 	readonly loading: boolean;

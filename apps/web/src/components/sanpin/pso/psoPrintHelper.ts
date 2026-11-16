@@ -1,13 +1,14 @@
 import type { PsoCleaningLog } from "@dental/shared";
 import { generateStatutoryPsoForm366PrintHtml, STATUTORY_PSO_REAGENTS } from "../sanpinAzopyramEngine";
 import { showToast } from "../../GlobalToast";
+import type { SanpinAppLogicContext } from "../sanpinConsolidatedExportHelpers";
 
 export function printPsoJournal(
-	logs: PsoCleaningLog[],
+	logs: readonly PsoCleaningLog[],
 	nurseName: string,
-	appLogic: any,
+	appLogic: SanpinAppLogicContext | null | undefined,
 	stampedRows: Record<string, boolean>,
-) {
+): void {
 	const recordsToPrint = logs.map((l, idx) => ({
 		id: l.id || `pso-${idx}`,
 		timestamp: l.timestamp || l.createdAt || new Date().toISOString(),
@@ -28,11 +29,11 @@ export function printPsoJournal(
 	}));
 
 	const html = generateStatutoryPsoForm366PrintHtml({
-		clinicName: appLogic?.clinicInfo?.name || "ООО «ДЕНТЕ КЛИНИК»",
-		clinicAddress: appLogic?.clinicInfo?.address || "г. Москва",
-		ogrn: "1187746123456",
-		inn: "7728412345",
-		licenseInfo: "ЛО41-01137-77/00368412",
+		clinicName: appLogic?.clinicInfo?.name || appLogic?.clinicName || "ООО «ДЕНТЕ КЛИНИК»",
+		clinicAddress: appLogic?.clinicInfo?.address || appLogic?.clinic?.address || "г. Москва",
+		ogrn: appLogic?.clinic?.ogrn || "1187746123456",
+		inn: appLogic?.clinic?.inn || "7728412345",
+		licenseInfo: appLogic?.clinic?.licenseNumber || "ЛО41-01137-77/00368412",
 		chiefDoctorFullName: appLogic?.activeDoctor?.fullName || "Главный врач клиники",
 		headNurseFullName: nurseName || "Главная медицинская сестра",
 		dateRangeTextRu: `Журнал за ${new Date().toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}`,

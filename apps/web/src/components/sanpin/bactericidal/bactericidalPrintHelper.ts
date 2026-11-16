@@ -1,3 +1,4 @@
+import type { BactericidalEquipment, BactericidalLogEntry } from "@dental/shared";
 import { generateBactericidalJournalPrintHtml } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 
@@ -7,9 +8,9 @@ export function handlePrintBactericidalJournal({
 	logs,
 	operatorStaffFullName,
 }: {
-	equipments: any[];
+	equipments: readonly BactericidalEquipment[];
 	selectedEquipId: string;
-	logs: any[];
+	logs: readonly BactericidalLogEntry[];
 	operatorStaffFullName: string;
 }): void {
 	if (equipments.length === 0) {
@@ -18,7 +19,11 @@ export function handlePrintBactericidalJournal({
 	}
 
 	const targetEquips = selectedEquipId === "all" ? equipments : equipments.filter((e) => e.id === selectedEquipId);
-	const targetEquip = targetEquips[0] || equipments[0];
+	const targetEquip = targetEquips[0] ?? equipments[0];
+	if (!targetEquip) {
+		showToast("Нет активных облучателей для формирования журнала", "warning");
+		return;
+	}
 	const equipSessions = logs
 		.filter((l) => selectedEquipId === "all" || l.equipmentId === targetEquip.id)
 		.map((l) => {
@@ -57,7 +62,7 @@ export function handlePrintBactericidalJournal({
 			remainingLampHours: Number(targetEquip.remainingLampHours) || (Number(targetEquip.maxLampHours || 8000) - Number(targetEquip.totalOperatingHours || 0)),
 			remainingLampPercent: Number(targetEquip.remainingLampPercent) || 100,
 			lampStatus: (targetEquip.lampStatus as "normal" | "warning_replace_soon" | "expired_replace_now") || "normal",
-			isLampCritical: Boolean(targetEquip.isLampCritical),
+			isLampCritical: targetEquip.lampStatus === "expired_replace_now",
 		},
 		sessions: equipSessions,
 	});

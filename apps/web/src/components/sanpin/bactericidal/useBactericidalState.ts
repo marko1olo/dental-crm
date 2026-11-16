@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
+import type { BactericidalEquipment, BactericidalLogEntry } from "@dental/shared";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { executePreShift30Min } from "../bactericidalShiftHelpers";
 import { closeEveningShiftAction, openMorningShiftAction } from "./bactericidalShiftActions";
 import { provisionEquipmentAction, replaceLampsAction } from "./bactericidalEquipmentActions";
 
+export type BactericidalLogItem = BactericidalLogEntry & {
+	readonly serialNumber?: string | null;
+};
+
 export function useBactericidalState() {
-	const [equipments, setEquipments] = useState<any[]>([]);
-	const [logs, setLogs] = useState<any[]>([]);
+	const [equipments, setEquipments] = useState<BactericidalEquipment[]>([]);
+	const [logs, setLogs] = useState<BactericidalLogItem[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [selectedEquipId, setSelectedEquipId] = useState<string>("all");
 	const [isEquipModalOpen, setIsEquipModalOpen] = useState(false);
@@ -25,8 +30,14 @@ export function useBactericidalState() {
 				fetch("/api/registers/bactericidal/equipments", { headers }),
 				fetch("/api/registers/bactericidal/logs", { headers }),
 			]);
-			if (equipRes.ok) setEquipments(await equipRes.json());
-			if (logRes.ok) setLogs(await logRes.json());
+			if (equipRes.ok) {
+				const equipData = (await equipRes.json()) as BactericidalEquipment[];
+				setEquipments(Array.isArray(equipData) ? equipData : []);
+			}
+			if (logRes.ok) {
+				const logData = (await logRes.json()) as BactericidalLogItem[];
+				setLogs(Array.isArray(logData) ? logData : []);
+			}
 		} catch (err) {
 			console.error("Failed to load bactericidal data", err);
 		} finally {
@@ -40,7 +51,7 @@ export function useBactericidalState() {
 		await replaceLampsAction(id, fetchAll);
 	};
 
-	const handleProvisionCanonicalEquipment = async (showNotice = true): Promise<any[]> => {
+	const handleProvisionCanonicalEquipment = async (showNotice = true): Promise<BactericidalEquipment[]> => {
 		if (submitting) return [];
 		try {
 			setSubmitting(true);
@@ -59,7 +70,7 @@ export function useBactericidalState() {
 				currentEquips = await handleProvisionCanonicalEquipment(false);
 				if (currentEquips.length === 0) return;
 			}
-			const targetId = equipmentId || (currentEquips.length === 1 ? currentEquips[0].id : undefined);
+			const targetId = equipmentId || (currentEquips.length === 1 ? currentEquips[0]?.id : undefined);
 			await executePreShift30Min(targetId, currentEquips, fetchAll);
 		} finally {
 			setSubmitting(false);

@@ -1,23 +1,86 @@
 import type {
-	BactericidalEquipmentRecord,
-	BactericidalSessionRecord,
 	ChamberPointEvaluation,
 	Form257Record,
-	GeneralCleaningJournalRecord,
+	PsoChemicalTestId,
 	PsoJournalRecord,
 	SterilizerEquipmentRecord,
-	TemperatureHumidityLogRecord,
 } from "@dental/shared";
+import type { FetchSanpinContext } from "./sanpinConsolidatedFetcher.js";
 
-export function mapRawPsoRecords(rawPso: any[], ctx: any): PsoJournalRecord[] {
-	return rawPso.map((item: any, idx: number) => ({
+export interface RawPsoRecordDto {
+	readonly id?: string | null | undefined;
+	readonly timestamp?: string | null | undefined;
+	readonly createdAt?: string | null | undefined;
+	readonly instrumentName?: string | null | undefined;
+	readonly batchItemCount?: number | string | null | undefined;
+	readonly testedSampleCount?: number | string | null | undefined;
+	readonly testType?: string | null | undefined;
+	readonly isAzopyramNegative?: boolean | null | undefined;
+	readonly isPhenolphthaleinNegative?: boolean | null | undefined;
+	readonly isBatchApproved?: boolean | null | undefined;
+	readonly detergentBrand?: string | null | undefined;
+	readonly rejectionReason?: string | null | undefined;
+	readonly operatorName?: string | null | undefined;
+	readonly notes?: string | null | undefined;
+}
+
+export interface RawSterilizerEquipmentDto {
+	readonly id: string;
+	readonly name?: string | null | undefined;
+	readonly brandModel?: string | null | undefined;
+	readonly serialNumber?: string | null | undefined;
+	readonly inventoryNumber?: string | null | undefined;
+	readonly deviceType?: string | null | undefined;
+	readonly deviceClass?: string | null | undefined;
+	readonly chamberVolumeLiters?: number | string | null | undefined;
+	readonly locationRoom?: string | null | undefined;
+	readonly verificationExpiryDate?: string | null | undefined;
+	readonly lastMaintenanceDate?: string | null | undefined;
+	readonly nextMaintenanceDate?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly notes?: string | null | undefined;
+}
+
+export interface RawSterilizationCycleDto {
+	readonly id?: string | null | undefined;
+	readonly timestamp?: string | null | undefined;
+	readonly createdAt?: string | null | undefined;
+	readonly cycleNumber?: number | string | null | undefined;
+	readonly autoclaveId?: string | null | undefined;
+	readonly deviceName?: string | null | undefined;
+	readonly cycleMode?: string | null | undefined;
+	readonly temperatureCelsius?: number | string | null | undefined;
+	readonly pressureBar?: number | string | null | undefined;
+	readonly durationMin?: number | string | null | undefined;
+	readonly itemsDescription?: string | null | undefined;
+	readonly packagingType?: string | null | undefined;
+	readonly indicatorType?: string | null | undefined;
+	readonly passedIndicator?: boolean | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly rejectionReason?: string | null | undefined;
+	readonly operatorName?: string | null | undefined;
+	readonly barcode?: string | null | undefined;
+}
+
+function normalizePsoTestType(val: string | null | undefined): PsoChemicalTestId {
+	if (val === "azopyram" || val === "phenolphthalein" || val === "sudan_iii") {
+		return val;
+	}
+	return "both_standard";
+}
+
+export function mapRawPsoRecords(
+	rawPso: readonly RawPsoRecordDto[],
+	ctx: FetchSanpinContext,
+): PsoJournalRecord[] {
+	return rawPso.map((item: RawPsoRecordDto, idx: number) => ({
 		id: item.id || `PSO-${idx + 1}`,
 		timestamp: item.timestamp || item.createdAt || new Date().toISOString(),
 		instrumentName: item.instrumentName || item.notes || "Стоматологический инструментарий",
 		categoryId: "therapeutic_kit",
 		batchItemCount: Number(item.batchItemCount) || 1,
 		testedSampleCount: Number(item.testedSampleCount) || 1,
-		testType: (item.testType as any) || "both_standard",
+		testType: normalizePsoTestType(item.testType),
 		isAzopyramNegative: item.isAzopyramNegative ?? true,
 		isPhenolphthaleinNegative: item.isPhenolphthaleinNegative ?? true,
 		isSudanNegative: true,
@@ -36,36 +99,37 @@ export function mapRawPsoRecords(rawPso: any[], ctx: any): PsoJournalRecord[] {
 }
 
 export function mapRawSterilizersAndCycles(
-	rawSterilizers: any[],
-	rawSterilization: any[],
-	ctx: any,
+	rawSterilizers: readonly RawSterilizerEquipmentDto[],
+	rawSterilization: readonly RawSterilizationCycleDto[],
+	ctx: FetchSanpinContext,
 ): { sterilizerEquipments: SterilizerEquipmentRecord[]; form257Records: Form257Record[] } {
-	const sterilizerEquipments: SterilizerEquipmentRecord[] = rawSterilizers.map((eq: any) => ({
+	const sterilizerEquipments: SterilizerEquipmentRecord[] = rawSterilizers.map((eq: RawSterilizerEquipmentDto) => ({
 		id: eq.id,
 		name: eq.name || eq.brandModel || "Автоклав",
 		brandModel: eq.brandModel || "Euronda E9 Next",
 		serialNumber: eq.serialNumber || "—",
-		inventoryNumber: eq.inventoryNumber || null,
+		inventoryNumber: eq.inventoryNumber ?? null,
 		deviceType: eq.deviceType || "Паровой",
-		deviceClass: eq.deviceClass || "B",
+		deviceClass: eq.deviceClass ?? "B",
 		chamberVolumeLiters: eq.chamberVolumeLiters ? Number(eq.chamberVolumeLiters) : 18,
-		locationRoom: eq.locationRoom || "ЦСО",
-		verificationExpiryDate: eq.verificationExpiryDate || null,
-		lastMaintenanceDate: eq.lastMaintenanceDate || null,
-		nextMaintenanceDate: eq.nextMaintenanceDate || null,
-		status: eq.status || "active",
-		notes: eq.notes || null,
+		locationRoom: eq.locationRoom ?? "ЦСО",
+		verificationExpiryDate: eq.verificationExpiryDate ?? null,
+		lastMaintenanceDate: eq.lastMaintenanceDate ?? null,
+		nextMaintenanceDate: eq.nextMaintenanceDate ?? null,
+		status: eq.status ?? "active",
+		notes: eq.notes ?? null,
 	}));
 
-	const form257Records: Form257Record[] = rawSterilization.map((item: any, idx: number) => {
+	const form257Records: Form257Record[] = rawSterilization.map((item: RawSterilizationCycleDto, idx: number) => {
 		const eq = sterilizerEquipments.find((e) => e.id === item.autoclaveId);
 		const isPassed = item.status === "completed" || item.status === "passed" || item.status === "sterile_passed" || item.passedIndicator === true;
+		const indicatorTradeName = item.indicatorType || "Медтест 134/5";
 		const chamberPoints: ChamberPointEvaluation[] = [
-			{ pointIndex: 1, code: "KT-1", nameRu: "Верхний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-			{ pointIndex: 2, code: "KT-2", nameRu: "Верхний правый угол", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-			{ pointIndex: 3, code: "KT-3", nameRu: "Центр камеры", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-			{ pointIndex: 4, code: "KT-4", nameRu: "Нижний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
-			{ pointIndex: 5, code: "KT-5", nameRu: "Точка стока конденсата", indicatorId: "medtest-134", indicatorTradeNameRu: item.indicatorType || "Медтест 134/5", status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
+			{ pointIndex: 1, code: "KT-1", nameRu: "Верхний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: indicatorTradeName, status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
+			{ pointIndex: 2, code: "KT-2", nameRu: "Верхний правый угол", indicatorId: "medtest-134", indicatorTradeNameRu: indicatorTradeName, status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
+			{ pointIndex: 3, code: "KT-3", nameRu: "Центр камеры", indicatorId: "medtest-134", indicatorTradeNameRu: indicatorTradeName, status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
+			{ pointIndex: 4, code: "KT-4", nameRu: "Нижний левый угол", indicatorId: "medtest-134", indicatorTradeNameRu: indicatorTradeName, status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
+			{ pointIndex: 5, code: "KT-5", nameRu: "Точка стока конденсата", indicatorId: "medtest-134", indicatorTradeNameRu: indicatorTradeName, status: isPassed ? "passed" : "failed", initialColorRu: "Желтый", actualColorRu: isPassed ? "Темно-коричневый" : "Желтый" },
 		];
 
 		return {

@@ -1,8 +1,9 @@
 import React from "react";
 import type { SanpinRegisterTab } from "../sanpinNavigationConfig";
+import type { SanpinRegisterSummary } from "../sanpinConsolidatedExportHelpers";
 
 export interface SanpinKpiSummaryGridProps {
-	readonly summary: any;
+	readonly summary: SanpinRegisterSummary | null;
 	readonly activeTab: SanpinRegisterTab;
 	readonly onSelectTab: (tabId: SanpinRegisterTab) => void;
 }

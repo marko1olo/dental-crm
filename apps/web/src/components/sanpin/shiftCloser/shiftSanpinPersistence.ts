@@ -49,8 +49,11 @@ export async function persistShiftSanpinAutoClose(
 			});
 
 			if (res.ok) {
-				const json = await res.json().catch(() => ({}));
-				const msg = (json as any)?.messageRu || `Смена ${date} зафиксирована в журналах СанПиН.`;
+				interface SanpinPersistResponse {
+					readonly messageRu?: string;
+				}
+				const json = (await res.json().catch(() => ({}))) as SanpinPersistResponse | null;
+				const msg = json?.messageRu || `Смена ${date} зафиксирована в журналах СанПиН.`;
 				options.onToast?.(msg, "success");
 				return {
 					success: true,

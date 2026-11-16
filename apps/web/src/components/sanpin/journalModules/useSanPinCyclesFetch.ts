@@ -10,7 +10,45 @@ import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DEFAULT_CYCLES, type SanPinCycleEntry, type SanPinJournalPeriod } from "./sanpinJournalTypes";
 
-function mapCycleRow(d: any, idx: number): SanPinCycleEntry {
+export interface RawSanPinCycleRow {
+	readonly id?: string | null | undefined;
+	readonly timestamp?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly passedIndicator?: boolean | null | undefined;
+	readonly notes?: string | null | undefined;
+	readonly itemsDescription?: string | null | undefined;
+	readonly batchSize?: number | string | null | undefined;
+	readonly kraftPouchesCount?: number | string | null | undefined;
+	readonly cycleNumber?: number | string | null | undefined;
+	readonly autoclaveId?: string | null | undefined;
+	readonly deviceName?: string | null | undefined;
+	readonly temperatureCelsius?: number | string | null | undefined;
+	readonly pressureBar?: number | string | null | undefined;
+	readonly durationMin?: number | string | null | undefined;
+	readonly regimeName?: string | null | undefined;
+	readonly indicatorType?: string | null | undefined;
+	readonly barcode?: string | null | undefined;
+	readonly operatorName?: string | null | undefined;
+	readonly batchBarcode?: string | null | undefined;
+	readonly psoStatus?: string | null | undefined;
+}
+
+function normalizePsoStatus(val: string | null | undefined): "norm" | "defect" | "none" {
+	if (val === "defect" || val === "none") return val;
+	return "norm";
+}
+
+function normalizeIndicatorClass(indicatorType: string | null | undefined): "4" | "5" | "6" {
+	if (indicatorType?.includes("4")) return "4";
+	if (indicatorType?.includes("6")) return "6";
+	return "5";
+}
+
+function isRawSanPinCycleRow(item: unknown): item is RawSanPinCycleRow {
+	return typeof item === "object" && item !== null;
+}
+
+function mapCycleRow(d: RawSanPinCycleRow, idx: number): SanPinCycleEntry {
 	const rawDate = d.timestamp ? new Date(d.timestamp) : new Date();
 	const dateStr = rawDate.toISOString().slice(0, 10);
 	const timeStr = rawDate.toTimeString().slice(0, 5);
@@ -23,14 +61,14 @@ function mapCycleRow(d: any, idx: number): SanPinCycleEntry {
 		id: d.id || `cyc-${idx}`,
 		date: dateStr,
 		time: timeStr,
-		cycleNumber: d.cycleNumber || idx + 1,
+		cycleNumber: Number(d.cycleNumber) || idx + 1,
 		autoclaveCode: d.autoclaveId || "—",
 		autoclaveModel: d.deviceName || "Автоклав",
 		temperatureC: Number(d.temperatureCelsius) || 0,
 		pressureBar: Number(d.pressureBar) || 0,
 		durationMin: Number(d.durationMin) || 0,
 		regimeName: d.regimeName || "Режим B (Универсальный 134°C / 5 мин)",
-		indicatorClass: (d.indicatorType?.includes("4") ? "4" : "5") as "4" | "5" | "6",
+		indicatorClass: normalizeIndicatorClass(d.indicatorType),
 		colorBefore: "Бежевый",
 		colorBeforeHex: "#d4b896",
 		colorAfter: isNorm ? "Темно-коричневый" : "Светло-желтый",
@@ -42,7 +80,7 @@ function mapCycleRow(d: any, idx: number): SanPinCycleEntry {
 		status: isNorm ? "passed" : "failed",
 		batchSize: realBatchSize,
 		batchBarcode: d.batchBarcode || "",
-		psoStatus: (d.psoStatus as any) || "norm",
+		psoStatus: normalizePsoStatus(d.psoStatus),
 		kraftPouchesCount: realBatchSize,
 	};
 }
@@ -66,9 +104,9 @@ export function useSanPinCyclesFetch(period: SanPinJournalPeriod) {
 			}
 
 			if (res && res.ok) {
-				const data = await res.json();
+				const data: unknown = await res.json();
 				if (Array.isArray(data) && data.length > 0) {
-					setCycles(data.map(mapCycleRow));
+					setCycles(data.filter(isRawSanPinCycleRow).map(mapCycleRow));
 					return;
 				}
 				if (Array.isArray(data) && data.length === 0) {

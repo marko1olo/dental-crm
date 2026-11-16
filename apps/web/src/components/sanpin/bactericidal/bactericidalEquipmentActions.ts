@@ -1,3 +1,4 @@
+import type { BactericidalEquipment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { provisionCanonicalBactericidalEquipment } from "./bactericidalPresets";
@@ -19,7 +20,7 @@ export async function replaceLampsAction(equipmentId: string, onRefresh: () => P
 			showToast("Замена ламп зафиксирована. Счетчик обнулен.", "success");
 			await onRefresh();
 		}
-	} catch (err) {
+	} catch {
 		showToast("Ошибка при сбросе счетчика ламп", "error");
 	}
 }
@@ -27,7 +28,7 @@ export async function replaceLampsAction(equipmentId: string, onRefresh: () => P
 export async function provisionEquipmentAction(
 	showToastNotice = true,
 	onRefresh: () => Promise<void>,
-): Promise<any[]> {
+): Promise<BactericidalEquipment[]> {
 	try {
 		const created = await provisionCanonicalBactericidalEquipment();
 		if (created) {
@@ -39,7 +40,7 @@ export async function provisionEquipmentAction(
 		}
 		showToast("Ошибка при подключении типового рециркулятора", "error");
 		return [];
-	} catch (err) {
+	} catch {
 		showToast("Сетевая ошибка при подключении типового рециркулятора", "error");
 		return [];
 	}

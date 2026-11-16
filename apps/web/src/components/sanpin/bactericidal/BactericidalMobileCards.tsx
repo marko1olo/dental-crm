@@ -1,7 +1,8 @@
 import React from "react";
+import type { BactericidalLogItem } from "./useBactericidalState";
 
 export interface BactericidalMobileCardsProps {
-	readonly logs: any[];
+	readonly logs: readonly BactericidalLogItem[];
 	readonly loading: boolean;
 }
 

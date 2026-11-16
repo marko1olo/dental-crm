@@ -1,8 +1,9 @@
 import React from "react";
 import { ShieldCheck, CheckCircle2 } from "lucide-react";
+import type { SanpinRegisterSummary } from "../sanpinConsolidatedExportHelpers";
 
 export interface SanpinHeaderTitleKpiProps {
-	readonly summary: any;
+	readonly summary: SanpinRegisterSummary | null;
 	readonly onToggleExpandedKpi: () => void;
 }
 
@@ -47,7 +48,7 @@ export const SanpinHeaderTitleKpi: React.FC<SanpinHeaderTitleKpiProps> = ({
 				</span>
 				<span className="sanpin-kpi-desktop-detail sanpin-kpi-sep">·</span>
 				<span className={`sanpin-kpi-desktop-detail ${hasTempDeviations ? "sanpin-kpi-status-bad" : "sanpin-kpi-status-ok"}`}>
-					T° {hasTempDeviations ? `${summary.temperature.deviationsToday} откл.` : "Норма"}
+					T° {hasTempDeviations ? `${summary?.temperature?.deviationsToday ?? 0} откл.` : "Норма"}
 				</span>
 			</button>
 		</div>

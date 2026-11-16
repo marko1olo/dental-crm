@@ -1,3 +1,4 @@
+import type { BactericidalEquipment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { executePreShift30Min, executeShiftAutopilot } from "../bactericidalShiftHelpers";
@@ -8,8 +9,8 @@ export async function openMorningShiftAction({
 	onProvisionFallback,
 	onRefresh,
 }: {
-	equipments: any[];
-	onProvisionFallback: () => Promise<any[]>;
+	equipments: readonly BactericidalEquipment[];
+	onProvisionFallback: () => Promise<BactericidalEquipment[]>;
 	onRefresh: () => Promise<void>;
 }): Promise<void> {
 	let currentEquips = equipments;
@@ -21,7 +22,7 @@ export async function openMorningShiftAction({
 		}
 	}
 
-	const targetId = currentEquips.length === 1 ? currentEquips[0].id : undefined;
+	const targetId = currentEquips.length === 1 ? currentEquips[0]?.id : undefined;
 	const clinicToken = readDenteClinicToken();
 	const staffToken = readDenteStaffToken();
 	const headers = {
@@ -60,8 +61,8 @@ export async function closeEveningShiftAction({
 	onProvisionFallback,
 	onRefresh,
 }: {
-	equipments: any[];
-	onProvisionFallback: () => Promise<any[]>;
+	equipments: readonly BactericidalEquipment[];
+	onProvisionFallback: () => Promise<BactericidalEquipment[]>;
 	onRefresh: () => Promise<void>;
 }): Promise<void> {
 	let currentEquips = equipments;
@@ -73,7 +74,7 @@ export async function closeEveningShiftAction({
 		}
 	}
 
-	const targetId = currentEquips.length === 1 ? currentEquips[0].id : undefined;
+	const targetId = currentEquips.length === 1 ? currentEquips[0]?.id : undefined;
 	const clinicToken = readDenteClinicToken();
 	const staffToken = readDenteStaffToken();
 	const headers = {
