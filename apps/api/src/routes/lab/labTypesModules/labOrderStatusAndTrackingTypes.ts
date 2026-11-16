@@ -66,20 +66,19 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "shipped_to_clinic":
 		case "fitting_ready":
 			return "shipped";
-		case "ready":
 		case "received":
+		case "ready":
 		case "in_clinic":
 		case "ready_in_clinic":
 		case "delivered_to_clinic":
 		case "готовая работа":
-			return "ready_in_clinic";
 		case "fitting":
 		case "fitted":
 		case "fitting_scheduled":
 		case "fitting_in_mouth":
 		case "примерка":
 		case "примерка во рту":
-			return "fitted";
+			return "received";
 		case "refitting":
 		case "rework":
 		case "rejected_remake":
@@ -92,6 +91,9 @@ export function mapStageToLabOrderStatus(stage: string): LabOrderStatus | null {
 		case "completed":
 		case "seated":
 		case "фиксация":
+		case "patient_fixation":
+		case "ready_fixation":
+		case "fixed":
 			return "completed";
 		case "cancelled":
 			return "cancelled";

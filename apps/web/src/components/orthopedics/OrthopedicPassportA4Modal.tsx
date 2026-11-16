@@ -2,14 +2,19 @@ import React, { useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, Printer, Copy, Award } from "lucide-react";
 import { showToast } from "../GlobalToast.js";
-import type { OrthopedicPassportData, OrthopedicPassportA4ModalProps } from "./passport/orthopedicPassportTypes.js";
+import {
+	normalizeToOrthopedicPassportData,
+	type OrthopedicPassportData,
+	type OrthopedicPassportA4ModalProps,
+	type ProstheticWarrantyPassport,
+} from "./passport/orthopedicPassportTypes.js";
 import { OrthopedicPassportHeader } from "./passport/OrthopedicPassportHeader.js";
 import { OrthopedicPassportSpecsTable } from "./passport/OrthopedicPassportSpecsTable.js";
 import { OrthopedicPassportCareNotice } from "./passport/OrthopedicPassportCareNotice.js";
 import { OrthopedicPassportSignatures } from "./passport/OrthopedicPassportSignatures.js";
 import { OrthopedicPassportMobileBar } from "./passport/OrthopedicPassportMobileBar.js";
 
-export type { OrthopedicPassportData, OrthopedicPassportA4ModalProps };
+export type { OrthopedicPassportData, OrthopedicPassportA4ModalProps, ProstheticWarrantyPassport };
 
 const DEFAULT_CARE_NOTES = [
 	"Проведение обязательной профессиональной гигиены и осмотра врачом не реже 1 раза в 6 месяцев.",
@@ -23,22 +28,24 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 	const printRef = useRef<HTMLDivElement>(null);
 	if (!isOpen) return null;
 
-	const issueDate = passport.issueDate || new Date().toLocaleDateString("ru-RU", { year: "numeric", month: "long", day: "numeric" });
-	const passportNumber = passport.passportNumber || (passport.orderNumber ? `ГП-${passport.orderNumber}` : `ГП-${Date.now().toString().slice(-6)}`);
-	const clinicName = passport.clinicName || "Стоматологическая клиника «DENTE»";
-	const labName = passport.labName || "Цифровая зуботехническая лаборатория «DenteLab Precision»";
-	const patientName = passport.patientName || "Пациент";
-	const doctorName = passport.doctorName || "Лечащий врач-ортопед";
-	const technicianName = passport.technicianName || "Смирнов А.В. (Зубной техник CAD/CAM)";
-	const warrantyLabelRu = passport.warrantyLabelRu || (passport.warrantyMonths ? `${passport.warrantyMonths} мес.` : "60 месяцев (5 лет)");
-	const batchLot = passport.batchLotNumber || `LOT-2026-${passportNumber.replace(/\D/g, "").slice(-4) || "8841"}`;
-	const standards = passport.standardsCompliance || "ГОСТ ISO 6872:2015 / ГОСТ 31572 / CE 0123 / СанПиН 2.1.3678-20";
-	const careNotes = passport.careNotes && passport.careNotes.length > 0 ? passport.careNotes : DEFAULT_CARE_NOTES;
+	const data = normalizeToOrthopedicPassportData(passport);
+
+	const issueDate = data.issueDate || new Date().toLocaleDateString("ru-RU", { year: "numeric", month: "long", day: "numeric" });
+	const passportNumber = data.passportNumber || (data.orderNumber ? `ГП-${data.orderNumber}` : `ГП-${Date.now().toString().slice(-6)}`);
+	const clinicName = data.clinicName || "Стоматологическая клиника «DENTE»";
+	const labName = data.labName || "Цифровая зуботехническая лаборатория «DenteLab Precision»";
+	const patientName = data.patientName || "Пациент";
+	const doctorName = data.doctorName || "Лечащий врач-ортопед";
+	const technicianName = data.technicianName || "Смирнов А.В. (Зубной техник CAD/CAM)";
+	const warrantyLabelRu = data.warrantyLabelRu || (data.warrantyMonths ? `${data.warrantyMonths} мес.` : "60 месяцев (5 лет)");
+	const batchLot = data.batchLotNumber || `LOT-2026-${passportNumber.replace(/\D/g, "").slice(-4) || "8841"}`;
+	const standards = data.standardsCompliance || "ГОСТ ISO 6872:2015 / ГОСТ 31572 / CE 0123 / СанПиН 2.1.3678-20";
+	const careNotes = data.careNotes && data.careNotes.length > 0 ? data.careNotes : DEFAULT_CARE_NOTES;
 
 	const handlePrint = () => { if (typeof window !== "undefined") window.print(); };
 
 	const handleCopyText = async () => {
-		const text = `ПАСПОРТ ОРТОПЕДИЧЕСКОЙ КОНСТРУКЦИИ И ГАРАНТИЙНЫЙ ТАЛОН № ${passportNumber}\nКлиника: ${clinicName}\nЗТЛ: ${labName}\nПациент: ${patientName}${passport.patientChartNumber ? ` (карта № ${passport.patientChartNumber})` : ""}\nВрач: ${doctorName}\nТехник: ${technicianName}\nДата: ${issueDate}\nЗуб FDI: ${passport.toothFdi}\nКонструкция: ${passport.constructionName}\nМатериал: ${passport.material}\nЦвет VITA: ${passport.colorVita}\nГарантия: ${warrantyLabelRu}\nLOT: ${batchLot}\nСтандарты: ${standards}`;
+		const text = `ПАСПОРТ ОРТОПЕДИЧЕСКОЙ КОНСТРУКЦИИ И ГАРАНТИЙНЫЙ ТАЛОН № ${passportNumber}\nКлиника: ${clinicName}\nЗТЛ: ${labName}\nПациент: ${patientName}${data.patientChartNumber ? ` (карта № ${data.patientChartNumber})` : ""}\nВрач: ${doctorName}\nТехник: ${technicianName}\nДата: ${issueDate}\nЗуб FDI: ${data.toothFdi}\nКонструкция: ${data.constructionName}\nМатериал: ${data.material}\nЦвет VITA: ${data.colorVita}\nГарантия: ${warrantyLabelRu}\nLOT: ${batchLot}\nСтандарты: ${standards}`;
 		try {
 			await navigator.clipboard.writeText(text);
 			showToast("Текст паспорта скопирован в буфер обмена", "success", 2500);
@@ -57,7 +64,7 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 						<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0"><Award size={18} /></div>
 						<div className="min-w-0 flex-1">
 							<h3 className="text-xs sm:text-sm font-bold truncate text-slate-900 dark:text-slate-100">Паспорт ортопедической конструкции</h3>
-							<p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">{passportNumber} · Зуб FDI {passport.toothFdi}</p>
+							<p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">{passportNumber} · Зуб FDI {data.toothFdi}</p>
 						</div>
 					</div>
 					<div className="flex items-center gap-1.5 shrink-0">
@@ -68,13 +75,13 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 				</div>
 				<div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-100 dark:bg-slate-950/40">
 					<div id="orthopedic-passport-print-area" ref={printRef} className="max-w-[800px] mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-4 sm:p-7 shadow-sm text-slate-900 dark:text-slate-100 font-sans" data-testid="passport-a4-sheet">
-						<OrthopedicPassportHeader clinicName={clinicName} passportNumber={passportNumber} issueDate={issueDate} batchLot={batchLot} toothFdi={passport.toothFdi} />
+						<OrthopedicPassportHeader clinicName={clinicName} passportNumber={passportNumber} issueDate={issueDate} batchLot={batchLot} toothFdi={data.toothFdi} />
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs">
-							<div><span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Пациент</span><div className="font-bold">{patientName}</div>{passport.patientChartNumber && (<div className="text-[11px] text-slate-500">Мед. карта № {passport.patientChartNumber}</div>)}</div>
+							<div><span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Пациент</span><div className="font-bold">{patientName}</div>{data.patientChartNumber && (<div className="text-[11px] text-slate-500">Мед. карта № {data.patientChartNumber}</div>)}</div>
 							<div><span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Врач-ортопед</span><div className="font-bold">{doctorName}</div><div className="text-[11px] text-slate-500">{clinicName}</div></div>
 							<div><span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Изготовитель (ЗТЛ)</span><div className="font-bold">{technicianName}</div><div className="text-[11px] text-slate-500">{labName}</div></div>
 						</div>
-						<OrthopedicPassportSpecsTable passport={passport} batchLot={batchLot} standards={standards} />
+						<OrthopedicPassportSpecsTable passport={data} batchLot={batchLot} standards={standards} />
 						<OrthopedicPassportCareNotice warrantyLabelRu={warrantyLabelRu} careNotes={careNotes} />
 						<OrthopedicPassportSignatures doctorName={doctorName} technicianName={technicianName} patientName={patientName} />
 					</div>
