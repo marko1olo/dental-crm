@@ -16,8 +16,8 @@ import {
 	isFurcationEligibleTooth,
 	PERIO_SITE_KEYS,
 	PSR_SEXTANTS,
+	rublesToKopecks,
 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
 
@@ -215,7 +215,7 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 		for (const item of items) {
 			await fetch("/api/inventory/soft-overdraft-deduct", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					itemId: item.itemId,
 					itemName: item.itemName,
@@ -227,7 +227,8 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 			});
 		}
 		return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (Soft Negative Stock)` };
-	} catch {
+	} catch (err) {
+		console.warn("[PerioCatalog] Soft overdraft deduct network fallback:", err);
 		// Докторская автономия: фоллбэк локального овердрафта без блокировки приёма врача
 	}
 	return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (локальный овердрафт)` };
@@ -411,7 +412,7 @@ export function dispatchPresetSideEffects(result: PresetApplyResult, onInsertToP
 	if (typeof window !== "undefined") {
 		window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { soap: protocolText, mode: "smart_append" } }));
 		if (service) {
-			const priceKopecks = (service.price || 0) * 100;
+			const priceKopecks = rublesToKopecks(service.price || 0);
 			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
 				detail: {
 					services: [{

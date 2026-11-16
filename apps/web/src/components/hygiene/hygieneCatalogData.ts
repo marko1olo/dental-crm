@@ -8,7 +8,6 @@
 
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { calculateOhiSScore } from "@dental/shared";
 
 export type OhiSLevel = "ideal" | "fair" | "poor" | "severe";
@@ -273,7 +272,7 @@ export async function deductWarehouseHygieneConsumables(options: {
 	try {
 		const response = await fetch(`/api/inventory/${encodeURIComponent(orgId)}/quick-writeoff-visit-bundle`, {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				visitType: "hygiene",
 				visitId: options.visitId,
@@ -289,7 +288,9 @@ export async function deductWarehouseHygieneConsumables(options: {
 			showToast(`Склад: списан комплект профгигиены (${count} поз., мягкий овердрафт активен)`, "success", 3000);
 			return true;
 		}
-	} catch {
+		console.warn("[HygieneCatalog] Warehouse deduction responded with status:", response.status);
+	} catch (err) {
+		console.warn("[HygieneCatalog] Warehouse deduction network failure:", err);
 		// Офлайн-автономия врача: при сбое сети приём не блокируется
 	}
 	showToast("Склад: расходники гигиены учтены в карте приёма", "info", 2500);

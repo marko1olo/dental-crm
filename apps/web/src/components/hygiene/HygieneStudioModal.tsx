@@ -20,7 +20,6 @@ import {
 	printHygieneHomeCareMemo,
 } from "./hygieneCatalogData";
 import { showToast } from "../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface HygieneStudioModalProps {
 	readonly isOpen: boolean;
@@ -48,16 +47,14 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 		let isCancelled = false;
 		async function loadLatest() {
 			try {
-				const res = await fetch(`/api/patients/${encodeURIComponent(patientId!)}/hygiene-indices/latest`, {
-					headers: { ...denteAdminSecretRequestHeaders() },
-				});
+				const res = await fetch(`/api/patients/${encodeURIComponent(patientId!)}/hygiene-indices/latest`);
 				if (!res.ok) return;
 				const json = await res.json();
 				if (!isCancelled && json?.latest?.ohi_s != null) {
 					setDynamicPreviousOhiS(json.latest);
 				}
-			} catch {
-				// Офлайн
+			} catch (err) {
+				console.warn("[HygieneStudio] Failed to load latest hygiene indices:", err);
 			}
 		}
 		void loadLatest();
@@ -125,7 +122,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 				try {
 					const res = await fetch(`/api/visits/${encodeURIComponent(visitId)}/hygiene-indices`, {
 						method: "POST",
-						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
 							ohi_s: selectedOhiS.score,
 							debris: selectedOhiS.debris,

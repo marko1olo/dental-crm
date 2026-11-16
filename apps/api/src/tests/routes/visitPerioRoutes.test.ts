@@ -53,16 +53,6 @@ describe("visitPerioRoutes integration", () => {
 	});
 
 	it("3. GET /api/visits/:visitId/perio returns 404 if visit does not exist", async () => {
-		vi.spyOn(db, "select").mockImplementation(() => {
-			return {
-				from: () => ({
-					where: () => ({
-						limit: () => Promise.resolve([]),
-					}),
-				}),
-			} as ReturnType<typeof db.select>;
-		});
-
 		const res = await app.inject({
 			method: "GET",
 			url: `/api/visits/${VISIT_ID}/perio`,

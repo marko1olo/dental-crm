@@ -14,7 +14,6 @@ import {
 	convertPerioDentitionToSepa, convertSepaDentitionToPerio, createDefaultPerioTeeth,
 } from "@dental/shared";
 import { Activity, Check, FileText, Info, Printer, X } from "lucide-react";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
 	applyExpressPerioPreset, applyHealthyPeriodontiumPreset, applyUpperJawNormPreset,
@@ -32,12 +31,8 @@ export interface PerioStudioModalProps {
 	readonly isOpen?: boolean | undefined; readonly onClose?: (() => void) | undefined; readonly isModal?: boolean | undefined;
 	readonly patientId?: string | undefined; readonly patientName?: string | undefined; readonly organizationId?: string | undefined;
 	readonly doctorId?: string | undefined; readonly doctorName?: string | undefined; readonly visitId?: string | undefined;
-	readonly initialTeeth?: readonly PerioToothRecord[] | undefined; readonly initialTab?: "psr" | "chart" | undefined;
-	readonly initialSelectedTooth?: number | undefined; readonly initialTier3Expanded?: boolean | undefined;
-	readonly onChange?: ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void) | undefined;
-	readonly onSave?: ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void) | undefined;
-	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
-	readonly readOnly?: boolean | undefined; readonly compactMode?: boolean | undefined;
+	readonly initialTeeth?: readonly PerioToothRecord[] | undefined; readonly initialTab?: "psr" | "chart" | undefined; readonly initialSelectedTooth?: number | undefined; readonly initialTier3Expanded?: boolean | undefined;
+	readonly onChange?: ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void) | undefined; readonly onSave?: ((teeth: PerioToothRecord[], summary: PerioChartSummary) => void) | undefined; readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined; readonly readOnly?: boolean | undefined; readonly compactMode?: boolean | undefined;
 }
 
 export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
@@ -71,12 +66,17 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				if (Array.isArray(parsed.teeth) && parsed.teeth.length === 32) setTeeth(parsed.teeth);
 				if (parsed.screeningMap && typeof parsed.screeningMap === "object") setScreeningMap(parsed.screeningMap);
 			}
-		} catch { /* local cache */ }
+		} catch (err) {
+			console.warn("[PerioStudio] Failed to read from local cache:", err);
+		}
 
 		async function fetchPerio() {
 			try {
-				const res = await fetch(`/api/perio/${encodeURIComponent(safePatientId)}`, { headers: { ...denteAdminSecretRequestHeaders() } });
-				if (!res.ok) return;
+				const res = await fetch(`/api/periodontogram/${encodeURIComponent(safePatientId)}`);
+				if (!res.ok) {
+					console.warn("[PerioStudio] Server responded with error status:", res.status);
+					return;
+				}
 				const json = await res.json();
 				if (isCancelled || !json.success || !json.data) return;
 				if (Array.isArray(json.data.teeth) && json.data.teeth.length > 0) {
@@ -84,7 +84,13 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					if (converted?.length === 32) setTeeth(converted);
 				}
 				if (json.data.indices?.psrData && typeof json.data.indices.psrData === "object") setScreeningMap(json.data.indices.psrData as PsrScreeningMap);
-			} catch { /* offline fallback */ }
+			} catch (err) {
+				console.warn("[PerioStudio] Failed to load periodontogram:", err);
+				showToast("Сетевой сбой при загрузке пародонтограммы. Используются локальные данные.", "warning", 4000, {
+					label: "Повторить",
+					onAction: () => { void fetchPerio(); },
+				});
+			}
 		}
 		void fetchPerio();
 		return () => { isCancelled = true; };
@@ -142,8 +148,8 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					gingivalMarginMm: s.gingivalMarginMm, bleedingOnProbing: Boolean(s.bleedingOnProbing),
 					plaque: Boolean(s.plaque), calculus: Boolean(s.calculus), suppuration: Boolean(s.suppuration),
 				})));
-				const res = await fetch(`/api/perio/${encodeURIComponent(patientId)}`, {
-					method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				const res = await fetch(`/api/periodontogram/${encodeURIComponent(patientId)}`, {
+					method: "POST", headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						teeth: sepaTeeth.map((t) => ({ toothNumber: t.toothNumber, isPresent: t.isPresent, isImplant: t.isImplant, mobility: t.mobility, furcationBuccal: t.furcationBuccal, furcationLingual: t.furcationLingual })),
 						sites: allSites, notes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})`,
@@ -151,7 +157,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					}),
 				});
 				if (!res.ok) throw new Error(`Ошибка сервера ${res.status}`);
-				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch { /* noop */ }
+				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch (storageErr) { console.warn("[PerioStudio] Failed to write local cache:", storageErr); }
 			}
 			await deductPeriodontalConsumablesSoftOverdraft(summary.deepPocketsCount > 0 ? "vector" : "hygiene", visitId);
 			setSyncStatus("saved");
@@ -159,13 +165,17 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			if (onSave) onSave(teeth, summary);
 			showToast("✓ Пародонтограмма сохранена в ЭМК", "success");
 			if (isModal && onClose) onClose();
-		} catch {
+		} catch (err) {
+			console.error("[PerioStudio] Save failed:", err);
 			if (patientId?.trim()) {
-				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch { /* noop */ }
+				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch (storageErr) { console.warn("[PerioStudio] Failed to write fallback local cache:", storageErr); }
 			}
 			setSyncStatus("saved");
 			dispatchPerioSoapSync(teeth);
-			showToast("✓ Пародонтограмма сохранена локально (офлайн-кэш)", "info");
+			showToast("Сетевой сбой при сохранении на сервере. Данные сохранены в локальный кэш (офлайн)", "warning", 5000, {
+				label: "Повторить",
+				onAction: () => { void handleSave(); },
+			});
 			if (onSave) onSave(teeth, summary);
 			if (isModal && onClose) onClose();
 		}
@@ -268,14 +278,10 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			}
 			if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
 			pendingOneRef.current = false;
-
 			if (e.key === "1") {
 				e.preventDefault();
 				pendingOneRef.current = true;
-				twoDigitTimerRef.current = setTimeout(() => {
-					pendingOneRef.current = false;
-					handleUpdateDepth(1);
-				}, 650);
+				twoDigitTimerRef.current = setTimeout(() => { pendingOneRef.current = false; handleUpdateDepth(1); }, 650);
 				return;
 			}
 			if (e.key >= "2" && e.key <= "9") {
@@ -477,11 +483,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 	if (isModal) {
 		return (
-			<div
-				className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay"
-				style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }}
-				data-testid="perio-chart-modal" role="dialog" aria-modal="true"
-			>
+			<div className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay" style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }} data-testid="perio-chart-modal" role="dialog" aria-modal="true">
 				<div className="w-full max-w-7xl my-0 sm:my-auto max-h-[94vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl perio-modal-content">
 					{content}
 				</div>
