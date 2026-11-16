@@ -30,35 +30,35 @@ export function EndoStudioToolbar(props: EndoStudioToolbarProps) {
 					className="btn-endo-obturation-norm secondary-button min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer shrink-0"
 					title="Мгновенно обтурировать каналы анатомической нормой: длина по FDI, МАФ 25.04, AH Plus, NaOCl 3%, латеральная компакция"
 				>
-					<Check size={14} className="stroke-[2.5] text-[var(--teal,#0d9488)] shrink-0" />
+					<Check size={14} className="stroke-[2.5] text-[var(--primary)] shrink-0" />
 					<span className="hidden sm:inline">Каналы запломбированы (физиологическая норма)</span>
 					<span className="sm:hidden">Запломбировать каналы (норма)</span>
 				</button>
 				<button
 					type="button"
 					onClick={() => props.onApplyCanonicalProtocol("pulpitis_1visit")}
-					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "pulpitis_1visit" ? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
+					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "pulpitis_1visit" ? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
 				>
 					Пульпит (1 визит)
 				</button>
 				<button
 					type="button"
 					onClick={() => props.onApplyCanonicalProtocol("periodontitis_temp")}
-					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "periodontitis_temp" ? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
+					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "periodontitis_temp" ? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
 				>
 					Периодонтит (Ca(OH)2)
 				</button>
 				<button
 					type="button"
 					onClick={() => props.onApplyCanonicalProtocol("periodontitis_permanent_ahplus")}
-					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "periodontitis_permanent_ahplus" ? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
+					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "periodontitis_permanent_ahplus" ? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
 				>
 					Периодонтит (AH Plus)
 				</button>
 				<button
 					type="button"
 					onClick={() => props.onApplyCanonicalProtocol("retreatment_unsealing")}
-					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "retreatment_unsealing" ? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
+					className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${props.activeProtocolId === "retreatment_unsealing" ? "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
 				>
 					Распломбировка
 				</button>
@@ -75,7 +75,7 @@ export function EndoStudioToolbar(props: EndoStudioToolbarProps) {
 			<button
 				type="button"
 				onClick={props.onAddCanal}
-				className="min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] text-[var(--teal,#0d9488)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+				className="min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] text-[var(--primary)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
 			>
 				<Plus size={14} /> Добавить канал
 			</button>

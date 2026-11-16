@@ -130,6 +130,8 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 	[
 		"/:organizationId/shift-batch-deduct",
 		"/shift-batch-deduct",
+		"/:organizationId/batch-deduct",
+		"/batch-deduct",
 		"/:organizationId/shift-deduct",
 		"/shift-deduct",
 		"/:organizationId/batch-shift-writeoff",
@@ -239,6 +241,20 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 	};
 	server.post("/:organizationId/quick-writeoff-surgery", handleSurg);
 	server.post("/quick-writeoff-surgery", handleSurg);
+
+	const handleHygiene = async (req: FastifyRequest<{ Params?: OrgParams; Body?: { visitId?: string; notes?: string } }>, rep: FastifyReply) => {
+		const org = await checkOrg(req, rep, "hygiene"); if (!org) return;
+		const uid = getRequestIdentity(req).userId ?? req.user?.id ?? null;
+		return withTenantCtx(org, (tx) => TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+			organizationId: org,
+			visitType: "hygiene",
+			userId: uid,
+			visitId: req.body?.visitId,
+			notes: req.body?.notes,
+		}));
+	};
+	server.post("/:organizationId/quick-writeoff-hygiene", handleHygiene);
+	server.post("/quick-writeoff-hygiene", handleHygiene);
 
 	server.post<{ Params?: OrgParams; Body?: QuickPackageBody }>("/:organizationId/quick-writeoff-package", async (req, rep) => {
 		const org = await checkOrg(req, rep, "package"); if (!org) return;

@@ -42,7 +42,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 		<div className="border border-[var(--line)] rounded-2xl bg-[var(--paper)] overflow-hidden shadow-xs">
 			<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<SlidersHorizontal size={14} className="text-[var(--teal,#0d9488)]" />
+					<SlidersHorizontal size={14} className="text-[var(--primary)]" />
 					<span className="text-xs font-bold text-[var(--ink)]">Корневые каналы зуба #{activeTooth}</span>
 					<span className="text-[11px] text-[var(--muted)]">({canals.length} {canals.length === 1 ? "канал" : "канала"})</span>
 				</div>
@@ -51,10 +51,10 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 						type="button"
 						onClick={onApplyAllCanalsApex00}
 						data-testid="btn-endo-all-apex-00"
-						className="btn-endo-all-apex-00 min-h-[36px] sm:min-h-[28px] h-8 sm:h-7 px-2.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+						className="btn-endo-all-apex-00 min-h-[36px] sm:min-h-[28px] h-8 sm:h-7 px-2.5 rounded-lg text-xs font-bold text-[var(--success)] bg-[var(--success-soft)] hover:opacity-90 border border-[var(--success)]/30 flex items-center gap-1.5 transition-colors cursor-pointer"
 						title="Выставить 0.0 Apex на все каналы"
 					>
-						<Check size={13} className="text-emerald-600 dark:text-emerald-400" />
+						<Check size={13} className="text-[var(--success)]" />
 						<span>Все 0.0 (Apex)</span>
 					</button>
 				</div>
@@ -92,7 +92,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 											type="checkbox"
 											checked={Boolean(c.isObliterated)}
 											onChange={() => onToggleObliteration(c.id)}
-											className="rounded text-[var(--teal,#0d9488)] cursor-pointer"
+											className="rounded text-[var(--primary)] cursor-pointer"
 										/>
 										<span className="text-[11px] text-[var(--muted)]">Облит.</span>
 									</label>
@@ -109,7 +109,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 										<input
 											type="number"
 											step="0.5"
-											min="10"
+											min={activeTooth >= 51 && activeTooth <= 85 ? "5" : "10"}
 											max="35"
 											value={c.workingLengthMm || 0}
 											onChange={(e) => onUpdateCanalLength(c.id, e.target.value)}
@@ -128,7 +128,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<select
 										value={c.apexLocatorReading || "0.0 (Apex)"}
 										onChange={(e) => onUpdateCanal(c.id, "apexLocatorReading", e.target.value)}
-										className="px-1.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold text-emerald-600 dark:text-emerald-400 cursor-pointer"
+										className="px-1.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold text-[var(--success)] cursor-pointer"
 									>
 										<option value="0.0 (Apex)">0.0 Apex</option>
 										<option value="-0.5 мм">-0.5 мм</option>
@@ -184,7 +184,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 										<button
 											type="button"
 											onClick={() => onRemoveCanal(c.id)}
-											className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/30 inline-flex items-center justify-center cursor-pointer transition-colors"
+											className="w-7 h-7 rounded-lg text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-transparent hover:border-[var(--danger)]/30 inline-flex items-center justify-center cursor-pointer transition-colors"
 											title="Удалить"
 										>
 											<Trash2 size={13} />
@@ -209,7 +209,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									onChange={(e) => onUpdateCanal(c.id, "canalName", e.target.value)}
 									className="w-16 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold"
 								/>
-								<span className="text-xs font-bold text-[var(--teal,#0d9488)]">
+								<span className="text-xs font-bold text-[var(--primary)]">
 									{c.isObliterated ? "ОБЛИТЕРИРОВАН" : `${c.workingLengthMm} мм`}
 								</span>
 							</div>
@@ -219,7 +219,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 										type="checkbox"
 										checked={Boolean(c.isObliterated)}
 										onChange={() => onToggleObliteration(c.id)}
-										className="rounded text-[var(--teal,#0d9488)]"
+										className="rounded text-[var(--primary)]"
 									/>
 									<span>Склероз</span>
 								</label>
@@ -227,7 +227,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<button
 										type="button"
 										onClick={() => onRemoveCanal(c.id)}
-										className="w-9 h-9 rounded-lg text-rose-500 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/30 flex items-center justify-center cursor-pointer transition-colors"
+										className="w-9 h-9 rounded-lg text-[var(--danger)] hover:bg-[var(--danger-soft)] border border-transparent hover:border-[var(--danger)]/30 flex items-center justify-center cursor-pointer transition-colors"
 									>
 										<Trash2 size={14} />
 									</button>
@@ -247,7 +247,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 								<input
 									type="number"
 									step="0.5"
-									min="10"
+									min={activeTooth >= 51 && activeTooth <= 85 ? "5" : "10"}
 									max="35"
 									value={c.workingLengthMm || 0}
 									onChange={(e) => onUpdateCanalLength(c.id, e.target.value)}
@@ -268,7 +268,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 								<select
 									value={c.apexLocatorReading || "0.0 (Apex)"}
 									onChange={(e) => onUpdateCanal(c.id, "apexLocatorReading", e.target.value)}
-									className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+									className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold text-[var(--success)]"
 								>
 									<option value="0.0 (Apex)">0.0 Apex</option>
 									<option value="-0.5 мм">-0.5 мм</option>

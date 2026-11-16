@@ -25,7 +25,7 @@ function readToothNumberFromUrl(): number {
 	const params = new URLSearchParams(window.location.search || "");
 	const toothParam = params.get("tooth") || params.get("toothNumber");
 	const parsed = toothParam ? parseInt(toothParam, 10) : 16;
-	return !Number.isNaN(parsed) && parsed >= 11 && parsed <= 48 ? parsed : 16;
+	return !Number.isNaN(parsed) && ((parsed >= 11 && parsed <= 48) || (parsed >= 51 && parsed <= 85)) ? parsed : 16;
 }
 
 function readPatientIdFromContext(): string | undefined {

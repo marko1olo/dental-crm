@@ -7,6 +7,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organizations } from "../auth.js";
@@ -94,6 +95,9 @@ export const toothStates = pgTable(
 			t.patientId,
 			t.toothNumber,
 		),
+		orgPatientToothUniqueIdx: uniqueIndex(
+			"tooth_states_org_patient_tooth_unique_idx",
+		).on(t.organizationId, t.patientId, t.toothNumber),
 	}),
 );
 

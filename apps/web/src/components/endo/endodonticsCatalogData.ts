@@ -312,8 +312,10 @@ export function sanitizeCanalsForSubmission(
 			if (Number.isNaN(num) || !Number.isFinite(num) || num <= 0) {
 				num = fallbackWl;
 			}
-			// Валидация строго в физиологическом диапазоне 10–35 мм с шагом 0.5 мм без NaN
-			safeWl = Math.max(10, Math.min(35, Math.round(num * 2) / 2));
+			// Валидация строго в физиологическом диапазоне (от 5 мм для молочных зубов 51-85, от 10 мм для постоянных 11-48) с шагом 0.5 мм без NaN
+			const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
+			const minWl = isDeciduous ? 5 : 10;
+			safeWl = Math.max(minWl, Math.min(35, Math.round(num * 2) / 2));
 		}
 
 		return {

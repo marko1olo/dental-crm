@@ -216,7 +216,9 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			if (Number.isNaN(num) || !Number.isFinite(num)) {
 				return { ...c, workingLengthMm: getAnatomicalWorkingLength(activeTooth, c.canalName) };
 			}
-			const safeWl = Math.max(10, Math.min(35, Math.round(num * 2) / 2));
+			const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
+			const minWl = isDeciduous ? 5 : 10;
+			const safeWl = Math.max(minWl, Math.min(35, Math.round(num * 2) / 2));
 			return { ...c, workingLengthMm: safeWl };
 		}));
 	}, [activeTooth]);
@@ -227,7 +229,9 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			const cur = typeof c.workingLengthMm === "number" && !Number.isNaN(c.workingLengthMm) && c.workingLengthMm > 0
 				? c.workingLengthMm
 				: getAnatomicalWorkingLength(activeTooth, c.canalName);
-			return { ...c, workingLengthMm: Math.max(10, Math.min(35, Math.round((cur + delta) * 2) / 2)), isObliterated: false };
+			const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
+			const minWl = isDeciduous ? 5 : 10;
+			return { ...c, workingLengthMm: Math.max(minWl, Math.min(35, Math.round((cur + delta) * 2) / 2)), isObliterated: false };
 		}));
 	}, [activeTooth]);
 
@@ -280,10 +284,12 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 
 	const applyOneClickObturationNorm = useCallback(() => {
 		const defaultAnatomicalCanals = getDefaultCanalsForTooth(activeTooth);
+		const isDeciduous = activeTooth >= 51 && activeTooth <= 85;
+		const minWl = isDeciduous ? 5 : 10;
 		const updated: EndoCanalData[] = defaultAnatomicalCanals.map((c) => ({
 			...c,
 			isObliterated: false,
-			workingLengthMm: Math.max(10, Math.min(35, Math.round((Number(c.workingLengthMm) || getAnatomicalWorkingLength(activeTooth, c.canalName)) * 2) / 2)),
+			workingLengthMm: Math.max(minWl, Math.min(35, Math.round((Number(c.workingLengthMm) || getAnatomicalWorkingLength(activeTooth, c.canalName)) * 2) / 2)),
 			masterApicalFile: "#25.04",
 			taper: ".04 (Конусность 4%)",
 			obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально",
@@ -592,7 +598,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 								className="secondary-button flex-1 sm:flex-initial min-h-[50px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								title="Распечатать эндодонтическую карту (А4)"
 							>
-								<Printer size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<Printer size={16} className="text-[var(--primary)] shrink-0" />
 								<span><span className="hidden sm:inline">Печать эндо-карты (А4)</span><span className="sm:hidden">Печать А4</span></span>
 							</button>
 							<button
@@ -602,7 +608,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 								className="secondary-button flex-1 sm:flex-initial min-h-[50px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								title="Скопировать памятку для пациента"
 							>
-								<Copy size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<Copy size={16} className="text-[var(--primary)] shrink-0" />
 								<span><span className="hidden sm:inline">Скопировать для пациента</span><span className="sm:hidden">Памятка</span></span>
 							</button>
 						</div>
