@@ -22,30 +22,32 @@ export function ContractServicesTable({
 			</thead>
 			<tbody>
 				{contractData.services && contractData.services.length > 0 ? (
-					contractData.services.map((s, idx) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: fixed rows
-						<tr key={idx}>
-							<td style={{ textAlign: "center" }}>{idx + 1}</td>
-							<td
-								style={{
-									textAlign: "center",
-									fontFamily: "monospace",
-									fontWeight: "bold",
-								}}
-							>
-								{s.code804n || "—"}
-							</td>
-							<td>{s.name}</td>
-							<td style={{ textAlign: "center" }}>{s.toothOrArea || "—"}</td>
-							<td style={{ textAlign: "center" }}>{s.quantity}</td>
-							<td style={{ textAlign: "right" }}>
-								{formatRubles(s.unitPriceRub)}
-							</td>
-							<td style={{ textAlign: "right", fontWeight: "bold" }}>
-								{formatRubles(s.totalRub)}
-							</td>
-						</tr>
-					))
+					contractData.services.map((s, idx) => {
+						const rowKey = `${s.code804n || "contract-service"}-${s.name}-${idx}`;
+						return (
+							<tr key={rowKey}>
+								<td style={{ textAlign: "center" }}>{idx + 1}</td>
+								<td
+									style={{
+										textAlign: "center",
+										fontFamily: "monospace",
+										fontWeight: "bold",
+									}}
+								>
+									{s.code804n || "—"}
+								</td>
+								<td>{s.name}</td>
+								<td style={{ textAlign: "center" }}>{s.toothOrArea || "—"}</td>
+								<td style={{ textAlign: "center" }}>{s.quantity}</td>
+								<td style={{ textAlign: "right" }}>
+									{formatRubles(s.unitPriceRub)}
+								</td>
+								<td style={{ textAlign: "right", fontWeight: "bold" }}>
+									{formatRubles(s.totalRub)}
+								</td>
+							</tr>
+						);
+					})
 				) : (
 					<tr>
 						<td style={{ textAlign: "center" }}>1</td>

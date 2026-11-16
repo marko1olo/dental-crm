@@ -24,7 +24,7 @@ export function PaidContractRequiredFieldsPanel({
 
 	if (missing.length === 0) {
 		return (
-			<p className="document-required-fields-ready p-3 my-3 text-xs rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+			<p className="document-required-fields-ready p-3 my-3 text-xs rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
 				Обязательные поля договора заполнены, все {requiredCount}. Дата и время проставятся автоматически.
 			</p>
 		);

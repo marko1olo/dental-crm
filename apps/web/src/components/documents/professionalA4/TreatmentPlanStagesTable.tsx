@@ -35,24 +35,26 @@ export function TreatmentPlanStagesTable({
 							</tr>
 						</thead>
 						<tbody>
-							{st.plannedServices.map((srv, sIdx) => (
-								// biome-ignore lint/suspicious/noArrayIndexKey: fixed stage rows
-								<tr key={sIdx}>
-									<td style={{ textAlign: "center" }}>
-										{st.stageNumber}.{sIdx + 1}
-									</td>
-									<td>{srv.name}</td>
-									<td style={{ textAlign: "center" }}>
-										{srv.toothOrArea || "—"}
-									</td>
-									<td style={{ textAlign: "center" }}>
-										{srv.timing || st.stageTiming || "по плану"}
-									</td>
-									<td style={{ textAlign: "right", fontWeight: "bold" }}>
-										{formatRubles(srv.priceRub)}
-									</td>
-								</tr>
-							))}
+							{st.plannedServices.map((srv, sIdx) => {
+								const stageRowKey = `${st.stageNumber}-${srv.name}-${sIdx}`;
+								return (
+									<tr key={stageRowKey}>
+										<td style={{ textAlign: "center" }}>
+											{st.stageNumber}.{sIdx + 1}
+										</td>
+										<td>{srv.name}</td>
+										<td style={{ textAlign: "center" }}>
+											{srv.toothOrArea || "—"}
+										</td>
+										<td style={{ textAlign: "center" }}>
+											{srv.timing || st.stageTiming || "по плану"}
+										</td>
+										<td style={{ textAlign: "right", fontWeight: "bold" }}>
+											{formatRubles(srv.priceRub)}
+										</td>
+									</tr>
+								);
+							})}
 						</tbody>
 						<tfoot>
 							<tr className="total-row">

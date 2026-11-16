@@ -229,7 +229,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 									</select>
 									{selectedCert && (
 										<div className="text-[11px] text-[var(--muted)] mt-1 flex flex-col gap-0.5">
-											<div><strong>Действителен до:</strong> {new Date(selectedCert.validTo).toLocaleDateString("ru-RU")}</div>
+											<div><strong>Действителен до:</strong> {selectedCert.validTo ? new Date(selectedCert.validTo).toLocaleDateString("ru-RU") : "—"}</div>
 											<div><strong>Издатель:</strong> {selectedCert.issuerName || "Минцифры России"}</div>
 											<div className="font-mono text-[10px]"><strong>Отпечаток:</strong> {selectedCert.thumbprint}</div>
 										</div>

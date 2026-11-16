@@ -7,16 +7,29 @@ import {
 	type OrthodonticCard043_1uPayload,
 	type FacialProfileType,
 	type OrthodonticAppliancePlan,
+	type Patient,
 } from "@dental/shared";
 import { loadLatestCephalometricStudy } from "../../orthodontics/cephalometricPersistence";
 
 type LipCompetenceType = "competent_closed" | "incompetent_open" | "closed_with_strain";
 
+export interface OrthodonticPatientCandidate {
+	readonly id?: string | undefined;
+	readonly administrativeProfile?: {
+		readonly orthodonticProgress?: {
+			readonly cephAnalysis?: unknown;
+		} | undefined;
+	} | undefined;
+	readonly orthodonticProgress?: {
+		readonly cephAnalysis?: unknown;
+	} | undefined;
+}
+
 export interface OrthodonticPatientCardFormProps {
 	initialPayload?: Partial<OrthodonticCard043_1uPayload> | undefined;
 	onChange?: ((payload: OrthodonticCard043_1uPayload) => void) | undefined;
 	disabled?: boolean | undefined;
-	patient?: any;
+	patient?: (Patient & OrthodonticPatientCandidate) | OrthodonticPatientCandidate | null | undefined;
 }
 
 function extractCephAngles(source: unknown): { sna?: number | undefined; snb?: number | undefined; anb?: number | undefined; fma?: number | undefined; savedAt?: string | undefined } | null {

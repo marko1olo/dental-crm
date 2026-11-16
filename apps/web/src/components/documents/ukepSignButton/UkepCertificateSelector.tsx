@@ -50,16 +50,16 @@ export function UkepCertificateSelector({
 			</select>
 
 			{isSelectedCertExpired ? (
-				<div className="p-2.5 mb-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded text-xs text-red-800 dark:text-red-300 flex items-start gap-2">
+				<div className="p-2.5 mb-2.5 bg-[var(--danger-soft,rgba(239,68,68,0.1))] border border-[var(--danger,#ef4444)]/30 rounded-xl text-xs text-[var(--danger,#ef4444)] flex items-start gap-2">
 					<AlertCircle size={14} className="shrink-0 mt-0.5" />
 					<div>
 						<strong>Срок действия сертификата истек:</strong>{" "}
-						{new Date(selectedCert!.validTo).toLocaleDateString("ru-RU")}
+						{selectedCert?.validTo ? new Date(selectedCert.validTo).toLocaleDateString("ru-RU") : "—"}
 						. Подписание юридически ничтожно по ст. 14 63-ФЗ.
 					</div>
 				</div>
 			) : isSelectedCertNonGost ? (
-				<div className="p-2.5 mb-2.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+				<div className="p-2.5 mb-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
 					<ShieldAlert size={14} className="shrink-0 mt-0.5" />
 					<div>
 						<strong>Несовместимый алгоритм ({selectedCert?.algorithmName || selectedCert?.algorithmOid || "RSA"}):</strong>{" "}
@@ -67,11 +67,11 @@ export function UkepCertificateSelector({
 					</div>
 				</div>
 			) : (
-				<div className="mb-2.5 text-[11px] text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+				<div className="mb-2.5 text-[11px] text-[var(--teal,#0d9488)] flex items-center gap-1.5">
 					<CheckCircle2 size={12} className="shrink-0" />
 					<span>
 						Сертификат ГОСТ Р 34.10-2012 действителен до{" "}
-						{selectedCert ? new Date(selectedCert.validTo).toLocaleDateString("ru-RU") : ""}
+						{selectedCert?.validTo ? new Date(selectedCert.validTo).toLocaleDateString("ru-RU") : "—"}
 					</span>
 				</div>
 			)}

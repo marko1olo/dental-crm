@@ -3,6 +3,13 @@ import { Edit3 } from "lucide-react";
 import type { Patient } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
 
+export interface InstallmentScheduleRowItem {
+	readonly stage?: string | undefined;
+	readonly date?: string | undefined;
+	readonly amountRub?: number | undefined;
+	readonly status?: string | undefined;
+}
+
 export interface InstallmentScheduleFormProps {
 	installmentScheduleBaseDocumentTitleValue?: (() => string) | undefined;
 	documentPatient?: Patient | null | undefined;
@@ -11,7 +18,7 @@ export interface InstallmentScheduleFormProps {
 	money?: ((val: number | null | undefined) => string) | undefined;
 	installmentSchedulePrepaidRubValue?: (() => number) | undefined;
 	installmentScheduleRemainingRubValue?: (() => number) | undefined;
-	installmentScheduleInstallmentRows?: (() => any[]) | undefined;
+	installmentScheduleInstallmentRows?: (() => readonly (InstallmentScheduleRowItem | unknown)[]) | undefined;
 }
 
 export const InstallmentScheduleForm: React.FC<InstallmentScheduleFormProps> =

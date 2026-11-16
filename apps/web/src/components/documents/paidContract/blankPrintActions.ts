@@ -45,9 +45,10 @@ export async function printBlankMedicalContract(
 	showToast("Подготовка бланка договора со строками _______...", "info", 2000);
 
 	const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-	const hasValidPatientUuid = typeof patient?.id === "string" && UUID_REGEX.test(patient.id.trim());
+	const patientId = typeof patient?.id === "string" ? patient.id.trim() : null;
+	const hasValidPatientUuid = Boolean(patientId && UUID_REGEX.test(patientId));
 
-	if (hasValidPatientUuid) {
+	if (hasValidPatientUuid && patientId) {
 		try {
 			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
 			const todayIso = new Date().toISOString().slice(0, 10);
@@ -56,7 +57,7 @@ export async function printBlankMedicalContract(
 				method: "POST",
 				headers,
 				body: JSON.stringify({
-					patientId: patient!.id!.trim(),
+					patientId,
 					kind: "paid_medical_services_contract",
 					title: "Договор платных медицинских услуг (Бланк)",
 					status: "draft",

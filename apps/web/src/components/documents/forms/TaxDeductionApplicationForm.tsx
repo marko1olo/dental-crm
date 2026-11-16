@@ -46,72 +46,30 @@ export function TaxDeductionApplicationForm({
 	normalizeRelationship,
 	relationshipOptions,
 }: TaxDeductionApplicationFormProps) {
-		const taxApplicationAuthorityDocument = useDocumentStore(
-			(state) => state.taxApplicationAuthorityDocument,
-		);
-		const setTaxApplicationAuthorityDocument = useDocumentStore(
-			(state) => state.setTaxApplicationAuthorityDocument,
-		);
-		const taxApplicationContact = useDocumentStore(
-			(state) => state.taxApplicationContact,
-		);
-		const setTaxApplicationContact = useDocumentStore(
-			(state) => state.setTaxApplicationContact,
-		);
-		const taxApplicationDeliveryChannel = useDocumentStore(
-			(state) => state.taxApplicationDeliveryChannel,
-		);
-		const setTaxApplicationDeliveryChannel = useDocumentStore(
-			(state) => state.setTaxApplicationDeliveryChannel,
-		);
-		const taxApplicationDuplicateWarningAccepted = useDocumentStore(
-			(state) => state.taxApplicationDuplicateWarningAccepted,
-		);
-		const setTaxApplicationDuplicateWarningAccepted = useDocumentStore(
-			(state) => state.setTaxApplicationDuplicateWarningAccepted,
-		);
-		const taxApplicationForm = useDocumentStore(
-			(state) => state.taxApplicationForm,
-		);
-		const setTaxApplicationForm = useDocumentStore(
-			(state) => state.setTaxApplicationForm,
-		);
-		const taxApplicationRelationship = useDocumentStore(
-			(state) => state.taxApplicationRelationship,
-		);
-		const setTaxApplicationRelationship = useDocumentStore(
-			(state) => state.setTaxApplicationRelationship,
-		);
-		const taxApplicationRequestedAt = useDocumentStore(
-			(state) => state.taxApplicationRequestedAt,
-		);
-		const setTaxApplicationRequestedAt = useDocumentStore(
-			(state) => state.setTaxApplicationRequestedAt,
-		);
-		const taxApplicationTaxpayerBirthDate = useDocumentStore(
-			(state) => state.taxApplicationTaxpayerBirthDate,
-		);
-		const setTaxApplicationTaxpayerBirthDate = useDocumentStore(
-			(state) => state.setTaxApplicationTaxpayerBirthDate,
-		);
-		const taxApplicationTaxpayerFullName = useDocumentStore(
-			(state) => state.taxApplicationTaxpayerFullName,
-		);
-		const setTaxApplicationTaxpayerFullName = useDocumentStore(
-			(state) => state.setTaxApplicationTaxpayerFullName,
-		);
-		const taxApplicationTaxpayerIdentityDocument = useDocumentStore(
-			(state) => state.taxApplicationTaxpayerIdentityDocument,
-		);
-		const setTaxApplicationTaxpayerIdentityDocument = useDocumentStore(
-			(state) => state.setTaxApplicationTaxpayerIdentityDocument,
-		);
-		const taxApplicationTaxpayerInn = useDocumentStore(
-			(state) => state.taxApplicationTaxpayerInn,
-		);
-		const setTaxApplicationTaxpayerInn = useDocumentStore(
-			(state) => state.setTaxApplicationTaxpayerInn,
-		);
+		const {
+			taxApplicationAuthorityDocument,
+			setTaxApplicationAuthorityDocument,
+			taxApplicationContact,
+			setTaxApplicationContact,
+			taxApplicationDeliveryChannel,
+			setTaxApplicationDeliveryChannel,
+			taxApplicationDuplicateWarningAccepted,
+			setTaxApplicationDuplicateWarningAccepted,
+			taxApplicationForm,
+			setTaxApplicationForm,
+			taxApplicationRelationship,
+			setTaxApplicationRelationship,
+			taxApplicationRequestedAt,
+			setTaxApplicationRequestedAt,
+			taxApplicationTaxpayerBirthDate,
+			setTaxApplicationTaxpayerBirthDate,
+			taxApplicationTaxpayerFullName,
+			setTaxApplicationTaxpayerFullName,
+			taxApplicationTaxpayerIdentityDocument,
+			setTaxApplicationTaxpayerIdentityDocument,
+			taxApplicationTaxpayerInn,
+			setTaxApplicationTaxpayerInn,
+		} = useDocumentStore();
 
 		const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
@@ -322,7 +280,7 @@ export function TaxDeductionApplicationForm({
 				<div style={{ marginTop: "16px" }}>
 					<button
 						type="button"
-						className="primary-button"
+						className="btn-tax-deduction-calc secondary-button inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-medium text-xs cursor-pointer hover:border-[var(--teal,#0d9488)] transition-colors min-h-[44px] sm:min-h-[36px]"
 						onClick={() => setIsCalculatorOpen(true)}
 					>
 						Рассчитать сумму вычета (НДФЛ)

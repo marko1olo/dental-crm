@@ -57,9 +57,10 @@ interface RawUkepApiDocumentItem {
 }
 
 export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | readonly UkepDocumentItem[]) {
-	const opts: UseUkepSigningEngineOptions = Array.isArray(options)
-		? { initialDocs: options }
-		: (options ?? {});
+	const opts: UseUkepSigningEngineOptions =
+		options && "length" in options
+			? { initialDocs: options }
+			: ((options as UseUkepSigningEngineOptions | undefined) ?? {});
 
 	const { patientId, patientFullName, initialDocs } = opts;
 
@@ -87,7 +88,7 @@ export function useUkepSigningEngine(options?: UseUkepSigningEngineOptions | rea
 			if (detected) {
 				const certs = await getPersonalCertificates();
 				setCertificates(certs);
-				if (certs.length > 0 && !selectedThumbprint) {
+				if (certs.length > 0 && !selectedThumbprint && certs[0]) {
 					setSelectedThumbprint(certs[0].thumbprint);
 				}
 			}

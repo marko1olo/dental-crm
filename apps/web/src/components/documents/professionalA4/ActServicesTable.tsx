@@ -22,33 +22,35 @@ export function ActServicesTable({
 				</tr>
 			</thead>
 			<tbody>
-				{actData.services.map((s, idx) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: fixed rows
-					<tr key={idx}>
-						<td style={{ textAlign: "center" }}>{idx + 1}</td>
-						<td
-							style={{
-								textAlign: "center",
-								fontFamily: "Courier New, monospace",
-								fontWeight: "bold",
-							}}
-						>
-							{s.code804n || "A16.07.002"}
-						</td>
-						<td>{s.name}</td>
-						<td style={{ textAlign: "center" }}>{s.toothOrArea || "—"}</td>
-						<td style={{ textAlign: "center" }}>{s.quantity}</td>
-						<td style={{ textAlign: "right" }}>
-							{formatRubles(s.unitPriceRub)}
-						</td>
-						<td style={{ textAlign: "right" }}>
-							{s.discountRub ? formatRubles(s.discountRub) : "—"}
-						</td>
-						<td style={{ textAlign: "right", fontWeight: "bold" }}>
-							{formatRubles(s.totalRub)}
-						</td>
-					</tr>
-				))}
+				{actData.services.map((s, idx) => {
+					const rowKey = `${s.code804n || "service"}-${s.name}-${idx}`;
+					return (
+						<tr key={rowKey}>
+							<td style={{ textAlign: "center" }}>{idx + 1}</td>
+							<td
+								style={{
+									textAlign: "center",
+									fontFamily: "Courier New, monospace",
+									fontWeight: "bold",
+								}}
+							>
+								{s.code804n || "A16.07.002"}
+							</td>
+							<td>{s.name}</td>
+							<td style={{ textAlign: "center" }}>{s.toothOrArea || "—"}</td>
+							<td style={{ textAlign: "center" }}>{s.quantity}</td>
+							<td style={{ textAlign: "right" }}>
+								{formatRubles(s.unitPriceRub)}
+							</td>
+							<td style={{ textAlign: "right" }}>
+								{s.discountRub ? formatRubles(s.discountRub) : "—"}
+							</td>
+							<td style={{ textAlign: "right", fontWeight: "bold" }}>
+								{formatRubles(s.totalRub)}
+							</td>
+						</tr>
+					);
+				})}
 			</tbody>
 			<tfoot>
 				<tr className="total-row">

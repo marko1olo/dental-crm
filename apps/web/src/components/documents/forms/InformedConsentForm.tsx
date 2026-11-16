@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import type { DocumentVisitHints } from "./documentFormTypes";
-import { InformedConsentModal } from "../../consents/InformedConsentModal.js";
+import { InformedConsentModal } from "../DocumentsStudioModal";
 import { useInformedConsentStore } from "./informedConsent/useInformedConsentStore";
 import { InformedConsentToolbar } from "./informedConsent/InformedConsentToolbar";
 import { InformedConsentInterventionSection } from "./informedConsent/InformedConsentInterventionSection";
 import { InformedConsentDetailsSection } from "./informedConsent/InformedConsentDetailsSection";
 
 export interface InformedConsentFormProps extends DocumentVisitHints {
-	isVisitClosed?: boolean;
-	visitStatus?: string;
+	readonly isVisitClosed?: boolean | undefined;
+	readonly visitStatus?: string | undefined;
 }
 
 export const InformedConsentForm = React.memo(function InformedConsentForm(props: InformedConsentFormProps) {

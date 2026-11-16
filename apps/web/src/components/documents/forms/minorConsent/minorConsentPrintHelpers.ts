@@ -1,7 +1,7 @@
 import {
 	generateMinorConsentPrintHtml,
 	printHtmlViaWindowOrIframe,
-} from "../../../consents/consentTemplates.js";
+} from "../../../consents/consentTemplates";
 import { showToast } from "../../../GlobalToast";
 
 export function printCompletedMinorConsent(params: {

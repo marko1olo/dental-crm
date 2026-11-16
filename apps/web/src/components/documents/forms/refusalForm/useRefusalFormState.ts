@@ -3,7 +3,7 @@ import { generateMedicalInterventionRefusal1051nHtml } from "@dental/shared";
 import { useDocumentStore } from "../../../../store/documentStore";
 import { usePatientStore } from "../../../../store/patientStore";
 import { showToast } from "../../../GlobalToast";
-import { printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates.js";
+import { printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates";
 import type { DocumentVisitHints } from "../documentFormTypes";
 
 export function useRefusalFormState({

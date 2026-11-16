@@ -1,7 +1,7 @@
 import React from "react";
 import { FileEdit } from "lucide-react";
 import { showToast } from "../../GlobalToast";
-import { InformedConsentModal } from "../../consents/InformedConsentModal.js";
+import { InformedConsentModal } from "../DocumentsStudioModal";
 import type { DocumentVisitHints } from "./documentFormTypes";
 import {
 	useRefusalFormState,

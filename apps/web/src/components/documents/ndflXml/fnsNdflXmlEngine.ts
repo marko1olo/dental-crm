@@ -64,8 +64,8 @@ export function generateFnsFileName(
 }
 
 function adaptPayloadToShared(payload: FnsNdflXmlPayload): FnsTaxPayload {
-	const kinship =
-		(payload.patient as unknown as { patientKinshipCode?: FnsKinshipCode }).patientKinshipCode ??
+	const kinship: FnsKinshipCode =
+		payload.patient.patientKinshipCode ??
 		payload.patient.kinshipCode ??
 		"1";
 

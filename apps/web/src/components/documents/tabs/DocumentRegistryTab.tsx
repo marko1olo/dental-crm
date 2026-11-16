@@ -44,7 +44,16 @@ export const DocumentRegistryTab: React.FC<DocumentRegistryTabProps> = React.mem
 					edsFilter={registryEdsFilter}
 					onEdsFilterChange={setRegistryEdsFilter}
 					kindFilter={registryKindFilter}
-					onKindFilterChange={(val) => setRegistryKindFilter(val as "all" | DocumentKind)}
+					onKindFilterChange={(val) => {
+						if (val === "all") {
+							setRegistryKindFilter("all");
+						} else {
+							const matched = availableRegistryKinds.find((k) => k.key === val);
+							if (matched) {
+								setRegistryKindFilter(matched.key);
+							}
+						}
+					}}
 					totalCount={typedActiveDocuments?.length ?? 0}
 					filteredCount={filteredActiveDocuments.length}
 					availableKinds={availableRegistryKinds.map((k) => ({ kind: k.key, label: k.label }))}

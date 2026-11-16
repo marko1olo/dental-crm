@@ -3,7 +3,7 @@ import { BASE_INFORMED_CONSENT_PRESET } from "@dental/shared";
 import { useDocumentStore } from "../../../../store/documentStore";
 import { usePatientStore } from "../../../../store/patientStore";
 import { informedConsentGuidanceReview } from "../../informedConsentGuiding";
-import { generateConsentPrintHtml, printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates.js";
+import { generateConsentPrintHtml, printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates";
 import { showToast } from "../../../GlobalToast";
 import type { InformedConsentFormProps } from "../InformedConsentForm";
 
