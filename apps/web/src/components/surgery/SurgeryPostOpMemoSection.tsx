@@ -29,7 +29,7 @@ export const SurgeryPostOpMemoSection: React.FC<SurgeryPostOpMemoSectionProps> =
 		<div className="surgery-postop-memo-container min-h-0" data-testid="surgery-memo-content">
 			<div className="surgery-postop-memo-header">
 				<div className="flex items-center gap-2 min-w-0">
-					<MessageSquare size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<MessageSquare size={16} className="text-[var(--primary)] shrink-0" />
 					<span className="text-xs font-bold text-[var(--ink)] truncate">
 						Памятка пациенту (#{toothFdi} · {scenarioTitle}):
 					</span>
@@ -43,7 +43,7 @@ export const SurgeryPostOpMemoSection: React.FC<SurgeryPostOpMemoSectionProps> =
 							data-testid="btn-print-memo"
 							title="Распечатать памятку пациенту"
 						>
-							<Printer size={14} className="text-[var(--teal,#0d9488)]" /><span>Печать памятки</span>
+							<Printer size={14} className="text-[var(--primary)]" /><span>Печать памятки</span>
 						</button>
 					)}
 					<button

@@ -3,14 +3,13 @@ import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { inventoryItems } from "../../db/schema.js";
-import { CANONICAL_IMPLANT_WAREHOUSE_SEEDS } from "./implantWarehouseSeeds.js";
 
 export function registerStockRoute(app: FastifyInstance) {
 	app.get("/api/clinical/implants/stock", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		let items = await db
+		const items = await db
 			.select()
 			.from(inventoryItems)
 			.where(
@@ -27,30 +26,6 @@ export function registerStockRoute(app: FastifyInstance) {
 					),
 				),
 			);
-
-		if (items.length === 0) {
-			const seedsToInsert = CANONICAL_IMPLANT_WAREHOUSE_SEEDS.map((seed) => ({
-				organizationId: orgId,
-				name: seed.name,
-				category: seed.category,
-				unit: seed.unit,
-				stockQuantity: seed.stockQuantity,
-				currentQty: seed.currentQty,
-				unitCostRub: seed.unitCostRub,
-				pricePerUnit: seed.pricePerUnit,
-				sku: seed.sku,
-				barcode: seed.barcode,
-				lotNumber: seed.lotNumber,
-				expirationDate: seed.expirationDate,
-				notes: seed.notes,
-			}));
-			await db.insert(inventoryItems).values(seedsToInsert);
-
-			items = await db
-				.select()
-				.from(inventoryItems)
-				.where(eq(inventoryItems.organizationId, orgId));
-		}
 
 		const implants = items.filter(
 			(i) =>

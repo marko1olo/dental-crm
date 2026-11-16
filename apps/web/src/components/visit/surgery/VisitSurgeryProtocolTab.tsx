@@ -120,7 +120,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 								<h3 className="text-sm font-black text-[var(--ink)] m-0">
 									Гарантийный паспорт дентального имплантата
 								</h3>
-								<span className="text-xs px-2 py-0.5 rounded-md font-mono font-bold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]">
+								<span className="text-xs px-2 py-0.5 rounded-md font-mono font-bold bg-[var(--primary)] text-white">
 									#{s.effectiveTooth}
 								</span>
 							</div>
@@ -154,13 +154,13 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 												code: "A16.07.054",
 												name: `Операция установки дентального имплантата ${passportData.brand} Ø${passportData.diameterMm}x${passportData.lengthMm}мм (Зуб #${passportData.toothFdi})`,
 												nameRu: `Операция установки дентального имплантата ${passportData.brand} Ø${passportData.diameterMm}x${passportData.lengthMm}мм (Зуб #${passportData.toothFdi})`,
-												priceRub: 45000,
+												priceRub: passportData.operationPriceRub ?? 0,
 												quantity: 1,
 											},
 										]);
 										showToast(`Услуга имплантации #${passportData.toothFdi} добавлена в смету`, "success");
 									}}
-									className="px-3 py-2 rounded-xl text-xs font-bold border border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white flex items-center gap-1.5 cursor-pointer min-h-[44px] touch-manipulation transition-all"
+									className="px-3 py-2 rounded-xl text-xs font-bold border border-[var(--primary)] bg-[var(--paper)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white flex items-center gap-1.5 cursor-pointer min-h-[44px] touch-manipulation transition-all"
 									data-testid="btn-passport-add-to-invoice"
 								>
 									<Plus size={16} />
@@ -175,7 +175,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 										s.setIsImplantModalOpen(false);
 										showToast("Паспорт внесен в дневник приёма", "success");
 									}}
-									className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer min-h-[44px] touch-manipulation shadow-xs hover:opacity-90 transition-all"
+									className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--primary)] text-white flex items-center gap-1.5 cursor-pointer min-h-[44px] touch-manipulation shadow-xs hover:opacity-90 transition-all"
 									data-testid="btn-passport-apply-diary"
 								>
 									<FileText size={16} />

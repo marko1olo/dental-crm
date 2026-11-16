@@ -10,6 +10,7 @@ export interface DeductedMaterial {
 	name: string;
 	lotNumber: string | null;
 	unitCostRub: number;
+	unitCostKopecks: string;
 	quantity: number;
 	isOverdraft: boolean;
 }
@@ -26,12 +27,50 @@ export async function deductConsumables(
 	// 1. Графт
 	if (input.boneGraftMaterial || input.boneGraftItemId) {
 		const graftName = input.boneGraftMaterial || "Костный графт Geistlich Bio-Oss (0.5г)";
-		const [graftItem] = input.boneGraftItemId
-			? await tx.select().from(inventoryItems).where(and(eq(inventoryItems.id, input.boneGraftItemId), eq(inventoryItems.organizationId, orgId))).limit(1)
-			: await tx.select().from(inventoryItems).where(and(eq(inventoryItems.organizationId, orgId), ilike(inventoryItems.name, "%bio-oss%"))).limit(1);
+		let graftItem = null;
+		if (input.boneGraftItemId) {
+			[graftItem] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(and(eq(inventoryItems.id, input.boneGraftItemId), eq(inventoryItems.organizationId, orgId)))
+				.limit(1);
+		} else if (input.boneGraftMaterial) {
+			const cleanName = input.boneGraftMaterial.trim();
+			const [found] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, orgId),
+						or(
+							ilike(inventoryItems.name, `%${cleanName}%`),
+							ilike(inventoryItems.name, "%bio-oss%"),
+							ilike(inventoryItems.name, "%графт%"),
+						),
+					),
+				)
+				.limit(1);
+			graftItem = found;
+		} else {
+			const [found] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, orgId),
+						or(
+							ilike(inventoryItems.name, "%bio-oss%"),
+							ilike(inventoryItems.name, "%графт%"),
+						),
+					),
+				)
+				.limit(1);
+			graftItem = found;
+		}
 
 		if (graftItem) {
 			const cost = Number(graftItem.unitCostRub || 0);
+			const costKopecks = BigInt(Math.round(cost * 100));
 			const newStock = Number((Number(graftItem.currentQty || 0) - 1).toFixed(4));
 			const isOver = newStock < 0;
 			await tx
@@ -64,6 +103,7 @@ export async function deductConsumables(
 				name: graftItem.name,
 				lotNumber: graftItem.lotNumber,
 				unitCostRub: cost,
+				unitCostKopecks: costKopecks.toString(),
 				quantity: 1,
 				isOverdraft: isOver,
 			});
@@ -73,6 +113,7 @@ export async function deductConsumables(
 				name: graftName,
 				lotNumber: null,
 				unitCostRub: 0,
+				unitCostKopecks: "0",
 				quantity: 1,
 				isOverdraft: true,
 			});
@@ -82,12 +123,50 @@ export async function deductConsumables(
 	// 2. Мембрана
 	if (input.membraneUsed || input.membraneItemId) {
 		const memName = input.membraneUsed || "Коллагеновая мембрана Geistlich Bio-Gide (16x22мм)";
-		const [memItem] = input.membraneItemId
-			? await tx.select().from(inventoryItems).where(and(eq(inventoryItems.id, input.membraneItemId), eq(inventoryItems.organizationId, orgId))).limit(1)
-			: await tx.select().from(inventoryItems).where(and(eq(inventoryItems.organizationId, orgId), ilike(inventoryItems.name, "%bio-gide%"))).limit(1);
+		let memItem = null;
+		if (input.membraneItemId) {
+			[memItem] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(and(eq(inventoryItems.id, input.membraneItemId), eq(inventoryItems.organizationId, orgId)))
+				.limit(1);
+		} else if (input.membraneUsed) {
+			const cleanName = input.membraneUsed.trim();
+			const [found] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, orgId),
+						or(
+							ilike(inventoryItems.name, `%${cleanName}%`),
+							ilike(inventoryItems.name, "%bio-gide%"),
+							ilike(inventoryItems.name, "%мембран%"),
+						),
+					),
+				)
+				.limit(1);
+			memItem = found;
+		} else {
+			const [found] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, orgId),
+						or(
+							ilike(inventoryItems.name, "%bio-gide%"),
+							ilike(inventoryItems.name, "%мембран%"),
+						),
+					),
+				)
+				.limit(1);
+			memItem = found;
+		}
 
 		if (memItem) {
 			const cost = Number(memItem.unitCostRub || 0);
+			const costKopecks = BigInt(Math.round(cost * 100));
 			const newStock = Number((Number(memItem.currentQty || 0) - 1).toFixed(4));
 			const isOver = newStock < 0;
 			await tx
@@ -120,6 +199,7 @@ export async function deductConsumables(
 				name: memItem.name,
 				lotNumber: memItem.lotNumber,
 				unitCostRub: cost,
+				unitCostKopecks: costKopecks.toString(),
 				quantity: 1,
 				isOverdraft: isOver,
 			});
@@ -129,6 +209,7 @@ export async function deductConsumables(
 				name: memName,
 				lotNumber: null,
 				unitCostRub: 0,
+				unitCostKopecks: "0",
 				quantity: 1,
 				isOverdraft: true,
 			});
@@ -138,33 +219,57 @@ export async function deductConsumables(
 	// 3. Шовный материал (только если врач указал шовный материал или выбран айтем)
 	if (input.sutureMaterial || input.sutureItemId) {
 		const sutureName = input.sutureMaterial || "Шовный материал Ethicon Викрил 4-0";
-		const [sutureItem] = input.sutureItemId
-			? await tx
-					.select()
-					.from(inventoryItems)
-					.where(
-						and(
-							eq(inventoryItems.id, input.sutureItemId),
-							eq(inventoryItems.organizationId, orgId),
+		let sutureItem = null;
+		if (input.sutureItemId) {
+			[sutureItem] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.id, input.sutureItemId),
+						eq(inventoryItems.organizationId, orgId),
+					),
+				)
+				.limit(1);
+		} else if (input.sutureMaterial) {
+			const cleanName = input.sutureMaterial.trim();
+			const [found] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, orgId),
+						or(
+							ilike(inventoryItems.name, `%${cleanName}%`),
+							ilike(inventoryItems.name, "%викрил%"),
+							ilike(inventoryItems.name, "%vicryl%"),
+							ilike(inventoryItems.name, "%шовн%"),
 						),
-					)
-					.limit(1)
-			: await tx
-					.select()
-					.from(inventoryItems)
-					.where(
-						and(
-							eq(inventoryItems.organizationId, orgId),
-							or(
-								ilike(inventoryItems.name, "%викрил%"),
-								ilike(inventoryItems.name, "%vicryl%"),
-							),
+					),
+				)
+				.limit(1);
+			sutureItem = found;
+		} else {
+			const [found] = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.organizationId, orgId),
+						or(
+							ilike(inventoryItems.name, "%викрил%"),
+							ilike(inventoryItems.name, "%vicryl%"),
+							ilike(inventoryItems.name, "%шовн%"),
 						),
-					)
-					.limit(1);
+					),
+				)
+				.limit(1);
+			sutureItem = found;
+		}
 
 		if (sutureItem) {
 			const cost = Number(sutureItem.unitCostRub || 0);
+			const costKopecks = BigInt(Math.round(cost * 100));
 			const newStock = Number((Number(sutureItem.currentQty || 0) - 1).toFixed(4));
 			const isOver = newStock < 0;
 			await tx
@@ -197,6 +302,7 @@ export async function deductConsumables(
 				name: sutureItem.name,
 				lotNumber: sutureItem.lotNumber,
 				unitCostRub: cost,
+				unitCostKopecks: costKopecks.toString(),
 				quantity: 1,
 				isOverdraft: isOver,
 			});
@@ -206,11 +312,17 @@ export async function deductConsumables(
 				name: sutureName,
 				lotNumber: null,
 				unitCostRub: 0,
+				unitCostKopecks: "0",
 				quantity: 1,
 				isOverdraft: true,
 			});
 		}
 	}
 
-	return { deductedMaterials, consumablesCostTotal };
+	const consumablesCostTotalKopecks = BigInt(Math.round(consumablesCostTotal * 100));
+	return {
+		deductedMaterials,
+		consumablesCostTotal,
+		consumablesCostTotalKopecks: consumablesCostTotalKopecks.toString(),
+	};
 }

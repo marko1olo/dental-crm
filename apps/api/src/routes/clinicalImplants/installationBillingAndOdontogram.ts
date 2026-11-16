@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { db } from "../../db/client.js";
 import {
 	patientInvoices,
+	serviceCatalogItems,
 	toothStateHistory,
 	toothStates,
 	treatmentItems,
@@ -22,10 +23,54 @@ export async function linkBillingAndOdontogram(
 	isqMean: number | null,
 	protocol: string,
 ) {
-	const operationPriceRub = Number(input.operationPriceRub ?? 45000);
-	const totalMaterialsCostRub = implantCost + consumablesCost;
-	const doctorGrossMarginRub = operationPriceRub - totalMaterialsCostRub;
-	const netDoctorIncomeRub = Math.max(0, doctorGrossMarginRub);
+	let resolvedPriceRub: number | null =
+		input.operationPriceRub !== undefined && input.operationPriceRub !== null
+			? Number(input.operationPriceRub)
+			: null;
+
+	if (resolvedPriceRub === null && input.catalogItemId) {
+		const [catalogItem] = await tx
+			.select()
+			.from(serviceCatalogItems)
+			.where(
+				and(
+					eq(serviceCatalogItems.id, input.catalogItemId),
+					eq(serviceCatalogItems.organizationId, orgId),
+				),
+			)
+			.limit(1);
+		if (catalogItem) {
+			resolvedPriceRub = Number(catalogItem.priceRub);
+		}
+	}
+
+	if (resolvedPriceRub === null) {
+		const [implantService] = await tx
+			.select()
+			.from(serviceCatalogItems)
+			.where(
+				and(
+					eq(serviceCatalogItems.organizationId, orgId),
+					eq(serviceCatalogItems.code, "A16.07.054"),
+				),
+			)
+			.limit(1);
+		if (implantService) {
+			resolvedPriceRub = Number(implantService.priceRub);
+		}
+	}
+
+	const operationPriceRub = resolvedPriceRub ?? 0;
+	const operationPriceKopecks = BigInt(Math.round(operationPriceRub * 100));
+	const implantCostKopecks = BigInt(Math.round(implantCost * 100));
+	const consumablesCostKopecks = BigInt(Math.round(consumablesCost * 100));
+	const totalMaterialsCostKopecks = implantCostKopecks + consumablesCostKopecks;
+	const doctorGrossMarginKopecks = operationPriceKopecks - totalMaterialsCostKopecks;
+	const netDoctorIncomeKopecks = doctorGrossMarginKopecks > 0n ? doctorGrossMarginKopecks : 0n;
+
+	const totalMaterialsCostRub = Number(totalMaterialsCostKopecks) / 100;
+	const doctorGrossMarginRub = Number(doctorGrossMarginKopecks) / 100;
+	const netDoctorIncomeRub = Number(netDoctorIncomeKopecks) / 100;
 
 	let linkedInvoiceId: string | null = null;
 
@@ -123,31 +168,76 @@ export async function linkBillingAndOdontogram(
 
 	const financialSummary = {
 		operationPriceRub,
+		operationPriceKopecks: operationPriceKopecks.toString(),
 		implantCostRub: implantCost,
+		implantCostKopecks: implantCostKopecks.toString(),
 		consumablesCostRub: consumablesCost,
+		consumablesCostKopecks: consumablesCostKopecks.toString(),
 		totalMaterialsCostRub,
+		totalMaterialsCostKopecks: totalMaterialsCostKopecks.toString(),
 		doctorGrossMarginRub,
+		doctorGrossMarginKopecks: doctorGrossMarginKopecks.toString(),
 		netDoctorIncomeRub,
+		netDoctorIncomeKopecks: netDoctorIncomeKopecks.toString(),
 		invoiceId: linkedInvoiceId,
-		marginPercent: operationPriceRub > 0 ? Number(((doctorGrossMarginRub / operationPriceRub) * 100).toFixed(1)) : 0,
+		marginPercent: operationPriceKopecks > 0n ? Number(((Number(doctorGrossMarginKopecks) / Number(operationPriceKopecks)) * 100).toFixed(1)) : 0,
 	};
 
-	await tx.delete(toothStates).where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, input.patientId), eq(toothStates.toothNumber, input.toothNumberFdi)));
-	await tx.insert(toothStates).values({
-		organizationId: orgId,
-		patientId: input.patientId,
-		toothNumber: input.toothNumberFdi,
-		state: "Implant",
-		surfaces: ["implant_site"],
-		notes: `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм (${isqMean !== null ? `ISQ: ${Math.round(isqMean)}, ` : ""}${input.finalInsertionTorqueNcm} Н·см, LOT: ${effectiveLot})`,
-	});
+	const [existingTooth] = await tx
+		.select()
+		.from(toothStates)
+		.where(
+			and(
+				eq(toothStates.organizationId, orgId),
+				eq(toothStates.patientId, input.patientId),
+				eq(toothStates.toothNumber, input.toothNumberFdi),
+			),
+		)
+		.limit(1);
+
+	const existingSurfaces = Array.isArray(existingTooth?.surfaces)
+		? (existingTooth.surfaces as string[])
+		: [];
+	const mergedSurfaces = Array.from(new Set([...existingSurfaces, "implant_site"]));
+
+	const newNote = `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм (${isqMean !== null ? `ISQ: ${Math.round(isqMean)}, ` : ""}${input.finalInsertionTorqueNcm} Н·см, LOT: ${effectiveLot})`;
+	const mergedNotes = existingTooth?.notes
+		? `${existingTooth.notes}; ${newNote}`
+		: newNote;
+
+	if (existingTooth) {
+		await tx
+			.update(toothStates)
+			.set({
+				state: "Implant",
+				surfaces: mergedSurfaces,
+				notes: mergedNotes,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(toothStates.organizationId, orgId),
+					eq(toothStates.patientId, input.patientId),
+					eq(toothStates.toothNumber, input.toothNumberFdi),
+				),
+			);
+	} else {
+		await tx.insert(toothStates).values({
+			organizationId: orgId,
+			patientId: input.patientId,
+			toothNumber: input.toothNumberFdi,
+			state: "Implant",
+			surfaces: mergedSurfaces,
+			notes: mergedNotes,
+		});
+	}
 
 	await tx.insert(toothStateHistory).values({
 		organizationId: orgId,
 		patientId: input.patientId,
 		toothNumber: input.toothNumberFdi,
 		newState: "Implant",
-		newSurfaces: ["implant_site"],
+		newSurfaces: mergedSurfaces,
 		reason: `Хирургическая установка имплантата ${input.implantBrand}. Протокол: ${protocol}`,
 	});
 

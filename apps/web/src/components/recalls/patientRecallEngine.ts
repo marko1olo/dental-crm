@@ -11,8 +11,18 @@ export * from "./recallClinicalTriggers";
 export * from "./recallProfile";
 export * from "./recallFilterSort";
 export * from "./recallActions";
-export * from "./recallMessagingApi";
 export { determineTaskCallTypeForCandidate } from "./recallsCatalogData";
+export {
+	buildTelegramUrl,
+	buildWhatsAppUrl,
+	generatePdnProtectedRecallMessage,
+	generateWhatsAppRecallMessage,
+	generateTelegramRecallMessage,
+	generateSmsRecallMessage,
+	buildRecallMessageContent,
+	calculateSmsSegments,
+	formatSmsSummary,
+} from "./recallSmsAndMessaging";
 
 // Clean aliases for legacy imports
 import { sanitizePhoneNumber, extractFirstName } from "./recallSmsAndMessaging";

@@ -3,6 +3,7 @@ import type { createImplantInstallationSchema } from "@dental/shared";
 import type { z } from "zod";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import type { DbExecutor } from "../../services/treatmentConsumables/types.js";
+import { CANONICAL_IMPLANT_WAREHOUSE_SEEDS } from "./implantWarehouseSeeds.js";
 
 type InstallationInput = z.infer<typeof createImplantInstallationSchema>;
 
@@ -26,6 +27,20 @@ export async function deductImplantScrew(
 
 
 	if (!invItem) {
+		const matchingSeed =
+			CANONICAL_IMPLANT_WAREHOUSE_SEEDS.find((s) => {
+				const lowerName = s.name.toLowerCase();
+				const brandMatch = lowerName.includes(input.implantBrand.toLowerCase());
+				const diamMatch = lowerName.includes(String(input.implantDiameterMm));
+				const lenMatch = lowerName.includes(String(input.implantLengthMm));
+				return brandMatch && (diamMatch || lenMatch);
+			}) ||
+			CANONICAL_IMPLANT_WAREHOUSE_SEEDS.find((s) => s.category === "Имплантология");
+
+		const defaultCostRub = matchingSeed?.unitCostRub ?? "0.00";
+		const defaultLot = input.lotNumber || matchingSeed?.lotNumber || "";
+		const defaultExp = input.expirationDate || matchingSeed?.expirationDate || null;
+
 		const [created] = await tx
 			.insert(inventoryItems)
 			.values({
@@ -36,10 +51,10 @@ export async function deductImplantScrew(
 				stockQuantity: "0",
 				currentQty: "0",
 				criticalThreshold: "2",
-				unitCostRub: "12500.00",
-				pricePerUnit: "12500.00",
-				lotNumber: input.lotNumber ?? "LOT-AUTO",
-				expirationDate: input.expirationDate ?? "2028-12-31",
+				unitCostRub: defaultCostRub,
+				pricePerUnit: defaultCostRub,
+				lotNumber: defaultLot,
+				expirationDate: defaultExp,
 			})
 			.returning();
 		if (!created) {
@@ -48,12 +63,13 @@ export async function deductImplantScrew(
 		invItem = created;
 	}
 
-	const effectiveLotNumber = input.lotNumber || invItem.lotNumber || "LOT-REAL-STOCK";
-	const effectiveSerialNumber = input.serialNumber || `SN-${invItem.id.slice(0, 8).toUpperCase()}`;
+	const effectiveLotNumber = input.lotNumber || invItem.lotNumber || "";
+	const effectiveSerialNumber = input.serialNumber || (invItem.barcode && invItem.barcode.includes("SN-") ? invItem.barcode.split("SN-")[1] : "") || "";
 	const currentStock = Number(invItem.currentQty ?? invItem.stockQuantity ?? 0);
 	const newStock = Number((currentStock - 1).toFixed(4));
 	const isOverdraft = newStock < 0;
-	const implantUnitCostRub = Number(invItem.unitCostRub ?? invItem.pricePerUnit ?? 12500);
+	const implantUnitCostRub = Number(invItem.unitCostRub ?? invItem.pricePerUnit ?? 0);
+	const implantUnitCostKopecks = BigInt(Math.round(implantUnitCostRub * 100));
 
 	await tx
 		.update(inventoryItems)
@@ -86,6 +102,7 @@ export async function deductImplantScrew(
 		newStock,
 		isOverdraft,
 		implantUnitCostRub,
+		implantUnitCostKopecks: implantUnitCostKopecks.toString(),
 		effectiveLotNumber,
 		effectiveSerialNumber,
 	};

@@ -149,7 +149,7 @@ export function registerInstallationRoute(app: FastifyInstance) {
 
 			return {
 				...installation,
-				inventoryDeduction: { transactionId: screw.implantTx?.id ?? "", itemId: screw.invItem.id, itemName: screw.invItem.name, previousStock: screw.currentStock, newStock: screw.newStock, unitCostRub: String(screw.implantUnitCostRub), isOverdraft: screw.isOverdraft },
+				inventoryDeduction: { transactionId: screw.implantTx?.id ?? "", itemId: screw.invItem.id, itemName: screw.invItem.name, previousStock: screw.currentStock, newStock: screw.newStock, unitCostRub: String(screw.implantUnitCostRub), unitCostKopecks: screw.implantUnitCostKopecks, isOverdraft: screw.isOverdraft },
 				deductedMaterials: allDeductions,
 				financials,
 				isImmediateLoadingFeasible,

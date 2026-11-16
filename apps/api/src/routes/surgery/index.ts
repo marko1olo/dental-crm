@@ -161,37 +161,69 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 						? ["extracted_socket"]
 						: ["cured_apical"];
 
-				await tx
-					.delete(toothStates)
+				const [existingTooth] = await tx
+					.select()
+					.from(toothStates)
 					.where(
 						and(
 							eq(toothStates.organizationId, orgId),
 							eq(toothStates.patientId, targetPatientId),
 							eq(toothStates.toothNumber, input.toothNumberFdi),
 						),
-					);
-				await tx.insert(toothStates).values({
-					organizationId: orgId,
-					patientId: targetPatientId,
-					toothNumber: input.toothNumberFdi,
-					state: newState,
-					surfaces: newSurfaces,
-					notes: `Хирургическая операция: ${norm?.title || effectiveNormId}`,
-				});
+					)
+					.limit(1);
+
+				const existingSurfaces = Array.isArray(existingTooth?.surfaces)
+					? (existingTooth.surfaces as string[])
+					: [];
+				const mergedSurfaces = Array.from(new Set([...existingSurfaces, ...newSurfaces]));
+
+				const opNote = `Хирургическая операция: ${norm?.title || effectiveNormId}`;
+				const mergedNotes = existingTooth?.notes
+					? `${existingTooth.notes}; ${opNote}`
+					: opNote;
+
+				if (existingTooth) {
+					await tx
+						.update(toothStates)
+						.set({
+							state: newState,
+							surfaces: mergedSurfaces,
+							notes: mergedNotes,
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(toothStates.organizationId, orgId),
+								eq(toothStates.patientId, targetPatientId),
+								eq(toothStates.toothNumber, input.toothNumberFdi),
+							),
+						);
+				} else {
+					await tx.insert(toothStates).values({
+						organizationId: orgId,
+						patientId: targetPatientId,
+						toothNumber: input.toothNumberFdi,
+						state: newState,
+						surfaces: mergedSurfaces,
+						notes: mergedNotes,
+					});
+				}
 
 				await tx.insert(toothStateHistory).values({
 					organizationId: orgId,
 					patientId: targetPatientId,
 					toothNumber: input.toothNumberFdi,
 					newState,
-					newSurfaces,
+					newSurfaces: mergedSurfaces,
 					reason: `Хирургическая операция: ${norm?.title || effectiveNormId}`,
 				});
 			}
 
 			// Фиксация в счете/смете пациента (Мандат 8wy, SSOT)
-			const normPrice = norm?.catalogServices?.[0]?.priceRub ?? 8500;
+			const normPrice = norm?.catalogServices?.[0]?.priceRub ?? 0;
 			const operationPriceRub = input.services?.[0]?.priceRub ?? normPrice;
+			const operationPriceKopecks = BigInt(Math.round(operationPriceRub * 100));
 			const serviceTitle = input.services?.[0]?.nameRu ?? norm?.title ?? "Амбулаторная хирургическая операция";
 
 			let linkedInvoiceId: string | null = null;
@@ -238,6 +270,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				visitId: targetVisitId,
 				invoiceId: linkedInvoiceId,
 				operationPriceRub,
+				operationPriceKopecks: operationPriceKopecks.toString(),
 				normId: input.normId,
 				toothNumberFdi: input.toothNumberFdi,
 				protocolText: input.protocolText,

@@ -5,12 +5,25 @@
  */
 
 import type { SurgicalServiceItem, SurgicalService804n, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus } from "@dental/shared";
-import { CANONICAL_SURGICAL_OPERATION_NORMS } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { NORMALIZED_IMPLANT_SYSTEMS } from "../implants/implantCatalogData";
+import { CANONICAL_SURGICAL_OPERATION_NORMS, NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS } from "@dental/shared";
 import { DEFAULT_CANONICAL_IMPLANT_STOCK } from "../implants/implantQuickPresets";
+import {
+	quickDeductSurgicalMaterials,
+	type QuickDeductSurgicalMaterialsParams,
+	type SurgicalMaterialDeductionItem,
+	type SurgicalMaterialDeductionResult,
+} from "./surgeryMaterialDeductionService";
 
-export type { SurgicalServiceItem, SurgicalService804n, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus };
+export type {
+	SurgicalServiceItem,
+	SurgicalService804n,
+	SurgicalOperationNorm,
+	SurgicalWarehouseOverdraftStatus,
+	QuickDeductSurgicalMaterialsParams,
+	SurgicalMaterialDeductionItem,
+	SurgicalMaterialDeductionResult,
+};
+export { quickDeductSurgicalMaterials };
 export type WarehouseOverdraftStatus = SurgicalWarehouseOverdraftStatus;
 export type SurgeryScenarioType = "extraction" | "resection_periostotomy" | "sinus_gbr" | "implant";
 export type ExtractionComplexity = "simple" | "complex" | "impacted_dystopic";
@@ -34,9 +47,6 @@ export interface SurgicalMemoParams {
 export type PostExtractionMemoParams = SurgicalMemoParams;
 export interface StandardImplantationParams {
 	readonly toothFdi?: number; readonly brand?: string; readonly model?: string; readonly diameterMm?: number; readonly lengthMm?: number; readonly torqueNcm?: number; readonly isq?: number; readonly boneDensity?: string; readonly lotNumber?: string; readonly serialNumber?: string; readonly capType?: "fdm" | "plug"; readonly sutureMaterial?: string; readonly postOpXray?: boolean;
-}
-export interface SurgicalMaterialDeductionResult {
-	readonly success: boolean; readonly isOverdraft: boolean; readonly deductedItems: readonly { readonly name: string; readonly unit: string; readonly quantity: number; readonly isOverdraft: boolean }[]; readonly messageRu: string;
 }
 
 export const COMMON_SURGERY_TEETH = [46, 36, 16, 26, 48, 38, 18, 28, 11, 21, 14, 24, 34, 44] as const;
@@ -77,32 +87,42 @@ export const CLOSED_SINUS_LIFT_NORM_TEXT = "Инфильтрационная а�
 export const PERIOSTOTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез слизистой и надкостницы длиной 2 см по переходной складке в проекции корня причинного зуба до кости. Эвакуация гнойного экссудата. Промывание 0.05% хлоргексидином. В рану введен перчаточный резиновый ленточный дренаж-выпускник. Гемостаз полный. Назначена антибиотикотерапия. Контрольный осмотр и смена дренажа завтра.";
 export const APICOECTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Трапециевидный разрез слизистой в проекции верхушки корня, отслоен лоскут. Трепанация кортикальной пластинки шаровидным бором. Резекция верхушки корня на 3 мм под углом 90°. Цистэктомия очага. Ретроградное пломбирование МТА (ProRoot). Контроль гемостаза. Ушивание раны узловыми швами Монофиламент 5-0. Рекомендации даны.";
 export const PERICORONITIS_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Иссечение воспаленного слизистого капюшона над коронкой ретинированного зуба скальпелем. Промывание антисептиками (хлоргексидин 0.05%), йодоформная турунда. Гемостаз полный. Рекомендации даны.";
-export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = Object.values(NORMALIZED_IMPLANT_SYSTEMS).map((sys) => {
+export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = Object.values(SHARED_NORMALIZED_IMPLANT_SYSTEMS).map((sys) => {
+	const brandName =
+		sys.name.includes("Nobel")
+			? "Nobel Biocare"
+			: sys.name.includes("Astra")
+				? "Astra Tech"
+				: sys.name.split(" ")[0] || sys.id;
+	const id = sys.id === "nobel" ? "nobel_biocare" : sys.id === "astra" ? "astra_tech" : sys.id;
+
 	const stockItem = DEFAULT_CANONICAL_IMPLANT_STOCK.find((item) =>
-		item.name.toLowerCase().includes(sys.brandName.toLowerCase()) ||
+		item.name.toLowerCase().includes(brandName.toLowerCase()) ||
+		item.id.toLowerCase().includes(id.toLowerCase()) ||
 		item.id.toLowerCase().includes(sys.id.toLowerCase()),
 	);
-	const lotNumber = stockItem?.lotNumber || `LOT-${sys.id.slice(0, 3).toUpperCase()}-2024`;
-	const serialNumber = stockItem?.barcode ? stockItem.barcode.slice(-9) : `SN-${sys.id.slice(0, 3).toUpperCase()}-01`;
+	const lotNumber = stockItem?.lotNumber || `LOT-${id.slice(0, 3).toUpperCase()}-2024`;
+	const serialNumber = stockItem?.barcode ? stockItem.barcode.slice(-9) : `SN-${id.slice(0, 3).toUpperCase()}-01`;
 	const expirationDate = stockItem?.expirationDate || "2029-12-31";
+	const unitCostRub = stockItem?.pricePerUnit ? parseInt(stockItem.pricePerUnit, 10) || 35000 : 35000;
 
 	return {
-		id: sys.id,
-		brandName: sys.brandName,
-		unitCostRub: sys.defaultKitPriceRub,
-		popularLines: sys.popularLines,
-		platformName: sys.connectionDetails,
-		screwdriverType: sys.screwdriverType,
-		screwdriverAliasRu: sys.screwdriverAliasRu,
+		id,
+		brandName,
+		unitCostRub,
+		popularLines: sys.platformTypes,
+		platformName: sys.platformTypes.join(", "),
+		screwdriverType: sys.driverTool,
+		screwdriverAliasRu: sys.driverTool,
 		minTorqueNcm: sys.minInsertionTorqueNcm,
 		defaultTorqueNcm: sys.defaultTorqueNcm,
 		maxSafeTorqueNcm: sys.maxSafeTorqueNcm,
-		isqOptimalRange: sys.id === "straumann" || sys.id === "nobel_biocare" ? "70–85" : "68–85",
-		standardDiametersMm: sys.standardDiametersMm,
-		standardLengthsMm: sys.standardLengthsMm,
+		isqOptimalRange: id === "straumann" || id === "nobel_biocare" ? "70–85" : "68–85",
+		standardDiametersMm: sys.diametersMm,
+		standardLengthsMm: sys.lengthsMm,
 		defaultDiameterMm: sys.defaultDiameterMm,
 		defaultLengthMm: sys.defaultLengthMm,
-		defaultArticle: stockItem?.sku || sys.defaultArticlePrefix,
+		defaultArticle: stockItem?.sku || `${id.toUpperCase()}-${sys.defaultDiameterMm}-${sys.defaultLengthMm}`,
 		defaultLotNumber: lotNumber,
 		defaultSerialNumber: serialNumber,
 		defaultExpirationDate: expirationDate,
@@ -208,7 +228,16 @@ const FALLBACK_IMPLANT_SYSTEM: SurgeryImplantSystemSpec = {
 };
 
 export function getImplantSystemById(id: string): SurgeryImplantSystemSpec {
-	const found = SURGERY_IMPLANT_SYSTEMS.find((s) => s.id === id || s.brandName.toLowerCase() === id.toLowerCase());
+	const target = id.toLowerCase().trim();
+	const found = SURGERY_IMPLANT_SYSTEMS.find(
+		(s) =>
+			s.id.toLowerCase() === target ||
+			s.brandName.toLowerCase() === target ||
+			(target === "nobel" && s.id === "nobel_biocare") ||
+			(target === "nobel_biocare" && (s.id === "nobel" || s.id === "nobel_biocare")) ||
+			(target === "astra" && s.id === "astra_tech") ||
+			(target === "astra_tech" && (s.id === "astra" || s.id === "astra_tech")),
+	);
 	return found ?? SURGERY_IMPLANT_SYSTEMS[0] ?? FALLBACK_IMPLANT_SYSTEM;
 }
 
@@ -308,71 +337,6 @@ export function evaluateSurgerySoftOverdraft(materials: readonly { name: string;
 }
 export const evaluateWarehouseOverdraft = evaluateSurgerySoftOverdraft;
 
-export async function quickDeductSurgicalMaterials(params: {
-	materials: readonly { name: string; unit: string; quantity: number; isWarehouseCritical?: boolean | undefined }[];
-	hasWarehouseDelay?: boolean | undefined;
-	operationTitle?: string | undefined;
-	organizationId?: string | undefined;
-	category?: string | undefined;
-	protocolId?: string | undefined;
-	toothNumber?: number | undefined;
-	sutureMaterial?: string | undefined;
-	implantBrand?: string | undefined;
-	visitId?: string | undefined;
-}): Promise<SurgicalMaterialDeductionResult> {
-	let isOverdraft = Boolean(params.hasWarehouseDelay);
-	const title = params.operationTitle || "Хирургия";
-	const cat = params.category || (title.toLowerCase().includes("имплант") ? "implant" : title.toLowerCase().includes("синус") ? "sinus_gbr" : title.toLowerCase().includes("удален") ? "surgery_extraction" : title.toLowerCase().includes("резекц") ? "surgery_apicoectomy" : "surgery");
-
-	let bundleType: "surgery" | "implant" | "sinus_gbr" | "surgery_extraction" | "surgery_apicoectomy" | "anesthesia_carpule" = "surgery";
-	if (cat === "implant") bundleType = "implant";
-	else if (cat === "sinus_gbr") bundleType = "sinus_gbr";
-	else if (cat === "surgery_extraction" || cat === "extraction") bundleType = "surgery_extraction";
-	else if (cat === "surgery_apicoectomy" || cat === "resection_periostotomy") bundleType = "surgery_apicoectomy";
-
-	if (typeof fetch === "function") {
-		try {
-			const res = await fetch("/api/surgery/materials/quick-deduct", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					bundleType,
-					toothNumberFdi: params.toothNumber,
-					visitId: params.visitId,
-					notes: `Списание по техкарте «${title}» (${params.materials.length} поз.)`,
-				}),
-			});
-			if (res.ok) {
-				const body = await res.json().catch(() => null);
-				if (body?.isOverdraft !== undefined) {
-					isOverdraft = Boolean(body.isOverdraft);
-				}
-			}
-		} catch {
-			/* Soft Negative Stock: офлайн или сбой сети не блокирует операцию врача (Мандат 8e) */
-			isOverdraft = Boolean(params.hasWarehouseDelay);
-		}
-	}
-
-	const deductedItems = params.materials.map((m) => ({ name: m.name, unit: m.unit, quantity: m.quantity, isOverdraft }));
-	const messageRu = isOverdraft
-		? `Списано ${params.materials.length} поз. под операцию «${title}» в мягкий овердрафт без блокировки врача.`
-		: `Материалы операции «${title}» (${params.materials.length} поз.) успешно списаны.`;
-
-	if (typeof window !== "undefined") {
-		window.dispatchEvent(new CustomEvent("dente-quick-writeoff-surgical-materials", {
-			detail: {
-				materials: deductedItems,
-				isOverdraft,
-				operationTitle: title,
-				toothFdi: params.toothNumber,
-				timestamp: new Date().toISOString(),
-			},
-		}));
-	}
-
-	return { success: true, isOverdraft, deductedItems, messageRu };
-}
 
 export function buildStandardExtractionProtocolText(params: {
 	toothFdi?: number; complexity?: ExtractionComplexity; hemostasis?: readonly SurgicalHemostasisMethod[];
