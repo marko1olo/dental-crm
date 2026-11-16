@@ -171,12 +171,14 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 				sourceType,
 			});
 		} else {
-			const current = convMap.get(key)!;
-			current.unreadCount++;
-			if (new Date(evt.createdAt).getTime() > new Date(current.lastMessageAt).getTime()) {
-				current.lastMessage = evt.messageText || "[Сообщение]";
-				current.lastMessageAt = evt.createdAt.toISOString();
-				current.lastMessageDirection = "inbound";
+			const current = convMap.get(key);
+			if (current) {
+				current.unreadCount++;
+				if (new Date(evt.createdAt).getTime() > new Date(current.lastMessageAt).getTime()) {
+					current.lastMessage = evt.messageText || "[Сообщение]";
+					current.lastMessageAt = evt.createdAt.toISOString();
+					current.lastMessageDirection = "inbound";
+				}
 			}
 		}
 	}
@@ -232,11 +234,13 @@ export async function fetchInboxConversations(orgId: string): Promise<{ conversa
 				sourceType,
 			});
 		} else {
-			const current = convMap.get(key)!;
-			if (new Date(out.createdAt).getTime() > new Date(current.lastMessageAt).getTime()) {
-				current.lastMessage = out.message;
-				current.lastMessageAt = out.createdAt.toISOString();
-				current.lastMessageDirection = "outbound";
+			const current = convMap.get(key);
+			if (current) {
+				if (new Date(out.createdAt).getTime() > new Date(current.lastMessageAt).getTime()) {
+					current.lastMessage = out.message;
+					current.lastMessageAt = out.createdAt.toISOString();
+					current.lastMessageDirection = "outbound";
+				}
 			}
 		}
 	}

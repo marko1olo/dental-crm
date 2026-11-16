@@ -27,10 +27,7 @@ export function CommunicationsMobilePane({
 								communicationTasks: ctrl.effectiveTasks,
 								communicationEvents: ctrl.effectiveEvents ?? [],
 							}
-						: ({
-								communicationTasks: ctrl.effectiveTasks,
-								communicationEvents: ctrl.effectiveEvents ?? [],
-							} as any)
+						: undefined
 				}
 				onGoToSchedule={ctrl.onGoToSchedule}
 				completeCommunicationTask={ctrl.completeCommunicationTask}

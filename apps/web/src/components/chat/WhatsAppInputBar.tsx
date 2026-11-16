@@ -56,7 +56,7 @@ export function WhatsAppInputBar({
 	};
 
 	return (
-		<div className="p-3 bg-[var(--paper,#0f172a)] border-t border-[var(--line,#334155)] flex flex-col gap-2">
+		<div className="p-3 bg-[var(--paper)] border-t border-[var(--line)] flex flex-col gap-2">
 			<div className="flex items-end gap-2">
 				{/* Hidden file input */}
 				<input
@@ -73,7 +73,7 @@ export function WhatsAppInputBar({
 				<button
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
-					className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line,#334155)] bg-[var(--paper-soft,rgba(30,41,59,0.5))] hover:bg-slate-700/60 active:scale-95 text-[var(--muted,#94a3b8)] hover:text-white transition-all inline-flex items-center justify-center cursor-pointer"
+					className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-soft)]/80 active:scale-95 text-[var(--muted)] hover:text-[var(--ink)] transition-all inline-flex items-center justify-center cursor-pointer"
 					title="Прикрепить план лечения, рентген-снимок или документ (до 16 МБ)"
 					aria-label="Прикрепить файл"
 					data-testid="whatsapp-attach-file-btn"
@@ -81,7 +81,7 @@ export function WhatsAppInputBar({
 					<Paperclip size={18} />
 				</button>
 
-				<div className="flex-1 min-w-0 rounded-xl bg-[var(--paper-soft,rgba(30,41,59,0.5))] border border-[var(--line,#334155)] focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all p-2 flex flex-col">
+				<div className="flex-1 min-w-0 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] focus-within:border-[var(--teal)] focus-within:ring-2 focus-within:ring-[var(--teal)]/20 transition-all p-2 flex flex-col">
 					<textarea
 						ref={textareaRef}
 						value={inputText}
@@ -89,7 +89,7 @@ export function WhatsAppInputBar({
 						onKeyDown={handleKeyDown}
 						rows={Math.min(5, Math.max(1, inputText.split("\n").length))}
 						placeholder="Введите текст сообщения (Enter для отправки)..."
-						className="w-full bg-transparent text-xs sm:text-sm text-[var(--ink,#f8fafc)] focus:outline-none resize-none leading-relaxed min-w-0 break-words"
+						className="w-full bg-transparent text-xs sm:text-sm text-[var(--ink)] focus:outline-none resize-none leading-relaxed min-w-0 break-words"
 					/>
 				</div>
 
@@ -98,7 +98,7 @@ export function WhatsAppInputBar({
 					type="button"
 					onClick={onSendMessage}
 					disabled={isSending}
-					className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 active:scale-95 text-white font-bold text-xs sm:text-sm transition-all inline-flex items-center justify-center gap-1.5 shadow-md shadow-teal-950/40 cursor-pointer"
+					className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] disabled:opacity-40 active:scale-95 text-white font-bold text-xs sm:text-sm transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
 					aria-label="Отправить сообщение"
 				>
 					<Send size={16} className={isSending ? "animate-pulse" : ""} />

@@ -328,55 +328,6 @@ export function useOmnichannelOperatorDesk({
 		}
 	};
 
-	// ─── 6. Simulate Incoming Message (Demo & Test Trigger) ───
-	const handleSimulateIncoming = async () => {
-		if (!isDemoShowcaseMode()) {
-			showToast("Симуляция входящих сообщений доступна только в демонстрационном режиме", "warning");
-			return;
-		}
-		try {
-			const randomChannels: BotChannel[] = ["telegram", "vk", "whatsapp", "max"];
-			const ch = randomChannels[Math.floor(Math.random() * randomChannels.length)] ?? "telegram";
-			const testNames = [
-				"Алексей Николаевич С.",
-				"Мария Дмитриевна В.",
-				"Сергей Павлович К.",
-				"Елена Александровна Т.",
-			];
-			const randomName = testNames[Math.floor(Math.random() * testNames.length)] ?? "Тестовый Пациент";
-			const randomPhone = `79${Math.floor(100000000 + Math.random() * 900000000)}`;
-			const testPhrases = [
-				"Здравствуйте! Подскажите, есть ли свободное окно к терапевту на завтра?",
-				"Добрый день! Сколько стоит профессиональная гигиена полости рта?",
-				"Здравствуйте! Сильно разболелся зуб после пломбы, можно записаться на осмотр?",
-				"Добрый день! Хочу проконсультироваться по установке импланта.",
-			];
-			const randomText = testPhrases[Math.floor(Math.random() * testPhrases.length)] ?? "Здравствуйте!";
-
-			const res = await fetch("/api/bots/test-incoming", {
-				method: "POST",
-				headers: {
-					...denteAdminSecretRequestHeaders(),
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					channel: ch,
-					senderId: randomPhone,
-					senderName: randomName,
-					text: randomText,
-				}),
-			});
-
-			if (res.ok) {
-				showToast(`Тестовое сообщение от ${randomName} (${ch.toUpperCase()}) создано!`, "success");
-				await fetchConversations();
-			}
-		} catch (err: unknown) {
-			console.warn("[OmnichannelOperatorDesk] Error simulating message:", err);
-			showToast("Ошибка симуляции сообщения", "error");
-		}
-	};
-
 	// ─── 7. Quick Booking Handler (Mandate 8e) ───
 	const handleQuickBookingSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -535,7 +486,7 @@ export function useOmnichannelOperatorDesk({
 		bookingSendConfirmation, setBookingSendConfirmation, isBookingSubmitting, doctorsList,
 		isLinkPatientModalOpen, setIsLinkPatientModalOpen, newPatientFullName, setNewPatientFullName,
 		newPatientPhone, setNewPatientPhone, isLinkingSubmitting, fetchConversations, fetchMessages,
-		handleTakeover, handleRelease, handleSendMessage, handleSimulateIncoming,
+		handleTakeover, handleRelease, handleSendMessage,
 		handleQuickBookingSubmit, handleLinkPatientSubmit, handleOpenQuickBooking, handleOpenLinkPatient,
 	};
 }

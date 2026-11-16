@@ -1,8 +1,4 @@
 import type { Dashboard } from "@dental/shared";
-import {
-	DEMO_COMMUNICATION_EVENTS,
-	DEMO_COMMUNICATION_TASKS,
-} from "./communicationsConstants";
 import type { CommunicationEvent, CommunicationTask } from "./types";
 
 export function defaultFormatDateTime(value: string): string {
@@ -29,25 +25,18 @@ export function hasCommunicationSummaryNumbers(
 
 export function resolveEffectiveCommunicationEvents(
 	dashboard: Dashboard | undefined,
-	isDemo: boolean,
+	_isDemo?: boolean,
 ): CommunicationEvent[] | undefined {
-	if (dashboard?.communicationEvents !== undefined) {
-		return dashboard.communicationEvents.length > 0 || !isDemo
-			? dashboard.communicationEvents
-			: DEMO_COMMUNICATION_EVENTS;
-	}
-	return isDemo ? DEMO_COMMUNICATION_EVENTS : undefined;
+	return dashboard?.communicationEvents;
 }
 
 export function resolveEffectiveCommunicationTasks(
 	sortedCommunicationTasks: CommunicationTask[] | undefined,
 	dashboard: Dashboard | undefined,
-	isDemo: boolean,
+	_isDemo?: boolean,
 ): CommunicationTask[] {
-	const rawTasks =
-		Array.isArray(sortedCommunicationTasks) &&
-		sortedCommunicationTasks.length > 0
-			? sortedCommunicationTasks
-			: (dashboard?.communicationTasks ?? []);
-	return rawTasks.length > 0 ? rawTasks : isDemo ? DEMO_COMMUNICATION_TASKS : [];
+	if (Array.isArray(sortedCommunicationTasks) && sortedCommunicationTasks.length > 0) {
+		return sortedCommunicationTasks;
+	}
+	return dashboard?.communicationTasks ?? [];
 }

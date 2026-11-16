@@ -18,11 +18,11 @@ export interface MobileChatMessageItem {
 	direction: "inbound" | "outbound";
 	channel: "whatsapp" | "telegram" | "sms" | "max";
 	timestamp: string;
-	status?: "sent" | "delivered" | "read" | "failed";
+	status?: "sent" | "delivered" | "read" | "failed" | undefined;
 }
 
 export interface MobileCommunicationsMessengerProps {
-	dashboard: Dashboard;
+	dashboard?: Dashboard | null;
 	onGoToSchedule?: () => void;
 	completeCommunicationTask?: (
 		taskId: string,
@@ -44,8 +44,8 @@ export interface MobileCommunicationsMessengerProps {
 }
 
 export type ActiveSection = "dialogs" | "tasks" | "journal" | "bots";
-export type ChannelFilter = "all" | "whatsapp" | "telegram" | "sms";
-export type ChatChannel = "whatsapp" | "telegram" | "sms";
+export type ChannelFilter = "all" | "whatsapp" | "telegram" | "sms" | "max";
+export type ChatChannel = "whatsapp" | "telegram" | "sms" | "max";
 
 export interface ActivePatient {
 	id: string;

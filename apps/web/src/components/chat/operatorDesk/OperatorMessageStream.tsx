@@ -95,7 +95,7 @@ export function OperatorMessageStream({
 							{activeConv.patientId && onOpenPatientCard && (
 								<button
 									type="button"
-									onClick={() => onOpenPatientCard(activeConv.patientId!)}
+									onClick={() => onOpenPatientCard(activeConv.patientId || "")}
 									className="text-teal-600 hover:underline font-semibold cursor-pointer"
 								>
 									Карточка
@@ -107,11 +107,11 @@ export function OperatorMessageStream({
 
 				{/* Action Buttons: Запись на приём / Привязать к карте / Перехватить диалог */}
 				<div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
-					{/* Кнопка записи на прием в 1 клик (Мандат 8e) */}
+					{/* Быстрая запись на приём (Мандат 8e) */}
 					<button
 						type="button"
 						onClick={onOpenQuickBooking}
-						className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+						className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white shadow-sm transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
 						title="Записать пациента на приём"
 						data-testid="quick-book-chat-btn"
 					>
@@ -125,11 +125,11 @@ export function OperatorMessageStream({
 						<button
 							type="button"
 							onClick={onOpenLinkPatient}
-							className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--line,#e2e8f0)] transition-all flex items-center gap-1 cursor-pointer shrink-0"
+							className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-all flex items-center gap-1 cursor-pointer shrink-0"
 							title="Создать или привязать карту пациента"
 							data-testid="link-patient-chat-btn"
 						>
-							<Plus size={14} className="text-teal-600" />
+							<Plus size={14} className="text-[var(--teal)]" />
 							<span className="hidden md:inline">Создать карту</span>
 						</button>
 					)}
@@ -240,7 +240,7 @@ export function OperatorMessageStream({
 											? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] rounded-tl-sm"
 											: isBot
 												? "bg-sky-50 dark:bg-sky-950/40 text-sky-950 dark:text-sky-100 border-sky-200 dark:border-sky-800 rounded-tr-sm"
-												: "bg-teal-600 text-white border-teal-700 rounded-tr-sm"
+												: "bg-[var(--teal,#0d9488)] text-white border border-[var(--teal-dark,#0f766e)] rounded-tr-sm"
 									}`}
 								>
 									{m.text}

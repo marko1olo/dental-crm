@@ -13,9 +13,18 @@ export const StaffChatInput: React.FC<StaffChatInputProps> = ({
 	onChangeMessageText,
 	onSendMessage,
 }) => {
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!messageText.trim()) {
+			inputRef?.current?.focus();
+			return;
+		}
+		onSendMessage(e);
+	};
+
 	return (
 		<form
-			onSubmit={onSendMessage}
+			onSubmit={handleSubmit}
 			className="p-3 border-t border-[var(--line)] bg-[var(--paper-soft)]/60 flex items-center gap-2 select-none"
 		>
 			<input
@@ -29,7 +38,7 @@ export const StaffChatInput: React.FC<StaffChatInputProps> = ({
 			/>
 			<button
 				type="submit"
-				disabled={!messageText.trim() || isSending}
+				disabled={isSending}
 				className="primary-button min-h-[44px] px-4 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-bold text-xs disabled:opacity-40 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.97]"
 				data-testid="staff-chat-send-btn"
 			>

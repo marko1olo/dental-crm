@@ -3,6 +3,8 @@ import { db } from "../../../db/client.js";
 import {
 	appointments,
 	chairs,
+	clinics,
+	organizations,
 	patients,
 	users,
 } from "../../../db/schema.js";
@@ -123,7 +125,24 @@ export async function handleBookAppointment(
 		const formattedDate = startDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", weekday: "short" });
 		const formattedTime = startDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
-		const confirmText = `Здравствуйте, ${patient.fullName}! Вы успешно записаны на приём в клинику DENTE.\n\n📅 Дата: ${formattedDate}\n⏰ Время: ${formattedTime}\n👨‍⚕️ Врач: ${doctorName}\n🎯 Причина: ${reason}\n\n📍 Адрес: ул. Стоматологическая, 12 (парковка во дворе).\nЕсли потребуется перенести или отменить визит, просто ответьте в этот чат!`;
+		const [clinic] = await db
+			.select({ name: clinics.name, address: clinics.address })
+			.from(clinics)
+			.where(eq(clinics.organizationId, orgId))
+			.limit(1);
+
+		let clinicAddress = clinic?.address?.trim();
+		if (!clinicAddress) {
+			const [org] = await db
+				.select({ name: organizations.name, legalAddress: organizations.legalAddress })
+				.from(organizations)
+				.where(eq(organizations.id, orgId))
+				.limit(1);
+			clinicAddress = org?.legalAddress?.trim();
+		}
+
+		const addressLine = clinicAddress ? `\nАдрес: ${clinicAddress}` : "";
+		const confirmText = `Здравствуйте, ${patient.fullName}! Вы успешно записаны на приём в клинику.\n\nДата: ${formattedDate}\nВремя: ${formattedTime}\nВрач: ${doctorName}\nПричина: ${reason}${addressLine}\n\nЕсли потребуется перенести или отменить визит, ответьте в этот чат.`;
 
 		await omnichannelBotEngine.sendOperatorMessage({
 			channel,

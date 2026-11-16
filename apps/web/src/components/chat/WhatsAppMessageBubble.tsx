@@ -25,13 +25,13 @@ export function WhatsAppMessageBubble({ msg }: WhatsAppMessageBubbleProps) {
 			<div
 				className={`min-w-0 break-words max-w-[85%] sm:max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm text-xs sm:text-sm font-normal leading-relaxed ${
 					isClinic
-						? "bg-gradient-to-br from-teal-700 to-teal-800 text-white rounded-tr-sm border border-teal-600/40"
-						: "bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] rounded-tl-sm border border-[var(--line,#334155)]"
+						? "bg-[var(--teal,#0d9488)] text-white rounded-tr-sm border border-[var(--teal-dark,#0f766e)]"
+						: "bg-[var(--paper-soft)] text-[var(--ink)] rounded-tl-sm border border-[var(--line)]"
 				}`}
 			>
 				{/* Sender name on incoming message */}
 				{!isClinic && msg.senderName && (
-					<div className="font-bold text-[10px] uppercase tracking-wider text-teal-400 mb-1">
+					<div className="font-bold text-[10px] uppercase tracking-wider text-[var(--teal)] mb-1">
 						{msg.senderName}
 					</div>
 				)}
@@ -42,7 +42,7 @@ export function WhatsAppMessageBubble({ msg }: WhatsAppMessageBubbleProps) {
 				{/* Timestamp & Status Icon */}
 				<div
 					className={`flex items-center justify-end gap-1 mt-1 text-[10px] font-mono ${
-						isClinic ? "text-teal-200/80" : "text-[var(--muted,#94a3b8)]"
+						isClinic ? "text-teal-100" : "text-[var(--muted)]"
 					}`}
 				>
 					<span>{timeStr}</span>
@@ -64,7 +64,7 @@ export function WhatsAppMessageBubble({ msg }: WhatsAppMessageBubbleProps) {
 							) : msg.status === "delivered" ? (
 								<CheckCheck size={13} className="opacity-70" />
 							) : msg.status === "failed" ? (
-								<AlertCircle size={13} className="text-rose-400" />
+								<AlertCircle size={13} className="text-[var(--danger,#ef4444)]" />
 							) : (
 								<Check size={13} className="opacity-70" />
 							)}

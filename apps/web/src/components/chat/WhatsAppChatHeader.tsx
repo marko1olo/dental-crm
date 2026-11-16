@@ -70,16 +70,16 @@ export function WhatsAppChatHeader({
 	return (
 		<>
 			{/* Apple Mobile HIG Drag Handle for 390px Viewports */}
-			<div className="sm:hidden w-10 h-1.5 rounded-full bg-[var(--line-strong,#475569)] mx-auto mt-2 mb-1 shrink-0" />
+			<div className="sm:hidden w-10 h-1.5 rounded-full bg-[var(--line-strong)] mx-auto mt-2 mb-1 shrink-0" />
 
 			{/* Top Bar: Patient Profile Info & Actions (Single row 36px/44px, Hick's law) */}
-			<div className="flex items-center justify-between px-4 py-3 bg-[var(--paper-soft,rgba(30,41,59,0.7))] border-b border-[var(--line,#334155)] backdrop-blur-md">
+			<div className="flex items-center justify-between px-4 py-3 bg-[var(--paper-soft)] border-b border-[var(--line)] backdrop-blur-md">
 				<div className="flex items-center gap-3 min-w-0">
 					{onClose && (
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
+							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center transition-colors"
 							aria-label="Назад / Закрыть чат"
 						>
 							<ArrowLeft size={18} />
@@ -100,21 +100,21 @@ export function WhatsAppChatHeader({
 
 					<div className="min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
-							<h3 className="text-sm sm:text-base font-bold text-[var(--ink,#f8fafc)] leading-tight truncate">
+							<h3 className="text-sm sm:text-base font-bold text-[var(--ink)] leading-tight truncate">
 								{effectiveName}
 							</h3>
 							{isPatient ? (
-								<span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-1.5 py-0.5 rounded-md">
+								<span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#2dd4bf)] bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal)]/30 px-1.5 py-0.5 rounded-md">
 									<UserCheck size={11} /> Пациент
 								</span>
 							) : (
-								<span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-950/80 border border-amber-800/60 px-1.5 py-0.5 rounded-md">
+								<span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--warn)] bg-[var(--warn-soft,rgba(245,158,11,0.12))] border border-[var(--warn)]/30 px-1.5 py-0.5 rounded-md">
 									<AlertCircle size={11} /> Лид
 								</span>
 							)}
 						</div>
 
-						<div className="flex items-center gap-2 text-xs text-[var(--muted,#94a3b8)] font-mono mt-0.5">
+						<div className="flex items-center gap-2 text-xs text-[var(--muted)] font-mono mt-0.5">
 							<span>{formattedPhone}</span>
 							<span
 								className={`w-1.5 h-1.5 rounded-full ${
@@ -150,7 +150,7 @@ export function WhatsAppChatHeader({
 						type="button"
 						onClick={onRefresh}
 						disabled={isLoading}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center transition-colors"
 						title="Обновить переписку"
 						aria-label="Обновить переписку"
 					>
@@ -160,7 +160,7 @@ export function WhatsAppChatHeader({
 					<button
 						type="button"
 						onClick={onToggleSearch}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center transition-colors"
 						title="Поиск по сообщениям"
 						aria-label="Поиск по сообщениям"
 					>
@@ -170,7 +170,7 @@ export function WhatsAppChatHeader({
 					<button
 						type="button"
 						onClick={onCallPatient}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-teal-400 hover:bg-teal-500/10 inline-flex items-center justify-center transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-[var(--teal)] hover:bg-[var(--teal)]/10 inline-flex items-center justify-center transition-colors"
 						title={`Позвонить пациенту ${formattedPhone}`}
 						aria-label={`Позвонить пациенту ${formattedPhone}`}
 					>
@@ -180,7 +180,7 @@ export function WhatsAppChatHeader({
 					<button
 						type="button"
 						onClick={onLaunchWhatsAppNative}
-						className="min-h-[44px] px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-md shadow-emerald-950/40"
+						className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-sm"
 						title="Открыть чат в приложении WhatsApp"
 						aria-label="Открыть в WhatsApp"
 					>
@@ -192,7 +192,7 @@ export function WhatsAppChatHeader({
 
 			{/* Search Input Bar (if toggled) */}
 			{isSearchOpen && (
-				<div className="p-2 bg-[var(--paper-soft,rgba(30,41,59,0.5))] border-b border-[var(--line,#334155)] flex items-center gap-2 animate-fade-in">
+				<div className="p-2 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center gap-2 animate-fade-in">
 					<div className="dente-search-wrap w-full">
 						<Search size={14} className="dente-search-icon" />
 						<input

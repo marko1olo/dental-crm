@@ -4,11 +4,11 @@ import { ChairsideAssistantReasonsDropdown } from "./ChairsideAssistantReasonsDr
 import { useChairsideIntercomPing } from "./useChairsideIntercomPing";
 
 export interface ChairsideIntercomBarProps {
-	cabinetNumber?: string;
-	patientId?: string;
-	patientName?: string;
-	onOpenMessenger?: () => void;
-	className?: string;
+	cabinetNumber?: string | undefined;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	onOpenMessenger?: (() => void) | undefined;
+	className?: string | undefined;
 }
 
 export const ChairsideIntercomBar: React.FC<ChairsideIntercomBarProps> = ({
@@ -36,7 +36,7 @@ export const ChairsideIntercomBar: React.FC<ChairsideIntercomBarProps> = ({
 								? "bg-[var(--teal)] text-white"
 								: "bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#2dd4bf)]"
 						}`}
-						title="Срочно вызвать ассистента к установке в 1 тап" data-testid="chairside-call-assistant-btn"
+						title="Срочно вызвать ассистента к установке" data-testid="chairside-call-assistant-btn"
 					>
 						<User size={16} className="shrink-0" />
 						<span>Нужен ассистент</span>
@@ -95,9 +95,9 @@ export const ChairsideIntercomBar: React.FC<ChairsideIntercomBarProps> = ({
 
 			<button
 				type="button" disabled={pingState.isSending} onClick={() => pingState.handlePing("urgent_doctor_call")}
-				className="h-11 min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 border border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 transition-all cursor-pointer shadow-xs active:scale-[0.97] shrink-0"
+				className="h-11 min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 border border-[var(--danger,#ef4444)]/40 bg-[var(--danger,#ef4444)]/15 hover:bg-[var(--danger,#ef4444)]/25 text-[var(--danger,#ef4444)] dark:text-rose-300 transition-all cursor-pointer shadow-xs active:scale-[0.97] shrink-0"
 				title="Экстренный вызов дежурного врача в кабинет!" data-testid="chairside-sos-btn"
-			><ShieldAlert size={16} className="text-rose-600 dark:text-rose-400 shrink-0" /><span>SOS</span></button>
+			><ShieldAlert size={16} className="text-[var(--danger,#ef4444)] shrink-0" /><span>SOS</span></button>
 
 			{onOpenMessenger && (
 				<button

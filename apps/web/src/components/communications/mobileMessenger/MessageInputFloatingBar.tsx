@@ -14,8 +14,8 @@ export interface MessageInputFloatingBarProps {
 	onSendMessage: () => void | Promise<void>;
 	isSendingMessage: boolean;
 	textareaRef: React.RefObject<HTMLTextAreaElement | null>;
-	fileInputRef?: React.RefObject<HTMLInputElement | null>;
-	onFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	fileInputRef?: React.RefObject<HTMLInputElement | null> | undefined;
+	onFileChange?: ((e: React.ChangeEvent<HTMLInputElement>) => void) | undefined;
 }
 
 export const MessageInputFloatingBar: React.FC<MessageInputFloatingBarProps> = ({

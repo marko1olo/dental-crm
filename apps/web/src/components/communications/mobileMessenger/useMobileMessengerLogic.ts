@@ -64,10 +64,11 @@ export function useMobileMessengerLogic({
 	}, [selectedPatientId, dashboard?.appointments, dashboard?.clinicSettings?.staff, dashboard?.todayIso]);
 
 	const activeTreatmentPlan = useMemo(() => {
-		if (patientInsight?.treatmentPlanTitle) {
+		const insight = patientInsight as (typeof patientInsight & { treatmentPlanTitle?: string; treatmentPlanTotalRub?: string }) | null;
+		if (insight?.treatmentPlanTitle) {
 			return {
-				title: patientInsight.treatmentPlanTitle,
-				totalRub: patientInsight.treatmentPlanTotalRub || "0",
+				title: insight.treatmentPlanTitle,
+				totalRub: insight.treatmentPlanTotalRub || "0",
 			};
 		}
 		return null;

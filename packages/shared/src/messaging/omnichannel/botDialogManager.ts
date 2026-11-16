@@ -136,8 +136,8 @@ export class BotDialogManager {
 
 			const buttons: BotKeyboardButton[][] = [
 				[
-					{ text: "📞 Позвонить в клинику", callbackData: "handover:call_clinic" },
-					{ text: "📍 Маршрут до клиники", callbackData: "nav:route" },
+					{ text: "Позвонить в клинику", callbackData: "handover:call_clinic" },
+					{ text: "Маршрут до клиники", callbackData: "nav:route" },
 				],
 			];
 
@@ -206,16 +206,16 @@ export class BotDialogManager {
 
 			const buttons: BotKeyboardButton[][] = [
 				[
-					{ text: "🦷 Терапия / Лечение кариеса", callbackData: "spec:therapy" },
-					{ text: "✨ Профгигиена полости рта", callbackData: "spec:hygiene" },
+					{ text: "Терапия / Лечение кариеса", callbackData: "spec:therapy" },
+					{ text: "Профгигиена полости рта", callbackData: "spec:hygiene" },
 				],
 				[
-					{ text: "👑 Ортопедия / Коронки / Виниры", callbackData: "spec:orthopedics" },
-					{ text: "🔩 Хирургия / Имплантация", callbackData: "spec:surgery" },
+					{ text: "Ортопедия / Коронки / Виниры", callbackData: "spec:orthopedics" },
+					{ text: "Хирургия / Имплантация", callbackData: "spec:surgery" },
 				],
 				[
-					{ text: "📐 Ортодонтия / Брекеты / Элайнеры", callbackData: "spec:orthodontics" },
-					{ text: "📞 Позвать администратора", callbackData: "handover:request" },
+					{ text: "Ортодонтия / Брекеты / Элайнеры", callbackData: "spec:orthodontics" },
+					{ text: "Связаться с администратором", callbackData: "handover:request" },
 				],
 			];
 
@@ -238,8 +238,8 @@ export class BotDialogManager {
 
 			const buttons: BotKeyboardButton[][] = [
 				[
-					{ text: "📅 Записаться на прием", callbackData: "intent:booking" },
-					{ text: "📞 Задать вопрос администратору", callbackData: "handover:request" },
+					{ text: "Записаться на прием", callbackData: "intent:booking" },
+					{ text: "Задать вопрос администратору", callbackData: "handover:request" },
 				],
 			];
 
@@ -267,13 +267,13 @@ export class BotDialogManager {
 		}
 
 		if (intent === "confirm") {
-			const replyText = "✅ Спасибо! Ваш визит подтвержден. Будем рады видеть вас в клинике DENTE!";
+			const replyText = "Спасибо! Ваш визит подтвержден. Будем рады видеть вас в клинике DENTE!";
 			this.recordBotReply(context, replyText, intent);
 			return { text: replyText };
 		}
 
 		if (intent === "cancel") {
-			const replyText = "❌ Ваша запись отменена. Если вам снова потребуется помощь стоматолога, мы всегда на связи.";
+			const replyText = "Ваша запись отменена. Если вам снова потребуется помощь стоматолога, мы всегда на связи.";
 			this.recordBotReply(context, replyText, intent);
 			return { text: replyText };
 		}
@@ -281,13 +281,13 @@ export class BotDialogManager {
 		if (intent === "reschedule") {
 			context.currentState = "awaiting_specialty";
 			const replyText =
-				"🔄 Поняли вас, давайте подберем другое удобное время.\n" +
+				"Поняли вас, давайте подберем другое удобное время.\n" +
 				"Уточните, пожалуйста, к какому врачу вы записаны, или выберите направление:";
 
 			const buttons: BotKeyboardButton[][] = [
 				[
-					{ text: "📅 Посмотреть свободные окна", callbackData: "slot:nearest" },
-					{ text: "📞 Позвать администратора", callbackData: "handover:request" },
+					{ text: "Посмотреть свободные окна", callbackData: "slot:nearest" },
+					{ text: "Связаться с администратором", callbackData: "handover:request" },
 				],
 			];
 
@@ -302,12 +302,12 @@ export class BotDialogManager {
 
 		const buttons: BotKeyboardButton[][] = [
 			[
-				{ text: "📅 Записаться на прием", callbackData: "intent:booking" },
-				{ text: "💰 Узнать цены на услуги", callbackData: "intent:price_faq" },
+				{ text: "Записаться на прием", callbackData: "intent:booking" },
+				{ text: "Узнать цены на услуги", callbackData: "intent:price_faq" },
 			],
 			[
-				{ text: "🚨 Острая боль / Экстренно", callbackData: "intent:emergency" },
-				{ text: "📞 Связаться с администратором", callbackData: "handover:request" },
+				{ text: "Острая боль / Экстренно", callbackData: "intent:emergency" },
+				{ text: "Связаться с администратором", callbackData: "handover:request" },
 			],
 		];
 
@@ -352,14 +352,14 @@ export class BotDialogManager {
 
 			const replyText =
 				`Отлично! Вы выбрали запись:\n` +
-				`👨‍⚕️ Врач: ${matchedSlot.doctorName} (${matchedSlot.specialty})\n` +
-				`🕒 Время: ${matchedSlot.dateFormatted} в ${matchedSlot.timeFormatted}\n\n` +
+				`Врач: ${matchedSlot.doctorName} (${matchedSlot.specialty})\n` +
+				`Время: ${matchedSlot.dateFormatted} в ${matchedSlot.timeFormatted}\n\n` +
 				`Подтвердить бронирование?`;
 
 			const buttons: BotKeyboardButton[][] = [
 				[
-					{ text: "✅ Подтвердить запись", callbackData: `book:confirm:${matchedSlot.slotId}` },
-					{ text: "🔄 Выбрать другое время", callbackData: "slot:nearest" },
+					{ text: "Подтвердить запись", callbackData: `book:confirm:${matchedSlot.slotId}` },
+					{ text: "Выбрать другое время", callbackData: "slot:nearest" },
 				],
 			];
 
@@ -377,8 +377,8 @@ export class BotDialogManager {
 
 		const buttons: BotKeyboardButton[][] = [
 			[
-				{ text: "📅 Ближайшие свободные окна", callbackData: "slot:nearest" },
-				{ text: "📞 Связаться с администратором", callbackData: "handover:request" },
+				{ text: "Ближайшие свободные окна", callbackData: "slot:nearest" },
+				{ text: "Связаться с администратором", callbackData: "handover:request" },
 			],
 		];
 
@@ -429,7 +429,7 @@ export class BotDialogManager {
 		if (payload.startsWith("book:confirm:")) {
 			context.currentState = "completed";
 			const replyText =
-				`🎉 Запись успешно подтверждена!\n` +
+				`Запись успешно подтверждена!\n` +
 				(context.selectedDoctorName ? `Врач: ${context.selectedDoctorName}\n` : "") +
 				(context.selectedSlotTime ? `Время: ${context.selectedSlotTime}\n\n` : "") +
 				`Ждем вас в клинике DENTE! Накануне визита мы пришлем вам напоминание.`;

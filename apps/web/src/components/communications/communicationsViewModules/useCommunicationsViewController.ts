@@ -3,6 +3,7 @@ import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { sliceDomList } from "../../../utils/domVirtualizationHelper";
+import { documentLabels as DEFAULT_DOCUMENT_LABELS } from "../../../workspaceUiLabels";
 import { summarizeJournal } from "../journalDigest";
 import {
 	COMMUNICATION_NOTE_DESCRIPTION_ID, COMMUNICATION_NOTE_INPUT_ID,
@@ -14,12 +15,17 @@ import {
 	defaultFormatDateTime, hasCommunicationSummaryNumbers,
 	resolveEffectiveCommunicationEvents, resolveEffectiveCommunicationTasks,
 } from "./communicationsUtils";
-import type { CommunicationEvent, CommunicationsViewProps } from "./types";
+import type { CommunicationActiveSection, CommunicationEvent, CommunicationsViewProps } from "./types";
 import { useCommunicationsNavigation } from "./useCommunicationsNavigation";
 
-export function useCommunicationsViewController(rawProps?: Partial<CommunicationsViewProps>) {
-	const logicContext = useOptionalAppLogicContext() ?? ({} as any);
-	const props = { ...logicContext, ...rawProps } as any;
+export interface UseCommunicationsViewOptions extends Partial<CommunicationsViewProps> {
+	activeSection?: CommunicationActiveSection;
+	setCommunicationNote?: (value: string) => void;
+}
+
+export function useCommunicationsViewController(rawProps?: UseCommunicationsViewOptions) {
+	const logicContext = useOptionalAppLogicContext();
+	const props: UseCommunicationsViewOptions = { ...logicContext, ...rawProps };
 
 	const {
 		communicationChannelLabels = DEFAULT_COMMUNICATION_CHANNEL_LABELS,
@@ -30,11 +36,11 @@ export function useCommunicationsViewController(rawProps?: Partial<Communication
 		communicationSavingTaskId = props.communicationSavingTaskId ?? null,
 		communicationStatusLabels = DEFAULT_COMMUNICATION_STATUS_LABELS,
 		completeCommunicationTask = () => {},
-		dashboard,
+		dashboard = logicContext?.dashboard,
 		documentKindsForCommunicationTask = () => [],
-		documentLabels = {},
+		documentLabels = props.documentLabels ?? DEFAULT_DOCUMENT_LABELS,
 		formatDateTime = defaultFormatDateTime,
-		onCommunicationNoteChange = props.onCommunicationNoteChange ?? (props as any).setCommunicationNote ?? (() => {}),
+		onCommunicationNoteChange = props.onCommunicationNoteChange ?? props.setCommunicationNote ?? (() => {}),
 		onGoToSchedule = props.onGoToSchedule ?? (() => { window.location.hash = "schedule"; }),
 		openCommunicationTaskDocumentWorkflow = () => {},
 		sortedCommunicationTasks,
@@ -65,7 +71,7 @@ export function useCommunicationsViewController(rawProps?: Partial<Communication
 		communicationNoteInputId: COMMUNICATION_NOTE_INPUT_ID,
 		communicationPriorityLabels, communicationSavingTaskId, communicationStatusLabels,
 		communicationSummaryHasNumbers: hasCommunicationSummaryNumbers(dashboard),
-		completeCommunicationTask, dashboard: dashboard!,
+		completeCommunicationTask, dashboard,
 		documentKindsForCommunicationTask, documentLabels,
 		effectiveEvents, effectiveTasks, formatDateTime,
 		isDemo, isMobile,

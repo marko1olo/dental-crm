@@ -50,7 +50,6 @@ export function OmnichannelOperatorDeskView({
 		setSelectedKey,
 		setIsMobileThreadOpen,
 		fetchConversations,
-		handleSimulateIncoming,
 		setChannelFilter,
 		setStatusFilter,
 		setSearchQuery,

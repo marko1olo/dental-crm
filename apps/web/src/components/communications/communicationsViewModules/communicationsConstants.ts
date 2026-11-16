@@ -1,8 +1,5 @@
 import type { StaffRole } from "@dental/shared";
-import { DEMO_COMMUNICATION_EVENTS, DEMO_COMMUNICATION_TASKS } from "./communicationsDemoData";
 import type { CommunicationTask } from "./types";
-
-export { DEMO_COMMUNICATION_EVENTS, DEMO_COMMUNICATION_TASKS };
 
 export const DEFAULT_COMMUNICATION_CHANNEL_LABELS: Record<CommunicationTask["channel"], string> = {
 	whatsapp: "WhatsApp", telegram: "Telegram", sms: "СМС",

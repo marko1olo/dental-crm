@@ -55,7 +55,7 @@ export const MobileTasksSection: React.FC<MobileTasksSectionProps> = ({ tasks, p
 							documentKinds={documentKindsForCommunicationTask(task)}
 							documentLabels={documentLabels} formatDateTime={formatDateTime}
 							openCommunicationTaskDocumentWorkflow={openCommunicationTaskDocumentWorkflow || (() => {})}
-							staffRoleLabels={staffRoleLabels} appointments={dashboard.appointments}
+							staffRoleLabels={staffRoleLabels} appointments={dashboard?.appointments || []}
 						/>
 					))}
 				</div>

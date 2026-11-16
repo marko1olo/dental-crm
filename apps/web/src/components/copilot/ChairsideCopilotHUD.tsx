@@ -8,6 +8,7 @@ import { ChairsideHUDCapsule } from "./chairside/ChairsideHUDCapsule";
 import { ChairsideThoughtStream } from "./chairside/ChairsideThoughtStream";
 import { ChairsideHUDComposer } from "./chairside/ChairsideHUDComposer";
 import { ChairsideHUDFooter } from "./chairside/ChairsideHUDFooter";
+import { ChairsideIntercomBar } from "../communications/ChairsideIntercomBar";
 import { mapVoiceIntentToHUDProposals } from "./chairside/chairsideVoiceIntentMapper";
 import type {
   ChairsideCopilotHUDProps, ChairsideThoughtStep, ChairsideToothProposal,
@@ -451,6 +452,13 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
         {/* Expanded Body Panel */}
         {isDrawerOpen && (
           <div className="chairside-hud-expanded-body chairside-hud-body p-3 flex flex-col gap-3">
+            {/* Chairside Intercom Bar (Mandates 8bj, 8aq) */}
+            <ChairsideIntercomBar
+              cabinetNumber="1"
+              patientId={props.patientId || undefined}
+              patientName={displayPatientName}
+            />
+
             {/* Passive Allergy Notice (Mandates 8e, 8y) - strictly AlertCircle vector icon, zero emojis */}
             {patientAllergies && patientAllergies.length > 0 && (
               <div className="chairside-hud-alert flex items-center gap-2 p-2 rounded-lg bg-[var(--warn)]/10 border border-[var(--warn)]/20 text-xs text-[var(--ink)]" data-testid="chairside-patient-allergies">

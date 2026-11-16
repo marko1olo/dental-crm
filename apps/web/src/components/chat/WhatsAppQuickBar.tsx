@@ -30,16 +30,16 @@ export function WhatsAppQuickBar({
 	onDirectSendTemplate,
 }: WhatsAppQuickBarProps) {
 	return (
-		<div className="p-2.5 bg-[var(--paper,#0f172a)] border-b border-[var(--line,#334155)]">
+		<div className="p-2.5 bg-[var(--paper)] border-b border-[var(--line)]">
 			<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] px-1 flex items-center gap-1">
+				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-1 flex items-center gap-1">
 					<Sparkles size={11} className="text-teal-600 dark:text-teal-400" />
 					<span>Быстрые шаблоны с клинической памяткой:</span>
 				</div>
 
 				{/* Omnichannel Channel Selector (Apple HIG Segmented Control) */}
 				<div
-					className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-soft,rgba(30,41,59,0.7))] border border-[var(--line,#334155)] shadow-xs"
+					className="inline-flex items-center p-0.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-xs"
 					role="radiogroup"
 					aria-label="Канал связи"
 				>
@@ -48,8 +48,8 @@ export function WhatsAppQuickBar({
 						onClick={() => onSelectChannel("whatsapp")}
 						className={`min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
 							selectedChannel === "whatsapp"
-								? "bg-emerald-600 text-white shadow-xs"
-								: "text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
+								? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						role="radio"
 						aria-checked={selectedChannel === "whatsapp"}
@@ -64,7 +64,7 @@ export function WhatsAppQuickBar({
 						className={`min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
 							selectedChannel === "telegram"
 								? "bg-sky-600 text-white shadow-xs"
-								: "text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						role="radio"
 						aria-checked={selectedChannel === "telegram"}
@@ -79,7 +79,7 @@ export function WhatsAppQuickBar({
 						className={`min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
 							selectedChannel === "sms"
 								? "bg-violet-600 text-white shadow-xs"
-								: "text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 						role="radio"
 						aria-checked={selectedChannel === "sms"}
@@ -99,7 +99,7 @@ export function WhatsAppQuickBar({
 						className={`min-h-[44px] rounded-xl border text-xs font-semibold whitespace-nowrap transition-all inline-flex items-stretch flex-shrink-0 shadow-xs overflow-hidden ${
 							selectedChipTemplate === tmpl.id
 								? "bg-teal-600 text-white border-teal-400 shadow-md ring-2 ring-teal-400/30"
-								: "bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#f8fafc)] border-[var(--line,#334155)] hover:border-teal-500/50"
+								: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-teal-500/50"
 						}`}
 					>
 						<button
@@ -115,7 +115,7 @@ export function WhatsAppQuickBar({
 							type="button"
 							onClick={() => onDirectSendTemplate(tmpl)}
 							disabled={isSending}
-							className="min-h-[44px] min-w-[36px] px-2 border-l border-[var(--line,#334155)] bg-transparent hover:bg-teal-700/60 dark:hover:bg-teal-500/30 text-teal-600 dark:text-teal-400 hover:text-white transition-colors flex items-center justify-center disabled:opacity-40"
+							className="min-h-[44px] min-w-[36px] px-2 border-l border-[var(--line)] bg-transparent hover:bg-teal-700/60 dark:hover:bg-teal-500/30 text-teal-600 dark:text-teal-400 hover:text-white transition-colors flex items-center justify-center disabled:opacity-40"
 							title={`Отправить сразу: ${tmpl.label}`}
 							aria-label={`Отправить сразу: ${tmpl.label}`}
 							data-testid={`quick-send-${tmpl.id}`}
