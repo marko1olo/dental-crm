@@ -1,4 +1,4 @@
-import type { StandardZtlPreset } from "../orthopedicsPresets.js";
+import type { StandardZtlPreset } from "../orthopedicCatalogData.js";
 import type { CanonicalManufacturing5StageItem } from "../../lab/labMath.js";
 
 export interface OrthopedicsZtlSelectorsProps {

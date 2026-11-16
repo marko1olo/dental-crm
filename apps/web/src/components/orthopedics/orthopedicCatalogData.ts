@@ -79,15 +79,6 @@ export interface StandardZtlPreset {
 	readonly hasAntagonists: boolean;
 }
 
-export type ManufacturingStageId = "impression" | "framework" | "try_in" | "ceramics" | "ready" | "fixed";
-
-export interface ManufacturingStageInfo {
-	readonly id: ManufacturingStageId;
-	readonly stepNumber: number;
-	readonly labelRu: string;
-	readonly descriptionRu: string;
-	readonly estimatedDays: number;
-}
 
 export interface OrthopedicEconomicsCalculation {
 	readonly unitsCount: number;
@@ -270,33 +261,12 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 	},
 ] as const;
 
-export const ORTHOPEDIC_MANUFACTURING_STAGES: readonly ManufacturingStageInfo[] = [
-	{ id: "impression", stepNumber: 1, labelRu: "Слепок / 3D интраоральный скан", descriptionRu: "Снятие цифровых или силиконовых оттисков и регистрация прикуса", estimatedDays: 1 },
-	{ id: "framework", stepNumber: 2, labelRu: "Моделирование и фрезеровка каркаса", descriptionRu: "CAD/CAM фрезеровка каркаса или печать примерки", estimatedDays: 2 },
-	{ id: "try_in", stepNumber: 3, labelRu: "Примерка каркаса у кресла", descriptionRu: "Проверка прилегания по уступу и окклюзионных контактов", estimatedDays: 1 },
-	{ id: "ceramics", stepNumber: 4, labelRu: "Нанесение керамики и индивидуализация", descriptionRu: "Послойное запекание дентина, эмали и глазурование по шкале Vita", estimatedDays: 2 },
-	{ id: "ready", stepNumber: 5, labelRu: "Готовая работа доставлена из ЗТЛ", descriptionRu: "Контроль качества конструкции и паспорта изделия", estimatedDays: 1 },
-	{ id: "fixed", stepNumber: 6, labelRu: "Постоянная фиксация у кресла", descriptionRu: "Окончательная посадка на цемент или винтовую фиксацию", estimatedDays: 0 },
-] as const;
-
 // ============================================================================
 // 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ И РАСЧЕТЫ
 // ============================================================================
 
 export function getZtlPresetById(id: string): StandardZtlPreset | undefined {
 	return STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === id);
-}
-
-export function getPreparationMarginById(id: string): PreparationMarginPreset | undefined {
-	return PREPARATION_MARGIN_PRESETS.find((m) => m.id === id);
-}
-
-export function getFixationPresetById(id: string): FixationTypePreset | undefined {
-	return FIXATION_TYPE_PRESETS.find((f) => f.id === id);
-}
-
-export function getStumpShadeByCode(code: string): StumpShadeOption | undefined {
-	return STUMP_SHADE_PRESETS.find((s) => s.code === code);
 }
 
 export function calculateOrthopedicEconomics(presetId: string, count: number = 1): OrthopedicEconomicsCalculation {

@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import type { OrthopedicsChairsidePanelProps } from "./orthopedicsChairsideTypes";
 import { calculateDueDateStr } from "./orthopedicsChairsideTypes";
+import { calculateOrthopedicEconomics } from "../orthopedicCatalogData";
+
+export type OrthopedicsChairsideState = ReturnType<typeof useOrthopedicsChairsideState>;
 
 export function useOrthopedicsChairsideState({
 	patientId, activeToothFdi, selectedTeeth = [], recentToothXrayUrl, initialLabOrder,
@@ -19,16 +22,20 @@ export function useOrthopedicsChairsideState({
 	const [selectedShade, setSelectedShade] = useState<string>(initialLabOrder?.colorVita || "A2");
 	const [selectedStumpShade, setSelectedStumpShade] = useState<string>(initialLabOrder?.stumpShade || "ND2");
 	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach" | "stump">("classical");
-	const [activeZtlPresetId, setActiveZtlPresetId] = useState<string>("zirconia_ml_katana");
+	const [activeZtlPresetId, setActiveZtlPresetId] = useState<string>("zirconia");
 	const [preparationMargin, setPreparationMargin] = useState<string>("chamfer");
 	const [selectedStageId, setSelectedStageId] = useState<string>("impression_scan");
 	const [fixationType, setFixationType] = useState<"cement" | "screw" | "clasp">("cement");
 	const [hasAntagonists, setHasAntagonists] = useState<boolean>(true);
-	const [grossPriceRub, setGrossPriceRub] = useState<number>(24000);
-	const [ztlCostRub, setZtlCostRub] = useState<number>(7500);
-	const [materialsCostRub, setMaterialsCostRub] = useState<number>(1200);
-	const [netMarginRub, setNetMarginRub] = useState<number>(15300);
-	const [marginPercent, setMarginPercent] = useState<number>(64);
+	const [articulatorType, setArticulatorType] = useState<"bio_art" | "kavo_protar" | "average_anatomical">("bio_art");
+	const [hasFacebow, setHasFacebow] = useState<boolean>(false);
+
+	const initialEcon = calculateOrthopedicEconomics("zirconia", 1);
+	const [grossPriceRub, setGrossPriceRub] = useState<number>(initialEcon.grossPriceRub);
+	const [ztlCostRub, setZtlCostRub] = useState<number>(initialEcon.ztlCostRub);
+	const [materialsCostRub, setMaterialsCostRub] = useState<number>(initialEcon.materialsCostRub);
+	const [netMarginRub, setNetMarginRub] = useState<number>(initialEcon.netMarginRub);
+	const [marginPercent, setMarginPercent] = useState<number>(initialEcon.marginPercent);
 	const [dueDate, setDueDate] = useState<string>(() => calculateDueDateStr(5));
 	const [overrideActive, setOverrideActive] = useState<boolean>(false);
 	const [overrideReason, setOverrideReason] = useState<string>("Клиническое решение врача");
@@ -48,11 +55,22 @@ export function useOrthopedicsChairsideState({
 		else if (activeToothFdi) setActiveTeethInput(String(activeToothFdi));
 	}, [activeToothFdi, selectedTeeth, initialLabOrder?.toothFdi]);
 
+	useEffect(() => {
+		const teethCount = Math.max(1, activeTeethInput.split(/[\s,;-]+/).map((p) => p.trim()).filter(Boolean).length);
+		const econ = calculateOrthopedicEconomics(activeZtlPresetId, teethCount);
+		setGrossPriceRub(econ.grossPriceRub);
+		setZtlCostRub(econ.ztlCostRub);
+		setMaterialsCostRub(econ.materialsCostRub);
+		setNetMarginRub(econ.netMarginRub);
+		setMarginPercent(econ.marginPercent);
+	}, [activeZtlPresetId, activeTeethInput]);
+
 	return {
 		activeTeethInput, setActiveTeethInput, activeXrayUrl, setActiveXrayUrl, jawScope, setJawScope,
 		selectedMaterial, setSelectedMaterial, selectedShade, setSelectedShade, selectedStumpShade, setSelectedStumpShade,
 		shadeSystem, setShadeSystem, activeZtlPresetId, setActiveZtlPresetId, preparationMargin, setPreparationMargin,
 		selectedStageId, setSelectedStageId, fixationType, setFixationType, hasAntagonists, setHasAntagonists,
+		articulatorType, setArticulatorType, hasFacebow, setHasFacebow,
 		grossPriceRub, setGrossPriceRub, ztlCostRub, setZtlCostRub, materialsCostRub, setMaterialsCostRub,
 		netMarginRub, setNetMarginRub, marginPercent, setMarginPercent, dueDate, setDueDate,
 		overrideActive, setOverrideActive, overrideReason, setOverrideReason, isWarrantyRework, setIsWarrantyRework,

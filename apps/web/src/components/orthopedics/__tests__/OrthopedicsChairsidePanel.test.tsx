@@ -247,8 +247,14 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="stump-shade-section"'), "Must render stump shade section");
-		assert.ok(html.includes("Цвет культи зуба (Natural Die ND1–ND9):"), "Must render header for ND1..ND9");
+		assert.ok(
+			html.includes('data-testid="stump-shade-container"') || html.includes('data-testid="stump-shade-section"'),
+			"Must render stump shade section",
+		);
+		assert.ok(
+			html.includes("Natural Die ND1–ND9"),
+			"Must render header for ND1..ND9",
+		);
 		for (let i = 1; i <= 9; i++) {
 			assert.ok(html.includes(`data-testid="stump-shade-ND${i}"`), `Must render button for ND${i}`);
 		}
@@ -329,7 +335,7 @@ describe("OrthopedicsChairsidePanel — EMR & Chairside Autonomy (Mandates 8d, 8
 
 		assert.ok(html.includes('data-testid="ortho-protocol-card-ortho_standard_crown_complete"'), "Must render card for master preset");
 		assert.ok(html.includes("Полный цикл"), "Must render badge Полный цикл");
-		assert.ok(html.includes("Автосписание БОМ"), "Must indicate warehouse soft overdraft write-off");
+		assert.ok(html.includes("Расходные материалы визита"), "Must indicate visit consumables");
 		assert.ok(html.includes('data-testid="apply-ortho-protocol-ortho_standard_crown_complete"'), "Must render button for master preset");
 	});
 

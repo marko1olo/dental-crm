@@ -1,16 +1,19 @@
 import { useCallback, useRef } from "react";
 import { showToast } from "../../GlobalToast";
-import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import {
-	applyOrthopedicProtocolToVisit, createDoctorClinicalOverride,
+	applyOrthopedicProtocolToVisit,
 	type OrthopedicProtocolPreset, type FormatOrthopedicProtocolOptions,
 } from "../orthopedicProtocols";
-import type { StandardZtlPreset } from "../orthopedicsPresets";
-import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS } from "../orthopedicsPresets";
-import { CANONICAL_MANUFACTURING_5_STAGES, type CanonicalManufacturing5StageItem } from "../../lab/labMath";
-import { calculateDueDateStr } from "./orthopedicsChairsideTypes";
+import type { StandardZtlPreset } from "../orthopedicCatalogData";
+import { STANDARD_ZTL_ORDER_PRESETS } from "../orthopedicCatalogData";
+import type { CanonicalManufacturing5StageItem } from "../../lab/labMath";
+import { calculateDueDateStr, type OrthopedicsChairsidePanelProps } from "./orthopedicsChairsideTypes";
+import type { OrthopedicsChairsideState } from "./useOrthopedicsChairsideState";
 
-export function useOrthopedicsChairsideActions(state: any, props: any) {
+export function useOrthopedicsChairsideActions(
+	state: OrthopedicsChairsideState,
+	props: OrthopedicsChairsidePanelProps,
+) {
 	const inFlightRef = useRef(false);
 
 	const handleSelectZtlPreset = useCallback((preset: StandardZtlPreset) => {
@@ -28,9 +31,15 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 		if (state.activeOrderId) {
 			fetch(`/api/lab/orders/${state.activeOrderId}`, {
 				method: "PATCH",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ stage: stage.id, techStage: stage.shortLabelRu }),
-			}).catch(() => {});
+			})
+				.then((res) => {
+					if (!res.ok) console.warn("Failed to update lab order stage on server", res.status);
+				})
+				.catch((err) => {
+					console.warn("Network error updating lab order stage", err);
+				});
 		}
 	}, [state]);
 
@@ -46,14 +55,25 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 		const orderNumber = `ЗТЛ-${Date.now().toString().slice(-6)}`;
 		state.setIsLabOrderSending(true);
 		const labOrderPayload = {
-			orderNumber, createdAt: new Date().toISOString(),
+			orderNumber,
+			createdAt: new Date().toISOString(),
 			teeth: teethParts.length > 0 ? teethParts : [],
 			teethFdi: teethParts.length > 0 ? teethParts.join(", ") : undefined,
 			jawScope: state.jawScope !== "none" ? state.jawScope : "upper",
-			construction: preset.constructionType, constructionType: preset.constructionType,
-			material: state.selectedMaterial, colorVita: state.selectedShade, stumpShade: state.selectedStumpShade,
+			construction: preset.constructionType,
+			constructionType: preset.constructionType,
+			material: state.selectedMaterial,
+			colorVita: state.selectedShade,
+			stumpShade: state.selectedStumpShade,
+			preparationMargin: state.preparationMargin,
+			fixationType: state.fixationType,
+			hasAntagonists: state.hasAntagonists,
+			articulatorType: state.articulatorType,
+			hasFacebow: state.hasFacebow,
+			attachedXrayUrl: state.activeXrayUrl ?? undefined,
 			laboratoryName: "Основная лаборатория",
-			dueDate: state.dueDate, patientId: props.patientId || undefined,
+			dueDate: state.dueDate,
+			patientId: props.patientId || undefined,
 			priceRub: state.isWarrantyRework ? 0 : state.grossPriceRub,
 			costRub: state.isWarrantyRework && state.warrantyLiabilityType === "lab_defect" ? 0 : state.ztlCostRub,
 			isWarrantyRework: state.isWarrantyRework,
@@ -66,7 +86,7 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 		try {
 			const res = await fetch("/api/lab/orders", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(labOrderPayload),
 			});
 			if (res.ok) {
@@ -87,16 +107,13 @@ export function useOrthopedicsChairsideActions(state: any, props: any) {
 	}, [state, props]);
 
 	const handleApplyProtocol = useCallback((protocol: OrthopedicProtocolPreset) => {
-		if (props.isLocked && !state.overrideActive) {
-			showToast("Клинический протокол заблокирован (активируйте оверрайд врача)", "warning");
-			return;
-		}
 		const teethParts = state.activeTeethInput.split(/[\s,;-]+/).map((p: string) => p.trim()).filter(Boolean);
 		const options: FormatOrthopedicProtocolOptions = {
 			teethFdi: teethParts.length > 0 ? teethParts : undefined,
 			toothFdi: teethParts.length === 1 ? teethParts[0] : undefined,
 			jawScope: state.jawScope !== "none" ? state.jawScope : undefined,
-			material: state.selectedMaterial, colorVita: state.selectedShade,
+			material: state.selectedMaterial,
+			colorVita: state.selectedShade,
 			labOrderId: props.initialLabOrder?.id ?? state.activeOrderId ?? undefined,
 		};
 		const result = applyOrthopedicProtocolToVisit({ protocol, options, copyToClipboard: true, showNotification: true });

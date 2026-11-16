@@ -4,7 +4,6 @@ import { ZtlPresetsGrid } from "./selectors/ZtlPresetsGrid.js";
 import { ZtlPrepMarginSelector } from "./selectors/ZtlPrepMarginSelector.js";
 import { ZtlFixationSelector } from "./selectors/ZtlFixationSelector.js";
 import { ZtlManufacturingStageTracker } from "./selectors/ZtlManufacturingStageTracker.js";
-import { ZtlStumpShadeSelector } from "./selectors/ZtlStumpShadeSelector.js";
 import { ZtlSoloEconomicsCard } from "./selectors/ZtlSoloEconomicsCard.js";
 import { ZtlOcclusionDrawer } from "./selectors/ZtlOcclusionDrawer.js";
 
@@ -56,7 +55,6 @@ export function OrthopedicsZtlSelectors({
 				onToggleAntagonists={(checked) => { setInternalAntagonists(checked); onToggleAntagonists?.(checked); }}
 			/>
 			<ZtlManufacturingStageTracker selectedStageId={selectedStageId} onSelectStage={onSelectStage} />
-			<ZtlStumpShadeSelector stumpShade={stumpShade} onSelectStumpShade={onSelectStumpShade} />
 			<ZtlOcclusionDrawer
 				activeArticulator={activeArticulator}
 				onSelectArticulator={(type) => { setInternalArticulator(type); onSelectArticulatorType?.(type); }}

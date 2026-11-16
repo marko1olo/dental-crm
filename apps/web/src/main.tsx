@@ -108,6 +108,11 @@ const OrthodonticStudioStandaloneView = React.lazy(() =>
 		default: m.DirectOrthodonticsLauncher,
 	})),
 );
+const OrthopedicStudioStandaloneView = React.lazy(() =>
+	import("./components/orthopedics/DirectOrthopedicsLauncher").then((m) => ({
+		default: m.DirectOrthopedicsLauncher,
+	})),
+);
 const WaitlistStandaloneView = React.lazy(() =>
 	import("./components/schedule/DirectWaitlistMatchesLauncher").then((m) => ({
 		default: m.DirectWaitlistMatchesLauncher,
@@ -637,6 +642,47 @@ if (publicPortalRoute) {
 	);
 } else if (
 	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=orthopedics") ||
+		window.location.search.includes("standalone=orthopedics") ||
+		window.location.search.includes("orthopedics=1") ||
+		window.location.search.includes("crowns=1") ||
+		window.location.hash === "#orthopedics" ||
+		window.location.hash === "#crowns" ||
+		window.location.hash === "#orthopedics-studio" ||
+		window.location.hash.startsWith("#orthopedics?") ||
+		window.location.hash.startsWith("#crowns?") ||
+		window.location.hash.startsWith("#orthopedics-studio?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinical">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка ортопедической студии...
+						</div>
+					}
+				>
+					<OrthopedicStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	!window.location.search.includes("orthopedics") &&
+	!window.location.hash.includes("orthopedics") &&
+	!window.location.hash.includes("crowns") &&
 	(window.location.search.includes("stand=ortho") ||
 		window.location.search.includes("standalone=ortho") ||
 		window.location.search.includes("stand=orthodontics") ||

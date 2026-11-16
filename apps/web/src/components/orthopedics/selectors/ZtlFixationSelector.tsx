@@ -1,6 +1,6 @@
 import React from "react";
 import { Sliders } from "lucide-react";
-import { FIXATION_TYPE_PRESETS } from "../orthopedicsPresets.js";
+import { FIXATION_TYPE_PRESETS } from "../orthopedicCatalogData.js";
 
 export interface ZtlFixationSelectorProps {
 	readonly fixationType: "cement" | "screw" | "clasp";

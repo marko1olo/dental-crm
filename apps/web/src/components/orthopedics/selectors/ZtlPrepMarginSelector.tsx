@@ -1,6 +1,6 @@
 import React from "react";
 import { DentalCrown } from "../../icons/DentalIcons.js";
-import { PREPARATION_MARGIN_PRESETS } from "../orthopedicsPresets.js";
+import { PREPARATION_MARGIN_PRESETS } from "../orthopedicCatalogData.js";
 
 export interface ZtlPrepMarginSelectorProps {
 	readonly preparationMargin: string;

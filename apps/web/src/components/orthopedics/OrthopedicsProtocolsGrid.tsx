@@ -49,7 +49,7 @@ export function OrthopedicsProtocolsGrid({
 						className={`p-3 rounded-lg border transition-colors flex flex-col justify-between gap-2 ${
 							isMasterPreset
 								? "md:col-span-2 border-teal-500/60 bg-teal-50/70 dark:bg-teal-950/30 ring-1 ring-teal-500/30 shadow-xs"
-								: "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-100/50 dark:hover:bg-slate-800"
+								: "border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)]"
 						}`}
 						data-testid={`ortho-protocol-card-${proto.id}`}
 					>
@@ -58,7 +58,7 @@ export function OrthopedicsProtocolsGrid({
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center justify-between gap-1 flex-wrap">
 									<div className="flex items-center gap-1.5 min-w-0">
-										<h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+										<h4 className="text-xs font-bold text-[var(--ink)] truncate">
 											{proto.shortLabel}
 										</h4>
 										{isMasterPreset && (
@@ -67,16 +67,16 @@ export function OrthopedicsProtocolsGrid({
 											</span>
 										)}
 									</div>
-									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+									<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-subtle)] text-[var(--muted)] border border-[var(--line)] shrink-0">
 										{proto.defaultIcd10}
 									</span>
 								</div>
-								<p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5 leading-relaxed">
+								<p className="text-xs text-[var(--muted)] line-clamp-2 mt-0.5 leading-relaxed">
 									{proto.treatment}
 								</p>
 								{isMasterPreset && (
-									<div className="mt-1 text-[11px] text-teal-800 dark:text-teal-300 font-medium">
-										Автосписание БОМ (мягкий овердрафт): А-силикон (Silagum), PMMA (Protemp 4), цемент (GC Fuji Plus / RelyX U200).
+									<div className="mt-1 text-[11px] text-[var(--teal,#0d9488)] font-medium">
+										Расходные материалы визита: А-силикон (Silagum), PMMA (Protemp 4), цемент (GC Fuji Plus / RelyX U200).
 									</div>
 								)}
 							</div>
@@ -84,16 +84,16 @@ export function OrthopedicsProtocolsGrid({
 
 						<div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line)] flex-wrap">
 							<div className="text-[11px] font-medium text-[var(--muted)]">
-								Номенклатура: <span className="font-mono text-[var(--ink)]">{proto.order804nServices.map((s) => s.code).join(", ")}</span>
+								Каталог процедур: <span className="font-mono text-[var(--ink)]">{proto.order804nServices.map((s) => s.code).join(", ")}</span>
 							</div>
 
 							<button
 								type="button"
 								onClick={() => onApplyProtocol(proto)}
-								className={`min-h-[48px] sm:min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+								className={`min-h-[48px] sm:min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 									isApplied
 										? "dente-btn-secondary text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/10"
-										: "primary-button bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white"
+										: "dente-btn-secondary border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
 								}`}
 								data-testid={`apply-ortho-protocol-${proto.id}`}
 								title={`Внести протокол «${proto.shortLabel}» в дневник приёма, смету визита и Этап 3 (Ортопедия)`}

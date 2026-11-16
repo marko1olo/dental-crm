@@ -1,6 +1,6 @@
 import React from "react";
 import { Zap, ShieldCheck } from "lucide-react";
-import { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS } from "../orthopedicsPresets.js";
+import { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS } from "../orthopedicCatalogData.js";
 
 export interface ZtlPresetsGridProps {
 	readonly activeZtlPresetId: string;

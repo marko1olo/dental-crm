@@ -8,9 +8,9 @@ import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker";
 import { OrthopedicsZtlSelectors } from "./OrthopedicsZtlSelectors";
 import { OrthopedicPassportA4Modal } from "./OrthopedicPassportA4Modal";
 import { DentalLabReadyInClinicModal, type ReadyInClinicLabOrder } from "../lab/DentalLabReadyInClinicModal";
-import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets";
+import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicCatalogData";
 
-export { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS, type PreparationMarginPreset, PREPARATION_MARGIN_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicsPresets";
+export { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS, type PreparationMarginPreset, PREPARATION_MARGIN_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicCatalogData";
 export type { LinkedChairsideLabOrderInfo, OrthopedicsChairsidePanelProps };
 
 export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps) {
