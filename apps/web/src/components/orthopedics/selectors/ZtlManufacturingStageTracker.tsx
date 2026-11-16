@@ -17,15 +17,15 @@ export function ZtlManufacturingStageTracker({
 	const currentStageIndex = CANONICAL_MANUFACTURING_5_STAGES.findIndex((s) => s.id === selectedStageId);
 
 	return (
-		<div className="mb-2.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 min-w-0 overflow-hidden">
+		<div className="mb-2.5 p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] min-w-0 overflow-hidden">
 			<div className="flex flex-wrap items-center justify-between gap-1 mb-2">
 				<div className="flex items-center gap-1.5 min-w-0">
-					<Clock size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+					<Clock size={15} className="text-[var(--primary)] shrink-0" />
+					<span className="text-xs font-bold text-[var(--ink)] truncate">
 						Этапы изготовления ЗТЛ:
 					</span>
 				</div>
-				<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+				<span className="text-[11px] text-[var(--muted)] truncate">
 					Слепок/Скан → Каркас → Керамика → Готовая работа → Фиксация
 				</span>
 			</div>
@@ -43,15 +43,15 @@ export function ZtlManufacturingStageTracker({
 								stg.step === 5 ? "col-span-2 sm:col-span-1" : ""
 							} ${
 								isSelected
-									? "bg-teal-600 text-white border-teal-700 shadow-sm ring-2 ring-teal-500/40"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm ring-2 ring-[var(--primary)]/40"
 									: isPassed
-									? "bg-teal-50 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200 border-teal-300 dark:border-teal-700"
-									: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+									? "bg-[var(--primary)]/10 text-[var(--ink)] border-[var(--primary)]/30"
+									: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:bg-[var(--paper-subtle)]"
 							}`}
 							data-testid={`chairside-stage-${stg.id}`}
 							title={stg.descRu}
 						>
-							<span className="text-[10px] uppercase font-bold tracking-wider opacity-85 truncate min-w-0 w-full">
+							<span className="text-[10px] font-bold opacity-85 truncate min-w-0 w-full">
 								Этап {stg.step}
 							</span>
 							<span className="truncate min-w-0 w-full text-center text-xs font-bold mt-0.5">

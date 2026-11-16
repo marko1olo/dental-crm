@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/orthopedics");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/eae9bcda-f2d4-49c9-ba6e-897640e2ec52");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c33839fb-d493-4aa5-94bd-b1fc3ddbe680");
 
 for (const dir of [PROOFS_DIR, BRAIN_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

@@ -41,7 +41,9 @@ function dispatchOrthopedicEvents(
 		window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
 			detail: { toothNumber: primaryTooth, teethNumbers, services: invoiceServices, labOrderId: options?.labOrderId, labOrderNumber: options?.labOrderNumber, technicianName: options?.technicianName, material: options?.material, warrantyPassport: options?.warrantyPassport },
 		}));
-	} catch {}
+	} catch (err) {
+		console.warn("Failed to dispatch orthopedic DOM events", err);
+	}
 }
 
 export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolParams): {
@@ -58,7 +60,11 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 	dispatchOrthopedicEvents(formatted, protocol, teethNumbers, options);
 
 	if (params.onAddToInvoice) {
-		try { params.onAddToInvoice(protocol.order804nServices); } catch {}
+		try {
+			params.onAddToInvoice(protocol.order804nServices);
+		} catch (err) {
+			console.warn("Failed to add orthopedic services to invoice", err);
+		}
 	}
 
 	try {
@@ -68,10 +74,14 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 			treatmentPlan: prev.treatmentPlan?.trim() ? `${prev.treatmentPlan.trim()}\n\n${formatted.treatment}` : formatted.treatment,
 			diagnosis: prev.diagnosis || protocol.defaultIcd10Label,
 		}));
-	} catch {}
+	} catch (err) {
+		console.warn("Failed to update visit store with orthopedic protocol", err);
+	}
 
 	if (params.copyToClipboard !== false && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-		navigator.clipboard.writeText(`ЖАЛОБЫ:\n${formatted.anamnesis}\n\nОБЪЕКТИВНО:\n${formatted.objective}\n\nЛЕЧЕНИЕ:\n${formatted.treatment}\n\nРЕКОМЕНДАЦИИ:\n${formatted.recommendations}`).catch(() => {});
+		navigator.clipboard.writeText(`ЖАЛОБЫ:\n${formatted.anamnesis}\n\nОБЪЕКТИВНО:\n${formatted.objective}\n\nЛЕЧЕНИЕ:\n${formatted.treatment}\n\nРЕКОМЕНДАЦИИ:\n${formatted.recommendations}`).catch((err) => {
+			console.warn("Failed to copy orthopedic protocol to clipboard", err);
+		});
 	}
 
 	if (protocol.warehouseBundleType && typeof window !== "undefined") {
@@ -79,7 +89,9 @@ export function applyOrthopedicProtocolToVisit(params: ApplyOrthopedicProtocolPa
 			window.dispatchEvent(new CustomEvent("dente-inventory-writeoff", {
 				detail: { protocolId: protocol.id, bundleType: protocol.warehouseBundleType, toothNumber: teethNumbers[0], teethNumbers, consumables: protocol.consumables },
 			}));
-		} catch {}
+		} catch (err) {
+			console.warn("Failed to dispatch inventory writeoff event", err);
+		}
 	}
 
 	if (params.showNotification !== false) {

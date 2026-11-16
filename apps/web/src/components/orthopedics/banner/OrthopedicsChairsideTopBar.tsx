@@ -17,7 +17,7 @@ export function OrthopedicsChairsideTopBar({
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 mb-2.5 border-b border-[var(--line)]">
 			<div className="flex items-center gap-2">
-				<DentalCrown size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
+				<DentalCrown size={18} className="text-[var(--primary)] shrink-0" />
 				<div className="leading-tight">
 					<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] tracking-tight">
 						Ортопедический протокол у кресла
@@ -40,7 +40,7 @@ export function OrthopedicsChairsideTopBar({
 						onChange={(e) => onChangeActiveTeethInput(e.target.value)}
 						placeholder="16, 21"
 						aria-label="Номера зубов FDI"
-						className="min-h-[44px] sm:min-h-[34px] w-20 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-teal-500"
+						className="min-h-[44px] sm:min-h-[34px] w-20 px-2.5 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)]"
 						data-testid="ortho-teeth-input"
 					/>
 				</div>
@@ -49,16 +49,16 @@ export function OrthopedicsChairsideTopBar({
 					className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-xs min-h-[44px] sm:min-h-[34px]"
 					data-testid="attached-xray-badge"
 				>
-					<Camera size={15} className={activeXrayUrl ? "text-teal-600 dark:text-teal-400 shrink-0" : "text-[var(--muted)] shrink-0"} />
+					<Camera size={15} className={activeXrayUrl ? "text-[var(--primary)] shrink-0" : "text-[var(--muted)] shrink-0"} />
 					{activeXrayUrl ? (
 						<div className="flex items-center gap-1.5">
-							<span className="text-teal-700 dark:text-teal-300 font-bold truncate max-w-[110px]" title="Снимок визита прикреплен к наряду ЗТЛ">
+							<span className="text-[var(--primary)] font-bold truncate max-w-[110px]" title="Снимок визита прикреплен к наряду ЗТЛ">
 								Снимок привязан
 							</span>
 							<button
 								type="button"
 								onClick={onDetachXray}
-								className="text-xs text-[var(--muted)] hover:text-rose-500 cursor-pointer font-bold px-0.5 inline-flex items-center"
+								className="text-xs text-[var(--muted)] hover:text-[var(--danger)] cursor-pointer font-bold px-0.5 inline-flex items-center"
 								title="Открепить снимок"
 							>
 								<X className="w-3 h-3" />
@@ -89,7 +89,7 @@ export function OrthopedicsChairsideTopBar({
 								onClick={() => onChangeJawScope(isSelected ? "none" : scope)}
 								className={`min-h-[44px] sm:min-h-[30px] px-2.5 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
 									isSelected
-										? "bg-teal-600 text-white shadow-xs"
+										? "bg-[var(--primary)] text-white shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
 								}`}
 								title={labels[scope].full}
@@ -105,7 +105,7 @@ export function OrthopedicsChairsideTopBar({
 					value={selectedMaterial}
 					onChange={(e) => onChangeSelectedMaterial(e.target.value)}
 					aria-label="Материал конструкции"
-					className="min-h-[44px] sm:min-h-[34px] px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-teal-500"
+					className="min-h-[44px] sm:min-h-[34px] px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-subtle)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-[var(--primary)]"
 				>
 					<option value="ZrO2 Multi-Layer">ZrO2 Multi-Layer</option>
 					<option value="IPS e.max Press">IPS e.max Press</option>

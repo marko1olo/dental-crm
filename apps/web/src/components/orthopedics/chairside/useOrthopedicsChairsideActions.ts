@@ -25,21 +25,27 @@ export function useOrthopedicsChairsideActions(
 		showToast(`Выбран стандарт ЗТЛ: ${preset.name} (${preset.badge})`, "info", 2000);
 	}, [state]);
 
-	const handleSelectStage = useCallback((stage: CanonicalManufacturing5StageItem) => {
+	const handleSelectStage = useCallback(async (stage: CanonicalManufacturing5StageItem) => {
 		state.setSelectedStageId(stage.id);
 		showToast(`Этап ЗТЛ: ${stage.shortLabelRu} (${stage.descRu})`, "info", 2000);
 		if (state.activeOrderId) {
-			fetch(`/api/lab/orders/${state.activeOrderId}`, {
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ stage: stage.id, techStage: stage.shortLabelRu }),
-			})
-				.then((res) => {
-					if (!res.ok) console.warn("Failed to update lab order stage on server", res.status);
-				})
-				.catch((err) => {
-					console.warn("Network error updating lab order stage", err);
+			try {
+				const res = await fetch(`/api/lab/orders/${state.activeOrderId}`, {
+					method: "PATCH",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": crypto.randomUUID(),
+					},
+					body: JSON.stringify({ stage: stage.id, techStage: stage.shortLabelRu }),
 				});
+				if (!res.ok) {
+					console.warn("Failed to update lab order stage on server", res.status);
+					showToast(`Не удалось обновить этап на сервере (${res.status})`, "error", 3000);
+				}
+			} catch (err) {
+				console.warn("Network error updating lab order stage", err);
+				showToast("Сетевая ошибка при обновлении этапа ЗТЛ", "error", 3000);
+			}
 		}
 	}, [state]);
 
@@ -70,10 +76,12 @@ export function useOrthopedicsChairsideActions(
 			hasAntagonists: state.hasAntagonists,
 			articulatorType: state.articulatorType,
 			hasFacebow: state.hasFacebow,
+			attachedImageUrl: state.activeXrayUrl ?? undefined,
 			attachedXrayUrl: state.activeXrayUrl ?? undefined,
 			laboratoryName: "Основная лаборатория",
 			dueDate: state.dueDate,
 			patientId: props.patientId || undefined,
+			patientName: props.patientName || undefined,
 			priceRub: state.isWarrantyRework ? 0 : state.grossPriceRub,
 			costRub: state.isWarrantyRework && state.warrantyLiabilityType === "lab_defect" ? 0 : state.ztlCostRub,
 			isWarrantyRework: state.isWarrantyRework,
@@ -86,12 +94,16 @@ export function useOrthopedicsChairsideActions(
 		try {
 			const res = await fetch("/api/lab/orders", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
+				},
 				body: JSON.stringify(labOrderPayload),
 			});
 			if (res.ok) {
 				const json = await res.json().catch(() => null);
-				if (json?.id) state.setActiveOrderId(json.id);
+				const payload = json?.data ?? json;
+				if (payload?.id) state.setActiveOrderId(payload.id);
 				state.setLabOrderSentNumber(orderNumber);
 				showToast(`Наряд ${orderNumber} в ЗТЛ успешно отправлен!`, "success", 3000);
 			} else {

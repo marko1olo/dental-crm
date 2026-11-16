@@ -18,7 +18,7 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 	const state = useOrthopedicsChairsideState(props);
 	const actions = useOrthopedicsChairsideActions(state, props);
 	const hasLinkedOrder = Boolean(props.initialLabOrder);
-	const effectiveOrderNum = props.initialLabOrder?.orderNumber || state.labOrderSentNumber || "ЗТЛ-402";
+	const effectiveOrderNum = props.initialLabOrder?.orderNumber || state.labOrderSentNumber || "";
 	const effectiveHeadline = `Работа из ЗТЛ доставлена: ${props.initialLabOrder?.workType || "Коронка"} зуб ${props.initialLabOrder?.toothFdi || state.activeTeethInput}`;
 	const activePreset = STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === state.activeZtlPresetId) ?? STANDARD_ZTL_ORDER_PRESETS[0];
 
@@ -54,13 +54,13 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 	]);
 
 	return (
-		<div className={`orthopedics-chairside-panel p-2.5 sm:p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs max-w-full overflow-x-clip ${props.className || ""}`} data-testid="orthopedics-chairside-panel">
+		<div className={`orthopedics-chairside-panel p-2.5 sm:p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs max-w-full overflow-x-clip ${props.className || ""}`} data-testid="orthopedics-chairside-panel">
 			{hasLinkedOrder && (
 				<OrthopedicsChairsideLabOrderBanner
 					readinessHeadline={effectiveHeadline} orderNumber={effectiveOrderNum}
-					technicianName={props.initialLabOrder?.technicianName || "Смирнов А.В."}
+					technicianName={props.initialLabOrder?.technicianName || ""}
 					selectedMaterial={state.selectedMaterial} selectedShade={state.selectedShade}
-					warrantyPassport={props.initialLabOrder?.warrantyPassport || "ГП-ЗТЛ-402"}
+					warrantyPassport={props.initialLabOrder?.warrantyPassport || (effectiveOrderNum ? `ГП-${effectiveOrderNum}` : "")}
 					fittingConfirmed={state.fittingConfirmed} onConfirmFitting={() => { state.setFittingConfirmed(true); props.onConfirmFitting?.(props.initialLabOrder?.id); }}
 					onOpenPassportA4={() => state.setIsPassportModalOpen(true)}
 				/>
@@ -104,8 +104,8 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 			<OrthopedicPassportA4Modal
 				isOpen={state.isPassportModalOpen} onClose={() => state.setIsPassportModalOpen(false)}
 				passport={{
-					orderNumber: effectiveOrderNum, passportNumber: `ГП-${effectiveOrderNum}`, patientName: props.patientName || "Пациент",
-					doctorName: props.doctorName || "Лечащий врач", technicianName: props.initialLabOrder?.technicianName || "Смирнов А.В.",
+					orderNumber: effectiveOrderNum, passportNumber: effectiveOrderNum ? `ГП-${effectiveOrderNum}` : "", patientName: props.patientName || "Пациент",
+					doctorName: props.doctorName || "Лечащий врач", technicianName: props.initialLabOrder?.technicianName || "",
 					toothFdi: state.activeTeethInput, constructionName: activePreset?.name ?? "Коронка", material: state.selectedMaterial,
 					colorVita: state.selectedShade, stumpShade: state.selectedStumpShade,
 					preparationMarginLabel: PREPARATION_MARGIN_PRESETS.find((m) => m.id === state.preparationMargin)?.labelRu ?? state.preparationMargin,

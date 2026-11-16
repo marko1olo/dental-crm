@@ -300,12 +300,12 @@ export function calculateOrthopedicEconomics(presetId: string, count: number = 1
 
 export function generateWarrantyPassportNumber(orderNumber: string): string {
 	const clean = (orderNumber || "").trim().replace(/^ГП-/, "");
-	return clean ? `ГП-${clean}` : "ГП-ЗТЛ-402";
+	return clean ? `ГП-${clean}` : "";
 }
 
 export function formatToothFormulaDisplay(toothFdi: string | number): string {
 	const raw = String(toothFdi || "").trim();
-	return raw || "16";
+	return raw || "";
 }
 
 export function validateOrthopedicTooth(toothFdi: string | number): boolean {
@@ -313,5 +313,9 @@ export function validateOrthopedicTooth(toothFdi: string | number): boolean {
 	if (Number.isNaN(num)) return false;
 	const quadrant = Math.floor(num / 10);
 	const toothPos = num % 10;
-	return quadrant >= 1 && quadrant <= 4 && toothPos >= 1 && toothPos <= 8;
+	// Постоянный прикус (11–48)
+	if (quadrant >= 1 && quadrant <= 4 && toothPos >= 1 && toothPos <= 8) return true;
+	// Молочный прикус (51–85) для детских ортопедических коронок и удерживателей пространства
+	if (quadrant >= 5 && quadrant <= 8 && toothPos >= 1 && toothPos <= 5) return true;
+	return false;
 }

@@ -36,7 +36,7 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 	const labName = data.labName || "Цифровая зуботехническая лаборатория «DenteLab Precision»";
 	const patientName = data.patientName || "Пациент";
 	const doctorName = data.doctorName || "Лечащий врач-ортопед";
-	const technicianName = data.technicianName || "Смирнов А.В. (Зубной техник CAD/CAM)";
+	const technicianName = data.technicianName || "Зубной техник CAD/CAM";
 	const warrantyLabelRu = data.warrantyLabelRu || (data.warrantyMonths ? `${data.warrantyMonths} мес.` : "60 месяцев (5 лет)");
 	const batchLot = data.batchLotNumber || `LOT-2026-${passportNumber.replace(/\D/g, "").slice(-4) || "8841"}`;
 	const standards = data.standardsCompliance || "ГОСТ ISO 6872:2015 / ГОСТ 31572 / CE 0123 / СанПиН 2.1.3678-20";
@@ -57,29 +57,29 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 	const modalContent = (
 		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto max-sm:items-end" role="dialog" aria-modal="true" data-testid="orthopedic-passport-modal">
 			<style>{`@media print { .no-print { display: none !important; } #orthopedic-passport-print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 12mm 15mm !important; background: #fff !important; color: #0f172a !important; box-shadow: none !important; border: none !important; } }`}</style>
-			<div className="relative w-full max-w-4xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh]">
-				<div className="sm:hidden w-9 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mt-2.5 mb-1 shrink-0 no-print" aria-hidden="true" />
-				<div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 border-b border-[var(--line,#e2e8f0)] bg-slate-50 dark:bg-slate-800/60 no-print shrink-0">
+			<div className="relative w-full max-w-4xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] sm:max-h-[92vh]">
+				<div className="sm:hidden w-9 h-1.5 bg-[var(--line)] rounded-full mx-auto mt-2.5 mb-1 shrink-0 no-print" aria-hidden="true" />
+				<div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] no-print shrink-0">
 					<div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-						<div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0"><Award size={18} /></div>
+						<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0"><Award size={18} /></div>
 						<div className="min-w-0 flex-1">
-							<h3 className="text-xs sm:text-sm font-bold truncate text-slate-900 dark:text-slate-100">Паспорт ортопедической конструкции</h3>
-							<p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">{passportNumber} · Зуб FDI {data.toothFdi}</p>
+							<h3 className="text-xs sm:text-sm font-bold truncate text-[var(--ink)]">Паспорт ортопедической конструкции</h3>
+							<p className="text-[11px] text-[var(--muted)] font-mono truncate">{passportNumber} · Зуб FDI {data.toothFdi}</p>
 						</div>
 					</div>
 					<div className="flex items-center gap-1.5 shrink-0">
-						<button type="button" onClick={handleCopyText} className="hidden sm:inline-flex min-h-[34px] px-3 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 items-center gap-1.5 cursor-pointer" data-testid="passport-copy-btn"><Copy size={14} className="text-teal-600" /><span>Скопировать</span></button>
-						<button type="button" onClick={handlePrint} className="hidden sm:inline-flex min-h-[34px] px-3.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white items-center gap-1.5 shadow-xs cursor-pointer" data-testid="passport-print-btn"><Printer size={14} /><span>Печать (А4)</span></button>
-						<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] sm:min-h-[34px] sm:min-w-[34px] rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-slate-200" aria-label="Закрыть" data-testid="passport-close-btn"><X size={18} /></button>
+						<button type="button" onClick={handleCopyText} className="hidden sm:inline-flex min-h-[34px] px-3 text-xs font-semibold rounded-lg border border-[var(--line)] hover:bg-[var(--paper)] text-[var(--ink)] items-center gap-1.5 cursor-pointer" data-testid="passport-copy-btn"><Copy size={14} className="text-[var(--primary)]" /><span>Скопировать</span></button>
+						<button type="button" onClick={handlePrint} className="hidden sm:inline-flex min-h-[34px] px-3.5 text-xs font-bold rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white items-center gap-1.5 shadow-xs cursor-pointer" data-testid="passport-print-btn"><Printer size={14} /><span>Печать (А4)</span></button>
+						<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] sm:min-h-[34px] sm:min-w-[34px] rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)]" aria-label="Закрыть" data-testid="passport-close-btn"><X size={18} /></button>
 					</div>
 				</div>
-				<div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-100 dark:bg-slate-950/40">
-					<div id="orthopedic-passport-print-area" ref={printRef} className="max-w-[800px] mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-4 sm:p-7 shadow-sm text-slate-900 dark:text-slate-100 font-sans" data-testid="passport-a4-sheet">
+				<div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[var(--paper-subtle)]">
+					<div id="orthopedic-passport-print-area" ref={printRef} className="max-w-[800px] mx-auto bg-[var(--paper)] border border-[var(--line)] rounded-xl p-4 sm:p-7 shadow-sm text-[var(--ink)] font-sans" data-testid="passport-a4-sheet">
 						<OrthopedicPassportHeader clinicName={clinicName} passportNumber={passportNumber} issueDate={issueDate} batchLot={batchLot} toothFdi={data.toothFdi} />
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs">
-							<div><span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Пациент</span><div className="font-bold">{patientName}</div>{data.patientChartNumber && (<div className="text-[11px] text-slate-500">Мед. карта № {data.patientChartNumber}</div>)}</div>
-							<div><span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Врач-ортопед</span><div className="font-bold">{doctorName}</div><div className="text-[11px] text-slate-500">{clinicName}</div></div>
-							<div><span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Изготовитель (ЗТЛ)</span><div className="font-bold">{technicianName}</div><div className="text-[11px] text-slate-500">{labName}</div></div>
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4 p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
+							<div><span className="text-[10px] font-bold text-[var(--muted)] block mb-0.5">Пациент</span><div className="font-bold">{patientName}</div>{data.patientChartNumber && (<div className="text-[11px] text-[var(--muted)]">Мед. карта № {data.patientChartNumber}</div>)}</div>
+							<div><span className="text-[10px] font-bold text-[var(--muted)] block mb-0.5">Врач-ортопед</span><div className="font-bold">{doctorName}</div><div className="text-[11px] text-[var(--muted)]">{clinicName}</div></div>
+							<div><span className="text-[10px] font-bold text-[var(--muted)] block mb-0.5">Изготовитель (ЗТЛ)</span><div className="font-bold">{technicianName}</div><div className="text-[11px] text-[var(--muted)]">{labName}</div></div>
 						</div>
 						<OrthopedicPassportSpecsTable passport={data} batchLot={batchLot} standards={standards} />
 						<OrthopedicPassportCareNotice warrantyLabelRu={warrantyLabelRu} careNotes={careNotes} />

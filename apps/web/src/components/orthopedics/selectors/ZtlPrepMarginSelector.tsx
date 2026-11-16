@@ -12,15 +12,15 @@ export function ZtlPrepMarginSelector({
 	onSelectPreparationMargin,
 }: ZtlPrepMarginSelectorProps) {
 	return (
-		<div className="mb-2.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 min-w-0 overflow-hidden" data-testid="prep-margin-section">
+		<div className="mb-2.5 p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] min-w-0 overflow-hidden" data-testid="prep-margin-section">
 			<div className="flex flex-wrap items-center justify-between gap-1 mb-2">
 				<div className="flex items-center gap-1.5 min-w-0">
-					<DentalCrown size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+					<DentalCrown size={15} className="text-[var(--primary)] shrink-0" />
+					<span className="text-xs font-bold text-[var(--ink)] truncate">
 						Граница препарирования:
 					</span>
 				</div>
-				<span className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+				<span className="text-[11px] text-[var(--muted)] truncate">
 					Тип уступа для прецизионного прилегания
 				</span>
 			</div>
@@ -34,16 +34,16 @@ export function ZtlPrepMarginSelector({
 							onClick={() => onSelectPreparationMargin(margin.id, margin.labelRu)}
 							className={`min-h-[48px] p-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between min-w-0 ${
 								isSelected
-									? "bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs"
-									: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+									? "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--ink)] ring-1 ring-[var(--primary)] shadow-xs"
+									: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
 							}`}
 							data-testid={`prep-margin-${margin.id}`}
 							title={margin.description}
 						>
-							<span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug truncate">
+							<span className="text-xs font-bold text-[var(--ink)] leading-snug truncate">
 								{margin.labelRu}
 							</span>
-							<span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono leading-tight mt-1">
+							<span className="text-[11px] text-[var(--muted)] font-mono leading-tight mt-1">
 								{margin.shortBadge}
 							</span>
 						</button>

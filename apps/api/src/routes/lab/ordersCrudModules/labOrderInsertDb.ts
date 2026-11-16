@@ -145,12 +145,26 @@ export async function insertLabOrderInDb(
 	const finalLabCostRub = isWarranty && data.warrantyLiabilityType === "lab_defect" ? 0 : effectiveLabCost;
 
 	let structuredNotes = effectiveNotes || "";
+	const clinicalSpecs: string[] = [];
+	if (data.stumpShade) clinicalSpecs.push(`Цвет культи: ${data.stumpShade}`);
+	if (data.preparationMargin) clinicalSpecs.push(`Уступ: ${data.preparationMargin}`);
+	if (data.fixationType) clinicalSpecs.push(`Фиксация: ${data.fixationType}`);
+	if (data.articulatorType) clinicalSpecs.push(`Артикулятор: ${data.articulatorType}`);
+	if (data.hasFacebow) clinicalSpecs.push("Лицевая дуга: Да");
+	if (data.hasAntagonists != null) clinicalSpecs.push(`Антагонисты: ${data.hasAntagonists ? "Да" : "Нет"}`);
+	if (clinicalSpecs.length > 0) {
+		const specsPrefix = `* Клинические параметры: ${clinicalSpecs.join("; ")}`;
+		structuredNotes = structuredNotes ? `${specsPrefix}\n${structuredNotes}` : specsPrefix;
+	}
+
 	if (isWarranty && !structuredNotes.includes("Гарантия")) {
 		const liabilityLabel = data.warrantyLiabilityType === "lab_defect"
 			? "Брак лаборатории (0 ₽ ЗТЛ, 0 ₽ пациенту)"
 			: "Гарантия клиники (оплата ЗТЛ клиникой, 0 ₽ пациенту)";
 		structuredNotes = `* Гарантия: ${liabilityLabel}\n${structuredNotes}`;
 	}
+
+	const effectiveAttachedImage = data.attachedImageUrl || data.attachedXrayUrl || null;
 
 	const [createdOrder] = await tx
 		.insert(labOrders)
@@ -172,6 +186,7 @@ export async function insertLabOrderInDb(
 			colorVita: normalizedColor,
 			dueDate: parsedDueDate,
 			clinicalNotes: structuredNotes.trim() || null,
+			attachedImageUrl: effectiveAttachedImage,
 			priceRub: finalPriceRub,
 			labCostRub: finalLabCostRub,
 			isWarranty,
@@ -224,6 +239,7 @@ export async function insertLabOrderInDb(
 					material: effectiveMaterial || "zirconia_multilayer_gradient",
 					shadeSystem: "VITA_CLASSICAL",
 					shadeFinal: normalizedColor,
+					shadeStump: data.stumpShade || null,
 					priceRub: String(pricePerTooth.toFixed(2)),
 				});
 			}

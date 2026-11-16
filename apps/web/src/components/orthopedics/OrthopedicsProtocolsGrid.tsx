@@ -21,15 +21,15 @@ export interface OrthopedicsProtocolsGridProps {
 export function getProtocolIcon(category: OrthopedicProtocolPreset["category"]) {
 	switch (category) {
 		case "prep_crown":
-			return <DentalCrown size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />;
+			return <DentalCrown size={18} className="text-[var(--primary)] shrink-0" />;
 		case "try_in":
-			return <CheckCircle2 size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />;
+			return <CheckCircle2 size={18} className="text-[var(--primary)] shrink-0" />;
 		case "permanent_cementation":
-			return <DentalVeneer size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
+			return <DentalVeneer size={18} className="text-[var(--primary)] shrink-0" />;
 		case "removable_prosthetics":
-			return <DentalBridge size={18} className="text-purple-600 dark:text-purple-400 shrink-0" />;
+			return <DentalBridge size={18} className="text-[var(--primary)] shrink-0" />;
 		case "consultation_norm":
-			return <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />;
+			return <ShieldCheck size={18} className="text-[var(--primary)] shrink-0" />;
 	}
 }
 
@@ -48,7 +48,7 @@ export function OrthopedicsProtocolsGrid({
 						key={proto.id}
 						className={`p-3 rounded-lg border transition-colors flex flex-col justify-between gap-2 ${
 							isMasterPreset
-								? "md:col-span-2 border-teal-500/60 bg-teal-50/70 dark:bg-teal-950/30 ring-1 ring-teal-500/30 shadow-xs"
+								? "md:col-span-2 border-[var(--primary)]/50 bg-[var(--primary)]/10 ring-1 ring-[var(--primary)]/30 shadow-xs"
 								: "border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)]"
 						}`}
 						data-testid={`ortho-protocol-card-${proto.id}`}
@@ -62,7 +62,7 @@ export function OrthopedicsProtocolsGrid({
 											{proto.shortLabel}
 										</h4>
 										{isMasterPreset && (
-											<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-600 text-white shadow-2xs shrink-0">
+											<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--primary)] text-white shadow-2xs shrink-0">
 												Полный цикл
 											</span>
 										)}
@@ -75,7 +75,7 @@ export function OrthopedicsProtocolsGrid({
 									{proto.treatment}
 								</p>
 								{isMasterPreset && (
-									<div className="mt-1 text-[11px] text-[var(--teal,#0d9488)] font-medium">
+									<div className="mt-1 text-[11px] text-[var(--primary)] font-medium">
 										Расходные материалы визита: А-силикон (Silagum), PMMA (Protemp 4), цемент (GC Fuji Plus / RelyX U200).
 									</div>
 								)}
@@ -92,7 +92,7 @@ export function OrthopedicsProtocolsGrid({
 								onClick={() => onApplyProtocol(proto)}
 								className={`min-h-[48px] sm:min-h-[36px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
 									isApplied
-										? "dente-btn-secondary text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/10"
+										? "dente-btn-secondary text-[var(--primary)] border-[var(--primary)]/40 bg-[var(--primary)]/10"
 										: "dente-btn-secondary border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
 								}`}
 								data-testid={`apply-ortho-protocol-${proto.id}`}

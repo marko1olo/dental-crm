@@ -25,28 +25,28 @@ export function OrthopedicPassportHeader({
 	);
 
 	return (
-		<div className="border-b-2 border-teal-600 pb-3.5 mb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+		<div className="border-b-2 border-[var(--primary)] pb-3.5 mb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
 			<div className="min-w-0 flex-1">
-				<div className="flex items-center gap-1.5 text-teal-700 dark:text-teal-400 font-bold text-xs uppercase tracking-wider mb-1">
+				<div className="flex items-center gap-1.5 text-[var(--primary)] font-bold text-xs tracking-wider mb-1">
 					<Building2 size={14} />
 					<span>{clinicName}</span>
 				</div>
-				<h1 className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
+				<h1 className="text-base sm:text-xl font-extrabold text-[var(--ink)] leading-tight">
 					ПАСПОРТ ОРТОПЕДИЧЕСКОЙ КОНСТРУКЦИИ
 				</h1>
-				<h2 className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
-					И СЕРТИФИКАТ ГАРАНТИЙНЫХ ОБЯЗАТЕЛЬСТВ № <span className="font-mono text-teal-700 dark:text-teal-400">{passportNumber}</span>
+				<h2 className="text-xs sm:text-sm font-semibold text-[var(--muted)] mt-0.5">
+					И СЕРТИФИКАТ ГАРАНТИЙНЫХ ОБЯЗАТЕЛЬСТВ № <span className="font-mono text-[var(--primary)]">{passportNumber}</span>
 				</h2>
 			</div>
 
 			<div className="flex items-center gap-2.5 shrink-0">
-				<div className="text-left sm:text-right text-xs shrink-0 font-mono text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-800/60 flex flex-col justify-between">
-					<div>Дата выдачи: <strong className="text-slate-900 dark:text-slate-100">{issueDate}</strong></div>
-					<div>Статус: <strong className="text-emerald-600 dark:text-emerald-400">ПОСТОЯННАЯ ФИКСАЦИЯ</strong></div>
-					<div className="text-[10px] text-slate-500 mt-0.5">LOT: <strong className="font-mono text-slate-700 dark:text-slate-300">{batchLot}</strong></div>
+				<div className="text-left sm:text-right text-xs shrink-0 font-mono text-[var(--muted)] border border-[var(--line)] rounded-lg p-2 bg-[var(--paper-soft)] flex flex-col justify-between">
+					<div>Дата выдачи: <strong className="text-[var(--ink)]">{issueDate}</strong></div>
+					<div>Статус: <strong className="text-[var(--primary)]">ПОСТОЯННАЯ ФИКСАЦИЯ</strong></div>
+					<div className="text-[10px] text-[var(--muted)] mt-0.5">LOT: <strong className="font-mono text-[var(--ink)]">{batchLot}</strong></div>
 				</div>
 				<div
-					className="w-[68px] h-[68px] p-1 bg-white border border-slate-300 dark:border-slate-700 rounded-lg flex flex-col items-center justify-center shrink-0 shadow-2xs"
+					className="w-[68px] h-[68px] p-1 bg-white border border-[var(--line)] rounded-lg flex flex-col items-center justify-center shrink-0 shadow-2xs"
 					title="QR-код проверки подлинности гарантийного сертификата"
 					data-testid="passport-qr-code"
 				>

@@ -16,15 +16,15 @@ export function OrthopedicsChairsideLabOrderBanner({
 	return (
 		<div
 			data-testid="ortho-chairside-linked-lab-order-banner"
-			className="mb-2.5 p-2.5 sm:p-3 rounded-xl border border-[var(--teal-soft,rgba(13,148,136,0.25))] bg-[var(--teal-soft,rgba(13,148,136,0.06))] flex flex-wrap items-center justify-between gap-2.5"
+			className="mb-2.5 p-2.5 sm:p-3 rounded-xl border border-[var(--primary)]/20 bg-[var(--paper-soft)] flex flex-wrap items-center justify-between gap-2.5"
 		>
 			<div className="min-w-0 flex-1 space-y-1">
 				<div className="flex items-center gap-2 flex-wrap">
-					<CheckCircle2 size={16} className="text-[var(--primary,#0d9488)] shrink-0" />
+					<CheckCircle2 size={16} className="text-[var(--primary)] shrink-0" />
 					<span data-testid="ortho-chairside-readiness-headline" className="text-xs font-bold text-[var(--ink)]">
 						{readinessHeadline}
 					</span>
-					<span className="px-1.5 py-0.5 rounded bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal-dark,var(--primary,#0d9488))] border border-[var(--primary,#0d9488)]/20 text-[10px] font-bold">
+					<span className="px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 text-[10px] font-bold">
 						Примерка / фиксация
 					</span>
 				</div>
@@ -55,7 +55,7 @@ export function OrthopedicsChairsideLabOrderBanner({
 						className="secondary-button min-h-[44px] sm:min-h-[34px] px-3 text-xs font-bold inline-flex items-center gap-1.5 shrink-0 focus:outline-none"
 						title="Сформировать Паспорт ортопедической конструкции и Гарантийный талон (А4)"
 					>
-						<FileText size={14} className="text-[var(--primary,#0d9488)] shrink-0" />
+						<FileText size={14} className="text-[var(--primary)] shrink-0" />
 						<span>Паспорт (А4)</span>
 					</button>
 				)}
@@ -63,10 +63,10 @@ export function OrthopedicsChairsideLabOrderBanner({
 					type="button"
 					data-testid="ortho-chairside-confirm-fitting-btn"
 					onClick={onConfirmFitting}
-					className={`min-h-[44px] sm:min-h-[34px] px-3.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 focus:outline-none ${
+					className={`min-h-[44px] sm:min-h-[34px] px-3.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 focus:outline-none ${
 						fittingConfirmed
-							? "bg-[var(--success,#10b981)] text-white shadow-xs"
-							: "bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover,#0f766e)] text-white shadow-xs"
+							? "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--primary)]/40 shadow-xs"
+							: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] shadow-xs"
 					}`}
 				>
 					<Check size={15} />
