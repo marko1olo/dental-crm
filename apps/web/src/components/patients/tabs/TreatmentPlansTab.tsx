@@ -622,10 +622,10 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 								const statusMap: Record<string, { label: string; badgeClass: string }> = {
 									Approved: { label: "Утверждён", badgeClass: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" },
 									Active: { label: "Активный", badgeClass: "bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300" },
-									Draft: { label: "Черновик", badgeClass: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
+									Draft: { label: "Черновик", badgeClass: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]" },
 									Completed: { label: "Завершён", badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300" },
 								};
-								const currentStatus = statusMap[pl.status] ?? { label: pl.status, badgeClass: "bg-slate-100 text-slate-700" };
+								const currentStatus = statusMap[pl.status] ?? { label: pl.status, badgeClass: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]" };
 								return (
 									<button
 										key={pl.id}
@@ -968,7 +968,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 								</div>
 
 								<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-[11px] text-[var(--muted)] leading-relaxed">
-									ℹ️ По <strong>Мандату 8e</strong> врач имеет право применить скидку до 100% на гарантийные переделки и коррекцию работы без задержек и ввода мастер-паролей.
+									ℹ️ Врач имеет право применить скидку до 100% на гарантийные переделки и коррекцию работы без задержек и ввода мастер-паролей.
 								</div>
 							</div>
 

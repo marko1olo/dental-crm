@@ -61,7 +61,7 @@ describe("FamilyWalletPanel — Bonus Point Presets & Touch Targets Invariants",
 	});
 });
 
-describe("PaymentFamilyDepositView & Family Ledger Combo Resolvers", () => {
+describe("Family Wallet & Family Ledger Combo Resolvers", () => {
 	it("3.1 1-Click Family Balance Combo correctly splits deposit offset and card remainder in exact kopecks", () => {
 		// Personal deposit = 0 ₽, Family Balance = 2 400.00 ₽, Total due = 6 000.00 ₽
 		const personalDepositRub = 0;

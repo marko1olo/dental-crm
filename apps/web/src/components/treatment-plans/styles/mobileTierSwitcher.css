@@ -66,7 +66,7 @@
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn:not(.active):hover {
-	background: var(--paper-strong, #334155) !important;
+	background: var(--paper-strong) !important;
 	border-color: var(--line, rgba(255, 255, 255, 0.15)) !important;
 	color: #ffffff !important;
 }
@@ -82,7 +82,7 @@
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn.active {
-	background: var(--paper-strong, #1e293b) !important;
+	background: var(--paper-soft) !important;
 	border-color: var(--line, rgba(255, 255, 255, 0.18)) !important;
 	color: var(--ink, #f8fafc) !important;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;

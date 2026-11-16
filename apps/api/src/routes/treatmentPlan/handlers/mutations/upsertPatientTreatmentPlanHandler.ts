@@ -15,6 +15,7 @@ import {
 	ensurePatientInOrganization,
 	loadTreatmentPlansForPatient,
 	numeric,
+	serializeTreatmentPlan,
 	verifyPlanWriteAccess,
 } from "../../../odontogram/planHelpers.js";
 import {
@@ -379,7 +380,7 @@ export async function handleUpsertPatientTreatmentPlan(
 				),
 			)
 			.limit(1);
-		savedPlan = (rawPlan as unknown as typeof savedPlan) ?? null;
+		savedPlan = rawPlan ? serializeTreatmentPlan(rawPlan, []) : null;
 	}
 
 	return reply.send({

@@ -56,7 +56,7 @@ export const TierCardStagesAccordion: React.FC<TierCardStagesAccordionProps> = (
 									<span className="text-[var(--teal-dark,var(--teal))] truncate min-w-0" title={stg.title}>
 										Этап {stg.stageNumber}: {stg.title.split(":")[1]?.trim() || stg.title}
 									</span>
-									<span className="font-mono text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0">
+									<span className="font-mono text-[var(--ink)] whitespace-nowrap shrink-0">
 										{formatPlanPriceRub(stg.totalRub)}
 									</span>
 								</div>

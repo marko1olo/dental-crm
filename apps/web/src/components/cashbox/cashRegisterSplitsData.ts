@@ -17,10 +17,13 @@ export type CheckoutPaymentMethodType =
 
 export type PaymentMethodTab =
 	| "card"
+	| "card_terminal"
 	| "cash"
 	| "sbp"
+	| "sbp_qr"
 	| "deposit"
 	| "family"
+	| "family_deposit"
 	| "split"
 	| "warranty"
 	| "installment";

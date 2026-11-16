@@ -15,7 +15,7 @@ import {
 	normalizePaymentsForTaxCertificate,
 	type TaxDeductionPaymentItem,
 } from "@dental/shared";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { familyGroups, patientRelationships, patients, payments } from "../../db/schema.js";
 import {
@@ -95,12 +95,17 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 
 	// 4. Fetch all payments in the given tax year for family members
 	const memberIds = members.map((m) => m.id);
+	if (memberIds.length === 0) {
+		return [];
+	}
+
 	const allPayments = await db
 		.select()
 		.from(payments)
 		.where(
 			and(
 				eq(payments.organizationId, organizationId),
+				inArray(payments.patientId, memberIds),
 			),
 		);
 
@@ -322,6 +327,10 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 		const code01EligibleRub = Math.min(code01AmountRub, statutoryLimitRub);
 		const estimated13PercentRefundRub = Math.round((code01EligibleRub + code02AmountRub) * 0.13);
 
+		const signatoryFullName = signatory?.fullName
+			? [signatory.fullName.family, signatory.fullName.given, signatory.fullName.patronymic].filter(Boolean).join(" ")
+			: undefined;
+
 		certificates.push({
 			certificateNumber: certNumber,
 			taxYear,
@@ -338,6 +347,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 			estimated13PercentRefundRub,
 			xmlPayload: xmlContent,
 			xmlFileName: fileName,
+			signatoryName: signatoryFullName,
 		});
 	}
 

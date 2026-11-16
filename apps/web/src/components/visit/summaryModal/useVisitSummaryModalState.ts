@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import type { Appointment } from "@dental/shared";
 import type { VisitDiaryEntry043, FdiToothRecord, ToothSurface } from "../../emr";
-import type { PaymentMethodTab } from "../../finance/modal/payment/paymentModalTypes.js";
+import type { PaymentMethodTab } from "../../cashbox/cashRegisterSplitsData.js";
 import { useVisitCompletion, assembleVisitStoreCompletedServices } from "../useVisitCompletion";
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
@@ -74,7 +74,19 @@ export function useVisitSummaryModalState(
 	const [appendedServices, setAppendedServices] = useState<readonly ChairsideSummaryServiceItem[]>([]);
 
 	const chairsideServices = useMemo(() => {
-		const storeServices = assembleVisitStoreCompletedServices() as readonly ChairsideSummaryServiceItem[];
+		const rawStoreServices = assembleVisitStoreCompletedServices();
+		const storeServices: readonly ChairsideSummaryServiceItem[] = rawStoreServices.map((s) => ({
+			id: s.id,
+			serviceId: s.id,
+			title: s.name,
+			name: s.name,
+			priceRub: s.priceRub,
+			unitPriceRub: s.priceRub,
+			quantity: s.quantity,
+			totalRub: s.totalRub,
+			...(s.code ? { code: s.code } : {}),
+			...(s.toothNumber !== undefined && s.toothNumber !== null ? { toothNumber: s.toothNumber } : {}),
+		}));
 		const activeVisitServices = appLogic?.dashboard?.activeVisit?.completedServices as readonly ChairsideSummaryServiceItem[] | undefined;
 		return resolveChairsideServices(servicesProp, storeServices, activeVisitServices, patient?.id);
 	}, [servicesProp, patient?.id, appLogic?.dashboard?.activeVisit?.completedServices]);

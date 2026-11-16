@@ -57,7 +57,7 @@ export const TierCardPaymentModes: React.FC<TierCardPaymentModesProps> = ({
 					<span>Скидка 5% за 100% оплату:</span>
 					<span className="font-mono whitespace-nowrap">-{formatPlanPriceRub(discount5PctAmount)}</span>
 				</div>
-				<div className="flex justify-between text-slate-800 dark:text-slate-200 font-bold gap-2">
+				<div className="flex justify-between text-[var(--ink)] font-bold gap-2">
 					<span>Итого со скидкой:</span>
 					<span className="font-mono text-[var(--teal,var(--brand-primary))] whitespace-nowrap">{formatPlanPriceRub(priceWith5PctDiscount)}</span>
 				</div>

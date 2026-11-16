@@ -23,13 +23,15 @@ export function buildEndodonticTherapyItems(
 	const stage3: TreatmentPlanItem[] = [];
 	const num = tooth.toothNumber;
 
-	const defCofferdam = DENTAL_SERVICES_CATALOG.CofferdamIsolation!;
-	stage1.push(
-		createPlanItem("s1-cofferdam-" + num, 1, "stage_1_therapy", defCofferdam, num, catalog, validDiscountPct, {
-			customTitle: "Наложение коффердама для изоляции зуба №" + num,
-			isDemoMode: isDemo,
-		}),
-	);
+	const defCofferdam = DENTAL_SERVICES_CATALOG.CofferdamIsolation;
+	if (defCofferdam) {
+		stage1.push(
+			createPlanItem("s1-cofferdam-" + num, 1, "stage_1_therapy", defCofferdam, num, catalog, validDiscountPct, {
+				customTitle: "Наложение коффердама для изоляции зуба №" + num,
+				isDemoMode: isDemo,
+			}),
+		);
+	}
 
 	const canalCount = extractCanalCount(tooth);
 	const defPrep = getEndoPreparationProcedure(canalCount);
@@ -49,22 +51,26 @@ export function buildEndodonticTherapyItems(
 		}),
 	);
 
-	const defBuildup = DENTAL_SERVICES_CATALOG.BuildupFiberPost!;
-	stage1.push(
-		createPlanItem("s1-buildup-" + num, 1, "stage_1_therapy", defBuildup, num, catalog, validDiscountPct, {
-			customTitle: "Восстановление культи зуба №" + num + " под коронку (Build-up со стекловолоконным штифтом)",
-			isDemoMode: isDemo,
-		}),
-	);
-
-	if (isMolarOrPremolar(num)) {
-		const defCrown = DENTAL_SERVICES_CATALOG.CrownZirconia!;
-		stage3.push(
-			createPlanItem("s3-crown-endo-" + num, 3, "stage_3_orthopedics", defCrown, num, catalog, validDiscountPct, {
-				customTitle: "Ортопедическая защита депульпированного зуба №" + num + " коронкой из диоксида циркония",
+	const defBuildup = DENTAL_SERVICES_CATALOG.BuildupFiberPost;
+	if (defBuildup) {
+		stage1.push(
+			createPlanItem("s1-buildup-" + num, 1, "stage_1_therapy", defBuildup, num, catalog, validDiscountPct, {
+				customTitle: "Восстановление культи зуба №" + num + " под коронку (Build-up со стекловолоконным штифтом)",
 				isDemoMode: isDemo,
 			}),
 		);
+	}
+
+	if (isMolarOrPremolar(num)) {
+		const defCrown = DENTAL_SERVICES_CATALOG.CrownZirconia;
+		if (defCrown) {
+			stage3.push(
+				createPlanItem("s3-crown-endo-" + num, 3, "stage_3_orthopedics", defCrown, num, catalog, validDiscountPct, {
+					customTitle: "Ортопедическая защита депульпированного зуба №" + num + " коронкой из диоксида циркония",
+					isDemoMode: isDemo,
+				}),
+			);
+		}
 	}
 
 	return { stage1, stage3 };

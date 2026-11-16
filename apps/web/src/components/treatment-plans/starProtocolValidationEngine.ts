@@ -249,7 +249,7 @@ export function validateTreatmentPlanStarProtocols(
 			protocolCode: "K08_IMPLANT_ORTHO",
 			protocolTitleRu: "Клиническая рекомендация: Совмещение процедур",
 			toothNumber: conflict.toothNumber,
-			ruleDescriptionRu: "Информирование о совмещении терапевтических и хирургических манипуляций (Мандат 8e: автономия врача)",
+			ruleDescriptionRu: "Информирование о совмещении терапевтических и хирургических манипуляций",
 			status: "warning",
 			messageRu: `Клиническая заметка (зуб №${conflict.toothNumber}): совмещение процедур («${conflict.procedureA.name}» и «${conflict.procedureB.name}»).`,
 			recommendationRu: `Врач автономно определяет последовательность и необходимость этапов лечения зуба №${conflict.toothNumber}. Сохранение плана не блокируется.`,

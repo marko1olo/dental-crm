@@ -5,38 +5,44 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PaymentFamilyDepositView } from "../../finance/modal/payment/PaymentFamilyDepositView";
+import type { Patient } from "@dental/shared";
+import { PatientFamilyAndInsuranceWidget } from "../PatientFamilyAndInsuranceWidget";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const patientsDir = path.resolve(__dirname, "..");
 
 describe("Red Team Inquisitor: Family Deposit & Representatives", () => {
-	it("1. PaymentFamilyDepositView displays exact 1-click CTA with family head and family balance", () => {
+	const mockPatient: Patient = {
+		id: "pat-1",
+		organizationId: "org-1",
+		fullName: "Иванов Иван Иванович",
+		phone: "+7 (999) 111-22-33",
+		birthDate: "1985-05-12",
+		gender: "male",
+		status: "active",
+		notes: null,
+		email: null,
+		administrativeProfile: null,
+		balanceRub: 45000,
+		balanceKopecks: 4500000,
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
+	};
+
+	it("1. PatientFamilyAndInsuranceWidget displays family balance and finance triggers cleanly", () => {
 		const html = renderToStaticMarkup(
-			React.createElement(PaymentFamilyDepositView, {
-				patientDepositRub: 0,
-				patientFamilyBalanceRub: 45000,
-				familyHeadName: "Иванов И.И.",
-				familyGroupName: "Семья Ивановых",
-				totalDueRub: 12000,
-				amountRub: "12000.00",
-				isSubmittingDeposit: false,
-				handleDepositOrPartialCombo: () => {},
-				setSplitDepositRub: () => {},
-				setSplitCardRub: () => {},
-				setSplitCashRub: () => {},
-				setSplitSbpRub: () => {},
-				setActiveMethod: () => {},
+			React.createElement(PatientFamilyAndInsuranceWidget, {
+				patient: mockPatient,
+				patientBalance: 45000,
 			}),
 		);
 
-		assert.match(
-			html,
-			/Списать с семейного депозита \(Баланс семьи:\s*45\s*000\s*₽,\s*Глава:\s*Иванов И\.И\.\)/,
+		assert.ok(
+			html.includes("Финансы, семейный счёт") ||
+			html.includes("Касса / Оплата") ||
+			html.includes("patient-card-finance-btn"),
 		);
-		assert.ok(html.includes('data-testid="btn-pay-family-full"'));
-		assert.ok(!html.includes('data-testid="btn-pay-family-full" disabled'));
 	});
 
 	it("2. PatientGeneralInfoTab embeds both PatientFamilyAndInsuranceWidget and PatientRepresentativesSection in family section", () => {

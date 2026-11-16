@@ -7,7 +7,7 @@ import { renderToString } from "react-dom/server";
 import { EmkToolbar } from "../emk/EmkToolbar.js";
 import { RecordNewDiaryInlineForm } from "../../emr/record/tabs/RecordNewDiaryInlineForm.js";
 import { InstallmentsActionBar } from "../../billing/installments/InstallmentsActionBar.js";
-import { DepositFooterActions } from "../../billing/depositModal/DepositFooterActions.js";
+import { RefundModalFooter } from "../../finance/refunds/refundServiceModalModules/RefundModalFooter.js";
 import { CheckoutDiscountAndPayerControls } from "../../cashbox/studioModules/checkout/CheckoutDiscountAndPayerControls.js";
 
 import { fileURLToPath } from "node:url";
@@ -80,19 +80,29 @@ describe("Red Team Clinical Inquisition: Mandates 8e & 8n Verification", () => {
 		assert.ok(html.includes("Принять очередной взнос"), "Must have action text");
 	});
 
-	it("2.2 confirms DepositFooterActions 'Пополнить' button is never dead disabled when amount is 0", () => {
+	it("2.2 confirms RefundModalFooter 'Провести возврат' button is never dead disabled when !hasSelection (Mandate 8e)", () => {
 		const html = renderToString(
-			<DepositFooterActions
-				amountRub={0}
-				isSubmitting={false}
-				isCompleted={false}
+			<RefundModalFooter
+				activeTab="form"
+				setActiveTab={() => {}}
 				onClose={() => {}}
-				onExecute={() => {}}
+				handleExecuteRefund={async () => {}}
+				isProcessing={false}
+				hasSelection={false}
+				calculation={{
+					totalRefundRub: 0,
+					totalRefundKopecks: 0,
+					refundCashRub: 0,
+					refundElectronicRub: 0,
+					refundPrepaidRub: 0,
+					remainingInvoiceDueRub: 0,
+					itemsToRefund: [],
+				}}
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="btn-submit-deposit-topup"'), "Must render btn-submit-deposit-topup");
-		assert.ok(!html.includes('disabled=""') && !html.includes("disabled="), "Button must not have disabled attribute when amount is 0 (shows soft guiding toast instead)");
+		assert.ok(html.includes("Провести возврат"), "Must render refund button");
+		assert.ok(!html.includes("disabled") && !html.includes("disabled:cursor-not-allowed"), "Button must not be dead disabled when !hasSelection (guides with toast instead)");
 	});
 
 	it("3.1 confirms CheckoutDiscountAndPayerControls does not mandate INN for citizens and cleans statutory codes", () => {

@@ -42,9 +42,14 @@ export async function handleUpdateTreatmentPlanStage(
 
 	const updateResult = await db.transaction(async (tx) => {
 		const stageCondition = isUuid
-			? and(eq(treatmentPlanStages.id, stageId), eq(treatmentPlanStages.organizationId, organizationId))
+			? and(
+					eq(treatmentPlanStages.id, stageId),
+					eq(treatmentPlanStages.planId, planId),
+					eq(treatmentPlanStages.organizationId, organizationId),
+				)
 			: !Number.isNaN(stageOrderNumber)
 				? and(
+						eq(treatmentPlanStages.planId, planId),
 						eq(treatmentPlanStages.stageOrder, stageOrderNumber),
 						eq(treatmentPlanStages.organizationId, organizationId),
 					)

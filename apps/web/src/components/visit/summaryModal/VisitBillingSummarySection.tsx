@@ -1,5 +1,5 @@
 import { Banknote, Check, CheckCircle2, CreditCard, Layers, Lightbulb, Plus, QrCode, Wallet } from "lucide-react";
-import type { PaymentMethodTab } from "../../finance/modal/payment/paymentModalTypes.js";
+import type { PaymentMethodTab } from "../../cashbox/cashRegisterSplitsData.js";
 import type { ConsumablesReconciliationResult } from "../../odontogram/treatmentEstimatorReconciler";
 
 export interface VisitBillingSummarySectionProps {

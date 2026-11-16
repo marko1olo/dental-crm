@@ -41,7 +41,7 @@ export const RoadmapStageFooter: React.FC<FooterProps> = ({
 					<button
 						type="button"
 						onClick={onSendStageToVisit}
-						className="min-h-[44px] md:min-h-[32px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--paper-strong)] border border-[var(--line-subtle,rgba(255,255,255,0.08))] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+						className="min-h-[44px] md:min-h-[32px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] border border-[var(--line-subtle,rgba(255,255,255,0.08))] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
 						data-testid={`roadmap-send-to-visit-${stage.stageNumber}`}
 						title="Перенести услуги этапа в текущий приём врача"
 					>

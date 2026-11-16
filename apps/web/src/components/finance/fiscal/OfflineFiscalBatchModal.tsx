@@ -58,7 +58,7 @@ export function OfflineFiscalBatchModal({
 					</div>
 
 					{!s.batchResult ? (
-						<button onClick={s.handleExecuteBatchFiscalization} disabled={s.isProcessing} className="flex items-center gap-2 px-5 py-2.5 mb-2 font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-lg shadow-md min-h-[48px] cursor-pointer" data-testid="btn-execute-batch-fiscalization">
+						<button onClick={s.handleExecuteBatchFiscalization} disabled={s.isProcessing} className="flex items-center gap-2 px-5 py-2.5 mb-2 font-bold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] rounded-xl shadow-sm min-h-[44px] cursor-pointer" data-testid="btn-execute-batch-fiscalization">
 							<Sparkles className="w-5 h-5 animate-pulse" />
 							{s.isProcessing ? "Фискализация..." : "Фискализировать все чеки"}
 						</button>

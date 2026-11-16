@@ -263,6 +263,14 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
    - Автономия врача (Мандат 8e): скидки до 100% (гарантийная переделка 0 ₽ без фискального чека), 0 заблокированных кнопок на Primary CTA.
    - Сплит-оплата: атомарный мульти-тендер (нал + терминал + СБП QR + семейный депозит/аванс) с авто-расчетом остатка в 1 клик.
    - Машинные гейты (Exit Code 0): `check:encoding`, `check:react-hooks`, `check:buttons`, unit-тесты (11/11 web, 76/76 fiscal, 18/18 api).
+17. **DEF-FIN-17 [ЗАКРЫТО] (Red Team Fixer 1 — Касса, 54-ФЗ, Сплит, Семейный баланс)**:
+   - **Sev 1**: Ликвидированы битые импорты удаленного `paymentModalTypes.js` в `types.ts`, `VisitBillingSummarySection.tsx`, `useVisitSummaryModalState.ts`. `PaymentMethodTab` централизован в `apps/web/src/components/cashbox/cashRegisterSplitsData.ts`.
+   - **Sev 1**: Ликвидирован OOM Full Table Scan в `apps/api/src/services/familyWallet/familyFnsTaxService.ts:98-105` — фильтрация всех платежей организации в Node.js заменена на строгий реляционный SQL-запрос через `inArray(payments.patientId, memberIds)` с защитным условием пустых участников.
+   - **Sev 2**: Снята блокировка Primary CTA (Мандат 8e) в `RefundModalFooter.tsx:40-41` (`!hasSelection` удален из `disabled`, исключены классы `disabled:cursor-not-allowed` и `disabled:opacity-50`, обеспечен мгновенный клик без искусственных барьеров).
+   - **Sev 2**: Устранена утечка ТЗ «ИНН для физических лиц не требуется» и хардкод `#0f172a` в `CashFlowFormInputs.tsx` с заменой на семантический токен `var(--ink)`.
+   - **Sev 2**: Устранены градиенты на кнопках в `OfflineFiscalBatchModal.tsx` с заменой на благородный тиловый токен `bg-[var(--teal,#0d9488)]`.
+   - **Снос сирот (`git rm`)**: Физически удалены 8 мертвых файлов (`PaymentFamilyDepositView.tsx`, `DepositTopupModal.tsx`, `depositModal/` 6 файлов).
+   - **4-State Visual Proof**: Сняты 4 канонических скриншота на живом сервере Vite (81 KB, 78 KB, 125 KB, 124 KB) и лично осмотрены через `read_file` (Zero-Clipping, 1 Primary CTA #0d9488, 0px горизонтального скролла, Apple HIG).
 
 ---
 

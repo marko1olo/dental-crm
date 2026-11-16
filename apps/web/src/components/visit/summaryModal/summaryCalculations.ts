@@ -20,7 +20,19 @@ export function resolveChairsideServices(
 	if (Array.isArray(servicesProp) && servicesProp.length > 0) return servicesProp;
 	if (Array.isArray(storeServices) && storeServices.length > 0) return storeServices;
 	if (Array.isArray(activeVisitServices) && activeVisitServices.length > 0) return activeVisitServices;
-	if (isDemoShowcaseMode() || isDemoPatientId(patientId || "")) return DEFAULT_CHAIRSIDE_SERVICES;
+	if (isDemoShowcaseMode() || isDemoPatientId(patientId || "")) {
+		return DEFAULT_CHAIRSIDE_SERVICES.map((s) => ({
+			id: s.id,
+			code804n: s.code804n,
+			code: s.code804n,
+			name: s.title,
+			title: s.title,
+			priceRub: s.unitPriceRub,
+			unitPriceRub: s.unitPriceRub,
+			quantity: s.quantity,
+			...(s.toothCode ? { toothCode: s.toothCode } : {}),
+		})) as readonly ChairsideSummaryServiceItem[];
+	}
 	return [];
 }
 

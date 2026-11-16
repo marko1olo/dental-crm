@@ -54,7 +54,7 @@ export const RoadmapStageHeader: React.FC<HeaderProps> = ({ stage, isExpanded, o
 				<button
 					type="button"
 					onClick={onToggle}
-					className="p-1.5 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] text-[var(--muted,var(--ink-muted))] hover:text-[var(--ink)] cursor-pointer inline-flex items-center justify-center transition-colors"
+					className="p-1.5 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 sm:w-8 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted,var(--ink-muted))] hover:text-[var(--ink)] cursor-pointer inline-flex items-center justify-center transition-colors"
 					aria-label={isExpanded ? "Свернуть" : "Развернуть"}
 					data-testid={`toggle-stage-btn-${stage.stageNumber}`}
 				>

@@ -1,6 +1,7 @@
 import React from "react";
 import { QuickBookingDrawer } from "../../schedule/QuickBookingDrawer";
-import { EmrProtocolGeneratorModal, type ToothSurface } from "../../emr";
+import type { VisitDiaryEntry043 } from "../../emr";
+import { ClinicalProtocolsCatalogModal } from "../clinicalCatalog/ClinicalProtocolsCatalogModal";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 import type { CashboxTenderType } from "../../cashbox/cashRegisterCatalogData.js";
 import type { AppLogicContextType } from "../../../contexts/AppLogicContext";
@@ -23,22 +24,33 @@ export function VisitSummarySequentialFlow({
 
 	if (isProtocolGeneratorOpen) {
 		return (
-			<EmrProtocolGeneratorModal
+			<ClinicalProtocolsCatalogModal
 				isOpen={true}
 				onClose={() => state.setIsProtocolGeneratorOpen(false)}
-				patientFullName={state.patientName !== "—" ? state.patientName : undefined}
-				patientBirthDate={state.patientBirth || undefined}
-				medicalCardNumber={state.patientCard || undefined}
-				initialToothNumber={
-					props.diary.diagnosisTooth ||
-					(state.abnormalTeeth[0] ? String(state.abnormalTeeth[0].toothNumber) : undefined)
+				activeTooth={
+					props.diary.diagnosisTooth
+						? Number(props.diary.diagnosisTooth)
+						: state.abnormalTeeth[0]
+							? Number(state.abnormalTeeth[0].toothNumber)
+							: 16
 				}
-				initialIcd10Code={props.diary.diagnosisIcd10 || undefined}
-				initialSurfaces={(state.abnormalTeeth[0]?.surfaces as ToothSurface[]) || undefined}
-				doctorFullName={props.doctorName !== "—" ? (props.doctorName ?? undefined) : undefined}
-				doctorSpecialty={props.doctorSpecialty ?? undefined}
-				odontogramTeeth={state.mappedOdontogramTeeth}
-				onApplyDiary={(synthesized) => {
+				onApplyPatch={(patch) => {
+					const synthesized: VisitDiaryEntry043 = {
+						id: `diary-${Date.now()}`,
+						entryDate: new Date().toISOString().split("T")[0] || "2026-08-22",
+						doctorFullName: props.doctorName || "Врач-стоматолог",
+						subjectiveComplaints: patch.complaint || patch.anamnesis || "",
+						objectiveStatusLocalis: patch.objectiveStatus || "",
+						assessmentDiagnosisText: patch.diagnosis || "",
+						assessmentIcd10Code: (patch.diagnosis || "").split(" ")[0] || "K02.1",
+						procedureProtocol: patch.treatmentPlan || "",
+						homeCareRecommendations: patch.recommendations || null,
+						toothNumber: props.diary.diagnosisTooth
+							? String(props.diary.diagnosisTooth)
+							: state.abnormalTeeth[0]
+								? String(state.abnormalTeeth[0].toothNumber)
+								: "16",
+					};
 					state.setSynthesizedDiaryPreview(synthesized);
 					props.onApplySynthesizedDiary?.(synthesized);
 					state.setIsProtocolGeneratorOpen(false);
@@ -62,7 +74,7 @@ export function VisitSummarySequentialFlow({
 								chairId: state.nextVisitDraft.chairId,
 								durationMinutes: 45,
 								reason: state.nextVisitDraft.reason || "Следующий этап лечения",
-								comment: state.nextVisitDraft.comment,
+								comment: state.nextVisitDraft.comment || undefined,
 						  }
 						: undefined
 				}

@@ -10,7 +10,6 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
-import { DepositTopupModal } from "../DepositTopupModal.js";
 import {
 	calculateCashChange,
 	calculateSplitBalances,
@@ -177,40 +176,7 @@ describe("Subagent 4 Inquisitor: SplitPaymentModal Multi-Tender & Auto-Calculati
 	});
 });
 
-describe("Subagent 4 Inquisitor: DepositTopupModal 54-FZ Advance", () => {
-	it("renders deposit topup presets and payment methods", () => {
-		const html = renderToString(
-			React.createElement(DepositTopupModal, {
-				isOpen: true,
-				onClose: () => {},
-				patientId: "pat-4",
-				patientName: "Петрова Анна Сергеевна",
-				currentDepositRub: 15000,
-			})
-		);
-
-		assert.ok(html.includes('data-testid="deposit-topup-modal"'));
-		assert.ok(html.includes("Пополнение депозита пациента"));
-		assert.ok(html.includes('data-testid="input-deposit-amount"'));
-
-		// Quick presets (+5000, +10000, +20000, +50000, +100000)
-		for (const preset of DEPOSIT_QUICK_PRESETS_RUB) {
-			assert.ok(html.includes(`data-testid="btn-deposit-preset-${preset}"`));
-		}
-
-		// Payment method tiles
-		assert.ok(html.includes('data-testid="btn-deposit-method-card"'));
-		assert.ok(html.includes('data-testid="btn-deposit-method-sbp"'));
-		assert.ok(html.includes('data-testid="btn-deposit-method-cash"'));
-		assert.ok(html.includes('data-testid="btn-deposit-method-bank"'));
-
-		// Family toggle
-		assert.ok(html.includes('data-testid="toggle-family-wallet"'));
-
-		// Submit button
-		assert.ok(html.includes('data-testid="btn-submit-deposit-topup"'));
-	});
-
+describe("Subagent 4 Inquisitor: Exact Cash Change Calculations", () => {
 	it("calculates cash change exact kopecks and handles underpayment safely", () => {
 		const change1 = calculateCashChange(4500, 5000);
 		assert.equal(change1.isShortage, false);

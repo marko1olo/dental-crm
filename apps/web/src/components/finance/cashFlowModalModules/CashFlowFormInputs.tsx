@@ -28,7 +28,7 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 			<div>
 				<label
 					htmlFor="cash-flow-amount-input"
-					className="block text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider mb-1.5"
+					className="block text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-1.5"
 				>
 					Сумма операции (₽):
 				</label>
@@ -42,9 +42,9 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 						value={cashFlowAmount}
 						onChange={(e) => setCashFlowAmount(e.target.value)}
 						data-testid="input-cash-flow-amount"
-						className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper,#ffffff)] text-lg font-black font-mono text-[var(--ink,#0f172a)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
+						className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper)] text-lg font-black font-mono text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
 					/>
-					<span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--muted,#64748b)] pointer-events-none">
+					<span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--muted)] pointer-events-none">
 						₽
 					</span>
 				</div>
@@ -55,7 +55,7 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 							key={amt}
 							type="button"
 							onClick={() => setCashFlowAmount(String(amt))}
-							className="min-h-[44px] px-3 py-1 text-xs font-bold rounded-lg border border-[var(--line,rgba(0,0,0,0.1))] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer"
+							className="min-h-[44px] px-3 py-1 text-xs font-bold rounded-lg border border-[var(--line,rgba(0,0,0,0.1))] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--glass-hover)] transition-all cursor-pointer"
 						>
 							+{amt.toLocaleString("ru-RU")} ₽
 						</button>
@@ -75,7 +75,7 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 			<div>
 				<label
 					htmlFor="cash-flow-basis-input"
-					className="block text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider mb-1.5"
+					className="block text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-1.5"
 				>
 					Основание операции / Назначение платежа:
 				</label>
@@ -86,14 +86,14 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 					value={cashFlowBasis}
 					onChange={(e) => setCashFlowBasis(e.target.value)}
 					data-testid="input-cash-flow-basis"
-					className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
+					className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
 				/>
 			</div>
 
 			<div>
 				<label
 					htmlFor="cash-flow-person-input"
-					className="block text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider mb-1.5"
+					className="block text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-1.5"
 				>
 					{isCashIn
 						? "ФИО плательщика / сотрудника (опционально):"
@@ -106,11 +106,8 @@ export const CashFlowFormInputs: React.FC<CashFlowFormInputsProps> = ({
 					value={cashFlowPerson}
 					onChange={(e) => setCashFlowPerson(e.target.value)}
 					data-testid="input-cash-flow-person"
-					className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
+					className="w-full min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line,rgba(0,0,0,0.15))] bg-[var(--paper)] text-xs text-[var(--ink)] focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
 				/>
-				<p className="text-[11px] text-[var(--muted,#64748b)] mt-1">
-					ИНН для физических лиц не требуется.
-				</p>
 			</div>
 		</div>
 	);

@@ -1,7 +1,7 @@
 import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 import type { VisitDiaryEntry043 } from "../../emr";
 import type { RadiologySnapshotItem } from "../VisitSummaryRadiologyGallery";
-import type { PaymentMethodTab } from "../../finance/modal/payment/paymentModalTypes.js";
+import type { PaymentMethodTab } from "../../cashbox/cashRegisterSplitsData.js";
 import type { ConsumablesReconciliationResult } from "../../odontogram/treatmentEstimatorReconciler";
 
 export type { RadiologySnapshotItem, ConsumablesReconciliationResult };
@@ -18,7 +18,7 @@ export interface ChairsideSummaryServiceItem {
 	readonly price?: number;
 	readonly quantity?: number;
 	readonly totalRub?: number;
-	readonly toothNumber?: number;
+	readonly toothNumber?: number | string;
 	readonly toothCode?: string;
 	[key: string]: unknown;
 }

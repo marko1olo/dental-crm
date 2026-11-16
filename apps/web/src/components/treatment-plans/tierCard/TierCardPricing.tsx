@@ -63,7 +63,7 @@ export const TierCardPricing: React.FC<TierCardPricingProps> = ({
 
 			{hasPriceDrift && tier.catalogDriftRub !== undefined && (
 				<div
-					className="text-[10px] text-slate-600 dark:text-slate-400 font-medium bg-slate-200/50 dark:bg-slate-800/50 px-2 py-0.5 rounded border border-slate-300/50 dark:border-slate-700/50"
+					className="text-[10px] text-[var(--muted)] font-medium bg-[var(--paper-soft)] px-2 py-0.5 rounded border border-[var(--line)]"
 					data-testid={`tier-drift-badge-${tier.tierId}`}
 					title="Цены в действующем каталоге изменились, смета тарифа сохранена неизменной"
 				>

@@ -209,9 +209,9 @@ export async function handleApproveTreatmentPlan(
 	}
 
 	const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
-	let createdInvoice: CreatedInvoiceSummary | null = null;
 
-	const approvedPlan = await db.transaction(async (tx) => {
+	const { approvedPlan, createdInvoice } = await db.transaction(async (tx) => {
+		let invoice: CreatedInvoiceSummary | null = null;
 		const [updated] = await tx
 			.update(treatmentPlans)
 			.set({
@@ -251,7 +251,7 @@ export async function handleApproveTreatmentPlan(
 			});
 
 			// DEF-PLAN-01: Создаем реальный счет/наряд в БД при утверждении плана
-			createdInvoice = await createInvoiceForApprovedPlan(tx, {
+			invoice = await createInvoiceForApprovedPlan(tx, {
 				organizationId,
 				patientId: existing.patientId,
 				planId: id,
@@ -260,7 +260,7 @@ export async function handleApproveTreatmentPlan(
 			});
 		}
 
-		return updated;
+		return { approvedPlan: updated, createdInvoice: invoice };
 	});
 
 	if (!approvedPlan) {
@@ -288,11 +288,11 @@ export async function handleApproveTreatmentPlan(
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "INVOICE_CREATED",
 				payload: {
-					invoiceId: (createdInvoice as CreatedInvoiceSummary).id,
-					invoiceNumber: (createdInvoice as CreatedInvoiceSummary).invoiceNumber,
+					invoiceId: createdInvoice.id,
+					invoiceNumber: createdInvoice.invoiceNumber,
 					patientId: existing.patientId,
-					patientName: (createdInvoice as CreatedInvoiceSummary).patientName,
-					totalAmountRub: (createdInvoice as CreatedInvoiceSummary).totalAmountRub,
+					patientName: createdInvoice.patientName,
+					totalAmountRub: createdInvoice.totalAmountRub,
 					status: "draft",
 				},
 			});
@@ -340,9 +340,9 @@ export async function handleUpdateTreatmentPlanStatus(
 
 	const isApproved = status.toLowerCase() === "approved";
 	const selectedTier = parsed.data.selectedTier || parsed.data.alternativeTier;
-	let createdInvoice: CreatedInvoiceSummary | null = null;
 
-	const updatedPlan = await db.transaction(async (tx) => {
+	const { updatedPlan, createdInvoice } = await db.transaction(async (tx) => {
+		let invoice: CreatedInvoiceSummary | null = null;
 		const [updated] = await tx
 			.update(treatmentPlans)
 			.set({
@@ -362,7 +362,7 @@ export async function handleUpdateTreatmentPlanStatus(
 				planGroupId: existing.planGroupId,
 			});
 
-			createdInvoice = await createInvoiceForApprovedPlan(tx, {
+			invoice = await createInvoiceForApprovedPlan(tx, {
 				organizationId,
 				patientId: existing.patientId,
 				planId: id,
@@ -371,7 +371,7 @@ export async function handleUpdateTreatmentPlanStatus(
 			});
 		}
 
-		return updated;
+		return { updatedPlan: updated, createdInvoice: invoice };
 	});
 
 	if (!updatedPlan) {
@@ -399,11 +399,11 @@ export async function handleUpdateTreatmentPlanStatus(
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "INVOICE_CREATED",
 				payload: {
-					invoiceId: (createdInvoice as CreatedInvoiceSummary).id,
-					invoiceNumber: (createdInvoice as CreatedInvoiceSummary).invoiceNumber,
+					invoiceId: createdInvoice.id,
+					invoiceNumber: createdInvoice.invoiceNumber,
 					patientId: existing.patientId,
-					patientName: (createdInvoice as CreatedInvoiceSummary).patientName,
-					totalAmountRub: (createdInvoice as CreatedInvoiceSummary).totalAmountRub,
+					patientName: createdInvoice.patientName,
+					totalAmountRub: createdInvoice.totalAmountRub,
 					status: "draft",
 				},
 			});

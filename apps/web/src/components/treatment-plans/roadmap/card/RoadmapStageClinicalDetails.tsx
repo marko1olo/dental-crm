@@ -23,7 +23,7 @@ export const RoadmapStageClinicalDetails: React.FC<DetailsProps> = ({ stage }) =
 							{`Выполнено ${completedProcsCount} из ${stage.procedures.length} процедур (${percent}%)`}
 						</span>
 					</div>
-					<div className="w-full h-1.5 rounded-full bg-[var(--paper-soft,#1e293b)] overflow-hidden border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
+					<div className="w-full h-1.5 rounded-full bg-[var(--paper-soft)] overflow-hidden border border-[var(--line-subtle,rgba(255,255,255,0.05))]">
 						<div className="h-full rounded-full bg-emerald-500 transition-all duration-300" style={{ width: `${percent}%` }} />
 					</div>
 				</div>
