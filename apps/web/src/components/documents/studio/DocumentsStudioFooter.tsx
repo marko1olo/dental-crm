@@ -124,7 +124,7 @@ export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
 						className="dente-btn-secondary min-h-[44px]"
 						title="Подтвердить наличие физического бумажного оригинала с подписью"
 					>
-						<CheckCircle2 size={15} className="text-emerald-600" />
+						<CheckCircle2 size={15} className="text-[var(--teal,#0d9488)]" />
 						<span>Подтвердить подписание на бумаге</span>
 					</button>
 				)}
@@ -142,15 +142,15 @@ export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
 					{isTax ? <Zap size={16} /> : <Printer size={16} />}
 					<span className="hidden sm:inline">
 						{isTax
-							? "✓ Печать справки для налогового вычета (А4)"
+							? "Печать справки для налогового вычета (А4)"
 							: isConsent
-								? "✓ Подписать пакет согласий и распечатать"
+								? "Подписать пакет согласий и распечатать"
 								: hasSigned
-									? "✓ Распечатать подписанный пакет приёма"
-									: "✓ Распечатать пакет приёма и подписать"}
+									? "Распечатать подписанный пакет приёма"
+									: "Распечатать пакет приёма и подписать"}
 					</span>
 					<span className="sm:hidden">
-						{isTax ? "✓ Печать справки (А4)" : isConsent ? "✓ Подписать пакет" : "✓ Распечатать"}
+						{isTax ? "Печать справки (А4)" : isConsent ? "Подписать пакет" : "Распечатать"}
 					</span>
 				</button>
 			</div>

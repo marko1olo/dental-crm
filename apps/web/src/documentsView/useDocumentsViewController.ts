@@ -405,7 +405,6 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 			isClinicalVisitOpen, setIsClinicalVisitOpen, isTaxAccountingOpen, setIsTaxAccountingOpen,
 			isSanpinRegistryOpen, setIsSanpinRegistryOpen, isAutoclaveLogOpen, setIsAutoclaveLogOpen,
 			onOpenAutoclaveLog: () => setIsAutoclaveLogOpen(true),
-			onOpenAutoclaveLog257: () => setIsAutoclaveLogOpen(true),
 			isFnsNdflXmlOpen, setIsFnsNdflXmlOpen, isEgiszRemdOpen, setIsEgiszRemdOpen,
 			isSickLeaveElnOpen, setIsSickLeaveElnOpen, isA4PrintPreviewOpen, setIsA4PrintPreviewOpen,
 			isPatientConsentSignDrawerOpen, setIsPatientConsentSignDrawerOpen,

@@ -8,10 +8,13 @@
 export * from "./consentCatalogData";
 
 // Каноническая студия пакетного подписания согласий и договоров (Мандаты 8e, 8am)
-export { ConsentStudioModal, type ConsentStudioModalProps } from "./ConsentStudioModal";
+export {
+	ConsentStudioModal,
+	InformedConsentModal,
+	InformedConsentModal as ConsentModal,
+	type DocumentsStudioModalProps as ConsentStudioModalProps,
+	type DocumentsStudioModalProps as InformedConsentModalProps,
+} from "../documents/DocumentsStudioModal";
 
 // Автономный лаунчер deep links (#consents, #consent, ?consent=1, dente:open-consent)
 export { DirectConsentLauncher } from "./DirectConsentLauncher";
-
-// Фасады совместимости
-export { InformedConsentModal, ConsentModal, type InformedConsentModalProps } from "./InformedConsentModal";

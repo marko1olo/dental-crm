@@ -12,7 +12,7 @@ export interface ConsentSignersRowProps {
 	readonly isSignPadOpen: boolean;
 	readonly onToggleSignPad: () => void;
 	readonly hasSigned: boolean;
-	readonly signedStatusText?: string;
+	readonly signedStatusText?: string | undefined;
 	readonly onClearCanvas: () => void;
 	readonly canvasRef: React.RefObject<HTMLCanvasElement | null>;
 	readonly onStartDrawing: (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => void;
@@ -21,8 +21,8 @@ export interface ConsentSignersRowProps {
 	readonly clinicName: string;
 	readonly clinicLicense: string;
 	readonly doctorFullName: string;
-	readonly toastNotice?: string | null;
-	readonly toastType?: "success" | "error" | "info";
+	readonly toastNotice?: string | null | undefined;
+	readonly toastType?: "success" | "error" | "info" | undefined;
 }
 
 export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
@@ -41,7 +41,7 @@ export const ConsentSignersRow: React.FC<ConsentSignersRowProps> = ({
 	toastNotice,
 	toastType = "info",
 }) => {
-	const currentStatusLabel = signedStatusText || (hasSigned ? "✓ Подписано" : "Ожидает росписи");
+	const currentStatusLabel = signedStatusText || (hasSigned ? "Подписано" : "Ожидает росписи");
 
 	return (
 		<div className="space-y-3">

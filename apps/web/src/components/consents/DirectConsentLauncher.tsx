@@ -9,7 +9,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
-import { ConsentStudioModal } from "./ConsentStudioModal";
+import { ConsentStudioModal } from "../documents/DocumentsStudioModal";
 import { type ConsentDocumentId, normalizeConsentDocId } from "./consentCatalogData";
 
 export const isConsentTarget = (): boolean => {

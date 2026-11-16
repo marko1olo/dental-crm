@@ -1396,6 +1396,22 @@
   - 🌙 Mobile Dark (390×844 @2x Retina): [`docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png) (144.4 KB)
   Вердикт: **[ПРОВЕРЕНО: ЧИСТО]**.
 
+### [DOC-10] [SEV-1] [ИСПРАВЛЕНО] Ликвидация Потёмкинского стаба scope mismatch, дубликатов словарей, восстановление автономии врача (Мандат 8e) и снос 406 строк сирот в студии согласий
+- **Файлы:**
+  - [`apps/web/src/components/consents/consentSsotEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/consentSsotEngine.ts) (Ликвидация фиктивного `detectConsentScopeMismatch(params: any): any` и дубликата `STATUTORY_CONSENT_KEY_LABELS` в пользу канонического реэкспорта)
+  - [`apps/web/src/components/consents/consentSummaryHelper.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/consentSummaryHelper.ts) (Консолидация полного реестра типов согласий, очистка канцелярита приказов 1051н и 323-ФЗ)
+  - [`apps/web/src/documentsView/DocumentsA4PrintPreview.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/documentsView/DocumentsA4PrintPreview.tsx) (Восстановление Автономии врача по Мандату 8e: снятие блокирующего `disabled` с кнопки сохранения бланка)
+  - [`apps/web/src/components/documents/surgicalPackage/anesthesiaSheet.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/surgicalPackage/anesthesiaSheet.ts) (Замена сырого «Приказ МЗ РФ № 1051н» на «Информированное согласие»)
+  - [`apps/web/src/components/documents/primaryIntakePackage/consentSheet.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/primaryIntakePackage/consentSheet.ts) (Замена сырого приказа на «Информированное добровольное согласие»)
+  - `apps/web/src/components/consents/studio/` (Физический снос 3 мертвых сирот на 406 строк кода: `ConsentBatchSignActions.tsx`, `ConsentDocumentViewer.tsx`, `ConsentSignaturePad.tsx`)
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Ликвидирован Потёмкинский стаб `detectConsentScopeMismatch` с бестиповым `any`, слепо возвращавший `hasMismatch: false`. Каноническая типизированная логика реэкспортируется из `consentSummaryHelper.ts` (`ConsentScopeMismatchParams`, `ConsentScopeMismatchResult`).
+  2. Словарь `STATUTORY_CONSENT_KEY_LABELS` сведен к единому SSOT в `consentSummaryHelper.ts` и реэкспортирован в `consentSsotEngine.ts` без дублирования.
+  3. В `DocumentsA4PrintPreview.tsx` Primary CTA кнопка «Сохранить бланк» больше никогда не блокируется через `disabled`. Сохранен статус `aria-busy` и добавлен guard clause `if (documentCreateSavingKind) return;`.
+  4. Сырые нормативные коды «Приказ МЗ РФ № 1051н» и «323-ФЗ» заменены на чистый профессиональный язык в печатных формах и хелперах.
+  5. 22/22 целевых тестов PASS (`InformedConsentModal.test.ts`, `informedConsent.test.ts`, `documentPackages.test.ts`).
+  6. 4-State Visual Proof: актуализированы скриншоты в `docs/proofs/documents/` (PC/Mobile x Light/Dark), лично проинспектированы через `read_file`. Вердикт: **[ПРОВЕРЕНО: ЧИСТО]**.
+
 
 ## 12. 🔐 АВТОРИЗАЦИЯ, RBAC, БЕЗОПАСНОСТЬ, ПИН-КОДЫ И АУДИТ-ЛОГИ
 

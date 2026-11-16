@@ -423,6 +423,7 @@ export interface ClinicRequisites {
 	readonly address: string;
 	readonly phone: string;
 	readonly license: string;
+	readonly kpp?: string | undefined;
 }
 
 export interface PatientRequisites {
