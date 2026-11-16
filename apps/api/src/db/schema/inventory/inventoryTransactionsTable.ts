@@ -96,6 +96,7 @@ export const inventoryTransactions = pgTable(
 		isOverdraft: boolean("is_overdraft").default(false),
 		userId: uuid("user_id"),
 		notes: text("notes"),
+		metadata: jsonb("metadata").$type<Record<string, unknown>>(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

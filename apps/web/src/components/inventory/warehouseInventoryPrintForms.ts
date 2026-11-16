@@ -315,3 +315,8 @@ export function generateInv19Html(doc: WarehouseInventoryAuditDocument): string 
 </body>
 </html>`;
 }
+
+export const generateInventoryAuditActHtml = generateInv3Html;
+export const generateDiscrepancyStatementHtml = generateInv19Html;
+export const generateMaterialWriteoffActHtml = generateWarehouseWriteoffActHtml;
+

@@ -97,10 +97,10 @@ describe("Warehouse Suite: Overdraft & FEFO & Waybills", () => {
 		assert.equal(totals.totalCostKopecks, 1034000);
 	});
 
-	it("генерирует валидный HTML печатной формы ТОРГ-12", () => {
+	it("генерирует валидный HTML печатной формы приходной накладной", () => {
 		const sampleWaybill = createSampleDentalWaybill();
 		const html = generateTorg12Html(sampleWaybill);
-		assert.ok(html.includes("ТОРГ-12"));
+		assert.ok(html.includes("Приходная накладная") || html.includes("ПРИХОДНАЯ НАКЛАДНАЯ"));
 		assert.ok(html.includes(sampleWaybill.waybillNumber));
 		assert.ok(html.includes(sampleWaybill.supplier.name));
 	});

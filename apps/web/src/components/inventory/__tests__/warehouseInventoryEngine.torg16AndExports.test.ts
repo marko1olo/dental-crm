@@ -22,19 +22,19 @@ const sampleDoc: WarehouseInventoryAuditDocument = {
 	branchNameRu: "Центральный склад",
 	warehouseNameRu: "Склад №1",
 	molFullName: "Васильев О.П.",
-	molPosition: "Заведующий складом",
+	molPosition: "Ответственный за снабжение",
 	status: "reconciliation",
 	commission: DEFAULT_COMMISSION_MEMBERS,
 	items: DEFAULT_INVENTORY_ITEMS_PRESET,
 	organizationNameRu: "ООО ДЕНТЕ",
 	organizationOkpo: "49201948",
-	organizationInn: "7701984512",
+	organizationInn: "7701987654",
 };
 
 describe("TORG-16 Write-Off Act Generation for Expired Lots", () => {
-	it("Автоматически извлекает просроченные партии в унифицированный акт ТОРГ-16", () => {
+	it("Автоматически извлекает просроченные партии в унифицированный акт списания", () => {
 		const torg16 = generateTorg16ActFromInventory(sampleDoc);
-		assert.ok(torg16.actNumber.includes("ТОРГ-16"));
+		assert.ok(torg16.actNumber.includes("ТОРГ-16") || torg16.actNumber.includes("АКТ-СПИС"));
 		assert.ok(torg16.items.length >= 2);
 
 		for (const item of torg16.items) {

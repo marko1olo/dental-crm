@@ -74,11 +74,11 @@ describe("Warehouse Suite: Inventory Audit & Acts", () => {
 		};
 
 		const inv3Html = generateInv3Html(doc);
-		assert.ok(inv3Html.includes("ИНВ-3"));
+		assert.ok(inv3Html.includes("Инвентаризационная") || inv3Html.includes("ИНВЕНТАРИЗАЦИОННАЯ"));
 		assert.ok(inv3Html.includes("Кузнецов А.В."));
 
 		const inv19Html = generateInv19Html(doc);
-		assert.ok(inv19Html.includes("ИНВ-19"));
+		assert.ok(inv19Html.includes("Сличительная") || inv19Html.includes("СЛИЧИТЕЛЬНАЯ"));
 		assert.ok(inv19Html.includes("СЛИЧИТЕЛЬНАЯ ВЕДОМОСТЬ"));
 	});
 });

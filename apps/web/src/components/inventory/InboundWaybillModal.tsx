@@ -10,6 +10,45 @@ import React, { useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Loader2, PackagePlus, Plus, X, Zap, Box } from "lucide-react";
 import { InboundWaybillItemsTable } from "./InboundWaybillItemsTable.js";
+import { CANONICAL_DENTAL_SUPPLIERS } from "./acceptanceWaybills/acceptanceCanonicalSuppliers.js";
+import { generateAcceptanceWaybillHtml } from "./acceptanceWaybills/acceptanceWaybillPrintDocument.js";
+import { createWaybillItem } from "./acceptanceWaybills/acceptanceWaybillItemFactory.js";
+import type { AcceptanceWaybillDocument } from "./acceptanceWaybillsTypes.js";
+
+function printHtmlViaHiddenIframe(htmlContent: string, documentTitle = "Приходная накладная"): void {
+	if (typeof document === "undefined") return;
+	const iframe = document.createElement("iframe");
+	iframe.style.position = "fixed";
+	iframe.style.right = "0";
+	iframe.style.bottom = "0";
+	iframe.style.width = "0";
+	iframe.style.height = "0";
+	iframe.style.border = "0";
+	iframe.title = documentTitle;
+	document.body.appendChild(iframe);
+	const iframeDoc = iframe.contentWindow?.document;
+	if (!iframeDoc) {
+		if (document.body.contains(iframe)) document.body.removeChild(iframe);
+		return;
+	}
+	iframeDoc.open();
+	iframeDoc.write(htmlContent);
+	iframeDoc.close();
+	setTimeout(() => {
+		try {
+			iframe.contentWindow?.focus();
+			iframe.contentWindow?.print();
+		} catch (e) {
+			console.warn("Iframe print error", e);
+		} finally {
+			setTimeout(() => {
+				if (document.body.contains(iframe)) {
+					document.body.removeChild(iframe);
+				}
+			}, 1000);
+		}
+	}, 200);
+}
 
 export interface InboundInvoiceItem {
 	id: string;
@@ -47,12 +86,7 @@ export interface InboundWaybillModalProps {
 export type WarehouseInboundInvoiceModalProps = InboundWaybillModalProps;
 export type AcceptanceWaybillsModalProps = InboundWaybillModalProps;
 
-const DEFAULT_SUPPLIERS = [
-	"ООО «Стомторг» (Санкт-Петербург)",
-	"ЗАО «ВладМиВа» (Белгород)",
-	"ООО «ДентОпт» (Москва)",
-	"ТД «Северная Каролина»",
-];
+const DEFAULT_SUPPLIERS = CANONICAL_DENTAL_SUPPLIERS.map((s) => s.name);
 
 const PRESETS = [
 	{ label: "Септанест", items: [{ name: "Септанест с адреналином 1:100 000 (50 карпул/уп)", quantity: 5, priceRub: 5400, unit: "упак", lot: "SEPT-2026-A", exp: "2028-12-31" }] },
@@ -75,7 +109,9 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 	const [invoiceNumber, setInvoiceNumber] = useState(
 		initialWaybill?.waybillNumber || `Приходная накладная № ${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-1`,
 	);
-	const [supplierName, setSupplierName] = useState(initialWaybill?.supplier?.name || initialWaybill?.supplierName || DEFAULT_SUPPLIERS[0]);
+	const [supplierName, setSupplierName] = useState(
+		initialWaybill?.supplier?.name || initialWaybill?.supplierName || "",
+	);
 	const [receiptDate, setReceiptDate] = useState(initialWaybill?.receiptDate || new Date().toISOString().slice(0, 10));
 	const [isPosting, setIsPosting] = useState(false);
 	const [errorBanner, setErrorBanner] = useState<string | null>(null);
@@ -88,18 +124,27 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 		if (initialWaybill?.items?.length) {
 			return initialWaybill.items.map((it: any, idx: number) => ({
 				id: it.id || `line-${idx}`,
+				inventoryItemId: it.inventoryItemId || it.itemId,
 				name: it.name,
 				quantity: Number(it.quantity) || 1,
 				priceRub: Number(it.unitPriceKopecks ? it.unitPriceKopecks / 100 : (it.unitCostRub || it.priceRub)) || 0,
 				priceKopecks: Number(it.unitPriceKopecks || (it.unitCostRub ? Number(it.unitCostRub) * 100 : 0)) || 0,
 				unit: it.unit || "шт.",
-				lotNumber: it.batchNumber || it.lotNumber || it.lot || `LOT-${idx}`,
-				expirationDate: it.expirationDate || "2028-12-31",
+				lotNumber: it.batchNumber || it.lotNumber || it.lot || `LOT-${idx + 1}`,
+				expirationDate: it.expirationDate || new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
 			}));
 		}
 		return [
-			{ id: "line-1", name: "Септанест с адреналином 1:100 000 (50 карпул/уп)", quantity: 5, priceRub: 5400, priceKopecks: 540000, unit: "упак", lotNumber: "SEPT-2026-A", expirationDate: "2028-12-31" },
-			{ id: "line-2", name: "Filtek Ultimate A2 (шприц 4г)", quantity: 10, priceRub: 3200, priceKopecks: 320000, unit: "шт.", lotNumber: "FLTK-2026-X", expirationDate: "2027-10-31" },
+			{
+				id: "line-1",
+				name: "",
+				quantity: 1,
+				priceRub: 0,
+				priceKopecks: 0,
+				unit: "шт.",
+				lotNumber: "",
+				expirationDate: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
+			},
 		];
 	});
 
@@ -176,6 +221,57 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 
 	const totalKopecks = useMemo(() => lines.reduce((acc, l) => acc + (Number(l.quantity) || 0) * (Number(l.priceKopecks) || 0), 0), [lines]);
 	const totalRub = totalKopecks / 100;
+
+	const handlePrintWaybill = () => {
+		const supplierObj = CANONICAL_DENTAL_SUPPLIERS.find(
+			(s) => s.name.toLowerCase() === supplierName.toLowerCase(),
+		) || {
+			id: `sup-${supplierName || "custom"}`,
+			name: supplierName || "Стоматологический поставщик",
+			inn: "",
+			isPreferred: false,
+		};
+
+		const waybillDoc: AcceptanceWaybillDocument = {
+			id: `wb-print-${Date.now()}`,
+			waybillNumber: invoiceNumber,
+			receiptDate,
+			supplier: supplierObj,
+			warehouseName: "Основной склад",
+			status: "posted",
+			items: lines.map((l, idx) => {
+				const qty = Number(l.quantity) || 1;
+				const costKopecks = Number(l.priceKopecks) || 0;
+				return createWaybillItem({
+					id: l.id || `line-${idx}`,
+					inventoryItemId: l.inventoryItemId,
+					name: l.name || "Материал стоматологический",
+					category: "Расходные",
+					unit: l.unit || "шт.",
+					batchNumber: l.lotNumber || `LOT-${idx + 1}`,
+					expirationDate: l.expirationDate || new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
+					quantity: qty,
+					unitPriceKopecks: costKopecks,
+					vatRate: 0,
+				});
+			}),
+			totals: {
+				totalPositions: lines.length,
+				totalQuantity: lines.reduce((acc, l) => acc + (Number(l.quantity) || 0), 0),
+				subtotalKopecks: totalKopecks,
+				totalVatKopecks: 0,
+				totalCostKopecks: totalKopecks,
+				subtotalRubles: totalRub,
+				totalVatRubles: 0,
+				totalCostRubles: totalRub,
+			},
+			receiverFullName: "Ответственный за снабжение",
+			receiverPosition: "Ответственный за снабжение",
+			postedAt: new Date().toISOString(),
+		};
+		const html = generateAcceptanceWaybillHtml(waybillDoc);
+		printHtmlViaHiddenIframe(html, `Приходная_накладная_${invoiceNumber}`);
+	};
 
 	const handleExportCsv = () => {
 		const headers = ["Наименование", "Количество", "Ед. изм.", "Цена (руб.)", "Сумма (руб.)", "Партия", "Срок годности"];
@@ -402,7 +498,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 					<div className="flex items-center gap-2 flex-wrap shrink-0">
 						<span className="text-sm font-medium text-[var(--muted)]">Итого по накладной:</span>
 						<strong className="text-base font-bold text-[var(--ink)] font-mono tabular-nums">{totalRub.toLocaleString("ru-RU")} ₽</strong>
-						<button type="button" onClick={() => window.print?.()} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="Печать приходной накладной" data-testid="print-waybill">
+						<button type="button" onClick={handlePrintWaybill} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="Печать приходной накладной" data-testid="print-waybill">
 							Печать накладной
 						</button>
 						<button type="button" onClick={handleExportCsv} className="secondary-button px-2.5 py-1 text-xs font-medium cursor-pointer rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="Экспорт накладной в CSV" data-testid="btn-export-invoice-csv">CSV</button>

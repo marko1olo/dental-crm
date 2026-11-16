@@ -323,6 +323,19 @@ export const handleAcceptanceWaybillRequest = async (
 					transactionType: "receipt",
 					isOverdraft: false,
 					notes: `Накладная №${data.waybillNumber} от ${data.supplierName}${data.supplierInn ? ` (ИНН ${data.supplierInn})` : ""} • Партия ${batchNumber} [FEFO]`,
+					metadata: {
+						waybillNumber: data.waybillNumber,
+						supplierName: data.supplierName,
+						supplierInn: data.supplierInn ?? null,
+						receiptDate: data.receiptDate,
+						warehouseId: data.warehouseId ?? null,
+						warehouseName: data.warehouseName ?? "Основной склад",
+						batchNumber,
+						expirationDate,
+						itemUnit: item.unit ?? existingItem.unit ?? "шт",
+						packageMultiplier: multiplier,
+						vatRate: item.vatRate ?? 0,
+					},
 					userId: effectiveUserId,
 				});
 

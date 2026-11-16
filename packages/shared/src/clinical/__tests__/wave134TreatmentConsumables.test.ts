@@ -387,7 +387,7 @@ describe("Wave 134: Treatment Consumables & 804n Inventory Linkage Engine", () =
 
 			assert.ok(typeof report === "string");
 			assert.ok(report.includes("МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ"));
-			assert.ok(report.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО: ФОРМА N 043/У"));
+			assert.ok(report.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"));
 			assert.ok(report.includes("АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ"));
 			assert.ok(report.includes("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"));
 			assert.ok(report.includes("Васильева Елена Сергеевна"));

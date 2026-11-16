@@ -56,7 +56,7 @@ export function useWarehouseInventoryState(
 		branchId: organizationId, branchNameRu: "Центральное отделение", warehouseNameRu: "Главный склад расходных материалов",
 		molFullName: "Кузнецов А.В. (Врач-стоматолог)", molPosition: "Врач-стоматолог / Ответственный сотрудник", status: "reconciliation",
 		commission: [{ fullName: "Кузнецов А.В. (Врач-стоматолог)", position: "Врач-стоматолог", role: "mol", roleRu: "Материально ответственное лицо" }],
-		items: auditLines, organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "", organizationInn: "7701984512",
+		items: auditLines, organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "", organizationInn: "7701987654",
 	}), [todayDate, organizationId, auditLines]);
 
 	const handlePrintStockCountSheet = () => { const w = window.open("", "_blank"); if (w) { w.document.write(generateInv3Html(currentDoc)); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } };

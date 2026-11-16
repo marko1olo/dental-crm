@@ -293,7 +293,7 @@ export function generateSupplierPurchaseOrderHtml(order: SupplierPurchaseOrder):
 		</div>
 		<div>
 			<div style="height: 30px;"></div>
-			<div class="sig-line">Главная медицинская сестра / Зав. складом</div>
+			<div class="sig-line">Главная медицинская сестра / Ответственный за снабжение</div>
 		</div>
 		<div>
 			<div style="height: 30px;"></div>

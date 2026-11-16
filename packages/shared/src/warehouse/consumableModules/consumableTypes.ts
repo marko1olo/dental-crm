@@ -1,6 +1,22 @@
 import { z } from "zod";
-import { consumableUnitSchema, type ConsumableUnit } from "../../inventory/procedureBomEngine.js";
-export { consumableUnitSchema, type ConsumableUnit };
+
+export const consumableUnitSchema = z.enum([
+	"pcs",
+	"carpule",
+	"gram",
+	"ml",
+	"pack",
+	"tube",
+	"dose",
+	"cm",
+	"карпула",
+	"шприц_гр",
+	"ампула",
+	"шт",
+	"метр",
+	"упак",
+]);
+export type ConsumableUnit = z.infer<typeof consumableUnitSchema>;
 
 export const treatmentConsumableLinkSchema = z.object({
 	id: z.string().min(1, "ID связи обязателен"),

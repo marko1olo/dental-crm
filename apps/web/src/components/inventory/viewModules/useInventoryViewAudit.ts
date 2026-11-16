@@ -24,7 +24,7 @@ export function useInventoryViewAudit(
 				molFullName: "Ответственный сотрудник", molPosition: "Старшая медсестра / Администратор", status: "reconciliation" as const,
 				commission: isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS,
 				items: isDemo ? [...DEFAULT_INVENTORY_ITEMS_PRESET] : [],
-				organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "49201948", organizationInn: "7701984512",
+				organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "49201948", organizationInn: "7701987654",
 			};
 		}
 		const auditItems: WarehouseAuditItemLine[] = items.map((it, idx) => computeAuditLineItem({
@@ -41,7 +41,7 @@ export function useInventoryViewAudit(
 			branchId: organizationId, branchNameRu: "Центральное отделение", warehouseNameRu: "Главный склад расходных материалов",
 			molFullName: "Ответственный сотрудник", molPosition: "Старшая медсестра / Администратор", status: "reconciliation" as const,
 			commission: isDemo ? DEFAULT_COMMISSION_MEMBERS : SOLO_DOCTOR_COMMISSION_MEMBERS, items: auditItems,
-			organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "49201948", organizationInn: "7701984512",
+			organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»", organizationOkpo: "49201948", organizationInn: "7701987654",
 		};
 	}, [items, organizationId]);
 

@@ -68,7 +68,7 @@ export function useExpressWaybillState(
 				supplier,
 				warehouseName: "Центральный склад клиники",
 				receiverFullName: "Ответственный за снабжение",
-				receiverPosition: "Зав. складом",
+				receiverPosition: "Ответственный за снабжение",
 				status: "posted",
 				items,
 				totals,

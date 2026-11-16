@@ -32,6 +32,7 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 					transactionId: inventoryTransactions.id,
 					createdAt: inventoryTransactions.createdAt,
 					notes: inventoryTransactions.notes,
+					metadata: inventoryTransactions.metadata,
 					quantity: inventoryTransactions.quantityChanged,
 					unitCostRub: inventoryTransactions.unitCostRub,
 					itemId: inventoryTransactions.itemId,
@@ -85,21 +86,33 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 			>();
 
 			for (const r of receipts) {
-				const notesStr = r.notes || "";
-				// Парсинг номера накладной и поставщика из формата:
-				// "Накладная №{waybillNumber} от {supplierName} (ИНН {supplierInn}) • Партия {batchNumber} [FEFO]"
-				let waybillNumber = "ПРХ-001";
-				let supplierName = "Стоматологический поставщик";
-				let supplierInn: string | null = null;
+				const meta = (r.metadata as Record<string, unknown> | null) || {};
+				let waybillNumber =
+					typeof meta.waybillNumber === "string" && meta.waybillNumber.trim()
+						? meta.waybillNumber.trim()
+						: "";
+				let supplierName =
+					typeof meta.supplierName === "string" && meta.supplierName.trim()
+						? meta.supplierName.trim()
+						: "";
+				let supplierInn: string | null =
+					typeof meta.supplierInn === "string" && meta.supplierInn.trim()
+						? meta.supplierInn.trim()
+						: null;
 
-				const wbMatch = notesStr.match(
-					/(?:Приход по накладной|Накладная) №(.+?) от (.+?)(?:\s*\(ИНН\s*([^)]+)\))?(?:\s*•|\s*$)/i,
-				);
-				if (wbMatch) {
-					waybillNumber = wbMatch[1]?.trim() || waybillNumber;
-					supplierName = wbMatch[2]?.trim() || supplierName;
-					supplierInn = wbMatch[3]?.trim() || null;
+				if (!waybillNumber || !supplierName) {
+					const notesStr = r.notes || "";
+					const wbMatch = notesStr.match(
+						/(?:Приход по накладной|Накладная) №(.+?) от (.+?)(?:\s*\(ИНН\s*([^)]+)\))?(?:\s*•|\s*$)/i,
+					);
+					if (wbMatch) {
+						if (!waybillNumber) waybillNumber = wbMatch[1]?.trim() || "ПРХ-001";
+						if (!supplierName) supplierName = wbMatch[2]?.trim() || "Стоматологический поставщик";
+						if (supplierInn === null) supplierInn = wbMatch[3]?.trim() || null;
+					}
 				}
+				if (!waybillNumber) waybillNumber = "ПРХ-001";
+				if (!supplierName) supplierName = "Стоматологический поставщик";
 
 				const receiptDate = r.createdAt
 					? new Date(r.createdAt).toISOString().slice(0, 10)
@@ -163,7 +176,7 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 					supplier: {
 						id: `sup-${wb.supplierName}`,
 						name: wb.supplierName,
-						inn: wb.supplierInn || "7701984512",
+						inn: wb.supplierInn || null,
 					},
 					warehouseName: "Основной склад",
 					status: "posted" as const,
@@ -179,7 +192,7 @@ export const registerSupplierInvoiceQueries = (server: FastifyInstance): void =>
 						totalCostRubles: Number((totalCostKopecks / 100).toFixed(2)),
 					},
 					receiverFullName: "Ответственный за снабжение",
-					receiverPosition: "Зав. складом",
+					receiverPosition: "Ответственный за снабжение",
 					postedAt: wb.createdAt,
 				};
 			});

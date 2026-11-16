@@ -22,13 +22,13 @@ const sampleDoc: WarehouseInventoryAuditDocument = {
 	branchNameRu: "Центральный склад",
 	warehouseNameRu: "Главный аптечный склад",
 	molFullName: "Васильев Олег Петрович",
-	molPosition: "Заведующий складом",
+	molPosition: "Ответственный за снабжение",
 	status: "reconciliation",
 	commission: DEFAULT_COMMISSION_MEMBERS,
 	items: DEFAULT_INVENTORY_ITEMS_PRESET,
 	organizationNameRu: "ООО «ДЕНТЕ КЛИНИК»",
 	organizationOkpo: "49201948",
-	organizationInn: "7701984512",
+	organizationInn: "7701987654",
 };
 
 describe("Official Russian Print Forms Generation (HTML)", () => {

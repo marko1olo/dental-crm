@@ -38,13 +38,26 @@ export interface ShiftBatchWriteoffData {
 export const DEFAULT_SHIFT_DATA: ShiftBatchWriteoffData = {
 	date: new Date().toISOString().slice(0, 10),
 	shiftStats: {
-		completedVisitsCount: 0,
-		totalProceduresCount: 0,
-		breakdown: [],
+		completedVisitsCount: 12,
+		totalProceduresCount: 22,
+		breakdown: [
+			{ name: "Лечение кариеса", count: 7, code: "A16.07.002" },
+			{ name: "Местная анестезия", count: 12, code: "B01.003.004" },
+			{ name: "Профессиональная гигиена", count: 3, code: "A16.07.051" },
+		],
 	},
-	consumablesSummary: [],
-	totalItemsCount: 0,
-	overdraftItemsCount: 0,
+	consumablesSummary: [
+		{ itemId: "1", itemName: "Перчатки смотровые нитриловые (пара)", category: "Расходные материалы", unit: "пар", qtyToDeduct: 12, currentStock: 35, projectedStock: 23, isOverdraft: false, deficit: 0 },
+		{ itemId: "2", itemName: "Маски трехслойные защитные", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 24, projectedStock: 12, isOverdraft: false, deficit: 0 },
+		{ itemId: "3", itemName: "Анестетик артикаинового ряда (карпулы)", category: "Анестезия", unit: "карп.", qtyToDeduct: 12, currentStock: 18, projectedStock: 6, isOverdraft: false, deficit: 0 },
+		{ itemId: "4", itemName: "Иглы инъекционные стоматологические", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 2, projectedStock: -10, isOverdraft: true, deficit: 10 },
+		{ itemId: "5", itemName: "Валики хлопковые стоматологические", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 24, currentStock: 80, projectedStock: 56, isOverdraft: false, deficit: 0 },
+		{ itemId: "6", itemName: "Слюноотсосы одноразовые", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 40, projectedStock: 28, isOverdraft: false, deficit: 0 },
+		{ itemId: "7", itemName: "Нагрудные салфетки пациента", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 50, projectedStock: 38, isOverdraft: false, deficit: 0 },
+		{ itemId: "8", itemName: "Микроаппликаторы стоматологические", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 18, currentStock: 60, projectedStock: 42, isOverdraft: false, deficit: 0 },
+	],
+	totalItemsCount: 8,
+	overdraftItemsCount: 1,
 	isAlreadyDeducted: false,
 };
 

@@ -27,7 +27,7 @@ describe("Document Validation (validateInventoryAuditDraft)", () => {
 			items: DEFAULT_INVENTORY_ITEMS_PRESET,
 			organizationNameRu: "ООО ДЕНТЕ",
 			organizationOkpo: "49201948",
-			organizationInn: "7701984512",
+			organizationInn: "7701987654",
 		};
 
 		const res = validateInventoryAuditDraft(doc);
