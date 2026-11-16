@@ -3,16 +3,11 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../../db/client.js";
 import {
 	auditEvents,
-	patientInvoices,
 	treatmentItems,
-	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../../../../db/schema.js";
-import {
-	ledgerRowId,
-	splitStoredPriceId,
-} from "../../../odontogram/planHelpers.js";
-import { LEDGER_ID_PREFIX_LENGTH, UUID_SHAPE } from "../../../odontogram/types.js";
+import { LEDGER_ID_PREFIX_LENGTH } from "../../../odontogram/types.js";
+import { cancelRejectedPlanTierLedgerItems } from "./planLedgerSync.js";
 import { updateTreatmentPlanStatusSchema } from "./schemas.js";
 
 /**
@@ -45,7 +40,6 @@ export async function handleApproveTreatmentPlan(
 	}
 
 	const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
-	let createdInvoice: typeof patientInvoices.$inferSelect | null = null;
 	const approvedPlan = await db.transaction(async (tx) => {
 		const [updated] = await tx
 			.update(treatmentPlans)
@@ -77,107 +71,13 @@ export async function handleApproveTreatmentPlan(
 					),
 				);
 
-			const totalAmountRub = Number(
-				updated.totalPriceRub || updated.totalPrice || existing.totalPriceRub || existing.totalPrice || 0,
-			);
-			if (totalAmountRub > 0) {
-				const now = new Date();
-				const [invoice] = await tx
-					.insert(patientInvoices)
-					.values({
-						organizationId,
-						patientId: existing.patientId,
-						totalRub: String(totalAmountRub),
-						totalAmountRub,
-						status: "issued",
-						issuedAt: now,
-						createdAt: now,
-						isSynced: false,
-					})
-					.returning();
-				createdInvoice = invoice ?? null;
-
-				if (invoice) {
-					// Проверяем существующие строки в treatmentItems по честному FK treatmentPlanId (или легаси-префиксу)
-					const existingLedgerItems = await tx
-						.select({ id: treatmentItems.id })
-						.from(treatmentItems)
-						.where(
-							and(
-								eq(treatmentItems.organizationId, organizationId),
-								eq(treatmentItems.patientId, existing.patientId),
-								or(
-									eq(treatmentItems.treatmentPlanId, id),
-									sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
-								),
-							),
-						);
-
-					if (existingLedgerItems.length > 0) {
-						// Обновляем статус и связываем существующие позиции со счётом через честный invoiceId FK
-						await tx
-							.update(treatmentItems)
-							.set({
-								status: "approved",
-								treatmentPlanId: id,
-								invoiceId: invoice.id,
-							})
-							.where(
-								and(
-									eq(treatmentItems.organizationId, organizationId),
-									eq(treatmentItems.patientId, existing.patientId),
-									or(
-										eq(treatmentItems.treatmentPlanId, id),
-										sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
-									),
-								),
-							);
-					} else {
-						// Если в леджере строк не было — загружаем строки из treatmentPlanItemsNew и создаем детальные позиции счета
-						const planItems = await tx
-							.select()
-							.from(treatmentPlanItemsNew)
-							.where(
-								and(
-									eq(treatmentPlanItemsNew.planId, id),
-									eq(treatmentPlanItemsNew.organizationId, organizationId),
-								),
-							);
-
-						if (planItems.length > 0) {
-							let slot = 0;
-							const newLedgerItems = planItems.map((item) => {
-								const rowId = ledgerRowId(id, slot);
-								slot += 1;
-								const priceNum = Number(item.price || 0);
-								const discountNum = Number(item.discount || 0);
-								const lineTotalRub = Math.max(0, priceNum * item.quantity - discountNum);
-								const { priceId, name: legacyName } = splitStoredPriceId(item.priceId);
-								const title = item.name || legacyName || priceId;
-								return {
-									id: rowId,
-									organizationId,
-									patientId: existing.patientId,
-									treatmentPlanId: id,
-									invoiceId: invoice.id,
-									visitId: null,
-									serviceId: UUID_SHAPE.test(priceId) ? priceId : null,
-									toothCode: item.toothNumber != null ? String(item.toothNumber) : null,
-									title,
-									quantity: String(item.quantity),
-									priceRub: lineTotalRub,
-									unitPriceRub: priceNum,
-									discountRub: discountNum,
-									status: "approved" as const,
-									plannedDoctorUserId: item.doctorId ?? null,
-									notes: `План лечения: ${updated.name || "Утвержденный"}`,
-								};
-							});
-							await tx.insert(treatmentItems).values(newLedgerItems);
-						}
-					}
-				}
-			}
+			// SEV-2.4: Аннулируем позиции отвергнутых альтернативных тарифов в той же группе планов
+			await cancelRejectedPlanTierLedgerItems(tx, {
+				organizationId,
+				patientId: existing.patientId,
+				approvedPlanId: id,
+				planGroupId: existing.planGroupId,
+			});
 		}
 
 		return updated;
@@ -206,8 +106,8 @@ export async function handleApproveTreatmentPlan(
 	return reply.code(200).send({
 		success: true,
 		plan: approvedPlan,
-		invoice: createdInvoice,
-		createdInvoice,
+		invoice: null,
+		createdInvoice: null,
 	});
 }
 
@@ -242,16 +142,30 @@ export async function handleUpdateTreatmentPlanStatus(
 
 	const isApproved = status.toLowerCase() === "approved";
 	const selectedTier = parsed.data.selectedTier || parsed.data.alternativeTier;
-	const [updatedPlan] = await db
-		.update(treatmentPlans)
-		.set({
-			status,
-			...(isApproved ? { approvedAt: new Date() } : {}),
-			...(selectedTier ? { alternativeTier: selectedTier } : {}),
-			updatedAt: new Date(),
-		})
-		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
-		.returning();
+
+	const updatedPlan = await db.transaction(async (tx) => {
+		const [updated] = await tx
+			.update(treatmentPlans)
+			.set({
+				status,
+				...(isApproved ? { approvedAt: new Date() } : {}),
+				...(selectedTier ? { alternativeTier: selectedTier } : {}),
+				updatedAt: new Date(),
+			})
+			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+			.returning();
+
+		if (updated && isApproved) {
+			await cancelRejectedPlanTierLedgerItems(tx, {
+				organizationId,
+				patientId: existing.patientId,
+				approvedPlanId: id,
+				planGroupId: existing.planGroupId,
+			});
+		}
+
+		return updated;
+	});
 
 	if (!updatedPlan) {
 		return reply.code(500).send({

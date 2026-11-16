@@ -66,7 +66,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
 
 	useEffect(() => {
-		if (resolvedInitialOperator) setOperatorName((prev) => (prev && prev !== "Иванова Е. С., дежурная медсестра" ? prev : resolvedInitialOperator));
+		if (resolvedInitialOperator) setOperatorName((prev) => (prev && prev !== "Дежурный администратор / медицинская сестра" ? prev : resolvedInitialOperator));
 	}, [resolvedInitialOperator]);
 
 	const isEffectiveDemo = typeof isDemo === "boolean" ? isDemo : isDemoShowcaseMode();
@@ -308,13 +308,13 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								</div>
 
 								<div className="pt-1 sm:pt-2 flex flex-col gap-2">
-									<button type="button" onClick={handleLaunchShiftMacroBatch} data-testid="sanpin-shift-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)" className="sanpin-primary-cta w-full min-h-[46px] font-bold text-xs sm:text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-md rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all">
+									<button type="button" onClick={handleLaunchShiftMacroBatch} data-testid="sanpin-shift-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)" className="sanpin-primary-cta w-full min-h-[46px] font-bold text-xs sm:text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-md rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all">
 										<CheckCircle className="w-4 h-4 shrink-0" />
 										<span>Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
 										<span className="sr-only">Зафиксировать автоклавирование смены</span>
 										<span className="sr-only">Зарегистрировать цикл стерилизации</span>
 										<span className="sr-only">Запустить цикл стерилизации</span>
-										<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
+										<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
 									</button>
 									<button type="button" onClick={handleRunCycle} data-testid="sanpin-run-cycle-cta" title="Зафиксировать единичный цикл автоклавирования" className="w-full min-h-[38px] text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50 hover:bg-[var(--line,#e2e8f0)]/50 border border-[var(--line,#e2e8f0)] rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors">
 										<span>Зафиксировать единичный цикл ({packagesCount} пакетов)</span>

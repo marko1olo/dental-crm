@@ -36,7 +36,6 @@ export * from "./CleaningControlTab";
 export * from "./UvAndCleaningTab";
 export * from "./MedicalWasteRegisterTab";
 export * from "./SterilizerFleetManager";
-export * from "./AutoclaveSterilizationJournalView";
 export * from "./SanpinCleaningAndDisinfectionView";
 export * from "./SterilizationBatchCycleModal";
 

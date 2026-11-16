@@ -8,10 +8,16 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-	evaluateCycleParameters, evaluate5ChamberPoints, createDefault5ChamberPoints,
-	checkNextBioControlDeadline, createSterilizationLogRecord, createForm257Record,
-	exportForm257ToCsv, generateForm257PrintHtml, detectMissingSterilizationDays,
-} from "../autoclaveLog/autoclaveLogEngine.js";
+	evaluateCycleParameters,
+	evaluate5ChamberPoints,
+	createDefault5ChamberPoints,
+	checkNextBioControlDeadline,
+	createForm257Record as createSterilizationLogRecord,
+	createForm257Record,
+	exportForm257ToCsv,
+	generateForm257PrintHtml,
+} from "@dental/shared";
+import { detectMissingSterilizationDays } from "../sterilization/calculations.js";
 
 describe("Журнал автоклавирования — 1-клик пакетная обработка смены", () => {
 	it("1-клик пакетная норма: пустые контрольные точки автоматически принимаются как 100% норма", () => {

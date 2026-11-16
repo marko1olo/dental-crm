@@ -14,17 +14,17 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { SanpinSterilizationHubModal } from "../SanpinSterilizationHubModal";
+import { SanpinStudioModal } from "../SanpinStudioModal";
 import { AUTOCLAVE_PROGRAMS, CLINIC_STERILIZERS, calculateBatchStockDeduction, createOneClickShiftBatch } from "../sanpinCatalogData";
 
 describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 	describe("1. Архитектурные Sweet Spot инварианты (Мандат 8b/8zi)", () => {
-		it("SanpinSterilizationHubModal.tsx является каноническим фасадом до 50 строк", () => {
-			const filePath = path.join(process.cwd(), "apps/web/src/components/sanpin/SanpinSterilizationHubModal.tsx");
+		it("SanpinStudioModal.tsx является каноническим студийным компонентом (Мандат 8b/8zi)", () => {
+			const filePath = path.join(process.cwd(), "apps/web/src/components/sanpin/SanpinStudioModal.tsx");
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
-				lines <= 60,
-				`SanpinSterilizationHubModal.tsx должен быть фасадом до 60 строк по Мандату 8b (факт: ${lines})`,
+				lines >= 350 && lines <= 450,
+				`SanpinStudioModal.tsx должен быть 350–450 строк по Мандату 8b (факт: ${lines})`,
 			);
 		});
 
@@ -50,7 +50,7 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 	describe("2. Рендеринг 4 канонических вкладок и ликвидация советского канцелярита (Мандат 8x)", () => {
 		it("рендерит все канонические разделы в хабе", () => {
 			const html = renderToStaticMarkup(
-				<SanpinSterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 
 			// 1. Автоклавирование
@@ -69,7 +69,7 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 
 		it("рендерит параметры программ автоклавирования 134°C и 121°C", () => {
 			const html = renderToStaticMarkup(
-				<SanpinSterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 
 			assert.ok(html.includes("134°C"));
@@ -80,7 +80,7 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 	describe("3. Единый дизайн-код и ровно 1 Primary CTA кнопка (Мандат 8am)", () => {
 		it("содержит ровно 1 Primary CTA кнопку #0d9488 на экране", () => {
 			const html = renderToStaticMarkup(
-				<SanpinSterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 
 			assert.ok(html.includes("data-testid=\"sanpin-run-cycle-cta\"") || html.includes("data-testid=\"primary-batch-sterilization-btn\""));
@@ -90,7 +90,7 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 
 		it("ни одна кнопка в модалке не заблокирована атрибутом disabled (Мандат 8e)", () => {
 			const html = renderToStaticMarkup(
-				<SanpinSterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 
 			assert.ok(!html.includes("disabled"), "Никакие кнопки не должны быть заблокированы (disabled)");
@@ -119,7 +119,7 @@ describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 	describe("5. Apple HIG Touch Ergonomics & Mobile Sheet Invariants", () => {
 		it("содержит Drag Handle 36x5px и скругление rounded-t-[24px] для смартфонов", () => {
 			const html = renderToStaticMarkup(
-				<SanpinSterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 
 			assert.ok(html.includes("sanpin-drag-handle") || html.includes("w-9 h-1.5"), "Должен быть Drag Handle для мобильного");

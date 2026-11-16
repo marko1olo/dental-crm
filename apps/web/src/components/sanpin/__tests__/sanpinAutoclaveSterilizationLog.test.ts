@@ -5,11 +5,11 @@ import {
 	evaluate5ChamberPoints,
 	createDefault5ChamberPoints,
 	checkNextBioControlDeadline,
-	createSterilizationLogRecord,
-	exportSterilizationLogToCsv,
-	generateSterilizationLogPrintHtml,
+	createForm257Record as createSterilizationLogRecord,
+	exportForm257ToCsv as exportSterilizationLogToCsv,
+	generateForm257PrintHtml as generateSterilizationLogPrintHtml,
 	generateBatchSterilizationRecords,
-} from "../autoclaveLog/autoclaveLogEngine.js";
+} from "@dental/shared";
 
 describe("Журнал контроля автоклавирования и работы стерилизаторов — 1-клик автономия", () => {
 	it("1-клик пакетная норма: пустые контрольные точки автоматически принимаются как 100% норма", () => {

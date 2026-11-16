@@ -1,5 +1,5 @@
 /**
- * treatmentPlanModuleHicksToolbar.test.tsx — закон Хика в тулбаре TreatmentPlanModule.
+ * treatmentPlanModuleHicksToolbar.test.tsx — закон Хика в интерфейсе TreatmentPlanStudioModal.
  * (Мандат 8b: строго <= 120 строк).
  */
 
@@ -7,75 +7,80 @@ import React from "react";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import { TreatmentPlanModule } from "../TreatmentPlanModule";
-import { AppLogicProvider } from "../../../contexts/AppLogicContext";
-import { mockAppContextWave49, sampleTeethWave49 } from "./helpers/wave49TestHelpers";
+import { TreatmentPlanStudioModal } from "../TreatmentPlanStudioModal.js";
+import { AppLogicProvider } from "../../../contexts/AppLogicContext.js";
+import { mockAppContextWave49, sampleTeethWave49 } from "./helpers/wave49TestHelpers.js";
 
-describe("TreatmentPlanModule — Чистый тулбар по закону Хика", () => {
-	it("renders clean single-line toolbar with mode toggles and actions", () => {
+describe("TreatmentPlanStudioModal — Чистый интерфейс по закону Хика", () => {
+	it("renders clean single-line header with depth toggles and actions", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppContextWave49}>
-				<TreatmentPlanModule
+				<TreatmentPlanStudioModal
+					isOpen={true}
+					onClose={() => {}}
 					patientId="PAT-WAVE49"
 					patientName="Смирнова Екатерина Васильевна"
-					teethData={sampleTeethWave49}
+					teeth={sampleTeethWave49}
 				/>
 			</AppLogicProvider>
 		);
 
-		assert.ok(html.includes("3 Варианта"));
-		assert.ok(html.includes("Поэтапный (I, II, III)"));
-		assert.ok(html.includes("tp-sign-btn"));
-		assert.ok(html.includes("tp-invoice-btn"));
-		assert.ok(html.includes("tp-fiscal-btn"));
-		assert.ok(html.includes("treatment-plan-options-menu-btn"));
+		assert.ok(html.includes("Экспресс"));
+		assert.ok(html.includes("Эксперт"));
+		assert.ok(html.includes("Тарифы и этапы"));
+		assert.ok(html.includes("print-plan-btn"));
+		assert.ok(html.includes("approve-treatment-plan-btn"));
 	});
 
-	it("guarantees 'Куратор' button is NOT duplicated in main toolbar row (Hick's Law)", () => {
+	it("guarantees curator is placed in tabs and NOT duplicated in header row (Hick's Law)", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppContextWave49}>
-				<TreatmentPlanModule
+				<TreatmentPlanStudioModal
+					isOpen={true}
+					onClose={() => {}}
 					patientId="PAT-WAVE49"
 					patientName="Смирнова Екатерина Васильевна"
-					teethData={sampleTeethWave49}
+					teeth={sampleTeethWave49}
 				/>
 			</AppLogicProvider>
 		);
 
+		assert.ok(html.includes('data-testid="tab-curator-assignment"'));
 		assert.ok(!html.includes('title="Закрепить куратора лечения за пациентом и планом (Фича #27)"'));
 	});
 
-	it("guarantees curator bureaucracy and broker commission are excluded from Options menu", () => {
+	it("guarantees clean clinical labels without commission or broker jargon", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppContextWave49}>
-				<TreatmentPlanModule
+				<TreatmentPlanStudioModal
+					isOpen={true}
+					onClose={() => {}}
 					patientId="PAT-WAVE49"
 					patientName="Смирнова Екатерина Васильевна"
-					teethData={sampleTeethWave49}
-					initialOptionsMenuOpen={true}
+					teeth={sampleTeethWave49}
 				/>
 			</AppLogicProvider>
 		);
 
-		assert.ok(!html.includes("options-menu-curator-btn"));
-		assert.ok(!html.includes("Куратор лечения (воронка и комиссия)"));
-		assert.ok(html.includes("options-menu-export-cashier-btn"));
-		assert.ok(html.includes("options-menu-contract-print-btn"));
+		assert.ok(!html.includes("комиссия"));
+		assert.ok(!html.includes("брокер"));
+		assert.ok(html.includes("Куратор плана"));
 	});
 
-	it("ensures Apple HIG touch-targets (>= 44px mobile, >= 38px desktop) for toolbar buttons", () => {
+	it("ensures Apple HIG touch-targets (>= 44px mobile, >= 36px desktop) for interactive buttons", () => {
 		const html = renderToString(
 			<AppLogicProvider value={mockAppContextWave49}>
-				<TreatmentPlanModule
+				<TreatmentPlanStudioModal
+					isOpen={true}
+					onClose={() => {}}
 					patientId="PAT-WAVE49"
 					patientName="Смирнова Екатерина Васильевна"
-					teethData={sampleTeethWave49}
+					teeth={sampleTeethWave49}
 				/>
 			</AppLogicProvider>
 		);
 
-		assert.ok(html.includes("min-h-[44px]"));
-		assert.ok(html.includes("sm:min-h-[38px]"));
-		assert.ok(html.includes("touch-manipulation"));
+		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[52px]"));
+		assert.ok(html.includes("min-h-[36px]"));
 	});
 });

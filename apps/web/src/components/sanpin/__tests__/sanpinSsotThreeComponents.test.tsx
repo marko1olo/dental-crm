@@ -17,7 +17,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { SterilizationBatchCycleModal } from "../SterilizationBatchCycleModal";
 import { AutoclaveJournalTab } from "../AutoclaveJournalTab";
-import { AutoclaveSterilizationJournalView } from "../AutoclaveSterilizationJournalView";
 import { CleaningControlTab } from "../CleaningControlTab";
 import { SanpinCleaningAndDisinfectionView } from "../SanpinCleaningAndDisinfectionView";
 
@@ -56,10 +55,8 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 			);
 		});
 
-		it("Фасады обратной совместимости AutoclaveSterilizationJournalView и SanpinCleaningAndDisinfectionView компактны (до 50 строк)", () => {
-			const f1 = fs.readFileSync(path.join(SANPIN_DIR, "AutoclaveSterilizationJournalView.tsx"), "utf-8").split("\n").length;
+		it("Фасад обратной совместимости SanpinCleaningAndDisinfectionView компактен (до 50 строк)", () => {
 			const f2 = fs.readFileSync(path.join(SANPIN_DIR, "SanpinCleaningAndDisinfectionView.tsx"), "utf-8").split("\n").length;
-			assert.ok(f1 <= 50, `AutoclaveSterilizationJournalView.tsx (${f1}L) обязан быть тонким фасадом <= 50L`);
 			assert.ok(f2 <= 50, `SanpinCleaningAndDisinfectionView.tsx (${f2}L) обязан быть тонким фасадом <= 50L`);
 		});
 	});
@@ -81,7 +78,7 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 		});
 	});
 
-	describe("3. AutoclaveJournalTab & AutoclaveSterilizationJournalView (Электронный журнал циклов)", () => {
+	describe("3. AutoclaveJournalTab (Электронный журнал циклов)", () => {
 		it("рендерит десктопную таблицу с колонками и мобильный адаптивный слой", () => {
 			const html = renderToStaticMarkup(<AutoclaveJournalTab />);
 
@@ -92,11 +89,6 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 			assert.ok(html.includes("sanpin-mobile-start-cycle-cta"), "Floating Bottom Bar для смартфонов");
 			assert.ok(html.includes("overflow-x-clip"), "0px паразитного горизонтального скролла");
 			assert.ok(!html.includes("Форма 257/у"), "Запрещен советский канцелярит 257/у");
-		});
-
-		it("фасад AutoclaveSterilizationJournalView корректно делегирует в AutoclaveJournalTab", () => {
-			const html = renderToStaticMarkup(<AutoclaveSterilizationJournalView />);
-			assert.ok(html.includes("autoclave-journal-tab"), "Фасад должен возвращать разметку журнала");
 		});
 	});
 

@@ -47,7 +47,7 @@ export function SterilizationBatchCycleModal({
 }: SterilizationBatchCycleModalProps) {
 	const appLogic = useOptionalAppLogicContext();
 	const resolvedOperator = useMemo(() => {
-		if (defaultOperatorName?.trim() && !defaultOperatorName.includes("Иванова")) return defaultOperatorName.trim();
+		if (defaultOperatorName?.trim()) return defaultOperatorName.trim();
 		const fromAuth = appLogic?.auth?.currentUser?.fullName || appLogic?.auth?.currentUser?.name || appLogic?.user?.name;
 		if (fromAuth?.trim()) return fromAuth.trim();
 		const cached = getCachedActiveStaffUser() as { fullName?: string; name?: string; role?: string } | null;
@@ -62,7 +62,7 @@ export function SterilizationBatchCycleModal({
 
 	useEffect(() => {
 		if (resolvedOperator) {
-			setOperatorName((prev) => (!prev || prev === "Иванова Е. С., медсестра ЦСО" || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
+			setOperatorName((prev) => (!prev || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
 		}
 	}, [resolvedOperator]);
 	const [itemsDescription, setItemsDescription] = useState<string>("Терапевтический лоток базовый (10 шт: зеркала, зонды, пинцеты, боры)");
@@ -258,10 +258,10 @@ export function SterilizationBatchCycleModal({
 				<div className="p-3.5 sm:p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-2.5 flex-wrap sm:flex-nowrap">
 					<button type="button" onClick={onClose} className="h-10 min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--muted,#64748b)] cursor-pointer">Отмена</button>
 					<div className="flex items-center gap-2 w-full sm:w-auto">
-						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sterilization-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)" className="flex-1 sm:flex-initial h-10 min-h-[44px] px-3.5 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-md inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]">
+						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sterilization-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + очистка норма)" className="flex-1 sm:flex-initial h-10 min-h-[44px] px-3.5 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-md inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]">
 							<CheckCircle2 size={15} className="text-white" />
 							<span>Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
-							<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
+							<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
 						</button>
 						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить цикл стерилизации" className="h-10 min-h-[44px] px-3 rounded-xl font-semibold text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-[0.98]">
 							<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>

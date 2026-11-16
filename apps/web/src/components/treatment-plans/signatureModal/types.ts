@@ -7,11 +7,11 @@ export interface TreatmentPlanSignatureModalProps {
 	readonly tier: TreatmentPlanTier;
 	readonly patientName: string;
 	readonly patientId: string;
-	readonly patientPhone?: string;
-	readonly planId?: string;
-	readonly initialSignMethod?: TreatmentPlanSignMethod;
-	readonly doctorFullName?: string;
-	readonly clinicName?: string;
+	readonly patientPhone?: string | undefined;
+	readonly planId?: string | null | undefined;
+	readonly initialSignMethod?: TreatmentPlanSignMethod | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly clinicName?: string | undefined;
 	readonly onClose: () => void;
 	readonly onSignedSuccess: (agreement: DigitalSignatureAgreementData) => void;
 }

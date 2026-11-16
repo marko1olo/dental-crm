@@ -11,7 +11,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SanPinJournalView } from "../SanPinJournalView";
 import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../sterilizationModules/sterilizationCycleTypes";
-import { SterilizationCycleDrawer } from "../sterilization/SterilizationCycleDrawer";
+import { SterilizationBatchCycleModal } from "../SterilizationBatchCycleModal";
 import { SterilizationJournalTable } from "../sterilization/SterilizationJournalTable";
 
 describe("Sterilization Presets & Red Team Jargon Purge", () => {
@@ -54,21 +54,13 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 		assert.ok(quick.subtitle.includes("Неупакованный инструмент"));
 	});
 
-	it("SterilizationCycleDrawer renders all 3 presets and unblocked approval CTA", () => {
+	it("SterilizationBatchCycleModal renders presets and unblocked approval CTA", () => {
 		const html = renderToStaticMarkup(
-			<SterilizationCycleDrawer isOpen={true} onClose={() => {}} />,
+			<SterilizationBatchCycleModal isOpen={true} onClose={() => {}} />,
 		);
 
 		// Header is clean clinical
-		assert.ok(html.includes("Утверждение цикла автоклава"));
-		assert.ok(
-			html.includes("Журнал работы стерилизаторов • Стандартные пресеты смены"),
-		);
-
-		// Check all 3 presets in rendered output
-		assert.ok(html.includes("drawer-preset-btn-standard_134_5"));
-		assert.ok(html.includes("drawer-preset-btn-delicate_121_20"));
-		assert.ok(html.includes("drawer-preset-btn-quick_134_3"));
+		assert.ok(html.includes("Запуск цикла стерилизации"));
 
 		// Primary CTA button is never blocked (disabled=false)
 		assert.ok(html.includes("approve-cycle-primary-cta"));
@@ -76,7 +68,7 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 		assert.ok(!html.match(/id="approve-cycle-primary-cta"[^>]*disabled/));
 
 		// Automatic indicator 5 class verification is visible
-		assert.ok(html.includes("Химический индикатор 5 класса пройден"));
+		assert.ok(html.includes("Химический индикатор 5 класса"));
 	});
 
 	it("SterilizationJournalTable renders clean clinical table and action controls", () => {

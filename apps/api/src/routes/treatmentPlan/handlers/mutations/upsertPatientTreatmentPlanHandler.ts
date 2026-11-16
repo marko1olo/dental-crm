@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
+import { db } from "../../../../db/client.js";
 import { withTenantCtx } from "../../../../db/rls.js";
 import {
 	auditEvents,
@@ -364,7 +365,23 @@ export async function handleUpsertPatientTreatmentPlan(
 		});
 	}
 
-	const [savedPlan] = await loadTreatmentPlansForPatient(patientId, organizationId);
+	const patientPlans = await loadTreatmentPlansForPatient(patientId, organizationId);
+	let savedPlan = patientPlans.find((p) => p.id === planId) ?? null;
+	if (!savedPlan) {
+		const [rawPlan] = await db
+			.select()
+			.from(treatmentPlans)
+			.where(
+				and(
+					eq(treatmentPlans.id, planId),
+					eq(treatmentPlans.patientId, patientId),
+					eq(treatmentPlans.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		savedPlan = (rawPlan as unknown as typeof savedPlan) ?? null;
+	}
+
 	return reply.send({
 		success: true,
 		planId,

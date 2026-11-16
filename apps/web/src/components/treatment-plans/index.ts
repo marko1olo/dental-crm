@@ -28,7 +28,6 @@ export * from "./TreatmentPlanPhased4StageView";
 export { TreatmentPlanStudioModal as TreatmentPlanPresenterModal } from "./TreatmentPlanStudioModal";
 export { isMicroConsumable } from "./treatmentPlanConsumables";
 export * from "./roadmap";
-export * from "./TreatmentPlanModule";
 export * from "./treatmentPlanBundlesEngine";
 export * from "./planPricing";
 export * from "./treatmentPlanTherapyNorms";

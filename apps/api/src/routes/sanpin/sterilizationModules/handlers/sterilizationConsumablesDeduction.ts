@@ -7,6 +7,7 @@
 
 import { and, eq, ilike, or } from "drizzle-orm";
 import { db } from "../../../../db/client.js";
+import { withTenantCtx, type TenantDb } from "../../../../db/rls.js";
 import { inventoryItems, inventoryTransactions, stockBatches } from "../../../../db/schema.js";
 import {
 	type SterilizationDeductionParams,
@@ -30,7 +31,7 @@ export async function executeSterilizationConsumablesDeduction(
 	}> = [];
 
 	try {
-		await db.transaction(async (tx) => {
+		await withTenantCtx(orgId, async (tx: TenantDb) => {
 			for (const spec of itemsToDeduct) {
 				const [existing] = await tx
 					.select()

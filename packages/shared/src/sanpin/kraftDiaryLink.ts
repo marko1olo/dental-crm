@@ -35,6 +35,10 @@ export function formatSterilizationDiaryRecord(params: FormatSterilizationRecord
 export const formatSterilizationRecord = formatSterilizationDiaryRecord;
 export const format043SterilizationRecord = formatSterilizationDiaryRecord;
 
+/**
+ * Мандат 8e / 8n / DEF-SAN-02: Медицинская карта (ЭМК) фиксирует лечение по стандарту SOAP,
+ * а не отчетность для Роспотребнадзора. Ноль загрязнения клинического описания СанПиН-бюрократией.
+ */
 export function attachKraftPackageToDiary(diaryOrText: string, parsedKraft: ParsedKraftBarcode): string;
 export function attachKraftPackageToDiary<T extends { appliedMaterials?: string | null; treatmentDescription?: string | null }>(
 	diaryOrText: T,
@@ -42,33 +46,10 @@ export function attachKraftPackageToDiary<T extends { appliedMaterials?: string 
 ): T;
 export function attachKraftPackageToDiary(
 	diaryOrText: { appliedMaterials?: string | null; treatmentDescription?: string | null } | string,
-	parsedKraft: ParsedKraftBarcode,
+	_parsedKraft: ParsedKraftBarcode,
 ): { appliedMaterials?: string | null; treatmentDescription?: string | null } | string {
-	const sterRecord = parsedKraft.formattedSterilizationDiaryRecord || parsedKraft.formattedProtocolRecord043;
-
-	if (typeof diaryOrText === "string") {
-		const curText = diaryOrText.trim();
-		if (
-			curText.includes(parsedKraft.rawInput) ||
-			(parsedKraft.cycleNumber && curText.includes(`цикл №${parsedKraft.cycleNumber}`) && curText.includes(parsedKraft.autoclaveId))
-		) {
-			return diaryOrText;
-		}
-		return curText ? `${curText}\n\n${sterRecord}` : sterRecord;
-	}
-
-	const curMaterials = (diaryOrText.appliedMaterials || "").trim();
-	if (
-		curMaterials.includes(parsedKraft.rawInput) ||
-		(parsedKraft.cycleNumber && curMaterials.includes(`цикл №${parsedKraft.cycleNumber}`) && curMaterials.includes(parsedKraft.autoclaveId))
-	) {
-		return diaryOrText;
-	}
-
-	return {
-		...diaryOrText,
-		appliedMaterials: curMaterials ? `${curMaterials}\n\n${sterRecord}` : sterRecord,
-	};
+	// Дневник приёма сохраняется в чистом клиническом виде
+	return diaryOrText;
 }
 
 export const attachKraftPackageTo043Diary = attachKraftPackageToDiary;

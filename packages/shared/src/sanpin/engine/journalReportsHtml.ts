@@ -238,7 +238,7 @@ export function generateForm257PrintHtml(
 		.header { text-align: center; margin-bottom: 8px; }
 		.clinic-title { font-size: 11pt; font-weight: bold; }
 		.form-title { font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px; }
-		table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 8pt; }
+		table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 8pt; table-layout: fixed; }
 		th { border: 1px solid #000; padding: 4px 2px; background: #f2f2f2; font-size: 7.5pt; text-align: center; font-weight: bold; }
 		.signatures { display: flex; justify-content: space-between; margin-top: 20px; font-size: 8.5pt; }
 		.sign-col { width: 45%; }
@@ -248,7 +248,11 @@ export function generateForm257PrintHtml(
 	<div class="header">
 		<div class="clinic-title">${clinicInfo.name}</div>
 		<div style="font-size: 7.5pt;">ИНН ${clinicInfo.inn} | ОГРН ${clinicInfo.ogrn} | ${clinicInfo.address}</div>
-		<div class="form-title">ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ (АВТОКЛАВОВ)</div>
+		<div class="form-stamp" style="font-size: 8pt; margin-top: 4px;">
+			Журнал автоклавирования и стерилизации (Форма № 257/у)<br/>
+			СанПиН 3.3686-21
+		</div>
+		<div class="form-title">ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И СТЕРИЛИЗАЦИИ — ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ</div>
 		<div style="font-size: 7.5pt; color: #333;">В соответствии с требованиями СанПиН 3.3686-21 «Профилактика инфекционных болезней» (${periodLabelRu})</div>
 	</div>
 
@@ -261,7 +265,7 @@ export function generateForm257PrintHtml(
 				<th>Стерилизуемые изделия</th>
 				<th style="width: 65px;">Кол-во и упаковка</th>
 				<th style="width: 75px;">Режим (T°, P, время)</th>
-				<th style="width: 110px;">Хим. индикаторы (5 точек)</th>
+				<th style="width: 110px;">Химический контроль (5 точек)</th>
 				<th style="width: 65px;">Результат контроля</th>
 				<th style="width: 85px;">Оператор ЦСО</th>
 				<th style="width: 70px;">Контроль ст. медсестры</th>
@@ -274,7 +278,7 @@ export function generateForm257PrintHtml(
 
 	<div class="signatures">
 		<div class="sign-col">
-			Главная медицинская сестра: ________________ / ${clinicInfo.headNurse} /
+			Главная медицинская сестра / Ответственный за стерилизацию в ЦСО: ________________ / ${clinicInfo.headNurse} /
 		</div>
 		<div class="sign-col" style="text-align: right;">
 			Главный врач клиники: ________________ / ${clinicInfo.chiefDoctor} /
@@ -600,7 +604,7 @@ export function generateTemperatureHumidityJournalPrintHtml(params: {
 		.clinic-name { font-size: 11pt; font-weight: bold; }
 		.title { font-size: 11.5pt; font-weight: bold; text-transform: uppercase; margin-top: 2px; }
 		.subtitle { font-size: 8pt; color: #333; }
-		table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 8pt; }
+		table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 8pt; table-layout: fixed; }
 		th { border: 1px solid #000; padding: 4px 2px; background: #f2f2f2; font-size: 7.5pt; text-align: center; font-weight: bold; }
 		.signatures { display: flex; justify-content: space-between; margin-top: 20px; font-size: 8.5pt; }
 		.sign-col { width: 45%; }

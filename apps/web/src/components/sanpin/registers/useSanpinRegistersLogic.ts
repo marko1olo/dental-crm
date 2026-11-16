@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { showToast } from "../../GlobalToast";
 import type { SanpinRegisterTab } from "../sanpinNavigationConfig";
-import { executeShiftSanpinAutoClose } from "../autoclaveLog/shiftAutoCloserEngine.js";
 import { generateSanpinShiftAutopilotBundle } from "@dental/shared";
 
 export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: SanpinRegisterTab = "autoclave") {
@@ -59,18 +58,15 @@ export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: Sa
 			const operatorName = appLogic?.activeDoctor?.fullName || "Медсестра ЦСО / Врач";
 			const headNurseName = appLogic?.clinic?.legalEntityName || "Ответственный по СанПиН";
 			const todayIso = new Date().toISOString().slice(0, 10);
-			const shiftAutoResult = executeShiftSanpinAutoClose({
-				date: todayIso, visitsCount: 12, operatorStaffFullName: operatorName, headNurseSignatureFullName: headNurseName,
-			});
 			const bundle = generateSanpinShiftAutopilotBundle({
 				date: todayIso, operatorFullName: operatorName, headNurseFullName: headNurseName,
 			});
 			const headers = auth ? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
 			await fetch("/api/registers/autofill-shift", {
-				method: "POST", headers, body: JSON.stringify({ ...bundle, autoShiftData: shiftAutoResult }),
+				method: "POST", headers, body: JSON.stringify(bundle),
 			}).catch(() => null);
 
-			showToast(`Смена заполнена: автоклавы ${shiftAutoResult.totalAutoclaveCycles} цикла, очистка ${shiftAutoResult.totalPsoSamplesTested} проб (100% норма).`, "success");
+			showToast(`Смена заполнена: автоклавы ${bundle.summary.totalSterilizationCycles} цикла, очистка ${bundle.summary.totalPsoSamplesTested} проб (100% норма).`, "success");
 			fetchSummary();
 			setRefreshCounter((p) => p + 1);
 		} catch {

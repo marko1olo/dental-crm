@@ -17,27 +17,20 @@ export function computeDiaryHashForTrayLink(row: DiaryHashInput): string {
 }
 
 /**
- * Мандат 8e / 8n: Запись мягкого клинического допуска в дневник по экстренным показаниям.
+ * Мандат 8e / 8n / DEF-SAN-02: Медицинская карта фиксирует клиническое лечение (SOAP),
+ * а не санитарную отчетность Роспотребнадзора. Ноль бюрократического мусора в дневнике.
  */
-export function buildEmergencySterilizationAdmissionNote(barcode: string): string {
-	return `[Стерилизация: мягкий допуск крафт-пакета ${barcode.trim()} по экстренным показаниям (СанПиН 3.3686-21)]`;
+export function buildEmergencySterilizationAdmissionNote(_barcode: string): string {
+	return "";
 }
 
 /**
- * Добавляет отметку о допуске в описание лечения без дублирования.
+ * Мандат 8e / 8n / DEF-SAN-02: Сохраняет клиническую чистоту протокола SOAP.
+ * Не засоряет описание лечения СанПиН-бюрократией.
  */
 export function applyEmergencySterilizationToDiaryTreatment(
 	currentTreatment: string | null | undefined,
-	barcode: string,
+	_barcode: string,
 ): string {
-	const emergencyNote = buildEmergencySterilizationAdmissionNote(barcode);
-	const base = (currentTreatment ?? "").trim();
-	if (!base) return emergencyNote;
-	if (
-		base.includes(emergencyNote.trim()) ||
-		(base.includes(barcode.trim()) && (base.includes("мягкий допуск") || base.includes("Стерилизация")))
-	) {
-		return base;
-	}
-	return `${base}\n${emergencyNote}`;
+	return (currentTreatment ?? "").trim();
 }

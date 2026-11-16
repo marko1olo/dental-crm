@@ -16,7 +16,7 @@ import {
 	STATUTORY_REGIMES_OPTIONS,
 	STATUTORY_PACKAGING_PRESETS,
 	INITIAL_5_POINTS,
-} from "../SterilizationCycleModal";
+} from "../sterilizationModules";
 import { SANPIN_CANONICAL_TABS } from "../sanpinNavigationConfig";
 import { SANPIN_REGISTERS_TOAST_MESSAGES } from "../sanpinToastMessages";
 

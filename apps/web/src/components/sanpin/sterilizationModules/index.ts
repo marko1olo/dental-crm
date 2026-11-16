@@ -7,4 +7,3 @@
 export * from "./sterilizationCycleTypes";
 export * from "./CycleParametersForm";
 export * from "./CyclePresetsSelector";
-export { SterilizationCycleModal } from "./SterilizationCycleModal";

@@ -1,4 +1,4 @@
-import type { ClinicAutoclaveDevice } from "../autoclave/autoclaveDeviceTypes";
+import type { ClinicAutoclaveDeviceItem as ClinicAutoclaveDevice } from "../sanpinCatalogData";
 export type { ClinicAutoclaveDevice };
 import type { SanpinSterilizationRegimeId } from "@dental/shared";
 

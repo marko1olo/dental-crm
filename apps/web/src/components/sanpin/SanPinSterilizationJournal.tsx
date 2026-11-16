@@ -57,7 +57,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 
 	useEffect(() => {
 		if (resolvedOperator) {
-			setOperatorName((prev) => (!prev || prev === "Иванова Е. С., медсестра ЦСО" || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
+			setOperatorName((prev) => (!prev || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
 		}
 	}, [resolvedOperator]);
 
@@ -345,7 +345,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 						>
 							<CheckCircle2 size={16} className="text-white" />
 							<span>{isBatchSubmitting ? "Проведение смены..." : "Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)"}</span>
-							<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)</span>
+							<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
 							<span className="sr-only">Провести цикл стерилизации</span>
 							<span className="sr-only">Запустить цикл стерилизации</span>
 						</button>

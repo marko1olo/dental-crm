@@ -11,6 +11,8 @@ export {
 export {
 	validateSterilizationCycle,
 	createDefaultChamberPoints,
+	detectMissingSterilizationDays,
+	type MissingSterilizationDaysAuditResult,
 } from "./cycleValidationRules.js";
 
 export {

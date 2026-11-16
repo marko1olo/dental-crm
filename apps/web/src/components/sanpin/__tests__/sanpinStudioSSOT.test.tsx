@@ -43,9 +43,6 @@ import {
 } from "../sanpinCatalogData";
 import { SanpinStudioModal } from "../SanpinStudioModal";
 import { DirectSanpinLauncher } from "../DirectSanpinLauncher";
-import { SanpinSterilizationHubModal } from "../SanpinSterilizationHubModal";
-import { SterilizationHubModal } from "../SterilizationHubModal";
-import { DirectSterilizationLauncher } from "../DirectSterilizationLauncher";
 
 const SANPIN_DIR = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
 	? path.resolve(process.cwd(), "apps/web/src/components/sanpin")
@@ -237,25 +234,6 @@ describe("SANPIN STUDIO CANONICAL SSOT SUITE (FIRST PRINCIPLES РФ 1–5 КРЕ
 		it("DirectSanpinLauncher монтирует каноническую SanpinStudioModal", () => {
 			const html = renderToStaticMarkup(<DirectSanpinLauncher forceOpen={true} />);
 			assert.ok(html.includes("direct-sanpin-launcher") && html.includes("sanpin-studio-modal"));
-		});
-
-		it("SanpinSterilizationHubModal является ре-экспортным прокси-фасадом к SanpinStudioModal", () => {
-			const html = renderToStaticMarkup(
-				<SanpinSterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
-			);
-			assert.ok(html.includes("sanpin-studio-modal"));
-		});
-
-		it("SterilizationHubModal является ре-экспортным прокси-фасадом к SanpinStudioModal", () => {
-			const html = renderToStaticMarkup(
-				<SterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
-			);
-			assert.ok(html.includes("sanpin-studio-modal"));
-		});
-
-		it("DirectSterilizationLauncher монтирует каноническую SanpinStudioModal", () => {
-			const html = renderToStaticMarkup(<DirectSterilizationLauncher forceOpen={true} />);
-			assert.ok(html.includes("direct-sterilization-launcher") && html.includes("sanpin-studio-modal"));
 		});
 	});
 });

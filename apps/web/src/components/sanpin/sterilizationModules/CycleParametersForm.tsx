@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
-import type { ClinicAutoclaveDevice } from "../autoclave/autoclaveDeviceTypes";
+import type { ClinicAutoclaveDevice } from "./sterilizationCycleTypes";
 import type { SterilizationRegimeOption } from "./sterilizationCycleTypes";
 import { STATUTORY_REGIMES_OPTIONS } from "./sterilizationCycleTypes";
 import { CyclePresetsSelector } from "./CyclePresetsSelector";

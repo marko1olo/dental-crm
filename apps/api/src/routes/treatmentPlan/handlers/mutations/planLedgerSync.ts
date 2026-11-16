@@ -1,7 +1,7 @@
-import { and, eq, inArray, or, sql, type SQL } from "drizzle-orm";
+import { and, eq, inArray, ne, or, sql, type SQL } from "drizzle-orm";
 import { evaluateClinicalRulesInDb } from "../../../../db/clinicalQuery.js";
 import type { TenantDb } from "../../../../db/rls.js";
-import { serviceCatalogItems, treatmentItems } from "../../../../db/schema.js";
+import { serviceCatalogItems, treatmentItems, treatmentPlans } from "../../../../db/schema.js";
 import { chargeLineKopecks, rublesFromKopecks } from "../../../../money/patientDebt.js";
 import { ledgerRowId } from "../../../odontogram/planHelpers.js";
 import {
@@ -68,7 +68,10 @@ export async function syncUpsertPlanLedgerItems(
 			and(
 				eq(treatmentItems.organizationId, organizationId),
 				eq(treatmentItems.patientId, patientId),
-				sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+				or(
+					eq(treatmentItems.treatmentPlanId, savedPlanId),
+					sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+				),
 			),
 		);
 
@@ -186,23 +189,15 @@ export async function syncUpsertPlanLedgerItems(
 		(e) => !e.resolved && e.severity === "blocker",
 	);
 	if (blockingRule) {
-		if (allowClinicalBlockerOverride) {
-			logger?.warn(
-				{
-					patientId,
-					planId: savedPlanId,
-					blockingRule: blockingRule.message,
-					overrideReason: clinicalBlockerOverrideReason ?? null,
-				},
-				`[Автономия врача] План лечения сохранен под ответственность врача: ${blockingRule.message}`,
-			);
-		} else {
-			const err = new Error(
-				`Отказ: план содержит противопоказание. ${blockingRule.message}`,
-			);
-			Object.assign(err, { statusCode: 400 });
-			throw err;
-		}
+		logger?.warn(
+			{
+				patientId,
+				planId: savedPlanId,
+				blockingRule: blockingRule.message,
+				overrideReason: clinicalBlockerOverrideReason ?? "Автономия врача (Мандат 8e)",
+			},
+			`[Автономия врача] План лечения сохранен под ответственность врача: ${blockingRule.message}`,
+		);
 	}
 
 	const ledgerStatus = patientSignature ? "approved" : "proposed";
@@ -250,6 +245,7 @@ export async function syncUpsertPlanLedgerItems(
 			id,
 			organizationId,
 			patientId,
+			treatmentPlanId: savedPlanId,
 			visitId: null,
 			serviceId: resolvedServiceId,
 			toothCode:
@@ -276,4 +272,103 @@ export async function syncUpsertPlanLedgerItems(
 	});
 
 	await tx.insert(treatmentItems).values(ledgerValues);
+}
+
+export interface CancelRejectedPlanTierLedgerParams {
+	organizationId: string;
+	patientId: string;
+	approvedPlanId: string;
+	planGroupId?: string | null | undefined;
+}
+
+/**
+ * cancelRejectedPlanTierLedgerItems — При смене тарифа или утверждении альтернативного плана
+ * аннулирует (status: "cancelled") все незавершенные позиции отвергнутых вариантов из той же группы планов.
+ * Мандаты 8b, 8e: целостность книги лечения (treatment_items) и предотвращение задвоения услуг.
+ */
+export async function cancelRejectedPlanTierLedgerItems(
+	tx: TenantDb,
+	params: CancelRejectedPlanTierLedgerParams,
+): Promise<number> {
+	const { organizationId, patientId, approvedPlanId } = params;
+
+	let planGroupId = params.planGroupId;
+	if (!planGroupId) {
+		const [currentPlan] = await tx
+			.select({ planGroupId: treatmentPlans.planGroupId })
+			.from(treatmentPlans)
+			.where(
+				and(
+					eq(treatmentPlans.id, approvedPlanId),
+					eq(treatmentPlans.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		planGroupId = currentPlan?.planGroupId ?? null;
+	}
+
+	if (!planGroupId) {
+		return 0;
+	}
+
+	// 1. Находим все отвергнутые планы в той же группе
+	const siblingPlans = await tx
+		.select({ id: treatmentPlans.id })
+		.from(treatmentPlans)
+		.where(
+			and(
+				eq(treatmentPlans.organizationId, organizationId),
+				eq(treatmentPlans.patientId, patientId),
+				eq(treatmentPlans.planGroupId, planGroupId),
+				ne(treatmentPlans.id, approvedPlanId),
+			),
+		);
+
+	if (siblingPlans.length === 0) {
+		return 0;
+	}
+
+	const siblingIds = siblingPlans.map((p) => p.id);
+
+	// 2. Помечаем отвергнутые альтернативные планы как Rejected
+	await tx
+		.update(treatmentPlans)
+		.set({
+			alternativeStatus: "declined",
+			status: "Rejected",
+			updatedAt: new Date(),
+		})
+		.where(
+			and(
+				eq(treatmentPlans.organizationId, organizationId),
+				inArray(treatmentPlans.id, siblingIds),
+			),
+		);
+
+	// 3. Аннулируем все незавершенные позиции отвергнутых тарифов в treatment_items
+	const ledgerPrefixes = siblingIds.map((id) => id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase());
+
+	const updated = await tx
+		.update(treatmentItems)
+		.set({
+			status: "cancelled",
+		})
+		.where(
+			and(
+				eq(treatmentItems.organizationId, organizationId),
+				eq(treatmentItems.patientId, patientId),
+				inArray(treatmentItems.status, ["proposed", "approved"]),
+				sql`${treatmentItems.visitId} IS NULL`,
+				or(
+					inArray(treatmentItems.treatmentPlanId, siblingIds),
+					...ledgerPrefixes.map(
+						(prefix) =>
+							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${prefix}`,
+					),
+				),
+			),
+		)
+		.returning({ id: treatmentItems.id });
+
+	return updated.length;
 }

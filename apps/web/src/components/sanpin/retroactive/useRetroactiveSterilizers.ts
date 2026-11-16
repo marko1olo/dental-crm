@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { POPULAR_STERILIZER_BRAND_PRESETS, type SterilizerEquipment } from "@dental/shared";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
-import { loadSavedClinicAutoclaves } from "../autoclave/autoclaveDeviceTypes";
+import { loadSavedClinicAutoclaves } from "../sanpinCatalogData";
 
 export function useRetroactiveSterilizers() {
 	const [sterilizerModel, setSterilizerModel] = useState("Melag Vacuklav 23B+ (B-класс)");

@@ -1,23 +1,20 @@
-import { and, eq, inArray, or, type SQL } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../../db/client.js";
 import {
 	auditEvents,
 	patients,
-	serviceCatalogItems,
-	treatmentItems,
 	treatmentPlanItemsNew,
 	treatmentPlanStages,
 	treatmentPlans,
 } from "../../../../db/schema.js";
 import { debtNumericText } from "../../../../money/patientDebt.js";
-import { ledgerRowId } from "../../../odontogram/planHelpers.js";
-import { UUID_SHAPE } from "../../../odontogram/types.js";
+import { syncUpsertPlanLedgerItems, type SyncPlanLedgerItemInput } from "./planLedgerSync.js";
 import { createTreatmentPlanSchema } from "./schemas.js";
 
 /**
- * handleCreateTreatmentPlan — Создание плана лечения с синхронизацией книги лечения (ledger).
- * Мандат 8b, 8e: целостный финансовый и клинический контур (treatment_items).
+ * handleCreateTreatmentPlan — Создание клинического плана лечения и этапов (SSOT).
+ * Мандаты 8b, 8e: план лечения — это клиническая смета, черновик не искажает отчёт дебиторки.
  */
 export async function handleCreateTreatmentPlan(
 	request: FastifyRequest,
@@ -47,15 +44,35 @@ export async function handleCreateTreatmentPlan(
 		});
 	}
 
-	let calculatedTotalRub = data.totalPriceRub ?? 0;
-	if (calculatedTotalRub === 0 && data.stages.length > 0) {
+	let itemsTotalKopecks = 0;
+	if (data.stages.length > 0) {
 		for (const st of data.stages) {
 			for (const it of st.items) {
-				calculatedTotalRub += Math.max(0, it.price * it.quantity - it.discount);
+				const unitKopecks = typeof it.unitPriceKopecks === "number" && it.unitPriceKopecks > 0
+					? Math.round(it.unitPriceKopecks)
+					: Math.round(it.price * 100);
+				const discountKopecks = Math.round(it.discount * 100);
+				const lineTotal = Math.max(0, unitKopecks * it.quantity - discountKopecks);
+				itemsTotalKopecks += lineTotal;
 			}
 		}
 	}
-	const totalKopecks = Math.round(calculatedTotalRub * 100);
+
+	let totalKopecks: number;
+	if (typeof data.totalPriceRub === "number" && data.totalPriceRub > 0) {
+		totalKopecks = Math.round(data.totalPriceRub * 100);
+	} else {
+		let discountedKopecks = itemsTotalKopecks;
+		if (typeof data.planDiscountRub === "number" && data.planDiscountRub > 0) {
+			const planDiscountKopecks = Math.round(data.planDiscountRub * 100);
+			discountedKopecks = Math.max(0, discountedKopecks - planDiscountKopecks);
+		} else if (typeof data.planDiscountPercent === "number" && data.planDiscountPercent > 0) {
+			const percentDiscountKopecks = Math.round((discountedKopecks * data.planDiscountPercent) / 100);
+			discountedKopecks = Math.max(0, discountedKopecks - percentDiscountKopecks);
+		}
+		totalKopecks = discountedKopecks;
+	}
+	const calculatedTotalRub = totalKopecks / 100;
 
 	const result = await db.transaction(async (tx) => {
 		const [newPlan] = await tx
@@ -83,18 +100,7 @@ export async function handleCreateTreatmentPlan(
 
 		const createdStages: Array<typeof treatmentPlanStages.$inferSelect> = [];
 		const createdItems: Array<typeof treatmentPlanItemsNew.$inferSelect> = [];
-		const allItemsFlat: Array<{
-			priceId?: string | null | undefined;
-			isCustom?: boolean | undefined;
-			name?: string | undefined;
-			toothNumber?: number | null | undefined;
-			quantity: number;
-			price: number;
-			discount: number;
-			unitPriceKopecks?: number | undefined;
-			totalPriceKopecks?: number | undefined;
-			doctorId?: string | null | undefined;
-		}> = [];
+		const allItemsFlat: SyncPlanLedgerItemInput[] = [];
 
 		for (const st of data.stages) {
 			const [createdStage] = await tx
@@ -130,89 +136,23 @@ export async function handleCreateTreatmentPlan(
 					.returning();
 
 				if (createdItem) createdItems.push(createdItem);
-				allItemsFlat.push(item);
+				allItemsFlat.push({
+					...item,
+					phase: st.stageOrder,
+					isAuto: item.isBundle,
+				});
 			}
 		}
 
-		// Синхронизация с книгой лечения (treatment_items)
 		if (allItemsFlat.length > 0) {
-			const uuidCandidates = allItemsFlat
-				.map((i) => i.priceId)
-				.filter((id): id is string => Boolean(id && UUID_SHAPE.test(id)));
-			const codeCandidates = allItemsFlat
-				.map((i) => i.priceId)
-				.filter((id): id is string => Boolean(id && !UUID_SHAPE.test(id) && id.length > 0));
-			const titleCandidates = allItemsFlat
-				.map((i) => i.name?.trim())
-				.filter((t): t is string => Boolean(t && t.length > 0));
-
-			const orConditions: SQL<unknown>[] = [];
-			if (uuidCandidates.length > 0) {
-				orConditions.push(inArray(serviceCatalogItems.id, uuidCandidates));
-			}
-			if (codeCandidates.length > 0) {
-				orConditions.push(inArray(serviceCatalogItems.code, codeCandidates));
-				orConditions.push(inArray(serviceCatalogItems.order804nCode, codeCandidates));
-			}
-			if (titleCandidates.length > 0) {
-				orConditions.push(inArray(serviceCatalogItems.title, titleCandidates));
-			}
-
-			const matchedServices = orConditions.length > 0
-				? await tx
-						.select({
-							id: serviceCatalogItems.id,
-							code: serviceCatalogItems.code,
-							order804nCode: serviceCatalogItems.order804nCode,
-							title: serviceCatalogItems.title,
-						})
-						.from(serviceCatalogItems)
-						.where(
-							and(
-								eq(serviceCatalogItems.organizationId, organizationId),
-								or(...orConditions),
-							),
-						)
-				: [];
-
-			const serviceLookup = new Map<string, string>();
-			for (const svc of matchedServices) {
-				serviceLookup.set(svc.id.toLowerCase(), svc.id);
-				if (svc.code) serviceLookup.set(svc.code.toLowerCase(), svc.id);
-				if (svc.order804nCode) serviceLookup.set(svc.order804nCode.toLowerCase(), svc.id);
-				if (svc.title) serviceLookup.set(svc.title.toLowerCase().trim(), svc.id);
-			}
-
-			let slot = 0;
-			const ledgerValues = allItemsFlat.map((item) => {
-				const id = ledgerRowId(newPlan.id, slot);
-				slot += 1;
-				const unitPriceRub = Number(item.price.toFixed(2));
-				const lineTotalRub = Number(Math.max(0, item.price * item.quantity - item.discount).toFixed(2));
-				const discountRub = Number(item.discount.toFixed(2));
-				const resolvedServiceId =
-					(item.priceId ? serviceLookup.get(item.priceId.toLowerCase()) : null) ||
-					(item.name ? serviceLookup.get(item.name.trim().toLowerCase()) : null) ||
-					(item.priceId && UUID_SHAPE.test(item.priceId) ? item.priceId : null);
-
-				return {
-					id,
-					organizationId,
-					patientId: data.patientId,
-					visitId: null,
-					serviceId: resolvedServiceId,
-					toothCode: item.toothNumber ? String(item.toothNumber) : null,
-					title: item.name?.trim() || item.priceId || "Индивидуальная услуга",
-					quantity: String(item.quantity),
-					priceRub: lineTotalRub,
-					unitPriceRub,
-					discountRub,
-					status: "proposed" as const,
-					plannedDoctorUserId: item.doctorId || data.doctorId || null,
-					notes: null,
-				};
+			await syncUpsertPlanLedgerItems(tx, {
+				organizationId,
+				patientId: data.patientId,
+				savedPlanId: newPlan.id,
+				items: allItemsFlat,
+				patientSignature: null,
+				logger: request.log,
 			});
-			await tx.insert(treatmentItems).values(ledgerValues);
 		}
 
 		try {
@@ -222,7 +162,7 @@ export async function handleCreateTreatmentPlan(
 				entityType: "treatment_plan",
 				entityId: newPlan.id,
 				action: "TREATMENT_PLAN_CREATED",
-				reason: `Создан план комплексного лечения «${newPlan.name}» на сумму ${calculatedTotalRub} ₽ с фиксацией в книге лечения`,
+				reason: `Создан план комплексного лечения «${newPlan.name}» на сумму ${calculatedTotalRub} ₽`,
 			});
 		} catch (auditErr) {
 			request.log.warn({ err: auditErr }, "Не удалось записать аудит создания плана лечения");

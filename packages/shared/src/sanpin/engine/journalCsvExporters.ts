@@ -74,11 +74,11 @@ export function exportForm257ToCsv(records: readonly Form257Record[]): string {
 		"Тип упаковки",
 		"Срок годности (дней)",
 		"Хим. индикатор",
-		"КТ-1",
-		"КТ-2",
-		"КТ-3",
-		"КТ-4",
-		"КТ-5",
+		"КТ-1 (Верхний угол)",
+		"КТ-2 (Нижний угол)",
+		"КТ-3 (Центр камеры)",
+		"КТ-4 (У дверцы)",
+		"КТ-5 (Задняя стенка)",
 		"Все 5 точек ОК",
 		"Результат цикла",
 		"Причина брака",
@@ -304,6 +304,6 @@ export function exportTemperatureHumidityJournalToCsv(records: readonly Temperat
 		escapeCsvField(r.notes || ""),
 	]);
 
-	const csvBody = [headers.join(";"), ...rows.map((row) => row.join(";"))].join("\r\n");
+	const csvBody = [headers.map(escapeCsvField).join(";"), ...rows.map((row) => row.join(";"))].join("\r\n");
 	return `\uFEFF${csvBody}`;
 }

@@ -116,38 +116,10 @@ export interface BactericidalLogRecord {
 export const PRESET_PACK_COUNTS = [4, 8, 12, 16, 24] as const;
 
 export const AUTOCLAVE_PROGRAMS: readonly AutoclaveProgram[] = [
-	{
-		id: "standard_134",
-		name: "134°C • 2.1 бар • 5 мин (Универсальная)",
-		description: "Стандартный цикл для наконечников, лотков и упакованных инструментов",
-		temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 5, dryingMinutes: 15,
-		indicatorClass: "Индикатор 5 класса (многопараметрический)",
-		suitableFor: "Упакованные инструменты в крафт-пакетах, стоматологические наконечники",
-	},
-	{
-		id: "delicate_121",
-		name: "121°C • 1.15 бар • 20 мин (Деликатная)",
-		description: "Бережный цикл для термолабильных изделий, оптики, силикона и пластмасс",
-		temperatureCelsius: 121, pressureBar: 1.15, exposureMinutes: 20, dryingMinutes: 15,
-		indicatorClass: "Индикатор 5 класса (121°C/20 мин)",
-		suitableFor: "Силиконовые оттискные ложки, пластиковые держатели, оптика",
-	},
-	{
-		id: "flash_134",
-		name: "134°C • 2.1 бар • 3 мин (Экспресс без упаковки)",
-		description: "Быстрый цикл для неотложной стерилизации монолитных стальных инструментов",
-		temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 3, dryingMinutes: 5,
-		indicatorClass: "Индикатор 4 класса",
-		suitableFor: "Неупакованный инструментарий для немедленного использования у кресла",
-	},
-	{
-		id: "prion_134",
-		name: "Прион 134°C • 2.1 бар • 18 мин (Усиленная)",
-		description: "Антиприонный цикл для хирургических и имплантологических инструментов",
-		temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 18, dryingMinutes: 20,
-		indicatorClass: "Индикатор 5-6 класса (134°C/18 мин)",
-		suitableFor: "Хирургические наборы, распаторы, элеваторы, костные инструменты",
-	},
+	{ id: "standard_134", name: "134°C • 2.1 бар • 5 мин (Универсальная)", description: "Стандартный цикл для наконечников, лотков и упакованных инструментов", temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 5, dryingMinutes: 15, indicatorClass: "Индикатор 5 класса (многопараметрический)", suitableFor: "Упакованные инструменты в крафт-пакетах, стоматологические наконечники" },
+	{ id: "delicate_121", name: "121°C • 1.15 бар • 20 мин (Деликатная)", description: "Бережный цикл для термолабильных изделий, оптики, силикона и пластмасс", temperatureCelsius: 121, pressureBar: 1.15, exposureMinutes: 20, dryingMinutes: 15, indicatorClass: "Индикатор 5 класса (121°C/20 мин)", suitableFor: "Силиконовые оттискные ложки, пластиковые держатели, оптика" },
+	{ id: "flash_134", name: "134°C • 2.1 бар • 3 мин (Экспресс без упаковки)", description: "Быстрый цикл для неотложной стерилизации монолитных стальных инструментов", temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 3, dryingMinutes: 5, indicatorClass: "Индикатор 4 класса", suitableFor: "Неупакованный инструментарий для немедленного использования у кресла" },
+	{ id: "prion_134", name: "Прион 134°C • 2.1 бар • 18 мин (Усиленная)", description: "Антиприонный цикл для хирургических и имплантологических инструментов", temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 18, dryingMinutes: 20, indicatorClass: "Индикатор 5-6 класса (134°C/18 мин)", suitableFor: "Хирургические наборы, распаторы, элеваторы, костные инструменты" },
 ];
 
 export const CLINIC_STERILIZERS: readonly ClinicSterilizerDevice[] = [
@@ -315,4 +287,29 @@ export function generateKraftStickersHtml(cycle: SterilizationBatchCycleRecord, 
 	const expStr = expDate.toLocaleDateString("ru-RU");
 	const stickers = Array.from({ length: count }, (_, idx) => `<div style="width:58mm;height:40mm;border:1px dashed #94a3b8;padding:3mm;box-sizing:border-box;page-break-after:always;display:flex;flex-direction:column;justify-content:space-between;font-family:sans-serif;"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #000;padding-bottom:1mm;"><span style="font-size:9pt;font-weight:bold;">СТЕРИЛЬНО</span><span style="font-size:8pt;font-weight:bold;">№${cycle.cycleNumber} / ${idx + 1}</span></div><div style="font-size:7pt;line-height:1.2;margin:1mm 0;"><div><b>Дата:</b> ${cycle.date} ${cycle.time}</div><div><b>Годен до:</b> ${expStr} (50 сут.)</div><div><b>Автоклав:</b> ${cycle.autoclaveName.split(" ")[0]} (${cycle.temperatureCelsius}°C/5м)</div><div><b>Индикатор:</b> ${cycle.chemicalIndicatorVerdict} (5 кл.)</div><div><b>Оператор:</b> ${cycle.operatorName.split(",")[0]}</div></div><div style="text-align:center;font-size:6pt;letter-spacing:1px;font-family:monospace;border-top:1px solid #ccc;padding-top:1mm;">*DENTE-CYC${cycle.cycleNumber}-${idx + 1}*</div></div>`).join("");
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><title>Термоэтикетки крафт-пакетов</title><style>@page{size:58mm 40mm;margin:0;}body{margin:0;padding:0;background:#fff;}</style></head><body>${stickers}</body></html>`;
+}
+
+export interface ClinicAutoclaveDeviceItem {
+	readonly id: string;
+	readonly code: string;
+	readonly brandModelRu: string;
+	readonly serialNumber: string;
+	readonly chamberVolumeLiters: number;
+	readonly methodType?: string;
+}
+
+export function loadSavedClinicAutoclaves(): ClinicAutoclaveDeviceItem[] {
+	if (typeof window !== "undefined" && window.localStorage) {
+		try {
+			const saved = window.localStorage.getItem("dente_clinic_autoclaves");
+			if (saved) {
+				const parsed = JSON.parse(saved);
+				if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+			}
+		} catch { /* ignore */ }
+	}
+	return [
+		{ id: "AUTO-MELAG-01", code: "АК-01", brandModelRu: "Melag Vacuklav 23 B+ (B-класс)", serialNumber: "SN-MEL-88412", chamberVolumeLiters: 22, methodType: "steam_autoclave" },
+		{ id: "AUTO-EURONDA-01", code: "АК-02", brandModelRu: "Euronda E9 Next (B-класс)", serialNumber: "SN-EUR-99824", chamberVolumeLiters: 24, methodType: "steam_autoclave" },
+	];
 }

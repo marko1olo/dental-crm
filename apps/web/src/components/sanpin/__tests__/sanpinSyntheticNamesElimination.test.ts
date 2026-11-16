@@ -5,10 +5,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateSanpinShiftAutopilotBundle } from "@dental/shared";
 import {
-	computeExpressStandardCycleValues,
-	EXPRESS_CYCLE_DEFAULTS,
-} from "../autoclaveLog/AutoclaveNewCycleTab.js";
-import {
 	createQuickClassBWasteRecord,
 	createQuickClassGWasteRecord,
 } from "../waste/medicalWasteEngine.js";
@@ -24,22 +20,22 @@ const BANNED_SYNTHETIC_NAMES = [
 	"Петрова Елена Сергеевна",
 	"Иванова Ольга Николаевна",
 	"Смирнова О. И.",
+	"Иванова Е. С.",
+	"Иванова Е.С.",
 ];
 
 describe("SanPiN Registers — Synthetic Names Elimination & Regulatory Roles Verification (Wave 105)", () => {
 	it("verifies elimination of banned synthetic names from production SanPiN components", () => {
 		const targetFiles = [
 			"SanpinRegisters.tsx",
-			"AutoclaveRegisterTab.tsx",
+			"SanpinStudioModal.tsx",
+			"SterilizationBatchCycleModal.tsx",
+			"SanPinSterilizationJournal.tsx",
 			"GeneralCleaningRegisterTab.tsx",
-			"SanpinAutoclaveRegisterTab.tsx",
 			"BactericidalRegisterTab.tsx",
 			"PsoRegisterTab.tsx",
 			"RetroactiveBatchTab.tsx",
 			"RetroactiveSanpinBatchModal.tsx",
-			"autoclaveLog/AutoclaveJournal257Tab.tsx",
-			"autoclaveLog/AutoclaveNewCycleTab.tsx",
-			"autoclaveLog/AutoclaveLog257Modal.tsx",
 			"waste/MedicalWasteJournalModal.tsx",
 			"waste/medicalWasteEngine.ts",
 		];
@@ -59,17 +55,12 @@ describe("SanPiN Registers — Synthetic Names Elimination & Regulatory Roles Ve
 	});
 
 	it("verifies regulatory statutory roles are used as clean defaults", () => {
-		// 1. Autoclave express cycle defaults
-		assert.equal(EXPRESS_CYCLE_DEFAULTS.defaultOperatorName, "Сотрудник клиники");
-		const expressValues = computeExpressStandardCycleValues({});
-		assert.equal(expressValues.operatorFullName, "Сотрудник клиники");
-
-		// 2. Shared autopilot shift bundle
+		// 1. Shared autopilot shift bundle
 		const bundle = generateSanpinShiftAutopilotBundle();
 		assert.equal(bundle.operatorFullName, "Медсестра ЦСО");
 		assert.equal(bundle.headNurseFullName, "Главная медсестра");
 
-		// 3. Quick waste records
+		// 2. Quick waste records
 		const wasteB = createQuickClassBWasteRecord();
 		assert.equal(wasteB.operatorStaffFullName, "Медсестра процедурного кабинета");
 		assert.equal(wasteB.operatorStaffPosition, "Медсестра процедурного кабинета");

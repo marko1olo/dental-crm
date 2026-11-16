@@ -67,6 +67,8 @@ export const TreatmentPlanClinicalModals: React.FC<TreatmentPlanClinicalModalsPr
 						tier={logic.effectiveSignTier}
 						patientName={logic.patientName}
 						patientId={logic.patientId}
+						patientPhone={logic.patientPhone || undefined}
+						planId={logic.currentPlanId || undefined}
 						doctorFullName={logic.auth?.currentUser?.name || "Лечащий врач"}
 						clinicName={logic.dashboard?.clinicSettings?.profile?.brandName || "Стоматологическая клиника DENTE"}
 						onClose={() => logic.setIsSignModalOpen(false)}

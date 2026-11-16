@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
 import { auditEvents, patients, treatmentItems, treatmentPlans } from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { LEDGER_ID_PREFIX_LENGTH } from "../../odontogram/types.js";
+import { cancelRejectedPlanTierLedgerItems } from "../handlers/mutations/planLedgerSync.js";
 import { handleOtpRequest, verifyOtpCode } from "./pepOtpService.js";
 import { activeOtpCache, signTreatmentPlanPepSchema } from "./pepTypes.js";
 import { isValidUuid } from "@dental/shared";
@@ -101,15 +102,26 @@ export async function handleSignTreatmentPlanPep(
 		if (updated) {
 			await tx
 				.update(treatmentItems)
-				.set({ status: "approved" })
+				.set({ status: "approved", treatmentPlanId: planId })
 				.where(
 					and(
 						eq(treatmentItems.organizationId, organizationId),
 						eq(treatmentItems.patientId, plan.patientId),
 						eq(treatmentItems.status, "proposed"),
-						sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+						or(
+							eq(treatmentItems.treatmentPlanId, planId),
+							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+						),
 					),
 				);
+
+			// SEV-2.4: Аннулируем позиции отвергнутых альтернативных тарифов в той же группе планов
+			await cancelRejectedPlanTierLedgerItems(tx, {
+				organizationId,
+				patientId: plan.patientId,
+				approvedPlanId: planId,
+				planGroupId: plan.planGroupId,
+			});
 		}
 
 		return updated;

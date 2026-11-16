@@ -6,8 +6,6 @@ import {
 	filterForm257Records,
 	createDefault5ChamberPoints,
 	createForm257Record,
-} from "../autoclaveLog/autoclaveLogEngine.js";
-import {
 	calculateAirDecontaminationDuration,
 	calculateLampOperatingHours,
 	exportBactericidalJournalToCsv,

@@ -140,7 +140,7 @@ export const MedicalWastePackagingAndScaleForm: React.FC<MedicalWastePackagingAn
 					>
 						{SANPIN_WASTE_PACKAGING_TYPES.filter((p) => p.wasteClass === selectedClass).map((pkg) => (
 							<option key={pkg.id} value={pkg.id}>
-								{pkg.nameRu} ({pkg.nominalVolumeLiters} л)
+								{pkg.nameRu} ({pkg.maxCapacityLiters} л)
 							</option>
 						))}
 					</select>

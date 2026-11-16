@@ -36,6 +36,18 @@ export const STATUTORY_STERILIZATION_REGIMES: readonly SterilizationRegimeDefini
 		sanpinStandardClauseRu: "СанПиН 3.3686-21 п. 3624 / Режим I усиленный",
 	},
 	{
+		id: "steam_134_20min_prion",
+		nameRu: "Паровой 134°C / 20 мин (2.0-2.2 атм / бар) — Антиприонный усиленный",
+		methodType: "steam_autoclave",
+		targetTemperatureCelsius: 134,
+		targetPressureBar: 2.1,
+		exposureTimeMinutes: 20,
+		tempToleranceCelsius: { min: 134, max: 138 },
+		pressureToleranceBar: { min: 2.0, max: 2.3 },
+		recommendedUsageRu: "Хирургический и имплантологический инструментарий",
+		sanpinStandardClauseRu: "СанПиН 3.3686-21 п. 3624 / Режим I прионный",
+	},
+	{
 		id: "steam_132_20min",
 		nameRu: "Паровой 132°C / 20 мин (2.0 атм / бар) — Базовый паровой (ГОСТ / СанПиН)",
 		methodType: "steam_autoclave",
@@ -116,6 +128,8 @@ export const DEFAULT_CLINIC_LEGAL: ClinicLegalInfo = {
 	licenseNumber: "№ ЛО41-01137-77/00368421",
 	volumeNumber: 1,
 };
+
+export { DEFAULT_CLINIC_LEGAL as DEFAULT_CLINIC_LEGAL_INFO };
 
 export function integerToRussianWords(num: number): string {
 	const n = Math.max(0, Math.floor(num));

@@ -68,7 +68,18 @@ export function createForm257Record(params: {
 
 	const status = isCyclePassed ? "sterile_passed" : "rejected_defect";
 	const rejectionReason = failureReasons.length > 0 ? failureReasons.join("; ") : undefined;
-	const sterilizerCode = params.sterilizerCode || "АК-01";
+	const sId = (params.sterilizerId || "").toLowerCase();
+	const defaultBrand = sId.includes("euronda")
+		? "Euronda E9 Next (Класс B)"
+		: sId.includes("dryheat")
+			? "Сухожар ГП-20 СПУ"
+			: "Melag Vacuklav 23B+";
+	const defaultCode = sId.includes("melag")
+		? "MELAG-01"
+		: sId.includes("euronda")
+			? "EURONDA-01"
+			: "АК-01";
+	const sterilizerCode = params.sterilizerCode || defaultCode;
 
 	const id = generateForm257RecordId(params.date, params.cycleNumber, sterilizerCode);
 	const digitalStampHash = calculateDigitalStampHash({
@@ -91,7 +102,7 @@ export function createForm257Record(params: {
 		cycleNumber: params.cycleNumber,
 		sterilizerId: params.sterilizerId,
 		sterilizerCode,
-		sterilizerBrandModel: params.sterilizerBrandModel || "Melag Vacuklav 23B+",
+		sterilizerBrandModel: params.sterilizerBrandModel || defaultBrand,
 		sterilizerSerialNumber: params.sterilizerSerialNumber || "VK-2024-8841",
 		regimeId: regime.id,
 		regimeNameRu: regime.nameRu,

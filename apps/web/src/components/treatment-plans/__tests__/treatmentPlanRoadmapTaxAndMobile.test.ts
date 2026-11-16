@@ -53,10 +53,9 @@ describe("TreatmentPlanRoadmap — Tax Deduction & Mobile Styling", () => {
 		onSelectStage(mockStage);
 		onBookStageSlot(mockStage.stageNumber, mockStage);
 
-		assert.ok(bookedStage);
-		assert.equal(bookedStage?.stageNumber, 2);
-		assert.ok(selectedStage);
-		assert.equal(selectedStage?.stageKind, "stage_2_therapy");
+		if (!bookedStage || !selectedStage) throw new Error("Stage not set");
+		assert.equal((bookedStage as typeof mockStage).stageNumber, 2);
+		assert.equal((selectedStage as typeof mockStage).stageKind, "stage_2_therapy");
 		assert.equal(bookedSlotNumber, 2);
 	});
 

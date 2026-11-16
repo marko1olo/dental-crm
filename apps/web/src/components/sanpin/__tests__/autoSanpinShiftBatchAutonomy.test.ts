@@ -34,8 +34,8 @@ import {
 	generateShiftSanpinDossierPrintHtml,
 	type ShiftSanpinAutoCloseResult,
 	type MonthSanpinBatchResult,
-} from "../autoclaveLog/shiftAutoCloserEngine.js";
-import { evaluate5ChamberPoints, evaluateCycleParameters } from "../autoclaveLog/autoclaveLogEngine.js";
+} from "../shiftAutoCloserEngine.js";
+import { evaluate5ChamberPoints, evaluateCycleParameters } from "@dental/shared";
 
 describe("Auto-SanPiN & 1-Click Batch Shift Journal Automation (Mandates 8e, 8k, 8n, 8v)", () => {
 	// ─────────────────────────────────────────────────────────────────────────

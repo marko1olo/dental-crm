@@ -1,19 +1,42 @@
 import { showToast } from "../GlobalToast.js";
 import {
-	type ClinicAutoclaveDevice,
-	loadSavedClinicAutoclaves,
-} from "./autoclave/autoclaveDeviceTypes.js";
-import {
 	createDefault5ChamberPoints,
 	createForm257Record,
-	DEFAULT_CLINIC_LEGAL_INFO,
-	generateSterilizationLogPrintHtml,
+	DEFAULT_CLINIC_LEGAL,
+	generateForm257PrintHtml,
 	type Form257Record,
-} from "./autoclaveLog/autoclaveLogEngine.js";
+} from "@dental/shared";
+import { CLINIC_STERILIZERS, type ClinicSterilizerDevice } from "./sanpinCatalogData";
+
+export interface ClinicAutoclaveDeviceLike {
+	id: string;
+	brandModelRu: string;
+	inventoryNumber?: string;
+	serialNumber?: string;
+	isOperational?: boolean;
+}
+
+function getDeviceBrandModel(d: ClinicAutoclaveDeviceLike | ClinicSterilizerDevice): string {
+	if ("brandModelRu" in d && d.brandModelRu) return d.brandModelRu;
+	if ("model" in d && d.model) return d.model;
+	if ("name" in d && d.name) return d.name;
+	return "Автоклав";
+}
+
+function isDeviceActive(d: ClinicAutoclaveDeviceLike | ClinicSterilizerDevice): boolean {
+	if ("isOperational" in d && typeof d.isOperational === "boolean") return d.isOperational;
+	if ("isCompliant" in d && typeof d.isCompliant === "boolean") return d.isCompliant;
+	return true;
+}
+
+function getDeviceCode(d: ClinicAutoclaveDeviceLike | ClinicSterilizerDevice): string {
+	if ("inventoryNumber" in d && d.inventoryNumber) return d.inventoryNumber;
+	return d.id || "АК-01";
+}
 
 export function handleGenerateMonthlySterilizationLog(
 	sterilizerId?: string,
-	clinicDevices?: ClinicAutoclaveDevice[],
+	clinicDevices?: readonly ClinicAutoclaveDeviceLike[],
 ): void {
 	const now = new Date();
 	const currentYear = now.getFullYear();
@@ -21,14 +44,15 @@ export function handleGenerateMonthlySterilizationLog(
 	const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 	const monthNameRu = now.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
 
-	const devices = clinicDevices && clinicDevices.length > 0 ? clinicDevices : loadSavedClinicAutoclaves();
+	const devices: readonly (ClinicAutoclaveDeviceLike | ClinicSterilizerDevice)[] =
+		clinicDevices && clinicDevices.length > 0 ? clinicDevices : CLINIC_STERILIZERS;
 	const matchedDevice = sterilizerId && sterilizerId !== "all"
-		? devices.find((d) => d.id === sterilizerId || d.brandModelRu.includes(sterilizerId))
-		: devices.find((d) => d.isOperational) || devices[0];
+		? devices.find((d) => d.id === sterilizerId || getDeviceBrandModel(d).includes(sterilizerId))
+		: devices.find((d) => isDeviceActive(d)) || devices[0];
 
 	const targetSterilizerId = matchedDevice?.id || "autoclave-melag-vacuklav-23b";
-	const targetSterilizerCode = matchedDevice?.inventoryNumber || matchedDevice?.id || "АК-01";
-	const targetSterilizerBrandModel = matchedDevice?.brandModelRu || "Melag Vacuklav 23 B+";
+	const targetSterilizerCode = matchedDevice ? getDeviceCode(matchedDevice) : "АК-01";
+	const targetSterilizerBrandModel = matchedDevice ? getDeviceBrandModel(matchedDevice) : "Melag Vacuklav 23 B+";
 	const targetSterilizerSerialNumber = matchedDevice?.serialNumber || "MEL-2024-9812";
 
 	const generatedRecords: Form257Record[] = [];
@@ -85,7 +109,7 @@ export function handleGenerateMonthlySterilizationLog(
 		);
 	}
 
-	const html = generateSterilizationLogPrintHtml(generatedRecords, DEFAULT_CLINIC_LEGAL_INFO, `за ${monthNameRu}`);
+	const html = generateForm257PrintHtml(generatedRecords, DEFAULT_CLINIC_LEGAL, `за ${monthNameRu}`);
 	const printWin = window.open("", "_blank");
 	if (!printWin) {
 		showToast("Разрешите всплывающие окна для печати журнала работы стерилизаторов (автоклавов)", "error");

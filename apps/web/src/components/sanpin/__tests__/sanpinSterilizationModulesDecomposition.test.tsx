@@ -16,40 +16,18 @@ import {
 import {
 	CycleParametersForm,
 	CyclePresetsSelector,
-	SterilizationCycleModal as ModularSterilizationModal,
 	STATUTORY_REGIMES_OPTIONS,
 	STATUTORY_PACKAGING_PRESETS,
 	INITIAL_5_POINTS,
 } from "../sterilizationModules";
 
-import { SterilizationCycleModal } from "../SterilizationCycleModal";
-
-import {
-	AutoclaveCycleRowItem,
-	AutoclaveIndicatorBadge,
-	AutoclaveRegisterRows,
-} from "../autoclave";
-
-describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decomposed Architecture (Mandates 8b, 8d, 8e)", () => {
+describe("SanPiN 3.3686-21 — Sterilization Cycle Decomposed Architecture (Mandates 8b, 8d, 8e)", () => {
 	it("verifies public export parity and component definitions", () => {
-		assert.equal(typeof SterilizationCycleModal, "function");
-		assert.equal(typeof ModularSterilizationModal, "function");
 		assert.equal(typeof CycleParametersForm, "function");
 		assert.equal(typeof CyclePresetsSelector, "function");
-		assert.equal(typeof AutoclaveCycleRowItem, "function");
-		assert.equal(typeof AutoclaveIndicatorBadge, "function");
-		assert.equal(typeof AutoclaveRegisterRows, "function");
 	});
 
-	it("verifies facade SterilizationCycleModal.tsx line count is strictly <= 50 lines", () => {
-		const facadePath = path.resolve(process.cwd(), "apps/web/src/components/sanpin/SterilizationCycleModal.tsx");
-		assert.ok(fs.existsSync(facadePath), "Facade file must exist");
-		const content = fs.readFileSync(facadePath, "utf8");
-		const lineCount = content.split(/\r?\n/).length;
-		assert.ok(lineCount <= 50, `Facade must be <= 50 lines, got ${lineCount}`);
-	});
-
-	it("verifies all decomposed modules in sterilizationModules are strictly <= 120 lines (Mandate 8b)", () => {
+	it("verifies all decomposed modules in sterilizationModules are strictly <= 350 lines (Mandate 8b)", () => {
 		const decomposedDir = path.resolve(process.cwd(), "apps/web/src/components/sanpin/sterilizationModules");
 		assert.ok(fs.existsSync(decomposedDir), "Decomposed directory must exist");
 		const files = fs.readdirSync(decomposedDir);
@@ -58,18 +36,6 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decompos
 			const filePath = path.join(decomposedDir, file);
 			const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/).length;
 			assert.ok(lines <= 350, `Module ${file} exceeds healthy limit of 350 lines (${lines} lines)`);
-		}
-	});
-
-	it("verifies all decomposed autoclave register files are strictly <= 250 lines", () => {
-		const dir = path.resolve(process.cwd(), "apps/web/src/components/sanpin/autoclave");
-		assert.ok(fs.existsSync(dir), "Autoclave directory must exist");
-		const files = ["AutoclaveRegisterRows.tsx", "AutoclaveCycleRowItem.tsx", "AutoclaveIndicatorBadge.tsx"];
-		for (const file of files) {
-			const filePath = path.join(dir, file);
-			assert.ok(fs.existsSync(filePath), `File ${file} must exist`);
-			const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/).length;
-			assert.ok(lines <= 250, `File ${file} exceeds 250 lines limit (${lines} lines)`);
 		}
 	});
 
@@ -118,69 +84,6 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decompos
 		assert.ok(html.includes("121"), "Must render 121 deg preset");
 	});
 
-	it("renders SterilizationCycleModal as clean 1-click Drawer (Mandate 8e / HIG)", () => {
-		const html = renderToStaticMarkup(
-			<ModularSterilizationModal
-				isOpen={true}
-				onClose={() => {}}
-			/>
-		);
-
-		assert.ok(html.includes("Утверждение цикла"), "Must render drawer title");
-		assert.ok(html.includes("data-testid=\"sterilization-cycle-drawer\""), "Must have drawer testid");
-		assert.ok(!html.includes("КТ-1"), "Must not have 5-point camera simulation");
-	});
-
-	it("renders AutoclaveIndicatorBadge and AutoclaveCycleRowItem correctly", () => {
-		const badgePassed = renderToStaticMarkup(<AutoclaveIndicatorBadge indicatorClass={5} passed={true} />);
-		assert.ok(badgePassed.includes("Кл. 5"), "Must show class 5");
-		assert.ok(badgePassed.includes("sanpin-tag-success"), "Must show success tag");
-
-		const badgeFailed = renderToStaticMarkup(<AutoclaveIndicatorBadge indicatorClass={4} passed={false} />);
-		assert.ok(badgeFailed.includes("Кл. 4"), "Must show class 4");
-		assert.ok(badgeFailed.includes("sanpin-tag-danger"), "Must show danger tag");
-
-		const mockLog: SterilizationLogRecord = {
-			id: "a0000000-0000-0000-0000-000000000001",
-			organizationId: "b0000000-0000-0000-0000-000000000001",
-			cycleNumber: 12,
-			deviceName: "Автоклав Melag Vacuklav 43B+",
-			sterilizerType: "autoclave_steam",
-			autoclaveId: "ak-01",
-			temperatureCelsius: 134.5,
-			pressureBar: 2.12,
-			durationMin: 5,
-			itemsDescription: "Стоматологический смотровой лоток",
-			packagingType: "kraft_self_adhesive",
-			barcode: "KP-20261012-012",
-			operatorName: "Иванова А. С.",
-			passedIndicator: true,
-			indicatorType: "class5_integrating",
-			biologicalTestResult: "not_conducted",
-			status: "passed",
-			timestamp: "2026-10-12T10:30:00.000Z",
-			createdAt: "2026-10-12T10:30:00.000Z",
-		};
-
-		const rowHtml = renderToStaticMarkup(
-			<AutoclaveCycleRowItem
-				log={mockLog}
-				isStamped={false}
-				onStampVerification={() => {}}
-				onPrintBatchPouches={() => {}}
-				onPrintSinglePouch={() => {}}
-				onOpenKraftForLog={() => {}}
-				isMenuOpen={false}
-				onToggleMenu={() => {}}
-			/>
-		);
-
-		assert.ok(rowHtml.includes("№12"), "Row must render cycle number");
-		assert.ok(rowHtml.includes("134.5 °C"), "Row must display cycle temperature");
-		assert.ok(rowHtml.includes("Иванова"), "Row must display operator");
-		assert.ok(rowHtml.includes("KP-20261012-012"), "Row must display barcode");
-	});
-
 	it("validates SSOT packaging expiry calculations and parameters validation", () => {
 		const validationResult = validateSterilizationCycleParameters("steam_134_5min", 134, 2.1, 5);
 		assert.equal(validationResult.isValid, true, "134C / 2.1 bar / 5 min should be valid");
@@ -193,10 +96,10 @@ describe("SanPiN 3.3686-21 — Sterilization Cycle & Autoclave Register Decompos
 	it("verifies zero cartoon emojis across decomposed files (Mandate 8d pt 7)", () => {
 		const dirs = [
 			path.resolve(process.cwd(), "apps/web/src/components/sanpin/sterilizationModules"),
-			path.resolve(process.cwd(), "apps/web/src/components/sanpin/autoclave"),
 		];
 
 		for (const dir of dirs) {
+			if (!fs.existsSync(dir)) continue;
 			const files = fs.readdirSync(dir);
 			for (const file of files) {
 				if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue;

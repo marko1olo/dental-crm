@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo } from "react";
-import { loadSavedClinicAutoclaves } from "../autoclave/autoclaveDeviceTypes";
+import { loadSavedClinicAutoclaves } from "../sanpinCatalogData";
 import type { SanPinJournalPeriod } from "./sanpinJournalTypes";
 import { useSanPinCyclesFetch } from "./useSanPinCyclesFetch";
 import { useSanPinBatchActions } from "./useSanPinBatchActions";

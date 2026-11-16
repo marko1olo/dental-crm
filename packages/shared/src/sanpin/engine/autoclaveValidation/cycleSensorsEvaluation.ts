@@ -59,3 +59,34 @@ export function evaluateCycleParameters(
 		failureReasons,
 	};
 }
+
+export interface BioControlDeadlineResult {
+	readonly lastTestDate: string;
+	readonly nextDeadlineDate: string;
+	readonly daysRemaining: number;
+	readonly isOverdue: boolean;
+	readonly statusDescriptionRu: string;
+}
+
+export function checkNextBioControlDeadline(
+	lastTestDate: string,
+	currentDate: Date = new Date(),
+): BioControlDeadlineResult {
+	const lastDate = new Date(lastTestDate);
+	const nextDeadline = new Date(lastDate);
+	nextDeadline.setMonth(nextDeadline.getMonth() + 6);
+
+	const diffMs = nextDeadline.getTime() - currentDate.getTime();
+	const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+	const isOverdue = daysRemaining < 0;
+
+	return {
+		lastTestDate,
+		nextDeadlineDate: nextDeadline.toISOString().slice(0, 10),
+		daysRemaining,
+		isOverdue,
+		statusDescriptionRu: isOverdue
+			? `ВНИМАНИЕ: Срок проведения бактериологического контроля истек (${Math.abs(daysRemaining)} дн. назад)`
+			: `Бактериологический контроль в норме (до следующего контроля ${daysRemaining} дн.)`,
+	};
+}

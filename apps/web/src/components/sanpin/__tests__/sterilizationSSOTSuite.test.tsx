@@ -29,8 +29,8 @@ import {
 	getSanpinBatchRecords,
 	generateSanpinPrintHtml,
 } from "../sanpinCatalogData";
-import { SterilizationHubModal } from "../SterilizationHubModal";
-import { DirectSterilizationLauncher } from "../DirectSterilizationLauncher";
+import { SanpinStudioModal } from "../SanpinStudioModal";
+import { DirectSanpinLauncher } from "../DirectSanpinLauncher";
 
 const SANPIN_DIR = fs.existsSync(path.resolve(process.cwd(), "src/components/sanpin"))
 	? path.resolve(process.cwd(), "src/components/sanpin")
@@ -48,23 +48,23 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 			);
 		});
 
-		it("SterilizationHubModal.tsx является каноническим фасадом до 50 строк", () => {
-			const filePath = path.join(SANPIN_DIR, "SterilizationHubModal.tsx");
+		it("SanpinStudioModal.tsx является каноническим студийным компонентом (Мандат 8b/8zi)", () => {
+			const filePath = path.join(SANPIN_DIR, "SanpinStudioModal.tsx");
 			const content = fs.readFileSync(filePath, "utf-8");
 			const lineCount = content.split("\n").length;
 			assert.ok(
-				lineCount <= 60,
-				`SterilizationHubModal.tsx содержит ${lineCount} строк (ожидался фасад до 60 по Мандату 8b)`,
+				lineCount >= 350 && lineCount <= 450,
+				`SanpinStudioModal.tsx содержит ${lineCount} строк (ожидалось 350–450 по Мандату 8b)`,
 			);
 		});
 
-		it("DirectSterilizationLauncher.tsx находится строго в диапазоне 50–90 строк", () => {
-			const filePath = path.join(SANPIN_DIR, "DirectSterilizationLauncher.tsx");
+		it("DirectSanpinLauncher.tsx находится строго в диапазоне 50–90 строк", () => {
+			const filePath = path.join(SANPIN_DIR, "DirectSanpinLauncher.tsx");
 			const content = fs.readFileSync(filePath, "utf-8");
 			const lineCount = content.split("\n").length;
 			assert.ok(
 				lineCount >= 50 && lineCount <= 90,
-				`DirectSterilizationLauncher.tsx содержит ${lineCount} строк (ожидалось 50–90)`,
+				`DirectSanpinLauncher.tsx содержит ${lineCount} строк (ожидалось 50–90)`,
 			);
 		});
 	});
@@ -208,7 +208,7 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 	describe("5. Рендеринг SterilizationHubModal: дизайн-код и эргономика", () => {
 		it("рендерит все канонические вкладки в хабе", () => {
 			const html = renderToStaticMarkup(
-				<SterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 			assert.ok(html.includes("Автоклав") || html.includes("Циклы стерилизации"));
 			assert.ok(html.includes("Крафт-пакеты"));
@@ -218,7 +218,7 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 
 		it("содержит ровно 1 Primary CTA кнопку #0d9488 на экране (Мандат 8am)", () => {
 			const html = renderToStaticMarkup(
-				<SterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 			assert.ok(html.includes("data-testid=\"sanpin-run-cycle-cta\"") || html.includes("data-testid=\"primary-batch-sterilization-btn\""));
 			assert.ok(html.includes("sanpin-primary-cta") || html.includes("#0d9488"));
@@ -227,7 +227,7 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 
 		it("ни одна кнопка в модалке не заблокирована атрибутом disabled (Мандат 8e)", () => {
 			const html = renderToStaticMarkup(
-				<SterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 			const hasDisabled = /<button[^>]*\bdisabled\b[^>]*>/i.test(html);
 			assert.equal(hasDisabled, false, "Обнаружена заблокированная кнопка (Мандат 8e нарушен)");
@@ -235,7 +235,7 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 
 		it("содержит Drag Handle 36x5px и скругление rounded-t-[24px] для Apple HIG смартфонов", () => {
 			const html = renderToStaticMarkup(
-				<SterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 			assert.ok(html.includes("sanpin-drag-handle") || html.includes("w-9 h-1.5"));
 			assert.ok(html.includes("sanpin-studio-modal") || html.includes("max-sm:rounded-t-[24px]"));
@@ -243,7 +243,7 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 
 		it("не содержит советского канцелярита в заголовках (Мандат 8x)", () => {
 			const html = renderToStaticMarkup(
-				<SterilizationHubModal isOpen={true} onClose={() => {}} isDemo={true} />,
+				<SanpinStudioModal isOpen={true} onClose={() => {}} isDemo={true} />,
 			);
 			assert.ok(!html.includes("Форма 257/у"));
 			assert.ok(!html.includes("Форма 366/у"));
@@ -251,10 +251,10 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 		});
 	});
 
-	describe("6. Автономный лаунчер DirectSterilizationLauncher", () => {
-		it("DirectSterilizationLauncher корректно инициализируется", () => {
-			assert.ok(DirectSterilizationLauncher);
-			assert.equal(typeof DirectSterilizationLauncher, "function");
+	describe("6. Автономный лаунчер DirectSanpinLauncher", () => {
+		it("DirectSanpinLauncher корректно инициализируется", () => {
+			assert.ok(DirectSanpinLauncher);
+			assert.equal(typeof DirectSanpinLauncher, "function");
 		});
 	});
 });

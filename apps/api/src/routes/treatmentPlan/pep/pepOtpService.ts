@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 import { and, desc, eq, gte, isNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
+import { communicationOutbox } from "../../../db/schema.js";
 import { portalOtpCodes } from "../../../db/schema/auth.js";
 import { hashCredential, verifyCredential } from "../../../utils/cryptoHelper.js";
 import { activeOtpCache } from "./pepTypes.js";
@@ -43,6 +44,21 @@ export async function handleOtpRequest(
 				deliveryStatus: "sent",
 				expiresAt,
 			});
+
+			// Постановка СМС-сообщения с кодом в реальную очередь отправки communication_outbox
+			if (targetPhone) {
+				await db.insert(communicationOutbox).values({
+					organizationId,
+					patientId,
+					channel: "sms",
+					intent: "transactional_reply",
+					scope: "service",
+					recipientAddress: targetPhone,
+					body: `Код подтверждения плана лечения DENTE: ${generatedCode}. Действителен 10 минут.`,
+					status: "queued",
+					dedupeKey: `pep:otp:${planId}:${Date.now()}`,
+				});
+			}
 		} catch (dbErr) {
 			request.log.error({ err: dbErr }, "[PEP-SMS] Ошибка записи OTP кода в portal_otp_codes");
 		}
