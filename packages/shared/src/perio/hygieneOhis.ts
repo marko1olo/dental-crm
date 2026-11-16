@@ -58,25 +58,25 @@ export function calculateOhiSScore(
 	let clinicalEvaluation: OhiSGrade = "excellent";
 	let ratingText = `OHI-S = ${total.toFixed(1)} (Отличная гигиена)`;
 
-	if (total <= 0.6) {
+	if (total === 0) {
 		clinicalEvaluation = "excellent";
-		ratingText = `OHI-S = ${total.toFixed(1)} (Низкий уровень налета / отличная гигиена)`;
-	} else if (total <= 1.6) {
+		ratingText = `OHI-S = 0.0 (Идеальная гигиена / норма ВОЗ)`;
+	} else if (total <= 0.6) {
+		clinicalEvaluation = "excellent";
+		ratingText = `OHI-S = ${total.toFixed(1)} (Отличная гигиена)`;
+	} else if (total <= 1.2) {
 		clinicalEvaluation = "good";
 		ratingText = `OHI-S = ${total.toFixed(1)} (Хороший уровень гигиены)`;
-	} else if (total <= 2.5) {
+	} else if (total <= 3.0) {
 		clinicalEvaluation = "moderate";
 		ratingText = `OHI-S = ${total.toFixed(1)} (Удовлетворительный уровень гигиены)`;
-	} else if (total <= 3.0) {
-		clinicalEvaluation = "poor";
-		ratingText = `OHI-S = ${total.toFixed(1)} (Неудовлетворительный уровень гигиены)`;
 	} else {
 		clinicalEvaluation = "severe";
-		ratingText = `OHI-S = ${total.toFixed(1)} (Плохой уровень гигиены / массивные отложения)`;
+		ratingText = `OHI-S = ${total.toFixed(1)} (Неудовлетворительный уровень гигиены / массивные отложения)`;
 	}
 
 	return {
 		debrisScore: avgDebris, calculusScore: avgCalculus, totalScore: total,
-		ratingText, clinicalEvaluation, assessedTeethCount, isOptimal: total <= 0.6,
+		ratingText, clinicalEvaluation, assessedTeethCount, isOptimal: total <= 1.2,
 	};
 }

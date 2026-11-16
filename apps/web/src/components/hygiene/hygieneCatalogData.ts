@@ -9,6 +9,7 @@
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { calculateOhiSScore } from "@dental/shared";
 
 export type OhiSLevel = "ideal" | "fair" | "poor" | "severe";
 
@@ -47,32 +48,32 @@ export function createIdealOhiSTeethScores(): Record<number, { debris: number; c
 export function computeCanonicalOhiS(
 	teeth: Readonly<Record<number, { debris?: number; calculus?: number }>>
 ): OhiSPreset {
-	let totalDebris = 0;
-	let totalCalculus = 0;
-	const count = CANONICAL_OHI_S_TEETH.length; // 6
-
+	const sharedInput: Record<number, { debrisScore?: number; calculusScore?: number }> = {};
 	for (const t of CANONICAL_OHI_S_TEETH) {
 		const rec = teeth[t.toothNumber];
-		totalDebris += rec?.debris ?? 0;
-		totalCalculus += rec?.calculus ?? 0;
+		sharedInput[t.toothNumber] = {
+			debrisScore: rec?.debris ?? 0,
+			calculusScore: rec?.calculus ?? 0,
+		};
 	}
 
-	const debrisAvg = Math.round((totalDebris / count) * 10) / 10;
-	const calculusAvg = Math.round((totalCalculus / count) * 10) / 10;
-	const score = Math.round((debrisAvg + calculusAvg) * 10) / 10;
+	const sharedResult = calculateOhiSScore(sharedInput);
+	const score = sharedResult.totalScore;
+	const debrisAvg = sharedResult.debrisScore;
+	const calculusAvg = sharedResult.calculusScore;
 
 	let id: OhiSLevel = "ideal";
 	let label = "Идеальная (0.0)";
-	let statusDescription = "Зубной налет и камень отсутствуют, десна интактная.";
-	let colorHex = "#10b981";
-	let badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+	let statusDescription = "Зубной налет и камень отсутствуют, десна интактная (норма ВОЗ).";
+	let colorHex = "#0d9488";
+	let badgeClass = "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800";
 
 	if (score === 0.0) {
 		id = "ideal";
 		label = "Идеальная (0.0)";
-		statusDescription = "Зубной налет и камень отсутствуют, десна интактная.";
-		colorHex = "#10b981";
-		badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+		statusDescription = "Зубной налет и камень отсутствуют, десна интактная (норма ВОЗ).";
+		colorHex = "#0d9488";
+		badgeClass = "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800";
 	} else if (score <= 1.2) {
 		id = "fair";
 		label = `Хорошая (${score.toFixed(1)})`;
@@ -87,7 +88,7 @@ export function computeCanonicalOhiS(
 		badgeClass = "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
 	} else {
 		id = "severe";
-		label = `Плохая (${score.toFixed(1)})`;
+		label = `Неудовлетворительная (${score.toFixed(1)})`;
 		statusDescription = "Обильный зубной налет, массивный над- и поддесневой камень.";
 		colorHex = "#ef4444";
 		badgeClass = "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
@@ -113,10 +114,10 @@ export const OHI_S_PRESETS: readonly OhiSPreset[] = [
 		debris: 0.0,
 		calculus: 0.0,
 		label: "Идеальная (0.0)",
-		statusDescription: "Зубной налет и камень отсутствуют, десна бледно-розовая, интактная.",
-		colorHex: "#10b981",
-		badgeClass: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
-		ratingText: "OHI-S: 0.0 (Отличная гигиена)",
+		statusDescription: "Зубной налет и камень отсутствуют, десна бледно-розовая, интактная (норма ВОЗ).",
+		colorHex: "#0d9488",
+		badgeClass: "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800",
+		ratingText: "OHI-S: 0.0 (Отличная гигиена / норма ВОЗ)",
 	},
 	{
 		id: "fair",
@@ -142,14 +143,14 @@ export const OHI_S_PRESETS: readonly OhiSPreset[] = [
 	},
 	{
 		id: "severe",
-		score: 2.6,
-		debris: 1.4,
-		calculus: 1.2,
-		label: "Неудовлетворительная (2.6)",
+		score: 3.2,
+		debris: 1.8,
+		calculus: 1.4,
+		label: "Неудовлетворительная (3.2)",
 		statusDescription: "Обильный над- и поддесневой камень, кровоточивость маргинального края при зондировании.",
 		colorHex: "#ef4444",
 		badgeClass: "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
-		ratingText: "OHI-S: 2.6 (Неудовлетворительная гигиена)",
+		ratingText: "OHI-S: 3.2 (Неудовлетворительная гигиена)",
 	},
 ];
 
@@ -381,6 +382,57 @@ export function commitHygieneVisitProtocol(params: CommitHygieneProtocolParams):
 	showToast("✓ Протокол гигиены успешно зафиксирован в карте приёма и кассе", "success", 3500);
 }
 
+export function printHtmlViaIframe(htmlContent: string): void {
+	if (typeof window === "undefined" || typeof document === "undefined") return;
+	try {
+		const existing = document.getElementById("dente-print-iframe");
+		if (existing) {
+			existing.remove();
+		}
+		const iframe = document.createElement("iframe");
+		iframe.id = "dente-print-iframe";
+		iframe.style.position = "fixed";
+		iframe.style.right = "0";
+		iframe.style.bottom = "0";
+		iframe.style.width = "0";
+		iframe.style.height = "0";
+		iframe.style.border = "0";
+		iframe.style.visibility = "hidden";
+		document.body.appendChild(iframe);
+
+		const doc = iframe.contentWindow?.document || iframe.contentDocument;
+		if (!doc) {
+			throw new Error("Unable to access print iframe document");
+		}
+		doc.open();
+		doc.write(htmlContent);
+		doc.close();
+
+		setTimeout(() => {
+			try {
+				iframe.contentWindow?.focus();
+				iframe.contentWindow?.print();
+			} catch (printErr) {
+				console.warn("[HygienePrint] Iframe print trigger failed:", printErr);
+			} finally {
+				setTimeout(() => {
+					iframe.remove();
+				}, 2000);
+			}
+		}, 250);
+	} catch (err) {
+		console.warn("[HygienePrint] Direct iframe print failed, falling back to popup window:", err);
+		const w = window.open("", "_blank");
+		if (w) {
+			w.document.open();
+			w.document.write(htmlContent);
+			w.document.close();
+		} else {
+			showToast("Окно печати заблокировано браузером", "warning", 3000);
+		}
+	}
+}
+
 export function printHygieneHomeCareMemo(params: {
 	readonly patientName: string;
 	readonly doctorName: string;
@@ -388,12 +440,7 @@ export function printHygieneHomeCareMemo(params: {
 	readonly ohiS: OhiSPreset;
 }): void {
 	if (typeof window === "undefined") return;
-	const w = window.open("", "_blank");
-	if (!w) {
-		showToast("Окно печати заблокировано браузером", "warning", 3000);
-		return;
-	}
-	w.document.write(`
+	const html = `
 		<!DOCTYPE html>
 		<html lang="ru">
 		<head>
@@ -427,9 +474,8 @@ export function printHygieneHomeCareMemo(params: {
 			<div class="item"><div class="item-title">5. Ирригатор полости рта</div><div class="item-desc">${params.carePlan.irrigator}</div></div>
 			<div class="item"><div class="item-title">6. Клинические советы</div><div class="item-desc">${params.carePlan.clinicalAdvice}</div></div>
 			<div class="footer">DENTE Dental CRM • Контрольный осмотр через ${params.carePlan.recallMonths} месяцев. Врач: ${params.doctorName}</div>
-			<script>window.onload = function() { window.print(); window.close(); };</script>
 		</body>
 		</html>
-	`);
-	w.document.close();
+	`;
+	printHtmlViaIframe(html);
 }

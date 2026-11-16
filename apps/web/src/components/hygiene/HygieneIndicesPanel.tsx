@@ -407,6 +407,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					onPresetSeverePeriodontitis={() => handleApplyPreset("severe", "Хронический генерализованный пародонтит тяжелой степени")}
 					onPresetProHygieneDone={() => handleApplyPreset("prophy", createClinicalProHygieneProtocolText())}
 					onPresetDeepFluoridation={() => handleApplyPreset("fluor", createDeepFluoridationProtocolText())}
+					onPresetRemineralization={() => handleApplyPreset("remin", createToothMousseProtocolText())}
 					onPresetToothMousse={() => handleApplyPreset("mousse", createToothMousseProtocolText())}
 					onPresetPerioAntiseptic={() => handleApplyPreset("antiseptic", createPerioAntisepticProtocolText())}
 				/>

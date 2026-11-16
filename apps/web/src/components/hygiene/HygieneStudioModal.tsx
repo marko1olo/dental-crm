@@ -66,12 +66,8 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 	const effectivePreviousOhiS = previousOhiS !== undefined ? previousOhiS : dynamicPreviousOhiS;
 
-	// Начальный расчет OHI-S
+	// Начальный расчет OHI-S: честная физиологическая норма (0.0) без потёмкинских симуляций
 	const [ohisTeeth, setOhisTeeth] = useState<Record<number, { debris: number; calculus: number }>>(() => {
-		// Если передан previousOhiS, стартуем с 0.8 для демонстрации динамики
-		if (previousOhiS !== undefined && previousOhiS !== null) {
-			return { 16: { debris: 1, calculus: 0 }, 11: { debris: 1, calculus: 0 }, 26: { debris: 1, calculus: 0 }, 31: { debris: 1, calculus: 0 }, 36: { debris: 1, calculus: 0 }, 46: { debris: 0, calculus: 0 } };
-		}
 		return createIdealOhiSTeethScores();
 	});
 	const calculatedOhiS = useMemo(() => computeCanonicalOhiS(ohisTeeth), [ohisTeeth]);
@@ -96,13 +92,22 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 		if (previousScore === null) return null;
 		const diff = previousScore - selectedOhiS.score;
 		if (diff > 0) {
-			const pct = Math.round((diff / previousScore) * 100);
-			return { text: `Было: ${previousScore} ➔ Стало: ${selectedOhiS.score} (Улучшение на ${pct}% 🟢)`, isPositive: true };
+			const pct = previousScore > 0 ? Math.round((diff / previousScore) * 100) : 0;
+			return {
+				text: `Было: ${previousScore.toFixed(1)} ➔ Текущий OHI-S: ${selectedOhiS.score.toFixed(1)} (Улучшение на ${pct}% 🟢)`,
+				isPositive: true,
+			};
 		}
 		if (diff < 0) {
-			return { text: `Было: ${previousScore} ➔ Стало: ${selectedOhiS.score} (Ухудшение гигиены ⚠️)`, isPositive: false };
+			return {
+				text: `Было: ${previousScore.toFixed(1)} ➔ Текущий OHI-S: ${selectedOhiS.score.toFixed(1)} (Увеличение отложений ⚠️)`,
+				isPositive: false,
+			};
 		}
-		return { text: `Было: ${previousScore} ➔ Стало: ${selectedOhiS.score} (Без изменений)`, isPositive: true };
+		return {
+			text: `Было: ${previousScore.toFixed(1)} ➔ Текущий OHI-S: ${selectedOhiS.score.toFixed(1)} (Без изменений)`,
+			isPositive: true,
+		};
 	}, [previousScore, selectedOhiS.score]);
 
 	const handleCommit = useCallback(async () => {
@@ -118,7 +123,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 			if (visitId?.trim()) {
 				try {
-					await fetch(`/api/visits/${encodeURIComponent(visitId)}/hygiene-indices`, {
+					const res = await fetch(`/api/visits/${encodeURIComponent(visitId)}/hygiene-indices`, {
 						method: "POST",
 						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 						body: JSON.stringify({
@@ -131,8 +136,13 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 							carePlanId: selectedCarePlan.id,
 						}),
 					});
-				} catch {
-					// Офлайн
+					if (!res.ok) {
+						console.warn("[HygieneStudioModal] Failed to persist hygiene indices on server:", res.status, res.statusText);
+						showToast("Индексы гигиены зафиксированы в карте приёма (сервер вернул " + res.status + ")", "info", 3500);
+					}
+				} catch (netErr) {
+					console.warn("[HygieneStudioModal] Network/offline persistence fallback:", netErr);
+					showToast("Индексы гигиены зафиксированы в локальной карте приёма", "info", 3000);
 				}
 			}
 			onClose();
@@ -334,10 +344,15 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 									type="button"
 									data-testid={`hygiene-preset-${preset.id}`}
 									onClick={() => {
-										if (preset.id === "ideal") setOhisTeeth(createIdealOhiSTeethScores());
-										else if (preset.id === "fair") setOhisTeeth({ 16: { debris: 1, calculus: 0 }, 11: { debris: 1, calculus: 0 }, 26: { debris: 1, calculus: 0 }, 31: { debris: 1, calculus: 0 }, 36: { debris: 1, calculus: 0 }, 46: { debris: 0, calculus: 0 } });
-										else if (preset.id === "poor") setOhisTeeth({ 16: { debris: 2, calculus: 1 }, 11: { debris: 2, calculus: 1 }, 26: { debris: 2, calculus: 1 }, 31: { debris: 2, calculus: 1 }, 36: { debris: 2, calculus: 1 }, 46: { debris: 2, calculus: 1 } });
-										else setOhisTeeth({ 16: { debris: 3, calculus: 2 }, 11: { debris: 3, calculus: 2 }, 26: { debris: 3, calculus: 2 }, 31: { debris: 3, calculus: 2 }, 36: { debris: 3, calculus: 2 }, 46: { debris: 3, calculus: 2 } });
+										if (preset.id === "ideal") {
+											setOhisTeeth(createIdealOhiSTeethScores());
+										} else if (preset.id === "fair") {
+											setOhisTeeth({ 16: { debris: 1, calculus: 0 }, 11: { debris: 1, calculus: 0 }, 26: { debris: 1, calculus: 0 }, 31: { debris: 1, calculus: 0 }, 36: { debris: 1, calculus: 0 }, 46: { debris: 0, calculus: 0 } });
+										} else if (preset.id === "poor") {
+											setOhisTeeth({ 16: { debris: 1, calculus: 1 }, 11: { debris: 1, calculus: 1 }, 26: { debris: 1, calculus: 1 }, 31: { debris: 1, calculus: 1 }, 36: { debris: 1, calculus: 0 }, 46: { debris: 1, calculus: 1 } });
+										} else {
+											setOhisTeeth({ 16: { debris: 2, calculus: 1 }, 11: { debris: 2, calculus: 1 }, 26: { debris: 2, calculus: 2 }, 31: { debris: 2, calculus: 1 }, 36: { debris: 1, calculus: 1 }, 46: { debris: 2, calculus: 2 } });
+										}
 									}}
 									className="px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] font-semibold text-[11px] shrink-0 cursor-pointer"
 								>
