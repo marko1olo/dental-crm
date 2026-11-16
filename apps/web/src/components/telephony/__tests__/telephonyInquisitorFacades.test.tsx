@@ -13,6 +13,7 @@ import { TelephonyDrawer } from "../TelephonyDrawer";
 import { IncomingCallPopup } from "../IncomingCallPopup";
 import { IncomingCallActionFooter } from "../incomingCallPopupModules/IncomingCallActionFooter";
 import { TelephonyStudioModal } from "../TelephonyStudioModal";
+import { createMockIncomingCallController } from "./telephonyTestFixtures";
 
 const mockAppLogicContext = {
 	dashboard: {
@@ -42,11 +43,21 @@ describe("Telephony Facades & Chairside Sterile Zone Invariants (Mandates 8e, 8n
 		});
 
 		it("IncomingCallActionFooter renders 1-click callback and quick booking buttons for receptionist", () => {
-			const mockCtrl = {
-				currentCall: { phone: "+79265551234", patientId: "pat-101", patientName: "Смирнова Анна", status: "ringing" },
-				isKnownPatient: true, handleQuickBook: () => {}, handleToggleCardDrawer: () => {},
-				showBadgeMoreMenu: false, setShowBadgeMoreMenu: () => {},
-			} as any;
+			const mockCtrl = createMockIncomingCallController({
+				currentCall: {
+					id: "call-footer-test",
+					phone: "+79265551234",
+					patientId: "pat-101",
+					patientName: "Смирнова Анна",
+					status: "ringing",
+					direction: "inbound",
+				},
+				isKnownPatient: true,
+				handleQuickBook: () => {},
+				handleToggleCardDrawer: () => {},
+				showBadgeMoreMenu: false,
+				setShowBadgeMoreMenu: () => {},
+			});
 			const html = renderToString(<IncomingCallActionFooter ctrl={mockCtrl} />);
 			assert.ok(html.includes('data-testid="badge-action-book"'), "Must contain 1-click booking CTA");
 			assert.ok(html.includes('data-testid="badge-action-callback"'), "Must contain 1-click callback button");

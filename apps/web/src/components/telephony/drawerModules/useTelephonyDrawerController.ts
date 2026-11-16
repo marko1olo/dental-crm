@@ -19,8 +19,9 @@ export function useTelephonyDrawerController(
 	const currentView = useAppStore((s) => s.currentView);
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const hash = typeof window !== "undefined" ? window.location.hash : "";
+	const sterileViews = new Set(["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"]);
 	const isSterileClinicalScreen =
-		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(currentView as string) ||
+		(Boolean(currentView) && sterileViews.has(String(currentView))) ||
 		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(hash);
 	const isDoctorMode =
 		selectedWorkspaceRole === "doctor" ||

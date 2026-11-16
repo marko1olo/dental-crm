@@ -16,6 +16,14 @@ import { Tooth45Container } from "./teeth/tooth45/Tooth45Container";
 import { Tooth46Container } from "./teeth/tooth46/Tooth46Container";
 import { Tooth47Container } from "./teeth/tooth47/Tooth47Container";
 import { Tooth48Container } from "./teeth/tooth48/Tooth48Container";
+import {
+	PediatricUpperIncisorContainer,
+	PediatricUpperCanineContainer,
+	PediatricUpperMolarContainer,
+	PediatricLowerIncisorContainer,
+	PediatricLowerCanineContainer,
+	PediatricLowerMolarContainer,
+} from "./teeth/pediatric/PediatricToothContainer";
 
 export interface AnatomicalToothProps extends Omit<Tooth46ContainerProps, "onClick"> {
 	toothNumber: number;
@@ -36,24 +44,24 @@ const LOWER: readonly (ToothComponentType | undefined)[] = [
 
 // Молочные зубы (квадранты 5, 6, 7, 8):
 // Резцы (51, 52, 61, 62, 71, 72, 81, 82) и клыки (53, 63, 73, 83)
-// Верхние молочные моляры (54, 55, 64, 65) обязаны иметь 3 корня (MB, DB, Palatal) — Tooth16/17Container!
-// Нижние молочные моляры (74, 75, 84, 85) обязаны иметь 2 корня (M, D) — Tooth46/47Container!
+// Верхние молочные моляры (54, 55, 64, 65) имеют 3 дивергирующих корня — PediatricUpperMolarContainer (PEDIATRIC_UPPER_MOLAR_GEOMETRY)!
+// Нижние молочные моляры (74, 75, 84, 85) имеют 2 дивергирующих корня — PediatricLowerMolarContainer (PEDIATRIC_LOWER_MOLAR_GEOMETRY)!
 const UPPER_PED: readonly (ToothComponentType | undefined)[] = [
 	undefined,
-	Tooth11Container, // 51, 61: центральный молочный резец
-	Tooth12Container, // 52, 62: боковой молочный резец
-	Tooth13Container, // 53, 63: молочный клык
-	Tooth16Container, // 54, 64: первый верхний молочный моляр (3 корня)
-	Tooth17Container, // 55, 65: второй верхний молочный моляр (3 корня)
+	PediatricUpperIncisorContainer, // 51, 61: центральный молочный резец
+	PediatricUpperIncisorContainer, // 52, 62: боковой молочный резец
+	PediatricUpperCanineContainer, // 53, 63: молочный клык
+	PediatricUpperMolarContainer, // 54, 64: первый верхний молочный моляр (3 корня, реальная детская геометрия)
+	PediatricUpperMolarContainer, // 55, 65: второй верхний молочный моляр (3 корня, реальная детская геометрия)
 ];
 
 const LOWER_PED: readonly (ToothComponentType | undefined)[] = [
 	undefined,
-	Tooth41Container, // 71, 81: центральный молочный резец
-	Tooth42Container, // 72, 82: боковой молочный резец
-	Tooth43Container, // 73, 83: молочный клык
-	Tooth46Container, // 74, 84: первый нижний молочный моляр (2 корня)
-	Tooth47Container, // 75, 85: второй нижний молочный моляр (2 корня)
+	PediatricLowerIncisorContainer, // 71, 81: центральный молочный резец
+	PediatricLowerIncisorContainer, // 72, 82: боковой молочный резец
+	PediatricLowerCanineContainer, // 73, 83: молочный клык
+	PediatricLowerMolarContainer, // 74, 84: первый нижний молочный моляр (2 корня, реальная детская геометрия)
+	PediatricLowerMolarContainer, // 75, 85: второй нижний молочный моляр (2 корня, реальная детская геометрия)
 ];
 
 function getToothComponent(num: number): ToothComponentType | undefined {

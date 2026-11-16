@@ -634,6 +634,45 @@
      - `packages/shared/src/tests/stomxPricelist.test.ts` — 11/11 PASS.
      - Все машинные гейты (`check:encoding`, `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) — 100% GREEN.
 
+### [CLN-08] [ИСПРАВЛЕНО] [SEV-1] Одонтограмма Wheeler 2.5D: MODBL-изоляция поверхностей, честная детская анатомия 51–85, таблица classic_gost, 120 FPS рендер и смета приёма (Мандаты 8ar, 8as, 8e, 8b)
+- **Файлы:**
+  - [`apps/api/src/routes/odontogram/statusRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/statusRoutes.ts)
+  - [`apps/web/src/components/odontogram/ToothChart.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothChart.tsx)
+  - [`apps/web/src/components/odontogram/anatomicalDualArch/AnatomicalGate0Cell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/anatomicalDualArch/AnatomicalGate0Cell.tsx)
+  - [`apps/web/src/components/odontogram/OdontogramQuickBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramQuickBar.tsx)
+  - [`apps/web/src/components/odontogram/OdontogramActiveViewSlot.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramActiveViewSlot.tsx)
+  - [`apps/web/src/components/odontogram/OdontogramGostTableView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramGostTableView.tsx)
+  - [`apps/web/src/components/odontogram/gate0/AnatomicalTooth.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gate0/AnatomicalTooth.tsx)
+  - [`apps/web/src/components/odontogram/gate0/gate0ToothFlagsConverter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gate0/gate0ToothFlagsConverter.ts)
+  - [`apps/web/src/components/odontogram/gate0/teeth/tooth46/Tooth46Container.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gate0/teeth/tooth46/Tooth46Container.tsx)
+  - [`apps/web/src/components/odontogram/gate0/teeth/pediatric/PediatricToothContainer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gate0/teeth/pediatric/PediatricToothContainer.tsx)
+  - [`apps/web/src/components/odontogram/radialMenu/ToothRadialSurfaceBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialSurfaceBar.tsx)
+  - [`apps/web/src/components/odontogram/syncModules/odontogramIndexedDbSync.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/syncModules/odontogramIndexedDbSync.ts)
+  - [`apps/web/src/components/odontogram/anatomicalMaterialsAndSurfaces.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/anatomicalMaterialsAndSurfaces.ts)
+  - `apps/web/src/components/odontogram/anatomicalMaterials/surfaceShadingService.ts` *(физически удален через git rm)*
+- **Суть бага:**
+  1. **DEF-ODONT-01 (MODBL Collision):** Кариес на окклюзионной поверхности стирал пломбу на медиальной поверхности из-за отсутствия "filled" в базовых состояниях и флагах композита.
+  2. **DEF-ODONT-02 (Детская анатомия):** В `AnatomicalTooth.tsx` молочные моляры (54..65, 74..85) мапились на взрослые моляры (Tooth16/46), а в `ToothRadialSurfaceBar.tsx` стояло блокирующее условие `if (isPrimary) return null;`, запрещавшее выбор поверхностей молочных зубов.
+  3. **DEF-ODONT-03 (Пустота в classic_gost):** Переключение режима в «classic_gost» возвращало `null` в `OdontogramActiveViewSlot.tsx`, вызывая пустой белый экран.
+  4. **DEF-ODONT-04 (Просадка 120 FPS):** Инлайн-стрелочные коллбэки `onToothClick` в `ToothChart.tsx` и отсутствие селективного компаратора в `AnatomicalGate0Cell.tsx` приводили к полному ре-рендеру всех 32 зубов при клике на один зуб.
+  5. **DEF-ODONT-05 (Кнопка сметы):** В тулбаре `OdontogramQuickBar.tsx` отсутствовал переключатель живой сметы приёма `OdontogramLiveInvoice` (`isLiveInvoiceOpen`).
+  6. **DEF-ODONT-06 (Мертвый код):** Файл `surfaceShadingService.ts` лежал мертвым грузом и не использовался в боевом рендере одонтограммы.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **MODBL-изоляция:** Добавлен "filled" в `isOrthopedicBase`/`isCompositeBase` в `statusRoutes.ts`, реализовано слияние поверхностей в `odontogramIndexedDbSync.ts`, снята блокировка `!flags.composite` с `hasCariesSurfaces`, изолированы полигоны в `Tooth46Container.tsx`.
+  2. **Честная детская анатомия:** Подключена реальная морфология deciduous моляров (3 корня сверху, 2 корня снизу) через `PediatricUpperMolarContainer` и `PediatricLowerMolarContainer`, разблокирован выбор поверхностей в `ToothRadialSurfaceBar.tsx`.
+  3. **Каноническая таблица ГОСТ:** Создан и смонтирован `OdontogramGostTableView.tsx` с полной поддержкой взрослого и молочного прикуса, бейджами статусов и интерактивными кликами.
+  4. **Стабильный 120 FPS рендер:** Функция `handleToothClick` обернута в `useCallback` в `ToothChart.tsx`, добавлен глубокий компаратор `areAnatomicalGate0CellPropsEqual` в `AnatomicalGate0Cell.tsx`, ре-рендерятся строго затронутые ячейки.
+  5. **Кнопка сметы в тулбаре:** В `OdontogramQuickBar.tsx` добавлен переключатель `toolbar-live-invoice-btn` с отображением суммы сметы приёма в рублях.
+  6. **Снос мертвого кода:** Файл `surfaceShadingService.ts` физически удален через `git rm`.
+  7. **Тесты и гейты:** `check:dynamic-imports` — Exit Code 0, модульные тесты одонтограммы — 100% PASS.
+  8. **4-State Visual Proofs:** Сняты и проинспектированы через `read_file`:
+     - ☀️ PC Light: `docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png` (167.5 KB)
+     - 🌙 PC Dark: `docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png` (176.8 KB)
+     - 📱 Mobile Light: `docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png` (218.6 KB)
+     - 📱 Mobile Dark: `docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png` (223.1 KB)
+     - ☀️ Детский прикус PC Light: `docs/proofs/odontogram/03_odontogram_pediatric_pc_light_1440x900.png` (116.5 KB)
+     - 🌙 Детский прикус PC Dark: `docs/proofs/odontogram/06_odontogram_pediatric_pc_dark_1440x900.png` (127.4 KB)
+
 ---
 
 ## 5. 📅 РАСПИСАНИЕ И СЕТКА КРЕСЕЛ

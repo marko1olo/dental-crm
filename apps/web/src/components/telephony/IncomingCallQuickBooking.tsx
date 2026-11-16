@@ -1,9 +1,18 @@
 import { Calendar, Clock, X, Zap } from "lucide-react";
 import React from "react";
-import type { Dashboard } from "@dental/shared";
-import { findNearestAvailableSlot } from "../../utils/scheduleCollisionUtils";
+import type { Appointment } from "@dental/shared";
+import { findNearestAvailableSlot, type ResourceCollisionOptions } from "../../utils/scheduleCollisionUtils";
 
 export type QuickSlotType = "today_urgent" | "today_standard" | "tomorrow" | "today_cito";
+
+export interface QuickBookingDashboardLike {
+	todayIso?: string | undefined;
+	appointments?: readonly Appointment[] | Appointment[] | undefined;
+	clinicSettings?: {
+		staff?: ResourceCollisionOptions["staff"] | undefined;
+		chairs?: ResourceCollisionOptions["chairs"] | undefined;
+	} | undefined;
+}
 
 export interface QuickSlotOption {
 	type: QuickSlotType;
@@ -45,7 +54,7 @@ export const QUICK_SLOT_PRESETS: QuickSlotOption[] = [
 ];
 
 export function computeQuickBookingSlots(
-	dashboard: Dashboard | null | undefined,
+	dashboard: QuickBookingDashboardLike | null | undefined,
 	resolvedPatientId?: string | null | undefined,
 ): {
 	slots: QuickSlotOption[];
@@ -57,7 +66,7 @@ export function computeQuickBookingSlots(
 	const defaultDoctorId = activeStaff[0]?.id || dashboard?.clinicSettings?.staff?.[0]?.id || null;
 	const activeChairs = dashboard?.clinicSettings?.chairs?.filter((c) => c.active) || [];
 	const defaultChairId = activeChairs[0]?.id || dashboard?.clinicSettings?.chairs?.[0]?.id || "";
-	const ctx = { staff: dashboard?.clinicSettings?.staff, chairs: dashboard?.clinicSettings?.chairs };
+	const ctx: ResourceCollisionOptions = { staff: dashboard?.clinicSettings?.staff, chairs: dashboard?.clinicSettings?.chairs };
 
 	const now = new Date();
 	const roundedNow = new Date(Math.ceil(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000));

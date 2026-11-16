@@ -36,6 +36,52 @@ function getWheelerToothWidthClass(toothNumber: number): string {
 	return "w-[64px] sm:w-[68px]";
 }
 
+function areAnatomicalGate0CellPropsEqual(
+	prev: Readonly<AnatomicalGate0CellProps>,
+	next: Readonly<AnatomicalGate0CellProps>,
+): boolean {
+	if (prev.toothNumber !== next.toothNumber) return false;
+	if (prev.isSelected !== next.isSelected) return false;
+	if (prev.isDark !== next.isDark) return false;
+	if (prev.zoom !== next.zoom) return false;
+	if (prev.onClick !== next.onClick) return false;
+
+	if (prev.toothData === next.toothData) return true;
+	if (!prev.toothData || !next.toothData) return false;
+
+	if (prev.toothData.state !== next.toothData.state) return false;
+	if (prev.toothData.restorationType !== next.toothData.restorationType) return false;
+	if (prev.toothData.material !== next.toothData.material) return false;
+	if (prev.toothData.rootState !== next.toothData.rootState) return false;
+	if (prev.toothData.mobility !== next.toothData.mobility) return false;
+	if (prev.toothData.icdasCode !== next.toothData.icdasCode) return false;
+
+	const prevSurfaces = prev.toothData.surfaces ?? [];
+	const nextSurfaces = next.toothData.surfaces ?? [];
+	if (prevSurfaces.length !== nextSurfaces.length) return false;
+	for (let i = 0; i < prevSurfaces.length; i++) {
+		if (prevSurfaces[i] !== nextSurfaces[i]) return false;
+	}
+
+	const prevCanals = prev.toothData.canalTreatments;
+	const nextCanals = next.toothData.canalTreatments;
+	if (Boolean(prevCanals) !== Boolean(nextCanals)) return false;
+	if (prevCanals && nextCanals) {
+		if (prevCanals.length !== nextCanals.length) return false;
+		for (let i = 0; i < prevCanals.length; i++) {
+			if (
+				prevCanals[i]?.canal !== nextCanals[i]?.canal ||
+				prevCanals[i]?.obturated !== nextCanals[i]?.obturated ||
+				prevCanals[i]?.material !== nextCanals[i]?.material
+			) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 export const AnatomicalGate0Cell: React.FC<AnatomicalGate0CellProps> = React.memo(({
 	toothNumber,
 	toothData,
@@ -76,6 +122,6 @@ export const AnatomicalGate0Cell: React.FC<AnatomicalGate0CellProps> = React.mem
 			/>
 		</div>
 	);
-});
+}, areAnatomicalGate0CellPropsEqual);
 
 AnatomicalGate0Cell.displayName = "AnatomicalGate0Cell";

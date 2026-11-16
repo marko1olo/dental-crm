@@ -62,9 +62,6 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 						canalCondition={a.canalCondition ?? "vital"} isDark={isDark}
 					/>
 				)}
-				{a.caries && !a.zirconiaCrown && (
-					<Tooth46CariesOverlay cariesType={cariesType} chronicity={a.cariesChronicity} cariesDepth={cariesDepth} isDark={isDark} />
-				)}
 				{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
 				{(a.composite || a.zirconiaCrown) && (
 					<Tooth46RestorationOverlay
@@ -73,6 +70,9 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 						crownCondition={a.crownCondition ?? "adequate"} translucent={Boolean(a.zirconiaCrown && (isEndo || a.postCore || a.implant))}
 						isDark={isDark} isImplant={Boolean(a.implant)}
 					/>
+				)}
+				{a.caries && !a.zirconiaCrown && (
+					<Tooth46CariesOverlay cariesType={cariesType} chronicity={a.cariesChronicity} cariesDepth={cariesDepth} isDark={isDark} />
 				)}
 				{a.implant && a.implantStage === "crown_screw" && (
 					<Tooth46SurgeryOverlay showImplant implantStage="crown_screw" renderScrewAccessOnly isDark={isDark} />

@@ -35,15 +35,12 @@ export const IncomingCallerSomaticAlerts: React.FC<IncomingCallerSomaticAlertsPr
 												: alert.severity === "info"
 													? "Информация"
 													: "Внимание";
-					const alertText =
-						alert.label ||
-						("text" in alert && typeof (alert as Record<string, unknown>).text === "string"
-							? String((alert as Record<string, unknown>).text)
-							: "Предупреждение");
+					const rawAlert = alert as { label?: string; text?: string; id?: string };
+					const alertText = rawAlert.label || rawAlert.text || "Предупреждение";
+					const key = rawAlert.id || `${alertText}-${idx}`;
 
 					return (
-						// biome-ignore lint/suspicious/noArrayIndexKey: simple alert items
-						<div key={idx} className="flex items-start gap-1.5 text-xs">
+						<div key={key} className="flex items-start gap-1.5 text-xs">
 							<span className="text-[var(--danger)] font-bold">•</span>
 							<span>
 								<strong>{alertText}</strong>

@@ -38,17 +38,16 @@ describe("Telephony Ghost Events Elimination (Red Team Inquisition)", () => {
 		// Intercept global fetch
 		const originalFetch = globalThis.fetch;
 		let dispatchedUrl = "";
-		let dispatchedBody: any = null;
+		let dispatchedBody: { phone?: string; patientName?: string } | null = null;
 
-		globalThis.fetch = (async (url: any, opts: any) => {
-			dispatchedUrl = String(url);
-			dispatchedBody = opts?.body ? JSON.parse(opts.body) : null;
-			return {
-				ok: true,
+		globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+			dispatchedUrl = String(input);
+			dispatchedBody = init?.body ? (JSON.parse(String(init.body)) as { phone?: string; patientName?: string }) : null;
+			return new Response(JSON.stringify({ success: true, callId: "test-call-id", status: "dialing" }), {
 				status: 200,
-				json: async () => ({ success: true, callId: "test-call-id", status: "dialing" }),
-			};
-		}) as any;
+				headers: { "Content-Type": "application/json" },
+			});
+		};
 
 		try {
 			const success = await initiateOutboundCall({
@@ -58,8 +57,10 @@ describe("Telephony Ghost Events Elimination (Red Team Inquisition)", () => {
 
 			assert.equal(success, true, "initiateOutboundCall must return true for valid phone");
 			assert.equal(dispatchedUrl, "/api/telephony/outbound-call", "Must dispatch to /api/telephony/outbound-call");
-			assert.equal(dispatchedBody?.phone, "+79995554433", "Must normalize phone to E.164");
-			assert.equal(dispatchedBody?.patientName, "Иванов Иван");
+			const body = dispatchedBody as { phone?: string; patientName?: string } | null;
+			assert.ok(body, "Dispatched payload must exist");
+			assert.equal(body.phone, "+79995554433", "Must normalize phone to E.164");
+			assert.equal(body.patientName, "Иванов Иван");
 
 			// Verify softphone state was activated in ringing state (awaiting call_answered event)
 			const updatedStore = useTelephonyStore.getState();

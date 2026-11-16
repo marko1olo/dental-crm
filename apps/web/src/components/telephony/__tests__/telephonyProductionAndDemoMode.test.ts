@@ -2,15 +2,18 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, test } from "node:test";
 const vi = {
 	restoreAllMocks: () => {},
-	fn: (impl?: any) => {
-		const fn: any = (...args: any[]) => {
-			fn.mock.calls.push(args);
+	fn: <TArgs extends unknown[], TReturn>(impl?: (...args: TArgs) => TReturn) => {
+		const calls: TArgs[] = [];
+		const fn = (...args: TArgs): TReturn | undefined => {
+			calls.push(args);
 			return impl ? impl(...args) : undefined;
 		};
-		fn.mock = { calls: [] };
+		fn.mock = { calls };
 		return fn;
 	},
-	stubGlobal: (key: string, val: any) => { (globalThis as any)[key] = val; },
+	stubGlobal: (key: string, val: unknown) => {
+		Object.defineProperty(globalThis, key, { value: val, configurable: true, writable: true });
+	},
 };
 import { disableDemoShowcaseMode, enableDemoShowcaseMode, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { assertNoSyntheticCallsInProduction, useTelephonyStore } from "../../../store/telephonyStore";

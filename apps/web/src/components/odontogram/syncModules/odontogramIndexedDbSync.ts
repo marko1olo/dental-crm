@@ -187,6 +187,7 @@ export function mergeTeethWithLocalCache(
 
 /**
  * Pure immutability reducer for applying tooth state and surface changes.
+ * Supports Surface Union Merge (MODBL) preserving fillings and caries on concurrent surfaces.
  */
 export function applyUpdatedStatesToTeeth(
 	currentTeeth: ToothData[],
@@ -198,6 +199,74 @@ export function applyUpdatedStatesToTeeth(
 	const nowIso = new Date().toISOString();
 	const next: ToothData[] = currentTeeth.map((tooth) => {
 		if (!toothNumbers.includes(tooth.toothNumber)) return tooth;
+
+		const prevClin = (tooth.clinicalData ?? {}) as Record<string, unknown>;
+		const isPrevFilling =
+			tooth.state === "Filled" ||
+			tooth.state === "Filling" ||
+			Boolean(prevClin.hasFilling);
+		const isIncomingCaries = state === "Caries";
+		const isIncomingFilling = state === "Filled" || state === "Filling";
+		const isPrevCaries = tooth.state === "Caries" || Boolean(prevClin.hasCaries);
+
+		let resolvedIncomingSurfaces: string[] = [];
+		if (surfacesOverride !== undefined) {
+			resolvedIncomingSurfaces = [...surfacesOverride];
+		} else if (currentActiveSurfaces.length > 0) {
+			resolvedIncomingSurfaces = [...currentActiveSurfaces];
+		}
+
+		// Composite state merge: Filling + Caries simultaneously
+		if (isPrevFilling && isIncomingCaries && resolvedIncomingSurfaces.length > 0) {
+			const prevFillSurfs = Array.isArray(prevClin.fillingSurfaces)
+				? (prevClin.fillingSurfaces as string[])
+				: (tooth.surfaces ?? []);
+			const mergedSurfaces = Array.from(
+				new Set([...prevFillSurfs, ...resolvedIncomingSurfaces]),
+			);
+			const updated: ToothData = {
+				...tooth,
+				state: "Caries",
+				surfaces: mergedSurfaces,
+				clinicalData: {
+					...prevClin,
+					hasFilling: true,
+					hasCaries: true,
+					baseState: "Filled",
+					fillingSurfaces: prevFillSurfs,
+					defectSurfaces: resolvedIncomingSurfaces,
+				},
+				updatedAt: nowIso,
+			};
+			return updated;
+		}
+
+		if (isPrevCaries && isIncomingFilling && resolvedIncomingSurfaces.length > 0) {
+			const prevCariesSurfs = Array.isArray(prevClin.defectSurfaces)
+				? (prevClin.defectSurfaces as string[])
+				: (tooth.surfaces ?? []);
+			const remainingCaries = prevCariesSurfs.filter(
+				(s) => !resolvedIncomingSurfaces.includes(s),
+			);
+			const mergedSurfaces = Array.from(
+				new Set([...resolvedIncomingSurfaces, ...remainingCaries]),
+			);
+			const updated: ToothData = {
+				...tooth,
+				state: remainingCaries.length > 0 ? "Caries" : "Filled",
+				surfaces: mergedSurfaces,
+				clinicalData: {
+					...prevClin,
+					hasFilling: true,
+					hasCaries: remainingCaries.length > 0,
+					fillingSurfaces: resolvedIncomingSurfaces,
+					defectSurfaces: remainingCaries.length > 0 ? remainingCaries : undefined,
+				},
+				updatedAt: nowIso,
+			};
+			return updated;
+		}
+
 		const updated: ToothData = { ...tooth, state, updatedAt: nowIso };
 		if (surfacesOverride !== undefined) {
 			if (surfacesOverride.length > 0) updated.surfaces = [...surfacesOverride];
@@ -206,6 +275,10 @@ export function applyUpdatedStatesToTeeth(
 			updated.surfaces = [...currentActiveSurfaces];
 		} else if (state === "Healthy" || state === "Missing") {
 			delete updated.surfaces;
+			if (updated.clinicalData) {
+				const { fillingSurfaces, defectSurfaces, hasFilling, hasCaries, ...restClin } = (updated.clinicalData as Record<string, unknown>);
+				updated.clinicalData = restClin;
+			}
 		} else if (tooth.surfaces && tooth.surfaces.length > 0) {
 			updated.surfaces = [...tooth.surfaces];
 		}

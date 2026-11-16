@@ -61,12 +61,20 @@ async function setTheme(page, theme) {
   await page.waitForTimeout(400);
 }
 
+const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/3e0c24a7-5b2e-4765-9ea6-b4ca2ea10302';
+if (!existsSync(BRAIN_DIR)) {
+  mkdirSync(BRAIN_DIR, { recursive: true });
+}
+
 function verifyAndSaveScreenshot(buffer, filename, description) {
   if (buffer.length < 20480) {
     throw new Error(`Screenshot ${filename} is too small: ${buffer.length} bytes (< 20KB threshold)!`);
   }
   const dest = path.join(PROOF_DIR, filename);
   writeFileSync(dest, buffer);
+  try {
+    copyFileSync(dest, path.join(BRAIN_DIR, filename));
+  } catch (_) {}
   const stats = statSync(dest);
   console.log(`[PROOF CAPTURED] ${filename}: ${stats.size} bytes (>= 20KB OK) -> ${description}`);
   return dest;

@@ -1,11 +1,13 @@
 import type { OdontogramViewMode } from "@dental/shared";
-import type React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { WheelerToothArch } from "./WheelerToothArch";
 import { OdontogramBatchBar } from "./OdontogramBatchBar";
+import { OdontogramGostTableView } from "./OdontogramGostTableView";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { OdontogramQuickTextInput } from "./OdontogramQuickTextInput";
 import { OdontogramStampPalette } from "./OdontogramStampPalette";
 import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
+import { ORDER_804N_PROCEDURES } from "./odontogramLiveInvoiceCalculations";
 
 export interface OdontogramActiveViewSlotProps {
 	readonly activeMode: OdontogramViewMode;
@@ -54,6 +56,45 @@ export const OdontogramActiveViewSlot: React.FC<
 	isPediatric,
 	isMixed,
 }) => {
+	const [liveEstimateToast, setLiveEstimateToast] = useState<{
+		toothNumbers: number[];
+		state: ToothState;
+		title: string;
+		priceRub: number;
+	} | null>(null);
+
+	// Автоматическое скрытие тоста сметы через 5 секунд
+	useEffect(() => {
+		if (!liveEstimateToast) return;
+		const timer = setTimeout(() => {
+			setLiveEstimateToast(null);
+		}, 5000);
+		return () => clearTimeout(timer);
+	}, [liveEstimateToast]);
+
+	const handleInterceptedQuickStateChange = useCallback(
+		(
+			targets: number[],
+			state: ToothState,
+			surfaces?: readonly string[] | undefined,
+		) => {
+			onQuickStateChange?.(targets, state, surfaces);
+
+			// Реактивное предложение добавить услугу в смету (Мандат 8ba / Дефект №3)
+			const procedure = ORDER_804N_PROCEDURES[state];
+			if (procedure && targets.length > 0) {
+				const totalPrice = procedure.price * targets.length;
+				setLiveEstimateToast({
+					toothNumbers: [...targets],
+					state,
+					title: procedure.title,
+					priceRub: totalPrice,
+				});
+			}
+		},
+		[onQuickStateChange],
+	);
+
 	const sharedSelectTeethGroup = typeof sharedViewProps?.onSelectTeethGroup === "function"
 		? (sharedViewProps.onSelectTeethGroup as (teeth: number[]) => void)
 		: undefined;
@@ -65,14 +106,14 @@ export const OdontogramActiveViewSlot: React.FC<
 		: undefined;
 
 	return (
-		<div className="flex flex-col lg:flex-row gap-3 w-full items-start">
+		<div className="flex flex-col lg:flex-row gap-3 w-full items-start relative">
 			<div className="odontogram-active-view-slot w-full flex-1 min-w-0 flex flex-col gap-2.5">
 				{activeMode === "anatomical_svg" && (
 					<WheelerToothArch
 						{...sharedViewProps}
 						teethData={teethData}
 						selectedTeeth={selectedTeeth}
-						onQuickStateChange={onQuickStateChange}
+						onQuickStateChange={handleInterceptedQuickStateChange}
 						activeStamp={activeStampTool}
 						mode="interactive"
 						dentitionMode={isPediatric ? "pediatric" : isMixed ? "mixed" : undefined}
@@ -89,6 +130,57 @@ export const OdontogramActiveViewSlot: React.FC<
 						showPeriodontalBoneLoss={true}
 					/>
 				)}
+				{activeMode === "classic_gost" && (
+					<OdontogramGostTableView
+						teethData={teethData}
+						selectedTeeth={selectedTeeth}
+						activeStamp={activeStampTool}
+						onQuickStateChange={handleInterceptedQuickStateChange}
+						onToothClick={typeof sharedViewProps?.onToothClick === "function" ? (num) => (sharedViewProps.onToothClick as (n: number) => void)(num) : undefined}
+						isPediatric={isPediatric}
+						isMixed={isMixed}
+					/>
+				)}
+
+				{/* Контекстный баннер-чип быстрого перехода в смету (Мандат 8ba) */}
+				{liveEstimateToast && !isLiveInvoiceOpen && (
+					<div
+						data-testid="live-estimate-toast"
+						className="live-estimate-toast w-full px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--primary,#0d9488)]/40 shadow-sm flex items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-1 duration-200"
+					>
+						<div className="flex items-center gap-2 min-w-0">
+							<span className="w-2 h-2 rounded-full bg-[var(--primary,#0d9488)] shrink-0 animate-pulse" />
+							<span className="text-[var(--ink-muted,#64748b)]">Добавлено в расчёт:</span>
+							<span className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100 truncate">
+								Зуб {liveEstimateToast.toothNumbers.join(", ")} ({liveEstimateToast.state})
+							</span>
+							<span className="font-mono font-medium text-[var(--primary,#0d9488)] shrink-0">
+								{liveEstimateToast.priceRub.toLocaleString("ru-RU")} ₽
+							</span>
+						</div>
+						<div className="flex items-center gap-2 shrink-0">
+							<button
+								type="button"
+								data-testid="live-estimate-open-btn"
+								onClick={() => {
+									setIsLiveInvoiceOpen(true);
+									setLiveEstimateToast(null);
+								}}
+								className="h-7 px-2.5 rounded-lg bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover,#0f766e)] text-white text-xs font-medium transition-colors inline-flex items-center gap-1 shadow-2xs"
+							>
+								Показать смету
+							</button>
+							<button
+								type="button"
+								aria-label="Закрыть уведомление о смете"
+								onClick={() => setLiveEstimateToast(null)}
+								className="w-6 h-6 rounded-md hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-slate-800 text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors text-sm"
+							>
+								✕
+							</button>
+						</div>
+					</div>
+				)}
 
 				{onQuickStateChange && (
 					<div
@@ -100,7 +192,7 @@ export const OdontogramActiveViewSlot: React.FC<
 							onSelectTeethGroup={onSelectTeethGroup ?? sharedSelectTeethGroup}
 							onClearSelection={onClearSelection ?? sharedClearSelection}
 							onInvertSelection={onInvertSelection ?? sharedInvertSelection}
-							onQuickStateChange={onQuickStateChange}
+							onQuickStateChange={handleInterceptedQuickStateChange}
 							isPediatric={isPediatric ?? Boolean(sharedViewProps?.pediatricMode)}
 							isMixed={isMixed ?? Boolean(sharedViewProps?.mixedDentition)}
 							className="bg-transparent border-0 p-0 shadow-none"
@@ -109,8 +201,13 @@ export const OdontogramActiveViewSlot: React.FC<
 						<OdontogramStampPalette
 							activeStampTool={activeStampTool}
 							setActiveStampTool={setActiveStampTool}
-							onQuickStateChange={onQuickStateChange}
-							handleQuickTriggerState={handleQuickTriggerState}
+							onQuickStateChange={handleInterceptedQuickStateChange}
+							handleQuickTriggerState={(state) => {
+								handleQuickTriggerState(state);
+								if (selectedTeeth.length > 0) {
+									handleInterceptedQuickStateChange(selectedTeeth, state);
+								}
+							}}
 							selectedTeeth={selectedTeeth}
 							className="bg-transparent border-0 p-0 shadow-none"
 						/>
@@ -122,13 +219,12 @@ export const OdontogramActiveViewSlot: React.FC<
 								maybeState?: ToothState,
 								maybeSurfaces?: readonly string[],
 							) => {
-								if (!onQuickStateChange) return;
 								if (Array.isArray(batchOrTargets) && batchOrTargets.length > 0 && typeof batchOrTargets[0] === "object" && batchOrTargets[0] !== null) {
 									for (const item of (batchOrTargets as readonly { readonly toothNumber: number; readonly state: ToothState; readonly surfaces?: readonly string[] }[])) {
-										onQuickStateChange([item.toothNumber], item.state, item.surfaces);
+										handleInterceptedQuickStateChange([item.toothNumber], item.state, item.surfaces);
 									}
 								} else if (Array.isArray(batchOrTargets) && maybeState) {
-									onQuickStateChange(batchOrTargets as number[], maybeState, maybeSurfaces);
+									handleInterceptedQuickStateChange(batchOrTargets as number[], maybeState, maybeSurfaces);
 								}
 							}}
 						/>

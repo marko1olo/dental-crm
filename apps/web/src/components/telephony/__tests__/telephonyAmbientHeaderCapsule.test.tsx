@@ -7,6 +7,8 @@ import { TelephonySoftphonePopover } from "../headerCapsule/TelephonySoftphonePo
 import { IncomingCallCapsuleBar } from "../incomingCallPopupModules/IncomingCallCapsuleBar";
 import { useTelephonyStore } from "../../../store/telephonyStore";
 
+import { createMockIncomingCallController } from "./telephonyTestFixtures";
+
 describe("Telephony Ambient Header Capsule & Dynamic Island Suite (Mandates 8e, 8n, Apple HIG)", () => {
 	it("1. TelephonyHeaderCapsule renders discreet 32px topbar pill with online state", () => {
 		useTelephonyStore.setState({ activeCall: null, agentState: "online", activeLineId: 1 });
@@ -55,17 +57,25 @@ describe("Telephony Ambient Header Capsule & Dynamic Island Suite (Mandates 8e, 
 	});
 
 	it("5. IncomingCallCapsuleBar provides Dynamic Island banner with 1-click card & booking", () => {
-		const mockCtrl = {
+		const mockCtrl = createMockIncomingCallController({
 			isCallAnswered: false, isCallEnded: false, elapsedSeconds: 8,
 			callerName: "Смирнова Екатерина", formattedPhone: "+7 (926) 555-12-34",
-			secondaryLine: null, handleSwitchAndAnswerSecondaryLine: () => {},
+			secondaryLine: { lineId: 2, state: "idle", call: null, durationSeconds: 0, isMuted: false },
+			handleSwitchAndAnswerSecondaryLine: () => {},
 			handleResumeSecondaryLine: () => {}, handleAnswerCall: () => {},
 			handleReject: () => {}, handleEndCall: () => {}, dismissCall: () => {},
 			closeCallDrawer: () => {}, setIsExpanded: () => {},
-			lastVisitSummary: { date: "14.10.2026", procedure: "Кариес" },
+			lastVisitSummary: {
+				lastVisitDate: "2026-10-14",
+				formattedLastVisit: "14.10.2026",
+				doctorName: "Д-р Петров",
+				doctorSpecialty: "therapist",
+				appointmentReason: "Кариес",
+				isNewPatient: false,
+			},
 			isKnownPatient: true, handleToggleCardDrawer: () => {},
 			handleQuickBook: () => {}, acutePainAlerts: [],
-		} as any;
+		});
 
 		const html = renderToString(<IncomingCallCapsuleBar ctrl={mockCtrl} />);
 		assert.ok(html.includes('data-testid="incoming-call-capsule"'), "Must render Dynamic Island capsule");

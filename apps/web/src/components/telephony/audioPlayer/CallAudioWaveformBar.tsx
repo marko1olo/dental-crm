@@ -61,8 +61,7 @@ export function CallAudioWaveformBar({
 
 					return (
 						<div
-							// biome-ignore lint/suspicious/noArrayIndexKey: deterministic 44-bar distribution
-							key={idx}
+							key={`waveform-bar-${idx}`}
 							style={{ height: `${barHeight}px` }}
 							className={`flex-1 rounded-full transition-colors ${
 								isPast

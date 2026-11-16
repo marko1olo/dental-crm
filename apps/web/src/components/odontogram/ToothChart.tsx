@@ -71,6 +71,17 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 		}
 	}, [onApplyFastCariesK021, onQuickStateChange, selectedTeeth]);
 
+	const handleToothClick = useCallback(
+		(e: React.MouseEvent<SVGGElement> | number, num?: number) => {
+			if (typeof onToothClick === "function") {
+				const n = typeof e === "number" ? e : (num ?? 11);
+				const clickCallback = onToothClick as (toothNumber: number) => void;
+				clickCallback(n);
+			}
+		},
+		[onToothClick],
+	);
+
 	return (
 		<div className={`tooth-chart-container w-full flex flex-col items-center ${className}`.trim()} data-testid="tooth-chart-container">
 			{!hideExpressActions && (
@@ -136,13 +147,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 				mixedDentition={mixedDentition}
 				dentitionMode={dentitionMode}
 				mode="interactive"
-				onToothClick={onToothClick ? ((e, num) => {
-					if (typeof onToothClick === "function") {
-						const n = typeof e === "number" ? e : (num ?? 11);
-						const clickCallback = onToothClick as (toothNumber: number) => void;
-						clickCallback(n);
-					}
-				}) : undefined}
+				onToothClick={onToothClick ? handleToothClick : undefined}
 				onQuickStateChange={onQuickStateChange}
 				className="w-full"
 			/>

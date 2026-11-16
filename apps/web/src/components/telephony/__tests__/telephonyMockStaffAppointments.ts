@@ -1,4 +1,4 @@
-import type { Appointment, InsuranceContract, StaffMember } from "@dental/shared";
+import type { Appointment, Chair, InsuranceContract, StaffMember } from "@dental/shared";
 
 /**
  * Mock Staff, Appointments & Insurance Contracts for Telephony Tests
@@ -48,6 +48,22 @@ export const mockAppointments: Appointment[] = [
 		endsAt: "2026-12-30T11:00:00Z",
 		reason: "Профгигиена полости рта",
 		comment: null,
+	},
+];
+
+export const mockChairs: Chair[] = [
+	{
+		id: "55555555-5555-5555-5555-555555555555",
+		organizationId: "99999999-9999-9999-9999-999999999999",
+		name: "Кресло 1",
+		active: true,
+		notes: null,
+		room: "Кабинет 1",
+		specialization: null,
+		hasXraySensor: false,
+		hasMicroscope: false,
+		hasSurgeryKit: false,
+		color: null,
 	},
 ];
 

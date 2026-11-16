@@ -16,8 +16,6 @@ export const ToothRadialSurfaceBar: React.FC<ToothRadialSurfaceBarProps> = ({
 	onSelectSurfaces,
 	isMobile = false,
 }) => {
-	if (isPrimary) return null;
-
 	const testIdPrefix = isMobile ? "radial-mobile-quick-surf" : "radial-desktop-quick-surf";
 
 	return (

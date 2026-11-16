@@ -201,15 +201,37 @@ function applyPathologiesAndLesions(flags: Tooth46LayerFlags, tooth: ToothData, 
 		state === "Cm" || state === "Cp" || state === "Cds" || state === "Cs";
 	const hasSecondaryCaries = Boolean(clin.hasSecondaryCaries || clin.secondaryCaries);
 	const hasExplicitCaries = Boolean(clin.cariesType);
-	const hasCariesSurfaces = Boolean(tooth.surfaces && tooth.surfaces.length > 0 && !flags.composite && !flags.zirconiaCrown);
 
-	if (isCariesState || hasSecondaryCaries || hasExplicitCaries || hasCariesSurfaces) {
+	// MODBL Surface Isolation: определяем поверхности пломбы и кариеса для предотвращения взаимного затирания
+	const fillingSurfaces = (Array.isArray(clin.fillingSurfaces)
+		? clin.fillingSurfaces
+		: (flags.composite && !isCariesState && Array.isArray(tooth.surfaces) ? tooth.surfaces : [])) as string[];
+	const fillingSet = new Set(fillingSurfaces.map((s) => s.toLowerCase()));
+
+	const rawCariesSurfaces = (Array.isArray(clin.defectSurfaces)
+		? clin.defectSurfaces
+		: (Array.isArray(clin.cariesSurfaces)
+			? clin.cariesSurfaces
+			: (isCariesState && Array.isArray(tooth.surfaces) ? tooth.surfaces : []))) as string[];
+	const freeCariesSurfaces = rawCariesSurfaces.filter((s) => !fillingSet.has(s.toLowerCase()));
+	const hasNonOverlappingCaries = rawCariesSurfaces.length > 0;
+	const hasCariesSurfaces = Boolean(
+		tooth.surfaces &&
+		tooth.surfaces.length > 0 &&
+		!flags.zirconiaCrown &&
+		(isCariesState || rawCariesSurfaces.length > 0)
+	);
+
+	if (isCariesState || hasSecondaryCaries || hasExplicitCaries || hasCariesSurfaces || hasNonOverlappingCaries) {
 		flags.caries = true;
-		flags.cariesType = mapSurfacesToCariesType(tooth.toothNumber, tooth.surfaces, (clin.cariesType as string) ?? null);
+		const targetSurfaces = (flags.composite && freeCariesSurfaces.length > 0)
+			? freeCariesSurfaces
+			: (rawCariesSurfaces.length > 0 ? rawCariesSurfaces : (tooth.surfaces ?? []));
+		flags.cariesType = mapSurfacesToCariesType(tooth.toothNumber, targetSurfaces, (clin.cariesType as string) ?? null);
 		flags.cariesDepth = mapClinicalDataToCariesDepth(clin);
 		flags.cariesChronicity = clin.chronicity === "chronic" ? "chronic" : "acute";
 
-		if (hasSecondaryCaries) {
+		if (hasSecondaryCaries || (flags.composite && rawCariesSurfaces.some((s) => fillingSet.has(s.toLowerCase())))) {
 			if (flags.composite) flags.compositeCondition = "defective";
 			if (flags.zirconiaCrown) flags.crownCondition = "defective";
 		}

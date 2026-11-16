@@ -61,15 +61,15 @@ describe("Telephony Audio Stream & Speed Lifecycle (Mandate 8b, 8e)", () => {
 		// Mock RTCPeerConnection in node test environment
 		let localDesc: { type?: string; sdp?: string } | null = null;
 		let remoteDesc: { type?: string; sdp?: string } | null = null;
-		const candidates: any[] = [];
+		const candidates: unknown[] = [];
 
 		class MockRTCPeerConnection {
 			public connectionState: RTCPeerConnectionState = "new";
-			public ontrack: any = null;
-			public onicecandidate: any = null;
-			public onconnectionstatechange: any = null;
+			public ontrack: ((event: unknown) => void) | null = null;
+			public onicecandidate: ((event: unknown) => void) | null = null;
+			public onconnectionstatechange: (() => void) | null = null;
 
-			constructor(public config: any) {}
+			constructor(public config: unknown) {}
 
 			public async createOffer() {
 				return { type: "offer" as const, sdp: "v=0\r\no=mock 123 IN IP4 127.0.0.1\r\ns=Test\r\n" };
@@ -79,19 +79,19 @@ describe("Telephony Audio Stream & Speed Lifecycle (Mandate 8b, 8e)", () => {
 				return { type: "answer" as const, sdp: "v=0\r\no=mock 456 IN IP4 127.0.0.1\r\ns=Test\r\n" };
 			}
 
-			public async setLocalDescription(desc?: any) {
+			public async setLocalDescription(desc?: { type?: string; sdp?: string }) {
 				localDesc = desc || { type: "offer", sdp: "mock" };
 			}
 
-			public async setRemoteDescription(desc: any) {
+			public async setRemoteDescription(desc: { type?: string; sdp?: string }) {
 				remoteDesc = desc;
 			}
 
-			public async addIceCandidate(cand: any) {
+			public async addIceCandidate(cand: unknown) {
 				candidates.push(cand);
 			}
 
-			public addTrack(track: any) {
+			public addTrack(track: unknown) {
 				return { track };
 			}
 
@@ -116,10 +116,14 @@ describe("Telephony Audio Stream & Speed Lifecycle (Mandate 8b, 8e)", () => {
 			}
 		}
 
-		(globalThis as any).window = globalThis.window || {};
-		(globalThis as any).window.RTCPeerConnection = MockRTCPeerConnection;
-		(globalThis as any).RTCSessionDescription = class {
-			constructor(public desc: any) {
+		const globalScope = globalThis as unknown as {
+			window?: { RTCPeerConnection?: unknown };
+			RTCSessionDescription?: unknown;
+		};
+		globalScope.window = globalScope.window || {};
+		globalScope.window.RTCPeerConnection = MockRTCPeerConnection;
+		globalScope.RTCSessionDescription = class {
+			constructor(public desc: Record<string, unknown>) {
 				Object.assign(this, desc);
 			}
 		};

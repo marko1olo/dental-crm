@@ -7,7 +7,7 @@
  * - Island 2 (Right): Single Primary CTA «✓ Санирован» (#0d9488, 1-click Mandate 8e) + QuickActions & MoreMenu Dropdowns
  */
 
-import { ChevronDown, Layers, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Layers, Receipt, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { TOOTH_STATE_LABELS } from "./chart/toothChartTypes";
 import { MoreMenuClinicalModules } from "./MoreMenuClinicalModules";
@@ -168,6 +168,28 @@ export const OdontogramQuickBar: React.FC<OdontogramQuickBarProps> = React.memo(
 							<span>Физиологическая норма</span>
 						</button>
 					)}
+
+					{/* Live Invoice / Estimate toggle */}
+					<button
+						type="button"
+						onClick={() => props.setIsLiveInvoiceOpen((prev) => !prev)}
+						className={`odontogram-tools-trigger-btn ${
+							props.isLiveInvoiceOpen
+								? "odontogram-tools-trigger-btn--active"
+								: ""
+						}`}
+						title="Смета приёма и расчёт услуг"
+						data-testid="toolbar-live-invoice-btn"
+						aria-pressed={props.isLiveInvoiceOpen}
+					>
+						<Receipt size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
+						<span className="hidden sm:inline font-bold">Смета</span>
+						{props.liveGrossTotalRub !== undefined && props.liveGrossTotalRub > 0 && (
+							<span className="font-mono text-xs px-1.5 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300">
+								{props.liveGrossTotalRub.toLocaleString("ru-RU")} ₽
+							</span>
+						)}
+					</button>
 
 					{/* Quick Actions Dropdown */}
 					<details className="relative shrink-0">

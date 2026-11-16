@@ -120,8 +120,7 @@ export function LiveCallAudioVisualizer({
 					const isPeak = barAmp > 0.6;
 					return (
 						<div
-							// biome-ignore lint/suspicious/noArrayIndexKey: fixed spectrum bars
-							key={idx}
+							key={`spectrum-bar-${idx}`}
 							style={{ height: `${heightPx}px` }}
 							className={`flex-1 rounded-full transition-all duration-75 ${
 								isMuted

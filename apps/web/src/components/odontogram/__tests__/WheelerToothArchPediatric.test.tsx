@@ -120,9 +120,9 @@ describe("WheelerToothArch Pediatric & Mixed Dentition Suite", () => {
 		// Нижние молочные моляры 74, 75, 84, 85
 		for (const toothNum of [74, 75, 84, 85]) {
 			const html = renderToStaticMarkup(<AnatomicalTooth toothNumber={toothNum} />);
-			// Нижние моляры содержат двухкорневую систему (M, D)
+			// Нижние моляры содержат двухкорневую систему (M, D) или детскую корневую геометрию
 			assert.ok(
-				html.includes("tooth46-roots") || html.includes("tooth47-roots") || html.includes("buccalCervicalRidge"),
+				html.includes("tooth46-roots") || html.includes("tooth47-roots") || html.includes("buccalCervicalRidge") || html.includes("pediatric-roots"),
 				`Нижний молочный моляр ${toothNum} обязан иметь анатомию нижнего моляра (2 корня)`,
 			);
 			// Не должен содержать премолярный ID

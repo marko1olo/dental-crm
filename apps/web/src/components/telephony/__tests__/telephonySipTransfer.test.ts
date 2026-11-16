@@ -2,19 +2,25 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import { useTelephonyStore } from "../../../store/telephonyStore.js";
 
+interface TransferRequestBody {
+	callId?: string;
+	targetExtensionOrPhone?: string;
+	transferType?: string;
+}
+
 describe("Telephony: SIP Call Transfer (Blind vs Attended)", () => {
 	const originalFetch = globalThis.fetch;
-	const dispatchedRequests: Array<{ url: string; method: string; body: any }> = [];
+	const dispatchedRequests: Array<{ url: string; method: string; body: TransferRequestBody | null }> = [];
 
 	beforeEach(() => {
 		dispatchedRequests.length = 0;
 		globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
 			const bodyStr = init?.body ? String(init.body) : "";
-			let parsedBody: any = null;
+			let parsedBody: TransferRequestBody | null = null;
 			try {
-				parsedBody = JSON.parse(bodyStr);
+				parsedBody = JSON.parse(bodyStr) as TransferRequestBody;
 			} catch {
-				parsedBody = bodyStr;
+				parsedBody = null;
 			}
 			dispatchedRequests.push({
 				url: String(url),

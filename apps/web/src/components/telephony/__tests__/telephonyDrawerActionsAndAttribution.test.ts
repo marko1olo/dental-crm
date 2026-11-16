@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
-const expect = (actual: any) => ({
-	toBe: (expected: any) => assert.strictEqual(actual, expected),
-	toEqual: (expected: any) => assert.deepStrictEqual(actual, expected),
+const expect = (actual: unknown) => ({
+	toBe: (expected: unknown) => assert.strictEqual(actual, expected),
+	toEqual: (expected: unknown) => assert.deepStrictEqual(actual, expected),
 	toContain: (substr: string) => assert.ok(String(actual).includes(substr), `Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(substr)}`),
 	toBeNull: () => assert.strictEqual(actual, null),
 	toBeDefined: () => assert.notStrictEqual(actual, undefined),
 	not: {
 		toContain: (substr: string) => assert.ok(!String(actual).includes(substr), `Expected ${JSON.stringify(actual)} not to contain ${JSON.stringify(substr)}`),
-		toBe: (expected: any) => assert.notStrictEqual(actual, expected),
+		toBe: (expected: unknown) => assert.notStrictEqual(actual, expected),
 		toBeNull: () => assert.notStrictEqual(actual, null),
 		toBeUndefined: () => assert.notStrictEqual(actual, undefined),
 	},

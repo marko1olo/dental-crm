@@ -2,15 +2,18 @@ import assert from "node:assert/strict";
 import { describe, test, beforeEach, afterEach } from "node:test";
 const vi = {
 	restoreAllMocks: () => {},
-	fn: (impl?: any) => {
-		const fn: any = (...args: any[]) => {
-			fn.mock.calls.push(args);
+	fn: <TArgs extends unknown[], TReturn>(impl?: (...args: TArgs) => TReturn) => {
+		const calls: TArgs[] = [];
+		const fn = (...args: TArgs): TReturn | undefined => {
+			calls.push(args);
 			return impl ? impl(...args) : undefined;
 		};
-		fn.mock = { calls: [] };
+		fn.mock = { calls };
 		return fn;
 	},
-	stubGlobal: (key: string, val: any) => { (globalThis as any)[key] = val; },
+	stubGlobal: (key: string, val: unknown) => {
+		Object.defineProperty(globalThis, key, { value: val, configurable: true, writable: true });
+	},
 };
 import {
 	dispatchBatchReminders,
@@ -23,14 +26,14 @@ describe("Telephony & Messengers Real Outbound API Integration", () => {
 	});
 
 	test("4.1. dispatchBatchReminders issues real fetch calls to /api/whatsapp/send and /api/communications/outbox", async () => {
-		const fetchCalls: Array<{ url: string; body: any; headers: any }> = [];
+		const fetchCalls: Array<{ url: string; body: Record<string, string>; headers: HeadersInit | undefined }> = [];
 
 		vi.stubGlobal(
 			"fetch",
 			vi.fn(async (url: string, init?: RequestInit) => {
 				fetchCalls.push({
 					url,
-					body: init?.body ? JSON.parse(init.body as string) : null,
+					body: init?.body ? (JSON.parse(init.body as string) as Record<string, string>) : {},
 					headers: init?.headers,
 				});
 				return {
@@ -108,7 +111,7 @@ describe("Telephony & Messengers Real Outbound API Integration", () => {
 		assert.ok(fetchCalls.length >= 2, `Must issue real network calls, got ${fetchCalls.length}`);
 
 		const waCall = fetchCalls.find((c) => c.url === "/api/whatsapp/send");
-		assert.ok(waCall);
+		assert.ok(waCall && waCall.body.message);
 		assert.strictEqual(waCall.body.patientId, "01a00000-0000-0000-0000-000000000001");
 		assert.ok(waCall.body.message.includes("Анна Сергеевна"));
 

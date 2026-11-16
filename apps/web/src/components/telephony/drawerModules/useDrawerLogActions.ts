@@ -26,7 +26,7 @@ export function useDrawerLogActions(params: { dashboard: Dashboard | null | unde
 		if (matched) setSelectedPatientId(matched.id);
 		else setNewPatientPhone(item.phone);
 
-		const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
+		const todayIso = dashboard?.todayIso || (new Date().toISOString().split("T")[0] ?? "");
 		const defaultDoctorId = dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id || "";
 		const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
 

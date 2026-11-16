@@ -47,7 +47,7 @@ export function TelephonyHeaderCapsule({
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleClickOutside = (e: MouseEvent) => {
-			if (capsuleRef.current && !capsuleRef.current.contains(e.target as Node)) {
+			if (capsuleRef.current && e.target instanceof Node && !capsuleRef.current.contains(e.target)) {
 				setIsOpen(false);
 			}
 		};
@@ -64,9 +64,10 @@ export function TelephonyHeaderCapsule({
 
 	// Mandate 8v & 8e: Doctor sterile zone & chairside chart immunity.
 	// Telephony is completely silent and hidden for doctor role or during clinical visit screens.
+	const sterileViews = new Set(["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"]);
 	const isSterileZone =
 		selectedWorkspaceRole === "doctor" ||
-		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(currentView as string) ||
+		(Boolean(currentView) && sterileViews.has(String(currentView))) ||
 		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(hash);
 
 	if (isSterileZone) {

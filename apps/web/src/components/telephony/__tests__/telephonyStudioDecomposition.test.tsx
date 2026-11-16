@@ -10,11 +10,11 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
 
-const expect = (actual: any) => ({
-	toBe: (expected: any) => assert.strictEqual(actual, expected),
-	toContain: (substr: string) => assert.ok(actual.includes(substr), `Expected actual to contain ${JSON.stringify(substr)}`),
+const expect = (actual: unknown) => ({
+	toBe: (expected: unknown) => assert.strictEqual(actual, expected),
+	toContain: (substr: string) => assert.ok(String(actual).includes(substr), `Expected actual to contain ${JSON.stringify(substr)}`),
 	not: {
-		toContain: (substr: string) => assert.ok(!actual.includes(substr), `Expected actual not to contain ${JSON.stringify(substr)}`),
+		toContain: (substr: string) => assert.ok(!String(actual).includes(substr), `Expected actual not to contain ${JSON.stringify(substr)}`),
 	},
 	toBeNull: () => assert.strictEqual(actual, null),
 });

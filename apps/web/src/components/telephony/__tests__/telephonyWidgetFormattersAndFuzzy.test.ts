@@ -84,12 +84,12 @@ test("Telephony - resolve patient from phone fuzzy matching", () => {
 		},
 	];
 
-	const match1 = resolvePatientFromPhone(patients as any, "89265554433");
+	const match1 = resolvePatientFromPhone(patients, "89265554433");
 	assert.strictEqual(match1?.id, "pat-100");
 
-	const match2 = resolvePatientFromPhone(patients as any, "89037778899");
+	const match2 = resolvePatientFromPhone(patients, "89037778899");
 	assert.strictEqual(match2?.id, "pat-100");
 
-	const noMatch = resolvePatientFromPhone(patients as any, "+79990000000");
+	const noMatch = resolvePatientFromPhone(patients, "+79990000000");
 	assert.strictEqual(noMatch, null);
 });

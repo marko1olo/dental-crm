@@ -25,7 +25,6 @@ export {
 	ANATOMICAL_SURFACE_LABELS_RU,
 	ANATOMICAL_SURFACE_NAMES_RU,
 } from "./anatomicalMaterials/restorativeMaterialsData";
-export { getSurfaceShading } from "./anatomicalMaterials/surfaceShadingService";
 export { CANAL_OBTURATIONS } from "./anatomicalMaterials/canalObturationsData";
 export {
 	getPeriodontalBoneLevelPath,

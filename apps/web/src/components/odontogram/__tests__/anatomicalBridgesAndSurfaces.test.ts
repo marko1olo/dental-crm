@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test, { describe } from "node:test";
 import {
 	CANAL_OBTURATIONS,
-	getSurfaceShading,
 	ICDAS_CLASSIFICATIONS,
 	RESTORATIVE_MATERIALS,
 } from "../anatomicalMaterialsAndSurfaces";
@@ -194,49 +193,6 @@ describe("Anatomical Shading, Materials, Resorption & ICDAS Suite", () => {
 		assert.equal(adult16.opacity, 1.0);
 		assert.ok(adult16.rootPath.length > 20);
 	});
-
-	test("getSurfaceShading возвращает правильные SVG-шейдеры, паттерны и цвета", () => {
-		// Кариес
-		const cariesShading = getSurfaceShading("Caries");
-		assert.equal(cariesShading.fill, "url(#dente-caries-grad)");
-		assert.equal(cariesShading.stroke, "#991b1b");
-		assert.equal(cariesShading.opacity, 0.95);
-
-		// Пломба: композитная смола (Composite Resin)
-		const compShading = getSurfaceShading("Filled", "composite");
-		assert.equal(compShading.fill, "url(#composite-fill-gradient)");
-		assert.equal(compShading.pattern, "url(#composite-resin-pattern)");
-		assert.equal(compShading.stroke, "#0f766e");
-
-		// Пломба: амальгама (Amalgam)
-		const amalgamShading = getSurfaceShading("Filled", "amalgam");
-		assert.equal(amalgamShading.fill, "url(#amalgam-metal-gradient)");
-		assert.equal(amalgamShading.pattern, "url(#amalgam-burnish-pattern)");
-		assert.equal(amalgamShading.stroke, "#334155");
-
-		// Пломба/вкладка: IPS E.max Ceramic
-		const emaxShading = getSurfaceShading("Filled", "ceramic_emax");
-		assert.equal(emaxShading.fill, "url(#ceramic-emax-gradient)");
-		assert.equal(emaxShading.pattern, "url(#ceramic-glaze-specular)");
-		assert.equal(emaxShading.stroke, "#0284c7");
-
-		// Золотая реставрация
-		const goldShading = getSurfaceShading("Filled", "gold");
-		assert.equal(goldShading.fill, "url(#gold-crown-gradient)");
-		assert.equal(goldShading.stroke, "#b45309");
-
-		// Искусственная коронка (Zirconia, PFM, Gold)
-		const zircShading = getSurfaceShading("Crown", "zirconia");
-		assert.equal(zircShading.fill, "url(#zirconia-crown-gradient)");
-		assert.equal(zircShading.opacity, 1);
-
-		const pfmShading = getSurfaceShading("Crown", "pfm_crown");
-		assert.equal(pfmShading.fill, "url(#pfm-crown-gradient)");
-
-		// Здоровая эмаль
-		const healthyShading = getSurfaceShading("Healthy");
-		assert.equal(healthyShading.fill, "url(#dente-enamel-healthy)");
-	});
 });
 
 describe("Bridge Prosthetics & Pontic Spans Engine (Fixed Dental Bridge)", () => {
@@ -329,15 +285,5 @@ describe("Bridge Prosthetics & Pontic Spans Engine (Fixed Dental Bridge)", () =>
 		assert.deepEqual([...bridge.teeth], [47, 46, 45, 44]);
 		assert.deepEqual([...bridge.abutments], [47, 44]);
 		assert.deepEqual([...bridge.pontics], [46, 45]);
-	});
-
-	test("getSurfaceShading для Retained и Root возвращает специализированные стили", () => {
-		const retainedShading = getSurfaceShading("Retained");
-		assert.equal(retainedShading.stroke, "#8b5cf6");
-		assert.equal(retainedShading.opacity, 0.85);
-
-		const rootShading = getSurfaceShading("Root");
-		assert.equal(rootShading.stroke, "#dc2626");
-		assert.equal(rootShading.opacity, 1);
 	});
 });

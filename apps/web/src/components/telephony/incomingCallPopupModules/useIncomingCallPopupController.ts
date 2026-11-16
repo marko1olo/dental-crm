@@ -66,8 +66,9 @@ export function useIncomingCallPopupController(
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
 	const hash = typeof window !== "undefined" ? window.location.hash : "";
+	const sterileViews = new Set(["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"]);
 	const isSterileClinicalScreen =
-		["visit", "odontogram", "periodontics", "xray", "radiology", "cbct"].includes(currentView as string) ||
+		(Boolean(currentView) && sterileViews.has(String(currentView))) ||
 		/#(visit|odontogram|periodontics|xray|radiology|cbct)/.test(hash);
 	const isDoctorMode =
 		selectedWorkspaceRole === "doctor" || currentView === "visit" ||
@@ -111,8 +112,8 @@ export function useIncomingCallPopupController(
 	useEffect(() => {
 		if (!showBadgeMoreMenu) return;
 		const handleClickOutside = (e: MouseEvent) => {
-			const target = e.target as HTMLElement | null;
-			if (!target?.closest("[data-badge-more-container]")) {
+			const target = e.target;
+			if (target instanceof Element && !target.closest("[data-badge-more-container]")) {
 				setShowBadgeMoreMenu(false);
 			}
 		};
@@ -291,7 +292,8 @@ export function useIncomingCallPopupController(
 
 	const handleSwitchAndAnswerSecondaryLine = (mode: "capsule" | "expanded" = "expanded") => {
 		if (!secondaryLine?.call) return;
-		switchLine(secondaryLine.lineId as 1 | 2);
+		const lineId: 1 | 2 = secondaryLine.lineId === 1 ? 1 : 2;
+		switchLine(lineId);
 		answerCall();
 		showToast(
 			mode === "capsule"
@@ -303,7 +305,8 @@ export function useIncomingCallPopupController(
 
 	const handleResumeSecondaryLine = () => {
 		if (!secondaryLine?.call) return;
-		switchLine(secondaryLine.lineId as 1 | 2);
+		const lineId: 1 | 2 = secondaryLine.lineId === 1 ? 1 : 2;
+		switchLine(lineId);
 		showToast(`Возврат к Линии ${secondaryLine.lineId}`, "info");
 	};
 

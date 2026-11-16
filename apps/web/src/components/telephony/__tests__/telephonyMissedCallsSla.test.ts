@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
-const expect = (actual: any) => ({
-	toBe: (expected: any) => assert.strictEqual(actual, expected),
-	toEqual: (expected: any) => assert.deepStrictEqual(actual, expected),
+const expect = (actual: unknown) => ({
+	toBe: (expected: unknown) => assert.strictEqual(actual, expected),
+	toEqual: (expected: unknown) => assert.deepStrictEqual(actual, expected),
 	toContain: (substr: string) => assert.ok(String(actual).includes(substr), `Expected ${JSON.stringify(actual)} to contain ${JSON.stringify(substr)}`),
 	toBeNull: () => assert.strictEqual(actual, null),
 	toBeDefined: () => assert.notStrictEqual(actual, undefined),
 	not: {
 		toContain: (substr: string) => assert.ok(!String(actual).includes(substr), `Expected ${JSON.stringify(actual)} not to contain ${JSON.stringify(substr)}`),
-		toBe: (expected: any) => assert.notStrictEqual(actual, expected),
+		toBe: (expected: unknown) => assert.notStrictEqual(actual, expected),
 	},
 });
 import {
@@ -55,11 +55,15 @@ describe("Telephony Missed Calls & 15m SLA Calculations", () => {
 		expect(summary.withinSlaCount).toBe(1);
 		expect(summary.nearestRemainingSeconds).toBe(10 * 60);
 
-		const freshStatus = resolveCallbackSlaStatus(history[0]!, now);
+		const item0 = history[0];
+		assert.ok(item0, "history[0] must exist");
+		const freshStatus = resolveCallbackSlaStatus(item0, now);
 		expect(freshStatus.status).toBe("pending_within_sla");
 		expect(freshStatus.formattedCountdown).toBe("10:00");
 
-		const overdueStatus = resolveCallbackSlaStatus(history[1]!, now);
+		const item1 = history[1];
+		assert.ok(item1, "history[1] must exist");
+		const overdueStatus = resolveCallbackSlaStatus(item1, now);
 		expect(overdueStatus.status).toBe("overdue_sla");
 		expect(overdueStatus.formattedCountdown).toContain("Просрочен");
 	});

@@ -3,8 +3,8 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const PROOF_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/odontogram";
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/f2c31f40-e4c0-4586-871d-fe7f3683e62d";
-const PARENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/2e26914e-fa5a-4892-8173-c6752860bc4c";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/3e0c24a7-5b2e-4765-9ea6-b4ca2ea10302";
+const PARENT_BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/8d148d14-84d7-401e-badd-c6ea47afd7f6";
 
 for (const d of [PROOF_DIR, BRAIN_DIR, PARENT_BRAIN_DIR]) {
 	if (!existsSync(d)) {
@@ -164,14 +164,14 @@ async function runCapture() {
 		// Switch to Pediatric Dentition mode (FDI 51–85)
 		console.log("Switching to Pediatric Dentition Mode (51–85)...");
 		try {
-			const pedBtn = pcPage.locator('button:has-text("Молочный")').first();
+			const pedBtn = pcPage.locator('[data-testid="toolbar-dentition-pediatric"], button:has-text("Детский"), button:has-text("Молочный")').first();
 			if (await pedBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
 				await pedBtn.click();
 				await pcPage.waitForTimeout(600);
 			} else {
 				await pcPage.evaluate(() => {
 					const btns = Array.from(document.querySelectorAll("button"));
-					const b = btns.find((x) => x.innerText && x.innerText.includes("Молочный"));
+					const b = btns.find((x) => x.innerText && (x.innerText.includes("Детский") || x.innerText.includes("Молочный")));
 					if (b) b.click();
 				});
 				await pcPage.waitForTimeout(600);
@@ -243,14 +243,14 @@ async function runCapture() {
 
 		// Switch to pediatric on mobile
 		try {
-			const pedBtn = mobilePage.locator('button:has-text("Молочный")').first();
+			const pedBtn = mobilePage.locator('[data-testid="toolbar-dentition-pediatric"], button:has-text("Детский"), button:has-text("Молочный")').first();
 			if (await pedBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
 				await pedBtn.click();
 				await mobilePage.waitForTimeout(500);
 			} else {
 				await mobilePage.evaluate(() => {
 					const btns = Array.from(document.querySelectorAll("button"));
-					const b = btns.find((x) => x.innerText && x.innerText.includes("Молочный"));
+					const b = btns.find((x) => x.innerText && (x.innerText.includes("Детский") || x.innerText.includes("Молочный")));
 					if (b) b.click();
 				});
 				await mobilePage.waitForTimeout(500);
