@@ -1,6 +1,5 @@
 import React from 'react';
-import type { DrugInteractionItem, DdiSafetyAlertData } from '../copilotTypes';
-import { CopilotDdiSafetyCard } from '../cards/CopilotDdiSafetyCard';
+import type { DrugInteractionItem } from '../copilotTypes';
 import { CopilotDrugInteractionCard } from '../CopilotDrugInteractionCard';
 
 type Obj = Record<string, unknown>;
@@ -18,11 +17,6 @@ export function renderDrugSection(tool: string, obj: Obj, result: unknown): Reac
     typeof obj.medical_advice === 'string';
 
   if (!isDrug) return null;
-
-  if (obj.ddiAlert || obj.alertType === 'ddi_allergy' || (obj.riskLevel && obj.primaryDrug)) {
-    const ddiData = (obj.ddiAlert || obj) as unknown as DdiSafetyAlertData;
-    return <CopilotDdiSafetyCard data={ddiData} />;
-  }
 
   const interactions: DrugInteractionItem[] = Array.isArray(obj.interactions)
     ? (obj.interactions as DrugInteractionItem[])

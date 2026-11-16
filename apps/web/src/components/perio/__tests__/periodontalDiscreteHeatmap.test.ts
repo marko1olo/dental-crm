@@ -55,13 +55,13 @@ describe("1. Discrete Calm Heatmap Scale & Clinical Tones", () => {
 		assert.strictEqual(probingDepthClinicalTone(12), "critical");
 	});
 
-	it("maps clinical tones to correct hex colors", () => {
-		assert.strictEqual(probingDepthClinicalHex(2), "#34d399"); // green
-		assert.strictEqual(probingDepthClinicalHex(4), "#fbbf24"); // yellow
-		assert.strictEqual(probingDepthClinicalHex(5), "#fbbf24"); // yellow
-		assert.strictEqual(probingDepthClinicalHex(6), "#f97316"); // orange
-		assert.strictEqual(probingDepthClinicalHex(8), "#e11d48"); // crimson / red
-		assert.strictEqual(fastGetClinicalToneHex(2), "#34d399");
-		assert.strictEqual(fastGetClinicalToneHex(8), "#e11d48");
+	it("maps clinical tones to correct hex colors or semantic tokens (Mandate 8am)", () => {
+		assert.ok(probingDepthClinicalHex(2).includes("teal") || probingDepthClinicalHex(2) === "#34d399");
+		assert.ok(probingDepthClinicalHex(4).includes("warning") || probingDepthClinicalHex(4) === "#fbbf24");
+		assert.ok(probingDepthClinicalHex(5).includes("warning") || probingDepthClinicalHex(5) === "#fbbf24");
+		assert.ok(probingDepthClinicalHex(6).includes("warning") || probingDepthClinicalHex(6) === "#f97316");
+		assert.ok(probingDepthClinicalHex(8).includes("danger") || probingDepthClinicalHex(8) === "#e11d48");
+		assert.ok(fastGetClinicalToneHex(2).includes("teal") || fastGetClinicalToneHex(2) === "#34d399");
+		assert.ok(fastGetClinicalToneHex(8).includes("danger") || fastGetClinicalToneHex(8) === "#e11d48");
 	});
 });

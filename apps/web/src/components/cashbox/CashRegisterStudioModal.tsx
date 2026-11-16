@@ -94,7 +94,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 		onClose,
 		shiftNumber = 1,
 		cashierFullName = "Кассир",
-		kktRegNumber = "0004819203048572",
+		kktRegNumber = "—",
 		ofdName = "Платформа ОФД",
 		cashInDrawerRub = 0,
 		cardSumRub = 0,
@@ -214,6 +214,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 							printFormat={state.printFormat}
 							setPrintFormat={state.setPrintFormat}
 							onExecutePayment={state.handleExecutePayment}
+							appliedDmsSplit={state.appliedDmsSplit}
 						/>
 					)}
 

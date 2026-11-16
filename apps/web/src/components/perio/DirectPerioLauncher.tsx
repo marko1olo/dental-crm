@@ -63,11 +63,13 @@ export function resolveDirectPerioPatientContext(input: DirectPerioPatientInput)
 export interface DirectPerioLauncherProps {
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
+	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
 }
 
 export const DirectPerioLauncher: React.FC<DirectPerioLauncherProps> = ({
 	patientId: propPatientId,
 	patientName: propPatientName,
+	onInsertToProtocol,
 }) => {
 	const activePatientId = usePatientStore((s) => s.selectedPatientId);
 	const activePatientName = usePatientStore((s) => s.patientCoreDraft.fullName);
@@ -139,6 +141,7 @@ export const DirectPerioLauncher: React.FC<DirectPerioLauncherProps> = ({
 			onClose={handleClose}
 			patientId={resolvedPatientId}
 			patientName={resolvedPatientName}
+			onInsertToProtocol={onInsertToProtocol}
 		/>
 	);
 };

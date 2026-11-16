@@ -12,21 +12,21 @@
 export type HeatmapTone = "neutral" | "success" | "warning-low" | "warning-high" | "error" | "critical";
 
 export const TONE_TO_CLASS: Record<HeatmapTone, string> = {
-	neutral: "bg-gray-100 ring-gray-300 text-gray-700 dark:bg-gray-700/70 dark:ring-gray-500 dark:text-gray-200 border-gray-300 dark:border-gray-600",
-	success: "bg-emerald-50 ring-emerald-400 text-emerald-800 dark:bg-emerald-900/50 dark:ring-emerald-500 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700",
-	"warning-low": "bg-amber-50 ring-amber-400 text-amber-800 dark:bg-amber-900/50 dark:ring-amber-500 dark:text-amber-200 border-amber-300 dark:border-amber-700",
-	"warning-high": "bg-orange-50 ring-orange-500 text-orange-800 dark:bg-orange-900/50 dark:ring-orange-500 dark:text-orange-200 border-orange-300 dark:border-orange-700",
-	error: "bg-rose-50 ring-rose-400 text-rose-800 dark:bg-rose-900/50 dark:ring-rose-500 dark:text-rose-200 border-rose-300 dark:border-rose-700",
-	critical: "bg-red-50 ring-red-500 text-red-900 dark:bg-red-950/70 dark:ring-red-500 dark:text-red-200 border-red-400 dark:border-red-700 font-black shadow-xs",
+	neutral: "bg-[var(--paper-soft,#f1f5f9)] ring-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] border-[var(--line,#e2e8f0)]",
+	success: "bg-[var(--teal-soft,#0d94881a)] ring-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/30",
+	"warning-low": "bg-[var(--warning-soft,#f59e0b1a)] ring-[var(--warning,#f59e0b)] text-[var(--warning,#f59e0b)] border-[var(--warning,#f59e0b)]/30",
+	"warning-high": "bg-[var(--warning-soft,#f59e0b26)] ring-[var(--warning-strong,#d97706)] text-[var(--warning-strong,#d97706)] border-[var(--warning-strong,#d97706)]/40",
+	error: "bg-[var(--danger-soft,#ef44441a)] ring-[var(--danger,#ef4444)] text-[var(--danger,#ef4444)] border-[var(--danger,#ef4444)]/30",
+	critical: "bg-[var(--danger-soft,#ef444426)] ring-[var(--danger,#ef4444)] text-[var(--danger,#ef4444)] border-[var(--danger,#ef4444)] font-bold shadow-xs",
 };
 
 export const TONE_TO_HEX: Record<HeatmapTone, string> = {
-	neutral: "#d1d5db",
-	success: "#34d399",
-	"warning-low": "#fbbf24",
-	"warning-high": "#f97316",
-	error: "#fb7185",
-	critical: "#e11d48",
+	neutral: "var(--muted, #94a3b8)",
+	success: "var(--teal, #0d9488)",
+	"warning-low": "var(--warning, #f59e0b)",
+	"warning-high": "var(--warning-strong, #d97706)",
+	error: "var(--danger, #ef4444)",
+	critical: "var(--danger, #ef4444)",
 };
 
 export function probingDepthTone(pd: number | null | undefined, mode: "standard" | "clinical" = "standard"): HeatmapTone {

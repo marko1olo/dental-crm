@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -186,10 +186,33 @@ async function buildTaxCertificatePayload(
 
 	if (!patient) return null;
 
+	let targetPatientIds = [patientId];
+	if (patient.familyGroupId) {
+		const familyMembers = await db
+			.select({ id: patients.id })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.familyGroupId, patient.familyGroupId),
+					eq(patients.organizationId, organizationId),
+				),
+			);
+		if (familyMembers.length > 0) {
+			targetPatientIds = familyMembers.map((m) => m.id);
+		}
+	}
+
 	const dbPayments = await db
 		.select()
 		.from(payments)
-		.where(and(eq(payments.patientId, patientId), eq(payments.organizationId, organizationId)));
+		.where(
+			and(
+				targetPatientIds.length === 1
+					? eq(payments.patientId, targetPatientIds[0]!)
+					: inArray(payments.patientId, targetPatientIds),
+				eq(payments.organizationId, organizationId),
+			),
+		);
 
 	const yearPayments = dbPayments.filter((p) => {
 		if (p.status !== "paid" && p.status !== "refunded") return false;

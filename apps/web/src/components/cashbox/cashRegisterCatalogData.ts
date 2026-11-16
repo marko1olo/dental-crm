@@ -304,6 +304,14 @@ export function getDemoUnpaidInvoices() {
 	];
 }
 
+export interface FiscalTapeOperationItem {
+	readonly id?: string | undefined;
+	readonly operationType?: string | undefined;
+	readonly amountRub?: number | undefined;
+	readonly reasonText?: string | null | undefined;
+	readonly createdAt?: string | undefined;
+}
+
 /** Generates monospaced 54-FZ thermal receipt tape text for preview */
 export function generateFiscalTapeText(params: {
 	shiftNumber: number;
@@ -315,6 +323,7 @@ export function generateFiscalTapeText(params: {
 	cardSumRub?: number | undefined;
 	sbpSumRub?: number | undefined;
 	advanceOffsetRub?: number | undefined;
+	operations?: readonly FiscalTapeOperationItem[] | undefined;
 	width?: "tape_80mm" | "tape_58mm" | undefined;
 }): string {
 	const w = params.width === "tape_58mm" ? 32 : 42;
@@ -325,27 +334,46 @@ export function generateFiscalTapeText(params: {
 		return `${left}${" ".repeat(space)}${right}`;
 	};
 
-	return [
+	const tapeLines: string[] = [
 		div,
 		"        ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 		"        КАССОВЫЙ ЧЕК / СМЕННЫЙ ОТЧЕТ",
 		div,
-		pad("ККТ Рег. №:", params.kktRegNumber || "0004829104058291"),
+		pad("ККТ Рег. №:", params.kktRegNumber || "ФНС ККТ ЗАРЕГИСТРИРОВАНА"),
 		pad("ОФД:", params.ofdName || "АО «ПЕРВЫЙ ОФД»"),
 		pad("Смена №:", String(params.shiftNumber)),
 		pad("Кассир:", params.cashierFullName),
 		line,
-		pad("НАЛИЧНЫЕ:", formatRubles(params.cashInDrawerRub ?? 15000)),
-		pad("БЕЗНАЛ / КАРТЫ:", formatRubles(params.cardSumRub ?? 35000)),
-		pad("СБП QR:", formatRubles(params.sbpSumRub ?? 7000)),
-		pad("ЗАЧЕТ АВАНСА:", formatRubles(params.advanceOffsetRub ?? 2000)),
+		pad("НАЛИЧНЫЕ:", formatRubles(params.cashInDrawerRub ?? 0)),
+		pad("БЕЗНАЛ / КАРТЫ:", formatRubles(params.cardSumRub ?? 0)),
+		pad("СБП QR:", formatRubles(params.sbpSumRub ?? 0)),
+		pad("ЗАЧЕТ АВАНСА:", formatRubles(params.advanceOffsetRub ?? 0)),
 		line,
-		pad("ИТОГО ВЫРУЧКА:", formatRubles(params.netRevenueRub ?? 59000)),
-		pad("ФН / ФД / ФПД:", "99990789 / 000104 / 389104821"),
-		div,
-		"       СПАСИБО ЗА ДОВЕРИЕ КЛИНИКЕ!",
-		div,
-	].join("\n");
+		pad("ИТОГО ВЫРУЧКА:", formatRubles(params.netRevenueRub ?? 0)),
+	];
+
+	if (params.operations && params.operations.length > 0) {
+		tapeLines.push(line);
+		tapeLines.push("ПОСЛЕДНИЕ ОПЕРАЦИИ (БД):");
+		for (const op of params.operations.slice(0, 5)) {
+			const timeStr = op.createdAt ? new Date(op.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "";
+			const typeLabel = op.operationType === "income" ? "ПРИХОД" : "РАСХОД";
+			tapeLines.push(pad(`${timeStr} ${typeLabel}:`, formatRubles(op.amountRub ?? 0)));
+			if (op.reasonText) {
+				tapeLines.push(`  ${op.reasonText.slice(0, w - 4)}`);
+			}
+		}
+	} else {
+		tapeLines.push(pad("ЖУРНАЛ ОПЕРАЦИЙ:", "0 проводок"));
+	}
+
+	tapeLines.push(line);
+	tapeLines.push(pad("РЕЖИМ ККТ:", "54-ФЗ ОНЛАЙН"));
+	tapeLines.push(div);
+	tapeLines.push("       СПАСИБО ЗА ДОВЕРИЕ КЛИНИКЕ!");
+	tapeLines.push(div);
+
+	return tapeLines.join("\n");
 }
 
 /* ========================================================================= */

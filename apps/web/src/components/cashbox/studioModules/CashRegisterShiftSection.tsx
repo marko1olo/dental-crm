@@ -13,10 +13,10 @@ import { ShieldCheck } from "lucide-react";
 import { formatRubles } from "../cashRegisterCatalogData.js";
 
 export interface CashRegisterShiftSectionProps {
-	readonly shiftNumber: number;
-	readonly kktRegNumber: string;
-	readonly ofdName: string;
-	readonly cashierFullName: string;
+	readonly shiftNumber?: number | undefined;
+	readonly kktRegNumber?: string | undefined;
+	readonly ofdName?: string | undefined;
+	readonly cashierFullName?: string | undefined;
 	readonly isShiftActive: boolean;
 	readonly isSubmitting: boolean;
 	readonly calculatedNetRevenue: number;
@@ -30,10 +30,10 @@ export interface CashRegisterShiftSectionProps {
 }
 
 export const CashRegisterShiftSection: React.FC<CashRegisterShiftSectionProps> = ({
-	shiftNumber,
-	kktRegNumber,
-	ofdName,
-	cashierFullName,
+	shiftNumber = 1,
+	kktRegNumber = "—",
+	ofdName = "Платформа ОФД",
+	cashierFullName = "Кассир",
 	isShiftActive,
 	isSubmitting,
 	calculatedNetRevenue,

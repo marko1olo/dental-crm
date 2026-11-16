@@ -123,7 +123,7 @@ describe("Red Team Clinical Inquisition: Mandates 8e & 8n Verification", () => {
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="inn-physical-not-required-badge"'), "Must render physical person optional badge");
+		assert.ok(html.includes('data-testid="payer-selection-section"'), "Must render payer selection section");
 		assert.ok(html.includes("Пациент (физлицо)"), "Must state clearly that payer is citizen");
 		assert.ok(!html.includes("54-ФЗ"), "Must not leak raw 54-FZ statute citation onto badge");
 	});

@@ -62,7 +62,7 @@ export const InvoicesModalsLayer: React.FC<InvoicesModalsLayerProps> = (props) =
 			<InvoicesPrimaryModals
 				isCreateModalOpen={isCreateModalOpen} setIsCreateModalOpen={setIsCreateModalOpen}
 				patientId={patientId} patientName={patientName} currentDoctorName={currentDoctorName}
-				clinicLegalName={clinicLegalName} invoices={invoices} handleCreateInvoice={handleCreateInvoice}
+				clinicLegalName={clinicLegalName} invoices={invoices} activePaymentInvoice={activePaymentInvoice} handleCreateInvoice={handleCreateInvoice}
 				isInstallmentsModalOpen={isInstallmentsModalOpen} setIsInstallmentsModalOpen={setIsInstallmentsModalOpen}
 				setBankInstallmentInvoice={setBankInstallmentInvoice} isShiftModalOpen={isShiftModalOpen}
 				setIsShiftModalOpen={setIsShiftModalOpen} isRegisterDrawerOpen={isRegisterDrawerOpen}

@@ -63,7 +63,7 @@ export function extractPortalPatient(request: FastifyRequest): AuthenticatedPort
  */
 export async function findUniquePatientByPhone(
 	rawPhone: string,
-	targetOrgId?: string,
+	targetOrgId?: string | undefined,
 ): Promise<{
 	id: string;
 	organizationId: string;

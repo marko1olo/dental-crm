@@ -136,13 +136,6 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 							&larr; Пациент (физлицо)
 						</button>
 					)}
-
-					<span
-						className="sr-only"
-						data-testid="inn-physical-not-required-badge"
-					>
-						Пациент (физлицо)
-					</span>
 				</div>
 
 				{/* Corporate / Sole Proprietor Mode: Compact Segmented Switch + INN Input */}

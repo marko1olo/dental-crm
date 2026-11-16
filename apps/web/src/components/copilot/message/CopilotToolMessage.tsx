@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import {
   Loader2, CheckCircle2, XCircle, AlertCircle, ChevronDown,
-  Activity, FileText, Receipt, Calendar, Camera, Pill, Wrench, Check, X
+  Activity, FileText, Receipt, Calendar, Camera, Wrench, Check, X
 } from 'lucide-react';
 import type { CopilotUiMessage, SelectIdHandler, BookSlotHandler, ConfirmHandler } from '../copilotTypes';
 import { CopilotResultCard } from '../CopilotResultCard';
@@ -46,10 +46,6 @@ function resolveToolMeta(toolName: string, args?: Record<string, unknown>) {
     Icon = Camera;
     cleanName = 'captureWorkstationScreenTool';
     if (args?.targetApp) paramHint = String(args.targetApp);
-  } else if (lower.includes('drug') || lower.includes('medication') || lower.includes('prescription')) {
-    Icon = Pill;
-    cleanName = 'checkDrugInteractionsTool';
-    if (args?.drug_name || args?.medication) paramHint = String(args.drug_name || args.medication);
   }
 
   const title = `Вызов: ${cleanName}${paramHint ? ` (${paramHint})` : ''}`;

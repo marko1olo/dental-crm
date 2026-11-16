@@ -61,8 +61,9 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 
 	// Финансы & Лояльность
 	const [bonusBalance, setBonusBalance] = useState<number>(() => (isDemo ? 2750 : 0));
-	const [depositBalance] = useState<number>(() => (isDemo ? 15000 : 0));
-	const [totalYearExpense] = useState<number>(() => (isDemo ? 148500 : 0));
+	const [depositBalance, setDepositBalance] = useState<number>(() => (isDemo ? 15000 : 0));
+	const [totalYearExpense, setTotalYearExpense] = useState<number>(() => (isDemo ? 148500 : 0));
+	const [sessionToken, setSessionToken] = useState<string | null>(null);
 
 	// Записи пациента
 	const [appointments, setAppointments] = useState<PatientAppointment[]>(() =>
@@ -142,8 +143,22 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 				const data = await res.json();
 				if (!isMounted || !data) return;
 
+				if (data.token) {
+					setSessionToken(data.token);
+					try {
+						localStorage.setItem("dente_portal_token", data.token);
+					} catch {
+						// Игнорируем недоступность хранилища в приватном режиме
+					}
+				}
 				if (data.patient?.bonusBalanceRub !== undefined) {
 					setBonusBalance(data.patient.bonusBalanceRub);
+				}
+				if (data.patient?.depositBalanceRub !== undefined) {
+					setDepositBalance(data.patient.depositBalanceRub);
+				}
+				if (data.patient?.totalYearExpenseRub !== undefined) {
+					setTotalYearExpense(data.patient.totalYearExpenseRub);
 				}
 				if (data.patient?.fullName) {
 					setPayerFullName((prev) => prev || data.patient.fullName);
@@ -329,35 +344,37 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 				costRub: app.costRub,
 			})),
 			treatmentPlans: [],
-			invoices: appointments.map((app, idx) => {
-				const cost = totalYearExpense > 0 ? Math.round(totalYearExpense / (appointments.length || 1)) : 15000;
-				const title = serviceCode === "2" ? "Дентальная имплантация (дорогостоящее лечение)" : (app.procedureTitle || "Стоматологическое лечение");
-				return {
-					id: `inv-${app.id || idx}`,
-					invoiceNumber: `Ч-${idx + 1}`,
-					issueDateIso: `${taxYear}-06-15`,
-					paidAtIso: `${taxYear}-06-15`,
-					titleRu: title,
-					totalAmountRub: cost,
-					paidAmountRub: cost,
-					remainingAmountRub: 0,
-					status: "paid" as const,
-					fiscalReceiptNumber: `ФД-${1000 + idx}`,
-					items: [{
-						code: serviceCode === "2" ? "A16.07.054.001" : "A16.07.002.001",
-						titleRu: title,
-						quantity: 1,
-						priceRub: cost,
-						totalRub: cost,
-					}],
-				};
-			}),
+			invoices: isDemo
+				? appointments
+						.filter((app) => app.isPast && typeof app.costRub === "number" && app.costRub > 0)
+						.map((app, idx) => ({
+							id: `inv-${app.id || idx}`,
+							invoiceNumber: `Ч-${idx + 1}`,
+							issueDateIso: `${taxYear}-08-14`,
+							paidAtIso: `${taxYear}-08-14`,
+							titleRu: app.procedureTitle || "Стоматологическое лечение",
+							totalAmountRub: app.costRub ?? 0,
+							paidAmountRub: app.costRub ?? 0,
+							remainingAmountRub: 0,
+							status: "paid" as const,
+							fiscalReceiptNumber: `ФД-${1000 + idx}`,
+							items: [
+								{
+									code: "A16.07.002.001",
+									titleRu: app.procedureTitle || "Стоматологическое лечение",
+									quantity: 1,
+									priceRub: app.costRub ?? 0,
+									totalRub: app.costRub ?? 0,
+								},
+							],
+						}))
+				: [],
 			warranties: [],
 			passport: payerPassport.trim() || undefined,
 		};
 
 		try {
-			await downloadPatientTaxCertificate1151156(cabinetData, taxYear);
+			await downloadPatientTaxCertificate1151156(cabinetData, taxYear, sessionToken);
 			setIsTaxCertGenerated(true);
 		} catch (err: unknown) {
 			console.error("Failed to download tax certificate:", err);
@@ -372,8 +389,8 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		bonusBalance,
 		appointments,
 		taxYear,
-		totalYearExpense,
-		serviceCode,
+		sessionToken,
+		isDemo,
 		payerPassport,
 	]);
 
@@ -389,7 +406,10 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		bonusBalance,
 		setBonusBalance,
 		depositBalance,
+		setDepositBalance,
 		totalYearExpense,
+		setTotalYearExpense,
+		sessionToken,
 		appointments,
 		setAppointments,
 		appointmentFilter,

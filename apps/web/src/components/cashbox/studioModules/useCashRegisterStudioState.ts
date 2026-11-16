@@ -9,7 +9,7 @@
  * - GlobalToast: Human-friendly feedback on every transaction and error.
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
@@ -94,13 +94,24 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		onClose,
 	} = props;
 
-	const baseDueRub = useMemo(() => {
+	const rawBaseDueRub = useMemo(() => {
 		if (propTotalDueRub !== undefined) return propTotalDueRub;
 		if (propAmountRub !== undefined) return propAmountRub;
 		if (propTotalDueKopecks !== undefined) return kopecksToRub(BigInt(propTotalDueKopecks));
 		if (propAmountKopecks !== undefined) return kopecksToRub(BigInt(propAmountKopecks));
 		return 0;
 	}, [propTotalDueRub, propAmountRub, propTotalDueKopecks, propAmountKopecks]);
+
+	const [customBaseDueRub, setCustomBaseDueRub] = useState<number | null>(null);
+	const [appliedDmsSplit, setAppliedDmsSplit] = useState<{
+		totalDueRub: number;
+		dmsRub: number;
+		patientRub: number;
+		insurerName?: string | undefined;
+		letterNumber?: string | undefined;
+	} | null>(null);
+
+	const baseDueRub = customBaseDueRub ?? rawBaseDueRub;
 
 	const normalizedTab: CashRegisterStudioTab =
 		mode === "shift" || initialTab === "reconciliation" || initialTab === "drawer"
@@ -156,6 +167,74 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const splitDiffKop = effectiveTotalKop - totalSplitAllocatedKop;
 	const isSplitBalanced = splitDiffKop === 0n;
 
+	// DMS Split Event Bus Listener (Mandates 8aq & 8e: Seamless DMS-to-Cashbox Bridge)
+	useEffect(() => {
+		const handleApplySplit = (e: Event) => {
+			const ce = e as CustomEvent<{
+				totalDueRub?: number | undefined;
+				dmsRub?: number | undefined;
+				patientRub?: number | undefined;
+				patientCopayRub?: number | undefined;
+				patientMethod?: CashboxTenderType | undefined;
+				patientCashRub?: number | undefined;
+				patientCardRub?: number | undefined;
+				letterId?: string | undefined;
+				letterNumber?: string | undefined;
+				insurerName?: string | undefined;
+				invoiceId?: string | undefined;
+			}>;
+			const d = ce.detail;
+			if (!d) return;
+
+			const copay = d.patientRub ?? d.patientCopayRub ?? 0;
+			const dms = d.dmsRub ?? 0;
+			const total = d.totalDueRub ?? (copay + dms);
+
+			setCustomBaseDueRub(copay > 0 ? copay : total);
+			setAppliedDmsSplit({
+				totalDueRub: total,
+				dmsRub: dms,
+				patientRub: copay,
+				insurerName: d.insurerName,
+				letterNumber: d.letterNumber,
+			});
+
+			if (
+				d.patientCashRub !== undefined &&
+				d.patientCardRub !== undefined &&
+				(d.patientCashRub > 0 || d.patientCardRub > 0)
+			) {
+				setMethod("split");
+				setSplitCashRub(d.patientCashRub);
+				setSplitCardRub(d.patientCardRub);
+				setCashReceivedRub(d.patientCashRub);
+			} else if (d.patientMethod === "cash") {
+				setMethod("cash");
+				setCashReceivedRub(copay);
+				setSplitCashRub(copay);
+				setSplitCardRub(0);
+			} else {
+				setMethod("card");
+				setSplitCardRub(copay);
+				setSplitCashRub(0);
+				setCashReceivedRub(0);
+			}
+			setSplitSbpRub(0);
+			setSplitDepositRub(0);
+			setActiveTab("checkout");
+
+			showToast(
+				`Применен сплит ДМС: страховая ${Math.round(dms).toLocaleString("ru-RU")} ₽, к доплате ${Math.round(copay).toLocaleString("ru-RU")} ₽`,
+				"success",
+			);
+		};
+
+		window.addEventListener("dente:cashbox-apply-split", handleApplySplit);
+		return () => {
+			window.removeEventListener("dente:cashbox-apply-split", handleApplySplit);
+		};
+	}, []);
+
 	// Split cash change
 	const splitCashChange = useMemo(() => {
 		if (splitCashReceivedRub <= 0 || splitCashRub <= 0) return null;
@@ -186,6 +265,34 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		}
 	}, [splitCashKop, splitCardKop, splitSbpKop, splitDepositKop, splitDiffKop]);
 
+	const [recentOperations, setRecentOperations] = useState<Array<{
+		id: string;
+		operationType: string;
+		amountRub: number;
+		reasonText?: string | null;
+		createdAt: string;
+	}>>([]);
+
+	useEffect(() => {
+		let isCancelled = false;
+		async function fetchRecentOps() {
+			try {
+				const res = await fetch("/api/cash/operation-list", {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const json = await res.json().catch(() => null);
+				if (!isCancelled && json?.data && Array.isArray(json.data)) {
+					setRecentOperations(json.data.slice(0, 10));
+				}
+			} catch {
+				// non-blocking / offline fallback
+			}
+		}
+		void fetchRecentOps();
+		return () => { isCancelled = true; };
+	}, [isShiftActive]);
+
 	const totalShiftKop =
 		rubToKopecks(initialCashDrawer) +
 		rubToKopecks(initialCardSum) +
@@ -205,6 +312,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				cardSumRub: initialCardSum,
 				sbpSumRub: initialSbpSum,
 				advanceOffsetRub: initialAdvanceSum,
+				operations: recentOperations,
 				width: printFormat === "tape_58mm" ? "tape_58mm" : "tape_80mm",
 			}),
 		[
@@ -217,6 +325,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			initialCardSum,
 			initialSbpSum,
 			initialAdvanceSum,
+			recentOperations,
 			printFormat,
 		],
 	);
@@ -456,12 +565,47 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		try {
 			if (isShiftActive) {
 				const closeFn = props.onCloseShiftAction || props.onCloseShift;
-				if (closeFn) await closeFn();
+				if (closeFn) {
+					await closeFn();
+				} else {
+					const headers = denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					});
+					const res = await fetch("/api/cash/shift/close", {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							force: true,
+							cashierFullName,
+						}),
+					});
+					if (!res.ok) {
+						const errJson = await res.json().catch(() => null);
+						throw new Error(errJson?.message || `Ошибка закрытия смены (код ${res.status})`);
+					}
+				}
 				setIsShiftActive(false);
 				showToast(`Кассовая смена №${shiftNumber} закрыта, Z-отчёт сформирован`, "success");
 			} else {
 				const openFn = props.onOpenShiftAction || props.onOpenShift;
-				if (openFn) await openFn();
+				if (openFn) {
+					await openFn();
+				} else {
+					const headers = denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					});
+					const res = await fetch("/api/cash/shift/open", {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							openedByUserId: undefined,
+						}),
+					});
+					if (!res.ok) {
+						const errJson = await res.json().catch(() => null);
+						throw new Error(errJson?.message || `Ошибка открытия смены (код ${res.status})`);
+					}
+				}
 				setIsShiftActive(true);
 				showToast(`Кассовая смена №${shiftNumber} успешно открыта`, "success");
 			}
@@ -471,7 +615,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [isSubmitting, isShiftActive, props, shiftNumber]);
+	}, [isSubmitting, isShiftActive, props, cashierFullName, shiftNumber]);
 
 	const handlePrintXReport = useCallback(async () => {
 		try {
@@ -540,6 +684,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		splitCashChange,
 		calculatedNetRevenue,
 		tapeText,
+		appliedDmsSplit,
 		handleBalanceSplit,
 		handleExecutePayment,
 		handleToggleShift,

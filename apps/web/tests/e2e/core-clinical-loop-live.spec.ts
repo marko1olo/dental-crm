@@ -187,8 +187,8 @@ test.describe("Core Clinical Loop Live E2E (PostgreSQL 18 + Fastify API)", () =>
 		await cashierModal.waitFor({ state: "visible", timeout: 15_000 });
 
 		// Проверка пассивной безопасности и отсутствия требования ИНН у физлиц (Мандат 8n)
-		const innBadge = page.locator('[data-testid="inn-physical-not-required-badge"]').first();
-		await expect(innBadge).toBeVisible();
+		const payerSection = page.locator('[data-testid="payer-selection-section"]').first();
+		await expect(payerSection).toBeVisible();
 
 		// Выбор способа оплаты "Сплит"
 		const tenderSplitBtn = page.locator('[data-testid="btn-tender-split"]').first();
@@ -261,9 +261,9 @@ test.describe("Core Clinical Loop Live E2E (PostgreSQL 18 + Fastify API)", () =>
 		const cashierModal = page.locator('[data-testid="cash-register-studio-modal"], [data-testid="cashier-studio-modal"]').first();
 		await cashierModal.waitFor({ state: "visible", timeout: 15_000 });
 
-		// Проверка бейджа 54-ФЗ без ИНН
-		const innBadge = page.locator('[data-testid="inn-physical-not-required-badge"]').first();
-		await expect(innBadge).toBeVisible();
+		// Проверка секции плательщика 54-ФЗ без ИНН
+		const payerSection = page.locator('[data-testid="payer-selection-section"]').first();
+		await expect(payerSection).toBeVisible();
 
 		// Фиксация экрана Mobile Dark
 		const shotPath = path.join(PROOFS_DIR, "04_core_clinical_loop_mobile_dark_390x844.png");

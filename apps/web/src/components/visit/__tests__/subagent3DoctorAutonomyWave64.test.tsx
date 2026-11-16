@@ -126,10 +126,10 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 		assert.strictEqual(warrantyResult.paymentStatus, "Оплачено (скидка 100%)");
 		assert.strictEqual(warrantyResult.bypassKktZeroReceipt, true);
 
-		// Verify CashRegisterStudioModal contains physical person non-requirement badge and warranty preset
+		// Verify CashRegisterStudioModal contains payer selection section and warranty preset
 		assert.ok(
-			cashRegisterControlsSource.includes("data-testid=\"inn-physical-not-required-badge\""),
-			"CashRegisterStudioModal must display 54-FZ badge that INN is not required for physical persons",
+			cashRegisterControlsSource.includes("data-testid=\"payer-selection-section\""),
+			"CashRegisterStudioModal must display 54-FZ section for payer selection",
 		);
 		assert.ok(
 			cashRegisterControlsSource.includes("preset-warranty-100"),

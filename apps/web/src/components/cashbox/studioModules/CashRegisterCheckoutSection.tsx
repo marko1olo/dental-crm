@@ -71,6 +71,13 @@ export interface CashRegisterCheckoutSectionProps {
 	readonly printFormat: string;
 	readonly setPrintFormat: (val: string) => void;
 	readonly onExecutePayment: () => void;
+	readonly appliedDmsSplit?: {
+		readonly totalDueRub: number;
+		readonly dmsRub: number;
+		readonly patientRub: number;
+		readonly insurerName?: string | undefined;
+		readonly letterNumber?: string | undefined;
+	} | null | undefined;
 }
 
 export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionProps> = ({
@@ -119,6 +126,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 	printFormat,
 	setPrintFormat,
 	onExecutePayment,
+	appliedDmsSplit,
 }) => {
 	const allergiesList = Array.isArray(patientAllergies)
 		? patientAllergies.filter(Boolean)
@@ -128,6 +136,37 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 
 	return (
 		<div className="space-y-4">
+			{appliedDmsSplit && (
+				<div
+					className="p-3 rounded-xl border flex items-center justify-between gap-3 text-xs"
+					style={{
+						background: "rgba(13, 148, 136, 0.08)",
+						borderColor: "var(--teal, #0d9488)",
+						color: "var(--ink)",
+					}}
+					data-testid="cashbox-dms-split-badge"
+				>
+					<div className="flex items-center gap-2">
+						<span className="font-bold text-[var(--teal,#0d9488)]">Полис ДМС:</span>
+						<span>
+							{appliedDmsSplit.insurerName || "Страховая компания"} покрывает{" "}
+							{formatRubles(appliedDmsSplit.dmsRub)}
+						</span>
+						{appliedDmsSplit.letterNumber && (
+							<span className="text-[var(--muted)]">
+								({appliedDmsSplit.letterNumber})
+							</span>
+						)}
+					</div>
+					<div className="font-semibold text-right">
+						Доплата на кассе:{" "}
+						<span className="font-bold text-[var(--teal,#0d9488)]">
+							{formatRubles(appliedDmsSplit.patientRub)}
+						</span>
+					</div>
+				</div>
+			)}
+
 			{/* Patient & Doctor Context Bar / Empty State */}
 			{patientName ? (
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] flex flex-wrap items-center justify-between gap-2 text-xs">

@@ -88,6 +88,7 @@ export function FinanceModalsHost({
 				clinicName={clinicName}
 				clinicLegalName={clinicName}
 				cashierInn={clinic?.inn}
+				onCloseShiftAction={s.handleCloseShift}
 				totalDueRub={totalBill}
 				amountRub={totalBill}
 				amountKopecks={Math.round(totalBill * 100)}

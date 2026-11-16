@@ -20,6 +20,7 @@ import {
 	applyExpressPerioPreset, applyHealthyPeriodontiumPreset, applyUpperJawNormPreset,
 	applyLowerJawNormPreset, applyZeroBopPreset, applyZeroCalculusAndPlaquePreset,
 	computePsrSummary, deductPeriodontalConsumablesSoftOverdraft, dispatchPresetSideEffects,
+	generatePerioProtocolText,
 	PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG, PERIO_TREATMENT_PROTOCOLS,
 	type PerioTreatmentProtocol, type PsrCode, type PsrScreeningMap, type PsrSextantId, SITES, type SiteKey,
 } from "./perioCatalogData";
@@ -120,6 +121,16 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		dispatchPresetSideEffects({ ...res, service: { code: protocol.code804n, name: protocol.titleRu, price: protocol.defaultPriceRub, category: "hygiene" } }, onInsertToProtocol);
 	}, [teeth, onInsertToProtocol]);
 
+	const dispatchPerioSoapSync = useCallback((currentTeeth: readonly PerioToothRecord[]) => {
+		const text = generatePerioProtocolText(currentTeeth);
+		if (onInsertToProtocol) onInsertToProtocol(text);
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
+				detail: { statusLocalis: text, objectiveStatus: text, mode: "smart_append" },
+			}));
+		}
+	}, [onInsertToProtocol]);
+
 	const handleSave = useCallback(async () => {
 		if (syncStatus === "saving") return;
 		setSyncStatus("saving");
@@ -144,6 +155,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			}
 			await deductPeriodontalConsumablesSoftOverdraft(summary.deepPocketsCount > 0 ? "vector" : "hygiene", visitId);
 			setSyncStatus("saved");
+			dispatchPerioSoapSync(teeth);
 			if (onSave) onSave(teeth, summary);
 			showToast("✓ Пародонтограмма сохранена в ЭМК", "success");
 			if (isModal && onClose) onClose();
@@ -152,11 +164,12 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch { /* noop */ }
 			}
 			setSyncStatus("saved");
+			dispatchPerioSoapSync(teeth);
 			showToast("✓ Пародонтограмма сохранена локально (офлайн-кэш)", "info");
 			if (onSave) onSave(teeth, summary);
 			if (isModal && onClose) onClose();
 		}
-	}, [syncStatus, patientId, teeth, psrSummary, screeningMap, summary, onSave, isModal, onClose]);
+	}, [syncStatus, patientId, teeth, psrSummary, screeningMap, summary, dispatchPerioSoapSync, onSave, isModal, onClose]);
 
 	const handlePrintProtocol = useCallback(() => {
 		if (typeof window !== "undefined") {
@@ -268,22 +281,11 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			if (e.key >= "2" && e.key <= "9") {
 				e.preventDefault();
 				handleUpdateDepth(Number(e.key));
-			} else if (e.code === "Space" || e.key === " ") {
-				e.preventDefault();
-				handleToggleBop();
-			} else if (e.key === "Tab") {
-				e.preventDefault();
-				handleNavigateSite(e.shiftKey ? "prev" : "next");
-			} else if (e.key === "ArrowRight") {
-				e.preventDefault();
-				handleNavigateTooth("next");
-			} else if (e.key === "ArrowLeft") {
-				e.preventDefault();
-				handleNavigateTooth("prev");
-			} else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-				e.preventDefault();
-				handleToggleJawAspect();
-			}
+			} else if (e.code === "Space" || e.key === " ") { e.preventDefault(); handleToggleBop(); }
+			else if (e.key === "Tab") { e.preventDefault(); handleNavigateSite(e.shiftKey ? "prev" : "next"); }
+			else if (e.key === "ArrowRight") { e.preventDefault(); handleNavigateTooth("next"); }
+			else if (e.key === "ArrowLeft") { e.preventDefault(); handleNavigateTooth("prev"); }
+			else if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); handleToggleJawAspect(); }
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => {

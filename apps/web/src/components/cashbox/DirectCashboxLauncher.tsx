@@ -161,6 +161,29 @@ export const DirectCashboxLauncher: React.FC = () => {
 			}
 		};
 
+		const handleSplitApply = (e: Event) => {
+			const ce = e as CustomEvent<{
+				patientRub?: number | undefined;
+				patientCopayRub?: number | undefined;
+				patientId?: string | undefined;
+				patientName?: string | undefined;
+				invoiceId?: string | undefined;
+			}>;
+			const d = ce?.detail;
+			const copay = d?.patientRub ?? d?.patientCopayRub ?? 0;
+			setCustomData({
+				mode: "checkout",
+				amountRub: copay,
+				patientId: d?.patientId,
+				patientName: d?.patientName,
+				invoiceId: d?.invoiceId,
+			});
+			setUrlState({
+				isOpen: true,
+				view: "checkout",
+			});
+		};
+
 		window.addEventListener("dente:open-cashbox", handleCustomOpen);
 		window.addEventListener("dente-open-cashbox", handleCustomOpen);
 		window.addEventListener("dente:open-cashier", handleCustomOpen);
@@ -169,6 +192,7 @@ export const DirectCashboxLauncher: React.FC = () => {
 		window.addEventListener("dente-open-fast-checkout", handleCustomOpen);
 		window.addEventListener("dente:open-payment-modal", handleCustomOpen);
 		window.addEventListener("dente-open-payment-modal", handleCustomOpen);
+		window.addEventListener("dente:cashbox-apply-split", handleSplitApply);
 
 		return () => {
 			window.removeEventListener("hashchange", checkUrl);
@@ -181,6 +205,7 @@ export const DirectCashboxLauncher: React.FC = () => {
 			window.removeEventListener("dente-open-fast-checkout", handleCustomOpen);
 			window.removeEventListener("dente:open-payment-modal", handleCustomOpen);
 			window.removeEventListener("dente-open-payment-modal", handleCustomOpen);
+			window.removeEventListener("dente:cashbox-apply-split", handleSplitApply);
 		};
 	}, [checkUrl]);
 

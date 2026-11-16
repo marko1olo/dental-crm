@@ -1,5 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { appointments, patients, users, visits } from "../../db/schema.js";
@@ -7,6 +8,8 @@ import {
 	isDbConnectionError,
 	TelegramReferralLoyaltyService,
 } from "../../services/telegram/TelegramReferralLoyaltyService.js";
+import { signToken } from "../../utils/cryptoHelper.js";
+import { PORTAL_TOKEN_KIND, PORTAL_TOKEN_TTL_SECONDS } from "../portal/types.js";
 import { calculateAvailableSlots } from "../publicBooking/bookingModules/publicBookingSlotEngine.js";
 import {
 	toothComplaintSchema,
@@ -204,18 +207,31 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 						id: visits.id,
 						startTime: visits.createdAt,
 						status: visits.status,
-						doctorName: sql<string>`'Лечащий врач'`,
+						doctorName: sql<string>`COALESCE(${users.fullName}, 'Лечащий врач')`,
 						doctorSpecialty: sql<string>`'Врач-стоматолог'`,
 						diagnosis: visits.diagnosis,
 					})
 					.from(visits)
+					.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+					.leftJoin(users, eq(appointments.doctorUserId, users.id))
 					.where(and(eq(visits.organizationId, organizationId), eq(visits.patientId, targetPatient.id)))
 					.orderBy(sql`${visits.createdAt} DESC`)
 					.limit(10);
 
+				const portalToken = signToken(
+					{
+						sub: targetPatient.id,
+						organizationId,
+						kind: PORTAL_TOKEN_KIND,
+					},
+					requireAuthTokenSecret(),
+					PORTAL_TOKEN_TTL_SECONDS,
+				);
+
 				return reply.send({
 					success: true,
 					authenticated: true,
+					token: portalToken,
 					patient: {
 						id: targetPatient.id,
 						fullName: targetPatient.fullName,

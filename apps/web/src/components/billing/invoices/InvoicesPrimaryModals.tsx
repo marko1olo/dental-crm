@@ -20,6 +20,8 @@ interface InvoicesPrimaryModalsProps {
 	readonly currentDoctorName: string;
 	readonly clinicLegalName: string;
 	readonly invoices: BillingInvoice[];
+	readonly activePaymentInvoice?: BillingInvoice | null | undefined;
+	readonly onCloseShiftAction?: (() => Promise<void> | void) | undefined;
 	readonly handleCreateInvoice: (params: {
 		patientName: string; serviceName: string; servicePriceRub: number; isWarranty100: boolean;
 	}) => void;
@@ -37,11 +39,14 @@ interface InvoicesPrimaryModalsProps {
 export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (props) => {
 	const {
 		isCreateModalOpen, setIsCreateModalOpen, patientId, patientName,
-		currentDoctorName, clinicLegalName, invoices, handleCreateInvoice,
-		isInstallmentsModalOpen, setIsInstallmentsModalOpen, setBankInstallmentInvoice,
-		isShiftModalOpen, setIsShiftModalOpen, isRegisterDrawerOpen,
-		setIsRegisterDrawerOpen, setActivePaymentInvoice, onUpdateInvoice,
+		currentDoctorName, clinicLegalName, invoices, activePaymentInvoice,
+		onCloseShiftAction, handleCreateInvoice, isInstallmentsModalOpen,
+		setIsInstallmentsModalOpen, setBankInstallmentInvoice, isShiftModalOpen,
+		setIsShiftModalOpen, isRegisterDrawerOpen, setIsRegisterDrawerOpen,
+		setActivePaymentInvoice, onUpdateInvoice,
 	} = props;
+
+	const selectedInvoice = activePaymentInvoice ?? (invoices.length > 0 ? invoices[0] : null);
 
 	return (
 		<>
@@ -56,7 +61,7 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 					patientId={patientId} patientName={patientName} clinicName={clinicLegalName}
 					onOpenBankInstallment={() => {
 						setIsInstallmentsModalOpen(false);
-						setBankInstallmentInvoice(invoices[0] || null);
+						setBankInstallmentInvoice(selectedInvoice || null);
 					}}
 				/>
 			)}
@@ -69,6 +74,7 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 					initialTab="reconciliation"
 					clinicLegalName={clinicLegalName}
 					cashierFullName={currentDoctorName}
+					onCloseShiftAction={onCloseShiftAction}
 					containerTestId="cash-register-modal"
 					submitButtonTestId="btn-confirm-close-shift-z-report"
 					title="Касса и чеки · Управление сменой и Z-отчёт"
@@ -83,20 +89,23 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 					initialTab="checkout"
 					cashierFullName={currentDoctorName}
 					clinicLegalName={clinicLegalName}
-					patientName={invoices[0]?.patientName}
-					patientId={invoices[0]?.patientId}
-					totalDueRub={invoices[0]?.totalAmountRub}
-					invoiceId={invoices[0]?.id}
+					patientName={selectedInvoice?.patientName || patientName || undefined}
+					patientId={selectedInvoice?.patientId || patientId || undefined}
+					totalDueRub={selectedInvoice?.totalAmountRub ?? 0}
+					amountRub={selectedInvoice?.totalAmountRub ?? 0}
+					amountKopecks={selectedInvoice ? Math.round(selectedInvoice.totalAmountRub * 100) : 0}
+					invoiceId={selectedInvoice?.id || undefined}
 					onSuccess={() => {
-						if (invoices[0] && onUpdateInvoice) {
+						if (selectedInvoice && onUpdateInvoice) {
 							onUpdateInvoice({
-								...invoices[0],
+								...selectedInvoice,
 								status: "paid",
-								paidAmountRub: invoices[0].totalAmountRub,
+								paidAmountRub: selectedInvoice.totalAmountRub,
 								paidAt: new Date().toISOString(),
 							});
 						}
-						showToast(`Оплата по счёту ${invoices[0]?.number || ""} успешно зафиксирована в кассе`, "success");
+						const invNumText = selectedInvoice?.number ? ` ${selectedInvoice.number}` : "";
+						showToast(`Оплата по счёту${invNumText} успешно зафиксирована в кассе`, "success");
 					}}
 				/>
 			)}

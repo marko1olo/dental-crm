@@ -4,10 +4,10 @@ export interface ClinicBranch {
 	id: string;
 	name: string;
 	address: string;
-	metro?: string;
+	metro?: string | undefined;
 	phone: string;
 	workHours: string;
-	isMain?: boolean;
+	isMain?: boolean | undefined;
 }
 
 export interface PopularService {
@@ -15,7 +15,7 @@ export interface PopularService {
 	title: string;
 	durationMinutes: number;
 	priceFormatted: string;
-	description?: string;
+	description?: string | undefined;
 }
 
 export interface ServiceCategory {
@@ -65,8 +65,8 @@ export interface BookingCategoryOption {
 	durationMinutes: number;
 	priceLabel: string;
 	iconName: "Stethoscope" | "Sparkles" | "Activity" | "Smile" | "Scissors";
-	badge?: string;
-	isPopular?: boolean;
+	badge?: string | undefined;
+	isPopular?: boolean | undefined;
 }
 
 export interface BookingConfirmationData {
