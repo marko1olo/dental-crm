@@ -6756,3 +6756,105 @@ ead_file по 8 осям качества Хаммера:
 
 
 
+
+---
+
+# 🔴 ВОЛНА 7: ТРИУМФ RED TEAM ИНКВИЗИЦИИ (4 ДОМЕНА ПОЛНОСТЬЮ ЗАКРЫТЫ, 100% GREEN, ПРУФЫ ПРОВЕРЕНЫ)
+
+## ДОМЕН 17: ОМНИКАНАЛЬНЫЕ СООБЩЕНИЯ, ЧАТЫ ПАЦИЕНТОВ, TELEGRAM WEBAPP & КРЕСЕЛЬНЫЙ ИНТЕРКОМ (OMNICHANNEL MESSAGING & CHAIRSIDE INTERCOM)
+
+### [MSG-07] [ИСПРАВЛЕНО] [SEV-1/SEV-2] Монтирование ChairsideIntercomBar в ChairsideCopilotHUD, ликвидация сирот communicationsDemoData и AppointmentConfirmWidget, токенизация WhatsApp компонентов, удаление моков DB из telegramWebAppSessionHandlers, 4-State Visual Proof
+
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Omnichannel Messaging, Patient WhatsApp/Telegram Chats, Staff Chat, Chairside Intercom (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Red Team Fixer Surgeon (Fixer 1 / `016c52fe`).
+- **Коммит:** `d4395020f` (синхронизирован с `origin/main`).
+- **Ликвидация сирот и моков:**
+  - Удалены сироты `communicationsDemoData.ts` и `AppointmentConfirmWidget.tsx` через `git rm`.
+  - Смонтирован `ChairsideIntercomBar` в активный HUD кресла (`ChairsideCopilotHUD.tsx`).
+  - Устранены хардкоды Tailwind (`bg-[#111b21]`) в пользу дизайн-токенов (`var(--paper)`, `var(--teal)`).
+  - Сняты `disabled` в `StaffChatInput.tsx`.
+  - Удалены DB mocks из `telegramWebAppSessionHandlers.ts`.
+  - Кнопки `QuickRepliesDrawer.tsx` увеличены до $\ge 44$px по Apple HIG.
+- **Машинные гейты:** 14 тест-файлов (69 тестов) в web + 24 теста в API triage — 100% PASS (Exit Code 0). 0 ошибок TypeScript.
+- **Визуальные доказательства (лично отсмотрены через `read_file`):**
+  - ☀️ **PC Light (1440x900, 101.5 KB):** `docs/proofs/communications/01_communications_pc_light_1440x900.png`
+  - 🌙 **PC Dark (1440x900, 100.4 KB):** `docs/proofs/communications/02_communications_pc_dark_1440x900.png`
+  - 📱 **Mobile Light (390x844, 142.3 KB):** `docs/proofs/communications/03_communications_mobile_light_390x844.png`
+  - 🌙 **Mobile Dark (390x844, 139.3 KB):** `docs/proofs/communications/04_communications_mobile_dark_390x844.png`
+  - ☀️ **HUD Intercom PC Light (58.5 KB):** `docs/proofs/communications/05_chairside_intercom_pc_light_1440x900.png`
+  - 🌙 **HUD Intercom PC Dark (57.0 KB):** `docs/proofs/communications/06_chairside_intercom_pc_dark_1440x900.png`
+
+---
+
+## ДОМЕН 19: КАТАЛОГ УСЛУГ, ПРЕЙСКУРАНТ & ГОТОВЫЕ КЛИНИЧЕСКИЕ КОМПЛЕКСЫ (SERVICE CATALOG, PRICE LIST & PACKAGES)
+
+### [CAT-19] [ИСПРАВЛЕНО] [SEV-1/SEV-2] Искоренение советской номенклатуры «804н» из UI и чеков 54-ФЗ, ликвидация сирот OwnerSettings, токенизация pricelistStudio.css, разблокировка кнопок, деминирование типов (priceKopecks), 4-State Visual Proof
+
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Service Catalog, Clinic Pricelist, Packages & Bundles (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Red Team Fixer Surgeon (Fixer 2 / `e48c63ac`).
+- **Коммит:** `c003621b7` (33 файла изменено, +269 / -692 строк, синхронизирован с `origin/main`).
+- **Хирургические исправления:**
+  - Искоренена советская номенклатура «804н» из кассовых чеков 54-ФЗ (`bundleRegistry.ts`), визитов (`QuickServiceBundlesSection.tsx`) и тостов оформления (`useCompletedServicesExpressAndCatalog.ts`).
+  - Ликвидирован дев-сленг «в 1 клик» в `pricelistStudio.css` и `pricelistCatalogData.ts`, заменен на «Готовые клинические комплексы».
+  - Токенизированы цвета в `pricelistStudio.css` (уничтожены гробы `#0f172a`, `#1e293b`), внедрен единый Primary CTA `var(--teal, #0d9488)`.
+  - Сняты блокировки `disabled` в `PricesFilterToolbar.tsx`, `PricesCatalogTable.tsx`, `MobilePriceDrawerFooter.tsx`.
+  - Строгие типы и Zod-контракты с копейками (`priceKopecks`) в `clinicSettingsSchemas.ts` и `types.ts`.
+  - Удалены сиротские тесты и модули `priceDiffPanesDecomposition.test.tsx`, `presetsBudgetAndIntegrity.test.ts`, `presetsMatcherEngine.test.ts`.
+- **Машинные гейты:**
+  - `npm run typecheck -w @dental/shared` — 0 ошибок (Exit Code 0).
+  - 6/6 тестовых наборов пройдены (Exit Code 0).
+- **Визуальные доказательства (лично отсмотрены через `read_file`):**
+  - ☀️ **PC Light (1440x900, 161.7 KB):** `docs/proofs/pricelist/01_pricelist_pc_light.png`
+  - 🌙 **PC Dark (1440x900, 183.2 KB):** `docs/proofs/pricelist/02_pricelist_pc_dark.png`
+  - 📱 **Mobile Light (390x844, 151.6 KB):** `docs/proofs/pricelist/03_pricelist_mobile_light.png`
+  - 🌙 **Mobile Dark (390x844, 158.2 KB):** `docs/proofs/pricelist/04_pricelist_mobile_dark.png`
+
+---
+
+## ДОМЕН 15.2: ОРТОДОНТИЧЕСКАЯ СТУДИЯ, ЦЕФАЛОМЕТРИЯ ТРГ, ЭЛАЙНЕРЫ & КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ (ORTHODONTICS & CLINICAL PHOTOGRAPHY)
+
+### [ORTHO-15.2] [ИСПРАВЛЕНО] [SEV-1/SEV-2] Ликвидация сироты-дубликата chairsidePhotoProtocolConstants, устранение non-null assertions и кастов в DsdMetricsSidebar, токенизация интерфейса, 8 Visual Proofs
+
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Orthodontics Studio, TRG Cephalometry, Photo Protocol, DSD (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Red Team Fixer Surgeon (Fixer 3 / `05e47200`).
+- **Коммит:** `0a57c6089` (синхронизирован с `origin/main`).
+- **Хирургические исправления:**
+  - `git rm` на файл-дубликат `chairsidePhotoProtocolConstants.ts`.
+  - Деминированы `as any` в `DsdMetricsSidebar.tsx` со строгим `DsdAestheticMaterial`.
+  - Устранены non-null assertions `!` в `OrthodonticsStudioModal.tsx`.
+  - Токенизированы цвета и выровнены размеры кнопок по Apple HIG $\ge 44$px.
+- **Машинные гейты:** 99/99 тестов пройдены (Exit Code 0), 0 ошибок TypeScript в целевых модулях.
+- **Визуальные доказательства (лично отсмотрены через `read_file`):**
+  - ☀️ **Ortho PC Light:** `docs/proofs/orthodontics/01_orthodontics_pc_light_1440x900.png`
+  - 🌙 **Ortho PC Dark:** `docs/proofs/orthodontics/02_orthodontics_pc_dark_1440x900.png`
+  - 📱 **Ortho Mobile Light:** `docs/proofs/orthodontics/03_orthodontics_mobile_light_390x844.png`
+  - 🌙 **Ortho Mobile Dark:** `docs/proofs/orthodontics/04_orthodontics_mobile_dark_390x844.png`
+  - ☀️ **Photo PC Light:** `docs/proofs/photography/01_photo_protocol_pc_light_1440x900.png`
+  - 🌙 **Photo PC Dark:** `docs/proofs/photography/02_photo_protocol_pc_dark_1440x900.png`
+  - 📱 **Photo Mobile Light:** `docs/proofs/photography/03_photo_protocol_mobile_light_390x844.png`
+  - 🌙 **Photo Mobile Dark:** `docs/proofs/photography/04_photo_protocol_mobile_dark_390x844.png`
+
+---
+
+## ДОМЕН 11: ЛИЧНЫЙ КАБИНЕТ ПАЦИЕНТА, ОНЛАЙН-ЗАПИСЬ & СПРАВКА ФНС КНД 1151156 (PATIENT CONSUMER PORTAL)
+
+### [PORTAL-11] [ИСПРАВЛЕНО] [SEV-1/SEV-2] Замена симулированного скачивания справки ФНС на реальный генератор КНД 1151156, устранение моков DB-ошибок, искоренение сленга «в 1 тап», 4-State Visual Proof
+
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Patient Portal, Telegram WebApp Cabinet, Online Booking, FNS Tax Certificates (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Red Team Fixer Surgeon (Fixer 4 / `554ad1c2`).
+- **Коммит:** синхронизирован с `origin/main`.
+- **Хирургические исправления:**
+  - В `useTelegramPortalCabinet.ts` ликвидирован фейковый `setTimeout` скачивания справки; подключен боевой эндпоинт `/api/portal/tax-certificate/html`.
+  - Удален мок `fallbackMockPatient` при сетевых ошибках DB (возвращается структурированный 503).
+  - Искоренен маркетологический сленг «в 1 тап» в пользу нативных описаний.
+  - Деминированы типы и приведены к токенам `var(--paper)` и `var(--teal)`.
+- **Машинные гейты:** 23/23 referral/loyalty тестов, 9/9 portal cabinet тестов, 26/26 patient cabinet тестов — 100% PASS (Exit Code 0).
+- **Визуальные доказательства (лично отсмотрены через `read_file`):**
+  - ☀️ **PC Light (1440x900, 632 KB):** `docs/proofs/portal/wave7_booking_pc_light_1440x900.png`
+  - 🌙 **PC Dark (1440x900, 311 KB):** `docs/proofs/portal/wave7_booking_pc_dark_1440x900.png`
+  - 📱 **Mobile Light (390x844, 210 KB):** `docs/proofs/portal/wave7_tgapp_tax_mobile_light_390x844.png`
+  - 🌙 **Mobile Dark (390x844, 206 KB):** `docs/proofs/portal/wave7_tgapp_tax_mobile_dark_390x844.png`
