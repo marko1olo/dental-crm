@@ -45,13 +45,13 @@ export const MdlpScannedMobileCards: React.FC<MdlpScannedMobileCardsProps> = ({
 					</div>
 
 					<div className="flex items-center justify-between pt-1 border-t border-[var(--line)]">
-						<span className="text-xs font-bold text-emerald-400">
+						<span className="text-xs font-mono font-medium text-[var(--success-ink)]">
 							{item.costRub != null ? `${item.costRub.toFixed(2)} ₽` : "—"}
 						</span>
 						<button
 							type="button"
 							onClick={() => onRemoveItem(item.id)}
-							className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-rose-400 hover:bg-rose-500/10 flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors"
+							className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-[var(--danger-ink)] hover:bg-[var(--danger-soft)] flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer transition-colors"
 							data-testid={`delete-item-mobile-${item.id}`}
 							title="Удалить позицию"
 						>

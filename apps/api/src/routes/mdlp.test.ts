@@ -264,4 +264,25 @@ describe("MDLP / Chestny Znak API Routes", () => {
 		assert(actJson.html.includes("АКТ СПИСАНИЯ ЛЕКАРСТВЕННЫХ ПРЕПАРАТОВ"));
 		assert(actJson.html.includes("Иванова Е.В."));
 	});
+
+	test("POST /api/mdlp/batch-disposal route alias performs identical batch disposal under Schema 10560", async () => {
+		const raw =
+			"010366479800001621DISP000000001\x1d17280531\x1d10LOTX\x1d91ABCD\x1d92SIG1234567890abcdefghijklmnopqrstuvwxyz1234";
+		const batchRes = await app.inject({
+			method: "POST",
+			url: "/api/mdlp/batch-disposal",
+			headers: clinicHeaders,
+			payload: {
+				items: [{ rawBarcode: raw, costRub: 450, reason: "Медицинское применение" }],
+				docNum: "АКТ-ВЫБЫТИЕ-2026-001",
+				docDate: "2026-08-25",
+			},
+		});
+
+		assert.strictEqual(batchRes.statusCode, 200);
+		const batchJson = batchRes.json();
+		assert.strictEqual(batchJson.success, true);
+		assert.strictEqual(batchJson.disposedCount, 1);
+		assert.strictEqual(batchJson.disposalDocument.actionId, 10560);
+	});
 });

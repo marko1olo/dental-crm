@@ -49,9 +49,8 @@
 
 .mdlp-sample-label {
 	font-size: 0.6875rem;
-	font-weight: 700;
-	color: var(--muted, #94a3b8);
-	text-transform: uppercase;
+	font-weight: 600;
+	color: var(--ink-muted, #94a3b8);
 }
 
 .mdlp-sample-pill {

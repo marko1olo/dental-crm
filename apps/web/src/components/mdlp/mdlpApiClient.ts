@@ -1,12 +1,27 @@
-import { type ChestnyZnakScannedItem, createChestnyZnakScannedItem } from "@dental/shared";
+import { type ChestnyZnakScannedItem, createChestnyZnakScannedItem, generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { type MdlpOfflinePackage, saveMdlpOfflineQueue } from "./mdlpOfflineQueue.js";
+
+interface MdlpItemRow {
+	rawBarcode?: string | null;
+	sgtin?: string | null;
+	costRub?: number | string | null;
+}
+
+interface MdlpQueueRow {
+	id?: string;
+	queuedAt?: string;
+	costRub?: number | string | null;
+	rawBarcode?: string | null;
+	patientId?: string | null;
+	visitId?: string | null;
+}
 
 /** Отправка отсканированного 2D DataMatrix в API (/api/mdlp/scan) */
 export async function submitMdlpBarcodeScan(
 	rawBarcode: string,
 	autoRegister = true,
-): Promise<{ success: boolean; item?: Record<string, unknown> | null; parsed?: any; status?: string; error?: string }> {
+): Promise<{ success: boolean; item?: Record<string, unknown> | null; parsed?: unknown; status?: string; error?: string }> {
 	try {
 		const res = await fetch("/api/mdlp/scan", {
 			method: "POST",
@@ -75,12 +90,14 @@ export async function fetchMdlpInStockItems(limit = 10): Promise<ChestnyZnakScan
 		const data = await res.json();
 		if (!Array.isArray(data?.items)) return [];
 
-		return data.items.map((row: any) =>
-			createChestnyZnakScannedItem(row.rawBarcode || row.sgtin, {
-				costRub: row.costRub ? Number(row.costRub) : 450,
-			}),
-		);
-	} catch {
+		return data.items.map((row: MdlpItemRow) => {
+			const cost = row.costRub != null && !Number.isNaN(Number(row.costRub)) ? Number(row.costRub) : null;
+			return createChestnyZnakScannedItem(row.rawBarcode || row.sgtin || "", {
+				costRub: cost,
+			});
+		});
+	} catch (err: unknown) {
+		console.debug("[MDLP ApiClient] fetchMdlpInStockItems failed:", err);
 		return [];
 	}
 }
@@ -100,9 +117,15 @@ export async function syncMdlpQueueToBackend(
 		const current = updated[i];
 		if (!current || current.status === "synced") continue;
 		try {
-			const res = await fetch("/api/mdlp/dispose-batch", {
+			const idempotencyKey = generateUuidV7();
+			const res = await fetch("/api/mdlp/batch-disposal", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+					"X-Idempotency-Key": idempotencyKey,
+					...denteAdminSecretRequestHeaders(),
+				},
 				body: JSON.stringify({
 					docNum: current.docNum,
 					docDate: current.docDate,
@@ -120,7 +143,8 @@ export async function syncMdlpQueueToBackend(
 			} else {
 				failedCount++;
 			}
-		} catch {
+		} catch (err: unknown) {
+			console.debug("[MDLP ApiClient] sync item failed:", err);
 			failedCount++;
 		}
 	}
@@ -138,21 +162,25 @@ export async function fetchMdlpLiveQueue(): Promise<MdlpOfflinePackage[]> {
 		const data = await res.json();
 		if (!Array.isArray(data?.queue)) return [];
 
-		return data.queue.map((item: any, idx: number) => ({
+		const todayStr = new Date().toISOString().slice(0, 10);
+		const dateCompact = todayStr.replace(/-/g, "");
+
+		return data.queue.map((item: MdlpQueueRow, idx: number) => ({
 			id: item.id || `live-mdlp-q-${idx}`,
 			createdAt: item.queuedAt || new Date().toISOString(),
-			docNum: `АКТ-СЛИВ-${idx + 1}`,
-			docDate: new Date().toISOString().slice(0, 10),
-			mode: "care_dispense",
+			docNum: `АКТ-ВЫБЫТИЕ-${dateCompact}-${String(idx + 1).padStart(3, "0")}`,
+			docDate: todayStr,
+			mode: "care_dispense" as const,
 			itemsCount: 1,
 			totalCostRub: Number(item.costRub || 0),
 			items: item.rawBarcode ? [createChestnyZnakScannedItem(item.rawBarcode, { costRub: Number(item.costRub || 0) })] : [],
-			status: "queued",
+			status: "queued" as const,
 			reason: "Очередь списания карпул (кабинет)",
-			patientId: item.patientId,
-			visitId: item.visitId,
+			patientId: item.patientId ?? undefined,
+			visitId: item.visitId ?? undefined,
 		}));
-	} catch {
+	} catch (err: unknown) {
+		console.debug("[MDLP ApiClient] fetchMdlpLiveQueue failed:", err);
 		return [];
 	}
 }

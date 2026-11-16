@@ -28,18 +28,15 @@
 }
 
 .mdlp-status-dot.online {
-	background-color: #10b981;
-	box-shadow: 0 0 8px #10b981;
+	background-color: var(--success-ink, #10b981);
 }
 
 .mdlp-status-dot.degraded {
-	background-color: #f59e0b;
-	box-shadow: 0 0 8px #f59e0b;
+	background-color: var(--warning-ink, #f59e0b);
 }
 
 .mdlp-status-dot.offline {
-	background-color: #ef4444;
-	box-shadow: 0 0 8px #ef4444;
+	background-color: var(--danger-ink, #ef4444);
 }
 
 .mdlp-crpt-status-text {

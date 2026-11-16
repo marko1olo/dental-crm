@@ -23,8 +23,6 @@ import { DirectLeadsStandaloneLauncher } from "./components/appLayout/modalsCont
 import { DirectAnalyticsLauncher } from "./components/analytics/DirectAnalyticsLauncher";
 import { DirectReportsLauncher } from "./components/appLayout/modalsContainerModules/standalone/ReportsStandaloneLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
-import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
-import { DirectEmrLauncher } from "./components/emr/DirectEmrLauncher";
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
@@ -139,6 +137,10 @@ function isStandaloneActive(): boolean {
 		h.includes("inventory") ||
 		s.includes("warehouse") ||
 		h.includes("warehouse") ||
+		s.includes("mdlp") ||
+		h.includes("mdlp") ||
+		s.includes("chestny_znak") ||
+		h.includes("chestny_znak") ||
 		s.includes("inbound") ||
 		h.includes("inbound") ||
 		s.includes("sanpin") ||
@@ -379,8 +381,6 @@ export function AppShell() {
 			<DirectAnalyticsLauncher />
 			<DirectReportsLauncher />
 			<DirectClinicalBundlesLauncher />
-			<DirectVisitLauncher />
-			<DirectEmrLauncher />
 			<DirectInsuranceLauncher />
 			<DirectLoyaltyLauncher />
 			<DirectPerioLauncher />

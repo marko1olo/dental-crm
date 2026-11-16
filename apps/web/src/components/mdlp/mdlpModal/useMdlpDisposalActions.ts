@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { ChestnyZnakScannedItem } from "@dental/shared";
+import { type ChestnyZnakScannedItem, generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
@@ -17,6 +17,22 @@ import {
 } from "../mdlpScanningPresets.js";
 import { playMdlpBeep } from "../mdlpAudio.js";
 import type { MdlpScanMode } from "./types.js";
+
+function getActiveStaffName(): string {
+	try {
+		if (typeof localStorage === "undefined") return "Дежурный врач-стоматолог";
+		const cached =
+			localStorage.getItem("dente_cached_active_staff_user") ||
+			localStorage.getItem("dental-crm:active-user:v1");
+		if (cached) {
+			const u = JSON.parse(cached);
+			if (u?.fullName || u?.name) return String(u.fullName || u.name);
+		}
+	} catch {
+		// fallback
+	}
+	return "Дежурный врач-стоматолог";
+}
 
 export function useMdlpDisposalActions(
 	isOpen: boolean, mode: MdlpScanMode, docNum: string, docDate: string,
@@ -113,8 +129,35 @@ export function useMdlpDisposalActions(
 	const handleEmergencyDispense = (preset: (typeof EMERGENCY_DISPENSE_PRESETS)[0]) => {
 		const isDemo = isDemoShowcaseMode();
 		const name = isDemo ? `${preset.shortName} [ДЕМО]` : preset.shortName;
-		const newItem = { ...createShiftCarpulesBatch(1)[0]!, tradeName: name, costRub: preset.cost };
-		setScannedItems((prev) => [newItem, ...prev]); playMdlpBeep(true);
+		const batch = createShiftCarpulesBatch(1);
+		const baseItem = batch[0] ?? {
+			id: `emg-${Date.now()}`,
+			rawBarcode: preset.code,
+			gtin: "03664798000016",
+			serialNumber: `EMG${Date.now()}`,
+			sgtin: `03664798000016EMG${Date.now()}`,
+			expirationDate: "2028-12-31",
+			expirationDateRaw: "281231",
+			isExpired: false,
+			isExpiringSoon: false,
+			daysUntilExpiration: 730,
+			series: "EMG-2026",
+			lot: "EMG-2026",
+			cryptoKey: "ABCD",
+			cryptoSignature: "SIG1234567890abcdefghijklmnopqrstuvwxyz1234",
+			status: "verified" as const,
+			statusReason: "Аварийная выдача",
+			tradeName: name,
+			inn: "Артикаин + Эпинефрин",
+			dosageForm: "Раствор для инъекций",
+			recognizedDrug: null,
+			costRub: preset.cost,
+			vatRate: 10 as const,
+			scannedAt: new Date().toISOString(),
+		};
+		const newItem = { ...baseItem, tradeName: name, costRub: preset.cost };
+		setScannedItems((prev) => [newItem, ...prev]);
+		playMdlpBeep(true);
 		submitMdlpBarcodeScan(preset.code, true).catch(() => null);
 		showToast(`Аварийная выдача: ${name} выдан врачу`, "success");
 	};
@@ -144,20 +187,67 @@ export function useMdlpDisposalActions(
 		}
 
 		playMdlpBeep(true);
+		const idempotencyKey = generateUuidV7();
+		const staffName = getActiveStaffName();
 		try {
-			await fetch("/api/mdlp/dispose-batch", {
+			const res = await fetch("/api/mdlp/batch-disposal", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+					"X-Idempotency-Key": idempotencyKey,
+					...denteAdminSecretRequestHeaders(),
+				},
 				body: JSON.stringify({
-					docNum, docDate, patientId: patientId ?? undefined, visitId: visitId ?? undefined,
+					docNum,
+					docDate,
+					patientId: patientId ?? undefined,
+					visitId: visitId ?? undefined,
+					doctorId: doctorId ?? undefined,
+					doctorName: staffName,
 					reason: "Списание при оказании медпомощи",
-					items: itemsToDispose.map((it) => ({ rawBarcode: it.rawBarcode, sgtin: it.sgtin, costRub: it.costRub })),
+					items: itemsToDispose.map((it) => ({
+						rawBarcode: it.rawBarcode,
+						sgtin: it.sgtin,
+						costRub: it.costRub,
+					})),
 				}),
 			});
-		} catch {
-			// Офлайн
+
+			if (!res.ok) {
+				throw new Error(`Ошибка сервера: ${res.status} ${res.statusText}`);
+			}
+
+			showToast(
+				`✓ Списание успешно подтверждено: ${itemsToDispose.length} упаковок зафиксировано`,
+				"success",
+			);
+			setScannedItems([]);
+		} catch (error: unknown) {
+			const errMessage = error instanceof Error ? error.message : "Сбой сетевого соединения";
+			const pkgId = `MDLP-${Date.now().toString(36).toUpperCase()}`;
+			const offlinePkg: MdlpOfflinePackage = {
+				id: pkgId,
+				createdAt: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+				docNum: docNum || `АКТ-ВЫБЫТИЕ-${pkgId}`,
+				docDate,
+				mode,
+				itemsCount: itemsToDispose.length,
+				totalCostRub: itemsToDispose.reduce((acc, it) => acc + (it.costRub ?? 0), 0),
+				items: itemsToDispose,
+				status: "queued",
+				reason: "Списание при оказании медпомощи (сохранено в офлайн-буфер при сетевом сбое)",
+				patientId: patientId ?? undefined,
+				visitId: visitId ?? undefined,
+			};
+			const updated = [offlinePkg, ...offlineQueue];
+			setOfflineQueue(updated);
+			saveMdlpOfflineQueue(updated);
+			showToast(
+				`Сбой связи с сервером (${errMessage}). Пакет сохранён в офлайн-буфер (${itemsToDispose.length} упак.)`,
+				"warning",
+			);
 		}
-		showToast(`✓ Списание успешно подтверждено: ${itemsToDispose.length} упаковок зафиксировано`, "success");
 	};
 
 	return {

@@ -43,10 +43,10 @@ export const MdlpScannedTableRow: React.FC<MdlpScannedTableRowProps> = ({
 					{item.expirationDate || "—"}
 				</div>
 				{item.isExpired && (
-					<div className="text-[10px] text-rose-400 font-semibold">Истек</div>
+					<div className="text-[10px] text-[var(--danger-ink)] font-semibold">Истек</div>
 				)}
 				{item.isExpiringSoon && (
-					<div className="text-[10px] text-amber-400 font-semibold">
+					<div className="text-[10px] text-[var(--warning-ink)] font-semibold">
 						{item.daysUntilExpiration} дн.
 					</div>
 				)}
@@ -54,14 +54,14 @@ export const MdlpScannedTableRow: React.FC<MdlpScannedTableRowProps> = ({
 			<td>
 				<MdlpStatusBadge item={item} />
 			</td>
-			<td style={{ fontWeight: 700 }}>
+			<td className="font-mono font-medium text-right tabular-nums">
 				{item.costRub != null ? `${item.costRub.toFixed(2)} ₽` : "—"}
 			</td>
 			<td style={{ textAlign: "center" }}>
 				<button
 					type="button"
 					onClick={() => onRemoveItem(item.id)}
-					className="p-1.5 rounded-lg text-[var(--muted)] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+					className="p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] transition-colors cursor-pointer"
 					title="Удалить из списка"
 					data-testid={`delete-item-${item.id}`}
 				>

@@ -1,8 +1,10 @@
-import type React from "react";
+import React, { useState } from "react";
+import { createCarpuleQueueItem } from "@dental/shared";
 import "./mdlpScanning.css";
 export * from "./mdlpScanningPresets.js";
 export type { MdlpScanningModalProps } from "./mdlpModal/types.js";
 import type { MdlpScanningModalProps } from "./mdlpModal/types.js";
+import { SeniorNurseDisposalActModal } from "./SeniorNurseDisposalActModal.js";
 import {
 	useMdlpModalState,
 	MdlpModalContainer,
@@ -19,6 +21,24 @@ import {
 export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = (props) => {
 	const { isOpen, onClose, clinicName = "ООО «Денте Стоматология»" } = props;
 	const state = useMdlpModalState(props);
+	const [isSeniorNurseActOpen, setIsSeniorNurseActOpen] = useState(false);
+
+	// Anti-Matryoshka (Mandate 8d Sin 6): render act modal sequentially at modal depth strictly 1
+	if (isSeniorNurseActOpen) {
+		return (
+			<SeniorNurseDisposalActModal
+				isOpen={true}
+				onClose={() => setIsSeniorNurseActOpen(false)}
+				items={state.scannedItems.map((it) =>
+					createCarpuleQueueItem(it.rawBarcode || it.sgtin, {
+						id: it.id,
+						costRub: it.costRub,
+					}),
+				)}
+				organizationName={clinicName}
+			/>
+		);
+	}
 
 	return (
 		<MdlpModalContainer isOpen={isOpen} onClose={onClose}>
@@ -69,6 +89,7 @@ export const MdlpScanningModal: React.FC<MdlpScanningModalProps> = (props) => {
 				onDeferredDisposal={state.handleDeferredDisposal}
 				onGenerateXml={state.handleGenerateXml}
 				onConfirmDisposal={state.handleConfirmDisposal}
+				onOpenSeniorNurseAct={() => setIsSeniorNurseActOpen(true)}
 			/>
 		</MdlpModalContainer>
 	);

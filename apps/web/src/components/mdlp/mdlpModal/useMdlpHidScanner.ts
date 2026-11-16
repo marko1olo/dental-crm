@@ -35,7 +35,7 @@ export function useMdlpHidScanner({
 		const processBarcode = (rawCode: string, source: "сканером" | "из буфера") => {
 			const trimmed = rawCode.trim();
 			if (trimmed.length < 10) return;
-			const newItem = createChestnyZnakScannedItem(trimmed, { costRub: 450 });
+			const newItem = createChestnyZnakScannedItem(trimmed);
 			setScannedItems((prev) => [newItem, ...prev]);
 			setBarcodeInput("");
 			resetXml();

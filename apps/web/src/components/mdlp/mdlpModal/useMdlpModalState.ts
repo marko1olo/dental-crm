@@ -67,7 +67,7 @@ export function useMdlpModalState(props: MdlpScanningModalProps) {
 			inputRef.current?.focus();
 			return;
 		}
-		const newItem = createChestnyZnakScannedItem(raw, { costRub: 450 });
+		const newItem = createChestnyZnakScannedItem(raw);
 		setScannedItems((prev) => [newItem, ...prev]);
 		setBarcodeInput("");
 		xml.setGeneratedXml(null);

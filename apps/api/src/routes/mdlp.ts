@@ -383,6 +383,7 @@ export async function registerMdlpRoutes(
 	app.post("/api/mdlp/scan", handleScan);
 	app.post("/api/mdlp/dispose", handleDispose);
 	app.post("/api/mdlp/dispose-batch", handleDisposeBatch);
+	app.post("/api/mdlp/batch-disposal", handleDisposeBatch);
 	app.get("/api/mdlp/queue", handleGetQueue);
 	app.post("/api/mdlp/queue/add", handleQueueAdd);
 	app.post("/api/mdlp/queue/remove", handleQueueRemove);
@@ -396,6 +397,7 @@ export async function registerMdlpRoutes(
 	app.post("/scan", handleScan);
 	app.post("/dispose", handleDispose);
 	app.post("/dispose-batch", handleDisposeBatch);
+	app.post("/batch-disposal", handleDisposeBatch);
 	app.get("/queue", handleGetQueue);
 	app.post("/queue/add", handleQueueAdd);
 	app.post("/queue/remove", handleQueueRemove);
