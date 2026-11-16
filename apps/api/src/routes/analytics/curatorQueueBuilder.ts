@@ -25,17 +25,20 @@ export function buildCuratorQueueItem(
 	plan: RawCuratorPlanRecord,
 	paymentMap: Map<string, number>,
 	doctorMap: Map<string, string>,
-	defaultCurator: CuratorStaffUser,
+	defaultCurator?: CuratorStaffUser | null,
 ): CuratorPatientQueueItem {
 	const adminProf = plan.patientAdminProfile;
-	const curatorId =
+	const rawCuratorId =
 		typeof adminProf?.curatorId === "string" && adminProf.curatorId
 			? adminProf.curatorId
-			: defaultCurator.id;
-	const curatorName =
-		typeof adminProf?.curatorFullName === "string" && adminProf.curatorFullName
+			: (defaultCurator?.id ?? null);
+	const curatorId = rawCuratorId === "00000000-0000-0000-0000-000000000001" ? null : rawCuratorId;
+
+	const curatorName = curatorId
+		? (typeof adminProf?.curatorFullName === "string" && adminProf.curatorFullName
 			? adminProf.curatorFullName
-			: doctorMap.get(curatorId) || defaultCurator.fullName;
+			: doctorMap.get(curatorId) || defaultCurator?.fullName || "Куратор клиники")
+		: "Не назначен";
 
 	const planPrice = Number(plan.totalPriceRub || plan.totalPrice || 0);
 	// PLN-05 [SEV-1]: Учет оплат строго по plan.id (treatmentPlanId) — ноль заражения чужими платежами из истории пациента

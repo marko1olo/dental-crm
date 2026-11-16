@@ -102,7 +102,8 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 			}
 			if (res.ok) {
 				const json = await res.json();
-				const b: ChairLoadBasis = json.basis || {
+				const payload = json?.data ?? json;
+				const b: ChairLoadBasis = payload.basis || {
 					workingDays: 24,
 					minutesPerDay: 720,
 					totalMinutesPerChair: 17280,
@@ -110,7 +111,8 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 				};
 				const plannedH = Math.round(b.totalMinutesPerChair / 60);
 
-				const mappedRows: ChairLoadItem[] = (json.rows || []).map((r: ChairLoadApiRow) => {
+				const rawRows: ChairLoadApiRow[] = payload.chairs ?? payload.rows ?? [];
+				const mappedRows: ChairLoadItem[] = rawRows.map((r: ChairLoadApiRow) => {
 					const workedH = Math.round(((r.bookedMinutes || 0) / 60) * 10) / 10;
 					const uPercent = typeof r.utilization === "number" ? Math.round(r.utilization * 100) : 0;
 					const freeH = Math.max(0, Math.round((plannedH - workedH) * 10) / 10);

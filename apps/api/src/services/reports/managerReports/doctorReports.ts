@@ -224,7 +224,18 @@ export async function chairLoad(
 		minutesPerDay = Math.max(60, Math.round(totalMinutesPerChair / workingDays));
 	}
 
-	const rows = await db
+	const allChairs = await db
+		.select({ id: chairs.id, name: chairs.name })
+		.from(chairs)
+		.where(
+			and(
+				eq(chairs.organizationId, scope.organizationId),
+				ne(chairs.isActive, false),
+			),
+		);
+	const chairNames = new Map(allChairs.map((row) => [row.id, row.name]));
+
+	const appRows = await db
 		.select({
 			chairId: appointments.chairId,
 			appointments: sql<number>`count(*)::int`,
@@ -243,29 +254,58 @@ export async function chairLoad(
 		)
 		.groupBy(appointments.chairId);
 
-	const chairRows = await db
-		.select({ id: chairs.id, name: chairs.name })
-		.from(chairs)
-		.where(eq(chairs.organizationId, scope.organizationId));
-	const chairNames = new Map(chairRows.map((row) => [row.id, row.name]));
+	const statsByChair = new Map<string | null, { appointments: number; bookedMinutes: number }>();
+	for (const r of appRows) {
+		statsByChair.set(r.chairId, {
+			appointments: Number(r.appointments || 0),
+			bookedMinutes: Number(r.bookedMinutes || 0),
+		});
+	}
 
-	const result: ChairLoadRow[] = rows
-		.map((row) => {
-			const bookedMinutes = Number(row.bookedMinutes);
-			return {
-				chairId: row.chairId,
-				chairName: row.chairId
-					? (chairNames.get(row.chairId) ?? "Кресло вне списка")
-					: "Без указания кресла",
-				appointments: Number(row.appointments),
+	const result: ChairLoadRow[] = [];
+
+	if (allChairs.length > 0) {
+		for (const c of allChairs) {
+			const stat = statsByChair.get(c.id) ?? { appointments: 0, bookedMinutes: 0 };
+			result.push({
+				chairId: c.id,
+				chairName: c.name,
+				appointments: stat.appointments,
+				bookedMinutes: stat.bookedMinutes,
+				utilization: Math.max(0, Math.min(1, stat.bookedMinutes / totalMinutesPerChair)),
+			});
+		}
+	} else {
+		for (const r of appRows) {
+			const bookedMinutes = Number(r.bookedMinutes || 0);
+			result.push({
+				chairId: r.chairId,
+				chairName: r.chairId ? (chairNames.get(r.chairId) ?? "Кресло вне списка") : "Без указания кресла",
+				appointments: Number(r.appointments || 0),
 				bookedMinutes,
-				// Записи без кресла нельзя отнести к занятости конкретного кресла.
-				utilization: row.chairId
+				utilization: r.chairId
 					? Math.max(0, Math.min(1, bookedMinutes / totalMinutesPerChair))
 					: null,
-			};
-		})
-		.sort((left, right) => right.bookedMinutes - left.bookedMinutes);
+			});
+		}
+	}
+
+	const unassigned = statsByChair.get(null);
+	if (unassigned && unassigned.appointments > 0 && allChairs.length > 0) {
+		result.push({
+			chairId: null,
+			chairName: "Без указания кресла",
+			appointments: unassigned.appointments,
+			bookedMinutes: unassigned.bookedMinutes,
+			utilization: null,
+		});
+	}
+
+	result.sort((left, right) => {
+		if (left.chairId === null) return 1;
+		if (right.chairId === null) return -1;
+		return right.bookedMinutes - left.bookedMinutes;
+	});
 
 	return {
 		rows: result,
@@ -277,7 +317,7 @@ export async function chairLoad(
 				`Знаменатель: ${workingDays} рабочих дн. × ${Math.round(minutesPerDay / 60)} ч. ` +
 				"Отменённые приёмы и неявки в занятые минуты не входят.",
 		},
-		isEmpty: result.length === 0,
+		isEmpty: result.length === 0 || result.every((r) => r.appointments === 0),
 	};
 }
 

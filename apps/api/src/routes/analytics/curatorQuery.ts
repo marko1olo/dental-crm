@@ -79,11 +79,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	}
 
 	const doctorMap = new Map(staffList.map((u) => [u.id, u.fullName]));
-	const defaultCurator: CuratorStaffUser = curatorUsers[0] || {
-		id: "00000000-0000-0000-0000-000000000001",
-		fullName: "Куратор клиники",
-		role: "curator",
-	};
+	const defaultCurator: CuratorStaffUser | null = curatorUsers[0] ?? null;
 
 	const queueItems = plans.map((plan) =>
 		buildCuratorQueueItem(plan, planPaymentMap, doctorMap, defaultCurator),

@@ -15,6 +15,20 @@ import type {
 	SelfBookingChannelMetric,
 } from "./onlineBookingTypes";
 
+export interface SelfBookingChannelDto {
+	readonly key: string;
+	readonly nameRu?: string | null;
+	readonly categoryRu?: string | null;
+	readonly viewsCount?: number | string | null;
+	readonly slotSelectedCount?: number | string | null;
+	readonly bookingsCount?: number | string | null;
+	readonly attendedCount?: number | string | null;
+	readonly noShowCount?: number | string | null;
+	readonly paidPatientsCount?: number | string | null;
+	readonly revenueKopecks?: number | string | null;
+	readonly spentKopecks?: number | string | null;
+}
+
 function mapIconType(key: string): SelfBookingChannelMetric["iconType"] {
 	if (key === "website_widget") return "globe";
 	if (key === "yandex_maps") return "yandex";
@@ -46,13 +60,15 @@ export function useOnlineBookingData() {
 					headers: denteAdminSecretRequestHeaders(),
 				});
 				if (!res.ok) return;
-				const data = await res.json();
+				const data = (await res.json()) as {
+					selfBookingChannels?: SelfBookingChannelDto[];
+					telephonyAdminFunnel?: Record<string, unknown>;
+				};
 				if (isMounted && Array.isArray(data.selfBookingChannels)) {
-					// biome-ignore lint/suspicious/noExplicitAny: API shape
-					const mapped = data.selfBookingChannels.map((c: any) => ({
+					const mapped = data.selfBookingChannels.map((c: SelfBookingChannelDto) => ({
 						key: c.key,
-						nameRu: c.nameRu,
-						categoryRu: c.categoryRu,
+						nameRu: c.nameRu || c.key,
+						categoryRu: c.categoryRu || "Самозапись",
 						iconType: mapIconType(c.key),
 						viewsCount: Math.max(0, Math.round(Number(c.viewsCount) || 0)),
 						slotSelectedCount: Math.max(0, Math.round(Number(c.slotSelectedCount) || 0)),

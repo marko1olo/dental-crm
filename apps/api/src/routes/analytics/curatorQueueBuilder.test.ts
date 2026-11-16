@@ -79,4 +79,26 @@ describe("PLN-05: Curator Queue strict plan payment scoping without cross-contam
 			"Новый план без оплат не должен ложно перескакивать на этап предоплаты",
 		);
 	});
+
+	test("DEF-ANALYTICS-05: Если куратор не назначен — возвращается null и 'Не назначен' без фейкового UUID", () => {
+		const unassignedPlan: RawCuratorPlanRecord = {
+			id: "plan-unassigned",
+			name: "План без куратора",
+			status: "Draft",
+			totalPriceRub: 50000,
+			totalPrice: 50000,
+			createdAt: new Date("2026-08-10"),
+			patientId: "pat-200",
+			doctorId: null,
+			patientFullName: "Петров П.П.",
+			patientPhone: "+79997654321",
+			patientEmail: null,
+			patientAdminProfile: null,
+		};
+
+		const item = buildCuratorQueueItem(unassignedPlan, new Map(), doctorMap, null);
+		assert.equal(item.curatorId, null, "Куратор должен быть null, когда не назначен");
+		assert.equal(item.curatorFullName, "Не назначен", "Отображаемое имя должно быть 'Не назначен'");
+		assert.notEqual(item.curatorId, "00000000-0000-0000-0000-000000000001", "Никаких фейковых хардкодных UUID");
+	});
 });

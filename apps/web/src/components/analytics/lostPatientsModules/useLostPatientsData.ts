@@ -28,22 +28,31 @@ export function deriveRecallCohorts(patients: readonly LostPatientRow[]): Recall
 
 	for (const cat of categories) {
 		const catPatients = patients.filter((p) => p.lastTreatmentCategory === cat.key);
-		const total = Math.max(
-			catPatients.length,
-			cat.key === "sanitation"
-				? Math.max(1, Math.round(patients.length * 0.4))
-				: cat.key === "general_therapy"
-					? Math.max(1, Math.round(patients.length * 0.35))
-					: Math.max(0, Math.round(patients.length * 0.15)),
-		);
-		if (total === 0) continue;
+		const total = catPatients.length;
+		if (total === 0) {
+			cohorts.push({
+				cohortKey: `${prev6mDate.toISOString().slice(0, 7)}-${cat.key}`,
+				cohortLabel: `${prev6mName} (${cat.label})`,
+				cohortMonth: prev6mName,
+				category: cat.key,
+				categoryLabel: cat.label,
+				totalPatients: 0,
+				returned6m: 0,
+				rate6m: 0,
+				returned12m: 0,
+				rate12m: 0,
+				recallRevenueKopecks: 0,
+				healthTone: "ok",
+			});
+			continue;
+		}
 
-		const returned6m =
-			catPatients.filter((p) => p.daysSinceLastVisit <= 180 || p.hasFutureAppointment).length ||
-			Math.round(total * 0.68);
-		const returned12m =
-			catPatients.filter((p) => p.daysSinceLastVisit <= 365 || p.hasFutureAppointment).length ||
-			Math.round(total * 0.54);
+		const returned6m = catPatients.filter(
+			(p) => p.daysSinceLastVisit <= 180 || p.hasFutureAppointment,
+		).length;
+		const returned12m = catPatients.filter(
+			(p) => p.daysSinceLastVisit <= 365 || p.hasFutureAppointment,
+		).length;
 
 		const rates = calculateRecallRates(total, returned6m, returned12m);
 		cohorts.push({
