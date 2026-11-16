@@ -17,7 +17,7 @@ describe("Wave 112 - Total Liquidation of Synthetic Character Mocks and Demo OTP
 		"apps/web/src/components/security/auditTrailEngine.ts",
 		"apps/web/src/components/analytics/LostPatientsPanel.tsx",
 		"apps/web/src/components/finance/one-c/oneCCommerceMlEngine.ts",
-		"apps/web/src/components/copilot/CopilotGenerativeCards.tsx",
+		"apps/web/src/components/copilot/cards/PatientProfileCard.tsx",
 		"apps/web/src/components/messaging/omnichannelEngine.ts",
 		"apps/web/src/components/portal/patientPortalPresets.ts",
 		"apps/web/src/components/radiology/HotFolderIntakeModal.tsx",

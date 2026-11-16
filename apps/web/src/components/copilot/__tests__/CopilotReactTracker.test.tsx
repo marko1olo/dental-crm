@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
-import { CopilotReactTracker } from '../CopilotGenerativeCards';
+import { CopilotReactTracker } from '../cards/CopilotReactTracker';
 
 describe('Copilot ReAct Agentic Loop & Tracker', () => {
   it('renders default canonical clinical ReAct steps', () => {

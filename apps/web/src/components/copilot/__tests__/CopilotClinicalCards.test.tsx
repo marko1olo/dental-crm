@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
-import { PatientProfileCard, ScheduleSlotPickerCard, PrescriptionCard, Prescription107Card } from '../CopilotGenerativeCards';
+import { PatientProfileCard, ScheduleSlotPickerCard, PrescriptionCard, Prescription107Card } from '../cards';
 
 describe('Copilot Clinical Cards', () => {
   it('renders PatientProfileCard with avatar, balance, allergies, and open card button', () => {

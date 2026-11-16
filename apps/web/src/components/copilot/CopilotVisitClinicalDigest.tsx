@@ -422,7 +422,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 						prompt: effectiveTooth
 							? `Зафиксируй зуб ${effectiveTooth}: норма, интактный, без патологии`
 							: "Осмотр полости рта: зубы интактны, кариозных поражений нет, слизистая бледно-розовая, норма",
-						icon: <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />,
+						icon: <CheckCircle2 size={13} className="text-[var(--success)] shrink-0" />,
 					},
 					{
 						id: "st-caries",
@@ -442,7 +442,7 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 						id: "st-hygiene",
 						label: "Профгигиена (УЗ + AirFlow)",
 						prompt: "Профессиональная гигиена полости рта: снятие зубных отложений УЗ-скейлером, Air-Flow, полировка пастой",
-						icon: <Sparkles size={13} className="text-blue-600 shrink-0" />,
+						icon: <Sparkles size={13} className="text-[var(--primary)] shrink-0" />,
 					},
 				].map((s) => (
 					<button

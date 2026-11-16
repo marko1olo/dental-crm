@@ -19,7 +19,7 @@ const DOCUMENT_KIND_MAP: Record<string, DocumentKind> = {
 };
 
 const DOCUMENT_TITLE_MAP: Record<string, string> = {
-	form_043: "Медицинская карта стоматологического пациента (043/у)",
+	form_043: "Медицинская карта приёма",
 	informed_consent: "Информированное добровольное согласие",
 	treatment_act: "Акт выполненных работ",
 	invoice_receipt: "Квитанция об оплате медицинских услуг",

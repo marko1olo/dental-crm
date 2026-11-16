@@ -8,6 +8,7 @@
  */
 
 import { parseDentalVoiceSpeech } from "../../../../services/voice";
+import type { ClinicalProtocolMatchResult } from "../../../visit/clinicalCatalog/clinicalProtocolsTypes";
 import {
   type ChairsideThoughtStep,
   type ChairsideToothProposal,
@@ -20,8 +21,8 @@ import {
 } from "../chairsideTypes";
 import type { ParsedAgentResult } from "./agentApiResponseParser";
 
-export interface CatalogMatchVoiceItem {
-  tooth?: number | undefined;
+export type CatalogMatchVoiceItem = ClinicalProtocolMatchResult | {
+  tooth?: number | null | undefined;
   recommendedToothState?: string | undefined;
   procedureName?: string | undefined;
   matchedIcd10?: string | undefined;
@@ -33,7 +34,7 @@ export interface CatalogMatchVoiceItem {
     treatmentPlan?: string | undefined;
     recommendations?: string | undefined;
   } | undefined;
-}
+};
 
 export function tryParseVoiceFallback(
   text: string,
@@ -61,9 +62,7 @@ export function tryParseVoiceFallback(
     Number(text.match(/\b([1-4][1-8])\b/)?.[1]) ||
     activeTooth ||
     null;
-  const toothState = catalogMatch
-    ? catalogMatch.recommendedToothState
-    : (firstToothUpdate?.state || "Caries");
+  const toothState = (catalogMatch?.recommendedToothState || firstToothUpdate?.state || "Caries");
   const toothStateLabel = catalogMatch
     ? `${catalogMatch.procedureName} (${catalogMatch.matchedIcd10 || "Каталог 1 142"})`
     : targetTooth
@@ -105,12 +104,12 @@ export function tryParseVoiceFallback(
   let soapProposal: ChairsideSoapProposal;
   if (catalogMatch) {
     soapProposal = {
-      complaint: catalogMatch.patch.complaint || (targetTooth ? `Жалобы в области зуба ${targetTooth}` : "Жалобы пациента"),
-      anamnesis: catalogMatch.patch.anamnesis || "Ранее не лечен, симптомы возникли недавно.",
-      objectiveStatus: catalogMatch.patch.objectiveStatus || (targetTooth ? `При осмотре: кариозное поражение зуба ${targetTooth}.` : "При осмотре: клинические проявления."),
-      diagnosis: catalogMatch.patch.diagnosis || `${catalogMatch.matchedIcd10 || "K02.1"} ${catalogMatch.procedureName}`,
-      treatmentPlan: catalogMatch.patch.treatmentPlan || "Проведено препарирование и пломбирование.",
-      recommendations: catalogMatch.patch.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
+      complaint: catalogMatch.patch?.complaint || (targetTooth ? `Жалобы в области зуба ${targetTooth}` : "Жалобы пациента"),
+      anamnesis: catalogMatch.patch?.anamnesis || "Ранее не лечен, симптомы возникли недавно.",
+      objectiveStatus: catalogMatch.patch?.objectiveStatus || (targetTooth ? `При осмотре: кариозное поражение зуба ${targetTooth}.` : "При осмотре: клинические проявления."),
+      diagnosis: catalogMatch.patch?.diagnosis || `${catalogMatch.matchedIcd10 || "K02.1"} ${catalogMatch.procedureName}`,
+      treatmentPlan: catalogMatch.patch?.treatmentPlan || "Проведено препарирование и пломбирование.",
+      recommendations: catalogMatch.patch?.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
       applied: false,
     };
   } else if (voiceIntent.soapNotes) {

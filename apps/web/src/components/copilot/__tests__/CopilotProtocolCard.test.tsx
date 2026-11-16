@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
-import { CopilotExaminationProtocolCard, CopilotProtocol043ConfirmCard, CopilotDdiSafetyCard } from '../CopilotGenerativeCards';
+import { CopilotExaminationProtocolCard, CopilotProtocol043ConfirmCard, CopilotDdiSafetyCard } from '../cards';
 import { CopilotClinicalProtocolCard } from '../cards/CopilotClinicalProtocolCard';
 import { useVisitStore } from '../../../store/visitStore';
 

@@ -1,0 +1,6 @@
+/* actionConfirm.css — Master Facade for Action Confirm (Mandate 8b: <= 30 lines) */
+@import "./copilotActionConfirmCard.css";
+@import "./copilotActionConfirmHeader.css";
+@import "./copilotActionConfirmParams.css";
+@import "./copilotActionConfirmForms.css";
+@import "./copilotActionConfirmDiff.css";

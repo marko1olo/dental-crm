@@ -90,10 +90,30 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     else if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]);
   }, [threadKey, patientId, hydrateSession]);
   useEffect(() => { if (initialTab) setActiveTab(initialTab as CopilotStudioTab); }, [initialTab]);
-  useEffect(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); }, [messages, threadKey, saveThreadMessages]);
-  const handleClose = useCallback(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); onClose(); }, [messages, threadKey, saveThreadMessages, onClose]);
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const baseDraftRef = useRef<string>(inputText), messagesEndRef = useRef<HTMLDivElement>(null), isFirstRenderRef = useRef<boolean>(true);
+
+  const resetDraft = useCallback(() => {
+    setInputText("");
+    baseDraftRef.current = "";
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("dente_copilot_draft_text");
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    resetDraft();
+  }, [patientId, resetDraft]);
+
+  const handleClose = useCallback(() => {
+    if (messages.length > 0) saveThreadMessages(threadKey, messages);
+    resetDraft();
+    onClose();
+  }, [messages, threadKey, saveThreadMessages, resetDraft, onClose]);
   const [appliedActionIds, setAppliedActionIds] = useState<Set<string>>(() => new Set()), [actionError, setActionError] = useState<string | null>(null), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>(""), [activeToolName, setActiveToolName] = useState<string | null>(null);
   const unifiedVoice = useUnifiedDictation({ preferredMode: "gemini_live", context: "chat", patientId: toValidUuid(patientId), visitId: toValidUuid(activeVisitId), autoFallback: true });
   const voice = { isListening: unifiedVoice.isRecording, fullText: unifiedVoice.fullTranscript, toggleListening: unifiedVoice.toggleDictation, stopListening: unifiedVoice.stopDictation, clearTranscript: unifiedVoice.clearTranscript };
@@ -316,7 +336,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
           <div className="copilot-studio-brand flex items-center gap-2.5 min-w-0 flex-1">
             <div className="copilot-studio-icon-badge w-8 h-8 rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal,rgba(13,148,136,0.3))] flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0"><Sparkles size={16} /></div>
             <div className="copilot-studio-title-box min-w-0 flex-1 truncate">
-              <div className="copilot-studio-title-row flex items-center gap-2"><h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)] truncate">ДЕНТА Копайлот</h2><span className="copilot-pulse-dot w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Движок активен" /></div>
+              <div className="copilot-studio-title-row flex items-center gap-2"><h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)] truncate">ДЕНТА Копайлот</h2><span className="copilot-pulse-dot w-2 h-2 rounded-full bg-[var(--success)] animate-pulse shrink-0" title="Движок активен" /></div>
               <div className="copilot-studio-submeta flex items-center gap-1.5 text-xs text-[var(--muted)] truncate"><span className="text-[11px] text-[var(--muted)] font-medium truncate"><span className="hidden sm:inline">Клинический ассистент врача</span><span className="sm:hidden">Ассистент</span></span></div>
             </div>
           </div>

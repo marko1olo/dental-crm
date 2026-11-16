@@ -302,12 +302,13 @@ describe("CRM Database AI Tools — Поиск пациентов и парси�
 });
 
 describe("CRM Database AI Tools — Реестр и Словарь O(1)", () => {
-	test("databaseToolsRegistry и databaseToolsMap содержат все 10 инструментов БД", () => {
-		assert.strictEqual(databaseToolsRegistry.length, 10);
+	test("databaseToolsRegistry и databaseToolsMap содержат все 11 инструментов БД", () => {
+		assert.strictEqual(databaseToolsRegistry.length, 11);
 		assert.ok(databaseToolsMap["get_patient_emr_and_odontogram"]);
 		assert.ok(databaseToolsMap["search_clinic_services_and_prices"]);
 		assert.ok(databaseToolsMap["update_tooth_status"]);
 		assert.ok(databaseToolsMap["create_appointment"]);
+		assert.ok(databaseToolsMap["get_available_slots"]);
 		assert.ok(databaseToolsMap["create_invoice_draft"]);
 		assert.ok(databaseToolsMap["patient_search"]);
 		assert.ok(databaseToolsMap["record_treatment"]);

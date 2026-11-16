@@ -1,17 +1,17 @@
 // Re-export all cards and types from modular cards directory
-export * from "./cards/types";
-export { PatientProfileCard } from "./cards/PatientProfileCard";
-export { ScheduleSlotPickerCard } from "./cards/ScheduleSlotPickerCard";
+export * from "./types";
+export { PatientProfileCard } from "./PatientProfileCard";
+export { ScheduleSlotPickerCard } from "./ScheduleSlotPickerCard";
 export {
 	PrescriptionCard,
 	PrescriptionCard as ElectronicPrescriptionCard,
 	Prescription107Card,
-} from "./cards/PrescriptionCard";
-export { EstimateTierCard } from "./cards/EstimateTierCard";
+} from "./PrescriptionCard";
+export { EstimateTierCard } from "./EstimateTierCard";
 export {
 	DEFAULT_DENTE_REACT_STEPS,
 	CopilotReactTracker,
-} from "./cards/CopilotReactTracker";
+} from "./CopilotReactTracker";
 export {
 	CopilotVisitCardConfirm,
 	CopilotVisitCardConfirm as CopilotSoapDiaryCard,
@@ -19,23 +19,23 @@ export {
 	CopilotVisitCardConfirm as CopilotMedicalCardProtocolCard,
 	CopilotVisitCardConfirm as ElectronicClinicalDiaryCard,
 	CopilotVisitCardConfirm as CopilotProtocol043ConfirmCard,
-} from "./cards/CopilotVisitCardConfirm";
+} from "./CopilotVisitCardConfirm";
 export {
 	CopilotSoapDiaryConfirm,
 	CopilotSoapDiaryConfirm as CopilotSoapDiaryActions,
 	CopilotSoapDiaryConfirm as CopilotProtocol043Actions,
-} from "./cards/CopilotSoapDiaryConfirm";
-export { CopilotClinicalProtocolCard } from "./cards/CopilotClinicalProtocolCard";
-export { CopilotDdiSafetyCard } from "./cards/CopilotDdiSafetyCard";
+} from "./CopilotSoapDiaryConfirm";
+export { CopilotClinicalProtocolCard } from "./CopilotClinicalProtocolCard";
+export { CopilotDdiSafetyCard } from "./CopilotDdiSafetyCard";
 export {
 	ProactiveAlertCardView,
 	WhatsAppApprovalCardView,
-} from "./cards/ProactiveAndWhatsAppCards";
+} from "./ProactiveAndWhatsAppCards";
 export {
 	CopilotCashboxInvoiceCard,
 	type CopilotCashboxInvoiceData,
-} from "./cards/CopilotCashboxInvoiceCard";
+} from "./CopilotCashboxInvoiceCard";
 export {
 	CopilotSurgeryPassportCard,
 	type CopilotSurgeryPassportData,
-} from "./cards/CopilotSurgeryPassportCard";
+} from "./CopilotSurgeryPassportCard";

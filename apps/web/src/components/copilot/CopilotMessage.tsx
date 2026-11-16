@@ -1,7 +1,7 @@
 import React from 'react';
 import type { CopilotUiMessage, SelectIdHandler, BookSlotHandler, ConfirmHandler } from './copilotTypes';
-import { CopilotActionConfirm } from './CopilotActionConfirm';
-import { CopilotReactTracker } from './CopilotGenerativeCards';
+import { CopilotActionConfirm } from './actionConfirm/CopilotActionConfirm';
+import { CopilotReactTracker } from './cards/CopilotReactTracker';
 import { CopilotTextMessage } from './message/CopilotTextMessage';
 import { CopilotToolMessage } from './message/CopilotToolMessage';
 import { CopilotThinkingMessage } from './message/CopilotThinkingMessage';

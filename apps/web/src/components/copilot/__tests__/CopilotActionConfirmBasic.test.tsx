@@ -6,7 +6,7 @@ import {
   CopilotActionConfirm,
   CopilotActionConfirm as CopilotActionConfirmation,
   CopilotActionConfirm as CopilotConfirmCard,
-} from '../CopilotActionConfirm';
+} from '../actionConfirm/CopilotActionConfirm';
 
 describe('CopilotActionConfirm Basic & Diff Verification', () => {
   it('renders CopilotActionConfirm with 3-way choices and humanized arguments', () => {

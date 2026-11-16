@@ -3997,4 +3997,24 @@ ead_file по 8 осям качества Хаммера:
   - 🎨 Chromascop PC Light: `docs/proofs/lab/05_dental_lab_chromascop_20shades_pc_light.png` (137.9 KB)
   - 🎨 Chromascop Mobile Light: `docs/proofs/lab/06_dental_lab_chromascop_20shades_mobile_light.png` (41.8 KB)
 
+#### 5. ДОМЕН 15/17: КЛИНИЧЕСКИЙ ИИ-КОПАЙЛОТ DENTE, ГОЛОСОВОЙ АССИСТЕНТ У КРЕСЛА (WHISPER STT), ДИКТОВКА SOAP И ДИСПЕТЧЕР ИНСТРУМЕНТОВ FASTIFY / PG18
+- **Хирург:** Red Team Fixer Surgeon (`f118ba20-5c7a-4384-a798-c9465e7ed02d`).
+- **Ликвидированные дефекты [COP-01..04]:**
+  1. **[COP-01] [CRITICAL LEAK] Stale Draft & Patient Context Leakage в CopilotStudioModal.tsx**: внедрена функция `resetDraft()`: очистка `inputText = ""`, `baseDraftRef.current = ""` и удаление `dente_copilot_draft_text` из `localStorage`. Вызывается в `handleClose` и в `useEffect([patientId])`. Исключена утечка чужих черновиков анамнеза между пациентами.
+  2. **[COP-02] [MONEY PRECISION] Целочисленные копеечные DTO в createInvoiceDraftTool.ts**: аргументы и DTO позиций типизированы с суффиксами `priceKopecks`, `unitKopecks`, `lineKopecks`, `discountKopecks`, `amountKopecks` (BigInt/integer копеек). Исключены float-округления цен и обеспечена строгая привязка позиций к созданному счету (`invoiceId: inserted.id`).
+  3. **[COP-03] [PROMPT / LEAK] Ликвидация советского канцелярита в printDocumentTool.ts**: устранено упоминание формы «(043/у)», название приведено к каноническому медицинскому «Медицинская карта приёма» (Мандат 8x).
+  4. **[COP-04] [CSS / HIG TOKENS] Хардкодные классы Tailwind в CopilotStudioModal.tsx и CopilotVisitClinicalDigest.tsx**: `bg-emerald-500` заменен на семантический токен `bg-[var(--success)]`, `text-emerald-600` на `text-[var(--success)]`, `text-blue-600` на `text-[var(--primary)]`.
+  5. **Физический снос сирот и дубликатов через `git rm`**: удалены 4 устаревших файла фасадов (`CopilotActionConfirm.tsx`, `CopilotActionConfirm.css`, `CopilotGenerativeCards.tsx`, `CopilotGenerativeCards.css`), каноническая реализация сведена в `components/copilot/actionConfirm/` и `components/copilot/cards/`.
+- **Машинные гейты:**
+  - `npm run check:encoding`: 0 замечаний (Exit Code 0).
+  - `npm run check:dynamic-imports`: 0 сломанных импортов (Exit Code 0).
+  - TypeScript: 0 ошибок в коде копайлота и серверных ИИ-тулов (`tsc` Exit Code 0).
+  - Тесты: 26/26 тестов passed (Exit Code 0).
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/copilot/05_copilot_studio_pc_light_1440x900.png` (61.4 KB)
+  - 🌙 PC Dark: `docs/proofs/copilot/06_copilot_studio_pc_dark_1440x900.png` (60.5 KB)
+  - 📱 Mobile Light: `docs/proofs/copilot/07_copilot_studio_mobile_light_390x844.png` (42.7 KB)
+  - 📱 Mobile Dark: `docs/proofs/copilot/08_copilot_studio_mobile_dark_390x844.png` (42.0 KB)
+
+
 

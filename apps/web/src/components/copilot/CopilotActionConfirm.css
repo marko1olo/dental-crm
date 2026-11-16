@@ -1,7 +1,0 @@
-/* CopilotActionConfirm.css — Master Facade (Mandate 8b: <= 30 lines) */
-@import "./actionStyles/copilotActionConfirmCard.css";
-@import "./actionStyles/copilotActionConfirmHeader.css";
-@import "./actionStyles/copilotActionConfirmParams.css";
-@import "./actionStyles/copilotActionConfirmForms.css";
-@import "./actionStyles/copilotActionConfirmDiff.css";
-

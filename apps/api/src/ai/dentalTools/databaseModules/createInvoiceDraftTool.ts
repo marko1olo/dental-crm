@@ -14,7 +14,10 @@ export const createInvoiceDraftSchema = z.object({
 	visitId: z.string().uuid("Некорректный UUID визита").optional().describe("ID визита"),
 	items: z.array(z.object({
 		title: z.string().describe("Наименование услуги"),
-		priceRub: z.number().min(0).describe("Цена в рублях"),
+		priceKopecks: z.number().int().min(0).optional().describe("Цена единицы услуги в копейках (Мандат 8bm)"),
+		priceRub: z.number().min(0).optional().describe("Цена в рублях (legacy/fallback)"),
+		unitKopecks: z.number().int().min(0).optional().describe("Цена единицы услуги в копейках"),
+		lineKopecks: z.number().int().min(0).optional().describe("Общая стоимость позиции в копейках"),
 		quantity: z.number().min(1).default(1).describe("Количество"),
 		serviceCode: z.string().optional().describe("Код услуги в прейскуранте"),
 		regulatoryCode: z.string().optional().describe("Регуляторный код услуги"),
@@ -22,7 +25,8 @@ export const createInvoiceDraftSchema = z.object({
 		code804n: z.string().optional().describe("Устаревший код услуги в прейскуранте"),
 		toothCode: z.string().optional().describe("Номер зуба"),
 	})).min(1, "Счет должен содержать хотя бы одну услугу").describe("Список оказанных услуг"),
-	discountRub: z.number().min(0).default(0).describe("Скидка врача в рублях (Мандат 8e: свобода скидок вплоть до 100%)"),
+	discountKopecks: z.number().int().min(0).default(0).optional().describe("Скидка врача в копейках (Мандат 8bm, 8e)"),
+	discountRub: z.number().min(0).default(0).optional().describe("Скидка врача в рублях (legacy/fallback)"),
 	confirmed: z.boolean().optional().default(true).describe("Флаг подтверждения сметы (2-фазный Guard)"),
 });
 
@@ -36,7 +40,9 @@ export interface CreateInvoiceDraftResult {
 	readonly subtotalRub: number;
 	readonly discountRub: number;
 	readonly totalAmountRub: number;
-	readonly amountKopecks?: number;
+	readonly amountKopecks: number;
+	readonly subtotalKopecks: number;
+	readonly discountKopecks: number;
 	readonly status: string;
 	readonly message: string;
 }
@@ -52,18 +58,28 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 	let subtotalKopecks = 0n;
 	const processedItems = args.items.map((item) => {
 		const qty = BigInt(Math.max(1, Math.round(item.quantity ?? 1)));
-		const unitKopecks = BigInt(Math.round(item.priceRub * 100));
-		const lineKopecks = unitKopecks * qty;
+		const unitKopecks = item.priceKopecks !== undefined
+			? BigInt(item.priceKopecks)
+			: item.unitKopecks !== undefined
+			? BigInt(item.unitKopecks)
+			: BigInt(Math.round((item.priceRub ?? 0) * 100));
+		const lineKopecks = item.lineKopecks !== undefined
+			? BigInt(item.lineKopecks)
+			: unitKopecks * qty;
 		subtotalKopecks += lineKopecks;
 		return {
 			...item,
 			qtyNumber: Number(qty),
 			unitKopecks,
 			lineKopecks,
+			unitPriceKopecks: Number(unitKopecks),
+			priceKopecks: Number(lineKopecks),
 		};
 	});
 
-	const discountKopecks = BigInt(Math.round((args.discountRub ?? 0) * 100));
+	const discountKopecks = args.discountKopecks !== undefined && args.discountKopecks > 0
+		? BigInt(args.discountKopecks)
+		: BigInt(Math.round((args.discountRub ?? 0) * 100));
 	const totalKopecks = subtotalKopecks > discountKopecks ? subtotalKopecks - discountKopecks : 0n;
 
 	const subtotalRub = kopecksToRub(subtotalKopecks);
@@ -81,6 +97,8 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 			discountRub,
 			totalAmountRub,
 			amountKopecks: Number(totalKopecks),
+			subtotalKopecks: Number(subtotalKopecks),
+			discountKopecks: Number(discountKopecks),
 			status: "confirmation_required",
 			message: `Требуется подтверждение выставления счёта на сумму ${totalAmountRub.toLocaleString("ru-RU")} ₽.`,
 		};
@@ -107,6 +125,7 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 			organizationId: orgId,
 			patientId,
 			visitId: args.visitId ?? null,
+			invoiceId: inserted.id,
 			title: item.title,
 			toothCode: item.toothCode ?? null,
 			quantity: String(item.qtyNumber),
@@ -126,6 +145,8 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 		discountRub,
 		totalAmountRub,
 		amountKopecks: Number(totalKopecks),
+		subtotalKopecks: Number(subtotalKopecks),
+		discountKopecks: Number(discountKopecks),
 		status: "draft_in_cashier",
 		message: `Счёт на сумму ${totalAmountRub.toLocaleString("ru-RU")} ₽ успешно создан и направлен в кассу клиники.`,
 	};

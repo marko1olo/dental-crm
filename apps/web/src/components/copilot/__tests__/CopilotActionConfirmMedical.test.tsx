@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
-import { CopilotActionConfirm } from '../CopilotActionConfirm';
+import { CopilotActionConfirm } from '../actionConfirm/CopilotActionConfirm';
 
 describe('CopilotActionConfirm Specialized 1-Click Medical Buttons', () => {
   it('displays 1-click EMR diary button for save_clinical_diary, save_examination_protocol and save_protocol_043', () => {
