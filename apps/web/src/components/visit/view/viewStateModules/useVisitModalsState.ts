@@ -88,20 +88,8 @@ export function useVisitModalsState({
 	}, [onOpenLabOrderModal, selectedToothForMenu]);
 
 	useEffect(() => {
-		const handleLabOrderEvent = (e: Event) => {
-			const ce = e as CustomEvent<{
-				items?: readonly { toothNumber?: number | string | null | undefined; toothCode?: string | number | null | undefined }[] | undefined;
-				selectedTeeth?: unknown;
-				teeth?: unknown;
-				toothNumber?: number | string | null | undefined;
-				toothFdi?: number | string | null | undefined;
-			}>;
-			const itemsTeeth = Array.isArray(ce?.detail?.items)
-				? ce.detail.items.map((it) => it.toothNumber ?? it.toothCode).filter(Boolean)
-				: undefined;
-			const customTooth = ce?.detail?.selectedTeeth ?? ce?.detail?.teeth ?? ce?.detail?.toothNumber ?? ce?.detail?.toothFdi ?? (itemsTeeth?.length ? itemsTeeth : undefined);
-			handleOpenLabOrder(customTooth);
-		};
+		// Улика №5: Дублирующий локальный слушатель "dente-open-lab-order-modal" устранён.
+		// Единый канонический SSOT вызова модалки ЗТЛ сосредоточен в AppModalsContainer (useAppModalsEventBridge).
 		const handleEndoEvent = (e: Event) => {
 			const ce = e as CustomEvent<{ toothNumber?: number | string; toothState?: string }>;
 			setEndoModalToothNumber(ce?.detail?.toothNumber ?? 16);
@@ -111,17 +99,15 @@ export function useVisitModalsState({
 		const handleWarrantyEvent = () => {
 			setIsWarrantyModalOpen(true);
 		};
-		window.addEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
 		window.addEventListener("dente-open-endo-modal", handleEndoEvent);
 		window.addEventListener("dente-open-warranty-passport", handleWarrantyEvent);
 		window.addEventListener("dente:open-warranty-passport", handleWarrantyEvent);
 		return () => {
-			window.removeEventListener("dente-open-lab-order-modal", handleLabOrderEvent);
 			window.removeEventListener("dente-open-endo-modal", handleEndoEvent);
 			window.removeEventListener("dente-open-warranty-passport", handleWarrantyEvent);
 			window.removeEventListener("dente:open-warranty-passport", handleWarrantyEvent);
 		};
-	}, [handleOpenLabOrder]);
+	}, []);
 
 	return {
 		endoModalToothNumber, setEndoModalToothNumber,

@@ -14,7 +14,6 @@ export interface SomaticQuickNormBarProps {
 	readonly selectedRisks: readonly string[];
 	readonly selectedAllergies: Record<string, string>;
 	readonly selectedAllergyCount: number;
-	readonly onOpenStomxTemplates?: (() => void) | undefined;
 	readonly onOpenClinicalTemplates?: (() => void) | undefined;
 	readonly onApplyPhysiologicalNorm: () => void;
 	readonly onApplyToDiary: () => void;
@@ -26,12 +25,11 @@ export const SomaticQuickNormBar: React.FC<SomaticQuickNormBarProps> = ({
 	selectedRisks,
 	selectedAllergies,
 	selectedAllergyCount,
-	onOpenStomxTemplates,
 	onOpenClinicalTemplates,
 	onApplyPhysiologicalNorm,
 	onApplyToDiary,
 }) => {
-	const openTemplates = onOpenClinicalTemplates ?? onOpenStomxTemplates ?? (() => {
+	const openTemplates = onOpenClinicalTemplates ?? (() => {
 		window.dispatchEvent(new CustomEvent("dente-open-clinical-templates"));
 	});
 

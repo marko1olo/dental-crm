@@ -34,7 +34,7 @@
   background: var(--paper-strong, #ffffff); border: 1px solid var(--glass-border, #cbd5e1);
   border-radius: 10px; padding: 14px 20px; margin-bottom: 16px; flex-wrap: wrap;
 }
-:is([data-theme="dark"], .dark) :is(.emr-studio-audit-status-banner, .emr043-audit-status-banner) { background: #1e293b; border-color: #334155; }
+:is([data-theme="dark"], .dark) :is(.emr-studio-audit-status-banner, .emr043-audit-status-banner) { background: var(--paper); border-color: var(--line); }
 
 .emr-studio-audit-badge-icon,
 .emr043-audit-badge-icon {

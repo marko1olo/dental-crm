@@ -21,19 +21,19 @@ export function VisitEmkCompletionSection({
 			{/* Ненавязчивая плашка завершения приёма (Мандат 8e: свобода врача, ноль насильственного срыва в кассу) */}
 			{completionResult && (
 				<div
-					className="mt-2.5 p-3.5 sm:p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-950 dark:text-emerald-50 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+					className="mt-2.5 p-3.5 sm:p-4 rounded-2xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal,#0d9488)]/10 text-[var(--ink)] text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
 					data-testid="visit-completion-success-banner"
 					role="status"
 				>
 					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+						<div className="w-8 h-8 rounded-xl bg-[var(--teal,#0d9488)] text-white flex items-center justify-center shrink-0 shadow-2xs">
 							<Check size={18} />
 						</div>
 						<div className="flex flex-col min-w-0">
-							<span className="font-extrabold text-emerald-950 dark:text-emerald-50">
+							<span className="font-extrabold text-[var(--ink)]">
 								Приём завершён. Счёт №{completionResult.receiptNumber || completionResult.invoiceId} сформирован
 							</span>
-							<span className="text-[11px] text-emerald-800/80 dark:text-emerald-200/80">
+							<span className="text-[11px] text-[var(--muted,#64748b)]">
 								Протокол и смета сохранены. К оплате: {completionResult.totalNetRub.toLocaleString("ru-RU")} ₽. Вы можете остаться в карте или перейти в кассу.
 							</span>
 						</div>
@@ -42,7 +42,7 @@ export function VisitEmkCompletionSection({
 						<button
 							type="button"
 							onClick={() => setIsSbpQrModalOpen(true)}
-							className="secondary-button min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/40 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-emerald-800 dark:text-emerald-200 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+							className="secondary-button min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line,#e2e8f0)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
 							data-testid="btn-reopen-sbp-qr"
 							title="Показать QR-код СБП"
 						>
@@ -56,7 +56,7 @@ export function VisitEmkCompletionSection({
 									window.location.hash = "finance";
 								}
 							}}
-							className="primary-button min-h-[38px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--primary)] text-white hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+							className="primary-button min-h-[38px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal,#0d9488)] text-white hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
 							data-testid="btn-goto-cashbox"
 						>
 							<span>Перейти в кассу</span>
@@ -69,19 +69,19 @@ export function VisitEmkCompletionSection({
 			{/* Честный неблокирующий баннер ошибки расчёта сметы без фальшивых чеков */}
 			{completionError && (
 				<div
-					className="mt-2.5 p-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-800 dark:text-rose-200 text-xs flex flex-wrap items-center justify-between gap-2"
+					className="mt-2.5 p-2.5 rounded-xl border border-[var(--danger,#ef4444)]/30 bg-[var(--danger,#ef4444)]/10 text-[var(--danger,#ef4444)] text-xs flex flex-wrap items-center justify-between gap-2"
 					data-testid="emk-completion-error-banner"
 					role="alert"
 				>
 					<div className="flex items-center gap-2 min-w-0">
-						<AlertTriangle size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+						<AlertTriangle size={14} className="text-[var(--danger,#ef4444)] shrink-0" />
 						<span className="truncate">{completionError}</span>
 					</div>
 					<button
 						type="button"
 						onClick={handleCompleteVisitAndGenerateReceipt}
 						disabled={isCompletingVisit}
-						className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+						className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--danger,#ef4444)] hover:opacity-90 text-white transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0"
 						data-testid="btn-retry-visit-estimate"
 					>
 						<RefreshCw size={12} className="shrink-0" />
@@ -95,15 +95,15 @@ export function VisitEmkCompletionSection({
 				<div
 					className={`mt-2.5 p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 transition-colors ${
 						isRevisingVisitNote
-							? "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200"
-							: "bg-[var(--surface-subtle)] border-[var(--glass-border)] text-[var(--muted)]"
+							? "bg-[var(--warning,#f59e0b)]/10 border-[var(--warning,#f59e0b)]/30 text-[var(--ink)]"
+							: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]"
 					}`}
 					data-testid="emk-revision-status-banner"
 				>
 					<div className="flex items-center gap-2">
 						<FileCheck
 							size={14}
-							className={isRevisingVisitNote ? "text-amber-600" : "text-[var(--muted)]"}
+							className={isRevisingVisitNote ? "text-[var(--warning,#f59e0b)]" : "text-[var(--muted,#64748b)]"}
 						/>
 						<span>
 							{isRevisingVisitNote
@@ -115,7 +115,7 @@ export function VisitEmkCompletionSection({
 						<button
 							type="button"
 							onClick={() => setIsRevisingVisitNote(false)}
-							className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 transition-colors cursor-pointer"
+							className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--warning,#f59e0b)]/20 hover:bg-[var(--warning,#f59e0b)]/30 text-[var(--ink)] transition-colors cursor-pointer"
 						>
 							Завершить правку
 						</button>
@@ -123,7 +123,7 @@ export function VisitEmkCompletionSection({
 						<button
 							type="button"
 							onClick={() => setIsRevisingVisitNote(true)}
-							className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--surface-hover)] hover:bg-[var(--surface-active)] text-[var(--text)] transition-colors cursor-pointer"
+							className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,#f1f5f9)] text-[var(--ink)] border border-[var(--line,#e2e8f0)] transition-colors cursor-pointer"
 						>
 							Внести исправление
 						</button>
@@ -132,7 +132,7 @@ export function VisitEmkCompletionSection({
 			)}
 
 			{/* Нижний командный бар: Сохранение и Завершение (Мандаты 8e, 8n) */}
-			<div className="mt-4 pt-3 border-t border-[var(--glass-border)] flex flex-wrap items-center justify-end gap-2.5">
+			<div className="mt-4 pt-3 border-t border-[var(--line,#e2e8f0)] flex flex-wrap items-center justify-end gap-2.5">
 				{isSignedVisit &&
 					(isRevisingVisitNote ? (
 						<div
@@ -142,7 +142,7 @@ export function VisitEmkCompletionSection({
 							<button
 								type="button"
 								onClick={() => setIsRevisingVisitNote(false)}
-								className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-500/10 hover:bg-gray-500/20 text-[var(--muted)] hover:text-[var(--text)] transition-all cursor-pointer"
+								className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer"
 								data-testid="btn-cancel-revision"
 							>
 								Отмена
@@ -151,7 +151,7 @@ export function VisitEmkCompletionSection({
 								type="button"
 								onClick={handleSaveVisitNote}
 								disabled={isDraftAccepting}
-								className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white border border-amber-600/30 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+								className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--warning,#f59e0b)] hover:opacity-90 text-white border border-[var(--warning,#f59e0b)]/30 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
 								data-testid="btn-save-revision-note"
 							>
 								<FileCheck size={15} />
@@ -162,7 +162,7 @@ export function VisitEmkCompletionSection({
 						<button
 							type="button"
 							onClick={() => setIsRevisingVisitNote(true)}
-							className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition-all cursor-pointer flex items-center gap-1.5"
+							className="min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--warning,#f59e0b)]/10 hover:bg-[var(--warning,#f59e0b)]/20 text-[var(--ink)] border border-[var(--warning,#f59e0b)]/30 transition-all cursor-pointer flex items-center gap-1.5"
 							data-testid="btn-begin-revision-note"
 						>
 							<FileCheck size={15} />
@@ -177,7 +177,7 @@ export function VisitEmkCompletionSection({
 					className="secondary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
 					data-testid="btn-save-visit-note"
 				>
-					<FileCheck size={16} className="shrink-0 text-[var(--teal)]" />
+					<FileCheck size={16} className="shrink-0 text-[var(--teal,#0d9488)]" />
 					<span>Сохранить запись приёма</span>
 				</button>
 
@@ -185,7 +185,7 @@ export function VisitEmkCompletionSection({
 					type="button"
 					onClick={handleCompleteVisitAndGenerateReceipt}
 					disabled={isCompletingVisit}
-					className="primary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--primary)] hover:opacity-90 text-[var(--on-primary,white)] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+					className="primary-button min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal,#0d9488)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
 					data-testid="btn-complete-visit-emk"
 				>
 					<Check size={16} className="shrink-0" />
@@ -196,7 +196,7 @@ export function VisitEmkCompletionSection({
 					<button
 						type="button"
 						onClick={() => setIsSbpQrModalOpen(true)}
-						className="min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/40 hover:bg-[var(--ok-fg)]/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+						className="min-h-[42px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#059669)] border border-[var(--ok-fg,#059669)]/40 hover:bg-[var(--ok-fg,#059669)]/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
 						data-testid="btn-reopen-sbp-qr"
 						title="Показать чек и QR-код СБП для оплаты"
 					>
@@ -233,7 +233,7 @@ export function VisitEmkCompletionSection({
 								className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
 								data-testid="btn-mobile-reopen-sbp"
 							>
-								<QrCode size={16} className="text-[var(--teal)] shrink-0" />
+								<QrCode size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
 								<span>СБП QR</span>
 							</button>
 							<button
@@ -243,7 +243,7 @@ export function VisitEmkCompletionSection({
 								className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
 								data-testid="btn-mobile-sticky-save"
 							>
-								<FileCheck size={16} className="text-[var(--teal)] shrink-0" />
+								<FileCheck size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
 								<span>Сохранить в карте</span>
 							</button>
 						</div>
@@ -308,7 +308,7 @@ export function VisitEmkCompletionSection({
 							</button>
 						)}
 
-						{/* Вспомогательная полоса действий: нейтральные Secondary кнопки */}
+						{/* Вспомогательная полоса действий: ровно 1 нейтральная Secondary кнопка сохранения черновика (ноль конкуренции с Primary) */}
 						<div className="mobile-bottom-secondary-strip">
 							<button
 								type="button"
@@ -317,19 +317,8 @@ export function VisitEmkCompletionSection({
 								className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
 								data-testid="btn-mobile-sticky-save"
 							>
-								<FileCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<FileCheck size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
 								<span>Сохранить черновик</span>
-							</button>
-
-							<button
-								type="button"
-								onClick={handleCompleteVisitAndGenerateReceipt}
-								disabled={isCompletingVisit}
-								className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
-								data-testid="btn-mobile-sticky-complete"
-							>
-								<Check size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-								<span>Завершить приём</span>
 							</button>
 						</div>
 					</>

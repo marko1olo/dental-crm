@@ -41,7 +41,7 @@ export function EmkToolbar({
 	onUndo,
 	onRedo,
 }: EmkToolbarProps) {
-	const onPrint043 = propOnPrintMedicalCard ?? propOnPrint043 ?? onOpenPrintModal;
+	const onPrintMedicalCard = propOnPrintMedicalCard ?? propOnPrint043 ?? onOpenPrintModal;
 	const onOpenConsent = propOnOpenConsent ?? onOpenConsentModal;
 	const storeUndoVisit = useVisitStore((s) => s.undoVisit);
 	const storeRedoVisit = useVisitStore((s) => s.redoVisit);
@@ -74,7 +74,8 @@ export function EmkToolbar({
 				onOpenProtocolsCatalog={onOpenProtocolsCatalog}
 				onToggleStarProtocols={onToggleStarProtocols}
 				onOpenConsent={onOpenConsent}
-				onPrint043={onPrint043}
+				onPrintMedicalCard={onPrintMedicalCard}
+				onPrint043={onPrintMedicalCard}
 				onToggleCopilot={onToggleCopilot}
 				isCopilotOpen={isCopilotOpen}
 				handleSchedule={handleSchedule}

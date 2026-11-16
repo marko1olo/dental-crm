@@ -20,7 +20,7 @@ import type { MedicalRecordData } from "../types/recordDataTypes";
 import type { FdiToothRecord } from "@dental/shared";
 
 const MOCK_CARD_DATA: MedicalRecordData = {
-	formNumber: "043/у",
+	formNumber: "Медицинская карта приёма",
 	formOrderName: "Приказ Минздрава России от 15.12.2014 № 834н",
 	clinic: {
 		clinicName: "Клиника ДЕНТЕ",
@@ -325,7 +325,7 @@ describe("Form 043/u Document Generators", () => {
 	it("generates structured JSON export and parses back without loss", () => {
 		const jsonStr = generateMedicalRecordJsonExport(MOCK_CARD_DATA);
 		const parsed = JSON.parse(jsonStr);
-		assert.equal(parsed.formNumber, "043/у");
+		assert.equal(parsed.formNumber, "Медицинская карта приёма");
 		assert.equal(parsed.exportSchemaVersion, "1.0.0");
 		assert.equal(parsed.passport.medicalCardNumber, "СТ-2026-0843");
 		assert.equal(parsed.visitDiaries.length, 1);

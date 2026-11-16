@@ -79,22 +79,22 @@ export const EmrProtocolModalContainer: React.FC<EmrProtocolGeneratorModalProps>
 
 						<div className={`lg:col-span-7 flex flex-col space-y-3 min-h-0 ${mobileSection === "params" ? "max-sm:hidden" : ""}`}>
 							<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-2 flex-wrap gap-2 shrink-0">
-								<div className="flex items-center gap-1.5 flex-wrap">
+								<div className="flex items-center p-1 bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] rounded-xl gap-1 flex-wrap">
 									<button
 										type="button" onClick={() => state.setActiveTab("preview")}
-										className={`px-3 py-1.5 min-h-[38px] rounded-xl text-xs font-bold transition-colors cursor-pointer ${state.activeTab === "preview" ? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]" : "text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#f1f5f9)]"}`}
+										className={`px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-bold transition-all cursor-pointer ${state.activeTab === "preview" ? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
 									>
 										Сводный SOAP протокол
 									</button>
 									<button
 										type="button" onClick={() => state.setActiveTab("soap_cards")}
-										className={`px-3 py-1.5 min-h-[38px] rounded-xl text-xs font-bold transition-colors cursor-pointer ${state.activeTab === "soap_cards" ? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]" : "text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#f1f5f9)]"}`}
+										className={`px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-bold transition-all cursor-pointer ${state.activeTab === "soap_cards" ? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
 									>
 										Разделы дневника
 									</button>
 									<button
 										type="button" onClick={() => state.setActiveTab("compliance")}
-										className={`px-3 py-1.5 min-h-[38px] rounded-xl text-xs font-bold transition-colors cursor-pointer ${state.activeTab === "compliance" ? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]" : "text-[var(--muted,#64748b)] hover:bg-[var(--paper-strong,#f1f5f9)]"}`}
+										className={`px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-bold transition-all cursor-pointer ${state.activeTab === "compliance" ? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--line,#e2e8f0)]" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
 									>
 										Стандарты ({state.complianceReport.complianceScore}%)
 									</button>

@@ -1,7 +1,0 @@
-/**
- * clinicalDiaryTemplates.css — Modern Clinical Diary Templates Layout Facade
- * Architectural Mandate 8b / 8zi: Consolidated CSS modules (~350 lines each)
- */
-
-@import "./styles/templatesLayoutAndCatalog.css";
-@import "./styles/templatesEditorAndMobile.css";

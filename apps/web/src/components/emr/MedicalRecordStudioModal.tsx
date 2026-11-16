@@ -443,9 +443,11 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 );
 
 export const DEFAULT_CLINICAL_RECORD_DATA = DEFAULT_MEDICAL_CARD_DATA;
+/** @deprecated Используйте DEFAULT_MEDICAL_CARD_DATA («Медицинская карта приёма», Мандаты 8x/8ap) */
 export const DEFAULT_043_DATA = DEFAULT_MEDICAL_CARD_DATA;
 export type ClinicalRecordPrintModalProps = MedicalRecordStudioModalProps;
 export const ClinicalRecordPrintModal = MedicalRecordStudioModal;
+/** @deprecated Используйте MedicalRecordStudioModal («Медицинская карта приёма», Мандаты 8x/8ap) */
 export type Form043PrintModalProps = MedicalRecordStudioModalProps;
 export const Form043PrintModal = MedicalRecordStudioModal;
 

@@ -12,6 +12,8 @@ export interface EmkQuickActionButtonsProps {
 	onOpenProtocolsCatalog?: (() => void) | undefined;
 	onToggleStarProtocols?: (() => void) | undefined;
 	onOpenConsent?: (() => void) | undefined;
+	onPrintMedicalCard?: (() => void) | undefined;
+	/** @deprecated Используйте onPrintMedicalCard */
 	onPrint043?: (() => void) | undefined;
 	onToggleCopilot?: (() => void) | undefined;
 	isCopilotOpen?: boolean | undefined;
@@ -26,10 +28,11 @@ export interface EmkQuickActionButtonsProps {
 export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 	const {
 		onApplyPhysiologicalNorm, onApplyNorm, onApplyOrthoNorm, onApplySurgeryNorm,
-		onOpenProtocolsCatalog, onToggleStarProtocols, onOpenConsent, onPrint043,
+		onOpenProtocolsCatalog, onToggleStarProtocols, onOpenConsent, onPrintMedicalCard, onPrint043,
 		handleSchedule, hasUnsavedChanges = false, voicePilotNode, specialtyFocusNode,
 		canUndo, canRedo, handleUndo, handleRedo,
 	} = props;
+	const resolvedPrintMedicalCard = onPrintMedicalCard ?? onPrint043;
 	const { isExtraMenuOpen, setIsExtraMenuOpen, dropdownPos, buttonRef, menuRef } = useEmkDropdownMenu();
 
 	return (
@@ -112,7 +115,8 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 					onApplyNorm={onApplyNorm} onApplyPhysiologicalNorm={onApplyPhysiologicalNorm}
 					onApplyOrthoNorm={onApplyOrthoNorm} onApplySurgeryNorm={onApplySurgeryNorm}
 					onToggleStarProtocols={onToggleStarProtocols} onOpenConsent={onOpenConsent}
-					onPrint043={onPrint043} canUndo={canUndo} canRedo={canRedo}
+					onPrintMedicalCard={resolvedPrintMedicalCard} onPrint043={resolvedPrintMedicalCard}
+					canUndo={canUndo} canRedo={canRedo}
 					handleUndo={handleUndo} handleRedo={handleRedo}
 				/>
 

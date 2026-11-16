@@ -18,7 +18,6 @@ export interface VisitAnamnesisTabProps {
 	readonly onAppendComorbidities?: ((text: string) => void) | undefined;
 	readonly activeTooth?: number | null | undefined;
 	readonly onOpenClinicalTemplates?: (() => void) | undefined;
-	readonly onOpenStomxTemplates?: (() => void) | undefined;
 }
 
 export type AllergenItem = DentalAllergenDefinition;

@@ -24,8 +24,6 @@ import {
 
 import {
 	PHYSIOLOGICAL_NORM_PRESET,
-} from "../components/emr/templates/ClinicalDiaryTemplatesModal.js";
-import {
 	CLINICAL_1CLICK_TEMPLATES_CATALOG,
 } from "../components/emr/templates/clinicalDiaryTemplatesEngine.js";
 

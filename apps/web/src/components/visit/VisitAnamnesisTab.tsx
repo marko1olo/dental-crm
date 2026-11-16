@@ -30,7 +30,7 @@ export {
 } from "./anamnesisTab/types";
 
 export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = (props) => {
-	const { onOpenClinicalTemplates, onOpenStomxTemplates } = props;
+	const { onOpenClinicalTemplates } = props;
 	const s = useAnamnesisState(props);
 
 	return (
@@ -41,7 +41,7 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = (props) => {
 				selectedRisks={s.selectedRisks}
 				selectedAllergies={s.selectedAllergies}
 				selectedAllergyCount={s.selectedAllergyCount}
-				onOpenClinicalTemplates={onOpenClinicalTemplates ?? onOpenStomxTemplates}
+				onOpenClinicalTemplates={onOpenClinicalTemplates}
 				onApplyPhysiologicalNorm={s.handleApplyPhysiologicalNorm}
 				onApplyToDiary={s.applyToDiary}
 			/>

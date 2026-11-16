@@ -155,7 +155,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				{ file: "emergency/emergencyRescue.css", classPattern: ".emergency-close-btn" },
 				{ file: "marketing/marketing.css", classPattern: ".marketing-studio-close-btn" },
 				{ file: "anesthesia/anesthesia.css", classPattern: ".hub-btn-close" },
-				{ file: "emr/templates/clinicalDiaryTemplates.css", classPattern: ".cd-templates-close-btn" },
+				{ file: "emr/emrStyles/emrMobileSheet.css", classPattern: ".emr-studio-btn-close" },
 				{ file: "documents/documentNavigation.css", classPattern: ".document-package-close-btn" },
 			];
 
@@ -189,7 +189,7 @@ describe("Deterministic Vision & Fitts's Law Ergonomics Invariants", () => {
 				"emergency/emergencyRescue.css",
 				"documents/documentNavigation.css",
 				"anesthesia/anesthesia.css",
-				"emr/templates/clinicalDiaryTemplates.css",
+				"emr/emrStyles/emrMobileSheet.css",
 			];
 
 			for (const relPath of mobileMediaCheckedFiles) {

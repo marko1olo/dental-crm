@@ -58,7 +58,7 @@ export function EmkProtocolsDropdownMenu({
 				}}
 				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
 			>
-				<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+				<Activity className="w-3.5 h-3.5 shrink-0 opacity-70" />
 				<span>Пародонтограмма и скрининг PSR</span>
 			</button>
 
@@ -71,7 +71,7 @@ export function EmkProtocolsDropdownMenu({
 				}}
 				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
 			>
-				<Pill className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+				<Pill className="w-3.5 h-3.5 shrink-0 opacity-70" />
 				<span>Выписать рецепт на лекарства</span>
 			</button>
 
@@ -84,7 +84,7 @@ export function EmkProtocolsDropdownMenu({
 				}}
 				className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
 			>
-				<FileText className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+				<FileText className="w-3.5 h-3.5 shrink-0 opacity-70" />
 				<span>Паспорт имплантата</span>
 			</button>
 
@@ -101,7 +101,7 @@ export function EmkProtocolsDropdownMenu({
 					onClick={() => { onToggleStarProtocols(); onClose(); }}
 					className="w-full text-left px-2.5 py-1.5 rounded-lg font-semibold text-[var(--teal-ink,var(--teal))] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 				>
-					<Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+					<Sparkles className="w-3.5 h-3.5 shrink-0 opacity-70" />
 					<span>Клинические протоколы</span>
 				</button>
 			)}
@@ -113,7 +113,7 @@ export function EmkProtocolsDropdownMenu({
 					onClick={() => { onOpenConsent(); onClose(); }}
 					className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
 				>
-					<ShieldCheck className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+					<ShieldCheck className="w-3.5 h-3.5 shrink-0 opacity-70" />
 					<span>Согласие пациента (ИДС)</span>
 				</button>
 			)}
@@ -125,7 +125,7 @@ export function EmkProtocolsDropdownMenu({
 					onClick={() => { (onPrintMedicalCard ?? onPrint043)?.(); onClose(); }}
 					className="w-full text-left px-2.5 py-1.5 rounded-lg font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal-ink,var(--teal))] flex items-center gap-2 cursor-pointer transition-colors"
 				>
-					<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+					<Printer className="w-3.5 h-3.5 shrink-0 opacity-70" />
 					<span>Печать медицинской карты</span>
 				</button>
 			)}

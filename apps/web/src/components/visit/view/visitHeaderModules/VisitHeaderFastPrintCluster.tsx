@@ -2,6 +2,7 @@ import { Calculator, FileText, Printer } from "lucide-react";
 
 export interface VisitHeaderFastPrintClusterProps {
 	handlePrintMedicalCardFast?: () => void;
+	/** @deprecated Используйте handlePrintMedicalCardFast */
 	handlePrintForm043uFast?: () => void;
 	handlePrintCompletedActFast: () => void;
 	handlePrintEstimateFast: () => void;
@@ -23,7 +24,8 @@ export function VisitHeaderFastPrintCluster({
 			<button
 				type="button"
 				onClick={onPrintCard}
-				data-testid="btn-visit-fast-print-043u"
+				data-testid="btn-visit-fast-print-card"
+				data-legacy-testid="btn-visit-fast-print-043u"
 				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
 				title="Печать дневника приёма (Медицинская карта)"
 				aria-label="Печать дневника"

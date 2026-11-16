@@ -25,7 +25,6 @@ export {
 import {
 	type OutpatientProtocolTemplate,
 	type OutpatientTemplateMetadata,
-	type StomxOutpatientTemplateMetadata,
 	buildAuthenticProtocolTemplate,
 } from "@dental/shared";
 
@@ -38,7 +37,7 @@ export const resolvedProtocolsCache = new Map<number, OutpatientProtocolTemplate
  * Результат кэшируется в RAM для мгновенного доступа без нагрузки на CPU.
  */
 export function resolveProtocolFromTemplate(
-	tpl: OutpatientTemplateMetadata | StomxOutpatientTemplateMetadata,
+	tpl: OutpatientTemplateMetadata,
 ): OutpatientProtocolTemplate {
 	const cached = resolvedProtocolsCache.get(tpl.id);
 	if (cached) {
