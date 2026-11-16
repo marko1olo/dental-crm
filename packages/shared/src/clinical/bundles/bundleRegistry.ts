@@ -13,6 +13,7 @@ import type {
 	CustomizedBundleItem,
 	CustomizedBundleResult,
 } from "./bundleTypes.js";
+import { kopecksToRubles, rublesToKopecks } from "../../money.js";
 import { HYGIENE_DIAGNOSIS_BUNDLE, PERIODONTITIS_DIAGNOSIS_BUNDLE } from "./hygieneAndPerioBundles.js";
 import { BRACES_FIXATION_DIAGNOSIS_BUNDLE, CROWN_DIAGNOSIS_BUNDLE } from "./orthoAndProstheticBundles.js";
 import { EXTRACTION_COMPLEX_DIAGNOSIS_BUNDLE, EXTRACTION_DIAGNOSIS_BUNDLE, IMPLANT_PLACEMENT_DIAGNOSIS_BUNDLE } from "./surgeryBundles.js";
@@ -389,7 +390,7 @@ export function resolveServicePriceAgainstCatalog(
 		const found = byCode ?? catalog.find((c) => c?.active !== false && String(c?.title || "").toLowerCase().replace(/ё/g, "е").includes(service.title.toLowerCase().replace(/ё/g, "е")));
 		if (found) {
 			const rub = extractValidRub(found, service.defaultPriceRub);
-			return { priceKopecks: Math.round(rub * 100), priceRub: rub, priceId: found.id ?? null, title: found.title ?? service.title, fromCatalog: true };
+			return { priceKopecks: rublesToKopecks(rub), priceRub: rub, priceId: found.id ?? null, title: found.title ?? service.title, fromCatalog: true };
 		}
 	}
 	return { priceKopecks: service.defaultPriceKopecks, priceRub: service.defaultPriceRub, priceId: null, title: service.title, fromCatalog: false };
@@ -412,7 +413,7 @@ export function createCustomizedBundle(
 	});
 	const checked = items.filter((it) => it.checked);
 	const totalKopecks = checked.reduce((acc, it) => acc + it.priceKopecks, 0);
-	return { bundleId: bundle.id, diagnosisIcd10: bundle.diagnosisIcd10, diagnosisTitle: bundle.diagnosisTitle, items, totalKopecks, totalRub: Math.round(totalKopecks) / 100, checkedCount: checked.length };
+	return { bundleId: bundle.id, diagnosisIcd10: bundle.diagnosisIcd10, diagnosisTitle: bundle.diagnosisTitle, items, totalKopecks, totalRub: kopecksToRubles(totalKopecks), checkedCount: checked.length };
 }
 
 export function exportCustomizedBundleToCashier54Fz(
@@ -431,7 +432,7 @@ export function exportCustomizedBundleToCashier54Fz(
 	return {
 		source: "chairside_diagnosis_package", bundleId: customized.bundleId, diagnosisIcd10: customized.diagnosisIcd10,
 		diagnosisTitle: customized.diagnosisTitle, toothCode: toothCodeStr, toothNumber: toothNum,
-		patientId: metadata.patientId, visitId: metadata.visitId, totalKopecks, totalRub: Math.round(totalKopecks) / 100,
+		patientId: metadata.patientId, visitId: metadata.visitId, totalKopecks, totalRub: kopecksToRubles(totalKopecks),
 		itemsCount: receiptItems.length, receiptItems,
 	};
 }

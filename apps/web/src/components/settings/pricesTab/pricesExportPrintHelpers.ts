@@ -1,10 +1,9 @@
-import type { ServiceCatalogItem } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, type ServiceCatalogItem } from "@dental/shared";
 import {
 	detectCategoryFrom804nCode,
 	exportPricelistToCsv,
 	generatePrintablePricelistHtml,
 	importPricelistFromCsv,
-	rublesToKopecks,
 } from "../../catalog/pricelist/servicePricelistEngine";
 import {
 	STATUTORY_ORDER_804N_PRESETS,
@@ -28,8 +27,8 @@ function extractCatalogItemPriceRub(item: ServiceCatalogItem): number {
 	const rawPrice =
 		item.basePriceRub ??
 		legacy.priceRub ??
-		(item.priceKopecks != null ? item.priceKopecks / 100 : 0);
-	return Number.isFinite(rawPrice) ? Math.round(rawPrice * 100) / 100 : 0;
+		(item.priceKopecks != null ? kopecksToRubles(item.priceKopecks) : 0);
+	return Number.isFinite(rawPrice) ? rawPrice : 0;
 }
 
 function toPricelistCategory(category: string | undefined): Order804nCategory {
@@ -267,7 +266,7 @@ export function mapScanItemsToDiffItems(
 ): IngestedMappingItem[] {
 	return itemsList.map((it, idx) => {
 		const priceRub = Number.isFinite(it.priceRub) ? Number(it.priceRub) : 0;
-		const priceKopecks = it.priceKopecks ?? Math.round(priceRub * 100);
+		const priceKopecks = it.priceKopecks ?? rublesToKopecks(priceRub);
 		const rawLine = it.rawLine || it.rawInput || it.cleanedTitle || "";
 		const cleanedTitle = it.cleanedTitle || rawLine || `Услуга ${idx + 1}`;
 		const hasCode = Boolean(it.code804n);

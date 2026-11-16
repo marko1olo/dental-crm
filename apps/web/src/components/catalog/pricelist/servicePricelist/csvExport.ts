@@ -10,7 +10,7 @@ import {
 	STATUTORY_VAT_EXEMPTION_NOTE,
 	type ServicePricelistItem,
 } from "../servicePricelistPresets";
-import { calculateTierPrice } from "./currencyMath";
+import { calculateTierPrice } from "./tierPricing";
 import type { CsvExportOptions } from "./types";
 
 export const UTF8_BOM = "\uFEFF";

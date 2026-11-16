@@ -2,7 +2,7 @@ import type { ToothData, ToothState } from "../../../odontogram/ToothChart";
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTierId } from "../../types";
 import type { CatalogServiceLookupItem } from "../../treatmentPlanPricingEngine";
 import { DEMO_SHOWCASE_TEETH, isDemoShowcaseMode, generateTreatmentPlanStages } from "../../treatmentPlanAutoGenerator";
-import { ORDER_804N_DICTIONARY, SERVICES_CATALOG_DICTIONARY, UPPER_ARCH_TEETH, LOWER_ARCH_TEETH, isDeciduousTooth } from "../../treatmentPlanServicesCatalog";
+import { ORDER_804N_DICTIONARY, SERVICES_CATALOG_DICTIONARY, UPPER_ARCH_TEETH, LOWER_ARCH_TEETH, isDeciduousTooth } from "../../treatmentPlanProcedures";
 import { createPlanItem, makeEmptyStage } from "../../treatmentPlanItemFactory";
 import { getDefaultClinicalPresetStages } from "../clinicalPresets";
 import { normalizeToothState, hasToothDefect } from "../toothStateHelpers";

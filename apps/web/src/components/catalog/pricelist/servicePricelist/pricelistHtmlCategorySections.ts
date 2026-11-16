@@ -5,7 +5,8 @@ import {
 	type ServicePricelistItem,
 	SPECIALTY_LABELS,
 } from "../servicePricelistPresets";
-import { calculateTierPrice, formatRubles } from "./currencyMath";
+import { formatRubles } from "@dental/shared";
+import { calculateTierPrice } from "./tierPricing";
 
 function renderCategoryRows(
 	catItems: readonly ServicePricelistItem[],

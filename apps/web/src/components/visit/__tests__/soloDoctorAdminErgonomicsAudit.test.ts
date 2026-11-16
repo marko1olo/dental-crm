@@ -298,13 +298,13 @@ describe("Solo Doctor & Admin Ergonomics Audit (Hot/Warm/Cold UI & Background Sa
 	// 5. ANTI-MATRYOSHKA LAW (MODAL DEPTH STRICTLY <= 1)
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("5. Anti-Matryoshka Law Audit (Modal Depth Strictly <= 1)", () => {
-		it("verifies MdlpDisposalQueueModal renders child act modal sequentially (depth 1)", () => {
-			const mdlpFile = path.join(WEB_SRC, "components/inventory/mdlp/MdlpDisposalQueueModal.tsx");
+		it("verifies MdlpScanningModal renders child act modal sequentially (depth 1)", () => {
+			const mdlpFile = path.join(WEB_SRC, "components/mdlp/MdlpScanningModal.tsx");
 			const content = fs.readFileSync(mdlpFile, "utf8");
 
 			assert.ok(
 				content.includes("Anti-Matryoshka (Mandate 8d Sin 6): render act modal sequentially at modal depth strictly 1"),
-				"MdlpDisposalQueueModal must sequentially return SeniorNurseDisposalActModal",
+				"MdlpScanningModal must sequentially return SeniorNurseDisposalActModal",
 			);
 		});
 

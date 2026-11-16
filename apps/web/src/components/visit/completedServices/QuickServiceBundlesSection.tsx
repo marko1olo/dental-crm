@@ -21,16 +21,16 @@ export const QuickServiceBundlesSection: React.FC<
 	selectedTooth,
 }) => {
 	return (
-		<div className="mb-3 p-2.5 rounded-lg bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/70 dark:border-indigo-800/50">
+		<div className="mb-3 p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
 			<div className="flex items-center justify-between gap-2 mb-2">
-				<span className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-					<Zap className="w-3.5 h-3.5 text-indigo-500" />
+				<span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+					<Zap className="w-3.5 h-3.5 text-[var(--primary)]" />
 					Комплексные клинические пакеты:
 				</span>
 				<button
 					type="button"
 					onClick={onToggleBundlesExpanded}
-					className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+					className="text-[11px] text-[var(--primary)] hover:underline flex items-center gap-0.5"
 				>
 					{bundlesExpanded ? "Свернуть" : "Показать все 4 пакета"}
 					{bundlesExpanded ? (
@@ -50,7 +50,7 @@ export const QuickServiceBundlesSection: React.FC<
 						key={b.id}
 						type="button"
 						onClick={() => onAddBundle(b)}
-						className="flex flex-col items-start p-2 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/30 transition-all text-left group min-h-[48px]"
+						className="flex flex-col items-start p-2 rounded-md bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper-soft)] transition-all text-left group min-h-[48px]"
 						title={b.services
 							.map(
 								(s) =>
@@ -59,15 +59,15 @@ export const QuickServiceBundlesSection: React.FC<
 							.join("\n")}
 					>
 						<div className="w-full flex items-center justify-between gap-1">
-							<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+							<span className="text-xs font-medium text-[var(--ink)] group-hover:text-[var(--primary)]">
 								{b.shortLabel}
 								{selectedTooth ? ` (зуб ${selectedTooth})` : ""}
 							</span>
-							<span className="text-xs font-bold text-slate-900 dark:text-slate-200 font-mono">
+							<span className="text-xs font-semibold text-[var(--ink)] font-mono">
 								{money(b.totalPriceRub)}
 							</span>
 						</div>
-						<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-full mt-0.5">
+						<span className="text-[10px] text-[var(--ink-muted)] truncate max-w-full mt-0.5">
 							{b.badge}
 						</span>
 					</button>

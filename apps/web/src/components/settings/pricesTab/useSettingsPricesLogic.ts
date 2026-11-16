@@ -1,7 +1,8 @@
-import type {
-	DentalSpecialty,
-	PricelistCollisionStrategy,
-	ServiceCatalogItem,
+import {
+	kopecksToRubles,
+	type DentalSpecialty,
+	type PricelistCollisionStrategy,
+	type ServiceCatalogItem,
 } from "@dental/shared";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -470,13 +471,13 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		setEditServiceForm({
 			title: item.title, code: item.code || "", catalogCode: statutoryCode,
 			standardCode: statutoryCode, order804nCode: statutoryCode, category: item.category,
-			specialty: item.specialty, basePriceRub: item.basePriceRub ?? item.priceRub ?? (item.priceKopecks ? item.priceKopecks / 100 : 0),
+			specialty: item.specialty, basePriceRub: item.basePriceRub ?? item.priceRub ?? (item.priceKopecks ? kopecksToRubles(item.priceKopecks) : 0),
 			materialsCostRub: item.materialsCostRub ?? 0, durationMinutes: item.durationMinutes || 30,
 			taxDeductible: item.taxDeductible,
 			vatRate: item.vatRate === "vat_20" || item.vatRate === "vat_0" || item.vatRate === "vat_exempt" ? item.vatRate : "vat_exempt",
 			active: item.isActive !== false && item.active !== false,
 		});
-		setPriceRubInput(rubToPriceInput(item.basePriceRub ?? item.priceRub ?? (item.priceKopecks ? item.priceKopecks / 100 : 0)));
+		setPriceRubInput(rubToPriceInput(item.basePriceRub ?? item.priceRub ?? (item.priceKopecks ? kopecksToRubles(item.priceKopecks) : 0)));
 		setPriceProblem(null);
 		setEditServiceId(item.id);
 	};

@@ -5,7 +5,7 @@
  */
 
 import type { PriceTierKind, ServicePricelistItem } from "../servicePricelistPresets";
-import { calculateTierPrice } from "./currencyMath";
+import { calculateTierPrice } from "./tierPricing";
 import { calculateServiceProfitability } from "./profitabilityCalculator";
 import type { PricelistSortDirection, PricelistSortField } from "./types";
 

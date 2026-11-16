@@ -8,7 +8,8 @@ import type {
 	PriceTierKind,
 	ServicePricelistItem,
 } from "../servicePricelistPresets";
-import { calculateTierPrice, rublesToKopecks } from "./currencyMath";
+import { rublesToKopecks } from "@dental/shared";
+import { calculateTierPrice } from "./tierPricing";
 import type { ProfitabilityLevel, ServiceProfitability } from "./types";
 
 export function calculateServiceProfitability(

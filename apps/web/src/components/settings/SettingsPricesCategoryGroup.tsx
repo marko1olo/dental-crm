@@ -157,8 +157,7 @@ export const SettingsPricesCategoryGroup: React.FC<
 								</button>
 								<button
 									type="button"
-									className="icon-button danger"
-									disabled={deletingServiceId === item.id}
+									className={`icon-button danger ${deletingServiceId === item.id ? "opacity-60" : ""}`}
 									aria-busy={deletingServiceId === item.id}
 									onClick={() => onDeleteService(item.id)}
 									aria-label={`Удалить услугу ${item.title}`}

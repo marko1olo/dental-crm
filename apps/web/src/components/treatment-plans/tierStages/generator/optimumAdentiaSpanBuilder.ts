@@ -1,4 +1,4 @@
-import { SERVICES_CATALOG_DICTIONARY } from "../../treatmentPlanServicesCatalog";
+import { SERVICES_CATALOG_DICTIONARY } from "../../treatmentPlanProcedures";
 import { createPlanItem } from "../../treatmentPlanItemFactory";
 import type { TierGeneratorContext } from "./types";
 import { buildOptimum3ToothBridge } from "./optimumAdentiaBridgeBuilder";

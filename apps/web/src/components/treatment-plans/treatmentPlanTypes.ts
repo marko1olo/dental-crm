@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import type { Kopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, type Kopecks } from "@dental/shared";
 import type {
 	TreatmentPlanStatus,
 	TreatmentPlanStageKind,
@@ -90,12 +90,14 @@ export const treatmentPlanSchema = z.object({
 
 export type TreatmentPlan = z.infer<typeof treatmentPlanSchema>;
 
+export { kopecksToRubles, rublesToKopecks };
+
 export function kopecksToRub(kopecks: number): number {
-	return Math.round(kopecks / 100);
+	return kopecksToRubles(kopecks);
 }
 
 export function rubToKopecks(rub: number): Kopecks {
-	return Math.round(rub * 100);
+	return rublesToKopecks(rub);
 }
 
 export function formatRubles(rub: number): string {

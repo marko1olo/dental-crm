@@ -9,7 +9,7 @@ import React, { useMemo } from "react";
 import { Coins, Check, X, Edit3, PackageCheck, ShieldCheck } from "lucide-react";
 import type { TreatmentPlanItem } from "./types";
 import { useMissingPriceAlert } from "./useMissingPriceAlert";
-import { DENTAL_SERVICES_CATALOG } from "./treatmentPlanServicesCatalog";
+import { loadCanonicalPricelist } from "../catalog/pricelistCatalogData";
 import { createPriceUpdatedPlanItem } from "./missingPriceItemUtils";
 import { MissingPriceInlineEditor, type MissingPriceInlineEditorProps } from "./MissingPriceInlineEditor";
 
@@ -387,9 +387,20 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 		if (bundleBasePriceRub && bundleBasePriceRub > 0) return bundleBasePriceRub;
 		if (item.unitPriceRub && item.unitPriceRub > 0) return item.unitPriceRub;
 		if (item.currentCatalogPriceRub && item.currentCatalogPriceRub > 0) return item.currentCatalogPriceRub;
-		const catalogCode = item.serviceCode || item.code804n;
-		if (catalogCode && DENTAL_SERVICES_CATALOG[catalogCode]) {
-			return DENTAL_SERVICES_CATALOG[catalogCode]!.defaultPriceRub;
+		const catalogCode = (item.serviceCode || item.code804n || "").trim().toUpperCase();
+		if (catalogCode) {
+			const activePricelist = loadCanonicalPricelist();
+			const matched = activePricelist.find(
+				(p) =>
+					p.isActive &&
+					!p.isArchived &&
+					[p.code804n, p.statutoryCode, p.serviceCode]
+						.map((c) => (c || "").trim().toUpperCase())
+						.includes(catalogCode),
+			);
+			if (matched && matched.basePriceRub > 0) {
+				return matched.basePriceRub;
+			}
 		}
 		return undefined;
 	}, [bundleBasePriceRub, item.unitPriceRub, item.currentCatalogPriceRub, item.serviceCode, item.code804n]);

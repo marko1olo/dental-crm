@@ -9,7 +9,7 @@ import {
 	type PriceTierKind,
 	type ServicePricelistItem,
 } from "../servicePricelistPresets";
-import { rublesToKopecks } from "./currencyMath";
+import { rublesToKopecks } from "@dental/shared";
 import { detectCategoryFromServiceCode } from "./serviceCodesAndSynonyms";
 import { parseCategoryFromLabel, parseSpecialtyFromLabel } from "./csvLabelParsers";
 import { CATEGORY_CODE_FALLBACK, type CsvColumnIndices } from "./csvColumnIndices";

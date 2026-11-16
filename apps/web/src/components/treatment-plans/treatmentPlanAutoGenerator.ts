@@ -6,7 +6,7 @@
 import type { ToothData } from "../odontogram/ToothChart";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "./types";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine";
-import { UPPER_ARCH_TEETH, LOWER_ARCH_TEETH, isDeciduousTooth } from "./treatmentPlanServicesCatalog";
+import { UPPER_ARCH_TEETH, LOWER_ARCH_TEETH, isDeciduousTooth } from "./catalogPredicates";
 import { makeEmptyStage } from "./treatmentPlanItemFactory";
 import { DEMO_SHOWCASE_TEETH, setDemoShowcaseMode, isDemoShowcaseMode } from "./autoGenerator/autoGenDemoMode";
 import { buildPeriodontalAndHygieneItems } from "./autoGenerator/autoGenPeriodontal";

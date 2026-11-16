@@ -1,6 +1,6 @@
 import type { TreatmentPlanItem } from "../../types";
 import type { CatalogServiceLookupItem } from "../../treatmentPlanPricingEngine";
-import { ORDER_804N_DICTIONARY } from "../../treatmentPlanServicesCatalog";
+import { ORDER_804N_DICTIONARY } from "../../treatmentPlanProcedures";
 import { createPlanItem } from "../../treatmentPlanItemFactory";
 
 export function getOptimumSurgeryItems(

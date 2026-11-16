@@ -5,7 +5,7 @@ import {
 	getEndoPreparationProcedure,
 	getEndoObturationProcedure,
 	isMolarOrPremolar,
-} from "../../treatmentPlanServicesCatalog";
+} from "../../treatmentPlanProcedures";
 import { createPlanItem } from "../../treatmentPlanItemFactory";
 import type { TierGeneratorContext } from "./types";
 

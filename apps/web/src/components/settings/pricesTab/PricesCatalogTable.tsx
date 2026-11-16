@@ -58,7 +58,7 @@ export function PricesCatalogTable({
 					</div>
 				) : (
 					<div className="empty-catalog-state p-6 max-w-lg mx-auto my-6 bg-[var(--paper)] border border-[var(--line)] rounded-2xl shadow-sm text-center flex flex-col items-center gap-3">
-						<div className="w-12 h-12 rounded-full bg-[var(--teal-soft)] text-[var(--teal)] flex items-center justify-center shrink-0">
+						<div className="w-12 h-12 rounded-full bg-[var(--primary-soft)] text-[var(--primary)] flex items-center justify-center shrink-0">
 							<Sparkles size={24} />
 						</div>
 						<div className="flex flex-col gap-1">
@@ -78,7 +78,7 @@ export function PricesCatalogTable({
 								onClick={() => {
 									if (!isSeedingBaseline) onSeedBaseline?.();
 								}}
-								className={`primary-button min-h-[36px] w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all ${
+								className={`primary-button min-h-[36px] w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all ${
 									isSeedingBaseline ? "pointer-events-none opacity-70" : ""
 								}`}
 							>
@@ -100,7 +100,7 @@ export function PricesCatalogTable({
 								onClick={onAddNewService}
 								className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg cursor-pointer"
 							>
-								<Plus size={14} className="text-[var(--teal)] mr-1 inline" />
+								<Plus size={14} className="text-[var(--primary)] mr-1 inline" />
 								Добавить вручную
 							</button>
 							<button
@@ -108,7 +108,7 @@ export function PricesCatalogTable({
 								onClick={onOpenScannerDropzone}
 								className="secondary-button h-8 px-3 text-[13px] font-medium rounded-lg cursor-pointer"
 							>
-								<UploadCloud size={14} className="text-[var(--teal)] mr-1 inline" />
+								<UploadCloud size={14} className="text-[var(--primary)] mr-1 inline" />
 								Импорт прейскуранта
 							</button>
 						</div>

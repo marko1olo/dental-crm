@@ -8,11 +8,11 @@ import type {
 	PriceTierKind,
 	ServicePricelistItem,
 } from "../servicePricelistPresets";
+import { rublesToKopecks } from "@dental/shared";
 import {
 	calculateTierPrice,
 	roundPrice,
-	rublesToKopecks,
-} from "./currencyMath";
+} from "./tierPricing";
 import type { BatchMarkupOptions } from "./types";
 
 export function applyBatchPriceMarkup(

@@ -1,5 +1,5 @@
-import type { Order804nProcedureDefinition } from "../types";
-import type { ToothData } from "../../odontogram/ToothChart";
+import type { Order804nProcedureDefinition } from "./types";
+import type { ToothData } from "../odontogram/ToothChart";
 
 export function isDeciduousTooth(toothNumber: number): boolean {
 	return (

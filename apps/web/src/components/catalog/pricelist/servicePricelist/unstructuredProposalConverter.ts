@@ -5,7 +5,7 @@
  */
 
 import type { ServicePricelistItem } from "../servicePricelistPresets";
-import { rublesToKopecks } from "./currencyMath";
+import { rublesToKopecks } from "@dental/shared";
 import type { ParsedPriceProposal } from "./types";
 
 export function proposalToPricelistItem(

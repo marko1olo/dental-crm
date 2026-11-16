@@ -3,7 +3,7 @@
 // =============================================================================
 
 export * from "./csvPricelistIo";
-export * from "./currencyMath";
+export * from "./tierPricing";
 export * from "./pricelistHtmlPrinter";
 export * from "./pricelistSearchAndSort";
 export * from "./profitabilityCalculator";

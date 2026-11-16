@@ -1,6 +1,6 @@
 import type { TreatmentPlanItem, TreatmentPlanStage } from "../../types";
 import type { CatalogServiceLookupItem } from "../../treatmentPlanPricingEngine";
-import { ORDER_804N_DICTIONARY } from "../../treatmentPlanServicesCatalog";
+import { ORDER_804N_DICTIONARY } from "../../treatmentPlanProcedures";
 import { createPlanItem } from "../../treatmentPlanItemFactory";
 import { buildPresetStage } from "./presetStageBuilder";
 import { getStandardTherapyItems } from "./standardTherapyItems";

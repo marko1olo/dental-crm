@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Search, Sparkles, X } from "lucide-react";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
-import { DENTAL_SERVICES_CATALOG } from "../treatmentPlanServicesCatalog";
+import { loadCanonicalPricelist } from "../../catalog/pricelistCatalogData";
 import type { SplitCatalogCategoryGroup, SplitCatalogPanelProps } from "./splitCatalogTypes";
 import { SplitCatalogToothQuickBar } from "./SplitCatalogToothQuickBar";
 import { SplitCatalogCategoryAccordion } from "./SplitCatalogCategoryAccordion";
@@ -22,9 +22,15 @@ export const SplitCatalogPanel: React.FC<SplitCatalogPanelProps> = ({
 
 	const effectiveCatalog = useMemo<CatalogServiceLookupItem[]>(() => {
 		if (Array.isArray(catalog) && catalog.length > 0) return catalog;
-		return Object.values(DENTAL_SERVICES_CATALOG).map((p) => ({
-			id: p.code, title: p.title, category: p.category, basePriceRub: p.defaultPriceRub,
-			code: p.code, order804nCode: p.code, active: true,
+		const activeItems = loadCanonicalPricelist();
+		return activeItems.map((p) => ({
+			id: p.id,
+			title: p.commercialTitle,
+			category: p.category,
+			basePriceRub: p.basePriceRub,
+			code: p.code804n,
+			order804nCode: p.code804n,
+			active: p.isActive && !p.isArchived,
 		}));
 	}, [catalog]);
 

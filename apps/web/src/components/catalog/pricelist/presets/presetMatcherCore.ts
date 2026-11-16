@@ -61,7 +61,7 @@ export function findPresetsByToothContext(
 			(p) =>
 				p.isAnatomicalCanalScalable ||
 				p.commercialTitle.toLowerCase().includes(canalSuffix) ||
-				p.statutoryTitle804n.toLowerCase().includes(canalSuffix),
+				(p.statutoryTitle804n?.toLowerCase().includes(canalSuffix) ?? false),
 		);
 		if (canalMatches.length > 0) return canalMatches;
 	}

@@ -1,6 +1,6 @@
 import type { TreatmentPlanItem } from "../types";
 import type { CatalogServiceLookupItem } from "../treatmentPlanPricingEngine";
-import { DENTAL_SERVICES_CATALOG } from "../treatmentPlanServicesCatalog";
+import { DENTAL_SERVICES_CATALOG } from "../treatmentPlanProcedures";
 import { createPlanItem } from "../treatmentPlanItemFactory";
 
 /**

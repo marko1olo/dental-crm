@@ -132,7 +132,7 @@ export function PriceItemEditModal(props: Partial<UnifiedPriceItemModalProps> & 
 
 				<header className="premium-modal-header px-5 py-4 border-b border-[var(--line)] flex items-center justify-between bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-lg bg-[var(--teal)]/10 text-[var(--teal)] flex items-center justify-center border border-[var(--teal)]/20 shrink-0">
+						<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center border border-[var(--primary)]/20 shrink-0">
 							<ReceiptText size={18} />
 						</div>
 						<div>
@@ -343,7 +343,7 @@ export function PriceItemEditModal(props: Partial<UnifiedPriceItemModalProps> & 
 						</button>
 						<button
 							type="submit"
-							className="primary-button w-full sm:w-auto min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 inline-flex items-center justify-center gap-1.5 font-semibold text-white bg-[var(--teal)] hover:bg-[var(--teal-dark)] transition-colors rounded-xl border-none cursor-pointer"
+							className="primary-button w-full sm:w-auto min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 inline-flex items-center justify-center gap-1.5 font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition-colors rounded-xl border-none cursor-pointer"
 							aria-busy={Boolean(isSaving)}
 						>
 							<Check size={16} />
@@ -351,7 +351,7 @@ export function PriceItemEditModal(props: Partial<UnifiedPriceItemModalProps> & 
 								{isSaving
 									? "Сохранение..."
 									: isCreation
-										? "✓ Добавить услугу"
+										? "Добавить услугу"
 										: "Сохранить"}
 							</span>
 						</button>
