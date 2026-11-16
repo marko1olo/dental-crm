@@ -60,10 +60,10 @@ export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> =
 				</div>
 			</div>
 
-			<div className="recall-kanban-card-actions" style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed var(--rm-border)" }}>
+			<div className="recall-kanban-card-actions" style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed var(--line)" }}>
 				<button
 					type="button"
-					className="recall-action-btn recall-action-btn--book bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] font-bold rounded-xl px-2.5 py-1.5 shadow-xs transition-colors border-0"
+					className="recall-action-btn recall-action-btn--book bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] font-medium rounded-lg px-2.5 py-1.5 shadow-xs transition-colors border-0 h-9"
 					style={{ minHeight: "36px", padding: "4px 8px", fontSize: "0.75rem", flex: "1 1 0", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "5px" }}
 					onClick={() => onBook(candidate)}
 					data-testid={`kanban-book-btn-${candidate.id}`}
@@ -73,11 +73,11 @@ export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> =
 					<span>Запланировать</span>
 				</button>
 
-				<div style={{ position: "relative", flex: "1 1 0", display: "inline-flex" }}>
+				<div style={{ position: "relative", flex: "1 1 0", display: "inline-flex", height: "36px" }}>
 					<button
 						type="button"
-						className={`${btnCls} recall-action-btn--whatsapp`}
-						style={{ minHeight: "32px", padding: "4px 6px", fontSize: "0.75rem", flex: "1 1 auto", borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+						className={`${btnCls} recall-action-btn--whatsapp h-9`}
+						style={{ minHeight: "36px", padding: "4px 6px", fontSize: "0.75rem", flex: "1 1 auto", borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
 						onClick={() => void onWhatsApp(candidate)}
 						data-testid={`recall-whatsapp-btn-${candidate.id}`}
 						title="Отправить в WhatsApp"
@@ -87,8 +87,8 @@ export const PatientRecallsKanbanCard: React.FC<PatientRecallsKanbanCardProps> =
 					</button>
 					<button
 						type="button"
-						className={btnCls}
-						style={{ minHeight: "32px", padding: "4px 5px", borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: "none" }}
+						className={`${btnCls} h-9`}
+						style={{ minHeight: "36px", padding: "4px 5px", borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: "none" }}
 						onClick={onToggleMenu}
 						data-testid={`kanban-actions-menu-btn-${candidate.id}`}
 						title="Дополнительные действия (SMS, перенос, статус)"

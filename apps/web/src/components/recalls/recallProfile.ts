@@ -1,5 +1,5 @@
 import type { RecallCycleType, RecallPeriodFilter, RecallUrgencyStatus } from "./recallCycleTypes";
-import { RECALL_CYCLE_CATALOG } from "./recallCycleCatalogData";
+import { RECALL_CYCLE_CATALOG } from "./recallsCatalogData";
 import {
 	addCalendarMonthsSafe,
 	addWeeksSafe,

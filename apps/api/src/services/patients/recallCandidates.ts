@@ -41,6 +41,7 @@ import {
 import { db } from "../../db/client.js";
 import {
 	appointments,
+	doctorPreferences,
 	patientImplantInstallations,
 	patientRecalls,
 	patients,
@@ -192,6 +193,11 @@ export async function findRecallCandidates(
 		WHERE pr.patient_id = ${patients}."id" AND pr.organization_id = ${patients}."organization_id"
 		ORDER BY pr.created_at DESC LIMIT 1
 	)`;
+	const lastDiagnosisMkb = sql<string | null>`(
+		SELECT a.diagnosis_mkb10 FROM ${appointments} a
+		WHERE a.patient_id = ${patients}."id" AND a.status = 'completed'
+		ORDER BY a.starts_at DESC LIMIT 1
+	)`;
 
 	const rows = await db
 		.select({
@@ -199,6 +205,7 @@ export async function findRecallCandidates(
 			fullName: patients.fullName,
 			phone: patients.phone,
 			email: patients.email,
+			birthDate: patients.birthDate,
 			/*
 			 * Псевдонимы обязательны. Без .as() выражение возвращается драйвером под
 			 * служебным именем вида «?column?», и поле в объекте оказывается пустым.
@@ -206,6 +213,7 @@ export async function findRecallCandidates(
 			lastCompletedAt: lastCompleted.as("last_completed_at"),
 			lastDoctorId: lastDoctorId.as("last_doctor_id"),
 			lastReason: lastReason.as("last_reason"),
+			lastDiagnosisMkb: lastDiagnosisMkb.as("last_diagnosis_mkb"),
 			implantCount: implantCount.as("implant_count"),
 			futureAppointments: futureCount.as("future_appointments"),
 			totalAppointments: anyAppointment.as("total_appointments"),
@@ -253,6 +261,27 @@ export async function findRecallCandidates(
 			: [];
 	const doctorById = new Map(doctorRows.map((d) => [d.id, d.fullName]));
 
+	const doctorPrefRows =
+		doctorIds.length > 0
+			? await db
+					.select({
+						doctorId: doctorPreferences.doctorId,
+						specialty: doctorPreferences.specialty,
+					})
+					.from(doctorPreferences)
+					.where(
+						and(
+							eq(doctorPreferences.organizationId, organizationId),
+							inArray(doctorPreferences.doctorId, doctorIds),
+						),
+					)
+			: [];
+	const doctorSpecialtyById = new Map(
+		doctorPrefRows
+			.filter((dp): dp is { doctorId: string; specialty: string } => Boolean(dp.doctorId))
+			.map((dp) => [dp.doctorId, dp.specialty]),
+	);
+
 	const candidates: RecallCandidate[] = [];
 	const byBand: Record<RecallBand, number> = {
 		due: 0,
@@ -266,26 +295,23 @@ export async function findRecallCandidates(
 		const monthsSince = lastAt ? monthsBetween(lastAt, now) : null;
 
 		const hasImplants = Number(row.implantCount) > 0;
-		const reasonText = (row.lastReason ?? "").toLowerCase();
-		const isEndo =
-			reasonText.includes("эндо") ||
-			reasonText.includes("пульпит") ||
-			reasonText.includes("периодонтит") ||
-			reasonText.includes("канал") ||
-			reasonText.includes("депульп") ||
-			reasonText.includes("endo");
-		const isPerio =
-			reasonText.includes("пародонт") ||
-			reasonText.includes("гингив") ||
-			reasonText.includes("вектор") ||
-			reasonText.includes("кюретаж") ||
-			reasonText.includes("perio");
-		const isOrtho =
-			reasonText.includes("ортодонт") ||
-			reasonText.includes("брекет") ||
-			reasonText.includes("ретейнер") ||
-			reasonText.includes("элайнер") ||
-			reasonText.includes("retention");
+		const doctorSpecialty = row.lastDoctorId ? (doctorSpecialtyById.get(row.lastDoctorId) ?? null) : null;
+		const mkb = (row.lastDiagnosisMkb ?? "").toUpperCase();
+
+		// Проверяем детский возраст (< 14 лет)
+		let isChildUnder14 = false;
+		if (row.birthDate) {
+			const bDate = new Date(row.birthDate);
+			if (!Number.isNaN(bDate.getTime())) {
+				const age = Math.floor((now.getTime() - bDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+				if (age < 14) isChildUnder14 = true;
+			}
+		}
+
+		const isOrtho = doctorSpecialty === "orthodontist" || mkb.startsWith("K07");
+		const isEndo = mkb.startsWith("K04");
+		const isPerio = doctorSpecialty === "periodontist" || mkb.startsWith("K05");
+		const isPediatric = isChildUnder14 || doctorSpecialty === "pediatric";
 
 		let cohortType: RecallCohort = "hygiene_therapy";
 		let suggestedIntervalMonths = 6;
@@ -295,6 +321,11 @@ export async function findRecallCandidates(
 			cohortType = "general";
 			suggestedIntervalMonths = 6;
 			clinicalReason = BAND_LABELS.never_arrived;
+		} else if (isPediatric) {
+			cohortType = "general";
+			suggestedIntervalMonths = 3;
+			clinicalReason =
+				"Детский профилактический осмотр и минерализация эмали (3 мес).";
 		} else if (isEndo) {
 			cohortType = "endodontic";
 			suggestedIntervalMonths = 1;
@@ -326,9 +357,9 @@ export async function findRecallCandidates(
 			}
 		} else if (isOrtho) {
 			cohortType = "orthodontic_retention";
-			suggestedIntervalMonths = 3;
+			suggestedIntervalMonths = 1; // 4 недели / 28 дней
 			clinicalReason =
-				"Контрольный осмотр ортодонтического ретейнера / ретенционного аппарата (3 мес).";
+				"Плановая активация аппаратуры и ортодонтический контроль (1 мес).";
 		} else {
 			cohortType = "hygiene_therapy";
 			suggestedIntervalMonths = 6;
@@ -363,15 +394,17 @@ export async function findRecallCandidates(
 			attendingDoctorName: row.lastDoctorId
 				? (doctorById.get(row.lastDoctorId) ?? null)
 				: null,
-			lastProcedureCategory: hasImplants
-				? "implant"
-				: isEndo
-					? "endodontic"
-					: isPerio
-						? "periodontal"
-						: isOrtho
-							? "orthodontics"
-							: "hygiene_therapy",
+			lastProcedureCategory: isPediatric
+				? "pediatric"
+				: hasImplants
+					? "implant"
+					: isEndo
+						? "endodontic"
+						: isPerio
+							? "periodontal"
+							: isOrtho
+								? "orthodontics"
+								: "hygiene_therapy",
 		});
 	}
 

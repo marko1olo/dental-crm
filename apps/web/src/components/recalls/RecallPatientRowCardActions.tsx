@@ -1,5 +1,5 @@
-import type React from "react";
-import { CalendarCheck, ChevronRight, Eye, Lightbulb, MessageCircle, Phone, Send } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { CalendarCheck, ChevronRight, Eye, Lightbulb, MessageCircle, MoreHorizontal, Phone, Send } from "lucide-react";
 import type { PatientRecallRecord, RecallContactStatus } from "./patientRecallEngine";
 
 export interface RecallPatientRowCardActionsProps {
@@ -24,94 +24,144 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 	onTelegram,
 	onCopySms,
 }) => {
-	const btnSecondary = "recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--primary)] hover:bg-[var(--paper-hover)] transition-colors";
-	const btnPrimary = "recall-action-btn recall-action-btn--book bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] font-bold rounded-xl px-3 py-1.5 shadow-xs transition-colors border-0 h-9 min-h-[36px] sm:min-h-[36px]";
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const menuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!isMenuOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+				setIsMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isMenuOpen]);
+
+	const btnSecondary =
+		"recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium rounded-lg px-3.5 h-9 text-sm gap-2 inline-flex items-center justify-center shrink-0 shadow-2xs transition-colors";
+	const btnPrimary =
+		"recall-action-btn recall-action-btn--book bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] font-medium rounded-lg px-3.5 h-9 text-sm gap-2 inline-flex items-center justify-center shrink-0 shadow-xs transition-colors border-0";
 
 	return (
-		<div className="recall-patient-card__actions" role="group" aria-label="Действия вызова">
+		<div className="recall-patient-card__actions flex items-center gap-2 relative" role="group" aria-label="Действия вызова">
+			{/* ЕДИНЫЙ PRIMARY CTA (Мандат 8am) */}
 			<button
 				type="button"
 				className={btnPrimary}
 				onClick={() => onBook(candidate)}
 				data-testid={`recall-book-btn-${candidate.id}`}
 				title="Запланировать осмотр"
-				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 			>
-				<CalendarCheck size={15} />
+				<CalendarCheck size={16} className="shrink-0" />
 				<span>Запланировать осмотр</span>
-				<ChevronRight size={14} />
+				<ChevronRight size={14} className="shrink-0" />
 			</button>
 
-			<a
-				href={candidate.phone ? `tel:${candidate.phone}` : undefined}
-				className={`${btnSecondary} recall-action-btn--phone`}
-				data-testid={`recall-phone-btn-${candidate.id}`}
-				title={candidate.phone ? `Позвонить: ${candidate.phone}` : "Телефон не указан"}
-				style={{ minHeight: "36px", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-			>
-				<Phone size={15} />
-				<span>Позвонить</span>
-			</a>
+			{/* SECONDARY ACTION: ПОЗВОНИТЬ */}
+			{candidate.phone && (
+				<a
+					href={`tel:${candidate.phone.replace(/[^+\d]/g, "")}`}
+					className={`${btnSecondary} recall-action-btn--phone`}
+					data-testid={`recall-phone-btn-${candidate.id}`}
+					title={`Позвонить: ${candidate.phone}`}
+					style={{ textDecoration: "none" }}
+				>
+					<Phone size={15} className="shrink-0" />
+					<span>Позвонить</span>
+				</a>
+			)}
 
-			<button
-				type="button"
-				className={`${btnSecondary} recall-action-btn--whatsapp`}
-				onClick={() => onWhatsApp(candidate)}
-				data-testid={`recall-whatsapp-btn-${candidate.id}`}
-				title="WhatsApp сообщение"
-				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-			>
-				<MessageCircle size={15} />
-				<span>WhatsApp</span>
-			</button>
+			{/* КОМПАКТНОЕ МЕНЮ ДЕЙСТВИЙ (Снос частокола кнопок) */}
+			<div className="relative inline-flex shrink-0" ref={menuRef}>
+				<button
+					type="button"
+					className={`${btnSecondary} px-2 w-9 h-9 flex items-center justify-center ${isScriptActive ? "border-[var(--primary)] text-[var(--primary)]" : ""}`}
+					onClick={() => setIsMenuOpen((prev) => !prev)}
+					data-testid={`recall-more-actions-btn-${candidate.id}`}
+					title="Дополнительные каналы связи и действия"
+					aria-label="Дополнительные каналы связи и действия"
+					aria-expanded={isMenuOpen}
+				>
+					<MoreHorizontal size={16} />
+				</button>
 
-			<button
-				type="button"
-				className={`${btnSecondary} recall-action-btn--telegram`}
-				onClick={() => onTelegram(candidate)}
-				data-testid={`recall-telegram-btn-${candidate.id}`}
-				title="Telegram сообщение"
-				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-			>
-				<Send size={14} />
-				<span>TG</span>
-			</button>
+				{isMenuOpen && (
+					<div
+						className="absolute right-0 bottom-full mb-1.5 z-50 min-w-[210px] rounded-xl border border-[var(--line)] bg-[var(--paper)] p-1.5 shadow-lg flex flex-col gap-1 text-sm animate-in fade-in zoom-in-95 duration-100"
+						role="menu"
+					>
+						<button
+							type="button"
+							className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+							onClick={() => {
+								setIsMenuOpen(false);
+								onWhatsApp(candidate);
+							}}
+							data-testid={`recall-whatsapp-btn-${candidate.id}`}
+						>
+							<MessageCircle size={15} className="text-[var(--success-ink,#10b981)] shrink-0" />
+							<span>WhatsApp сообщение</span>
+						</button>
 
-			<button
-				type="button"
-				className={`${btnSecondary} recall-action-btn--script ${isScriptActive ? "active" : ""}`}
-				onClick={() => onToggleScript(candidate)}
-				data-testid={`recall-script-btn-${candidate.id}`}
-				title="Речевой скрипт для диалога"
-				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-			>
-				<Lightbulb size={15} />
-				<span>Скрипт</span>
-			</button>
+						<button
+							type="button"
+							className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+							onClick={() => {
+								setIsMenuOpen(false);
+								onTelegram(candidate);
+							}}
+							data-testid={`recall-telegram-btn-${candidate.id}`}
+						>
+							<Send size={15} className="text-[var(--info-ink,#0284c7)] shrink-0" />
+							<span>Telegram сообщение</span>
+						</button>
 
-			<button
-				type="button"
-				className={`${btnSecondary} recall-action-btn--subtle`}
-				onClick={() => onCopySms(candidate)}
-				data-testid={`recall-sms-btn-${candidate.id}`}
-				title="Скопировать СМС"
-				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-			>
-				<Send size={14} />
-				<span>СМС</span>
-			</button>
+						<button
+							type="button"
+							className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+							onClick={() => {
+								setIsMenuOpen(false);
+								onCopySms(candidate);
+							}}
+							data-testid={`recall-sms-btn-${candidate.id}`}
+						>
+							<Send size={15} className="text-[var(--ink-muted)] shrink-0" />
+							<span>Скопировать СМС</span>
+						</button>
 
-			<button
-				type="button"
-				className={`${btnSecondary} recall-action-btn--preview`}
-				onClick={() => onTogglePreview?.(candidate)}
-				data-testid={`recall-quick-preview-btn-${candidate.id}`}
-				title="Быстрый просмотр шаблона"
-				style={{ minHeight: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-			>
-				<Eye size={14} />
-				<span>Превью</span>
-			</button>
+						<div className="h-px bg-[var(--line)] my-0.5" />
+
+						<button
+							type="button"
+							className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+							onClick={() => {
+								setIsMenuOpen(false);
+								onToggleScript(candidate);
+							}}
+							data-testid={`recall-script-btn-${candidate.id}`}
+						>
+							<Lightbulb size={15} className="text-[var(--warning-ink,#f59e0b)] shrink-0" />
+							<span>{isScriptActive ? "Скрыть скрипт" : "Речевой скрипт"}</span>
+						</button>
+
+						{onTogglePreview && (
+							<button
+								type="button"
+								className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+								onClick={() => {
+									setIsMenuOpen(false);
+									onTogglePreview(candidate);
+								}}
+								data-testid={`recall-quick-preview-btn-${candidate.id}`}
+							>
+								<Eye size={15} className="text-[var(--ink-muted)] shrink-0" />
+								<span>Быстрый просмотр</span>
+							</button>
+						)}
+					</div>
+				)}
+			</div>
 		</div>
 	);
 };

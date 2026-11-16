@@ -22,7 +22,7 @@ export const PatientRecallsTaskCallsToolbar: React.FC<PatientRecallsTaskCallsToo
 	onToggleTaskCallScriptType,
 	taskCallCandidates,
 }) => {
-	const btnCls = "recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors";
+	const btnCls = "recall-action-btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--primary)] transition-colors";
 
 	return (
 		<div className="recall-toolbar">
@@ -56,7 +56,7 @@ export const PatientRecallsTaskCallsToolbar: React.FC<PatientRecallsTaskCallsToo
 				<button
 					type="button"
 					data-testid="chip-task-call-all"
-					className={`recall-chip border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors ${selectedTaskCallType === "all" ? "active" : ""}`}
+					className={`recall-chip border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--primary)] transition-colors ${selectedTaskCallType === "all" ? "active" : ""}`}
 					onClick={() => onSelectTaskCallType("all")}
 				>
 					Все задачи
@@ -70,7 +70,7 @@ export const PatientRecallsTaskCallsToolbar: React.FC<PatientRecallsTaskCallsToo
 							key={cat.type}
 							type="button"
 							data-testid={`chip-task-call-${cat.type}`}
-							className={`recall-chip border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors ${selectedTaskCallType === cat.type ? "active" : ""}`}
+							className={`recall-chip border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--primary)] transition-colors ${selectedTaskCallType === cat.type ? "active" : ""}`}
 							onClick={() => onSelectTaskCallType(cat.type)}
 						>
 							{cat.shortLabelRu}

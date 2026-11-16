@@ -110,8 +110,8 @@ export function registerStatusRoutes(app: FastifyInstance) {
 					.set({
 						status,
 						channel: commChannel ?? channel ?? null,
-						notes: note ?? undefined,
-						completedAt: isCompletedState ? new Date() : undefined,
+						notes: note ?? null,
+						completedAt: isCompletedState ? new Date() : null,
 						updatedAt: new Date(),
 					})
 					.where(eq(patientRecalls.id, existingRecalls[0].id));
@@ -123,7 +123,7 @@ export function registerStatusRoutes(app: FastifyInstance) {
 					dueDate: new Date(),
 					channel: commChannel ?? channel ?? null,
 					notes: note ?? `Обновление статуса профосмотра: ${status}`,
-					completedAt: isCompletedState ? new Date() : undefined,
+					completedAt: isCompletedState ? new Date() : null,
 				});
 			}
 		});

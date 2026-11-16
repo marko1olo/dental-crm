@@ -52,7 +52,10 @@ export function useRecallHubActions({
 			status: newStatus,
 			channel,
 			note,
-		}).catch((err) => console.error("[RecallActions] Status persist error:", err));
+		}).catch((err) => {
+			console.error("[RecallActions] Status persist error:", err);
+			showToast("Не удалось сохранить статус осмотра на сервере", "error");
+		});
 		if (onStatusChange) onStatusChange(candidateId, newStatus);
 	};
 
@@ -96,9 +99,13 @@ export function useRecallHubActions({
 
 	const handleCopySms = async (candidate: PatientRecallRecord) => {
 		const smsText = generatePdnProtectedRecallMessage(candidate, { clinicName });
-		navigator.clipboard.writeText(smsText).catch(() => {});
-		handleStatusUpdate(candidate.id, "invited", "sms");
-		showToast("Текст приглашения скопирован", "info");
+		try {
+			await navigator.clipboard.writeText(smsText);
+			showToast("Текст приглашения скопирован в буфер обмена", "info");
+		} catch (err) {
+			console.error("[RecallActions] Clipboard error:", err);
+			showToast("Не удалось скопировать текст в буфер обмена", "error");
+		}
 	};
 
 	const handleBook = (candidate: PatientRecallRecord) => {

@@ -34,6 +34,8 @@ export interface PatientRecallItem {
 	readonly lastContactedAt?: string | undefined;
 	readonly lastContactChannel?: RecallChannelType | undefined;
 	readonly scheduledAppointmentDate?: string | undefined;
+	readonly consentMarketing?: boolean | undefined;
+	readonly lastInviteDate?: string | undefined;
 }
 
 export interface PatientRecallRecord {
@@ -79,6 +81,8 @@ export interface PatientRecallRecord {
 	readonly postponedUntil?: string | undefined;
 	readonly postponeReason?: string | undefined;
 	readonly channelId?: string | undefined;
+	readonly consentMarketing?: boolean | undefined;
+	readonly lastInviteDate?: string | undefined;
 }
 
 export type PatientRecallCandidate = PatientRecallRecord;

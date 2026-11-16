@@ -30,7 +30,7 @@ export const PatientRecallsTaskCallBanner: React.FC<PatientRecallsTaskCallBanner
 		>
 			<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, color: "var(--ink)" }}>
-					<Lightbulb size={18} style={{ color: "var(--teal)" }} />
+					<Lightbulb size={18} style={{ color: "var(--primary)" }} />
 					<span>Речевой скрипт звонка: {meta.titleRu}</span>
 				</div>
 				<button

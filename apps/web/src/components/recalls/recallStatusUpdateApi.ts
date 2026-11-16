@@ -21,7 +21,12 @@ export async function sendRecallCandidateStatusUpdate(
 		`/api/patients/recall-candidates/${encodeURIComponent(params.patientId)}/status`,
 		{
 			method: "PATCH",
-			headers: { ...(headers ?? {}), "content-type": "application/json", Accept: "application/json" },
+			headers: {
+				"Idempotency-Key": crypto.randomUUID(),
+				...(headers ?? {}),
+				"content-type": "application/json",
+				Accept: "application/json",
+			},
 			body: JSON.stringify({ status: params.status, channel: params.channel, note: params.note }),
 		},
 	);

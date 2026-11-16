@@ -23,14 +23,14 @@ export function validateRecallInviteSafety(
 	const consentMarketing =
 		options.consentMarketing !== undefined
 			? options.consentMarketing
-			: (candidate as unknown as { consentMarketing?: boolean }).consentMarketing ?? false;
+			: candidate.consentMarketing ?? false;
 
 	return checkNotificationSpamCollision({
 		patientId: candidate.patientId,
 		notificationType: "recall",
 		consentMarketing,
 		hasServiceAppointmentToday: options.hasServiceAppointmentToday,
-		lastMarketingSentAt: options.lastContactedAt ?? (candidate as unknown as { lastInviteDate?: string }).lastInviteDate ?? null,
+		lastMarketingSentAt: options.lastContactedAt ?? candidate.lastInviteDate ?? null,
 		messagesSentTodayCount: options.messagesSentTodayCount ?? 0,
 		targetDate: options.targetDate,
 	});
@@ -62,7 +62,12 @@ export async function sendRecallCandidateInvite(
 
 	const response = await fetch("/api/recalls/invite", {
 		method: "POST",
-		headers: { ...(headers ?? {}), "content-type": "application/json", Accept: "application/json" },
+		headers: {
+			"Idempotency-Key": crypto.randomUUID(),
+			...(headers ?? {}),
+			"content-type": "application/json",
+			Accept: "application/json",
+		},
 		body: JSON.stringify({ patientId: params.patientId, channel: params.channel, body: params.body }),
 	});
 

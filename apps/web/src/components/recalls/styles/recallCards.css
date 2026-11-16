@@ -24,7 +24,7 @@
 }
 .recall-patient-card:hover {
 	background: var(--rm-surface-hover);
-	border-color: var(--teal);
+	border-color: var(--primary);
 	box-shadow: var(--shadow-1);
 }
 
@@ -59,7 +59,7 @@
 	font-size: 0.875rem;
 	line-height: 1.4;
 }
-.recall-patient-card__procedure { font-weight: 600; color: var(--teal); }
+.recall-patient-card__procedure { font-weight: 600; color: var(--primary); }
 .recall-patient-card__divider { color: var(--muted); font-size: 0.75rem; }
 .recall-patient-card__last-visit { color: var(--rm-text-main); font-size: 0.8125rem; }
 .recall-patient-card__no-phone { color: var(--muted); font-style: italic; }
@@ -69,7 +69,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
-	color: var(--teal);
+	color: var(--primary);
 	text-decoration: none;
 	font-weight: 600;
 	min-height: 24px;

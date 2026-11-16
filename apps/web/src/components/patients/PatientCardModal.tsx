@@ -12,7 +12,7 @@
 import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity, AlertOctagon, Award, Calendar, Camera, ClipboardList, ExternalLink,
+	Activity, AlertOctagon, Award, Calendar, CalendarCheck, Camera, ClipboardList, ExternalLink,
 	FileCheck, FileText, HeartPulse, History, Plus, Printer, Scan, ShieldAlert, ShieldCheck,
 	Stethoscope, User, Users, Wallet, X,
 } from "lucide-react";
@@ -44,6 +44,10 @@ import { PatientCreationModalBody } from "./patientCreation/PatientCreationModal
 export * from "./patientCardModalModules/patientCardModalTypes";
 import type { PatientCardTab, PatientModalMode, PatientCardModalProps } from "./patientCardModalModules/patientCardModalTypes";
 import { toCanonicalPatient, createPatientCreationOptions } from "./patientCardModalModules/patientCardModalTypes";
+
+const PatientRecallsHubModal = React.lazy(() =>
+	import("../recalls/PatientRecallsHubModal").then((m) => ({ default: m.PatientRecallsHubModal })),
+);
 
 const TABS = [
 	{ id: "general", testId: "tab-patient-general", label: "Паспортные данные", Icon: FileText },
@@ -95,13 +99,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
 	const [isMedicalRecordStudioOpen, setIsMedicalRecordStudioOpen] = React.useState(false);
+	const [isRecallsHubOpen, setIsRecallsHubOpen] = React.useState(false);
 
 	const isAnySubModalOpen = Boolean(
 		isMedicalRecordStudioOpen ||
 		isPhotoModalOpen ||
 		isDiplomaModalOpen ||
 		isDmsLetterModalOpen ||
-		isTaxDeductionModalOpen
+		isTaxDeductionModalOpen ||
+		isRecallsHubOpen
 	);
 
 	// Состояние для режима создания пациента
@@ -273,6 +279,18 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							>
 								<ClipboardList className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>ЭМК</span>
+							</button>
+						)}
+						{!isCreateMode && (
+							<button
+								type="button"
+								data-testid="btn-patient-recalls-hub"
+								onClick={() => setIsRecallsHubOpen(true)}
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
+								title="Диспансерный график и профосмотры (Рекаллы)"
+							>
+								<CalendarCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Профосмотры</span>
 							</button>
 						)}
 						{isCreateMode ? (
@@ -645,6 +663,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								},
 							}}
 						/>
+						{isRecallsHubOpen && (
+							<React.Suspense fallback={null}>
+								<PatientRecallsHubModal
+									isOpen={isRecallsHubOpen}
+									onClose={() => setIsRecallsHubOpen(false)}
+									clinicName="DENTE Clinic"
+								/>
+							</React.Suspense>
+						)}
 					</>
 				)}
 				</div>

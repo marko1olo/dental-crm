@@ -56,12 +56,12 @@
 	touch-action: manipulation;
 }
 .recall-action-btn:hover { background: var(--rm-surface-hover); border-color: var(--rm-text-muted); }
-.recall-action-btn--phone { color: var(--rm-primary); border-color: var(--rm-primary); }
-.recall-action-btn--whatsapp { color: var(--ok-fg); background: var(--ok-bg); border-color: var(--ok-fg); }
-.recall-action-btn--telegram { color: var(--info-fg); background: var(--info-bg); border-color: var(--info-fg); }
-.recall-action-btn--script { color: var(--rm-primary); background: var(--rm-primary-light); border-color: var(--rm-primary); }
-.recall-action-btn--book { color: var(--paper-strong); background: var(--rm-primary); border-color: var(--rm-primary); }
-.recall-action-btn--book:hover { background: var(--rm-primary-hover); }
+.recall-action-btn--phone { color: var(--primary); border-color: var(--line); }
+.recall-action-btn--whatsapp { color: var(--success-ink, #10b981); background: var(--success-soft, rgba(16, 185, 129, 0.1)); border-color: var(--line); }
+.recall-action-btn--telegram { color: var(--info-ink, #0284c7); background: var(--info-soft, rgba(2, 132, 199, 0.1)); border-color: var(--line); }
+.recall-action-btn--script { color: var(--primary); background: var(--paper-soft); border-color: var(--line); }
+.recall-action-btn--book { color: #ffffff; background: var(--primary); border-color: var(--primary); }
+.recall-action-btn--book:hover { background: var(--primary-hover); }
 
 @media (pointer: coarse) {
 	.recall-action-btn {

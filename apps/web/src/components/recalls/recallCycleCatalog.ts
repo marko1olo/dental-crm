@@ -5,4 +5,4 @@
 
 export * from "./recallCycleTypes";
 export * from "./recallRecordTypes";
-export * from "./recallCycleCatalogData";
+export * from "./recallsCatalogData";

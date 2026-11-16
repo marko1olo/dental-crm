@@ -1,6 +1,6 @@
 import type React from "react";
 import type { RecallCycleType } from "./patientRecallEngine";
-import { RECALL_CYCLE_PRESETS } from "./recallCyclePresetsConfig";
+import { RECALL_CYCLE_PRESETS } from "./recallsCatalogData";
 
 export interface RecallCycleSegmentedBarProps {
 	readonly selectedCycle: RecallCycleType | "all";

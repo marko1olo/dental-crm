@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Check, Edit3, FileText, Gift, Save, ShieldCheck, Users } from "lucide-react";
+import { CalendarCheck, Check, Edit3, FileText, Gift, Save, ShieldCheck, Users } from "lucide-react";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../blankContractPrint";
 import type { PatientHeaderRecord } from "../headerModules/patientHeaderTypes";
 
@@ -66,6 +66,20 @@ export function PatientTopHeaderMenu({
 			<button type="button" onClick={handleOpenFamily} className={itemCls} data-testid="header-open-family-btn">
 				<Users size={13} className="text-indigo-500 shrink-0" />
 				<span>Семейный счёт и баланс</span>
+			</button>
+			<button
+				type="button"
+				onClick={() => {
+					onClose();
+					window.dispatchEvent(
+						new CustomEvent("dente-open-recalls-hub", { detail: { patientId: selectedPatient?.id } }),
+					);
+				}}
+				className={itemCls}
+				data-testid="header-open-recalls-btn"
+			>
+				<CalendarCheck size={13} className="text-[var(--primary)] shrink-0" />
+				<span>Профосмотры и диспансеризация</span>
 			</button>
 			<div className="h-px bg-[var(--line)] my-0.5" />
 			<button type="button" onClick={() => { onClose(); void printBlankMedicalContract(selectedPatient); }} className={itemCls} data-testid="header-print-blank-contract-btn">

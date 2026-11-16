@@ -33,13 +33,13 @@
 	touch-action: manipulation;
 }
 .recall-preset-btn:hover {
-	border-color: var(--teal);
+	border-color: var(--primary);
 	color: var(--rm-text-main);
 }
 .recall-preset-btn.active {
-	background: var(--teal-surface, var(--rm-surface-hover));
-	border-color: var(--teal);
-	color: var(--teal);
+	background: var(--paper-soft);
+	border-color: var(--primary);
+	color: var(--primary);
 	font-weight: 700;
 }
 .recall-preset-label-short { display: none; }
