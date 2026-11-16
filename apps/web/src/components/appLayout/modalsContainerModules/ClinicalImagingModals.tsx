@@ -6,9 +6,11 @@ import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
 import { VisiographComparisonModal } from "../../radiology/VisiographComparisonModal";
 import { ImagingExportModal } from "../../imaging/ImagingExportModal";
+import type { ImagingStudy } from "../../imaging/types";
 import { usePatientStore } from "../../../store/patientStore";
 import { useVisitStore } from "../../../store/visitStore";
 import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
+import type { StaffUser } from "../../auth/staffPinPad/staffPinPadTypes";
 
 const CbctTunerPlayground = lazyWithRetry(() =>
 	import("../../radiology/tuner/CbctTunerPlayground").then((m) => ({ default: m.CbctTunerPlayground })),
@@ -26,7 +28,7 @@ export interface ClinicalImagingModalsProps {
 	setIsCbctTunerOpen: (open: boolean) => void;
 	isCbctDirectModalOpen: boolean;
 	setIsCbctDirectModalOpen: (open: boolean) => void;
-	activeStaffUser?: any;
+	activeStaffUser?: StaffUser | null | undefined;
 }
 
 export function ClinicalImagingModals({
@@ -46,8 +48,19 @@ export function ClinicalImagingModals({
 	const clinicName = useDocumentBrandingStore((s) => s.clinicName) || "Стоматологическая клиника";
 
 	const effectivePatientName = patientCoreDraft?.fullName?.trim() || (selectedPatientId ? `Пациент #${selectedPatientId.slice(0, 8)}` : "");
-	const effectiveCardNumber = (patientCoreDraft as any)?.cardNumber || (patientCoreDraft as any)?.medicalCardNumber || "";
 	const effectiveToothFdi = activeToothNumber ? String(activeToothNumber) : undefined;
+	const doctorDisplayName =
+		(typeof activeStaffUser?.name === "string" && activeStaffUser.name) ||
+		(typeof activeStaffUser?.fullName === "string" && activeStaffUser.fullName) ||
+		"Лечащий врач";
+
+	const exportStudy: ImagingStudy = {
+		id: effectiveToothFdi ? `study-rvg-${effectiveToothFdi}` : "study-rvg-current",
+		title: effectiveToothFdi ? `Прицельный снимок визиографа (зуб ${effectiveToothFdi})` : "Прицельный снимок визиографа",
+		capturedAt: new Date().toISOString(),
+		date: new Date().toISOString(),
+		kind: "rvg",
+	};
 
 	return (
 		<>
@@ -56,7 +69,6 @@ export function ClinicalImagingModals({
 					isOpen={isGlobalVisiographOpen}
 					onClose={() => setIsGlobalVisiographOpen(false)}
 					patientName={effectivePatientName || undefined}
-					patientCardNumber={effectiveCardNumber || undefined}
 					activeToothFdi={effectiveToothFdi}
 				/>
 			)}
@@ -65,18 +77,12 @@ export function ClinicalImagingModals({
 				<ImagingExportModal
 					isOpen={isGlobalImagingExportOpen}
 					onClose={() => setIsGlobalImagingExportOpen(false)}
-					study={{
-						id: effectiveToothFdi ? `study-rvg-${effectiveToothFdi}` : "study-rvg-current",
-						title: effectiveToothFdi ? `Прицельный снимок визиографа (зуб ${effectiveToothFdi})` : "Прицельный снимок визиографа",
-						capturedAt: new Date().toISOString(),
-						date: new Date().toISOString(),
-						kind: "rvg",
-					} as any}
+					study={exportStudy}
 					patient={{
 						fullName: effectivePatientName || "Пациент не выбран",
-						medicalCardNumber: effectiveCardNumber,
+						medicalCardNumber: "",
 					}}
-					doctorName={activeStaffUser?.name || "Лечащий врач"}
+					doctorName={doctorDisplayName}
 					clinicName={clinicName}
 				/>
 			)}

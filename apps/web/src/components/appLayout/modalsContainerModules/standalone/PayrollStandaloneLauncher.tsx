@@ -10,6 +10,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { AppLoadingState } from "../../../../AppBootState";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import { lazyWithRetry } from "../../../../lib/lazyWithRetry";
+import { DirectDoctorPayrollReportLauncher } from "../../../analytics/DirectDoctorPayrollReportLauncher";
 
 const DoctorPayrollStudioModal = lazyWithRetry(() =>
 	import("../../../payroll/DoctorPayrollStudioModal").then((module) => ({
@@ -23,6 +24,13 @@ interface PayrollDoctorOption {
 	readonly specialtyId: string;
 }
 
+interface RawStaffItem {
+	readonly id?: string;
+	readonly fullName?: string;
+	readonly role?: string;
+	readonly specialties?: readonly string[];
+}
+
 function useRealDoctors(): PayrollDoctorOption[] {
 	const [doctors, setDoctors] = useState<PayrollDoctorOption[]>([]);
 	useEffect(() => {
@@ -33,14 +41,16 @@ function useRealDoctors(): PayrollDoctorOption[] {
 					headers: denteAdminSecretRequestHeaders(),
 				});
 				if (!res.ok) return;
-				const data = await res.json();
-				const staff: unknown[] = Array.isArray(data) ? data : (data?.staff ?? []);
-				const mapped = staff
-					.filter((s: any) => s?.role === "doctor" && s?.id && s?.fullName)
-					.map((s: any) => ({
-						id: String(s.id),
-						name: String(s.fullName),
-						specialtyId: Array.isArray(s.specialties) && s.specialties[0] ? String(s.specialties[0]) : "general_dentist",
+				const data = (await res.json()) as { staff?: readonly RawStaffItem[] } | readonly RawStaffItem[];
+				const staff: readonly RawStaffItem[] = Array.isArray(data)
+					? data
+					: (data && "staff" in data && Array.isArray(data.staff) ? data.staff : []);
+				const mapped: PayrollDoctorOption[] = staff
+					.filter((s): s is RawStaffItem & { id: string; fullName: string } => s?.role === "doctor" && typeof s?.id === "string" && typeof s?.fullName === "string")
+					.map((s) => ({
+						id: s.id,
+						name: s.fullName,
+						specialtyId: Array.isArray(s.specialties) && typeof s.specialties[0] === "string" ? s.specialties[0] : "general_dentist",
 					}));
 				if (!cancelled) setDoctors(mapped);
 			} catch {
@@ -82,6 +92,19 @@ export function renderPayrollLauncher(): React.ReactElement | null {
 
 	const search = window.location.search || "";
 	const hash = window.location.hash || "";
+
+	// Сводная ведомость Net Revenue и зарплаты ассистентов (DoctorPayrollReport)
+	if (
+		hash.includes("doctor-payroll-report") ||
+		hash.includes("executive-payroll") ||
+		hash.includes("assistant-payroll") ||
+		search.includes("doctor_payroll") ||
+		search.includes("executive_payroll") ||
+		search.includes("assistant_payroll")
+	) {
+		return <DirectDoctorPayrollReportLauncher />;
+	}
+
 	const isPayrollRoute =
 		search.includes("payroll") ||
 		hash.includes("payroll") ||

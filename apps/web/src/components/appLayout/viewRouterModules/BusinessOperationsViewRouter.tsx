@@ -3,6 +3,8 @@
  */
 
 import React, { Suspense } from "react";
+import type { StaffMember } from "@dental/shared";
+import type { SettingsStaffUser } from "../../../views/settingsView/types";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
 import { viewLabels } from "../../../workspaceShell";
 import { AppLoadingState } from "../../../AppBootState";
@@ -31,17 +33,27 @@ export function BusinessOperationsViewRouter({
 	appLogicValue,
 }: AppViewRouterProps) {
 	if (currentView === "settings") {
-		const defaultStaff =
+		const rawStaff =
 			activeStaffUser ??
-			dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "owner") ??
-			dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "doctor") ??
+			dashboard?.clinicSettings?.staff?.find((s: StaffMember) => s.role === "owner") ??
+			dashboard?.clinicSettings?.staff?.find((s: StaffMember) => s.role === "doctor") ??
 			dashboard?.clinicSettings?.staff?.[0] ??
 			null;
+		const defaultStaff: SettingsStaffUser | null = rawStaff
+			? {
+					id: rawStaff.id,
+					role: typeof rawStaff.role === "string" ? rawStaff.role : undefined,
+					fullName: typeof rawStaff.fullName === "string" ? rawStaff.fullName : undefined,
+					email: typeof rawStaff.email === "string" ? rawStaff.email : null,
+					phone: typeof rawStaff.phone === "string" ? rawStaff.phone : null,
+					active: typeof rawStaff.active === "boolean" ? rawStaff.active : undefined,
+				}
+			: null;
 
 		return (
 			<WorkspaceRouteErrorBoundary view="settings" label={viewLabels.settings} panelClassName="settings-zone" panelId="settings">
 				<Suspense fallback={<AppLoadingState message="Загрузка настроек..." />}>
-					<SettingsView activeStaffUser={defaultStaff} activePatient={activePatient} {...(appLogicValue as any)} />
+					<SettingsView activeStaffUser={defaultStaff} activePatient={activePatient} {...(appLogicValue ?? {})} />
 				</Suspense>
 			</WorkspaceRouteErrorBoundary>
 		);
@@ -51,7 +63,10 @@ export function BusinessOperationsViewRouter({
 		return (
 			<WorkspaceRouteErrorBoundary view="marketing" label="Маркетинг/SEO" panelClassName="panel marketing-panel" panelId="marketing">
 				<Suspense fallback={<AppLoadingState message="Загрузка маркетинга..." />}>
-					<MarketingView clinicName={dashboard?.clinicName} clinicPhone={clinicProfileDraft?.phone ?? ""} />
+					<MarketingView
+						clinicName={dashboard?.clinicName || "Стоматология ДЕНТЕ Премиум"}
+						clinicPhone={typeof clinicProfileDraft?.phone === "string" ? clinicProfileDraft.phone : ""}
+					/>
 				</Suspense>
 			</WorkspaceRouteErrorBoundary>
 		);

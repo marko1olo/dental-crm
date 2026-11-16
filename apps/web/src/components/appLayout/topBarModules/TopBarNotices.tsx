@@ -8,18 +8,19 @@ import { isDemoShowcaseMode, disableDemoShowcaseMode } from "../../../lib/demoMo
 import { clearOfflineClinicCaches } from "../../../lib/offlineStorage";
 import { DENTE_CLINIC_TOKEN_KEY, DENTE_STAFF_TOKEN_KEY, safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
 import { DemoModeBanner } from "../../demo/DemoModeBanner";
+import type { DenteTelegramHandoffTarget } from "../../../AppConstants";
 
 export interface TopBarNoticesProps {
-	clinicName?: string;
-	defaultClinicNoticeHidden?: boolean;
-	setDefaultClinicNoticeHidden?: Dispatch<SetStateAction<boolean>>;
-	reopenOnboarding?: () => void;
-	error?: string | null;
-	setError?: Dispatch<SetStateAction<string | null>>;
-	uiPreferencesSyncError?: string | null;
-	setUiPreferencesSyncError?: Dispatch<SetStateAction<string | null>>;
-	telegramHandoffNotice?: any;
-	setTelegramHandoffNotice?: Dispatch<SetStateAction<any>>;
+	clinicName?: string | undefined;
+	defaultClinicNoticeHidden?: boolean | undefined;
+	setDefaultClinicNoticeHidden?: Dispatch<SetStateAction<boolean>> | undefined;
+	reopenOnboarding?: (() => void) | undefined;
+	error?: string | null | undefined;
+	setError?: Dispatch<SetStateAction<string | null>> | undefined;
+	uiPreferencesSyncError?: string | null | undefined;
+	setUiPreferencesSyncError?: Dispatch<SetStateAction<string | null>> | undefined;
+	telegramHandoffNotice?: DenteTelegramHandoffTarget | null | undefined;
+	setTelegramHandoffNotice?: Dispatch<SetStateAction<DenteTelegramHandoffTarget | null>> | undefined;
 }
 
 export function TopBarNotices({

@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import type { StaffUser } from "../../auth/staffPinPad/staffPinPadTypes";
 import type { AppModalsContainerProps } from "../types";
 
 export interface StandaloneLaunchersProps {
@@ -59,28 +60,28 @@ export interface ClinicalModalsSubcontainerProps {
 	setIsConsentDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 	isEgiszRemdModalOpen: boolean;
 	setIsEgiszRemdModalOpen: Dispatch<SetStateAction<boolean>>;
-	activeStaffUser: any;
+	activeStaffUser?: StaffUser | null | undefined;
 }
 
 export interface LoyaltyModalContext {
-	patientName?: string;
-	patientId?: string;
-	initialPointsBalance?: number;
-	currentInvoiceAmountKop?: number;
-	medicalCardNumber?: string;
+	patientName?: string | undefined;
+	patientId?: string | undefined;
+	initialPointsBalance?: number | undefined;
+	currentInvoiceAmountKop?: number | undefined;
+	medicalCardNumber?: string | undefined;
 }
 
 export interface AdministrativeModalsSubcontainerProps {
 	isGlobalLabCreateOrderOpen: boolean;
 	setIsGlobalLabCreateOrderOpen: (open: boolean) => void;
 	labCreateOrderContext: LabCreateOrderContext | null;
-	isGlobalLoyaltyOpen?: boolean;
-	setIsGlobalLoyaltyOpen?: (open: boolean) => void;
-	loyaltyModalContext?: LoyaltyModalContext | null;
+	isGlobalLoyaltyOpen?: boolean | undefined;
+	setIsGlobalLoyaltyOpen?: ((open: boolean) => void) | undefined;
+	loyaltyModalContext?: LoyaltyModalContext | null | undefined;
 	isSessionLocked?: boolean | undefined;
 	setIsSessionLocked?: Dispatch<SetStateAction<boolean>> | undefined;
-	activeStaffUser: any;
-	setActiveStaffUser: Dispatch<SetStateAction<any>>;
+	activeStaffUser?: StaffUser | null | undefined;
+	setActiveStaffUser: Dispatch<SetStateAction<StaffUser | null>>;
 	handleClinicLogout: () => void;
 	handleFullStaffLock: () => void;
 }

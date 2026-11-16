@@ -42,15 +42,15 @@ export type ImagingModalId =
 	| "rvg_capture";
 
 export type ImagingViewProps = {
-	onStudyCreated?: (study: ImagingStudy) => void;
-	onStudyUpdated?: (study: ImagingStudy) => void;
-	selectedImagingStudy?: ImagingStudy | null;
-	activePatient?: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null;
+	onStudyCreated?: ((study: ImagingStudy) => void) | undefined;
+	onStudyUpdated?: ((study: ImagingStudy) => void) | undefined;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
+	activePatient?: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null | undefined;
 	activeAppointment?: unknown;
-	activeImagingStudies?: ImagingStudy[];
-	visibleImagingStudies?: ImagingStudy[];
-	setSelectedImagingStudyId?: (id: string) => void;
-	setImagingKindFilter?: (kind: string) => void;
+	activeImagingStudies?: ImagingStudy[] | undefined;
+	visibleImagingStudies?: ImagingStudy[] | undefined;
+	setSelectedImagingStudyId?: ((id: string) => void) | undefined;
+	setImagingKindFilter?: ((kind: string) => void) | undefined;
 	[key: string]: unknown;
 };
 

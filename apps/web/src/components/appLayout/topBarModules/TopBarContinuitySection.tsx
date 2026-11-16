@@ -32,7 +32,7 @@ export function TopBarContinuitySection({
 			onFlushVisit={() => void flushPendingVisitSaves({ silent: false })}
 			pendingSpeechChunkCount={pendingSpeechChunkCount}
 			pendingVisitSaveCount={pendingVisitSaveCount}
-			networkState={networkState}
+			{...(networkState ? { networkState } : {})}
 			pendingMutationCount={pendingMutationCount}
 			onSyncMutations={() => void syncOfflineMutations()}
 			isSyncingMutations={isSyncingMutations}

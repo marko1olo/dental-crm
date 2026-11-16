@@ -23,9 +23,9 @@ const PatientCockpit = lazyWithRetry(() =>
 const ImagingView = lazyWithRetry(() =>
 	import("../../../ImagingView").then((m) => ({ default: m.ImagingView })),
 );
-const TreatmentPlanModule = lazyWithRetry(() =>
-	import("../../treatment-plans/TreatmentPlanModule").then((m) => ({
-		default: m.TreatmentPlanModule,
+const TreatmentPlanStudioModal = lazyWithRetry(() =>
+	import("../../treatment-plans/TreatmentPlanStudioModal").then((m) => ({
+		default: m.TreatmentPlanStudioModal,
 	})),
 );
 const OrthodonticsStudioModal = lazyWithRetry(() =>
@@ -61,9 +61,9 @@ export function ClinicalViewRouter({
 							activePatient={activeVisitPatient || activePatient}
 							activePatientInsight={activePatientInsight}
 							dashboard={dashboard}
-							activeCommunicationTasks={activeCommunicationTasks}
-							activeImagingStudies={activeImagingStudies}
-							activeUsableDocuments={activeUsableDocuments}
+							activeCommunicationTasks={activeCommunicationTasks ?? []}
+							activeImagingStudies={activeImagingStudies ?? []}
+							activeUsableDocuments={activeUsableDocuments ?? []}
 						/>
 					</Suspense>
 				</WorkspaceRouteErrorBoundary>
@@ -75,18 +75,42 @@ export function ClinicalViewRouter({
 		return (
 			<WorkspaceRouteErrorBoundary view="imaging" label={viewLabels.imaging} panelClassName="panel imaging-panel" panelId="imaging">
 				<Suspense fallback={<AppLoadingState message="Загрузка снимков пациента..." />}>
-					<ImagingView {...(appLogicValue as any)} activePatient={activePatient} activeImagingStudies={activeImagingStudies} currentView={currentView} />
+					<ImagingView
+						{...((appLogicValue as Record<string, unknown> | undefined) ?? {})}
+						activePatient={activePatient}
+						{...(activeImagingStudies ? { activeImagingStudies: [...activeImagingStudies] } : {})}
+						currentView={currentView}
+					/>
 				</Suspense>
 			</WorkspaceRouteErrorBoundary>
 		);
 	}
 
 	if (currentView === "visit") {
+		const targetPatientId = patientId || activeVisitPatient?.id || activePatient?.id;
+		const targetPatientName = activeVisitPatient?.fullName || activePatient?.fullName;
+		const orthoProps = {
+			isOpen: true as const,
+			onClose: () => {
+				if (typeof window !== "undefined") {
+					const url = new URL(window.location.href);
+					url.searchParams.delete("perspective");
+					window.history.replaceState({}, "", url.pathname + url.search);
+					window.dispatchEvent(new CustomEvent("dente:perspective-changed", { detail: { perspective: "default" } }));
+				}
+			},
+			...(targetPatientId ? { patientId: targetPatientId } : {}),
+			...(targetPatientName ? { patientName: targetPatientName } : {}),
+			...(dashboard?.activeVisit?.id ? { visitId: dashboard.activeVisit.id } : {}),
+		};
+
 		return (
 			<WorkspaceRouteErrorBoundary view="visit" label={viewLabels.visit} panelClassName="panel visit-panel" panelId="visit">
 				<Suspense fallback={<AppLoadingState message="Загрузка клинического приёма..." />}>
 					{perspective === "orthodontic" ? (
-						<OrthodonticsStudioModal
+						<OrthodonticsStudioModal {...orthoProps} />
+					) : perspective === "presentation" ? (
+						<TreatmentPlanStudioModal
 							isOpen={true}
 							onClose={() => {
 								if (typeof window !== "undefined") {
@@ -96,19 +120,16 @@ export function ClinicalViewRouter({
 									window.dispatchEvent(new CustomEvent("dente:perspective-changed", { detail: { perspective: "default" } }));
 								}
 							}}
-							patientId={patientId || activeVisitPatient?.id || activePatient?.id}
-							patientName={activeVisitPatient?.fullName || activePatient?.fullName}
-							doctorName={dashboard?.activeVisit?.doctorName}
-							visitId={dashboard?.activeVisit?.id}
-						/>
-					) : perspective === "presentation" ? (
-						<TreatmentPlanModule
 							patientId={patientId || "anonymous"}
 							patientName={activePatient?.fullName || "Пациент"}
-							teethData={(patientId && loadStoredTeethData(patientId)) || []}
+							teeth={(patientId && loadStoredTeethData(patientId)) || []}
 						/>
 					) : (
-						<ClinicalErrorBoundary workspaceName="Приём пациента" workspaceKey="visit" visitId={dashboard?.activeVisit?.id}>
+						<ClinicalErrorBoundary
+							workspaceName="Приём пациента"
+							workspaceKey="visit"
+							{...(dashboard?.activeVisit?.id ? { visitId: dashboard.activeVisit.id } : {})}
+						>
 							<VisitView />
 						</ClinicalErrorBoundary>
 					)}

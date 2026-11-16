@@ -6,9 +6,10 @@
 import React from "react";
 import { AlertOctagon } from "lucide-react";
 import { LanCitoEmergencyBanner } from "../../sync/LanCitoEmergencyBanner";
+import type { ActiveCitoAlert } from "../../../hooks/useLanP2P";
 
 export interface TopBarEmergencyBellProps {
-	activeCitoAlerts?: any[];
+	activeCitoAlerts?: ActiveCitoAlert[];
 	dismissCitoAlert?: (alertId: string) => void;
 	onEmergencyClick?: () => void;
 	showSosButton?: boolean;

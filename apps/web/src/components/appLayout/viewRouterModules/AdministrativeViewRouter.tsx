@@ -26,19 +26,13 @@ const CommunicationsView = lazyWithRetry(() =>
 	import("../../../CommunicationsView").then((m) => ({ default: m.CommunicationsView })),
 );
 
-export function AdministrativeViewRouter({ currentView, dashboard, appLogicValue }: AppViewRouterProps) {
+export function AdministrativeViewRouter({ currentView }: AppViewRouterProps) {
 	if (currentView === "schedule") {
 		return (
 			<WorkspaceRouteErrorBoundary view="schedule" label={viewLabels.schedule} panelClassName="panel schedule-panel" panelId="schedule">
 				<Suspense fallback={<AppLoadingState message="Подготовка модулей расписания..." />}>
 					<ClinicalErrorBoundary workspaceName="Расписание приёмов" workspaceKey="schedule">
-						<ScheduleView
-							dashboard={dashboard}
-							patientName={appLogicValue?.patientName}
-							loadDashboard={appLogicValue?.loadDashboard}
-							lockScheduleAdminSession={() => appLogicValue?.lockTelegramAdminSession?.("schedule")}
-							unlockScheduleAdminSession={() => appLogicValue?.unlockTelegramAdminSession?.("schedule")}
-						/>
+						<ScheduleView />
 					</ClinicalErrorBoundary>
 				</Suspense>
 			</WorkspaceRouteErrorBoundary>

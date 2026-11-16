@@ -75,7 +75,7 @@ export function AppTopBar(props: AppTopBarProps) {
 				showAdministrationTopActions={showAdministrationTopActions}
 				showDoctorVisitShortcut={showDoctorVisitShortcut}
 				staffRoleLabels={staffRoleLabels}
-				todayIso={dashboard?.todayIso}
+				todayIso={dashboard?.todayIso || props.todayIso || ""}
 				onLockSession={handleLockSession}
 				onOpenDoctorShiftCockpit={openDoctorShiftCockpit}
 				onOpenCbctDemo={() => setIsCbctDirectModalOpen(true)}

@@ -1,8 +1,20 @@
-import type { StaffRole, DentalSpecialty, ClinicMode } from "@dental/shared";
+import type { StaffRole, DentalSpecialty, ClinicMode, Dashboard } from "@dental/shared";
 import type { Dispatch, SetStateAction } from "react";
+import type { BrowserContinuityStatus } from "../../../browserContinuity";
+import type { NetworkState } from "../../../utils/networkConnectivity";
+import type { ActiveCitoAlert } from "../../../hooks/useLanP2P";
+import type { DenteTelegramHandoffTarget } from "../../../AppConstants";
+
+export interface ActiveDoctorInfo {
+	id?: string;
+	fullName?: string;
+	name?: string;
+	specialty?: string;
+	[key: string]: unknown;
+}
 
 export interface TopBarCoreProps {
-	dashboard: any;
+	dashboard: Dashboard | null | undefined;
 	clinicName: string;
 	todayIso: string;
 	defaultClinicNoticeHidden: boolean;
@@ -23,14 +35,14 @@ export interface TopBarCoreProps {
 	setSettingsTab: (tab: string) => void;
 	isDoctorShiftCockpitOpen: boolean;
 	closeDoctorShiftCockpit: () => void;
-	activeDoctor: any;
+	activeDoctor?: ActiveDoctorInfo | null | undefined;
 }
 
 export interface TopBarEmergencyAndSyncProps {
-	activeCitoAlerts: any[];
+	activeCitoAlerts: ActiveCitoAlert[];
 	dismissCitoAlert: (alertId: string) => void;
 	browserContinuityCritical: boolean;
-	browserContinuity: any;
+	browserContinuity: BrowserContinuityStatus | null | undefined;
 	isOnline: boolean;
 	isPendingVisitSyncing: boolean;
 	refreshBrowserContinuity: (opts: { silent: boolean }) => Promise<void>;
@@ -38,7 +50,7 @@ export interface TopBarEmergencyAndSyncProps {
 	flushPendingVisitSaves: (opts: { silent: boolean }) => Promise<void>;
 	pendingSpeechChunkCount: number;
 	pendingVisitSaveCount: number;
-	networkState: any;
+	networkState: NetworkState | null | undefined;
 	pendingMutationCount: number;
 	syncOfflineMutations: () => Promise<void>;
 	isSyncingMutations: boolean;
@@ -49,6 +61,6 @@ export interface TopBarNoticeAndErrorProps {
 	setError: Dispatch<SetStateAction<string | null>>;
 	uiPreferencesSyncError: string | null;
 	setUiPreferencesSyncError: Dispatch<SetStateAction<string | null>>;
-	telegramHandoffNotice: any;
-	setTelegramHandoffNotice: Dispatch<SetStateAction<any>>;
+	telegramHandoffNotice: DenteTelegramHandoffTarget | null | undefined;
+	setTelegramHandoffNotice: Dispatch<SetStateAction<DenteTelegramHandoffTarget | null>>;
 }

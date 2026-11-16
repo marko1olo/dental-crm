@@ -44,13 +44,13 @@ export const CANONICAL_SETTINGS_TABS: CanonicalSettingsTabDefinition[] = [
 ];
 
 export interface SettingsStaffUser {
-	id?: string;
-	role?: string;
-	fullName?: string;
-	email?: string | null;
-	phone?: string | null;
-	specialties?: string[];
-	active?: boolean;
+	id?: string | undefined;
+	role?: string | undefined;
+	fullName?: string | undefined;
+	email?: string | null | undefined;
+	phone?: string | null | undefined;
+	specialties?: string[] | undefined;
+	active?: boolean | undefined;
 }
 
 export interface SettingsViewFeatureFlags {

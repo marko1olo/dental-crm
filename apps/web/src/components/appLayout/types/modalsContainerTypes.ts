@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import type { StaffUser } from "../../auth/staffPinPad/staffPinPadTypes";
 
 export interface AppModalsContainerProps {
 	isCbctTunerOpen: boolean;
@@ -15,8 +16,8 @@ export interface AppModalsContainerProps {
 	setIsPrivacyShieldActive: Dispatch<SetStateAction<boolean>>;
 	isSessionLocked?: boolean;
 	setIsSessionLocked?: Dispatch<SetStateAction<boolean>>;
-	activeStaffUser: any;
-	setActiveStaffUser: Dispatch<SetStateAction<any>>;
+	activeStaffUser?: StaffUser | null;
+	setActiveStaffUser: Dispatch<SetStateAction<StaffUser | null>>;
 	handleClinicLogout: () => void;
 	handleFullStaffLock: () => void;
 }

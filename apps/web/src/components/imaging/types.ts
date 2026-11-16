@@ -28,27 +28,27 @@ export type ImagingStudyKind =
 
 export interface ImagingStudy {
 	id: string;
-	patientId?: string;
-	visitId?: string | null;
+	patientId?: string | null | undefined;
+	visitId?: string | null | undefined;
 	kind: ImagingStudyKind;
 	title: string;
-	region?: string | null;
-	toothCode?: string | null;
-	sourceKind?: string;
-	sourceName?: string;
-	storagePath?: string | null;
-	previewUrl?: string | null;
+	region?: string | null | undefined;
+	toothCode?: string | null | undefined;
+	sourceKind?: string | undefined;
+	sourceName?: string | undefined;
+	storagePath?: string | null | undefined;
+	previewUrl?: string | null | undefined;
 	capturedAt: string;
-	status?: string;
-	aiSummary?: string | null;
-	aiToothUpdates?: unknown[];
-	dicomStudyUid?: string;
-	studyInstanceUid?: string;
-	studyUid?: string;
-	dicomSeriesUid?: string;
-	seriesInstanceUid?: string;
-	seriesUid?: string;
-	hasDicomweb?: boolean;
+	status?: string | undefined;
+	aiSummary?: string | null | undefined;
+	aiToothUpdates?: unknown[] | undefined;
+	dicomStudyUid?: string | null | undefined;
+	studyInstanceUid?: string | null | undefined;
+	studyUid?: string | null | undefined;
+	dicomSeriesUid?: string | null | undefined;
+	seriesInstanceUid?: string | null | undefined;
+	seriesUid?: string | null | undefined;
+	hasDicomweb?: boolean | undefined;
 	[key: string]: unknown;
 }
 

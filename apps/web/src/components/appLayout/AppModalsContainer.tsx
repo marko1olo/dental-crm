@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { AppModalsContainerProps } from "./types";
-import { type StandaloneLaunchersProps } from "./modalsContainerModules/modalsContainerTypes";
+import { type StandaloneLaunchersProps, type LoyaltyModalContext } from "./modalsContainerModules/modalsContainerTypes";
 import { renderStandaloneLaunchers } from "./modalsContainerModules/StandaloneLaunchers";
 import { ClinicalModalsSubcontainer } from "./modalsContainerModules/ClinicalModalsSubcontainer";
 import { AdministrativeModalsSubcontainer } from "./modalsContainerModules/AdministrativeModalsSubcontainer";
@@ -13,7 +13,7 @@ import { GlobalSupportModals } from "./modalsContainerModules/GlobalSupportModal
 import { useAppModalsEventBridge } from "./modalsContainerModules/useAppModalsEventBridge";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
-import { DentalLabStudioModal } from "../lab/DentalLabStudioModal";
+import { DentalLabStudioModal, type DentalLabStudioModalProps } from "../lab/DentalLabStudioModal";
 import { DicomViewerModal } from "../imaging/DicomViewerModal";
 
 export type { StandaloneLaunchersProps };
@@ -24,8 +24,11 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 	const primaryModal = useUiSurfaceStore((s) => s.primaryModal);
 	const isLoyaltyFromStore = primaryModal?.id === "loyalty";
 	const isEffectiveLoyaltyOpen = Boolean(bridge.isGlobalLoyaltyOpen || isLoyaltyFromStore);
-	const effectiveLoyaltyContext =
-		(isLoyaltyFromStore ? (primaryModal?.payload as any) : null) || bridge.loyaltyModalContext;
+	const loyaltyPayload =
+		isLoyaltyFromStore && primaryModal?.payload && typeof primaryModal.payload === "object"
+			? (primaryModal.payload as LoyaltyModalContext)
+			: null;
+	const effectiveLoyaltyContext = loyaltyPayload || bridge.loyaltyModalContext;
 	const isEmergencyFromStore = primaryModal?.id === "emergency_rescue";
 	const isEffectiveEmergencyOpen = Boolean(bridge.isEmergencyRescueOpen || isEmergencyFromStore);
 	const isPayrollFromStore = primaryModal?.id === "doctor_payroll" || primaryModal?.id === "payroll";
@@ -55,7 +58,9 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 				<DentalLabStudioModal
 					isOpen={true}
 					onClose={() => useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id)}
-					{...(primaryModal?.payload as any)}
+					{...(primaryModal?.payload && typeof primaryModal.payload === "object"
+						? (primaryModal.payload as Partial<DentalLabStudioModalProps>)
+						: {})}
 				/>
 			)}
 

@@ -1,8 +1,8 @@
 import React from "react";
 import { DentalLabStudioModal } from "../../lab/DentalLabStudioModal";
 import { DoctorPrivacyShield } from "../../auth/DoctorPrivacyShield";
-import { GlobalPaymentModalLauncher } from "../../billing/GlobalPaymentModalLauncher";
 import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
+import type { StaffUser } from "../../auth/staffPinPad/staffPinPadTypes";
 import type { AdministrativeModalsSubcontainerProps } from "./modalsContainerTypes";
 
 const LoyaltyStudioModal = React.lazy(() =>
@@ -27,7 +27,6 @@ export function AdministrativeModalsSubcontainer({
 }: AdministrativeModalsSubcontainerProps) {
 	return (
 		<>
-			<GlobalPaymentModalLauncher activeStaffUser={activeStaffUser} />
 			{isGlobalLabCreateOrderOpen && (
 				<DentalLabStudioModal
 					isOpen={isGlobalLabCreateOrderOpen}
@@ -38,8 +37,8 @@ export function AdministrativeModalsSubcontainer({
 					}
 					patientId={labCreateOrderContext?.patientId || ""}
 					doctorName={
-						activeStaffUser?.name ||
-						activeStaffUser?.fullName ||
+						(typeof activeStaffUser?.name === "string" && activeStaffUser.name) ||
+						(typeof activeStaffUser?.fullName === "string" && activeStaffUser.fullName) ||
 						"Лечащий врач"
 					}
 					initialToothFdi={labCreateOrderContext?.toothNumber || "21"}
@@ -64,8 +63,8 @@ export function AdministrativeModalsSubcontainer({
 				isOpen={Boolean(isSessionLocked)}
 				doctor={activeStaffUser}
 				onUnlock={(unlockedUser) => {
-					if (unlockedUser) {
-						setActiveStaffUser(unlockedUser);
+					if (unlockedUser && typeof unlockedUser === "object") {
+						setActiveStaffUser(unlockedUser as StaffUser);
 					}
 					setIsSessionLocked?.(false);
 					safeLocalStorageRemoveItem("dente_session_locked");
