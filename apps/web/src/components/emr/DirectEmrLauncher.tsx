@@ -10,7 +10,7 @@
  */
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { generateUuidV7 } from "@dental/shared";
+import { generateUuidV7, resolveDentalSpecialty } from "@dental/shared";
 import { MedicalRecordStudioModal } from "./MedicalRecordStudioModal";
 import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalCardCatalogData";
 import type { MedicalRecordData } from "./types/recordDataTypes";
@@ -200,8 +200,37 @@ export const DirectEmrLauncher: React.FC = () => {
 					const complaint = updated.anamnesis?.chiefComplaint || primaryDiary?.subjectiveComplaints || "";
 					const anamnesis = updated.anamnesis?.historyOfPresentIllness || "";
 					const statusLocalis = primaryDiary?.objectiveStatusLocalis || updated.dentalStatus?.oralMucosaStatus || "";
-					const diagnosisIcd10 = updated.passport?.primaryDiagnosisIcd10 || primaryDiary?.assessmentIcd10Code || "Z01.2";
+					const diagnosisIcd10 = updated.passport?.primaryDiagnosisIcd10 || primaryDiary?.assessmentIcd10Code || "";
 					const treatmentDescription = updated.generalTreatmentPlan || primaryDiary?.procedureProtocol || "";
+					const resolvedSpecialty = resolveDentalSpecialty(updated.passport?.attendingDoctorSpecialty);
+
+					// DEF-EMR-01: Персистентность в PostgreSQL 18 через POST /api/diaries (visit_diaries и visit_diary_revisions)
+					const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+					if (isUuid(visitId) && isUuid(patientId)) {
+						try {
+							await fetch("/api/diaries", {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									...denteAdminSecretRequestHeaders(),
+								},
+								credentials: "same-origin",
+								body: JSON.stringify({
+									visitId,
+									patientId,
+									complaint,
+									anamnesis,
+									statusLocalis,
+									diagnosisIcd10: diagnosisIcd10 || undefined,
+									diagnosisTooth: primaryDiary?.toothNumber ? String(primaryDiary.toothNumber) : undefined,
+									treatmentDescription,
+									status: "draft",
+								}),
+							});
+						} catch (diaryErr) {
+							console.warn("DirectEmrLauncher: ошибка персистентности в /api/diaries", diaryErr);
+						}
+					}
 
 					const res = await fetch(`/api/visits/${visitId}/draft/autosave`, {
 						method: "PUT",
@@ -212,7 +241,7 @@ export const DirectEmrLauncher: React.FC = () => {
 						credentials: "same-origin",
 						body: JSON.stringify({
 							patientId,
-							selectedSpecialty: "therapist",
+							selectedSpecialty: resolvedSpecialty,
 							transcript: "",
 							draft: {
 								complaint,

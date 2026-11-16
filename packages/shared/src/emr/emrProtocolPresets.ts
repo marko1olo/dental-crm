@@ -9,8 +9,21 @@ export * from "./emrProtocolTypes.js";
 import type { ClinicalProtocolTemplate, ClinicalSpecialtyKind } from "./emrProtocolTypes.js";
 import { THERAPY_EMR_PROTOCOL_CATALOG } from "./emrProtocolCatalogTherapy.js";
 import { SPECIALTY_EMR_PROTOCOL_CATALOG } from "./emrProtocolCatalogSpecialty.js";
+import {
+	MASTER_CLINICAL_SOAP_PROTOCOLS,
+	findSoapProtocolById,
+	searchSoapMasterProtocols,
+	formatSoapDiaryFromProtocol,
+} from "../clinical/soap/soapMasterCatalog.js";
 
-export { THERAPY_EMR_PROTOCOL_CATALOG, SPECIALTY_EMR_PROTOCOL_CATALOG };
+export {
+	THERAPY_EMR_PROTOCOL_CATALOG,
+	SPECIALTY_EMR_PROTOCOL_CATALOG,
+	MASTER_CLINICAL_SOAP_PROTOCOLS,
+	findSoapProtocolById,
+	searchSoapMasterProtocols,
+	formatSoapDiaryFromProtocol,
+};
 
 /**
  * Базовый каталог клинических протоколов по МКБ-10 (Приказ Минздрава № 834н / СтАР)
@@ -66,6 +79,62 @@ export function getClinicalProtocolTemplate(icd10Code: string, specialty?: Clini
 				specialty: companion.category,
 			};
 		}
+	}
+
+	// Поиск в SSOT реестре клинических SOAP-протоколов (MASTER_CLINICAL_SOAP_PROTOCOLS)
+	const soapMasterMatch = MASTER_CLINICAL_SOAP_PROTOCOLS.find(
+		(p) => p.icd10.toUpperCase() === normalizedCode || p.id.toUpperCase() === normalizedCode,
+	);
+	if (soapMasterMatch) {
+		const isEndo = soapMasterMatch.icd10.toUpperCase().startsWith("K04") || soapMasterMatch.id.toLowerCase().includes("endo");
+		const specialtyKind: ClinicalSpecialtyKind = isEndo
+			? "endodontics"
+			: soapMasterMatch.category === "pediatric"
+				? "pediatric"
+				: soapMasterMatch.category === "hygiene"
+					? "periodontics"
+					: soapMasterMatch.category === "orthopedics"
+						? "orthopedics"
+						: soapMasterMatch.category === "periodontology"
+							? "periodontics"
+							: soapMasterMatch.category === "surgery"
+								? "surgery"
+								: "therapy";
+
+		return {
+			icd10Code: soapMasterMatch.icd10,
+			icd10Title: soapMasterMatch.icd10Label,
+			clinicalDiagnosis: `${soapMasterMatch.title} (${soapMasterMatch.icd10})`,
+			specialty: specialtyKind,
+			defaultSubjectiveComplaints: soapMasterMatch.complaint,
+			defaultAnamnesisMorbi: soapMasterMatch.anamnesis,
+			defaultObjectiveStatus: soapMasterMatch.statusLocalis,
+			defaultPercussion: "negative",
+			defaultThermalTest: "indifferent",
+			defaultProbing: "along_enamel_dentin_border",
+			defaultEodMicroamperes: 5,
+			defaultProcedureProtocol: soapMasterMatch.treatmentDescription,
+			anesthesiaDefault: {
+				drug: "septanest_1_100000",
+				doseCarpules: soapMasterMatch.anesthetic?.carpulesCount ?? 1,
+				doseMl: soapMasterMatch.anesthetic?.volumeMl ?? 1.7,
+				technique: "infiltration",
+			},
+			defaultMaterials: soapMasterMatch.materialsToDeduct.map((m) => m.name),
+			defaultRecommendations: soapMasterMatch.recommendations || "Контрольный осмотр через 6 месяцев.",
+			requiresRubberDam: specialtyKind === "therapy" || specialtyKind === "endodontics",
+			requiresApexLocatorRvg: specialtyKind === "endodontics",
+			statutoryOrderRef: "Приказ Минздрава РФ № 834н",
+			order804nServices: soapMasterMatch.service804n
+				? [
+						{
+							code: soapMasterMatch.service804n.code804n,
+							nameRu: soapMasterMatch.service804n.title,
+							isMandatory: true,
+						},
+					]
+				: [],
+		};
 	}
 
 	// Дефолтный fallback на кариес дентина K02.1

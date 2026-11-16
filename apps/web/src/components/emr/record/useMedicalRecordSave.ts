@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useState } from "react";
+import { resolveDentalSpecialty } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { MedicalRecordData } from "../types/recordDataTypes";
@@ -57,8 +58,37 @@ export function useMedicalRecordSave({
 				const complaint = formData.anamnesis.chiefComplaint || primaryDiary?.subjectiveComplaints || "";
 				const anamnesis = formData.anamnesis.historyOfPresentIllness || "";
 				const statusLocalis = primaryDiary?.objectiveStatusLocalis || formData.dentalStatus.oralMucosaStatus || "";
-				const diagnosisIcd10 = formData.passport.primaryDiagnosisIcd10 || primaryDiary?.assessmentIcd10Code || "Z01.2";
+				const diagnosisIcd10 = formData.passport.primaryDiagnosisIcd10 || primaryDiary?.assessmentIcd10Code || "";
 				const treatmentDescription = formData.generalTreatmentPlan || primaryDiary?.procedureProtocol || "";
+				const resolvedSpecialty = resolveDentalSpecialty(formData.passport.attendingDoctorSpecialty);
+
+				// DEF-EMR-01: Сохранение и персистентность в PostgreSQL 18 через POST /api/diaries (visit_diaries и visit_diary_revisions)
+				const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+				if (isUuid(effectiveVisitId) && isUuid(effectivePatientId)) {
+					try {
+						await fetch("/api/diaries", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							credentials: "same-origin",
+							body: JSON.stringify({
+								visitId: effectiveVisitId,
+								patientId: effectivePatientId,
+								complaint,
+								anamnesis,
+								statusLocalis,
+								diagnosisIcd10: diagnosisIcd10 || undefined,
+								diagnosisTooth: primaryDiary?.toothNumber ? String(primaryDiary.toothNumber) : undefined,
+								treatmentDescription,
+								status: effectiveIsDraft ? "draft" : "signed",
+							}),
+						});
+					} catch (diaryPersistErr) {
+						console.warn("useMedicalRecordSave: ошибка персистентности в /api/diaries", diaryPersistErr);
+					}
+				}
 
 				const res = await fetch(`/api/visits/${effectiveVisitId}/draft/autosave`, {
 					method: "PUT",
@@ -69,7 +99,7 @@ export function useMedicalRecordSave({
 					credentials: "same-origin",
 					body: JSON.stringify({
 						patientId: effectivePatientId,
-						selectedSpecialty: "therapist",
+						selectedSpecialty: resolvedSpecialty,
 						transcript: "",
 						draft: {
 							complaint,

@@ -1,6 +1,8 @@
-import type { Patient } from "@dental/shared";
+import type { Patient, Dashboard } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { fetchWithHandling } from "../../../utils/networkUtils";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
+import { DEMO_SHOWCASE_MODAL_PATIENT } from "../patientCardModalModules/patientCardModalTypes";
 import {
 	buildPatientAdministrativeProfilePayload,
 	type PatientAdministrativeProfileDraft,
@@ -47,9 +49,15 @@ function buildAdministrativeDraftFromGeneralInfo(
 export async function persistPatientCardModalToApi(
 	patientData: PatientGeneralInfo,
 	safetyProfile: PatientClinicalSafetyProfile,
-	demoPatientId: string,
+	demoPatientId?: string,
 ): Promise<void> {
-	if (!patientData.id || patientData.id === demoPatientId) return;
+	if (!patientData.id) return;
+	// Защита от мутации демонстрационного пациента в режиме показа (SEV-1.1)
+	const isDemo = isDemoShowcaseMode();
+	const isDemoId = patientData.id === DEMO_SHOWCASE_MODAL_PATIENT.id || (Boolean(demoPatientId) && patientData.id === demoPatientId);
+	if (isDemo && isDemoId) {
+		return;
+	}
 	const diaryNotes = patientData.doctorClinicalNotes?.trim() || formatSafetyProfileToDiaryText(safetyProfile);
 	const covLimitRub = typeof patientData.dmsCoverageLimitRub === "number" ? patientData.dmsCoverageLimitRub : (patientData.dmsCoverageLimitRub ? Number(patientData.dmsCoverageLimitRub) : null);
 	const covLimitKop = patientData.dmsCoverageLimitKopecks ?? (covLimitRub !== null && !isNaN(covLimitRub) ? Math.round(covLimitRub * 100) : null);
@@ -107,7 +115,7 @@ export async function executePatientCardModalSaveAutonomy({
 	updatedSafety: PatientClinicalSafetyProfile;
 	updatePatientCoreDraft: (field: keyof PatientCoreDraft, value: string) => void;
 	updatePatientAdministrativeProfileDraft: (field: keyof PatientAdministrativeProfileDraft, value: unknown) => void;
-	setDashboard?: (updater: (curr: any) => any) => void;
+	setDashboard?: (updater: (curr: Dashboard | null | undefined) => Dashboard | null | undefined) => void;
 }) {
 	if (updatedGeneral.fullName?.trim()) updatePatientCoreDraft("fullName", updatedGeneral.fullName.trim());
 	if (updatedGeneral.phone !== undefined) updatePatientCoreDraft("phone", updatedGeneral.phone ?? "");
@@ -166,7 +174,7 @@ export async function executePatientCardModalSaveAutonomy({
 		const latestRes = resAdmin.ok ? resAdmin : resCore;
 		if (latestRes.ok && setDashboard) {
 			const saved = (await latestRes.json()) as Patient;
-			setDashboard((curr: any) => curr ? { ...curr, patients: curr.patients.map((p: Patient) => (p.id === saved.id ? saved : p)) } : curr);
+			setDashboard((curr) => curr ? { ...curr, patients: curr.patients.map((p: Patient) => (p.id === saved.id ? saved : p)) } : curr);
 		}
 	} catch (err: unknown) {
 		console.error("[PatientPersistence] Failed to execute patient card save autonomy:", err);

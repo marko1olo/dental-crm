@@ -3,6 +3,8 @@ import type { PatientClinicalSafetyProfile } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
 import { persistPatientCardModalToApi } from "../patientAutonomyActions";
 import type { PatientSectionSaveState } from "../patientCardSavePill";
+import { DEMO_SHOWCASE_MODAL_PATIENT } from "./patientCardModalTypes";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 
 export interface PatientCardDraftSyncProps {
 	isOpen: boolean;
@@ -69,7 +71,8 @@ export function usePatientCardDraftSync({
 				if (onSavePatient) {
 					await onSavePatient(patientData, safetyProfile);
 				} else {
-					await persistPatientCardModalToApi(patientData, safetyProfile, patientData.id || "");
+					const demoId = isDemoShowcaseMode() ? (DEMO_SHOWCASE_MODAL_PATIENT.id || "") : "";
+					await persistPatientCardModalToApi(patientData, safetyProfile, demoId);
 				}
 				setIsDirty(false);
 				setSaveState("saved");

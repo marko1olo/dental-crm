@@ -40,7 +40,7 @@ export function parseConsentRows(rawConsents: unknown): ConsentRow[] {
 			scope: String(r.scope ?? "") as Scope,
 			state: (r.state === "granted" ? "granted" : "revoked") as ConsentState,
 			source: typeof r.source === "string" ? r.source : undefined,
-			evidence: r.evidence as any,
-			decidedAt: r.decidedAt as any,
+			evidence: typeof r.evidence === "string" ? r.evidence : null,
+			decidedAt: typeof r.decidedAt === "string" ? r.decidedAt : null,
 		}));
 }

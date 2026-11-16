@@ -40,7 +40,9 @@ export function usePatientCreationForm(options: UsePatientCreationFormOptions): 
 		parentRole: state.parentRole,
 		parentName: state.parentName,
 		parentPhone: state.parentPhone,
-		createPatient: options.createPatient as any,
+		createPatient: async (opts) => {
+			return await options.createPatient(opts);
+		},
 		onClose: options.onClose,
 		setDuplicateConflict: validation.setDuplicateConflict,
 		validationResult: validation.validationResult,

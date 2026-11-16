@@ -34,7 +34,8 @@ export async function savePatientCardModal({
 			if (!targetId) {
 				throw new Error("Идентификатор пациента не найден. Сохранение невозможно.");
 			}
-			await persistPatientCardModalToApi(patientData, safetyProfile, targetId);
+			const demoId = isDemoShowcaseMode() ? (DEMO_SHOWCASE_MODAL_PATIENT.id || "") : "";
+			await persistPatientCardModalToApi(patientData, safetyProfile, demoId);
 		}
 		setIsDirty(false);
 		setSaveState("saved");

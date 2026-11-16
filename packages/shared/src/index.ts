@@ -34,6 +34,8 @@ export {
 	type DmsGuaranteeLetterStatus,
 	dmsGuaranteeLetterSchema,
 	dentalSpecialtySchema,
+	type DentalSpecialty,
+	resolveDentalSpecialty,
 	staffRoleSchema,
 	type StaffRole,
 	type GeneratedDocument,

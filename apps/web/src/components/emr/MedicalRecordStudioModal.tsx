@@ -14,7 +14,12 @@ import {
 	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, MoreHorizontal, Download, Copy, Loader2,
 } from "lucide-react";
 import { useAppStore } from "../../store/appStore";
-import type { MedicalRecordData, ClinicalVisitDiaryEntry, ClinicalPassportData } from "./types/recordDataTypes";
+import type {
+	MedicalRecordData,
+	ClinicalVisitDiaryEntry,
+	ClinicalPassportData,
+	ClinicalAnamnesisData,
+} from "./types/recordDataTypes";
 import {
 	DEFAULT_MEDICAL_CARD_DATA,
 	resolveClinicRequisites,
@@ -160,6 +165,34 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 				return updated;
 			});
 		}, [onSave]);
+
+		const handleUpdatePassport = useCallback(
+			(patch: Partial<ClinicalPassportData>) => {
+				setFormData((prev) => {
+					const updated = {
+						...prev,
+						passport: { ...prev.passport, ...patch },
+					};
+					onSave?.(updated);
+					return updated;
+				});
+			},
+			[onSave],
+		);
+
+		const handleUpdateAnamnesis = useCallback(
+			(patch: Partial<ClinicalAnamnesisData>) => {
+				setFormData((prev) => {
+					const updated = {
+						...prev,
+						anamnesis: { ...prev.anamnesis, ...patch },
+					};
+					onSave?.(updated);
+					return updated;
+				});
+			},
+			[onSave],
+		);
 
 		const handleAddDiary = useCallback((newDiary: ClinicalVisitDiaryEntry) => {
 			setFormData((prev) => {
@@ -409,8 +442,20 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								/>
 							</div>
 						)}
-						{activeTab === "passport" && <RecordPassportTab formData={formData} ageText={ageText} />}
-						{activeTab === "anamnesis" && <RecordAnamnesisTab formData={formData} onApplyNorm={handleApplyNorm} />}
+						{activeTab === "passport" && (
+							<RecordPassportTab
+								formData={formData}
+								ageText={ageText}
+								onUpdatePassport={handleUpdatePassport}
+							/>
+						)}
+						{activeTab === "anamnesis" && (
+							<RecordAnamnesisTab
+								formData={formData}
+								onApplyNorm={handleApplyNorm}
+								onUpdateAnamnesis={handleUpdateAnamnesis}
+							/>
+						)}
 						{activeTab === "odontogram" && <RecordOdontogramTab formData={formData} dmft={dmft} cpitn={cpitn} onApplyNorm={handleApplyNorm} />}
 						{activeTab === "diaries" && (
 							<RecordDiariesTab

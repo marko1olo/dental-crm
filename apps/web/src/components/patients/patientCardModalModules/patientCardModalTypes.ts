@@ -7,6 +7,11 @@ import type { PatientCoreDraft } from "../coreEditor/usePatientCoreDraftDebounce
 import type { PatientFieldRequirements } from "../patientFieldRequirementsConfig";
 import type { ClinicalVisitItem } from "../patientHistory/types";
 import type { PatientAdministrativeProfileDraft } from "../../../constants/onboardingConstants";
+import { usePatientStore } from "../../../store/patientStore";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { fetchWithHandling } from "../../../utils/networkUtils";
+import { buildPatientAdministrativeProfilePayload } from "../../../utils/clinicProfileUtils";
+import { showToast } from "../../GlobalToast";
 import {
 	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
@@ -66,7 +71,7 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 	};
 }
 
-export type PatientCardTab = "general" | "formula" | "perio" | "anamnesis" | "visits" | "documents" | "radiology" | "family" | "finance" | "treatmentPlans" | "photos";
+export type PatientCardTab = "general" | "formula" | "perio" | "anamnesis" | "visits" | "documents" | "radiology" | "family" | "finance" | "treatmentPlans" | "photos" | "reclamations";
 export type PatientModalMode = "view" | "edit" | "create";
 
 export interface PatientCardModalProps {
@@ -90,6 +95,8 @@ export interface PatientCardModalProps {
 	readonly dashboard?: Dashboard | null | undefined;
 	readonly visits?: ClinicalVisitItem[] | undefined;
 	readonly className?: string | undefined;
+	readonly doctorId?: string | undefined;
+	readonly doctorName?: string | undefined;
 
 	// Поддержка режима создания (PatientCreationModal compatibility)
 	readonly createPatient?: ((options?: { allowDuplicate?: boolean }) => void | Promise<void | Patient | null>) | undefined;
@@ -121,6 +128,68 @@ export function toCanonicalPatient(patientData: Partial<PatientGeneralInfo>): Pa
 	};
 }
 
+export async function createPatientCanonicalApiFallback(
+	options?: { allowDuplicate?: boolean },
+): Promise<Patient | null> {
+	const storeState = usePatientStore.getState();
+	const fullName = (storeState.newPatientName || storeState.patientCoreDraft.fullName || "").trim();
+	if (!fullName) {
+		showToast("Укажите ФИО пациента перед созданием карточки.", "warning");
+		return null;
+	}
+	const cleanPhone = storeState.newPatientPhone?.trim() || storeState.patientCoreDraft.phone?.trim() || null;
+	const cleanBirthDate = storeState.newPatientBirthDate?.trim() || storeState.patientCoreDraft.birthDate?.trim() || null;
+	const isAnon = storeState.patientAdministrativeProfileDraft.isAnonymous === true;
+	const anonymousCode = isAnon
+		? (storeState.patientAdministrativeProfileDraft.anonymousCode || null)
+		: null;
+	const administrativeProfile = buildPatientAdministrativeProfilePayload({
+		...storeState.patientAdministrativeProfileDraft,
+		isAnonymous: isAnon,
+		anonymousCode,
+	});
+	const cleanNotes = storeState.patientCoreDraft.notes?.trim() || null;
+	const payload = {
+		fullName,
+		phone: cleanPhone,
+		birthDate: cleanBirthDate,
+		notes: cleanNotes,
+		isAnonymous: isAnon,
+		anonymousCode,
+		administrativeProfile,
+		allowDuplicate: Boolean(options?.allowDuplicate),
+	};
+
+	const response = await fetchWithHandling("/api/patients", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			...denteAdminSecretRequestHeaders(),
+		},
+		body: JSON.stringify(payload),
+	});
+
+	if (!response.ok) {
+		const errorJson = (await response.json().catch(() => null)) as { message?: string } | null;
+		const errorMsg = errorJson?.message || "Ошибка создания пациента";
+		const conflictError = new Error(errorMsg) as Error & {
+			status?: number;
+			duplicateData?: unknown;
+		};
+		conflictError.status = response.status;
+		conflictError.duplicateData = errorJson;
+		throw conflictError;
+	}
+
+	const patient = (await response.json()) as Patient;
+	storeState.setNewPatientName("");
+	storeState.setNewPatientPhone("");
+	storeState.setNewPatientBirthDate("");
+	storeState.setSelectedPatientId(patient.id);
+	showToast("Карточка пациента создана", "success", 3000);
+	return patient;
+}
+
 export function createPatientCreationOptions(
 	props: PatientCardModalProps,
 	isOpen: boolean,
@@ -129,7 +198,7 @@ export function createPatientCreationOptions(
 	return {
 		isOpen,
 		onClose,
-		createPatient: props.createPatient ?? (async () => null),
+		createPatient: props.createPatient ?? createPatientCanonicalApiFallback,
 		updatePatientCoreDraft: props.updatePatientCoreDraft,
 		customRequirements: props.customRequirements,
 		initialBirthDate: props.initialBirthDate,

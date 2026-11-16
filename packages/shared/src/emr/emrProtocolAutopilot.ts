@@ -161,8 +161,8 @@ export function generateEmrAutopilotPlan(request: EmrAutopilotRequest): EmrAutop
 
 	// Валидация соответствия Приказу № 834н
 	const complianceAudit = validateForm043uCompliance({
-		patientFullName: request.patientFullName || "Пациент Тестовый",
-		medicalCardNumber: request.medicalCardNumber || "КАРТА-043-001",
+		patientFullName: request.patientFullName || "",
+		medicalCardNumber: request.medicalCardNumber || "",
 		allergologicalHistory: request.allergologicalHistory || "Аллергологический анамнез спокоен, аллергических реакций на местные анестетики и антибиотики не отмечает.",
 		doctorFullName: request.doctorFullName,
 		visitDiaries: [soapVisitDiary],

@@ -1,9 +1,11 @@
 /**
  * StandalonePatientCardHost.tsx — Честный standalone хост комплексной карты пациента PatientCardModal (Мандат 8b <= 50 строк).
  * Позволяет мгновенно открыть каноническую карточку пациента (?patient_card=1, #patient-card).
+ * Защищен от утечки демонстрационных данных в боевой контур (Мандат 8al, SEV-1.3).
  */
 
 import React from "react";
+import { User, Users } from "lucide-react";
 import {
 	PatientCardModal,
 	DEMO_SHOWCASE_MODAL_PATIENT,
@@ -14,11 +16,64 @@ import { isDemoShowcaseMode } from "../../../../../lib/demoMode.js";
 
 export const StandalonePatientCardHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
-	const effectivePatientId: string = patientId || DEMO_SHOWCASE_MODAL_PATIENT.id || "00000000-0000-0000-0000-000000000001";
+	const isDemo = isDemoShowcaseMode();
+
+	// В боевом режиме без patientId показываем честный клинический Empty State
+	if (!patientId && !isDemo) {
+		return (
+			<div
+				className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] flex items-center justify-center p-4"
+				data-testid="patient-card-standalone-empty"
+			>
+				<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-2xl p-6 text-center max-w-md w-full shadow-lg">
+					<div className="w-12 h-12 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-center mx-auto mb-4 text-[var(--teal,#0d9488)]">
+						<Users className="w-6 h-6" />
+					</div>
+					<h3 className="text-base font-bold text-[var(--ink)] mb-1">
+						Пациент не выбран
+					</h3>
+					<p className="text-xs text-[var(--muted)] mb-5">
+						Для просмотра медицинской карты выберите пациента из реестра клиники
+					</p>
+					<div className="flex items-center justify-center gap-2">
+						<button
+							type="button"
+							onClick={onClose}
+							className="h-9 px-4 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+						>
+							Закрыть
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								if (typeof window !== "undefined") {
+									window.location.hash = "patients";
+								}
+								onClose();
+							}}
+							className="h-9 px-4 text-xs font-bold rounded-xl border-0 bg-[var(--teal,#0d9488)] text-white hover:opacity-95 shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						>
+							<User className="w-4 h-4" />
+							<span>Перейти в картотеку</span>
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	const effectivePatientId: string = patientId || (isDemo ? (DEMO_SHOWCASE_MODAL_PATIENT.id || "00000000-0000-0000-0000-000000000001") : "");
 	const launcherPatientName = useLauncherPatientName(effectivePatientId);
 
-	const fallbackName = DEMO_SHOWCASE_MODAL_PATIENT.fullName;
-	const patientName = launcherPatientName || fallbackName;
+	const initialPatient = isDemo && !patientId
+		? DEMO_SHOWCASE_MODAL_PATIENT
+		: launcherPatientName
+			? { id: effectivePatientId, fullName: launcherPatientName }
+			: null;
+
+	const initialSafety = isDemo && !patientId ? DEMO_SHOWCASE_MODAL_SAFETY : undefined;
+
+	const initialTab = (typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("tab") as any) : undefined) || "general";
 
 	return (
 		<div
@@ -28,13 +83,10 @@ export const StandalonePatientCardHost: React.FC<{ onClose: () => void }> = ({ o
 			<PatientCardModal
 				isOpen={true}
 				onClose={onClose}
+				initialTab={initialTab}
 				patientId={effectivePatientId}
-				patient={{
-					...DEMO_SHOWCASE_MODAL_PATIENT,
-					id: effectivePatientId,
-					fullName: patientName,
-				}}
-				safetyProfile={DEMO_SHOWCASE_MODAL_SAFETY}
+				patient={initialPatient}
+				safetyProfile={initialSafety}
 			/>
 		</div>
 	);

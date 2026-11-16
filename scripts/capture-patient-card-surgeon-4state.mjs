@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, "../apps/web");
 const configFile = path.resolve(webRoot, "vite.config.ts");
 
-const CONV_ID = "dd53db83-508c-4eeb-ae02-39a678d29490";
+const CONV_ID = "5f0419d8-86d9-4d6e-a9da-692189b1a343";
 const DIRS = [
 	path.resolve(__dirname, "../docs/proofs/patient_card"),
 	path.resolve(__dirname, "../docs/proofs/patients"),

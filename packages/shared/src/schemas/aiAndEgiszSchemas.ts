@@ -114,6 +114,22 @@ export const dentalSpecialtySchema = z.enum([
 
 export type DentalSpecialty = z.infer<typeof dentalSpecialtySchema>;
 
+export function resolveDentalSpecialty(specialtyText?: string | null): DentalSpecialty {
+	if (!specialtyText) return "therapist";
+	const s = specialtyText.toLowerCase();
+	if (s.includes("хирург") || s.includes("surgeon")) return "surgeon";
+	if (s.includes("ортопед") || s.includes("orthopedist") || s.includes("orthopedic") || s.includes("протез")) return "orthopedist";
+	if (s.includes("ортодонт") || s.includes("orthodontist")) return "orthodontist";
+	if (s.includes("пародонт") || s.includes("periodontist")) return "periodontist";
+	if (s.includes("гигиен") || s.includes("hygienist")) return "hygienist";
+	if (s.includes("детск") || s.includes("pediatric")) return "pediatric";
+	if (s.includes("имплант") || s.includes("implantologist")) return "implantologist";
+	if (s.includes("рентген") || s.includes("диагност") || s.includes("radiologist")) return "radiologist";
+	if (s.includes("терапевт") || s.includes("therapist")) return "therapist";
+	if (s.includes("универсал") || s.includes("universal") || s.includes("общ")) return "universal";
+	return "therapist";
+}
+
 export const serviceCategorySchema = z.enum([
 	"consultation",
 	"therapy",

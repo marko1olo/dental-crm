@@ -342,7 +342,7 @@ export function formatStatutorySoapSummary(diary: VisitDiaryEntry043): string {
 	const toothInfo = diary.toothNumber ? ` [Зуб ${diary.toothNumber}]` : "";
 	return [
 		`══════════════════════════════════════════════════════════════════`,
-		`ДНЕВНИК ПРИЁМА ФОРМЫ 043/у (Приказ Минздрава № 834н)${toothInfo}`,
+		`ДНЕВНИК КЛИНИЧЕСКОГО ПРИЁМА${toothInfo}`,
 		`Дата/время: ${diary.entryDate} ${diary.entryTime || ""}`,
 		`Врач: ${diary.doctorFullName} (${diary.doctorSpecialty || "Врач-стоматолог"})`,
 		`──────────────────────────────────────────────────────────────────`,

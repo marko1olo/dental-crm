@@ -42,7 +42,7 @@ export function useCommunicationConsents(patientId?: string | null) {
 				setError(detail ?? (res.status === 404 ? "Пациент не найден — обновите карточку." : actionFailureToast("Согласия на связь не загружены", res.status)));
 				setLoaded(false); return;
 			}
-			const defaultsRaw = json?.defaults as any;
+			const defaultsRaw = typeof json?.defaults === "object" && json?.defaults !== null ? (json.defaults as Record<string, unknown>) : null;
 			const defaults = {
 				service: defaultsRaw?.service === "revoked" ? ("revoked" as const) : ("granted" as const),
 				marketing: defaultsRaw?.marketing === "granted" ? ("granted" as const) : ("revoked" as const),
@@ -50,7 +50,8 @@ export function useCommunicationConsents(patientId?: string | null) {
 			const next = buildMatrix(parseConsentRows(json?.consents), defaults);
 			setMatrix(next); setBaseline({ ...next }); setLoaded(true);
 		} catch (e) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (e as any)?.status ?? null), "error");
+			const errStatus = typeof e === "object" && e !== null && "status" in e && typeof (e as { status: unknown }).status === "number" ? (e as { status: number }).status : null;
+			showToast(actionFailureToast("Ошибка выполнения операции", errStatus), "error");
 			logger.error("[comm-consents] load failed", e);
 			setError(`Согласия не загружены: ${requestFailureCause(null)}.`); setLoaded(false);
 		} finally { setLoading(false); }
