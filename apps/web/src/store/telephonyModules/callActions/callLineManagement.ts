@@ -94,13 +94,13 @@ export function createCallLineManagementActions(set: SetState, get: GetState) {
 			let patientName = call.patientName;
 			let phone = call.phone;
 
+			// В демо-режиме подставляем каноническую персону ТОЛЬКО если номер звонка пустой (явный запуск пустого демо-звонка)
+			// Реальные входящие номера абонентов НИКОГДА не мутируются и не подменяются (Мандат DEF-TEL-04)
 			if (isDemoShowcaseMode()) {
-				if (!patientId || !patientName || patientName === "Неизвестный номер") {
+				if (!phone || phone.trim().length < 4) {
 					patientId = "01a00000-0000-0000-0000-000000000001";
 					patientName = "Смирнова Анна Сергеевна";
-					if (!phone || phone.trim().length < 4) {
-						phone = "+7 916 234-56-78";
-					}
+					phone = "+7 916 234-56-78";
 				}
 			}
 

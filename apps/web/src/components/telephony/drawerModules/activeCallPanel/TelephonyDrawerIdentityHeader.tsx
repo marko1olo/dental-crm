@@ -2,12 +2,15 @@ import { CalendarCheck, ChevronDown, Copy, UserCheck } from "lucide-react";
 import React from "react";
 import { showToast } from "../../../GlobalToast";
 import { CHANNEL_BADGE_COLORS, type CallAttribution } from "../../telephonyAttribution";
+import { IncomingCallerStatusBadge } from "../../incomingCallerCard/IncomingCallerStatusBadge";
+import type { TelephonyPatientCategory } from "../../../../store/telephonyTypes";
 
 export interface TelephonyDrawerIdentityHeaderProps {
 	avatarColors: { bg: string; text: string };
 	initials: string;
 	callerName: string;
 	isKnownPatient: boolean;
+	patientCategory?: TelephonyPatientCategory;
 	callAttribution: CallAttribution | null;
 	formattedPhone: string;
 	phone: string;
@@ -21,6 +24,7 @@ export function TelephonyDrawerIdentityHeader({
 	initials,
 	callerName,
 	isKnownPatient,
+	patientCategory = "Постоянный",
 	callAttribution,
 	formattedPhone,
 	phone,
@@ -30,7 +34,7 @@ export function TelephonyDrawerIdentityHeader({
 }: TelephonyDrawerIdentityHeaderProps): React.JSX.Element {
 	return (
 		<>
-			{/* Patient Identity Block */}
+			{/* Patient Identity Block (Unified with IncomingCallerCard SSOT) */}
 			<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center gap-3">
 				<div
 					className="w-12 h-12 rounded-2xl flex items-center justify-center text-base font-black shrink-0 shadow-xs border border-[var(--line)]"
@@ -42,9 +46,10 @@ export function TelephonyDrawerIdentityHeader({
 					<div className="flex items-center gap-1.5 flex-wrap">
 						<h3 className="text-base font-bold text-[var(--ink)] truncate">{callerName}</h3>
 						{isKnownPatient ? (
-							<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-								Пациент
-							</span>
+							<IncomingCallerStatusBadge
+								isKnownPatient={true}
+								resolvedCategory={patientCategory}
+							/>
 						) : (
 							<span
 								className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 inline-flex items-center gap-1"

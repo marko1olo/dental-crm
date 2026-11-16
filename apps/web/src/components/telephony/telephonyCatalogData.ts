@@ -14,6 +14,7 @@ import {
 	maskPhoneRu,
 	formatWhatsAppUrl,
 } from "@dental/shared";
+import type { CallStatus } from "../../store/telephonyTypes";
 
 export { normalizePhoneRu, formatPhoneRu, maskPhoneRu, formatWhatsAppUrl };
 
@@ -23,6 +24,49 @@ export type TelephonyCallType =
 	| "incoming_missed"
 	| "outgoing_success"
 	| "outgoing_missed";
+
+/**
+ * Единый канонический резолвер статуса звонка (SSOT Mandate 8aj, Ось №3).
+ * Устраняет Split-Brain между стором телефонии и Студией звонков.
+ */
+export function resolveCanonicalCallStatus(
+	apiStatus?: string,
+	durationSeconds?: number,
+): CallStatus {
+	if (apiStatus === "completed" || apiStatus === "answered") {
+		return "answered";
+	}
+	if (apiStatus === "needs_call" || apiStatus === "missed") {
+		return "missed";
+	}
+	if (apiStatus === "held") {
+		return "connected";
+	}
+	if (apiStatus === "ringing" || apiStatus === "connected" || apiStatus === "rejected") {
+		return apiStatus;
+	}
+	if (durationSeconds !== undefined && durationSeconds === 0) {
+		return "missed";
+	}
+	return "answered";
+}
+
+/**
+ * Единый канонический резолвер типа звонка для интерфейса Студии.
+ */
+export function resolveCanonicalCallType(
+	direction?: string,
+	status?: string,
+	durationSeconds?: number,
+): TelephonyCallType {
+	const isIncoming = direction !== "outbound";
+	const canonicalStatus = resolveCanonicalCallStatus(status, durationSeconds);
+	const isMissed = canonicalStatus === "missed" || canonicalStatus === "rejected";
+	if (isIncoming) {
+		return isMissed ? "incoming_missed" : "incoming_answered";
+	}
+	return isMissed ? "outgoing_missed" : "outgoing_success";
+}
 
 export interface TelephonyCallTypeConfig {
 	id: TelephonyCallType;

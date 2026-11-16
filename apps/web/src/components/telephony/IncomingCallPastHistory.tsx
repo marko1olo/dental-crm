@@ -9,11 +9,35 @@ export interface TransferExtension {
 }
 
 export const DEFAULT_TRANSFER_EXTENSIONS: TransferExtension[] = [
-	{ ext: "101", label: "101 Терапевт" },
-	{ ext: "102", label: "102 Хирург" },
-	{ ext: "103", label: "103 Ортопед" },
-	{ ext: "104", label: "104 Ресепшн" },
+	{ ext: "101", label: "Кабинет 1 (Терапия)" },
+	{ ext: "102", label: "Кабинет 2 (Хирургия)" },
+	{ ext: "103", label: "Кабинет 3 (Ортопедия)" },
+	{ ext: "104", label: "Ресепшн / Администратор" },
 ];
+
+/**
+ * Динамический резолвер внутренних линий клиники (Мандат DEF-TEL-05).
+ * Привязывает добавочные номера к реальным кабинетам и врачам активной смены.
+ */
+export function resolveActiveClinicExtensions(custom?: TransferExtension[]): TransferExtension[] {
+	if (custom && custom.length > 0) return custom;
+	try {
+		if (typeof window !== "undefined") {
+			const rawShift = localStorage.getItem("dente_active_shift");
+			if (rawShift) {
+				const shift = JSON.parse(rawShift);
+				if (Array.isArray(shift.activeDoctors) && shift.activeDoctors.length > 0) {
+					return shift.activeDoctors.map((doc: { ext?: string; name?: string; cabinet?: string }, idx: number) => ({
+						ext: doc.ext || String(101 + idx),
+						label: doc.cabinet ? `${doc.ext || String(101 + idx)} Каб. ${doc.cabinet}` : `${doc.ext || String(101 + idx)} ${doc.name || "Врач"}`,
+					}));
+				}
+			}
+		}
+	} catch {}
+
+	return DEFAULT_TRANSFER_EXTENSIONS;
+}
 
 export interface OutcomeOption {
 	action: CallOutcome;
@@ -33,6 +57,7 @@ export interface IncomingCallTransferPanelProps {
 	transferType: "blind" | "attended";
 	onSelectTransferType: (t: "blind" | "attended") => void;
 	onStartTransfer: (ext: string, type: "blind" | "attended") => void;
+	extensions?: TransferExtension[];
 }
 
 export function IncomingCallTransferPanel({
@@ -41,7 +66,10 @@ export function IncomingCallTransferPanel({
 	transferType,
 	onSelectTransferType,
 	onStartTransfer,
+	extensions,
 }: IncomingCallTransferPanelProps) {
+	const activeExtensions = resolveActiveClinicExtensions(extensions);
+
 	return (
 		<div className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] space-y-2">
 			<button
@@ -80,15 +108,18 @@ export function IncomingCallTransferPanel({
 					</div>
 
 					<div className="grid grid-cols-4 gap-1.5">
-						{DEFAULT_TRANSFER_EXTENSIONS.map((item) => (
+						{activeExtensions.map((item) => (
 							<button
 								key={item.ext}
 								type="button"
 								onClick={() => onStartTransfer(item.ext, transferType)}
-								className="min-h-[40px] p-2 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] font-bold text-xs text-[var(--ink,#0f172a)] text-center transition-all cursor-pointer"
+								className="min-h-[40px] p-1.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] hover:bg-[var(--teal-surface)] border border-[var(--line,#e2e8f0)] font-bold text-xs text-[var(--ink,#0f172a)] text-center transition-all cursor-pointer truncate"
 								title={`Перевести вызов на ${item.label}`}
 							>
-								{item.ext}
+								<div className="font-mono text-xs font-bold leading-tight">{item.ext}</div>
+								<div className="text-[10px] text-[var(--muted,#64748b)] truncate font-normal leading-tight mt-0.5">
+									{item.label.replace(/^\d+\s*/, "")}
+								</div>
 							</button>
 						))}
 					</div>

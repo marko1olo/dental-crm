@@ -10,7 +10,7 @@ describe("Telephony: SIP Call Transfer (Blind vs Attended)", () => {
 		dispatchedRequests.length = 0;
 		globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
 			const bodyStr = init?.body ? String(init.body) : "";
-			let parsedBody = null;
+			let parsedBody: any = null;
 			try {
 				parsedBody = JSON.parse(bodyStr);
 			} catch {

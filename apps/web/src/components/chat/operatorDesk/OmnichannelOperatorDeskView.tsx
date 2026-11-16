@@ -94,7 +94,6 @@ export function OmnichannelOperatorDeskView({
 					setIsMobileThreadOpen(true);
 				}}
 				onRefresh={fetchConversations}
-				onSimulateIncoming={handleSimulateIncoming}
 				onSetChannelFilter={setChannelFilter}
 				onSetStatusFilter={setStatusFilter}
 				onSetSearchQuery={setSearchQuery}

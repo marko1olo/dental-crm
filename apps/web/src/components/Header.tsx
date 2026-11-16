@@ -5,7 +5,6 @@
  */
 
 import React from "react";
-import { TelephonyHeaderCapsule } from "./telephony/headerCapsule";
 import {
 	HeaderBranding,
 	HeaderGlobalSearch,
@@ -69,9 +68,8 @@ export function Header({
 				className="mx-auto hidden md:flex"
 			/>
 
-			{/* Right: Telephony/Cash/Sync Capsule + User Profile & Theme */}
+			{/* Right: Clinic Status Capsule + User Profile & Theme */}
 			<div className="flex items-center gap-2 shrink-0">
-				<TelephonyHeaderCapsule id="global-crm-header-telephony-capsule" />
 				<HeaderSystemStatus
 					onLockSession={onLockSession}
 					onOpenShiftModal={onOpenShiftModal}

@@ -5,6 +5,7 @@ import {
 	readDenteStaffToken,
 } from "../../lib/safeLocalStorage";
 import { normalizePhone } from "../telephonyHelpers";
+import { resolveCanonicalCallStatus } from "../../components/telephony/telephonyCatalogData";
 import {
 	type CallHistoryItem,
 	type IncomingCallPayload,
@@ -170,20 +171,10 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 					else if (digits === "9267778899") patientName = "Кузнецов Дмитрий Игоревич";
 					else if (digits === "9035551122") patientName = "Первичный абонент";
 				}
-				let status: CallHistoryItem["status"] = "answered";
-				if (c.status === "completed" || c.status === "answered") {
-					status = "answered";
-				} else if (c.status === "needs_call" || c.status === "missed") {
-					status = "missed";
-				} else if (c.status === "held") {
-					status = "connected";
-				} else if (
-					c.status === "ringing" ||
-					c.status === "connected" ||
-					c.status === "rejected"
-				) {
-					status = c.status;
-				}
+				const status: CallHistoryItem["status"] = resolveCanonicalCallStatus(
+					c.status,
+					typeof c.durationSeconds === "number" ? c.durationSeconds : undefined,
+				);
 
 				return {
 					id: c.id,

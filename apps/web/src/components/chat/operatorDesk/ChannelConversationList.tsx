@@ -23,7 +23,7 @@ export interface ChannelConversationListProps {
 	isMobileThreadOpen: boolean;
 	onSelectConversation: (key: string) => void;
 	onRefresh: () => void;
-	onSimulateIncoming: () => void;
+	onSimulateIncoming?: () => void;
 	onSetChannelFilter: (ch: "all" | BotChannel) => void;
 	onSetStatusFilter: (status: "all" | "intercepted" | "bot") => void;
 	onSetSearchQuery: (query: string) => void;
@@ -159,15 +159,6 @@ export function ChannelConversationList({
 					<div className="p-8 text-center text-[var(--muted,#64748b)] flex flex-col items-center justify-center gap-2">
 						<Bot size={32} className="text-slate-300 dark:text-slate-600" />
 						<p className="text-xs">Диалогов не найдено</p>
-						{isDemoShowcaseMode() && (
-							<button
-								type="button"
-								onClick={onSimulateIncoming}
-								className="mt-2 text-xs font-semibold text-teal-600 hover:underline"
-							>
-								Создать тестовое обращение
-							</button>
-						)}
 					</div>
 				) : (
 					filteredConversations.map((conv) => {

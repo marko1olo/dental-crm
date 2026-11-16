@@ -14,6 +14,7 @@ import {
 	type TelephonyCatalogCall, type TelephonyCallApiRecord, type TelephonyCallType, type TelephonyFilterType, TELEPHONY_CATALOG_DATA,
 	TELEPHONY_CALL_TYPES, DIALPAD_KEYS, formatPhoneRu, getWhatsAppUrl, playSafeWebAudioTone,
 	triggerOpenPatientCard, triggerBookAppointment, triggerCreatePatient,
+	resolveCanonicalCallType,
 } from "./telephonyCatalogData";
 export type { TelephonyCallApiRecord } from "./telephonyCatalogData";
 import { TelephonyCallList } from "./TelephonyCallList";
@@ -275,6 +276,39 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 	const [isNoteSaved, setIsNoteSaved] = useState(false);
 
 	const activeLineId = useTelephonyStore((s) => s.activeLineId);
+	const callHistory = useTelephonyStore((s) => s.callHistory);
+	const fetchCallHistory = useTelephonyStore((s) => s.fetchCallHistory);
+
+	const storeCatalogCalls = useMemo<TelephonyCatalogCall[]>(() => {
+		if (!callHistory || callHistory.length === 0) return [];
+		return callHistory.map((c) => {
+			const callType = resolveCanonicalCallType(c.direction, c.status, c.durationSeconds);
+			const phone = c.phone || "";
+			const callerName = c.patientName || (phone ? `Абонент ${formatPhoneRu(phone)}` : "Неизвестный абонент");
+			const dateObj = c.timestamp ? new Date(c.timestamp) : (c.callStartedAt ? new Date(c.callStartedAt) : new Date());
+			const timestampText = dateObj.toLocaleDateString("ru-RU", {
+				day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+			});
+			return {
+				id: String(c.id || c.callId || phone),
+				callType,
+				phone,
+				callerName,
+				patientId: c.patientId ? String(c.patientId) : null,
+				patientCategory: c.patientId ? "Постоянный" : "Первичный",
+				balanceRub: 0,
+				lastVisitDate: null,
+				attendingDoctor: null,
+				clinicalNote: c.outcomeNote || undefined,
+				somaticAlert: null,
+				durationSeconds: c.durationSeconds || 0,
+				timestampText,
+				hasRecording: Boolean(c.recordingUrl),
+				recordingUrl: c.recordingUrl || undefined,
+				transcriptSnippet: c.transcript?.[0]?.text,
+			};
+		});
+	}, [callHistory]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -285,6 +319,8 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 			}
 			return;
 		}
+
+		void fetchCallHistory();
 
 		let isMounted = true;
 		const staffToken = readDenteStaffToken();
@@ -298,13 +334,9 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 				if (!isMounted) return;
 				if (data?.calls && Array.isArray(data.calls)) {
 					const mapped: TelephonyCatalogCall[] = data.calls.map((c) => {
-						const isIncoming = c.direction === "inbound";
-						const isMissed = c.status === "needs_call" || (c.durationSeconds === 0 && isIncoming);
-						const callType: TelephonyCallType = isIncoming
-							? isMissed ? "incoming_missed" : "incoming_answered"
-							: isMissed ? "outgoing_missed" : "outgoing_success";
+						const callType = resolveCanonicalCallType(c.direction, c.status, c.durationSeconds);
 						const phone = c.patientPhone || c.callerPhone || "";
-						const callerName = c.patientName || (phone ? `Абонент ${formatPhoneRu(phone)}` : "Неизвестный номер");
+						const callerName = c.patientName || (phone ? `Абонент ${formatPhoneRu(phone)}` : "Неизвестный абонент");
 						const dateObj = c.createdAt ? new Date(c.createdAt) : new Date();
 						const timestampText = dateObj.toLocaleDateString("ru-RU", {
 							day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
@@ -329,14 +361,15 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		return () => {
 			isMounted = false;
 		};
-	}, [isOpen, selectedCallId]);
+	}, [isOpen, selectedCallId, fetchCallHistory]);
 
 	const isDemo = isDemoShowcaseMode();
 
 	const baseCalls = useMemo(() => {
+		if (storeCatalogCalls.length > 0) return storeCatalogCalls;
 		if (dbCalls.length > 0) return dbCalls;
 		return isDemo ? TELEPHONY_CATALOG_DATA : [];
-	}, [dbCalls, isDemo]);
+	}, [storeCatalogCalls, dbCalls, isDemo]);
 
 	const filteredCalls = useMemo(() => {
 		return baseCalls.filter((call) => {

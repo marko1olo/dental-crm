@@ -66,14 +66,15 @@ describe("Telephony Production Purity & Demo Showcase Invariants", () => {
 		assert.strictEqual(active.phone, "+79162345678");
 	});
 
-	test("2.2. In demo mode, explicit phone call preserves phone but links Smirnova Anna", () => {
+	test("2.2. In demo mode, explicit phone call preserves actual phone and does not mutate caller to Smirnova (DEF-TEL-04)", () => {
 		enableDemoShowcaseMode();
 		const store = useTelephonyStore.getState();
 		store.triggerIncomingCall({ phone: "+7 900 123-45-67", patientId: null, patientName: "Неизвестный номер", provider: "uis", status: "ringing" });
 		const active = useTelephonyStore.getState().activeCall;
 		assert.ok(active);
-		assert.strictEqual(active.patientName, "Смирнова Анна Сергеевна");
-		assert.strictEqual(active.patientId, "01a00000-0000-0000-0000-000000000001");
+		assert.strictEqual(active.phone, "+79001234567");
+		assert.strictEqual(active.patientName, "Неизвестный номер");
+		assert.strictEqual(active.patientId, null);
 	});
 
 	test("3.1. Doctor immunity covers doctor role, visit, odontogram, and periodontics", () => {

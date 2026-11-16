@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { isDemoShowcaseMode } from "../lib/demoMode";
 import { useWebsocket } from "./useWebsocket";
 import { useAppStore } from "../store/appStore";
 import {
@@ -82,8 +83,12 @@ export function useTelephonyRealtime() {
 	}, [lastMessage, triggerIncomingCall, isDoctorMode, fetchCallHistory]);
 
 	useEffect(() => {
+		if (process.env.NODE_ENV === "production" && !isDemoShowcaseMode()) {
+			return;
+		}
 		const handleMock = (e: Event) => {
 			if (isDoctorMode) return;
+			if (process.env.NODE_ENV === "production" && !isDemoShowcaseMode()) return;
 			const custom = e as CustomEvent<IncomingCallPayload>;
 			if (custom.detail) triggerIncomingCall(custom.detail);
 		};

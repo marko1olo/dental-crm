@@ -113,7 +113,7 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 			assert.strictEqual(active?.patientId, null);
 		});
 
-		it("demo showcase mode canonically binds to Smirnova Anna Sergeevna", () => {
+		it("demo showcase mode canonically binds to Smirnova Anna Sergeevna on empty trigger", () => {
 			enableDemoShowcaseMode();
 			assert.strictEqual(isDemoShowcaseMode(), true);
 
@@ -130,6 +130,25 @@ describe("CTI Telephony Red Team Inquisition (8c, 8e, 8k, 8y, 8d)", () => {
 			assert.notStrictEqual(active, null);
 			assert.strictEqual(active?.patientName, "Смирнова Анна Сергеевна");
 			assert.strictEqual(active?.phone, "+79162345678");
+		});
+
+		it("demo showcase mode does not mutate explicit callers to Smirnova (DEF-TEL-04)", () => {
+			enableDemoShowcaseMode();
+			assert.strictEqual(isDemoShowcaseMode(), true);
+
+			const store = useTelephonyStore.getState();
+			store.triggerIncomingCall({
+				phone: "+7 905 123-45-67",
+				patientId: null,
+				patientName: "Алексеев Петр",
+				provider: "mango",
+				status: "ringing",
+			});
+
+			const active = useTelephonyStore.getState().activeCall;
+			assert.notStrictEqual(active, null);
+			assert.strictEqual(active?.patientName, "Алексеев Петр");
+			assert.strictEqual(active?.phone, "+79051234567");
 		});
 	});
 

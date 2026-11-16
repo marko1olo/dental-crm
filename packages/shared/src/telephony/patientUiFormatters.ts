@@ -62,7 +62,12 @@ export function formatDurationTimer(totalSeconds: number): string {
 	return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
-export function generateWaveformBars(seed: string | null | undefined, count = 48): number[] {
+/**
+ * Генерирует детерминированную волну-заглушку (Fallback/Placeholder Waveform)
+ * для аудиозаписи звонка на время загрузки файла или при отсутствии декодированного AudioBuffer.
+ * Служит исключительно визуальным плейсхолдером (Fallback Waveform Placeholder) до загрузки реального потока.
+ */
+export function generateWaveformFallbackBars(seed: string | null | undefined, count = 48): number[] {
 	const barCount = Math.max(1, count);
 	const rawSeed = typeof seed === "string" && seed.trim() ? seed.trim() : "dente-telephony-audio-call";
 
@@ -75,7 +80,7 @@ export function generateWaveformBars(seed: string | null | undefined, count = 48
 	const bars: number[] = new Array(barCount);
 	const base = 0.35;
 	for (let i = 0; i < barCount; i++) {
-		// Clean deterministic amplitude distribution without fake sinusoidal speech imitation
+		// Clean deterministic amplitude fallback distribution without fake sinusoidal speech imitation
 		const sampleVal = Math.abs((hash ^ (i * 2654435761)) % 100) / 100;
 		const wave = base + sampleVal * 0.45;
 		const clamped = Math.max(0.15, Math.min(0.95, wave));
@@ -83,3 +88,5 @@ export function generateWaveformBars(seed: string | null | undefined, count = 48
 	}
 	return bars;
 }
+
+export const generateWaveformBars = generateWaveformFallbackBars;
