@@ -34,7 +34,7 @@ export interface MigrationOperatorStepActionsProps {
 	isClinicPublicLookupLoading: boolean;
 	isSmartImportLoading: boolean;
 	runMigrationAutopilot: (
-		candidate?: any,
+		candidate?: MigrationLocalSourceDiscoveryCandidate | null,
 		options?: { includeSmartImportText?: boolean },
 	) => void;
 	discoverMigrationSources: () => void;

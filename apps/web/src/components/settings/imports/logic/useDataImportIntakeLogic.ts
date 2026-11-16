@@ -14,15 +14,15 @@ export interface UseDataImportIntakeLogicParams {
 	smartImportText?: string;
 	imagingImportText?: string;
 	importText?: string;
-	browserMigrationDiscovery?: any;
-	smartImportPreview?: any;
-	imagingSourceChoices?: any;
-	imagingImportPreview?: any;
-	importSourceKinds?: any;
-	documentIngestionTargets?: any;
-	documentIngestion?: any;
-	importIntake?: any;
-	importPreview?: any;
+	browserMigrationDiscovery?: MigrationLocalSourceDiscoveryResponse | null;
+	smartImportPreview?: SmartImportPreviewResponse | null;
+	imagingSourceChoices?: ImagingSourceKind[] | null;
+	imagingImportPreview?: ImagingImportPreviewResponse | null;
+	importSourceKinds?: ImportSourceKind[] | null;
+	documentIngestionTargets?: DocumentIngestionTarget[] | null;
+	documentIngestion?: DocumentIngestionResponse | null;
+	importIntake?: ImportIntakeResponse | null;
+	importPreview?: ImportPreviewResponse | null;
 	setSmartImportMode?: (mode: string) => void;
 }
 
@@ -47,22 +47,15 @@ export function useDataImportIntakeLogic(params: UseDataImportIntakeLogicParams)
 	const imagingImportInputReady = (imagingImportText || "").trim().length > 0;
 	const patientImportInputReady = (importText || "").trim().length > 0;
 
-	const typedBrowserMigrationDiscovery =
-		browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
-	const typedSmartImportPreview =
-		smartImportPreview as SmartImportPreviewResponse | null;
-	const typedImagingSourceChoices =
-		(imagingSourceChoices ?? []) as ImagingSourceKind[];
-	const typedImagingImportPreview =
-		imagingImportPreview as ImagingImportPreviewResponse | null;
-	const typedImportSourceKinds =
-		(importSourceKinds ?? []) as ImportSourceKind[];
-	const typedDocumentIngestionTargets =
-		(documentIngestionTargets ?? []) as DocumentIngestionTarget[];
-	const typedDocumentIngestion =
-		documentIngestion as DocumentIngestionResponse | null;
-	const typedImportIntake = importIntake as ImportIntakeResponse | null;
-	const typedImportPreview = importPreview as ImportPreviewResponse | null;
+	const typedBrowserMigrationDiscovery = browserMigrationDiscovery ?? null;
+	const typedSmartImportPreview = smartImportPreview ?? null;
+	const typedImagingSourceChoices = imagingSourceChoices ?? [];
+	const typedImagingImportPreview = imagingImportPreview ?? null;
+	const typedImportSourceKinds = importSourceKinds ?? [];
+	const typedDocumentIngestionTargets = documentIngestionTargets ?? [];
+	const typedDocumentIngestion = documentIngestion ?? null;
+	const typedImportIntake = importIntake ?? null;
+	const typedImportPreview = importPreview ?? null;
 
 	const focusSmartImportWorkbench = () => {
 		if (setSmartImportMode) {

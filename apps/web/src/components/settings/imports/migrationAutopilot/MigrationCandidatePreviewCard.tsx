@@ -1,5 +1,6 @@
 import React from "react";
 import type {
+	MigrationAutopilotDryRunSummary,
 	MigrationAutopilotOperatorScriptStep,
 	MigrationLocalSourceDiscoveryCandidate,
 } from "@dental/shared";
@@ -9,7 +10,7 @@ import { MigrationOperatorStepActions } from "../MigrationOperatorStepActions";
 import type { MigrationOperatorActionsCommonProps } from "./migrationAutopilotTypes";
 
 export interface MigrationCandidatePreviewCardProps {
-	dryRunSummary: any;
+	dryRunSummary: MigrationAutopilotDryRunSummary | null | undefined;
 	primaryStep: MigrationAutopilotOperatorScriptStep | null | undefined;
 	primaryCandidate: MigrationLocalSourceDiscoveryCandidate | null | undefined;
 	operatorActionsProps: MigrationOperatorActionsCommonProps;

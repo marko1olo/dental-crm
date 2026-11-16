@@ -1,7 +1,13 @@
 import React from "react";
 import type {
 	DicomFirstFramePreviewResponse,
+	DicomFolderSeriesPreviewResponse,
+	DicomFolderWorkupPlanResponse,
+	DicomSeriesPreviewGroup,
+	DicomSeriesPreviewResponse,
+	ImagingImportCommitResponse,
 	ImagingImportPreviewResponse,
+	ImagingSourceKind,
 } from "@dental/shared";
 import {
 	CheckCircle2,
@@ -53,8 +59,8 @@ export interface MigrationDicomViewerSectionProps {
 	isDicomSeriesPreviewLoading: boolean;
 	isImagingImportLoading: boolean;
 	isImagingImportCommitting: boolean;
-	dicomSeriesPreview: any;
-	typedDicomSeriesPreviewSeries: any[];
+	dicomSeriesPreview: DicomSeriesPreviewResponse | null | undefined;
+	typedDicomSeriesPreviewSeries: DicomSeriesPreviewGroup[];
 	imagingKindLabels: Record<string, string>;
 	dicomSeriesViewerLabels: Record<string, string>;
 	mprLoadStrategyLabels: Record<string, string>;
@@ -63,7 +69,7 @@ export interface MigrationDicomViewerSectionProps {
 		| ImagingImportPreviewResponse
 		| null
 		| undefined;
-	imagingImportCommit: any;
+	imagingImportCommit: ImagingImportCommitResponse | null | undefined;
 	updateDicomFirstFrameViewerState: (
 		updater: (prev: DicomFirstFrameViewerState) => DicomFirstFrameViewerState,
 	) => void;
@@ -73,13 +79,13 @@ export interface MigrationDicomViewerSectionProps {
 	) => void;
 	setDicomFirstFrameViewerState: (s: DicomFirstFrameViewerState) => void;
 	previewDicomFirstFrameSlice: (index: number) => void;
-	setImagingImportSourceKind: (k: any) => void;
+	setImagingImportSourceKind: (k: ImagingSourceKind) => void;
 	setImagingImportText: (t: string) => void;
-	setImagingImportPreview: (p: any) => void;
-	setImagingImportCommit: (c: any) => void;
-	setDicomSeriesPreview: (p: any) => void;
-	setDicomFolderSeriesScan: (s: any) => void;
-	setDicomFolderWorkupPlan: (p: any) => void;
+	setImagingImportPreview: (p: ImagingImportPreviewResponse | null) => void;
+	setImagingImportCommit: (c: ImagingImportCommitResponse | null) => void;
+	setDicomSeriesPreview: (p: DicomSeriesPreviewResponse | null) => void;
+	setDicomFolderSeriesScan: (s: DicomFolderSeriesPreviewResponse | null) => void;
+	setDicomFolderWorkupPlan: (p: DicomFolderWorkupPlanResponse | null) => void;
 	previewDicomSeries: () => void;
 	previewImagingImport: () => void;
 	commitImagingImport: () => void;

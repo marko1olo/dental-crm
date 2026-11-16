@@ -1,5 +1,8 @@
 import React from "react";
-import type { MigrationLocalSourceWorkupResponse } from "@dental/shared";
+import type {
+	MigrationLocalSourceWorkupResponse,
+	MigrationReadinessItem,
+} from "@dental/shared";
 import {
 	migrationAutomationLevelLabels,
 	migrationBridgeKitKindLabels,
@@ -23,7 +26,7 @@ export interface MigrationWorkupSectionProps {
 		| MigrationLocalSourceWorkupResponse
 		| null
 		| undefined;
-	typedMigrationWorkupReadinessIssues: any[];
+	typedMigrationWorkupReadinessIssues: MigrationReadinessItem[];
 }
 
 export function MigrationWorkupSection({

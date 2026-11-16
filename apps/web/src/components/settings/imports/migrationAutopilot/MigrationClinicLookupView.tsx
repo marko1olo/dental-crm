@@ -1,4 +1,9 @@
 import React from "react";
+import type {
+	ClinicPublicLookupResponse,
+	ClinicPublicLookupSuggestion,
+	SmartImportPublicLookupTarget,
+} from "@dental/shared";
 import { ExternalLink, ShieldCheck } from "lucide-react";
 import {
 	clinicPublicLookupBoundaryText,
@@ -9,7 +14,7 @@ import {
 import { clinicPublicLookupWarningText, humanizeMigrationText } from "../helpers";
 
 export interface MigrationClinicLookupViewProps {
-	clinicLookup: any;
+	clinicLookup: ClinicPublicLookupResponse | null | undefined;
 	clinicProfileSaveState: string;
 	clinicProfileSaveButtonText: string;
 	saveClinicProfileFromDraft: () => void;
@@ -37,15 +42,15 @@ export function MigrationClinicLookupView({
 			<span>{humanizeMigrationText(clinicLookup.nextAction)}</span>
 			<small className="clinic-public-boundary">{clinicPublicLookupBoundaryText}</small>
 			<div className="clinic-public-targets">
-				{(clinicLookup.publicLookupTargets ?? []).slice(0, 4).map((target: any) => (
+				{(clinicLookup.publicLookupTargets ?? []).slice(0, 4).map((target: SmartImportPublicLookupTarget) => (
 					<a className="secondary-button" href={target.url} key={`${target.kind}:${target.title}`} target="_blank" rel="noreferrer noopener" title={target.title}>
 						<ExternalLink aria-hidden="true" /> {target.title}
 					</a>
 				))}
 			</div>
-			{clinicLookup.suggestions?.length > 0 && (
+			{(clinicLookup.suggestions ?? []).length > 0 && (
 				<div className="clinic-public-suggestions" data-testid="migration-autopilot-clinic-suggestions">
-					{clinicLookup.suggestions.slice(0, 3).map((suggestion: any) => {
+					{(clinicLookup.suggestions ?? []).slice(0, 3).map((suggestion: ClinicPublicLookupSuggestion) => {
 						const entries = clinicLookupSuggestionFieldEntries(suggestion.fields);
 						return (
 							<article key={`${suggestion.source}:${suggestion.confidence}:${suggestion.fields.inn ?? "c"}`}>

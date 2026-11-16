@@ -16,12 +16,12 @@ import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { DEMO_SHOWCASE_MIGRATION_AUTOPILOT } from "../migrationAutopilotDemo";
 
 export interface UseMigrationAutopilotLogicParams {
-	migrationAutopilot?: any;
-	migrationSourceDiscovery?: any;
-	migrationSourceWorkup?: any;
-	migrationSourceProbe?: any;
-	browserMigrationDiscovery?: any;
-	smartImportPreview?: any;
+	migrationAutopilot?: MigrationAutopilotResponse | null;
+	migrationSourceDiscovery?: MigrationLocalSourceDiscoveryResponse | null;
+	migrationSourceWorkup?: MigrationLocalSourceWorkupResponse | null;
+	migrationSourceProbe?: MigrationLocalSourceProbeResponse | null;
+	browserMigrationDiscovery?: MigrationLocalSourceDiscoveryResponse | null;
+	smartImportPreview?: SmartImportPreviewResponse | null;
 	isMigrationSourceDiscovering?: boolean;
 	isBrowserMigrationScanning?: boolean;
 	isMigrationAutopilotLoading?: boolean;
@@ -50,20 +50,15 @@ export function useMigrationAutopilotLogic(params: UseMigrationAutopilotLogicPar
 		migrationClinicFieldsFound = 0,
 	} = params;
 
-	const typedBrowserMigrationDiscovery =
-		browserMigrationDiscovery as MigrationLocalSourceDiscoveryResponse | null;
-	const typedSmartImportPreview =
-		smartImportPreview as SmartImportPreviewResponse | null;
+	const typedBrowserMigrationDiscovery = browserMigrationDiscovery ?? null;
+	const typedSmartImportPreview = smartImportPreview ?? null;
 
 	const typedMigrationAutopilot =
-		(migrationAutopilot as MigrationAutopilotResponse | null) ??
+		migrationAutopilot ??
 		(isDemoShowcaseMode() ? DEMO_SHOWCASE_MIGRATION_AUTOPILOT : null);
-	const typedMigrationSourceDiscovery =
-		migrationSourceDiscovery as MigrationLocalSourceDiscoveryResponse | null;
-	const typedMigrationSourceWorkup =
-		migrationSourceWorkup as MigrationLocalSourceWorkupResponse | null;
-	const typedMigrationSourceProbe =
-		migrationSourceProbe as MigrationLocalSourceProbeResponse | null;
+	const typedMigrationSourceDiscovery = migrationSourceDiscovery ?? null;
+	const typedMigrationSourceWorkup = migrationSourceWorkup ?? null;
+	const typedMigrationSourceProbe = migrationSourceProbe ?? null;
 
 	const typedMigrationAutopilotSources = (typedMigrationAutopilot?.sources ??
 		[]) as MigrationAutopilotSource[];

@@ -5,11 +5,11 @@ import type {
 import { clinicPublicLookupFieldLabels } from "../constants";
 
 export interface UseClinicProfileDraftLogicParams {
-	clinicProfileDraft?: any;
+	clinicProfileDraft?: Record<string, unknown> | null;
 	clinicProfileSaveState?: string;
 	updateClinicProfileDraft?: (key: string, value: string) => void;
-	clinicPublicLookup?: any;
-	smartImportPreview?: any;
+	clinicPublicLookup?: ClinicPublicLookupResponse | null;
+	smartImportPreview?: SmartImportPreviewResponse | null;
 }
 
 export function useClinicProfileDraftLogic(params: UseClinicProfileDraftLogicParams) {
@@ -21,10 +21,8 @@ export function useClinicProfileDraftLogic(params: UseClinicProfileDraftLogicPar
 		smartImportPreview,
 	} = params;
 
-	const typedClinicPublicLookup =
-		clinicPublicLookup as ClinicPublicLookupResponse | null;
-	const typedSmartImportPreview =
-		smartImportPreview as SmartImportPreviewResponse | null;
+	const typedClinicPublicLookup = clinicPublicLookup ?? null;
+	const typedSmartImportPreview = smartImportPreview ?? null;
 
 	const clinicLookupSuggestionFieldEntries = (
 		fields: Record<string, unknown>,

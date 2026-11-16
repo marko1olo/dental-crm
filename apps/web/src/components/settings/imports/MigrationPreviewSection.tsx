@@ -2,6 +2,7 @@ import React from "react";
 import type {
 	DocumentIngestionResponse,
 	DocumentIngestionTarget,
+	ImportCommitResponse,
 	ImportIntakeResponse,
 	ImportPreviewResponse,
 	ImportSourceKind,
@@ -34,7 +35,7 @@ export interface MigrationPreviewSectionProps {
 	settingsTab: string;
 	typedImportSourceKinds: ImportSourceKind[];
 	importSourceKind: ImportSourceKind;
-	importSourceLabels: Record<string, any>;
+	importSourceLabels: Record<string, { title?: string; detail?: string }>;
 	typedDocumentIngestionTargets: DocumentIngestionTarget[];
 	documentIngestionTarget: DocumentIngestionTarget;
 	ingestionTargetLabels: Record<string, string>;
@@ -48,11 +49,11 @@ export interface MigrationPreviewSectionProps {
 	isImportCommitting: boolean;
 	typedImportIntake: ImportIntakeResponse | null | undefined;
 	typedImportPreview: ImportPreviewResponse | null | undefined;
-	importCommit: any;
+	importCommit: ImportCommitResponse | null | undefined;
 	setImportSourceKind: (k: ImportSourceKind) => void;
-	setImportPreview: (p: any) => void;
-	setImportCommit: (c: any) => void;
-	setImportIntake: (i: any) => void;
+	setImportPreview: (p: ImportPreviewResponse | null) => void;
+	setImportCommit: (c: ImportCommitResponse | null) => void;
+	setImportIntake: (i: ImportIntakeResponse | null) => void;
 	setDocumentIngestionTarget: (t: DocumentIngestionTarget) => void;
 	ingestImportFile: (f: File | undefined) => void;
 	setImportText: (t: string | ((prev: string) => string)) => void;

@@ -1,3 +1,28 @@
+import type React from "react";
+import type {
+	ClinicPublicLookupResponse,
+	DicomFirstFramePreviewResponse,
+	DicomFolderSeriesPreviewResponse,
+	DicomFolderWorkupPlanResponse,
+	DicomLocalFolderDiscoveryResponse,
+	DicomSeriesPreviewGroup,
+	DicomSeriesPreviewResponse,
+	DocumentIngestionResponse,
+	DocumentIngestionTarget,
+	ImagingFolderScanResponse,
+	ImagingImportPreviewResponse,
+	ImagingSourceKind,
+	ImportIntakeResponse,
+	ImportPreviewResponse,
+	ImportSourceKind,
+	LocalImagingOrganizerResponse,
+	MigrationAutopilotResponse,
+	MigrationLocalSourceDiscoveryResponse,
+	MigrationLocalSourceProbeResponse,
+	MigrationLocalSourceWorkupResponse,
+	SmartImportPreviewResponse,
+} from "@dental/shared";
+import type { DicomFirstFrameViewerState } from "./types";
 import { useClinicProfileDraftLogic } from "./logic/useClinicProfileDraftLogic";
 import { useDicomViewerLogic } from "./logic/useDicomViewerLogic";
 import { useMigrationAutopilotLogic } from "./logic/useMigrationAutopilotLogic";
@@ -7,33 +32,35 @@ export interface UseSettingsImportsLogicParams {
 	smartImportText?: string;
 	imagingImportText?: string;
 	importText?: string;
-	browserMigrationDiscovery?: any;
-	smartImportPreview?: any;
-	imagingSourceChoices?: any;
-	imagingImportPreview?: any;
-	importSourceKinds?: any;
-	documentIngestionTargets?: any;
-	documentIngestion?: any;
-	importIntake?: any;
-	importPreview?: any;
-	clinicProfileDraft?: any;
+	browserMigrationDiscovery?: MigrationLocalSourceDiscoveryResponse | null;
+	smartImportPreview?: SmartImportPreviewResponse | null;
+	imagingSourceChoices?: ImagingSourceKind[] | null;
+	imagingImportPreview?: ImagingImportPreviewResponse | null;
+	importSourceKinds?: ImportSourceKind[] | null;
+	documentIngestionTargets?: DocumentIngestionTarget[] | null;
+	documentIngestion?: DocumentIngestionResponse | null;
+	importIntake?: ImportIntakeResponse | null;
+	importPreview?: ImportPreviewResponse | null;
+	clinicProfileDraft?: Record<string, unknown> | null;
 	clinicProfileSaveState?: string;
 	updateClinicProfileDraft?: (key: string, value: string) => void;
-	migrationAutopilot?: any;
-	migrationSourceDiscovery?: any;
-	migrationSourceWorkup?: any;
-	migrationSourceProbe?: any;
-	clinicPublicLookup?: any;
-	dicomFirstFramePreview?: any;
-	dicomFirstFrameViewerState?: any;
-	defaultDicomFirstFrameViewerState?: any;
-	setDicomFirstFrameViewerState?: any;
-	dicomSeriesPreview?: any;
-	dicomLocalFolderDiscovery?: any;
-	localImagingOrganizer?: any;
-	imagingFolderScan?: any;
-	dicomFolderSeriesScan?: any;
-	dicomFolderWorkupPlan?: any;
+	migrationAutopilot?: MigrationAutopilotResponse | null;
+	migrationSourceDiscovery?: MigrationLocalSourceDiscoveryResponse | null;
+	migrationSourceWorkup?: MigrationLocalSourceWorkupResponse | null;
+	migrationSourceProbe?: MigrationLocalSourceProbeResponse | null;
+	clinicPublicLookup?: ClinicPublicLookupResponse | null;
+	dicomFirstFramePreview?: DicomFirstFramePreviewResponse | null;
+	dicomFirstFrameViewerState?: DicomFirstFrameViewerState | null;
+	defaultDicomFirstFrameViewerState?: DicomFirstFrameViewerState | null;
+	setDicomFirstFrameViewerState?:
+		| React.Dispatch<React.SetStateAction<DicomFirstFrameViewerState>>
+		| ((updater: (state: DicomFirstFrameViewerState) => DicomFirstFrameViewerState) => void);
+	dicomSeriesPreview?: DicomSeriesPreviewResponse | { series?: DicomSeriesPreviewGroup[] } | null;
+	dicomLocalFolderDiscovery?: DicomLocalFolderDiscoveryResponse | null;
+	localImagingOrganizer?: LocalImagingOrganizerResponse | null;
+	imagingFolderScan?: ImagingFolderScanResponse | null;
+	dicomFolderSeriesScan?: DicomFolderSeriesPreviewResponse | null;
+	dicomFolderWorkupPlan?: DicomFolderWorkupPlanResponse | null;
 	isMigrationSourceDiscovering?: boolean;
 	isBrowserMigrationScanning?: boolean;
 	isMigrationAutopilotLoading?: boolean;

@@ -95,4 +95,4 @@ export type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 export type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 export type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
-export type SettingsViewProps = Record<string, any>;
+export type SettingsViewProps = Record<string, unknown>;

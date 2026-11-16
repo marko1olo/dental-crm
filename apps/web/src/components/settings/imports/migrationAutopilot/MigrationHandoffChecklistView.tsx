@@ -9,7 +9,7 @@ import { humanizeMigrationText } from "../helpers";
 
 export interface MigrationHandoffChecklistViewProps {
 	checklist: MigrationAutopilotHandoffChecklistItem[];
-	triageItems?: any[];
+	triageItems?: MigrationAutopilotHandoffChecklistItem[];
 }
 
 export function MigrationHandoffChecklistView({

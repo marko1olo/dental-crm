@@ -1,4 +1,6 @@
 import type {
+	ClinicPublicLookupResponse,
+	MigrationAutopilotDryRunSummary,
 	MigrationAutopilotHandoffChecklistItem,
 	MigrationAutopilotOperatorScriptStep,
 	MigrationAutopilotPacketLane,
@@ -11,12 +13,12 @@ import type {
 export interface MigrationAutopilotSectionProps {
 	migrationAutopilot: MigrationAutopilotResponse | null | undefined;
 	typedMigrationAutopilotSources: MigrationAutopilotSource[];
-	typedMigrationAutopilotClinicLookup: any;
+	typedMigrationAutopilotClinicLookup: ClinicPublicLookupResponse | null | undefined;
 	typedMigrationAutopilotSteps: MigrationAutopilotStep[];
 	typedMigrationOperatorLanes: MigrationAutopilotPacketLane[];
 	typedMigrationHandoffChecklist: MigrationAutopilotHandoffChecklistItem[];
-	migrationDryRunSummary: any;
-	migrationTriageItems: any[];
+	migrationDryRunSummary: MigrationAutopilotDryRunSummary | null | undefined;
+	migrationTriageItems: MigrationAutopilotHandoffChecklistItem[];
 	migrationOperatorScriptSteps: MigrationAutopilotOperatorScriptStep[];
 	migrationPrimaryOperatorStep:
 		| MigrationAutopilotOperatorScriptStep
@@ -43,7 +45,7 @@ export interface MigrationAutopilotSectionProps {
 	clinicProfileSaveState: string;
 	clinicProfileSaveButtonText: string;
 	runMigrationAutopilot: (
-		candidate?: any,
+		candidate?: MigrationLocalSourceDiscoveryCandidate | null,
 		options?: { includeSmartImportText?: boolean },
 	) => void;
 	discoverMigrationSources: () => void;
@@ -86,7 +88,7 @@ export interface MigrationOperatorActionsCommonProps {
 	isClinicPublicLookupLoading: boolean;
 	isSmartImportLoading: boolean;
 	runMigrationAutopilot: (
-		candidate?: any,
+		candidate?: MigrationLocalSourceDiscoveryCandidate | null,
 		options?: { includeSmartImportText?: boolean },
 	) => void;
 	discoverMigrationSources: () => void;

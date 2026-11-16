@@ -1,8 +1,12 @@
 import React from "react";
 import type {
 	ClinicPublicLookupResponse,
+	ClinicPublicLookupSuggestion,
 	MigrationLocalSourceProbeResponse,
+	MigrationReadinessItem,
+	SmartImportCommitResponse,
 	SmartImportPreviewResponse,
+	SmartImportPublicLookupTarget,
 } from "@dental/shared";
 import {
 	CheckCircle2,
@@ -37,12 +41,12 @@ export interface MigrationProbeSectionProps {
 		| MigrationLocalSourceProbeResponse
 		| null
 		| undefined;
-	typedMigrationProbeReadinessIssues: any[];
+	typedMigrationProbeReadinessIssues: MigrationReadinessItem[];
 	clinicPublicLookup: ClinicPublicLookupResponse | null | undefined;
-	typedClinicPublicLookupSuggestions: any[];
-	typedClinicPublicLookupTargets: any[];
+	typedClinicPublicLookupSuggestions: ClinicPublicLookupSuggestion[];
+	typedClinicPublicLookupTargets: SmartImportPublicLookupTarget[];
 	typedSmartImportPreview: SmartImportPreviewResponse | null | undefined;
-	smartImportCommit: any;
+	smartImportCommit: SmartImportCommitResponse | null | undefined;
 	smartImportInputReady: boolean;
 	isSmartImportCommitting: boolean;
 	clinicProfileSaveState: string;

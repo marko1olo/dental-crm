@@ -1,25 +1,29 @@
+import type React from "react";
 import type {
 	DicomFirstFramePreviewResponse,
 	DicomFolderSeriesPreviewResponse,
 	DicomFolderWorkupPlanResponse,
 	DicomLocalFolderDiscoveryResponse,
 	DicomSeriesPreviewGroup,
+	DicomSeriesPreviewResponse,
 	ImagingFolderScanResponse,
 	LocalImagingOrganizerResponse,
 } from "@dental/shared";
 import type { DicomFirstFrameViewerState, InputChangeEvent } from "../types";
 
 export interface UseDicomViewerLogicParams {
-	dicomFirstFramePreview?: any;
-	dicomFirstFrameViewerState?: any;
-	defaultDicomFirstFrameViewerState?: any;
-	setDicomFirstFrameViewerState?: any;
-	dicomSeriesPreview?: any;
-	dicomLocalFolderDiscovery?: any;
-	localImagingOrganizer?: any;
-	imagingFolderScan?: any;
-	dicomFolderSeriesScan?: any;
-	dicomFolderWorkupPlan?: any;
+	dicomFirstFramePreview?: DicomFirstFramePreviewResponse | null;
+	dicomFirstFrameViewerState?: DicomFirstFrameViewerState | null;
+	defaultDicomFirstFrameViewerState?: DicomFirstFrameViewerState | null;
+	setDicomFirstFrameViewerState?:
+		| React.Dispatch<React.SetStateAction<DicomFirstFrameViewerState>>
+		| ((updater: (state: DicomFirstFrameViewerState) => DicomFirstFrameViewerState) => void);
+	dicomSeriesPreview?: DicomSeriesPreviewResponse | { series?: DicomSeriesPreviewGroup[] } | null;
+	dicomLocalFolderDiscovery?: DicomLocalFolderDiscoveryResponse | null;
+	localImagingOrganizer?: LocalImagingOrganizerResponse | null;
+	imagingFolderScan?: ImagingFolderScanResponse | null;
+	dicomFolderSeriesScan?: DicomFolderSeriesPreviewResponse | null;
+	dicomFolderWorkupPlan?: DicomFolderWorkupPlanResponse | null;
 	isDicomFirstFramePreviewing?: boolean;
 }
 
@@ -38,12 +42,19 @@ export function useDicomViewerLogic(params: UseDicomViewerLogicParams) {
 		isDicomFirstFramePreviewing,
 	} = params;
 
-	const typedDicomFirstFramePreview =
-		dicomFirstFramePreview as DicomFirstFramePreviewResponse | null;
-	const typedDicomFirstFrameViewerState =
-		dicomFirstFrameViewerState as DicomFirstFrameViewerState;
-	const typedDefaultDicomFirstFrameViewerState =
-		defaultDicomFirstFrameViewerState as DicomFirstFrameViewerState;
+	const typedDicomFirstFramePreview = dicomFirstFramePreview ?? null;
+	const typedDicomFirstFrameViewerState: DicomFirstFrameViewerState =
+		dicomFirstFrameViewerState ??
+		defaultDicomFirstFrameViewerState ?? {
+			rotationDeg: 0,
+			flipHorizontal: false,
+			inverted: false,
+			brightness: 1,
+			contrast: 1,
+			zoom: 1,
+		};
+	const typedDefaultDicomFirstFrameViewerState: DicomFirstFrameViewerState =
+		defaultDicomFirstFrameViewerState ?? typedDicomFirstFrameViewerState;
 
 	const dicomFirstFrameSelectableCount =
 		typedDicomFirstFramePreview?.selectableFileCount ?? 0;
@@ -86,18 +97,13 @@ export function useDicomViewerLogic(params: UseDicomViewerLogicParams) {
 		dicomFirstFrameCurrentIndex < dicomFirstFrameSelectableCount - 1 &&
 		!isDicomFirstFramePreviewing;
 
-	const typedDicomSeriesPreviewSeries = (dicomSeriesPreview?.series ??
-		[]) as DicomSeriesPreviewGroup[];
-	const typedDicomLocalFolderDiscovery =
-		dicomLocalFolderDiscovery as DicomLocalFolderDiscoveryResponse | null;
-	const typedLocalImagingOrganizer =
-		localImagingOrganizer as LocalImagingOrganizerResponse | null;
-	const typedImagingFolderScan =
-		imagingFolderScan as ImagingFolderScanResponse | null;
-	const typedDicomFolderSeriesScan =
-		dicomFolderSeriesScan as DicomFolderSeriesPreviewResponse | null;
-	const typedDicomFolderWorkupPlan =
-		dicomFolderWorkupPlan as DicomFolderWorkupPlanResponse | null;
+	const typedDicomSeriesPreviewSeries: DicomSeriesPreviewGroup[] =
+		dicomSeriesPreview?.series ?? [];
+	const typedDicomLocalFolderDiscovery = dicomLocalFolderDiscovery ?? null;
+	const typedLocalImagingOrganizer = localImagingOrganizer ?? null;
+	const typedImagingFolderScan = imagingFolderScan ?? null;
+	const typedDicomFolderSeriesScan = dicomFolderSeriesScan ?? null;
+	const typedDicomFolderWorkupPlan = dicomFolderWorkupPlan ?? null;
 
 	const updateDicomFirstFrameViewerState = (
 		updater: (state: DicomFirstFrameViewerState) => DicomFirstFrameViewerState,

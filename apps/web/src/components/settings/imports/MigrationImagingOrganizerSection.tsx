@@ -1,7 +1,9 @@
 import React from "react";
 import type {
+	DicomFirstFramePreviewResponse,
 	DicomFolderSeriesPreviewResponse,
 	DicomFolderWorkupPlanResponse,
+	DicomLocalFolderDiscoveryResponse,
 	ImagingFolderScanResponse,
 	LocalImagingOrganizerResponse,
 } from "@dental/shared";
@@ -28,20 +30,20 @@ export interface MigrationImagingOrganizerSectionProps {
 	dicomTextureStrategyLabels: Record<string, string>;
 	dicomLabel: (
 		map: Record<string, string>,
-		key: any,
+		key: string | number | undefined | null,
 		fallback: string,
 	) => string;
 	isDicomFolderWorkupPlanning: boolean;
 	isDicomWorkbenchBuilding: boolean;
 	isDicomFirstFramePreviewing: boolean;
-	rememberLocalImagingFolder: (p: string, o?: any) => void;
-	setDicomFolderSeriesScan: (s: any) => void;
-	setDicomFolderWorkupPlan: (p: any) => void;
-	setDicomFirstFramePreview: (p: any) => void;
-	setImagingFolderScan: (s: any) => void;
-	setDicomLocalFolderDiscovery: (d: any) => void;
-	prepareDicomWorkbenchFromFolder: (p: string, t: string, o?: any) => void;
-	previewDicomFirstFrame: (p?: string, o?: any) => void;
+	rememberLocalImagingFolder: (p: string, o?: Record<string, unknown>) => void;
+	setDicomFolderSeriesScan: (s: DicomFolderSeriesPreviewResponse | null) => void;
+	setDicomFolderWorkupPlan: (p: DicomFolderWorkupPlanResponse | null) => void;
+	setDicomFirstFramePreview: (p: DicomFirstFramePreviewResponse | null) => void;
+	setImagingFolderScan: (s: ImagingFolderScanResponse | null) => void;
+	setDicomLocalFolderDiscovery: (d: DicomLocalFolderDiscoveryResponse | null) => void;
+	prepareDicomWorkbenchFromFolder: (p: string, t: string, o?: Record<string, unknown>) => void | Promise<void>;
+	previewDicomFirstFrame: (p?: string, o?: Record<string, unknown>) => void | Promise<void>;
 }
 
 export function MigrationImagingOrganizerSection({

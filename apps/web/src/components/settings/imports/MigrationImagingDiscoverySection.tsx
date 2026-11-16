@@ -1,8 +1,20 @@
 import React, { type RefObject } from "react";
 import type {
+	DicomFirstFramePreviewResponse,
+	DicomFolderSeriesPreviewResponse,
+	DicomFolderWorkupPlanResponse,
 	DicomLocalFolderDiscoveryResponse,
+	ImagingFolderScanResponse,
+	ImagingImportCommitResponse,
+	ImagingImportPreviewResponse,
 	ImagingSourceKind,
+	LocalImagingOrganizerResponse,
 } from "@dental/shared";
+import type {
+	BrowserImagingScanProgress,
+	BrowserPickedImagingFolderPreview,
+	LocalImagingFolderDraft,
+} from "../../../store/imagingStoreModules/types";
 import {
 	CircleStop,
 	Database,
@@ -18,6 +30,28 @@ import {
 } from "./helpers";
 import type { InputChangeEvent, TextInputChangeEvent } from "./types";
 
+export type BrowserImagingScanProgressState = Partial<Omit<BrowserImagingScanProgress, "elapsedMs">> & {
+	readonly matchedFiles?: number;
+	readonly lastFolder?: string | null;
+	readonly elapsedMs?: number | null;
+};
+
+export type LocalImagingFolderDraftState = Partial<Omit<LocalImagingFolderDraft, "origin">> & {
+	readonly folderPath: string;
+	readonly origin?: "manual" | "discovery" | "organizer" | "workbench" | "browser" | string;
+	readonly safeDisplayName?: string;
+	readonly fileCount?: number | null;
+};
+
+export type BrowserPickedImagingFolderState = Partial<Omit<BrowserPickedImagingFolderPreview, "sourceKind">> & {
+	readonly folderLabel?: string;
+	readonly safeDisplayName?: string;
+	readonly fileCount?: number;
+	readonly sourceKind?: "browser_directory_picker" | "browser_file_input" | "browser_folder" | string;
+	readonly folderPath?: string;
+	readonly files?: readonly File[] | FileList;
+};
+
 export interface MigrationImagingDiscoverySectionProps {
 	settingsTab: string;
 	typedImagingSourceChoices: ImagingSourceKind[];
@@ -25,10 +59,10 @@ export interface MigrationImagingDiscoverySectionProps {
 	imagingSourceLabels: Record<string, string>;
 	imagingSourceDetails: Record<string, string>;
 	imagingFolderPath: string;
-	localImagingFolderDraft: any;
+	localImagingFolderDraft: LocalImagingFolderDraftState | null;
 	browserDirectoryPickerAvailable: boolean;
 	browserImagingFileInputAccept: string;
-	browserImagingScanProgress: any;
+	browserImagingScanProgress: BrowserImagingScanProgressState | null;
 	isBrowserImagingFolderPicking: boolean;
 	isLocalDicomOperationActive: boolean;
 	isDicomLocalDiscovering: boolean;
@@ -36,23 +70,23 @@ export interface MigrationImagingDiscoverySectionProps {
 	isDicomFirstFramePreviewing: boolean;
 	isDicomFolderWorkupPlanning: boolean;
 	isDicomWorkbenchBuilding: boolean;
-	browserPickedImagingFolder: any;
+	browserPickedImagingFolder: BrowserPickedImagingFolderState | null;
 	typedDicomLocalFolderDiscovery: DicomLocalFolderDiscoveryResponse | null | undefined;
 	browserDirectoryInputRef: RefObject<HTMLInputElement>;
 	browserImagingFilesInputRef: RefObject<HTMLInputElement>;
 	setImagingImportSourceKind: (k: ImagingSourceKind) => void;
-	setImagingImportPreview: (p: any) => void;
-	setImagingImportCommit: (c: any) => void;
+	setImagingImportPreview: (p: ImagingImportPreviewResponse | null) => void;
+	setImagingImportCommit: (c: ImagingImportCommitResponse | null) => void;
 	setImagingFolderPath: (p: string) => void;
-	stageLocalImagingFolderRecovery: (p: string, o: any) => void;
-	rememberLocalImagingFolder: (p: string, o?: any) => void;
+	stageLocalImagingFolderRecovery: (p: string, o?: Record<string, unknown>) => void;
+	rememberLocalImagingFolder: (p: string, o?: Record<string, unknown>) => void;
 	clearLocalImagingFolderRecovery: () => void;
-	setImagingFolderScan: (s: any) => void;
-	setDicomFolderSeriesScan: (s: any) => void;
-	setDicomFolderWorkupPlan: (p: any) => void;
-	setDicomFirstFramePreview: (p: any) => void;
-	setDicomLocalFolderDiscovery: (d: any) => void;
-	setLocalImagingOrganizer: (o: any) => void;
+	setImagingFolderScan: (s: ImagingFolderScanResponse | null) => void;
+	setDicomFolderSeriesScan: (s: DicomFolderSeriesPreviewResponse | null) => void;
+	setDicomFolderWorkupPlan: (p: DicomFolderWorkupPlanResponse | null) => void;
+	setDicomFirstFramePreview: (p: DicomFirstFramePreviewResponse | null) => void;
+	setDicomLocalFolderDiscovery: (d: DicomLocalFolderDiscoveryResponse | null) => void;
+	setLocalImagingOrganizer: (o: LocalImagingOrganizerResponse | null) => void;
 	handleBrowserDirectoryInputChange: (f: FileList | null) => void;
 	pickBrowserImagingFolder: () => void;
 	pickBrowserImagingFiles: () => void;
@@ -60,8 +94,8 @@ export interface MigrationImagingDiscoverySectionProps {
 	cancelLocalDicomOperation: () => void;
 	discoverDicomFolders: () => void;
 	organizeLocalImagingSources: () => void;
-	previewDicomFirstFrame: (p?: string, o?: any) => void;
-	prepareDicomWorkbenchFromFolder: (p: string, t: string, o?: any) => void;
+	previewDicomFirstFrame: (p?: string, o?: Record<string, unknown>) => void | Promise<void>;
+	prepareDicomWorkbenchFromFolder: (p: string, t: string, o?: Record<string, unknown>) => void | Promise<void>;
 	clearBrowserPickedImagingFolderPreview: () => void;
 }
 
@@ -319,11 +353,11 @@ export function MigrationImagingDiscoverySection({
 							<div className="browser-scan-progress-labels">
 								<strong>Сканирую локальную папку снимков</strong>
 								<span>
-									Проверено папок {browserImagingScanProgress.scannedFolders},
-									найдено файлов {browserImagingScanProgress.matchedFiles}.
+									Проверено папок {browserImagingScanProgress.scannedFolders ?? 0},
+									найдено файлов {browserImagingScanProgress.matchedFiles ?? browserImagingScanProgress.scannedFiles ?? 0}.
 								</span>
 								<small>
-									Текущая папка: {browserImagingScanProgress.lastFolder || "поиск файлов"}
+									Текущая папка: {browserImagingScanProgress.lastFolder ?? browserImagingScanProgress.currentItem ?? "поиск файлов"}
 									{browserImagingScanProgress.elapsedMs !== null &&
 									browserImagingScanProgress.elapsedMs !== undefined
 										? ` · прошло ${formatBrowserImagingScanElapsed(browserImagingScanProgress.elapsedMs)}`
@@ -411,10 +445,10 @@ export function MigrationImagingDiscoverySection({
 					>
 						<div className="browser-picked-folder-head">
 							<div>
-								<strong>{browserPickedImagingFolder.folderLabel}</strong>
+								<strong>{browserPickedImagingFolder.folderLabel ?? browserPickedImagingFolder.safeDisplayName ?? "Папка снимков"}</strong>
 								<span>
-									Выбрано {browserPickedImagingFolder.fileCount} файлов ·{" "}
-									{browserPickedImagingFolder.sourceKind === "browser_folder"
+									Выбрано {browserPickedImagingFolder.fileCount ?? browserPickedImagingFolder.scannedFiles ?? 0} файлов ·{" "}
+									{browserPickedImagingFolder.sourceKind === "browser_folder" || browserPickedImagingFolder.sourceKind === "browser_directory_picker"
 										? "папка снимков"
 										: "набор файлов"}
 								</span>
@@ -425,10 +459,10 @@ export function MigrationImagingDiscoverySection({
 									type="button"
 									onClick={() =>
 										void previewDicomFirstFrame(
-											browserPickedImagingFolder.folderPath,
+											browserPickedImagingFolder.folderPath ?? browserPickedImagingFolder.rootName ?? "",
 											{
 												files: browserPickedImagingFolder.files,
-												folderLabel: browserPickedImagingFolder.folderLabel,
+												folderLabel: browserPickedImagingFolder.folderLabel ?? browserPickedImagingFolder.safeDisplayName,
 												sourceKind: browserPickedImagingFolder.sourceKind,
 											},
 										)
