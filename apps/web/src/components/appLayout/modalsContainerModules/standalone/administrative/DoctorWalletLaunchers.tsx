@@ -7,6 +7,7 @@ import React, { Suspense, useState, useEffect, useCallback } from "react";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import { isDemoShowcaseMode } from "../../../../../lib/demoMode";
+import { DoctorPayrollStudioModal } from "../../../../payroll/DoctorPayrollStudioModal";
 import {
 	type DoctorPayoutReport,
 	DEMO_SHOWCASE_REPORT,
@@ -36,6 +37,8 @@ const DoctorWalletStandaloneWorkspace: React.FC = () => {
 	const [month, setMonth] = useState<string>(() => (isDemo ? "2026-10" : new Date().toISOString().slice(0, 7)));
 	const [report, setReport] = useState<DoctorPayoutReport | null>(() => (isDemo ? DEMO_SHOWCASE_REPORT : null));
 	const [isLoading, setIsLoading] = useState<boolean>(!isDemo);
+	const [isPayrollStudioOpen, setIsPayrollStudioOpen] = useState<boolean>(false);
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string | undefined>(undefined);
 
 	const fetchReport = useCallback(async (selectedMonth: string) => {
 		if (isDemo) {
@@ -95,10 +98,20 @@ const DoctorWalletStandaloneWorkspace: React.FC = () => {
 					month={month}
 					onMonthChange={(newMonth) => setMonth(newMonth)}
 					onRefresh={() => void fetchReport(month)}
-					onOpenPayrollModal={() => {}}
+					onOpenPayrollModal={(doc) => {
+						setSelectedDoctorId(doc.doctorUserId);
+						setIsPayrollStudioOpen(true);
+					}}
 					canEditRates={false}
 					isLoading={isLoading}
 				/>
+				{isPayrollStudioOpen && (
+					<DoctorPayrollStudioModal
+						isOpen={isPayrollStudioOpen}
+						onClose={() => setIsPayrollStudioOpen(false)}
+						initialDoctorId={selectedDoctorId}
+					/>
+				)}
 			</div>
 		</Suspense>
 	);

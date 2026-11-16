@@ -80,11 +80,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	useEffect(() => {
 		if (isDemo || !isOpen) return;
 		let cancelled = false;
-		const query = new URLSearchParams({
-			doctorId: "all",
-			from: periodDates.startIso,
-			to: periodDates.endIso,
-		});
+		const query = new URLSearchParams({ doctorId: "all", from: periodDates.startIso, to: periodDates.endIso });
 		void fetch(`/api/v1/payroll/calculations?${query.toString()}`).then((r) => r.ok ? r.json() : null).then((data) => {
 			if (cancelled || !data) return;
 			if (Array.isArray(data.orders)) setApiOrders(data.orders);
@@ -101,17 +97,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 	const summary: DoctorPayrollSummary = useMemo(() => {
 		if (!selectedDoctor) return EMPTY_DOCTOR_PAYROLL_SUMMARY;
-		if (
-			apiSummary &&
-			!isDemo &&
-			customPercent === null &&
-			advanceRub === 0 &&
-			apiSummary.doctorId === selectedDoctor.id
-		) {
-			return {
-				...apiSummary,
-				payoutStatus,
-			};
+		if (apiSummary && !isDemo && customPercent === null && advanceRub === 0 && apiSummary.doctorId === selectedDoctor.id) {
+			return { ...apiSummary, payoutStatus };
 		}
 		return calculateDoctorPayrollSummary({
 			orders: effectiveOrders, doctor: selectedDoctor, percent: customPercent ?? undefined,
@@ -152,7 +139,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			try {
 				const res = await fetch("/api/expenses", {
 					method: "POST", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ category: "payroll", amountKopecks: advanceIncrement * 100, expenseDate: new Date().toISOString().slice(0, 10), description: `Аванс врачу: ${selectedDoctor.name}`, paymentMethod: "cash" }),
+					body: JSON.stringify({ category: "salaries", amountKopecks: advanceIncrement * 100, expenseDate: new Date().toISOString().slice(0, 10), description: `Аванс врачу: ${selectedDoctor.name}`, paymentMethod: "cash" }),
 				});
 				if (!res.ok) throw new Error("Касса отклонила операцию");
 				setAdvanceRub((v) => v + advanceIncrement);
@@ -181,21 +168,31 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	};
 
 	const handleCommitPayout = async () => {
-		if (!selectedDoctor) {
-			setFeedbackMsg("Врачи не зарегистрированы"); setTimeout(() => setFeedbackMsg(null), 3500); return;
-		}
 		setIsSaving(true); setFeedbackMsg(null);
 		try {
-			await closeSettlementPeriodApi({
-				doctorId: selectedDoctor.id, periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
-				payoutModel: selectedDoctor.payoutModel, chairRentalRub: Math.round(summary.chairRentalKopecks / 100),
-				advanceRub, grossRevenueKop: summary.totalGrossKopecks, labCostKop: summary.totalLabCostKopecks,
-				materialCostKop: summary.totalMaterialCostKopecks, netBaseKop: summary.totalNetBaseKopecks,
-				categoryPercent: customPercent ?? selectedDoctor.commissionPercent,
-				totalAccruedKop: summary.doctorAccruedKopecks, ndflKop: summary.ndfl13TaxKopecks,
-				netPayoutKop: summary.payoutKopecks, markPaid: true,
-			});
-			setPayoutStatus("paid_rko"); setFeedbackMsg("Выплата утверждена, выдан чек РКО");
+			if (activeTab === "summary") {
+				await closeSettlementPeriodApi({
+					doctorId: "all", periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
+					payoutModel: "percentage", chairRentalRub: 0, advanceRub: 0, grossRevenueKop: clinicTotals.gross,
+					labCostKop: clinicTotals.lab, materialCostKop: 0, netBaseKop: clinicTotals.netBase, categoryPercent: 0,
+					totalAccruedKop: clinicTotals.payout, ndflKop: 0, netPayoutKop: clinicTotals.payout, markPaid: true,
+				});
+				setPayoutStatus("paid_rko"); setFeedbackMsg("Ведомости клиники утверждены для всех врачей, выданы РКО");
+			} else {
+				if (!selectedDoctor) {
+					setFeedbackMsg("Врачи не зарегистрированы"); setTimeout(() => setFeedbackMsg(null), 3500); return;
+				}
+				await closeSettlementPeriodApi({
+					doctorId: selectedDoctor.id, periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
+					payoutModel: selectedDoctor.payoutModel, chairRentalRub: Math.round(summary.chairRentalKopecks / 100),
+					advanceRub, grossRevenueKop: summary.totalGrossKopecks, labCostKop: summary.totalLabCostKopecks,
+					materialCostKop: summary.totalMaterialCostKopecks, netBaseKop: summary.totalNetBaseKopecks,
+					categoryPercent: customPercent ?? selectedDoctor.commissionPercent,
+					totalAccruedKop: summary.doctorAccruedKopecks, ndflKop: summary.ndfl13TaxKopecks,
+					netPayoutKop: summary.payoutKopecks, markPaid: true,
+				});
+				setPayoutStatus("paid_rko"); setFeedbackMsg("Выплата утверждена, выдан чек РКО");
+			}
 		} catch (err: unknown) {
 			const errorMsg = err instanceof Error ? err.message : "Не удалось закрыть расчетный период";
 			setFeedbackMsg(`Ошибка: ${errorMsg}. Нажмите кнопку повторно.`);
@@ -216,7 +213,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">Ведомость начисления зарплаты</h2>
-								<button type="button" onClick={() => setPayoutStatus((p) => (p === "paid_rko" ? "accrued" : "paid_rko"))} className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0 ${payoutStatus === "paid_rko" ? "bg-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40" : "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"}`} title="Нажмите для переключения статуса выплаты">
+								<button type="button" onClick={() => setPayoutStatus((p) => (p === "paid_rko" ? "accrued" : "paid_rko"))} className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0 ${payoutStatus === "paid_rko" ? "bg-[var(--teal)]/20 text-[var(--teal)] border border-[var(--teal)]/40" : "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"}`} title="Нажмите для переключения статуса выплаты">
 									{payoutStatus === "paid_rko" ? <Check className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}<span>{payoutStatus === "paid_rko" ? "Выплачено (РКО)" : "Начислено"}</span>
 								</button>
 							</div>
@@ -238,20 +235,20 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					</div>
 					<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-xl border border-[var(--line)] shrink-0">
 						{(["shift", "current_month", "previous_month"] as const).map((preset) => (
-							<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${periodPreset === preset ? "bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>{preset === "shift" ? "Смена" : preset === "current_month" ? "Месяц" : "Прошлый"}</button>
+							<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${periodPreset === preset ? "bg-[var(--teal)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>{preset === "shift" ? "Смена" : preset === "current_month" ? "Месяц" : "Прошлый"}</button>
 						))}
 					</div>
 				</div>
 
 				<div className="payroll-studio-body">
 					{feedbackMsg && (
-						<div className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 ${feedbackMsg.startsWith("Ошибка") ? "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400" : "bg-[var(--teal,#0d9488)]/15 border-[var(--teal,#0d9488)]/30 text-[var(--teal,#0d9488)]"}`} role="alert">
+						<div className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 ${feedbackMsg.startsWith("Ошибка") ? "bg-[var(--danger-soft)] border-[var(--danger)]/30 text-[var(--danger)]" : "bg-[var(--teal)]/15 border-[var(--teal)]/30 text-[var(--teal)]"}`} role="alert">
 							<div className="flex items-center gap-2">
 								{feedbackMsg.startsWith("Ошибка") ? <X className="w-4 h-4 shrink-0" /> : <Check className="w-4 h-4 shrink-0" />}
 								<span>{feedbackMsg}</span>
 							</div>
 							{feedbackMsg.startsWith("Ошибка") && (
-								<button type="button" onClick={() => void handleCommitPayout()} className="px-2.5 py-1 rounded-lg bg-rose-600 text-white hover:bg-rose-700 text-xs font-semibold cursor-pointer shrink-0 transition-colors">Повторить</button>
+								<button type="button" onClick={() => void handleCommitPayout()} className="px-2.5 py-1 rounded-lg bg-[var(--danger)] text-white hover:opacity-90 text-xs font-semibold cursor-pointer shrink-0 transition-colors">Повторить</button>
 							)}
 						</div>
 					)}
@@ -261,9 +258,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 						<div className="flex flex-col gap-4">
 							<div className="payroll-studio-kpi-grid">
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Выручка клиники (касса)</span><span className="payroll-studio-kpi-value">{rub(clinicTotals.gross)}</span></div>
-								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Затраты на ЗТЛ</span><span className="payroll-studio-kpi-value text-red-600 dark:text-red-400">− {rub(clinicTotals.lab)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Затраты на ЗТЛ</span><span className="payroll-studio-kpi-value text-[var(--danger)]">− {rub(clinicTotals.lab)}</span></div>
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Чистая база (Net Base)</span><span className="payroll-studio-kpi-value">{rub(clinicTotals.netBase)}</span></div>
-								<div className="payroll-studio-kpi-card bg-[var(--teal,#0d9488)]/10 border-[var(--teal,#0d9488)]/30"><span className="payroll-studio-kpi-label text-[var(--teal,#0d9488)]">Фонд выплат врачам</span><span className="payroll-studio-kpi-value text-[var(--teal,#0d9488)]">{rub(clinicTotals.payout)}</span></div>
+								<div className="payroll-studio-kpi-card bg-[var(--teal)]/10 border-[var(--teal)]/30"><span className="payroll-studio-kpi-label text-[var(--teal)]">Фонд выплат врачам</span><span className="payroll-studio-kpi-value text-[var(--teal)]">{rub(clinicTotals.payout)}</span></div>
 							</div>
 
 							<div className="hidden sm:block payroll-studio-table-container">
@@ -279,9 +276,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 												<tr key={doctor.id} className="hover:bg-[var(--paper-soft)]/50">
 													<td className="font-semibold text-[var(--ink)]"><div>{doctor.name}</div><div className="text-[10px] text-[var(--muted)]">{doctor.taxRegime === "self_employed" ? "Самозанятый (НПД)" : "Трудовой договор"}</div></td>
 													<td className="text-[var(--muted)]">{doctor.specialtyTitleRu}</td>
-													<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td><td className="text-right text-red-600 dark:text-red-400">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
+													<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td><td className="text-right text-[var(--danger)]">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
 													<td className="text-right font-semibold">{rub(docSummary.totalNetBaseKopecks)}</td><td className="text-right text-[var(--muted)]">{doctor.payoutModel === "chair_rental" ? "Аренда" : `${doctor.commissionPercent}%`}</td>
-													<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</td>
+													<td className="text-right font-bold text-[var(--teal)]">{rub(docSummary.payoutKopecks)}</td>
 													<td className="text-center"><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Детали</button></td>
 												</tr>
 											))
@@ -296,7 +293,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								) : (
 									allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
 										<div key={doctor.id} className="payroll-studio-mobile-card">
-											<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{doctor.name}</div><div className="text-[11px] text-[var(--muted)]">{doctor.specialtyTitleRu}</div></div><span className="font-bold text-sm text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</span></div>
+											<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{doctor.name}</div><div className="text-[11px] text-[var(--muted)]">{doctor.specialtyTitleRu}</div></div><span className="font-bold text-sm text-[var(--teal)]">{rub(docSummary.payoutKopecks)}</span></div>
 											<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]"><span>Выручка: {rub(docSummary.totalGrossKopecks)}</span><span>ЗТЛ: −{rub(docSummary.totalLabCostKopecks)}</span><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--paper-soft)] border border-[var(--line)]">Детали →</button></div>
 										</div>
 									))
@@ -315,7 +312,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 									{doctors.map((doc) => {
 										const isSelected = doc.id === (selectedDoctor?.id ?? "");
 										return (
-											<button key={doc.id} type="button" onClick={() => { setSelectedDoctorId(doc.id); setCustomPercent(null); }} className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${isSelected ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"}`}>
+											<button key={doc.id} type="button" onClick={() => { setSelectedDoctorId(doc.id); setCustomPercent(null); }} className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${isSelected ? "bg-[var(--teal)] text-white shadow-xs" : "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"}`}>
 												<span className="w-5 h-5 rounded-full bg-black/15 flex items-center justify-center text-[10px]">{doc.initials}</span>
 												<span>{doc.name}</span>
 												<span className="text-[10px] opacity-80">({doc.payoutModel === "chair_rental" ? "Аренда" : `${doc.commissionPercent}%`})</span>
@@ -327,14 +324,14 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 							<div className="payroll-studio-kpi-grid">
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Выручка услуг</span><span className="payroll-studio-kpi-value">{rub(summary.totalGrossKopecks)}</span></div>
-								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">ЗТЛ (Лаборатория)</span><span className="payroll-studio-kpi-value text-red-600 dark:text-red-400">− {rub(summary.totalLabCostKopecks)}</span></div>
-								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Расходные материалы</span><span className="payroll-studio-kpi-value text-amber-600 dark:text-amber-400">− {rub(summary.totalMaterialCostKopecks)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">ЗТЛ (Лаборатория)</span><span className="payroll-studio-kpi-value text-[var(--danger)]">− {rub(summary.totalLabCostKopecks)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Расходные материалы</span><span className="payroll-studio-kpi-value text-[var(--warning)]">− {rub(summary.totalMaterialCostKopecks)}</span></div>
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Чистая база (Net Base)</span><span className="payroll-studio-kpi-value">{rub(summary.totalNetBaseKopecks)}</span></div>
 							</div>
 
 							<div className="payroll-studio-hero">
 								<div>
-									<div className="text-xs font-bold text-[var(--teal,#0d9488)]">Начислено врачу по ставке</div>
+									<div className="text-xs font-bold text-[var(--teal)]">Начислено врачу по ставке</div>
 									<div className="payroll-studio-hero-accrued mt-0.5">{rub(summary.doctorAccruedKopecks)}</div>
 									<div className="text-[11px] text-[var(--muted)] mt-1">{!selectedDoctor ? "Врач не выбран" : selectedDoctor.payoutModel === "chair_rental" ? "Модель: Аренда кресла" : `Сдельный процент: ${customPercent ?? selectedDoctor.commissionPercent}% от чистой базы`}{summary.minimumGuaranteeApplied && " • Минимальный гарантированный оклад"}</div>
 								</div>
@@ -358,7 +355,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 										<div className="flex items-center gap-2">
 											<span className="font-semibold text-[var(--ink)]">Ставка врача:</span>
 											{[20, 25, 30, 35, 40].map((pct) => (
-												<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? selectedDoctor?.commissionPercent ?? 25) === pct ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>{pct}%</button>
+												<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? selectedDoctor?.commissionPercent ?? 25) === pct ? "bg-[var(--teal)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>{pct}%</button>
 											))}
 										</div>
 									)}
@@ -391,9 +388,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 														<td className="font-mono font-medium"><div>{ord.orderNumber}</div><div className="text-[10px] text-[var(--muted)]">{ord.dateIso}</div></td>
 														<td className="font-medium"><div>{ord.patientName}</div><div className="text-[10px] text-[var(--muted)]">Карта: {ord.medicalCardNumber}</div></td>
 														<td><div className="truncate max-w-[200px]">{ord.serviceNameRu}</div><span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] text-[var(--muted)]">{ord.categoryLabelRu}</span></td>
-														<td className="text-right font-semibold">{rub(ord.grossKopecks)}</td><td className="text-right text-red-600 dark:text-red-400">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
-														<td className="text-right text-amber-600 dark:text-amber-400">{ord.materialCostKopecks > 0 ? `− ${rub(ord.materialCostKopecks)}` : "—"}</td><td className="text-right font-medium">{rub(netBase)}</td>
-														<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(fee)}</td>
+														<td className="text-right font-semibold">{rub(ord.grossKopecks)}</td><td className="text-right text-[var(--danger)]">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
+														<td className="text-right text-[var(--warning)]">{ord.materialCostKopecks > 0 ? `− ${rub(ord.materialCostKopecks)}` : "—"}</td><td className="text-right font-medium">{rub(netBase)}</td>
+														<td className="text-right font-bold text-[var(--teal)]">{rub(fee)}</td>
 													</tr>
 												);
 											})
@@ -410,7 +407,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 										const { netBase, fee } = calculateOrderNetAndFee(ord, selectedDoctor, customPercent);
 										return (
 											<div key={ord.id} className="payroll-studio-mobile-card">
-												<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div><span className="font-bold text-xs text-[var(--teal,#0d9488)]">{rub(fee)}</span></div>
+												<div className="payroll-studio-mobile-card-row"><div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div><span className="font-bold text-xs text-[var(--teal)]">{rub(fee)}</span></div>
 												<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]"><span>Чек: {rub(ord.grossKopecks)}</span><span>{ord.labCostKopecks > 0 ? `ЗТЛ: −${rub(ord.labCostKopecks)}` : "Без ЗТЛ"}</span><span className="font-medium text-[var(--ink)]">База: {rub(netBase)}</span></div>
 											</div>
 										);
@@ -439,9 +436,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 											effectiveClosedPeriods.map((period) => (
 												<tr key={period.id}>
 													<td className="font-semibold text-[var(--ink)]">{period.periodLabelRu}</td><td className="text-[var(--muted)]">{period.dateClosedIso}</td>
-													<td className="font-medium">{period.doctorName}</td><td className="font-mono text-xs text-[var(--teal,#0d9488)]">{period.rkoReceiptNumber.replace(/^РКО-/, "Чек №")}</td>
-													<td className="text-right">{rub(period.grossKopecks)}</td><td className="text-right text-red-600 dark:text-red-400">− {rub(period.labCostKopecks)}</td>
-													<td className="text-right font-medium">{rub(period.netBaseKopecks)}</td><td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(period.payoutKopecks)}</td>
+													<td className="font-medium">{period.doctorName}</td><td className="font-mono text-xs text-[var(--teal)]">{period.rkoReceiptNumber.replace(/^РКО-/, "Чек №")}</td>
+													<td className="text-right">{rub(period.grossKopecks)}</td><td className="text-right text-[var(--danger)]">− {rub(period.labCostKopecks)}</td>
+													<td className="text-right font-medium">{rub(period.netBaseKopecks)}</td><td className="text-right font-bold text-[var(--teal)]">{rub(period.payoutKopecks)}</td>
 													<td className="text-center"><button type="button" onClick={() => handlePrintPayslip()} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Листок</button></td>
 												</tr>
 											))
@@ -453,15 +450,15 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					)}
 				</div>
 
-				{/* Footer: Exactly ONE Primary CTA Button #0d9488 (Mandates 8am & 8e: Never Disabled) */}
+				{/* Footer: Exactly ONE Primary CTA Button (Mandates 8am & 8e: Never Disabled) */}
 				<div className="payroll-studio-footer">
 					<div className="text-xs text-[var(--muted)] flex items-center justify-between sm:justify-start gap-2">
-						<span>Итого к выплате:</span><span className="text-base font-bold text-[var(--ink)]">{rub(summary.payoutKopecks)}</span>
+						<span>Итого к выплате:</span><span className="text-base font-bold text-[var(--ink)]">{rub(activeTab === "summary" ? clinicTotals.payout : summary.payoutKopecks)}</span>
 					</div>
 					<div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
 						<button type="button" onClick={onClose} className="hidden sm:inline-flex payroll-studio-secondary-btn">Закрыть</button>
 						<button type="button" onClick={handleCommitPayout} className="payroll-studio-primary-cta w-full sm:w-auto bg-[var(--teal,#0d9488)]" data-testid="payroll-studio-primary-cta">
-							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : "Закрыть расчетный период"}</span>
+							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : activeTab === "summary" ? "Утвердить ведомости клиники" : "Закрыть расчетный период"}</span>
 						</button>
 					</div>
 				</div>

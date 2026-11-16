@@ -163,7 +163,7 @@ export async function fetchActiveDoctorProfiles(orgId: string): Promise<DoctorPa
 	for (const c of commRows) {
 		const docKey = c.userId || c.doctorId;
 		if (docKey) {
-			const rate = Number(c.commissionPct || c.commissionPercent || 25);
+			const rate = Number(c.commissionPercent || c.commissionPct || 25);
 			commMap.set(docKey, rate);
 		}
 	}
@@ -549,7 +549,7 @@ export async function fetchClosedPayrollStatements(
 		periodLabelRu: s.period,
 		dateClosedIso: s.createdAt.toISOString().slice(0, 10),
 		doctorName,
-		rkoReceiptNumber: `РКО-${s.id.slice(0, 8).toUpperCase()}`,
+		rkoReceiptNumber: s.rkoNumber || `РКО-${s.id.slice(0, 8).toUpperCase()}`,
 		grossKopecks: Math.round(Number(s.grossRevenueKopecks || Math.round(Number(s.grossRevenueRub) * 100))),
 		labCostKopecks: Math.round(Number(s.labCostKopecks || Math.round(Number(s.labCostRub) * 100))),
 		materialCostKopecks: Math.round(Number(s.materialsCostKopecks || Math.round(Number(s.materialsCostRub) * 100))),

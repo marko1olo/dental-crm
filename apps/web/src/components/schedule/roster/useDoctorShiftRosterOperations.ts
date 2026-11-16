@@ -13,7 +13,7 @@ import { useRosterBulkOperations } from "./rosterOperations/useRosterBulkOperati
 export type { EmployeeInfo, UseDoctorShiftRosterOperationsParams };
 
 export function useDoctorShiftRosterOperations(params: UseDoctorShiftRosterOperationsParams) {
-	const { appointments = [], clinicName = 'ООО "Денте Клиник"', onSave, onClose, initialEditingShift } = params;
+	const { appointments = [], clinicName = "Стоматологическая клиника", onSave, onClose, initialEditingShift } = params;
 
 	const {
 		staffList, cabinets, weekStartDateIso, setWeekStartDateIso,

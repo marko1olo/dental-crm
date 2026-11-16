@@ -16,7 +16,7 @@ export function generatePrintableRosterHtml(
 	shifts: DoctorShift[],
 	weekStartIso: string,
 	weekEndIso: string,
-	clinicName = 'ООО "Денте Клиник"',
+	clinicName = "Стоматологическая клиника",
 	cabinets: CabinetDefinition[] = CLINIC_CABINETS_CATALOG,
 ): string {
 	const activeShifts = shifts.filter(

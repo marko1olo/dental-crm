@@ -70,6 +70,7 @@ const closeSettlementSchema = z.object({
 	payoutModel: z.enum(["percentage", "chair_rental"]).optional().default("percentage"),
 	categoryPercent: z.number().optional(),
 	chairRentalRub: z.number().optional(),
+	rkoNumber: z.string().optional(),
 	ndflKop: z.number().optional(),
 	ndflKopecks: z.number().int().optional(),
 	ndfl13Rub: z.number().optional(),
@@ -325,16 +326,90 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
 		const body = parsed.data;
 
-		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, identity.userId ?? undefined);
-		if (!resolvedDocId) {
-			return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
-		}
-
 		const fromDate = new Date(`${body.periodStart.slice(0, 10)}T00:00:00.000Z`);
 		const toDate = new Date(`${body.periodEnd.slice(0, 10)}T23:59:59.999Z`);
 		const periodKey = body.periodStart.slice(0, 7) === body.periodEnd.slice(0, 7)
 			? body.periodStart.slice(0, 7)
 			: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
+
+		// DEF-PAYROLL-04: Пакетный макро-поток в 1 клик для закрытия ведомостей всех врачей клиники
+		if (body.doctorId === "all") {
+			const activeDoctors = await fetchActiveDoctorProfiles(orgId);
+			const batchStatements: NonNullable<Awaited<ReturnType<typeof closeSettlementPeriodInDb>>["statement"]>[] = [];
+			let totalClosedAppts = 0;
+
+			for (const doc of activeDoctors) {
+				const { shiftsCount, completedServices } = await fetchDoctorPayrollDataset({
+					orgId,
+					resolvedDocId: doc.id,
+					fromStr: body.periodStart,
+					toStr: body.periodEnd,
+					fromDate,
+					toDate,
+				});
+
+				const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
+				const isRental = docPayoutModel === "chair_rental";
+
+				const payrollResult = calculateDoctorPeriodPayroll({
+					doctorId: doc.id,
+					doctorName: doc.name,
+					specialtyId: doc.specialtyId,
+					periodStartIso: body.periodStart.slice(0, 10),
+					periodEndIso: body.periodEnd.slice(0, 10),
+					services: completedServices,
+					customBasePercentage: doc.commissionPercent,
+					payoutModel: docPayoutModel,
+					chairRentalKop: isRental ? Math.round(shiftsCount * doc.defaultShiftRateKop) : 0,
+					advancePayoutKop: 0,
+					taxRegime: doc.taxRegime,
+				});
+
+				const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;
+				const rkoNumber = body.rkoNumber || `РКО-${doc.id.slice(0, 4).toUpperCase()}-${periodKey}`;
+
+				const res = await closeSettlementPeriodInDb({
+					organizationId: orgId,
+					doctorId: doc.id,
+					periodKey,
+					fromDate,
+					toDate,
+					payoutModel: docPayoutModel,
+					grossRevenueKopecks: payrollResult.totalGrossRevenueKop,
+					labCostKopecks: payrollResult.totalLabDeductionsKop,
+					materialsCostKopecks: payrollResult.totalMaterialDeductionsKop,
+					netBaseRevenueKopecks: payrollResult.totalNetBaseKop,
+					categoryPercent: doc.commissionPercent,
+					calculatedPieceworkKopecks: payrollResult.grossPayoutBeforeTaxKop,
+					fixedSalaryKopecks: payrollResult.chairRentalKop || 0,
+					bonusesTotalKopecks: 0,
+					penaltiesTotalKopecks: 0,
+					totalAccruedKopecks: payrollResult.grossPayoutBeforeTaxKop,
+					ndfl13Kopecks: payrollResult.ndfl13TaxKop || 0,
+					netPayoutKopecks: payoutKopecks,
+					rkoNumber,
+					markPaid: body.markPaid ?? true,
+				});
+
+				if (res.statement) batchStatements.push(res.statement);
+				totalClosedAppts += res.closedAppointmentsCount;
+			}
+
+			return reply.send({
+				ok: true,
+				statementId: batchStatements[0]?.id || "batch",
+				statement: batchStatements[0] || null,
+				statements: batchStatements,
+				count: batchStatements.length,
+				closedAppointmentsCount: totalClosedAppts,
+				message: `Пакетное утверждение ведомостей клиники: зафиксированы расчетные периоды для ${batchStatements.length} врачей`,
+			});
+		}
+
+		const resolvedDocId = await resolveDoctorUserUuid(orgId, body.doctorId, identity.userId ?? undefined);
+		if (!resolvedDocId) {
+			return reply.code(404).send({ error: "DoctorNotFoundError", message: "Врач не найден" });
+		}
 
 		const grossKop = (body.grossRevenueKopecks ?? body.grossRevenueKop) !== undefined
 			? Math.max(0, body.grossRevenueKopecks ?? body.grossRevenueKop ?? 0)
@@ -389,6 +464,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			totalAccruedKopecks: totalAccruedKop,
 			ndfl13Kopecks: ndflKop,
 			netPayoutKopecks: payoutKop,
+			rkoNumber: body.rkoNumber,
 			markPaid: body.markPaid ?? true,
 		});
 

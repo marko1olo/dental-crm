@@ -9,6 +9,7 @@
 import React, { Suspense, useEffect, useState, useCallback } from "react";
 import { X } from "lucide-react";
 import { DoctorPayoutMobileWallet } from "./DoctorPayoutMobileWallet";
+import { DoctorPayrollStudioModal } from "../../payroll/DoctorPayrollStudioModal";
 import { DEMO_SHOWCASE_REPORT } from "./demoShowcaseData";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { DoctorPayoutReport } from "./types";
@@ -44,6 +45,8 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 	const [month, setMonth] = useState<string>(() => (isDemo ? "2026-10" : new Date().toISOString().slice(0, 7)));
 	const [report, setReport] = useState<DoctorPayoutReport | null>(() => (isDemo ? DEMO_SHOWCASE_REPORT : null));
 	const [isLoading, setIsLoading] = useState<boolean>(!isDemo && isOpen);
+	const [isPayrollStudioOpen, setIsPayrollStudioOpen] = useState<boolean>(false);
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string | undefined>(undefined);
 
 	const fetchReport = useCallback(async (selectedMonth: string) => {
 		if (isDemo) {
@@ -173,7 +176,10 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 							month={month}
 							onMonthChange={(newMonth) => setMonth(newMonth)}
 							onRefresh={() => void fetchReport(month)}
-							onOpenPayrollModal={() => {}}
+							onOpenPayrollModal={(doc) => {
+								setSelectedDoctorId(doc.doctorUserId);
+								setIsPayrollStudioOpen(true);
+							}}
 							canEditRates={false}
 							isLoading={isLoading}
 							onRequestPayout={(doc, amountKop) => {
@@ -182,6 +188,13 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 						/>
 					</Suspense>
 				</div>
+				{isPayrollStudioOpen && (
+					<DoctorPayrollStudioModal
+						isOpen={isPayrollStudioOpen}
+						onClose={() => setIsPayrollStudioOpen(false)}
+						initialDoctorId={selectedDoctorId}
+					/>
+				)}
 			</div>
 		</div>
 	);

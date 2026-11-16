@@ -105,14 +105,17 @@ export const doctorCommissions = pgTable(
 		organizationId: uuid("organization_id")
 			.notNull()
 			.references(() => organizations.id),
-		doctorId: uuid("doctor_id"),
-		// alias — some routes reference it as userId (user FK instead of staff FK)
+		/** Канонический внешний ключ врача (пользователя users.id) */
 		userId: uuid("user_id"),
+		/** @deprecated Исторический алиас для user_id (сохранён для обратной совместимости) */
+		doctorId: uuid("doctor_id"),
 		specialty: text("specialty").default("universal"),
 		serviceCategory: text("service_category"),
+		/** Каноническая процентная ставка врача (%) */
 		commissionPercent: numeric("commission_percent", { precision: 5, scale: 2 })
 			.notNull()
 			.default("25"),
+		/** @deprecated Исторический алиас для commission_percent */
 		commissionPct: numeric("commission_pct", { precision: 5, scale: 2 })
 			.notNull()
 			.default("25"),
@@ -138,8 +141,8 @@ export const doctorCommissions = pgTable(
 		organizationIdIdx: index("doctor_commissions_organizationId_idx").on(
 			t.organizationId,
 		),
-		doctorIdIdx: index("doctor_commissions_doctor_id_idx").on(t.doctorId),
 		userIdIdx: index("doctor_commissions_user_id_idx").on(t.userId),
+		doctorIdIdx: index("doctor_commissions_doctor_id_idx").on(t.doctorId),
 	}),
 );
 

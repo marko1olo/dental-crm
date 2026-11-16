@@ -99,7 +99,7 @@ export function DoctorShiftRosterModal(props: DoctorShiftRosterModalProps) {
 		onClose,
 		staffList: propStaffList,
 		cabinets: propCabinets,
-		clinicName = 'ООО "Денте Клиник"',
+		clinicName = "Стоматологическая клиника",
 		onOpenT13Timesheet,
 	} = props;
 

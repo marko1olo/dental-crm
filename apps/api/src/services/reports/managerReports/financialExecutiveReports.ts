@@ -36,7 +36,11 @@ import {
 	calculateDoctorPeriodPayroll,
 	type DoctorCompletedServiceItem,
 } from "@dental/shared";
-import { normalizeClinicalCategory } from "../../../routes/doctorPayrollDbQueries.js";
+import {
+	fetchActiveDoctorProfiles,
+	fetchDoctorPayrollDataset,
+	normalizeClinicalCategory,
+} from "../../../routes/doctorPayrollDbQueries.js";
 import type { ReportScope } from "./types.js";
 
 export type PaymentMethodBreakdown = {
@@ -291,396 +295,125 @@ export async function financialExecutiveSummary(
 
 /**
  * Прозрачная ведомость начисления зарплаты врачам (Net Revenue).
+ * Полная синхронизация с каноническим калькулятором пакета @dental/shared и /api/v1/payroll/calculations (DEF-PAYROLL-07).
  */
 export async function doctorPayrollReport(
 	scope: ReportScope,
 ): Promise<DoctorPayrollReportData> {
 	try {
-	// 1. Все врачи клиники
-	const doctorUsers = await db
-		.select({
-			id: users.id,
-			fullName: users.fullName,
-			role: users.role,
-			specialties: users.specialties,
-		})
-		.from(users)
-		.where(
-			and(
-				eq(users.organizationId, scope.organizationId),
-				or(eq(users.role, "doctor"), eq(users.role, "owner")),
-			),
-		);
+		const activeDoctors = await fetchActiveDoctorProfiles(scope.organizationId);
+		const fromStr = scope.from.toISOString().slice(0, 10);
+		const toStr = scope.to.toISOString().slice(0, 10);
 
-	const doctorsMap = new Map(
-		doctorUsers.map((d) => {
-			const spec = Array.isArray(d.specialties) && d.specialties[0] ? String(d.specialties[0]) : "therapy";
-			return [
-				d.id,
-				{
-					name: d.fullName || "Врач клиники",
-					specialty: d.role === "owner" ? "Главный врач / Стоматолог" : "Врач-стоматолог",
-					specialtyId: spec,
-				},
-			];
-		}),
-	);
+		const rows: DoctorPayrollRow[] = [];
+		let totalServicesRenderedKopecks = 0;
+		let totalMaterialsCostKopecks = 0;
+		let totalLabCostKopecks = 0;
+		let totalNetRevenueKopecks = 0;
+		let totalPayoutKopecks = 0;
+		let totalAppointmentsCompleted = 0;
 
-	// 2. Индивидуальные комиссии врачей из doctorCommissions [PAY-03: SEV-1 FIX]
-	// Связываем doctorId и userId (alias в схеме), а также commissionPct и commissionPercent
-	const commissions = await db
-		.select({
-			doctorId: doctorCommissions.doctorId,
-			userId: doctorCommissions.userId,
-			commissionPercent: doctorCommissions.commissionPercent,
-			commissionPct: doctorCommissions.commissionPct,
-		})
-		.from(doctorCommissions)
-		.where(
-			and(
-				eq(doctorCommissions.organizationId, scope.organizationId),
-				eq(doctorCommissions.isActive, true),
-			),
-		);
+		for (const doc of activeDoctors) {
+			const { shiftsCount, orders, completedServices } = await fetchDoctorPayrollDataset({
+				orgId: scope.organizationId,
+				resolvedDocId: doc.id,
+				fromStr,
+				toStr,
+				fromDate: scope.from,
+				toDate: scope.to,
+			});
 
-	const commissionRateMap = new Map<string, number>();
-	for (const comm of commissions) {
-		const rate = Number(comm.commissionPct ?? comm.commissionPercent);
-		if (!Number.isNaN(rate) && rate > 0) {
-			if (comm.userId) {
-				commissionRateMap.set(comm.userId, rate);
-			}
-			if (comm.doctorId) {
-				commissionRateMap.set(comm.doctorId, rate);
-			}
-		}
-	}
+			const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
+			const isRental = docPayoutModel === "chair_rental";
 
-	// 3. Выручка по врачам через привязку платеж -> визит -> прием
-	const doctorRevenues = await db
-		.select({
-			doctorId: appointments.doctorUserId,
-			revenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)::numeric(12,2)`,
-			completedCount: sql<number>`count(distinct case when ${appointments.status} = 'completed' then ${appointments.id} end)::int`,
-		})
-		.from(payments)
-		.leftJoin(patientInvoices, eq(payments.documentId, patientInvoices.id))
-		.leftJoin(
-			visits,
-			eq(sql`coalesce(${payments.visitId}, ${patientInvoices.visitId})`, visits.id),
-		)
-		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
-		.where(
-			and(
-				eq(payments.organizationId, scope.organizationId),
-				inArray(payments.status, ["paid", "refunded"]),
-				gte(payments.paidAt, scope.from),
-				lte(payments.paidAt, scope.to),
-				isNotNull(appointments.doctorUserId),
-			),
-		)
-		.groupBy(appointments.doctorUserId);
+			const payrollResult = calculateDoctorPeriodPayroll({
+				doctorId: doc.id,
+				doctorName: doc.name,
+				specialtyId: doc.specialtyId,
+				periodStartIso: fromStr,
+				periodEndIso: toStr,
+				services: completedServices,
+				customBasePercentage: doc.commissionPercent,
+				payoutModel: docPayoutModel,
+				chairRentalKop: isRental ? Math.round(shiftsCount * doc.defaultShiftRateKop) : 0,
+				advancePayoutKop: 0,
+				taxRegime: doc.taxRegime,
+			});
 
-	// 4. Зафиксированные расчетные ведомости из doctorPayrollStatements (если были созданы)
-	const fromKey = scope.from.toISOString().slice(0, 7);
-	const toKey = scope.to.toISOString().slice(0, 7);
+			const servicesRenderedKopecks = payrollResult.totalGrossRevenueKop;
+			const servicesRenderedRub = Math.round(servicesRenderedKopecks / 100);
+			const materialsCostKopecks = payrollResult.totalMaterialDeductionsKop;
+			const materialsCostRub = Math.round(materialsCostKopecks / 100);
+			const labCostKopecks = payrollResult.totalLabDeductionsKop;
+			const labCostRub = Math.round(labCostKopecks / 100);
+			const netRevenueKopecks = payrollResult.totalNetBaseKop;
+			const netRevenueRub = Math.round(netRevenueKopecks / 100);
+			const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;
+			const payoutRub = Math.round(payoutKopecks / 100);
 
-	const statementRows = await db
-		.select({
-			doctorId: doctorPayrollStatements.doctorId,
-			materialsCostRub: sql<number>`coalesce(sum(${doctorPayrollStatements.materialsCostRub}), 0)::numeric(12,2)`,
-			categoryPercent: sql<number>`max(${doctorPayrollStatements.categoryPercent})::numeric(5,2)`,
-		})
-		.from(doctorPayrollStatements)
-		.where(
-			and(
-				eq(doctorPayrollStatements.organizationId, scope.organizationId),
-				gte(doctorPayrollStatements.period, fromKey),
-				lte(doctorPayrollStatements.period, toKey),
-			),
-		)
-		.groupBy(doctorPayrollStatements.doctorId);
+			totalServicesRenderedKopecks += servicesRenderedKopecks;
+			totalMaterialsCostKopecks += materialsCostKopecks;
+			totalLabCostKopecks += labCostKopecks;
+			totalNetRevenueKopecks += netRevenueKopecks;
+			totalPayoutKopecks += payoutKopecks;
+			totalAppointmentsCompleted += orders.length;
 
-	const statementsMap = new Map(
-		statementRows.map((s) => [
-			s.doctorId,
-			{
-				materialsCostRub: Number(s.materialsCostRub || 0),
-				percent: Number(s.categoryPercent || 0),
-			},
-		]),
-	);
-
-	// 4b. Расходы зуботехнической лаборатории (ЗТЛ) по выполненным нарядам за период [PAY-04: честная себестоимость без мока 30%]
-	const labOrderRows = await db
-		.select({
-			doctorId: labOrders.doctorId,
-			labCostRub: sql<number>`coalesce(sum(case when ${labOrders.isWarranty} = false and ${labOrders.status} in ('completed', 'received', 'ready', 'ready_in_clinic', 'fitted', 'installed') then coalesce(${labOrders.labCostRub}, 0) else 0 end), 0)::numeric(12,2)`,
-		})
-		.from(labOrders)
-		.where(
-			and(
-				eq(labOrders.organizationId, scope.organizationId),
-				gte(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`, scope.from),
-				lte(sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`, scope.to),
-				isNotNull(labOrders.doctorId),
-			),
-		)
-		.groupBy(labOrders.doctorId);
-
-	const labCostsMap = new Map(
-		labOrderRows.map((l) => [l.doctorId, Number(l.labCostRub || 0)]),
-	);
-
-	// 4c. Фактически списанные материалы со склада по техкартам и нарядам [PAY-04: честный учет без мока 10%]
-	const materialUsageRows = await db
-		.select({
-			doctorId: appointments.doctorUserId,
-			totalCostRub: sql<number>`coalesce(sum(case when coalesce(${inventoryItems.isOverhead}, false) = false then abs(coalesce(${inventoryTransactions.quantityChanged}, ${inventoryTransactions.qty}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0) else 0 end), 0)::numeric(12,2)`,
-		})
-		.from(inventoryTransactions)
-		.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
-		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
-		.leftJoin(
-			inventoryItems,
-			and(
-				or(
-					eq(inventoryTransactions.itemId, inventoryItems.id),
-					eq(inventoryTransactions.inventoryItemId, inventoryItems.id),
-				),
-				eq(inventoryItems.organizationId, scope.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(inventoryTransactions.organizationId, scope.organizationId),
-				inArray(inventoryTransactions.transactionType, [
-					"auto_deduct",
-					"usage",
-					"write_off",
-					"emergency_overdraft",
-					"shift_batch_deduction",
-				]),
-				gte(inventoryTransactions.createdAt, scope.from),
-				lte(inventoryTransactions.createdAt, scope.to),
-				isNotNull(appointments.doctorUserId),
-			),
-		)
-		.groupBy(appointments.doctorUserId);
-
-	const materialsMap = new Map(
-		materialUsageRows.map((m) => [m.doctorId, Number(m.totalCostRub || 0)]),
-	);
-
-	// 4d. Фактические оказанные услуги врачей за период для прозрачной детализации категорий
-	const doctorCompletedTreatments = await db
-		.select({
-			doctorId: appointments.doctorUserId,
-			title: treatmentItems.title,
-			category: serviceCatalogItems.category,
-			specialty: serviceCatalogItems.specialty,
-			priceRub: treatmentItems.priceRub,
-			quantity: treatmentItems.quantity,
-			startsAt: appointments.startsAt,
-			patientName: patients.fullName,
-		})
-		.from(treatmentItems)
-		.innerJoin(visits, eq(treatmentItems.visitId, visits.id))
-		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
-		.leftJoin(patients, eq(appointments.patientId, patients.id))
-		.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
-		.where(
-			and(
-				eq(treatmentItems.organizationId, scope.organizationId),
-				gte(appointments.startsAt, scope.from),
-				lte(appointments.startsAt, scope.to),
-				isNotNull(appointments.doctorUserId),
-			),
-		);
-
-	// 5. Собираем всех уникальных врачей (из списка персонала + из выручки)
-	const allDoctorIds = Array.from(
-		new Set([
-			...doctorUsers.map((d) => d.id),
-			...doctorRevenues.map((r) => r.doctorId).filter((id): id is string => Boolean(id)),
-		]),
-	);
-
-	const rows: DoctorPayrollRow[] = [];
-	let totalServicesRenderedKopecks = 0;
-	let totalMaterialsCostKopecks = 0;
-	let totalLabCostKopecks = 0;
-	let totalNetRevenueKopecks = 0;
-	let totalPayoutKopecks = 0;
-	let totalAppointmentsCompleted = 0;
-
-	for (const docId of allDoctorIds) {
-		const docMeta = doctorsMap.get(docId) ?? {
-			name: "Специалист клиники",
-			specialty: "Стоматолог",
-			specialtyId: "therapy",
-		};
-		const revRow = doctorRevenues.find((r) => r.doctorId === docId);
-		const revRub = Math.max(0, Number(revRow?.revenueRub || 0));
-		const completedCount = Number(revRow?.completedCount || 0);
-
-		// Списанные материалы техкарт: либо из зафиксированной ведомости, либо по фактическим складским проводкам [PAY-04]
-		const st = statementsMap.get(docId);
-		const materialsCostRub =
-			st && st.materialsCostRub > 0
-				? st.materialsCostRub
-				: (materialsMap.get(docId) ?? 0);
-
-		// Расходы ЗТЛ по заказам ортопедии
-		const labCostRub = labCostsMap.get(docId) ?? 0;
-		const labCostKopecks = Math.round(labCostRub * 100);
-
-		// Чистая выручка (Net Revenue) = выручка минус материалы техкарт минус расходы ЗТЛ
-		const directCostsRub = materialsCostRub + labCostRub;
-		const netRevenueRub = Math.max(0, revRub - directCostsRub);
-
-		// Процентная ставка: doctorCommissions -> statements -> дефолтная ставка из канонического doctorPayrollEngine (25%)
-		const commissionPercent =
-			commissionRateMap.get(docId) ?? (st?.percent && st.percent > 0 ? st.percent : (DEFAULT_CATEGORY_COMMISSION_PERCENT.orthodontics ?? 25.0));
-
-		// Расчёты в целочисленных копейках через канонический SSOT @dental/shared
-		const servicesRenderedKopecks = Math.round(revRub * 100);
-		const materialsCostKopecks = Math.round(materialsCostRub * 100);
-
-		const docTreatments = doctorCompletedTreatments.filter((t) => t.doctorId === docId);
-		const primaryCategory = normalizeClinicalCategory(null, docMeta.specialtyId);
-
-		const services: DoctorCompletedServiceItem[] = [];
-
-		if (docTreatments.length > 0) {
-			const totalTreatGrossKop = docTreatments.reduce((acc, t) => {
-				const qty = Math.max(1, Number(t.quantity || 1));
-				return acc + Math.round(Number(t.priceRub || 0) * 100 * qty);
-			}, 0);
-
-			let remainingLabKop = labCostKopecks;
-			let remainingMatKop = materialsCostKopecks;
-
-			for (let i = 0; i < docTreatments.length; i++) {
-				const treat = docTreatments[i]!;
-				const qty = Math.max(1, Number(treat.quantity || 1));
-				const gKop = Math.round(Number(treat.priceRub || 0) * 100 * qty);
-				const cat = normalizeClinicalCategory(treat.category, treat.specialty || docMeta.specialtyId);
-
-				const share = totalTreatGrossKop > 0 ? gKop / totalTreatGrossKop : 1 / docTreatments.length;
-				const allocatedLab = i === docTreatments.length - 1 ? remainingLabKop : Math.min(remainingLabKop, Math.round(labCostKopecks * share));
-				remainingLabKop = Math.max(0, remainingLabKop - allocatedLab);
-
-				const allocatedMat = i === docTreatments.length - 1 ? remainingMatKop : Math.min(remainingMatKop, Math.round(materialsCostKopecks * share));
-				remainingMatKop = Math.max(0, remainingMatKop - allocatedMat);
-
-				services.push({
-					id: `service-${docId}-${i}`,
-					dateIso: treat.startsAt ? treat.startsAt.toISOString().slice(0, 10) : scope.from.toISOString().slice(0, 10),
-					patientName: treat.patientName || "Пациент",
-					medicalCardNumber: "МК",
-					serviceNameRu: treat.title || "Стоматологическая услуга",
-					category: cat,
-					grossRevenueKop: gKop,
-					actuallyPaidGrossKop: gKop,
-					labCostKop: allocatedLab,
-					materialCostKop: allocatedMat,
-					isPaid: true,
-				});
-			}
-		} else {
-			services.push({
-				id: `order-${docId}`,
-				dateIso: scope.from.toISOString().slice(0, 10),
-				patientName: "Пациент клиники",
-				medicalCardNumber: "МК",
-				serviceNameRu: `${docMeta.name} — Приём (${docMeta.specialty})`,
-				category: primaryCategory,
-				grossRevenueKop: servicesRenderedKopecks,
-				actuallyPaidGrossKop: servicesRenderedKopecks,
-				labCostKop: labCostKopecks,
-				materialCostKop: materialsCostKopecks,
-				isPaid: true,
+			rows.push({
+				doctorId: doc.id,
+				doctorName: doc.name,
+				specialty: doc.specialtyTitleRu || "Врач-стоматолог",
+				servicesRenderedRub,
+				servicesRenderedKopecks,
+				materialsCostRub,
+				materialsCostKopecks,
+				labCostRub,
+				labCostKopecks,
+				netRevenueRub,
+				netRevenueKopecks,
+				commissionPercent: doc.commissionPercent,
+				payoutRub,
+				payoutKopecks,
+				appointmentsCompleted: orders.length,
 			});
 		}
 
-		const periodPayroll = calculateDoctorPeriodPayroll({
-			doctorId: docId,
-			doctorName: docMeta.name,
-			specialtyId: primaryCategory,
-			periodStartIso: scope.from.toISOString().slice(0, 10),
-			periodEndIso: scope.to.toISOString().slice(0, 10),
-			services,
-			customBasePercentage: commissionPercent,
-		});
+		// Сортируем врачей по чистой выручке (Net Revenue) по убыванию
+		rows.sort((a, b) => b.netRevenueKopecks - a.netRevenueKopecks);
 
-		const netRevenueKopecks = periodPayroll.totalNetBaseKop;
-		const payoutKopecks = periodPayroll.grossPayoutBeforeTaxKop;
-		const payoutRub = Math.round(payoutKopecks / 100);
+		// 6. Расчет оплаты труда ассистентов клиники
+		const assistantReport = await assistantPayrollReport(scope);
 
-		totalServicesRenderedKopecks += servicesRenderedKopecks;
-		totalMaterialsCostKopecks += materialsCostKopecks;
-		totalLabCostKopecks += labCostKopecks;
-		totalNetRevenueKopecks += netRevenueKopecks;
-		totalPayoutKopecks += payoutKopecks;
-		totalAppointmentsCompleted += completedCount;
-
-		rows.push({
-			doctorId: docId,
-			doctorName: docMeta.name,
-			specialty: docMeta.specialty,
-			servicesRenderedRub: Math.round(revRub),
-			servicesRenderedKopecks,
-			materialsCostRub: Math.round(materialsCostRub),
-			materialsCostKopecks,
-			labCostRub: Math.round(labCostRub),
-			labCostKopecks,
-			netRevenueRub: Math.round(netRevenueRub),
-			netRevenueKopecks,
-			commissionPercent,
-			payoutRub,
-			payoutKopecks,
-			appointmentsCompleted: completedCount,
-		});
-	}
-
-	// Сортируем врачей по чистой выручке (Net Revenue) по убыванию
-	rows.sort((a, b) => b.netRevenueKopecks - a.netRevenueKopecks);
-
-	// 6. Расчет оплаты труда ассистентов клиники [PAY-05]
-	const assistantReport = await assistantPayrollReport(scope);
-
-	return {
-		period: {
-			from: scope.from.toISOString(),
-			to: scope.to.toISOString(),
-		},
-		rows,
-		assistantRows: assistantReport.rows,
-		totals: {
-			totalServicesRenderedRub: Math.round(totalServicesRenderedKopecks / 100),
-			totalServicesRenderedKopecks,
-			totalMaterialsCostRub: Math.round(totalMaterialsCostKopecks / 100),
-			totalMaterialsCostKopecks,
-			totalLabCostRub: Math.round(totalLabCostKopecks / 100),
-			totalLabCostKopecks,
-			totalNetRevenueRub: Math.round(totalNetRevenueKopecks / 100),
-			totalNetRevenueKopecks,
-			totalPayoutRub: Math.round(totalPayoutKopecks / 100),
-			totalPayoutKopecks,
-			totalAppointmentsCompleted,
-			totalAssistantPayoutRub: assistantReport.totals.totalPayoutRub,
-			totalAssistantPayoutKopecks: assistantReport.totals.totalPayoutKopecks,
-			totalClinicPayrollRub: Math.round(
-				(totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks) / 100,
-			),
-			totalClinicPayrollKopecks:
-				totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks,
-		},
-		isEmpty:
-			(rows.length === 0 || totalServicesRenderedKopecks === 0) &&
-			assistantReport.isEmpty,
-	};
+		return {
+			period: {
+				from: scope.from.toISOString(),
+				to: scope.to.toISOString(),
+			},
+			rows,
+			assistantRows: assistantReport.rows,
+			totals: {
+				totalServicesRenderedRub: Math.round(totalServicesRenderedKopecks / 100),
+				totalServicesRenderedKopecks,
+				totalMaterialsCostRub: Math.round(totalMaterialsCostKopecks / 100),
+				totalMaterialsCostKopecks,
+				totalLabCostRub: Math.round(totalLabCostKopecks / 100),
+				totalLabCostKopecks,
+				totalNetRevenueRub: Math.round(totalNetRevenueKopecks / 100),
+				totalNetRevenueKopecks,
+				totalPayoutRub: Math.round(totalPayoutKopecks / 100),
+				totalPayoutKopecks,
+				totalAppointmentsCompleted,
+				totalAssistantPayoutRub: assistantReport.totals.totalPayoutRub,
+				totalAssistantPayoutKopecks: assistantReport.totals.totalPayoutKopecks,
+				totalClinicPayrollRub: Math.round(
+					(totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks) / 100,
+				),
+				totalClinicPayrollKopecks:
+					totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks,
+			},
+			isEmpty:
+				(rows.length === 0 || totalServicesRenderedKopecks === 0) &&
+				assistantReport.isEmpty,
+		};
 	} catch (err) {
 		console.error("DOCTOR_PAYROLL_REPORT_ERROR:", err);
 		throw err;

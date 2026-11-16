@@ -398,6 +398,7 @@ export const doctorPayrollStatements = pgTable(
 			.notNull()
 			.default(0),
 		isFinalized: boolean("is_finalized").notNull().default(false),
+		rkoNumber: text("rko_number"),
 		paidAt: timestamp("paid_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
