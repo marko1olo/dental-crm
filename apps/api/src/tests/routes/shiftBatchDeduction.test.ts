@@ -16,7 +16,10 @@ import {
 	inventoryItems,
 	inventoryTransactions,
 	organizations,
+	patients,
+	treatmentItems,
 	users,
+	visits,
 } from "../../db/schema.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
 import { warehouseRoutes } from "../../routes/warehouse.js";
@@ -36,6 +39,9 @@ const ORG_ID = fixtureUuid(NAMESPACE, 1);
 const STAFF_ID = fixtureUuid(NAMESPACE, 2);
 const ITEM_ARTICAINE_ID = fixtureUuid(NAMESPACE, 3);
 const ITEM_NEEDLES_ID = fixtureUuid(NAMESPACE, 4);
+const PATIENT_ID = fixtureUuid(NAMESPACE, 5);
+const VISIT_ID = fixtureUuid(NAMESPACE, 6);
+const TREATMENT_ITEM_ID = fixtureUuid(NAMESPACE, 7);
 
 function isDbDown(error: unknown): boolean {
 	if (isDatabaseUnavailable(error)) return true;
@@ -105,6 +111,31 @@ describe("Shift Batch Auto-Deduction & Soft Overdraft (Mandates 8e, 8n)", () => 
 					currentQty: "2.000",
 					stockQuantity: "2.000",
 					unitCostRub: "18.00",
+				});
+
+				await tx.insert(patients).values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Пациент Тестовой Смены",
+				});
+
+				await tx.insert(visits).values({
+					id: VISIT_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					status: "signed",
+				});
+
+				await tx.insert(treatmentItems).values({
+					id: TREATMENT_ITEM_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					visitId: VISIT_ID,
+					title: "Лечение кариеса",
+					quantity: "1",
+					priceRub: 4500,
+					unitPriceRub: 4500,
+					status: "completed",
 				});
 			});
 		}
@@ -235,5 +266,24 @@ describe("Shift Batch Auto-Deduction & Soft Overdraft (Mandates 8e, 8n)", () => 
 		assert.equal(deductRes.statusCode, 200, deductRes.body);
 		const deductData = JSON.parse(deductRes.body);
 		assert.equal(deductData.success, true);
+	});
+
+	it("4. DEF-WARE-02: при 0 визитов за смену возвращает честный пустой список без навязанных списаний", async (t) => {
+		if (!databaseReady) return t.skip("Database is down");
+
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/inventory/${ORG_ID}/shift-summary?date=2020-01-01`,
+			headers: authHeaders(),
+		});
+
+		assert.equal(res.statusCode, 200, res.body);
+		const data = JSON.parse(res.body);
+
+		assert.equal(data.shiftStats.completedVisitsCount, 0, "Число визитов должно быть 0");
+		assert.equal(data.shiftStats.totalProceduresCount, 0, "Число процедур должно быть 0");
+		assert.deepEqual(data.shiftStats.breakdown, [], "Разбивка должна быть пустой");
+		assert.deepEqual(data.consumablesSummary, [], "Расходники не должны накручиваться при 0 визитов");
+		assert.equal(data.totalItemsCount, 0);
 	});
 });

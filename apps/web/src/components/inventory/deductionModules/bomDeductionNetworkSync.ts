@@ -4,10 +4,23 @@ import type { AutoVisitBomDeductionResult } from "@dental/shared";
 import type { PerformAutoVisitBomDeductionOptions } from "./bomDeductionTypes.js";
 import type { DeductionValidationSummary } from "./bomDeductionValidator.js";
 
+export interface NormalizedServiceItem {
+	readonly serviceCode: string;
+	readonly quantity: number;
+	readonly serviceTitle?: string | undefined;
+	readonly toothNumber?: number | string | null | undefined;
+}
+
+export interface OverdraftValidationItem {
+	readonly inventoryItemId: string;
+	readonly itemName: string;
+	readonly deficitQty: number;
+}
+
 export function syncAutoBomDeduction(
 	options: PerformAutoVisitBomDeductionOptions,
 	result: AutoVisitBomDeductionResult,
-	normalizedServices: readonly any[],
+	normalizedServices: readonly NormalizedServiceItem[],
 	validation: DeductionValidationSummary,
 ) {
 	try {
@@ -102,7 +115,7 @@ export function syncAutoBomDeduction(
 						chairId: options.chairId,
 						cabinetId: options.cabinetId,
 						message: validation.overdraftNotice,
-						items: (validation.overdraftItems || []).map((i: any) => ({
+						items: (validation.overdraftItems || []).map((i: OverdraftValidationItem) => ({
 							itemId: i.inventoryItemId,
 							itemName: i.itemName,
 							deficitQty: i.deficitQty,

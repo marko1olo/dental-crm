@@ -17,6 +17,7 @@ export function printInboundWaybill(wb: AcceptanceWaybillDocument): void {
 	}
 }
 
+export const printWaybill = printInboundWaybill;
 export const printWaybillTorg12 = printInboundWaybill;
 
 export function exportWaybillCsv(wb: AcceptanceWaybillDocument): void {

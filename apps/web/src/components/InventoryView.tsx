@@ -108,8 +108,8 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 		isInventoryAuditOpen,
 		onCloseInventoryAudit: () => setIsInventoryAuditOpen(false),
 		onOpenInventoryAudit: () => setIsInventoryAuditOpen(true),
-		isMdlpDisposalOpen: false,
-		onCloseMdlpDisposal: () => {},
+		isMdlpDisposalOpen: isMdlpScanningOpen,
+		onCloseMdlpDisposal: () => setIsMdlpScanningOpen(false),
 		isMdlpScanningOpen,
 		onCloseMdlpScanning: () => setIsMdlpScanningOpen(false),
 		onOpenMdlpScanning: () => setIsMdlpScanningOpen(true),
@@ -182,7 +182,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 				setIsProcedureDeductionOpen={() => setIsBatchWriteoffOpen(true)}
 				setIsWarehouseTransferOpen={() => {}}
 				setIsInventoryAuditOpen={setIsInventoryAuditOpen}
-				setIsMdlpDisposalOpen={() => {}}
+				setIsMdlpDisposalOpen={() => setIsMdlpScanningOpen(true)}
 				onOpenShiftDeductionModal={() => setIsBatchWriteoffOpen(true)}
 				onOpenSterilizationCycleModal={() => setIsSterilizationCycleOpen(true)}
 				onOpenProtocolDeduction={() => setIsBatchWriteoffOpen(true)}
@@ -197,7 +197,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 
 			{activeSubTab === "inventory" && (
 				<div className="dente-filter-chips min-h-[36px] sm:h-9 px-3 py-1 bg-[var(--paper-soft)] border-b border-[var(--line-subtle)] flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none flex-nowrap shrink-0" role="toolbar" aria-label="Фильтр по категориям материалов" data-testid="inventory-category-filters-row">
-					<span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] mr-1 shrink-0">Категории:</span>
+					<span className="text-[11px] font-semibold text-[var(--muted)] mr-1 shrink-0">Категории:</span>
 					{INVENTORY_CATEGORIES.map((cat) => {
 						const Icon = cat.icon;
 						const isActive = selectedCategory === cat.id;

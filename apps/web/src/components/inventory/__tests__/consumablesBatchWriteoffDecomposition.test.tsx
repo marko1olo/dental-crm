@@ -20,10 +20,15 @@ import { BatchWriteoffFooterActions } from "../writeoff/BatchWriteoffFooterActio
 
 describe("Consumables Batch Writeoff Decomposed Modules Suite (Mandates 8e, 8n, 8am, 8ze)", () => {
 	it("1. BatchWriteoffShiftStats: рендерит показатели смены, процедуры и плашку мягкого овердрафта", () => {
+		const shiftWithData = {
+			completedVisitsCount: 12,
+			totalProceduresCount: 22,
+			breakdown: [{ name: "Лечение кариеса", count: 7, code: "A16.07.002" }],
+		};
 		const html = renderToString(
 			<BatchWriteoffShiftStats
 				date={DEFAULT_SHIFT_DATA.date}
-				shiftStats={DEFAULT_SHIFT_DATA.shiftStats}
+				shiftStats={shiftWithData}
 				hasOverdraft={true}
 			/>,
 		);
@@ -51,16 +56,20 @@ describe("Consumables Batch Writeoff Decomposed Modules Suite (Mandates 8e, 8n, 
 	});
 
 	it("3. BatchWriteoffConsumablesTable: корректно отображает список материалов с овердрафтом", () => {
+		const mockConsumables = [
+			{ itemId: "1", itemName: "Перчатки смотровые нитриловые", category: "Расходные материалы", unit: "пар", qtyToDeduct: 12, currentStock: 35, projectedStock: 23, isOverdraft: false, deficit: 0 },
+			{ itemId: "4", itemName: "Иглы инъекционные стоматологические", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 2, projectedStock: -10, isOverdraft: true, deficit: 10 },
+		];
 		const html = renderToString(
 			<BatchWriteoffConsumablesTable
-				consumables={DEFAULT_SHIFT_DATA.consumablesSummary}
+				consumables={mockConsumables}
 			/>,
 		);
 
 		assert.ok(html.includes("Перчатки смотровые нитриловые"), "Отображается материал нормы");
 		assert.ok(html.includes("Иглы инъекционные стоматологические"), "Отображается материал с дефицитом");
 		assert.ok(html.includes("дефицит") && html.includes("-10"), "Отрицательный остаток четко помечен дефицитом");
-		assert.ok(html.includes("Материалы по техкартам") && html.includes("8"), "Шапка содержит точное число материалов");
+		assert.ok(html.includes("Материалы по техкартам") && html.includes("2"), "Шапка содержит точное число материалов");
 	});
 
 	it("4. BatchWriteoffFooterActions: кнопка списания активна (ноль блокировок, Мандат 8e) и имеет цвет var(--teal)", () => {
@@ -94,5 +103,14 @@ describe("Consumables Batch Writeoff Decomposed Modules Suite (Mandates 8e, 8n, 
 		assert.ok(!html.includes("disabled"), "Кнопка НЕ должна иметь атрибут disabled даже при отправке (Мандат 8e)");
 		assert.ok(html.includes("aria-busy=\"true\""), "При отправке кнопка имеет статус aria-busy");
 		assert.ok(html.includes("Списание расходников..."), "Текст состояния отправки");
+	});
+
+	it("6. DEFAULT_SHIFT_DATA: является честным пустым состоянием (DEF-WARE-01, ноль потемкинских визитов)", () => {
+		assert.equal(DEFAULT_SHIFT_DATA.shiftStats.completedVisitsCount, 0);
+		assert.equal(DEFAULT_SHIFT_DATA.shiftStats.totalProceduresCount, 0);
+		assert.deepEqual(DEFAULT_SHIFT_DATA.shiftStats.breakdown, []);
+		assert.deepEqual(DEFAULT_SHIFT_DATA.consumablesSummary, []);
+		assert.equal(DEFAULT_SHIFT_DATA.totalItemsCount, 0);
+		assert.equal(DEFAULT_SHIFT_DATA.overdraftItemsCount, 0);
 	});
 });

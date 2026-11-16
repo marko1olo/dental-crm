@@ -69,6 +69,17 @@ export async function getShiftConsumablesSummary(
 		for (const val of grouped.values()) breakdown.push(val);
 	}
 
+	if (todaysVisits.length === 0) {
+		return {
+			date: effectiveDate,
+			shiftStats: { completedVisitsCount: 0, totalProceduresCount: 0, breakdown: [] },
+			consumablesSummary: [],
+			totalItemsCount: 0,
+			overdraftItemsCount: 0,
+			isAlreadyDeducted,
+		};
+	}
+
 	const allOrgItems = await tx.select().from(inventoryItems).where(eq(inventoryItems.organizationId, organizationId));
 	const consumablesSummary: ShiftConsumableSummaryItem[] = [];
 

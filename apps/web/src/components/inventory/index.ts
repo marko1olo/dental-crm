@@ -32,7 +32,7 @@ export * from "./InventoryConfirmDialog.js";
 export * from "./inventoryDataMappers.js";
 export * from "./inventoryMath.js";
 export * from "./MaterialBomsSettingsPanel.js";
-export * from "./mdlp/index.js";
+export * from "../mdlp/index.js";
 export * from "./useInventoryLogic.js";
 export * from "./useInventoryQuickWriteoff.js";
 export * from "./useInventoryRules.js";

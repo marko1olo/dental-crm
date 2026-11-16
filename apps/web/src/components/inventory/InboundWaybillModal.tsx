@@ -65,11 +65,35 @@ export interface InboundInvoiceItem {
 
 export type InboundWaybillLineItem = InboundInvoiceItem;
 
+export interface InitialWaybillItemData {
+	id?: string | undefined;
+	inventoryItemId?: string | undefined;
+	itemId?: string | undefined;
+	name?: string | undefined;
+	quantity?: number | string | undefined;
+	unitPriceKopecks?: number | undefined;
+	unitCostRub?: number | string | undefined;
+	priceRub?: number | string | undefined;
+	unit?: string | undefined;
+	batchNumber?: string | undefined;
+	lotNumber?: string | undefined;
+	lot?: string | undefined;
+	expirationDate?: string | undefined;
+}
+
+export interface InitialWaybillData {
+	waybillNumber?: string | undefined;
+	supplierName?: string | undefined;
+	supplier?: { name?: string | undefined } | undefined;
+	receiptDate?: string | undefined;
+	items?: readonly InitialWaybillItemData[] | undefined;
+}
+
 export interface InboundWaybillModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly organizationId?: string | undefined;
-	readonly initialWaybill?: any;
+	readonly initialWaybill?: InitialWaybillData | undefined;
 	readonly inventoryItems?: readonly {
 		readonly id: string;
 		readonly name: string;
@@ -122,10 +146,10 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 
 	const [lines, setLines] = useState<InboundInvoiceItem[]>(() => {
 		if (initialWaybill?.items?.length) {
-			return initialWaybill.items.map((it: any, idx: number) => ({
+			return initialWaybill.items.map((it, idx: number) => ({
 				id: it.id || `line-${idx}`,
 				inventoryItemId: it.inventoryItemId || it.itemId,
-				name: it.name,
+				name: it.name || "",
 				quantity: Number(it.quantity) || 1,
 				priceRub: Number(it.unitPriceKopecks ? it.unitPriceKopecks / 100 : (it.unitCostRub || it.priceRub)) || 0,
 				priceKopecks: Number(it.unitPriceKopecks || (it.unitCostRub ? Number(it.unitCostRub) * 100 : 0)) || 0,
@@ -328,23 +352,24 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 			const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
 
 			if (!res.ok) {
-				// Фоллбэк прямого пополнения остатков с погашением овердрафта
-				for (const item of payload.items) {
-					if (item.inventoryItemId) {
-						await fetch(`/api/inventory/${organizationId || "current"}/${item.inventoryItemId}/stock`, {
-							method: "PATCH",
-							headers,
-							body: JSON.stringify({ adjustment: item.quantity, allowOverdraft: true, reason: `Приход по накладной ${invoiceNumber}` }),
-						}).catch(() => {});
-					}
+				let errorMessage = "Ошибка проведения накладной";
+				try {
+					const errorJson = await res.json();
+					errorMessage = errorJson.error || errorJson.message || `Ошибка сервера (${res.status})`;
+				} catch {
+					errorMessage = `Ошибка сервера (${res.status} ${res.statusText})`;
 				}
+				setErrorBanner(errorMessage);
+				return;
 			}
 
-			if (onInvoicePosted) await onInvoicePosted(payload);
-			if (onWaybillPosted) await onWaybillPosted(payload);
+			const resData = await res.json().catch(() => payload);
+			if (onInvoicePosted) await onInvoicePosted(resData);
+			if (onWaybillPosted) await onWaybillPosted(resData);
 			onClose();
-		} catch (err: any) {
-			setErrorBanner(err.message || "Ошибка проведения накладной");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			setErrorBanner(msg || "Ошибка проведения накладной");
 		} finally {
 			setIsPosting(false);
 		}
@@ -407,18 +432,18 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 					{/* Реквизиты накладной */}
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)]">
 						<div>
-							<label className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] mb-1">Номер приходной накладной</label>
+							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Номер приходной накладной</label>
 							<input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden" data-testid="inbound-invoice-number-input" />
 						</div>
 						<div>
-							<label className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] mb-1">Поставщик</label>
+							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Поставщик</label>
 							<input type="text" value={supplierName} onChange={(e) => setSupplierName(e.target.value)} list={`sup-list-${defaultId}`} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden" data-testid="inbound-invoice-supplier-input" />
 							<datalist id={`sup-list-${defaultId}`}>
 								{DEFAULT_SUPPLIERS.map((s) => <option key={s} value={s}>{s}</option>)}
 							</datalist>
 						</div>
 						<div>
-							<label className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] mb-1">Дата поступления</label>
+							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Дата поступления</label>
 							<input type="date" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden" data-testid="inbound-invoice-date-input" />
 						</div>
 					</div>

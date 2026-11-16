@@ -7,15 +7,25 @@ import { WaybillItemsGrid } from "./WaybillItemsGrid.js";
 
 export interface WaybillDetailsViewProps {
 	readonly waybill: AcceptanceWaybillDocument;
-	readonly onPrintTorg12: (wb: AcceptanceWaybillDocument) => void;
+	readonly onPrintWaybill?: ((wb: AcceptanceWaybillDocument) => void) | undefined;
+	readonly onPrintTorg12?: ((wb: AcceptanceWaybillDocument) => void) | undefined;
 	readonly onExportCsv: (wb: AcceptanceWaybillDocument) => void;
 }
 
 export const WaybillDetailsView: React.FC<WaybillDetailsViewProps> = ({
 	waybill,
+	onPrintWaybill,
 	onPrintTorg12,
 	onExportCsv,
 }) => {
+	const handlePrint = () => {
+		if (onPrintWaybill) {
+			onPrintWaybill(waybill);
+		} else if (onPrintTorg12) {
+			onPrintTorg12(waybill);
+		}
+	};
+
 	return (
 		<div
 			className="flex-1 flex flex-col min-h-0 overflow-hidden"
@@ -28,11 +38,12 @@ export const WaybillDetailsView: React.FC<WaybillDetailsViewProps> = ({
 							Накладная № {waybill.waybillNumber}
 						</h4>
 						<span
-							className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-								waybill.status === "posted"
-									? "bg-emerald-500/20 text-emerald-800 dark:text-emerald-200"
-									: "bg-amber-500/20 text-amber-800 dark:text-amber-200"
-							}`}
+							className="text-[10px] font-semibold px-2 py-0.5 rounded border"
+							style={{
+								backgroundColor: waybill.status === "posted" ? "var(--success-soft, rgba(16, 185, 129, 0.15))" : "var(--warning-soft, rgba(245, 158, 11, 0.15))",
+								color: waybill.status === "posted" ? "var(--success-ink, #065f46)" : "var(--warning-ink, #92400e)",
+								borderColor: waybill.status === "posted" ? "var(--success-line, rgba(16, 185, 129, 0.3))" : "var(--warning-line, rgba(245, 158, 11, 0.3))",
+							}}
 						>
 							{waybill.status === "posted" ? "Проведена" : "Черновик"}
 						</span>
@@ -46,10 +57,10 @@ export const WaybillDetailsView: React.FC<WaybillDetailsViewProps> = ({
 				<div className="flex items-center gap-1.5">
 					<button
 						type="button"
-						onClick={() => onPrintTorg12(waybill)}
+						onClick={handlePrint}
 						className="secondary-button h-8 px-2.5 text-xs font-semibold gap-1.5"
-						title="Печать накладной поступления"
-						data-testid="btn-print-torg12"
+						title="Печать приходной накладной"
+						data-testid="btn-print-waybill"
 					>
 						<Printer size={13} />
 						<span>Печать накладной</span>
@@ -80,7 +91,7 @@ export const WaybillDetailsView: React.FC<WaybillDetailsViewProps> = ({
 				</div>
 				<div>
 					<span>Итого к оплате: </span>
-					<strong className="text-sm font-bold text-teal-700 dark:text-teal-300">
+					<strong className="text-sm font-bold text-[var(--teal,#0d9488)] font-mono tabular-nums">
 						{money(kopecksToRubles(waybill.totals.totalCostKopecks))}
 					</strong>
 				</div>

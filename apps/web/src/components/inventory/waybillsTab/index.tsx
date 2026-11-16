@@ -30,7 +30,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props)
 		expressSupplierId, setExpressSupplierId, expressWaybillNum, setExpressWaybillNum,
 		expressDate, setExpressDate, expressAmountRub, setExpressAmountRub,
 		handlePostExpressWaybill, handleAddTemplateItem, handleRemoveDraftItem, handlePostWaybill,
-		handlePrintTorg12, handleExportCsv, handleStartCreateNew, filteredWaybills,
+		handlePrintWaybill, handlePrintTorg12, handleExportCsv, handleStartCreateNew, filteredWaybills,
 		handleChangeSupplier, handleChangeWaybillNumber, handleChangeReceiptDate,
 	} = useWarehouseWaybills(props);
 
@@ -66,7 +66,7 @@ export const WarehouseWaybillsTab: React.FC<WarehouseWaybillsTabProps> = (props)
 							onSubmit={handlePostWaybill}
 						/>
 					) : selectedWaybill ? (
-						<WaybillDetailsView waybill={selectedWaybill} onPrintTorg12={handlePrintTorg12} onExportCsv={handleExportCsv} />
+						<WaybillDetailsView waybill={selectedWaybill} onPrintWaybill={handlePrintWaybill} onPrintTorg12={handlePrintTorg12} onExportCsv={handleExportCsv} />
 					) : (
 						<WaybillDetailsEmpty totalWaybillsCount={waybillsList.length} onStartCreateNew={handleStartCreateNew} />
 					)}

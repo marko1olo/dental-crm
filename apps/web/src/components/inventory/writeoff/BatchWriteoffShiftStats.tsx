@@ -39,20 +39,20 @@ export const BatchWriteoffShiftStats: React.FC<BatchWriteoffShiftStatsProps> = (
 			{/* Сводные показатели смены */}
 			<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 p-3 sm:p-3.5 bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line-subtle,#f1f5f9)] text-xs">
 				<div>
-					<span className="text-[11px] text-[var(--muted,#64748b)] uppercase font-semibold">Дата смены</span>
+					<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">Дата смены</span>
 					<div className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 mt-0.5">
 						<Calendar size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<span>{date}</span>
 					</div>
 				</div>
 				<div>
-					<span className="text-[11px] text-[var(--muted,#64748b)] uppercase font-semibold">Завершено приёмов</span>
+					<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">Завершено приёмов</span>
 					<div className="font-bold text-[var(--ink,#0f172a)] text-sm mt-0.5">
 						{shiftStats.completedVisitsCount} пациентов
 					</div>
 				</div>
 				<div className="col-span-2 sm:col-span-1">
-					<span className="text-[11px] text-[var(--muted,#64748b)] uppercase font-semibold">Норма расхода</span>
+					<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">Норма расхода</span>
 					<div className="font-bold text-[var(--ink,#0f172a)] text-sm mt-0.5">
 						{shiftStats.totalProceduresCount} по прейскуранту
 					</div>

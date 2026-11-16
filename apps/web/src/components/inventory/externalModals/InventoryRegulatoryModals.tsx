@@ -3,7 +3,6 @@ import { InboundWaybillModal } from "../InboundWaybillModal.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 import type { WarehouseWriteoffItem } from "./useAuditAndManagerWriteoffHandlers.js";
 
-const MdlpDisposalQueueModal = lazy(() => import("../mdlp/index.js").then((m) => ({ default: m.MdlpDisposalQueueModal })));
 const MdlpScanningModal = lazy(() => import("../../mdlp/MdlpScanningModal.js").then((m) => ({ default: m.MdlpScanningModal })));
 const WarehouseManagerModal = lazy(() => import("../ConsumablesBatchWriteoffModal.js").then((m) => ({ default: m.ConsumablesBatchWriteoffModal })));
 const AcceptanceWaybillsModal = lazy(() => import("../InboundWaybillModal.js").then((m) => ({ default: m.InboundWaybillModal })));
@@ -33,6 +32,12 @@ export const InventoryRegulatoryModals: React.FC<InventoryRegulatoryModalsProps>
 	onCloseWarehouseManager, onOpenInventoryAudit, onConfirmManagerWriteoff,
 	isMdlpScanningOpen, onCloseMdlpScanning, isAcceptanceWaybillsOpen, onCloseAcceptanceWaybills,
 }) => {
+	const isMdlpActive = isMdlpDisposalOpen || isMdlpScanningOpen;
+	const handleCloseMdlp = () => {
+		onCloseMdlpDisposal();
+		onCloseMdlpScanning();
+	};
+
 	return (
 		<>
 			{isInboundInvoiceModalOpen && (
@@ -46,15 +51,11 @@ export const InventoryRegulatoryModals: React.FC<InventoryRegulatoryModalsProps>
 				/>
 			)}
 
-			{isMdlpDisposalOpen && (
+			{isMdlpActive && (
 				<Suspense fallback={null}>
-					<MdlpDisposalQueueModal
-						isOpen={isMdlpDisposalOpen}
-						onClose={onCloseMdlpDisposal}
-						onConfirmDisposal={async () => {
-							onCloseMdlpDisposal();
-							fetchItems();
-						}}
+					<MdlpScanningModal
+						isOpen={isMdlpActive}
+						onClose={handleCloseMdlp}
 					/>
 				</Suspense>
 			)}
@@ -64,15 +65,6 @@ export const InventoryRegulatoryModals: React.FC<InventoryRegulatoryModalsProps>
 					<WarehouseManagerModal
 						isOpen={isWarehouseManagerOpen}
 						onClose={onCloseWarehouseManager}
-					/>
-				</Suspense>
-			)}
-
-			{isMdlpScanningOpen && (
-				<Suspense fallback={null}>
-					<MdlpScanningModal
-						isOpen={isMdlpScanningOpen}
-						onClose={onCloseMdlpScanning}
 					/>
 				</Suspense>
 			)}
