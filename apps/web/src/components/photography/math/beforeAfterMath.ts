@@ -14,6 +14,12 @@ export function calculateSplitClipPath(
 	}
 }
 
+export function calculateComparisonClipPath(sliderPositionPercent: number): string {
+	const safePercent = Number.isFinite(sliderPositionPercent) ? sliderPositionPercent : 50;
+	const clamped = clamp(safePercent, 0, 100);
+	return `inset(0 ${100 - clamped}% 0 0)`;
+}
+
 export function calculateSimilarityTransform(
 	beforePoints: [Point2D, Point2D],
 	afterPoints: [Point2D, Point2D]

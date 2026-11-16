@@ -245,10 +245,10 @@ export const ChairsidePhotoQrBridgeModal: React.FC<ChairsidePhotoQrBridgeModalPr
 						</div>
 					) : error ? (
 						<div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
-							<div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/20">
+							<div className="w-12 h-12 rounded-full bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)] flex items-center justify-center border border-[var(--danger,rgba(239,68,68,0.2))]">
 								<AlertCircle size={24} />
 							</div>
-							<p className="text-sm font-semibold text-red-600 dark:text-red-400 max-w-xs m-0">{error}</p>
+							<p className="text-sm font-semibold text-[var(--danger,#ef4444)] max-w-xs m-0">{error}</p>
 							<button
 								type="button"
 								onClick={createSession}

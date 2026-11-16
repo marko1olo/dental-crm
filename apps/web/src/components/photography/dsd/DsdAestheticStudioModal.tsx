@@ -110,7 +110,8 @@ export const DsdAestheticStudioModal: React.FC<DsdAestheticStudioModalProps> = (
 		if (initialPhotoUrl) {
 			setActivePhotoUrl(initialPhotoUrl);
 		} else if (effectivePhotos.length > 0 && !activePhotoUrl) {
-			setActivePhotoUrl(effectivePhotos[0]!.url);
+			const firstPhoto = effectivePhotos[0];
+			if (firstPhoto) setActivePhotoUrl(firstPhoto.url);
 		}
 	}, [initialPhotoUrl, effectivePhotos, activePhotoUrl]);
 

@@ -81,7 +81,7 @@ export {
 export * from "../warehouse/treatmentConsumablesEngine.js";
 export * from "../warehouse/defaultServiceBomCatalog.js";
 export * from "../warehouse/autoVisitBomEngine.js";
-export { CLASS_B_WEIGHT_ESTIMATES, calculateClassBWasteWeightKg } from "../warehouse/autoVisitBomEngine.js";
+export { calculateClassBWasteWeightKg } from "../warehouse/autoVisitBomEngine.js";
 export * from "./photoProtocol.js";
 export * from "./soap/index.js";
 export * from "./somaticCatalog.js";

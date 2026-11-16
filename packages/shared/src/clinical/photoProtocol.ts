@@ -525,6 +525,15 @@ export const dsdToothMetricSchema = z.object({
 	goldenDeviationPercent: z.number().nonnegative(),
 });
 
+export const DSD_AESTHETIC_MATERIALS = [
+	"emax_lithium_disilicate",
+	"zirconia_multilayer",
+	"feldspathic_ceramic",
+	"composite",
+] as const;
+export const dsdAestheticMaterialSchema = z.enum(DSD_AESTHETIC_MATERIALS);
+export type DsdAestheticMaterial = z.infer<typeof dsdAestheticMaterialSchema>;
+
 export interface DsdAnalysisData {
 	id: string;
 	photoUrl: string;
@@ -538,7 +547,7 @@ export interface DsdAnalysisData {
 	smileArcCurvature: "consonant" | "flat" | "reverse";
 	smileArcSymmetryPercent: number;
 	teethMetrics: DsdToothMetric[];
-	recommendedMaterial: "emax_lithium_disilicate" | "zirconia_multilayer" | "feldspathic_ceramic" | "composite";
+	recommendedMaterial: DsdAestheticMaterial;
 	recommendedVitaShade: string;
 	translucencyLevel: "HT" | "LT" | "MO" | "HO";
 	doctorNotes?: string;
@@ -558,12 +567,7 @@ export const dsdAnalysisDataSchema = z.object({
 	smileArcCurvature: z.enum(["consonant", "flat", "reverse"]).default("consonant"),
 	smileArcSymmetryPercent: z.number().min(0).max(100).default(95),
 	teethMetrics: z.array(dsdToothMetricSchema).default([]),
-	recommendedMaterial: z.enum([
-		"emax_lithium_disilicate",
-		"zirconia_multilayer",
-		"feldspathic_ceramic",
-		"composite",
-	]).default("emax_lithium_disilicate"),
+	recommendedMaterial: dsdAestheticMaterialSchema.default("emax_lithium_disilicate"),
 	recommendedVitaShade: z.string().default("A2"),
 	translucencyLevel: z.enum(["HT", "LT", "MO", "HO"]).default("HT"),
 	doctorNotes: z.string().optional(),
@@ -648,4 +652,29 @@ export function calculateWheelerToothMetrics(
 		},
 	];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. CHAIRSIDE VITA SHADES & DIARY SUMMARY FORMATTERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const VITA_SHADES = [
+	"A1", "A2", "A3", "A3.5", "A4",
+	"B1", "B2", "B3", "B4",
+	"C1", "C2", "C3", "C4",
+	"D2", "D3", "D4",
+	"BL1", "BL2", "BL3", "BL4",
+] as const;
+
+export type VitaShadeType = (typeof VITA_SHADES)[number];
+
+export function formatChairsidePhotoProtocolDiaryRu(
+	filledCount: number,
+	presetName: string,
+	teeth: readonly number[],
+	shade: string,
+): string {
+	const teethStr = teeth.length > 0 ? teeth.join(", ") : "все сегменты";
+	return `[ФОТОПРОТОКОЛ КРЕСЛА AACD/DSD]: Выполнено ${filledCount} снимков по протоколу «${presetName}». Фиксация До/После. Зубы: ${teethStr}. Оттенок VITA: ${shade}. Прикреплено к карте.`;
+}
+
 

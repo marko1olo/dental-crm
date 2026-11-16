@@ -10,7 +10,7 @@ import {
 	Maximize2,
 	RotateCw,
 } from 'lucide-react';
-import type { DsdAnalysisData, DsdToothMetric } from '@dental/shared';
+import type { DsdAnalysisData, DsdToothMetric, DsdAestheticMaterial } from '@dental/shared';
 import type { DsdCanvasGuideFlags, DsdFacialLandmarks, DsdCalibrationState } from './DsdCanvasOverlay';
 
 export interface DsdMetricsSidebarProps {
@@ -36,9 +36,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 	onApplyToTreatmentPlanAndLab,
 	onResetToNorm,
 }) => {
-	const [selectedMaterial, setSelectedMaterial] = useState<
-		'emax_lithium_disilicate' | 'zirconia_multilayer' | 'feldspathic_ceramic' | 'composite'
-	>('emax_lithium_disilicate');
+	const [selectedMaterial, setSelectedMaterial] = useState<DsdAestheticMaterial>('emax_lithium_disilicate');
 	const [selectedVitaShade, setSelectedVitaShade] = useState('A2');
 	const [selectedTranslucency, setSelectedTranslucency] = useState<'HT' | 'LT' | 'MO' | 'HO'>('HT');
 	const [doctorNotes, setDoctorNotes] = useState('');
@@ -165,7 +163,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 							onClick={() => onToggleGuide('midline')}
 							className={`text-xs px-2 py-1.5 rounded-lg border text-left font-medium flex items-center justify-between transition cursor-pointer ${
 								guides.midline
-									? 'bg-rose-50 dark:bg-rose-950/40 border-rose-500 text-rose-700 dark:text-rose-300'
+									? 'bg-[var(--danger-soft,rgba(239,68,68,0.1))] border-[var(--danger,#ef4444)] text-[var(--danger,#ef4444)]'
 									: 'border-[var(--line,#cbd5e1)] dark:border-slate-800 opacity-60'
 							}`}
 						>
@@ -177,7 +175,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 							onClick={() => onToggleGuide('smileArc')}
 							className={`text-xs px-2 py-1.5 rounded-lg border text-left font-medium flex items-center justify-between transition cursor-pointer ${
 								guides.smileArc
-									? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300'
+									? 'bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]'
 									: 'border-[var(--line,#cbd5e1)] dark:border-slate-800 opacity-60'
 							}`}
 						>
@@ -189,7 +187,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 							onClick={() => onToggleGuide('goldenRatio')}
 							className={`text-xs px-2 py-1.5 rounded-lg border text-left font-medium flex items-center justify-between transition cursor-pointer ${
 								guides.goldenRatio
-									? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 text-amber-700 dark:text-amber-300'
+									? 'bg-[var(--warning-soft,rgba(245,158,11,0.1))] border-[var(--warning,#f59e0b)] text-[var(--warning,#f59e0b)]'
 									: 'border-[var(--line,#cbd5e1)] dark:border-slate-800 opacity-60'
 							}`}
 						>
@@ -201,7 +199,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 							onClick={() => onToggleGuide('calibration')}
 							className={`text-xs px-2 py-1.5 rounded-lg border text-left font-medium flex items-center justify-between transition cursor-pointer col-span-2 ${
 								guides.calibration
-									? 'bg-purple-50 dark:bg-purple-950/40 border-purple-500 text-purple-700 dark:text-purple-300'
+									? 'bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] font-bold'
 									: 'border-[var(--line,#cbd5e1)] dark:border-slate-800 opacity-60'
 							}`}
 						>
@@ -256,13 +254,13 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 						</div>
 						<div className="p-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950/50">
 							<div className="text-[11px] text-[var(--muted,#64748b)]">Сдвиг средней линии</div>
-							<div className="font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+							<div className="font-bold text-[var(--danger,#ef4444)] mt-0.5">
 								{midlineOffsetMm} мм
 							</div>
 						</div>
 						<div className="p-2 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950/50 col-span-2">
 							<div className="text-[11px] text-[var(--muted,#64748b)]">Линия улыбки (Smile Arc)</div>
-							<div className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+							<div className="font-semibold text-[var(--teal,#0d9488)] mt-0.5">
 								{smileDescription}
 							</div>
 						</div>
@@ -273,7 +271,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 				<div className="space-y-1.5">
 					<div className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center justify-between">
 						<span>Пропорции резцов Wheeler 2.5D:</span>
-						<span className="font-mono text-[11px] text-amber-600 dark:text-amber-400">
+						<span className="font-mono text-[11px] text-[var(--warning,#f59e0b)]">
 							W/L: {ratioWH}%
 						</span>
 					</div>
@@ -289,19 +287,19 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 								<span className="font-bold">11 / 21</span>
 								<span>{centralWidthMm} мм</span>
 								<span>{centralHeightMm} мм</span>
-								<span className="text-amber-600 dark:text-amber-400 font-bold">100% (база)</span>
+								<span className="text-[var(--warning,#f59e0b)] font-bold">100% (база)</span>
 							</div>
 							<div className="grid grid-cols-4 p-1.5">
 								<span className="font-bold">12 / 22</span>
 								<span>{lateralWidthMm} мм</span>
 								<span>{Math.round(centralHeightMm * 0.88 * 10) / 10} мм</span>
-								<span className="text-amber-600 dark:text-amber-400">61.8%</span>
+								<span className="text-[var(--warning,#f59e0b)]">61.8%</span>
 							</div>
 							<div className="grid grid-cols-4 p-1.5">
 								<span className="font-bold">13 / 23</span>
 								<span>{canineWidthMm} мм</span>
 								<span>{Math.round(centralHeightMm * 0.95 * 10) / 10} мм</span>
-								<span className="text-amber-600 dark:text-amber-400">38.2%</span>
+								<span className="text-[var(--warning,#f59e0b)]">38.2%</span>
 							</div>
 						</div>
 					</div>
@@ -317,7 +315,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 							<label className="text-[11px] text-[var(--muted,#64748b)] block mb-1">Материал</label>
 							<select
 								value={selectedMaterial}
-								onChange={(e) => setSelectedMaterial(e.target.value as any)}
+								onChange={(e) => setSelectedMaterial(e.target.value as DsdAestheticMaterial)}
 								className="w-full px-2 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 font-medium cursor-pointer"
 							>
 								<option value="emax_lithium_disilicate">IPS e.max (Дисиликат)</option>
@@ -336,7 +334,7 @@ export const DsdMetricsSidebar: React.FC<DsdMetricsSidebarProps> = ({
 										onClick={() => setSelectedVitaShade(shade)}
 										className={`flex-1 py-1 rounded text-xs font-bold border transition cursor-pointer ${
 											selectedVitaShade === shade
-												? 'bg-teal-600 text-white border-teal-600'
+												? 'bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]'
 												: 'border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800'
 										}`}
 									>

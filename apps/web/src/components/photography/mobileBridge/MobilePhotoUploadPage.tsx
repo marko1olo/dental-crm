@@ -206,10 +206,10 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 	if (error) {
 		return (
 			<div className="min-h-screen bg-[var(--paper)] text-[var(--ink)] flex flex-col items-center justify-center p-6 text-center gap-4">
-				<div className="w-14 h-14 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/20">
+				<div className="w-14 h-14 rounded-full bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)] flex items-center justify-center border border-[var(--danger,rgba(239,68,68,0.2))]">
 					<AlertCircle size={32} />
 				</div>
-				<h2 className="text-lg font-bold m-0 text-red-600 dark:text-red-400">Сессия не активна</h2>
+				<h2 className="text-lg font-bold m-0 text-[var(--danger,#ef4444)]">Сессия не активна</h2>
 				<p className="text-sm text-[var(--muted)] max-w-xs m-0 leading-relaxed">{error}</p>
 				<button
 					type="button"
@@ -274,7 +274,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 							Текущий ракурс
 						</span>
 						{uploadedSlots[selectedSlotId] && (
-							<span className="flex items-center gap-1 text-[11px] font-bold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
+							<span className="flex items-center gap-1 text-[11px] font-bold text-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.1))] px-2 py-0.5 rounded-full border border-[var(--teal,#0d9488)]/20">
 								<Check size={12} />
 								<span>Снимок сделан</span>
 							</span>
@@ -320,7 +320,7 @@ export const MobilePhotoUploadPage: React.FC<MobilePhotoUploadPageProps> = ({ to
 
 									<div className="shrink-0">
 										{isDone ? (
-											<div className="w-6 h-6 rounded-full bg-green-500/15 text-green-600 dark:text-green-400 flex items-center justify-center">
+											<div className="w-6 h-6 rounded-full bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] flex items-center justify-center">
 												<Check size={14} />
 											</div>
 										) : (

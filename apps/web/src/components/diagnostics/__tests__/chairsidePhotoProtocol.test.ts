@@ -16,9 +16,11 @@ import {
 } from "../../photography/photoGridPresets";
 import {
 	VITA_SHADES,
-	calculateComparisonClipPath,
 	formatChairsidePhotoProtocolDiaryRu,
-} from "../chairsidePhotoProtocolConstants";
+} from "@dental/shared";
+import {
+	calculateComparisonClipPath,
+} from "../../photography/photoProtocolMath";
 
 describe("ChairsidePhotoProtocol — Presets & Slot Invariants", () => {
 	it("1. Standard 12-Slot Protocol contains all 12 canonical AACD/DSD clinical slots", () => {

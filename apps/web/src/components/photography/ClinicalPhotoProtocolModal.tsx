@@ -134,7 +134,8 @@ export const ClinicalPhotoProtocolModal: React.FC<ClinicalPhotoProtocolModalProp
 
 		// Если выбран конкретный слот — грузим строго в него
 		if (currentSlotRef.current) {
-			handleUpload(currentSlotRef.current, files[0]!);
+			const firstFile = files[0];
+			if (firstFile) handleUpload(currentSlotRef.current, firstFile);
 			return;
 		}
 

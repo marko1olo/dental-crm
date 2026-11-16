@@ -659,10 +659,11 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						}}
 						onPhotoSaved={(res) => {
 							const record = res as { slotId?: string } | undefined;
-							if (record?.slotId) {
+							const slotId = record?.slotId;
+							if (slotId) {
 								setProtocol((prev) => ({
 									...prev,
-									photoStatuses: { ...prev.photoStatuses, [record.slotId!]: true },
+									photoStatuses: { ...prev.photoStatuses, [slotId]: true },
 								}));
 							}
 						}}
