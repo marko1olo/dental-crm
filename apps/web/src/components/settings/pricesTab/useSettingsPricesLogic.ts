@@ -25,10 +25,10 @@ import {
 	printPricelistA4,
 } from "./pricesExportPrintHelpers";
 import { showToast } from "../../GlobalToast";
-import {
-	type ExistingCatalogReference,
-	type IngestedMappingItem,
-} from "../../catalog/mappingDiff/PriceListMappingDiffView";
+import type {
+	ExistingCatalogReference,
+	IngestedMappingItem,
+} from "../../catalog/mappingDiff/types";
 import {
 	syncPricelistItemsToCatalog,
 	type SyncableCatalogItemInput,
@@ -142,8 +142,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 	}, [typedServiceCatalog, searchQuery, selectedCategoryFilter]);
 
 	const groupedCatalog = useMemo(() => {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		const groups: Record<string, any[]> = {};
+		const groups: Record<string, ServiceCatalogItem[]> = {};
 		filteredCatalog.forEach((item) => {
 			const cat = item.category || "other";
 			(groups[cat] ??= []).push(item);
@@ -211,9 +210,8 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 			showToast(editServiceId === "new" ? "Услуга добавлена в прейскурант" : "Услуга обновлена", "success");
 			setEditServiceId(null);
-			// biome-ignore lint/suspicious/noExplicitAny: error handling
-		} catch (error: any) {
-			const msg = error.message || "Ошибка сохранения";
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : "Ошибка сохранения";
 			mergedProps.setError?.(msg);
 			showToast(msg, "error");
 		} finally {
@@ -244,9 +242,8 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			else if (typeof appLogic?.loadDashboard === "function") await appLogic.loadDashboard();
 
 			showToast("Услуга отключена в прейскуранте", "success");
-			// biome-ignore lint/suspicious/noExplicitAny: error handling
-		} catch (error: any) {
-			const msg = error.message || "Ошибка удаления";
+		} catch (error: unknown) {
+			const msg = error instanceof Error ? error.message : "Ошибка удаления";
 			mergedProps.setError?.(msg);
 			showToast(msg, "error");
 		} finally {
@@ -321,9 +318,10 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 			showToast(seededCount > 0 ? `Базовый прейскурант услуг успешно заполнен (${seededCount} услуг)` : "Базовый прейскурант услуг актуален (услуги уже присутствуют в каталоге)", "success");
 			setIsCodesMenuOpen(false);
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error("[pricelist] Ошибка наполнения базового прейскуранта услуг:", error);
-			showToast(error?.message || "Не удалось наполнить базовый прейскурант услуг", "error");
+			const msg = error instanceof Error ? error.message : "Не удалось наполнить базовый прейскурант услуг";
+			showToast(msg, "error");
 		} finally {
 			setIsSeedingBaseline(false);
 		}
@@ -467,17 +465,18 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		setEditServiceId("new");
 	};
 
-	const openEditServiceModal = (item: any) => {
+	const openEditServiceModal = (item: ServiceCatalogItem) => {
 		const statutoryCode = item.standardCode || item.catalogCode || item.order804nCode || item.code || "";
 		setEditServiceForm({
 			title: item.title, code: item.code || "", catalogCode: statutoryCode,
 			standardCode: statutoryCode, order804nCode: statutoryCode, category: item.category,
-			specialty: item.specialty, basePriceRub: item.basePriceRub ?? item.priceRub ?? 0,
+			specialty: item.specialty, basePriceRub: item.basePriceRub ?? item.priceRub ?? (item.priceKopecks ? item.priceKopecks / 100 : 0),
 			materialsCostRub: item.materialsCostRub ?? 0, durationMinutes: item.durationMinutes || 30,
-			taxDeductible: item.taxDeductible, vatRate: item.vatRate || "vat_exempt",
+			taxDeductible: item.taxDeductible,
+			vatRate: item.vatRate === "vat_20" || item.vatRate === "vat_0" || item.vatRate === "vat_exempt" ? item.vatRate : "vat_exempt",
 			active: item.isActive !== false && item.active !== false,
 		});
-		setPriceRubInput(rubToPriceInput(item.basePriceRub ?? item.priceRub ?? 0));
+		setPriceRubInput(rubToPriceInput(item.basePriceRub ?? item.priceRub ?? (item.priceKopecks ? item.priceKopecks / 100 : 0)));
 		setPriceProblem(null);
 		setEditServiceId(item.id);
 	};

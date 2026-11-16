@@ -76,7 +76,7 @@ export const scanAndImportItemSchema = z.object({
 	cleanedTitle: z.string().min(1, "Наименование услуги не может быть пустым"),
 	code: z.string().optional(),
 	serviceCode: z.string().optional(),
-	code804n: z.string().default("A16.07.002"),
+	code804n: z.string().optional(),
 	category: z.string().default("therapy"),
 	specialty: z.string().default("therapist"),
 	priceRub: z.number().nonnegative("Цена не может быть отрицательной"),

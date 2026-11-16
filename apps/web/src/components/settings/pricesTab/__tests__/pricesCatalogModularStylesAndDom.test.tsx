@@ -1,14 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { PriceItemEditModal } from "../PriceItemEditModal";
 import { PricesCatalogTable } from "../PricesCatalogTable";
 import { PricesFilterToolbar } from "../PricesFilterToolbar";
+import type { ServiceEditFormData } from "../types";
 
 describe("PricesCatalog Modular Architecture & Mandate 8b <= 120 lines", () => {
-	const stylesDir = path.resolve(__dirname, "../styles");
+	const currentDir = typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+	const stylesDir = path.resolve(currentDir, "../styles");
 	const catalogStylesDir = path.resolve(stylesDir, "catalogStyles");
 
 	it("pricesCatalog.css facade exists, is strictly <= 30 lines and imports all 8 modules", () => {
@@ -119,16 +122,20 @@ describe("PricesCatalogTable — Render and Empty States", () => {
 	});
 
 	it("renders grouped services with tabular prices and action buttons", () => {
-		const mockCatalog = {
+		const mockCatalog: Record<string, any[]> = {
 			therapy: [
 				{
 					id: "srv-1",
+					organizationId: "org-1",
 					title: "Лечение кариеса",
 					code: "A16.07.002",
+					category: "therapy",
 					basePriceRub: 3500,
 					specialty: "therapist",
 					durationMinutes: 45,
 					isActive: true,
+					active: true,
+					aliases: [],
 				},
 			],
 		};
@@ -161,7 +168,7 @@ describe("PricesCatalogTable — Render and Empty States", () => {
 
 describe("PriceItemEditModal — Single Source of Truth Form", () => {
 	it("renders modal form with inputs for service title, code and price in rubles", () => {
-		const formState = {
+		const formState: ServiceEditFormData = {
 			title: "Профессиональная гигиена полости рта",
 			code: "ГИГ-01",
 			catalogCode: "A16.07.051",

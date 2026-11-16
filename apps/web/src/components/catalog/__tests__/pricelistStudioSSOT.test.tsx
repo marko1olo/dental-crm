@@ -3,7 +3,7 @@
  *
  * Исчерпывающий Red Team аудит и верификация канонического SSOT прейскуранта.
  * Проверяет: 0 float-ошибок, 6 клинических категорий, автономию врача (Мандат 8e),
- * отсутствие канцелярита (Мандат 8x), поиск за 1 клик, Apple HIG и Direct Launchers.
+ * отсутствие канцелярита (Мандат 8x), быстрый поиск, Apple HIG и Direct Launchers.
  */
 
 import assert from "node:assert/strict";
@@ -26,7 +26,11 @@ import {
 	getSpecialtyForCategory,
 	getCategoryDisplayLabel,
 } from "../pricelistCatalogData";
-import { PricelistStudioModal, ServicePriceListStudioModal } from "../PricelistStudioModal";
+import {
+	PricelistStudioModal,
+	ServicePriceListStudioModal,
+	type PricelistInputItem,
+} from "../PricelistStudioModal";
 import { PriceItemEditModal } from "../../settings/pricesTab/PriceItemEditModal";
 import { DirectPricelistLauncher } from "../DirectPricelistLauncher";
 
@@ -93,7 +97,7 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 			assert.ok(titles.includes("Имплантат под ключ"));
 		});
 
-		it("содержит готовые клинические пакеты «Под ключ» в 1 клик (Мандаты 8e, 8n)", () => {
+		it("содержит готовые клинические пакеты «Под ключ» (Мандаты 8e, 8n)", () => {
 			assert.ok(CANONICAL_CLINICAL_BUNDLES.length >= 4);
 			const bundleTitles = CANONICAL_CLINICAL_BUNDLES.map((b) => b.shortTitle);
 			assert.ok(bundleTitles.includes("Кариес под ключ"));
@@ -116,7 +120,7 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 		});
 	});
 
-	describe("3. Быстрый поиск и фильтрация за 1 клик", () => {
+	describe("3. Быстрый поиск и фильтрация", () => {
 		it("фильтрует по выбранной категории", () => {
 			const surgeryItems = filterPricelist(
 				CANONICAL_PRICELIST_PRESETS,
@@ -244,7 +248,7 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 		});
 
 		it("корректно сохраняет нулевую цену (0 ₽) и не превращает её в 3500 ₽ (DEF-PRICE-05)", () => {
-			const freeItem = {
+			const freeItem: PricelistInputItem = {
 				id: "srv-free",
 				title: "Бесплатный профилактический осмотр",
 				category: "therapy",

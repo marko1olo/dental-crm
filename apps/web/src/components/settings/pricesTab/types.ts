@@ -1,12 +1,13 @@
 import type {
 	DentalSpecialty,
 	PricelistCollisionStrategy,
+	ServiceCatalogItem,
 	ServiceCategory,
 } from "@dental/shared";
 import type {
 	ExistingCatalogReference,
 	IngestedMappingItem,
-} from "../../catalog/mappingDiff/PriceListMappingDiffView";
+} from "../../catalog/mappingDiff/types";
 import type { ServicePricelistItem } from "../../catalog/pricelist/servicePricelistPresets";
 
 export interface ServiceEditFormData {
@@ -38,21 +39,21 @@ export interface PricesFilterToolbarProps {
 	onSelectCategoryFilter: (catId: string) => void;
 	searchQuery: string;
 	onSearchChange: (query: string) => void;
-	isCodesMenuOpen?: boolean;
-	setIsCodesMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
-	codesMenuRef?: React.RefObject<HTMLDivElement | null>;
+	isCodesMenuOpen?: boolean | undefined;
+	setIsCodesMenuOpen?: React.Dispatch<React.SetStateAction<boolean>> | undefined;
+	codesMenuRef?: React.RefObject<HTMLDivElement | null> | undefined;
 	/** Алиасы обратной совместимости */
-	is804nCodesMenuOpen?: boolean;
-	setIs804nCodesMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
-	codes804nMenuRef?: React.RefObject<HTMLDivElement | null>;
+	is804nCodesMenuOpen?: boolean | undefined;
+	setIs804nCodesMenuOpen?: React.Dispatch<React.SetStateAction<boolean>> | undefined;
+	codes804nMenuRef?: React.RefObject<HTMLDivElement | null> | undefined;
 	isSeedingBaseline: boolean;
-	onSeedStandardCatalog?: (replace?: boolean) => void;
-	onSeedBaseline804n?: (replace?: boolean) => void;
+	onSeedStandardCatalog?: ((replace?: boolean) => void) | undefined;
+	onSeedBaseline804n?: ((replace?: boolean) => void) | undefined;
 	onExportCsv: () => void;
 	isNativeScannerDropzoneOpen: boolean;
 	onToggleNativeScannerDropzone: () => void;
 	onOpenServicePricelistModal: () => void;
-	onPrintPricelist?: () => void;
+	onPrintPricelist?: (() => void) | undefined;
 	onOpenNewServiceModal: () => void;
 }
 
@@ -66,8 +67,8 @@ export interface PriceItemEditModalProps {
 	priceProblem: string | null;
 	setPriceProblem: (problem: string | null) => void;
 	isSaving: boolean;
-	serviceCategoryLabels?: Record<string, string>;
-	specialtyLabels?: Record<string, string>;
+	serviceCategoryLabels?: Record<string, string> | undefined;
+	specialtyLabels?: Record<string, string> | undefined;
 	onClose: () => void;
 	onSave: (e: React.FormEvent) => void;
 }
@@ -111,16 +112,39 @@ export interface PriceImportModalProps {
 	}) => Promise<void>;
 }
 
+export interface CreateServicePayload {
+	title: string;
+	code?: string;
+	category: ServiceCategory;
+	specialty: DentalSpecialty;
+	basePriceRub: number;
+	materialsCostRub?: number;
+	durationMinutes: number;
+	taxDeductible: boolean;
+	vatRate?: "vat_exempt" | "vat_0" | "vat_20" | undefined;
+	active: boolean;
+	order804nCode?: string | null;
+}
+
+export interface ClinicDashboardResponse {
+	clinic?: { name?: string; [key: string]: unknown };
+	clinicSettings?: {
+		name?: string;
+		profile?: { organizationId?: string; clinicName?: string; mode?: string; [key: string]: unknown };
+		[key: string]: unknown;
+	};
+	serviceCatalog?: readonly ServiceCatalogItem[];
+	[key: string]: unknown;
+}
+
 export interface PricesCatalogTableProps {
-	// biome-ignore lint/suspicious/noExplicitAny: generic item array from catalog
-	groupedCatalog: Record<string, any[]>;
+	groupedCatalog: Record<string, readonly ServiceCatalogItem[]>;
 	categoryLimits: Record<string, number>;
 	setCategoryLimits: React.Dispatch<React.SetStateAction<Record<string, number>>>;
 	serviceCategoryLabels?: Record<string, string>;
 	specialtyLabels?: Record<string, string>;
 	deletingServiceId: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: service item
-	onEditService: (item: any) => void;
+	onEditService: (item: ServiceCatalogItem) => void;
 	onDeleteService: (id: string) => void;
 	searchQuery: string;
 	selectedCategoryFilter: string;
@@ -132,13 +156,10 @@ export interface PricesCatalogTableProps {
 }
 
 export interface UseSettingsPricesLogicProps {
-	// biome-ignore lint/suspicious/noExplicitAny: dashboard object
-	dashboard?: any;
-	serviceCategoryLabels?: Record<string, string>;
-	specialtyLabels?: Record<string, string>;
-	// biome-ignore lint/suspicious/noExplicitAny: mutation payload
-	createServiceCatalogItem?: (payload: any) => Promise<any>;
-	// biome-ignore lint/suspicious/noExplicitAny: mutation payload
-	updateServiceCatalogItem?: (id: string, payload: any) => Promise<any>;
-	deleteServiceCatalogItem?: (id: string) => Promise<any>;
+	dashboard?: ClinicDashboardResponse | undefined;
+	serviceCategoryLabels?: Record<string, string> | undefined;
+	specialtyLabels?: Record<string, string> | undefined;
+	createServiceCatalogItem?: ((payload: CreateServicePayload) => Promise<unknown>) | undefined;
+	updateServiceCatalogItem?: ((id: string, payload: Partial<CreateServicePayload>) => Promise<unknown>) | undefined;
+	deleteServiceCatalogItem?: ((id: string) => Promise<unknown>) | undefined;
 }

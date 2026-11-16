@@ -7,4 +7,3 @@ export * from "./usePriceMappingDiffState";
 export * from "./PriceDiffControls";
 export * from "./PriceDiffPanes";
 export * from "./PriceListMappingDiffView";
-export * from "./panes";

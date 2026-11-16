@@ -3,10 +3,12 @@ import type { ServiceCatalogItem } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { BASELINE_PRICELIST_SERVICES } from "../../catalog/pricelist/servicePricelistPresets";
 import { syncPricelistItemsToCatalog } from "../catalogSyncHelper";
+import type { CreateServicePayload } from "../pricesTab/types";
 
 interface UseMobilePricesActionsParams {
+	// biome-ignore lint/suspicious/noExplicitAny: appLogic bag
 	appLogic: Record<string, any>;
-	rawCatalog: ServiceCatalogItem[];
+	rawCatalog: readonly ServiceCatalogItem[];
 }
 
 export function useMobilePricesActions({ appLogic, rawCatalog }: UseMobilePricesActionsParams) {
@@ -24,7 +26,7 @@ export function useMobilePricesActions({ appLogic, rawCatalog }: UseMobilePrices
 		else if (typeof loadClinicSettings === "function") await loadClinicSettings();
 	};
 
-	const handleSaveService = async (payload: any, serviceId?: string) => {
+	const handleSaveService = async (payload: CreateServicePayload, serviceId?: string) => {
 		try {
 			if (serviceId) {
 				if (typeof updateServiceCatalogItem === "function") await updateServiceCatalogItem(serviceId, payload);
@@ -34,8 +36,9 @@ export function useMobilePricesActions({ appLogic, rawCatalog }: UseMobilePrices
 				showToast(`Услуга «${payload.title}» добавлена в каталог`, "success");
 			}
 			await reload();
-		} catch (err: any) {
-			showToast(err?.message || "Не удалось сохранить услугу", "error");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось сохранить услугу";
+			showToast(msg, "error");
 			throw err;
 		}
 	};
@@ -45,8 +48,9 @@ export function useMobilePricesActions({ appLogic, rawCatalog }: UseMobilePrices
 			if (typeof deleteServiceCatalogItem === "function") await deleteServiceCatalogItem(serviceId);
 			showToast("Услуга удалена из каталога", "info");
 			await reload();
-		} catch (err: any) {
-			showToast(err?.message || "Не удалось удалить услугу", "error");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось удалить услугу";
+			showToast(msg, "error");
 			throw err;
 		}
 	};
@@ -57,14 +61,15 @@ export function useMobilePricesActions({ appLogic, rawCatalog }: UseMobilePrices
 		try {
 			await syncPricelistItemsToCatalog({
 				items: BASELINE_PRICELIST_SERVICES,
-				existingServices: rawCatalog,
+				existingServices: rawCatalog as ServiceCatalogItem[],
 				createServiceCatalogItem,
 				updateServiceCatalogItem,
 			});
 			await reload();
 			showToast(`Каталог наполнен: добавлено ${BASELINE_PRICELIST_SERVICES.length} типовых услуг`, "success");
-		} catch (err: any) {
-			showToast(err?.message || "Ошибка наполнения каталога", "error");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка наполнения каталога";
+			showToast(msg, "error");
 		} finally {
 			setIsSeeding(false);
 		}

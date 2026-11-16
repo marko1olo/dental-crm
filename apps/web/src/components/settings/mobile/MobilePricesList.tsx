@@ -1,5 +1,6 @@
 import React from "react";
 import { ChevronRight, Clock } from "lucide-react";
+import type { ServiceCatalogItem } from "@dental/shared";
 import { money } from "../../../AppHelpers";
 
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
@@ -17,9 +18,9 @@ const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
 };
 
 interface MobilePricesListProps {
-	services: any[];
+	services: readonly ServiceCatalogItem[];
 	serviceCategoryLabels: Record<string, string>;
-	onSelectService: (service: any) => void;
+	onSelectService: (service: ServiceCatalogItem) => void;
 }
 
 export const MobilePricesList: React.FC<MobilePricesListProps> = ({
@@ -30,8 +31,7 @@ export const MobilePricesList: React.FC<MobilePricesListProps> = ({
 	return (
 		<div className="rounded-[16px] bg-[var(--paper)] border border-[var(--line)] overflow-hidden divide-y divide-[var(--line-subtle)] shadow-xs">
 			{services.map((service) => {
-				const s = service as any;
-				const basePrice = s.basePriceRub ?? s.priceRub ?? 0;
+				const basePrice = service.basePriceRub ?? service.priceRub ?? (service.priceKopecks ? service.priceKopecks / 100 : 0);
 				return (
 					<div
 						key={service.id}
@@ -58,12 +58,12 @@ export const MobilePricesList: React.FC<MobilePricesListProps> = ({
 										Без кода
 									</span>
 								)}
-								{s.taxDeductible !== false && (
+								{service.taxDeductible !== false && (
 									<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 whitespace-nowrap">
 										Вычет
 									</span>
 								)}
-								{s.vatRate === "vat_20" ? (
+								{service.vatRate === "vat_20" ? (
 									<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 whitespace-nowrap">
 										НДС 20%
 									</span>

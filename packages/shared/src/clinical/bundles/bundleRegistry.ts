@@ -423,7 +423,7 @@ export function exportCustomizedBundleToCashier54Fz(
 	const toothNum = metadata.toothNumber !== undefined ? Number(metadata.toothNumber) || undefined : undefined;
 	const toothCodeStr = metadata.toothNumber !== undefined ? String(metadata.toothNumber) : undefined;
 	const receiptItems: Cashier54FzItemPayload[] = activeItems.map((item) => ({
-		name: `[${item.serviceCode || item.code804n}] ${item.title}${toothCodeStr ? ` (зуб ${toothCodeStr})` : ""}`,
+		name: `${item.title}${toothCodeStr ? ` (зуб ${toothCodeStr})` : ""}`,
 		code804n: item.code804n, serviceCode: item.serviceCode, priceKopecks: item.priceKopecks, quantity: 1, sumKopecks: item.priceKopecks,
 		taxRate: "none", paymentSubject: 4, paymentMethod: 4, toothNumber: toothNum, toothCode: toothCodeStr,
 	}));

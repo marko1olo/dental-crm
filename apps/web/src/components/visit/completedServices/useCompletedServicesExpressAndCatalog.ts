@@ -56,7 +56,7 @@ export function useCompletedServicesExpressAndCatalog({
 
 		const toothMsg = formatToothBadgeMsg(selectedTooth);
 		showToast(
-			`Услуга «[${service.code804n}] ${service.title}»${toothMsg} (${money(service.priceRub)}) внесена в карту и счёт`,
+			`Услуга «${service.title}»${toothMsg} (${money(service.priceRub)}) внесена в карту и счёт`,
 			"success",
 			3500,
 		);
@@ -90,7 +90,7 @@ export function useCompletedServicesExpressAndCatalog({
 
 		const toothMsg = formatToothBadgeMsg(selectedTooth);
 		showToast(
-			`Услуга «[${item.code}] ${item.title}»${toothMsg} (${money(item.priceRub)}) внесена в карту и счёт`,
+			`Услуга «${item.title}»${toothMsg} (${money(item.priceRub)}) внесена в карту и счёт`,
 			"success",
 			3500,
 		);

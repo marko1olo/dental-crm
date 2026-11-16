@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
+import type { DentalSpecialty, ServiceCatalogItem, ServiceCategory } from "@dental/shared";
 import { normalizeRubAmountInput } from "../../../rubAmountInput";
 import { rubToPriceInput } from "../pricelistEditorHelpers";
+import { normalizeCategoryToBackend } from "../../catalog/pricelistCatalogData";
+import type { CreateServicePayload } from "../pricesTab/types";
 
 interface UseMobilePriceDrawerFormParams {
 	isOpen: boolean;
-	service: any | null;
-	onSave: (servicePayload: any, serviceId?: string) => Promise<void>;
+	service: ServiceCatalogItem | null;
+	onSave: (servicePayload: CreateServicePayload, serviceId?: string) => Promise<void>;
 	onDelete?: ((serviceId: string) => Promise<void>) | undefined;
 	onClose: () => void;
 }
@@ -77,8 +80,8 @@ export function useMobilePriceDrawerForm({
 				title: title.trim(),
 				code: code.trim(),
 				basePriceRub,
-				category,
-				specialty,
+				category: normalizeCategoryToBackend(category) as ServiceCategory,
+				specialty: specialty as DentalSpecialty,
 				durationMinutes,
 				taxDeductible,
 				vatRate,

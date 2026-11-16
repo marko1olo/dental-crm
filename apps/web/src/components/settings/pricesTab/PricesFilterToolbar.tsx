@@ -1,6 +1,7 @@
 import {
 	ChevronDown,
 	Download,
+	Loader2,
 	Plus,
 	Printer,
 	Search,
@@ -155,14 +156,24 @@ export function PricesFilterToolbar({
 										type="button"
 										data-testid="pricelist-seed-standard-catalog-btn"
 										data-testid-alias="pricelist-seed-baseline-804n-btn"
-										disabled={isSeedingBaseline}
-										onClick={() => seedCatalog?.(false)}
-										className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-white text-[var(--teal-dark)] transition-all cursor-pointer flex items-center gap-2 group disabled:opacity-50"
+										onClick={() => {
+											if (!isSeedingBaseline) seedCatalog?.(false);
+										}}
+										className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft)] hover:bg-[var(--teal)] hover:text-white text-[var(--teal-dark)] transition-all cursor-pointer flex items-center gap-2 group ${
+											isSeedingBaseline ? "pointer-events-none opacity-70" : ""
+										}`}
 									>
-										<Sparkles
-											size={14}
-											className="shrink-0 text-[var(--teal)] group-hover:text-white"
-										/>
+										{isSeedingBaseline ? (
+											<Loader2
+												size={14}
+												className="shrink-0 text-[var(--teal)] animate-spin"
+											/>
+										) : (
+											<Sparkles
+												size={14}
+												className="shrink-0 text-[var(--teal)] group-hover:text-white"
+											/>
+										)}
 										<div className="flex flex-col min-w-0">
 											<span className="font-bold truncate">
 												{isSeedingBaseline

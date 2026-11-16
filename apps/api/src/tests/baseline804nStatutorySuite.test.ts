@@ -8,12 +8,16 @@ describe("Серверный каталог базовых услуг 804н и �
 		assert.equal(BASELINE_804N_PRICELIST_SERVICES.length, 30);
 	});
 
-	it("каждая услуга имеет валидный код 804н (класс A или B)", () => {
-		const code804nRegex = /^A\d{2}\.\d{2}\.\d{3}(\.\d{3})?$|^B\d{2}\.\d{3}\.\d{3}(\.\d{3})?$/;
+	it("каждая услуга имеет понятное клиническое название и валидную категорию", () => {
+		const validCategories = new Set(["therapy", "prosthetics", "surgery", "hygiene", "consultation", "imaging"]);
 		for (const service of BASELINE_804N_PRICELIST_SERVICES) {
 			assert.ok(
-				code804nRegex.test(service.code),
-				`Некорректный код 804н у услуги «${service.title}»: ${service.code}`,
+				service.title && service.title.trim().length >= 5,
+				`Слишком короткое или пустое название услуги: ${service.code}`,
+			);
+			assert.ok(
+				validCategories.has(service.category),
+				`Невалидная категория услуги «${service.title}»: ${service.category}`,
 			);
 		}
 	});

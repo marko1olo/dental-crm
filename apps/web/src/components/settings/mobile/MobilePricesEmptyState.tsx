@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 interface MobilePricesEmptyStateProps {
 	searchQuery: string;
@@ -41,12 +41,19 @@ export const MobilePricesEmptyState: React.FC<MobilePricesEmptyStateProps> = ({
 			) : (
 				<button
 					type="button"
-					disabled={isSeeding}
-					onClick={onSeedBaseline}
-					className="w-full min-h-[46px] h-11 px-4 rounded-xl text-[14px] font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-transform cursor-pointer disabled:opacity-50 mt-1"
+					onClick={() => {
+						if (!isSeeding) onSeedBaseline();
+					}}
+					className={`w-full min-h-[46px] h-11 px-4 rounded-xl text-[14px] font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-transform cursor-pointer mt-1 ${
+						isSeeding ? "pointer-events-none opacity-70" : ""
+					}`}
 					data-testid="btn-mobile-seed-baseline"
 				>
-					<Sparkles size={16} />
+					{isSeeding ? (
+						<Loader2 size={16} className="animate-spin" />
+					) : (
+						<Sparkles size={16} />
+					)}
 					<span>
 						{isSeeding ? "Наполнение каталога..." : "Заполнить прейскурант (30 услуг)"}
 					</span>

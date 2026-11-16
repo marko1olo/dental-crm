@@ -4,7 +4,7 @@ import type {
 	TabularImportAnalysis,
 } from "@dental/shared";
 import { useRef, useState } from "react";
-import type { IngestedMappingItem } from "../../catalog/mappingDiff/PriceListMappingDiffView";
+import type { IngestedMappingItem } from "../../catalog/mappingDiff/types";
 import { staffMutationHeaders } from "../staffMutationRequest";
 import type {
 	ImportResultSummary,
@@ -273,7 +273,7 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 				priceRub: r.priceRub,
 				priceKopecks: r.priceKopecks,
 				confidence: r.order804nCode ? 0.95 : 0.75,
-				confidenceKind: r.order804nCode ? "exact_code" : "medium_keyword",
+				confidenceKind: r.order804nCode ? "exact_code" : "medium_category",
 				matchedExistingServiceId: r.matchedExistingServiceId,
 				matchedExistingTitle: r.matchedExistingTitle,
 				matchedExistingPriceRub: r.matchedExistingPriceRub,

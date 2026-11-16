@@ -1,11 +1,12 @@
 import type React from "react";
 import { Edit3, Trash2 } from "lucide-react";
+import type { ServiceCatalogItem } from "@dental/shared";
 import { money } from "../../AppHelpers";
 import { sliceDomList } from "../../utils/domVirtualizationHelper";
 
 export interface SettingsPricesCategoryGroupProps {
 	readonly category: string;
-	readonly items: any[];
+	readonly items: readonly ServiceCatalogItem[];
 	readonly categoryLimits: Record<string, number>;
 	readonly setCategoryLimits: React.Dispatch<
 		React.SetStateAction<Record<string, number>>
@@ -13,7 +14,7 @@ export interface SettingsPricesCategoryGroupProps {
 	readonly serviceCategoryLabels: Record<string, string>;
 	readonly specialtyLabels: Record<string, string>;
 	readonly deletingServiceId: string | null;
-	readonly onEditService: (item: any) => void;
+	readonly onEditService: (item: ServiceCatalogItem) => void;
 	readonly onDeleteService: (id: string) => void;
 }
 

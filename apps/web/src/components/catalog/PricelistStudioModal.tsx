@@ -74,8 +74,9 @@ function mapSpecialtyToDoctorSpecialty(spec: DentalSpecialty): DoctorSpecialty {
 		case "pediatric":
 		case "hygienist":
 		case "radiologist":
-		case "anesthesiologist":
 			return spec;
+		case "implantologist":
+			return "surgeon";
 		case "periodontist":
 			return "therapist";
 		case "universal":
@@ -87,7 +88,7 @@ function mapSpecialtyToDoctorSpecialty(spec: DentalSpecialty): DoctorSpecialty {
 export type PricelistInputItem =
 	| PricelistStudioItem
 	| ServicePricelistItem
-	| (Partial<PricelistStudioItem> & {
+	| (Partial<PricelistStudioItem> & Partial<ServicePricelistItem> & {
 			readonly id?: string | undefined;
 			readonly title?: string | undefined;
 			readonly code?: string | undefined;
@@ -95,6 +96,9 @@ export type PricelistInputItem =
 			readonly priceRub?: number | undefined;
 			readonly basePriceRub?: number | undefined;
 			readonly durationMin?: number | undefined;
+			readonly materialsCostRub?: number | undefined;
+			readonly costRub?: number | undefined;
+			readonly active?: boolean | undefined;
 	  });
 
 export interface PricelistStudioModalProps {
@@ -147,39 +151,47 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 	onApplyBundleToVisit,
 	onAddServiceToInvoice,
 	clinicName = "Стоматологическая клиника «DENTE»",
+	clinicAddress,
+	clinicPhone,
+	clinicLicense,
+	chiefDoctorName,
 }) => {
 	const [items, setItems] = useState<readonly PricelistStudioItem[]>(() => {
 		if (initialItems && initialItems.length > 0) {
-			return initialItems.map((item, idx) => ({
-				id: item.id || `srv-${idx}`,
-				code: item.code || item.serviceCode || item.regulatoryCode || `ПОЗ-${idx + 1}`,
-				serviceCode: item.serviceCode || item.code || `ПОЗ-${idx + 1}`,
-				regulatoryCode: item.regulatoryCode || item.code,
-				title: item.title || item.commercialTitle || "Стоматологическая услуга",
-				category: normalizeCategoryFromBackend(item.category),
-				priceKopecks:
-					typeof item.priceKopecks === "number" && Number.isFinite(item.priceKopecks)
-						? Math.round(item.priceKopecks)
-						: typeof item.priceRub === "number" && Number.isFinite(item.priceRub)
-							? Math.round(item.priceRub * 100)
-							: typeof item.basePriceRub === "number" && Number.isFinite(item.basePriceRub)
-								? Math.round(item.basePriceRub * 100)
-								: 350000,
-				costKopecks:
-					typeof item.costKopecks === "number" && Number.isFinite(item.costKopecks)
-						? Math.round(item.costKopecks)
-						: typeof item.materialCostRub === "number" && Number.isFinite(item.materialCostRub)
-							? Math.round(item.materialCostRub * 100)
-							: typeof item.materialsCostRub === "number" && Number.isFinite(item.materialsCostRub)
-								? Math.round(item.materialsCostRub * 100)
-								: typeof item.costRub === "number" && Number.isFinite(item.costRub)
-									? Math.round(item.costRub * 100)
-									: 50000,
-				durationMin: item.durationMin || item.estimatedDurationMin || 30,
-				isActive: (item.active !== undefined ? item.active !== false : true) && item.isActive !== false,
-				tags: item.tags || [],
-				isBundle: item.isBundle || false,
-			}));
+			return initialItems.map((rawItem, idx) => {
+				// biome-ignore lint/suspicious/noExplicitAny: polymorphic input mapper
+				const item = rawItem as any;
+				return {
+					id: item.id || `srv-${idx}`,
+					code: item.code || item.serviceCode || item.regulatoryCode || `ПОЗ-${idx + 1}`,
+					serviceCode: item.serviceCode || item.code || `ПОЗ-${idx + 1}`,
+					regulatoryCode: item.regulatoryCode || item.code,
+					title: item.title || item.commercialTitle || "Стоматологическая услуга",
+					category: normalizeCategoryFromBackend(item.category),
+					priceKopecks:
+						typeof item.priceKopecks === "number" && Number.isFinite(item.priceKopecks)
+							? Math.round(item.priceKopecks)
+							: typeof item.priceRub === "number" && Number.isFinite(item.priceRub)
+								? Math.round(item.priceRub * 100)
+								: typeof item.basePriceRub === "number" && Number.isFinite(item.basePriceRub)
+									? Math.round(item.basePriceRub * 100)
+									: 350000,
+					costKopecks:
+						typeof item.costKopecks === "number" && Number.isFinite(item.costKopecks)
+							? Math.round(item.costKopecks)
+							: typeof item.materialCostRub === "number" && Number.isFinite(item.materialCostRub)
+								? Math.round(item.materialCostRub * 100)
+								: typeof item.materialsCostRub === "number" && Number.isFinite(item.materialsCostRub)
+									? Math.round(item.materialsCostRub * 100)
+									: typeof item.costRub === "number" && Number.isFinite(item.costRub)
+										? Math.round(item.costRub * 100)
+										: 50000,
+					durationMin: item.durationMin || item.estimatedDurationMin || 30,
+					isActive: (item.active !== undefined ? item.active !== false : true) && item.isActive !== false,
+					tags: item.tags || [],
+					isBundle: item.isBundle || false,
+				};
+			});
 		}
 		return loadCanonicalPricelist();
 	});

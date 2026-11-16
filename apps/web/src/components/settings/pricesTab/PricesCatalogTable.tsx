@@ -1,4 +1,4 @@
-import { FolderTree, Plus, Sparkles, UploadCloud } from "lucide-react";
+import { FolderTree, Loader2, Plus, Sparkles, UploadCloud } from "lucide-react";
 import type React from "react";
 import { SettingsPricesCategoryGroup } from "../SettingsPricesCategoryGroup";
 import type { PricesCatalogTableProps } from "./types";
@@ -75,11 +75,18 @@ export function PricesCatalogTable({
 								data-testid="pricelist-seed-standard-catalog-btn"
 								data-testid-alias="pricelist-seed-baseline-804n-btn"
 								title="Заполнить рекомендованный прейскурант (30 базовых услуг)"
-								disabled={isSeedingBaseline}
-								onClick={onSeedBaseline}
-								className="primary-button min-h-[36px] w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+								onClick={() => {
+									if (!isSeedingBaseline) onSeedBaseline?.();
+								}}
+								className={`primary-button min-h-[36px] w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all ${
+									isSeedingBaseline ? "pointer-events-none opacity-70" : ""
+								}`}
 							>
-								<Sparkles size={15} className="shrink-0" />
+								{isSeedingBaseline ? (
+									<Loader2 size={15} className="shrink-0 animate-spin" />
+								) : (
+									<Sparkles size={15} className="shrink-0" />
+								)}
 								<span>
 									{isSeedingBaseline
 										? "Наполнение каталога..."

@@ -54,7 +54,7 @@ export const QuickServiceBundlesSection: React.FC<
 						title={b.services
 							.map(
 								(s) =>
-									`• [${s.code804n}] ${s.title} (${money(s.priceRub)})`,
+									`• ${s.title} (${money(s.priceRub)})`,
 							)
 							.join("\n")}
 					>

@@ -9,6 +9,8 @@ import {
 	useSettingsPricesLogic,
 } from "./pricesTab";
 
+import type { CreateServicePayload } from "./pricesTab/types";
+
 type SettingsPricesTabContract = {
 	readonly dashboard?: unknown;
 	readonly pricelistSourceKindLabels?: Record<string, string> | undefined;
@@ -31,9 +33,9 @@ type SettingsPricesTabContract = {
 	readonly pricelistParserModeLabels?: Record<string, string> | undefined;
 	readonly serviceCategoryLabels?: Record<string, string> | undefined;
 	readonly specialtyLabels?: Record<string, string> | undefined;
-	readonly createServiceCatalogItem?: ((item: any) => Promise<any> | void) | undefined;
-	readonly updateServiceCatalogItem?: ((id: string, item: any) => Promise<any> | void) | undefined;
-	readonly deleteServiceCatalogItem?: ((id: string) => Promise<any> | void) | undefined;
+	readonly createServiceCatalogItem?: ((payload: CreateServicePayload) => Promise<unknown>) | undefined;
+	readonly updateServiceCatalogItem?: ((id: string, payload: Partial<CreateServicePayload>) => Promise<unknown>) | undefined;
+	readonly deleteServiceCatalogItem?: ((id: string) => Promise<unknown>) | undefined;
 };
 
 export function SettingsPricesTab() {
@@ -68,7 +70,7 @@ export function SettingsPricesTab() {
 	} = mergedProps;
 
 	const prices = useSettingsPricesLogic({
-		dashboard, serviceCategoryLabels, specialtyLabels,
+		dashboard: dashboard as any, serviceCategoryLabels, specialtyLabels,
 		createServiceCatalogItem, updateServiceCatalogItem, deleteServiceCatalogItem,
 	});
 
@@ -86,8 +88,8 @@ export function SettingsPricesTab() {
 			{prices.activeTab === "catalog" && (
 				<PricesCatalogSection
 					prices={prices}
-					serviceCategoryLabels={serviceCategoryLabels}
-					specialtyLabels={specialtyLabels}
+					serviceCategoryLabels={serviceCategoryLabels || {}}
+					specialtyLabels={specialtyLabels || {}}
 				/>
 			)}
 

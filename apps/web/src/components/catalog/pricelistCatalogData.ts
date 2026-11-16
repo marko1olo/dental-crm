@@ -790,7 +790,7 @@ export function getMatchedTag(item: PricelistStudioItem, query: string): string 
 }
 
 /**
- * Поиск и фильтрация услуг за 1 клик (по названию, коду и синонимам/клиническим тегам)
+ * Поиск и фильтрация услуг (по названию, коду и синонимам/клиническим тегам)
  */
 export function filterPricelist(
 	items: readonly PricelistStudioItem[],

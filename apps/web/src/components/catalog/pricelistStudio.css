@@ -158,7 +158,7 @@
 }
 
 .pricelist-btn-primary:hover {
-	background: #0f766e;
+	background: var(--teal-dark, #0f766e);
 	color: #ffffff;
 }
 
@@ -175,7 +175,7 @@
 	flex-wrap: wrap;
 }
 
-/* Быстрые клинические комплексы «Под ключ» в 1 клик (Мандаты 8e, 8n) */
+/* Готовые клинические комплексы «Под ключ» (Мандаты 8e, 8n) */
 .pricelist-quick-bundles-strip {
 	display: flex;
 	align-items: center;
@@ -427,7 +427,7 @@
 	margin-top: 2px;
 }
 
-/* Инлайн редактирование цены за 1 клик — моноширинный табличный шрифт без клиппинга */
+/* Инлайн редактирование цены — моноширинный табличный шрифт без клиппинга */
 .pricelist-price-cell {
 	display: inline-flex;
 	align-items: center;
@@ -843,30 +843,30 @@
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn-primary:hover,
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn.pricelist-btn-primary:hover {
-	background: #0f766e !important;
-	border-color: #0f766e !important;
+	background: var(--teal-dark, #0f766e) !important;
+	border-color: var(--teal-dark, #0f766e) !important;
 	color: #ffffff !important;
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-search-input {
 	background: rgba(255, 255, 255, 0.04);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-drag-handle {
-	background: #475569;
+	background: var(--line, #475569);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-chip-btn {
 	background: rgba(255, 255, 255, 0.05);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-chip-btn.active {
 	background: rgba(13, 148, 136, 0.18);
-	color: #2dd4bf;
+	color: var(--teal-light, #2dd4bf);
 	border-color: var(--teal, #14b8a6);
 }
 
@@ -876,7 +876,7 @@
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-floating-bottom-bar {
-	background: #0f172a;
+	background: var(--paper, #0f172a);
 	border-color: var(--line, #334155);
 }
 
@@ -886,15 +886,15 @@
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-price-input {
-	background: #0f172a;
-	color: #f8fafc;
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
 	border-color: var(--teal, #14b8a6);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-quick-bundle-chip {
 	background: rgba(255, 255, 255, 0.05);
 	border-color: var(--line, #334155);
-	color: #f8fafc;
+	color: var(--ink, #f8fafc);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-quick-bundle-chip:hover {
@@ -903,18 +903,18 @@
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-form-drawer {
-	background: #0f172a;
-	border-color: #334155;
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-input {
-	background: #1e293b;
-	border-color: #334155;
-	color: #f8fafc;
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-input:focus {
-	background: #0f172a;
+	background: var(--paper, #0f172a);
 	border-color: var(--teal, #14b8a6);
 }
 
@@ -947,7 +947,7 @@
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-tag-match-chip {
 	background: rgba(20, 184, 166, 0.18);
-	color: #2dd4bf;
+	color: var(--teal-light, #2dd4bf);
 	border-color: rgba(20, 184, 166, 0.35);
 }
 
