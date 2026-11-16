@@ -31,38 +31,43 @@ export async function handleWhatsAppWebhook(
 	}
 	// Meta Cloud API format
 	else if (Array.isArray(body.entry)) {
-		const entry = body.entry[0] as
-			| {
-					changes?: Array<{
-						value?: {
-							messages?: Array<{
-								id: string;
-								from: string;
-								text?: { body?: string };
-								interactive?: { button_reply?: { id: string } };
-							}>;
-							contacts?: Array<{ profile?: { name?: string } }>;
-						};
-					}>;
-			  }
-			| undefined;
+		for (const entryRaw of body.entry) {
+			const entry = entryRaw as
+				| {
+						changes?: Array<{
+							value?: {
+								messages?: Array<{
+									id: string;
+									from: string;
+									text?: { body?: string };
+									interactive?: { button_reply?: { id: string } };
+								}>;
+								contacts?: Array<{ profile?: { name?: string } }>;
+							};
+						}>;
+				  }
+				| undefined;
 
-		const msg = entry?.changes?.[0]?.value?.messages?.[0];
-		const contact = entry?.changes?.[0]?.value?.contacts?.[0];
-
-		if (msg) {
-			inbound = {
-				channel: "whatsapp",
-				organizationId,
-				botConfigId: "default",
-				senderId: msg.from,
-				senderName: contact?.profile?.name || null,
-				messageId: msg.id,
-				text: msg.text?.body || "",
-				payload: msg.interactive?.button_reply?.id || null,
-				timestamp: Date.now(),
-				rawEvent: body,
-			};
+			for (const change of entry?.changes || []) {
+				const val = change?.value;
+				const contacts = val?.contacts || [];
+				const contactName = contacts[0]?.profile?.name || null;
+				for (const msg of val?.messages || []) {
+					const inboundMsg: BotInboundMessage = {
+						channel: "whatsapp",
+						organizationId,
+						botConfigId: "default",
+						senderId: msg.from,
+						senderName: contactName,
+						messageId: msg.id,
+						text: msg.text?.body || "",
+						payload: msg.interactive?.button_reply?.id || null,
+						timestamp: Date.now(),
+						rawEvent: body,
+					};
+					await omnichannelBotEngine.dispatchInboundMessage(inboundMsg);
+				}
+			}
 		}
 	}
 

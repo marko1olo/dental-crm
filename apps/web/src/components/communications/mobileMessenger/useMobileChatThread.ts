@@ -4,6 +4,40 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import { showToast } from "../../GlobalToast";
 import type { ChatChannel, MobileChatMessageItem, MobileCommunicationsMessengerProps } from "./types";
 
+interface RawMobileApiMessage {
+	id?: string;
+	message?: string;
+	bodyText?: string;
+	direction?: string;
+	channel?: string;
+	createdAt?: string;
+	status?: string;
+}
+
+interface RawCommunicationEvent {
+	id?: string;
+	patientId?: string;
+	message?: string;
+	direction?: string;
+	channel?: string;
+	createdAt?: string;
+	status?: string;
+}
+
+function parseChannel(rawChannel?: string): ChatChannel {
+	if (rawChannel === "telegram" || rawChannel === "sms" || rawChannel === "max") {
+		return rawChannel;
+	}
+	return "whatsapp";
+}
+
+function parseMessageStatus(rawStatus?: string): "delivered" | "read" | "failed" | "sent" {
+	if (rawStatus === "failed") return "failed";
+	if (rawStatus === "read") return "read";
+	if (rawStatus === "sent") return "sent";
+	return "delivered";
+}
+
 export function useMobileChatThread(
 	selectedPatientId: string | null,
 	activeChannel: ChatChannel,
@@ -53,30 +87,49 @@ export function useMobileChatThread(
 				headers: denteAdminSecretRequestHeaders(),
 			});
 			if (res.ok) {
-				const data = await res.json();
-				const list = Array.isArray(data) ? data : Array.isArray(data.messages) ? data.messages : [];
+				const data = (await res.json()) as
+					| RawMobileApiMessage[]
+					| { messages?: RawMobileApiMessage[] };
+				const list = (Array.isArray(data)
+					? data
+					: Array.isArray(data.messages)
+						? data.messages
+						: []) as RawMobileApiMessage[];
 				if (list.length > 0) {
-					setChatMessages(list.map((m: any, idx: number) => ({
-						id: m.id || `msg-${idx}`,
-						patientId: pId,
-						text: m.message || m.bodyText || "",
-						direction: m.direction === "inbound" ? "inbound" : "outbound",
-						channel: (m.channel as any) || "whatsapp",
-						timestamp: m.createdAt || new Date().toISOString(),
-						status: m.direction === "inbound" ? undefined : (m.status as any) || "delivered",
-					})));
+					setChatMessages(
+						list.map((m, idx: number) => ({
+							id: m.id || `msg-${idx}`,
+							patientId: pId,
+							text: m.message || m.bodyText || "",
+							direction: m.direction === "inbound" ? "inbound" : "outbound",
+							channel: parseChannel(m.channel),
+							timestamp: m.createdAt || new Date().toISOString(),
+							status:
+								m.direction === "inbound"
+									? undefined
+									: parseMessageStatus(m.status),
+						})),
+					);
 					return;
 				}
 			}
 		} catch { /* fallback */ }
 
-		const matching = (dashboard?.communicationEvents ?? []).filter((ev: any) => ev.patientId === pId);
+		const events = (dashboard?.communicationEvents ??
+			[]) as RawCommunicationEvent[];
+		const matching = events.filter((ev) => ev.patientId === pId);
 		if (matching.length > 0) {
-			setChatMessages(matching.map((ev: any, idx: number) => ({
-				id: ev.id || `ev-${idx}`, patientId: pId, text: ev.message || "Сообщение в чате",
-				direction: ev.direction === "inbound" ? "inbound" : "outbound", channel: (ev.channel as any) || "whatsapp",
-				timestamp: ev.createdAt, status: ev.status === "failed" ? "failed" : "read",
-			})));
+			setChatMessages(
+				matching.map((ev, idx: number) => ({
+					id: ev.id || `ev-${idx}`,
+					patientId: pId,
+					text: ev.message || "Сообщение в чате",
+					direction: ev.direction === "inbound" ? "inbound" : "outbound",
+					channel: parseChannel(ev.channel),
+					timestamp: ev.createdAt || new Date().toISOString(),
+					status: ev.status === "failed" ? "failed" : "read",
+				})),
+			);
 		} else if (isDemoShowcaseMode()) {
 			const now = Date.now();
 			setChatMessages([

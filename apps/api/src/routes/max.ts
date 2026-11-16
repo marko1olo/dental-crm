@@ -7,7 +7,6 @@
  *
  * Docs: https://business.max.ru (requires business account login)
  */
-import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -26,6 +25,7 @@ import {
 } from "../db/schema.js";
 import { sendMaxTextMessage } from "../maxTransport.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
+import { OmnichannelTokenVault } from "../services/bots/OmnichannelTokenVault.js";
 import { resolveRecipientAddress } from "../services/communications/dispatch/channelAdapters.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
 import { wsBroker } from "../services/websocketBroker.js";
@@ -53,7 +53,7 @@ const updateMaxConfigSchema = z.object({
 });
 
 function maskToken(raw: string): string {
-	return createHash("sha256").update(raw).digest("hex").slice(0, 12);
+	return OmnichannelTokenVault.maskToken(raw);
 }
 
 function parseJsonSafe<T>(value: unknown, fallback: T): T {
@@ -173,8 +173,13 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			};
 
 			if (input.botId !== undefined) updateValues.botId = input.botId;
-			if (input.apiToken)
-				updateValues.tokenSecretRef = maskToken(input.apiToken);
+			if (input.apiToken) {
+				const encToken = OmnichannelTokenVault.isEncrypted(input.apiToken)
+					? input.apiToken
+					: OmnichannelTokenVault.encrypt(input.apiToken, orgId);
+				updateValues.maxBotToken = encToken;
+				updateValues.tokenSecretRef = encToken;
+			}
 			if (input.webhookUrl !== undefined)
 				updateValues.webhookUrl = input.webhookUrl;
 			if (input.enabledFeatures !== undefined)
@@ -183,23 +188,34 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 				);
 			if (input.staffRouting !== undefined)
 				updateValues.staffRoutingJson = JSON.stringify(input.staffRouting);
-			if (input.isActive !== undefined) updateValues.isActive = input.isActive;
+			if (input.isActive !== undefined) {
+				updateValues.isActive = input.isActive;
+				updateValues.isEnabled = input.isActive;
+			}
 
 			await db
 				.update(denteMaxBotConfigs)
 				.set(updateValues)
 				.where(eq(denteMaxBotConfigs.organizationId, orgId));
 		} else {
+			const encToken = input.apiToken
+				? OmnichannelTokenVault.isEncrypted(input.apiToken)
+					? input.apiToken
+					: OmnichannelTokenVault.encrypt(input.apiToken, orgId)
+				: null;
+
 			await db.insert(denteMaxBotConfigs).values({
 				organizationId: orgId,
 				botId: input.botId ?? null,
-				tokenSecretRef: input.apiToken ? maskToken(input.apiToken) : null,
+				maxBotToken: encToken,
+				tokenSecretRef: encToken,
 				webhookUrl: input.webhookUrl ?? null,
 				enabledFeaturesJson: JSON.stringify(input.enabledFeatures ?? []),
 				staffRoutingJson: JSON.stringify(
 					input.staffRouting ?? { defaultUserId: null, rules: [] },
 				),
 				isActive: input.isActive ?? false,
+				isEnabled: input.isActive ?? false,
 			});
 		}
 
@@ -224,7 +240,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			.where(eq(denteMaxBotConfigs.organizationId, orgId))
 			.limit(1);
 
-		if (!config?.botId || !config.tokenSecretRef) {
+		if (!config?.botId || (!config.tokenSecretRef && !config.maxBotToken)) {
 			return {
 				channel: "max",
 				connected: false,
@@ -447,10 +463,19 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			});
 		}
 
-		if (!config.maxBotToken) {
+		const rawStoredToken = config.maxBotToken || config.tokenSecretRef;
+		if (!rawStoredToken) {
 			return reply.code(400).send({
 				error: "MaxTokenMissing",
 				message: "В конфигурации MAX не указан токен бота.",
+			});
+		}
+
+		const botToken = OmnichannelTokenVault.resolveToken(rawStoredToken, orgId);
+		if (!botToken) {
+			return reply.code(400).send({
+				error: "MaxTokenInvalid",
+				message: "Не удалось расшифровать токен бота MAX.",
 			});
 		}
 
@@ -467,7 +492,7 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 		}
 
 		const sendResult = await sendMaxTextMessage({
-			botToken: config.maxBotToken,
+			botToken,
 			recipient: { kind: "chat", id: recipientAddress },
 			text: message,
 		});

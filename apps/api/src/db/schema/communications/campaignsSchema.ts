@@ -4,6 +4,7 @@ import {
 	index,
 	integer,
 	jsonb,
+	pgEnum,
 	pgTable,
 	text,
 	timestamp,
@@ -212,6 +213,48 @@ export const outgoingNotifications = pgTable(
 	}),
 );
 
+export const communicationCampaignStatus = pgEnum("communication_campaign_status", [
+	"draft",
+	"scheduled",
+	"running",
+	"completed",
+	"cancelled",
+]);
+
+export const communicationCampaigns = pgTable(
+	"communication_campaigns",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		clinicId: uuid("clinic_id").references(() => clinics.id),
+		title: text("title").notNull(),
+		templateId: uuid("template_id").references(() => communicationTemplates.id),
+		channel: communicationChannel("channel").notNull(),
+		scope: communicationConsentScope("scope").notNull().default("marketing"),
+		status: communicationCampaignStatus("status").notNull().default("draft"),
+		audienceJson: text("audience_json").notNull().default("{}"),
+		audienceSnapshotJson: text("audience_snapshot_json"),
+		scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+		launchedAt: timestamp("launched_at", { withTimezone: true }),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createdByUserId: uuid("created_by_user_id").references(() => users.id),
+		launchedByUserId: uuid("launched_by_user_id").references(() => users.id),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(table) => ({
+		campaignOrgCreatedIdx: index(
+			"communication_campaigns_org_created_idx",
+		).on(table.organizationId, table.createdAt),
+	}),
+);
+
 export const communicationOutbox = pgTable(
 	"communication_outbox",
 	{
@@ -223,7 +266,9 @@ export const communicationOutbox = pgTable(
 		patientId: uuid("patient_id").references(() => patients.id),
 		taskId: uuid("task_id").references(() => communicationTasks.id),
 		templateId: uuid("template_id").references(() => communicationTemplates.id),
-		campaignId: uuid("campaign_id"),
+		campaignId: uuid("campaign_id").references(
+			() => communicationCampaigns.id,
+		),
 		channel: communicationChannel("channel").notNull(),
 		intent: communicationIntent("intent").notNull(),
 		scope: communicationConsentScope("scope").notNull().default("service"),

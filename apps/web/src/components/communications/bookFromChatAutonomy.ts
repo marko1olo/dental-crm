@@ -16,18 +16,30 @@ export interface ChatPatientBookingInfo {
 	reason?: string | undefined;
 }
 
+export interface ChatBookingDashboardContext {
+	todayIso?: string;
+	clinicSettings?: {
+		staff?: Array<{ id: string; role?: string; fullName?: string }>;
+		chairs?: Array<{ id: string; name?: string }>;
+	};
+}
+
 export function executeBookAppointmentFromChat(
 	patient: ChatPatientBookingInfo,
-	dashboard?: any,
+	dashboard?: ChatBookingDashboardContext | null,
 ): void {
 	if (!patient.fullName && !patient.phone) {
 		showToast("Не удалось определить данные пациента для записи", "warning");
 		return;
 	}
 
-	const todayIso = dashboard?.todayIso || new Date().toISOString().split("T")[0]!;
-	const defaultDoctorId = dashboard?.clinicSettings?.staff?.find((s: any) => s.role === "doctor")?.id || "";
-	const defaultChairId = dashboard?.clinicSettings?.chairs?.[0]?.id || "";
+	const todayIso =
+		dashboard?.todayIso ?? new Date().toISOString().slice(0, 10);
+	const defaultDoctorId =
+		dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor")?.id ??
+		"";
+	const defaultChairId =
+		dashboard?.clinicSettings?.chairs?.[0]?.id ?? "";
 	const reason = patient.reason?.trim() || "Запись из чата мессенджера";
 
 	const slotInfo = {

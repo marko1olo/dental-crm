@@ -5,11 +5,14 @@
  * appointment reminders, post-operative care recommendations, treatment plan invoices).
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { denteWhatsappBotConfigs } from "../../db/schema.js";
+import {
+	communicationTemplates,
+	denteWhatsappBotConfigs,
+} from "../../db/schema.js";
 import type { WhatsAppTemplateDefinition } from "./types.js";
 
 export const DEFAULT_APPROVED_TEMPLATES: WhatsAppTemplateDefinition[] = [
@@ -70,13 +73,45 @@ export async function registerTemplateManagerRoutes(
 			.where(eq(denteWhatsappBotConfigs.organizationId, orgId))
 			.limit(1);
 
-		// Suppress unused variable warning while keeping query intact for DB verification
-		void config;
+		// Synchronize with clinic templates from PostgreSQL communicationTemplates
+		const customTemplates = await db
+			.select({
+				id: communicationTemplates.id,
+				title: communicationTemplates.title,
+				intent: communicationTemplates.intent,
+				isActive: communicationTemplates.isActive,
+			})
+			.from(communicationTemplates)
+			.where(
+				and(
+					eq(communicationTemplates.organizationId, orgId),
+					eq(communicationTemplates.channel, "whatsapp"),
+				),
+			);
+
+		const dbTemplates: WhatsAppTemplateDefinition[] = customTemplates.map((t) => ({
+			name: t.title.toLowerCase().replace(/[^a-z0-9_]/g, "_") || "template",
+			language: "ru",
+			status: t.isActive ? "approved" : "rejected",
+			category: t.intent === "recall" ? "MARKETING" : "UTILITY",
+		}));
+
+		const templateMap = new Map<string, WhatsAppTemplateDefinition>();
+		for (const tmpl of DEFAULT_APPROVED_TEMPLATES) {
+			templateMap.set(tmpl.name, tmpl);
+		}
+		for (const tmpl of dbTemplates) {
+			templateMap.set(tmpl.name, tmpl);
+		}
+
+		const mergedTemplates = Array.from(templateMap.values());
 
 		return {
 			ok: true,
-			data: DEFAULT_APPROVED_TEMPLATES,
+			data: mergedTemplates,
+			count: mergedTemplates.length,
 			syncedAt: new Date().toISOString(),
+			wabaConnected: Boolean(config?.isActive),
 		};
 	});
 }

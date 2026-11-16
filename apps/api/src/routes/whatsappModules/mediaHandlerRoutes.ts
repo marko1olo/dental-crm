@@ -6,9 +6,15 @@
  * and isolates tenant media storage.
  */
 
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import { db } from "../../db/client.js";
+import { attachments } from "../../db/schema.js";
+import { UPLOADS_DIR } from "../fileModules/common.js";
 import {
 	ALLOWED_WHATSAPP_MEDIA_TYPES,
 	type WhatsAppAllowedMediaType,
@@ -105,15 +111,57 @@ export async function registerMediaHandlerRoutes(
 			};
 		}
 
+		await fs.mkdir(UPLOADS_DIR, { recursive: true });
+
+		const uniqueSuffix = crypto.randomUUID();
+		const rawExt =
+			path.extname(fileName) ||
+			(mimeType === "application/pdf"
+				? ".pdf"
+				: mimeType === "image/png"
+					? ".png"
+					: mimeType === "image/webp"
+						? ".webp"
+						: ".jpg");
+		const safeBase = path
+			.basename(fileName, rawExt)
+			.replace(/[^a-zA-Z0-9.-]/g, "_");
+		const storageFilename = `${uniqueSuffix}-${safeBase}${rawExt}`;
+		const storagePath = path.join(UPLOADS_DIR, storageFilename);
+
+		const sha256 = crypto.createHash("sha256").update(buffer).digest("hex");
+		await fs.writeFile(storagePath, buffer);
+
+		const [attachment] = await db
+			.insert(attachments)
+			.values({
+				organizationId: orgId,
+				patientId,
+				fileName,
+				mimeType,
+				storagePath: storageFilename,
+				sha256,
+			})
+			.returning();
+
+		if (!attachment) {
+			reply.code(500);
+			return {
+				error: "AttachmentSaveFailed",
+				message: "Не удалось сохранить медиафайл на сервере.",
+			};
+		}
+
 		return {
 			ok: true,
-			mediaId: `wamid.media.${Date.now()}`,
+			mediaId: attachment.id,
 			patientId,
-			fileName,
-			mimeType,
+			fileName: attachment.fileName,
+			mimeType: attachment.mimeType,
 			bytes: buffer.length,
+			mediaUrl: `/api/attachments/${attachment.id}/download`,
 			caption: caption ?? null,
-			message: "Медиафайл проверен и подготовлен к отправке.",
+			message: "Медиафайл сохранен и подготовлен к отправке.",
 		};
 	});
 }

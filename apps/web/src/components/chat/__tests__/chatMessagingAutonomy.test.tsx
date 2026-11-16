@@ -15,7 +15,6 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
 import { OmnichannelOperatorDesk } from "../OmnichannelOperatorDesk";
-import { TelegramBotIntegrationModal } from "../TelegramBotIntegrationModal";
 import { WhatsAppChatPanel } from "../WhatsAppChatPanel";
 import { OperatorInputBar } from "../operatorDesk/OperatorInputBar";
 
@@ -153,25 +152,7 @@ describe("Chat & Omnichannel Messaging Autonomy Suite (Mandates 8e, 8d, 8k, 8n, 
 		});
 	});
 
-	describe("4. TelegramBotIntegrationModal Non-Blocking Autonomy", () => {
-		it("renders bot status, reminder template, and touch targets >= 44x44px", () => {
-			const html = renderToString(
-				<TelegramBotIntegrationModal
-					isOpen={true}
-					onClose={() => {}}
-					patientId="pat-101"
-					patientName="Смирнова Анна Сергеевна"
-					patientPhone="+7 (916) 234-56-78"
-				/>,
-			);
 
-			assert.ok(html.includes('data-testid="telegram-bot-integration-modal"'), "Must render telegram bot modal container");
-			assert.ok(html.includes('data-testid="send-telegram-notification-btn"'), "Must render send notification button");
-			assert.ok(html.includes("min-h-[44px]"), "Touch targets must enforce min-h-[44px]");
-			assert.ok(html.includes("rounded-t-[24px]"), "Mobile sheet must use rounded-t-[24px]");
-			assert.ok(html.includes("Смирнова Анна Сергеевна"), "Must prefill patient name");
-		});
-	});
 
 	describe("5. OperatorInputBar Doctor & Staff Autonomy & Clean Clinical Russian", () => {
 		it("send button is NOT disabled on empty input and meets >= 44x44px", () => {

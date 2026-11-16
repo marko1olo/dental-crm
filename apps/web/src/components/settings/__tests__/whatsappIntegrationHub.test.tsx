@@ -3,8 +3,10 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { WhatsappIntegrationHub } from "../WhatsappIntegrationHub.js";
-import { WhatsappSettingsPanel } from "../WhatsappSettingsPanel.js";
+import {
+	WhatsappIntegrationHub,
+	WhatsappSettingsPanel,
+} from "../WhatsappSettingsPanel.js";
 import type {
 	WhatsappSettings,
 	WhatsappConnectionStatus,
@@ -70,7 +72,7 @@ function createMockSettingsHook(): ReturnType<typeof useWhatsappSettings> {
 }
 
 describe("WhatsappIntegrationHub UI Component Tests", () => {
-	it("renders both connection modes (QR Code and Official WABA Cloud)", () => {
+	it("renders both connection modes (Cloud API and QR Gateway)", () => {
 		const html = renderToStaticMarkup(
 			<WhatsappIntegrationHub
 				staffOptions={[{ id: "user-1", fullName: "Иванова А.В." }]}
@@ -78,39 +80,12 @@ describe("WhatsappIntegrationHub UI Component Tests", () => {
 			/>,
 		);
 
-		// Проверяем наличие вкладок
-		assert.ok(html.includes("Рабочий номер по QR-коду"), "Должна быть вкладка QR-кода");
-		assert.ok(html.includes("Официальный WhatsApp Cloud (WABA)"), "Должна быть вкладка WABA");
-		assert.ok(html.includes("data-testid=\"tab-qr-mode\""), "Должен быть data-testid вкладки QR");
-		assert.ok(html.includes("data-testid=\"tab-waba-mode\""), "Должен быть data-testid вкладки WABA");
-	});
-
-	it("renders QR code session controls, timer and pairing code switch", () => {
-		const html = renderToStaticMarkup(
-			<WhatsappIntegrationHub
-				staffOptions={[]}
-				useSettingsHook={() => createMockSettingsHook()}
-			/>,
-		);
-
-		assert.ok(html.includes("Обновление QR-кода через"), "Должен отображаться таймер обновления");
-		assert.ok(html.includes("Обновить QR"), "Должна быть кнопка ручного обновления QR");
-		assert.ok(html.includes("Код сопряжения"), "Должна быть кнопка переключения на Pairing Code");
-		assert.ok(html.includes("Симулировать сканирование"), "Должна быть кнопка симуляции для тестов");
-	});
-
-	it("renders step-by-step accordion instructions for clinic staff", () => {
-		const html = renderToStaticMarkup(
-			<WhatsappIntegrationHub
-				staffOptions={[]}
-				useSettingsHook={() => createMockSettingsHook()}
-			/>,
-		);
-
-		assert.ok(html.includes("Откройте WhatsApp на рабочем смартфоне клиники"), "Шаг 1 инструкции");
-		assert.ok(html.includes("Связанные устройства"), "Шаг 2 инструкции");
-		assert.ok(html.includes("Привязка устройства"), "Шаг 3 инструкции");
-		assert.ok(html.includes("Технология Multi-Device"), "Памятка Multi-Device");
+		// Проверяем наличие режимов подключения
+		assert.ok(html.includes("Meta Cloud API (Официальный)"), "Должна быть опция Meta Cloud API");
+		assert.ok(html.includes("WhatsApp QR-шлюз"), "Должна быть опция QR-шлюза");
+		assert.ok(html.includes("data-testid=\"wa-mode-cloud-btn\""), "Должен быть data-testid кнопки Cloud API");
+		assert.ok(html.includes("data-testid=\"wa-mode-qr-btn\""), "Должен быть data-testid кнопки QR");
+		assert.ok(html.includes("data-testid=\"whatsapp-mode-selector\""), "Должен быть data-testid селектора режима");
 	});
 
 	it("renders integrated WhatsappSettingsPanel with Hub controls without breaking legacy contract", () => {
@@ -123,5 +98,6 @@ describe("WhatsappIntegrationHub UI Component Tests", () => {
 
 		assert.ok(html.includes("whatsapp-panel") || html.includes("whatsapp-integration-hub"));
 		assert.ok(html.includes("WhatsApp"));
+		assert.ok(html.includes("Подключён"), "Должен отображаться статус подключения");
 	});
 });

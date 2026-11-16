@@ -12,6 +12,18 @@ import { useWhatsAppPatientDetails } from "./useWhatsAppPatientDetails";
 
 let chatMsgSeq = 0;
 
+interface RawInboxMessage {
+	id?: string;
+	patientId?: string;
+	patientName?: string;
+	message?: string;
+	bodyText?: string;
+	channel?: string;
+	direction?: string;
+	status?: string;
+	createdAt?: string;
+}
+
 export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 	const {
 		dashboard,
@@ -59,19 +71,31 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 				{ headers: denteAdminSecretRequestHeaders() },
 			);
 			if (res.ok) {
-				const data = await res.json();
-				const list = Array.isArray(data)
+				const data = (await res.json()) as
+					| RawInboxMessage[]
+					| { messages?: RawInboxMessage[] };
+				const list = (Array.isArray(data)
 					? data
 					: Array.isArray(data.messages)
 						? data.messages
-						: [];
-				const parsed: ChatMessage[] = list.map((m: any) => ({
-					id: m.id || `msg-${Date.now()}-${++chatMsgSeq}`,
+						: []) as RawInboxMessage[];
+				const parsed: ChatMessage[] = list.map((m, idx) => ({
+					id: m.id || `msg-${Date.now()}-${idx}-${++chatMsgSeq}`,
 					sender: m.direction === "inbound" ? "patient" : "clinic",
-					senderName: m.direction === "inbound" ? (m.patientName || effectiveName) : "DENTE Администратор",
+					senderName:
+						m.direction === "inbound"
+							? m.patientName || effectiveName
+							: "DENTE Администратор",
 					text: m.message || m.bodyText || "",
 					timestamp: m.createdAt || new Date().toISOString(),
-					status: m.direction === "inbound" ? undefined : (m.status === "failed" ? "failed" : (m.status === "delivered" || m.status === "read" ? m.status : "sent")),
+					status:
+						m.direction === "inbound"
+							? undefined
+							: m.status === "failed"
+								? "failed"
+								: m.status === "delivered" || m.status === "read"
+									? m.status
+									: "sent",
 				}));
 				setMessages(parsed);
 			} else {
@@ -207,8 +231,64 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 	};
 
 	const handleAttachFile = (file: File) => {
-		setInputText((prev) => (prev ? `${prev}\n[Вложение: ${file.name}]` : `[Вложение: ${file.name}]`));
-		showToast(`Файл «${file.name}» (${Math.round(file.size / 1024)} КБ) прикреплен к сообщению`, "info");
+		if (!effectivePatientId) {
+			showToast(
+				"Для отправки файлов требуется привязать карту пациента",
+				"warning",
+			);
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = async () => {
+			const result = reader.result;
+			if (typeof result !== "string") return;
+			const base64Data = result.includes(",") ? result.split(",")[1] : result;
+			if (!base64Data) return;
+
+			showToast(`Загрузка файла «${file.name}»...`, "info");
+			try {
+				const res = await fetch("/api/whatsapp/media/upload", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({
+						patientId: effectivePatientId,
+						fileName: file.name,
+						mimeType: file.type || "application/octet-stream",
+						base64Data,
+					}),
+				});
+
+				const data = (await res.json().catch(() => ({}))) as {
+					ok?: boolean;
+					mediaUrl?: string;
+					message?: string;
+				};
+
+				if (res.ok && data.mediaUrl) {
+					const fullAttachmentText = `[Вложение: ${file.name}] ${data.mediaUrl}`;
+					setInputText((prev) =>
+						prev ? `${prev}\n${fullAttachmentText}` : fullAttachmentText,
+					);
+					showToast(`Файл «${file.name}» загружен и прикреплен`, "success");
+				} else {
+					showToast(
+						data.message || "Ошибка загрузки файла на сервер",
+						"error",
+					);
+				}
+			} catch (err) {
+				console.error("Failed to upload WhatsApp media file:", err);
+				showToast("Сбой сети при загрузке файла", "error");
+			}
+		};
+		reader.onerror = () => {
+			showToast("Ошибка чтения файла с диска", "error");
+		};
+		reader.readAsDataURL(file);
 	};
 
 	const handleCallPatient = () => {

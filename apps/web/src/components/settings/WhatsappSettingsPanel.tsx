@@ -1,6 +1,5 @@
 import React from "react";
 import "./WhatsappIntegrationHub.css";
-export { WhatsappIntegrationHub } from "./WhatsappIntegrationHub.js";
 
 import { useWhatsappSettings } from "../../hooks/useWhatsappSettings.js";
 import { showToast } from "../GlobalToast.js";
@@ -14,6 +13,7 @@ import type { WhatsappSettingsPanelProps } from "./whatsapp/types.js";
 
 export { computeWhatsappSettingsDirty, isWhatsappSettingsSaveDisabled };
 export type * from "./whatsapp/types.js";
+export type WhatsappIntegrationHubProps = WhatsappSettingsPanelProps;
 
 export function WhatsappSettingsPanel({
 	staffOptions,
@@ -135,3 +135,5 @@ export function WhatsappSettingsPanel({
 		/>
 	);
 }
+
+export const WhatsappIntegrationHub = WhatsappSettingsPanel;

@@ -14,6 +14,7 @@ export function useMobileMessageSender(
 	const [inputText, setInputText] = useState("");
 	const [activeChannel, setActiveChannel] = useState<ChatChannel>("whatsapp");
 	const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
+	const [attachedMediaUrl, setAttachedMediaUrl] = useState<string | null>(null);
 	const [isSendingMessage, setIsSendingMessage] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -25,22 +26,30 @@ export function useMobileMessageSender(
 
 	const handleSendMessage = useCallback(async () => {
 		const text = inputText.trim();
-		if (!text && !attachedFileName) {
+		if (!text && !attachedMediaUrl) {
 			const defTmpl = quickTemplates[0];
 			if (defTmpl) handleApplyTemplate(defTmpl);
 			return;
 		}
 		if (!selectedPatientId || isSendingMessage) return;
 
-		const fullText = attachedFileName ? `${text ? text + "\n" : ""}[Прикреплен снимок: ${attachedFileName}]` : text;
+		const fullText = attachedMediaUrl
+			? `${text ? text + "\n" : ""}[Прикреплен файл: ${attachedFileName || "документ"}] ${attachedMediaUrl}`
+			: text;
 		const newMsg: MobileChatMessageItem = {
-			id: `mobile-msg-${Date.now()}`, patientId: selectedPatientId, text: fullText,
-			direction: "outbound", channel: activeChannel, timestamp: new Date().toISOString(), status: "sent",
+			id: `mobile-msg-${Date.now()}`,
+			patientId: selectedPatientId,
+			text: fullText,
+			direction: "outbound",
+			channel: activeChannel,
+			timestamp: new Date().toISOString(),
+			status: "sent",
 		};
 
 		setChatMessages((prev) => [...prev, newMsg]);
 		setInputText("");
 		setAttachedFileName(null);
+		setAttachedMediaUrl(null);
 		setIsSendingMessage(true);
 
 		try {
@@ -66,7 +75,7 @@ export function useMobileMessageSender(
 		} finally {
 			setIsSendingMessage(false);
 		}
-	}, [inputText, attachedFileName, selectedPatientId, isSendingMessage, activeChannel, quickTemplates, handleApplyTemplate, communicationChannelLabels, setChatMessages]);
+	}, [inputText, attachedMediaUrl, attachedFileName, selectedPatientId, isSendingMessage, activeChannel, quickTemplates, handleApplyTemplate, communicationChannelLabels, setChatMessages]);
 
 	const handleToggleChannel = useCallback(() => {
 		setActiveChannel((prev) => (prev === "whatsapp" ? "telegram" : prev === "telegram" ? "sms" : "whatsapp"));
@@ -75,19 +84,65 @@ export function useMobileMessageSender(
 
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-	const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-		const target = e.target;
-		const file = target.files?.[0];
-		if (file) {
-			setAttachedFileName(file.name);
-			const sizeKb = Math.round(file.size / 1024);
-			showToast(
-				`Файл «${file.name}» (${sizeKb} КБ) прикреплен к сообщению`,
-				"info",
-			);
-		}
-		target.value = "";
-	}, []);
+	const handleFileChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const target = e.target;
+			const file = target.files?.[0];
+			if (file) {
+				if (!selectedPatientId) {
+					showToast("Для отправки файла выберите диалог с пациентом", "warning");
+					target.value = "";
+					return;
+				}
+				if (file.size > 16 * 1024 * 1024) {
+					showToast("Максимальный размер вложения — 16 МБ", "error");
+					target.value = "";
+					return;
+				}
+				const reader = new FileReader();
+				reader.onload = async () => {
+					const result = reader.result;
+					if (typeof result !== "string") return;
+					const base64Data = result.includes(",") ? result.split(",")[1] : result;
+					if (!base64Data) return;
+
+					showToast(`Загрузка «${file.name}»...`, "info");
+					try {
+						const res = await fetch("/api/whatsapp/media/upload", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify({
+								patientId: selectedPatientId,
+								fileName: file.name,
+								mimeType: file.type || "application/octet-stream",
+								base64Data,
+							}),
+						});
+						const data = (await res.json().catch(() => ({}))) as {
+							ok?: boolean;
+							mediaUrl?: string;
+							message?: string;
+						};
+						if (res.ok && data.mediaUrl) {
+							setAttachedFileName(file.name);
+							setAttachedMediaUrl(data.mediaUrl);
+							showToast(`Файл «${file.name}» загружен и прикреплен`, "success");
+						} else {
+							showToast(data.message || "Ошибка загрузки файла", "error");
+						}
+					} catch {
+						showToast("Сбой сети при загрузке файла", "error");
+					}
+				};
+				reader.readAsDataURL(file);
+			}
+			target.value = "";
+		},
+		[selectedPatientId],
+	);
 
 	const handleAttachFile = useCallback(() => {
 		if (fileInputRef.current) {
@@ -105,7 +160,10 @@ export function useMobileMessageSender(
 		attachedFileName, setAttachedFileName, isSendingMessage,
 		handleSendMessage, handleToggleChannel, handleAttachFile,
 		handleFileChange, fileInputRef,
-		handleRemoveAttachedFile: () => setAttachedFileName(null),
+		handleRemoveAttachedFile: () => {
+			setAttachedFileName(null);
+			setAttachedMediaUrl(null);
+		},
 		handleApplyTemplate, textareaRef,
 	};
 }

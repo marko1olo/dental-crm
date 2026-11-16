@@ -38,6 +38,7 @@ import {
 	sendWhatsappTextMessage,
 	type WhatsappCredentials,
 } from "../../whatsappTransport.js";
+import { OmnichannelTokenVault } from "../bots/OmnichannelTokenVault.js";
 import type {
 	CommunicationChannelCode,
 	CommunicationConsentScope,
@@ -131,6 +132,7 @@ export async function resolveChannelCredentials(
 			const [max] = await tx
 				.select({
 					token: denteMaxBotConfigs.maxBotToken,
+					tokenSecretRef: denteMaxBotConfigs.tokenSecretRef,
 					isActive: denteMaxBotConfigs.isActive,
 				})
 				.from(denteMaxBotConfigs)
@@ -150,7 +152,13 @@ export async function resolveChannelCredentials(
 			: null,
 		telegramBotToken: readTelegramBotToken(telegramConfig?.mode ?? null, env),
 		// Выключенная интеграция — это «не настроено», а не «настроено и молчит».
-		maxBotToken: maxConfig?.isActive ? maxConfig.token?.trim() || null : null,
+		maxBotToken:
+			maxConfig?.isActive && (maxConfig.token || maxConfig.tokenSecretRef)
+				? OmnichannelTokenVault.resolveToken(
+						maxConfig.token || maxConfig.tokenSecretRef,
+						organizationId,
+					)
+				: null,
 	};
 }
 

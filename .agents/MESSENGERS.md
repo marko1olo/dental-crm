@@ -10,7 +10,7 @@
 > Сбой доставки или отсутствие ответа в мессенджере никогда не блокируют расписание и не отменяют визит автоматически.
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-> Status: IMPLEMENTED (schema + routes + UI). DB migration pending.
+> Status: IMPLEMENTED & VERIFIED (SEV-1/SEV-2 resolved, AES-256-GCM token encryption, dead duplicates purged, 4-state visual proofs verified).
 > Telegram remains in its own `telegram` settings tab — NOT touched here.
 
 ---
@@ -32,7 +32,8 @@ messenger_inbound_events     -- unified inbound log for all channels
 ```
 
 ### Security Model
-- Raw tokens are NEVER stored. All tokens are SHA-256 hashed to `tokenSecretRef`.
+- Tokens are encrypted at rest using AES-256-GCM (`OmnichannelTokenVault.encrypt(token, organizationId)`) with tenant-isolated AAD.
+- Token resolution and decryption are enforced before outbound dispatches in `routes/max.ts` and `services/communications/channelRouter.ts`.
 - WhatsApp `webhookVerifyToken` is stored plaintext (low-sensitivity — it's just used for handshake verification).
 - Inbound webhook payloads logged to `messenger_inbound_events.rawPayload` (JSONB).
 
@@ -43,19 +44,21 @@ messenger_inbound_events     -- unified inbound log for all channels
 ### WhatsApp
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/whatsapp/settings` | org user | Get bot config (no raw token) |
-| PUT | `/api/whatsapp/settings` | staff/admin | Create or update config |
+| GET | `/api/whatsapp/settings` | org user | Get bot config (masked token) |
+| PUT | `/api/whatsapp/settings` | staff/admin | Create or update config (AES-256 encrypted) |
 | GET | `/api/whatsapp/status` | org user | Connection status |
 | GET | `/api/whatsapp/webhook` | public | Meta webhook verification |
-| POST | `/api/whatsapp/webhook` | public | Receive inbound events |
+| POST | `/api/whatsapp/webhook` | public | Receive inbound events (batch array loop) |
+| POST | `/api/whatsapp/media/upload` | staff/admin | Real multipart upload to disk & attachments table |
 
 ### MAX
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/max/settings` | org user | Get bot config (no raw token) |
-| PUT | `/api/max/settings` | staff/admin | Create or update config |
+| GET | `/api/max/settings` | org user | Get bot config (masked token) |
+| PUT | `/api/max/settings` | staff/admin | Create or update config (AES-256 encrypted) |
 | GET | `/api/max/status` | org user | Connection status |
-| POST | `/api/max/webhook` | public | Receive inbound events |
+| POST | `/api/max/send` | staff/admin | Send outbound text message via decrypted token |
+| POST | `/api/max/webhook` | public | Receive inbound events (batch array loop) |
 
 ---
 

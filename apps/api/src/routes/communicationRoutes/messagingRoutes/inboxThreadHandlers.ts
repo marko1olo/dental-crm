@@ -71,6 +71,7 @@ export function registerInboxThreadHandlers(app: FastifyInstance): void {
 			.leftJoin(patients, eq(patients.id, communicationEvents.patientId))
 			.where(
 				and(
+					eq(communicationEvents.organizationId, orgId),
 					eq(patients.organizationId, orgId),
 					eq(communicationEvents.patientId, patientId),
 				),
