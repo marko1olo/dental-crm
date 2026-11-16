@@ -59,5 +59,3 @@ export const CONSENT_INTERVENTION_TYPES = [
 	{ id: "surgery", label: "Хирургия и удаление" },
 	{ id: "prosthetics", label: "Ортопедия" },
 ] as const;
-
-export const CONSENT_1051N_INTERVENTION_TYPES = CONSENT_INTERVENTION_TYPES;

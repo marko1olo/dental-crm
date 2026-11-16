@@ -17,6 +17,14 @@ import {
 	buildTaxCertificateDocumentData,
 	resolveTaxDeductionCategory,
 } from "./taxCertificateEngine";
+import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";
+import { printHtmlViaIframe } from "./printHtmlViaIframe";
+import {
+	downloadFnsTaxXmlFile,
+	downloadFnsNoMedoplXmlFile,
+	type TaxDeductionCertificateParams,
+	type TaxDeductionPaymentItem,
+} from "../finance/taxDeductionEngine";
 import {
 	DEFAULT_CLINIC_REQUISITES,
 	DEMO_SAMPLE_PATIENT,
@@ -48,6 +56,75 @@ import "./documentsStudio.css";
 
 export type DocumentTemplateKey = DocumentPackageKey | "contract" | "act" | "consent" | "tax_deduction";
 export type TaxDeductionTab = "form" | "checks" | "family" | "xml" | "registry";
+
+function generateA4PrintHtml(options: {
+	clinic: { name: string; inn: string; license: string; address: string; phone: string };
+	patient: PatientRequisites;
+	doctorFullName: string;
+	currentDate: string;
+	totalAmountKopecks: number;
+	documentText: string;
+	hasSigned?: boolean | undefined;
+	signedAtTimeStr?: string | null | undefined;
+}): string {
+	const escapeHtml = (str: string) =>
+		(str || "")
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;");
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(options.clinic.name)} — ${escapeHtml(options.patient.fullName || "Документ")}</title>
+  <style>
+    @page { size: A4 portrait; margin: 15mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #0f172a; margin: 0; padding: 24px; }
+    .sheet-header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
+    .clinic-title { font-size: 16px; font-weight: 700; text-transform: uppercase; }
+    .clinic-sub { font-size: 11px; color: #475569; margin-top: 3px; }
+    .date-badge { text-align: right; font-size: 12px; }
+    .total-cost { font-weight: 600; color: #0d9488; margin-top: 4px; }
+    .doc-content { white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.65; margin: 24px 0; min-height: 500px; }
+    .sheet-footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid #cbd5e1; display: flex; justify-content: space-between; font-size: 12px; }
+    .sig-block { max-width: 45%; }
+  </style>
+</head>
+<body>
+  <div class="sheet-header">
+    <div>
+      <div class="clinic-title">${escapeHtml(options.clinic.name)}</div>
+      <div class="clinic-sub">${escapeHtml(options.clinic.address)} · Тел: ${escapeHtml(options.clinic.phone)}</div>
+      <div class="clinic-sub">Лицензия: ${escapeHtml(options.clinic.license)}</div>
+    </div>
+    <div class="date-badge">
+      <div>Дата: ${options.currentDate}</div>
+      <div class="total-cost">Сумма: ${formatKopecksToRubles(options.totalAmountKopecks)}</div>
+    </div>
+  </div>
+  <div class="doc-content">${escapeHtml(options.documentText)}</div>
+  <div class="sheet-footer">
+    <div class="sig-block">
+      <div style="font-weight: 600;">Исполнитель:</div>
+      <div>${escapeHtml(options.doctorFullName)}</div>
+      <div style="margin-top: 18px; color: #64748b;">Подпись: ______________________ М.П.</div>
+    </div>
+    <div class="sig-block" style="text-align: right;">
+      <div style="font-weight: 600;">Пациент:</div>
+      <div>${escapeHtml(options.patient.fullName || "______________________")}</div>
+      <div style="margin-top: 18px; color: #64748b;">
+        ${options.hasSigned ? `Подписано пациентом ${options.signedAtTimeStr ? `в ${options.signedAtTimeStr} ` : ""}[OK]` : "Подпись: ______________________"}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+export const NO_PATIENT_SELECTED_PLACEHOLDER =
+	"[Бланк для ручного заполнения — Пациент: ____________________________________]";
 
 export interface DocumentsStudioModalProps {
 	readonly isOpen: boolean;
@@ -116,9 +193,6 @@ export interface DocumentsStudioModalProps {
 	readonly onConsentSigned?: ((payload: unknown) => void) | undefined;
 	readonly [key: string]: unknown;
 }
-
-export const NO_PATIENT_SELECTED_PLACEHOLDER =
-	"[Пациент не выбран. Выберите пациента в CRM для автоматического заполнения договора и ИДС]";
 
 export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	isOpen,
@@ -272,6 +346,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 							? pmt.amountKopecks
 							: Math.round(Number(pmt.amountRub || pmt.amount || 0) * 100);
 					return {
+						id: `payment-srv-${idx + 1}`,
 						code: pmt.code804n || `PAY-${idx + 1}`,
 						title:
 							pmt.serviceName ||
@@ -340,22 +415,23 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 
 	// Генерация текста текущего документа в зависимости от выбранного пакета
 	const renderedDocumentText = useMemo(() => {
-		if (!isDemo && !patient.fullName.trim() && !hasNoConfirmedPayments) {
-			return NO_PATIENT_SELECTED_PLACEHOLDER;
-		}
+		const blankNotice = (!isDemo && !patient.fullName.trim() && !hasNoConfirmedPayments)
+			? `${NO_PATIENT_SELECTED_PLACEHOLDER}\n\n`
+			: "";
+
 		switch (activePackage) {
 			case "informed_consent":
-				return generateInformedConsentTemplate(legalContext, activeConsentSubKind);
+				return `${blankNotice}${generateInformedConsentTemplate(legalContext, activeConsentSubKind)}`;
 			case "tax_certificate": {
 				const baseText = generateTaxCertificateTemplate(legalContext);
 				const codeBreakdown = `\n[РАЗДЕЛЕНИЕ ПО КОДАМ УСЛУГ ДЛЯ ФНС]:\nКод 1 (стандартные медицинские услуги): ${formatKopecksToRubles(code01Kopecks)}\nКод 2 (дорогостоящее лечение): ${formatKopecksToRubles(code02Kopecks)}\n`;
 				const emptyNote = hasNoConfirmedPayments ? "\n[Нет подтвержденных фискальных оплат за указанный налоговый период. Формируется чистый бланк со штампом клиники]\n" : "";
-				return `Справка для налогового вычета (ФНС) · КНД 1151156\n${baseText}${codeBreakdown}${emptyNote}`;
+				return `${blankNotice}Справка об оплате медицинских услуг для налогового вычета (ФНС России)\n${baseText}${codeBreakdown}${emptyNote}`;
 			}
 			case "card_extract":
-				return generateCardExtractTemplate(legalContext);
+				return `${blankNotice}${generateCardExtractTemplate(legalContext)}`;
 			default:
-				return generateIntakePackageTemplate(legalContext);
+				return `${blankNotice}${generateIntakePackageTemplate(legalContext)}`;
 		}
 	}, [isDemo, patient.fullName, hasNoConfirmedPayments, activePackage, legalContext, activeConsentSubKind, code01Kopecks, code02Kopecks]);
 
@@ -415,11 +491,31 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 				}),
 			);
 			showToast("Чистый бланк справки для налогового вычета отправлен на печать", "success");
+		} else if (activePackage === "intake") {
+			printPrimaryIntakePackage({
+				patient: {
+					fullName: patient.fullName || "____________________________________",
+					birthDate: patient.birthDate || "",
+					phone: patient.phone || "",
+					address: patient.address || "",
+				},
+				clinic: clinicRequisites,
+				doctorFullName: effectiveDoctorName,
+			});
+			showToast("Чистый бланк первичного приёма отправлен на печать", "success");
 		} else {
-			window.print();
+			const a4Html = generateA4PrintHtml({
+				clinic: clinicRequisites,
+				patient,
+				doctorFullName: effectiveDoctorName,
+				currentDate,
+				totalAmountKopecks,
+				documentText: renderedDocumentText,
+			});
+			printHtmlViaIframe(a4Html, "dente-docs-studio-print-iframe");
 			showToast("Чистый бланк отправлен на печать", "success");
 		}
-	}, [activePackage, taxYear, clinicRequisites, effectiveDoctorName, patient, showToast]);
+	}, [activePackage, taxYear, clinicRequisites, effectiveDoctorName, patient, currentDate, totalAmountKopecks, renderedDocumentText, showToast]);
 
 	const handlePaperConfirm = useCallback(() => {
 		setHasSigned(true);
@@ -435,27 +531,82 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 		showToast("Подписание на бумаге подтверждено и зарегистрировано в истории", "success");
 	}, [currentConsentKey, recordConsentLocally, onConsentSigned, patient.fullName, showToast]);
 
+	const buildCertParams = useCallback((): TaxDeductionCertificateParams => {
+		const rawServices = effectiveServices.length > 0
+			? effectiveServices
+			: [
+					{
+						id: "pmt-draft-1",
+						code: "PAY-1",
+						title: "Оплата медицинских услуг",
+						quantity: 1,
+						priceKopecks: totalAmountKopecks || 0,
+						amountKopecks: totalAmountKopecks || 0,
+					},
+				];
+
+		const pmtItems: TaxDeductionPaymentItem[] = rawServices.map((s, idx) => ({
+			id: `pmt-${idx + 1}`,
+			dateIso: `${taxYear}-06-15T12:00:00.000Z`,
+			receiptNumber: `ЧЕК-${idx + 1}`,
+			fiscalDocumentNumber: `ФД-${idx + 1}`,
+			fiscalSign: `ФП-${idx + 1}`,
+			serviceName: s.title,
+			code804n: s.code?.startsWith("PAY") ? undefined : s.code,
+			amountRub: (s.amountKopecks || 0) / 100,
+			amountKopecks: s.amountKopecks || 0,
+			taxCode: resolveTaxDeductionCategory(s.code || "", s.title),
+		}));
+
+		return {
+			certificateNumber: `СПР-${taxYear}/001`,
+			issueDateIso: new Date().toISOString(),
+			taxYear,
+			clinic: {
+				legalName: clinicRequisites.name,
+				inn: clinicRequisites.inn,
+				kpp: clinicRequisites.kpp || undefined,
+				ogrn: clinicRequisites.ogrn || undefined,
+				licenseNumber: clinicRequisites.license,
+				address: clinicRequisites.address,
+				chiefDoctorName: effectiveDoctorName,
+			},
+			payer: {
+				fullName: patient.fullName.trim() || "Пациент Не Указан",
+				inn: patient.inn || undefined,
+				birthDate: patient.birthDate || undefined,
+				relationship: "patient",
+			},
+			patient: {
+				fullName: patient.fullName.trim() || "Пациент Не Указан",
+				inn: patient.inn || undefined,
+				birthDate: patient.birthDate || undefined,
+			},
+			payments: pmtItems,
+		};
+	}, [taxYear, clinicRequisites, effectiveDoctorName, patient, effectiveServices, totalAmountKopecks]);
+
 	const handleDownloadXml = useCallback(() => {
-		const blob = new Blob([`<FNS_TAX_DEDUCTION_KND1151156 Year="${taxYear}" Patient="${patient.fullName}" Inn="${patient.inn || ''}" TotalKopecks="${totalAmountKopecks}" Code1="${code01Kopecks}" Code2="${code02Kopecks}" />`], { type: "application/xml;charset=utf-8" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = `FNS_1151156_${taxYear}_${patient.inn || 'draft'}.xml`;
-		a.click();
-		URL.revokeObjectURL(url);
-		showToast("XML-файл справки выгружен для ТКС", "success");
-	}, [taxYear, patient.fullName, patient.inn, totalAmountKopecks, code01Kopecks, code02Kopecks, showToast]);
+		try {
+			const certParams = buildCertParams();
+			downloadFnsTaxXmlFile(certParams);
+			showToast("XML-файл справки выгружен для ТКС", "success");
+		} catch (err) {
+			console.error("[DocumentsStudioModal] Сбой генерации XML справки:", err);
+			showToast("Ошибка формирования XML справки", "error");
+		}
+	}, [buildCertParams, showToast]);
 
 	const handleDownloadNoMedopl = useCallback(() => {
-		const blob = new Blob([`<NO_MEDOPL_5_01 Version="5.01" Year="${taxYear}" Clinic="${clinicRequisites.name}" Inn="${clinicRequisites.inn}" Count="1" Total="${totalAmountKopecks}" />`], { type: "application/xml;charset=utf-8" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = `NO_MEDOPL_${taxYear}_${clinicRequisites.inn}.xml`;
-		a.click();
-		URL.revokeObjectURL(url);
-		showToast("Файл электронного реестра NO_MEDOPL (5.01) выгружен", "success");
-	}, [taxYear, clinicRequisites.name, clinicRequisites.inn, totalAmountKopecks, showToast]);
+		try {
+			const certParams = buildCertParams();
+			downloadFnsNoMedoplXmlFile(certParams);
+			showToast("Файл электронного реестра NO_MEDOPL (5.01) выгружен", "success");
+		} catch (err) {
+			console.error("[DocumentsStudioModal] Сбой генерации NO_MEDOPL:", err);
+			showToast("Ошибка формирования реестра NO_MEDOPL", "error");
+		}
+	}, [buildCertParams, showToast]);
 
 	const handlePrimarySignAndPrint = useCallback(async () => {
 		setHasSigned(true);
@@ -584,8 +735,30 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 				}),
 			);
 			showToast("Справка для налогового вычета сформирована и отправлена на печать", "success");
+		} else if (activePackage === "intake") {
+			printPrimaryIntakePackage({
+				patient: {
+					fullName: patient.fullName || "____________________________________",
+					birthDate: patient.birthDate || "",
+					phone: patient.phone || "",
+					address: patient.address || "",
+				},
+				clinic: clinicRequisites,
+				doctorFullName: effectiveDoctorName,
+			});
+			showToast("Комплект документов первичного приёма отправлен на печать", "success");
 		} else {
-			window.print();
+			const a4Html = generateA4PrintHtml({
+				clinic: clinicRequisites,
+				patient,
+				doctorFullName: effectiveDoctorName,
+				currentDate,
+				totalAmountKopecks,
+				documentText: renderedDocumentText,
+				hasSigned: true,
+				signedAtTimeStr: nowStr,
+			});
+			printHtmlViaIframe(a4Html, "dente-docs-studio-print-iframe");
 			showToast("Комплект документов утвержден и отправлен на печать", "success");
 		}
 	}, [
@@ -608,6 +781,8 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 		code01Kopecks,
 		code02Kopecks,
 		clinicRequisites,
+		currentDate,
+		renderedDocumentText,
 		showToast,
 	]);
 

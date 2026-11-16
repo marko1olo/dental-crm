@@ -21,7 +21,7 @@ import {
 	type ConsentDocumentId,
 	type ConsentSignStatus,
 } from "../consentCatalogData";
-import { ConsentStudioModal } from "../ConsentStudioModal";
+import { ConsentStudioModal } from "../index";
 import { DirectConsentLauncher } from "../DirectConsentLauncher";
 
 describe("Red Team Inquisition: Consents & Legal Documents SSOT", () => {

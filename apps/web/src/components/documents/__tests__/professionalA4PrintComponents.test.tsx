@@ -275,10 +275,10 @@ describe("Professional A4 Document Sheet & Preview Modal (SSR Safe Tests)", () =
 		assert.ok(html.includes("Лист 2 из 2"));
 	});
 
-	it("renders Tab 4 (Informed Consent 1051n) with exactly 2 discrete A4 sheets and art. 20 323-FZ", () => {
+	it("renders Tab 4 (Informed Consent) with exactly 2 discrete A4 sheets and art. 20 323-FZ", () => {
 		const html = renderToString(
 			<ProfessionalDocumentA4Sheet
-				activeTab="consent_1051n"
+				activeTab="informed_consent"
 				contractData={mockContractData}
 				actData={mockActData}
 				treatmentPlanData={mockTreatmentPlanData}
