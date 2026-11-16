@@ -1,3 +1,4 @@
+import { CANONICAL_PG_LAB_STATUSES, mapStageToCanonicalPgStatus } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { LabOrderStatus } from "../../../db/labQuery.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -6,23 +7,11 @@ import { isPermittedLabStatusTransition } from "../ordersCrudModules/labOrderSta
 import { mapStageOrStatusToMilestone } from "../types.js";
 import type { LabOrderPatchBody } from "./labOrderPatchSchema.js";
 
-const VALID_LAB_ORDER_STATUSES = new Set<string>([
-	"draft",
-	"sent",
-	"in_progress",
-	"shipped",
-	"received",
-	"ready",
-	"ready_in_clinic",
-	"refitting",
-	"fitted",
-	"completed",
-	"cancelled",
-	"rejected_remake",
-]);
+const VALID_LAB_ORDER_STATUSES = new Set<string>(CANONICAL_PG_LAB_STATUSES);
 
 function toLabOrderStatus(status: string): LabOrderStatus {
-	return VALID_LAB_ORDER_STATUSES.has(status) ? (status as LabOrderStatus) : "draft";
+	const canonical = mapStageToCanonicalPgStatus(status);
+	return VALID_LAB_ORDER_STATUSES.has(canonical) ? (canonical as LabOrderStatus) : "draft";
 }
 
 export type PatchDbResult =
@@ -57,18 +46,20 @@ export async function executeLabOrderPatch(
 			return { kind: "locked_installed" };
 		}
 
-		if (targetStatus && targetStatus !== currentOrder.status) {
+		const canonicalTarget = targetStatus ? toLabOrderStatus(targetStatus) : undefined;
+
+		if (canonicalTarget && canonicalTarget !== currentOrder.status) {
 			const currentStatus = toLabOrderStatus(currentOrder.status);
-			if (!isPermittedLabStatusTransition(currentStatus, targetStatus)) {
-				return { kind: "invalid_transition", currentStatus, targetStatus };
+			if (!isPermittedLabStatusTransition(currentStatus, canonicalTarget)) {
+				return { kind: "invalid_transition", currentStatus, targetStatus: canonicalTarget };
 			}
 		}
 
 		const now = new Date();
 		const auditFields: Partial<{ sentAt: Date; completedAt: Date; cancelledAt: Date }> = {};
-		if (targetStatus === "sent" && !currentOrder.sentAt) auditFields.sentAt = now;
-		else if (targetStatus === "completed" && !currentOrder.completedAt) auditFields.completedAt = now;
-		else if (targetStatus === "cancelled" && !currentOrder.cancelledAt) auditFields.cancelledAt = now;
+		if (canonicalTarget === "sent" && !currentOrder.sentAt) auditFields.sentAt = now;
+		else if (canonicalTarget === "completed" && !currentOrder.completedAt) auditFields.completedAt = now;
+		else if (canonicalTarget === "cancelled" && !currentOrder.cancelledAt) auditFields.cancelledAt = now;
 
 		let updatedClinicalNotes = currentOrder.clinicalNotes;
 		if (body.clinicalNotes !== undefined) {
@@ -81,7 +72,7 @@ export async function executeLabOrderPatch(
 		}
 
 		const updateValues: Record<string, unknown> = { updatedAt: now, ...auditFields };
-		if (targetStatus) updateValues.status = targetStatus;
+		if (canonicalTarget) updateValues.status = canonicalTarget;
 		if (isWarrantyRequest) updateValues.isLockedInstalled = false;
 		if (updatedClinicalNotes !== undefined) updateValues.clinicalNotes = updatedClinicalNotes;
 		if (body.labComments !== undefined) updateValues.labComments = body.labComments;

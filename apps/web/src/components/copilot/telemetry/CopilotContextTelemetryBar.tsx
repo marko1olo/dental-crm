@@ -90,7 +90,7 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 				const realAllergies = (allergies || []).filter((a) => !isNegativeAllergyStatement(a));
 				if (realAllergies.length === 0) return null;
 				return (
-					<span className="copilot-context-chip copilot-context-chip--warn px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 border border-rose-500/25 flex items-center gap-1 shrink-0" title={realAllergies.join(", ")}>
+					<span className="copilot-context-chip copilot-context-chip--warn px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--danger-soft,rgba(244,63,94,0.1))] text-[var(--danger,#e11d48)] border border-[var(--danger-border,rgba(244,63,94,0.25))] flex items-center gap-1 shrink-0" title={realAllergies.join(", ")}>
 						<ShieldAlert size={11} className="shrink-0" />
 						<span>{`Аллергии (${realAllergies.length})`}</span>
 					</span>
@@ -141,18 +141,18 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 						{/* Пороговые маркеры сжатия */}
 						{isSlidingWindow && (
 							<span
-								className="px-1 py-0.2 rounded text-[9px] font-bold uppercase bg-rose-100 text-rose-700 border border-rose-300 animate-pulse shrink-0"
+								className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--danger-soft,rgba(244,63,94,0.12))] text-[var(--danger,#e11d48)] border border-[var(--danger-border,rgba(244,63,94,0.3))] animate-pulse shrink-0"
 								data-testid="marker-sliding-window"
 							>
-								Sliding Window
+								Скользящее окно
 							</span>
 						)}
 						{isPruning && (
 							<span
-								className="px-1 py-0.2 rounded text-[9px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-300 shrink-0"
+								className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--warn-soft,rgba(245,158,11,0.12))] text-[var(--warn,#d97706)] border border-[var(--warn-border,rgba(245,158,11,0.3))] shrink-0"
 								data-testid="marker-pruning"
 							>
-								Pruning
+								Сжатие контекста
 							</span>
 						)}
 					</div>

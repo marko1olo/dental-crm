@@ -203,10 +203,10 @@ export function applyUpdatedStatesToTeeth(
 		const prevClin = (tooth.clinicalData ?? {}) as Record<string, unknown>;
 		const isPrevFilling =
 			tooth.state === "Filled" ||
-			tooth.state === "Filling" ||
+			(tooth.state as string) === "Filling" ||
 			Boolean(prevClin.hasFilling);
 		const isIncomingCaries = state === "Caries";
-		const isIncomingFilling = state === "Filled" || state === "Filling";
+		const isIncomingFilling = state === "Filled" || (state as string) === "Filling";
 		const isPrevCaries = tooth.state === "Caries" || Boolean(prevClin.hasCaries);
 
 		let resolvedIncomingSurfaces: string[] = [];

@@ -12,7 +12,7 @@ import { safeLocalStorageGetItem, safeLocalStorageSetItem, readDenteClinicToken,
 import { isDemoShowcaseMode, isDemoPatientId } from "../../lib/demoMode";
 import { CLINICAL_QUICK_PRESETS, CRM_FASTIFY_TOOLS_REGISTRY } from "./copilotCatalogData";
 import { SHOWCASE_INITIAL_MESSAGES } from "../../store/copilotShowcaseData";
-import { useCopilotStore } from "../../store/copilotStore";
+import { useCopilotStore, type CopilotMessage } from "../../store/copilotStore";
 import type { CopilotUiMessage, DesktopHostWindow } from "./copilotTypes";
 import { parseActionProposal, parseJsonResponse } from "./copilotTypes";
 import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer"; import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { CopilotMemoryTab } from "./CopilotMemoryTab"; import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest"; import { handleClinicalSpeechOrText } from "./copilotDictationHandler"; import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView"; import { CopilotResultCard } from "./CopilotResultCard"; import { CopilotStudioActionsTab } from "./CopilotStudioActionsTab";
@@ -22,7 +22,7 @@ export type CopilotStudioTab = "dialog" | "actions" | "memory";
 export interface CopilotStudioModalProps {
   isOpen: boolean; onClose: () => void; activeTooth?: number | null | undefined; patientId?: string | null | undefined;
   patientName?: string | null | undefined; activeVisitId?: string | null | undefined; initialTab?: CopilotStudioTab | undefined;
-  initialMessages?: Array<CopilotChatMessage | CopilotUiMessage> | undefined; isThinking?: boolean | undefined; thoughtProcess?: string | undefined;
+  initialMessages?: Array<CopilotChatMessage | CopilotUiMessage | CopilotMessage> | undefined; isThinking?: boolean | undefined; thoughtProcess?: string | undefined;
 }
 export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 export interface CopilotChatMessage {
@@ -36,8 +36,8 @@ const extractSuggestions = (text: string) => {
 };
 export const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [];
 
-const parseChatMsgs = (list?: Array<CopilotChatMessage | CopilotUiMessage | Record<string, unknown>>): CopilotChatMessage[] => (list || []).map((m, i) => {
-  const mRec = m as Record<string, unknown>;
+const parseChatMsgs = (list?: Array<CopilotChatMessage | CopilotUiMessage | CopilotMessage | Record<string, unknown>>): CopilotChatMessage[] => (list || []).map((m, i) => {
+  const mRec = typeof m === "object" && m !== null ? (m as Record<string, unknown>) : {};
   const raw = typeof mRec.text === "string" ? mRec.text : typeof mRec.content === "string" ? mRec.content : (mRec.kind === "tool" ? `Выполнен инструмент: ${String(mRec.name || "")}` : "");
   const { cleanText, suggestions } = extractSuggestions(raw);
   const mRole = mRec.role === "assistant" || mRec.kind === "tool" ? "assistant" : "user";

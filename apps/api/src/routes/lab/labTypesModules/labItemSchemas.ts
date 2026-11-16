@@ -58,18 +58,5 @@ export const createLabItemSchema = z.object({
 		.transform(String)
 		.optional()
 		.nullable(),
-	meshTriangleCount: z.number().int().optional().nullable(),
-	meshSurfaceAreaMm2: z
-		.union([z.number(), z.string()])
-		.transform(String)
-		.optional()
-		.nullable(),
-	meshVolumeMm3: z
-		.union([z.number(), z.string()])
-		.transform(String)
-		.optional()
-		.nullable(),
-	meshBboxMm: z.record(z.unknown()).optional().nullable(),
-	isManifold: z.boolean().default(true),
 	priceRub: labItemPriceSchema,
 });

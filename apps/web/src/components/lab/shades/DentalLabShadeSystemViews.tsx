@@ -3,6 +3,7 @@ import type { ShadeSystemKey } from "./dentalLabShadePickerTypes";
 import { DentalLab3dMasterGrid } from "./DentalLab3dMasterGrid";
 import { DentalLabBleachGrid } from "./DentalLabBleachGrid";
 import { DentalLabClassicalGrid } from "./DentalLabClassicalGrid";
+import { DentalLabChromascopGrid } from "./DentalLabChromascopGrid";
 import { DentalLabStumpGrid } from "./DentalLabStumpGrid";
 
 export interface DentalLabShadeSystemViewsProps {
@@ -38,6 +39,12 @@ export function DentalLabShadeSystemViews({
 			)}
 			{currentSystem === "bleach" && (
 				<DentalLabBleachGrid
+					selectedShade={selectedShade}
+					onSelectShade={onSelectShade}
+				/>
+			)}
+			{currentSystem === "chromascop" && (
+				<DentalLabChromascopGrid
 					selectedShade={selectedShade}
 					onSelectShade={onSelectShade}
 				/>

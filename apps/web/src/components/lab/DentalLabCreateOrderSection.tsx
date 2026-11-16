@@ -12,6 +12,8 @@ import {
 	LOWER_JAW_TEETH,
 	formatKopecksToRubles,
 } from "./dentalLabCatalogData.js";
+import { DentalLabShadePicker } from "./DentalLabShadePicker";
+import type { ShadeSystemKey } from "./shades/dentalLabShadePickerTypes";
 
 export interface DentalLabCreateOrderSectionProps {
 	readonly activeMainTab: string;
@@ -78,6 +80,8 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 }) => {
 	const [customLabInput, setCustomLabInput] = useState("");
 	const [isAddingCustomLab, setIsAddingCustomLab] = useState(false);
+	const [showFullPalette, setShowFullPalette] = useState(false);
+	const [activeShadeSystem, setActiveShadeSystem] = useState<ShadeSystemKey>("classical");
 
 	return (
 		<aside className={`dental-lab-left-column ${activeMainTab === "new_order" ? "mobile-visible" : "mobile-hidden"}`} data-testid="lab-order-create-panel">
@@ -145,14 +149,53 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 				</select>
 			</div>
 			<div className="space-y-1">
-				<div className="flex items-center justify-between text-xs font-semibold"><span className="text-[var(--ink)]">Оттенок VITA: <strong className="text-[var(--teal)]">{selectedShade}</strong></span><span className="text-[10px] text-[var(--ink-muted)]">Classic + Bleach</span></div>
-				<div className="dental-lab-shades-scroll">{VITA_SHADES_SSOT.map((v) => (<button key={v.code} type="button" data-testid={`shade-chip-${v.code}`} onClick={() => setSelectedShade(v.code)} className={`dental-lab-shade-chip ${selectedShade === v.code ? "selected" : ""}`} title={v.label}><span className="dental-lab-shade-color-dot" style={{ backgroundColor: v.approxHex }} /><span>{v.code}</span></button>))}</div>
+				<div className="flex items-center justify-between text-xs font-semibold">
+					<span className="text-[var(--ink)]">
+						Оттенок VITA / Chromascop: <strong className="text-[var(--primary)]">{selectedShade}</strong>
+					</span>
+					<button
+						type="button"
+						data-testid="toggle-full-shade-palette-btn"
+						onClick={() => setShowFullPalette((prev) => !prev)}
+						className="text-[11px] text-[var(--primary)] hover:underline cursor-pointer bg-transparent border-0 font-medium"
+					>
+						{showFullPalette ? "Свернуть шкалу" : "Все шкалы (VITA, Chromascop)..."}
+					</button>
+				</div>
+				{showFullPalette ? (
+					<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]" data-testid="extended-shade-picker-wrapper">
+						<DentalLabShadePicker
+							shadeSystem={activeShadeSystem}
+							onShadeSystemChange={setActiveShadeSystem}
+							selectedShade={selectedShade}
+							onSelectShade={(s) => setSelectedShade(s)}
+							showStumpSelector={false}
+							showBleachTab={true}
+						/>
+					</div>
+				) : (
+					<div className="dental-lab-shades-scroll">
+						{VITA_SHADES_SSOT.map((v) => (
+							<button
+								key={v.code}
+								type="button"
+								data-testid={`shade-chip-${v.code}`}
+								onClick={() => setSelectedShade(v.code)}
+								className={`dental-lab-shade-chip ${selectedShade === v.code ? "selected" : ""}`}
+								title={v.label}
+							>
+								<span className="dental-lab-shade-color-dot" style={{ backgroundColor: v.approxHex }} />
+								<span>{v.code}</span>
+							</button>
+						))}
+					</div>
+				)}
 			</div>
 			<div className="space-y-1">
 				<div className="flex items-center justify-between">
 					<label htmlFor="lab-partner-select" className="text-xs font-semibold text-[var(--ink)] block">Лаборатория / Зубной техник</label>
 					{!isAddingCustomLab && (
-						<button type="button" onClick={() => setIsAddingCustomLab(true)} className="text-[10px] text-[var(--teal)] hover:underline cursor-pointer bg-transparent border-0">
+						<button type="button" onClick={() => setIsAddingCustomLab(true)} className="text-[10px] text-[var(--primary)] hover:underline cursor-pointer bg-transparent border-0">
 							+ Своя ЗТЛ / Техник
 						</button>
 					)}
@@ -165,7 +208,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 							value={customLabInput}
 							onChange={(e) => setCustomLabInput(e.target.value)}
 							placeholder="Название ЗТЛ или ФИО техника..."
-							className="flex-1 text-xs font-semibold p-1.5 rounded-xl border border-[var(--teal)] bg-[var(--paper-strong)] text-[var(--ink)]"
+							className="flex-1 text-xs font-semibold p-1.5 rounded-xl border border-[var(--primary)] bg-[var(--paper-strong)] text-[var(--ink)]"
 						/>
 						<button
 							type="button"
@@ -181,7 +224,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 									setIsAddingCustomLab(false);
 								}
 							}}
-							className="px-2.5 py-1.5 bg-[var(--teal)] text-white text-[11px] font-bold rounded-xl cursor-pointer"
+							className="px-2.5 py-1.5 bg-[var(--primary)] text-white text-[11px] font-bold rounded-xl cursor-pointer"
 						>
 							ОК
 						</button>
@@ -216,7 +259,7 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 			</div>
 			<div className="grid grid-cols-2 gap-2">
 				<div><label htmlFor="lab-due-date-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Срок сдачи</label><input id="lab-due-date-input" type="date" value={effectiveDueDate} onChange={(e) => setCustomDueDate(e.target.value)} className="w-full text-xs p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]" /></div>
-				<div className="flex items-center pt-4"><label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer"><input type="checkbox" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} className="rounded text-[var(--teal)]" /><span>Срочный наряд</span></label></div>
+				<div className="flex items-center pt-4"><label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer"><input type="checkbox" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} className="rounded text-[var(--primary)]" /><span>Срочный наряд</span></label></div>
 			</div>
 			<div className="space-y-1">
 				<label htmlFor="lab-notes-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Указания технику</label>
@@ -225,12 +268,12 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 			<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-2 space-y-0.5 text-xs">
 				<div className="flex justify-between text-[var(--ink-muted)]"><span>Себестоимость ЗТЛ ({teethCount} ед.):</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalLabCostKopecks)}</strong></div>
 				<div className="flex justify-between text-[var(--ink-muted)]"><span>Прайс для пациента:</span><strong className="text-[var(--ink)]">{formatKopecksToRubles(totalPatientPriceKopecks)}</strong></div>
-				<div className="flex justify-between border-t border-[var(--line)] pt-0.5 text-[var(--teal)] font-bold"><span>Маржа клиники:</span><span>+{formatKopecksToRubles(netClinicRevenueKopecks)}</span></div>
+				<div className="flex justify-between border-t border-[var(--line)] pt-0.5 text-[var(--primary)] font-bold"><span>Маржа клиники:</span><span>+{formatKopecksToRubles(netClinicRevenueKopecks)}</span></div>
 			</div>
-			{/* Ровно ОДНА Primary CTA кнопка #0d9488 (Мандат 8am & 8e: НИКОГДА НЕ DISABLED) */}
+			{/* Ровно ОДНА Primary CTA кнопка (Мандат 8am & 8e: НИКОГДА НЕ DISABLED) */}
 			<div className="pt-2 space-y-1.5 pb-2">
 				<button type="button" data-testid="submit-lab-order-button" id="submit-lab-order-button" onClick={handleCreateOrder}
-					className="dental-lab-primary-cta bg-[var(--teal,#0d9488)] submit-lab-order-btn" style={{ backgroundColor: "var(--teal, #0d9488)" }}>
+					className="dental-lab-primary-cta bg-[var(--primary)] text-white shadow-sm submit-lab-order-btn">
 					<span>✓ Создать заказ-наряд</span>
 				</button>
 				<div className="grid grid-cols-2 gap-2">

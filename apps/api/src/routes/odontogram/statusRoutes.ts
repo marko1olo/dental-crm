@@ -59,6 +59,12 @@ async function applyToothStateMutation(
 		notes?: string | null | undefined;
 		canalMeasurements?: unknown[] | null | undefined;
 		clinicalData?: Record<string, unknown> | null | undefined;
+		mobility?: number | null | undefined;
+		mobilityDegree?: number | null | undefined;
+		isPrimaryPediatric?: boolean | null | undefined;
+		resorptionStage?: number | null | undefined;
+		pediatricCrownPresent?: boolean | null | undefined;
+		secondaryCariesUnderFilling?: boolean | null | undefined;
 		visitId?: string | null | undefined;
 		updatedAt?: string | null | undefined;
 		version?: number | null | undefined;
@@ -360,6 +366,26 @@ async function applyToothStateMutation(
 					data.canalMeasurements !== undefined
 						? data.canalMeasurements
 						: (prev?.canalMeasurements ?? null);
+
+				// Обогащение канонического SSOT toothStates расширенными клиническими атрибутами (детство, подвижность, резорбция)
+				const isPrimaryTooth = (toothNumber >= 51 && toothNumber <= 85) || Boolean(data.isPrimaryPediatric) || Boolean(prevClinical?.isPrimaryPediatric);
+				const effectiveMobility = data.mobility ?? data.mobilityDegree ?? (data.clinicalData?.mobility as number | undefined) ?? (data.clinicalData?.mobilityDegree as number | undefined) ?? prevClinical?.mobility ?? prevClinical?.mobilityDegree;
+				const effectiveResorption = data.resorptionStage ?? (data.clinicalData?.resorptionStage as number | undefined) ?? prevClinical?.resorptionStage;
+				const effectivePediatricCrown = data.pediatricCrownPresent ?? (data.clinicalData?.pediatricCrownPresent as boolean | undefined) ?? prevClinical?.pediatricCrownPresent;
+				const effectiveSecondaryCaries = data.secondaryCariesUnderFilling ?? (data.clinicalData?.secondaryCariesUnderFilling as boolean | undefined) ?? prevClinical?.secondaryCariesUnderFilling;
+
+				if (isPrimaryTooth || effectiveMobility !== undefined || effectiveResorption !== undefined || effectivePediatricCrown !== undefined || effectiveSecondaryCaries !== undefined) {
+					const existingObj = parseClinicalDataFromNotes(effectiveNotes) || prevClinical || {};
+					const enrichedClinicalData = {
+						...existingObj,
+						...(isPrimaryTooth ? { isPrimaryPediatric: true } : {}),
+						...(effectiveMobility !== undefined ? { mobility: effectiveMobility, mobilityDegree: effectiveMobility } : {}),
+						...(effectiveResorption !== undefined ? { resorptionStage: effectiveResorption } : {}),
+						...(effectivePediatricCrown !== undefined ? { pediatricCrownPresent: effectivePediatricCrown } : {}),
+						...(effectiveSecondaryCaries !== undefined ? { secondaryCariesUnderFilling: effectiveSecondaryCaries } : {}),
+					};
+					effectiveNotes = JSON.stringify(enrichedClinicalData);
+				}
 
 				// 1. Record transition into append-only tooth state history audit log
 				historyToInsert.push({

@@ -417,7 +417,7 @@ export function VisitEmkOdontogramBar({
 								new CustomEvent("dente:open-hygiene", {
 									detail: {
 										patientId: activePatient?.id,
-										visitId: draft?.id,
+										visitId: (draft as { id?: string } | null | undefined)?.id,
 										patientName: activePatient?.fullName,
 									},
 								}),

@@ -2,8 +2,11 @@ export * from "./labOrders.js";
 export {
 	type VitaShadePaletteItem,
 	VITA_CLASSICAL_PLUS_BLEACH_PALETTE,
+	type ChromascopShadeItem,
+	CHROMASCOP_PALETTE,
 	VITA_SHADE_HEX_MAP,
 	getVitaShadeHex,
+	getChromascopShadeHex,
 	VALID_VITA_SHADE_REGEX,
 	type LabWorkTypeCatalogItem,
 	CANONICAL_LAB_WORK_TYPES,

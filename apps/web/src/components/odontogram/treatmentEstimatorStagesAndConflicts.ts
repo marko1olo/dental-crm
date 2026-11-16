@@ -10,6 +10,8 @@ import type { TreatmentPlanItem, TreatmentPlanStageKind } from "../treatment-pla
 import { type EstimatorRule, type EstimatorSuggestionKey, isDeciduousFdiToothNumber } from "./treatmentEstimatorRules";
 import { type EstimatorToothInput, type PlanItem, planItemFromRule } from "./treatmentEstimatorCatalogMatching";
 import { type EstimatorContract, estimatorRowMoney, safeKopecks } from "./treatmentEstimatorMoney";
+import { getWarrantyPreset, type WarrantyCategory } from "../warranty/warrantyPresets";
+import { calculateWarrantyTerms } from "../warranty/warrantyCalculation";
 
 export type TreatmentStageId =
 	| "stage_1_therapy"
@@ -153,48 +155,29 @@ export interface TreatmentWarrantyInfo {
 export function calculateTreatmentWarranty(item: PlanItem): TreatmentWarrantyInfo {
 	const name = (item.name || "").toLowerCase();
 	const cat = (item.category || "").toLowerCase();
-
+	let category: WarrantyCategory = "composite_restoration";
 	if (name.includes("имплант") || item.suggestion === "implant") {
-		return {
-			warrantyMonths: 36,
-			serviceLifeMonths: 120,
-			categoryRu: "Дентальная имплантация",
-			termsDescription: "Гарантия клиники на остеоинтеграцию 3 года при условии прохождения профгигиены каждые 6 мес. Пожизненная гарантия производителя на титановый имплантат.",
-			isManufacturerLifetimeWarranty: true,
-		};
-	}
-	if (
+		category = "implant_fixture";
+	} else if (
 		name.includes("коронк") || name.includes("протез") || name.includes("e.max") ||
 		name.includes("циркон") || name.includes("винир") || cat === "prosthetics" || item.suggestion === "crown"
 	) {
-		return {
-			warrantyMonths: 24,
-			serviceLifeMonths: 60,
-			categoryRu: "Ортопедическая конструкция",
-			termsDescription: "Гарантия на целостность коронки/вкладки 24 месяца в соответствии с клиническими рекомендациями СтАР.",
-		};
+		category = "ceramic_crown_veneer";
+	} else if (
+		name.includes("пульпит") || name.includes("периодонтит") || name.includes("канал") ||
+		item.suggestion === "pulpitis" || item.suggestion === "periodontitis"
+	) {
+		category = "endodontic_treatment";
 	}
-	if (name.includes("пульпит") || name.includes("периодонтит") || name.includes("канал") || item.suggestion === "pulpitis" || item.suggestion === "periodontitis") {
-		return {
-			warrantyMonths: 12,
-			serviceLifeMonths: 36,
-			categoryRu: "Эндодонтическое лечение",
-			termsDescription: "Гарантия 12 месяцев при обязательном последующем покрытии зуба коронкой/вкладкой в течение 3 месяцев.",
-		};
-	}
-	if (name.includes("кариес") || name.includes("пломб") || item.suggestion === "caries") {
-		return {
-			warrantyMonths: 12,
-			serviceLifeMonths: 24,
-			categoryRu: "Терапевтическая реставрация",
-			termsDescription: "Гарантия 12 месяцев на краевое прилегание и стабильность цвета фотополимерной пломбы по ГОСТ Р 52623.4-2015.",
-		};
-	}
+
+	const preset = getWarrantyPreset(category);
+	const terms = calculateWarrantyTerms({ category });
 	return {
-		warrantyMonths: 6,
-		serviceLifeMonths: 12,
-		categoryRu: "Стоматологическая процедура",
-		termsDescription: "Стандартный гарантийный срок согласно Положению об оказании медицинских услуг клиники.",
+		warrantyMonths: terms.adjustedWarrantyMonths,
+		serviceLifeMonths: terms.adjustedServiceLifeMonths,
+		categoryRu: preset.title,
+		termsDescription: `Гарантия ${terms.adjustedWarrantyMonths} мес., срок службы ${terms.adjustedServiceLifeMonths} мес. в соответствии с регламентом СтАР.`,
+		...(category === "implant_fixture" ? { isManufacturerLifetimeWarranty: true } : {}),
 	};
 }
 

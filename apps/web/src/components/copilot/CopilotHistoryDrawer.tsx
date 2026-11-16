@@ -17,7 +17,7 @@ export interface CopilotHistoryDrawerProps {
 	onSelectThread: (threadId: string) => void;
 }
 
-export function getThreadDateCategory(thread: { id?: string; title?: string; pinned?: boolean; createdAt?: string; updatedAt?: string }): "pinned" | "today" | "yesterday" | "earlier" {
+export function getThreadDateCategory(thread: { id?: string | undefined; title?: string | undefined; pinned?: boolean | undefined; createdAt?: string | undefined; updatedAt?: string | undefined }): "pinned" | "today" | "yesterday" | "earlier" {
 	if (thread.pinned) return "pinned";
 	const now = new Date();
 	const todayStr = now.toISOString().slice(0, 10);
@@ -205,7 +205,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 				<div className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs">
 					{pinnedThreads.length > 0 && (
 						<div className="space-y-1.5">
-							<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--teal,#0d9488)] flex items-center gap-1">
+							<div className="text-[10px] font-semibold tracking-normal text-[var(--teal,#0d9488)] flex items-center gap-1">
 								<Pin size={10} />
 								<span>Закрепленные</span>
 							</div>
@@ -215,7 +215,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 
 					{todayThreads.length > 0 && (
 						<div className="space-y-1.5">
-							<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1 pt-1">
+							<div className="text-[10px] font-semibold tracking-normal text-[var(--muted)] flex items-center gap-1 pt-1">
 								<Calendar size={10} />
 								<span>Сегодня</span>
 							</div>
@@ -225,7 +225,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 
 					{yesterdayThreads.length > 0 && (
 						<div className="space-y-1.5">
-							<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1 pt-1">
+							<div className="text-[10px] font-semibold tracking-normal text-[var(--muted)] flex items-center gap-1 pt-1">
 								<Calendar size={10} />
 								<span>Вчера</span>
 							</div>
@@ -235,7 +235,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 
 					{earlierThreads.length > 0 && (
 						<div className="space-y-1.5">
-							<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1 pt-1">
+							<div className="text-[10px] font-semibold tracking-normal text-[var(--muted)] flex items-center gap-1 pt-1">
 								<Calendar size={10} />
 								<span>Ранее</span>
 							</div>

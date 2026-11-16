@@ -362,7 +362,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 					</nav>
 				</header>
 				{feedbackToast && (
-					<div className="bg-[var(--teal)] text-white px-4 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
+					<div className="bg-[var(--primary)] text-white px-4 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
 						<span>✓ {feedbackToast}</span>
 						<button type="button" onClick={() => setFeedbackToast(null)} className="text-white font-bold opacity-80 hover:opacity-100">&#215;</button>
 					</div>
@@ -378,7 +378,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В работе ЗТЛ", in_clinic: "Готово в клинике", overdue: "Просроченные" };
 										return (
 											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
-												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--teal)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
+												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--primary)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
 										);
 									})}
 								</div>
@@ -433,7 +433,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 										const labels: Record<LabFilterTab, string> = { all: "Все заказы", in_work: "В работе ЗТЛ", in_clinic: "Готово в клинике", overdue: "Просроченные" };
 										return (
 											<button key={tab} type="button" data-testid={`filter-tab-${tab}`} onClick={() => setActiveFilter(tab)}
-												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--teal)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
+												className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer ${activeFilter === tab ? "bg-[var(--primary)] text-white shadow-xs" : "bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>{labels[tab]}</button>
 										);
 									})}
 								</div>

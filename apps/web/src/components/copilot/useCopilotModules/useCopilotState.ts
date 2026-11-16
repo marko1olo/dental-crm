@@ -73,7 +73,7 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 				if (currentThreadId) {
 					const mapped = next.map((m, idx) => ({
 						id: "id" in m && typeof m.id === "string" ? m.id : `msg-${idx}`,
-						role: (m.role === "assistant" || m.role === "system" ? m.role : "user") as "user" | "assistant" | "system",
+						role: ("role" in m && (m.role === "assistant" || m.role === "system") ? m.role : "user") as "user" | "assistant" | "system",
 						text: "text" in m && typeof m.text === "string" ? m.text : "",
 						content: "text" in m && typeof m.text === "string" ? m.text : "",
 					}));

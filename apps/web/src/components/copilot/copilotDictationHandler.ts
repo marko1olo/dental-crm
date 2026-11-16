@@ -37,9 +37,9 @@ export interface DictationProcessingResult {
 
 function restoreVisitAndOdontogram(
 	prevStates: Record<string, VisitToothUiState>,
-	prevRecords: Record<string, any>,
+	prevRecords: Record<string, Parameters<ReturnType<typeof useVisitStore.getState>["setVisitToothRecord"]>[1]>,
 	patientId: string | null | undefined,
-	prevStored: any,
+	prevStored: ReturnType<typeof loadStoredTeethData>,
 ) {
 	useVisitStore.getState().setVisitToothStateByCode(() => prevStates);
 	for (const [c, r] of Object.entries(prevRecords)) {
@@ -207,7 +207,10 @@ export function handleClinicalSpeechOrText(
 				const billableServices: BillableItem[] = [];
 				if (priceListProcedures && priceListProcedures.length > 0) {
 					for (const p of priceListProcedures) {
-						const resolvedPrice = Number(p.priceRub ?? (p as any).price ?? 0);
+						const fallbackPrice = typeof p === "object" && p !== null && "price" in p && typeof (p as { price?: unknown }).price === "number"
+							? (p as { price: number }).price
+							: 0;
+						const resolvedPrice = Number(p.priceRub ?? fallbackPrice);
 						const resolvedTooth = p.toothNumber || firstTooth;
 						const procedureCode = p.code804n;
 						billableServices.push({
@@ -218,7 +221,15 @@ export function handleClinicalSpeechOrText(
 					}
 				}
 				if (intent.anesthesia) {
-					const resolvedAnesthesiaPrice = Number((intent.anesthesia as any).priceRub ?? (intent.anesthesia as any).price ?? 0);
+					const anObj: unknown = intent.anesthesia;
+					const anPrice = typeof anObj === "object" && anObj !== null
+						? ("priceRub" in anObj && typeof (anObj as { priceRub?: unknown }).priceRub === "number"
+							? (anObj as { priceRub: number }).priceRub
+							: ("price" in anObj && typeof (anObj as { price?: unknown }).price === "number"
+								? (anObj as { price: number }).price
+								: 0))
+						: 0;
+					const resolvedAnesthesiaPrice = Number(anPrice);
 					billableServices.push({
 						code: intent.anesthesia.code804n || "A11.07.012", name: `Анестезия: ${intent.anesthesia.displayName}`,
 						title: `Анестезия: ${intent.anesthesia.displayName}`, price: resolvedAnesthesiaPrice, priceRub: resolvedAnesthesiaPrice,

@@ -84,10 +84,28 @@ export function renderClinicalAndReActSection(tool: string, obj: Obj): React.Rea
       tooth: (obj.tooth as string | number) ?? (obj.toothNumber as string | number),
       toothNumber: (obj.toothNumber as string | number) ?? (obj.tooth as string | number),
       patch: obj.patch && typeof obj.patch === 'object' ? (obj.patch as ClinicalProtocolCardData['patch']) : undefined,
-      toothState: typeof obj.toothState === 'string' ? (obj.toothState as any) : undefined,
+      toothState:
+        obj.toothState === 'treatment' ||
+        obj.toothState === 'done' ||
+        obj.toothState === 'missing' ||
+        obj.toothState === 'idle'
+          ? obj.toothState
+          : undefined,
       applied: typeof obj.applied === 'boolean' ? obj.applied : true,
       totalCatalogProtocols: 1142,
-      alternatives: Array.isArray(obj.alternatives) ? (obj.alternatives as any) : undefined,
+      alternatives: Array.isArray(obj.alternatives)
+        ? (obj.alternatives
+            .filter((item): item is { id: string | number; procedureName?: string; name?: string; categoryKey?: string; categoryName?: string; matchedIcd10?: string } =>
+              typeof item === 'object' && item !== null && ('id' in item || 'procedureName' in item || 'name' in item)
+            )
+            .map(alt => ({
+              id: String(alt.id || `alt-${Date.now()}`),
+              procedureName: String(alt.procedureName || alt.name || 'Альтернативный протокол'),
+              ...(typeof alt.categoryKey === 'string' ? { categoryKey: alt.categoryKey } : {}),
+              ...(typeof alt.categoryName === 'string' ? { categoryName: alt.categoryName } : {}),
+              ...(typeof alt.matchedIcd10 === 'string' ? { matchedIcd10: alt.matchedIcd10 } : {}),
+            })))
+        : undefined,
     };
     return <CopilotClinicalProtocolCard data={cardData} />;
   }

@@ -72,4 +72,21 @@ describe("dentalLabShadePickerDom — Shade & Odontogram Controls", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		assert.strictEqual(emojiRegex.test(shadeHtml), false);
 	});
+
+	it("рендерит вкладку и 20-цветную сетку Ivoclar Chromascop (110–540)", () => {
+		const html = renderToString(
+			<DentalLabShadePicker
+				shadeSystem="chromascop"
+				selectedShade="110"
+				onSelectShade={() => {}}
+			/>,
+		);
+		assert.ok(html.includes("Chromascop"), "должен содержать вкладку Chromascop");
+		assert.ok(html.includes('data-testid="chromascop-grid-container"'), "должен рендерить контейнер Chromascop");
+		assert.ok(html.includes('data-testid="chromascop-shade-110"'), "оттенок 110 (Белый)");
+		assert.ok(html.includes('data-testid="chromascop-shade-210"'), "оттенок 210 (Желтый)");
+		assert.ok(html.includes('data-testid="chromascop-shade-310"'), "оттенок 310 (Серый)");
+		assert.ok(html.includes('data-testid="chromascop-shade-410"'), "оттенок 410 (Коричневый)");
+		assert.ok(html.includes('data-testid="chromascop-shade-540"'), "оттенок 540 (Темный)");
+	});
 });

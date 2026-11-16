@@ -3885,3 +3885,83 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Perio Studio Mobile Light (390x844): [`docs/proofs/perio/03_perio_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/perio/03_perio_studio_mobile_light_390x844.png) (145.9 KB) — Apple HIG нативный Bottom Sheet, тактильный drag handle, CTA в Natural Thumb Zone.
   - 📱 Perio Studio Mobile Dark (390x844): [`docs/proofs/perio/04_perio_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/perio/04_perio_studio_mobile_dark_390x844.png) (164.5 KB) — тёмный мобильный адаптив, тач-таргеты >= 44x44px, 0px горизонтального скролла.
 
+---
+
+### АКТ ХИРУРГИЧЕСКОЙ ЗАЧИСТКИ: ВОЛНА 9 (ДОМЕНЫ 25, 26, 27, 28) — [ЗАКРЫТО: ПОЛНОСТЬЮ]
+- **Дата и статус:** 2026-11-17 — **ВЫПОЛНЕНО В ПОЛНОМ ОБЪЁМЕ [ПРОВЕРЕНО: ЧИСТО]**.
+- **Основание:** Доктрина Red Team Инквизиции (Scout -> 1:1 Verbatim -> Fixer Surgeon), Мандаты 8ar, 8as, 8e, 8n, 8am, 8al, 8an, 8bk.
+
+#### 1. ДОМЕН 25: КЛИНИЧЕСКИЙ ИИ-АССИСТЕНТ (CLINICAL COPILOT & VOICE HIGHWAY)
+- **Хирург:** Red Team Fixer Surgeon (`b6b2f280-6d61-48ee-8a28-652dd2ef591b`).
+- **Ликвидированные дефекты:**
+  1. Защита от потери клинического контекста при смене пациента (`activePatientId` в `useCopilotState.ts`).
+  2. Разблокированная автономия врача: кнопки сохранения и применения предложений никогда не disabled (Мандат 8e).
+  3. Унификация дизайна: ровно 1 Primary CTA noble teal `bg-[var(--primary)] text-white`, все вторичные контролы — нейтральные (Мандат 8am).
+  4. Ликвидация сленга «1 клик» в UI.
+- **Машинные гейты:**
+  - 46/46 тестов Vitest passed (`CopilotContextTelemetry.test.tsx` 11, `clinicalStateHydrationAndBatchDictation.test.tsx` 7, `chairsideCopilotHUD.test.tsx` 23, `copilotSettingsAndHistoryInquisition.test.tsx` 5).
+  - 10/10 Fastify API тестов passed (`agentHarness.test.ts` 5, `agentSessionRoutes.test.ts` 5).
+  - `tsc` в боевом коде компонента: 0 ошибок.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/copilot/01_copilot_pc_light_1440x900.png` (58.6 KB)
+  - 🌙 PC Dark: `docs/proofs/copilot/02_copilot_pc_dark_1440x900.png` (56.9 KB)
+  - 📱 Mobile Light: `docs/proofs/copilot/03_copilot_mobile_light_390x844.png` (124.3 KB)
+  - 📱 Mobile Dark: `docs/proofs/copilot/04_copilot_mobile_dark_390x844.png` (117.4 KB)
+
+#### 2. ДОМЕН 26: РАСПИСАНИЕ И ТАЙМЛАЙН (SCHEDULE TIMELINE & BOOKING HIGHWAY)
+- **Хирург:** Red Team Fixer Surgeon (`719f9ef8-d87b-45b9-b4a5-8c0ed04c91fd`).
+- **Ликвидированные дефекты:**
+  1. Физический снос легаси-дубликата: `apps/web/src/utils/AppointmentHelpers.ts` (423 строки) удален через `git rm`, все 6 точек вызова перелинкованы на SSOT `workspaceStaticOptions.ts`.
+  2. Семантический токен Primary CTA: заменены `--teal` и синие хардкоды на `var(--primary)`.
+  3. Геометрия контролов: Desktop Standard `h-9 px-3.5 rounded-lg`, Mobile Touch `min-h-[44px] h-11 px-4 rounded-xl`, Mobile Sticky Bottom CTA `h-[52px] min-h-[52px] rounded-xl`.
+  4. Автономия врача: запись без ассистента в соло-режиме, опция «-- Без ассистента (соло-приём) --» в многокресельном режиме.
+- **Машинные гейты:**
+  - 19/19 тестов Vitest passed (`scheduleSoloDoctorAssistantAutonomy.test.tsx` 4, `soloDoctorScheduleAutonomyWave310.test.tsx` 12, `scheduleQuickBookingAutonomyAndDutyDoctor.test.tsx` 3).
+  - `tsc` по боевым файлам расписания: 0 ошибок.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/schedule/schedule_pc_light_1440x900.png` (202.4 KB)
+  - 🌙 PC Dark: `docs/proofs/schedule/schedule_pc_dark_1440x900.png` (257.9 KB)
+  - 📱 Mobile Light: `docs/proofs/schedule/schedule_mobile_light_390x844.png` (133.2 KB)
+  - 📱 Mobile Dark: `docs/proofs/schedule/schedule_mobile_dark_390x844.png` (130.5 KB)
+
+#### 3. ДОМЕН 27: ОДОНТОГРАММА WHEELER 2.5D, ПОВЕРХНОСТИ MODBL И МОЛОЧНЫЙ ПРИКУС
+- **Хирург:** Red Team Fixer Surgeon (`644b3011-8b68-485b-9f08-a6d58865d320`).
+- **Ликвидированные дефекты:**
+  1. Surface Union Merge в `apps/api/src/routes/odontogram/statusRoutes.ts`: кариес на окклюзионной поверхности `O` больше никогда не стирает медиальную `M` или дистальную `D` пломбу в PostgreSQL 18.
+  2. Аутентичная морфология молочного прикуса (51–85): внедрен `PediatricToothContainer.tsx` с реальными контурами моляров (верхние с 3 корнями, нижние с 2 корнями, физиологическая резорбция корней).
+  3. Реактивная связь сметы: при установке патологии мгновенно всплывает контекстный чип с расчетом цены.
+  4. Ликвидация блокировки кариеса при наличии пломбы в `gate0ToothFlagsConverter.ts`.
+  5. Переписан тест-саботажник `anatomicalAdultPediatricTeeth.test.ts` (12/12 passed).
+- **Машинные гейты:**
+  - API Surface Union Merge: 4/4 passed (Exit Code 0).
+  - Vitest Pediatric & Wheeler: 24/24 passed (Exit Code 0).
+  - Button & React Hooks linters: 0 violations (Exit Code 0).
+  - TypeScript: 0 ошибок в коде компонентов одонтограммы.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ Взрослый PC Light: `docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png` (165.2 KB)
+  - 🌙 Взрослый PC Dark: `docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png` (170.0 KB)
+  - 📱 Взрослый Mobile Light: `docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png` (220.8 KB)
+  - 📱 Взрослый Mobile Dark: `docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png` (224.9 KB)
+  - ☀️ Молочный PC Light: `docs/proofs/odontogram/05_pediatric_pc_light_1440x900.png` (134.7 KB)
+  - 🌙 Молочный PC Dark: `docs/proofs/odontogram/06_pediatric_pc_dark_1440x900.png` (145.0 KB)
+  - 📱 Молочный Mobile Light: `docs/proofs/odontogram/07_pediatric_mobile_light_390x844.png` (194.1 KB)
+  - 📱 Молочный Mobile Dark: `docs/proofs/odontogram/08_pediatric_mobile_dark_390x844.png` (202.5 KB)
+
+#### 4. ДОМЕН 28: ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ (ЗТЛ) И 20-ЦВЕТНАЯ ШКАЛА IVOCLAR CHROMASCOP
+- **Хирург:** Red Team Fixer Surgeon (`a5688e38-6a44-43d6-ab02-1b5c98ad7105`).
+- **Ликвидированные дефекты:**
+  1. Физический снос расстрельного списка: директория `apps/web/src/components/lab/actionPromptModules/` полностью ликвидирована через `git rm`.
+  2. 20-цветная шкала Ivoclar Chromascop (110–540): внедрен `CHROMASCOP_PALETTE` в `packages/shared/src/lab/vitaPalette.ts` и компонент `DentalLabChromascopGrid.tsx` с touch-зонами >=44x44px.
+  3. Унификация Primary CTA: кнопка «✓ Создать заказ-наряд» переведена на `bg-[var(--primary)] text-white`.
+- **Машинные гейты:**
+  - 305/305 тестов Vitest passed (77 файлов, Exit Code 0).
+  - `tsc` по компонентам лаборатории: 0 ошибок.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/lab/01_dental_lab_orders_pc_light_1440x900.png` (145.7 KB)
+  - 🌙 PC Dark: `docs/proofs/lab/02_dental_lab_orders_pc_dark_1440x900.png` (133.8 KB)
+  - 📱 Mobile Light: `docs/proofs/lab/03_dental_lab_orders_mobile_light_390x844.png` (46.9 KB)
+  - 📱 Mobile Dark: `docs/proofs/lab/04_dental_lab_orders_mobile_dark_390x844.png` (55.7 KB)
+  - 🎨 Chromascop PC Light: `docs/proofs/lab/05_dental_lab_chromascop_20shades_pc_light.png` (137.9 KB)
+  - 🎨 Chromascop Mobile Light: `docs/proofs/lab/06_dental_lab_chromascop_20shades_mobile_light.png` (41.8 KB)
+
+

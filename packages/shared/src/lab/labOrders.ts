@@ -656,6 +656,109 @@ export function mapTo5StageLabStatus(rawStatus?: string | null): Canonical5LabSt
 	return "sent";
 }
 
+// ─── CANONICAL 8 POSTGRESQL CHECK-CONSTRAINT LAB STATUSES (MIGRATION 0042) ──
+
+export const CANONICAL_PG_LAB_STATUSES = [
+	"draft",
+	"sent",
+	"in_progress",
+	"shipped",
+	"received",
+	"refitting",
+	"completed",
+	"cancelled",
+] as const;
+
+export const canonicalPgLabStatusSchema = z.enum(CANONICAL_PG_LAB_STATUSES);
+export type CanonicalPgLabStatus = z.infer<typeof canonicalPgLabStatusSchema>;
+
+/**
+ * Канонический маппинг из 5 клинических стадий UI в строго 8 допустимых статусов PostgreSQL CHECK constraint.
+ * Защищает от ошибки "violates check constraint lab_orders_status_check".
+ */
+export const STAGE_TO_CANONICAL_PG_STATUS: Record<Canonical5LabStatus, CanonicalPgLabStatus> = {
+	sent: "sent",
+	in_progress: "in_progress",
+	fitting: "received",       // работа прибыла в клинику для клинической примерки у пациента
+	ready: "received",         // работа завершена лабораторией и получена клиникой
+	completed: "completed",    // конструкция зафиксирована во рту
+};
+
+/**
+ * Двусторонний канонический маппер: преобразует любой входной этап/стадию в строго один из 8 статусов PostgreSQL CHECK-constraint.
+ */
+export function mapStageToCanonicalPgStatus(rawStage?: string | null): CanonicalPgLabStatus {
+	if (!rawStage) return "sent";
+	const s = rawStage.toLowerCase().trim();
+	if (s === "draft") return "draft";
+	if (s === "cancelled") return "cancelled";
+	if (
+		s === "refitting" ||
+		s === "rework" ||
+		s === "rejected_remake" ||
+		s === "correction_remake" ||
+		s === "warranty_rework" ||
+		s === "переделка" ||
+		s === "рекламация"
+	) {
+		return "refitting";
+	}
+	if (
+		s === "completed" ||
+		s === "fitted" ||
+		s === "seated" ||
+		s === "installed_in_mouth" ||
+		s === "фиксация" ||
+		s === "сдан"
+	) {
+		return "completed";
+	}
+	if (
+		s === "ready" ||
+		s === "received" ||
+		s === "ready_in_clinic" ||
+		s === "in_clinic" ||
+		s === "delivered_to_clinic" ||
+		s === "fitting" ||
+		s === "fitting_ready" ||
+		s === "framework_fitting" ||
+		s === "fitting_scheduled" ||
+		s === "fitting_in_mouth" ||
+		s === "готовая работа" ||
+		s === "примерка"
+	) {
+		return "received";
+	}
+	if (s === "shipped" || s === "shipped_to_clinic") {
+		return "shipped";
+	}
+	if (
+		s === "in_progress" ||
+		s === "in_production" ||
+		s === "cad_design" ||
+		s === "cad_cam" ||
+		s === "model_cad_design" ||
+		s === "cad_modeling" ||
+		s === "milling_wax_up" ||
+		s === "framework_wax_milling" ||
+		s === "sintering_ceramic_layering" ||
+		s === "ceramic_layering" ||
+		s === "нанесение керамики" ||
+		s === "в работе"
+	) {
+		return "in_progress";
+	}
+	return "sent";
+}
+
+/**
+ * Двусторонний канонический маппер: преобразует статус PostgreSQL (8 или 12 статусов)
+ * в каноническую 5-стадийную модель UI (Canonical5LabStatus: sent -> in_progress -> fitting -> ready -> completed).
+ */
+export function mapPgStatusTo5Stage(rawStatus?: string | null): Canonical5LabStatus {
+	return mapTo5StageLabStatus(rawStatus);
+}
+
 // ─── STATUTORY FORM ZTL-1 METADATA (STaR / GOST R 51087-97) ─────────────────
 
 export const FORM_ZTL_1_METADATA = {
@@ -1155,10 +1258,19 @@ export const VITA_3D_MASTER_SHADES = [
 	"5M3",
 ] as const;
 
+export const CHROMASCOP_SHADES = [
+	"110", "120", "130", "140",
+	"210", "220", "230", "240",
+	"310", "320", "330", "340",
+	"410", "420", "430", "440",
+	"510", "520", "530", "540",
+] as const;
+
 export const ALL_VALID_VITA_SHADES: ReadonlySet<string> = new Set<string>([
 	...VITA_CLASSICAL_SHADES,
 	...VITA_BLEACH_SHADES,
 	...VITA_3D_MASTER_SHADES,
+	...CHROMASCOP_SHADES,
 ]);
 
 export function normalizeVitaShade(shade: string): string {
@@ -1199,7 +1311,7 @@ export function isValidVitaShade(shade?: string | null | undefined): boolean {
 }
 
 export const VITA_SHADE_VALIDATION_MESSAGE =
-	"Недопустимый оттенок зуба. Используйте стандарт VITA Classical (A1–D4), VITA 3D-Master (1M1–5M3) или Bleach (0M1–0M3, BL1–BL4).";
+	"Недопустимый оттенок зуба. Используйте стандарт VITA Classical (A1–D4), VITA 3D-Master (1M1–5M3), Bleach (0M1–0M3, BL1–BL4) или Ivoclar Chromascop (110–540).";
 
 export const LAB_ORDER_MATERIALS = {
 	zirconia_multilayer: "Диоксид циркония многослойный (Multi-layer)",

@@ -50,33 +50,18 @@ function areAnatomicalGate0CellPropsEqual(
 	if (!prev.toothData || !next.toothData) return false;
 
 	if (prev.toothData.state !== next.toothData.state) return false;
-	if (prev.toothData.restorationType !== next.toothData.restorationType) return false;
 	if (prev.toothData.material !== next.toothData.material) return false;
-	if (prev.toothData.rootState !== next.toothData.rootState) return false;
 	if (prev.toothData.mobility !== next.toothData.mobility) return false;
-	if (prev.toothData.icdasCode !== next.toothData.icdasCode) return false;
+	if (prev.toothData.hasPost !== next.toothData.hasPost) return false;
+	if (prev.toothData.postType !== next.toothData.postType) return false;
+	if (prev.toothData.periapicalLesion !== next.toothData.periapicalLesion) return false;
+	if (prev.toothData.rootResorptionStage !== next.toothData.rootResorptionStage) return false;
 
 	const prevSurfaces = prev.toothData.surfaces ?? [];
 	const nextSurfaces = next.toothData.surfaces ?? [];
 	if (prevSurfaces.length !== nextSurfaces.length) return false;
 	for (let i = 0; i < prevSurfaces.length; i++) {
 		if (prevSurfaces[i] !== nextSurfaces[i]) return false;
-	}
-
-	const prevCanals = prev.toothData.canalTreatments;
-	const nextCanals = next.toothData.canalTreatments;
-	if (Boolean(prevCanals) !== Boolean(nextCanals)) return false;
-	if (prevCanals && nextCanals) {
-		if (prevCanals.length !== nextCanals.length) return false;
-		for (let i = 0; i < prevCanals.length; i++) {
-			if (
-				prevCanals[i]?.canal !== nextCanals[i]?.canal ||
-				prevCanals[i]?.obturated !== nextCanals[i]?.obturated ||
-				prevCanals[i]?.material !== nextCanals[i]?.material
-			) {
-				return false;
-			}
-		}
 	}
 
 	return true;

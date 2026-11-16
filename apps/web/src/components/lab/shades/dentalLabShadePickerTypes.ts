@@ -1,4 +1,4 @@
-export type ShadeSystemKey = "classical" | "3d_master" | "bleach" | "stump";
+export type ShadeSystemKey = "classical" | "3d_master" | "bleach" | "stump" | "chromascop";
 
 export interface DentalLabShadePickerProps {
 	readonly shadeSystem?: ShadeSystemKey | undefined;

@@ -56,13 +56,13 @@ export function mapVoiceIntentToHUDProposals(
     };
   }
 
-  const procs = intent.procedures804n || (intent as any).treatmentProcedures;
+  const procs = intent.procedures804n;
   if (procs && procs.length > 0) {
-    result.servicesProposal = procs.map((p: any, idx: number) => ({
+    result.servicesProposal = procs.map((p, idx: number) => ({
       id: `proc-voice-${idx}-${Date.now()}`,
-      serviceCode: p.serviceCode || p.code804n || "A16.07.001",
-      code804n: p.serviceCode || p.code804n || "A16.07.001",
-      title: p.name || p.title || "Медицинская услуга",
+      serviceCode: p.code804n || "A16.07.001",
+      code804n: p.code804n || "A16.07.001",
+      title: p.name || "Медицинская услуга",
       priceRub: p.priceRub || 1500,
       quantity: p.quantity || 1,
       applied: false,

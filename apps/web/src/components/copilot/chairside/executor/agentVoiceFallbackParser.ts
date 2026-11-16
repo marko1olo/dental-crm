@@ -20,10 +20,25 @@ import {
 } from "../chairsideTypes";
 import type { ParsedAgentResult } from "./agentApiResponseParser";
 
+export interface CatalogMatchVoiceItem {
+  tooth?: number | undefined;
+  recommendedToothState?: string | undefined;
+  procedureName?: string | undefined;
+  matchedIcd10?: string | undefined;
+  patch?: {
+    complaint?: string | undefined;
+    anamnesis?: string | undefined;
+    objectiveStatus?: string | undefined;
+    diagnosis?: string | undefined;
+    treatmentPlan?: string | undefined;
+    recommendations?: string | undefined;
+  } | undefined;
+}
+
 export function tryParseVoiceFallback(
   text: string,
   activeTooth: number | null = null,
-  catalogMatch: any = null,
+  catalogMatch: CatalogMatchVoiceItem | null = null,
   matchedProtocol: MatchedProtocolInfo | null = null,
 ): ParsedAgentResult | null {
   const voiceIntent = parseDentalVoiceSpeech(text);
@@ -65,15 +80,15 @@ export function tryParseVoiceFallback(
   } : null;
 
   let servicesProposal: ChairsideServiceProposal[];
-  const voiceProcs = (voiceIntent as any).treatmentProcedures || voiceIntent.procedures804n || [];
-  if (voiceProcs.length > 0) {
-    servicesProposal = voiceProcs.map((p: any, idx: number) => ({
-      id: `voice-srv-${idx}-${p.serviceCode || p.code804n || idx}`,
-      serviceCode: p.serviceCode || p.code804n || "A16.07.001",
-      code804n: p.serviceCode || p.code804n || "A16.07.001",
-      title: p.name || p.title || "Медицинская услуга",
+  const voiceProcs = voiceIntent.procedures804n;
+  if (voiceProcs && voiceProcs.length > 0) {
+    servicesProposal = voiceProcs.map((p, idx: number) => ({
+      id: `voice-srv-${idx}-${p.code804n || idx}`,
+      serviceCode: p.code804n || "A16.07.001",
+      code804n: p.code804n || "A16.07.001",
+      title: p.name || "Медицинская услуга",
       toothNumber: targetTooth ?? undefined,
-      quantity: 1,
+      quantity: p.quantity || 1,
       priceRub: p.priceRub || 3500,
       applied: false,
     }));

@@ -77,6 +77,37 @@ export const SHADE_SWATCH_MAP: Record<string, ShadeSwatchInfo> = {
 	ND7: { bg: "#9b8d80", border: "#7b6c5f", desc: "Темная дисколорированная серая культя", group: "Культя" },
 	ND8: { bg: "#6d5d52", border: "#4f4137", desc: "Сильно пигментированная девитальная", group: "Культя" },
 	ND9: { bg: "#949ba2", border: "#6c737c", desc: "Металлическая вкладка / титановый абатмент", group: "Культя" },
+
+	// Ivoclar Chromascop (110–540)
+	// Группа 100 — Белые
+	"110": { bg: "#F3EBDD", border: "#dbcfbc", desc: "Chromascop 110 — Белый светлый", group: "Chromascop 100" },
+	"120": { bg: "#EFE4D2", border: "#d5c7b1", desc: "Chromascop 120 — Белый средний", group: "Chromascop 100" },
+	"130": { bg: "#E8D9C0", border: "#ccbca1", desc: "Chromascop 130 — Белый насыщенный", group: "Chromascop 100" },
+	"140": { bg: "#DFCCA9", border: "#c2ae89", desc: "Chromascop 140 — Белый пришеечный", group: "Chromascop 100" },
+
+	// Группа 200 — Желтые
+	"210": { bg: "#F4E8D0", border: "#d8c9ad", desc: "Chromascop 210 — Желтый светлый", group: "Chromascop 200" },
+	"220": { bg: "#EADCBF", border: "#cdbca0", desc: "Chromascop 220 — Желтый средний", group: "Chromascop 200" },
+	"230": { bg: "#DECBAA", border: "#c1ad8b", desc: "Chromascop 230 — Желтый насыщенный", group: "Chromascop 200" },
+	"240": { bg: "#D3BC95", border: "#b59e77", desc: "Chromascop 240 — Желтый глубокий", group: "Chromascop 200" },
+
+	// Группа 300 — Серые
+	"310": { bg: "#EEDEC8", border: "#d1c0a8", desc: "Chromascop 310 — Серый светлый", group: "Chromascop 300" },
+	"320": { bg: "#E3CEB4", border: "#c5b095", desc: "Chromascop 320 — Серый средний", group: "Chromascop 300" },
+	"330": { bg: "#D8BDA0", border: "#b99e82", desc: "Chromascop 330 — Серый насыщенный", group: "Chromascop 300" },
+	"340": { bg: "#CBAA89", border: "#ac8c6b", desc: "Chromascop 340 — Серый глубокий", group: "Chromascop 300" },
+
+	// Группа 400 — Коричневые
+	"410": { bg: "#EAE0D0", border: "#cdc1af", desc: "Chromascop 410 — Коричневый светлый", group: "Chromascop 400" },
+	"420": { bg: "#DFD3BE", border: "#c1b49e", desc: "Chromascop 420 — Коричневый средний", group: "Chromascop 400" },
+	"430": { bg: "#D2C3AA", border: "#b4a38b", desc: "Chromascop 430 — Коричневый насыщенный", group: "Chromascop 400" },
+	"440": { bg: "#C2B093", border: "#a49275", desc: "Chromascop 440 — Коричневый глубокий", group: "Chromascop 400" },
+
+	// Группа 500 — Темные
+	"510": { bg: "#E3D1BE", border: "#c6b39f", desc: "Chromascop 510 — Темный светлый", group: "Chromascop 500" },
+	"520": { bg: "#D5BF9F", border: "#b7a07f", desc: "Chromascop 520 — Темный средний", group: "Chromascop 500" },
+	"530": { bg: "#C7AB88", border: "#a88c69", desc: "Chromascop 530 — Темный насыщенный", group: "Chromascop 500" },
+	"540": { bg: "#B79870", border: "#977953", desc: "Chromascop 540 — Темный глубокий", group: "Chromascop 500" },
 };
 
 export const STUMP_NATURAL_DIE_SHADES = [

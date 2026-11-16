@@ -96,45 +96,35 @@ describe("WheelerToothArch Pediatric & Mixed Dentition Suite", () => {
 	});
 
 	test("AnatomicalTooth корректно рендерит анатомию молочных моляров (3 корня сверху, 2 корня снизу)", () => {
-		// Верхние молочные моляры 54, 55, 64, 65
+		// Верхние молочные моляры 54, 55, 64, 65: честная детская анатомия (3 корня PEDIATRIC_UPPER_MOLAR_GEOMETRY)
 		for (const toothNum of [54, 55, 64, 65]) {
 			const html = renderToStaticMarkup(<AnatomicalTooth toothNumber={toothNum} />);
-			// Верхние моляры содержат разметку трех корней (MB, DB, Palatal)
+			// Верхние моляры содержат разметку трех корней детской геометрии
 			assert.ok(
-				html.includes("tooth16-root-palatal") || html.includes("palatal") || html.includes("buccalRoots"),
-				`Верхний молочный моляр ${toothNum} обязан иметь нёбный корень (3 корня)`,
+				html.includes('data-testid="pediatric-roots"') && html.includes("M 18 84 C 10 64, 10 38, 16 18"),
+				`Верхний молочный моляр ${toothNum} обязан иметь честную трехкорневую анатомию детского моляра (3 корня)`,
 			);
-			// Не должен содержать премолярный ID
+			// Не должен содержать премолярный или взрослый молярный ID
 			assert.equal(
-				html.includes("tooth14-roots"),
+				html.includes("tooth14-roots") || html.includes("tooth15-roots") || html.includes("tooth16-roots"),
 				false,
-				`Верхний молочный моляр ${toothNum} НЕ ДОЛЖЕН маппиться на премоляр 14`,
-			);
-			assert.equal(
-				html.includes("tooth15-roots"),
-				false,
-				`Верхний молочный моляр ${toothNum} НЕ ДОЛЖЕН маппиться на премоляр 15`,
+				`Верхний молочный моляр ${toothNum} НЕ ДОЛЖЕН маппиться на взрослые зубы 14, 15 или 16`,
 			);
 		}
 
-		// Нижние молочные моляры 74, 75, 84, 85
+		// Нижние молочные моляры 74, 75, 84, 85: честная детская анатомия (2 корня PEDIATRIC_LOWER_MOLAR_GEOMETRY)
 		for (const toothNum of [74, 75, 84, 85]) {
 			const html = renderToStaticMarkup(<AnatomicalTooth toothNumber={toothNum} />);
-			// Нижние моляры содержат двухкорневую систему (M, D) или детскую корневую геометрию
+			// Нижние моляры содержат двухкорневую систему (M, D) честной детской корневой геометрии
 			assert.ok(
-				html.includes("tooth46-roots") || html.includes("tooth47-roots") || html.includes("buccalCervicalRidge") || html.includes("pediatric-roots"),
-				`Нижний молочный моляр ${toothNum} обязан иметь анатомию нижнего моляра (2 корня)`,
+				html.includes('data-testid="pediatric-roots"') && html.includes("M 18 76 C 10 96, 10 122, 16 142"),
+				`Нижний молочный моляр ${toothNum} обязан иметь анатомию нижнего детского моляра (2 корня PEDIATRIC_LOWER_MOLAR_GEOMETRY)`,
 			);
-			// Не должен содержать премолярный ID
+			// Не должен содержать премолярный или взрослый молярный ID
 			assert.equal(
-				html.includes("tooth44-roots"),
+				html.includes("tooth44-roots") || html.includes("tooth45-roots") || html.includes("tooth46-roots") || html.includes("tooth47-roots"),
 				false,
-				`Нижний молочный моляр ${toothNum} НЕ ДОЛЖЕН маппиться на премоляр 44`,
-			);
-			assert.equal(
-				html.includes("tooth45-roots"),
-				false,
-				`Нижний молочный моляр ${toothNum} НЕ ДОЛЖЕН маппиться на премоляр 45`,
+				`Нижний молочный моляр ${toothNum} НЕ ДОЛЖЕН маппиться на взрослые зубы 44, 45, 46 или 47`,
 			);
 		}
 	});

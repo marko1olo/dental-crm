@@ -1,9 +1,10 @@
 import React from "react";
 import { SHADE_SWATCH_MAP } from "../labMath";
+import type { ShadeSystemKey } from "./dentalLabShadePickerTypes";
 
 export interface DentalLabExpressShadeNavProps {
-	readonly shadeSystem: "classical" | "3d_master" | "bleach" | "stump";
-	readonly setShadeSystem: (sys: "classical" | "3d_master" | "bleach" | "stump") => void;
+	readonly shadeSystem: ShadeSystemKey;
+	readonly setShadeSystem: (sys: ShadeSystemKey) => void;
 	readonly currentShade: string;
 	readonly selectedStumpShade?: string | null | undefined;
 }
@@ -73,6 +74,20 @@ export const DentalLabExpressShadeNav: React.FC<DentalLabExpressShadeNavProps> =
 					}`}
 				>
 					<span data-testid="vita-stump-tab">Культя (ND)</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setShadeSystem("chromascop")}
+					data-testid="shade-system-chromascop-btn"
+					id="vita-tab-chromascop"
+					className={`min-h-[44px] sm:min-h-[36px] px-3 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-2xs active:scale-[0.98] ${
+						shadeSystem === "chromascop"
+							? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white"
+							: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
+					}`}
+				>
+					<span data-testid="chromascop-tab">Chromascop</span>
 				</button>
 			</div>
 

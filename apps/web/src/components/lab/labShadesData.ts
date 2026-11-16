@@ -29,6 +29,14 @@ export const VITA_3D_MASTER_SHADES = [
 	"5M1", "5M2", "5M3",
 ] as const;
 
+export const CHROMASCOP_SHADES = [
+	"110", "120", "130", "140",
+	"210", "220", "230", "240",
+	"310", "320", "330", "340",
+	"410", "420", "430", "440",
+	"510", "520", "530", "540",
+] as const;
+
 export interface VitaClassicalGroup {
 	readonly id: "A" | "B" | "C" | "D";
 	readonly name: string;
@@ -36,6 +44,52 @@ export interface VitaClassicalGroup {
 	readonly descRu: string;
 	readonly shades: readonly string[];
 }
+
+export interface ChromascopGroup {
+	readonly id: "100" | "200" | "300" | "400" | "500";
+	readonly name: string;
+	readonly toneRu: string;
+	readonly descRu: string;
+	readonly shades: readonly string[];
+}
+
+export const CHROMASCOP_GROUPS: readonly ChromascopGroup[] = [
+	{
+		id: "100",
+		name: "Группа 100",
+		toneRu: "Белый тон",
+		descRu: "Светлые белые оттенки повышенной яркости (110–140)",
+		shades: ["110", "120", "130", "140"],
+	},
+	{
+		id: "200",
+		name: "Группа 200",
+		toneRu: "Желтый тон",
+		descRu: "Естественные теплые желтоватые оттенки дентина (210–240)",
+		shades: ["210", "220", "230", "240"],
+	},
+	{
+		id: "300",
+		name: "Группа 300",
+		toneRu: "Серый тон",
+		descRu: "Серые и серо-коричневые нейтральные оттенки (310–340)",
+		shades: ["310", "320", "330", "340"],
+	},
+	{
+		id: "400",
+		name: "Группа 400",
+		toneRu: "Коричневый тон",
+		descRu: "Глубокие коричневые оттенки для зрелых зубов (410–440)",
+		shades: ["410", "420", "430", "440"],
+	},
+	{
+		id: "500",
+		name: "Группа 500",
+		toneRu: "Темный тон",
+		descRu: "Темно-коричневые и пришеечные насыщенные оттенки (510–540)",
+		shades: ["510", "520", "530", "540"],
+	},
+] as const;
 
 export const VITA_CLASSICAL_GROUPS: readonly VitaClassicalGroup[] = [
 	{

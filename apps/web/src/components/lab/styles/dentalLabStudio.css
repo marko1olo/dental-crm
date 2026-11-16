@@ -204,11 +204,11 @@
 	background: var(--lab-teal-surface);
 }
 
-/* 6. Единая Primary CTA кнопка #0d9488 */
+/* 6. Единая Primary CTA кнопка var(--primary) */
 .dental-lab-primary-cta {
 	min-height: 38px;
 	width: 100%;
-	background: var(--lab-teal);
+	background: var(--primary);
 	color: #ffffff;
 	font-weight: 700;
 	font-size: 0.85rem;
@@ -219,14 +219,14 @@
 	justify-content: center;
 	gap: 6px;
 	cursor: pointer;
-	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
 	transition: background 0.15s ease, transform 0.1s ease;
 	outline: none;
 	padding: 6px 10px;
 	text-align: center;
 }
 
-.dental-lab-primary-cta:hover { background: var(--lab-teal-hover); }
+.dental-lab-primary-cta:hover { background: var(--primary-hover); }
 .dental-lab-primary-cta:active { transform: scale(0.985); }
 
 /* 7. Карточка наряда и действия */

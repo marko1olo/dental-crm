@@ -18,6 +18,8 @@ import {
 	MIXED_UPPER_TEETH,
 	PEDIATRIC_LOWER_TEETH,
 	PEDIATRIC_UPPER_TEETH,
+	PEDIATRIC_UPPER_MOLAR_GEOMETRY,
+	PEDIATRIC_LOWER_MOLAR_GEOMETRY,
 } from "../anatomicalPediatricGeometries";
 import { BOTTOM_TEETH, TOP_TEETH } from "../AnatomicalToothColors";
 import { AnatomicalTooth } from "../gate0/AnatomicalTooth";
@@ -35,14 +37,42 @@ describe("Anatomical Adult & Pediatric Teeth Morphology Suite (Wheeler 2.5D SSOT
 		}
 	});
 
-	test("Все 20 молочных зубов ребенка рендерятся каноническим AnatomicalTooth", () => {
+	test("Все 20 молочных зубов ребенка рендерятся каноническим AnatomicalTooth с реальной детской геометрией", () => {
 		const allPediatricTeeth = [...PEDIATRIC_UPPER_TEETH, ...PEDIATRIC_LOWER_TEETH];
 		assert.equal(allPediatricTeeth.length, 20, "Должно быть ровно 20 молочных зубов");
 
 		for (const toothNum of allPediatricTeeth) {
 			const html = renderToString(React.createElement(AnatomicalTooth, { toothNumber: toothNum }));
 			assert.ok(html.includes("<svg"), `Молочный зуб ${toothNum} должен рендерить SVG`);
+			assert.ok(html.includes("viewBox=\"0 0 100 218\""), `Молочный зуб ${toothNum} должен иметь унифицированный viewBox 100 218`);
 			assert.ok(html.includes(`>${toothNum}<`), `Молочный зуб ${toothNum} должен отображать бейдж номера FDI`);
+
+			const pos = toothNum % 10;
+			const quadrant = Math.floor(toothNum / 10);
+			const isTop = quadrant === 5 || quadrant === 6;
+
+			// Проверка реальных контуров молочных моляров (ликвидация подлога Tooth16/Tooth46)
+			if (pos === 4 || pos === 5) {
+				if (isTop) {
+					assert.ok(
+						html.includes("M 18 84 C 12 96, 10 128, 28 138"),
+						`Верхний молочный моляр ${toothNum} обязан рендерить уникальную детскую коронку PEDIATRIC_UPPER_MOLAR_GEOMETRY`,
+					);
+					assert.ok(
+						html.includes("M 18 84 C 10 64, 10 38, 16 18"),
+						`Верхний молочный моляр ${toothNum} обязан иметь 3 дивергирующих корня PEDIATRIC_UPPER_MOLAR_GEOMETRY`,
+					);
+				} else {
+					assert.ok(
+						html.includes("M 18 76 C 12 64, 10 32, 28 22"),
+						`Нижний молочный моляр ${toothNum} обязан рендерить уникальную детскую коронку PEDIATRIC_LOWER_MOLAR_GEOMETRY`,
+					);
+					assert.ok(
+						html.includes("M 18 76 C 10 96, 10 122, 16 142"),
+						`Нижний молочный моляр ${toothNum} обязан иметь 2 дивергирующих корня PEDIATRIC_LOWER_MOLAR_GEOMETRY`,
+					);
+				}
+			}
 		}
 	});
 

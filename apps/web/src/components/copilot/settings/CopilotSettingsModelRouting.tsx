@@ -121,7 +121,7 @@ export function CopilotSettingsModelRouting({
 				<div className="space-y-2.5 pt-1" data-testid="copilot-byok-controls">
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 						<div>
-							<label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Провайдер ИИ</label>
+							<label className="text-[10px] font-semibold text-[var(--muted)] block mb-1">Провайдер ИИ</label>
 							<select value={byokProvider} onChange={(e) => setByokProvider(e.target.value as AiProvider)} className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]">
 								<option value="gemini">Google Gemini</option>
 								<option value="anthropic">Anthropic Claude</option>
@@ -130,7 +130,7 @@ export function CopilotSettingsModelRouting({
 							</select>
 						</div>
 						<div>
-							<label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1">Модель</label>
+							<label className="text-[10px] font-semibold text-[var(--muted)] block mb-1">Модель нейросети</label>
 							<select value={byokModel} onChange={(e) => setByokModel(e.target.value)} className="w-full h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]">
 								{MODERN_BYOK_MODELS.map((m) => (<option key={m.id} value={m.id}>{m.label} ({m.note})</option>))}
 							</select>
@@ -138,7 +138,7 @@ export function CopilotSettingsModelRouting({
 					</div>
 
 					<div>
-						<label className="text-[10px] font-bold text-[var(--muted)] uppercase block mb-1 flex items-center justify-between">
+						<label className="text-[10px] font-semibold text-[var(--muted)] block mb-1 flex items-center justify-between">
 							<span className="flex items-center gap-1"><KeyRound size={11} className="text-[var(--teal,#0d9488)]" /><span>Персональный API-ключ</span></span>
 							<span className="text-[9px] font-normal text-[var(--muted)]">Хранится локально в браузере</span>
 						</label>

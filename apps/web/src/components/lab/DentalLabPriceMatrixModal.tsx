@@ -32,9 +32,32 @@ export function DentalLabPriceMatrixModal({
 			try {
 				const res = await fetch("/api/clinical/dental-lab/presets", { headers: denteAdminSecretRequestHeaders() });
 				if (!res.ok) return;
-				const data = await res.json() as { presets?: Array<Record<string, unknown>> };
-				if (Array.isArray(data.presets) && data.presets.length > 0 && !isCancelled) {
-					// Presets loaded dynamically
+				const data = (await res.json()) as { items?: LabPriceMatrixItem[]; presets?: Array<Record<string, unknown>> };
+				const rawItems = Array.isArray(data?.items)
+					? data.items
+					: Array.isArray(data?.presets)
+						? data.presets
+						: null;
+				if (rawItems && rawItems.length > 0 && !isCancelled) {
+					const items: LabPriceMatrixItem[] = rawItems.map((p, idx) => {
+						const cat = typeof p.category === "string" && ["crowns", "aesthetics", "removable", "aligners", "implants"].includes(p.category)
+							? (p.category as LabPriceMatrixItem["category"])
+							: "crowns";
+						return {
+							id: String(p.id || `preset_${idx}`),
+							category: cat,
+							categoryTitleRu: String(p.categoryTitleRu || "Коронки и конструкции"),
+							nameRu: String(p.nameRu || "Ортопедическая конструкция"),
+							shortTitle: String(p.shortTitle || p.nameRu || "Конструкция"),
+							material: String(p.material || "Материал"),
+							turnaroundBusinessDays: Number(p.turnaroundBusinessDays || 5),
+							suggestedCostRub: Number(p.suggestedCostRub || 0),
+							suggestedPriceRub: Number(p.suggestedPriceRub || 0),
+							doctorDeductionPct: Number(p.doctorDeductionPct || 50),
+							...(p.specialInstructions ? { specialInstructions: String(p.specialInstructions) } : {}),
+						};
+					});
+					setMatrixItems(items);
 				}
 			} catch {
 				// Fallback to CANONICAL_LAB_PRICE_MATRIX

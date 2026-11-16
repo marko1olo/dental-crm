@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertCircle, Check, CheckCircle2 } from "lucide-react";
-import type { DentalLabFinancialGateResult } from "../dentalLabFinancialGateEngine";
+import type { DentalLabFinancialGateResult } from "./dentalLabFinancialGateTypes";
 
 export interface DentalLabFinancialGateBannerProps {
 	readonly gateResult: DentalLabFinancialGateResult;

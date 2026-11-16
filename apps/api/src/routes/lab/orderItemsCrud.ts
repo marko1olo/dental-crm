@@ -29,11 +29,6 @@ export async function insertLabItem(
 			implantSystem: body.implantSystem ?? null,
 			implantPlatformDiameterMm: body.implantPlatformDiameterMm ?? null,
 			tiBaseHeightMm: body.tiBaseHeightMm ?? null,
-			meshTriangleCount: body.meshTriangleCount ?? null,
-			meshSurfaceAreaMm2: body.meshSurfaceAreaMm2 ?? null,
-			meshVolumeMm3: body.meshVolumeMm3 ?? null,
-			meshBboxMm: body.meshBboxMm ?? null,
-			isManifold: body.isManifold,
 			priceRub: body.priceRub ? String(body.priceRub) : null,
 		})
 		.returning();

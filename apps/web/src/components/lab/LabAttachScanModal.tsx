@@ -121,7 +121,7 @@ export function LabAttachPathInput({
 					type="text"
 					value={filePath}
 					onChange={(e) => setFilePath(e.target.value)}
-					placeholder="scans/upper_jaw_scan.stl или https://..."
+					placeholder="https://... или выберите файл через «Обзор...»"
 					className="flex-1 h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-teal-500 focus:outline-none font-mono"
 					data-testid="lab-attach-scan-path-input"
 				/>
@@ -146,98 +146,26 @@ export function LabAttachPathInput({
 	);
 }
 
-export interface LabAttachPresetItem {
-	readonly label: string;
-	readonly path: string;
-	readonly type: "stl" | "ply" | "photo";
-}
-
-export function LabAttachPresetList({
-	presets,
-	filePath,
-	onSelect,
-}: {
-	readonly presets: readonly LabAttachPresetItem[];
-	readonly filePath: string;
-	readonly onSelect: (preset: LabAttachPresetItem) => void;
-}) {
-	return (
-		<div className="space-y-1.5">
-			<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] block">
-				Быстрые пресеты клинических файлов:
-			</span>
-			<div className="flex flex-wrap gap-1.5">
-				{presets.map((pr) => (
-					<button
-						key={pr.label}
-						type="button"
-						onClick={() => onSelect(pr)}
-						className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer text-left ${
-							filePath === pr.path
-								? "bg-teal-500/15 border-teal-500/40 text-teal-800 dark:text-teal-200 font-bold"
-								: "bg-[var(--paper-soft,#f1f5f9)] hover:bg-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] border-[var(--line,#cbd5e1)]"
-						}`}
-					>
-						{pr.label}
-					</button>
-				))}
-			</div>
-		</div>
-	);
-}
-
 export interface LabAttachScanPresetsProps {
 	readonly attachType: "stl" | "ply" | "photo";
 	readonly setAttachType: (t: "stl" | "ply" | "photo") => void;
-	readonly filePath: string;
-	readonly setFilePath: (p: string) => void;
-	readonly patientTag: string;
-	readonly toothTag: string | number;
+	readonly filePath?: string;
+	readonly setFilePath?: (p: string) => void;
+	readonly patientTag?: string;
+	readonly toothTag?: string | number;
 	readonly onPresetSelect?: () => void;
 }
 
 export function LabAttachScanPresets({
 	attachType,
 	setAttachType,
-	filePath,
-	setFilePath,
-	patientTag,
-	toothTag,
-	onPresetSelect,
 }: LabAttachScanPresetsProps) {
-	const presets: readonly LabAttachPresetItem[] = [
-		{
-			label: "В/Ч Верхняя челюсть (STL)",
-			path: `scans/${patientTag}_upper_${toothTag}.stl`,
-			type: "stl",
-		},
-		{
-			label: "Н/Ч Нижняя челюсть (STL)",
-			path: `scans/${patientTag}_lower_${toothTag}.stl`,
-			type: "stl",
-		},
-		{
-			label: "Цветной скан прикуса (PLY)",
-			path: `scans/${patientTag}_occlusion_bite.ply`,
-			type: "ply",
-		},
-		{
-			label: "Клиническое фото улыбки (JPG)",
-			path: `photos/${patientTag}_clinical_view.jpg`,
-			type: "photo",
-		},
-	];
-
 	return (
 		<div className="space-y-3.5">
 			<div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line,#cbd5e1)]">
 				<button
 					type="button"
-					onClick={() => {
-						setAttachType("stl");
-						if (!filePath.toLowerCase().endsWith(".stl"))
-							setFilePath(`scans/${patientTag}_upper.stl`);
-					}}
+					onClick={() => setAttachType("stl")}
 					className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 						attachType === "stl"
 							? "bg-[var(--paper,#ffffff)] text-teal-700 dark:text-teal-300 shadow-2xs border border-[var(--line,#cbd5e1)]"
@@ -249,11 +177,7 @@ export function LabAttachScanPresets({
 				</button>
 				<button
 					type="button"
-					onClick={() => {
-						setAttachType("ply");
-						if (!filePath.toLowerCase().endsWith(".ply"))
-							setFilePath(`scans/${patientTag}_bite.ply`);
-					}}
+					onClick={() => setAttachType("ply")}
 					className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 						attachType === "ply"
 							? "bg-[var(--paper,#ffffff)] text-purple-700 dark:text-purple-300 shadow-2xs border border-[var(--line,#cbd5e1)]"
@@ -265,11 +189,7 @@ export function LabAttachScanPresets({
 				</button>
 				<button
 					type="button"
-					onClick={() => {
-						setAttachType("photo");
-						if (is3DScanUrl(filePath))
-							setFilePath(`photos/${patientTag}_bite.jpg`);
-					}}
+					onClick={() => setAttachType("photo")}
 					className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 						attachType === "photo"
 							? "bg-[var(--paper,#ffffff)] text-sky-700 dark:text-sky-300 shadow-2xs border border-[var(--line,#cbd5e1)]"
@@ -280,16 +200,6 @@ export function LabAttachScanPresets({
 					<span>Фото прикуса</span>
 				</button>
 			</div>
-
-			<LabAttachPresetList
-				presets={presets}
-				filePath={filePath}
-				onSelect={(pr) => {
-					setFilePath(pr.path);
-					setAttachType(pr.type);
-					onPresetSelect?.();
-				}}
-			/>
 		</div>
 	);
 }

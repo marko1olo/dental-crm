@@ -1,4 +1,4 @@
-import { normalizeVitaShade } from "@dental/shared";
+import { CANONICAL_PG_LAB_STATUSES, mapStageToCanonicalPgStatus, normalizeVitaShade } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { LabOrderStatus } from "../../../db/labQuery.js";
 import type { TenantDb } from "../../../db/rls.js";
@@ -7,23 +7,11 @@ import { mapStageToLabOrderStatus } from "../types.js";
 import type { UpdateLabOrderInput } from "./labOrderValidationSchemas.js";
 import { isPermittedLabStatusTransition } from "./labOrderStatusTransitions.js";
 
-const VALID_LAB_ORDER_STATUSES = new Set<string>([
-	"draft",
-	"sent",
-	"in_progress",
-	"shipped",
-	"received",
-	"ready",
-	"ready_in_clinic",
-	"refitting",
-	"fitted",
-	"completed",
-	"cancelled",
-	"rejected_remake",
-]);
+const VALID_LAB_ORDER_STATUSES = new Set<string>(CANONICAL_PG_LAB_STATUSES);
 
 function toLabOrderStatus(status: string): LabOrderStatus {
-	return VALID_LAB_ORDER_STATUSES.has(status) ? (status as LabOrderStatus) : "draft";
+	const canonical = mapStageToCanonicalPgStatus(status);
+	return VALID_LAB_ORDER_STATUSES.has(canonical) ? (canonical as LabOrderStatus) : "draft";
 }
 
 /**
@@ -109,7 +97,7 @@ export async function updateLabOrderInDb(
 	else if (updateData.labCostKopecks !== undefined) updatePayload.labCostRub = updateData.labCostKopecks === null ? null : Math.round(Number(updateData.labCostKopecks)) / 100;
 	else if (updateData.costKopecks !== undefined) updatePayload.labCostRub = updateData.costKopecks === null ? null : Math.round(Number(updateData.costKopecks)) / 100;
 
-	if (targetStatus !== undefined) updatePayload.status = targetStatus;
+	if (targetStatus !== undefined) updatePayload.status = toLabOrderStatus(targetStatus);
 	if (updateData.labComments !== undefined) updatePayload.labComments = updateData.labComments;
 	if (updateData.attachedImageUrl !== undefined) updatePayload.attachedImageUrl = updateData.attachedImageUrl;
 

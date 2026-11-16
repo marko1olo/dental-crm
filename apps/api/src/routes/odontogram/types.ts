@@ -94,6 +94,12 @@ export const batchToothStateSchema = z.object({
 	notes: z.string().max(10000).optional().nullable(),
 	canalMeasurements: z.array(endoCanalMeasurementSchema).optional().nullable(),
 	clinicalData: endoToothClinicalDataSchema.optional().nullable(),
+	mobility: z.number().int().min(0).max(4).optional().nullable(),
+	mobilityDegree: z.number().int().min(0).max(4).optional().nullable(),
+	isPrimaryPediatric: z.boolean().optional().nullable(),
+	resorptionStage: z.number().optional().nullable(),
+	pediatricCrownPresent: z.boolean().optional().nullable(),
+	secondaryCariesUnderFilling: z.boolean().optional().nullable(),
 	visitId: z
 		.string()
 		.optional()
@@ -114,6 +120,12 @@ export const odontogramStatusMutationSchema = z
 		notes: z.string().max(10000).optional().nullable(),
 		canalMeasurements: z.array(endoCanalMeasurementSchema).optional().nullable(),
 		clinicalData: endoToothClinicalDataSchema.optional().nullable(),
+		mobility: z.number().int().min(0).max(4).optional().nullable(),
+		mobilityDegree: z.number().int().min(0).max(4).optional().nullable(),
+		isPrimaryPediatric: z.boolean().optional().nullable(),
+		resorptionStage: z.number().optional().nullable(),
+		pediatricCrownPresent: z.boolean().optional().nullable(),
+		secondaryCariesUnderFilling: z.boolean().optional().nullable(),
 		visitId: z
 			.string()
 			.optional()

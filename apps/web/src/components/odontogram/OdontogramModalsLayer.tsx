@@ -253,6 +253,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 				<div className="w-full flex flex-col gap-6 mt-2 animate-in fade-in duration-200">
 					<React.Suspense fallback={null}>
 						<TreatmentPlanStudioModal
+							key={patientId || "draft"}
 							isOpen={true}
 							onClose={() => {
 								if (typeof window !== "undefined") {

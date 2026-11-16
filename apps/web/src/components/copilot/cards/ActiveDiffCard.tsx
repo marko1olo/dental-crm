@@ -74,7 +74,7 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-2 font-mono text-[11px] leading-relaxed">
 				{/* Блок Было */}
 				<div className="p-2.5 rounded-xl border border-[var(--danger,#ef4444)]/30 bg-[var(--danger-soft,rgba(239,68,68,0.06))] text-[var(--ink)] space-y-1">
-					<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--danger,#ef4444)] flex items-center gap-1">
+					<div className="text-[10px] font-semibold tracking-normal text-[var(--danger,#ef4444)] flex items-center gap-1">
 						<span>- Было</span>
 					</div>
 					<div className="whitespace-pre-wrap max-h-36 overflow-y-auto font-mono text-[11px] opacity-90">
@@ -84,7 +84,7 @@ export const ActiveDiffCard: React.FC<ActiveDiffCardProps> = ({
 
 				{/* Блок Станет */}
 				<div className="p-2.5 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] text-[var(--ink)] space-y-1">
-					<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--teal,#0d9488)] flex items-center gap-1">
+					<div className="text-[10px] font-semibold tracking-normal text-[var(--teal,#0d9488)] flex items-center gap-1">
 						<span>+ Станет</span>
 					</div>
 					<div className="whitespace-pre-wrap max-h-36 overflow-y-auto font-mono text-[11px] font-medium">

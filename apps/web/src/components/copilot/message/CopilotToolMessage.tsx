@@ -96,19 +96,19 @@ export const CopilotToolMessage: React.FC<CopilotToolMessageProps> = ({
             </span>
           )}
           {isDone && (
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--success-soft,rgba(16,185,129,0.1))] text-[var(--success,#059669)] border border-[var(--success-border,rgba(16,185,129,0.25))] flex items-center gap-1">
               <CheckCircle2 size={11} />
               <span>{`Готово ${durationText ? `(${durationText})` : ''}`}</span>
             </span>
           )}
           {isError && (
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--danger-soft,rgba(244,63,94,0.1))] text-[var(--danger,#e11d48)] border border-[var(--danger-border,rgba(244,63,94,0.25))] flex items-center gap-1">
               <XCircle size={11} />
               <span>Ошибка</span>
             </span>
           )}
           {isConfirmation && (
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--warn-soft,rgba(245,158,11,0.1))] text-[var(--warn,#d97706)] border border-[var(--warn-border,rgba(245,158,11,0.25))] flex items-center gap-1">
               <AlertCircle size={11} />
               <span>Требуется подтверждение</span>
             </span>
@@ -118,7 +118,7 @@ export const CopilotToolMessage: React.FC<CopilotToolMessageProps> = ({
 
       {/* Ошибка при исполнении */}
       {isError && message.error && (
-        <div className="mt-2 p-2 rounded bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-mono text-[11px]">
+        <div className="mt-2 p-2 rounded bg-[var(--danger-soft,rgba(244,63,94,0.1))] border border-[var(--danger-border,rgba(244,63,94,0.25))] text-[var(--danger,#e11d48)] font-mono text-[11px]">
           {message.error}
         </div>
       )}
@@ -127,7 +127,7 @@ export const CopilotToolMessage: React.FC<CopilotToolMessageProps> = ({
       {isConfirmation && (
         <div className="mt-2.5 pt-2 border-t border-[var(--line,rgba(15,118,110,0.15))] space-y-2">
           <div className="copilot-contiguous-diff p-2 rounded-lg bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line,rgba(15,118,110,0.15))] font-mono text-[11px] space-y-1">
-            <div className="diff-line diff-del flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-1 rounded">
+            <div className="diff-line diff-del flex items-center gap-1.5 text-[var(--danger,#e11d48)] bg-[var(--danger-soft,rgba(244,63,94,0.1))] px-2 py-1 rounded">
               <span className="font-bold select-none">-</span>
               <span className="line-through opacity-85">{`Зуб ${toothNumber}: ${oldState}`}</span>
             </div>
@@ -141,7 +141,7 @@ export const CopilotToolMessage: React.FC<CopilotToolMessageProps> = ({
             <button
               type="button"
               onClick={() => onConfirm?.(message.callId, 'reject')}
-              className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 hover:bg-rose-50 font-medium flex items-center gap-1.5 cursor-pointer text-xs"
+              className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] font-medium flex items-center gap-1.5 cursor-pointer text-xs"
             >
               <X size={13} />
               <span>Отклонить</span>

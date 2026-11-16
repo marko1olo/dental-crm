@@ -27,7 +27,18 @@ import {
 	FORM_ZTL_1_METADATA,
 	generateProstheticWarrantyPassport,
 	prostheticWarrantyPassportSchema,
+	CANONICAL_PG_LAB_STATUSES,
+	canonicalPgLabStatusSchema,
+	STAGE_TO_CANONICAL_PG_STATUS,
+	mapStageToCanonicalPgStatus,
+	mapPgStatusTo5Stage,
+	isValidVitaShade,
 } from "./labOrders.js";
+import {
+	VALID_VITA_SHADE_REGEX,
+	getVitaShadeHex,
+	getChromascopShadeHex,
+} from "./vitaPalette.js";
 
 describe("Shared Dental Lab — Zod Validation Schemas", () => {
 	test("labWorkTypeSchema validates all standard work types", () => {
@@ -72,6 +83,21 @@ describe("Shared Dental Lab — Zod Validation Schemas", () => {
 		for (let i = 1; i <= 9; i++) {
 			assert.equal(stumpNaturalDieShadeSchema.parse(`ND${i}`), `ND${i}`);
 		}
+	});
+
+	test("Ivoclar Chromascop (110–540) validation and hex resolution", () => {
+		const validChromascop = ["110", "120", "130", "140", "210", "220", "230", "240", "310", "320", "330", "340", "410", "420", "430", "440", "510", "520", "530", "540"];
+		for (const code of validChromascop) {
+			assert.ok(isValidVitaShade(code), `Code ${code} must be valid in isValidVitaShade`);
+			assert.ok(VALID_VITA_SHADE_REGEX.test(code), `Code ${code} must match VALID_VITA_SHADE_REGEX`);
+			assert.ok(getVitaShadeHex(code), `Code ${code} must resolve to hex color`);
+			assert.ok(getChromascopShadeHex(code), `Code ${code} must resolve via getChromascopShadeHex`);
+		}
+
+		// Invalid Chromascop codes
+		assert.equal(isValidVitaShade("150"), false, "150 is out of Chromascop range");
+		assert.equal(isValidVitaShade("610"), false, "610 group does not exist in Chromascop");
+		assert.equal(VALID_VITA_SHADE_REGEX.test("999"), false, "999 must fail regex");
 	});
 
 	test("labOrderSchema validates realistic statutory lab order", () => {
@@ -316,6 +342,49 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 				warrantyYears: 15,
 			});
 		});
+	});
+
+	test("CANONICAL_PG_LAB_STATUSES and bidirectional stage-status mappers satisfy Postgres 0042 CHECK constraint", () => {
+		// Strict 8 statuses matching PostgreSQL CHECK constraint (0042)
+		assert.equal(CANONICAL_PG_LAB_STATUSES.length, 8);
+		const expectedPgStatuses = ["draft", "sent", "in_progress", "shipped", "received", "refitting", "completed", "cancelled"];
+		expectedPgStatuses.forEach((st) => {
+			assert.ok(CANONICAL_PG_LAB_STATUSES.includes(st as any));
+			assert.equal(canonicalPgLabStatusSchema.parse(st), st);
+		});
+
+		// UI 5-stages to PG status mapping: no arbitrary unconstrained strings
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.sent, "sent");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.in_progress, "in_progress");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.fitting, "received");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.ready, "received");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.completed, "completed");
+
+		// mapStageToCanonicalPgStatus: resilient handling of ad-hoc stage names into strict 8 statuses
+		assert.equal(mapStageToCanonicalPgStatus("draft"), "draft");
+		assert.equal(mapStageToCanonicalPgStatus("sent"), "sent");
+		assert.equal(mapStageToCanonicalPgStatus("scan_sent"), "sent");
+		assert.equal(mapStageToCanonicalPgStatus("Слепок/Скан"), "sent");
+		assert.equal(mapStageToCanonicalPgStatus("in_progress"), "in_progress");
+		assert.equal(mapStageToCanonicalPgStatus("in_production"), "in_progress");
+		assert.equal(mapStageToCanonicalPgStatus("cad_modeling"), "in_progress");
+		assert.equal(mapStageToCanonicalPgStatus("shipped"), "shipped");
+		assert.equal(mapStageToCanonicalPgStatus("ready"), "received");
+		assert.equal(mapStageToCanonicalPgStatus("in_clinic"), "received");
+		assert.equal(mapStageToCanonicalPgStatus("fitting"), "received");
+		assert.equal(mapStageToCanonicalPgStatus("fitting_ready"), "received");
+		assert.equal(mapStageToCanonicalPgStatus("refitting"), "refitting");
+		assert.equal(mapStageToCanonicalPgStatus("rework"), "refitting");
+		assert.equal(mapStageToCanonicalPgStatus("completed"), "completed");
+		assert.equal(mapStageToCanonicalPgStatus("seated"), "completed");
+		assert.equal(mapStageToCanonicalPgStatus("cancelled"), "cancelled");
+
+		// mapPgStatusTo5Stage returns canonical 5-stage progression
+		assert.equal(mapPgStatusTo5Stage("sent"), "sent");
+		assert.equal(mapPgStatusTo5Stage("in_progress"), "in_progress");
+		assert.equal(mapPgStatusTo5Stage("refitting"), "fitting");
+		assert.equal(mapPgStatusTo5Stage("received"), "ready");
+		assert.equal(mapPgStatusTo5Stage("completed"), "completed");
 	});
 });
 

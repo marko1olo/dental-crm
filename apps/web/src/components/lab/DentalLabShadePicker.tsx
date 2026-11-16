@@ -13,14 +13,16 @@ if (typeof document !== "undefined") {
 export type { DentalLabShadePickerProps };
 
 export interface DentalLabShadeSelectorProps {
-	shadeSystem: "classical" | "3d_master" | "bleach";
-	setShadeSystem: (system: "classical" | "3d_master" | "bleach") => void;
+	shadeSystem: "classical" | "3d_master" | "bleach" | "chromascop";
+	setShadeSystem: (system: "classical" | "3d_master" | "bleach" | "chromascop") => void;
 	shadeClassical: string;
 	setShadeClassical: (s: string) => void;
 	shade3dMaster: string;
 	setShade3dMaster: (s: string) => void;
 	shadeBleach: string;
 	setShadeBleach: (s: string) => void;
+	shadeChromascop?: string | undefined;
+	setShadeChromascop?: ((s: string) => void) | undefined;
 	shadeCervical: string;
 	setShadeCervical: (s: string) => void;
 	shadeBody: string;
@@ -146,17 +148,20 @@ export function DentalLabShadeSelector(props: DentalLabShadeSelectorProps): Reac
 			? props.shade3dMaster
 			: props.shadeSystem === "bleach"
 				? props.shadeBleach
-				: props.shadeClassical;
+				: props.shadeSystem === "chromascop"
+					? (props.shadeChromascop || "110")
+					: props.shadeClassical;
 
 	const handleSelectShade = (shade: string) => {
 		if (props.shadeSystem === "classical") props.setShadeClassical(shade);
 		else if (props.shadeSystem === "3d_master") props.setShade3dMaster(shade);
+		else if (props.shadeSystem === "chromascop") props.setShadeChromascop?.(shade);
 		else props.setShadeBleach(shade);
 		props.setShadeBody(shade);
 	};
 
 	const handleSystemChange = (
-		sys: "classical" | "3d_master" | "bleach" | "stump",
+		sys: ShadeSystemKey,
 	) => {
 		if (sys !== "stump") props.setShadeSystem(sys);
 	};

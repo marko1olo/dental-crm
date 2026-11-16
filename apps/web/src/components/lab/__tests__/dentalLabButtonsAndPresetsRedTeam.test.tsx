@@ -30,14 +30,14 @@ describe("Red Team — Dental Lab Buttons, Presets & Action Bar Invariants", () 
 		assert.equal(html.includes('data-testid="quick-construction-zirconia_multilayer"'), true);
 	});
 
-	it("3. Studio action bar has exactly ONE Primary CTA (teal), other buttons are neutral outline", () => {
+	it("3. Studio action bar has exactly ONE Primary CTA (canonical primary), other buttons are neutral outline", () => {
 		const html = renderToStaticMarkup(
 			<DentalLabStudioModal isOpen={true} onClose={() => {}} />
 		);
-		// Primary CTA button is present and highlighted with teal
+		// Primary CTA button is present and highlighted with canonical primary token
 		assert.equal(html.includes("submit-lab-order-btn"), true);
 		assert.equal(html.includes("Создать заказ-наряд"), true);
-		assert.equal(html.includes("bg-[var(--teal,#0d9488)]"), true);
+		assert.equal(html.includes("bg-[var(--primary)]"), true);
 		// Secondary buttons are neutral
 		assert.equal(html.includes("print-lab-order-a5-btn"), true);
 		assert.equal(html.includes("Печать наряда А5"), true);

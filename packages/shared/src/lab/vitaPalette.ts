@@ -5,9 +5,9 @@
 
 export interface VitaShadePaletteItem {
 	readonly code: string;
-	readonly group: "A" | "B" | "C" | "D" | "BL";
+	readonly group: "A" | "B" | "C" | "D" | "BL" | "100" | "200" | "300" | "400" | "500";
 	readonly displayName: string;
-	readonly type: "classical" | "bleach";
+	readonly type: "classical" | "bleach" | "chromascop";
 	readonly order: number;
 	readonly hex: string;
 }
@@ -42,15 +42,63 @@ export const VITA_CLASSICAL_PLUS_BLEACH_PALETTE: readonly VitaShadePaletteItem[]
 	{ code: "BL4", group: "BL", displayName: "BL4", type: "bleach", order: 20, hex: "#FBE1C6" },
 ] as const;
 
+export interface ChromascopShadeItem {
+	readonly code: string;
+	readonly group: "100" | "200" | "300" | "400" | "500";
+	readonly groupNameRu: string;
+	readonly displayName: string;
+	readonly order: number;
+	readonly hex: string;
+}
+
 /**
- * Словарь сопоставления кода оттенка VITA в HEX-цвет.
+ * 20 эталонных оттенков Ivoclar Chromascop (110–540) с точными HEX-цветами.
+ * 110–140: Белые, 210–240: Желтые, 310–340: Серые, 410–440: Коричневые, 510–540: Темные.
+ */
+export const CHROMASCOP_PALETTE: readonly ChromascopShadeItem[] = [
+	// Группа 100 — Белые (White)
+	{ code: "110", group: "100", groupNameRu: "Белые (100)", displayName: "110", order: 1, hex: "#F3EBDD" },
+	{ code: "120", group: "100", groupNameRu: "Белые (100)", displayName: "120", order: 2, hex: "#EFE4D2" },
+	{ code: "130", group: "100", groupNameRu: "Белые (100)", displayName: "130", order: 3, hex: "#E8D9C0" },
+	{ code: "140", group: "100", groupNameRu: "Белые (100)", displayName: "140", order: 4, hex: "#DFCCA9" },
+
+	// Группа 200 — Желтые (Yellow)
+	{ code: "210", group: "200", groupNameRu: "Желтые (200)", displayName: "210", order: 5, hex: "#F4E8D0" },
+	{ code: "220", group: "200", groupNameRu: "Желтые (200)", displayName: "220", order: 6, hex: "#EADCBF" },
+	{ code: "230", group: "200", groupNameRu: "Желтые (200)", displayName: "230", order: 7, hex: "#DECBAA" },
+	{ code: "240", group: "200", groupNameRu: "Желтые (200)", displayName: "240", order: 8, hex: "#D3BC95" },
+
+	// Группа 300 — Серые (Grey)
+	{ code: "310", group: "300", groupNameRu: "Серые (300)", displayName: "310", order: 9, hex: "#EEDEC8" },
+	{ code: "320", group: "300", groupNameRu: "Серые (300)", displayName: "320", order: 10, hex: "#E3CEB4" },
+	{ code: "330", group: "300", groupNameRu: "Серые (300)", displayName: "330", order: 11, hex: "#D8BDA0" },
+	{ code: "340", group: "300", groupNameRu: "Серые (300)", displayName: "340", order: 12, hex: "#CBAA89" },
+
+	// Группа 400 — Коричневые (Brown)
+	{ code: "410", group: "400", groupNameRu: "Коричневые (400)", displayName: "410", order: 13, hex: "#EAE0D0" },
+	{ code: "420", group: "400", groupNameRu: "Коричневые (400)", displayName: "420", order: 14, hex: "#DFD3BE" },
+	{ code: "430", group: "400", groupNameRu: "Коричневые (400)", displayName: "430", order: 15, hex: "#D2C3AA" },
+	{ code: "440", group: "400", groupNameRu: "Коричневые (400)", displayName: "440", order: 16, hex: "#C2B093" },
+
+	// Группа 500 — Темные (Dark)
+	{ code: "510", group: "500", groupNameRu: "Темные (500)", displayName: "510", order: 17, hex: "#E3D1BE" },
+	{ code: "520", group: "500", groupNameRu: "Темные (500)", displayName: "520", order: 18, hex: "#D5BF9F" },
+	{ code: "530", group: "500", groupNameRu: "Темные (500)", displayName: "530", order: 19, hex: "#C7AB88" },
+	{ code: "540", group: "500", groupNameRu: "Темные (500)", displayName: "540", order: 20, hex: "#B79870" },
+] as const;
+
+/**
+ * Словарь сопоставления кода оттенка VITA / Chromascop в HEX-цвет.
  */
 export const VITA_SHADE_HEX_MAP: Readonly<Record<string, string>> = Object.freeze(
-	Object.fromEntries(VITA_CLASSICAL_PLUS_BLEACH_PALETTE.map((item) => [item.code, item.hex])),
+	Object.fromEntries([
+		...VITA_CLASSICAL_PLUS_BLEACH_PALETTE.map((item) => [item.code, item.hex] as const),
+		...CHROMASCOP_PALETTE.map((item) => [item.code, item.hex] as const),
+	]),
 );
 
 /**
- * Получить HEX-код оттенка VITA по его обозначению (регистронезависимо).
+ * Получить HEX-код оттенка VITA или Chromascop по его обозначению (регистронезависимо).
  */
 export function getVitaShadeHex(shadeCode: string | null | undefined): string | undefined {
 	if (!shadeCode) return undefined;
@@ -58,10 +106,18 @@ export function getVitaShadeHex(shadeCode: string | null | undefined): string | 
 	return VITA_SHADE_HEX_MAP[normalized];
 }
 
-// ─── ВАЛИДАЦИЯ ОТТЕНКОВ VITA ──────────────────────────────────────────────────
+/**
+ * Получить HEX-код оттенка Chromascop по числовому коду 110–540.
+ */
+export function getChromascopShadeHex(code: string | null | undefined): string | undefined {
+	if (!code) return undefined;
+	return getVitaShadeHex(code);
+}
 
-// Допустимые классические (A1-D4), отбеливающие (BL1-4, OM1-3, 0M1-3) и 3D-Master (1M1-5M3) оттенки VITA
-export const VALID_VITA_SHADE_REGEX = /^([A-D][1-4](\.5)?|BL[1-4]|0?M[1-3]|[1-5][MLR][1-3](\.5)?)$/i;
+// ─── ВАЛИДАЦИЯ ОТТЕНКОВ VITA И CHROMASCOP ────────────────────────────────────
+
+// Допустимые классические (A1-D4), отбеливающие (BL1-4, OM1-3, 0M1-3), 3D-Master (1M1-5M3) и Chromascop (110-540)
+export const VALID_VITA_SHADE_REGEX = /^([A-D][1-4](\.5)?|BL[1-4]|0?M[1-3]|[1-5][MLR][1-3](\.5)?|[1-5][1-4]0)$/i;
 
 // ─── 17 ЭТАЛОННЫХ ИЗДЕЛИЙ ЗУБОТЕХНИЧЕСКОЙ ЛАБОРАТОРИИ ──────────────────────────
 

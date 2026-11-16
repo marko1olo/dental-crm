@@ -1,11 +1,12 @@
 import React from "react";
 import { ToothShadeGuide } from "../../icons/DentalIcons";
 import { SHADE_SWATCH_MAP } from "../labShadesData";
+import type { ShadeSystemKey } from "./dentalLabShadePickerTypes";
 
 export interface DentalLabShadeHeaderProps {
-	readonly currentSystem: "classical" | "3d_master" | "bleach" | "stump";
+	readonly currentSystem: ShadeSystemKey;
 	readonly onSystemChange: (
-		sys: "classical" | "3d_master" | "bleach" | "stump",
+		sys: ShadeSystemKey,
 	) => void;
 	readonly selectedShade: string;
 	readonly selectedStumpShade?: string | null | undefined;
@@ -69,6 +70,15 @@ export function DentalLabShadeHeader({
 						data-testid="vita-stump-tab"
 					>
 						Культя (ND)
+					</button>
+					<button
+						type="button"
+						onClick={() => onSystemChange("chromascop")}
+						data-active={currentSystem === "chromascop" ? "true" : "false"}
+						className={`dente-segmented-item min-h-[44px] sm:min-h-[36px] ${currentSystem === "chromascop" ? "active" : ""}`}
+						data-testid="shade-system-chromascop-btn"
+					>
+						<span data-testid="chromascop-tab">Chromascop</span>
 					</button>
 				</div>
 			</div>

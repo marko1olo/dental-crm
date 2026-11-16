@@ -6,7 +6,13 @@
  * расчет рабочих дней без выходных, учет строго в копейках (amountKopecks) и автономия врача (Мандаты 8b, 8e, 8am).
  */
 
-import { DENTAL_LAB_CONSTRUCTIONS } from "@dental/shared";
+import {
+	DENTAL_LAB_CONSTRUCTIONS,
+	STAGE_TO_CANONICAL_PG_STATUS,
+	mapStageToCanonicalPgStatus,
+	CANONICAL_PG_LAB_STATUSES,
+	type CanonicalPgLabStatus,
+} from "@dental/shared";
 
 export type DentalLabStage = "created" | "scan_sent" | "in_production" | "fitting_ready" | "in_clinic" | "seated";
 
@@ -45,11 +51,11 @@ export function mapDbStatusToStage(status: string | null | undefined): DentalLab
 	}
 }
 
-export const STAGE_TO_DB_STATUS: Record<DentalLabStage, string> = {
+export const STAGE_TO_DB_STATUS: Record<DentalLabStage, CanonicalPgLabStatus> = {
 	scan_sent: "sent",
 	in_production: "in_progress",
-	fitting_ready: "shipped",
-	in_clinic: "ready_in_clinic",
+	fitting_ready: "received",
+	in_clinic: "received",
 	seated: "completed",
 	created: "sent",
 };

@@ -135,6 +135,7 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 			{isPlanWizardOpen && (
 				<React.Suspense fallback={null}>
 					<TreatmentPlanStudioModal
+						key={patientId || "draft"}
 						isOpen={isPlanWizardOpen}
 						onClose={onClosePlanWizard}
 						teeth={teethData}

@@ -21,7 +21,7 @@ describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", 
 		assert.strictEqual(MODAL_EXPRESS_LAB_PRESETS.length, 18);
 	});
 
-	it("2. Modal renders with exactly ONE Primary CTA in Teal (#0d9488) and never disabled (Mandate 8e & 8am)", async () => {
+	it("2. Modal renders with exactly ONE Primary CTA in canonical primary token and never disabled (Mandate 8e & 8am)", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
 
@@ -43,7 +43,7 @@ describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", 
 			const primaryCta = findNodeByTestId(doc.body, "submit-lab-order-btn") || findNodeByTestId(doc.body, "submit-lab-order-button");
 			assert.notStrictEqual(primaryCta, null);
 			const className = primaryCta?.getAttribute("class") || "";
-			assert.ok(className.includes("var(--teal,#0d9488)") || className.includes("#0d9488"));
+			assert.ok(className.includes("var(--primary)") || className.includes("var(--teal,#0d9488)") || className.includes("#0d9488"));
 			assert.strictEqual(primaryCta?.getAttribute("disabled"), null); // Never disabled (Mandate 8e)
 		} finally {
 			await act(async () => {

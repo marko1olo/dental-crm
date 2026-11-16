@@ -69,6 +69,10 @@ export const SENSOR_BRAND_NAMES: Record<string, string> = {
 	generic: "Универсальный радиовизиограф",
 };
 
+interface DirectoryHandleWithValues extends FileSystemDirectoryHandle {
+	values(): AsyncIterable<FileSystemHandle>;
+}
+
 export class VisiographHotFolderEngine {
 	private static instance: VisiographHotFolderEngine | null = null;
 
@@ -309,8 +313,7 @@ export class VisiographHotFolderEngine {
 
 	private async scanDirectoryHandle(handle: FileSystemDirectoryHandle, isInitialPrime: boolean): Promise<void> {
 		try {
-			// biome-ignore lint/suspicious/noExplicitAny: FileSystemDirectoryHandle async iterable
-			const entries = (handle as any).values();
+			const entries = (handle as DirectoryHandleWithValues).values();
 			for await (const entry of entries) {
 				if (entry.kind === "file") {
 					const fileName = entry.name as string;
@@ -356,8 +359,7 @@ export class VisiographHotFolderEngine {
 		const count = this.getQueuedCount();
 		for (const listener of this.listeners) {
 			try {
-				// biome-ignore lint/suspicious/noExplicitAny: safe caller
-				listener(this.currentActiveScan as any, count);
+				listener(this.currentActiveScan, count);
 			} catch {
 				// Prevent listener crash from breaking loop
 			}

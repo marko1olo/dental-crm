@@ -72,7 +72,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 	}, [onApplyFastCariesK021, onQuickStateChange, selectedTeeth]);
 
 	const handleToothClick = useCallback(
-		(e: React.MouseEvent<SVGGElement> | number, num?: number) => {
+		(e: React.MouseEvent<HTMLElement> | number, num?: number) => {
 			if (typeof onToothClick === "function") {
 				const n = typeof e === "number" ? e : (num ?? 11);
 				const clickCallback = onToothClick as (toothNumber: number) => void;
