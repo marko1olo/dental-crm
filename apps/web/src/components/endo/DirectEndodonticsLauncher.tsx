@@ -80,8 +80,8 @@ export const DirectEndodonticsLauncher: React.FC = () => {
 
 	if (!isActive || !isOpen) return null;
 	const pStore = usePatientStore.getState();
-	const patientName = (patientId && pStore.patients?.find((p) => p.id === patientId)?.fullName) ||
-		pStore.patientCoreDraft?.fullName || (isDemoShowcaseMode() ? "Смирнова Елена Сергеевна" : (patientId ? `Пациент #${patientId.slice(0, 8)}` : "Пациент"));
+	const patientName = pStore.patientCoreDraft?.fullName ||
+		(isDemoShowcaseMode() ? "Смирнова Елена Сергеевна" : (patientId ? `Пациент #${patientId.slice(0, 8)}` : "Пациент"));
 	const doctorName = useAppStore.getState().activeDoctorName || "Д-р Смирнов А.П.";
 
 	return (

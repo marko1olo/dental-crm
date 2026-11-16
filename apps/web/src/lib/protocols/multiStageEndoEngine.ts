@@ -26,6 +26,39 @@
 
 import type { DiaryState } from "./protocolTypes.js";
 
+/** Интерфейс элемента каталога услуг клиники (без any) */
+export interface ClinicServiceItem {
+	readonly id?: string | number | undefined;
+	readonly code?: string | undefined;
+	readonly code804n?: string | undefined;
+	readonly name?: string | undefined;
+	readonly title?: string | undefined;
+	readonly basePriceRub?: number | undefined;
+	readonly priceRub?: number | undefined;
+	readonly price?: number | undefined;
+}
+
+/** Интерфейс записи приёма пациента из расписания/архива */
+export interface AppointmentLike {
+	readonly id?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly startsAt?: string | undefined;
+	readonly date?: string | undefined;
+	readonly reason?: string | undefined;
+	readonly comment?: string | undefined;
+	readonly notes?: string | undefined;
+	readonly diagnosis?: string | undefined;
+	readonly diagnosisTooth?: number | string | undefined;
+}
+
+/** Интерфейс снимка зуба из одонтограммы */
+export interface StoredToothSnapshot {
+	readonly toothNumber?: number | string | undefined;
+	readonly state?: string | undefined;
+	readonly diagnosis?: string | undefined;
+	readonly notes?: string | undefined;
+}
+
 /** Коды Номенклатуры медицинских услуг Минздрава РФ (Приказ 804н) */
 export const ORDER_804N_ENDO_CODES = {
 	STAGE1_INSTRUMENTATION_1CANAL: "A16.07.030.001",
@@ -100,7 +133,7 @@ export interface MultiStageEndoTransformResult {
 
 /** Резолвер цены услуги из прейскуранта клиники с мягким фолбеком */
 export function resolveServicePriceFromCatalog(
-	serviceCatalog: readonly any[] | undefined,
+	serviceCatalog: readonly ClinicServiceItem[] | undefined,
 	code804n: string,
 	fallbackPriceRub: number,
 	defaultTitle: string,
@@ -201,11 +234,11 @@ export function isEndodonticIndication(diagnosisOrText?: string | null): boolean
 /** Построение быстрого индекса истории незавершенных эндо-приёмов в памяти */
 export function buildPatientPreviousVisitsEndoIndex(params: {
 	readonly patientId?: string | null | undefined;
-	readonly appointments?: readonly any[] | undefined;
-	readonly dashboard?: any | undefined;
-	readonly storedTeeth?: readonly any[] | undefined;
+	readonly appointments?: readonly AppointmentLike[] | undefined;
+	readonly dashboard?: { appointments?: readonly AppointmentLike[] | undefined } | undefined;
+	readonly storedTeeth?: readonly StoredToothSnapshot[] | undefined;
 	readonly toothStates?: Record<string, string> | undefined;
-	readonly toothRecords?: Record<string, any> | undefined;
+	readonly toothRecords?: Record<string, unknown> | undefined;
 	readonly activeVisitId?: string | null | undefined;
 }): Map<number, LastVisitSoapSnapshot> {
 	const patientKey = params.patientId || "current-active-patient";
@@ -355,7 +388,7 @@ export function getUnfinishedEndoSnapshot(
 export function transformEndoStage1ToStage2(params: {
 	readonly snapshot: LastVisitSoapSnapshot;
 	readonly toothNumber?: number | undefined;
-	readonly serviceCatalog?: readonly any[] | undefined;
+	readonly serviceCatalog?: readonly ClinicServiceItem[] | undefined;
 	readonly currentDiary?: DiaryState | undefined;
 }): MultiStageEndoTransformResult {
 	const tooth = params.toothNumber || params.snapshot.toothNumber;

@@ -13,7 +13,7 @@ import { chromium, devices } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CURRENT_CONV_ID = "ffe99d3a-6840-43da-a656-b8d5a93ed559";
+const CURRENT_CONV_ID = process.env.CONV_ID || "c5f5b79b-4493-41ee-9876-7a0a421628c8";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}`;
 const OUT_ENDO = path.resolve(__dirname, "../docs/proofs/endo");
 const OUT_THERAPY = path.resolve(__dirname, "../docs/proofs/therapy");
@@ -88,9 +88,7 @@ async function suppressOverlays(page) {
 async function main() {
 	console.log("=== Launching Chrome for Canonical 4-State Endo Proofs ===");
 	const browser = await chromium.launch({
-		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 		headless: true,
-		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
 	});
 
 	const targets = [
@@ -133,7 +131,6 @@ async function main() {
 				isMobile: t.isMobile,
 				hasTouch: t.isMobile,
 				deviceScaleFactor: 1,
-				serviceWorkers: "block",
 			};
 
 			const context = await browser.newContext(contextOptions);
@@ -144,8 +141,8 @@ async function main() {
 
 			const targetUrl = `http://127.0.0.1:5173/?stand=endo&demo=true#endo`;
 			console.log(`Navigating to ${targetUrl}...`);
-			await page.goto(targetUrl, { waitUntil: "commit", timeout: 30000 });
-			await page.waitForTimeout(1000);
+			await page.goto(targetUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+			await page.waitForTimeout(1200);
 
 			// Ждем полной гидратации и исчезновения экрана загрузки
 			await page.waitForFunction(() => {
@@ -153,7 +150,7 @@ async function main() {
 				return !bodyText.includes("Загрузка системы...");
 			}, { timeout: 20000 }).catch(() => {});
 
-			await page.waitForTimeout(1000);
+			await page.waitForTimeout(800);
 			await suppressOverlays(page);
 
 			// Применяем тему
@@ -178,7 +175,7 @@ async function main() {
 				await page.waitForTimeout(600);
 			}
 
-			await page.waitForSelector('[data-testid="endodontic-studio-modal"], [data-testid="endo-canal-log-modal"]', { timeout: 15000 });
+			await page.waitForSelector('[data-testid="endodontic-studio-modal"], [data-testid="endo-canal-log-modal"]', { timeout: 30000 });
 			await page.waitForTimeout(1000);
 			await suppressOverlays(page);
 

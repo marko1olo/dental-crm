@@ -10,12 +10,13 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Activity, Check, ChevronDown, Copy, FileText, Printer, X } from "lucide-react";
+import { Activity, Check, ChevronDown, Copy, FileText, MoreHorizontal, Printer, X } from "lucide-react";
 import type { EndoCanalData, EndoToothClinicalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { printHtmlViaIframe } from "../documents/printHtmlViaIframe";
 import {
 	CANONICAL_ENDO_PROTOCOLS, CANONICAL_IRRIGATION_SOLUTIONS, NITI_SYSTEM_OPTIONS,
 	calculateEndoBillingAndMaterialsEstimate, calculateEndoTreatmentCostKopecks,
@@ -24,6 +25,119 @@ import {
 	type EndoProtocolPresetId, type EndoStageStamp, type QuickCanalState,
 } from "./endodonticsCatalogData";
 import { EndoStudioToolbar, EndoCanalsTableSection } from "./studioModules";
+
+/** Генератор канонического печатного бланка эндодонтической карты А4 (Мандат 8e) */
+export function generateEndoCardPrintHtml(params: {
+	clinicName: string;
+	clinicPhone: string;
+	patientName: string;
+	doctorName: string;
+	toothNumber: number;
+	toothAnatomicalName: string;
+	stageStamp: string;
+	canals: readonly EndoCanalData[];
+	irrigation: string;
+	rotarySystem: string;
+	radiologyControl: string;
+	protocolText: string;
+	totalRubles: number;
+}): string {
+	const dateStr = new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+	const stageLabel = params.stageStamp === "COMPLETED"
+		? "Постоянная обтурация каналов (завершено)"
+		: params.stageStamp === "TEMP_CAOH2"
+			? "Временная обтурация лечебной пастой Ca(OH)2"
+			: "Черновик этапа";
+
+	const rowsHtml = params.canals.map((c, i) => `
+		<tr>
+			<td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${i + 1}</td>
+			<td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-weight: bold;">${c.canalName}</td>
+			<td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">${c.isObliterated ? "Облитерирован" : `${c.workingLengthMm || "—"} мм`}</td>
+			<td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">${c.apexLocatorReading || "0.0 (Apex)"}</td>
+			<td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">${c.masterApicalFile || "#25.04"} (${c.taper || ".04"})</td>
+			<td style="padding: 6px 8px; border: 1px solid #cbd5e1;">${c.sealer || "AH Plus"}</td>
+			<td style="padding: 6px 8px; border: 1px solid #cbd5e1;">${c.obturationTechnique || "Латеральная компакция"}</td>
+		</tr>
+	`).join("");
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<title>Эндодонтическая карта зуба #${params.toothNumber} — ${params.patientName}</title>
+	<style>
+		@page { size: A4; margin: 15mm 15mm 15mm 15mm; }
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11pt; color: #0f172a; margin: 0; padding: 0; line-height: 1.4; }
+		h1 { font-size: 15pt; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+		.header { border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 12px; }
+		.clinic { font-size: 10pt; color: #475569; margin-bottom: 4px; }
+		.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-bottom: 12px; font-size: 10pt; }
+		.meta-item { display: flex; }
+		.meta-label { font-weight: 600; color: #475569; width: 140px; }
+		.meta-val { font-weight: 500; }
+		table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+		th { background: #f1f5f9; padding: 6px 8px; border: 1px solid #cbd5e1; font-weight: 600; text-align: left; }
+		.protocol-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 9pt; white-space: pre-wrap; font-family: inherit; margin-top: 10px; }
+		.signatures { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 15px; border-top: 1px solid #cbd5e1; font-size: 10pt; }
+		.sig-block { width: 45%; }
+		.sig-line { border-bottom: 1px solid #0f172a; margin-top: 30px; }
+	</style>
+</head>
+<body>
+	<div class="header">
+		<div class="clinic">${params.clinicName} • Тел: ${params.clinicPhone}</div>
+		<h1>ЭНДОДОНТИЧЕСКАЯ КАРТА ЛЕЧЕНИЯ КОРНЕВЫХ КАНАЛОВ</h1>
+		<div style="font-weight: 600; color: #0d9488;">Зуб FDI: #${params.toothNumber} (${params.toothAnatomicalName})</div>
+	</div>
+
+	<div class="meta-grid">
+		<div class="meta-item"><span class="meta-label">Пациент:</span><span class="meta-val">${params.patientName}</span></div>
+		<div class="meta-item"><span class="meta-label">Дата процедуры:</span><span class="meta-val">${dateStr}</span></div>
+		<div class="meta-item"><span class="meta-label">Лечащий врач:</span><span class="meta-val">${params.doctorName}</span></div>
+		<div class="meta-item"><span class="meta-label">Клинический этап:</span><span class="meta-val">${stageLabel}</span></div>
+		<div class="meta-item"><span class="meta-label">NiTi-система:</span><span class="meta-val">${params.rotarySystem}</span></div>
+		<div class="meta-item"><span class="meta-label">Ирригация:</span><span class="meta-val">${params.irrigation}</span></div>
+	</div>
+
+	<h3 style="font-size: 11pt; margin: 12px 0 4px 0;">Протокол калибровки и обтурации каналов</h3>
+	<table>
+		<thead>
+			<tr>
+				<th style="width: 30px; text-align: center;">№</th>
+				<th>Канал</th>
+				<th style="text-align: center;">Длина WL</th>
+				<th style="text-align: center;">Апекс</th>
+				<th style="text-align: center;">Мастер-файл MAF</th>
+				<th>Силер</th>
+				<th>Метод обтурации</th>
+			</tr>
+		</thead>
+		<tbody>
+			${rowsHtml}
+		</tbody>
+	</table>
+
+	<div style="font-size: 9.5pt; color: #334155; margin-top: 6px;">
+		<strong>Рентгенологический контроль:</strong> ${params.radiologyControl}
+	</div>
+
+	<h3 style="font-size: 11pt; margin: 14px 0 4px 0;">Клинический протокол дневника приёма (SOAP)</h3>
+	<div class="protocol-box">${params.protocolText}</div>
+
+	<div class="signatures">
+		<div class="sig-block">
+			<div>Врач-стоматолог: ${params.doctorName}</div>
+			<div class="sig-line"></div>
+		</div>
+		<div class="sig-block">
+			<div>Пациент: ${params.patientName}</div>
+			<div class="sig-line"></div>
+		</div>
+	</div>
+</body>
+</html>`;
+}
 
 export interface EndodonticStudioModalProps {
 	readonly isOpen: boolean;
@@ -64,6 +178,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 	const [isLoadingFromDb, setIsLoadingFromDb] = useState<boolean>(false);
 	const [copied, setCopied] = useState<boolean>(false);
+	const [showMobileActions, setShowMobileActions] = useState<boolean>(false);
 
 	useEffect(() => {
 		const targetTooth = props.toothNumber || 16;
@@ -234,6 +349,25 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		}
 	}, [props.clinicName, props.clinicPhone, props.patientName, props.doctorName, activeTooth, stageStamp]);
 
+	const handlePrintWorksheet = useCallback(() => {
+		const html = generateEndoCardPrintHtml({
+			clinicName: props.clinicName || "Стоматологическая клиника DENTE",
+			clinicPhone: props.clinicPhone || "+7 (495) 123-45-67",
+			patientName: props.patientName || "Пациент",
+			doctorName: props.doctorName || "Лечащий врач",
+			toothNumber: activeTooth,
+			toothAnatomicalName,
+			stageStamp,
+			canals,
+			irrigation,
+			rotarySystem,
+			radiologyControl,
+			protocolText: generatedProtocolText,
+			totalRubles: costEstimate.totalRubles,
+		});
+		printHtmlViaIframe(html, "dente-endo-card-print-iframe");
+	}, [props.clinicName, props.clinicPhone, props.patientName, props.doctorName, activeTooth, toothAnatomicalName, stageStamp, canals, irrigation, rotarySystem, radiologyControl, generatedProtocolText, costEstimate.totalRubles]);
+
 	const handleCommitProtocol = useCallback(async () => {
 		setIsSaving(true);
 		const sanitized = sanitizeCanalsForSubmission(canals, activeTooth, stageStamp, getAnatomicalWorkingLength);
@@ -358,24 +492,31 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 
 	const modalContent = (
 		<div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-x-clip" role="dialog" aria-modal="true" aria-label={`Эндодонтическая студия зуба ${activeTooth}`} data-testid="endodontic-studio-modal">
-			<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 border-t sm:border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-t-[24px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-w-full" data-testid="endo-canal-log-modal">
+			<div className="relative w-full max-w-5xl bg-[var(--paper)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-w-full" data-testid="endo-canal-log-modal">
 				<div className="w-9 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 sm:hidden shrink-0" />
-				<header className="flex items-center justify-between p-3.5 sm:p-4 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/80 shrink-0">
+				<header className="flex items-center justify-between p-3.5 sm:p-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="w-10 h-10 rounded-xl bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] flex items-center justify-center font-bold text-sm shrink-0">#{activeTooth}</div>
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
-								<h2 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] dark:text-white truncate">
+								<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] truncate">
 									<span className="sm:hidden">Зуб #{activeTooth}: Эндодонтия</span>
 									<span className="hidden sm:inline">Эндодонтическая студия: {toothAnatomicalName}</span>
 								</h2>
 								{props.toothState && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 truncate">{props.toothState}</span>}
 								{isLoadingFromDb && <span className="text-[11px] text-teal-600 dark:text-teal-400 flex items-center gap-1 font-medium"><Activity size={12} className="animate-spin" /> Загрузка...</span>}
 							</div>
-							<p className="text-xs text-[var(--muted,#64748b)] hidden sm:block truncate">Эндодонтический журнал каналов • Канонический протокол инструментальной обработки, ирригации и 3D-обтурации каналов</p>
+							<p className="text-xs text-[var(--muted)] hidden sm:block truncate">Эндодонтический журнал каналов • Канонический протокол инструментальной обработки, ирригации и 3D-обтурации каналов</p>
 						</div>
 					</div>
-					<button type="button" onClick={props.onClose} className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" aria-label="Закрыть"><X size={18} /></button>
+					<button
+						type="button"
+						onClick={props.onClose}
+						className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] rounded-xl flex items-center justify-center bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+						aria-label="Закрыть"
+					>
+						<X size={18} />
+					</button>
 				</header>
 
 				<div className="p-3.5 sm:p-5 overflow-y-auto flex-1 space-y-3.5">
@@ -401,37 +542,37 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 
 					{/* Клинические параметры */}
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-						<div className="p-3 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 border border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1.5">Машинная NiTi-система:</span>
-							<select value={rotarySystem} onChange={(e) => setRotarySystem(e.target.value)} className="w-full min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs text-[var(--ink,#0f172a)] dark:text-white cursor-pointer">
+						<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
+							<span className="text-[11px] font-bold text-[var(--ink)] block mb-1.5">Машинная NiTi-система:</span>
+							<select value={rotarySystem} onChange={(e) => setRotarySystem(e.target.value)} className="w-full min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] cursor-pointer">
 								{NITI_SYSTEM_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
 							</select>
 						</div>
-						<div className="p-3 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 border border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1.5">Ирригация и УЗ-активация:</span>
-							<select value={irrigation} onChange={(e) => setIrrigation(e.target.value)} className="w-full min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs text-[var(--ink,#0f172a)] dark:text-white cursor-pointer">
+						<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
+							<span className="text-[11px] font-bold text-[var(--ink)] block mb-1.5">Ирригация и УЗ-активация:</span>
+							<select value={irrigation} onChange={(e) => setIrrigation(e.target.value)} className="w-full min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] cursor-pointer">
 								{CANONICAL_IRRIGATION_SOLUTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
 							</select>
 						</div>
-						<div className="p-3 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 border border-[var(--line,#e2e8f0)] dark:border-slate-800">
-							<span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1.5">Стоимость (BigInt копейки):</span>
+						<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
+							<span className="text-[11px] font-bold text-[var(--ink)] block mb-1.5">Предварительный расчёт:</span>
 							<div className="flex items-center justify-between text-xs pt-0.5">
 								<span className="font-bold text-[var(--teal,#0d9488)]">{costEstimate.totalRubles.toLocaleString("ru-RU")} ₽</span>
-								<span className="text-[10px] text-[var(--muted,#64748b)]">({costEstimate.services.length} усл.)</span>
+								<span className="text-[10px] text-[var(--muted)]">({costEstimate.services.length} усл.)</span>
 							</div>
 						</div>
 					</div>
 
 					{/* Разворачиваемый протокол приёма */}
-					<details className="group border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/30 overflow-hidden">
-						<summary className="flex items-center justify-between p-3 cursor-pointer select-none text-xs font-bold text-[var(--ink,#0f172a)] dark:text-white list-none">
+					<details className="group border border-[var(--line)] rounded-2xl bg-[var(--paper-soft)] overflow-hidden">
+						<summary className="flex items-center justify-between p-3 cursor-pointer select-none text-xs font-bold text-[var(--ink)] list-none">
 							<div className="flex items-center gap-2"><FileText size={14} className="text-[var(--teal,#0d9488)]" /><span>Сформированный клинический протокол эндодонтии</span></div>
-							<ChevronDown size={14} className="text-[var(--muted,#64748b)] transition-transform duration-200 group-open:rotate-180" />
+							<ChevronDown size={14} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
 						</summary>
-						<div className="p-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 space-y-2">
-							<textarea readOnly rows={5} value={generatedProtocolText} className="w-full p-2.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-900 font-mono text-[11px] text-[var(--ink,#0f172a)] dark:text-white outline-none resize-none" />
+						<div className="p-3 border-t border-[var(--line)] space-y-2">
+							<textarea readOnly rows={5} value={generatedProtocolText} className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] font-mono text-[11px] text-[var(--ink)] outline-none resize-none" />
 							<div className="flex justify-end">
-								<button type="button" onClick={handleCopyText} className="min-h-[36px] h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 cursor-pointer">
+								<button type="button" onClick={handleCopyText} className="min-h-[36px] h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer transition-colors">
 									<Copy size={13} /> {copied ? "Скопировано!" : "Скопировать текст"}
 								</button>
 							</div>
@@ -440,21 +581,60 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 				</div>
 
 				{/* 3. Footer — Ровно ОДНА Primary CTA кнопка #0d9488 («Зафиксировать протокол каналов») */}
-				<footer className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/90 shrink-0">
+				<footer className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
+					{/* Второстепенные действия: десктоп и мобильные */}
 					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-						<div className="grid grid-cols-2 sm:flex items-center gap-2">
-							<button type="button" onClick={() => { if (typeof window !== "undefined") window.print(); }} data-testid="endo-print-worksheet-btn" className="secondary-button min-h-[50px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer" title="Распечатать эндодонтическую карту (А4)"><Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" /><span><span className="hidden sm:inline">Печать эндо-карты (А4)</span><span className="sm:hidden">Печать А4</span></span></button>
-							<button type="button" onClick={handleCopyPatientMemo} data-testid="endo-copy-patient-memo-btn" className="secondary-button min-h-[50px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer" title="Скопировать памятку для пациента"><Copy size={16} className="text-teal-600 dark:text-teal-400 shrink-0" /><span><span className="hidden sm:inline">Скопировать для пациента</span><span className="sm:hidden">Памятка</span></span></button>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={handlePrintWorksheet}
+								data-testid="endo-print-worksheet-btn"
+								className="secondary-button flex-1 sm:flex-initial min-h-[50px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								title="Распечатать эндодонтическую карту (А4)"
+							>
+								<Printer size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<span><span className="hidden sm:inline">Печать эндо-карты (А4)</span><span className="sm:hidden">Печать А4</span></span>
+							</button>
+							<button
+								type="button"
+								onClick={handleCopyPatientMemo}
+								data-testid="endo-copy-patient-memo-btn"
+								className="secondary-button flex-1 sm:flex-initial min-h-[50px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+								title="Скопировать памятку для пациента"
+							>
+								<Copy size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<span><span className="hidden sm:inline">Скопировать для пациента</span><span className="sm:hidden">Памятка</span></span>
+							</button>
 						</div>
 						<div className="flex items-center gap-2">
-							<select value={stageStamp} onChange={(e) => setStageStamp(e.target.value as EndoStageStamp)} aria-label="Клинический штамп этапа лечения" className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer">
-								<option value="COMPLETED">ОБТУРИРОВАНО</option><option value="TEMP_CAOH2">ВРЕМЕННАЯ ОБТУРАЦИЯ</option><option value="DRAFT">ЧЕРНОВИК</option>
+							<select
+								value={stageStamp}
+								onChange={(e) => setStageStamp(e.target.value as EndoStageStamp)}
+								aria-label="Клинический штамп этапа лечения"
+								className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+							>
+								<option value="COMPLETED">ОБТУРИРОВАНО</option>
+								<option value="TEMP_CAOH2">ВРЕМЕННАЯ ОБТУРАЦИЯ</option>
+								<option value="DRAFT">ЧЕРНОВИК</option>
 							</select>
-							<button type="button" onClick={props.onClose} className="secondary-button min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer">Отмена</button>
+							<button
+								type="button"
+								onClick={props.onClose}
+								className="secondary-button min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 rounded-xl text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+							>
+								Отмена
+							</button>
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
-						<button type="button" data-testid="insert-endo-protocol-btn" onClick={handleCommitProtocol} className="primary-button flex-1 sm:flex-initial min-h-[50px] sm:min-h-[36px] h-11 sm:h-9 px-5 sm:px-6 rounded-xl text-xs sm:text-sm font-bold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-98 text-white flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer whitespace-nowrap" title="Зафиксировать протокол каналов">
+					{/* Primary CTA кнопка (ровно 1 на экран, Natural Thumb Zone >= 44px на мобиле, 36px на десктопе) */}
+					<div className="flex items-center">
+						<button
+							type="button"
+							data-testid="insert-endo-protocol-btn"
+							onClick={handleCommitProtocol}
+							className="primary-button w-full sm:w-auto min-h-[50px] sm:min-h-[36px] h-12 sm:h-9 px-5 sm:px-6 rounded-xl text-xs sm:text-sm font-bold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-98 text-white flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+							title="Зафиксировать протокол каналов"
+						>
 							<Check size={18} className="shrink-0" />
 							<span>{isSaving ? "Сохранение..." : "Зафиксировать протокол каналов"}</span>
 						</button>

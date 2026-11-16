@@ -39,12 +39,12 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 	} = props;
 
 	return (
-		<div className="border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-slate-900/50 overflow-hidden shadow-xs">
-			<div className="p-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-800/60 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 flex items-center justify-between">
+		<div className="border border-[var(--line)] rounded-2xl bg-[var(--paper)] overflow-hidden shadow-xs">
+			<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<SlidersHorizontal size={14} className="text-[var(--teal,#0d9488)]" />
-					<span className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-white">Корневые каналы зуба #{activeTooth}</span>
-					<span className="text-[11px] text-[var(--muted,#64748b)]">({canals.length} {canals.length === 1 ? "канал" : "канала"})</span>
+					<span className="text-xs font-bold text-[var(--ink)]">Корневые каналы зуба #{activeTooth}</span>
+					<span className="text-[11px] text-[var(--muted)]">({canals.length} {canals.length === 1 ? "канал" : "канала"})</span>
 				</div>
 				<div className="flex items-center gap-2">
 					<button
@@ -64,7 +64,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 			<div className="hidden sm:block overflow-x-auto">
 				<table className="w-full text-left border-collapse text-xs">
 					<thead>
-						<tr className="border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 text-[var(--muted,#64748b)]">
+						<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)]">
 							<th className="p-2.5 font-bold">Канал</th>
 							<th className="p-2.5 font-bold">Склероз</th>
 							<th className="p-2.5 font-bold">Длина WL</th>
@@ -75,15 +75,15 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 							<th className="p-2.5 text-center font-bold">Удалить</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-[var(--line,#e2e8f0)] dark:divide-slate-800">
+					<tbody className="divide-y divide-[var(--line)]">
 						{canals.map((c) => (
-							<tr key={c.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30">
-								<td className="p-2.5 font-bold text-[var(--ink,#0f172a)] dark:text-white">
+							<tr key={c.id} className="hover:bg-[var(--paper-soft)]/60">
+								<td className="p-2.5 font-bold text-[var(--ink)]">
 									<input
 										type="text"
 										value={c.canalName}
 										onChange={(e) => onUpdateCanal(c.id, "canalName", e.target.value)}
-										className="w-16 px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs font-bold"
+										className="w-16 px-1.5 py-1 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold"
 									/>
 								</td>
 								<td className="p-2.5">
@@ -94,7 +94,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 											onChange={() => onToggleObliteration(c.id)}
 											className="rounded text-[var(--teal,#0d9488)] cursor-pointer"
 										/>
-										<span className="text-[11px] text-[var(--muted,#64748b)]">Облит.</span>
+										<span className="text-[11px] text-[var(--muted)]">Облит.</span>
 									</label>
 								</td>
 								<td className="p-2.5">
@@ -102,7 +102,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 										<button
 											type="button"
 											onClick={() => onAdjustLength(c.id, -0.5)}
-											className="w-6 h-6 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+											className="w-6 h-6 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] font-bold hover:bg-[var(--paper-strong)] cursor-pointer flex items-center justify-center transition-colors"
 										>
 											-
 										</button>
@@ -113,12 +113,12 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 											max="35"
 											value={c.workingLengthMm || 0}
 											onChange={(e) => onUpdateCanalLength(c.id, e.target.value)}
-											className="w-14 px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs text-center font-bold"
+											className="w-14 px-1.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs text-center font-bold"
 										/>
 										<button
 											type="button"
 											onClick={() => onAdjustLength(c.id, 0.5)}
-											className="w-6 h-6 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+											className="w-6 h-6 rounded border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] font-bold hover:bg-[var(--paper-strong)] cursor-pointer flex items-center justify-center transition-colors"
 										>
 											+
 										</button>
@@ -128,7 +128,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<select
 										value={c.apexLocatorReading || "0.0 (Apex)"}
 										onChange={(e) => onUpdateCanal(c.id, "apexLocatorReading", e.target.value)}
-										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs font-semibold text-emerald-600 dark:text-emerald-400 cursor-pointer"
+										className="px-1.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold text-emerald-600 dark:text-emerald-400 cursor-pointer"
 									>
 										<option value="0.0 (Apex)">0.0 Apex</option>
 										<option value="-0.5 мм">-0.5 мм</option>
@@ -141,7 +141,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<select
 										value={c.masterApicalFile}
 										onChange={(e) => onUpdateCanal(c.id, "masterApicalFile", e.target.value)}
-										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs min-w-[140px] cursor-pointer"
+										className="px-1.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs min-w-[140px] cursor-pointer"
 									>
 										{CANONICAL_MAF_SIZES.map((opt) => (
 											<option key={opt.label} value={opt.label}>
@@ -159,7 +159,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<select
 										value={c.taper}
 										onChange={(e) => onUpdateCanal(c.id, "taper", e.target.value)}
-										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs min-w-[100px] cursor-pointer"
+										className="px-1.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs min-w-[100px] cursor-pointer"
 									>
 										<option value=".04 (Конусность 4%)">.04 (4%)</option>
 										<option value=".06 (Конусность 6%)">.06 (6%)</option>
@@ -170,7 +170,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<select
 										value={c.sealer || "AH Plus (эпоксидный герметик)"}
 										onChange={(e) => onUpdateCanal(c.id, "sealer", e.target.value)}
-										className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs min-w-[180px] cursor-pointer"
+										className="px-1.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs min-w-[180px] cursor-pointer"
 									>
 										{CURATED_SEALERS.map((s) => (
 											<option key={s} value={s}>
@@ -184,7 +184,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 										<button
 											type="button"
 											onClick={() => onRemoveCanal(c.id)}
-											className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 inline-flex items-center justify-center cursor-pointer"
+											className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/30 inline-flex items-center justify-center cursor-pointer transition-colors"
 											title="Удалить"
 										>
 											<Trash2 size={13} />
@@ -198,7 +198,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 			</div>
 
 			{/* Mobile Grouped Cards View (Apple HIG) */}
-			<div className="sm:hidden p-3 divide-y divide-[var(--line,#e2e8f0)] dark:divide-slate-800 space-y-3">
+			<div className="sm:hidden p-3 divide-y divide-[var(--line)] space-y-3">
 				{canals.map((c) => (
 					<div key={c.id} className="pt-3 first:pt-0 space-y-2.5">
 						<div className="flex items-center justify-between">
@@ -207,14 +207,14 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									type="text"
 									value={c.canalName}
 									onChange={(e) => onUpdateCanal(c.id, "canalName", e.target.value)}
-									className="w-16 px-2 py-1 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-xs font-bold"
+									className="w-16 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold"
 								/>
 								<span className="text-xs font-bold text-[var(--teal,#0d9488)]">
 									{c.isObliterated ? "ОБЛИТЕРИРОВАН" : `${c.workingLengthMm} мм`}
 								</span>
 							</div>
 							<div className="flex items-center gap-2">
-								<label className="flex items-center gap-1 text-[11px] text-[var(--muted,#64748b)]">
+								<label className="flex items-center gap-1 text-[11px] text-[var(--muted)]">
 									<input
 										type="checkbox"
 										checked={Boolean(c.isObliterated)}
@@ -227,7 +227,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									<button
 										type="button"
 										onClick={() => onRemoveCanal(c.id)}
-										className="w-9 h-9 rounded-lg text-rose-500 hover:bg-rose-50 flex items-center justify-center cursor-pointer"
+										className="w-9 h-9 rounded-lg text-rose-500 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/30 flex items-center justify-center cursor-pointer transition-colors"
 									>
 										<Trash2 size={14} />
 									</button>
@@ -235,12 +235,12 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 							</div>
 						</div>
 						<div className="flex items-center gap-2">
-							<span className="text-[11px] text-[var(--muted,#64748b)] w-14">Длина:</span>
+							<span className="text-[11px] text-[var(--muted)] w-14">Длина:</span>
 							<div className="flex items-center gap-1 flex-1">
 								<button
 									type="button"
 									onClick={() => onAdjustLength(c.id, -0.5)}
-									className="min-h-[44px] w-11 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 font-bold text-sm bg-[var(--paper,#ffffff)] dark:bg-slate-800 flex items-center justify-center cursor-pointer"
+									className="min-h-[44px] w-11 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-sm flex items-center justify-center hover:bg-[var(--paper-strong)] cursor-pointer transition-colors"
 								>
 									-
 								</button>
@@ -251,12 +251,12 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									max="35"
 									value={c.workingLengthMm || 0}
 									onChange={(e) => onUpdateCanalLength(c.id, e.target.value)}
-									className="min-h-[44px] flex-1 px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-center font-bold text-sm"
+									className="min-h-[44px] flex-1 px-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-center font-bold text-sm"
 								/>
 								<button
 									type="button"
 									onClick={() => onAdjustLength(c.id, 0.5)}
-									className="min-h-[44px] w-11 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 font-bold text-sm bg-[var(--paper,#ffffff)] dark:bg-slate-800 flex items-center justify-center cursor-pointer"
+									className="min-h-[44px] w-11 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] font-bold text-sm flex items-center justify-center hover:bg-[var(--paper-strong)] cursor-pointer transition-colors"
 								>
 									+
 								</button>
@@ -264,11 +264,11 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 						</div>
 						<div className="grid grid-cols-2 gap-2">
 							<div>
-								<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Апекслокатор:</span>
+								<span className="text-[10px] text-[var(--muted)] block mb-1">Апекслокатор:</span>
 								<select
 									value={c.apexLocatorReading || "0.0 (Apex)"}
 									onChange={(e) => onUpdateCanal(c.id, "apexLocatorReading", e.target.value)}
-									className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+									className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold text-emerald-600 dark:text-emerald-400"
 								>
 									<option value="0.0 (Apex)">0.0 Apex</option>
 									<option value="-0.5 мм">-0.5 мм</option>
@@ -278,11 +278,11 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 								</select>
 							</div>
 							<div>
-								<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Мастер-файл MAF:</span>
+								<span className="text-[10px] text-[var(--muted)] block mb-1">Мастер-файл MAF:</span>
 								<select
 									value={c.masterApicalFile}
 									onChange={(e) => onUpdateCanal(c.id, "masterApicalFile", e.target.value)}
-									className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-medium"
+									className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium"
 								>
 									{CANONICAL_MAF_SIZES.map((opt) => (
 										<option key={opt.label} value={opt.label}>
@@ -298,11 +298,11 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 							</div>
 						</div>
 						<div>
-							<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Силер / герметик:</span>
+							<span className="text-[10px] text-[var(--muted)] block mb-1">Силер / герметик:</span>
 							<select
 								value={c.sealer || "AH Plus (эпоксидный герметик)"}
 								onChange={(e) => onUpdateCanal(c.id, "sealer", e.target.value)}
-								className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-medium"
+								className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium"
 							>
 								{CURATED_SEALERS.map((s) => (
 									<option key={s} value={s}>
