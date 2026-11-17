@@ -8,6 +8,7 @@ export interface TelephonyPatientLike {
 	phone?: string | null | undefined;
 	balanceRub?: number | string | null | undefined;
 	notes?: string | null | undefined;
+	allergies?: string | string[] | null | undefined;
 	administrativeProfile?: {
 		legalRepresentativePhone?: string | null | undefined;
 		insurancePolicyNumber?: string | null | undefined;

@@ -40,7 +40,7 @@ test("Patient Personal Cabinet & 375px Mobile Ergonomics Suite", async (t) => {
 		assert.ok(htmlCert.includes("КНД 1151156"), "Must contain statutory KND form code");
 		assert.ok(htmlCert.includes("СПРАВКА"), "Must contain title");
 		assert.ok(htmlCert.includes(demo.fullName), "Must contain patient full name");
-		assert.ok(htmlCert.includes(demo.cardNumber), "Must contain medical card number");
+		assert.ok(htmlCert.includes(demo.cardNumber ?? ""), "Must contain medical card number");
 
 		// Total paid calculation
 		const paidSum = demo.invoices
@@ -101,7 +101,7 @@ test("Patient Personal Cabinet & 375px Mobile Ergonomics Suite", async (t) => {
 
 	await t.test("6. SMS/OTP 63-FZ PEP Consent Signing Workflow", () => {
 		const demo = DEMO_PATIENT_CABINET;
-		const pendingConsent = demo.consents.find((c) => c.status === "pending_signature");
+		const pendingConsent = (demo.consents ?? []).find((c) => c.status === "pending_signature");
 		assert.ok(pendingConsent, "Pending consent must exist in demo data");
 
 		const otp = generateSmsOtp(demo.phone, "748291");
@@ -127,7 +127,19 @@ test("Patient Personal Cabinet & 375px Mobile Ergonomics Suite", async (t) => {
 		const cssPath = candidatePaths.find((p) => fs.existsSync(p)) || candidatePaths[0]!;
 		assert.ok(fs.existsSync(cssPath), `patientCabinet.css must exist at ${cssPath}`);
 
-		const css = fs.readFileSync(cssPath, "utf8");
+		function readCssWithImports(filePath: string, visited = new Set<string>()): string {
+			if (visited.has(filePath) || !fs.existsSync(filePath)) return "";
+			visited.add(filePath);
+			const content = fs.readFileSync(filePath, "utf8");
+			const dir = path.dirname(filePath);
+			const importedContent = content.replace(/@import\s+["']([^"']+)["'];/g, (_, importPath) => {
+				const resolved = path.resolve(dir, importPath);
+				return readCssWithImports(resolved, visited);
+			});
+			return content + "\n" + importedContent;
+		}
+
+		const css = readCssWithImports(cssPath);
 
 		// Touch targets >= 44px
 		assert.ok(css.includes("min-height: 44px") || css.includes("min-height: 48px"));
