@@ -109,30 +109,44 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = (pr
 			)}
 
 			{/* Вкладыш для амбулаторной карты (1 клик из смены врача) */}
-			{printingAppointment && (
-				<FastClinicalPrintEngine
-					isOpen={Boolean(printingAppointment)}
-					onClose={() => setPrintingAppointment(null)}
-					initialDocType="clinical_protocol_entry"
-					patient={{
-						fullName: printingAppointment.patientFullName,
-						birthDate: printingAppointment.patientBirthDate,
-						phone: printingAppointment.patientPhone,
-						cardNumber: printingAppointment.cardNumber,
-					}}
-					doctor={{
-						fullName: initialDoctorName,
-						specialty: initialDoctorSpecialty,
-					}}
-					visitData={{
-						date: printingAppointment.startsAtIso.split("T")[0],
-						time: printingAppointment.startsAtIso.split("T")[1]?.slice(0, 5) || "14:30",
-						toothNumber: printingAppointment.diagnosisTooth || "46",
-						diagnosis: printingAppointment.diagnosisIcd10 || "K02.1 Кариес дентина (хронический глубокий кариес)",
-						treatment: printingAppointment.treatmentDescription,
-					}}
-				/>
-			)}
+			{printingAppointment && (() => {
+				const splitDate = printingAppointment.startsAtIso.split("T");
+				const visitDate = splitDate[0];
+				const visitTime = splitDate[1]?.slice(0, 5) || "14:30";
+
+				return (
+					<FastClinicalPrintEngine
+						isOpen={Boolean(printingAppointment)}
+						onClose={() => setPrintingAppointment(null)}
+						initialDocType="clinical_protocol_entry"
+						patient={{
+							fullName: printingAppointment.patientFullName,
+							...(printingAppointment.patientBirthDate !== undefined
+								? { birthDate: printingAppointment.patientBirthDate }
+								: {}),
+							...(printingAppointment.patientPhone !== undefined
+								? { phone: printingAppointment.patientPhone }
+								: {}),
+							...(printingAppointment.cardNumber !== undefined
+								? { cardNumber: printingAppointment.cardNumber }
+								: {}),
+						}}
+						doctor={{
+							fullName: initialDoctorName,
+							specialty: initialDoctorSpecialty,
+						}}
+						visitData={{
+							time: visitTime,
+							toothNumber: printingAppointment.diagnosisTooth || "46",
+							diagnosis: printingAppointment.diagnosisIcd10 || "K02.1 Кариес дентина (хронический глубокий кариес)",
+							...(visitDate !== undefined ? { date: visitDate } : {}),
+							...(printingAppointment.treatmentDescription !== undefined
+								? { treatment: printingAppointment.treatmentDescription }
+								: {}),
+						}}
+					/>
+				);
+			})()}
 		</div>
 	);
 };

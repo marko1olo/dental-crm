@@ -68,37 +68,37 @@ export interface FiscalDataSummary {
 export interface FastClinicalPrintEngineProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialDocType?: FastPrintDocType | string;
+	readonly initialDocType?: FastPrintDocType | string | undefined;
 	readonly patient?: {
-		readonly id?: string;
-		readonly organizationId?: string;
-		readonly fullName?: string;
-		readonly birthDate?: string;
-		readonly phone?: string;
-		readonly address?: string;
-		readonly cardNumber?: string;
-		readonly allergies?: string;
-		readonly somaticNotes?: string;
-	} | Patient | null;
-	readonly clinic?: ClinicSummary | null;
+		readonly id?: string | undefined;
+		readonly organizationId?: string | undefined;
+		readonly fullName?: string | undefined;
+		readonly birthDate?: string | undefined;
+		readonly phone?: string | undefined;
+		readonly address?: string | undefined;
+		readonly cardNumber?: string | undefined;
+		readonly allergies?: string | undefined;
+		readonly somaticNotes?: string | undefined;
+	} | Patient | null | undefined;
+	readonly clinic?: ClinicSummary | null | undefined;
 	readonly doctor?: {
-		readonly fullName?: string;
-		readonly specialty?: string;
-	} | null;
+		readonly fullName?: string | undefined;
+		readonly specialty?: string | undefined;
+	} | null | undefined;
 	readonly visitData?: {
-		readonly date?: string;
-		readonly time?: string;
-		readonly toothNumber?: ToothNumber;
-		readonly diagnosis?: string | ClinicalDiagnosis;
-		readonly complaints?: string;
-		readonly objective?: string;
-		readonly treatment?: string;
-		readonly recommendations?: string;
-	} | null;
-	readonly services?: readonly PrintServiceItem[];
-	readonly planStages?: readonly PlanStageSummary[];
-	readonly fiscalData?: FiscalDataSummary | null;
-	readonly onAfterPrint?: () => void;
+		readonly date?: string | undefined;
+		readonly time?: string | undefined;
+		readonly toothNumber?: ToothNumber | undefined;
+		readonly diagnosis?: string | ClinicalDiagnosis | undefined;
+		readonly complaints?: string | undefined;
+		readonly objective?: string | undefined;
+		readonly treatment?: string | undefined;
+		readonly recommendations?: string | undefined;
+	} | null | undefined;
+	readonly services?: readonly PrintServiceItem[] | undefined;
+	readonly planStages?: readonly PlanStageSummary[] | undefined;
+	readonly fiscalData?: FiscalDataSummary | null | undefined;
+	readonly onAfterPrint?: (() => void) | undefined;
 }
 
 function mapDocTypeToA4Tab(docType?: string): ProfessionalA4DocumentTab {

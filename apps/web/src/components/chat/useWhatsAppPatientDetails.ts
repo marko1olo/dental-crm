@@ -33,8 +33,8 @@ export function useWhatsAppPatientDetails({
 		return null;
 	}, [dashboard?.patients, effectivePatientId, patientPhone]);
 
-	const effectivePhone = patient?.phone || patientPhone || "";
-	const effectiveName = patient?.fullName || patientName || "Пациент клиники";
+	const effectivePhone: string = (typeof patient?.phone === "string" ? patient.phone : null) || patientPhone || "";
+	const effectiveName: string = (typeof patient?.fullName === "string" ? patient.fullName : null) || patientName || "Пациент клиники";
 	const formattedPhone = formatPhoneDisplay(effectivePhone);
 	const initials = formatPatientInitials(effectiveName);
 	const avatarColors = getAvatarColor(effectiveName);

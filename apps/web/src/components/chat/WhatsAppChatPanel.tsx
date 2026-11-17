@@ -7,13 +7,13 @@ import { WhatsAppInputBar } from "./WhatsAppInputBar";
 export interface ChatMessage {
 	id: string;
 	sender: "clinic" | "patient" | "system";
-	senderName?: string;
+	senderName?: string | undefined;
 	text: string;
 	timestamp: string;
-	status?: "sent" | "delivered" | "read" | "failed";
-	mediaUrl?: string;
-	mediaType?: "image" | "document" | "audio";
-	quickActionPayload?: string;
+	status?: "sent" | "delivered" | "read" | "failed" | undefined;
+	mediaUrl?: string | undefined;
+	mediaType?: "image" | "document" | "audio" | undefined;
+	quickActionPayload?: string | undefined;
 }
 
 export interface WhatsAppChatPanelProps {

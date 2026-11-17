@@ -79,24 +79,29 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 					: Array.isArray(data.messages)
 						? data.messages
 						: []) as RawInboxMessage[];
-				const parsed: ChatMessage[] = list.map((m, idx) => ({
-					id: m.id || `msg-${Date.now()}-${idx}-${++chatMsgSeq}`,
-					sender: m.direction === "inbound" ? "patient" : "clinic",
-					senderName:
+				const parsed: ChatMessage[] = list.map((m, idx) => {
+					const sender = m.direction === "inbound" ? "patient" : "clinic";
+					const senderName: string =
 						m.direction === "inbound"
-							? m.patientName || effectiveName
-							: "DENTE Администратор",
-					text: m.message || m.bodyText || "",
-					timestamp: m.createdAt || new Date().toISOString(),
-					status:
+							? String(m.patientName || effectiveName || "Пациент клиники")
+							: "DENTE Администратор";
+					const status =
 						m.direction === "inbound"
 							? undefined
 							: m.status === "failed"
-								? "failed"
+								? ("failed" as const)
 								: m.status === "delivered" || m.status === "read"
-									? m.status
-									: "sent",
-				}));
+									? (m.status as "delivered" | "read")
+									: ("sent" as const);
+					return {
+						id: m.id || `msg-${Date.now()}-${idx}-${++chatMsgSeq}`,
+						sender,
+						senderName,
+						text: m.message || m.bodyText || "",
+						timestamp: m.createdAt || new Date().toISOString(),
+						...(status !== undefined ? { status } : {}),
+					};
+				});
 				setMessages(parsed);
 			} else {
 				setMessages([]);
@@ -205,7 +210,7 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 		if (!tmpl) return;
 		await dispatchMessage(tmpl.buildText(), tmpl.label, {
 			templateName: tmpl.id,
-			intent: tmpl.intent,
+			...(tmpl.intent !== undefined ? { intent: tmpl.intent } : {}),
 		});
 	};
 
