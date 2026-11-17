@@ -6,6 +6,7 @@
  * - Mandate 8l: Action Engine
  */
 
+import type { Appointment } from "@dental/shared";
 import { useAppStore } from "../../../store/appStore";
 import type { ActionExecutionContext, CRMActionResult } from "./types.js";
 
@@ -75,8 +76,9 @@ export async function handleSchedulingAction(
 		// Direct sync into useAppStore.getState().dashboard.appointments
 		useAppStore.getState().setDashboard((prev) => {
 			if (!prev) return prev;
-			const newAppt = {
+			const newAppt: Appointment = {
 				id: createdApptId,
+				organizationId: prev.clinicSettings?.profile?.organizationId || "00000000-0000-7000-8000-000000000001",
 				patientId,
 				doctorUserId: doctorId,
 				chairId,
@@ -84,11 +86,12 @@ export async function handleSchedulingAction(
 				endsAt,
 				status: "planned",
 				reason,
+				comment: null,
 			};
 			const existing = prev.appointments || [];
 			return {
 				...prev,
-				appointments: [...existing, newAppt as any],
+				appointments: [...existing, newAppt],
 			};
 		});
 
@@ -138,7 +141,7 @@ export async function handleSchedulingAction(
 			if (!prev || !prev.appointments) return prev;
 			return {
 				...prev,
-				appointments: prev.appointments.map((a: any) =>
+				appointments: prev.appointments.map((a: Appointment) =>
 					a.id === appointmentId ? { ...a, status: "cancelled", cancelReason: reason } : a,
 				),
 			};
@@ -195,7 +198,7 @@ export async function handleSchedulingAction(
 			if (!prev || !prev.appointments) return prev;
 			return {
 				...prev,
-				appointments: prev.appointments.map((a: any) =>
+				appointments: prev.appointments.map((a: Appointment) =>
 					a.id === appointmentId ? { ...a, startsAt: newStartsAt, endsAt: newEndsAt } : a,
 				),
 			};

@@ -16,6 +16,10 @@ import {
 } from "./ResamplingAudioWorklet";
 import { VadEngine, type VadEngineConfig } from "./VadEngine";
 
+interface WindowWithWebkitAudio {
+	webkitAudioContext?: typeof AudioContext;
+}
+
 let cachedWorkletBlobUrl: string | null = null;
 const registeredContexts = new WeakSet<AudioContext>();
 
@@ -27,8 +31,7 @@ export function isAudioWorkletSupported(): boolean {
 
 	const hasAudioContext =
 		typeof window.AudioContext !== "undefined" ||
-		// biome-ignore lint/suspicious/noExplicitAny: WebKit AudioContext support check
-		typeof (window as any).webkitAudioContext !== "undefined";
+		typeof (window as Window & WindowWithWebkitAudio).webkitAudioContext !== "undefined";
 
 	const hasAudioWorklet =
 		typeof window.AudioWorkletNode !== "undefined" &&
@@ -167,8 +170,7 @@ export async function createResamplingAudioCapturePipeline(config: {
 	// 2. Инициализация AudioContext
 	const AudioCtxClass =
 		window.AudioContext ||
-		// biome-ignore lint/suspicious/noExplicitAny: WebKit AudioContext support
-		(window as any).webkitAudioContext;
+		(window as Window & WindowWithWebkitAudio).webkitAudioContext;
 	const audioCtx = config.audioContext ?? new AudioCtxClass();
 
 	if (audioCtx.state === "suspended") {

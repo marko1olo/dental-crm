@@ -10,6 +10,7 @@ import type {
 	OfflineDraftRecord,
 	OfflineMutationQueueRecord,
 } from "@dental/shared";
+import type { OfflineMutation, MutationEntityType } from "../../services/offline/types.js";
 import {
 	saveOfflineDraft,
 	loadOfflineDraft,
@@ -107,10 +108,10 @@ export class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 	async enqueueMutation(
 		mutation: Omit<OfflineMutationQueueRecord, "id" | "createdAt" | "synced" | "retryAttempts">,
 	): Promise<OfflineMutationQueueRecord> {
-		let res: any;
+		let res: OfflineMutation;
 		try {
 			res = await enqueueOfflineMutation({
-				entityType: mutation.entityType as any,
+				entityType: mutation.entityType as MutationEntityType,
 				entityId: mutation.entityId,
 				action: mutation.action,
 				payload: { json: mutation.payloadJson },
@@ -126,7 +127,7 @@ export class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 					const { purgeSyncedDraftsAndOldCache } = await import("../../services/offline/offlineStorage.js");
 					await purgeSyncedDraftsAndOldCache();
 					res = await enqueueOfflineMutation({
-						entityType: mutation.entityType as any,
+						entityType: mutation.entityType as MutationEntityType,
 						entityId: mutation.entityId,
 						action: mutation.action,
 						payload: { json: mutation.payloadJson },
@@ -158,11 +159,11 @@ export class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 		mutations: Array<Omit<OfflineMutationQueueRecord, "id" | "createdAt" | "synced" | "retryAttempts">>,
 	): Promise<OfflineMutationQueueRecord[]> {
 		if (!mutations || mutations.length === 0) return [];
-		let resList: any[];
+		let resList: OfflineMutation[];
 		try {
 			resList = await enqueueOfflineMutationsBatch(
 				mutations.map((m) => ({
-					entityType: m.entityType as any,
+					entityType: m.entityType as MutationEntityType,
 					entityId: m.entityId,
 					action: m.action,
 					payload: { json: m.payloadJson },
@@ -180,7 +181,7 @@ export class WebUnifiedStorageEngine implements UnifiedStorageEngineContract {
 					await purgeSyncedDraftsAndOldCache();
 					resList = await enqueueOfflineMutationsBatch(
 						mutations.map((m) => ({
-							entityType: m.entityType as any,
+							entityType: m.entityType as MutationEntityType,
 							entityId: m.entityId,
 							action: m.action,
 							payload: { json: m.payloadJson },

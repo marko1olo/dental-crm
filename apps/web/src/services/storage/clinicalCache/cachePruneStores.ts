@@ -11,6 +11,26 @@ import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
 import type { ClinicalCachedEntity } from "../storageTypes";
 import { inMemoryEntityCacheMap, removeLocalStorageCachedEntity } from "./cacheStorageMemory";
 
+interface PruneDraftItem {
+	draftKey?: string;
+	updatedAtMs?: number;
+	updatedAt?: string;
+	isSaved?: boolean;
+}
+
+interface PruneMutationItem {
+	mutationId?: string;
+	status?: string;
+	createdAtMs?: number;
+	createdAt?: string;
+}
+
+interface PruneScheduleItem {
+	scheduleKey?: string;
+	cachedAtMs?: number;
+	cachedAt?: string;
+}
+
 export async function pruneIdbStores(nowMs: number, maxAgeMs: number, statutoryKeys: Set<string>) {
 	let clinical = 0, drafts = 0, mutations = 0, schedules = 0;
 	try {
@@ -45,8 +65,8 @@ export async function pruneIdbStores(nowMs: number, maxAgeMs: number, statutoryK
 				const tx = db.transaction(DRAFTS_STORE_NAME, "readwrite");
 				const store = tx.objectStore(DRAFTS_STORE_NAME);
 				const req = store.getAll();
-				const list = await new Promise<any[]>((res, rej) => {
-					req.onsuccess = () => res((req.result as any[]) || []);
+				const list = await new Promise<PruneDraftItem[]>((res, rej) => {
+					req.onsuccess = () => res((req.result as PruneDraftItem[]) || []);
 					req.onerror = () => rej(req.error);
 				});
 				let op = 0;
@@ -68,8 +88,8 @@ export async function pruneIdbStores(nowMs: number, maxAgeMs: number, statutoryK
 				const tx = db.transaction(MUTATIONS_STORE_NAME, "readwrite");
 				const store = tx.objectStore(MUTATIONS_STORE_NAME);
 				const req = store.getAll();
-				const list = await new Promise<any[]>((res, rej) => {
-					req.onsuccess = () => res((req.result as any[]) || []);
+				const list = await new Promise<PruneMutationItem[]>((res, rej) => {
+					req.onsuccess = () => res((req.result as PruneMutationItem[]) || []);
 					req.onerror = () => rej(req.error);
 				});
 				let op = 0;
@@ -89,8 +109,8 @@ export async function pruneIdbStores(nowMs: number, maxAgeMs: number, statutoryK
 				const tx = db.transaction(SCHEDULES_CACHE_STORE_NAME, "readwrite");
 				const store = tx.objectStore(SCHEDULES_CACHE_STORE_NAME);
 				const req = store.getAll();
-				const list = await new Promise<any[]>((res, rej) => {
-					req.onsuccess = () => res((req.result as any[]) || []);
+				const list = await new Promise<PruneScheduleItem[]>((res, rej) => {
+					req.onsuccess = () => res((req.result as PruneScheduleItem[]) || []);
 					req.onerror = () => rej(req.error);
 				});
 				let op = 0;

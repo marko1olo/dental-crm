@@ -34,6 +34,21 @@ interface SerialPortLike {
 	writable?: unknown;
 }
 
+interface WebSerialApi {
+	getPorts(): Promise<SerialPortLike[]>;
+	requestPort(options?: { filters?: Array<{ usbVendorId?: number; usbProductId?: number }> }): Promise<SerialPortLike>;
+	addEventListener(type: string, listener: (event: Event) => void): void;
+	removeEventListener(type: string, listener: (event: Event) => void): void;
+}
+
+interface NavigatorWithSerial {
+	serial?: WebSerialApi;
+}
+
+interface SerialPortEventLike extends Event {
+	port?: SerialPortLike;
+}
+
 function mapSerialPortToDevice(port: SerialPortLike, index: number): HardwareDevice {
 	const info = port.getInfo();
 	const vendorId = info.usbVendorId;
@@ -73,8 +88,9 @@ export async function getAvailableSerialPorts(): Promise<HardwareDevice[]> {
 	}
 
 	try {
-		// biome-ignore lint/suspicious/noExplicitAny: Web Serial API standard call
-		const ports: SerialPortLike[] = await (navigator as any).serial.getPorts();
+		const serial = (navigator as Navigator & NavigatorWithSerial).serial;
+		if (!serial) return [];
+		const ports: SerialPortLike[] = await serial.getPorts();
 		return ports.map((port, idx) => mapSerialPortToDevice(port, idx));
 	} catch (err) {
 		console.warn("[SerialPortScanner] Failed to enumerate ports:", err);
@@ -104,8 +120,9 @@ export async function requestSerialPort(options?: {
 		];
 
 		const filters = options?.filters ?? defaultFilters;
-		// biome-ignore lint/suspicious/noExplicitAny: Web Serial API standard call
-		const port: SerialPortLike = await (navigator as any).serial.requestPort({ filters });
+		const serial = (navigator as Navigator & NavigatorWithSerial).serial;
+		if (!serial) return null;
+		const port: SerialPortLike = await serial.requestPort({ filters });
 		if (!port) return null;
 
 		return mapSerialPortToDevice(port, 0);
@@ -130,13 +147,14 @@ export function subscribeSerialPortEvents(
 		return () => {};
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: Web Serial API standard target
-	const serial = (navigator as any).serial;
+	const serial = (navigator as Navigator & NavigatorWithSerial).serial;
+	if (!serial) {
+		return () => {};
+	}
 
 	const handleConnect = (event: Event) => {
 		try {
-			// biome-ignore lint/suspicious/noExplicitAny: event.port
-			const port = (event as any).port as SerialPortLike;
+			const port = (event as SerialPortEventLike).port;
 			if (port) {
 				onConnect(mapSerialPortToDevice(port, 0));
 			}

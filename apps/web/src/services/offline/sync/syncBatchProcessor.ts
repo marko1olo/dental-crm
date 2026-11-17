@@ -21,7 +21,7 @@ export interface BatchProcessOptions {
 	baseBackoffMs: number;
 	maxBackoffMs: number;
 	jitter: boolean;
-	fetchImpl?: typeof fetch;
+	fetchImpl?: typeof fetch | undefined;
 	emit: (type: "progress" | "complete" | "conflict" | "error" | "slow_drain", data: unknown) => void;
 }
 

@@ -5,6 +5,10 @@
  * Исключает утечки дескрипторов аудио-устройств ОС и конфликты параллельных контекстов на iOS Safari.
  */
 
+interface WindowWithWebkitAudio {
+	webkitAudioContext?: typeof AudioContext;
+}
+
 let sharedContext: AudioContext | null = null;
 
 /**
@@ -18,8 +22,7 @@ export function getSharedAudioContext(): AudioContext | null {
 	if (!sharedContext || sharedContext.state === "closed") {
 		const AudioCtxClass =
 			window.AudioContext ||
-			// biome-ignore lint/suspicious/noExplicitAny: webkitAudioContext fallback for Safari
-			(window as any).webkitAudioContext;
+			(window as Window & WindowWithWebkitAudio).webkitAudioContext;
 
 		if (AudioCtxClass) {
 			try {

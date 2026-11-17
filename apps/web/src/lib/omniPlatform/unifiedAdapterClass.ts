@@ -47,6 +47,18 @@ import {
 	startOfflineQueueAutoSync,
 } from "./offlineSyncManager";
 
+interface DesktopPrintResultLike {
+	success: boolean;
+	printedAt?: string;
+	printerName?: string;
+	printerUsed?: string;
+	error?: string;
+}
+
+interface DenteKioskWindow {
+	__DENTE_KIOSK_ACTIVE__?: boolean;
+}
+
 export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 	get environment(): OmniEnvironment {
 		return detectOmniEnvironment();
@@ -155,12 +167,13 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 						widthMm: job.paperWidthMm ?? 80,
 						copies: job.copies ?? 1,
 					});
-					if (res.success) {
-						const printerUsed = (res as any).printerName || (res as any).printerUsed || job.kktConnection?.host || "ESC/POS 9100";
+					const printRes = res as DesktopPrintResultLike;
+					if (printRes.success) {
+						const printerUsed = printRes.printerName || printRes.printerUsed || job.kktConnection?.host || "ESC/POS 9100";
 						return {
 							success: true,
 							methodUsed: "desktop_silent",
-							printedAt: res.printedAt || now,
+							printedAt: printRes.printedAt || now,
 							...(printerUsed ? { printerName: printerUsed } : {}),
 						};
 					}
@@ -233,11 +246,12 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 			};
 		}
 
+		const jobType = (job as { type?: unknown }).type;
 		return {
 			success: false,
 			methodUsed: "browser_print",
 			printedAt: now,
-			error: `Неизвестный тип задания печати: ${(job as any).type}`,
+			error: `Неизвестный тип задания печати: ${String(jobType ?? "unknown")}`,
 		};
 	}
 
@@ -337,8 +351,11 @@ export class UnifiedOmniPlatformAdapter implements OmniPlatformContract {
 	 * Checks if clinical kiosk mode is currently active.
 	 */
 	isKioskModeActive(): boolean {
-		if (typeof window !== "undefined" && (window as any).__DENTE_KIOSK_ACTIVE__ !== undefined) {
-			return Boolean((window as any).__DENTE_KIOSK_ACTIVE__);
+		if (typeof window !== "undefined") {
+			const kioskActive = (window as Window & DenteKioskWindow).__DENTE_KIOSK_ACTIVE__;
+			if (kioskActive !== undefined) {
+				return Boolean(kioskActive);
+			}
 		}
 		return false;
 	}

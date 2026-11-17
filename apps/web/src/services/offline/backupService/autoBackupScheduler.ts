@@ -14,7 +14,7 @@ import type {
 	AutoBackupScheduleStatus,
 } from "./types.js";
 
-let autoBackupIntervalTimer: any = null;
+let autoBackupIntervalTimer: ReturnType<typeof setInterval> | null = null;
 let autoBackupStatus: AutoBackupScheduleStatus = {
 	isRunning: false,
 	intervalMinutes: 60,
@@ -72,17 +72,17 @@ export function startAutoBackupSchedule(options?: AutoBackupScheduleOptions): Au
 			if (options?.onBackupComplete) {
 				options.onBackupComplete(result);
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			logger.error("[OfflineBackup] Scheduled auto-backup failed", err);
 			autoBackupStatus.lastBackupStatus = "error";
 			if (options?.onBackupError) {
-				options.onBackupError(err);
+				options.onBackupError(err instanceof Error ? err : new Error(String(err)));
 			}
 		}
 	}, intervalMs);
 
-	if (typeof (autoBackupIntervalTimer as any)?.unref === "function") {
-		(autoBackupIntervalTimer as any).unref();
+	if (typeof (autoBackupIntervalTimer as { unref?: () => void })?.unref === "function") {
+		(autoBackupIntervalTimer as { unref: () => void }).unref();
 	}
 
 	logger.info(`[OfflineBackup] Auto-backup schedule started: interval ${intervalMinutes} minutes`);

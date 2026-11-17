@@ -259,7 +259,7 @@ export async function verifyLocalCacheIntegrity(options?: {
 					const cacheStore = tx.objectStore(CLINICAL_CACHE_STORE_NAME);
 					const cacheReq = cacheStore.getAll();
 					cacheReq.onsuccess = () => {
-						const cacheItems = (cacheReq.result as any[]) || [];
+						const cacheItems = (cacheReq.result as Array<{ cacheKey?: string }>) || [];
 						clinicalCacheCount = cacheItems.length;
 
 						for (const item of cacheItems) {
@@ -280,7 +280,7 @@ export async function verifyLocalCacheIntegrity(options?: {
 							if (isCorrupt) {
 								corruptedCount++;
 								if (autoRepair && !item.cacheKey) {
-									cacheStore.delete(item.cacheKey);
+									cacheStore.delete(item.cacheKey ?? "");
 									repairedCount++;
 									const lastIssue = issues[issues.length - 1];
 									if (lastIssue) lastIssue.autoRepaired = true;

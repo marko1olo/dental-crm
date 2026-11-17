@@ -72,7 +72,14 @@ export class LanP2PDispatcher {
 	public disconnectWebSocket(): void { this.wsManager.disconnect(); }
 
 	public handleIncomingRawMessage(raw: unknown, src: "broadcast_channel" | "websocket" | "http_peer" = "broadcast_channel"): boolean {
-		const msg = validateIncomingP2PMessage({ raw, sourceTransport: src, currentNodeId: this.nodeId, organizationId: this.organizationId, branchId: this.branchId, seenMap: this.seenMessageIds });
+		const msg = validateIncomingP2PMessage({
+			raw,
+			sourceTransport: src,
+			currentNodeId: this.nodeId,
+			organizationId: this.organizationId,
+			...(this.branchId !== undefined ? { branchId: this.branchId } : {}),
+			seenMap: this.seenMessageIds,
+		});
 		if (!msg) return false;
 		this.totalReceived++;
 		this.lastMessageIso = new Date().toISOString();
@@ -90,7 +97,15 @@ export class LanP2PDispatcher {
 		return ok;
 	}
 
-	private get meta() { return { nodeId: this.nodeId, nodeRole: this.nodeRole, nodeName: this.nodeName, organizationId: this.organizationId, defaultBranchId: this.branchId }; }
+	private get meta() {
+		return {
+			nodeId: this.nodeId,
+			nodeRole: this.nodeRole,
+			nodeName: this.nodeName,
+			organizationId: this.organizationId,
+			...(this.branchId !== undefined ? { defaultBranchId: this.branchId } : {}),
+		};
+	}
 	public async broadcastChairStatus(p: ChairStatusBroadcastParams): Promise<LanP2PMessage<LanChairStatusEvent>> { const m = buildChairStatusMessage(p, this.meta); await this.broadcastMessage(m); return m; }
 	public async broadcastAssistantCitoCall(p: AssistantCitoBroadcastParams): Promise<LanP2PMessage<LanAssistantCitoEvent>> { const m = buildAssistantCitoMessage(p, this.meta); await this.broadcastMessage(m); return m; }
 	public async broadcastInvoiceToCashier(p: InvoiceCashierBroadcastParams): Promise<LanP2PMessage<LanInvoiceTransferEvent>> { const m = buildInvoiceCashierMessage(p, this.meta); await this.broadcastMessage(m); return m; }

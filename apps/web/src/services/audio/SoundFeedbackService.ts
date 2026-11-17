@@ -9,6 +9,10 @@ import {
 import { clinicalProceduralAudio } from "./clinicalProceduralAudio.js";
 import { getSharedAudioContext, resetSharedAudioContext } from "./sharedAudioContext.js";
 
+interface WindowWithWebkitAudio {
+	webkitAudioContext?: typeof AudioContext;
+}
+
 export type SoundEffectType =
 	| "mic_start"
 	| "mic_stop"
@@ -118,8 +122,7 @@ export class SoundFeedbackService {
 		if (typeof window === "undefined") return false;
 		return Boolean(
 			window.AudioContext ||
-			// biome-ignore lint/suspicious/noExplicitAny: webkitAudioContext fallback
-			(window as any).webkitAudioContext,
+			(window as Window & WindowWithWebkitAudio).webkitAudioContext,
 		);
 	}
 
@@ -206,8 +209,8 @@ export class SoundFeedbackService {
 			}
 			this.idleSuspendTimer = null;
 		}, this.idleTimeoutMs);
-		if (this.idleSuspendTimer && typeof (this.idleSuspendTimer as any).unref === "function") {
-			(this.idleSuspendTimer as any).unref();
+		if (this.idleSuspendTimer && typeof (this.idleSuspendTimer as { unref?: () => void }).unref === "function") {
+			(this.idleSuspendTimer as { unref: () => void }).unref();
 		}
 	}
 

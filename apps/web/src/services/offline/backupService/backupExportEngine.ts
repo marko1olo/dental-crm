@@ -72,6 +72,25 @@ function notifyVaultChange(totalSnapshots: number): void {
 /**
  * Инициирует сохранение файла на внешний диск / USB-флешку или скачивание в браузере.
  */
+interface FileSystemWritableFileStreamLike {
+	write(data: string | BufferSource | Blob): Promise<void>;
+	close(): Promise<void>;
+}
+
+interface FileSystemFileHandleLike {
+	createWritable(): Promise<FileSystemWritableFileStreamLike>;
+}
+
+interface WindowWithFilePicker {
+	showSaveFilePicker?: (options?: {
+		suggestedName?: string;
+		types?: Array<{ description?: string; accept: Record<string, string[]> }>;
+	}) => Promise<FileSystemFileHandleLike>;
+	denteDesktopNative?: {
+		saveLocalBackupFile?: (content: string, filename: string) => Promise<void>;
+	};
+}
+
 export async function downloadOrSaveDenteFile(
 	content: string,
 	filename: string,
@@ -79,10 +98,12 @@ export async function downloadOrSaveDenteFile(
 ): Promise<{ savedDirectly: boolean }> {
 	if (typeof window === "undefined") return { savedDirectly: false };
 
+	const win = window as Window & WindowWithFilePicker;
+
 	// 1. File System Access API (Сохранение на выбранный USB-накопитель или сетевой диск)
-	if (preferPicker && typeof (window as any).showSaveFilePicker === "function") {
+	if (preferPicker && typeof win.showSaveFilePicker === "function") {
 		try {
-			const handle = await (window as any).showSaveFilePicker({
+			const handle = await win.showSaveFilePicker({
 				suggestedName: filename,
 				types: [
 					{
@@ -96,8 +117,8 @@ export async function downloadOrSaveDenteFile(
 			await writable.close();
 			logger.info(`[OfflineBackup] Successfully wrote backup directly via File System Access API to: ${filename}`);
 			return { savedDirectly: true };
-		} catch (err: any) {
-			if (err?.name === "AbortError") {
+		} catch (err: unknown) {
+			if ((err as { name?: string })?.name === "AbortError") {
 				logger.info("[OfflineBackup] User aborted file save picker");
 				return { savedDirectly: false };
 			}
@@ -106,12 +127,12 @@ export async function downloadOrSaveDenteFile(
 	}
 
 	// 2. Desktop Windows Native Bridge
-	const desktopNative = (window as any).denteDesktopNative;
+	const desktopNative = win.denteDesktopNative;
 	if (desktopNative?.saveLocalBackupFile) {
 		try {
 			await desktopNative.saveLocalBackupFile(content, filename);
 			return { savedDirectly: true };
-		} catch (err: any) {
+		} catch (err: unknown) {
 			logger.warn("[OfflineBackup] Desktop native save failed, falling back to browser download", err);
 		}
 	}
@@ -188,7 +209,7 @@ export async function exportOfflineClinicBackup(
 	}
 
 	// 3. Сбор всех закэшированных клинических данных
-	let clinicalCache: any[] = [];
+	let clinicalCache: unknown[] = [];
 	try {
 		clinicalCache = await listPatientClinicalCache(undefined, orgId);
 	} catch (err) {
@@ -360,14 +381,15 @@ export function recordLocalVaultSnapshot(
 
 		safeLocalStorageSetItem(LOCAL_VAULT_STORAGE_KEY, JSON.stringify(snapshots));
 		notifyVaultChange(snapshots.length);
-	} catch (err: any) {
+	} catch (err: unknown) {
+		const errObj = err as { name?: string; code?: number; message?: string } | null;
 		const isQuotaExceeded =
-			err &&
-			(err.name === "QuotaExceededError" ||
-				err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
-				err.code === 22 ||
-				err.code === 1014 ||
-				(typeof err.message === "string" && err.message.toLowerCase().includes("quota")));
+			errObj &&
+			(errObj.name === "QuotaExceededError" ||
+				errObj.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+				errObj.code === 22 ||
+				errObj.code === 1014 ||
+				(typeof errObj.message === "string" && errObj.message.toLowerCase().includes("quota")));
 
 		logger.warn(
 			`[OfflineBackup] Could not store rolling snapshot in localStorage (${isQuotaExceeded ? "QuotaExceededError" : "storage error"}), fallback guaranteed via IndexedDB`,
@@ -507,7 +529,7 @@ export async function createLocalDatabaseSnapshot(options?: {
 	}
 
 	// 3. Clinical cache
-	let clinicalCache: any[] = [];
+	let clinicalCache: unknown[] = [];
 	try {
 		clinicalCache = await listPatientClinicalCache(undefined, orgId);
 	} catch (err) {

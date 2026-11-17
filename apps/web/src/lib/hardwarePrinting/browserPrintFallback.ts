@@ -9,14 +9,55 @@ import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { isAndroidNativeApp, isDesktopExecutable, printMobileThermalBinary } from "../omniPlatformAdapter.js";
 import type { UniversalPrintResult } from "./printingTypes.js";
 
+interface WebUsbEndpointLike {
+	direction?: string;
+	endpointNumber: number;
+}
+
+interface WebUsbAlternateInterfaceLike {
+	endpoints?: WebUsbEndpointLike[];
+}
+
+interface WebUsbInterfaceLike {
+	interfaceNumber?: number;
+	alternate?: WebUsbAlternateInterfaceLike;
+	alternates?: WebUsbAlternateInterfaceLike[];
+}
+
+interface WebUsbConfigurationLike {
+	interfaces?: WebUsbInterfaceLike[];
+}
+
+interface WebUsbDeviceLike {
+	configuration?: WebUsbConfigurationLike | null;
+	open: () => Promise<void>;
+	selectConfiguration?: (configurationValue: number) => Promise<void>;
+	claimInterface: (interfaceNumber: number) => Promise<void>;
+	transferOut: (endpointNumber: number, data: BufferSource | Uint8Array) => Promise<unknown>;
+	close: () => Promise<void>;
+}
+
+interface WebUsbLike {
+	requestDevice: (options: { filters: Array<{ classCode: number }> }) => Promise<WebUsbDeviceLike>;
+}
+
+interface NavigatorWithUsb {
+	usb?: WebUsbLike;
+}
+
 export function isWebUsbSupported(): boolean {
-	return typeof navigator !== "undefined" && "usb" in navigator && Boolean((navigator as any).usb?.requestDevice);
+	return (
+		typeof navigator !== "undefined" &&
+		"usb" in navigator &&
+		Boolean((navigator as Navigator & NavigatorWithUsb).usb?.requestDevice)
+	);
 }
 
 export async function printWebUsbEscPosReceipt(rawBytes: Uint8Array): Promise<{ success: boolean; error?: string }> {
 	if (!isWebUsbSupported()) return { success: false, error: "WebUSB API недоступен в данном браузере" };
 	try {
-		const usb = (navigator as any).usb;
+		const usb = (navigator as Navigator & NavigatorWithUsb).usb;
+		if (!usb) return { success: false, error: "WebUSB недоступен" };
 		const device = await usb.requestDevice({ filters: [{ classCode: 7 }] });
 		await device.open();
 		if (!device.configuration && typeof device.selectConfiguration === "function") {
@@ -27,7 +68,7 @@ export async function printWebUsbEscPosReceipt(rawBytes: Uint8Array): Promise<{ 
 		const ifaces = device.configuration?.interfaces || [];
 		for (const iface of ifaces) {
 			const activeAlt = iface.alternate || iface.alternates?.[0];
-			const outEp = activeAlt?.endpoints?.find((ep: { direction: string }) => ep.direction === "out");
+			const outEp = activeAlt?.endpoints?.find((ep) => ep.direction === "out");
 			if (outEp) {
 				ifaceNumber = iface.interfaceNumber ?? 0;
 				outEndpoint = outEp.endpointNumber;
@@ -35,7 +76,7 @@ export async function printWebUsbEscPosReceipt(rawBytes: Uint8Array): Promise<{ 
 			}
 		}
 		await device.claimInterface(ifaceNumber);
-		await device.transferOut(outEndpoint, rawBytes as unknown as BufferSource);
+		await device.transferOut(outEndpoint, rawBytes);
 		try { await device.close(); } catch {}
 		return { success: true };
 	} catch (err) {

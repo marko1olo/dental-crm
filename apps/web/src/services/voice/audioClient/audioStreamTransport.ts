@@ -30,11 +30,57 @@ export interface AudioTransportHost {
 const INTERIM_MESSAGE_TYPES = new Set(["interim_token", "interim_transcript", "transcript_interim", "interim"]);
 const FINAL_MESSAGE_TYPES = new Set(["final_token", "final_transcript", "transcript_final", "final", "turn_complete"]);
 
+interface SpeechRecognitionAlternativeLike {
+	transcript: string;
+	confidence?: number;
+}
+
+interface SpeechRecognitionResultLike {
+	isFinal: boolean;
+	length: number;
+	[index: number]: SpeechRecognitionAlternativeLike;
+}
+
+interface SpeechRecognitionResultListLike {
+	length: number;
+	[index: number]: SpeechRecognitionResultLike;
+}
+
+interface SpeechRecognitionEventLike extends Event {
+	resultIndex: number;
+	results: SpeechRecognitionResultListLike;
+}
+
+interface SpeechRecognitionErrorEventLike extends Event {
+	error: string;
+	message?: string;
+}
+
+interface SpeechRecognitionLike {
+	lang: string;
+	continuous: boolean;
+	interimResults: boolean;
+	onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+	onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+	onend: (() => void) | null;
+	start(): void;
+	stop(): void;
+	abort(): void;
+}
+
+interface SpeechRecognitionConstructorLike {
+	new (): SpeechRecognitionLike;
+}
+
+interface WindowWithSpeechRecognition {
+	SpeechRecognition?: SpeechRecognitionConstructorLike;
+	webkitSpeechRecognition?: SpeechRecognitionConstructorLike;
+}
+
 export class AudioStreamTransport {
 	private host: AudioTransportHost;
 	public ws: WebSocket | null = null;
-	// biome-ignore lint/suspicious/noExplicitAny: Web Speech API instance
-	public browserRecognition: any = null;
+	public browserRecognition: SpeechRecognitionLike | null = null;
 
 	private pcmRingBuffer: PcmAudioChunk[] = [];
 	private isReconnecting = false;
@@ -339,8 +385,8 @@ export class AudioStreamTransport {
 
 	public startBrowserSpeechRecognition(): void {
 		if (typeof window === "undefined") return;
-		// biome-ignore lint/suspicious/noExplicitAny: SpeechRecognition window check
-		const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+		const win = window as Window & WindowWithSpeechRecognition;
+		const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
 		if (!SpeechRec) {
 			console.warn("Web Speech API not supported in this browser");
 			return;
@@ -353,12 +399,11 @@ export class AudioStreamTransport {
 			recognition.continuous = true;
 			recognition.interimResults = true;
 
-			// biome-ignore lint/suspicious/noExplicitAny: Event type
-			recognition.onresult = (event: any) => {
+			recognition.onresult = (event: SpeechRecognitionEventLike) => {
 				let interim = "";
 				for (let i = event.resultIndex; i < event.results.length; i++) {
-					const transcript = event.results[i][0].transcript;
-					if (event.results[i].isFinal) {
+					const transcript = event.results[i]?.[0]?.transcript || "";
+					if (event.results[i]?.isFinal) {
 						if (transcript.trim()) this.host.onFinalSegment(transcript.trim());
 					} else {
 						interim += transcript;
@@ -367,8 +412,7 @@ export class AudioStreamTransport {
 				this.host.onInterimTranscript(interim);
 			};
 
-			// biome-ignore lint/suspicious/noExplicitAny: Event type
-			recognition.onerror = (event: any) => {
+			recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
 				console.warn("Browser Speech Recognition error:", event.error);
 				if (event.error === "not-allowed" || event.error === "service-not-allowed") {
 					this.host.onFatalSpeechError("Доступ к распознаванию речи в браузере заблокирован");

@@ -103,22 +103,38 @@ function initTokenCache(): void {
 	}
 }
 
+interface DenteAuthWindow {
+	__denteClinicToken?: unknown;
+	__denteStaffToken?: unknown;
+	[INSTALLED_FLAG]?: unknown;
+}
+
 /**
  * Возвращает токен из оперативной памяти (0 мс, без вызова localStorage.getItem).
  */
 function readToken(key: string): string | null {
 	initTokenCache();
-	if (key === CLINIC_TOKEN_STORAGE_KEY) {
-		if (typeof window !== "undefined" && (window as any).__denteClinicToken) {
-			return String((window as any).__denteClinicToken);
+	if (typeof window !== "undefined") {
+		const win = window as Window & DenteAuthWindow;
+		if (key === CLINIC_TOKEN_STORAGE_KEY) {
+			if (win.__denteClinicToken) {
+				return String(win.__denteClinicToken);
+			}
+			return cachedClinicToken ?? (readDenteClinicToken() || null);
 		}
-		return cachedClinicToken ?? (readDenteClinicToken() || null);
-	}
-	if (key === STAFF_TOKEN_STORAGE_KEY) {
-		if (typeof window !== "undefined" && (window as any).__denteStaffToken) {
-			return String((window as any).__denteStaffToken);
+		if (key === STAFF_TOKEN_STORAGE_KEY) {
+			if (win.__denteStaffToken) {
+				return String(win.__denteStaffToken);
+			}
+			return cachedStaffToken ?? (readDenteStaffToken() || null);
 		}
-		return cachedStaffToken ?? (readDenteStaffToken() || null);
+	} else {
+		if (key === CLINIC_TOKEN_STORAGE_KEY) {
+			return cachedClinicToken ?? (readDenteClinicToken() || null);
+		}
+		if (key === STAFF_TOKEN_STORAGE_KEY) {
+			return cachedStaffToken ?? (readDenteStaffToken() || null);
+		}
 	}
 	const value = safeLocalStorageGetItem(key);
 	return value?.trim() ? value : null;
@@ -272,7 +288,7 @@ function scheduleBackgroundCatalogRevalidation(
 
 export function installApiAuthFetch(): void {
 	if (typeof window === "undefined") return;
-	const globalWindow = window as unknown as Record<string, unknown>;
+	const globalWindow = window as Window & DenteAuthWindow;
 	if (globalWindow[INSTALLED_FLAG]) return;
 	globalWindow[INSTALLED_FLAG] = true;
 
@@ -321,8 +337,9 @@ export function installApiAuthFetch(): void {
 
 		// Поддержка тотипотентности и идемпотентности (X-Idempotency-Key)
 		if (!headers.has("x-idempotency-key")) {
-			if (headers.has("idempotency-key")) {
-				headers.set("X-Idempotency-Key", headers.get("idempotency-key")!);
+			const existingIdempotency = headers.get("idempotency-key");
+			if (existingIdempotency) {
+				headers.set("X-Idempotency-Key", existingIdempotency);
 			} else if (init?.body && typeof init.body === "string" && (method === "POST" || method === "PUT" || method === "PATCH")) {
 				try {
 					const parsed = JSON.parse(init.body);

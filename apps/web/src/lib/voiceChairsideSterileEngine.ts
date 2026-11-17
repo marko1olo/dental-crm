@@ -195,7 +195,7 @@ export function parseVoiceChairsideCommand(rawText: string): SterileVoiceParseRe
  */
 export function insertTextIntoActiveInput(text: string): boolean {
 	if (typeof document === "undefined" || !text.trim()) return false;
-	const active = document.activeElement as any;
+	const active = document.activeElement;
 	if (!active) return false;
 
 	const isTextArea =
@@ -206,43 +206,43 @@ export function insertTextIntoActiveInput(text: string): boolean {
 	const isTextInput =
 		typeof HTMLInputElement !== "undefined"
 			? active instanceof HTMLInputElement && (!active.type || active.type === "text" || active.type === "search")
-			: active.tagName === "INPUT" && (!active.type || active.type === "text" || active.type === "search");
+			: active.tagName === "INPUT" && (!active.getAttribute("type") || active.getAttribute("type") === "text" || active.getAttribute("type") === "search");
 
 	if (isTextArea || isTextInput) {
-		const start = typeof active.selectionStart === "number" ? active.selectionStart : (active.value?.length ?? 0);
-		const end = typeof active.selectionEnd === "number" ? active.selectionEnd : (active.value?.length ?? 0);
-		const val = String(active.value || "");
+		const inputEl = active as HTMLInputElement | HTMLTextAreaElement;
+		const start = typeof inputEl.selectionStart === "number" ? inputEl.selectionStart : (inputEl.value?.length ?? 0);
+		const end = typeof inputEl.selectionEnd === "number" ? inputEl.selectionEnd : (inputEl.value?.length ?? 0);
+		const val = String(inputEl.value || "");
 		const prefix = start > 0 && !/\s$/.test(val.slice(0, start)) ? " " : "";
 		const cleanText = text.trim();
 		const nextVal = val.slice(0, start) + prefix + cleanText + val.slice(end);
 
 		// Support React controlled components via prototype value descriptor setter
 		try {
-			const proto = Object.getPrototypeOf(active);
+			const proto = Object.getPrototypeOf(inputEl);
 			const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
 			if (descriptor?.set) {
-				descriptor.set.call(active, nextVal);
+				descriptor.set.call(inputEl, nextVal);
 			} else {
-				active.value = nextVal;
+				inputEl.value = nextVal;
 			}
 		} catch {
-			active.value = nextVal;
+			inputEl.value = nextVal;
 		}
 
 		const newCursor = start + prefix.length + cleanText.length;
-		if (typeof active.setSelectionRange === "function") {
+		if (typeof inputEl.setSelectionRange === "function") {
 			try {
-				active.setSelectionRange(newCursor, newCursor);
+				inputEl.setSelectionRange(newCursor, newCursor);
 			} catch {
 				// ignore
 			}
 		}
 
-		if (typeof active.dispatchEvent === "function") {
+		if (typeof inputEl.dispatchEvent === "function") {
 			try {
-				const InputEventClass = typeof Event !== "undefined" ? Event : function (this: any, type: string) { this.type = type; } as any;
-				active.dispatchEvent(new InputEventClass("input", { bubbles: true }));
-				active.dispatchEvent(new InputEventClass("change", { bubbles: true }));
+				inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+				inputEl.dispatchEvent(new Event("change", { bubbles: true }));
 			} catch {
 				// ignore
 			}

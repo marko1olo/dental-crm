@@ -64,4 +64,4 @@ export interface OpenDirectRvgDetail {
 	readonly fileName?: string;
 }
 
-export type VisiographScanListener = (scan: VisiographDetectedScan, queueLength: number) => void;
+export type VisiographScanListener = (scan: VisiographDetectedScan | null, queueLength: number) => void;

@@ -35,6 +35,21 @@ interface UsbDeviceLike {
 	close?(): Promise<void>;
 }
 
+interface WebUsbApi {
+	getDevices(): Promise<UsbDeviceLike[]>;
+	requestDevice(options?: { filters?: Array<{ vendorId?: number; productId?: number }> }): Promise<UsbDeviceLike>;
+	addEventListener(type: string, listener: (event: Event) => void): void;
+	removeEventListener(type: string, listener: (event: Event) => void): void;
+}
+
+interface NavigatorWithUsb {
+	usb?: WebUsbApi;
+}
+
+interface UsbConnectionEventLike extends Event {
+	device?: UsbDeviceLike;
+}
+
 function mapUsbDeviceToHardwareDevice(dev: UsbDeviceLike): HardwareDevice {
 	const vendorId = dev.vendorId;
 	const productId = dev.productId;
@@ -73,8 +88,9 @@ export async function getAvailableUsbDevices(): Promise<HardwareDevice[]> {
 	}
 
 	try {
-		// biome-ignore lint/suspicious/noExplicitAny: WebUSB API standard call
-		const devices: UsbDeviceLike[] = await (navigator as any).usb.getDevices();
+		const usb = (navigator as Navigator & NavigatorWithUsb).usb;
+		if (!usb) return [];
+		const devices: UsbDeviceLike[] = await usb.getDevices();
 		return devices.map((d) => mapUsbDeviceToHardwareDevice(d));
 	} catch (err) {
 		console.warn("[UsbDeviceScanner] Failed to enumerate WebUSB devices:", err);
@@ -102,8 +118,9 @@ export async function requestUsbDevice(): Promise<HardwareDevice | null> {
 			{ vendorId: 0x24dc }, // Rutoken
 		];
 
-		// biome-ignore lint/suspicious/noExplicitAny: WebUSB API standard call
-		const device: UsbDeviceLike = await (navigator as any).usb.requestDevice({ filters });
+		const usb = (navigator as Navigator & NavigatorWithUsb).usb;
+		if (!usb) return null;
+		const device: UsbDeviceLike = await usb.requestDevice({ filters });
 		if (!device) return null;
 
 		return mapUsbDeviceToHardwareDevice(device);
@@ -127,13 +144,14 @@ export function subscribeUsbDeviceEvents(
 		return () => {};
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: WebUSB API standard target
-	const usb = (navigator as any).usb;
+	const usb = (navigator as Navigator & NavigatorWithUsb).usb;
+	if (!usb) {
+		return () => {};
+	}
 
 	const handleConnect = (event: Event) => {
 		try {
-			// biome-ignore lint/suspicious/noExplicitAny: event.device
-			const device = (event as any).device as UsbDeviceLike;
+			const device = (event as UsbConnectionEventLike).device;
 			if (device) {
 				onConnect(mapUsbDeviceToHardwareDevice(device));
 			}

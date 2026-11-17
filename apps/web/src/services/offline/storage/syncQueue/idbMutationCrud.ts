@@ -26,7 +26,7 @@ export async function getPendingOfflineMutations(filter?: {
 	}
 }
 
-function filterMutations(list: OfflineMutation[], filter?: { entityType?: MutationEntityType; organizationId?: string }): OfflineMutation[] {
+function filterMutations(list: OfflineMutation[], filter?: { entityType?: MutationEntityType | undefined; organizationId?: string | undefined }): OfflineMutation[] {
 	return list.filter((m) => {
 		if (m.status !== "pending" && m.status !== "failed") return false;
 		if (filter?.entityType && m.entityType !== filter.entityType) return false;

@@ -1,4 +1,4 @@
-import type { Dashboard } from "@dental/shared";
+import type { Chair, ClinicMode, Dashboard, StaffMember } from "@dental/shared";
 import { DEMO_CHIEF_DOCTOR } from "../../../components/auth/staffUnlockState";
 import {
 	DEMO_CHAIR_1_ID,
@@ -146,23 +146,44 @@ export function createOfflineFallbackDashboard(
 		? [
 				{
 					id: DEMO_CHAIR_1_ID,
+					organizationId: orgId,
 					name: "Кресло 1 (Основное)",
 					color: "var(--teal, #0d9488)",
 					active: true,
+					room: null,
+					notes: null,
+					specialization: null,
+					hasXraySensor: false,
+					hasMicroscope: false,
+					hasSurgeryKit: false,
 				},
 			]
 		: [
 				{
 					id: DEMO_CHAIR_1_ID,
+					organizationId: orgId,
 					name: "Кресло 1 (Основное)",
 					color: "var(--teal, #0d9488)",
 					active: true,
+					room: null,
+					notes: null,
+					specialization: null,
+					hasXraySensor: false,
+					hasMicroscope: false,
+					hasSurgeryKit: false,
 				},
 				{
 					id: DEMO_CHAIR_2_ID,
+					organizationId: orgId,
 					name: "Кресло 2 (Ортопедия / Терапия)",
 					color: "var(--accent, #6366f1)",
 					active: true,
+					room: null,
+					notes: null,
+					specialization: null,
+					hasXraySensor: false,
+					hasMicroscope: false,
+					hasSurgeryKit: false,
 				},
 			];
 
@@ -183,43 +204,151 @@ export function createOfflineFallbackDashboard(
 		? getDemoShowcaseAppointments().map((a) => ({ ...a, organizationId: DEMO_SHOWCASE_ORG_ID }))
 		: [];
 
-	const fallbackStaff = shouldSeedDemo
-		? getDemoShowcaseStaff().map((s) => ({ ...s, organizationId: DEMO_SHOWCASE_ORG_ID }))
+	const fallbackStaff: StaffMember[] = shouldSeedDemo
+		? getDemoShowcaseStaff().map((s) => ({
+				id: s.id,
+				organizationId: DEMO_SHOWCASE_ORG_ID,
+				fullName: s.fullName,
+				role: s.role,
+				specialties: [],
+				phone: s.phone || null,
+				email: s.email || null,
+				active: s.active,
+				canSignMedicalRecords: true,
+				canManageMoney: true,
+				canManageImports: false,
+				color: s.color,
+				createdAt: today,
+				updatedAt: today,
+			}))
 		: [
 				{
 					id: DEMO_CHIEF_DOCTOR.id,
-					fullName: DEMO_CHIEF_DOCTOR.fullName,
-					role: DEMO_CHIEF_DOCTOR.role,
+					organizationId: orgId,
+					fullName: typeof DEMO_CHIEF_DOCTOR.fullName === "string" ? DEMO_CHIEF_DOCTOR.fullName : "Доктор Демо (Главный врач)",
+					role: "doctor",
+					specialties: [],
+					phone: null,
+					email: null,
 					active: true,
-					color: DEMO_CHIEF_DOCTOR.color,
+					canSignMedicalRecords: true,
+					canManageMoney: true,
+					canManageImports: false,
+					color: typeof DEMO_CHIEF_DOCTOR.color === "string" ? DEMO_CHIEF_DOCTOR.color : "var(--teal, #0d9488)",
+					createdAt: today,
+					updatedAt: today,
 				},
 			];
 
-	return {
+	const fallbackDashboard: Dashboard = {
+		clinicName,
+		todayIso: today,
 		clinicSettings: {
 			profile: {
-				id: orgId,
-				name: clinicName,
+				organizationId: orgId,
 				clinicName: clinicName,
-				mode: (isSolo ? "solo_doctor" : (profile?.mode as any) || "small_clinic"),
+				legalName: null,
+				inn: null,
+				address: null,
+				phone: null,
+				mode: (isSolo ? "solo_doctor" : profile?.mode === "solo_doctor" ? "solo_doctor" : "small_clinic") as ClinicMode,
 				timezone: "Europe/Moscow",
+				defaultVisitMinutes: 30,
+				scheduleDefaults: {
+					workdayStart: "09:00",
+					workdayEnd: "20:00",
+					workingDays: [1, 2, 3, 4, 5],
+					appointmentBufferMinutes: 5,
+				},
+				networkEnabled: false,
+				egiszEnabled: false,
+				updatedAt: today,
 			},
 			chairs: chairsList,
 			staff: fallbackStaff,
+			integrationPresets: [],
+			workspaceProfiles: [],
+			roleAccessPolicies: [],
+			modeHints: [],
 		},
 		appointments: starterAppointments,
 		patients: starterPatients,
-		finance: {
-			dailyRevenueRub: shouldSeedDemo ? 3500 : 0,
-			monthlyRevenueRub: shouldSeedDemo ? 18500 : 0,
-			cashBalanceRub: 0,
+		shiftIntelligence: {
+			modeFit: {
+				title: "Solo Doctor Fit",
+				mode: (isSolo ? "solo_doctor" : "small_clinic"),
+				fitScore: 100,
+				blockers: [],
+				upgrades: [],
+				lowFrictionNextStep: "Готово к работе",
+			},
+			doctorLoads: [],
+			assistantLoads: [],
+			chairLoads: [],
+			roleQueues: [],
+			scheduleWarnings: [],
 		},
-		statistics: {
-			totalPatients: starterPatients.length,
-			totalAppointments: starterAppointments.length,
-			occupancyRatePercent: shouldSeedDemo ? 50 : 0,
+		activeVisit: null,
+		documents: [],
+		imagingStudies: [],
+		protocolTemplates: [],
+		serviceCatalog: [],
+		treatmentPlanItems: [],
+		treatmentPlanScenarios: [],
+		clinicalRules: [],
+		clinicalRuleEvaluations: [],
+		clinicalRuleSummary: {
+			blockers: 0,
+			warnings: 0,
+			activeRules: 0,
+			evaluatedRules: 0,
+			unresolved: 0,
+			requiredServices: 0,
+			coveredRules: 0,
 		},
-	} as unknown as Dashboard;
+		payments: [],
+		billingSummary: {
+			totalPaidRub: 0,
+			totalPlannedRub: 0,
+			totalDiscountRub: 0,
+			totalDueRub: 0,
+			taxDeductionEligibleRub: 0,
+			draftDocumentAmountRub: 0,
+			openTreatmentItems: 0,
+			unpaidDocuments: 0,
+		},
+		communicationTemplates: [],
+		communicationTasks: [],
+		communicationEvents: [],
+		communicationSummary: {
+			openTasks: 0,
+			overdue: 0,
+			urgentTasks: 0,
+			dueToday: 0,
+			completedToday: 0,
+			appointmentConfirmations: 0,
+			paymentReminders: 0,
+			postVisitInstructions: 0,
+		},
+		importBatches: [],
+		speechProviders: [],
+		auditEvents: [],
+		complianceWarnings: [],
+		patientInsights: [],
+		recommendedActions: [],
+		appointmentReadiness: [],
+		scheduleSuggestions: [],
+		visitCloseChecklist: {
+			visitId: "00000000-0000-7000-8000-000000000001",
+			readyToSign: true,
+			score: 100,
+			nextAction: "none",
+			blockingItems: 0,
+			items: [],
+		},
+	};
+
+	return fallbackDashboard;
 }
 
 /**

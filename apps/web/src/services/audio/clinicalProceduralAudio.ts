@@ -11,6 +11,10 @@ import {
 } from "../../lib/safeLocalStorage.js";
 import { getSharedAudioContext, resetSharedAudioContext } from "./sharedAudioContext.js";
 
+interface WindowWithWebkitAudio {
+	webkitAudioContext?: typeof AudioContext;
+}
+
 export type ProceduralSignalType =
 	| "scanner_beep"
 	| "cashier_kaching"
@@ -120,8 +124,7 @@ export class ClinicalProceduralAudioEngine {
 		if (typeof window === "undefined") return false;
 		return Boolean(
 			window.AudioContext ||
-			// biome-ignore lint/suspicious/noExplicitAny: Safari fallback
-			(window as any).webkitAudioContext,
+			(window as Window & WindowWithWebkitAudio).webkitAudioContext,
 		);
 	}
 
@@ -224,8 +227,8 @@ export class ClinicalProceduralAudioEngine {
 			this.idleSuspendTimer = null;
 		}, this.idleTimeoutMs);
 
-		if (this.idleSuspendTimer && typeof (this.idleSuspendTimer as any).unref === "function") {
-			(this.idleSuspendTimer as any).unref();
+		if (this.idleSuspendTimer && typeof (this.idleSuspendTimer as { unref?: () => void }).unref === "function") {
+			(this.idleSuspendTimer as { unref: () => void }).unref();
 		}
 	}
 

@@ -367,12 +367,15 @@ export async function handleClinicalAction(
 		// Real direct dispatch into useVisitStore (completedServices & reactive tooth state)
 		useVisitStore.getState().addCompletedService({
 			code: serviceCode,
+			serviceCode,
 			title: serviceName,
+			name: serviceName,
 			price,
+			priceRub: price,
 			quantity,
 			toothNumber: toothNum ?? undefined,
 			toothCode: toothNum ? String(toothNum) : undefined,
-		} as any);
+		});
 
 		useVisitStore.getState().applyServicesToToothState({
 			toothNumber: toothNum ?? undefined,

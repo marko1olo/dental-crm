@@ -32,6 +32,12 @@ import {
 	storageState,
 } from "./types.js";
 
+interface DenteWindowWithStorageGlobals {
+	__denteStaffToken?: string;
+	__denteClinicToken?: string;
+	requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+}
+
 export function safeLocalStorageGetItem(key: string): string | null {
 	// 1. Проверяем очередь отложенных записей (самое свежее состояние)
 	if (storageState.pendingDiskWrites.has(key)) {
@@ -131,14 +137,9 @@ export function safeLocalStorageSetItem(key: string, value: string, immediate = 
 	if (storageState.diskFlushTimer === null) {
 		storageState.diskFlushTimer = setTimeout(() => {
 			storageState.diskFlushTimer = null;
-			if (
-				typeof window !== "undefined" &&
-				typeof (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback === "function"
-			) {
-				(window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback(
-					() => flushPendingStorageWrites(),
-					{ timeout: 1000 },
-				);
+			const win = typeof window !== "undefined" ? (window as Window & DenteWindowWithStorageGlobals) : null;
+			if (win && typeof win.requestIdleCallback === "function") {
+				win.requestIdleCallback(() => flushPendingStorageWrites(), { timeout: 1000 });
 			} else {
 				flushPendingStorageWrites();
 			}
@@ -184,8 +185,9 @@ export function safeLocalStorageRemoveItem(key: string): boolean {
 }
 
 export function readDenteStaffToken(): string {
-	if (typeof window !== "undefined" && (window as any).__denteStaffToken) {
-		return String((window as any).__denteStaffToken);
+	if (typeof window !== "undefined") {
+		const token = (window as Window & DenteWindowWithStorageGlobals).__denteStaffToken;
+		if (token) return String(token);
 	}
 	if (storageState.inMemoryStaffToken !== null && storageState.inMemoryStaffToken !== "") {
 		return storageState.inMemoryStaffToken;
@@ -207,8 +209,9 @@ export function readDenteStaffToken(): string {
 }
 
 export function readDenteClinicToken(): string {
-	if (typeof window !== "undefined" && (window as any).__denteClinicToken) {
-		return String((window as any).__denteClinicToken);
+	if (typeof window !== "undefined") {
+		const token = (window as Window & DenteWindowWithStorageGlobals).__denteClinicToken;
+		if (token) return String(token);
 	}
 	if (storageState.inMemoryClinicToken !== null && storageState.inMemoryClinicToken !== "") {
 		return storageState.inMemoryClinicToken;
@@ -293,14 +296,9 @@ export function safeSessionStorageSetItem(key: string, value: string, immediate 
 	if (storageState.sessionDiskFlushTimer === null) {
 		storageState.sessionDiskFlushTimer = setTimeout(() => {
 			storageState.sessionDiskFlushTimer = null;
-			if (
-				typeof window !== "undefined" &&
-				typeof (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback === "function"
-			) {
-				(window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback(
-					() => flushPendingSessionStorageWrites(),
-					{ timeout: 1000 },
-				);
+			const win = typeof window !== "undefined" ? (window as Window & DenteWindowWithStorageGlobals) : null;
+			if (win && typeof win.requestIdleCallback === "function") {
+				win.requestIdleCallback(() => flushPendingSessionStorageWrites(), { timeout: 1000 });
 			} else {
 				flushPendingSessionStorageWrites();
 			}

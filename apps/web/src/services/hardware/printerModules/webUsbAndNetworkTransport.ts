@@ -26,16 +26,18 @@ export function isCapacitorNativeEnvironment(): boolean {
  * Dispatches raw binary buffer to Bluetooth LE / SPP thermal printer via native bridge
  * or Web Bluetooth API fallback in Chromium.
  */
+interface MobileNativeThermalApi {
+	printThermalBinary?(bytes: number[]): Promise<{ success?: boolean } | null | undefined>;
+}
+
 export async function dispatchBluetoothPrintBuffer(
 	buffer: Uint8Array,
 ): Promise<BluetoothDispatchResult> {
 	// 1. Native Mobile Bridge if present
-	const nativeApi = getMobileNativeApi();
-	// biome-ignore lint/suspicious/noExplicitAny: native bridge dynamic method
-	if (nativeApi && typeof (nativeApi as any).printThermalBinary === "function") {
+	const nativeApi = getMobileNativeApi() as MobileNativeThermalApi | null;
+	if (nativeApi && typeof nativeApi.printThermalBinary === "function") {
 		try {
-			// biome-ignore lint/suspicious/noExplicitAny: native bridge call
-			const res = await (nativeApi as any).printThermalBinary(Array.from(buffer));
+			const res = await nativeApi.printThermalBinary(Array.from(buffer));
 			return { success: Boolean(res?.success) };
 		} catch (e) {
 			return { success: false, error: e instanceof Error ? e.message : String(e) };

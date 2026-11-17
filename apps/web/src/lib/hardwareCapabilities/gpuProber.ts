@@ -177,6 +177,26 @@ export function detectHybridGpuStatus(
 	};
 }
 
+interface WebGpuAdapterInfoLike {
+	vendor?: string;
+	architecture?: string;
+	device?: string;
+	description?: string;
+}
+
+interface WebGpuAdapterLike {
+	info?: WebGpuAdapterInfoLike;
+	requestAdapterInfo?: () => Promise<WebGpuAdapterInfoLike>;
+}
+
+interface WebGpuLike {
+	requestAdapter: (options?: { powerPreference?: string }) => Promise<WebGpuAdapterLike | null>;
+}
+
+interface NavigatorWithGpu {
+	gpu?: WebGpuLike;
+}
+
 /**
  * Probes WebGPU adapter with 'high-performance' power preference.
  * On dual-GPU laptops (NVIDIA Optimus / AMD Enduro), this signals the OS/DXGI runtime
@@ -201,12 +221,12 @@ export async function probeWebGpuAdapter(): Promise<WebGpuAdapterInfo | null> {
 		// ignore
 	}
 
-	if (typeof navigator === "undefined" || !("gpu" in navigator) || !(navigator as any).gpu) {
+	if (typeof navigator === "undefined" || !("gpu" in navigator)) {
 		return null;
 	}
 
 	try {
-		const gpu = (navigator as any).gpu;
+		const gpu = (navigator as Navigator & NavigatorWithGpu).gpu;
 		if (!gpu || typeof gpu.requestAdapter !== "function") {
 			return null;
 		}
@@ -217,11 +237,11 @@ export async function probeWebGpuAdapter(): Promise<WebGpuAdapterInfo | null> {
 			return null;
 		}
 
-		let rawInfo: any = null;
-		if ("info" in adapter && (adapter as any).info) {
-			rawInfo = (adapter as any).info;
-		} else if (typeof (adapter as any).requestAdapterInfo === "function") {
-			rawInfo = await (adapter as any).requestAdapterInfo();
+		let rawInfo: WebGpuAdapterInfoLike | null = null;
+		if ("info" in adapter && adapter.info) {
+			rawInfo = adapter.info;
+		} else if (typeof adapter.requestAdapterInfo === "function") {
+			rawInfo = await adapter.requestAdapterInfo();
 		}
 
 		const vendor = typeof rawInfo?.vendor === "string" ? rawInfo.vendor : null;
@@ -320,10 +340,12 @@ export function detectGpuDetails(): GpuDetails {
 						powerPreference: "high-performance",
 						desynchronized: true,
 					}) ||
-						canvas.getContext("experimental-webgl" as any, {
-							powerPreference: "high-performance",
-							desynchronized: true,
-						})) as WebGLRenderingContext | null;
+						(canvas instanceof HTMLCanvasElement
+							? canvas.getContext("experimental-webgl", {
+									powerPreference: "high-performance",
+									desynchronized: true,
+							  })
+							: null)) as WebGLRenderingContext | null;
 				} catch {
 					gl = null;
 				}
@@ -455,7 +477,9 @@ export function runFillrateMicroBenchmark(): number | null {
 		if (!canvas) return null;
 
 		gl = (canvas.getContext("webgl", { powerPreference: "high-performance" }) ||
-			canvas.getContext("experimental-webgl" as any, { powerPreference: "high-performance" })) as WebGLRenderingContext | null;
+			(canvas instanceof HTMLCanvasElement
+				? canvas.getContext("experimental-webgl", { powerPreference: "high-performance" })
+				: null)) as WebGLRenderingContext | null;
 		if (!gl) return null;
 
 		const t0 = performance.now();

@@ -38,6 +38,23 @@ function guessDeviceType(friendlyName: string, vendorId?: string): HardwareDevic
 	return undefined;
 }
 
+interface SerialPortInfoLike {
+	usbVendorId?: number;
+	usbProductId?: number;
+}
+
+interface WebSerialPortLike {
+	getInfo?: () => SerialPortInfoLike;
+}
+
+interface WebSerialLike {
+	getPorts?: () => Promise<WebSerialPortLike[]>;
+}
+
+interface NavigatorWithSerial {
+	serial?: WebSerialLike;
+}
+
 /**
  * Enumerates available serial and USB ports for clinic devices.
  */
@@ -45,25 +62,29 @@ export async function discoverHardwarePorts(): Promise<DiscoveredDevicePort[]> {
 	const results: DiscoveredDevicePort[] = [];
 
 	// 1. WebSerial API (Chrome / Edge on desktop)
-	if (typeof navigator !== "undefined" && "serial" in navigator && (navigator as any).serial?.getPorts) {
-		try {
-			const ports = await (navigator as any).serial.getPorts();
-			for (let i = 0; i < ports.length; i++) {
-				const info = ports[i].getInfo?.() || {};
-				const vendorIdHex = info.usbVendorId ? `0x${info.usbVendorId.toString(16)}` : undefined;
-				const productIdHex = info.usbProductId ? `0x${info.usbProductId.toString(16)}` : undefined;
-				const path = `COM${i + 1}`;
-				const friendlyName = `Serial Device (VID: ${vendorIdHex ?? "?"}, PID: ${productIdHex ?? "?"})`;
-				results.push({
-					path,
-					vendorId: vendorIdHex,
-					productId: productIdHex,
-					friendlyName,
-					guessedType: guessDeviceType(friendlyName, vendorIdHex),
-				});
+	if (typeof navigator !== "undefined" && "serial" in navigator) {
+		const navSerial = (navigator as Navigator & NavigatorWithSerial).serial;
+		if (navSerial?.getPorts) {
+			try {
+				const ports = await navSerial.getPorts();
+				for (let i = 0; i < ports.length; i++) {
+					const port = ports[i];
+					const info = port?.getInfo?.() || {};
+					const vendorIdHex = info.usbVendorId ? `0x${info.usbVendorId.toString(16)}` : undefined;
+					const productIdHex = info.usbProductId ? `0x${info.usbProductId.toString(16)}` : undefined;
+					const path = `COM${i + 1}`;
+					const friendlyName = `Serial Device (VID: ${vendorIdHex ?? "?"}, PID: ${productIdHex ?? "?"})`;
+					results.push({
+						path,
+						vendorId: vendorIdHex,
+						productId: productIdHex,
+						friendlyName,
+						guessedType: guessDeviceType(friendlyName, vendorIdHex),
+					});
+				}
+			} catch {
+				// ignore permission errors
 			}
-		} catch {
-			// ignore permission errors
 		}
 	}
 

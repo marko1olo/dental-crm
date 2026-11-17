@@ -49,5 +49,9 @@ export function matchBookingService(
 		);
 	}
 
-	return { reason, durationMinutes, remainingText: remaining };
+	return {
+		...(reason !== undefined ? { reason } : {}),
+		durationMinutes,
+		remainingText: remaining,
+	};
 }

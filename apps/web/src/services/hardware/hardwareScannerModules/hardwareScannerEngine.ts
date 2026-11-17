@@ -46,6 +46,15 @@ import {
 	scanImageDataFallback,
 } from "./cameraErrorClassifier.js";
 
+interface DetectedBarcodeLike {
+	rawValue: string;
+	format: string;
+}
+
+interface BarcodeDetectorLike {
+	detect(image: ImageBitmapSource): Promise<DetectedBarcodeLike[]>;
+}
+
 export class HardwareScanner {
 	private state: HardwareScannerState = "idle";
 	private activeMediaStream: MediaStream | null = null;
@@ -424,14 +433,15 @@ export class HardwareScanner {
 					let detectedFormat: BarcodeFormat = "unknown";
 
 					// 1. Native High-Speed BarcodeDetector API (Chrome / Edge / Android 60 FPS)
-					// biome-ignore lint/suspicious/noExplicitAny: BarcodeDetector dynamic call
-					if (this.barcodeDetectorInstance && typeof (this.barcodeDetectorInstance as any).detect === "function") {
-						// biome-ignore lint/suspicious/noExplicitAny: BarcodeDetector result
-						const barcodes: any[] = await (this.barcodeDetectorInstance as any).detect(video);
+					const detector = this.barcodeDetectorInstance as BarcodeDetectorLike | null;
+					if (detector && typeof detector.detect === "function") {
+						const barcodes = await detector.detect(video);
 						if (barcodes && barcodes.length > 0) {
 							const first = barcodes[0];
-							detectedCode = first.rawValue;
-							detectedFormat = mapBarcodeDetectorFormat(first.format);
+							if (first) {
+								detectedCode = first.rawValue;
+								detectedFormat = mapBarcodeDetectorFormat(first.format);
+							}
 						}
 					} else {
 						// 2. Fallback Canvas Frame Scanner
