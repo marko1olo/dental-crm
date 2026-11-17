@@ -1,4 +1,5 @@
 import type React from "react";
+import type { MotionStyle } from "framer-motion";
 import type {
 	CanonicalMarketingChannelKey,
 	ChannelFunnelMetric,
@@ -88,7 +89,7 @@ export const FUNNEL_MODAL_OVERLAY_STYLE: React.CSSProperties = {
 	padding: "16px",
 };
 
-export const FUNNEL_MODAL_CONTAINER_STYLE: React.CSSProperties = {
+export const FUNNEL_MODAL_CONTAINER_STYLE: MotionStyle = {
 	background: "var(--paper-strong)",
 	color: "var(--ink)",
 	width: "1100px",

@@ -50,7 +50,10 @@ export function MarketingSegmentsCohortCard({
 					});
 				}
 			})
-			.catch(() => {});
+			.catch((err) => {
+				console.error("[MarketingCohort] Failed to load cohorts:", err);
+				showToast("Не удалось загрузить сегменты базы", "warning");
+			});
 		return () => {
 			isMounted = false;
 		};
@@ -106,9 +109,9 @@ export function MarketingSegmentsCohortCard({
 						<p className="marketing-cohort-desc" title={seg.description}>
 							{seg.description}
 						</p>
-						{typeof (seg as any).revenueKopecks === "number" && (seg as any).revenueKopecks > 0 && (
+						{typeof seg.revenueKopecks === "number" && seg.revenueKopecks > 0 && (
 							<div className="text-[11px] font-medium text-[var(--muted)]">
-								Выручка: {Math.round((seg as any).revenueKopecks / 100).toLocaleString("ru-RU")} ₽
+								Выручка: {Math.round(seg.revenueKopecks / 100).toLocaleString("ru-RU")} ₽
 							</div>
 						)}
 						<button

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RotateCcw, Save, Settings } from "lucide-react";
 import {
 	DEFAULT_PATIENT_FIELD_REQUIREMENTS,
@@ -7,28 +7,77 @@ import {
 	savePatientFieldRequirements,
 } from "../../patients/patientFieldRequirementsConfig";
 import { showToast } from "../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 
 export function PatientFieldRequirementsSettings() {
 	const [requirements, setRequirements] = useState<PatientFieldRequirements>(() => loadPatientFieldRequirements());
 	const [isSaved, setIsSaved] = useState(false);
+
+	useEffect(() => {
+		let isMounted = true;
+		fetch("/api/marketing/patient-field-requirements", {
+			headers: denteAdminSecretRequestHeaders(),
+		})
+			.then((res) => (res.ok ? res.json() : null))
+			.then((serverData) => {
+				if (!isMounted || !serverData) return;
+				setRequirements(serverData);
+				savePatientFieldRequirements(serverData);
+			})
+			.catch((err) => {
+				console.warn("[PatientFieldRequirements] Offline/fallback mode:", err);
+			});
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 
 	const handleToggle = (key: keyof PatientFieldRequirements) => {
 		setRequirements((prev) => ({ ...prev, [key]: !prev[key] }));
 		setIsSaved(false);
 	};
 
-	const handleSave = () => {
+	const handleSave = async () => {
 		savePatientFieldRequirements(requirements);
 		setIsSaved(true);
-		showToast("Настройки обязательности полей сохранены", "success");
+		try {
+			const res = await fetch("/api/marketing/patient-field-requirements", {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify(requirements),
+			});
+			if (!res.ok) {
+				throw new Error(`Server returned status ${res.status}`);
+			}
+			showToast("Настройки обязательности полей сохранены на сервере", "success");
+		} catch (err) {
+			console.warn("[PatientFieldRequirements] Saved to local cache only:", err);
+			showToast("Настройки сохранены локально (сервер недоступен)", "info");
+		}
 		setTimeout(() => setIsSaved(false), 2500);
 	};
 
-	const handleReset = () => {
-		setRequirements({ ...DEFAULT_PATIENT_FIELD_REQUIREMENTS });
-		savePatientFieldRequirements(DEFAULT_PATIENT_FIELD_REQUIREMENTS);
+	const handleReset = async () => {
+		const resetReq = { ...DEFAULT_PATIENT_FIELD_REQUIREMENTS };
+		setRequirements(resetReq);
+		savePatientFieldRequirements(resetReq);
 		setIsSaved(true);
-		showToast("Настройки сброшены по умолчанию", "success");
+		try {
+			await fetch("/api/marketing/patient-field-requirements", {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify(resetReq),
+			});
+			showToast("Настройки сброшены по умолчанию", "success");
+		} catch (err) {
+			showToast("Настройки сброшены локально", "info");
+		}
 		setTimeout(() => setIsSaved(false), 2500);
 	};
 

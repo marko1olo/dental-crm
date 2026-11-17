@@ -90,22 +90,22 @@ export function MarketingDashboardHeader({
 
 				<button
 					type="button"
-					className="secondary-button marketing-header-csv-btn h-8 min-h-[32px] px-3 rounded-lg text-[13px] font-medium inline-flex items-center gap-1.5 cursor-pointer"
+					className="secondary-button marketing-header-csv-btn h-9 min-h-[36px] px-3.5 rounded-xl text-sm font-medium inline-flex items-center gap-2 cursor-pointer"
 					onClick={onExportCsv}
 					data-testid="marketing-export-csv-btn"
 					title="Экспортировать сводку в Excel (CSV)"
 				>
-					<Download size={13} />
+					<Download size={15} />
 					<span>CSV</span>
 				</button>
 
 				<button
 					type="button"
-					className="primary-button marketing-header-promo-btn h-8 min-h-[32px] px-3.5 rounded-lg text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+					className="primary-button marketing-header-promo-btn h-9 min-h-[36px] px-3.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
 					onClick={onOpenNewPromoModal}
 					data-testid="marketing-create-promo-btn"
 				>
-					<Plus size={14} />
+					<Plus size={16} />
 					<span>Новая акция</span>
 				</button>
 			</div>

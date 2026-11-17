@@ -174,6 +174,57 @@ export function savePatientFieldRequirements(requirements: PatientFieldRequireme
 	safeLocalStorageSetItem(PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY, JSON.stringify(validated));
 }
 
+export async function fetchPatientFieldRequirementsFromServer(
+	requestHeaders?: HeadersInit,
+): Promise<PatientFieldRequirements> {
+	try {
+		const res = await fetch("/api/marketing/patient-field-requirements", {
+			headers: requestHeaders,
+		});
+		if (res.ok) {
+			const data = await res.json();
+			const validated = patientFieldRequirementsSchema.safeParse(data);
+			if (validated.success) {
+				savePatientFieldRequirements(validated.data);
+				return validated.data;
+			}
+		}
+	} catch {
+		// fallback to localStorage
+	}
+	return loadPatientFieldRequirements();
+}
+
+export async function syncPatientFieldRequirementsToServer(
+	requirements: PatientFieldRequirements,
+	requestHeaders?: HeadersInit,
+): Promise<PatientFieldRequirements> {
+	savePatientFieldRequirements(requirements);
+	try {
+		const res = await fetch("/api/marketing/patient-field-requirements", {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+				...(requestHeaders || {}),
+			},
+			body: JSON.stringify(requirements),
+		});
+		if (res.ok) {
+			const data = await res.json();
+			if (data?.requirements) {
+				const validated = patientFieldRequirementsSchema.safeParse(data.requirements);
+				if (validated.success) {
+					savePatientFieldRequirements(validated.data);
+					return validated.data;
+				}
+			}
+		}
+	} catch {
+		// fallback to local
+	}
+	return requirements;
+}
+
 // ─── 4. НЕБЛОКИРУЮЩАЯ ВАЛИДАЦИЯ ДЛЯ БЫСТРОГО ИНТЕЙКА (МАНДАТ 8e, 8n) ──────────
 
 export function validatePatientDraftWithRequirements(

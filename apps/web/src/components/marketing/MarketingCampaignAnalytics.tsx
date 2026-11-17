@@ -15,6 +15,7 @@ export const MarketingCampaignAnalytics: React.FC<MarketingCampaignAnalyticsProp
 	stats,
 }) => {
 	const avgCheck = stats.visits > 0 ? stats.revenueRub / stats.visits : 0;
+	const isPending = stats.reach === 0 && stats.visits === 0 && stats.revenueRub === 0;
 
 	return (
 		<div className="marketing-section" data-testid="marketing-analytics-section">
@@ -23,7 +24,9 @@ export const MarketingCampaignAnalytics: React.FC<MarketingCampaignAnalyticsProp
 					<TrendingUp size={16} className="text-[var(--primary)]" aria-hidden="true" />
 					<h4 className="marketing-section-title">Аналитика эффективности и окупаемость</h4>
 				</div>
-				<span className="marketing-section-badge">Автоматический учет по промокоду</span>
+				<span className="marketing-section-badge">
+					{isPending ? "Ожидание активаций по промокоду" : "Автоматический учет по промокоду"}
+				</span>
 			</div>
 
 			<div className="marketing-kpi-grid">
@@ -34,7 +37,7 @@ export const MarketingCampaignAnalytics: React.FC<MarketingCampaignAnalyticsProp
 					</div>
 					<div className="marketing-kpi-value">{stats.reach} чел.</div>
 					<div className="marketing-kpi-sub">
-						Доставлено {stats.delivered} ({stats.deliveredPercent}%)
+						{isPending ? "Рассылка еще не запускалась" : `Доставлено ${stats.delivered} (${stats.deliveredPercent}%)`}
 					</div>
 				</div>
 
@@ -46,7 +49,9 @@ export const MarketingCampaignAnalytics: React.FC<MarketingCampaignAnalyticsProp
 					<div className="marketing-kpi-value text-[var(--primary)]">
 						{stats.conversionPercent}%
 					</div>
-					<div className="marketing-kpi-sub">{stats.visits} пациентов записались</div>
+					<div className="marketing-kpi-sub">
+						{isPending ? "Визитов пока нет" : `${stats.visits} пациентов записались`}
+					</div>
 				</div>
 
 				<div className="marketing-kpi-card">
@@ -68,7 +73,7 @@ export const MarketingCampaignAnalytics: React.FC<MarketingCampaignAnalyticsProp
 						<span className="marketing-kpi-label">Окупаемость (ROMI)</span>
 					</div>
 					<div className="marketing-kpi-value text-[var(--primary)] font-extrabold">
-						+{stats.romiPercent}%
+						{stats.romiPercent > 0 ? `+${stats.romiPercent}%` : `${stats.romiPercent}%`}
 					</div>
 					<div className="marketing-kpi-sub">
 						Затраты: {stats.budgetSpentRub.toLocaleString("ru-RU")} ₽
@@ -94,7 +99,7 @@ export const MarketingCampaignAnalytics: React.FC<MarketingCampaignAnalyticsProp
 				<div className="marketing-funnel-arrow">→</div>
 				<div className="marketing-funnel-step">
 					<span className="marketing-funnel-num font-bold">
-						{(stats.revenueRub / 1000).toFixed(0)}k ₽
+						{stats.revenueRub > 0 ? `${(stats.revenueRub / 1000).toFixed(0)}k ₽` : "0 ₽"}
 					</span>
 					<span className="marketing-funnel-name">Оплачено в кассу</span>
 				</div>

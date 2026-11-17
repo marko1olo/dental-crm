@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { showToast } from "../../components/GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	type ChannelSpendMap,
@@ -69,8 +70,9 @@ export function useMarketingLiveSpends() {
 						...liveSpends,
 					}));
 				}
-			} catch {
-				// Silently fall back to standard presets
+			} catch (err) {
+				console.error("[MarketingLiveSpends] Network error fetching attribution:", err);
+				showToast("Не удалось загрузить онлайн-расходы рекламы", "warning");
 			}
 		}
 

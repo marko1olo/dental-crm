@@ -18,7 +18,7 @@ export const DEFAULT_ACTIVE_PROMOS: readonly MarketingPromo[] = [
 		minInvoiceRub: 3500,
 		description: "Ультразвуковое снятие твердых зубных отложений + полировка Air-Flow и реминерализация.",
 		conditions: ["Включает первичный осмотр врача-терапевта и фотопротокол", "Требуется предварительная запись"],
-		stats: { reach: 142, delivered: 140, deliveredPercent: 98.6, visits: 34, conversionPercent: 23.9, revenueRub: 497000, budgetSpentRub: 1200, romiPercent: 412 },
+		stats: { reach: 0, delivered: 0, deliveredPercent: 0, visits: 0, conversionPercent: 0, revenueRub: 0, budgetSpentRub: 0, romiPercent: 0 },
 		templates: {
 			sms: "{Имя}, здравствуйте! В клинике «{Клиника}» действует акция: профгигиена Air-Flow за {Скидка} по промокоду {Промокод}. Запись: {Ссылка}",
 			whatsapp: "Здравствуйте, {Имя}!\n\nСпециальное предложение от клиники *{Клиника}*: комплексная ультразвуковая гигиена и полировка Air-Flow за *{Скидка}*.\n\nПромокод: *{Промокод}*\nЗапись: {Ссылка}",
@@ -39,7 +39,7 @@ export const DEFAULT_ACTIVE_PROMOS: readonly MarketingPromo[] = [
 		minInvoiceRub: 2000,
 		description: "Автоматическое персональное поздравление именинников со скидкой 10% на терапию.",
 		conditions: ["Действует 7 дней до и 14 дней после даты рождения", "Не суммируется с другими специальными акциями"],
-		stats: { reach: 86, delivered: 86, deliveredPercent: 100, visits: 28, conversionPercent: 32.5, revenueRub: 312000, budgetSpentRub: 680, romiPercent: 458 },
+		stats: { reach: 0, delivered: 0, deliveredPercent: 0, visits: 0, conversionPercent: 0, revenueRub: 0, budgetSpentRub: 0, romiPercent: 0 },
 		templates: {
 			sms: "{Имя}, с наступающим днем рождения! Дарим скидку {Скидка} в «{Клиника}» по коду {Промокод}. Запись: {Ссылка}",
 			whatsapp: "С днем рождения, {Имя}!\n\nКлиника *{Клиника}* дарит вам скидку *{Скидка}* на лечение и гигиену.\nПромокод: *{Промокод}*\nЗапись: {Ссылка}",
@@ -60,7 +60,7 @@ export const DEFAULT_ACTIVE_PROMOS: readonly MarketingPromo[] = [
 		minInvoiceRub: 15000,
 		description: "Бонусный сертификат на 5 000 ₽ при совместном лечении двух и более членов семьи.",
 		conditions: ["Сумма плана от 15 000 ₽", "Единый семейный баланс"],
-		stats: { reach: 54, delivered: 53, deliveredPercent: 98.1, visits: 18, conversionPercent: 33.3, revenueRub: 270000, budgetSpentRub: 520, romiPercent: 518 },
+		stats: { reach: 0, delivered: 0, deliveredPercent: 0, visits: 0, conversionPercent: 0, revenueRub: 0, budgetSpentRub: 0, romiPercent: 0 },
 		templates: {
 			sms: "{Имя}, семейный сертификат на {Скидка} в «{Клиника}»! Код {Промокод}: {Ссылка}",
 			whatsapp: "Здравствуйте, {Имя}!\n\nВ клинике *{Клиника}* семейный сертификат *{Скидка}*!\nПромокод: *{Промокод}*\nЗапись: {Ссылка}",
@@ -81,7 +81,7 @@ export const DEFAULT_ACTIVE_PROMOS: readonly MarketingPromo[] = [
 		minInvoiceRub: 1900,
 		description: "Диагностика врача-стоматолога с фотопротоколом, 3D КЛКТ обеих челюстей и планом лечения.",
 		conditions: ["Действует только для первичных пациентов клиники", "Включает заключение рентгенолога"],
-		stats: { reach: 210, delivered: 206, deliveredPercent: 98.0, visits: 49, conversionPercent: 23.3, revenueRub: 399000, budgetSpentRub: 1850, romiPercent: 215 },
+		stats: { reach: 0, delivered: 0, deliveredPercent: 0, visits: 0, conversionPercent: 0, revenueRub: 0, budgetSpentRub: 0, romiPercent: 0 },
 		templates: {
 			sms: "{Имя}, чекап зубов + 3D КТ всего за {Скидка} в «{Клиника}». Код: {Промокод}. Запись: {Ссылка}",
 			whatsapp: "Здравствуйте, {Имя}!\n\nПриглашаем на чекап в клинику *{Клиника}*: консультация + 3D КЛКТ за *{Скидка}* по коду *{Промокод}*.\nЗапись: {Ссылка}",

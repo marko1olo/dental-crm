@@ -4118,6 +4118,40 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Mobile Light Shift Close: `docs/proofs/finance/07_cash_shift_reconciliation_mobile_light_390x844.png` (42.6 KB)
   - 📱 Mobile Dark Shift Close: `docs/proofs/finance/08_cash_shift_reconciliation_mobile_dark_390x844.png` (43.5 KB)
 
+### 3. ДОМЕН 28: СКВОЗНАЯ МАРКЕТИНГОВАЯ АНАЛИТИКА, UTM-МЕТКИ, ИСТОЧНИКИ ПЕРВИЧНЫХ ПАЦИЕНТОВ, ROMI И КОНВЕРСИИ КАНАЛОВ ПРИВЛЕЧЕНИЯ
+- **Хирург:** Red Team Fixer Surgeon (`fa95456e-56e0-4fed-be34-162d51d0d23f`).
+- **Ликвидированные дефекты DEF-MKT-01..09:**
+  1. **[DEF-MKT-01] [MOCK DATA ELIMINATION] Обнуление захардкоженной статистики акций**: В `marketingPromoDefaults.ts` и `marketingActivePromosPresets.ts` фиктивные числа (охват 142 чел, 497 000 ₽) заменены на честные 0 (`reach: 0, delivered: 0, visits: 0, revenueRub: 0, romiPercent: 0`). В `MarketingCampaignAnalytics.tsx` выведено честное состояние ожидания активаций без псевдо-выручки.
+  2. **[DEF-MKT-02] [API CONTRACT] Подключение PatientFieldRequirementsSettings к Fastify API**: Локальный `localStorage` заменен на интеграцию с Fastify роутами `GET` и `PUT` `/api/marketing/patient-field-requirements` с заголовками `denteAdminSecretRequestHeaders()`. В `patientFieldRequirementsConfig.ts` добавлены хелперы `fetchPatientFieldRequirementsFromServer` и `syncPatientFieldRequirementsToServer`.
+  3. **[DEF-MKT-03] [MATH PURITY] Устранение синтетического множителя * 1.25**: В `packages/shared/src/marketing/romiModules/romiMetricsAggregator.ts:10` удален синтетический множитель лидов `* 1.25`, расчет ROMI ведется строго по реальным данным БД.
+  4. **[DEF-MKT-04] [TYPING PURITY] Снос каста `(seg as any)`**: В `apps/web/src/components/marketing/marketingTypes.ts` добавлено `readonly revenueKopecks?: number | undefined;` в `PatientSegmentOption`, устранен каст в `MarketingSegmentsCohortCard.tsx`.
+  5. **[DEF-MKT-05] [TYPING PURITY] Снос каста `as any` в LeadsFunnelAnalyticsModal.tsx**: Свойство стиля `FUNNEL_MODAL_CONTAINER_STYLE` типизировано строгим `MotionStyle` из `framer-motion`, устранен каст `as any` и ошибка TS2375 при `exactOptionalPropertyTypes: true`.
+  6. **[DEF-MKT-06] [ERROR HANDLING] Устранение пустых `catch` блоков**: В `MarketingSegmentsCohortCard.tsx` и `useMarketingLiveSpends.ts` пустые `catch` заменены на логирование ошибки и нотификацию пользователя через `showToast`.
+  7. **[DEF-MKT-07] [TYPOGRAPHY] Искоренение `uppercase` в лейблах маркетинга**: Устранен `uppercase` / `text-transform: uppercase` в `MarketingSourceCard.tsx`, `marketing.css`, `marketingRomiKpis.css`, `marketingRomiMobileCards.css`, `marketingRomiTableView.css`, `marketingWorkspace.css` (Мандат 8am).
+  8. **[DEF-MKT-08] [MONEY PRECISION] Целочисленные копейки в ожидаемой выручке лидов**: В `apps/api/src/routes/leadsMetrics.ts` ожидаемая выручка лидов переведена на копейки `pipelineExpectedRevenueKopecks: number` с парсингом через `parseKopecks` из `@dental/shared` без потери точности Decimal.
+  9. **[DEF-MKT-09] [BUTTON DESIGN TOKENS] Унификация геометрии кнопок дашборда**: В `MarketingDashboardHeader.tsx` кнопки приведены к канонической высоте `h-9 min-h-[36px] px-3.5 rounded-xl text-sm font-medium` по Мандату 8am.
+  10. **[ORPHAN PURGE] Физический снос 6 сирот CSS через `git rm`**: Ликвидированы мертвые файлы в `apps/web/src/components/analytics/marketingStyles/` (`marketingFunnel.css`, `marketingModalShell.css`, `marketingNavAndKpis.css`, `marketingPatientCardsAndFooter.css`, `marketingPeriodSelector.css`, `marketingTableAndBadges.css`).
+- **Машинные гейты (Exit Code 0):**
+  - `npm run check:encoding`: 0 замечаний (проверено 20128 файлов).
+  - `npm run check:dynamic-imports`: 489 импортов, 0 сломанных ссылок.
+  - `npm run check:buttons`: 0 нарушений (проверено 4398 TSX и 1309 CSS).
+  - Тесты API (`leadsBatchAndSlaMetrics.test.ts`): 5/5 passed.
+  - Тесты Web (6 тестовых сьютов маркетинга): 34/34 passed.
+  - TypeScript: 0 ошибок в измененных файлах API и Web (`tsc` Exit Code 0).
+- **4-State Visual Proofs (Личный осмотр через `read_file`, все > 20 KB):**
+  - ☀️ PC Light Promos: `docs/proofs/marketing/marketing_ssot_pc_light_1440x900.png` (142.5 KB)
+  - 🌙 PC Dark Promos: `docs/proofs/marketing/marketing_ssot_pc_dark_1440x900.png` (141.0 KB)
+  - ☀️ PC Light ROMI Table: `docs/proofs/marketing/marketing_romi_table_pc_light_1440x900.png` (75.3 KB)
+  - 🌙 PC Dark ROMI Table: `docs/proofs/marketing/marketing_romi_table_pc_dark_1440x900.png` (74.3 KB)
+  - ☀️ PC Light Leads Kanban: `docs/proofs/marketing/leads_kanban_ssot_pc_light_1440x900.png` (36.3 KB)
+  - 🌙 PC Dark Leads Kanban: `docs/proofs/marketing/leads_kanban_ssot_pc_dark_1440x900.png` (34.0 KB)
+  - 📱 Mobile Light Promos: `docs/proofs/marketing/marketing_ssot_mobile_light_390x844.png` (144.8 KB)
+  - 📱 Mobile Dark Promos: `docs/proofs/marketing/marketing_ssot_mobile_dark_390x844.png` (146.4 KB)
+  - 📱 Mobile Light ROMI: `docs/proofs/marketing/marketing_romi_table_mobile_light_390x844.png` (125.7 KB)
+  - 📱 Mobile Dark ROMI: `docs/proofs/marketing/marketing_romi_table_mobile_dark_390x844.png` (128.0 KB)
+  - 📱 Mobile Light Leads Kanban: `docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png` (52.7 KB)
+  - 📱 Mobile Dark Leads Kanban: `docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png` (51.5 KB)
+
 
 
 

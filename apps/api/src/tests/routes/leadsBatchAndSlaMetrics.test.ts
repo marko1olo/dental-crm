@@ -404,8 +404,9 @@ describe("LEADS BATCH STAGE, SLA METRICS & TELEPHONY AUDITING SUITE (ZERO MOCKS)
 			// Urgent count: LEAD_SLA_BREACH and LEAD_3 are urgent
 			assert.ok(metrics.urgentCount >= 2);
 
-			// Revenue: 25000 + 40000 + 15000 + 120000 + 50000 + 35000 = 285000
+			// Revenue: 25000 + 40000 + 15000 + 120000 + 50000 + 35000 = 285000 (28 500 000 kopecks)
 			assert.strictEqual(metrics.pipelineExpectedRevenueRub, 285000);
+			assert.strictEqual(metrics.pipelineExpectedRevenueKopecks, 28500000);
 
 			// Stage conversions
 			assert.ok(metrics.stageConversionRates);

@@ -47,4 +47,5 @@ export interface PatientSegmentOption {
 	readonly name: string;
 	readonly count: number;
 	readonly description: string;
+	readonly revenueKopecks?: number | undefined;
 }

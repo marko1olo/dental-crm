@@ -66,9 +66,7 @@
 .marketing-code-label {
 	font-size: 10.5px;
 	font-weight: 600;
-	text-transform: uppercase;
 	color: var(--muted);
-	letter-spacing: 0.04em;
 }
 
 .marketing-code-value-wrap {

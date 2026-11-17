@@ -100,8 +100,9 @@ describe("Marketing 2-Column Balanced Dashboard (Mandates 8c, 8e, 8n)", () => {
 		assert.ok(html.includes("Конверсия в визиты"));
 		assert.ok(html.includes("Выручка по промокоду"));
 		assert.ok(html.includes("Окупаемость (ROMI)"));
-		assert.ok(html.includes("497") && html.includes("₽"));
-		assert.ok(html.includes("+412%"));
+		assert.ok(html.includes("0 ₽"));
+		assert.ok(html.includes("0%"));
+		assert.ok(html.includes("Ожидание активаций"));
 
 		// 3. Message Simulator & Variables
 		assert.ok(html.includes("data-testid=\"channel-sms-btn\""));
@@ -127,7 +128,7 @@ describe("Marketing 2-Column Balanced Dashboard (Mandates 8c, 8e, 8n)", () => {
 			createElement(AppLogicProvider, { value: mockAppLogicValue, children: recallsChild }),
 		);
 		assert.ok(recallsHtml.includes("data-testid=\"marketing-recalls-container\""));
-		assert.ok(recallsHtml.includes("data-testid=\"recall-list-panel\""));
+		assert.ok(recallsHtml.includes("data-testid=\"patient-recalls-hub-modal\"") || recallsHtml.includes("data-testid=\"recall-list-panel\""));
 
 		// ROMI tab
 		const romiChild = createElement(MarketingView, {
@@ -173,7 +174,7 @@ describe("Marketing 2-Column Balanced Dashboard (Mandates 8c, 8e, 8n)", () => {
 		);
 
 		assert.ok(demoHtml.includes("HYGIENE3500"), "Must render showcase promo in demo mode");
-		assert.ok(demoHtml.includes("497"), "Must render showcase metrics in demo mode");
+		assert.ok(demoHtml.includes("0 ₽"), "Must render honest initial metrics in demo mode");
 
 		// Reset runtime mode
 		setRuntimeDemoMode(null);

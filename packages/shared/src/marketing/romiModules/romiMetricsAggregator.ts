@@ -7,7 +7,7 @@ import type { AdvertisingChannelInput, AdvertisingChannelMetric, MarketingRomiSu
 export function buildAdvertisingChannelMetric(input: AdvertisingChannelInput): AdvertisingChannelMetric {
 	const { profitKopecks, romiPercent, cacKopecks, averageCheckKopecks, romiStatus } =
 		calculateChannelRomi(input.spentKopecks, input.primaryPatientsCount, input.revenueKopecks);
-	const leadsCount = input.leadsCount ?? (input.primaryPatientsCount > 0 ? Math.round(input.primaryPatientsCount * 1.25) : 0);
+	const leadsCount = input.leadsCount ?? (input.primaryPatientsCount > 0 ? input.primaryPatientsCount : 0);
 	const showUpRatePercent = leadsCount > 0
 		? Number(((input.primaryPatientsCount / leadsCount) * 100).toFixed(1))
 		: (input.primaryPatientsCount > 0 ? 100 : 0);

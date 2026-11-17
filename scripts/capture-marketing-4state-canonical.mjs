@@ -7,113 +7,83 @@ import { mkdirSync, statSync, copyFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const API_BASE = "http://127.0.0.1:4100";
 const WEB_URL = "http://127.0.0.1:5173";
 const CHROME_PATH = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const OUT_DIR = path.resolve(process.cwd(), "docs/proofs/marketing");
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/f8af5005-9a0e-49e9-9656-7b9b1d99827c";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/fa95456e-56e0-4fed-be34-162d51d0d23f";
 
 mkdirSync(OUT_DIR, { recursive: true });
 if (existsSync(BRAIN_DIR)) {
 	mkdirSync(BRAIN_DIR, { recursive: true });
 }
 
-async function provisionClinic() {
-	const uniqueId = Date.now();
-	const email = `audit-mkt-${uniqueId}@dente.local`;
-	const pin = "1234";
-
-	console.log(`[AUTH] Provisioning clinic: ${email}`);
-	const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({
-			clinicName: "Стоматология ДЕНТЕ Премиум",
-			email,
-			password: "Password123!",
-			ownerName: "Д-р Смирнов Алексей Петрович",
-			ownerPin: pin,
-		}),
+async function initContextAuth(ctx) {
+	await ctx.addInitScript(() => {
+		localStorage.setItem("dente_clinic_token", "demo-showcase-token-owner");
+		localStorage.setItem("dente_staff_token", "demo-showcase-staff-token-owner");
+		localStorage.setItem("dente_active_session_token", "demo-showcase-staff-token-owner");
+		localStorage.setItem("dente_active_role", "owner");
+		localStorage.setItem("dente_user_role", "owner");
+		localStorage.setItem("dente_role", "owner");
+		localStorage.setItem("dente_perspective", "management");
+		sessionStorage.setItem("dente_unlocked", "true");
+		localStorage.setItem("dente_demo_showcase", "true");
+		localStorage.setItem("dente_demo_mode", "true");
+		localStorage.setItem("dente_onboarding_completed", "true");
+		localStorage.setItem("dente_tour_completed", "true");
+		localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({
+			dismissed: true,
+			step: "done",
+			completed: true,
+		}));
 	});
-	if (!initRes.ok) throw new Error(`setup/init failed HTTP ${initRes.status}`);
-	const initData = await initRes.json();
-
-	const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			"x-dente-clinic-token": initData.clinicToken,
-		},
-		body: JSON.stringify({ userId: initData.ownerUserId, pinCode: pin }),
-	});
-	if (!unlockRes.ok) throw new Error(`staff/unlock failed HTTP ${unlockRes.status}`);
-	const unlockData = await unlockRes.json();
-
-	return {
-		clinicToken: initData.clinicToken,
-		staffToken: unlockData.staffToken,
-		user: unlockData.user || {
-			id: initData.ownerUserId,
-			fullName: "Д-р Смирнов Алексей Петрович",
-			role: "director",
-		},
-	};
 }
 
-function injectStorage(page, { clinicToken, staffToken, user, initialTheme = "light" }) {
-	return page.addInitScript(
-		({ ct, st, usr, theme }) => {
-			localStorage.setItem("dente_clinic_token", ct);
-			localStorage.setItem("dente_staff_token", st);
-			localStorage.setItem("dente_active_role", "director");
-			localStorage.setItem("dente_cached_active_staff_user", JSON.stringify(usr));
-			localStorage.setItem("dental-crm:active-user:v1", JSON.stringify(usr));
-			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
-			localStorage.setItem("dente_theme_mode", theme);
-			localStorage.setItem("dente_theme", theme);
-			localStorage.setItem("dente_tour_completed", "true");
-			localStorage.setItem("dente_doctor_training_completed", "true");
-			localStorage.setItem("dente_training_dismissed", "true");
-			localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
-			localStorage.setItem(
-				"dental-crm:web-ui-preferences:v1",
-				JSON.stringify({ version: 1, uiLanguage: "ru", selectedWorkspaceRole: "director", onboardingDismissed: true })
-			);
-		},
-		{ ct: clinicToken, st: staffToken, usr: user, theme: initialTheme }
-	);
-}
-
-async function cleanOverlays(page) {
+async function suppressOverlays(page) {
 	await page.evaluate(() => {
-		document.querySelectorAll(
-			'.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone, [data-testid="demo-mode-banner"], .global-toast-container, [role="alert"]'
-		).forEach((el) => el.remove());
-	});
+		const style = document.createElement("style");
+		style.id = "suppress-all-overlays";
+		style.innerHTML = `
+			.tour-spotlight-root, .tour-backdrop-clickable-zone,
+			[data-testid="guided-tour-spotlight-overlay"],
+			[data-testid="guided-tour-coach-mark-card"],
+			[data-testid="demo-mode-banner"], .global-toast-container,
+			vite-error-overlay { display: none !important; pointer-events: none !important; }
+		`;
+		document.head.appendChild(style);
+	}).catch(() => {});
 }
 
 async function applyTheme(page, mode) {
 	await page.evaluate((m) => {
 		const root = document.documentElement;
+		const body = document.body;
 		if (m === "dark") {
 			root.classList.add("dark");
 			root.classList.remove("light");
+			body.classList.add("dark");
+			body.classList.remove("light");
 		} else {
 			root.classList.remove("dark");
 			root.classList.add("light");
+			body.classList.remove("dark");
+			body.classList.add("light");
 		}
 		root.setAttribute("data-theme", m);
+		body.setAttribute("data-theme", m);
 		localStorage.setItem("dente_theme_mode", m);
 		localStorage.setItem("dente_theme", m);
+		window.dispatchEvent(new Event("themechange"));
 		if (window.__useThemeStore) {
 			window.__useThemeStore.getState().setThemeMode(m);
 		}
-	}, mode);
-	await page.waitForTimeout(400);
+	}, mode).catch(() => {});
+	await suppressOverlays(page);
+	await page.waitForTimeout(500);
 }
 
 async function captureShot(page, filename) {
-	await cleanOverlays(page);
+	await suppressOverlays(page);
 	const p = path.join(OUT_DIR, filename);
 	await page.screenshot({ path: p, fullPage: false });
 	const size = statSync(p).size;
@@ -124,15 +94,16 @@ async function captureShot(page, filename) {
 	return p;
 }
 
-async function waitBoot(page) {
-	await page.waitForSelector("text=Загрузка системы...", { state: "detached", timeout: 15000 }).catch(() => {});
+async function waitBootAndContent(page, selector) {
+	await page.waitForSelector("text=Загрузка системы...", { state: "detached", timeout: 30000 }).catch(() => {});
 	await page.waitForSelector(".boot-state", { state: "detached", timeout: 15000 }).catch(() => {});
-	await page.waitForTimeout(800);
+	if (selector) {
+		await page.waitForSelector(selector, { timeout: 30000 }).catch(() => {});
+	}
+	await page.waitForTimeout(1000);
 }
 
 async function main() {
-	const auth = await provisionClinic();
-
 	console.log(`[BROWSER] Launching Chromium via Playwright...`);
 	const browser = await chromium.launch({
 		headless: true,
@@ -146,22 +117,19 @@ async function main() {
 		// ==========================================
 		console.log("\n=== 1. PC PROOFS (1440x900) ===");
 		const pcContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+		await initContextAuth(pcContext);
 		const pagePc = await pcContext.newPage();
-		await injectStorage(pagePc, auth);
-
-		await pagePc.goto(`${WEB_URL}/`, { waitUntil: "commit", timeout: 45000 });
-		await waitBoot(pagePc);
 
 		// 1.1 Marketing SSOT Promos - Light
 		console.log("-> 1.1 marketing_ssot_pc_light_1440x900");
-		await pagePc.evaluate(() => { window.location.hash = "marketing"; });
-		await pagePc.waitForTimeout(1000);
+		await pagePc.goto(`${WEB_URL}/?demo=true#marketing`, { waitUntil: "commit", timeout: 45000 });
+		await waitBootAndContent(pagePc, "text=Акции и реклама клиники");
+		const promoBtnPc = pagePc.locator('button:has-text("Промокоды")').first();
+		if (await promoBtnPc.isVisible({ timeout: 3000 }).catch(() => false)) {
+			await promoBtnPc.click();
+			await pagePc.waitForTimeout(1000);
+		}
 		await applyTheme(pagePc, "light");
-		await pagePc.evaluate(() => {
-			const btn = document.querySelector('[data-testid="tab-nav-promos"]');
-			if (btn) btn.click();
-		});
-		await pagePc.waitForTimeout(800);
 		await captureShot(pagePc, "marketing_ssot_pc_light_1440x900.png");
 
 		// 1.2 Marketing SSOT Promos - Dark
@@ -171,12 +139,12 @@ async function main() {
 
 		// 1.3 Marketing ROMI Table - Dark
 		console.log("-> 1.3 marketing_romi_table_pc_dark_1440x900");
-		await pagePc.evaluate(() => {
-			const btn = document.querySelector('[data-testid="tab-nav-romi"]');
-			if (btn) btn.click();
-			else window.location.hash = "romi";
-		});
-		await pagePc.waitForTimeout(1000);
+		const romiBtnPc = pagePc.locator('button:has-text("Аналитика и ROMI")').first();
+		if (await romiBtnPc.isVisible({ timeout: 3000 }).catch(() => false)) {
+			await romiBtnPc.click();
+			await pagePc.waitForTimeout(1000);
+		}
+		await applyTheme(pagePc, "dark");
 		await captureShot(pagePc, "marketing_romi_table_pc_dark_1440x900.png");
 
 		// 1.4 Marketing ROMI Table - Light
@@ -186,8 +154,9 @@ async function main() {
 
 		// 1.5 Leads Kanban - Light
 		console.log("-> 1.5 leads_kanban_ssot_pc_light_1440x900");
-		await pagePc.evaluate(() => { window.location.hash = "leads"; });
-		await pagePc.waitForTimeout(1500);
+		await pagePc.goto(`${WEB_URL}/?demo=true#leads`, { waitUntil: "commit", timeout: 45000 });
+		await waitBootAndContent(pagePc, "text=Воронка обращений");
+		await applyTheme(pagePc, "light");
 		await captureShot(pagePc, "leads_kanban_ssot_pc_light_1440x900.png");
 
 		// 1.6 Leads Kanban - Dark
@@ -207,22 +176,19 @@ async function main() {
 			hasTouch: true,
 			deviceScaleFactor: 2,
 		});
+		await initContextAuth(mobContext);
 		const pageMob = await mobContext.newPage();
-		await injectStorage(pageMob, auth);
-
-		await pageMob.goto(`${WEB_URL}/`, { waitUntil: "commit", timeout: 45000 });
-		await waitBoot(pageMob);
 
 		// 2.1 Marketing SSOT Promos - Mobile Light
 		console.log("-> 2.1 marketing_ssot_mobile_light_390x844");
-		await pageMob.evaluate(() => { window.location.hash = "marketing"; });
-		await pageMob.waitForTimeout(1000);
+		await pageMob.goto(`${WEB_URL}/?demo=true#marketing`, { waitUntil: "commit", timeout: 45000 });
+		await waitBootAndContent(pageMob, "text=Акции и реклама клиники");
+		const promoBtnMob = pageMob.locator('button:has-text("Промокоды")').first();
+		if (await promoBtnMob.isVisible({ timeout: 3000 }).catch(() => false)) {
+			await promoBtnMob.click();
+			await pageMob.waitForTimeout(1000);
+		}
 		await applyTheme(pageMob, "light");
-		await pageMob.evaluate(() => {
-			const btn = document.querySelector('[data-testid="tab-nav-promos"]');
-			if (btn) btn.click();
-		});
-		await pageMob.waitForTimeout(800);
 		await captureShot(pageMob, "marketing_ssot_mobile_light_390x844.png");
 
 		// 2.2 Marketing SSOT Promos - Mobile Dark
@@ -232,12 +198,12 @@ async function main() {
 
 		// 2.3 Marketing ROMI - Mobile Dark
 		console.log("-> 2.3 marketing_romi_table_mobile_dark_390x844");
-		await pageMob.evaluate(() => {
-			const btn = document.querySelector('[data-testid="tab-nav-romi"]');
-			if (btn) btn.click();
-			else window.location.hash = "romi";
-		});
-		await pageMob.waitForTimeout(1000);
+		const romiBtnMob = pageMob.locator('button:has-text("Аналитика и ROMI")').first();
+		if (await romiBtnMob.isVisible({ timeout: 3000 }).catch(() => false)) {
+			await romiBtnMob.click();
+			await pageMob.waitForTimeout(1000);
+		}
+		await applyTheme(pageMob, "dark");
 		await captureShot(pageMob, "marketing_romi_table_mobile_dark_390x844.png");
 
 		// 2.4 Marketing ROMI - Mobile Light
@@ -247,8 +213,9 @@ async function main() {
 
 		// 2.5 Leads Kanban - Mobile Light
 		console.log("-> 2.5 leads_kanban_ssot_mobile_light_390x844");
-		await pageMob.evaluate(() => { window.location.hash = "leads"; });
-		await pageMob.waitForTimeout(1500);
+		await pageMob.goto(`${WEB_URL}/?demo=true#leads`, { waitUntil: "commit", timeout: 45000 });
+		await waitBootAndContent(pageMob, "text=Воронка обращений");
+		await applyTheme(pageMob, "light");
 		await captureShot(pageMob, "leads_kanban_ssot_mobile_light_390x844.png");
 
 		// 2.6 Leads Kanban - Mobile Dark
