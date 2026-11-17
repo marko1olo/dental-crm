@@ -12,8 +12,8 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const ORCH_ID = "07663fdc-eba5-48a1-bbb4-3c4b8f181006";
-const SUBAGENT_ID = "598b5a81-856a-4173-b861-ae5a4df2d7a3";
+const ORCH_ID = "0b7866b2-4ebf-443b-8f35-0fa3ff22cb58";
+const SUBAGENT_ID = "3f8dfe53-7fb4-4dda-afae-135e48876e09";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/perio");
 const OUT_ORCH = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${ORCH_ID}`);
 const OUT_SELF = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${SUBAGENT_ID}`);
@@ -81,8 +81,24 @@ async function setTheme(page, theme) {
 	await page.waitForTimeout(800);
 }
 
+async function detectAppPort() {
+	const net = require("node:net");
+	for (const port of [5173, 5174, 5175, 3000]) {
+		const isOpen = await new Promise((resolve) => {
+			const socket = new net.Socket();
+			socket.setTimeout(500);
+			socket.on("connect", () => { socket.destroy(); resolve(true); });
+			socket.on("timeout", () => { socket.destroy(); resolve(false); });
+			socket.on("error", () => { socket.destroy(); resolve(false); });
+			socket.connect(port, "127.0.0.1");
+		});
+		if (isOpen) return port;
+	}
+	return 5173;
+}
+
 async function main() {
-	const activePort = 5173;
+	const activePort = await detectAppPort();
 	const baseUrl = `http://127.0.0.1:${activePort}`;
 	console.log(`\n=== 4-State Proof for Periodontology Studio: Navigating to ${baseUrl}/?perio=1#perio ===`);
 

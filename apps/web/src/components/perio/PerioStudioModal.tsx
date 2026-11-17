@@ -12,6 +12,7 @@ import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
 import {
 	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices,
 	convertPerioDentitionToSepa, convertSepaDentitionToPerio, createDefaultPerioTeeth,
+	formatKopecksToRub,
 } from "@dental/shared";
 import { Activity, Check, FileText, Info, Printer, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -124,7 +125,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		setSelectedProtocolId(protocol.id);
 		const res = applyExpressPerioPreset(teeth, protocol.id === "prophy_airflow_ultrasound" ? "pro_hygiene_express" : protocol.id);
 		setTeeth(res.updatedTeeth);
-		dispatchPresetSideEffects({ ...res, service: { code: protocol.code804n, name: protocol.titleRu, price: protocol.defaultPriceRub, category: "hygiene" } }, onInsertToProtocol);
+		dispatchPresetSideEffects({ ...res, service: { code: protocol.serviceCode, serviceCode: protocol.serviceCode, name: protocol.titleRu, priceKopecks: protocol.priceKopecks, category: "Пародонтология" } }, onInsertToProtocol);
 	}, [teeth, onInsertToProtocol]);
 
 	const dispatchPerioSoapSync = useCallback((currentTeeth: readonly PerioToothRecord[]) => {
@@ -228,17 +229,22 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const handleNavigateSite = useCallback((direction: "next" | "prev") => {
 		const idx = SITES.findIndex((s) => s.key === selectedSiteKey);
 		if (direction === "next") {
-			if (idx >= 0 && idx < SITES.length - 1 && SITES[idx + 1]) setSelectedSiteKey(SITES[idx + 1]!.key);
+			const nextSite = idx >= 0 && idx < SITES.length - 1 ? SITES[idx + 1] : undefined;
+			if (nextSite) setSelectedSiteKey(nextSite.key);
 			else {
-				const tIdx = ALL_PERIO_TEETH.indexOf(selectedToothNum as never);
-				const nextNum = tIdx >= 0 && tIdx < ALL_PERIO_TEETH.length - 1 ? ALL_PERIO_TEETH[tIdx + 1] : ALL_PERIO_TEETH[0];
-				if (nextNum !== undefined && SITES[0]) { setSelectedToothNum(nextNum); setSelectedSiteKey(SITES[0].key); }
+				const perioTeeth = ALL_PERIO_TEETH as readonly number[];
+				const tIdx = perioTeeth.indexOf(selectedToothNum);
+				const nextNum = tIdx >= 0 && tIdx < perioTeeth.length - 1 ? perioTeeth[tIdx + 1] : perioTeeth[0];
+				const firstSite = SITES[0];
+				if (nextNum !== undefined && firstSite) { setSelectedToothNum(nextNum); setSelectedSiteKey(firstSite.key); }
 			}
 		} else {
-			if (idx > 0 && SITES[idx - 1]) setSelectedSiteKey(SITES[idx - 1]!.key);
+			const prevSite = idx > 0 ? SITES[idx - 1] : undefined;
+			if (prevSite) setSelectedSiteKey(prevSite.key);
 			else {
-				const tIdx = ALL_PERIO_TEETH.indexOf(selectedToothNum as never);
-				const prevNum = tIdx > 0 ? ALL_PERIO_TEETH[tIdx - 1] : ALL_PERIO_TEETH[ALL_PERIO_TEETH.length - 1];
+				const perioTeeth = ALL_PERIO_TEETH as readonly number[];
+				const tIdx = perioTeeth.indexOf(selectedToothNum);
+				const prevNum = tIdx > 0 ? perioTeeth[tIdx - 1] : perioTeeth[perioTeeth.length - 1];
 				const lastSite = SITES[SITES.length - 1];
 				if (prevNum !== undefined && lastSite) { setSelectedToothNum(prevNum); setSelectedSiteKey(lastSite.key); }
 			}
@@ -246,10 +252,11 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	}, [selectedToothNum, selectedSiteKey]);
 
 	const handleNavigateTooth = useCallback((direction: "next" | "prev") => {
-		const tIdx = ALL_PERIO_TEETH.indexOf(selectedToothNum as never);
+		const perioTeeth = ALL_PERIO_TEETH as readonly number[];
+		const tIdx = perioTeeth.indexOf(selectedToothNum);
 		const target = direction === "next"
-			? (tIdx >= 0 && tIdx < ALL_PERIO_TEETH.length - 1 ? ALL_PERIO_TEETH[tIdx + 1] : ALL_PERIO_TEETH[0])
-			: (tIdx > 0 ? ALL_PERIO_TEETH[tIdx - 1] : ALL_PERIO_TEETH[ALL_PERIO_TEETH.length - 1]);
+			? (tIdx >= 0 && tIdx < perioTeeth.length - 1 ? perioTeeth[tIdx + 1] : perioTeeth[0])
+			: (tIdx > 0 ? perioTeeth[tIdx - 1] : perioTeeth[perioTeeth.length - 1]);
 		if (target !== undefined) setSelectedToothNum(target);
 	}, [selectedToothNum]);
 
@@ -417,7 +424,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 									<div className="text-[11px] text-[var(--muted)] pt-0.5 break-words">{proto.descriptionRu}</div>
 								</div>
 								<div className="w-full flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line)]">
-									<span className="text-[11px] font-semibold text-[var(--primary,#0d9488)] shrink-0">{proto.defaultPriceRub.toLocaleString("ru-RU")} ₽</span>
+									<span className="text-[11px] font-semibold text-[var(--primary,#0d9488)] shrink-0">{formatKopecksToRub(proto.priceKopecks)}</span>
 									<span className="text-[10px] text-[var(--muted)] font-medium text-right truncate">Клинический протокол</span>
 								</div>
 							</button>

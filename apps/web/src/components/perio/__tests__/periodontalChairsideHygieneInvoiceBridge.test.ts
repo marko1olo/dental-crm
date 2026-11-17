@@ -50,14 +50,16 @@ describe("11. Chairside Hygiene & Treatment Plan Invoice Bridge", () => {
 		assert.strictEqual(firstAffected.toothNumber, 46);
 
 		const { planText, prophyService, curettageServices } = buildPeriodontalTreatmentPlanJustification(affected);
-		assert.ok(planText.includes("A16.07.051"));
-		assert.ok(planText.includes("A16.07.011"));
+		assert.ok(planText.includes("Комплексная профессиональная гигиена"));
+		assert.ok(planText.includes("Закрытый кюретаж"));
 		assert.ok(planText.includes("#46"));
-		assert.strictEqual(prophyService.code804n, "A16.07.051");
+		assert.strictEqual(prophyService.serviceCode, "A16.07.051");
+		assert.strictEqual(prophyService.priceKopecks, 550000);
 		assert.strictEqual(curettageServices.length, 1);
 		const firstCurettage = curettageServices[0];
 		assert.ok(firstCurettage);
 		assert.strictEqual(firstCurettage.toothNumber, 46);
-		assert.strictEqual(firstCurettage.code804n, "A16.07.011");
+		assert.strictEqual(firstCurettage.serviceCode, "A16.07.011");
+		assert.strictEqual(firstCurettage.priceKopecks, 180000);
 	});
 });
