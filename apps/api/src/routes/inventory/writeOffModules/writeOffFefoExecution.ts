@@ -29,10 +29,10 @@ export async function executeFefoBatchDeduction(
 	const results: Array<FefoDeductionResult> = [];
 
 	for (const item of items) {
-		let itemId = item.inventoryItemId || item.id;
+		let itemId = item.inventoryItemId || item.id || item.itemId;
 
-		if (!itemId && item.name?.trim()) {
-			const searchName = item.name.trim();
+		const searchName = (item.name || item.itemName || "").trim();
+		if (!itemId && searchName) {
 			let [found] = await tx
 				.select({ id: inventoryItems.id })
 				.from(inventoryItems)

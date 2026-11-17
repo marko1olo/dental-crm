@@ -14,6 +14,7 @@ import {
 	quickCarpuleDisposalSchema,
 	softOverdraftDeductSchema,
 } from "../../../services/warehouse/warehouseOperations.js";
+import { handleDeductRequest } from "./writeOffFefoParties.js";
 
 async function resolveOrg(req: FastifyRequest, rep: FastifyReply, tag: string): Promise<string | null> {
 	const resolved = await requireResolvedStaffOrAdminOrganizationId(req, rep, tag);
@@ -36,6 +37,17 @@ export async function registerSoftOverdraftRoutes(server: FastifyInstance): Prom
 	const handleSoftOverdraft = async (request: FastifyRequest, reply: FastifyReply) => {
 		const targetOrgId = await resolveOrg(request, reply, "inventory soft overdraft deduct");
 		if (!targetOrgId) return;
+
+		const rawBody = request.body;
+		if (
+			Array.isArray(rawBody) ||
+			(rawBody &&
+				typeof rawBody === "object" &&
+				(("materials" in rawBody && Array.isArray((rawBody as { materials?: unknown }).materials)) ||
+					("items" in rawBody && Array.isArray((rawBody as { items?: unknown }).items))))
+		) {
+			return handleDeductRequest(targetOrgId, rawBody, request, reply);
+		}
 
 		const parsed = softOverdraftDeductSchema.safeParse(request.body ?? {});
 		if (!parsed.success) {

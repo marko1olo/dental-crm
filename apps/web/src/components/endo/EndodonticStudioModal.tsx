@@ -329,24 +329,33 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		} catch { /* soft */ }
 
 		if (materialsEstimate.materials.length > 0) {
-			fetch("/api/inventory/soft-overdraft-deduct", {
+			fetch("/api/inventory/deduct", {
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
-					toothNumber: activeTooth,
-					patientId: props.patientId,
-					stageStamp,
-					allowSoftOverdraft: true,
 					materials: materialsEstimate.materials.map((m) => ({
+						inventoryItemId: m.itemId,
+						id: m.itemId,
 						itemId: m.itemId,
+						name: m.itemName,
 						itemName: m.itemName,
 						quantity: m.quantity,
-						unit: m.unit,
-						costPriceKopecks: m.costPriceKopecks,
+						unitCostRub: m.costPriceKopecks ? (m.costPriceKopecks / 100) : 0,
 					})),
-					notes: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
+					allowOverdraft: true,
+					reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
+					notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
 				}),
-			}).catch(() => { /* Soft: фоновая сеть не блокирует работу врача у кресла */ });
+			})
+				.then(async (res) => {
+					if (!res.ok) {
+						console.warn("[EndoStudioModal] Фоновое списание материалов завершилось со статусом:", res.status);
+					}
+				})
+				.catch((err) => {
+					console.error("[EndoStudioModal] Ошибка фонового списания материалов:", err);
+					showToast("Склад: задержка фонового списания материалов (Soft Overdraft сохранён)", "warning", 3000);
+				});
 		}
 
 		if (props.onSaveCanals) {

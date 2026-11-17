@@ -118,7 +118,9 @@ export const acceptanceWaybillBodySchema = z.object({
 export const inventoryDeductItemSchema = z.object({
 	inventoryItemId: z.string().optional(),
 	id: z.string().optional(),
+	itemId: z.string().optional(),
 	name: z.string().optional(),
+	itemName: z.string().optional(),
 	quantity: z
 		.number({
 			required_error: "Укажите количество для списания",

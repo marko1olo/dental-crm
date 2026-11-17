@@ -16,7 +16,6 @@ import {
 } from "./StandaloneTherapyWorkspaceHosts";
 import { StandaloneClinicalTemplatesHost } from "./StandaloneClinicalTemplatesHost";
 import { StandaloneEmrProtocolHost } from "./StandaloneEmrProtocolHost";
-import { StandaloneEndoHost } from "./StandaloneEndoHost";
 import { StandaloneClinicalBundlesHost } from "./StandaloneClinicalBundlesHost";
 import { ToothContextDrawer } from "../../../../diagnostics/ToothContextDrawer";
 import { PediatricMixedDentitionModal } from "../../../../odontogram/PediatricMixedDentitionModal";
@@ -63,14 +62,6 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		return (
 			<StandaloneEmrProtocolHost
 				onClose={() => clearUrlTokens(["emr-protocol", "protocol-generator", "star-protocol"])}
-			/>
-		);
-	}
-
-	if (hasUrlToken(["endo", "endodontics", "root-canals", "chairside-endo"])) {
-		return (
-			<StandaloneEndoHost
-				onClose={() => clearUrlTokens(["endo", "endodontics", "root-canals", "chairside-endo"])}
 			/>
 		);
 	}
