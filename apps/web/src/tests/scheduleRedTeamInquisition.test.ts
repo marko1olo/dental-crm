@@ -17,7 +17,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { Appointment, Dashboard, Patient } from "@dental/shared";
 
 import { ScheduleDayZeroBanner } from "../components/schedule/grid/ScheduleGridToolbar";
-import { ScheduleFilterStrip } from "../components/schedule/ScheduleFilterStrip";
+import { ScheduleUnifiedToolbar as ScheduleFilterStrip } from "../components/schedule/ScheduleUnifiedToolbar";
 import { AppointmentCardPrimaryActions } from "../components/schedule/appointmentCardActions/index";
 import { AppointmentCard } from "../components/schedule/AppointmentCard";
 import { AppointmentAlertBadges } from "../components/schedule/AppointmentPaymentBadges";

@@ -30,7 +30,7 @@ import {
 import { buildChairDoctorAssignmentsFromShifts } from "../view/scheduleViewShifts";
 import { appointmentScheduleMissingFields } from "../../../AppHelpers";
 import { ScheduleShiftAnalytics } from "../ScheduleShiftAnalytics";
-import { ScheduleFilterStrip } from "../ScheduleFilterStrip";
+import { ScheduleUnifiedToolbar } from "../ScheduleUnifiedToolbar";
 
 // Cartoon emoji detector per Mandate 8d п. 7
 const CARTOON_EMOJI_REGEX =
@@ -913,9 +913,9 @@ describe("Schedule, Chairs & Shifts Architecture Parity (Schedule & Chair)", () 
 			assert.equal(firstCall[0]?.id, "warn-1");
 		});
 
-		it("ScheduleFilterStrip is a valid component and renders without error", async () => {
-			assert.ok(ScheduleFilterStrip, "ScheduleFilterStrip component must be exported");
-			assert.equal(typeof ScheduleFilterStrip, "function", "ScheduleFilterStrip must be a function/component");
+		it("ScheduleUnifiedToolbar is a valid component and renders without error", async () => {
+			assert.ok(ScheduleUnifiedToolbar, "ScheduleUnifiedToolbar component must be exported");
+			assert.equal(typeof ScheduleUnifiedToolbar, "function", "ScheduleUnifiedToolbar must be a function/component");
 		});
 	});
 });

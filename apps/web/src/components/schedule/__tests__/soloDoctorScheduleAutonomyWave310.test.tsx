@@ -26,7 +26,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
 import type { Appointment, Dashboard } from "@dental/shared";
-import { ScheduleFilterStrip } from "../ScheduleFilterStrip";
+import { ScheduleUnifiedToolbar } from "../ScheduleUnifiedToolbar";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -263,7 +263,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 	describe("2. Toolbar Density per Hick's Law (Mandate 8d item 2, 8p)", () => {
 		it("ScheduleFilterStrip renders strictly 1 row with 32-36px desktop height", () => {
 			const html = renderToString(
-				React.createElement(ScheduleFilterStrip, {
+				React.createElement(ScheduleUnifiedToolbar, {
 					scheduleDateFilter: "2026-09-24",
 					setScheduleDateFilter: () => {},
 					stepScheduleDay: () => {},
@@ -290,7 +290,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 
 		it("ScheduleFilterStrip displays prominent [Запись] button on face toolbar", () => {
 			const html = renderToString(
-				React.createElement(ScheduleFilterStrip, {
+				React.createElement(ScheduleUnifiedToolbar, {
 					scheduleDateFilter: "2026-09-24",
 					setScheduleDateFilter: () => {},
 					stepScheduleDay: () => {},
@@ -313,7 +313,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 
 		it("ScheduleFilterStrip suppresses multiple doctor and chair chip clutter for solo doctor", () => {
 			const html = renderToString(
-				React.createElement(ScheduleFilterStrip, {
+				React.createElement(ScheduleUnifiedToolbar, {
 					scheduleDateFilter: "2026-09-24",
 					setScheduleDateFilter: () => {},
 					stepScheduleDay: () => {},
@@ -347,7 +347,7 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 
 		it("ScheduleFilterStrip provides secondary actions inside the [...] options dropdown", () => {
 			const html = renderToString(
-				React.createElement(ScheduleFilterStrip, {
+				React.createElement(ScheduleUnifiedToolbar, {
 					scheduleDateFilter: "2026-09-24",
 					setScheduleDateFilter: () => {},
 					stepScheduleDay: () => {},
@@ -496,11 +496,11 @@ describe("Mandates 8l / 8e / 8n / 8d / 8p: Solo Doctor & Reception Ergonomics In
 				"schedule.css must contain zero cartoon emojis",
 			);
 
-			const filterStripPath = path.join(webRoot, "src/components/schedule/ScheduleFilterStrip.tsx");
+			const filterStripPath = path.join(webRoot, "src/components/schedule/ScheduleUnifiedToolbar.tsx");
 			const filterStripContent = fs.readFileSync(filterStripPath, "utf8");
 			assert.ok(
 				!CARTOON_EMOJI_REGEX.test(filterStripContent),
-				"ScheduleFilterStrip.tsx must contain zero cartoon emojis",
+				"ScheduleUnifiedToolbar.tsx must contain zero cartoon emojis",
 			);
 
 			const quickDrawerPath = path.join(webRoot, "src/components/schedule/QuickBookingDrawer.tsx");

@@ -23,9 +23,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const webRoot = path.resolve(__dirname, "../..");
 
-test("Desktop Ergonomics — ScheduleFilterStrip and schedule.css enforce 36px 1-row toolbar and wheel scroll", () => {
+test("Desktop Ergonomics — ScheduleUnifiedToolbar and schedule.css enforce 36px 1-row toolbar and wheel scroll", () => {
 	const scheduleTsx = fs.readFileSync(
-		path.join(webRoot, "src/components/schedule/ScheduleFilterStrip.tsx"),
+		path.join(webRoot, "src/components/schedule/ScheduleUnifiedToolbar.tsx"),
 		"utf8",
 	);
 	const scheduleCss = fs.readFileSync(

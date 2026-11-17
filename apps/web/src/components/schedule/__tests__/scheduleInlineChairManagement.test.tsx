@@ -9,9 +9,9 @@ import {
 	CHAIR_SPECIALTY_PRESETS,
 } from "../QuickAddChairModal";
 import {
-	ScheduleFilterStrip,
-	type ScheduleFilterStripProps,
-} from "../ScheduleFilterStrip";
+	ScheduleUnifiedToolbar as ScheduleFilterStrip,
+	type ScheduleUnifiedToolbarProps as ScheduleFilterStripProps,
+} from "../ScheduleUnifiedToolbar";
 import { DURATION_PRESETS } from "../patientReliabilityScore";
 
 type MockFn = {

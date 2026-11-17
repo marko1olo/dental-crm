@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ScheduleFilterStrip } from "./ScheduleFilterStrip";
+import { ScheduleUnifiedToolbar } from "./ScheduleUnifiedToolbar";
 
-describe("ScheduleFilterStrip Component", () => {
+describe("ScheduleUnifiedToolbar Component", () => {
 	it("renders 'Все записи' quick chip button and date picker control group", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-09",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -55,7 +55,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("renders non-active 'Все записи' chip when filters are active", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-09",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -80,7 +80,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("renders 'Пациент с острой болью (CITO!)' button when onEmergencyCitoBooking is provided", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-09",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -108,7 +108,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("renders chair chips with Russian dental specialization ('Кресло 1 (Терапия)', 'Кресло 2 (Хирургия)', 'Кресло 3 (Ортодонтия)')", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-24",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -135,7 +135,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("falls back to default clinic chairs with specializations when chairs list is empty", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-24",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -157,7 +157,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("renders 'Пациент' quick search button when onOpenPatientSearch is provided", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-25",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -180,7 +180,7 @@ describe("ScheduleFilterStrip Component", () => {
 	it("renders 'Завтра', 'Вся неделя' quick day switcher buttons", () => {
 		const todayIso = new Date().toISOString().slice(0, 10);
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: todayIso,
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -201,7 +201,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("renders 'Напомнить на завтра' button when onOpenTomorrowReminders is provided", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-25",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -222,7 +222,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("adapts date picker and view switcher controls on mobile viewports <= 420px without overflow", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-31",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -250,7 +250,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("renders StomX shift queue status filter chips (Ожидает приёма, На приёме, Ожидает оплаты) per Mandates 8d, 8e, 8n", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-09",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},
@@ -277,7 +277,7 @@ describe("ScheduleFilterStrip Component", () => {
 
 	it("renders StomX shift queue count badges when queueCounts are provided", () => {
 		const html = renderToStaticMarkup(
-			createElement(ScheduleFilterStrip, {
+			createElement(ScheduleUnifiedToolbar, {
 				scheduleDateFilter: "2026-08-09",
 				setScheduleDateFilter: () => {},
 				stepScheduleDay: () => {},

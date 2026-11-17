@@ -17,11 +17,6 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-	DEFAULT_STOMX_WORKPLACE_PALETTE,
-	getStomxWorkplacePalette,
-	STOMX_REFUSE_REASONS_CATALOG,
-	STOMX_WORKPLACE_PALETTES,
-	STOMX_WORKPLACE_PALETTES_MAP,
 	DEFAULT_WORKPLACE_CHAIR_PALETTE,
 	getWorkplaceChairPalette,
 	WORKPLACE_CHAIR_PALETTES,
@@ -43,16 +38,16 @@ describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 		assert.ok(workplaceChairPaletteSchema);
 	});
 
-	it("should have exactly 5 canonical StomX workplace palettes", () => {
-		assert.equal(STOMX_WORKPLACE_PALETTES.length, 5);
+	it("should have exactly 5 canonical workplace palettes", () => {
+		assert.equal(WORKPLACE_CHAIR_PALETTES.length, 5);
 		const expectedIds = [1, 5, 6, 8, 9];
-		const actualIds = STOMX_WORKPLACE_PALETTES.map((p) => p.id);
+		const actualIds = WORKPLACE_CHAIR_PALETTES.map((p) => p.id);
 		assert.deepEqual(actualIds, expectedIds);
 	});
 
-	it("should contain exact 4-state hex colors matching StomX reverse engineering depot", () => {
+	it("should contain exact 4-state hex colors for canonical palettes", () => {
 		// Lavender
-		const lavender = STOMX_WORKPLACE_PALETTES_MAP.lavender;
+		const lavender = WORKPLACE_CHAIR_PALETTES_MAP.lavender;
 		assert.ok(lavender);
 		assert.equal(lavender.bright_code, "#AEA7D3");
 		assert.equal(lavender.bright_dark, "#292541");
@@ -61,7 +56,7 @@ describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 		assert.equal(lavender.nameRu, "Лаванда");
 
 		// Blue
-		const blue = STOMX_WORKPLACE_PALETTES_MAP.blue;
+		const blue = WORKPLACE_CHAIR_PALETTES_MAP.blue;
 		assert.ok(blue);
 		assert.equal(blue.bright_code, "#91B9E9");
 		assert.equal(blue.bright_dark, "#25313F");
@@ -70,7 +65,7 @@ describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 		assert.equal(blue.nameRu, "Синий");
 
 		// Rose
-		const rose = STOMX_WORKPLACE_PALETTES_MAP.rose;
+		const rose = WORKPLACE_CHAIR_PALETTES_MAP.rose;
 		assert.ok(rose);
 		assert.equal(rose.bright_code, "#EF8AAF");
 		assert.equal(rose.bright_dark, "#392029");
@@ -79,7 +74,7 @@ describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 		assert.equal(rose.nameRu, "Роза");
 
 		// Olive
-		const olive = STOMX_WORKPLACE_PALETTES_MAP.olive;
+		const olive = WORKPLACE_CHAIR_PALETTES_MAP.olive;
 		assert.ok(olive);
 		assert.equal(olive.bright_code, "#C1DE9B");
 		assert.equal(olive.bright_dark, "#2C381C");
@@ -88,7 +83,7 @@ describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 		assert.equal(olive.nameRu, "Олива");
 
 		// Sand
-		const sand = STOMX_WORKPLACE_PALETTES_MAP.sand;
+		const sand = WORKPLACE_CHAIR_PALETTES_MAP.sand;
 		assert.ok(sand);
 		assert.equal(sand.bright_code, "#E1EF8A");
 		assert.equal(sand.bright_dark, "#413425");
@@ -104,31 +99,30 @@ describe("Wave 115: 4-State Workplace Palettes Parity", () => {
 		}
 	});
 
-	it("getStomxWorkplacePalette should correctly resolve by id, number, index, or fallback", () => {
+	it("getWorkplaceChairPalette should correctly resolve by id, number, index, or fallback", () => {
 		// By ID
-		assert.equal(getStomxWorkplacePalette("lavender").nameRu, "Лаванда");
-		assert.equal(getStomxWorkplacePalette("blue").nameRu, "Синий");
-		assert.equal(getStomxWorkplacePalette("rose").nameRu, "Роза");
-		assert.equal(getStomxWorkplacePalette("olive").nameRu, "Олива");
-		assert.equal(getStomxWorkplacePalette("sand").nameRu, "Песок");
+		assert.equal(getWorkplaceChairPalette("lavender").nameRu, "Лаванда");
+		assert.equal(getWorkplaceChairPalette("blue").nameRu, "Синий");
+		assert.equal(getWorkplaceChairPalette("rose").nameRu, "Роза");
+		assert.equal(getWorkplaceChairPalette("olive").nameRu, "Олива");
+		assert.equal(getWorkplaceChairPalette("sand").nameRu, "Песок");
 
 		// By index / number
-		assert.equal(getStomxWorkplacePalette(0).nameRu, "Лаванда");
-		assert.equal(getStomxWorkplacePalette(1).nameRu, "Лаванда"); // id 1 is lavender
-		assert.equal(getStomxWorkplacePalette(5).nameRu, "Синий"); // id 5 is blue
-		assert.equal(getStomxWorkplacePalette(6).nameRu, "Роза"); // id 6 is rose
-		assert.equal(getStomxWorkplacePalette(8).nameRu, "Олива"); // id 8 is olive
-		assert.equal(getStomxWorkplacePalette(9).nameRu, "Песок"); // id 9 is sand
+		assert.equal(getWorkplaceChairPalette(0).nameRu, "Лаванда");
+		assert.equal(getWorkplaceChairPalette(1).nameRu, "Лаванда"); // id 1 is lavender
+		assert.equal(getWorkplaceChairPalette(5).nameRu, "Синий"); // id 5 is blue
+		assert.equal(getWorkplaceChairPalette(6).nameRu, "Роза"); // id 6 is rose
+		assert.equal(getWorkplaceChairPalette(8).nameRu, "Олива"); // id 8 is olive
+		assert.equal(getWorkplaceChairPalette(9).nameRu, "Песок"); // id 9 is sand
 
 		// Invalid string / fallback
-		assert.equal(getStomxWorkplacePalette("").nameRu, DEFAULT_STOMX_WORKPLACE_PALETTE.nameRu);
-		assert.equal(getStomxWorkplacePalette(null as any).nameRu, DEFAULT_STOMX_WORKPLACE_PALETTE.nameRu);
-		assert.equal(getStomxWorkplacePalette(undefined as any).nameRu, DEFAULT_STOMX_WORKPLACE_PALETTE.nameRu);
+		assert.equal(getWorkplaceChairPalette("").nameRu, DEFAULT_WORKPLACE_CHAIR_PALETTE.nameRu);
+		assert.equal(getWorkplaceChairPalette("" as string).nameRu, DEFAULT_WORKPLACE_CHAIR_PALETTE.nameRu);
 	});
 });
 
 describe("Wave 115: ScheduleGrid Workplace Palette Integration", () => {
-	it("ScheduleGrid source should contain data-chair-palette and getStomxWorkplacePalette", () => {
+	it("ScheduleGrid source should contain data-chair-palette and getWorkplaceChairPalette", () => {
 		const gridPath = path.resolve(__dirname, "../ScheduleGrid.tsx");
 		const headerPath = path.resolve(__dirname, "../grid/ScheduleChairHeaderTopBar.tsx");
 		const content = [
@@ -136,17 +130,17 @@ describe("Wave 115: ScheduleGrid Workplace Palette Integration", () => {
 			fs.readFileSync(headerPath, "utf-8"),
 		].join("\n");
 
-		assert.ok(/getWorkplaceChairPalette|getStomxWorkplacePalette/.test(content));
+		assert.ok(/getWorkplaceChairPalette/.test(content));
 		assert.match(content, /data-chair-palette/);
 		assert.match(content, /chair-palette-badge-/);
-		assert.ok(/WORKPLACE_CHAIR_PALETTES|STOMX_WORKPLACE_PALETTES/.test(content));
+		assert.ok(/WORKPLACE_CHAIR_PALETTES/.test(content));
 	});
 });
 
 describe("Wave 115: AppointmentCard Refusal Reasons & Categorization", () => {
 	it("should export 10 refusal reasons from shared catalog", () => {
-		assert.equal(STOMX_REFUSE_REASONS_CATALOG.length, 10);
-		const codes = STOMX_REFUSE_REASONS_CATALOG.map((r) => r.code);
+		assert.equal(APPOINTMENT_REFUSAL_REASONS_CATALOG.length, 10);
+		const codes = APPOINTMENT_REFUSAL_REASONS_CATALOG.map((r) => r.code);
 		assert.ok(codes.includes("no_show_confirmed"));
 		assert.ok(codes.includes("no_show_unconfirmed"));
 		assert.ok(codes.includes("patient_cancelled"));

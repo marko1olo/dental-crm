@@ -22,6 +22,7 @@ import {
 	parsePreferredWeekday,
 	slotFitsRanges,
 } from "../schedule/waitlistMatching.js";
+import { utcToLocalWallTime } from "../../routes/publicBooking.js";
 
 export interface GapFillerCandidate {
 	readonly patientId: string;
@@ -52,10 +53,11 @@ export interface GapFillerAlert {
  */
 export async function triggerSmartGapFiller(
 	cancelledAppointmentId: string,
-	options?: { organizationId?: string | undefined; maxCandidates?: number | undefined },
+	options?: { organizationId?: string | undefined; maxCandidates?: number | undefined; timezone?: string | undefined },
 ): Promise<GapFillerAlert | null> {
 	try {
 		const maxCandidates = options?.maxCandidates ?? 3;
+		const effectiveTimeZone = options?.timezone || "Europe/Samara";
 
 		// 1. Fetch details of the cancelled appointment
 		const [appt] = await db
@@ -84,7 +86,7 @@ export async function triggerSmartGapFiller(
 			Math.round((appt.endsAt.getTime() - appt.startsAt.getTime()) / (1000 * 60)),
 		);
 
-		const timeFormatted = `${appt.startsAt.toLocaleDateString("ru-RU")} в ${appt.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+		const timeFormatted = `${appt.startsAt.toLocaleDateString("ru-RU", { timeZone: effectiveTimeZone })} в ${appt.startsAt.toLocaleTimeString("ru-RU", { timeZone: effectiveTimeZone, hour: "2-digit", minute: "2-digit" })}`;
 
 		const candidates: GapFillerCandidate[] = [];
 
@@ -116,9 +118,9 @@ export async function triggerSmartGapFiller(
 			)
 			.limit(10);
 
-		const slotStartMinute =
-			appt.startsAt.getHours() * 60 + appt.startsAt.getMinutes();
-		const slotWeekday = appt.startsAt.getDay();
+		const localSlot = utcToLocalWallTime(appt.startsAt, effectiveTimeZone);
+		const slotStartMinute = localSlot.hours * 60 + localSlot.minutes;
+		const slotWeekday = localSlot.weekday;
 
 		for (const entry of waitlistEntries) {
 			if (!entry.patientId) continue;
