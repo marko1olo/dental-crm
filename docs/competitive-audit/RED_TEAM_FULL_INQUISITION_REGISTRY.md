@@ -4016,5 +4016,81 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Mobile Light: `docs/proofs/copilot/07_copilot_studio_mobile_light_390x844.png` (42.7 KB)
   - 📱 Mobile Dark: `docs/proofs/copilot/08_copilot_studio_mobile_dark_390x844.png` (42.0 KB)
 
+---
+
+## 🏆 ВОЛНА 10: ХИРУРГИЧЕСКИЙ ПРОТОКОЛ, ИМПЛАНТАЦИЯ, ЭНДОДОНТИЯ, ТЕЛЕФОНИЯ И ОРТОДОНТИЯ (ДОМЕНЫ 29, 30, 31, 32)
+
+### 1. ДОМЕН 29: ХИРУРГИЯ, ЖУРНАЛ ИМПЛАНТАЦИИ И РАСХОДНИКИ ХИРУРГА
+- **Хирург:** Red Team Fixer Surgeon (`008f4e1d-4223-4db9-89e2-866986f44b33`).
+- **Ликвидированные дефекты:**
+  1. **Клиническая безопасность: Запрет установки имплантатов в молочные зубы (FDI 51–85)**: В `implantologyAndPrescriptionSchemas.ts` внедрены `isPermanentFdiTooth` и `permanentToothNumberFdiSchema`. В Fastify API `patientImplantsRoute.ts:113-124` молочные зубы отсекаются с HTTP 400 `InvalidFdiTooth`. Написан регрессионный тест `implantologyDentitionGate.test.ts`.
+  2. **Искоренение советского канцелярита «804н»**: В `catalog.ts` экспорт `SURGICAL_SERVICES_804N` переименован в канонический `SURGICAL_SERVICES_CATALOG`. В `surgeryCatalogData.ts` нормализованы `getExtractionServices`, `getSinusGbrServices`, `getSurgicalCatalogServices`.
+  3. **Копеечные суммы и связка счетов (Мандат 8bm)**: В `installationBillingAndOdontogram.ts` внедрена связка `invoiceId: linkedInvoiceId`, возвращаются `totalAmountRub` и `totalAmountKopecks: operationPriceKopecks.toString()`.
+  4. **Декомпозиция монолита implantCatalogData.ts (1601 строка)**: Монолит разбит на 7 специализированных модулей (`implantBrandTypes.ts`, `implantNormalizedSystems.ts`, `implantTorqueSpecs.ts`, `implantTiBaseCatalog.ts`, `implantWarrantyEngine.ts`, `implantFixtureDrillCatalog.ts`, `implantClinicalGeometry.ts`) и канонический фасад `implantCatalogData.ts` (240 строк).
+- **Машинные гейты (Exit Code 0):**
+  - Surgery routes tests: 9/9 passed.
+  - Implant Torque Specs: 5/5 passed.
+  - Implantology SSOT Suite: 8/8 passed.
+  - Surgery Component Suite: 57/57 passed (9 файлов).
+  - Implantology Dentition Gate: 5/5 passed.
+  - `check:encoding`, `check:migration-drift`, `check:css-tokens`, `check:buttons`: 0 нарушений.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/surgery/01_surgery_hub_pc_light_1440x900.png` (102.3 KB)
+  - 🌙 PC Dark: `docs/proofs/surgery/02_surgery_hub_pc_dark_1440x900.png` (102.8 KB)
+  - 📱 Mobile Light: `docs/proofs/surgery/03_surgery_hub_mobile_light_390x844.png` (61.6 KB)
+  - 🌙 Mobile Dark: `docs/proofs/surgery/04_surgery_hub_mobile_dark_390x844.png` (56.6 KB)
+  - 📄 Implant Passport PC Light: `docs/proofs/surgery/05_implant_passport_pc_light_1440x900.png` (148.2 KB)
+
+### 2. ДОМЕН 30: ЭНДОДОНТИЯ, КОРНЕВЫЕ КАНАЛЫ И АПЕКСЛОКАТОР
+- **Хирург:** Red Team Fixer Surgeon (`fc7a9880-8fd6-436f-a2cb-93db905f0248`).
+- **Ликвидированные дефекты:**
+  1. **Физический снос клона `StandaloneEndoHost.tsx` (`git rm`)**: Ликвидирована сирота и очищена мертвая ветка в `TherapyLaunchers.tsx:70-76`. Канонический SSOT закреплен в `DirectEndodonticsLauncher.tsx`.
+  2. **Списание расходников (Soft Negative Stock, Мандат 8v)**: В `EndodonticStudioModal.tsx` и `ChairsideEndoQuickBar.tsx` вызов списания согласован с каноническим батч-эндпоинтом `POST /api/inventory/deduct` (`{ materials: [...], allowOverdraft: true, reason: notes }`). В `writeOffSoftOverdraft.ts` добавлена авто-делегация пакетных тел.
+  3. **Единый SSOT карты анатомии каналов**: Канонический SSOT закреплен в `packages/shared/src/clinical/endo/canalAnatomyRules.ts`. Файл `toothCanalAnatomyMap.ts` переведен в чистый фасад реэкспорта без дублирования.
+  4. **Лимит строк (Мандат 8b / 8zi)**: `ChairsideEndoQuickBar.tsx` сокращен до 349 строк (<= 350 строк).
+- **Машинные гейты (Exit Code 0, 67/67 PASS):**
+  - Веб-сьют эндодонтии (`chairsideEndoChips`, `chairsideEndoQuickBar`, `endodonticsSSOTSuite`): 32/32 passed.
+  - Shared анатомия и биллинг: 34/34 passed.
+  - Складской e2e-тест: 1/1 passed.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/endodontics/01_endo_pc_light_1440x900.png` (94.0 KB)
+  - 🌙 PC Dark: `docs/proofs/endodontics/02_endo_pc_dark_1440x900.png` (91.7 KB)
+  - 📱 Mobile Light: `docs/proofs/endodontics/03_endo_mobile_light_390x844.png` (114.3 KB)
+  - 📱 Mobile Dark: `docs/proofs/endodontics/04_endo_mobile_dark_390x844.png` (115.2 KB)
+
+### 3. ДОМЕН 31: ТЕЛЕФОНИЯ, СОФТФОН И КОЛЛ-ЦЕНТР
+- **Аудитор:** Red Team Scout (`39ea6664-67d1-419a-9e1b-53093952f41b`) & L1 Orchestrator.
+- **Вердикт:** `[ПРОВЕРЕНО: ЧИСТО, ДЕФЕКТОВ НЕТ]`
+  - Плавающие FAB-виджеты полностью искоренены: звонки обслуживаются верхней капсулой событий (`IncomingCallPopup.tsx`), шапочной капсулой (`TelephonyHeaderCapsule.tsx`) и мобильным Bottom Sheet.
+  - Иммунитет врача у кресла активен (стерильная зона не прерывается звонками).
+  - 17/17 бэкенд-тестов (`telephonyCallerLookup`, `telephonyWebhook`) и 13/13 фронтенд-тестов passed (Exit Code 0).
+  - Проведена санитарная чистка неиспользуемых селекторов в `telephonyCoexistence.css`.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/telephony/01_telephony_capsule_pc_light_1440x900.png`
+  - 🌙 PC Dark: `docs/proofs/telephony/02_telephony_capsule_pc_dark_1440x900.png`
+  - 📱 Mobile Light: `docs/proofs/telephony/03_telephony_drawer_mobile_light_390x844.png`
+  - 📱 Mobile Dark: `docs/proofs/telephony/04_telephony_drawer_mobile_dark_390x844.png`
+
+### 4. ДОМЕН 32: ОРТОДОНТИЯ, ФОТОПРОТОКОЛ, ЭЛАЙНЕРЫ И БРЕКЕТЫ
+- **Хирург:** Red Team Fixer Surgeon (`67331adb-6fe5-4717-8a56-1dbf732d4cfa`).
+- **Ликвидированные дефекты:**
+  1. **8 ракурсов стандарта ABO/Энгля**: В `ORTHO_PHOTO_SLOTS_SSOT` добавлены верхняя (`occlusion_upper`) и нижняя (`occlusion_lower`) окклюзионные проекции. В `OrthodonticsTabsContent.tsx` починена проверка соответствия ключей `isSlotMatching`, восстановившая работу бейджа «Зафиксировано».
+  2. **Устранение падения теста #22 в `orthodonticsSSOTSuite.test.tsx`**: Лейбл Primary CTA в `CephalometricAnalysisModalUI.tsx` приведен к канону `'Сохранить в ЭМК'`.
+  3. **Персистентность аппаратов и эластиков**: В `OrthodonticProgressRecord` и схемы Zod включены поля `applianceId`, `applianceName`, `applianceCategory`, `selectedElasticId`, `selectedActionIds` с сохранением в PostgreSQL 18.
+  4. **Искоренение хардкод-фоллбека `'pat-ortho-studio'`**: В `DirectOrthodonticsLauncher.tsx` внедрен честный `StandaloneDeepLinkMissingState` без паразитных 404 запросов.
+- **Машинные гейты (Exit Code 0, 33/33 PASS):**
+  - Web Orthodontics SSOT Suite: 23/23 passed.
+  - API Orthodontics Routes Suite: 10/10 passed.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/orthodontics/01_orthodontics_studio_pc_light_1440x900.png` (87.2 KB)
+  - 🌙 PC Dark: `docs/proofs/orthodontics/02_orthodontics_studio_pc_dark_1440x900.png` (84.5 KB)
+  - 📱 Mobile Light: `docs/proofs/orthodontics/03_orthodontics_studio_mobile_light_390x844.png` (46.8 KB)
+  - 📱 Mobile Dark: `docs/proofs/orthodontics/04_orthodontics_studio_mobile_dark_390x844.png` (46.9 KB)
+  - 📸 8 ракурсов ABO PC Light: `docs/proofs/orthodontics/05_ortho_photo_trg_tab_pc_light_1440x900.png` (97.4 KB)
+  - 📸 8 ракурсов ABO PC Dark: `docs/proofs/orthodontics/06_ortho_photo_trg_tab_pc_dark_1440x900.png` (93.1 KB)
+  - 📸 8 ракурсов ABO Mobile Light: `docs/proofs/orthodontics/07_ortho_photo_trg_tab_mobile_light_390x844.png` (41.4 KB)
+  - 📸 8 ракурсов ABO Mobile Dark: `docs/proofs/orthodontics/08_ortho_photo_trg_tab_mobile_dark_390x844.png` (41.6 KB)
+
+
 
 

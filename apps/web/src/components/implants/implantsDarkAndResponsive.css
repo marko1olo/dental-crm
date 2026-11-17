@@ -38,9 +38,9 @@
 
 /* 3. Гарантированный Primary CTA в мобильном и десктопном футере */
 .implant-passport-actions .primary-button {
-	background: var(--teal, #0d9488) !important;
+	background: var(--primary) !important;
 	color: #ffffff !important;
-	border: 1px solid var(--teal-dark, #0f766e) !important;
+	border: 1px solid var(--primary-hover, #0284c7) !important;
 }
 
 .implant-passport-actions .secondary-button {
@@ -77,14 +77,14 @@
 
 :is([data-theme="dark"], html.dark, .dark) .primary-button,
 :is([data-theme="dark"], html.dark, .dark) .implant-passport-actions .primary-button {
-	background: var(--teal, #0d9488) !important;
+	background: var(--primary) !important;
 	color: #ffffff !important;
-	border-color: var(--teal-dark, #0f766e) !important;
+	border-color: var(--primary-hover, #0284c7) !important;
 }
 
 :is([data-theme="dark"], html.dark, .dark) .primary-button:hover,
 :is([data-theme="dark"], html.dark, .dark) .implant-passport-actions .primary-button:hover {
-	background: #0f766e !important;
+	background: var(--primary-hover, #0284c7) !important;
 }
 
 :is([data-theme="dark"], html.dark, .dark) .implant-select,
@@ -107,7 +107,7 @@
 }
 
 :is([data-theme="dark"], html.dark, .dark) .implant-system-pill.active {
-	background: var(--teal, #0d9488) !important;
+	background: var(--primary) !important;
 	color: #ffffff !important;
 }
 

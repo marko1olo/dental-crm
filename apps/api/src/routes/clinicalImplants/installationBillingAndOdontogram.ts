@@ -157,6 +157,7 @@ export async function linkBillingAndOdontogram(
 		organizationId: orgId,
 		patientId: input.patientId,
 		visitId: input.visitId ?? null,
+		invoiceId: linkedInvoiceId,
 		toothCode: String(input.toothNumberFdi),
 		title: `Внутрикостная дентальная имплантация системы ${input.implantBrand} (Зуб FDI #${input.toothNumberFdi})`,
 		priceRub: operationPriceRub,
@@ -169,6 +170,8 @@ export async function linkBillingAndOdontogram(
 	const financialSummary = {
 		operationPriceRub,
 		operationPriceKopecks: operationPriceKopecks.toString(),
+		totalAmountRub: operationPriceRub,
+		totalAmountKopecks: operationPriceKopecks.toString(),
 		implantCostRub: implantCost,
 		implantCostKopecks: implantCostKopecks.toString(),
 		consumablesCostRub: consumablesCost,

@@ -28,11 +28,8 @@ export function getImplantPlatformById(brand: ImplantBrand, line?: string): Plat
 }
 
 export {
-	ChairsideSurgeryHubModal as ImplantPassportModal,
-	ChairsideSurgeryHubModal as ImplantSurgicalPassportModal,
-	ChairsideSurgeryHubModal as ImplantSurgeryProtocolModal,
-	type ChairsideSurgeryHubModalProps as ImplantPassportModalProps,
-	type ChairsideSurgeryHubModalProps as ImplantSurgeryProtocolModalProps,
+	ChairsideSurgeryHubModal,
+	type ChairsideSurgeryHubModalProps,
 } from "../surgery/ChairsideSurgeryHubModal";
 
 export type {

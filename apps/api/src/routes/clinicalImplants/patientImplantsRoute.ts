@@ -112,10 +112,15 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 		}
 		if (query.toothNumberFdi !== undefined && query.toothNumberFdi !== null && query.toothNumberFdi !== "") {
 			const fdi = Number(query.toothNumberFdi);
-			if (!Number.isInteger(fdi) || fdi < 11 || (fdi > 48 && fdi < 51) || fdi > 85) {
+			const isPermanent =
+				(fdi >= 11 && fdi <= 18) ||
+				(fdi >= 21 && fdi <= 28) ||
+				(fdi >= 31 && fdi <= 38) ||
+				(fdi >= 41 && fdi <= 48);
+			if (!Number.isInteger(fdi) || !isPermanent) {
 				return reply.code(400).send({
 					error: "InvalidFdiTooth",
-					message: "Некорректный номер зуба FDI (ожидается целое число 11..48 или 51..85).",
+					message: "Некорректный номер зуба FDI для имплантации (ожидается постоянный зуб: 11..18, 21..28, 31..38, 41..48). Установка дентальных имплантатов в молочный прикус (51..85) запрещена.",
 				});
 			}
 			conditions.push(eq(patientImplantInstallations.toothNumberFdi, fdi));

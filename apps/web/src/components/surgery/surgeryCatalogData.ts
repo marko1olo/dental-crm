@@ -56,6 +56,7 @@ export const EXTRACTION_SURGICAL_CODES = {
 	SINUS_LIFT: "A16.07.041.001", BONE_GRAFT: "A16.07.041", CURETTAGE: "A16.07.026",
 	SUTURE_VICRYL: "A16.07.097", ANESTHESIA_INFILTRATION: "A11.07.015", ANESTHESIA_CONDUCTION: "A11.07.016",
 } as const;
+/** @deprecated Use EXTRACTION_SURGICAL_CODES instead (Mandate 8x) */
 export const EXTRACTION_804N_CODES = EXTRACTION_SURGICAL_CODES;
 
 export const EXTRACTION_COMPLEXITY_OPTIONS = [
@@ -406,6 +407,7 @@ export function getExtractionSurgicalServices(params: {
 	return items;
 }
 export const getExtractionServices = getExtractionSurgicalServices;
+/** @deprecated Use getExtractionServices instead (Mandate 8x) */
 export const getExtractionServices804n = getExtractionSurgicalServices;
 
 export function getSinusGbrSurgicalServices(params: { isClosedSinus: boolean; toothFdi?: number; membrane?: string; hasPins?: boolean }): readonly SurgicalServiceItem[] {
@@ -419,6 +421,7 @@ export function getSinusGbrSurgicalServices(params: { isClosedSinus: boolean; to
 	];
 }
 export const getSinusGbrServices = getSinusGbrSurgicalServices;
+/** @deprecated Use getSinusGbrServices instead (Mandate 8x) */
 export const getSinusGbrServices804n = getSinusGbrSurgicalServices;
 
 export function buildPostExtractionMemoText(params: SurgicalMemoParams = {}): string {
@@ -516,6 +519,7 @@ export function getSurgicalCatalogServices(norm: SurgicalOperationNorm, toothFdi
 	const title = norm.serviceTitle || norm.service804nTitle || norm.title;
 	return code ? [{ code, nameRu: title, name: title, priceRub: 3500, quantity: 1, suggestedPriceRub: 3500, toothNumber: effectiveTooth, stageKind: "stage_2_surgery", isPrimary: true }] : [];
 }
+/** @deprecated Use getSurgicalCatalogServices instead (Mandate 8x) */
 export const getSurgicalServices804n = getSurgicalCatalogServices;
 
 export function dispatchSurgicalServicesToInvoice(params: {

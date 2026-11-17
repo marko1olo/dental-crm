@@ -403,7 +403,7 @@ export const SURGERY_ANESTHETICS = [
 	{ id: "lidocaine", name: "Лидокаин 2% (2.0 мл)", defaultDose: "2.0 мл" },
 ] as const;
 
-export const SURGICAL_SERVICES_804N = [
+export const SURGICAL_SERVICES_CATALOG = [
 	{ code: "A16.07.001", name: "Удаление зуба простое", priceKopecks: 350000 },
 	{ code: "A16.07.001.001", name: "Удаление зуба сложное с разъединением корней", priceKopecks: 650000 },
 	{ code: "A16.07.001.002", name: "Удаление зуба ретинированного / дистопированного", priceKopecks: 950000 },
@@ -412,6 +412,9 @@ export const SURGICAL_SERVICES_804N = [
 	{ code: "A16.07.041", name: "Костная пластика челюсти (НКР)", priceKopecks: 3000000 },
 	{ code: "A16.07.019", name: "Ушивание раны в полости рта", priceKopecks: 120000 },
 ] as const;
+
+/** @deprecated Use SURGICAL_SERVICES_CATALOG instead (Mandate 8x) */
+export const SURGICAL_SERVICES_804N = SURGICAL_SERVICES_CATALOG;
 
 export const SURGERY_CONSUMABLES = [
 	{ id: "suture_vicryl_40", name: "Шовный материал Vicryl 4-0 (колющая игла)", category: "suture" },

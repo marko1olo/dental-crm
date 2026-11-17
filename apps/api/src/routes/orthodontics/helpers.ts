@@ -51,6 +51,17 @@ export function parseOrthoData(raw: unknown): OrthodonticProgressRecord | null {
 	}
 
 	return {
+		applianceId: parsed.applianceId ? String(parsed.applianceId) : undefined,
+		applianceName: parsed.applianceName ? String(parsed.applianceName) : undefined,
+		applianceCategory: (parsed.applianceCategory === "brackets" || parsed.applianceCategory === "aligners" || parsed.applianceCategory === "plate")
+			? parsed.applianceCategory
+			: undefined,
+		selectedElasticId: parsed.selectedElasticId !== undefined && parsed.selectedElasticId !== null
+			? String(parsed.selectedElasticId)
+			: (parsed.selectedElasticId === null ? null : undefined),
+		selectedActionIds: Array.isArray(parsed.selectedActionIds)
+			? parsed.selectedActionIds.map(String)
+			: undefined,
 		currentAligner: hasAlignerSignals
 			? (Number.isFinite(currentAlignerNum) && currentAlignerNum > 0 ? currentAlignerNum : 1)
 			: undefined,

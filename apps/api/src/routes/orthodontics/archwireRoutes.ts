@@ -49,6 +49,11 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 
 			const updatedProgress: OrthodonticProgressRecord = {
 				...currentProgress,
+				applianceId: body.applianceId || currentProgress.applianceId,
+				applianceName: body.applianceName || currentProgress.applianceName,
+				applianceCategory: body.applianceCategory || currentProgress.applianceCategory || "brackets",
+				selectedElasticId: body.selectedElasticId !== undefined ? body.selectedElasticId : currentProgress.selectedElasticId,
+				selectedActionIds: body.selectedActionIds || currentProgress.selectedActionIds,
 				upperArchwire,
 				lowerArchwire,
 				archwire: combinedArchwire,

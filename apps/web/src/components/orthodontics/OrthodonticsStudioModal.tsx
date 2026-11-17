@@ -89,10 +89,20 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						currentStage?: number;
 						archwire?: string;
 						lastActionSummary?: string;
+						applianceId?: string;
+						applianceName?: string;
+						applianceCategory?: "brackets" | "aligners" | "plate";
+						selectedElasticId?: string | null;
+						selectedActionIds?: string[];
 					};
 					if (!isCancelled && data) {
 						setProtocol((prev) => ({
 							...prev,
+							...(data.applianceId ? { applianceId: data.applianceId } : {}),
+							...(data.applianceName ? { applianceName: data.applianceName } : {}),
+							...(data.applianceCategory ? { applianceCategory: data.applianceCategory } : {}),
+							...(data.selectedElasticId !== undefined ? { selectedElasticId: data.selectedElasticId } : {}),
+							...(Array.isArray(data.selectedActionIds) ? { selectedActionIds: data.selectedActionIds } : {}),
 							...(data.currentAligner
 								? {
 										alignerTracking: {
@@ -348,6 +358,10 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							note: `Выдача комплекта элайнеров (актуальный шаг ${protocol.alignerTracking.currentStep} из ${protocol.alignerTracking.totalSteps})`,
 							visitId,
 							soapSummary,
+							applianceId: protocol.applianceId,
+							applianceName: protocol.applianceName,
+							selectedElasticId: protocol.selectedElasticId,
+							selectedActionIds: protocol.selectedActionIds,
 						}),
 					});
 				} else if (protocol.applianceCategory === "plate") {
@@ -360,6 +374,10 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							note: protocol.clinicalNotes || protocol.notes || "Контрольный осмотр и активация расширяющего винта пластинки",
 							visitId,
 							soapSummary,
+							applianceId: protocol.applianceId,
+							applianceName: protocol.applianceName,
+							selectedElasticId: protocol.selectedElasticId,
+							selectedActionIds: protocol.selectedActionIds,
 						}),
 					});
 				} else {
@@ -389,6 +407,10 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								note: "Плановая смена ортодонтических дуг ВЧ + НЧ",
 								visitId,
 								soapSummary,
+								applianceId: protocol.applianceId,
+								applianceName: protocol.applianceName,
+								selectedElasticId: protocol.selectedElasticId,
+								selectedActionIds: protocol.selectedActionIds,
 							}),
 						});
 					} else {
@@ -405,6 +427,10 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								note: `Смена дуги ВЧ: ${upperMat} ${protocol.upperSection}`,
 								visitId,
 								soapSummary,
+								applianceId: protocol.applianceId,
+								applianceName: protocol.applianceName,
+								selectedElasticId: protocol.selectedElasticId,
+								selectedActionIds: protocol.selectedActionIds,
 							}),
 						});
 						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
@@ -419,6 +445,10 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								note: `Смена дуги НЧ: ${lowerMat} ${protocol.lowerSection}`,
 								visitId,
 								soapSummary,
+								applianceId: protocol.applianceId,
+								applianceName: protocol.applianceName,
+								selectedElasticId: protocol.selectedElasticId,
+								selectedActionIds: protocol.selectedActionIds,
 							}),
 						});
 					}

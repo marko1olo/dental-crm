@@ -148,7 +148,7 @@ export const TRG_ANGLES_NORMS_SSOT: TrgAngleNorm[] = [
 ];
 
 export interface OrthoPhotoSlotDef {
-	id: "frontal_rest" | "frontal_smile" | "profile" | "occlusion_right" | "occlusion_center" | "occlusion_left";
+	id: "frontal_rest" | "frontal_smile" | "profile" | "occlusion_right" | "occlusion_center" | "occlusion_left" | "occlusion_upper" | "occlusion_lower";
 	titleRu: string;
 	category: "portrait" | "intraoral";
 	descriptionRu: string;
@@ -161,6 +161,8 @@ export const ORTHO_PHOTO_SLOTS_SSOT: OrthoPhotoSlotDef[] = [
 	{ id: "occlusion_right", titleRu: "Окклюзия справа", category: "intraoral", descriptionRu: "Класс смыкания по молярам и клыкам (16-46, 13-43)" },
 	{ id: "occlusion_center", titleRu: "Окклюзия по центру", category: "intraoral", descriptionRu: "Совпадение центральных линий, перекрытие резцов" },
 	{ id: "occlusion_left", titleRu: "Окклюзия слева", category: "intraoral", descriptionRu: "Класс смыкания по молярам и клыкам (26-36, 23-33)" },
+	{ id: "occlusion_upper", titleRu: "Окклюзия верхней челюсти", category: "intraoral", descriptionRu: "Форма зубного ряда ВЧ, симметрия небного шва" },
+	{ id: "occlusion_lower", titleRu: "Окклюзия нижней челюсти", category: "intraoral", descriptionRu: "Форма зубного ряда НЧ, кривая Шпее, положение резцов" },
 ];
 
 export interface AlignerTrackingState {

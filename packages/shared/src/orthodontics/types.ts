@@ -62,6 +62,10 @@ export const archwireChangePayloadSchema = z.object({
 	note: z.string().max(300).optional(),
 	visitId: z.string().optional(),
 	soapSummary: z.string().optional(),
+	applianceId: z.string().optional(),
+	applianceName: z.string().optional(),
+	selectedElasticId: z.string().nullable().optional(),
+	selectedActionIds: z.array(z.string()).optional(),
 }).transform((data) => {
 	const effectiveSection = data.section || data.size || ".016";
 	const effectiveProfile = data.profile || (effectiveSection.includes("x") ? "rectangular" : "round");

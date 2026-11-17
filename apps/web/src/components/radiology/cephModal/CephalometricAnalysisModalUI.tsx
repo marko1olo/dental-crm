@@ -165,10 +165,10 @@ export function CephalometricAnalysisModal(props: CephalometricAnalysisModalProp
 							data-testid="btn-insert-ceph-protocol"
 							className="primary-button shrink-0 flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg bg-[var(--primary,#0d9488)] text-white hover:bg-[var(--primary-strong,#0f766e)] shadow-sm transition-all cursor-pointer"
 							title="Зафиксировать исследование и перенести в медицинскую карту"
-							aria-label="В медицинскую карту"
+							aria-label="Сохранить в ЭМК"
 						>
 							<FileText size={14} />
-							<span className="whitespace-nowrap">В медицинскую карту</span>
+							<span className="whitespace-nowrap">Сохранить в ЭМК</span>
 						</button>
 
 						<button

@@ -42,8 +42,15 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 		const currentProgress = parseOrthoData(adminProfile.orthodonticProgress) ?? createInitialOrthoRecord();
 		const actionSummary = `Переход на этап ${body.nextStage}${body.stageTitle ? `: ${body.stageTitle}` : ""}`;
 		const updatedProgress: OrthodonticProgressRecord = {
-			...currentProgress, currentStage: body.nextStage, stageTitle: body.stageTitle || currentProgress.stageTitle,
-			lastActionDate: new Date().toISOString(), lastActionSummary: actionSummary,
+			...currentProgress,
+			currentStage: body.nextStage,
+			stageTitle: body.stageTitle || currentProgress.stageTitle,
+			applianceId: body.applianceId || currentProgress.applianceId,
+			applianceName: body.applianceName || currentProgress.applianceName,
+			selectedElasticId: body.selectedElasticId !== undefined ? body.selectedElasticId : currentProgress.selectedElasticId,
+			selectedActionIds: body.selectedActionIds || currentProgress.selectedActionIds,
+			lastActionDate: new Date().toISOString(),
+			lastActionSummary: actionSummary,
 		};
 
 		// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки

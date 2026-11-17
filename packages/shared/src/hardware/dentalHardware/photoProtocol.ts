@@ -256,11 +256,13 @@ export const SLOT_CANONICAL_ALIASES: Readonly<Record<string, string>> = {
 	// Extraoral / Портрет
 	extraoral_portrait_rest: "portrait_rest",
 	portrait_rest: "portrait_rest",
+	frontal_rest: "portrait_rest",
 	face_rest: "portrait_rest",
 	rest: "portrait_rest",
 
 	extraoral_portrait_smile: "portrait_smile",
 	portrait_smile: "portrait_smile",
+	frontal_smile: "portrait_smile",
 	face_smile: "portrait_smile",
 	smile: "portrait_smile",
 
@@ -273,6 +275,7 @@ export const SLOT_CANONICAL_ALIASES: Readonly<Record<string, string>> = {
 	profile_90_smile: "profile_90_smile",
 	profile_90: "profile_90_rest",
 	profile_right: "profile_90_rest",
+	profile: "profile_90_rest",
 
 	extraoral_profile_45: "portrait_45_smile",
 	portrait_45_smile: "portrait_45_smile",
@@ -285,6 +288,7 @@ export const SLOT_CANONICAL_ALIASES: Readonly<Record<string, string>> = {
 	intraoral_frontal_occlusion: "intraoral_frontal_occlusion",
 	anterior_occlusion: "intraoral_frontal_occlusion",
 	frontal_occlusion: "intraoral_frontal_occlusion",
+	occlusion_center: "intraoral_frontal_occlusion",
 	front_occlusion: "intraoral_frontal_occlusion",
 	front_bite: "intraoral_frontal_occlusion",
 
@@ -302,6 +306,7 @@ export const SLOT_CANONICAL_ALIASES: Readonly<Record<string, string>> = {
 	intraoral_right_lateral: "intraoral_right_buccal",
 	buccal_right: "intraoral_right_buccal",
 	right_buccal: "intraoral_right_buccal",
+	occlusion_right: "intraoral_right_buccal",
 	lateral_right: "intraoral_right_buccal",
 	right_bite: "intraoral_right_buccal",
 
@@ -310,6 +315,7 @@ export const SLOT_CANONICAL_ALIASES: Readonly<Record<string, string>> = {
 	intraoral_left_lateral: "intraoral_left_buccal",
 	buccal_left: "intraoral_left_buccal",
 	left_buccal: "intraoral_left_buccal",
+	occlusion_left: "intraoral_left_buccal",
 	lateral_left: "intraoral_left_buccal",
 	left_bite: "intraoral_left_buccal",
 
@@ -322,6 +328,7 @@ export const SLOT_CANONICAL_ALIASES: Readonly<Record<string, string>> = {
 	maxillary_occlusal: "intraoral_maxillary_occlusal",
 	upper_arch: "intraoral_maxillary_occlusal",
 	occlusal_upper: "intraoral_maxillary_occlusal",
+	occlusion_upper: "intraoral_maxillary_occlusal",
 	upper_occlusal: "intraoral_maxillary_occlusal",
 
 	intraoral_occlusal_mandibular: "intraoral_mandibular_occlusal",
@@ -332,6 +339,7 @@ export const SLOT_CANONICAL_ALIASES: Readonly<Record<string, string>> = {
 	mandibular_occlusal: "intraoral_mandibular_occlusal",
 	lower_arch: "intraoral_mandibular_occlusal",
 	occlusal_lower: "intraoral_mandibular_occlusal",
+	occlusion_lower: "intraoral_mandibular_occlusal",
 	lower_occlusal: "intraoral_mandibular_occlusal",
 
 	// Intraoral Overjet

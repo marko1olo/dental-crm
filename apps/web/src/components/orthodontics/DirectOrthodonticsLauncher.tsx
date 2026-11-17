@@ -8,6 +8,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { OrthodonticsStudioModal } from "./OrthodonticsStudioModal";
 import { usePatientStore } from "../../store/patientStore";
 import { useAppStore } from "../../store/appStore";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import StandaloneDeepLinkMissingState from "../appLayout/modalsContainerModules/standalone/StandaloneDeepLinkMissingState";
 
 let isGlobalOrthoModalMounted = false;
 
@@ -86,8 +88,20 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 
 	if (!isActive || !isOpen) return null;
 
+	const isDemo = isDemoShowcaseMode();
 	const queryPatientId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("patientId") : null;
-	const activePatientId = queryPatientId || storePatientId || dashboard?.activeVisit?.patientId || "pat-ortho-studio";
+	const activePatientId = queryPatientId || storePatientId || dashboard?.activeVisit?.patientId || (isDemo ? "pat-1" : null);
+
+	if (!activePatientId) {
+		return (
+			<StandaloneDeepLinkMissingState
+				title="Пациент не выбран"
+				message="Для открытия ортодонтической студии необходимо выбрать пациента в расписании или перейти по ссылке с указанием patientId."
+				testId="ortho-missing-patient-guard"
+				onClose={handleClose}
+			/>
+		);
+	}
 
 	return (
 		<OrthodonticsStudioModal

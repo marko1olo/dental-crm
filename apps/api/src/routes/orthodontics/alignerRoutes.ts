@@ -73,6 +73,11 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 
 			const updatedProgress: OrthodonticProgressRecord = {
 				...currentProgress,
+				applianceId: body.applianceId || currentProgress.applianceId || "clear_aligners",
+				applianceName: body.applianceName || currentProgress.applianceName || "Элайнеры (ортодонтические каппы)",
+				applianceCategory: "aligners",
+				selectedElasticId: body.selectedElasticId !== undefined ? body.selectedElasticId : currentProgress.selectedElasticId,
+				selectedActionIds: body.selectedActionIds || currentProgress.selectedActionIds,
 				currentAligner: toAligner,
 				totalAligners: effectiveTotal,
 				wearDaysPerAligner: body.wearDaysPerAligner,

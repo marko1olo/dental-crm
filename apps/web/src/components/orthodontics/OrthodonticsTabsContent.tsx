@@ -7,6 +7,7 @@
 
 import React from "react";
 import { Check, Layers, ArrowRight, Copy, BookOpen, Camera, Activity } from "lucide-react";
+import { isSlotMatching } from "@dental/shared";
 import {
 	ARCHWIRE_ALLOYS_SSOT, ARCHWIRE_SECTIONS_SSOT, ELASTICS_CATALOG,
 	CHAIRSIDE_ACTIONS_CATALOG, ANGLE_CLASSES_CATALOG, ORTHO_PHOTO_SLOTS_SSOT,
@@ -212,7 +213,11 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 						</div>
 						<div className="ortho-photo-grid pt-2">
 							{ORTHO_PHOTO_SLOTS_SSOT.map((slot) => {
-								const isVerified = Boolean(protocol.photoStatuses[slot.id]);
+								const isVerified =
+									Boolean(protocol.photoStatuses[slot.id]) ||
+									Object.entries(protocol.photoStatuses).some(
+										([key, val]) => Boolean(val) && isSlotMatching(key, slot.id),
+									);
 								return (
 									<div key={slot.id} onClick={() => handleTogglePhotoSlot(slot.id)} className={`ortho-photo-card cursor-pointer ${isVerified ? "verified" : ""}`}>
 										<div className="flex items-center justify-between">

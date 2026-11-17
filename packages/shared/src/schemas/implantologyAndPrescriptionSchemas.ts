@@ -1,9 +1,26 @@
 import { z } from "zod";
 import { boneDensityClassSchema, implantSystemBrandSchema, type StabilityEvaluationStatus, type SurgicalImplantProtocol, torqueCurveSampleSchema } from "./anesthesiaAndRestorationSchemas.js";
 
+export const isPermanentFdiTooth = (tooth: number): boolean => {
+	return (
+		(tooth >= 11 && tooth <= 18) ||
+		(tooth >= 21 && tooth <= 28) ||
+		(tooth >= 31 && tooth <= 38) ||
+		(tooth >= 41 && tooth <= 48)
+	);
+};
+
+export const permanentToothNumberFdiSchema = z
+	.number()
+	.int()
+	.refine(
+		isPermanentFdiTooth,
+		"Номер зуба для имплантации должен соответствовать постоянному прикусу FDI (11–18, 21–28, 31–38, 41–48). Установка дентальных имплантатов в область молочных зубов (51–85) запрещена.",
+	);
+
 export const createImplantInstallationSchema = z.object({
 	patientId: z.string().uuid(),
-	toothNumberFdi: z.number().int().min(11).max(85),
+	toothNumberFdi: permanentToothNumberFdiSchema,
 	catalogItemId: z.string().uuid().optional().nullable(),
 	inventoryItemId: z.string().uuid().optional().nullable(),
 	visitId: z.string().uuid().optional().nullable(),

@@ -12,6 +12,10 @@ export const issueAlignerSetSchema = z.object({
 	note: z.string().max(300).optional(),
 	visitId: z.string().optional(),
 	soapSummary: z.string().optional(),
+	applianceId: z.string().optional(),
+	applianceName: z.string().optional(),
+	selectedElasticId: z.string().nullable().optional(),
+	selectedActionIds: z.array(z.string()).optional(),
 });
 
 export const archwireChangeSchema = ArchwireChangePayloadSchema;
@@ -28,6 +32,12 @@ export const stageAdvanceSchema = z.object({
 	nextStage: z.number().int().min(1).max(10),
 	stageTitle: z.string().max(120).optional(),
 	note: z.string().max(300).optional(),
+	visitId: z.string().optional(),
+	soapSummary: z.string().optional(),
+	applianceId: z.string().optional(),
+	applianceName: z.string().optional(),
+	selectedElasticId: z.string().nullable().optional(),
+	selectedActionIds: z.array(z.string()).optional(),
 });
 
 export const rebracketSchema = z.object({
@@ -82,6 +92,11 @@ export interface OrthoMaterialDeductionResult {
 }
 
 export interface OrthodonticProgressRecord extends Record<string, unknown> {
+	applianceId?: string | undefined;
+	applianceName?: string | undefined;
+	applianceCategory?: "brackets" | "aligners" | "plate" | undefined;
+	selectedElasticId?: string | null | undefined;
+	selectedActionIds?: string[] | undefined;
 	currentAligner?: number | undefined;
 	totalAligners?: number | undefined;
 	startDate: string;
