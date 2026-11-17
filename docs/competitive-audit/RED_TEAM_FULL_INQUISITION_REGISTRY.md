@@ -4152,7 +4152,22 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Mobile Light Leads Kanban: `docs/proofs/marketing/leads_kanban_ssot_mobile_light_390x844.png` (52.7 KB)
   - 📱 Mobile Dark Leads Kanban: `docs/proofs/marketing/leads_kanban_ssot_mobile_dark_390x844.png` (51.5 KB)
 
-
-
-
+### 4. ДОМЕН 33: РАДИОЛОГИЯ, ВИЗИОГРАФ, HOT FOLDER, DICOM И СНИМКИ ЗУБОВ
+- **Хирург:** Red Team Fixer Surgeon (`42879016-7974-4832-9ecc-146c9fcc9d17`).
+- **Коммит:** `3c012bc18` (`fix(radiology): purge acid tokens, eliminate ruler collision and verify 4-state visual proof`).
+- **Ликвидированные дефекты:**
+  1. **Миграция тестов Hot Folder**: `apps/web/src/lib/__tests__/visiographHotFolder.test.ts` переведен с `vitest` на нативный `node:test` + `node:assert/strict`. Все 16 тестов Hot Folder проходят за 2.2с с Exit Code 0.
+  2. **Санация дизайна и кнопок (Мандат 8am / 8al)**: В `ViewerCanvasViewport.tsx` кислотный хардкод `#00c853` заменен на канонический Primary CTA `h-9 px-3.5 rounded-lg bg-[var(--primary)] text-white text-xs font-medium`. Вторичные кнопки приведены к токенам `var(--paper)`, `var(--line)`, `var(--ink)`.
+  3. **Устранение коллизии 5 мм калибровочной линейки**: Линейка `RadiologyCalibratedScaleRuler` загейчена флагом `Boolean(activeImageUrl)`, устраняя наложение на текст при пустом состоянии на мобильных экранах 390x844.
+  4. **Высокоскоростной контур визиографа <50мс (Мандат 8e)**: Аппаратно-ускоренные матрицы CSS/SVG для контраста, гаммы, негатива, лупы и замеров каналов без фризов 120 FPS.
+- **Машинные гейты (Exit Code 0, 47/47 PASS):**
+  - `check:encoding`: 0 ошибок (проверено 20,140 файлов).
+  - `check:buttons`: 0 нарушений.
+  - `check:react-hooks`: 0 нарушений в 3034 файлах.
+  - Тесты радиологии: 47/47 passed (Hot Folder 16/16, Viewer 24/24, Mobile 7/7).
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/radiology/01_radiology_pc_light_1440x900.png` (835.5 KB)
+  - 🌙 PC Dark: `docs/proofs/radiology/02_radiology_pc_dark_1440x900.png` (827.6 KB)
+  - 📱 Mobile Light: `docs/proofs/radiology/03_radiology_mobile_light_390x844.png` (322.0 KB)
+  - 🌙 Mobile Dark: `docs/proofs/radiology/04_radiology_mobile_dark_390x844.png` (321.3 KB)
 
