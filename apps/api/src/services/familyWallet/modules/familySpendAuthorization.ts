@@ -131,9 +131,17 @@ export async function verifyFamilySpendAuthorization(params: {
 	}
 
 	// 3. Validate spend with shared logic
+	// Для подтвержденного члена семьи (isConfirmedFamilyMember === true) выставляем canSpendFamilyWallet: true по умолчанию (Мандат 8n),
+	// если нет явного запрета canSpendFamilyWallet === false.
+	const effectiveCanSpend = rel
+		? (rel.canSpendFamilyWallet !== null && rel.canSpendFamilyWallet !== undefined
+				? rel.canSpendFamilyWallet
+				: isConfirmedFamilyMember)
+		: isConfirmedFamilyMember;
+
 	const effectiveRel = rel
 		? {
-				canSpendFamilyWallet: rel.canSpendFamilyWallet,
+				canSpendFamilyWallet: effectiveCanSpend,
 				isLegalRepresentative: rel.isLegalRepresentative === true,
 				relationshipType: (rel.patientId === patientId
 					? rel.relationshipType
@@ -141,7 +149,7 @@ export async function verifyFamilySpendAuthorization(params: {
 				spendLimitKopecks: spendLimitKop,
 			}
 		: {
-				canSpendFamilyWallet: false,
+				canSpendFamilyWallet: effectiveCanSpend,
 				isLegalRepresentative: false,
 				relationshipType: "relative" as PatientRelationshipKind,
 				spendLimitKopecks: undefined,

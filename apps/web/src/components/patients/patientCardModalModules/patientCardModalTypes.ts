@@ -97,6 +97,7 @@ export interface PatientCardModalProps {
 	readonly className?: string | undefined;
 	readonly doctorId?: string | undefined;
 	readonly doctorName?: string | undefined;
+	readonly onOpenWarrantyPassport?: (() => void) | undefined;
 
 	// Поддержка режима создания (PatientCreationModal compatibility)
 	readonly createPatient?: ((options?: { allowDuplicate?: boolean }) => void | Promise<void | Patient | null>) | undefined;

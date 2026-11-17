@@ -70,7 +70,14 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 							phone: patient.phone,
 							birthDate: patient.birthDate,
 							snils: patient.snils,
-						} : undefined}
+						} : (isDemoShowcaseMode() ? {
+							id: "01a00000-0000-0000-0000-000000000001",
+							fullName: "Ковалев Дмитрий Сергеевич",
+							cardNumber: "МК-8492",
+							phone: "+7 (912) 345-67-89",
+							birthDate: "1985-06-12",
+							snils: undefined,
+						} : undefined)}
 						doctorId={activeDoctorId}
 						doctorName={doctorName}
 						clinicName={activeWorkspaceProfile?.title || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"}

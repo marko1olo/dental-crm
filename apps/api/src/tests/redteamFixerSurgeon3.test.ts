@@ -9,7 +9,7 @@ import {
 } from "../services/labScanDirectUpload.js";
 import {
 	validateAndResolveStoragePath,
-} from "../routes/lab/scansMockStorageHandlers.js";
+} from "../routes/lab/scansLocalStorageHandlers.js";
 import {
 	checkStaffPinRateLimit,
 	cleanupExpiredPinRateLimits,
@@ -27,6 +27,9 @@ import {
 	appendFallbackMessage,
 } from "../routes/agentSessionRoutes.js";
 import { LanKktDriverService } from "../services/hardware/lanKktDriverService.js";
+import { verifyFamilySpendAuthorization } from "../services/familyWallet/modules/familySpendAuthorization.js";
+import { FamilyWalletError } from "../services/familyWallet/familyWalletTypes.js";
+import { patientReclamationCreateBodySchema } from "../routes/patients/types.js";
 
 describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination", () => {
 	// ─── 1. AI Stream Parser [DONE] Immediate Termination ──────────────────────
@@ -226,6 +229,161 @@ describe("Red Team Fixer Surgeon 3 — Complete Architectural Defect Elimination
 			assert.strictEqual(status.fnSerial, "");
 			assert.strictEqual(status.kktSerialNumber, "");
 			assert.ok(status.error?.includes("KKT unreachable"));
+		});
+	});
+
+	// ─── 6. Family Spend Authorization & Mandate 8n ────────────────────────────
+	describe("6. Family Spend Authorization (familySpendAuthorization.ts)", () => {
+		const mockFamily = {
+			id: "family-group-1",
+			headPatientId: "pat-head-uuid",
+			primaryPatientId: "pat-head-uuid",
+			balance: "500000", // 5 000 руб
+			organizationId: "org-1",
+			name: "Семья Смирновых",
+			currency: "RUB",
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		test("подтверждённый член семьи имеет право на списание по умолчанию (Мандат 8n) без явной записи в patient_relationships", async () => {
+			const mockTx = {
+				select: (fields?: unknown) => ({
+					from: (_table: unknown) => ({
+						where: (_clause: unknown) => ({
+							limit: async (_n: number) => {
+								if (fields && typeof fields === "object" && "familyGroupId" in fields) {
+									return [{ id: "pat-child-uuid", familyGroupId: "family-group-1" }];
+								}
+								return [];
+							},
+						}),
+					}),
+				}),
+			} as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["tx"];
+
+			await verifyFamilySpendAuthorization({
+				tx: mockTx,
+				organizationId: "org-1",
+				family: mockFamily as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["family"],
+				patientId: "pat-child-uuid",
+				debitKopecks: 120000,
+			});
+		});
+
+		test("блокирует списание при явном запрете canSpendFamilyWallet === false", async () => {
+			const mockTx = {
+				select: (fields?: unknown) => ({
+					from: (_table: unknown) => ({
+						where: (_clause: unknown) => ({
+							limit: async (_n: number) => {
+								if (fields && typeof fields === "object" && "familyGroupId" in fields) {
+									return [{ id: "pat-child-uuid", familyGroupId: "family-group-1" }];
+								}
+								return [
+									{
+										patientId: "pat-head-uuid",
+										relatedPatientId: "pat-child-uuid",
+										relationshipType: "child",
+										canSpendFamilyWallet: false,
+										isLegalRepresentative: true,
+										notes: null,
+									},
+								];
+							},
+						}),
+					}),
+				}),
+			} as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["tx"];
+
+			await assert.rejects(
+				async () => {
+					await verifyFamilySpendAuthorization({
+						tx: mockTx,
+						organizationId: "org-1",
+						family: mockFamily as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["family"],
+						patientId: "pat-child-uuid",
+						debitKopecks: 120000,
+					});
+				},
+				(err: unknown) => {
+					assert.ok(err instanceof FamilyWalletError);
+					assert.strictEqual(err.statusCode, 403);
+					assert.strictEqual(err.code, "UNAUTHORIZED_FAMILY_SPEND");
+					return true;
+				},
+			);
+		});
+
+		test("отклоняет списание для постороннего пациента, не состоящего в семье", async () => {
+			const mockTx = {
+				select: (fields?: unknown) => ({
+					from: (_table: unknown) => ({
+						where: (_clause: unknown) => ({
+							limit: async (_n: number) => {
+								if (fields && typeof fields === "object" && "familyGroupId" in fields) {
+									return [{ id: "pat-stranger-uuid", familyGroupId: null }];
+								}
+								return [];
+							},
+						}),
+					}),
+				}),
+			} as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["tx"];
+
+			await assert.rejects(
+				async () => {
+					await verifyFamilySpendAuthorization({
+						tx: mockTx,
+						organizationId: "org-1",
+						family: mockFamily as unknown as Parameters<typeof verifyFamilySpendAuthorization>[0]["family"],
+						patientId: "pat-stranger-uuid",
+						debitKopecks: 50000,
+					});
+				},
+				(err: unknown) => {
+					assert.ok(err instanceof FamilyWalletError);
+					assert.strictEqual(err.statusCode, 403);
+					assert.strictEqual(err.code, "NOT_AUTHORIZED_KINSHIP");
+					return true;
+				},
+			);
+		});
+	});
+
+	// ─── 7. Patient Reclamations & Tooth Defect Linkage ───────────────────────
+	describe("7. Patient Reclamations Schema & Tooth Defect Linkage", () => {
+		test("валидирует и принимает поля toothNumber, defectType, warrantyCertificateId", () => {
+			const validPayload = {
+				complicationDetails: "Скол композитной пломбы на зубе 16 через 3 месяца после лечения",
+				proposedAction: "Гарантийная переделка (0 ₽)",
+				toothNumber: 16,
+				defectType: "Скол пломбы / реставрации",
+				warrantyCertificateId: "00000000-0000-0000-0000-000000000099",
+			};
+
+			const parsed = patientReclamationCreateBodySchema.safeParse(validPayload);
+			assert.strictEqual(parsed.success, true);
+			if (parsed.success) {
+				assert.strictEqual(parsed.data.toothNumber, 16);
+				assert.strictEqual(parsed.data.defectType, "Скол пломбы / реставрации");
+				assert.strictEqual(parsed.data.warrantyCertificateId, "00000000-0000-0000-0000-000000000099");
+			}
+		});
+
+		test("разрешает создание рекламации без обязательного doctorId на уровне тела (бэкенд берёт reqId.userId)", () => {
+			const payloadWithoutDoctor = {
+				complicationDetails: "Боли при накусывании в области зуба 46",
+				toothNumber: 46,
+				defectType: "Осложнение эндодонтии (периодонтит)",
+			};
+
+			const parsed = patientReclamationCreateBodySchema.safeParse(payloadWithoutDoctor);
+			assert.strictEqual(parsed.success, true);
+			if (parsed.success) {
+				assert.strictEqual(parsed.data.doctorId, undefined);
+				assert.strictEqual(parsed.data.toothNumber, 46);
+			}
 		});
 	});
 });

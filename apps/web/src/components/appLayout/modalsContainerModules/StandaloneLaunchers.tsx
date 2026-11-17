@@ -50,6 +50,8 @@ export function renderStandaloneLaunchers(
 			window.location.search.includes("ortho") ||
 			window.location.hash.includes("ortho") ||
 			window.location.search.includes("dicom") ||
+			window.location.search.includes("warranty") ||
+			window.location.hash.includes("warranty") ||
 			window.location.hash.includes("capture") ||
 			window.location.hash.includes("rvg") ||
 			window.location.hash.includes("dicom"));

@@ -19,6 +19,7 @@ import { StandaloneEmrProtocolHost } from "./StandaloneEmrProtocolHost";
 import { StandaloneClinicalBundlesHost } from "./StandaloneClinicalBundlesHost";
 import { ToothContextDrawer } from "../../../../diagnostics/ToothContextDrawer";
 import { PediatricMixedDentitionModal } from "../../../../odontogram/PediatricMixedDentitionModal";
+import { DirectWarrantyLauncher } from "../../../../warranty/DirectWarrantyLauncher";
 import { useVisitStore } from "../../../../../store/visitStore";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
@@ -103,6 +104,10 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 				onClose={() => clearUrlTokens(["pediatric", "children", "pedodontics"], ["pediatric", "children"])}
 			/>
 		);
+	}
+
+	if (hasUrlToken(["warranty-passport", "warranty_passport", "warranty-studio", "warranty"])) {
+		return <DirectWarrantyLauncher />;
 	}
 
 	return null;

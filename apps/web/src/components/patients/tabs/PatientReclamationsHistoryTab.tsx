@@ -12,12 +12,26 @@ export interface PatientReclamationRecord {
 	readonly id: string;
 	readonly patientId: string;
 	readonly doctorId: string | null;
+	readonly toothNumber?: number | null | undefined;
+	readonly warrantyCertificateId?: string | null | undefined;
+	readonly defectType?: string | null | undefined;
 	readonly complicationDetails: string;
 	readonly proposedAction: string | null;
 	readonly status: "under_review" | "resolved" | string;
 	readonly resolvedAt: string | null;
 	readonly createdAt: string;
 }
+
+export const RECLAMATION_DEFECT_TYPES = [
+	"Скол пломбы / реставрации",
+	"Выпадение пломбы",
+	"Расцементировка коронки / моста",
+	"Скол керамической облицовки",
+	"Перелом протеза / конструкции",
+	"Осложнение эндодонтии (периодонтит)",
+	"Претензия по эстетике / цвету",
+	"Другое клиническое осложнение",
+] as const;
 
 export interface PatientReclamationsHistoryTabProps {
 	readonly patientId?: string | null | undefined;
@@ -42,6 +56,8 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 		const [isCreateFormOpen, setIsCreateFormOpen] = useState<boolean>(false);
 		const [complicationDetails, setComplicationDetails] = useState<string>("");
 		const [proposedAction, setProposedAction] = useState<string>("Гарантийная переделка (0 ₽)");
+		const [toothNumber, setToothNumber] = useState<string>("");
+		const [defectType, setDefectType] = useState<string>("Скол пломбы / реставрации");
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
 		const fetchReclamations = useCallback(async () => {
@@ -86,20 +102,37 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 				return;
 			}
 
-			// Проверяем валидность doctorId для бэкенда PostgreSQL 18
+			// Проверяем валидность doctorId: из пропсов, сессии клиники или оставляем undefined (Fastify использует reqId.userId)
+			const sessionDoctorId = typeof window !== "undefined" ? sessionStorage.getItem("dente_staff_id") : null;
 			const effectiveDoctorId = (doctorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doctorId))
 				? doctorId
-				: "00000000-0000-0000-0000-000000000001"; // Fallback канонического врача клиники
+				: (sessionDoctorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionDoctorId))
+					? sessionDoctorId
+					: undefined;
+
+			const parsedTooth = toothNumber.trim() ? Number.parseInt(toothNumber.replace(/\D/g, ""), 10) : null;
+			const validTooth = parsedTooth && Number.isFinite(parsedTooth) && parsedTooth >= 11 && parsedTooth <= 85
+				? parsedTooth
+				: null;
+
+			const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: `rec-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 			setIsSubmitting(true);
 			try {
 				const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/reclamations`, {
 					method: "POST",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+					}),
 					body: JSON.stringify({
 						complicationDetails: trimmedDetails,
 						proposedAction: proposedAction.trim() || null,
-						doctorId: effectiveDoctorId,
+						toothNumber: validTooth,
+						defectType: defectType.trim() || null,
+						...(effectiveDoctorId ? { doctorId: effectiveDoctorId } : {}),
 					}),
 				});
 
@@ -111,6 +144,8 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 				const created = (await res.json()) as PatientReclamationRecord;
 				setReclamations((prev) => [created, ...prev]);
 				setComplicationDetails("");
+				setToothNumber("");
+				setDefectType("Скол пломбы / реставрации");
 				setProposedAction("Гарантийная переделка (0 ₽)");
 				setIsCreateFormOpen(false);
 				showToast("Рекламация успешно зафиксирована в медицинской карте", "success", 4000);
@@ -126,7 +161,11 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 			if (onOpenWarrantyPassport) {
 				onOpenWarrantyPassport();
 			} else if (typeof window !== "undefined") {
-				window.location.hash = "#warranty-passport";
+				window.dispatchEvent(
+					new CustomEvent("dente:open-warranty-passport", {
+						detail: { patientId, patientName },
+					}),
+				);
 			}
 		};
 
@@ -261,6 +300,41 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 							/>
 						</div>
 
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+							<div className="sm:col-span-2 flex flex-col gap-1.5">
+								<label htmlFor="reclamation-defect-type-field" className="text-xs font-semibold text-[var(--ink)]">
+									Тип клинического дефекта:
+								</label>
+								<select
+									id="reclamation-defect-type-field"
+									value={defectType}
+									onChange={(e) => setDefectType(e.target.value)}
+									className="w-full h-9 px-2.5 text-xs sm:text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-colors min-h-[36px]"
+								>
+									{RECLAMATION_DEFECT_TYPES.map((type) => (
+										<option key={type} value={type}>
+											{type}
+										</option>
+									))}
+								</select>
+							</div>
+
+							<div className="flex flex-col gap-1.5">
+								<label htmlFor="reclamation-tooth-field" className="text-xs font-semibold text-[var(--ink)]">
+									Зуб (FDI 11–48):
+								</label>
+								<input
+									id="reclamation-tooth-field"
+									type="text"
+									value={toothNumber}
+									onChange={(e) => setToothNumber(e.target.value)}
+									placeholder="Напр. 16 или 24"
+									maxLength={2}
+									className="w-full h-9 px-2.5 text-xs sm:text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-colors min-h-[36px] font-mono"
+								/>
+							</div>
+						</div>
+
 						<div className="flex flex-col gap-1.5">
 							<label htmlFor="reclamation-action-field" className="text-xs font-semibold text-[var(--ink)]">
 								Предложенное клиническое действие или гарантийное решение:
@@ -388,6 +462,16 @@ export const PatientReclamationsHistoryTab: React.FC<PatientReclamationsHistoryT
 													<span className="text-xs font-bold text-[var(--ink)]">
 														{formattedDate}
 													</span>
+													{rec.toothNumber && (
+														<span className="text-[11px] font-bold px-2 py-0.2 rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 font-mono">
+															Зуб {rec.toothNumber}
+														</span>
+													)}
+													{rec.defectType && (
+														<span className="text-[10.5px] font-medium px-2 py-0.2 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)]">
+															{rec.defectType}
+														</span>
+													)}
 													<span
 														className={`text-[10.5px] font-bold px-2 py-0.2 rounded-full border ${
 															isResolved
