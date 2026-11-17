@@ -5,6 +5,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import type {
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
@@ -101,6 +102,29 @@ export function useStudioPlanLifecycle({
 	const [draftSavedNotice, setDraftSavedNotice] = useState<string | null>(null);
 	const [exportSuccessNotice, setExportSuccessNotice] = useState<string | null>(null);
 
+	// Мандат 8bn / 8zq: Zero-Leak Draft Reset при размонтировании/закрытии модалки
+	const resetDraft = useCallback(() => {
+		setStages([]);
+		setCurrentPlanId(null);
+		setDoctorDiscountPercent(0);
+		setIsDiscountBarOpen(false);
+		setApprovedSuccessMessage(null);
+		setApprovalErrorMessage(null);
+		setDraftSavedNotice(null);
+		setExportSuccessNotice(null);
+	}, []);
+
+	useEffect(() => {
+		if (!isOpen) {
+			resetDraft();
+		}
+	}, [isOpen, resetDraft]);
+
+	const handleCloseWithReset = useCallback(() => {
+		resetDraft();
+		onClose();
+	}, [resetDraft, onClose]);
+
 	// 0. Реактивная гидратация планов лечения пациента без F5 (Мандаты 8d, 8zq)
 	useEffect(() => {
 		if (!isOpen || !patientId) return;
@@ -194,7 +218,7 @@ export function useStudioPlanLifecycle({
 								subtitle: `Процедур в этапе: ${groupItems.length}`,
 								clinicalGoal: "Комплексная санация полости рта",
 								totalRub: sRub,
-								totalKopecks: sRub * 100,
+								totalKopecks: rublesToKopecks(sRub),
 								estimatedVisits: groupItems.length || 1,
 								estimatedWeeks: ph * 2,
 								status: activePlan.status === "Approved" ? "agreed" : "draft",
@@ -364,7 +388,7 @@ export function useStudioPlanLifecycle({
 				clinicalGoal: bundle.description,
 				items: newItems,
 				totalRub: newItems.reduce((acc, it) => acc + it.priceRub, 0),
-				totalKopecks: newItems.reduce((acc, it) => acc + it.priceRub, 0) * 100,
+				totalKopecks: rublesToKopecks(newItems.reduce((acc, it) => acc + it.priceRub, 0)),
 				estimatedVisits: bundle.estimatedVisits ?? 1,
 				estimatedWeeks: 1,
 				status: "draft",
@@ -388,7 +412,7 @@ export function useStudioPlanLifecycle({
 					...stg,
 					items: updatedItems,
 					totalRub: stageTotalRub,
-					totalKopecks: stageTotalRub * 100,
+					totalKopecks: rublesToKopecks(stageTotalRub),
 				};
 			})
 		);
@@ -404,7 +428,7 @@ export function useStudioPlanLifecycle({
 					...stg,
 					items: updatedItems,
 					totalRub: stageTotalRub,
-					totalKopecks: stageTotalRub * 100,
+					totalKopecks: rublesToKopecks(stageTotalRub),
 				};
 			})
 		);
@@ -444,18 +468,18 @@ export function useStudioPlanLifecycle({
 							? Number(it.amountKopecks)
 							: typeof it.amountKopecks === "number" && it.amountKopecks > 0
 								? Math.round(it.amountKopecks)
-								: Math.round(unitPriceRub * 100);
+								: rublesToKopecks(unitPriceRub);
 					const quantity = it.quantity || 1;
 					const discountRub = it.discountRub || 0;
-					const discountKopecks = Math.round(discountRub * 100);
+					const discountKopecks = rublesToKopecks(discountRub);
 					const totalPriceKopecks = Math.max(0, unitPriceKopecks * quantity - discountKopecks);
 
 					allItems.push({
 						priceId: resolvedPriceId,
 						isCustom: !resolvedPriceId,
 						name: it.name || "Индивидуальная услуга",
-						price: unitPriceKopecks / 100,
-						discount: discountKopecks / 100,
+						price: kopecksToRubles(unitPriceKopecks),
+						discount: kopecksToRubles(discountKopecks),
 						unitPriceKopecks,
 						totalPriceKopecks,
 						quantity,
@@ -557,7 +581,7 @@ export function useStudioPlanLifecycle({
 				status: "Approved",
 				selectedTier: activeTier.tierId,
 				totalRub: activeTier.totalRub,
-				totalKopecks: activeTier.totalRub * 100,
+				totalKopecks: rublesToKopecks(activeTier.totalRub),
 				patientId,
 				patientName,
 				doctorFullName,
@@ -652,5 +676,7 @@ export function useStudioPlanLifecycle({
 		savePlanToApi,
 		handlePrint,
 		handleExportPdf,
+		resetDraft,
+		handleCloseWithReset,
 	};
 }

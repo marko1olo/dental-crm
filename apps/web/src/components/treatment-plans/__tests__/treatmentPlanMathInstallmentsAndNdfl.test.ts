@@ -11,7 +11,7 @@ import {
 	calculateChairsideTaxDeduction,
 	NDFL_STANDARD_ANNUAL_LIMIT_RUB,
 	NDFL_STANDARD_ANNUAL_LIMIT_KOPECKS,
-} from "../treatmentPlanMath";
+} from "../treatmentPlanPricingEngine";
 
 describe("treatmentPlanMath — Рассрочка 0% и вычет 13% НДФЛ", () => {
 	it("returns 0 for zero or negative kopecks", () => {

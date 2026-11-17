@@ -1,6 +1,6 @@
 import React from "react";
 import { Stamp } from "lucide-react";
-import type { CompletedWorksActAndWriteOffData } from "../types.js";
+import type { CompletedWorksActAndWriteOffData } from "../types/index.js";
 import type { DocumentBrandColorPalette } from "../../../store/documentBrandingStore.js";
 
 export interface ActSignatureGridProps {

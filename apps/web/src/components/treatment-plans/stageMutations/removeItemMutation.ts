@@ -1,4 +1,4 @@
-import type { TreatmentPlanStage } from "../types.js";
+import type { TreatmentPlanStage } from "../types/index.js";
 import { computeStageItemsTotalKopecks } from "./common.js";
 
 export function removeItemFromStages(

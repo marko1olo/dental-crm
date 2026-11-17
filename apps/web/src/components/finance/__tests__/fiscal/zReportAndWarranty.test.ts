@@ -9,7 +9,7 @@ import {
 	generateFiscalReceipt54Fz,
 } from "../../fiscalReceiptEngine.js";
 import { DEFAULT_TREATMENT_STAGES, generateFiscalReceiptPayload, validateCheckoutSplit } from "../../../cashbox/cashRegisterCatalogData.js";
-import type { TreatmentPlanItem } from "../../../treatment-plans/types.js";
+import type { TreatmentPlanItem } from "../../../treatment-plans/types/index.js";
 
 describe("Fiscal Receipt Engine — Stages & Warranty", () => {
 	it("calculates exact cash drawer amount from bill denominations and fractional coins", () => {

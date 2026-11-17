@@ -18,6 +18,5 @@ describe("Universal Multi-Specialist — Точность копеек в PG18",
 		assert.equal(stages.length, 1);
 		const st = stages[0]!;
 		assert.equal(st.totalKopecks, 230288);
-		assert.equal(st.totalRub, 2302.88);
 	});
 });

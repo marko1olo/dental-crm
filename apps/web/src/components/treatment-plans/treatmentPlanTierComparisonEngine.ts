@@ -6,7 +6,7 @@
  */
 
 import type { ToothData } from "../odontogram/ToothChart.js";
-import type { TreatmentPlanTier } from "./types.js";
+import type { TreatmentPlanTier } from "./types/index.js";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine.js";
 import { DEMO_SHOWCASE_TEETH, isDemoShowcaseMode } from "./treatmentPlanAutoGenerator.js";
 import { generateTierPlanStages } from "./treatmentPlanTierStagesGenerator.js";

@@ -6,7 +6,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Kopecks } from "@dental/shared";
-import { applyDoctorDiscountToStages } from "../treatmentPlanMath";
+import { applyDoctorDiscountToStages } from "../treatmentPlanPricingEngine";
 import type { TreatmentPlanStage } from "../types";
 
 describe("treatmentPlanMath — Скидки врача и гарантия (Мандат 8e)", () => {

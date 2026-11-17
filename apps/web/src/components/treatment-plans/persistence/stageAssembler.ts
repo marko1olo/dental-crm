@@ -1,4 +1,4 @@
-import type { TreatmentPlanItem, TreatmentPlanStage } from "../types.js";
+import type { TreatmentPlanItem, TreatmentPlanStage } from "../types/index.js";
 import { calculateStageTotals } from "../treatmentPlanPricingEngine.js";
 import { resolvePhaseMetadata } from "./phaseMetadataResolver.js";
 

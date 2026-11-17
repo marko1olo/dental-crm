@@ -11,7 +11,7 @@ import {
 	generateFiscalRefundReceipt54Fz,
 	generateTaxDeductionCertificate,
 } from "../../fiscalReceiptEngine.js";
-import type { TreatmentPlanItem } from "../../../treatment-plans/types.js";
+import type { TreatmentPlanItem } from "../../../treatment-plans/types/index.js";
 
 describe("Fiscal Receipt Engine — Tax Certificate & Refund", () => {
 	const sampleItems: TreatmentPlanItem[] = [

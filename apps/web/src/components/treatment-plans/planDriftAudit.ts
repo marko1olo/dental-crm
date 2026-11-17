@@ -3,6 +3,7 @@
  * Обеспечивает честное сопоставление сметных цен с прейскурантом клиники (Мандаты 8b, 8e, 8n).
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import type {
 	PlanPriceCatalogItem,
 	TreatmentPlanStatus,
@@ -144,9 +145,9 @@ export function auditTreatmentPlanDrift(
 
 		const drift = detectPriceDrift(item.unitPriceRub, matched, isImmutable);
 		const qty = Math.max(1, item.quantity || 1);
-		const snapshotLineKopecks = Math.round(item.unitPriceRub * 100) * qty;
+		const snapshotLineKopecks = rublesToKopecks(item.unitPriceRub) * qty;
 		const catalogUnitPrice = drift.currentCatalogPriceRub ?? item.unitPriceRub;
-		const catalogLineKopecks = Math.round(catalogUnitPrice * 100) * qty;
+		const catalogLineKopecks = rublesToKopecks(catalogUnitPrice) * qty;
 		const lineDriftKopecks = catalogLineKopecks - snapshotLineKopecks;
 
 		totalSnapshotKopecks += snapshotLineKopecks;

@@ -2,7 +2,7 @@
  * treatmentPlanPersistenceEngine.ts — движок гидратации и персистенции планов лечения DENTE CRM (Facade).
  */
 
-import type { TreatmentPlanStage } from "./types.js";
+import type { TreatmentPlanStage } from "./types/index.js";
 import type { CatalogServiceLookupItem } from "./treatmentPlanPricingEngine.js";
 import { hydrateRawPlanItem, type RawTreatmentPlanItemDto } from "./persistence/rawItemHydrator.js";
 import { assembleStageFromItems } from "./persistence/stageAssembler.js";

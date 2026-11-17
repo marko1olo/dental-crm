@@ -1,7 +1,7 @@
 import { formatFdiToothName } from "../../portal/patientPortalEngine.js";
 import type { RoadmapStageKind, RoadmapProcedureItem } from "./types.js";
 import { translate804nToPatientDescription } from "./roadmapPriceHelpers.js";
-import type { TreatmentPlanItem } from "../types.js";
+import type { TreatmentPlanItem } from "../types/index.js";
 
 export interface RoadmapAccumulatedBuckets {
 	stageBuckets: Record<RoadmapStageKind, RoadmapProcedureItem[]>;

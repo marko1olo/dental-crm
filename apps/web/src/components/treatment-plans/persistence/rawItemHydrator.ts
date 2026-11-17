@@ -1,5 +1,5 @@
-import type { Kopecks } from "@dental/shared";
-import type { TreatmentPlanItem } from "../types.js";
+import { type Kopecks, kopecksToRubles } from "@dental/shared";
+import type { TreatmentPlanItem } from "../types/index.js";
 import { type CatalogServiceLookupItem, planLineTotalKopecks } from "../treatmentPlanPricingEngine.js";
 import { classifyPlanItemCategoryAndStageKind } from "./stageKindClassifier.js";
 
@@ -60,7 +60,7 @@ export function hydrateRawPlanItem(
 			quantity,
 			discount: discountRub,
 		}) ?? (0 as Kopecks);
-	const netRub = netKopecks / 100;
+	const netRub = kopecksToRubles(netKopecks);
 
 	const isCompleted = Boolean(
 		raw.isCompleted || raw.status === "completed" || raw.planStatus === "completed",

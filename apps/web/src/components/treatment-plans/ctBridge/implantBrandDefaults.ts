@@ -10,6 +10,44 @@ export const BRAND_DEFAULTS: Record<ImplantBrandKey, { label: string; economy: n
 	mis: { label: "MIS V3 / Seven (Израиль)", economy: 20000, standard: 26000, premium: 32000 },
 };
 
+/**
+ * Динамическая загрузка цен имплантов из номенклатуры каталога клиники (Мандат 8n / 8z).
+ * При наличии реальных позиций в прейскуранте заменяет статические заглушки на фактические цены.
+ */
+export function resolveImplantBrandTierPrices(
+	brandKey: ImplantBrandKey,
+	catalog?: readonly CatalogServiceLookupItem[] | undefined,
+): { label: string; economy: number; standard: number; premium: number } {
+	const fallback = BRAND_DEFAULTS[brandKey] ?? {
+		label: "Дентальный имплантат",
+		economy: 25000,
+		standard: 35000,
+		premium: 50000,
+	};
+	if (!catalog || catalog.length === 0) return fallback;
+
+	const searchToken = brandKey.toLowerCase().replace(/_/g, " ");
+	const brandItems = catalog.filter(
+		(c) => c.active !== false && (c.title?.toLowerCase().includes(searchToken) || (c.order804nCode && c.order804nCode.includes("A16.07.054"))),
+	);
+
+	if (brandItems.length === 0) return fallback;
+
+	const validPrices = brandItems
+		.map((b) => b.basePriceRub)
+		.filter((p): p is number => typeof p === "number" && p > 0)
+		.sort((a, b) => a - b);
+
+	if (validPrices.length === 0) return fallback;
+
+	return {
+		label: fallback.label,
+		economy: validPrices[0] ?? fallback.economy,
+		standard: validPrices[Math.floor(validPrices.length / 2)] ?? fallback.standard,
+		premium: validPrices[validPrices.length - 1] ?? fallback.premium,
+	};
+}
+
 export function resolveCatalogPrice(
 	order804nCode: string,
 	fallbackPriceRub: number,

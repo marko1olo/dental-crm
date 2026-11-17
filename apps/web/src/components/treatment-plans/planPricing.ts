@@ -9,7 +9,15 @@ export * from "./pricing/planSuggestionsResolver";
 // Re-exports from decomposed modules to guarantee 100% backward compatibility
 export type { PlanPriceCatalogItem } from "./planDriftAudit";
 export * from "./planInsuranceCoverage";
-export * from "./planPaymentSchedules";
+export {
+	type InstallmentScheduleKopecks,
+	calculateInstallmentScheduleKopecks,
+	type StagedPaymentBreakdownKopecks,
+	calculateStagedPaymentScheduleKopecks,
+	type PrepaymentDiscountCalculation,
+	calculatePrepaymentDiscountKopecks,
+	formatPlanPriceRub,
+} from "./treatmentPlanPricingEngine";
 export * from "./planDriftAudit";
 export * from "./planDraftValidation";
 

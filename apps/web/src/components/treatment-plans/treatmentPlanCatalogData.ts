@@ -9,6 +9,7 @@
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./treatmentPlanTypes";
 import type { ToothData } from "./types";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { generatePatientCasePresentation } from "@dental/shared";
 
 export { generatePatientCasePresentation };
@@ -809,7 +810,7 @@ export interface ClinicTierServicePrice {
 	readonly premium: { readonly name: string; readonly priceRub: number };
 }
 
-export const CLINIC_SERVICE_TIER_CATALOG: readonly ClinicTierServicePrice[] = [
+export const CLINIC_SERVICE_TIER_CATALOG_DEMO: readonly ClinicTierServicePrice[] = [
 	{
 		code804n: "A16.07.002",
 		category: "Терапия",
@@ -909,6 +910,15 @@ export const CLINIC_SERVICE_TIER_CATALOG: readonly ClinicTierServicePrice[] = [
 ];
 
 /**
+ * CLINIC_SERVICE_TIER_CATALOG — В демонстрационном режиме используются эталонные тарифы.
+ * В боевом режиме цены поступают из номенклатуры PostgreSQL 18 (service_catalog_items).
+ */
+export const CLINIC_SERVICE_TIER_CATALOG: readonly ClinicTierServicePrice[] =
+	typeof window !== "undefined" && !isDemoShowcaseMode()
+		? []
+		: CLINIC_SERVICE_TIER_CATALOG_DEMO;
+
+/**
  * resolveTierService — Сопоставление услуги с клиническим прейскурантом тарифов клиники.
  */
 export function resolveTierService(
@@ -924,7 +934,12 @@ export function resolveTierService(
 		return { name: item.name, priceRub: basePrice };
 	}
 
-	const catalogEntry = CLINIC_SERVICE_TIER_CATALOG.find(
+	const activeCatalog =
+		typeof window !== "undefined" && isDemoShowcaseMode()
+			? CLINIC_SERVICE_TIER_CATALOG_DEMO
+			: CLINIC_SERVICE_TIER_CATALOG;
+
+	const catalogEntry = activeCatalog.find(
 		(entry) => entry.code804n === code || (code && code.startsWith(entry.code804n)),
 	);
 
@@ -938,7 +953,7 @@ export function resolveTierService(
 	}
 
 	if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.006");
+		const entry = activeCatalog.find((e) => e.code804n === "A16.07.006");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -949,7 +964,7 @@ export function resolveTierService(
 		}
 	}
 	if (/имплант/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.054.001");
+		const entry = activeCatalog.find((e) => e.code804n === "A16.07.054.001");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -960,7 +975,7 @@ export function resolveTierService(
 		}
 	}
 	if (/коронк/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.004");
+		const entry = activeCatalog.find((e) => e.code804n === "A16.07.004");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -971,7 +986,7 @@ export function resolveTierService(
 		}
 	}
 	if (/вкладк/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.003.001");
+		const entry = activeCatalog.find((e) => e.code804n === "A16.07.003.001");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -982,7 +997,7 @@ export function resolveTierService(
 		}
 	}
 	if (/эндодонт|канал/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.008.002");
+		const entry = activeCatalog.find((e) => e.code804n === "A16.07.008.002");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -993,7 +1008,7 @@ export function resolveTierService(
 		}
 	}
 	if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.002");
+		const entry = activeCatalog.find((e) => e.code804n === "A16.07.002");
 		if (entry) {
 			return {
 				name: tierId === "economy"

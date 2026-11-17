@@ -1,4 +1,4 @@
-import type { TreatmentPlanStage } from "../types.js";
+import type { TreatmentPlanStage } from "../types/index.js";
 
 export function assignDoctorToStageInStages(
 	stages: readonly TreatmentPlanStage[],

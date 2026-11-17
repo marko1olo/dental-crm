@@ -1,6 +1,6 @@
 import type { Kopecks } from "@dental/shared";
 import type { ToothData } from "../../../odontogram/ToothChart.js";
-import type { TreatmentPlanStage, TreatmentPlanTier } from "../../types.js";
+import type { TreatmentPlanStage, TreatmentPlanTier } from "../../types/index.js";
 import type { AppLogicContextType } from "../../../../contexts/AppLogicContext.js";
 
 export class MockLocalStorage implements Storage {

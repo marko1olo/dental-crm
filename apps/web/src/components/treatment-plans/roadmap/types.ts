@@ -8,7 +8,7 @@ import type {
 	TreatmentPlanStage,
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
-} from "../types.js";
+} from "../types/index.js";
 
 export type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId };
 

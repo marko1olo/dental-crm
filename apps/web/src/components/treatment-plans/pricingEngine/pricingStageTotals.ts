@@ -3,6 +3,7 @@ import {
 	multiplyKopecks,
 	sumKopecks,
 	calculateStaged304030Schedule,
+	kopecksToRubles,
 } from "@dental/shared";
 import type {
 	TreatmentPlanItem,
@@ -33,7 +34,7 @@ export function calculateStageTotals(items: readonly TreatmentPlanItem[]): {
 		}),
 	);
 
-	const totalRub = totalKopecks / 100;
+	const totalRub = kopecksToRubles(totalKopecks);
 	return { totalKopecks, totalRub };
 }
 
@@ -58,7 +59,7 @@ export function calculatePlanStagesTotals(stages: readonly TreatmentPlanStage[])
 	}
 
 	const totalKopecks = sumKopecks(stages.map((s) => s.totalKopecks));
-	const totalRub = totalKopecks / 100;
+	const totalRub = kopecksToRubles(totalKopecks);
 	const itemsCount = stages.reduce((acc, s) => acc + s.items.length, 0);
 	const estimatedWeeks = stages.reduce((acc, s) => acc + (s.estimatedWeeks || 0), 0);
 	const estimatedVisits = stages.reduce((acc, s) => acc + (s.estimatedVisits || 0), 0);

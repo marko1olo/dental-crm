@@ -1,5 +1,5 @@
 import { parseKopecks } from "@dental/shared";
-import type { TreatmentPlanItem, TreatmentPlanStage } from "../types.js";
+import type { TreatmentPlanItem, TreatmentPlanStage } from "../types/index.js";
 import { computeStageItemsTotalKopecks } from "./common.js";
 
 export { removeItemFromStages } from "./removeItemMutation.js";

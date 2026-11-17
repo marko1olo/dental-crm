@@ -1,6 +1,6 @@
 import { type Kopecks, parseKopecks } from "@dental/shared";
-import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageKind } from "../types.js";
-import { romanizeStageNumber } from "../types.js";
+import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageKind } from "../types/index.js";
+import { romanizeStageNumber } from "../types/index.js";
 import { computeStageItemsTotalKopecks } from "./common.js";
 
 export function addItemToPlanStages(

@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import type { TreatmentPlanItem } from "./types";
 import {
 	createWarrantyPlanItem,
@@ -23,8 +24,8 @@ export function parseKopecksFromRubString(val: string): { kopecks: number; rub: 
 	if (clean === "") return null;
 	const num = Number(clean);
 	if (Number.isNaN(num) || num < 0 || !Number.isFinite(num)) return null;
-	const kopecks = Math.round(num * 100);
-	return { kopecks, rub: kopecks / 100 };
+	const kopecks = rublesToKopecks(num);
+	return { kopecks, rub: kopecksToRubles(kopecks) };
 }
 
 export function useMissingPriceAlert({

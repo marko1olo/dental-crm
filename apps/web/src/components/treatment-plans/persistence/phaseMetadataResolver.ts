@@ -1,4 +1,4 @@
-import { type TreatmentPlanStageKind, romanizeStageNumber } from "../types.js";
+import { type TreatmentPlanStageKind, romanizeStageNumber } from "../types/index.js";
 
 export interface PhaseMetadata {
 	stageKind: TreatmentPlanStageKind;

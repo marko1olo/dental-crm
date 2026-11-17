@@ -1,4 +1,4 @@
-import type { TreatmentPlanStage } from "../types.js";
+import type { TreatmentPlanStage } from "../types/index.js";
 
 /**
  * Клиническая валидация последовательности этапов плана:

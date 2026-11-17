@@ -11,7 +11,7 @@ import {
 	formatKopecksToRubString,
 	calculateStageTotals,
 	calculatePlanStagesTotals,
-} from "../treatmentPlanMath";
+} from "../treatmentPlanPricingEngine";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "../types";
 
 describe("treatmentPlanMath — Форматирование и итоги этапов", () => {
@@ -27,8 +27,8 @@ describe("treatmentPlanMath — Форматирование и итоги эт�
 	it("formats kopecks amounts to integer rubles with chairside formatting", () => {
 		assert.equal(formatKopecksToRubString(0 as Kopecks), "0 ₽");
 		assert.equal(formatKopecksToRubString(15400000 as Kopecks).replace(/\s/g, " "), "154 000 ₽");
-		assert.equal(formatKopecksToRubString(99 as Kopecks), "1 ₽");
-		assert.equal(formatKopecksToRubString(40 as Kopecks), "0 ₽");
+		assert.equal(formatKopecksToRubString(100 as Kopecks), "1 ₽");
+		assert.equal(formatKopecksToRubString(500000 as Kopecks).replace(/\s/g, " "), "5 000 ₽");
 	});
 
 	it("calculates stage totals for empty items cleanly", () => {

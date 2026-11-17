@@ -101,6 +101,7 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 
 	return (
 		<TreatmentPlanStudioModal
+			key={resolvedPatientId || "draft"}
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientId={resolvedPatientId}

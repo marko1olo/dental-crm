@@ -1,4 +1,4 @@
-import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageKind } from "../types.js";
+import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageKind } from "../types/index.js";
 import { computeStageItemsTotalKopecks } from "./common.js";
 
 const KIND_MAP: Record<string, string> = {

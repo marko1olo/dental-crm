@@ -5,7 +5,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mapTreatmentItemsToFiscalReceipt } from "../../fiscalReceiptEngine.js";
-import type { TreatmentPlanItem } from "../../../treatment-plans/types.js";
+import type { TreatmentPlanItem } from "../../../treatment-plans/types/index.js";
 
 describe("Fiscal Receipt Engine — Item Mapping & Exact Kopecks", () => {
 	const sampleTreatmentItems: TreatmentPlanItem[] = [

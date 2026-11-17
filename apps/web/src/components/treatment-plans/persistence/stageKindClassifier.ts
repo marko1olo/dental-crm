@@ -1,4 +1,4 @@
-import type { TreatmentPlanStageKind } from "../types.js";
+import type { TreatmentPlanStageKind } from "../types/index.js";
 
 export function classifyPlanItemCategoryAndStageKind(
 	name: string,

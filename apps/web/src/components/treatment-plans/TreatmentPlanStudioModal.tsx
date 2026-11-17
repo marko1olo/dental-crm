@@ -125,6 +125,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		handleApprove,
 		handleSaveDraft,
 		handleExportPdf,
+		handleCloseWithReset,
 	} = useStudioPlanLifecycle({
 		isOpen,
 		onClose,
@@ -172,7 +173,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					isDiscountBarOpen={isDiscountBarOpen}
 					setIsDiscountBarOpen={setIsDiscountBarOpen}
 					handleExportPdf={handleExportPdf}
-					onClose={onClose}
+					onClose={handleCloseWithReset}
 				/>
 
 				{/* 1.1. Вкладки студии (в режиме Эксперт — полная палитра; в Экспресс — всегда доступно) */}

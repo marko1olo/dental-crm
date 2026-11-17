@@ -1,4 +1,4 @@
-import { type Kopecks, parseKopecks } from "@dental/shared";
+import { type Kopecks, parseKopecks, kopecksToRubles } from "@dental/shared";
 
 /**
  * Разбор денежного значения без исключения посреди отрисовки.
@@ -58,6 +58,6 @@ export function formatChairsidePrice(amountRub: number | undefined | null): stri
  * Форматирует сумму в копейках в рублевую строку.
  */
 export function formatKopecksToRubString(amountKopecks: Kopecks | number): string {
-	const rub = Math.round(Number(amountKopecks) / 100);
+	const rub = kopecksToRubles(Number(amountKopecks));
 	return formatChairsidePrice(rub);
 }

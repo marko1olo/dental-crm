@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import type { CompletedWorksActAndWriteOffData } from "./types.js";
+import type { CompletedWorksActAndWriteOffData } from "./types/index.js";
 import type { DocumentBrandColorPalette } from "../../store/documentBrandingStore.js";
 import { ActLegalTermsSection } from "./actSignatures/ActLegalTermsSection.js";
 import { ActSignatureGrid } from "./actSignatures/ActSignatureGrid.js";

@@ -1,4 +1,4 @@
-import type { TreatmentPlanItem, TreatmentPlanStage } from "../types.js";
+import type { TreatmentPlanItem, TreatmentPlanStage } from "../types/index.js";
 import { recalculateStageTotals } from "./stageTotalsAndReindex.js";
 
 /**

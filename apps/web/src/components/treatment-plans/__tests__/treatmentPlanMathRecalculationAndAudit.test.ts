@@ -10,7 +10,7 @@ import {
 	calculateChairsideInstallments,
 	recalculateTierTotals,
 	validatePlanFinancialIntegrity,
-} from "../treatmentPlanMath";
+} from "../treatmentPlanPricingEngine";
 import type { TreatmentPlanStage, TreatmentPlanTier } from "../types";
 import { sampleBaseTier } from "./helpers/mathTestHelpers";
 

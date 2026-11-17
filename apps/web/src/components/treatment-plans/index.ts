@@ -15,7 +15,7 @@ export {
 	formatRubles,
 	isPlanPriceImmutable,
 } from "./treatmentPlanTypes";
-export { calculateChairsideInstallments } from "./treatmentPlanMath";
+export { calculateChairsideInstallments } from "./treatmentPlanPricingEngine";
 export * from "./treatmentPlanStagesEngine";
 export * from "./treatmentPlanMaterialEngine";
 export * from "./TreatmentPlan3TierComparison";
@@ -34,6 +34,6 @@ export * from "./treatmentPlanActFormatters";
 export * from "./TreatmentPlanActHeader";
 export * from "./TreatmentPlanActMaterialsTable";
 export * from "./TreatmentPlanActSignatures";
-export * from "./treatmentPlanMath";
+export * from "./treatmentPlanPricingEngine";
 export * from "./TreatmentPlanStudioModal";
 export * from "./treatmentPlanCatalogData";

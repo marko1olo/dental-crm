@@ -6,7 +6,7 @@
 
 import type { Kopecks } from "@dental/shared";
 import type { DocumentBrandColorPalette } from "../../../store/documentBrandingStore.js";
-import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../types.js";
+import type { CompletedWorksActAndWriteOffData, TreatmentPlanItem } from "../types/index.js";
 
 export type { ActPrintHeaderProps } from "./types/actPrintHeaderTypes.js";
 

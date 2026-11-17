@@ -1,5 +1,5 @@
 import type { Kopecks } from "@dental/shared";
-import { calculateChairsideInstallments, calculateChairsideTaxDeduction } from "../../treatmentPlanMath";
+import { calculateChairsideInstallments, calculateChairsideTaxDeduction } from "../../treatmentPlanPricingEngine";
 import type { TreatmentPlanTier } from "../../types";
 
 export const sampleBaseTier: TreatmentPlanTier = {

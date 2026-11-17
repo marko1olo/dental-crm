@@ -1,6 +1,6 @@
 import type { Kopecks } from "@dental/shared";
-import type { TreatmentPlanStage, TreatmentPlanStageKind } from "../types.js";
-import { romanizeStageNumber } from "../types.js";
+import type { TreatmentPlanStage, TreatmentPlanStageKind } from "../types/index.js";
+import { romanizeStageNumber } from "../types/index.js";
 
 export function createNewStageInPlan(
 	stages: readonly TreatmentPlanStage[],

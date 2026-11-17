@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { Kopecks } from "@dental/shared";
 import { exportPlanToCashier } from "../treatmentPlanNetworkSync.js";
-import type { TreatmentPlanStage } from "../types.js";
+import type { TreatmentPlanStage } from "../types/index.js";
 import { buildMockTier } from "./helpers/cashierExportTestHelpers.js";
 
 interface GlobalWithFetch {

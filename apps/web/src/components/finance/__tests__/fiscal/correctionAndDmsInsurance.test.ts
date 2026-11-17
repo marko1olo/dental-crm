@@ -9,7 +9,7 @@ import {
 	calculateSplitPaymentAllocation,
 	generateFiscalCorrectionReceipt54Fz,
 } from "../../fiscalReceiptEngine.js";
-import type { TreatmentPlanItem } from "../../../treatment-plans/types.js";
+import type { TreatmentPlanItem } from "../../../treatment-plans/types/index.js";
 
 describe("Fiscal Receipt Engine — Correction, DMS Insurance & Family Wallet", () => {
 	const singleProcItems: TreatmentPlanItem[] = [

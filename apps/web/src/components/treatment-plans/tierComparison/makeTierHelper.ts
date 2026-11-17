@@ -1,5 +1,5 @@
 import { sumKopecks, calculateStaged304030Schedule } from "@dental/shared";
-import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "../types.js";
+import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "../types/index.js";
 import { calculateNdflDeduction, computeTierInstallments } from "../treatmentPlanPricingEngine.js";
 import type { TierPresetMeta } from "./tierMetadataPresets.js";
 

@@ -8,6 +8,7 @@ export * from "./planTierTypes";
 export * from "./planMaterialTypes";
 export * from "./planActAndInvoiceTypes";
 export * from "./planValidationTypes";
+export { romanizeStageNumber } from "../treatmentPlanTypes";
 export type { CatalogServiceLookupItem } from "../pricingEngine/pricingCatalogMatcher";
 export type { ClinicalBundleDefinition, ClinicalBundleId } from "../bundlesPresets/types";
 export type { CompletedWorksActResult, InventoryItemLookup } from "../treatmentPlanMaterialEngine";

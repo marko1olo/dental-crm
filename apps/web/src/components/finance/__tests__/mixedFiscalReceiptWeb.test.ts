@@ -13,7 +13,7 @@ import {
 	generateFiscalReceipt54Fz,
 	mapTreatmentItemsToFiscalReceipt,
 } from "../fiscalReceiptEngine.js";
-import type { TreatmentPlanItem } from "../../treatment-plans/types.js";
+import type { TreatmentPlanItem } from "../../treatment-plans/types/index.js";
 
 describe("Web 54-FZ Mixed Fiscal Receipts & Gift Certificates Suite", () => {
 	const medicalItem: TreatmentPlanItem = {

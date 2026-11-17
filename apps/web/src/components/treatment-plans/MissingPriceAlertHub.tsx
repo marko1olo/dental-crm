@@ -398,7 +398,7 @@ export const MissingPriceAlert: React.FC<MissingPriceAlertProps> = ({
 						.map((c) => (c || "").trim().toUpperCase())
 						.includes(catalogCode),
 			);
-			if (matched && matched.basePriceRub > 0) {
+			if (matched && typeof matched.basePriceRub === "number" && matched.basePriceRub > 0) {
 				return matched.basePriceRub;
 			}
 		}
