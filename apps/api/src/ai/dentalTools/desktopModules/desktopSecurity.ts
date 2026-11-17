@@ -12,13 +12,12 @@ import {
 } from "./securityConstants.js";
 
 export function checkIsLocalWorkstation(context: DentalToolContext): boolean {
-	if (context.runtimeMode === "web_browser") {
+	if (context.runtimeMode !== "desktop_native" && !context.allowLocalExecution) {
 		return false;
 	}
 	return (
 		process.platform === "win32" ||
 		process.env.WORKSTATION_MODE === "true" ||
-		context.runtimeMode === "desktop_native" ||
 		context.allowLocalExecution === true
 	);
 }

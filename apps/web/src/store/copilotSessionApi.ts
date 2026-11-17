@@ -193,3 +193,30 @@ export async function saveRemoteMemoryFacts(memoryFacts: AiMemoryFact[]): Promis
 		return false;
 	}
 }
+
+export async function fetchRemoteSettings(): Promise<Record<string, unknown> | null> {
+	try {
+		const res = await fetch("/api/agent/settings", {
+			method: "GET",
+			headers: getAuthHeaders(),
+		});
+		if (!res.ok) return null;
+		const data = (await res.json()) as { ok?: boolean; settings?: Record<string, unknown> };
+		return (data?.settings && typeof data.settings === "object") ? data.settings : null;
+	} catch {
+		return null;
+	}
+}
+
+export async function saveRemoteSettings(settings: Record<string, unknown>): Promise<boolean> {
+	try {
+		const res = await fetch("/api/agent/settings", {
+			method: "PUT",
+			headers: getAuthHeaders(),
+			body: JSON.stringify({ settings }),
+		});
+		return res.ok;
+	} catch {
+		return false;
+	}
+}

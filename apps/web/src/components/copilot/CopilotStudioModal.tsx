@@ -15,6 +15,7 @@ import { SHOWCASE_INITIAL_MESSAGES } from "../../store/copilotShowcaseData";
 import { useCopilotStore, type CopilotMessage } from "../../store/copilotStore";
 import type { CopilotUiMessage, DesktopHostWindow } from "./copilotTypes";
 import { parseActionProposal, parseJsonResponse } from "./copilotTypes";
+import { executeCopilotConfirmation } from "./useCopilotModules/useCopilotActions";
 import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer"; import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { CopilotMemoryTab } from "./CopilotMemoryTab"; import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest"; import { handleClinicalSpeechOrText } from "./copilotDictationHandler"; import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView"; import { CopilotResultCard } from "./CopilotResultCard"; import { CopilotStudioActionsTab } from "./CopilotStudioActionsTab";
 
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
@@ -41,20 +42,12 @@ const parseChatMsgs = (list?: Array<CopilotChatMessage | CopilotUiMessage | Copi
   const raw = typeof mRec.text === "string" ? mRec.text : typeof mRec.content === "string" ? mRec.content : (mRec.kind === "tool" ? `Выполнен инструмент: ${String(mRec.name || "")}` : "");
   const { cleanText, suggestions } = extractSuggestions(raw);
   const mRole = mRec.role === "assistant" || mRec.kind === "tool" ? "assistant" : "user";
-  const replies = Array.isArray(mRec.suggestedReplies)
-    ? mRec.suggestedReplies.filter((s): s is string => typeof s === "string")
-    : suggestions;
+  const replies = Array.isArray(mRec.suggestedReplies) ? mRec.suggestedReplies.filter((s): s is string => typeof s === "string") : suggestions;
   return {
     id: typeof mRec.id === "string" ? mRec.id : typeof mRec.callId === "string" ? mRec.callId : `msg-${i}`,
-    role: mRole,
-    text: cleanText,
-    timestamp: typeof mRec.timestamp === "string" ? mRec.timestamp : "10:00",
-    applied: Boolean(mRec.applied),
-    citation: typeof mRec.citation === "string" ? mRec.citation : undefined,
-    actionProposal: parseActionProposal(mRec.actionProposal),
-    suggestedReplies: replies,
-    toolResult: mRec.toolResult,
-    toolName: typeof mRec.toolName === "string" ? mRec.toolName : undefined,
+    role: mRole, text: cleanText, timestamp: typeof mRec.timestamp === "string" ? mRec.timestamp : "10:00", applied: Boolean(mRec.applied),
+    citation: typeof mRec.citation === "string" ? mRec.citation : undefined, actionProposal: parseActionProposal(mRec.actionProposal),
+    suggestedReplies: replies, toolResult: mRec.toolResult, toolName: typeof mRec.toolName === "string" ? mRec.toolName : undefined,
   };
 });
 const toValidUuid = (val?: string | null): string | undefined => typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val) ? val : undefined;
@@ -84,35 +77,27 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     return false;
   }, [saveThreadMessages]);
   useEffect(() => {
+    setMessages([]);
     const saved = threadMessages[threadKey];
     if (saved && saved.length > 0) setMessages(parseChatMsgs(saved));
     else if (threadKey && threadKey !== "default-thread") void hydrateSession(threadKey).then((ok) => { if (!ok && !isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]); });
-    else if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]);
+    else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) setMessages(SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[]);
+    else setMessages([]);
   }, [threadKey, patientId, hydrateSession]);
   useEffect(() => { if (initialTab) setActiveTab(initialTab as CopilotStudioTab); }, [initialTab]);
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const baseDraftRef = useRef<string>(inputText), messagesEndRef = useRef<HTMLDivElement>(null), isFirstRenderRef = useRef<boolean>(true);
 
   const resetDraft = useCallback(() => {
-    setInputText("");
-    baseDraftRef.current = "";
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.removeItem("dente_copilot_draft_text");
-      } catch {
-        // ignore
-      }
-    }
+    setInputText(""); baseDraftRef.current = "";
+    if (typeof window !== "undefined") { try { localStorage.removeItem("dente_copilot_draft_text"); } catch { /* ignore */ } }
   }, []);
 
-  useEffect(() => {
-    resetDraft();
-  }, [patientId, resetDraft]);
+  useEffect(() => { resetDraft(); }, [patientId, resetDraft]);
 
   const handleClose = useCallback(() => {
     if (messages.length > 0) saveThreadMessages(threadKey, messages);
-    resetDraft();
-    onClose();
+    resetDraft(); onClose();
   }, [messages, threadKey, saveThreadMessages, resetDraft, onClose]);
   const [appliedActionIds, setAppliedActionIds] = useState<Set<string>>(() => new Set()), [actionError, setActionError] = useState<string | null>(null), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>(""), [activeToolName, setActiveToolName] = useState<string | null>(null);
   const unifiedVoice = useUnifiedDictation({ preferredMode: "gemini_live", context: "chat", patientId: toValidUuid(patientId), visitId: toValidUuid(activeVisitId), autoFallback: true });
@@ -275,12 +260,11 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     try {
       if (act.id || act.toolName) {
         try {
-          const res = await fetch("/api/agent/confirm", {
-            method: "POST", headers: { "Content-Type": "application/json", "x-agent-runtime": apiRuntimeMode, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-            body: JSON.stringify({ callId: act.id, toolName: act.toolName, args: act.payload, confirmed: true, decision: "confirm", patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode }),
+          const ok = await executeCopilotConfirmation({
+            callId: act.id, decision: "confirm", actionName: act.toolName, actionArgs: act.payload || {},
+            patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode,
           });
-          const data = parseJsonResponse(await res.json().catch(() => ({})));
-          if (res.ok && data?.ok !== false) addToolLog({ toolName: act.toolName, category: "clinical", status: "success", args: act.payload || {}, resultSummary: `Подтверждено действие: ${act.toolName}` });
+          if (ok) addToolLog({ toolName: act.toolName, category: "clinical", status: "success", args: act.payload || {}, resultSummary: `Подтверждено действие: ${act.toolName}` });
         } catch (apiErr) {
           console.warn("[CopilotStudioModal] Confirm API non-blocking fallback:", apiErr);
         }
@@ -426,9 +410,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
 
             {/* Variant 2: Умные контекстные подсказки нейросети (Smart Replies) */}
             {(() => {
-              const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
-              const replies = lastAssistant?.suggestedReplies;
-              if (!replies || replies.length === 0 || isStreaming) return null;
+              const replies = [...messages].reverse().find((m) => m.role === "assistant")?.suggestedReplies;
+              if (!replies?.length || isStreaming) return null;
               return (
                 <div className="copilot-smart-replies-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0" data-testid="copilot-smart-replies">
                   <span className="hidden sm:flex text-[11px] text-[var(--teal,#0d9488)] font-semibold shrink-0 items-center gap-1"><Sparkles size={12} className="text-[var(--teal,#0d9488)] shrink-0" /><span>Подсказки:</span></span>
@@ -449,14 +432,12 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         )}
 
         {/* ВКЛАДКА 2: БЫСТРЫЕ ДЕЙСТВИЯ (FASTIFY API) И ЛОГИ ИНСТРУМЕНТОВ */}
-        {activeTab === "actions" && (
-          <CopilotStudioActionsTab activeTooth={activeTooth} patientId={patientId} runtimeMode={runtimeMode} toolExecutionLogs={toolExecutionLogs} activeDiff={activeDiff} setActiveDiff={setActiveDiff} applyActiveDiff={applyActiveDiff} rejectActiveDiff={rejectActiveDiff} executeApiTool={executeApiTool} />
-        )}
+        {activeTab === "actions" && <CopilotStudioActionsTab activeTooth={activeTooth} patientId={patientId} runtimeMode={runtimeMode} toolExecutionLogs={toolExecutionLogs} activeDiff={activeDiff} setActiveDiff={setActiveDiff} applyActiveDiff={applyActiveDiff} rejectActiveDiff={rejectActiveDiff} executeApiTool={executeApiTool} />}
         {/* ВКЛАДКА 3: ПАМЯТЬ ИИ (LONG-TERM CLINICAL PREFERENCES) */}
         {activeTab === "memory" && <CopilotMemoryTab />}
         <CopilotSettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} onOpenMemoryTab={() => { setSettingsOpen(false); setActiveTab("memory"); }} />
         <CopilotHistoryDrawer isOpen={isHistoryOpen} onClose={() => setHistoryOpen(false)} onSelectThread={(tId) => {
-          selectThread(tId); const saved = threadMessages[tId];
+          selectThread(tId); setMessages([]); const saved = threadMessages[tId];
           if (saved && saved.length > 0) setMessages(parseChatMsgs(saved));
           else { const f = threads.find((t) => t.id === tId); setMessages(f?.previewText ? [{ id: `thread-init-${Date.now()}`, role: "assistant", text: f.previewText, timestamp: f.updatedAt, citation: "Клинический протокол СтАР" }] : []); void hydrateSession(tId); }
           setHistoryOpen(false); setActiveTab("dialog");

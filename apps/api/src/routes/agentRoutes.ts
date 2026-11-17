@@ -564,6 +564,93 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 		},
 	);
 
+	// ─── GET /api/agent/settings ────────────────────────────────────────────────
+	server.get(
+		"/api/agent/settings",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"agent get settings",
+			);
+			if (!resolvedOrgId) return;
+
+			const identity = getRequestIdentity(request);
+			const record = await getDoctorPreferencesFromDb(
+				resolvedOrgId,
+				identity.userId || null,
+			);
+			const prefs = (record?.preferences || {}) as Record<string, unknown>;
+			const settings = (prefs.copilotSettings && typeof prefs.copilotSettings === "object")
+				? prefs.copilotSettings
+				: null;
+
+			return reply.code(200).send({
+				ok: true,
+				settings,
+				specialty: record?.specialty || "therapist",
+			});
+		},
+	);
+
+	// ─── PUT /api/agent/settings ────────────────────────────────────────────────
+	server.put(
+		"/api/agent/settings",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"agent save settings",
+			);
+			if (!resolvedOrgId) return;
+
+			const bodySchema = z.object({
+				settings: z.record(z.unknown()),
+				specialty: z.string().optional(),
+			});
+
+			const parseResult = bodySchema.safeParse(request.body ?? {});
+			if (!parseResult.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат настроек копайлота",
+					details: parseResult.error.format(),
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const current = await getDoctorPreferencesFromDb(
+				resolvedOrgId,
+				identity.userId || null,
+			);
+			const existingPrefs = (current?.preferences || {}) as Record<string, unknown>;
+			const currentSettings = (existingPrefs.copilotSettings && typeof existingPrefs.copilotSettings === "object")
+				? (existingPrefs.copilotSettings as Record<string, unknown>)
+				: {};
+			const nextPrefs = {
+				...existingPrefs,
+				copilotSettings: {
+					...currentSettings,
+					...parseResult.data.settings,
+				},
+			};
+
+			const saved = await saveDoctorPreferencesInDb(
+				resolvedOrgId,
+				identity.userId || null,
+				nextPrefs,
+				parseResult.data.specialty || current?.specialty || "therapist",
+			);
+
+			return reply.code(200).send({
+				ok: true,
+				settings: (saved.preferences as Record<string, unknown>).copilotSettings,
+			});
+		},
+	);
+
 	// ─── ACTION CONFIRMATION ENDPOINTS (TWO-PHASE GUARD & HITL) ───────────────
 	const actionEndpoints = [
 		"/api/agent/action",

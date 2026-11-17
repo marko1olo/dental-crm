@@ -45,6 +45,90 @@ interface UseCopilotActionsParams {
 	>;
 }
 
+export interface ExecuteCopilotConfirmationOptions {
+	callId: string;
+	decision: "confirm" | "reject";
+	actionName: string;
+	actionArgs?: Record<string, unknown> | undefined;
+	modifiedArgs?: Record<string, unknown> | undefined;
+	reason?: string | undefined;
+	apiBaseUrl?: string | undefined;
+	sessionId?: string | undefined;
+	patientId?: string | undefined;
+	runtimeMode?: string | undefined;
+}
+
+export async function executeCopilotConfirmation({
+	callId,
+	decision,
+	actionName,
+	actionArgs = {},
+	modifiedArgs,
+	reason,
+	apiBaseUrl = "",
+	sessionId,
+	patientId,
+	runtimeMode = "web_browser",
+}: ExecuteCopilotConfirmationOptions): Promise<boolean> {
+	const finalArgs = {
+		...actionArgs,
+		...(modifiedArgs || {}),
+	};
+	const baseUrl = apiBaseUrl.replace(/\/$/, "");
+	const token = readDenteClinicToken() || readDenteStaffToken() || "";
+
+	let apiOk = false;
+	try {
+		const res = await fetch(`${baseUrl}/api/agent/confirm`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"x-agent-runtime": runtimeMode,
+				...(token ? { Authorization: `Bearer ${token}` } : {}),
+			},
+			body: JSON.stringify({
+				callId,
+				toolName: actionName,
+				args: finalArgs,
+				decision,
+				confirmed: decision === "confirm",
+				reason,
+				patientId: patientId || undefined,
+				sessionId: sessionId || undefined,
+				runtimeMode,
+			}),
+		});
+		apiOk = res.ok;
+	} catch (apiErr) {
+		console.warn("[executeCopilotConfirmation] Fastify confirm fallback:", apiErr);
+	}
+
+	try {
+		if (decision === "confirm") {
+			await copilotActionRunner.confirmAction(callId, finalArgs, baseUrl, sessionId).catch(async (runnerErr) => {
+				console.warn("[executeCopilotConfirmation] copilotActionRunner fallback:", runnerErr);
+				await dispatchCrmAction(
+					{
+						callId,
+						name: actionName,
+						arguments: finalArgs,
+						confirmed: true,
+					},
+					baseUrl,
+				).catch(() => {});
+			});
+		} else {
+			await copilotActionRunner.rejectAction(callId, reason, baseUrl, sessionId).catch((err) => {
+				console.warn("[executeCopilotConfirmation] rejectAction fallback:", err);
+			});
+		}
+	} catch (runnerErr) {
+		console.warn("[executeCopilotConfirmation] Local runner execution error:", runnerErr);
+	}
+
+	return apiOk;
+}
+
 export function useCopilotActions({
 	apiBaseUrl,
 	busy,
@@ -145,35 +229,22 @@ export function useCopilotActions({
 				...(modifiedArgs || {}),
 			};
 
-			if (decision === "confirm") {
-				copilotActionRunner
-					.confirmAction(callId, actionArgs, apiBaseUrl)
-					.catch((err) => {
-						console.warn("[useCopilotActions] confirmAction failed, attempting fallback:", err);
-						dispatchCrmAction(
-							{
-								callId,
-								name: actionName,
-								arguments: actionArgs,
-								confirmed: true,
-							},
-							apiBaseUrl,
-						).catch((dispatchErr) => {
-							console.warn("[useCopilotActions] dispatchCrmAction fallback failed:", dispatchErr);
-						});
-					});
-			} else {
-				copilotActionRunner
-					.rejectAction(callId, reason, apiBaseUrl)
-					.catch((err) => {
-						console.warn("[useCopilotActions] rejectAction failed:", err);
-					});
-			}
-
 			const sessId = (conversationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-7][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(conversationId))
 				? conversationId
 				: generateUuidV7();
+
 			try {
+				await executeCopilotConfirmation({
+					callId,
+					decision,
+					actionName,
+					actionArgs,
+					modifiedArgs,
+					reason,
+					apiBaseUrl,
+					sessionId: sessId,
+				});
+
 				await streamRequest("/api/agent/confirm", {
 					sessionId: sessId,
 					callId,

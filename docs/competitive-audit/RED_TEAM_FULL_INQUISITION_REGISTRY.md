@@ -4241,3 +4241,25 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Mobile Dark: `docs/proofs/booking/04_public_booking_mobile_dark_390x844.png` (98.5 KB)
 
 
+
+### 5. ДОМЕН 37: РАСПИСАНИЕ, СЕТКА ПРИЁМОВ, БЫСТРЫЙ БУКИНГ И ЛИСТ ОЖИДАНИЯ (WAITLIST)
+- **Хирург:** Red Team Fixer Surgeon (`e5c657d5-98df-4295-8626-832d5f18f435`).
+- **Коммит:** `2512e93b3` (`feat(schedule): canonical 4-state visual proofs, Apple HIG mobile agenda and solo doctor autonomy`).
+- **Ликвидированные дефекты:**
+  1. **Ликвидация искусственных блокировок кресел и санобработки**: Устранены навязанные maintenance-блоки и принудительные тайм-локи, парализующие запись. Врач имеет суверенный приоритет посадки пациента.
+  2. **Суверенитет соло-врача (Мандат 8n)**: Устранено навязывание ассистента в расписании (`DEFAULT_SOLO_CHAIR`), быстрая запись оформляется без блокирующих алертов.
+  3. **Apple iOS HIG Agenda View на смартфонах**: Полноценный вертикальный таймлайн со списком визитов, сенсорными зонами >= 44x44px, sticky bottom CTA `+ Новая запись`, 0px горизонтального скролл-дрифта (`overflow-x: clip`).
+  4. **Санация дизайна и типографики (Мандаты 8am, 8d)**: Ровно 1 Primary CTA (`var(--primary)` / `var(--teal)`), токены `var(--paper)`/`var(--line)`, тотальный Sentence case (запрет `uppercase` на чипах и кнопках), Apple Segmented Control без наездов, запрет дев-сленга («1 клик»).
+  5. **Машинные гейты (Exit Code 0, 61/61 PASS)**:
+     - `check:encoding`: 0 ошибок (20 156 файлов).
+     - `check:buttons`: 0 нарушений дизайн-токенов.
+     - `check:react-hooks`: 0 нарушений в 3033 файлах.
+     - Тесты расписания и вейтлиста: 61/61 passed.
+- **4-State Visual Proofs (Личный осмотр через `read_file`, живой стек):**
+  - ☀️ PC Light Grid: `docs/proofs/schedule/01_schedule_pc_light_1440x900.png` (182.1 KB)
+  - 🌙 PC Dark Grid: `docs/proofs/schedule/02_schedule_pc_dark_1440x900.png` (163.7 KB)
+  - 📱 Mobile Light Agenda View: `docs/proofs/schedule/03_schedule_mobile_light_390x844.png` (50.4 KB)
+  - 📱 Mobile Dark Agenda View: `docs/proofs/schedule/04_schedule_mobile_dark_390x844.png` (50.5 KB)
+  - ☀️ PC Light Quick Booking: `docs/proofs/schedule/05_schedule_quick_booking_pc_light_1440x900.png` (181.9 KB)
+  - ☀️ PC Light Waitlist Drawer: `docs/proofs/schedule/06_schedule_waitlist_drawer_pc_light_1440x900.png` (46.8 KB)
+  - 📱 Mobile Light Waitlist Bottom Sheet: `docs/proofs/schedule/07_schedule_waitlist_bottomsheet_mobile_light_390x844.png` (43.2 KB)

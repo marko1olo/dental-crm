@@ -12,7 +12,8 @@ import { type ContextTelemetryData, PRODUCTION_TELEMETRY, SHOWCASE_TELEMETRY } f
 import { SHOWCASE_MEMORY_FACTS, SHOWCASE_THREADS, SHOWCASE_TOOL_LOGS } from "./copilotShowcaseData";
 import {
 	appendRemoteMessage, createRemoteSession, deleteRemoteSession, fetchRemoteMessages,
-	fetchRemoteSessions, fetchRemoteMemoryFacts, saveRemoteMemoryFacts, generateSessionUuid, isSessionUuid, updateRemoteSession,
+	fetchRemoteSessions, fetchRemoteMemoryFacts, saveRemoteMemoryFacts, fetchRemoteSettings,
+	saveRemoteSettings, generateSessionUuid, isSessionUuid, updateRemoteSession,
 } from "./copilotSessionApi";
 import { DEFAULT_SETTINGS, detectRuntimeEnvironment, getInitialCopilotState } from "./copilotStoreDefaults";
 
@@ -69,49 +70,24 @@ export interface ActiveDiff {
 export type CopilotActiveDiff = ActiveDiff;
 
 export interface CopilotSettings {
-	trustLevel: AiTrustLevel;
-	provider: AiProvider;
-	model: string;
-	modelRoutingMode: ModelRoutingMode;
-	byokProvider: AiProvider;
-	byokApiKey: string;
-	byokModel: string;
-	byokBaseUrl?: string;
-	speedMode: AiSpeedMode;
-	showThinkingProcess: boolean;
-	showTypingAnimation?: boolean;
-	clinicalSpecialization: ClinicalSpecialization;
-	diaryTemplate: DiaryTemplate;
-	customDoctorInstructions: string;
-	granularPermissions: GranularAgentPermissions;
-	temperature: number;
-	contextLimitTokens?: number;
-	runtimeMode: CopilotRuntimeEnvironment;
-	speechEngine?: SpeechEngine;
-	autoSaveDrafts: boolean;
-	webSpeechSensitivity: WebSpeechSensitivity;
-	maskPhiData: boolean;
-	apiKeyMasked?: string;
-	globalDictationHotkey: string;
-	autoMicOnAppointmentOpen: boolean;
-	localDropzonePath: string;
-	gloveModeTouchTarget: boolean;
-	screenWakeLock: boolean;
-	hapticFeedbackEnabled: boolean;
+	trustLevel: AiTrustLevel; provider: AiProvider; model: string;
+	modelRoutingMode: ModelRoutingMode; byokProvider: AiProvider; byokApiKey: string;
+	byokModel: string; byokBaseUrl?: string; speedMode: AiSpeedMode;
+	showThinkingProcess: boolean; showTypingAnimation?: boolean;
+	clinicalSpecialization: ClinicalSpecialization; diaryTemplate: DiaryTemplate;
+	customDoctorInstructions: string; granularPermissions: GranularAgentPermissions;
+	temperature: number; contextLimitTokens?: number; runtimeMode: CopilotRuntimeEnvironment;
+	speechEngine?: SpeechEngine; autoSaveDrafts: boolean; webSpeechSensitivity: WebSpeechSensitivity;
+	maskPhiData: boolean; apiKeyMasked?: string; globalDictationHotkey: string;
+	autoMicOnAppointmentOpen: boolean; localDropzonePath: string; gloveModeTouchTarget: boolean;
+	screenWakeLock: boolean; hapticFeedbackEnabled: boolean;
 }
 
 export interface CopilotStoreState {
-	settings: CopilotSettings;
-	memoryFacts: AiMemoryFact[];
-	threads: CopilotThread[];
-	activeThreadId: string;
-	threadSearchQuery: string;
-	toolExecutionLogs: ToolExecutionLog[];
-	activeDiff: ActiveDiff | null;
-	threadMessages: Record<string, CopilotMessage[]>;
-	isSettingsOpen: boolean;
-	isHistoryOpen: boolean;
-	isStudioOpen: boolean;
+	settings: CopilotSettings; memoryFacts: AiMemoryFact[]; threads: CopilotThread[];
+	activeThreadId: string; threadSearchQuery: string; toolExecutionLogs: ToolExecutionLog[];
+	activeDiff: ActiveDiff | null; threadMessages: Record<string, CopilotMessage[]>;
+	isSettingsOpen: boolean; isHistoryOpen: boolean; isStudioOpen: boolean;
 	telemetry: ContextTelemetryData;
 
 	// Actions
@@ -168,6 +144,24 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		set((state) => {
 			const next = { ...state.settings, ...patch };
 			safeLocalStorageSetJson("dente_copilot_settings", next);
+			if (!isDemoShowcaseMode()) {
+				void saveRemoteSettings({
+					trustLevel: next.trustLevel,
+					speedMode: next.speedMode,
+					granularPermissions: next.granularPermissions,
+					showTypingAnimation: next.showTypingAnimation,
+					byokProvider: next.byokProvider,
+					provider: next.provider,
+					model: next.model,
+					modelRoutingMode: next.modelRoutingMode,
+					diaryTemplate: next.diaryTemplate,
+					clinicalSpecialization: next.clinicalSpecialization,
+					customDoctorInstructions: next.customDoctorInstructions,
+					showThinkingProcess: next.showThinkingProcess,
+					temperature: next.temperature,
+					maskPhiData: next.maskPhiData,
+				});
+			}
 			return { settings: next };
 		});
 	},
@@ -321,6 +315,18 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			}
 		} catch (err) {
 			console.info("[copilotStore] Offline fallback for memory facts:", err);
+		}
+		try {
+			const remoteSettings = await fetchRemoteSettings();
+			if (remoteSettings && typeof remoteSettings === "object" && Object.keys(remoteSettings).length > 0) {
+				set((state) => {
+					const merged = { ...state.settings, ...remoteSettings };
+					safeLocalStorageSetJson("dente_copilot_settings", merged);
+					return { settings: merged };
+				});
+			}
+		} catch (err) {
+			console.info("[copilotStore] Offline fallback for remote settings:", err);
 		}
 		try {
 			const remote = await fetchRemoteSessions();
