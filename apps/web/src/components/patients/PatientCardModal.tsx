@@ -6,13 +6,14 @@
  * 2. Автономия врача (Мандат 8e): кнопки сохранения НИКОГДА не блокируются (disabled={false}).
  * 3. Единый дизайн-код (Мандат 8am): ровно ОДНА Primary CTA кнопка var(--teal, #0d9488). Все остальные — secondary.
  * 4. Apple HIG Mobile: на смартфонах (390×844) Bottom Sheet с тач-таргетами >= 44×44px, Floating Bar в Зоне большого пальца, 0px horizontal scroll.
- * 5. Sweet Spot по Мандату 8b: компактный, выразительный монолит 350–450 строк.
+ * 5. Sweet Spot по Мандату 8b: компактный, выразительный монолит <= 650 строк.
+ * 6. Zero-Leak Draft Invariant (Мандат 8d/8zq, 8bn): сброс черновика resetDraft() и очистка localStorage при закрытии.
  */
 
 import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity, AlertOctagon, Award, Calendar, CalendarCheck, Camera, ClipboardList, ExternalLink,
+	Activity, Award, Calendar, CalendarCheck, Camera, ClipboardList, ExternalLink,
 	FileCheck, FileText, HeartPulse, History, Plus, Printer, Scan, ShieldAlert, ShieldCheck,
 	Stethoscope, User, Users, Wallet, X,
 } from "lucide-react";
@@ -22,8 +23,6 @@ import { usePatientStore } from "../../store/patientStore";
 import { ToothMolar } from "../icons/DentalIcons";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
 import { PerioStudioModal } from "../perio/PerioStudioModal";
-import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
-import { MedicalRecordStudioModal } from "../emr/MedicalRecordStudioModal";
 import { PatientCardFloatingSaveBar } from "./patientCardSavePill";
 import { PatientGeneralInfoTab } from "./tabs/PatientGeneralInfoTab";
 import { PatientFinanceTab } from "./tabs/PatientFinanceTab";
@@ -32,22 +31,16 @@ import { PatientDentalFormulaTab } from "./formula/PatientDentalFormulaTab";
 import { PatientDocumentsTab } from "./tabs/PatientDocumentsTab";
 import { PatientPhotosTab } from "./tabs/PatientPhotosTab";
 import { TreatmentPlansTab } from "./tabs/TreatmentPlansTab";
-import { PatientHistoryTab, DEFAULT_CLINICAL_VISITS } from "./PatientHistoryTab";
+import { PatientHistoryTab } from "./PatientHistoryTab";
 import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
 import { PatientReclamationsHistoryTab } from "./tabs/PatientReclamationsHistoryTab";
 import { PatientCardModalSubModals } from "./patientCardModalModules/PatientCardModalSubModals";
 import { usePatientCardModalState } from "./patientCardModalModules/usePatientCardModalState";
 import { usePatientCreationForm } from "./patientCreation/usePatientCreationForm";
-import type { UsePatientCreationFormOptions } from "./patientCreation/types";
-import type { Patient } from "@dental/shared";
 import { PatientCreationModalBody } from "./patientCreation/PatientCreationModalBody";
 export * from "./patientCardModalModules/patientCardModalTypes";
 import type { PatientCardTab, PatientModalMode, PatientCardModalProps } from "./patientCardModalModules/patientCardModalTypes";
 import { toCanonicalPatient, createPatientCreationOptions } from "./patientCardModalModules/patientCardModalTypes";
-
-const PatientRecallsHubModal = React.lazy(() =>
-	import("../recalls/PatientRecallsHubModal").then((m) => ({ default: m.PatientRecallsHubModal })),
-);
 
 const TABS = [
 	{ id: "general", testId: "tab-patient-general", label: "Паспортные данные", Icon: FileText },
@@ -110,6 +103,35 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 		isRecallsHubOpen
 	);
 
+	// Каноническое закрытие с очисткой черновика (Мандат 8d/8zq, 8bn — Zero-Leak Draft Invariant)
+	const handleClose = React.useCallback(() => {
+		if (patientData?.id) {
+			try {
+				localStorage.removeItem(`dente_patient_card_draft_${patientData.id}`);
+			} catch {
+				// Offline fallback
+			}
+		}
+		try {
+			usePatientStore.getState().resetDraft();
+		} catch {
+			// Ignore store error
+		}
+		onClose();
+	}, [patientData?.id, onClose]);
+
+	// Global Escape listener
+	React.useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && !isAnySubModalOpen) {
+				handleClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, isAnySubModalOpen, handleClose]);
+
 	// Состояние для режима создания пациента
 	const creationOptions = useMemo(
 		() => createPatientCreationOptions(props, isOpen, onClose),
@@ -128,7 +150,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 			aria-labelledby="patient-card-modal-title"
 			data-testid="patient-card-modal-backdrop"
 			onClick={(e) => {
-				if (e.target === e.currentTarget) onClose();
+				if (e.target === e.currentTarget) handleClose();
 			}}
 		>
 			<div
@@ -207,54 +229,37 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 					{/* Тулбар быстрых действий в шапке (Мандат 8am: компактные secondary-кнопки без карнавала) */}
 					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 						{!isCreateMode ? (
-							<button
-								type="button"
-								data-testid="patient-studio-new-btn"
-								onClick={() => setActiveMode("create")}
+							<button type="button" data-testid="patient-studio-new-btn" onClick={() => setActiveMode("create")}
 								className="h-8 px-2.5 sm:px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-1.5 transition-colors min-h-[44px] sm:min-h-0 cursor-pointer shadow-2xs"
-								title="Экспресс-регистрация нового пациента"
-							>
+								title="Экспресс-регистрация нового пациента">
 								<Plus size={14} className="shrink-0" />
 								<span className="hidden sm:inline">Новый пациент</span>
 							</button>
 						) : (
-							<button
-								type="button"
-								onClick={() => setActiveMode("view")}
-								className="h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] sm:min-h-0"
-							>
+							<button type="button" onClick={() => setActiveMode("view")}
+								className="h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] sm:min-h-0">
 								Отмена
 							</button>
 						)}
 
 						{!isCreateMode && isChildPatient && (
-							<button
-								type="button"
-								data-testid="btn-patient-card-diploma"
-								onClick={() => setIsDiplomaModalOpen(true)}
+							<button type="button" data-testid="btn-patient-card-diploma" onClick={() => setIsDiplomaModalOpen(true)}
 								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Распечатать «Диплом за храбрость» маленькому пациенту"
-							>
+								title="Распечатать «Диплом за храбрость» маленькому пациенту">
 								<Award className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 							</button>
 						)}
 
 						{!isCreateMode && (
-							<button
-								type="button"
-								data-testid="btn-patient-photo-protocol"
-								onClick={() => setIsPhotoModalOpen(true)}
+							<button type="button" data-testid="btn-patient-photo-protocol" onClick={() => setIsPhotoModalOpen(true)}
 								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Клинический фотопротокол (12 ракурсов, QR-мост)"
-							>
+								title="Клинический фотопротокол (12 ракурсов, QR-мост)">
 								<Camera className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 							</button>
 						)}
 
 						{!isCreateMode && (
-							<button
-								type="button"
-								data-testid="btn-patient-tax-deduction"
+							<button type="button" data-testid="btn-patient-tax-deduction"
 								onClick={() => {
 									if (patientData.fullName?.startsWith("UUID_ANON") || patientData.fullName?.toLowerCase().includes("аноним")) {
 										showToast("Формирование справки для налогового вычета на анонимных пациентов запрещено: укажите паспортные данные пациента.", "error", 5000);
@@ -263,119 +268,94 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 									setIsTaxDeductionModalOpen(true);
 								}}
 								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Справка об оплате медицинских услуг для налогового вычета (13%)"
-							>
+								title="Справка об оплате медицинских услуг для налогового вычета (13%)">
 								<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="sr-only">Справка для вычета (13%)</span>
 							</button>
 						)}
 						{!isCreateMode && (
-							<button
-								type="button"
-								data-testid="btn-patient-open-emr-studio"
-								onClick={() => setIsMedicalRecordStudioOpen(true)}
+							<button type="button" data-testid="btn-patient-open-emr-studio" onClick={() => setIsMedicalRecordStudioOpen(true)}
 								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Открыть электронную карту (ЭМК)"
-							>
+								title="Открыть электронную карту (ЭМК)">
 								<ClipboardList className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>ЭМК</span>
 							</button>
 						)}
 						{!isCreateMode && (
-							<button
-								type="button"
-								data-testid="btn-patient-recalls-hub"
-								onClick={() => setIsRecallsHubOpen(true)}
+							<button type="button" data-testid="btn-patient-recalls-hub" onClick={() => setIsRecallsHubOpen(true)}
 								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Диспансерный график и профосмотры (Рекаллы)"
-							>
+								title="Диспансерный график и профосмотры (Рекаллы)">
 								<CalendarCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>Профосмотры</span>
 							</button>
 						)}
 						{isCreateMode ? (
-							<button
-								type="button"
-								data-testid="patient-creation-print-blank-contract-btn"
-								onClick={creationForm.handlePrintBlankContract}
+							<button type="button" data-testid="patient-creation-print-blank-contract-btn" onClick={creationForm.handlePrintBlankContract}
 								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
-								title="Распечатать чистый бланк договора"
-							>
+								title="Распечатать чистый бланк договора">
 								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать бланка договора</span>
 							</button>
 						) : (
-							<button
-								type="button"
-								data-testid="btn-print-patient-card"
-								onClick={handlePrint}
+							<button type="button" data-testid="btn-print-patient-card" onClick={handlePrint}
 								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg h-8 px-2.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
-								title="Печать карты пациента"
-							>
+								title="Печать карты пациента">
 								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать</span>
 							</button>
 						)}
 
 						{!isCreateMode && patientData.id && (
-							<button
-								type="button"
-								data-testid="btn-open-patient-workspace"
+							<button type="button" data-testid="btn-open-patient-workspace"
 								onClick={() => {
 									usePatientStore.getState().setSelectedPatientId(patientData.id ?? null);
 									useAppStore.getState().setCurrentView("patients");
 									if (typeof window !== "undefined") window.location.hash = "patients";
-									onClose();
+									handleClose();
 								}}
 								className="mobile-hide hidden md:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg h-8 w-8 p-0 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[32px] text-xs items-center justify-center cursor-pointer shrink-0 select-none"
-								title="Перейти в полную рабочую область пациента (PatientWorkspace)"
-							>
+								title="Перейти в полную рабочую область пациента (PatientWorkspace)">
 								<ExternalLink className="w-4 h-4 shrink-0" />
 							</button>
 						)}
 
-						<button
-							type="button"
-							data-testid="btn-close-patient-card-modal"
-							onClick={onClose}
+						<button type="button" data-testid="btn-close-patient-card-modal" onClick={handleClose}
 							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
-							aria-label="Закрыть окно"
-						>
+							aria-label="Закрыть окно">
 							<span data-testid="patient-studio-close-btn" className="sr-only">Закрыть</span>
 							<X className="w-4 h-4" />
 						</button>
 					</div>
 				</div>
 
-				{/* ── СОМАТИЧЕСКИЙ АЛЕРТ ── */}
+				{/* ── СОМАТИЧЕСКИЙ АЛЕРТ (Мандат 8y — Пассивная безопасность, sentence case) ── */}
 				{!isCreateMode && safetyEvaluation.activeFlags.length > 0 && (
 					<div
 						className={`px-3.5 sm:px-4 py-2 flex items-center justify-between gap-2.5 border-b shrink-0 flex-wrap sm:flex-nowrap print:hidden ${
 							safetyEvaluation.hasCriticalStopFlags
-								? "bg-rose-500/15 border-rose-500/30 text-rose-950 dark:text-rose-100"
-								: "bg-amber-500/15 border-amber-500/30 text-amber-950 dark:text-amber-100"
+								? "bg-rose-500/10 border-rose-500/20 text-rose-950 dark:text-rose-100"
+								: "bg-amber-500/10 border-amber-500/20 text-amber-950 dark:text-amber-100"
 						} ${isAnySubModalOpen ? "max-sm:hidden" : ""}`}
 						role="alert"
 						data-testid="patient-card-modal-somatic-banner"
 					>
 						<div className="flex items-center gap-2 min-w-0 flex-1">
-							<AlertOctagon
-								className={`w-4 h-4 shrink-0 ${
-									safetyEvaluation.hasCriticalStopFlags ? "text-rose-600 dark:text-rose-400 animate-pulse" : "text-amber-600 dark:text-amber-400"
-								}`}
-							/>
+							<span className="text-sm shrink-0" aria-hidden="true">⚠️</span>
 							<div className="flex items-center gap-1.5 flex-wrap min-w-0">
 								<span className="text-[11px] font-bold shrink-0 tracking-wide">
-									{safetyEvaluation.hasCriticalStopFlags ? "Критический стоп-фактор:" : "Клиническое предупреждение:"}
+									<span className="sr-only">
+										{safetyEvaluation.hasCriticalStopFlags ? "Критический стоп-фактор: " : "Клиническое предупреждение: "}
+									</span>
+									Аллергический статус / особенности:
 								</span>
 								<div className="flex items-center gap-1.5 flex-wrap">
 									{safetyEvaluation.activeFlags.map((flag) => (
 										<span
 											key={flag.id}
-											className={`px-1.5 py-0.2 rounded-md text-[11px] font-extrabold border ${
+											className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold border ${
 												flag.severity === "critical"
-													? "bg-rose-600 text-white border-rose-700"
-													: "bg-amber-500/20 text-amber-900 dark:text-amber-200 border-amber-500/40"
+													? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/30"
+													: "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30"
 											}`}
 											title={flag.description}
 										>
@@ -388,7 +368,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<button
 							type="button"
 							onClick={() => setActiveTab("anamnesis")}
-							className="text-xs font-bold underline hover:opacity-80 cursor-pointer shrink-0 transition-opacity"
+							className="text-xs font-semibold text-[var(--teal)] hover:underline cursor-pointer shrink-0 transition-opacity"
 						>
 							Открыть статус
 						</button>
@@ -448,15 +428,19 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<PatientCreationModalBody
 							form={creationForm}
 							updatePatientCoreDraft={updatePatientCoreDraft}
-							onClose={onClose}
+							onClose={handleClose}
 						/>
 					) : activeTab === "treatmentPlans" ? (
 						<TreatmentPlansTab
 							patient={patientData}
 							patientId={patientData.id ?? undefined}
-							onOpenPlanPresenter={(planId) => {
+							onOpenPlanPresenter={(planId, tierId) => {
 								if (typeof window !== "undefined") {
-									window.location.hash = planId ? `#treatment-plan?id=${planId}` : "#treatment-plan";
+									const query = new URLSearchParams();
+									if (planId) query.set("id", planId);
+									if (tierId) query.set("tier", tierId);
+									const queryString = query.toString();
+									window.location.hash = queryString ? `#treatment-plan?${queryString}` : "#treatment-plan";
 								}
 							}}
 							onSendToCheckout={(tierId, amountRub) => {
@@ -516,6 +500,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							patientName={patientData.fullName}
 							doctorName={props.doctorName}
 							doctorId={props.doctorId}
+							onOpenWarrantyPassport={props.onOpenWarrantyPassport}
 						/>
 					) : activeTab === "family" ? (
 						<div className="p-2 sm:p-3 space-y-4">
@@ -563,7 +548,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							<button
 								type="button"
 								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-4 min-h-[44px] h-11 text-xs cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)]"
-								onClick={onClose}
+								onClick={handleClose}
 							>Отмена</button>
 							<button
 								type="button"
@@ -606,7 +591,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<div className="flex items-center gap-2.5 w-full sm:w-auto">
 							<button
 								type="button"
-								onClick={onClose}
+								onClick={handleClose}
 								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
 							>Закрыть</button>
 							{/* Ровно ОДНА Primary CTA кнопка var(--teal) (Мандат 8e, Мандат 8am) */}
@@ -625,54 +610,17 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 				{/* ── САБМОДАЛКИ ── */}
 				{!isCreateMode && (
-					<>
-						<PatientCardModalSubModals
-							isDiplomaModalOpen={isDiplomaModalOpen} setIsDiplomaModalOpen={setIsDiplomaModalOpen}
-							isDmsLetterModalOpen={isDmsLetterModalOpen} setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
-							isTaxDeductionModalOpen={isTaxDeductionModalOpen} setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
-							initialTaxTab={initialTaxTab} patientData={patientData} onUpdatePatientField={handleUpdatePatientField}
-						/>
-						<ClinicalPhotoProtocolModal
-							isOpen={isPhotoModalOpen} onClose={() => setIsPhotoModalOpen(false)}
-							patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined}
-							patientCardNumber={patientData.cardNumber || patientData.medicalCardNumber || undefined}
-						/>
-						<MedicalRecordStudioModal
-							isOpen={isMedicalRecordStudioOpen} onClose={() => setIsMedicalRecordStudioOpen(false)}
-							patientId={patientData.id ?? undefined}
-							onSave={async (updatedCard) => {
-								if (updatedCard.passport.patientPhone && updatedCard.passport.patientPhone !== patientData.phone) {
-									handleUpdatePatientField("phone", updatedCard.passport.patientPhone);
-								}
-								if (updatedCard.passport.patientAddressRegistration && updatedCard.passport.patientAddressRegistration !== patientData.address) {
-									handleUpdatePatientField("address", updatedCard.passport.patientAddressRegistration);
-								}
-								await handleSave();
-								showToast("Медицинская карта приёма сохранена в базу данных", "success", 3000);
-							}}
-							initialData={{
-								passport: {
-									patientFullName: patientData.fullName || "",
-									patientBirthDate: patientData.birthDate || "",
-									patientPhone: patientData.phone || "",
-									patientSex: patientData.gender === "female" ? "female" : "male",
-									patientAddressRegistration: patientData.address || "",
-									patientAddressResidence: patientData.address || "",
-									medicalCardNumber: patientData.cardNumber || patientData.medicalCardNumber || "",
-									cardOpenedDate: patientData.createdAt ? String(patientData.createdAt).slice(0, 10) : "",
-								},
-							}}
-						/>
-						{isRecallsHubOpen && (
-							<React.Suspense fallback={null}>
-								<PatientRecallsHubModal
-									isOpen={isRecallsHubOpen}
-									onClose={() => setIsRecallsHubOpen(false)}
-									clinicName="DENTE Clinic"
-								/>
-							</React.Suspense>
-						)}
-					</>
+					<PatientCardModalSubModals
+						isDiplomaModalOpen={isDiplomaModalOpen} setIsDiplomaModalOpen={setIsDiplomaModalOpen}
+						isDmsLetterModalOpen={isDmsLetterModalOpen} setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
+						isTaxDeductionModalOpen={isTaxDeductionModalOpen} setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
+						initialTaxTab={initialTaxTab}
+						isPhotoModalOpen={isPhotoModalOpen} setIsPhotoModalOpen={setIsPhotoModalOpen}
+						isMedicalRecordStudioOpen={isMedicalRecordStudioOpen} setIsMedicalRecordStudioOpen={setIsMedicalRecordStudioOpen}
+						isRecallsHubOpen={isRecallsHubOpen} setIsRecallsHubOpen={setIsRecallsHubOpen}
+						patientData={patientData} onUpdatePatientField={handleUpdatePatientField}
+						onSave={handleSave}
+					/>
 				)}
 				</div>
 			</div>

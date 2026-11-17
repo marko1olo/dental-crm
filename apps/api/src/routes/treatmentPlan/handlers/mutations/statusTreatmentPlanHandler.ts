@@ -11,6 +11,7 @@ import {
 	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../../../../db/schema.js";
+import { rublesToKopecks } from "@dental/shared";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { formatInvoiceNumber } from "../../../invoiceRoutes/invoiceCalculationHelpers.js";
 import { LEDGER_ID_PREFIX_LENGTH } from "../../../odontogram/types.js";
@@ -92,8 +93,8 @@ async function createInvoiceForApprovedPlan(
 			const lineTotal = Math.max(0, unitPrice * qty - discount);
 			totalAmountRub += lineTotal;
 
-			const unitPriceKopecks = Math.round(unitPrice * 100);
-			const lineTotalKopecks = Math.round(lineTotal * 100);
+			const unitPriceKopecks = rublesToKopecks(unitPrice);
+			const lineTotalKopecks = rublesToKopecks(lineTotal);
 			const itemId = randomUUID();
 
 			itemsToInsert.push({
@@ -126,7 +127,7 @@ async function createInvoiceForApprovedPlan(
 		}
 	} else {
 		totalAmountRub = Number(planTotalPriceRub || 0);
-		const totalKopecks = Math.round(totalAmountRub * 100);
+		const totalKopecks = rublesToKopecks(totalAmountRub);
 		const itemId = randomUUID();
 
 		itemsToInsert.push({

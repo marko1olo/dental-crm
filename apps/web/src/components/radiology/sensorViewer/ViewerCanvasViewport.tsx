@@ -53,7 +53,7 @@ export const ViewerCanvasViewport: React.FC<ViewerCanvasViewportProps> = ({ stat
 				flex: 1,
 				position: "relative",
 				overflow: "hidden",
-				backgroundColor: "#020617",
+				backgroundColor: "var(--paper-strong, #020617)",
 			}}
 			className="sensor-viewport-container"
 		>
@@ -83,31 +83,33 @@ export const ViewerCanvasViewport: React.FC<ViewerCanvasViewportProps> = ({ stat
 				/>
 			)}
 
-			{/* Vertical 5 mm Calibrated Ladder Scale Ruler (Left Edge) */}
-			<RadiologyCalibratedScaleRuler
-				zoom={zoom}
-				pixelPitchMicrons={pixelPitchMicrons}
-				sensorModelOrDevice={
-					(activeStudy && "apparatusModel" in activeStudy && activeStudy.apparatusModel) ||
-					(activeStudy && "metadata" in activeStudy && activeStudy.metadata?.apparatusModel) ||
-					"vatech_ezsensor"
-				}
-				targetLengthMm={5.0}
-				position="left"
-			/>
+			{/* Vertical 5 mm Calibrated Ladder Scale Ruler (Left Edge, when image loaded) */}
+			{Boolean(activeImageUrl) && (
+				<RadiologyCalibratedScaleRuler
+					zoom={zoom}
+					pixelPitchMicrons={pixelPitchMicrons}
+					sensorModelOrDevice={
+						(activeStudy && "apparatusModel" in activeStudy && activeStudy.apparatusModel) ||
+						(activeStudy && "metadata" in activeStudy && activeStudy.metadata?.apparatusModel) ||
+						"vatech_ezsensor"
+					}
+					targetLengthMm={5.0}
+					position="left"
+				/>
+			)}
 
 			{/* Empty state when no image is loaded */}
 			{!activeImageUrl && (
 				<div
-					className="absolute inset-0 flex flex-col items-center justify-center p-6 text-slate-300 gap-4 z-10"
+					className="absolute inset-0 flex flex-col items-center justify-center p-6 text-[var(--ink)] gap-4 z-10"
 					data-testid="sensor-viewer-empty-placeholder"
 				>
-					<div className="w-16 h-16 rounded-2xl bg-[#0f172a] border border-[#334155] flex items-center justify-center shadow-lg">
-						<Scan size={36} className="text-[#2dd4bf]" />
+					<div className="w-14 h-14 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center shadow-sm">
+						<Scan size={32} className="text-[var(--primary)]" />
 					</div>
 					<div className="text-center max-w-sm">
-						<h3 className="text-sm font-bold text-white mb-1">Снимки пока не загружены</h3>
-						<p className="text-xs text-slate-400">
+						<h3 className="text-sm font-semibold text-[var(--ink)] mb-1">Снимки пока не загружены</h3>
+						<p className="text-xs text-[var(--ink-muted)]">
 							Выберите снимок в истории исследований пациента, загрузите локальный файл или выполните захват с визиографа
 						</p>
 					</div>
@@ -115,7 +117,7 @@ export const ViewerCanvasViewport: React.FC<ViewerCanvasViewportProps> = ({ stat
 						<button
 							type="button"
 							onClick={() => uploadInputRef.current?.click()}
-							className="px-3.5 py-2 rounded-lg bg-[#00C853] hover:bg-[#00b047] text-[#022c15] text-xs font-bold flex items-center gap-2 cursor-pointer shadow-sm transition-transform active:scale-95"
+							className="h-9 px-3.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-medium inline-flex items-center gap-2 cursor-pointer shadow-sm transition-transform active:scale-95"
 							data-testid="btn-empty-upload-image"
 						>
 							<UploadCloud size={14} />
@@ -126,10 +128,10 @@ export const ViewerCanvasViewport: React.FC<ViewerCanvasViewportProps> = ({ stat
 							onClick={() => {
 								showToast("Датчик RVG EzSensor подключен и откалиброван. Готов к экспозиции.", "info");
 							}}
-							className="px-3 py-2 rounded-lg bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+							className="h-9 px-3.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs font-medium inline-flex items-center gap-2 cursor-pointer transition-colors"
 							data-testid="btn-empty-connect-rvg"
 						>
-							<span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+							<span className="w-2 h-2 rounded-full bg-[var(--success,#10b981)] animate-pulse" />
 							<span>Подключить визиограф RVG</span>
 						</button>
 					</div>

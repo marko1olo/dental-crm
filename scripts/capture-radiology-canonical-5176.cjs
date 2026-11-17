@@ -3,8 +3,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/radiology");
-if (!fs.existsSync(PROOFS_DIR)) {
-  fs.mkdirSync(PROOFS_DIR, { recursive: true });
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/42879016-7974-4832-9ecc-146c9fcc9d17/proofs");
+for (const d of [PROOFS_DIR, BRAIN_DIR]) {
+  if (!fs.existsSync(d)) {
+    fs.mkdirSync(d, { recursive: true });
+  }
 }
 
 function verifyProof(filePath) {
@@ -61,11 +64,10 @@ async function setTheme(page, theme) {
 }
 
 async function main() {
-  console.log("=== Launching Chrome for Radiology & Visiograph 4-State Proofs ===");
+  console.log("=== Launching Chromium for Radiology & Visiograph 4-State Proofs ===");
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
   });
 
   const ctx = await browser.newContext({
@@ -104,7 +106,7 @@ async function main() {
 
   const page = await ctx.newPage();
 
-  const port = process.env.WEB_PORT || 5174;
+  const port = process.env.WEB_PORT || 5176;
   const url = `http://127.0.0.1:${port}/?demo=true#radiology-standalone`;
   console.log(`Navigating to ${url}...`);
   await page.goto(url, { waitUntil: "commit", timeout: 45000 });
@@ -133,35 +135,39 @@ async function main() {
   await page.waitForTimeout(1500);
   await suppressOverlays(page);
 
+  // Helper to save both names
+  async function saveProofPair(canonicalName, altName, description) {
+    const p1 = path.join(PROOFS_DIR, canonicalName);
+    const p2 = path.join(PROOFS_DIR, altName);
+    await page.screenshot({ path: p1, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(p1, p2);
+    fs.copyFileSync(p1, path.join(BRAIN_DIR, canonicalName));
+    fs.copyFileSync(p1, path.join(BRAIN_DIR, altName));
+    verifyProof(p1);
+    console.log(`[SAVED] ${canonicalName} & ${altName} -> ${description}`);
+  }
+
   // 1. PC Light (1440x900)
   console.log("\n[1/4] Capturing PC Light (1440x900)...");
   await setTheme(page, "light");
-  const pcLightPath = path.join(PROOFS_DIR, "01_imaging_visiograph_pc_light_1440x900.png");
-  await page.screenshot({ path: pcLightPath, fullPage: false, animations: "disabled" });
-  verifyProof(pcLightPath);
+  await saveProofPair("01_radiology_pc_light_1440x900.png", "01_imaging_visiograph_pc_light_1440x900.png", "☀️ PC Light 1440x900");
 
   // 2. PC Dark (1440x900)
   console.log("\n[2/4] Capturing PC Dark (1440x900)...");
   await setTheme(page, "dark");
-  const pcDarkPath = path.join(PROOFS_DIR, "02_imaging_visiograph_pc_dark_1440x900.png");
-  await page.screenshot({ path: pcDarkPath, fullPage: false, animations: "disabled" });
-  verifyProof(pcDarkPath);
+  await saveProofPair("02_radiology_pc_dark_1440x900.png", "02_imaging_visiograph_pc_dark_1440x900.png", "🌙 PC Dark 1440x900");
 
   // 3. Mobile Light (390x844)
   console.log("\n[3/4] Capturing Mobile Light (390x844)...");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(1000);
   await setTheme(page, "light");
-  const mobLightPath = path.join(PROOFS_DIR, "03_imaging_visiograph_mobile_light_390x844.png");
-  await page.screenshot({ path: mobLightPath, fullPage: false, animations: "disabled" });
-  verifyProof(mobLightPath);
+  await saveProofPair("03_radiology_mobile_light_390x844.png", "03_imaging_visiograph_mobile_light_390x844.png", "📱 Mobile Light 390x844");
 
   // 4. Mobile Dark (390x844)
   console.log("\n[4/4] Capturing Mobile Dark (390x844)...");
   await setTheme(page, "dark");
-  const mobDarkPath = path.join(PROOFS_DIR, "04_imaging_visiograph_mobile_dark_390x844.png");
-  await page.screenshot({ path: mobDarkPath, fullPage: false, animations: "disabled" });
-  verifyProof(mobDarkPath);
+  await saveProofPair("04_radiology_mobile_dark_390x844.png", "04_imaging_visiograph_mobile_dark_390x844.png", "🌙 Mobile Dark 390x844");
 
   await browser.close();
   console.log("\n=======================================================");

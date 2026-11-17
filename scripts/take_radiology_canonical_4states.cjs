@@ -6,7 +6,7 @@ const crypto = require("node:crypto");
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
 const PROOF_DIR = path.resolve(process.cwd(), "docs/proofs/radiology");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/34918577-f22c-4066-afa5-21e2f1bd9f41/proofs");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/42879016-7974-4832-9ecc-146c9fcc9d17/proofs");
 
 for (const d of [PROOF_DIR, BRAIN_DIR]) {
   if (!fs.existsSync(d)) {
@@ -89,8 +89,7 @@ async function run() {
 
   const browser = await chromium.launch({
     headless: true,
-    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
   });
 
   const context = await browser.newContext({
@@ -236,6 +235,24 @@ async function run() {
     const brainPath = path.join(BRAIN_DIR, filename);
     await page.screenshot({ path: outPath, fullPage: false });
     fs.copyFileSync(outPath, brainPath);
+
+    if (filename === "07_sensor_study_viewer_pc_light_1440x900.png") {
+      const p1 = path.join(PROOF_DIR, "01_radiology_pc_light_1440x900.png");
+      fs.copyFileSync(outPath, p1);
+      fs.copyFileSync(outPath, path.join(BRAIN_DIR, "01_radiology_pc_light_1440x900.png"));
+    } else if (filename === "08_sensor_study_viewer_pc_dark_1440x900.png") {
+      const p2 = path.join(PROOF_DIR, "02_radiology_pc_dark_1440x900.png");
+      fs.copyFileSync(outPath, p2);
+      fs.copyFileSync(outPath, path.join(BRAIN_DIR, "02_radiology_pc_dark_1440x900.png"));
+    } else if (filename === "09_sensor_study_viewer_mobile_light_390x844.png") {
+      const p3 = path.join(PROOF_DIR, "03_radiology_mobile_light_390x844.png");
+      fs.copyFileSync(outPath, p3);
+      fs.copyFileSync(outPath, path.join(BRAIN_DIR, "03_radiology_mobile_light_390x844.png"));
+    } else if (filename === "10_sensor_study_viewer_mobile_dark_390x844.png") {
+      const p4 = path.join(PROOF_DIR, "04_radiology_mobile_dark_390x844.png");
+      fs.copyFileSync(outPath, p4);
+      fs.copyFileSync(outPath, path.join(BRAIN_DIR, "04_radiology_mobile_dark_390x844.png"));
+    }
 
     const stats = fs.statSync(outPath);
     const hash = crypto.createHash("md5").update(fs.readFileSync(outPath)).digest("hex");

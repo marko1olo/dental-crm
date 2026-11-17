@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { TreatmentPlanStudioModal } from "./TreatmentPlanStudioModal";
+import type { TreatmentPlanTierId } from "./treatmentPlanTypes";
 import { usePatientStore } from "../../store/patientStore";
 import { useAppStore } from "../../store/appStore";
 
@@ -33,7 +34,24 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		);
 	}, []);
 
+	const parseUrlParams = useCallback(() => {
+		if (typeof window === "undefined") {
+			return { targetPlanId: null, targetTier: null };
+		}
+		const hash = window.location.hash;
+		const search = window.location.search;
+		const queryStr = hash.includes("?")
+			? hash.split("?")[1]
+			: (search.startsWith("?") ? search.slice(1) : search);
+		const params = new URLSearchParams(queryStr || "");
+		const targetPlanId = params.get("id") || params.get("planId");
+		const targetTier = params.get("tier");
+		return { targetPlanId, targetTier };
+	}, []);
+
 	const [isOpen, setIsOpen] = useState<boolean>(checkUrlTrigger);
+	const [targetPlanId, setTargetPlanId] = useState<string | null>(() => parseUrlParams().targetPlanId);
+	const [targetTier, setTargetTier] = useState<string | null>(() => parseUrlParams().targetTier);
 	const [customPatientName, setCustomPatientName] = useState<string | null>(null);
 	const [customDoctorFullName, setCustomDoctorFullName] = useState<string | null>(null);
 	const [customPatientId, setCustomPatientId] = useState<string | null>(null);
@@ -63,14 +81,21 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 
 	useEffect(() => {
 		const handleHashOrPop = () => {
-			if (checkUrlTrigger()) setIsOpen(true);
+			if (checkUrlTrigger()) {
+				const { targetPlanId: pId, targetTier: tTier } = parseUrlParams();
+				setTargetPlanId(pId);
+				setTargetTier(tTier);
+				setIsOpen(true);
+			}
 		};
 
 		const handleCustomOpen = (evt: Event) => {
-			const d = (evt as CustomEvent<{ patientName?: string; doctorFullName?: string; patientId?: string }>).detail;
+			const d = (evt as CustomEvent<{ patientName?: string; doctorFullName?: string; patientId?: string; planId?: string; tier?: string }>).detail;
 			if (d?.patientName) setCustomPatientName(d.patientName);
 			if (d?.doctorFullName) setCustomDoctorFullName(d.doctorFullName);
 			if (d?.patientId) setCustomPatientId(d.patientId);
+			if (d?.planId) setTargetPlanId(d.planId);
+			if (d?.tier) setTargetTier(d.tier);
 			setIsOpen(true);
 		};
 
@@ -83,31 +108,39 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 			window.removeEventListener("popstate", handleHashOrPop);
 			window.removeEventListener("dente:open-treatment-plan", handleCustomOpen);
 		};
-	}, [checkUrlTrigger]);
+	}, [checkUrlTrigger, parseUrlParams]);
 
 	const handleClose = useCallback(() => {
 		setIsOpen(false);
+		setTargetPlanId(null);
+		setTargetTier(null);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("plans");
 			url.searchParams.delete("plan");
 			url.searchParams.delete("treatment-plan");
-			const cleanHash = window.location.hash.replace(/#(treatment-plans?|treatment-studio|plan-presenter|plans|estimates)/gi, "");
+			const cleanHash = window.location.hash.replace(/#(treatment-plans?|treatment-studio|plan-presenter|plans|estimates)(\?[^#]*)?/gi, "");
 			window.history.replaceState(null, "", url.pathname + (url.search ? url.search : "") + cleanHash);
 		}
 	}, []);
 
 	if (!isOpen) return null;
 
+	const validTier: TreatmentPlanTierId =
+		targetTier === "economy" || targetTier === "optimum" || targetTier === "premium"
+			? targetTier
+			: "optimum";
+
 	return (
 		<TreatmentPlanStudioModal
-			key={resolvedPatientId || "draft"}
+			key={`${resolvedPatientId || "draft"}-${targetPlanId || "new"}-${validTier}`}
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientId={resolvedPatientId}
 			patientName={resolvedPatientName}
 			doctorFullName={resolvedDoctorFullName}
-			initialSelectedTierId="optimum"
+			planId={targetPlanId || undefined}
+			initialSelectedTierId={validTier}
 		/>
 	);
 };
