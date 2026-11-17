@@ -8,7 +8,7 @@ export interface DigitalSignatureData {
 	signedAt: string;
 	recipientFullName: string;
 	recipientRole: string;
-	pepCode?: string;
+	pepCode?: string | undefined;
 	sha256Fingerprint: string;
 }
 

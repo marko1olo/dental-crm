@@ -40,16 +40,18 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 			setRecords((prev) => [
 				...prev,
 				{
+					id: crypto.randomUUID(),
 					studyDate: new Date().toISOString().slice(0, 10),
 					studyType,
 					anatomicalArea: "Зона обследования",
+					apparatusModel: "Рентгеновский аппарат DENTE",
+					tubeVoltageKv: 70,
+					tubeCurrentMa: 8,
+					exposureTimeSeconds: 0.1,
 					effectiveDoseMsv: standardDose,
-					effectiveDoseMicrosv: standardDose * 1000,
-					apparatusName: "Рентгеновский аппарат DENTE",
-					voltageKv: 70,
-					currentMa: 8,
-					exposureTimeSec: 0.1,
-					technicianOrDoctorFullName: "Врач клиники",
+					effectiveDoseMicrosieverts: standardDose * 1000,
+					radiologistFullName: "Врач клиники",
+					notes: null,
 				},
 			]);
 		};

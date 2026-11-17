@@ -12423,7 +12423,42 @@
 
 ---
 
-### 526. Red Team Инквизиция Домена 4: Публичная Онлайн-Запись (Online Booking Widget), Пациентский Портал и Входящие Коммуникации — Физический Снос 6 Сирот и Дубликатов, Ликвидация Маркетингового Сленга «в 1 клик» (Мандат 8zg), Снятие Disabled с Кнопок Авторизации (Мандат 8e), Динамические Даты Гонки Слотов и Блэклиста, Apple HIG 4-State Visual Proof Gate
+### 527. Red Team Fixer Surgeon & Домен C: Жизненный Цикл Документов и Справка 13% НДФЛ ФНС КНД 1151156 (Приказ ФНС РФ № ЕА-7-11/824@) — Ликвидация Popup-Блокеров и Перевод на Скрытый iFrame, Живая Интеграция с PG18 Без Синтетических Заглушек, Поддержка «Налогоплательщик ≠ Пациент», Снос 6 Дубликатов, Устранение Мобильного Частокола Кнопок и 4-State Visual Proof Gate
+
+- **1. Ликвидация уязвимостей печати и блокировки всплывающих окон (Popup Blockers) (Мандаты 8e, 8al)**:
+  - Полностью исключены вызовы `window.open` с задержками `setTimeout(300)` в `printHtmlViaIframe.ts`, `taxCertificateEngine.ts`, `taxDeductionEngine.ts` и `documentsDownloadUtils.ts`.
+  - Реализован канонический протокол скрытого iframe (`position: fixed; right: 0; bottom: 0; width: 0; height: 0; border: 0; zIndex: -999;`) с надёжным onload-триггером и таймерным страховочным механизмом.
+- **2. Сквозная интеграция UI ➔ API ➔ DB и ликвидация синтетических дат (Мандаты 8z, 8wy, 8ba)**:
+  - В `apps/web/src/components/documents/DocumentsStudioModal.tsx` подключена загрузка подтверждённых чеков из боевого эндпоинта Fastify `GET /api/documents/tax-deduction/preview/:patientId?year=:taxYear`.
+  - Полностью удалены захардкоженные даты 15 июня и синтетические номера чеков (`ЧЕК-1`, `ФД-1`, `ФП-1`).
+  - Реализован честный медицинский Empty State: при отсутствии подтверждённых оплат за выбранный год выводится корректное уведомление с предложением распечатать чистый бланк справки со штампом клиники для ручного заполнения.
+- **3. Полноценная поддержка связки «Налогоплательщик ≠ Пациент» (Приказ ФНС № ЕА-7-11/824@)**:
+  - Поддержаны все поля налогоплательщика (`payerFullName`, `payerInn`, `payerBirthDate`, `payerPassport`, `payerRelationship`).
+  - Генератор формирует Лист 001 (данные налогоплательщика) и Лист 002 (данные пациента) с кодами родства (01 - супруг(а), 02 - родитель, 03 - ребенок) и разделением сумм по Коду 1 (обычное лечение) и Коду 2 (дорогостоящее лечение по Постановлению Правительства РФ № 458).
+- **4. Регуляторная чистота и отказ от парсинга комментариев кассира (Мандаты 8x, 8ap)**:
+  - Исправлена опечатка `КНД 1151158` ➔ `КНД 1151156` в `packages/shared/src/fiscal/fnsTaxDeductionEngine.ts`.
+  - В `apps/api/src/routes/portal/portalTaxCertRoutes.ts` и `apps/api/src/services/familyWallet/familyFnsTaxService.ts` устранён хрупкий regex-парсинг комментариев кассира (`p.note`), классификация переведена на канонические номенклатурные классификаторы `classifyTaxDeduction804n` и `classifyNdflServiceCode`.
+- **5. Физический снос 6 файлов-дубликатов через `git rm` (Мандаты 8bd, 8bf)**:
+  - Удалена папка-клон `apps/web/src/components/documents/taxCertificate/` (`aggregation.ts`, `css.ts`, `htmlGenerator.ts`, `index.ts`, `renderSections.ts`, `types.ts`).
+  - Вся логика консолидирована в канонический SSOT `apps/web/src/components/documents/taxCertificateEngine.ts`.
+- **6. Ликвидация частокола кнопок на мобильных (Apple HIG Touch Ergonomics, 390×844)**:
+  - В `apps/web/src/components/documents/documentsStudio.css` исправлен дефект `flex: 1` у пяти вторичных кнопок подвала, вызывавший сплющивание и наезд текста на смартфонах.
+  - Тулбар переведен на аккуратную адаптивную верстку с горизонтальным скроллом чипов (`overflow-x: auto; scrollbar-width: none; flex: 0 0 auto;`), исключающую обрезание слов и наложение кнопок.
+  - Селектор статуса `ЧЕРНОВИК` в темной теме переведен на семантические токены `dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800` без слепящих белых рамок.
+- **7. 4-State Visual Proof Gate (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark)**:
+  - 4 канонических скриншота высокого разрешения зафиксированы в `docs/proofs/documents/` и лично проверены через `read_file`:
+    - `01_documents_studio_pc_light_1440x900.png` (132 KB, PC Light 1440x900, А4 превью, тиловый акцент, честный пустой стейт);
+    - `02_documents_studio_pc_dark_1440x900.png` (127 KB, PC Dark 1440x900, темная тема без слепящих плашек);
+    - `03_documents_studio_mobile_light_390x844.png` (154 KB, iPhone Mobile Light 390x844, нативный Apple HIG Bottom Sheet, touch targets >= 44x44px);
+    - `04_documents_studio_mobile_dark_390x844.png` (140 KB, iPhone Mobile Dark 390x844, идеальное выравнивание и 0px наезда).
+- **8. 100% Машинные гейты верификации**:
+  - `check:encoding` — EXIT 0 (20158 файлов);
+  - `check:buttons` — EXIT 0 (4401 TSX, 1309 CSS, 0 нарушений);
+  - `check:css-tokens` — EXIT 0 (1309 CSS, 0 неразрешенных var());
+  - `check:react-hooks` — EXIT 0 (3033 файла с хуками, 0 нарушений);
+  - `taxCertificateAndPrescriptionZeroMock.test.ts` — 26/26 PASS;
+  - `ndflTaxService.test.ts` — 2/2 PASS.
+
 
 - **1. Физический снос 6 сирот и дубликатов через `git rm` (Мандаты 8bd, 8bf, 8bj)**:
   - `apps/web/src/components/booking/engine/bookingStepEngine.ts`: 0 импортов в монорепо; логика перенесена в `usePublicBookingState.ts`.

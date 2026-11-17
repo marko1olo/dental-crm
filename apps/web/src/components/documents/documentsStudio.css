@@ -580,13 +580,25 @@
 		display: flex;
 		width: 100%;
 		gap: 8px;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		padding: 2px 2px 6px 2px;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.dente-docs-footer-secondary-actions::-webkit-scrollbar {
+		display: none;
 	}
 
 	.dente-docs-footer-secondary-actions .dente-btn-secondary {
-		flex: 1;
-		height: 44px;
-		min-height: 44px;
+		flex: 0 0 auto;
+		white-space: nowrap;
+		height: 40px;
+		min-height: 40px;
+		padding: 0 14px;
 		font-size: 13px;
+		border-radius: 10px;
 		justify-content: center;
 	}
 

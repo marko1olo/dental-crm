@@ -39,7 +39,7 @@ export function buildA4MedicalCardData(
 	return {
 		clinic: cl,
 		patient: pt,
-		cardNumber: pt.cardNumber,
+		cardNumber: pt.cardNumber || "____",
 		visitDate: todayRu,
 		doctorFullName: doctor || "____________________________________",
 		doctorSpecialty: "Врач-стоматолог",
@@ -79,7 +79,7 @@ export function buildA4ConsentData(
 	customConsentData?: Partial<A4DocumentInformedConsentData>,
 ): A4DocumentInformedConsentData {
 	return {
-		consentNumber: `ИДС-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "____"}`,
+		consentNumber: `ИДС-${new Date().getFullYear()}/${(pt.cardNumber ?? "").replace(/\D/g, "") || "____"}`,
 		consentDate: todayRu,
 		clinic: cl,
 		patient: pt,
@@ -103,7 +103,7 @@ export function buildA4PersonalDataConsent(
 	customPersonalDataConsent?: Partial<A4DocumentPersonalDataConsentData>,
 ): A4DocumentPersonalDataConsentData {
 	return {
-		consentNumber: `ПД-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "____"}`,
+		consentNumber: `ПД-${new Date().getFullYear()}/${(pt.cardNumber ?? "").replace(/\D/g, "") || "____"}`,
 		consentDate: todayRu,
 		clinic: cl,
 		patient: pt,

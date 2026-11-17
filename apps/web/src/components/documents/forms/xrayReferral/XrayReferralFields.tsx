@@ -1,15 +1,15 @@
 import React from "react";
-import type { XrayCbctReferralPregnancyStatus, XrayCbctReferralStudyType } from "@dental/shared";
+import type { XrayCbctReferralPregnancyStatus, XrayCbctReferralPriority, XrayCbctReferralStudyType } from "@dental/shared";
 import { useDocumentStore } from "../../../../store/documentStore";
 
 export interface XrayReferralFieldsProps {
 	renderClinicalToothRowsEditor?: (() => React.ReactNode) | undefined;
 	inferredTreatmentArea?: string | null | undefined;
 	normalizedXrayStudyType?: ((val: string) => XrayCbctReferralStudyType) | undefined;
-	typedXrayStudyTypeOptions?: Array<{ value: XrayCbctReferralStudyType; label: string }> | undefined;
-	normalizedXrayPriority?: ((val: string) => any) | undefined;
+	typedXrayStudyTypeOptions?: ReadonlyArray<{ value: XrayCbctReferralStudyType; label: string }> | undefined;
+	normalizedXrayPriority?: ((val: string) => XrayCbctReferralPriority) | undefined;
 	normalizedXrayPregnancyStatus?: ((val: string) => XrayCbctReferralPregnancyStatus) | undefined;
-	typedXrayPregnancyStatusOptions?: Array<{ value: XrayCbctReferralPregnancyStatus; label: string }> | undefined;
+	typedXrayPregnancyStatusOptions?: ReadonlyArray<{ value: XrayCbctReferralPregnancyStatus; label: string }> | undefined;
 	activeDoctorFullName?: string | null | undefined;
 }
 

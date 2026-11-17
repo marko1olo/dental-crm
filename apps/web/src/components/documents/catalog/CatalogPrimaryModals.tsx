@@ -88,7 +88,7 @@ export function CatalogPrimaryModals({
 					initialTab={selectedA4Tab || "contract"}
 					patient={patient ?? null}
 					doctorFullName={doctorName ?? null}
-					clinicProfileDraft={clinicProfileDraft}
+					clinicProfileDraft={clinicProfileDraft as Record<string, unknown> | null | undefined}
 					existingDocuments={existingDocuments}
 				/>
 			)}

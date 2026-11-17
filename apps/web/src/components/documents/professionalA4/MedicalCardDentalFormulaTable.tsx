@@ -8,6 +8,26 @@ interface MedicalCardFormulaPayload extends A4DocumentMedicalCardData {
 	readonly sanitizedTeethFormulaMap?: Record<string, string> | null | undefined;
 }
 
+function normalizeFormulaMap(
+	raw: Record<string, string> | Record<string | number, { state?: string; status?: string; label?: string } | undefined> | null | undefined,
+): Record<number, { state?: string; statusCode?: string }> | undefined {
+	if (!raw) return undefined;
+	const result: Record<number, { state?: string; statusCode?: string }> = {};
+	for (const [key, val] of Object.entries(raw)) {
+		const num = Number(key);
+		if (!Number.isNaN(num)) {
+			if (typeof val === "string") {
+				result[num] = { state: val, statusCode: val };
+			} else if (val && typeof val === "object") {
+				const state = typeof val.state === "string" ? val.state : typeof val.status === "string" ? val.status : typeof val.label === "string" ? val.label : undefined;
+				const statusCode = typeof val.status === "string" ? val.status : typeof val.state === "string" ? val.state : undefined;
+				result[num] = { state, statusCode };
+			}
+		}
+	}
+	return result;
+}
+
 export function MedicalCardDentalFormulaTable({
 	medicalCardData,
 }: {
@@ -15,10 +35,12 @@ export function MedicalCardDentalFormulaTable({
 }): React.JSX.Element {
 	const mc = medicalCardData as MedicalCardFormulaPayload;
 
-	const initialMap =
-		mc.initialTeethFormulaMap || mc.teethFormulaMap || undefined;
-	const sanitizedMap =
-		mc.sanitizedTeethFormulaMap || mc.teethFormulaMap || undefined;
+	const initialMap = normalizeFormulaMap(
+		mc.initialTeethFormulaMap || mc.teethFormulaMap,
+	);
+	const sanitizedMap = normalizeFormulaMap(
+		mc.sanitizedTeethFormulaMap || mc.teethFormulaMap,
+	);
 
 	return (
 		<>

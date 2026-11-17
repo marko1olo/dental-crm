@@ -1,4 +1,5 @@
-import type { Patient } from "@dental/shared";
+import type { Patient, A4ClinicRequisites, A4PatientRequisites } from "@dental/shared";
+export type { A4ClinicRequisites, A4PatientRequisites };
 
 export function buildA4TodayRu(): string {
 	const d = new Date();
@@ -20,46 +21,6 @@ export function buildA4TodayRu(): string {
 	const month = months[d.getMonth()];
 	const year = d.getFullYear();
 	return `${day} ${month} ${year}`;
-}
-
-export interface A4ClinicRequisites {
-	name: string;
-	legalName: string;
-	shortName: string;
-	address: string;
-	actualAddress: string;
-	inn: string;
-	kpp: string;
-	ogrn: string;
-	licenseNumber: string;
-	licenseDate: string;
-	licenseIssuer: string;
-	phone: string;
-	email: string;
-	bankName: string;
-	bik: string;
-	checkingAccount: string;
-	correspondentAccount: string;
-	directorTitle: string;
-	directorFullName: string;
-	city: string;
-}
-
-export interface A4PatientRequisites {
-	fullName: string;
-	birthDate: string;
-	gender: "male" | "female";
-	phone: string;
-	passportSeries: string;
-	passportNumber: string;
-	passportIssuedBy: string;
-	passportIssuedDate: string;
-	passportDepartmentCode: string;
-	address: string;
-	registrationAddress: string;
-	snils: string;
-	omsPolis: string;
-	cardNumber: string;
 }
 
 export function buildA4ClinicRequisites(
@@ -115,8 +76,33 @@ export function buildA4ClinicRequisites(
 	};
 }
 
-export function buildA4PatientRequisites(patient?: Patient | null): A4PatientRequisites {
-	const admin = patient?.administrativeProfile;
+export function buildA4PatientRequisites(
+	patient?: Patient | A4PatientRequisites | Partial<A4PatientRequisites> | null | undefined,
+): A4PatientRequisites {
+	if (patient && "fullName" in patient && typeof (patient as A4PatientRequisites).fullName === "string") {
+		const a4p = patient as A4PatientRequisites;
+		if ("passportSeries" in a4p || "passportNumber" in a4p || "passportIssuedBy" in a4p) {
+			return {
+				fullName: a4p.fullName || "________________________________________",
+				birthDate: a4p.birthDate ?? "«___» _________ _____ г.",
+				gender: a4p.gender === "female" ? "female" : "male",
+				phone: a4p.phone ?? "+7 (___) ___-__-__",
+				passportSeries: a4p.passportSeries ?? "____",
+				passportNumber: a4p.passportNumber ?? "______",
+				passportIssuedBy: a4p.passportIssuedBy ?? "________________________________________________",
+				passportIssuedDate: a4p.passportIssuedDate ?? "«___» _________ _____ г.",
+				passportDepartmentCode: a4p.passportDepartmentCode ?? "___-___",
+				address: a4p.address ?? "________________________________________________________",
+				registrationAddress: a4p.registrationAddress ?? a4p.address ?? "________________________________________________________",
+				snils: a4p.snils ?? "___-___-___ __",
+				omsPolis: a4p.omsPolis ?? "____________________",
+				cardNumber: a4p.cardNumber ?? "МК-________",
+			};
+		}
+	}
+
+	const p = patient as Patient | null | undefined;
+	const admin = p?.administrativeProfile;
 	const pObj = (patient ?? {}) as Record<string, unknown>;
 	const getPString = (key: string): string => {
 		const val = pObj[key];
@@ -170,7 +156,7 @@ export function buildA4PatientRequisites(patient?: Patient | null): A4PatientReq
 	return {
 		fullName: patient?.fullName || "________________________________________",
 		birthDate: patient?.birthDate
-			? new Date(patient.birthDate).toLocaleDateString("ru-RU")
+			? (isNaN(new Date(patient.birthDate).getTime()) ? patient.birthDate : new Date(patient.birthDate).toLocaleDateString("ru-RU"))
 			: "«___» _________ _____ г.",
 		gender: patient?.gender === "female" ? "female" : "male",
 		phone: patient?.phone || "+7 (___) ___-__-__",

@@ -11,9 +11,9 @@ async function computeDocumentSha256(
 	}
 	const content = JSON.stringify({
 		id: doc?.id ?? "doc-pending",
-		kind: doc?.documentKind ?? "general_consent",
+		kind: doc?.kind ?? "general_consent",
 		patientId: patientId ?? "unknown",
-		issuedAt: doc?.issuedAt ?? doc?.createdAt ?? "",
+		issuedAt: doc?.issuedAt ?? (doc && "generatedAt" in doc && typeof (doc as { generatedAt?: unknown }).generatedAt === "string" ? (doc as { generatedAt: string }).generatedAt : "") ?? "",
 	});
 	if (typeof window !== "undefined" && window.crypto?.subtle) {
 		const hashBuf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));

@@ -128,6 +128,15 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 	if (!isOpen) return null;
 
 	const mappedTab = mapDocTypeToA4Tab(initialDocType);
+	const pCardNumber = (patient && "cardNumber" in patient && typeof patient.cardNumber === "string")
+		? patient.cardNumber
+		: (patient?.id ? `МК-${patient.id.slice(0, 8)}` : "");
+	const diagCode = typeof visitData?.diagnosis === "object" && visitData?.diagnosis !== null
+		? visitData.diagnosis.code
+		: visitData?.diagnosis || "";
+	const diagDesc = typeof visitData?.diagnosis === "object" && visitData?.diagnosis !== null
+		? visitData.diagnosis.titleRu
+		: "";
 
 	return (
 		<DocumentA4PrintPreviewModal
@@ -138,7 +147,7 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 			clinicProfileDraft={clinic ?? undefined}
 			patient={
 				patient
-					? {
+					? ({
 							id: patient.id || "",
 							organizationId:
 								"organizationId" in patient && typeof patient.organizationId === "string"
@@ -147,31 +156,29 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 							fullName: patient.fullName || "Пациент",
 							birthDate: patient.birthDate || "",
 							phone: patient.phone || "",
+							email: "email" in patient && typeof patient.email === "string" ? patient.email : "",
+							gender: "gender" in patient && (patient.gender === "male" || patient.gender === "female") ? patient.gender : "other",
 							status: "active",
-							source: "direct",
-							gender: "other",
+							notes: null,
+							balanceRub: 0,
+							balanceKopecks: 0,
+							administrativeProfile: null,
 							createdAt: new Date().toISOString(),
 							updatedAt: new Date().toISOString(),
-						}
+						} as Patient)
 					: null
 			}
 			medicalCardData={{
-				cardNumber: patient?.cardNumber || "",
-				patientFullName: patient?.fullName || "Пациент",
-				patientBirthDate: patient?.birthDate || "",
-				patientPhone: patient?.phone || "",
-				patientAddress: patient?.address || "",
-				visitDateRu: visitData?.date || new Date().toLocaleDateString("ru-RU"),
+				cardNumber: pCardNumber,
+				visitDate: visitData?.date || new Date().toLocaleDateString("ru-RU"),
 				doctorFullName: doctor?.fullName || "Врач-стоматолог",
-				doctorSpecialtyRu: doctor?.specialty || "Стоматолог-терапевт",
-				diagnosisMkb10:
-					typeof visitData?.diagnosis === "object" && visitData?.diagnosis !== null
-						? visitData.diagnosis.code
-						: visitData?.diagnosis || "",
-				complaintsRu: visitData?.complaints || "",
-				objectiveRu: visitData?.objective || "",
-				treatmentRu: visitData?.treatment || "",
-				recommendationsRu: visitData?.recommendations || "",
+				doctorSpecialty: doctor?.specialty || "Стоматолог-терапевт",
+				diagnosisIcd10: diagCode,
+				diagnosisDescription: diagDesc,
+				complaints: visitData?.complaints || "",
+				statusLocalis: visitData?.objective || "",
+				treatmentProtocol: visitData?.treatment || "",
+				recommendations: visitData?.recommendations || "",
 			}}
 		/>
 	);

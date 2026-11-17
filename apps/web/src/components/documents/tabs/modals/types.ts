@@ -34,7 +34,7 @@ export interface DocumentModalsContainerProps {
 	isSickLeaveElnOpen: boolean;
 	setIsSickLeaveElnOpen: (open: boolean) => void;
 	activePatient?: Patient | null;
-	activeDoctor?: { fullName?: string } | null;
+	activeDoctor?: { fullName?: string; role?: string; specialties?: string[]; [key: string]: unknown } | null | undefined;
 	clinicProfileDraft?: ClinicProfileDraft;
 	typedActiveDocuments?: GeneratedDocument[];
 	createDocument: (kind: DocumentKind) => void | Promise<void>;

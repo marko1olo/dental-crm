@@ -2,7 +2,7 @@ import React from "react";
 import type { A4DocumentPersonalDataConsentData } from "@dental/shared";
 import { PersonalDataSheetHeader } from "./PersonalDataSheetHeader";
 import { PersonalDataSignGrid } from "./PersonalDataSignGrid";
-import type { A4ClinicRequisites } from "./a4ClinicPatientDefaults";
+import { buildA4PatientRequisites, type A4ClinicRequisites } from "./a4ClinicPatientDefaults";
 
 export interface PersonalDataSheetProps {
 	zoomClass: string;
@@ -14,19 +14,7 @@ export const PersonalDataSheet: React.FC<PersonalDataSheetProps> = ({
 	effectivePersonalDataConsent,
 	cl,
 }) => {
-	const pt = effectivePersonalDataConsent?.patient ?? {
-		fullName: "____________________________________",
-		birthDate: "",
-		address: "",
-		phone: "",
-		registrationAddress: "",
-		snils: "",
-		passportSeries: "",
-		passportNumber: "",
-		passportIssuedBy: "",
-		passportIssuedDate: "",
-		passportDepartmentCode: "",
-	};
+	const pt = buildA4PatientRequisites(effectivePersonalDataConsent?.patient);
 	const contractDate =
 		effectivePersonalDataConsent?.consentDate ??
 		new Date().toLocaleDateString("ru-RU");

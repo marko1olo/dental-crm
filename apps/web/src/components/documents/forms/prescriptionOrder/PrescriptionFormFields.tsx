@@ -2,7 +2,7 @@ import React from "react";
 import { useDocumentStore } from "../../../../store/documentStore";
 
 export interface PrescriptionFormFieldsProps {
-	renderClinicalToothRowsEditor?: () => React.ReactNode;
+	renderClinicalToothRowsEditor?: (() => React.ReactNode) | undefined;
 }
 
 export const PrescriptionFormFields: React.FC<PrescriptionFormFieldsProps> = React.memo(

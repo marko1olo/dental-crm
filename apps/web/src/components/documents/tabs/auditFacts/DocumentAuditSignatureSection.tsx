@@ -19,13 +19,14 @@ export const DocumentAuditSignatureSection: React.FC<DocumentAuditSignatureSecti
 		formatShortDate,
 		onReloadFacts,
 	}) {
-		const hasSignature = Boolean(facts.signatureAttestation);
-		const sigMode = facts.signatureAttestation?.mode;
-		const isSmsOtp = sigMode === "simple_sms_otp" || sigMode === "sms_otp" || sigMode === "simple_electronic_signature" ||
-			(typeof sigMode === "string" && sigMode.toLowerCase().includes("sms")) ||
-			Boolean(facts.signatureAttestation?.note?.toLowerCase().includes("sms"));
-		const isHandwritten = sigMode === "paper_handwritten" || sigMode === "paper_signed";
-		const isTablet = sigMode === "electronic_tablet_signature";
+		const attestation = facts.signatureAttestation;
+		const sigMode = attestation?.mode;
+		const isSmsOtp = sigMode === "simple_electronic_signature" && Boolean(
+			attestation?.note?.toLowerCase().includes("sms") ||
+			attestation?.note?.toLowerCase().includes("смс")
+		);
+		const isHandwritten = sigMode === "paper_signed";
+		const isTablet = sigMode === "simple_electronic_signature" && !isSmsOtp;
 
 		return (
 			<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-2.5">
@@ -36,19 +37,29 @@ export const DocumentAuditSignatureSection: React.FC<DocumentAuditSignatureSecti
 					</span>
 				</div>
 
-				{hasSignature ? (
+				{attestation ? (
 					<div className={`p-2.5 px-3 rounded-lg border flex flex-col gap-1.5 ${isSmsOtp ? "bg-teal-500/10 border-[var(--teal)]" : "bg-[var(--paper-soft)] border-[var(--line)]"}`}>
 						<div className="flex items-center gap-2">
-							{isSmsOtp ? <Smartphone className="w-4 h-4 text-[var(--teal)] shrink-0" /> : isTablet ? <CheckCheck className="w-4 h-4 text-[var(--teal)] shrink-0" /> : <FileSignature className="w-4 h-4 text-[var(--teal)] shrink-0" />}
+							{isSmsOtp ? (
+								<Smartphone className="w-4 h-4 text-[var(--teal)] shrink-0" />
+							) : isTablet ? (
+								<CheckCheck className="w-4 h-4 text-[var(--teal)] shrink-0" />
+							) : (
+								<FileSignature className="w-4 h-4 text-[var(--teal)] shrink-0" />
+							)}
 							<strong className="text-xs font-bold text-[var(--ink)]">
-								{isSmsOtp ? "Электронная подпись по СМС подтверждена" : isHandwritten ? "Подписано на бумажном носителе" : (documentIssueSignatureModeLabels[sigMode] ?? "Подпись зафиксирована")}
+								{isSmsOtp
+									? "Электронная подпись по СМС подтверждена"
+									: isHandwritten
+										? "Подписано на бумажном носителе"
+										: ((sigMode && documentIssueSignatureModeLabels[sigMode]) || "Подпись зафиксирована")}
 							</strong>
 						</div>
 						<div className="text-xs text-[var(--muted)] flex flex-wrap gap-3">
-							<span><strong>Получатель:</strong> {facts.signatureAttestation.recipientFullName} ({facts.signatureAttestation.recipientRole})</span>
-							<span><strong>Ответственный:</strong> {facts.signatureAttestation.staffFullName} ({facts.signatureAttestation.staffRole})</span>
-							{facts.signatureAttestation.signedAt && (
-								<span><strong>Дата:</strong> {typeof formatShortDate === "function" ? formatShortDate(facts.signatureAttestation.signedAt) : String(facts.signatureAttestation.signedAt)}</span>
+							<span><strong>Получатель:</strong> {attestation.recipientFullName} ({attestation.recipientRole})</span>
+							<span><strong>Ответственный:</strong> {attestation.staffFullName} ({attestation.staffRole})</span>
+							{attestation.signedAt && (
+								<span><strong>Дата:</strong> {typeof formatShortDate === "function" ? formatShortDate(attestation.signedAt) : String(attestation.signedAt)}</span>
 							)}
 						</div>
 					</div>
@@ -65,7 +76,7 @@ export const DocumentAuditSignatureSection: React.FC<DocumentAuditSignatureSecti
 							<ShieldCheck className="w-4 h-4 text-[var(--teal)] shrink-0" />
 							<span>Подписано электронной подписью (УКЭП ГОСТ)</span>
 						</div>
-						<div className="text-xs text-[var(--ink)]"><strong>Владелец сертификата:</strong> {facts.doctorCertSubject || facts.signatureAttestation?.staffFullName || "Врач клиники"}</div>
+						<div className="text-xs text-[var(--ink)]"><strong>Владелец сертификата:</strong> {facts.doctorCertSubject || attestation?.staffFullName || "Врач клиники"}</div>
 						{facts.doctorCertSerial && <div className="text-[11px] text-[var(--muted)] font-mono break-all"><strong>Серийный номер:</strong> {facts.doctorCertSerial}</div>}
 					</div>
 				) : facts.status === "issued" ? (

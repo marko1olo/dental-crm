@@ -1,6 +1,10 @@
 import { escapeHtml, formatDateRu } from "../documentPrintFormatters";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
-import type { SurgicalPackagePrintOptions, SurgicalRequisitesContext } from "./types";
+import type {
+	SurgicalPackagePrintOptions,
+	SurgicalPatientRequisites,
+	SurgicalRequisitesContext,
+} from "./types";
 import type { ClinicProfileDraft } from "../../../helpers/types";
 import type { Patient } from "@dental/shared";
 
@@ -60,22 +64,24 @@ export function buildSurgicalClinic(draft: ClinicProfileDraft | null | undefined
 	};
 }
 
-interface PatientWithAdminExt extends Partial<Patient> {
+type PatientWithAdminExt = Partial<Patient> & {
 	administrativeProfile?: {
-		snils?: string | null;
-		registrationAddress?: string | null;
-		passportSeries?: string | null;
-		passportNumber?: string | null;
-		passportIssuedBy?: string | null;
-		passportIssuedDate?: string | null;
-		passportDepartmentCode?: string | null;
-	} | null;
-	snils?: string | null;
-	address?: string | null;
-	gender?: string | null;
-}
+		snils?: string | null | undefined;
+		registrationAddress?: string | null | undefined;
+		passportSeries?: string | null | undefined;
+		passportNumber?: string | null | undefined;
+		passportIssuedBy?: string | null | undefined;
+		passportIssuedDate?: string | null | undefined;
+		passportDepartmentCode?: string | null | undefined;
+		[key: string]: unknown;
+	} | null | undefined;
+	snils?: string | null | undefined;
+	address?: string | null | undefined;
+};
 
-export function buildSurgicalPatient(patient: Patient | null | undefined) {
+export function buildSurgicalPatient(
+	patient: Patient | null | undefined,
+): SurgicalPatientRequisites | null {
 	if (!patient) return null;
 	const p = patient as PatientWithAdminExt;
 	return {

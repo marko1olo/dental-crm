@@ -2,6 +2,7 @@ import React from "react";
 import { Edit3 } from "lucide-react";
 import type {
 	XrayCbctReferralPregnancyStatus,
+	XrayCbctReferralPriority,
 	XrayCbctReferralStudyType,
 } from "@dental/shared";
 import { XrayReferralFields } from "./xrayReferral/XrayReferralFields";
@@ -10,13 +11,13 @@ export interface XrayCbctReferralFormProps {
 	renderClinicalToothRowsEditor?: (() => React.ReactNode) | undefined;
 	inferredTreatmentArea?: string | null | undefined;
 	normalizedXrayStudyType?: ((val: string) => XrayCbctReferralStudyType) | undefined;
-	typedXrayStudyTypeOptions?: Array<{
+	typedXrayStudyTypeOptions?: ReadonlyArray<{
 		value: XrayCbctReferralStudyType;
 		label: string;
 	}> | undefined;
-	normalizedXrayPriority?: ((val: string) => any) | undefined;
+	normalizedXrayPriority?: ((val: string) => XrayCbctReferralPriority) | undefined;
 	normalizedXrayPregnancyStatus?: ((val: string) => XrayCbctReferralPregnancyStatus) | undefined;
-	typedXrayPregnancyStatusOptions?: Array<{
+	typedXrayPregnancyStatusOptions?: ReadonlyArray<{
 		value: XrayCbctReferralPregnancyStatus;
 		label: string;
 	}> | undefined;

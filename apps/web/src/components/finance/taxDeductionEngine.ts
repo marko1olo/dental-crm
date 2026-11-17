@@ -74,6 +74,7 @@ import {
 	type TaxDeductionBatchParams,
 	type TaxDeductionCertificateParams,
 } from "@dental/shared";
+import { printHtmlViaIframe } from "../documents/printHtmlViaIframe";
 
 /**
  * Triggers a browser download of the generated FNS 824@ XML document.
@@ -154,17 +155,9 @@ export function renderTaxDeductionBatchCertificateHtml(batch: TaxDeductionBatchP
 }
 
 /**
- * Opens a print dialog with the official A4 form of the KND 1151156 Certificate.
+ * Opens a print dialog with the official A4 form of the KND 1151156 Certificate via hidden iframe.
  */
 export function printTaxCertificateKnd1151156(params: TaxDeductionCertificateParams): void {
 	const html = renderOfficialTaxCertificateKnd1151156Html(params);
-	const win = window.open("", "_blank");
-	if (win) {
-		win.document.write(html);
-		win.document.close();
-		win.focus();
-		setTimeout(() => {
-			win.print();
-		}, 300);
-	}
+	printHtmlViaIframe(html, "fns-tax-cert-knd1151156-print-iframe");
 }

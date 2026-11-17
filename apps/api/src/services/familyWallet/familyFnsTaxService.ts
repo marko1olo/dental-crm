@@ -10,6 +10,8 @@
 import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
+	classifyNdflServiceCode,
+	classifyTaxDeduction804n,
 	extractTaxYearFromDate,
 	kopecksToRub,
 	normalizePaymentsForTaxCertificate,
@@ -158,7 +160,8 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 			const amtKop = Math.round(amtRub * 100);
 			const isExpensive = Boolean(
 				p.taxDeductionCode === "2" ||
-				(p.note && /имплант|синус|костн|остеопластик|аугментац/i.test(p.note)),
+				classifyTaxDeduction804n(p.code804n ?? "") === "2" ||
+				classifyNdflServiceCode(p.serviceName ?? p.note ?? "", p.code804n ?? "") === "2",
 			);
 			const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();
 			const docNum = p.fiscalReceiptNumber ? p.fiscalReceiptNumber.replace(/\D/g, "") : p.id.slice(0, 8);

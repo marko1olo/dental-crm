@@ -45,14 +45,12 @@ export const DocumentRegulatoryModals: React.FC<DocumentModalsContainerProps> = 
 				? activePatient.gender
 				: undefined;
 
+		const docRec = activeDoctor as Record<string, unknown> | null | undefined;
+		const docSpecialties = Array.isArray(docRec?.specialties) ? docRec.specialties : undefined;
 		const doctorSpecialty =
-			activeDoctor?.role ||
-			(activeDoctor?.specialties?.[0]
-				? String(activeDoctor.specialties[0])
-				: undefined) ||
-			("specialty" in (activeDoctor ?? {})
-				? String((activeDoctor as { specialty?: unknown })?.specialty ?? "")
-				: undefined) ||
+			(typeof docRec?.role === "string" ? docRec.role : undefined) ||
+			(docSpecialties?.[0] ? String(docSpecialties[0]) : undefined) ||
+			(typeof docRec?.specialty === "string" ? docRec.specialty : undefined) ||
 			undefined;
 
 		return (

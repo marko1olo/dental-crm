@@ -14,8 +14,17 @@ export function useCanvasSigner(onClear?: () => void) {
 		const canvas = canvasRef.current;
 		if (!canvas) return null;
 		const rect = canvas.getBoundingClientRect();
-		const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-		const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+		let clientX = 0;
+		let clientY = 0;
+		if ("touches" in e) {
+			const touch = e.touches[0] ?? (e as React.TouchEvent<HTMLCanvasElement>).changedTouches?.[0];
+			if (!touch) return null;
+			clientX = touch.clientX;
+			clientY = touch.clientY;
+		} else {
+			clientX = e.clientX;
+			clientY = e.clientY;
+		}
 		return { x: clientX - rect.left, y: clientY - rect.top, ctx: canvas.getContext("2d") };
 	}, []);
 

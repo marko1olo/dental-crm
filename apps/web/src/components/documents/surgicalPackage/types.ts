@@ -25,40 +25,40 @@ export interface SurgicalItem {
 
 /** Реквизиты клиники для печатных форм хирургического пакета (честные данные профиля клиники). */
 export interface SurgicalClinicRequisites {
-	readonly clinicName?: string | null;
-	readonly legalName?: string | null;
-	readonly fullName?: string | null;
-	readonly shortName?: string | null;
-	readonly inn?: string | null;
-	readonly ogrn?: string | null;
-	readonly licenseNumber?: string | null;
-	readonly address?: string | null;
-	readonly actualAddress?: string | null;
-	readonly phone?: string | null;
+	readonly clinicName?: string | null | undefined;
+	readonly legalName?: string | null | undefined;
+	readonly fullName?: string | null | undefined;
+	readonly shortName?: string | null | undefined;
+	readonly inn?: string | null | undefined;
+	readonly ogrn?: string | null | undefined;
+	readonly licenseNumber?: string | null | undefined;
+	readonly address?: string | null | undefined;
+	readonly actualAddress?: string | null | undefined;
+	readonly phone?: string | null | undefined;
 }
 
 /** Реквизиты пациента для печатных форм хирургического пакета. */
 export interface SurgicalPatientRequisites {
-	readonly fullName?: string | null;
-	readonly birthDate?: string | null;
-	readonly phone?: string | null;
-	readonly snils?: string | null;
-	readonly registrationAddress?: string | null;
-	readonly address?: string | null;
-	readonly passportSeries?: string | null;
-	readonly passportNumber?: string | null;
-	readonly passportIssuedBy?: string | null;
-	readonly passportIssuedDate?: string | null;
-	readonly passportDepartmentCode?: string | null;
-	readonly passport?: string | null;
-	readonly gender?: string | null;
+	readonly fullName?: string | null | undefined;
+	readonly birthDate?: string | null | undefined;
+	readonly phone?: string | null | undefined;
+	readonly snils?: string | null | undefined;
+	readonly registrationAddress?: string | null | undefined;
+	readonly address?: string | null | undefined;
+	readonly passportSeries?: string | null | undefined;
+	readonly passportNumber?: string | null | undefined;
+	readonly passportIssuedBy?: string | null | undefined;
+	readonly passportIssuedDate?: string | null | undefined;
+	readonly passportDepartmentCode?: string | null | undefined;
+	readonly passport?: string | null | undefined;
+	readonly gender?: string | null | undefined;
 }
 
 /** Параметры операции: зуб, тип вмешательства, анестетик. */
 export interface SurgicalOperationDetails {
-	readonly toothNumber?: string | number | null;
-	readonly operationType?: string | null;
-	readonly anestheticName?: string | null;
+	readonly toothNumber?: string | number | null | undefined;
+	readonly operationType?: string | null | undefined;
+	readonly anestheticName?: string | null | undefined;
 }
 
 /** Вход печатного движка хирургического пакета. */

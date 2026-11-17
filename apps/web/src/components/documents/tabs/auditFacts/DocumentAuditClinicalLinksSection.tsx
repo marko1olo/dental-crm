@@ -33,7 +33,9 @@ export const DocumentAuditClinicalLinksSection: React.FC<DocumentAuditClinicalLi
 							<span>Привязанный план лечения</span>
 						</div>
 						<strong className="text-xs text-[var(--ink)]">
-							{facts.treatmentPlanId ? `План лечения № ${facts.treatmentPlanId.slice(0, 8)}` : "Общеклинический документ"}
+							{"treatmentPlanId" in facts && typeof (facts as Record<string, unknown>).treatmentPlanId === "string"
+								? `План лечения № ${String((facts as Record<string, unknown>).treatmentPlanId).slice(0, 8)}`
+								: "Общеклинический документ"}
 						</strong>
 					</div>
 				</div>

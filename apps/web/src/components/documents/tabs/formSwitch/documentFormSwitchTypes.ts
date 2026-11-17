@@ -17,10 +17,12 @@ import type {
 	TaxDeductionApplicationForm as TaxDeductionApplicationFormKind,
 	TaxDeductionApplicationRelationship,
 	XrayCbctReferralPregnancyStatus,
+	XrayCbctReferralPriority,
 	XrayCbctReferralStudyType,
 } from "@dental/shared";
 import type { DocumentSelectOption } from "../../forms/documentFormTypes";
 import type { MedicalCopyRequestSourceDocument } from "../../forms/MedicalDocumentReleaseReceiptForm";
+import type { TreatmentPlanAcceptanceVariant } from "../../forms/TreatmentPlanAcceptanceForm";
 
 export type DocumentKindWithAliases =
 	| DocumentKind
@@ -49,6 +51,8 @@ export interface DocumentFormSwitchDashboardHints {
 	activeVisit?: {
 		complaint?: string | null | undefined;
 		diagnosis?: string | null | undefined;
+		doctorSummary?: string | null | undefined;
+		treatmentPlan?: string | null | undefined;
 	} | null | undefined;
 }
 
@@ -104,7 +108,7 @@ export interface DocumentFormSwitchProps {
 	treatmentEstimateTotalRubValue?: (() => number) | undefined;
 	treatmentEstimateTreatmentBasisValue?: (() => string) | undefined;
 	plannedServiceLinesForFinancialPayload?: (() => DocumentPlannedServiceLine[]) | undefined;
-	normalizedTreatmentPlanAcceptanceVariant?: ((val: string) => string) | undefined;
+	normalizedTreatmentPlanAcceptanceVariant?: ((val: string) => TreatmentPlanAcceptanceVariant) | undefined;
 	treatmentAcceptancePlannedTotalRub?: (() => number) | undefined;
 	applyPostVisitCarePreset?: ((topic: PostVisitCareTopic, opts?: { force?: boolean }) => void) | undefined;
 	changePostVisitCareTopic?: ((topic: PostVisitCareTopic) => void) | undefined;
@@ -112,7 +116,7 @@ export interface DocumentFormSwitchProps {
 	normalizedPostVisitCareTopic?: ((val: string) => PostVisitCareTopic) | undefined;
 	postVisitCareTopicOptions?: readonly DocumentSelectOption<PostVisitCareTopic>[] | undefined;
 	normalizedXrayPregnancyStatus?: ((val: string) => XrayCbctReferralPregnancyStatus) | undefined;
-	normalizedXrayPriority?: ((val: string) => string) | undefined;
+	normalizedXrayPriority?: ((val: string) => XrayCbctReferralPriority) | undefined;
 	normalizedXrayStudyType?: ((val: string) => XrayCbctReferralStudyType) | undefined;
 	xrayPregnancyStatusOptions?: readonly DocumentSelectOption<XrayCbctReferralPregnancyStatus>[] | undefined;
 	xrayStudyTypeOptions?: readonly DocumentSelectOption<XrayCbctReferralStudyType>[] | undefined;

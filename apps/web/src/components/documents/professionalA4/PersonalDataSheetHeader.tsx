@@ -8,19 +8,7 @@ export function PersonalDataSheetHeader({
 	contractDate,
 }: {
 	cl: A4ClinicRequisites;
-	pt: A4PatientRequisites | {
-		fullName: string;
-		birthDate?: string;
-		address?: string;
-		registrationAddress?: string;
-		phone?: string;
-		snils?: string;
-		passportSeries?: string;
-		passportNumber?: string;
-		passportIssuedBy?: string;
-		passportIssuedDate?: string;
-		passportDepartmentCode?: string;
-	};
+	pt: A4PatientRequisites;
 	contractDate: string;
 }): React.JSX.Element {
 	return (

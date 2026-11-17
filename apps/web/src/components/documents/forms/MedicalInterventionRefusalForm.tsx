@@ -79,16 +79,16 @@ export const MedicalInterventionRefusalForm = React.memo(
 						initialTemplateKey="CONSENT_TREATMENT_REFUSAL"
 						initialVerificationMethod="tablet_stylus"
 						patient={{
-							fullName: s.patientCoreDraft.fullName || null,
-							birthDate: s.patientCoreDraft.birthDate || null,
-							passport: s.patientAdministrativeProfileDraft.identityDocument || null,
-							phone: s.patientCoreDraft.phone || null,
-							snils: s.patientAdministrativeProfileDraft.snils || null,
-							address: s.patientAdministrativeProfileDraft.registrationAddress || null,
+							fullName: s.patientCoreDraft.fullName || undefined,
+							birthDate: s.patientCoreDraft.birthDate || undefined,
+							passport: s.patientAdministrativeProfileDraft.identityDocument || undefined,
+							phone: s.patientCoreDraft.phone || undefined,
+							snils: s.patientAdministrativeProfileDraft.snils || undefined,
+							address: s.patientAdministrativeProfileDraft.registrationAddress || undefined,
 						}}
 						doctorName={s.refusalDoctorFullName || hints.activeDoctorFullName || "Врач-стоматолог"}
-						toothNumbers={hints.inferredTreatmentArea || null}
-						diagnosisIcd={s.refusalClinicalIndication || hints.activeVisitComplaint || null}
+						toothNumbers={hints.inferredTreatmentArea || undefined}
+						diagnosisIcd={s.refusalClinicalIndication || hints.activeVisitComplaint || undefined}
 						onConsentSigned={() => {
 							s.setRefusalConsequencesUnderstood(true);
 							s.setRefusalConfirmedAt(new Date().toLocaleDateString("ru-RU"));

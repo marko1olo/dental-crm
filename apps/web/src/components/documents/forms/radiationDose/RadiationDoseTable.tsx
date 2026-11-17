@@ -25,16 +25,16 @@ export const RadiationDoseTable: React.FC<RadiationDoseTableProps> = ({ records 
 				</thead>
 				<tbody>
 					{records.map((r, idx) => (
-						<tr key={idx}>
+						<tr key={r.id || idx}>
 							<td>{r.studyDate}</td>
 							<td>{(dentalRadiologyStudyLabels as Record<string, string>)[r.studyType] ?? r.studyType}</td>
 							<td>{r.anatomicalArea}</td>
-							<td>{r.apparatusName}</td>
+							<td>{r.apparatusModel}</td>
 							<td>
 								<strong>{Number(r.effectiveDoseMsv ?? 0).toFixed(4)}</strong>
 							</td>
-							<td>{Number(r.effectiveDoseMicrosv ?? 0).toFixed(1)}</td>
-							<td>{r.technicianOrDoctorFullName}</td>
+							<td>{Number(r.effectiveDoseMicrosieverts ?? (r.effectiveDoseMsv ? r.effectiveDoseMsv * 1000 : 0)).toFixed(1)}</td>
+							<td>{r.radiologistFullName}</td>
 						</tr>
 					))}
 				</tbody>

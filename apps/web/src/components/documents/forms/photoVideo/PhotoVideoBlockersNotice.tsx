@@ -1,5 +1,5 @@
 import React from "react";
-import type { PhotoVideoConsentGuidanceReview } from "../photoVideoConsentGuiding";
+import type { PhotoVideoConsentGuidanceReview } from "../../photoVideoConsentGuiding";
 
 export const PhotoVideoBlockersNotice: React.FC<{ review: PhotoVideoConsentGuidanceReview }> = ({ review }) => {
 	if (review.blockers.length === 0) return null;

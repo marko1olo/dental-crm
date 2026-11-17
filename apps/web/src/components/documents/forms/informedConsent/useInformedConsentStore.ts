@@ -3,7 +3,7 @@ import { BASE_INFORMED_CONSENT_PRESET } from "@dental/shared";
 import { useDocumentStore } from "../../../../store/documentStore";
 import { usePatientStore } from "../../../../store/patientStore";
 import { informedConsentGuidanceReview } from "../../informedConsentGuiding";
-import { generateConsentPrintHtml, printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates";
+import { generateSingleConsentTemplatePrintHtml, printHtmlViaWindowOrIframe } from "../../../consents/consentTemplates";
 import { showToast } from "../../../GlobalToast";
 import type { InformedConsentFormProps } from "../InformedConsentForm";
 
@@ -22,31 +22,27 @@ export function useInformedConsentStore({
 	const effectiveWatermark = isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ / ПАЦИЕНТОМ" : "ЧЕРНОВИК";
 
 	const patientModalData = useMemo(() => ({
-		fullName: patientCoreDraft.fullName || null, birthDate: patientCoreDraft.birthDate || null,
-		passport: patientAdministrativeProfileDraft.identityDocument || null, phone: patientCoreDraft.phone || null,
-		snils: patientAdministrativeProfileDraft.snils || null, address: patientAdministrativeProfileDraft.registrationAddress || null,
-		cardNumber: null,
+		fullName: patientCoreDraft.fullName || undefined,
+		birthDate: patientCoreDraft.birthDate || undefined,
+		passport: patientAdministrativeProfileDraft.identityDocument || undefined,
+		phone: patientCoreDraft.phone || undefined,
+		snils: patientAdministrativeProfileDraft.snils || undefined,
+		address: patientAdministrativeProfileDraft.registrationAddress || undefined,
+		cardNumber: undefined,
 	}), [patientCoreDraft, patientAdministrativeProfileDraft]);
 
 	const handlePrintConsent = () => {
-		const html = generateConsentPrintHtml({
-			patientName: patientCoreDraft.fullName?.trim() || "________________________________________",
-			birthDate: patientCoreDraft.birthDate?.trim() || "«___» _________ _____ г.",
-			passport: patientAdministrativeProfileDraft.identityDocument?.trim() || "серия ______ № ________ выдан ____________________",
-			snils: patientAdministrativeProfileDraft.snils?.trim() || "___-___-___ __",
-			phone: patientCoreDraft.phone?.trim() || "+7 (___) ___-__-__",
-			doctorName: docStore.informedConsentDoctorFullName?.trim() || activeDoctorFullName?.trim() || "Врач-стоматолог клиники",
-			intervention: docStore.informedConsentIntervention?.trim() || "Стоматологический осмотр, диагностика и согласованный объем вмешательств",
-			toothOrArea: docStore.informedConsentToothOrArea?.trim() || inferredTreatmentArea?.trim() || "Полость рта (все квадранты)",
-			diagnosisOrIndication: docStore.informedConsentDiagnosisOrIndication?.trim() || activeVisitComplaint?.trim() || "Санация полости рта",
-			expectedBenefit: docStore.informedConsentExpectedBenefit?.trim() || "Восстановление анатомической формы и функции зубочелюстной системы",
-			anesthesia: docStore.informedConsentAnesthesia,
-			materialNotes: docStore.informedConsentMaterialNotes,
-			risks: docStore.informedConsentRisks?.trim() || "Кратковременная чувствительность при накусывании (1-3 дня)",
-			alternatives: docStore.informedConsentAlternatives?.trim() || "Отказ от медицинского вмешательства с разъяснением возможных осложнений",
-			aftercare: docStore.informedConsentAftercare?.trim() || "Соблюдение гигиены полости рта, щадящая диета, контрольный осмотр",
-			date: docStore.informedConsentConfirmedAt?.trim() || new Date().toLocaleDateString("ru-RU"),
-			isBlank: false, isSigned: isClosedOrSigned, watermarkText: effectiveWatermark,
+		const html = generateSingleConsentTemplatePrintHtml("CONSENT_THERAPY", {
+			context: {
+				patientName: patientCoreDraft.fullName?.trim() || "________________________________________",
+				birthDate: patientCoreDraft.birthDate?.trim() || "«___» _________ _____ г.",
+				passport: patientAdministrativeProfileDraft.identityDocument?.trim() || "серия ______ № ________ выдан ____________________",
+				phone: patientCoreDraft.phone?.trim() || "+7 (___) ___-__-__",
+				doctorName: docStore.informedConsentDoctorFullName?.trim() || activeDoctorFullName?.trim() || "Врач-стоматолог клиники",
+				toothNumbers: docStore.informedConsentToothOrArea?.trim() || inferredTreatmentArea?.trim() || "Полость рта (все квадранты)",
+				diagnosisIcd: docStore.informedConsentDiagnosisOrIndication?.trim() || activeVisitComplaint?.trim() || "Санация полости рта",
+				date: docStore.informedConsentConfirmedAt?.trim() || new Date().toLocaleDateString("ru-RU"),
+			},
 		});
 		printHtmlViaWindowOrIframe(html);
 		showToast(isClosedOrSigned ? "Бланк ИДС отправлен на печать (ПОДПИСАНО)" : "Бланк ИДС отправлен на печать (ЧЕРНОВИК)", "info", 3000);
@@ -98,7 +94,12 @@ export function useInformedConsentStore({
 		docStore, isClosedOrSigned, effectiveWatermark, patientModalData,
 		handlePrintConsent,
 		handlePrintBlankConsent: () => {
-			printHtmlViaWindowOrIframe(generateConsentPrintHtml({ isBlank: true, date: "«___» _________ 20___ г.", watermarkText: "ЧЕРНОВИК" }));
+			printHtmlViaWindowOrIframe(generateSingleConsentTemplatePrintHtml("CONSENT_THERAPY", {
+				context: {
+					patientName: "________________________________________",
+					date: "«___» _________ 20___ г.",
+				},
+			}));
 			showToast("Чистый бланк ИДС со строками «________» отправлен на печать", "info", 3000);
 		},
 		handleCopyPatientSummary, handleFillNorm, review,

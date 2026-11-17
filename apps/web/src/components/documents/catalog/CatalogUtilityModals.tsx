@@ -65,8 +65,8 @@ export function CatalogUtilityModals({
 					onClose={() => setIsConsentModalOpen(false)}
 					patient={{
 						fullName: effectivePatientName,
-						phone: patient?.phone,
-						birthDate: patient?.birthDate,
+						phone: patient?.phone ?? undefined,
+						birthDate: patient?.birthDate ?? undefined,
 					}}
 					patientContext={{
 						doctorName: doctorName,
@@ -74,56 +74,63 @@ export function CatalogUtilityModals({
 					}}
 				/>
 			)}
-			{isLocalTaxModalOpen && (
-				<TaxDeductionCertificateModal
-					isOpen={isLocalTaxModalOpen}
-					onClose={() => setIsLocalTaxModalOpen(false)}
-					initialTab={taxInitialTab}
-					patientName={effectivePatientName}
-					patientBirthDate={patient?.birthDate ?? undefined}
-					patientInn={effectivePatientInn}
-					patientSnils={effectivePatientSnils}
-					patientId={patient?.id}
-					clinicName={
-						clinicProfileDraft?.legalEntityName ||
-						clinicProfileDraft?.name ||
-						clinicName ||
-						""
-					}
-					clinicInn={clinicProfileDraft?.inn || ""}
-					clinicKpp={clinicProfileDraft?.kpp || ""}
-					clinicOgrn={clinicProfileDraft?.ogrn || ""}
-					clinicLicenseNumber={
-						clinicProfileDraft?.licenseNumber ||
-						clinicProfileDraft?.medicalLicenseNumber ||
-						""
-					}
-					clinicLicenseDate={
-						clinicProfileDraft?.licenseDate ||
-						clinicProfileDraft?.medicalLicenseIssuedAt ||
-						""
-					}
-					clinicAddress={clinicProfileDraft?.address || ""}
-					chiefDoctorName={doctorName || ""}
-					payments={
-						(sanitizedPayments ?? mappedTaxPayments)?.map((p) => ({
-							id: p.id,
-							dateIso: p.dateIso,
-							receiptNumber: p.receiptNumber ?? "",
-							fiscalDocumentNumber: p.fiscalDocumentNumber ?? "",
-							fiscalSign: p.fiscalSign ?? "",
-							serviceName: p.serviceName,
-							code804n: p.code804n,
-							amountRub: p.amountRub,
-							amountKopecks: p.amountKopecks,
-							taxCode: p.taxCode,
-							isRefund: p.isRefund,
-							isReturn: p.isReturn,
-							status: p.status,
-						}))
-					}
-				/>
-			)}
+			{isLocalTaxModalOpen && (() => {
+				const draftObj = clinicProfileDraft as Record<string, unknown> | null | undefined;
+				const resolvedClinicName = (typeof draftObj?.clinicName === "string" && draftObj.clinicName) ||
+					(typeof draftObj?.legalName === "string" && draftObj.legalName) ||
+					(typeof draftObj?.legalEntityName === "string" && draftObj.legalEntityName) ||
+					(typeof draftObj?.name === "string" && draftObj.name) ||
+					clinicName ||
+					"";
+				const resolvedInn = typeof draftObj?.inn === "string" ? draftObj.inn : "";
+				const resolvedKpp = typeof draftObj?.kpp === "string" ? draftObj.kpp : "";
+				const resolvedOgrn = typeof draftObj?.ogrn === "string" ? draftObj.ogrn : "";
+				const resolvedLicenseNumber = (typeof draftObj?.medicalLicenseNumber === "string" && draftObj.medicalLicenseNumber) ||
+					(typeof draftObj?.licenseNumber === "string" && draftObj.licenseNumber) ||
+					"";
+				const resolvedLicenseDate = (typeof draftObj?.medicalLicenseIssuedAt === "string" && draftObj.medicalLicenseIssuedAt) ||
+					(typeof draftObj?.licenseDate === "string" && draftObj.licenseDate) ||
+					"";
+				const resolvedAddress = typeof draftObj?.address === "string" ? draftObj.address : "";
+
+				return (
+					<TaxDeductionCertificateModal
+						isOpen={isLocalTaxModalOpen}
+						onClose={() => setIsLocalTaxModalOpen(false)}
+						initialTab={taxInitialTab}
+						patientName={effectivePatientName}
+						patientBirthDate={patient?.birthDate ?? undefined}
+						patientInn={effectivePatientInn}
+						patientSnils={effectivePatientSnils}
+						patientId={patient?.id}
+						clinicName={resolvedClinicName}
+						clinicInn={resolvedInn}
+						clinicKpp={resolvedKpp}
+						clinicOgrn={resolvedOgrn}
+						clinicLicenseNumber={resolvedLicenseNumber}
+						clinicLicenseDate={resolvedLicenseDate}
+						clinicAddress={resolvedAddress}
+						chiefDoctorName={doctorName || ""}
+						payments={
+							(sanitizedPayments ?? mappedTaxPayments)?.map((p) => ({
+								id: p.id,
+								dateIso: p.dateIso,
+								receiptNumber: p.receiptNumber ?? "",
+								fiscalDocumentNumber: p.fiscalDocumentNumber ?? "",
+								fiscalSign: p.fiscalSign ?? "",
+								serviceName: p.serviceName,
+								code804n: p.code804n,
+								amountRub: p.amountRub,
+								amountKopecks: p.amountKopecks,
+								taxCode: p.taxCode,
+								isRefund: p.isRefund,
+								isReturn: p.isReturn,
+								status: p.status,
+							}))
+						}
+					/>
+				);
+			})()}
 		</>
 	);
 }

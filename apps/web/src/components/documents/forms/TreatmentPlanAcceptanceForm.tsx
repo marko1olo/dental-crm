@@ -3,8 +3,17 @@ import { Edit3 } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import type { DocumentFormSwitchDashboardHints } from "../tabs/formSwitch/documentFormSwitchTypes";
 
+export type TreatmentPlanAcceptanceVariant = "other" | "standard" | "urgent" | "optimal" | "staged" | "maintenance";
+
+function defaultNormalizeVariant(val: string): TreatmentPlanAcceptanceVariant {
+	if (val === "urgent" || val === "standard" || val === "optimal" || val === "staged" || val === "maintenance") {
+		return val;
+	}
+	return "other";
+}
+
 export interface TreatmentPlanAcceptanceFormProps {
-	normalizedTreatmentPlanAcceptanceVariant?: ((val: string) => string) | undefined;
+	normalizedTreatmentPlanAcceptanceVariant?: ((val: string) => TreatmentPlanAcceptanceVariant) | undefined;
 	dashboard?: DocumentFormSwitchDashboardHints | undefined;
 	inferredTreatmentArea?: string | null | undefined;
 	renderClinicalToothRowsEditor?: (() => React.ReactNode) | undefined;
@@ -17,7 +26,7 @@ export const TreatmentPlanAcceptanceForm: React.FC<
 	TreatmentPlanAcceptanceFormProps
 > = React.memo(function TreatmentPlanAcceptanceForm(props) {
 	const {
-		normalizedTreatmentPlanAcceptanceVariant = (v) => v,
+		normalizedTreatmentPlanAcceptanceVariant = defaultNormalizeVariant,
 		dashboard,
 		inferredTreatmentArea,
 		renderClinicalToothRowsEditor,

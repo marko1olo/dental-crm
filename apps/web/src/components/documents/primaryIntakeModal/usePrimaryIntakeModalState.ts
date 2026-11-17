@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
+import type { DigitalSignatureData } from "../digitalSignature/types";
 import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
 import { useDocumentStore } from "../../../store/documentStore";
 import { showToast } from "../../GlobalToast";
@@ -79,12 +80,7 @@ export function usePrimaryIntakeModalState({
 		showToast("Анкета здоровья заполнена нормой: соматически здоров, противопоказаний нет", "success", 3500);
 	};
 
-	const handleConfirmSignatureFromTablet = async (signatureData?: {
-		signatureSvg?: string;
-		pepCode?: string;
-		mode?: string;
-		[key: string]: unknown;
-	}) => {
+	const handleConfirmSignatureFromTablet = async (signatureData?: DigitalSignatureData | undefined) => {
 		for (const kind of missingKinds) {
 			onCreateDocument(kind);
 		}

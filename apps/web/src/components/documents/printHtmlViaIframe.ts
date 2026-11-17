@@ -1,39 +1,20 @@
 /**
  * printHtmlViaIframe.ts
  *
- * Fast zero-latency printing helper via window or hidden iframe (Mandate 8e).
+ * Fast zero-latency printing helper strictly via hidden iframe (Mandate 8e).
+ * Eliminates popup-blocker issues caused by window.open.
  */
 
 export function printHtmlViaIframe(html: string, iframeId = "dente-print-iframe"): void {
-	let printWindow: Window | null = null;
-	try {
-		printWindow = window.open("", "_blank", "width=920,height=1050");
-	} catch (e) {
-		console.warn("window.open blocked, using iframe fallback", e);
-	}
-
-	if (printWindow && !printWindow.closed) {
-		try {
-			printWindow.document.open();
-			printWindow.document.write(html);
-			printWindow.document.close();
-			printWindow.focus();
-			setTimeout(() => {
-				try {
-					printWindow?.print();
-				} catch (printErr) {
-					console.error("Window print trigger failed:", printErr);
-				}
-			}, 300);
-			return;
-		} catch (writeErr) {
-			console.warn("Error writing to printWindow, trying fallback iframe", writeErr);
-		}
+	if (typeof window === "undefined" || typeof document === "undefined") {
+		return;
 	}
 
 	try {
 		const existingIframe = document.getElementById(iframeId);
-		if (existingIframe) existingIframe.remove();
+		if (existingIframe) {
+			existingIframe.remove();
+		}
 
 		const iframe = document.createElement("iframe");
 		iframe.id = iframeId;
@@ -42,26 +23,42 @@ export function printHtmlViaIframe(html: string, iframeId = "dente-print-iframe"
 		iframe.style.bottom = "0";
 		iframe.style.width = "0";
 		iframe.style.height = "0";
-		iframe.style.border = "none";
+		iframe.style.border = "0";
 		iframe.style.zIndex = "-999";
+		iframe.setAttribute("aria-hidden", "true");
 		document.body.appendChild(iframe);
 
 		const doc = iframe.contentWindow?.document;
-		if (doc) {
-			doc.open();
-			doc.write(html);
-			doc.close();
-			iframe.contentWindow?.focus();
-			setTimeout(() => {
-				try {
-					iframe.contentWindow?.print();
-				} catch (iframeErr) {
-					console.error("Iframe print trigger failed:", iframeErr);
-				}
-			}, 350);
+		if (!doc) {
+			console.error("[printHtmlViaIframe] Unable to access iframe document");
+			window.print();
+			return;
 		}
-	} catch (iframeSetupErr) {
-		console.error("Iframe fallback print failed:", iframeSetupErr);
+
+		doc.open();
+		doc.write(html);
+		doc.close();
+
+		const triggerPrint = (): void => {
+			try {
+				iframe.contentWindow?.focus();
+				iframe.contentWindow?.print();
+			} catch (err) {
+				console.error("[printHtmlViaIframe] Direct print trigger failed:", err);
+				window.print();
+			}
+		};
+
+		// Ensure styles/assets in doc are loaded
+		if (iframe.contentWindow) {
+			iframe.contentWindow.onload = (): void => {
+				setTimeout(triggerPrint, 50);
+			};
+		}
+		// Fallback timeout in case onload does not fire for document.write
+		setTimeout(triggerPrint, 250);
+	} catch (err) {
+		console.error("[printHtmlViaIframe] Failed to create or write to iframe:", err);
 		window.print();
 	}
 }

@@ -1,20 +1,24 @@
 import React, { useMemo } from "react";
-import type { ClinicProfileDraft } from "../../../AppConstants";
 import { useDocumentStore } from "../../../store/documentStore";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
-import { personalDataOperatorRequisitesReview } from "../personalDataOperatorRequisites";
+import {
+	personalDataOperatorRequisitesReview,
+	type PersonalDataOperatorInput,
+} from "../personalDataOperatorRequisites";
 import { PersonalDataOperatorSection } from "./personalData/PersonalDataOperatorSection";
 import { PersonalDataDetailsSection } from "./personalData/PersonalDataDetailsSection";
 import { PersonalDataTermsSection } from "./personalData/PersonalDataTermsSection";
 
-export type DocumentClinicOperator = Pick<
-	ClinicProfileDraft,
-	"legalName" | "clinicName" | "inn" | "address"
->;
+export interface DocumentClinicOperator {
+	legalName?: string | undefined;
+	clinicName?: string | undefined;
+	inn?: string | undefined;
+	address?: string | undefined;
+}
 
 export interface PersonalDataProcessingConsentFormProps {
 	/** Черновик профиля клиники: оператор, ИНН и адрес для согласия на ПДн. */
-	clinicProfileDraft?: Partial<DocumentClinicOperator> | DocumentClinicOperator | undefined;
+	clinicProfileDraft?: DocumentClinicOperator | null | undefined;
 }
 
 /**
@@ -25,7 +29,7 @@ export const PersonalDataProcessingConsentForm = React.memo(
 	function PersonalDataProcessingConsentForm({
 		clinicProfileDraft,
 	}: PersonalDataProcessingConsentFormProps) {
-		const safeOperator: DocumentClinicOperator = useMemo(
+		const safeOperator: PersonalDataOperatorInput = useMemo(
 			() => ({
 				legalName: clinicProfileDraft?.legalName ?? "",
 				clinicName: clinicProfileDraft?.clinicName ?? "",

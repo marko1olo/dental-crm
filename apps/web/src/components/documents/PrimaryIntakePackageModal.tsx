@@ -35,6 +35,7 @@ export function PrimaryIntakePackageModal(props: PrimaryIntakePackageModalProps)
 	).map((t) => t.label).join(", ");
 
 	if (state.isSignatureTabletOpen) {
+		const resolvedClinicName = (typeof clinicProfileDraft?.clinicName === "string" && clinicProfileDraft.clinicName) || "Стоматологическая клиника";
 		return (
 			<DigitalSignatureTabletModal
 				isOpen={state.isSignatureTabletOpen}
@@ -42,8 +43,8 @@ export function PrimaryIntakePackageModal(props: PrimaryIntakePackageModalProps)
 				documentsPackageTitle={`Экспресс-пакет первичного визита (Договор и Согласие: ${activeInterventions})`}
 				patient={patient}
 				doctorFullName={doctorFullName ?? null}
-				clinicName={clinicProfileDraft?.clinicName || "Стоматологическая клиника"}
-				onConfirmSignature={state.handleConfirmSignatureFromTablet}
+				clinicName={resolvedClinicName}
+				onConfirmSignature={(data) => state.handleConfirmSignatureFromTablet(data)}
 				onPrintArchiveA4={print.handleBatchPrint}
 			/>
 		);

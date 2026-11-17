@@ -37,7 +37,7 @@ export const FinancialDocumentForms: React.FC<DocumentFormSwitchProps> = React.m
 				)}
 				{selectedDocumentKind === "completed_works_act" && (
 					<CompletedWorksActForm
-						activeDoctorFullName={props.activeDoctor?.fullName ?? null} dashboard={props.dashboard} money={props.money}
+						activeDoctorFullName={props.activeDoctor?.fullName ?? null} dashboard={props.dashboard ?? undefined} money={props.money}
 						completedActContractReferenceForUi={props.completedActContractReferenceForUi}
 						completedActFiscalReceiptLines={props.completedActFiscalReceiptLines}
 						completedActPaidRubValue={props.completedActPaidRubValue}

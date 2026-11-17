@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
-import type { PrescriptionValidationResult } from "../prescriptionPrintEngine";
+import type { PrescriptionValidationResult } from "../../prescriptionPrintEngine";
 
 export const PrescriptionValidationAlert: React.FC<{ validation: PrescriptionValidationResult | null }> = ({ validation }) => {
 	if (!validation || (validation.isValid && validation.warnings.length === 0)) return null;

@@ -4,28 +4,12 @@ import { useDocumentStore } from "../../../store/documentStore";
 import { showToast } from "../../GlobalToast";
 import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
 
-interface PatientAdministrativeProfile {
-	readonly snils?: string | null | undefined;
-	readonly registrationAddress?: string | null | undefined;
-	readonly passportSeries?: string | null | undefined;
-	readonly passportNumber?: string | null | undefined;
-	readonly passportIssuedBy?: string | null | undefined;
-	readonly passportIssuedDate?: string | null | undefined;
-	readonly passportDepartmentCode?: string | null | undefined;
-	readonly legalRepresentativeFullName?: string | null | undefined;
-	readonly legalRepresentativeRelationship?: string | null | undefined;
-	readonly legalRepresentativePhone?: string | null | undefined;
-	readonly legalRepresentativeIdentityDocument?: string | null | undefined;
-	readonly legalRepresentativeBasisDocument?: string | null | undefined;
-}
-
-interface PatientWithAdminFields extends Partial<Patient> {
-	readonly administrativeProfile?: PatientAdministrativeProfile | null | undefined;
-	readonly snils?: string | null | undefined;
+type PatientWithAdminFields = Partial<Patient> & {
+	readonly administrativeProfile?: Record<string, unknown> | null | undefined;
 	readonly address?: string | null | undefined;
-	readonly gender?: string | null | undefined;
 	readonly cardNumber?: string | null | undefined;
-}
+	readonly snils?: string | null | undefined;
+};
 
 export interface FastPrintIntakeParams {
 	patient?: Patient | null | undefined;
@@ -43,44 +27,53 @@ export function executeFastPrintPrimaryIntake({
 	const docStore = useDocumentStore.getState();
 	const p = patient as PatientWithAdminFields | undefined;
 	const adminProfile = p?.administrativeProfile;
+	const pAdmin = adminProfile as Record<string, unknown> | null | undefined;
 	const repFullName =
-		adminProfile?.legalRepresentativeFullName ||
+		(typeof pAdmin?.legalRepresentativeFullName === "string" ? pAdmin.legalRepresentativeFullName : null) ||
 		docStore.minorRepresentativeFullName;
 	const representative = repFullName
 		? {
 				fullName: repFullName,
 				relationship:
-					adminProfile?.legalRepresentativeRelationship ||
+					(typeof pAdmin?.legalRepresentativeRelationship === "string" ? pAdmin.legalRepresentativeRelationship : null) ||
 					docStore.minorRepresentativeRelationship ||
 					"Законный представитель",
 				phone:
-					adminProfile?.legalRepresentativePhone ||
+					(typeof pAdmin?.legalRepresentativePhone === "string" ? pAdmin.legalRepresentativePhone : null) ||
 					docStore.minorRepresentativePhone ||
 					patient?.phone,
 				passport:
-					adminProfile?.legalRepresentativeIdentityDocument ||
+					(typeof pAdmin?.legalRepresentativeIdentityDocument === "string" ? pAdmin.legalRepresentativeIdentityDocument : null) ||
 					docStore.minorRepresentativeIdentityDocument,
 				basisDocument:
-					adminProfile?.legalRepresentativeBasisDocument ||
+					(typeof pAdmin?.legalRepresentativeBasisDocument === "string" ? pAdmin.legalRepresentativeBasisDocument : null) ||
 					docStore.minorRepresentativeAuthorityDocument,
 			}
 		: null;
 
-	const clinicPrintPayload = clinicProfileDraft
+	const draft = clinicProfileDraft as Record<string, unknown> | DocumentClinicProfileRequisites | null | undefined;
+	const draftRecord = (draft && typeof draft === "object" ? draft : null) as Record<string, unknown> | null;
+	const clinicPrintPayload = draftRecord
 		? {
 				clinicName:
-					clinicProfileDraft.clinicName || "Стоматологическая клиника",
+					(typeof draftRecord.clinicName === "string" && draftRecord.clinicName) || "Стоматологическая клиника",
 				legalName:
-					clinicProfileDraft.legalName || clinicProfileDraft.clinicName || "",
-				inn: clinicProfileDraft.inn || "",
-				kpp: clinicProfileDraft.kpp || "",
-				ogrn: clinicProfileDraft.ogrn || "",
-				licenseNumber: clinicProfileDraft.licenseNumber || "",
-				licenseDate: clinicProfileDraft.licenseDate || "",
-				address: clinicProfileDraft.address || "",
-				phone: clinicProfileDraft.phone || "",
-				directorFullName: clinicProfileDraft.directorFullName || "",
-				city: clinicProfileDraft.city || "",
+					(typeof draftRecord.legalName === "string" && draftRecord.legalName) || (typeof draftRecord.clinicName === "string" && draftRecord.clinicName) || "",
+				inn: typeof draftRecord.inn === "string" ? draftRecord.inn : "",
+				kpp: typeof draftRecord.kpp === "string" ? draftRecord.kpp : "",
+				ogrn: typeof draftRecord.ogrn === "string" ? draftRecord.ogrn : "",
+				licenseNumber:
+					(typeof draftRecord.licenseNumber === "string" && draftRecord.licenseNumber) ||
+					(typeof draftRecord.medicalLicenseNumber === "string" && draftRecord.medicalLicenseNumber) ||
+					"",
+				licenseDate:
+					(typeof draftRecord.licenseDate === "string" && draftRecord.licenseDate) ||
+					(typeof draftRecord.medicalLicenseIssuedAt === "string" && draftRecord.medicalLicenseIssuedAt) ||
+					"",
+				address: typeof draftRecord.address === "string" ? draftRecord.address : "",
+				phone: typeof draftRecord.phone === "string" ? draftRecord.phone : "",
+				directorFullName: typeof draftRecord.directorFullName === "string" ? draftRecord.directorFullName : "",
+				city: typeof draftRecord.city === "string" ? draftRecord.city : "",
 			}
 		: {
 				clinicName: clinicName || "Стоматологическая клиника",
@@ -95,14 +88,14 @@ export function executeFastPrintPrimaryIntake({
 					fullName: patient.fullName,
 					birthDate: patient.birthDate,
 					phone: patient.phone,
-					snils: adminProfile?.snils || p?.snils,
-					registrationAddress: adminProfile?.registrationAddress || p?.address,
-					address: adminProfile?.registrationAddress || p?.address,
-					passportSeries: adminProfile?.passportSeries,
-					passportNumber: adminProfile?.passportNumber,
-					passportIssuedBy: adminProfile?.passportIssuedBy,
-					passportIssuedDate: adminProfile?.passportIssuedDate,
-					passportDepartmentCode: adminProfile?.passportDepartmentCode,
+					snils: (typeof pAdmin?.snils === "string" ? pAdmin.snils : null) || (typeof p?.snils === "string" ? p.snils : null),
+					registrationAddress: (typeof pAdmin?.registrationAddress === "string" ? pAdmin.registrationAddress : null) || p?.address,
+					address: (typeof pAdmin?.registrationAddress === "string" ? pAdmin.registrationAddress : null) || p?.address,
+					passportSeries: typeof pAdmin?.passportSeries === "string" ? pAdmin.passportSeries : undefined,
+					passportNumber: typeof pAdmin?.passportNumber === "string" ? pAdmin.passportNumber : undefined,
+					passportIssuedBy: typeof pAdmin?.passportIssuedBy === "string" ? pAdmin.passportIssuedBy : undefined,
+					passportIssuedDate: typeof pAdmin?.passportIssuedDate === "string" ? pAdmin.passportIssuedDate : undefined,
+					passportDepartmentCode: typeof pAdmin?.passportDepartmentCode === "string" ? pAdmin.passportDepartmentCode : undefined,
 					gender: p?.gender,
 					cardNumber: p?.cardNumber,
 				}

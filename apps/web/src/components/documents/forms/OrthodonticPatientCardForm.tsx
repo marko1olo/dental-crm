@@ -29,7 +29,7 @@ export interface OrthodonticPatientCardFormProps {
 	initialPayload?: Partial<OrthodonticCard043_1uPayload> | undefined;
 	onChange?: ((payload: OrthodonticCard043_1uPayload) => void) | undefined;
 	disabled?: boolean | undefined;
-	patient?: (Patient & OrthodonticPatientCandidate) | OrthodonticPatientCandidate | null | undefined;
+	patient?: Patient | OrthodonticPatientCandidate | null | undefined;
 }
 
 function extractCephAngles(source: unknown): { sna?: number | undefined; snb?: number | undefined; anb?: number | undefined; fma?: number | undefined; savedAt?: string | undefined } | null {
@@ -108,9 +108,10 @@ export const OrthodonticPatientCardForm: React.FC<OrthodonticPatientCardFormProp
 		} | null>(null);
 
 		const syncFromCephStudy = useCallback(() => {
+			const pCand = patient as OrthodonticPatientCandidate | null | undefined;
 			const candidate =
-				patient?.administrativeProfile?.orthodonticProgress?.cephAnalysis ??
-				patient?.orthodonticProgress?.cephAnalysis ??
+				pCand?.administrativeProfile?.orthodonticProgress?.cephAnalysis ??
+				pCand?.orthodonticProgress?.cephAnalysis ??
 				loadLatestCephalometricStudy(patient?.id);
 			const extracted = extractCephAngles(candidate);
 			if (extracted) {

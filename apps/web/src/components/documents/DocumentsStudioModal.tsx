@@ -9,7 +9,8 @@
  * Целевой размер фасада: 320–380 строк (Sweet Spot Mandate 8b, строго <= 420 строк).
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import type { Patient, TaxDeductionRelationship } from "@dental/shared";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
@@ -140,16 +141,16 @@ export interface DocumentsStudioModalProps {
 		readonly [key: string]: unknown;
 	} | undefined;
 	readonly patient?: {
-		readonly id?: string | undefined;
-		readonly fullName?: string | undefined;
-		readonly birthDate?: string | undefined;
-		readonly passport?: string | undefined;
-		readonly phone?: string | undefined;
-		readonly address?: string | undefined;
-		readonly inn?: string | undefined;
-		readonly snils?: string | undefined;
+		readonly id?: string | null | undefined;
+		readonly fullName?: string | null | undefined;
+		readonly birthDate?: string | null | undefined;
+		readonly passport?: string | null | undefined;
+		readonly phone?: string | null | undefined;
+		readonly address?: string | null | undefined;
+		readonly inn?: string | null | undefined;
+		readonly snils?: string | null | undefined;
 		readonly [key: string]: unknown;
-	} | undefined;
+	} | Patient | null | undefined;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientBirthDate?: string | undefined;
@@ -188,6 +189,18 @@ export interface DocumentsStudioModalProps {
 	readonly diagnosisRu?: string | undefined;
 	readonly anamnesisRu?: string | undefined;
 	readonly epicrisisRu?: string | undefined;
+	readonly taxpayer?: {
+		readonly fullName?: string | undefined;
+		readonly inn?: string | undefined;
+		readonly birthDate?: string | undefined;
+		readonly passport?: string | undefined;
+		readonly relationship?: TaxDeductionRelationship | undefined;
+	} | undefined;
+	readonly payerFullName?: string | undefined;
+	readonly payerInn?: string | undefined;
+	readonly payerBirthDate?: string | undefined;
+	readonly payerPassport?: string | undefined;
+	readonly payerRelationship?: TaxDeductionRelationship | undefined;
 	readonly onSigned?: ((payload: { packageKey: DocumentPackageKey; signedAt: string; isDigital: boolean }) => void) | undefined;
 	readonly onDocumentSigned?: ((payload: unknown) => void) | undefined;
 	readonly onConsentSigned?: ((payload: unknown) => void) | undefined;
@@ -206,6 +219,12 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	patientSnils: directPatientSnils,
 	doctorName: directDoctorName,
 	doctorFullName: directDoctorFullName,
+	taxpayer,
+	payerFullName: directPayerFullName,
+	payerInn: directPayerInn,
+	payerBirthDate: directPayerBirthDate,
+	payerPassport: directPayerPassport,
+	payerRelationship: directPayerRelationship,
 	initialTemplate = "intake",
 	initialDocId,
 	selectedYear,
@@ -245,6 +264,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	const [hasSigned, setHasSigned] = useState<boolean>(false);
 	const [toastNotice, setToastNotice] = useState<string | null>(null);
 	const [toastType, setToastType] = useState<"success" | "error" | "info">("info");
+	const [backendTaxReceipts, setBackendTaxReceipts] = useState<readonly TaxDeductionPaymentItem[]>([]);
 
 	const {
 		canvasRef,
@@ -256,6 +276,62 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	} = useCanvasSigner(() => setHasSigned(false));
 
 	const effectivePatientId = patientContext?.id || directPatient?.id || directPatientId;
+
+	useEffect(() => {
+		if (!isOpen || activePackage !== "tax_certificate" || !effectivePatientId) {
+			setBackendTaxReceipts([]);
+			return;
+		}
+
+		let isMounted = true;
+		const headers = denteAdminSecretRequestHeaders();
+
+		fetch(`/api/documents/tax-deduction/preview/${encodeURIComponent(effectivePatientId)}?year=${taxYear}`, {
+			headers,
+		})
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data) => {
+				if (!isMounted) return;
+				const payload = data && typeof data === "object" && "data" in data ? (data as { data: unknown }).data : data;
+				if (payload && typeof payload === "object" && Array.isArray((payload as { receipts?: unknown[] }).receipts)) {
+					const rawList = (payload as { receipts: Array<{
+						id?: string;
+						receiptNumber?: string;
+						fiscalDocumentNumber?: string;
+						receiptDate?: string;
+						serviceName?: string;
+						amountRub?: number;
+						deductionCode?: string;
+						isExcluded?: boolean;
+					}> }).receipts;
+					const activeList = rawList.filter((r) => !r.isExcluded);
+					const mapped: TaxDeductionPaymentItem[] = activeList.map((r, idx) => {
+						const rub = Number(r.amountRub) || 0;
+						return {
+							id: r.id || `preview-rcpt-${idx + 1}`,
+							dateIso: r.receiptDate || new Date().toISOString(),
+							receiptNumber: r.receiptNumber || String(idx + 1),
+							fiscalDocumentNumber: r.fiscalDocumentNumber || "0",
+							fiscalSign: "0",
+							serviceName: r.serviceName || "Стоматологические медицинские услуги",
+							amountRub: rub,
+							amountKopecks: Math.round(rub * 100),
+							taxCode: r.deductionCode === "2" ? "2" : "1",
+						};
+					});
+					setBackendTaxReceipts(mapped);
+				} else {
+					setBackendTaxReceipts([]);
+				}
+			})
+			.catch(() => {
+				if (isMounted) setBackendTaxReceipts([]);
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, activePackage, effectivePatientId, taxYear]);
 	const { patientConsentsMap, recordConsentLocally } = usePatientConsents(isOpen, effectivePatientId);
 
 	const currentConsentKey = useMemo<string>(() => {
@@ -285,13 +361,17 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 			};
 		}
 		if (directPatient) {
+			const dp = directPatient as Record<string, unknown>;
+			const dpInn = (typeof dp.inn === "string" ? dp.inn : undefined) || directPatientInn;
+			const dpPassport = typeof dp.passport === "string" ? dp.passport : "";
+			const dpAddress = typeof dp.address === "string" ? dp.address : "";
 			return {
 				fullName: directPatient.fullName || directPatientName || "",
 				birthDate: directPatient.birthDate || directPatientBirthDate || "",
-				passport: directPatient.passport || "",
-				address: directPatient.address || "",
+				passport: dpPassport,
+				address: dpAddress,
 				phone: directPatient.phone || "",
-				...(directPatient.inn || directPatientInn ? { inn: directPatient.inn || directPatientInn } : {}),
+				...(dpInn ? { inn: dpInn } : {}),
 			};
 		}
 		if (directPatientName || directPatientBirthDate || directPatientInn) {
@@ -411,7 +491,60 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 		consentSubKind: activeConsentSubKind,
 	}), [clinicRequisites, patient, effectiveDoctorName, isDemo, effectivePatientId, currentDate, taxYear, effectiveServices, totalAmountKopecks, clinicalTexts, activeConsentSubKind]);
 
-	const hasNoConfirmedPayments = (Array.isArray(payments) && payments.length === 0) && (!effectiveServices || effectiveServices.length === 0);
+	const taxReceiptItems = useMemo<readonly TaxDeductionPaymentItem[]>(() => {
+		if (backendTaxReceipts.length > 0) return backendTaxReceipts;
+		if (Array.isArray(payments) && payments.length > 0) {
+			return payments.map((pmt: unknown, idx: number) => {
+				const p = (pmt && typeof pmt === "object") ? (pmt as Record<string, unknown>) : {};
+				const amtKop =
+					typeof p.amountKopecks === "number"
+						? p.amountKopecks
+						: Math.round(Number(p.amountRub || p.amount || 0) * 100);
+				const code804n = typeof p.code804n === "string" ? p.code804n : undefined;
+				const serviceName = typeof p.serviceName === "string" ? p.serviceName : typeof p.description === "string" ? p.description : "Оплата медицинских услуг";
+				const rawTaxCode = typeof p.taxCode === "string" ? p.taxCode : resolveTaxDeductionCategory(code804n || "", serviceName);
+				const receiptNumber = typeof p.receiptNumber === "string" ? p.receiptNumber : undefined;
+				const fiscalDocumentNumber = typeof p.fiscalDocumentNumber === "string" ? p.fiscalDocumentNumber : undefined;
+				const fiscalSign = typeof p.fiscalSign === "string" ? p.fiscalSign : undefined;
+				const dateIso = typeof p.dateIso === "string" ? p.dateIso : typeof p.paidAt === "string" ? p.paidAt : new Date().toISOString();
+				return {
+					id: typeof p.id === "string" ? p.id : `pmt-${idx + 1}`,
+					dateIso,
+					receiptNumber: receiptNumber || String(idx + 1),
+					fiscalDocumentNumber: fiscalDocumentNumber || "0",
+					fiscalSign: fiscalSign || "0",
+					serviceName,
+					...(code804n ? { code804n } : {}),
+					amountRub: amtKop / 100,
+					amountKopecks: amtKop,
+					taxCode: (rawTaxCode === "2" ? "2" : "1") as "1" | "2",
+				};
+			});
+		}
+		return [];
+	}, [backendTaxReceipts, payments]);
+
+	const taxTotalAmountKopecks = useMemo(() => {
+		return taxReceiptItems.reduce((acc, p) => acc + (p.amountKopecks || 0), 0);
+	}, [taxReceiptItems]);
+
+	const { taxCode01Kopecks, taxCode02Kopecks } = useMemo(() => {
+		let c1 = 0;
+		let c2 = 0;
+		for (const p of taxReceiptItems) {
+			const amt = p.amountKopecks || Math.round(p.amountRub * 100);
+			if (p.taxCode === "2") {
+				c2 += amt;
+			} else {
+				c1 += amt;
+			}
+		}
+		return { taxCode01Kopecks: c1, taxCode02Kopecks: c2 };
+	}, [taxReceiptItems]);
+
+	const hasNoConfirmedPayments = activePackage === "tax_certificate"
+		? taxReceiptItems.length === 0
+		: (Array.isArray(payments) && payments.length === 0) && (!effectiveServices || effectiveServices.length === 0);
 
 	// Генерация текста текущего документа в зависимости от выбранного пакета
 	const renderedDocumentText = useMemo(() => {
@@ -423,17 +556,22 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 			case "informed_consent":
 				return `${blankNotice}${generateInformedConsentTemplate(legalContext, activeConsentSubKind)}`;
 			case "tax_certificate": {
-				const baseText = generateTaxCertificateTemplate(legalContext);
-				const codeBreakdown = `\n[РАЗДЕЛЕНИЕ ПО КОДАМ УСЛУГ ДЛЯ ФНС]:\nКод 1 (стандартные медицинские услуги): ${formatKopecksToRubles(code01Kopecks)}\nКод 2 (дорогостоящее лечение): ${formatKopecksToRubles(code02Kopecks)}\n`;
-				const emptyNote = hasNoConfirmedPayments ? "\n[Нет подтвержденных фискальных оплат за указанный налоговый период. Формируется чистый бланк со штампом клиники]\n" : "";
-				return `${blankNotice}Справка об оплате медицинских услуг для налогового вычета (ФНС России)\n${baseText}${codeBreakdown}${emptyNote}`;
+				if (taxReceiptItems.length === 0) {
+					return `Справка об оплате медицинских услуг для представления в налоговый орган Российской Федерации (ФНС России)\nФорма по КНД 1151156 (Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@)\n\nНет подтверждённых платежей за ${taxYear} год.\n\nЗа выбранный налоговый период по данному пациенту не зарегистрировано подтверждённых кассовых оплат.\nДля формирования официальной справки по форме КНД 1151156 необходимы зарегистрированные чеки ККТ.\n\n[Доступна печать чистого бланка справки со штампом клиники для ручного заполнения]`;
+				}
+				const baseText = generateTaxCertificateTemplate({
+					...legalContext,
+					totalAmountKopecks: taxTotalAmountKopecks,
+				});
+				const codeBreakdown = `\n[РАЗДЕЛЕНИЕ ПО КОДАМ УСЛУГ ДЛЯ ФНС]:\nКод 1 (стандартные медицинские услуги): ${formatKopecksToRubles(taxCode01Kopecks)}\nКод 2 (дорогостоящее лечение): ${formatKopecksToRubles(taxCode02Kopecks)}\n`;
+				return `${blankNotice}Справка об оплате медицинских услуг для налогового вычета (ФНС России)\n${baseText}${codeBreakdown}`;
 			}
 			case "card_extract":
 				return `${blankNotice}${generateCardExtractTemplate(legalContext)}`;
 			default:
 				return `${blankNotice}${generateIntakePackageTemplate(legalContext)}`;
 		}
-	}, [isDemo, patient.fullName, hasNoConfirmedPayments, activePackage, legalContext, activeConsentSubKind, code01Kopecks, code02Kopecks]);
+	}, [isDemo, patient.fullName, hasNoConfirmedPayments, activePackage, legalContext, activeConsentSubKind, taxReceiptItems, taxYear, taxTotalAmountKopecks, taxCode01Kopecks, taxCode02Kopecks]);
 
 	const showToast = useCallback((msg: string, type: "success" | "error" | "info" = "info") => {
 		setToastNotice(msg);
@@ -467,6 +605,12 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 
 	const handlePrintBlank = useCallback(() => {
 		if (activePackage === "tax_certificate") {
+			const payerFullName = taxpayer?.fullName || directPayerFullName || undefined;
+			const payerInn = taxpayer?.inn || directPayerInn || undefined;
+			const payerBirthDate = taxpayer?.birthDate || directPayerBirthDate || undefined;
+			const payerPassport = taxpayer?.passport || directPayerPassport || undefined;
+			const payerRelationship = taxpayer?.relationship || directPayerRelationship || "patient";
+
 			printTaxCertificate(
 				buildTaxCertificateDocumentData({
 					documentNumber: `БЛ-${taxYear}/001`,
@@ -483,6 +627,13 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 						birthDate: patient.birthDate || "____.____.________",
 						passport: patient.passport || "серия _____ № ___________",
 						inn: patient.inn || undefined,
+					},
+					taxpayer: {
+						fullName: payerFullName,
+						inn: payerInn,
+						birthDate: payerBirthDate,
+						passport: payerPassport,
+						relationship: payerRelationship,
 					},
 					receiptsCount: 0,
 					totalAmountKopecks: 0,
@@ -532,31 +683,10 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	}, [currentConsentKey, recordConsentLocally, onConsentSigned, patient.fullName, showToast]);
 
 	const buildCertParams = useCallback((): TaxDeductionCertificateParams => {
-		const rawServices = effectiveServices.length > 0
-			? effectiveServices
-			: [
-					{
-						id: "pmt-draft-1",
-						code: "PAY-1",
-						title: "Оплата медицинских услуг",
-						quantity: 1,
-						priceKopecks: totalAmountKopecks || 0,
-						amountKopecks: totalAmountKopecks || 0,
-					},
-				];
-
-		const pmtItems: TaxDeductionPaymentItem[] = rawServices.map((s, idx) => ({
-			id: `pmt-${idx + 1}`,
-			dateIso: `${taxYear}-06-15T12:00:00.000Z`,
-			receiptNumber: `ЧЕК-${idx + 1}`,
-			fiscalDocumentNumber: `ФД-${idx + 1}`,
-			fiscalSign: `ФП-${idx + 1}`,
-			serviceName: s.title,
-			code804n: s.code?.startsWith("PAY") ? undefined : s.code,
-			amountRub: (s.amountKopecks || 0) / 100,
-			amountKopecks: s.amountKopecks || 0,
-			taxCode: resolveTaxDeductionCategory(s.code || "", s.title),
-		}));
+		const payerFullName = taxpayer?.fullName || directPayerFullName || patient.fullName.trim() || "Пациент Не Указан";
+		const payerInn = taxpayer?.inn || directPayerInn || patient.inn || undefined;
+		const payerBirthDate = taxpayer?.birthDate || directPayerBirthDate || patient.birthDate || undefined;
+		const payerRelationship = taxpayer?.relationship || directPayerRelationship || "patient";
 
 		return {
 			certificateNumber: `СПР-${taxYear}/001`,
@@ -572,23 +702,27 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 				chiefDoctorName: effectiveDoctorName,
 			},
 			payer: {
-				fullName: patient.fullName.trim() || "Пациент Не Указан",
-				inn: patient.inn || undefined,
-				birthDate: patient.birthDate || undefined,
-				relationship: "patient",
+				fullName: payerFullName,
+				inn: payerInn,
+				birthDate: payerBirthDate,
+				relationship: payerRelationship,
 			},
 			patient: {
 				fullName: patient.fullName.trim() || "Пациент Не Указан",
 				inn: patient.inn || undefined,
 				birthDate: patient.birthDate || undefined,
 			},
-			payments: pmtItems,
+			payments: [...taxReceiptItems],
 		};
-	}, [taxYear, clinicRequisites, effectiveDoctorName, patient, effectiveServices, totalAmountKopecks]);
+	}, [taxReceiptItems, taxpayer, directPayerFullName, directPayerInn, directPayerBirthDate, directPayerRelationship, patient, taxYear, clinicRequisites, effectiveDoctorName]);
 
 	const handleDownloadXml = useCallback(() => {
 		try {
 			const certParams = buildCertParams();
+			if (!certParams.payments || certParams.payments.length === 0) {
+				showToast("Нет подтверждённых платежей за выбранный год", "error");
+				return;
+			}
 			downloadFnsTaxXmlFile(certParams);
 			showToast("XML-файл справки выгружен для ТКС", "success");
 		} catch (err) {
@@ -600,6 +734,10 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	const handleDownloadNoMedopl = useCallback(() => {
 		try {
 			const certParams = buildCertParams();
+			if (!certParams.payments || certParams.payments.length === 0) {
+				showToast("Нет подтверждённых платежей за выбранный год", "error");
+				return;
+			}
 			downloadFnsNoMedoplXmlFile(certParams);
 			showToast("Файл электронного реестра NO_MEDOPL (5.01) выгружен", "success");
 		} catch (err) {
@@ -716,6 +854,12 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 		}
 
 		if (activePackage === "tax_certificate") {
+			const payerFullName = taxpayer?.fullName || directPayerFullName || patient.fullName || undefined;
+			const payerInn = taxpayer?.inn || directPayerInn || patient.inn || undefined;
+			const payerBirthDate = taxpayer?.birthDate || directPayerBirthDate || patient.birthDate || undefined;
+			const payerPassport = taxpayer?.passport || directPayerPassport || undefined;
+			const payerRelationship = taxpayer?.relationship || directPayerRelationship || "patient";
+
 			printTaxCertificate(
 				buildTaxCertificateDocumentData({
 					documentNumber: legalContext.documentNumber,
@@ -728,10 +872,17 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 					clinicAddress: clinicRequisites.address,
 					doctorFullName: effectiveDoctorName,
 					patient,
-					receiptsCount: effectiveServices.length || 1,
-					totalAmountKopecks,
-					code01Kopecks,
-					code02Kopecks,
+					taxpayer: {
+						fullName: payerFullName,
+						inn: payerInn,
+						birthDate: payerBirthDate,
+						passport: payerPassport,
+						relationship: payerRelationship,
+					},
+					receiptsCount: taxReceiptItems.length,
+					totalAmountKopecks: taxTotalAmountKopecks,
+					code01Kopecks: taxCode01Kopecks,
+					code02Kopecks: taxCode02Kopecks,
 				}),
 			);
 			showToast("Справка для налогового вычета сформирована и отправлена на печать", "success");
@@ -791,7 +942,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	const stampBadgeElement = (
 		<div
 			data-testid="tax-certificate-stamp-badge"
-			className="dente-tax-stamp-badge inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200"
+			className="dente-tax-stamp-badge inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800"
 		>
 			{effectiveHasSigned || (!hasNoConfirmedPayments && totalAmountKopecks > 0) ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"}
 		</div>
@@ -890,7 +1041,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 								<div className="dente-a4-date-badge">
 									<div>Дата: {currentDate}</div>
 									<div className="text-teal-700 font-medium mt-1">
-										Сумма: {formatKopecksToRubles(totalAmountKopecks)}
+										Сумма: {formatKopecksToRubles(activePackage === "tax_certificate" ? taxTotalAmountKopecks : totalAmountKopecks)}
 									</div>
 								</div>
 							</div>
