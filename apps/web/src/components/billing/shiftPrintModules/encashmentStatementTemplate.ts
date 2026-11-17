@@ -5,7 +5,6 @@
 import type { EncashmentStatementData } from "./types.js";
 
 export function generateEncashmentStatementHtml(stmt: EncashmentStatementData): string {
-	const d = stmt.denominations;
 	return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -39,30 +38,13 @@ export function generateEncashmentStatementHtml(stmt: EncashmentStatementData): 
 		<tr><td><strong>Сумма прописью:</strong></td><td style="font-weight: 600;">${stmt.encashmentAmountWordsRu}</td></tr>
 	</table>
 
-	<div style="margin-top: 12px; font-weight: 600; font-size: 10pt;">Покупюрная опись вложения:</div>
-	<table class="grid-table" style="margin-top: 4px; font-size: 9pt;">
-		<thead>
-			<tr><th>Номинал</th><th>Кол-во</th><th>Сумма (руб.)</th><th>Номинал</th><th>Кол-во</th><th>Сумма (руб.)</th></tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td>5 000 ₽</td><td style="text-align: center;">${d.b5000 ?? 0}</td><td style="text-align: right;">${((d.b5000 ?? 0) * 5000).toFixed(2)}</td>
-				<td>200 ₽</td><td style="text-align: center;">${d.b200 ?? 0}</td><td style="text-align: right;">${((d.b200 ?? 0) * 200).toFixed(2)}</td>
-			</tr>
-			<tr>
-				<td>2 000 ₽</td><td style="text-align: center;">${d.b2000 ?? 0}</td><td style="text-align: right;">${((d.b2000 ?? 0) * 2000).toFixed(2)}</td>
-				<td>100 ₽</td><td style="text-align: center;">${d.b100 ?? 0}</td><td style="text-align: right;">${((d.b100 ?? 0) * 100).toFixed(2)}</td>
-			</tr>
-			<tr>
-				<td>1 000 ₽</td><td style="text-align: center;">${d.b1000 ?? 0}</td><td style="text-align: right;">${((d.b1000 ?? 0) * 1000).toFixed(2)}</td>
-				<td>50 ₽</td><td style="text-align: center;">${d.b50 ?? 0}</td><td style="text-align: right;">${((d.b50 ?? 0) * 50).toFixed(2)}</td>
-			</tr>
-			<tr>
-				<td>500 ₽</td><td style="text-align: center;">${d.b500 ?? 0}</td><td style="text-align: right;">${((d.b500 ?? 0) * 500).toFixed(2)}</td>
-				<td>Монеты / Мелочь</td><td style="text-align: center;">—</td><td style="text-align: right;">${(((d.c10 ?? 0) * 10 + (d.c5 ?? 0) * 5 + (d.c2 ?? 0) * 2 + (d.c1 ?? 0) * 1 + (d.coinsFractionalRub || 0))).toFixed(2)}</td>
-			</tr>
-		</tbody>
-	</table>
+	<div style="margin-top: 16px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f8fafc;">
+		<div style="font-weight: 600; font-size: 10pt; color: #0f766e; margin-bottom: 6px;">Сведения о передаче вложений:</div>
+		<div style="font-size: 9.5pt; color: #334155; line-height: 1.5;">
+			Денежные средства вложены в опломбированный сейф-пакет <strong>№ ${stmt.bagNumber || "б/н"}</strong> (индикаторная пломба <strong>№ ${stmt.sealNumber || "б/н"}</strong>).
+			Целостность защитных элементов подтверждена ответственным лицом при сдаче.
+		</div>
+	</div>
 
 	<div class="sig-block">
 		<div><strong>Сдал (кассир):</strong> ___________________ (${stmt.cashierFullName})</div>

@@ -43,6 +43,9 @@ export const cashBoxes = pgTable(
 		balanceRub: numeric("balance_rub", { precision: 14, scale: 2, mode: "number" })
 			.notNull()
 			.default(0),
+		balanceKopecks: bigint("balance_kopecks", { mode: "number" })
+			.notNull()
+			.default(0),
 		isMain: boolean("is_main").notNull().default(false),
 		isCashless: boolean("is_cashless").notNull().default(false),
 		kkmModel: text("kkm_model"),

@@ -28,6 +28,7 @@ export interface FinanceOperationsToolbarProps {
 	onOpenFamilyBilling?: (() => void) | undefined;
 	onOpenSplitPayment?: (() => void) | undefined;
 	onOpenDoctorPayroll?: (() => void) | undefined;
+	onOpenAccountingExport?: (() => void) | undefined;
 	shiftNumber: number;
 	paymentFiscalCashierName: string;
 	cashInDrawerRub: number;
@@ -48,6 +49,7 @@ export function FinanceOperationsToolbar(props: FinanceOperationsToolbarProps) {
 		onOpenInvoices, isFinanceOptionsOpen, onToggleFinanceOptions, onCloseFinanceOptions,
 		onOpenPnl, onGoToDocuments, onOpenCashbox, onOpenBillingAct, onOpenQuickExpense,
 		onOpenTaxCertificate, onOpenT13Timesheet, onOpenFamilyBilling, onOpenSplitPayment,
+		onOpenAccountingExport,
 		shiftNumber, paymentFiscalCashierName, cashInDrawerRub, cardSumRub, sbpSumRub,
 		advanceOffsetRub, onOpenShift, onCloseShift, onCashIn, onCashOut, onPrintXReport,
 	} = props;
@@ -84,6 +86,7 @@ export function FinanceOperationsToolbar(props: FinanceOperationsToolbarProps) {
 				onOpenT13Timesheet={onOpenT13Timesheet}
 				onOpenFamilyBilling={onOpenFamilyBilling}
 				onOpenSplitPayment={onOpenSplitPayment}
+				onOpenAccountingExport={onOpenAccountingExport}
 			/>
 
 			{isCashShiftOpen && (

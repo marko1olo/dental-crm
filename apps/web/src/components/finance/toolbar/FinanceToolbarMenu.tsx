@@ -15,6 +15,7 @@ export interface FinanceToolbarMenuProps {
 	readonly onOpenT13Timesheet?: (() => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;
 	readonly onOpenSplitPayment?: (() => void) | undefined;
+	readonly onOpenAccountingExport?: (() => void) | undefined;
 	readonly isCashShiftOpen: boolean;
 	readonly onToggleCashShift: () => void;
 }

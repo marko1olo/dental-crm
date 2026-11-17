@@ -7,21 +7,10 @@
  */
 
 import { z } from "zod";
+import { expenseCategorySchema, type ExpenseCategory } from "./expensesEngine.js";
 
-export const clinicExpenseCategorySchema = z.enum([
-	"rent",
-	"utilities",
-	"salaries",
-	"supplies",
-	"equipment",
-	"insurance",
-	"maintenance",
-	"lab_fees",
-	"marketing",
-	"taxes",
-	"other",
-]);
-export type ClinicExpenseCategory = z.infer<typeof clinicExpenseCategorySchema>;
+export const clinicExpenseCategorySchema = expenseCategorySchema;
+export type ClinicExpenseCategory = ExpenseCategory;
 
 export const costNatureSchema = z.enum(["fixed", "variable", "semi_variable"]);
 export type CostNature = z.infer<typeof costNatureSchema>;
@@ -52,12 +41,13 @@ export const CATEGORY_DEFAULT_NATURE: Record<ClinicExpenseCategory, CostNature> 
 	utilities: "semi_variable",
 	salaries: "fixed",
 	supplies: "variable",
-	equipment: "fixed",
+	equipment_lease: "fixed",
 	insurance: "fixed",
 	maintenance: "semi_variable",
-	lab_fees: "variable",
+	lab_costs: "variable",
 	marketing: "semi_variable",
-	taxes: "variable",
+	taxes_fees: "variable",
+	license_software: "fixed",
 	other: "semi_variable",
 };
 
@@ -88,12 +78,13 @@ export function calculateClinicOverhead(
 		utilities: 0,
 		salaries: 0,
 		supplies: 0,
-		equipment: 0,
+		equipment_lease: 0,
 		insurance: 0,
 		maintenance: 0,
-		lab_fees: 0,
+		lab_costs: 0,
 		marketing: 0,
-		taxes: 0,
+		taxes_fees: 0,
+		license_software: 0,
 		other: 0,
 	};
 

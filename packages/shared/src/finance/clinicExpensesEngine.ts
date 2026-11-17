@@ -23,27 +23,17 @@
 
 import { z } from "zod";
 import { formatKopecksRu } from "../utils/money.js";
+import {
+	expenseCategorySchema,
+	type ExpenseCategory,
+	EXPENSE_CATEGORY_LABELS_RU as CANONICAL_EXPENSE_CATEGORY_LABELS_RU,
+} from "./expensesEngine.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. ZOD SCHEMAS & TYPES
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * 10 Canonical Operating Expense Categories for Dental Practices.
- */
-export const expenseCategorySchema = z.enum([
-	"rent",
-	"utilities",
-	"salaries",
-	"supplies",
-	"equipment_lease",
-	"insurance",
-	"maintenance",
-	"marketing",
-	"license_software",
-	"other",
-]);
-export type ExpenseCategory = z.infer<typeof expenseCategorySchema>;
+export { expenseCategorySchema, type ExpenseCategory };
 
 /** Non-colliding export alias for package root exports */
 export const clinicOperatingExpenseCategorySchema = expenseCategorySchema;
@@ -59,6 +49,8 @@ export const EXPENSE_CATEGORY_LABELS_RU: Record<ExpenseCategory, string> = {
 	maintenance: "Техническое обслуживание установок, компрессоров, автоклавов",
 	marketing: "Реклама, маркетинг, сайт, телефония и лидогенерация",
 	license_software: "Лицензии ПО, МИС, ОФД, ЭЦП и сервисы маркировки ЧЗ/МДЛП",
+	lab_costs: "Зуботехнические лаборатории",
+	taxes_fees: "Налоги, эквайринг, банковские комиссии",
 	other: "Прочие административно-хозяйственные расходы",
 };
 
@@ -212,6 +204,8 @@ export function aggregateExpensesByCategory(
 		maintenance: 0,
 		marketing: 0,
 		license_software: 0,
+		lab_costs: 0,
+		taxes_fees: 0,
 		other: 0,
 	};
 

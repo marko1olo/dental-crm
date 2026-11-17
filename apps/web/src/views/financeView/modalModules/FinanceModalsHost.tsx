@@ -32,6 +32,12 @@ const ManagerialPnlDashboardModal = lazy(() =>
 	),
 );
 
+const Billing1CExportModal = lazy(() =>
+	import("../../../components/finance/Billing1CExportModal").then((m) => ({
+		default: m.Billing1CExportModal,
+	})),
+);
+
 export interface FinanceModalsHostProps {
 	readonly s: FinanceViewState;
 	readonly isDoctorPayrollOpen?: boolean;
@@ -137,6 +143,23 @@ export function FinanceModalsHost({
 						s.setIsSplitPaymentOpen(false);
 					}}
 				/>
+			)}
+
+			{s.isAccountingExportOpen && (
+				<Suspense fallback={null}>
+					<Billing1CExportModal
+						isOpen={s.isAccountingExportOpen}
+						onClose={() => s.setIsAccountingExportOpen(false)}
+						items={[]}
+						patientName={docPat?.fullName || effPat?.fullName || "Пациент клиники"}
+						patientId={docPat?.id || effPat?.id}
+						patientPhone={docPat?.phone ?? effPat?.phone ?? undefined}
+						clinicName={clinicName}
+						clinicInn={clinic?.inn || ""}
+						clinicKpp={clinic?.kpp || "770101001"}
+						totalRub={totalBill}
+					/>
+				</Suspense>
 			)}
 
 			<FinancePatientModalsSubhost

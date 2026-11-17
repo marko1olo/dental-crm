@@ -50,6 +50,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				onOpenFamilyBilling={() => s.setIsFamilyBillingOpen(true)}
 				onOpenSplitPayment={() => s.setIsSplitPaymentOpen(true)}
 				onOpenDoctorPayroll={() => setIsDoctorPayrollOpen(true)}
+				onOpenAccountingExport={() => s.setIsAccountingExportOpen(true)}
 				shiftNumber={s.shiftNumber}
 				paymentFiscalCashierName={s.paymentFiscalCashierName}
 				cashInDrawerRub={s.cashInDrawerRub}

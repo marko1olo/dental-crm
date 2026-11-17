@@ -242,12 +242,16 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 			}
 
 			const balanceBefore = targetBox.balanceRub ?? 0;
-			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) - rubToKopecks(amountRub));
+			const balanceBeforeKop = targetBox.balanceKopecks ?? rubToKopecks(balanceBefore);
+			const expenseKop = data.amountKopecks;
+			const balanceAfterKop = balanceBeforeKop - expenseKop;
+			const balanceAfter = kopecksToRub(balanceAfterKop);
 
 			await tx
 				.update(cashBoxes)
 				.set({
 					balanceRub: balanceAfter,
+					balanceKopecks: balanceAfterKop,
 					updatedAt: new Date(),
 				})
 				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
@@ -413,11 +417,14 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				.limit(1);
 
 			if (box) {
-				const restoredBalance = kopecksToRub(rubToKopecks(box.balanceRub) + rubToKopecks(op.amountRub));
+				const refundKop = rubToKopecks(op.amountRub);
+				const restoredKop = (box.balanceKopecks ?? rubToKopecks(box.balanceRub)) + refundKop;
+				const restoredBalance = kopecksToRub(restoredKop);
 				await tx
 					.update(cashBoxes)
 					.set({
 						balanceRub: restoredBalance,
+						balanceKopecks: restoredKop,
 						updatedAt: new Date(),
 					})
 					.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, organizationId)));

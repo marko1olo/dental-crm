@@ -18,6 +18,9 @@ export const expenseCategorySchema = z.enum([
 	"taxes_fees",       // Налоги, эквайринг, банковские комиссии
 	"marketing",        // Реклама и лидогенерация
 	"equipment_lease",  // Лизинг и сервисное обслуживание установок/томографа
+	"insurance",        // Страхование профессиональной ответственности
+	"maintenance",      // Техническое обслуживание оборудования
+	"license_software", // Лицензии ПО, МИС, ОФД и маркировка
 	"other",            // Прочие расходы
 ]);
 export type ExpenseCategory = z.infer<typeof expenseCategorySchema>;
@@ -64,6 +67,9 @@ export const EXPENSE_CATEGORY_LABELS_RU: Record<ExpenseCategory, string> = {
 	taxes_fees: "Налоги, эквайринг, банковские комиссии",
 	marketing: "Реклама и лидогенерация",
 	equipment_lease: "Лизинг и сервисное обслуживание установок/томографа",
+	insurance: "Страхование профессиональной ответственности",
+	maintenance: "ТО оборудования и автоклавов",
+	license_software: "Лицензии ПО, МИС, ОФД и маркировка",
 	other: "Прочие расходы",
 };
 
@@ -99,6 +105,9 @@ export function calculateMonthlyExpensesSummary(
 		taxes_fees: 0,
 		marketing: 0,
 		equipment_lease: 0,
+		insurance: 0,
+		maintenance: 0,
+		license_software: 0,
 		other: 0,
 	};
 
@@ -117,6 +126,9 @@ export function calculateMonthlyExpensesSummary(
 		taxes_fees: kopecksToRub(categoryTotalsKopecks.taxes_fees),
 		marketing: kopecksToRub(categoryTotalsKopecks.marketing),
 		equipment_lease: kopecksToRub(categoryTotalsKopecks.equipment_lease),
+		insurance: kopecksToRub(categoryTotalsKopecks.insurance),
+		maintenance: kopecksToRub(categoryTotalsKopecks.maintenance),
+		license_software: kopecksToRub(categoryTotalsKopecks.license_software),
 		other: kopecksToRub(categoryTotalsKopecks.other),
 	};
 

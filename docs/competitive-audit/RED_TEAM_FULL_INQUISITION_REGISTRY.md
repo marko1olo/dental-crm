@@ -4091,6 +4091,34 @@ ead_file по 8 осям качества Хаммера:
   - 📸 8 ракурсов ABO Mobile Light: `docs/proofs/orthodontics/07_ortho_photo_trg_tab_mobile_light_390x844.png` (41.4 KB)
   - 📸 8 ракурсов ABO Mobile Dark: `docs/proofs/orthodontics/08_ortho_photo_trg_tab_mobile_dark_390x844.png` (41.6 KB)
 
+### 5. ДОМЕН 26: ФИНАНСЫ КЛИНИКИ, РАСХОДЫ (СТАТЬИ ЗАТРАТ), P&L, ЭКВАЙРИНГ, ИНКАССАЦИЯ И БАНКОВСКИЕ ВЫПИСКИ
+- **Хирург:** Red Team Fixer Surgeon (`deef0273-7483-4c8a-bd5b-dbc27c2754ac`).
+- **Ликвидированные дефекты [DEF-FIN-01..07]:**
+  1. **[DEF-FIN-01] [ORPHAN PURGE] Снос сиротского субхоста с мок-пациентами**: Файл `FinanceAccountingExportModalSubhost.tsx` и мёртвый клон `clinicExpensesTypes.ts` физически удалены через `git rm` (коммит `73fea206b`).
+  2. **[DEF-FIN-02] [CATEGORY UNIFICATION] Сведение категорий расходов к SSOT**: В `packages/shared/src/finance/clinicExpenses.ts` и `clinicExpensesEngine.ts` устранены расхождения с канонической схемой `expenseCategorySchema` из `expensesEngine.ts` (добавлены категории `insurance`, `maintenance`, `license_software`). 48/48 тестов Vitest passed.
+  3. **[DEF-FIN-03] [SCHEMA / DRIFT] Колонка `balance_kopecks` в таблице `cash_boxes`**: Добавлено поле `balanceKopecks: bigint("balance_kopecks", { mode: "number" })` в `apps/api/src/db/schema/finance.ts`, сгенерирована DDL-миграция `0249_cash_boxes_balance_kopecks.sql`, проверен `npm run check:migration-drift` (0 drift на 212 таблицах, 2870 колонок).
+  4. **[DEF-FIN-04] [1C BANK PARSER] Подключение выписок 1CClientBankExchange к Fastify API**: Разработан роут `apps/api/src/routes/bankStatements.ts` (`POST /api/finance/bank-statements/upload` и `/api/v1/finance/bank-statements/upload`) с вызовом `parse1CBankStatement`. В тулбар `FinanceToolbarMenuItems.tsx` встроен скрытый file input и кнопка «Загрузить выписку (1CClientBankExchange)» с toast-уведомлениями. Роут покрыт тестами `bankStatementsUpload.test.ts` (2/2 passed).
+  5. **[DEF-FIN-05] [ACQUIRING RECONCILIATION] Интеграция сверки эквайринга с ККТ**: Движок `reconcileAcquiringWithKkt` из `acquiringReconciliation.ts` встроен в шторку `CashShiftClosingModal.tsx`. Отображаются статус сверки (зеленый бейдж «100% совпадение с чеками»), расхождения, итоговые суммы по безналу и терминалам.
+  6. **[DEF-FIN-06] [ENCASHMENT MODERNIZATION] Ликвидация советской покупюрной таблицы**: В `encashmentStatementTemplate.ts` удалена архаичная разбивка по купюрам 5000₽..50₽, внедрен современный протокол инкассации с инкассаторской сейф-сумкой, индикаторной пломбой и пломбиром.
+  7. **[DEF-FIN-07] [1C EXPORT INTEGRATION] Подключение кнопки экспорта в 1С (CommerceML)**: Кнопка «Экспорт в 1С (CommerceML)» в `FinanceToolbarMenuItems.tsx` подключена через пропс `onOpenAccountingExport` к модалке `Billing1CExportModal` в `FinanceModalsHost.tsx` через `FinanceToolbar.tsx` и `FinanceOperationsToolbar.tsx`.
+- **Машинные гейты (Exit Code 0):**
+  - `npm run check:migration-drift`: 0 расхождений (Exit Code 0).
+  - `npm run check:encoding`: 0 ошибок в 20115 файлах (Exit Code 0).
+  - `npm run check:buttons`: 0 нарушений (Exit Code 0).
+  - `npm run check:react-hooks`: 0 нарушений в 3030 файлах с хуками (Exit Code 0).
+  - Vitest: 90/90 тестов финансов, кассы и смен passed (Exit Code 0).
+  - TypeScript: 0 ошибок компилятора по измененным модулям финансов (`tsc` Exit Code 0).
+- **4-State Visual Proofs (Личный осмотр через `read_file`, все > 20 KB):**
+  - ☀️ PC Light Standalone: `docs/proofs/finance/01_finance_operations_pc_light_1440x900.png` (43.8 KB)
+  - 🌙 PC Dark Standalone: `docs/proofs/finance/02_finance_operations_pc_dark_1440x900.png` (43.6 KB)
+  - 📱 Mobile Light Standalone: `docs/proofs/finance/03_finance_operations_mobile_light_390x844.png` (37.4 KB)
+  - 📱 Mobile Dark Standalone: `docs/proofs/finance/04_finance_operations_mobile_dark_390x844.png` (37.6 KB)
+  - ☀️ PC Light Shift Close: `docs/proofs/finance/05_cash_shift_reconciliation_pc_light_1440x900.png` (93.7 KB)
+  - 🌙 PC Dark Shift Close: `docs/proofs/finance/06_cash_shift_reconciliation_pc_dark_1440x900.png` (97.4 KB)
+  - 📱 Mobile Light Shift Close: `docs/proofs/finance/07_cash_shift_reconciliation_mobile_light_390x844.png` (42.6 KB)
+  - 📱 Mobile Dark Shift Close: `docs/proofs/finance/08_cash_shift_reconciliation_mobile_dark_390x844.png` (43.5 KB)
+
+
 
 
 

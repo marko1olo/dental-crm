@@ -31,6 +31,7 @@ export interface FinanceToolbarProps {
 	readonly onOpenT13Timesheet?: (() => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;
 	readonly onOpenSplitPayment?: (() => void) | undefined;
+	readonly onOpenAccountingExport?: (() => void) | undefined;
 }
 
 export function FinanceToolbar(p: FinanceToolbarProps): React.JSX.Element {
@@ -63,6 +64,7 @@ export function FinanceToolbar(p: FinanceToolbarProps): React.JSX.Element {
 					onOpenT13Timesheet={p.onOpenT13Timesheet}
 					onOpenFamilyBilling={p.onOpenFamilyBilling}
 					onOpenSplitPayment={p.onOpenSplitPayment}
+					onOpenAccountingExport={p.onOpenAccountingExport}
 					isCashShiftOpen={p.isCashShiftOpen}
 					onToggleCashShift={p.onToggleCashShift}
 				/>

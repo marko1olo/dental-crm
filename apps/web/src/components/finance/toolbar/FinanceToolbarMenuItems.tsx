@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
 	TrendingUp,
 	FileText,
@@ -9,8 +9,11 @@ import {
 	Calendar,
 	Coins,
 	Users,
+	UploadCloud,
+	FileSpreadsheet,
 } from "lucide-react";
 import type { FinanceToolbarMenuProps } from "./FinanceToolbarMenu.js";
+import { showToast } from "../../GlobalToast.js";
 
 function MenuItemBtn({ onClick, icon, label, testId, isDanger }: {
 	readonly onClick: () => void;
@@ -36,9 +39,48 @@ function MenuItemBtn({ onClick, icon, label, testId, isDanger }: {
 
 export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.Element {
 	const wrap = (fn: () => void) => () => { p.onCloseFinanceOptions(); fn(); };
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	const handleUploadBankStatementFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		try {
+			const content = await file.text();
+			const response = await fetch("/api/finance/bank-statements/upload", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ content }),
+			});
+
+			if (!response.ok) {
+				const errJson = await response.json().catch(() => null);
+				throw new Error(errJson?.message || `Ошибка сервера: ${response.status}`);
+			}
+
+			const data = await response.json();
+			showToast(
+				`Выписка 1С загружена: ${data.count ?? 0} платежей на сумму ${data.totalReceivedRub ?? 0} ₽`,
+				"success",
+			);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось разобрать файл выписки 1С";
+			showToast(msg, "error");
+		} finally {
+			if (e.target) e.target.value = "";
+		}
+	};
 
 	return (
 		<>
+			<input
+				type="file"
+				ref={fileInputRef}
+				accept=".txt,.csv"
+				className="hidden"
+				aria-hidden="true"
+				onChange={handleUploadBankStatementFile}
+			/>
 			{p.onOpenQuickExpense && (
 				<MenuItemBtn
 					onClick={wrap(p.onOpenQuickExpense)}
@@ -49,6 +91,23 @@ export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.E
 				/>
 			)}
 			<MenuItemBtn onClick={wrap(p.onOpenPnl)} icon={<TrendingUp size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />} label="Управленческий P&L" />
+			{p.onOpenAccountingExport && (
+				<MenuItemBtn
+					onClick={wrap(p.onOpenAccountingExport)}
+					icon={<FileSpreadsheet size={14} className="shrink-0 text-orange-600 dark:text-orange-400" />}
+					label="Экспорт в 1С (CommerceML)"
+					testId="menuitem-accounting-export"
+				/>
+			)}
+			<MenuItemBtn
+				onClick={() => {
+					p.onCloseFinanceOptions();
+					fileInputRef.current?.click();
+				}}
+				icon={<UploadCloud size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />}
+				label="Выписка 1С (Загрузка)"
+				testId="menuitem-upload-bank-statement"
+			/>
 			<MenuItemBtn onClick={wrap(p.onGoToDocuments)} icon={<FileText size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />} label="Документы" />
 			<MenuItemBtn onClick={wrap(() => p.onOpenBillingAct?.())} icon={<FileCheck size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />} label="Акт выполненных работ и гарантии" testId="btn-finance-open-billing-act" />
 			{p.onOpenTaxCertificate && (
