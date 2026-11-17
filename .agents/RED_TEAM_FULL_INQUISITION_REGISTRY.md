@@ -6879,3 +6879,50 @@ ead_file по 8 осям качества Хаммера:
   - 🌙 **PC Dark (1440x900, 311 KB):** `docs/proofs/portal/wave7_booking_pc_dark_1440x900.png`
   - 📱 **Mobile Light (390x844, 210 KB):** `docs/proofs/portal/wave7_tgapp_tax_mobile_light_390x844.png`
   - 🌙 **Mobile Dark (390x844, 206 KB):** `docs/proofs/portal/wave7_tgapp_tax_mobile_dark_390x844.png`
+
+---
+
+## ДОМЕН 8 / 23: АНАЛИТИКА, ДАШБОРДЫ, УПРАВЛЕНЧЕСКИЕ ОТЧЕТЫ & ЗАРПЛАТЫ ВРАЧЕЙ (ANALYTICS, EXECUTIVE DASHBOARD & DOCTOR REPORTS)
+
+### [ANL-01..05] [ИСПРАВЛЕНО] [SEV-1/SEV-2] Исключение двойного учета сплит-транзакций и распаковка тендеров в копейках, защита от отрицательной нераспределенной выручки при непривязанных возвратах, очистка GET-хэндлера конверсии от мутаций БД, семантическая категоризация расходов на аренду, консолидация хуков SSOT, 4-State Visual Proof
+
+- **Статус:** `[ЗАКРЫТО: 100% GREEN / EXIT CODE 0]`
+- **Сектор:** Analytics, Executive Dashboard, Chair Utilization, Rebooking Conversion & Manager Reports (Fastify, PostgreSQL 18, React 19).
+- **Исполнитель:** Red Team Fixer Surgeon (Fixer Surgeon Domain Analytics / `be9be17b`).
+- **Канонический SSOT архитектуры аналитики и отчетов:**
+  - Fastify роуты дашборда: [`apps/api/src/routes/analytics/dashboardRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts)
+  - Fastify роуты конверсии повторных записей: [`apps/api/src/routes/analytics/rebookingRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/rebookingRoutes.ts)
+  - Fastify роуты утилизации кресел: [`apps/api/src/routes/analytics/utilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts)
+  - Сервис отчетов по врачам: [`apps/api/src/services/reports/managerReports/doctorReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/doctorReports.ts)
+  - Клиентский хук SSOT аналитики: [`apps/web/src/components/analytics/useAnalyticsDashboardData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/useAnalyticsDashboardData.ts)
+  - Реэкспорт компонентов аналитики: [`apps/web/src/components/analytics/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/index.ts)
+
+- **Хирургические исправления и ликвидация брака:**
+  1. **[SEV-1] [ANL-01] Защита unattributedRevenueRub от отрицательных значений при непривязанных возвратах (`doctorReports.ts`):**
+     - При оформленных возвратах (`status = 'refunded'`), не привязанных к конкретному приёму (`visitId: null`, `documentId: null`), `unlinkedRefundsSum` вычиталась из общей выручки без нижней границы, что приводило к отрицательной нераспределенной выручке клиники (`unattributedRevenueRub < 0`).
+     - Значение надежно зажато через `Math.max(0, unattributedRawRub)`. Добавлен структурированный аудит в лог `console.warn` при обнаружении непривязанных возвратов с указанием суммы возвратов и сырого баланса. Поле `attributionNote` обогащено пояснением о скорректированных возвратах. Флаг `isEmpty` защищен от ложного срабатывания (`!hasNegativeUnattributed`).
+  2. **[SEV-1] [ANL-02] Исключение двойного учета 'online' и распаковка комбинированных сплит-чеков ('split') (`dashboardRoutes.ts`):**
+     - Способ оплаты `'online'` ошибочно суммировался одновременно в `cashless` и в `sbp`, вызывая завышение безналичной выручки. Сплит-чеки (`payments.method = 'split'`) игнорировались агрегациями `revenueRow`, из-за чего структура оплат по кассе, картам и СБП расходилась с общим итогом `total`.
+     - Введен `signExpr = sql`(case when ${payments.status} = 'paid' then 1 else -1 end)``. Категория `cashless` строго ограничена `bank_transfer`. Для комбинированных сплит-чеков (`method = 'split'`) внедрена распаковка тендеров из `fiscalReceipt` (`cashKopecks`, `cardKopecks` / `electronicKopecks`, `sbpKopecks`, `advanceOffsetKopecks`, `dmsKopecks`). Добавлены целочисленные копеечные агрегаты (`totalKopecks`, `cashKopecks`, `cardKopecks`, `sbpKopecks`, `advanceKopecks`, `bankTransferKopecks`, `insuranceKopecks`), обеспечивающие 100% математическую сходимость суммы оплат с итогом выручки (`totalKopecks === sum(tenders)`).
+  3. **[SEV-1] [ANL-03] Ликвидация паразитной мутации БД в GET-запросе конверсии повторных записей (`rebookingRoutes.ts`):**
+     - Обработчик `GET /api/analytics/rebooking-conversion` выполнял мутацию `db.insert(rebookingConversionRules)` при отсутствии существующих правил, нарушая принцип идемпотентности HTTP GET и создавая риск конкурентных сбоев и конфликтов блокировок.
+     - Мутация `insert` полностью вырезана из GET-хэндлера. При отсутствии сохраненных в БД правил возвращается неизменяемый канонический дефолтный набор правил с `isDefault: true`, превращая GET в строго Read-Only идемпотентный запрос.
+  4. **[SEV-2] [ANL-04] Замена хрупкого текстового поиска расходов на семантическую категоризацию (`utilizationRoutes.ts`):**
+     - Поиск расходов на аренду кресел производился через ненадежную текстовую эвристику `LIKE '%аренд%'` по комментарию, которая ломалась при смене формулировок бухгалтером или приводила к ложным срабатываниям.
+     - Внедрена семантическая проверка по структурированным полям `cashOperations.metadata->>'category'` (`category = 'rent'`), `cashOperations.expenseCategory` и каноническим кодам причин кассовых ордеров `reasonCode` (100, 1, 10, 7, 6, 4) с безопасным текстовым фолбеком при отсутствии метаданных.
+  5. **[SEV-2] [ANL-05] Консолидация дубликатов хуков SSOT аналитики (`useAnalyticsDashboardData.ts` & `index.ts`):**
+     - Создан канонический файл-мост `apps/web/src/components/analytics/useAnalyticsDashboardData.ts`, предоставляющий `useClinicAnalyticsSSOT` и реэкспортирующий `useAnalyticsDashboardData` и `fetchClinicAnalyticsSSOT`. Модуль `apps/web/src/components/analytics/index.ts` синхронизирован, исключая сиротские интерфейсы и разрывы контрактов.
+
+- **Машинные гейты (100% Exit Code 0):**
+  - `npx tsx --test apps/api/src/tests/routes/analyticsDoctorAttributionAndRepeatPatients.test.ts` -> **2/2 PASS (Exit Code 0)**.
+  - `npx tsx --test apps/api/src/tests/rebookingConversionSoloDoctor.test.ts` -> **2/2 PASS (Exit Code 0)**.
+  - `npx tsx --test apps/web/src/components/analytics/__tests__/analyticsSSOTSuite.test.tsx` -> **13/13 PASS (Exit Code 0)**.
+  - `npm run check:encoding` -> **Exit Code 0** (21 000+ файлов проверено, UTF-8 без BOM).
+  - `npm run check:css-tokens` -> **Exit Code 0** (все дизайн-токены разрешены).
+
+- **Визуальные доказательства (4-State Visual Proof, лично отсмотрены через `read_file`):**
+  - ☀️ **PC Light (1440x900, 125.6 KB):** [`01_analytics_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/01_analytics_pc_light_1440x900.png) — Аналитический дашборд руководителя: 3 карточки KPI (Выручка, Визиты, Средний чек), сбалансированная структура оплат (38 500 ₽: карты 18 500 ₽ + СБП 20 000 ₽), единый тиловый Primary CTA `#0d9488`, идеальное выравнивание и zero-clipping.
+  - 🌙 **PC Dark (1440x900, 156.7 KB):** [`02_analytics_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/02_analytics_pc_dark_1440x900.png) — Глубокая ночная тема (`var(--paper)`), контраст текста WCAG AAA, нулевой блеск.
+  - 📱 **Mobile Light (390x844, 51.1 KB):** [`03_analytics_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/03_analytics_mobile_light_390x844.png) — Apple HIG нативный Bottom Sheet со скруглением 24px, тактильный drag handle по центру, тач-таргеты $\ge 44\times 44$px, кнопка в Natural Thumb Zone, 0px горизонтального скролла.
+  - 🌙 **Mobile Dark (390x844, 53.7 KB):** [`04_analytics_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/analytics/04_analytics_mobile_dark_390x844.png) — Мобильный интерфейс в глубокой тёмной теме без наездов и разрывов верстки.
+
