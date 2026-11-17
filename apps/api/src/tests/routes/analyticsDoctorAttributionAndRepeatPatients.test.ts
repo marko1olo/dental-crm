@@ -111,4 +111,61 @@ describe("DEF-ANL-03: Doctor Payment Attribution via Invoice documentId", () => 
 			await purgeFixtureOrganizations([orgId]);
 		}
 	});
+
+	it("[ANL-01] clamps unattributed revenue to >= 0 when unlinked refunds exceed positive revenue", async () => {
+		const orgId = fixtureUuid("docAttrReportUnlink", 1);
+		const doctorId = fixtureUuid("docAttrReportUnlink", 2);
+		const patientId = fixtureUuid("docAttrReportUnlink", 3);
+
+		await purgeFixtureOrganizations([orgId]);
+
+		const now = new Date();
+		const from = new Date(now.getTime() - 24 * 3600 * 1000);
+		const to = new Date(now.getTime() + 24 * 3600 * 1000);
+
+		try {
+			await withFixtureTenant(orgId, async (tx) => {
+				await tx.insert(organizations).values({
+					id: orgId,
+					name: "Клиника Возвратов",
+				});
+				await tx.insert(users).values({
+					id: doctorId,
+					organizationId: orgId,
+					fullName: "Доктор Васильев А.А.",
+					role: "doctor",
+				});
+				await tx.insert(patients).values({
+					id: patientId,
+					organizationId: orgId,
+					fullName: "Пациент С Возвратом",
+					phone: "+79991112233",
+				});
+				// Непривязанный к визиту/врачу возврат (refunded)
+				await tx.insert(payments).values({
+					organizationId: orgId,
+					patientId,
+					documentId: null,
+					visitId: null,
+					amountRub: 5000,
+					method: "card",
+					status: "refunded",
+					paidAt: now,
+					clientMutationId: `mut-refund-unlink-${Date.now()}`,
+				});
+			});
+
+			const report = await doctorPerformance({
+				organizationId: orgId,
+				from,
+				to,
+			});
+
+			// Неотрицательное значение нераспределенной выручки
+			assert.equal(report.unattributedRevenueRub, 0, "Нераспределенная выручка не должна быть отрицательной");
+			assert.ok(report.attributionNote.includes("возвраты на сумму"), "Должна быть явная запись в attributionNote о возвратах");
+		} finally {
+			await purgeFixtureOrganizations([orgId]);
+		}
+	});
 });

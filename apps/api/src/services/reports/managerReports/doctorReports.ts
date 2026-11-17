@@ -111,15 +111,28 @@ export async function doctorPerformance(
 		return fresh;
 	};
 
-	let unattributedRevenueRub = 0;
+	let rawUnattributedRevenueRub = 0;
+	let unlinkedRefundsSumRub = 0;
 	for (const row of revenueRows) {
 		const amount = Number(row.revenueRub);
 		if (!row.doctorUserId) {
-			unattributedRevenueRub += amount;
+			rawUnattributedRevenueRub += amount;
+			if (amount < 0) {
+				unlinkedRefundsSumRub += Math.abs(amount);
+			}
 			continue;
 		}
 		ensure(row.doctorUserId).revenueRub += amount;
 	}
+
+	// [ANL-01] Защита от отрицательной нераспределённой выручки при непривязанных к врачам возвратах
+	const hasNegativeUnattributed = rawUnattributedRevenueRub < 0;
+	if (hasNegativeUnattributed) {
+		console.warn(
+			`[ANL-01][Audit] Negative unattributed revenue (${rawUnattributedRevenueRub} руб) detected due to doctor-unlinked refunds for org ${scope.organizationId}. Clamped to 0. Total unlinked refunds: ${unlinkedRefundsSumRub} руб.`,
+		);
+	}
+	const unattributedRevenueRub = Math.max(0, rawUnattributedRevenueRub);
 
 	for (const row of appointmentRows) {
 		if (!row.doctorUserId) continue;
@@ -163,12 +176,14 @@ export async function doctorPerformance(
 		// отнести не к чему, и такая сумма показывается отдельно, а не
 		// размазывается по врачам.
 		attributionNote:
-			unattributedRevenueRub > 0
-				? "Часть выручки не отнесена к врачу: платёж не связан с приёмом. " +
-					"Связь идёт через приём, у визита отдельного поля «врач» нет. " +
-					"Чтобы выручка попадала врачу, оплату нужно оформлять из визита, созданного из записи в расписании."
-				: "Вся выручка периода отнесена к врачам.",
-		isEmpty: rows.length === 0 && unattributedRevenueRub === 0,
+			hasNegativeUnattributed
+				? `Обнаружены не привязанные к приёмам возвраты на сумму ${Math.round(unlinkedRefundsSumRub).toLocaleString("ru-RU")} ₽. Нераспределённая выручка скорректирована до 0 ₽.`
+				: unattributedRevenueRub > 0
+					? "Часть выручки не отнесена к врачу: платёж не связан с приёмом. " +
+						"Связь идёт через приём, у визита отдельного поля «врач» нет. " +
+						"Чтобы выручка попадала врачу, оплату нужно оформлять из визита, созданного из записи в расписании."
+					: "Вся выручка периода отнесена к врачам.",
+		isEmpty: rows.length === 0 && unattributedRevenueRub === 0 && !hasNegativeUnattributed,
 	};
 }
 

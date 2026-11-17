@@ -5,11 +5,16 @@
  */
 
 export * from "./analyticsCatalogData";
+export * from "./useAnalyticsDashboardData";
 export * from "./ExecutiveAnalyticsStudioModal";
 export * from "./DirectAnalyticsLauncher";
 export * from "./studio/index";
 export * from "./ExecutiveFinancialSummary";
+export * from "./doctorPayrollExportUtils";
+export * from "./DoctorPayrollTable";
+export * from "./AssistantPayrollTable";
 export * from "./DoctorPayrollReport";
+export * from "./DirectDoctorPayrollReportLauncher";
 export * from "./ChairOccupancyReport";
 export * from "./ExecutiveDashboard";
 export { ManagerialPnlDashboardModal } from "../finance/pnl/ManagerialPnlDashboardModal";

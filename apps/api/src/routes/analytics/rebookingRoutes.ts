@@ -277,37 +277,9 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				}
 			}
 
-			// 5. Синхронизируем вычисленные события в таблицу rebooking_conversion_rules (наполнение реальными данными)
-			const existingKeys = new Set(
-				storedRules.map(
-					(r) => `${r.patientName}__${r.appointmentDate}__${r.creditedRole}`,
-				),
-			);
-			const rulesToInsert: Array<typeof rebookingConversionRules.$inferInsert> = [];
-
-			for (const ev of computedEvents) {
-				const key = `${ev.patientName}__${ev.appointmentDate}__${ev.creditedRole}`;
-				if (!existingKeys.has(key)) {
-					existingKeys.add(key);
-					rulesToInsert.push({
-						organizationId: orgId,
-						patientName: ev.patientName,
-						rebookedBy: ev.rebookedBy,
-						timeDeltaMinutes: ev.timeDeltaMinutes,
-						creditedRole: ev.creditedRole,
-						appointmentDate: ev.appointmentDate,
-						createdAt: ev.createdAt,
-					});
-				}
-			}
-
-			if (rulesToInsert.length > 0) {
-				try {
-					await db.insert(rebookingConversionRules).values(rulesToInsert);
-				} catch (err) {
-					request.log.warn({ err }, "Не удалось зафиксировать кэш rebooking_conversion_rules");
-				}
-			}
+			// 5. [ANL-03] GET-эндпоинт строго Read-Only:
+			// Побочные DB-мутации (insert/update) исключены для обеспечения абсолютной идемпотентности чтения.
+			// Фиксация правил осуществляется строго через явный POST /api/analytics/rebooking-conversion.
 
 			// 6. Объединяем сохранённые и вычисленные записи
 			const allRecordsMap = new Map<string, RebookingEvent>();

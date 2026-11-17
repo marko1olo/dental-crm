@@ -480,15 +480,18 @@ export async function registerUtilizationRoutes(app: FastifyInstance) {
 			const workingDaysPerMonth = Math.min(31, Math.max(1, Math.round((daysPerWeek * 52) / 12)));
 			const activeChairsCount = Math.max(1, chairData.chairUtilizationJson.length);
 
-			// Чтение фактических расходов клиники из cash_operations (Мандат 8wy — 100% реальный PostgreSQL без моков)
+			// [ANL-04] Чтение фактических расходов клиники по семантическим категориям (expenseCategorySchema & cashExpenseReasons):
+			// 1) metadata->>'category' (rent, utilities, salaries, marketing, etc.)
+			// 2) reasonCode регламентированного справочника (100: аренда, 1: ФОТ, 10/7: коммуналка/связь, 6: маркетинг, 4: санпин)
+			// 3) Безопасный fallback по reasonText при отсутствии семантических тегов
 			const [actualExpenses] = await db
 				.select({
-					rent: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} = 100 or lower(coalesce(${cashOperations.reasonText}, '')) like '%аренд%' then ${cashOperations.amountRub} else 0 end), 0)`,
-					utilities: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} in (7, 10) or lower(coalesce(${cashOperations.reasonText}, '')) like '%коммун%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%связ%' then ${cashOperations.amountRub} else 0 end), 0)`,
-					payroll: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} = 1 or lower(coalesce(${cashOperations.reasonText}, '')) like '%зарплат%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%фот%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%оклад%' then ${cashOperations.amountRub} else 0 end), 0)`,
-					depreciation: sql<number>`coalesce(sum(case when lower(coalesce(${cashOperations.reasonText}, '')) like '%амортиз%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%оборудован%' then ${cashOperations.amountRub} else 0 end), 0)`,
-					sanpin: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} = 4 or lower(coalesce(${cashOperations.reasonText}, '')) like '%санпин%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%стерил%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%дезинф%' then ${cashOperations.amountRub} else 0 end), 0)`,
-					marketing: sql<number>`coalesce(sum(case when ${cashOperations.reasonCode} = 6 or lower(coalesce(${cashOperations.reasonText}, '')) like '%маркетинг%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%реклам%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					rent: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'rent' or ${cashOperations.reasonCode} = 100 or lower(coalesce(${cashOperations.reasonText}, '')) like '%аренд%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					utilities: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'utilities' or ${cashOperations.reasonCode} in (7, 10) or lower(coalesce(${cashOperations.reasonText}, '')) like '%коммун%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%связ%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					payroll: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('salaries', 'payroll') or ${cashOperations.reasonCode} = 1 or lower(coalesce(${cashOperations.reasonText}, '')) like '%зарплат%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%фот%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%оклад%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					depreciation: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('equipment_lease', 'depreciation') or lower(coalesce(${cashOperations.reasonText}, '')) like '%амортиз%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%оборудован%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					sanpin: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' in ('sanpin', 'sterilization') or ${cashOperations.reasonCode} = 4 or lower(coalesce(${cashOperations.reasonText}, '')) like '%санпин%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%стерил%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%дезинф%' then ${cashOperations.amountRub} else 0 end), 0)`,
+					marketing: sql<number>`coalesce(sum(case when ${cashOperations.metadata}->>'category' = 'marketing' or ${cashOperations.reasonCode} = 6 or lower(coalesce(${cashOperations.reasonText}, '')) like '%маркетинг%' or lower(coalesce(${cashOperations.reasonText}, '')) like '%реклам%' then ${cashOperations.amountRub} else 0 end), 0)`,
 				})
 				.from(cashOperations)
 				.where(
