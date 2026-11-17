@@ -1,5 +1,5 @@
 import type { RecallCycleType } from "./recallCycleTypes";
-import { addCalendarMonthsSafe, addWeeksSafe, formatIsoDateOnly } from "./recallDateUtils";
+import { addCalendarMonthsSafe, addWeeksSafe, formatIsoDateOnly } from "./recallDateMath";
 
 export function calculateHygieneRecallDate(
 	lastVisitDate: Date | string,

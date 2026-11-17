@@ -25,6 +25,8 @@ export function extractPolitePatientName(fullName: string): string {
 }
 
 export const sanitizePhoneNumber = cleanPhoneDigits;
+export { cleanPhoneDigits };
+export const extractPatientFirstName = extractFirstName;
 
 export function generate1ClickBookingLink(options: {
 	readonly baseUrl?: string | undefined;

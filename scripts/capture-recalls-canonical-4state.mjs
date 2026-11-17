@@ -5,8 +5,12 @@ import { chromium } from "playwright";
 const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
 const PROOFS_DIR = path.resolve(process.cwd(), "docs/proofs/recalls");
+const BRAIN_DIR = path.resolve(
+  "C:/Users/Admin/.gemini/antigravity/brain/6be7270d-a95f-49e2-8413-763a02b01e38"
+);
 
 mkdirSync(PROOFS_DIR, { recursive: true });
+mkdirSync(BRAIN_DIR, { recursive: true });
 
 async function main() {
   console.log("=== STARTING RECALLS CANONICAL 4-STATE CAPTURE ===");
@@ -127,114 +131,143 @@ async function main() {
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-web-security"],
   });
 
-  try {
-    // ------------------------------------------------------------------
-    // 1. PC VIEWPORT (1440x900)
-    // ------------------------------------------------------------------
-    const pcCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-    await pcCtx.addInitScript(({ ct, st, uid }) => {
-      if (ct) localStorage.setItem("dente_clinic_token", ct);
-      if (st) localStorage.setItem("dente_staff_token", st);
-      localStorage.setItem("dente_active_role", "owner");
-      localStorage.setItem("dente_user_id", uid || "owner_1");
-      localStorage.setItem("dente_onboarding_completed", "true");
-      localStorage.setItem("dente_tour_completed", "true");
-      localStorage.setItem("dente_theme_mode", "light");
-    }, { ct: clinicToken, st: staffToken, uid: ownerUserId });
-
-    const pcPage = await pcCtx.newPage();
-    await pcPage.goto(`${WEB_BASE}/?recalls=1#recalls`, { waitUntil: "domcontentloaded", timeout: 45000 });
-    await pcPage.waitForTimeout(2000);
-
-    // Ensure modal open
-    await pcPage.evaluate(() => {
-      window.dispatchEvent(new CustomEvent("dente-open-recalls-hub"));
-    });
-    await pcPage.waitForTimeout(2000);
-
-    // Proof 1: PC Light (1440x900)
-    console.log("[Proof 1] PC Light...");
-    await pcPage.evaluate(() => {
-      document.documentElement.setAttribute("data-theme", "light");
-      document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("light");
-    });
-    await pcPage.waitForTimeout(1000);
-    const p1Path = path.join(PROOFS_DIR, "01_recalls_hub_pc_light_1440x900.png");
-    await pcPage.screenshot({ path: p1Path, fullPage: false });
-    copyFileSync(p1Path, path.join(PROOFS_DIR, "01_recalls_pc_light_1440x900.png"));
-    console.log("[Proof 1 OK] Saved 01_recalls_hub_pc_light_1440x900.png");
-
-    // Proof 2: PC Dark (1440x900)
-    console.log("[Proof 2] PC Dark...");
-    await pcPage.evaluate(() => {
-      document.documentElement.setAttribute("data-theme", "dark");
-      document.documentElement.classList.remove("light");
-      document.documentElement.classList.add("dark");
-    });
-    await pcPage.waitForTimeout(1000);
-    const p2Path = path.join(PROOFS_DIR, "02_recalls_hub_pc_dark_1440x900.png");
-    await pcPage.screenshot({ path: p2Path, fullPage: false });
-    copyFileSync(p2Path, path.join(PROOFS_DIR, "02_recalls_pc_dark_1440x900.png"));
-    console.log("[Proof 2 OK] Saved 02_recalls_hub_pc_dark_1440x900.png");
-
-    await pcCtx.close();
-
-    // ------------------------------------------------------------------
-    // 2. MOBILE VIEWPORT (390x844)
-    // ------------------------------------------------------------------
-    const mobCtx = await browser.newContext({
-      viewport: { width: 390, height: 844 },
+  const targets = [
+    {
+      id: "01_recalls_pc_light_1440x900.png",
+      altId: "01_recalls_hub_pc_light_1440x900.png",
+      width: 1440,
+      height: 900,
+      isMobile: false,
+      isDark: false,
+      desc: "PC Light (1440x900)",
+    },
+    {
+      id: "02_recalls_pc_dark_1440x900.png",
+      altId: "02_recalls_hub_pc_dark_1440x900.png",
+      width: 1440,
+      height: 900,
+      isMobile: false,
+      isDark: true,
+      desc: "PC Dark (1440x900)",
+    },
+    {
+      id: "03_recalls_mobile_light_390x844.png",
+      altId: "03_recalls_hub_mobile_light_390x844.png",
+      width: 390,
+      height: 844,
       isMobile: true,
-      hasTouch: true,
-    });
-    await mobCtx.addInitScript(({ ct, st, uid }) => {
-      if (ct) localStorage.setItem("dente_clinic_token", ct);
-      if (st) localStorage.setItem("dente_staff_token", st);
-      localStorage.setItem("dente_active_role", "owner");
-      localStorage.setItem("dente_user_id", uid || "owner_1");
-      localStorage.setItem("dente_onboarding_completed", "true");
-      localStorage.setItem("dente_tour_completed", "true");
-      localStorage.setItem("dente_theme_mode", "light");
-    }, { ct: clinicToken, st: staffToken, uid: ownerUserId });
+      isDark: false,
+      desc: "Mobile Light (390x844)",
+    },
+    {
+      id: "04_recalls_mobile_dark_390x844.png",
+      altId: "04_recalls_hub_mobile_dark_390x844.png",
+      width: 390,
+      height: 844,
+      isMobile: true,
+      isDark: true,
+      desc: "Mobile Dark (390x844)",
+    },
+  ];
 
-    const mobPage = await mobCtx.newPage();
-    await mobPage.goto(`${WEB_BASE}/?recalls=1#recalls`, { waitUntil: "domcontentloaded", timeout: 45000 });
-    await mobPage.waitForTimeout(2000);
+  try {
+    for (const target of targets) {
+      console.log(`\n[Capturing] ${target.desc}...`);
+      const context = await browser.newContext({
+        viewport: { width: target.width, height: target.height },
+        deviceScaleFactor: target.isMobile ? 2 : 1,
+        isMobile: target.isMobile,
+        hasTouch: target.isMobile,
+        colorScheme: target.isDark ? "dark" : "light",
+      });
 
-    await mobPage.evaluate(() => {
-      window.dispatchEvent(new CustomEvent("dente-open-recalls-hub"));
-    });
-    await mobPage.waitForTimeout(2000);
+      await context.addInitScript(
+        ({ ct, st, uid, isDark }) => {
+          if (ct) localStorage.setItem("dente_clinic_token", ct);
+          if (st) localStorage.setItem("dente_staff_token", st);
+          localStorage.setItem("dente_active_session_token", st || "");
+          localStorage.setItem("dente_active_role", "owner");
+          localStorage.setItem("dente_user_role", "owner");
+          localStorage.setItem("dente_active_user_id", uid || "owner_1");
+          localStorage.setItem("dente_user_id", uid || "owner_1");
+          localStorage.setItem("dente_active_mode", "clinic");
+          sessionStorage.setItem("dente_unlocked", "true");
+          localStorage.setItem("dente_onboarding_completed", "true");
+          localStorage.setItem("dente_tour_completed", "true");
+          localStorage.setItem("dente_tour_dismissed", "true");
+          localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+          localStorage.setItem("dente_theme", isDark ? "dark" : "light");
+          localStorage.setItem("dente_theme_mode", isDark ? "dark" : "light");
+          localStorage.setItem(
+            "dental-crm:web-ui-preferences:v1",
+            JSON.stringify({
+              version: 1,
+              uiLanguage: "ru",
+              theme: isDark ? "dark" : "light",
+              selectedWorkspaceRole: "owner",
+              onboardingDismissed: true,
+              onboardingStep: "done",
+            })
+          );
+        },
+        { ct: clinicToken, st: staffToken, uid: ownerUserId, isDark: target.isDark }
+      );
 
-    // Proof 3: Mobile Light (390x844)
-    console.log("[Proof 3] Mobile Light...");
-    await mobPage.evaluate(() => {
-      document.documentElement.setAttribute("data-theme", "light");
-      document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("light");
-    });
-    await mobPage.waitForTimeout(1000);
-    const p3Path = path.join(PROOFS_DIR, "03_recalls_hub_mobile_light_390x844.png");
-    await mobPage.screenshot({ path: p3Path, fullPage: false });
-    copyFileSync(p3Path, path.join(PROOFS_DIR, "03_recalls_mobile_light_390x844.png"));
-    console.log("[Proof 3 OK] Saved 03_recalls_hub_mobile_light_390x844.png");
+      const page = await context.newPage();
+      await page.goto(`${WEB_BASE}/?recalls=1#recalls`, {
+        waitUntil: "domcontentloaded",
+        timeout: 45000,
+      });
 
-    // Proof 4: Mobile Dark (390x844)
-    console.log("[Proof 4] Mobile Dark...");
-    await mobPage.evaluate(() => {
-      document.documentElement.setAttribute("data-theme", "dark");
-      document.documentElement.classList.remove("light");
-      document.documentElement.classList.add("dark");
-    });
-    await mobPage.waitForTimeout(1000);
-    const p4Path = path.join(PROOFS_DIR, "04_recalls_hub_mobile_dark_390x844.png");
-    await mobPage.screenshot({ path: p4Path, fullPage: false });
-    copyFileSync(p4Path, path.join(PROOFS_DIR, "04_recalls_mobile_dark_390x844.png"));
-    console.log("[Proof 4 OK] Saved 04_recalls_hub_mobile_dark_390x844.png");
+      // Wait for app shell
+      await page
+        .waitForSelector(".app-shell, #workspace-content, .workspace-shell", {
+          state: "visible",
+          timeout: 25000,
+        })
+        .catch(() => {});
 
-    await mobCtx.close();
-    console.log("\n=== ALL 4 CANONICAL RECALLS PROOFS CAPTURED ===");
+      // Ensure theme classes on DOM
+      await page.evaluate(({ isDark }) => {
+        const t = isDark ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", t);
+        document.body.setAttribute("data-theme", t);
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+          document.documentElement.classList.remove("light");
+          document.body.classList.add("dark");
+          document.body.classList.remove("light");
+        } else {
+          document.documentElement.classList.remove("dark");
+          document.documentElement.classList.add("light");
+          document.body.classList.remove("dark");
+          document.body.classList.add("light");
+        }
+        window.dispatchEvent(new CustomEvent("dente-open-recalls-hub"));
+      }, { isDark: target.isDark });
+
+      // Wait for modal container
+      await page.waitForSelector(".recall-manager-container", {
+        state: "visible",
+        timeout: 15000,
+      });
+
+      // Allow animations & fonts to settle
+      await page.waitForTimeout(1500);
+
+      const targetPath = path.join(PROOFS_DIR, target.id);
+      const altPath = path.join(PROOFS_DIR, target.altId);
+      const brainPath = path.join(BRAIN_DIR, target.id);
+
+      await page.screenshot({ path: targetPath, fullPage: false });
+      copyFileSync(targetPath, altPath);
+      copyFileSync(targetPath, brainPath);
+      console.log(`[OK] Saved ${target.id} -> ${targetPath}`);
+
+      await context.close();
+    }
+
+    console.log("\n=== ALL 4 CANONICAL RECALLS PROOFS CAPTURED SUCCESSFULLY ===");
   } finally {
     await browser.close();
   }

@@ -18,17 +18,23 @@ import {
 	CANONICAL_RECALL_STATUS_CONFIG,
 	toCanonicalRecallStatus,
 	fromCanonicalRecallStatus,
-	generateWhatsAppRecallMessage,
-	generateSmsRecallMessage,
-	calculateSmsSegments,
+} from "../recallsCatalogData";
+import {
 	calculateHygieneRecallTrigger,
 	calculateImplantProstheticRecallTrigger,
 	calculateOrthoActivationRecallTrigger,
 	calculatePediatricRecallTrigger,
+} from "../recallClinicalTriggers";
+import {
+	generateWhatsAppRecallMessage,
+	generateSmsRecallMessage,
+} from "../recallChannelTemplates";
+import { calculateSmsSegments } from "../recallSmsSegments";
+import {
 	cleanPhoneDigits,
 	extractFirstName,
 	extractPolitePatientName,
-} from "../recallsCatalogData";
+} from "../recallMessageFormatters";
 
 describe("Recall Studio SSOT Master Suite", () => {
 	const emojiRegex = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;

@@ -57,6 +57,30 @@
 	font-family: inherit;
 }
 
+:is(
+	[data-theme="dark"],
+	[data-theme="night"],
+	[data-theme="oled"],
+	[data-theme="ocean"],
+	[data-theme="emerald"],
+	[data-theme="cyber_xray"],
+	html.dark,
+	body.dark,
+	.dark
+) .recall-manager-container {
+	--rm-bg: var(--paper, #0f172a);
+	--rm-surface: var(--paper-strong, #1e293b);
+	--rm-surface-hover: var(--paper-soft, #020617);
+	--rm-border: var(--line, rgba(204, 251, 241, 0.15));
+	--rm-text-main: var(--ink, #f8fafc);
+	--rm-text-muted: var(--ink-muted, #94a3b8);
+	--rm-text-subtle: var(--ink-muted, #64748b);
+	--rm-primary-light: var(--paper-soft, rgba(45, 212, 191, 0.12));
+	background: var(--rm-bg);
+	color: var(--rm-text-main);
+	border-color: var(--rm-border);
+}
+
 .recall-empty-state {
 	text-align: center;
 	padding: 48px 16px;

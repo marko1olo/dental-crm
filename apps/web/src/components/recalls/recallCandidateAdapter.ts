@@ -1,11 +1,7 @@
 import type { RecallCandidate } from "@dental/shared";
-import {
-	addCalendarMonthsSafe,
-	formatIsoDateOnly,
-	type PatientRecallRecord,
-	type RecallCycleType,
-	type RecallUrgencyStatus,
-} from "./patientRecallEngine";
+import { addCalendarMonthsSafe, formatIsoDateOnly } from "./recallDateMath";
+import type { PatientRecallRecord } from "./recallRecordTypes";
+import type { RecallCycleType, RecallUrgencyStatus } from "./recallCycleTypes";
 
 export function mapRecallCandidateToRecord(candidate: {
 	patientId?: string | null | undefined;

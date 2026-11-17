@@ -86,81 +86,81 @@ export const RecallPatientRowCardActions: React.FC<RecallPatientRowCardActionsPr
 					<MoreHorizontal size={16} />
 				</button>
 
-				{isMenuOpen && (
-					<div
-						className="absolute right-0 bottom-full mb-1.5 z-50 min-w-[210px] rounded-xl border border-[var(--line)] bg-[var(--paper)] p-1.5 shadow-lg flex flex-col gap-1 text-sm animate-in fade-in zoom-in-95 duration-100"
-						role="menu"
+				<div
+					className={`absolute right-0 bottom-full mb-1.5 z-50 min-w-[210px] rounded-xl border border-[var(--line)] bg-[var(--paper)] p-1.5 shadow-lg flex-col gap-1 text-sm animate-in fade-in zoom-in-95 duration-100 ${
+						isMenuOpen ? "flex" : "hidden"
+					}`}
+					role="menu"
+				>
+					<button
+						type="button"
+						className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+						onClick={() => {
+							setIsMenuOpen(false);
+							onWhatsApp(candidate);
+						}}
+						data-testid={`recall-whatsapp-btn-${candidate.id}`}
 					>
+						<MessageCircle size={15} className="text-[var(--success-ink,#10b981)] shrink-0" />
+						<span>WhatsApp сообщение</span>
+					</button>
+
+					<button
+						type="button"
+						className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+						onClick={() => {
+							setIsMenuOpen(false);
+							onTelegram(candidate);
+						}}
+						data-testid={`recall-telegram-btn-${candidate.id}`}
+					>
+						<Send size={15} className="text-[var(--info-ink,#0284c7)] shrink-0" />
+						<span>Telegram сообщение</span>
+					</button>
+
+					<button
+						type="button"
+						className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+						onClick={() => {
+							setIsMenuOpen(false);
+							onCopySms(candidate);
+						}}
+						data-testid={`recall-sms-btn-${candidate.id}`}
+					>
+						<Send size={15} className="text-[var(--ink-muted)] shrink-0" />
+						<span>Скопировать СМС</span>
+					</button>
+
+					<div className="h-px bg-[var(--line)] my-0.5" />
+
+					<button
+						type="button"
+						className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
+						onClick={() => {
+							setIsMenuOpen(false);
+							onToggleScript(candidate);
+						}}
+						data-testid={`recall-script-btn-${candidate.id}`}
+					>
+						<Lightbulb size={15} className="text-[var(--warning-ink,#f59e0b)] shrink-0" />
+						<span>{isScriptActive ? "Скрыть скрипт" : "Речевой скрипт"}</span>
+					</button>
+
+					{onTogglePreview && (
 						<button
 							type="button"
 							className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
 							onClick={() => {
 								setIsMenuOpen(false);
-								onWhatsApp(candidate);
+								onTogglePreview(candidate);
 							}}
-							data-testid={`recall-whatsapp-btn-${candidate.id}`}
+							data-testid={`recall-quick-preview-btn-${candidate.id}`}
 						>
-							<MessageCircle size={15} className="text-[var(--success-ink,#10b981)] shrink-0" />
-							<span>WhatsApp сообщение</span>
+							<Eye size={15} className="text-[var(--ink-muted)] shrink-0" />
+							<span>Быстрый просмотр</span>
 						</button>
-
-						<button
-							type="button"
-							className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
-							onClick={() => {
-								setIsMenuOpen(false);
-								onTelegram(candidate);
-							}}
-							data-testid={`recall-telegram-btn-${candidate.id}`}
-						>
-							<Send size={15} className="text-[var(--info-ink,#0284c7)] shrink-0" />
-							<span>Telegram сообщение</span>
-						</button>
-
-						<button
-							type="button"
-							className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
-							onClick={() => {
-								setIsMenuOpen(false);
-								onCopySms(candidate);
-							}}
-							data-testid={`recall-sms-btn-${candidate.id}`}
-						>
-							<Send size={15} className="text-[var(--ink-muted)] shrink-0" />
-							<span>Скопировать СМС</span>
-						</button>
-
-						<div className="h-px bg-[var(--line)] my-0.5" />
-
-						<button
-							type="button"
-							className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
-							onClick={() => {
-								setIsMenuOpen(false);
-								onToggleScript(candidate);
-							}}
-							data-testid={`recall-script-btn-${candidate.id}`}
-						>
-							<Lightbulb size={15} className="text-[var(--warning-ink,#f59e0b)] shrink-0" />
-							<span>{isScriptActive ? "Скрыть скрипт" : "Речевой скрипт"}</span>
-						</button>
-
-						{onTogglePreview && (
-							<button
-								type="button"
-								className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors w-full border-0 bg-transparent cursor-pointer font-normal"
-								onClick={() => {
-									setIsMenuOpen(false);
-									onTogglePreview(candidate);
-								}}
-								data-testid={`recall-quick-preview-btn-${candidate.id}`}
-							>
-								<Eye size={15} className="text-[var(--ink-muted)] shrink-0" />
-								<span>Быстрый просмотр</span>
-							</button>
-						)}
-					</div>
-				)}
+					)}
+				</div>
 			</div>
 		</div>
 	);

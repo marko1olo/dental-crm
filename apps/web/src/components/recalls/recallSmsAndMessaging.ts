@@ -5,5 +5,6 @@
 export * from "./recallSmsSegments";
 export * from "./recallMessageFormatters";
 export * from "./recallChannelTemplates";
+export * from "./recallMessageContentBuilder";
 export * from "./recallMessagingApi";
 export type { RecallInviteRequest, RecallInviteResponse } from "@dental/shared/recalls";

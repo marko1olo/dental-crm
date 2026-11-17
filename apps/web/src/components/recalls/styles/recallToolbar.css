@@ -91,7 +91,7 @@
 .recall-chip.active {
 	background: var(--rm-primary);
 	border-color: var(--rm-primary);
-	color: var(--paper-strong);
+	color: #ffffff;
 }
 .recall-chip-count {
 	font-size: 0.75rem;
@@ -101,8 +101,8 @@
 	color: var(--rm-text-muted);
 }
 .recall-chip.active .recall-chip-count {
-	background: var(--paper-strong);
-	color: var(--rm-primary);
+	background: rgba(255, 255, 255, 0.2);
+	color: #ffffff;
 }
 @media (max-width: 768px) {
 	.recall-toolbar { padding: 8px 12px; gap: 8px; }

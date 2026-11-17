@@ -299,17 +299,3 @@ export const DEMO_SHOWCASE_CANDIDATES: readonly PatientRecallRecord[] = Object.f
 	},
 ]);
 
-
-// ============================================================================
-// 4. ОПРЕДЕЛЕНИЕ ТИПА ЗВОНКА
-// ============================================================================
-
-export function determineTaskCallTypeForCandidate(cand: PatientRecallRecord | PatientRecallItem): string {
-	const notes = (cand.clinicalNotes || "").toLowerCase();
-	if (notes.includes("удалени") || notes.includes("самочувстви") || notes.includes("контроль")) return "learn_health";
-	if (notes.includes("не начат") || notes.includes("план лечения")) return "medplan_not_started";
-	if (notes.includes("не завершен") || notes.includes("не закончен")) return "medplan_not_finished";
-	if (cand.status === "scheduled") return "appointment_confirmation";
-	if (cand.status === "declined") return "appointment_refuse";
-	return "preventive_inspection";
-}

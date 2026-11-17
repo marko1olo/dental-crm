@@ -41,9 +41,9 @@ describe("2. Canonical Workflow Statuses & Mapping", () => {
 			assert.ok(cfg.label.length > 0);
 			assert.ok(cfg.badgeColorToken.length > 0);
 		}
-		assert.equal(CANONICAL_RECALL_STATUS_CONFIG.not_called.label, "Не звонили");
-		assert.equal(CANONICAL_RECALL_STATUS_CONFIG.reached.label, "Дозвонились");
-		assert.equal(CANONICAL_RECALL_STATUS_CONFIG.declined.label, "Отказ");
-		assert.equal(CANONICAL_RECALL_STATUS_CONFIG.scheduled.label, "Записан");
+		assert.equal(CANONICAL_RECALL_STATUS_CONFIG.not_called.label, "Пора приглашать");
+		assert.equal(CANONICAL_RECALL_STATUS_CONFIG.reached.label, "Приглашение отправлено (WhatsApp/СМС)");
+		assert.equal(CANONICAL_RECALL_STATUS_CONFIG.declined.label, "Отказ / Перенос");
+		assert.equal(CANONICAL_RECALL_STATUS_CONFIG.scheduled.label, "Записан на приём");
 	});
 });
