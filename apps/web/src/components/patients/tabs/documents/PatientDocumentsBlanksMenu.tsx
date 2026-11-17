@@ -53,7 +53,7 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 				onClick={() => {
 					onClose();
 					if (onPrintOutpatientCard) onPrintOutpatientCard();
-					else onOpenFastPrint("form043u");
+					else onOpenFastPrint("medical_card");
 				}}
 				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
 				data-testid="btn-print-outpatient-card"

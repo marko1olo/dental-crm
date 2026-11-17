@@ -38,7 +38,7 @@ export const PatientDocumentsHeader: React.FC<PatientDocumentsHeaderProps> = ({
 	return (
 		<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[var(--line)]">
 			<div className="min-w-0">
-				<h3 className="text-sm font-bold text-[var(--ink)] uppercase tracking-wider m-0 flex items-center gap-2">
+				<h3 className="text-sm font-bold text-[var(--ink)] tracking-tight m-0 flex items-center gap-2">
 					<FileText className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" aria-hidden="true" />
 					<span className="truncate">Официальная документация пациента</span>
 				</h3>
@@ -50,7 +50,7 @@ export const PatientDocumentsHeader: React.FC<PatientDocumentsHeaderProps> = ({
 			<div className="flex items-center gap-2 shrink-0">
 				<button
 					type="button"
-					onClick={() => onOpenFastPrint("form043u")}
+					onClick={() => onOpenFastPrint("medical_card")}
 					className="h-8 min-h-[32px] px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs shrink-0 active:scale-95"
 					data-testid="btn-fast-vector-print-hub"
 					title="Мгновенная печать карты, акта и сметы"

@@ -41,6 +41,7 @@ export interface PatientStore {
 	setSelectedPatientId: (
 		val: string | null | ((prev: string | null) => string | null),
 	) => void;
+	resetPatientSession: () => void;
 
 	patientCoreDraft: PatientCoreDraft;
 	setPatientCoreDraft: (
@@ -108,6 +109,7 @@ export interface PatientStore {
 	 * Подбор услуг по зубной формуле стор не проходит и никогда не проходил: он идёт
 	 * пропсом currentTeeth в смонтированный TreatmentEstimator.
 	 */
+	resetDraft: () => void;
 }
 
 export const usePatientStore = create<PatientStore>((set) => ({
@@ -116,15 +118,33 @@ export const usePatientStore = create<PatientStore>((set) => ({
 		set((state) => {
 			const nextSelectedPatientId =
 				typeof val === "function" ? val(state.selectedPatientId) : val;
-			if (
-				state.selectedPatientId !== null &&
-				nextSelectedPatientId !== state.selectedPatientId
-			) {
-				useVisitStore.getState().resetVisitToothState();
-				useVisitStore.getState().setCompletedServices([]);
+			if (nextSelectedPatientId !== state.selectedPatientId) {
+				useVisitStore.getState().resetPatientVisitSession();
+				return {
+					selectedPatientId: nextSelectedPatientId,
+					patientCoreDraft: emptyPatientCoreDraft(),
+					patientCoreDirty: false,
+					patientCoreSaveState: "idle",
+					patientAdministrativeProfileDraft: emptyPatientAdministrativeProfileDraft(),
+					patientAdministrativeProfileDirty: false,
+					patientAdministrativeProfileSaveState: "idle",
+				};
 			}
 			return { selectedPatientId: nextSelectedPatientId };
 		}),
+
+	resetPatientSession: () => {
+		useVisitStore.getState().resetPatientVisitSession();
+		set({
+			selectedPatientId: null,
+			patientCoreDraft: emptyPatientCoreDraft(),
+			patientCoreDirty: false,
+			patientCoreSaveState: "idle",
+			patientAdministrativeProfileDraft: emptyPatientAdministrativeProfileDraft(),
+			patientAdministrativeProfileDirty: false,
+			patientAdministrativeProfileSaveState: "idle",
+		});
+	},
 
 	patientCoreDraft: emptyPatientCoreDraft(),
 	setPatientCoreDraft: (val) =>
@@ -209,7 +229,23 @@ export const usePatientStore = create<PatientStore>((set) => ({
 			newRulePatientText:
 				typeof val === "function" ? val(state.newRulePatientText) : val,
 		})),
+
+	resetDraft: () =>
+		set({
+			newPatientName: "",
+			newPatientPhone: "",
+			newPatientBirthDate: "",
+			isPatientCreating: false,
+			patientCoreDraft: emptyPatientCoreDraft(),
+			patientCoreDirty: false,
+			patientCoreSaveState: "idle",
+			patientAdministrativeProfileDraft: emptyPatientAdministrativeProfileDraft(),
+			patientAdministrativeProfileDirty: false,
+			patientAdministrativeProfileSaveState: "idle",
+		}),
 }));
+
+export const useDraftStore = usePatientStore;
 
 declare global {
 	interface Window {

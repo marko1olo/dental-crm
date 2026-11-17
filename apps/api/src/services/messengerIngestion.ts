@@ -35,10 +35,11 @@
  *    сразу. Теперь отказ фиксируется в согласиях по этому каналу.
  */
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, lte, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
+	appointments,
 	clinics,
 	communicationEvents,
 	communicationTasks,
@@ -348,6 +349,21 @@ async function sendOptOutAcknowledgement(
 	}
 }
 
+export function isPositiveAppointmentConfirmationText(text: string): boolean {
+	const cleaned = text
+		.trim()
+		.toLowerCase()
+		.replace(/[\s\-_,!.?]+/g, " ")
+		.trim();
+	if (/^(да|буду|приду|подтверждаю|подтверждаем|подтвердить|ок|ok|хорошо|\+)$/i.test(cleaned)) {
+		return true;
+	}
+	if (/^(да\s*(буду|приду|подтверждаю|конечно|обязательно)|буду\s*обязательно|запись\s*подтверждаю|подтверждаю\s*запись|буду\s*на\s*приеме|буду\s*на\s*приёме)$/i.test(cleaned)) {
+		return true;
+	}
+	return false;
+}
+
 type InboundEventRow = typeof messengerInboundEvents.$inferSelect;
 
 async function processSingleEvent(
@@ -458,6 +474,65 @@ async function processSingleEvent(
 			type: "INBOX_NEW_MESSAGE",
 			payload: { channel, patientId, text: messageText, optOutIntent: intent },
 		});
+
+		// Автоматическое распознавание согласия на визит («Да, буду», «Подтверждаю»)
+		if (intent === null && isPositiveAppointmentConfirmationText(messageText)) {
+			try {
+				const now = new Date();
+				const windowStart = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+				const windowEnd = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+				const [plannedAppt] = await db
+					.select({
+						id: appointments.id,
+						startsAt: appointments.startsAt,
+					})
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, organizationId),
+							eq(appointments.patientId, patientId),
+							eq(appointments.status, "planned"),
+							gte(appointments.startsAt, windowStart),
+							lte(appointments.startsAt, windowEnd),
+						),
+					)
+					.orderBy(appointments.startsAt)
+					.limit(1);
+
+				if (plannedAppt) {
+					await db
+						.update(appointments)
+						.set({ status: "confirmed" })
+						.where(
+							and(
+								eq(appointments.organizationId, organizationId),
+								eq(appointments.id, plannedAppt.id),
+							),
+						);
+
+					wsBroker.broadcastToOrganization(organizationId, {
+						type: "APPOINTMENT_UPDATED",
+						payload: { id: plannedAppt.id, status: "confirmed" },
+					});
+
+					try {
+						await enqueueMessage({
+							organizationId,
+							patientId,
+							channel,
+							intent: "appointment_confirmation",
+							body: "Спасибо! Ваша запись подтверждена. Ждём вас в клинике!",
+							dedupeKey: `appt_confirm_ack_${plannedAppt.id}`,
+						});
+					} catch (enqueueErr) {
+						console.warn("[MessengerIngestion] Failed to enqueue confirmation reply:", enqueueErr);
+					}
+				}
+			} catch (apptErr) {
+				console.warn("[MessengerIngestion] Failed to auto-confirm appointment by text:", apptErr);
+			}
+		}
 
 		// Semantic triage & HitL pipeline integration (MAX / WhatsApp / Telegram / VK / SMS)
 		if (intent === null) {

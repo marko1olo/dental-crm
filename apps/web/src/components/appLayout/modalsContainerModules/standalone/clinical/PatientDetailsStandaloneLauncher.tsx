@@ -35,5 +35,5 @@ function StandalonePatientDetailsHost(): React.ReactElement {
 		);
 	}
 
-	return <PatientCardModal isOpen={true} onClose={onClose} patientId={patientId} />;
+	return <PatientCardModal key={patientId || "draft"} isOpen={true} onClose={onClose} patientId={patientId} />;
 }

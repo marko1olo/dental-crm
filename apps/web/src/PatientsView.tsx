@@ -6,6 +6,7 @@ import React, {
 	useRef,
 	useState,
 } from "react";
+import type { Dashboard as DashboardData } from "@dental/shared";
 import { showToast } from "./components/GlobalToast";
 import {
 	executeBookPatientAppointmentAutonomy,
@@ -334,7 +335,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				) : mobileActiveView === "card" && selectedPatient ? (
 					<MobilePatientProfileWorkspace
 						patient={selectedPatient}
-						dashboard={props.dashboard as any}
+						dashboard={props.dashboard as DashboardData | null | undefined}
 						onBack={() => setMobileActiveView("list")}
 						onSelectPatient={handleSelectPatient}
 						onOpenVisit={(visitId) =>
@@ -468,6 +469,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 			{isPatientCardModalOpen && selectedPatient && (
 				<Suspense fallback={null}>
 					<PatientCardModal
+						key={selectedPatient.id || "draft"}
 						patient={selectedPatient}
 						isOpen={isPatientCardModalOpen}
 						onClose={() => setIsPatientCardModalOpen(false)}

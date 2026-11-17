@@ -51,7 +51,7 @@ export const PatientDocumentsTab: React.FC<PatientDocumentsTabProps> = React.mem
 
 				{patientDocs.length > 0 ? (
 					<div className="flex flex-col gap-2.5">
-						<div className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
+						<div className="text-xs font-bold text-[var(--muted)] tracking-tight">
 							Оформленные и подготовленные документы ({patientDocs.length})
 						</div>
 

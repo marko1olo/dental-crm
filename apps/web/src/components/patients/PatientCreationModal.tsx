@@ -15,7 +15,7 @@ import type { PatientCreationModalProps } from "./patientCreation";
 export type { PatientCreationModalProps } from "./patientCreation";
 
 export function PatientCreationModal(props: PatientCreationModalProps) {
-	return <PatientCardModal {...props} mode="create" />;
+	return <PatientCardModal key="patient-creation-draft" {...props} mode="create" />;
 }
 
 export const CreatePatientModal = PatientCreationModal;

@@ -81,6 +81,7 @@ export const StandalonePatientCardHost: React.FC<{ onClose: () => void }> = ({ o
 			data-testid="patient-card-standalone-root"
 		>
 			<PatientCardModal
+				key={effectivePatientId || "draft"}
 				isOpen={true}
 				onClose={onClose}
 				initialTab={initialTab}
