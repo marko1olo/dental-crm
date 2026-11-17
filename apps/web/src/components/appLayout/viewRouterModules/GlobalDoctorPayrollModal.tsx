@@ -89,7 +89,7 @@ export function GlobalDoctorPayrollModal({ clinicSettings }: GlobalDoctorPayroll
 					name: doc.doctorName,
 					specialtyId: doc.specialtyId || (doc.role === "doctor" ? "solo-doctor" : doc.role),
 				},
-			]
+			].filter((d): d is { readonly id: string; readonly name: string; readonly specialtyId: string; } => Boolean(d.id && d.name && d.specialtyId))
 		: undefined;
 
 	return (

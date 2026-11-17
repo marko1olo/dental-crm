@@ -44,6 +44,8 @@ import type {
 import type { BrowserContinuityStatus } from "../../browserContinuity";
 import type { AppView, SettingsTab } from "../../utils/routeUtils";
 
+export type { StaffRole };
+
 export interface NavigationAndThemeSlice {
 	odontogramUseSurfaces: boolean;
 	setOdontogramUseSurfaces: (

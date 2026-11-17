@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { parseKopecks } from "@dental/shared";
 import { crmLeads, crmLeadStageHistory } from "../db/schema.js";
 
 export interface PipelineMetricsResult {
@@ -9,6 +10,7 @@ export interface PipelineMetricsResult {
 	stageConversionRates: Record<string, number>;
 	slaBreachedCount: number;
 	urgentCount: number;
+	pipelineExpectedRevenueKopecks: number;
 	pipelineExpectedRevenueRub: number;
 }
 
@@ -38,7 +40,7 @@ export async function calculateLeadPipelineMetrics(
 
 	let slaBreachedCount = 0;
 	let urgentCount = 0;
-	let pipelineExpectedRevenueRub = 0;
+	let pipelineExpectedRevenueKopecks = 0;
 	const now = new Date();
 
 	for (const lead of leads) {
@@ -60,9 +62,9 @@ export async function calculateLeadPipelineMetrics(
 		}
 
 		if (lead.expectedRevenue) {
-			const val = Number.parseFloat(lead.expectedRevenue);
-			if (!Number.isNaN(val) && val > 0) {
-				pipelineExpectedRevenueRub += val;
+			const kopecks = parseKopecks(lead.expectedRevenue);
+			if (kopecks > 0) {
+				pipelineExpectedRevenueKopecks += kopecks;
 			}
 		}
 	}
@@ -158,7 +160,8 @@ export async function calculateLeadPipelineMetrics(
 		stageConversionRates,
 		slaBreachedCount,
 		urgentCount,
+		pipelineExpectedRevenueKopecks,
 		pipelineExpectedRevenueRub:
-			Math.round(pipelineExpectedRevenueRub * 100) / 100,
+			Math.round(pipelineExpectedRevenueKopecks / 100),
 	};
 }

@@ -87,7 +87,7 @@ export function AppBootScreens({ sessionAuth, appLogic }: AppBootScreensProps) {
 	if (accessUnlockRequired && !dashboard) {
 		return (
 			<AppUnlockState
-				accessMessage={accessUnlockMessage}
+				accessMessage={accessUnlockMessage ?? ""}
 				adminSecretDraft={clinicalAdminSecretDraft}
 				onAdminSecretChange={setClinicalAdminSecretDraft}
 				onUnlock={() => unlockTelegramAdminSession("all")}
@@ -102,7 +102,7 @@ export function AppBootScreens({ sessionAuth, appLogic }: AppBootScreensProps) {
 				actionLabel="Повторить загрузку"
 				onAction={() => {
 					setError(null);
-					void loadDashboard().catch((e: unknown) => {
+					void Promise.resolve(loadDashboard()).catch((e: unknown) => {
 						setError(operatorWorkflowFailureMessage("Не удалось загрузить данные клиники", e));
 					});
 				}}

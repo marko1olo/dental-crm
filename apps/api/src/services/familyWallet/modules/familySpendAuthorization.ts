@@ -81,16 +81,7 @@ export async function verifyFamilySpendAuthorization(params: {
 		)
 		.limit(1);
 
-	// 1. Authorization check in patient_relationships: spending requires confirmed permission
-	if (!rel || rel.canSpendFamilyWallet !== true) {
-		throw new FamilyWalletError(
-			"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
-			403,
-			"UNAUTHORIZED_FAMILY_SPEND",
-		);
-	}
-
-	// 2. Check if patient belongs to the confirmed family group
+	// 1. Check if patient belongs to the confirmed family group
 	const [patientRow] = await tx
 		.select({
 			id: patients.id,
@@ -117,7 +108,7 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	// 3. Check individual spend limit if configured on the relationship
+	// 2. Check individual spend limit if configured on the relationship
 	let spendLimitKop: number | undefined;
 	if ((rel as Record<string, unknown> | undefined)?.["spendLimitKopecks"] !== undefined) {
 		spendLimitKop = Number((rel as Record<string, unknown>)["spendLimitKopecks"]);
@@ -139,10 +130,10 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	// 4. Validate spend with shared logic
+	// 3. Validate spend with shared logic
 	const effectiveRel = rel
 		? {
-				canSpendFamilyWallet: rel.canSpendFamilyWallet !== false,
+				canSpendFamilyWallet: rel.canSpendFamilyWallet,
 				isLegalRepresentative: rel.isLegalRepresentative === true,
 				relationshipType: (rel.patientId === patientId
 					? rel.relationshipType
@@ -150,7 +141,7 @@ export async function verifyFamilySpendAuthorization(params: {
 				spendLimitKopecks: spendLimitKop,
 			}
 		: {
-				canSpendFamilyWallet: true,
+				canSpendFamilyWallet: false,
 				isLegalRepresentative: false,
 				relationshipType: "relative" as PatientRelationshipKind,
 				spendLimitKopecks: undefined,

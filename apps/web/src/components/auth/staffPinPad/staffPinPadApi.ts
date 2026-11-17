@@ -23,7 +23,7 @@ export function isDemoOrFallbackStaff(user: StaffUser): boolean {
 export async function requestStaffUnlock(
 	completedPin: string,
 	user: StaffUser,
-): Promise<{ success: boolean; user?: unknown; error?: string }> {
+): Promise<{ success: boolean; user?: StaffUser; error?: string }> {
 	if (isDemoOrFallbackStaff(user)) {
 		safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, `demo-staff-token-${user.id || "chief"}`, true);
 		return {
@@ -46,7 +46,7 @@ export async function requestStaffUnlock(
 			body: JSON.stringify({ userId: user.id, pinCode: completedPin }),
 		});
 		const rawBody = await response.text();
-		let payload: { message?: unknown; staffToken?: unknown; user?: { fullName?: unknown } } | null = null;
+		let payload: { message?: unknown; staffToken?: unknown; user?: Partial<StaffUser> } | null = null;
 		if (rawBody) {
 			try { payload = JSON.parse(rawBody); } catch {
 				logger.error("[StaffPinPad] ответ сервера не JSON", response.status, rawBody.slice(0, 200));
@@ -58,7 +58,14 @@ export async function requestStaffUnlock(
 			return { success: false, error: serverMsg || actionFailureToast("Смена не открыта", response.status) };
 		}
 		const staffToken = typeof payload?.staffToken === "string" ? payload.staffToken.trim() : "";
-		const unlockedUser = payload?.user && typeof payload.user === "object" ? payload.user : null;
+		const rawUser = payload?.user && typeof payload.user === "object" ? payload.user : null;
+		const unlockedUser: StaffUser | null = rawUser && typeof rawUser.id === "string" ? {
+			id: rawUser.id,
+			fullName: typeof rawUser.fullName === "string" ? rawUser.fullName : (user.fullName || "Сотрудник"),
+			role: typeof rawUser.role === "string" ? rawUser.role : (user.role || "doctor"),
+			organizationId: typeof rawUser.organizationId === "string" ? rawUser.organizationId : user.organizationId,
+			email: typeof rawUser.email === "string" ? rawUser.email : user.email,
+		} : null;
 		if (!staffToken || !unlockedUser) {
 			return { success: false, error: "Смена не открыта: сервер принял PIN, но не выдал ключ смены." };
 		}

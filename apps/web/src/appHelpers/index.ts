@@ -23,6 +23,8 @@ export type {
 	MedicalDocumentReleaseChannel,
 	MedicalRecordExtractDocumentDraftFields,
 	SettingsTabGroup,
+	VisitNoteField,
+	VisitNoteForm,
 } from "./types.js";
 
 export {

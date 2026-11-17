@@ -2,6 +2,8 @@ import {
 	getCachedActiveStaffUser,
 	getCachedClinicProfile,
 } from "../../lib/offlineStorage";
+import type { StaffUser } from "./staffPinPad/staffPinPadTypes";
+import { DEMO_SHOWCASE_ORG_ID } from "../../lib/demoMode";
 
 export type IdentityType = "email" | "phone" | "clinic_id";
 
@@ -57,7 +59,7 @@ export interface QuickResumeData {
 	hasResume: boolean;
 	fullName: string;
 	roleLabel: string;
-	rawUser?: unknown | undefined;
+	rawUser?: StaffUser | null;
 	clinicName?: string | undefined;
 }
 
@@ -65,30 +67,34 @@ export interface QuickResumeData {
  * Извлекает данные предыдущей сессии для фичи Quick Resume (Быстрый возврат в 1 клик)
  */
 export function getQuickResumeData(): QuickResumeData {
-	const cachedUser = getCachedActiveStaffUser() as {
-		fullName?: string;
-		name?: string;
-		role?: string;
-		email?: string;
-	} | null;
+	const rawCachedUser = getCachedActiveStaffUser();
+	const cachedUser = (rawCachedUser && typeof rawCachedUser === "object" ? rawCachedUser : null) as (Partial<StaffUser> & { name?: string }) | null;
 
 	const cachedClinic = getCachedClinicProfile() as {
 		name?: string;
 		clinicName?: string;
 	} | null;
 
-	if (cachedUser && (cachedUser.fullName || cachedUser.name)) {
-		const name = cachedUser.fullName || cachedUser.name || "Доктор";
+	if (cachedUser && (cachedUser.fullName || cachedUser.name || cachedUser.id)) {
+		const name = cachedUser.fullName || (typeof cachedUser.name === "string" ? cachedUser.name : "") || "Доктор";
 		let roleLabel = "Врач клиники";
 		if (cachedUser.role === "owner") roleLabel = "Главный врач / Владелец";
 		else if (cachedUser.role === "admin") roleLabel = "Администратор";
 		else if (cachedUser.role === "doctor") roleLabel = "Врач-стоматолог";
 
+		const normalizedUser: StaffUser = {
+			id: typeof cachedUser.id === "string" && cachedUser.id ? cachedUser.id : "demo-doctor-chief",
+			fullName: name,
+			role: typeof cachedUser.role === "string" ? cachedUser.role : "doctor",
+			organizationId: typeof cachedUser.organizationId === "string" ? cachedUser.organizationId : DEMO_SHOWCASE_ORG_ID,
+			email: typeof cachedUser.email === "string" ? cachedUser.email : undefined,
+		};
+
 		return {
 			hasResume: true,
 			fullName: name,
 			roleLabel,
-			rawUser: cachedUser,
+			rawUser: normalizedUser,
 			clinicName: cachedClinic?.name || cachedClinic?.clinicName,
 		};
 	}
@@ -97,5 +103,6 @@ export function getQuickResumeData(): QuickResumeData {
 		hasResume: false,
 		fullName: "",
 		roleLabel: "",
+		rawUser: null,
 	};
 }
