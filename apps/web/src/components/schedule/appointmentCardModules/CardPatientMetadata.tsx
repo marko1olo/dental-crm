@@ -1,4 +1,5 @@
 import React from "react";
+import type { Appointment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
@@ -9,10 +10,10 @@ export interface CardPatientMetadataProps {
 	patientId?: string | null | undefined;
 	doctorName?: string | null | undefined;
 	chairName?: string | null | undefined;
-	appointment: any;
+	appointment: Appointment;
 	sizeVariant?: "micro" | "two-line" | "expanded" | undefined;
 	onOpenVisit?: (() => void) | null | undefined;
-	openAppointmentEditor: (appt: any) => void;
+	openAppointmentEditor: (appt: Appointment) => void;
 	setIsMobileSheetOpen: (open: boolean) => void;
 }
 

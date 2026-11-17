@@ -75,7 +75,11 @@ export function ScheduleRosterAndSyncModals(props: ScheduleViewModalsProps) {
         onUpdateChair={handleAddChairFromSchedule}
         existingChairsCount={dashboard?.clinicSettings?.chairs?.length || 0}
         branches={(dashboard?.clinicSettings as ClinicSettingsWithBranches | undefined)?.branches}
-        doctors={scheduleDoctors}
+        doctors={scheduleDoctors?.map((d) => ({
+          id: d.id,
+          fullName: d.fullName || d.name || "Врач",
+          ...(d.role ? { role: d.role } : {}),
+        }))}
       />
 
       <DoctorCalendarSyncModal

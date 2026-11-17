@@ -51,8 +51,8 @@ export interface UseCbctStudioExportsProps {
 	readonly huSamplingResult: HUZoneSampling;
 	readonly mischClassification: MischClassificationResult;
 	readonly onApplyToPlan?: ((item: TreatmentPlanItem) => void) | undefined;
-	readonly onApplyToVisitDiary?: ((summary: any) => void) | undefined;
-	readonly onApplyToDiary043?: ((summary: any) => void) | undefined;
+	readonly onApplyToVisitDiary?: ((summary: string) => void) | undefined;
+	readonly onApplyToDiary043?: ((summary: string) => void) | undefined;
 	readonly onOpenLabOrder?: ((draft: DentalLabOrderData) => void) | undefined;
 	readonly crossSectionCanvasRef?: React.RefObject<HTMLCanvasElement | null> | undefined;
 }

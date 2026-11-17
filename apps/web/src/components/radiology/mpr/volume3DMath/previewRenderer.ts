@@ -71,8 +71,8 @@ export function renderCanvas2DPreviewSlice(
 	const badgeH = 22;
 	const badgeX = Math.max(8, (width - badgeW) / 2);
 	const badgeY = 8;
-	if (typeof (ctx as any).roundRect === "function") {
-		(ctx as any).roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+	if ("roundRect" in ctx && typeof ctx.roundRect === "function") {
+		ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
 	} else {
 		ctx.rect(badgeX, badgeY, badgeW, badgeH);
 	}

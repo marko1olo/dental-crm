@@ -40,8 +40,17 @@ export function GridAppointmentHudDetails({
 	dashboard,
 }: GridAppointmentHudDetailsProps) {
 	const teeth = extractTeethList(a);
-	const labOrders = (dashboard as DashboardWithLabOrders).labOrders ?? [];
-	const labStatus = resolveAppointmentLabStatus(a, labOrders);
+	const labOrders = (dashboard as DashboardWithLabOrders).labOrders;
+	const matchedLabOrder = Array.isArray(labOrders)
+		? (labOrders.find((o) => {
+				const order = o as Record<string, unknown> | null | undefined;
+				return (
+					(Boolean(order?.appointmentId) && order?.appointmentId === a.id) ||
+					(Boolean(a.patientId) && order?.patientId === a.patientId)
+				);
+		  }) as Record<string, unknown> | null | undefined)
+		: null;
+	const labStatus = resolveAppointmentLabStatus(a, matchedLabOrder);
 	const vitaShade = (a as HudAppointment).vitaShade;
 
 	return (

@@ -4,7 +4,7 @@ import { formatDoctorShortName } from "../AppointmentGridCard";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 
 export interface ScheduleChairMultiShiftCardProps {
-  chair: any;
+  chair: { id: string; name?: string; [key: string]: unknown };
   assignment: ChairDoctorShiftAssignment;
   isToday: boolean;
   currentHour: number;
@@ -12,7 +12,7 @@ export interface ScheduleChairMultiShiftCardProps {
   handleConfirmAssignDoctor: (
     chairId: string,
     docId: string,
-    shiftPreset: any,
+    shiftPreset: string | unknown,
     eveningDocId?: string,
   ) => void;
 }

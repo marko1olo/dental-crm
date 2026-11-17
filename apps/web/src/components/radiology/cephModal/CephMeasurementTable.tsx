@@ -42,7 +42,7 @@ export function CephMeasurementTable({
 				</div>
 				<div className="my-1 flex items-baseline gap-1">
 					{isValValid ? (
-						<span className={`text-base font-black font-mono leading-none ${meas.status === "normal" ? "text-emerald-400" : meas.status === "increased" ? "text-rose-400" : "text-cyan-400"}`}>
+						<span className={`text-base font-black font-mono leading-none ${meas.status === "normal" ? "text-emerald-400" : meas.status === "deviation_high" ? "text-rose-400" : "text-cyan-400"}`}>
 							{meas.value}{meas.unit || "°"}
 						</span>
 					) : (
@@ -52,8 +52,8 @@ export function CephMeasurementTable({
 				</div>
 				<div>
 					{isValValid ? (
-						<span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${meas.status === "normal" ? "bg-emerald-950 text-emerald-300 border border-emerald-500/40" : meas.status === "increased" ? "bg-rose-950 text-rose-300 border border-rose-500/40" : "bg-cyan-950 text-cyan-300 border border-cyan-500/40"}`}>
-							{id === "ANB" ? (meas.status === "normal" ? "Класс I" : meas.status === "increased" ? "Класс II" : "Класс III") : id === "1-NA" || id === "1-NB" ? (meas.status === "normal" ? "Норма" : meas.status === "increased" ? "Протрузия" : "Ретрузия") : (meas.status === "normal" ? "Норма" : meas.status === "increased" ? "Увеличен" : "Уменьшен")}
+						<span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${meas.status === "normal" ? "bg-emerald-950 text-emerald-300 border border-emerald-500/40" : meas.status === "deviation_high" ? "bg-rose-950 text-rose-300 border border-rose-500/40" : "bg-cyan-950 text-cyan-300 border border-cyan-500/40"}`}>
+							{id === "ANB" ? (meas.status === "normal" ? "Класс I" : meas.status === "deviation_high" ? "Класс II" : "Класс III") : id === "1-NA" || id === "1-NB" ? (meas.status === "normal" ? "Норма" : meas.status === "deviation_high" ? "Протрузия" : "Ретрузия") : (meas.status === "normal" ? "Норма" : meas.status === "deviation_high" ? "Увеличен" : "Уменьшен")}
 						</span>
 					) : (
 						<span className="text-[9px] font-medium text-amber-400/90 truncate block">{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}</span>

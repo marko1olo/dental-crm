@@ -427,7 +427,7 @@ export class WebGl2PanoramicEngine {
 			: 0.65;
 		gl.uniform1f(this.uniforms!.anteriorTroughRatio, effAnteriorRatio);
 
-		const effSharpen = (options as any).sharpenAmount ?? ((options as any).sharpen ? 0.18 : 0.0);
+		const effSharpen = options.sharpenAmount ?? (options.sharpen ? 0.18 : 0.0);
 		if (this.uniforms!.sharpenAmount) {
 			gl.uniform1f(this.uniforms!.sharpenAmount, effSharpen);
 		}

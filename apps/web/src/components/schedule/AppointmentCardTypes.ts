@@ -57,6 +57,6 @@ export type AppointmentCardProps = {
 	useManualSelects: boolean;
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	onOpenVisit?: () => void;
-	onOpenWaitlistForSlot?: ((slot: any) => void) | undefined;
+	onOpenWaitlistForSlot?: ((slot: unknown) => void) | undefined;
 	onFreeSlotToWaitlist?: ((appointment: Appointment) => void) | undefined;
 };

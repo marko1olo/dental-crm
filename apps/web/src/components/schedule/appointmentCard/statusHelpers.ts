@@ -14,9 +14,10 @@ export function isAppointmentInChair(status: string | undefined | null): boolean
  */
 export function isAppointmentCito(appointment?: Appointment | null): boolean {
 	if (!appointment) return false;
+	const citoExt = appointment as { isCito?: boolean; cito?: boolean };
 	return Boolean(
-		(appointment as any)?.isCito ||
-		(appointment as any)?.cito ||
+		citoExt?.isCito ||
+		citoExt?.cito ||
 		(appointment?.reason ?? "").toLowerCase().includes("cito") ||
 		(appointment?.reason ?? "").toLowerCase().includes("острая боль") ||
 		(appointment?.reason ?? "").toLowerCase().includes("срочн")

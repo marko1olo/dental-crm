@@ -4,12 +4,12 @@ import type { Appointment, Dashboard } from "@dental/shared";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 
 export interface ScheduleMobileGridModeProps {
-	chairs: Array<{ id: string; name: string; room?: string; active?: boolean }>;
+	chairs: Array<{ id: string; name: string; room?: string | null | undefined; active?: boolean | undefined }>;
 	appointments: Appointment[];
 	effectiveDateKey: string;
 	selectedDoctorId: string | null;
 	dashboard: Dashboard | null | undefined;
-	patientName: (patients: unknown[], id: string | null) => string;
+	patientName: (patients: Dashboard["patients"], id: string | null) => string;
 	appointmentLabels: Record<string, string>;
 	onSlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
 	onQuickBooking?: (() => void) | undefined;

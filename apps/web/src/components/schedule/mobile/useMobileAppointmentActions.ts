@@ -1,7 +1,12 @@
 import type { Appointment } from "@dental/shared";
 
 interface MobileAppointmentActionParams {
-  onAppointmentMove?: ((id: string, patch: any) => Promise<unknown> | void | any) | undefined;
+  onAppointmentMove?:
+    | ((
+        id: string,
+        patch: Partial<Appointment> & Record<string, unknown>,
+      ) => Promise<unknown> | void)
+    | undefined;
 }
 
 export function useMobileAppointmentActions({ onAppointmentMove }: MobileAppointmentActionParams) {

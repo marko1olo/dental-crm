@@ -6,20 +6,20 @@ import { ScheduleChairMultiShiftCard } from "./ScheduleChairMultiShiftCard";
 import { ScheduleChairSingleShiftCard } from "./ScheduleChairSingleShiftCard";
 
 export interface ScheduleChairDutySectionProps {
-  chair: any;
+  chair: { id: string; name?: string; [key: string]: unknown };
   assignment?: ChairDoctorShiftAssignment | undefined;
   hasDoctor: boolean;
   isToday: boolean;
   currentHour: number;
-  doctors: Array<any>;
-  suggestedDoctor: any | null;
+  doctors: Array<{ id: string; fullName: string; role?: string; specialties?: string[] }>;
+  suggestedDoctor: { id: string; fullName: string; role?: string } | null;
   isSoloDoctor: boolean;
   dateKey?: string | undefined;
   openAssignModal: (chairId: string) => void;
   handleConfirmAssignDoctor: (
     chairId: string,
     docId: string,
-    shiftPreset: any,
+    shiftPreset: string | unknown,
     eveningDocId?: string,
   ) => void;
 }

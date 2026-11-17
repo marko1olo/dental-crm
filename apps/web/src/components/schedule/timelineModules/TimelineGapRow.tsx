@@ -4,7 +4,11 @@ import { formatMinutesForHumans } from "../scheduleDayGrouping";
 
 interface TimelineGapRowProps {
 	dateKey: string;
-	row: any;
+	row: {
+		startsAt?: string | undefined;
+		endsAt?: string | undefined;
+		minutes: number;
+	};
 	gapStartLabel: string | null;
 	gapEndLabel: string | null;
 	onEmptySlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;

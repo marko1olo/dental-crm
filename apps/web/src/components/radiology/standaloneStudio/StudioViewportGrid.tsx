@@ -3,8 +3,7 @@ import { CbctLeftToolDock } from "../CbctLeftToolDock.js";
 import { CbctMprViewportsGrid } from "../mpr/CbctMprViewportsGrid.js";
 import type { StudioViewportGridProps } from "./types.js";
 
-// biome-ignore lint/suspicious/noExplicitAny: master viewport grid facade forwarding props to underlying components
-export const StudioViewportGrid: React.FC<any> = (props) => {
+export const StudioViewportGrid: React.FC<StudioViewportGridProps> = (props) => {
 	return (
 		<>
 			<CbctLeftToolDock
@@ -24,7 +23,7 @@ export const StudioViewportGrid: React.FC<any> = (props) => {
 				onAutoDetectArch={props.onAutoDetectArch}
 			/>
 
-			<CbctMprViewportsGrid {...(props as any)} />
+			<CbctMprViewportsGrid {...props} />
 		</>
 	);
 };

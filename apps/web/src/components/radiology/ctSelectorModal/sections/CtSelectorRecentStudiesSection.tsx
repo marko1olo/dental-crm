@@ -1,11 +1,12 @@
 import React from "react";
 import { ChevronRight, Layers, RefreshCw } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
+import type { CtRecentStudyItem } from "../types";
 
 export interface CtSelectorRecentStudiesSectionProps {
-	readonly patientStudies: ImagingStudy[];
+	readonly patientStudies: readonly CtRecentStudyItem[];
 	readonly isLoadingStudies: boolean;
-	readonly launchStudy: (study: ImagingStudy) => void;
+	readonly launchStudy: (study: CtRecentStudyItem | ImagingStudy | unknown) => void;
 }
 
 export const CtSelectorRecentStudiesSection: React.FC<CtSelectorRecentStudiesSectionProps> = ({
@@ -52,23 +53,26 @@ export const CtSelectorRecentStudiesSection: React.FC<CtSelectorRecentStudiesSec
 									</strong>
 									<div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] flex-wrap">
 										<span>
-											{study.capturedAt || (study as any).studyDate
-												? new Date(
-														study.capturedAt || (study as any).studyDate,
-													).toLocaleDateString("ru-RU", {
-														day: "numeric",
-														month: "short",
-														year: "numeric",
-													})
-												: "Архив"}
+											{(() => {
+												const dateStr =
+													("capturedAt" in study && typeof study.capturedAt === "string" ? study.capturedAt : null) ||
+													("studyDate" in study && typeof study.studyDate === "string" ? study.studyDate : null);
+												return dateStr
+													? new Date(dateStr).toLocaleDateString("ru-RU", {
+															day: "numeric",
+															month: "short",
+															year: "numeric",
+													  })
+													: "Архив";
+											})()}
 										</span>
-										{study.sliceCount ? (
+										{"sliceCount" in study && typeof study.sliceCount === "number" && study.sliceCount > 0 ? (
 											<>
 												<span>·</span>
 												<span>{study.sliceCount} срезов</span>
 											</>
 										) : null}
-										{study.voxelSpacing ? (
+										{"voxelSpacing" in study && typeof study.voxelSpacing === "string" && study.voxelSpacing ? (
 											<>
 												<span>·</span>
 												<span>{study.voxelSpacing}</span>

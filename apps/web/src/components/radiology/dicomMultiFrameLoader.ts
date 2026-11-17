@@ -173,13 +173,19 @@ export interface MultiFrameVolumeIngestionOptions {
   enableProgressiveLOD?: boolean | undefined;
 }
 
+interface GlobalWithScheduler {
+  scheduler?: { yield?: () => Promise<void> };
+}
+
 /**
  * Yields execution back to the browser / Node event loop to prevent UI thread starvation.
  */
 export async function yieldToEventLoop(): Promise<void> {
-  const g = globalThis as unknown as { scheduler?: { yield?: () => Promise<void> } };
-  if (g.scheduler && typeof g.scheduler.yield === "function") {
-    await g.scheduler.yield();
+  const scheduler = "scheduler" in globalThis
+    ? (globalThis as GlobalWithScheduler).scheduler
+    : undefined;
+  if (scheduler && typeof scheduler.yield === "function") {
+    await scheduler.yield();
   } else {
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
   }

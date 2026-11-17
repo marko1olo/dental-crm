@@ -1,14 +1,14 @@
 import type { Appointment } from "@dental/shared";
-import type { ClinicalBadgeItem } from "./types";
+import type { ClinicalBadgeItem, ExtendedAppointmentBadgeData, PatientBadgeData } from "./types";
 import { isAppointmentCito } from "../appointmentCardHelpers";
 
 export function resolveBadgesPart2(
 	appointment: Appointment,
-	patient: any,
+	patient: PatientBadgeData | null | undefined,
 ): ClinicalBadgeItem[] {
 	const badges: ClinicalBadgeItem[] = [];
 	const reason = (appointment?.reason || "").toLowerCase();
-	const aAny = appointment as any;
+	const aAny = appointment as ExtendedAppointmentBadgeData;
 
 	// 9. schi-9: Treatment plan
 	if (Boolean(aAny?.treatmentPlanId) || Boolean(aAny?.planNumber)) {
@@ -25,7 +25,7 @@ export function resolveBadgesPart2(
 	// 10. schi-10: Radiology / X-Ray / CBCT
 	if (
 		Boolean(patient?.hasXrays) ||
-		Boolean(patient?.radiologyStudiesCount > 0) ||
+		Boolean((patient?.radiologyStudiesCount ?? 0) > 0) ||
 		Boolean(aAny?.hasXray) ||
 		/снимок|рентген|кт|cbct|оптг/i.test(reason)
 	) {

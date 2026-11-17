@@ -6,8 +6,8 @@ import { useScheduleStore } from "../../../store/scheduleStore";
 export interface ScheduleMobileFilterChipsProps {
   selectedDoctorId: string | null;
   selectedChairId: string | null;
-  doctors: any[];
-  chairs: any[];
+  doctors: Array<{ id: string; fullName: string }>;
+  chairs: Array<{ id: string; name: string }>;
   onSelectDoctor?: ((id: string | null) => void) | undefined;
   onSelectChair?: ((id: string | null) => void) | undefined;
 }
@@ -37,7 +37,7 @@ export const ScheduleMobileFilterChips: React.FC<ScheduleMobileFilterChipsProps>
           <span>Все врачи и кабинеты</span>
         </button>
 
-        {doctors.map((doc: any) => {
+        {doctors.map((doc) => {
           const isSelected = selectedDoctorId === doc.id;
           return (
             <button
@@ -56,7 +56,7 @@ export const ScheduleMobileFilterChips: React.FC<ScheduleMobileFilterChipsProps>
           );
         })}
 
-        {chairs.map((chair: any) => {
+        {chairs.map((chair) => {
           const isSelected = selectedChairId === chair.id;
           return (
             <button

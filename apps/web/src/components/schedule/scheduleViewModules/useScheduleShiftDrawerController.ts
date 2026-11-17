@@ -5,6 +5,8 @@ import {
   applyDoctorChairDateRange,
   type DateRangeShiftPreset,
   type DoctorShift,
+  type StaffMember as RosterStaffMember,
+  type CabinetDefinition as RosterCabinetDefinition,
 } from "../roster/DoctorShiftRosterModal";
 import {
   DEFAULT_SOLO_CHAIR,
@@ -13,6 +15,7 @@ import {
 import {
   DEFAULT_CLINIC_STAFF,
   CLINIC_CABINETS_CATALOG,
+  type MedicalStaffRole,
 } from "../roster/doctorShiftRosterPresets";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
@@ -20,9 +23,9 @@ export type ScheduleShiftDrawerControllerProps = {
   currentDateKey: string;
   scheduleDoctorFilterId: string | null;
   scheduleChairFilterId: string | null;
-  rosterStaffList: any[];
-  rosterCabinets: any[];
-  scheduleDoctors: any[];
+  rosterStaffList: RosterStaffMember[];
+  rosterCabinets: RosterCabinetDefinition[];
+  scheduleDoctors: Array<{ id: string; fullName?: string; role?: string; specialties?: string[] }>;
   dashboard?: Dashboard;
   savedDoctorShifts: DoctorShift[];
   handleSaveDoctorShifts: (shifts: DoctorShift[]) => Promise<void>;
@@ -87,7 +90,7 @@ export function useScheduleShiftDrawerController(props: ScheduleShiftDrawerContr
           doctorId: defaultDoc?.id || "doc-1",
           doctorName:
             defaultDoc?.shortName || defaultDoc?.fullName || "Врач",
-          doctorRole: (defaultDoc?.role as any) || "doctor",
+          doctorRole: (defaultDoc?.role as MedicalStaffRole) || "therapist",
           assistantId: defaultDoc?.defaultAssistantId || null,
           assistantName: null,
           cabinetId: defaultCab.id,

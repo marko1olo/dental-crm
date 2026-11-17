@@ -60,7 +60,16 @@ export const extractToothBadge = (appt: Appointment): string | null => {
 };
 
 export const resolveMobileAllergyBadge = (appt: Appointment, pat: Dashboard["patients"][number] | null | undefined): string | null => {
-  const rawAllergies = pat?.allergies || pat?.anamnesis?.allergies;
+  const pRecord = pat as (Record<string, unknown> | null | undefined);
+  const rawAllergies =
+    (typeof pRecord?.allergies === "string" ? pRecord.allergies : undefined) ||
+    (pRecord?.anamnesis &&
+    typeof pRecord.anamnesis === "object" &&
+    pRecord.anamnesis !== null &&
+    "allergies" in pRecord.anamnesis &&
+    typeof (pRecord.anamnesis as Record<string, unknown>).allergies === "string"
+      ? ((pRecord.anamnesis as Record<string, unknown>).allergies as string)
+      : undefined);
   if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim() && !isNegativeAllergyStatement(rawAllergies)) {
     return rawAllergies.replace(/^аллерги[яи][: \t-]*/i, "").replace(/^на\s+/i, "").trim();
   }

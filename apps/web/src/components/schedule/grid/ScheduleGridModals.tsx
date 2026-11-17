@@ -5,28 +5,29 @@ import { QuickAddChairModal, type QuickAddChairData } from "../QuickAddChairModa
 import { QuickAddDoctorModal, type QuickAddDoctorData } from "../QuickAddDoctorModal";
 import type { TargetSlotInfo } from "../waitlist/WaitlistDrawer";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
+import type { ScheduleChairItem } from "./scheduleChairHeaderTypes";
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 
 export interface ScheduleGridModalsProps {
   assigningChairId: string | null;
   setAssigningChairId: (id: string | null) => void;
-  effectiveChairs: Array<any>;
-  doctors: Array<any>;
+  effectiveChairs: Array<ScheduleChairItem | Dashboard["chairs"][number]>;
+  doctors: Array<{ id: string; fullName: string; role?: string; specialties?: string[]; [key: string]: unknown }>;
   dateKey: string;
   effectiveChairAssignments: Record<string, ChairDoctorShiftAssignment>;
   handleConfirmAssignDoctor: (
     chairId: string,
     docId: string,
-    shiftPreset: any,
+    shiftPreset: string | unknown,
     eveningDocId?: string,
   ) => void;
   handleUnassignDoctor: (chairId: string) => void;
-  onAddDoctor?: ((doctorData: QuickAddDoctorData) => Promise<any> | any) | undefined;
+  onAddDoctor?: ((doctorData: QuickAddDoctorData) => Promise<unknown> | unknown) | undefined;
   isSoloDoctor: boolean;
   onOpenAddChair?: (() => void) | undefined;
   isInternalAddChairModalOpen: boolean;
   setIsInternalAddChairModalOpen: (open: boolean) => void;
-  onAddChair?: ((chairData: QuickAddChairData) => Promise<any> | any) | undefined;
+  onAddChair?: ((chairData: QuickAddChairData) => Promise<unknown> | unknown) | undefined;
   dashboard: Dashboard;
   isQuickAddDoctorOpen: boolean;
   setIsQuickAddDoctorOpen: (open: boolean) => void;
@@ -89,7 +90,7 @@ export function ScheduleGridModals({
               handleConfirmAssignDoctor(
                 chairId,
                 assignment.doctorId,
-                (assignment.shiftPreset as any) || "morning",
+                assignment.shiftPreset || "morning",
                 assignment.subShifts?.[1]?.doctorId,
               );
             } else {
@@ -97,7 +98,13 @@ export function ScheduleGridModals({
             }
             setAssigningChairId(null);
           }}
-          onAddDoctor={onAddDoctor}
+          onAddDoctor={
+            onAddDoctor
+              ? async (docData) => {
+                  await onAddDoctor(docData);
+                }
+              : undefined
+          }
           isSoloDoctor={isSoloDoctor}
         />
       )}
@@ -110,26 +117,29 @@ export function ScheduleGridModals({
           existingChairsCount={effectiveChairs.length}
           doctors={doctors}
           onAddChair={
-            onAddChair ||
-            (async (chairData) => {
-              const newChair = {
-                id: chairData.id || `chair-${Date.now()}`,
-                name: chairData.name,
-                room: chairData.room || chairData.roomNumber || "",
-                color: chairData.color || "#0d9488",
-                specialization: chairData.specialization,
-                active: chairData.isActive ?? true,
-                branchId: chairData.branchId,
-              };
-              if (chairData.defaultDoctorId) {
-                handleConfirmAssignDoctor(
-                  newChair.id,
-                  chairData.defaultDoctorId,
-                  "full",
-                );
-              }
-              setIsInternalAddChairModalOpen(false);
-            })
+            onAddChair
+              ? async (chairData) => {
+                  await onAddChair(chairData);
+                }
+              : async (chairData) => {
+                  const newChair = {
+                    id: chairData.id || `chair-${Date.now()}`,
+                    name: chairData.name,
+                    room: chairData.room || chairData.roomNumber || "",
+                    color: chairData.color || "#0d9488",
+                    specialization: chairData.specialization,
+                    active: chairData.isActive ?? true,
+                    branchId: chairData.branchId,
+                  };
+                  if (chairData.defaultDoctorId) {
+                    handleConfirmAssignDoctor(
+                      newChair.id,
+                      chairData.defaultDoctorId,
+                      "full",
+                    );
+                  }
+                  setIsInternalAddChairModalOpen(false);
+                }
           }
         />
       )}
@@ -144,12 +154,12 @@ export function ScheduleGridModals({
           onAddDoctor={async (docData) => {
             let createdDoctorId = docData.id;
             if (onAddDoctor) {
-              const createdResult: any = await onAddDoctor(docData);
-              if (createdResult && createdResult.id) {
+              const createdResult = await onAddDoctor(docData);
+              if (createdResult && typeof createdResult === "object" && "id" in createdResult && typeof createdResult.id === "string") {
                 createdDoctorId = createdResult.id;
               }
             } else {
-              const newStaffMember: any = {
+              const newStaffMember = {
                 id: docData.id || `doc-quick-${Date.now()}`,
                 organizationId:
                   (dashboard as { organizationId?: string })?.organizationId ||

@@ -55,7 +55,11 @@ export function useSensorViewerState(props: SensorStudyViewerProps): SensorViewe
 		return () => window.removeEventListener("resize", onResize);
 	}, []);
 
-	const calibratedMmPerPx = useMemo(() => resolveCalibratedPixelSpacing((activeStudy as any)?.apparatusModel || "vatech_ezsensor", 0.0350), [activeStudy]);
+	const apparatusModel =
+		activeStudy && "apparatusModel" in activeStudy && typeof activeStudy.apparatusModel === "string"
+			? activeStudy.apparatusModel
+			: "vatech_ezsensor";
+	const calibratedMmPerPx = useMemo(() => resolveCalibratedPixelSpacing(apparatusModel, 0.0350), [apparatusModel]);
 	const pixelPitchMicrons = useMemo(() => Number((calibratedMmPerPx * 1000.0).toFixed(1)), [calibratedMmPerPx]);
 
 	const measurementsHook = useSensorViewerMeasurements({ calibratedMmPerPx });

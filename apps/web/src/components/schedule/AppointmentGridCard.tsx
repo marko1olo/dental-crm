@@ -79,7 +79,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 	const aEnd = toDateTimeLocalValue(a.endsAt, timezone).slice(11, 16);
 
 	const docObj = a.doctorUserId ? staffLookupMap.get(a.doctorUserId) : undefined;
-	const doctorSpecialty = docObj?.specialty || (Array.isArray(docObj?.specialties) ? docObj?.specialties[0] : undefined) || docObj?.role;
+	const doctorSpecialty = (docObj as { specialty?: string; specialties?: string[]; role?: string } | undefined)?.specialty || (Array.isArray(docObj?.specialties) ? docObj?.specialties[0] : undefined) || docObj?.role;
 	const docTheme = getDoctorSpecialtyTheme(doctorSpecialty);
 	const collision = collisionMap.get(a.id);
 	const isCito = isAppointmentCito(a);

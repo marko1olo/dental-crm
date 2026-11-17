@@ -62,6 +62,8 @@ export interface PanoramicReconstructionOptions {
 	readonly airCutoffHU?: number;
 	readonly softKneeCeiling?: number;
 	readonly useSoftKnee?: boolean;
+	readonly sharpen?: boolean | undefined;
+	readonly sharpenAmount?: number | undefined;
 	readonly outputBuffer?: Uint8ClampedArray;
 }
 

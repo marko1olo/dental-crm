@@ -139,7 +139,7 @@ export function measureAlveolarRidgeFromVolume(
 	archCurve?: DentalArchCurve,
 ): AlveolarRidgeMeasurement {
 	const toothStr = String(toothFdi);
-	const anchor = archCurve?.anchors?.find((a: any) => a.toothFdi === toothStr);
+	const anchor = archCurve?.anchors?.find((a) => a.toothFdi === toothStr);
 	const centerZMm = archCurve?.planeZMm ?? 0.0;
 	const normals = archCurve?.splinePointsMm ? calculateArchTangentsAndNormals(archCurve.splinePointsMm) : [];
 

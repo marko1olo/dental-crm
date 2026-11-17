@@ -20,15 +20,15 @@ export interface ChairArchetypePreset {
 }
 
 export interface QuickAddChairData {
-	id?: string;
+	id?: string | undefined;
 	name: string;
-	room?: string;
-	roomNumber?: string;
-	specialization?: string;
-	color?: string;
-	isActive?: boolean;
-	branchId?: string;
-	defaultDoctorId?: string | null;
+	room?: string | undefined;
+	roomNumber?: string | undefined;
+	specialization?: string | undefined;
+	color?: string | undefined;
+	isActive?: boolean | undefined;
+	branchId?: string | undefined;
+	defaultDoctorId?: string | null | undefined;
 }
 
 export interface QuickAddChairModalProps {

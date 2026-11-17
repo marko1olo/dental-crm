@@ -3,12 +3,12 @@ import { formatDoctorShortName } from "../AppointmentGridCard";
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 
 export interface ScheduleChairHeaderSelectsProps {
-  chair: any;
-  doctors: Array<any>;
+  chair: { id: string; name?: string; [key: string]: unknown };
+  doctors: Array<{ id: string; fullName: string }>;
   assignment?: ChairDoctorShiftAssignment | undefined;
   openAssignModal: (chairId: string) => void;
   handleBindDoctorToChair: (chairId: string, doctorId: string) => void;
-  handleConfirmAssignDoctor: (chairId: string, docId: string, shiftPreset: any) => void;
+  handleConfirmAssignDoctor: (chairId: string, docId: string, shiftPreset: string | unknown) => void;
   handleUnassignDoctor: (chairId: string) => void;
 }
 

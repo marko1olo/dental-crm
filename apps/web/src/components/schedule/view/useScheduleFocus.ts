@@ -17,24 +17,14 @@ export function useScheduleFocus({
     if (!wrapper) return;
 
     const isVisible = (element: HTMLElement) => {
-      if (
-        typeof (
-          element as unknown as {
-            checkVisibility?: (opts?: {
-              checkOpacity?: boolean;
-              checkVisibilityCSS?: boolean;
-            }) => boolean;
-          }
-        ).checkVisibility === "function"
-      ) {
-        return (
-          element as unknown as {
-            checkVisibility: (opts?: {
-              checkOpacity?: boolean;
-              checkVisibilityCSS?: boolean;
-            }) => boolean;
-          }
-        ).checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+      const elWithCheck = element as HTMLElement & {
+        checkVisibility?: (opts?: {
+          checkOpacity?: boolean;
+          checkVisibilityCSS?: boolean;
+        }) => boolean;
+      };
+      if (typeof elWithCheck.checkVisibility === "function") {
+        return elWithCheck.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
       }
       if (element.offsetParent === null && element.style.position !== "fixed")
         return false;

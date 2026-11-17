@@ -1,19 +1,19 @@
-import type { Appointment } from "@dental/shared";
-import type { ClinicalBadgeItem } from "./types";
+import type { Appointment, AppointmentLabStatusInfo } from "@dental/shared";
+import type { ClinicalBadgeItem, ExtendedAppointmentBadgeData, PatientBadgeData } from "./types";
 import { resolveAppointmentLabStatus } from "./labStatusResolver";
 
 export function resolveBadgesPart1(
 	appointment: Appointment,
-	patient: any,
+	patient: PatientBadgeData | null | undefined,
 	balance: number | null | undefined,
 	allergyAlert: string | null | undefined,
-	explicitLabOrder?: any,
+	explicitLabOrder?: AppointmentLabStatusInfo | Record<string, unknown> | null | undefined,
 ): ClinicalBadgeItem[] {
 	const badges: ClinicalBadgeItem[] = [];
 	const reason = (appointment?.reason || "").toLowerCase();
-	const aAny = appointment as any;
+	const aAny = appointment as ExtendedAppointmentBadgeData;
 
-	if (allergyAlert || patient?.allergies || patient?.anamnesis?.allergies) {
+	if (allergyAlert || patient?.allergies || (patient?.anamnesis as { allergies?: unknown } | undefined)?.allergies) {
 		badges.push({
 			id: "somatic_allergy",
 			schiCode: "schi-1",
@@ -51,7 +51,7 @@ export function resolveBadgesPart1(
 
 	const hasConsent =
 		Boolean(patient?.hasInformedConsent) ||
-		Boolean(patient?.consents?.length > 0) ||
+		Boolean((patient?.consents?.length ?? 0) > 0) ||
 		Boolean(aAny?.hasConsent);
 	if (hasConsent) {
 		badges.push({

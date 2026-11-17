@@ -5,6 +5,12 @@ import type { RadiologyStudy } from "../types";
 import { exportDirectRvgImageOrDicom, persistRvgScanToServer } from "../directRvgFileValidation";
 import { useVisitStore } from "../../../store/visitStore";
 
+export interface DirectRvgLabSendData {
+	readonly study: RadiologyStudy;
+	readonly toothFdi: string;
+	readonly note: string;
+}
+
 export interface UseDirectRvgEmrActionsProps {
 	readonly patientId: string;
 	readonly patientName: string;
@@ -20,7 +26,7 @@ export interface UseDirectRvgEmrActionsProps {
 	readonly clinicalNotes: string;
 	readonly canvasRef: React.RefObject<HTMLCanvasElement | null>;
 	readonly onSaveToEmr?: ((study: RadiologyStudy) => void) | undefined;
-	readonly onSendToLab?: ((data: any) => void) | undefined;
+	readonly onSendToLab?: ((data: DirectRvgLabSendData) => void) | undefined;
 	readonly onExportDicom?: ((study: RadiologyStudy) => void) | undefined;
 	readonly onClose: () => void;
 }

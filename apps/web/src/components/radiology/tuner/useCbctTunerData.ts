@@ -14,6 +14,10 @@ import {
 	findOcclusalZPlane,
 } from "../dentalCurveEngine";
 
+interface CbctWindowDemoExtension {
+	__cbctDemoVolume?: CbctVoxelVolume | undefined;
+}
+
 export interface TunerPatientOption {
 	readonly id: string;
 	readonly name: string;
@@ -58,7 +62,7 @@ export function useCbctTunerData(initialPatientId = "zakharov") {
 	const [selectedPatientId, setSelectedPatientId] = useState<string>(initialPatientId);
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(() => {
 		if (typeof window !== "undefined") {
-			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+			const win = window as typeof window & CbctWindowDemoExtension;
 			if (win.__cbctDemoVolume) return win.__cbctDemoVolume;
 		}
 		return null;
@@ -79,7 +83,7 @@ export function useCbctTunerData(initialPatientId = "zakharov") {
 		try {
 			// Fast path 1: Check existing global demo volume for zakharov
 			if (patientId === "zakharov" && typeof window !== "undefined") {
-				const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+				const win = window as typeof window & CbctWindowDemoExtension;
 				if (win.__cbctDemoVolume) {
 					const demoVol = win.__cbctDemoVolume;
 					setVolume({
@@ -147,7 +151,7 @@ export function useCbctTunerData(initialPatientId = "zakharov") {
 				};
 
 				if (typeof window !== "undefined" && patientId === "zakharov") {
-					(window as unknown as { __cbctDemoVolume?: CbctVoxelVolume }).__cbctDemoVolume = vol;
+					(window as typeof window & CbctWindowDemoExtension).__cbctDemoVolume = vol;
 				}
 
 				setVolume(vol);

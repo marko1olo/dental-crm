@@ -4,12 +4,12 @@ export interface AppointmentStatusPopupProps {
   appointment: Appointment;
   dashboard: Dashboard;
   displayStatus: Appointment["status"];
-  appointmentPatient: any;
+  appointmentPatient: { id?: string; fullName?: string; phone?: string | null } | null | undefined;
   appointmentPatientName: string;
   patientBalance: number | null;
-  appointmentDoctor: any;
-  appointmentAssistant: any;
-  appointmentChair: any;
+  appointmentDoctor: { id?: string; fullName?: string; role?: string } | null | undefined;
+  appointmentAssistant: { id?: string; fullName?: string } | null | undefined;
+  appointmentChair: { id?: string; name?: string } | null | undefined;
   cardTeeth: string[];
   allergyAlert: string | null;
   appointmentLabels: Record<Appointment["status"], string>;

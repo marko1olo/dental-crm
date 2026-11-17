@@ -16,9 +16,9 @@ export type ShiftPresetType =
 
 export interface ScheduleChairDoctorPopoverProps {
 	chair: { id: string; name: string };
-	doctors: Array<any>;
+	doctors: Array<{ id: string; fullName: string; role?: string; specialties?: string[] }>;
 	assignment: ChairDoctorShiftAssignment | undefined;
-	suggestedDoctor: any | null;
+	suggestedDoctor: { id: string; fullName: string; role?: string } | null;
 	hasDoctor: boolean;
 	dateKey: string;
 	dashboard: Dashboard;

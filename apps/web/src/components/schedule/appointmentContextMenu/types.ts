@@ -3,10 +3,10 @@ import type { Appointment, Dashboard, ScheduleSuggestion } from "@dental/shared"
 export interface AppointmentCardContextMenuProps {
 	appointment: Appointment;
 	dashboard: Dashboard;
-	appointmentSuggestions?: ScheduleSuggestion[] | any[] | undefined;
-	appointmentPatient: any;
+	appointmentSuggestions?: ScheduleSuggestion[] | readonly ScheduleSuggestion[] | undefined;
+	appointmentPatient: { id?: string; fullName?: string; phone?: string | null } | null | undefined;
 	appointmentPatientName: string;
-	appointmentDoctor: any;
+	appointmentDoctor: { id?: string | undefined; fullName?: string | undefined; role?: string | undefined } | null | undefined;
 	isQuickStatusUpdating: boolean;
 	openScheduleSuggestion?: ((section: string) => void) | undefined;
 	handleShiftAppointmentTime: (minutes: number) => Promise<void> | void;

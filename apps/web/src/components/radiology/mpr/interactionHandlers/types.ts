@@ -20,6 +20,7 @@ import type {
 } from "../../dentalCurveEngine";
 import type { VirtualImplantSpec } from "../../implantSafetyEngine";
 import type { StudioMode } from "../cbctStudioTypes";
+import type { MeasurementHandleDragDescriptor } from "../curvedViewport/types";
 
 export interface UseCbctInteractionHandlersParams {
 	volume: CbctVoxelVolume | null;
@@ -67,31 +68,13 @@ export interface UseCbctInteractionHandlersParams {
 			CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null
 		>
 	>;
-	hoveredMeasurementHandle: {
-		id: string;
-		handleIndex: number;
-		plane?: MprPlane;
-	} | null;
+	hoveredMeasurementHandle: MeasurementHandleDragDescriptor | null;
 	setHoveredMeasurementHandle: React.Dispatch<
-		React.SetStateAction<{
-			id: string;
-			handleIndex: number;
-			plane?: MprPlane;
-		} | null>
+		React.SetStateAction<MeasurementHandleDragDescriptor | null>
 	>;
-	draggingMeasurementHandle: {
-		id: string;
-		handleIndex: number;
-		plane?: MprPlane;
-		type?: string;
-	} | null;
+	draggingMeasurementHandle: MeasurementHandleDragDescriptor | null;
 	setDraggingMeasurementHandle: React.Dispatch<
-		React.SetStateAction<{
-			id: string;
-			handleIndex: number;
-			plane?: MprPlane;
-			type?: string;
-		} | null>
+		React.SetStateAction<MeasurementHandleDragDescriptor | null>
 	>;
 	nervePoints: Point3D[];
 	setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;
@@ -261,31 +244,13 @@ export interface MprCanvasEventContext {
 			CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null
 		>
 	>;
-	hoveredMeasurementHandle: {
-		id: string;
-		handleIndex: number;
-		plane?: MprPlane;
-	} | null;
+	hoveredMeasurementHandle: MeasurementHandleDragDescriptor | null;
 	setHoveredMeasurementHandle: React.Dispatch<
-		React.SetStateAction<{
-			id: string;
-			handleIndex: number;
-			plane?: MprPlane;
-		} | null>
+		React.SetStateAction<MeasurementHandleDragDescriptor | null>
 	>;
-	draggingMeasurementHandle: {
-		id: string;
-		handleIndex: number;
-		plane?: MprPlane;
-		type?: string;
-	} | null;
+	draggingMeasurementHandle: MeasurementHandleDragDescriptor | null;
 	setDraggingMeasurementHandle: React.Dispatch<
-		React.SetStateAction<{
-			id: string;
-			handleIndex: number;
-			plane?: MprPlane;
-			type?: string;
-		} | null>
+		React.SetStateAction<MeasurementHandleDragDescriptor | null>
 	>;
 	nervePoints: Point3D[];
 	setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;

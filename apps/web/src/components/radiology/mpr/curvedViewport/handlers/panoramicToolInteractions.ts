@@ -155,10 +155,10 @@ export function handlePanoramicToolMouseDown(
 				handleIndex: handleHit.handleIndex,
 				plane: "panoramic",
 			});
-			setSelectedMeasurement({
-				type: handleHit.type,
-				id: handleHit.id,
-			} as unknown as CbctMeasurementRuler);
+			const matched = handleHit.type === "ruler"
+				? rulers.find((r) => r.id === handleHit.id) ?? null
+				: angles.find((a) => a.id === handleHit.id) ?? null;
+			setSelectedMeasurement(matched);
 			return true;
 		}
 
@@ -182,10 +182,10 @@ export function handlePanoramicToolMouseDown(
 				setSelectedMeasurement(null);
 				return true;
 			}
-			setSelectedMeasurement({
-				type: objectHit.type,
-				id: objectHit.id,
-			} as unknown as CbctMeasurementRuler);
+			const matched = objectHit.type === "ruler"
+				? rulers.find((r) => r.id === objectHit.id) ?? null
+				: angles.find((a) => a.id === objectHit.id) ?? null;
+			setSelectedMeasurement(matched);
 			return true;
 		}
 	}

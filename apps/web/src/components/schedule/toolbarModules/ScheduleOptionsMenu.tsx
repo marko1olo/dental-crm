@@ -20,7 +20,7 @@ export interface ScheduleOptionsMenuProps {
 	localNow: Date;
 	onSelectWholeWeek?: (() => void) | undefined;
 	statusFilter?: string | null | undefined;
-	onSetStatusFilter: (status: any) => void;
+	onSetStatusFilter: (status: string) => void;
 	queueCounts?: {
 		all?: number;
 		arrived?: number;

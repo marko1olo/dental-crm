@@ -1,13 +1,24 @@
 import React, { useState } from "react";
+import type { Appointment } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { calculateProportionalCardHeight } from "../appointmentCardHelpers";
 import type { AppointmentCardProps } from "../AppointmentCardTypes";
 
+interface AppointmentCardContainerState {
+	appointmentDoctor?: { fullName?: string | null } | null | undefined;
+	appointmentChair?: { name?: string | null } | null | undefined;
+	appointmentPatient?: { id?: string | null } | null | undefined;
+	appointmentPatientName: string;
+	durationMinutes: number;
+	setIsHoverPreviewOpen: (open: boolean) => void;
+	hoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+}
+
 export function useAppointmentCardContainerInteractions(
 	props: AppointmentCardProps,
-	state: any,
+	state: AppointmentCardContainerState,
 ) {
 	const {
 		appointment,
@@ -57,7 +68,7 @@ export function useAppointmentCardContainerInteractions(
 		}
 	};
 
-	const handleFreeSlotToWaitlist = (appt: any) => {
+	const handleFreeSlotToWaitlist = (appt: Appointment) => {
 		if (props.onFreeSlotToWaitlist) props.onFreeSlotToWaitlist(appt);
 		if (props.onOpenWaitlistForSlot) {
 			props.onOpenWaitlistForSlot({

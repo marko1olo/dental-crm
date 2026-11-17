@@ -1,6 +1,6 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import React, { useMemo } from "react";
-import { formatDayTitle } from "../scheduleDayGrouping";
+import { formatDayTitle, type ScheduleDayGroup } from "../scheduleDayGrouping";
 
 export type ScheduleFilterSummaryProps = {
   scheduleDateFilter: string;
@@ -11,7 +11,7 @@ export type ScheduleFilterSummaryProps = {
   scheduleChairFilterId: string | null;
   appointmentLabels?: Record<Appointment["status"], string>;
   dashboard?: Dashboard;
-  visibleDayGroups?: any;
+  visibleDayGroups?: ScheduleDayGroup[] | undefined;
   scheduleOverlapCount: number;
   shiftWarnings?: Dashboard["shiftIntelligence"]["scheduleWarnings"];
   resetScheduleFilters: () => void;

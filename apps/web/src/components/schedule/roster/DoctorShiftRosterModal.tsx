@@ -79,7 +79,7 @@ export interface DoctorShiftRosterModalProps {
 	cabinets?: CabinetDefinition[] | undefined;
 	appointments?:
 		| Array<{
-				chairId: string;
+				chairId?: string | null | undefined;
 				startsAt: string;
 				endsAt: string;
 				status?: string | undefined;

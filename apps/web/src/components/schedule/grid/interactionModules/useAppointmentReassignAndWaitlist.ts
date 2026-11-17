@@ -12,8 +12,12 @@ import type { TargetSlotInfo } from "../../waitlist/waitlistTypes";
 export function useAppointmentReassignAndWaitlist(
   dashboard: Dashboard,
   patientName: (patients: Dashboard["patients"], patientId: string | null) => string,
-  // biome-ignore lint/suspicious/noExplicitAny: move payload
-  onAppointmentMove?: ((appointmentId: string, updates: any) => Promise<any> | void) | undefined,
+  onAppointmentMove?:
+    | ((
+        appointmentId: string,
+        updates: Partial<Appointment> & { allowOverbooking?: boolean; [key: string]: unknown },
+      ) => Promise<boolean | void | unknown> | boolean | void)
+    | undefined,
   onQuickStatusChange?: ((appointmentId: string, status: Appointment["status"]) => void) | undefined,
   onOpenWaitlistForSlot?: ((slot: TargetSlotInfo) => void) | undefined,
   setSelectedMobileAppt?: React.Dispatch<React.SetStateAction<Appointment | null>> | undefined,
@@ -38,8 +42,7 @@ export function useAppointmentReassignAndWaitlist(
         startsAt: appt.startsAt,
         endsAt: appt.endsAt,
         doctorUserId: appt.doctorUserId,
-        // biome-ignore lint/suspicious/noExplicitAny: doctor name
-        doctorName: doc?.fullName || (doc as any)?.name || null,
+        doctorName: doc?.fullName || ((doc as { name?: string } | undefined)?.name ?? null),
         chairId: appt.chairId,
         chairName: chair?.name || null,
         patientId: appt.patientId,

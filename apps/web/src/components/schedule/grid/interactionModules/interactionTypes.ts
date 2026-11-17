@@ -23,8 +23,11 @@ export interface UseScheduleAppointmentInteractionsProps {
   toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
   timezone: string;
   onAppointmentMove?:
-    // biome-ignore lint/suspicious/noExplicitAny: move payload
-    ((appointmentId: string, updates: any) => Promise<any> | void) | undefined;
+    | ((
+        appointmentId: string,
+        updates: Partial<Appointment> & { allowOverbooking?: boolean; [key: string]: unknown },
+      ) => Promise<boolean | void | unknown> | boolean | void)
+    | undefined;
   onQuickStatusChange?:
     | ((appointmentId: string, status: Appointment["status"]) => void)
     | undefined;

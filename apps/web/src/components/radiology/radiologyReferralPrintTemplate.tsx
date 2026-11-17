@@ -62,7 +62,7 @@ export interface RadiologyReferralModalProps {
 		readonly diagnosisIcd10?: string | null | undefined;
 		readonly diagnosisTooth?: string | null | undefined;
 		readonly statusLocalis?: string | null | undefined;
-		readonly [key: string]: any;
+		readonly [key: string]: unknown;
 	} | null | undefined;
 	readonly doctorName?: string | null | undefined;
 	readonly doctorSpecialty?: string | null | undefined;
@@ -72,7 +72,7 @@ export interface RadiologyReferralModalProps {
 	readonly clinicLicense?: string | null | undefined;
 	readonly initialDiagnosisIcd10?: string | undefined;
 	readonly initialTeeth?: string[] | undefined;
-	readonly onSuccessReferralCreated?: ((referralData: any) => void) | undefined;
+	readonly onSuccessReferralCreated?: ((referralData: RadiologyReferralPrintData | Record<string, unknown>) => void) | undefined;
 }
 
 export const EMPTY_TEETH_LIST: readonly string[] = [];

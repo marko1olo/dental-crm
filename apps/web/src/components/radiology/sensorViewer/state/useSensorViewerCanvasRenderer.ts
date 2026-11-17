@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import {
 	calculatePhysicalDistanceMm, calculateCurvedCanalLengthMm, calculateLesionAreaGaussMm2, type ViewerPoint2D,
+	type ViewerRulerMeasurement, type ViewerCurvedMeasurement, type ViewerAreaMeasurement,
 } from "../../dentalViewerMath.js";
 import { drawRuler, drawCurvedCanal, drawLesionContour, drawMagnifierOverlay } from "../../dentalViewerCanvasDraw.js";
 import type { ViewerTool } from "../types.js";
@@ -9,9 +10,9 @@ interface UseSensorViewerCanvasRendererProps {
 	containerRef: React.RefObject<HTMLDivElement | null>; canvasRef: React.RefObject<HTMLCanvasElement | null>;
 	rawImageRef: React.MutableRefObject<HTMLImageElement | null>; filteredCanvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
 	activeImageUrl: string; zoom: number; panX: number; panY: number; activeTool: ViewerTool;
-	magnifierPos: ViewerPoint2D | null; calibratedMmPerPx: number; measurements: any[];
-	draftStart: ViewerPoint2D | null; draftCurrent: ViewerPoint2D | null; curvedCanals: any[];
-	draftCurvedPoints: ViewerPoint2D[]; lesionContours: any[]; draftLesionPoints: ViewerPoint2D[];
+	magnifierPos: ViewerPoint2D | null; calibratedMmPerPx: number; measurements: readonly ViewerRulerMeasurement[];
+	draftStart: ViewerPoint2D | null; draftCurrent: ViewerPoint2D | null; curvedCanals: readonly ViewerCurvedMeasurement[];
+	draftCurvedPoints: ViewerPoint2D[]; lesionContours: readonly ViewerAreaMeasurement[]; draftLesionPoints: ViewerPoint2D[];
 	updateFilteredBuffer: () => void;
 }
 

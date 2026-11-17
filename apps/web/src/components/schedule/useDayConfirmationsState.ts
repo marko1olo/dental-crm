@@ -39,7 +39,7 @@ export function useDayConfirmationsState() {
       setData(payload);
       setHandled(new Set());
     } catch (loadError) {
-      showToast(actionFailureToast("Ошибка выполнения операции", (loadError as any)?.status ?? null), "error");
+      showToast(actionFailureToast("Ошибка выполнения операции", (loadError as { status?: number })?.status ?? null), "error");
       setData(null);
       setError(loadError instanceof Error ? loadError.message : String(loadError));
     } finally {
@@ -97,7 +97,7 @@ export function useDayConfirmationsState() {
         }
       }
     } catch (err) {
-      showToast(actionFailureToast("Не удалось обновить статус визита", (err as any)?.status ?? null), "error");
+      showToast(actionFailureToast("Не удалось обновить статус визита", (err as { status?: number })?.status ?? null), "error");
     } finally {
       setStatusUpdatingId(null);
     }

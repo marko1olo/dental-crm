@@ -38,7 +38,7 @@ export function auditMandibularNerveSafety(
 	implantPose: CrossSectionImplantPose,
 	canal?: MandibularCanalCrossSection | null,
 ): NerveSafetyAuditResult {
-	const center = canal?.center ?? (canal as unknown as { canalCenterMm?: { x: number; y: number } })?.canalCenterMm;
+	const center = canal?.center ?? canal?.canalCenterMm;
 	if (!canal || !center || !implantPose?.entryPoint || !implantPose?.implantSpec) {
 		return createUnmeasuredNerveSafety();
 	}
@@ -49,7 +49,7 @@ export function auditMandibularNerveSafety(
 	);
 	const seg = pointToSegmentDistance2D(center, implantPose.entryPoint, apex);
 	const implantRadius = (implantPose.implantSpec.diameterMm ?? 4.0) / 2.0;
-	const canalRadius = canal.radiusMm ?? (canal as unknown as { canalRadiusMm?: number })?.canalRadiusMm ?? 1.5;
+	const canalRadius = canal.radiusMm ?? canal.canalRadiusMm ?? 1.5;
 	const safetyMargin = canal.safetyMarginMm ?? 2.0;
 	const netClearanceWall = seg.distance - (implantRadius + canalRadius);
 	const netClearanceSafety = netClearanceWall - safetyMargin;

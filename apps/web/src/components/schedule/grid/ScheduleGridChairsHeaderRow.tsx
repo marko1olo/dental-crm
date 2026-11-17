@@ -1,16 +1,26 @@
 import React from "react";
+import type { Dashboard } from "@dental/shared";
 import { ScheduleGridTimeCorner } from "./ScheduleGridToolbar";
 import { ScheduleChairHeader } from "./ScheduleChairHeader";
+import type { useScheduleChairDuty } from "./useScheduleChairDuty";
+import type { QuickAddChairData } from "../QuickAddChairModal";
+import type { ScheduleChairItem } from "./scheduleChairHeaderTypes";
 
 export interface ScheduleGridChairsHeaderRowProps {
-  duty: any;
-  interactions: any;
-  gridData: any;
+  duty: ReturnType<typeof useScheduleChairDuty>;
+  interactions: {
+    gridStep: 15 | 30 | 60;
+    handleSetGridStep: (step: 15 | 30 | 60) => void;
+    handleAddMaintenance?: ((chairId: string, reason: string, durationMinutes: number, startTimeStr?: string) => void) | undefined;
+  };
+  gridData: {
+    dailyTally?: unknown;
+  };
   dateKey: string;
   isToday: boolean;
   currentHour: number;
-  dashboard: any;
-  onEditChair: any;
+  dashboard: Dashboard;
+  onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
 }
 
 export function ScheduleGridChairsHeaderRow({
@@ -32,7 +42,7 @@ export function ScheduleGridChairsHeaderRow({
       }}
     >
       <ScheduleGridTimeCorner gridStep={interactions.gridStep} handleSetGridStep={interactions.handleSetGridStep} />
-      {duty.effectiveChairs.map((chair: any, chairIndex: number) => (
+      {duty.effectiveChairs.map((chair, chairIndex: number) => (
         <ScheduleChairHeader
           key={chair.id}
           chair={chair}

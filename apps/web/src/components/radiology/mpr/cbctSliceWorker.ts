@@ -62,13 +62,22 @@ export function handleWorkerMessage(
 	}
 }
 
-if (typeof self !== "undefined" && typeof (self as unknown as Worker).postMessage === "function") {
-	self.onmessage = (event: MessageEvent<CbctWorkerInboundMessage>) => {
+interface WorkerGlobalContext {
+	postMessage(message: unknown, transfer?: Transferable[]): void;
+	onmessage: ((event: MessageEvent<CbctWorkerInboundMessage>) => void) | null;
+}
+
+const workerScope = typeof self !== "undefined" && "postMessage" in self
+	? (self as WorkerGlobalContext)
+	: null;
+
+if (workerScope && typeof workerScope.postMessage === "function") {
+	workerScope.onmessage = (event: MessageEvent<CbctWorkerInboundMessage>) => {
 		handleWorkerMessage(event.data, (resp, transfer) => {
 			if (transfer && transfer.length > 0) {
-				(self as unknown as Worker).postMessage(resp, transfer);
+				workerScope.postMessage(resp, transfer);
 			} else {
-				(self as unknown as Worker).postMessage(resp);
+				workerScope.postMessage(resp);
 			}
 		});
 	};

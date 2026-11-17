@@ -28,6 +28,7 @@ import {
 	createDefaultEffectivePatientStudies,
 	createInitialLeftViewport,
 	createInitialRightViewport,
+	getStudyTitle,
 } from "./consultationInitialState.js";
 import { formatFilmstripDateTime } from "../RadiologyFilmstripDock.js";
 import { showToast } from "../../GlobalToast.js";
@@ -419,7 +420,7 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 			setRightViewport((rv) => ({
 				...rv,
 				imageSrc: postStudy?.imageUrl || "/radiology/sample_rvg_tooth16.jpg",
-				title: (postStudy as any)?.title || "Контроль ПОСЛЕ лечения (Обтурация каналов)",
+				title: getStudyTitle(postStudy, "Контроль ПОСЛЕ лечения (Обтурация каналов)"),
 				subtitle: postStudy?.studyDate
 					? formatFilmstripDateTime(postStudy.studyDate).dateStr
 					: "16.05.2024",

@@ -42,13 +42,25 @@ export const CbctMprImplantStudioModal: React.FC<
 	const modalId = "cbct-studio-modal";
 	const modalContainerRef = useRef<HTMLDivElement | null>(null);
 
+	const studyRecord = study && typeof study === "object" ? (study as Record<string, unknown>) : null;
+	const studyDoctorId = typeof studyRecord?.doctorId === "string" ? studyRecord.doctorId : undefined;
+	const studyDoctorName = typeof studyRecord?.doctorName === "string" ? studyRecord.doctorName : undefined;
+	const consultationStudy = study && typeof study === "object" && "id" in study && typeof study.id === "string"
+		? {
+				id: study.id,
+				modality: "modality" in study && typeof study.modality === "string" ? study.modality : "cbct_3d",
+				studyDate: "studyDate" in study && typeof study.studyDate === "string" ? study.studyDate : new Date().toISOString(),
+				...("title" in study && typeof study.title === "string" ? { title: study.title } : {}),
+		  }
+		: undefined;
+
 	const state = useCbctStudioModalState({
 		initialStudioMode, initialSidebarOpen, initialCaliper, initialViewLayout, initialVolume,
 		initialTool, initialNervePoints, patientName: patientName ?? undefined, patientId: patientId ?? undefined,
 	});
 
 	const ctrl = useCbctStudioController({
-		isOpen, onClose, study: (study as RadiologyStudy | null | undefined), patientName: patientName ?? undefined, patientId: patientId ?? undefined, onApplyToDiary: effectiveApplyToDiary, onApplyToDiary043: effectiveApplyToDiary, onApplyToPlan,
+		isOpen, onClose, study: (study && "studyType" in study ? (study as RadiologyStudy) : null), patientName: patientName ?? undefined, patientId: patientId ?? undefined, onApplyToDiary: effectiveApplyToDiary, onApplyToDiary043: effectiveApplyToDiary, onApplyToPlan,
 		initialVolume, initialImageIds, autoLoadDemo, state, modalContainerRef,
 	});
 
@@ -350,7 +362,7 @@ export const CbctMprImplantStudioModal: React.FC<
 					<div style={{ position: "fixed", inset: 0, zIndex: 999999 }} data-testid="cbct-comparison-split-overlay">
 						<RadiologyConsultationSplit
 							patientName={patientName || state.patientDisplayName}
-							initialLeftStudy={(study as any) ?? undefined}
+							initialLeftStudy={consultationStudy}
 							initialSplitMode="dynamics"
 							onClose={() => state.setIsComparisonSplitOpen(false)}
 							onInsertProtocol={(note) => { effectiveApplyToDiary?.(note); }}
@@ -365,8 +377,8 @@ export const CbctMprImplantStudioModal: React.FC<
 						initialOrder={ctrl.labOrderDraft}
 						patientId={patientId ?? undefined}
 						patientName={state.patientDisplayName}
-						doctorId={(study as any)?.doctorId ?? undefined}
-						doctorName={(study as any)?.doctorName ?? undefined}
+						doctorId={studyDoctorId}
+						doctorName={studyDoctorName}
 						initialToothFdi={ctrl.labOrderDraft.toothFdi ?? undefined}
 						onOrderSaved={() => ctrl.setIsLabOrderModalOpen(false)}
 					/>

@@ -223,7 +223,7 @@ export function bindSoloDoctorToDefaultChair(params: {
 			doctorRole: "therapist",
 			assistantId: null,
 			assistantName: null,
-			cabinetId: (chair as any)?.roomNumber || "cab-1",
+			cabinetId: chair?.roomNumber || "cab-1",
 			chairId: targetChairId,
 			dateIso,
 			archetypeId: "morning_shift",

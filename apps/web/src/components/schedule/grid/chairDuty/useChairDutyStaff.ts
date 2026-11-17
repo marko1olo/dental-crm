@@ -45,7 +45,7 @@ export function useChairDutyStaff(
 	const isZeroChairs = Array.isArray(rawChairs) && chairs.length === 0 && !isSoloMode;
 
 	const effectiveChairs = useMemo(() => {
-		return chairs && chairs.length > 0 ? chairs : [DEFAULT_SOLO_CHAIR as any];
+		return chairs && chairs.length > 0 ? chairs : [DEFAULT_SOLO_CHAIR];
 	}, [chairs]);
 
 	const isSoloDoctor =

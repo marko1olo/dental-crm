@@ -77,7 +77,7 @@ export function DoctorShiftDrawer({
 			staffList.find((s) => s.id === editingShift.doctorId) ||
 			staffList.find((s) => s.isDoctor) ||
 			staffList[0] ||
-			(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+			(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0] : undefined);
 
 		if (!effectiveDoc) {
 			showToast("Не выбран врач для сохранения смены", "warning");
@@ -87,7 +87,7 @@ export function DoctorShiftDrawer({
 		const effectiveCab =
 			cabinets.find((c) => c.id === editingShift.cabinetId) ||
 			cabinets[0] ||
-			(isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG[0]! : undefined);
+			(isDemoShowcaseMode() ? CLINIC_CABINETS_CATALOG[0] : undefined);
 
 		if (!effectiveCab) {
 			showToast("Не выбран кабинет для смены", "warning");
@@ -398,17 +398,21 @@ export function DoctorShiftDrawer({
 
 				{/* Drawer Footer Actions */}
 				<div className="flex items-center justify-between mt-auto pt-4 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
-					{!isNewShift && editingShift.id && (
+					{!isNewShift && editingShift.id ? (
 						<button
 							type="button"
 							className="roster-btn roster-btn-danger"
-							onClick={() => onDeleteShift(editingShift.id!)}
+							onClick={() => {
+								if (editingShift.id) {
+									onDeleteShift(editingShift.id);
+								}
+							}}
 							style={{ minHeight: "44px" }}
 						>
 							<Trash2 size={16} />
 							<span>Удалить</span>
 						</button>
-					)}
+					) : null}
 					<div className="flex items-center gap-2 ml-auto">
 						<button
 							type="button"

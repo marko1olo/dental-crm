@@ -7,6 +7,7 @@ import {
 	type ViewportTransform,
 	type CbctMeasurementRuler,
 	type CbctAngleMeasurement,
+	type CbctProbeMarker,
 	type CbctViewportType,
 	CBCT_HOUNSFIELD_PRESETS,
 	DEFAULT_OBLIQUE_ROTATION,
@@ -17,10 +18,12 @@ import {
 	DEFAULT_MANDIBULAR_ARCH_ANCHORS,
 	type CrossSectionSliceData,
 	type DentalArchCurve,
+	type PanoramicReconstructionResult,
 	autoDetectDentalArch,
 	buildDentalArchCurve,
 } from "../dentalCurveEngine.js";
 import { getSharedCbctGlContext, disposeSharedCbctGlContext } from "../mpr/webgl/CbctVolumeGlContext.js";
+import type { MeasurementHandleDragDescriptor } from "../mpr/curvedViewport/types.js";
 import {
 	type ImplantBrandKey,
 	type VirtualImplantSpec,
@@ -111,7 +114,7 @@ export function useCbctStandaloneStudio(props: CbctStandaloneStudioViewProps) {
 		if (cached) return cached;
 		if (routeParams.isDemo || isDemoShowcaseMode() || isDemoPatientId(effectivePatientId)) {
 			if (typeof window !== "undefined") {
-				const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+				const win = window as typeof window & { __cbctDemoVolume?: CbctVoxelVolume };
 				if (win.__cbctDemoVolume) return win.__cbctDemoVolume;
 			}
 		}
@@ -150,6 +153,10 @@ export function useCbctStandaloneStudio(props: CbctStandaloneStudioViewProps) {
 	const [archCurve, setArchCurve] = useState<DentalArchCurve>(() =>
 		buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible"),
 	);
+	const handleSwitchJaw = useCallback((jaw: "mandible" | "maxilla") => {
+		setJawType(jaw);
+		setArchCurve(buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, jaw));
+	}, []);
 	const [crossSections, setCrossSections] = useState<CrossSectionSliceData[]>([]);
 	const [activeCrossSectionIdx, setActiveCrossSectionIdx] = useState<number>(0);
 	const [crossSectionStepMm, setCrossSectionStepMm] = useState<number>(1.5);
@@ -177,7 +184,16 @@ export function useCbctStandaloneStudio(props: CbctStandaloneStudioViewProps) {
 	const [activeTool, setActiveTool] = useState<CbctToolMode>("crosshair");
 	const [activeViewport, setActiveViewport] = useState<CbctViewportType>("axial");
 	const [rulers, setRulers] = useState<CbctMeasurementRuler[]>([]);
+	const [activeRuler, setActiveRuler] = useState<(CbctMeasurementRuler & { currentMm: Point3D }) | null>(null);
 	const [angles, setAngles] = useState<CbctAngleMeasurement[]>([]);
+	const [activeAngle, setActiveAngle] = useState<(CbctAngleMeasurement & { currentMm: Point3D }) | null>(null);
+	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]);
+	const [activeProbe, setActiveProbe] = useState<(CbctProbeMarker & { hu: number; tissueName: string }) | null>(null);
+	const [selectedMeasurement, setSelectedMeasurement] = useState<CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null>(null);
+	const [hoveredMeasurementHandle, setHoveredMeasurementHandle] = useState<MeasurementHandleDragDescriptor | null>(null);
+	const [draggingMeasurementHandle, setDraggingMeasurementHandle] = useState<MeasurementHandleDragDescriptor | null>(null);
+	const [crossSectionDragStart, setCrossSectionDragStart] = useState<{ clientX: number; clientY: number; startX: number; startY: number; startAng: number } | null>(null);
+	const [panoramicData, setPanoramicData] = useState<PanoramicReconstructionResult | null>(null);
 	const [transforms, setTransforms] = useState<Record<CbctViewportType, ViewportTransform>>(getDefaultViewportTransforms);
 
 	// Canvas refs
@@ -244,12 +260,16 @@ export function useCbctStandaloneStudio(props: CbctStandaloneStudioViewProps) {
 				canalCenterMm: pt,
 				radiusMm: 1.75,
 				safetyMarginMm: 2.0,
-			} as unknown as MandibularCanalCrossSection;
+			};
 		}
 		const fallbackPt = { x: 2.0, y: 16.5 };
 		return {
-			isDetected: false, center: fallbackPt, canalCenterMm: fallbackPt, radiusMm: 1.75, safetyMarginMm: 2.0,
-		} as unknown as MandibularCanalCrossSection;
+			isDetected: false,
+			center: fallbackPt,
+			canalCenterMm: fallbackPt,
+			radiusMm: 1.75,
+			safetyMarginMm: 2.0,
+		};
 	}, [activeCrossSection, interpolatedNerve3D]);
 
 	const nerveAuditResult = useMemo(
@@ -402,6 +422,8 @@ export function useCbctStandaloneStudio(props: CbctStandaloneStudioViewProps) {
 		setTransforms,
 		crosshairMm,
 		setCrosshairMm,
+		obliqueAngles,
+		setObliqueAngles,
 		activeTool,
 		studioMode,
 		windowWidth,
@@ -410,53 +432,107 @@ export function useCbctStandaloneStudio(props: CbctStandaloneStudioViewProps) {
 		setWindowLevel,
 		rulers,
 		setRulers,
+		activeRuler,
+		setActiveRuler,
 		angles,
 		setAngles,
+		activeAngle,
+		setActiveAngle,
+		probeMarkers,
+		setProbeMarkers,
+		activeProbe,
+		setActiveProbe,
+		selectedMeasurement,
+		setSelectedMeasurement,
+		hoveredMeasurementHandle,
+		setHoveredMeasurementHandle,
+		draggingMeasurementHandle,
+		setDraggingMeasurementHandle,
 		nervePoints,
 		setNervePoints,
 		selectedNerveNodeIdx,
 		setSelectedNerveNodeIdx,
-		obliqueAngles,
-		setObliqueAngles,
+		showDentalArch,
+		archCurve,
+		setArchCurve,
+		panoramicData,
 		crossSections,
+		activeCrossSection,
 		activeCrossSectionIdx,
 		setActiveCrossSectionIdx,
+		currentImplantSpec,
 		implantEntryXOffsetMm,
 		setImplantEntryXOffsetMm,
 		implantEntryDepthMm,
 		setImplantEntryDepthMm,
 		implantAngulationDeg,
 		setImplantAngulationDeg,
-		currentImplantSpec,
-		activeCrossSection,
-		dragImplantPart,
-		setDragImplantPart,
 		hoveredImplantPart,
 		setHoveredImplantPart,
+		dragImplantPart,
+		setDragImplantPart,
+		crossSectionDragStart,
+		setCrossSectionDragStart,
+		handleToggleMaximize,
 		jawType,
-		archCurve,
+		onSwitchJaw: handleSwitchJaw,
+		panoCanvasRef: panoBaseCanvasRef,
+		crossSectionCanvasRef: crossSectionBaseCanvasRef,
 		axialCanvasRef: axialBaseCanvasRef,
 		coronalCanvasRef: coronalBaseCanvasRef,
 		sagittalCanvasRef: sagittalBaseCanvasRef,
-		panoCanvasRef: panoBaseCanvasRef,
-		crossSectionCanvasRef: crossSectionBaseCanvasRef,
-	} as any);
+	});
 
 	// Slice renderer hook
 	useCbctSliceRenderer({
 		isOpen: true,
 		volume,
+		crosshairMm,
+		obliqueAngles,
 		windowWidth,
 		windowLevel,
 		invertColors,
 		slabMode,
 		slabThicknessMm,
-		obliqueAngles,
-		crosshairMm,
 		transforms,
+		maximizedViewport,
+		viewLayout,
+		layoutBurstCount: 0,
+		activeTool,
+		studioMode,
+		rulers,
+		activeRuler,
+		angles,
+		activeAngle,
+		probeMarkers,
+		activeProbe,
+		selectedMeasurement,
+		hoveredMeasurementHandle,
+		draggingMeasurementHandle,
+		implant3DWorld,
+		currentImplantPose,
+		nerveAuditResult,
+		interpolatedNerve3D,
+		nervePoints,
+		nerveTotalLengthMm,
+		selectedNerveNodeIdx,
+		activeRotationHandle: interactions.activeRotationHandle,
+		hoveredHandle: interactions.hoveredHandle,
+		showDentalArch,
+		showEdgeRulers,
+		hoveredViewport,
 		archCurve,
-		activeCrossSectionIdx,
+		activeCrossSection,
+		currentImplantSpec,
+		selectedArchAnchorIdx: null,
+		hoveredArchAnchorIdx: interactions.hoveredArchAnchorIdx,
+		isDraggingArchAnchor: interactions.isDraggingArchAnchor,
+		panoramicData,
 		crossSections,
+		activeCrossSectionIdx,
+		currentCanal,
+		hoveredImplantPart,
+		dragImplantPart,
 		axialBaseCanvasRef,
 		axialOverlayCanvasRef,
 		coronalBaseCanvasRef,
@@ -467,7 +543,7 @@ export function useCbctStandaloneStudio(props: CbctStandaloneStudioViewProps) {
 		panoOverlayCanvasRef,
 		crossSectionBaseCanvasRef,
 		crossSectionOverlayCanvasRef,
-	} as any);
+	});
 
 	const handleResetNerve = useCallback(() => {
 		setNervePoints([]);
@@ -535,11 +611,6 @@ export function useCbctStandaloneStudio(props: CbctStandaloneStudioViewProps) {
 			showToast(`Анатомическая дуга ${jawType === "mandible" ? "нижней" : "верхней"} челюсти обнаружена`, "success");
 		}
 	}, [volume, jawType]);
-
-	const handleSwitchJaw = useCallback((jaw: "mandible" | "maxilla") => {
-		setJawType(jaw);
-		setArchCurve(buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, jaw));
-	}, []);
 
 	const handleClearRulers = useCallback(() => {
 		setRulers([]);

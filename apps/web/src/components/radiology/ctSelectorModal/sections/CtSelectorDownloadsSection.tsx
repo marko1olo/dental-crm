@@ -6,7 +6,7 @@ export interface CtSelectorDownloadsSectionProps {
 	readonly downloads: CtDownloadItem[];
 	readonly isScanningDownloads: boolean;
 	readonly refreshDownloads: () => void;
-	readonly launchStudy: (study: any, imageIds?: string[] | undefined, filePath?: string | undefined) => void | Promise<void>;
+	readonly launchStudy: (study: unknown, imageIds?: string[] | undefined, filePath?: string | undefined) => void | Promise<void>;
 }
 
 export const CtSelectorDownloadsSection: React.FC<CtSelectorDownloadsSectionProps> = ({

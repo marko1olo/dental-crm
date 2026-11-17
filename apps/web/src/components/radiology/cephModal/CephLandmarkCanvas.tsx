@@ -94,7 +94,13 @@ export function CephLandmarkCanvas({
 					onLandmarkChange={(id, pt) => onLandmarkChange(id as LandmarkKey, pt)}
 					onRemoveLandmark={(id) => onRemoveLandmark(id as LandmarkKey)}
 					activeTargetKey={activeTargetKey}
-					onSelectTargetKey={setActiveTargetKey}
+					onSelectTargetKey={(key) => {
+						if (!key) {
+							setActiveTargetKey(null);
+						} else if (CEPHALOMETRIC_LANDMARKS.some((l) => l.key === key)) {
+							setActiveTargetKey(key as LandmarkKey);
+						}
+					}}
 					imageUrl={imageUrl}
 					onImageUpload={(url) => {
 						setImageUrl(url);
@@ -120,7 +126,11 @@ export function CephLandmarkCanvas({
 					aiBackendBadge={aiBackendBadge}
 					aiBackendLabel={aiBackendLabel}
 					aiBackendPref={aiBackendPref}
-					onChangeAiBackendPref={setAiBackendPref}
+					onChangeAiBackendPref={(pref) => {
+						if (pref === "auto" || pref === "template_norm" || pref === "class_1" || pref === "manual") {
+							setAiBackendPref(pref);
+						}
+					}}
 					aiInferenceStats={aiStats}
 				/>
 			</div>

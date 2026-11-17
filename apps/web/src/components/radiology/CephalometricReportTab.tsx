@@ -1,6 +1,6 @@
 /**
  * DENTE CRM — Cephalometric Analysis Report Tab & Categorized Measurements View
- * Standards: Form 043/u Medical Record, Steiner, Tweed, Downs, Jacobson Wits, Ricketts, McNamara
+ * Standards: Medical Record, Steiner, Tweed, Downs, Jacobson Wits, Ricketts, McNamara
  * Mandate 8b: Monolith extraction (<= 800 lines).
  */
 
@@ -124,7 +124,15 @@ export function CephalometricMeasurementsCategories({
 		title: string,
 		category: "sagittal" | "vertical" | "dental",
 	) => {
-		const items = analysis.measurements.filter((m) => m.category === category);
+		const items = analysis.measurements.filter((m) => {
+			if (category === "sagittal") return m.category === "skeletal_sagittal";
+			if (category === "vertical") return m.category === "skeletal_vertical";
+			return (
+				m.category === "dental_upper" ||
+				m.category === "dental_lower" ||
+				m.category === "interincisal"
+			);
+		});
 		return (
 			<div>
 				<div className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5">
@@ -134,6 +142,7 @@ export function CephalometricMeasurementsCategories({
 					{items.map((m) => {
 						const isValValid = m.value !== null && Number.isFinite(m.value);
 						const missingKeys = getRequiredLandmarksForMeasurement(m.id).filter((k) => !landmarks[k]);
+						const normText = `${m.normMin}–${m.normMax} ${m.unit}`;
 						return (
 							<div
 								key={m.id}
@@ -141,10 +150,10 @@ export function CephalometricMeasurementsCategories({
 							>
 								<div className="min-w-0">
 									<div className="text-sm font-bold text-white min-w-0 break-words">
-										{m.name}
+										{m.nameRu}
 									</div>
 									<div className="text-xs text-slate-400 mt-0.5 min-w-0 break-words">
-										{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{m.normText}</span>
+										{m.clinicalInterpretation} · Норма: <span className="font-bold text-slate-200">{normText}</span>
 									</div>
 								</div>
 								<div className="text-right shrink-0 flex flex-col items-end gap-1">
@@ -153,9 +162,9 @@ export function CephalometricMeasurementsCategories({
 											isValValid
 												? m.status === "normal"
 													? "text-emerald-400"
-													: m.status === "increased"
+													: m.status === "deviation_high"
 														? "text-rose-400"
-														: m.status === "decreased"
+														: m.status === "deviation_low"
 															? "text-cyan-400"
 															: "text-slate-400"
 												: "text-slate-500"
@@ -168,9 +177,9 @@ export function CephalometricMeasurementsCategories({
 											isValValid
 												? m.status === "normal"
 													? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
-													: m.status === "increased"
+													: m.status === "deviation_high"
 														? "bg-rose-950 text-rose-300 border-rose-500/40"
-														: m.status === "decreased"
+														: m.status === "deviation_low"
 															? "bg-cyan-950 text-cyan-300 border-cyan-500/40"
 															: "bg-slate-800 text-slate-400 border-slate-700"
 												: "bg-slate-800 text-amber-300 border border-amber-500/30"
@@ -179,9 +188,9 @@ export function CephalometricMeasurementsCategories({
 										{isValValid
 											? m.status === "normal"
 												? "Норма"
-												: m.status === "increased"
+												: m.status === "deviation_high"
 													? "Увеличен"
-													: m.status === "decreased"
+													: m.status === "deviation_low"
 														? "Уменьшен"
 														: "Нет данных"
 											: missingKeys.length > 0
@@ -244,15 +253,16 @@ export function CephalometricMobileAccordion({
 						{analysis.measurements.map((m) => {
 							const isValValid = m.value !== null && Number.isFinite(m.value);
 							const missingKeys = getRequiredLandmarksForMeasurement(m.id).filter((k) => !landmarks[k]);
+							const normText = `${m.normMin}–${m.normMax} ${m.unit}`;
 							return (
 								<div
 									key={m.id}
 									className="p-2 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between text-xs"
 								>
 									<div className="min-w-0 pr-2">
-										<div className="font-bold text-white truncate">{m.name}</div>
+										<div className="font-bold text-white truncate">{m.nameRu}</div>
 										<div className="text-[10px] text-slate-400 truncate">
-											{m.clinicalInterpretation} · Норма: {m.normText}
+											{m.clinicalInterpretation} · Норма: {normText}
 										</div>
 									</div>
 									<div className="text-right shrink-0 flex items-center gap-1.5">
@@ -264,9 +274,9 @@ export function CephalometricMobileAccordion({
 												isValValid
 													? m.status === "normal"
 														? "bg-emerald-950 text-emerald-300 border border-emerald-500/40"
-														: m.status === "increased"
+														: m.status === "deviation_high"
 															? "bg-rose-950 text-rose-300 border border-rose-500/40"
-															: m.status === "decreased"
+															: m.status === "deviation_low"
 																? "bg-sky-950 text-sky-300 border border-sky-500/40"
 																: "bg-slate-800 text-slate-400"
 													: "bg-slate-800 text-amber-300 border border-amber-500/30"
@@ -275,9 +285,9 @@ export function CephalometricMobileAccordion({
 											{isValValid
 												? m.status === "normal"
 													? "Норма"
-													: m.status === "increased"
+													: m.status === "deviation_high"
 														? "Увелич."
-														: m.status === "decreased"
+														: m.status === "deviation_low"
 															? "Уменьш."
 															: "—"
 												: missingKeys.length > 0

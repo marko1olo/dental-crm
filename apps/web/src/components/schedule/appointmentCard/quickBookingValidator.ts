@@ -9,7 +9,7 @@ export function validateQuickBookingFields(input: {
 	startsAt?: string | null;
 	assistantId?: string | null;
 	inn?: string | null;
-	[key: string]: any;
+	[key: string]: unknown;
 }): {
 	isValid: boolean;
 	missingFields: string[];

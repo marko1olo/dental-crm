@@ -27,6 +27,7 @@ import {
 	updateDraggedMeasurementAngle,
 	updateDraggedMeasurementRuler,
 } from "../cbctInteractionHelpers";
+import type { MeasurementHandleDragDescriptor } from "../curvedViewport/types";
 import {
 	MEASUREMENT_HANDLE_HIT_RADIUS,
 	MEASUREMENT_OBJECT_HIT_RADIUS,
@@ -55,9 +56,9 @@ export interface MeasurementInteractionContext {
 	setActiveRuler: React.Dispatch<
 		React.SetStateAction<(CbctMeasurementRuler & { currentMm: Point3D }) | null>
 	>;
-	activeAngle: (CbctAngleMeasurement & { currentMm: Point3D }) | null;
+	activeAngle: (CbctAngleMeasurement & { currentMm: Point3D; step?: "vertex" | "end" }) | null;
 	setActiveAngle: React.Dispatch<
-		React.SetStateAction<(CbctAngleMeasurement & { currentMm: Point3D }) | null>
+		React.SetStateAction<(CbctAngleMeasurement & { currentMm: Point3D; step?: "vertex" | "end" }) | null>
 	>;
 	activeProbe: (CbctProbeMarker & { hu: number; tissueName: string }) | null;
 	setActiveProbe: React.Dispatch<
@@ -71,12 +72,7 @@ export interface MeasurementInteractionContext {
 		>
 	>;
 	setDraggingMeasurementHandle: React.Dispatch<
-		React.SetStateAction<{
-			id: string;
-			handleIndex: number;
-			plane?: MprPlane;
-			type?: string;
-		} | null>
+		React.SetStateAction<MeasurementHandleDragDescriptor | null>
 	>;
 }
 
@@ -117,10 +113,10 @@ export function handleMeasurementMouseDownHits(
 			handleIndex: handleHit.handleIndex,
 			plane,
 		});
-		setSelectedMeasurement({
-			type: handleHit.type,
-			id: handleHit.id,
-		} as unknown as CbctMeasurementRuler);
+		const matched = handleHit.type === "ruler"
+			? rulers.find((r) => r.id === handleHit.id) ?? null
+			: angles.find((a) => a.id === handleHit.id) ?? null;
+		setSelectedMeasurement(matched);
 		return true;
 	}
 
@@ -146,10 +142,12 @@ export function handleMeasurementMouseDownHits(
 			setSelectedMeasurement(null);
 			return true;
 		}
-		setSelectedMeasurement({
-			type: objectHit.type,
-			id: objectHit.id,
-		} as unknown as CbctMeasurementRuler);
+		const matched = objectHit.type === "ruler"
+			? rulers.find((r) => r.id === objectHit.id) ?? null
+			: objectHit.type === "angle"
+				? angles.find((a) => a.id === objectHit.id) ?? null
+				: probeMarkers.find((p) => p.id === objectHit.id) ?? null;
+		setSelectedMeasurement(matched);
 		return true;
 	}
 
@@ -221,25 +219,20 @@ export function handleMeasurementCreationMouseDown(
 				currentMm: pointMm,
 				angleDeg: 0,
 				step: "vertex",
-			} as unknown as CbctAngleMeasurement & { currentMm: Point3D });
+			});
 			showToast(
 				"Точка 1 (плечо) установлена. Кликните для установки вершины угла",
 				"info",
 			);
 			return true;
 		}
-		if (
-			(activeAngle as unknown as { step?: "vertex" | "end" }).step === "vertex"
-		) {
+		if (activeAngle.step === "vertex") {
 			setActiveAngle({
 				...activeAngle,
 				vertexMm: pointMm,
 				endMm: pointMm,
 				currentMm: pointMm,
 				step: "end",
-			} as unknown as CbctAngleMeasurement & {
-				currentMm: Point3D;
-				step?: "vertex" | "end";
 			});
 			showToast(
 				"Вершина угла зафиксирована. Кликните для фиксации второго плеча",
@@ -301,12 +294,7 @@ export function handleMeasurementCreationMouseDown(
  * Returns true if handled.
  */
 export function handleMeasurementMouseMove(
-	draggingMeasurementHandle: {
-		id: string;
-		handleIndex: number;
-		plane?: MprPlane;
-		type?: string;
-	} | null,
+	draggingMeasurementHandle: MeasurementHandleDragDescriptor | null,
 	activeTool: CbctToolMode,
 	ctx: MeasurementInteractionContext,
 ): boolean {
@@ -396,7 +384,7 @@ export function handleMeasurementMouseMove(
 		);
 		setActiveAngle((prev) => {
 			if (!prev) return null;
-			if ((prev as unknown as { step?: "vertex" | "end" }).step === "vertex")
+			if (prev.step === "vertex")
 				return { ...prev, vertexMm: currentMm, currentMm };
 			return {
 				...prev,

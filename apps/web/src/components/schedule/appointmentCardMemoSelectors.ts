@@ -18,8 +18,8 @@ export function isAppointmentEntityEqual(prev: AppointmentCardProps, next: Appoi
 	) {
 		return false;
 	}
-	const prevTeeth = (p as any)?.teeth;
-	const nextTeeth = (n as any)?.teeth;
+	const prevTeeth = (p as { teeth?: unknown })?.teeth;
+	const nextTeeth = (n as { teeth?: unknown })?.teeth;
 	if (Array.isArray(prevTeeth) || Array.isArray(nextTeeth)) {
 		if (!Array.isArray(prevTeeth) || !Array.isArray(nextTeeth)) return false;
 		if (prevTeeth.length !== nextTeeth.length) return false;

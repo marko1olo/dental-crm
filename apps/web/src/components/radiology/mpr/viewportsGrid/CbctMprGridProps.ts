@@ -16,7 +16,11 @@ import type {
 	ViewportTransform,
 } from "../../cbctMprMath";
 import type { CrossSectionSliceData, DentalArchCurve } from "../../dentalCurveEngine";
-import type { ImplantBrandKey } from "../../implantSafetyEngine";
+import type {
+	ImplantBrandKey,
+	Implant3DWorldProjection,
+	NerveSafetyAuditResult,
+} from "../../implantSafetyEngine";
 import type { StudioMode, ViewLayoutMode } from "../cbctStudioTypes";
 
 export interface CbctMprViewportsGridProps {
@@ -91,14 +95,14 @@ export interface CbctMprViewportsGridProps {
 	readonly selectedLengthMm?: number | undefined; readonly onSelectLengthMm?: ((l: number) => void) | undefined;
 	readonly displayBoneClass?: string | undefined; readonly displayMeanHU?: number | null | undefined; readonly displayTorque?: string | undefined;
 	readonly displayNerveClearanceMm?: number | null | undefined; readonly displayDrillingProtocol?: string | undefined;
-	readonly nerveSafetyStatus?: string | undefined; readonly nervePoints?: any; readonly interpolatedNerve3D?: any;
-	readonly implant3DWorld?: any; readonly nerveAuditResult?: any;
+	readonly nerveSafetyStatus?: string | undefined; readonly nervePoints?: readonly Point3D[] | undefined; readonly interpolatedNerve3D?: readonly Point3D[] | undefined;
+	readonly implant3DWorld?: Implant3DWorldProjection | null | undefined; readonly nerveAuditResult?: NerveSafetyAuditResult | null | undefined;
 	readonly handleExportToEmr?: (() => void) | undefined; readonly handleExportToPlan?: (() => void) | undefined;
 	readonly onChangeWindowWidth?: ((w: number) => void) | undefined; readonly onChangeWindowLevel?: ((l: number) => void) | undefined;
-	readonly onChangeSlabThicknessMm?: ((t: number) => void) | undefined; readonly onChangeSlabMode?: ((m: any) => void) | undefined;
-	readonly onSelectClinicalPreset?: ((p: any) => void) | undefined; readonly activePresetId?: string | undefined;
+	readonly onChangeSlabThicknessMm?: ((t: number) => void) | undefined; readonly onChangeSlabMode?: ((m: SlabProjectionMode) => void) | undefined;
+	readonly onSelectClinicalPreset?: ((p: string) => void) | undefined; readonly activePresetId?: string | undefined;
 	readonly panoThicknessMm?: number | undefined; readonly onChangePanoThicknessMm?: ((t: number) => void) | undefined;
-	readonly panoProjectionMode?: any; readonly onChangePanoProjectionMode?: ((m: any) => void) | undefined;
+	readonly panoProjectionMode?: string | undefined; readonly onChangePanoProjectionMode?: ((m: string) => void) | undefined;
 	readonly crossSectionStepMm?: number | undefined; readonly onChangeCrossSectionStepMm?: ((s: number) => void) | undefined;
 	readonly implantEntryXOffsetMm?: number | undefined; readonly onChangeImplantEntryXOffsetMm?: ((o: number) => void) | undefined;
 	readonly implantEntryDepthMm?: number | undefined; readonly onChangeImplantEntryDepthMm?: ((d: number) => void) | undefined;

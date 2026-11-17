@@ -10,6 +10,7 @@ import type { CbctToolMode } from "../../CbctLeftToolDock";
 import type {
 	CbctAngleMeasurement,
 	CbctMeasurementRuler,
+	CbctProbeMarker,
 	CbctViewportType,
 	CbctVoxelVolume,
 	Point3D,
@@ -295,7 +296,7 @@ export function handleAngleMeasurementClick(
 	>,
 	setAngles: React.Dispatch<React.SetStateAction<CbctAngleMeasurement[]>>,
 	setSelectedMeasurement: React.Dispatch<
-		React.SetStateAction<CbctMeasurementRuler | null>
+		React.SetStateAction<CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null>
 	>,
 ): void {
 	if (!activeAngle) {
@@ -308,26 +309,20 @@ export function handleAngleMeasurementClick(
 			currentMm: pt,
 			angleDeg: 0,
 			step: "vertex",
-		} as unknown as CbctAngleMeasurement & { currentMm: Point3D });
+		});
 		showToast(
 			"Точка 1 (плечо) установлена. Кликните для установки вершины угла",
 			"info",
 		);
 		return;
 	}
-	if (
-		(activeAngle as unknown as { step?: "vertex" | "end" }).step ===
-		"vertex"
-	) {
+	if (activeAngle.step === "vertex") {
 		setActiveAngle({
 			...activeAngle,
 			vertexMm: pt,
 			endMm: pt,
 			currentMm: pt,
 			step: "end",
-		} as unknown as CbctAngleMeasurement & {
-			currentMm: Point3D;
-			step?: "vertex" | "end";
 		});
 		showToast(
 			"Вершина угла зафиксирована. Кликните для фиксации второго плеча",
@@ -350,7 +345,7 @@ export function handleAngleMeasurementClick(
 	};
 	setAngles((prev) => [...prev, full]);
 	setActiveAngle(null);
-	setSelectedMeasurement(full as unknown as CbctMeasurementRuler);
+	setSelectedMeasurement(full);
 	showToast(`Измерение угла зафиксировано: ${deg}°`, "success");
 }
 

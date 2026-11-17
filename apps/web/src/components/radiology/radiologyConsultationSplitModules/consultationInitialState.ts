@@ -18,7 +18,7 @@ type StudyWithTitleFields = {
 	readonly studyDescription?: string | undefined;
 };
 
-function getStudyTitle(
+export function getStudyTitle(
 	study: RadiologyStudy | RadiologyFilmstripItem | undefined,
 	fallback: string,
 ): string {
@@ -104,12 +104,16 @@ export function createInitialRightViewport(options: {
 	if (splitMode === "atlas") {
 		const fallbackPathology: ConsultationPathologyItem = {
 			id: "periapical-periodontitis",
+			disciplineId: "conservative",
 			code: "K04.5",
 			titleRu: "Хронический апикальный периодонтит",
 			titleEn: "Chronic apical periodontitis",
+			descriptionRu: "Хроническое воспаление периапикальных тканей зуба",
+			stages: ["Начальная стадия", "Деструктивная стадия"],
+			keyEducationalPoints: ["Очаг деструкции костной ткани у апекса"],
+			recommendedTreatmentRu: "Эндодонтическое лечение и обтурация корневых каналов",
 			previewUrl: "/radiology/sample_rvg_tooth16.jpg",
 			imageUrl: "/radiology/sample_rvg_tooth16.jpg",
-			differentialHighlights: [],
 		};
 		const defaultPathology =
 			CONSULTATION_PATHOLOGY_CATALOG[1] ??

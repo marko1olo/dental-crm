@@ -8,7 +8,7 @@ export function DiagnosticsMenuSection({
 	appointmentPatientName,
 	onClose,
 }: {
-	appointmentPatient: any;
+	appointmentPatient: { id?: string | null | undefined } | null | undefined;
 	appointmentPatientName: string;
 	onClose: () => void;
 }) {

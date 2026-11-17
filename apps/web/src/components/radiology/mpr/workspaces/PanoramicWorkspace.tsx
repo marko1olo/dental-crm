@@ -12,7 +12,7 @@ export interface PanoramicWorkspaceProps extends WorkspaceCommonProps {
 	readonly slabThicknessMm?: number | undefined;
 	readonly onChangeSlabThicknessMm?: ((th: number) => void) | undefined;
 	readonly slabMode?: string | undefined;
-	readonly onChangeSlabMode?: ((mode: any) => void) | undefined;
+	readonly onChangeSlabMode?: ((mode: string) => void) | undefined;
 	readonly panoThicknessMm?: number | undefined;
 	readonly onChangePanoThicknessMm?: ((th: number) => void) | undefined;
 	readonly panoProjectionMode?: string | undefined;

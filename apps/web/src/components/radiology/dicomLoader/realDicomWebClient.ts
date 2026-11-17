@@ -10,9 +10,8 @@ import { buildVolumeFromDicomBuffers } from "./realDicomVoxelIngestion";
 
 function getViteApiUrl(): string {
 	try {
-		const meta = import.meta as unknown as { env?: Record<string, string> };
-		if (meta && meta.env && typeof meta.env.VITE_API_URL === "string") {
-			return meta.env.VITE_API_URL;
+		if (typeof import.meta !== "undefined" && import.meta.env && typeof import.meta.env.VITE_API_URL === "string") {
+			return import.meta.env.VITE_API_URL;
 		}
 	} catch {}
 	return "";

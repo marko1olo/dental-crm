@@ -19,8 +19,8 @@ import {
 import type { ChairDoctorShiftAssignment } from "./gridTypes";
 
 export interface UseScheduleChairShiftBulkOpsProps {
-  doctors: Array<any>;
-  effectiveChairs: Array<any>;
+  doctors: Array<{ id: string; fullName?: string; specialties?: string[]; role?: string; [key: string]: unknown }>;
+  effectiveChairs: Array<{ id: string; name: string; [key: string]: unknown }>;
   effectiveChairAssignments?: Record<string, ChairDoctorShiftAssignment>;
   dateKey: string;
   dashboard: Dashboard;
@@ -90,7 +90,7 @@ export function useScheduleChairShiftBulkOps({
       if (typeof window !== "undefined") {
         for (const dayIso of weekDays) {
           const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
-          const parsed = safeLocalStorageGetJson<Record<string, any>>(
+          const parsed = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment>>(
             existingKey,
             {},
           );
@@ -98,7 +98,7 @@ export function useScheduleChairShiftBulkOps({
           safeLocalStorageSetJson(existingKey, parsed, true);
         }
 
-        const currentShifts = safeLocalStorageGetJson<any[]>(
+        const currentShifts = safeLocalStorageGetJson<DoctorShift[]>(
           "dente_doctor_shifts",
           [],
         );
@@ -188,7 +188,7 @@ export function useScheduleChairShiftBulkOps({
         for (let d = 1; d <= daysInMonth; d++) {
           const dayIso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
           const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
-          const parsed = safeLocalStorageGetJson<Record<string, any>>(
+          const parsed = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment>>(
             existingKey,
             {},
           );
@@ -197,7 +197,7 @@ export function useScheduleChairShiftBulkOps({
         }
 
         const mondayIso = getMondayOfWeekIso(dateKey);
-        const currentShifts = safeLocalStorageGetJson<any[]>(
+        const currentShifts = safeLocalStorageGetJson<DoctorShift[]>(
           "dente_doctor_shifts",
           [],
         );
@@ -280,7 +280,7 @@ export function useScheduleChairShiftBulkOps({
 
       if (typeof window !== "undefined" && dateKey) {
         const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
-        const existingStorage = safeLocalStorageGetJson<Record<string, any>>(
+        const existingStorage = safeLocalStorageGetJson<Record<string, ChairDoctorShiftAssignment>>(
           storageKey,
           {},
         );
@@ -330,7 +330,7 @@ export function useScheduleChairShiftBulkOps({
         }
       }
 
-      const currentShifts = safeLocalStorageGetJson<any[]>(
+      const currentShifts = safeLocalStorageGetJson<DoctorShift[]>(
         "dente_doctor_shifts",
         [],
       );

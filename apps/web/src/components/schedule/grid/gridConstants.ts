@@ -1,3 +1,5 @@
+import type { Chair } from "@dental/shared";
+
 export const CHAIR_SHIFT_PRESETS = [
   {
     id: "morning" as const,
@@ -74,13 +76,17 @@ export const HOURS = [
   "21:00",
 ];
 
-export const DEFAULT_SOLO_CHAIR = {
+export const DEFAULT_SOLO_CHAIR: Chair = {
   id: "default-chair",
+  organizationId: "default",
   name: "Кресло 1 (Основное)",
-  roomNumber: "1",
   room: "1",
-  isActive: true,
   active: true,
   color: "var(--teal, #0d9488)",
-  defaultDoctorId: null as string | null,
+  specialization: null,
+  hasXraySensor: false,
+  hasMicroscope: false,
+  hasSurgeryKit: false,
+  notes: null,
+  defaultDoctorId: null,
 };

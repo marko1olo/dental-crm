@@ -2,15 +2,16 @@ import type { RadiologyStudy } from "../types.js";
 
 export interface RadiologyFilmstripItem {
 	readonly id: string;
-	readonly title?: string;
+	readonly title?: string | undefined;
+	readonly studyDescription?: string | undefined;
 	readonly modality: "intraoral_rvg" | "optg_panoramic" | "cbct_3d" | "trg_ceph" | "photo_clinical" | string;
-	readonly modalityLabel?: string;
+	readonly modalityLabel?: string | undefined;
 	readonly studyDate: string; // ISO date or "DD.MM.YYYY HH:mm:ss"
-	readonly teethFdi?: string[];
-	readonly imageUrl?: string;
-	readonly thumbnailUrl?: string;
-	readonly effectiveDoseMicrosv?: number;
-	readonly apparatusModel?: string;
+	readonly teethFdi?: string[] | undefined;
+	readonly imageUrl?: string | undefined;
+	readonly thumbnailUrl?: string | undefined;
+	readonly effectiveDoseMicrosv?: number | undefined;
+	readonly apparatusModel?: string | undefined;
 }
 
 export interface RadiologyFilmstripDockProps {

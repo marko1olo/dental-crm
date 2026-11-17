@@ -1,5 +1,9 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import type { ChairDoctorShiftAssignment } from "./grid/gridTypes";
+import type { QuickBookingAppointmentType } from "./patientReliabilityScore";
+import type { useQuickBookingPatientSearch } from "./useQuickBookingPatientSearch";
+import type { useQuickBookingStaff } from "./useQuickBookingStaff";
+import type { useQuickBookingCollision } from "./useQuickBookingCollision";
 
 export interface QuickBookingStageService {
   id?: string | undefined;
@@ -56,12 +60,14 @@ export interface QuickBookingDrawerProps {
   initialSlot?: QuickBookingSlotInfo | null | undefined;
   editingAppointment?: Appointment | null | undefined;
   dashboard?: Dashboard | undefined;
-  // biome-ignore lint/suspicious/noExplicitAny: automated suppression
-  auth?: any;
+  auth?: { user?: { id?: string; name?: string; role?: string } | null } | unknown;
   onAppointmentCreated?: ((appointment: Appointment) => void) | undefined;
   onAppointmentUpdated?: ((appointment: Appointment) => void) | undefined;
-  loadDashboard?: (() => Promise<void>) | undefined;
-  setDashboard?: ((dashboard: Dashboard) => void) | undefined;
+  loadDashboard?: (() => Promise<void | unknown>) | undefined;
+  setDashboard?:
+    | React.Dispatch<React.SetStateAction<Dashboard>>
+    | ((dashboard: Dashboard) => void)
+    | undefined;
   toDateTimeLocalValue?:
     | ((value: string, timeZone?: string | null) => string)
     | undefined;
@@ -94,15 +100,19 @@ export interface QuickBookingSlotConflictData {
 }
 
 export interface UseQuickBookingSubmitParams {
-  patientSearch: any;
-  appointmentType: any;
+  patientSearch: ReturnType<typeof useQuickBookingPatientSearch>;
+  appointmentType: QuickBookingAppointmentType;
   doctorUserId: string;
   dutyDoctorId: string | null;
-  doctors: any[];
-  dutyDoc: any;
+  doctors: ReturnType<typeof useQuickBookingStaff>["doctors"];
+  dutyDoc: ReturnType<typeof useQuickBookingStaff>["doctors"][number] | null | undefined;
   chairId: string;
-  chairs: any[];
-  currentChair: any;
+  chairs: ReturnType<typeof useQuickBookingStaff>["chairs"];
+  currentChair:
+    | ReturnType<typeof useQuickBookingStaff>["chairs"][number]
+    | { id: string; name?: string }
+    | null
+    | undefined;
   assistantUserId: string | null;
   startsAtLocal: string;
   durationMinutes: number;
@@ -110,15 +120,18 @@ export interface UseQuickBookingSubmitParams {
   comment: string;
   status: Appointment["status"];
   isSoloClinic: boolean;
-  collision: any;
+  collision: ReturnType<typeof useQuickBookingCollision>;
   setSlotConflict: (conflict: QuickBookingSlotConflictData | null) => void;
   setSubmitError: (err: string | null) => void;
   initialSlot: QuickBookingSlotInfo | null | undefined;
   isEditing: boolean;
   editingAppointmentId: string | null;
   dashboard?: Dashboard | null | undefined;
-  setDashboard?: ((dash: Dashboard) => void) | undefined;
-  loadDashboard?: (() => Promise<any> | void) | undefined;
+  setDashboard?:
+    | React.Dispatch<React.SetStateAction<Dashboard>>
+    | ((dash: Dashboard) => void)
+    | undefined;
+  loadDashboard?: (() => Promise<void | unknown> | void) | undefined;
   onAppointmentCreated?: ((appt: Appointment) => void) | undefined;
   onAppointmentUpdated?: ((appt: Appointment) => void) | undefined;
   onClose: () => void;

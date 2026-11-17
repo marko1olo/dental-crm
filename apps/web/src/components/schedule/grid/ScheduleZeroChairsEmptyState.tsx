@@ -7,8 +7,14 @@ export interface ScheduleZeroChairsEmptyStateProps {
   onOpenAddChair?: (() => void) | undefined;
   isInternalAddChairModalOpen: boolean;
   setIsInternalAddChairModalOpen: (open: boolean) => void;
-  doctors: Array<any>;
-  onAddChair?: ((chairData: QuickAddChairData) => Promise<any> | any) | undefined;
+  doctors: Array<{
+    id: string;
+    fullName: string;
+    role?: string;
+    specialties?: string[];
+    active?: boolean;
+  }>;
+  onAddChair?: ((chairData: QuickAddChairData) => Promise<unknown> | void) | undefined;
   dashboard: Dashboard;
   handleConfirmAssignDoctor: (
     chairId: string,
@@ -62,34 +68,38 @@ export function ScheduleZeroChairsEmptyState({
           existingChairsCount={0}
           doctors={doctors}
           onAddChair={
-            onAddChair ||
-            (async (chairData) => {
-              const newChairId = chairData.id || `chair-${Date.now()}`;
-              if (dashboard?.clinicSettings) {
-                const chairItem = {
-                  id: newChairId,
-                  organizationId: dashboard.clinicSettings.profile?.organizationId || "",
-                  name: chairData.name,
-                  room: chairData.room || chairData.roomNumber || "",
-                  color: chairData.color || "#0d9488",
-                  specialization: chairData.specialization || null,
-                  active: chairData.isActive ?? true,
-                  hasXraySensor: false,
-                  hasMicroscope: false,
-                  hasSurgeryKit: false,
-                  notes: null,
-                };
-                dashboard.clinicSettings.chairs = [...(dashboard.clinicSettings.chairs || []), chairItem];
-              }
-              if (chairData.defaultDoctorId) {
-                handleConfirmAssignDoctor(
-                  newChairId,
-                  chairData.defaultDoctorId,
-                  "full",
-                );
-              }
-              setIsInternalAddChairModalOpen(false);
-            })
+            onAddChair
+              ? async (chairData) => {
+                  await onAddChair(chairData);
+                }
+              : async (chairData) => {
+                  const newChairId = chairData.id || `chair-${Date.now()}`;
+                  if (dashboard?.clinicSettings) {
+                    const chairItem = {
+                      id: newChairId,
+                      organizationId: dashboard.clinicSettings.profile?.organizationId || "",
+                      name: chairData.name,
+                      room: chairData.room || chairData.roomNumber || "",
+                      color: chairData.color || "#0d9488",
+                      specialization: (chairData.specialization as "pediatric" | "therapist" | "surgeon" | "orthopedist" | "orthodontist" | "hygienist" | "general" | null) || null,
+                      active: chairData.isActive ?? true,
+                      hasXraySensor: false,
+                      hasMicroscope: false,
+                      hasSurgeryKit: false,
+                      notes: null,
+                      defaultDoctorId: chairData.defaultDoctorId || null,
+                    };
+                    dashboard.clinicSettings.chairs = [...(dashboard.clinicSettings.chairs || []), chairItem];
+                  }
+                  if (chairData.defaultDoctorId) {
+                    handleConfirmAssignDoctor(
+                      newChairId,
+                      chairData.defaultDoctorId,
+                      "full",
+                    );
+                  }
+                  setIsInternalAddChairModalOpen(false);
+                }
           }
         />
       )}

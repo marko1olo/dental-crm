@@ -41,6 +41,30 @@ export interface DateRangeShiftBindingParams {
 	includeWeekends?: boolean | undefined;
 }
 
+function resolveStaffDisplayName(staff: CompatibleRosterStaff | null | undefined, fallback: string): string {
+	if (!staff) return fallback;
+	return staff.shortName || staff.fullName || fallback;
+}
+
+function resolveStaffRole(staff: CompatibleRosterStaff | null | undefined): MedicalStaffRole {
+	const role = staff?.role;
+	if (
+		role === "therapist" ||
+		role === "orthopedist" ||
+		role === "surgeon" ||
+		role === "orthodontist" ||
+		role === "pediatric" ||
+		role === "hygienist" ||
+		role === "assistant" ||
+		role === "nurse" ||
+		role === "intern" ||
+		role === "technician"
+	) {
+		return role;
+	}
+	return "therapist";
+}
+
 /**
  * 1-Click Fast Multi-Day Date Range Doctor-to-Chair Shift Binding (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
@@ -188,10 +212,10 @@ export function applyDoctorChairDateRange(
 			newShifts.push({
 				id: `shift-${currentIso}-${chairId}-${doc.id}-${shiftPreset}-${dayCounter}`,
 				doctorId: doc.id,
-				doctorName: doc.shortName || doc.fullName,
-				doctorRole: doc.role,
+				doctorName: resolveStaffDisplayName(doc, `Врач ${doc.id}`),
+				doctorRole: resolveStaffRole(doc),
 				assistantId: asst ? asst.id : null,
-				assistantName: asst ? asst.shortName || asst.fullName : null,
+				assistantName: asst ? (asst.shortName || asst.fullName || "Ассистент") : null,
 				cabinetId: targetCabId,
 				chairId,
 				dateIso: currentIso,

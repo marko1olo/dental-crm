@@ -72,7 +72,7 @@ export interface WorkspaceCommonProps {
 	readonly implantAngulationDeg?: number | undefined;
 	readonly onChangeImplantAngulationDeg?: ((val: number) => void) | undefined;
 	readonly activeTool?: string | undefined;
-	readonly onSelectTool?: ((tool: any) => void) | undefined;
+	readonly onSelectTool?: ((tool: "ruler" | "crosshair" | "angle" | string) => void) | undefined;
 	readonly rulers?: readonly CbctMeasurementRuler[] | undefined;
 	readonly onClearRulers?: ((plane?: CbctViewportType) => void) | undefined;
 }

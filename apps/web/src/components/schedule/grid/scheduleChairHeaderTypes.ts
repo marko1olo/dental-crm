@@ -22,10 +22,10 @@ export interface ScheduleChairItem {
 export interface ScheduleChairHeaderProps {
   chair: ScheduleChairItem;
   chairIndex: number;
-  dailyTally: any;
+  dailyTally?: { totalMinutes?: number; revenueKopecks?: bigint | number; count?: number } | unknown;
   effectiveChairAssignments: Record<string, ChairDoctorShiftAssignment>;
-  doctors: Array<any>;
-  suggestedDoctor: any | null;
+  doctors: Array<{ id: string; fullName: string; role?: string; specialties?: string[] }>;
+  suggestedDoctor: { id: string; fullName: string; role?: string } | null;
   isSoloDoctor: boolean;
   dateKey: string;
   dashboard: Dashboard;
@@ -37,7 +37,7 @@ export interface ScheduleChairHeaderProps {
   setActiveHeaderMaintenanceChairId?: ((id: string | null | ((prev: string | null) => string | null)) => void) | undefined;
   onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
   openAssignModal: (chairId: string) => void;
-  handleConfirmAssignDoctor: (chairId: string, docId: string, shiftPreset: any, eveningDocId?: string) => void;
+  handleConfirmAssignDoctor: (chairId: string, docId: string, shiftPreset: string | unknown, eveningDocId?: string) => void;
   handleUnassignDoctor: (chairId: string) => void;
   handleAssignDoctorWeek: (chairId: string, docId: string, fullWeek?: boolean) => void;
   handleAssignDoctorMonth: (chairId: string, docId: string) => void;

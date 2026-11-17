@@ -14,6 +14,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import type { CbctVoxelVolume, Point3D } from "../../cbctMprMath";
 import type { Implant3DWorldProjection } from "../../implantSafetyEngine";
+import type { Volume3DImplantParam } from "../volume3DMath/types";
 import {
 	disposeWebGl2VolumeRaymarching,
 	initWebGl2VolumeRaymarching,
@@ -32,7 +33,8 @@ export interface UseVolume3DContextParams {
 	nervePoints?: readonly Point3D[] | undefined;
 	interpolatedNerve3D?: readonly Point3D[] | undefined;
 	implant3DWorld?: Implant3DWorldProjection | null | undefined;
-	active3DImplants: readonly unknown[];
+	implants3DWorld?: readonly Implant3DWorldProjection[] | undefined;
+	active3DImplants?: readonly Volume3DImplantParam[] | undefined;
 	nerveAuditResult?:
 		| {
 				readonly isDangerous: boolean;
@@ -54,6 +56,7 @@ export function useVolume3DContext({
 	nervePoints = [],
 	interpolatedNerve3D = [],
 	implant3DWorld = null,
+	implants3DWorld,
 	active3DImplants,
 	nerveAuditResult = null,
 }: UseVolume3DContextParams) {
@@ -189,7 +192,7 @@ export function useVolume3DContext({
 				nervePoints,
 				interpolatedNerve3D,
 				implant3DWorld,
-				implantsList: active3DImplants as any,
+				implantsList: implants3DWorld ?? (implant3DWorld ? [implant3DWorld] : []),
 				nerveAuditResult,
 			});
 		}
@@ -203,6 +206,7 @@ export function useVolume3DContext({
 		nervePoints,
 		interpolatedNerve3D,
 		implant3DWorld,
+		implants3DWorld,
 		nerveAuditResult,
 		active3DImplants,
 		effectiveHibernated,

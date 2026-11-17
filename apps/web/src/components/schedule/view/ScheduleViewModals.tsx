@@ -108,7 +108,11 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
               }
             : undefined
         }
-        setDashboard={logicContext?.setDashboard}
+        setDashboard={
+          logicContext?.setDashboard
+            ? (dash) => logicContext.setDashboard(dash)
+            : undefined
+        }
         toDateTimeLocalValue={toDateTimeLocalValue}
         fromDateTimeLocalValue={fromDateTimeLocalValue}
         chairDoctorAssignments={computedChairDoctorAssignments}

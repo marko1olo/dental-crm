@@ -3,19 +3,20 @@ import { Settings, UserCheck, UserPlus } from "lucide-react";
 import { DEFAULT_SOLO_CHAIR } from "./gridConstants";
 import type { QuickAddChairData } from "../QuickAddChairModal";
 import type { ScheduleChairItem } from "./scheduleChairHeaderTypes";
+import type { ChairDoctorShiftAssignment } from "./gridTypes";
 
 export interface ScheduleChairHeaderTopBarProps {
   chair: ScheduleChairItem;
   chairAccentColor: string;
-  chairPalette: any;
-  doctors: Array<any>;
+  chairPalette: { nameRu?: string; bright_code?: string; [key: string]: unknown };
+  doctors: Array<{ id: string; fullName: string; role?: string; specialties?: string[] }>;
   hasDoctor: boolean;
   activeHeaderDoctorPopoverChairId: string | null;
-  assignment?: any;
+  assignment?: ChairDoctorShiftAssignment | undefined;
   setActiveHeaderMaintenanceChairId?: ((id: string | null | ((prev: string | null) => string | null)) => void) | undefined;
   setActiveHeaderDoctorPopoverChairId: (id: string | null) => void;
   onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
-  handleConfirmAssignDoctor?: ((chairId: string, docId: string, shiftPreset: any) => void) | undefined;
+  handleConfirmAssignDoctor?: ((chairId: string, docId: string, shiftPreset: string | unknown) => void) | undefined;
 }
 
 export const ScheduleChairHeaderTopBar: React.FC<ScheduleChairHeaderTopBarProps> = (props) => {

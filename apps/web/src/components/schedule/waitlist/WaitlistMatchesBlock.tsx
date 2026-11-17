@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Check, ClipboardList, Loader2, Zap } from "lucide-react";
+import type { Appointment, StaffMember, Chair } from "@dental/shared";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { showToast } from "../../GlobalToast";
 import { handleBookWaitlistSlot } from "../view/scheduleModalsModules/waitlistSlotBookingHandler";
@@ -39,12 +40,12 @@ export function WaitlistMatchesBlock({
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Находим целевой приём в расписании (если есть)
-  const appt = (ctx?.dashboard?.appointments || []).find((a: any) => a.id === appointmentId);
+  const appt = (ctx?.dashboard?.appointments || []).find((a: Appointment) => a.id === appointmentId);
   const doctor = (ctx?.dashboard?.clinicSettings?.staff || []).find(
-    (s: any) => s.id === appt?.doctorUserId,
+    (s: StaffMember) => s.id === appt?.doctorUserId,
   );
   const chair = (ctx?.dashboard?.clinicSettings?.chairs || []).find(
-    (c: any) => c.id === appt?.chairId,
+    (c: Chair) => c.id === appt?.chairId,
   );
 
   const targetSlot: TargetSlotInfo | null = appt
@@ -172,7 +173,7 @@ export function WaitlistMatchesBlock({
                   <button
                     type="button"
                     title="Написать в WhatsApp"
-                    onClick={() => openWhatsAppChat(candidate.patientPhone!, offerText)}
+                    onClick={() => openWhatsAppChat(candidate.patientPhone ?? "", offerText)}
                     className="h-7 px-2 rounded border border-[var(--line,#e2e8f0)] hover:bg-[#25D366]/10 text-[#128C7E] font-medium text-[11px]"
                   >
                     WA

@@ -50,7 +50,7 @@ export function useQuickAddChairForm(props: QuickAddChairModalProps) {
 				setSelectedColor(initialData.color || "#0d9488");
 				setIsActive(initialData.isActive !== false);
 				setBranchId(initialData.branchId || "");
-				setDefaultDoctorId((initialData as any).defaultDoctorId || "");
+				setDefaultDoctorId(initialData.defaultDoctorId || "");
 			} else {
 				setChairName("");
 				setRoomNumber("");

@@ -6,13 +6,25 @@ import { useVisitStore } from "../../../../store/visitStore.js";
 import { usePatientStore } from "../../../../store/patientStore.js";
 import { showToast } from "../../../GlobalToast.js";
 import type { RadiologyFilmstripItem } from "../../RadiologyFilmstripDock.js";
+import type { RadiologyStudy } from "../../types.js";
+import type { ViewerRulerMeasurement, ViewerCurvedMeasurement } from "../../dentalViewerMath.js";
 
 interface UseSensorViewerExportProtocolProps {
-	toothFdiCode?: string | number | null | undefined; onInsertToProtocol?: ((statement: string) => void) | undefined;
-	rawImageRef: React.MutableRefObject<HTMLImageElement | null>; filteredCanvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
-	measurements: any[]; curvedCanals: any[]; calibratedMmPerPx: number; activeStudy: any;
-	patientName?: string | null | undefined; patientAge?: string | number | null | undefined; patientBirthDate?: string | null | undefined; effectiveTooth: string;
-	onSelectStudy?: ((study: any) => void) | undefined; setActiveStudy: (study: any) => void; setIsProtocolsOpen: (open: boolean) => void;
+	toothFdiCode?: string | number | null | undefined;
+	onInsertToProtocol?: ((statement: string) => void) | undefined;
+	rawImageRef: React.MutableRefObject<HTMLImageElement | null>;
+	filteredCanvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
+	measurements: readonly ViewerRulerMeasurement[];
+	curvedCanals: readonly ViewerCurvedMeasurement[];
+	calibratedMmPerPx: number;
+	activeStudy: RadiologyStudy | RadiologyFilmstripItem | null;
+	patientName?: string | null | undefined;
+	patientAge?: string | number | null | undefined;
+	patientBirthDate?: string | null | undefined;
+	effectiveTooth: string;
+	onSelectStudy?: ((study: RadiologyStudy | RadiologyFilmstripItem) => void) | undefined;
+	setActiveStudy: React.Dispatch<React.SetStateAction<RadiologyStudy | RadiologyFilmstripItem | null>>;
+	setIsProtocolsOpen: (open: boolean) => void;
 }
 
 export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolProps) {
@@ -62,13 +74,30 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 		}
 		setIsExporting(true);
 		try {
+			const activePatientName =
+				p.activeStudy && "patientName" in p.activeStudy && typeof p.activeStudy.patientName === "string"
+					? p.activeStudy.patientName
+					: p.patientName || undefined;
+			const activePatientBirthDate =
+				p.activeStudy && "patientBirthDate" in p.activeStudy && typeof p.activeStudy.patientBirthDate === "string"
+					? p.activeStudy.patientBirthDate
+					: p.patientBirthDate || undefined;
+			const activeModalityLabel =
+				p.activeStudy && "modalityLabel" in p.activeStudy && typeof p.activeStudy.modalityLabel === "string"
+					? p.activeStudy.modalityLabel
+					: "IO-СЕНСОР";
+			const activeStudyDate =
+				p.activeStudy && "studyDate" in p.activeStudy && typeof p.activeStudy.studyDate === "string"
+					? p.activeStudy.studyDate
+					: undefined;
+
 			const blob = await renderClinicalExportBlob({
 				rawImage: rawImg, filteredCanvas: p.filteredCanvasRef.current,
 				measurements: p.measurements, curvedCanals: p.curvedCanals,
-				calibratedMmPerPx: p.calibratedMmPerPx, patientName: (p.activeStudy?.patientName || p.patientName) || undefined,
-				patientAge: p.patientAge || undefined, patientBirthDate: (p.activeStudy?.patientBirthDate || p.patientBirthDate) || undefined,
-				toothFdi: p.effectiveTooth || undefined, modalityLabel: p.activeStudy?.modalityLabel || "IO-СЕНСОР",
-				studyDate: p.activeStudy?.studyDate || undefined,
+				calibratedMmPerPx: p.calibratedMmPerPx, patientName: activePatientName,
+				patientAge: p.patientAge || undefined, patientBirthDate: activePatientBirthDate,
+				toothFdi: p.effectiveTooth || undefined, modalityLabel: activeModalityLabel,
+				studyDate: activeStudyDate,
 			});
 			if (!blob) {
 				showToast("Не удалось сформировать экспорт", "error");

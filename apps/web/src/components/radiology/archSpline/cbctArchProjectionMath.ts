@@ -88,7 +88,7 @@ export function createDentalArchCurve(
 export function updateDentalArchAnchorPosition(
 	archCurve: DentalArchCurve,
 	anchorIndexOrFdiOrId: number | string,
-	newPositionMm: Point2D | (Point2D & { readonly zMm?: number }),
+	newPositionMm: Point2D & { readonly zMm?: number | undefined },
 ): DentalArchCurve {
 	let modified = false;
 	const anchors = archCurve.anchors.map((anchor, idx) => {
@@ -98,7 +98,7 @@ export function updateDentalArchAnchorPosition(
 			anchor.toothFdi === String(anchorIndexOrFdiOrId);
 		if (isTarget) {
 			modified = true;
-			const zVal = "zMm" in newPositionMm ? (newPositionMm as any).zMm : anchor.zMm;
+			const zVal = "zMm" in newPositionMm ? newPositionMm.zMm : anchor.zMm;
 			return {
 				...anchor,
 				positionMm: { x: Number(newPositionMm.x.toFixed(2)), y: Number(newPositionMm.y.toFixed(2)) },

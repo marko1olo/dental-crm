@@ -12,7 +12,7 @@ import {
 interface Props {
 	appointment: Appointment;
 	pName: string;
-	patObj?: Patient | null;
+	patObj?: Patient | { id?: string | null | undefined; [key: string]: unknown } | null | undefined;
 	dashboard: Dashboard;
 	onCloseMenu: () => void;
 }

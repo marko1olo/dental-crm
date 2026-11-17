@@ -41,7 +41,7 @@ export const GridAppointmentReassignSection: React.FC<Props> = ({
 					<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">Сменить кресло</div>
 					<div className="flex items-center gap-1 px-1 flex-wrap">
 						{effectiveChairs.map((ch, chIdx) => {
-							const chPalette = getWorkplaceChairPalette((ch as any).colorId ?? ch.id ?? chIdx);
+							const chPalette = getWorkplaceChairPalette(ch.colorId ?? ch.id ?? chIdx);
 							const chAccent = ch.color || chPalette.bright_code;
 							const isCurrent = a.chairId === ch.id;
 							return (

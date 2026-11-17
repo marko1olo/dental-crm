@@ -4,6 +4,7 @@ import type {
 	Dashboard,
 	ScheduleSuggestion,
 } from "@dental/shared";
+import type { AppointmentScheduleDraft } from "../../../utils/draftDefaults";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { ScheduleDayGroup } from "../scheduleDayGrouping";
 
@@ -13,13 +14,13 @@ export interface ScheduleTimelineProps {
 	visibleScheduleSuggestions: ScheduleSuggestion[];
 	appointmentReadinessById: Map<string, AppointmentReadiness>;
 	appointmentLabels: Record<Appointment["status"], string>;
-	appointmentScheduleDrafts: Record<string, any>;
+	appointmentScheduleDrafts: Record<string, AppointmentScheduleDraft>;
 	appointmentScheduleSaveStates: Record<string, string>;
 	appointmentScheduleErrors: Record<string, string | null>;
 	appointmentScheduleDirtyIds: Set<string>;
 	editingAppointmentId: string | null;
-	appointmentDraftFromAppointment: (appointment: Appointment) => any;
-	appointmentDraftMissingSteps: (draft: any) => string[];
+	appointmentDraftFromAppointment: (appointment: Appointment) => AppointmentScheduleDraft;
+	appointmentDraftMissingSteps: (draft: AppointmentScheduleDraft) => string[];
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	openScheduleSuggestion: (section: string) => void;
 	formatTime: (value: string) => string;
@@ -61,13 +62,13 @@ export interface TimelineDayGroupProps {
 	onEmptySlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
 	onOpenVisit?: ((appointment?: Appointment) => void) | undefined;
 	dashboard: Dashboard;
-	appointmentScheduleDrafts: Record<string, any>;
+	appointmentScheduleDrafts: Record<string, AppointmentScheduleDraft>;
 	appointmentScheduleSaveStates: Record<string, string>;
 	appointmentScheduleErrors: Record<string, string | null>;
 	appointmentScheduleDirtyIds: Set<string>;
 	editingAppointmentId: string | null;
-	appointmentDraftFromAppointment: (appointment: Appointment) => any;
-	appointmentDraftMissingSteps: (draft: any) => string[];
+	appointmentDraftFromAppointment: (appointment: Appointment) => AppointmentScheduleDraft;
+	appointmentDraftMissingSteps: (draft: AppointmentScheduleDraft) => string[];
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	visibleScheduleSuggestions: ScheduleSuggestion[];
 	appointmentReadinessById: Map<string, AppointmentReadiness>;

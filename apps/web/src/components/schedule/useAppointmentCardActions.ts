@@ -7,26 +7,26 @@ import { broadcastVisitStatusChange } from "../../services/storage";
 
 export interface AppointmentActionsOptions {
 	appointment: Appointment;
-	dashboard?: Dashboard;
-	appointmentDraft?: any;
-	appointmentEditing?: boolean;
-	appointmentHasOpenVisit?: boolean;
-	appointmentLabels?: Record<string, string>;
-	appointmentPatient?: any;
+	dashboard?: Dashboard | undefined;
+	appointmentDraft?: Partial<Appointment> | Record<string, unknown> | null | undefined;
+	appointmentEditing?: boolean | undefined;
+	appointmentHasOpenVisit?: boolean | undefined;
+	appointmentLabels?: Record<string, string> | undefined;
+	appointmentPatient?: { id: string; fullName?: string } | null | undefined;
 	appointmentPatientName: string;
-	appointmentDoctor?: any;
-	appointmentChair?: any;
-	activeVisitLockedAppointmentStatuses?: Set<string>;
+	appointmentDoctor?: { id?: string; fullName?: string } | null | undefined;
+	appointmentChair?: { id?: string; name?: string } | null | undefined;
+	activeVisitLockedAppointmentStatuses?: Set<string> | undefined;
 	formatTime: (iso: string) => string;
-	patientName: (patients: any, patientId: string | null) => string;
+	patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
 	normalizedAppointmentStatus: (status: Appointment["status"]) => Appointment["status"];
-	updateAppointmentScheduleDraft: (id: string, field: string, value: any) => void;
+	updateAppointmentScheduleDraft: (id: string, field: string, value: string | number | boolean | null | undefined) => void;
 	saveAppointmentSchedule: (id: string) => Promise<boolean>;
 	openAppointmentEditor: (appt: Appointment) => void;
 	repeatAppointment: (appt: Appointment) => void;
 	copyAppointmentToBuffer?: ((appt: Appointment) => void) | undefined;
 	onOpenVisit?: (() => void) | undefined;
-	onOpenWaitlistForSlot?: ((slot: any) => void) | undefined;
+	onOpenWaitlistForSlot?: ((slot: unknown) => void) | undefined;
 }
 
 export function useAppointmentCardActions(options: AppointmentActionsOptions) {

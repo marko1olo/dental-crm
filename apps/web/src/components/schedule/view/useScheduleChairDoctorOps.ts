@@ -20,8 +20,7 @@ export interface ScheduleOpsAuthContext {
 
 export interface UseScheduleChairDoctorOpsParams {
   loadDashboard?: () => void | Promise<void>;
-  // biome-ignore lint/suspicious/noExplicitAny: composite client dashboard state updater
-  setDashboard?: ((updater: (prev: any) => any) => void) | undefined;
+  setDashboard?: ((updater: (prev: Dashboard) => Dashboard) => void) | undefined;
   setScheduleChairFilterId: (id: string | null) => void;
   setEditingChairData: (data: QuickAddChairData | null) => void;
   setIsQuickAddChairOpen: (open: boolean) => void;

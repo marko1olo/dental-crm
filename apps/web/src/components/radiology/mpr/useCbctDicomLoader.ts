@@ -460,7 +460,7 @@ interface DemoCbctManifest {
 				setVolume(finalVol);
 				setLoadedSliceCount(totalSlices);
 				if (typeof window !== "undefined") {
-					(window as unknown as { __cbctDemoVolume?: CbctVoxelVolume }).__cbctDemoVolume = finalVol;
+					(window as typeof window & { __cbctDemoVolume?: CbctVoxelVolume }).__cbctDemoVolume = finalVol;
 				}
 
 				const arch = alignArchAndCrosshair(finalVol);

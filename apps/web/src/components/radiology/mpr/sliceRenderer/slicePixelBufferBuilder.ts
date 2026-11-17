@@ -31,14 +31,19 @@ export const safeRequestAnimFrame = (cb: () => void): number => {
 	if (typeof requestAnimationFrame === "function") {
 		return requestAnimationFrame(cb);
 	}
-	return setTimeout(cb, 0) as unknown as number;
+	if (typeof window !== "undefined" && typeof window.setTimeout === "function") {
+		return window.setTimeout(cb, 0);
+	}
+	return Number(setTimeout(cb, 0));
 };
 
 export const safeCancelAnimFrame = (id: number): void => {
 	if (typeof cancelAnimationFrame === "function") {
 		cancelAnimationFrame(id);
+	} else if (typeof window !== "undefined" && typeof window.clearTimeout === "function") {
+		window.clearTimeout(id);
 	} else {
-		clearTimeout(id as unknown as NodeJS.Timeout);
+		globalThis.clearTimeout(id);
 	}
 };
 

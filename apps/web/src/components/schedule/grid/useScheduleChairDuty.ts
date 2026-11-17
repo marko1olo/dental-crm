@@ -49,8 +49,9 @@ export function useScheduleChairDuty(props: UseScheduleChairDutyProps) {
   const modals = useChairDutyModals(staffState.doctors, effectiveChairAssignments, getSuggestedDoctorForChair, onOpenAddChair);
 
   const handleConfirmAssignDoctor = useCallback(
-    (chairId: string, docId: string, shiftPreset: any, eveningDocId?: string) => {
-      const assignment = buildChairShiftAssignment(chairId, docId, shiftPreset, staffState.doctors, effectiveChairAssignments, eveningDocId);
+    (chairId: string, docId: string, shiftPreset: string | unknown, eveningDocId?: string) => {
+      const normalizedPreset = typeof shiftPreset === "string" ? shiftPreset : "morning";
+      const assignment = buildChairShiftAssignment(chairId, docId, normalizedPreset, staffState.doctors, effectiveChairAssignments, eveningDocId);
       const chair = staffState.effectiveChairs.find((c) => c.id === chairId) || { id: chairId, name: "Кресло" };
       saveAssignment(chairId, assignment);
       if (typeof onAssignChairDoctor === "function") onAssignChairDoctor(chairId, assignment);
@@ -77,8 +78,8 @@ export function useScheduleChairDuty(props: UseScheduleChairDutyProps) {
         storedChairDef[chairId] = doctorId;
         safeLocalStorageSetJson("dente_chair_default_doctors", storedChairDef);
       }
-      if (targetDoc) (targetDoc as any).preferredChairId = chairId;
-      if (targetChair) (targetChair as any).defaultDoctorId = doctorId;
+      if (targetDoc) (targetDoc as typeof targetDoc & { preferredChairId?: string }).preferredChairId = chairId;
+      if (targetChair) (targetChair as typeof targetChair & { defaultDoctorId?: string | null }).defaultDoctorId = doctorId;
       handleConfirmAssignDoctor(chairId, doctorId, "full");
       showToast(`Врач ${targetDoc ? formatDoctorShortName(targetDoc.fullName) : doctorId} закреплен за креслом «${targetChair?.name || chairId}»`, "success", 3500);
     },

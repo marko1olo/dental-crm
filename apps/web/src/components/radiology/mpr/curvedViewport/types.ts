@@ -9,6 +9,7 @@ import type { CbctToolMode } from "../../CbctLeftToolDock";
 import type {
 	CbctAngleMeasurement,
 	CbctMeasurementRuler,
+	CbctProbeMarker,
 	CbctViewportType,
 	CbctVoxelVolume,
 	Point3D,
@@ -121,7 +122,7 @@ export interface UseCbctCurvedViewportHandlersParams {
 		React.SetStateAction<ImplantDragState | null>
 	>;
 	setSelectedMeasurement: React.Dispatch<
-		React.SetStateAction<CbctMeasurementRuler | null>
+		React.SetStateAction<CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null>
 	>;
 	handleSelectTooth: (toothFdi: number | string) => void;
 	panoCanvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -187,9 +188,9 @@ export interface UseCbctCurvedViewportHandlersParams {
 		>
 	>;
 	hoveredMeasurementHandle: MeasurementHandleDragDescriptor | null;
-	setHoveredMeasurementHandle: React.Dispatch<React.SetStateAction<any>>;
+	setHoveredMeasurementHandle: React.Dispatch<React.SetStateAction<MeasurementHandleDragDescriptor | null>>;
 	draggingMeasurementHandle: MeasurementHandleDragDescriptor | null;
-	setDraggingMeasurementHandle: React.Dispatch<React.SetStateAction<any>>;
+	setDraggingMeasurementHandle: React.Dispatch<React.SetStateAction<MeasurementHandleDragDescriptor | null>>;
 }
 
 /**

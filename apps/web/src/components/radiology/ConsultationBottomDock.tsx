@@ -141,7 +141,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 										{src ? (
 											<img
 												src={src}
-												alt={(st as any).title || (st as any).studyDescription || dateStr}
+												alt={st.title || st.studyDescription || dateStr}
 												className="w-full h-full object-cover group-hover:scale-105 transition-transform"
 											/>
 										) : (
@@ -256,7 +256,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 											{src ? (
 												<img
 													src={src}
-													alt={(st as any).title || dateStr}
+													alt={st.title || dateStr}
 													className="w-full h-full object-cover group-hover:scale-105 transition-transform"
 												/>
 											) : (

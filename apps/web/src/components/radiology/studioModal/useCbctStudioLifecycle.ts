@@ -15,6 +15,12 @@ import type { useCbctStudioModalState } from "./useCbctStudioModalState";
 import type { RadiologyStudy } from "../types";
 import { autoDetectDentalArch, findOcclusalZPlane } from "../dentalCurveEngine";
 
+interface CbctWindowVolumeExtensions {
+	__cbctDemoVolume?: CbctVoxelVolume | undefined;
+	__cbctActiveVolume?: CbctVoxelVolume | undefined;
+	__cbctSharedVolume?: CbctVoxelVolume | undefined;
+}
+
 export interface UseCbctStudioLifecycleProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -44,11 +50,7 @@ export function useCbctStudioLifecycle({
 		if (!vol) return false;
 		if (initialVolume && vol === initialVolume) return true;
 		if (typeof window !== "undefined") {
-			const win = window as unknown as {
-				__cbctDemoVolume?: CbctVoxelVolume;
-				__cbctActiveVolume?: CbctVoxelVolume;
-				__cbctSharedVolume?: CbctVoxelVolume;
-			};
+			const win = window as typeof window & CbctWindowVolumeExtensions;
 			if (win.__cbctDemoVolume && vol === win.__cbctDemoVolume) return true;
 			if (win.__cbctActiveVolume && vol === win.__cbctActiveVolume) return true;
 			if (win.__cbctSharedVolume && vol === win.__cbctSharedVolume) return true;
@@ -123,7 +125,7 @@ export function useCbctStudioLifecycle({
 		if (initialVolume && !state.volume) {
 			applyVol(initialVolume);
 		} else if (typeof window !== "undefined") {
-			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+			const win = window as typeof window & CbctWindowVolumeExtensions;
 			if (win.__cbctDemoVolume && !state.volume) applyVol(win.__cbctDemoVolume);
 			const handleCustomLoad = (e: Event) => {
 				const customEvent = e as CustomEvent<CbctVoxelVolume>;
@@ -161,10 +163,7 @@ export function useCbctStudioLifecycle({
 		if (state.volume) {
 			cacheActiveCbctVolume(state.volume);
 			if (typeof window !== "undefined") {
-				const win = window as unknown as {
-					__cbctSharedVolume?: CbctVoxelVolume;
-					__cbctActiveVolume?: CbctVoxelVolume;
-				};
+				const win = window as typeof window & CbctWindowVolumeExtensions;
 				win.__cbctSharedVolume = state.volume;
 				win.__cbctActiveVolume = state.volume;
 			}

@@ -14,10 +14,8 @@ import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
 import type { ChairDoctorShiftAssignment } from "../grid/gridTypes";
 import type { DoctorShift } from "../roster/DoctorShiftRosterModal";
 import type { ScheduleDayGroup } from "../scheduleDayGrouping";
-import type {
-  AppointmentScheduleDraft,
-  AppointmentScheduleSaveState,
-} from "./scheduleViewTypes";
+import type { AppointmentScheduleDraft } from "../../../utils/draftDefaults";
+import type { AppointmentScheduleSaveState } from "./scheduleViewTypes";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import { ScheduleMobileAgendaView } from "../mobile/ScheduleMobileAgendaView";
 import { openVisitWithBackendSync } from "../appointmentCardActions/visitSyncHelper";
@@ -208,14 +206,11 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   const handleAppointmentMove = useCallback(
     async (
       appointmentId: string,
-      updates: {
-        startsAt?: string;
-        endsAt?: string;
-        chairId?: string;
-        doctorUserId?: string;
-        allowOverbooking?: boolean;
+      updates: Partial<Appointment> & {
+        doctorUserId?: string | null | undefined;
+        allowOverbooking?: boolean | undefined;
       },
-    ) => {
+    ): Promise<boolean> => {
       if (inFlightMoveRef.current[appointmentId]) return false;
       inFlightMoveRef.current[appointmentId] = true;
       try {
@@ -235,13 +230,13 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
           updateAppointmentScheduleDraft(
             appointmentId,
             "chairId",
-            updates.chairId,
+            updates.chairId ?? "",
           );
         if (updates.doctorUserId !== undefined)
           updateAppointmentScheduleDraft(
             appointmentId,
             "doctorUserId",
-            updates.doctorUserId,
+            updates.doctorUserId ?? "",
           );
         return await saveAppointmentSchedule(appointmentId, {
           allowOverbooking: updates.allowOverbooking ?? true,

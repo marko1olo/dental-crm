@@ -2,13 +2,14 @@ import type { Appointment } from "@dental/shared";
 import { DEFAULT_SOLO_CHAIR } from "./grid/gridConstants";
 import { resolveChairDutyDoctor } from "./chairRosterMath";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawerTypes";
+import type { ChairDoctorShiftAssignment } from "./grid/gridTypes";
 
 export interface ResolveInitialSlotValuesParams {
   initialSlot: QuickBookingSlotInfo | null | undefined;
   editingAppt: Appointment | null;
   doctors: Array<{ id: string; fullName: string }>;
-  chairs: any[];
-  chairDoctorAssignments?: Record<string, any> | undefined;
+  chairs: Array<{ id: string; name?: string; defaultDoctorId?: string | null }>;
+  chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
   isSoloClinic: boolean;
   toLocal: (iso: string) => string;
 }
@@ -77,7 +78,7 @@ export function resolveQuickBookingInitialValues({
       chairDoctorAssignments,
       initStartsAtLocal.slice(0, 10),
       null,
-      (chairObj as { defaultDoctorId?: string | null } | null)?.defaultDoctorId || (isSoloClinic && doctors[0] ? doctors[0].id : null),
+      chairObj?.defaultDoctorId || (isSoloClinic && doctors[0] ? doctors[0].id : null),
     );
     if (duty.doctorId) initDoctor = duty.doctorId;
   }

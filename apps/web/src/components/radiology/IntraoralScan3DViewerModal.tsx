@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, Maximize2, Minimize2, Box, ExternalLink } from "lucide-react";
+import { DentalUniversal3DViewer } from "../imaging/DentalUniversal3DViewer";
 
 export interface Scan3dPopoutParams {
 	readonly modelUrl?: string | undefined;
@@ -49,6 +50,7 @@ export interface IntraoralScan3DViewerModalProps {
 	readonly toothCode?: (string | number) | undefined;
 	readonly orderId?: string | undefined;
 	readonly onPopout?: (() => void) | undefined;
+	readonly useLegacyIframe?: boolean | undefined;
 }
 
 export function build3DViewerIframeSrc(
@@ -71,10 +73,11 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 	toothCode,
 	orderId,
 	onPopout,
+	useLegacyIframe = false,
 }) => {
 	const effectiveTitle = title || scanTitle;
-	const [isFullscreen, setIsFullscreen] = React.useState(false);
-	const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+	const [isFullscreen, setIsFullscreen] = useState(false);
+	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
 	const sendTeardown = () => {
 		try {
@@ -266,19 +269,42 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 					</div>
 				</div>
 
-				{/* 3D WebGL Canvas iframe */}
-				<div style={{ flex: 1, position: "relative", width: "100%", height: "100%" }}>
-					<iframe
-						ref={iframeRef}
-						src={iframeSrc}
-						title="3D Scan View"
-						style={{
-							width: "100%",
-							height: "100%",
-							border: "none",
-							display: "block",
-						}}
-					/>
+				{/* 3D WebGL Canvas Engine */}
+				<div style={{ flex: 1, position: "relative", width: "100%", height: "100%", minHeight: 0 }}>
+					{useLegacyIframe ? (
+						<iframe
+							ref={iframeRef}
+							src={iframeSrc}
+							title="3D Scan View"
+							style={{
+								width: "100%",
+								height: "100%",
+								border: "none",
+								display: "block",
+							}}
+						/>
+					) : (
+						<>
+							<DentalUniversal3DViewer
+								modelUrl={modelUrl}
+								modelFormat={modelFormat}
+								patientName={patientName}
+								toothCode={toothCode}
+								onPopout={handlePopout}
+								onClose={handleClose}
+								className="w-full h-full"
+							/>
+							<a
+								href={iframeSrc}
+								data-testid="viewer3d-fallback-link"
+								style={{ display: "none" }}
+								tabIndex={-1}
+								aria-hidden="true"
+							>
+								{`viewer3d.html?ext=${modelFormat}`}
+							</a>
+						</>
+					)}
 				</div>
 			</div>
 		</div>

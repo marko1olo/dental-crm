@@ -36,7 +36,7 @@ export function EditorStatusSection({
 	const currentStatus = (appointmentDraft?.status || appointment.status) as Appointment["status"];
 	const isSelectLocked =
 		appointmentHasOpenVisit &&
-		Boolean(activeVisitLockedAppointmentStatuses?.has?.(currentStatus as any));
+		Boolean(activeVisitLockedAppointmentStatuses?.has?.(currentStatus));
 
 	return (
 		<div className="min-w-0">

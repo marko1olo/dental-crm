@@ -33,8 +33,8 @@ export interface SchedulePropsAssemblerInput {
   rosterData: ReturnType<typeof useScheduleRosterData>;
   chairOps: ReturnType<typeof useScheduleChairDoctorOps>;
   shortcuts: ReturnType<typeof useScheduleShortcuts>;
-  scheduleStore: any;
-  settingsStore: any;
+  scheduleStore: ReturnType<typeof useScheduleStore.getState>;
+  settingsStore: ReturnType<typeof useSettingsStore.getState>;
   props: Record<string, unknown>;
   logicContext?: AppLogicContextType | null;
   effectiveDashboard: unknown;
@@ -104,7 +104,7 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
       ? "Сервер клиники не настроен на изменение расписания: в его настройках не задан секрет администратора. Секрет задаёт тот, кто устанавливал программу — без него запись не сохранится, сколько бы вы ни вводили здесь."
       : "Сервер клиники не принял изменение расписания без секрета администратора. Введите его, чтобы сохранить запись.";
 
-  const headerToolbarProps: any = {
+  const headerToolbarProps: ScheduleHeaderToolbarProps = {
     clinicToday,
     scheduleDateFilter: scheduleStore.scheduleDateFilter,
     setScheduleDateFilter: scheduleStore.setScheduleDateFilter,
@@ -305,7 +305,7 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
     setScheduleDateFilter: scheduleStore.setScheduleDateFilter,
   };
 
-  const modalsLayerProps: any = {
+  const modalsLayerProps: ScheduleModalsLayerProps = {
     quickBookingOpen: dragDrop.quickBookingOpen,
     setQuickBookingOpen: dragDrop.setQuickBookingOpen,
     quickBookingSlot:

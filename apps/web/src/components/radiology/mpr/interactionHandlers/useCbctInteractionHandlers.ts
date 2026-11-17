@@ -224,9 +224,7 @@ export function useCbctInteractionHandlers(
 		setDragImplantPart,
 		crossSectionDragStart,
 		setCrossSectionDragStart,
-		setSelectedMeasurement: setSelectedMeasurement as React.Dispatch<
-			React.SetStateAction<any>
-		>,
+		setSelectedMeasurement,
 		handleSelectTooth,
 		panoCanvasRef,
 		crossSectionCanvasRef,

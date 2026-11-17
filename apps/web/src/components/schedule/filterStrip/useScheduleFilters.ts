@@ -79,7 +79,11 @@ export function useScheduleFilters({
 
 		// 2. Fallback to localStorage assignments for this date if present
 		if (typeof window !== "undefined" && effectiveDoctorIdForMyChair) {
-			const parsed = safeLocalStorageGetJson<Record<string, any> | null>(
+			interface StoredChairAssignment {
+				doctorId?: string | null;
+				subShifts?: Array<{ doctorId?: string | null }>;
+			}
+			const parsed = safeLocalStorageGetJson<Record<string, StoredChairAssignment> | null>(
 				`dente_chair_doctor_assignments_${currentDateIso}`,
 				null,
 			);
@@ -88,8 +92,7 @@ export function useScheduleFilters({
 					(cId) =>
 						parsed[cId]?.doctorId === effectiveDoctorIdForMyChair ||
 						parsed[cId]?.subShifts?.some(
-							// biome-ignore lint/suspicious/noExplicitAny: sub-shift check
-							(s: any) => s.doctorId === effectiveDoctorIdForMyChair,
+							(s) => s.doctorId === effectiveDoctorIdForMyChair,
 						),
 				);
 				if (assignedChairId) {

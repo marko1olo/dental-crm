@@ -14,8 +14,11 @@ export function analyzeAirwayVolume(volume: CbctVoxelVolume): AirwayAnalysisResu
 			clinicalSummary: "Нет данных для анализа дыхательных путей",
 		};
 	}
-	const spacing = (volume as any).spacingMm || (volume as any).spacing || [0.3, 0.3, 0.3];
-	const voxelVolumeMm3 = spacing[0] * spacing[1] * spacing[2];
+	const sp = volume.spacingMm;
+	const spacingX = typeof sp?.x === "number" ? sp.x : 0.3;
+	const spacingY = typeof sp?.y === "number" ? sp.y : 0.3;
+	const spacingZ = typeof sp?.z === "number" ? sp.z : 0.3;
+	const voxelVolumeMm3 = spacingX * spacingY * spacingZ;
 
 	// Airway HU threshold: typically [-1024, -600]
 	let airwayVoxels = 0;

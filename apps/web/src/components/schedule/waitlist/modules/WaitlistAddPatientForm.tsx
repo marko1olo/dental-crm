@@ -5,8 +5,8 @@ import { TREATMENT_CATEGORIES } from "../waitlistTypes";
 export interface WaitlistAddPatientFormProps {
 	onSubmit: (e: React.FormEvent) => void;
 	isSubmitting: boolean;
-	clinicPatients: any[];
-	staffDoctors: any[];
+	clinicPatients: Array<{ id: string; fullName: string; phone?: string | null }>;
+	staffDoctors: Array<{ id: string; fullName: string }>;
 	newPatientId: string;
 	onSelectPatientId: (id: string) => void;
 	newPatientName: string;
@@ -70,7 +70,7 @@ export function WaitlistAddPatientForm({
 						className="w-full h-10 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 					>
 						<option value="">-- Выберите существующего пациента --</option>
-						{clinicPatients.map((p: any) => (
+						{clinicPatients.map((p) => (
 							<option key={p.id} value={p.id}>
 								{p.fullName} ({p.phone || "нет тел."})
 							</option>
@@ -110,7 +110,7 @@ export function WaitlistAddPatientForm({
 					className="w-full h-10 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 				>
 					<option value="">Любой врач клиники</option>
-					{staffDoctors.map((doc: any) => (
+					{staffDoctors.map((doc) => (
 						<option key={doc.id} value={doc.id}>
 							{doc.fullName}
 						</option>

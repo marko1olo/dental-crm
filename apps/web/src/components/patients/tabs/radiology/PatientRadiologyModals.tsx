@@ -1,4 +1,5 @@
 import React from "react";
+import type { ImagingStudy } from "@dental/shared";
 import { DicomViewerModal } from "../../../imaging/DicomViewerModal";
 import { IntraoralScan3DViewerModal } from "../../../radiology/IntraoralScan3DViewerModal";
 import { HotFolderIntakeModal } from "../../../radiology/HotFolderIntakeModal";
@@ -9,6 +10,12 @@ import type { PatientRadiologyModalsProps } from "./radiologyModalTypes";
 
 export * from "./radiologyModalTypes";
 
+function isImagingStudy(study: unknown): study is ImagingStudy {
+	if (typeof study !== "object" || study === null) return false;
+	const candidate = study as Record<string, unknown>;
+	return typeof candidate.id === "string" && typeof candidate.kind === "string";
+}
+
 export const PatientRadiologyModals: React.FC<PatientRadiologyModalsProps> = ({
 	patientId, patientName, patientBirthDate, cardNumber,
 	active2dStudy, setActive2dStudy, activeScan3dStudy, setActiveScan3dStudy,
@@ -17,6 +24,17 @@ export const PatientRadiologyModals: React.FC<PatientRadiologyModalsProps> = ({
 	tactileFilters, setTactileFilters, sortedStudies, filteredStudies,
 	showCtSelector, setShowCtSelector, handleOpen3d, loadPatientStudies,
 }) => {
+	const resolveStudy = (candidate: unknown): ImagingStudy | undefined => {
+		if (isImagingStudy(candidate)) return candidate;
+		if (typeof candidate === "object" && candidate !== null) {
+			const candidateId = (candidate as { readonly id?: unknown }).id;
+			if (typeof candidateId === "string") {
+				return sortedStudies.find((s) => s.id === candidateId);
+			}
+		}
+		return undefined;
+	};
+
 	return (
 		<>
 			{active2dStudy && (
@@ -84,16 +102,19 @@ export const PatientRadiologyModals: React.FC<PatientRadiologyModalsProps> = ({
 					studies={sortedStudies}
 					onSelectStudy={(study, launchMode) => {
 						setShowCtSelector(false);
-						if (launchMode === "crm_window") handleOpen3d(study);
+						const resolved = resolveStudy(study);
+						if (launchMode === "crm_window" && resolved) handleOpen3d(resolved);
 					}}
 					onOpenCbctStudio={(study) => {
 						setShowCtSelector(false);
-						if (study) handleOpen3d(study);
+						const resolved = resolveStudy(study);
+						if (resolved) handleOpen3d(resolved);
 					}}
 					onImagesLoaded={(_imageIds, studyMeta) => {
 						setShowCtSelector(false);
 						loadPatientStudies();
-						if (studyMeta) handleOpen3d(studyMeta);
+						const resolved = resolveStudy(studyMeta);
+						if (resolved) handleOpen3d(resolved);
 					}}
 				/>
 			)}

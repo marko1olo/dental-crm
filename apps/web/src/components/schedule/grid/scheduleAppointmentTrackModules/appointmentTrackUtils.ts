@@ -31,7 +31,7 @@ export function calcAppointmentsSpan(
   const maxSpan = Math.max(
     1,
     ...appointments.map((a) => {
-      let duration = (a as any).durationMinutes;
+      let duration = (a as { durationMinutes?: number }).durationMinutes;
       if (!duration && a.startsAt && a.endsAt) {
         const diffMs = Date.parse(a.endsAt) - Date.parse(a.startsAt);
         if (!Number.isNaN(diffMs) && diffMs > 0) {

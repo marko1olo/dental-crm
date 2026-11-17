@@ -30,6 +30,30 @@ export type CompatibleRosterStaff =
 			active?: boolean;
 	  };
 
+function resolveStaffDisplayName(staff: CompatibleRosterStaff | null | undefined, fallback: string): string {
+	if (!staff) return fallback;
+	return staff.shortName || staff.fullName || fallback;
+}
+
+function resolveStaffRole(staff: CompatibleRosterStaff | null | undefined): MedicalStaffRole {
+	const role = staff?.role;
+	if (
+		role === "therapist" ||
+		role === "orthopedist" ||
+		role === "surgeon" ||
+		role === "orthodontist" ||
+		role === "pediatric" ||
+		role === "hygienist" ||
+		role === "assistant" ||
+		role === "nurse" ||
+		role === "intern" ||
+		role === "technician"
+	) {
+		return role;
+	}
+	return "therapist";
+}
+
 /**
  * 1-Click Apply Doctor-to-Chair Weekly Shift Template (DENTE Architecture, Mandates 8e, 8k, 8n)
  */
@@ -134,10 +158,10 @@ export function applyDoctorChairWeeklyTemplate(
 				newShiftsByDate.set(`${dateIso}-morn`, {
 					id: `shift-${dateIso}-${chairId}-${doc.id}-even-morn`,
 					doctorId: doc.id,
-					doctorName: doc.shortName || doc.fullName,
-					doctorRole: doc.role,
+					doctorName: resolveStaffDisplayName(doc, `Врач ${doc.id}`),
+					doctorRole: resolveStaffRole(doc),
 					assistantId: asst ? asst.id : null,
-					assistantName: asst ? asst.shortName || asst.fullName : null,
+					assistantName: asst ? (asst.shortName || asst.fullName || "Ассистент") : null,
 					cabinetId: targetCabId,
 					chairId,
 					dateIso,
@@ -153,17 +177,18 @@ export function applyDoctorChairWeeklyTemplate(
 				});
 			} else {
 				const asstBId =
-					(otherDoc as any).preferredAssistantId || (otherDoc as any).defaultAssistantId;
+					("preferredAssistantId" in otherDoc ? otherDoc.preferredAssistantId : undefined) ||
+					("defaultAssistantId" in otherDoc ? otherDoc.defaultAssistantId : undefined);
 				const asstB = asstBId
 					? staffList.find((s) => s.id === asstBId) || null
 					: staffList.find((s) => s.role === "assistant") || null;
 				newShiftsByDate.set(`${dateIso}-eve`, {
 					id: `shift-${dateIso}-${chairId}-${otherDoc.id}-odd-eve`,
 					doctorId: otherDoc.id,
-					doctorName: otherDoc.shortName || otherDoc.fullName,
-					doctorRole: otherDoc.role,
+					doctorName: resolveStaffDisplayName(otherDoc, `Врач ${otherDoc.id}`),
+					doctorRole: resolveStaffRole(otherDoc),
 					assistantId: asstB ? asstB.id : null,
-					assistantName: asstB ? asstB.shortName || asstB.fullName : null,
+					assistantName: asstB ? (asstB.shortName || asstB.fullName || "Ассистент") : null,
 					cabinetId: targetCabId,
 					chairId,
 					dateIso,
@@ -182,10 +207,10 @@ export function applyDoctorChairWeeklyTemplate(
 			newShiftsByDate.set(dateIso, {
 				id: `shift-${dateIso}-${chairId}-${doc.id}-${template.id}`,
 				doctorId: doc.id,
-				doctorName: doc.shortName || doc.fullName,
-				doctorRole: doc.role,
+				doctorName: resolveStaffDisplayName(doc, `Врач ${doc.id}`),
+				doctorRole: resolveStaffRole(doc),
 				assistantId: asst ? asst.id : null,
-				assistantName: asst ? asst.shortName || asst.fullName : null,
+				assistantName: asst ? (asst.shortName || asst.fullName || "Ассистент") : null,
 				cabinetId: targetCabId,
 				chairId,
 				dateIso,

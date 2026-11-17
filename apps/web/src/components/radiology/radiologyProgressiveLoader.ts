@@ -87,11 +87,10 @@ export function convert16BitToRgbaImageData(
 		rgbaBytes[byteIdx + 3] = 255;
 	}
 
-	if (typeof ImageData !== "undefined") {
-		return new ImageData(rgbaBytes, width, height);
-	}
-	if (typeof globalThis !== "undefined" && typeof (globalThis as any).ImageData === "function") {
-		return new (globalThis as any).ImageData(rgbaBytes, width, height);
+	const ImgDataCtor = typeof ImageData !== "undefined" ? ImageData : null;
+
+	if (ImgDataCtor) {
+		return new ImgDataCtor(rgbaBytes, width, height);
 	}
 	throw new Error("convert16BitToRgbaImageData requires a browser DOM environment with ImageData constructor");
 }

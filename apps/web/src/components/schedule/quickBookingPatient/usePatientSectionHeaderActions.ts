@@ -1,5 +1,6 @@
 import type { Dashboard, Patient } from "@dental/shared";
 import { printBlankMedicalContract } from "../../patients/blankContractPrint";
+import type { QuickBookingAppointmentType } from "../patientReliabilityScore";
 
 export interface HeaderActionsParams {
   selectedPatient: Patient | null;
@@ -10,7 +11,7 @@ export interface HeaderActionsParams {
   newPatientBirthDate: string;
   searchQuery: string;
   setShowInlineNewPatient: (show: boolean) => void;
-  setAppointmentType: (t: any) => void;
+  setAppointmentType: (t: QuickBookingAppointmentType) => void;
   setReason: (r: string) => void;
   setComment: (c: string) => void;
   setDurationMinutes: (d: number) => void;

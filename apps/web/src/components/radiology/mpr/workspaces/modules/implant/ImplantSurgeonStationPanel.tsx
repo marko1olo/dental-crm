@@ -3,7 +3,7 @@ import { Sparkles, ChevronDown } from "lucide-react";
 import { DentalImplant } from "../../../../../icons/DentalIcons";
 import type { ClinicalImplantSpec } from "../../implant/implantCatalog";
 import type { ImplantBrandKey } from "../../../../implantSafetyEngine";
-import type { EdentulousToothFdi } from "../../../../alveolarRidgeMorphometry.js";
+import type { EdentulousToothFdi, AlveolarRidgeMeasurement } from "../../../../alveolarRidgeMorphometry.js";
 import { ImplantBrandSelector } from "./ImplantBrandSelector";
 import { ImplantDimensionsSelector } from "./ImplantDimensionsSelector";
 import { ImplantPoseControls } from "./ImplantPoseControls";
@@ -44,7 +44,7 @@ export interface ImplantSurgeonStationPanelProps {
 	readonly setIsEditing043: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly edited043Text: string;
 	readonly setEdited043Text: (text: string) => void;
-	readonly edentulousData: any;
+	readonly edentulousData: AlveolarRidgeMeasurement;
 	readonly resolvedPatient: string;
 }
 

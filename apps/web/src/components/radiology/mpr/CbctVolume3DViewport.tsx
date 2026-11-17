@@ -74,7 +74,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 	const airwayResult = useMemo(() => deriveAirwayAnalysis(volume, activePreset), [activePreset, volume]);
 
 	const { canvasRef, canvas2dRef, overlayCanvasRef, containerRef, glStateRef, canvasDims, isGpuActive, setIsGpuActive, effectiveHibernated, activeProfile, activeProfileRef } = useVolume3DContext({
-		volume, forceHibernated, setIsInteracting, yaw, pitch, zoom, pan, nervePoints, interpolatedNerve3D, implant3DWorld, active3DImplants, nerveAuditResult,
+		volume, forceHibernated, setIsInteracting, yaw, pitch, zoom, pan, nervePoints, interpolatedNerve3D, implant3DWorld, implants3DWorld, active3DImplants, nerveAuditResult,
 	});
 
 	useEffect(() => {

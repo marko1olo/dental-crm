@@ -29,7 +29,7 @@ export interface QuickBookingDoctorSummary {
 
 export interface QuickBookingChairSummary {
   id: string;
-  name: string;
+  name?: string | undefined;
   [key: string]: unknown;
 }
 

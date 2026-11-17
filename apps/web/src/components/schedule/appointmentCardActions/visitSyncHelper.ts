@@ -7,7 +7,7 @@ import { usePatientStore } from "../../../store/patientStore";
 
 export async function openVisitWithBackendSync(
 	appointment: Appointment,
-	appointmentPatient: any,
+	appointmentPatient: { id?: string | null | undefined } | null | undefined,
 	onOpenVisit?: (() => void) | null | undefined,
 ): Promise<void> {
 	const pid = appointmentPatient?.id || appointment.patientId;
@@ -49,7 +49,7 @@ export async function openVisitWithBackendSync(
 
 export async function handleStartTreatmentAndOpenVisit(
 	appointment: Appointment,
-	appointmentPatient: any,
+	appointmentPatient: { id?: string | null | undefined } | null | undefined,
 	handleQuickStatusChange: (status: Appointment["status"]) => Promise<void> | void,
 	onOpenVisit?: (() => void) | null | undefined,
 ): Promise<void> {

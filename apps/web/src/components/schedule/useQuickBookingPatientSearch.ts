@@ -22,7 +22,10 @@ export interface UseQuickBookingPatientSearchOptions {
   initialSlot?: QuickBookingSlotInfo | null | undefined;
   editingAppt?: Appointment | null | undefined;
   initialMatchedPatient?: Patient | null | undefined;
-  setDashboard?: ((dashboard: Dashboard) => void) | undefined;
+  setDashboard?:
+    | React.Dispatch<React.SetStateAction<Dashboard>>
+    | ((dashboard: Dashboard) => void)
+    | undefined;
   isOpen: boolean;
   onQuickCreatePatient?:
     | ((data: { fullName: string; phone?: string | null }) => Promise<{ id: string; fullName: string; phone?: string | null } | null | void>)

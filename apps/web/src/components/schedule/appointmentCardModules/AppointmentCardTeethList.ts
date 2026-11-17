@@ -1,16 +1,24 @@
 import type { Appointment } from "@dental/shared";
 
+export type ExtendedAppointmentTeeth = Omit<Partial<Appointment>, "toothNumber"> & {
+	teeth?: unknown;
+	toothNumber?: unknown;
+	tooth?: unknown;
+	comment?: string | null | undefined;
+};
+
 export function extractTeethList(appointment: Appointment): string[] {
 	if (!appointment) return [];
-	const explicitTeeth = (appointment as any)?.teeth;
+	const apptExt = appointment as ExtendedAppointmentTeeth;
+	const explicitTeeth = apptExt?.teeth;
 	if (Array.isArray(explicitTeeth) && explicitTeeth.length > 0) {
 		return explicitTeeth.map(String);
 	}
-	const singleTooth = (appointment as any)?.toothNumber || (appointment as any)?.tooth;
+	const singleTooth = apptExt?.toothNumber || apptExt?.tooth;
 	if (singleTooth) {
 		return [String(singleTooth)];
 	}
-	const text = `${appointment.reason || ""} ${appointment.comment || ""}`;
+	const text = `${appointment.reason || ""} ${apptExt.comment || ""}`;
 	if (!text.trim()) return [];
 	const matches = text.match(/\b([1-4][1-8]|[5-8][1-5])\b/g);
 	if (matches && matches.length > 0) {

@@ -1,5 +1,5 @@
-import type { Appointment } from "@dental/shared";
-import type { ClinicalBadgeItem } from "./types";
+import type { Appointment, AppointmentLabStatusInfo } from "@dental/shared";
+import type { ClinicalBadgeItem, PatientBadgeData } from "./types";
 import { resolveBadgesPart1 } from "./clinicalBadgeRulesPart1";
 import { resolveBadgesPart2 } from "./clinicalBadgeRulesPart2";
 import { resolveBadgesPart3 } from "./clinicalBadgeRulesPart3";
@@ -9,12 +9,10 @@ import { resolveBadgesPart3 } from "./clinicalBadgeRulesPart3";
  */
 export function resolveAppointmentClinicalBadges(
 	appointment?: Appointment | null,
-	// biome-ignore lint/suspicious/noExplicitAny: patient payload
-	patient?: any,
+	patient?: PatientBadgeData | null,
 	balance?: number | null,
 	allergyAlert?: string | null,
-	// biome-ignore lint/suspicious/noExplicitAny: lab order payload
-	explicitLabOrder?: any,
+	explicitLabOrder?: AppointmentLabStatusInfo | Record<string, unknown> | null,
 ): ClinicalBadgeItem[] {
 	if (!appointment) return [];
 	const part1 = resolveBadgesPart1(

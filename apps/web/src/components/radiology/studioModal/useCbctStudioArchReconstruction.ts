@@ -87,7 +87,7 @@ export function useCbctStudioArchReconstruction({
 			gamma: 1.50,
 			useSoftKnee: false,
 			airCutoffHU: -500,
-		} as any);
+		});
 		state.setPanoramicData(panoRes);
 
 		const bridge = getSharedCbctWorkerBridge();

@@ -8,8 +8,8 @@ import { showRollbackToast, showToast } from "../../GlobalToast";
 interface Props {
 	appointment: Appointment;
 	pName: string;
-	patObj?: any;
-	docObj?: any;
+	patObj?: { phone?: string | null; [key: string]: unknown } | null | undefined;
+	docObj?: { fullName?: string | null; role?: string | null; [key: string]: unknown } | null | undefined;
 	dashboard: Dashboard;
 	onCloseMenu: () => void;
 	onFreeSlotToWaitlist: (appt: Appointment) => void;
@@ -27,15 +27,17 @@ export const GridAppointmentCommunicationSubmenu: React.FC<Props> = ({
 	const handleWhatsApp = () => {
 		const text = generateAppointmentWhatsAppMessage({
 			patientName: pName,
-			doctorName: docObj?.fullName,
-			doctorSpecialty: docObj?.role,
+			doctorName: docObj?.fullName ?? undefined,
+			doctorSpecialty: docObj?.role ?? undefined,
 			appointmentStartsAt: a.startsAt,
 			clinicName: dashboard.clinicSettings?.profile?.clinicName,
 			clinicAddress: dashboard.clinicSettings?.profile?.address,
 			clinicPhone: dashboard.clinicSettings?.profile?.phone,
 			treatmentReason: a.reason,
 		});
-		openWhatsAppChat(patObj.phone!, text);
+		if (patObj?.phone) {
+			openWhatsAppChat(patObj.phone, text);
+		}
 		onCloseMenu();
 	};
 

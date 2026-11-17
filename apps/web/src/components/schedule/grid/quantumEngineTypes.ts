@@ -32,9 +32,9 @@ export interface QuantumCollisionParams {
   patientName?: string | undefined;
 }
 
-export function isMaintenanceBlock(entity: any): entity is ChairMaintenanceBlock {
+export function isMaintenanceBlock(entity: unknown): entity is ChairMaintenanceBlock {
+  if (!entity || typeof entity !== "object") return false;
   return (
-    Boolean(entity) &&
     !("status" in entity) &&
     "reason" in entity &&
     !("patientId" in entity)

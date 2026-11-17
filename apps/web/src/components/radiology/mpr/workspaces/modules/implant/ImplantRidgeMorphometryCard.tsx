@@ -1,6 +1,6 @@
 import React from "react";
 import { Activity, FileText } from "lucide-react";
-import { exportAlveolarRidgeToEmr, type EdentulousToothFdi } from "../../../../alveolarRidgeMorphometry.js";
+import { exportAlveolarRidgeToEmr, type EdentulousToothFdi, type AlveolarRidgeMeasurement } from "../../../../alveolarRidgeMorphometry.js";
 
 export interface ImplantRidgeMorphometryCardProps {
 	readonly ridgeWidths: {
@@ -15,7 +15,7 @@ export interface ImplantRidgeMorphometryCardProps {
 	readonly setIsEditing043: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly edited043Text: string;
 	readonly setEdited043Text: (text: string) => void;
-	readonly edentulousData: any;
+	readonly edentulousData: AlveolarRidgeMeasurement;
 	readonly resolvedPatient: string;
 	readonly handleExportToEmr?: (() => void) | undefined;
 }
@@ -48,7 +48,20 @@ export const ImplantRidgeMorphometryCard: React.FC<ImplantRidgeMorphometryCardPr
 					<button type="button" onClick={() => setEdentulousTooth(26)} className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${edentulousTooth === 26 ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200"}`} data-testid="cbct-ridge-tooth-26-btn">#26</button>
 					<button type="button" onClick={() => setEdentulousTooth(27)} className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${edentulousTooth === 27 ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200"}`} data-testid="cbct-ridge-tooth-27-btn">#27</button>
 					{activeCrossSection?.nearestToothFdi && activeCrossSection.nearestToothFdi !== "26" && activeCrossSection.nearestToothFdi !== "27" && (
-						<button type="button" onClick={() => { const num = Number.parseInt(activeCrossSection.nearestToothFdi!, 10); if (!Number.isNaN(num)) setEdentulousTooth(num as any); }} className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border transition-colors cursor-pointer ${edentulousTooth === Number.parseInt(activeCrossSection.nearestToothFdi!, 10) ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-zinc-800 text-cyan-300 border-cyan-500/40 hover:text-zinc-200"}`} data-testid="cbct-ridge-current-tooth-btn">#{activeCrossSection.nearestToothFdi}</button>
+						<button
+							type="button"
+							onClick={() => {
+								const fdiStr = activeCrossSection.nearestToothFdi;
+								if (fdiStr) {
+									const num = Number.parseInt(fdiStr, 10);
+									if (!Number.isNaN(num)) setEdentulousTooth(num);
+								}
+							}}
+							className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border transition-colors cursor-pointer ${edentulousTooth === Number.parseInt(activeCrossSection.nearestToothFdi, 10) ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-zinc-800 text-cyan-300 border-cyan-500/40 hover:text-zinc-200"}`}
+							data-testid="cbct-ridge-current-tooth-btn"
+						>
+							#{activeCrossSection.nearestToothFdi}
+						</button>
 					)}
 				</div>
 			</div>

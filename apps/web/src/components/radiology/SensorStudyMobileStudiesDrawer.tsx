@@ -110,7 +110,10 @@ export const SensorStudyMobileStudiesDrawer: React.FC<SensorStudyMobileStudiesDr
 						studies.map((item) => {
 							const isSelected = item.id === activeStudyId;
 							const toothBadge = item.teethFdi?.[0] ? `#${item.teethFdi[0]}` : null;
-							const itemTitle = (item as any).title || (item as any).studyDescription || "Исследование";
+							const itemTitle =
+								("title" in item && item.title) ||
+								("studyDescription" in item && item.studyDescription) ||
+								"Исследование";
 							return (
 								<div
 									key={item.id}

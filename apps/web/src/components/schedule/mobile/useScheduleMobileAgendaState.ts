@@ -62,12 +62,16 @@ export function useScheduleMobileAgendaState(props: ScheduleMobileAgendaViewProp
 
   const doctors = useMemo(() => {
     return (dashboard?.clinicSettings?.staff ?? []).filter(
-      (s: any) => s.active !== false && (s.role === "doctor" || s.specialties?.length || s.specialty)
+      (s) =>
+        s.active !== false &&
+        (s.role === "doctor" ||
+          Boolean((s as { specialties?: unknown[] }).specialties?.length) ||
+          Boolean((s as { specialty?: unknown }).specialty)),
     );
   }, [dashboard?.clinicSettings?.staff]);
 
   const chairs = useMemo(() => {
-    return (dashboard?.clinicSettings?.chairs ?? []).filter((c: any) => c.active !== false);
+    return (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active !== false);
   }, [dashboard?.clinicSettings?.chairs]);
 
   const filteredDayAppointments = useMemo(() => {

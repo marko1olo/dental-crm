@@ -19,8 +19,12 @@ export function useAppointmentDurationAndShift(
   formatTime: (iso: string) => string,
   toDateTimeLocalValue: (iso: string, timezone?: string | null) => string,
   timezone: string,
-  // biome-ignore lint/suspicious/noExplicitAny: move payload
-  onAppointmentMove?: ((appointmentId: string, updates: any) => Promise<any> | void) | undefined,
+  onAppointmentMove?:
+    | ((
+        appointmentId: string,
+        updates: Partial<Appointment> & { allowOverbooking?: boolean; [key: string]: unknown },
+      ) => Promise<boolean | void | unknown> | boolean | void)
+    | undefined,
   setSelectedMobileAppt?: React.Dispatch<React.SetStateAction<Appointment | null>> | undefined,
 ) {
   const handleAdjustAppointmentDuration = useCallback(

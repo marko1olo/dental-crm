@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard } from "@dental/shared";
 import {
   safeLocalStorageGetItem,
   safeLocalStorageSetItem,
@@ -19,8 +19,8 @@ import { buildChairDoctorAssignmentsByDate } from "./scheduleViewShifts";
 
 export interface UseScheduleRosterDataParams {
   dashboard: Dashboard | null | undefined;
-  sortedAppointments?: any[];
-  auth?: any;
+  sortedAppointments?: Appointment[] | undefined;
+  auth?: { denteClinicalMutationHeaders?: () => Record<string, string>; [key: string]: unknown } | null | undefined;
   currentDateKey: string;
 }
 

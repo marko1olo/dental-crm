@@ -12,7 +12,7 @@ export interface UseScheduleShortcutsParams {
   scheduleDateFilter: string;
   clinicToday: string;
   todayScheduleDate: () => string;
-  auth: any;
+  auth: { denteClinicalReadHeaders?: () => Record<string, string>; [key: string]: unknown } | null | undefined;
   setQuickBookingSlot: (slot: QuickBookingSlotInfo | null) => void;
   setQuickBookingOpen: (open: boolean) => void;
   showToast: (
@@ -29,9 +29,9 @@ export interface UseScheduleShortcutsParams {
   setWaitlistOpen: (open: boolean) => void;
   showCreateForm: boolean;
   setShowCreateForm: (show: boolean) => void;
-  updateNewAppointmentDraft: (key: string, val: any) => void;
+  updateNewAppointmentDraft: (key: string, val: unknown) => void;
   focusNewAppointmentEditor: () => void;
-  patientName?: (patients: any[], id: string | null | undefined) => string;
+  patientName?: ((patients: Dashboard["patients"], id: string | null | undefined) => string) | undefined;
   setUseManualSelects: (use: boolean) => void;
   setShowClipboardPanel: (show: boolean) => void;
   setShowFreedSlotsPanel: (show: boolean) => void;
@@ -265,7 +265,27 @@ export function useScheduleShortcuts({
     };
 
     const handleOpenQuickBookingEvent = (e?: Event) => {
-      let draft: any = (e as CustomEvent)?.detail;
+      let draft: {
+        doctorId?: string;
+        doctorUserId?: string;
+        doctorName?: string;
+        chairId?: string;
+        durationMinutes?: number;
+        patientId?: string;
+        patientName?: string;
+        title?: string;
+        reason?: string;
+      } | null = ((e as CustomEvent)?.detail as {
+        doctorId?: string;
+        doctorUserId?: string;
+        doctorName?: string;
+        chairId?: string;
+        durationMinutes?: number;
+        patientId?: string;
+        patientName?: string;
+        title?: string;
+        reason?: string;
+      }) ?? null;
       if (!draft && typeof window !== "undefined") {
         try {
           const raw = window.localStorage.getItem("dente_schedule_quick_booking_draft");

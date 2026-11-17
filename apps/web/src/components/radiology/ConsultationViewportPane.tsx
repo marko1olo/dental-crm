@@ -119,7 +119,7 @@ export const ConsultationViewportPane: React.FC<ConsultationViewportPaneProps> =
 
 			{/* HTML5 Diagnostic Canvas */}
 			<canvas
-				ref={canvasRef as any}
+				ref={canvasRef}
 				data-testid={`consultation-canvas-${slot}`}
 				className="w-full h-full block"
 				style={{

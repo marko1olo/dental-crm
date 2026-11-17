@@ -1,4 +1,4 @@
-import type { Dashboard, DentalSpecialty } from "@dental/shared";
+import type { Appointment, Dashboard, DentalSpecialty } from "@dental/shared";
 import type React from "react";
 import type { DayFreeSlots } from "../doctorFreeSlotsEngine";
 import type {
@@ -7,6 +7,7 @@ import type {
   QuickBookingAppointmentType,
 } from "../patientReliabilityScore";
 import type {
+  QuickBookingSlotConflictData,
   QuickBookingSlotInfo,
   QuickBookingStageService,
 } from "../QuickBookingDrawerTypes";
@@ -16,6 +17,7 @@ export type {
   AppointmentTypePreset,
   DurationPreset,
   QuickBookingAppointmentType,
+  QuickBookingSlotConflictData,
   QuickBookingSlotInfo,
   QuickBookingStageService,
 };
@@ -58,19 +60,15 @@ export interface QuickBookingServiceSectionProps {
   setAssistantUserId: (id: string | null) => void;
   chairId: string;
   setChairId: (id: string) => void;
-  // biome-ignore lint/suspicious/noExplicitAny: preserved prop signature
-  status: any;
-  // biome-ignore lint/suspicious/noExplicitAny: preserved prop signature
-  setStatus: (s: any) => void;
+  status: Appointment["status"];
+  setStatus: React.Dispatch<React.SetStateAction<Appointment["status"]>> | ((s: Appointment["status"]) => void);
   reason: string;
   setReason: (r: string) => void;
   comment: string;
   setComment: (c: string) => void;
   submitError: string | null;
-  // biome-ignore lint/suspicious/noExplicitAny: preserved prop signature
-  slotConflict: any;
-  // biome-ignore lint/suspicious/noExplicitAny: preserved prop signature
-  setSlotConflict: (c: any) => void;
+  slotConflict: QuickBookingSlotConflictData | null;
+  setSlotConflict: (c: QuickBookingSlotConflictData | null) => void;
   handleSubmitBooking: (
     e?: React.FormEvent,
     opts?: { overbookOverride?: boolean },
@@ -91,10 +89,8 @@ export interface QuickBookingServiceSectionProps {
 export interface QuickPresetChipsBarProps {
   appointmentType: QuickBookingAppointmentType;
   handleSelectAppointmentType: (type: QuickBookingAppointmentType) => void;
-  // biome-ignore lint/suspicious/noExplicitAny: preserved prop signature
-  status: any;
-  // biome-ignore lint/suspicious/noExplicitAny: preserved prop signature
-  setStatus: (s: any) => void;
+  status: Appointment["status"];
+  setStatus: React.Dispatch<React.SetStateAction<Appointment["status"]>> | ((s: Appointment["status"]) => void);
   reason: string;
   setReason: (r: string) => void;
   comment: string;

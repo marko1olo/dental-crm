@@ -1,7 +1,7 @@
 import type { Dashboard, Patient } from "@dental/shared";
 import type React from "react";
 import type { PotentialDuplicateItem } from "../patientSearchEngine";
-import type { PatientReliabilityAssessment } from "../patientReliabilityScore";
+import type { PatientReliabilityAssessment, QuickBookingAppointmentType } from "../patientReliabilityScore";
 
 export interface QuickBookingPatientSectionProps {
   dashboard?: Dashboard | undefined;
@@ -34,7 +34,7 @@ export interface QuickBookingPatientSectionProps {
   hasActivePatientVisit: boolean;
   doctorUserId: string;
   doctors: Array<{ id: string; fullName: string }>;
-  setAppointmentType: (t: any) => void;
+  setAppointmentType: (t: QuickBookingAppointmentType) => void;
   setReason: (r: string) => void;
   setComment: (c: string) => void;
   setDurationMinutes: (d: number) => void;

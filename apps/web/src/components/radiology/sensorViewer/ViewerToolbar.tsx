@@ -64,6 +64,15 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 
 	const { patientName, onClose } = props;
 
+	const activePatientName =
+		activeStudy && "patientName" in activeStudy && typeof activeStudy.patientName === "string"
+			? activeStudy.patientName
+			: patientName || "Пациент";
+	const activeModalityLabel =
+		activeStudy && "modalityLabel" in activeStudy && typeof activeStudy.modalityLabel === "string"
+			? activeStudy.modalityLabel
+			: "Прицельный снимок RVG";
+
 	if (isFullscreen) {
 		return null;
 	}
@@ -81,10 +90,10 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					</span>
 					<div className="flex flex-col min-w-0">
 						<span className="text-white font-semibold text-xs truncate">
-							{(activeStudy as any)?.patientName || patientName || "Пациент"}
+							{activePatientName}
 						</span>
 						<span className="text-[10px] text-slate-400 truncate">
-							{effectiveTooth ? `Зуб #${effectiveTooth} • ` : ""}{(activeStudy as any)?.modalityLabel || "Прицельный снимок RVG"}
+							{effectiveTooth ? `Зуб #${effectiveTooth} • ` : ""}{activeModalityLabel}
 						</span>
 					</div>
 				</div>

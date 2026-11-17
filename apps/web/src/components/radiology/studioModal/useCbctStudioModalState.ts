@@ -53,6 +53,7 @@ import {
 	classifyMischBoneQuality,
 } from "../boneDensityMischMath";
 import type { CbctToolMode } from "../CbctLeftToolDock";
+import type { MeasurementHandleDragDescriptor } from "../mpr/curvedViewport/types";
 import {
 	type StudioMode,
 	type ViewLayoutMode,
@@ -99,7 +100,7 @@ export function useCbctStudioModalState({
 	const [volume, setVolume] = useState<CbctVoxelVolume | null>(() => {
 		if (initialVolume) return initialVolume;
 		if ((isDemoShowcaseMode() || isDemoPatientId(patientId)) && typeof window !== "undefined") {
-			const win = window as unknown as { __cbctDemoVolume?: CbctVoxelVolume };
+			const win = window as typeof window & { __cbctDemoVolume?: CbctVoxelVolume };
 			if (win.__cbctDemoVolume) return win.__cbctDemoVolume;
 		}
 		return null;
@@ -164,8 +165,8 @@ export function useCbctStudioModalState({
 	const [probeMarkers, setProbeMarkers] = useState<CbctProbeMarker[]>([]);
 	const [activeProbe, setActiveProbe] = useState<(CbctProbeMarker & { hu: number; tissueName: string }) | null>(null);
 	const [selectedMeasurement, setSelectedMeasurement] = useState<CbctMeasurementRuler | CbctAngleMeasurement | CbctProbeMarker | null>(null);
-	const [hoveredMeasurementHandle, setHoveredMeasurementHandle] = useState<{ id: string; handleIndex: number } | null>(null);
-	const [draggingMeasurementHandle, setDraggingMeasurementHandle] = useState<{ id: string; handleIndex: number } | null>(null);
+	const [hoveredMeasurementHandle, setHoveredMeasurementHandle] = useState<MeasurementHandleDragDescriptor | null>(null);
+	const [draggingMeasurementHandle, setDraggingMeasurementHandle] = useState<MeasurementHandleDragDescriptor | null>(null);
 	const [transforms, setTransforms] = useState<Record<CbctViewportType, ViewportTransform>>(getDefaultViewportTransforms);
 
 	const axialBaseCanvasRef = useRef<HTMLCanvasElement | null>(null);

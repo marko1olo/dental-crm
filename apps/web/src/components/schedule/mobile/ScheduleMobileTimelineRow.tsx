@@ -115,11 +115,8 @@ export const ScheduleMobileTimelineRow: React.FC<
 	const allergyText = resolveMobileAllergyBadge(appt, pat);
 	const rawBal = pat?.balanceRub;
 	const balance =
-		rawBal !== undefined &&
-		rawBal !== null &&
-		rawBal !== "" &&
-		Number.isFinite(Number(rawBal))
-			? Number(rawBal)
+		typeof rawBal === "number" && Number.isFinite(rawBal)
+			? rawBal
 			: null;
 	const patientPhone =
 		pat?.phone ??

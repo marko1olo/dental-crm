@@ -41,11 +41,12 @@ export function drawCrossSectionWorldPass(
 	let canalCenterX = 0;
 	let canalCenterY = 0;
 
-	if (currentCanal) {
+	if (currentCanal?.center && typeof currentCanal.radiusMm === "number") {
 		canalCenterX = centerX + currentCanal.center.x / pxSpacing;
 		canalCenterY = topY + currentCanal.center.y / pxSpacing;
 		const canalRadiusPx = currentCanal.radiusMm / pxSpacing;
-		const safetyRadiusPx = (currentCanal.radiusMm + currentCanal.safetyMarginMm) / pxSpacing;
+		const safetyMarginMm = currentCanal.safetyMarginMm ?? 0;
+		const safetyRadiusPx = (currentCanal.radiusMm + safetyMarginMm) / pxSpacing;
 		const isDangerous = studioMode === "implant" && Boolean(nerveAuditResult?.isDangerous);
 		const isWarning = studioMode === "implant" && Boolean(nerveAuditResult?.isWarning);
 

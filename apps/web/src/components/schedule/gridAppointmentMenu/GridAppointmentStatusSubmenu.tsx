@@ -6,7 +6,7 @@ import { showRollbackToast } from "../../GlobalToast";
 
 interface Props {
 	appointment: Appointment;
-	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
+	onQuickStatusChange?: ((id: string, status: Appointment["status"]) => void) | undefined;
 	onCloseMenu: () => void;
 }
 
@@ -17,7 +17,7 @@ export const GridAppointmentStatusSubmenu: React.FC<Props> = ({
 }) => {
 	if (!onQuickStatusChange) return null;
 
-	const handleStatus = (newStatus: string, title: string) => {
+	const handleStatus = (newStatus: Appointment["status"], title: string) => {
 		const prevStatus = a.status;
 		onQuickStatusChange(a.id, newStatus);
 		onCloseMenu();

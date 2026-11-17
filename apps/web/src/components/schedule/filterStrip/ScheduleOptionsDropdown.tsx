@@ -82,7 +82,7 @@ export function ScheduleOptionsDropdown(props: ScheduleOptionsDropdownProps): Re
 					</button>
 				)}
 
-				<ScheduleOptionsMobileSection {...(props as any)} />
+				<ScheduleOptionsMobileSection {...props} />
 
 				<ScheduleOptionsDateSection
 					setScheduleDateFilter={setScheduleDateFilter}
@@ -110,7 +110,7 @@ export function ScheduleOptionsDropdown(props: ScheduleOptionsDropdownProps): Re
 					setIsOptionsMenuOpen={setIsOptionsMenuOpen}
 				/>
 
-				<ScheduleOptionsToolsSection {...(props as any)} />
+				<ScheduleOptionsToolsSection {...props} />
 			</div>
 		</div>
 	);

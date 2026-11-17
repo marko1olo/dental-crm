@@ -165,6 +165,7 @@ export interface CbctReportData {
 
 import {
 	type ViewportSnapshotOptions,
+	type ExportableCanvas,
 	exportCleanViewportSnapshot,
 	generateFallbackRadiologicalFrame,
 	FALLBACK_DICOM_BASE64_PNG,
@@ -239,13 +240,13 @@ export async function generateSynchronizedReportSnapshots(
 	const pixelSpacing = volume.spacingMm.x || 0.4;
 	const safeCrosshair = clampCoordinateToVolume(crosshairMm, volume);
 
-	const createSliceCanvas = (data: Uint8ClampedArray, w: number, h: number): HTMLCanvasElement => {
+	const createSliceCanvas = (data: Uint8ClampedArray, w: number, h: number): ExportableCanvas => {
 		if (typeof document === "undefined" || !document.createElement) {
 			return {
 				width: w,
 				height: h,
 				toDataURL: () => generateFallbackRadiologicalFrame(w, h),
-			} as unknown as HTMLCanvasElement;
+			};
 		}
 		const c = document.createElement("canvas");
 		c.width = Math.max(1, w);

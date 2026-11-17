@@ -104,7 +104,10 @@ export const ScheduleInspectorEmptyState: React.FC<ScheduleInspectorEmptyStatePr
             {dayAppointments.map((a) => {
               const aTime = toDateTimeLocalValue(a.startsAt, timezone).slice(11, 16);
               const patObj = a.patientId ? patientLookupMap.get(a.patientId) : undefined;
-              const pName = patObj?.fullName || (a as any).patient?.fullName || "Пациент";
+              const pName =
+                patObj?.fullName ||
+                (a as { patient?: { fullName?: string } }).patient?.fullName ||
+                "Пациент";
               const docObj = a.doctorUserId ? staffLookupMap.get(a.doctorUserId) : undefined;
               const docName = docObj?.fullName || "";
               const statusLabel = getNormalizedAppointmentStatusLabel(a.status, appointmentLabels);

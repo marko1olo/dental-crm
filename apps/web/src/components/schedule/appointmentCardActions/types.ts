@@ -5,7 +5,7 @@ export interface AppointmentCardPrimaryActionsProps {
 	displayStatus: Appointment["status"];
 	appointmentEditing?: boolean | undefined;
 	isQuickStatusUpdating: boolean;
-	appointmentPatient: any;
+	appointmentPatient: { id?: string; fullName?: string } | null | undefined;
 	appointmentPatientName: string;
 	onOpenVisit?: (() => void) | null | undefined;
 	handleQuickStatusChange: (status: Appointment["status"], noteAppend?: string) => Promise<void> | void;

@@ -127,6 +127,13 @@ export function generateFallbackRadiologicalFrame(width = 512, height = 512): st
 	return FALLBACK_DICOM_BASE64_PNG;
 }
 
+export type ExportableCanvas = HTMLCanvasElement | {
+	width: number;
+	height: number;
+	toDataURL: (type?: string) => string;
+	getContext?: ((contextId: string) => unknown) | undefined;
+};
+
 /**
  * Generates a clean clinical PNG snapshot from a viewport canvas:
  * 1. Strips out all interactive HTML UI buttons and controls.
@@ -136,7 +143,7 @@ export function generateFallbackRadiologicalFrame(width = 512, height = 512): st
  * 5. Composite dual-layer calipers (overlayCanvas) for unblurred vector measurement overlays.
  */
 export async function exportCleanViewportSnapshot(
-	canvas: HTMLCanvasElement,
+	canvas: ExportableCanvas,
 	viewportTitle: string,
 	scaleMm: number,
 	options: ViewportSnapshotOptions = {},
@@ -218,7 +225,9 @@ export async function exportCleanViewportSnapshot(
 	// 2. Draw source slice image from canvas (with LUT pixel inversion if toner saving is active)
 	try {
 		if (sourceCanvas.width > 0 && sourceCanvas.height > 0) {
-			ctx.drawImage(sourceCanvas, 0, 0, width, height);
+			if (typeof HTMLCanvasElement !== "undefined" && sourceCanvas instanceof HTMLCanvasElement) {
+				ctx.drawImage(sourceCanvas, 0, 0, width, height);
+			}
 
 			if (isInvertToner && typeof ctx.getImageData === "function" && typeof ctx.putImageData === "function") {
 				try {
@@ -402,7 +411,7 @@ export async function exportCleanViewportSnapshot(
  * Convenience helper: exports viewport canvas at high-resolution 300 DPI for clinical printing.
  */
 export async function export300DpiViewportSnapshot(
-	canvas: HTMLCanvasElement,
+	canvas: ExportableCanvas,
 	viewportTitle: string,
 	scaleMm: number,
 	options: ViewportSnapshotOptions = {},

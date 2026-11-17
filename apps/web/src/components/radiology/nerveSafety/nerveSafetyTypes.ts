@@ -35,9 +35,12 @@ export interface CrossSectionImplantPose {
 }
 
 export interface MandibularCanalCrossSection {
-	readonly center: { readonly x: number; readonly y: number };
-	readonly radiusMm: number;
-	readonly safetyMarginMm: number;
+	readonly isDetected?: boolean | undefined;
+	readonly center?: { readonly x: number; readonly y: number } | undefined;
+	readonly canalCenterMm?: { readonly x: number; readonly y: number } | undefined;
+	readonly radiusMm?: number | undefined;
+	readonly canalRadiusMm?: number | undefined;
+	readonly safetyMarginMm?: number | undefined;
 }
 
 export interface AlveolarRidgeEnvelope {

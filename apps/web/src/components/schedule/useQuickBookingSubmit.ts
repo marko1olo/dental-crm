@@ -52,7 +52,7 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
 
       if (collision.hasCollision && !isEmergency && !opts?.overbookOverride) {
         const slotStr = collision.suggestedSlot ? collision.suggestedSlot.timeDisplay || collision.suggestedSlot.label : null;
-        setSlotConflict({ message: collision.message, suggestedSlots: slotStr ? [slotStr] : [] });
+        setSlotConflict({ message: collision.message || "Конфликт времени приёма", suggestedSlots: slotStr ? [slotStr] : [] });
         return;
       }
 

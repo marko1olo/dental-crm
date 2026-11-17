@@ -38,10 +38,8 @@ export class GlContextLifecycleManager {
 	}
 
 	public simulateContextLost(canvas: HTMLCanvasElement | null, onDirect: () => void): void {
-		if (canvas && typeof canvas.dispatchEvent === "function") {
-			const evt = typeof Event !== "undefined"
-				? new Event("webglcontextlost", { cancelable: true })
-				: ({ type: "webglcontextlost", preventDefault: () => {} } as unknown as Event);
+		if (canvas && typeof canvas.dispatchEvent === "function" && typeof Event !== "undefined") {
+			const evt = new Event("webglcontextlost", { cancelable: true });
 			canvas.dispatchEvent(evt);
 		} else {
 			onDirect();
@@ -49,10 +47,8 @@ export class GlContextLifecycleManager {
 	}
 
 	public simulateContextRestored(canvas: HTMLCanvasElement | null, onDirect: () => void): void {
-		if (canvas && typeof canvas.dispatchEvent === "function") {
-			const evt = typeof Event !== "undefined"
-				? new Event("webglcontextrestored")
-				: ({ type: "webglcontextrestored" } as unknown as Event);
+		if (canvas && typeof canvas.dispatchEvent === "function" && typeof Event !== "undefined") {
+			const evt = new Event("webglcontextrestored");
 			canvas.dispatchEvent(evt);
 		} else {
 			onDirect();

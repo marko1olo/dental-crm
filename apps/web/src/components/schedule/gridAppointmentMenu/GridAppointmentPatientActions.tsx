@@ -8,7 +8,7 @@ import { showToast } from "../../GlobalToast";
 interface Props {
 	appointment: Appointment;
 	pName: string;
-	patObj?: any;
+	patObj?: { id?: string; phone?: string | null; [key: string]: unknown } | null | undefined;
 	onAppointmentClick: (appt: Appointment) => void;
 	onCloseMenu: () => void;
 }

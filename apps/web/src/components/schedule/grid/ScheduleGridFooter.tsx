@@ -2,9 +2,18 @@ import React from "react";
 import { CalendarCheck, Clock, Copy, Eye, EyeOff, PanelRight } from "lucide-react";
 import { countLabel } from "../../../lib/russianPlural";
 
+export interface ScheduleDailyTally {
+  totalAppointmentsCount: number;
+  clinicOccupancyPercent: number;
+  totalDurationMinutes: number;
+  clinicWorkdayLabel?: string | null | undefined;
+  totalRevenueRub: number;
+  [key: string]: unknown;
+}
+
 export interface ScheduleGridFooterProps {
-  dailyTally: any;
-  effectiveChairs: Array<any>;
+  dailyTally: ScheduleDailyTally;
+  effectiveChairs: Array<{ id: string; name: string; [key: string]: unknown }>;
   handleCopyWeekShiftsToNextWeek: () => void;
   showRevenue: boolean;
   handleToggleShowRevenue: () => void;

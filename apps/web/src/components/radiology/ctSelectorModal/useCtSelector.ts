@@ -16,16 +16,26 @@ import {
 	type DesktopCtDownloadItem,
 	type DesktopExternalViewerInfo,
 } from "../../../native/desktopBridge";
-import type { CtLaunchMode, CtSelectorModalProps } from "./types";
+import type { CtLaunchMode, CtRecentStudyItem, CtSelectorModalProps } from "./types";
+import type { ImagingStudy } from "@dental/shared";
 
 const BATCH_PROCESSING_CHUNK_SIZE = 50;
 
-async function getDicomImageLoader() {
+interface DicomImageLoaderLike {
+	wadouri?: {
+		fileManager?: {
+			add: (file: File | Blob) => string;
+		};
+	};
+}
+
+async function getDicomImageLoader(): Promise<DicomImageLoaderLike | null> {
 	if (typeof window === "undefined") return null;
 	try {
-		const mod = await import("@cornerstonejs/dicom-image-loader");
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic import
-		return (mod as any).default || mod;
+		const mod = (await import("@cornerstonejs/dicom-image-loader")) as {
+			default?: DicomImageLoaderLike;
+		} & DicomImageLoaderLike;
+		return mod.default || mod;
 	} catch (err) {
 		logger.warn("[CtSelectorModal] Could not load cornerstoneDICOMImageLoader:", err);
 		return null;
@@ -61,7 +71,7 @@ export function useCtSelector(props: CtSelectorModalProps) {
 	const [extractionPercent, setExtractionPercent] = useState<number | null>(null);
 
 	// Recent Patient Studies State
-	const [patientStudies, setPatientStudies] = useState<any[]>(propStudies ?? []);
+	const [patientStudies, setPatientStudies] = useState<readonly CtRecentStudyItem[]>(propStudies ?? []);
 	const [isLoadingStudies, setIsLoadingStudies] = useState<boolean>(false);
 
 	const isDesktop = isDesktopApp();
@@ -148,7 +158,8 @@ export function useCtSelector(props: CtSelectorModalProps) {
 
 	// Execute study opening according to chosen mode
 	const launchStudy = useCallback(
-		async (study: any, imageIds?: string[], filePath?: string) => {
+		async (study: unknown, imageIds?: string[], filePath?: string) => {
+			const studyRecord = study && typeof study === "object" ? (study as Record<string, unknown>) : null;
 			if (launchMode === "crm_window") {
 				if (onSelectStudy) {
 					onSelectStudy(study, "crm_window");
@@ -161,7 +172,7 @@ export function useCtSelector(props: CtSelectorModalProps) {
 				}
 				onClose();
 			} else if (launchMode === "standalone_window") {
-				const studyId = study?.id || "quick-ct";
+				const studyId = typeof studyRecord?.id === "string" ? studyRecord.id : "quick-ct";
 				const res = await openCbctPopoutWindow({
 					studyId,
 					patientId: patientId || undefined,
@@ -175,9 +186,10 @@ export function useCtSelector(props: CtSelectorModalProps) {
 					onClose();
 				}
 			} else if (launchMode === "external_app") {
+				const resolvedPath = filePath || (typeof studyRecord?.storagePath === "string" ? studyRecord.storagePath : undefined);
 				const res = await openInExternalViewer({
 					viewerId: selectedViewerId,
-					filePath: filePath || study?.storagePath,
+					filePath: resolvedPath,
 				});
 				if (res.success) {
 					showToast("КТ запущено во внешнем просмотрщике", "success");

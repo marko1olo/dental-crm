@@ -62,7 +62,10 @@ export function executeCrossSectionMouseDown(
 	const handleHit = hitTestCrossSectionHandles(pointerPx, rulers, angles, activeCrossSection, currentTransform, canvas.width);
 	if (handleHit) {
 		setDraggingMeasurementHandle({ type: handleHit.type, id: handleHit.id, handleIndex: handleHit.handleIndex, plane: "cross_section" });
-		setSelectedMeasurement({ type: handleHit.type, id: handleHit.id } as unknown as CbctMeasurementRuler);
+		const matched = handleHit.type === "ruler"
+			? rulers.find((r) => r.id === handleHit.id) ?? null
+			: angles.find((a) => a.id === handleHit.id) ?? null;
+		setSelectedMeasurement(matched);
 		return;
 	}
 	const objectHit = hitTestCrossSectionObjects(pointerPx, rulers, angles, activeCrossSection, currentTransform, canvas.width);
@@ -73,7 +76,10 @@ export function executeCrossSectionMouseDown(
 			setSelectedMeasurement(null);
 			return;
 		}
-		setSelectedMeasurement({ type: objectHit.type, id: objectHit.id } as unknown as CbctMeasurementRuler);
+		const matched = objectHit.type === "ruler"
+			? rulers.find((r) => r.id === objectHit.id) ?? null
+			: angles.find((a) => a.id === objectHit.id) ?? null;
+		setSelectedMeasurement(matched);
 		return;
 	}
 

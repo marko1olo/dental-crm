@@ -1,13 +1,13 @@
 import type { Appointment } from "@dental/shared";
-import type { ClinicalBadgeItem } from "./types";
+import type { ClinicalBadgeItem, ExtendedAppointmentBadgeData, PatientBadgeData } from "./types";
 import { isAppointmentInChair } from "../appointmentCardHelpers";
 
 export function resolveBadgesPart3(
 	appointment: Appointment,
-	patient: any,
+	patient: PatientBadgeData | null | undefined,
 ): ClinicalBadgeItem[] {
 	const badges: ClinicalBadgeItem[] = [];
-	const aAny = appointment as any;
+	const aAny = appointment as ExtendedAppointmentBadgeData;
 
 	// 14. schi-14: Pediatric
 	if (patient?.birthDate) {

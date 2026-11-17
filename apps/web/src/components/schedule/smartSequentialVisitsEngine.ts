@@ -246,7 +246,7 @@ export interface CreateSmartSequentialAppointmentParams {
   protocolKey: SmartClinicalProtocolKey;
   existingAppointments?: readonly Appointment[];
   customIntervalDays?: number;
-  onSuccess?: (createdAppointment: any) => void;
+  onSuccess?: ((createdAppointment: Appointment) => void) | undefined;
   onRollback?: (cancelledAppointmentId: string) => void;
   apiUrlPrefix?: string;
 }
@@ -257,7 +257,7 @@ export interface CreateSmartSequentialAppointmentParams {
  */
 export async function createSmartSequentialAppointment(
   params: CreateSmartSequentialAppointmentParams,
-): Promise<{ success: boolean; appointment?: any; error?: string }> {
+): Promise<{ success: boolean; appointment?: Appointment | undefined; error?: string | undefined }> {
   const {
     parentAppointment,
     protocolKey,
@@ -329,10 +329,10 @@ export async function createSmartSequentialAppointment(
       body: JSON.stringify(payload),
     });
 
-    let created: any;
+    let created: Appointment;
     if (!res.ok) {
       if (isDemoOrOffline) {
-        created = { id: `stage-${Date.now()}`, status: "planned", ...payload };
+        created = { id: `stage-${Date.now()}`, status: "planned", ...payload } as Appointment;
       } else {
         const errData = await res.json().catch(() => ({}));
         let message = errData?.message || "Не удалось запланировать следующий этап";
@@ -344,7 +344,7 @@ export async function createSmartSequentialAppointment(
       }
     } else {
       const data = await res.json();
-      created = data?.appointment || data;
+      created = (data?.appointment || data) as Appointment;
     }
 
     onSuccess?.(created);

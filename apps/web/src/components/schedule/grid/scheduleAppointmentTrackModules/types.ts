@@ -12,7 +12,7 @@ export interface ScheduleAppointmentTrackProps {
   densityMode?: ScheduleDensityMode;
   timeSlots: string[];
   gridStep: 15 | 30 | 60;
-  effectiveChairs: Array<any>;
+  effectiveChairs: Array<{ id: string; name: string; color?: string; [key: string]: unknown }>;
   dateKey: string;
   chairSlotCellMap: Map<
     string,
@@ -33,10 +33,10 @@ export interface ScheduleAppointmentTrackProps {
   ) => string;
   dashboard: Dashboard;
   handleRemoveMaintenance: (blockId: string) => void;
-  doctors: Array<any>;
-  patientLookupMap: Map<string, any>;
-  staffLookupMap: Map<string, any>;
-  collisionMap: Map<string, any>;
+  doctors: Array<{ id: string; fullName: string; [key: string]: unknown }>;
+  patientLookupMap: Map<string, unknown>;
+  staffLookupMap: Map<string, unknown>;
+  collisionMap: Map<string, unknown>;
   timezone: string;
   toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
   appointmentLabels: Record<Appointment["status"], string>;
@@ -67,10 +67,13 @@ export interface ScheduleAppointmentTrackProps {
   effectiveChairAssignments: Record<string, ChairDoctorShiftAssignment>;
   effectiveMaintenanceBlocks: ChairMaintenanceBlock[];
   onAppointmentMove?:
-    | ((appointmentId: string, updates: any) => Promise<any> | void)
+    | ((
+        appointmentId: string,
+        updates: Partial<Appointment> & Record<string, unknown>,
+      ) => Promise<unknown> | void)
     | undefined;
   onSlotClick: (slot: QuickBookingSlotInfo) => void;
-  emergencyReserveSlots: Array<any>;
+  emergencyReserveSlots: Array<Record<string, unknown>>;
 }
 
 export interface SlotCellData {
@@ -82,7 +85,7 @@ export interface SlotCellData {
 export interface AppointmentTrackController {
   effectiveDensityMode: ScheduleDensityMode;
   baseSlotHeightPx: number;
-  handleSlotDrop: (e: React.DragEvent, chair: any, hour: string) => void;
+  handleSlotDrop: (e: React.DragEvent, chair: { id: string; [key: string]: unknown }, hour: string) => void;
   canSplitShift: boolean;
   morningSlots: string[];
   eveningSlots: string[];

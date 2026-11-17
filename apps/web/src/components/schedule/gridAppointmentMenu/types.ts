@@ -3,15 +3,15 @@ import type { Appointment, Dashboard } from "@dental/shared";
 export interface GridAppointmentMenuProps {
 	appointment: Appointment;
 	pName: string;
-	patObj?: any;
-	docObj?: any;
+	patObj?: { id?: string; fullName?: string; phone?: string | null; balanceRub?: number | string | null; [key: string]: unknown } | null | undefined;
+	docObj?: { id?: string; fullName?: string; phone?: string | null; [key: string]: unknown } | null | undefined;
 	effectiveChairs: Array<{ id: string; name: string; color?: string; colorId?: string | number }>;
 	doctors: Array<{ id: string; fullName: string; specialties?: string[]; role?: string }>;
 	dashboard: Dashboard;
 	isMenuOpen: boolean;
 	onAppointmentClick: (appt: Appointment) => void;
 	onCloseMenu: () => void;
-	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
+	onQuickStatusChange?: ((id: string, status: Appointment["status"]) => void) | undefined;
 	onAdjustDuration: (appt: Appointment, deltaMinutes: number) => void;
 	onShiftLateness: (appt: Appointment, deltaMinutes: number) => void;
 	onReassignChair: (appt: Appointment, chairId: string) => void;

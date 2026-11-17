@@ -76,6 +76,12 @@ export interface StudioClosedPayload {
 	readonly durationSeconds?: number | undefined;
 }
 
+interface CbctWindowScope {
+	__cbctSharedVolume?: CbctVoxelVolume | null | undefined;
+	__cbctActiveVolume?: CbctVoxelVolume | undefined;
+	__cbctDemoVolume?: CbctVoxelVolume | undefined;
+}
+
 // In-memory cache for shared volumes between opener and popout window
 let inMemorySharedVolume: CbctVoxelVolume | null = null;
 
@@ -83,7 +89,7 @@ export function cacheActiveCbctVolume(volume: CbctVoxelVolume | null): void {
 	inMemorySharedVolume = volume;
 	if (typeof window !== "undefined") {
 		try {
-			(window as unknown as { __cbctSharedVolume?: CbctVoxelVolume | null }).__cbctSharedVolume = volume;
+			(window as typeof window & CbctWindowScope).__cbctSharedVolume = volume;
 		} catch {
 			// ignore cross-origin/sandbox quirks
 		}
@@ -93,14 +99,10 @@ export function cacheActiveCbctVolume(volume: CbctVoxelVolume | null): void {
 export function getCachedActiveCbctVolume(): CbctVoxelVolume | null {
 	if (inMemorySharedVolume) return inMemorySharedVolume;
 	if (typeof window !== "undefined") {
-		const win = window as unknown as { __cbctSharedVolume?: CbctVoxelVolume };
+		const win = window as typeof window & CbctWindowScope;
 		if (win.__cbctSharedVolume) return win.__cbctSharedVolume;
 		try {
-			const opener = window.opener as unknown as {
-				__cbctSharedVolume?: CbctVoxelVolume;
-				__cbctActiveVolume?: CbctVoxelVolume;
-				__cbctDemoVolume?: CbctVoxelVolume;
-			} | null;
+			const opener = window.opener ? (window.opener as Window & CbctWindowScope) : null;
 			if (opener?.__cbctSharedVolume) return opener.__cbctSharedVolume;
 			if (opener?.__cbctActiveVolume) return opener.__cbctActiveVolume;
 			if (opener?.__cbctDemoVolume) return opener.__cbctDemoVolume;
@@ -112,7 +114,7 @@ export function getCachedActiveCbctVolume(): CbctVoxelVolume | null {
 }
 
 // BroadcastChannel instance singleton
-const inMemorySubscribers = new Set<(message: CbctStudioSyncMessage<any>) => void>();
+const inMemorySubscribers = new Set<(message: CbctStudioSyncMessage<unknown>) => void>();
 let broadcastChannelInstance: BroadcastChannel | null = null;
 
 function getBroadcastChannel(): BroadcastChannel | null {
@@ -188,7 +190,7 @@ export function publishCbctSyncEvent<T = unknown>(
  * Returns an unsubscribe cleanup function.
  */
 export function subscribeCbctSyncEvents(
-	handler: (message: CbctStudioSyncMessage<any>) => void,
+	handler: (message: CbctStudioSyncMessage<unknown>) => void,
 ): () => void {
 	// Register for intra-process / intra-window notifications
 	inMemorySubscribers.add(handler);
@@ -201,7 +203,7 @@ export function subscribeCbctSyncEvents(
 
 	// 1. BroadcastChannel listener (inter-window / inter-tab)
 	const channel = getBroadcastChannel();
-	const onChannelMessage = (ev: MessageEvent<CbctStudioSyncMessage<any>>) => {
+	const onChannelMessage = (ev: MessageEvent<CbctStudioSyncMessage<unknown>>) => {
 		if (ev?.data && ev.data.type) {
 			handler(ev.data);
 		}
@@ -212,7 +214,7 @@ export function subscribeCbctSyncEvents(
 	const onStorageEvent = (ev: StorageEvent) => {
 		if (ev.key === CBCT_STORAGE_SYNC_KEY && ev.newValue) {
 			try {
-				const parsed = JSON.parse(ev.newValue) as CbctStudioSyncMessage<any>;
+				const parsed = JSON.parse(ev.newValue) as CbctStudioSyncMessage<unknown>;
 				if (parsed && parsed.type) {
 					handler(parsed);
 				}

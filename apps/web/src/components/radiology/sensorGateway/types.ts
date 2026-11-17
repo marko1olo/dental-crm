@@ -48,6 +48,8 @@ export interface UniversalSensorModel {
 	readonly recommendedHotFolder: string;
 }
 
+export type DentalSensorModel = UniversalSensorModel;
+
 export interface SensorVendorProfile {
 	readonly brand: SensorBrandId;
 	readonly name: string;

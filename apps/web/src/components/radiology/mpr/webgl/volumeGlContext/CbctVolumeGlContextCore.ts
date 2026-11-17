@@ -51,8 +51,8 @@ export class CbctVolumeGlContext extends CbctVolumeGlContextRenderOps {
 		if (this.gl) {
 			this.disposeGlResources();
 			const loseCtx = this.gl.getExtension ? this.gl.getExtension("WEBGL_lose_context") : null;
-			if (loseCtx && typeof (loseCtx as unknown as { loseContext?: () => void }).loseContext === "function") {
-				(loseCtx as unknown as { loseContext: () => void }).loseContext();
+			if (loseCtx && "loseContext" in loseCtx && typeof loseCtx.loseContext === "function") {
+				loseCtx.loseContext();
 			}
 		}
 		this.cleanupListeners?.(); this.cleanupListeners = null;

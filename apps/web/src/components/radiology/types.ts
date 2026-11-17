@@ -215,6 +215,10 @@ export interface RadiologyAiFindings {
 /** Единица рентгенологического исследования */
 export interface RadiologyStudy {
 	id: string;
+	title?: string | undefined;
+	studyDescription?: string | undefined;
+	kind?: string | undefined;
+	capturedAt?: string | undefined;
 	patientId?: string;
 	patientName?: string;
 	patientBirthDate?: string;

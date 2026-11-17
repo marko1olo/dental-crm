@@ -3,6 +3,7 @@ import type {
 	AppointmentLabStatusInfo,
 } from "@dental/shared";
 import { evaluateAppointmentLabStatus } from "@dental/shared";
+import type { ExtendedAppointmentBadgeData } from "./types";
 
 /**
  * Resolves lab order status info:
@@ -12,8 +13,7 @@ import { evaluateAppointmentLabStatus } from "@dental/shared";
  */
 export function resolveAppointmentLabStatus(
 	appointment?: Appointment | null,
-	// biome-ignore lint/suspicious/noExplicitAny: lab order payload
-	explicitLabOrder?: any,
+	explicitLabOrder?: AppointmentLabStatusInfo | Record<string, unknown> | null | undefined,
 	referenceDate: Date | string = new Date(),
 ): AppointmentLabStatusInfo | null {
 	if (!appointment && !explicitLabOrder) return null;
@@ -27,8 +27,7 @@ export function resolveAppointmentLabStatus(
 		return explicitLabOrder as AppointmentLabStatusInfo;
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: polymorphic appointment structure
-	const aAny = appointment as any;
+	const aAny = appointment as ExtendedAppointmentBadgeData | null | undefined;
 	const candidate =
 		explicitLabOrder ||
 		aAny?.labOrder ||
@@ -52,7 +51,7 @@ export function resolveAppointmentLabStatus(
 			: null);
 
 	if (candidate) {
-		return evaluateAppointmentLabStatus(candidate, referenceDate);
+		return evaluateAppointmentLabStatus(candidate as Parameters<typeof evaluateAppointmentLabStatus>[0], referenceDate);
 	}
 
 	return null;

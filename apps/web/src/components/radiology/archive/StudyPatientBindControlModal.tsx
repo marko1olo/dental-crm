@@ -121,8 +121,9 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 					setSearchResults([]);
 				}
 			}
-		} catch (err: any) {
-			if (err?.name === "AbortError") return;
+		} catch (err: unknown) {
+			if (err instanceof Error && err.name === "AbortError") return;
+			if (typeof err === "object" && err !== null && "name" in err && (err as { name?: string }).name === "AbortError") return;
 			if (seq !== searchSeqRef.current) return;
 			if (isDemoShowcaseMode()) {
 				setSearchResults(

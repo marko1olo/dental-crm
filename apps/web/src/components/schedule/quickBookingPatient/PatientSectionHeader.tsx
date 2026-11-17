@@ -1,6 +1,7 @@
 import type { Dashboard, Patient } from "@dental/shared";
 import { FileText, Flame, User, UserPlus } from "lucide-react";
 import React from "react";
+import type { QuickBookingAppointmentType } from "../patientReliabilityScore";
 import { usePatientSectionHeaderActions } from "./usePatientSectionHeaderActions";
 
 export interface PatientSectionHeaderProps {
@@ -13,7 +14,7 @@ export interface PatientSectionHeaderProps {
   setNewPatientPhone: (phone: string) => void;
   newPatientBirthDate: string;
   searchQuery: string;
-  setAppointmentType: (t: any) => void;
+  setAppointmentType: (t: QuickBookingAppointmentType) => void;
   setReason: (r: string) => void;
   setComment: (c: string) => void;
   setDurationMinutes: (d: number) => void;

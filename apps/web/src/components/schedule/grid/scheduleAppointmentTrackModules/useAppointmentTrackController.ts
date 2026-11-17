@@ -43,7 +43,7 @@ export function useAppointmentTrackController(
   const inFlightDropRef = useRef(false);
 
   // Slot drop helper for Drag-and-Drop & Waitlist items
-  const handleSlotDrop = (e: React.DragEvent, chair: any, hour: string) => {
+  const handleSlotDrop = (e: React.DragEvent, chair: { id: string; [key: string]: unknown }, hour: string) => {
     if (inFlightDropRef.current) return;
     try {
       dragGhostManager.endDrag();

@@ -20,7 +20,10 @@ export function useScheduleGridController(props: ScheduleGridProps) {
     onQuickStatusChange,
   } = props;
 
-  const patientName = propPatientName || propGetPatientName || ((_p: any, _id: string | null) => "Пациент");
+  const patientName =
+    propPatientName ||
+    propGetPatientName ||
+    ((_p: Dashboard["patients"] | unknown, _id: string | null) => "Пациент");
   const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
   const duty = useScheduleChairDuty({

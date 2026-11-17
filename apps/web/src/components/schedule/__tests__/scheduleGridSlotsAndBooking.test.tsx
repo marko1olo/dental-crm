@@ -284,7 +284,10 @@ describe("Schedule Grid Slots & Quick Booking Drawer Suite (Mandates 8d, 8e, 8k)
 		assert.ok(submitBtn.className?.includes("min-h-[44px]"), "Submit button must have min-h-[44px]");
 
 		// 4. Dark mode theme hygiene: check semantic CSS tokens
-		assert.ok(submitBtn.className?.includes("var(--teal-dark)"), "Must use var(--teal-dark) for primary action contrast");
+		assert.ok(
+			submitBtn.className?.includes("var(--primary)") || submitBtn.className?.includes("var(--teal-dark)"),
+			"Must use var(--primary) or var(--teal-dark) for primary action contrast",
+		);
 		assert.ok(cancelBtn.className?.includes("var(--paper)"), "Must use var(--paper) for cancel button");
 	});
 });

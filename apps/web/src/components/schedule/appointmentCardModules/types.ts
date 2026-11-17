@@ -1,9 +1,30 @@
 import type { Appointment, Dashboard, ScheduleSuggestion } from "@dental/shared";
 import type { AppointmentCardProps } from "../AppointmentCardTypes";
 
+export interface AppointmentCardVisualState {
+	appointmentDoctor?: { id?: string | undefined; fullName?: string | undefined; role?: string | undefined } | null | undefined;
+	appointmentPatient?: { id?: string | undefined; fullName?: string | undefined; phone?: string | null | undefined } | null | undefined;
+	appointmentPatientName?: string;
+	patientBalance?: number | null | undefined;
+	isCito?: boolean;
+	displayStatus?: Appointment["status"];
+	isQuickStatusUpdating?: boolean;
+	isLockedStatus?: boolean;
+	handleQuickStatusChange?: (status: Appointment["status"], noteAppend?: string) => Promise<void>;
+	handleShiftAppointmentTime?: (shiftMinutes: number) => void;
+	activeScheduleCollision?: { [key: string]: unknown; message?: string | null } | null | undefined;
+	appointmentHasOpenVisit?: boolean;
+	cardTeeth?: string[];
+	allergyAlert?: string | null | undefined;
+	somaticAlert?: string | null | undefined;
+	labReadinessAlert?: string | null | undefined;
+	appointmentChair?: Dashboard["chairs"][number] | null | undefined;
+	[key: string]: unknown;
+}
+
 export interface AppointmentCardVisualBodyProps {
 	props: AppointmentCardProps;
-	state: any;
+	state: AppointmentCardVisualState;
 	isMicroDensity: boolean;
 	isTwoLineMode: boolean;
 	appointmentSuggestions: ScheduleSuggestion[];
@@ -17,12 +38,12 @@ export interface AppointmentCardPopupsProps {
 	appointment: Appointment;
 	dashboard: Dashboard;
 	displayStatus: Appointment["status"];
-	appointmentPatient: unknown;
+	appointmentPatient: { id?: string | undefined; fullName?: string | undefined; phone?: string | null | undefined } | null | undefined;
 	appointmentPatientName: string;
 	patientBalance?: number | null | undefined;
-	appointmentDoctor: unknown;
-	appointmentAssistant: unknown;
-	appointmentChair: unknown;
+	appointmentDoctor: { id?: string | undefined; fullName?: string | undefined; role?: string | undefined } | null | undefined;
+	appointmentAssistant: { id?: string | undefined; fullName?: string | undefined } | null | undefined;
+	appointmentChair: { id?: string | undefined; name?: string | undefined } | null | undefined;
 	cardTeeth: string[];
 	allergyAlert?: string | null | undefined;
 	appointmentLabels: Record<Appointment["status"], string>;

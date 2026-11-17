@@ -33,7 +33,19 @@ export interface RadiologyModuleModalsProps {
 	tactileFilters: RadiologyTactileFilterState;
 	setTactileFilters: (f: RadiologyTactileFilterState) => void;
 	setActiveView: (view: "archive" | "hub") => void;
-	patient: (Patient & { name?: string; cardNumber?: string; medicalCardNumber?: string }) | null | undefined; patientName: string; cardNum: string; docName: string;
+	patient?: {
+		readonly id?: string | null | undefined;
+		readonly fullName?: string | null | undefined;
+		readonly birthDate?: string | null | undefined;
+		readonly gender?: string | null | undefined;
+		readonly phone?: string | null | undefined;
+		readonly cardNumber?: string | null | undefined;
+		readonly medicalCardNumber?: string | null | undefined;
+		readonly name?: string | undefined;
+	} | null | undefined;
+	patientName: string;
+	cardNum: string;
+	docName: string;
 	doctorSpecialty?: string | null | undefined; clinicName?: string | null | undefined;
 	activeToothFdi?: string | number | null | undefined;
 	selectedStudyForStudio: ImagingStudy | null; setSelectedStudyForStudio: (s: ImagingStudy | null) => void;

@@ -278,8 +278,18 @@ export class SliceDispatchEngine {
 		};
 
 		if (existingPromise) {
-			setupPendingAndPost(existingPromise.resolve, existingPromise.reject);
-			return Promise.resolve(undefined as unknown as MprSliceExtractionResult);
+			return new Promise<MprSliceExtractionResult>((resolve, reject) => {
+				setupPendingAndPost(
+					(val) => {
+						existingPromise.resolve(val);
+						resolve(val);
+					},
+					(err) => {
+						existingPromise.reject(err);
+						reject(err);
+					},
+				);
+			});
 		}
 
 		return new Promise<MprSliceExtractionResult>((resolve, reject) => {
@@ -384,9 +394,19 @@ export class SliceDispatchEngine {
 		};
 
 		if (existingPromise) {
-			setupPendingAndPost(existingPromise.resolve, existingPromise.reject);
-			return Promise.resolve(
-				undefined as unknown as Record<MprPlane, MprSliceExtractionResult>,
+			return new Promise<Record<MprPlane, MprSliceExtractionResult>>(
+				(resolve, reject) => {
+					setupPendingAndPost(
+						(val) => {
+							existingPromise.resolve(val);
+							resolve(val);
+						},
+						(err) => {
+							existingPromise.reject(err);
+							reject(err);
+						},
+					);
+				},
 			);
 		}
 

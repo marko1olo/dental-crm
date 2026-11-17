@@ -139,8 +139,16 @@ export const SensorStudyViewerLayout: React.FC<SensorStudyViewerLayoutProps> = (
 			{showConsultationSplit && (
 				<div className="fixed inset-0 z-[100000] bg-[#020617] flex flex-col">
 					<RadiologyConsultationSplit
-						patientName={(activeStudy as any)?.patientName || patientName}
-						patientCardNumber={(activeStudy as any)?.medicalCardNumber || medicalCardNumber}
+						patientName={
+							(activeStudy && "patientName" in activeStudy && typeof activeStudy.patientName === "string"
+								? activeStudy.patientName
+								: patientName)
+						}
+						patientCardNumber={
+							(activeStudy && "medicalCardNumber" in activeStudy && typeof activeStudy.medicalCardNumber === "string"
+								? activeStudy.medicalCardNumber
+								: medicalCardNumber)
+						}
 						patientAge={patientAge}
 						patientGender={patientGender}
 						activeToothFdi={effectiveTooth}

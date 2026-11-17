@@ -13,11 +13,25 @@ export function resolvePatientBalance(
 	return Number.isFinite(num) ? num : null;
 }
 
+export interface PatientAlertSubject {
+	allergies?: unknown;
+	anamnesis?:
+		| {
+				allergies?: unknown;
+				chronicDiseases?: string | null | undefined;
+		  }
+		| null
+		| undefined;
+	chronicDiseases?: string | null | undefined;
+	notes?: string | null | undefined;
+	[key: string]: unknown;
+}
+
 /**
  * Extracts patient allergy alert string, respecting negative statements ("нет аллергий").
  */
 export function getPatientAllergyAlert(
-	patient?: any,
+	patient?: PatientAlertSubject | null,
 	reason?: string | null,
 ): string | null {
 	if (!patient && !reason) return null;
@@ -54,7 +68,7 @@ export function getPatientAllergyAlert(
 /**
  * Extracts patient somatic alert (chronic diseases, cardiovascular, diabetes, etc.).
  */
-export function getPatientSomaticAlert(patient?: any): string | null {
+export function getPatientSomaticAlert(patient?: PatientAlertSubject | null): string | null {
 	if (!patient) return null;
 	const chronic = patient?.anamnesis?.chronicDiseases || patient?.chronicDiseases;
 	if (chronic && typeof chronic === "string" && chronic.trim()) {

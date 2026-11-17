@@ -2,8 +2,7 @@
  * realDicomJpegDecoder.ts — Декодирование JPEG Lossless (1.2.840.10008.1.2.4.70) (Мандат 8b).
  */
 
-import * as jpegPkg from "jpeg-lossless-decoder-js";
-const JpegDecoder: any = (jpegPkg as any).Decoder || (jpegPkg as any).default?.Decoder || (jpegPkg as any).default;
+import { Decoder } from "jpeg-lossless-decoder-js";
 
 export function decodeJpegLosslessSliceBuffer(buffer: ArrayBuffer): Uint16Array | null {
 	const u8 = new Uint8Array(buffer);
@@ -25,7 +24,7 @@ export function decodeJpegLosslessSliceBuffer(buffer: ArrayBuffer): Uint16Array 
 	}
 	if (eoi === -1) return null;
 	try {
-		const dec = new JpegDecoder();
+		const dec = new Decoder();
 		const subBuf = u8.subarray(soi, eoi);
 		const arrBuf = subBuf.buffer.slice(subBuf.byteOffset, subBuf.byteOffset + subBuf.byteLength);
 		const decoded = dec.decode(arrBuf, 0, arrBuf.byteLength, 2);

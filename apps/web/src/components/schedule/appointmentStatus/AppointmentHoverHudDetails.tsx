@@ -89,7 +89,9 @@ export function AppointmentHoverHudDetails({
                 clinicPhone: dashboard?.clinicSettings?.profile?.phone,
                 treatmentReason: appointment.reason,
               });
-              openWhatsAppChat(appointmentPatient.phone!, text);
+              if (appointmentPatient?.phone) {
+                openWhatsAppChat(appointmentPatient.phone, text);
+              }
             }}
             className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
             title="Открыть чат в WhatsApp"
