@@ -39,7 +39,7 @@ import {
 } from "./botSettings.js";
 import {
 	denteTelegramAppointmentCallbacksReady,
-} from "./appointmentCallbacks.js";
+} from "./telegramChatLinkHelpers.js";
 import {
 	telegramReplyMarkupFor,
 } from "./replyMarkups.js";

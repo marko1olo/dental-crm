@@ -9,7 +9,6 @@ import {
 	inMemoryDomainState,
 	hasDenteTelegramWebhookUpdate,
 	claimDenteTelegramWebhookUpdate,
-	handleDenteTelegramAppointmentCallback,
 	recordDenteTelegramWebhookEvent,
 	type DomainState,
 } from "../../services/telegram/telegramLegacyMemoryStore.js";
@@ -58,7 +57,10 @@ import {
 } from "./webhookUpdateParser.js";
 import { handleWebhookSpecializedCallbacks } from "./webhookCallbackHandlers.js";
 import { handleWebhookMediaAndEmergency } from "./webhookMediaAndEmergency.js";
-import { dispatchWebhookMessage } from "./webhookMessageDispatch.js";
+import {
+	dispatchWebhookMessage,
+	type WebhookAppointmentCallbackResult,
+} from "./webhookMessageDispatch.js";
 
 export async function sendWebhookSuggestedReply(
 	chatId: string | null,
@@ -279,14 +281,17 @@ export async function handleWebhook(
 				event: null,
 			});
 		}
-		const appointmentCallbackResult = handleDenteTelegramAppointmentCallback({
-			callbackData,
-			chatFingerprint: chatHash,
-			organizationId: runtime.organizationId,
-			clinicId: runtime.clinicId,
-			botConfigId: runtime.botConfigId,
-			state: domainState,
-		});
+		const appointmentCallbackResult: WebhookAppointmentCallbackResult = {
+			handled: false,
+			ok: false,
+			action: "appointment_not_handled",
+			appointmentId: null,
+			taskId: null,
+			eventId: null,
+			suggestedReply: null,
+			callbackAnswerText: "",
+			warnings: [],
+		};
 
 		// Приём рефералов / друзей по deep link: /start ref_...
 		if (

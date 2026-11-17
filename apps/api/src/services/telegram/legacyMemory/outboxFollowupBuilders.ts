@@ -44,7 +44,7 @@ import {
 } from "./botSettings.js";
 import {
 	activeTelegramChatLinkFor,
-} from "./appointmentCallbacks.js";
+} from "./telegramChatLinkHelpers.js";
 import {
 	buildDenteTelegramOutboxItem,
 	issuedPostVisitRecommendationExists,

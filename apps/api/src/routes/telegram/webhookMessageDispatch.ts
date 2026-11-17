@@ -4,6 +4,7 @@ import { withTenantCtx } from "../../db/rls.js";
 import { messengerInboundEvents } from "../../db/schema.js";
 import { updateAppointmentInDb } from "../../db/appointmentsQuery.js";
 import { processInboundEvents } from "../../services/messengerIngestion.js";
+import { wsBroker } from "../../services/websocketBroker.js";
 import {
 	denteTelegramWebhookResponseSchema,
 	type DenteTelegramBotSettings,
@@ -169,6 +170,13 @@ export async function dispatchWebhookMessage(params: {
 					appointmentCallbackResult.appointmentId,
 					{ status: "confirmed" },
 				);
+				wsBroker.broadcastToOrganization(runtime.organizationId, {
+					type: "APPOINTMENT_UPDATED",
+					payload: {
+						id: appointmentCallbackResult.appointmentId,
+						status: "confirmed",
+					},
+				});
 			} catch (updateError) {
 				request.log.error(
 					{

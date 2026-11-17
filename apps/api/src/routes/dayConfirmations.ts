@@ -24,11 +24,13 @@ import { requireClinicalReadContext } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { appointmentActionCodes } from "../db/communicationsSchema.js";
 import {
-	appointments, clinics, communicationOutbox, denteTelegramChatLinks, patients, users,
+	appointments, clinics, communicationOutbox, communicationTemplates, denteTelegramChatLinks, patients, users,
 } from "../db/schema.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { replyBadRequest } from "./routeErrors.js";
 import { decryptTelegramChatId } from "../utils/telegramChatRef.js";
+import { issueAppointmentActionLinks } from "../services/communications/appointmentActionLinks.js";
+import { renderTemplate } from "../services/communications/templateRenderer.js";
 
 const querySchema = z.object({
 	/** Дата в виде ГГГГ-ММ-ДД. По умолчанию — завтра: обзвон делают накануне. */
@@ -560,6 +562,19 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 			details?: string;
 		}> = [];
 
+		const activeTemplates = await db
+			.select()
+			.from(communicationTemplates)
+			.where(
+				and(
+					eq(communicationTemplates.organizationId, organizationId),
+					eq(communicationTemplates.isActive, true),
+				),
+			);
+		const templateByChannel = new Map(
+			activeTemplates.map((t) => [`${t.channel}:${t.intent}`, t]),
+		);
+
 		const outboxInserts: Array<typeof communicationOutbox.$inferInsert> = [];
 		const outboxCandidates: Array<{
 			appointmentId: string;
@@ -627,7 +642,43 @@ export async function registerDayConfirmationRoutes(app: FastifyInstance) {
 				minute: "2-digit",
 			});
 
-			const bodyText = `Здравствуйте, ${patName}! Напоминаем о вашей записи в клинику на завтра (${date}) в ${timeStr}. Ждём вас!`;
+			const actionLinks = await issueAppointmentActionLinks(
+				{
+					organizationId,
+					appointmentId: appt.id,
+					startsAt: appt.startsAt,
+				},
+				new Date(),
+			);
+
+			const values: Record<string, string> = {
+				patient: patName,
+				clinic: clinic?.name ?? "Клиника",
+				date,
+				time: timeStr,
+				confirmLink: actionLinks?.confirmLink ?? "",
+				cancelLink: actionLinks?.cancelLink ?? "",
+				rescheduleLink: actionLinks?.rescheduleLink ?? "",
+			};
+
+			const template =
+				templateByChannel.get(`${preferredChannel}:appointment_confirmation`) ??
+				templateByChannel.get(`${preferredChannel}:appointment_reminder`);
+
+			let bodyText = "";
+			if (template?.body) {
+				const rendered = renderTemplate(template.body, values);
+				if (rendered.ok) {
+					bodyText = rendered.text;
+				}
+			}
+
+			if (!bodyText) {
+				const linkSuffix = actionLinks?.confirmLink
+					? `\n\nПодтвердить в 1 клик: ${actionLinks.confirmLink}\nОтменить: ${actionLinks.cancelLink}`
+					: "";
+				bodyText = `Здравствуйте, ${patName}! Напоминаем о вашей записи в клинику на завтра (${date}) в ${timeStr}.${linkSuffix}\nЖдём вас!`;
+			}
 
 			outboxInserts.push({
 				organizationId,

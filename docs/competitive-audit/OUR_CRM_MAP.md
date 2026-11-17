@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-11-17 / WAVES 175–369 / ВОЛНА 367.9 ВЕРХОВНАЯ RED TEAM ИНКВИЗИЦИЯ ДОМЕНА 29: МОБИЛЬНАЯ ВЕРСИЯ КЛИНИКИ [DEF-MOB-01..03]: СОМАТИЧЕСКИЕ АЛЕРТЫ В USEMOBILEPATIENTSAFETYALERTS.TS, СНОС AS ANY В PATIENTSVIEW.TSX, ТИПИЗАЦИЯ В LEADSKANBANMOBILECONTAINER.TSX, РЕКУРСИВНЫЕ @IMPORT В ПАЦИЕНТСКИХ ТЕСТАХ, 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF GATE — ВСЕ ФИЧИ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-11-17 / WAVES 175–369 / ВОЛНА 367.10 ВЕРХОВНАЯ RED TEAM ИНКВИЗИЦИЯ ДОМЕНА 30: УВЕДОМЛЕНИЯ ПАЦИЕНТОВ, SMS/WHATSAPP/TELEGRAM ШЛЮЗЫ, НАПОМИНАНИЯ О ВИЗИТАХ, 2-СТОРОННИЕ КОЛБЭКИ И 1-КЛИК ССЫЛКИ [DEF-NOTIF-01..05]: ВНЕДРЕНИЕ TELEGRAM APPOINTMENT ACTIONS В WEBHOOKCALLBACKHANDLERS.TS, WEBSOCKET-БРОДКАСТ APPOINTMENT_UPDATED, NLP-РАСПОЗНАВАНИЕ ТЕКСТОВЫХ ОТВЕТОВ В MESSENGERINGESTION.TS, 1-КЛИК ССЫЛКИ И ДИНАМИЧЕСКИЕ ШАБЛОНЫ В DAYCONFIRMATIONS.TS, СНОС МУЛЯЖА LEGACYMEMORY/APPOINTMENTCALLBACKS.TS ЧЕРЕЗ GIT RM, 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF GATE — ВСЕ ФИЧИ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).

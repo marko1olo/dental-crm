@@ -10,7 +10,7 @@ export * from "./botUrlHelpers.js";
 export * from "./botSettings.js";
 export * from "./linkCodes.js";
 export * from "./messageRenderer.js";
-export * from "./appointmentCallbacks.js";
+export * from "./telegramChatLinkHelpers.js";
 export * from "./documentAndCareRequests.js";
 export * from "./replyMarkups.js";
 export * from "./scheduleAndContactRequests.js";

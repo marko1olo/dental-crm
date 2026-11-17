@@ -27,13 +27,16 @@ import type {
 } from "./telegramWebhookTypes.js";
 import {
 	extractMessageIdFromUpdate,
+	parseAppointmentActionCallbackPayload,
 	parseNpsCallbackPayload,
 	parsePostOpCallbackPayload,
 } from "./telegramCallbackParser.js";
 import {
 	recordPostOpCriticalAlertInDb,
 	resolveLatestAppointmentForPatient,
+	updateAppointmentStatusFromTelegram,
 } from "./telegramCallbackMutations.js";
+import { wsBroker } from "../../../services/websocketBroker.js";
 
 /** Обработка отзыва NPS */
 export async function handleNpsCallback(
@@ -432,4 +435,157 @@ export async function handleCloserCallback(
 	}
 
 	return null;
+}
+
+function formatUuidWithDashes(val: string): string {
+	const raw = val.replace(/-/g, "").toLowerCase();
+	if (raw.length === 32) {
+		return `${raw.slice(0, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(16, 20)}-${raw.slice(20)}`;
+	}
+	return val;
+}
+
+/**
+ * Обработка интерактивных кнопок визита пациента (подтверждение, отмена, перенос).
+ * Гарантирует мгновенный WebSocket broadcast в расписание клиники.
+ */
+export async function handleAppointmentCallback(
+	params: WebhookSpecializedCallbackParams,
+): Promise<SpecializedCallbackHandlerResult> {
+	const {
+		request,
+		runtime,
+		callbackData,
+		callbackQueryId,
+		chatHash,
+		chatId,
+		update,
+		updateKind,
+	} = params;
+
+	if (!callbackData) return null;
+	const parsed = parseAppointmentActionCallbackPayload(callbackData);
+	if (!parsed || !parsed.appointmentId) return null;
+
+	const appointmentId = formatUuidWithDashes(parsed.appointmentId);
+	let actionName = "telegram_appointment_unknown";
+	let toastText = "Действие обработано";
+	let replyText = "Ваш ответ принят.";
+	let shouldBroadcastStatus: "confirmed" | "cancelled" | null = null;
+
+	if (parsed.action === "confirm") {
+		actionName = "telegram_appointment_confirmed";
+		toastText = "✅ Запись подтверждена! Ждём вас в клинике.";
+		replyText = "✅ Вы успешно подтвердили запись на приём. Будем рады видеть вас в клинике DENTE!";
+		shouldBroadcastStatus = "confirmed";
+	} else if (parsed.action === "cancel") {
+		actionName = "telegram_appointment_cancelled";
+		toastText = "Запись отменена.";
+		replyText = "Ваша запись на приём отменена. Если захотите выбрать другое время — нажмите «Записаться на приём».";
+		shouldBroadcastStatus = "cancelled";
+	} else if (parsed.action === "reschedule") {
+		actionName = "telegram_appointment_reschedule_requested";
+		toastText = "Запрос на перенос принят.";
+		replyText = "Мы получили ваш запрос на перенос записи. Администратор свяжется с вами в ближайшее время для подбора удобного слота.";
+	} else if (parsed.action === "call_request") {
+		actionName = "telegram_appointment_call_requested";
+		toastText = "Запрос на звонок принят.";
+		replyText = "Администратор клиники свяжется с вами по указанному телефону в ближайшее время.";
+	}
+
+	if (shouldBroadcastStatus && appointmentId) {
+		try {
+			await updateAppointmentStatusFromTelegram(
+				runtime.organizationId,
+				appointmentId,
+				shouldBroadcastStatus,
+			);
+			wsBroker.broadcastToOrganization(runtime.organizationId, {
+				type: "APPOINTMENT_UPDATED",
+				payload: { id: appointmentId, status: shouldBroadcastStatus },
+			});
+		} catch (mutationErr) {
+			request.log.error(
+				{ mutationErr, organizationId: runtime.organizationId, appointmentId, status: shouldBroadcastStatus },
+				"Не удалось обновить статус записи по Telegram callback",
+			);
+		}
+	}
+
+	if (callbackQueryId && runtime.botToken) {
+		void answerTelegramCallbackQuery({
+			botToken: runtime.botToken,
+			callbackQueryId,
+			text: toastText,
+		}).catch(() => {});
+	}
+
+	const messageId = extractMessageIdFromUpdate(update);
+	const inlineKeyboard: Array<Array<{ text: string; callback_data: string }>> =
+		parsed.action === "confirm"
+			? [
+					[
+						{ text: "📍 Схема проезда", callback_data: "dente:location" },
+						{ text: "🏠 Главное меню", callback_data: "dente:start" },
+					],
+				]
+			: [
+					[
+						{ text: "📅 Записаться на приём", callback_data: "dente:schedule" },
+						{ text: "🏠 Главное меню", callback_data: "dente:start" },
+					],
+				];
+
+	const replyMarkup = { inline_keyboard: inlineKeyboard };
+	const activeBotToken = runtime.botToken;
+	const activeChatId = chatId;
+
+	if (messageId && activeChatId && activeBotToken) {
+		await editTelegramMessageText({
+			botToken: activeBotToken,
+			chatId: activeChatId,
+			messageId,
+			text: replyText,
+			replyMarkup,
+		}).catch(async () => {
+			await sendTelegramTextMessage({
+				botToken: activeBotToken,
+				chatId: activeChatId,
+				text: replyText,
+				replyMarkup,
+			}).catch(() => {});
+		});
+	} else if (activeChatId && activeBotToken) {
+		await sendTelegramTextMessage({
+			botToken: activeBotToken,
+			chatId: activeChatId,
+			text: replyText,
+			replyMarkup,
+		}).catch(() => {});
+	}
+
+	const event = recordDenteTelegramWebhookEvent({
+		updateId: update.update_id,
+		organizationId: runtime.organizationId,
+		botConfigId: runtime.botConfigId,
+		chatFingerprint: chatHash,
+		updateKind,
+		command: `/callback:${callbackData}`,
+		status: "processed",
+		action: actionName,
+		warnings: [],
+	});
+
+	return denteTelegramWebhookResponseSchema.parse(
+		readableTelegramPayload({
+			ok: true,
+			duplicate: false,
+			action: actionName,
+			suggestedReply: readableTelegramText(replyText),
+			suggestedReplyMarkup: readableTelegramPayload(replyMarkup),
+			suggestedPhotoUrl: null,
+			warnings: [],
+			event,
+		}),
+	);
 }

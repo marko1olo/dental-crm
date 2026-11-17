@@ -55,7 +55,7 @@ import {
 import {
 	activeTelegramChatLinkFor,
 	telegramFeatureForTemplate,
-} from "./appointmentCallbacks.js";
+} from "./telegramChatLinkHelpers.js";
 import {
 	decryptTelegramChatTransportRef,
 } from "./linkCodes.js";

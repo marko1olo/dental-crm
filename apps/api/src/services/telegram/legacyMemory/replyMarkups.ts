@@ -29,7 +29,7 @@ import {
 	buildDenteTelegramAppointmentCallbackData,
 	denteTelegramAppointmentCallbacksReady,
 	normalizeDenteTelegramAppointmentCallbackScope,
-} from "./appointmentCallbacks.js";
+} from "./telegramChatLinkHelpers.js";
 
 export function denteTelegramMainMenuRow(): Array<{
 	text: string;

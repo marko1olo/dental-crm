@@ -21,7 +21,7 @@ import {
 	persistMutableState,
 	recordAuditEvent,
 } from "./storeState.js";
-import { activeTelegramChatLinkByFingerprint } from "./appointmentCallbacks.js";
+import { activeTelegramChatLinkByFingerprint } from "./telegramChatLinkHelpers.js";
 
 const denteTelegramCareRequestTopics: Record<
 	DenteTelegramCareRequestTopic,

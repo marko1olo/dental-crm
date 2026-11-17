@@ -38,7 +38,7 @@ import {
 import {
 	activeTelegramChatLinkFor,
 	activeTelegramChatLinkByFingerprint,
-} from "./appointmentCallbacks.js";
+} from "./telegramChatLinkHelpers.js";
 
 
 const denteTelegramDocumentRequestTopics: Record<

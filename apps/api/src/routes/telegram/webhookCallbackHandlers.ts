@@ -19,6 +19,7 @@ import {
 	handlePostOpCallback,
 	handleTriageCallback,
 	handleCloserCallback,
+	handleAppointmentCallback,
 } from "./webhookModules/specializedPatientCallbacks.js";
 import {
 	handleIntercomAckCallback,
@@ -57,6 +58,7 @@ export {
 	handlePostOpCallback,
 	handleTriageCallback,
 	handleCloserCallback,
+	handleAppointmentCallback,
 } from "./webhookModules/specializedPatientCallbacks.js";
 
 export {
@@ -100,6 +102,8 @@ export async function handleWebhookSpecializedCallbacks(params: {
 			return handleTriageCallback(callbackParams);
 		case "closer":
 			return handleCloserCallback(callbackParams);
+		case "appointment":
+			return handleAppointmentCallback(callbackParams);
 		default:
 			return null;
 	}

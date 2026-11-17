@@ -42,7 +42,7 @@ import {
 	activeTelegramChatLinkByFingerprint,
 	telegramScheduleVisibleStatuses,
 	appointmentStatusLabelForTelegram,
-} from "./appointmentCallbacks.js";
+} from "./telegramChatLinkHelpers.js";
 import {
 	telegramAppointmentTimeLabel,
 } from "./messageRenderer.js";
