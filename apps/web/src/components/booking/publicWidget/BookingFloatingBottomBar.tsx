@@ -40,10 +40,10 @@ export const BookingFloatingBottomBar: React.FC<BookingFloatingBottomBarProps> =
 		>
 			<div className="dbw-floating-bar-inner">
 				<div className="dbw-floating-bar-summary min-w-0 flex-1">
-					<div className="dbw-floating-summary-service truncate text-xs font-bold text-[var(--text-main)]">
+					<div className="dbw-floating-summary-service truncate text-xs font-bold text-[var(--ink)]">
 						{selectedCategory.title}
 					</div>
-					<div className="dbw-floating-summary-meta text-[11px] text-[var(--text-muted)] truncate flex items-center gap-1.5">
+					<div className="dbw-floating-summary-meta text-[11px] text-[var(--ink-muted)] truncate flex items-center gap-1.5">
 						<span className="font-semibold text-[var(--primary)]">
 							{selectedCategory.priceLabel}
 						</span>
@@ -51,7 +51,7 @@ export const BookingFloatingBottomBar: React.FC<BookingFloatingBottomBarProps> =
 						<span>
 							{selectedSlot
 								? `${formatRussianDate(selectedDate)} в ${selectedSlot.time}`
-								: "Выберите время"}
+								: "Подбор времени / лист ожидания"}
 						</span>
 					</div>
 				</div>

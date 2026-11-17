@@ -11,6 +11,7 @@ import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { patients, portalOtpCodes } from "../../db/schema.js";
 import { hashCredential } from "../../utils/cryptoHelper.js";
+import { resolveChannelCredentials, sendThroughChannel } from "../../services/communications/channelRouter.js";
 import { RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS } from "./types.js";
 
 export const OTP_TTL_MS = 5 * 60 * 1000; // 5 минут
@@ -178,6 +179,28 @@ export class BookingVerificationEngine {
 							deliveryStatus: "sent",
 							expiresAt: new Date(now + OTP_TTL_MS),
 						});
+					}
+
+					// Real SMS provider dispatch via resolveChannelCredentials and sendThroughChannel (DEF-PB-02)
+					if (method === "sms") {
+						try {
+							const credentials = await resolveChannelCredentials(organizationId);
+							if (credentials?.sms) {
+								const recipient = cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`;
+								await sendThroughChannel(
+									{
+										channel: "sms",
+										recipientAddress: recipient,
+										subject: null,
+										body: `Код подтверждения онлайн-записи: ${code}. DENTE`,
+										idempotencyKey: `booking-otp:${challengeId}`,
+									},
+									credentials,
+								);
+							}
+						} catch {
+							// Safe fallback: provider unconfigured or dispatch error — flow continues without hanging
+						}
 					}
 				} catch {
 					// In test/offline environments, in-memory challenge remains active

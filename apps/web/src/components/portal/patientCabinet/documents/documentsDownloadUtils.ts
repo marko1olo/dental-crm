@@ -1,3 +1,5 @@
+import { printHtmlViaIframe } from "../../../documents/printHtmlViaIframe";
+
 export function downloadHtmlFile(htmlContent: string, fileName: string): void {
 	if (typeof window === "undefined" || typeof document === "undefined") {
 		return;
@@ -18,18 +20,5 @@ export function downloadHtmlFile(htmlContent: string, fileName: string): void {
 }
 
 export function openPrintWindow(htmlContent: string): void {
-	if (typeof window === "undefined") return;
-	try {
-		const printWin = window.open("", "_blank");
-		if (printWin) {
-			printWin.document.write(htmlContent);
-			printWin.document.close();
-			printWin.focus();
-			setTimeout(() => {
-				printWin.print();
-			}, 300);
-		}
-	} catch (e) {
-		console.error("Failed to open print window:", e);
-	}
+	printHtmlViaIframe(htmlContent, "portal-doc-print-iframe");
 }

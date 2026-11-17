@@ -2,21 +2,14 @@
  * perioCatalogData.ts — Единый канонический SSOT каталог пародонтологии и скрининга ВОЗ (PSR)
  * Стандарты ВОЗ / СтАР: 6 секстантов (S1..S6), шкала кодов 0..4 + *, 4 клинических протокола гигиены,
  * списание расходников пакетом (Soft Negative Stock, Мандат 8n), автономия врача (Мандат 8e).
- * Норматив размера: 280–350 строк (Sweet Spot, Мандат 8b).
+ * Норматив размера: 280–430 строк (Sweet Spot, Мандат 8b <= 500 строк).
  */
 
 import type { FurcationGrade, MobilityGrade, PerioChartSummary, PerioToothRecord, PsrSextantResult } from "@dental/shared";
 import {
-	ALL_PERIO_TEETH,
-	calculateClinicalAttachmentLevel,
-	calculatePerioIndices,
-	calculatePsrSextants,
-	createDefaultPerioTeeth,
-	formatPsrSextantsSummary,
-	isFurcationEligibleTooth,
-	PERIO_SITE_KEYS,
-	PSR_SEXTANTS,
-	rublesToKopecks,
+	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices,
+	calculatePsrSextants, createDefaultPerioTeeth, formatPsrSextantsSummary,
+	isFurcationEligibleTooth, PERIO_SITE_KEYS, PSR_SEXTANTS, rublesToKopecks,
 } from "@dental/shared";
 import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
@@ -36,13 +29,9 @@ export {
 // 1. ШКАЛА СЕКСТАНТОВ PSR / CPITN (ВОЗ / СтАР)
 export type PsrCode = 0 | 1 | 2 | 3 | 4;
 export type PsrSextantId = "S1" | "S2" | "S3" | "S4" | "S5" | "S6";
-
 export interface PsrSextantMeta {
-	readonly id: PsrSextantId;
-	readonly name: string;
-	readonly labelRu: string;
-	readonly teethRange: string;
-	readonly teeth: readonly number[];
+	readonly id: PsrSextantId; readonly name: string; readonly labelRu: string;
+	readonly teethRange: string; readonly teeth: readonly number[];
 }
 
 export const PSR_SEXTANTS_CATALOG: readonly PsrSextantMeta[] = [
@@ -53,17 +42,12 @@ export const PSR_SEXTANTS_CATALOG: readonly PsrSextantMeta[] = [
 	{ id: "S5", name: "S5", labelRu: "Нижний фронтальный", teethRange: "43–33", teeth: [43, 42, 41, 31, 32, 33] },
 	{ id: "S6", name: "S6", labelRu: "Нижний левый дистальный", teethRange: "34–37", teeth: [34, 35, 36, 37] },
 ] as const;
-
 export const PSR_SEXTANTS_CONFIG = PSR_SEXTANTS_CATALOG;
 export type PsrSextantInfo = PsrSextantMeta;
 
 export interface PsrCodeMeta {
-	readonly code: PsrCode;
-	readonly labelRu: string;
-	readonly criteriaRu: string;
-	readonly actionRu: string;
-	readonly colorHex: string;
-	readonly badgeClass: string;
+	readonly code: PsrCode; readonly labelRu: string; readonly criteriaRu: string;
+	readonly actionRu: string; readonly colorHex: string; readonly badgeClass: string;
 }
 
 export const PSR_CODES_CATALOG: Record<PsrCode, PsrCodeMeta> = {
@@ -73,7 +57,6 @@ export const PSR_CODES_CATALOG: Record<PsrCode, PsrCodeMeta> = {
 	3: { code: 3, labelRu: "Код 3: Карман 3.5–5.5 мм", criteriaRu: "Глубина кармана 3.5–5.5 мм, полоса зонда частично скрыта (локальный пародонтит)", actionRu: "Профгигиена + закрытый кюретаж / ультразвуковая полировка корней", colorHex: "#f97316", badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30" },
 	4: { code: 4, labelRu: "Код 4: Карман > 5.5 мм", criteriaRu: "Глубина кармана > 5.5 мм, полоса зонда скрыта полностью (выраженный пародонтит)", actionRu: "Комплексное лечение: скейлинг, кюретаж, шинирование подвижных зубов", colorHex: "#f43f5e", badgeClass: "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40" },
 };
-
 export const PSR_CODE_DEFINITIONS = PSR_CODES_CATALOG;
 export type PsrCodeDefinition = PsrCodeMeta;
 
@@ -81,30 +64,19 @@ export interface PerioSiteDetail {
 	probingDepthMm: number; gingivalMarginMm: number; bleedingOnProbing: boolean;
 	plaque: boolean; calculus: boolean; suppuration: boolean; calMm: number;
 }
-
 export interface DetailedPerioTooth {
 	toothNumber: number; isMissing: boolean; isImplant: boolean;
 	mobility: 0 | 1 | 2 | 3; furcation: 0 | 1 | 2 | 3;
 	distoBuccal: PerioSiteDetail; midBuccal: PerioSiteDetail; mesioBuccal: PerioSiteDetail;
 	distoLingual: PerioSiteDetail; midLingual: PerioSiteDetail; mesioLingual: PerioSiteDetail;
 }
-
 export const PSR_ASTERISK_DESCRIPTION = "Символ *: вовлечение фуркаций корней, подвижность II–III степени, рецессия десны >= 3.5 мм";
-
-export interface PsrSextantState {
-	code: PsrCode;
-	asterisk?: boolean;
-}
-
+export interface PsrSextantState { code: PsrCode; asterisk?: boolean; }
 export type PsrScreeningMap = Record<PsrSextantId, PsrSextantState>;
 
 export interface PerioScreeningSummary {
-	maxPsrCode: PsrCode;
-	hasAsterisk: boolean;
-	psrFormula: string;
-	suggestedDiagnosisRu: string;
-	icd10Code: string;
-	hygienePlanRu: string;
+	maxPsrCode: PsrCode; hasAsterisk: boolean; psrFormula: string;
+	suggestedDiagnosisRu: string; icd10Code: string; hygienePlanRu: string;
 	requiresDetailedCharting: boolean;
 }
 
@@ -133,34 +105,27 @@ export function computePsrSummary(screeningMap: PsrScreeningMap): PerioScreening
 
 // 2. ЧЕТЫРЕ КАНОНИЧЕСКИХ КЛИНИЧЕСКИХ ПРОТОКОЛА ПАРОДОНТОЛОГИИ И ГИГИЕНЫ
 export interface PerioTreatmentProtocol {
-	readonly id: string;
-	readonly titleRu: string;
-	readonly serviceCode: string;
-	readonly priceKopecks: number;
-	readonly descriptionRu: string;
-	readonly protocolTextRu: string;
+	readonly id: string; readonly titleRu: string; readonly serviceCode: string;
+	readonly priceKopecks: number; readonly descriptionRu: string; readonly protocolTextRu: string;
 	readonly consumableKind: "hygiene" | "vector" | "splinting" | "recession" | "curettage";
 	readonly consumablesListRu: readonly string[];
 }
 
-export const PERIO_EXPRESS_PRESETS: Record<string, { id: string; titleRu: string; subtitleRu: string; icd10: string; serviceCode?: string; defaultProtocolRu: string }> = {
+export const PERIO_EXPRESS_PRESETS: Record<string, { id: string; titleRu: string; subtitleRu: string; icd10: string; serviceCode?: string; code804n?: string; defaultProtocolRu: string }> = {
 	perio_norm_express: { id: "perio_norm_express", titleRu: "Норма пародонта", subtitleRu: "PSR 0 во всех секстантах, глубина <= 2 мм, BOP 0", icd10: "Z01.2", defaultProtocolRu: "Слизистая оболочка бледно-розовая, десневые сосочки плотные, патологические зубодесневые карманы не определяются, кровоточивость отсутствует. Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует, подвижности зубов нет. маргинальная десна бледно-розовая, глубина зубодесневой борозды 1-2 мм, кровоточивость отсутствует, подвижности зубов нет. Скрининг PSR: 0 во всех секстантах. Патологических карманов нет. Диагноз: Здоров (Z01.2)." },
 	gingivitis_express: { id: "gingivitis_express", titleRu: "Гингивит", subtitleRu: "PSR 1-2, карманы < 3.5 мм, диффузная кровоточивость", icd10: "K05.1", defaultProtocolRu: "Пародонт: десна отечна, гиперемирована, валикообразно утолщена, диффузная кровоточивость при зондировании (BOP+), глубина десневых бороздок 2-3 мм (ложные карманы за счет отека десны, < 3.5 мм), зубодесневое прикрепление сохранено, наддесневой зубной камень, подвижности зубов нет. Скрининг PSR: 1-2. Диагноз: Хронический катаральный гингивит (K05.1)." },
 	periodontitis_mild_express: { id: "periodontitis_mild_express", titleRu: "Пародонтит легкой степени", subtitleRu: "PSR 2-3, карманы 3.5–4.0 мм, BOP+, над- и поддесневой камень", icd10: "K05.30", defaultProtocolRu: "Пародонт: маргинальная десна отечна, умеренно гиперемирована, кровоточивость при зондировании (BOP+), пародонтальные карманы глубиной 3.5–4.0 мм без гноетечения (PSR 2-3), над- и поддесневые зубные отложения, потеря зубодесневого прикрепления CAL 1-2 мм. Патологическая подвижность зубов: 0-I ст. во фронтальном отделе. На рентгенограмме: резорбция кортикальной пластинки вершин межальвеолярных перегородок до 1/3 длины корней. Диагноз: Хронический пародонтит лёгкой степени (K05.30)." },
 	periodontitis_moderate_express: { id: "periodontitis_moderate_express", titleRu: "Пародонтит средней степени", subtitleRu: "PSR 3, карманы до 5 мм", icd10: "K05.31", defaultProtocolRu: "Пародонт: глубина пародонтальных карманов 3.5–5.0 мм (PSR 3), десна гиперемирована с цианотичным оттенком, выраженная кровоточивость при зондировании, над- и поддесневой зубной камень, рецессия десны 1-2 мм, патологическая подвижность зубов I ст. Диагноз: Хронический генерализованный пародонтит средней степени (K05.31)." },
 	periodontitis_severe_express: { id: "periodontitis_severe_express", titleRu: "Пародонтит тяжелой степени", subtitleRu: "PSR 4*, карманы >= 6 мм, гноетечение, подвижность II-III ст.", icd10: "K05.32", defaultProtocolRu: "Пародонт: десна застойно гиперемирована, цианотична, выраженная кровоточивость сосочков (BOP > 50%), глубокие пародонтальные карманы от 6 до 8 мм (PSR 4*) с серозно-гнойным экссудатом (гноетечение). Выраженная рецессия десны 2-4 мм с обнажением фуркаций (фуркационные дефекты II класса). Патологическая подвижность зубов II-III ст., веерообразное смещение резцов. На рентгенограмме: деструкция костной ткани более 1/2 длины корней. Диагноз: Хронический генерализованный пародонтит тяжёлой степени (K05.32)." },
 	recession_express: { id: "recession_express", titleRu: "Рецессия десны", subtitleRu: "K06.0, рецессия десны 2–3 мм, CAL > PD, без карманов и воспаления", icd10: "K06.0", defaultProtocolRu: "Пародонт: апикальное смещение десневого края (рецессия десны) на 2–3 мм преимущественно с вестибулярной поверхности клыков и премоляров (I–II класс по Миллеру / Cairo). Обнажение шеек зубов, гиперчувствительность к термическим раздражителям. Патологические зубодесневые карманы отсутствуют (глубина зондирования 1–2 мм), кровоточивость при зондировании отсутствует (BOP 0%), десна бледно-розовая, плотная. Потеря прикрепления (CAL) 3–5 мм за счет рецессии. Диагноз: Рецессия десны (K06.0)." },
-	pro_hygiene_express: { id: "pro_hygiene_express", titleRu: "Профгигиена полости рта", subtitleRu: "УЗ-удаление отложений + Air-Flow глицин + полировка + глубокое фторирование эмали", icd10: "Z01.2", serviceCode: "A16.07.051", defaultProtocolRu: "Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой + глубокое фторирование эмали" },
+	pro_hygiene_express: { id: "pro_hygiene_express", titleRu: "Профгигиена полости рта", subtitleRu: "УЗ-удаление отложений + Air-Flow глицин + полировка + глубокое фторирование эмали", icd10: "Z01.2", serviceCode: "A16.07.051", code804n: "A16.07.051", defaultProtocolRu: "Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой + глубокое фторирование эмали (Bifluorid 12)" },
 };
-
 export type PerioExpressPresetId = keyof typeof PERIO_EXPRESS_PRESETS;
 export type PerioExpressPreset = typeof PERIO_EXPRESS_PRESETS[PerioExpressPresetId];
 
 export function generateComprehensivePerioProtocolText(teeth: readonly PerioToothRecord[]): string {
 	const summary = calculatePerioIndices(teeth);
-	const deepCount = summary.deepPocketsCount;
-	const bop = summary.fmbsPercent;
-	return `Объективный пародонтальный статус (Медицинская карта приёма): обследовано зубов: ${teeth.filter((t) => !t.isMissing).length}. Кровоточивость десневой борозды (BOP): ${bop}%. Глубоких патологических карманов (>= 4 мм): ${deepCount}.`;
+	return `Объективный пародонтальный статус (Медицинская карта приёма): обследовано зубов: ${teeth.filter((t) => !t.isMissing).length}. Кровоточивость десневой борозды (BOP): ${summary.fmbsPercent}%. Глубоких патологических карманов (>= 4 мм): ${summary.deepPocketsCount}.`;
 }
 
 export const PERIO_TREATMENT_PROTOCOLS: readonly PerioTreatmentProtocol[] = [
@@ -171,13 +136,7 @@ export const PERIO_TREATMENT_PROTOCOLS: readonly PerioTreatmentProtocol[] = [
 ] as const;
 
 // 3. СПИСАНИЕ РАСХОДНИКОВ ПАКЕТОМ В БЭКЕ (SOFT NEGATIVE STOCK, МАНДАТ 8n)
-export interface PeriodontalConsumableItem {
-	itemId: string;
-	itemName: string;
-	quantity: number;
-	notes: string;
-}
-
+export interface PeriodontalConsumableItem { itemId: string; itemName: string; quantity: number; notes: string; }
 export const PERIODONTAL_CONSUMABLES_CATALOG: Record<"hygiene" | "vector" | "splinting" | "recession" | "curettage" | "norm", PeriodontalConsumableItem[]> = {
 	hygiene: [
 		{ itemId: "mat_airflow_powder", itemName: "Порошок для воздушно-абразивной обработки (глицин)", quantity: 1, notes: "Снятие биопленки" },
@@ -213,23 +172,26 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 	if (!items.length) return { success: true, deductedCount: 0, messageRu: "Расходные материалы не требуются (норма)" };
 	try {
 		for (const item of items) {
-			await fetch("/api/inventory/soft-overdraft-deduct", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					itemId: item.itemId,
-					itemName: item.itemName,
-					quantity: item.quantity,
-					reason: `Пародонтология: списание по протоколу (${procedureKind})`,
-					...(visitId ? { visitId } : {}),
-					allowOverdraft: true,
-				}),
-			});
+			const payload = {
+				itemId: item.itemId, itemName: item.itemName, quantity: item.quantity,
+				reason: `Пародонтология: списание по протоколу (${procedureKind})`,
+				...(visitId ? { visitId } : {}), allowOverdraft: true,
+			};
+			try {
+				await fetch("/api/warehouse/soft-overdraft-deduct", {
+					method: "POST", headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				});
+			} catch {
+				await fetch("/api/inventory/soft-overdraft-deduct", {
+					method: "POST", headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				});
+			}
 		}
 		return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (Soft Negative Stock)` };
 	} catch (err) {
 		console.warn("[PerioCatalog] Soft overdraft deduct network fallback:", err);
-		// Докторская автономия: фоллбэк локального овердрафта без блокировки приёма врача
 	}
 	return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (локальный овердрафт)` };
 }
@@ -242,6 +204,19 @@ const makePerioSite = (depth: number, bop = false, gm = 0, plq = false, calc = f
 const fillSixSites = (s: ReturnType<typeof makePerioSite>) => ({
 	distoBuccal: s, midBuccal: s, mesioBuccal: s, distoLingual: s, midLingual: s, mesioLingual: s,
 });
+
+export function normalizePerioDentition(incoming?: readonly PerioToothRecord[] | null): PerioToothRecord[] {
+	const base = createDefaultPerioTeeth(2);
+	if (!incoming || !Array.isArray(incoming) || incoming.length === 0) return applyHealthyPeriodontiumPreset(base);
+	const incomingMap = new Map<number, PerioToothRecord>();
+	for (const t of incoming) {
+		if (t && typeof t.toothNumber === "number") incomingMap.set(t.toothNumber, t);
+	}
+	return base.map((defaultTooth) => {
+		const match = incomingMap.get(defaultTooth.toothNumber);
+		return match ? { ...defaultTooth, ...match } : { ...defaultTooth, isMissing: true };
+	});
+}
 
 export function applyHealthyPeriodontiumPreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	const s = makePerioSite(2);
@@ -277,7 +252,6 @@ export function applyZeroCalculusAndPlaquePreset(teeth: readonly PerioToothRecor
 		return updated;
 	});
 }
-
 export function applyGingivitisPreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	return teeth.map((t) => {
 		if (t.isMissing) return { ...t };
@@ -285,7 +259,6 @@ export function applyGingivitisPreset(teeth: readonly PerioToothRecord[]): Perio
 		return { ...t, mobility: 0, furcation: 0, ...fillSixSites(makePerioSite(isLowerAnterior ? 3 : 2, true, 0, true, isLowerAnterior)) };
 	});
 }
-
 export function applyPeriodontitisMildPreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	return teeth.map((t) => {
 		if (t.isMissing) return { ...t };
@@ -294,7 +267,6 @@ export function applyPeriodontitisMildPreset(teeth: readonly PerioToothRecord[])
 		return { ...t, mobility: [31, 32, 41, 42].includes(t.toothNumber) ? 1 : 0, furcation: 0, ...fillSixSites(s) };
 	});
 }
-
 export function applyPeriodontitisModeratePreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	return teeth.map((t) => {
 		if (t.isMissing) return { ...t };
@@ -305,7 +277,6 @@ export function applyPeriodontitisModeratePreset(teeth: readonly PerioToothRecor
 		return { ...t, mobility: [31, 32, 41, 42].includes(num) ? 1 : 0, furcation, ...fillSixSites(s) };
 	});
 }
-
 export function applyPeriodontitisSeverePreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	return teeth.map((t) => {
 		if (t.isMissing) return { ...t };
@@ -318,7 +289,6 @@ export function applyPeriodontitisSeverePreset(teeth: readonly PerioToothRecord[
 		return { ...t, mobility, furcation, ...fillSixSites(s) };
 	});
 }
-
 export function applyGingivalRecessionPreset(teeth: readonly PerioToothRecord[]): PerioToothRecord[] {
 	return teeth.map((t) => {
 		if (t.isMissing) return { ...t };
@@ -435,19 +405,11 @@ export function dispatchPresetSideEffects(result: PresetApplyResult, onInsertToP
 			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
 				detail: {
 					services: [{
-						code: service.serviceCode || service.code,
-						name: service.name,
-						nameRu: service.name,
-						priceKopecks,
-						amountKopecks: priceKopecks,
-						quantity: 1,
-						category: service.category || "Пародонтология",
-						stageKind: "hygiene",
-						isPrimary: true,
+						code: service.serviceCode || service.code, name: service.name, nameRu: service.name,
+						priceKopecks, amountKopecks: priceKopecks, quantity: 1,
+						category: service.category || "Пародонтология", stageKind: "hygiene", isPrimary: true,
 					}],
-					toothNumber: undefined,
-					teethNumbers: [],
-					stageKind: "hygiene",
+					toothNumber: undefined, teethNumbers: [], stageKind: "hygiene",
 				},
 			}));
 		}
@@ -465,9 +427,7 @@ export function generatePerioProtocolText(teeth: readonly PerioToothRecord[]): s
 
 export function generatePsrDiaryProtocol(presetId: string, customPsrSummary?: string, customNotes?: string): string {
 	const preset = PERIO_EXPRESS_PRESETS[presetId];
-	if (preset) {
-		return preset.defaultProtocolRu;
-	}
+	if (preset) return preset.defaultProtocolRu;
 	let text = `Пародонт: обследование по 6 секстантам PSR.\n${customPsrSummary ? `Скрининг PSR (ВОЗ): ${customPsrSummary}.` : ""}\nПародонтальный статус зафиксирован.`;
 	if (customNotes?.trim()) text += `\nОсобые отметки: ${customNotes.trim()}`;
 	return text;
@@ -492,19 +452,12 @@ export function buildPeriodontalTreatmentPlanJustification(affectedTeeth: readon
 	curettageServices: Array<{ toothNumber: number; serviceCode: string; code804n?: string; name: string; priceKopecks: number; price?: number }>;
 } {
 	const prophyService = {
-		serviceCode: "A16.07.051",
-		code804n: "A16.07.051",
-		name: "Комплексная профессиональная гигиена полости рта",
-		priceKopecks: 550000,
-		price: 5500,
+		serviceCode: "A16.07.051", code804n: "A16.07.051",
+		name: "Комплексная профессиональная гигиена полости рта", priceKopecks: 550000, price: 5500,
 	};
 	const curettageServices = affectedTeeth.map((t) => ({
-		toothNumber: t.toothNumber,
-		serviceCode: "A16.07.011",
-		code804n: "A16.07.011",
-		name: `Закрытый кюретаж пародонтального кармана зуба #${t.toothNumber}`,
-		priceKopecks: 180000,
-		price: 1800,
+		toothNumber: t.toothNumber, serviceCode: "A16.07.011", code804n: "A16.07.011",
+		name: `Закрытый кюретаж пародонтального кармана зуба #${t.toothNumber}`, priceKopecks: 180000, price: 1800,
 	}));
 	const teethList = affectedTeeth.map((t) => `#${t.toothNumber}`).join(", ");
 	const planText = `План пародонтологического лечения:\n1. Комплексная профессиональная гигиена полости рта\n2. Закрытый кюретаж патологических зубодесневых карманов: ${teethList || "не требуется"}.`;
@@ -520,4 +473,3 @@ export const SITES: { key: SiteKey; label: string; short: string }[] = [
 	{ key: "mesioBuccal", label: "Медиально-вестибулярная", short: "МВ" }, { key: "distoLingual", label: "Дистально-язычная / нёбная", short: "ДЯ" },
 	{ key: "midLingual", label: "Серединно-язычная / нёбная", short: "СЯ" }, { key: "mesioLingual", label: "Медиально-язычная / нёбная", short: "МЯ" },
 ];
-

@@ -200,7 +200,7 @@ export async function fetchPatientFamilyData(
 			const adminProf = pInfo?.administrativeProfile as Record<string, unknown> | null;
 			const cardNum =
 				(adminProf?.cardNumber as string | undefined) ||
-				(pInfo?.id ? `043-${pInfo.id.slice(0, 6).toUpperCase()}` : undefined);
+				(pInfo?.id ? `К-${pInfo.id.slice(0, 6).toUpperCase()}` : undefined);
 			return {
 				id: otherId,
 				fullName: pInfo?.fullName || "Член семьи",

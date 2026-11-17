@@ -30,7 +30,7 @@ export interface BookingSpecialistStepProps {
 	selectedCategoryId: string | null;
 	onSelectCategory: (category: BookingCategoryOption) => void;
 	isSoloDoctor: boolean;
-	selectedDoctor: BookingDoctorData;
+	selectedDoctor: BookingDoctorData | null;
 	activeDoctors: BookingDoctorData[];
 	selectedDoctorId: string | null;
 	onSelectDoctorId: (id: string | null) => void;
@@ -96,7 +96,7 @@ export interface BookingSuccessConfirmationProps {
 	confirmationData: BookingConfirmationData | null;
 	selectedDate: string;
 	selectedSlot: BookingSlotItem | null;
-	selectedDoctor: BookingDoctorData;
+	selectedDoctor: BookingDoctorData | null;
 	selectedBranch: ClinicBranch;
 	patientName: string;
 	patientPhone: string;

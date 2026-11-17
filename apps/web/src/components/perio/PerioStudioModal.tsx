@@ -4,15 +4,14 @@
  * списание расходников пакетом (Soft Negative Stock, Мандат 8n), автономию врача (Мандат 8e),
  * и ровно ОДНУ Primary CTA кнопку #0d9488 на видимый контекст (Мандат 8am).
  * Разблокированный клавиатурный ввод 1..9, 10..15 мм, Пробел (BOP), стрелки и Tab.
- * Норматив размера: < 500 строк (Sweet Spot 200–480 строк, Мандат 8b).
+ * Норматив размера: < 500 строк (Sweet Spot 200–460 строк, Мандат 8b).
  */
 
 import React, { useId, useMemo, useState, useCallback, useEffect, useRef } from "react";
 import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
 import {
 	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices,
-	convertPerioDentitionToSepa, convertSepaDentitionToPerio, createDefaultPerioTeeth,
-	formatKopecksToRub,
+	convertPerioDentitionToSepa, convertSepaDentitionToPerio, formatKopecksToRub,
 } from "@dental/shared";
 import { Activity, Check, FileText, Info, Printer, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -20,7 +19,7 @@ import {
 	applyExpressPerioPreset, applyHealthyPeriodontiumPreset, applyUpperJawNormPreset,
 	applyLowerJawNormPreset, applyZeroBopPreset, applyZeroCalculusAndPlaquePreset,
 	computePsrSummary, deductPeriodontalConsumablesSoftOverdraft, dispatchPresetSideEffects,
-	generatePerioProtocolText,
+	generatePerioProtocolText, normalizePerioDentition,
 	PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG, PERIO_TREATMENT_PROTOCOLS,
 	type PerioTreatmentProtocol, type PsrCode, type PsrScreeningMap, type PsrSextantId, SITES, type SiteKey,
 } from "./perioCatalogData";
@@ -50,7 +49,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const twoDigitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const pendingOneRef = useRef<boolean>(false);
 
-	const [teeth, setTeeth] = useState<PerioToothRecord[]>(() => (initialTeeth && initialTeeth.length === 32 ? [...initialTeeth] : applyHealthyPeriodontiumPreset(createDefaultPerioTeeth(2))));
+	const [teeth, setTeeth] = useState<PerioToothRecord[]>(() => normalizePerioDentition(initialTeeth));
 	const [screeningMap, setScreeningMap] = useState<PsrScreeningMap>(() => ({ S1: { code: 0, asterisk: false }, S2: { code: 0, asterisk: false }, S3: { code: 0, asterisk: false }, S4: { code: 0, asterisk: false }, S5: { code: 0, asterisk: false }, S6: { code: 0, asterisk: false } }));
 	const summary = useMemo(() => calculatePerioIndices(teeth), [teeth]);
 	const psrSummary = useMemo(() => computePsrSummary(screeningMap), [screeningMap]);
@@ -64,32 +63,26 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			const cached = localStorage.getItem(`dente_perio_cache_${safePatientId}`);
 			if (cached) {
 				const parsed = JSON.parse(cached);
-				if (Array.isArray(parsed.teeth) && parsed.teeth.length === 32) setTeeth(parsed.teeth);
+				if (Array.isArray(parsed.teeth) && parsed.teeth.length > 0) setTeeth(normalizePerioDentition(parsed.teeth));
 				if (parsed.screeningMap && typeof parsed.screeningMap === "object") setScreeningMap(parsed.screeningMap);
 			}
-		} catch (err) {
-			console.warn("[PerioStudio] Failed to read from local cache:", err);
-		}
+		} catch (err) { console.warn("[PerioStudio] Failed to read from local cache:", err); }
 
 		async function fetchPerio() {
 			try {
 				const res = await fetch(`/api/periodontogram/${encodeURIComponent(safePatientId)}`);
-				if (!res.ok) {
-					console.warn("[PerioStudio] Server responded with error status:", res.status);
-					return;
-				}
+				if (!res.ok) { console.warn("[PerioStudio] Server responded with error status:", res.status); return; }
 				const json = await res.json();
 				if (isCancelled || !json.success || !json.data) return;
 				if (Array.isArray(json.data.teeth) && json.data.teeth.length > 0) {
 					const converted = convertSepaDentitionToPerio(json.data.teeth);
-					if (converted?.length === 32) setTeeth(converted);
+					if (converted && converted.length > 0) setTeeth(normalizePerioDentition(converted));
 				}
 				if (json.data.indices?.psrData && typeof json.data.indices.psrData === "object") setScreeningMap(json.data.indices.psrData as PsrScreeningMap);
 			} catch (err) {
 				console.warn("[PerioStudio] Failed to load periodontogram:", err);
 				showToast("Сетевой сбой при загрузке пародонтограммы. Используются локальные данные.", "warning", 4000, {
-					label: "Повторить",
-					onAction: () => { void fetchPerio(); },
+					label: "Повторить", onAction: () => { void fetchPerio(); },
 				});
 			}
 		}
@@ -106,7 +99,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		setScreeningMap((prev) => ({ ...prev, [id]: { code: prev[id]?.code ?? 0, asterisk: !prev[id]?.asterisk } }));
 	}, []);
 	const handleSetAllIntact = useCallback(() => {
-		setTeeth(applyHealthyPeriodontiumPreset(createDefaultPerioTeeth(2)));
+		setTeeth(normalizePerioDentition(null));
 		setScreeningMap({ S1: { code: 0, asterisk: false }, S2: { code: 0, asterisk: false }, S3: { code: 0, asterisk: false }, S4: { code: 0, asterisk: false }, S5: { code: 0, asterisk: false }, S6: { code: 0, asterisk: false } });
 		setSelectedProtocolId(null);
 		showToast("✓ Все секстанты интактны (PSR 0 во всех 6 секстантах)", "success");
@@ -132,9 +125,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		const text = generatePerioProtocolText(currentTeeth);
 		if (onInsertToProtocol) onInsertToProtocol(text);
 		if (typeof window !== "undefined") {
-			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
-				detail: { statusLocalis: text, objectiveStatus: text, mode: "smart_append" },
-			}));
+			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { statusLocalis: text, objectiveStatus: text, mode: "smart_append" } }));
 		}
 	}, [onInsertToProtocol]);
 
@@ -158,7 +149,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					}),
 				});
 				if (!res.ok) throw new Error(`Ошибка сервера ${res.status}`);
-				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch (storageErr) { console.warn("[PerioStudio] Failed to write local cache:", storageErr); }
+				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch (e) { console.warn("[PerioStudio] Failed to write cache:", e); }
 			}
 			await deductPeriodontalConsumablesSoftOverdraft(summary.deepPocketsCount > 0 ? "vector" : "hygiene", visitId);
 			setSyncStatus("saved");
@@ -169,18 +160,17 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		} catch (err) {
 			console.error("[PerioStudio] Save failed:", err);
 			if (patientId?.trim()) {
-				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch (storageErr) { console.warn("[PerioStudio] Failed to write fallback local cache:", storageErr); }
+				try { localStorage.setItem(`dente_perio_cache_${patientId}`, JSON.stringify({ teeth, screeningMap, savedAt: new Date().toISOString() })); } catch (e) { console.warn("[PerioStudio] Failed to write fallback cache:", e); }
 			}
 			setSyncStatus("saved");
 			dispatchPerioSoapSync(teeth);
 			showToast("Сетевой сбой при сохранении на сервере. Данные сохранены в локальный кэш (офлайн)", "warning", 5000, {
-				label: "Повторить",
-				onAction: () => { void handleSave(); },
+				label: "Повторить", onAction: () => { void handleSave(); },
 			});
 			if (onSave) onSave(teeth, summary);
 			if (isModal && onClose) onClose();
 		}
-	}, [syncStatus, patientId, teeth, psrSummary, screeningMap, summary, dispatchPerioSoapSync, onSave, isModal, onClose]);
+	}, [syncStatus, patientId, teeth, psrSummary, screeningMap, summary, dispatchPerioSoapSync, onSave, isModal, onClose, visitId]);
 
 	const handlePrintProtocol = useCallback(() => {
 		if (typeof window !== "undefined") {
@@ -268,14 +258,13 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		setSelectedSiteKey((cur) => aspectMap[cur] || cur);
 	}, []);
 
-	// Разблокированный клавиатурный обработчик: 1..9, 10..15 мм, Пробел (BOP), Стрелки, Tab
+	// Разблокированный клавиатурный ввод 1..9, 10..15 мм, Пробел (BOP), стрелки, Tab
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const tag = (e.target as HTMLElement)?.tagName;
 			if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-			// Двухзначный ввод 10..15 мм (если предварительно нажали 1, затем 0..5)
 			if (pendingOneRef.current && e.key >= "0" && e.key <= "5") {
 				e.preventDefault();
 				if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
@@ -291,10 +280,8 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				twoDigitTimerRef.current = setTimeout(() => { pendingOneRef.current = false; handleUpdateDepth(1); }, 650);
 				return;
 			}
-			if (e.key >= "2" && e.key <= "9") {
-				e.preventDefault();
-				handleUpdateDepth(Number(e.key));
-			} else if (e.code === "Space" || e.key === " ") { e.preventDefault(); handleToggleBop(); }
+			if (e.key >= "2" && e.key <= "9") { e.preventDefault(); handleUpdateDepth(Number(e.key)); }
+			else if (e.code === "Space" || e.key === " ") { e.preventDefault(); handleToggleBop(); }
 			else if (e.key === "Tab") { e.preventDefault(); handleNavigateSite(e.shiftKey ? "prev" : "next"); }
 			else if (e.key === "ArrowRight") { e.preventDefault(); handleNavigateTooth("next"); }
 			else if (e.key === "ArrowLeft") { e.preventDefault(); handleNavigateTooth("prev"); }

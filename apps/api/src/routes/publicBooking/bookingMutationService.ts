@@ -3,6 +3,7 @@ import {
 	appointments,
 	chairs,
 	patientArchiveReasonsAndBlacklists,
+	patientConsents,
 	patients,
 	users,
 } from "../../db/schema.js";
@@ -30,6 +31,7 @@ export interface BookingMutationParams {
 	utmMedium?: string | undefined;
 	idempotencyKey?: string | undefined;
 	status?: "planned" | "confirmed" | undefined;
+	hasAgreedToPrivacy?: boolean | undefined;
 }
 
 export type BookingMutationResult =
@@ -119,6 +121,7 @@ export async function executeBookingTransaction(
 	// 2. Identify and lock/create patient
 	let patientId = params.patientId;
 	let patientStatus: string | undefined;
+	const phoneDigits = normalizePhoneDigits(patientPhone);
 
 	if (patientId) {
 		const [p] = await tx
@@ -139,7 +142,6 @@ export async function executeBookingTransaction(
 	}
 
 	if (!patientId) {
-		const phoneDigits = normalizePhoneDigits(patientPhone);
 		const [existingByPhone] = await tx
 			.select({ id: patients.id, status: patients.status })
 			.from(patients)
@@ -355,6 +357,20 @@ export async function executeBookingTransaction(
 					updatedAt: new Date(),
 				})
 				.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)));
+		}
+	}
+
+	// 4b. Record patient consent under 152-FZ if explicitly granted (DEF-PB-01)
+	if (params.hasAgreedToPrivacy && patientId) {
+		try {
+			await tx.insert(patientConsents).values({
+				organizationId,
+				patientId,
+				kind: "personal_data_processing",
+				grantedAt: new Date(),
+			});
+		} catch {
+			// Non-blocking if consent already recorded for this patient
 		}
 	}
 

@@ -32,11 +32,11 @@ export function signDocumentWithPep(params: {
 	const signedAtIso = new Date(now).toISOString();
 	const documentDigest = computeDocumentDigest(params.document);
 
-	let statutoryAct: "323-ФЗ ст. 20 (ИДС)" | "ПП РФ № 736 (Договор)" | "Приказ МЗ РФ № 804н (Акт)" = "323-ФЗ ст. 20 (ИДС)";
+	let statutoryAct: "323-ФЗ ст. 20 (ИДС)" | "ПП РФ № 736 (Договор)" | "Акт оказанных медицинских услуг" = "323-ФЗ ст. 20 (ИДС)";
 	if (params.document.documentType === "contract_736") {
 		statutoryAct = "ПП РФ № 736 (Договор)";
 	} else if (params.document.documentType === "act_804n") {
-		statutoryAct = "Приказ МЗ РФ № 804н (Акт)";
+		statutoryAct = "Акт оказанных медицинских услуг";
 	}
 
 	const rawAuditTrailPayload = [

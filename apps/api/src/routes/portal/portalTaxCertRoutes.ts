@@ -2,6 +2,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
+	classifyNdflServiceCode,
+	classifyTaxDeduction804n,
 	extractTaxYearFromDate,
 	generateTaxCertificateQrSvg,
 	normalizePaymentsForTaxCertificate,
@@ -89,24 +91,18 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		};
 	}>("/tax-certificate/preview", handleTaxCertificatePreview);
 
-	server.get<{
-		Querystring: {
-			year?: string;
-			payerInn?: string;
-			payerFullName?: string;
-			relationship?: string;
-		};
-	}>("/tax-certificate/knd-1151156", handleTaxCertificatePreview);
-
-	// 12. FNS Order 824@ (КНД 1151156) Tax Deduction Certificate HTML Export
-	server.get<{
-		Querystring: {
-			year?: string;
-			payerInn?: string;
-			payerFullName?: string;
-			relationship?: string;
-		};
-	}>("/tax-certificate/html", async (request, reply) => {
+	// Канонический медицинский эндпоинт скачивания справки для налогового вычета
+	const handleTaxCertificateExport = async (
+		request: FastifyRequest<{
+			Querystring: {
+				year?: string;
+				payerInn?: string;
+				payerFullName?: string;
+				relationship?: string;
+			};
+		}>,
+		reply: FastifyReply,
+	) => {
 		const auth = extractPortalPatient(request);
 		if (!auth) {
 			reply.status(401);
@@ -144,10 +140,38 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 			reply.type("text/html; charset=utf-8");
 			return reply.send(html);
 		});
-	});
+	};
+
+	server.get<{
+		Querystring: {
+			year?: string;
+			payerInn?: string;
+			payerFullName?: string;
+			relationship?: string;
+		};
+	}>("/tax-certificate/download", handleTaxCertificateExport);
+
+	server.get<{
+		Querystring: {
+			year?: string;
+			payerInn?: string;
+			payerFullName?: string;
+			relationship?: string;
+		};
+	}>("/tax-certificate/html", handleTaxCertificateExport);
+
+	// Алиас для обратной совместимости
+	server.get<{
+		Querystring: {
+			year?: string;
+			payerInn?: string;
+			payerFullName?: string;
+			relationship?: string;
+		};
+	}>("/tax-certificate/knd-1151156", handleTaxCertificatePreview);
 
 	// 13. Clinical Extract HTML Export (Чистый клинический стандарт без советского канцелярита)
-	const handleForm043Html = async (request: FastifyRequest, reply: FastifyReply) => {
+	const handleClinicalExtractHtml = async (request: FastifyRequest, reply: FastifyReply) => {
 		const auth = extractPortalPatient(request);
 		if (!auth) {
 			reply.status(401);
@@ -155,7 +179,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		}
 
 		return withTenantCtx(auth.organizationId, async () => {
-			const html = await renderForm043Html(auth.patientId, auth.organizationId);
+			const html = await renderClinicalExtractHtml(auth.patientId, auth.organizationId);
 			if (!html) {
 				reply.status(404);
 				return { error: "PatientNotFound" };
@@ -166,8 +190,12 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 		});
 	};
 
-	server.get("/form-043/html", handleForm043Html);
-	server.get("/extract-043/html", handleForm043Html);
+	// Канонический медицинский роут
+	server.get("/clinical-extract/html", handleClinicalExtractHtml);
+	server.get("/clinical-extract/download", handleClinicalExtractHtml);
+	// Алиасы для обратной совместимости
+	server.get("/form-043/html", handleClinicalExtractHtml);
+	server.get("/extract-043/html", handleClinicalExtractHtml);
 }
 
 async function buildTaxCertificatePayload(
@@ -227,7 +255,8 @@ async function buildTaxCertificatePayload(
 		const amtKop = Math.round(amtRub * 100);
 		const isExpensive = Boolean(
 			p.taxDeductionCode === "2" ||
-			(p.note && /имплант|синус|костн|остеопластик|аугментац/i.test(p.note)),
+			classifyTaxDeduction804n(p.code804n ?? "") === "2" ||
+			classifyNdflServiceCode(p.serviceName ?? p.note ?? "", p.code804n ?? "") === "2",
 		);
 
 		const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();
@@ -368,7 +397,7 @@ async function buildTaxCertificatePayload(
 	};
 }
 
-async function renderForm043Html(patientId: string, organizationId: string) {
+async function renderClinicalExtractHtml(patientId: string, organizationId: string) {
 	const [patient] = await db
 		.select()
 		.from(patients)

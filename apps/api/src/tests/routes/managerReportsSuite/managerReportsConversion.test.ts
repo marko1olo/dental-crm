@@ -20,7 +20,7 @@ describe("отчёты руководителю: воронка приемов, 
 	let app: FastifyInstance;
 
 	before(async () => {
-		ctx = await setupReportsContext();
+		ctx = await setupReportsContext("0421");
 		app = ctx.app;
 	});
 
@@ -34,7 +34,7 @@ describe("отчёты руководителю: воронка приемов, 
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/appointments",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -54,7 +54,7 @@ describe("отчёты руководителю: воронка приемов, 
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/patient-flow",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -97,23 +97,23 @@ describe("отчёты руководителю: воронка приемов, 
 		);
 
 		const { boundaryPatient, boundaryAppointment } = await withFixtureTenant(
-			ORG_ID,
+			ctx.orgId,
 			async () => {
 				await db
 					.update(clinics)
 					.set({ timezone: FAR_ZONE })
-					.where(eq(clinics.id, CLINIC_ID));
+					.where(eq(clinics.id, ctx.clinicId));
 				const [seededPatient] = await db
 					.insert(patients)
 					.values({
-						organizationId: ORG_ID,
+						organizationId: ctx.orgId,
 						fullName: "Ночной Пациент Границевич",
 					})
 					.returning({ id: patients.id });
 				const [seededAppointment] = await db
 					.insert(appointments)
 					.values({
-						organizationId: ORG_ID,
+						organizationId: ctx.orgId,
 						patientId: seededPatient?.id ?? "",
 						status: "completed",
 						startsAt: justAfterMonthStart,
@@ -134,7 +134,7 @@ describe("отчёты руководителю: воронка приемов, 
 			const response = await app.inject({
 				method: "GET",
 				url: `/api/reports/patient-flow?from=${encodeURIComponent(from)}`,
-				headers: ORG_HEADERS,
+				headers: ctx.headers,
 			});
 			assert.equal(response.statusCode, 200, response.body);
 			const body = JSON.parse(response.body);
@@ -151,7 +151,7 @@ describe("отчёты руководителю: воронка приемов, 
 				`приём попал в предыдущий месяц ${previousMonth}: месяц снова считается в поясе сессии — ${JSON.stringify(buckets)}`,
 			);
 		} finally {
-			await withFixtureTenant(ORG_ID, async () => {
+			await withFixtureTenant(ctx.orgId, async () => {
 				await db
 					.delete(appointments)
 					.where(eq(appointments.id, boundaryAppointment?.id ?? ""));
@@ -161,7 +161,7 @@ describe("отчёты руководителю: воронка приемов, 
 				await db
 					.update(clinics)
 					.set({ timezone: "Europe/Moscow" })
-					.where(eq(clinics.id, CLINIC_ID));
+					.where(eq(clinics.id, ctx.clinicId));
 			});
 		}
 	});
@@ -197,23 +197,23 @@ describe("отчёты руководителю: воронка приемов, 
 		);
 
 		const { boundaryPatient, boundaryAppointment } = await withFixtureTenant(
-			ORG_ID,
+			ctx.orgId,
 			async () => {
 				await db
 					.update(clinics)
 					.set({ timezone: FAR_ZONE })
-					.where(eq(clinics.id, CLINIC_ID));
+					.where(eq(clinics.id, ctx.clinicId));
 				const [seededPatient] = await db
 					.insert(patients)
 					.values({
-						organizationId: ORG_ID,
+						organizationId: ctx.orgId,
 						fullName: "Панельный Пациент Границевич",
 					})
 					.returning({ id: patients.id });
 				const [seededAppointment] = await db
 					.insert(appointments)
 					.values({
-						organizationId: ORG_ID,
+						organizationId: ctx.orgId,
 						patientId: seededPatient?.id ?? "",
 						status: "completed",
 						startsAt: justAfterMonthStart,
@@ -237,7 +237,7 @@ describe("отчёты руководителю: воронка приемов, 
 			const response = await app.inject({
 				method: "GET",
 				url: `/api/reports/patient-flow?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-				headers: ORG_HEADERS,
+				headers: ctx.headers,
 			});
 			assert.equal(response.statusCode, 200, response.body);
 			const body = JSON.parse(response.body);
@@ -254,7 +254,7 @@ describe("отчёты руководителю: воронка приемов, 
 				`приём попал в предыдущий месяц ${previousMonth}: с обеими границами месяц считается в поясе сессии — ${JSON.stringify(buckets)}`,
 			);
 		} finally {
-			await withFixtureTenant(ORG_ID, async () => {
+			await withFixtureTenant(ctx.orgId, async () => {
 				await db
 					.delete(appointments)
 					.where(eq(appointments.id, boundaryAppointment?.id ?? ""));
@@ -264,7 +264,7 @@ describe("отчёты руководителю: воронка приемов, 
 				await db
 					.update(clinics)
 					.set({ timezone: "Europe/Moscow" })
-					.where(eq(clinics.id, CLINIC_ID));
+					.where(eq(clinics.id, ctx.clinicId));
 			});
 		}
 	});
@@ -275,7 +275,7 @@ describe("отчёты руководителю: воронка приемов, 
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/reminder-effect",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);

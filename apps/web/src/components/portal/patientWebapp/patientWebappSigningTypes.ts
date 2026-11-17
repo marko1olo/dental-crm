@@ -13,7 +13,7 @@ export interface PepSignatureAuditTrail {
 	readonly timestampMs: number;
 	readonly signedAtIso: string;
 	readonly legalBasis: "63-ФЗ ст. 5, ст. 6 (ПЭП)";
-	readonly statutoryActBasis: "323-ФЗ ст. 20 (ИДС)" | "ПП РФ № 736 (Договор)" | "Приказ МЗ РФ № 804н (Акт)";
+	readonly statutoryActBasis: "323-ФЗ ст. 20 (ИДС)" | "ПП РФ № 736 (Договор)" | "Акт оказанных медицинских услуг";
 	readonly signerFullName: string;
 	readonly signerPassport?: string | undefined;
 	readonly ipAddress?: string | undefined;

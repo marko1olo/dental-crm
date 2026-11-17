@@ -30,6 +30,11 @@ export interface ExecutivePaymentBreakdown {
 	readonly depositRub?: number | undefined;
 	readonly depositPercent?: number | undefined;
 	readonly totalRub: number;
+	readonly cashKopecks?: number | undefined;
+	readonly cardDmsKopecks?: number | undefined;
+	readonly sbpKopecks?: number | undefined;
+	readonly depositKopecks?: number | undefined;
+	readonly totalKopecks?: number | undefined;
 }
 
 export interface ExecutiveTopDoctorItem {

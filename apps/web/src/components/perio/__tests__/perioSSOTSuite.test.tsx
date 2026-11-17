@@ -11,6 +11,8 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import {
 	computePsrSummary,
+	deductPeriodontalConsumablesSoftOverdraft,
+	normalizePerioDentition,
 	PERIO_TREATMENT_PROTOCOLS,
 	PERIODONTAL_CONSUMABLES_CATALOG,
 	PSR_CODES_CATALOG,
@@ -227,5 +229,46 @@ describe("Канонический SSOT пародонтологии и эксп
 		assert.ok(probeHtml.includes("data-testid=\"perio-tooth-btn-16\""));
 		assert.ok(probeHtml.includes("min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px]"));
 		assert.strictEqual(probeHtml.includes("sm:min-h-[32px]"), false, "В углубленном зондировании не должно оставаться кнопок 32px");
+	});
+
+	it("12. Частичная адентия: normalizePerioDentition сохраняет 28 зубов и не затирает данные", () => {
+		// Создаем пациента с 28 зубами (удалены 18, 28, 38, 48)
+		const all32 = createDefaultPerioTeeth(2);
+		const patient28 = all32.filter((t) => ![18, 28, 38, 48].includes(t.toothNumber));
+		// Меняем на зубе 16 глубину кармана на 6 мм и BOP true
+		const tooth16 = patient28.find((t) => t.toothNumber === 16);
+		assert.ok(tooth16);
+		tooth16.distoBuccal.probingDepthMm = 6;
+		tooth16.distoBuccal.bleedingOnProbing = true;
+
+		// Нормализация должна вернуть 32 зуба, не потеряв измерения зуба 16 и пометив отсутствующие как isMissing: true
+		const normalized = normalizePerioDentition(patient28);
+		assert.strictEqual(normalized.length, 32, "Формула обязана иметь 32 слота анатомической челюсти");
+
+		const norm16 = normalized.find((t) => t.toothNumber === 16);
+		assert.ok(norm16);
+		assert.strictEqual(norm16.isMissing, false);
+		assert.strictEqual(norm16.distoBuccal.probingDepthMm, 6, "Глубина кармана 6 мм на зубе 16 не должна стираться!");
+		assert.strictEqual(norm16.distoBuccal.bleedingOnProbing, true, "BOP на зубе 16 обязан сохраниться!");
+
+		const norm18 = normalized.find((t) => t.toothNumber === 18);
+		assert.ok(norm18);
+		assert.strictEqual(norm18.isMissing, true, "Отсутствующий зуб 18 обязан быть помечен isMissing: true");
+
+		// При пустом входе или null возвращается интактный пародонт
+		const emptyNorm = normalizePerioDentition(null);
+		assert.strictEqual(emptyNorm.length, 32);
+		assert.strictEqual(emptyNorm.every((t) => !t.isMissing), true);
+	});
+
+	it("13. Soft Negative Stock: списание расходников пародонтологии возвращает успех без блокировки", async () => {
+		const res = await deductPeriodontalConsumablesSoftOverdraft("hygiene", "test-visit-123");
+		assert.strictEqual(res.success, true);
+		assert.ok(res.deductedCount > 0, "Должны быть списаны расходники гигиены");
+		assert.ok(res.messageRu.includes("Soft Negative Stock") || res.messageRu.includes("овердрафт"));
+
+		const normRes = await deductPeriodontalConsumablesSoftOverdraft("norm");
+		assert.strictEqual(normRes.success, true);
+		assert.strictEqual(normRes.deductedCount, 0);
 	});
 });

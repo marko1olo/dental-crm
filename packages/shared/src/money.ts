@@ -270,6 +270,12 @@ export function formatKopecksRu(kopecks: Kopecks): string {
 /** Алиас для обратной совместимости */
 export const moneyRub = formatKopecksRu;
 
+/** Каноническое форматирование копеек в рубли для UI (Мандат 8bm) */
+export function formatKopecksToRub(kopecks: number | null | undefined): string {
+	if (kopecks === null || kopecks === undefined || !Number.isFinite(kopecks)) return "0 ₽";
+	return formatKopecksRu(Math.round(kopecks));
+}
+
 /**
  * Форматирует рублевую сумму с копейками в стандарте РФ: "1 500,00 ₽" или "1 500,50 ₽".
  * Гарантирует точные 2 знака копеек, неразрывный пробел U+00A0 и знак рубля.

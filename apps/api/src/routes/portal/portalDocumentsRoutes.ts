@@ -16,6 +16,7 @@ import {
 } from "../../db/schema.js";
 import { verifyOtpCode } from "../treatmentPlan/pep/pepOtpService.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
+import { DEFAULT_PORTAL_CONSENTS_CATALOG } from "./portalConsentsData.js";
 import { generateSha256Hex } from "./portalUtils.js";
 import {
 	type SelectTierBody,
@@ -101,43 +102,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				(patientRow.administrativeProfile as Record<string, unknown> | null)
 					?.consentSignatures as Record<string, unknown> | undefined;
 
-			const defaultCatalog = [
-				{
-					id: "ids_treatment",
-					code: "ИДС-ТЕР-01",
-					titleRu: "Информированное добровольное согласие на терапевтическое лечение",
-					categoryRu: "Терапия",
-					statutoryBasis: "323-ФЗ ст. 20",
-					summaryTextRu:
-						"Согласие на проведение осмотра, инструментальной диагностики, анестезии и пломбирования кариозных полостей.",
-					fullTextContent:
-						"Я, пациент клиники, даю информированное добровольное согласие на виды медицинских вмешательств в соответствии с Приказом Минздрава РФ № 1051н и ст. 20 ФЗ № 323-ФЗ...",
-				},
-				{
-					id: "ids_anesthesia",
-					code: "ИДС-АНЕСТ-01",
-					titleRu: "Информированное добровольное согласие на местное обезболивание",
-					categoryRu: "Анестезия",
-					statutoryBasis: "323-ФЗ ст. 20",
-					summaryTextRu:
-						"Согласие на инфильтрационную и проводниковую анестезию современными карпульными анестетиками с оценкой рисков.",
-					fullTextContent:
-						"Я подтверждаю, что сообщил врачу достоверные сведения о наличии аллергических реакций, патологии сердечно-сосудистой системы и принимаемых препаратах...",
-				},
-				{
-					id: "pd_152",
-					code: "ПДН-152",
-					titleRu: "Согласие на обработку персональных данных",
-					categoryRu: "Персональные данные",
-					statutoryBasis: "152-ФЗ",
-					summaryTextRu:
-						"Согласие на сбор, систематизацию, хранение и обработку персональных данных и медицинской тайны в рамках медпомощи.",
-					fullTextContent:
-						"В соответствии с требованиями Федерального закона от 27.07.2006 № 152-ФЗ «О персональных данных» даю согласие клинике на обработку моих персональных данных...",
-				},
-			];
-
-			const mergedConsents = defaultCatalog.map((cat) => {
+			const mergedConsents = DEFAULT_PORTAL_CONSENTS_CATALOG.map((cat) => {
 				const foundDb = dbConsents.find((c) => c.kind === cat.id);
 				const auditRecord = profileAudit?.[cat.id] as Record<string, unknown> | undefined;
 				const isSigned = Boolean(foundDb?.grantedAt || auditRecord?.signedAtIso);
@@ -458,58 +423,80 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 					),
 				);
 
-			const planStages = planItems.map((it, idx) => {
-				const separatorIndex = (it.priceId ?? "").indexOf("::");
-				const titleRu =
-					separatorIndex >= 0
-						? it.priceId.slice(separatorIndex + 2) || "Лечебная процедура"
-						: it.priceId || "Лечебная процедура";
-				const rawPrice =
-					Number(it.price || 0) * (it.quantity || 1) - Number(it.discount || 0);
-				const costRub = Math.max(0, Math.round(rawPrice));
-				return {
-					id: it.id,
-					orderIndex: idx + 1,
-					titleRu,
-					categoryRu: "Стоматология",
-					teethFdi: it.toothNumber ? [String(it.toothNumber)] : [],
-					costRub,
-					paidRub: 0,
-					remainingRub: costRub,
-					status: "in_progress" as "in_progress" | "completed",
-					procedures: [titleRu],
-				};
-			});
+			// [DEF-PORTAL-03] Ликвидация потёмкинских наценок (* 0.8 и * 1.4).
+			// Если доктор завел реальные альтернативы в БД (ст. 20 323-ФЗ) — отдаем их честно.
+			// Если у пациента один утвержденный план — отдаем его как канонический план лечения с реальной стоимостью без фальшивых коэффициентов.
+			const hasRealAlternatives = dbPlans.some((p) => p.isAlternative || p.alternativeTier);
 
-			const totalRealCostRub = planStages.reduce((sum, s) => sum + s.costRub, 0);
+			const basicPlan = dbPlans.find((p) => p.alternativeTier === "basic");
+			const standardPlan =
+				dbPlans.find((p) => p.alternativeTier === "standard" || (!p.alternativeTier && !p.isAlternative)) ||
+				dbPlans[0];
+			const premiumPlan = dbPlans.find((p) => p.alternativeTier === "premium");
 
-			// Динамическая 3-уровневая модель формируется ИСКЛЮЧИТЕЛЬНО на основе реальных назначений пациента
+			const getPlanStages = (targetPlanId?: string) => {
+				const items = targetPlanId
+					? planItems.filter((it) => it.planId === targetPlanId)
+					: planItems;
+				return items.map((it, idx) => {
+					const separatorIndex = (it.priceId ?? "").indexOf("::");
+					const titleRu =
+						separatorIndex >= 0
+							? it.priceId.slice(separatorIndex + 2) || "Лечебная процедура"
+							: it.priceId || "Лечебная процедура";
+					const rawPrice =
+						Number(it.price || 0) * (it.quantity || 1) - Number(it.discount || 0);
+					const costRub = Math.max(0, Math.round(rawPrice));
+					return {
+						id: it.id,
+						orderIndex: idx + 1,
+						titleRu,
+						categoryRu: "Стоматология",
+						teethFdi: it.toothNumber ? [String(it.toothNumber)] : [],
+						costRub,
+						paidRub: 0,
+						remainingRub: costRub,
+						status: "in_progress" as "in_progress" | "completed",
+						procedures: [titleRu],
+					};
+				});
+			};
+
+			const standardStages = getPlanStages(standardPlan?.id);
+			const standardTotalCost = standardStages.reduce((sum, s) => sum + s.costRub, 0);
+
+			const basicStages = basicPlan ? getPlanStages(basicPlan.id) : standardStages;
+			const basicTotalCost = basicPlan
+				? basicStages.reduce((sum, s) => sum + s.costRub, 0)
+				: standardTotalCost;
+
+			const premiumStages = premiumPlan ? getPlanStages(premiumPlan.id) : standardStages;
+			const premiumTotalCost = premiumPlan
+				? premiumStages.reduce((sum, s) => sum + s.costRub, 0)
+				: standardTotalCost;
+
 			const threeTierModel = {
 				selectedTier,
+				isCustomAlternatives: hasRealAlternatives,
 				tiers: [
 					{
 						tierId: "basic" as const,
-						tierNameRu: "Базовый (Эконом)",
+						tierNameRu: basicPlan?.name || "Базовый (Эконом)",
 						subtitleRu: "Функциональное восстановление базовыми материалами",
-						totalCostRub: Math.round(totalRealCostRub * 0.8),
+						totalCostRub: basicTotalCost,
 						warrantyMonths: 12,
 						durationWeeks: 4,
 						benefits: [
 							"Качественное восстановление современными материалами",
 							"Базовая клиническая гарантия 1 год",
 						],
-						stages: planStages.map((s) => ({
-							...s,
-							costRub: Math.round(s.costRub * 0.8),
-							paidRub: s.status === "completed" ? Math.round(s.costRub * 0.8) : 0,
-							remainingRub: s.status === "completed" ? 0 : Math.round(s.costRub * 0.8),
-						})),
+						stages: basicStages,
 					},
 					{
 						tierId: "standard" as const,
-						tierNameRu: "Оптимальный (Стандарт)",
+						tierNameRu: standardPlan?.name || "Оптимальный (Стандарт)",
 						subtitleRu: "Анатомическая реставрация и расширенная гарантия",
-						totalCostRub: totalRealCostRub,
+						totalCostRub: standardTotalCost,
 						warrantyMonths: 24,
 						durationWeeks: 6,
 						benefits: [
@@ -517,13 +504,13 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 							"Лечение по международным клиническим протоколам",
 							"Гарантия 2 года",
 						],
-						stages: planStages,
+						stages: standardStages,
 					},
 					{
 						tierId: "premium" as const,
-						tierNameRu: "Премиум (VIP All-Inclusive)",
+						tierNameRu: premiumPlan?.name || "Премиум (VIP All-Inclusive)",
 						subtitleRu: "Премиальные технологии и бессрочное сопровождение",
-						totalCostRub: Math.round(totalRealCostRub * 1.4),
+						totalCostRub: premiumTotalCost,
 						warrantyMonths: 60,
 						durationWeeks: 8,
 						benefits: [
@@ -531,12 +518,7 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 							"Персональный врач-куратор",
 							"Расширенная гарантия 5 лет с регулярными чекапами",
 						],
-						stages: planStages.map((s) => ({
-							...s,
-							costRub: Math.round(s.costRub * 1.4),
-							paidRub: s.status === "completed" ? Math.round(s.costRub * 1.4) : 0,
-							remainingRub: s.status === "completed" ? 0 : Math.round(s.costRub * 1.4),
-						})),
+						stages: premiumStages,
 					},
 				],
 			};

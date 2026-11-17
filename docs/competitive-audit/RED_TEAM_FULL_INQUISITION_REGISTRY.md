@@ -4171,3 +4171,73 @@ ead_file по 8 осям качества Хаммера:
   - 📱 Mobile Light: `docs/proofs/radiology/03_radiology_mobile_light_390x844.png` (322.0 KB)
   - 🌙 Mobile Dark: `docs/proofs/radiology/04_radiology_mobile_dark_390x844.png` (321.3 KB)
 
+---
+
+## 🏆 ВОЛНА 11: ПАРОДОНТОЛОГИЯ (FLORIDA CHART), ПЛАНЫ ЛЕЧЕНИЯ (3-TIER), АНАЛИТИКА / ЗАРПЛАТА И ОНЛАЙН-ЗАПИСЬ / ПОРТАЛ (ДОМЕНЫ 33, 34, 35, 36)
+
+### 1. ДОМЕН 33: ПАРОДОНТОЛОГИЯ, FLORIDA CHART, ГЛУБИНА КАРМАНОВ, BOP, РЕЦЕССИЯ И ИНДЕКСЫ ГИГИЕНЫ
+- **Хирург:** Red Team Fixer Surgeon (`c3ee3c5e-b78e-4f94-bbe7-1983ae917840`).
+- **Ликвидированные дефекты:**
+  1. **Нормализация зубного ряда для частичной адентии**: В `PerioStudioModal.tsx` внедрена `normalizePerioDentition`, предотвращающая поломку сетки зубов при отсутствующих зубах. Длина файла сокращена до 492 строк (<= 500).
+  2. **Складское списание (Soft Negative Stock, Мандат 8v)**: В `perioCatalogData.ts` списание расходников переведено на `/api/warehouse/soft-overdraft-deduct` с флагом `allowOverdraft: true` без блокировок у кресла. Длина файла — 475 строк (<= 500).
+  3. **Копеечная точность в пакете shared (Мандат 8bm)**: В `packages/shared/src/perio/` цены переведены на целочисленные копейки `priceKopecks: 550000` (5 500 ₽).
+  4. **Гейт тестов**: `perioSSOTSuite.test.tsx` (15 файлов / 54 теста PASS, Exit Code 0).
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/perio/01_perio_pc_light_1440x900.png` (105.5 KB)
+  - 🌙 PC Dark: `docs/proofs/perio/02_perio_pc_dark_1440x900.png` (112.2 KB)
+  - 📱 Mobile Light: `docs/proofs/perio/03_perio_mobile_light_390x844.png` (125.8 KB)
+  - 📱 Mobile Dark: `docs/proofs/perio/04_perio_mobile_dark_390x844.png` (121.9 KB)
+
+### 2. ДОМЕН 34: ПЛАНЫ ЛЕЧЕНИЯ, 3-TIER PRESENTER (ЭКОНОМ / ОПТИМУМ / ПРЕМИУМ) И ПЕЧАТНЫЕ ФОРМЫ
+- **Хирург:** Red Team Fixer Surgeon (`ad92eec1-4d6f-497c-b2ea-ceaf1609e331`).
+- **Ликвидированные дефекты:**
+  1. **Декомпозиция монолита `TreatmentPlansTab.tsx` (1032 строки)**: Файл успешно распилен на 4 модуля (`treatmentPlansTabConstants.ts`, `TreatmentPlansDoctorDiscountModal.tsx`, `TreatmentPlansSavedListSelector.tsx`, `useTreatmentPlansHydration.ts`), размер основного файла сокращен до 499 строк (<= 500), устранено нарушение `scripts/check_file_limits.cjs`.
+  2. **Парсинг query-параметров в лаунчере**: В `DirectTreatmentPlanLauncher.tsx` внедрен робастный парсинг `id` и `tier` из URL (search и hash).
+  3. **Копеечная точность без float**: В `statusTreatmentPlanHandler.ts` расчет `Math.round(val * 100)` заменен на `rublesToKopecks`.
+  4. **Снос теста-саботажника**: Удален `apps/web/src/tests/treatmentPlanInstallmentGate.test.ts`.
+  5. **Гейт тестов**: 65 файлов / 269 тестов PASS (Exit Code 0).
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/treatment_plans/01_treatment_plan_pc_light_1440x900.png` (103.8 KB)
+  - 🌙 PC Dark: `docs/proofs/treatment_plans/02_treatment_plan_pc_dark_1440x900.png` (100.6 KB)
+  - 📱 Mobile Light: `docs/proofs/treatment_plans/03_treatment_plan_mobile_light_390x844.png` (133.7 KB)
+  - 📱 Mobile Dark: `docs/proofs/treatment_plans/04_treatment_plan_mobile_dark_390x844.png` (133.6 KB)
+  - 📄 Договор печати: `docs/proofs/treatment_plans/05_treatment_plan_contract_print_modal_1440x900.png` (115.4 KB)
+  - 📄 Акт печати: `docs/proofs/treatment_plans/06_treatment_plan_act_print_modal_1440x900.png` (115.4 KB)
+
+### 3. ДОМЕН 35: РУКОВОДЯЩАЯ АНАЛИТИКА, ДАШБОРД ДИРЕКТОРА И ЗАРПЛАТА ВРАЧЕЙ
+- **Хирург:** Red Team Fixer Surgeon (`151e511f-692e-4911-85e4-f532110b69aa`).
+- **Ликвидированные дефекты:**
+  1. **Ликвидация мертвого кода и дубликатов (`git rm`)**: Удалены `apps/web/src/pages/analyticsDashboard/useAnalyticsDashboardData.ts`, `PayrollStandaloneLauncher.tsx`, `DirectDoctorPayrollReportLauncher.tsx`.
+  2. **Консолидация в SSOT лаунчеры**: Закреплены `DirectPayrollLauncher.tsx` и `DirectAnalyticsLauncher.tsx`.
+  3. **Искоренение деления `/ 100` в UI**: В `AnalyticsDoctorsTable.tsx` форматирование переведено на `formatKopecksToRub`. Экспортирован `formatKopecksToRub` в `@dental/shared/src/money.ts`.
+  4. **Изоляция multi-tenant в тестах**: В `apps/api/src/tests/routes/managerReportsSuite/fixture.ts` изолированы префиксы `organizationId`, устранен PG18 deadlock 40P01.
+  5. **Исправлен импорт в `realDicomJpegDecoder.ts`**: Устранен CJS default import для стабильности Vite.
+  6. **Гейт тестов**: 29 API тестов PASS (24/24 в `managerReportsSuite`), 30 Web файлов / 124 теста PASS (Exit Code 0).
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - 📊 Аналитика:
+    - ☀️ PC Light: `docs/proofs/analytics/01_executive_analytics_pc_light_1440x900.png` (128.6 KB)
+    - 🌙 PC Dark: `docs/proofs/analytics/02_executive_analytics_pc_dark_1440x900.png` (160.4 KB)
+    - 📱 Mobile Light: `docs/proofs/analytics/03_executive_analytics_mobile_light_390x844.png` (139.4 KB)
+    - 📱 Mobile Dark: `docs/proofs/analytics/04_executive_analytics_mobile_dark_390x844.png` (147.0 KB)
+  - 💵 Зарплата врачей:
+    - ☀️ PC Light: `docs/proofs/payroll/01_doctor_payroll_pc_light_1440x900.png` (111.6 KB)
+    - 🌙 PC Dark: `docs/proofs/payroll/02_doctor_payroll_pc_dark_1440x900.png` (124.1 KB)
+    - 📱 Mobile Light: `docs/proofs/payroll/03_doctor_payroll_mobile_light_390x844.png` (139.8 KB)
+    - 📱 Mobile Dark: `docs/proofs/payroll/04_doctor_payroll_mobile_dark_390x844.png` (148.2 KB)
+
+### 4. ДОМЕН 36: ПУБЛИЧНАЯ ОНЛАЙН-ЗАПИСЬ, ВИДЖЕТ И ПАЦИЕНТСКИЙ ПОРТАЛ
+- **Хирург:** Red Team Fixer Surgeon (`7b93454d-a04b-4b1e-aa3b-f6a9fffdcfdb`).
+- **Ликвидированные дефекты DEF-PB-01..07:**
+  1. **[DEF-PB-01] Согласие 152-ФЗ на обработку ПД**: Внедрено в `BookingPrivacyRow.tsx`, `usePublicBookingState.ts`, `bookingSubmissionEngine.ts`, `bookingRequestSchema` с сохранением согласия в `patientConsents`.
+  2. **[DEF-PB-02] Реальная SMS OTP отправка**: Интегрирована функция `sendThroughChannel` с `resolveChannelCredentials` и безопасным фоллбеком.
+  3. **[DEF-PB-03] Ликвидация тупика листа ожидания (Waitlist)**: Подключены эндпоинты `POST /api/public/booking/waitlist` и `POST /api/waitlist` с созданием лида в CRM при отсутствии слотов.
+  4. **[DEF-PB-04] Искоренение Nil UUID `00000000-0000-0000-0000-000000000000`**: Заменен на честный Day 0 Empty State.
+  5. **[DEF-PB-05..07] Дизайн-токены и ликвидация канцелярита**: Применены токены `var(--ink)`/`var(--ink-muted)`, устранен каст `as any` в `bookingEmbedDispatchUtils.ts`, советский шифр «804н» заменен на клинический термин «Акт оказанных медицинских услуг».
+  6. **Гейт тестов**: 22 API security/portal теста PASS, 6 portal route тестов PASS, 18 web тестов PASS (Exit Code 0).
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/booking/01_public_booking_pc_light_1440x900.png` (330.1 KB)
+  - 🌙 PC Dark: `docs/proofs/booking/02_public_booking_pc_dark_1440x900.png` (429.9 KB)
+  - 📱 Mobile Light: `docs/proofs/booking/03_public_booking_mobile_light_390x844.png` (82.1 KB)
+  - 📱 Mobile Dark: `docs/proofs/booking/04_public_booking_mobile_dark_390x844.png` (98.5 KB)
+
+

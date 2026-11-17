@@ -50,7 +50,7 @@ export function useFamilyTabState(
 		const initials = cleanName.split(" ").filter(Boolean).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 		const memberSeq = members.length + 1;
 		const cleanCard = newCardNumber.trim();
-		const assignedCard = cleanCard || (data.cardNumber ? `${data.cardNumber}-${memberSeq}` : `043-СЕМЬЯ-${memberSeq}`);
+		const assignedCard = cleanCard || (data.cardNumber ? `${data.cardNumber}-${memberSeq}` : `К-СЕМЬЯ-${memberSeq}`);
 		const memberId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? `fam-member-${crypto.randomUUID()}` : `fam-member-${data.patientId || "pat"}-${memberSeq}`;
 
 		const newMember: PatientCabinetFamilyMember = {

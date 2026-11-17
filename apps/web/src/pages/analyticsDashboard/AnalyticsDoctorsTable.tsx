@@ -1,5 +1,5 @@
 import { Printer, Users } from "lucide-react";
-import { money } from "../../AppHelpers";
+import { formatCurrency, formatKopecksToRub } from "@dental/shared";
 import { EmptyState } from "../../components/EmptyState.js";
 import {
 	formatCompletionRate,
@@ -49,13 +49,13 @@ export function DoctorProfitabilityTable({
 						const completion = formatCompletionRate(doc?.completionRate);
 						const marginTitle =
 							doc?.clinicMarginRub !== undefined && doc?.clinicMarginRub !== null
-								? `Маржа клиники: ${money(doc.clinicMarginRub)}${doc.doctorPayrollRub ? ` • Выплата врачу: ${money(doc.doctorPayrollRub)}` : ""}`
+								? `Маржа клиники: ${formatCurrency(doc.clinicMarginRub)}${doc.doctorPayrollRub ? ` • Выплата врачу: ${formatCurrency(doc.doctorPayrollRub)}` : ""}`
 								: margin.title;
 						return (
 							<tr key={doc?.name ?? "unknown"}>
 								<td className="font-medium whitespace-nowrap">{doc?.name ?? "—"}</td>
 								{/* Таблица — точная сумма с копейками, а не короткий вид плитки. */}
-								<td className="whitespace-nowrap">{money(doc?.revenue ?? 0)}</td>
+								<td className="whitespace-nowrap tabular-nums text-right font-mono">{formatCurrency(doc?.revenue ?? 0)}</td>
 								<td
 									className={`font-semibold whitespace-nowrap min-w-[110px] ${metricToneClass(margin.tone)}`}
 									title={marginTitle}
@@ -75,12 +75,12 @@ export function DoctorProfitabilityTable({
 								</td>
 								<td
 									className="whitespace-nowrap font-medium text-center"
-									title={(doc?.labOrdersCostRub ?? 0) > 0 ? `Списания ЗТЛ: ${money(doc?.labOrdersCostRub ?? 0)}` : undefined}
+									title={(doc?.labOrdersCostRub ?? 0) > 0 ? `Списания ЗТЛ: ${formatCurrency(doc?.labOrdersCostRub ?? 0)}` : undefined}
 								>
 									{doc?.labOrdersCount ?? 0}
 									{(doc?.labOrdersCostRub ?? 0) > 0 && (
-										<span className="block text-xs text-[var(--muted)] font-normal">
-											{formatRub(doc?.labOrdersCostRub ?? 0)}
+										<span className="block text-xs text-[var(--muted)] font-normal font-mono tabular-nums">
+											{formatCurrency(doc?.labOrdersCostRub ?? 0)}
 										</span>
 									)}
 								</td>

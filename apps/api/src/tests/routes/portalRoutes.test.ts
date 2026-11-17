@@ -61,6 +61,8 @@ describe("Patient Personal Portal API Routes", () => {
 				await db.insert(organizations).values({
 					id: ORG_ID,
 					name: "Стоматология ДЕНТЕ Портал",
+					inn: "7704123456",
+					bankDetails: "р/с 40702810938000123456, БИК 044525225",
 				});
 
 				await db.insert(patients).values({

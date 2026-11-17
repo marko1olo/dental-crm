@@ -5,6 +5,5 @@ export { AnalyticsRevenueCharts } from "./AnalyticsRevenueCharts";
 export { AnalyticsDoctorsTable, DoctorProfitabilityTable } from "./AnalyticsDoctorsTable";
 export { AnalyticsSubDashboards } from "./AnalyticsSubDashboards";
 export { RebookingConversionRulesWidget } from "./RebookingConversionRulesWidget";
-export { useAnalyticsDashboardData } from "./useAnalyticsDashboardData";
 export * from "./constants";
 export type * from "./types";

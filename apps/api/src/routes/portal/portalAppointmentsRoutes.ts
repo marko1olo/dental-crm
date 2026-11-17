@@ -74,13 +74,54 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 					imageUrl:
 						s.imageDataUri ||
 						(s.storagePath
-							? `/api/files/download?path=${encodeURIComponent(s.storagePath)}`
+							? `/api/portal/scans/${s.id}/download`
 							: ""),
 					diagnosticConclusion:
 						s.aiSummary || s.notes || "Снимок без патологических изменений",
 					capturedAtIso: s.capturedAt.toISOString(),
 				})),
 			};
+		});
+	});
+
+	// [DEF-PORTAL-01] Безопасная выгрузка снимков без утечки физического пути хоста
+	server.get<{ Params: { scanId: string } }>("/scans/:scanId/download", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const scanId = request.params.scanId?.trim();
+			if (!scanId || !isValidUuid(scanId)) {
+				reply.status(400);
+				return { error: "InvalidScanId" };
+			}
+
+			const [xray] = await db
+				.select()
+				.from(xrayScans)
+				.where(
+					and(
+						eq(xrayScans.id, scanId),
+						eq(xrayScans.patientId, auth.patientId),
+						eq(xrayScans.organizationId, auth.organizationId),
+					),
+				)
+				.limit(1);
+
+			if (xray?.imageDataUri) {
+				const matches = xray.imageDataUri.match(/^data:([^;]+);base64,(.+)$/);
+				if (matches && matches[1] && matches[2]) {
+					const buffer = Buffer.from(matches[2], "base64");
+					reply.type(matches[1]);
+					return reply.send(buffer);
+				}
+			}
+
+			reply.status(404);
+			return { error: "ScanNotFound" };
 		});
 	});
 

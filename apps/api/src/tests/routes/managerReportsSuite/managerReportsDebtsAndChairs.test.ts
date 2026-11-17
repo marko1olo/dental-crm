@@ -23,7 +23,7 @@ describe("отчёты руководителю: дебиторка, переп�
 	const { inPeriod } = getReportDates();
 
 	before(async () => {
-		ctx = await setupReportsContext();
+		ctx = await setupReportsContext("0431");
 		app = ctx.app;
 	});
 
@@ -37,13 +37,13 @@ describe("отчёты руководителю: дебиторка, переп�
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/chairs",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
 		const chair = body.rows.find(
-			(row: { chairId: string }) => row.chairId === CHAIR_ID,
+			(row: { chairId: string }) => row.chairId === ctx.chairId,
 		);
 		assert.ok(chair, JSON.stringify(body));
 		// 90 + 60 минут завершённых приёмов. Отменённый и неявка кресло не заняли.
@@ -65,7 +65,7 @@ describe("отчёты руководителю: дебиторка, переп�
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/receivables",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -73,7 +73,7 @@ describe("отчёты руководителю: дебиторка, переп�
 		// Назначено 30 000, получено 10 000 → долг 20 000 у «старого» пациента.
 		assert.equal(body.totalDebtRub, 20_000, JSON.stringify(body));
 		const debtor = body.rows.find(
-			(row: { patientId: string }) => row.patientId === PATIENT_OLD,
+			(row: { patientId: string }) => row.patientId === ctx.patientOld,
 		);
 		assert.equal(debtor?.debtRub, 20_000);
 		assert.ok(debtor?.oldestChargeAt !== null);
@@ -90,12 +90,12 @@ describe("отчёты руководителю: дебиторка, переп�
 	test("переплата названа отдельно, а долг от неё не поехал", async (context) => {
 		if (!ctx.databaseAvailable) return context.skip("база недоступна");
 
-		const [prepayment] = await withFixtureTenant(ORG_ID, async () =>
+		const [prepayment] = await withFixtureTenant(ctx.orgId, async () =>
 			db
 				.insert(payments)
 				.values({
-					organizationId: ORG_ID,
-					patientId: PATIENT_NEW,
+					organizationId: ctx.orgId,
+					patientId: ctx.patientNew,
 					amountRub: 4_500.5,
 					status: "paid",
 					paidAt: inPeriod,
@@ -107,7 +107,7 @@ describe("отчёты руководителю: дебиторка, переп�
 			const response = await app.inject({
 				method: "GET",
 				url: "/api/reports/receivables",
-				headers: ORG_HEADERS,
+				headers: ctx.headers,
 			});
 			assert.equal(response.statusCode, 200, response.body);
 			const body = JSON.parse(response.body);
@@ -121,7 +121,7 @@ describe("отчёты руководителю: дебиторка, переп�
 			);
 
 			const prepaid = body.prepayments.find(
-				(row: { patientId: string }) => row.patientId === PATIENT_NEW,
+				(row: { patientId: string }) => row.patientId === ctx.patientNew,
 			);
 			assert.equal(prepaid?.prepaidRub, 4_500.5);
 			assert.equal(prepaid?.patientName, "Новый Пациент Петрович");
@@ -129,7 +129,7 @@ describe("отчёты руководителю: дебиторка, переп�
 			// Переплативший не должник: попасть в дебиторку он не имеет права.
 			assert.equal(
 				body.rows.find(
-					(row: { patientId: string }) => row.patientId === PATIENT_NEW,
+					(row: { patientId: string }) => row.patientId === ctx.patientNew,
 				),
 				undefined,
 			);
@@ -139,7 +139,7 @@ describe("отчёты руководителю: дебиторка, переп�
 			assert.ok(noteText.includes("20 000,00"), noteText);
 			assert.ok(noteText.includes("15 499,50"), noteText);
 		} finally {
-			await withFixtureTenant(ORG_ID, async () => {
+			await withFixtureTenant(ctx.orgId, async () => {
 				await db.delete(payments).where(eq(payments.id, prepayment?.id ?? ""));
 			});
 		}
@@ -151,7 +151,7 @@ describe("отчёты руководителю: дебиторка, переп�
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/receivables",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -167,7 +167,7 @@ describe("отчёты руководителю: дебиторка, переп�
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/schedule-load",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -191,7 +191,7 @@ describe("отчёты руководителю: дебиторка, переп�
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/summary",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);

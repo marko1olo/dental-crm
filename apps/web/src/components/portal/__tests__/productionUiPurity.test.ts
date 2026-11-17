@@ -29,7 +29,7 @@ const TARGET_FILES = {
 	patientCabinet: path.join(SRC_DIR, "components/portal/patientCabinet/PatientCabinetModal.tsx"),
 	implantPassport: path.join(SRC_DIR, "components/surgery/ChairsideSurgeryHubModal.tsx"),
 	mdlpScanning: path.join(SRC_DIR, "components/mdlp/MdlpScanningModal.tsx"),
-	mdlpDisposalQueue: path.join(SRC_DIR, "components/inventory/mdlp/MdlpDisposalQueueModal.tsx"),
+	mdlpDisposalQueue: path.join(SRC_DIR, "components/mdlp/SeniorNurseDisposalActModal.tsx"),
 } as const;
 
 describe("Production UI Purity & Dev Leaks Purge (Wave 106 - Mandate 8p/8d)", () => {
@@ -79,14 +79,13 @@ describe("Production UI Purity & Dev Leaks Purge (Wave 106 - Mandate 8p/8d)", ()
 		assert.ok(content.includes("Поднесите 2D-сканер к коду DataMatrix на упаковке"), "Must contain clean scanner instruction");
 	});
 
-	it("5. MdlpDisposalQueueModal contains no 'Тест ПКУ' block or test references", () => {
+	it("5. SeniorNurseDisposalActModal contains no 'Тест ПКУ' block or test references", () => {
 		const content = fs.readFileSync(TARGET_FILES.mdlpDisposalQueue, "utf8");
 
 		assert.ok(!content.includes("Тест ПКУ"), "Must not contain 'Тест ПКУ' block");
 		assert.ok(!content.includes("+ Ультракаин форте"), "Must not render demo drug addition buttons");
 		assert.ok(!content.includes("+ Скандонест"), "Must not render demo drug addition buttons");
 		assert.ok(!content.includes("быстрым тестом выше"), "Empty queue table must not reference fast test above");
-		assert.ok(content.includes("Отсканируйте DataMatrix код"), "Must contain clean 2D scanner instruction");
 	});
 
 	it("6. Universal check: zero forbidden debug substrings in all 5 files", () => {

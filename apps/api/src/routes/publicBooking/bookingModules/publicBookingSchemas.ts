@@ -71,6 +71,7 @@ export const bookingRequestSchema = z.object({
 	utm_content: z.string().trim().max(100).optional(),
 	utm_term: z.string().trim().max(100).optional(),
 	idempotencyKey: z.string().trim().max(100).optional(),
+	hasAgreedToPrivacy: z.boolean().optional(),
 });
 
 export const publicBookingFieldLabels: Record<string, string> = {

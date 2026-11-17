@@ -147,6 +147,7 @@ export type BookAppointmentBody = {
 	utm_content?: string;
 	utm_term?: string;
 	idempotencyKey?: string;
+	hasAgreedToPrivacy?: boolean;
 };
 
 export type BookAppointmentRequest = FastifyRequest<{
@@ -378,6 +379,7 @@ export async function handleBookAppointment(
 					utmMedium: parsed.data.utm_medium,
 					idempotencyKey: effectiveIdempotencyKey,
 					status: isConfirmed ? "confirmed" : "planned",
+					hasAgreedToPrivacy: parsed.data.hasAgreedToPrivacy,
 				});
 
 				if (bookingResult.conflict || ("blocked" in bookingResult && bookingResult.blocked)) {

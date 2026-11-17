@@ -10,6 +10,8 @@ export const rawPlanItemSchema = z.object({
 	tooth: z.number().int().min(11).max(85).optional(),
 	quantity: z.number().int().min(1).default(1),
 	priceRub: z.number().positive(),
+	priceKopecks: z.number().int().nonnegative().optional(),
+	amountKopecks: z.number().int().nonnegative().optional(),
 	category: z.enum(["diagnostics", "therapy", "surgery_implant", "prosthetics", "hygiene", "other"]).default("other"),
 });
 export type RawPlanItem = z.infer<typeof rawPlanItemSchema>;
@@ -50,6 +52,7 @@ export const slideRisksSchema = z.object({
 		}),
 	),
 	escalatedCostEstimateRub: z.number().positive(),
+	escalatedCostEstimateKopecks: z.number().int().nonnegative().optional(),
 });
 export type SlideRisks = z.infer<typeof slideRisksSchema>;
 
@@ -59,6 +62,7 @@ export const roadmapStageSchema = z.object({
 	durationRu: z.string(),
 	goalRu: z.string(),
 	costRub: z.number().nonnegative(),
+	costKopecks: z.number().int().nonnegative().optional(),
 	itemsSummaryRu: z.array(z.string()),
 });
 export type RoadmapStage = z.infer<typeof roadmapStageSchema>;
@@ -68,9 +72,11 @@ export const slideRoadmapSchema = z.object({
 	title: z.string(),
 	headlineRu: z.string(),
 	totalPlanCostRub: z.number().positive(),
+	totalPlanCostKopecks: z.number().int().nonnegative().optional(),
 	stages: z.array(roadmapStageSchema),
 	installmentOfferRu: z.string().optional(),
 	monthlyPaymentEstimateRub: z.number().optional(),
+	monthlyPaymentEstimateKopecks: z.number().int().nonnegative().optional(),
 });
 export type SlideRoadmap = z.infer<typeof slideRoadmapSchema>;
 

@@ -269,11 +269,11 @@ export async function fetchClinicAnalyticsSSOT(
 		const avgCheckKop = completedVisits > 0 ? Math.round(totalRevenueKop / completedVisits) : Number(kpis.averageCheckKopecks ?? 0);
 
 		const pb = kpis.paymentBreakdown;
-		const cashKop = pb ? Math.round(Number(pb.cashRub || 0) * 100) : 0;
-		const cardKop = pb ? Math.round(Number(pb.cardDmsRub || 0) * 100) : 0;
-		const sbpKop = pb ? Math.round(Number(pb.sbpRub || 0) * 100) : 0;
-		const depositKop = pb ? Math.round(Number(pb.depositRub || 0) * 100) : 0;
-		const sumKop = cashKop + cardKop + sbpKop + depositKop;
+		const cashKop = pb ? (pb.cashKopecks ?? Math.round(Number(pb.cashRub || 0) * 100)) : 0;
+		const cardKop = pb ? (pb.cardDmsKopecks ?? Math.round(Number(pb.cardDmsRub || 0) * 100)) : 0;
+		const sbpKop = pb ? (pb.sbpKopecks ?? Math.round(Number(pb.sbpRub || 0) * 100)) : 0;
+		const depositKop = pb ? (pb.depositKopecks ?? Math.round(Number(pb.depositRub || 0) * 100)) : 0;
+		const sumKop = pb?.totalKopecks ?? (cashKop + cardKop + sbpKop + depositKop);
 
 		const methods: PaymentMethodItem[] = [
 			{

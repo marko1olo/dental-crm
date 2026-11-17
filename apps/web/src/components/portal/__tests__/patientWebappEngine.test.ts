@@ -24,7 +24,7 @@ import {
 	type PatientInvoiceBillItem,
 	type PatientTreatmentPlanStage,
 	type SignableStatutoryDocument,
-} from "../patientWebappEngine.js";
+} from "../patientWebapp/index.js";
 
 describe("Patient WebApp Engine & Mobile Portal Core (63-ФЗ, СБП НСПК, Копеечная Математика)", () => {
 	describe("1. Криптография, Сессии Пациента и Magic Links", () => {

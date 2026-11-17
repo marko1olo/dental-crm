@@ -1,4 +1,4 @@
-import { sumKopecks } from "@dental/shared";
+import { sumKopecks, rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import {
 	chargeLineKopecks,
 	debtNumericText,
@@ -63,9 +63,12 @@ export function calculateTreatmentPlanItemSummary(
 	const unitPrice = numeric(item.price);
 	const discountRub = numeric(item.discount);
 	const quantity = item.quantity || 1;
-	const lineTotal = Math.max(0, unitPrice * quantity - discountRub);
+	const unitPriceKopecks = rublesToKopecks(unitPrice);
+	const discountKopecks = rublesToKopecks(discountRub);
+	const lineTotalKopecks = Math.max(0, unitPriceKopecks * quantity - discountKopecks);
+	const planLineTotalRub = kopecksToRubles(lineTotalKopecks);
 	const discountPercent =
-		unitPrice > 0 ? Math.round((discountRub / (unitPrice * quantity)) * 100) : 0;
+		unitPriceKopecks > 0 ? Math.round((discountKopecks / (unitPriceKopecks * quantity)) * 100) : 0;
 
 	return {
 		itemId: item.id,
@@ -78,8 +81,8 @@ export function calculateTreatmentPlanItemSummary(
 		planDiscountRub: discountRub,
 		planDiscountPercent: discountPercent,
 		quantity,
-		planLineTotalRub: lineTotal,
-		lineTotalKopecks: Math.round(lineTotal * 100),
+		planLineTotalRub,
+		lineTotalKopecks,
 		phase: item.phase || 1,
 	};
 }
@@ -96,7 +99,7 @@ export function calculateTreatmentPlanTotals(
 			return item.totalPriceKopecks;
 		}
 		if (item.unitPriceKopecks !== undefined && item.unitPriceKopecks >= 0) {
-			const discountKop = Math.round((item.discount || 0) * 100);
+			const discountKop = rublesToKopecks(item.discount || 0);
 			return Math.max(0, item.unitPriceKopecks * (item.quantity || 1) - discountKop);
 		}
 		return chargeLineKopecks({
@@ -148,7 +151,7 @@ export function calculateEffectivePlanDiscount(params: {
 		const clampedPercent = Math.min(100, Math.max(0, planDiscountPercent));
 		discountKopecks = Math.round((baseTotalKopecks * clampedPercent) / 100);
 	} else if (planDiscountRub > 0) {
-		discountKopecks = Math.min(baseTotalKopecks, Math.round(planDiscountRub * 100));
+		discountKopecks = Math.min(baseTotalKopecks, rublesToKopecks(planDiscountRub));
 	}
 
 	const finalTotalKopecks = Math.max(0, baseTotalKopecks - discountKopecks);

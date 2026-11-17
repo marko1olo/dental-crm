@@ -54,7 +54,7 @@ export const BookingMainFlow: React.FC<BookingMainFlowProps> = ({ state }) => {
 					}
 				}}
 				onJoinWaitlist={() => {
-					state.handleStepChange(4);
+					state.handleJoinWaitlist?.();
 					showToast(
 						"Заполните контакты, чтобы администратор записал вас при появлении свободного окна",
 						"info",

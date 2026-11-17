@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
-import { clinics, organizations, users } from "../../db/schema.js";
+import { appointmentWaitlists, clinics, organizations, patientConsents, patients, users } from "../../db/schema.js";
 import {
 	optionalDoctorIdSchema,
 	sendOtpSchema,
@@ -13,6 +13,7 @@ import {
 	handleSlotsQuery,
 } from "./bookingModules/publicBookingSlotEngine.js";
 import {
+	createCrmLeadFromPublicIntake,
 	handleBookAppointment,
 	type BookAppointmentBody,
 	type BookAppointmentRequest,
@@ -283,6 +284,139 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		Params: { organizationId: string };
 		Body: BookAppointmentBody;
 	}>("/appointments", createAppointmentHandler);
+
+	// DEF-PB-03: Public waitlist intake handler
+	const publicWaitlistHandler = async (
+		request: FastifyRequest<{
+			Params?: { organizationId?: string };
+			Body: {
+				organizationId?: string;
+				patientId?: string;
+				patientName: string;
+				patientPhone: string;
+				doctorId?: string;
+				preferredDoctorId?: string;
+				date?: string;
+				comment?: string;
+				notes?: string;
+				hasAgreedToPrivacy?: boolean;
+				idempotencyKey?: string;
+			};
+		}>,
+		reply: FastifyReply,
+	) => {
+		if (isRateLimited(request.ip ?? "unknown")) {
+			return reply.status(429).send({ error: "Слишком много запросов." });
+		}
+		const body = request.body;
+		if (!body?.patientName?.trim() || !body?.patientPhone?.trim()) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Имя и телефон пациента обязательны для добавления в лист ожидания.",
+			});
+		}
+
+		const organizationId =
+			request.params?.organizationId ||
+			body.organizationId ||
+			(await resolveDefaultClinicOrgId());
+
+		const cleanPhone = body.patientPhone.trim();
+		const cleanName = body.patientName.trim();
+		const preferredDoctor = body.preferredDoctorId || body.doctorId || null;
+		const comment = body.comment || body.notes || "";
+
+		const waitlistResult = await withSuperuserBypass(async (tx) => {
+			let patientId = body.patientId;
+			if (!patientId) {
+				const [existing] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, organizationId),
+							eq(patients.phone, cleanPhone),
+						),
+					)
+					.limit(1);
+
+				if (existing) {
+					patientId = existing.id;
+				} else {
+					const [newPatient] = await tx
+						.insert(patients)
+						.values({
+							organizationId,
+							fullName: cleanName,
+							phone: cleanPhone,
+							status: "active",
+						})
+						.returning({ id: patients.id });
+					patientId = newPatient?.id;
+				}
+			}
+
+			if (!patientId) {
+				throw new Error("Не удалось создать профиль пациента для листа ожидания");
+			}
+
+			if (body.hasAgreedToPrivacy) {
+				try {
+					await tx.insert(patientConsents).values({
+						organizationId,
+						patientId,
+						kind: "personal_data_processing",
+						grantedAt: new Date(),
+					});
+				} catch {
+					// Non-blocking
+				}
+			}
+
+			const preferredRanges = [
+				{
+					day: body.date || "Любой день",
+					slot: "any",
+					notes: comment,
+				},
+			];
+
+			const [waitlistEntry] = await tx
+				.insert(appointmentWaitlists)
+				.values({
+					organizationId,
+					patientId,
+					patientName: cleanName,
+					patientPhone: cleanPhone,
+					preferredDoctorId: preferredDoctor,
+					priorityLevel: "medium",
+					preferredTimeRanges: preferredRanges,
+					status: "waiting",
+				})
+				.returning();
+
+			await createCrmLeadFromPublicIntake(tx, {
+				organizationId,
+				patientName: cleanName,
+				patientPhone: cleanPhone,
+				source: "waitlist",
+				receiptStatus: "WAITLIST",
+				comment: `Заявка в лист ожидания на ${body.date || "ближайшее время"}: ${comment}`.trim(),
+				doctorId: preferredDoctor || undefined,
+			});
+
+			return waitlistEntry;
+		});
+
+		return reply.send({
+			success: true,
+			waitlistId: waitlistResult?.id,
+			message: "Заявка в лист ожидания успешно принята. Администратор свяжется с вами.",
+		});
+	};
+
+	server.post("/waitlist", publicWaitlistHandler);
+	server.post("/:organizationId/waitlist", publicWaitlistHandler);
 
 	// 1a. Get doctors with default organization fallback
 	server.get("/doctors", async (request, reply) => {

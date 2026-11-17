@@ -14,10 +14,11 @@ import {
 
 export interface BookingDoctorsSectionProps {
 	isSoloDoctor: boolean;
-	selectedDoctor: BookingDoctorData;
+	selectedDoctor: BookingDoctorData | null;
 	activeDoctors: BookingDoctorData[];
 	selectedDoctorId: string | null;
 	onSelectDoctorId: (id: string | null) => void;
+	clinicPhone?: string | undefined;
 }
 
 export const BookingDoctorsSection: React.FC<BookingDoctorsSectionProps> = ({
@@ -26,8 +27,31 @@ export const BookingDoctorsSection: React.FC<BookingDoctorsSectionProps> = ({
 	activeDoctors,
 	selectedDoctorId,
 	onSelectDoctorId,
+	clinicPhone = "+7 (800) 555-35-35",
 }) => {
-	if (isSoloDoctor) {
+	if (activeDoctors.length === 0) {
+		return (
+			<div
+				className="dbw-empty-doctors-banner p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-center my-3"
+				data-testid="day0-empty-doctors"
+			>
+				<p className="text-sm font-semibold text-[var(--ink)]">
+					Расписание формируется
+				</p>
+				<p className="text-xs text-[var(--ink-muted)] mt-1 max-w-md mx-auto">
+					В данный момент нет свободных специалистов для прямой онлайн-записи. Вы можете оставить заявку в лист ожидания или связаться с клиникой по телефону:
+				</p>
+				<a
+					href={`tel:${clinicPhone.replace(/[^\d+]/g, "")}`}
+					className="inline-flex items-center gap-1.5 mt-2.5 text-sm font-semibold text-[var(--primary)] hover:underline"
+				>
+					{clinicPhone}
+				</a>
+			</div>
+		);
+	}
+
+	if (isSoloDoctor && selectedDoctor) {
 		return (
 			<div
 				className="dbw-solo-doctor-banner mb-4"

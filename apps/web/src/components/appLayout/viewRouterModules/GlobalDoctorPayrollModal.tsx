@@ -3,6 +3,7 @@
  */
 
 import React, { Suspense, useEffect, useState } from "react";
+import type { ClinicSettings } from "@dental/shared";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
 import type { PayrollServiceOrder } from "../../payroll/payrollCatalogData";
 
@@ -13,7 +14,11 @@ const DoctorPayrollStudioModal = lazyWithRetry(() =>
 );
 
 interface GlobalDoctorPayrollModalProps {
-	readonly clinicSettings?: { readonly name?: string } | undefined;
+	readonly clinicSettings?:
+		| ClinicSettings
+		| { readonly name?: string; readonly clinicName?: string; readonly profile?: { readonly clinicName?: string } }
+		| null
+		| undefined;
 }
 
 interface GlobalDoctorPayrollEventDetail {
@@ -92,12 +97,19 @@ export function GlobalDoctorPayrollModal({ clinicSettings }: GlobalDoctorPayroll
 			].filter((d): d is { readonly id: string; readonly name: string; readonly specialtyId: string; } => Boolean(d.id && d.name && d.specialtyId))
 		: undefined;
 
+	const clinicName =
+		(clinicSettings && "profile" in clinicSettings && clinicSettings.profile?.clinicName) ||
+		(clinicSettings && "clinicName" in clinicSettings && typeof clinicSettings.clinicName === "string" ? clinicSettings.clinicName : undefined) ||
+		(clinicSettings && "name" in clinicSettings && typeof clinicSettings.name === "string" ? clinicSettings.name : undefined) ||
+		"ООО «Денте Стоматология»";
+
 	return (
 		<Suspense fallback={null}>
 			<DoctorPayrollStudioModal
+				key={doc?.doctorUserId || globalDoctorPayroll.doctorId || "global-doctor-payroll"}
 				isOpen={Boolean(globalDoctorPayroll)}
 				onClose={() => setGlobalDoctorPayroll(null)}
-				clinicName={clinicSettings?.name || "ООО «Денте Стоматология»"}
+				clinicName={clinicName}
 				initialDoctorId={doc?.doctorUserId || globalDoctorPayroll.doctorId}
 				doctorsList={doctorsList}
 				orders={initialServices}

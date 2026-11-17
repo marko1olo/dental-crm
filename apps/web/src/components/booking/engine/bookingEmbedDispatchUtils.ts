@@ -15,6 +15,26 @@ export interface BookingReceiptData {
 	createdAt: string;
 }
 
+interface TelegramUser {
+	id: number;
+	first_name: string;
+	username?: string | undefined;
+}
+
+interface TelegramWebApp {
+	ready?: () => void;
+	expand?: () => void;
+	initDataUnsafe?: {
+		user?: TelegramUser | undefined;
+	} | undefined;
+}
+
+type WindowWithTelegram = Window & {
+	Telegram?: {
+		WebApp?: TelegramWebApp | undefined;
+	} | undefined;
+};
+
 /**
  * Detects Telegram Mini App environment
  */
@@ -25,8 +45,8 @@ export function detectTelegramWebApp(): {
 	if (typeof window === "undefined") {
 		return { isTelegram: false };
 	}
-	// biome-ignore lint/suspicious/noExplicitAny: Telegram global check
-	const tg = (window as any)?.Telegram?.WebApp;
+	const win = window as unknown as WindowWithTelegram;
+	const tg = win.Telegram?.WebApp;
 	if (tg) {
 		tg.ready?.();
 		tg.expand?.();

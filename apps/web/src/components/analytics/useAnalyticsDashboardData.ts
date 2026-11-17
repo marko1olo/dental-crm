@@ -15,8 +15,6 @@ import {
 	fetchClinicAnalyticsSSOT,
 } from "./analyticsCatalogData.js";
 
-// Реэкспорт канонического хука дашборда для страницы аналитики
-export { useAnalyticsDashboardData } from "../../pages/analyticsDashboard/useAnalyticsDashboardData.js";
 
 /**
  * Хук реактивной загрузки единого SSOT управленческой аналитики клиники.

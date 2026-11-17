@@ -149,7 +149,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 }) => {
 	const isDemo = isDemoShowcaseMode();
 	const effectivePatientName = patientName ?? (isDemo ? "Воронов Алексей Владимирович" : "");
-	const effectiveCardNumber = cardNumber ?? (isDemo ? "043-8842" : "");
+	const effectiveCardNumber = cardNumber ?? (isDemo ? "К-8842" : "");
 	const effectivePhone = phone ?? (isDemo ? "+7 (999) 123-45-67" : "");
 	const effectiveBirthDate = birthDate ?? (isDemo ? "1984-05-14" : "");
 

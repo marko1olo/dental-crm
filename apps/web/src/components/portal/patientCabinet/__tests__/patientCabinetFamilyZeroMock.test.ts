@@ -81,7 +81,7 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 	it("3.1 FamilyTab Rendering: Renders honest family pool banner & members with canonical card numbers", () => {
 		const data = {
 			...PATIENT_CABINET_PRESET_ALEXEY,
-			cardNumber: "043-8842",
+			cardNumber: "К-8842",
 		};
 
 		const html = renderToStaticMarkup(
@@ -95,8 +95,8 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 
 		assert.ok(html.includes("pc-family-tab"), "Renders family tab container");
 		assert.ok(html.includes("Семейный депозит и бонусный пул"), "Renders family summary banner");
-		assert.ok(html.includes("043-8843"), "Renders spouse canonical card number 043-8843");
-		assert.ok(html.includes("043-8844"), "Renders child canonical card number 043-8844");
+		assert.ok(html.includes("К-8843"), "Renders spouse canonical card number К-8843");
+		assert.ok(html.includes("К-8844"), "Renders child canonical card number К-8844");
 		assert.ok(html.includes("btn-toggle-add-family-member"), "Renders add member toggle button");
 		assert.ok(html.includes("min-height:44px") || html.includes("min-height: 44px"), "Enforces touch-friendly >=44px buttons");
 	});

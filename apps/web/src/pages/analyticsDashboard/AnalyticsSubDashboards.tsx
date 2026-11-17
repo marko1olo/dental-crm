@@ -37,9 +37,10 @@ export function AnalyticsSubDashboards({
 }: AnalyticsSubDashboardsProps) {
 	return (
 		<>
-			{(analyticsSection === "executive" || analyticsSection === "clinic") && (
+			{(analyticsSection === "executive" || analyticsSection === "clinic" || analyticsSection === "operational") && (
 				<ExecutiveDashboard
 					hideHeaderToolbar={false}
+					initialTab={analyticsSection === "operational" ? "chairs" : undefined}
 					period={
 						dateRange === "today"
 							? "day"

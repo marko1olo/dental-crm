@@ -11,7 +11,7 @@ export const ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = [
 		nextCheckupDueDateIso: "2026-10-05",
 		checkupIntervalMonths: 6,
 		checkupScheduleCount: 10,
-		verificationUrl: "https://dente-clinic.ru/portal/warranty?cert=WAR-2026-8842-01&card=043-8842",
+		verificationUrl: "https://dente-clinic.ru/portal/warranty?cert=WAR-2026-8842-01&card=К-8842",
 		items: [
 			{
 				toothFdi: "1.6",
@@ -39,7 +39,7 @@ export const ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = [
 		nextCheckupDueDateIso: "2026-10-05",
 		checkupIntervalMonths: 6,
 		checkupScheduleCount: 4,
-		verificationUrl: "https://dente-clinic.ru/portal/warranty?cert=WAR-2026-8842-02&card=043-8842",
+		verificationUrl: "https://dente-clinic.ru/portal/warranty?cert=WAR-2026-8842-02&card=К-8842",
 		items: [
 			{
 				toothFdi: "1.1, 1.2, 2.1, 2.2",

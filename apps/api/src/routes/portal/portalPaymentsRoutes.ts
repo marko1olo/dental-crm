@@ -17,6 +17,29 @@ import type {
 	PaymentStatusQuery,
 } from "./types.js";
 
+function extractBankRequisites(bankDetails?: string | null): { account?: string | undefined; bic?: string | undefined } {
+	if (!bankDetails) return {};
+	try {
+		const parsed = JSON.parse(bankDetails);
+		if (parsed && typeof parsed === "object") {
+			const account = (parsed.account || parsed.recipientAccount || parsed.settlementAccount) as string | undefined;
+			const bic = (parsed.bic || parsed.bankBic) as string | undefined;
+			return {
+				...(account ? { account } : {}),
+				...(bic ? { bic } : {}),
+			};
+		}
+	} catch {
+		// Plain text regex extraction
+	}
+	const accountMatch = bankDetails.match(/\b(40[78]\d{17})\b/);
+	const bicMatch = bankDetails.match(/\b(04\d{7})\b/);
+	return {
+		...(accountMatch?.[1] ? { account: accountMatch[1] } : {}),
+		...(bicMatch?.[1] ? { bic: bicMatch[1] } : {}),
+	};
+}
+
 export async function registerPortalPaymentsRoutes(server: FastifyInstance): Promise<void> {
 	// 11. Create Dynamic SBP QR Code for Stage/Invoice Payment (Protected)
 	server.post<{
@@ -81,15 +104,27 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 					inn: organizations.inn,
 					kpp: organizations.kpp,
 					ogrn: organizations.ogrn,
+					bankDetails: organizations.bankDetails,
 				})
 				.from(organizations)
 				.where(eq(organizations.id, auth.organizationId))
 				.limit(1);
 
-			const recipientLegalName = org?.name || "ООО «Стоматологическая клиника ДЕНТЕ»";
-			const recipientInn = org?.inn || "7704123456";
-			const recipientAccount = "40702810938000123456";
-			const bankBic = "044525225";
+			// [DEF-PORTAL-05] Проверка реальных банковских реквизитов организации (защита от хардкодных тестовых счетов)
+			const requisites = extractBankRequisites(org?.bankDetails);
+			const recipientAccount = requisites.account;
+			const bankBic = requisites.bic;
+
+			if (!recipientAccount || !bankBic) {
+				reply.status(422);
+				return {
+					error: "PAYMENT_REQUISITES_UNAVAILABLE",
+					message: "Банковские реквизиты клиники для приёма платежей через СБП не настроены. Обратитесь к администратору клиники.",
+				};
+			}
+
+			const recipientLegalName = org?.name || "Стоматологическая клиника";
+			const recipientInn = org?.inn || "";
 
 			const amountKopecks = Math.round(amountRub * 100);
 			const qrId = `SBPA${Date.now().toString(36).toUpperCase()}${invoiceNumber.replace(/\D/g, "")}`;

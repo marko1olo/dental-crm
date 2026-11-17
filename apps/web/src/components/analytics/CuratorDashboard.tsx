@@ -117,6 +117,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 
 			{assignmentTarget && (
 				<TreatmentPlanStudioModal
+					key={assignmentTarget.patientId || "draft"}
 					isOpen={Boolean(assignmentTarget)}
 					onClose={() => setAssignmentTarget(null)}
 					patientId={assignmentTarget.patientId}

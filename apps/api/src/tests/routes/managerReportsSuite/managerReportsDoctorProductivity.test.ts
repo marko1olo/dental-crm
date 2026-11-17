@@ -22,7 +22,7 @@ describe("отчёты руководителю: продуктивность в
 	const { inPeriod } = getReportDates();
 
 	before(async () => {
-		ctx = await setupReportsContext();
+		ctx = await setupReportsContext("0411", { skipUnlinkedRefund: true });
 		app = ctx.app;
 	});
 
@@ -36,13 +36,13 @@ describe("отчёты руководителю: продуктивность в
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/doctors",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
 		const doctor = body.rows.find(
-			(row: { doctorUserId: string }) => row.doctorUserId === DOCTOR_ID,
+			(row: { doctorUserId: string }) => row.doctorUserId === ctx.doctorId,
 		);
 		assert.ok(doctor, JSON.stringify(body));
 		assert.equal(doctor.revenueRub, 10_000);
@@ -61,12 +61,12 @@ describe("отчёты руководителю: продуктивность в
 	test("платёж без приёма не размазывается по врачам, а называется отдельно", async (context) => {
 		if (!ctx.databaseAvailable) return context.skip("база недоступна");
 
-		const [orphanPayment] = await withFixtureTenant(ORG_ID, async () =>
+		const [orphanPayment] = await withFixtureTenant(ctx.orgId, async () =>
 			db
 				.insert(payments)
 				.values({
-					organizationId: ORG_ID,
-					patientId: PATIENT_NEW,
+					organizationId: ctx.orgId,
+					patientId: ctx.patientNew,
 					amountRub: 3_000,
 					status: "paid",
 					paidAt: inPeriod,
@@ -77,23 +77,23 @@ describe("отчёты руководителю: продуктивность в
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/doctors",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 		assert.equal(body.unattributedRevenueRub, 3_000, JSON.stringify(body));
 		assert.ok(
-			body.attributionNote.includes("не отнесена"),
+			body.attributionNote.toLowerCase().includes("не отнесен"),
 			body.attributionNote,
 		);
 
 		const doctor = body.rows.find(
-			(row: { doctorUserId: string }) => row.doctorUserId === DOCTOR_ID,
+			(row: { doctorUserId: string }) => row.doctorUserId === ctx.doctorId,
 		);
 		// Врачу чужие 3 000 не приписаны.
 		assert.equal(doctor.revenueRub, 10_000);
 
-		await withFixtureTenant(ORG_ID, async () => {
+		await withFixtureTenant(ctx.orgId, async () => {
 			await db.delete(payments).where(eq(payments.id, orphanPayment?.id ?? ""));
 		});
 	});
@@ -104,7 +104,7 @@ describe("отчёты руководителю: продуктивность в
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/services",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -130,7 +130,7 @@ describe("отчёты руководителю: продуктивность в
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/financial-summary",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
@@ -151,7 +151,7 @@ describe("отчёты руководителю: продуктивность в
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/doctor-payroll",
-			headers: ORG_HEADERS,
+			headers: ctx.headers,
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);

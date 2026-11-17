@@ -20,7 +20,6 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				"PatientFriendlyOdontogram.tsx",
 				"PatientPlanView.tsx",
 				"PatientPortalTreatmentStageCard.tsx",
-				"patientWebappEngine.ts",
 				"patientPortalEngine.ts",
 				"patientPortalPresets.ts",
 				"patientPortalTypes.ts",
@@ -62,8 +61,8 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				"portal/index.ts must export PatientPortalTreatmentStageCard directly",
 			);
 			assert.ok(
-				portalIndexSource.includes('export * from "./patientWebappEngine.js"'),
-				"portal/index.ts must export patientWebappEngine directly",
+				portalIndexSource.includes('export * from "./patientWebapp/index.js"'),
+				"portal/index.ts must export patientWebapp directly",
 			);
 		},
 	);

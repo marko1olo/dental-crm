@@ -19,14 +19,36 @@ import { createTenantTestApp } from "../../support/tenantTestApp.js";
 import { authTokenSecret } from "../../../security/authSecret.js";
 import { signToken } from "../../../utils/cryptoHelper.js";
 
-export const ORG_ID = "dce70000-0000-4000-8000-000000000401";
-export const CLINIC_ID = "dce70000-0000-4000-8000-000000000402";
-export const DOCTOR_ID = "dce70000-0000-4000-8000-000000000403";
-export const CHAIR_ID = "dce70000-0000-4000-8000-000000000404";
-export const PATIENT_OLD = "dce70000-0000-4000-8000-000000000405";
-export const PATIENT_NEW = "dce70000-0000-4000-8000-000000000406";
-export const VISIT_ID = "dce70000-0000-4000-8000-000000000407";
-export const APPOINTMENT_ID = "dce70000-0000-4000-8000-000000000408";
+export function getTenantConfig(suffix = "0401") {
+	const orgId = `dce70000-0000-4000-8000-00000000${suffix}`;
+	const clinicId = `dce70000-0000-4000-8000-00000000${suffix.slice(0, 3)}2`;
+	const doctorId = `dce70000-0000-4000-8000-00000000${suffix.slice(0, 3)}3`;
+	const chairId = `dce70000-0000-4000-8000-00000000${suffix.slice(0, 3)}4`;
+	const patientOld = `dce70000-0000-4000-8000-00000000${suffix.slice(0, 3)}5`;
+	const patientNew = `dce70000-0000-4000-8000-00000000${suffix.slice(0, 3)}6`;
+	const visitId = `dce70000-0000-4000-8000-00000000${suffix.slice(0, 3)}7`;
+	const appointmentId = `dce70000-0000-4000-8000-00000000${suffix.slice(0, 3)}8`;
+	return {
+		orgId,
+		clinicId,
+		doctorId,
+		chairId,
+		patientOld,
+		patientNew,
+		visitId,
+		appointmentId,
+	};
+}
+
+const defaultCfg = getTenantConfig("0401");
+export const ORG_ID = defaultCfg.orgId;
+export const CLINIC_ID = defaultCfg.clinicId;
+export const DOCTOR_ID = defaultCfg.doctorId;
+export const CHAIR_ID = defaultCfg.chairId;
+export const PATIENT_OLD = defaultCfg.patientOld;
+export const PATIENT_NEW = defaultCfg.patientNew;
+export const VISIT_ID = defaultCfg.visitId;
+export const APPOINTMENT_ID = defaultCfg.appointmentId;
 export let ORG_HEADERS: Record<string, string> = { "x-organization-id": ORG_ID };
 
 export function isMissingDatabase(error: unknown): boolean {
@@ -43,31 +65,36 @@ export function getReportDates() {
 	return { period, inPeriod, longAgo };
 }
 
-export async function removeFixtureRows(): Promise<void> {
-	await withFixtureTenant(ORG_ID, async () => {
-		await db.delete(treatmentItems).where(eq(treatmentItems.organizationId, ORG_ID));
-		await db.delete(payments).where(eq(payments.organizationId, ORG_ID));
-		await db.delete(visits).where(eq(visits.organizationId, ORG_ID));
-		await db.delete(appointments).where(eq(appointments.organizationId, ORG_ID));
-		await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
-		await db.delete(chairs).where(eq(chairs.organizationId, ORG_ID));
-		await db.delete(users).where(eq(users.organizationId, ORG_ID));
-		await db.delete(clinics).where(eq(clinics.organizationId, ORG_ID));
-		await db.delete(organizations).where(eq(organizations.id, ORG_ID));
+export async function removeFixtureRows(cfg = defaultCfg): Promise<void> {
+	await withFixtureTenant(cfg.orgId, async () => {
+		await db.delete(treatmentItems).where(eq(treatmentItems.organizationId, cfg.orgId));
+		await db.delete(payments).where(eq(payments.organizationId, cfg.orgId));
+		await db.delete(visits).where(eq(visits.organizationId, cfg.orgId));
+		await db.delete(appointments).where(eq(appointments.organizationId, cfg.orgId));
+		await db.delete(patients).where(eq(patients.organizationId, cfg.orgId));
+		await db.delete(chairs).where(eq(chairs.organizationId, cfg.orgId));
+		await db.delete(users).where(eq(users.organizationId, cfg.orgId));
+		await db.delete(clinics).where(eq(clinics.organizationId, cfg.orgId));
+		await db.delete(organizations).where(eq(organizations.id, cfg.orgId));
 	});
 }
 
-export async function seedFixtureRows(inPeriod: Date, longAgo: Date): Promise<void> {
-	await withFixtureTenant(ORG_ID, async () => {
+export async function seedFixtureRows(
+	inPeriod: Date,
+	longAgo: Date,
+	cfg = defaultCfg,
+	options?: { skipUnlinkedRefund?: boolean },
+): Promise<void> {
+	await withFixtureTenant(cfg.orgId, async () => {
 		await db
 			.insert(organizations)
-			.values({ id: ORG_ID, name: "Клиника отчётов" })
+			.values({ id: cfg.orgId, name: `Клиника отчётов ${cfg.orgId.slice(-4)}` })
 			.onConflictDoNothing();
 		await db
 			.insert(clinics)
 			.values({
-				id: CLINIC_ID,
-				organizationId: ORG_ID,
+				id: cfg.clinicId,
+				organizationId: cfg.orgId,
 				name: "Главная",
 				timezone: "Europe/Moscow",
 			})
@@ -75,17 +102,17 @@ export async function seedFixtureRows(inPeriod: Date, longAgo: Date): Promise<vo
 		await db
 			.insert(chairs)
 			.values({
-				id: CHAIR_ID,
-				organizationId: ORG_ID,
-				clinicId: CLINIC_ID,
+				id: cfg.chairId,
+				organizationId: cfg.orgId,
+				clinicId: cfg.clinicId,
 				name: "Кресло 1",
 			})
 			.onConflictDoNothing();
 		await db
 			.insert(users)
 			.values({
-				id: DOCTOR_ID,
-				organizationId: ORG_ID,
+				id: cfg.doctorId,
+				organizationId: cfg.orgId,
 				fullName: "Петров Пётр Петрович",
 				role: "owner",
 			})
@@ -93,8 +120,8 @@ export async function seedFixtureRows(inPeriod: Date, longAgo: Date): Promise<vo
 		await db
 			.insert(patients)
 			.values([
-				{ id: PATIENT_OLD, organizationId: ORG_ID, fullName: "Старый Пациент Иванович" },
-				{ id: PATIENT_NEW, organizationId: ORG_ID, fullName: "Новый Пациент Петрович" },
+				{ id: cfg.patientOld, organizationId: cfg.orgId, fullName: "Старый Пациент Иванович" },
+				{ id: cfg.patientNew, organizationId: cfg.orgId, fullName: "Новый Пациент Петрович" },
 			])
 			.onConflictDoNothing();
 
@@ -102,47 +129,47 @@ export async function seedFixtureRows(inPeriod: Date, longAgo: Date): Promise<vo
 			.insert(appointments)
 			.values([
 				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_OLD,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
+					organizationId: cfg.orgId,
+					patientId: cfg.patientOld,
+					doctorUserId: cfg.doctorId,
+					chairId: cfg.chairId,
 					status: "completed",
 					startsAt: longAgo,
 					endsAt: new Date(longAgo.getTime() + 60 * 60_000),
 				},
 				{
-					id: APPOINTMENT_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_OLD,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
+					id: cfg.appointmentId,
+					organizationId: cfg.orgId,
+					patientId: cfg.patientOld,
+					doctorUserId: cfg.doctorId,
+					chairId: cfg.chairId,
 					status: "completed",
 					startsAt: inPeriod,
 					endsAt: new Date(inPeriod.getTime() + 90 * 60_000),
 				},
 				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_NEW,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
+					organizationId: cfg.orgId,
+					patientId: cfg.patientNew,
+					doctorUserId: cfg.doctorId,
+					chairId: cfg.chairId,
 					status: "completed",
 					startsAt: new Date(inPeriod.getTime() + 3 * 60 * 60_000),
 					endsAt: new Date(inPeriod.getTime() + 4 * 60 * 60_000),
 				},
 				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_NEW,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
+					organizationId: cfg.orgId,
+					patientId: cfg.patientNew,
+					doctorUserId: cfg.doctorId,
+					chairId: cfg.chairId,
 					status: "cancelled",
 					startsAt: new Date(inPeriod.getTime() + 6 * 60 * 60_000),
 					endsAt: new Date(inPeriod.getTime() + 7 * 60 * 60_000),
 				},
 				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_NEW,
-					doctorUserId: DOCTOR_ID,
-					chairId: CHAIR_ID,
+					organizationId: cfg.orgId,
+					patientId: cfg.patientNew,
+					doctorUserId: cfg.doctorId,
+					chairId: cfg.chairId,
 					status: "no_show",
 					startsAt: new Date(inPeriod.getTime() + 8 * 60 * 60_000),
 					endsAt: new Date(inPeriod.getTime() + 9 * 60 * 60_000),
@@ -153,50 +180,53 @@ export async function seedFixtureRows(inPeriod: Date, longAgo: Date): Promise<vo
 		await db
 			.insert(visits)
 			.values({
-				id: VISIT_ID,
-				organizationId: ORG_ID,
-				patientId: PATIENT_OLD,
-				appointmentId: APPOINTMENT_ID,
+				id: cfg.visitId,
+				organizationId: cfg.orgId,
+				patientId: cfg.patientOld,
+				appointmentId: cfg.appointmentId,
 				status: "signed",
 				createdAt: inPeriod,
 			})
 			.onConflictDoNothing();
 
-		await db
-			.insert(payments)
-			.values([
-				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_OLD,
-					visitId: VISIT_ID,
-					amountRub: 10_000,
-					status: "paid",
-					paidAt: inPeriod,
-				},
-				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_OLD,
-					amountRub: 50_000,
-					status: "planned",
-					paidAt: inPeriod,
-				},
-				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_NEW,
-					amountRub: 7_000,
-					status: "refunded",
-					paidAt: inPeriod,
-				},
-			])
-			.onConflictDoNothing();
+		const paymentRows = [
+			{
+				organizationId: cfg.orgId,
+				patientId: cfg.patientOld,
+				visitId: cfg.visitId,
+				amountRub: 10_000,
+				status: "paid" as const,
+				paidAt: inPeriod,
+			},
+			{
+				organizationId: cfg.orgId,
+				patientId: cfg.patientOld,
+				amountRub: 50_000,
+				status: "planned" as const,
+				paidAt: inPeriod,
+			},
+		];
+
+		if (!options?.skipUnlinkedRefund) {
+			paymentRows.push({
+				organizationId: cfg.orgId,
+				patientId: cfg.patientNew,
+				visitId: undefined,
+				amountRub: 7_000,
+				status: "refunded" as const,
+				paidAt: inPeriod,
+			});
+		}
+
+		await db.insert(payments).values(paymentRows).onConflictDoNothing();
 
 		await db
 			.insert(treatmentItems)
 			.values([
 				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_OLD,
-					visitId: VISIT_ID,
+					organizationId: cfg.orgId,
+					patientId: cfg.patientOld,
+					visitId: cfg.visitId,
 					title: "Лечение кариеса",
 					quantity: "2",
 					priceRub: 8_000,
@@ -205,9 +235,9 @@ export async function seedFixtureRows(inPeriod: Date, longAgo: Date): Promise<vo
 					status: "completed",
 				},
 				{
-					organizationId: ORG_ID,
-					patientId: PATIENT_OLD,
-					visitId: VISIT_ID,
+					organizationId: cfg.orgId,
+					patientId: cfg.patientOld,
+					visitId: cfg.visitId,
 					title: "Гигиена",
 					quantity: "1",
 					priceRub: 16_000,
@@ -224,9 +254,22 @@ export interface ManagerReportsTestContext {
 	app: FastifyInstance;
 	databaseAvailable: boolean;
 	originalEnv: NodeJS.ProcessEnv;
+	orgId: string;
+	clinicId: string;
+	doctorId: string;
+	chairId: string;
+	patientOld: string;
+	patientNew: string;
+	visitId: string;
+	appointmentId: string;
+	headers: Record<string, string>;
 }
 
-export async function setupReportsContext(): Promise<ManagerReportsTestContext> {
+export async function setupReportsContext(
+	suffix = "0401",
+	options?: { skipUnlinkedRefund?: boolean },
+): Promise<ManagerReportsTestContext> {
+	const cfg = getTenantConfig(suffix);
 	const originalEnv = { ...process.env };
 	process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 	process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
@@ -234,16 +277,17 @@ export async function setupReportsContext(): Promise<ManagerReportsTestContext> 
 	process.env.AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || "fixture_test_secret_32_bytes_long_string_12345";
 
 	const secret = authTokenSecret();
-	const clinicToken = signToken({ organizationId: ORG_ID }, secret);
+	const clinicToken = signToken({ organizationId: cfg.orgId }, secret);
 	const staffToken = signToken(
-		{ organizationId: ORG_ID, userId: DOCTOR_ID, role: "owner" },
+		{ organizationId: cfg.orgId, userId: cfg.doctorId, role: "owner" },
 		secret,
 	);
-	ORG_HEADERS = {
-		"x-organization-id": ORG_ID,
+	const headers = {
+		"x-organization-id": cfg.orgId,
 		"x-dente-clinic-token": clinicToken,
 		"x-dente-staff-token": staffToken,
 	};
+	ORG_HEADERS = headers;
 
 	const app = createTenantTestApp();
 	await registerReportRoutes(app);
@@ -252,19 +296,33 @@ export async function setupReportsContext(): Promise<ManagerReportsTestContext> 
 	let databaseAvailable = true;
 
 	try {
-		await removeFixtureRows();
-		await seedFixtureRows(inPeriod, longAgo);
+		await removeFixtureRows(cfg);
+		await seedFixtureRows(inPeriod, longAgo, cfg, options);
 	} catch (error) {
 		if (!isMissingDatabase(error)) throw error;
 		databaseAvailable = false;
 	}
 
-	return { app, databaseAvailable, originalEnv };
+	return {
+		app,
+		databaseAvailable,
+		originalEnv,
+		orgId: cfg.orgId,
+		clinicId: cfg.clinicId,
+		doctorId: cfg.doctorId,
+		chairId: cfg.chairId,
+		patientOld: cfg.patientOld,
+		patientNew: cfg.patientNew,
+		visitId: cfg.visitId,
+		appointmentId: cfg.appointmentId,
+		headers,
+	};
 }
 
 export async function teardownReportsContext(ctx: ManagerReportsTestContext): Promise<void> {
 	if (ctx.databaseAvailable) {
-		await removeFixtureRows();
+		const cfg = getTenantConfig(ctx.orgId.slice(-4));
+		await removeFixtureRows(cfg);
 	}
 	await ctx.app.close();
 	process.env = ctx.originalEnv;

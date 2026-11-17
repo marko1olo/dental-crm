@@ -214,6 +214,9 @@ async function main() {
 			await page.goto(`${baseUrl}/#schedule`, { waitUntil: "domcontentloaded", timeout: 45000 });
 			await page.waitForTimeout(2000);
 			await page.waitForSelector(".workspace-shell, nav, header", { state: "visible", timeout: 25000 }).catch(() => {});
+			// Wait for splash loader to finish
+			await page.waitForSelector("text='Подготовка модулей расписания'", { state: "detached", timeout: 20000 }).catch(() => {});
+			await page.waitForTimeout(3000);
 			await suppressOverlays(page);
 
 			// Нажимаем переключатель панели подтверждений дня / обзвона

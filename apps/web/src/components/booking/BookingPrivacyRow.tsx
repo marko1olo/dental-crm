@@ -10,20 +10,30 @@ export const BookingPrivacyRow: React.FC<BookingPrivacyRowProps> = ({
 	onAgreedChange,
 }) => {
 	return (
-		<div className="dbw-privacy-row">
+		<div className="dbw-privacy-row flex items-start gap-2.5">
 			<input
 				id="privacy-checkbox"
 				data-testid="privacy-checkbox"
 				type="checkbox"
 				checked={hasAgreedToPrivacy}
 				onChange={(e) => onAgreedChange(e.target.checked)}
-				className="w-5 h-5 cursor-pointer min-w-[20px] min-h-[20px]"
+				className="w-5 h-5 cursor-pointer min-w-[20px] min-h-[20px] mt-0.5 accent-[var(--primary)]"
 			/>
 			<label
 				htmlFor="privacy-checkbox"
-				className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug cursor-pointer py-2 flex items-center"
+				className="text-xs font-medium text-[var(--ink-muted)] leading-snug cursor-pointer select-none"
 			>
-				Я согласен на обработку персональных данных для записи на приём
+				Я согласен с{" "}
+				<a
+					href="/privacy"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="underline underline-offset-2 hover:text-[var(--primary)] text-[var(--ink)] transition-colors"
+					onClick={(e) => e.stopPropagation()}
+				>
+					политикой конфиденциальности (152-ФЗ)
+				</a>{" "}
+				и даю согласие на обработку персональных данных
 			</label>
 		</div>
 	);

@@ -12,6 +12,7 @@ import {
 	patientInvoices,
 	patients,
 	treatmentPlans,
+	users,
 	visitDiaries,
 } from "../../../db/schema.js";
 import type { HealthQuestionnaireBody } from "../types.js";
@@ -23,15 +24,62 @@ export async function fetchPatientMedicalRecords(
 	patientId: string,
 	organizationId: string,
 ) {
-	const visits = await db
-		.select()
+	// Врачи организации для явной DTO-проекции
+	const doctorRows = await db
+		.select({
+			id: users.id,
+			fullName: users.fullName,
+			specialties: users.specialties,
+		})
+		.from(users)
+		.where(eq(users.organizationId, organizationId));
+
+	const doctorMap = new Map(doctorRows.map((d) => [d.id, d]));
+
+	// [DEF-PORTAL-02] Явная проекция DTO визитов для пациента без служебных крипто-хэшей, баркодов и ID персонала
+	const rawVisits = await db
+		.select({
+			id: visitDiaries.id,
+			visitId: visitDiaries.visitId,
+			createdAt: visitDiaries.createdAt,
+			doctorId: visitDiaries.doctorId,
+			complaint: visitDiaries.complaint,
+			diagnosisIcd10: visitDiaries.diagnosisIcd10,
+			diagnosisTooth: visitDiaries.diagnosisTooth,
+			treatmentDescription: visitDiaries.treatmentDescription,
+			statusLocalis: visitDiaries.statusLocalis,
+			content: visitDiaries.content,
+		})
 		.from(visitDiaries)
 		.where(
 			and(
 				eq(visitDiaries.patientId, patientId),
 				eq(visitDiaries.organizationId, organizationId),
 			),
-		);
+		)
+		.orderBy(desc(visitDiaries.createdAt));
+
+	const visits = rawVisits.map((v) => {
+		const doc = v.doctorId ? doctorMap.get(v.doctorId) : undefined;
+		const docSpecialty = Array.isArray(doc?.specialties)
+			? doc.specialties[0]
+			: typeof doc?.specialties === "string"
+				? doc.specialties
+				: "Стоматолог";
+		return {
+			id: v.id,
+			visitId: v.visitId,
+			visitDate: v.createdAt ? v.createdAt.toISOString() : null,
+			doctorName: doc?.fullName || "Врач клиники",
+			specialty: docSpecialty,
+			complaint: v.complaint || null,
+			diagnosisDescription: [v.diagnosisIcd10, v.diagnosisTooth ? `(зуб ${v.diagnosisTooth})` : ""]
+				.filter(Boolean)
+				.join(" ") || null,
+			patientRecommendations: v.statusLocalis || v.treatmentDescription || v.content || null,
+			treatmentDescription: v.treatmentDescription || null,
+		};
+	});
 
 	const plans = await db
 		.select()
@@ -64,7 +112,7 @@ export async function fetchPatientMedicalRecords(
 			),
 		);
 
-	// 152-ФЗ / 323-ФЗ ст. 13: Снимки визиографа/КТ без служебных заметок врача/куратора
+	// [DEF-PORTAL-01] 152-ФЗ / 323-ФЗ: Защищенный URL скачивания без утечки физического пути хоста
 	const scans = await db
 		.select({
 			id: imagingStudies.id,
@@ -73,7 +121,6 @@ export async function fetchPatientMedicalRecords(
 			toothCode: imagingStudies.toothCode,
 			capturedAt: imagingStudies.capturedAt,
 			aiSummary: imagingStudies.aiSummary,
-			storagePath: imagingStudies.storagePath,
 		})
 		.from(imagingStudies)
 		.where(
@@ -84,12 +131,23 @@ export async function fetchPatientMedicalRecords(
 		)
 		.orderBy(desc(imagingStudies.capturedAt));
 
+	const sanitizedScans = scans.map((s) => ({
+		id: s.id,
+		titleRu: s.titleRu,
+		modality: s.modality,
+		toothCode: s.toothCode,
+		capturedAt: s.capturedAt,
+		aiSummary: s.aiSummary,
+		downloadUrl: `/api/portal/scans/${s.id}/download`,
+		viewUrl: `/api/portal/scans/${s.id}/view`,
+	}));
+
 	return {
 		visits,
 		plans,
 		invoices,
 		documents,
-		scans,
+		scans: sanitizedScans,
 	};
 }
 
