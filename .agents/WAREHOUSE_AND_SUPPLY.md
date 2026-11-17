@@ -330,6 +330,32 @@
   * В `packages/shared/src/warehouse/autoVisitBomEngine.ts` ликвидирован симулятор веса осколков стекла карпул (`calculateClassBWasteWeightKg`).
   * Печатные формы очищены от бланков Госкомстата (ИНВ-3, ИНВ-19, ТОРГ-12, ТОРГ-16, М-11) и переведены на чистую медицинскую терминологию («Инвентаризационная ведомость остатков материалов», «Сличительная ведомость материалов клиники», «Приходная накладная материалов клиники»).
 
+---
+
+## 🔬 15. Red Team Fixer: Домен №39 «Стерилизация, автоклавы, журналы СанПиН 3.3686-21, азопирамовые пробы и крафт-пакеты» (Мандаты 8bd, 8e, 8n, 8x, 8am, 8bj, 8al)
+
+* **ДЕФЕКТ №1: Идемпотентная привязка крафт-пакетов к медицинской карте (`kraftDiaryLink.ts`)**:
+  * Ликвидирована фиктивная заглушка `attachKraftPackageToDiary`, игнорировавшая данные пакета.
+  * Реализовано бесшовное связывание реквизитов автоклава, цикла, индикатора и крафт-пакета со структурированным полем `appliedMaterials` (SOAP протокола) и строковыми представлениями дневника приёма.
+  * Гарантирована строгая идемпотентность: повторное сканирование одного и того же пакета не дублирует запись стерилизации в медкарте.
+* **ДЕФЕКТ №2: Строгая валидация парсера штрихкодов (`kraftBarcodeParser.ts`)**:
+  * Устранен ложно-положительный результат `isValid: true` при пустых или пробельных строках.
+  * Пустой ввод детерминированно возвращает `isValid: false`, `isExpired: true`, `errorMessage: "Штрихкод крафт-пакета не указан или пуст."`.
+* **ДЕФЕКТ №3: Токенизация и ликвидация хардкода `#334155` (Мандат 8am)**:
+  * В `SterilizationBatchCycleModal.tsx`, `SanPinSterilizationJournal.tsx`, `CleaningControlTab.tsx` и `sanpin.css` ликвидирован хардкод `dark:border-[#334155]` и `divide-[#334155]`. Все контуры переведены на семантический токен `var(--line)`.
+* **ДЕФЕКТ №4: Осознанная селекция сирот (Мандат 8bj)**:
+  * Удалены реальные сироты (`SanpinUvAndCleaningRegisterTab.tsx` — 8-строчный дублирующий фасад, заменен прямым реэкспортом `UvAndCleaningTab`, и `SanpinUvAndCleaningSubHeader.tsx` с 0 импортов).
+  * Подтверждена неприкосновенность активных модулей печати и журналов (`autoclaveMonthlyJournalPrint.ts`, `AutoclavePrintHelpers.ts`, `bactericidalShiftHelpers.ts`, `generalCleaningPrintHelpers.ts` и др.), используемых боевым интерфейсом.
+* **Машинные гейты и 4-State Visual Proofs (Мандат 8al)**:
+  * Все тесты СанПиН (14 в `sanpinAutoInventory.test.ts`, 14 в `sanpinInventoryAutopilot.test.ts`, 9 в `sterilization043QuickScannerLink.test.ts`, 30 в `sanpin.test.ts`, 310 в `apps/web/src/components/sanpin/__tests__/`) — 100% GREEN (Exit Code 0).
+  * `npm run check:encoding`: 0 ошибок (20 140 файлов проверено).
+  * Сняты и лично отсмотрены через `read_file` 4 скриншота высокого разрешения в `docs/proofs/sanpin/`:
+    * ☀️ PC Light (1440×900, 127 KB): `01_sanpin_studio_pc_light_1440x900.png`
+    * 🌙 PC Dark (1440×900, 162 KB): `02_sanpin_studio_pc_dark_1440x900.png`
+    * 📱 Mobile Light (390×844, 166 KB): `03_sanpin_studio_mobile_light_390x844.png`
+    * 🌙 Mobile Dark (390×844, 175 KB): `04_sanpin_studio_mobile_dark_390x844.png`
+
+
 
 
 

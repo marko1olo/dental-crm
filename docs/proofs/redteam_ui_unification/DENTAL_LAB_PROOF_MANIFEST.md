@@ -62,3 +62,7 @@
 2. **Мандат 8n (Соло-врач и малая клиника)**: Ноль лишней бюрократии, 1-кликовый экспресс-заказ из кресла врача и 1-кликовая приемка «✓ Получено в клинику».
 3. **Мандат 8x & 8ao (Анти-враньё и чистый русский язык)**: 0 упоминаний «043/у», «804н», «Форма 257/у» и 0 упоминаний чужих брендов в коде и интерфейсе.
 4. **Apple HIG**: Тач-таргеты $\ge 44\times 44\text{px}$, Natural Thumb Zone, нативные шторки и Grouped List на смартфонах.
+5. **Мандаты 8am, 8bi (UPPERCASE BAN & Filename Shadowing Elimination)**:
+   - Ликвидированы 8 точек несанкционированного `uppercase` и инлайн-стилей `textTransform: "uppercase"` в компонентах ЗТЛ: `MobileSheetStatusButtons.tsx`, `LabOrdersTableHeader.tsx`, `DentalLabExpressShadeNav.tsx`, `TimelineTrialDatesCards.tsx`, `LabTrackingPipelineStages.tsx`, `LabTrackingRestorationSummary.tsx`, `GuestLabPortalCourierWaybill.tsx`, `GuestLabPortalHeader.tsx`.
+   - Ликвидирован дефект семантики имени файла (Filename Shadowing): `ordersView/LabOrderCard.tsx` переименован в `ordersView/LabOrderCardsGrid.tsx`, синхронизированы экспорты в `ordersView/index.ts` и `DentalLabOrdersViewSwitch.tsx`.
+   - Все 44 юнит-теста домена ЗТЛ пройдены с результатом 100% PASS, компилятор `tsc` 0 ошибок.

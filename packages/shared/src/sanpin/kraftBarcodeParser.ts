@@ -41,21 +41,19 @@ export function parseAndValidateKraftBarcode(
 	const autoclaveId = options.defaultAutoclaveId || "Автоклав №1";
 
 	if (!trimmed) {
-		// Мандат 8e / 8n / DEF-SAN-01: Презумпция стерильности лотка по умолчанию у кресла.
-		// Врач лечит зубы, а не занимается поштучным сканированием штрихкодов в перчатках.
 		return {
 			rawInput: "",
 			barcodeType: "code128_1d",
-			isValid: true,
-			isExpired: false,
+			isValid: false,
+			isExpired: true,
 			isExpiringSoon: false,
-			daysRemaining: 50,
-			daysLifespan: 50,
-			batchId: "SHIFT-BATCH",
+			daysRemaining: 0,
+			daysLifespan: 0,
+			batchId: "",
 			autoclaveId,
-			cycleNumber: 1,
+			cycleNumber: 0,
 			packDateIso: refDate,
-			expDateIso: addDaysToIso(refDate, 50),
+			expDateIso: refDate,
 			operatorId: "STAFF-CSO",
 			operatorName,
 			toolSetId: "set_therapeutic_tray",
@@ -64,11 +62,11 @@ export function parseAndValidateKraftBarcode(
 			packageSizeId: "size_100x200",
 			indicatorId: "chemical_indicator_class_5",
 			indicatorClassRu: "Химический интегратор 5 класса",
-			indicatorPassed: true,
+			indicatorPassed: false,
 			sanpinClauseRu: "Стандарт стерилизации инструментария",
 			formattedSterilizationDiaryRecord: "",
 			formattedProtocolRecord043: "",
-			errorMessage: undefined,
+			errorMessage: "Штрихкод крафт-пакета не указан или пуст.",
 		};
 	}
 

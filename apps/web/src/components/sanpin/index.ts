@@ -15,7 +15,7 @@ export * from "./DirectSanpinLauncher";
 export * from "./SanpinRegisters";
 export * from "./SanpinCleaningAndDisinfectionView";
 export * from "./SterilizationBatchCycleModal";
-export { SanpinUvAndCleaningRegisterTab } from "./SanpinUvAndCleaningRegisterTab";
+export { UvAndCleaningTab as SanpinUvAndCleaningRegisterTab } from "./UvAndCleaningTab";
 export * from "./BactericidalRegisterTab";
 export * from "./GeneralCleaningRegisterTab";
 export * from "./CabinetReadinessTab";

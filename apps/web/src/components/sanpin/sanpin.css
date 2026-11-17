@@ -154,11 +154,11 @@
 .dark .sanpin-secondary-btn {
 	background-color: var(--paper, #1e293b);
 	color: var(--ink, #f1f5f9);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 
 .dark .sanpin-secondary-btn:hover {
-	background-color: var(--paper-soft, #334155);
+	background-color: var(--paper-soft);
 }
 
 .sanpin-table-wrapper {

@@ -46,10 +46,56 @@ export function attachKraftPackageToDiary<T extends { appliedMaterials?: string 
 ): T;
 export function attachKraftPackageToDiary(
 	diaryOrText: { appliedMaterials?: string | null; treatmentDescription?: string | null } | string,
-	_parsedKraft: ParsedKraftBarcode,
+	parsedKraft: ParsedKraftBarcode,
 ): { appliedMaterials?: string | null; treatmentDescription?: string | null } | string {
-	// Дневник приёма сохраняется в чистом клиническом виде
-	return diaryOrText;
+	const record =
+		parsedKraft.formattedProtocolRecord043 ||
+		parsedKraft.formattedSterilizationDiaryRecord ||
+		(parsedKraft.autoclaveId
+			? formatSterilizationDiaryRecord({
+					autoclaveId: parsedKraft.autoclaveId,
+					cycleNumber: parsedKraft.cycleNumber || 1,
+					packDateIso: parsedKraft.packDateIso,
+					expDateIso: parsedKraft.expDateIso,
+					barcode: parsedKraft.rawInput || parsedKraft.batchId,
+					operatorName: parsedKraft.operatorName,
+					toolSetNameRu: parsedKraft.toolSetNameRu,
+					isExpired: parsedKraft.isExpired,
+				})
+			: "");
+
+	if (!record) {
+		return diaryOrText;
+	}
+
+	const barcodeIdentifier = (parsedKraft.rawInput || parsedKraft.batchId || "").trim();
+
+	if (typeof diaryOrText === "string") {
+		if (
+			diaryOrText.includes(record) ||
+			(barcodeIdentifier.length > 3 && diaryOrText.includes(barcodeIdentifier))
+		) {
+			return diaryOrText;
+		}
+		const trimmed = diaryOrText.trim();
+		return trimmed ? `${trimmed}\n\n${record}` : record;
+	}
+
+	const existingMaterials = diaryOrText.appliedMaterials ?? "";
+	if (
+		existingMaterials.includes(record) ||
+		(barcodeIdentifier.length > 3 && existingMaterials.includes(barcodeIdentifier))
+	) {
+		return diaryOrText;
+	}
+
+	const trimmedExisting = existingMaterials.trim();
+	const newMaterials = trimmedExisting ? `${trimmedExisting}\n${record}` : record;
+
+	return {
+		...diaryOrText,
+		appliedMaterials: newMaterials,
+	};
 }
 
 export const attachKraftPackageTo043Diary = attachKraftPackageToDiary;

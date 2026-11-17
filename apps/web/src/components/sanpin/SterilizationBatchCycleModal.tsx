@@ -230,7 +230,7 @@ export function SterilizationBatchCycleModal({
 							<input id="nurse-name-input" type="text" value={operatorName} onChange={(e) => setOperatorName(e.target.value)} className="w-full h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#1e293b)] font-medium focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]" />
 						</div>
 					</div>
-					<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] flex flex-col gap-1">
+					<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] flex flex-col gap-1">
 						<div className="flex items-center justify-between text-xs">
 							<span className="font-bold text-[var(--ink,#1e293b)] inline-flex items-center gap-1.5"><FlaskConical size={13} className="text-[var(--teal,#0d9488)]" />Предстерилизационная очистка:</span>
 							<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"><CheckCircle2 size={11} /> 100% норма</span>

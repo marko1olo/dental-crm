@@ -38,16 +38,19 @@
 
 | Состояние | Разрешение | Файл скриншота | Размер | Статус инспекции |
 |---|---|---|---|---|
-| ☀️ **PC Light** | 1440×900 | [`01_sanpin_studio_pc_light_1440x900.png`](./01_sanpin_studio_pc_light_1440x900.png) | 84 KB | **ПРОВЕРЕНО**: Все 3 вкладки видны, ровно 1 Primary CTA #0d9488, аккуратная десктопная таблица, плашка пакетного списания расходников со склада. |
-| 🌙 **PC Dark** | 1440×900 | [`02_sanpin_studio_pc_dark_1440x900.png`](./02_sanpin_studio_pc_dark_1440x900.png) | 83 KB | **ПРОВЕРЕНО**: Глубокий темный фон, контраст WCAG AAA, бирюзовый акцент #0d9488, 0 слепящих пятен. |
-| 📱 **Mobile Light** | 390×844 | [`03_sanpin_studio_mobile_light_390x844.png`](./03_sanpin_studio_mobile_light_390x844.png) | 51 KB | **ПРОВЕРЕНО**: Нативный Bottom Sheet, rounded-t-[24px], drag handle 36×5px, Grouped List Cards вместо таблицы, кнопка $\ge 44$px в зоне большого пальца, 0px горизонтального скролла. |
-| 📱 **Mobile Dark** | 390×844 | [`04_sanpin_studio_mobile_dark_390x844.png`](./04_sanpin_studio_mobile_dark_390x844.png) | 52 KB | **ПРОВЕРЕНО**: Темный мобильный Bottom Sheet, карточки циклов, 0px горизонтального дрифта, безопасный отступ снизу. |
+| ☀️ **PC Light** | 1440×900 | [`01_sanpin_studio_pc_light_1440x900.png`](./01_sanpin_studio_pc_light_1440x900.png) | 127 KB | **ПРОВЕРЕНО**: Все 3 вкладки видны, ровно 1 Primary CTA #0d9488, аккуратная десктопная таблица, плашка пакетного списания расходников со склада. |
+| 🌙 **PC Dark** | 1440×900 | [`02_sanpin_studio_pc_dark_1440x900.png`](./02_sanpin_studio_pc_dark_1440x900.png) | 162 KB | **ПРОВЕРЕНО**: Глубокий темный фон, контраст WCAG AAA, бирюзовый акцент #0d9488, 0 слепящих пятен, токен `var(--line)` без хардкода `#334155`. |
+| 📱 **Mobile Light** | 390×844 | [`03_sanpin_studio_mobile_light_390x844.png`](./03_sanpin_studio_mobile_light_390x844.png) | 166 KB | **ПРОВЕРЕНО**: Нативный Bottom Sheet, rounded-t-[24px], drag handle 36×5px, Grouped List Cards вместо таблицы, кнопка $\ge 44$px в зоне большого пальца, 0px горизонтального скролла. |
+| 📱 **Mobile Dark** | 390×844 | [`04_sanpin_studio_mobile_dark_390x844.png`](./04_sanpin_studio_mobile_dark_390x844.png) | 175 KB | **ПРОВЕРЕНО**: Темный мобильный Bottom Sheet, карточки циклов, 0px горизонтального дрифта, безопасный отступ снизу. |
 
 ---
 
-## 3. Машинные гейты и верификация
+## 3. Машинные гейты и верификация (Red Team Fixer — Домен №39)
 
-- `node --test apps/web/src/components/sanpin/__tests__/*.test.ts*`: **329 tests, 119 suites, 329 pass, 0 fail (100% PASS, Exit Code 0)**
-- `npm run check:encoding`: **23 745 файлов проверено, 0 ошибок (Strict UTF-8 without BOM)**
-- `node scripts/check-css-tokens.mjs`: **0 неразрешенных имен (Exit Code 0)**
-- `Mandate 8d pt 7 emoji check`: **CLEAN (0 эмодзи в коде)**
+- `npx tsx --test packages/shared/src/tests/sanpinAutoInventory.test.ts`: **14/14 pass (100% GREEN, Exit Code 0)**
+- `npx tsx --test packages/shared/src/tests/sanpinInventoryAutopilot.test.ts`: **14/14 pass (100% GREEN, Exit Code 0)**
+- `npx tsx --test packages/shared/src/tests/sanpin.test.ts`: **30/30 pass (100% GREEN, Exit Code 0)**
+- `npx tsx --test apps/web/src/tests/sterilization043QuickScannerLink.test.ts`: **9/9 pass (100% GREEN, Exit Code 0)**
+- `npx tsx --test apps/web/src/components/sanpin/__tests__/*.test.ts*`: **310/310 pass (100% GREEN, Exit Code 0)**
+- `npx tsc -p packages/shared/tsconfig.json --noEmit`: **0 ошибок (Exit Code 0)**
+- `npm run check:encoding`: **20 140 файлов проверено, 0 замечаний (Strict UTF-8 without BOM)**
