@@ -86,10 +86,8 @@ export function QuickNotesAndConflictSection({
                 type="button"
                 onClick={() => {
                   const tag = `[Отмена: ${refuse.nameRu}]`;
-                  setComment((prev) => {
-                    const clean = prev.replace(/\[Отмена:[^\]]*\]/g, "").trim();
-                    return clean ? `${tag} ${clean}` : tag;
-                  });
+                  const clean = comment.replace(/\[Отмена:[^\]]*\]/g, "").trim();
+                  setComment(clean ? `${tag} ${clean}` : tag);
                 }}
                 className="min-h-[36px] px-2.5 py-1 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all cursor-pointer"
               >

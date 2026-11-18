@@ -50,7 +50,11 @@ export function useScheduleChairDuty(props: UseScheduleChairDutyProps) {
 
   const handleConfirmAssignDoctor = useCallback(
     (chairId: string, docId: string, shiftPreset: string | unknown, eveningDocId?: string) => {
-      const normalizedPreset = typeof shiftPreset === "string" ? shiftPreset : "morning";
+      const validPresets = ["morning", "morning_9", "evening", "evening_15", "full", "full_9_21", "two_shifts"] as const;
+      type ValidPreset = typeof validPresets[number];
+      const normalizedPreset: ValidPreset = typeof shiftPreset === "string" && validPresets.includes(shiftPreset as ValidPreset)
+        ? (shiftPreset as ValidPreset)
+        : "morning";
       const assignment = buildChairShiftAssignment(chairId, docId, normalizedPreset, staffState.doctors, effectiveChairAssignments, eveningDocId);
       const chair = staffState.effectiveChairs.find((c) => c.id === chairId) || { id: chairId, name: "Кресло" };
       saveAssignment(chairId, assignment);

@@ -51,8 +51,13 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
       const isEmergency = appointmentType === "emergency";
 
       if (collision.hasCollision && !isEmergency && !opts?.overbookOverride) {
-        const slotStr = collision.suggestedSlot ? collision.suggestedSlot.timeDisplay || collision.suggestedSlot.label : null;
-        setSlotConflict({ message: collision.message || "Конфликт времени приёма", suggestedSlots: slotStr ? [slotStr] : [] });
+        const rawSlotStr = collision.suggestedSlot?.timeDisplay || collision.suggestedSlot?.label;
+        const validSlotStr = typeof rawSlotStr === "string" && rawSlotStr.trim() ? rawSlotStr.trim() : null;
+        const conflictMessage = String(collision.message || "Конфликт времени приёма");
+        setSlotConflict({
+          message: conflictMessage,
+          suggestedSlots: validSlotStr ? [validSlotStr] : [],
+        });
         return;
       }
 

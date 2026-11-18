@@ -18,7 +18,7 @@ export interface AppointmentCardVisualState {
 	allergyAlert?: string | null | undefined;
 	somaticAlert?: string | null | undefined;
 	labReadinessAlert?: string | null | undefined;
-	appointmentChair?: Dashboard["chairs"][number] | null | undefined;
+	appointmentChair?: NonNullable<Dashboard["clinicSettings"]["chairs"]>[number] | { id?: string | undefined; name?: string | undefined } | null | undefined;
 	[key: string]: unknown;
 }
 

@@ -1,8 +1,11 @@
 import type React from "react";
 import type {
   Appointment,
+  Chair,
   Dashboard,
+  Patient,
 } from "@dental/shared";
+import type { ScheduleStaffMember, ScheduleGridCollision } from "../../appointmentCardModules/appointmentCardTypes";
 import type { ChairMaintenanceBlock } from "../../../../utils/scheduleCollisionUtils";
 import type { ChairDoctorShiftAssignment } from "../gridTypes";
 import type { QuickBookingSlotInfo } from "../../QuickBookingDrawer";
@@ -12,7 +15,7 @@ export interface ScheduleAppointmentTrackProps {
   densityMode?: ScheduleDensityMode;
   timeSlots: string[];
   gridStep: 15 | 30 | 60;
-  effectiveChairs: Array<{ id: string; name: string; color?: string; [key: string]: unknown }>;
+  effectiveChairs: Array<Chair | { id: string; name: string; color?: string | null | undefined; [key: string]: unknown }>;
   dateKey: string;
   chairSlotCellMap: Map<
     string,
@@ -34,9 +37,9 @@ export interface ScheduleAppointmentTrackProps {
   dashboard: Dashboard;
   handleRemoveMaintenance: (blockId: string) => void;
   doctors: Array<{ id: string; fullName: string; [key: string]: unknown }>;
-  patientLookupMap: Map<string, unknown>;
-  staffLookupMap: Map<string, unknown>;
-  collisionMap: Map<string, unknown>;
+  patientLookupMap: Map<string, Patient>;
+  staffLookupMap: Map<string, ScheduleStaffMember>;
+  collisionMap: Map<string, ScheduleGridCollision>;
   timezone: string;
   toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;
   appointmentLabels: Record<Appointment["status"], string>;
@@ -69,7 +72,15 @@ export interface ScheduleAppointmentTrackProps {
   onAppointmentMove?:
     | ((
         appointmentId: string,
-        updates: Partial<Appointment> & Record<string, unknown>,
+        updates: {
+          startsAt?: string | undefined;
+          endsAt?: string | undefined;
+          chairId?: string | null | undefined;
+          doctorUserId?: string | null | undefined;
+          allowOverbooking?: boolean | undefined;
+          status?: Appointment["status"] | undefined;
+          [key: string]: unknown;
+        },
       ) => Promise<unknown> | void)
     | undefined;
   onSlotClick: (slot: QuickBookingSlotInfo) => void;

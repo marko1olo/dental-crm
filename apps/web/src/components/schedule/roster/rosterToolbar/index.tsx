@@ -114,14 +114,19 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 
 		React.useEffect(() => {
 			if (!selectedDoctorId && doctors.length > 0) {
-				setSelectedDoctorId(doctors[0]!.id);
+				const firstDoc = doctors[0];
+				if (firstDoc) {
+					setSelectedDoctorId(firstDoc.id);
+				}
 			}
 		}, [doctors, selectedDoctorId]);
 
 		React.useEffect(() => {
 			if (!selectedChairKey && allChairs.length > 0) {
-				const firstChair = allChairs[0]!;
-				setSelectedChairKey(`${firstChair.cabinetId}:::${firstChair.chairId}`);
+				const firstChair = allChairs[0];
+				if (firstChair) {
+					setSelectedChairKey(`${firstChair.cabinetId}:::${firstChair.chairId}`);
+				}
 			}
 		}, [allChairs, selectedChairKey]);
 

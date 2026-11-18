@@ -62,7 +62,18 @@ export interface ScheduleGridProps {
   selectedChairId?: string | null | undefined;
   selectedDoctorId?: string | null | undefined;
   onAppointmentMove?:
-    ((appointmentId: string, updates: Partial<Appointment> & { allowOverbooking?: boolean }) => Promise<unknown> | void) | undefined;
+    ((
+      appointmentId: string,
+      updates: {
+        startsAt?: string | undefined;
+        endsAt?: string | undefined;
+        chairId?: string | null | undefined;
+        doctorUserId?: string | null | undefined;
+        allowOverbooking?: boolean | undefined;
+        status?: Appointment["status"] | undefined;
+        [key: string]: unknown;
+      },
+    ) => Promise<unknown> | void) | undefined;
   chairDoctorAssignments?:
     Record<string, ChairDoctorShiftAssignment> | undefined;
   onAssignChairDoctor?:

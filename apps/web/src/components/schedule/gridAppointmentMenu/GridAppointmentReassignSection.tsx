@@ -5,7 +5,7 @@ import { showRollbackToast } from "../../GlobalToast";
 
 interface Props {
 	appointment: Appointment;
-	effectiveChairs: Array<{ id: string; name: string; color?: string; colorId?: string | number }>;
+	effectiveChairs: Array<{ id: string; name: string; color?: string | null | undefined; colorId?: string | number | undefined; [key: string]: unknown }>;
 	doctors: Array<{ id: string; fullName: string; specialties?: string[]; role?: string }>;
 	onReassignChair: (appt: Appointment, chairId: string) => void;
 	onReassignDoctor: (appt: Appointment, doctorId: string) => void;

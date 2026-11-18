@@ -228,8 +228,9 @@ export function AppointmentModalLabSection({
       </div>
 
       {items.map((item) => {
-        const hasDue = Boolean(item.dueDateIso);
-        const dueDateObj = hasDue ? new Date(item.dueDateIso!) : null;
+        const dueDateIso = item.dueDateIso;
+        const hasDue = Boolean(dueDateIso);
+        const dueDateObj = dueDateIso ? new Date(dueDateIso) : null;
         const isBeforeLab =
           dueDateObj &&
           startsAtLocal &&

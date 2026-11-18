@@ -40,8 +40,9 @@ export function detectDoctorChairConflicts(
 		if (chairShifts.length > 1) {
 			chairShifts.sort((a, b) => a.startTime.localeCompare(b.startTime));
 			for (let i = 0; i < chairShifts.length - 1; i++) {
-				const current = chairShifts[i]!;
-				const next = chairShifts[i + 1]!;
+				const current = chairShifts[i];
+				const next = chairShifts[i + 1];
+				if (!current || !next) continue;
 				if (current.endTime > next.startTime && current.doctorId !== next.doctorId) {
 					const [chairId, dateIso] = key.split("_");
 					conflicts.push({

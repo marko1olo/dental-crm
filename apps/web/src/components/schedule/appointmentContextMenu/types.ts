@@ -4,7 +4,7 @@ export interface AppointmentCardContextMenuProps {
 	appointment: Appointment;
 	dashboard: Dashboard;
 	appointmentSuggestions?: ScheduleSuggestion[] | readonly ScheduleSuggestion[] | undefined;
-	appointmentPatient: { id?: string; fullName?: string; phone?: string | null } | null | undefined;
+	appointmentPatient: { id?: string | undefined; fullName?: string | undefined; phone?: string | null | undefined; [key: string]: unknown } | null | undefined;
 	appointmentPatientName: string;
 	appointmentDoctor: { id?: string | undefined; fullName?: string | undefined; role?: string | undefined } | null | undefined;
 	isQuickStatusUpdating: boolean;

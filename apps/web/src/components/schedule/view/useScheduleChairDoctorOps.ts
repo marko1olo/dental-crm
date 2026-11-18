@@ -56,11 +56,12 @@ export function useScheduleChairDoctorOps({
   const handleAddChairFromSchedule = useCallback(
     async (chairData: QuickAddChairData) => {
       setScheduleChairFilterId(null);
-      const isUpdate = Boolean(chairData.id);
+      const chairId = chairData.id;
+      const isUpdate = Boolean(chairId);
       let isSuccess = false;
       try {
-        const url = isUpdate
-          ? `/api/settings/chairs/${encodeURIComponent(chairData.id!)}`
+        const url = isUpdate && chairId
+          ? `/api/settings/chairs/${encodeURIComponent(chairId)}`
           : "/api/settings/chairs";
         const method = isUpdate ? "PUT" : "POST";
         const res = await fetch(url, {

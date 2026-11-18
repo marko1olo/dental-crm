@@ -44,13 +44,13 @@ export function TodayQueueItemActionButtons({
         </button>
       )}
 
-      {item.primaryAction && (
+      {item.primaryAction ? (
         <button
           type="button"
           data-testid={`queue-primary-action-${item.id}`}
           onClick={() => {
-            if (isPrimaryBusy) return;
-            handleActionClick(item, item.primaryAction!);
+            if (isPrimaryBusy || !item.primaryAction) return;
+            handleActionClick(item, item.primaryAction);
           }}
           className={`inline-flex h-9 min-h-[36px] sm:h-9 min-h-[44px] sm:min-h-[36px] cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3.5 text-xs font-bold transition-all shadow-2xs select-none ${
             item.primaryAction.buttonVariant === "primary"
@@ -70,7 +70,7 @@ export function TodayQueueItemActionButtons({
           {item.primaryAction.iconName === "RotateCcw" && <RotateCcw size={14} className="shrink-0" />}
           <span>{item.primaryAction.labelRu}</span>
         </button>
-      )}
+      ) : null}
 
       {item.secondaryActions.length > 0 &&
         item.secondaryActions.slice(0, 1).map((secAction) => (

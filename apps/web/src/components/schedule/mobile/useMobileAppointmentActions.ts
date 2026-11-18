@@ -4,7 +4,7 @@ interface MobileAppointmentActionParams {
   onAppointmentMove?:
     | ((
         id: string,
-        patch: Partial<Appointment> & Record<string, unknown>,
+        patch: { startsAt?: string | undefined; endsAt?: string | undefined; chairId?: string | undefined; doctorUserId?: string | undefined; allowOverbooking?: boolean | undefined; status?: Appointment["status"] | undefined },
       ) => Promise<unknown> | void)
     | undefined;
 }

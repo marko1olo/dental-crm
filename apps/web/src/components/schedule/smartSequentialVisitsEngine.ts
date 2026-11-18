@@ -62,7 +62,13 @@ export function formatDateIso(d: Date): string {
 export function formatRuDate(dateStr: string): string {
   try {
     const parts = dateStr.split("-").map(Number);
-    const d = new Date(parts[0]!, parts[1]! - 1, parts[2]!);
+    const y = parts[0];
+    const m = parts[1];
+    const day = parts[2];
+    if (y === undefined || m === undefined || day === undefined || Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(day)) {
+      return dateStr;
+    }
+    const d = new Date(y, m - 1, day);
     const months = [
       "янв", "фев", "мар", "апр", "май", "июн",
       "июл", "авг", "сен", "окт", "ноя", "дек",
@@ -234,14 +240,14 @@ export interface CreateSmartSequentialAppointmentParams {
   parentAppointment: {
     id: string;
     patientId: string;
-    doctorUserId?: string | null;
-    chairId?: string | null;
-    startsAt?: string | null;
-    toothNumber?: number | null;
-    diagnosisMkb10?: string | null;
-    reason?: string | null;
-    clinicalStage?: string | null;
-    stageIndex?: number | null;
+    doctorUserId?: string | null | undefined;
+    chairId?: string | null | undefined;
+    startsAt?: string | null | undefined;
+    toothNumber?: number | null | undefined;
+    diagnosisMkb10?: string | null | undefined;
+    reason?: string | null | undefined;
+    clinicalStage?: string | null | undefined;
+    stageIndex?: number | null | undefined;
   };
   protocolKey: SmartClinicalProtocolKey;
   existingAppointments?: readonly Appointment[];
@@ -332,7 +338,22 @@ export async function createSmartSequentialAppointment(
     let created: Appointment;
     if (!res.ok) {
       if (isDemoOrOffline) {
-        created = { id: `stage-${Date.now()}`, status: "planned", ...payload } as Appointment;
+        created = {
+          id: `stage-${Date.now()}`,
+          organizationId: "org-default",
+          status: "planned",
+          patientId: payload.patientId,
+          doctorUserId: payload.doctorUserId || null,
+          chairId: payload.chairId || null,
+          startsAt: payload.startsAt,
+          endsAt: payload.endsAt,
+          reason: payload.reason,
+          comment: payload.comment,
+          toothNumber: payload.toothNumber,
+          diagnosisMkb10: payload.diagnosisMkb10,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as Appointment;
       } else {
         const errData = await res.json().catch(() => ({}));
         let message = errData?.message || "Не удалось запланировать следующий этап";

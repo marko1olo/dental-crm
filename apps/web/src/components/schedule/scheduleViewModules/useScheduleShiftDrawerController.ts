@@ -67,9 +67,16 @@ export function useScheduleShiftDrawerController(props: ScheduleShiftDrawerContr
         rosterStaffList.find((s) => s.id === scheduleDoctorFilterId) ||
         rosterStaffList.find((s) => s.isDoctor) ||
         rosterStaffList[0] ||
-        (isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined);
+        (isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0] : undefined);
 
-      const defaultCab = rosterCabinets[0] || CLINIC_CABINETS_CATALOG[0]!;
+      const fallbackCab: RosterCabinetDefinition = CLINIC_CABINETS_CATALOG[0] ?? {
+        id: "cab-1",
+        number: 1,
+        name: "Терапевтический кабинет №1",
+        specialty: "Терапия",
+        chairs: [{ id: "chair-1a", name: "Кресло 1А", equipment: "" }],
+      };
+      const defaultCab = rosterCabinets[0] || fallbackCab;
       const defaultChair =
         defaultCab.chairs?.[0]?.id ||
         dashboard?.clinicSettings?.chairs?.[0]?.id ||

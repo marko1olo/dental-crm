@@ -74,7 +74,7 @@ export interface QuickAddDoctorModalProps {
 	readonly onClose: () => void;
 	readonly onAddDoctor?: ((doctorData: QuickAddDoctorData) => Promise<void> | void) | undefined;
 	readonly onDoctorAdded?: ((doctorData: QuickAddDoctorData) => Promise<void> | void) | undefined;
-	readonly chairs?: Array<{ id: string; name: string; room?: string | null; active?: boolean }> | undefined;
+	readonly chairs?: Array<{ id: string; name: string; room?: string | null | undefined; active?: boolean | undefined; [key: string]: unknown }> | undefined;
 	readonly existingDoctorsCount?: number | undefined;
 	readonly defaultChairId?: string | null | undefined;
 }

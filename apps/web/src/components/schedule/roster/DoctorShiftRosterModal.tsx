@@ -5,6 +5,7 @@
  */
 
 import React from "react";
+import type { Appointment } from "@dental/shared";
 import { Check } from "lucide-react";
 import { DoctorPayrollStudioModal } from "../../payroll/DoctorPayrollStudioModal";
 import {
@@ -78,6 +79,7 @@ export interface DoctorShiftRosterModalProps {
 	staffList?: StaffMember[] | undefined;
 	cabinets?: CabinetDefinition[] | undefined;
 	appointments?:
+		| readonly Appointment[]
 		| Array<{
 				chairId?: string | null | undefined;
 				startsAt: string;

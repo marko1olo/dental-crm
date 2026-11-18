@@ -17,7 +17,8 @@ export async function dispatchBatchReminders(
 	};
 
 	for (let i = 0; i < reminders.length; i++) {
-		const item = reminders[i]!;
+		const item = reminders[i];
+		if (!item) continue;
 		options?.onProgress?.(i + 1, reminders.length);
 
 		if (!item.patientPhone && !item.telegramUsername) {

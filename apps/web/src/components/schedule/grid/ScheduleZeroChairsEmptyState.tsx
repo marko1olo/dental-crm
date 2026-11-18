@@ -14,7 +14,7 @@ export interface ScheduleZeroChairsEmptyStateProps {
     specialties?: string[];
     active?: boolean;
   }>;
-  onAddChair?: ((chairData: QuickAddChairData) => Promise<unknown> | void) | undefined;
+  onAddChair?: ((chairData: QuickAddChairData) => Promise<unknown> | unknown) | undefined;
   dashboard: Dashboard;
   handleConfirmAssignDoctor: (
     chairId: string,
@@ -75,19 +75,19 @@ export function ScheduleZeroChairsEmptyState({
               : async (chairData) => {
                   const newChairId = chairData.id || `chair-${Date.now()}`;
                   if (dashboard?.clinicSettings) {
-                    const chairItem = {
+                    const chairItem: NonNullable<Dashboard["clinicSettings"]["chairs"]>[number] = {
                       id: newChairId,
                       organizationId: dashboard.clinicSettings.profile?.organizationId || "",
                       name: chairData.name,
-                      room: chairData.room || chairData.roomNumber || "",
+                      room: chairData.room || chairData.roomNumber || null,
                       color: chairData.color || "#0d9488",
-                      specialization: (chairData.specialization as "pediatric" | "therapist" | "surgeon" | "orthopedist" | "orthodontist" | "hygienist" | "general" | null) || null,
+                      specialization: (chairData.specialization as "pediatric" | "therapist" | "surgeon" | "orthopedist" | "orthodontist" | "hygienist" | "universal" | null) || null,
                       active: chairData.isActive ?? true,
                       hasXraySensor: false,
                       hasMicroscope: false,
                       hasSurgeryKit: false,
                       notes: null,
-                      defaultDoctorId: chairData.defaultDoctorId || null,
+                      ...(chairData.defaultDoctorId ? { defaultDoctorId: chairData.defaultDoctorId } : {}),
                     };
                     dashboard.clinicSettings.chairs = [...(dashboard.clinicSettings.chairs || []), chairItem];
                   }

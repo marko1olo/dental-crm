@@ -5,17 +5,17 @@ import type { QuickAddChairData } from "../QuickAddChairModal";
 export interface ScheduleChairItem {
   id: string;
   name: string;
-  color?: string | null;
-  colorId?: string | number;
-  room?: string | null;
-  roomNumber?: string | null;
-  branchId?: string | null;
-  specialization?: string | null;
-  active?: boolean;
-  isActive?: boolean;
-  hasXraySensor?: boolean;
-  hasMicroscope?: boolean;
-  hasSurgeryKit?: boolean;
+  color?: string | null | undefined;
+  colorId?: string | number | undefined;
+  room?: string | null | undefined;
+  roomNumber?: string | null | undefined;
+  branchId?: string | null | undefined;
+  specialization?: string | null | undefined;
+  active?: boolean | undefined;
+  isActive?: boolean | undefined;
+  hasXraySensor?: boolean | undefined;
+  hasMicroscope?: boolean | undefined;
+  hasSurgeryKit?: boolean | undefined;
   [key: string]: unknown;
 }
 

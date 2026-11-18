@@ -26,7 +26,14 @@ export const GridAppointmentStatusSubmenu: React.FC<Props> = ({
 		}, 5000, "Вернуть");
 	};
 
-	const items = [
+	const items: Array<{
+		status: Appointment["status"];
+		title: string;
+		icon: typeof PhoneCall;
+		activeClass: string;
+		inactiveClass: string;
+		active: boolean;
+	}> = [
 		{ status: "confirmed", title: "Подтвержден", icon: PhoneCall, activeClass: "bg-violet-500 text-white font-bold", inactiveClass: "hover:bg-[var(--paper-soft)] text-violet-700 dark:text-violet-300", active: a.status === "confirmed" },
 		{ status: "arrived", title: "Пришел", icon: UserCheck, activeClass: "bg-emerald-500 text-white font-bold", inactiveClass: "hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300", active: a.status === "arrived" },
 		{ status: "in_treatment", title: "В кресле", icon: CalendarCheck, activeClass: "bg-[var(--teal,var(--brand-primary))] text-white font-bold", inactiveClass: "hover:bg-[var(--paper-soft)] text-[var(--teal-dark,var(--teal))]", active: isAppointmentInChair(a.status) },

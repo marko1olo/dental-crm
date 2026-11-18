@@ -55,7 +55,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
         onSlotClick={props.onSlotClick}
         onAppointmentClick={props.onAppointmentClick}
         onQuickStatusChange={props.onQuickStatusChange}
-        onAppointmentMove={props.onAppointmentMove ? (id: string, updates: Partial<Appointment>) => props.onAppointmentMove?.(id, updates) : undefined}
+        onAppointmentMove={props.onAppointmentMove ? (id, updates) => props.onAppointmentMove?.(id, updates) : undefined}
         patientName={ctrl.patientName}
         formatTime={props.formatTime}
         toDateTimeLocalValue={ctrl.toDateTimeLocalValue}

@@ -6,12 +6,8 @@
 import { parseSearchQueryForQuickPatient as parseSearchQueryImpl } from "./patientSearchEngine/quickPatientPrefill";
 import type { QuickPatientPrefill } from "./patientSearchEngine/searchEngineTypes";
 
-export interface QuickPatientPrefill {
-	fullName: string;
-	phone: string;
-}
-
 export type {
+	QuickPatientPrefill,
 	SearchablePatient,
 	SearchMatchHighlightPart,
 	PatientSearchResultItem,

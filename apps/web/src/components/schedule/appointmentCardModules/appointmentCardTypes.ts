@@ -44,7 +44,7 @@ export interface GridAppointmentCardProps {
 	densityMode?: ScheduleDensityMode;
 	appointment: Appointment;
 	chair: { id: string; name: string };
-	effectiveChairs: Array<{ id: string; name: string; color?: string; colorId?: string | number }>;
+	effectiveChairs: Array<{ id: string; name: string; color?: string | null | undefined; colorId?: string | number | undefined; [key: string]: unknown }>;
 	doctors: Array<{ id: string; fullName: string; specialties?: string[]; role?: string }>;
 	patientLookupMap: Map<string, Patient>;
 	staffLookupMap: Map<string, ScheduleStaffMember>;
@@ -113,7 +113,7 @@ export interface AppointmentQuickActionsMenuProps {
 	pName: string;
 	patObj?: Patient | null | undefined;
 	docObj?: ScheduleStaffMember | null | undefined;
-	effectiveChairs: Array<{ id: string; name: string; color?: string; colorId?: string | number }>;
+	effectiveChairs: Array<{ id: string; name: string; color?: string | null | undefined; colorId?: string | number | undefined; [key: string]: unknown }>;
 	doctors: Array<{ id: string; fullName: string; specialties?: string[]; role?: string }>;
 	dashboard: Dashboard;
 	isHovered: boolean;

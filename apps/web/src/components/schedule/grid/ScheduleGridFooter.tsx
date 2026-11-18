@@ -1,6 +1,8 @@
 import React from "react";
 import { CalendarCheck, Clock, Copy, Eye, EyeOff, PanelRight } from "lucide-react";
+import type { Chair } from "@dental/shared";
 import { countLabel } from "../../../lib/russianPlural";
+import type { DailyScheduleTallySummary } from "../freeSlotsModules/freeSlotsTypes";
 
 export interface ScheduleDailyTally {
   totalAppointmentsCount: number;
@@ -8,12 +10,11 @@ export interface ScheduleDailyTally {
   totalDurationMinutes: number;
   clinicWorkdayLabel?: string | null | undefined;
   totalRevenueRub: number;
-  [key: string]: unknown;
 }
 
 export interface ScheduleGridFooterProps {
-  dailyTally: ScheduleDailyTally;
-  effectiveChairs: Array<{ id: string; name: string; [key: string]: unknown }>;
+  dailyTally: DailyScheduleTallySummary | ScheduleDailyTally;
+  effectiveChairs: Array<Chair | { id: string; name: string; [key: string]: unknown }>;
   handleCopyWeekShiftsToNextWeek: () => void;
   showRevenue: boolean;
   handleToggleShowRevenue: () => void;

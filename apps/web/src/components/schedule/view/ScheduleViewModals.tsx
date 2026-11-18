@@ -1,4 +1,5 @@
 import React from "react";
+import type { Dashboard } from "@dental/shared";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import { WaitlistDrawer } from "../waitlist/WaitlistDrawer";
 import type { WaitlistCandidateItem } from "../waitlist/waitlistTypes";
@@ -110,7 +111,12 @@ export function ScheduleViewModals(props: ScheduleViewModalsProps) {
         }
         setDashboard={
           logicContext?.setDashboard
-            ? (dash) => logicContext.setDashboard(dash)
+            ? (dash: Dashboard) => {
+                const setter = logicContext.setDashboard;
+                if (typeof setter === "function") {
+                  (setter as (d: Dashboard) => void)(dash);
+                }
+              }
             : undefined
         }
         toDateTimeLocalValue={toDateTimeLocalValue}

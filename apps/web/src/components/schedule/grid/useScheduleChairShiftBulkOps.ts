@@ -9,6 +9,7 @@ import {
   copyWeekShiftsToTargetWeek,
   copyWeekShiftsToMonth,
   applyDoctorChairWeeklyTemplate,
+  type DoctorShift,
 } from ".././roster/DoctorShiftRosterModal";
 import {
   safeLocalStorageGetItem,

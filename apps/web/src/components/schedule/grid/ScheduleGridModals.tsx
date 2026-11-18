@@ -11,7 +11,7 @@ import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 export interface ScheduleGridModalsProps {
   assigningChairId: string | null;
   setAssigningChairId: (id: string | null) => void;
-  effectiveChairs: Array<ScheduleChairItem | Dashboard["chairs"][number]>;
+  effectiveChairs: Array<ScheduleChairItem | NonNullable<Dashboard["clinicSettings"]["chairs"]>[number]>;
   doctors: Array<{ id: string; fullName: string; role?: string; specialties?: string[]; [key: string]: unknown }>;
   dateKey: string;
   effectiveChairAssignments: Record<string, ChairDoctorShiftAssignment>;

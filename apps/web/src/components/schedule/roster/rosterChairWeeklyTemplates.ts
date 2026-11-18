@@ -44,10 +44,7 @@ function resolveStaffRole(staff: CompatibleRosterStaff | null | undefined): Medi
 		role === "orthodontist" ||
 		role === "pediatric" ||
 		role === "hygienist" ||
-		role === "assistant" ||
-		role === "nurse" ||
-		role === "intern" ||
-		role === "technician"
+		role === "assistant"
 	) {
 		return role;
 	}

@@ -12,10 +12,10 @@ import {
 export interface ScheduleChairSlotItem {
   id: string;
   name: string;
-  color?: string | null;
-  colorId?: string | number;
-  isActive?: boolean;
-  active?: boolean;
+  color?: string | null | undefined;
+  colorId?: string | number | undefined;
+  isActive?: boolean | undefined;
+  active?: boolean | undefined;
   [key: string]: unknown;
 }
 
@@ -207,7 +207,9 @@ export function AppointmentTimeSlotCell({
     undefined;
 
   const isEmergencyBuffer = props.emergencyReserveSlots.some((r) => {
-    const rHour = props.toDateTimeLocalValue(r.startTime, props.timezone).slice(11, 13);
+    const startTime = typeof r.startTime === "string" ? r.startTime : "";
+    if (!startTime) return false;
+    const rHour = props.toDateTimeLocalValue(startTime, props.timezone).slice(11, 13);
     return rHour === hour.slice(0, 2);
   });
 

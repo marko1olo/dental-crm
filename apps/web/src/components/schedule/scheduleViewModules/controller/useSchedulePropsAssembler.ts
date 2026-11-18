@@ -106,7 +106,7 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
 
   const headerToolbarProps: ScheduleHeaderToolbarProps = {
     clinicToday,
-    scheduleDateFilter: scheduleStore.scheduleDateFilter,
+    scheduleDateFilter: scheduleStore.scheduleDateFilter ?? "",
     setScheduleDateFilter: scheduleStore.setScheduleDateFilter,
     stepScheduleDay: gridNav.stepScheduleDay,
     activeScheduleFilterCount: filterSummary.activeScheduleFilterCount,
@@ -118,7 +118,7 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
     setScheduleChairFilterId: scheduleStore.setScheduleChairFilterId,
     scheduleStatusFilter: scheduleStore.scheduleStatusFilter,
     shiftQueueCounts: gridNav.shiftQueueCounts,
-    setScheduleStatusFilter: (status: string) => {
+    setScheduleStatusFilter: (status: string | null) => {
       if (typeof scheduleStore.setScheduleStatusFilter !== "function") return;
       scheduleStore.setScheduleStatusFilter(
         !status || status === "all"
@@ -224,7 +224,7 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
   const activeViewPortProps: ScheduleActiveViewPortProps = {
     scheduleViewMode: gridNav.scheduleViewMode,
     dashboard: effectiveDashboard as ScheduleActiveViewPortProps["dashboard"],
-    scheduleDateFilter: scheduleStore.scheduleDateFilter,
+    scheduleDateFilter: scheduleStore.scheduleDateFilter ?? "",
     clinicToday,
     todayScheduleDate,
     scheduleGridStep: gridNav.scheduleGridStep,
@@ -346,7 +346,7 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
     logicContext: logicContext as ScheduleModalsLayerProps["logicContext"],
     scheduleDoctorFilterId: scheduleStore.scheduleDoctorFilterId,
     scheduleChairFilterId: scheduleStore.scheduleChairFilterId,
-    scheduleDateFilter: scheduleStore.scheduleDateFilter,
+    scheduleDateFilter: scheduleStore.scheduleDateFilter ?? "",
     clinicToday,
     todayScheduleDate,
     computedChairDoctorAssignments:

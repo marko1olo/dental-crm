@@ -16,17 +16,20 @@ export function buildChairDoctorAssignmentsFromShifts(
       shift.doctorId &&
       shift.status !== "cancelled"
     ) {
-      if (!shiftsByChair[shift.chairId]) {
-        shiftsByChair[shift.chairId] = [];
+      let list = shiftsByChair[shift.chairId];
+      if (!list) {
+        list = [];
+        shiftsByChair[shift.chairId] = list;
       }
-      shiftsByChair[shift.chairId]!.push(shift);
+      list.push(shift);
     }
   }
 
   for (const [chairId, chairShifts] of Object.entries(shiftsByChair)) {
-    if (chairShifts.length === 0) continue;
+    if (!chairShifts || chairShifts.length === 0) continue;
     if (chairShifts.length === 1) {
-      const s = chairShifts[0]!;
+      const s = chairShifts[0];
+      if (!s) continue;
       const preset: "morning" | "evening" | "full" | "custom" =
         s.archetypeId === "morning_shift"
           ? "morning"
@@ -61,7 +64,8 @@ export function buildChairDoctorAssignmentsFromShifts(
       const sorted = [...chairShifts].sort((a, b) =>
         a.startTime.localeCompare(b.startTime),
       );
-      const primary = sorted[0]!;
+      const primary = sorted[0];
+      if (!primary) continue;
       const subShifts = sorted.map((s) => ({
         doctorId: s.doctorId,
         doctorName: s.doctorName,
@@ -80,6 +84,9 @@ export function buildChairDoctorAssignmentsFromShifts(
         .map((s) => `${s.startTime}–${s.endTime}`)
         .join(" & ");
 
+      const firstSub = subShifts[0];
+      const lastSub = subShifts[subShifts.length - 1];
+
       assignments[chairId] = {
         chairId,
         doctorId: primary.doctorId,
@@ -88,8 +95,8 @@ export function buildChairDoctorAssignmentsFromShifts(
         shiftPreset: "custom",
         shiftLabel: shortNamesComposite,
         shiftHours: hoursComposite,
-        startHour: subShifts[0]!.startHour,
-        endHour: subShifts[subShifts.length - 1]!.endHour,
+        startHour: firstSub?.startHour ?? 8,
+        endHour: lastSub?.endHour ?? 20,
         subShifts,
       };
     }

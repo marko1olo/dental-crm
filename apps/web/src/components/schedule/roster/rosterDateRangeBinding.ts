@@ -55,10 +55,7 @@ function resolveStaffRole(staff: CompatibleRosterStaff | null | undefined): Medi
 		role === "orthodontist" ||
 		role === "pediatric" ||
 		role === "hygienist" ||
-		role === "assistant" ||
-		role === "nurse" ||
-		role === "intern" ||
-		role === "technician"
+		role === "assistant"
 	) {
 		return role;
 	}
@@ -189,7 +186,10 @@ export function applyDoctorChairDateRange(
 	let dayCounter = 0;
 	while (currentIso <= endIso && dayCounter < 180) {
 		const parts = currentIso.split("-").map(Number);
-		const curDate = new Date(Date.UTC(parts[0]!, parts[1]! - 1, parts[2]!));
+		const y = parts[0] ?? 2026;
+		const m = parts[1] ?? 1;
+		const d = parts[2] ?? 1;
+		const curDate = new Date(Date.UTC(y, m - 1, d));
 		const dayOfWeek = curDate.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
 
 		let shouldInclude = true;

@@ -25,6 +25,7 @@ import type { DayGroupingAppointment } from "../scheduleDayGrouping";
 import type { ChairDoctorShiftAssignment } from "../grid/gridTypes";
 import type { ScheduleViewBodyProps } from "../view/ScheduleViewBody";
 import type { ScheduleViewToolbarProps } from "../view/scheduleViewToolbarTypes";
+import type { ScheduleViewModalsProps } from "../view/scheduleModalsModules/scheduleModalsTypes";
 
 // Re-export core types for consumers
 export type {
@@ -149,106 +150,4 @@ export type ScheduleHeaderToolbarProps = ScheduleViewToolbarProps & {
 
 export type ScheduleActiveViewPortProps = ScheduleViewBodyProps;
 
-export type ScheduleModalsLayerProps = {
-  quickBookingOpen: boolean;
-  setQuickBookingOpen: (open: boolean) => void;
-  quickBookingSlot: QuickBookingSlotInfo | null;
-  setQuickBookingSlot: (slot: QuickBookingSlotInfo | null) => void;
-  modalAppointment: Appointment | null;
-  setModalAppointment: (appointment: Appointment | null) => void;
-  doctorFreeSlotsOpen: boolean;
-  setDoctorFreeSlotsOpen: (open: boolean) => void;
-  preventiveInspectionOpen: boolean;
-  setPreventiveInspectionOpen: (open: boolean) => void;
-  isRosterModalOpen: boolean;
-  setIsRosterModalOpen: (open: boolean) => void;
-  isQuickAddChairOpen: boolean;
-  setIsQuickAddChairOpen: (open: boolean) => void;
-  isCalendarSyncModalOpen: boolean;
-  setIsCalendarSyncModalOpen: (open: boolean) => void;
-  isPatientSearchOpen: boolean;
-  setIsPatientSearchOpen: (open: boolean) => void;
-  isTomorrowRemindersOpen: boolean;
-  setIsTomorrowRemindersOpen: (open: boolean) => void;
-  waitlistOpen: boolean;
-  setWaitlistOpen: (open: boolean) => void;
-  waitlistQuickFillSlot: TargetSlotInfo | null;
-  setWaitlistQuickFillSlot: (slot: TargetSlotInfo | null) => void;
-  editingChairData: QuickAddChairData | null;
-  setEditingChairData: (data: QuickAddChairData | null) => void;
-  isPendingOnlineBookingsOpen?: boolean | undefined;
-  setIsPendingOnlineBookingsOpen?: ((open: boolean) => void) | undefined;
-  pendingOnlineBookings?: Appointment[] | undefined;
-  dashboard: Dashboard;
-  auth?: { user?: { id?: string; name?: string; role?: string } | null } | null | undefined;
-  loadDashboard?: ((options?: { adminSecret?: string }) => Promise<void>) | undefined;
-  logicContext?: {
-    setDashboard?: React.Dispatch<React.SetStateAction<Dashboard>> | ((updater: (prev: Dashboard) => Dashboard) => void);
-  } | null | undefined;
-  scheduleDoctorFilterId: string | null;
-  scheduleChairFilterId: string | null;
-  scheduleDateFilter: string;
-  clinicToday: string;
-  todayScheduleDate: () => string;
-  computedChairDoctorAssignments: Record<string, ChairDoctorShiftAssignment>;
-  savedDoctorShifts: DoctorShift[];
-  rosterStaffList: RosterStaffMember[];
-  rosterCabinets: RosterCabinetDefinition[];
-  rosterAppointments: Appointment[];
-  scheduleDoctors: Array<{ id: string; name?: string; fullName?: string; role?: string }>;
-  currentDateKey: string;
-  formatTime: (value: string) => string;
-  patientName: (patients: Dashboard["patients"], patientId: string | null) => string;
-  toDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-  fromDateTimeLocalValue: (value: string, timeZone?: string | null) => string;
-  appointmentLabels: Record<Appointment["status"], string>;
-  activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
-  appointmentReadinessById: Map<string, AppointmentReadiness>;
-  updateAppointmentScheduleDraft: <K extends keyof AppointmentScheduleDraft>(
-    appointmentId: string,
-    key: K,
-    value: AppointmentScheduleDraft[K],
-  ) => void;
-  saveAppointmentSchedule: (
-    appointmentId: string,
-    options?: {
-      closeEditorOnSave?: boolean;
-      allowOverbooking?: boolean;
-      allowEmergencyOverride?: boolean;
-    },
-  ) => Promise<boolean>;
-  repeatAppointment: (appointment: Appointment) => void;
-  copyAppointmentToBuffer: (appointment: Appointment) => void;
-  handleOpenWaitlistForSlot: (slot: TargetSlotInfo) => void;
-  updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(
-    key: K,
-    value: AppointmentScheduleDraft[K],
-  ) => void;
-  focusNewAppointmentEditor: () => void;
-  createAppointmentFromDraft: (options?: {
-    allowOverbooking?: boolean;
-    allowEmergencyOverride?: boolean;
-  }) => Promise<boolean>;
-  handleSaveDoctorShifts: (shifts: DoctorShift[]) => Promise<void>;
-  handleAddChairFromSchedule: (chairData: QuickAddChairData) => Promise<void>;
-  showToast: (msg: string, type?: "success" | "error" | "info" | "warning", duration?: number) => void;
-  editingDrawerShift: Partial<DoctorShift> | null;
-  setEditingDrawerShift: (shift: Partial<DoctorShift> | null) => void;
-  isNewDrawerShift: boolean;
-  onSaveDrawerShift: (shift: DoctorShift, isNew: boolean) => void;
-  onDeleteDrawerShift: (shiftId: string) => void;
-  onCloseDoctorShiftDrawer: () => void;
-  isChairDateRangeModalOpen: boolean;
-  setIsChairDateRangeModalOpen: (open: boolean) => void;
-  chairRangeDoctorId: string;
-  setChairRangeDoctorId: (id: string) => void;
-  chairRangeChairId: string;
-  setChairRangeChairId: (id: string) => void;
-  chairRangeStartDate: string;
-  setChairRangeStartDate: (date: string) => void;
-  chairRangeEndDate: string;
-  setChairRangeEndDate: (date: string) => void;
-  chairRangePreset: DateRangeShiftPreset;
-  setChairRangePreset: (preset: DateRangeShiftPreset) => void;
-  onApplyChairDateRange: () => void;
-};
+export type ScheduleModalsLayerProps = ScheduleViewModalsProps;

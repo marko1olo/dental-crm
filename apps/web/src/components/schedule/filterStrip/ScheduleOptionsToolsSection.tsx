@@ -24,29 +24,29 @@ import { printBlankMedicalContract } from "../../patients/blankContractPrint";
 
 export interface ScheduleOptionsToolsSectionProps {
 	setIsOptionsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	onOpenPatientSearch?: () => void;
-	onToggleSmartAi?: () => void;
-	setScheduleViewMode?: (mode: "timeline" | "grid" | "chairs") => void;
-	scheduleViewMode?: "timeline" | "grid" | "chairs";
-	onOpenDoctorFreeSlots?: () => void;
-	onOpenPreventiveInspection?: () => void;
-	preventiveInspectionCount?: number;
-	onOpenTomorrowReminders?: () => void;
-	onEmergencyCitoBooking?: () => void;
-	onToggleShiftAnalytics?: () => void;
-	showShiftAnalytics?: boolean;
-	onOpenShiftRoster?: () => void;
-	onOpenDoctorShiftDrawer?: () => void;
-	onOpenChairDateRangeModal?: () => void;
-	onOpenWaitlist?: () => void;
-	waitlistCount?: number;
-	onToggleConfirmations?: () => void;
-	showConfirmationsPanel?: boolean;
-	onToggleFreedSlots?: () => void;
-	showFreedSlotsPanel?: boolean;
-	onToggleClipboard?: () => void;
-	showClipboardPanel?: boolean;
-	onOpenCalendarSync?: () => void;
+	onOpenPatientSearch?: (() => void) | undefined;
+	onToggleSmartAi?: (() => void) | undefined;
+	setScheduleViewMode?: ((mode: "timeline" | "grid" | "chairs") => void) | undefined;
+	scheduleViewMode?: ("timeline" | "grid" | "chairs") | undefined;
+	onOpenDoctorFreeSlots?: (() => void) | undefined;
+	onOpenPreventiveInspection?: (() => void) | undefined;
+	preventiveInspectionCount?: number | undefined;
+	onOpenTomorrowReminders?: (() => void) | undefined;
+	onEmergencyCitoBooking?: (() => void) | undefined;
+	onToggleShiftAnalytics?: (() => void) | undefined;
+	showShiftAnalytics?: boolean | undefined;
+	onOpenShiftRoster?: (() => void) | undefined;
+	onOpenDoctorShiftDrawer?: (() => void) | undefined;
+	onOpenChairDateRangeModal?: (() => void) | undefined;
+	onOpenWaitlist?: (() => void) | undefined;
+	waitlistCount?: number | undefined;
+	onToggleConfirmations?: (() => void) | undefined;
+	showConfirmationsPanel?: boolean | undefined;
+	onToggleFreedSlots?: (() => void) | undefined;
+	showFreedSlotsPanel?: boolean | undefined;
+	onToggleClipboard?: (() => void) | undefined;
+	showClipboardPanel?: boolean | undefined;
+	onOpenCalendarSync?: (() => void) | undefined;
 }
 
 export function ScheduleOptionsToolsSection({

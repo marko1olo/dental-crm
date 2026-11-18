@@ -206,9 +206,14 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
   const handleAppointmentMove = useCallback(
     async (
       appointmentId: string,
-      updates: Partial<Appointment> & {
+      updates: {
+        startsAt?: string | undefined;
+        endsAt?: string | undefined;
+        chairId?: string | null | undefined;
         doctorUserId?: string | null | undefined;
         allowOverbooking?: boolean | undefined;
+        status?: Appointment["status"] | undefined;
+        [key: string]: unknown;
       },
     ): Promise<boolean> => {
       if (inFlightMoveRef.current[appointmentId]) return false;

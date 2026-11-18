@@ -4,6 +4,7 @@
 
 import type { CabinetDefinition, StaffMember } from "../doctorShiftRosterPresets";
 import type { DoctorShift } from "../doctorShiftRosterEngine";
+import type { Appointment } from "@dental/shared";
 
 export interface EmployeeInfo {
 	readonly id: string;
@@ -19,8 +20,9 @@ export interface UseDoctorShiftRosterOperationsParams {
 	staffList?: StaffMember[] | undefined;
 	cabinets?: CabinetDefinition[] | undefined;
 	appointments?:
+		| readonly Appointment[]
 		| Array<{
-				chairId: string;
+				chairId?: string | null | undefined;
 				startsAt: string;
 				endsAt: string;
 				status?: string | undefined;

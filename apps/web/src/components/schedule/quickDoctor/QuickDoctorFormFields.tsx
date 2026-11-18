@@ -17,7 +17,7 @@ interface QuickDoctorFormFieldsProps {
 	setPhone: (phone: string) => void;
 	preferredChairId: string;
 	setPreferredChairId: (chairId: string) => void;
-	activeChairs: Array<{ id: string; name: string; room?: string | null }>;
+	activeChairs: Array<{ id: string; name: string; room?: string | null | undefined; [key: string]: unknown }>;
 	defaultDoctorName: string;
 }
 

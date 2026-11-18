@@ -11,10 +11,10 @@ export type ScheduleChairMember = NonNullable<Dashboard["clinicSettings"]>["chai
 
 export interface CardStandardBodyProps {
 	appointment: Appointment;
-	appointmentPatient?: Patient | null | undefined;
+	appointmentPatient?: { id?: string | undefined; fullName?: string | undefined; phone?: string | null | undefined; [key: string]: unknown } | null | undefined;
 	appointmentPatientName: string;
-	appointmentDoctor?: ScheduleStaffMember | null | undefined;
-	appointmentChair?: ScheduleChairMember | null | undefined;
+	appointmentDoctor?: { id?: string | undefined; fullName?: string | undefined; role?: string | undefined; [key: string]: unknown } | null | undefined;
+	appointmentChair?: { id?: string | undefined; name?: string | undefined; color?: string | null | undefined; [key: string]: unknown } | null | undefined;
 	patientBalance: number | null;
 	isCito: boolean;
 	displayStatus: Appointment["status"];

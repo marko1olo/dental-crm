@@ -25,7 +25,7 @@ export interface PatientSectionHeaderProps {
 }
 
 export function PatientSectionHeader(props: PatientSectionHeaderProps) {
-  const { showInlineNewPatient, isTechnicalBreak } = props;
+  const { showInlineNewPatient, setShowInlineNewPatient, isTechnicalBreak } = props;
   const { handleCitoClick, handlePrintBlank, handleNewPatientToggle } = usePatientSectionHeaderActions(props);
 
   return (

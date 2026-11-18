@@ -10,7 +10,7 @@ export interface ScheduleMobileAgendaViewProps {
   onSlotClick?: ((slot: QuickBookingSlotInfo) => void) | undefined;
   onAppointmentClick?: ((appointment: Appointment) => void) | undefined;
   onQuickStatusChange?: ((appointmentId: string, status: Appointment["status"]) => void) | undefined;
-  onAppointmentMove?: ((appointmentId: string, updates: { startsAt?: string; endsAt?: string; chairId?: string; doctorUserId?: string; allowOverbooking?: boolean; status?: Appointment["status"] }) => void | Promise<unknown>) | undefined;
+  onAppointmentMove?: ((appointmentId: string, updates: { startsAt?: string | undefined; endsAt?: string | undefined; chairId?: string | undefined; doctorUserId?: string | undefined; allowOverbooking?: boolean | undefined; status?: Appointment["status"] | undefined }) => void | Promise<unknown>) | undefined;
   patientName: (patients: Dashboard["patients"], id: string | null) => string;
   formatTime: (iso: string) => string;
   toDateTimeLocalValue: (iso: string, timezone?: string | null) => string;

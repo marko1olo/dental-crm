@@ -6,12 +6,21 @@ import { useMemo } from "react";
 import { MEDICAL_STAFF_ROLES, RUSSIAN_PRODUCTION_CALENDAR_2026, type StaffMember } from "../doctorShiftRosterPresets";
 import { calculateStaffRosterStats, detectRosterConflicts, type DoctorShift } from "../doctorShiftRosterEngine";
 import type { T13RowData } from "../doctorMatrix/types";
+import type { Appointment } from "@dental/shared";
 import type { EmployeeInfo } from "./rosterOperationsTypes";
 
 interface UseRosterComputationsParams {
 	shifts: DoctorShift[];
 	staffList: StaffMember[];
-	appointments: Array<{ chairId: string; startsAt: string; endsAt: string; status?: string | undefined }>;
+	appointments?:
+		| readonly Appointment[]
+		| Array<{
+				chairId?: string | null | undefined;
+				startsAt: string;
+				endsAt: string;
+				status?: string | undefined;
+		  }>
+		| undefined;
 	weekStartDateIso: string;
 	weekEndDateIso: string;
 }
@@ -50,9 +59,9 @@ export function useRosterComputations({
 	}, [staffList]);
 
 	const sanitizedAppointments = useMemo(() => {
-		return appointments.map((a) => {
+		return (appointments ?? []).map((a) => {
 			const item: { chairId: string; startsAt: string; endsAt: string; status?: string } = {
-				chairId: a.chairId, startsAt: a.startsAt, endsAt: a.endsAt,
+				chairId: a.chairId ?? "", startsAt: a.startsAt, endsAt: a.endsAt,
 			};
 			if (a.status) item.status = a.status;
 			return item;

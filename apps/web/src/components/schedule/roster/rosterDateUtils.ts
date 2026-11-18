@@ -22,7 +22,10 @@ export function getMondayOfWeekIso(dateIso?: string): string {
 	let targetDate: Date;
 	if (dateIso && /^\d{4}-\d{2}-\d{2}$/.test(dateIso)) {
 		const parts = dateIso.split("-").map(Number);
-		targetDate = new Date(Date.UTC(parts[0]!, parts[1]! - 1, parts[2]!));
+		const y = parts[0] ?? 2026;
+		const m = parts[1] ?? 1;
+		const d = parts[2] ?? 1;
+		targetDate = new Date(Date.UTC(y, m - 1, d));
 	} else if (dateIso) {
 		const parsed = new Date(dateIso);
 		if (Number.isNaN(parsed.getTime())) {
@@ -114,7 +117,7 @@ export function applyCellShiftPreset(
 				}
 			: staffList.find((s) => s.isDoctor) ||
 				staffList[0] ||
-				(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0]! : undefined));
+				(isDemoShowcaseMode() ? DEFAULT_CLINIC_STAFF[0] : undefined));
 
 	if (!doc) {
 		return currentShifts;
@@ -173,10 +176,17 @@ export function applyCellShiftPreset(
 		customNotes = "Весь день (08:00–20:00)";
 	}
 
+	const fallbackCab: CabinetDefinition = CLINIC_CABINETS_CATALOG[0] ?? {
+		id: "cab-1",
+		number: 1,
+		name: "Терапевтический кабинет №1",
+		specialty: "Терапия",
+		chairs: [{ id: "chair-1a", name: "Кресло 1А", equipment: "" }],
+	};
 	const targetCab =
 		cabinets.find((c) => c.id === cabinetId) ||
 		cabinets[0] ||
-		CLINIC_CABINETS_CATALOG[0]!;
+		fallbackCab;
 	const targetChair =
 		targetCab.chairs.find((ch) => ch.id === chairId) ||
 		(chairId

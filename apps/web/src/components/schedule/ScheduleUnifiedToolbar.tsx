@@ -19,6 +19,7 @@
  */
 
 import React, { useRef, useState, useEffect, useMemo, type ReactElement } from "react";
+import type { Appointment } from "@dental/shared";
 import { Plus } from "lucide-react";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { QuickAddChairModal } from "./QuickAddChairModal";
@@ -248,7 +249,7 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 						localNow={localNow}
 						onSelectWholeWeek={props.onSelectWholeWeek}
 						statusFilter={statusFilter}
-						onSetStatusFilter={setStatusFilter}
+						onSetStatusFilter={(st: string) => setStatusFilter(st as Appointment["status"] | "all")}
 						queueCounts={props.queueCounts}
 						onOpenAddChair={handleOpenAddChair}
 						onOpenWaitlist={props.onOpenWaitlist}

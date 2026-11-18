@@ -5,7 +5,7 @@ export interface GridAppointmentMenuProps {
 	pName: string;
 	patObj?: { id?: string; fullName?: string; phone?: string | null; balanceRub?: number | string | null; [key: string]: unknown } | null | undefined;
 	docObj?: { id?: string; fullName?: string; phone?: string | null; [key: string]: unknown } | null | undefined;
-	effectiveChairs: Array<{ id: string; name: string; color?: string; colorId?: string | number }>;
+	effectiveChairs: Array<{ id: string; name: string; color?: string | null | undefined; colorId?: string | number | undefined; [key: string]: unknown }>;
 	doctors: Array<{ id: string; fullName: string; specialties?: string[]; role?: string }>;
 	dashboard: Dashboard;
 	isMenuOpen: boolean;

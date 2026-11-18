@@ -37,9 +37,9 @@ export interface ScheduleLogicContext {
 }
 
 export interface ScheduleViewModalsProps {
-  isPendingOnlineBookingsOpen?: boolean;
-  setIsPendingOnlineBookingsOpen?: (open: boolean) => void;
-  pendingOnlineBookings?: Appointment[];
+  isPendingOnlineBookingsOpen?: boolean | undefined;
+  setIsPendingOnlineBookingsOpen?: ((open: boolean) => void) | undefined;
+  pendingOnlineBookings?: Appointment[] | undefined;
   quickBookingOpen: boolean;
   setQuickBookingOpen: (open: boolean) => void;
   quickBookingSlot: QuickBookingSlotInfo | null;
@@ -67,8 +67,8 @@ export interface ScheduleViewModalsProps {
   editingChairData: QuickAddChairData | null;
   setEditingChairData: (data: QuickAddChairData | null) => void;
   dashboard: Dashboard | null | undefined;
-  auth?: { user?: { id?: string; name?: string; role?: string } | null } | null | undefined;
-  loadDashboard?: () => void | Promise<void>;
+  auth?: { user?: { id?: string | undefined; name?: string | undefined; role?: string | undefined } | null | undefined } | null | undefined;
+  loadDashboard?: (() => void | Promise<void>) | undefined;
   logicContext?: ScheduleLogicContext | null | undefined;
   scheduleDoctorFilterId: string | null;
   scheduleChairFilterId: string | null;
@@ -80,7 +80,7 @@ export interface ScheduleViewModalsProps {
   rosterStaffList: RosterStaffMember[];
   rosterCabinets: RosterCabinetDefinition[];
   rosterAppointments: Appointment[];
-  scheduleDoctors: Array<{ id: string; name?: string; fullName?: string; role?: string }>;
+  scheduleDoctors: Array<{ id: string; name?: string | undefined; fullName?: string | undefined; role?: string | undefined }>;
   currentDateKey: string;
   formatTime: (iso: string) => string;
   patientName: (patients: Dashboard["patients"], id: string | null) => string;
@@ -90,33 +90,33 @@ export interface ScheduleViewModalsProps {
   activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
   appointmentReadinessById: Map<string, AppointmentReadiness>;
   updateAppointmentScheduleDraft: <K extends keyof AppointmentScheduleDraft>(id: string, key: K, val: AppointmentScheduleDraft[K]) => void;
-  saveAppointmentSchedule: (id: string, opts?: { closeEditorOnSave?: boolean; allowOverbooking?: boolean; allowEmergencyOverride?: boolean }) => Promise<boolean>;
+  saveAppointmentSchedule: (id: string, opts?: { closeEditorOnSave?: boolean | undefined; allowOverbooking?: boolean | undefined; allowEmergencyOverride?: boolean | undefined } | undefined) => Promise<boolean>;
   repeatAppointment: (app: Appointment) => void;
   copyAppointmentToBuffer: (app: Appointment) => Promise<void>;
   handleOpenWaitlistForSlot: (slot: TargetSlotInfo) => void;
   updateNewAppointmentDraft: <K extends keyof AppointmentScheduleDraft>(key: K, val: AppointmentScheduleDraft[K]) => void;
   focusNewAppointmentEditor: () => void;
-  createAppointmentFromDraft: (opts?: { allowOverbooking?: boolean; allowEmergencyOverride?: boolean }) => Promise<boolean>;
+  createAppointmentFromDraft: (opts?: { allowOverbooking?: boolean | undefined; allowEmergencyOverride?: boolean | undefined } | undefined) => Promise<boolean>;
   handleSaveDoctorShifts: (shifts: DoctorShift[]) => Promise<void>;
   handleAddChairFromSchedule: (chairData: QuickAddChairData) => Promise<void>;
   showToast: (msg: string, type?: "success" | "error" | "info" | "warning", duration?: number) => void;
-  editingDrawerShift?: Partial<DoctorShift> | null;
-  setEditingDrawerShift?: React.Dispatch<React.SetStateAction<Partial<DoctorShift> | null>>;
-  isNewDrawerShift?: boolean;
-  onSaveDrawerShift?: (shift: DoctorShift, isNew: boolean) => void;
-  onDeleteDrawerShift?: (shiftId: string) => void;
-  onCloseDoctorShiftDrawer?: () => void;
-  isChairDateRangeModalOpen?: boolean;
-  setIsChairDateRangeModalOpen?: (open: boolean) => void;
-  chairRangeDoctorId?: string;
-  setChairRangeDoctorId?: (id: string) => void;
-  chairRangeChairId?: string;
-  setChairRangeChairId?: (id: string) => void;
-  chairRangeStartDate?: string;
-  setChairRangeStartDate?: (date: string) => void;
-  chairRangeEndDate?: string;
-  setChairRangeEndDate?: (date: string) => void;
-  chairRangePreset?: DateRangeShiftPreset;
-  setChairRangePreset?: (preset: DateRangeShiftPreset) => void;
-  onApplyChairDateRange?: () => void;
+  editingDrawerShift?: Partial<DoctorShift> | null | undefined;
+  setEditingDrawerShift?: React.Dispatch<React.SetStateAction<Partial<DoctorShift> | null>> | undefined;
+  isNewDrawerShift?: boolean | undefined;
+  onSaveDrawerShift?: ((shift: DoctorShift, isNew: boolean) => void) | undefined;
+  onDeleteDrawerShift?: ((shiftId: string) => void) | undefined;
+  onCloseDoctorShiftDrawer?: (() => void) | undefined;
+  isChairDateRangeModalOpen?: boolean | undefined;
+  setIsChairDateRangeModalOpen?: ((open: boolean) => void) | undefined;
+  chairRangeDoctorId?: string | undefined;
+  setChairRangeDoctorId?: ((id: string) => void) | undefined;
+  chairRangeChairId?: string | undefined;
+  setChairRangeChairId?: ((id: string) => void) | undefined;
+  chairRangeStartDate?: string | undefined;
+  setChairRangeStartDate?: ((date: string) => void) | undefined;
+  chairRangeEndDate?: string | undefined;
+  setChairRangeEndDate?: ((date: string) => void) | undefined;
+  chairRangePreset?: DateRangeShiftPreset | undefined;
+  setChairRangePreset?: ((preset: DateRangeShiftPreset) => void) | undefined;
+  onApplyChairDateRange?: (() => void) | undefined;
 }

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { Dashboard } from "@dental/shared";
 import { generateTimeSlots } from "./gridSlotMath";
 import { useScheduleChairDuty } from "./useScheduleChairDuty";
 import { useScheduleAppointmentInteractions } from "./useScheduleAppointmentInteractions";
@@ -20,10 +21,10 @@ export function useScheduleGridController(props: ScheduleGridProps) {
     onQuickStatusChange,
   } = props;
 
-  const patientName =
-    propPatientName ||
-    propGetPatientName ||
-    ((_p: Dashboard["patients"] | unknown, _id: string | null) => "Пациент");
+  const patientName: (patients: Dashboard["patients"] | undefined, id: string | null) => string =
+    (propPatientName as ((patients: Dashboard["patients"] | undefined, id: string | null) => string) | undefined) ||
+    (propGetPatientName as ((patients: Dashboard["patients"] | undefined, id: string | null) => string) | undefined) ||
+    ((_p: Dashboard["patients"] | undefined, _id: string | null) => "Пациент");
   const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
   const duty = useScheduleChairDuty({

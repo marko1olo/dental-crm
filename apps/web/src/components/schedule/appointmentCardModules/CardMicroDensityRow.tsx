@@ -11,9 +11,9 @@ import { CardPatientMetadata } from "./CardPatientMetadata";
 
 export interface CardMicroDensityRowProps {
 	appointment: Appointment;
-	appointmentPatient?: Patient | null | undefined;
+	appointmentPatient?: { id?: string | undefined; fullName?: string | undefined; phone?: string | null | undefined; [key: string]: unknown } | null | undefined;
 	appointmentPatientName: string;
-	appointmentDoctor?: ScheduleStaffMember | null | undefined;
+	appointmentDoctor?: { id?: string | undefined; fullName?: string | undefined; role?: string | undefined; [key: string]: unknown } | null | undefined;
 	patientBalance: number | null;
 	isCito: boolean;
 	displayStatus: Appointment["status"];

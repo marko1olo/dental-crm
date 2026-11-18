@@ -1,6 +1,6 @@
 import React from "react";
 import { Clock, X } from "lucide-react";
-import type { Appointment } from "@dental/shared";
+import type { Appointment, Dashboard } from "@dental/shared";
 import { GridAppointmentCard } from "../../AppointmentGridCard";
 import type { ChairMaintenanceBlock } from "../../../../utils/scheduleCollisionUtils";
 import type { ScheduleDensityMode } from "../../useScheduleState";
@@ -81,8 +81,8 @@ export function TrackAppointmentCard({
       patientLookupMap={props.patientLookupMap}
       staffLookupMap={props.staffLookupMap}
       collisionMap={props.collisionMap}
-      patientNameFn={(pts, id) => props.patientName(pts, id)}
-      getPatientName={(pts, id) => props.patientName(pts, id)}
+      patientNameFn={(pts, id) => props.patientName(pts as unknown as Dashboard["patients"], id)}
+      getPatientName={(pts, id) => props.patientName(pts as unknown as Dashboard["patients"], id)}
       dashboard={props.dashboard}
       timezone={props.timezone}
       toDateTimeLocalValue={props.toDateTimeLocalValue}

@@ -32,7 +32,7 @@ export function AppointmentTrackGridLines({
   } = controller;
 
   if (canSplitShift) {
-    const chair = props.effectiveChairs[0];
+    const chair = props.effectiveChairs[0] ?? { id: "chair-1", name: "Кресло 1" };
     return (
       <>
         <DecoupledDragGhost />
