@@ -44,7 +44,6 @@ export function GuestLabPortalHeader({ order }: GuestLabPortalHeaderProps): Reac
 					<p
 						style={{
 							fontSize: "12px",
-							textTransform: "uppercase",
 							color: "var(--text-secondary)",
 							marginBottom: "4px",
 						}}

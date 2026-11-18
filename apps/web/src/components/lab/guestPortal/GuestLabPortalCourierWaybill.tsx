@@ -66,7 +66,7 @@ export function GuestLabPortalCourierWaybill({
 				<div data-testid="courier-waybill-card" style={{ border: "2px dashed var(--teal)", borderRadius: "12px", padding: "20px", background: "var(--paper)", marginBottom: "16px", textAlign: "left" }}>
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", borderBottom: "1px solid var(--line)", paddingBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
 						<div>
-							<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--teal)", fontWeight: 700, fontSize: "12px", textTransform: "uppercase" }}>
+							<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--teal)", fontWeight: 700, fontSize: "12px" }}>
 								<Truck size={16} /><span>Курьерская накладная передачи в клинику</span>
 							</div>
 							<h4 style={{ margin: "4px 0 0 0", fontSize: "18px", fontWeight: 800 }}>{orderNumberDisplay}</h4>

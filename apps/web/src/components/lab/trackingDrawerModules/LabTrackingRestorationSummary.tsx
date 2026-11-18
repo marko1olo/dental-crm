@@ -30,7 +30,7 @@ export function LabTrackingRestorationSummary({
 			{/* Quick Restoration Summary Card */}
 			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
 				<div className="flex items-center justify-between">
-					<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
+					<span className="text-xs font-semibold text-[var(--muted)]">
 						Параметры реставрации
 					</span>
 					<span className="text-xs px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold">
@@ -72,7 +72,7 @@ export function LabTrackingRestorationSummary({
 
 			{/* Financial Breakdown */}
 			<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
-				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block">
+				<span className="text-xs font-semibold text-[var(--muted)] block">
 					Финансовый расчет (Копеечная точность)
 				</span>
 				<div className="grid grid-cols-3 gap-3">

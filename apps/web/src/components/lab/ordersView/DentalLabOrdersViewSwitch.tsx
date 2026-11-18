@@ -1,7 +1,7 @@
 import React from "react";
 import { AlertCircle, FlaskConical, Loader2, Plus } from "lucide-react";
 import { LabOrdersTable } from "./LabOrdersTable";
-import { LabOrderCardsGrid } from "./LabOrderCard";
+import { LabOrderCardsGrid } from "./LabOrderCardsGrid";
 import { getStatusBadge } from "./constants";
 import type { useDentalLabOrders } from "./useDentalLabOrders";
 import { DentalLabOrdersKanbanView } from "./DentalLabOrdersKanbanView";

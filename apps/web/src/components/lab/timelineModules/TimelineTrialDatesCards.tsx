@@ -9,7 +9,7 @@ export function TimelineTrialDatesCards({ order }: TimelineTrialDatesCardsProps)
 	return (
 		<div className="pt-2 border-t border-[var(--line)] grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
 			<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-				<span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider block mb-1">
+				<span className="text-[10px] font-semibold text-[var(--muted)] block mb-1">
 					1. Примерка каркаса
 				</span>
 				<div className="font-bold font-mono text-[var(--ink)]">
@@ -20,7 +20,7 @@ export function TimelineTrialDatesCards({ order }: TimelineTrialDatesCardsProps)
 			</div>
 
 			<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-				<span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider block mb-1">
+				<span className="text-[10px] font-semibold text-[var(--muted)] block mb-1">
 					2. Примерка керамики / Бисквит
 				</span>
 				<div className="font-bold font-mono text-[var(--ink)]">
@@ -31,7 +31,7 @@ export function TimelineTrialDatesCards({ order }: TimelineTrialDatesCardsProps)
 			</div>
 
 			<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-				<span className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider block mb-1">
+				<span className="text-[10px] font-semibold text-[var(--muted)] block mb-1">
 					3. Готовность / Фиксация
 				</span>
 				<div className="font-bold font-mono text-teal-600 dark:text-teal-400">

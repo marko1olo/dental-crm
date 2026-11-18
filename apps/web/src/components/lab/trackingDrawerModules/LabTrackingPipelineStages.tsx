@@ -22,7 +22,7 @@ export function LabTrackingPipelineStages({
 
 			{/* 5-Stage Stepper Bar */}
 			<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2" data-testid="lab-drawer-5stage-stepper">
-				<div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex justify-between">
+				<div className="text-[11px] font-bold text-[var(--muted)] flex justify-between">
 					<span>5 этапов клинического трекинга</span>
 					<span className="text-[10px] text-[var(--muted)] font-medium">Стандарт лаборатории</span>
 				</div>
@@ -45,7 +45,7 @@ export function LabTrackingPipelineStages({
 								} ${isCurrent ? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-xs ring-1 ring-[var(--teal)]" : isPassed ? "bg-[var(--teal-surface)] border-[var(--teal-soft)] text-[var(--teal)] font-semibold" : "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"}`}
 								data-testid={`drawer-5stage-step-${item.id}`} title={item.descRu}
 							>
-								<div className="text-[9px] uppercase font-bold tracking-wider">Эт. {item.step}</div>
+								<div className="text-[9px] font-bold">Эт. {item.step}</div>
 								<div className="text-[11px] font-bold truncate">{item.shortLabelRu}</div>
 							</button>
 						);

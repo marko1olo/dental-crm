@@ -109,7 +109,7 @@ export const DentalLabExpressShadeNav: React.FC<DentalLabExpressShadeNavProps> =
 						data-testid="selected-stump-shade-header-chip"
 						title={`Культя зуба: ${selectedStumpShade}`}
 					>
-						<span className="text-[10px] text-[var(--muted,#64748b)] uppercase">Культя:</span>
+						<span className="text-[10px] text-[var(--muted,#64748b)]">Культя:</span>
 						<span>{selectedStumpShade}</span>
 					</div>
 				)}

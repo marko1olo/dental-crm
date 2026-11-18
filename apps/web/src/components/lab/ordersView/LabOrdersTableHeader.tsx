@@ -21,7 +21,7 @@ export function LabOrdersTableHeader({
 
 	return (
 		<thead>
-			<tr className="h-8 min-h-[32px] max-h-[32px] bg-[var(--paper-soft)] border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] select-none">
+			<tr className="h-8 min-h-[32px] max-h-[32px] bg-[var(--paper-soft)] border-b border-[var(--line)] text-[11px] font-semibold text-[var(--muted)] select-none">
 				<th className="px-2 py-0 whitespace-nowrap w-[36px] text-center" onClick={(e) => e.stopPropagation()}>
 					{onToggleSelectAll ? (
 						<input

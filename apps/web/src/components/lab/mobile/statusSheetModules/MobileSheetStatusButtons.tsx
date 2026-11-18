@@ -17,7 +17,7 @@ export function MobileSheetStatusButtons({
 
 	return (
 		<div className="space-y-1.5">
-			<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] px-1">
+			<div className="text-[11px] font-semibold text-[var(--muted)] px-1">
 				Сменить статус наряда:
 			</div>
 			<div className="mobile-lab-status-grid">
