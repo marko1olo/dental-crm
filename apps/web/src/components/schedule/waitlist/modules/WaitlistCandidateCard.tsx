@@ -95,31 +95,39 @@ export function WaitlistCandidateCard({
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-2 border-t border-[var(--line-subtle,#f1f5f9)]">
 				{/* Мессенджеры и копирование */}
 				<div className="flex items-center gap-1.5 flex-wrap">
-					{candidate.patientPhone && (
+					{candidate.patientPhone ? (
 						<>
 							<button
 								type="button"
 								title="Написать в WhatsApp"
-								onClick={() => openWhatsAppChat(candidate.patientPhone!, offerText)}
-								className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[#25D366]/10 text-xs font-medium text-[#128C7E] flex items-center gap-1 transition-colors cursor-pointer"
+								onClick={() => {
+									if (candidate.patientPhone) {
+										openWhatsAppChat(candidate.patientPhone, offerText);
+									}
+								}}
+								className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] flex items-center gap-1 transition-colors cursor-pointer"
 							>
 								<span>WhatsApp</span>
 							</button>
 							<button
 								type="button"
 								title="Написать в Telegram"
-								onClick={() => openTelegramChat(candidate.patientPhone!, offerText)}
-								className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[#0088cc]/10 text-xs font-medium text-[#0088cc] flex items-center gap-1 transition-colors cursor-pointer"
+								onClick={() => {
+									if (candidate.patientPhone) {
+										openTelegramChat(candidate.patientPhone, offerText);
+									}
+								}}
+								className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] flex items-center gap-1 transition-colors cursor-pointer"
 							>
-								<span>TG</span>
+								<span>Telegram</span>
 							</button>
 						</>
-					)}
+					) : null}
 					<button
 						type="button"
 						title="Скопировать вежливый текст предложения"
 						onClick={() => onCopyOfferMessage(candidate)}
-						className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-subtle,#f1f5f9)] text-xs text-[var(--text-muted,#64748b)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="h-9 sm:h-8 px-3 sm:px-2.5 min-h-[36px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs text-[var(--text-muted,#64748b)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
 						{copiedId === candidate.id ? (
 							<>
@@ -149,7 +157,7 @@ export function WaitlistCandidateCard({
 					<button
 						type="button"
 						onClick={() => onAssignCandidate?.(candidate)}
-						className="w-full sm:w-auto h-11 sm:h-8 px-4 sm:px-3 rounded-xl sm:rounded-lg border border-[var(--line)] text-[var(--primary)] hover:bg-[var(--primary-soft)] text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center"
+						className="w-full sm:w-auto h-11 sm:h-8 px-4 sm:px-3 rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--primary)] hover:bg-[var(--primary-soft)] text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center"
 					>
 						Назначить
 					</button>

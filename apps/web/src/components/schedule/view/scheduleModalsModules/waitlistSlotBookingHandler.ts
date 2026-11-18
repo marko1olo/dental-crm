@@ -112,26 +112,36 @@ export async function handleBookWaitlistSlot({
       }
     }
 
-    // 3. Переводим заявку в листе ожидания в статус booked на бэкенде
+    // 3. Переводим заявку в листе ожидания в канонический статус 'fulfilled' на бэкенде
     const entryId = candidate.id;
     if (entryId) {
-      await fetch(`/api/waitlist/${encodeURIComponent(entryId)}/status`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ status: "booked" }),
-      }).catch(() => {
-        return fetch(`/api/waitlist/${encodeURIComponent(entryId)}`, {
+      const idempotencyKey =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `waitlist-fulfill-${Date.now()}`;
+
+      const waitlistHeaders: Record<string, string> = {
+        ...headers,
+        "Idempotency-Key": idempotencyKey,
+      };
+
+      const patchStatusRes = await fetch(
+        `/api/waitlist/${encodeURIComponent(entryId)}/status`,
+        {
+          method: "PATCH",
+          headers: waitlistHeaders,
+          body: JSON.stringify({ status: "fulfilled" }),
+        },
+      );
+
+      if (!patchStatusRes.ok) {
+        // Запасной вызов PUT /api/waitlist/:id со статусом fulfilled
+        await fetch(`/api/waitlist/${encodeURIComponent(entryId)}`, {
           method: "PUT",
-          headers,
-          body: JSON.stringify({ status: "booked" }),
-        }).catch(() => {
-          return fetch(`/api/waitlist/${encodeURIComponent(entryId)}/status`, {
-            method: "PATCH",
-            headers,
-            body: JSON.stringify({ status: "fulfilled" }),
-          }).catch(() => {});
-        });
-      });
+          headers: waitlistHeaders,
+          body: JSON.stringify({ status: "fulfilled" }),
+        }).catch(() => {});
+      }
     }
 
     if (typeof showToast === "function") {

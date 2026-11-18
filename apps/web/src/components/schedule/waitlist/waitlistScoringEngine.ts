@@ -22,7 +22,8 @@ export function scoreWaitlistCandidate(
   targetSlot?: TargetSlotInfo | null,
 ): CandidateScoreResult {
   const urgency = detectWaitlistUrgency(candidate);
-  const urgencyCfg = URGENCY_CONFIG[urgency] || URGENCY_CONFIG.routine!;
+  const defaultUrgency = URGENCY_CONFIG.routine ?? { label: "Плановый", weight: 15, rank: 3 };
+  const urgencyCfg = URGENCY_CONFIG[urgency] ?? defaultUrgency;
   const matchReasons: string[] = [];
   const mismatchReasons: string[] = [];
 
@@ -61,7 +62,7 @@ export function scoreWaitlistCandidate(
   const dayFits = checkTimeWindowFit(targetSlot.startsAt, undefined, candidate.preferredDays, undefined);
   const timeFits = checkTimeWindowFit(
     targetSlot.startsAt,
-    candidate.preferredTimeRanges,
+    candidate.preferredTimeRanges ?? undefined,
     candidate.preferredDays,
     candidate.preferredTimeOfDay,
   );

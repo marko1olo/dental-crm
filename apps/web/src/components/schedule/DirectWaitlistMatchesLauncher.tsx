@@ -3,6 +3,7 @@
  * Mandate 8b (<= 120 lines), Mandate 8e (Doctor Autonomy), Mandate 8aq (Mounted in UI Tree).
  */
 import React, { useEffect, useState } from "react";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { WaitlistMatchesBlock } from "./waitlist/WaitlistMatchesBlock";
 import { WaitlistDrawer } from "./waitlist/WaitlistDrawer";
 import type { TargetSlotInfo } from "./waitlist/waitlistTypes";
@@ -28,7 +29,7 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 	const [activeSlot, setActiveSlot] = useState<TargetSlotInfo | null>(() => {
 		if (typeof window === "undefined") return null;
 		const s = window.location.search || "";
-		if (s.includes("target-slot") || s.includes("slot=demo")) {
+		if (isDemoShowcaseMode() && (s.includes("target-slot") || s.includes("slot=demo"))) {
 			return {
 				appointmentId: "demo-freed-slot-1",
 				startsAt: "2026-11-12T10:00:00.000Z",
@@ -39,6 +40,22 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 				chairName: "Кресло 1 (Терапия)",
 				treatmentCategory: "Терапия",
 				freedBecause: "Отмена приёма (окно 60 мин)",
+			};
+		}
+		// Боевой контекст: извлекаем параметры реального слота из query string
+		const params = new URLSearchParams(s);
+		const apptId = params.get("appointmentId") || params.get("slotId");
+		if (apptId) {
+			return {
+				appointmentId: apptId,
+				startsAt: params.get("startsAt") || new Date().toISOString(),
+				endsAt: params.get("endsAt") || new Date(Date.now() + 3600000).toISOString(),
+				doctorUserId: params.get("doctorUserId") || null,
+				doctorName: params.get("doctorName") || null,
+				chairId: params.get("chairId") || null,
+				chairName: params.get("chairName") || null,
+				treatmentCategory: params.get("treatmentCategory") || undefined,
+				freedBecause: params.get("freedBecause") || "Отмена приёма",
 			};
 		}
 		return null;
@@ -89,33 +106,33 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 			data-testid="standalone-waitlist-matches-root"
 		>
 			<div className="max-w-4xl mx-auto w-full space-y-4">
-				<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)]">
-					<div>
-						<h2 className="text-base font-bold text-[var(--ink,#0f172a)]">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--line,#e2e8f0)]">
+					<div className="min-w-0">
+						<h2 className="text-base font-bold text-[var(--ink,#0f172a)] leading-tight">
 							Подбор пациентов из листа ожидания в освободившееся окно
 						</h2>
 						{activeSlot ? (
-							<p className="text-xs text-[var(--text-muted,#64748b)] mt-0.5">
+							<p className="text-xs text-[var(--text-muted,#64748b)] mt-1">
 								{activeSlot.doctorName} • {activeSlot.chairName} • {activeSlot.freedBecause || "Освободившийся слот"}
 							</p>
 						) : (
-							<p className="text-xs text-[var(--text-muted,#64748b)] mt-0.5">
+							<p className="text-xs text-[var(--text-muted,#64748b)] mt-1">
 								Слот не выбран
 							</p>
 						)}
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
 						<button
 							type="button"
 							onClick={() => setIsDrawerOpen(true)}
-							className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-hover,#0f766e)] shadow-sm transition-colors cursor-pointer"
+							className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer"
 						>
-							Открыть лист
+							Весь лист
 						</button>
 						<button
 							type="button"
 							onClick={handleClose}
-							className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer"
+							className="h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer"
 						>
 							Закрыть
 						</button>
@@ -143,7 +160,7 @@ export const DirectWaitlistMatchesLauncher: React.FC = () => {
 						<button
 							type="button"
 							onClick={() => setIsDrawerOpen(true)}
-							className="px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-hover,#0f766e)] cursor-pointer"
+							className="h-9 px-4 text-sm font-medium rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] cursor-pointer inline-flex items-center justify-center"
 						>
 							Открыть лист ожидания
 						</button>

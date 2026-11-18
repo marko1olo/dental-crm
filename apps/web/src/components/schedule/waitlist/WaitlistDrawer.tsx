@@ -29,7 +29,7 @@ export interface WaitlistDrawerProps {
   updateNewAppointmentDraft?: (<K extends keyof AppointmentScheduleDraft>(key: K, value: AppointmentScheduleDraft[K]) => void) | undefined;
   focusNewAppointmentEditor?: (() => void) | undefined;
   onAppointmentCreated?: (() => void) | undefined;
-  dashboard?: Dashboard | null | undefined;
+  dashboard?: Dashboard | Partial<Dashboard> | Record<string, unknown> | null | undefined;
   auth?: AppLogicContextType["auth"];
 }
 

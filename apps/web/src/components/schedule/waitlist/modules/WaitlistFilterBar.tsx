@@ -32,14 +32,14 @@ export function WaitlistFilterBar({
 					value={searchQuery}
 					onChange={(e) => onSearchChange(e.target.value)}
 					placeholder="Поиск по пациенту, телефону, врачу..."
-					className="w-full h-10 pr-3 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+					className="w-full h-9 pr-3 text-xs sm:text-sm rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 					style={{ paddingLeft: "38px" }}
 				/>
 			</div>
 
 			<div className="flex items-center gap-2 flex-wrap text-xs">
 				{targetSlot?.doctorUserId && isSmartMatch && (
-					<label className="flex items-center gap-1.5 cursor-pointer select-none bg-[var(--paper-subtle,#f1f5f9)] px-2.5 py-1 rounded-md text-[var(--text,#0f172a)]">
+					<label className="h-9 inline-flex items-center gap-1.5 cursor-pointer select-none bg-[var(--paper-subtle,#f1f5f9)] px-3 rounded-lg text-[var(--text,#0f172a)] border border-[var(--line,#e2e8f0)]">
 						<input
 							type="checkbox"
 							checked={sameDoctorOnly}
@@ -52,7 +52,7 @@ export function WaitlistFilterBar({
 				<select
 					value={urgencyFilter}
 					onChange={(e) => onUrgencyFilterChange(e.target.value)}
-					className="h-7 text-xs rounded-md border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-2 focus:ring-0"
+					className="h-9 text-xs sm:text-sm rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 				>
 					<option value="all">Все приоритеты</option>
 					<option value="urgent">Острая боль</option>

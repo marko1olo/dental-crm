@@ -154,14 +154,15 @@ export function detectWaitlistUrgency(
 export function extractPatientPoliteName(fullName?: string | null): string {
   if (!fullName || typeof fullName !== "string") return "Пациент";
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "Пациент";
-  if (parts.length === 1) return parts[0]!;
-  if (parts.length >= 3) {
+  const first = parts[0];
+  if (!first) return "Пациент";
+  if (parts.length === 1) return first;
+  if (parts.length >= 3 && parts[1] && parts[2]) {
     // Иванов Иван Иванович -> Иван Иванович
     return `${parts[1]} ${parts[2]}`;
   }
   // Петрова Анна -> Анна
-  return parts[1] || parts[0]!;
+  return parts[1] || first;
 }
 
 /**
@@ -271,9 +272,9 @@ export function parseTimeToMinutes(raw: unknown): number | null {
  */
 export function checkTimeWindowFit(
   slotStartsAt: string,
-  preferredTimeRanges?: Array<{ day?: string; slot?: string }> | any,
-  preferredDays?: string[],
-  preferredTimeOfDay?: string[],
+  preferredTimeRanges?: WaitlistTimeRange[] | Array<{ day?: string | undefined; slot?: string | undefined; [key: string]: unknown }> | null | undefined,
+  preferredDays?: string[] | undefined,
+  preferredTimeOfDay?: string[] | undefined,
 ): boolean {
   if (!slotStartsAt) return true;
 

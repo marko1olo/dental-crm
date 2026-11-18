@@ -12490,6 +12490,45 @@
   - `check:react-hooks` — EXIT 0 (3173 файла, 0 нарушений).
   - 66/66 тестов виджета букинга в `apps/web/src/components/booking/` — PASS.
 
+---
+
+## 43. Волна 328: Red Team Ревизия Домена D — Лист ожидания и умный овербукинг (Waitlist & Smart Overbooking) (Мандаты 8am, 8bi, 8bk, 8bf, 8bm, 8bo, 8az)
+
+- **1. Консолидация SSOT и переключение на боевой роут бэкенда**:
+  - `apps/web/src/components/schedule/waitlist/WaitlistMatchesBlock.tsx`: клиентский выкачиватель всего пула пациентов переключен на канонический роут бэкенда `GET /api/appointments/:appointmentId/waitlist-matches` (сервис `apps/api/src/services/schedule/waitlistMatching.ts`), производящий полноценную SQL-фильтрацию, расчет предпочтений по врачу, креслу, дням недели и времени суток в часовом поясе клиники, а также детекцию будущих запланированных визитов (`alreadyBooked`).
+  - В интерфейс `BackendMatchItem` и маппинг добавлены поля `phone` / `patientPhone` и `reason`, отображающие реальные контакты и клинические мотивы подбора без белых дыр «Без телефона».
+- **2. Канонический статус Drizzle и идемпотентность бронирования (Мандат 8bo)**:
+  - В `apps/web/src/components/schedule/view/scheduleModalsModules/waitlistSlotBookingHandler.ts` ликвидирован стыдный тройной try/catch с перебором случайных статусов `'booked'` / `'fulfilled'`.
+  - Канонический статус Drizzle жестко зафиксирован как `'fulfilled'` (согласно схеме `appointmentWaitlists`).
+  - Добавлен клиентский заголовок `Idempotency-Key` (UUIDv7/crypto.randomUUID) для исключения дублирования сетевых мутаций.
+  - Создан реэкспорт `apps/web/src/components/schedule/waitlist/waitlistSlotBookingHandler.ts` для обеспечения обратной совместимости импортов.
+- **3. Изоляция демо-режима и боевые query-параметры (Мандат 8wy)**:
+  - В `apps/web/src/components/schedule/DirectWaitlistMatchesLauncher.tsx` мок-слот `demo-freed-slot-1` и `demo-doctor-smirnov` строго изолированы за проверкой `isDemoShowcaseMode()`.
+  - Реализован парсинг параметров боевого слота из URL search params (`appointmentId`, `startsAt`, `endsAt`, `doctorName`, `chairName`, `freedBecause`), позволяющий открывать инлайн-подбор для любого освободившегося окна клиники.
+- **4. Реальная транзакционная конкурентность PostgreSQL 18 (Мандат 8z)**:
+  - Тест `apps/api/src/tests/schedule/waitlistConcurrency.test.ts` (и реэкспорт `apps/api/src/tests/waitlistConcurrency.test.ts`) полностью переписан с in-memory симуляции на JS-массивах `sampleData.js` на честную проверку конкурентных транзакций в PostgreSQL 18 с `withFixtureTenant`.
+  - Проверена атомарная посадка пациента из листа ожидания в освобожденное окно (`cancelled`/`no_show`) с переводом заявки в `'fulfilled'`, а также защита от гонки (race protection) через `expectedCurrentStatus` — параллельная попытка второго администратора занять то же окно отвергается с кодом 409 Conflict. 100% pass (Exit Code 0).
+- **5. Санитаризация UI, геометрия кнопок и Apple HIG (Мандаты 8am, 8bi)**:
+  - `WaitlistSlotBanner.tsx`: ликвидирован `uppercase` (ALL CAPS BAN), реализована функция `formatMatchesCount` с правильным склонением числительных в русском языке («1 совпадение», «2 совпадения», «5 совпадений») вместо срезанного «совпад.».
+  - `WaitlistFilterBar.tsx`: высота инпута, селекта и чекбокса выровнена под канонический десктопный стандарт `h-9` (36px).
+  - `WaitlistCandidateCard.tsx`: удален хардкод `#25D366` и `#0088cc`, все второстепенные кнопки переведены на семантические токены `var(--paper)` и `var(--line)`.
+  - `WaitlistMatchesBlock.tsx`: кнопки приведены к канонической геометрии `h-9` (Desktop) и `h-11` (Mobile), добавлен честный Empty State (`data-testid="waitlist-matches-empty"`), обеспечено наличие ровно 1 Primary CTA noble teal (`var(--teal, #0d9488)`) на карточку кандидата.
+  - `DirectWaitlistMatchesLauncher.tsx`: контейнер шапки переведен на `flex flex-col sm:flex-row sm:items-center justify-between gap-3`, что полностью устранило срезание и клиппинг кнопки «Закрыть» на экранах смартфонов 390x844.
+- **6. 4-State Visual Proof Gate (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark)**:
+  - 4 канонических скриншота зафиксированы в `docs/proofs/waitlist/` и лично проверены через `read_file`:
+    - `01_waitlist_pc_light_1440x900.png` (43.8 KB, PC Light 1440x900);
+    - `02_waitlist_pc_dark_1440x900.png` (43.7 KB, PC Dark 1440x900);
+    - `03_waitlist_mobile_light_390x844.png` (110.4 KB, iPhone Mobile Light 390x844);
+    - `04_waitlist_mobile_dark_390x844.png` (108.5 KB, iPhone Mobile Dark 390x844).
+  - Подтверждено: размер файлов > 20 KB, 0px срезанного текста, ровно 1 Primary CTA noble teal (`#0d9488`), WCAG AAA контрастность в Dark Mode, Apple HIG тач-таргеты.
+- **7. Машинные гейты верификации**:
+  - `npm run check:encoding` — EXIT 0 (20141 файл без замечаний).
+  - `npm run check:buttons` — EXIT 0 (4397 файлов TSX, 1309 файлов CSS, 0 нарушений).
+  - `npm run check:css-tokens` — EXIT 0 (1309 файлов CSS, все var() разрешены).
+  - `npm run check:react-hooks` — EXIT 0 (3031 файл с хуками, 0 нарушений).
+  - Unit/E2E тесты: `WaitlistDrawerMatching.test.tsx` (11/11 PASS), `waitlistConcurrency.test.ts` (2/2 PASS на PG18).
+
+
 
 
 

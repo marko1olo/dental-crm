@@ -14,7 +14,7 @@ export interface UseWaitlistOptions {
   targetSlot?: TargetSlotInfo | null | undefined;
   onBookSlot?: ((patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void) | undefined;
   onClose?: (() => void) | undefined;
-  dashboard?: Dashboard | null | undefined;
+  dashboard?: Dashboard | Partial<Dashboard> | Record<string, unknown> | null | undefined;
   auth?: AppLogicContextType["auth"] | null | undefined;
 }
 
@@ -221,9 +221,11 @@ export function useWaitlistState(options: UseWaitlistOptions) {
   // Копирование вежливого сообщения в буфер
   const handleCopyOfferMessage = useCallback(
     (candidate: WaitlistCandidateItem) => {
+      const clinicSettings = dashboard?.clinicSettings as { name?: string; profile?: { clinicName?: string } } | undefined;
       const clinicName =
-        dashboard?.clinicName ||
-        dashboard?.clinicSettings?.profile?.clinicName ||
+        (typeof dashboard?.clinicName === "string" ? dashboard.clinicName : null) ||
+        clinicSettings?.name ||
+        clinicSettings?.profile?.clinicName ||
         "Стоматология DENTE";
       const message = generateWaitlistOfferMessage({
         patientName: candidate.patientName,
