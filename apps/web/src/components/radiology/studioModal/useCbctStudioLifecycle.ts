@@ -124,6 +124,7 @@ export function useCbctStudioLifecycle({
 
 		if (initialVolume && !state.volume) {
 			applyVol(initialVolume);
+			return undefined;
 		} else if (typeof window !== "undefined") {
 			const win = window as typeof window & CbctWindowVolumeExtensions;
 			if (win.__cbctDemoVolume && !state.volume) applyVol(win.__cbctDemoVolume);
@@ -136,6 +137,7 @@ export function useCbctStudioLifecycle({
 				window.removeEventListener("dente-load-cbct-volume", handleCustomLoad);
 			};
 		}
+		return undefined;
 	}, [initialVolume, state.volume, state.jawType, patientId, patientName]);
 
 	const autoLoadDemoAttemptedRef = useRef(false);

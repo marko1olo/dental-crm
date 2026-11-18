@@ -27,9 +27,17 @@ export const DirectRvgCaptureLauncher: React.FC = () => {
 			s.includes("rvg-hardware") ||
 			h.includes("rvg-hardware") ||
 			s.includes("rvg=1") ||
-			h.includes("rvg") ||
-			s.includes("xray=1") ||
-			h.includes("xray")
+			s.includes("stand=rvg-capture") ||
+			h === "#rvg-capture" ||
+			h.startsWith("#rvg-capture?") ||
+			h === "#direct-rvg" ||
+			h.startsWith("#direct-rvg?") ||
+			h === "#rvg-hardware" ||
+			h.startsWith("#rvg-hardware?") ||
+			h === "#rvg" ||
+			h.startsWith("#rvg?") ||
+			h === "#xray-capture" ||
+			s.includes("xray=capture")
 		);
 	}, []);
 
@@ -38,6 +46,7 @@ export const DirectRvgCaptureLauncher: React.FC = () => {
 	useEffect(() => {
 		const handleOpen = () => setIsOpen(true);
 
+		window.addEventListener("dente:open-direct-rvg", handleOpen);
 		window.addEventListener("dente:open-rvg-capture", handleOpen);
 		window.addEventListener("dente-open-rvg-capture", handleOpen);
 		window.addEventListener("dente:open-rvg", handleOpen);
@@ -54,6 +63,7 @@ export const DirectRvgCaptureLauncher: React.FC = () => {
 		window.addEventListener("popstate", handleNavigation);
 
 		return () => {
+			window.removeEventListener("dente:open-direct-rvg", handleOpen);
 			window.removeEventListener("dente:open-rvg-capture", handleOpen);
 			window.removeEventListener("dente-open-rvg-capture", handleOpen);
 			window.removeEventListener("dente:open-rvg", handleOpen);
@@ -72,8 +82,9 @@ export const DirectRvgCaptureLauncher: React.FC = () => {
 				h.includes("rvg-capture") ||
 				h.includes("direct-rvg") ||
 				h.includes("rvg-hardware") ||
-				h.includes("rvg") ||
-				h.includes("xray")
+				h === "#rvg" ||
+				h.startsWith("#rvg?") ||
+				h === "#xray-capture"
 			) {
 				history.replaceState(null, "", window.location.pathname + window.location.search);
 			}

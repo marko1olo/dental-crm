@@ -51,11 +51,11 @@ export async function buildVolumeFromDicomZip(
 		let streamEnded = false;
 		const checkDone = () => { if (streamEnded && activeFiles === 0) resolve(); };
 
-		unzipper.onfile = (file) => {
+		unzipper.onfile = (file: fflate.UnzipFile) => {
 			if (!isDicomEntry(file.name)) return;
 			activeFiles++;
 			let chunks: Uint8Array[] = [];
-			file.ondata = (err, chunk, final) => {
+			file.ondata = (err: fflate.FlateError | null, chunk: Uint8Array, final: boolean) => {
 				if (err) { activeFiles--; reject(err); return; }
 				if (chunk?.length) chunks.push(chunk);
 				if (final) {

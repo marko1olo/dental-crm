@@ -42,9 +42,12 @@ export function useMobileRadiologyController(
 			if (
 				typeof navigator !== "undefined" &&
 				typeof navigator.vibrate === "function"
-			)
+			) {
 				navigator.vibrate(10);
-		} catch {}
+			}
+		} catch (err) {
+			console.warn("[Radiology Mobile] Тактильный отклик недоступен:", err);
+		}
 	}, []);
 
 	const handleResetTransform = useCallback(() => {
@@ -86,7 +89,7 @@ export function useMobileRadiologyController(
 		if (s.contrast !== 1.0) parts.push(`contrast(${s.contrast})`);
 		if (s.brightness !== 1.0) parts.push(`brightness(${s.brightness})`);
 		if (s.enhancementClahe)
-			parts.push("contrast(1.4) drop-shadow(0 0 1px #2dd4bf)");
+			parts.push("contrast(1.4) drop-shadow(0 0 1px var(--primary-hover, #14b8a6))");
 		return parts.length > 0 ? parts.join(" ") : "none";
 	}, [s.inverted, s.contrast, s.brightness, s.enhancementClahe]);
 

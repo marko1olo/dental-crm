@@ -26,13 +26,27 @@ export const DirectRadiologyLauncher: React.FC = () => {
 		if (typeof window === "undefined") return false;
 		const s = (window.location.search || "").toLowerCase();
 		const h = (window.location.hash || "").toLowerCase();
+		// Исключаем аппаратный захват, чтобы не перехватывать чужой скоуп
+		if (
+			h.includes("rvg-capture") ||
+			h.includes("direct-rvg") ||
+			h.includes("rvg-hardware") ||
+			s.includes("rvg-capture") ||
+			s.includes("direct-rvg")
+		) {
+			return false;
+		}
 		return (
 			s.includes("radiology-standalone") ||
 			h.includes("radiology-standalone") ||
 			s.includes("radiology=1") ||
-			h.includes("radiology") ||
+			h === "#radiology" ||
+			h.startsWith("#radiology?") ||
+			h.startsWith("#radiology/") ||
 			s.includes("visiograph=1") ||
-			h.includes("visiograph") ||
+			h === "#visiograph" ||
+			h.startsWith("#visiograph?") ||
+			h.startsWith("#visiograph/") ||
 			s.includes("xray-viewer") ||
 			h.includes("xray-viewer") ||
 			h.includes("study-viewer")
@@ -76,8 +90,13 @@ export const DirectRadiologyLauncher: React.FC = () => {
 		if (typeof window !== "undefined" && window.location.hash) {
 			const h = window.location.hash.toLowerCase();
 			if (
-				h.includes("radiology") ||
-				h.includes("visiograph") ||
+				h === "#radiology" ||
+				h.startsWith("#radiology?") ||
+				h.startsWith("#radiology/") ||
+				h.includes("radiology-standalone") ||
+				h === "#visiograph" ||
+				h.startsWith("#visiograph?") ||
+				h.startsWith("#visiograph/") ||
 				h.includes("xray-viewer") ||
 				h.includes("study-viewer")
 			) {

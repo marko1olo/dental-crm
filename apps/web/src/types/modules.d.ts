@@ -68,3 +68,30 @@ declare module "dicom-parser" {
 	export default dicomParser;
 }
 
+declare module "fflate" {
+	export type FlateError = Error & { code?: number };
+	export type AsyncFlateCallback<T> = (err: FlateError | null, data: T) => void;
+	export type Unzipped = { [key: string]: Uint8Array };
+	export function unzip(data: Uint8Array, cb: AsyncFlateCallback<Unzipped>): void;
+	export function unzipSync(data: Uint8Array, opts?: unknown): Unzipped;
+	export class AsyncUnzipInflate {}
+	export class UnzipInflate {}
+	export interface UnzipFile {
+		name: string;
+		size?: number;
+		originalSize?: number;
+		compression?: number;
+		ondata: (err: FlateError | null, chunk: Uint8Array, final: boolean) => void;
+		start(): void;
+	}
+	export class Unzip {
+		constructor(cb?: (file: UnzipFile) => void);
+		register(cls: unknown): void;
+		onfile?: ((file: UnzipFile) => void) | undefined;
+		push(chunk: Uint8Array, final?: boolean): void;
+	}
+	export function strFromU8(dat: Uint8Array, latin1?: boolean): string;
+	export function strToU8(str: string, latin1?: boolean): Uint8Array;
+}
+
+

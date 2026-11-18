@@ -10,8 +10,6 @@ import { DirectTomorrowRemindersLauncher } from "./components/schedule/DirectTom
 import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
 import { DirectDocumentsLauncher } from "./components/documents/DirectDocumentsLauncher";
 import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
-import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
-import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
 import { DirectShiftLauncher } from "./components/shift/DirectShiftLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
@@ -370,8 +368,6 @@ export function AppShell() {
 			<DirectPrescriptionLauncher />
 			<DirectSanpinLauncher />
 			<DirectDocumentsLauncher />
-			<DirectRadiologyLauncher />
-			<DirectRvgCaptureLauncher />
 			<DirectCashboxLauncher />
 			<DirectShiftLauncher />
 			<DirectDentalLabLauncher />

@@ -49,7 +49,7 @@ export const CtSelectorRecentStudiesSection: React.FC<CtSelectorRecentStudiesSec
 								</div>
 								<div className="min-w-0">
 									<strong className="block text-xs font-bold text-[var(--ink)] leading-snug line-clamp-2">
-										{study.title || "3D КЛКТ исследование"}
+										{typeof study.title === "string" && study.title.trim() ? study.title : "3D КЛКТ исследование"}
 									</strong>
 									<div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] flex-wrap">
 										<span>

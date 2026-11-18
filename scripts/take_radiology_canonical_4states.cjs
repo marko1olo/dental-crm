@@ -331,11 +331,13 @@ async function run() {
   // ==========================================
   // PART 3: SensorStudyViewer Standalone Launcher
   // ==========================================
-  console.log(`[Browser] Opening SensorStudyViewer via hash #radiology-standalone...`);
+  console.log(`[Browser] Opening SensorStudyViewer via event & hash #radiology-standalone...`);
   await page.evaluate(() => {
     window.location.hash = "#radiology-standalone";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    window.dispatchEvent(new CustomEvent("dente:open-radiology"));
   });
-  await page.waitForSelector('[data-testid="sensor-study-viewer"]', { state: "visible", timeout: 20000 });
+  await page.waitForSelector('[data-testid="sensor-study-viewer"], [data-testid="direct-radiology-launcher-root"]', { state: "visible", timeout: 20000 });
   await page.waitForTimeout(2000);
 
   console.log(">>> Capturing 07_sensor_study_viewer_pc_light_1440x900.png...");

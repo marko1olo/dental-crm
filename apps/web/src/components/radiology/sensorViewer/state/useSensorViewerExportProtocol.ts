@@ -46,11 +46,15 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 				const current = prev.objectiveStatus || "";
 				return { ...prev, objectiveStatus: current.trim() ? `${current.trim()}\n${statement}` : statement };
 			});
-		} catch {}
+		} catch (visitErr) {
+			console.warn("[SensorViewerExport] Не удалось записать статус в дневник визита:", visitErr);
+		}
 
 		p.onInsertToProtocol?.(statement);
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-			navigator.clipboard.writeText(statement).catch(() => {});
+			navigator.clipboard.writeText(statement).catch((clipErr) => {
+				console.warn("[SensorViewerExport] Не удалось скопировать заключение в буфер обмена:", clipErr);
+			});
 		}
 
 		setIsNormaApplied(true);
@@ -144,7 +148,9 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 			try {
 				const id = usePatientStore.getState().selectedPatientId;
 				if (id) patientId = id;
-			} catch {}
+			} catch (storeErr) {
+				console.warn("[SensorViewerExport] Ошибка получения selectedPatientId:", storeErr);
+			}
 
 			const res = await fetch("/api/xray/scans", {
 				method: "POST",
@@ -177,7 +183,8 @@ export function useSensorViewerExportProtocol(p: UseSensorViewerExportProtocolPr
 			} else {
 				showToast(`Снимок «${file.name}» успешно открыт`, "info");
 			}
-		} catch {
+		} catch (uploadErr) {
+			console.warn("[SensorViewerExport] Ошибка сохранения снимка на сервере:", uploadErr);
 			showToast(`Снимок «${file.name}» открыт локально`, "info");
 		}
 	}, [p]);

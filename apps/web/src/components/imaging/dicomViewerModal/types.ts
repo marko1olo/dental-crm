@@ -8,6 +8,7 @@ export interface DicomViewerModalProps {
 	readonly toothFdiCode?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientId?: string | undefined;
+	readonly studyId?: string | undefined;
 	readonly studyDate?: string | undefined;
 	readonly studiesHistory?: readonly RadiologyFilmstripItem[] | undefined;
 	readonly initialViewMode?: "2d" | "3d_mpr" | "sectioning" | undefined;

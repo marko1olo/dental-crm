@@ -12,7 +12,7 @@ import { useDicomViewerModalAi } from "./useDicomViewerModalAi.js";
 import { teardownViewportCanvases } from "../../../utils/viewportTeardownHelper.js";
 
 export function useDicomViewerModalController(props: DicomViewerModalProps) {
-	const { isOpen, onClose, imageSrc, title, toothFdiCode, patientName, patientId, studyDate, initialViewMode = "2d", onInsertToProtocol } = props;
+	const { isOpen, onClose, imageSrc, title, toothFdiCode, patientName, patientId, studyId, studyDate, initialViewMode = "2d", onInsertToProtocol } = props;
 	const [viewMode, setViewMode] = useState(initialViewMode);
 	const [isCtSelectorOpen, setIsCtSelectorOpen] = useState(false);
 	const [isCbctStudioOpen, setIsCbctStudioOpen] = useState(false);
@@ -48,24 +48,30 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 
 	const handleSwitchViewMode = useCallback((mode: "2d" | "3d_mpr" | "sectioning") => {
 		if (mode === "3d_mpr" || mode === "sectioning") {
-			openCbctPopoutWindow({ studyId: "ct-study-current", patientId: patientId || undefined, patientName: patientName || undefined, title: `3D КТ · ${patientName || "Исследование"}` }).then((res) => {
+			const effectiveStudyId = studyId || (activeStudyId !== "study-current" ? activeStudyId : undefined) || "cbct-scan-primary";
+			openCbctPopoutWindow({ studyId: effectiveStudyId, patientId: patientId || undefined, patientName: patientName || undefined, title: `3D КТ · ${patientName || "Исследование"}` }).then((res) => {
 				if (!res.success) {
 					setIsCbctStudioOpen(true);
 				}
-			}).catch(() => {
+			}).catch((err) => {
+				console.warn("[Radiology] Не удалось открыть внешнее окно КЛКТ, переключаем на встроенную студию:", err);
 				setIsCbctStudioOpen(true);
 			});
 			return;
 		}
 		if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
 		setViewMode(mode);
-	}, [patientId, patientName]);
+	}, [patientId, patientName, studyId, activeStudyId]);
 
 	const handleInsertNormaTo043 = useCallback(() => {
 		const targetTooth = toothFdiCode ? ` зуба ${toothFdiCode}` : "";
 		const statement = `Рентгенологическое исследование (RVG/DICOM)${targetTooth}: норма. Патологических изменений костной ткани не выявлено.`;
 		applyRadiologyProtocolToForm043({ protocol: statement, options: { toothFdi: toothFdiCode, modalityLabel: "RVG/DICOM" }, onInsertToProtocol, showNotification: false });
-		try { useVisitStore.getState().setVisitNoteForm((prev) => ({ ...prev, objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n${statement}` : statement })); } catch {}
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => ({ ...prev, objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n${statement}` : statement }));
+		} catch (err) {
+			console.warn("[Radiology] Не удалось записать заключение в дневник визита:", err);
+		}
 		if (onInsertToProtocol) onInsertToProtocol(statement);
 		setIsNormaApplied(true);
 		setAppliedProtocolId("norma");

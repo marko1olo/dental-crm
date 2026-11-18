@@ -61,8 +61,6 @@ export function useToothScanThumbnail(toothNumber: number, selectedPatientId?: s
 				patientId: selectedPatientId,
 				scanId: toothScanThumbnail?.id,
 			};
-			window.dispatchEvent(new CustomEvent("dente-open-rvg-capture", { detail }));
-			window.dispatchEvent(new CustomEvent("dente-open-rvg-capture-modal", { detail }));
 			window.dispatchEvent(new CustomEvent("dente:open-direct-rvg", { detail }));
 		}
 		onClose();

@@ -110,7 +110,7 @@ export function useHotFolderEmrDispatcher({
 							reader.readAsDataURL(blob);
 						});
 					}
-					await fetch("/api/xray/scans", {
+					const response = await fetch("/api/xray/scans", {
 						method: "POST",
 						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 						body: JSON.stringify({
@@ -124,8 +124,13 @@ export function useHotFolderEmrDispatcher({
 							notes: protocolNote,
 							status: "done",
 						}),
-					}).catch(() => {});
-				} catch {}
+					});
+					if (!response.ok) {
+						console.warn("[HotFolderEmrDispatcher] Не удалось сохранить снимок на сервере, статус:", response.status);
+					}
+				} catch (uploadErr) {
+					console.warn("[HotFolderEmrDispatcher] Ошибка при сохранении снимка из HotFolder:", uploadErr);
+				}
 			})();
 		}
 
@@ -171,8 +176,8 @@ export function useHotFolderEmrDispatcher({
 					detail: { study, toothFdi: selectedTeeth[0] || "16", teethFdi: selectedTeeth },
 				}),
 			);
-		} catch {
-			// ignore
+		} catch (eventErr) {
+			console.warn("[HotFolderEmrDispatcher] Ошибка при отправке клинического события:", eventErr);
 		}
 
 		showToast(

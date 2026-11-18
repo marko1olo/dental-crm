@@ -304,7 +304,7 @@ export function useCtSelector(props: CtSelectorModalProps) {
 			}
 
 			return new Promise<void>((resolve) => {
-				fflate.unzip(archiveBuffer!, async (err, unzipped) => {
+				fflate.unzip(archiveBuffer!, async (err: fflate.FlateError | null, unzipped: fflate.Unzipped) => {
 					archiveBuffer = null; // Free compressed memory
 					if (err) {
 						logger.error("[CtSelectorModal] Unzip error:", err);
@@ -348,7 +348,7 @@ export function useCtSelector(props: CtSelectorModalProps) {
 							if (!fileData) continue;
 
 							if (isDicomEntry(filename, fileData)) {
-								const file = new File([fileData], filename);
+								const file = new File([fileData.buffer as ArrayBuffer], filename);
 								const id = dicomLoader?.wadouri?.fileManager?.add(file) ?? URL.createObjectURL(file);
 								imageIds.push(id);
 							}

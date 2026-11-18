@@ -157,10 +157,11 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 					<DirectRvgCaptureModal
 						isOpen={true}
 						onClose={() => routing.setIsVisiographDirectModalOpen(false)}
-						patientName={patient?.fullName || patient?.name || "Пациент"}
-						patientCardNumber={patient?.cardNumber || "ЭМК №2026/891"}
+						patientId={patient?.id}
+						patientName={patient?.fullName || patient?.name || (patient?.id ? `Пациент #${patient.id.slice(0, 8)}` : "Пациент")}
+						patientCardNumber={patient?.cardNumber || patient?.cardId || (patient?.id ? `ЭМК №${patient.id.slice(0, 8)}` : "ЭМК не выбрана")}
 						doctorName={staffUser?.fullName || activeDoctor?.fullName || "Лечащий врач"}
-						initialToothFdi="16"
+						initialToothFdi={activeToothNumber ? String(activeToothNumber) : undefined}
 					/>
 				</Suspense>
 			)}
