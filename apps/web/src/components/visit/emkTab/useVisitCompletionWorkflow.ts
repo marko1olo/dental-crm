@@ -7,15 +7,29 @@ import {
 	completeClinicalVisitAndAssembleEstimate,
 } from "../clinicalVisitWorkflow";
 import { assembleVisitStoreCompletedServices } from "../useVisitCompletion";
-import { executeVisitPostCompletionPipeline } from "../completionModules/visitCompletionPipeline";
+import {
+	executeVisitPostCompletionPipeline,
+	type ActiveVisitCompletionContext,
+	type DashboardCompletionContext,
+	type DashboardAppointmentContext,
+} from "../completionModules/visitCompletionPipeline";
 import { createVisitInvoiceInApi } from "../completionModules/visitInvoiceCreationService";
 import type { Dashboard, Patient } from "@dental/shared";
-import type { VisitPatientEntity } from "../view/VisitViewProps";
+import type { VisitPatientEntity, VisitDoctorEntity } from "../view/VisitViewProps";
+import type { VisitEmkDashboardEntity } from "./types";
+
+export type CompletionDashboardContext = DashboardCompletionContext & {
+	readonly activeDoctor?: VisitDoctorEntity | { id?: string; fullName?: string; specialty?: string } | null | undefined;
+	readonly activeVisit?: ActiveVisitCompletionContext | null | undefined;
+	readonly activeAppointment?: DashboardAppointmentContext | null | undefined;
+	readonly [key: string]: unknown;
+};
 
 export interface UseVisitCompletionWorkflowOptions {
 	openVisitId: string;
 	activePatient?: VisitPatientEntity | Patient | { id?: string; fullName?: string; phone?: string; name?: string } | null | undefined;
-	dashboard?: (Dashboard & { activeVisit?: { treatmentPlanId?: string | null; stageNumber?: number | null; organizationId?: string }; activeAppointment?: { treatmentPlanId?: string | null; stageNumber?: number | null } }) | null | undefined;
+	activeDoctor?: VisitDoctorEntity | { id?: string; fullName?: string; specialty?: string } | null | undefined;
+	dashboard?: (Dashboard & VisitEmkDashboardEntity) | CompletionDashboardContext | null | undefined;
 	visitNoteForm: Record<string, unknown>;
 	flushSoloPendingSave: () => Promise<void>;
 	acceptDraftToVisit?: (() => Promise<void>) | undefined;
@@ -25,6 +39,7 @@ export interface UseVisitCompletionWorkflowOptions {
 export function useVisitCompletionWorkflow({
 	openVisitId,
 	activePatient,
+	activeDoctor,
 	dashboard,
 	visitNoteForm,
 	flushSoloPendingSave,
@@ -55,20 +70,30 @@ export function useVisitCompletionWorkflow({
 			}
 
 			const finalDiary = {
-				complaint: visitNoteForm?.complaint || "Жалоб нет",
+				complaint:
+					typeof visitNoteForm?.complaint === "string" && visitNoteForm.complaint.trim() !== ""
+						? visitNoteForm.complaint
+						: "Жалоб нет",
 				anamnesis:
-					visitNoteForm?.anamnesis ||
-					"Соматически здоров. Аллергоанамнез не отягощен.",
+					typeof visitNoteForm?.anamnesis === "string" && visitNoteForm.anamnesis.trim() !== ""
+						? visitNoteForm.anamnesis
+						: "Соматически здоров. Аллергоанамнез не отягощен.",
 				objectiveStatus:
-					visitNoteForm?.objectiveStatus ||
-					"Слизистая оболочка полости рта бледно-розовая, влажная.",
+					typeof visitNoteForm?.objectiveStatus === "string" && visitNoteForm.objectiveStatus.trim() !== ""
+						? visitNoteForm.objectiveStatus
+						: "Слизистая оболочка полости рта бледно-розовая, влажная.",
 				diagnosis:
-					visitNoteForm?.diagnosis ||
-					"Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
+					typeof visitNoteForm?.diagnosis === "string" && visitNoteForm.diagnosis.trim() !== ""
+						? visitNoteForm.diagnosis
+						: "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)",
 				treatmentPlan:
-					visitNoteForm?.treatmentPlan || "План оздоровления и гигиены",
+					typeof visitNoteForm?.treatmentPlan === "string" && visitNoteForm.treatmentPlan.trim() !== ""
+						? visitNoteForm.treatmentPlan
+						: "План оздоровления и гигиены",
 				recommendations:
-					visitNoteForm?.recommendations || "Профосмотр через 6 месяцев",
+					typeof visitNoteForm?.recommendations === "string" && visitNoteForm.recommendations.trim() !== ""
+						? visitNoteForm.recommendations
+						: "Профосмотр через 6 месяцев",
 			};
 
 			const additionalServices = assembleVisitStoreCompletedServices();
@@ -76,7 +101,9 @@ export function useVisitCompletionWorkflow({
 			const effectivePatientId = activePatient?.id || "pat-default";
 			const effectivePatientName = activePatient?.fullName || "Пациент";
 			const effectiveDoctorName =
-				dashboard?.activeDoctor?.fullName || "Лечащий врач";
+				activeDoctor?.fullName ||
+				dashboard?.activeDoctor?.fullName ||
+				"Лечащий врач";
 
 			const effectiveDiagnosisTooth =
 				diagnosisTooth != null && String(diagnosisTooth).trim() !== ""
@@ -120,25 +147,35 @@ export function useVisitCompletionWorkflow({
 					dashboard?.activeAppointment?.treatmentPlanId ||
 					null,
 				stageNumber:
-					dashboard?.activeVisit?.stageNumber ??
-					dashboard?.activeAppointment?.stageNumber ??
-					undefined,
-				activeVisit: dashboard?.activeVisit,
-				dashboard,
+					typeof dashboard?.activeVisit?.stageNumber === "number"
+						? dashboard.activeVisit.stageNumber
+						: typeof dashboard?.activeAppointment?.stageNumber === "number"
+							? dashboard.activeAppointment.stageNumber
+							: undefined,
+				activeVisit: dashboard?.activeVisit ?? undefined,
+				dashboard: dashboard ?? undefined,
 				result,
 			});
+
+			const effectiveDoctorId =
+				activeDoctor?.id ||
+				dashboard?.activeDoctor?.id ||
+				undefined;
 
 			const createdInvoice = await createVisitInvoiceInApi({
 				effectiveVisitId,
 				effectivePatientId,
-				effectiveDoctorId: dashboard?.activeDoctor?.id,
+				effectiveDoctorId,
 				result,
 			});
 
-			if (createdInvoice.isPersistedInDb) {
-				result.invoiceId = createdInvoice.invoiceId;
-				result.receiptNumber = createdInvoice.invoiceNumber;
-			}
+			const finalCompletionResult: ClinicalVisitCompletionResult = createdInvoice.isPersistedInDb
+				? {
+						...result,
+						invoiceId: createdInvoice.invoiceId,
+						receiptNumber: createdInvoice.invoiceNumber,
+				  }
+				: result;
 
 			staffTelemetryService.recordAction({
 				actionType: "custom_action",
@@ -148,7 +185,7 @@ export function useVisitCompletionWorkflow({
 				details: {
 					status: "completed",
 					invoiceId: createdInvoice.invoiceId,
-					totalNetRub: result.totalNetRub,
+					totalNetRub: finalCompletionResult.totalNetRub,
 					receiptNumber: createdInvoice.invoiceNumber,
 				},
 			});
@@ -162,7 +199,7 @@ export function useVisitCompletionWorkflow({
 						: "Пациент"),
 				visitId: openVisitId,
 				invoiceId: createdInvoice.invoiceId,
-				services: result.items,
+				services: finalCompletionResult.items,
 				totalDueRub: createdInvoice.totalAmountRub,
 				receiptNumber: createdInvoice.invoiceNumber,
 				timestamp: Date.now(),
@@ -174,11 +211,11 @@ export function useVisitCompletionWorkflow({
 				// Local storage quota safe
 			}
 
-			setCompletionResult(result);
+			setCompletionResult(finalCompletionResult);
 			// Мандат 8e: Запрет насильственного срыва экрана в кассу. Врач остаётся в карте приёма!
 			setIsSbpQrModalOpen(false);
 			showToast(
-				`Приём завершён. Счёт №${createdInvoice.invoiceNumber}: ${result.totalNetRub.toLocaleString("ru-RU")} ₽ сформирован.`,
+				`Приём завершён. Счёт №${createdInvoice.invoiceNumber}: ${finalCompletionResult.totalNetRub.toLocaleString("ru-RU")} ₽ сформирован.`,
 				"success",
 				4000,
 			);
@@ -214,7 +251,7 @@ export function useVisitCompletionWorkflow({
 		} finally {
 			setIsCompletingVisit(false);
 		}
-	}, [visitNoteForm, openVisitId, activePatient, dashboard, flushSoloPendingSave, acceptDraftToVisit, diagnosisTooth]);
+	}, [visitNoteForm, openVisitId, activePatient, activeDoctor, dashboard, flushSoloPendingSave, acceptDraftToVisit, diagnosisTooth]);
 
 	React.useEffect(() => {
 		const handleExternalTrigger = (e: Event) => {

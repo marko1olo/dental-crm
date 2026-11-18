@@ -1,0 +1,35 @@
+feat(billing): unify cashbox payment SSOT, consolidate SBP gateway, and purge banking escrow simulator
+
+## Контекст и архитектурная цель (Why):
+- Ликвидация трехкратного дублирования логики оплаты и модулей кассы; установление CashboxView в качестве единого SSOT для платежей.
+- Устранение банковского эскроу-симулятора в планах лечения: замена каскадных блокировок эскроу (lockedEscrowKopecks) на честную клиническую модель прямого списания авансового депозита пациента (Мандаты 8e, 8n).
+- Унификация шлюза СБП: маршрутизация опроса статуса динамического QR на канонический серверный роут /api/billing/sbp/status/:id и экспорт контрактов из @dental/shared/billing.
+- Чистка чеков 54-ФЗ от бюрократического птичьего языка ('ФФД 1.2' -> 'Кассовые чеки', Мандат 8x).
+
+## Что конкретно сделано (What & Where):
+- packages/shared/src/billing/index.ts: экспортированы канонические контракты СБП (SbpPaymentPackage, SbpQrEngine, generateSbpDynamicQrSchema).
+- apps/api/src/routes/sbp/sbpRouteHandlers.ts: зарегистрирован алиас эндпоинта /api/billing/sbp/status/:id.
+- apps/web/src/components/billing/sbp/useSbpPolling.ts: опрос статуса переведен на канонический шлюз с fallback (103 строки, Mandate 8b).
+- apps/web/src/components/billing/CashRegisterPaymentPane.tsx: организованы импорты, оптимизирован фасад (98 строк, Mandate 8b).
+- apps/web/src/components/billing/cashShiftPrintTemplates.ts: заменен канцелярит 'ФФД 1.2' на клинический русский язык (456 строк).
+- apps/web/src/components/treatment-plans/stagePayment/stagePaymentEngine.ts: списание депозита в этапы лечения переведено на прямое покрытие без мнимых эскроу-блокировок.
+- apps/web/src/components/treatment-plans/stagePayment/StagePaymentEscrowTab.tsx: интерфейс переработан в 'Авансовый депозит пациента' (120 строк, Mandate 8b).
+- apps/web/src/components/treatment-plans/stagePayment/modal/StagePaymentModalTabs.tsx & stagePaymentActionHandlers.ts: обновлены бейджи баланса и понятные клинические сообщения (93 и 82 строки).
+- apps/web/src/components/visit/emkTab/VisitEmkModals.tsx: добавлена прямая фискализация СБП по кнопке подтверждения оплаты (342 строки).
+- apps/web/src/components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx: добавлена кнопка перехода в кассу в 1 клик для оплаты визита (493 строки).
+- apps/web/src/tests/stagePayment.test.ts & stagePaymentEngine.test.ts: тесты переписаны под клиническую модель аванса с сохранением балансовых инвариантов.
+- docs/proofs/cashbox/: сохранены 4-состояния скриншотов экрана кассы.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Biome check: 0 errors, 0 warnings (Exit Code 0).
+- Vitest: 5 test suites passed (41 passed, 0 failed).
+- Визуальный пруф (4-State Screen Visual Proof):
+  * ☀️ PC Light (1440x900): docs/proofs/cashbox/01_cashbox_pc_light_1440x900.png
+  * 🌙 PC Dark (1440x900): docs/proofs/cashbox/02_cashbox_pc_dark_1440x900.png
+  * ☀️ Mobile Light (390x844): docs/proofs/cashbox/03_cashbox_mobile_light_390x844.png
+  * 🌙 Mobile Dark (390x844): docs/proofs/cashbox/04_cashbox_mobile_dark_390x844.png
+- Отсутствие горизонтального скролла (0px), тач-таргеты >= 44x44px, Floating Bottom Bar.
+
+## Синхронизация документации (Documentation Sync):
+- Синхронизированы контракты @dental/shared/billing.
+- Подтверждена опциональность ИНН физлица в валидациях 54-ФЗ (receiptTotalsValidation.ts).

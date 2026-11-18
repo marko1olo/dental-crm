@@ -1,7 +1,6 @@
 import { money } from "../../../AppHelpers";
 import { countLabel } from "../../../lib/russianPlural";
-import { useVisitStore } from "../../../store/visitStore";
-import type { ToothState } from "../../../store/visit/types";
+import { useVisitStore, type VisitToothUiState } from "../../../store/visitStore";
 import type { ToothClinicalServicePayload } from "@dental/shared";
 import { showRollbackToast, showToast } from "../../GlobalToast";
 import {
@@ -12,7 +11,7 @@ import { dispatchAddServicesToInvoice } from "./completedServicesEngine";
 
 interface RemovalActionParams {
 	readonly planText: string;
-	readonly updateVisitNoteField?: (field: string, value: unknown) => void;
+	readonly updateVisitNoteField?: ((field: string, value: unknown) => void) | undefined;
 	readonly summary: CompletedServicesSummary;
 	readonly visitPatientId: string | null;
 	readonly visitId: string | null;
@@ -35,7 +34,7 @@ export function useCompletedServicesRemovalAction({
 		updateVisitNoteField("treatmentPlan", kept.join("\n").replace(/\n+$/, ""));
 
 		let removedService: ToothClinicalServicePayload | null = null;
-		let previousToothState: ToothState | string | null = null;
+		let previousToothState: VisitToothUiState | null = null;
 
 		if (parsed) {
 			const currentList = useVisitStore.getState().completedServices;
@@ -48,7 +47,7 @@ export function useCompletedServicesRemovalAction({
 				return (codeMatch || titleMatch) && toothMatch;
 			});
 			if (removeIdx !== -1) {
-				removedService = currentList[removeIdx];
+				removedService = currentList[removeIdx] ?? null;
 				useVisitStore.getState().removeCompletedService(removeIdx);
 			}
 
@@ -60,8 +59,7 @@ export function useCompletedServicesRemovalAction({
 				if (!hasOther && !toothStr.includes(",")) {
 					const visitState = useVisitStore.getState();
 					previousToothState =
-						visitState.visitToothStateByCode?.[toothStr] ||
-						(visitState as unknown as { teeth?: Record<string, { state?: ToothState | string }> }).teeth?.[toothStr]?.state ||
+						(visitState.visitToothStateByCode?.[toothStr] as VisitToothUiState | undefined) ||
 						null;
 					visitState.setToothState(toothStr, "idle");
 				}

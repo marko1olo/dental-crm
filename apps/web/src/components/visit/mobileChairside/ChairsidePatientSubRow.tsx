@@ -3,9 +3,9 @@ import { AlertTriangle } from "lucide-react";
 import { VisitTimer } from "../VisitTimer";
 
 export interface ChairsidePatientSubRowProps {
-	activeAppointment?: { startsAt?: string; [key: string]: unknown } | undefined;
+	activeAppointment?: { startsAt?: string | Date | null | undefined; [key: string]: unknown } | null | undefined;
 	consolidatedAllergyChip?: string | null | undefined;
-	testId?: string;
+	testId?: string | undefined;
 }
 
 export const ChairsidePatientSubRow: React.FC<ChairsidePatientSubRowProps> = ({
@@ -17,7 +17,7 @@ export const ChairsidePatientSubRow: React.FC<ChairsidePatientSubRowProps> = ({
 		<div className="mobile-chairside-hud-sub-row">
 			<div className="mobile-chairside-timer-wrap">
 				<VisitTimer
-					createdAt={activeAppointment?.startsAt}
+					createdAt={activeAppointment?.startsAt ? String(activeAppointment.startsAt) : undefined}
 				/>
 			</div>
 

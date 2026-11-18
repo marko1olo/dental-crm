@@ -6,8 +6,10 @@
 export interface BeforeAfterSplitterPhotoItem {
 	readonly id: string;
 	readonly url: string;
-	readonly name?: string;
-	readonly stage?: "before" | "after" | "process";
+	readonly name?: string | undefined;
+	readonly label?: string | undefined;
+	readonly date?: string | undefined;
+	readonly stage?: "before" | "after" | "process" | undefined;
 }
 
 export interface BeforeAfterSplitterProps {

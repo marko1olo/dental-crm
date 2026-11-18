@@ -1,4 +1,4 @@
-import { CheckCircle2, FileCheck, ShieldAlert } from "lucide-react";
+import { CheckCircle2, FileCheck } from "lucide-react";
 import type React from "react";
 import type { WarrantyCalculationResult, WarrantyItem, WarrantyRiskFactors } from "../warrantyEngine.js";
 import type { StarQuickPreset, WarrantyCategory } from "../warrantyPresets.js";
@@ -41,24 +41,12 @@ export interface WarrantyItemsStepProps {
 }
 
 export const WarrantyItemsStep: React.FC<WarrantyItemsStepProps> = (props) => {
-	const { completedStages, onOpenRemediation, onImportCompletedStages } = props;
+	const { completedStages, onImportCompletedStages } = props;
 
 	return (
 		<div className="warranty-studio-grid">
 			<div className="warranty-studio-main">
-				<div className="warranty-quick-remediation-banner">
-					<div className="warranty-remediation-banner-left">
-						<ShieldAlert size={20} className="warranty-remediation-banner-icon" />
-						<div>
-							<strong>Гарантийный приём (выпала пломба, расцементировка коронки, скол)</strong>
-							<p>Оформление гарантии: пациент платит 0 ₽ • Списание со склада по факту</p>
-						</div>
-					</div>
-					<button type="button" className="warranty-btn-remediation-quick" onClick={onOpenRemediation}>
-						Оформить переделку (0 ₽)
-					</button>
-				</div>
-
+				{/* Баннер импорта из завершенных этапов плана лечения (если есть) */}
 				{completedStages && completedStages.length > 0 && (
 					<div className="warranty-stages-import-banner">
 						<div className="warranty-stages-banner-left">
@@ -68,21 +56,48 @@ export const WarrantyItemsStep: React.FC<WarrantyItemsStepProps> = (props) => {
 								<p>Формирование гарантийного паспорта по всем выполненным манипуляциям</p>
 							</div>
 						</div>
-						<button type="button" className="warranty-btn-secondary" onClick={onImportCompletedStages}>
+						<button
+							type="button"
+							className="warranty-btn-secondary dente-btn-secondary"
+							onClick={onImportCompletedStages}
+						>
 							<CheckCircle2 size={14} style={{ color: "var(--ok-fg)" }} />
 							Заполнить из плана ({completedStages.length})
 						</button>
 					</div>
 				)}
 
-				<WarrantyTeethFormula selectedTeeth={props.selectedTeeth} items={props.items} onToggleTooth={props.onToggleTooth} />
-				<WarrantyCategoryPresetsBar activeCategory={props.activeCategory} currentWorkTitle={props.currentWorkTitle} onApplyStarQuickPreset={props.onApplyStarQuickPreset} onSelectCategory={props.onSelectCategory} />
-				<WarrantyItemFormInputs {...props} />
-				<WarrantyItemsTable items={props.items} calculation={props.calculation} onRemoveItem={props.onRemoveItem} />
-			</div>
+				{/* 1. Зубная формула FDI */}
+				<WarrantyTeethFormula
+					selectedTeeth={props.selectedTeeth}
+					items={props.items}
+					onToggleTooth={props.onToggleTooth}
+				/>
 
-			<div className="warranty-studio-sidebar">
-				<WarrantyRiskFactorsPanel riskFactors={props.riskFactors} onRiskFactorsChange={props.onRiskFactorsChange} calculation={props.calculation} />
+				{/* 2. Категория и готовые пресеты клиники */}
+				<WarrantyCategoryPresetsBar
+					activeCategory={props.activeCategory}
+					currentWorkTitle={props.currentWorkTitle}
+					onApplyStarQuickPreset={props.onApplyStarQuickPreset}
+					onSelectCategory={props.onSelectCategory}
+				/>
+
+				{/* 3. Параметры материала, оттенка VITA и добавление */}
+				<WarrantyItemFormInputs {...props} />
+
+				{/* 4. Таблица позиций гарантийного сертификата */}
+				<WarrantyItemsTable
+					items={props.items}
+					calculation={props.calculation}
+					onRemoveItem={props.onRemoveItem}
+				/>
+
+				{/* 5. Клинические условия и факторы риска (компактный аккордеон, 0px шума для 99% нормы) */}
+				<WarrantyRiskFactorsPanel
+					riskFactors={props.riskFactors}
+					onRiskFactorsChange={props.onRiskFactorsChange}
+					calculation={props.calculation}
+				/>
 			</div>
 		</div>
 	);

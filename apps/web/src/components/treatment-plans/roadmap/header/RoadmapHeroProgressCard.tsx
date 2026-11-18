@@ -27,7 +27,7 @@ export const RoadmapHeroProgressCard: React.FC<RoadmapHeroProgressCardProps> = (
 		<div className="roadmap-hero" data-testid="roadmap-hero">
 			<div className="roadmap-header-row">
 				<div>
-					<div className="text-xs font-semibold text-[var(--brand,#0d9488)] uppercase tracking-wider">
+					<div className="text-xs font-semibold text-[var(--brand,#0d9488)]">
 						{planNumber} • Куратор: {curatingDoctorName}
 					</div>
 					<h3 className="roadmap-title">{planTitle}</h3>

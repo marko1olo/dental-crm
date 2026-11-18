@@ -15,13 +15,13 @@ import {
 
 export interface PatientAvatarAndInfoSectionProps {
 	activePatient: VisitPatientEntity | null | undefined;
-	patientAge: string | null;
+	patientAge: string | null | undefined;
 	activeAppointment?: VisitAppointmentEntity | null | undefined;
 	activePeers: readonly SoftPeerPresence[];
-	summaryText: string | null;
+	summaryText: string | null | undefined;
 	activePatientCriticalBadges: readonly VisitCriticalBadge[];
-	consolidatedAllergyChip: string | null;
-	consolidatedSomaticChip?: string | null;
+	consolidatedAllergyChip: string | null | undefined;
+	consolidatedSomaticChip?: string | null | undefined;
 }
 
 export function PatientAvatarAndInfoSection({
@@ -61,7 +61,7 @@ export function PatientAvatarAndInfoSection({
 			<span className="hidden sm:inline-flex shrink-0">
 				<VisitTimer createdAt={activeAppointment?.startTime || activeAppointment?.startAt || activeAppointment?.createdAt || null} />
 			</span>
-			<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText} className="hidden sm:inline-flex shrink-0" />
+			<SoftPresenceIndicator activePeers={activePeers} summaryText={summaryText ?? null} className="hidden sm:inline-flex shrink-0" />
 
 			{/* 1. Суверенный бейдж аллергии: ТОЛЬКО реальные аллергены */}
 			{hasAllergy ? (

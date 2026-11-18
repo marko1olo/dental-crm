@@ -51,6 +51,8 @@ export function createWarrantyRemediationOrder(params: {
 		defectTitle: template.title,
 		clinicalFinding,
 		remediationAction,
+		amountKopecks: 0n,
+		costToPatientKopecks: 0,
 		costToPatientRub: 0,
 		discountPercent: 100,
 		isFreeWarrantyService: true,

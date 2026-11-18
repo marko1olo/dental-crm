@@ -609,6 +609,7 @@ export function paymentMethodForDocument(payment: Payment) {
 		online: "онлайн-оплата",
 		insurance: "страховая",
 		family_wallet: "семейный кошелек",
+		split: "сплит-оплата",
 		other: "иной способ",
 	};
 	return labels[payment.method] ?? payment.method;

@@ -14,6 +14,22 @@ interface StaffRouting {
 interface StaffOption {
 	id: string;
 	fullName: string;
+	role?: string | undefined;
+}
+
+function formatStaffLabel(s: StaffOption): string {
+	if (!s.role) return s.fullName;
+	const roleLabel =
+		s.role === "doctor"
+			? "Врач"
+			: s.role === "admin"
+				? "Администратор"
+				: s.role === "nurse"
+					? "Ассистент"
+					: s.role === "director"
+						? "Руководитель"
+						: s.role;
+	return `${s.fullName} (${roleLabel})`;
 }
 
 interface Props {
@@ -115,7 +131,7 @@ export function MessengerRoutingRules({
 					<option value="">— Не назначен —</option>
 					{staffOptions.map((s) => (
 						<option key={s.id} value={s.id}>
-							{s.fullName}
+							{formatStaffLabel(s)}
 						</option>
 					))}
 				</select>
@@ -151,7 +167,7 @@ export function MessengerRoutingRules({
 							<option value="">— Не назначен —</option>
 							{staffOptions.map((s) => (
 								<option key={s.id} value={s.id}>
-									{s.fullName}
+									{formatStaffLabel(s)}
 								</option>
 							))}
 						</select>

@@ -8,10 +8,10 @@ import { isDemoShowcaseMode } from "../../lib/demoMode";
 import type { ImagingStudy } from "./imagingViewTypes";
 
 export function useResolvedImagingStudies(props: {
-	activeImagingStudies?: ImagingStudy[];
-	visibleImagingStudies?: ImagingStudy[];
-	dashboard?: { imagingStudies?: ImagingStudy[] };
-	activePatient?: { id?: string } | null;
+	activeImagingStudies?: ImagingStudy[] | undefined;
+	visibleImagingStudies?: ImagingStudy[] | undefined;
+	dashboard?: { imagingStudies?: ImagingStudy[] | undefined } | undefined;
+	activePatient?: { id?: string | undefined; [key: string]: unknown } | null | undefined;
 }): ImagingStudy[] {
 	const { activeImagingStudies, visibleImagingStudies, dashboard, activePatient } = props;
 

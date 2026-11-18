@@ -1,0 +1,24 @@
+/* Patient Actions Bar (DEF-PAT-02, Mandate 8p) */
+.patient-admin-actions.sticky-patient-actions {
+	position: static !important;
+	z-index: auto !important;
+	background: transparent !important;
+	padding: 4px 0 !important;
+	border-top: none !important;
+	box-shadow: none !important;
+	margin-top: 4px !important;
+	margin-bottom: 4px !important;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+[data-theme="dark"] .patient-admin-actions.sticky-patient-actions,
+[data-theme="night"] .patient-admin-actions.sticky-patient-actions,
+[data-theme="contrast"] .patient-admin-actions.sticky-patient-actions,
+[data-theme="cyber_xray"] .patient-admin-actions.sticky-patient-actions {
+	background: transparent !important;
+	border-top-color: transparent !important;
+	box-shadow: none !important;
+}

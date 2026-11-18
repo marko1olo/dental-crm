@@ -7,6 +7,7 @@
  */
 
 import React from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../GlobalToast.js";
 import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 import type { BillingInvoice } from "./invoiceTypes.js";
@@ -87,7 +88,7 @@ export const InvoicesModalsLayer: React.FC<InvoicesModalsLayerProps> = (props) =
 					initialTab="checkout"
 					totalDueRub={activePaymentInvoice.totalAmountRub}
 					amountRub={activePaymentInvoice.totalAmountRub}
-					amountKopecks={Math.round(activePaymentInvoice.totalAmountRub * 100)}
+					amountKopecks={rublesToKopecks(activePaymentInvoice.totalAmountRub)}
 					patientId={activePaymentInvoice.patientId}
 					patientName={activePaymentInvoice.patientName}
 					patientPhone={activePaymentInvoice.patientPhone}

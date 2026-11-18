@@ -98,6 +98,8 @@ export async function updateLabOrderInDb(
 	else if (updateData.costKopecks !== undefined) updatePayload.labCostRub = updateData.costKopecks === null ? null : Math.round(Number(updateData.costKopecks)) / 100;
 
 	if (targetStatus !== undefined) updatePayload.status = toLabOrderStatus(targetStatus);
+	if (updateData.stage !== undefined) updatePayload.stage = updateData.stage;
+	else if (updateData.techStage !== undefined) updatePayload.stage = updateData.techStage;
 	if (updateData.labComments !== undefined) updatePayload.labComments = updateData.labComments;
 	if (updateData.attachedImageUrl !== undefined) updatePayload.attachedImageUrl = updateData.attachedImageUrl;
 

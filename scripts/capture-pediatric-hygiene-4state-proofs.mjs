@@ -94,8 +94,22 @@ async function main() {
       }, { th: s.theme });
 
       await page.waitForSelector('[data-testid="hygiene-studio-modal"]', { timeout: 15000 });
+      // Click Silness-Loe tab to capture the newly introduced hygiene index grid
+      await page.evaluate(() => {
+        const btns = Array.from(document.querySelectorAll("button"));
+        const silnessBtn = btns.find((b) => b.textContent && b.textContent.includes("Silness-Löe"));
+        if (silnessBtn) silnessBtn.click();
+      });
       await sleep(600);
       await saveProof(page, path.join(hygieneOutDir, s.name));
+
+      // Close modal before next theme/viewport iteration
+      await page.evaluate(() => {
+        const btns = Array.from(document.querySelectorAll("button"));
+        const cancelBtn = btns.find((b) => b.textContent && (b.textContent.trim() === "Отмена" || b.textContent.includes("✕")));
+        if (cancelBtn) cancelBtn.click();
+      });
+      await sleep(400);
     }
 
     console.log("=== ALL 8 4-STATE PROOFS SUCCESSFULLY CAPTURED! ===");

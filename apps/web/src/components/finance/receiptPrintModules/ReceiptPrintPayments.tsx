@@ -1,4 +1,5 @@
 import React from "react";
+import { kopecksToRubles, formatKopecksToRubles } from "@dental/shared";
 import type { FiscalReceipt54FzResult } from "../fiscalReceiptEngine.js";
 
 export interface ReceiptPrintPaymentsProps {
@@ -83,15 +84,15 @@ export const ReceiptPrintPayments: React.FC<ReceiptPrintPaymentsProps> = ({ rece
 					<div className="pt-2 border-t border-dotted border-[var(--border,#cbd5e1)] text-[11px] space-y-1">
 						<div className="flex justify-between text-[var(--muted,#64748b)]">
 							<span>МЕДУСЛУГИ (БЕЗ НДС):</span>
-							<span className="font-semibold text-[var(--ink,#0f172a)]">{((receipt.medicalTotalKopecks || receipt.vatNoneKopecks || 0) / 100).toLocaleString("ru-RU")} ₽</span>
+							<span className="font-semibold text-[var(--ink,#0f172a)]">{kopecksToRubles(receipt.medicalTotalKopecks || receipt.vatNoneKopecks || 0).toLocaleString("ru-RU")} ₽</span>
 						</div>
 						<div className="flex justify-between text-[var(--muted,#64748b)]">
 							<span>ТОВАРЫ РОЗНИЦЫ (НДС 20%):</span>
-							<span className="font-semibold text-[var(--ink,#0f172a)]">{((receipt.retailTotalKopecks || 0) / 100).toLocaleString("ru-RU")} ₽</span>
+							<span className="font-semibold text-[var(--ink,#0f172a)]">{kopecksToRubles(receipt.retailTotalKopecks || 0).toLocaleString("ru-RU")} ₽</span>
 						</div>
 						<div className="flex justify-between font-bold text-[var(--ink,#0f172a)]">
 							<span>В Т.Ч. СУММА НДС 20%:</span>
-							<span className="font-mono">{((receipt.vat20Kopecks || 0) / 100).toFixed(2)} ₽</span>
+							<span className="font-mono">{formatKopecksToRubles(receipt.vat20Kopecks || 0)} ₽</span>
 						</div>
 					</div>
 				) : (

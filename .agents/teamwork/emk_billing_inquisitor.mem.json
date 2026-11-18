@@ -1,0 +1,51 @@
+{
+  "agent": "emk_billing_inquisitor",
+  "status": "completed",
+  "timestamp": "2026-10-22T21:11:00Z",
+  "objective": "Полная ликвидация сырых номеров бланков, приказов и бюрократического мусора в названиях функций, кнопок, тулов и текстах для пользователя (Мандаты 8e, 8n, 8x, 8ap); устранение ложных блокировок оплат по ОМС в decree659Audit; обеспечение свободы печати черновиков и врачебных скидок до 100%.",
+  "results": {
+    "decree659_audit_fixed": {
+      "file": "apps/api/src/db/billing/decree659Audit.ts",
+      "summary": "Ложная блокировка Decree659OmsForbiddenError устранена для прямых коммерческих оплат (наличные, карта, СБП, депозит, смешанные расчеты). Проверка полиса ОМС, СНИЛС и паспорта применяется исключительно при методе оплаты insurance. Анонимные коммерческие расчеты проводятся свободно.",
+      "class": "InsuranceBillingRestrictionError (с алиасом Decree659Error для обратной совместимости)"
+    },
+    "types_refactored": {
+      "file": "apps/api/src/db/billing/types.ts",
+      "summary": "Введен канонический доменный класс InsuranceBillingRestrictionError, сохранен алиас Decree659Error для сохранения совместимости с API-клиентами."
+    },
+    "invoice_handlers_purged": {
+      "file": "apps/api/src/routes/invoiceRoutes/invoicePaymentAndRefundHandlers.ts",
+      "summary": "Вычищен бюрократический канцелярит из сообщений об ошибках ОМС и скидок, убраны ссылки на постановления и статьи законов в пользовательских текстах."
+    },
+    "zero_bird_language_ui": {
+      "files": [
+        "apps/web/src/components/documents/fastClinicalPrint/RenderForm043u.tsx",
+        "apps/web/src/components/billing/cashShiftPrintTemplates.ts",
+        "apps/web/src/components/billing/cashShiftClosingEngine.ts",
+        "apps/web/src/components/documents/OutpatientCardPrintModal.tsx"
+      ],
+      "changes": [
+        "Форма № 043/у и СССР №1030 заменены на «Медицинская карта приёма» и «Электронная медицинская карта»",
+        "CRM DENTE • 54-ФЗ заменено на «CRM DENTE • Касса и чеки»",
+        "Предупреждение ст. 4.3 54-ФЗ заменено на понятный текст о временной блокировке чеков до закрытия смены",
+        "Префиксы Д-043/, А-043/, П-043/ заменены на чистые клинические Д-, А-, П-"
+      ]
+    },
+    "doctor_autonomy_verified": {
+      "summary": "Кнопки печати активны в любой момент со статусом «ЧЕРНОВИК» или «ПОДПИСАНО ВРАЧОМ» без требования КриптоПро; скидки врача 0..50% и 100% гарантийная скидка доступны в 1 клик без паролей администратора."
+    },
+    "verification_gates": {
+      "zeroBirdLanguagePurity": "20 passing, 0 failing (apps/web/src/tests/zeroBirdLanguagePurity.test.ts)",
+      "billingBarrierRemoval": "8 passing, 0 failing (apps/api/src/tests/billingBarrierRemoval.test.ts)",
+      "fastClinicalPrintEngine": "10 passing, 0 failing (apps/web/src/components/documents/__tests__/FastClinicalPrintEngine.test.tsx)",
+      "decree659AnesthesiaAudit": "6 passing, 0 failing (apps/api/src/tests/compliance/decree659AnesthesiaBillingAudit.test.ts)",
+      "encodingCheck": "15087 files checked, UTF-8 clean"
+    },
+    "visual_proofs": {
+      "pc_light": "docs/proofs/documents/documents_pc_light.png",
+      "pc_dark": "docs/proofs/documents/documents_pc_dark.png",
+      "mobile_light": "docs/proofs/documents/documents_mobile_light.png",
+      "mobile_dark": "docs/proofs/documents/documents_mobile_dark.png"
+    }
+  }
+}

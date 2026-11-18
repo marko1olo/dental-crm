@@ -11,9 +11,14 @@ import { DemoTourSelector } from "./DemoTourSelector";
 import { Register } from "./Register";
 import { UserLogin } from "./UserLogin";
 
+import type { StaffUser } from "./staffPinPad/staffPinPadTypes";
+import type { ClinicLoginProfile } from "./userLogin/userLoginTypes";
+
 interface AuthHubProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	onSuccess: (clinicProfile: any, userProfile?: any) => void;
+	onSuccess: (
+		clinicProfile: ClinicLoginProfile | { organizationId?: string; [key: string]: unknown } | null,
+		userProfile?: StaffUser | Record<string, unknown> | null,
+	) => void;
 }
 
 export type AuthHubView =

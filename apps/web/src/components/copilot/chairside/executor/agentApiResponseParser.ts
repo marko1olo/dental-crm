@@ -110,17 +110,27 @@ export function parseAgentApiResponse(
       } else if ((action.type === "apply_treatment_estimate" || action.type === "apply_estimate_804n") && action.payload) {
         const p = action.payload;
         if (Array.isArray(p.items)) {
-          result.servicesProposal = p.items.map((it: any, idx: number) => ({
-            id: `srv-${it.serviceCode || it.code || it.code804n || idx}-${idx}`,
-            serviceCode: it.serviceCode || it.code || it.code804n || "A16.07.001",
-            code804n: it.serviceCode || it.code || it.code804n || "A16.07.001",
-            title: it.title || "Услуга",
-            toothNumber: it.toothNumber || data.toothNumber,
-            quantity: it.quantity || 1,
-            priceRub: it.priceRub || 0,
-            discountPercent: p.discountPercent,
-            applied: false,
-          }));
+          result.servicesProposal = p.items.map((it: any, idx: number) => {
+            const priceKopecks = typeof it.priceKopecks === "number"
+              ? it.priceKopecks
+              : Math.round((it.priceRub || 0) * 100);
+            const priceRub = typeof it.priceRub === "number"
+              ? it.priceRub
+              : Math.round(priceKopecks / 100);
+            return {
+              id: `srv-${it.serviceCode || it.code || it.code804n || idx}-${idx}`,
+              serviceCode: it.serviceCode || it.code || it.code804n || "A16.07.001",
+              regulatoryCode: it.regulatoryCode || it.code804n || undefined,
+              code804n: it.code804n || it.regulatoryCode || it.serviceCode || it.code || "A16.07.001",
+              title: it.title || "Услуга",
+              toothNumber: it.toothNumber || data.toothNumber,
+              quantity: it.quantity || 1,
+              priceKopecks,
+              priceRub,
+              discountPercent: p.discountPercent,
+              applied: false,
+            };
+          });
         }
       } else if (action.type === "apply_soap_diary" && action.payload) {
         const p = action.payload;
@@ -171,17 +181,27 @@ export function parseAgentApiResponse(
   }
 
   if (Array.isArray(data.servicesProposal) && !result.servicesProposal) {
-    result.servicesProposal = data.servicesProposal.map((it: any, idx: number) => ({
-      id: it.id || `srv-${it.serviceCode || it.code || it.code804n || idx}-${idx}`,
-      serviceCode: it.serviceCode || it.code || it.code804n || "A16.07.001",
-      code804n: it.code804n || it.serviceCode || it.code || "A16.07.001",
-      title: it.title || "Услуга",
-      toothNumber: it.toothNumber || activeTooth,
-      quantity: it.quantity || 1,
-      priceRub: it.priceRub || 0,
-      discountPercent: it.discountPercent,
-      applied: false,
-    }));
+    result.servicesProposal = data.servicesProposal.map((it: any, idx: number) => {
+      const priceKopecks = typeof it.priceKopecks === "number"
+        ? it.priceKopecks
+        : Math.round((it.priceRub || 0) * 100);
+      const priceRub = typeof it.priceRub === "number"
+        ? it.priceRub
+        : Math.round(priceKopecks / 100);
+      return {
+        id: it.id || `srv-${it.serviceCode || it.code || it.code804n || idx}-${idx}`,
+        serviceCode: it.serviceCode || it.code || it.code804n || "A16.07.001",
+        regulatoryCode: it.regulatoryCode || it.code804n || undefined,
+        code804n: it.code804n || it.regulatoryCode || it.serviceCode || it.code || "A16.07.001",
+        title: it.title || "Услуга",
+        toothNumber: it.toothNumber || activeTooth,
+        quantity: it.quantity || 1,
+        priceKopecks,
+        priceRub,
+        discountPercent: it.discountPercent,
+        applied: false,
+      };
+    });
   }
 
   if (data.soapProposal && !result.soapProposal) {

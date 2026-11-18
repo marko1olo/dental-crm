@@ -65,7 +65,6 @@ export const STANDARD_DENTAL_RADIATION_DOSES: Record<string, number> = DEFAULT_E
 export interface RadiationExposureLike {
 	readonly studyDate?: string | null | undefined;
 	readonly effectiveDoseMsv?: number | null | undefined;
-	readonly [key: string]: unknown;
 }
 
 /** Калькулятор суммарной годовой дозы и уровня безопасности */

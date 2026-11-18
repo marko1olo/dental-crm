@@ -13,10 +13,10 @@ import {
 import { organizations, users } from "./auth.js";
 import { patients } from "./patients.js";
 
-// ─── 1. ПСО (Форма № 366/у) ──────────────────────────────────────────────────
+// ─── 1. Предстерилизационная очистка (контроль очистки) ───────────────────────
 // preSterilizationCleaningLogs объявлен в inventory.ts и реэкспортируется
 
-// ─── 2. Автоклавы и сухожары (Форма № 257/у) ─────────────────────────────────
+// ─── 2. Автоклавы и контроль стерилизаторов ──────────────────────────────────
 // sterilizationLogs и autoclaveDailyTests объявлены в inventory.ts и реэкспортируются
 
 export const sterilizerEquipments = pgTable(

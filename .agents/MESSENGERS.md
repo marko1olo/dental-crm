@@ -49,16 +49,24 @@ messenger_inbound_events     -- unified inbound log for all channels
 | GET | `/api/whatsapp/status` | org user | Connection status |
 | GET | `/api/whatsapp/webhook` | public | Meta webhook verification |
 | POST | `/api/whatsapp/webhook` | public | Receive inbound events (batch array loop) |
+| POST | `/api/whatsapp/send` | staff/admin | Send outbound message via Meta Cloud API / Green API |
+| POST | `/api/whatsapp/test-message` | staff/admin | Test message delivery |
 | POST | `/api/whatsapp/media/upload` | staff/admin | Real multipart upload to disk & attachments table |
 
-### MAX
+### MAX (VK Max)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/max/settings` | org user | Get bot config (masked token) |
-| PUT | `/api/max/settings` | staff/admin | Create or update config (AES-256 encrypted) |
+| PUT | `/api/max/settings` | staff/admin | Create or update config (AES-256 encrypted, enabledFeatures, staffRouting) |
 | GET | `/api/max/status` | org user | Connection status |
 | POST | `/api/max/send` | staff/admin | Send outbound text message via decrypted token |
 | POST | `/api/max/webhook` | public | Receive inbound events (batch array loop) |
+
+### Единый диалог (Inbox)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/communications/inbox/:patientId` | org user | Чтение сквозной истории переписки с пациентом |
+| POST | `/api/communications/inbox/:patientId/send` | staff/admin | Универсальная отправка в выбранный канал (WA, Telegram, MAX, SMS) |
 
 ---
 
@@ -116,10 +124,18 @@ Available intents: `appointment_booking`, `appointment_status`, `document_reques
 
 ---
 
+## Решенные архитектурные дефекты (Red Team Triage)
+
+1. **Реальная маршрутизация персонала (DEF-COMM-01)**: В `settingsPropsBuilder.ts` проброшен реальный список активных сотрудников клиники (`staffOptions`). В `WhatsappSettingsPanel`, `MaxSettingsPanel` и `MessengerRoutingRules` выпадающие списки наполняются живыми сотрудниками.
+2. **Вкладка MAX в панели табов (DEF-COMM-02)**: В `SettingsMessengersTab.tsx` возвращена таб-кнопка «MAX (VK Max)» в полосу `messenger-channel-tabs`.
+3. **Ликвидация чужого бренда (DEF-COMM-03)**: В `messengerChannelTypes.ts` искоренено «1C:MAX Интеграция» → переименовано в «MAX (VK Max) — Национальный мессенджер».
+4. **Управление фичами MAX (DEF-COMM-04)**: В `useMaxSettings.ts` и `MaxSettingsPanel.tsx` реализовано интерактивное управление `enabledFeatures` (чат, уведомления, напоминания) с сохранением в БД и расчетом dirty-стейта.
+5. **Надежная адресация MAX (DEF-COMM-05 & DEF-COMM-06)**: В `channelAdapters.ts` ликвидирован хрупкий regex в `notes` — адрес `chatId` извлекается напрямую из реляционной таблицы `messengerInboundEvents` с сохранением обратной совместимости.
+6. **Омниканальный выбор каналов у кресла (DEF-COMM-07 & DEF-COMM-08)**: В `WhatsAppChatPanel.tsx`, `WhatsAppQuickBar.tsx` и `PatientWhatsappSendPanel.tsx` добавлен селектор каналов (WhatsApp / Telegram / MAX / SMS) для врача у кресла.
+
+---
+
 ## Pending
 
-1. **DB Migration**: Tables exist in schema but need a migration file or `drizzle-kit push` to apply to the actual database.
-2. **Feature toggles**: UI shows features as read-only. Editing `enabledFeatures` for WA/MAX not yet wired — POST to `staffRouting` works, feature array save is a future ticket.
-3. **Real token storage**: Production deployments should replace the SHA-256 mask approach with a proper secrets vault (e.g., KMS, Vault, or env-var based lookup).
-4. **Outbox/send**: `POST /api/whatsapp/send` and `POST /api/max/send` not yet implemented — needed for outbound messages.
-5. **staffOptions prop**: `SettingsMessengersTab` receives `props.staffOptions` — the parent `SettingsView.tsx` currently passes `props={{}}`. Wire in real staff list from context when integrating fully.
+1. **Real token storage**: Production deployments should replace the SHA-256 mask approach with a proper secrets vault (e.g., KMS, Vault, or env-var based lookup).
+2. **VK Send API**: ВКонтакте принимает сообщения через вебхук сообщества; прямая исходящая отправка по API сообществ VK запланирована в следующем релизе.

@@ -10,6 +10,7 @@ import { AlertCircle, Download, FileText, Loader2, Printer, RefreshCw, Users } f
 import React, { useCallback, useEffect, useState } from "react";
 import { money } from "../../../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { useAppStore } from "../../../../store/appStore";
 import { showToast } from "../../../GlobalToast";
 import type { FamilyGroupDetails } from "./types";
 
@@ -29,6 +30,7 @@ export interface FamilyTaxCertificateItem {
 	readonly estimated13PercentRefundRub: number;
 	readonly xmlPayload: string;
 	readonly xmlFileName: string;
+	readonly signatoryName?: string | undefined;
 }
 
 export interface FamilyWalletTaxSectionProps {
@@ -59,13 +61,17 @@ function downloadXmlPayload(xmlContent: string, fileName: string) {
 	}
 }
 
-function printTaxCertificateHtml(cert: FamilyTaxCertificateItem) {
+function printTaxCertificateHtml(
+	cert: FamilyTaxCertificateItem,
+	clinicProfile?: { signatoryName?: string | null | undefined } | null | undefined,
+) {
 	try {
 		const printWin = window.open("", "_blank");
 		if (!printWin) {
 			showToast("Разрешите всплывающие окна для печати справки", "error");
 			return;
 		}
+		const signatoryName = cert.signatoryName ?? clinicProfile?.signatoryName ?? "Главный врач";
 		const html = `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -125,7 +131,7 @@ function printTaxCertificateHtml(cert: FamilyTaxCertificateItem) {
 	</div>
 
 	<div class="signatures">
-		<div>Главный врач / Ответственное лицо: ____________ / Иванов И.И. /</div>
+		<div>Главный врач / Ответственное лицо: ____________ / ${signatoryName} /</div>
 		<div>Дата выдачи: ${new Date().toLocaleDateString("ru-RU")}</div>
 	</div>
 
@@ -142,6 +148,7 @@ function printTaxCertificateHtml(cert: FamilyTaxCertificateItem) {
 
 export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 	React.memo(function FamilyWalletTaxSection({ familyData }) {
+		const clinicProfile = useAppStore((s) => s.clinicProfileDraft);
 		const [selectedYear, setSelectedYear] = useState<number>(AVAILABLE_TAX_YEARS[0] ?? new Date().getFullYear());
 		const [loading, setLoading] = useState(false);
 		const [error, setError] = useState<string | null>(null);
@@ -369,7 +376,7 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 											<button
 												type="button"
 												data-testid={`btn-print-tax-${cert.patientId}`}
-												onClick={() => printTaxCertificateHtml(cert)}
+												onClick={() => printTaxCertificateHtml(cert, clinicProfile)}
 												className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
 												title="Печать справки об оплате медицинских услуг"
 											>

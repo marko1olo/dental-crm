@@ -1,0 +1,40 @@
+/* Patient Workspace: Feature Cards Grid */
+.patient-feature-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	min-width: 0;
+}
+
+.patient-feature-grid article {
+	background: var(--paper-soft);
+	border: none;
+	border-radius: 10px;
+	display: grid;
+	gap: 10px;
+	grid-template-rows: auto minmax(0, 1fr);
+	min-height: 168px;
+	padding: 14px;
+}
+
+.patient-feature-grid svg {
+	color: var(--teal);
+	height: 24px;
+	width: 24px;
+}
+
+.patient-feature-grid h3 {
+	font-size: 15px;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.patient-feature-grid p {
+	color: var(--muted);
+	margin: 6px 0 0;
+}
+
+.feature-link {
+	margin-top: 8px;
+	padding: 0;
+}

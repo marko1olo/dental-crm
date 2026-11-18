@@ -146,166 +146,169 @@ export const IntraoralScan3DViewerModal: React.FC<IntraoralScan3DViewerModalProp
 			<div
 				style={{
 					position: "relative",
-					width: isFullscreen ? "100vw" : "92vw",
-					height: isFullscreen ? "100vh" : "90vh",
-					maxWidth: isFullscreen ? "100vw" : "1400px",
-					maxHeight: isFullscreen ? "100vh" : "900px",
+					width: isFullscreen ? "100vw" : "96vw",
+					height: isFullscreen ? "100vh" : "94vh",
+					maxWidth: isFullscreen ? "100vw" : "1600px",
+					maxHeight: isFullscreen ? "100vh" : "960px",
 					background: "var(--paper-strong, #090d16)",
 					border: isFullscreen ? "none" : "1px solid var(--line, #334155)",
-					borderRadius: isFullscreen ? "0" : "10px",
+					borderRadius: isFullscreen ? "0" : "12px",
 					display: "flex",
 					flexDirection: "column",
 					overflow: "hidden",
 					boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)",
 				}}
 			>
-				{/* Header */}
-				<div
-					style={{
-						height: "44px",
-						padding: "0 16px",
-						background: "var(--paper, #0f172a)",
-						borderBottom: "1px solid var(--line, #1e293b)",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "space-between",
-						userSelect: "none",
-					}}
-				>
-					<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-						<Box size={18} color="#6366f1" />
-						<span style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink, #f8fafc)" }}>
-							{scanTitle}
-						</span>
-						{patientName && (
-							<span
-								style={{
-									fontSize: "11px",
-									padding: "2px 8px",
-									background: "rgba(99, 102, 241, 0.15)",
-									color: "#818cf8",
-									borderRadius: "4px",
-									border: "1px solid rgba(99, 102, 241, 0.3)",
-								}}
-							>
-								Пациент: {patientName}
-							</span>
-						)}
-						{toothCode && (
-							<span
-								style={{
-									fontSize: "11px",
-									padding: "2px 8px",
-									background: "rgba(13, 148, 136, 0.15)",
-									color: "#2dd4bf",
-									borderRadius: "4px",
-									border: "1px solid rgba(13, 148, 136, 0.3)",
-									fontWeight: 600,
-								}}
-							>
-								{`Зуб № ${toothCode}`}
-							</span>
-						)}
-					</div>
-
-					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-						<button
-							type="button"
-							data-testid="btn-scan3d-popout"
-							onClick={handlePopout}
-							title="Открыть 3D-скан в отдельном окне / на 2-м мониторе (освобождает экран приема)"
+				{useLegacyIframe ? (
+					<>
+						{/* Header for Legacy Iframe Mode */}
+						<div
 							style={{
-								background: "rgba(99, 102, 241, 0.15)",
-								border: "1px solid rgba(99, 102, 241, 0.4)",
-								color: "#818cf8",
-								cursor: "pointer",
-								padding: "4px 10px",
-								borderRadius: "6px",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								fontSize: "12px",
-								fontWeight: 600,
-							}}
-						>
-							<ExternalLink size={13} />
-							<span>На 2-й монитор</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setIsFullscreen(!isFullscreen)}
-							title={isFullscreen ? "Свернуть" : "На весь экран"}
-							style={{
-								background: "transparent",
-								border: "none",
-								color: "var(--ink-muted, #94a3b8)",
-								cursor: "pointer",
-								padding: "6px",
-								borderRadius: "4px",
+								height: "44px",
+								padding: "0 16px",
+								background: "var(--paper, #0f172a)",
+								borderBottom: "1px solid var(--line, #1e293b)",
 								display: "flex",
 								alignItems: "center",
+								justifyContent: "space-between",
+								userSelect: "none",
 							}}
 						>
-							{isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-						</button>
-						<button
-							type="button"
-							data-testid="btn-close-3d-scan-modal"
-							onClick={handleClose}
-							title="Закрыть (Esc)"
-							style={{
-								background: "transparent",
-								border: "none",
-								color: "var(--ink-muted, #94a3b8)",
-								cursor: "pointer",
-								padding: "6px",
-								borderRadius: "4px",
-								display: "flex",
-								alignItems: "center",
-							}}
-						>
-							<X size={18} />
-						</button>
-					</div>
-				</div>
+							<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+								<Box size={18} color="#6366f1" />
+								<span style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink, #f8fafc)" }}>
+									{scanTitle}
+								</span>
+								{patientName && (
+									<span
+										style={{
+											fontSize: "11px",
+											padding: "2px 8px",
+											background: "rgba(99, 102, 241, 0.15)",
+											color: "#818cf8",
+											borderRadius: "4px",
+											border: "1px solid rgba(99, 102, 241, 0.3)",
+										}}
+									>
+										Пациент: {patientName}
+									</span>
+								)}
+								{toothCode && (
+									<span
+										style={{
+											fontSize: "11px",
+											padding: "2px 8px",
+											background: "rgba(13, 148, 136, 0.15)",
+											color: "#2dd4bf",
+											borderRadius: "4px",
+											border: "1px solid rgba(13, 148, 136, 0.3)",
+											fontWeight: 600,
+										}}
+									>
+										{`Зуб № ${toothCode}`}
+									</span>
+								)}
+							</div>
 
-				{/* 3D WebGL Canvas Engine */}
-				<div style={{ flex: 1, position: "relative", width: "100%", height: "100%", minHeight: 0 }}>
-					{useLegacyIframe ? (
-						<iframe
-							ref={iframeRef}
-							src={iframeSrc}
-							title="3D Scan View"
-							style={{
-								width: "100%",
-								height: "100%",
-								border: "none",
-								display: "block",
-							}}
-						/>
-					) : (
-						<>
-							<DentalUniversal3DViewer
-								modelUrl={modelUrl}
-								modelFormat={modelFormat}
-								patientName={patientName}
-								toothCode={toothCode}
-								onPopout={handlePopout}
-								onClose={handleClose}
-								className="w-full h-full"
+							<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+								<button
+									type="button"
+									data-testid="btn-scan3d-popout"
+									onClick={handlePopout}
+									title="Открыть 3D-скан в отдельном окне / на 2-м мониторе (освобождает экран приема)"
+									style={{
+										background: "rgba(99, 102, 241, 0.15)",
+										border: "1px solid rgba(99, 102, 241, 0.4)",
+										color: "#818cf8",
+										cursor: "pointer",
+										padding: "4px 10px",
+										borderRadius: "6px",
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "6px",
+										fontSize: "12px",
+										fontWeight: 600,
+									}}
+								>
+									<ExternalLink size={13} />
+									<span>На 2-й монитор</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setIsFullscreen(!isFullscreen)}
+									title={isFullscreen ? "Свернуть" : "На весь экран"}
+									style={{
+										background: "transparent",
+										border: "none",
+										color: "var(--ink-muted, #94a3b8)",
+										cursor: "pointer",
+										padding: "6px",
+										borderRadius: "4px",
+										display: "flex",
+										alignItems: "center",
+									}}
+								>
+									{isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+								</button>
+								<button
+									type="button"
+									data-testid="btn-close-3d-scan-modal"
+									onClick={handleClose}
+									title="Закрыть (Esc)"
+									style={{
+										background: "transparent",
+										border: "none",
+										color: "var(--ink-muted, #94a3b8)",
+										cursor: "pointer",
+										padding: "6px",
+										borderRadius: "4px",
+										display: "flex",
+										alignItems: "center",
+									}}
+								>
+									<X size={18} />
+								</button>
+							</div>
+						</div>
+
+						{/* Legacy Iframe Viewport */}
+						<div style={{ flex: 1, position: "relative", width: "100%", height: "100%", minHeight: 0 }}>
+							<iframe
+								ref={iframeRef}
+								src={iframeSrc}
+								title="3D Scan View"
+								style={{
+									width: "100%",
+									height: "100%",
+									border: "none",
+									display: "block",
+								}}
 							/>
-							<a
-								href={iframeSrc}
-								data-testid="viewer3d-fallback-link"
-								style={{ display: "none" }}
-								tabIndex={-1}
-								aria-hidden="true"
-							>
-								{`viewer3d.html?ext=${modelFormat}`}
-							</a>
-						</>
-					)}
-				</div>
+						</div>
+					</>
+				) : (
+					/* Modern Universal 3D Engine Viewport: Single Unified Toolbar & Zero-Matryoshka */
+					<div style={{ flex: 1, position: "relative", width: "100%", height: "100%", minHeight: 0 }}>
+						<DentalUniversal3DViewer
+							modelUrl={modelUrl}
+							modelFormat={modelFormat}
+							patientName={patientName}
+							toothCode={toothCode}
+							onPopout={handlePopout}
+							onClose={handleClose}
+							className="w-full h-full"
+						/>
+						<a
+							href={iframeSrc}
+							data-testid="viewer3d-fallback-link"
+							style={{ display: "none" }}
+							tabIndex={-1}
+							aria-hidden="true"
+						>
+							{`viewer3d.html?ext=${modelFormat}`}
+						</a>
+					</div>
+				)}
 			</div>
 		</div>
 	);

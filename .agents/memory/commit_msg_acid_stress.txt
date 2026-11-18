@@ -1,0 +1,36 @@
+test(concurrency): add PostgreSQL 18 ACID transaction stress suite & fix stock deadlock
+
+Why / Architectural Context:
+In a high-throughput dental clinic with 4 receptionists and 6 doctors concurrently
+booking appointments, debiting family deposits, and completing clinical visits,
+database isolation anomalies, lost updates, or table deadlocks lead to phantom bookings,
+corrupted accounting balances, and operational paralysis.
+Red Team audit discovered that multi-item warehouse write-offs in opposing lock orders
+previously triggered fatal PostgreSQL 40P01 deadlocks due to unordered row locking
+in SELECT ... WHERE id IN (...) FOR UPDATE.
+
+What & Where:
+1. apps/api/src/services/treatmentConsumables/stockDeductionModules/inventoryItemLocker.ts:
+   - Added explicit `.orderBy(asc(inventoryItems.id))` to lockAndAggregateInventoryItems()
+     ensuring deterministic lexical UUID locking order across all concurrent transactions,
+     completely eliminating PostgreSQL 40P01 deadlock conditions.
+2. apps/api/src/tests/concurrency/acidTransactionStress.test.ts:
+   - Implemented 20-thread schedule booking storm on identical slot yielding strictly
+     1 x 201 Created and 19 x 409 Conflict with suggestedSlots alternative windows.
+   - Implemented 15-thread family wallet debit storm (3,000 RUB each on 10,000 RUB balance)
+     yielding strictly 3 x 200 OK and 12 x 402 Insufficient Funds, final DB balance 1,000.00 RUB.
+   - Implemented 20-thread deadlock immunity test with opposing lock orders [A, B, C] vs [C, B, A]
+     running simultaneously without any PostgreSQL deadlocks.
+   - Implemented composite treatment plan/stage/items transaction rollback verification
+     guaranteeing zero orphaned rows upon simulation failure.
+   - Implemented PostgreSQL pool lifecycle test ensuring allowExitOnIdle: true.
+3. docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md:
+   - Created comprehensive audit registry documenting test invariants, execution benchmarks,
+     and root-cause deadlock fix.
+4. .agents/DATABASE.md:
+   - Synchronized ACID concurrency section with acidTransactionStress.test.ts and registry link.
+
+Proof & Machine Gates:
+- npm run check:encoding -> Exit Code 0 (23964 files verified, 0 warnings).
+- node --test acidTransactionStress.test.ts -> 5/5 passed in 4.35s (<= 10s ceiling).
+- Preserved dirty worktree integrity via per-file staging (Mandate 8an).

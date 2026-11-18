@@ -46,7 +46,7 @@ export function useVisitSaveUnloadFlush(params: UseVisitSaveUnloadFlushParams): 
 			const form = currentFormRef.current;
 			const effVisitId = visitId || activeVisitId;
 			const effPatientId = patientId || activeVisitPatientId;
-			const effOrgId = organizationId || activeVisitOrgId;
+			const effOrgId = (organizationId || activeVisitOrgId) ?? undefined;
 
 			if (form && effVisitId && effVisitId !== "no-active-visit") {
 				const draftPayload = visitNoteDraftFromForm(form, [

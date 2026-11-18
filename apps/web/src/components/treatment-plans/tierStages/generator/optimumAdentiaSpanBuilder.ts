@@ -19,48 +19,95 @@ export function handleOptimumAdentiaSpan(
 		return;
 	}
 
-	// Одиночные дефекты в Оптимум: Straumann + Ti-Base абатмент + коронка Katana/E.max
+	const isPremium = ctx.tierId === "premium";
+
+	// Одиночные дефекты зубного ряда: дифференциация Оптимум vs Премиум
 	for (const missingT of currentSpan) {
 		markHasImplants();
 		handled.add(missingT);
 
 		const defGuide = SERVICES_CATALOG_DICTIONARY.SurgicalNavigationGuide!;
 		stage2Items.push(
-			createPlanItem("s2-guide-" + missingT, 2, "stage_2_surgery", defGuide, missingT, catalog, validDiscountPct, { isDemoMode: isDemo }),
-		);
-
-		const defImpPrem = SERVICES_CATALOG_DICTIONARY.DentalImplantationPremium!;
-		stage2Items.push(
 			createPlanItem(
-				"s2-imp-opt-" + missingT,
+				(isPremium ? "s2-guide-prem-" : "s2-guide-opt-") + missingT,
 				2,
 				"stage_2_surgery",
-				defImpPrem,
+				defGuide,
 				missingT,
 				catalog,
 				validDiscountPct,
-				{
-					customTitle: "Имплантация Straumann Roxolid SLActive в области зуба №" + missingT,
-					isDemoMode: isDemo,
-				},
+				{ isDemoMode: isDemo },
 			),
 		);
 
-		const defImpCrownPrem = SERVICES_CATALOG_DICTIONARY.ImplantCrownPremium!;
-		stage3Items.push(
-			createPlanItem(
-				"s3-imp-crown-opt-" + missingT,
-				3,
-				"stage_3_orthopedics",
-				defImpCrownPrem,
-				missingT,
-				catalog,
-				validDiscountPct,
-				{
-					customTitle: "Протезирование на имплантате: индивидуальный Ti-Base абатмент + коронка Katana/E.max (№" + missingT + ")",
-					isDemoMode: isDemo,
-				},
-			),
-		);
+		if (isPremium) {
+			const defImpPrem = SERVICES_CATALOG_DICTIONARY.DentalImplantationPremium!;
+			stage2Items.push(
+				createPlanItem(
+					"s2-imp-prem-" + missingT,
+					2,
+					"stage_2_surgery",
+					defImpPrem,
+					missingT,
+					catalog,
+					validDiscountPct,
+					{
+						customTitle: "Имплантация премиум-системы Straumann Roxolid SLActive в области зуба №" + missingT + " (пожизненная гарантия)",
+						isDemoMode: isDemo,
+					},
+				),
+			);
+
+			const defImpCrownPrem = SERVICES_CATALOG_DICTIONARY.ImplantCrownPremium!;
+			stage3Items.push(
+				createPlanItem(
+					"s3-imp-crown-prem-" + missingT,
+					3,
+					"stage_3_orthopedics",
+					defImpCrownPrem,
+					missingT,
+					catalog,
+					validDiscountPct,
+					{
+						customTitle: "Протезирование на имплантате: индивидуальный Ti-Base абатмент + коронка Katana Multi-Layer (№" + missingT + ", гарантия 10 лет)",
+						isDemoMode: isDemo,
+					},
+				),
+			);
+		} else {
+			const defImp = SERVICES_CATALOG_DICTIONARY.DentalImplantation!;
+			stage2Items.push(
+				createPlanItem(
+					"s2-imp-opt-" + missingT,
+					2,
+					"stage_2_surgery",
+					defImp,
+					missingT,
+					catalog,
+					validDiscountPct,
+					{
+						customTitle: "Дентальная имплантация Osstem TS-III в области зуба №" + missingT,
+						isDemoMode: isDemo,
+					},
+				),
+			);
+
+			const defImpCrown = SERVICES_CATALOG_DICTIONARY.ImplantCrownProsthetics!;
+			stage3Items.push(
+				createPlanItem(
+					"s3-imp-crown-opt-" + missingT,
+					3,
+					"stage_3_orthopedics",
+					defImpCrown,
+					missingT,
+					catalog,
+					validDiscountPct,
+					{
+						customTitle: "Протезирование на имплантате: коронка из диоксида циркония с винтовой фиксацией (№" + missingT + ")",
+						isDemoMode: isDemo,
+					},
+				),
+			);
+		}
 	}
 }

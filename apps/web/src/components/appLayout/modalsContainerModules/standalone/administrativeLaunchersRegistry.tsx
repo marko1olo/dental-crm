@@ -18,7 +18,6 @@ import { DirectTreatmentPlanLauncher } from "../../../treatment-plans/DirectTrea
 import { DirectCashboxLauncher } from "../../../cashbox/DirectCashboxLauncher";
 import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
 import { DirectSanpinLauncher } from "../../../sanpin/DirectSanpinLauncher";
-import { DirectSterilizationLauncher } from "../../../sanpin/DirectSterilizationLauncher";
 import { OmnichannelOperatorDesk } from "../../../chat/OmnichannelOperatorDesk";
 import { DocumentsView } from "../../../../DocumentsView";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
@@ -32,7 +31,6 @@ import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescri
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
 import { DirectWaitlistMatchesLauncher } from "../../../schedule/DirectWaitlistMatchesLauncher";
-import { renderPayrollLauncher } from "./PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
 
@@ -42,10 +40,47 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		id: "doctor-payroll-studio",
 		title: "Студия зарплат и сдельной мотивации врачей",
 		criteria: {
-			tokens: ["payroll", "doctor-payroll", "salary", "commissions", "doctor-payout", "payroll-studio"],
-			searchIncludes: ["payroll=1", "doctor-payroll=1", "salary=1", "commissions=1", "doctor-payout=1"],
-			exactHashes: ["#payroll", "#doctor-payroll", "#salary", "#commissions", "#doctor-payout", "#payroll-studio"],
-			hashPrefixes: ["#payroll?", "#doctor-payroll?", "#salary?", "#commissions?"],
+			tokens: [
+				"payroll",
+				"doctor-payroll",
+				"salary",
+				"commissions",
+				"doctor-payout",
+				"payroll-studio",
+				"doctor-payroll-report",
+				"executive-payroll",
+				"assistant-payroll",
+			],
+			searchIncludes: [
+				"payroll=1",
+				"doctor-payroll=1",
+				"doctor_payroll=1",
+				"salary=1",
+				"commissions=1",
+				"doctor-payout=1",
+				"executive_payroll=1",
+				"assistant_payroll=1",
+			],
+			exactHashes: [
+				"#payroll",
+				"#doctor-payroll",
+				"#salary",
+				"#commissions",
+				"#doctor-payout",
+				"#payroll-studio",
+				"#doctor-payroll-report",
+				"#executive-payroll",
+				"#assistant-payroll",
+			],
+			hashPrefixes: [
+				"#payroll?",
+				"#doctor-payroll?",
+				"#salary?",
+				"#commissions?",
+				"#doctor-payroll-report?",
+				"#executive-payroll?",
+				"#assistant-payroll?",
+			],
 		},
 		render: () => <DirectPayrollLauncher />,
 	},
@@ -218,7 +253,7 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		criteria: {
 			tokens: ["sterilization", "autoclave", "sanpin-autoclave"],
 		},
-		render: () => <DirectSterilizationLauncher />,
+		render: () => <DirectSanpinLauncher />,
 	},
 	// 11. Производственный санитарный контроль
 	{
@@ -401,13 +436,7 @@ export function renderAdministrativeLaunchers(
 		return matchedLauncher;
 	}
 
-	// 2. Расчет зарплаты и комиссии врачей (?payroll=1, ?payout=1, #payroll)
-	const payroll = renderPayrollLauncher();
-	if (payroll) {
-		return payroll;
-	}
-
-	// 3. Управленческие отчеты и аудит (?reports=1, #reports, ?analytics=1)
+	// 2. Управленческие отчеты и аудит (?reports=1, #reports, ?analytics=1)
 	const reports = renderReportsStandaloneLauncher();
 	if (reports) {
 		return reports;

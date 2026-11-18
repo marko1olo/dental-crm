@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../documents/DocumentsStudioModal";
 import {
 	MobilePatientDocumentsTab,
 	MobilePatientFinanceTab,

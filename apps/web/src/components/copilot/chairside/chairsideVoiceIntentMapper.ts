@@ -58,15 +58,20 @@ export function mapVoiceIntentToHUDProposals(
 
   const procs = intent.procedures804n;
   if (procs && procs.length > 0) {
-    result.servicesProposal = procs.map((p, idx: number) => ({
-      id: `proc-voice-${idx}-${Date.now()}`,
-      serviceCode: p.code804n || "A16.07.001",
-      code804n: p.code804n || "A16.07.001",
-      title: p.name || "Медицинская услуга",
-      priceRub: p.priceRub || 1500,
-      quantity: p.quantity || 1,
-      applied: false,
-    }));
+    result.servicesProposal = procs.map((p, idx: number) => {
+      const priceRub = p.priceRub || 1500;
+      return {
+        id: `proc-voice-${idx}-${Date.now()}`,
+        serviceCode: p.code804n || "A16.07.001",
+        regulatoryCode: p.code804n || "A16.07.001",
+        code804n: p.code804n || "A16.07.001",
+        title: p.name || "Медицинская услуга",
+        priceKopecks: priceRub * 100,
+        priceRub,
+        quantity: p.quantity || 1,
+        applied: false,
+      };
+    });
   }
 
   if (intent.soapNotes) {

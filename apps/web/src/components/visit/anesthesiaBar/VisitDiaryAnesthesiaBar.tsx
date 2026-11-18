@@ -49,7 +49,11 @@ export function VisitDiaryAnesthesiaBar({
 		>
 			<AnesthesiaQuickBar
 				patientWeightKg={safety.patientWeightKg}
-				targetToothNumberFdi={diary.diagnosisTooth || 16}
+				targetToothNumberFdi={
+					typeof diary.diagnosisTooth === "string" || typeof diary.diagnosisTooth === "number"
+						? diary.diagnosisTooth
+						: 16
+				}
 				hasCardiovascularRisk={safety.hasCardiovascularRisk}
 				hasSulfiteAllergy={safety.hasSulfiteAllergy}
 				hasBronchialAsthma={safety.hasBronchialAsthma}

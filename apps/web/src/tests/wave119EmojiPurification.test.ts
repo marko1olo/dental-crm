@@ -139,12 +139,12 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(!content.includes("⚡"), "SanpinRegisters must not contain raw ⚡ emoji");
 		assert.ok(!RAW_EMOJI_REGEX.test(content), "SanpinRegisters must be free of raw emojis");
 
-		const toolbarPath = path.join(
+		const studioPath = path.join(
 			repoRoot,
-			"apps/web/src/components/sanpin/autoclave/AutoclaveRegisterToolbar.tsx",
+			"apps/web/src/components/sanpin/SanpinStudioModal.tsx",
 		);
-		const toolbarContent = fs.readFileSync(toolbarPath, "utf-8");
-		assert.ok(toolbarContent.includes("<Sparkles"), "AutoclaveRegisterToolbar must render Lucide Sparkles vector icon");
+		const studioContent = fs.readFileSync(studioPath, "utf-8");
+		assert.ok(!RAW_EMOJI_REGEX.test(studioContent), "SanpinStudioModal must be free of raw emojis");
 	});
 
 	it("10. SanpinCycleModal: eradicated per Mandate 8s (no dead dummy stub in repo)", () => {

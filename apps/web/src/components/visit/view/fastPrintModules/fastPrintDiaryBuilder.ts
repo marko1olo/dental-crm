@@ -27,8 +27,13 @@ export interface FastPrintClinicalDiaryParams {
 	readonly isClosed?: boolean | undefined;
 	readonly watermarkText?: string | undefined;
 	readonly dashboard?: FastPrintDashboardContext | null | undefined;
-	readonly teethFormula?: Record<string | number, ToothStateRecord | undefined> | null | undefined;
-	readonly selectedToothForMenu?: string | number | null | undefined;
+	readonly teethFormula?: Record<string | number, ToothStateRecord | string | { state?: string; status?: string; label?: string } | undefined> | null | undefined;
+	readonly selectedToothForMenu?:
+		| string
+		| number
+		| { code: string; label?: string | undefined; state?: string | undefined; [key: string]: unknown }
+		| null
+		| undefined;
 }
 
 export type FastPrint043Params = FastPrintClinicalDiaryParams;
@@ -84,31 +89,41 @@ export function printHtmlViaIframe(htmlContent: string, documentTitle = "Печ�
 }
 
 export function extractClinicRequisites(dashboard: FastPrintDashboardContext | null | undefined): FastPrintClinicRequisites {
+	const clinicSettings = dashboard?.clinicSettings as Record<string, unknown> | undefined;
+	const profile = (clinicSettings?.profile || {}) as Record<string, unknown>;
+	const organization = dashboard?.organization as Record<string, unknown> | undefined;
+
 	const clinicName =
-		dashboard?.organization?.name ||
-		dashboard?.organizationName ||
-		dashboard?.clinicSettings?.clinicName ||
+		(organization?.name as string | undefined) ||
+		(dashboard?.organizationName as string | undefined) ||
+		(clinicSettings?.clinicName as string | undefined) ||
+		(profile?.brandName as string | undefined) ||
 		"Стоматологическая клиника";
 	const clinicAddress =
-		dashboard?.organization?.address ||
-		dashboard?.clinicSettings?.address ||
+		(organization?.address as string | undefined) ||
+		(clinicSettings?.address as string | undefined) ||
+		(profile?.address as string | undefined) ||
 		"—";
 	const clinicPhone =
-		dashboard?.organization?.phone ||
-		dashboard?.clinicSettings?.phone ||
+		(organization?.phone as string | undefined) ||
+		(clinicSettings?.phone as string | undefined) ||
+		(profile?.phone as string | undefined) ||
 		"—";
 	const clinicOgrn =
-		dashboard?.organization?.ogrn ||
-		dashboard?.clinicSettings?.ogrn ||
+		(organization?.ogrn as string | undefined) ||
+		(clinicSettings?.ogrn as string | undefined) ||
+		(profile?.ogrn as string | undefined) ||
 		"—";
 	const clinicInn =
-		dashboard?.organization?.inn ||
-		dashboard?.clinicSettings?.inn ||
+		(organization?.inn as string | undefined) ||
+		(clinicSettings?.inn as string | undefined) ||
+		(profile?.inn as string | undefined) ||
 		"—";
 	const license =
-		dashboard?.organization?.licenseNumber ||
-		dashboard?.organization?.license ||
-		dashboard?.clinicSettings?.licenseNumber ||
+		(organization?.licenseNumber as string | undefined) ||
+		(organization?.license as string | undefined) ||
+		(clinicSettings?.licenseNumber as string | undefined) ||
+		(profile?.medicalLicenseNumber as string | undefined) ||
 		"—";
 
 	return {
@@ -122,7 +137,7 @@ export function extractClinicRequisites(dashboard: FastPrintDashboardContext | n
 }
 
 export function normalizeOdontogramForDmft(
-	teethFormula: Record<string | number, ToothStateRecord | { state?: string | undefined; status?: string | undefined } | undefined> | null | undefined,
+	teethFormula: Record<string | number, ToothStateRecord | string | { state?: string | undefined; status?: string | undefined; label?: string | undefined } | undefined> | null | undefined,
 ): DmftCalculationResult {
 	let decayed = 0;
 	let missing = 0;
@@ -132,7 +147,7 @@ export function normalizeOdontogramForDmft(
 
 	for (const tooth of Object.values(teethFormula)) {
 		if (!tooth) continue;
-		const state = String(tooth.state || tooth.status || "").toLowerCase().trim();
+		const state = typeof tooth === "string" ? tooth.toLowerCase().trim() : String(tooth.state || tooth.status || tooth.label || "").toLowerCase().trim();
 		if (
 			state.includes("caries") ||
 			state.includes("кариес") ||
@@ -294,9 +309,9 @@ export function buildMedicalCardDataFromFastPrintParams(params: FastPrintClinica
 	const cardNumber = activePatient.cardNumber || activePatient.medicalCardNumber || activePatient.id || "—";
 	const visitDate = activeAppointment?.startsAt ? formatRuDateShort(activeAppointment.startsAt) : new Date().toLocaleDateString("ru-RU");
 
-	const rawDiagnosis = visitNoteForm?.diagnosis || (params.selectedToothForMenu ? `Зуб ${params.selectedToothForMenu}: K02.1 Кариес дентина` : "K02.1 Кариес дентина");
+	const rawDiagnosis = visitNoteForm?.diagnosis || (params.selectedToothForMenu ? `Зуб ${typeof params.selectedToothForMenu === "object" ? params.selectedToothForMenu.code : params.selectedToothForMenu}: K02.1 Кариес дентина` : "K02.1 Кариес дентина");
 	const icd10Match = rawDiagnosis.match(/([A-Z]\d{2}(?:\.\d+)?)/i);
-	const diagnosisIcd10 = icd10Match ? icd10Match[1].toUpperCase() : "Z01.2";
+	const diagnosisIcd10 = icd10Match?.[1] ? icd10Match[1].toUpperCase() : "Z01.2";
 	const diagnosisDescription = rawDiagnosis.replace(/^[A-Z]\d{2}(?:\.\d+)?\s*/i, "").trim() || "Стоматологическое обследование и лечение";
 
 	return {
@@ -316,7 +331,7 @@ export function buildMedicalCardDataFromFastPrintParams(params: FastPrintClinica
 			city: "г. Москва",
 		},
 		patient: {
-			fullName: patientName,
+			fullName: patientName || "—",
 			birthDate: activePatient?.birthDate ? formatRuDateShort(activePatient.birthDate) : "—",
 			gender: activePatient?.gender || "unknown",
 			phone: activePatient?.phone || "—",
@@ -329,13 +344,21 @@ export function buildMedicalCardDataFromFastPrintParams(params: FastPrintClinica
 		doctorSpecialty: activeDoctor?.specialty || "Врач-стоматолог",
 		complaints: visitNoteForm?.complaint || "Жалоб на момент осмотра не предъявляет.",
 		anamnesisMorbi: visitNoteForm?.anamnesis || "Соматически здоров. Аллергологический анамнез не отягощен.",
-		allergyStatus: activePatient?.allergies?.length ? activePatient.allergies.join(", ") : "Не отягощен (со слов пациента)",
+		allergyStatus: Array.isArray(activePatient?.allergies)
+			? activePatient.allergies.join(", ")
+			: typeof activePatient?.allergies === "string"
+				? activePatient.allergies
+				: "Не отягощен (со слов пациента)",
 		somaticStatus: "Соматически здоров, сопутствующих заболеваний нет",
 		statusLocalis: visitNoteForm?.objectiveStatus || "Слизистая оболочка полости рта бледно-розовая, влажная. Прикус физиологический.",
 		diagnosisIcd10,
 		diagnosisDescription,
-		diagnosisTooth: params.selectedToothForMenu != null ? String(params.selectedToothForMenu) : undefined,
-		teethFormulaMap: params.teethFormula,
+		diagnosisTooth: typeof params.selectedToothForMenu === "object" && params.selectedToothForMenu !== null
+			? String(params.selectedToothForMenu.code)
+			: params.selectedToothForMenu != null
+				? String(params.selectedToothForMenu)
+				: undefined,
+		teethFormulaMap: params.teethFormula as Record<string | number, { state?: string; status?: string; label?: string; } | undefined> | null | undefined,
 		treatmentProtocol: visitNoteForm?.treatmentPlan || "Препарирование кариозной полости, медикаментозная обработка, постановка пломбы светового отверждения.",
 		recommendations: visitNoteForm?.recommendations || "Соблюдение гигиены полости рта. Контрольный осмотр через 6 месяцев.",
 	};

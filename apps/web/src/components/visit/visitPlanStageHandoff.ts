@@ -65,16 +65,17 @@ export interface TreatmentPlanStageLike {
 	title?: string | undefined;
 	titleRu?: string | undefined;
 	name?: string | undefined;
-	items?: PlanStageItem[] | undefined;
+	items?: readonly PlanStageItem[] | PlanStageItem[] | undefined;
 	[key: string]: unknown;
 }
 
 export interface TreatmentPlanLike {
 	id?: string | undefined;
 	name?: string | undefined;
+	title?: string | undefined;
 	status?: string | undefined;
-	items?: PlanStageItem[] | undefined;
-	stages?: TreatmentPlanStageLike[] | undefined;
+	items?: readonly PlanStageItem[] | PlanStageItem[] | undefined;
+	stages?: readonly TreatmentPlanStageLike[] | TreatmentPlanStageLike[] | undefined;
 	[key: string]: unknown;
 }
 

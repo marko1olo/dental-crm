@@ -1,6 +1,11 @@
 import type {
+	DicomRenderCachePlanResponse,
+	DicomViewerToolStateBundleResponse,
 	DicomViewerWorkbenchManifestResponse,
 	DicomWorkstationReadinessResponse,
+	ImagingViewerImplantPlan,
+	ImagingViewerTool,
+	LocalBridgeReadinessResponse,
 } from "@dental/shared";
 import { CtPlanningToolsPanel } from "../../../../ctPlanningTools";
 import {
@@ -17,7 +22,7 @@ import { DicomResourcePolicyPanel } from "./DicomResourcePolicyPanel";
 import type { CbctWorkbenchPlane } from "./types";
 
 export interface DicomMprWorkbenchPanelProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	// biome-ignore lint/suspicious/noExplicitAny: composite legacy settings props bag
 	mergedProps: any;
 }
 
@@ -162,20 +167,24 @@ export function DicomMprWorkbenchPanel({
 		dicomWebCheck,
 	} = mergedProps;
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedImagingViewerActiveTool = imagingViewerActiveTool as any;
-	const typedCtPlanningActiveQuickActionId = ctPlanningActiveQuickActionId as
+	const typedImagingViewerActiveTool = (imagingViewerActiveTool ?? null) as
+		| ImagingViewerTool
+		| null
+		| undefined;
+	const typedCtPlanningActiveQuickActionId = (ctPlanningActiveQuickActionId ?? null) as
 		| string
-		| null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedCtPlanningImplantPlan = ctPlanningImplantPlan as any | null;
+		| null
+		| undefined;
+	const typedCtPlanningImplantPlan = (ctPlanningImplantPlan ?? null) as
+		| ImagingViewerImplantPlan
+		| null
+		| undefined;
 	const typedDicomViewerWorkbenchManifest =
-		dicomViewerWorkbenchManifest as DicomViewerWorkbenchManifestResponse | null;
-	const typedDicomViewerToolStateBundle = dicomViewerToolStateBundle as
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		any | null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedLocalBridgeReadiness = localBridgeReadiness as any | null;
+		(dicomViewerWorkbenchManifest ?? null) as DicomViewerWorkbenchManifestResponse | null;
+	const typedDicomViewerToolStateBundle =
+		(dicomViewerToolStateBundle ?? null) as DicomViewerToolStateBundleResponse | null;
+	const typedLocalBridgeReadiness =
+		(localBridgeReadiness ?? null) as LocalBridgeReadinessResponse | null;
 	const typedCbctWorkbenchProjections = (
 		Array.isArray(cbctWorkbenchProjections) ? cbctWorkbenchProjections : []
 	) as string[];
@@ -192,9 +201,9 @@ export function DicomMprWorkbenchPanel({
 		Array.isArray(cbctResourceSafetyCaps) ? cbctResourceSafetyCaps : []
 	) as string[];
 	const typedDicomWorkstationReadiness =
-		dicomWorkstationReadiness as DicomWorkstationReadinessResponse | null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedDicomRenderCachePlan = mergedProps.dicomRenderCachePlan as any;
+		(dicomWorkstationReadiness ?? null) as DicomWorkstationReadinessResponse | null;
+	const typedDicomRenderCachePlan =
+		(mergedProps.dicomRenderCachePlan ?? null) as DicomRenderCachePlanResponse | null;
 
 	const handleResetEndpointState = () => {
 		setDicomWebCheck(null);

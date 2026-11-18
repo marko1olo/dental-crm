@@ -75,7 +75,7 @@ export function useVisitDiaryPhotoUploadState({
 						headers: {
 							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
 						},
-						signal,
+						...(signal ? { signal } : {}),
 					},
 				);
 				status = res.status;
@@ -168,7 +168,7 @@ export function useVisitDiaryPhotoUploadState({
 	}, [attachments, photoObjectUrls, unreadablePhotoIds, selectedPrintIds]);
 
 	const uploadBlobAttachment = useCallback(
-		async (compressedBlob: Blob, fileName: string) => {
+		async (compressedBlob: Blob, fileName?: string) => {
 			if (isLocked) {
 				showToast("Дневник уже подписан", "info");
 				return;

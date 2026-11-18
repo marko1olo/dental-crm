@@ -1,8 +1,12 @@
+import type { StaffUser } from "../staffPinPad/staffPinPadTypes";
+
 export type PracticeScale = "solo" | "clinic";
 
 export interface RegisterProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	onSuccess: (clinicProfile: any, userProfile: any) => void;
+	onSuccess: (
+		clinicProfile: { id?: string; organizationId?: string; name?: string; [key: string]: unknown },
+		userProfile?: StaffUser | Record<string, unknown> | null,
+	) => void;
 	onSwitchToLogin: () => void;
 	onSwitchToDemoTour?: () => void;
 }

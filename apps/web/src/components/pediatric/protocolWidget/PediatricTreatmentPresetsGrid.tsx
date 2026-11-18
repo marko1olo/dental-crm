@@ -39,7 +39,7 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 						<button
 							type="button"
 							onClick={handleConsent}
-							className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
+							className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
 							data-testid="pediatric-btn-sign-consent"
 						>
 							<span data-testid="pediatric-btn-sign-consent-323fz">Согласие оформлено</span>

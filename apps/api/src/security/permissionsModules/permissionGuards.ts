@@ -7,8 +7,80 @@ import { getRequestIdentity } from "../identity.js";
 import {
 	permissionRefusalMessage,
 	roleHasPermission,
+	roleHasPermissionWithOverrides,
 } from "./permissionChecks.js";
 import type { Permission } from "./permissionMatrix.js";
+
+interface RoleMatrixCacheEntry {
+	overrides: Record<string, Record<string, string | boolean>>;
+	expiresAt: number;
+}
+
+const roleMatrixCache = new Map<string, RoleMatrixCacheEntry>();
+const ROLE_MATRIX_CACHE_TTL_MS = 60_000; // 60 секунд in-memory кэш
+
+/**
+ * Сброс in-memory кэша матрицы прав (вызывается при PUT /api/settings/role-matrix).
+ */
+export function invalidateRoleMatrixCache(organizationId?: string): void {
+	if (organizationId) {
+		roleMatrixCache.delete(organizationId);
+	} else {
+		roleMatrixCache.clear();
+	}
+}
+
+/**
+ * Получение переопределений матрицы прав организации из БД с кэшированием на 60 сек.
+ */
+export async function fetchRoleMatrixOverrides(
+	organizationId: string,
+): Promise<Record<string, Record<string, string | boolean>> | null> {
+	const now = Date.now();
+	const cached = roleMatrixCache.get(organizationId);
+	if (cached && cached.expiresAt > now) {
+		return cached.overrides;
+	}
+
+	try {
+		const { db } = await import("../../db/client.js");
+		const { organizations } = await import("../../db/schema.js");
+		const { eq } = await import("drizzle-orm");
+
+		const [org] = await db
+			.select({ workspaceFeatureFlags: organizations.workspaceFeatureFlags })
+			.from(organizations)
+			.where(eq(organizations.id, organizationId))
+			.limit(1);
+
+		const flags = (org?.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
+		const overrides =
+			(flags.roleMatrixOverrides as Record<string, Record<string, string | boolean>> | null) ?? {};
+
+		roleMatrixCache.set(organizationId, {
+			overrides,
+			expiresAt: now + ROLE_MATRIX_CACHE_TTL_MS,
+		});
+
+		return overrides;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Синхронное чтение переопределений из кэша (если уже загружены).
+ */
+export function getCachedRoleMatrixOverrides(
+	organizationId: string,
+): Record<string, Record<string, string | boolean>> | null {
+	const now = Date.now();
+	const cached = roleMatrixCache.get(organizationId);
+	if (cached && cached.expiresAt > now) {
+		return cached.overrides;
+	}
+	return null;
+}
 
 /**
  * Требует у запроса конкретное право. Возвращает организацию и сотрудника либо
@@ -40,7 +112,9 @@ export async function requirePermission(
 		});
 		return null;
 	}
-	if (!roleHasPermission(identity.role, permission)) {
+
+	const overrides = await fetchRoleMatrixOverrides(identity.organizationId);
+	if (!roleHasPermissionWithOverrides(identity.role, permission, overrides)) {
 		reply.code(403).send({
 			error: "PermissionDenied",
 			permission,
@@ -90,7 +164,12 @@ export function enforcePermissionWhenStaffKnown(
 		return false;
 	}
 
-	if (!roleHasPermission(identity.role, permission)) {
+	const cachedOverrides = getCachedRoleMatrixOverrides(identity.organizationId);
+	const hasAccess = cachedOverrides
+		? roleHasPermissionWithOverrides(identity.role, permission, cachedOverrides)
+		: roleHasPermission(identity.role, permission);
+
+	if (!hasAccess) {
 		reply.code(403).send({
 			error: "PermissionDenied",
 			permission,

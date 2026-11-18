@@ -181,6 +181,7 @@ export {
 	DEFAULT_STAGE2_OBTURATION_TITLE,
 	DEFAULT_STAGE2_RESTORATION_TITLE,
 	BASELINE_PRICES_RUB,
+	type ClinicServiceItem,
 	type LastVisitSoapSnapshot,
 	type MultiStageEndoTransformResult,
 	resolveServicePriceFromCatalog,

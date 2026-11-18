@@ -41,5 +41,5 @@ export const DEFAULT_OVERVIEW_CHANNELS: MessengerChannelItem[] = [
 	{ id: "wa_phone", title: "WhatsApp Web QR", shortBadge: "WA WEB", channel: "whatsapp", type: "phone", status: "unconfigured", statusText: "Не настроен", statusColor: "gray", configTab: "whatsapp" },
 	{ id: "wa_waba", title: "WhatsApp Business API", shortBadge: "WABA", channel: "whatsapp", type: "waba", status: "unconfigured", statusText: "Не подключен", statusColor: "gray", configTab: "whatsapp" },
 	{ id: "vk_group", title: "VK Сообщество клиники", shortBadge: "VK GROUP", channel: "vk", type: "group", status: "unconfigured", statusText: "Не подключено", statusColor: "gray", configTab: "vk" },
-	{ id: "max_bot", title: "1C:MAX Интеграция", shortBadge: "1C:MAX", channel: "max", type: "bot", status: "unconfigured", statusText: "Не настроен", statusColor: "gray", configTab: "max" },
+	{ id: "max_bot", title: "MAX (VK Max) — Национальный мессенджер", shortBadge: "MAX", channel: "max", type: "bot", status: "unconfigured", statusText: "Не настроен", statusColor: "gray", configTab: "max" },
 ];

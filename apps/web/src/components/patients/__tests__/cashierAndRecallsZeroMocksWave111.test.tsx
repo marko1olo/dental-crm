@@ -29,7 +29,7 @@ test("Wave 111 — PatientRecallsHubModal renders honest empty state without DEF
 
 test("Wave 111 — Static file verification: Zero synthetic mock patients in production components", () => {
 	const webComponentsDir = path.resolve(__dirname, "../../");
-	const consentPath = path.join(webComponentsDir, "consents/InformedConsentModal.tsx");
+	const consentPath = path.join(webComponentsDir, "documents/DocumentsStudioModal.tsx");
 	const consentContent = fs.readFileSync(consentPath, "utf-8");
 	assert.ok(!consentContent.includes("Иванова Анна Сергеевна"));
 	assert.ok(!consentContent.includes("Барабаш Сергей Владимирович"));

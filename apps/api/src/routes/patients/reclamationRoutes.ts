@@ -113,11 +113,17 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 					"Не описана суть жалобы или осложнения — без этого запись в карте бесполезна.",
 			});
 		}
-		const doctorId =
+		let doctorId =
 			typeof body.doctorId === "string" &&
 			PATIENT_ID_UUID_PATTERN.test(body.doctorId.trim())
 				? body.doctorId.trim()
 				: null;
+		if (!doctorId) {
+			const reqId = getRequestIdentity(request);
+			if (reqId.userId && PATIENT_ID_UUID_PATTERN.test(reqId.userId)) {
+				doctorId = reqId.userId;
+			}
+		}
 		if (!doctorId) {
 			return reply.code(400).send({
 				error: "ValidationError",
@@ -128,6 +134,25 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 		const proposedAction =
 			typeof body.proposedAction === "string" && body.proposedAction.trim()
 				? body.proposedAction.trim()
+				: null;
+
+		let toothNumber: number | null = null;
+		if (typeof body.toothNumber === "number" && Number.isFinite(body.toothNumber)) {
+			toothNumber = Math.round(body.toothNumber);
+		} else if (typeof body.toothNumber === "string") {
+			const parsed = Number.parseInt(body.toothNumber.replace(/\D/g, ""), 10);
+			if (Number.isFinite(parsed)) toothNumber = parsed;
+		}
+
+		const warrantyCertificateId =
+			typeof body.warrantyCertificateId === "string" &&
+			PATIENT_ID_UUID_PATTERN.test(body.warrantyCertificateId.trim())
+				? body.warrantyCertificateId.trim()
+				: null;
+
+		const defectType =
+			typeof body.defectType === "string" && body.defectType.trim()
+				? body.defectType.trim().slice(0, 64)
 				: null;
 
 		try {
@@ -144,6 +169,9 @@ export function registerPatientReclamationRoutes(app: FastifyInstance) {
 					complicationDetails: details,
 					proposedAction,
 					doctorId,
+					toothNumber,
+					warrantyCertificateId,
+					defectType,
 				},
 			);
 			return reply.status(201).send(created);

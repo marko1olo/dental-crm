@@ -1,0 +1,7 @@
+/**
+ * visit-clinical-diary.css — Canonical Clinical Diary Stylesheet (Mandate 8x & 8ap)
+ * Mandates 8b (<=110 lines), 8x (human clinical terms), 8ap (pure domain names).
+ * All modular stylesheets reside in apps/web/src/components/visit/diaryStyles/.
+ */
+
+@import "../components/visit/diaryStyles/index.css";

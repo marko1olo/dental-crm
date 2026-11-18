@@ -81,16 +81,21 @@ export function tryParseVoiceFallback(
   let servicesProposal: ChairsideServiceProposal[];
   const voiceProcs = voiceIntent.procedures804n;
   if (voiceProcs && voiceProcs.length > 0) {
-    servicesProposal = voiceProcs.map((p, idx: number) => ({
-      id: `voice-srv-${idx}-${p.code804n || idx}`,
-      serviceCode: p.code804n || "A16.07.001",
-      code804n: p.code804n || "A16.07.001",
-      title: p.name || "Медицинская услуга",
-      toothNumber: targetTooth ?? undefined,
-      quantity: p.quantity || 1,
-      priceRub: p.priceRub || 3500,
-      applied: false,
-    }));
+    servicesProposal = voiceProcs.map((p, idx: number) => {
+      const priceRub = p.priceRub || 3500;
+      return {
+        id: `voice-srv-${idx}-${p.code804n || idx}`,
+        serviceCode: p.code804n || "A16.07.001",
+        regulatoryCode: p.code804n || "A16.07.001",
+        code804n: p.code804n || "A16.07.001",
+        title: p.name || "Медицинская услуга",
+        toothNumber: targetTooth ?? undefined,
+        quantity: p.quantity || 1,
+        priceKopecks: priceRub * 100,
+        priceRub,
+        applied: false,
+      };
+    });
   } else {
     const presetIdx = /пульпит|канал/i.test(text) ? 1 : /гигиен|чистк|налет/i.test(text) ? 2 : 0;
     const preset = CLINICAL_PRESETS[presetIdx] ?? defaultPreset;

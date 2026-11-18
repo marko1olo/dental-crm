@@ -116,10 +116,10 @@ export function DicomDiagnosticsPanel({
 								: "Рабочий набор пока не сохранен локально."}
 						</span>
 						<span>
-							{dicomWorkbenchServerBundle
+							{dicomWorkbenchServerBundle?.serverSavedAt
 								? `Сервер сохранил ${formatTime(dicomWorkbenchServerBundle.serverSavedAt)}; тяжелые данные снимков не сохранялись.`
 								: dicomWorkbenchServerBundle
-									? `На сервере есть восстановление ${formatTime(dicomWorkbenchServerBundle.serverSavedAt)}.`
+									? `На сервере есть восстановление ${formatTime(dicomWorkbenchServerBundle.serverSavedAt ?? null)}.`
 									: "Серверного восстановления пока нет."}
 						</span>
 						<span>

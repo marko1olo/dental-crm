@@ -14,6 +14,10 @@ import { organizations } from "../auth.js";
 import { patients } from "../patients.js";
 
 // #40 — прием::зубная_формула_пломба_кариес_и_детская_формула
+// ВНИМАНИЕ (DEF-PED-02 / SSOT): Каноническим источником истины для всех состояний одонтограммы,
+// включая молочный прикус (isPrimaryPediatric), подвижность (mobilityDegree), резорбцию (resorptionStage),
+// детские коронки (pediatricCrownPresent) и вторичный кариес (secondaryCariesUnderFilling), является
+// таблица `toothStates` (через notes/clinicalData JSON). Данная таблица сохранена для сохранения DDL-паритета миграций.
 export const extendedOdontogramStates = pgTable(
 	"extended_odontogram_states",
 	{

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { callCashShiftApi } from "../../finance/cashShiftApi";
+import { generateUuidV7 } from "@dental/shared";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { showToast } from "../../GlobalToast";
 
 export interface UseMobileShiftCashOperationsParams {
@@ -28,12 +29,23 @@ export function useMobileShiftCashOperations({
 		}
 		setIsSubmittingCashIn(true);
 		try {
-			await callCashShiftApi("/api/fiscal/cash-in", "/api/cash/cash-introduction", {
-				amountRub: cashInAmount,
-				reasonText: cashInReason,
-				operationType: "income",
-				basis: "change_float",
+			const res = await fetch("/api/cash/cash-introduction", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				body: JSON.stringify({
+					amountRub: cashInAmount,
+					reasonText: cashInReason,
+					operationType: "income",
+					basis: "change_float",
+				}),
 			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => null);
+				throw new Error(err?.message || `Ошибка внесения (${res.status})`);
+			}
 			showToast(`Внесено в кассу: ${cashInAmount} ₽ (${cashInReason})`, "success");
 			setIsCashInSheetOpen(false);
 		} catch {
@@ -55,19 +67,37 @@ export function useMobileShiftCashOperations({
 						: 0;
 
 			if (withdrawAmount > 0) {
-				await callCashShiftApi("/api/fiscal/cash-out", "/api/cash/cash-withdrawal", {
-					amountRub: withdrawAmount,
-					reasonText: "Инкассация выручки за смену в главную кассу",
-					operationType: "expense",
-					basis: "encashment",
+				await fetch("/api/cash/cash-withdrawal", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
+					body: JSON.stringify({
+						amountRub: withdrawAmount,
+						reasonText: "Инкассация выручки за смену в главную кассу",
+						operationType: "expense",
+						basis: "encashment",
+					}),
 				});
 			}
 
-			await callCashShiftApi("/api/fiscal/shift/close", "/api/cash/cash-box-all-closing", {
-				shiftNumber,
-				closeReason: "regular_shift_close",
-				encashedRub: withdrawAmount,
+			const resClose = await fetch("/api/cashbox/shift/close", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				body: JSON.stringify({
+					shiftNumber,
+					closeReason: "regular_shift_close",
+					encashedRub: withdrawAmount,
+				}),
 			});
+			if (!resClose.ok) {
+				const err = await resClose.json().catch(() => null);
+				throw new Error(err?.message || `Ошибка закрытия смены (${resClose.status})`);
+			}
 
 			showToast(`Фискальный Z-отчёт смены снят. Инкассировано: ${withdrawAmount} ₽`, "success");
 			setIsCashOutSheetOpen(false);

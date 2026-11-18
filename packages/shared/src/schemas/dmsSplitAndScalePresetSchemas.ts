@@ -274,7 +274,7 @@ export function calculateDmsGuaranteeSplit(
 
 				hasUnapproved = true;
 				const reason = !isServiceApproved
-					? `Услуга ${it.serviceCode || it.serviceName || ""} не входит в согласованный перечень 804н гарантийного письма № ${letter.letterNumber}`
+					? `Услуга ${it.serviceCode || it.serviceName || ""} не входит в согласованный перечень процедур гарантийного письма № ${letter.letterNumber}`
 					: `Зуб ${it.toothNumber} не согласован гарантийным письмом № ${letter.letterNumber}`;
 				const coPayKop = lineTotalKop;
 				totalCoPayKop += coPayKop;

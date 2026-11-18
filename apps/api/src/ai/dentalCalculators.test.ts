@@ -18,13 +18,11 @@ import {
 	compareDentalMaterialsTool,
 	generateClinicalProtocolTool,
 	generateClinicalProtocolEntryTool,
-	generateForm043Tool,
 	handleCalculateAnesthesia,
 	handleChairsideEmergency,
 	handleCheckSomaticRisks,
 	handleCompareDentalMaterials,
 	handleGenerateClinicalProtocolEntry,
-	handleGenerateForm043,
 	handleMultidisciplinaryConcilium,
 	handleTranslatePatientComplaint,
 	multidisciplinaryConciliumTool,
@@ -193,8 +191,8 @@ describe("Dental Tool Arsenal — Клинические калькулятор�
 		assert.strictEqual(generateClinicalProtocolEntryTool.name, "generate_clinical_protocol_entry");
 	});
 
-	test("generate_form_043_entry: протокол лечения кариеса K02.1 для зуба 16", async () => {
-		const res = await handleGenerateForm043(
+	test("generate_clinical_protocol_entry: протокол лечения кариеса K02.1 для зуба 16", async () => {
+		const res = await handleGenerateClinicalProtocolEntry(
 			{
 				toothNumber: 16,
 				diagnosisMkb: "K02.1",
@@ -213,7 +211,7 @@ describe("Dental Tool Arsenal — Клинические калькулятор�
 		assert.ok(res.statusLocalis.includes("кариозная полость"));
 		assert.ok(res.treatmentProtocol.includes("коффердама"));
 		assert.ok(res.treatmentProtocol.includes("Estelite Asteria A2"));
-		assert.ok(res.fullForm043Text.includes("Медицинская карта приёма") || res.fullForm043Text.includes("ФОРМА № 043/У"));
+		assert.ok(res.fullProtocolText.includes("Медицинская карта приёма"));
 	});
 
 	test("multidisciplinary_concilium: синтезирует 6 клинических этапов", async () => {

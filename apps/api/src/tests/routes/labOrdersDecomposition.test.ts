@@ -81,12 +81,27 @@ describe("Dental Lab Orders Decomposition — Layer 0 Schemas & Types Parity", (
 	it("validates updateLabOrderSchema allows partial clinical updates", () => {
 		const partialUpdate = updateLabOrderSchema.safeParse({
 			colorVita: "A3",
+			stage: "fitting_ready",
 			clinicalNotes: "Уточнение прикуса: коррекция контактного пункта дистально.",
 			priceRub: 28000,
 		});
 		assert.ok(partialUpdate.success);
 		assert.equal(partialUpdate.data.colorVita, "A3");
+		assert.equal(partialUpdate.data.stage, "fitting_ready");
 		assert.equal(partialUpdate.data.priceRub, 28000);
+	});
+
+	it("preserves fine-grained clinical stage without collapsing into coarse status", () => {
+		const orderWithStage = createLabOrderSchema.safeParse({
+			patientId: "0192e2b0-8451-789a-bcde-000000000001",
+			toothFdi: "24",
+			material: "zirconia_ml",
+			colorVita: "A2",
+			stage: "glaze",
+			priceRub: 22000,
+		});
+		assert.ok(orderWithStage.success);
+		assert.equal(orderWithStage.data.stage, "glaze");
 	});
 
 	it("normalizes restoration materials and restoration types correctly", () => {
@@ -161,8 +176,8 @@ describe("Dental Lab Orders Decomposition — Layer 0/2 Stage & Status Mapping",
 		assert.equal(mapStageToLabOrderStatus("Слепок/Скан"), "sent");
 		assert.equal(mapStageToLabOrderStatus("model_cad_design"), "in_progress");
 		assert.equal(mapStageToLabOrderStatus("shipped_to_clinic"), "shipped");
-		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "ready_in_clinic");
-		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "fitted");
+		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "received");
+		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "received");
 		assert.equal(mapStageToLabOrderStatus("Фиксация"), "completed");
 		assert.equal(mapStageToLabOrderStatus("cancelled"), "cancelled");
 		assert.equal(mapStageToLabOrderStatus("unknown_stage"), null);

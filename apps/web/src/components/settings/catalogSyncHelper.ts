@@ -206,6 +206,7 @@ export async function syncPricelistItemsToCatalog({
 				durationMinutes,
 				taxDeductible: item.taxDeductible !== false,
 				active,
+				priceKopecks: Math.round(exactBasePriceRub * 100),
 			};
 
 			if (itemCode) existingByCode.set(itemCode, targetRecord);

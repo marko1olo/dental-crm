@@ -132,7 +132,7 @@ export async function requestAgentSseStream(
               applied: false,
             };
           }
-        } else if ((toolName === "generate_clinical_protocol_entry" || toolName === "generate_form_043_entry") && result) {
+        } else if ((toolName === "generate_clinical_protocol_entry" || toolName === "generate_clinical_protocol") && result) {
           soapProposal = {
             complaint: result.complaints || result.complaint || "",
             anamnesis: result.anamnesis || "",

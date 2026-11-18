@@ -47,7 +47,7 @@ export {
 export * from "./datetime/index.js";
 export * from "./demo/index.js";
 export type { Kopecks } from "./money.js";
-export { kopecksToRubles, formatRubles, formatKopecksToRubles, kopecksToNumericString, parseKopecks } from "./money.js";
+export { kopecksToRubles, formatRubles, formatKopecksToRubles, formatKopecksToRub, kopecksToNumericString, parseKopecks } from "./money.js";
 export { kopecksToRub, rubToKopecks } from "./fiscal/kopecksArithmetic.js";
 export * from "./money.js";
 export * from "./moneyWordsRu.js";
@@ -69,6 +69,7 @@ export * from "./mdlp/index.js";
 export * from "./utils/index.js";
 export * from "./mobile/index.js";
 export * from "./hardware/index.js";
+export * from "./geometry/index.js";
 export * from "./imaging/index.js";
 export * from "./onboarding/index.js";
 export * from "./omniPlatformAdapter.js";

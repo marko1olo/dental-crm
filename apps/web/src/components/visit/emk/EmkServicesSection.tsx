@@ -21,13 +21,14 @@ export interface EmkServicesSectionProps extends EmkSectionProps {
 	visitId?: string | undefined;
 	onOpenPriceSearchModal?: (() => void) | undefined;
 	activePatient?: {
-		id?: string;
-		fullName?: string;
-		phone?: string;
-		balanceRub?: number;
-	} | null;
-	activeDoctorName?: string;
-	clinicLegalName?: string;
+		id?: string | undefined;
+		fullName?: string | undefined;
+		phone?: string | null | undefined;
+		balanceRub?: number | undefined;
+		[key: string]: unknown;
+	} | null | undefined;
+	activeDoctorName?: string | undefined;
+	clinicLegalName?: string | undefined;
 }
 
 const BASE_QUICK_PRICE_SERVICES = [
@@ -97,10 +98,10 @@ export function EmkServicesSection({
 	);
 
 	const handleAddServiceToPlan = (srv: typeof defaultPriceServices[0]) => {
-		const curr = visitNoteForm?.treatmentPlan || "";
+		const curr = String(visitNoteForm?.treatmentPlan || "");
 		const targetTooth = activeTooth ? ` (зуб ${activeTooth})` : "";
 		const line = `• [${srv.code804n}] ${srv.title}${targetTooth} — 1 усл. (${srv.basePriceRub} ₽)`;
-		updateVisitNoteField("treatmentPlan", appendClinicalText(curr, line, "\n"));
+		updateVisitNoteField?.("treatmentPlan", appendClinicalText(curr, line, "\n"));
 
 		// Мгновенная передача в кассовый счёт визита без блокирующих диалогов (Мандаты 8e, 8n, 8v)
 		if (typeof window !== "undefined") {
@@ -126,12 +127,12 @@ export function EmkServicesSection({
 	};
 
 	const handleAddBundleToPlan = (bundle: ClinicalServiceBundle) => {
-		const curr = visitNoteForm?.treatmentPlan || "";
+		const curr = String(visitNoteForm?.treatmentPlan || "");
 		const targetTooth = activeTooth ? ` (зуб ${activeTooth})` : "";
 		const lines = bundle.services
 			.map((s) => `• [${s.code804n}] ${s.title}${targetTooth} — 1 усл. (${s.priceRub} ₽)`)
 			.join("\n");
-		updateVisitNoteField("treatmentPlan", appendClinicalText(curr, `\nПакет «${bundle.title}»:\n${lines}`, "\n"));
+		updateVisitNoteField?.("treatmentPlan", appendClinicalText(curr, `\nПакет «${bundle.title}»:\n${lines}`, "\n"));
 
 		// Мгновенная передача пакета услуг в кассовый счёт визита (Мандаты 8e, 8n, 8v)
 		if (typeof window !== "undefined") {
@@ -257,10 +258,10 @@ export function EmkServicesSection({
 
 			<div className="mt-2">
 				<VisitServiceBillingWidget
-					visitId={visitId || visitNoteForm?.visitId}
+					visitId={visitId || (typeof visitNoteForm?.visitId === "string" ? visitNoteForm.visitId : undefined)}
 					patientId={activePatient?.id}
 					patientName={activePatient?.fullName}
-					patientPhone={activePatient?.phone}
+					patientPhone={activePatient?.phone || undefined}
 					patientDepositRub={activePatient?.balanceRub}
 					doctorName={activeDoctorName || "Врач-стоматолог"}
 					clinicLegalName={clinicLegalName}

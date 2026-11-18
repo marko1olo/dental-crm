@@ -88,6 +88,7 @@ export interface PatientGeneralInfo {
 	representativeFullName?: string | null | undefined;
 	representativePhone?: string | null | undefined;
 	representativeDoc?: string | null | undefined;
+	representativePassportDetails?: string | null | undefined;
 	preferredDocumentRecipient?: string | null | undefined;
 	dataProcessingBasisNote?: string | null | undefined;
 }

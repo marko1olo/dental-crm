@@ -25,3 +25,4 @@ export * from "./staffChat.js";
 export * from "./idempotency.js";
 export * from "./warranties.js";
 export * from "./dentalLabOrders.js";
+export * from "./intraoralScans.js";

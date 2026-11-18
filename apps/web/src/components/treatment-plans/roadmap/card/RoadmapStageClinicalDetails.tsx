@@ -36,7 +36,7 @@ export const RoadmapStageClinicalDetails: React.FC<DetailsProps> = ({ stage }) =
 
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3 text-xs">
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-					<div className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase flex items-center gap-1.5 mb-1">
+					<div className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5 mb-1">
 						<Clock size={13} />
 						<span>Сроки и длительность</span>
 					</div>
@@ -44,7 +44,7 @@ export const RoadmapStageClinicalDetails: React.FC<DetailsProps> = ({ stage }) =
 				</div>
 
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-					<div className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase flex items-center gap-1.5 mb-1">
+					<div className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 mb-1">
 						<AlertCircle size={13} />
 						<span>Подготовка пациента</span>
 					</div>
@@ -52,7 +52,7 @@ export const RoadmapStageClinicalDetails: React.FC<DetailsProps> = ({ stage }) =
 				</div>
 
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-					<div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5 mb-1">
+					<div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-1">
 						<ShieldCheck size={13} />
 						<span>Гарантия клиники</span>
 					</div>

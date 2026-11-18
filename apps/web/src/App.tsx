@@ -7,6 +7,7 @@
 import React, { useEffect } from "react";
 import { AppLogicProvider } from "./contexts/AppLogicContext";
 import { renderStandaloneLaunchers } from "./components/appLayout";
+import { ClinicalErrorBoundary } from "./components/common/ClinicalErrorBoundary";
 import { useAppLogic } from "./useAppLogic";
 import {
 	scheduleClinicalHotModulesWarmup,
@@ -43,7 +44,11 @@ export function App() {
 	const standalone = renderStandaloneLaunchers(routing);
 	if (standalone) {
 		return (
-			<AppLogicProvider value={appLogicValue}>{standalone}</AppLogicProvider>
+			<AppLogicProvider value={appLogicValue}>
+				<ClinicalErrorBoundary workspaceName="Автономный модуль" workspaceKey="standalone">
+					{standalone}
+				</ClinicalErrorBoundary>
+			</AppLogicProvider>
 		);
 	}
 
@@ -53,8 +58,12 @@ export function App() {
 
 	return (
 		<AppSessionProviders appLogic={appLogicValue}>
-			<AppNavigationShell appLogic={appLogicValue} sessionAuth={sessionAuth} routing={routing} />
-			<AppModalsContainer routing={routing} sessionAuth={sessionAuth} appLogic={appLogicValue} />
+			<ClinicalErrorBoundary workspaceName="Навигация приложения" workspaceKey="navigation">
+				<AppNavigationShell appLogic={appLogicValue} sessionAuth={sessionAuth} routing={routing} />
+			</ClinicalErrorBoundary>
+			<ClinicalErrorBoundary workspaceName="Модальные окна и студии" workspaceKey="modals">
+				<AppModalsContainer routing={routing} sessionAuth={sessionAuth} appLogic={appLogicValue} />
+			</ClinicalErrorBoundary>
 		</AppSessionProviders>
 	);
 }

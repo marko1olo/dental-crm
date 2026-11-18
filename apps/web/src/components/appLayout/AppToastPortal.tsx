@@ -2,7 +2,6 @@ import React, { Suspense } from "react";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import type { AppToastPortalProps } from "./types";
 import { A2hsPromptModal } from "../../pwa/A2hsPromptModal";
-import { ChairsideErgonomicsHost } from "../chairside/ChairsideErgonomicsHost";
 
 const ClinicalGuidanceHost = lazyWithRetry(() =>
 	import("../guidance/ClinicalGuidanceHost").then((module) => ({
@@ -19,7 +18,6 @@ const VisiographIncomingToast = lazyWithRetry(() =>
 export function AppToastPortal(_props: AppToastPortalProps) {
 	return (
 		<>
-			<ChairsideErgonomicsHost />
 			<Suspense fallback={null}>
 				<ClinicalGuidanceHost />
 			</Suspense>

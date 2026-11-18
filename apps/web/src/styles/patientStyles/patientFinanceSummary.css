@@ -1,0 +1,74 @@
+/* Finance Summary Grid (Desktop Single-Row Layout, DEF-FIN-01, Mandate 8p & 8c) */
+@media (max-width: 840px) {
+	.workspace.view-patients .top-actions,
+	.workspace.view-finance .top-actions {
+		display: none !important;
+	}
+}
+
+.finance-summary-grid {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 12px !important;
+	padding: 4px 12px !important;
+	min-height: 32px !important;
+	max-height: 36px !important;
+	margin-bottom: 8px !important;
+	flex-wrap: nowrap !important;
+	overflow-x: auto !important;
+}
+
+.finance-summary-grid article {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: baseline !important;
+	gap: 6px !important;
+	min-height: 24px !important;
+	max-height: 28px !important;
+	padding: 0 4px !important;
+	border: none !important;
+	background: transparent !important;
+	flex-shrink: 0 !important;
+}
+
+.finance-summary-grid span {
+	font-size: 11px !important;
+	font-weight: 700 !important;
+	color: var(--muted) !important;
+	white-space: nowrap !important;
+	line-height: 1 !important;
+}
+
+.finance-summary-grid strong {
+	font-size: 13px !important;
+	font-weight: 800 !important;
+	line-height: 1 !important;
+	white-space: nowrap !important;
+	color: var(--ink) !important;
+}
+
+.finance-summary-grid article.finance-tax-deduction-card {
+	display: inline-flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	gap: 8px !important;
+}
+
+.finance-summary-grid article.finance-tax-deduction-card .finance-tax-card-header {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+}
+
+.finance-summary-grid article.finance-tax-deduction-card button {
+	display: inline-flex !important;
+	align-items: center !important;
+	margin: 0 0 0 6px !important;
+	padding: 2px 8px !important;
+	font-size: 11px !important;
+	line-height: 1.2 !important;
+	border-radius: 6px !important;
+	white-space: nowrap !important;
+}

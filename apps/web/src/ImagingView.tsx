@@ -25,13 +25,37 @@ export function ImagingStudyThumbnail({ study, previewSrc }: { study?: ImagingSt
 export function ImagingView(props: ImagingViewProps) {
 	const appLogic = useAppLogicContext();
 	const auth = appLogic?.auth;
-	const { activeAppointment, activePatient, attachBrowserDirectoryInputRef, browserImagingFileInputAccept, formatShortDate, handleBrowserDirectoryInputChange, imagingKindFilter = "all", imagingToothFilter = "all", imagingPreviewSource, imagingViewerHref, isBrowserImagingFolderPicking, pickBrowserImagingFolder, selectedImagingStudy, selectedImagingViewerPlan, setImagingKindFilter, setImagingToothFilter, setSelectedImagingStudyId } = props;
-	const imagingKindLabels = props.imagingKindLabels ?? defKindLabels, imagingKindOptions = props.imagingKindOptions ?? defKindOptions, imagingSourceLabels = props.imagingSourceLabels ?? defSourceLabels;
-	const localFilesInputRef = useRef<HTMLInputElement | null>(null), cameraCaptureInputRef = useRef<HTMLInputElement | null>(null);
-	const browserImagingFilesInputRef = props.browserImagingFilesInputRef || localFilesInputRef;
-	const pickBrowserImagingFiles = props.pickBrowserImagingFiles || (() => browserImagingFilesInputRef.current?.click());
+	const {
+		activeAppointment,
+		activePatient,
+		attachBrowserDirectoryInputRef,
+		browserImagingFileInputAccept,
+		formatShortDate,
+		handleBrowserDirectoryInputChange,
+		imagingKindFilter = "all",
+		imagingToothFilter = "all",
+		imagingPreviewSource,
+		imagingViewerHref,
+		isBrowserImagingFolderPicking = false,
+		pickBrowserImagingFolder,
+		selectedImagingStudy,
+		selectedImagingViewerPlan,
+		setImagingKindFilter,
+		setImagingToothFilter,
+		setSelectedImagingStudyId,
+	} = props;
+	const imagingKindLabels = props.imagingKindLabels ?? defKindLabels;
+	const imagingKindOptions = props.imagingKindOptions ?? defKindOptions;
+	const imagingSourceLabels = props.imagingSourceLabels ?? defSourceLabels;
+	const localFilesInputRef = useRef<HTMLInputElement | null>(null);
+	const cameraCaptureInputRef = useRef<HTMLInputElement | null>(null);
+	const browserImagingFilesInputRef = props.browserImagingFilesInputRef ?? localFilesInputRef;
+	const pickBrowserImagingFiles = props.pickBrowserImagingFiles ?? (() => browserImagingFilesInputRef.current?.click());
 	const [internalSelectedStudyId, setInternalSelectedStudyId] = useState<string | null>(null);
-	const handleSelectStudy = useCallback((id: string) => { setInternalSelectedStudyId(id); setSelectedImagingStudyId?.(id); }, [setSelectedImagingStudyId]);
+	const handleSelectStudy = useCallback((id: string) => {
+		setInternalSelectedStudyId(id);
+		setSelectedImagingStudyId?.(id);
+	}, [setSelectedImagingStudyId]);
 	const resolvedStudies = useResolvedImagingStudies(props);
 	const effectiveSelectedStudy = (internalSelectedStudyId ? resolvedStudies.find((s) => s.id === internalSelectedStudyId) : null) ?? selectedImagingStudy ?? resolvedStudies[0] ?? null;
 	const handleStudyUploaded = (study: ImagingStudy) => { if (study?.id) handleSelectStudy(study.id); };
@@ -44,41 +68,110 @@ export function ImagingView(props: ImagingViewProps) {
 
 	return (
 		<section className="imaging-panel" id="imaging" aria-label="Снимки пациента">
-			<ImagingHiddenInputs attachBrowserDirectoryInputRef={attachBrowserDirectoryInputRef} browserImagingFilesInputRef={browserImagingFilesInputRef} cameraCaptureInputRef={cameraCaptureInputRef} browserImagingFileInputAccept={browserImagingFileInputAccept} handleBrowserDirectoryInputChange={handleBrowserDirectoryInputChange} handleCameraPhotoCapture={handleCameraPhotoCapture} />
+			<ImagingHiddenInputs
+				attachBrowserDirectoryInputRef={attachBrowserDirectoryInputRef}
+				browserImagingFilesInputRef={browserImagingFilesInputRef}
+				cameraCaptureInputRef={cameraCaptureInputRef}
+				browserImagingFileInputAccept={browserImagingFileInputAccept}
+				handleBrowserDirectoryInputChange={handleBrowserDirectoryInputChange ?? (() => {})}
+				handleCameraPhotoCapture={handleCameraPhotoCapture}
+			/>
 			<div className="block md:hidden w-full h-full">
 				<MobileChairsideRadiologyViewer
-					selectedImagingStudy={effectiveSelectedStudy} activeImagingStudies={resolvedStudies} activePatient={activePatient} onSelectStudy={handleSelectStudy}
-					effectivePreviewUrl={viewState.effectivePreviewUrl} isPreviewLoading={viewState.isPreviewLoading} previewLoadError={viewState.previewLoadError} selectedStudyHasFile={viewState.selectedStudyHasFile}
-					imagingKindLabels={imagingKindLabels} onCaptureCamera={() => cameraCaptureInputRef.current?.click()} onPickFiles={pickBrowserImagingFiles} onAnalyzeAI={viewState.handleAnalyzeAI}
-					isAnalyzingAI={viewState.isAnalyzingAI} onOpenCbctStudio={() => setActiveModal("cbct_studio")} onOpenPanoramic={handleOpenPanoramic} onOpenRadiologyModule={() => setActiveModal("radiology_module")}
+					selectedImagingStudy={effectiveSelectedStudy}
+					activeImagingStudies={resolvedStudies}
+					activePatient={activePatient ?? null}
+					onSelectStudy={handleSelectStudy}
+					effectivePreviewUrl={viewState.effectivePreviewUrl}
+					isPreviewLoading={viewState.isPreviewLoading}
+					previewLoadError={viewState.previewLoadError}
+					selectedStudyHasFile={viewState.selectedStudyHasFile}
+					imagingKindLabels={imagingKindLabels}
+					onCaptureCamera={() => cameraCaptureInputRef.current?.click()}
+					onPickFiles={pickBrowserImagingFiles}
+					onAnalyzeAI={viewState.handleAnalyzeAI}
+					isAnalyzingAI={viewState.isAnalyzingAI}
+					onOpenCbctStudio={() => setActiveModal("cbct_studio")}
+					onOpenPanoramic={handleOpenPanoramic}
+					onOpenRadiologyModule={() => setActiveModal("radiology_module")}
 				/>
 			</div>
 			<ImagingDesktopWorkspace
 				props={{ ...props, selectedImagingStudy: effectiveSelectedStudy, visibleImagingStudies: resolvedStudies }}
-				activePatient={activePatient} activeAppointment={activeAppointment} activeImagingStudies={resolvedStudies} selectedImagingStudy={effectiveSelectedStudy}
-				selectedImagingViewerPlan={selectedImagingViewerPlan} isBrowserImagingFolderPicking={isBrowserImagingFolderPicking} isCapturingCameraPhoto={isCapturingCameraPhoto} pickBrowserImagingFolder={() => void pickBrowserImagingFolder()}
-				pickBrowserImagingFiles={pickBrowserImagingFiles} cameraCaptureInputRef={cameraCaptureInputRef} setActiveModal={setActiveModal} imagingKindFilter={imagingKindFilter} setImagingKindFilter={setImagingKindFilter}
-				imagingToothFilter={imagingToothFilter} setImagingToothFilter={setImagingToothFilter} imagingKindOptions={imagingKindOptions} imagingKindLabels={imagingKindLabels}
-				imagingSourceLabels={imagingSourceLabels} isCbctActive={viewState.isCbctActive} localImageIds={localImageIds} setLocalImageIds={setLocalImageIds} isDicomwebLoading={viewState.isDicomwebLoading}
-				dicomwebLoadProgress={viewState.dicomwebLoadProgress} handleLoadFromDicomweb={viewState.handleLoadFromDicomweb} visibleImagingStudies={resolvedStudies} imagingPreviewSource={imagingPreviewSource}
-				imagingViewerHref={imagingViewerHref} setSelectedImagingStudyId={handleSelectStudy} formatShortDate={formatShortDate} effectiveMprProps={viewState.effectiveMprProps}
+				activePatient={activePatient ?? null}
+				activeAppointment={activeAppointment}
+				activeImagingStudies={resolvedStudies}
+				selectedImagingStudy={effectiveSelectedStudy}
+				selectedImagingViewerPlan={selectedImagingViewerPlan}
+				isBrowserImagingFolderPicking={isBrowserImagingFolderPicking}
+				isCapturingCameraPhoto={isCapturingCameraPhoto}
+				pickBrowserImagingFolder={() => void pickBrowserImagingFolder?.()}
+				pickBrowserImagingFiles={pickBrowserImagingFiles}
+				cameraCaptureInputRef={cameraCaptureInputRef}
+				setActiveModal={setActiveModal}
+				imagingKindFilter={imagingKindFilter}
+				setImagingKindFilter={setImagingKindFilter ?? (() => {})}
+				imagingToothFilter={imagingToothFilter}
+				setImagingToothFilter={setImagingToothFilter ?? (() => {})}
+				imagingKindOptions={imagingKindOptions}
+				imagingKindLabels={imagingKindLabels}
+				imagingSourceLabels={imagingSourceLabels}
+				isCbctActive={viewState.isCbctActive}
+				localImageIds={localImageIds}
+				setLocalImageIds={setLocalImageIds}
+				isDicomwebLoading={viewState.isDicomwebLoading}
+				dicomwebLoadProgress={viewState.dicomwebLoadProgress}
+				handleLoadFromDicomweb={viewState.handleLoadFromDicomweb}
+				visibleImagingStudies={resolvedStudies}
+				imagingPreviewSource={imagingPreviewSource}
+				imagingViewerHref={imagingViewerHref}
+				setSelectedImagingStudyId={handleSelectStudy}
+				formatShortDate={formatShortDate}
+				effectiveMprProps={viewState.effectiveMprProps}
 				viewer2dProps={{
-					...viewState.viewer2dProps, activePatient, activeAppointment, onPickFolder: () => void pickBrowserImagingFolder(), onCaptureCamera: () => cameraCaptureInputRef.current?.click(),
-					onOpenRvgCapture: () => setActiveModal("rvg_capture"), onStudyUploaded: handleStudyUploaded,
+					...viewState.viewer2dProps,
+					imagingKindLabels,
+					activePatient,
+					activeAppointment: activeAppointment?.id
+						? {
+								id: String(activeAppointment.id),
+								...(typeof activeAppointment.date === "string" ? { date: activeAppointment.date } : {}),
+								...(typeof activeAppointment.patientName === "string" ? { patientName: activeAppointment.patientName } : {}),
+						  }
+						: undefined,
+					onPickFolder: () => void pickBrowserImagingFolder?.(),
+					onCaptureCamera: () => cameraCaptureInputRef.current?.click(),
+					onOpenRvgCapture: () => setActiveModal("rvg_capture"),
+					onStudyUploaded: handleStudyUploaded,
 				}}
 			/>
 			<ImagingViewModals
-				isCbctStudioOpen={activeModal === "cbct_studio"} setIsCbctStudioOpen={(o) => setActiveModal(o ? "cbct_studio" : null)}
-				isCtSelectorOpen={activeModal === "ct_selector"} setIsCtSelectorOpen={(o) => setActiveModal(o ? "ct_selector" : null)}
-				isPanoramicWindowOpen={activeModal === "panoramic"} setIsPanoramicWindowOpen={(o) => setActiveModal(o ? "panoramic" : null)}
-				isRadiologyModuleOpen={activeModal === "radiology_module"} setIsRadiologyModuleOpen={(o) => setActiveModal(o ? "radiology_module" : null)}
-				isExportModalOpen={activeModal === "export"} setIsExportModalOpen={(o) => setActiveModal(o ? "export" : null)}
-				isComparisonOpen={activeModal === "comparison"} setIsComparisonOpen={(o) => setActiveModal(o ? "comparison" : null)}
-				isRvgCaptureOpen={activeModal === "rvg_capture"} setIsRvgCaptureOpen={(o) => setActiveModal(o ? "rvg_capture" : null)}
-				rvgInitialTooth={controller.rvgInitialTooth} onRvgSaveToEmr={controller.handleRvgSaveToEmr}
+				isCbctStudioOpen={activeModal === "cbct_studio"}
+				setIsCbctStudioOpen={(o) => setActiveModal(o ? "cbct_studio" : null)}
+				isCtSelectorOpen={activeModal === "ct_selector"}
+				setIsCtSelectorOpen={(o) => setActiveModal(o ? "ct_selector" : null)}
+				isPanoramicWindowOpen={activeModal === "panoramic"}
+				setIsPanoramicWindowOpen={(o) => setActiveModal(o ? "panoramic" : null)}
+				isRadiologyModuleOpen={activeModal === "radiology_module"}
+				setIsRadiologyModuleOpen={(o) => setActiveModal(o ? "radiology_module" : null)}
+				isExportModalOpen={activeModal === "export"}
+				setIsExportModalOpen={(o) => setActiveModal(o ? "export" : null)}
+				isComparisonOpen={activeModal === "comparison"}
+				setIsComparisonOpen={(o) => setActiveModal(o ? "comparison" : null)}
+				isRvgCaptureOpen={activeModal === "rvg_capture"}
+				setIsRvgCaptureOpen={(o) => setActiveModal(o ? "rvg_capture" : null)}
+				rvgInitialTooth={controller.rvgInitialTooth}
+				onRvgSaveToEmr={controller.handleRvgSaveToEmr}
 				localImageIds={localImageIds}
-				selectedImagingStudy={effectiveSelectedStudy} activePatient={activePatient} activeAppointment={activeAppointment} activeImagingStudies={resolvedStudies} authClinicName={auth?.clinic?.name}
-				effectivePreviewUrl={viewState.effectivePreviewUrl} selectedStudySummary={viewState.selectedStudySummary} setSelectedImagingStudyId={handleSelectStudy} openPopoutStudio={openPopoutStudio}
+				selectedImagingStudy={effectiveSelectedStudy}
+				activePatient={activePatient ?? null}
+				activeAppointment={activeAppointment}
+				activeImagingStudies={resolvedStudies}
+				authClinicName={(auth as { clinic?: { name?: string | null } })?.clinic?.name ?? null}
+				effectivePreviewUrl={viewState.effectivePreviewUrl}
+				selectedStudySummary={viewState.selectedStudySummary}
+				setSelectedImagingStudyId={handleSelectStudy}
+				openPopoutStudio={openPopoutStudio}
 			/>
 		</section>
 	);

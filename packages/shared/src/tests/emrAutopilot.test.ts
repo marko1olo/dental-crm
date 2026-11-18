@@ -15,7 +15,6 @@ import {
 import {
 	generateEmrAutopilotPlan,
 	synthesizeFullOdontogramAutopilot,
-	validateForm043uCompliance,
 } from "../emr/index.js";
 import type { FdiToothRecord } from "../documents/forms043u.js";
 

@@ -1,0 +1,110 @@
+{
+  "role": "radiology_stability_inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-05T23:25:00Z",
+  "defects_resolved": [
+    {
+      "id": "RAD-01",
+      "severity": "SEV-1",
+      "title": "Падение Fastify-сервера при запуске внешних вьюверов",
+      "file": "apps/api/src/routes/imaging/pacsModules/pacsExternalViewerLaunch.ts",
+      "fix": "Регистрация child.on('error') ДО unref() для безопасного перехвата ENOENT и исключения падения Node.js/Fastify, строгая валидация fs.existsSync, fs.statSync().isFile(), очистка невалидных флагов /open и -study для Ez3D-i / Romexis / Carestream",
+      "tests": "apps/api/src/routes/imaging/__tests__/pacsExternalViewerLaunch.test.ts"
+    },
+    {
+      "id": "RAD-02",
+      "severity": "SEV-1",
+      "title": "Синхронный фриз браузера на 8 секунд при распаковке КТ",
+      "file": "apps/web/src/components/radiology/dicomLoader/realDicomZipLoader.ts",
+      "fix": "Полная ликвидация fflate.unzipSync, переход на асинхронный потоковый fflate.Unzip с чанками по 2 МБ и yieldToEventLoop(), фильтрация ненужных файлов без запуска декомпрессии, честный прогресс-бар 0..100%, защита памяти от OOM",
+      "tests": "apps/web/src/components/radiology/__tests__/realDicomZipLoaderAsync.test.ts"
+    },
+    {
+      "id": "RAD-03",
+      "severity": "SEV-1",
+      "title": "Ликвидация заблокированной кнопки disabled={isBilled} и фальшивого снимка по умолчанию в VisiographStudyViewer",
+      "file": "apps/web/src/components/radiology/VisiographStudyViewer.tsx",
+      "fix": "Удален захардкоженный дефолтный снимок '/radiology/sample_rvg_tooth16.jpg', внедрено честное Empty State с дропзоной data-testid='rvg-empty-dropzone' и автоподхватом 16-битных DICOM/TIFF файлов с автоопределением зуба FDI. Кнопка '+ В чек' полностью отвязана от disabled по Мандату 8e. Синхронизирована прямая гидратация activeVisit и протокола приема useVisitStore при привязке снимка к зубу",
+      "tests": "apps/web/src/components/radiology/__tests__/visiographStudyViewer.test.tsx"
+    },
+    {
+      "id": "RAD-04",
+      "severity": "SEV-2",
+      "title": "Устранение disabled={isBilled} в VisiographHotFolderToast",
+      "file": "apps/web/src/components/radiology/VisiographHotFolderToast.tsx",
+      "fix": "Ликвидирован disabled={isBilled} по Мандату 8e. Кнопка '+ Чек' всегда интерактивна, не блокирует врача и мягко оповещает при повторном клике",
+      "tests": "apps/web/src/components/radiology/__tests__/visiographIncomingToast.test.tsx"
+    },
+    {
+      "id": "RAD-05",
+      "severity": "SEV-2",
+      "title": "Удаление инъекции синтетической истории снимков в sensorViewerDefaults для реальных пациентов",
+      "file": "apps/web/src/components/radiology/sensorViewer/state/sensorViewerDefaults.ts",
+      "fix": "Для реальных пациентов возвращается честный текущий снимок или пустой список без вставки фиктивных снимков 'study-prior-1' и 'study-prior-2'. Демо-данные изолированы под guard isDemo",
+      "tests": "apps/web/src/components/radiology/__tests__/sensorStudyViewer.test.tsx"
+    },
+    {
+      "id": "RAD-06",
+      "severity": "SEV-2",
+      "title": "Снос процедурной симуляции отклика сенсора на setTimeout 900мс в VisiographStudioModal",
+      "file": "apps/web/src/components/visiograph/VisiographStudioModal.tsx",
+      "fix": "Удален искусственный таймер setTimeout 900ms. Заменен на честный слушатель window события 'dente-hotfolder-scan'",
+      "tests": "apps/web/src/components/visiograph/__tests__/visiographSSOTSuite.test.tsx"
+    },
+    {
+      "id": "RAD-07",
+      "severity": "SEV-2",
+      "title": "Поддержка честных 16-битных DICOM (.dcm, .dicom) и TIFF файлов в анализаторе снимков",
+      "file": "apps/web/src/components/imaging/visiographAnalyzer/useVisiographAnalyzer/useVisiographAnalyzerScan.ts",
+      "fix": "Расширен фильтр accept в input на '.dcm,.dicom,.tif,.tiff,.png,.jpg,.jpeg,.webp,image/*'. Внедрена автоматическая конвертация бинарных DICOM данных в Data URL через readRadiologyFileForCapture с извлечением номеров зубов по формуле FDI",
+      "tests": "apps/web/src/tests/visiographFindings.test.ts"
+    }
+  ],
+  "proofs": [
+    {
+      "theme": "PC Light",
+      "resolution": "1440x900",
+      "file": "docs/proofs/radiology/radiology_pc_light_1440x900.png",
+      "size_kb": 138.5,
+      "status": "PASS",
+      "autopsy": "Честный пустой стейт без фальшивых зубов, 1 Primary CTA, Segmented Controls без наездов, 0px горизонтального скролла"
+    },
+    {
+      "theme": "PC Dark",
+      "resolution": "1440x900",
+      "file": "docs/proofs/radiology/radiology_pc_dark_1440x900.png",
+      "size_kb": 137.5,
+      "status": "PASS",
+      "autopsy": "WCAG AAA тёмные токены slate-950, 0 слепящих белых пятен, яркий чёткий акцент Teal, 0 disabled кнопок"
+    },
+    {
+      "theme": "Mobile Light",
+      "resolution": "390x844",
+      "file": "docs/proofs/radiology/radiology_mobile_light_390x844.png",
+      "size_kb": 27.2,
+      "status": "PASS",
+      "autopsy": "Apple HIG тач-таргеты >= 44x44px, Natural Thumb Zone в нижней трети, шапка <= 56px, 0px горизонтального скролла"
+    },
+    {
+      "theme": "Mobile Dark",
+      "resolution": "390x844",
+      "file": "docs/proofs/radiology/radiology_mobile_dark_390x844.png",
+      "size_kb": 27.4,
+      "status": "PASS",
+      "autopsy": "Абсолютная контрастность, отсутствие наездов текста и обрезанных слов, честный отклик интерфейса"
+    }
+  ],
+  "verification": {
+    "node_tests": "108/108 passed",
+    "visiograph_findings": "11/11 passed",
+    "visiograph_ssot": "12/12 passed",
+    "visiograph_study_viewer": "7/7 passed",
+    "direct_rvg_modal": "14/14 passed",
+    "dental_2d_viewer": "18/18 passed",
+    "sensor_study_viewer": "11/11 passed",
+    "sensor_study_tools": "10/10 passed",
+    "sensor_study_filmstrip": "21/21 passed",
+    "visiograph_toast": "3/3 passed",
+    "visual_proof_gate": "4/4 states captured and verified via read_file"
+  }
+}

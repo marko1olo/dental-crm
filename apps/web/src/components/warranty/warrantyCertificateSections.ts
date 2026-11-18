@@ -8,6 +8,7 @@ import { getWarrantyPreset, MANDATORY_WARRANTY_CONDITIONS } from "./warrantyPres
 import type { CheckupScheduleItem, WarrantyCalculationResult, WarrantyItem } from "./warrantyEngineTypes.js";
 import type { WarrantyRemediationOrder } from "./warrantyRemediationTypes.js";
 import { addMonthsToDate, formatShortDate } from "./warrantyDateUtils.js";
+import { calculateItemWarrantyTerms } from "./warrantyCalculation.js";
 
 export function renderCertificateItemsRows(items: WarrantyItem[], calculation: WarrantyCalculationResult, issueDate: string): string {
 	if (items.length === 0) {
@@ -26,8 +27,7 @@ export function renderCertificateItemsRows(items: WarrantyItem[], calculation: W
 	return items
 		.map((item, idx) => {
 			const preset = getWarrantyPreset(item.category);
-			const warrantyMonths = item.customWarrantyMonths ?? calculation.adjustedWarrantyMonths;
-			const serviceLifeMonths = item.customServiceLifeMonths ?? calculation.adjustedServiceLifeMonths;
+			const { warrantyMonths, serviceLifeMonths } = calculateItemWarrantyTerms(item, calculation.totalRiskMultiplier);
 			const expDate = addMonthsToDate(issueDate, warrantyMonths);
 			const serviceCode = item.serviceCode || item.serviceCode804n || preset.serviceCode804n || preset.code;
 

@@ -24,19 +24,19 @@ export interface ImagingViewModalsProps {
 	setIsExportModalOpen: (open: boolean) => void;
 	isComparisonOpen: boolean;
 	setIsComparisonOpen: (open: boolean) => void;
-	isRvgCaptureOpen?: boolean;
-	setIsRvgCaptureOpen?: (open: boolean) => void;
-	rvgInitialTooth?: string | null;
-	onRvgSaveToEmr?: (study: ImagingStudy) => void;
-	localImageIds?: string[];
+	isRvgCaptureOpen?: boolean | undefined;
+	setIsRvgCaptureOpen?: ((open: boolean) => void) | undefined;
+	rvgInitialTooth?: string | null | undefined;
+	onRvgSaveToEmr?: ((study: ImagingStudy) => void) | undefined;
+	localImageIds?: string[] | undefined;
 	selectedImagingStudy: ImagingStudy | null;
-	activePatient: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null;
-	activeAppointment: unknown;
+	activePatient: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null | undefined;
+	activeAppointment?: { doctorName?: string | null; [key: string]: unknown } | null | undefined;
 	activeImagingStudies: ImagingStudy[];
-	authClinicName?: string | null;
-	effectivePreviewUrl?: string | null;
-	selectedStudySummary?: string | null;
-	setSelectedImagingStudyId?: (id: string) => void;
+	authClinicName?: string | null | undefined;
+	effectivePreviewUrl?: string | null | undefined;
+	selectedStudySummary?: string | null | undefined;
+	setSelectedImagingStudyId?: ((id: string) => void) | undefined;
 	openPopoutStudio: (studyId?: string, imageIds?: string[]) => void;
 }
 
@@ -61,7 +61,17 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 					patientCardNumber={activePatient?.cardNumber ?? activePatient?.medicalCardNumber}
 					initialToothFdi={rvgInitialTooth ?? undefined}
 					onSaveToEmr={(study) => {
-						onRvgSaveToEmr?.(study);
+						const mapped: ImagingStudy = {
+							id: study.id,
+							...(study.patientId !== undefined ? { patientId: study.patientId } : {}),
+							kind: study.modality === "intraoral_rvg" ? "periapical" : "other",
+							title: study.anatomicalArea ? `Снимок RVG ${study.anatomicalArea}` : "Прицельный снимок RVG",
+							toothCode: study.teethFdi?.[0] ?? null,
+							previewUrl: study.imageUrl ?? null,
+							capturedAt: study.studyDate,
+							status: study.status,
+						};
+						onRvgSaveToEmr?.(mapped);
 						setIsRvgCaptureOpen?.(false);
 					}}
 				/>
@@ -88,9 +98,18 @@ export function ImagingViewModals(props: ImagingViewModalsProps) {
 					patientName={activePatient?.name ?? activePatient?.fullName}
 					cardNumber={activePatient?.cardNumber ?? activePatient?.medicalCardNumber}
 					studies={activeImagingStudies}
-					onSelectStudy={(study) => study?.id && setSelectedImagingStudyId?.(study.id)}
-					onOpenCbctStudio={(study, ids) => openPopoutStudio(study?.id, ids)}
-					onImagesLoaded={(ids, meta) => openPopoutStudio(meta?.id, ids)}
+					onSelectStudy={(study) => {
+						const studyId = (study as { id?: string } | null | undefined)?.id;
+						if (studyId) setSelectedImagingStudyId?.(studyId);
+					}}
+					onOpenCbctStudio={(study, ids) => {
+						const studyId = (study as { id?: string } | null | undefined)?.id;
+						openPopoutStudio(studyId, ids);
+					}}
+					onImagesLoaded={(ids, meta) => {
+						const metaId = (meta as { id?: string } | null | undefined)?.id;
+						openPopoutStudio(metaId, ids);
+					}}
 				/>
 			)}
 

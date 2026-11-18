@@ -8,8 +8,16 @@
 import { Camera } from "lucide-react";
 import React from "react";
 
+export interface PatientStudyItem {
+	id: string;
+	title?: string | undefined;
+	previewUrl?: string | undefined;
+	toothCode?: string | number | undefined;
+	capturedAt?: string | undefined;
+}
+
 export interface MobilePatientScansTabProps {
-	patientStudies: any[];
+	patientStudies: PatientStudyItem[];
 }
 
 export const MobilePatientScansTab: React.FC<MobilePatientScansTabProps> = ({
@@ -32,7 +40,7 @@ export const MobilePatientScansTab: React.FC<MobilePatientScansTabProps> = ({
 				</div>
 			) : (
 				<div className="grid grid-cols-2 gap-2.5">
-					{patientStudies.map((study: any) => (
+					{patientStudies.map((study) => (
 						<div
 							key={study.id}
 							className="p-2.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs flex flex-col gap-1.5"

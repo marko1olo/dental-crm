@@ -94,7 +94,7 @@ export function EmkPerioMeasurements({
 
 		// 1. Обновляем план лечения в форме
 		const currentTreatmentPlan = typeof visitNoteForm?.treatmentPlan === "string" ? visitNoteForm.treatmentPlan : "";
-		updateVisitNoteField(
+		updateVisitNoteField?.(
 			"treatmentPlan",
 			appendClinicalText(currentTreatmentPlan, planText, "\n\n"),
 		);
@@ -109,43 +109,46 @@ export function EmkPerioMeasurements({
 			`Клинический диагноз: Хронический генерализованный пародонтит ${severityLabel} (${diagCode}).`;
 
 		const currentObjectiveStatus = typeof visitNoteForm?.objectiveStatus === "string" ? visitNoteForm.objectiveStatus : "";
-		updateVisitNoteField(
+		updateVisitNoteField?.(
 			"objectiveStatus",
 			appendClinicalText(currentObjectiveStatus, pathologyStatus, "\n\n"),
 		);
 
 		const currentDiag = String(visitNoteForm?.diagnosis || "").trim();
 		if (!currentDiag || currentDiag.includes("Z01.2") || currentDiag.includes("Здоров")) {
-			updateVisitNoteField("diagnosis", `${diagCode} Хронический пародонтит (${teethListStr})`);
+			updateVisitNoteField?.("diagnosis", `${diagCode} Хронический пародонтит (${teethListStr})`);
 		}
 
 		// 3. Добавляем услуги кюретажа и гигиены в смету визита
+		const prophyPrice = prophyService.price ?? 0;
 		useVisitStore.getState().addCompletedService({
 			serviceId: prophyService.code804n, code804n: prophyService.code804n, name: prophyService.name,
-			title: prophyService.name, priceRub: prophyService.price, price: prophyService.price, quantity: 1,
+			title: prophyService.name, priceRub: prophyPrice, price: prophyPrice, quantity: 1,
 		});
 		for (const cur of curettageServices) {
+			const curPrice = cur.price ?? 0;
 			useVisitStore.getState().addCompletedService({
 				serviceId: cur.code804n, code804n: cur.code804n, name: cur.name, title: cur.name,
-				priceRub: cur.price, price: cur.price, quantity: 1, toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,
+				priceRub: curPrice, price: curPrice, quantity: 1, toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,
 			});
 		}
 
 		// 4. Диспатчим событие сметы для кассы и мягкого списания расходников
 		if (typeof window !== "undefined") {
-			const prophyKop = rublesToKopecks(prophyService.price);
+			const prophyKop = rublesToKopecks(prophyPrice);
 			const allServices = [
 				{
 					serviceId: prophyService.code804n, name: prophyService.name, title: prophyService.name,
-					code: prophyService.code804n, code804n: prophyService.code804n, unitPriceRub: prophyService.price,
+					code: prophyService.code804n, code804n: prophyService.code804n, unitPriceRub: prophyPrice,
 					unitPriceKopecks: prophyKop, priceKopecks: prophyKop, amountKopecks: prophyKop,
 					quantity: 1, category: "hygiene", stageKind: "hygiene",
 				},
 				...curettageServices.map((cur) => {
-					const curKop = rublesToKopecks(cur.price);
+					const curPrice = cur.price ?? 0;
+					const curKop = rublesToKopecks(curPrice);
 					return {
 						serviceId: cur.code804n, name: cur.name, title: cur.name,
-						code: cur.code804n, code804n: cur.code804n, unitPriceRub: cur.price,
+						code: cur.code804n, code804n: cur.code804n, unitPriceRub: curPrice,
 						unitPriceKopecks: curKop, priceKopecks: curKop, amountKopecks: curKop,
 						quantity: 1, category: "hygiene", stageKind: "hygiene",
 						toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,

@@ -4,7 +4,7 @@ import type { ImagingStudy } from "./imagingViewTypes";
 
 interface UseImagingDicomwebParams {
 	selectedImagingStudy: ImagingStudy | null;
-	activePatientId?: string | null;
+	activePatientId?: string | null | undefined;
 	authHeaders: Record<string, string>;
 	localImageIds: string[];
 	setLocalImageIds: (ids: string[]) => void;

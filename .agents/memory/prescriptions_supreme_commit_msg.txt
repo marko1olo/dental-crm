@@ -1,0 +1,40 @@
+feat(prescriptions): modular generator decomposition, MNN catalog & 4-state visual proofs
+
+## Контекст и архитектурная цель (Why):
+- Реализация Высшей Конституции THE HAMMER и Мандатов 8b (декомпозиция монолитов <= 120 строк), 8e (Автономия врача), 8y (Ноль фармакологической паранойи: стоматолог лечит зубы, а не заведует аптекой, аллергии выводятся пассивной янтарной плашкой, утверждение и печать в 1 клик), 8am (единый дизайн-код кнопок 36px, ровно 1 Primary CTA) и 8aq (прямое монтирование в боевой UI).
+- Устранение монолитов в генераторе рецептов (prescriptionPresets.ts 438 строк, prescriptionMnnCatalog.ts 383 строки, prescriptionDosageEngine.ts 402 строки, prescriptionPackages.ts 181 строка, prescriptionEngine.ts 219 строк).
+- Ликвидация сырых номеров советских приказов (1094н, 107-1/у, 148-1/у-88) из интерфейса в пользу живого клинического языка («Рецептурный бланк», «Специальный рецепт»).
+- Ликвидация мультяшных raw-эмодзи в разметке в пользу векторных Lucide-иконок (Mandate 8d pt 7).
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/components/prescriptions/generator/:
+  * prescriptionPresets.ts: декомпозирован в фасад (33 строки) и подмодули prescriptionPresetTypes.ts, prescriptionPresetsAntibiotics.ts, prescriptionPresetsNsaids.ts, prescriptionPresetsTopical.ts, prescriptionPresetsSpecial.ts (все <= 105 строк).
+  * prescriptionPackages.ts: декомпозирован в фасад (20 строк) и подмодули prescriptionPackageTypes.ts, prescriptionPackagesCore.ts, prescriptionPackagesExtended.ts, prescriptionPackagesPediatric.ts (все <= 78 строк).
+  * prescriptionMnnCatalog.ts: декомпозирован в фасад (10 строк) и подмодули prescriptionMnnTypes.ts, prescriptionMnnDataSystemic.ts, prescriptionMnnDataTopical.ts, prescriptionMnnData.ts, prescriptionMnnValidator.ts, prescriptionSignaValidator.ts (все <= 119 строк).
+  * prescriptionDosageEngine.ts: декомпозирован в фасад (8 строк) и подмодули prescriptionDosageTypes.ts, prescriptionDosagePediatricRules.ts, prescriptionDosageCalculator.ts, prescriptionDosageValidator.ts (все <= 111 строк). Исправлена педиатрическая формула амоксиклава (300 мг на 20 кг).
+  * prescriptionEngine.ts: декомпозирован в фасад (12 строк) и подмодули prescriptionEngineTypes.ts, prescriptionDocumentGenerator.ts, prescriptionMemoFormatter.ts (все <= 94 строк).
+- apps/web/src/components/prescriptions/DirectPrescriptionLauncher.tsx:
+  * Создан суверенный автономный шлюз (93 строки) для прямого вызова рецептов по хэшу (#prescriptions, #rx) и системным событиям dente:open-prescriptions.
+- apps/web/src/AppShell.tsx:
+  * Смонтирован DirectPrescriptionLauncher в корневое дерево живого UI (Мандат 8aq).
+- apps/web/src/components/prescriptions/:
+  * Заменены сырые эмодзи на Lucide-иконки (AlertTriangle, Check) в PrescriptionAllergyBanner.tsx, PrescriptionAllergyConflictStrip.tsx, PrescriptionCatalogListItem.tsx, prescriptionFastSetsCore.ts.
+- docs/proofs/prescriptions/:
+  * Сняты и верифицированы 6 скриншотов Red Team: PC Light (1440x900), PC Dark (1440x900), Mobile Light (390x844), Mobile Dark (390x844), Mobile Preview Light/Dark.
+  * Синхронизирован README.md с полным реестром доказательств, тестов и лимитов.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Vitest: 7 test files, 81 passed, 0 failed (100% PASS, Exit Code 0).
+- File limit audit: 0 non-test files > 120 lines в components/prescriptions/ (100% PASS по Мандату 8b).
+- Encoding check: npm run check:encoding проверено 19289 файлов, 0 замечаний (Exit Code 0).
+- Red Team Visual Proof: лично отсмотрены скриншоты через read_file:
+  * 01_prescription_modal_pc_light.png (141.3 KB)
+  * 02_prescription_modal_pc_dark.png (140.8 KB)
+  * 03_prescription_modal_mobile_light.png (131.3 KB)
+  * 04_prescription_modal_mobile_dark.png (129.1 KB)
+  * 05_prescription_modal_mobile_preview_light.png (124.1 KB)
+  * 06_prescription_modal_mobile_preview_dark.png (124.3 KB)
+  * Нулевой горизонтальный скролл, сенсорный минимум >= 44x44px, Natural Thumb Zone на смартфонах, ровно 1 Primary CTA.
+
+## Синхронизация документации (Documentation Sync):
+- Обновлен docs/proofs/prescriptions/README.md со сводной матрицей доказательств, метриками декомпозиции и ссылками на скриншоты.

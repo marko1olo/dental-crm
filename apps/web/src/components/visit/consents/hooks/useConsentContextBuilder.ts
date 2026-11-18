@@ -71,13 +71,17 @@ export function useConsentContextBuilder({
 	}, [consentRecords]);
 
 	const consentScopeMismatch = useMemo<ConsentScopeMismatchResult>(() => {
+		const combinedClinicalText = [
+			visitNoteForm?.treatmentPlan || "",
+			visitNoteForm?.diagnosis || "",
+			visitNoteForm?.complaint || "",
+			visitNoteForm?.anamnesis || "",
+			visitNoteForm?.objectiveStatus || "",
+		].filter(Boolean).join(" ");
+
 		return detectConsentScopeMismatch({
 			signedConsentKeys,
-			treatmentPlanText: visitNoteForm?.treatmentPlan,
-			diagnosisText: visitNoteForm?.diagnosis,
-			complaintText: visitNoteForm?.complaint,
-			anamnesisText: visitNoteForm?.anamnesis,
-			objectiveStatusText: visitNoteForm?.objectiveStatus,
+			...(combinedClinicalText ? { treatmentPlanText: combinedClinicalText } : {}),
 			additionalProcedures: selectedToothForMenu
 				? [typeof selectedToothForMenu === "number" ? String(selectedToothForMenu) : (selectedToothForMenu?.code || "")]
 				: [],

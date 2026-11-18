@@ -158,6 +158,12 @@ describe("Patient Treatment Plan - Progress & Financial Calculations", () => {
 		const premiumTier = model.tiers.find((t) => t.tierId === "premium");
 
 		assert.ok(basicTier && standardTier && premiumTier);
+		if (!basicTier || !standardTier || !premiumTier) {
+			assert.fail("All 3 tiers must exist");
+		}
+		if (basicTier.warrantyMonths === undefined || standardTier.warrantyMonths === undefined || premiumTier.warrantyMonths === undefined) {
+			assert.fail("All 3 tiers must have warrantyMonths defined");
+		}
 		assert.ok(basicTier.totalCostRub < standardTier.totalCostRub);
 		assert.ok(standardTier.totalCostRub < premiumTier.totalCostRub);
 

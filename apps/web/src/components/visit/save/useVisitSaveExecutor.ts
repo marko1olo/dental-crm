@@ -21,7 +21,7 @@ interface UseVisitSaveExecutorParams {
 	visitId?: string | null | undefined;
 	patientId?: string | null | undefined;
 	organizationId?: string | null | undefined;
-	activeVisit?: { id: string; patientId?: string; organizationId?: string; revision?: number | null } | null;
+	activeVisit?: { id?: string; patientId?: string; organizationId?: string; revision?: number | null; [key: string]: unknown } | null | undefined;
 	selectedSpecialty?: DentalSpecialty | string | null | undefined;
 	silent?: boolean | undefined;
 	setSaveState: (state: SaveSyncState) => void;

@@ -23,17 +23,12 @@ export interface ShiftDayQueue {
 	arrivedPatients: ArrivedPatientItem[];
 }
 
+import type { VisitCriticalBadge } from "../visitCriticalBadges";
+
 /**
  * Критический медицинский алерт пациента (аллергия, соматика, стоп-факторы)
  */
-export interface PatientCriticalBadge {
-	id: string;
-	testId?: string | undefined;
-	shortLabel?: string | undefined;
-	fullLabel: string;
-	title: string;
-	severity?: "critical" | "warning" | "info" | undefined;
-}
+export type PatientCriticalBadge = VisitCriticalBadge;
 
 /**
  * Структурный контракт пациента для шапки визита

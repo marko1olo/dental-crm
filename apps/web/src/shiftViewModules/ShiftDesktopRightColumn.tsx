@@ -3,7 +3,7 @@ import {
 	DoctorShiftCashSection,
 	ShiftTodoListSection,
 } from "../components/shift";
-import type { ShiftFinancialMode, ShiftRecommendedAction, ShiftViewStats } from "./shiftViewTypes";
+import type { ShiftFinancialMode, ShiftRecommendedAction, ShiftViewStats, ShiftVisitPatient } from "./shiftViewTypes";
 
 export interface ShiftDesktopRightColumnProps {
 	shiftFinancialMode: ShiftFinancialMode;
@@ -16,7 +16,7 @@ export interface ShiftDesktopRightColumnProps {
 	setIsShiftCloseModalOpen: (open: boolean) => void;
 	visibleRecommendedActions?: readonly unknown[] | undefined;
 	recommendedActionPriorityLabels?: Record<string, string> | undefined;
-	patientsById: Map<string, unknown>;
+	patientsById: ReadonlyMap<string, ShiftVisitPatient>;
 	runRecommendedAction: (action: ShiftRecommendedAction | null | undefined) => void;
 	userRole?: string | undefined;
 }

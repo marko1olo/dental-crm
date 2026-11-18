@@ -7,7 +7,11 @@ import { useImagingStudyMetadataAttach } from "./useImagingStudyMetadataAttach";
 
 export function useImagingViewController(
 	props: ImagingViewProps,
-	appLogic: { auth?: unknown; loadDashboard?: () => Promise<unknown> | void; [key: string]: unknown } | null | undefined,
+	appLogic: {
+		auth?: { denteClinicalMutationHeaders?: (headers?: Record<string, string>) => Record<string, string>; [key: string]: unknown } | null | undefined;
+		loadDashboard?: () => Promise<unknown> | void;
+		[key: string]: unknown;
+	} | null | undefined,
 ) {
 	const auth = appLogic?.auth;
 	const { activeAppointment, activePatient, selectedImagingStudy, setSelectedImagingStudyId, setImagingKindFilter } = props;
@@ -78,7 +82,9 @@ export function useImagingViewController(
 		setIsCapturingCameraPhoto(true);
 		try {
 			await processCameraPhotoCapture({
-				file, activePatientId: activePatient.id, activeAppointmentId: activeAppointment?.id,
+				file,
+				activePatientId: activePatient.id,
+				...(activeAppointment?.id ? { activeAppointmentId: String(activeAppointment.id) } : {}),
 				onStudyCreated: (id) => { setSelectedImagingStudyId?.(id); setImagingKindFilter?.("photo"); },
 				onDashboardRefresh: () => { if (appLogic?.loadDashboard) void appLogic.loadDashboard(); },
 			});
@@ -89,7 +95,7 @@ export function useImagingViewController(
 	};
 
 	const { handleAttachTooth, handleAttachVisit } = useImagingStudyMetadataAttach(
-		selectedImagingStudy, auth, props, appLogic,
+		selectedImagingStudy ?? null, auth, props, appLogic,
 	);
 
 	const handleRvgSaveToEmr = useCallback((study: ImagingStudy) => {

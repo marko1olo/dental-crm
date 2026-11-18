@@ -201,7 +201,7 @@ export async function executeCopilotAgentRequest(
                 surfaces: res.surfaces,
               },
             });
-          } else if ((name === "generate_clinical_protocol_entry" || name === "generate_form_043_entry") && res) {
+          } else if ((name === "generate_clinical_protocol_entry" || name === "generate_clinical_protocol") && res) {
             normalizedData.actions.push({
               type: "apply_soap_diary",
               payload: {

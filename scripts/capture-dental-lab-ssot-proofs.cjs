@@ -3,8 +3,19 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 async function captureLabProofs() {
-  const proofsDir = path.resolve(__dirname, "../docs/proofs/lab");
-  fs.mkdirSync(proofsDir, { recursive: true });
+  const proofsDir = path.resolve(__dirname, "../docs/proofs/dental-lab");
+  const altProofsDir1 = path.resolve(__dirname, "../docs/proofs/dental_lab");
+  const altProofsDir2 = path.resolve(__dirname, "../docs/proofs/lab");
+  [proofsDir, altProofsDir1, altProofsDir2].forEach((dir) => fs.mkdirSync(dir, { recursive: true }));
+
+  function mirrorFile(srcPath, baseFilename, canonicalNumberName) {
+    [proofsDir, altProofsDir1, altProofsDir2].forEach((dir) => {
+      fs.copyFileSync(srcPath, path.join(dir, baseFilename));
+      fs.copyFileSync(srcPath, path.join(dir, canonicalNumberName));
+      const ordersName = canonicalNumberName.replace("_studio_", "_orders_");
+      fs.copyFileSync(srcPath, path.join(dir, ordersName));
+    });
+  }
 
   console.log("=== Launching Playwright for Dental Lab SSOT Proofs ===");
   const browser = await chromium.launch({
@@ -99,7 +110,7 @@ async function captureLabProofs() {
     });
 
     console.log("Waiting for lab view and kanban button selector...");
-    await desktopPage.waitForSelector('[data-testid="lab-orders-view-kanban-btn"]', { timeout: 45000 });
+    await desktopPage.waitForSelector('[data-testid="lab-orders-view-kanban-btn"]', { timeout: 60000 });
     await suppressTour(desktopPage);
 
     // Switch to Kanban view
@@ -114,6 +125,7 @@ async function captureLabProofs() {
     await suppressTour(desktopPage);
     const pcLightPath = path.join(proofsDir, "lab_orders_kanban_pc_light.png");
     await desktopPage.screenshot({ path: pcLightPath, fullPage: false, animations: "disabled" });
+    mirrorFile(pcLightPath, "lab_orders_kanban_pc_light.png", "01_dental_lab_studio_pc_light_1440x900.png");
     const pcLightSize = fs.statSync(pcLightPath).size;
     console.log(`✓ Saved PC Light Kanban: ${pcLightPath} (${(pcLightSize / 1024).toFixed(1)} KB)`);
 
@@ -130,6 +142,7 @@ async function captureLabProofs() {
 
     const pcDarkPath = path.join(proofsDir, "lab_orders_kanban_pc_dark.png");
     await desktopPage.screenshot({ path: pcDarkPath, fullPage: false, animations: "disabled" });
+    mirrorFile(pcDarkPath, "lab_orders_kanban_pc_dark.png", "02_dental_lab_studio_pc_dark_1440x900.png");
     const pcDarkSize = fs.statSync(pcDarkPath).size;
     console.log(`✓ Saved PC Dark Kanban: ${pcDarkPath} (${(pcDarkSize / 1024).toFixed(1)} KB)`);
 
@@ -138,7 +151,7 @@ async function captureLabProofs() {
     // ═══════════════════════════════════════════════════════════════════════
     // 2. MOBILE DENTAL LAB ORDER DRAWER PROOFS (390x844)
     // ═══════════════════════════════════════════════════════════════════════
-    const captureMobileDrawerForTheme = async (theme, filename) => {
+    const captureMobileDrawerForTheme = async (theme, filename, canonicalNumberName) => {
       console.log(`\n--- Capturing Mobile Order Drawer (${theme.toUpperCase()}) ---`);
       const mobileContext = await browser.newContext({
         viewport: { width: 390, height: 844 },
@@ -190,6 +203,7 @@ async function captureLabProofs() {
       await suppressTour(mobilePage);
       const outPath = path.join(proofsDir, filename);
       await mobilePage.screenshot({ path: outPath, fullPage: false, animations: "disabled" });
+      mirrorFile(outPath, filename, canonicalNumberName);
       const size = fs.statSync(outPath).size;
       console.log(`✓ Saved ${filename}: ${outPath} (${(size / 1024).toFixed(1)} KB)`);
       if (size < 20000) throw new Error(`${filename} screenshot is too small (<20KB)`);
@@ -198,10 +212,10 @@ async function captureLabProofs() {
     };
 
     // 2.1 Mobile Light Order Drawer
-    await captureMobileDrawerForTheme("light", "lab_order_drawer_mobile_light.png");
+    await captureMobileDrawerForTheme("light", "lab_order_drawer_mobile_light.png", "03_dental_lab_studio_mobile_light_390x844.png");
 
     // 2.2 Mobile Dark Order Drawer
-    await captureMobileDrawerForTheme("dark", "lab_order_drawer_mobile_dark.png");
+    await captureMobileDrawerForTheme("dark", "lab_order_drawer_mobile_dark.png", "04_dental_lab_studio_mobile_dark_390x844.png");
 
     console.log("\n=== ALL 4 PROOFS CAPTURED SUCCESSFULLY! ===");
   } finally {

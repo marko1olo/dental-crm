@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { visitDiaries, visits } from "../../../db/schema.js";
 import {
@@ -29,12 +29,52 @@ export async function executeSaveOrSignDiaryTx(params: {
 	const isSigning = data.status === "signed";
 
 	return await db.transaction(async (tx) => {
-		const [existing] = await tx
-			.select()
-			.from(visitDiaries)
-			.where(and(eq(visitDiaries.visitId, data.visitId), eq(visitDiaries.organizationId, orgId)))
-			.limit(1)
-			.for("update");
+		const targetTooth = data.diagnosisTooth?.trim() || null;
+		const toothCondition = targetTooth
+			? eq(visitDiaries.diagnosisTooth, targetTooth)
+			: isNull(visitDiaries.diagnosisTooth);
+
+		let existing = (
+			await tx
+				.select()
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, data.visitId),
+						eq(visitDiaries.organizationId, orgId),
+						toothCondition,
+					),
+				)
+				.limit(1)
+				.for("update")
+		)[0];
+
+		if (!existing) {
+			const candidateDiaries = await tx
+				.select()
+				.from(visitDiaries)
+				.where(
+					and(
+						eq(visitDiaries.visitId, data.visitId),
+						eq(visitDiaries.organizationId, orgId),
+					),
+				)
+				.for("update");
+
+			if (targetTooth) {
+				const unassignedDraft = candidateDiaries.find((d) => !d.diagnosisTooth && !d.isLocked);
+				if (unassignedDraft) {
+					existing = unassignedDraft;
+				}
+			} else {
+				const lockedDiary = candidateDiaries.find((d) => d.isLocked);
+				if (lockedDiary) {
+					existing = lockedDiary;
+				} else if (candidateDiaries.length === 1) {
+					existing = candidateDiaries[0];
+				}
+			}
+		}
 
 		if (existing?.isLocked) {
 			throw new DiarySigningError("AlreadyLocked", "Дневник подписан и заблокирован.");

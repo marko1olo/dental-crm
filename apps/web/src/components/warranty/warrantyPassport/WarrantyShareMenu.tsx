@@ -32,14 +32,15 @@ export const WarrantyShareMenu: React.FC<WarrantyShareMenuProps> = ({
 	onCopyLink,
 }) => {
 	return (
-		<div className="warranty-share-dropdown-wrap">
+		<div className="warranty-share-dropdown-wrap shrink-0">
 			<button
 				type="button"
-				className="warranty-btn-secondary"
+				className="warranty-btn-secondary dente-btn-secondary whitespace-nowrap"
 				onClick={onToggle}
 				title="Отправить памятку пациенту в WhatsApp или Telegram"
 			>
-				<MessageSquare size={16} /> <span>Памятка в WhatsApp / TG</span>
+				<MessageSquare size={15} />
+				<span className="whitespace-nowrap">Памятка в мессенджер</span>
 			</button>
 			{isOpen && (
 				<div className="warranty-share-popover">

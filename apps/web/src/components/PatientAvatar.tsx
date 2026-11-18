@@ -97,13 +97,13 @@ export function getInitials(fullName?: string): string {
 }
 
 export interface PatientAvatarProps {
-	fullName?: string;
-	size?: number;
-	mode?: "silhouette" | "initials" | "auto";
-	border?: boolean;
-	className?: string;
-	style?: React.CSSProperties;
-	title?: string;
+	fullName?: string | undefined;
+	size?: number | undefined;
+	mode?: "silhouette" | "initials" | "auto" | undefined;
+	border?: boolean | undefined;
+	className?: string | undefined;
+	style?: React.CSSProperties | undefined;
+	title?: string | undefined;
 }
 
 export function PatientAvatar({

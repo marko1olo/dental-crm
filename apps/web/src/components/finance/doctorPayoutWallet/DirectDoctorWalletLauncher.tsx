@@ -8,6 +8,7 @@
 
 import React, { Suspense, useEffect, useState, useCallback } from "react";
 import { X } from "lucide-react";
+import { kopecksToRubles } from "@dental/shared";
 import { DoctorPayoutMobileWallet } from "./DoctorPayoutMobileWallet";
 import { DoctorPayrollStudioModal } from "../../payroll/DoctorPayrollStudioModal";
 import { DEMO_SHOWCASE_REPORT } from "./demoShowcaseData";
@@ -183,7 +184,7 @@ export const DirectDoctorWalletLauncher: React.FC = () => {
 							canEditRates={false}
 							isLoading={isLoading}
 							onRequestPayout={(doc, amountKop) => {
-								showToast(`Запрос на выплату: ${doc.doctorName}, ${(amountKop / 100).toLocaleString("ru-RU")} ₽`, "success");
+								showToast(`Запрос на выплату: ${doc.doctorName}, ${kopecksToRubles(amountKop).toLocaleString("ru-RU")} ₽`, "success");
 							}}
 						/>
 					</Suspense>

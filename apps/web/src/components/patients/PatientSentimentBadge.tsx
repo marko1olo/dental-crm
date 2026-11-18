@@ -5,14 +5,19 @@ import {
 	computePatientSentiment,
 	type PatientSentimentType,
 	type PatientSentimentInfo,
+	type PatientSentimentSubject,
 } from "./patientSentimentComputation";
 
-export { computePatientSentiment, type PatientSentimentType, type PatientSentimentInfo };
+export {
+	computePatientSentiment,
+	type PatientSentimentType,
+	type PatientSentimentInfo,
+	type PatientSentimentSubject,
+};
 
 export interface PatientSentimentBadgeProps {
 	patientId?: string | null | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: flexible patient record
-	patient?: any | null | undefined;
+	patient?: PatientSentimentSubject | null | undefined;
 	ltvRub?: number | null | undefined;
 	complianceScore?: number | null | undefined;
 	sentiment?: PatientSentimentType | null | undefined;

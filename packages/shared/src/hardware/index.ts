@@ -11,3 +11,6 @@ export * from "./hardwareTypes.js";
 export * from "./labelPrinterGenerator.js";
 export * from "./escposGenerator.js";
 export * from "./dentalHardwareBridge.js";
+export * from "./intraoralScannerTypes.js";
+export * from "./intraoralScannerClassifier.js";
+export * from "./exocadProjectGenerator.js";

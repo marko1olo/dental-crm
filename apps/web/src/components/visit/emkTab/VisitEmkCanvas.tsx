@@ -6,6 +6,7 @@ import {
 	buildPatientPreviousVisitsEndoIndex,
 	getUnfinishedEndoSnapshot,
 	transformEndoStage1ToStage2,
+	type ClinicServiceItem,
 	type LastVisitSoapSnapshot,
 } from "../../../lib/clinicalProtocols";
 import { useVisitStore } from "../../../store/visitStore";
@@ -34,11 +35,12 @@ export function VisitEmkCanvas({
 	const visitToothRecordsByCode = useVisitStore((s) => s.visitToothRecordsByCode);
 
 	const endoHistoryIndex = React.useMemo(() => {
+		const rawStoredTeeth = dashboard?.storedTeeth ?? dashboard?.teeth;
 		return buildPatientPreviousVisitsEndoIndex({
 			patientId: activePatient?.id,
-			appointments: dashboard?.appointments,
-			dashboard,
-			storedTeeth: dashboard?.storedTeeth ?? dashboard?.teeth,
+			appointments: Array.isArray(dashboard?.appointments) ? dashboard.appointments : undefined,
+			dashboard: dashboard ?? undefined,
+			storedTeeth: Array.isArray(rawStoredTeeth) ? rawStoredTeeth : undefined,
 			toothStates: visitToothStateByCode,
 			toothRecords: visitToothRecordsByCode,
 			activeVisitId: openVisitId,
@@ -68,11 +70,14 @@ export function VisitEmkCanvas({
 				`Продолжение эндодонтического лечения зуба ${snapshot.toothNumber} (Этап 2)`,
 			);
 
-			const serviceCatalog =
+			const rawCatalog =
 				dashboard?.serviceCatalog ??
 				dashboard?.services ??
 				dashboard?.priceList ??
 				[];
+			const serviceCatalog: readonly ClinicServiceItem[] = Array.isArray(rawCatalog)
+				? (rawCatalog as readonly ClinicServiceItem[])
+				: [];
 
 			const result = transformEndoStage1ToStage2({
 				snapshot,

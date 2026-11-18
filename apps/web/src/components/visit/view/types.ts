@@ -5,6 +5,7 @@ import type { VisitCriticalBadge } from "./visitCriticalBadges";
 import type {
 	VisitAppointmentEntity,
 	VisitDoctorEntity,
+	VisitLoadedTreatmentPlan,
 	VisitNoteFormExtended,
 	VisitPatientEntity,
 	VisitPrimaryActionConfig,
@@ -14,6 +15,7 @@ import type {
 export type {
 	VisitAppointmentEntity,
 	VisitDoctorEntity,
+	VisitLoadedTreatmentPlan,
 	VisitNoteFormExtended,
 	VisitPatientEntity,
 	VisitPrimaryActionConfig,
@@ -21,18 +23,6 @@ export type {
 };
 
 export type VisitSubViewTabType = "odontogram" | "emk" | "diagnostics" | "plan" | "consents" | "anamnesis" | string;
-
-export interface VisitLoadedTreatmentPlan
-	extends Omit<Partial<TreatmentPlanScenario>, "id" | "status" | "createdAt">,
-		Omit<Partial<TreatmentPlanItem>, "id" | "status" | "createdAt"> {
-	id?: string;
-	status?: TreatmentPlanItem["status"] | string;
-	createdAt?: string;
-	plannedAt?: string;
-	date?: string;
-	stages?: unknown[];
-	items?: unknown[];
-}
 
 export interface VisitViewHeaderProps {
 	activePatient: VisitPatientEntity | null | undefined;
@@ -45,7 +35,7 @@ export interface VisitViewHeaderProps {
 	activePeers: readonly SoftPeerPresence[];
 	summaryText: string | null;
 	visitNoteForm?: VisitNoteFormExtended | undefined;
-	updateVisitNoteField?: ((field: string, value: string) => void) | undefined;
+	updateVisitNoteField?: ((field: string, value: unknown) => void) | undefined;
 	handleApplySomaticNormQuick: () => void;
 	handlePrintClinicalDiaryFast?: (() => void) | undefined;
 	handlePrintForm043uFast: () => void;

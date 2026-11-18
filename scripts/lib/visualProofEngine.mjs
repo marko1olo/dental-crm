@@ -265,7 +265,7 @@ export async function navigateToLiveRoute(page, targetUrl, options = {}) {
 	for (let attempt = 1; attempt <= maxRetries && !succeeded; attempt++) {
 		try {
 			await page.goto(targetUrl, {
-				waitUntil: "domcontentloaded",
+				waitUntil: "commit",
 				timeout,
 			});
 

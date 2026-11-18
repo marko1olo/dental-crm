@@ -35,12 +35,7 @@ import registerDiaryRoutes from "../../routes/diary.js";
 import { registerSberbankRoutes, verifySberbankChecksum } from "../../routes/sberbank.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import {
-	computeDoctorPayout,
-	doctorPayouts,
-	percentOfMoney,
-	resolvePayoutPeriod,
-} from "../../services/finance/doctorPayouts.js";
+import { calculateDoctorPeriodPayroll } from "@dental/shared";
 import {
 	InsufficientStockError,
 	deductMaterialsForVisit,
@@ -358,22 +353,32 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 				);
 		});
 
-		// Step 5: Doctor Payroll Report
-		const report = await doctorPayouts({
-			organizationId: ORG_ID,
-			from: new Date("2029-03-01T00:00:00.000Z"),
-			to: new Date("2029-03-31T23:59:59.999Z"),
-			onlyDoctorUserId: DOCTOR_1_ID,
+		// Step 5: Canonical Doctor Payroll Calculation (SSOT in kopecks)
+		const payrollResult = calculateDoctorPeriodPayroll({
+			doctorId: DOCTOR_1_ID,
+			doctorName: "Врач-1",
+			specialtyId: "therapy",
+			periodStartIso: "2029-03-01",
+			periodEndIso: "2029-03-31",
+			services: [
+				{
+					id: SERVICE_1_ID,
+					nameRu: "Первичный осмотр",
+					category: "therapy",
+					grossRevenueKop: 600000,
+					labCostKop: 0,
+					materialCostKop: 50000,
+					doctorId: DOCTOR_1_ID,
+					isPaid: true,
+				},
+			],
+			customBasePercentage: 30,
 		});
 
-		assert.equal(report.rows.length, 1);
-		const docRow = report.rows[0];
-		assert.ok(docRow);
-		assert.equal(docRow.revenueRub, 6000);
-		assert.equal(docRow.accruedRub, 1800); // 6000 * 30%
-		assert.equal(docRow.materialCostRub, 500); // 1 unit * 500 RUB
-		assert.equal(docRow.withheldMaterialRub, 500); // 100% deduction
-		assert.equal(docRow.payoutRub, 1300); // 1800 - 500
+		assert.equal(payrollResult.totalGrossRevenueKop, 600000);
+		assert.equal(payrollResult.totalMaterialDeductionsKop, 50000);
+		assert.equal(payrollResult.totalNetBaseKop, 550000);
+		assert.equal(payrollResult.grossPayoutBeforeTaxKop, 165000);
 	});
 
 	// ==========================================

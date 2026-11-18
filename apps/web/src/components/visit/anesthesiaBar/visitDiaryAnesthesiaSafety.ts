@@ -43,7 +43,7 @@ export function extractPatientAnesthesiaProfile(
 			p.anamnesis.toLowerCase().includes(n)
 		)
 			return true;
-		return Boolean(diary.comorbidities?.toLowerCase().includes(n));
+		return typeof diary.comorbidities === "string" && diary.comorbidities.toLowerCase().includes(n);
 	};
 
 	const hasLidocaineAllergy = Boolean(

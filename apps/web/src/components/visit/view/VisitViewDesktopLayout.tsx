@@ -31,10 +31,23 @@ export function VisitViewDesktopLayout({ s }: VisitViewDesktopLayoutProps) {
 					toothNumber: toothNum,
 					state: (rawState as ToothState) || "Healthy",
 				}}
-				patient={s.activePatient}
-				doctorName={s.activeDoctor?.name || "Лечащий врач-стоматолог"}
-				onUpdateTooth={(num, updatedState) => {
-					s.setToothState(String(num), updatedState);
+				patient={
+					s.activePatient
+						? {
+								id: s.activePatient.id,
+								fullName: s.activePatient.fullName,
+								ageYears: typeof s.patientAge === "number" ? s.patientAge : undefined,
+						  }
+						: undefined
+				}
+				doctorName={s.activeDoctor?.name || s.activeDoctor?.fullName || "Лечащий врач-стоматолог"}
+				onUpdateTooth={(num, updates) => {
+					if (updates?.state) {
+						s.setToothState(String(num), String(updates.state));
+					}
+				}}
+				onUpdateToothStatus={(num, state) => {
+					s.setToothState(String(num), state);
 				}}
 				onInsertToProtocol={(text) => {
 					s.appendToEMKField("objective", text);

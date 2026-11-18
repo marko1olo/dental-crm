@@ -20,7 +20,7 @@ export function EmkDiaryProtocolSection({
 	const applyFormatting = (prefix: string, suffix: string = "") => {
 		const curr = visitNoteForm?.treatmentPlan || "";
 		if (!curr) return;
-		updateVisitNoteField("treatmentPlan", `${prefix}${curr}${suffix}`);
+		updateVisitNoteField?.("treatmentPlan", `${prefix}${curr}${suffix}`);
 	};
 
 	return (
@@ -40,8 +40,8 @@ export function EmkDiaryProtocolSection({
 				<DebouncedEmkTextarea
 					fieldKey="diagnosis"
 					label="Диагноз МКБ-10"
-					value={visitNoteForm?.diagnosis || ""}
-					onCommit={updateVisitNoteField}
+					value={String(visitNoteForm?.diagnosis || "")}
+					onCommit={(key, val) => updateVisitNoteField?.(key, val)}
 					placeholder="Код МКБ-10 и клинический развернутый диагноз (например, K02.1 Кариес дентина или K04.0 Пульпит)..."
 					className="w-full min-h-[60px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
@@ -49,28 +49,28 @@ export function EmkDiaryProtocolSection({
 				<div className="flex flex-wrap gap-1.5 text-[11px] pt-1">
 					<button
 						type="button"
-						onClick={() => updateVisitNoteField("diagnosis", "K02.1 Кариес дентина")}
+						onClick={() => updateVisitNoteField?.("diagnosis", "K02.1 Кариес дентина")}
 						className="dente-btn-pill text-[10px] py-0.5 px-2"
 					>
 						K02.1 Кариес дентина
 					</button>
 					<button
 						type="button"
-						onClick={() => updateVisitNoteField("diagnosis", "K04.0 Пульпит")}
+						onClick={() => updateVisitNoteField?.("diagnosis", "K04.0 Пульпит")}
 						className="dente-btn-pill text-[10px] py-0.5 px-2"
 					>
 						K04.0 Пульпит
 					</button>
 					<button
 						type="button"
-						onClick={() => updateVisitNoteField("diagnosis", "K04.5 Хронический периодонтит")}
+						onClick={() => updateVisitNoteField?.("diagnosis", "K04.5 Хронический периодонтит")}
 						className="dente-btn-pill text-[10px] py-0.5 px-2"
 					>
 						K04.5 Хронический периодонтит
 					</button>
 					<button
 						type="button"
-						onClick={() => updateVisitNoteField("diagnosis", "K05.1 Хронический катаральный гингивит")}
+						onClick={() => updateVisitNoteField?.("diagnosis", "K05.1 Хронический катаральный гингивит")}
 						className="dente-btn-pill text-[10px] py-0.5 px-2"
 					>
 						K05.1 Хронический катаральный гингивит
@@ -128,7 +128,7 @@ export function EmkDiaryProtocolSection({
 						</button>
 						<button
 							type="button"
-							onClick={() => updateVisitNoteField("treatmentPlan", "")}
+							onClick={() => updateVisitNoteField?.("treatmentPlan", "")}
 							className="p-1 rounded text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors"
 							title="Очистить"
 						>
@@ -140,8 +140,8 @@ export function EmkDiaryProtocolSection({
 				<DebouncedEmkTextarea
 					fieldKey="treatmentPlan"
 					label="Протокол лечения"
-					value={visitNoteForm?.treatmentPlan || ""}
-					onCommit={updateVisitNoteField}
+					value={String(visitNoteForm?.treatmentPlan || "")}
+					onCommit={(key, val) => updateVisitNoteField?.(key, val)}
 					placeholder="Подробный протокол вмешательства: препарирование, медикаментозная обработка, пломбировочный материал, полировка, рекомендации..."
 					className="w-full min-h-[130px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
@@ -162,8 +162,8 @@ export function EmkDiaryProtocolSection({
 				<DebouncedEmkTextarea
 					fieldKey="recommendations"
 					label="Рекомендации"
-					value={visitNoteForm?.recommendations || ""}
-					onCommit={updateVisitNoteField}
+					value={String(visitNoteForm?.recommendations || "")}
+					onCommit={(key, val) => updateVisitNoteField?.(key, val)}
 					placeholder="Назначения врача, режим питания, медикаментозная терапия, дата контрольного визита..."
 					className="w-full min-h-[75px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>

@@ -10,11 +10,18 @@ export interface PatientHeaderAppointment {
 	status?: string | null | undefined;
 }
 
-export interface PatientHeaderRecord extends Partial<Patient> {
+export interface PatientHeaderRecord {
 	id: string;
 	fullName: string;
 	phone?: string | null | undefined;
 	birthDate?: string | null | undefined;
+	birthDateIso?: string | null | undefined;
+	gender?: "other" | "male" | "female" | null | undefined;
+	status?: "active" | "archived" | undefined;
+	notes?: string | null | undefined;
+	organizationId?: string | undefined;
+	balanceRub?: number | undefined;
+	balanceKopecks?: number | bigint | undefined;
 	hasSignedContract?: boolean | undefined;
 	contractStatus?: "issued" | "draft" | "none" | string | undefined;
 	hasSignedConsent?: boolean | undefined;
@@ -26,6 +33,7 @@ export interface PatientHeaderRecord extends Partial<Patient> {
 		allergies?: string | null | undefined;
 		clinicalSafetyProfile?: Record<string, unknown> | null | undefined;
 	} | null | undefined;
+	[key: string]: unknown;
 }
 
 export interface PatientHeaderCardProps {

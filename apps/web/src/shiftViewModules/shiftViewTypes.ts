@@ -1,4 +1,11 @@
 import type { Dashboard, StaffRole } from "@dental/shared";
+import type {
+	ShiftVisitAppointment,
+	ShiftVisitDoctor,
+	ShiftVisitPatient,
+} from "../components/shift/visitsKpi/visitsKpiTypes";
+
+export type { ShiftVisitAppointment, ShiftVisitDoctor, ShiftVisitPatient };
 
 export interface ShiftViewStats {
 	readonly totalAppointments: number;
@@ -109,14 +116,14 @@ export interface ShiftMetricsHeaderProps {
 }
 
 export interface ShiftVisitsQueueProps {
-	todayAppointments: readonly unknown[];
-	inChairAppointments: readonly unknown[];
-	waitingAppointments: readonly unknown[];
-	awaitingPaymentAppointments: readonly unknown[];
-	patientsById: Map<string, unknown>;
-	staffById: Map<string, unknown>;
-	currentPatient: unknown;
-	inChairAppointment: unknown;
+	todayAppointments: readonly ShiftVisitAppointment[];
+	inChairAppointments: readonly ShiftVisitAppointment[];
+	waitingAppointments: readonly ShiftVisitAppointment[];
+	awaitingPaymentAppointments: readonly ShiftVisitAppointment[];
+	patientsById: ReadonlyMap<string, ShiftVisitPatient>;
+	staffById: ReadonlyMap<string, ShiftVisitDoctor>;
+	currentPatient?: ShiftVisitPatient | null | undefined;
+	inChairAppointment?: ShiftVisitAppointment | null | undefined;
 	manyDoctors: boolean;
 	onSelectPatient: (patientId: string) => void;
 	onOpenAppointmentEmk: (patientId: string) => void;

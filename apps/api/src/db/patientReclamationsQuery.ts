@@ -26,6 +26,9 @@ export type PatientReclamation = {
 	id: string;
 	patientId: string;
 	doctorId: string | null;
+	toothNumber: number | null;
+	warrantyCertificateId: string | null;
+	defectType: string | null;
 	complicationDetails: string;
 	proposedAction: string | null;
 	status: ReclamationStatus;
@@ -47,6 +50,9 @@ function toReclamation(
 		id: row.id,
 		patientId: row.patientId,
 		doctorId: row.doctorId ?? null,
+		toothNumber: row.toothNumber ?? null,
+		warrantyCertificateId: row.warrantyCertificateId ?? null,
+		defectType: row.defectType ?? null,
 		complicationDetails: row.complicationDetails,
 		proposedAction: row.proposedAction ?? null,
 		// База ограничена CHECK-ом на два значения, но приведение всё равно делаем
@@ -83,6 +89,9 @@ export async function createPatientReclamationInDb(
 		complicationDetails: string;
 		proposedAction: string | null;
 		doctorId: string | null;
+		toothNumber?: number | null | undefined;
+		warrantyCertificateId?: string | null | undefined;
+		defectType?: string | null | undefined;
 	},
 ): Promise<PatientReclamation> {
 	// Ownership assert: patient must belong to caller org (route also checks; helper is shared).
@@ -124,6 +133,9 @@ export async function createPatientReclamationInDb(
 			organizationId: orgId,
 			patientId,
 			doctorId: input.doctorId,
+			toothNumber: input.toothNumber ?? null,
+			warrantyCertificateId: input.warrantyCertificateId ?? null,
+			defectType: input.defectType ?? null,
 			complicationDetails: input.complicationDetails,
 			proposedAction: input.proposedAction,
 			status: "under_review",

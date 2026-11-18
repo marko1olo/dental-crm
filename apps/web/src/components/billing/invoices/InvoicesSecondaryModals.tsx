@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { rubToKopecks } from "@dental/shared";
+import { rubToKopecks, kopecksToRubles } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 import { CashReceiptPrintModal } from "../../finance/CashReceiptPrintModal.js";
@@ -118,7 +118,7 @@ export const InvoicesSecondaryModals: React.FC<InvoicesSecondaryModalsProps> = (
 					patientPhone={bankInstallmentInvoice.patientPhone || ""} clinicName={clinicLegalName}
 					onInstallmentApproved={(appr) => {
 						setBankInstallmentInvoice(null);
-						showToast(`Рассрочка одобрена! Сумма: ${(appr.approvedAmountKopecks / 100).toLocaleString("ru-RU")} ₽ (${appr.monthlyPaymentRub.toLocaleString("ru-RU")} ₽/мес)`, "success");
+						showToast(`Рассрочка одобрена! Сумма: ${kopecksToRubles(appr.approvedAmountKopecks).toLocaleString("ru-RU")} ₽ (${appr.monthlyPaymentRub.toLocaleString("ru-RU")} ₽/мес)`, "success");
 					}}
 				/>
 			)}

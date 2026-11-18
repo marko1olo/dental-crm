@@ -49,7 +49,7 @@ describe("7-Gates Clinical Triage Engine (evaluateClinicalTriage)", () => {
 		assert.equal(toothMutation.intentCategory, "crm_mutation");
 		assert.equal(toothMutation.detectedToothNumber, 46);
 		assert.ok(toothMutation.suggestedTools.includes("update_tooth_status"));
-		assert.ok(toothMutation.suggestedTools.includes("generate_form_043_entry"));
+		assert.ok(toothMutation.suggestedTools.includes("generate_clinical_protocol_entry"));
 
 		const appointmentMutation = evaluateClinicalTriage("Запиши пациента на завтра в 15:00");
 		assert.equal(appointmentMutation.intentCategory, "crm_mutation");

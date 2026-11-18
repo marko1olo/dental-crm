@@ -1,5 +1,6 @@
 import React from "react";
 import { AlertCircle, Check } from "lucide-react";
+import { formatKopecksToRub } from "@dental/shared";
 import type {
   ChairsideToothProposal,
   ChairsideServiceProposal,
@@ -13,6 +14,7 @@ export interface ChairsideHUDProposalsProps {
   toothProposal: ChairsideToothProposal | null;
   servicesProposal: ChairsideServiceProposal[];
   servicesTotalPrice: number;
+  servicesTotalKopecks?: number | undefined;
   soapProposal: ChairsideSoapProposal;
   anestheticProposal: ChairsideAnestheticProposal | null;
   consentProposal?: ChairsideConsentProposal | null | undefined;
@@ -31,6 +33,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
   toothProposal,
   servicesProposal,
   servicesTotalPrice,
+  servicesTotalKopecks,
   soapProposal,
   anestheticProposal,
   consentProposal,
@@ -133,14 +136,14 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
         <div className="chairside-hud-card chairside-card-services" data-testid="chairside-card-services">
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-semibold text-xs text-[var(--ink)]">Смета услуг ({servicesProposal.length})</span>
-            <span className="text-xs font-bold text-[var(--teal)]">{servicesTotalPrice} ₽</span>
+            <span className="text-xs font-bold text-[var(--teal)] font-mono">{formatKopecksToRub(servicesTotalKopecks ?? Math.round(servicesTotalPrice * 100))}</span>
           </div>
           <ul className="text-xs space-y-1 text-[var(--muted)] mb-2">
             {servicesProposal.map((s) => (
               <li key={s.id} className="flex justify-between items-start py-0.5 gap-2">
-                <span className="shrink-0 font-mono text-[11px] text-[var(--muted)]">{s.serviceCode || s.code804n}</span>
+                <span className="shrink-0 font-mono text-[11px] text-[var(--muted)]">{s.serviceCode || s.regulatoryCode || s.code804n}</span>
                 <span className="flex-1 text-xs text-[var(--ink)] break-words leading-tight">{s.title}</span>
-                <span className="shrink-0 font-medium whitespace-nowrap">{s.priceRub} ₽</span>
+                <span className="shrink-0 font-medium whitespace-nowrap font-mono">{formatKopecksToRub(s.priceKopecks ?? Math.round((s.priceRub ?? 0) * 100))}</span>
               </li>
             ))}
           </ul>

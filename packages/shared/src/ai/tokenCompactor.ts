@@ -273,6 +273,8 @@ function humanizeToolName(name: string): string {
 		case "calculate_anesthesia":
 		case "calculateAnesthesia":
 			return "Расчет безопасной анестезии";
+		case "generate_clinical_protocol_entry":
+		case "generate_clinical_protocol":
 		case "generate_form_043":
 		case "generateForm043":
 			return "Медицинская карта приёма (дневник визита)";

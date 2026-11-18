@@ -4,7 +4,7 @@ import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PatientCardModal } from "../PatientCardModal";
 import { PatientGeneralInfoTab } from "../tabs/PatientGeneralInfoTab";
-import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../../documents/DocumentsStudioModal";
 
 describe("PatientCardModal & TaxDeduction Autonomy (FNS Form KND 1151156)", () => {
 	it("renders 1-click 'Справка ФНС (1151156)' button in PatientCardModal header", () => {

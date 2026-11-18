@@ -71,6 +71,7 @@ export interface ClinicProfileDraft {
 	medicalLicenseNumber?: string;
 	medicalLicenseIssuedAt?: string;
 	medicalLicenseIssuer?: string;
+	signatoryName?: string;
 }
 
 export interface OnboardingWizardModalProps {

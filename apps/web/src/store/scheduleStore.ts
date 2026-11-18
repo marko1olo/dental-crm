@@ -1,7 +1,7 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import { create } from "zustand";
 import { useAppStore } from "./appStore";
-import type {
+export type {
 	AppointmentScheduleDraft,
 	AppointmentScheduleSaveState,
 	StaffScheduleDraft,

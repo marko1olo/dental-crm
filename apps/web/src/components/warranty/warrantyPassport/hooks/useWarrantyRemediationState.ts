@@ -19,7 +19,7 @@ export function useWarrantyRemediationState({
 	certificateId, patient, doctorId, doctorName, doctorSpecialty, clinicName, items, onRemediationCreated,
 }: UseWarrantyRemediationParams) {
 	const [remediations, setRemediations] = useState<WarrantyRemediationOrder[]>([]);
-	const [selectedRemediationTooth, setSelectedRemediationTooth] = useState("1.6");
+	const [selectedRemediationTooth, setSelectedRemediationTooth] = useState(items[0]?.toothNumber ?? "");
 	const [selectedDefectType, setSelectedDefectType] = useState<WarrantyDefectType>("filling_loss");
 	const [customRemediationFinding, setCustomRemediationFinding] = useState("");
 	const [customRemediationAction, setCustomRemediationAction] = useState("");
@@ -37,7 +37,7 @@ export function useWarrantyRemediationState({
 	};
 
 	const handleCreateRemediation = async () => {
-		const tooth = selectedRemediationTooth || (items[0]?.toothNumber ?? "1.6");
+		const tooth = selectedRemediationTooth || (items[0]?.toothNumber ?? "—");
 		const matchedItem = items.find((it) => it.toothNumber === tooth);
 		const order = createWarrantyRemediationOrder({
 			certificateId, toothNumber: tooth, originalWorkTitle: matchedItem?.clinicalWorkTitle || "Ранее выполненная работа",
@@ -56,18 +56,36 @@ export function useWarrantyRemediationState({
 
 		if (patient?.id) {
 			try {
-				const effectiveDoctorId = doctorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doctorId) ? doctorId : undefined;
-				if (effectiveDoctorId) {
-					await fetch(`/api/patients/${patient.id}/reclamations`, {
-						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-						body: JSON.stringify({
-							complicationDetails: `Гарантийный случай: ${order.defectTitle} (Зуб ${tooth}). ${customRemediationFinding || ""}${ztlNote}`,
-							proposedAction: `Гарантийная переделка (0 ₽): ${customRemediationAction || ""}`,
-							doctorId: effectiveDoctorId,
-						}),
-					});
+				let effectiveDoctorId =
+					doctorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doctorId)
+						? doctorId
+						: undefined;
+
+				if (!effectiveDoctorId && typeof window !== "undefined") {
+					const stored =
+						sessionStorage.getItem("dente_staff_id") ||
+						localStorage.getItem("dente_active_doctor_id") ||
+						sessionStorage.getItem("dente_user_id") ||
+						localStorage.getItem("dente_user_id");
+					if (stored && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stored)) {
+						effectiveDoctorId = stored;
+					}
 				}
+
+				const numericTooth = Number.parseInt(tooth.replace(/\D/g, ""), 10);
+
+				await fetch(`/api/patients/${patient.id}/reclamations`, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						complicationDetails: `Гарантийный случай: ${order.defectTitle} (Зуб ${tooth}). ${customRemediationFinding || ""}${ztlNote}`,
+						proposedAction: `Гарантийная переделка (0 ₽): ${customRemediationAction || ""}`,
+						...(effectiveDoctorId ? { doctorId: effectiveDoctorId } : {}),
+						toothNumber: Number.isFinite(numericTooth) ? numericTooth : undefined,
+						warrantyCertificateId: certificateId,
+						defectType: selectedDefectType,
+					}),
+				});
 			} catch (err) {
 				console.error("Non-blocking: Failed to persist warranty reclamation to backend:", err);
 			}

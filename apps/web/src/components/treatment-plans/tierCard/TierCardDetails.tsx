@@ -41,7 +41,7 @@ export const TierCardDetails: React.FC<TierCardDetailsProps> = ({ tier }) => {
 
 			{tier.materialsHeadline && (
 				<div className="p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))]/60 text-[11px] text-[var(--ink,#0f172a)] leading-snug">
-					<div className="text-[10px] font-bold text-[var(--teal,var(--brand-primary))] uppercase tracking-wider mb-0.5">
+					<div className="text-[10px] font-semibold text-[var(--teal,var(--brand-primary))] mb-0.5">
 						Клинические материалы
 					</div>
 					<div className="font-semibold">{tier.materialsHeadline}</div>

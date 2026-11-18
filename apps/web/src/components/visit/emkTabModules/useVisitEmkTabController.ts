@@ -55,7 +55,7 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 			const scheduleLine = `Повторный приём (${label}): ориентировочно ${dateStr}`;
 			updateVisitNoteField(
 				"recommendations",
-				appendClinicalText(visitNoteForm?.recommendations || "", scheduleLine, "\n"),
+				appendClinicalText(String(visitNoteForm?.recommendations || ""), scheduleLine, "\n"),
 			);
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(
@@ -225,15 +225,15 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 
 			updateVisitNoteField(
 				"complaint",
-				appendClinicalText(visitNoteForm?.complaint || "", `${toothPrefix}${preset.complaint || ""}`, "\n"),
+				appendClinicalText(String(visitNoteForm?.complaint || ""), `${toothPrefix}${preset.complaint || ""}`, "\n"),
 			);
 			updateVisitNoteField(
 				"anamnesis",
-				appendClinicalText(visitNoteForm?.anamnesis || "", preset.anamnesis || "", "\n"),
+				appendClinicalText(String(visitNoteForm?.anamnesis || ""), preset.anamnesis || "", "\n"),
 			);
 			updateVisitNoteField(
 				"objectiveStatus",
-				appendClinicalText(visitNoteForm?.objectiveStatus || "", `${toothPrefix}${statusLocalis}`, "\n"),
+				appendClinicalText(String(visitNoteForm?.objectiveStatus || ""), `${toothPrefix}${statusLocalis}`, "\n"),
 			);
 			updateVisitNoteField(
 				"diagnosis",
@@ -241,11 +241,11 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 			);
 			updateVisitNoteField(
 				"treatmentPlan",
-				appendClinicalText(visitNoteForm?.treatmentPlan || "", `${toothPrefix}${treatmentText}`, "\n"),
+				appendClinicalText(String(visitNoteForm?.treatmentPlan || ""), `${toothPrefix}${treatmentText}`, "\n"),
 			);
 			updateVisitNoteField(
 				"recommendations",
-				appendClinicalText(visitNoteForm?.recommendations || "", recommendationsText, "\n"),
+				appendClinicalText(String(visitNoteForm?.recommendations || ""), recommendationsText, "\n"),
 			);
 
 			if (typeof window !== "undefined") {

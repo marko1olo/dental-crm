@@ -1,13 +1,35 @@
 import type { StaffUnlockMember } from "../staffUnlockState";
 
 export type StaffUser = StaffUnlockMember & {
-	fullName?: string;
-	role?: string;
-	organizationId?: string;
-	email?: string;
-	phone?: string;
+	fullName?: string | undefined;
+	role?: string | undefined;
+	organizationId?: string | undefined;
+	email?: string | undefined;
+	phone?: string | undefined;
 	[key: string]: unknown;
 };
+
+export function demoStaffToStaffUser(staff: {
+	id: string;
+	organizationId?: string | undefined;
+	fullName?: string | undefined;
+	role?: string | undefined;
+	email?: string | undefined;
+	phone?: string | undefined;
+	active?: boolean | undefined;
+	color?: string | undefined;
+}): StaffUser {
+	return {
+		id: staff.id,
+		organizationId: staff.organizationId,
+		fullName: staff.fullName,
+		role: staff.role,
+		email: staff.email,
+		phone: staff.phone,
+		active: staff.active,
+		color: staff.color,
+	};
+}
 
 export interface StaffPinPadProps {
 	/**

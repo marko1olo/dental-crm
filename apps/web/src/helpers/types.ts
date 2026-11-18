@@ -345,19 +345,7 @@ export type PatientAdministrativeProfileSaveState =
 
 export type StaffScheduleSaveState = "idle" | "saving" | "saved" | "error";
 
-export type AppointmentScheduleDraft = {
-	patientId?: string | null;
-	doctorUserId: string;
-	assistantUserId?: string | null;
-	chairId: string;
-	status: Appointment["status"];
-	startsAt: string;
-	endsAt: string;
-	reason?: string;
-	comment?: string;
-	notes?: string;
-	cancellationReason?: string;
-};
+export type { AppointmentScheduleDraft } from "../utils/draftDefaults";
 
 export type AppointmentScheduleSaveState =
 	| "idle"

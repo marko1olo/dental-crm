@@ -33,7 +33,16 @@ export function VisitHeaderActionsToolbar(props: VisitViewHeaderProps) {
 		<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 			<div className="sr-only" aria-hidden="true">
 				<SomaticSafetyAlertWidget
-					patient={activePatient}
+					patient={
+						activePatient
+							? {
+									...activePatient,
+									allergies: Array.isArray(activePatient.allergies)
+										? activePatient.allergies.join(", ")
+										: (activePatient.allergies ?? null),
+								}
+							: null
+					}
 					variant="header"
 					hideNormButton={true}
 					onApplyNorm={handleApplySomaticNormQuick}

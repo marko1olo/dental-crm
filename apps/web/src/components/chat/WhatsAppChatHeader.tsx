@@ -18,7 +18,7 @@ export interface WhatsAppChatHeaderProps {
 	initials: string;
 	avatarColors: { bg: string; text: string; border: string };
 	isPatient: boolean;
-	selectedChannel: "whatsapp" | "telegram" | "sms";
+	selectedChannel: "whatsapp" | "telegram" | "max" | "sms";
 	isLoading: boolean;
 	isSearchOpen: boolean;
 	searchQuery: string;
@@ -122,7 +122,9 @@ export function WhatsAppChatHeader({
 										? "bg-emerald-400"
 										: selectedChannel === "telegram"
 											? "bg-sky-400"
-											: "bg-violet-400"
+											: selectedChannel === "max"
+												? "bg-amber-400"
+												: "bg-violet-400"
 								}`}
 							/>
 							<span
@@ -131,14 +133,18 @@ export function WhatsAppChatHeader({
 										? "text-emerald-400"
 										: selectedChannel === "telegram"
 											? "text-sky-400"
-											: "text-violet-400"
+											: selectedChannel === "max"
+												? "text-amber-400"
+												: "text-violet-400"
 								}`}
 							>
 								{selectedChannel === "whatsapp"
 									? "WhatsApp Онлайн"
 									: selectedChannel === "telegram"
 										? "Telegram Бот"
-										: "SMS Шлюз"}
+										: selectedChannel === "max"
+											? "MAX (VK Max)"
+											: "SMS Шлюз"}
 							</span>
 						</div>
 					</div>

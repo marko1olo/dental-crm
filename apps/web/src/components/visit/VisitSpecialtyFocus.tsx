@@ -1,5 +1,6 @@
 import React from "react";
 import type { VisitDoctorEntity, VisitPatientEntity } from "./view/VisitViewProps";
+import type { ChairsideDoctorEntity, ChairsidePatientEntity } from "./mobileChairside/types";
 import { useSpecialtyFocusState } from "./specialtyFocusModules/useSpecialtyFocusState";
 import { SpecialtyFocusBar } from "./specialtyFocusModules/SpecialtyFocusBar";
 import { SpecialtyProtocolDrawer } from "./specialtyFocusModules/SpecialtyProtocolDrawer";
@@ -10,8 +11,8 @@ export interface VisitSpecialtyFocusProps {
 	onToggleDrawer?: (open: boolean) => void;
 	renderBarOnly?: boolean;
 	renderDrawerOnly?: boolean;
-	activePatient?: VisitPatientEntity | null | undefined;
-	activeDoctor?: VisitDoctorEntity | null | undefined;
+	activePatient?: VisitPatientEntity | ChairsidePatientEntity | { id?: string; fullName?: string; birthDate?: string | Date | null | undefined; age?: number | string | undefined } | null | undefined;
+	activeDoctor?: VisitDoctorEntity | ChairsideDoctorEntity | { id?: string; fullName?: string } | null | undefined;
 	selectedSpecialty?: string | undefined;
 	setSelectedSpecialty?: ((spec: string) => void) | undefined;
 	[key: string]: unknown;

@@ -11,7 +11,7 @@ import { useCompletedServicesExternalListener } from "./useCompletedServicesExte
 interface PlanSyncParams {
 	readonly planText: string;
 	readonly planLines: string[];
-	readonly updateVisitNoteField?: (field: string, value: unknown) => void;
+	readonly updateVisitNoteField?: ((field: string, value: unknown) => void) | undefined;
 	readonly selectedTooth: string | null;
 }
 

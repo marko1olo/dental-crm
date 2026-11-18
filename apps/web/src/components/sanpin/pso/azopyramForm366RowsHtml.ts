@@ -1,6 +1,6 @@
 import type { PsoPrintRecordItem } from "./azopyramTypes";
 
-export function renderPsoForm366RowsHtml(records: readonly PsoPrintRecordItem[]): string {
+export function renderCleaningControlRowsHtml(records: readonly PsoPrintRecordItem[]): string {
 	return records
 		.map((r, i) => {
 			const dt = new Date(r.timestamp);
@@ -35,3 +35,5 @@ export function renderPsoForm366RowsHtml(records: readonly PsoPrintRecordItem[])
 		})
 		.join("\n");
 }
+
+export { renderCleaningControlRowsHtml as renderPsoForm366RowsHtml };

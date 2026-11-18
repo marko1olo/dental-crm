@@ -18,16 +18,22 @@ export const HYGIENE_PRESETS = [
     services: [
       {
         id: "srv-h1",
+        serviceCode: "A16.07.051",
+        regulatoryCode: "A16.07.051",
         code804n: "A16.07.051",
         title: "Профессиональная гигиена полости рта и зубов (УЗ + Air-Flow)",
         quantity: 1,
+        priceKopecks: 500000,
         priceRub: 5000,
       },
       {
         id: "srv-h2",
+        serviceCode: "A11.07.024",
+        regulatoryCode: "A11.07.024",
         code804n: "A11.07.024",
         title: "Местное применение реминерализующих препаратов (фторирование)",
         quantity: 1,
+        priceKopecks: 150000,
         priceRub: 1500,
       },
     ],

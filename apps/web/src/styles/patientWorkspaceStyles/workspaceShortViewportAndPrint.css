@@ -1,0 +1,88 @@
+/* Patient Workspace: Short Laptop Viewport (<= 780px) & Print Optimizations */
+@media (max-height: 780px) {
+	.specialty-focus-bar {
+		display: none !important;
+	}
+
+	.emk-voice-pilot-collapsed {
+		display: none !important;
+	}
+
+	.visit-monolithic-header {
+		padding: 2px 8px !important;
+		min-height: 30px !important;
+	}
+
+	.emk-unified-toolbar {
+		gap: 0 !important;
+		padding: 0 !important;
+		margin: 2px 0 6px 0 !important;
+		flex-direction: column !important;
+		flex-wrap: nowrap !important;
+		height: auto !important;
+		min-height: auto !important;
+		max-height: none !important;
+		width: 100% !important;
+	}
+
+	.emk-tabs-container {
+		padding: 1px 4px !important;
+		gap: 3px !important;
+		width: 100% !important;
+		min-height: 26px !important;
+		height: 26px !important;
+		flex-shrink: 0 !important;
+	}
+
+	.emk-tab-button {
+		min-height: 24px !important;
+		height: 24px !important;
+		padding: 0 6px !important;
+		font-size: 11px !important;
+	}
+
+	.emk-tab-mic-btn {
+		min-height: 24px !important;
+		height: 24px !important;
+		padding: 0 6px !important;
+		font-size: 11px !important;
+	}
+
+	.emk-tier1-quick-soap-bar {
+		padding: 0 !important;
+		gap: 3px !important;
+	}
+
+	.emk-tier1-quick-soap-bar button {
+		min-height: 24px !important;
+		height: 24px !important;
+		padding: 0 6px !important;
+		font-size: 11px !important;
+	}
+
+	.visit-note-status-badge {
+		padding: 1px 6px !important;
+		font-size: 10px !important;
+	}
+}
+
+@media print {
+	.treatment-plan-card, .treatment-stage-section, .treatment-estimator-table tr,
+	.prescription-blank-container, .fiscal-receipt-print-wrapper,
+	.sanpin-journal-table tr, .print-avoid-break {
+		break-inside: avoid !important;
+		page-break-inside: avoid !important;
+	}
+
+	.print-break-before {
+		break-before: page !important;
+		page-break-before: always !important;
+	}
+
+	body,
+	.app-shell,
+	.modal-content-wrapper {
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+}

@@ -12,6 +12,14 @@ import {
 } from "../../../lib/clinicalProtocols";
 import { useVisitStore } from "../../../store/visitStore";
 
+interface PatientToothStateDto {
+	toothNumber: number;
+	state: ToothState;
+	surfaces?: string[] | undefined;
+	notes?: string | undefined;
+	updatedAt?: string | undefined;
+}
+
 export async function fetchPatientToothStates(
 	patientId: string,
 	signal?: AbortSignal,
@@ -21,11 +29,11 @@ export async function fetchPatientToothStates(
 		if (signal) init.signal = signal;
 		const res = await fetch(`/api/patients/${patientId}/tooth-states`, init);
 		if (!res.ok) return null;
-		const data = await res.json();
+		const data = (await res.json()) as { success?: boolean; states?: PatientToothStateDto[] } | null;
 		if (!data?.success || !Array.isArray(data.states) || data.states.length === 0) return null;
-		return data.states.map((s: any) => ({
+		return data.states.map((s: PatientToothStateDto) => ({
 			toothNumber: s.toothNumber,
-			state: s.state as ToothState,
+			state: s.state,
 			surfaces: Array.isArray(s.surfaces) ? s.surfaces : undefined,
 			notes: s.notes || undefined,
 			updatedAt: s.updatedAt || undefined,
@@ -99,7 +107,8 @@ export function broadcastToothEvents(
 		}
 	}
 
-	if (targets.length === 1 && onApplyFindingToDiary) {
-		onApplyFindingToDiary(targets[0]!, nextState, nextSurfaces);
+	const singleTarget = targets[0];
+	if (targets.length === 1 && singleTarget !== undefined && onApplyFindingToDiary) {
+		onApplyFindingToDiary(singleTarget, nextState, nextSurfaces);
 	}
 }

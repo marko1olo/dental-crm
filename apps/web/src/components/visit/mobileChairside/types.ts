@@ -3,7 +3,14 @@
  * DENTE Dental CRM — Sovereign Mobile Chairside Visit Workspace (Layer 0: Types & Constants)
  */
 
-import type { PlanStageItem } from "../visitPlanStageHandoff";
+import type { PlanStageItem, TreatmentPlanLike, TreatmentPlanStageLike } from "../visitPlanStageHandoff";
+import type {
+  VisitPatientEntity,
+  VisitAppointmentEntity,
+  VisitDoctorEntity,
+  VisitLoadedTreatmentPlan,
+  VisitNoteFormExtended,
+} from "../view/VisitViewProps";
 
 export type MobileChairsideStep =
   | "complaints"
@@ -26,6 +33,7 @@ export interface ChairsidePatientEntity {
   fullName?: string | undefined;
   name?: string | undefined;
   birthDate?: string | Date | undefined;
+  phone?: string | null | undefined;
   cardNumber?: string | undefined;
   medicalCardNumber?: string | undefined;
   allergies?: string | readonly string[] | undefined;
@@ -64,27 +72,15 @@ export interface ChairsideVisitNoteForm {
   [key: string]: unknown;
 }
 
-export interface ChairsideTreatmentPlanStage {
-  stageNumber: number;
-  title: string;
-  items: readonly PlanStageItem[] | PlanStageItem[];
-}
-
-export interface ChairsideTreatmentPlan {
-  id?: string | undefined;
-  name?: string | undefined;
-  title?: string | undefined;
-  items?: readonly PlanStageItem[] | PlanStageItem[] | undefined;
-  stages?: readonly ChairsideTreatmentPlanStage[] | ChairsideTreatmentPlanStage[] | undefined;
-  [key: string]: unknown;
-}
+export type ChairsideTreatmentPlanStage = TreatmentPlanStageLike;
+export type ChairsideTreatmentPlan = TreatmentPlanLike;
 
 export interface MobileChairsideVisitWorkspaceProps {
-  activePatient: ChairsidePatientEntity | null | undefined;
-  activeAppointment?: ChairsideAppointmentEntity | null | undefined;
-  activeDoctor?: ChairsideDoctorEntity | null | undefined;
-  visitNoteForm?: ChairsideVisitNoteForm | null | undefined;
-  updateVisitNoteField: (field: string, value: unknown) => void;
+  activePatient: ChairsidePatientEntity | VisitPatientEntity | null | undefined;
+  activeAppointment?: ChairsideAppointmentEntity | VisitAppointmentEntity | null | undefined;
+  activeDoctor?: ChairsideDoctorEntity | VisitDoctorEntity | null | undefined;
+  visitNoteForm?: ChairsideVisitNoteForm | VisitNoteFormExtended | Record<string, unknown> | null | undefined;
+  updateVisitNoteField: (field: string, value: any) => void;
   flushPendingVisitSaves?: (() => Promise<void> | void) | undefined;
   handleApplySomaticNormQuick?: (() => void) | undefined;
   handleFinishVisitAction?: (() => Promise<void> | void) | undefined;
@@ -93,12 +89,12 @@ export interface MobileChairsideVisitWorkspaceProps {
   handleOpenLabOrder?: (() => void) | undefined;
   onOpenWarrantyModal?: (() => void) | undefined;
   consolidatedAllergyChip?: string | null | undefined;
-  patientAge?: string | null | undefined;
+  patientAge?: string | number | null | undefined;
   toothStateByCode?: Record<string, string> | undefined;
   setToothState?: ((code: string, state: string) => void) | undefined;
   onClose?: (() => void) | undefined;
   testId?: string | undefined;
-  loadedTreatmentPlan?: ChairsideTreatmentPlan | null | undefined;
+  loadedTreatmentPlan?: ChairsideTreatmentPlan | VisitLoadedTreatmentPlan | null | undefined;
   initialStep?: MobileChairsideStep | undefined;
 }
 
@@ -109,9 +105,9 @@ export interface ChairsideStepItem {
 }
 
 export interface ChairsidePatientQuickBarProps {
-  activePatient: ChairsidePatientEntity | null | undefined;
-  activeAppointment?: ChairsideAppointmentEntity | null | undefined;
-  patientAge?: string | null | undefined;
+  activePatient: ChairsidePatientEntity | VisitPatientEntity | null | undefined;
+  activeAppointment?: ChairsideAppointmentEntity | VisitAppointmentEntity | null | undefined;
+  patientAge?: string | number | null | undefined;
   consolidatedAllergyChip?: string | null | undefined;
   handlePrintForm043uFast?: (() => void) | undefined;
   handleOpenPrescription?: (() => void) | undefined;
@@ -152,9 +148,9 @@ export interface ChairsideProtocolsSectionProps {
   currentStep: MobileChairsideStep;
   visitNoteForm?: ChairsideVisitNoteForm | null | undefined;
   updateVisitNoteField: (field: string, value: unknown) => void;
-  activePatient: ChairsidePatientEntity | null | undefined;
-  activeAppointment?: ChairsideAppointmentEntity | null | undefined;
-  loadedTreatmentPlan?: ChairsideTreatmentPlan | null | undefined;
+  activePatient: ChairsidePatientEntity | VisitPatientEntity | null | undefined;
+  activeAppointment?: ChairsideAppointmentEntity | VisitAppointmentEntity | null | undefined;
+  loadedTreatmentPlan?: ChairsideTreatmentPlan | VisitLoadedTreatmentPlan | null | undefined;
   isStageTaken: boolean;
   onTakeStage: (
     stage: { title: string; stageNumber: number; items: readonly PlanStageItem[] | PlanStageItem[] },
@@ -178,7 +174,7 @@ export interface ChairsideProtocolsSectionProps {
 
 export interface ChairsideBottomStickyActionsProps {
   currentStep: MobileChairsideStep;
-  loadedTreatmentPlan?: ChairsideTreatmentPlan | null | undefined;
+  loadedTreatmentPlan?: ChairsideTreatmentPlan | VisitLoadedTreatmentPlan | null | undefined;
   isStageTaken: boolean;
   onPrevStep: () => void;
   onNextStep: () => void;

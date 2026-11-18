@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { QuickCreateInvoiceModal } from "../QuickCreateInvoiceModal.js";
 import { PatientInstallmentsModal } from "../PatientInstallmentsModal.js";
@@ -93,7 +94,7 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 					patientId={selectedInvoice?.patientId || patientId || undefined}
 					totalDueRub={selectedInvoice?.totalAmountRub ?? 0}
 					amountRub={selectedInvoice?.totalAmountRub ?? 0}
-					amountKopecks={selectedInvoice ? Math.round(selectedInvoice.totalAmountRub * 100) : 0}
+					amountKopecks={selectedInvoice ? rublesToKopecks(selectedInvoice.totalAmountRub) : 0}
 					invoiceId={selectedInvoice?.id || undefined}
 					onSuccess={() => {
 						if (selectedInvoice && onUpdateInvoice) {

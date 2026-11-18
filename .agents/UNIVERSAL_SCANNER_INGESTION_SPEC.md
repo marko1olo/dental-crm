@@ -1,7 +1,7 @@
 # УНИВЕРСАЛЬНЫЙ МУЛЬТИВЕНДОРНЫЙ ХАБ СТОМАТОЛОГИЧЕСКИХ СКАНЕРОВ (DENTE UNIVERSAL SCANNER HUB)
 
-> **ДОКУМЕНТ:** Архитектурная спецификация универсального приёма, нормализации и 3D-визуализации интраоральных сканов любых мировых производителей: **3Shape TRIOS, Medit (i500/i600/i700/i900), iTero (Align), Dentsply Sirona (CEREC/Primescan), Carestream/DEXIS (CS 3600/3700/3800), Shining 3D (Aoralscan), Panda, Runyes** и произвольных STL/PLY/OBJ файлов.  
-> **СТАТУС:** Канонический стандарт модуля `@dental/shared/hardware/universalScannerHub.ts`, бэкенд-пайплайна `@dental/api` и вьюера `@dental/web`.
+> **ДОКУМЕНТ:** Архитектурная спецификация универсального приёма, нормализации и 3D-визуализации интраоральных сканов любых мировых производителей: **3Shape TRIOS, Medit (i500/i600/i700/i900), iTero (Align), Dentsply Sirona (CEREC/Primescan), Carestream/DEXIS (CS 3600/3700/3800), Shining 3D (Aoralscan), Panda, Runyes, Eighteeth** и произвольных STL/PLY/OBJ файлов.  
+> **СТАТУС:** Канонический стандарт реализован в `@dental/shared/hardware` (`intraoralScannerTypes.ts`, `intraoralScannerClassifier.ts`) и `@dental/shared/geometry` (`dentalMeshMath.ts`), бэкенд-пайплайна `@dental/api` и вьюера `@dental/web`.
 
 ---
 
@@ -240,3 +240,41 @@ export async function registerUniversalScanRoutes(app: FastifyInstance) {
 
 - Как только любой сканер завершает экспорт $\to$ демон за 1 секунду перехватывает архив $\to$ шлет в CRM $\to$ у врача в карточке пациента мгновенно загорается зеленая плашка **«Поступил 3D скан челюстей»**.
 - **0 кликов, 0 рутины, полная универсальность!**
+
+---
+
+## 8. КЛИНИЧЕСКАЯ И МАТЕМАТИЧЕСКАЯ РЕАЛИЗАЦИЯ В `@dental/shared`
+
+Каноническая реализация контрактов и математики 3D-геометрии зафиксирована в следующих модулях:
+
+### 8.1. `packages/shared/src/hardware/intraoralScannerTypes.ts`
+- **Вендоры (`IntraoralScannerVendor`):** `'3shape' | 'medit' | 'itero' | 'sirona' | 'shining3d' | 'panda' | 'runyes' | 'carestream' | 'eighteeth' | 'generic'`.
+- **Роли файлов (`IntraoralScanFileRole`):** `'upper_jaw' | 'lower_jaw' | 'buccal_bite_1' | 'buccal_bite_2' | 'preparation_die' | 'pre_op_jaw' | 'scanbody' | 'face_scan' | 'order_metadata' | 'screenshot_preview'`.
+- **Иммутабельные геометрии:** `Vector3 = readonly [number, number, number]`, `Matrix4x4 = readonly [number, ... 16 чисел]`.
+- **Микронные пороги окклюзионного контакта (`OCCLUSION_THRESHOLDS_MICRONS`):**
+  * Твердый контакт / коллизия: `< 50 мкм` (`hard_contact`).
+  * Физиологический контакт: `50 – 150 мкм` (`physiological_contact`).
+  * Зазор препарирования / коронки: `150 – 350 мкм` (`clearance_gap`).
+  * Дизокклюзия / свободное пространство: `> 350 мкм` (`disocclusion`).
+- **Контракт анализа поднутрений (`UndercutAnalysisResult`):** вектор пути введения, зоны поднутрений с глубиной и площадью в мм².
+- **Единый контракт сессии сканирования (`IntraoralScanSession`):** идентификатор, пациент, визит, вендор, модель, матрица окклюзии 4x4, LOD0/LOD1/LOD2 URLs, FDI зубы препарирования и имплантов.
+
+### 8.2. `packages/shared/src/hardware/intraoralScannerClassifier.ts`
+- Детерминированный многоязычный классификатор файлов (RU / EN / Translit).
+- Извлечение FDI номеров зубов (11–48, 51–85) с валидацией через канонический SSOT `isValidFdiToothNumber`.
+- Детектор сигнатур оборудования всех 10 мировых производителей.
+- Группировщик файлов сессий `groupFilesIntoScanSessions` с итеративным очищением суффиксов ролей.
+
+### 8.3. `packages/shared/src/geometry/dentalMeshMath.ts`
+- **Каноническая матрица преобразования CAD Z-Up $\leftrightarrow$ Three.js Y-Up:**
+  $$\mathbf{M}_{\text{CAD}\to\text{Three}} = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & -1 & 0 & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix}, \quad \mathbf{M}_{\text{Three}\to\text{CAD}} = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & -1 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix}$$
+- **Нормализатор масштаба `detectAndNormalizeUnits`:** авто-детекция метров ($<0.2$ м $\to \times 1000$), микронов ($>5000$ мкм $\to \times 0.001$) и миллиметров ($1.0$).
+- **Аналитическое обращение матриц 4x4 (`invertMatrix4x4`):** метод Крамера / союзной матрицы с защитой от сингулярных матриц ($\det = 0$).
+- **Пространственный воксельный хэш `SpatialVoxelGrid`:** ускоренный расчет карты окклюзионных зазоров $O(N)$ вместо $O(N^2)$.
+- **Алгоритм ICP (Iterative Closest Point) `alignJawsByBuccalBite`:** выравнивание челюстей по скану смыкания прикуса.
+- **Анализ поднутрений `analyzeUndercuts`:** детектирование отрицательных углов уклона относительно пути введения протеза.
+
+### 8.4. Тестовое покрытие
+- Сьют `packages/shared/src/hardware/__tests__/intraoralScannerEngine.test.ts`: **40/40 тестов пройдены (100% green)**.
+- Гейт компилятора: `npm run typecheck -w @dental/shared` — **Exit Code 0 (ноль ошибок)**.
+

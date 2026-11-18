@@ -1,0 +1,91 @@
+{
+  "agent": "warehouse_inventory_inquisitor",
+  "role": "Red Team Inquisitor #3: Склад, пакетное списание расходников и Soft Negative Stock",
+  "timestamp": "2026-11-04T06:09:40Z",
+  "status": "COMPLETED",
+  "invariants": {
+    "mandate_8e_doctor_autonomy": "VERIFIED: 0 disabled buttons across clinical deduction flows, visits and cashbox are never blocked on zero or negative stock",
+    "mandate_8n_soft_negative_stock": "VERIFIED: negative stock permitted without errors, overdraft flags set cleanly, automated procurement signals triggered",
+    "mandate_8am_single_primary_cta": "VERIFIED: strictly 1 primary CTA in var(--teal) (#0d9488) on all modals, secondary actions strictly neutral",
+    "mandate_8d_apple_hig_mobile": "VERIFIED: bottom sheet drawer, touch targets >= 44x44px, grouped list cards on mobile screens 390x844",
+    "zero_jargon_in_ui": "VERIFIED: purged all dev jargon and mandate numbers like (Мандат 8n) from headings, alerts, notes, and toasts",
+    "batch_presets": "VERIFIED: packages for Therapy, Surgery, Hygiene wired with 1-click batch deductions"
+  },
+  "proofs": [
+    {
+      "file": "warehouse_catalog_stock_pc_light_1440x900.png",
+      "size_bytes": 148070,
+      "state": "PC Light (1440x900)",
+      "inspected": true,
+      "verified_features": "Table alignment fixed (SKU under Артикул, Qty under Остаток), soft overdraft row highlighted with -4 items without blocking, 1 Primary CTA"
+    },
+    {
+      "file": "warehouse_catalog_stock_pc_dark_1440x900.png",
+      "size_bytes": 194048,
+      "state": "PC Dark (1440x900)",
+      "inspected": true,
+      "verified_features": "Deep dark theme, WCAG AAA contrast, clear amber overdraft notice"
+    },
+    {
+      "file": "warehouse_batch_writeoff_pc_light_1440x900.png",
+      "size_bytes": 68403,
+      "state": "PC Light (1440x900)",
+      "inspected": true,
+      "verified_features": "Quick presets Therapy/Surgery/Hygiene, quiet overdraft banner without dev jargon, 1 Primary CTA in var(--teal)"
+    },
+    {
+      "file": "warehouse_batch_writeoff_pc_dark_1440x900.png",
+      "size_bytes": 65638,
+      "state": "PC Dark (1440x900)",
+      "inspected": true,
+      "verified_features": "High contrast dark mode, zero clipping, zero white flash"
+    },
+    {
+      "file": "warehouse_inbound_invoice_pc_light_1440x900.png",
+      "size_bytes": 64921,
+      "state": "PC Light (1440x900)",
+      "inspected": true,
+      "verified_features": "FEFO tracking, functional CSV export, single primary CTA in var(--teal), neutral add-row button"
+    },
+    {
+      "file": "warehouse_inbound_invoice_pc_dark_1440x900.png",
+      "size_bytes": 63488,
+      "state": "PC Dark (1440x900)",
+      "inspected": true,
+      "verified_features": "Dark theme inbound modal, clean inputs, zero clipping"
+    },
+    {
+      "file": "warehouse_stock_mobile_light_390x844.png",
+      "size_bytes": 142540,
+      "state": "Mobile Light (390x844)",
+      "inspected": true,
+      "verified_features": "Apple HIG Bottom Sheet Drawer with Drag Handle, grouped list cards, Floating Bottom Bar with 1 Primary CTA"
+    },
+    {
+      "file": "warehouse_stock_mobile_dark_390x844.png",
+      "size_bytes": 160768,
+      "state": "Mobile Dark (390x844)",
+      "inspected": true,
+      "verified_features": "Mobile dark theme, thumb-zone primary CTA, 0px horizontal scroll"
+    },
+    {
+      "file": "warehouse_writeoff_modal_mobile_light_390x844.png",
+      "size_bytes": 250265,
+      "state": "Mobile Light (390x844)",
+      "inspected": true,
+      "verified_features": "Mobile batch deduction tab with procedure presets and quick writeoff"
+    },
+    {
+      "file": "warehouse_writeoff_modal_mobile_dark_390x844.png",
+      "size_bytes": 319283,
+      "state": "Mobile Dark (390x844)",
+      "inspected": true,
+      "verified_features": "Mobile dark batch deduction tab"
+    }
+  ],
+  "machine_gates": {
+    "test_suite": "44 passed, 0 failed (apps/web/src/components/inventory/__tests__/*.test.tsx)",
+    "encoding": "23,752 files checked, 0 errors",
+    "dynamic_imports": "18,160 files checked, 527 dynamic imports, 0 errors"
+  }
+}

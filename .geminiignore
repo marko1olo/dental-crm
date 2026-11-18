@@ -1,0 +1,78 @@
+# .geminiignore — исключает папки из индексации Antigravity / Gemini
+# Аналог .gitignore для AGY. Без этого файла AGY индексирует все 173К файлов.
+
+# --- Зависимости (не код, не читать) ---
+node_modules/
+**/node_modules/
+
+# --- Билды и dist ---
+apps/web/dist/
+apps/api/dist/
+**/dist/
+**/.turbo/
+**/.vite/
+
+# --- База данных PostgreSQL (сырые страницы, бинари) ---
+.data/
+.local-pg-data/
+apps/api/.data/
+pglite-data/
+temp-test-db/
+dente-db/
+dente_local_db_win/
+
+# --- Скриншоты и PNG-пруфы (тяжёлые бинари, не код) ---
+docs/screenshots/
+docs/proofs/
+docs/screenshots_light/
+docs/competitive-audit/
+
+# --- Реверс-инжиниринг (APK/DEX/бинари конкурентов) ---
+РЕВЕРС ИНЖИНИРИНГ ДРУГИЕ ЦРМ/
+РЕВЕРС ИНЖИНИРИНГ DENTALPRO/
+РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС/
+РЕВЕРС ИНЖИНИРИНГ СТОМ-ИКС НОВЫЙ ЗАВОЗ/
+надо отсюда всё спиздить сука/
+
+# --- ML модели (бинарные ONNX файлы) ---
+*.onnx
+models/
+
+# --- Загрузки и бэкапы ---
+uploads/
+backups/
+
+# --- Мусорные артефакты субагентов в .agents ---
+.agents/*.json
+.agents/*.txt
+.agents/*.patch
+.agents/*.log
+.agents/diff*
+.agents/biome*
+.agents/audit_*
+.agents/subagent_*
+
+# --- Временные файлы ---
+.tmp/
+tmp/
+test-results/
+playwright-report/
+blob-report/
+
+# --- Исходники reference-репозиториев (чужой код, не наш) ---
+reference_repos/
+
+# --- PNG-скриншоты в корне (proof_*.png, test_*.png, scratch_*.png) ---
+proof_*.png
+test_*.png
+schedule_*.png
+scratch_*.png
+visit_*.png
+pricelist_*.png
+cache_hit_*.png
+debug_*.png
+diag_*.png
+mobile_*.png
+settings_*.png
+stage_*.png
+temp_*.png

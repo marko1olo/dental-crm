@@ -18,6 +18,7 @@ import { BotStudioModal } from "./telegram/BotStudioModal.js";
 interface StaffOption {
 	id: string;
 	fullName: string;
+	role?: string | undefined;
 }
 
 export type MessengerTabId =
@@ -203,6 +204,21 @@ export function SettingsMessengersTab({
 						WA
 					</span>
 					WhatsApp Business
+				</button>
+
+				<button
+					role="tab"
+					aria-selected={activeMessenger === "max"}
+					aria-controls="messenger-panel-max"
+					id="messenger-tab-max"
+					type="button"
+					onClick={() => setActiveMessenger("max")}
+					className={`messenger-channel-tab${activeMessenger === "max" ? " active" : ""}`}
+				>
+					<span className="messenger-tab-badge max-badge" aria-hidden="true">
+						MAX
+					</span>
+					MAX (VK Max)
 				</button>
 
 				<button

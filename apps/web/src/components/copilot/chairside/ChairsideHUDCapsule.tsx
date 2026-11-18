@@ -3,6 +3,7 @@ import {
   Mic, MicOff, Check, X, ChevronDown, ChevronUp,
   Columns, Minimize2,
 } from "lucide-react";
+import { formatKopecksToRub } from "@dental/shared";
 import type {
   ChairsideToothProposal,
   ChairsideServiceProposal,
@@ -21,6 +22,7 @@ export interface ChairsideHUDCapsuleProps {
   onRemoveAnesthetic: () => void;
   servicesProposal: ChairsideServiceProposal[];
   servicesTotalPrice: number;
+  servicesTotalKopecks?: number | undefined;
   onRemoveServices: () => void;
   onApplyAllActions: () => void;
   isDrawerOpen: boolean;
@@ -43,6 +45,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
   onRemoveAnesthetic,
   servicesProposal,
   servicesTotalPrice,
+  servicesTotalKopecks,
   onRemoveServices,
   onApplyAllActions,
   isDrawerOpen,
@@ -101,7 +104,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
         )}
         {servicesProposal.length > 0 && (
           <div className="chairside-live-pill chairside-live-pill--services live-pill-services" data-testid="live-pill-services">
-            <span className="chairside-live-pill-text">{`${servicesTotalPrice} ₽`}</span>
+            <span className="chairside-live-pill-text font-mono">{formatKopecksToRub(servicesTotalKopecks ?? Math.round(servicesTotalPrice * 100))}</span>
             <button type="button" onClick={onRemoveServices} className="btn-remove-pill-services" aria-label="Удалить услуги" data-testid="btn-remove-pill-services"><X size={10} /></button>
           </div>
         )}

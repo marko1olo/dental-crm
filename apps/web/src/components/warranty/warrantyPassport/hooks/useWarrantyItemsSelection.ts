@@ -12,7 +12,7 @@ export interface UseWarrantyItemsSelectionParams {
 }
 
 export function useWarrantyItemsSelection({ isOpen, initialCategory, initialTeeth = [], completedStages = [] }: UseWarrantyItemsSelectionParams) {
-	const [selectedTeeth, setSelectedTeeth] = useState<string[]>(initialTeeth.length > 0 ? initialTeeth : ["1.6"]);
+	const [selectedTeeth, setSelectedTeeth] = useState<string[]>(initialTeeth);
 	const [activeCategory, setActiveCategory] = useState<WarrantyCategory>(initialCategory);
 	const [currentWorkTitle, setCurrentWorkTitle] = useState("");
 	const [currentMaterial, setCurrentMaterial] = useState("");
@@ -41,14 +41,15 @@ export function useWarrantyItemsSelection({ isOpen, initialCategory, initialTeet
 		}
 		if (completedStages.length > 0) {
 			setItems(mapCompletedStagesToWarrantyItems(completedStages));
-		} else {
-			const teethList = initialTeeth.length > 0 ? initialTeeth : ["1.6"];
-			setItems(teethList.map((tooth) => ({
+		} else if (initialTeeth.length > 0) {
+			setItems(initialTeeth.map((tooth) => ({
 				id: generateUuidV7(), toothNumber: tooth, category: initialCategory, clinicalWorkTitle: preset.title,
 				materialName: mat?.name ?? preset.recommendedMaterials[0] ?? "Композит", manufacturer: mat?.manufacturer ?? preset.popularManufacturers[0] ?? "3M ESPE",
 				country: mat?.country ?? "США", vitaShade: "A2", serviceCode804n: preset.serviceCode804n,
 				baseWarrantyMonths: preset.baseWarrantyMonths, baseServiceLifeMonths: preset.baseServiceLifeMonths,
 			})));
+		} else {
+			setItems([]);
 		}
 	}, [isOpen, initialCategory, initialTeeth.join(","), completedStages.map((s) => `${s.toothNumber ?? ""}-${s.serviceTitle}`).join(",")]);
 

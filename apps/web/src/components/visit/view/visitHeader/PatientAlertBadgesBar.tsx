@@ -24,7 +24,10 @@ export function PatientAlertBadgesBar({
 		return buildConsolidatedAllergyChip(activePatient, activePatientCriticalBadges);
 	}, [consolidatedAllergyChip, activePatient, activePatientCriticalBadges]);
 
-	const labStatus = React.useMemo(() => resolveAppointmentLabStatus(activeAppointment), [activeAppointment]);
+	const labStatus = React.useMemo(
+		() => resolveAppointmentLabStatus(activeAppointment as Parameters<typeof resolveAppointmentLabStatus>[0]),
+		[activeAppointment],
+	);
 	const hexColor = labStatus?.colorVita ? getVitaShadeHex(labStatus.colorVita) : null;
 
 	return (

@@ -42,7 +42,7 @@ export function useWhatsAppChatLogic(props: WhatsAppChatPanelProps) {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSending, setIsSending] = useState(false);
-	const [selectedChannel, setSelectedChannel] = useState<"whatsapp" | "telegram" | "sms">("whatsapp");
+	const [selectedChannel, setSelectedChannel] = useState<"whatsapp" | "telegram" | "max" | "sms">("whatsapp");
 	const [inputText, setInputText] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSearchOpen, setIsSearchOpen] = useState(false);

@@ -6,9 +6,9 @@ import { compressCameraFile } from "./cameraCaptureCompressor";
 export interface CameraCaptureParams {
 	file: File;
 	activePatientId: string;
-	activeAppointmentId?: string;
-	onStudyCreated?: (studyId: string) => void;
-	onDashboardRefresh?: () => void;
+	activeAppointmentId?: string | undefined;
+	onStudyCreated?: ((studyId: string) => void) | undefined;
+	onDashboardRefresh?: (() => void) | undefined;
 }
 
 export async function processCameraPhotoCapture({

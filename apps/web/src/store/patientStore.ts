@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type {
+export type {
 	PatientAdministrativeProfileDraft,
 	PatientAdministrativeProfileSaveState,
 	PatientCoreDraft,

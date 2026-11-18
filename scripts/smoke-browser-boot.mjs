@@ -38,7 +38,7 @@ page.on("requestfailed", (r) =>
 );
 
 const response = await page.goto(URL, {
-	waitUntil: "domcontentloaded",
+	waitUntil: "commit",
 	timeout: 20000,
 });
 await page.waitForTimeout(4000);

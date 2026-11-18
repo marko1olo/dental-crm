@@ -14,7 +14,7 @@ import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
 	Activity, Award, Calendar, CalendarCheck, Camera, ClipboardList, ExternalLink,
-	FileCheck, FileText, HeartPulse, History, Plus, Printer, Scan, ShieldAlert, ShieldCheck,
+	FileCheck, FileText, FlaskConical, HeartPulse, History, Plus, Printer, Scan, ShieldAlert, ShieldCheck,
 	Stethoscope, User, Users, Wallet, X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -34,6 +34,7 @@ import { TreatmentPlansTab } from "./tabs/TreatmentPlansTab";
 import { PatientHistoryTab } from "./PatientHistoryTab";
 import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidget";
 import { PatientReclamationsHistoryTab } from "./tabs/PatientReclamationsHistoryTab";
+import { LabOrdersPanel } from "./LabOrdersPanel";
 import { PatientCardModalSubModals } from "./patientCardModalModules/PatientCardModalSubModals";
 import { usePatientCardModalState } from "./patientCardModalModules/usePatientCardModalState";
 import { usePatientCreationForm } from "./patientCreation/usePatientCreationForm";
@@ -46,6 +47,7 @@ const TABS = [
 	{ id: "general", testId: "tab-patient-general", label: "Паспортные данные", Icon: FileText },
 	{ id: "anamnesis", testId: "tab-patient-anamnesis", label: "Анамнез", Icon: HeartPulse },
 	{ id: "treatmentPlans", testId: "tab-patient-treatment-plans", label: "План лечения", Icon: ClipboardList },
+	{ id: "labOrders", testId: "tab-patient-lab-orders", label: "Лаборатория (ЗТЛ)", Icon: FlaskConical },
 	{ id: "visits", testId: "tab-patient-visits", label: "Визиты и файлы", Icon: History },
 	{ id: "finance", testId: "tab-patient-finance", label: "Счета и баланс", Icon: Wallet },
 	{ id: "radiology", testId: "tab-patient-radiology", label: "Снимки и КТ", Icon: Scan },
@@ -450,6 +452,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							}}
 							onPrintPlan={handlePrint}
 						/>
+					) : activeTab === "labOrders" ? (
+						<div className="p-2 sm:p-3">
+							<LabOrdersPanel patientId={patientData.id ?? undefined} />
+						</div>
 					) : activeTab === "finance" ? (
 						<PatientFinanceTab
 							patient={patientData}

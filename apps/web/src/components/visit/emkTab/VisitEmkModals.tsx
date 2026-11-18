@@ -13,6 +13,7 @@ export function VisitEmkModals({
 	setIsSbpQrModalOpen,
 	completionResult,
 	activePatient,
+	activeDoctor,
 	isStarProtocolsOpen,
 	setIsStarProtocolsOpen,
 	isSoapTemplatesModalOpen,
@@ -30,6 +31,10 @@ export function VisitEmkModals({
 	const totalNetRub = completionResult?.totalNetRub ?? 0;
 	const receiptNumber = completionResult?.receiptNumber ?? "00001";
 	const patientName = activePatient?.fullName ?? "Пациент";
+	const doctorFullName =
+		activeDoctor?.fullName || dashboard?.activeDoctor?.fullName || "Лечащий врач";
+	const doctorSpecialty =
+		activeDoctor?.specialty || dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт";
 
 	const inFlightSbpRef = React.useRef(false);
 
@@ -175,31 +180,42 @@ export function VisitEmkModals({
 				isOpen={isConsentModalOpen}
 				onClose={() => setIsConsentModalOpen(false)}
 				patientId={activePatient?.id}
-				visitId={dashboard?.activeVisit?.id}
+				visitId={dashboard?.activeVisit?.id ?? undefined}
 				patient={
 					activePatient
 						? {
-								id: activePatient.id,
-								fullName: activePatient.fullName,
-								birthDate: activePatient.birthDate,
-								passport: activePatient.passport,
-								phone: activePatient.phone,
-								snils: activePatient.snils,
-								address: activePatient.address,
+								id: activePatient.id || undefined,
+								fullName: activePatient.fullName || undefined,
+								birthDate: activePatient.birthDate ?? undefined,
+								passport:
+									typeof (activePatient as Record<string, unknown>).passport === "string"
+										? ((activePatient as Record<string, unknown>).passport as string)
+										: undefined,
+								phone: activePatient.phone ?? undefined,
+								snils:
+									typeof (activePatient as Record<string, unknown>).snils === "string"
+										? ((activePatient as Record<string, unknown>).snils as string)
+										: undefined,
+								address: activePatient.address ?? undefined,
 								cardNumber:
-									activePatient.medicalCardNumber ||
-									activePatient.cardNumber ||
-									activePatient.id,
+									(typeof (activePatient as Record<string, unknown>).medicalCardNumber === "string" &&
+										((activePatient as Record<string, unknown>).medicalCardNumber as string)) ||
+									(typeof (activePatient as Record<string, unknown>).cardNumber === "string" &&
+										((activePatient as Record<string, unknown>).cardNumber as string)) ||
+									activePatient.id ||
+									undefined,
 							}
 						: undefined
 				}
-				doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
-				doctorSpecialty={dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт"}
+				doctorName={doctorFullName}
+				doctorSpecialty={doctorSpecialty}
 				diagnosisIcd={
-					visitNoteForm?.diagnosis ? String(visitNoteForm.diagnosis).split(" ")[0] : undefined
+					typeof visitNoteForm?.diagnosis === "string" && visitNoteForm.diagnosis
+						? visitNoteForm.diagnosis.split(" ")[0]
+						: undefined
 				}
 				toothNumbers={
-					dashboard?.activeVisit?.diagnosisTooth
+					dashboard?.activeVisit?.diagnosisTooth != null
 						? String(dashboard.activeVisit.diagnosisTooth)
 						: undefined
 				}
@@ -220,7 +236,7 @@ export function VisitEmkModals({
 			<MedicalRecordStudioModal
 				isOpen={isPrintModalOpen}
 				onClose={() => setIsPrintModalOpen(false)}
-				visitId={dashboard?.activeVisit?.id}
+				visitId={dashboard?.activeVisit?.id ?? undefined}
 				patientId={activePatient?.id}
 				onSave={async (updatedCard) => {
 					const primaryDiary = updatedCard.visitDiaries?.[0];
@@ -231,61 +247,109 @@ export function VisitEmkModals({
 					const treatmentPlan = updatedCard.generalTreatmentPlan || primaryDiary?.procedureProtocol;
 					const recommendations = primaryDiary?.homeCareRecommendations;
 
-					if (complaint) updateVisitNoteField("complaint", complaint);
-					if (anamnesis) updateVisitNoteField("anamnesis", anamnesis);
-					if (statusLocalis) updateVisitNoteField("objectiveStatus", statusLocalis);
-					if (diagnosis) updateVisitNoteField("diagnosis", diagnosis);
-					if (treatmentPlan) updateVisitNoteField("treatmentPlan", treatmentPlan);
-					if (recommendations) updateVisitNoteField("recommendations", recommendations);
+					if (typeof complaint === "string" && complaint) updateVisitNoteField("complaint", complaint);
+					if (typeof anamnesis === "string" && anamnesis) updateVisitNoteField("anamnesis", anamnesis);
+					if (typeof statusLocalis === "string" && statusLocalis) updateVisitNoteField("objectiveStatus", statusLocalis);
+					if (typeof diagnosis === "string" && diagnosis) updateVisitNoteField("diagnosis", diagnosis);
+					if (typeof treatmentPlan === "string" && treatmentPlan) updateVisitNoteField("treatmentPlan", treatmentPlan);
+					if (typeof recommendations === "string" && recommendations) updateVisitNoteField("recommendations", recommendations);
 
 					showToast("Медицинская карта приёма синхронизирована с приёмом", "success", 3000);
 				}}
 				initialData={{
-					passport: activePatient
+					...(activePatient
 						? {
-								patientFullName: activePatient.fullName || "",
-								patientBirthDate: activePatient.birthDate || "",
-								medicalCardNumber:
-									activePatient.medicalCardNumber ||
-									activePatient.cardNumber ||
-									activePatient.id ||
-									"",
-								patientPhone: activePatient.phone || "",
-								primaryDiagnosisText: visitNoteForm?.diagnosis || "",
-								primaryDiagnosisIcd10: visitNoteForm?.diagnosis
-									? String(visitNoteForm.diagnosis).split(" ")[0]
-									: "",
-								attendingDoctorFullName: dashboard?.activeDoctor?.fullName || "",
-								attendingDoctorSpecialty: dashboard?.activeDoctor?.specialty || "",
-							}
-						: undefined,
-					anamnesis: {
-						chiefComplaint: visitNoteForm?.complaint || visitNoteForm?.complaints || "",
-						historyOfPresentIllness: visitNoteForm?.anamnesis || "",
-					},
-					generalTreatmentPlan: visitNoteForm?.treatmentPlan || visitNoteForm?.treatment || "",
-					visitDiaries: (visitNoteForm?.complaint || visitNoteForm?.objectiveStatus || visitNoteForm?.treatmentPlan || visitNoteForm?.diagnosis)
-						? [
-								{
-									id: `diary-${dashboard?.activeVisit?.id || "active"}`,
-									entryDate: new Date().toISOString().split("T")[0],
-									entryTime: new Date().toTimeString().slice(0, 5),
-									doctorFullName: dashboard?.activeDoctor?.fullName || "Лечащий врач",
-									doctorSpecialty: dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт",
-									toothNumber: dashboard?.activeVisit?.diagnosisTooth
-										? String(dashboard.activeVisit.diagnosisTooth)
-										: null,
-									subjectiveComplaints: visitNoteForm?.complaint || visitNoteForm?.complaints || "",
-									objectiveStatusLocalis: visitNoteForm?.objectiveStatus || visitNoteForm?.objective || "",
-									assessmentDiagnosisText: visitNoteForm?.diagnosis || "",
-									assessmentIcd10Code: visitNoteForm?.diagnosis
-										? String(visitNoteForm.diagnosis).split(" ")[0]
-										: "",
-									procedureProtocol: visitNoteForm?.treatmentPlan || visitNoteForm?.treatment || "",
-									homeCareRecommendations: visitNoteForm?.recommendations || "",
+								passport: {
+									patientFullName: activePatient.fullName || "",
+									patientBirthDate: activePatient.birthDate || "",
+									medicalCardNumber:
+										(typeof (activePatient as Record<string, unknown>).medicalCardNumber === "string" &&
+											((activePatient as Record<string, unknown>).medicalCardNumber as string)) ||
+										(typeof (activePatient as Record<string, unknown>).cardNumber === "string" &&
+											((activePatient as Record<string, unknown>).cardNumber as string)) ||
+										activePatient.id ||
+										"",
+									patientPhone: activePatient.phone || "",
+									primaryDiagnosisText:
+										typeof visitNoteForm?.diagnosis === "string"
+											? visitNoteForm.diagnosis
+											: "",
+									primaryDiagnosisIcd10:
+										typeof visitNoteForm?.diagnosis === "string" && visitNoteForm.diagnosis
+											? visitNoteForm.diagnosis.split(" ")[0] ?? ""
+											: "",
+									attendingDoctorFullName: doctorFullName,
+									attendingDoctorSpecialty: doctorSpecialty,
 								},
-							]
-						: undefined,
+						  }
+						: {}),
+					anamnesis: {
+						chiefComplaint:
+							typeof visitNoteForm?.complaint === "string" && visitNoteForm.complaint
+								? visitNoteForm.complaint
+								: typeof visitNoteForm?.complaints === "string" && visitNoteForm.complaints
+									? visitNoteForm.complaints
+									: "",
+						historyOfPresentIllness:
+							typeof visitNoteForm?.anamnesis === "string" ? visitNoteForm.anamnesis : "",
+						medicalHistoryVitae: "",
+						allergologicalHistory: "",
+						concomitantSomaticDiseases: "",
+						currentSystemicMedications: "",
+						pregnancyLactationStatus: "",
+						pastDentalInterventions: "",
+						occupationalHazardsAndHabits: "",
+					},
+					generalTreatmentPlan:
+						typeof visitNoteForm?.treatmentPlan === "string" && visitNoteForm.treatmentPlan
+							? visitNoteForm.treatmentPlan
+							: typeof visitNoteForm?.treatment === "string" && visitNoteForm.treatment
+								? visitNoteForm.treatment
+								: "",
+					...((visitNoteForm?.complaint || visitNoteForm?.objectiveStatus || visitNoteForm?.treatmentPlan || visitNoteForm?.diagnosis)
+						? {
+								visitDiaries: [
+									{
+										id: `diary-${dashboard?.activeVisit?.id || "active"}`,
+										entryDate: new Date().toISOString().split("T")[0] ?? "",
+										entryTime: new Date().toTimeString().slice(0, 5),
+										doctorFullName,
+										doctorSpecialty,
+										toothNumber: dashboard?.activeVisit?.diagnosisTooth
+											? String(dashboard.activeVisit.diagnosisTooth)
+											: null,
+										subjectiveComplaints:
+											typeof visitNoteForm?.complaint === "string" && visitNoteForm.complaint
+												? visitNoteForm.complaint
+												: typeof visitNoteForm?.complaints === "string" && visitNoteForm.complaints
+													? visitNoteForm.complaints
+													: "",
+										objectiveStatusLocalis:
+											typeof visitNoteForm?.objectiveStatus === "string" && visitNoteForm.objectiveStatus
+												? visitNoteForm.objectiveStatus
+												: typeof visitNoteForm?.objective === "string" && visitNoteForm.objective
+													? visitNoteForm.objective
+													: "",
+										assessmentDiagnosisText:
+											typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis : "",
+										assessmentIcd10Code:
+											typeof visitNoteForm?.diagnosis === "string" && visitNoteForm.diagnosis
+												? visitNoteForm.diagnosis.split(" ")[0] ?? ""
+												: "",
+										procedureProtocol:
+											typeof visitNoteForm?.treatmentPlan === "string" && visitNoteForm.treatmentPlan
+												? visitNoteForm.treatmentPlan
+												: typeof visitNoteForm?.treatment === "string" && visitNoteForm.treatment
+													? visitNoteForm.treatment
+													: "",
+										homeCareRecommendations:
+											typeof visitNoteForm?.recommendations === "string"
+												? visitNoteForm.recommendations
+												: "",
+									},
+								],
+						  }
+						: {}),
 				}}
 				isLocked={isSignedVisit}
 				status={isSignedVisit ? "signed" : "draft"}

@@ -5,6 +5,9 @@
  * ИДС, памяток, актов выполненных услуг, смет и медицинских карт (Мандат 8bk).
  */
 
+import type { Dashboard } from "@dental/shared";
+import type { VisitDashboardEntity } from "../VisitViewProps";
+
 export interface FastPrintPatientContext {
 	readonly id?: string | null | undefined;
 	readonly fullName?: string | null | undefined;
@@ -29,6 +32,7 @@ export interface FastPrintPatientContext {
 		readonly dataProcessingBasisNote?: string | null | undefined;
 	} | null | undefined;
 	readonly clinicalSafetyProfile?: Record<string, unknown> | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface FastPrintDoctorContext {
@@ -37,6 +41,7 @@ export interface FastPrintDoctorContext {
 	readonly name?: string | null | undefined;
 	readonly specialty?: string | null | undefined;
 	readonly specialtyRu?: string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface FastPrintAppointmentContext {
@@ -44,6 +49,7 @@ export interface FastPrintAppointmentContext {
 	readonly startsAt?: string | Date | null | undefined;
 	readonly patientId?: string | null | undefined;
 	readonly doctorId?: string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface FastPrintVisitNoteFormContext {
@@ -55,6 +61,7 @@ export interface FastPrintVisitNoteFormContext {
 	readonly recommendations?: string | null | undefined;
 	readonly revisionCount?: number | null | undefined;
 	readonly isRevising?: boolean | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface FastPrintPlanItemContext {
@@ -70,6 +77,7 @@ export interface FastPrintPlanItemContext {
 	readonly priceRub?: number | undefined;
 	readonly unitPriceRub?: number | undefined;
 	readonly totalRub?: number | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface FastPrintPlanContext {
@@ -81,8 +89,10 @@ export interface FastPrintPlanContext {
 		readonly title?: string | undefined;
 		readonly stageNumber?: number | undefined;
 		readonly items?: readonly FastPrintPlanItemContext[] | undefined;
+		readonly [key: string]: unknown;
 	}[] | undefined;
 	readonly status?: string | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface FastPrintDashboardOrganization {
@@ -93,6 +103,7 @@ export interface FastPrintDashboardOrganization {
 	readonly inn?: string | undefined;
 	readonly licenseNumber?: string | undefined;
 	readonly license?: string | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface FastPrintDashboardClinicSettings {
@@ -104,27 +115,35 @@ export interface FastPrintDashboardClinicSettings {
 	readonly licenseNumber?: string | undefined;
 	readonly profile?: {
 		readonly brandName?: string | undefined;
+		readonly [key: string]: unknown;
 	} | undefined;
+	readonly [key: string]: unknown;
 }
 
-export interface FastPrintDashboardContext {
-	readonly organization?: FastPrintDashboardOrganization | undefined;
-	readonly organizationName?: string | undefined;
-	readonly clinicSettings?: FastPrintDashboardClinicSettings | undefined;
-	readonly activeDoctor?: FastPrintDoctorContext | undefined;
-	readonly activeVisit?: {
-		readonly id?: string | undefined;
-		readonly patientId?: string | undefined;
-		readonly diagnosisTooth?: string | number | undefined;
-	} | undefined;
-	readonly patients?: readonly FastPrintPatientContext[] | undefined;
-	readonly imagingStudies?: readonly unknown[] | undefined;
-}
+export type FastPrintDashboardContext =
+	| VisitDashboardEntity
+	| ((Partial<Dashboard> | Record<string, unknown>) & {
+			readonly organization?: FastPrintDashboardOrganization | null | undefined;
+			readonly organizationName?: string | undefined;
+			readonly clinicSettings?: FastPrintDashboardClinicSettings | undefined;
+			readonly activeDoctor?: FastPrintDoctorContext | undefined;
+			readonly activeVisit?: {
+				readonly id?: string | undefined;
+				readonly patientId?: string | undefined;
+				readonly diagnosisTooth?: string | number | undefined;
+				readonly [key: string]: unknown;
+			} | undefined;
+			readonly patients?: readonly unknown[] | undefined;
+			readonly imagingStudies?: readonly unknown[] | undefined;
+			readonly [key: string]: unknown;
+	  });
 
 export interface ToothStateRecord {
 	readonly state?: string | undefined;
 	readonly status?: string | undefined;
 	readonly customNote?: string | undefined;
+	readonly label?: string | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface FastPrintClinicRequisites {

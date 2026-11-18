@@ -18,11 +18,13 @@ export interface ChairsideToothProposal {
 export interface ChairsideServiceProposal {
   id: string;
   serviceCode: string;
-  code804n?: string;
+  regulatoryCode?: string | undefined;
+  code804n?: string | undefined;
   title: string;
   toothNumber?: number | undefined;
   quantity: number;
-  priceRub: number;
+  priceKopecks: number;
+  priceRub?: number | undefined;
   discountPercent?: number | undefined;
   applied?: boolean | undefined;
 }

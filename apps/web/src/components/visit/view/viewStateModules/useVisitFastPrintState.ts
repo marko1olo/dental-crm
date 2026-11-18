@@ -30,7 +30,7 @@ export interface UseVisitFastPrintStateParams {
 	visitNoteForm: VisitViewProps["visitNoteForm"];
 	dashboard: VisitViewProps["dashboard"];
 	toothStateByCode: VisitViewProps["toothStateByCode"];
-	selectedToothForMenu: string | number | null | undefined;
+	selectedToothForMenu?: string | number | { code: string; label?: string; state?: string; [key: string]: unknown } | null | undefined;
 	updateVisitNoteField: VisitViewProps["updateVisitNoteField"];
 }
 

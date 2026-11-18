@@ -28,7 +28,12 @@ export const BeforeAfterSplitter: React.FC<BeforeAfterSplitterProps> = ({
 				afterLabel={afterLabel}
 				compact={compact}
 				onClose={onClose}
-				photos={photos.map((p) => ({ id: p.id, url: p.url, label: p.label, date: p.date }))}
+				photos={photos.map((p) => ({
+					id: p.id,
+					url: p.url,
+					...(p.label !== undefined ? { label: p.label } : {}),
+					...(p.date !== undefined ? { date: p.date } : {}),
+				}))}
 			/>
 		</div>
 	);

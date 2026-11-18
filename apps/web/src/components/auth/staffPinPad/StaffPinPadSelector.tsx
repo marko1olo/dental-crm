@@ -5,7 +5,7 @@ import { PanelLoadFailure } from "../../PanelLoadFailure";
 import { DEMO_CHIEF_DOCTOR, STAFF_UNLOCK_LIST_SUBJECT } from "../staffUnlockState";
 import { getDemoShowcaseStaff } from "../../../utils/demoModeEngine";
 import { StaffPinPadCard } from "./StaffPinPadCards";
-import type { StaffUser } from "./staffPinPadTypes";
+import { type StaffUser, demoStaffToStaffUser } from "./staffPinPadTypes";
 
 interface StaffPinPadSelectorProps {
 	listPhase: "loading" | "failed" | "empty" | "ready";
@@ -52,7 +52,7 @@ export function StaffPinPadSelector({
 								<Zap size={12} className="text-[var(--teal,#0d9488)]" />
 								<span>Быстрый вход / Демо-профиль:</span>
 							</div>
-							{(getDemoShowcaseStaff() as unknown as StaffUser[]).slice(0, 4).map((staff) => (
+							{getDemoShowcaseStaff().slice(0, 4).map(demoStaffToStaffUser).map((staff) => (
 								<StaffPinPadCard
 									key={staff.id}
 									staff={staff}

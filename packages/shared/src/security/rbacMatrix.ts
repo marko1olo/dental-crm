@@ -14,6 +14,17 @@
 
 import { z } from "zod";
 
+export const CANONICAL_STAFF_ROLES = [
+	"owner",
+	"doctor",
+	"administrator",
+	"assistant",
+	"manager",
+] as const;
+
+export type CanonicalStaffRole = (typeof CANONICAL_STAFF_ROLES)[number];
+export const canonicalStaffRoleSchema = z.enum(CANONICAL_STAFF_ROLES);
+
 export const GRANULAR_STAFF_ROLES = [
 	"owner",
 	"head_doctor",
@@ -650,5 +661,66 @@ export function getAccessLevelBadge(level: AccessLevel): {
 				badgeClass: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
 				borderClass: "border-slate-200 dark:border-slate-700",
 			};
+	}
+}
+
+/**
+ * Нормализация любой клинической или административной роли/синонима к 5 каноническим ролям клиники (Мандат 8n).
+ * Канонические роли: owner, doctor, administrator, assistant, manager.
+ */
+export function normalizeStaffRoleToCanonical(
+	rawRole: string | null | undefined,
+): CanonicalStaffRole | "curator" | "unknown" {
+	if (!rawRole || typeof rawRole !== "string") return "unknown";
+	const normalized = rawRole.trim().toLowerCase();
+
+	switch (normalized) {
+		case "owner":
+		case "admin":
+		case "director":
+		case "chief":
+			return "owner";
+
+		case "doctor":
+		case "head_doctor":
+		case "chief_doctor":
+		case "dentist":
+		case "therapist":
+		case "orthopedist":
+		case "surgeon":
+		case "orthodontist":
+		case "periodontist":
+		case "pediatric":
+		case "hygienist":
+		case "implantologist":
+		case "radiologist":
+		case "universal":
+		case "general":
+			return "doctor";
+
+		case "administrator":
+		case "senior_admin":
+		case "registrar":
+		case "receptionist":
+		case "admin_reception":
+			return "administrator";
+
+		case "assistant":
+		case "senior_nurse":
+		case "nurse":
+		case "sanitary":
+			return "assistant";
+
+		case "manager":
+		case "accountant":
+		case "finance":
+		case "bookkeeper":
+			return "manager";
+
+		case "curator":
+			return "curator";
+
+		default:
+			return "unknown";
 	}
 }

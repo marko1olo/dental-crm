@@ -7,6 +7,7 @@ import {
 	text,
 	timestamp,
 	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { organizations } from "../auth.js";
 import { patients } from "./patientCore.js";
@@ -81,6 +82,9 @@ export const patientReclamations = pgTable(
 		// Без внешнего ключа намеренно: сотрудника могут уволить и удалить, а разбор
 		// по его работе обязан остаться в карте.
 		doctorId: uuid("doctor_id"),
+		toothNumber: integer("tooth_number"),
+		warrantyCertificateId: uuid("warranty_certificate_id"),
+		defectType: varchar("defect_type", { length: 64 }),
 		complicationDetails: text("complication_details").notNull(),
 		proposedAction: text("proposed_action"),
 		status: text("status").notNull().default("under_review"),
@@ -98,6 +102,9 @@ export const patientReclamations = pgTable(
 		),
 		patientIdIdx: index("patient_reclamations_patient_id_idx").on(t.patientId),
 		doctorIdIdx: index("patient_reclamations_doctor_id_idx").on(t.doctorId),
+		warrantyCertIdx: index("patient_reclamations_warranty_certificate_id_idx").on(
+			t.warrantyCertificateId,
+		),
 	}),
 );
 

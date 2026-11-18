@@ -1,0 +1,64 @@
+{
+  "subagent": "Senior Red Team Warehouse & Shift Deduction Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-10-25T19:04:00+04:00",
+  "mandates_applied": [
+    "Mandate 8b: AST Monolith Decomposition (all files strictly <= 120 lines)",
+    "Mandate 8e: Doctor & Staff Autonomy (zero disabled submit/print buttons)",
+    "Mandate 8n: Solo Doctor & Small Clinic Sovereignty (Soft Negative Stock background overdraft)",
+    "Mandate 8x: Clear Clinical Domain Language (destroyed Soviet forms 0504230, M-11, TORG-16)",
+    "Mandate 8am: Unified Design Code (exactly 1 Primary CTA emerald button per visible view)",
+    "Mandate 8ap: Anti-Fabrication & Zero Bureaucratic Jargon (no statutory law codes in function names)",
+    "Mandate 8ze: Touch Ergonomics & Apple HIG (touch targets >= 44x44px, Natural Thumb Zone, 0px horizontal scroll)"
+  ],
+  "engines_consolidated": {
+    "legacy_engines": [
+      "components/inventory/writeoff",
+      "components/inventory/batchWriteoff (old partial)",
+      "components/inventory/deductionModalModules"
+    ],
+    "canonical_ssot": "components/inventory/WarehouseBatchWriteoffModal.tsx & ShiftBatchDeductionModal.tsx",
+    "shift_batch_deduction_action": "✓ Списать расходники смены по техкартам оказанных услуг",
+    "soft_negative_stock": {
+      "active": true,
+      "blocking_doctor": false,
+      "blocking_cashier": false,
+      "indicator_badge": "Мягкий овердрафт склада (Мандат 8n)"
+    }
+  },
+  "soviet_monsters_purged": [
+    "apps/web/src/components/inventory/writeoff/printForms/printAct0504230.ts",
+    "apps/web/src/components/inventory/writeoff/printForms/printFormM11.ts",
+    "apps/web/src/components/inventory/writeoff/printForms/printTorg16.ts",
+    "apps/web/src/components/inventory/writeoff/quickDocs/quickCarpuleDocument.ts",
+    "apps/web/src/components/inventory/writeoff/quickDocs/quickCarpuleParams.ts"
+  ],
+  "modern_act_sheet": "apps/web/src/components/inventory/batchWriteoff/batchWriteoffPrintAct.ts (92 lines, single-signer, debureaucratized)",
+  "file_line_counts": {
+    "apps/web/src/components/inventory/batchWriteoff/batchWriteoffPrintAct.ts": 92,
+    "apps/web/src/components/inventory/batchWriteoff/batchWriteoffTypes.ts": 78,
+    "apps/web/src/components/inventory/batchWriteoff/useBatchWriteoffLogic.ts": 100,
+    "apps/web/src/components/inventory/batchWriteoff/BatchWriteoffHeader.tsx": 99,
+    "apps/web/src/components/inventory/batchWriteoff/BatchWriteoffShiftTab.tsx": 76,
+    "apps/web/src/components/inventory/batchWriteoff/BatchWriteoffPackagesTab.tsx": 77,
+    "apps/web/src/components/inventory/batchWriteoff/BatchWriteoffProcedureTab.tsx": 82,
+    "apps/web/src/components/inventory/batchWriteoff/BatchWriteoffFooter.tsx": 85,
+    "apps/web/src/components/inventory/WarehouseBatchWriteoffModal.tsx": 71,
+    "apps/web/src/components/inventory/ShiftBatchDeductionModal.tsx": 84,
+    "apps/web/src/components/inventory/writeoff/ClinicalWriteoffFooter.tsx": 108,
+    "apps/web/src/components/inventory/writeoff/clinicalWriteoffPrintForms.ts": 35,
+    "apps/web/src/components/inventory/writeoff/clinicalWriteoffQuickDocuments.ts": 52,
+    "apps/web/src/components/inventory/writeoff/styles/writeoffButtons.css": 119,
+    "apps/web/src/components/inventory/useInventoryLogic.ts": 114
+  },
+  "visual_proofs": {
+    "pc_light": "docs/proofs/inventory_writeoff/pc_light_1440x900.png (65,977 bytes)",
+    "pc_dark": "docs/proofs/inventory_writeoff/pc_dark_1440x900.png (64,557 bytes)",
+    "mobile_light": "docs/proofs/inventory_writeoff/mobile_light_390x844.png (40,854 bytes)",
+    "mobile_dark": "docs/proofs/inventory_writeoff/mobile_dark_390x844.png (41,401 bytes)"
+  },
+  "test_gates": {
+    "vitest_inventory": "61 files passed, 201 tests passed, 0 failures",
+    "check_encoding": "19,409 files checked, 0 errors"
+  }
+}

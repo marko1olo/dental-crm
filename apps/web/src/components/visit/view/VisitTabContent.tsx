@@ -27,7 +27,7 @@ export interface VisitTabContentProps {
 	activePatient?: VisitPatientEntity | null | undefined;
 	activeDoctor?: VisitDoctorEntity | null | undefined;
 	visitNoteForm?: VisitNoteFormExtended | null | undefined;
-	updateVisitNoteField?: ((field: string, val: string) => void) | undefined;
+	updateVisitNoteField?: ((field: string, value: unknown) => void) | undefined;
 	loadedTreatmentPlan?: VisitLoadedTreatmentPlan | null | undefined;
 	dashboard?: Dashboard | null | undefined;
 	selectedToothForMenu?: { code: string; label?: string } | null | undefined;
@@ -144,6 +144,7 @@ export function VisitTabContent({
 				</div>
 				{isPresenterModalOpen && (
 					<TreatmentPlanStudioModal
+						key={activePatient?.id || "draft"}
 						isOpen={isPresenterModalOpen}
 						onClose={() => setIsPresenterModalOpen(false)}
 						patientId={activePatient?.id}

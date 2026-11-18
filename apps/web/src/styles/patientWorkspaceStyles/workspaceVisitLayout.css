@@ -1,0 +1,39 @@
+/* Patient Workspace: Clinician Visit Grid & Sidebar Layout */
+.visit-grid-container {
+	display: grid;
+	gap: 20px;
+	grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.6fr);
+	align-items: start;
+}
+
+@media (max-width: 1200px) {
+	.visit-grid-container {
+		grid-template-columns: 1fr;
+	}
+}
+
+.visit-sidebar-materials {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	position: sticky;
+	top: 20px;
+}
+
+.visit-sidebar-box {
+	background: var(--paper-soft);
+	border: none;
+	border-radius: 12px;
+	padding: 16px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.visit-sidebar-box h3 {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0 0 12px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}

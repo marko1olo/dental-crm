@@ -12,6 +12,9 @@ import {
 	AUTOPILOT_HYGIENE_K051,
 	AUTOPILOT_EXTRACTION_K011,
 	AUTOPILOT_EXTRACTION_K045,
+	AUTOPILOT_EXTRACTION_COMPLEX_K011,
+	AUTOPILOT_IMPLANT_STANDARD_K081,
+	AUTOPILOT_SINUS_GBR_K082,
 	AUTOPILOT_NORM_HEALTHY,
 	DOCTOR_AUTOPILOT_PRESETS_MAP,
 } from "./autopilotPresetsData";
@@ -75,10 +78,12 @@ export function build1ClickEmergencyPainPreset(
 		...base,
 		defaultTooth: tooth,
 		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
-		service804n: {
-			...base.service804n!,
-			title: `${base.service804n!.title} (Зуб ${tooth})`,
-		},
+		service804n: base.service804n
+			? {
+					...base.service804n,
+					title: `${base.service804n.title} (Зуб ${tooth})`,
+				}
+			: undefined,
 	};
 }
 
@@ -95,10 +100,12 @@ export function build1ClickPulpitisPreset(
 		...AUTOPILOT_PULPITIS_K040,
 		defaultTooth: tooth,
 		statusLocalis: `${toothPrefix}${AUTOPILOT_PULPITIS_K040.statusLocalis}`,
-		service804n: {
-			...AUTOPILOT_PULPITIS_K040.service804n!,
-			title: `${AUTOPILOT_PULPITIS_K040.service804n!.title} (Зуб ${tooth})`,
-		},
+		service804n: AUTOPILOT_PULPITIS_K040.service804n
+			? {
+					...AUTOPILOT_PULPITIS_K040.service804n,
+					title: `${AUTOPILOT_PULPITIS_K040.service804n.title} (Зуб ${tooth})`,
+				}
+			: undefined,
 	};
 }
 
@@ -115,10 +122,12 @@ export function build1ClickPeriodontitisPreset(
 		...AUTOPILOT_PERIODONTITIS_K045,
 		defaultTooth: tooth,
 		statusLocalis: `${toothPrefix}${AUTOPILOT_PERIODONTITIS_K045.statusLocalis}`,
-		service804n: {
-			...AUTOPILOT_PERIODONTITIS_K045.service804n!,
-			title: `${AUTOPILOT_PERIODONTITIS_K045.service804n!.title} (Зуб ${tooth})`,
-		},
+		service804n: AUTOPILOT_PERIODONTITIS_K045.service804n
+			? {
+					...AUTOPILOT_PERIODONTITIS_K045.service804n,
+					title: `${AUTOPILOT_PERIODONTITIS_K045.service804n.title} (Зуб ${tooth})`,
+				}
+			: undefined,
 	};
 }
 
@@ -128,12 +137,14 @@ export function build1ClickPeriodontitisPreset(
 export function build1ClickHygienePreset(
 	toothNumber?: number | null,
 ): DoctorAutopilotPreset {
-	const preset = { ...AUTOPILOT_HYGIENE_K051 };
 	if (toothNumber) {
-		preset.defaultTooth = toothNumber;
-		preset.title = `${AUTOPILOT_HYGIENE_K051.title} (Зуб ${toothNumber})`;
+		return {
+			...AUTOPILOT_HYGIENE_K051,
+			defaultTooth: toothNumber,
+			title: `${AUTOPILOT_HYGIENE_K051.title} (Зуб ${toothNumber})`,
+		};
 	}
-	return preset;
+	return { ...AUTOPILOT_HYGIENE_K051 };
 }
 
 /**
@@ -152,10 +163,12 @@ export function build1ClickExtractionPreset(
 		...base,
 		defaultTooth: tooth,
 		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
-		service804n: {
-			...base.service804n!,
-			title: `${base.service804n!.title} (Зуб ${tooth})`,
-		},
+		service804n: base.service804n
+			? {
+					...base.service804n,
+					title: `${base.service804n.title} (Зуб ${tooth})`,
+				}
+			: undefined,
 	};
 }
 
@@ -167,15 +180,17 @@ export function build1ClickExtractionComplexPreset(
 ): DoctorAutopilotPreset {
 	const tooth = toothNumber ?? 48;
 	const toothPrefix = `Зуб ${tooth}: `;
-	const base = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_extraction_complex_k011 || AUTOPILOT_EXTRACTION_K045;
+	const base = AUTOPILOT_EXTRACTION_COMPLEX_K011 || AUTOPILOT_EXTRACTION_K045;
 	return {
 		...base,
 		defaultTooth: tooth,
 		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
-		service804n: {
-			...base.service804n!,
-			title: `${base.service804n!.title} (Зуб ${tooth})`,
-		},
+		service804n: base.service804n
+			? {
+					...base.service804n,
+					title: `${base.service804n.title} (Зуб ${tooth})`,
+				}
+			: undefined,
 	};
 }
 
@@ -187,15 +202,17 @@ export function build1ClickImplantPreset(
 ): DoctorAutopilotPreset {
 	const tooth = toothNumber ?? 36;
 	const toothPrefix = `Зуб ${tooth}: `;
-	const base = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_implant_standard_k081;
+	const base = AUTOPILOT_IMPLANT_STANDARD_K081;
 	return {
 		...base,
 		defaultTooth: tooth,
 		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
-		service804n: {
-			...base.service804n!,
-			title: `${base.service804n!.title} (Зуб ${tooth})`,
-		},
+		service804n: base.service804n
+			? {
+					...base.service804n,
+					title: `${base.service804n.title} (Зуб ${tooth})`,
+				}
+			: undefined,
 	};
 }
 
@@ -207,15 +224,17 @@ export function build1ClickSinusGbrPreset(
 ): DoctorAutopilotPreset {
 	const tooth = toothNumber ?? 16;
 	const toothPrefix = `Зуб ${tooth}: `;
-	const base = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_sinus_gbr_k082;
+	const base = AUTOPILOT_SINUS_GBR_K082;
 	return {
 		...base,
 		defaultTooth: tooth,
 		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
-		service804n: {
-			...base.service804n!,
-			title: `${base.service804n!.title} (Зуб ${tooth})`,
-		},
+		service804n: base.service804n
+			? {
+					...base.service804n,
+					title: `${base.service804n.title} (Зуб ${tooth})`,
+				}
+			: undefined,
 	};
 }
 

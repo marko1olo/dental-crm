@@ -1,4 +1,5 @@
 import {
+	Bot,
 	MessageSquare,
 	Phone,
 	Send,
@@ -7,8 +8,8 @@ import {
 import type { QuickTemplateItem } from "./whatsAppChatTemplates";
 
 export interface WhatsAppQuickBarProps {
-	selectedChannel: "whatsapp" | "telegram" | "sms";
-	onSelectChannel: (channel: "whatsapp" | "telegram" | "sms") => void;
+	selectedChannel: "whatsapp" | "telegram" | "max" | "sms";
+	onSelectChannel: (channel: "whatsapp" | "telegram" | "max" | "sms") => void;
 	quickTemplates: QuickTemplateItem[];
 	selectedChipTemplate: string | null;
 	isSending: boolean;
@@ -72,6 +73,21 @@ export function WhatsAppQuickBar({
 					>
 						<Send size={12} />
 						<span>Telegram</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => onSelectChannel("max")}
+						className={`min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
+							selectedChannel === "max"
+								? "bg-amber-600 text-white shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						role="radio"
+						aria-checked={selectedChannel === "max"}
+						data-testid="channel-select-max"
+					>
+						<Bot size={12} />
+						<span>MAX</span>
 					</button>
 					<button
 						type="button"

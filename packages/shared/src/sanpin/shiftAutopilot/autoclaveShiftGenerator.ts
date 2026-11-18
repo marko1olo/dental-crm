@@ -6,8 +6,10 @@
 
 import { CLINIC_AUTOCLAVE_MODELS } from "../sanpinJournalsPresets.js";
 import {
+	createAutoclaveRecord,
 	createDefault5ChamberPoints,
 	createForm257Record,
+	type AutoclaveCycleRecord,
 	type Form257Record,
 	type SterilizationRegimeId,
 } from "../sanpinRegistryEngine.js";
@@ -28,7 +30,7 @@ export interface CanonicalShiftAutoclaveOptions {
  */
 export function createCanonicalShiftAutoclaveBatch(
 	options: CanonicalShiftAutoclaveOptions = {},
-): Form257Record {
+): AutoclaveCycleRecord {
 	const date = options.date || new Date().toISOString().slice(0, 10);
 	const cycleNumber = options.cycleNumber ?? 1;
 	const packsCount = options.packsCount ?? 18;
@@ -38,7 +40,7 @@ export function createCanonicalShiftAutoclaveBatch(
 	const melagApp = CLINIC_AUTOCLAVE_MODELS.find((a) => a.id === "AUTO-MELAG-01") || CLINIC_AUTOCLAVE_MODELS[0]!;
 	const chamberPoints = createDefault5ChamberPoints("steam_134_5min");
 
-	return createForm257Record({
+	return createAutoclaveRecord({
 		date,
 		cycleNumber,
 		sterilizerId: melagApp.id,
@@ -68,7 +70,7 @@ export function generateShiftAutoclaveRecords(
 	operatorFullName: string,
 	operatorPosition: string,
 	headNurseFullName: string,
-): Form257Record[] {
+): AutoclaveCycleRecord[] {
 	const melagApp = CLINIC_AUTOCLAVE_MODELS.find((a) => a.id === "AUTO-MELAG-01") || CLINIC_AUTOCLAVE_MODELS[0]!;
 	const eurondaApp = CLINIC_AUTOCLAVE_MODELS.find((a) => a.id === "AUTO-EURONDA-02") || CLINIC_AUTOCLAVE_MODELS[1] || melagApp;
 
@@ -77,7 +79,7 @@ export function generateShiftAutoclaveRecords(
 	const tauChamberPoints = createDefault5ChamberPoints("dry_heat_180_60min");
 
 	return [
-		createForm257Record({
+		createAutoclaveRecord({
 			date,
 			cycleNumber: 1,
 			sterilizerId: melagApp.id,
@@ -100,7 +102,7 @@ export function generateShiftAutoclaveRecords(
 			isHeadNurseVerified: true,
 			notes: "Фракционированный вакуум 3-кратный. Сушка 15 мин. Тест-интеграторы 5 класса норма.",
 		}),
-		createForm257Record({
+		createAutoclaveRecord({
 			date,
 			cycleNumber: 2,
 			sterilizerId: eurondaApp.id,
@@ -123,7 +125,7 @@ export function generateShiftAutoclaveRecords(
 			isHeadNurseVerified: true,
 			notes: "Режим 134°C/20 мин. Внутренний контроль каждой кассеты пройден.",
 		}),
-		createForm257Record({
+		createAutoclaveRecord({
 			date,
 			cycleNumber: 3,
 			sterilizerId: "DRY-TAU-01",
@@ -149,7 +151,7 @@ export function generateShiftAutoclaveRecords(
 	];
 }
 
-export interface GenerateBatchForm257Options {
+export interface GenerateBatchAutoclaveOptions {
 	startDate?: string;
 	endDate?: string;
 	targetDates?: readonly string[];
@@ -166,7 +168,9 @@ export interface GenerateBatchForm257Options {
 	isHeadNurseVerified?: boolean;
 }
 
-export function generateBatchSterilizationRecords(options: GenerateBatchForm257Options): Form257Record[] {
+export type GenerateBatchForm257Options = GenerateBatchAutoclaveOptions;
+
+export function generateBatchAutoclaveRecords(options: GenerateBatchAutoclaveOptions): AutoclaveCycleRecord[] {
 	const {
 		startDate, endDate, targetDates, excludeSundays = true, cyclesPerDay = 2, packsPerCycle = 14,
 		sterilizerId = "autoclave-melag-vacuklav-23b",
@@ -209,7 +213,7 @@ export function generateBatchSterilizationRecords(options: GenerateBatchForm257O
 	}
 
 	if (datesToProcess.length === 0) return [];
-	const records: Form257Record[] = [];
+	const records: AutoclaveCycleRecord[] = [];
 
 	for (const dateStr of datesToProcess) {
 		const count = Math.max(1, cyclesPerDay);
@@ -225,7 +229,7 @@ export function generateBatchSterilizationRecords(options: GenerateBatchForm257O
 				: `Терапевтические наборы (зеркала, зонды, пинцеты), наконечники турбинные NSK Ti-Max (${currentCyclePacks} упак.)`;
 			const chamberPoints = createDefault5ChamberPoints("steam_134_5min", true);
 
-			const rec = createForm257Record({
+			const rec = createAutoclaveRecord({
 				date: dateStr, cycleNumber: cycleNum, sterilizerId,
 				sterilizerCode: options.sterilizerCode || "АК-01",
 				sterilizerBrandModel: options.sterilizerBrandModel || "Melag Vacuklav 23 B+",
@@ -243,10 +247,13 @@ export function generateBatchSterilizationRecords(options: GenerateBatchForm257O
 	return records;
 }
 
-export { generateBatchSterilizationRecords as generateBatchForm257Records };
+export {
+	generateBatchAutoclaveRecords as generateBatchSterilizationRecords,
+	generateBatchAutoclaveRecords as generateBatchForm257Records,
+};
 
-export function filterForm257Records(
-	records: readonly Form257Record[],
+export function filterAutoclaveRecords(
+	records: readonly AutoclaveCycleRecord[],
 	criteria: {
 		searchQuery?: string;
 		startDate?: string;
@@ -255,7 +262,7 @@ export function filterForm257Records(
 		regimeId?: string;
 		status?: string;
 	},
-): Form257Record[] {
+): AutoclaveCycleRecord[] {
 	return records.filter((rec) => {
 		if (criteria.searchQuery && criteria.searchQuery.trim().length > 0) {
 			const query = criteria.searchQuery.trim().toLowerCase();
@@ -275,3 +282,5 @@ export function filterForm257Records(
 		return true;
 	});
 }
+
+export const filterForm257Records = filterAutoclaveRecords;

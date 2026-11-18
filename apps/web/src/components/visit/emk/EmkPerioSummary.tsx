@@ -41,14 +41,14 @@ export function EmkPerioSummary({
 			"Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует (BOP 0%), патологических карманов нет, подвижность зубов физиологическая (0 ст.). Скрининг PSR: 0 во всех секстантах.";
 
 		const currentObjectiveStatus = typeof visitNoteForm?.objectiveStatus === "string" ? visitNoteForm.objectiveStatus : "";
-		updateVisitNoteField(
+		updateVisitNoteField?.(
 			"objectiveStatus",
 			appendClinicalText(currentObjectiveStatus, normStatusRu, "\n\n"),
 		);
 
 		const currentDiag = String(visitNoteForm?.diagnosis || "").trim();
 		if (!currentDiag || currentDiag.includes("Здоров") || currentDiag.includes("Z01.2")) {
-			updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование (Пародонт интактен / норма)");
+			updateVisitNoteField?.("diagnosis", "Z01.2 Стоматологическое обследование (Пародонт интактен / норма)");
 		}
 
 		if (typeof window !== "undefined") {
@@ -111,7 +111,7 @@ export function EmkPerioSummary({
 		const planAddition =
 			"• Профессиональная гигиена полости рта (A16.07.051): ультразвуковое удаление над- и поддесневых зубных отложений скейлером, воздушно-абразивная обработка Air-Flow, полировка эмали пастой, глубокое фторирование.";
 		const currentTreatmentPlan = typeof visitNoteForm?.treatmentPlan === "string" ? visitNoteForm.treatmentPlan : "";
-		updateVisitNoteField(
+		updateVisitNoteField?.(
 			"treatmentPlan",
 			appendClinicalText(currentTreatmentPlan, planAddition, "\n\n"),
 		);
@@ -134,7 +134,7 @@ export function EmkPerioSummary({
 			}
 
 			const currentObjectiveStatus = typeof visitNoteForm?.objectiveStatus === "string" ? visitNoteForm.objectiveStatus : "";
-			updateVisitNoteField(
+			updateVisitNoteField?.(
 				"objectiveStatus",
 				appendClinicalText(currentObjectiveStatus, text, "\n\n"),
 			);

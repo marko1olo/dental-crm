@@ -30,7 +30,7 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [isServicePricelistModalOpen, setIsServicePricelistModalOpen] = useState(false);
-	const [editingService, setEditingService] = useState<any | null>(null);
+	const [editingService, setEditingService] = useState<ServiceCatalogItem | null>(null);
 
 	const rawCatalog = (dashboard?.serviceCatalog ?? []) as ServiceCatalogItem[];
 	const { isSeeding, handleSaveService, handleDeleteService, handleSeedBaseline } =

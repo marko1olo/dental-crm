@@ -24,7 +24,12 @@ export interface FastPrintConsentParams {
 	readonly activeAppointment?: FastPrintAppointmentContext | null | undefined;
 	readonly visitNoteForm?: FastPrintVisitNoteFormContext | null | undefined;
 	readonly dashboard?: FastPrintDashboardContext | null | undefined;
-	readonly selectedToothForMenu?: number | string | null | undefined;
+	readonly selectedToothForMenu?:
+		| number
+		| string
+		| { code: string; label?: string | undefined; state?: string | undefined; [key: string]: unknown }
+		| null
+		| undefined;
 	readonly interventionType?: string | undefined;
 }
 
@@ -152,7 +157,10 @@ export function executeFastPrintInformedConsent({
 	const doctorName = activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач";
 	const specialty = activeDoctor?.specialty || activeDoctor?.specialtyRu || "Стоматолог-терапевт";
 	const currentDate = activeAppointment?.startsAt ? formatRuDateShort(activeAppointment.startsAt) : new Date().toLocaleDateString("ru-RU");
-	const toothInfo = selectedToothForMenu ? ` (в области зуба № ${selectedToothForMenu})` : "";
+	const toothCode = typeof selectedToothForMenu === "object" && selectedToothForMenu !== null
+		? selectedToothForMenu.code
+		: selectedToothForMenu;
+	const toothInfo = toothCode ? ` (в области зуба № ${toothCode})` : "";
 	const diagnosis = visitNoteForm?.diagnosis || "Клинический диагноз по МКБ-10 установлен";
 
 	const html = `<!DOCTYPE html>

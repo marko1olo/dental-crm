@@ -39,6 +39,7 @@ import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthop
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
+import { DirectWarrantyLauncher } from "./components/warranty/DirectWarrantyLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { useAppStore } from "./store/appStore";
@@ -397,6 +398,7 @@ export function AppShell() {
 			<DirectSurgeryLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
+			<DirectWarrantyLauncher />
 			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />
 			)}

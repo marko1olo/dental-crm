@@ -11,6 +11,7 @@
 
 import React, { useMemo } from "react";
 import { Smile, CheckCircle2, AlertCircle, Clock, CreditCard } from "lucide-react";
+import { formatKopecksToRub } from "@dental/shared";
 import type { AlignerTrackingState } from "./orthodonticsCatalogData";
 
 export interface AlignerInstallmentTranche {
@@ -28,15 +29,6 @@ export interface AlignerTrackingCardProps {
 	readonly onAdvanceStep?: () => void;
 	readonly customTranches?: readonly AlignerInstallmentTranche[];
 	readonly totalSetupCostKopecks?: bigint;
-}
-
-function formatKopecksToRub(kopecks: bigint): string {
-	const rub = Number(kopecks / 100n);
-	return new Intl.NumberFormat("ru-RU", {
-		style: "currency",
-		currency: "RUB",
-		maximumFractionDigits: 0,
-	}).format(rub);
 }
 
 export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
@@ -239,7 +231,7 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 					</div>
 					{tranches.length > 0 && (
 						<div className="text-[11px] text-[var(--ink-muted)]">
-							Оплачено: <strong className="text-[var(--teal,#0d9488)]">{formatKopecksToRub(paidKopecks)}</strong> из {formatKopecksToRub(totalKopecks)}
+							Оплачено: <strong className="text-[var(--teal,#0d9488)]">{formatKopecksToRub(Number(paidKopecks))}</strong> из {formatKopecksToRub(Number(totalKopecks))}
 						</div>
 					)}
 				</div>
@@ -285,7 +277,7 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 
 									<div className="flex items-baseline justify-between">
 										<span className="text-sm font-extrabold text-[var(--ink)]">
-											{formatKopecksToRub(t.amountKopecks)}
+											{formatKopecksToRub(Number(t.amountKopecks))}
 										</span>
 										<span className="text-[10px] text-[var(--ink-muted)]">{t.dueDateText}</span>
 									</div>

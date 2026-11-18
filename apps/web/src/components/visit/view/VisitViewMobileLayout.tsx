@@ -84,6 +84,9 @@ export function VisitViewMobileLayout({ s }: VisitViewMobileLayoutProps) {
 				<CryptoProSigner
 					diaryHash={null}
 					isLocked={false}
+					lockedAt={null}
+					ensureDraftSaved={async () => null}
+					onLock={async () => {}}
 				/>
 			</div>
 		</>

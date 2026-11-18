@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
-import type { DentalLabOrderData, CanonicalLabOrderStatus } from "../lab/labMath";
+import type { DentalLabOrderData, Canonical5LabStatus } from "../lab/labMath";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import type { LabOrder, LabOrderFilterKey } from "./labOrdersTypes";
 import {
@@ -22,24 +22,25 @@ export interface LabOrderPromptState {
 }
 
 export function labOrderToDentalLabOrderData(order: LabOrder): DentalLabOrderData {
+	const orderNum = order.orderNumber ?? order.gostOrderNumber;
 	return {
 		id: order.id,
 		patientId: order.patientId,
-		patientName: order.patientName ?? undefined,
-		doctorId: order.doctorId,
-		doctorName: order.doctorName,
-		orderNumber: order.orderNumber ?? order.gostOrderNumber ?? undefined,
+		doctorId: order.doctorId ?? null,
+		doctorName: order.doctorName ?? null,
 		secureToken: order.secureToken,
-		toothFdi: order.toothFdi,
-		material: order.material,
-		colorVita: order.colorVita,
-		constructionType: order.constructionType ?? undefined,
+		toothFdi: order.toothFdi ?? null,
+		material: order.material ?? null,
+		colorVita: order.colorVita ?? null,
 		status: order.status,
-		stage: order.stage ?? undefined,
-		dueDate: order.dueDate,
-		clinicalNotes: order.clinicalNotes,
-		labComments: order.labComments,
-		attachedImageUrl: order.attachedImageUrl,
+		dueDate: order.dueDate ?? null,
+		clinicalNotes: order.clinicalNotes ?? null,
+		labComments: order.labComments ?? null,
+		attachedImageUrl: order.attachedImageUrl ?? null,
+		...(order.patientName != null ? { patientName: order.patientName } : {}),
+		...(orderNum != null ? { orderNumber: orderNum } : {}),
+		...(order.constructionType != null ? { constructionType: order.constructionType } : {}),
+		...(order.stage != null ? { stage: order.stage } : {}),
 	};
 }
 
@@ -130,7 +131,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 	}, [orders]);
 
 	const handleStatusTransition = (orderId: string, targetStatus: string) => {
-		void transitionLabOrderStatus(orderId, targetStatus as CanonicalLabOrderStatus, () => void fetchOrders());
+		void transitionLabOrderStatus(orderId, targetStatus as Canonical5LabStatus, () => void fetchOrders());
 	};
 
 	const handleScheduleAppointment = (order: LabOrder) => {
@@ -184,6 +185,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		isTrackingDrawerOpen,
 		setIsTrackingDrawerOpen,
 		selectedOrderForTracking,
+		setSelectedOrderForTracking,
 		openMenuOrderId,
 		setOpenMenuOrderId,
 		modalInitialTab,

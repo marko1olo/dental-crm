@@ -24,7 +24,7 @@ export async function handleGetRegulatoryExport(req: FastifyRequest, reply: Fast
 
 	const todayStr = new Date().toISOString().slice(0, 10);
 
-	const form257Logs = await db
+	const autoclaveLogs = await db
 		.select({
 			id: sterilizationLogs.id,
 			cycleNumber: sterilizationLogs.cycleNumber,
@@ -47,7 +47,7 @@ export async function handleGetRegulatoryExport(req: FastifyRequest, reply: Fast
 		.orderBy(desc(sterilizationLogs.timestamp))
 		.limit(200);
 
-	const form366Logs = await db
+	const cleaningControlLogs = await db
 		.select({
 			id: preSterilizationCleaningLogs.id,
 			instrumentName: sql<string>`coalesce(nullif(pre_sterilization_cleaning_logs.notes, ''), 'Стоматологический инструментарий')`,
@@ -74,20 +74,30 @@ export async function handleGetRegulatoryExport(req: FastifyRequest, reply: Fast
 		traySterileByDefault: true,
 		regulatoryStandard: "СанПиН 3.3686-21",
 		forms: {
+			autoclaveJournal: {
+				titleRu: "Журнал контроля работы стерилизаторов (автоклавирование)",
+				recordsCount: autoclaveLogs.length,
+				records: autoclaveLogs,
+			},
+			cleaningControlJournal: {
+				titleRu: "Журнал учета качества предстерилизационной очистки",
+				recordsCount: cleaningControlLogs.length,
+				records: cleaningControlLogs,
+			},
 			form257u: {
 				titleRu: "Журнал контроля работы стерилизаторов (автоклавирование)",
-				recordsCount: form257Logs.length,
-				records: form257Logs,
+				recordsCount: autoclaveLogs.length,
+				records: autoclaveLogs,
 			},
 			form366u: {
 				titleRu: "Журнал учета качества предстерилизационной очистки",
-				recordsCount: form366Logs.length,
-				records: form366Logs,
+				recordsCount: cleaningControlLogs.length,
+				records: cleaningControlLogs,
 			},
 		},
 		summary: {
-			totalSterilizationCycles: form257Logs.length,
-			totalPsoBatches: form366Logs.length,
+			totalSterilizationCycles: autoclaveLogs.length,
+			totalPsoBatches: cleaningControlLogs.length,
 			allPassed: true,
 			complianceStatusRu: "100% Соответствие санитарным нормам",
 		},

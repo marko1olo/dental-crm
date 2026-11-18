@@ -179,7 +179,7 @@ export async function fetchPatientFieldRequirementsFromServer(
 ): Promise<PatientFieldRequirements> {
 	try {
 		const res = await fetch("/api/marketing/patient-field-requirements", {
-			headers: requestHeaders,
+			...(requestHeaders ? { headers: requestHeaders } : {}),
 		});
 		if (res.ok) {
 			const data = await res.json();

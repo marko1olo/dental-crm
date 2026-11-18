@@ -73,6 +73,7 @@ export async function executeLabOrderPatch(
 
 		const updateValues: Record<string, unknown> = { updatedAt: now, ...auditFields };
 		if (canonicalTarget) updateValues.status = canonicalTarget;
+		if (body.stage !== undefined) updateValues.stage = body.stage;
 		if (isWarrantyRequest) updateValues.isLockedInstalled = false;
 		if (updatedClinicalNotes !== undefined) updateValues.clinicalNotes = updatedClinicalNotes;
 		if (body.labComments !== undefined) updateValues.labComments = body.labComments;

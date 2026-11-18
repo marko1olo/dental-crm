@@ -33,7 +33,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PediatricBraveryDiplomaModal } from "../components/pediatric/PediatricBraveryDiplomaModal.js";
 import { VisitPediatricProtocolWidget } from "../components/pediatric/VisitPediatricProtocolWidget.js";
 import { DocumentsCatalogView } from "../components/documents/DocumentsCatalogView.js";
-import { ConsentStudioModal as ConsentModal } from "../components/consents/ConsentStudioModal.js";
+import { ConsentStudioModal as ConsentModal } from "../components/documents/DocumentsStudioModal.js";
 
 const EMOJI_REGEX =
 	/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;

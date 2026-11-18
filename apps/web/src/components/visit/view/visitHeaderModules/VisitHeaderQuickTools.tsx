@@ -7,7 +7,7 @@ export interface VisitHeaderQuickToolsProps {
 	handleOpenLabOrder: () => void;
 	setIsQueueCockpitForced: (forced: boolean) => void;
 	setSelectedPatientId?: ((id: string | null) => void) | undefined;
-	appLogic?: { setSelectedPatientId?: (id: string | null) => void } | undefined;
+	appLogic?: { setSelectedPatientId?: ((id: string | null) => void) | undefined; [key: string]: unknown } | undefined;
 }
 
 export function VisitHeaderQuickTools({

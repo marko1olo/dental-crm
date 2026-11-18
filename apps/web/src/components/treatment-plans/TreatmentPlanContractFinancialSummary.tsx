@@ -23,11 +23,11 @@ export const TreatmentPlanContractFinancialSummary: React.FC<TreatmentPlanContra
 	return (
 		<div className="space-y-3.5 p-4 sm:p-5 rounded-2xl bg-slate-50/90 border border-slate-200">
 			<div className="flex items-center justify-between flex-wrap gap-2">
-				<h3 className="font-black text-slate-900 uppercase tracking-wide text-xs flex items-center gap-1.5 m-0">
+				<h3 className="font-bold text-slate-900 text-xs flex items-center gap-1.5 m-0">
 					<Percent size={14} className="text-[var(--teal-dark,var(--teal))]" />
 					<span>3. Стоимость лечения, порядок оплаты и финансовые программы</span>
 				</h3>
-				<span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Вариант: {tier.title}</span>
+				<span className="text-[10px] font-semibold text-slate-500">Вариант: {tier.title}</span>
 			</div>
 
 			{/* 3-Column Grand Totals Card */}
@@ -59,7 +59,7 @@ export const TreatmentPlanContractFinancialSummary: React.FC<TreatmentPlanContra
 
 			{/* Stages Breakdown Cards */}
 			<div className="pt-1">
-				<div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
+				<div className="text-[10px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
 					<Layers size={12} className="text-slate-400" />
 					<span>Разбивка сметы по клиническим этапам:</span>
 				</div>

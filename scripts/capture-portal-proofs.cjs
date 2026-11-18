@@ -6,9 +6,13 @@ const crypto = require("crypto");
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const TARGET_DIR = path.resolve(__dirname, "../docs/proofs/portal");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/69cb45a3-13eb-41e0-9edf-bc5dcef5ebce/proofs");
 
 if (!fs.existsSync(TARGET_DIR)) {
 	fs.mkdirSync(TARGET_DIR, { recursive: true });
+}
+if (!fs.existsSync(BRAIN_DIR)) {
+	fs.mkdirSync(BRAIN_DIR, { recursive: true });
 }
 
 const configs = [
@@ -35,10 +39,18 @@ const configs = [
 ];
 
 async function capture() {
+	const possibleBrowserPaths = [
+		"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+		"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+		"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+		"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+	];
+	const executablePath = possibleBrowserPaths.find((p) => fs.existsSync(p));
+
 	const browser = await puppeteer.launch({
 		headless: "new",
-		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-		args: ["--no-sandbox", "--disable-setuid-sandbox"],
+		executablePath,
+		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
 	});
 
 	try {
@@ -49,24 +61,28 @@ async function capture() {
 				{ name: "prefers-color-scheme", value: cfg.theme },
 			]);
 
-			console.log(`Navigating to http://localhost:5173/book for ${cfg.filename}...`);
-			await page.goto("http://localhost:5173/book", {
-				waitUntil: "networkidle0",
-				timeout: 30000,
+			console.log(`Navigating to http://127.0.0.1:5173/#/book/demo-clinic for ${cfg.filename}...`);
+			await page.goto("http://127.0.0.1:5173/#/book/demo-clinic", {
+				waitUntil: "domcontentloaded",
+				timeout: 20000,
 			});
 
-			// Применяем тему на уровне DOM и documentElement
 			await page.evaluate((theme) => {
 				document.documentElement.classList.remove("light", "dark");
 				document.documentElement.classList.add(theme);
 				document.documentElement.setAttribute("data-theme", theme);
-				localStorage.setItem("dental_theme", theme);
+				try {
+					localStorage.setItem("dental_theme", theme);
+				} catch (_) {}
 			}, cfg.theme);
 
 			await wait(2000);
 
 			const targetPath = path.join(TARGET_DIR, cfg.filename);
 			await page.screenshot({ path: targetPath, fullPage: false });
+
+			const brainPath = path.join(BRAIN_DIR, cfg.filename);
+			fs.copyFileSync(targetPath, brainPath);
 
 			const content = fs.readFileSync(targetPath);
 			const hash = crypto.createHash("md5").update(content).digest("hex");

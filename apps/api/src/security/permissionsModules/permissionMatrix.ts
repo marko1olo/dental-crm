@@ -71,6 +71,30 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 	owner: ALL,
 	admin: ALL,
 
+	// Главный врач: клинический надзор, ЭМК, протоколы, ЕГИСЗ, аудит качества, расписание
+	head_doctor: [
+		"schedule.read",
+		"schedule.write",
+		"patients.read",
+		"patients.write",
+		"clinical.read",
+		"clinical.write",
+		"finance.read",
+		"analytics.read",
+		"payroll.read",
+		"payroll.read.own",
+		"inventory.read",
+		"inventory.write",
+		"settings.read",
+		"egisz.submit",
+		"communications.read",
+		"communications.write",
+		"agent.read",
+		"agent.write",
+		"workstation.read",
+		"workstation.write",
+	],
+
 	// Управляющий: всё, кроме врачебной документации и выгрузки в ЕГИСЗ.
 	manager: [
 		"schedule.read",
@@ -90,6 +114,38 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"communications.write",
 	],
 
+	// Бухгалтер / Финансист: касса, 54-ФЗ, зарплатные ведомости, инвентаризация
+	accountant: [
+		"patients.read",
+		"finance.read",
+		"finance.write",
+		"analytics.read",
+		"payroll.read",
+		"payroll.read.own",
+		"inventory.read",
+		"settings.read",
+	],
+
+	// Старший администратор: управление расписанием, касса, картотека, запись, склад
+	senior_admin: [
+		"schedule.read",
+		"schedule.write",
+		"patients.read",
+		"patients.write",
+		"clinical.read",
+		"finance.read",
+		"finance.write",
+		"analytics.read",
+		"payroll.read.own",
+		"inventory.read",
+		"inventory.write",
+		"settings.read",
+		"communications.read",
+		"communications.write",
+		"agent.read",
+		"agent.write",
+	],
+
 	// Администратор ресепшена: записывает, ведёт картотеку, принимает оплату.
 	// Зарплаты врачей не видит — ни чужие, ни свои: он не врач.
 	administrator: [
@@ -107,6 +163,23 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"communications.write",
 		"agent.read",
 		"agent.write",
+	],
+
+	// Регистратор: базовая запись, встреча пациентов, базовый чек
+	registrar: [
+		"schedule.read",
+		"schedule.write",
+		"patients.read",
+		"patients.write",
+		"clinical.read",
+		"finance.read",
+		"finance.write",
+		"analytics.read",
+		"inventory.read",
+		"settings.read",
+		"communications.read",
+		"communications.write",
+		"agent.read",
 	],
 
 	// Врач: ведёт приём, оформляет и принимает оплату у кресла (Мандат 8e / 8n соло-врач),
@@ -131,6 +204,19 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"agent.write",
 		"workstation.read",
 		"workstation.write",
+	],
+
+	// Старшая медсестра: СанПиН, автоклавы, склад медикаментов и расходников
+	senior_nurse: [
+		"schedule.read",
+		"patients.read",
+		"clinical.read",
+		"inventory.read",
+		"inventory.write",
+		"payroll.read.own",
+		"settings.read",
+		"communications.read",
+		"agent.read",
 	],
 
 	// Ассистент: видит приём, списывает материалы, видит свои смены и начисления в кошельке.

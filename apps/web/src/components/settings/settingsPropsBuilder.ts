@@ -62,6 +62,15 @@ export function buildSettingsProps(
 		"";
 	const adminSecretReady = (adminSecretDraft || "").trim().length > 0;
 
+	const rawStaff = (appLogic?.staff as Array<{ id: string; fullName: string; role?: string; isActive?: boolean }>) ?? [];
+	const staffOptions = rawStaff
+		.filter((s) => s && s.isActive !== false)
+		.map((s) => ({
+			id: s.id,
+			fullName: s.fullName,
+			role: s.role,
+		}));
+
 	return {
 		...appLogic,
 		...settingsStore,
@@ -75,6 +84,7 @@ export function buildSettingsProps(
 		legalReadinessPercent: appLogic?.legalReadinessPercent ?? 100,
 		newChairReadyToCreate: appLogic?.newChairReadyToCreate ?? false,
 		newStaffReadyToCreate: appLogic?.newStaffReadyToCreate ?? false,
+		staffOptions,
 		telegramPreviewLoadingGuidanceId: "telegram-preview-loading-guidance",
 		telegramPreviewPatientGuidanceId: "telegram-preview-patient-guidance",
 		telegramPreviewStaffGuidanceId: "telegram-preview-staff-guidance",

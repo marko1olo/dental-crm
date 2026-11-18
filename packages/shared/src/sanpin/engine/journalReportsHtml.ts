@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * SANPIN 3.3686-21 OFFICIAL PRINT & HTML REPORT GENERATORS (LAYER 3)
- * Печатные макеты журналов (ПСО, Форма № 257/у, Бактерицидный, Генеральные уборки,
+ * Печатные макеты журналов (контроль предстерилизационной очистки, автоклавирование, бактерицидный, генеральные уборки,
  * Экспресс-контроль готовности кабинетов, Температурный режим холодильников)
  * ============================================================================
  */
@@ -164,15 +164,15 @@ export function generatePsoJournalPrintHtml(params: {
 		</div>
 	</div>
 
-	${renderSanpinOfficialStampsHtml(clinic, "Медсестра ЦСО / Ответственная за ПСО и азопирам")}
+	${renderSanpinOfficialStampsHtml(clinic, "Медсестра ЦСО / Ответственная за предстерилизационную очистку и азопирам")}
 </body>
 </html>`;
 }
 
 /**
- * 1-клик генерация официального печатного макета Журнала работы стерилизаторов (Форма № 257/у)
+ * 1-клик генерация официального печатного макета Журнала работы стерилизаторов и автоклавирования
  */
-export function generateForm257PrintHtml(
+export function generateAutoclaveJournalPrintHtml(
 	records: readonly Form257Record[],
 	clinicInfo: ClinicLegalInfo = DEFAULT_CLINIC_LEGAL,
 	periodLabelRu = "за текущий отчетный период",
@@ -249,7 +249,7 @@ export function generateForm257PrintHtml(
 		<div class="clinic-title">${clinicInfo.name}</div>
 		<div style="font-size: 7.5pt;">ИНН ${clinicInfo.inn} | ОГРН ${clinicInfo.ogrn} | ${clinicInfo.address}</div>
 		<div class="form-stamp" style="font-size: 8pt; margin-top: 4px;">
-			Журнал автоклавирования и стерилизации (Форма № 257/у)<br/>
+			Журнал контроля работы стерилизаторов и автоклавирования<br/>
 			СанПиН 3.3686-21
 		</div>
 		<div class="form-title">ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И СТЕРИЛИЗАЦИИ — ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ</div>
@@ -289,6 +289,8 @@ export function generateForm257PrintHtml(
 </body>
 </html>`;
 }
+
+export { generateAutoclaveJournalPrintHtml as generateForm257PrintHtml };
 
 export function generateBactericidalJournalPrintHtml(params: {
 	equipment: BactericidalEquipmentRecord;
@@ -596,7 +598,7 @@ export function generateTemperatureHumidityJournalPrintHtml(params: {
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Журнал регистрации температурного режима холодильников (Приказ 706н)</title>
+	<title>Журнал регистрации температурного режима холодильников и зон хранения</title>
 	<style>
 		@page { size: A4 landscape; margin: 10mm; }
 		body { font-family: 'Times New Roman', serif; font-size: 8.5pt; line-height: 1.2; color: #000; }

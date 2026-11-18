@@ -1,0 +1,54 @@
+{
+  "agent": "Red Team Финишер «Хвост-3» (sanpin/documents/outpatient/timeline)",
+  "updated": "2026-10-25T02:20:00Z",
+  "status": "COMPLETED",
+  "step": "DOMAIN_CLOSED",
+  "done": [
+    "git status снят: оборванная волна = декомпозиция файлов в модули (sanpin routes -> *Modules/, outpatient.ts -> outpatient/, CSS -> styles/, consent form -> personalData/)",
+    "Конституция прочитана: UI_STANDARDS.md, DESIGNER_VISUAL_INQUISITION_BIBLE.md, MOBILE_DESIGN_APPLE_HIG.md (целиком), HAMMER 8x/8y/8am/VII",
+    "SanPIN API роуты: 4 фасада чистые, модули монолитные, typecheck api = 0 ошибок",
+    "МЁРТВЫЙ НЕРВ ВЫРЕЗАН: SanPinScannerModal (недостижим после удаления кнопки волной) + directScanCode/onDirectScanSubmit props (Filters объявлял, не рендерил) + handleQuickChairsideScan + pouchBarcodeUtils.ts + onAttachPouchToVisit цепочка (SterilizationJournal->JournalView->SanpinRegisters;顶层 никто не передаёт). Удалены файлы: SanPinScannerModal.tsx, pouchBarcodeUtils.ts",
+    "documentsPreviewEntry.tsx: исправлены 2 ошибки типов (documents->contracts, doctorFullName->настоящие пропсы TaxAccountingPackageModal)",
+    "Тесты: sanPinSterilizationJournalSuite + sterilization043QuickScannerLink = 14 pass / 0 fail (запуск из КОРНЯ: node --import tsx --import ./apps/web/testCssStub.mjs --test ...)",
+    "take-2 возрождение: тесты перепроверены (sanPin journal 5/0, outpatient043 12/0, wave115 4/0), api typecheck 0, web 0 ошибок в sanpin+documents",
+    "documents type-минное поле разминировано: premiumPrint импорты не на ту глубину (../visit -> ../../visit, ../../store -> ../../../store), BrandColorPalette -> DocumentBrandColorPalette, surgicalPackage/types.ts потерянные типы восстановлены (SurgicalPackagePrintOptions, SurgicalRequisitesContext, requisites), ClinicProfileDraft импорт -> appHelpers/types + medicalLicenseNumber, exactOptionalPropertyTypes фиксы PatientContractsHeader/List, SurgicalPatientCard, TaxChecklistSection",
+    "web typecheck: 156 -> 136 ошибок (все 20 убранных — мои зоны documents), sanpin 0",
+    "appModules диффы = чужая schedule-зона (SmartSlotRecovery снос) — НЕ коммитить; anesthesia API тесты тоже чужие",
+    "8 гранулярных коммитов: предшественник весь закоммичен + мои фиксы",
+    "sanpin-фронт ревизия: хедер 1 Primary CTA изумруд батч-за-смену, навигация живым русским, useSanPinCyclesFetch/useSanPinBatchActions честные (снесены выдуманные Иванова А.С./KP-84920/АК-01 АК-02 чередование), КТ/ПСО жаргон выпилен из сводки смены и аварийных сообщений; тесты sanPin journal 5/0 + presets 9/0",
+    "documents фронт: каталог живым русским + quick-actions в 1 клик (A4 табы), outpatientCard/defaultCardData.ts перестал врать (выдуманные ИНН/ОГРН/лицензия/директор Воронов/диагноз K02.1 зуб 16 снесены -> честные поля из профиля либо пустые строки бланка), коммит d4ad20c52, тесты 19/0, typecheck 0 в зонах",
+    "timelineRoutes.ts ревизия: communication-timelines читает communication_events (живые писатели), 404!=пустой, 500 честный; /portal читает visits/plans/invoices/issued docs/appointments/doctors из БД с 152-ФЗ санитизацией notes/curator полей — вранья нет",
+    "outpatient.ts фасад 44 строки + 10 модулей <85 строк: verify queue из outpatientVerifications (orgId), templates из outpatientTemplateCategories JOIN, дефекты/локи — БД. Чисто"
+  ],
+  "remaining": [
+    "Гейты: check:encoding + финальные точечные тесты + typecheck",
+    "4-State пруфы живого 5173 (sanpin + documents)",
+    "Финальный чекпоинт + отчёт"
+  ],
+  "findings": [
+    "Декомпозиция SanPIN API выглядит монолитной: 4 роут-файла = тонкие фасады <=30 строк, вся логика в untracked *Modules/ (16 файлов, все <180 строк)",
+    "Батч-мандаты уже в коде: quick-shift-bundle (отходы A+Б в 1 клик), autopilot-month (уборки), shift-autopilot (температура), shift-close (фиксация комплекта журналов в 1 клик)"
+  ],
+  "gates": {},
+  "commits": [
+    "5de63c9af sanpin dead-nerve",
+    "1e112ca82 sanpin CSS decomposition",
+    "2fc914ef8 kraft decomposition",
+    "(hash) sanpin api decomposition",
+    "(hash) outpatient api decomposition",
+    "(hash) documents issue.ts consent sync",
+    "4435d8bc7 documents personalData decomposition",
+    "b4aedf123 documents type fixes",
+    "dbc94429f sanpin front honesty"
+  ],
+  "final_commits": [
+    "предшественник: 5de63c9af,1e112ca82,2fc914ef8 + sanpin/outpatient/documents api decomposition",
+    "агент take-2: 93fa93417,6d26998a6,47e348594 (пруфы), 52798e7f5 (единое батч-автоклавирование+эргономика), 2bd4cf997 (декомпозиция монолитов, снос совкобюрократии), a95b9d9c8 (consents-documents + пруфы)",
+    "оркестратор: докоммит сирот-пруфов documents_purge/sanpin_autoclave"
+  ],
+  "proofs": {
+    "sanpin": "docs/proofs/sanpin/01..04 + комплект журналов/ПСО/автоклав/готовность кабинета (~40 кадров)",
+    "documents": "docs/proofs/documents/01..06 + каталог/пачка/ФНС/форма043/purge (~35 кадров)"
+  },
+  "gates_final": "api typecheck EXIT 0, encoding OK по чекпоинтам агентов"
+}

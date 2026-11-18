@@ -5,7 +5,6 @@
 
 import React from "react";
 import { MdlpScanningModal } from "../../../../mdlp/MdlpScanningModal";
-import { MdlpDisposalQueueModal } from "../../../../inventory/mdlp/MdlpDisposalQueueModal";
 import { InboundWaybillModal } from "../../../../inventory/InboundWaybillModal";
 import { ConsumablesBatchWriteoffModal } from "../../../../inventory/ConsumablesBatchWriteoffModal";
 
@@ -58,10 +57,10 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 
 	if (isMdlpDisposalStandalone) {
 		return (
-			<MdlpDisposalQueueModal
+			<MdlpScanningModal
 				isOpen={true}
-				patientName="Иванов И.И."
-				doctorName="Д-р Смирнов"
+				initialMode="care_dispense"
+				clinicName="ООО «Денте Стоматология»"
 				onClose={() => {
 					const u = new URL(window.location.href);
 					u.searchParams.delete("mdlp_disposal");

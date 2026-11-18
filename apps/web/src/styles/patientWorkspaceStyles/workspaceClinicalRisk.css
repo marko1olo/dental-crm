@@ -1,0 +1,56 @@
+/* Patient Workspace: Clinical Risk & Somatic Status Banner */
+.visit-risk-card {
+	border-radius: 10px;
+	padding: 12px;
+	margin-bottom: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	border: none;
+}
+
+.visit-risk-card.risk-high {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+}
+
+.visit-risk-card.risk-watch {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+}
+
+.visit-risk-card.risk-low {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+}
+
+.visit-risk-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-weight: 800;
+	font-size: 12px;
+	text-transform: uppercase;
+}
+
+.visit-risk-reasons {
+	margin: 0;
+	padding-left: 16px;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.visit-risk-flags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.visit-risk-flag {
+	background: rgba(0, 0, 0, 0.05);
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+}

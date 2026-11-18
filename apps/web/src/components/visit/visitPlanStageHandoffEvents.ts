@@ -38,13 +38,13 @@ export function dispatchOpenLabOrderForStage(
 	patient?: HandoffPatientLike | null | undefined,
 ): void {
 	if (typeof window !== "undefined") {
-		const stageItems = items || stagePayload?.items || [];
+		const stageItems: readonly PlanStageItem[] = items || stagePayload?.items || [];
 		const teeth = stageItems
 			.map((it: PlanStageItem) => it.toothNumber ?? it.toothCode)
 			.filter((t: unknown): t is number | string => t !== undefined && t !== null && t !== "");
 		const uniqueTeeth = Array.from(new Set(teeth));
 		const teethStr = uniqueTeeth.join(", ");
-		const totalPriceRub = stageItems.reduce((acc: number, it: PlanStageItem) => {
+		const totalPriceRub = stageItems.reduce<number>((acc: number, it: PlanStageItem) => {
 			const price = Number(it.unitPriceRub ?? it.price ?? it.priceRub ?? 0);
 			const qty = Number(it.quantity || 1);
 			const discount = Number(it.discountRub ?? it.discount ?? 0);

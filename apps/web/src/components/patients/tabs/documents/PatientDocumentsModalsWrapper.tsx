@@ -1,18 +1,18 @@
 import React from "react";
-import type { GeneratedDocument, Patient } from "@dental/shared";
+import type { DocumentIssueSignatureMode, GeneratedDocument, Patient } from "@dental/shared";
 import type { AppLogicContextType } from "../../../../contexts/AppLogicContext";
-import type { useDocumentStore } from "../../../../store/documentStore";
+import type { DocumentState } from "../../../../store/documentStore";
 import { DocumentAuditFactsModal } from "../../../documents/tabs/DocumentAuditFactsModal";
 import { DocumentIssueConfirmationModal } from "../../../documents/tabs/DocumentIssueConfirmationModal";
 import { DigitalSignatureTabletModal } from "../../../documents/DigitalSignatureTabletModal";
-import { FastClinicalPrintEngine, type FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
+import { FastClinicalPrintEngine, type FastPrintDocType, type ClinicSummary } from "../../../documents/FastClinicalPrintEngine";
 import { TaxDeductionCertificateModal } from "../../../documents/DocumentsStudioModal";
 import type { TabletSignatureData } from "./usePatientDocumentsLogic";
 
 interface PatientDocumentsModalsWrapperProps {
 	patient: Patient;
-	appLogic: Partial<AppLogicContextType> | Record<string, unknown>;
-	docStore: ReturnType<typeof useDocumentStore> | Record<string, unknown>;
+	appLogic?: Partial<AppLogicContextType> | undefined;
+	docStore: DocumentState;
 	isFastPrintOpen: boolean;
 	setIsFastPrintOpen: (open: boolean) => void;
 	fastPrintDocType: FastPrintDocType;
@@ -30,7 +30,7 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 	fastPrintDocType, tabletSignDoc, setTabletSignDoc, activeIssueDoc, onTabletSignatureConfirm,
 	isTaxModalOpen, setIsTaxModalOpen, taxModalInitialTab,
 }) => {
-	const dashboard = appLogic.dashboard;
+	const dashboard = appLogic?.dashboard;
 	const adminProfile = patient.administrativeProfile;
 	const safety = adminProfile?.clinicalSafetyProfile as Record<string, unknown> | null | undefined;
 	const patientAddress = adminProfile?.residentialAddress || adminProfile?.registrationAddress || undefined;
@@ -46,34 +46,51 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 			? safety.chronicDiseases
 			: (typeof patient.notes === "string" ? patient.notes : undefined);
 
+	const clinicProfile = dashboard?.clinicSettings?.profile;
+	const org = dashboard?.organization;
+	const clinicSummary: ClinicSummary | undefined = (clinicProfile || org) ? {
+		name: clinicProfile?.clinicName ?? (typeof org?.name === "string" ? org.name : undefined),
+		inn: clinicProfile?.inn ?? (typeof org?.inn === "string" ? org.inn : undefined),
+		ogrn: clinicProfile?.ogrn ?? (typeof org?.ogrn === "string" ? org.ogrn : undefined),
+		address: clinicProfile?.address ?? (typeof org?.address === "string" ? org.address : undefined),
+		phone: clinicProfile?.phone ?? (typeof org?.phone === "string" ? org.phone : undefined),
+		licenseNumber: clinicProfile?.medicalLicenseNumber ?? clinicProfile?.licenseNumber ?? undefined,
+		legalName: clinicProfile?.legalEntityName ?? (typeof org?.legalName === "string" ? org.legalName : undefined),
+	} : undefined;
+
+	const doctorSummary = dashboard?.activeDoctor ? {
+		fullName: dashboard.activeDoctor.fullName ?? undefined,
+		specialty: dashboard.activeDoctor.specialty ?? undefined,
+	} : undefined;
+
 	return (
 		<>
 			<DocumentAuditFactsModal
 				documentAuditFacts={docStore.documentAuditFacts}
-				documentLabels={appLogic.documentLabels}
-				documentStatusLabels={appLogic.documentStatusLabels}
-				formatShortDate={appLogic.formatShortDate}
-				documentSourceStatusClassNames={appLogic.documentSourceStatusClassNames}
-				documentSourceStatusLabels={appLogic.documentSourceStatusLabels}
-				documentIssueSignatureModeLabels={appLogic.documentIssueSignatureModeLabels}
-				documentVoidReasonLabels={appLogic.documentVoidReasonLabels}
-				loadDocumentAuditFacts={appLogic.loadDocumentAuditFacts}
+				documentLabels={appLogic?.documentLabels}
+				documentStatusLabels={appLogic?.documentStatusLabels}
+				formatShortDate={appLogic?.formatShortDate}
+				documentSourceStatusClassNames={appLogic?.documentSourceStatusClassNames}
+				documentSourceStatusLabels={appLogic?.documentSourceStatusLabels}
+				documentIssueSignatureModeLabels={appLogic?.documentIssueSignatureModeLabels ?? {}}
+				documentVoidReasonLabels={appLogic?.documentVoidReasonLabels ?? {}}
+				loadDocumentAuditFacts={appLogic?.loadDocumentAuditFacts ?? (() => {})}
 				setDocumentAuditFacts={docStore.setDocumentAuditFacts}
-				openIssuedDocumentHtml={appLogic.openIssuedDocumentHtml}
-				downloadIssuedDocumentHtml={appLogic.downloadIssuedDocumentHtml}
-				downloadIssuedDocumentPdf={appLogic.downloadIssuedDocumentPdf}
+				openIssuedDocumentHtml={appLogic?.openIssuedDocumentHtml ?? (() => {})}
+				downloadIssuedDocumentHtml={appLogic?.downloadIssuedDocumentHtml ?? (() => {})}
+				downloadIssuedDocumentPdf={appLogic?.downloadIssuedDocumentPdf ?? (() => {})}
 			/>
 
 			<DocumentIssueConfirmationModal
 				documentIssueConfirmation={activeIssueDoc}
-				documentLabels={appLogic.documentLabels}
-				patientName={appLogic.patientName}
+				documentLabels={appLogic?.documentLabels}
+				patientName={appLogic?.patientName}
 				patients={dashboard?.patients}
-				money={appLogic.money}
+				money={appLogic?.money}
 				documentIssueSignatureMode={docStore.documentIssueSignatureMode}
 				setDocumentIssueSignatureMode={docStore.setDocumentIssueSignatureMode}
-				normalizedDocumentIssueSignatureMode={appLogic.normalizedDocumentIssueSignatureMode}
-				documentIssueSignatureModeLabels={appLogic.documentIssueSignatureModeLabels}
+				normalizedDocumentIssueSignatureMode={appLogic?.normalizedDocumentIssueSignatureMode ?? ((m: string) => m as DocumentIssueSignatureMode)}
+				documentIssueSignatureModeLabels={appLogic?.documentIssueSignatureModeLabels ?? {}}
 				documentIssueSignedAt={docStore.documentIssueSignedAt}
 				setDocumentIssueSignedAt={docStore.setDocumentIssueSignedAt}
 				documentIssueRecipientFullName={docStore.documentIssueRecipientFullName}
@@ -100,7 +117,7 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 				documentIssueMissingGuidanceId="patient-doc-issue-missing"
 				documentIssueSaving={false}
 				setDocumentIssueConfirmationId={docStore.setDocumentIssueConfirmationId}
-				confirmDocumentIssue={appLogic.confirmDocumentIssue}
+				confirmDocumentIssue={appLogic?.confirmDocumentIssue ?? (() => {})}
 			/>
 
 			<FastClinicalPrintEngine
@@ -117,8 +134,8 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 					allergies: patientAllergies,
 					somaticNotes: patientSomaticNotes,
 				}}
-				clinic={dashboard?.clinicSettings?.profile || dashboard?.organization}
-				doctor={dashboard?.activeDoctor}
+				clinic={clinicSummary}
+				doctor={doctorSummary}
 			/>
 
 			{tabletSignDoc && (
@@ -128,9 +145,13 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 					document={tabletSignDoc}
 					patient={patient}
 					doctorFullName={dashboard?.activeDoctor?.fullName}
-					clinicName={dashboard?.clinicSettings?.profile?.clinicName || dashboard?.organization?.name || "Стоматологическая клиника"}
+					clinicName={dashboard?.clinicSettings?.profile?.clinicName || (typeof dashboard?.organization?.name === "string" ? dashboard.organization.name : undefined) || "Стоматологическая клиника"}
 					onConfirmSignature={onTabletSignatureConfirm}
-					onPrintArchiveA4={() => void appLogic.downloadIssuedDocumentPdf(tabletSignDoc.id)}
+					onPrintArchiveA4={() => {
+						if (appLogic?.downloadIssuedDocumentPdf && tabletSignDoc?.id) {
+							void appLogic.downloadIssuedDocumentPdf(tabletSignDoc.id);
+						}
+					}}
 				/>
 			)}
 

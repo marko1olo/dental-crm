@@ -1,5 +1,6 @@
 import React from "react";
 import { CalendarPlus, CheckCircle2, Receipt } from "lucide-react";
+import { rublesToKopecks } from "@dental/shared";
 import { formatKopecksToRubExact } from "../roadmapPriceHelpers.js";
 import type { RoadmapStageData } from "../types.js";
 
@@ -19,7 +20,7 @@ export const RoadmapStageFooter: React.FC<FooterProps> = ({
 	onBookStage,
 }) => {
 	const totalKopecks =
-		typeof stage.totalKopecks === "number" ? stage.totalKopecks : Math.round((stage.totalRub || 0) * 100);
+		typeof stage.totalKopecks === "number" ? stage.totalKopecks : rublesToKopecks(stage.totalRub || 0);
 
 	return (
 		<div className="roadmap-stage-footer">
@@ -66,10 +67,10 @@ export const RoadmapStageFooter: React.FC<FooterProps> = ({
 						data-testid={`stage-completed-badge-${stage.stageNumber}`}
 					>
 						<span
-							className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white text-[11px] font-black uppercase tracking-wider shadow-xs"
+							className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white text-[11px] font-semibold shadow-xs"
 							data-testid={`stage-paid-footer-badge-${stage.stageNumber}`}
 						>
-							ОПЛАЧЕНО 100%
+							Оплачено 100%
 						</span>
 						<span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
 							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />

@@ -1,4 +1,4 @@
-import React, { useId, useMemo } from "react";
+import React, { useId, useMemo, useState } from "react";
 import { useOrthopedicsChairsideState } from "./chairside/useOrthopedicsChairsideState";
 import { useOrthopedicsChairsideActions } from "./chairside/useOrthopedicsChairsideActions";
 import type { OrthopedicsChairsidePanelProps } from "./chairside/orthopedicsChairsideTypes";
@@ -8,6 +8,7 @@ import { OrthopedicsVitaShadePicker } from "./OrthopedicsVitaShadePicker";
 import { OrthopedicsZtlSelectors } from "./OrthopedicsZtlSelectors";
 import { OrthopedicPassportA4Modal } from "./OrthopedicPassportA4Modal";
 import { DentalLabReadyInClinicModal, type ReadyInClinicLabOrder } from "../lab/DentalLabReadyInClinicModal";
+import { DentalUniversal3DViewer } from "../imaging/DentalUniversal3DViewer.js";
 import { STANDARD_ZTL_ORDER_PRESETS, PREPARATION_MARGIN_PRESETS, FIXATION_TYPE_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicCatalogData";
 
 export { type StandardZtlPreset, STANDARD_ZTL_ORDER_PRESETS, type PreparationMarginPreset, PREPARATION_MARGIN_PRESETS, VITA_3D_MASTER_SHADE_GROUPS } from "./orthopedicCatalogData";
@@ -22,6 +23,7 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 	const effectiveHeadline = `Работа из ЗТЛ доставлена: ${props.initialLabOrder?.workType || "Коронка"} зуб ${props.initialLabOrder?.toothFdi || state.activeTeethInput}`;
 	const activePreset = STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === state.activeZtlPresetId) ?? STANDARD_ZTL_ORDER_PRESETS[0];
 
+	const [is3dViewerOpen, setIs3dViewerOpen] = useState(false);
 	const readyOrder = useMemo<ReadyInClinicLabOrder>(() => ({
 		id: props.initialLabOrder?.id || state.activeOrderId || undefined,
 		orderNumber: effectiveOrderNum,
@@ -69,7 +71,20 @@ export function OrthopedicsChairsidePanel(props: OrthopedicsChairsidePanelProps)
 				selectId={selectId} activeTeethInput={state.activeTeethInput} onChangeActiveTeethInput={state.setActiveTeethInput}
 				activeXrayUrl={state.activeXrayUrl} onDetachXray={() => state.setActiveXrayUrl(null)} jawScope={state.jawScope}
 				onChangeJawScope={state.setJawScope} selectedMaterial={state.selectedMaterial} onChangeSelectedMaterial={state.setSelectedMaterial}
+				is3dViewerOpen={is3dViewerOpen} onToggle3dViewer={() => setIs3dViewerOpen(!is3dViewerOpen)}
 			/>
+			{is3dViewerOpen && (
+				<div className="my-2.5 rounded-xl overflow-hidden border border-[var(--line)] shadow-sm h-[480px]">
+					<DentalUniversal3DViewer
+						patientName={props.patientName}
+						toothCode={state.activeTeethInput}
+						activeTeeth={state.activeTeethInput.split(/[\s,;-]+/).filter(Boolean)}
+						onOpenLabOrder={() => actions.handleImmediateSendToLab()}
+						onClose={() => setIs3dViewerOpen(false)}
+						className="h-full"
+					/>
+				</div>
+			)}
 			<OrthopedicsZtlSelectors
 				activeZtlPresetId={state.activeZtlPresetId} onSelectZtlPreset={actions.handleSelectZtlPreset}
 				preparationMargin={state.preparationMargin} onSelectPreparationMargin={(m) => state.setPreparationMargin(m)}

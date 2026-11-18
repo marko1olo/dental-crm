@@ -1,0 +1,67 @@
+/* Dark Theme Overrides for Categorized Quick Chips */
+[data-theme="dark"] .quick-chip-somatic,
+[data-theme="night"] .quick-chip-somatic,
+[data-theme="cyber_xray"] .quick-chip-somatic {
+	background: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+[data-theme="dark"] .quick-chip-somatic:hover,
+[data-theme="night"] .quick-chip-somatic:hover,
+[data-theme="cyber_xray"] .quick-chip-somatic:hover {
+	background: rgba(244, 63, 94, 0.12) !important;
+	border-color: rgba(244, 63, 94, 0.5) !important;
+	color: var(--ink) !important;
+}
+
+[data-theme="dark"] .quick-chip-comfort,
+[data-theme="night"] .quick-chip-comfort,
+[data-theme="cyber_xray"] .quick-chip-comfort {
+	background: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	border-color: rgba(20, 184, 166, 0.3) !important;
+}
+
+[data-theme="dark"] .quick-chip-comfort:hover,
+[data-theme="night"] .quick-chip-comfort:hover,
+[data-theme="cyber_xray"] .quick-chip-comfort:hover {
+	background: rgba(20, 184, 166, 0.12) !important;
+	border-color: rgba(20, 184, 166, 0.5) !important;
+	color: var(--ink) !important;
+}
+
+[data-theme="dark"] .quick-chip-finance,
+[data-theme="night"] .quick-chip-finance,
+[data-theme="cyber_xray"] .quick-chip-finance {
+	background: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	border-color: rgba(129, 140, 248, 0.3) !important;
+}
+
+[data-theme="dark"] .quick-chip-finance:hover,
+[data-theme="night"] .quick-chip-finance:hover,
+[data-theme="cyber_xray"] .quick-chip-finance:hover {
+	background: rgba(129, 140, 248, 0.12) !important;
+	border-color: rgba(129, 140, 248, 0.5) !important;
+	color: var(--ink) !important;
+}
+
+/* Atmospheric zero glare palette */
+[data-theme="dark"] .quick-chips-wrap .quick-chip.quick-chip-somatic,
+[data-theme="night"] .quick-chips-wrap .quick-chip.quick-chip-somatic {
+	border-color: rgba(244, 63, 94, 0.35);
+	background: rgba(244, 63, 94, 0.08);
+}
+
+[data-theme="dark"] .quick-chips-wrap .quick-chip.quick-chip-comfort,
+[data-theme="night"] .quick-chips-wrap .quick-chip.quick-chip-comfort {
+	border-color: rgba(20, 184, 166, 0.35);
+	background: rgba(20, 184, 166, 0.08);
+}
+
+[data-theme="dark"] .quick-chips-wrap .quick-chip.quick-chip-finance,
+[data-theme="night"] .quick-chips-wrap .quick-chip.quick-chip-finance {
+	border-color: rgba(99, 102, 241, 0.35);
+	background: rgba(99, 102, 241, 0.08);
+}

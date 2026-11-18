@@ -1,0 +1,71 @@
+{
+  "subagent": "red_team_inquisitor_2_chairside_surgery_hub",
+  "timestamp": "2026-11-04T10:13:00+04:00",
+  "status": "COMPLETED",
+  "mandatesVerified": ["8b", "8e", "8n", "8x", "8am", "8aq", "8ze"],
+  "remediatedDefects": [
+    {
+      "id": "DEFECT-SURGERY-01",
+      "severity": "Sev-1",
+      "summary": "Eliminated asynchronous setTimeout(() => window.print(), 100) hack in ChairsideSurgeryHubModal.tsx; converted to synchronous flushSync transition with immediate window.print() and toast notification."
+    },
+    {
+      "id": "DEFECT-SURGERY-02",
+      "severity": "Sev-1",
+      "summary": "Demolished hardcoded financial deduction doctorGrossMarginRub: scenarioConfig.defaultPriceRub - 16000. Replaced with calculateSurgeryFinancials() consuming catalog seed costs from SURGERY_IMPLANT_SYSTEMS (Osstem, Straumann, Dentium, Nobel, Ankylos) and actual consumables."
+    },
+    {
+      "id": "DEFECT-SURGERY-03",
+      "severity": "Sev-1",
+      "summary": "Eliminated synthetic mock UUID fallback 00000000-0000-0000-0000-000000000001. Extracted resolveEffectiveSurgeryPatientId() resolving honest patient IDs from activeStore, activeVisit, dashboard, and backend database."
+    },
+    {
+      "id": "DEFECT-SURGERY-04",
+      "severity": "Sev-2",
+      "summary": "Demolished dummy duplicate file SurgeryStudioModal.tsx (was identical alias wrapper). Replaced with direct export in ChairsideSurgeryHubModal.tsx and updated DirectSurgeryLauncher."
+    },
+    {
+      "id": "DEFECT-SURGERY-05",
+      "severity": "Sev-2",
+      "summary": "Decomposed ChairsideSurgeryHubModal from 512 lines down to 422 lines (under 500L ceiling) by extracting resolveSurgeryPatient.ts (47L) and SurgeryPostOpMemoSection.tsx (71L)."
+    },
+    {
+      "id": "DEFECT-SURGERY-06",
+      "severity": "Sev-2",
+      "summary": "Enforced strictly ONE Primary CTA button (#0d9488, .surgery-primary-cta). Converted 'Норма в 1 клик', brand selector chips, FDI teeth buttons, and torque selectors to neutral secondary borders (var(--line))."
+    },
+    {
+      "id": "DEFECT-SURGERY-07",
+      "severity": "Sev-2",
+      "summary": "Fixed AppShell double-mount issue by registering surgery/extraction standalone hash routes in isStandaloneActive(), preventing double modal overlay."
+    },
+    {
+      "id": "DEFECT-SURGERY-08",
+      "severity": "Sev-2",
+      "summary": "Eliminated word clipping and ellipses on mobile screens: patient/doctor header, express protocol subtitles, and footer telemetry now wrap cleanly without truncate."
+    }
+  ],
+  "visualProofScreenshots": [
+    "docs/screenshots/surgery/01_surgery_hub_pc_light_1440x900.png",
+    "docs/screenshots/surgery/02_surgery_hub_pc_dark_1440x900.png",
+    "docs/screenshots/surgery/03_surgery_hub_mobile_light_390x844.png",
+    "docs/screenshots/surgery/04_surgery_hub_mobile_dark_390x844.png"
+  ],
+  "testSuite": {
+    "command": "node --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/surgery/__tests__/*.test.*",
+    "totalTests": 48,
+    "passedTests": 48,
+    "failedTests": 0,
+    "exitCode": 0
+  },
+  "touchedFiles": [
+    "apps/web/src/AppShell.tsx",
+    "apps/web/src/components/surgery/ChairsideSurgeryHubModal.tsx",
+    "apps/web/src/components/surgery/DirectSurgeryLauncher.tsx",
+    "apps/web/src/components/surgery/SurgeryPostOpMemoSection.tsx",
+    "apps/web/src/components/surgery/resolveSurgeryPatient.ts",
+    "apps/web/src/components/surgery/surgeryCatalogData.ts",
+    "apps/web/src/components/surgery/__tests__/surgerySSOTSuite.test.tsx",
+    "scripts/capture-surgery-4state-canonical.mjs"
+  ]
+}

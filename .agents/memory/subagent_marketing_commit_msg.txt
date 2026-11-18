@@ -1,0 +1,61 @@
+feat(marketing): декомпозиция монолитов маркетинга и ROMI под лимит <= 120 строк и 4-State Visual Proof
+
+## Контекст и архитектурная цель (Why):
+- Исполнение Мандата 8b (жесткий лимит <= 120 строк на каждый файл) и Манифеста Создателя.
+- Ликвидация гигантских монолитов стилей marketingRomi.css (было 586 строк) и MarketingDashboardView.css (было 746 строк).
+- Декомпозиция монолитных TSX-компонентов MarketingDashboardView.tsx (было 204 строки), MarketingRoiAndSegmentsPanel.tsx (было 138 строк), MarketingView.tsx (было 133 строки) и MarketingCampaignLaunchSection.tsx (было 121 строка).
+- Защита Мандата 8e (Автономия врача и маркетолога: кнопки «+ Создать промокод», «+ Добавить канал», «Запустить рассылку» никогда не disabled).
+- Защита Мандата 8am (Ровно ОДНА Primary CTA кнопка на видимый контекст в фирменном стиле DENTE).
+- Защита Мандата 8ze (Apple HIG Touch Ergonomics >= 44x44px, Natural Thumb Zone, 0px горизонтального скролла).
+- Полный запрет потемкинских деревень и симуляторов в вакууме: работа в живом дереве вызовов UI (Мандат 8ap).
+
+## Что конкретно сделано (What & Where):
+1. **Декомпозиция CSS marketingRomi.css (586 -> 14 строк фасад):**
+   - apps/web/src/components/marketing/romiStyles/marketingRomiHeader.css (102 строки): шапка, заголовок, экшены.
+   - apps/web/src/components/marketing/romiStyles/marketingRomiKpis.css (75 строк): KPI грид, баннер синхронизации.
+   - apps/web/src/components/marketing/romiStyles/marketingRomiAddForm.css (69 строк): форма добавления канала.
+   - apps/web/src/components/marketing/romiStyles/marketingRomiTableView.css (82 строки): разметка таблицы, инпуты.
+   - apps/web/src/components/marketing/romiStyles/marketingRomiBadgesAndTotals.css (106 строк): бейджи, итоговые строки.
+   - apps/web/src/components/marketing/romiStyles/marketingRomiEmptyState.css (51 строка): пустое состояние.
+   - apps/web/src/components/marketing/romiStyles/marketingRomiMobileCards.css (111 строк): адаптивные карточки Apple HIG.
+   - apps/web/src/components/marketing/marketingRomi.css (14 строк): модульный фасад с @import.
+
+2. **Декомпозиция CSS MarketingDashboardView.css (746 -> 18 строк фасад):**
+   - apps/web/src/pages/marketingStyles/marketingDashboardHeader.css (77 строк): общая обертка, шапка, телеметрия.
+   - apps/web/src/pages/marketingStyles/marketingDashboardPeriodSelector.css (48 строк): сегментированный селектор.
+   - apps/web/src/pages/marketingStyles/marketingDashboardKpis.css (79 строк): топ-стрип 4 метрик KPI.
+   - apps/web/src/pages/marketingStyles/marketingDashboardGrid.css (67 строк): 2-колоночная сетка и карточки секций.
+   - apps/web/src/pages/marketingStyles/marketingDashboardChannels.css (94 строки): список каналов привлечения и бары.
+   - apps/web/src/pages/marketingStyles/marketingDashboardFunnelAndIntake.css (89 строк): воронка конверсий и сплит.
+   - apps/web/src/pages/marketingStyles/marketingDashboardRomi.css (74 строки): хиро-блок ROMI и юнит-экономика.
+   - apps/web/src/pages/marketingStyles/marketingDashboardCohorts.css (92 строки): сетка сегментированных когорт пациентов.
+   - apps/web/src/pages/marketingStyles/marketingDashboardButtons.css (72 строки): кнопки экспорта CSV и модалок.
+   - apps/web/src/pages/marketingStyles/marketingDashboardMobile.css (76 строк): сенсорная адаптация Apple HIG >= 44px.
+   - apps/web/src/pages/MarketingDashboardView.css (18 строк): модульный фасад с @import.
+
+3. **Декомпозиция TSX-компонентов:**
+   - apps/web/src/pages/marketingDashboardModules/MarketingRoiAdCard.tsx (77 строк): вынесена карточка ROMI юнит-экономики.
+   - apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx (76 строк): вынесена карточка когорт.
+   - apps/web/src/pages/marketingDashboardModules/MarketingRoiAndSegmentsPanel.tsx (сокращен со 138 до 31 строки).
+   - apps/web/src/pages/marketingDashboardModules/useMarketingDashboardData.ts (110 строк): бизнес-логика и вычисления дашборда.
+   - apps/web/src/pages/marketingDashboardModules/MarketingDashboardModals.tsx (74 строки): ленивые модальные окна.
+   - apps/web/src/pages/MarketingDashboardView.tsx (сокращен с 204 до 96 строк).
+   - apps/web/src/components/marketing/MarketingViewHeader.tsx (77 строк): шапка хаба, Primary CTA и вкладки.
+   - apps/web/src/MarketingView.tsx (сокращен со 133 до 92 строк).
+   - apps/web/src/components/marketing/MarketingCampaignLaunchControls.tsx (50 строк): контролы согласия и бюджет.
+   - apps/web/src/components/marketing/MarketingCampaignLaunchSection.tsx (сокращен со 121 до 107 строк).
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- **Инвентаризация строк (Мандат 8b):** 64 из 64 файлов маркетинга строго <= 120 строк (100% compliance).
+- **Кодировка:** npm run check:encoding — Exit Code 0, 18 602 файлов UTF-8 без BOM.
+- **Тесты маркетинга:** 34 passing, 0 failing (9 suites, 4.5 сек).
+- **Типизация TypeScript:** 0 ошибок в коде маркетинга (tsc с exactOptionalPropertyTypes).
+- **4-State Visual Proof:** снято 12 скриншотов в живом браузере Chrome на реальном стенде:
+  - ☀️ PC Light (1440x900): 01_pc_light_01_promos.png, 01_pc_light_02_romi_table.png, 01_pc_light_03_leads_funnel_dashboard.png
+  - 🌙 PC Dark (1440x900): 02_pc_dark_01_promos.png, 02_pc_dark_02_romi_table.png, 02_pc_dark_03_leads_funnel_dashboard.png
+  - 📱 Mobile Light (390x844): 03_mobile_light_01_promos.png, 03_mobile_light_02_romi_table.png, 03_mobile_light_03_leads_funnel_dashboard.png
+  - 📱 Mobile Dark (390x844): 04_mobile_dark_01_promos.png, 04_mobile_dark_02_romi_table.png, 04_mobile_dark_03_leads_funnel_dashboard.png
+- **Личный аудит скриншотов через read_file по 8 осям дефектов:** [ПРОВЕРЕНО: ЧИСТО]. 0 заблокированных кнопок, ровно 1 Primary CTA, 0px горизонтального скролла.
+
+## Синхронизация документации (Documentation Sync):
+- Скриншоты 4 состояний сохранены в docs/proofs/marketing/.

@@ -21,7 +21,7 @@ export function handleCariesTooth(num: number, ctx: TierGeneratorContext): void 
 				},
 			),
 		);
-	} else {
+	} else if (tierId === "optimum") {
 		// optimum: керамическая вкладка / накладка IPS e.max CAD в этап 3 (ортопедия)
 		const defInlay = SERVICES_CATALOG_DICTIONARY.InlayOnlay!;
 		stage3Items.push(
@@ -39,6 +39,24 @@ export function handleCariesTooth(num: number, ctx: TierGeneratorContext): void 
 				},
 			),
 		);
+	} else {
+		// premium: анатомическая микрофрезерованная вкладка Multi-Layer диоксид циркония Katana в этап 3 (ортопедия)
+		const defInlay = SERVICES_CATALOG_DICTIONARY.InlayOnlay!;
+		stage3Items.push(
+			createPlanItem(
+				"s3-inlay-prem-" + num,
+				3,
+				"stage_3_orthopedics",
+				defInlay,
+				num,
+				catalog,
+				validDiscountPct,
+				{
+					customTitle: "Анатомическая микрофрезерованная вкладка Multi-Layer диоксид циркония Katana на зуб №" + num + " (расширенная гарантия 10 лет)",
+					isDemoMode: isDemo,
+				},
+			),
+		);
 	}
 }
 
@@ -47,8 +65,26 @@ export function handleCrownTooth(num: number, ctx: TierGeneratorContext): void {
 	if (tierId === "economy") {
 		const defMK = SERVICES_CATALOG_DICTIONARY.CrownMetalCeramic!;
 		stage3Items.push(createPlanItem("s3-crown-" + num, 3, "stage_3_orthopedics", defMK, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
-	} else {
+	} else if (tierId === "optimum") {
 		const defEmax = SERVICES_CATALOG_DICTIONARY.CrownEmaxCeramic!;
 		stage3Items.push(createPlanItem("s3-crown-" + num, 3, "stage_3_orthopedics", defEmax, num, catalog, validDiscountPct, { isDemoMode: isDemo }));
+	} else {
+		// premium: коронка из многослойного диоксида циркония Katana Zirconia с расширенной гарантией 10 лет
+		const defZirc = SERVICES_CATALOG_DICTIONARY.CrownZirconia!;
+		stage3Items.push(
+			createPlanItem(
+				"s3-crown-prem-" + num,
+				3,
+				"stage_3_orthopedics",
+				defZirc,
+				num,
+				catalog,
+				validDiscountPct,
+				{
+					customTitle: "Восстановление зуба №" + num + " коронкой Multi-Layer диоксид циркония Katana (расширенная гарантия 10 лет)",
+					isDemoMode: isDemo,
+				},
+			),
+		);
 	}
 }

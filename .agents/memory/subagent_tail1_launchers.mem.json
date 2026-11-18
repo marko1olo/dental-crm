@@ -1,0 +1,85 @@
+{
+  "role": "Red Team Finisher Tail-1: Launchers, Shell & Fakes (wave 1 of 3)",
+  "project": "C:\\Clinic_MVP\\dental-crm",
+  "status": "COMPLETED_BY_ORCHESTRATOR",
+  "updatedAt": "2026-10-24",
+  "waveScope": {
+    "mine": [
+      "apps/web/src/AppShell.tsx",
+      "apps/web/src/CommunicationsView.tsx",
+      "apps/web/src/appModules/useAppRoutingEvents.ts",
+      "apps/web/src/components/appLayout/** (incl. modalsContainerModules/standalone/**)",
+      "apps/api/src/serverModules/routeRegistrar.ts"
+    ],
+    "foreignReportOnly": [
+      "apps/web/src/components/payroll/demoPayrollServices.ts (fakes pat_mikhailov/Михайлов live here - report only)",
+      "diary, communications components, cashbox/finance views, pricelist, documents, outpatient, patients, anesthesia, consents, diagnostics, sanpin, schedule services, db/appointmentsQuery, appointmentErrors, scripts/*.mjs"
+    ]
+  },
+  "step0_findings": {
+    "dangling_edits_verified_intact": [
+      "routeRegistrar.ts: +registerConsentRoutes (import + call, target apps/api/src/routes/consents.ts exists)",
+      "AppShell.tsx: -DirectDocumentsLauncher, +DirectWarehouseMdlpLauncher (target exists, exported at WarehouseMdlpLaunchers.tsx:54)",
+      "CommunicationsView.tsx: mobile omnichannel container height 124px->196px (mobile filter bar taller)",
+      "useAppRoutingEvents.ts: +prescriptions/rx deep-link -> setIsPrescriptionForm107Open (state exists in useAppHashRouting)",
+      "SpecializedAdministrativeLaunchers.tsx: omnichannel/telephony standalone launcher unmounted (Potemkin page with hardcoded call)",
+      "SurgeryLaunchers.tsx: consent direct modal also via ?consent/?consents/#consent tokens",
+      "TherapyLaunchers.tsx: +renderPatientDetailsLauncher (target exists PatientDetailsStandaloneLauncher.tsx:42)",
+      "CommunicationsChannelFilterBar.tsx: C4 fix - duplicate omni CTA hidden when activeSection==='omnichannel' (Mandate 8am)"
+    ],
+    "orphans": [
+      "apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/OmnichannelAndTelephonyStandaloneLauncher.tsx - unmounted by SpecializedAdministrativeLaunchers, zero references in src -> delete (Potemkin: hardcoded call UI)"
+    ],
+    "fakes_found": {
+      "mine_burn": [
+        "CashierFinanceLaunchers.tsx: checkout fake Ivanova/14500/5000/12000, sbp fake pat_mikhailov/15400/5000/18500/Воронова/fake items, cashflow fake 38500 + no-op onCashIn/onCashOut",
+        "FiscalReceiptLaunchers.tsx: fake invoice CHEK-089-2026 pat_mikhailov 15400",
+        "FamilyBillingLaunchers.tsx: fake 'Семья Михайловых' 18500 payer pat_mikhailov + fake son pat_son 4200",
+        "TreatmentPlanLaunchers.tsx: scenarios fake 'Иванова Екатерина' isDemoMode=true; estimator pat_mikhailov fake teeth 16/36/46; treatment-plans pat-demo-01 'Пациент'",
+        "useLivePatientPlanLoader.ts: DEMO_PLAN_INFO fake 'Смирнова Анна Сергеевна' bypasses API in demo mode"
+      ],
+      "foreign_report": [
+        "apps/web/src/components/payroll/demoPayrollServices.ts:49 patientName 'Михайлов Артем Евгеньевич' (payroll owner wave)"
+      ]
+    }
+  },
+  "api_map_for_honest_rewrite": {
+    "patient": "GET /api/patients/:id -> {fullName, phone, birthDate, familyGroupId, balanceRub}",
+    "debt": "GET /api/billing/invoices?patientId= -> {success, data:[{totalRub, paidRub, status}]} (paid/refunded/voided excluded, same as GlobalPaymentModalLauncher)",
+    "invoiceForReceipt": "GET /api/invoices?patientId= -> {invoices:[{id,number,patientName,patientPhone,totalAmountRub,paidAmountRub,status,date,...}], items}",
+    "family": "GET /api/finance/family/patient/:patientId -> FamilyGroup {id,name,balance(string rub),members,headPatientName} 404 if none",
+    "cashDay": "GET /api/billing/payments?period=day -> {success, data:[{amountRub, method, paidAt}]} + summarizeCashDay(cashDaySummary.ts) -> cashRub",
+    "cashInOut": "POST /api/cash/cash-introduction | /api/cash/cash-withdrawal (callCashShiftApi helper)",
+    "headers": "denteAdminSecretRequestHeaders()",
+    "cashier": "clinicProfileDraft from useAppStore; staff name via StandaloneLaunchersProps? NO - sessionAuth.activeStaffUser lives in appModules layer, not passed to standalone props -> use store-only where possible"
+  },
+  "plan": [
+    "Create standalone/launcherFinanceApi.ts (honest fetchers)",
+    "Create standalone/StandaloneDeepLinkMissingState.tsx (honest guidance, no dead ends, Mandate 8e)",
+    "Create administrative/CashierFinanceLauncherHosts.tsx (checkout+sbp hosts)",
+    "Create administrative/CashFlowLauncherHost.tsx (real cash-box day sums + real cash-in/out APIs)",
+    "Create administrative/FiscalReceiptLauncherHost.tsx (real invoice from /api/invoices)",
+    "Create administrative/FamilyBillingLauncherHost.tsx (real family group)",
+    "Create administrative/TreatmentPlanLauncherHosts.tsx (scenarios/estimator/treatment-plans real patientId)",
+    "Rewrite 4 launcher files as thin URL routers",
+    "Delete orphan OmnichannelAndTelephonyStandaloneLauncher.tsx",
+    "Fix useLivePatientPlanLoader.ts demo branch to use API",
+    "Gates: typecheck (0 errors in my files), check:encoding, targeted tests, 4-State live proofs if visible diff",
+    "Granular commits + report"
+  ],
+  "gates": {
+    "typecheck": "pending",
+    "check:encoding": "pending",
+    "targetedTests": "pending",
+    "proofs": "pending"
+  },
+  "commits": [],
+  "checkpoint_version": "final",
+  "final": {
+    "commit": "feat(launchers): honest standalone hosts on live API (см. git log -1)",
+    "done_by_agent": "launcherFinanceApi.ts + 7 хостов + тонкие URL-роутеры 4 лаунчеров + deepLinkUrl + DeepLinkMissingState + TreatmentPlanWorkspaceShell + выжжены фейки pat_mikhailov/Иванова/Смирнова/Воронова/15400/18500/38500/CHEK-089/pat_son/pat-demo-01 + удалён осиротевший OmnichannelAndTelephonyStandaloneLauncher (Потёмкин) + useLivePatientPlanLoader демо-ветка через API",
+    "done_by_orchestrator": "фиксы type-ошибок: value-import React в StandaloneTherapyWorkspaceHosts, гвард match[1] в useLauncherPatientDebt, переписаны 2 теста-саботажника (appLayoutLaunchers — старые пропсы patientId/patientName; appLayoutViewRouter — выдуманные модальные флаги) под новый дизайн",
+    "gates": "typecheck 0 ошибок в скоупе appLayout; check:encoding 19192 OK; тесты лаунчеров+вьюроутера 4/4",
+    "report_only": "demoPayrollServices.ts:49 фейк Михайлов — территория payroll-волны; ЗТЛ-пункт (dental_lab_inquisitor IN_PROGRESS) — передан в очередь"
+  }
+}

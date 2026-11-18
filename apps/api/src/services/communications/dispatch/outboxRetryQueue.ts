@@ -17,6 +17,7 @@ import {
 	sql,
 } from "drizzle-orm";
 import { db } from "../../../db/client.js";
+import { withSuperuserBypass, withTenantCtx, type TenantDb } from "../../../db/rls.js";
 import {
 	communicationOutbox,
 	patientCommunicationConsents,
@@ -48,18 +49,24 @@ export async function releaseStuckLocks(
 	if (organizationId)
 		scope.push(eq(communicationOutbox.organizationId, organizationId));
 
-	const released = await db
-		.update(communicationOutbox)
-		.set({
-			status: "queued",
-			lockedAt: null,
-			lockedBy: null,
-			nextAttemptAt: now,
-			updatedAt: now,
-		})
-		.where(and(...scope))
-		.returning({ id: communicationOutbox.id });
-	return released.length;
+	const run = async (tx: TenantDb) => {
+		const released = await tx
+			.update(communicationOutbox)
+			.set({
+				status: "queued",
+				lockedAt: null,
+				lockedBy: null,
+				nextAttemptAt: now,
+				updatedAt: now,
+			})
+			.where(and(...scope))
+			.returning({ id: communicationOutbox.id });
+		return released.length;
+	};
+
+	return organizationId
+		? withTenantCtx(organizationId, run)
+		: withSuperuserBypass(run);
 }
 
 /**
@@ -72,7 +79,7 @@ export async function claimBatch(
 	workerId: string,
 	organizationId: string | null,
 ): Promise<OutboxRow[]> {
-	return db.transaction(async (tx) => {
+	const run = async (tx: TenantDb) => {
 		const scope = [
 			eq(communicationOutbox.status, "queued" as const),
 			lte(communicationOutbox.nextAttemptAt, now),
@@ -105,7 +112,11 @@ export async function claimBatch(
 				),
 			)
 			.returning();
-	});
+	};
+
+	return organizationId
+		? withTenantCtx(organizationId, run)
+		: withSuperuserBypass(run);
 }
 
 /**
@@ -127,18 +138,24 @@ export async function countQueueRemainder(
 	if (handledIds.length > 0)
 		scope.push(notInArray(communicationOutbox.id, [...handledIds]));
 
-	const [row] = await db
-		.select({
-			awaitingRetry: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} > 0))::int`,
-			awaitingSchedule: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} = 0))::int`,
-		})
-		.from(communicationOutbox)
-		.where(and(...scope));
+	const run = async (tx: TenantDb) => {
+		const [row] = await tx
+			.select({
+				awaitingRetry: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} > 0))::int`,
+				awaitingSchedule: sql<number>`(count(*) filter (where ${communicationOutbox.attempts} = 0))::int`,
+			})
+			.from(communicationOutbox)
+			.where(and(...scope));
 
-	return {
-		awaitingRetry: Number(row?.awaitingRetry ?? 0),
-		awaitingSchedule: Number(row?.awaitingSchedule ?? 0),
+		return {
+			awaitingRetry: Number(row?.awaitingRetry ?? 0),
+			awaitingSchedule: Number(row?.awaitingSchedule ?? 0),
+		};
 	};
+
+	return organizationId
+		? withTenantCtx(organizationId, run)
+		: withSuperuserBypass(run);
 }
 
 export async function loadConsents(
@@ -148,31 +165,33 @@ export async function loadConsents(
 	const byPatient = new Map<string, ConsentRecord[]>();
 	if (patientIds.length === 0) return byPatient;
 
-	const rows = await db
-		.select({
-			patientId: patientCommunicationConsents.patientId,
-			channel: patientCommunicationConsents.channel,
-			scope: patientCommunicationConsents.scope,
-			state: patientCommunicationConsents.state,
-		})
-		.from(patientCommunicationConsents)
-		.where(
-			and(
-				eq(patientCommunicationConsents.organizationId, organizationId),
-				inArray(patientCommunicationConsents.patientId, patientIds),
-			),
-		);
+	return withTenantCtx(organizationId, async (tx: TenantDb) => {
+		const rows = await tx
+			.select({
+				patientId: patientCommunicationConsents.patientId,
+				channel: patientCommunicationConsents.channel,
+				scope: patientCommunicationConsents.scope,
+				state: patientCommunicationConsents.state,
+			})
+			.from(patientCommunicationConsents)
+			.where(
+				and(
+					eq(patientCommunicationConsents.organizationId, organizationId),
+					inArray(patientCommunicationConsents.patientId, patientIds),
+				),
+			);
 
-	for (const row of rows) {
-		const list = byPatient.get(row.patientId) ?? [];
-		list.push({
-			channel: row.channel as CommunicationChannelCode,
-			scope: row.scope as CommunicationConsentScope,
-			state: row.state as "granted" | "revoked",
-		});
-		byPatient.set(row.patientId, list);
-	}
-	return byPatient;
+		for (const row of rows) {
+			const list = byPatient.get(row.patientId) ?? [];
+			list.push({
+				channel: row.channel as CommunicationChannelCode,
+				scope: row.scope as CommunicationConsentScope,
+				state: row.state as "granted" | "revoked",
+			});
+			byPatient.set(row.patientId, list);
+		}
+		return byPatient;
+	});
 }
 
 /** Сколько сообщений уже ушло пациенту за сегодня — против навязчивости. */
@@ -185,27 +204,29 @@ export async function countSentToday(
 	if (patientIds.length === 0) return counts;
 
 	const dayStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-	const rows = await db
-		.select({
-			patientId: communicationOutbox.patientId,
-			total: sql<number>`count(*)::int`,
-		})
-		.from(communicationOutbox)
-		.where(
-			and(
-				eq(communicationOutbox.organizationId, organizationId),
-				inArray(communicationOutbox.patientId, patientIds),
-				inArray(communicationOutbox.status, ["sent", "delivered"]),
-				isNotNull(communicationOutbox.sentAt),
-				sql`${communicationOutbox.sentAt} >= ${dayStart.toISOString()}`,
-			),
-		)
-		.groupBy(communicationOutbox.patientId);
+	return withTenantCtx(organizationId, async (tx: TenantDb) => {
+		const rows = await tx
+			.select({
+				patientId: communicationOutbox.patientId,
+				total: sql<number>`count(*)::int`,
+			})
+			.from(communicationOutbox)
+			.where(
+				and(
+					eq(communicationOutbox.organizationId, organizationId),
+					inArray(communicationOutbox.patientId, patientIds),
+					inArray(communicationOutbox.status, ["sent", "delivered"]),
+					isNotNull(communicationOutbox.sentAt),
+					sql`${communicationOutbox.sentAt} >= ${dayStart.toISOString()}`,
+				),
+			)
+			.groupBy(communicationOutbox.patientId);
 
-	for (const row of rows) {
-		if (row.patientId) counts.set(row.patientId, Number(row.total));
-	}
-	return counts;
+		for (const row of rows) {
+			if (row.patientId) counts.set(row.patientId, Number(row.total));
+		}
+		return counts;
+	});
 }
 
 export async function markSuppressed(
@@ -213,17 +234,23 @@ export async function markSuppressed(
 	reason: string,
 	now: Date,
 ): Promise<void> {
-	await db
-		.update(communicationOutbox)
-		.set({
-			status: "suppressed",
-			lockedAt: null,
-			lockedBy: null,
-			lastErrorClass: "suppressed",
-			lastErrorMessage: reason,
-			updatedAt: now,
-		})
-		.where(eq(communicationOutbox.id, row.id));
+	const run = async (tx: TenantDb) => {
+		await tx
+			.update(communicationOutbox)
+			.set({
+				status: "suppressed",
+				lockedAt: null,
+				lockedBy: null,
+				lastErrorClass: "suppressed",
+				lastErrorMessage: reason,
+				updatedAt: now,
+			})
+			.where(eq(communicationOutbox.id, row.id));
+	};
+
+	return row.organizationId
+		? withTenantCtx(row.organizationId, run)
+		: withSuperuserBypass(run);
 }
 
 export async function markDeferred(
@@ -232,16 +259,22 @@ export async function markDeferred(
 	reason: string,
 	now: Date,
 ): Promise<void> {
-	await db
-		.update(communicationOutbox)
-		.set({
-			status: "queued",
-			lockedAt: null,
-			lockedBy: null,
-			nextAttemptAt: notBefore,
-			lastErrorClass: "deferred",
-			lastErrorMessage: reason,
-			updatedAt: now,
-		})
-		.where(eq(communicationOutbox.id, row.id));
+	const run = async (tx: TenantDb) => {
+		await tx
+			.update(communicationOutbox)
+			.set({
+				status: "queued",
+				lockedAt: null,
+				lockedBy: null,
+				nextAttemptAt: notBefore,
+				lastErrorClass: "deferred",
+				lastErrorMessage: reason,
+				updatedAt: now,
+			})
+			.where(eq(communicationOutbox.id, row.id));
+	};
+
+	return row.organizationId
+		? withTenantCtx(row.organizationId, run)
+		: withSuperuserBypass(run);
 }

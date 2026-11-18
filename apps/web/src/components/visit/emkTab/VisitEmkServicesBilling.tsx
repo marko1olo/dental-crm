@@ -76,7 +76,7 @@ export function VisitEmkServicesBilling({
 						<div className="pt-2">
 							<OrthopedicsChairsidePanel
 								patientId={activePatient?.id}
-								activeToothFdi={effectiveActiveTooth}
+								activeToothFdi={effectiveActiveTooth ?? undefined}
 								initialLabOrder={linkedLabOrder}
 								isLocked={isLocked}
 							/>
@@ -92,7 +92,11 @@ export function VisitEmkServicesBilling({
 				isLocked={isLocked}
 				activePatient={activePatient}
 				activeDoctorName={dashboard?.activeDoctor?.fullName}
-				clinicLegalName={dashboard?.activeDoctor?.clinicName || "ООО «ДЕНТЕ»"}
+				clinicLegalName={
+					(dashboard?.activeDoctor as { clinicName?: string } | undefined)?.clinicName ||
+					((dashboard as Record<string, unknown> | null | undefined)?.organization as { name?: string } | undefined)?.name ||
+					"ООО «ДЕНТЕ»"
+				}
 			/>
 
 			<div className="pt-2">

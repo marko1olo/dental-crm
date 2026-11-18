@@ -6,11 +6,14 @@
 
 import { ChevronDown, ChevronRight, SlidersHorizontal } from "lucide-react";
 import React, { useState } from "react";
+import type { PatientCoreDraft } from "../../../AppConstants";
 import { PatientCreationExtraFields } from "./PatientCreationExtraFields";
 
+import type { UsePatientCreationFormResult } from "./usePatientCreationTypes";
+
 export interface PatientCreationExtraSectionProps {
-	readonly form: any;
-	readonly updatePatientCoreDraft?: any;
+	readonly form: UsePatientCreationFormResult;
+	readonly updatePatientCoreDraft?: ((field: keyof PatientCoreDraft, value: string) => void) | undefined;
 }
 
 export function PatientCreationExtraSection({ form }: PatientCreationExtraSectionProps) {

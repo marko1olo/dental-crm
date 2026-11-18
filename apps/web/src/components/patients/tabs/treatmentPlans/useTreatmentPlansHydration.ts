@@ -7,6 +7,9 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import {
 	splitLaborAndMaterials,
 	PLAN_TIER_CONFIGS,
+	rublesToKopecks,
+	kopecksToRubles,
+	sumKopecks,
 	type TreatmentPlanItem,
 } from "@dental/shared";
 import { buildCanonical3TierPlans } from "../../../treatment-plans/treatmentPlanCatalogData";
@@ -142,8 +145,8 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 			const unitPrice = it.price !== undefined ? Number(it.price) : 0;
 			const discount = it.discount !== undefined ? Number(it.discount) : 0;
 			const quantity = it.quantity || 1;
-			const grossCostKopecks = Math.round(unitPrice * quantity * 100);
-			const discountKopecks = Math.round(discount * quantity * 100);
+			const grossCostKopecks = rublesToKopecks(unitPrice * quantity);
+			const discountKopecks = rublesToKopecks(discount * quantity);
 			const netCostKopecks = Math.max(0, grossCostKopecks - discountKopecks);
 			const { laborKopecks, materialsKopecks } = splitLaborAndMaterials(netCostKopecks, "optimum");
 
@@ -161,7 +164,7 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 				stageKind: "stage_1_therapy" as const,
 				stageNumber: (it.phase as 1 | 2 | 3) || 1,
 				tierKey: "optimum" as const,
-				unitPriceKopecks: Math.round(unitPrice * 100),
+				unitPriceKopecks: rublesToKopecks(unitPrice),
 				unitPriceRub: unitPrice,
 				quantity,
 				grossCostKopecks,
@@ -182,12 +185,12 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 	// Базовые клинические этапы плана лечения для канонического 3-уровневого калькулятора и печати
 	const planStages: TreatmentPlanStage[] = useMemo(() => {
 		if (!effectiveItems || effectiveItems.length === 0) return [];
-		const totalKopecks = effectiveItems.reduce(
-			(sum, it) =>
-				sum + Math.round(Math.max(0, (it.unitPriceRub || 0) * (it.quantity || 1) - (it.discountRub || 0)) * 100),
-			0,
+		const totalKopecks = sumKopecks(
+			effectiveItems.map((it) =>
+				rublesToKopecks(Math.max(0, (it.unitPriceRub || 0) * (it.quantity || 1) - (it.discountRub || 0)))
+			)
 		);
-		const totalRub = Math.round(totalKopecks / 100);
+		const totalRub = kopecksToRubles(totalKopecks);
 
 		return [
 			{
@@ -297,8 +300,8 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 			badge: activeTierData?.badgeText || "",
 			isRecommended: activeTierData?.isRecommended ?? true,
 			totalRub: activeTierData?.totalRub || 0,
-			totalKopecks: (activeTierData?.totalRub || 0) * 100,
-			amountKopecks: BigInt((activeTierData?.totalRub || 0) * 100),
+			totalKopecks: rublesToKopecks(activeTierData?.totalRub || 0),
+			amountKopecks: BigInt(rublesToKopecks(activeTierData?.totalRub || 0)),
 			warrantyYears: activeTierData?.warrantyYears || 1,
 			keyAdvantages: [],
 			stages: planStages,
@@ -315,7 +318,7 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 			subtitle: "Терапевтический протокол",
 			clinicalGoal: "Санация полости рта",
 			totalRub: activeTierData?.totalRub || 0,
-			totalKopecks: (activeTierData?.totalRub || 0) * 100,
+			totalKopecks: rublesToKopecks(activeTierData?.totalRub || 0),
 			estimatedVisits: 1,
 			estimatedWeeks: 1,
 			status: "completed" as const,
@@ -335,8 +338,10 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 	const discountedTotalRub = useMemo(() => {
 		if (!activeTierData) return 0;
 		const base = activeTierData.totalRub;
-		const withDiscount = Math.round(base * (1 - doctorDiscountPercent / 100));
-		return Math.max(0, withDiscount - bonusPointsToUseRub);
+		const baseKopecks = rublesToKopecks(base);
+		const discountFactor = Math.max(0, 1 - doctorDiscountPercent / 100);
+		const withDiscountRub = kopecksToRubles(Math.round(baseKopecks * discountFactor));
+		return Math.max(0, withDiscountRub - bonusPointsToUseRub);
 	}, [activeTierData, doctorDiscountPercent, bonusPointsToUseRub]);
 
 	return {

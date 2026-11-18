@@ -1,7 +1,7 @@
 import type { Patient } from "@dental/shared";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
-import { useScheduleStore } from "../../../store/scheduleStore";
+import { useScheduleStore, type AppointmentScheduleDraft } from "../../../store/scheduleStore";
 import type { AppView } from "../../../utils/routeUtils";
 import { showToast } from "../../GlobalToast";
 
@@ -29,12 +29,12 @@ export function executeOpenPatientVisitAutonomy({
 
 export function executeBookPatientAppointmentAutonomy({
 	selectedPatient,
-	setNewAppointmentDraft = (draft: any) => useScheduleStore.getState().setNewAppointmentDraft(draft),
+	setNewAppointmentDraft = (draft: AppointmentScheduleDraft) => useScheduleStore.getState().setNewAppointmentDraft(draft),
 	setCurrentView = (view: AppView) => useAppStore.getState().setCurrentView(view),
 	showToastFn = showToast,
 }: {
 	selectedPatient: Patient | null | undefined;
-	setNewAppointmentDraft?: (draft: any) => void;
+	setNewAppointmentDraft?: (draft: AppointmentScheduleDraft) => void;
 	setCurrentView?: (view: AppView) => void;
 	showToastFn?: (text: string, type?: "success" | "error" | "info" | "warning", duration?: number) => void;
 }) {

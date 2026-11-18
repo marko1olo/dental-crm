@@ -17,6 +17,11 @@ export const UPPER_LEFT_TEETH = ["21", "22", "23", "24", "25", "26", "27", "28"]
 export const LOWER_RIGHT_TEETH = ["48", "47", "46", "45", "44", "43", "42", "41"];
 export const LOWER_LEFT_TEETH = ["31", "32", "33", "34", "35", "36", "37", "38"];
 
+export const DECIDUOUS_UPPER_RIGHT_TEETH = ["55", "54", "53", "52", "51"];
+export const DECIDUOUS_UPPER_LEFT_TEETH = ["61", "62", "63", "64", "65"];
+export const DECIDUOUS_LOWER_RIGHT_TEETH = ["85", "84", "83", "82", "81"];
+export const DECIDUOUS_LOWER_LEFT_TEETH = ["71", "72", "73", "74", "75"];
+
 /**
  * Автоопределение категории стоматологической помощи по названию услуги плана лечения (Мандат 8e/8k)
  */
@@ -63,11 +68,11 @@ export const mapCompletedStagesToWarrantyItems = (stages: CompletedTreatmentStag
 		const cat = st.category || detectCategoryFromServiceTitle(st.serviceTitle);
 		const preset = getWarrantyPreset(cat);
 		const mat = DENTAL_MATERIALS_CATALOG.find((m) => m.category === cat);
-		const rawTooth = st.toothNumber ? String(st.toothNumber).trim() : "1.6";
+		const rawTooth = st.toothNumber ? String(st.toothNumber).trim() : "";
 		const tooth =
 			rawTooth.length === 2 && !rawTooth.includes(".")
 				? `${rawTooth[0]}.${rawTooth[1]}`
-				: rawTooth || "1.6";
+				: rawTooth || "—";
 
 		let matName = st.materialName || mat?.name || preset.recommendedMaterials[0] || "Стоматологический материал";
 		let manufacturer = st.manufacturer || mat?.manufacturer || preset.popularManufacturers[0] || "Производитель";

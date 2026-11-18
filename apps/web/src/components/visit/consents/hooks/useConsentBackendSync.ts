@@ -88,8 +88,9 @@ export function useConsentBackendSync({
 				sms: "sms_otp",
 				portal: "patient_portal",
 			};
-			const verificationMethod = methodToVerification[record.method] || "paper_signed";
-			const signatureType = record.method === "tablet" ? "tablet_stylus" : "paper_signed";
+			const methodKey = record.method || "paper";
+			const verificationMethod = methodToVerification[methodKey] || "paper_signed";
+			const signatureType = methodKey === "tablet" ? "tablet_stylus" : "paper_signed";
 
 			const res = await fetch(`/api/patients/${encodeURIComponent(patientId)}/consents`, {
 				method: "POST",

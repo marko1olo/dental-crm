@@ -282,9 +282,9 @@ test("3. Clinical Tool Arsenal: Pure Clinical Language, FDI Validation & No Forc
 		assert.ok(protocolRes.treatmentProtocol.includes("Estelite Asteria A2"));
 
 		// Pure Clinical Language check (Mandate 8x): NO bureaucratic regulatory slang
-		assert.ok(!protocolRes.fullForm043Text.includes("Приказ 804н"));
-		assert.ok(!protocolRes.fullForm043Text.includes("форма 043/у советского образца"));
-		assert.ok(protocolRes.fullForm043Text.includes("Медицинская карта приёма стоматологического пациента / Протокол приёма SOAP"));
+		assert.ok(!protocolRes.fullProtocolText.includes("Приказ 804н"));
+		assert.ok(!protocolRes.fullProtocolText.includes("форма 043/у советского образца"));
+		assert.ok(protocolRes.fullProtocolText.includes("Медицинская карта приёма стоматологического пациента / Протокол приёма SOAP"));
 	});
 });
 

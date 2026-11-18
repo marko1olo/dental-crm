@@ -1,0 +1,2552 @@
+[
+  {
+    "screenName": "pinpad",
+    "themeName": "light",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 1,
+      "buttonDefects": 0,
+      "typographyDefects": 0,
+      "emojiDefects": 0,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [],
+    "typographyDefects": [],
+    "emojiDefects": [],
+    "darkModeGlareDefects": [],
+    "screenshot": "pinpad_pc_light.png"
+  },
+  {
+    "screenName": "pinpad",
+    "themeName": "dark",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 19,
+      "buttonDefects": 17,
+      "typographyDefects": 2,
+      "emojiDefects": 1,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-staff-card.active",
+        "text": "ДС Д-р Соколов А. В. Врач-стоматолог · P",
+        "value": "74px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-staff-card",
+        "text": "ДО Д-р Орлов А. В. Врач-стоматолог · PIN",
+        "value": "74px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-staff-card",
+        "text": "ДМ Д-р Морозова Е. И. Врач-стоматолог · ",
+        "value": "74px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-staff-card",
+        "text": "ДГ Д-р Громов К. Д. Врач-стоматолог · PI",
+        "value": "74px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-link-btn.auth-link-btn--muted",
+        "text": "Выйти из аккаунта клиники",
+        "value": "15px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-pin-btn",
+        "text": "1",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-pin-btn",
+        "text": "2",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-pin-btn",
+        "text": "3",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-pin-btn",
+        "text": "4",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.auth-pin-btn",
+        "text": "5",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "p.auth-subtitle",
+        "text": "Выберите свой профиль для разблокировки ",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "word_clipping_ellipsis",
+        "selector": "span",
+        "clippedWord": "ников…",
+        "text": "Загружаем список сотрудников…",
+        "rule": "Запрещено обрезание русских слов многоточием"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "…",
+        "text": "Загружаем список сотрудников…",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "pinpad_pc_dark.png"
+  },
+  {
+    "screenName": "schedule",
+    "themeName": "light",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 273,
+      "buttonDefects": 119,
+      "typographyDefects": 0,
+      "emojiDefects": 4,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"sidebar-footer-theme-switcher-btn\"]",
+        "text": "Свет",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"clinic-control-center-trigger\"]",
+        "text": "Пульт управления клиникой (macOS Control",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"open-demo-case-btn\"]",
+        "text": "Клинический кейс роли",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"create-clinic-free-btn\"]",
+        "text": "Создать свою клинику бесплатно",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"exit-demo-button\"]",
+        "text": "Выйти из демо",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Скрыть предупреждение",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"btn-grid-step-15\"]",
+        "text": "15м",
+        "value": "19px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"btn-grid-step-30\"]",
+        "text": "30м",
+        "value": "19px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"btn-grid-step-60\"]",
+        "text": "60м",
+        "value": "19px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"btn-chair-maintenance-01a124d1-5806-7952-9249-0823851d894d\"]",
+        "text": "Санобработка и техперерыв для Кабинет 1 ",
+        "value": "22px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.appointment-action-label.whitespace-nowrap",
+        "emojis": "→",
+        "text": "В приём →",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.appointment-action-label.whitespace-nowrap",
+        "emojis": "→",
+        "text": "В приём →",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.appointment-action-label.whitespace-nowrap",
+        "emojis": "→",
+        "text": "В приём →",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "₽",
+        "text": "•••••• ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "schedule_pc_light.png"
+  },
+  {
+    "screenName": "schedule",
+    "themeName": "dark",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 273,
+      "buttonDefects": 119,
+      "typographyDefects": 0,
+      "emojiDefects": 4,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"sidebar-footer-theme-switcher-btn\"]",
+        "text": "Тьма",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"clinic-control-center-trigger\"]",
+        "text": "Пульт управления клиникой (macOS Control",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"open-demo-case-btn\"]",
+        "text": "Клинический кейс роли",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"create-clinic-free-btn\"]",
+        "text": "Создать свою клинику бесплатно",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"exit-demo-button\"]",
+        "text": "Выйти из демо",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Скрыть предупреждение",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"btn-grid-step-15\"]",
+        "text": "15м",
+        "value": "19px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"btn-grid-step-30\"]",
+        "text": "30м",
+        "value": "19px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"btn-grid-step-60\"]",
+        "text": "60м",
+        "value": "19px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"btn-chair-maintenance-01a124d1-5806-7952-9249-0823851d894d\"]",
+        "text": "Санобработка и техперерыв для Кабинет 1 ",
+        "value": "22px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.appointment-action-label.whitespace-nowrap",
+        "emojis": "→",
+        "text": "В приём →",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.appointment-action-label.whitespace-nowrap",
+        "emojis": "→",
+        "text": "В приём →",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.appointment-action-label.whitespace-nowrap",
+        "emojis": "→",
+        "text": "В приём →",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "₽",
+        "text": "•••••• ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "schedule_pc_dark.png"
+  },
+  {
+    "screenName": "pipeline",
+    "themeName": "light",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 54,
+      "buttonDefects": 12,
+      "typographyDefects": 5,
+      "emojiDefects": 11,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"sidebar-footer-theme-switcher-btn\"]",
+        "text": "Свет",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"clinic-control-center-trigger\"]",
+        "text": "Пульт управления клиникой (macOS Control",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"open-demo-case-btn\"]",
+        "text": "Клинический кейс роли",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"create-clinic-free-btn\"]",
+        "text": "Создать свою клинику бесплатно",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"exit-demo-button\"]",
+        "text": "Выйти из демо",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Скрыть предупреждение",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.p-3.rounded-2xl",
+        "text": "Все этапы 0 пл. 0 ₽",
+        "value": "69px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.p-3.rounded-2xl",
+        "text": "Требуется смета 0 пл. 0 ₽",
+        "value": "69px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.p-3.rounded-2xl",
+        "text": "Ожидает решения 0 пл. 0 ₽",
+        "value": "69px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.p-3.rounded-2xl",
+        "text": "Без записи 0 пл. 0 ₽",
+        "value": "69px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Требуется смета",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Ожидает решения",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Без записи",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Брошенные (>30д)",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Завершенные",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.sm:text-sm",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.sm:text-sm",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.sm:text-sm",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.sm:text-sm",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "pipeline_pc_light.png"
+  },
+  {
+    "screenName": "pipeline",
+    "themeName": "dark",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 54,
+      "buttonDefects": 12,
+      "typographyDefects": 5,
+      "emojiDefects": 11,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"sidebar-footer-theme-switcher-btn\"]",
+        "text": "Тьма",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"clinic-control-center-trigger\"]",
+        "text": "Пульт управления клиникой (macOS Control",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"open-demo-case-btn\"]",
+        "text": "Клинический кейс роли",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"create-clinic-free-btn\"]",
+        "text": "Создать свою клинику бесплатно",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"exit-demo-button\"]",
+        "text": "Выйти из демо",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Скрыть предупреждение",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.p-3.rounded-2xl",
+        "text": "Все этапы 0 пл. 0 ₽",
+        "value": "69px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.p-3.rounded-2xl",
+        "text": "Требуется смета 0 пл. 0 ₽",
+        "value": "69px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.p-3.rounded-2xl",
+        "text": "Ожидает решения 0 пл. 0 ₽",
+        "value": "69px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.p-3.rounded-2xl",
+        "text": "Без записи 0 пл. 0 ₽",
+        "value": "69px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Требуется смета",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Ожидает решения",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Без записи",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Брошенные (>30д)",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.sm:text-sm",
+        "text": "Завершенные",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.sm:text-sm",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.sm:text-sm",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.sm:text-sm",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.sm:text-sm",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "pipeline_pc_dark.png"
+  },
+  {
+    "screenName": "budget",
+    "themeName": "light",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 1,
+      "buttonDefects": 1,
+      "typographyDefects": 0,
+      "emojiDefects": 0,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Обновить страницу",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      }
+    ],
+    "typographyDefects": [],
+    "emojiDefects": [],
+    "darkModeGlareDefects": [],
+    "screenshot": "budget_pc_light.png"
+  },
+  {
+    "screenName": "budget",
+    "themeName": "dark",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 1,
+      "buttonDefects": 1,
+      "typographyDefects": 0,
+      "emojiDefects": 0,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Обновить страницу",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      }
+    ],
+    "typographyDefects": [],
+    "emojiDefects": [],
+    "darkModeGlareDefects": [],
+    "screenshot": "budget_pc_dark.png"
+  },
+  {
+    "screenName": "odontogram",
+    "themeName": "light",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 848,
+      "buttonDefects": 57,
+      "typographyDefects": 3,
+      "emojiDefects": 1,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"sidebar-footer-theme-switcher-btn\"]",
+        "text": "Свет",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"clinic-control-center-trigger\"]",
+        "text": "Пульт управления клиникой (macOS Control",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"open-demo-case-btn\"]",
+        "text": "Клинический кейс роли",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"create-clinic-free-btn\"]",
+        "text": "Создать свою клинику бесплатно",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"exit-demo-button\"]",
+        "text": "Выйти из демо",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Скрыть предупреждение",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-somatic-norm-one-click\"]",
+        "text": "Заполнить нормой",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-visit-lab-order-fast\"]",
+        "text": "Наряд ЗТЛ",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-visit-emergency-rescue\"]",
+        "text": "Аптечка",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"odontogram-mode-btn-anatomical_svg\"]",
+        "text": "3D",
+        "value": "25px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.text-xs.font-bold",
+        "text": "Пакетные операции",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span",
+        "text": "Выбор квадрантов и фронта",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.text-xs.font-bold",
+        "text": "Челюсти и прикус",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "✓",
+        "text": "✓ Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "odontogram_pc_light.png"
+  },
+  {
+    "screenName": "odontogram",
+    "themeName": "dark",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 848,
+      "buttonDefects": 57,
+      "typographyDefects": 3,
+      "emojiDefects": 1,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"sidebar-footer-theme-switcher-btn\"]",
+        "text": "Тьма",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"clinic-control-center-trigger\"]",
+        "text": "Пульт управления клиникой (macOS Control",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"open-demo-case-btn\"]",
+        "text": "Клинический кейс роли",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"create-clinic-free-btn\"]",
+        "text": "Создать свою клинику бесплатно",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"exit-demo-button\"]",
+        "text": "Выйти из демо",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Скрыть предупреждение",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-somatic-norm-one-click\"]",
+        "text": "Заполнить нормой",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-visit-lab-order-fast\"]",
+        "text": "Наряд ЗТЛ",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-visit-emergency-rescue\"]",
+        "text": "Аптечка",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"odontogram-mode-btn-anatomical_svg\"]",
+        "text": "3D",
+        "value": "25px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.text-xs.font-bold",
+        "text": "Пакетные операции",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span",
+        "text": "Выбор квадрантов и фронта",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.text-xs.font-bold",
+        "text": "Челюсти и прикус",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "✓",
+        "text": "✓ Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "odontogram_pc_dark.png"
+  },
+  {
+    "screenName": "prescription",
+    "themeName": "light",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 848,
+      "buttonDefects": 144,
+      "typographyDefects": 42,
+      "emojiDefects": 48,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"sidebar-footer-theme-switcher-btn\"]",
+        "text": "Свет",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"clinic-control-center-trigger\"]",
+        "text": "Пульт управления клиникой (macOS Control",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"open-demo-case-btn\"]",
+        "text": "Клинический кейс роли",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"create-clinic-free-btn\"]",
+        "text": "Создать свою клинику бесплатно",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"exit-demo-button\"]",
+        "text": "Выйти из демо",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Скрыть предупреждение",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-somatic-norm-one-click\"]",
+        "text": "Заполнить нормой",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-visit-lab-order-fast\"]",
+        "text": "Наряд ЗТЛ",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-visit-emergency-rescue\"]",
+        "text": "Аптечка",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.sr-only",
+        "text": "Отметка выполнения",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "label.text-[11px].font-extrabold",
+        "text": "1. Анатомический корневой канал:",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span",
+        "text": "2. Длина по апекслокатору (WL):",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "label.text-[11px].font-extrabold",
+        "text": "3. Мастер-файл (MAF) и конусность:",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "label.text-[11px].font-extrabold",
+        "text": "4. Эндодонтический силер:",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "label.text-[11px].font-extrabold",
+        "text": "5. Метод обтурации:",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 1",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 2",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 3",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 4",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 5",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "✓",
+        "text": "✓ Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.hidden.sm:inline",
+        "emojis": "✓",
+        "text": "✓ Соматически здоров / Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[11px].text-slate-500",
+        "emojis": "→ → → →",
+        "text": "Слепок/Скан → Каркас/Примерка → Нанесение керамики",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "₽",
+        "text": "Гарантийная замена (0 ₽)",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "1 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "4 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "800 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "5 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "600 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "1 800 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "prescription_pc_light.png"
+  },
+  {
+    "screenName": "prescription",
+    "themeName": "dark",
+    "viewportName": "pc",
+    "counts": {
+      "buttonsChecked": 848,
+      "buttonDefects": 144,
+      "typographyDefects": 42,
+      "emojiDefects": 48,
+      "darkModeGlareDefects": 78
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"sidebar-footer-theme-switcher-btn\"]",
+        "text": "Тьма",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"clinic-control-center-trigger\"]",
+        "text": "Пульт управления клиникой (macOS Control",
+        "value": "30px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"open-demo-case-btn\"]",
+        "text": "Клинический кейс роли",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"create-clinic-free-btn\"]",
+        "text": "Создать свою клинику бесплатно",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"exit-demo-button\"]",
+        "text": "Выйти из демо",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button",
+        "text": "Скрыть предупреждение",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-somatic-norm-one-click\"]",
+        "text": "Заполнить нормой",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-visit-lab-order-fast\"]",
+        "text": "Наряд ЗТЛ",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "[data-testid=\"btn-visit-emergency-rescue\"]",
+        "text": "Аптечка",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.sr-only",
+        "text": "Отметка выполнения",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "label.text-[11px].font-extrabold",
+        "text": "1. Анатомический корневой канал:",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span",
+        "text": "2. Длина по апекслокатору (WL):",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "label.text-[11px].font-extrabold",
+        "text": "3. Мастер-файл (MAF) и конусность:",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "label.text-[11px].font-extrabold",
+        "text": "4. Эндодонтический силер:",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "label.text-[11px].font-extrabold",
+        "text": "5. Метод обтурации:",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 1",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 2",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 3",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 4",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.text-[10px].uppercase",
+        "text": "Этап 5",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "✓",
+        "text": "✓ Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.hidden.sm:inline",
+        "emojis": "✓",
+        "text": "✓ Соматически здоров / Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[11px].text-slate-500",
+        "emojis": "→ → → →",
+        "text": "Слепок/Скан → Каркас/Примерка → Нанесение керамики",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "₽",
+        "text": "Гарантийная замена (0 ₽)",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "1 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "4 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "800 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "5 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "600 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[10px].font-mono",
+        "emojis": "₽",
+        "text": "1 800 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "280x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "298x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "275x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "299x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "327x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "468x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "280x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "392x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "div.inline-flex.items-center",
+        "bgColor": "rgb(248, 250, 252)",
+        "dimensions": "476x18",
+        "text": "",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      },
+      {
+        "type": "dark_mode_white_glare",
+        "selector": "button.dente-segmented-item.active",
+        "bgColor": "rgb(255, 255, 255)",
+        "dimensions": "103x28",
+        "text": "VITA Classical",
+        "rule": "0 слепящих белых пятен в Dark Mode"
+      }
+    ],
+    "screenshot": "prescription_pc_dark.png"
+  },
+  {
+    "screenName": "pinpad",
+    "themeName": "light",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 1,
+      "buttonDefects": 0,
+      "typographyDefects": 0,
+      "emojiDefects": 0,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [],
+    "typographyDefects": [],
+    "emojiDefects": [],
+    "darkModeGlareDefects": [],
+    "screenshot": "pinpad_mobile_light.png"
+  },
+  {
+    "screenName": "pinpad",
+    "themeName": "dark",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 1,
+      "buttonDefects": 0,
+      "typographyDefects": 0,
+      "emojiDefects": 0,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [],
+    "typographyDefects": [],
+    "emojiDefects": [],
+    "darkModeGlareDefects": [],
+    "screenshot": "pinpad_mobile_dark.png"
+  },
+  {
+    "screenName": "schedule",
+    "themeName": "light",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 108,
+      "buttonDefects": 15,
+      "typographyDefects": 4,
+      "emojiDefects": 0,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ПН 5",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ВТ 6",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "СР 7",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ЧТ 8",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ПТ 9",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell.is-selected",
+        "text": "СБ 10",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ВС 11",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"schedule-mobile-appt-card\"]",
+        "text": "Иванов Алексей С. ГОТОВО Первичный осмот",
+        "value": "117.5px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"schedule-mobile-appt-card\"]",
+        "text": "Ковалёв Роман С. ЗАПЛАНИРОВАН Первичный ",
+        "value": "135px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "irregular_border_style",
+        "selector": "div.schedule-mobile-gap-row",
+        "text": "Свободно (90 мин) · 12:30 – 14:00 Записа",
+        "value": "dashed",
+        "standard": "solid 1px var(--line)"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.schedule-mobile-status-badge.bg-slate-500/15",
+        "text": "Готово",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.schedule-mobile-status-badge.bg-sky-500/15",
+        "text": "Запланирован",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.schedule-mobile-status-badge.bg-[var(--teal,#0d9488)]/15",
+        "text": "В кресле",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.schedule-mobile-status-badge.bg-emerald-500/15",
+        "text": "Подтвержден",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [],
+    "darkModeGlareDefects": [],
+    "screenshot": "schedule_mobile_light.png"
+  },
+  {
+    "screenName": "schedule",
+    "themeName": "dark",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 108,
+      "buttonDefects": 15,
+      "typographyDefects": 4,
+      "emojiDefects": 0,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ПН 5",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ВТ 6",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "СР 7",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ЧТ 8",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ПТ 9",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell.is-selected",
+        "text": "СБ 10",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "button.schedule-mobile-day-cell",
+        "text": "ВС 11",
+        "value": "64px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"schedule-mobile-appt-card\"]",
+        "text": "Иванов Алексей С. ГОТОВО Первичный осмот",
+        "value": "117.5px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"schedule-mobile-appt-card\"]",
+        "text": "Ковалёв Роман С. ЗАПЛАНИРОВАН Первичный ",
+        "value": "135px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "irregular_border_style",
+        "selector": "div.schedule-mobile-gap-row",
+        "text": "Свободно (90 мин) · 12:30 – 14:00 Записа",
+        "value": "dashed",
+        "standard": "solid 1px var(--line)"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.schedule-mobile-status-badge.bg-slate-500/15",
+        "text": "Готово",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.schedule-mobile-status-badge.bg-sky-500/15",
+        "text": "Запланирован",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.schedule-mobile-status-badge.bg-[var(--teal,#0d9488)]/15",
+        "text": "В кресле",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "span.schedule-mobile-status-badge.bg-emerald-500/15",
+        "text": "Подтвержден",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [],
+    "darkModeGlareDefects": [],
+    "screenshot": "schedule_mobile_dark.png"
+  },
+  {
+    "screenName": "pipeline",
+    "themeName": "light",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 56,
+      "buttonDefects": 1,
+      "typographyDefects": 1,
+      "emojiDefects": 7,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "button.mobile-tab-item.active",
+        "text": "Ещё",
+        "value": "55px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.font-bold",
+        "text": "Требуется смета",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.block.text-[11px]",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "pipeline_mobile_light.png"
+  },
+  {
+    "screenName": "pipeline",
+    "themeName": "dark",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 56,
+      "buttonDefects": 1,
+      "typographyDefects": 1,
+      "emojiDefects": 7,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "button.mobile-tab-item.active",
+        "text": "Ещё",
+        "value": "55px",
+        "standard": "32px / 36px / 40px / 44px"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h3.text-xs.font-bold",
+        "text": "Требуется смета",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "div.text-[11px].font-semibold",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.block.text-[11px]",
+        "emojis": "₽",
+        "text": "0 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "pipeline_mobile_dark.png"
+  },
+  {
+    "screenName": "budget",
+    "themeName": "light",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 2,
+      "buttonDefects": 0,
+      "typographyDefects": 1,
+      "emojiDefects": 7,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h1.text-sm.font-bold",
+        "text": "Стоматология ДЕНТЕ Премиум 1791619061531",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.font-semibold",
+        "emojis": "₽",
+        "text": "6 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.font-semibold",
+        "emojis": "₽",
+        "text": "14 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.font-semibold",
+        "emojis": "₽",
+        "text": "4 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.font-medium.text-slate-900",
+        "emojis": "₽",
+        "text": "25 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-base.text-cyan-600",
+        "emojis": "₽",
+        "text": "25 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.font-serif",
+        "emojis": "✕",
+        "text": "✕",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "№",
+        "text": "Я подтверждаю согласие с предложенным планом лечен",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "budget_mobile_light.png"
+  },
+  {
+    "screenName": "budget",
+    "themeName": "dark",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 2,
+      "buttonDefects": 0,
+      "typographyDefects": 1,
+      "emojiDefects": 7,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "h1.text-sm.font-bold",
+        "text": "Стоматология ДЕНТЕ Премиум 1791619061531",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.font-semibold",
+        "emojis": "₽",
+        "text": "6 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.font-semibold",
+        "emojis": "₽",
+        "text": "14 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.font-semibold",
+        "emojis": "₽",
+        "text": "4 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.font-medium.text-slate-900",
+        "emojis": "₽",
+        "text": "25 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-base.text-cyan-600",
+        "emojis": "₽",
+        "text": "25 500 ₽",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-xs.font-serif",
+        "emojis": "✕",
+        "text": "✕",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      },
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span",
+        "emojis": "№",
+        "text": "Я подтверждаю согласие с предложенным планом лечен",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "budget_mobile_dark.png"
+  },
+  {
+    "screenName": "odontogram",
+    "themeName": "light",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 53,
+      "buttonDefects": 14,
+      "typographyDefects": 2,
+      "emojiDefects": 1,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-complaints\"]",
+        "text": "1. Жалобы",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-exam\"]",
+        "text": "2. Осмотр",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-diagnosis\"]",
+        "text": "3. Диагноз",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-treatment\"]",
+        "text": "4. Лечение",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-checkout\"]",
+        "text": "5. Итог и Чек",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-norm-btn\"]",
+        "text": "✓ Соматически здоров / Норма 1 тап",
+        "value": "52px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-mic-toggle-btn\"]",
+        "text": "Голосовая диктовка SmartMic",
+        "value": "48px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_border_radius",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-mic-toggle-btn\"]",
+        "text": "Голосовая диктовка SmartMic",
+        "value": "14px",
+        "standard": "8px (cards/buttons) / 20px (pill chips)"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.mobile-smart-mic-chip",
+        "text": "+ Перкуссия норм",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.mobile-smart-mic-chip",
+        "text": "+ Анестезия 1.7мл",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.mobile-chairside-card-title",
+        "text": "Жалобы пациента",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.mobile-chairside-card-title",
+        "text": "Анамнез заболевания и жизни",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[15px].font-bold",
+        "emojis": "✓",
+        "text": "✓ Соматически здоров / Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "odontogram_mobile_light.png"
+  },
+  {
+    "screenName": "odontogram",
+    "themeName": "dark",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 53,
+      "buttonDefects": 14,
+      "typographyDefects": 2,
+      "emojiDefects": 1,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-complaints\"]",
+        "text": "1. Жалобы",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-exam\"]",
+        "text": "2. Осмотр",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-diagnosis\"]",
+        "text": "3. Диагноз",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-treatment\"]",
+        "text": "4. Лечение",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-checkout\"]",
+        "text": "5. Итог и Чек",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-norm-btn\"]",
+        "text": "✓ Соматически здоров / Норма 1 тап",
+        "value": "52px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-mic-toggle-btn\"]",
+        "text": "Голосовая диктовка SmartMic",
+        "value": "48px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_border_radius",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-mic-toggle-btn\"]",
+        "text": "Голосовая диктовка SmartMic",
+        "value": "14px",
+        "standard": "8px (cards/buttons) / 20px (pill chips)"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.mobile-smart-mic-chip",
+        "text": "+ Перкуссия норм",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.mobile-smart-mic-chip",
+        "text": "+ Анестезия 1.7мл",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.mobile-chairside-card-title",
+        "text": "Жалобы пациента",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.mobile-chairside-card-title",
+        "text": "Анамнез заболевания и жизни",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[15px].font-bold",
+        "emojis": "✓",
+        "text": "✓ Соматически здоров / Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "odontogram_mobile_dark.png"
+  },
+  {
+    "screenName": "prescription",
+    "themeName": "light",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 53,
+      "buttonDefects": 14,
+      "typographyDefects": 2,
+      "emojiDefects": 1,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-complaints\"]",
+        "text": "1. Жалобы",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-exam\"]",
+        "text": "2. Осмотр",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-diagnosis\"]",
+        "text": "3. Диагноз",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-treatment\"]",
+        "text": "4. Лечение",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-checkout\"]",
+        "text": "5. Итог и Чек",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-norm-btn\"]",
+        "text": "✓ Соматически здоров / Норма 1 тап",
+        "value": "52px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-mic-toggle-btn\"]",
+        "text": "Голосовая диктовка SmartMic",
+        "value": "48px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_border_radius",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-mic-toggle-btn\"]",
+        "text": "Голосовая диктовка SmartMic",
+        "value": "14px",
+        "standard": "8px (cards/buttons) / 20px (pill chips)"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.mobile-smart-mic-chip",
+        "text": "+ Перкуссия норм",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.mobile-smart-mic-chip",
+        "text": "+ Анестезия 1.7мл",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.mobile-chairside-card-title",
+        "text": "Жалобы пациента",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.mobile-chairside-card-title",
+        "text": "Анамнез заболевания и жизни",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[15px].font-bold",
+        "emojis": "✓",
+        "text": "✓ Соматически здоров / Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "prescription_mobile_light.png"
+  },
+  {
+    "screenName": "prescription",
+    "themeName": "dark",
+    "viewportName": "mobile",
+    "counts": {
+      "buttonsChecked": 53,
+      "buttonDefects": 14,
+      "typographyDefects": 2,
+      "emojiDefects": 1,
+      "darkModeGlareDefects": 0
+    },
+    "buttonDefects": [
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-complaints\"]",
+        "text": "1. Жалобы",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-exam\"]",
+        "text": "2. Осмотр",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-diagnosis\"]",
+        "text": "3. Диагноз",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-treatment\"]",
+        "text": "4. Лечение",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-step-checkout\"]",
+        "text": "5. Итог и Чек",
+        "value": "34px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-norm-btn\"]",
+        "text": "✓ Соматически здоров / Норма 1 тап",
+        "value": "52px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_height",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-mic-toggle-btn\"]",
+        "text": "Голосовая диктовка SmartMic",
+        "value": "48px",
+        "standard": "32px / 36px / 40px / 44px"
+      },
+      {
+        "type": "non_standard_border_radius",
+        "selector": "[data-testid=\"mobile-chairside-visit-workspace-mic-toggle-btn\"]",
+        "text": "Голосовая диктовка SmartMic",
+        "value": "14px",
+        "standard": "8px (cards/buttons) / 20px (pill chips)"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.mobile-smart-mic-chip",
+        "text": "+ Перкуссия норм",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      },
+      {
+        "type": "missing_css_transition",
+        "selector": "button.mobile-smart-mic-chip",
+        "text": "+ Анестезия 1.7мл",
+        "value": "transition: all 0s",
+        "standard": "transition: all 0.15s ease / 0.2s cubic-bezier"
+      }
+    ],
+    "typographyDefects": [
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.mobile-chairside-card-title",
+        "text": "Жалобы пациента",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      },
+      {
+        "type": "unmotivated_uppercase",
+        "selector": "div.mobile-chairside-card-title",
+        "text": "Анамнез заболевания и жизни",
+        "rule": "Запрещен кричащий капслок в интерфейсе"
+      }
+    ],
+    "emojiDefects": [
+      {
+        "type": "unicode_emoji_detected",
+        "selector": "span.text-[15px].font-bold",
+        "emojis": "✓",
+        "text": "✓ Соматически здоров / Норма",
+        "rule": "Мультяшные Unicode-эмодзи запрещены, только Lucide SVG"
+      }
+    ],
+    "darkModeGlareDefects": [],
+    "screenshot": "prescription_mobile_dark.png"
+  }
+]

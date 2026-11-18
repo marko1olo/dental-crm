@@ -22,7 +22,9 @@ export interface WarrantyRemediationOrder {
 	readonly defectTitle: string;
 	readonly clinicalFinding: string;
 	readonly remediationAction: string;
-	readonly costToPatientRub: 0; // Strictly 0 ₽ (Mandate 8e)
+	readonly amountKopecks: 0n; // Mandate 8bm: exact bigint kopecks
+	readonly costToPatientKopecks: 0; // Mandate 8bm: exact kopecks
+	readonly costToPatientRub: 0; // Strictly 0 ₽ (Mandate 8e, backwards compatible)
 	readonly discountPercent: 100;
 	readonly isFreeWarrantyService: true;
 	readonly requiresMasterPassword: false;

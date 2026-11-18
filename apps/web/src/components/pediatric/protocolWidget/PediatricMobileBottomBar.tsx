@@ -32,7 +32,7 @@ export const PediatricMobileBottomBar: React.FC<
 
 	return (
 		<div
-			className="md:hidden fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[60] max-w-[100vw] overflow-x-clip backdrop-blur-xl bg-[var(--paper-strong,#ffffff)]/95 dark:bg-zinc-900/95 border-t border-[var(--line,#e2e8f0)] p-2.5 pb-2 shadow-[0_-4px_24px_rgba(0,0,0,0.22)] flex flex-col gap-1.5"
+			className="md:hidden fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[60] max-w-[100vw] overflow-x-clip backdrop-blur-xl bg-[var(--paper-strong,#ffffff)]/95 border-t border-[var(--line,#e2e8f0)] p-2.5 pb-2 shadow-[0_-4px_24px_rgba(0,0,0,0.22)] flex flex-col gap-1.5"
 			data-testid="pediatric-mobile-bottom-bar"
 		>
 			{/* Верхняя строка мобильного бара: сводка диагноза + зуба */}
@@ -40,19 +40,16 @@ export const PediatricMobileBottomBar: React.FC<
 				<span className="font-bold text-[var(--ink,#0f172a)] truncate">
 					Зуб {currentTooth} • {activePreset.shortLabelRu}
 				</span>
-				<span className="font-mono text-xs font-extrabold text-teal-700 dark:text-teal-400 shrink-0 ml-2">
+				<span className="font-mono text-xs font-extrabold text-[var(--primary)] shrink-0 ml-2">
 					{diagnosisIcd10}
 				</span>
 			</div>
 
-			{/* Главная кнопка действия (Primary CTA): ровно ОДНА Primary CTA кнопка (высота >= 52px, Мандат 8am/8ze), благородный тиловый Noble Teal #0d9488 */}
+			{/* Главная кнопка действия (Primary CTA): ровно ОДНА Primary CTA кнопка (высота >= 52px, Мандат 8am/8ze) */}
 			<button
 				type="button"
 				onClick={handleApply}
-				className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-extrabold shadow-md transition active:scale-[0.98] cursor-pointer touch-manipulation select-none bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white"
-				style={{
-					boxShadow: "0 4px 14px rgba(13, 148, 136, 0.3)",
-				}}
+				className="flex h-[52px] min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-extrabold shadow-md transition active:scale-[0.98] cursor-pointer touch-manipulation select-none bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white"
 				data-testid="pediatric-mobile-btn-apply"
 				title="Внести протокол в медицинскую карту"
 				aria-label="Внести в карту"
@@ -66,48 +63,33 @@ export const PediatricMobileBottomBar: React.FC<
 				<button
 					type="button"
 					onClick={onAddServicesToInvoice}
-					className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
-					style={{
-						backgroundColor: "var(--paper, #ffffff)",
-						borderColor: "var(--line, #e2e8f0)",
-						color: "var(--ink, #0f172a)",
-					}}
+					className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
 					data-testid="pediatric-mobile-btn-invoice"
 					title="Добавить услуги в смету"
 				>
-					<Coins className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+					<Coins className="h-4 w-4 shrink-0 text-[var(--primary)]" />
 					<span className="truncate">В смету ({servicesCount})</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onOpenMemoModal}
-					className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
-					style={{
-						backgroundColor: "var(--paper, #ffffff)",
-						borderColor: "var(--line, #e2e8f0)",
-						color: "var(--ink, #0f172a)",
-					}}
+					className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
 					data-testid="pediatric-mobile-btn-memo"
 					title="Печать памятки родителям"
 				>
-					<Printer className="h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />
+					<Printer className="h-4 w-4 shrink-0 text-[var(--ink-muted)]" />
 					<span className="truncate">Памятка</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onOpenDiplomaModal}
-					className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
-					style={{
-						backgroundColor: "var(--paper, #ffffff)",
-						borderColor: "var(--line, #e2e8f0)",
-						color: "var(--ink, #0f172a)",
-					}}
+					className="flex min-h-[44px] h-[44px] items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-2 text-xs font-bold transition active:scale-95 cursor-pointer touch-manipulation select-none"
 					data-testid="pediatric-mobile-btn-diploma"
 					title="Печать диплома за храбрость"
 				>
-					<Award className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+					<Award className="h-4 w-4 shrink-0 text-[var(--warning,#f59e0b)]" />
 					<span className="truncate">Диплом</span>
 				</button>
 			</div>

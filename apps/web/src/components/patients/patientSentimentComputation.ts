@@ -14,9 +14,55 @@ import {
 
 export type { PatientSentimentInfo, PatientSentimentType };
 
+export interface PatientSentimentSubject {
+	readonly id?: string | null | undefined;
+	readonly fullName?: string | null | undefined;
+	readonly sentimentType?: PatientSentimentType | null | undefined;
+	readonly totalSpentRub?: number | null | undefined;
+	readonly ltvRub?: number | null | undefined;
+	readonly totalPaidRub?: number | null | undefined;
+	readonly totalPaidKopecks?: number | null | undefined;
+	readonly total_paid_kopecks?: number | null | undefined;
+	readonly loyaltyTier?: string | null | undefined;
+	readonly tier?: string | null | undefined;
+	readonly administrativeProfile?: {
+		readonly loyaltyTier?: string | null | undefined;
+		readonly taxpayerInn?: string | null | undefined;
+		readonly snils?: string | null | undefined;
+		readonly identityDocument?: string | null | undefined;
+		readonly [key: string]: unknown;
+	} | null | undefined;
+	readonly allergies?: string | readonly string[] | null | undefined;
+	readonly allergiesList?: string | readonly string[] | null | undefined;
+	readonly clinicalSafety?: {
+		readonly allergies?: string | readonly string[] | null | undefined;
+		readonly [key: string]: unknown;
+	} | null | undefined;
+	readonly clinicalSafetyProfile?: {
+		readonly hasCriticalStopFlags?: boolean | null | undefined;
+		readonly activeFlags?: readonly unknown[] | null | undefined;
+		readonly [key: string]: unknown;
+	} | null | undefined;
+	readonly hasSevereAllergies?: boolean | null | undefined;
+	readonly requiresStrictInformedConsent?: boolean | null | undefined;
+	readonly no_show_count?: number | null | undefined;
+	readonly noShowsCount?: number | null | undefined;
+	readonly cancellationsCount?: number | null | undefined;
+	readonly completedVisitsCount?: number | null | undefined;
+	readonly completed_visits_count?: number | null | undefined;
+	readonly visitsCount?: number | null | undefined;
+	readonly history?: {
+		readonly noShows?: number | null | undefined;
+		readonly cancellations?: number | null | undefined;
+		readonly attended?: number | null | undefined;
+		readonly [key: string]: unknown;
+	} | null | undefined;
+	readonly noShowProbability?: number | null | undefined;
+	readonly [key: string]: unknown;
+}
+
 export function computePatientSentiment(
-	// biome-ignore lint/suspicious/noExplicitAny: flexible patient record
-	patient: any,
+	patient?: PatientSentimentSubject | null | undefined,
 	overrides?: { sentiment?: PatientSentimentType | null | undefined; ltvRub?: number | null | undefined; complianceScore?: number | null | undefined } | undefined,
 ): PatientSentimentInfo {
 	if (!patient && !overrides?.sentiment) {

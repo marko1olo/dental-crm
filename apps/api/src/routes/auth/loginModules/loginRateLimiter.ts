@@ -9,13 +9,60 @@ interface RateLimitEntry {
 	failedAttempts: number;
 	lockoutUntil: number;
 	firstAttemptAt: number;
+	lastAttemptAt: number;
 }
 
 const PIN_MAX_ATTEMPTS = 5;
 const PIN_LOCKOUT_MS = 5 * 60 * 1000; // 5 минут (300 секунд)
 const PIN_WINDOW_MS = 10 * 60 * 1000; // Окно сброса счётчика при отсутствии активности
+export const MAX_PIN_RATE_LIMIT_ENTRIES = 5000; // Лимит записей в памяти для защиты от OOM
 
 const pinRateLimitMap = new Map<string, RateLimitEntry>();
+let lastPeriodicCleanup = 0;
+let cleanupIntervalTimer: NodeJS.Timeout | null = null;
+
+function ensureCleanupTimer(): void {
+	if (!cleanupIntervalTimer && typeof setInterval === "function") {
+		cleanupIntervalTimer = setInterval(() => {
+			cleanupExpiredPinRateLimits();
+		}, 60_000);
+		cleanupIntervalTimer.unref?.();
+	}
+}
+
+/**
+ * Очистка устаревших записей rate limiter (Garbage Collection).
+ */
+export function cleanupExpiredPinRateLimits(currentTime?: number): number {
+	const now = currentTime ?? Date.now();
+	let evictedCount = 0;
+
+	for (const [key, entry] of pinRateLimitMap.entries()) {
+		if (entry.lockoutUntil > 0) {
+			if (now > entry.lockoutUntil) {
+				pinRateLimitMap.delete(key);
+				evictedCount++;
+			}
+		} else if (now - entry.firstAttemptAt > PIN_WINDOW_MS) {
+			pinRateLimitMap.delete(key);
+			evictedCount++;
+		}
+	}
+
+	// LRU eviction if size still exceeds MAX_PIN_RATE_LIMIT_ENTRIES
+	while (pinRateLimitMap.size >= MAX_PIN_RATE_LIMIT_ENTRIES) {
+		const oldestKey = pinRateLimitMap.keys().next().value;
+		if (oldestKey !== undefined) {
+			pinRateLimitMap.delete(oldestKey);
+			evictedCount++;
+		} else {
+			break;
+		}
+	}
+
+	lastPeriodicCleanup = now;
+	return evictedCount;
+}
 
 export function getStaffPinRateLimitKey(
 	orgId: string,
@@ -35,6 +82,7 @@ export interface PinRateLimitStatus {
 }
 
 export function checkStaffPinRateLimit(key: string): PinRateLimitStatus {
+	ensureCleanupTimer();
 	const now = Date.now();
 	const entry = pinRateLimitMap.get(key);
 
@@ -69,7 +117,19 @@ export function checkStaffPinRateLimit(key: string): PinRateLimitStatus {
 }
 
 export function recordStaffPinFailure(key: string): PinRateLimitStatus {
+	ensureCleanupTimer();
 	const now = Date.now();
+
+	// Throttled lazy GC every 30s when map is non-empty
+	if (now - lastPeriodicCleanup > 30_000 && pinRateLimitMap.size > 100) {
+		cleanupExpiredPinRateLimits(now);
+	}
+
+	// Enforce LRU cap before insertion
+	if (!pinRateLimitMap.has(key) && pinRateLimitMap.size >= MAX_PIN_RATE_LIMIT_ENTRIES) {
+		cleanupExpiredPinRateLimits(now);
+	}
+
 	const entry = pinRateLimitMap.get(key);
 
 	if (!entry || now - entry.firstAttemptAt > PIN_WINDOW_MS) {
@@ -77,7 +137,10 @@ export function recordStaffPinFailure(key: string): PinRateLimitStatus {
 			failedAttempts: 1,
 			lockoutUntil: 0,
 			firstAttemptAt: now,
+			lastAttemptAt: now,
 		};
+		// Re-inserting updates LRU order in Map
+		pinRateLimitMap.delete(key);
 		pinRateLimitMap.set(key, newEntry);
 		return {
 			allowed: true,
@@ -86,6 +149,11 @@ export function recordStaffPinFailure(key: string): PinRateLimitStatus {
 	}
 
 	entry.failedAttempts += 1;
+	entry.lastAttemptAt = now;
+
+	// Re-insert to refresh LRU order
+	pinRateLimitMap.delete(key);
+	pinRateLimitMap.set(key, entry);
 
 	if (entry.failedAttempts >= PIN_MAX_ATTEMPTS) {
 		entry.lockoutUntil = now + PIN_LOCKOUT_MS;
@@ -110,4 +178,12 @@ export function resetStaffPinRateLimit(key: string): void {
 // Экспорт для unit-тестов
 export function clearAllStaffPinRateLimitsForTesting(): void {
 	pinRateLimitMap.clear();
+	if (cleanupIntervalTimer) {
+		clearInterval(cleanupIntervalTimer);
+		cleanupIntervalTimer = null;
+	}
+}
+
+export function getPinRateLimitMapSizeForTesting(): number {
+	return pinRateLimitMap.size;
 }

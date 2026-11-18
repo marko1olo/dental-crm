@@ -12,31 +12,47 @@ import { DentalLabStudioModal } from "../../../lab/DentalLabStudioModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../../store/visitStore";
 import { showToast } from "../../../GlobalToast";
+import type {
+	VisitModalPatientEntity,
+	VisitModalDoctorEntity,
+	VisitModalAppointmentEntity,
+	VisitModalDashboardEntity,
+} from "./visitViewModalsTypes";
+import type {
+	VisitPatientEntity,
+	VisitDoctorEntity,
+	VisitAppointmentEntity,
+	VisitDashboardEntity,
+} from "../VisitViewProps";
+import type { Dashboard } from "@dental/shared";
 
 export interface LabSectionPatient {
-	readonly id?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly fullName?: string | undefined;
-	readonly name?: string | undefined;
-	readonly medCardNumber?: string | undefined;
-	readonly cardNumber?: string | undefined;
+	readonly id?: string | null | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly fullName?: string | null | undefined;
+	readonly name?: string | null | undefined;
+	readonly medCardNumber?: string | null | undefined;
+	readonly cardNumber?: string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface LabSectionDoctor {
-	readonly id?: string | undefined;
-	readonly userId?: string | undefined;
-	readonly fullName?: string | undefined;
-	readonly name?: string | undefined;
+	readonly id?: string | null | undefined;
+	readonly userId?: string | null | undefined;
+	readonly fullName?: string | null | undefined;
+	readonly name?: string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface LabSectionAppointment {
-	readonly patientId?: string | undefined;
-	readonly patientName?: string | undefined;
-	readonly doctorId?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly startTime?: string | undefined;
-	readonly startAt?: string | undefined;
-	readonly date?: string | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly patientName?: string | null | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly doctorName?: string | null | undefined;
+	readonly startTime?: string | null | undefined;
+	readonly startAt?: string | null | undefined;
+	readonly date?: string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface LabSectionCatalogService {
@@ -49,11 +65,13 @@ export interface LabSectionCatalogService {
 
 export interface LabSectionDashboard {
 	readonly activeVisit?: {
-		readonly patientId?: string | undefined;
-	} | undefined;
+		readonly patientId?: string | null | undefined;
+		readonly [key: string]: unknown;
+	} | null | undefined;
 	readonly services?: readonly LabSectionCatalogService[] | undefined;
 	readonly pricelist?: readonly LabSectionCatalogService[] | undefined;
 	readonly catalogServices?: readonly LabSectionCatalogService[] | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface SavedLabOrderNotification {
@@ -83,10 +101,10 @@ export interface SavedLabOrderNotification {
 export interface DentalLabOrderModalSectionProps {
 	isOpen: boolean;
 	onClose: () => void;
-	activePatient: LabSectionPatient | null | undefined;
-	activeDoctor: LabSectionDoctor | null | undefined;
-	activeAppointment: LabSectionAppointment | null | undefined;
-	dashboard: LabSectionDashboard | null | undefined;
+	activePatient: VisitPatientEntity | null | undefined;
+	activeDoctor: VisitDoctorEntity | null | undefined;
+	activeAppointment: VisitAppointmentEntity | null | undefined;
+	dashboard: VisitDashboardEntity | undefined;
 	effectiveTreatmentPlanId?: string | undefined;
 	effectiveStageId?: string | undefined;
 	effectiveStageNumber?: number | undefined;
@@ -124,29 +142,29 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 				useUiSurfaceStore.getState().closePrimaryModal("lab_order");
 			}}
 			patientId={
-				activePatient?.id ||
-				activePatient?.patientId ||
-				activeAppointment?.patientId ||
-				(typeof dashboard?.activeVisit?.patientId === "string"
-					? dashboard.activeVisit.patientId
-					: undefined)
+				(typeof activePatient?.id === "string" ? activePatient.id : undefined) ||
+				(typeof activeAppointment?.patientId === "string" ? activeAppointment.patientId : undefined) ||
+				(((dashboard as Record<string, unknown> | null | undefined)?.activeVisit as { patientId?: string } | undefined)?.patientId) ||
+				undefined
 			}
 			patientName={
-				activePatient?.fullName ||
-				activePatient?.name ||
-				activeAppointment?.patientName ||
+				(typeof activePatient?.fullName === "string" ? activePatient.fullName : undefined) ||
+				(typeof activePatient?.name === "string" ? activePatient.name : undefined) ||
+				(typeof activeAppointment?.patientName === "string" ? activeAppointment.patientName : undefined) ||
 				"Пациент"
 			}
 			doctorId={
-				activeDoctor?.id ||
-				activeDoctor?.userId ||
-				activeAppointment?.doctorId ||
+				(typeof activeDoctor?.id === "string" ? activeDoctor.id : undefined) ||
+				(typeof activeDoctor?.userId === "string" ? activeDoctor.userId : undefined) ||
+				(typeof (activeAppointment as Record<string, unknown> | null | undefined)?.doctorId === "string"
+					? ((activeAppointment as Record<string, unknown>).doctorId as string)
+					: undefined) ||
 				undefined
 			}
 			doctorName={
-				activeDoctor?.fullName ||
-				activeDoctor?.name ||
-				activeAppointment?.doctorName ||
+				(typeof activeDoctor?.fullName === "string" ? activeDoctor.fullName : undefined) ||
+				(typeof activeDoctor?.name === "string" ? activeDoctor.name : undefined) ||
+				(typeof activeAppointment?.doctorName === "string" ? activeAppointment.doctorName : undefined) ||
 				"Лечащий врач"
 			}
 			treatmentPlanId={effectiveTreatmentPlanId}
@@ -170,12 +188,12 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 			scheduledVisitDate={
 				activeAppointment?.startTime ||
 				activeAppointment?.startAt ||
-				activeAppointment?.date ||
+				(typeof activeAppointment?.date === "string" ? activeAppointment.date : undefined) ||
 				undefined
 			}
 			patientChartNumber={
-				activePatient?.medCardNumber ||
-				activePatient?.cardNumber ||
+				(typeof activePatient?.cardNumber === "string" ? activePatient.cardNumber : undefined) ||
+				((activePatient as Record<string, unknown> | null | undefined)?.medCardNumber as string | undefined) ||
 				undefined
 			}
 			onOrderSaved={(rawOrder) => {
@@ -289,7 +307,8 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 						if (typeof order.impressionPriceKopecks === "number" && order.impressionPriceKopecks > 0) {
 							return Math.round(order.impressionPriceKopecks / 100);
 						}
-						const servicesList = dashboard?.services || dashboard?.pricelist || dashboard?.catalogServices;
+						const rawDashboard = dashboard as Record<string, unknown> | null | undefined;
+						const servicesList = rawDashboard?.services || rawDashboard?.pricelist || rawDashboard?.catalogServices;
 						if (Array.isArray(servicesList)) {
 							const found = servicesList.find((s: LabSectionCatalogService) => s.code804n === "A02.07.010" || s.order804nCode === "A02.07.010" || s.code === "A02.07.010");
 							if (found && typeof found.priceRub === "number" && found.priceRub > 0) {

@@ -1,0 +1,7 @@
+test(e2e): cross-module cashbox billing, warehouse consumption, and Wheeler odontogram multi-select flows
+
+- Add cashbox-billing-flow.spec.ts: split tender 50/50 payment, exact BigInt amountKopecks (650 000 kop), 54-FZ receipt, patient balance zero debt, shift Z-report reconciliation
+- Add warehouse-consumption-flow.spec.ts: procedure tech map batch deduction (caries x4), Mandate 8n Soft Negative Stock quiet overdraft, 1-click inventory audit, express inbound waybill
+- Add odontogram-multiselect-flow.spec.ts: Wheeler 2.5D formula frontal group selection (13-23, 43-33), 1-click physiological norm, wisdom teeth edentulism (18, 28, 38, 48), reactive hydration (Mandate 8zq)
+- Add 12 4-state visual proof artifacts (PC Light/Dark 1440x900 + Mobile Light/Dark 390x844) verified on 8 visual axes via personal read_file
+- Update docs/testing/E2E_CLINICAL_TESTING_STANDARD.md and BACKLOG.md

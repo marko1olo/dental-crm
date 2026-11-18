@@ -1,0 +1,69 @@
+/* Patient Workspace: Mobile Viewport Responsive Layout (<= 768px) */
+.patient-row {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	min-height: 80px;
+}
+
+@media (max-width: 768px) {
+	.visit-grid-container {
+		grid-template-columns: 1fr;
+	}
+	.patient-feature-grid {
+		grid-template-columns: 1fr;
+	}
+	.emk-tabs-container {
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding: 2px 8px !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		max-width: 100% !important;
+		box-sizing: border-box !important;
+	}
+	.emk-tabs-container::-webkit-scrollbar {
+		display: none;
+	}
+	.emk-unified-toolbar > div:first-child {
+		flex-wrap: nowrap !important;
+	}
+	.emk-tier1-quick-soap-bar {
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding: 2px 8px !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		max-width: 100% !important;
+		box-sizing: border-box !important;
+	}
+	.emk-tier1-quick-soap-bar button {
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+		max-width: none !important;
+		min-width: fit-content !important;
+	}
+	.emk-tier1-quick-soap-bar button span {
+		white-space: nowrap !important;
+		overflow: visible !important;
+		text-overflow: clip !important;
+	}
+	.visit-fields textarea,
+	.emk-field-container textarea {
+		min-height: 130px !important;
+		font-size: 14px;
+	}
+	/* Предотвращение перекрытия дневника нижним навбаром на мобильных экранах */
+	.visit-panel,
+	.visit-note-panel,
+	.visit-fields {
+		padding-bottom: 7.5rem !important; /* 120px safe area above mobile navigation */
+	}
+}

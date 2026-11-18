@@ -1,5 +1,5 @@
 import React from "react";
-import { Camera, X } from "lucide-react";
+import { Camera, X, Box } from "lucide-react";
 import { DentalCrown } from "../../icons/DentalIcons.js";
 import type { OrthopedicsChairsideTopBarProps } from "./orthopedicsBannerTypes.js";
 
@@ -13,6 +13,8 @@ export function OrthopedicsChairsideTopBar({
 	onChangeJawScope,
 	selectedMaterial,
 	onChangeSelectedMaterial,
+	is3dViewerOpen,
+	onToggle3dViewer,
 }: OrthopedicsChairsideTopBarProps) {
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 mb-2.5 border-b border-[var(--line)]">
@@ -100,6 +102,23 @@ export function OrthopedicsChairsideTopBar({
 						);
 					})}
 				</div>
+
+				{onToggle3dViewer && (
+					<button
+						type="button"
+						onClick={onToggle3dViewer}
+						className={`min-h-[44px] sm:min-h-[34px] px-2.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+							is3dViewerOpen
+								? "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/40 shadow-xs"
+								: "bg-[var(--paper-subtle)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
+						}`}
+						title="3D Интраоральный просмотрщик челюстей и прикуса"
+						data-testid="toggle-ortho-3d-viewer-btn"
+					>
+						<Box className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
+						<span>3D-скан</span>
+					</button>
+				)}
 
 				<select
 					value={selectedMaterial}

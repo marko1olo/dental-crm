@@ -1,0 +1,35 @@
+refactor(shift): декомпозиция монолитов смены и кассы по Мандату 8b и Apple HIG
+
+## Контекст и архитектурная цель (Why):
+- В проекте присутствовали два связанных CSS-монолита: shift-dashboard.css (545+ строк) и mobile-shift.css (567+ строк), нарушавшие Мандат 8b (лимит файлов <= 120 строк).
+- Требовалось декомпозировать стили кассовой смены и рабочего места врача/кассира на изолированные семантические микро-модули без деструктивных изменений интерфейса.
+- Гарантирована врачебная и кассовая автономия (Мандаты 8e & 8n): кнопки смены и ордеров никогда не блокируются, 0 бюрократии и регуляторного мусора.
+- Устранена путаница между рантаймами тестов (vitest -> node:test) для 6 тестов смены.
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/styles/shiftStyles/shiftLayout.css (93 строки): базовый грид, шапка смены, статус-бейдж, полоса KPI.
+- apps/web/src/styles/shiftStyles/shiftRevenueCards.css (91 строка): карточки выручки (нал, безнал, переводы, аванс), выплата врачу, сводка за смену.
+- apps/web/src/styles/shiftStyles/shiftCashTransactions.css (118 строк): журнал кассовых ордеров, нижние шторки внесений/выплат, пресеты сумм.
+- apps/web/src/styles/shiftStyles/shiftConsumables.css (115 строк): расходные материалы смены, тактильные степперы, мягкий овердрафт.
+- apps/web/src/styles/shiftStyles/shiftDarkTheme.css (88 строк): глубокий высококонтрастный Dark Mode на семантических токенах var(--paper), var(--paper-strong), var(--line), var(--teal), var(--ink).
+- apps/web/src/styles/shiftStyles/shiftMobileCockpit.css (79 строк): Apple iOS HIG touch адаптив (390x844), тач-таргеты >= 44x44px, Natural Thumb Zone, 0px горизонтального скролла.
+- apps/web/src/styles/shiftStyles/shiftTodoAndActions.css (82 строки): срочные задачи смены и быстрые действия врача.
+- apps/web/src/styles/shiftStyles/shiftPatientCockpit.css (50 строк): карточка пациента в кресле, факты и панель клинических рисков.
+- apps/web/src/styles/modules/shift-dashboard.css (8 строк): ультра-тонкий фасад импорта микро-модулей.
+- apps/web/src/styles/modules/mobile-shift.css (6 строк): ультра-тонкий фасад импорта сенсорных модулей.
+- apps/web/src/components/reports/ReportsDashboard.tsx: скорректирован импорт React для чистого рендеринга в node:test.
+- apps/web/src/components/shift/__tests__/: переведены 6 тестов смены на стандартный runner node:test.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- npm run check:encoding: проверено 21554 файлов, 0 замечаний (Exit Code 0).
+- npm run check:css-tokens: 1518 css-файлов, 0 неразрешенных var(), 0 светлых запасов (Exit Code 0).
+- Unit Tests: 38 passing, 0 failing (Exit Code 0).
+- Визуальный пруф Red Team (Chromium Playwright) в docs/proofs/shift/:
+  * 01_shift_pc_light.png (1440x900 Light, 191 610 байт >= 20 КБ)
+  * 02_shift_pc_dark.png (1440x900 Dark, 197 497 байт >= 20 КБ)
+  * 03_shift_mobile_light.png (390x844 Light, 154 295 байт >= 20 КБ)
+  * 04_shift_mobile_dark.png (390x844 Dark, 151 129 байт >= 20 КБ)
+  Все 4 скриншота лично проверены через read_file: отсутствие слепящих белых пятен, наездов текста и горизонтального дрифта.
+
+## Синхронизация документации (Documentation Sync):
+- Создана детальная спецификация docs/architecture/SHIFT_DASHBOARD_DECOMPOSITION_SPEC.md.

@@ -31,7 +31,7 @@ export function getWhatsappTemplateText(
 				? generateAppointmentConfirmationMessage({
 						patientName: nameHint,
 						doctorName: upcomingAppointment.doctorName,
-						appointmentStartsAt: upcomingAppointment.startsAt,
+						appointmentStartsAt: upcomingAppointment.startsAt || new Date().toISOString(),
 						clinicName,
 						templateType: "reminder",
 					})

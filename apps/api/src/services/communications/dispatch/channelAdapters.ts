@@ -4,9 +4,9 @@
  * for SMS, Telegram, WhatsApp, MAX and Email.
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
-import { patients } from "../../../db/schema.js";
+import { messengerInboundEvents, patients } from "../../../db/schema.js";
 import { isValidEmailAddress } from "../../../emailTransport.js";
 import { normalizeRussianMsisdn } from "../../../smsTransport.js";
 import { normalizeWhatsappRecipient } from "../../../whatsappTransport.js";
@@ -57,10 +57,28 @@ export async function resolveRecipientAddress(
 
 		if (channel === "max") {
 			/*
-			 * В MAX бот не пишет первым: диалог начинает пациент, и его идентификатор
-			 * приходит во входящем событии. Разбор входящих оставляет метку
-			 * `MAX:<chat_id>` в заметках карточки — отсюда и берётся адрес.
+			 * В MAX бот не пишет первым: диалог начинает пациент.
+			 * Идентификатор чата берётся напрямую из реляционных записей входящих сообщений
+			 * (messengerInboundEvents), а при их отсутствии — из метки в заметках (legacy fallback).
 			 */
+			const [latestInbound] = await tx
+				.select({ externalChatId: messengerInboundEvents.externalChatId })
+				.from(messengerInboundEvents)
+				.where(
+					and(
+						eq(messengerInboundEvents.organizationId, organizationId),
+						eq(messengerInboundEvents.patientId, patientId),
+						eq(messengerInboundEvents.channel, "max"),
+						isNotNull(messengerInboundEvents.externalChatId),
+					),
+				)
+				.orderBy(desc(messengerInboundEvents.createdAt))
+				.limit(1);
+
+			if (latestInbound?.externalChatId && latestInbound.externalChatId.trim()) {
+				return { address: latestInbound.externalChatId.trim(), reason: null };
+			}
+
 			const mark = /MAX:(-?\d{1,19})/.exec(patient.notes ?? "");
 			return mark?.[1]
 				? { address: mark[1], reason: null }

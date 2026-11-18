@@ -1,8 +1,27 @@
 import type React from "react";
+import type { ClinicalFormFieldTarget } from "@dental/shared";
+
+export interface EmkVisitNoteForm {
+	complaint?: string | null | undefined;
+	complaints?: string | null | undefined;
+	anamnesis?: string | null | undefined;
+	objectiveStatus?: string | null | undefined;
+	objectiveInspection?: string | null | undefined;
+	diagnosis?: string | null | undefined;
+	treatment?: string | null | undefined;
+	treatmentPlan?: string | null | undefined;
+	recommendations?: string | null | undefined;
+	anesthesia?: string | null | undefined;
+	anesthetic?: string | null | undefined;
+	patientId?: string | undefined;
+	visitId?: string | undefined;
+	id?: string | undefined;
+	[key: string]: unknown;
+}
 
 export interface EmkSectionProps {
-	visitNoteForm: Record<string, unknown>;
-	updateVisitNoteField: (fieldKey: string, value: unknown) => void;
+	visitNoteForm?: EmkVisitNoteForm | Record<string, unknown> | null | undefined;
+	updateVisitNoteField?: ((fieldKey: string, value: unknown) => void) | undefined;
 	isLocked?: boolean | undefined;
 	disabled?: boolean | undefined;
 	isRevising?: boolean | undefined;
@@ -12,8 +31,6 @@ export interface EmkSectionProps {
 	patientAge?: number | null | undefined;
 	patientGender?: string | null | undefined;
 }
-
-import type { ClinicalFormFieldTarget } from "@dental/shared";
 
 export interface DebouncedEmkTextareaProps {
 	fieldKey: string;

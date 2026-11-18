@@ -73,8 +73,12 @@ export function buildTreatmentItemsToInsert(params: {
 				return true;
 			return false;
 		});
+		const rawDoctor =
+			reqItem?.doctorId || matchingDbPlanItem?.doctorId || doctorUserId;
 		const plannedDoctor =
-			reqItem?.doctorId || matchingDbPlanItem?.doctorId || doctorUserId || null;
+			typeof rawDoctor === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawDoctor.trim())
+				? rawDoctor.trim()
+				: null;
 		return {
 			organizationId: orgId,
 			patientId,

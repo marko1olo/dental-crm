@@ -41,14 +41,15 @@ export interface ClinicServiceItem {
 /** Интерфейс записи приёма пациента из расписания/архива */
 export interface AppointmentLike {
 	readonly id?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly startsAt?: string | undefined;
-	readonly date?: string | undefined;
-	readonly reason?: string | undefined;
-	readonly comment?: string | undefined;
-	readonly notes?: string | undefined;
-	readonly diagnosis?: string | undefined;
-	readonly diagnosisTooth?: number | string | undefined;
+	readonly patientId?: string | null | undefined;
+	readonly startsAt?: string | null | undefined;
+	readonly date?: string | null | undefined;
+	readonly reason?: string | null | undefined;
+	readonly comment?: string | null | undefined;
+	readonly notes?: string | null | undefined;
+	readonly diagnosis?: string | null | undefined;
+	readonly diagnosisTooth?: number | string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 /** Интерфейс снимка зуба из одонтограммы */
@@ -57,6 +58,7 @@ export interface StoredToothSnapshot {
 	readonly state?: string | undefined;
 	readonly diagnosis?: string | undefined;
 	readonly notes?: string | undefined;
+	readonly [key: string]: unknown;
 }
 
 /** Коды Номенклатуры медицинских услуг Минздрава РФ (Приказ 804н) */
@@ -234,9 +236,9 @@ export function isEndodonticIndication(diagnosisOrText?: string | null): boolean
 /** Построение быстрого индекса истории незавершенных эндо-приёмов в памяти */
 export function buildPatientPreviousVisitsEndoIndex(params: {
 	readonly patientId?: string | null | undefined;
-	readonly appointments?: readonly AppointmentLike[] | undefined;
-	readonly dashboard?: { appointments?: readonly AppointmentLike[] | undefined } | undefined;
-	readonly storedTeeth?: readonly StoredToothSnapshot[] | undefined;
+	readonly appointments?: readonly AppointmentLike[] | readonly unknown[] | undefined;
+	readonly dashboard?: { appointments?: readonly AppointmentLike[] | readonly unknown[] | undefined; [key: string]: unknown } | undefined;
+	readonly storedTeeth?: readonly StoredToothSnapshot[] | readonly unknown[] | undefined;
 	readonly toothStates?: Record<string, string> | undefined;
 	readonly toothRecords?: Record<string, unknown> | undefined;
 	readonly activeVisitId?: string | null | undefined;
@@ -388,8 +390,8 @@ export function getUnfinishedEndoSnapshot(
 export function transformEndoStage1ToStage2(params: {
 	readonly snapshot: LastVisitSoapSnapshot;
 	readonly toothNumber?: number | undefined;
-	readonly serviceCatalog?: readonly ClinicServiceItem[] | undefined;
-	readonly currentDiary?: DiaryState | undefined;
+	readonly serviceCatalog?: readonly ClinicServiceItem[] | readonly unknown[] | undefined;
+	readonly currentDiary?: DiaryState | null | undefined;
 }): MultiStageEndoTransformResult {
 	const tooth = params.toothNumber || params.snapshot.toothNumber;
 	const snapshotDate = params.snapshot.date;

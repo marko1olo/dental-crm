@@ -3,9 +3,11 @@ import { showToast } from "../../../GlobalToast";
 import { generateSha256 } from "../../../consents/consentIntegrityHash";
 import {
 	printFilledConsentTemplate, printBlankConsentTemplate, printFilledConsentPackage,
-	type ConsentTemplateKey, type ConsentPackageKey, type ConsentSubstitutionContext,
+	type ConsentTemplateKey, type ConsentSubstitutionContext,
 } from "../../../consents/consentTemplates";
 import type { ConsentRecordState } from "../visitConsentTypes";
+
+export type ConsentPackageKey = "PACKAGE_PRIMARY_VISIT" | "PACKAGE_SURGERY" | "PACKAGE_ORTHOPEDICS" | string;
 
 interface UseConsentActionsParams {
 	patientId: string;

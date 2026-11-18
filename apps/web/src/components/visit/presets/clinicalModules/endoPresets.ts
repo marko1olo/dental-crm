@@ -28,7 +28,7 @@ export const AUTOPILOT_EMERGENCY_PAIN_K040: DoctorAutopilotPreset = {
 		category: "therapy",
 	},
 	additionalServices804n: [
-		{ code804n: "B01.003.004.001", title: "Местная анестезия инфильтрационная/проводниковая", basePriceRub: 800, category: "anesthesia" },
+		{ code804n: "B01.003.004.001", title: "Местная анестезия инфильтрационная/проводниковая", basePriceRub: 800, category: "therapy" },
 	],
 	informedConsent: "Информированное добровольное согласие (ИДС) на неотложную стоматологическую помощь оформлено.",
 	materialsToDeduct: [

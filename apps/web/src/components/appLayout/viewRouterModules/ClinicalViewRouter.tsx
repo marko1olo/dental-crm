@@ -111,6 +111,7 @@ export function ClinicalViewRouter({
 						<OrthodonticsStudioModal {...orthoProps} />
 					) : perspective === "presentation" ? (
 						<TreatmentPlanStudioModal
+							key={patientId || "draft"}
 							isOpen={true}
 							onClose={() => {
 								if (typeof window !== "undefined") {

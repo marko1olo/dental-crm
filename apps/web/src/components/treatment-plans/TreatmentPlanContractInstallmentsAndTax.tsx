@@ -1,6 +1,6 @@
 import React from "react";
 import { Clock, CreditCard, ShieldCheck } from "lucide-react";
-import { type Kopecks, splitKopecks } from "@dental/shared";
+import { type Kopecks, splitKopecks, kopecksToRubles } from "@dental/shared";
 import type { TreatmentPlanTier } from "./types";
 
 export interface TreatmentPlanContractInstallmentsAndTaxProps {
@@ -28,14 +28,14 @@ export const TreatmentPlanContractInstallmentsAndTax: React.FC<TreatmentPlanCont
 							<CreditCard size={13} />
 							<span>Программа беспроцентной рассрочки 0% ({installmentMonths} мес.):</span>
 						</div>
-						<span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[9px] uppercase tracking-wider">
+						<span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold text-[9px]">
 							0% переплат
 						</span>
 					</div>
 					<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
 						{([3, 6, 12, 24] as const).map((m) => {
 							const parts = splitKopecks(finalTotalKopecks, m);
-							const monthly = Math.round((parts[0] ?? 0) / 100);
+							const monthly = Math.round(kopecksToRubles(parts[0] ?? 0));
 							const isCurrent = m === installmentMonths;
 							return (
 								<div key={m} className={`p-1.5 rounded-lg border ${isCurrent ? "bg-teal-50 border-teal-300 ring-1 ring-teal-200" : "bg-slate-50/80 border-slate-200"}`}>

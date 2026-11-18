@@ -289,6 +289,8 @@ export function isFillingState(state: string | null | undefined): boolean {
 	const s = state.trim().toLowerCase();
 	return (
 		s === "filling" ||
+		s === "filled" ||
+		s === "done" ||
 		s === "f" ||
 		s === "пломба" ||
 		s === "plomba" ||

@@ -1,0 +1,51 @@
+/* Mobile Actions Grid for Create Patient Modal (<= 768px, Mandate 8e, 8al) */
+@media (max-width: 768px) {
+	.create-patient-modal-actions {
+		display: grid !important;
+		grid-template-columns: 1fr 1fr !important;
+		gap: 8px !important;
+		width: 100% !important;
+	}
+
+	.create-patient-modal-actions button {
+		width: 100% !important;
+		min-height: 44px !important;
+		height: auto !important;
+		padding: 8px 10px !important;
+		font-size: 0.8125rem !important;
+		font-weight: 700 !important;
+		border-radius: 12px !important;
+		justify-content: center !important;
+		text-align: center !important;
+	}
+
+	.create-patient-modal-actions [data-testid="patient-creation-submit-btn"] {
+		grid-column: 1 / -1 !important;
+		min-height: 48px !important;
+		font-size: 0.9375rem !important;
+		order: 1 !important;
+	}
+
+	.create-patient-modal-actions [data-testid="patient-creation-submit-and-book-btn"] {
+		order: 2 !important;
+	}
+
+	.create-patient-modal-actions [data-testid="patient-creation-submit-and-visit-btn"] {
+		order: 3 !important;
+	}
+
+	.create-patient-modal-actions [data-testid="patient-creation-print-blank-contract-btn"] {
+		order: 4 !important;
+	}
+
+	.create-patient-modal-actions [data-testid="footer-allow-duplicate-create-btn"] {
+		grid-column: 1 / -1 !important;
+		order: 5 !important;
+	}
+
+	.create-patient-modal-actions .create-patient-cancel-btn {
+		grid-column: 1 / -1 !important;
+		order: 99 !important;
+		min-height: 44px !important;
+	}
+}

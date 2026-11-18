@@ -4,8 +4,10 @@ import {
 	computeViewerImageStyle, useEffectiveMprProps, useImagingAiAnalysis,
 	useImagingPreviewBlob, useImagingMeasurementsPersistence, type AiProposal,
 } from "../../components/imaging";
+import { defaultImagingViewerState as fallbackDefaultViewerState } from "../../constants/imagingConstants";
+import { imagingKindLabels as defaultImagingKindLabels } from "../../imagingUiLabels";
 import { useImagingDicomweb } from "./useImagingDicomweb";
-import type { ImagingModalId, ImagingViewProps } from "./imagingViewTypes";
+import type { ImagingModalId, ImagingStudy, ImagingViewerState, ImagingViewProps } from "./imagingViewTypes";
 
 export function useImagingViewState(
 	props: ImagingViewProps,
@@ -22,9 +24,16 @@ export function useImagingViewState(
 	const auth = appLogic?.auth;
 	const {
 		selectedImagingStudy, activePatient, defaultImagingViewerState,
-		imagingViewerState, imagingPreviewSource, selectedImagingViewerPlan,
-		imagingViewerHref, browserPickedImagingFolder, imagingKindLabels,
+		imagingPreviewSource, selectedImagingViewerPlan,
+		imagingViewerHref, browserPickedImagingFolder,
 	} = props;
+
+	const imagingKindLabels = props.imagingKindLabels ?? defaultImagingKindLabels;
+	const [localViewerState, setLocalViewerState] = useState<ImagingViewerState>(
+		props.defaultImagingViewerState ?? props.imagingViewerState ?? fallbackDefaultViewerState,
+	);
+	const imagingViewerState = props.imagingViewerState ?? localViewerState;
+	const setImagingViewerState = props.setImagingViewerState ?? setLocalViewerState;
 
 	const authHeaders = useMemo(() => {
 		const clinicToken = readDenteClinicToken();
@@ -38,20 +47,23 @@ export function useImagingViewState(
 	}, [auth?.token]);
 
 	const { isDicomwebLoading, dicomwebLoadProgress, handleLoadFromDicomweb } = useImagingDicomweb({
-		selectedImagingStudy, activePatientId: activePatient?.id, authHeaders,
-		localImageIds: controller.localImageIds, setLocalImageIds: controller.setLocalImageIds,
+		selectedImagingStudy: selectedImagingStudy ?? null,
+		...(activePatient?.id ? { activePatientId: activePatient.id } : {}),
+		authHeaders,
+		localImageIds: controller.localImageIds,
+		setLocalImageIds: controller.setLocalImageIds,
 	});
 
 	const {
 		isAnalyzingAI, enhancementOn, setEnhancementOn, selectedStudyHasFile,
 		handleAnalyzeAI, selectedStudySummary, selectedStudyToothUpdates,
-	} = useImagingAiAnalysis({ selectedImagingStudy, auth });
+	} = useImagingAiAnalysis({ selectedImagingStudy: selectedImagingStudy ?? null, auth });
 
 	const [pendingAiProposal, setPendingAiProposal] = useState<AiProposal | null>(null);
 	const [isRulerActive, setIsRulerActive] = useState(false);
 	const [isPanActive, setIsPanActive] = useState(false);
 	const { rulerMeasurements, setRulerMeasurements } = useImagingMeasurementsPersistence({
-		selectedImagingStudy, auth, setImagingViewerState: props.setImagingViewerState,
+		selectedImagingStudy: selectedImagingStudy ?? null, auth, setImagingViewerState,
 	});
 
 	const currentPixelSpacingMm = useMemo(() => {
@@ -65,19 +77,22 @@ export function useImagingViewState(
 	);
 
 	const { effectivePreviewUrl, isPreviewLoading, previewLoadError } = useImagingPreviewBlob({
-		selectedImagingStudy, imagingPreviewSource, auth,
+		selectedImagingStudy: selectedImagingStudy ?? null,
+		...(imagingPreviewSource ? { imagingPreviewSource } : {}),
+		auth,
 	});
 
 	const isCbctActive = controller.localImageIds?.length > 0 || selectedImagingStudy?.kind === "cbct";
 	const effectiveMprProps = useEffectiveMprProps(props, appLogic, {
-		selectedImagingStudy, setLocalImageIds: controller.setLocalImageIds,
-		selectedImagingViewerPlan, imagingViewerHref,
+		selectedImagingStudy: selectedImagingStudy ?? null, setLocalImageIds: controller.setLocalImageIds,
+		selectedImagingViewerPlan,
+		...(imagingViewerHref ? { imagingViewerHref } : {}),
 	});
 
 	const viewer2dProps = {
 		...props, selectedImagingStudy, localImageIds: controller.localImageIds,
 		setLocalImageIds: controller.setLocalImageIds, browserPickedImagingFolder,
-		imagingViewerState, setImagingViewerState: props.setImagingViewerState,
+		imagingViewerState, setImagingViewerState,
 		defaultImagingViewerState, computedViewerImageStyle, effectivePreviewUrl,
 		isPreviewLoading, previewLoadError, selectedStudyHasFile, imagingKindLabels,
 		isDicomwebLoading, dicomwebLoadProgress, onOpenCbctStudio: () => controller.setActiveModal("cbct_studio"),

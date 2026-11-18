@@ -1,0 +1,91 @@
+/* Patient Workspace: EMK Unified Toolbar & Quick SOAP Bar */
+.emk-unified-toolbar {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	min-width: 0;
+	height: auto;
+	min-height: auto;
+	max-height: none;
+	border-radius: 12px;
+	border: 1px solid var(--glass-border);
+	background: var(--paper-strong);
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	margin-bottom: 12px;
+}
+
+.emk-tier1-quick-soap-bar {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	min-height: 38px;
+	height: 38px;
+	max-height: 38px;
+	padding: 3px 8px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	box-sizing: border-box;
+	flex-shrink: 0;
+}
+
+.emk-tier1-quick-soap-bar button {
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	min-width: max-content !important;
+}
+
+.emk-tier1-quick-soap-bar::-webkit-scrollbar {
+	display: none;
+}
+
+@media (max-width: 639px) {
+	.emk-tabs-container {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 4px;
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
+		min-height: 36px;
+		height: 36px;
+		max-height: 36px;
+		padding: 2px 6px;
+		background: var(--paper-soft);
+		border-top: 1px solid var(--line);
+		overflow-x: auto;
+		scrollbar-width: none;
+		box-sizing: border-box;
+		flex-shrink: 0;
+	}
+}
+
+@media (min-width: 640px) {
+	.emk-tabs-container {
+		display: none !important;
+	}
+}
+
+.emk-tabs-container button {
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+}
+
+.emk-tabs-container::-webkit-scrollbar {
+	display: none;
+}
+
+.visit-note-status-badge {
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	min-width: max-content !important;
+	font-size: 11px !important;
+	padding: 2px 8px !important;
+	line-height: 1.3 !important;
+}

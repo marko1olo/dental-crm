@@ -1,0 +1,7 @@
+/* Widgets Grid & Layout Containers */
+.patients-widgets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
+	gap: 1rem;
+	margin-top: 1rem;
+}

@@ -5,7 +5,7 @@ import { NativeTomographyLaunchBar } from "./NativeTomographyLaunchBar";
 import type { ImagingStudy } from "./imagingViewTypes";
 
 export interface ImagingCbctActiveCardProps {
-	selectedImagingStudy: ImagingStudy | null;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
 	localImageIds: string[];
 	isDicomwebLoading: boolean;
 	dicomwebLoadProgress: string | null;

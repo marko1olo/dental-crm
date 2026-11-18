@@ -1,3 +1,5 @@
+export type PatientChatChannel = "whatsapp" | "telegram" | "max";
+
 export type PatientWhatsappSendPanelProps = {
 	patientId?: string | null;
 	/** Номер из карточки — только подсказка; сервер берёт phone из БД. */

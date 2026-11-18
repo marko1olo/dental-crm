@@ -6,6 +6,8 @@
  * - Сохранение всех тестовых идентификаторов и канонических сообщений.
  */
 
+import type { PatientCoreDraft, PatientAdministrativeProfileDraft } from "../../../store/patientStore";
+
 export interface RepresentativeRoleOption {
 	readonly role: string;
 	readonly label: string;
@@ -52,8 +54,8 @@ export const SOMATIC_NORM_DEFAULT_NOTE =
 
 export function syncCreationDraftsToStore(
 	store: {
-		setPatientAdministrativeProfileDraft: (updater: (prev: any) => any) => void;
-		setPatientCoreDraft: (updater: (prev: any) => any) => void;
+		setPatientAdministrativeProfileDraft: (updater: (prev: PatientAdministrativeProfileDraft) => PatientAdministrativeProfileDraft) => void;
+		setPatientCoreDraft: (updater: (prev: PatientCoreDraft) => PatientCoreDraft) => void;
 	},
 	opts: {
 		advertisingSource: string;

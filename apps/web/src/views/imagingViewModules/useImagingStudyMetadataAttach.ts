@@ -10,7 +10,7 @@ import type { ImagingStudy } from "./imagingViewTypes";
 export function useImagingStudyMetadataAttach(
 	selectedImagingStudy: ImagingStudy | null,
 	auth: { denteClinicalMutationHeaders?: (headers?: Record<string, string>) => Record<string, string> } | null | undefined,
-	props: { onStudyUpdated?: (study: unknown) => void; [key: string]: unknown },
+	props: { onStudyUpdated?: ((study: ImagingStudy) => void) | undefined; [key: string]: unknown },
 	appLogic: { loadDashboard?: () => Promise<unknown> | void; [key: string]: unknown } | null | undefined,
 ) {
 	const handleAttachTooth = useCallback(async (toothCode: string) => {

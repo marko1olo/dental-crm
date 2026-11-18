@@ -1,0 +1,41 @@
+feat(portal): patient cabinet modular CSS decomposition, touch ergonomics & 4-state visual proof
+
+## Контекст и архитектурная цель (Why):
+- Личный кабинет пациента (Patient Personal Portal & Self-Service Cabinet) содержал 4 тяжелых монолитных CSS-файла суммарным объемом 2845 строк, нарушавших Мандат 8b (лимит <= 120 строк на микро-модуль).
+- Требовалось провести полную модульную инквизицию и разнести стили по смысловым микро-модулям в apps/web/src/components/portal/patientCabinet/cabinetStyles/, превратив 4 исходных монолита в тонкие фасады @import (<= 15 строк каждый).
+- Требовалось гарантировать соблюдение Мандатов 8e (0 disabled-кнопок), 8n (соло-практика, семейный баланс, экспресс-чекин на ресепшене), 8x & 8ap (запрет сырых номеров приказов в видимом интерфейсе), Apple HIG (тач-таргеты >= 44x44px, Natural Thumb Zone, 0px горизонтального дрифта) и снять 4 реальных скриншота-доказательства (Chromium Playwright).
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/components/portal/patientCabinet/cabinetStyles/:
+  * Создано 35 специализированных микро-модулей со строгим размером от 39 до 116 строк (Мандат 8b <= 120 строк).
+  * cabinetThemeVariables.css (61 строка), cabinetThemeOverrides.css (92 строки) — многотемный базис (Light, Dark, OLED, Cyber X-Ray, Calm Teal).
+  * cabinetHeader.css (100 строк), cabinetNav.css (58 строк), cabinetCardsLayout.css (116 строк), cabinetButtons.css (65 строк).
+  * cabinetInvoicesBase.css (110 строк), cabinetSbpAndOtp.css (100 строк), cabinetInvoiceFilterChips.css (76 строк).
+  * cabinetTaxWidget.css (113 строк), cabinetDentalPassport.css (59 строк), cabinetInterventions.css (101 строка).
+  * cabinetBottomSheets.css (71 строка), cabinetMobileTabBar.css (69 строк), cabinetStatusHero.css (114 строк), cabinetQuickActions.css (103 строки).
+  * cabinetPlansTaxDeduction.css (61 строка), cabinetPlansThreeTier.css (73 строки), cabinetPlansHeroDiagram.css (45 строк), cabinetPlansHeroFinancials.css (77 строк), cabinetPlansAllInclusive.css (63 строки), cabinetPlansStagesList.css (103 строки), cabinetPlansStageDetails.css (83 строки), cabinetFriendlyBillingToolbar.css (96 строк), cabinetFriendlyBillingItems.css (85 строк).
+  * cabinetProgressAndWarranty.css (74 строки), cabinetConsentsAndHotline.css (55 строк), cabinetAdaptiveTablet.css (39 строк), cabinetAdaptiveMobileBase.css (94 строки), cabinetAdaptiveMobileActions.css (88 строк), cabinetSubmodalsAndSlots.css (89 строк), cabinetReceptionAndNextVisit.css (42 строки), cabinetCareMemoCard.css (83 строки), cabinetCareWhatsApp.css (67 строк), cabinetFriendlyBillingSection.css (83 строки).
+- apps/web/src/components/portal/patientCabinet/:
+  * patientCabinetBase.css: превращен в тонкий фасад из 10 строк.
+  * patientCabinetWidgets.css: превращен в тонкий фасад из 10 строк.
+  * patientCabinetPlans.css: превращен в тонкий фасад из 11 строк.
+  * patientCabinetResponsive.css: превращен в тонкий фасад из 12 строк.
+- apps/web/:
+  * patient-cabinet-preview.html: автономная витрина кабинета пациента.
+  * src/patientCabinetPreviewEntry.tsx: входная точка для изоляции модалки (48 строк).
+- docs/architecture/PATIENT_CABINET_PORTAL_SPEC.md:
+  * Детальная архитектурная спецификация и каталог всех 35 модулей.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- 4 реальных скриншота в docs/proofs/patient_cabinet/ (Playwright Chromium, каждый >= 160 КБ, лично отсмотрены через read_file):
+  * 01_patient_cabinet_pc_light.png (1440x900 Light, 509.5 KB) — [ПРОВЕРЕНО: ЧИСТО]
+  * 02_patient_cabinet_pc_dark.png (1440x900 Dark, 479.4 KB) — [ПРОВЕРЕНО: ЧИСТО]
+  * 03_patient_cabinet_mobile_light.png (390x844 Light, 164.7 KB) — [ПРОВЕРЕНО: ЧИСТО]
+  * 04_patient_cabinet_mobile_dark.png (390x844 Dark, 168.2 KB) — [ПРОВЕРЕНО: ЧИСТО]
+- Тесты: 30 passing, 0 failing (patientCabinetAutonomyInquisition, patientCabinetMobile375, patientPortalReceptionQr85).
+- Гейт кодировок: npm run check:encoding — 21392 файла проверено, Exit Code 0.
+- Гейт токенов CSS: npm run check:css-tokens — 1487 css-файлов проверено, 0 неразрешенных var(), Exit Code 0.
+- Лимиты Мандата 8b: все созданные CSS файлы <= 116 строк, фасады <= 12 строк.
+
+## Синхронизация документации (Documentation Sync):
+- Оформлен docs/architecture/PATIENT_CABINET_PORTAL_SPEC.md.

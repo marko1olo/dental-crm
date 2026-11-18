@@ -6,10 +6,10 @@ export interface DiagnosticsActionButtonsProps {
 	readonly diagnosticMode: DiagnosticTabMode;
 	readonly onOpenReportStudio: () => void;
 	readonly onOpenRadiologyReferral: () => void;
-	readonly onOpenDirectRvg?: () => void;
-	readonly onOpenHotFolder?: () => void;
-	readonly onOpenDicomViewer?: () => void;
-	readonly onOpenComparison?: () => void;
+	readonly onOpenDirectRvg?: (() => void) | undefined;
+	readonly onOpenHotFolder?: (() => void) | undefined;
+	readonly onOpenDicomViewer?: (() => void) | undefined;
+	readonly onOpenComparison?: (() => void) | undefined;
 }
 
 export function DiagnosticsActionButtons({

@@ -23,7 +23,7 @@ export function sanitizeDocumentText(text: string): string {
 
 describe("Form 043/u Emoji Cleanliness & Render (Mandates 8d & 8e)", () => {
 	const form043Path = path.resolve(__dirname, "../../emr/MedicalRecordStudioModal.tsx");
-	const consentPath = path.resolve(__dirname, "../../consents/InformedConsentModal.tsx");
+	const consentPath = path.resolve(__dirname, "../../documents/DocumentsStudioModal.tsx");
 	const form043Source = fs.readFileSync(form043Path, "utf8");
 	const consentSource = fs.readFileSync(consentPath, "utf8");
 

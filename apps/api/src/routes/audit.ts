@@ -9,7 +9,7 @@ import {
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 import { auditFromRequest } from "../clinicalAuditService.js";
 import { db } from "../db/client.js";
-import { auditEvents, clinicalAuditLogs } from "../db/schema.js";
+import { auditEvents } from "../db/schema.js";
 import { ADMIN_ROLES, getRequestIdentity, requireStaffIdentity } from "../security/identity.js";
 import { getMedicalAccessAuditTrailFromDb } from "../security/medicalAuditTrail.js";
 
@@ -196,7 +196,6 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 
 		const now = new Date();
 		const validAuditEvents: Array<typeof auditEvents.$inferInsert> = [];
-		const validClinicalLogs: Array<typeof clinicalAuditLogs.$inferInsert> = [];
 
 		for (const raw of rawList) {
 			if (!raw || typeof raw !== "object") continue;
@@ -261,33 +260,6 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 					reason,
 					createdAt: validOccurredAt,
 				});
-
-				const patientId =
-					typeof fallbackRaw.patientId === "string"
-						? fallbackRaw.patientId
-						: null;
-				if (
-					patientId ||
-					actionType === "emr_open" ||
-					actionType === "diagnosis_change"
-				) {
-					validClinicalLogs.push({
-						id: randomUUID(),
-						organizationId: orgId,
-						patientId: patientId,
-						actorUserId,
-						userId: actorUserId,
-						actorLogin: identity.fullName ?? null,
-						eventType: actionType,
-						action: actionType.toUpperCase(),
-						entityType,
-						entityId,
-						ipAddress: ip,
-						userAgent,
-						meta: sanitizedDetails,
-						createdAt: validOccurredAt,
-					});
-				}
 				continue;
 			}
 
@@ -315,41 +287,10 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 				reason,
 				createdAt: validOccurredAt,
 			});
-
-			if (
-				entry.patientId ||
-				entry.actionType === "emr_open" ||
-				entry.actionType === "diagnosis_change" ||
-				entry.actionType === "service_add" ||
-				entry.actionType === "service_remove" ||
-				entry.entityType === "emr" ||
-				entry.entityType === "patient"
-			) {
-				validClinicalLogs.push({
-					id: randomUUID(),
-					organizationId: orgId,
-					patientId: entry.patientId ?? null,
-					actorUserId,
-					userId: actorUserId,
-					actorLogin: entry.actorName ?? identity.fullName ?? null,
-					eventType: entry.actionType,
-					action: entry.actionType.toUpperCase(),
-					entityType: entry.entityType,
-					entityId: entry.entityId,
-					ipAddress: ip,
-					userAgent,
-					meta: sanitizedDetails,
-					createdAt: validOccurredAt,
-				});
-			}
 		}
 
 		if (validAuditEvents.length > 0) {
 			await db.insert(auditEvents).values(validAuditEvents);
-		}
-
-		if (validClinicalLogs.length > 0) {
-			await db.insert(clinicalAuditLogs).values(validClinicalLogs);
 		}
 
 		return reply.status(201).send({

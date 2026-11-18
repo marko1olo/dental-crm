@@ -55,6 +55,9 @@ export interface PatientReclamationResponse {
 	readonly patientId?: string | undefined;
 	readonly doctorId?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;
+	readonly toothNumber?: number | string | null | undefined;
+	readonly warrantyCertificateId?: string | null | undefined;
+	readonly defectType?: string | null | undefined;
 	readonly complicationDetails?: string | null | undefined;
 	readonly proposedAction?: string | null | undefined;
 	readonly status?: "under_review" | "resolved" | string | undefined;

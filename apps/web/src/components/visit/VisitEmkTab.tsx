@@ -211,6 +211,7 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 				setIsSbpQrModalOpen={setIsSbpQrModalOpen}
 				completionResult={completionResult}
 				activePatient={activePatient}
+				activeDoctor={activeDoctor}
 				isStarProtocolsOpen={isStarProtocolsOpen}
 				setIsStarProtocolsOpen={setIsStarProtocolsOpen}
 				isSoapTemplatesModalOpen={isSoapTemplatesModalOpen}

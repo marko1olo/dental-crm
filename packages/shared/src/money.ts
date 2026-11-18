@@ -52,9 +52,10 @@ export const nonNegativeMoneyRubSchema = moneyRubSchema.refine(
 /**
  * Форматирует целые копейки в строку рублей с двумя знаками ("150.00").
  */
-export function formatKopecksToRubles(kopecks: number): string {
-	if (!Number.isFinite(kopecks)) return "0.00";
-	return (Math.round(kopecks) / 100).toFixed(2);
+export function formatKopecksToRubles(kopecks: number | bigint): string {
+	const num = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
+	if (!Number.isFinite(num)) return "0.00";
+	return (Math.round(num) / 100).toFixed(2);
 }
 
 export const formatKopecksToRubExact = formatKopecksToRubles;
@@ -271,9 +272,11 @@ export function formatKopecksRu(kopecks: Kopecks): string {
 export const moneyRub = formatKopecksRu;
 
 /** Каноническое форматирование копеек в рубли для UI (Мандат 8bm) */
-export function formatKopecksToRub(kopecks: number | null | undefined): string {
-	if (kopecks === null || kopecks === undefined || !Number.isFinite(kopecks)) return "0 ₽";
-	return formatKopecksRu(Math.round(kopecks));
+export function formatKopecksToRub(kopecks: number | bigint | null | undefined): string {
+	if (kopecks === null || kopecks === undefined) return "0 ₽";
+	const num = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
+	if (!Number.isFinite(num)) return "0 ₽";
+	return formatKopecksRu(Math.round(num));
 }
 
 /**

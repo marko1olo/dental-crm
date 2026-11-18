@@ -1,9 +1,9 @@
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
-import { type CanonicalLabOrderStatus, buildLabAppointmentDraft } from "../../lab/labMath";
+import { type Canonical5LabStatus, buildLabAppointmentDraft } from "../../lab/labMath";
 import type { LabOrder } from "../LabOrdersPanel";
 
-export async function transitionLabOrderStatus(orderId: string, targetStatus: CanonicalLabOrderStatus, onDone: () => void) {
+export async function transitionLabOrderStatus(orderId: string, targetStatus: Canonical5LabStatus | string, onDone: () => void) {
 	try {
 		const res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, {
 			method: "PATCH",
@@ -30,13 +30,13 @@ export function scheduleLabAppointment(
 ) {
 	const draft = buildLabAppointmentDraft({
 		patientId: order.patientId,
-		patientName: order.patientName,
-		doctorId: order.doctorId,
-		doctorName: order.doctorName,
-		toothFdi: order.toothFdi,
-		material: order.material,
-		dueDate: order.dueDate,
-		status: order.status,
+		doctorId: order.doctorId ?? null,
+		doctorName: order.doctorName ?? null,
+		toothFdi: order.toothFdi ?? null,
+		material: order.material ?? null,
+		dueDate: order.dueDate ?? null,
+		...(order.patientName ? { patientName: order.patientName } : {}),
+		...(order.status ? { status: order.status } : {}),
 	});
 	if (!draft) return;
 	if (appLogic?.updateNewAppointmentDraft) {

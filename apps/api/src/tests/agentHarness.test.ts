@@ -238,7 +238,7 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 									id: "call_inf",
 									type: "function",
 									function: {
-										name: "generate_form_043",
+										name: "generate_clinical_protocol_entry",
 										arguments: JSON.stringify({
 											toothNumber: 36,
 											icd10Diagnosis: "K02.1",

@@ -1,3 +1,4 @@
+import React from "react";
 import { ScanSearch } from "lucide-react";
 import type { DicomCapabilityHeaderProps } from "./types";
 
@@ -23,7 +24,11 @@ export function DicomCapabilityHeader({
 					const CapabilityIcon = capability.icon;
 					return (
 						<article key={capability.title}>
-							<CapabilityIcon aria-hidden="true" />
+							{typeof CapabilityIcon === "function" ? (
+								<CapabilityIcon aria-hidden="true" />
+							) : React.isValidElement(CapabilityIcon) ? (
+								CapabilityIcon
+							) : null}
 							<div>
 								<span>{capability.state}</span>
 								<h3>{capability.title}</h3>

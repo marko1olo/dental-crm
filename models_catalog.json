@@ -1,0 +1,36 @@
+{
+  "Google": [
+    "Gemini 4 Argon 🧠 🔍 🖼️",
+    "Gemini 4 Carbon 🧠 🔍 🖼️",
+    "Gemini 4 Hydrogen 🧠 🔍 🖼️",
+    "Gemini 3.5 Flash Lite 🧠 🔍 🖼️",
+    "Gemma 4 31B 🧠 🔍 🖼️"
+  ],
+  "OpenAI": [
+    "GPT-6 Astra 🧠 🔍 🖼️",
+    "GPT-6.1 Sol 🧠 🔍 🖼️",
+    "GPT-6.1 Terra 🧠 🔍 🖼️",
+    "GPT-6 Luna 🧠 🔍 🖼️"
+  ],
+  "Anthropic": [
+    "Claude Haiku 5.5 🧠 🔍 🖼️",
+    "Claude Sonnet 5.5 🧠 🔍 🖼️",
+    "Claude Opus 5.5 🧠 🔍 🖼️",
+    "Claude Fable 5.2 🧠 🔍 🖼️"
+  ],
+  "Deepseek": [
+    "DeepSeek V4.1 Flash 🧠 🖼️"
+  ],
+  "Grok": [
+    "Grok 4.6 🧠 🔍 🖼️"
+  ],
+  "Moonshot": [
+    "Kimi K3.1 Pro 🧠 🖼️"
+  ],
+  "Alibaba": [
+    "Qwen 3.8 Max 🧠 🔍"
+  ],
+  "Zhipu": [
+    "GLM-5.3 🧠"
+  ]
+}

@@ -13,7 +13,7 @@ import "./LabOrdersPanel.css";
 export type { LabOrder } from "./labOrdersTypes";
 
 export interface LabOrdersPanelProps {
-	readonly patientId?: string;
+	readonly patientId?: string | null | undefined;
 }
 
 const FILTER_LABELS: readonly { key: LabOrderFilterKey; label: string }[] = [
@@ -37,9 +37,10 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 	if (hasDentalLab === false && !isDemoShowcaseMode()) {
 		return null;
 	}
-	if (!patientId) return <DentalLabOrdersView />;
+	const effectivePatientId = patientId ?? undefined;
+	if (!effectivePatientId) return <DentalLabOrdersView />;
 
-	const logic = useLabOrdersPanelLogic(patientId);
+	const logic = useLabOrdersPanelLogic(effectivePatientId);
 	const portalBasePath = "/#/portal/lab-order/";
 
 	return (
@@ -81,8 +82,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 					<button
 						type="button"
 						onClick={logic.handleOpenCreateOrder}
-						className="primary-button min-h-[38px] px-3.5 py-1.5 text-xs font-bold rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5 text-white active:scale-95 transition-transform"
-						style={{ backgroundColor: "var(--teal, #0d9488)", borderColor: "var(--teal, #0d9488)" }}
+						className="primary-button h-9 px-3.5 rounded-lg text-xs font-medium shadow-xs cursor-pointer inline-flex items-center gap-1.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white active:scale-95 transition-transform shrink-0"
 						data-testid="lab-order-panel-create-btn"
 					>
 						<Plus className="w-4 h-4 shrink-0" />
@@ -131,17 +131,17 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 			{/* Состояния: Ошибка, Загрузка, Пустой список или Карточки нарядов */}
 			{logic.error && (
 				<div
-					className="p-3.5 rounded-2xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between gap-2"
+					className="p-3.5 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] text-[var(--danger-ink)] text-xs flex items-center justify-between gap-2"
 					role="alert"
 				>
 					<div className="flex items-center gap-2">
-						<AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+						<AlertCircle className="w-4 h-4 text-[var(--danger)] shrink-0" />
 						<span>{logic.error}</span>
 					</div>
 					<button
 						type="button"
 						onClick={() => void logic.fetchOrders()}
-						className="px-2.5 py-1 rounded-lg bg-rose-200 dark:bg-rose-900 font-semibold hover:bg-rose-300 transition-colors cursor-pointer shrink-0"
+						className="px-2.5 py-1 rounded-lg bg-[var(--paper)] text-[var(--danger-ink)] border border-[var(--danger-line)] font-medium hover:bg-[var(--danger-soft)] transition-colors cursor-pointer shrink-0"
 					>
 						Повторить
 					</button>
@@ -170,8 +170,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 					<button
 						type="button"
 						onClick={logic.handleOpenCreateOrder}
-						className="primary-button min-h-[40px] px-4 py-2 flex items-center gap-1.5 text-xs font-bold rounded-xl shadow-xs cursor-pointer text-white"
-						style={{ backgroundColor: "var(--teal, #0d9488)", borderColor: "var(--teal, #0d9488)" }}
+						className="primary-button h-9 px-4 inline-flex items-center gap-1.5 text-xs font-medium rounded-lg shadow-xs cursor-pointer bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white"
 						data-testid="lab-order-panel-create-empty-btn"
 					>
 						<Plus className="w-4 h-4" />
@@ -206,7 +205,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 						logic.setIsOrderModalOpen(false);
 						logic.setSelectedOrderForEdit(null);
 					}}
-					patientId={patientId}
+					patientId={patientId ?? undefined}
 					initialTab="new_order"
 					onOrderSaved={() => {
 						logic.setIsOrderModalOpen(false);

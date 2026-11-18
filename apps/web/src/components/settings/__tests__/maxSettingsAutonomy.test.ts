@@ -26,13 +26,13 @@ import type {
 	MaxSettingsLoadState,
 	MaxStaffRouting,
 	useMaxSettings,
-} from "../../../hooks/useMaxSettings.js";
+} from "../../../hooks/useMaxSettings";
 import { showToast } from "../../GlobalToast.js";
 import {
 	computeMaxSettingsDirty,
 	isMaxSettingsSaveDisabled,
 	MaxSettingsPanel,
-} from "../MaxSettingsPanel.js";
+} from "../MaxSettingsPanel";
 
 const SAMPLE_SETTINGS: MaxSettings = {
 	id: "max-settings-001",
@@ -80,6 +80,9 @@ function createMockSettingsHook(overrides?: Partial<ReturnType<typeof useMaxSett
 			setWebhookUrlDraft: () => {},
 			isActiveDraft: true,
 			setIsActiveDraft: () => {},
+			enabledFeaturesDraft: ["chat", "notifications"],
+			setEnabledFeaturesDraft: () => {},
+			toggleFeature: () => {},
 			staffRoutingDraft: {
 				defaultUserId: "staff-1",
 				rules: [{ intent: "appointment", assignToUserId: "staff-1" }],
@@ -215,6 +218,22 @@ describe("Mandate 8e Dirty Calculation Autonomy — computeMaxSettingsDirty", ()
 		});
 
 		assert.equal(dirty, true, "Should be dirty when routing rules differ");
+	});
+
+	it("Returns true when enabledFeaturesDraft differs from saved features", () => {
+		const dirty = computeMaxSettingsDirty({
+			botIdDraft: "bot_123",
+			settingsBotId: "bot_123",
+			isActiveDraft: true,
+			settingsIsActive: true,
+			enabledFeaturesDraft: ["chat", "reminders"],
+			settingsEnabledFeatures: ["chat"],
+			staffRoutingDraft: baseRouting,
+			settingsStaffRouting: baseRouting,
+			apiTokenDraft: "",
+		});
+
+		assert.equal(dirty, true, "Should be dirty when enabled features differ");
 	});
 
 	it("Returns true when new apiToken is entered", () => {

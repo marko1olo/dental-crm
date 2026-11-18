@@ -79,7 +79,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			<DocumentModalsContainer
 				{...vm.modalsContainerProps}
 				onOpenAutoclaveLog={() => setIsAutoclaveLogOpen(true)}
-				onOpenAutoclaveLog257={() => setIsAutoclaveLogOpen(true)}
 			/>
 		</div>
 	);

@@ -39,7 +39,7 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 	const callId = `outbound-${Date.now()}`;
 	const patientName = req.patientName || "Пациент";
 
-	// 1. Immediately activate softphone floating HUD with active outgoing call in ringing state (without popup)
+	// 1. Immediately activate softphone header capsule / drawer with active outgoing call in ringing state
 	store.startOutboundCall({
 		id: callId,
 		callId,

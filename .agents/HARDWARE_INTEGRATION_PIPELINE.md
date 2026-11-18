@@ -112,9 +112,13 @@ flowchart LR
 
 ---
 
-## 3. ЧТО ДЕЛАТЬ ПРЯМО СЕЙЧАС (NEXT IMMEDIATE ACTIONS)
+## 3. СТАТУС ВНЕДРЕНИЯ И ДАЛЬНЕЙШИЕ ДЕЙСТВИЯ (STATUS & NEXT STEPS)
 
-1. **Шаг 1:** Добавить схемы типов `packages/shared/src/hardware/intraoralScannerTypes.ts`.
+1. **Шаг 1 (ВЫПОЛНЕНО 100%):** Созданы типы, Zod-контракты и 3D-математика в `@dental/shared`:
+   - `packages/shared/src/hardware/intraoralScannerTypes.ts` (контракты вендоров, ролей, окклюзии, поднутрений).
+   - `packages/shared/src/hardware/intraoralScannerClassifier.ts` (классификатор файлов и группировщик сессий).
+   - `packages/shared/src/geometry/dentalMeshMath.ts` (CAD $\leftrightarrow$ WebGL координаты, воксельный расчет окклюзии в микронах, ICP выравнивание).
+   - Покрытие тестами: `packages/shared/src/hardware/__tests__/intraoralScannerEngine.test.ts` (40/40 тестов зелёные, `tsc` Exit Code 0).
 2. **Шаг 2:** Создать сервис обработки 3D-файлов `apps/api/src/services/meshProcessingService.ts` с вызовом `MeshSimplify.exe`.
 3. **Шаг 3:** Реализовать Fastify роут `apps/api/src/routes/clinicalScans.ts`.
 4. **Шаг 4:** Создать компонент `DentalJaw3DViewer.tsx` в `apps/web/src/components/imaging/`.

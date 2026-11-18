@@ -1,0 +1,274 @@
+[
+  {
+    "view": "shift",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 26,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\shift_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "schedule",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 26,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\schedule_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "patients",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 26,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\patients_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "pipeline",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 26,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\pipeline_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "imaging",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 26,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\imaging_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "visit",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 26,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\visit_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "documents",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 26,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\documents_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "finance",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 26,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\finance_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "analytics",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 19,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\analytics_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "communications",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 19,
+      "hasBootState": true,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\communications_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "inventory",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 18,
+      "hasBootState": false,
+      "hasAppShell": false,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\inventory_1440x900.png",
+    "status": "FAIL"
+  },
+  {
+    "view": "lab",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 1609,
+      "hasBootState": false,
+      "hasAppShell": true,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\lab_1440x900.png",
+    "status": "PASS"
+  },
+  {
+    "view": "scanner",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 1379,
+      "hasBootState": false,
+      "hasAppShell": true,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\scanner_1440x900.png",
+    "status": "PASS"
+  },
+  {
+    "view": "leads",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 3703,
+      "hasBootState": false,
+      "hasAppShell": true,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\leads_1440x900.png",
+    "status": "PASS"
+  },
+  {
+    "view": "settings",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 748,
+      "hasBootState": true,
+      "hasAppShell": true,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\settings_1440x900.png",
+    "status": "PASS"
+  },
+  {
+    "view": "marketing",
+    "metrics": {
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "hasHorizontalDrift": false,
+      "bodyTextLength": 922,
+      "hasBootState": true,
+      "hasAppShell": true,
+      "disabledButtonsCount": 0,
+      "disabledButtonsSample": []
+    },
+    "newErrorsCount": 0,
+    "newErrors": [],
+    "screenshot": "C:\\Clinic_MVP\\dental-crm\\docs\\screenshots\\crawler_audit\\marketing_1440x900.png",
+    "status": "PASS"
+  }
+]

@@ -115,7 +115,8 @@ export async function insertLabOrderInDb(
 	const effectiveToothFdi = data.toothFdi || data.teethFdi || null;
 	const effectiveMaterial = data.material || data.materialName || data.construction || data.materialId || null;
 	const effectiveNotes = data.clinicalNotes || data.doctorNotes || null;
-	const effectiveStatus = (data.status ? mapStageToLabOrderStatus(data.status) : null) ?? "draft";
+	const effectiveStage = data.stage || data.techStage || null;
+	const effectiveStatus = (data.status ? mapStageToLabOrderStatus(data.status) : null) ?? (effectiveStage ? mapStageToLabOrderStatus(effectiveStage) : null) ?? "draft";
 
 	const effectiveLabName = data.laboratoryName || data.labName || null;
 	const effectiveLabCost = data.labCostRub != null
@@ -191,6 +192,7 @@ export async function insertLabOrderInDb(
 			labCostRub: finalLabCostRub,
 			isWarranty,
 			status: effectiveStatus,
+			stage: effectiveStage,
 		})
 		.returning();
 
@@ -248,6 +250,7 @@ export async function insertLabOrderInDb(
 
 	const enrichedOrder = {
 		...createdOrder,
+		stage: createdOrder.stage ?? effectiveStage,
 		treatmentPlanId: data.treatmentPlanId ?? null,
 		appointmentId: data.appointmentId ?? null,
 		visitId: data.visitId ?? null,

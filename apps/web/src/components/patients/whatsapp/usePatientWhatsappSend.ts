@@ -6,7 +6,7 @@ import { actionFailureToast, requestFailureCause } from "../../../lib/panelState
 import { openWhatsAppChat, resolvePatientUpcomingAppointment } from "../../../store/telephonyStore";
 import { logger } from "../../../utils/logger";
 import { showToast } from "../../GlobalToast";
-import type { PatientWhatsappSendPanelProps, WhatsappTemplateType } from "./types";
+import type { PatientChatChannel, PatientWhatsappSendPanelProps, WhatsappTemplateType } from "./types";
 import { getWhatsappTemplateText } from "./whatsappTemplates";
 
 function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
@@ -20,6 +20,7 @@ function jsonObjectOrNull(raw: string): Record<string, unknown> | null {
 export function usePatientWhatsappSend({ patientId, patientPhone, patientName }: PatientWhatsappSendPanelProps) {
 	const appLogic = useAppLogicContext();
 	const dashboard = appLogic?.dashboard;
+	const [channel, setChannel] = useState<PatientChatChannel>("whatsapp");
 	const [message, setMessage] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -49,34 +50,48 @@ export function usePatientWhatsappSend({ patientId, patientPhone, patientName }:
 	const send = useCallback(async () => {
 		const id = (patientId ?? "").trim();
 		const text = message.trim();
-		if (!id) { showToast("Выберите пациента для отправки WhatsApp", "warning"); return; }
+		if (!id) { showToast("Выберите пациента для отправки сообщения", "warning"); return; }
 		if (!text) { showToast("Введите текст сообщения или выберите быстрый шаблон", "warning"); return; }
 		if (busy) return;
 		setBusy(true); setError(null); setLastOk(null);
 		try {
-			const res = await fetch("/api/whatsapp/send", {
+			const endpoint =
+				channel === "whatsapp"
+					? "/api/whatsapp/send"
+					: channel === "max"
+						? "/api/max/send"
+						: `/api/communications/inbox/${encodeURIComponent(id)}/send`;
+			const payload =
+				channel === "whatsapp" || channel === "max"
+					? { patientId: id, message: text }
+					: { message: text, channel: "telegram" };
+
+			const res = await fetch(endpoint, {
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({ patientId: id, message: text }),
+				body: JSON.stringify(payload),
 			});
 			const raw = await res.text();
 			const json = jsonObjectOrNull(raw);
 			const serverMsg = typeof json?.message === "string" ? json.message.trim() : "";
 			const detail = operatorReadableErrorDetail(serverMsg || null);
 			if (!res.ok) {
-				logger.error(`[whatsapp-send] POST ${res.status} ${raw.slice(0, 300)}`);
-				const msg = detail ?? (res.status === 404 ? "Пациент не найден в этой клинике." : res.status === 400 ? "WhatsApp неактивен или не настроен — проверьте Настройки → Мессенджеры." : res.status === 422 ? "У пациента нет корректного номера телефона для WhatsApp." : res.status === 502 ? "WhatsApp Cloud API отклонил сообщение." : res.status === 403 ? "Недостаточно прав: прямая отправка WhatsApp недоступна врачу." : actionFailureToast("Сообщение в WhatsApp не отправлено", res.status));
+				logger.error(`[messenger-send] POST ${res.status} ${raw.slice(0, 300)}`);
+				const channelLabel = channel === "whatsapp" ? "WhatsApp" : channel === "max" ? "MAX" : "Telegram";
+				const msg = detail ?? (res.status === 404 ? "Пациент не найден в этой клинике." : res.status === 400 ? `${channelLabel} неактивен или не настроен — проверьте Настройки → Мессенджеры.` : res.status === 422 ? `У пациента нет данных для отправки через ${channelLabel}.` : res.status === 502 ? `${channelLabel} шлюз отклонил сообщение.` : res.status === 403 ? `Недостаточно прав: прямая отправка ${channelLabel} недоступна.` : actionFailureToast(`Сообщение в ${channelLabel} не отправлено`, res.status));
 				setError(msg); showToast(msg, "error", 12000); return;
 			}
 			const providerId = typeof json?.providerMessageId === "string" ? json.providerMessageId.trim() : "";
-			const okText = providerId ? `WhatsApp отправлен (id ${providerId}).` : "Сообщение отправлено в WhatsApp.";
+			const channelLabel = channel === "whatsapp" ? "WhatsApp" : channel === "max" ? "MAX" : "Telegram";
+			const okText = providerId ? `${channelLabel} отправлен (id ${providerId}).` : `Сообщение отправлено в ${channelLabel}.`;
 			setLastOk(okText); setMessage(""); showToast(okText, "success", 8000);
 		} catch (e) {
-			logger.error("[whatsapp-send] request failed", e);
-			const msg = `Сообщение в WhatsApp не отправлено: ${requestFailureCause(null)}.`;
+			logger.error("[messenger-send] request failed", e);
+			const channelLabel = channel === "whatsapp" ? "WhatsApp" : channel === "max" ? "MAX" : "Telegram";
+			const msg = `Сообщение в ${channelLabel} не отправлено: ${requestFailureCause(null)}.`;
 			setError(msg); showToast(msg, "error", 12000);
 		} finally { setBusy(false); }
-	}, [busy, message, patientId]);
+	}, [busy, channel, message, patientId]);
 
 	const handleOpenWebWhatsApp = useCallback(() => {
 		if (!phoneHint) { showToast("У пациента не указан номер телефона", "warning"); return; }
@@ -87,6 +102,7 @@ export function usePatientWhatsappSend({ patientId, patientPhone, patientName }:
 
 	return {
 		pid, nameHint, phoneHint, cleanPhone, upcomingAppointment, message, setMessage, busy, error, lastOk,
+		channel, setChannel,
 		applyTemplate, send, handleOpenWebWhatsApp,
 	};
 }

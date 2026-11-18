@@ -12,12 +12,11 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
 import {
 	auditEvents,
-	clinicalAuditLogs,
 	treatmentPlans,
 	users,
 	visitDiaries,
@@ -111,74 +110,41 @@ export async function getPatientActiveDiagnosisFromDb(
 
 /**
  * Записывает факт доступа к медицинской карте / диагнозу в защищенный журнал аудита (152-ФЗ).
+ * SSOT: Запись сохраняется в единую таблицу audit_events (Мандат 8bf / DEF-SEC-05).
  */
 export async function recordMedicalRecordAccessAudit(
 	input: MedicalAccessAuditInput,
 ): Promise<void> {
 	const auditId = randomUUID();
 	const eventAction = input.action ?? "VIEW_DIAGNOSIS";
-	const eventType = input.eventType ?? "DIAGNOSIS_ACCESS";
 	const diagnosisText = input.diagnosis ?? "Медицинская карта (ЭМК / 043-у)";
 
 	try {
-		// 1. Пишем в клинический журнал аудита (clinical_audit_logs) с RLS-контекстом
 		const UUID_SHAPE =
 			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-		const validPatientUuid =
-			input.patientId && UUID_SHAPE.test(input.patientId) ? input.patientId : null;
 		const validActorUuid =
 			input.actorUserId && UUID_SHAPE.test(input.actorUserId) ? input.actorUserId : null;
 
-		await db.transaction(async (tx) => {
-			await tx.execute(
-				sql`SELECT set_config('app.current_organization_id', ${input.organizationId}, true), set_config('app.current_tenant', ${input.organizationId}, true)`,
-			);
-
-			await tx.insert(clinicalAuditLogs).values({
-				id: auditId,
-				organizationId: input.organizationId,
-				patientId: validPatientUuid,
-				actorUserId: validActorUuid,
-				userId: validActorUuid,
-				actorLogin: input.actorLogin ?? null,
-				eventType: eventType,
-				action: eventAction,
-				resourceType: "patient",
-				entityType: "patient_diagnosis",
-				resourceId: validPatientUuid,
-				entityId: input.patientId ?? "unknown",
-				ipAddress: input.ipAddress ?? null,
-				userAgent: input.userAgent ?? null,
-				meta: {
-					diagnosis: input.diagnosis ?? null,
-					actorRole: input.actorRole ?? null,
-					accessedAt: new Date().toISOString(),
-					...(input.metadata ?? {}),
-				},
-			});
-			// Проверяем существование пользователя в таблице users для соблюдения FK audit_events_actor_user_id_users_id_fk
-			let validActorUserId: string | null = null;
-			if (validActorUuid) {
-				const [existingUser] = await tx
-					.select({ id: users.id })
-					.from(users)
-					.where(eq(users.id, validActorUuid))
-					.limit(1);
-				if (existingUser) {
-					validActorUserId = existingUser.id;
-				}
+		let validActorUserId: string | null = null;
+		if (validActorUuid) {
+			const [existingUser] = await db
+				.select({ id: users.id })
+				.from(users)
+				.where(eq(users.id, validActorUuid))
+				.limit(1);
+			if (existingUser) {
+				validActorUserId = existingUser.id;
 			}
+		}
 
-			// 2. Дублируем в журнал системных событий (audit_events) для отображения в стандартном интерфейсе аудита
-			await tx.insert(auditEvents).values({
-				id: randomUUID(),
-				organizationId: input.organizationId,
-				actorUserId: validActorUserId,
-				entityType: "patient_diagnosis",
-				entityId: input.patientId ?? "unknown",
-				action: eventAction,
-				reason: `Доступ к медицинской тайне (152-ФЗ): диагноз «${diagnosisText}», пациент ${input.patientId ?? "не указан"}, сотрудник: ${input.actorLogin ?? input.actorUserId ?? "неизвестно"} (${input.actorRole ?? "роль не указана"})`,
-			});
+		await db.insert(auditEvents).values({
+			id: auditId,
+			organizationId: input.organizationId,
+			actorUserId: validActorUserId,
+			entityType: "patient_diagnosis",
+			entityId: input.patientId ?? "unknown",
+			action: eventAction,
+			reason: `Доступ к медицинской тайне (152-ФЗ): диагноз «${diagnosisText}», пациент ${input.patientId ?? "не указан"}, сотрудник: ${input.actorLogin ?? input.actorUserId ?? "неизвестно"} (${input.actorRole ?? "роль не указана"})`,
 		});
 	} catch (error) {
 		// Аварийный канал протоколирования: запись аудита не должна ронять клинический прием,
@@ -257,7 +223,7 @@ export async function auditMedicalAccessFromRequest(
 }
 
 /**
- * Получает историю доступа к медицинским картам и диагнозам для целей проверки комплаенса 152-ФЗ.
+ * Получает историю доступа к медицинским картам и диагнозам из единого журнала audit_events (152-ФЗ / Мандат 8bf).
  */
 export async function getMedicalAccessAuditTrailFromDb(
 	organizationId: string,
@@ -268,36 +234,37 @@ export async function getMedicalAccessAuditTrailFromDb(
 	},
 ): Promise<MedicalAuditRecord[]> {
 	const limit = Math.min(Math.max(options?.limit ?? 50, 1), 200);
-	const conditions = [eq(clinicalAuditLogs.organizationId, organizationId)];
+	const conditions = [
+		eq(auditEvents.organizationId, organizationId),
+		eq(auditEvents.entityType, "patient_diagnosis"),
+	];
 
 	if (options?.patientId) {
-		conditions.push(eq(clinicalAuditLogs.patientId, options.patientId));
+		conditions.push(eq(auditEvents.entityId, options.patientId));
 	}
 	if (options?.actorUserId) {
-		conditions.push(eq(clinicalAuditLogs.actorUserId, options.actorUserId));
+		conditions.push(eq(auditEvents.actorUserId, options.actorUserId));
 	}
 
 	const rows = await db
 		.select()
-		.from(clinicalAuditLogs)
+		.from(auditEvents)
 		.where(and(...conditions))
-		.orderBy(desc(clinicalAuditLogs.createdAt))
+		.orderBy(desc(auditEvents.createdAt))
 		.limit(limit);
 
 	return rows.map((row) => {
-		const meta = (row.meta as Record<string, unknown> | null) ?? {};
-		const diagnosis = typeof meta.diagnosis === "string" ? meta.diagnosis : null;
 		return {
 			id: row.id,
 			organizationId: row.organizationId,
-			patientId: row.patientId,
+			patientId: row.entityId,
 			actorUserId: row.actorUserId,
-			actorLogin: row.actorLogin,
+			actorLogin: null,
 			action: row.action,
-			eventType: row.eventType,
-			diagnosis,
-			ipAddress: row.ipAddress,
-			userAgent: row.userAgent,
+			eventType: "DIAGNOSIS_ACCESS",
+			diagnosis: row.reason,
+			ipAddress: null,
+			userAgent: null,
 			createdAt:
 				row.createdAt instanceof Date
 					? row.createdAt.toISOString()

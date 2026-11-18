@@ -22,7 +22,7 @@ export const CommunicationTimelineItem: React.FC<CommunicationTimelineItemProps>
 			</div>
 			<p className="mt-1 mb-0 text-[var(--ink)] break-words whitespace-pre-wrap">{entry.message}</p>
 			{entry.recordingUrl ? (
-				<CallAudioPlayer recordingUrl={entry.recordingUrl} durationSeconds={entry.durationSeconds ?? null} />
+				<CallAudioPlayer recordingUrl={entry.recordingUrl} durationSeconds={entry.durationSeconds ?? undefined} />
 			) : null}
 			<p className="mt-1 mb-0 text-[var(--muted)]">
 				{entry.actorName ? `Сотрудник: ${entry.actorName}` : "Автоматически, без участия сотрудника"}

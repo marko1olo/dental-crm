@@ -21,6 +21,7 @@ export interface VisitAnamnesisTabProps {
 }
 
 export type AllergenItem = DentalAllergenDefinition;
+export type DentalAllergen = AllergenItem;
 export const DENTAL_ALLERGENS: readonly AllergenItem[] = DENTAL_ALLERGEN_CATALOG;
 
 export interface SomaticStopFactorItem {

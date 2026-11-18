@@ -64,15 +64,16 @@ export function escapeHtml(value: unknown): string {
 		.replace(/'/g, "&#39;");
 }
 
-export function formatPassportString(p?: {
-	passportSeries?: string | null;
-	passportNumber?: string | null;
-	passportIssuedBy?: string | null;
-	passportIssuedDate?: string | null;
-	passportDepartmentCode?: string | null;
-	passportRaw?: string | null;
-	[key: string]: unknown;
-} | null): string {
+export interface PassportStringPayload {
+	readonly passportSeries?: string | null | undefined;
+	readonly passportNumber?: string | null | undefined;
+	readonly passportIssuedBy?: string | null | undefined;
+	readonly passportIssuedDate?: string | null | undefined;
+	readonly passportDepartmentCode?: string | null | undefined;
+	readonly passportRaw?: string | null | undefined;
+}
+
+export function formatPassportString(p?: PassportStringPayload | null | undefined): string {
 	if (!p) return "серия ______ № __________, выдан ____________________________________________________, дата «___» _________ _____ г., код подразделения: _________";
 	if (p.passportSeries && p.passportNumber) {
 		const issuedBy = p.passportIssuedBy ? `, выдан ${p.passportIssuedBy}` : "";

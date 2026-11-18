@@ -42,7 +42,7 @@ export const TierCardPricing: React.FC<TierCardPricingProps> = ({
 	return (
 		<div className="p-3 sm:p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,var(--border,#cbd5e1))]/50 space-y-1 sm:space-y-1.5">
 			<div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 sm:gap-2">
-				<span className="text-xs text-[var(--muted,#64748b)] font-semibold uppercase tracking-wider">
+				<span className="text-xs text-[var(--muted,#64748b)] font-semibold">
 					Полная стоимость:
 				</span>
 				<span className="text-2xl sm:text-xl font-black text-[var(--ink,#0f172a)] font-mono tracking-tight whitespace-nowrap">

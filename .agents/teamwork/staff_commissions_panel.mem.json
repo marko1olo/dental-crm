@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-11-05T23:27:30+04:00",
+  "domain": "Staff Payroll, Doctor Shifts & Net Revenue SSOT",
+  "inquisitor": "RED TEAM INQUISITOR WAVE 502: STAFF PAYROLL & DOCTOR SHIFTS INQUISITOR",
+  "status": "PASSED_WITH_FLYING_COLORS",
+  "mandates_complied": [
+    "Mandate 8b: File line counts within sweet spot (DoctorPayrollStudioModal.tsx: 478 lines, target 380–480; doctorPayrollStudio.css: 334 lines, target 250–350; payroll.ts: 198 lines)",
+    "Mandate 8e: Doctor Autonomy & Financial Sovereignty. Zero disabled buttons. 1-click settlement close and payslip print",
+    "Mandate 8n: Solo practice & Small Clinic Sovereignty. Integer kopecks math (BIGINT amountKopecks) with ZERO float/Math.round drift. Net Revenue = Gross − Lab (ЗТЛ) − Consumables",
+    "Mandate 8x: Clean clinical language without Soviet bureaucratic codes (no Т-51, no 1151078)",
+    "Mandate 8wy: Strict isolation between production and demo showcase modes. Zero synthetic mocks in live production. PostgreSQL views doctor_shifts, staff_payroll_settlements, doctors created and wired",
+    "Mandate 8am: Exactly ONE Primary CTA in Emerald Teal #0d9488",
+    "Mandate 8ze & 8aw: Apple Mobile HIG (390x844), touch targets >= 44x44px, bottom sheet drawer with tactile drag pill, 0px horizontal scroll"
+  ],
+  "endpoints_implemented": [
+    "GET /api/v1/doctors (Fastify + PostgreSQL users/doctors view)",
+    "GET /api/v1/payroll/calculations (Fastify + PostgreSQL doctor_shift_rosters / doctor_shifts, appointments, treatments)",
+    "POST /api/v1/payroll/close-settlement (ACID PostgreSQL transaction with doctor_payroll_statements / staff_payroll_settlements)",
+    "GET /api/v1/doctor/reports (doctor performance & shift analytics)",
+    "GET /api/v1/doctor/shifts (doctor shifts from PostgreSQL doctor_shifts view)"
+  ],
+  "frontend_updates": [
+    "apps/web/src/components/payroll/DoctorPayrollStudioModal.tsx (478 lines, eliminated CANONICAL_PAYROLL_DOCTORS fallback in live mode, wired GET /api/v1/doctors and GET /api/v1/payroll/calculations, A5 payslip print, CSV export, never disabled CTA)",
+    "apps/web/src/components/payroll/closeSettlementPeriodApi.ts (wired POST /api/v1/payroll/close-settlement)",
+    "apps/web/src/components/payroll/styles/doctorPayrollStudio.css (334 lines, multi-theme CSS tokens, responsive wrapped tabs on 390x844 mobile)"
+  ],
+  "visual_proofs": [
+    {
+      "name": "PC Light (1440x900)",
+      "path": "docs/proofs/payroll/01_pc_light_1440x900.png",
+      "size_bytes": 228122,
+      "inspected_via_read_file": true,
+      "verdict": "PASS — Zero clipping, crystal clear table & KPI, 1 Primary CTA #0d9488"
+    },
+    {
+      "name": "PC Dark (1440x900)",
+      "path": "docs/proofs/payroll/02_pc_dark_1440x900.png",
+      "size_bytes": 197924,
+      "inspected_via_read_file": true,
+      "verdict": "PASS — Deep dark theme tokens (var(--paper)), zero white spots, WCAG AAA contrast"
+    },
+    {
+      "name": "Mobile Light (390x844)",
+      "path": "docs/proofs/payroll/03_mobile_light_390x844.png",
+      "size_bytes": 141758,
+      "inspected_via_read_file": true,
+      "verdict": "PASS — Apple HIG bottom sheet, 0px horizontal drift, 2-row wrapped tab/period bar, touch target >= 44px"
+    },
+    {
+      "name": "Mobile Dark (390x844)",
+      "path": "docs/proofs/payroll/04_mobile_dark_390x844.png",
+      "size_bytes": 146505,
+      "inspected_via_read_file": true,
+      "verdict": "PASS — Flawless dark mode ergonomics, pristine typography, thumb zone CTA"
+    }
+  ],
+  "test_suites_passed": [
+    "apps/web/src/components/payroll/__tests__/payrollStudioSSOT.test.tsx (17 passed)",
+    "apps/web/src/components/payroll/__tests__/doctorPayrollSSOTSuite.test.tsx (11 passed)",
+    "apps/api/src/tests/routes/doctorEarningsRoutes.test.ts (7 passed)",
+    "apps/api/src/tests/routes/payrollStudioInquisition.test.ts (3 passed)"
+  ],
+  "gates_passed": [
+    "npm run check:encoding (23836 files, Exit Code 0)",
+    "npm run check:stub-overrides (139 properties, Exit Code 0)",
+    "npm run check:fetch-response (14417 files, Exit Code 0)",
+    "npm run check:dynamic-imports (18173 files, 531 imports, Exit Code 0)"
+  ]
+}

@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+	CANONICAL_STAFF_ROLES,
 	GRANULAR_STAFF_ROLES,
 	GRANULAR_ROLE_MATRIX,
 	ROLE_METADATA_REGISTRY,
@@ -15,6 +16,7 @@ import {
 	canSignMedicalRecords,
 	getAccessLevelBadge,
 	hasPermission,
+	normalizeStaffRoleToCanonical,
 	evaluatePasswordEntropy,
 	maskRussianPhone,
 	maskRussianPassport,
@@ -183,5 +185,53 @@ describe("Staff Security & 152-FZ Password Entropy Guard", () => {
 		assert.strictEqual(strongResult.isAcceptableForStaff, true);
 		assert.ok(strongResult.effectiveEntropyBits >= 50, "Entropy must be >= 50 bits");
 		assert.ok(strongResult.scorePercent >= 70, "Score percent must be >= 70");
+	});
+});
+
+describe("Canonical Staff Roles & Fail-Closed Prevention (Mandate 8n / DEF-SEC-02)", () => {
+	it("verifies canonical staff roles are exactly 5 roles for clinic scale 1-5 chairs", () => {
+		assert.deepStrictEqual(CANONICAL_STAFF_ROLES, [
+			"owner",
+			"doctor",
+			"administrator",
+			"assistant",
+			"manager",
+		]);
+	});
+
+	it("normalizes clinical and administrative aliases to canonical staff roles without failing closed", () => {
+		// Owner aliases
+		assert.strictEqual(normalizeStaffRoleToCanonical("owner"), "owner");
+		assert.strictEqual(normalizeStaffRoleToCanonical("admin"), "owner");
+		assert.strictEqual(normalizeStaffRoleToCanonical("director"), "owner");
+
+		// Doctor aliases
+		assert.strictEqual(normalizeStaffRoleToCanonical("doctor"), "doctor");
+		assert.strictEqual(normalizeStaffRoleToCanonical("head_doctor"), "doctor");
+		assert.strictEqual(normalizeStaffRoleToCanonical("dentist"), "doctor");
+		assert.strictEqual(normalizeStaffRoleToCanonical("orthopedist"), "doctor");
+		assert.strictEqual(normalizeStaffRoleToCanonical("surgeon"), "doctor");
+		assert.strictEqual(normalizeStaffRoleToCanonical("hygienist"), "doctor");
+
+		// Administrator / Front-desk aliases
+		assert.strictEqual(normalizeStaffRoleToCanonical("administrator"), "administrator");
+		assert.strictEqual(normalizeStaffRoleToCanonical("registrar"), "administrator");
+		assert.strictEqual(normalizeStaffRoleToCanonical("senior_admin"), "administrator");
+		assert.strictEqual(normalizeStaffRoleToCanonical("receptionist"), "administrator");
+
+		// Nursing / Assistant aliases
+		assert.strictEqual(normalizeStaffRoleToCanonical("assistant"), "assistant");
+		assert.strictEqual(normalizeStaffRoleToCanonical("senior_nurse"), "assistant");
+		assert.strictEqual(normalizeStaffRoleToCanonical("nurse"), "assistant");
+
+		// Management & Finance aliases
+		assert.strictEqual(normalizeStaffRoleToCanonical("manager"), "manager");
+		assert.strictEqual(normalizeStaffRoleToCanonical("accountant"), "manager");
+		assert.strictEqual(normalizeStaffRoleToCanonical("bookkeeper"), "manager");
+
+		// Special roles
+		assert.strictEqual(normalizeStaffRoleToCanonical("curator"), "curator");
+		assert.strictEqual(normalizeStaffRoleToCanonical("unknown_hacker_role"), "unknown");
+		assert.strictEqual(normalizeStaffRoleToCanonical(null), "unknown");
 	});
 });

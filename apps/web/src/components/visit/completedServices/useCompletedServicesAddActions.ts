@@ -3,7 +3,7 @@ import { useCompletedServicesExpressAndCatalog } from "./useCompletedServicesExp
 
 interface AddActionsParams {
 	readonly planText: string;
-	readonly updateVisitNoteField?: (field: string, value: unknown) => void;
+	readonly updateVisitNoteField?: ((field: string, value: unknown) => void) | undefined;
 	readonly selectedTooth: string | null;
 	readonly onClearSearch: () => void;
 }

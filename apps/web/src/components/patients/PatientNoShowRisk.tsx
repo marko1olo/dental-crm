@@ -88,6 +88,12 @@ export function createNewPatientFallbackRisk(considered = 0) {
 
 // ─── 2. ПРЕДСТАВЛЕНИЕ СТАТИСТИКИ ──────────────────────────────────────────────
 
+export type PatientNoShowRiskFactor = string | {
+	factor: string;
+	impact?: string | number | undefined;
+	description?: string | undefined;
+};
+
 export interface PatientNoShowRiskData {
 	score?: number | undefined;
 	riskLevel?: string | undefined;
@@ -99,11 +105,7 @@ export interface PatientNoShowRiskData {
 		cancellations: number;
 		consideredAppointments: number;
 	} | undefined;
-	factors?: Array<{
-		factor: string;
-		impact: string | number;
-		description?: string | undefined;
-	}> | undefined;
+	factors?: PatientNoShowRiskFactor[] | undefined;
 	explanation?: string | undefined;
 }
 
@@ -164,9 +166,11 @@ export function PatientNoShowRiskStats({ riskData }: PatientNoShowRiskStatsProps
 				<div className="mt-3">
 					<span className="text-xs font-bold text-[var(--ink)]">Факторы надёжности расписания:</span>
 					<ul className="mt-1 space-y-1 text-xs text-[var(--muted)] pl-4 list-disc">
-						{(factors ?? []).map((factor: string) => (
-							<li key={factor}>{factor}</li>
-						))}
+						{(factors ?? []).map((factor, idx) => {
+							const text = typeof factor === "string" ? factor : factor.factor;
+							const key = typeof factor === "string" ? `${factor}-${idx}` : factor.factor;
+							return <li key={key}>{text}</li>;
+						})}
 					</ul>
 				</div>
 			)}

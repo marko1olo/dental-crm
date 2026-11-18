@@ -1,10 +1,11 @@
+import type { ServiceCatalogItem } from "@dental/shared";
+import type { CreateServicePayload } from "../pricesTab/types";
+
 export interface MobilePriceDrawerProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	// biome-ignore lint/suspicious/noExplicitAny: service item
-	readonly service: any | null;
-	// biome-ignore lint/suspicious/noExplicitAny: service payload
-	readonly onSave: (servicePayload: any, serviceId?: string) => Promise<void>;
+	readonly service: ServiceCatalogItem | null;
+	readonly onSave: (servicePayload: CreateServicePayload, serviceId?: string) => Promise<void>;
 	readonly onDelete?: (serviceId: string) => Promise<void>;
 	readonly serviceCategoryLabels?: Record<string, string>;
 	readonly specialtyLabels?: Record<string, string>;

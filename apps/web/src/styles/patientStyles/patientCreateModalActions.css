@@ -1,0 +1,37 @@
+/* Create Patient Modal: Footer Action Buttons */
+.create-patient-modal-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.create-patient-modal-actions button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+}
+
+.create-patient-cancel-btn {
+	min-height: 36px;
+	padding: 0 1rem;
+	font-weight: 600;
+	font-size: 0.875rem;
+}
+
+.create-patient-submit-btn {
+	min-height: 36px;
+	padding: 0 1.25rem;
+	font-weight: 700;
+	font-size: 0.875rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+}
+
+.create-patient-modal-drag-handle-wrap {
+	display: none;
+}

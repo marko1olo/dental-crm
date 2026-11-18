@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { emptyVisitNoteForm } from "../../utils/draftDefaults.js";
 import { createBillingInvoiceSlice } from "./billingInvoiceSlice.js";
 import { createDiaryProtocolSlice } from "./diaryProtocolSlice.js";
 import { createOdontogramSlice } from "./odontogramSlice.js";
@@ -8,6 +9,33 @@ export const useVisitStore = create<VisitStore>((set) => ({
 	...createOdontogramSlice(set),
 	...createDiaryProtocolSlice(set),
 	...createBillingInvoiceSlice(set),
+	resetPatientVisitSession: () =>
+		set({
+			visitToothStateByCode: {},
+			visitAiDiagnosesByCode: {},
+			visitToothRecordsByCode: {},
+			completedServices: [],
+			visitNoteForm: emptyVisitNoteForm,
+			transcript: "",
+			sessionTranscript: "",
+			clearedTranscriptSnapshot: null,
+			draft: null,
+			undoStack: [],
+			redoStack: [],
+			canUndo: false,
+			canRedo: false,
+			activeToothNumber: null,
+			activeStudy: null,
+			visitFlowResult: null,
+			lastServerDraftSavedAt: null,
+			serverDraftSyncState: "idle",
+			localDraftWasRestored: false,
+			isDraftLoading: false,
+			isDraftAccepting: false,
+			isPendingVisitSyncing: false,
+			isVisitDictating: false,
+			isTranscriptPolishing: false,
+		}),
 }));
 
 declare global {

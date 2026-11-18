@@ -34,11 +34,13 @@ export function EmkAnesthesiaSection({
 		if (count === 2) {
 			clinicalNote = clinicalNote.replace(/1\.[78]\s*мл/g, "3.4 мл (2 карпулы)");
 		}
-		const curr = visitNoteForm?.treatmentPlan || "";
-		updateVisitNoteField(
-			"treatmentPlan",
-			appendClinicalText(curr, clinicalNote, "\n\n"),
-		);
+		const curr = String(visitNoteForm?.treatmentPlan || "");
+		if (updateVisitNoteField) {
+			updateVisitNoteField(
+				"treatmentPlan",
+				appendClinicalText(curr, clinicalNote, "\n\n"),
+			);
+		}
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
 				new CustomEvent("dente-add-services-to-invoice", {
@@ -63,15 +65,17 @@ export function EmkAnesthesiaSection({
 
 	const handleNoAnesthesia = () => {
 		setSelectedDrugKey("none");
-		const currentPlan = visitNoteForm?.treatmentPlan || "";
-		updateVisitNoteField(
-			"treatmentPlan",
-			appendClinicalText(
-				currentPlan,
-				"Анестезия: не применялась (интактно / лечение без анестезии по согласию пациента).",
-				"\n\n",
-			),
-		);
+		const currentPlan = String(visitNoteForm?.treatmentPlan || "");
+		if (updateVisitNoteField) {
+			updateVisitNoteField(
+				"treatmentPlan",
+				appendClinicalText(
+					currentPlan,
+					"Анестезия: не применялась (интактно / лечение без анестезии по согласию пациента).",
+					"\n\n",
+				),
+			);
+		}
 		showToast("Зафиксировано: без анестезии / интактно", "info", 2500);
 	};
 
@@ -98,7 +102,7 @@ export function EmkAnesthesiaSection({
 	return (
 		<div className="flex flex-col gap-2 mt-1 min-w-0 max-w-full">
 			<EmkAnesthesiaAlert
-				anamnesisText={visitNoteForm?.anamnesis}
+				anamnesisText={typeof visitNoteForm?.anamnesis === "string" ? visitNoteForm.anamnesis : ""}
 				onSelectSafeDrug={(k) => setSelectedDrugKey(k)}
 			/>
 			<EmkAnesthesiaPresetChips

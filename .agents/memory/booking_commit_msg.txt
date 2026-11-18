@@ -1,0 +1,30 @@
+feat(booking): canonical online booking ssot, otp persistence & 4-state proofs
+
+WHY & ARCHITECTURAL CONTEXT:
+- Red Team Inquisitor audit [POR-01..10] revealed critical race condition (double booking) in Telegram loyalty booking, hardcoded standardSlots array in /api/telegram/webapp/slots, and in-memory Map OTP code storage.
+- In addition, 23 mock and clone files (PublicBookingStudioModal, onlineBookingCatalogData, 3 duplicate facades, orphaned Telegram Mini App tooth components, and budgetSign legacy views) violated Mandates 8z, 8aq, 8bd (Rotten Seed & SSOT).
+
+WHAT & WHERE (SURGICAL CHANGES):
+- apps/api/src/routes/telegramBotLoyalty/telegramWebAppSessionHandlers.ts: replaced static standardSlots with dynamic calculateAvailableSlots(tx, ...) from publicBookingSlotEngine.ts.
+- apps/api/src/services/telegram/referralLoyalty/referralLoyaltyServiceClass.ts: routed bookAppointmentFromWebApp through canonical executeBookingTransaction with hierarchical FOR UPDATE locking (Chair -> Doctor -> Patient).
+- apps/api/src/routes/patientPortal.ts & bookingVerificationEngine.ts: integrated persistent SMS OTP storage and lookup in PostgreSQL 18 table portal_otp_codes.
+- apps/web/src/components/booking/DirectPublicBookingLauncher.tsx: updated #booking selector to mount canonical PublicBookingWidget in accessible modal dialog with >=44x44px close button.
+- apps/web/src/components/booking/publicWidget/BookingFloatingBottomBar.tsx: eliminated mobile 390px clipping using responsive span.
+- Physically removed 23 clone/mock files and orphaned folders via git rm.
+- Synchronized canonical exports and tests.
+
+MACHINE GATES & VISUAL PROOF:
+- npm run check:encoding: 23,213 files checked, 0 errors (Exit Code 0).
+- npm run check:stub-overrides, check:fetch-response, check:dynamic-imports: 0 errors (Exit Code 0).
+- 309 unit/integration tests passed (23 patientSmsAuthEngine, 64 booking vitest, 194 portal vitest, 12 publicBookingQueue, 16 publicPortalRoute).
+- 4-State Visual Proofs captured on live stack (Vite 5173 + Fastify 4100 + PG 18) and personally verified via read_file:
+  * docs/proofs/booking/01_online_booking_pc_light_1440x900.png (182 KB)
+  * docs/proofs/booking/02_online_booking_pc_dark_1440x900.png (260 KB)
+  * docs/proofs/booking/03_online_booking_mobile_light_390x844.png (194 KB)
+  * docs/proofs/booking/04_online_booking_mobile_dark_390x844.png (192 KB)
+  Zero clipping, 1 Primary CTA, 0px horizontal scroll, Apple HIG compliant.
+
+DOCUMENTATION SYNC:
+- Updated .agents/CANONICAL_ARCHITECTURE.md (Mandate 8be: Patient Online Booking & Consumer Portal SSOT).
+- Updated docs/competitive-audit/FEATURES_REGISTRY.md (Addendum 515).
+- Updated docs/competitive-audit/BACKLOG.md (Wave 504).

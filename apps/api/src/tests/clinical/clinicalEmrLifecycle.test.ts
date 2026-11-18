@@ -365,6 +365,58 @@ describe("Клинический жизненный цикл ЭМК, форму�
 				"Зуб 16: глубокая кариозная полость на окклюзионной поверхности",
 			);
 		});
+
+		test("3.4. Мульти-зубной приём: сохранение дневников для зубов 16 и 26 сохраняет оба и не затирает данные", async () => {
+			const res16 = await app.inject({
+				method: "POST",
+				url: "/api/diaries",
+				headers: {
+					authorization: `Bearer ${doctorToken}`,
+					"content-type": "application/json",
+				},
+				payload: {
+					visitId,
+					patientId,
+					status: "draft",
+					diagnosisTooth: "16",
+					statusLocalis: "Зуб 16: кариес эмали",
+				},
+			});
+			assert.equal(res16.statusCode, 200);
+
+			const res26 = await app.inject({
+				method: "POST",
+				url: "/api/diaries",
+				headers: {
+					authorization: `Bearer ${doctorToken}`,
+					"content-type": "application/json",
+				},
+				payload: {
+					visitId,
+					patientId,
+					status: "draft",
+					diagnosisTooth: "26",
+					statusLocalis: "Зуб 26: кариес дентина",
+				},
+			});
+			assert.equal(res26.statusCode, 200);
+
+			// Проверяем, что в БД существуют отдельные дневники для зуба 16 и зуба 26
+			await withFixtureTenant(organizationId, async (tx) => {
+				const diaries = await tx
+					.select()
+					.from(visitDiaries)
+					.where(and(eq(visitDiaries.visitId, visitId), eq(visitDiaries.organizationId, organizationId)));
+
+				const diary16 = diaries.find((d) => d.diagnosisTooth === "16");
+				const diary26 = diaries.find((d) => d.diagnosisTooth === "26");
+				assert.ok(diary16, "Дневник зуба 16 обязан существовать");
+				assert.ok(diary26, "Дневник зуба 26 обязан существовать");
+				assert.equal(diary16.statusLocalis, "Зуб 16: кариес эмали");
+				assert.equal(diary26.statusLocalis, "Зуб 26: кариес дентина");
+				assert.notEqual(diary16.id, diary26.id, "ID дневников должны различаться");
+			});
+		});
 	});
 
 	// =========================================================================

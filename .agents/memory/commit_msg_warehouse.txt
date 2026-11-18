@@ -1,0 +1,39 @@
+feat(warehouse): decompose inventory monoliths <= 120 lines and enable quiet soft negative stock
+
+## Контекст и архитектурная цель (Why):
+- Реализация требований Мандата 8b (декомпозиция монолитов на компактные слои строго <= 120 строк).
+- Реализация Мандатов 8e (Автономия врача) и 8n (Суверенитет соло-практики и малой клиники 1-3 кресла):
+  нулевой или недостаточный остаток материалов на складе НИКОГДА не блокирует приём пациента, оформление визитов или кассовые чеки. Все недостачи списываются в тихий мягкий овердрафт (Soft Negative Stock / Mandate 8aa) с фиксацией потребности для дозаказа.
+- Консолидация модалок прихода и списания по Apple HIG (Мандаты 8am, 8al, 8x):
+  ровно одна Primary CTA кнопка «+ Оприходовать накладную», 1-клик списание смены «⚡ Списать расходники смены», нативные Bottom Sheets и Grouped List Cards на мобильных устройствах (390x844).
+
+## Что конкретно сделано (What & Where):
+- apps/api/src/services/treatmentConsumables/:
+  * unifiedStockDeductionEngine.ts, unifiedItemResolver.ts, unifiedStockDeductionTypes.ts — единый движок списания с поддержкой тихого овердрафта.
+  * quickWriteoffService.ts декомпозирован на компактный фасад и quickWriteoff/quickWriteoffPresets.ts.
+  * bundleWriteoffService.ts декомпозирован на фасад и bundleWriteoff/ (shiftBundlePresets.ts, orthopedicsBundlePresets.ts, visitBundlePresets.ts).
+  * surgeryWriteoffService.ts декомпозирован на фасад и surgeryWriteoff/surgeryMaterialBuilder.ts.
+  * recipeService.ts декомпозирован на фасад и recipeService/ (recipeQueries.ts, recipeMutations.ts, recipeLinkOptions.ts, recipeForService.ts, recipeRowMapper.ts).
+  * shiftBatchWriteoffService.ts декомпозирован на фасад и shiftBatch/ (shiftSummaryQueries.ts, shiftBatchExecution.ts, shiftBatchTypes.ts, shiftBatchPresets.ts).
+  * manualDeduction.ts декомпозирован на manualDeduction/ (manualDeductionAggregator.ts, manualDeductionExecution.ts).
+  * stockDeduction.ts декомпозирован на stockDeductionModules/ (procedureBomDbResolver.ts, statutoryBomResolver.ts, stockDeductionStepExecutor.ts, stockDeductionIdempotency.ts, inventoryItemMatcher.ts, inventoryItemLocker.ts, visitDeductionHandler.ts, toothDeductionHandler.ts, treatmentItemReconciler.ts, stockDeductionNotes.ts, stockDeductionLocks.ts).
+- apps/api/src/services/warehouse/:
+  * warehouseOperations.ts декомпозирован на канонический фасад (26 строк), quickCarpuleDisposal.ts (утилизация карпул СанПиН 3.3686-21), softOverdraftDeduct.ts (тихий овердрафт), warehouseDeductHandlers.ts, warehouseDeductVisitHandler.ts, warehouseSchemas.ts.
+- apps/web/src/components/inventory/:
+  * InboundWaybillModal.tsx декомпозирован на компактный координирующий контейнер (115 строк), useInboundWaybillTotals.ts и inboundWaybill/ (InboundWaybillHeader, InboundWaybillRequisites, InboundWaybillTable, InboundWaybillTableRow, InboundWaybillFooter, inboundWaybillApi, inboundWaybillPrintAct, inboundWaybillPresets, inboundWaybillTypes).
+  * WarehouseBatchWriteoffModal.tsx декомпозирован на контейнер (98 строк) и batchWriteoff/ (BatchWriteoffHeader, BatchWriteoffShiftTab, BatchWriteoffPackagesTab, BatchWriteoffProcedureTab, BatchWriteoffFooter, batchWriteoffPrintAct, batchWriteoffTypes).
+  * InventoryViewMobileLayout.tsx декомпозирован на лэйаут (98 строк) и viewModules/ (inventoryMobileTypes.ts, inventoryModalsState.ts).
+  * StockRowStockCell.tsx декомпозирован на ячейку (74 строки) и StockOverdraftBadge.tsx (57 строк).
+  * Все файлы строго <= 120 строк (100% соответствие Мандату 8b).
+- docs/proofs/inventory/:
+  * README.md синхронизирован со спецификацией архитектуры, 100% passing тестами и 4-состоятельными скриншотами.
+  * Обновлены скриншоты PC Light/Dark 1440x900 и Mobile Light/Dark 390x844.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Backend Tests: npx tsx --test apps/api/src/tests/routes/inventory*.test.ts -> 13 passing (100%), 0 failing.
+- Frontend Tests: node --test apps/web/src/components/inventory/__tests__/*.test.ts* -> 184 passing (100%), 0 failing.
+- Line Limits: 0 файлов > 120 строк в домене склада (apps/api/src/services/treatmentConsumables/, apps/api/src/services/warehouse/, apps/web/src/components/inventory/).
+- 4-State Visual Proof: подтверждены и проверены через read_file в docs/proofs/inventory/ (PC Light 1440x900, PC Dark 1440x900, Mobile Light 390x844, Mobile Dark 390x844).
+
+## Синхронизация документации (Documentation Sync):
+- Обновлен docs/proofs/inventory/README.md.

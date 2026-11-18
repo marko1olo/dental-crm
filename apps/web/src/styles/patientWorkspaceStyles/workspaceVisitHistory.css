@@ -1,0 +1,35 @@
+/* Patient Workspace: Past Visits History Timeline */
+.visit-history-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.visit-history-item {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 12px 14px;
+	font-size: 13px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.visit-history-item-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 6px;
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.visit-history-item-header strong {
+	color: var(--ink);
+	font-size: 13px;
+}
+
+.visit-history-item-body {
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--muted);
+}

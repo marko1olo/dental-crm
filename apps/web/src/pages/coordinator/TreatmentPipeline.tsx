@@ -171,6 +171,7 @@ export const TreatmentPipeline: React.FC = () => {
 					)}
 
 					<TreatmentPlanStudioModal
+						key={state.selectedCardForPresenter.patientId || "draft"}
 						isOpen={Boolean(state.selectedCardForPresenter)}
 						onClose={() => {
 							state.setSelectedCardForPresenter(null);

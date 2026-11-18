@@ -20,7 +20,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomInt } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { dbRaw, transactionStorage, type TenantDb, type TenantTransaction } from "./client.js";
+import { db, dbRaw, transactionStorage, type TenantDb, type TenantTransaction } from "./client.js";
 
 export type { TenantDb, TenantTransaction };
 
@@ -163,12 +163,17 @@ export async function withResilientTransaction<T>(
 	let fn: (tx: TenantDb) => Promise<T>;
 	let options: ResilientTransactionOptions;
 
+	const ambientTx = transactionStorage.getStore();
+
 	if (typeof dbOrFn === "function") {
-		targetDb = dbRaw;
+		targetDb = ambientTx ?? dbRaw;
 		fn = dbOrFn;
 		options = (fnOrOptions as ResilientTransactionOptions) ?? {};
 	} else {
-		targetDb = dbOrFn;
+		targetDb =
+			(dbOrFn === dbRaw || (dbOrFn as unknown) === db) && ambientTx
+				? ambientTx
+				: dbOrFn;
 		fn = fnOrOptions as (tx: TenantDb) => Promise<T>;
 		options = maybeOptions ?? {};
 	}
@@ -186,11 +191,17 @@ export async function withResilientTransaction<T>(
 			? options.clinicId
 			: (currentClinicStorage.getStore() ?? null);
 
+	const isNestedTx = targetDb !== dbRaw && (targetDb as unknown) !== db;
+	const txConfig =
+		!isNestedTx && options.isolationLevel
+			? { isolationLevel: options.isolationLevel }
+			: undefined;
+
 	let lastError: unknown;
 
 	for (let attempt = 0; attempt <= maxRetries; attempt++) {
 		try {
-			// Execute inside a fresh transaction checked out from the pool
+			// Execute inside transaction (reusing connection via savepoint if nested)
 			const txResult = await targetDb.transaction(
 				async (tx) => {
 					if (effectiveTenantId) {
@@ -214,9 +225,7 @@ export async function withResilientTransaction<T>(
 						fn(tx),
 					);
 				},
-				options.isolationLevel
-					? { isolationLevel: options.isolationLevel }
-					: undefined,
+				txConfig,
 			);
 
 			return txResult;
@@ -279,3 +288,6 @@ export async function withResilientClinicContext<T>(
 ): Promise<T> {
 	return currentClinicStorage.run(clinicId, fn);
 }
+
+export const resilientTransaction = withResilientTransaction;
+

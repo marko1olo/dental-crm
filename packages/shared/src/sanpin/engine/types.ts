@@ -11,7 +11,7 @@ import type {
 } from "../sanpinJournalsPresets.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. PSO TYPES & RECORDS (Форма № 366/у)
+// 1. PSO TYPES & RECORDS (Контроль предстерилизационной очистки)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface PsoJournalRecord {
@@ -34,8 +34,10 @@ export interface PsoJournalRecord {
 	readonly notes?: string | undefined;
 }
 
+export type CleaningControlRecord = PsoJournalRecord;
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. STERILIZATION & AUTOCLAVE TYPES (Форма № 257/у)
+// 2. STERILIZATION & AUTOCLAVE TYPES (Контроль работы стерилизаторов / автоклавирование)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type SterilizationRegimeId =
@@ -114,7 +116,7 @@ export interface BiologicalControlTestRecord {
 	readonly notes?: string | undefined;
 }
 
-export interface Form257Record {
+export interface AutoclaveCycleRecord {
 	readonly id: string;
 	readonly date: string; // YYYY-MM-DD
 	readonly cycleNumber: number;
@@ -152,6 +154,8 @@ export interface Form257Record {
 	readonly notes?: string | undefined;
 	readonly createdAt: string;
 }
+
+export type Form257Record = AutoclaveCycleRecord;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. BACTERICIDAL & DISINFECTION TYPES (Р 3.5.1904-04)
@@ -389,6 +393,7 @@ export interface ConsolidatedSanpinJournalData {
 	readonly responsibleHeadNurseRu?: string | undefined;
 	readonly psoRecords?: readonly PsoJournalRecord[] | undefined;
 	readonly form257Records?: readonly Form257Record[] | undefined;
+	readonly autoclaveRecords?: readonly AutoclaveCycleRecord[] | undefined;
 	readonly sterilizationCycles?: readonly (Form257Record | Record<string, unknown>)[] | undefined;
 	readonly sterilizerEquipments?: readonly SterilizerEquipmentRecord[] | undefined;
 	readonly bactericidalSessions?: readonly BactericidalSessionRecord[] | undefined;

@@ -26,18 +26,6 @@ body:has(.visit-bottom-bar) .dnt-incoming-call-badge-container {
 	z-index: 9995;
 }
 
-body:has([role="dialog"]) .dnt-telephony-floating-widget,
-body:has([aria-modal="true"]) .dnt-telephony-floating-widget,
-body:has([data-testid="visit-view"]) .dnt-telephony-floating-widget,
-body:has(.floating-bottom-bar) .dnt-telephony-floating-widget,
-body:has([role="dialog"]) .telephony-floating-softphone,
-body:has([aria-modal="true"]) .telephony-floating-softphone,
-body:has([data-testid="visit-view"]) .telephony-floating-softphone,
-body:has(.floating-bottom-bar) .telephony-floating-softphone {
-	top: 68px;
-	bottom: auto;
-	right: 24px;
-}
 
 .dnt-telephony-island-container > *,
 .dnt-incoming-call-badge-container > * {

@@ -369,7 +369,7 @@ export function getToolDescriptionRu(toolName: string): string {
 			return "Запрос электронной медицинской карты";
 		case "search_clinic_services_and_prices":
 			return "Поиск услуг в прейскуранте";
-		case "generate_form_043_entry":
+		case "generate_clinical_protocol_entry":
 		case "generate_clinical_protocol":
 			return "Синтез дневника амбулаторной карты приёма";
 		case "multidisciplinary_concilium":

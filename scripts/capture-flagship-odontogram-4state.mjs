@@ -6,9 +6,9 @@ const API_BASE = "http://127.0.0.1:4100";
 const WEB_BASE = "http://127.0.0.1:5173";
 const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/documents";
 const OUT_ODONTO = "C:/Clinic_MVP/dental-crm/docs/proofs/odontogram";
-const CONV_ID = "c44dee1f-e8b2-4479-94c5-7299ac52d786";
+const CONV_ID = "644b3011-8b68-485b-9f08-a6d58865d320";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
-const SUB_CONV = "C:/Users/Admin/.gemini/antigravity/brain/985f660d-836b-454e-8a98-cd014608676d";
+const SUB_CONV = "C:/Users/Admin/.gemini/antigravity/brain/1a5ac924-43af-42a0-a684-00dbb822c536";
 const browserExecutable = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 
 [OUT_DOCS, OUT_ODONTO, OUT_CONV, SUB_CONV].forEach((dir) => {

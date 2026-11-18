@@ -25,7 +25,7 @@ export function EmkEndoSection({
 
 	const handleInsertToDiary = (soapText: string) => {
 		if (!updateVisitNoteField) return;
-		const curr = visitNoteForm?.treatmentPlan || "";
+		const curr = String(visitNoteForm?.treatmentPlan || "");
 		updateVisitNoteField("treatmentPlan", appendClinicalText(curr, soapText, "\n\n"));
 	};
 
@@ -34,11 +34,20 @@ export function EmkEndoSection({
 			<ChairsideEndoQuickBar
 				activeTooth={targetToothNum}
 				toothState={
-					visitNoteForm?.diagnosis ||
-					(typeof visitNoteForm?.complaint === "string" ? "Пульпит / Лечение каналов" : undefined)
+					typeof visitNoteForm?.diagnosis === "string"
+						? visitNoteForm.diagnosis
+						: typeof visitNoteForm?.complaint === "string"
+							? "Пульпит / Лечение каналов"
+							: undefined
 				}
-				patientId={visitNoteForm?.patientId}
-				visitId={visitNoteForm?.visitId || visitNoteForm?.id}
+				patientId={typeof visitNoteForm?.patientId === "string" ? visitNoteForm.patientId : undefined}
+				visitId={
+					typeof visitNoteForm?.visitId === "string"
+						? visitNoteForm.visitId
+						: typeof visitNoteForm?.id === "string"
+							? visitNoteForm.id
+							: undefined
+				}
 				isLocked={isLocked}
 				onInsertToDiary={handleInsertToDiary}
 				onOpenFullModal={onOpenEndoModal}

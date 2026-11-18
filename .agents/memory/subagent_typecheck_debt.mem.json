@@ -1,0 +1,25 @@
+{
+  "role": "Red Team typecheck debt cleaner",
+  "started": "2026-10-25T23:20+03",
+  "revived": "2026-10-26T00:20+03 после сетевого обрыва",
+  "finished": "2026-10-26T01:00+03",
+  "baseline": 596,
+  "final": 504,
+  "commits": [
+    "747e90ed3 fix(types): payroll-тест",
+    "aa784a757 fix(types): journeyEventBuilders",
+    "b1842ba2c fix(types): patients (24 файла)",
+    "d14cb53d3 fix(types): odontogram",
+    "8514f78a8 fix(types): orthodontics/ceph",
+    "d53e86d91 fix(types): perio + node:test опции",
+    "d91a90af4 fix(types): misc-домены (14 файлов)"
+  ],
+  "myDelta": "-92 ошибок (596→504); остальное сокращение с 179 до 596 — влёт параллельных сессий, потом частично самоустранён",
+  "skippedForeignDomains": [
+    "radiology/standaloneStudio (153) — декомпозиция в полёте, хук порезан",
+    "portal/patientCabinet (~160) — активная сессия 23:28",
+    "dicom/panoramic/renderer — untracked новая папка с битыми относительными путями",
+    "booking-тест, anamnesis, PatientDetailsModal, imaging/dicom M, billing/sbp, schedule M-хвост"
+  ],
+  "preExistingTestFailures": "copilot-тест (движок f296d8a79 удалил 'Концевой дефект' — тест ждал старое поведение), egisz 3.2 дозировки и 5.1 VisitDiaryHeader — падали до моих правок, строки не трогал"
+}

@@ -386,7 +386,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 									<svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 									</svg>
-									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру ЗТЛ..." className="dental-lab-search-input w-full text-xs py-2 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" style={{ paddingLeft: "38px" }} />
+									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру ЗТЛ..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
 								</div>
 							</div>
 							<div className="space-y-3">
@@ -441,7 +441,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 									<svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 									</svg>
-									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру ЗТЛ..." className="dental-lab-search-input w-full text-xs py-2 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" style={{ paddingLeft: "38px" }} />
+									<input type="search" data-testid="lab-orders-search-input" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по пациенту, номеру ЗТЛ..." className="dental-lab-search-input w-full text-xs py-2 pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" />
 								</div>
 							</div>
 							<div className="space-y-3 overflow-y-auto max-h-[64vh] pr-1">

@@ -191,7 +191,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           <div className="mobile-chairside-grouped-card">
             <div className="mobile-chairside-card-title">Жалобы (Subjective)</div>
             <textarea
-              value={visitNoteForm?.complaint || ""}
+              value={String(visitNoteForm?.complaint || "")}
               onChange={(e) => updateVisitNoteField("complaint", e.target.value)}
               placeholder="Жалобы пациента..."
               className="mobile-chairside-textarea"
@@ -203,7 +203,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           <div className="mobile-chairside-grouped-card">
             <div className="mobile-chairside-card-title">Анамнез жизни и соматика</div>
             <textarea
-              value={visitNoteForm?.anamnesis || ""}
+              value={String(visitNoteForm?.anamnesis || "")}
               onChange={(e) => updateVisitNoteField("anamnesis", e.target.value)}
               placeholder="Анамнез, сопутствующие заболевания..."
               className="mobile-chairside-textarea"
@@ -215,7 +215,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           <div className="mobile-chairside-grouped-card">
             <div className="mobile-chairside-card-title">Объективный статус (Objective)</div>
             <textarea
-              value={visitNoteForm?.objectiveStatus || ""}
+              value={String(visitNoteForm?.objectiveStatus || "")}
               onChange={(e) => updateVisitNoteField("objectiveStatus", e.target.value)}
               placeholder="Данные осмотра полости рта..."
               className="mobile-chairside-textarea"
@@ -228,7 +228,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
             <div className="mobile-chairside-card-title">Диагноз (Assessment)</div>
             <input
               type="text"
-              value={visitNoteForm?.diagnosis || ""}
+              value={String(visitNoteForm?.diagnosis || "")}
               onChange={(e) => updateVisitNoteField("diagnosis", e.target.value)}
               placeholder="Диагноз МКБ-10..."
               className="w-full text-sm font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] px-3 py-2 text-[var(--ink)]"
@@ -239,7 +239,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           <div className="mobile-chairside-grouped-card">
             <div className="mobile-chairside-card-title">Лечение и протокол (Plan)</div>
             <textarea
-              value={visitNoteForm?.treatmentPlan || ""}
+              value={String(visitNoteForm?.treatmentPlan || "")}
               onChange={(e) => updateVisitNoteField("treatmentPlan", e.target.value)}
               placeholder="Проведённое лечение и манипуляции..."
               className="mobile-chairside-textarea"
@@ -251,7 +251,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
           <div className="mobile-chairside-grouped-card">
             <div className="mobile-chairside-card-title">Рекомендации и назначения</div>
             <textarea
-              value={visitNoteForm?.recommendations || ""}
+              value={String(visitNoteForm?.recommendations || "")}
               onChange={(e) => updateVisitNoteField("recommendations", e.target.value)}
               placeholder="Рекомендации пациенту..."
               className="mobile-chairside-textarea"

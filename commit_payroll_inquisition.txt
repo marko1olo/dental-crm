@@ -1,0 +1,44 @@
+refactor(finance): decompose DoctorPayrollTab and payroll modules <= 120 lines, 4-state visual proof
+
+## Контекст и архитектурная цель (Why):
+- Исполнение Мандата 8b (лимит <= 120 строк на модуль), Мандата 8e (Автономия врача и запрет блокировок), Мандата 8n (Суверенитет соло-врача на 1-2 кресла) и Мандата 8x (Ликвидация советского канцелярита).
+- Монолит `DoctorPayrollTab.tsx` (195 строк) распилен на ультра-тонкий координирующий фасад (61 строка).
+- Устранены устаревшие `.js` расширения в путях импортов компонентов и типов.
+- Декомпозированы модальные компоненты начисления зарплаты (`DoctorPayrollModal`, `DoctorPayrollModalContent`, `PayrollActionButtonsBar`, `PayrollRentalInputs`).
+
+## Что конкретно сделано (What & Where):
+- `apps/web/src/views/financeView/DoctorPayrollTab.tsx`:
+  - Распилен до 61 строки, координирует расчет, фильтры периода и рендер чеков.
+  - Устранены устаревшие `.js` импорты.
+- `apps/web/src/views/financeView/payrollTabModules/`:
+  - `useDoctorPayrollTabData.ts` (100 строк) — реактивный хук стейта, выбора доктора и расчета сдельной оплаты.
+  - `mapEarningsApiServices.ts` (45 строк) — нормализация сервисов и чеков по прайсу услуг.
+  - `payrollTabExportUtils.ts` (24 строки) — чистый экспорт Т-51 CSV и генерация HTML расчетного листка A4.
+  - `PayrollTabHeader.tsx` (105 строк) — мобильная адаптация фильтра дат, выбора врача и кнопок печати/экспорта.
+  - `PayrollStatCards.tsx` (79 строк) — 6 карточек показателей Net Revenue (выручка, вычет ЗТЛ, материалы, чистая база, начислено, на руки).
+  - `PayrollChecksTable.tsx` (82 строки) — десктопная таблица чеков с data-testid.
+- `apps/web/src/components/payroll/`:
+  - `DoctorPayrollModal.tsx`: распилен со 150 до 77 строк.
+  - `useDoctorPayrollModalActions.ts` (93 строки): вынесена логика мессенджеров (WhatsApp/Telegram), экспорта CSV, 1С XML и печати.
+  - `DoctorPayrollModalContent.tsx`: сокращен со 139 до 110 строк.
+  - `payrollModules/PayrollEmptyDoctorState.tsx` (45 строк): заглушка выбора специалиста.
+  - `payrollModules/PayrollActionButtonsBar.tsx`: сокращен со 137 до 104 строк.
+  - `payrollModules/PayrollMobileThumbBar.tsx` (50 строк): Apple HIG плавающая панель Natural Thumb Zone с кнопками >= 44px.
+  - `payrollModules/PayrollRentalInputs.tsx`: сокращен со 132 до 83 строк.
+  - `payrollModules/PayrollFixedRentalInputs.tsx` (70 строк): автономный ввод смен и ставки аренды кресла соло-врача.
+- `apps/web/src/tests/doctorPayroll.test.ts`:
+  - Добавлен автоматический тест верификации лимитов строк Mandate 8b (<= 120 строк) для `DoctorPayrollTab` и всех подмодулей.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Тесты: `npx vitest run apps/web/src/components/payroll/ apps/web/src/tests/doctorPayroll.test.ts` — 50 passing, 0 failing.
+- 4-State Red Team Visual Proof снят и лично отсмотрен через `read_file`:
+  * PC Light (1440x900): `docs/proofs/payroll/01_pc_light_1440x900.png` (238 КБ)
+  * PC Dark (1440x900): `docs/proofs/payroll/02_pc_dark_1440x900.png` (228 КБ)
+  * Mobile Light (390x844): `docs/proofs/payroll/03_mobile_light_390x844.png` (145 КБ)
+  * Mobile Dark (390x844): `docs/proofs/payroll/04_mobile_dark_390x844.png` (147 КБ)
+  * Проверено: кнопки >= 44px на смартфоне, 36px на ПК, 0px горизонтального скролла, нет урезанного текста многоточиями.
+
+## Синхронизация документации (Documentation Sync):
+- Обновлен `docs/DOCTOR_PAYROLL_INQUISITION_AUDIT.md`:
+  - Добавлены разделы по декомпозиции монолитов (Мандат 8b & 8aq), элиминации `.js` расширений, суверенитету соло-врача и Net Revenue расчету.
+  - Зафиксированы результаты 4-State Visual Proof и статус 50 тестов.

@@ -20,7 +20,8 @@ export interface CtStudyRecord {
 export type CtRecentStudyItem =
 	| ImagingStudy
 	| RadiologyFilmstripItem
-	| CtStudyRecord;
+	| CtStudyRecord
+	| { readonly id: string; readonly [key: string]: unknown };
 
 export interface CtSelectorModalProps {
 	readonly isOpen: boolean;

@@ -83,7 +83,8 @@ export function EmkObjectiveStatusSection({
 
 	const handleAddChip = (fieldKey: string, chipText: string) => {
 		if (!updateVisitNoteField) return;
-		const current = visitNoteForm?.[fieldKey] || "";
+		const rawVal = visitNoteForm?.[fieldKey];
+		const current = typeof rawVal === "string" ? rawVal : "";
 		updateVisitNoteField(fieldKey, appendClinicalText(current, chipText, " "));
 	};
 
@@ -144,8 +145,8 @@ export function EmkObjectiveStatusSection({
 				<DebouncedEmkTextarea
 					fieldKey="objectiveStatus"
 					label="Объективный статус"
-					value={visitNoteForm?.objectiveStatus || ""}
-					onCommit={updateVisitNoteField}
+					value={String(visitNoteForm?.objectiveStatus || "")}
+					onCommit={(key, val) => updateVisitNoteField?.(key, val)}
 					placeholder="Внешний осмотр, лимфоузлы, прикус, состояние СОПР, десен, детальный статус зуба (кариозная полость, перкуссия, зондирование, подвижность)..."
 					className="w-full min-h-[90px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
@@ -232,8 +233,8 @@ export function EmkObjectiveStatusSection({
 				<DebouncedEmkTextarea
 					fieldKey="examination"
 					label="Дополнительные исследования"
-					value={visitNoteForm?.examination || ""}
-					onCommit={updateVisitNoteField}
+					value={String(visitNoteForm?.examination || "")}
+					onCommit={(key, val) => updateVisitNoteField?.(key, val)}
 					placeholder="Данные рентгенографии, ЭОД, КЛКТ, диагностических проб..."
 					className="w-full min-h-[75px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>

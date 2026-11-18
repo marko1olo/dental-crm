@@ -69,7 +69,7 @@ export const AUTOPILOT_SINUS_GBR_K082: DoctorAutopilotPreset = {
 	informedConsent: "ИДС на операцию синус-лифтинга и костной пластики подписано пациентом.",
 	postOpMemo: "Не сморкаться, не чихать с закрытым ртом, капли в нос сосудосуживающие 5 дней. Снятие швов через 10-14 дней.",
 	materialsToDeduct: [
-		{ name: "Костный графт Geistlich Bio-Oss 0.5г", category: "surgery", unit: "фл.", quantity: 1, unitCostRub: 14500 },
+		{ name: "Костный графт Geistlich Bio-Oss 0.5г", category: "surgery", unit: "упак.", quantity: 1, unitCostRub: 14500 },
 		{ name: "Мембрана коллагеновая Geistlich Bio-Gide 25x25 мм", category: "surgery", unit: "шт.", quantity: 1, unitCostRub: 16800 },
 		{ name: "Пины титановые для фиксации мембран", category: "surgery", unit: "шт.", quantity: 2, unitCostRub: 1200 },
 		{ name: "Шовный материал ПГА 4-0", category: "surgery", unit: "шт.", quantity: 1, unitCostRub: 420 },

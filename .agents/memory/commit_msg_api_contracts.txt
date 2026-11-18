@@ -1,0 +1,40 @@
+test(api): harden Fastify route contracts against PostgreSQL 22P02 and CWE-209
+
+Why:
+- Non-UUID strings passed in route parameters (:visitId, :appointmentId,
+  :itemId, :staffId) or query parameters (?doctorId, ?patientId, ?date)
+  reached PostgreSQL 18 via Drizzle ORM queries without preflight format
+  checks, raising SQLSTATE 22P02 ('invalid input syntax for type uuid')
+  and throwing unhandled 500 Internal Server Errors (CWE-209 / OWASP).
+- In chairside dental operations, malformed client parameters or desynced
+  local state must be rejected cleanly with 400 Bad Request or 404 Not Found,
+  returning structured error objects instead of crashing sessions.
+
+What:
+- visits: Add UUID pattern preflight validation in handleGetVisitDraft,
+  handleApplyPlanItemsToVisit, and handleCompleteVisitWorkOrder (returning
+  400 VisitValidationError / ValidationError). Validate targetVisitId with
+  isValidUuid in handlePostVisitConsumables and handleGetVisitConsumables.
+- billing: Add UUID pattern preflight in invoicePayHandler (400 BillingValidationError).
+  In apps/api/src/db/billing/billingLookups.ts, guard getPatientForBilling,
+  getVisitForBilling, getDocumentForBilling, and getPaymentsByPatientIdInDb
+  against non-UUID strings to return safe null/[] and avoid crashing tenant transactions.
+- inventory: In itemCatalogMutations.ts, validate itemId with UUID pattern in
+  handleUpdateInventoryItem, handlePatchInventoryItem, and handleDeleteInventoryItem,
+  returning 404 Item not found for non-UUID identifiers.
+- appointments: In appointmentsQueryRoutes.ts, preflight doctorId and patientId
+  with APPOINTMENT_ID_UUID_PATTERN and date with YYYY-MM-DD validation, returning
+  400 AppointmentValidationError.
+- staff: In staffMutationRoutes.ts, validate staffId with UUID pattern in
+  PUT /api/staff/:staffId/profile and POST /api/staff/:staffId/terminate-session
+  (returning 400 ValidationError).
+- docs & registry: Register audited contracts in docs/testing/API_ROUTES_INQUISITION_REGISTRY.md
+  and update .agents/DATABASE.md.
+
+Tests:
+- Created apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts
+  exercising 19 integration test cases via Fastify app.inject():
+  19/19 passing in 3.7 seconds.
+- Verified existing visits route test suite apps/api/src/tests/routes/visits.test.ts:
+  26/26 passing with zero regressions.
+- Passed npm run check:encoding with 0 errors across 23,939 files.

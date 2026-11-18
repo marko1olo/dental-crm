@@ -1,0 +1,57 @@
+/* Finance Summary Grid (Mobile Adaptive Layout <= 768px, Mandate 8p & 8c) */
+@media (max-width: 768px) {
+	.finance-summary-grid {
+		display: grid !important;
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 4px 8px !important;
+		padding: 6px 10px !important;
+		min-height: auto !important;
+		max-height: none !important;
+		margin-bottom: 6px !important;
+	}
+
+	.finance-summary-grid article {
+		display: flex !important;
+		flex-direction: row !important;
+		justify-content: space-between !important;
+		align-items: center !important;
+		min-height: 22px !important;
+		max-height: none !important;
+		padding: 2px 4px !important;
+		border: none !important;
+		background: transparent !important;
+	}
+
+	.finance-summary-grid article.finance-tax-deduction-card {
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: stretch !important;
+		justify-content: center !important;
+		min-height: auto !important;
+		max-height: none !important;
+	}
+
+	.finance-summary-grid article.finance-tax-deduction-card .finance-tax-card-header {
+		display: flex !important;
+		flex-direction: row !important;
+		justify-content: space-between !important;
+		align-items: center !important;
+		width: 100% !important;
+	}
+
+	.finance-summary-grid article.finance-tax-deduction-card button {
+		display: block !important;
+		width: 100% !important;
+		margin-top: 2px !important;
+		padding: 0 !important;
+		font-size: 11px !important;
+		line-height: 1.25 !important;
+		white-space: normal !important;
+		text-align: left !important;
+		word-break: break-word !important;
+	}
+
+	.finance-summary-grid p {
+		display: none !important;
+	}
+}

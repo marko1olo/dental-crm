@@ -183,6 +183,12 @@ export interface VisitStore {
 	 * находка ИИ по зубу пациента Б молча игнорировалась в пользу данных пациента А.
 	 */
 	resetVisitToothState: () => void;
+	/**
+	 * Единый канонический сброс сессии визита пациента.
+	 * Гарантирует очистку карты зубов, диагнозов, дневника приёма, черновиков,
+	 * стенограммы и истории undo/redo при переключении между пациентами.
+	 */
+	resetPatientVisitSession: () => void;
 	applyAiToothCodes: (
 		detectedCodes: string[],
 		primaryState?: ToothState,

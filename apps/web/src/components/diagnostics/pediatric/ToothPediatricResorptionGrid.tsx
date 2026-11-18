@@ -1,6 +1,5 @@
 import React from "react";
-import { Check } from "lucide-react";
-import { DentalForm043 } from "../../icons/DentalIcons";
+import { Check, FileText } from "lucide-react";
 import type { RootResorptionStage } from "../../odontogram/anatomicalGeometriesTypes";
 import { RESORPTION_STAGES } from "./pediatricTypes";
 
@@ -30,7 +29,7 @@ export const ToothPediatricResorptionGrid: React.FC<ToothPediatricResorptionGrid
 					style={{ minHeight: "32px", height: "32px", padding: "4px 10px", fontSize: "12px", gap: "6px" }}
 					title={`Внести запись о резорбции корней зуба #${toothNumber} в карту`}
 				>
-					<DentalForm043 size={14} />
+					<FileText size={14} />
 					<span>Внести в карту</span>
 				</button>
 			</div>

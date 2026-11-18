@@ -8,7 +8,7 @@ import { generateFnsTaxCertificatePrintHtml, generateMedicalRecordExtractPrintHt
 import { SAMPLE_FNS_TAX_1151156_PRESET } from "./sampleFnsTaxPreset";
 import type { FnsTaxPaymentItem } from "./cdaR2XmlBuilder";
 import { formatKopecksToRubles } from "./cdaR2XmlBuilder";
-import { TaxDeductionCertificateModal } from "../finance/TaxDeductionCertificateModal";
+import { TaxDeductionCertificateModal } from "../documents/DocumentsStudioModal";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import "./egiszRemd.css";
 

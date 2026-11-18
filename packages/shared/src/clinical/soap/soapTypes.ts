@@ -16,6 +16,7 @@ export type ClinicalPresetCategory =
 	| "therapy"
 	| "surgery"
 	| "orthopedics"
+	| "orthodontics"
 	| "hygiene"
 	| "periodontology"
 	| "pediatric";

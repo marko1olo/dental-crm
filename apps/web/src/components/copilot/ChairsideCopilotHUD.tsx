@@ -177,9 +177,21 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
   });
   const [isExecutingAgent, setIsExecutingAgent] = useState(false);
 
-  const servicesTotalPrice = useMemo(
-    () => servicesProposal.reduce((sum, s) => sum + s.priceRub * s.quantity, 0),
+  const servicesTotalKopecks = useMemo(
+    () =>
+      servicesProposal.reduce((sum, s) => {
+        const kopecks =
+          typeof s.priceKopecks === "number"
+            ? s.priceKopecks
+            : Math.round((s.priceRub ?? 0) * 100);
+        return sum + kopecks * s.quantity;
+      }, 0),
     [servicesProposal]
+  );
+
+  const servicesTotalPrice = useMemo(
+    () => Math.round(servicesTotalKopecks / 100),
+    [servicesTotalKopecks]
   );
 
   const handleIntentParsed = useCallback((intent: DentalVoiceIntent) => {
@@ -293,12 +305,18 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     if (onApplyServices) onApplyServices(servicesProposal);
     if (onAddBillingItem) onAddBillingItem(servicesProposal);
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("dente-add-billing-item", {
-        detail: { items: servicesProposal, totalRub: servicesTotalPrice },
-      }));
+      window.dispatchEvent(
+        new CustomEvent("dente-add-billing-item", {
+          detail: {
+            items: servicesProposal,
+            totalKopecks: servicesTotalKopecks,
+            totalRub: servicesTotalPrice,
+          },
+        })
+      );
     }
     setServicesProposal((prev) => prev.map((s) => ({ ...s, applied: true })));
-  }, [servicesProposal, servicesTotalPrice, onApplyServices, onAddBillingItem]);
+  }, [servicesProposal, servicesTotalKopecks, servicesTotalPrice, onApplyServices, onAddBillingItem]);
 
   const handleApplySoap = useCallback(() => {
     const patch: Record<string, string> = {
@@ -439,6 +457,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
           onRemoveAnesthetic={() => setAnestheticProposal(null)}
           servicesProposal={servicesProposal}
           servicesTotalPrice={servicesTotalPrice}
+          servicesTotalKopecks={servicesTotalKopecks}
           onRemoveServices={() => setServicesProposal([])}
           onApplyAllActions={handleApplyAllActions}
           isDrawerOpen={isDrawerOpen}
@@ -521,6 +540,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               toothProposal={toothProposal}
               servicesProposal={servicesProposal}
               servicesTotalPrice={servicesTotalPrice}
+              servicesTotalKopecks={servicesTotalKopecks}
               soapProposal={soapProposal}
               anestheticProposal={anestheticProposal}
               safetyAlert={safetyAlert}

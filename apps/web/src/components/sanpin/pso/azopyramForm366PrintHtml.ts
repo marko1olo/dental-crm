@@ -4,5 +4,6 @@
  */
 export {
 	generatePsoAzopyramPrintHtml,
+	generateCleaningControlPrintHtml,
 	generatePsoAzopyramPrintHtml as generateStatutoryPsoForm366PrintHtml,
 } from "./psoAzopyramPrintHtml";

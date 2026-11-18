@@ -39,7 +39,7 @@ export const ActPrintActionBarMeta: React.FC<ActPrintActionBarMetaProps> = ({ ac
 					<span className="font-bold text-sm text-[var(--ink,#0f172a)] dark:text-white block">
 						Акт сдачи-приемки и Накладная на списание ТМЦ
 					</span>
-					<span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${statusClass}`}>
+					<span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold ${statusClass}`}>
 						{statusLabel}
 					</span>
 				</div>

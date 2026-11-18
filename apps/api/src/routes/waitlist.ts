@@ -8,6 +8,7 @@ import {
 import { db } from "../db/client.js";
 import { appointmentWaitlists, patients, users } from "../db/schema.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { createCrmLeadFromPublicIntake } from "./publicBooking/bookingModules/publicBookingMutations.js";
 
 const waitlistParamsSchema = z.object({
 	id: z.string().min(1),
@@ -297,6 +298,21 @@ export async function registerWaitlistRoutes(
 					? { treatmentCategory: meta.treatmentCategory }
 					: {}),
 			};
+
+			// Create CRM Lead for the waitlist addition (DEF-PB-03)
+			try {
+				await createCrmLeadFromPublicIntake(db, {
+					organizationId: orgId,
+					patientName: patient.fullName,
+					patientPhone: patient.phone || "",
+					source: "waitlist",
+					receiptStatus: "WAITLIST",
+					comment: `Лист ожидания: ${meta.notes || ""}`.trim(),
+					doctorId: data.preferredDoctorId || undefined,
+				});
+			} catch {
+				// Non-blocking CRM lead sync
+			}
 
 			// Notify UI via WebSocket
 			wsBroker.broadcastToOrganization(orgId, {

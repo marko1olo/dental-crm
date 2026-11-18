@@ -1,0 +1,51 @@
+{
+  "agent": "settings_access_inquisition",
+  "updated": "FINAL",
+  "status": "DONE — все фиксы, коммиты и 4-State пруфы готовы",
+  "commits": [
+    "c6d3afe1e fix(access): staff no-token owner fallback + fail-open role",
+    "7bf982223 fix(access): settings.write на 20 мутациях настроек",
+    "a9cc289f5 fix(access): switch-role эскалация (роль из БД + PIN чужого юзера)",
+    "8e58d04a1/721bc96d5/fe6763dc3/f86ac0d01/e13d2cd78/eefb592e1 refactor(settings): 6 коммитов декомпозиции наследия волны",
+    "461d14c01 proof(settings): 4-State пруфы"
+  ],
+  "gates": {
+    "typecheck": "0 ошибок в скоупе (api: routes/settings|staff|auth|security; web: components/settings)",
+    "encoding": "OK (iron gate при каждом коммите)",
+    "tests": "staff 7/7, redteam settings 5/5, serviceCatalog+staffCredentials+uiPreferences+hardening 21/21, web settings 13/13+118/118+39/39 комиссии с материальным/лабораторным вычетом"
+  },
+  "proofs": "docs/proofs/settings/ 8 скринов (clinic+staff x PC/Mobile x Light/Dark), снято scripts/capture_settings_4state_proofs.mjs с живого стенда, каждый отсмотрен по 12 вопросам — контент настроек чист",
+  "foreignDomainHoles": [
+    "billingRoutes/billingRouteHandlers.ts — 13 роутов денег без гарда (finance)",
+    "fiscal/receiptRoutes/index.ts — 16 роутов чеков без гарда (cashbox)",
+    "sbp/sbpRouteHandlers.ts — 10 роутов СБП без гарда (finance)",
+    "invoiceRoutes invoiceCrudHandlers+invoicePaymentAndRefundHandlers — без гарда (finance)",
+    "pricelist/routeHandlers.ts — 15 роутов без гарда (pricelist)",
+    "prescriptions.ts — 9 роутов рецептов без гарда",
+    "lab/* 7 файлов (ordersCrud 12, technicianPortal 6...) — без гарда",
+    "patients/ticketRoutes + timelineRoutes — без гарда; crud/administrative — только identity",
+    "hardware.ts — 4 роута без гарда",
+    "speechLive.ts — 3 роута indirect",
+    "visits/visitDraftRoutes (9) + visitWorkOrderRoutes (3) — без гарда",
+    "telegram/webhookIngress — без сигнатурной проверки вебхука",
+    "workspaceProfileRoutes — 5 роутов без гарда",
+    "outpatient.ts — 12 роутов без гарда",
+    "documentTemplates templateCrudRoutes — без гарда (documents, другой агент)",
+    "communicationReceipts.ts — 3 роута (communications)",
+    "analytics/executiveRoutes — indirect",
+    "sanpin/* 7 файлов — без гарда (другой агент)",
+    "demo/demoRoutes.ts — проверить демо-изоляцию",
+    "websocket.ts — indirect (проверить токен на ws-upgrade)",
+    "lanNetwork.ts — 14 роутов indirect (pair/verify пишут свой контур)"
+  ],
+  "foreignUiDefects": [
+    "appLayout шапка: 2 акцентные кнопки рядом (зелёная «Приём» + синяя «Запись») — Мандат 8am",
+    "appLayout сайдбар: обрезка пункта «Комиссии и …» многоточием",
+    "appLayout TopBarOnboardingStrips: текст баннера «Реквизиты клиники можно запол…» обрезается CSS"
+  ],
+  "phantoms": [
+    "POST /api/settings/reset-demo и /api/settings/reset-zero — мёртвые стабы («не поддерживается»), веб не вызывает — кандидаты на снос",
+    "/api/staff/* (extended HR API) — сирота: 0 вызовов из веба, охрана усилена, но семантика дублирует /api/settings/staff — кандидат на снос при следующей волне"
+  ],
+  "notes": "Демо/прод честны: demo-токены только в demo-контуре за DENTE_ALLOW_DEMO_LOGIN (dev/test+флаг); staff-тесты переведены на подписанные токены"
+}

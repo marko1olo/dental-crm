@@ -21,16 +21,17 @@ export type FastPrintDocType =
 	| "treatment_estimate";
 
 export interface ClinicSummary {
-	readonly id?: string;
-	readonly name?: string;
-	readonly legalName?: string;
-	readonly inn?: string;
-	readonly ogrn?: string;
-	readonly address?: string;
-	readonly phone?: string;
-	readonly email?: string;
-	readonly licenseNumber?: string;
-	readonly chiefDoctorFullName?: string;
+	readonly id?: string | null | undefined;
+	readonly name?: string | null | undefined;
+	readonly legalName?: string | null | undefined;
+	readonly inn?: string | null | undefined;
+	readonly ogrn?: string | null | undefined;
+	readonly address?: string | null | undefined;
+	readonly phone?: string | null | undefined;
+	readonly email?: string | null | undefined;
+	readonly licenseNumber?: string | null | undefined;
+	readonly chiefDoctorFullName?: string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export type ToothNumber = number | string;
@@ -70,15 +71,16 @@ export interface FastClinicalPrintEngineProps {
 	readonly onClose: () => void;
 	readonly initialDocType?: FastPrintDocType | string | undefined;
 	readonly patient?: {
-		readonly id?: string | undefined;
-		readonly organizationId?: string | undefined;
-		readonly fullName?: string | undefined;
-		readonly birthDate?: string | undefined;
-		readonly phone?: string | undefined;
-		readonly address?: string | undefined;
-		readonly cardNumber?: string | undefined;
-		readonly allergies?: string | undefined;
-		readonly somaticNotes?: string | undefined;
+		readonly id?: string | null | undefined;
+		readonly organizationId?: string | null | undefined;
+		readonly fullName?: string | null | undefined;
+		readonly birthDate?: string | Date | null | undefined;
+		readonly phone?: string | null | undefined;
+		readonly address?: string | null | undefined;
+		readonly cardNumber?: string | null | undefined;
+		readonly allergies?: string | readonly string[] | null | undefined;
+		readonly somaticNotes?: string | null | undefined;
+		readonly [key: string]: unknown;
 	} | Patient | null | undefined;
 	readonly clinic?: ClinicSummary | null | undefined;
 	readonly doctor?: {

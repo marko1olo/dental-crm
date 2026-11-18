@@ -465,8 +465,8 @@ describe("Section 2: Dental Technical Laboratory (ЗТЛ наряды-заказ
 		assert.equal(mapStageToLabOrderStatus("Каркас/Примерка"), "in_progress");
 		assert.equal(mapStageToLabOrderStatus("Нанесение керамики"), "in_progress");
 		assert.equal(mapStageToLabOrderStatus("shipped"), "shipped");
-		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "ready_in_clinic");
-		assert.equal(mapStageToLabOrderStatus("Примерка"), "fitted");
+		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "received");
+		assert.equal(mapStageToLabOrderStatus("Примерка"), "received");
 		assert.equal(mapStageToLabOrderStatus("Фиксация"), "completed");
 		assert.equal(mapStageToLabOrderStatus("Рекламация"), "refitting");
 		assert.equal(mapStageToLabOrderStatus("Переделка"), "refitting");

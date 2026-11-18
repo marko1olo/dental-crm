@@ -1,11 +1,13 @@
 import { ExternalLink, MessageSquare, Phone, Send } from "lucide-react";
 import React from "react";
+import type { PatientChatChannel } from "./types";
 
 interface WhatsappSendActionsProps {
 	readonly busy: boolean;
 	readonly cleanPhone: string;
 	readonly phoneHint: string;
 	readonly message: string;
+	readonly channel: PatientChatChannel;
 	readonly onSend: () => void;
 	readonly onOpenWebWhatsApp: () => void;
 }
@@ -15,9 +17,11 @@ export function WhatsappSendActions({
 	cleanPhone,
 	phoneHint,
 	message,
+	channel,
 	onSend,
 	onOpenWebWhatsApp,
 }: WhatsappSendActionsProps) {
+	const channelLabel = channel === "whatsapp" ? "WhatsApp" : channel === "max" ? "MAX" : "Telegram";
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2">
 			<div className="flex items-center gap-2 flex-wrap">
@@ -29,7 +33,7 @@ export function WhatsappSendActions({
 					className="min-h-[44px] sm:min-h-[32px] px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/40 disabled:opacity-50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
 				>
 					<Send size={14} />
-					<span>{busy ? "Отправляю…" : "Отправить в WhatsApp"}</span>
+					<span>{busy ? "Отправляю…" : `Отправить в ${channelLabel}`}</span>
 				</button>
 
 				{cleanPhone ? (

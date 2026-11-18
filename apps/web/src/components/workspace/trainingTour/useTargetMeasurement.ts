@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { QuestStep } from "../trainingTourModules/trainingTourTypes";
+import type { AppView } from "../../../utils/routeUtils";
 
 export function useTargetMeasurement(
 	isOpen: boolean,
 	currentStep: QuestStep | null,
-	setCurrentView: (view: string) => void,
+	setCurrentView: (view: AppView) => void,
 ) {
 	const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 

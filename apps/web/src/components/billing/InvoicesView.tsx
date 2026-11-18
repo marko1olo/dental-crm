@@ -7,6 +7,7 @@
  */
 
 import React, { useState } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { useMemoryLeakGuard } from "../../hooks/useMemoryLeakGuard.js";
 import { InvoicesModalsLayer } from "./InvoicesModalsLayer.js";
 import { showToast } from "../GlobalToast.js";
@@ -67,6 +68,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 						...denteAdminSecretRequestHeaders(),
 					},
 					body: JSON.stringify({

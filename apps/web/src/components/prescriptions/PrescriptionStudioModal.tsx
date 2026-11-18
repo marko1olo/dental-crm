@@ -37,6 +37,10 @@ export interface PrescriptionStudioModalProps {
 		readonly birthDate?: string | undefined;
 		readonly cardNumber?: string | undefined;
 		readonly medicalCardNumber?: string | undefined;
+		readonly address?: string | undefined;
+		readonly snils?: string | undefined;
+		readonly omsPolicy?: string | undefined;
+		readonly weightKg?: number | undefined;
 		readonly allergies?: readonly string[] | string | undefined;
 		readonly chronicDiseases?: readonly string[] | string | undefined;
 	} | null | undefined;

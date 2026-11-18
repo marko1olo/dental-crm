@@ -1,0 +1,85 @@
+/* Quick Chips: Groups, Base Style & Categorized Color Palettes */
+.quick-chips-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.quick-chips-group-title {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: none;
+	color: var(--muted);
+}
+
+.quick-chips-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.quick-chip {
+	padding: 4px 10px;
+	min-height: 28px;
+	max-width: none;
+	text-overflow: clip;
+	overflow: visible;
+	white-space: nowrap;
+	flex-shrink: 0;
+	font-size: 12px;
+	font-weight: 500;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line) !important;
+	border-style: solid !important;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.quick-chip:hover {
+	background: var(--paper-hover, var(--teal-surface)) !important;
+	border-color: var(--teal) !important;
+	border-style: solid !important;
+	color: var(--teal-dark) !important;
+}
+
+/* Categorized Quick Chips (DEF-PAT-03, Mandates 8d, 8p - Calm Pastel Luxury Palette) */
+.quick-chip-somatic {
+	background: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	border-color: rgba(225, 29, 72, 0.22) !important;
+}
+
+.quick-chip-somatic:hover {
+	background: rgba(225, 29, 72, 0.06) !important;
+	border-color: rgba(225, 29, 72, 0.45) !important;
+	color: var(--ink) !important;
+}
+
+.quick-chip-comfort {
+	background: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	border-color: rgba(13, 148, 136, 0.22) !important;
+}
+
+.quick-chip-comfort:hover {
+	background: rgba(13, 148, 136, 0.06) !important;
+	border-color: rgba(13, 148, 136, 0.45) !important;
+	color: var(--ink) !important;
+}
+
+.quick-chip-finance {
+	background: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	border-color: rgba(99, 102, 241, 0.22) !important;
+}
+
+.quick-chip-finance:hover {
+	background: rgba(99, 102, 241, 0.06) !important;
+	border-color: rgba(99, 102, 241, 0.45) !important;
+	color: var(--ink) !important;
+}

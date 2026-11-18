@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { kopecksToRubles } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { invoiceItems, patientInvoices } from "../../db/schema.js";
 
@@ -8,7 +9,7 @@ export interface LinkOrthoBillingParams {
 	visitId?: string | null | undefined;
 	serviceCode: string;
 	serviceName: string;
-	priceRub: number;
+	priceRub?: number | undefined;
 	priceKopecks: bigint;
 }
 
@@ -24,10 +25,13 @@ export interface OrthoBillingResult {
 
 /**
  * DEF-ORTHO-05 / Red Team Досье: Связка ортодонтических активаций с прейскурантом и кассовым чеком.
+ * DEF-ORTHO-API-01: priceKopecks — единственный источник правды (SSOT); priceRub рассчитывается автоматически из priceKopecks.
  * Если передан visitId, автоматически добавляет медицинскую услугу активации в черновик счета пациента.
  */
 export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingParams): Promise<OrthoBillingResult> {
-	const { organizationId, patientId, visitId, serviceCode, serviceName, priceRub, priceKopecks } = params;
+	const { organizationId, patientId, visitId, serviceCode, serviceName, priceKopecks } = params;
+	const priceRub = kopecksToRubles(Number(priceKopecks));
+
 	if (!visitId) {
 		return {
 			serviceAdded: false,

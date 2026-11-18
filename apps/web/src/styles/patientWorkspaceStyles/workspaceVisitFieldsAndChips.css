@@ -1,0 +1,65 @@
+/* Patient Workspace: Specialty Focus Bar, Visit Textareas & Quick Chips */
+.specialty-focus-bar {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.specialty-focus-bar::-webkit-scrollbar {
+	display: none;
+}
+
+.specialty-focus-bar button {
+	min-height: 22px !important;
+	height: 22px !important;
+	padding: 1px 6px !important;
+	font-size: 11px !important;
+}
+
+.visit-fields textarea,
+.emk-field-container textarea {
+	min-height: 68px !important;
+	line-height: 1.45;
+	font-size: 13px;
+}
+
+.visit-fields textarea:focus,
+.emk-field-container textarea:focus {
+	min-height: 100px !important;
+}
+
+.visit-fields.single-tab-mode {
+	grid-template-columns: 1fr;
+}
+
+.visit-fields.single-tab-mode textarea,
+.visit-fields.single-tab-mode .emk-field-container textarea {
+	min-height: 160px !important;
+	font-size: 14px;
+}
+
+.quick-chips-scroll-container {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	gap: 6px !important;
+	overflow-x: visible !important;
+}
+
+.visit-note-panel .quick-chip,
+.visit-quick-chip,
+.emk-tab-panel .quick-chip,
+.visit-fields .quick-chip,
+.visit-note-panel .quick-chip span,
+.visit-quick-chip span,
+.emk-tab-panel .quick-chip span,
+.visit-fields .quick-chip span {
+	max-width: none !important;
+	min-width: max-content !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+}

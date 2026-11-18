@@ -201,12 +201,17 @@ export function useChairsideVisitWorkspace({
   const handleTakeActivePlanStage = useCallback(() => {
     if (!loadedTreatmentPlan) return;
     const stages = loadedTreatmentPlan.stages || [];
-    const activeStage = stages[0] || {
-      title: loadedTreatmentPlan.name || loadedTreatmentPlan.title || "План лечения",
-      stageNumber: 1,
-      items: loadedTreatmentPlan.items || [],
+    const rawStage = stages[0];
+    const activeStage = {
+      title:
+        (rawStage && (rawStage.title || ("titleRu" in rawStage ? String(rawStage.titleRu) : undefined) || ("name" in rawStage ? String(rawStage.name) : undefined))) ||
+        loadedTreatmentPlan.name ||
+        loadedTreatmentPlan.title ||
+        "План лечения",
+      stageNumber: (rawStage && rawStage.stageNumber) ?? 1,
+      items: (rawStage && rawStage.items) || loadedTreatmentPlan.items || [],
     };
-    const items = activeStage.items || loadedTreatmentPlan.items || [];
+    const items = activeStage.items;
     handleTakeStageFromBanner(activeStage, items);
   }, [loadedTreatmentPlan, handleTakeStageFromBanner]);
 

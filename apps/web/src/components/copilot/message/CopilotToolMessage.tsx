@@ -29,9 +29,9 @@ function resolveToolMeta(toolName: string, args?: Record<string, unknown>) {
     Icon = Activity;
     cleanName = 'updateToothStatusTool';
     if (args?.tooth) paramHint = `Зуб ${args.tooth}`;
-  } else if (lower.includes('soap') || lower.includes('diary') || lower.includes('protocol') || lower.includes('043')) {
+  } else if (lower.includes('soap') || lower.includes('diary') || lower.includes('protocol')) {
     Icon = FileText;
-    cleanName = 'generateForm043Tool';
+    cleanName = 'generateClinicalProtocolEntryTool';
     if (args?.tooth) paramHint = `Зуб ${args.tooth}`;
   } else if (lower.includes('invoice') || lower.includes('billing') || lower.includes('estimate')) {
     Icon = Receipt;

@@ -52,7 +52,9 @@ export function assembleVisitStoreCompletedServices(): ClinicalEstimateItem[] {
 		assembled.push({
 			id: s.serviceId || `srv-store-${idx}-${code}`,
 			code,
-			name: s.toothNumber ? `${s.name} (зуб ${s.toothNumber})` : s.name,
+			name: s.toothNumber
+				? `${s.name || s.title || code} (зуб ${s.toothNumber})`
+				: (s.name || s.title || code),
 			quantity: qty,
 			priceRub: price,
 			discountRub: 0,

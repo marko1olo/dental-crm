@@ -101,6 +101,6 @@ export function buildUnsealKraftPackageResponse(params: UnsealKraftPackageParams
 		status: "unsealed" as const,
 		sanpinVerified: true,
 		message:
-			"Крафт-пакет успешно вскрыт и списан без комиссии из 3 человек (СанПиН 3.3686-21).",
+			"Крафт-пакет успешно вскрыт. Материалы готовы к приёму.",
 	};
 }

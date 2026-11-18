@@ -1,0 +1,55 @@
+/* Patient Workspace: Insight Head, Metadata & Risk Badges */
+.patient-insight-head {
+	align-items: start;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.patient-insight-head span,
+.patient-row-meta span {
+	background: var(--teal-soft);
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+	padding: 5px 8px;
+}
+
+.risk-watch .patient-insight-head span,
+.patient-row.risk-watch .patient-row-meta .patient-risk-label {
+	background: var(--warn-bg);
+	color: var(--ink);
+}
+
+.risk-high .patient-insight-head span,
+.patient-row.risk-high .patient-row-meta .patient-risk-label {
+	background: var(--bad-bg);
+	color: var(--ink);
+}
+
+.patient-insight-head strong {
+	line-height: 1.25;
+}
+
+.patient-insight-meta,
+.patient-row-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.patient-insight-meta span {
+	background: var(--teal-soft);
+	border: none;
+	border-radius: 999px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 850;
+	padding: 5px 8px;
+}
+
+.patient-insight-panel p {
+	color: var(--muted);
+	margin: 0;
+}

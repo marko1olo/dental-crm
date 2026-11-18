@@ -49,7 +49,7 @@ import {
 	applyDoctorDiscountToStages,
 	calculateStageTotals,
 	calculatePlanStagesTotals,
-} from "../components/treatment-plans/treatmentPlanMath";
+} from "../components/treatment-plans/treatmentPlanPricingEngine";
 import { buildStagesFromPlanItems } from "../components/treatment-plans/treatmentPlanPersistenceEngine";
 import type { TreatmentPlanStage } from "../components/treatment-plans/types";
 

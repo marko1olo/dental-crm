@@ -12,7 +12,7 @@ export async function saveQuickPsoRecordToApi(
 			detergentBrand: pso.detergentBrand,
 			azopyramPassed: pso.azopyramResult === "negative",
 			phenolphthaleinPassed: pso.phenolphthaleinResult === "negative",
-			notes: `${pso.notes || ""} • [ПСО: ${pso.operatorName}]`.trim(),
+			notes: `${pso.notes || ""} • [Очистка: ${pso.operatorName}]`.trim(),
 		};
 
 		const res = await fetch("/api/registers/pso", {
@@ -29,7 +29,7 @@ export async function saveQuickPsoRecordToApi(
 			return {
 				ok: false,
 				error:
-					errBody?.message || `Ошибка сохранения пробы ПСО (${res.status})`,
+					errBody?.message || `Ошибка сохранения контроля очистки (${res.status})`,
 			};
 		}
 
@@ -39,7 +39,7 @@ export async function saveQuickPsoRecordToApi(
 		const msg =
 			err instanceof Error
 				? err.message
-				: "Сетевой сбой при сохранении пробы ПСО";
+				: "Сетевой сбой при сохранении контроля очистки";
 		return { ok: false, error: msg };
 	}
 }

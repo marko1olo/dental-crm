@@ -64,7 +64,7 @@ export interface ToothData {
 	pocketDepthMm?: number;
 	maxPocketDepth?: number;
 	canalCount?: number;
-	notes?: string;
+	notes?: string | undefined;
 	clinicalData?: EndoToothClinicalData | Record<string, unknown>;
 	bridgeRole?: "pillar" | "pontic" | null;
 	canalObturationLevel?: "full" | "two_thirds" | "half";
@@ -73,7 +73,7 @@ export interface ToothData {
 	hasApicoectomy?: boolean;
 	stageBadge?: string | undefined;
 	calculus?: boolean | undefined;
-	updatedAt?: string;
+	updatedAt?: string | undefined;
 	diagnosis?: string | undefined;
 	number?: number | undefined;
 }

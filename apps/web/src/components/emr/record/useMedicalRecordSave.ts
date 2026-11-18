@@ -70,35 +70,64 @@ export function useMedicalRecordSave({
 				// DEF-EMR-01: Сохранение и персистентность в PostgreSQL 18 через POST /api/diaries (visit_diaries и visit_diary_revisions)
 				const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 				if (isUuid(effectiveVisitId) && isUuid(effectivePatientId)) {
+					const diariesToPersist = formData.visitDiaries.length > 0 ? formData.visitDiaries : [undefined];
 					try {
-						await fetch("/api/diaries", {
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json",
-								...denteAdminSecretRequestHeaders(),
-							},
-							credentials: "same-origin",
-							body: JSON.stringify({
-								visitId: effectiveVisitId,
-								patientId: effectivePatientId,
-								complaint,
-								anamnesis,
-								statusLocalis,
-								diagnosisIcd10: diagnosisIcd10 || undefined,
-								diagnosisTooth: primaryDiary?.toothNumber ? String(primaryDiary.toothNumber) : undefined,
-								treatmentDescription,
-								status: effectiveIsDraft ? "draft" : "signed",
+						await Promise.all(
+							diariesToPersist.map(async (diary) => {
+								const diaryComplaint = formData.anamnesis.chiefComplaint || diary?.subjectiveComplaints || complaint;
+								const diaryAnamnesis = formData.anamnesis.historyOfPresentIllness || anamnesis;
+								const diaryStatusLocalis = diary?.objectiveStatusLocalis || statusLocalis;
+								const diaryDiagnosisIcd10 = formData.passport.primaryDiagnosisIcd10 || diary?.assessmentIcd10Code || diagnosisIcd10;
+								const diaryTreatmentDescription = formData.generalTreatmentPlan || diary?.procedureProtocol || treatmentDescription;
+								const diaryTooth = diary?.toothNumber ? String(diary.toothNumber) : undefined;
+
+								const idempotencyKey =
+									typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+										? crypto.randomUUID()
+										: undefined;
+
+								const diaryRes = await fetch("/api/diaries", {
+									method: "POST",
+									headers: {
+										"Content-Type": "application/json",
+										...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+										...denteAdminSecretRequestHeaders(),
+									},
+									credentials: "same-origin",
+									body: JSON.stringify({
+										visitId: effectiveVisitId,
+										patientId: effectivePatientId,
+										complaint: diaryComplaint,
+										anamnesis: diaryAnamnesis,
+										statusLocalis: diaryStatusLocalis,
+										diagnosisIcd10: diaryDiagnosisIcd10 || undefined,
+										diagnosisTooth: diaryTooth,
+										treatmentDescription: diaryTreatmentDescription,
+										status: effectiveIsDraft ? "draft" : "signed",
+									}),
+								});
+
+								if (!diaryRes.ok && !effectiveIsDraft) {
+									const errJson = await diaryRes.json().catch(() => null);
+									console.warn("useMedicalRecordSave: ошибка сохранения дневника в /api/diaries", errJson);
+								}
 							}),
-						});
+						);
 					} catch (diaryPersistErr) {
 						console.warn("useMedicalRecordSave: ошибка персистентности в /api/diaries", diaryPersistErr);
 					}
 				}
 
+				const autosaveIdempotency =
+					typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+						? crypto.randomUUID()
+						: undefined;
+
 				const res = await fetch(`/api/visits/${effectiveVisitId}/draft/autosave`, {
 					method: "PUT",
 					headers: {
 						"Content-Type": "application/json",
+						...(autosaveIdempotency ? { "Idempotency-Key": autosaveIdempotency } : {}),
 						...denteAdminSecretRequestHeaders(),
 					},
 					credentials: "same-origin",

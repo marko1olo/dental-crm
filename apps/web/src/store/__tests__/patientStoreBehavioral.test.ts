@@ -27,7 +27,17 @@ describe("PatientStore Behavioral Tests — Cross-Store Synchronization & Drafts
 	it("1. changing selectedPatientId resets visit tooth states and completed services in visitStore", () => {
 		// Setup visit state for patient A
 		usePatientStore.getState().setSelectedPatientId("patient-alpha");
+		usePatientStore.getState().setPatientCoreDraft((p) => ({ ...p, fullName: "Пациент А" }));
+		usePatientStore.getState().setPatientCoreDirty(true);
 		useVisitStore.getState().setToothState("16", "caries");
+		useVisitStore.getState().setVisitNoteForm({
+			complaint: "Острая боль в зубе 16",
+			anamnesis: "Заболел вчера",
+			objectiveStatus: "Глубокая кариозная полость",
+			diagnosis: "K04.0 Пульпит",
+			treatmentPlan: "Эндодонтия 16",
+		});
+		useVisitStore.getState().setTranscript("Пациент жалуется на ночные боли...");
 		useVisitStore.getState().addCompletedService({
 			serviceId: "srv-caries",
 			title: "Лечение кариеса",
@@ -36,13 +46,24 @@ describe("PatientStore Behavioral Tests — Cross-Store Synchronization & Drafts
 
 		assert.equal(useVisitStore.getState().visitToothStateByCode["16"], "caries");
 		assert.equal(useVisitStore.getState().completedServices.length, 1);
+		assert.equal(useVisitStore.getState().visitNoteForm.complaint, "Острая боль в зубе 16");
+		assert.equal(useVisitStore.getState().transcript, "Пациент жалуется на ночные боли...");
+		assert.equal(usePatientStore.getState().patientCoreDraft.fullName, "Пациент А");
+		assert.equal(usePatientStore.getState().patientCoreDirty, true);
 
-		// Switch to patient B -> visitStore MUST be reset cleanly to prevent cross-patient contamination
+		// Switch to patient B -> visitStore and patient drafts MUST be reset cleanly to prevent cross-patient contamination (Mandate 8e)
 		usePatientStore.getState().setSelectedPatientId("patient-beta");
 
 		assert.equal(usePatientStore.getState().selectedPatientId, "patient-beta");
 		assert.equal(useVisitStore.getState().visitToothStateByCode["16"], undefined);
 		assert.equal(useVisitStore.getState().completedServices.length, 0);
+		assert.equal(useVisitStore.getState().visitNoteForm.complaint, "");
+		assert.equal(useVisitStore.getState().visitNoteForm.diagnosis, "");
+		assert.equal(useVisitStore.getState().transcript, "");
+		assert.equal(useVisitStore.getState().undoStack.length, 0);
+		assert.equal(useVisitStore.getState().redoStack.length, 0);
+		assert.equal(usePatientStore.getState().patientCoreDraft.fullName, "");
+		assert.equal(usePatientStore.getState().patientCoreDirty, false);
 	});
 
 	it("2. updates patient core draft and dirty state", () => {

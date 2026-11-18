@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
 import { imagingStudyHasFile } from "./types";
+import type { ToothUpdate } from "./xrayProtocol/types";
 
 export interface UseImagingAiAnalysisOptions {
 	selectedImagingStudy: any;
@@ -13,7 +14,7 @@ export function useImagingAiAnalysis({
 	auth,
 }: UseImagingAiAnalysisOptions) {
 	const [analysisByStudy, setAnalysisByStudy] = useState<
-		Record<string, { summary: string; toothUpdates: unknown[] }>
+		Record<string, { summary: string; toothUpdates: ToothUpdate[] }>
 	>({});
 	const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
 	const [enhancementOn, setEnhancementOn] = useState(false);
@@ -63,7 +64,13 @@ export function useImagingAiAnalysis({
 			}
 
 			const summary = typeof payload.analysisResult.summary === "string" ? payload.analysisResult.summary : "";
-			const toothUpdates = Array.isArray(payload.analysisResult.toothUpdates) ? payload.analysisResult.toothUpdates : [];
+			const toothUpdates: ToothUpdate[] = Array.isArray(payload.analysisResult.toothUpdates)
+				? payload.analysisResult.toothUpdates.map((item: any) => ({
+						code: String(item?.code ?? ""),
+						state: String(item?.state ?? ""),
+						diagnosisOrFinding: String(item?.diagnosisOrFinding ?? item?.diagnosis ?? ""),
+				  }))
+				: [];
 			setAnalysisByStudy((current) => ({
 				...current,
 				[studyId]: { summary, toothUpdates },
@@ -86,9 +93,11 @@ export function useImagingAiAnalysis({
 		analysisForSelected?.summary ??
 		(selectedImagingStudy?.aiSummary as string | undefined) ??
 		null;
-	const selectedStudyToothUpdates =
+	const selectedStudyToothUpdates: ToothUpdate[] | undefined =
 		analysisForSelected?.toothUpdates ??
-		(selectedImagingStudy?.aiToothUpdates as unknown[] | undefined);
+		(Array.isArray(selectedImagingStudy?.aiToothUpdates)
+			? (selectedImagingStudy.aiToothUpdates as ToothUpdate[])
+			: undefined);
 
 	return {
 		isAnalyzingAI,

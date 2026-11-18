@@ -8,10 +8,7 @@ import {
 	createDoctorClinicalOverride,
 	applyOrthopedicProtocolToVisit,
 } from "../orthopedicProtocols.js";
-import {
-	VisiographAnalyzer,
-	type XrayScan,
-} from "../../imaging/VisiographAnalyzer.js";
+import { DicomAiFindingsFooter } from "../../imaging/aiFindings/DicomAiFindingsFooter.js";
 import { AppLogicProvider } from "../../../contexts/AppLogicContext.js";
 
 const mockAppLogic = {
@@ -121,35 +118,22 @@ describe("Wave 41: Doctor Autonomy & Eradication of Locked Disabled States (Mand
 		});
 	});
 
-	describe("2. Visiograph Analyzer Clinical Autonomy (Mandate 8e)", () => {
+	describe("2. Radiology AI Findings Clinical Autonomy (Mandate 8e)", () => {
 		it("Кнопка применения находок ИИ к зубной формуле НЕ заблокирована", () => {
-			const mockScan: XrayScan = {
-				id: "scan-test-41",
-				patientId: "patient-test-41",
-				status: "done",
-				kind: "periapical",
-				toothCode: "16",
-				hasImage: true,
-				capturedAt: new Date().toISOString(),
-				createdAt: new Date().toISOString(),
-				aiReport:
-					"Контрольный прицельный снимок зуба 16: периапикальные ткани без патологических теней. Кариозных полостей не обнаружено.",
-				aiToothStates: { "16": "watch" },
-			};
-
 			const html = renderToString(
-				<AppLogicProvider value={mockAppLogic as any}>
-					<VisiographAnalyzer initialScan={mockScan} toothCode="16" />
-				</AppLogicProvider>,
+				<DicomAiFindingsFooter
+					isApplyingToChart={false}
+					onApplyFindingsToChart={() => {}}
+				/>,
 			);
 
 			assert.ok(
-				html.includes('data-testid="btn-apply-findings-to-chart"'),
+				html.includes('data-testid="btn-dicom-apply-findings"'),
 				"Кнопка применения находок ИИ к зубной формуле должна присутствовать в разметке",
 			);
 
 			const match = html.match(
-				/<button[^>]*data-testid="btn-apply-findings-to-chart"[^>]*>/,
+				/<button[^>]*data-testid="btn-dicom-apply-findings"[^>]*>/,
 			);
 			assert.ok(match, "Тег кнопки применения находок ИИ должен быть найден");
 			assert.ok(

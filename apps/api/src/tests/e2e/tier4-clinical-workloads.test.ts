@@ -34,10 +34,7 @@ import registerDiaryRoutes from "../../routes/diary.js";
 import { registerSberbankRoutes } from "../../routes/sberbank.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { authTokenSecret } from "../../security/authSecret.js";
-import {
-	computeDoctorPayout,
-	doctorPayouts,
-} from "../../services/finance/doctorPayouts.js";
+import { calculateDoctorPeriodPayroll } from "@dental/shared";
 import {
 	InsufficientStockError,
 	deductMaterialsForVisit,
@@ -633,55 +630,90 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 	// =========================================================================
 	// Scenario 3: Monthly Clinic Closeout with Doctor Commission Reconciliation
 	// =========================================================================
-	it("Scenario 3: Monthly closeout calculates doctor payroll across specialties, lab orders and consumables", () => {
-		// Doctor 1 (Therapy): 100,000 RUB revenue, 30% commission = 30,000; 5,000 materials (100% deduction) -> Payout = 25,000 RUB
-		const doc1 = computeDoctorPayout({
-			revenueRub: 100000,
-			materialCostRub: 5000,
-			materialMovements: 5,
-			commissionPct: 30,
-			materialDeductionPct: 100,
+	it("Scenario 3: Monthly closeout calculates doctor payroll across specialties, lab orders and consumables (SSOT in kopecks)", () => {
+		// Doctor 1 (Therapy): 100,000 RUB gross, 5,000 materials -> Net base = 95,000 RUB, 30% commission -> 28,500 RUB
+		const doc1 = calculateDoctorPeriodPayroll({
+			doctorId: "doc-1",
+			doctorName: "Терапевт",
+			specialtyId: "therapy",
+			periodStartIso: "2029-03-01",
+			periodEndIso: "2029-03-31",
+			services: [
+				{
+					id: "s1",
+					nameRu: "Терапия",
+					category: "therapy",
+					grossRevenueKop: 10000000,
+					labCostKop: 0,
+					materialCostKop: 500000,
+					doctorId: "doc-1",
+					isPaid: true,
+				},
+			],
+			customBasePercentage: 30,
 		});
-		assert.equal(doc1.state, "computed");
-		assert.equal(doc1.accruedRub, 30000);
-		assert.equal(doc1.withheldMaterialRub, 5000);
-		assert.equal(doc1.payoutRub, 25000);
+		assert.equal(doc1.totalGrossRevenueKop, 10000000);
+		assert.equal(doc1.totalMaterialDeductionsKop, 500000);
+		assert.equal(doc1.totalNetBaseKop, 9500000);
+		assert.equal(doc1.grossPayoutBeforeTaxKop, 2850000);
 
-		// Surgeon (Surgery): 200,000 RUB revenue, 25% commission = 50,000; 30,000 materials (50% deduction = 15,000) -> Payout = 35,000 RUB
-		const surgeon = computeDoctorPayout({
-			revenueRub: 200000,
-			materialCostRub: 30000,
-			materialMovements: 3,
-			commissionPct: 25,
-			materialDeductionPct: 50,
+		// Surgeon (Surgery): 200,000 RUB gross, 15,000 materials -> Net base = 185,000 RUB, 25% commission -> 46,250 RUB
+		const surgeon = calculateDoctorPeriodPayroll({
+			doctorId: "doc-2",
+			doctorName: "Хирург",
+			specialtyId: "surgery",
+			periodStartIso: "2029-03-01",
+			periodEndIso: "2029-03-31",
+			services: [
+				{
+					id: "s2",
+					nameRu: "Хирургия",
+					category: "surgery",
+					grossRevenueKop: 20000000,
+					labCostKop: 0,
+					materialCostKop: 1500000,
+					doctorId: "doc-2",
+					isPaid: true,
+				},
+			],
+			customBasePercentage: 25,
 		});
-		assert.equal(surgeon.state, "computed");
-		assert.equal(surgeon.accruedRub, 50000);
-		assert.equal(surgeon.withheldMaterialRub, 15000);
-		assert.equal(surgeon.payoutRub, 35000);
+		assert.equal(surgeon.totalGrossRevenueKop, 20000000);
+		assert.equal(surgeon.totalNetBaseKop, 18500000);
+		assert.equal(surgeon.grossPayoutBeforeTaxKop, 4625000);
 
-		// Orthopedist (Orthopedics): 300,000 RUB revenue, 20% commission = 60,000; 10,000 materials (100% = 10,000); 60,000 lab orders (30% = 18,000) -> Payout = 32,000 RUB
-		const ortho = computeDoctorPayout({
-			revenueRub: 300000,
-			materialCostRub: 10000,
-			materialMovements: 2,
-			commissionPct: 20,
-			materialDeductionPct: 100,
-			labCostRub: 60000,
-			labOrdersCount: 4,
-			labDeductionPct: 30,
+		// Orthopedist (Orthopedics): 300,000 RUB gross, 10,000 materials, 18,000 lab orders -> Net base = 272,000 RUB, 20% commission -> 54,400 RUB
+		const ortho = calculateDoctorPeriodPayroll({
+			doctorId: "doc-3",
+			doctorName: "Ортопед",
+			specialtyId: "orthopedics",
+			periodStartIso: "2029-03-01",
+			periodEndIso: "2029-03-31",
+			services: [
+				{
+					id: "s3",
+					nameRu: "Ортопедия",
+					category: "orthopedics",
+					grossRevenueKop: 30000000,
+					labCostKop: 1800000,
+					materialCostKop: 1000000,
+					doctorId: "doc-3",
+					isPaid: true,
+				},
+			],
+			customBasePercentage: 20,
 		});
-		assert.equal(ortho.state, "computed");
-		assert.equal(ortho.accruedRub, 60000);
-		assert.equal(ortho.withheldMaterialRub, 10000);
-		assert.equal(ortho.withheldLabRub, 18000);
-		assert.equal(ortho.payoutRub, 32000);
+		assert.equal(ortho.totalGrossRevenueKop, 30000000);
+		assert.equal(ortho.totalLabDeductionsKop, 1800000);
+		assert.equal(ortho.totalMaterialDeductionsKop, 1000000);
+		assert.equal(ortho.totalNetBaseKop, 27200000);
+		assert.equal(ortho.grossPayoutBeforeTaxKop, 5440000);
 
 		// Total clinic closeout validation
-		const totalRevenue = 100000 + 200000 + 300000; // 600,000 RUB
-		const totalDoctorPayouts = doc1.payoutRub + surgeon.payoutRub + ortho.payoutRub; // 25,000 + 35,000 + 32,000 = 92,000 RUB
-		assert.equal(totalRevenue, 600000);
-		assert.equal(totalDoctorPayouts, 92000);
+		const totalRevenueKop = doc1.totalGrossRevenueKop + surgeon.totalGrossRevenueKop + ortho.totalGrossRevenueKop;
+		const totalDoctorPayoutsKop = doc1.grossPayoutBeforeTaxKop + surgeon.grossPayoutBeforeTaxKop + ortho.grossPayoutBeforeTaxKop;
+		assert.equal(totalRevenueKop, 60000000); // 600,000 RUB
+		assert.equal(totalDoctorPayoutsKop, 12915000); // 129,150 RUB
 	});
 
 	// =========================================================================

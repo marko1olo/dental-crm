@@ -43,6 +43,7 @@ export const FinancialAndPlanningModals: React.FC<FinancialAndPlanningModalsProp
 			{/* Stage Payment & Milestone Escrow via Canonical TreatmentPlanStudioModal */}
 			{effectiveActiveModal === "stage_payment" && (
 				<TreatmentPlanStudioModal
+					key={activePatient?.id || "draft"}
 					isOpen={isStagePaymentModalOpen}
 					initialActiveTab="installment"
 					onClose={() => {
@@ -58,6 +59,7 @@ export const FinancialAndPlanningModals: React.FC<FinancialAndPlanningModalsProp
 			{/* Canonical 3-Tier Treatment Plan Presenter & Studio (Mandates 8e, 8n) */}
 			{effectiveActiveModal === "price_validator" && isPriceValidatorModalOpen && (
 				<TreatmentPlanStudioModal
+					key={activePatient?.id || "draft"}
 					isOpen={isPriceValidatorModalOpen}
 					onClose={() => {
 						setIsPriceValidatorModalOpen(false);

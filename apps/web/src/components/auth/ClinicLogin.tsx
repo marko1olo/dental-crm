@@ -23,8 +23,7 @@ import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 
 interface ClinicLoginProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	onLoginSuccess: (clinicProfile: any) => void;
+	onLoginSuccess: (clinicProfile: { id?: string; name?: string; email?: string; [key: string]: unknown }) => void;
 	onSwitchToUserLogin?: () => void;
 	onSwitchToDemoTour?: () => void;
 }
@@ -71,10 +70,10 @@ export function ClinicLogin({
 			safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, data.clinicToken);
 			showToast("Вход в рабочее пространство клиники выполнен", "success");
 			onLoginSuccess(data.clinicProfile);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
+		} catch (err: unknown) {
 			logger.error(err);
-			showToast(err.message || "Неверный логин или пароль клиники", "error");
+			const message = err instanceof Error ? err.message : "Неверный логин или пароль клиники";
+			showToast(message, "error");
 		} finally {
 			setLoading(false);
 		}

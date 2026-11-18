@@ -1,9 +1,14 @@
 import type {
+	DicomRenderCachePlanResponse,
+	DicomSeriesPreviewGroup,
+	DicomSeriesPreviewResponse,
+	DicomViewerLaunchManifestResponse,
 	DicomViewerWorkbenchManifestResponse,
+	DicomWebConnectorCheckResponse,
 	DicomWorkstationReadinessResponse,
 	MprWindowPreset,
 } from "@dental/shared";
-import type { ChangeEvent, CSSProperties, KeyboardEvent } from "react";
+import type { ChangeEvent, CSSProperties, KeyboardEvent, ReactNode } from "react";
 
 export type CbctWorkbenchPlane = { key: string; title: string; detail: string };
 export type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -11,8 +16,7 @@ export type InputChangeEvent = ChangeEvent<HTMLInputElement>;
 
 export interface DicomCapabilityHeaderProps {
 	capabilities: Array<{
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		icon: any;
+		icon: React.ComponentType<{ className?: string; size?: number | string; "aria-hidden"?: boolean | "true" | "false" }> | ReactNode;
 		title: string;
 		detail: string;
 		state: string;
@@ -22,10 +26,8 @@ export interface DicomCapabilityHeaderProps {
 export interface DicomSeriesLabPanelProps {
 	previewDicomSeries: () => void | Promise<void>;
 	isDicomSeriesPreviewLoading: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dicomSeriesPreview: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	seriesList: Array<any>;
+	dicomSeriesPreview: DicomSeriesPreviewResponse | null | undefined;
+	seriesList: DicomSeriesPreviewGroup[];
 	parserNotes: string[];
 	imagingKindLabels: Record<string, string>;
 	dicomSeriesViewerLabels: Record<string, string>;
@@ -61,12 +63,10 @@ export interface DicomMprVisualizerPanelProps {
 	};
 	mprWorkbenchSummaryText: string;
 	mprLinkedPlanesEnabled: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	mprNearestClinicalPreset: {
 		exact?: boolean;
 		label: string;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		deltas: any[];
+		deltas: unknown[];
 		title?: string;
 	};
 	applyNearestMprClinicalPreset: () => void;
@@ -111,18 +111,20 @@ export interface DicomMprControlPanelProps {
 	formatTime: (time: string | null) => string;
 	mprWorkbenchDraftRestored: boolean;
 	restoreMprWorkbenchLocalDraft: () => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	mprClinicalPresets: Array<any>;
+	mprClinicalPresets: Array<{
+		id: string;
+		title: string;
+		detail?: string | undefined;
+		projection: string;
+		[key: string]: unknown;
+	}>;
 	describeMprClinicalPresetProjectionFallback: (
 		projection: string,
 		projections: string[],
 		labels: Record<string, string>,
 	) => string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	mprClinicalPresetButtonClass: (preset: any) => string;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	applyMprClinicalPreset: (preset: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	mprClinicalPresetButtonClass: (preset: { id?: string; [key: string]: unknown }) => string;
+	applyMprClinicalPreset: (preset: { id?: string; [key: string]: unknown }) => void;
 	mprNearestClinicalPreset: {
 		exact?: boolean;
 		title?: string;
@@ -137,8 +139,7 @@ export interface DicomMprControlPanelProps {
 }
 
 export interface DicomOhifBridgePanelProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dicomViewerLaunchManifest: any;
+	dicomViewerLaunchManifest: DicomViewerLaunchManifestResponse | null | undefined;
 	dicomViewerLaunchModeLabels: Record<string, string>;
 	dicomWebEndpointUrl: string;
 	setDicomWebEndpointUrl: (url: string) => void;
@@ -146,8 +147,7 @@ export interface DicomOhifBridgePanelProps {
 	setOhifBaseUrl: (url: string) => void;
 	onResetEndpointState: () => void;
 	onResetOhifState: () => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	cbctWorkbenchSeries: any;
+	cbctWorkbenchSeries: DicomSeriesPreviewGroup | null | undefined;
 	isDicomWorkbenchBuilding: boolean;
 	buildDicomViewerWorkbenchManifest: () => void | Promise<void>;
 	dicomWorkbenchSeriesGuidanceId: string;
@@ -166,13 +166,10 @@ export interface DicomOhifBridgePanelProps {
 	buildDicomRenderCachePlan: () => void | Promise<void>;
 	isDicomRenderCachePlanning: boolean;
 	dicomWorkstationGuidanceId: string;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dicomWorkstationReadiness: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dicomWebCheck: any;
+	dicomWorkstationReadiness: DicomWorkstationReadinessResponse | unknown;
+	dicomWebCheck: DicomWebConnectorCheckResponse | null | undefined;
 	dicomWebStatusLabels: Record<string, string>;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dicomLabel: (dict: any, value: any, fallback: string) => string;
+	dicomLabel: (dict?: Record<string, string> | null | undefined, value?: unknown, fallback?: string) => string;
 }
 
 export interface DicomDiagnosticsPanelProps {
@@ -184,16 +181,17 @@ export interface DicomDiagnosticsPanelProps {
 	dicomDiagnosticPixelPolicyLabels: Record<string, string>;
 	dicomWorkbenchLocalSavedAt: string | null;
 	formatTime: (time: string | null) => string;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dicomWorkbenchServerBundle: any;
+	dicomWorkbenchServerBundle: {
+		serverSavedAt?: string | null | undefined;
+		[key: string]: unknown;
+	} | null | undefined;
 	dicomWorkbenchSourceIsRedacted: boolean;
 	saveDicomWorkbenchBundleToServer: () => void | Promise<void>;
 	isDicomWorkbenchServerSaving: boolean;
 	reconnectDicomWorkbenchFromCurrentFolder: () => void | Promise<void>;
 	imagingFolderPath: string;
 	isDicomWorkbenchReconnecting: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	restoreDicomWorkbenchServerBundle: (bundle: any) => void;
+	restoreDicomWorkbenchServerBundle: (bundle: unknown) => void;
 	downloadDicomWorkbenchManifest: () => void;
 	clearDicomWorkbenchRecovery: () => void;
 	typedDicomWorkstationReadiness: DicomWorkstationReadinessResponse | null;
@@ -202,10 +200,8 @@ export interface DicomDiagnosticsPanelProps {
 	dicomGpuClassLabels: Record<string, string>;
 	dicomExecutionLaneLabels: Record<string, string>;
 	dicomReadinessCheckLabels: Record<string, string>;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	typedDicomRenderCachePlan: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dicomLabel: (dict: any, value: any, fallback: string) => string;
+	typedDicomRenderCachePlan: DicomRenderCachePlanResponse | null;
+	dicomLabel: (dict?: Record<string, string> | null | undefined, value?: unknown, fallback?: string) => string;
 }
 
 export interface DicomServerConfigPreset {

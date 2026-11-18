@@ -1,0 +1,12 @@
+feat(copilot): complete clinical AI copilot & voice architecture inquisition
+
+- Architecture & Zero-Fake: validated 100% real Fastify API, PostgreSQL 18 & live ReAct harness without mock delays or setTimeout hacks.
+- Dual-Harness Runtime: Web CRM (16 clinical tools, Fastify API) vs Desktop Native OS (31 tools, file I/O, Romexis/Ez3D/Sidexis/3Shape app orchestration, COM/USB hardware).
+- Voice Everywhere: Google Gemini Live / Whisper STT priority, keyPool rotation, speech-key-health.json logging, seamless browser webkitSpeechRecognition fallback.
+- Copilot Settings & Autonomy: 3 trust levels (confirm_all, balanced, autonomous) with 5 granular auto-approve checkboxes.
+- Extended Thinking: Typing and CoT thought process indicators with live pulses and timers.
+- Session History & Threads: Multi-thread management, session switching, fulltext search, patient context pinning.
+- Apple HIG Mobile: 390x844 Bottom Sheet drawer with tactile drag handle (36x5px), touch targets >= 44x44px, Natural Thumb Zone.
+- Bug Remediation: Fixed undefined firstTooth in copilotDictationHandler.ts and Fastify route syntax in leadLifecycleRoutes.ts.
+- Mandate 8b: CopilotContextTelemetryBar.tsx strictly <= 200 lines (198 lines achieved).
+- Machine Gates & Proofs: 219 tests passing (10 ReAct harness + 209 web suite), check:encoding verified (23842 files), 6 fresh visual proofs captured & personally audited.

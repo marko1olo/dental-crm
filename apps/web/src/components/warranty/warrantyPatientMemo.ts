@@ -6,13 +6,14 @@
 
 import type { WarrantyCertificateData } from "./warrantyRemediationTypes.js";
 import { addMonthsToDate, formatRussianDate, formatShortDate } from "./warrantyDateUtils.js";
+import { calculateItemWarrantyTerms } from "./warrantyCalculation.js";
 
 export function generateWarrantyPatientMemo(data: WarrantyCertificateData): string {
 	const { patient, clinic, doctor, items, calculation, certificateId, issueDate, verificationUrl } = data;
 
 	const itemsSummary = items
 		.map((it) => {
-			const months = it.customWarrantyMonths ?? calculation.adjustedWarrantyMonths;
+			const { warrantyMonths: months } = calculateItemWarrantyTerms(it, calculation.totalRiskMultiplier);
 			const expDate = addMonthsToDate(issueDate, months);
 			return `• Зуб ${it.toothNumber}: ${it.clinicalWorkTitle} (${it.materialName}) — гарантия ${months} мес. (до ${formatShortDate(expDate)})`;
 		})

@@ -6,7 +6,7 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function run() {
 	const proofDir = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/pricelist");
-	const brainDir = path.resolve(process.env.ARTIFACT_DIR || "C:/Users/Admin/.gemini/antigravity/brain/51b2cadf-82fc-4d55-9156-bc6cfcd20363");
+	const brainDir = path.resolve(process.env.ARTIFACT_DIR || "C:/Users/Admin/.gemini/antigravity/brain/e48c63ac-450a-4577-a8bf-4babbd82e8aa");
 
 	for (const d of [proofDir, brainDir]) {
 		if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });

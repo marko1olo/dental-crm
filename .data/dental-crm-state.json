@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "savedAt": "2026-10-14T09:06:56.264Z",
+  "savedAt": "2026-11-15T23:33:00.969Z",
   "state": {
     "clinicProfile": {
       "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
@@ -657,7 +657,7 @@
         "administrativeProfile": null,
         "balanceRub": 0,
         "createdAt": "2026-10-09T16:23:48.438Z",
-        "updatedAt": "2026-10-09T16:23:48.447Z"
+        "updatedAt": "2026-11-15T23:33:00.708Z"
       },
       {
         "id": "fe736762-aef9-46c2-94d8-0ba5ea1bd11a",
@@ -1029,6 +1029,16 @@
     "importBatches": [],
     "auditEvents": [
       {
+        "id": "ce216af4-539f-4250-94da-62669d98fac7",
+        "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
+        "actorUserId": null,
+        "entityType": "patient",
+        "entityId": "3ebb4567-7777-4f19-8c23-2a78c9962796",
+        "action": "patient_core_updated",
+        "reason": "Core patient identity and contact facts updated for scheduling, documents, tax, and communication.",
+        "createdAt": "2026-11-15T23:33:00.709Z"
+      },
+      {
         "id": "a861db19-a2b3-4d61-996b-e14321c9a8d5",
         "organizationId": "4a3420d1-6ffb-4459-bd8f-7f7087f5e191",
         "actorUserId": null,
@@ -1283,5 +1293,5 @@
       "updatedAt": "2026-10-09T16:23:48.438Z"
     }
   },
-  "checksum": "cb36734e6ff4252fe8bdf4ca99c18a534dcba9490af21f74d6e64da43f7e19f8"
+  "checksum": "7c505aa677d99e29aa64c19a6d2cec52fdee8a1068942b9bc22c5569615ef2a9"
 }

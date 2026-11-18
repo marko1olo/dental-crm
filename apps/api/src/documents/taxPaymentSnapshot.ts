@@ -102,7 +102,7 @@ function baseTaxPaymentsForDocument(
 	if (taxDocumentUsesPaymentSnapshot(document.kind)) {
 		return selectedPaymentIds.size
 			? matchingPayments.filter((payment) => selectedPaymentIds.has(payment.id))
-			: [];
+			: matchingPayments;
 	}
 	const linkedPayments = matchingPayments.filter(
 		(payment) => payment.documentId === document.id,

@@ -350,7 +350,7 @@ export function documentPayloadConsistencyReason(
 			application.requestedForm === "knd_1151156" &&
 			application.requestedTaxYear < taxDeductionCertificateMinYear
 		) {
-			return "Заявление на налоговый вычет: КНД 1151156 доступна только для оплат с 2024 года.";
+			return "Заявление на налоговый вычет: Справка для налогового вычета (13% НДФЛ) доступна только для оплат с 2024 года.";
 		}
 		if (
 			application.requestedForm === "legacy_2021_2023" &&

@@ -371,6 +371,28 @@ describe("PostgreSQL Resiliency, Pool Watchdog & Idempotency Engine", () => {
 			assert.equal(recordedContexts[1].org, FIXTURE_ORG);
 			assert.equal(recordedContexts[1].clinic, FIXTURE_CLINIC);
 		});
+
+		test("reentrant execution inside withTenantCtx reuses ambient transaction without deadlocking pool", async (t) => {
+			if (!dbAvailable) return t.skip("Database is unavailable");
+
+			const initialWaiting = pool.waitingCount;
+
+			const result = await withTenantCtx(FIXTURE_ORG, async (_outerTx) => {
+				return await withResilientTransaction(async (innerTx) => {
+					const tenantRes = await innerTx.execute(
+						sql`SELECT current_setting('app.current_tenant', true) AS tenant`,
+					);
+					// Verify we are on the same connection and tenant is set
+					// biome-ignore lint/suspicious/noExplicitAny: test query
+					const tenant = (tenantRes as any).rows?.[0]?.tenant;
+					return { tenant, sameClient: innerTx !== undefined };
+				});
+			});
+
+			assert.equal(result.tenant, FIXTURE_ORG);
+			assert.equal(result.sameClient, true);
+			assert.equal(pool.waitingCount, initialWaiting);
+		});
 	});
 
 	// =========================================================================

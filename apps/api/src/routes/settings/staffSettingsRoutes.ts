@@ -22,7 +22,10 @@ import {
 } from "../../db/settingsQuery.js";
 import { grantStaffAuthorityInDb } from "../../db/staffAuthorityQuery.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { requirePermission } from "../../security/permissions.js";
+import {
+	invalidateRoleMatrixCache,
+	requirePermission,
+} from "../../security/permissions.js";
 import { hashCredential } from "../../utils/cryptoHelper.js";
 import {
 	parseSettingsPayload,
@@ -534,6 +537,8 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 				updatedAt: new Date(),
 			})
 			.where(eq(schema.organizations.id, orgId));
+
+		invalidateRoleMatrixCache(orgId);
 
 		return reply.send({ ok: true, matrix: updatedOverrides });
 	});

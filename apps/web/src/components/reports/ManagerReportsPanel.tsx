@@ -61,7 +61,17 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 	const scheduleMargins = useMemo(() => computeScheduleMargins(scheduleLoad.data), [scheduleLoad.data]);
 
 	const handleExportCsv = () => triggerCsvDownload(generateManagerReportsCsv({ period: { from, to }, summary, services: services.data, receivables: debtors.data, scheduleLoad: scheduleLoad.data }), `dente_report_${from}_${to}.csv`);
-	const handleEveningSummary = () => { const text = formatEveningZReportText(summary, { from, to }, appLogic?.auth?.clinic?.name); void navigator.clipboard?.writeText(text); alert("Вечерний Z-отчёт скопирован!"); };
+	const handleEveningSummary = () => {
+		const text = formatEveningZReportText(summary, { from, to }, appLogic?.auth?.clinic?.name);
+		void navigator.clipboard?.writeText(text);
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente:toast", {
+					detail: { message: "Вечерний отчёт скопирован в буфер обмена", type: "success" },
+				}),
+			);
+		}
+	};
 
 	return (
 		<section className="panel ops-panel" data-testid="manager-reports-panel">
@@ -80,13 +90,14 @@ export function ManagerReportsPanel({ clinicMode = null }: ManagerReportsPanelPr
 						type="button"
 						onClick={() => {
 							if (typeof window !== "undefined") {
-								window.location.hash = "#analytics";
+								window.dispatchEvent(new CustomEvent("dente:open-executive-studio"));
 								window.dispatchEvent(new CustomEvent("dente:open-analytics"));
+								window.location.hash = "#executive-studio";
 							}
 						}}
 						className="h-9 px-3.5 rounded-xl bg-[var(--primary)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center gap-1.5 shrink-0"
 					>
-						<span>Открыть дашборд руководителя</span>
+						<span>Открыть студию руководителя</span>
 					</button>
 				</div>
 			)}

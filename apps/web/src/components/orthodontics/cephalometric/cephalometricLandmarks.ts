@@ -50,6 +50,7 @@ export interface CephalometricMeasurement {
 	status: "normal" | "deviation_high" | "deviation_low" | "unmeasured";
 	clinicalInterpretation: string;
 	category: "skeletal_sagittal" | "skeletal_vertical" | "dental_upper" | "dental_lower" | "interincisal";
+	readonly symbol?: string | undefined;
 }
 
 export interface CephalometricDiagnosis {

@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import type { AppView } from "../../../utils/routeUtils";
 import {
 	CLINICAL_QUEST_TRACKS,
 	type QuestProgressState,
@@ -17,7 +18,7 @@ export interface UseTourActionsParams {
 	readonly setIsOpen: (open: boolean) => void;
 	readonly currentStepIndex: number;
 	readonly currentStep: QuestStep;
-	readonly setCurrentView: (view: string) => void;
+	readonly setCurrentView: (view: AppView) => void;
 	readonly onComplete?: (() => void) | undefined;
 	readonly onClose?: (() => void) | undefined;
 }

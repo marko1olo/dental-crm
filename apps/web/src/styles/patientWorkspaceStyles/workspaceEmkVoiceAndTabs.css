@@ -1,0 +1,69 @@
+/* Patient Workspace: EMK Voice Pilot HUD & Tab Buttons */
+.emk-voice-pilot-hud {
+	margin: 0 !important;
+	border-radius: 8px !important;
+}
+
+.emk-voice-pilot-hud.emk-voice-pilot-collapsed {
+	border: none !important;
+	background: transparent !important;
+	padding: 0 !important;
+}
+
+.emk-voice-pilot-hud:not(.has-content):not(.emk-voice-pilot-collapsed) {
+	height: auto !important;
+	max-height: none !important;
+}
+
+.emk-voice-pilot-hud > div:first-child {
+	min-height: 32px !important;
+	padding: 0 !important;
+}
+
+.emk-voice-pilot-hud button {
+	min-height: 32px !important;
+	height: 32px !important;
+	box-sizing: border-box !important;
+}
+
+.emk-tab-button {
+	background: transparent;
+	border: 1px solid transparent;
+	color: var(--muted);
+	padding: 0 10px;
+	height: 28px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	transition: all 0.15s ease;
+	cursor: pointer;
+	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+.emk-tab-button:hover {
+	background: color-mix(in srgb, var(--paper) 60%, transparent);
+	color: var(--ink);
+	border-color: transparent;
+}
+
+.emk-tab-button.active {
+	background: var(--paper) !important;
+	border-color: var(--line) !important;
+	color: var(--ink) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+	font-weight: 600 !important;
+	border-radius: 6px !important;
+}
+
+.emk-tab-dot {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: currentColor;
+	opacity: 0.8;
+	margin-left: 2px;
+}

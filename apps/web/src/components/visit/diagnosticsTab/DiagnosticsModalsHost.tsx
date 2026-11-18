@@ -53,7 +53,7 @@ export interface DiagnosticsModalsHostProps {
 	patientStudies: DiagnosticStudy[];
 	photoAttachments: ClinicalPhotoAttachment[];
 	setPhotoAttachments: React.Dispatch<React.SetStateAction<ClinicalPhotoAttachment[]>>;
-	onInsertToProtocol?: (text: string) => void;
+	onInsertToProtocol?: ((text: string) => void) | undefined;
 
 	// Modal states & setters
 	isCephModalOpen: boolean;
@@ -70,15 +70,15 @@ export interface DiagnosticsModalsHostProps {
 	setIsDirectRvgModalOpen: (open: boolean) => void;
 	isDicomViewerModalOpen: boolean;
 	setIsDicomViewerModalOpen: (open: boolean) => void;
-	selectedDicomImageSrc?: string;
+	selectedDicomImageSrc?: string | undefined;
 	setSelectedDicomImageSrc: (src?: string) => void;
 	selected3DScanModelUrl: string | null;
 	setSelected3DScanModelUrl: (url: string | null) => void;
-	selected3DScanTitle?: string;
+	selected3DScanTitle?: string | undefined;
 	isHotFolderModalOpen: boolean;
 	setIsHotFolderModalOpen: (open: boolean) => void;
-	isComparisonModalOpen?: boolean;
-	setIsComparisonModalOpen?: (open: boolean) => void;
+	isComparisonModalOpen?: boolean | undefined;
+	setIsComparisonModalOpen?: ((open: boolean) => void) | undefined;
 }
 
 export function DiagnosticsModalsHost({
@@ -139,7 +139,7 @@ export function DiagnosticsModalsHost({
 					isOpen={isRadiologyModalOpen}
 					onClose={() => setIsRadiologyModalOpen(false)}
 					patient={activePatient}
-					diary={EMPTY_DIARY}
+					diary={undefined}
 					doctorName={ctx?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
 				/>
@@ -206,10 +206,10 @@ export function DiagnosticsModalsHost({
 						.filter((s) => s.previewUrl || s.viewerUrl)
 						.map((s) => ({
 							imageUrl: (s.previewUrl || s.viewerUrl)!,
-							toothFdi: s.toothCode || undefined,
 							modalityLabel: s.kind === "cbct" ? "3D КЛКТ" : s.kind === "cephalometric" ? "ТРГ" : "Рентген RVG",
 							dapDoseDgyCm2: (s.effectiveDoseMicrosv || 2) * 0.05,
-							capturedAt: s.capturedAt,
+							...(s.toothCode ? { toothFdi: s.toothCode } : {}),
+							...(s.capturedAt ? { capturedAt: s.capturedAt } : {}),
 						}))}
 				/>
 			)}

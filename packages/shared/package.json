@@ -66,6 +66,11 @@
 			"import": "./dist/hardware/index.js",
 			"default": "./dist/hardware/index.js"
 		},
+		"./geometry": {
+			"types": "./dist/geometry/index.d.ts",
+			"import": "./dist/geometry/index.js",
+			"default": "./dist/geometry/index.js"
+		},
 		"./inventory/consumables": {
 			"types": "./dist/inventory/consumables.d.ts",
 			"import": "./dist/inventory/consumables.js",

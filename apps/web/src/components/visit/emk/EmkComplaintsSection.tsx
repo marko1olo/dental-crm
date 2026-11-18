@@ -53,10 +53,10 @@ export function EmkComplaintsSection({
 				<DebouncedEmkTextarea
 					fieldKey="complaint"
 					label="Жалобы пациента"
-					value={visitNoteForm?.complaint || visitNoteForm?.complaints || ""}
+					value={String(visitNoteForm?.complaint || visitNoteForm?.complaints || "")}
 					onCommit={(key, val) => {
-						updateVisitNoteField(key, val);
-						updateVisitNoteField("complaints", val);
+						updateVisitNoteField?.(key, val);
+						updateVisitNoteField?.("complaints", val);
 					}}
 					placeholder="Опишите жалобы пациента (характер боли, локализация, провоцирующие факторы)..."
 					className="w-full min-h-[115px] sm:min-h-[85px] p-3 pb-5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
@@ -90,8 +90,8 @@ export function EmkComplaintsSection({
 				<DebouncedEmkTextarea
 					fieldKey="anamnesis"
 					label="Анамнез"
-					value={visitNoteForm?.anamnesis || ""}
-					onCommit={updateVisitNoteField}
+					value={String(visitNoteForm?.anamnesis || "")}
+					onCommit={(key, val) => updateVisitNoteField?.(key, val)}
 					placeholder="История настоящего заболевания, перенесенные соматические заболевания, аллергологический статус..."
 					className="w-full min-h-[115px] sm:min-h-[85px] p-3 pb-5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>

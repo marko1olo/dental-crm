@@ -25,7 +25,7 @@ export const StageFooterStatusPicker: React.FC<StageFooterStatusPickerProps> = (
 }) => {
 	return (
 		<>
-			<div className="px-2.5 py-1 text-[11.5px] font-semibold text-[var(--muted,#64748b)] uppercase tracking-wider">
+			<div className="px-2.5 py-1 text-[11.5px] font-semibold text-[var(--muted,#64748b)]">
 				Статус этапа:
 			</div>
 			{STAGE_STATUS_KEYS.map((st) => {

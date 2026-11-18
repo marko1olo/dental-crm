@@ -10,7 +10,6 @@ import {
 	evaluateLaunchersRegistry,
 } from "./deepLinkMatcher";
 import { clearUrlTokens } from "./deepLinkUrl";
-import { DirectVisitLauncher } from "../../../visit/DirectVisitLauncher";
 import { EmkComplaintsSection } from "../../../visit/emk/EmkComplaintsSection";
 import { StandaloneEmrMedicalRecordHost } from "./clinical/StandaloneEmrMedicalRecordHost";
 import { StandaloneClinicalTemplatesHost } from "./clinical/StandaloneClinicalTemplatesHost";
@@ -51,7 +50,13 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				],
 				hashIncludes: ["visit_standalone", "chairside-visit"],
 			},
-			render: () => <DirectVisitLauncher />,
+			render: () => {
+				const appState = useAppStore.getState();
+				if (appState.currentView !== "visit") {
+					appState.setCurrentView("visit");
+				}
+				return null;
+			},
 		},
 
 		// 2. Жалобы и первичный анамнез пациента

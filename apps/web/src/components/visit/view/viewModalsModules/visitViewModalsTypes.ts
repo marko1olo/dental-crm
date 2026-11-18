@@ -5,66 +5,20 @@
  */
 
 import type { ToothStateRecord } from "../fastPrintModules/fastPrintTypes";
+import type {
+	VisitPatientEntity,
+	VisitDoctorEntity,
+	VisitDashboardEntity,
+	VisitAppointmentEntity,
+	VisitLoadedTreatmentPlan,
+	VisitNoteFormExtended,
+} from "../VisitViewProps";
+import type { Dashboard } from "@dental/shared";
 
-export interface VisitModalPatientEntity {
-	readonly id?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly fullName?: string | undefined;
-	readonly name?: string | undefined;
-	readonly cardNumber?: string | undefined;
-	readonly medCardNumber?: string | undefined;
-	readonly medicalCardNumber?: string | undefined;
-	readonly birthDate?: string | undefined;
-	readonly phone?: string | undefined;
-	readonly snils?: string | undefined;
-	readonly address?: string | undefined;
-	readonly passport?: string | undefined;
-	readonly allergies?: readonly string[] | string | undefined;
-	readonly chronicDiseases?: readonly string[] | string | undefined;
-	readonly [key: string]: unknown;
-}
-
-export interface VisitModalDoctorEntity {
-	readonly id?: string | undefined;
-	readonly userId?: string | undefined;
-	readonly fullName?: string | undefined;
-	readonly name?: string | undefined;
-	readonly specialty?: string | undefined;
-	readonly snils?: string | undefined;
-	readonly [key: string]: unknown;
-}
-
-export interface VisitModalAppointmentEntity {
-	readonly id?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly patientName?: string | undefined;
-	readonly doctorId?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly startTime?: string | undefined;
-	readonly startAt?: string | undefined;
-	readonly date?: string | undefined;
-	readonly treatmentPlanId?: string | undefined;
-	readonly stageId?: string | undefined;
-	readonly stageNumber?: number | undefined;
-	readonly stageTitle?: string | undefined;
-	readonly status?: string | undefined;
-	readonly [key: string]: unknown;
-}
-
-export interface VisitModalDashboardEntity {
-	readonly organization?: {
-		readonly id?: string | undefined;
-		readonly name?: string | undefined;
-		readonly [key: string]: unknown;
-	} | undefined;
-	readonly clinicSettings?: Record<string, unknown> | undefined;
-	readonly activeVisit?: {
-		readonly id?: string | undefined;
-		readonly patientId?: string | undefined;
-		readonly [key: string]: unknown;
-	} | undefined;
-	readonly [key: string]: unknown;
-}
+export type VisitModalPatientEntity = VisitPatientEntity;
+export type VisitModalDoctorEntity = VisitDoctorEntity;
+export type VisitModalAppointmentEntity = VisitAppointmentEntity;
+export type VisitModalDashboardEntity = VisitDashboardEntity;
 
 export interface VisitModalNoteFormEntity {
 	readonly diagnosis?: string | undefined;
@@ -81,11 +35,17 @@ export interface VisitModalNoteFormEntity {
 export interface VisitModalTreatmentPlanEntity {
 	readonly id?: string | undefined;
 	readonly title?: string | undefined;
+	readonly status?: string | undefined;
+	readonly items?: readonly unknown[] | undefined;
 	readonly [key: string]: unknown;
 }
 
 export interface VisitViewModalsProps {
-	loadedTreatmentPlan?: VisitModalTreatmentPlanEntity | null | undefined;
+	loadedTreatmentPlan?:
+		| VisitModalTreatmentPlanEntity
+		| VisitLoadedTreatmentPlan
+		| null
+		| undefined;
 	isVisiographComparisonModalOpen?: boolean | undefined;
 	setIsVisiographComparisonModalOpen?: ((v: boolean) => void) | undefined;
 	endoModalToothNumber: string | number | null;
@@ -107,7 +67,12 @@ export interface VisitViewModalsProps {
 	setIsEmergencyModalOpen: (v: boolean) => void;
 	isVoiceDictationModalOpen: boolean;
 	setIsVoiceDictationModalOpen: (v: boolean) => void;
-	selectedToothForMenu: string | number | null | undefined;
+	selectedToothForMenu?:
+		| { code: string; label?: string | undefined; state?: string | undefined }
+		| string
+		| number
+		| null
+		| undefined;
 	isWarrantyModalOpen: boolean;
 	setIsWarrantyModalOpen: (v: boolean) => void;
 	isDoctorShiftModalOpen: boolean;
@@ -116,12 +81,17 @@ export interface VisitViewModalsProps {
 	setIsInformedConsentModalOpen: (v: boolean) => void;
 	isPrescriptionModalOpen?: boolean | undefined;
 	setIsPrescriptionModalOpen?: ((v: boolean) => void) | undefined;
-	activePatient: VisitModalPatientEntity | null | undefined;
-	activeDoctor: VisitModalDoctorEntity | null | undefined;
-	dashboard: VisitModalDashboardEntity | null | undefined;
-	patientAge?: string | null | undefined;
+	activePatient?: VisitPatientEntity | null | undefined;
+	activeDoctor?: VisitDoctorEntity | null | undefined;
+	dashboard?: VisitDashboardEntity | undefined;
+	patientAge?: string | number | null | undefined;
 	appendToEMKField: (field: string, text: string) => void;
-	setToothState: (code: string, state: string | ToothStateRecord | Record<string, unknown>) => void;
-	visitNoteForm: VisitModalNoteFormEntity | null | undefined;
-	activeAppointment: VisitModalAppointmentEntity | null | undefined;
+	setToothState: (code: string, state: string) => void;
+	visitNoteForm?:
+		| VisitModalNoteFormEntity
+		| VisitNoteFormExtended
+		| Record<string, unknown>
+		| null
+		| undefined;
+	activeAppointment?: VisitAppointmentEntity | null | undefined;
 }

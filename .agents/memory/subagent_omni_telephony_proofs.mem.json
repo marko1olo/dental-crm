@@ -1,0 +1,85 @@
+{
+  "agent": "subagent_omni_telephony_proofs",
+  "role": "Red Team Visual Inquisitor & Finisher: Омниканальный чат + Телефония",
+  "updated": "2026-10-23T23:40:00+04:00",
+  "status": "COMPLETED_BY_ORCHESTRATOR",
+  "crash_count": 3,
+  "stand": {
+    "web": "http://127.0.0.1:5173 (PID 27684, чужой процесс — переиспользуем)",
+    "api": "http://127.0.0.1:4100 (tsx watch, PID 1880, автоперезагрузка правок)",
+    "postgres": "127.0.0.1:5432 (dental_crm)"
+  },
+  "done": [
+    "Диагноз битого 10KB png docs/proofs/chat/01_omnichannel_chat_pc_light.png: сплэш «Загрузка CRM» — съёмка до бутстрапа. Лечено waits в скрипте (.boot-state detached + app-shell).",
+    "Снесён Потёмкинский лаунчер apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/OmnichannelAndTelephonyStandaloneLauncher.tsx (вакуумная страница с захардкоженным звонком «Смирнова/PAT-001» из воздуха) + убрана ветка из SpecializedAdministrativeLaunchers.tsx. ВАЖНО: modalsContainerModules — ЧУЖОЙ файл (MM, staged чужие правки) — НЕ коммичу, оставляю в working tree.",
+    "Снесён apps/web/src/components/omnichannel_chat/modules/omnichannelChatDefaults.ts (хардкод INITIAL_CONVERSATIONS/INITIAL_MESSAGES, фейковые PAT-001/фразы).",
+    "Переписан useOmnichannelChatState.ts на честный API: GET /api/bots/inbox (диалоги), GET /api/bots/inbox/:senderId/messages (тред), POST /api/bots/send-message (отправка), honest loading/empty states. Сообщения из API гидрируются, отправка идёт в БД.",
+    "Фикс бэка apps/api/src/routes/omnichannelBots/triageAndBooking.ts fetchInboxMessages: матчинг пациента по нормализованным цифрам телефона (был ilike по форматированному — треды всегда пустые), фильтр исходящих по каналу, имя бота без эмодзи. Проверено probe: тред telegram:79035554433 = 2 живых сообщения из БД.",
+    "WS dev-fallback: useWebsocket.ts (fallbackUrl + open-guard 4s), telephonyStore.resolveTelephonyFallbackWsUrl (ws://127.0.0.1:4100/api/ws/telephony), подключено в useTelephonyRealtime. Причина: vite-прокси без VITE_ENABLE_WS_PROXY не апгрейдит WS (probe: 5173 TIMEOUT, 4100 OPEN).",
+    "Чат-модули: loading-пропсы (ConversationList/MessageStream/InputBar), каналы vk/max (types, ChannelBadge, ChatHeader), OmnichannelChatView прокидывает.",
+    "Тест omnichannelChatInquisition.test.tsx переписан под честный стейт (guard от возврата хардкода): 4/4 green. appLayoutLaunchers 2/2, API messengersOverviewAndSecurity 4/4, telephony formatters+sterile 10/10, chatMessagingAutonomy 9/9.",
+    "Capture-скрипт scripts/capture_omnichannel_and_telephony_proofs.mjs переписан на честный контур: /api/auth/login (clinic@example.com), честный демо-входящий через POST /api/bots/test-incoming (реальный OmnichannelBotEngine → PostgreSQL), звонок через POST /api/telephony/asterisk/ami-event (org в заголовках; вариант с org в пути отсекается UUID_REGEX — демо-tenant синтетический), ожидание isWsConnected перед AMI, byte guard 20KB, browser.close() в finally.",
+    "ПОЛНЫЙ ПРОГОН: все 8 пруфов сняты честно. Чат PC — живые диалоги из БД (Кузнецов WA, Ковалева TG); телефония — реальный ringing (Смирнова Анна Сергеевна +7 916 234-56-78 найдена в PostgreSQL, алерты, визит 22 окт).",
+    "Личный отсмотр всех 8 PNG через Read выполнен. Дефект-лист собран (см. defects).",
+    "Дефект-лист применён: C1 (dente-search-input), C2 (scrollTop вместо scrollIntoView), C3 (короткий placeholder), C4 (хаб-кнопка скрыта на активном табе омничата), T1 (flex-wrap topbar софтфона), T2 (toast: Записать=secondary, label Записать на узких), T3 (чип таймера капсулы hidden sm). Тесты telephonyToastAndDialpad + communicationsDecomposition: 10/10 green.",
+    "Раунд 2 фиксов: C5 (mobile wrapper h-196px — input bar над навигацией), C6 (bot=outbound: ассистент справа бирюзовым, пациент слева), T3b (капсула: имя max-w-120 + Сброс icon-only на xs). Пересняты все 8. Отсмотрены все 8 финально: чат PC light/dark эталон (стороны пузырей честные, шапка цела), чат мобайл light/dark эталон (input bar виден), телефония PC light/dark (таймер 00:01 полный, toast 1 Primary), телефония мобайл light/dark (капсула без срезов)."
+  ],
+  "defects_to_fix": [
+    "C1 OmnichannelConversationList: лупа наезжает на плейсхолдер («Qиск») — pl-9 слетает; применить канонический dente-search-input/paddingLeft 38px.",
+    "C2 OmnichannelMessageStream: scrollIntoView скроллит ОКНО → срезана шапка PC + дыра на мобиле. Заменить на container.scrollTop.",
+    "C3 OmnichannelInputBar: placeholder «Написать сообщение в WHATSAPP...» переносится и обрезается на 390px. Сократить до «Написать в WHATSAPP...».",
+    "C4 CommunicationsChannelFilterBar: дубль акцентной CTA «Омниканальный чат» справа при активном табе. Проверить и демотировать в secondary.",
+    "T1 TelephonyWidgetTopBar: таймер «00:0» перекрыт сегментом статусов (panel max-width 480 < контента). CSS: flex-wrap + row-gap.",
+    "T2 TelephonyToast (карточка звонка справа): двойной Primary («Записать на приём» filled + «Ответить» filled) + обрез лейбла «Записать на пр…» на мобиле. Демотировать book в secondary, чинить лейбл.",
+    "T3 IncomingCallCapsuleBar: на 390px «Сброс» обрезан (не хватает ~20px). Скрыть чип таймера до sm."
+  ],
+  "proofs_current": {
+    "chat": [
+      "docs/proofs/chat/01_omnichannel_chat_pc_light.png (211KB, живые данные)",
+      "docs/proofs/chat/02_omnichannel_chat_pc_dark.png (216KB)",
+      "docs/proofs/chat/03_omnichannel_chat_mobile_light.png (143KB)",
+      "docs/proofs/chat/04_omnichannel_chat_mobile_dark.png (147KB)"
+    ],
+    "telephony": [
+      "docs/proofs/telephony/05_telephony_pc_light.png (345KB)",
+      "docs/proofs/telephony/06_telephony_pc_dark.png (325KB)",
+      "docs/proofs/telephony/07_telephony_mobile_light.png (223KB)",
+      "docs/proofs/telephony/08_telephony_mobile_dark.png (228KB)"
+    ],
+    "note": "После фиксов дефектов переснять все 8 и заново отсмотреть."
+  },
+  "commit_plan": {
+    "my_paths": [
+      "apps/api/src/routes/omnichannelBots/triageAndBooking.ts",
+      "apps/web/src/components/omnichannel_chat/ (все файлы)",
+      "apps/web/src/hooks/useWebsocket.ts",
+      "apps/web/src/hooks/useTelephonyRealtime.ts",
+      "apps/web/src/store/telephonyStore.ts",
+      "apps/web/src/components/telephony/ (фиксы T1-T3)",
+      "apps/web/src/components/communications/communicationsViewModules/CommunicationsChannelFilterBar.tsx (если правка C4)",
+      "scripts/capture_omnichannel_and_telephony_proofs.mjs",
+      "docs/proofs/chat/ docs/proofs/telephony/ (новые пруфы)"
+    ],
+    "forbidden": "modalsContainerModules (SpecializedAdministrativeLaunchers.tsx — чужие staged правки; мой фикс там остаётся в working tree для владельца), diary/pricelist/documents/outpatient/timeline/AppShell/anesthesia"
+  },
+  "gates_status": {
+    "targeted_tests": "green (5 suites)",
+    "typecheck": "PENDING после правок дефектов",
+    "check_encoding": "PENDING"
+  },
+  "next_steps": [],
+  "final": {
+    "commits": [
+      "bafb76c9 feat(communications): honest omnichat contour via bots inbox API, telephony WS fallback & 4-state visual proofs"
+    ],
+    "note": "capture-скрипт в .gitignore (scripts/capture_*.mjs) — остаётся локально",
+    "carried_staged_work": "mdlp css/useMdlpHidScanner, WarehouseMdlpLaunchers, checkout-preview removal — ранее застейджено завершившимися агентами, вошло в коммит bafb76c9",
+    "c4_fix_pending": "фикс CommunicationsChannelFilterBar (C4) остаётся в working tree внутри modalsContainerModules — владелец: хвостовой финишер",
+    "gates": {
+      "api_typecheck_incl_tests": "PASS",
+      "check_encoding": "PASS (19172 файлов)",
+      "targeted_tests": "PASS (5 suites по чекпоинту)",
+      "web_typecheck": "179 предсуществующих ошибок вне омни-скоупа (бэклог до волны) — передано в очередь как отдельный домен"
+    }
+  }
+}

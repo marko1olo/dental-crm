@@ -60,11 +60,11 @@ const CbctStandaloneStudioView = React.lazy(() =>
 const CephStandaloneStudioView = React.lazy(() =>
 	import("./components/radiology/CephalometricAnalysisModal").then((m) => ({
 		default: (props: {
-			patientId?: string;
-			patientName?: string;
-			initialImageUrl?: string;
-			initialStudioMode?: string;
-			autoLoadDemo?: boolean;
+			patientId?: string | undefined;
+			patientName?: string | undefined;
+			initialImageUrl?: string | undefined;
+			initialStudioMode?: string | undefined;
+			autoLoadDemo?: boolean | undefined;
 		}) => (
 			<m.CephalometricAnalysisModal
 				isOpen={true}
@@ -113,6 +113,11 @@ const OrthopedicStudioStandaloneView = React.lazy(() =>
 		default: m.DirectOrthopedicsLauncher,
 	})),
 );
+const SurgeryStudioStandaloneView = React.lazy(() =>
+	import("./components/surgery/DirectSurgeryLauncher").then((m) => ({
+		default: m.DirectSurgeryLauncher,
+	})),
+);
 const WaitlistStandaloneView = React.lazy(() =>
 	import("./components/schedule/DirectWaitlistMatchesLauncher").then((m) => ({
 		default: m.DirectWaitlistMatchesLauncher,
@@ -138,11 +143,6 @@ const PayrollStandaloneStudioView = React.lazy(() =>
 		default: m.DirectPayrollLauncher,
 	})),
 );
-const DoctorPayrollReportStandaloneView = React.lazy(() =>
-	import("./components/analytics/DirectDoctorPayrollReportLauncher").then((m) => ({
-		default: m.DirectDoctorPayrollReportLauncher,
-	})),
-);
 const ChairsideHudStandaloneView = React.lazy(() =>
 	import("./components/copilot/ChairsideCopilotHUD").then((m) => ({
 		default: () => {
@@ -158,7 +158,7 @@ const ChairsideHudStandaloneView = React.lazy(() =>
 						<m.ChairsideCopilotHUD
 							initialOpen={true}
 							initialDocked={true}
-							initialPresetIndex={null}
+							initialPresetIndex={undefined}
 							activeTooth={toothFromQuery}
 							patientName={patientNameFromQuery || "Пациент не выбран"}
 							patientAllergies={[]}
@@ -590,7 +590,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -626,7 +626,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -664,7 +664,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -673,6 +673,46 @@ if (publicPortalRoute) {
 					}
 				>
 					<OrthopedicStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=surgery") ||
+		window.location.search.includes("standalone=surgery") ||
+		window.location.search.includes("surgery=1") ||
+		window.location.search.includes("implant=1") ||
+		window.location.search.includes("extraction=1") ||
+		window.location.hash === "#surgery" ||
+		window.location.hash === "#implant" ||
+		window.location.hash === "#extraction" ||
+		window.location.hash === "#surgery-studio" ||
+		window.location.hash.startsWith("#surgery?") ||
+		window.location.hash.startsWith("#implant?") ||
+		window.location.hash.startsWith("#surgery/"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка хирургического хаба...
+						</div>
+					}
+				>
+					<SurgeryStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
@@ -709,7 +749,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -744,7 +784,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -777,7 +817,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -814,7 +854,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -889,7 +929,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -907,13 +947,22 @@ if (publicPortalRoute) {
 	typeof window !== "undefined" &&
 	(window.location.search.includes("stand=payroll") ||
 		window.location.search.includes("standalone=payroll") ||
+		window.location.search.includes("stand=doctor-payroll-report") ||
+		window.location.search.includes("standalone=doctor-payroll-report") ||
 		window.location.search.includes("payroll=1") ||
 		window.location.search.includes("doctor_payroll=1") ||
 		window.location.search.includes("doctor-payroll=1") ||
+		window.location.search.includes("executive_payroll=1") ||
+		window.location.search.includes("assistant_payroll=1") ||
 		window.location.hash === "#payroll" ||
 		window.location.hash === "#doctor-payroll" ||
+		window.location.hash === "#doctor-payroll-report" ||
+		window.location.hash === "#executive-payroll" ||
+		window.location.hash === "#assistant-payroll" ||
 		window.location.hash.startsWith("#payroll?") ||
-		window.location.hash.startsWith("#doctor-payroll?"))
+		window.location.hash.startsWith("#doctor-payroll?") ||
+		window.location.hash.startsWith("#doctor-payroll-report?") ||
+		window.location.hash.startsWith("#executive-payroll?"))
 ) {
 	applyThemeToRoot(
 		document.documentElement,
@@ -942,43 +991,6 @@ if (publicPortalRoute) {
 	);
 } else if (
 	typeof window !== "undefined" &&
-	(window.location.search.includes("stand=doctor-payroll-report") ||
-		window.location.search.includes("standalone=doctor-payroll-report") ||
-		window.location.search.includes("executive_payroll=1") ||
-		window.location.search.includes("assistant_payroll=1") ||
-		window.location.hash === "#doctor-payroll-report" ||
-		window.location.hash === "#executive-payroll" ||
-		window.location.hash === "#assistant-payroll" ||
-		window.location.hash.startsWith("#doctor-payroll-report?") ||
-		window.location.hash.startsWith("#executive-payroll?"))
-) {
-	applyThemeToRoot(
-		document.documentElement,
-		resolveTheme(
-			"auto",
-			window.matchMedia("(prefers-color-scheme: dark)").matches,
-		),
-	);
-	installApiAuthFetch();
-
-	appRoot.render(
-		<React.StrictMode>
-			<BootErrorBoundary audience="clinic">
-				<React.Suspense
-					fallback={
-						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
-							Загрузка отчета по зарплатам...
-						</div>
-					}
-				>
-					<DoctorPayrollReportStandaloneView />
-				</React.Suspense>
-				<GlobalToast />
-			</BootErrorBoundary>
-		</React.StrictMode>,
-	);
-} else if (
-	typeof window !== "undefined" &&
 	(window.location.search.includes("stand=chairside-hud") ||
 		window.location.search.includes("standalone=chairside-hud") ||
 		window.location.hash === "#chairside-hud" ||
@@ -995,7 +1007,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
@@ -1027,7 +1039,7 @@ if (publicPortalRoute) {
 
 	appRoot.render(
 		<React.StrictMode>
-			<BootErrorBoundary audience="clinical">
+			<BootErrorBoundary audience="clinic">
 				<React.Suspense
 					fallback={
 						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">

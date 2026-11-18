@@ -5,18 +5,13 @@
 
 import type { DiaryState } from "../../lib/protocols/protocolTypes";
 import type {
-	ClinicalSoapPreset,
 	ClinicalService804n,
 	ClinicalMaterialDeduction,
 	ToothClinicalState,
-} from "./clinicalSoapTypes.js";
+	DoctorAutopilotPreset,
+} from "@dental/shared";
 
-export interface DoctorAutopilotPreset extends ClinicalSoapPreset {
-	readonly surfaces?: string | null | undefined;
-	readonly informedConsent?: string | undefined;
-	readonly postOpMemo?: string | undefined;
-	readonly is1ClickAutopilot: true;
-}
+export type { DoctorAutopilotPreset };
 
 export interface Template {
 	id: string;

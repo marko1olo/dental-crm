@@ -219,10 +219,14 @@ export function AuthArtBackground({
 			const isReducedMotion =
 				typeof window !== "undefined" &&
 				window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			const nav = (typeof navigator !== "undefined" ? navigator : {}) as any;
-			const isSaveData =
-				nav.connection?.saveData || nav.connection?.effectiveType?.includes("2g");
+			const nav = typeof navigator !== "undefined"
+				? (navigator as Navigator & {
+						connection?: { saveData?: boolean; effectiveType?: string };
+				  })
+				: undefined;
+			const isSaveData = Boolean(
+				nav?.connection?.saveData || nav?.connection?.effectiveType?.includes("2g"),
+			);
 
 			const art = selectAuthArt(manifest, {
 				pack: effectiveSettings.pack,

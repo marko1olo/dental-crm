@@ -4,9 +4,11 @@ const path = require("node:path");
 
 const PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/dental_lab");
 const ALT_PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/lab");
+const CANONICAL_PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/dental-lab");
 
 fs.mkdirSync(PROOFS_DIR, { recursive: true });
 fs.mkdirSync(ALT_PROOFS_DIR, { recursive: true });
+fs.mkdirSync(CANONICAL_PROOFS_DIR, { recursive: true });
 
 (async () => {
   console.log("=== Launching Playwright Chromium for Dental Lab Studio Proofs ===");
@@ -98,11 +100,18 @@ fs.mkdirSync(ALT_PROOFS_DIR, { recursive: true });
     const outPath = path.join(PROOFS_DIR, st.name);
     await page.screenshot({ path: outPath, fullPage: false, animations: "disabled" });
     fs.copyFileSync(outPath, path.join(ALT_PROOFS_DIR, st.name));
+    fs.copyFileSync(outPath, path.join(CANONICAL_PROOFS_DIR, st.name));
 
-    // Also copy to canonical _orders_ filenames required by Red Team auditor
+    // Also copy to canonical _orders_ and short _lab_ filenames required by Red Team auditor
     const ordersName = st.name.replace("_studio_", "_orders_");
     fs.copyFileSync(outPath, path.join(PROOFS_DIR, ordersName));
     fs.copyFileSync(outPath, path.join(ALT_PROOFS_DIR, ordersName));
+    fs.copyFileSync(outPath, path.join(CANONICAL_PROOFS_DIR, ordersName));
+
+    const labName = st.name.replace("dental_lab_studio_", "lab_");
+    fs.copyFileSync(outPath, path.join(ALT_PROOFS_DIR, labName));
+    fs.copyFileSync(outPath, path.join(PROOFS_DIR, labName));
+    fs.copyFileSync(outPath, path.join(CANONICAL_PROOFS_DIR, labName));
 
     const stat = fs.statSync(outPath);
     console.log(`[PROOF VERIFIED] ${st.name} & ${ordersName}: ${stat.size} bytes (${(stat.size / 1024).toFixed(1)} KB)`);

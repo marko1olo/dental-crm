@@ -1,0 +1,88 @@
+/* Create Patient Modal: Form Fields, Smart Parse, Grid & Footer Container */
+.create-patient-form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.create-patient-label-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.create-patient-label {
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.create-patient-smart-parse-btn {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--teal);
+	background: var(--teal-surface);
+	border: 1px solid var(--teal-ring);
+	border-radius: 6px;
+	padding: 2px 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.create-patient-smart-parse-btn:hover {
+	background: var(--teal);
+	color: var(--on-teal, var(--paper));
+}
+
+.create-patient-input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--line-strong);
+	border-radius: 9px;
+	font-size: 0.875rem;
+	min-height: 36px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	transition: all 0.2s ease;
+	outline: none;
+}
+
+.create-patient-input:focus {
+	border-color: var(--teal);
+	background: var(--paper);
+	box-shadow: 0 0 0 3px var(--teal-surface);
+}
+
+.create-patient-grid-2 {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 1rem;
+}
+
+@media (max-width: 480px) {
+	.create-patient-grid-2 {
+		grid-template-columns: 1fr;
+	}
+}
+
+.create-patient-modal-footer {
+	padding: 1rem 1.5rem;
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
+	border-radius: 0 0 16px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.patient-create-modal-guidance {
+	margin: 0;
+	font-size: 0.8rem;
+	line-height: 1.4;
+}

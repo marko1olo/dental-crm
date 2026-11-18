@@ -1,6 +1,14 @@
 export interface DicomMprHeaderProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	cbctWorkbenchSeries: any;
+	cbctWorkbenchSeries?: {
+		patientName?: string | null;
+		fileCount?: number;
+		mprReadiness?: {
+			canOpenMpr?: boolean;
+			recommendedLayout?: string;
+			[key: string]: unknown;
+		};
+		[key: string]: unknown;
+	} | null | undefined;
 }
 
 export function DicomMprHeader({ cbctWorkbenchSeries }: DicomMprHeaderProps) {
@@ -14,18 +22,18 @@ export function DicomMprHeader({ cbctWorkbenchSeries }: DicomMprHeaderProps) {
 					<strong>Рабочее место КЛКТ / КТ-срезы</strong>
 					<p>
 						{cbctWorkbenchSeries
-							? `${cbctWorkbenchSeries.patientName ?? "Пациент ?"} · ${cbctWorkbenchSeries.fileCount} файлов · ${cbctWorkbenchSeries.mprReadiness.recommendedLayout}`
+							? `${cbctWorkbenchSeries.patientName ?? "Пациент ?"} · ${cbctWorkbenchSeries.fileCount ?? 0} файлов · ${cbctWorkbenchSeries.mprReadiness?.recommendedLayout ?? "аксиальный / панорамный"}`
 							: "Сначала проверьте предпросмотр серий КЛКТ/КТ."}
 					</p>
 				</div>
 				<span
 					className={
-						cbctWorkbenchSeries?.mprReadiness.canOpenMpr
+						cbctWorkbenchSeries?.mprReadiness?.canOpenMpr
 							? "mpr-ready"
 							: "mpr-warn"
 					}
 				>
-					{cbctWorkbenchSeries?.mprReadiness.canOpenMpr
+					{cbctWorkbenchSeries?.mprReadiness?.canOpenMpr
 						? "предпросмотр КТ-срезов готов"
 						: "только предпросмотр"}
 				</span>

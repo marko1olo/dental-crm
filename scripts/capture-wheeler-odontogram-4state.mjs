@@ -3,7 +3,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const PROOF_DIR = "C:/Clinic_MVP/dental-crm/docs/proofs/odontogram";
-const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/9d94d250-068f-4caa-90cd-249e41f168e4";
+const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/644b3011-8b68-485b-9f08-a6d58865d320";
 
 [PROOF_DIR, BRAIN_DIR].forEach((dir) => {
 	if (!existsSync(dir)) {
@@ -14,9 +14,9 @@ const BRAIN_DIR = "C:/Users/Admin/.gemini/antigravity/brain/9d94d250-068f-4caa-9
 const WEB_URL = "http://127.0.0.1:5173/?demo=true#odontogram";
 
 const edgePath = [
+	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
 	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 ].find((p) => existsSync(p));
 
 async function suppressOverlays(page) {
@@ -156,6 +156,7 @@ async function runCapture() {
 		await pcPage.waitForTimeout(400);
 		const pcLightBuf = await pcPage.screenshot({ fullPage: false });
 		verifyAndSaveScreenshot(pcLightBuf, "01_odontogram_pc_light_1440x900.png", "Odontogram Wheeler 2.5D Full Arch (PC Light 1440x900)");
+		verifyAndSaveScreenshot(pcLightBuf, "01_pc_light_1440x900.png", "Odontogram Wheeler 2.5D Full Arch (PC Light 1440x900)");
 		verifyAndSaveScreenshot(pcLightBuf, "02_odontogram_multiselect_pc_light_1440x900.png", "Odontogram Multi-Select Active Front & Molars (PC Light 1440x900)");
 
 		// 1.2 PC Dark (1440x900)
@@ -163,7 +164,28 @@ async function runCapture() {
 		await pcPage.waitForTimeout(400);
 		const pcDarkBuf = await pcPage.screenshot({ fullPage: false });
 		verifyAndSaveScreenshot(pcDarkBuf, "02_odontogram_pc_dark_1440x900.png", "Odontogram Wheeler 2.5D Full Arch (PC Dark 1440x900)");
+		verifyAndSaveScreenshot(pcDarkBuf, "02_pc_dark_1440x900.png", "Odontogram Wheeler 2.5D Full Arch (PC Dark 1440x900)");
 		verifyAndSaveScreenshot(pcDarkBuf, "01_odontogram_multiselect_pc_dark_1440x900.png", "Odontogram Multi-Select Active Front & Molars (PC Dark 1440x900)");
+
+		// 1.3 PC Pediatric (1440x900)
+		try {
+			await pcPage.keyboard.press("Escape");
+			await pcPage.waitForTimeout(400);
+			const pedBtn = await pcPage.$('[data-testid="toolbar-dentition-pediatric"]');
+			if (pedBtn) {
+				await pedBtn.click();
+				await pcPage.waitForTimeout(600);
+				await setTheme(pcPage, "light");
+				const pedLightBuf = await pcPage.screenshot({ fullPage: false });
+				verifyAndSaveScreenshot(pedLightBuf, "05_pediatric_pc_light_1440x900.png", "Pediatric Odontogram Wheeler 2.5D 51–85 (PC Light 1440x900)");
+
+				await setTheme(pcPage, "dark");
+				const pedDarkBuf = await pcPage.screenshot({ fullPage: false });
+				verifyAndSaveScreenshot(pedDarkBuf, "06_pediatric_pc_dark_1440x900.png", "Pediatric Odontogram Wheeler 2.5D 51–85 (PC Dark 1440x900)");
+			}
+		} catch (e) {
+			console.warn("Could not capture PC pediatric:", e.message);
+		}
 
 		await pcContext.close();
 
@@ -215,6 +237,7 @@ async function runCapture() {
 		await mobilePage.waitForTimeout(400);
 		const mobileLightBuf = await mobilePage.screenshot({ fullPage: false });
 		verifyAndSaveScreenshot(mobileLightBuf, "03_odontogram_mobile_light_390x844.png", "Odontogram Wheeler 2.5D Full Arch Apple HIG (Mobile Light 390x844)");
+		verifyAndSaveScreenshot(mobileLightBuf, "03_mobile_light_390x844.png", "Odontogram Wheeler 2.5D Full Arch Apple HIG (Mobile Light 390x844)");
 		verifyAndSaveScreenshot(mobileLightBuf, "03_odontogram_multiselect_mobile_light_390x844.png", "Mobile Chairside Teeth Selector & Quadrants (Mobile Light 390x844)");
 
 		// 2.2 Mobile Dark (390x844)
@@ -222,7 +245,26 @@ async function runCapture() {
 		await mobilePage.waitForTimeout(400);
 		const mobileDarkBuf = await mobilePage.screenshot({ fullPage: false });
 		verifyAndSaveScreenshot(mobileDarkBuf, "04_odontogram_mobile_dark_390x844.png", "Odontogram Wheeler 2.5D Full Arch Apple HIG (Mobile Dark 390x844)");
+		verifyAndSaveScreenshot(mobileDarkBuf, "04_mobile_dark_390x844.png", "Odontogram Wheeler 2.5D Full Arch Apple HIG (Mobile Dark 390x844)");
 		verifyAndSaveScreenshot(mobileDarkBuf, "04_odontogram_multiselect_mobile_dark_390x844.png", "Mobile Chairside Teeth Selector & Quadrants (Mobile Dark 390x844)");
+
+		// 2.3 Mobile Pediatric (390x844)
+		try {
+			const mobPedBtn = await mobilePage.$('[data-testid="toolbar-dentition-pediatric"]');
+			if (mobPedBtn) {
+				await mobPedBtn.click();
+				await mobilePage.waitForTimeout(600);
+				await setTheme(mobilePage, "light");
+				const mobPedLightBuf = await mobilePage.screenshot({ fullPage: false });
+				verifyAndSaveScreenshot(mobPedLightBuf, "07_pediatric_mobile_light_390x844.png", "Pediatric Odontogram Wheeler 2.5D 51–85 Apple HIG (Mobile Light 390x844)");
+
+				await setTheme(mobilePage, "dark");
+				const mobPedDarkBuf = await mobilePage.screenshot({ fullPage: false });
+				verifyAndSaveScreenshot(mobPedDarkBuf, "08_pediatric_mobile_dark_390x844.png", "Pediatric Odontogram Wheeler 2.5D 51–85 Apple HIG (Mobile Dark 390x844)");
+			}
+		} catch (e) {
+			console.warn("Could not capture mobile pediatric:", e.message);
+		}
 
 		await mobileContext.close();
 		console.log("=== ALL 4-STATE PROOFS CAPTURED SUCCESSFULLY ===");

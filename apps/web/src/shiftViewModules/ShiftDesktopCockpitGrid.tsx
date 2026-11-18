@@ -1,26 +1,26 @@
 import type { Dashboard } from "@dental/shared";
 import React from "react";
 import { ShiftViewChairStatusCard } from "./ShiftViewChairStatusCard";
-import type { ShiftFinancialMode, ShiftRecommendedAction, ShiftViewStats } from "./shiftViewTypes";
+import type { ShiftFinancialMode, ShiftRecommendedAction, ShiftViewStats, ShiftVisitAppointment, ShiftVisitDoctor, ShiftVisitPatient } from "./shiftViewTypes";
 import { ShiftViewVisitsQueue } from "./ShiftViewVisitsQueue";
 import { ShiftDesktopRightColumn } from "./ShiftDesktopRightColumn";
 
 export interface ShiftDesktopCockpitGridProps {
 	dashboard?: Dashboard | undefined;
 	activeDoctorFullName: string;
-	inChairAppointment: unknown;
-	currentPatient: unknown;
+	inChairAppointment?: ShiftVisitAppointment | null | undefined;
+	currentPatient?: ShiftVisitPatient | null | undefined;
 	currentPatientHasCallablePhone: boolean;
 	currentPatientCallablePhone: string | null;
 	currentAppointmentReason: string;
-	nextAppointment: unknown;
-	nextAppointmentPatient: unknown;
-	todayAppointments: readonly unknown[];
-	inChairAppointments: readonly unknown[];
-	waitingAppointments: readonly unknown[];
-	awaitingPaymentAppointments: readonly unknown[];
-	patientsById: Map<string, unknown>;
-	staffById: Map<string, unknown>;
+	nextAppointment?: unknown;
+	nextAppointmentPatient?: unknown;
+	todayAppointments: readonly ShiftVisitAppointment[];
+	inChairAppointments: readonly ShiftVisitAppointment[];
+	waitingAppointments: readonly ShiftVisitAppointment[];
+	awaitingPaymentAppointments: readonly ShiftVisitAppointment[];
+	patientsById: ReadonlyMap<string, ShiftVisitPatient>;
+	staffById: ReadonlyMap<string, ShiftVisitDoctor>;
 	manyDoctors: boolean;
 	shiftStats: ShiftViewStats;
 	shiftFinancialMode: ShiftFinancialMode;

@@ -54,12 +54,14 @@ export interface ActiveVisitCompletionContext {
 	readonly transcript?: string | null | undefined;
 	readonly treatmentPlanId?: string | null | undefined;
 	readonly stageNumber?: number | string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface DashboardAppointmentContext {
 	readonly id?: string | null | undefined;
 	readonly treatmentPlanId?: string | null | undefined;
 	readonly stageNumber?: number | string | null | undefined;
+	readonly [key: string]: unknown;
 }
 
 export type DashboardCompletionContext = Partial<Dashboard> & {
@@ -69,6 +71,7 @@ export type DashboardCompletionContext = Partial<Dashboard> & {
 			readonly organizationId?: string | null | undefined;
 		} | null | undefined;
 	} | null | undefined;
+	readonly [key: string]: unknown;
 };
 
 export interface VisitPostCompletionContext {

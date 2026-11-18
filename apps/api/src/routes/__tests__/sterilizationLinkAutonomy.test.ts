@@ -89,17 +89,16 @@ describe("Sterilization Tray Auto-Provision & Doctor Autonomy (Mandates 8e, 8n)"
 		assert.match(evaluation.errorMessage ?? "", /Лоток не прошел контроль стерилизации/);
 	});
 
-	it("appends emergency sterilization note to diary treatment description cleanly", () => {
+	it("preserves diary clinical SOAP purity without bureaucratic rospotrebnadzor junk", () => {
 		const note = buildEmergencySterilizationAdmissionNote("TRAY-EMERGENCY-01");
-		assert.match(note, /TRAY-EMERGENCY-01/);
-		assert.match(note, /СанПиН 3.3686-21/);
+		assert.equal(note, "");
 
 		// When treatment description is empty
 		const treatment1 = applyEmergencySterilizationToDiaryTreatment(
 			null,
 			"TRAY-EMERGENCY-01",
 		);
-		assert.equal(treatment1, note);
+		assert.equal(treatment1, "");
 
 		// When treatment description has existing text
 		const treatment2 = applyEmergencySterilizationToDiaryTreatment(
@@ -108,10 +107,10 @@ describe("Sterilization Tray Auto-Provision & Doctor Autonomy (Mandates 8e, 8n)"
 		);
 		assert.equal(
 			treatment2,
-			`Препарирование полости, медикаментозная обработка\n${note}`,
+			"Препарирование полости, медикаментозная обработка",
 		);
 
-		// Does not duplicate note if called again
+		// Does not alter treatment if called again
 		const treatment3 = applyEmergencySterilizationToDiaryTreatment(
 			treatment2,
 			"TRAY-EMERGENCY-01",
@@ -141,7 +140,7 @@ describe("Sterilization Tray Auto-Provision & Doctor Autonomy (Mandates 8e, 8n)"
 		assert.equal(res.status, "unsealed");
 		assert.equal(res.sanpinVerified, true);
 		assert.equal(res.unsealedAt, "2026-09-23T01:00:00.000Z");
-		assert.match(res.message, /без комиссии из 3 человек/);
+		assert.match(res.message, /Крафт-пакет успешно вскрыт/);
 
 		// Zero emoji in unseal message
 		const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;

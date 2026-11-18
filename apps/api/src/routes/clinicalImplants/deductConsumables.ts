@@ -27,7 +27,7 @@ export async function deductConsumables(
 	// 1. Графт
 	if (input.boneGraftMaterial || input.boneGraftItemId) {
 		const graftName = input.boneGraftMaterial || "Костный графт Geistlich Bio-Oss (0.5г)";
-		let graftItem = null;
+		let graftItem: typeof inventoryItems.$inferSelect | undefined = undefined;
 		if (input.boneGraftItemId) {
 			[graftItem] = await tx
 				.select()
@@ -123,7 +123,7 @@ export async function deductConsumables(
 	// 2. Мембрана
 	if (input.membraneUsed || input.membraneItemId) {
 		const memName = input.membraneUsed || "Коллагеновая мембрана Geistlich Bio-Gide (16x22мм)";
-		let memItem = null;
+		let memItem: typeof inventoryItems.$inferSelect | undefined = undefined;
 		if (input.membraneItemId) {
 			[memItem] = await tx
 				.select()
@@ -219,7 +219,7 @@ export async function deductConsumables(
 	// 3. Шовный материал (только если врач указал шовный материал или выбран айтем)
 	if (input.sutureMaterial || input.sutureItemId) {
 		const sutureName = input.sutureMaterial || "Шовный материал Ethicon Викрил 4-0";
-		let sutureItem = null;
+		let sutureItem: typeof inventoryItems.$inferSelect | undefined = undefined;
 		if (input.sutureItemId) {
 			[sutureItem] = await tx
 				.select()

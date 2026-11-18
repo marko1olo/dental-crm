@@ -31,7 +31,7 @@ export const PHYSIOLOGICAL_NORM = {
 export interface ExtractedSafetyProfile {
 	allergies: Record<string, string>;
 	risks: string[];
-	pregnancyTrimester?: PregnancyTrimester;
+	pregnancyTrimester?: PregnancyTrimester | undefined;
 }
 
 export function extractPatientSafetyDefaults(

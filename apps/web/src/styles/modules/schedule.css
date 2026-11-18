@@ -4,11 +4,6 @@
    All modular components reside in ../scheduleStyles/ (all <= 120 lines)
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Schedule Filter Chips Support & Smooth Horizontal Scroll */
-.schedule-filter-chips {
-	scroll-behavior: smooth;
-}
-
 @import "../scheduleStyles/scheduleThemeTokens.css";
 @import "../scheduleStyles/scheduleCardLayout.css";
 @import "../scheduleStyles/scheduleCardGrid.css";
@@ -26,3 +21,8 @@
 @import "../scheduleStyles/scheduleViewControls.css";
 @import "../scheduleStyles/scheduleOptionsAndStep.css";
 @import "../scheduleStyles/scheduleMiniCalendar.css";
+
+/* Schedule Filter Chips Support & Smooth Horizontal Scroll */
+.schedule-filter-chips {
+	scroll-behavior: smooth;
+}

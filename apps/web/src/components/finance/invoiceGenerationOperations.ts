@@ -8,6 +8,8 @@
 import {
 	type PlanToInvoiceValidationReport,
 	formatKopecksRu,
+	kopecksToRubles,
+	generateUuidV7,
 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
@@ -101,11 +103,9 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 				nameRu: it.nameRu,
 				categoryRu: it.categoryRu,
 				quantity: it.quantity,
-				planUnitPriceRub: Number((it.planUnitPriceKopecks / 100).toFixed(2)),
-				effectiveUnitPriceRub: Number(
-					(it.effectiveUnitPriceKopecks / 100).toFixed(2),
-				),
-				discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
+				planUnitPriceRub: kopecksToRubles(it.planUnitPriceKopecks),
+				effectiveUnitPriceRub: kopecksToRubles(it.effectiveUnitPriceKopecks),
+				discountRub: kopecksToRubles(it.effectiveDiscountKopecks),
 				resolutionPolicy: it.selectedResolution,
 				serviceId:
 					it.suggested804nAnalogue?.serviceId || ("serviceId" in it && typeof (it as { serviceId?: unknown }).serviceId === "string" ? (it as { serviceId: string }).serviceId : undefined),
@@ -123,6 +123,7 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 			method: "POST",
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 			}),
 			body: JSON.stringify(payload),
 		});
@@ -134,7 +135,7 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 
 		const createdData = await res.json();
 		const invoiceNetRub = Number(
-			createdData.totalNetRub ?? (effectiveReport.effectiveInvoiceNetKopecks / 100).toFixed(2),
+			createdData.totalNetRub ?? kopecksToRubles(effectiveReport.effectiveInvoiceNetKopecks),
 		);
 		const invoiceStatus: BillingInvoice["status"] =
 			invoiceNetRub === 0 ? "warranty_100" : "issued";
@@ -157,7 +158,7 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 				code: it.code804n,
 				name: it.nameRu,
 				quantity: it.quantity,
-				priceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
+				priceRub: kopecksToRubles(it.effectiveUnitPriceKopecks),
 			})),
 			createdAt: createdData.issuedAt || new Date().toISOString(),
 			notes: `Выписан ${documentType === "work_order" ? "наряд-заказ" : "счет"} по плану ${planNumber}`,
@@ -195,7 +196,7 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 	} catch (createErr: unknown) {
 		console.warn("[executeInvoiceCreation] Ошибка вызова API создания счета, переключение на локальный автономный fallback:", createErr);
 		// Fallback for offline / network failure (Mandates 8e, 8n)
-		const fallbackNetRub = Number((effectiveReport.effectiveInvoiceNetKopecks / 100).toFixed(2));
+		const fallbackNetRub = kopecksToRubles(effectiveReport.effectiveInvoiceNetKopecks);
 		const fallbackStatus: BillingInvoice["status"] =
 			fallbackNetRub === 0 ? "warranty_100" : "issued";
 		const fallbackInvoice: BillingInvoice = {
@@ -214,7 +215,7 @@ export async function submitInvoiceFromPlan(params: SubmitInvoiceParams): Promis
 				code: it.code804n,
 				name: it.nameRu,
 				quantity: it.quantity,
-				priceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
+				priceRub: kopecksToRubles(it.effectiveUnitPriceKopecks),
 			})),
 			createdAt: new Date().toISOString(),
 			notes: `Счет (автономный режим) по плану ${planNumber}`,
@@ -259,7 +260,7 @@ export async function createTaxAddendum(
 	unapprovedItems: readonly InvoiceUnapprovedItem[],
 ): Promise<TaxAddendumDocument> {
 	const totalAmountRub = unapprovedItems.reduce(
-		(sum, it) => sum + (it.effectiveUnitPriceKopecks / 100) * it.quantity,
+		(sum, it) => sum + kopecksToRubles(it.effectiveUnitPriceKopecks) * it.quantity,
 		0,
 	);
 	const payload = {
@@ -275,7 +276,7 @@ export async function createTaxAddendum(
 				nameRu: it.nameRu,
 				code804n: it.code804n,
 				quantity: it.quantity,
-				priceRub: it.effectiveUnitPriceKopecks / 100,
+				priceRub: kopecksToRubles(it.effectiveUnitPriceKopecks),
 			})),
 		},
 	};
@@ -284,6 +285,7 @@ export async function createTaxAddendum(
 		method: "POST",
 		headers: denteAdminSecretRequestHeaders({
 			"Content-Type": "application/json",
+			"Idempotency-Key": generateUuidV7(),
 		}),
 		body: JSON.stringify(payload),
 	});

@@ -153,14 +153,35 @@ async function main() {
     });
 
     // 1.1 PC Light (1440x900)
-    console.log("Capturing 01_loyalty_studio_pc_light_1440x900.png...");
+    console.log("Capturing 01_loyalty_pc_light.png...");
     await setLightTheme(pcPage);
     await saveProof(pcPage, "01_loyalty_studio_pc_light_1440x900.png");
+    await saveProof(pcPage, "01_loyalty_pc_light.png");
 
     // 1.2 PC Dark (1440x900)
-    console.log("Capturing 02_loyalty_studio_pc_dark_1440x900.png...");
+    console.log("Capturing 02_loyalty_pc_dark.png...");
     await setDarkTheme(pcPage);
     await saveProof(pcPage, "02_loyalty_studio_pc_dark_1440x900.png");
+    await saveProof(pcPage, "02_loyalty_pc_dark.png");
+
+    // 1.3 PC Light Certificates Tab (Продажа и выпуск сертификатов)
+    console.log("Switching to certificates tab...");
+    await setLightTheme(pcPage);
+    await pcPage.evaluate(() => {
+      const tabs = Array.from(document.querySelectorAll(".loyalty-tab-btn"));
+      const certTab = tabs.find((t) => t.textContent && t.textContent.includes("Сертификаты"));
+      if (certTab) certTab.click();
+    });
+    await pcPage.waitForTimeout(500);
+    await saveProof(pcPage, "loyalty_tab_certificates_pc_light.png");
+
+    // Возвращаемся на вкладку баланса
+    await pcPage.evaluate(() => {
+      const tabs = Array.from(document.querySelectorAll(".loyalty-tab-btn"));
+      const balTab = tabs.find((t) => t.textContent && t.textContent.includes("Баланс"));
+      if (balTab) balTab.click();
+    });
+    await pcPage.waitForTimeout(300);
 
     // ═══════════════════════════════════════════════════════════
     // 2. MOBILE CONTEXT (390 x 844) Apple HIG
@@ -199,14 +220,16 @@ async function main() {
     });
 
     // 2.1 Mobile Light (390x844)
-    console.log("Capturing 03_loyalty_studio_mobile_light_390x844.png...");
+    console.log("Capturing 03_loyalty_mobile_light.png...");
     await setLightTheme(mobilePage);
     await saveProof(mobilePage, "03_loyalty_studio_mobile_light_390x844.png");
+    await saveProof(mobilePage, "03_loyalty_mobile_light.png");
 
     // 2.2 Mobile Dark (390x844)
-    console.log("Capturing 04_loyalty_studio_mobile_dark_390x844.png...");
+    console.log("Capturing 04_loyalty_mobile_dark.png...");
     await setDarkTheme(mobilePage);
     await saveProof(mobilePage, "04_loyalty_studio_mobile_dark_390x844.png");
+    await saveProof(mobilePage, "04_loyalty_mobile_dark.png");
 
     console.log("\n✅ All 4-State Proofs captured successfully!");
   } finally {

@@ -4,6 +4,7 @@ import {
 	Copy,
 	ExternalLink,
 	HelpCircle,
+	MessageSquare,
 	RefreshCw,
 	Shield,
 	Wifi,
@@ -22,6 +23,12 @@ import {
 	messengerRoutingChanged,
 } from "./MessengerRoutingRules.js";
 
+export const MAX_FEATURE_LABELS: Record<string, string> = {
+	chat: "Входящие сообщения и чат",
+	notifications: "Сервисные уведомления клиники",
+	reminders: "Напоминания о приёмах за 24ч и 2ч",
+};
+
 /**
  * Вычисляет наличие несохраненных изменений в форме настроек MAX.
  */
@@ -30,13 +37,20 @@ export function computeMaxSettingsDirty(params: {
 	settingsBotId: string | null | undefined;
 	isActiveDraft: boolean;
 	settingsIsActive: boolean | undefined;
+	enabledFeaturesDraft?: string[] | undefined;
+	settingsEnabledFeatures?: string[] | undefined;
 	staffRoutingDraft: MaxStaffRouting;
 	settingsStaffRouting: MaxStaffRouting | undefined;
 	apiTokenDraft: string;
 }): boolean {
+	const featuresChanged = params.enabledFeaturesDraft
+		? (params.enabledFeaturesDraft.length !== (params.settingsEnabledFeatures?.length ?? 0) ||
+		   params.enabledFeaturesDraft.some((f) => !params.settingsEnabledFeatures?.includes(f)))
+		: false;
 	return (
 		params.botIdDraft !== (params.settingsBotId ?? "") ||
 		params.isActiveDraft !== (params.settingsIsActive ?? false) ||
+		featuresChanged ||
 		messengerRoutingChanged(params.staffRoutingDraft, params.settingsStaffRouting) ||
 		params.apiTokenDraft.trim() !== ""
 	);
@@ -91,6 +105,8 @@ export function MaxSettingsPanel({
 		setWebhookUrlDraft,
 		isActiveDraft,
 		setIsActiveDraft,
+		enabledFeaturesDraft,
+		toggleFeature,
 		staffRoutingDraft,
 		setStaffRoutingDraft,
 		save,
@@ -109,20 +125,17 @@ export function MaxSettingsPanel({
 	};
 
 	/*
-	 * Признак изменений. РОУТИНГ ЗДЕСЬ ОБЯЗАТЕЛЕН: без него владелец назначал,
-	 * кому идут входящие сообщения пациентов, а кнопка «Сохранить» оставалась
-	 * выключенной (`disabled={!dirty}`) — заполнил и сохранить нечем. Сравнение
-	 * самого роутинга — в MessengerRoutingRules, рядом с его формой.
-	 *
-	 * webhookUrlDraft в признак не входит намеренно: поля ввода для него в панели
-	 * нет (адрес вебхука — наш собственный, он показан кодом ниже), значит и
-	 * измениться он не может.
+	 * Признак изменений. РОУТИНГ И ФИЧИ ЗДЕСЬ ОБЯЗАТЕЛЬНЫ: без них владелец назначал,
+	 * кому идут входящие сообщения пациентов или включал модули, а кнопка «Сохранить» оставалась
+	 * выключенной (`disabled={!dirty}`).
 	 */
 	const dirty = computeMaxSettingsDirty({
 		botIdDraft,
 		settingsBotId: settings?.botId,
 		isActiveDraft,
 		settingsIsActive: settings?.isActive,
+		enabledFeaturesDraft,
+		settingsEnabledFeatures: settings?.enabledFeatures,
 		staffRoutingDraft,
 		settingsStaffRouting: settings?.staffRouting,
 		apiTokenDraft,
@@ -301,6 +314,47 @@ export function MaxSettingsPanel({
 							onChange={(e) => setIsActiveDraft(e.target.checked)}
 						/>
 						<span className="slider"></span>
+					</div>
+				</div>
+
+				<div className="messenger-features-section">
+					<h4>Включенные функции MAX</h4>
+					<p className="messenger-routing-hint">
+						Выберите активные модули взаимодействия через мессенджер MAX.
+					</p>
+					<div
+						className="premium-feature-grid"
+						role="group"
+						aria-label="Функции MAX"
+						style={{ border: "none", padding: 0, margin: "12px 0" }}
+					>
+						{Object.entries(MAX_FEATURE_LABELS).map(([key, label]) => {
+							const enabled = enabledFeaturesDraft?.includes(key) ?? false;
+							return (
+								<label
+									htmlFor={`max-feature-${key}`}
+									key={key}
+									className={`premium-feature-card ${enabled ? "active" : ""}`}
+								>
+									<div className="premium-feature-icon">
+										<MessageSquare size={20} />
+									</div>
+									<div className="premium-feature-content">
+										<h4>{label}</h4>
+										<p>Автоматическая отправка</p>
+									</div>
+									<div className="premium-switch">
+										<input
+											id={`max-feature-${key}`}
+											type="checkbox"
+											checked={enabled}
+											onChange={() => (toggleFeature ? toggleFeature(key) : null)}
+										/>
+										<span className="slider"></span>
+									</div>
+								</label>
+							);
+						})}
 					</div>
 				</div>
 

@@ -1,0 +1,61 @@
+{
+  "subagent": "RED TEAM INQUISITOR 1: EMR & CLINICAL DIARY ARCHITECTURE PURGE",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-04T10:12:00.000Z",
+  "scope": {
+    "directory": "apps/web/src/components/emr/",
+    "fastify_routes": ["apps/api/src/routes/visits/", "apps/api/src/routes/clinical/"]
+  },
+  "liquidated_proxies": [
+    "apps/web/src/components/emr/Form043PrintModal.tsx",
+    "apps/web/src/components/emr/ClinicalDiaryPrintModal.tsx",
+    "apps/web/src/components/emr/Form043TabSections.tsx",
+    "apps/web/src/components/emr/outpatientRecordTabSections.tsx",
+    "apps/web/src/components/emr/ClinicalDiaryTabSections.tsx",
+    "apps/web/src/components/emr/emr043Types.ts",
+    "apps/web/src/components/emr/outpatientRecordTypes.ts",
+    "apps/web/src/components/emr/clinicalDiaryTypes.ts",
+    "apps/web/src/components/emr/emr043Math.ts",
+    "apps/web/src/components/emr/outpatientRecordMath.ts",
+    "apps/web/src/components/emr/emr043DefaultData.ts",
+    "apps/web/src/components/emr/outpatientRecordDefaultData.ts",
+    "apps/web/src/components/emr/clinicalDiaryDefaultData.ts",
+    "apps/web/src/components/emr/emr043ExportEngines.ts",
+    "apps/web/src/components/emr/outpatientRecordExportEngines.ts",
+    "apps/web/src/components/emr/emr043HtmlPrint.ts"
+  ],
+  "canonical_ssot": {
+    "types": "apps/web/src/components/emr/types/recordDataTypes.ts",
+    "math": "apps/web/src/components/emr/clinicalDiaryMath.ts",
+    "modal": "apps/web/src/components/emr/MedicalRecordStudioModal.tsx",
+    "validation": "apps/web/src/components/emr/math/recordMathValidation.ts",
+    "defaults": "apps/web/src/components/emr/defaults/recordPhysiologicalNorm.ts"
+  },
+  "mandate_8e_invariants": {
+    "isComplete_non_blocking": true,
+    "physiological_norm_1click": true,
+    "dual_state_watermark": "ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ) vs ПОДПИСАНО ВРАЧОМ",
+    "zero_disabled_buttons": true,
+    "debounced_autosave": true
+  },
+  "visual_proof_4state": {
+    "pc_light": "docs/screenshots/emr/01_emr_studio_pc_light_1440x900.png",
+    "pc_dark": "docs/screenshots/emr/02_emr_studio_pc_dark_1440x900.png",
+    "mobile_light": "docs/screenshots/emr/03_emr_studio_mobile_light_390x844.png",
+    "mobile_dark": "docs/screenshots/emr/04_emr_studio_mobile_dark_390x844.png",
+    "inspected_by_read_file": true,
+    "defects_detected": 0
+  },
+  "verified_tests": [
+    "apps/web/src/components/emr/__tests__/emr043Export.test.ts",
+    "apps/web/src/components/emr/__tests__/medicalCardCatalogData.test.ts",
+    "apps/web/src/components/emr/__tests__/mockEradicationWave112.test.ts",
+    "apps/web/src/components/emr/__tests__/stomtTemplatesSoapAutonomy.test.tsx",
+    "apps/web/src/components/visit/diary/__tests__/clinicalDiaryDoctorAutonomy.test.ts",
+    "apps/web/src/components/visit/__tests__/doctorAutonomyEmkWave65.test.tsx",
+    "apps/web/src/components/patients/__tests__/outpatientAutonomyWave42.test.tsx",
+    "apps/web/src/components/patients/__tests__/outpatientPrintRenderWave42.test.tsx",
+    "apps/web/src/tests/redTeamZeroBloatInquisition.test.ts",
+    "apps/web/src/tests/outpatientHospitalBloatDemolitionInquisition.test.ts"
+  ]
+}

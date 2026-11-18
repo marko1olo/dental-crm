@@ -1,4 +1,5 @@
 import { and, eq, ilike, or } from "drizzle-orm";
+import { formatKopecksToRubles } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import type { OrthoMaterialDeductionResult } from "./types.js";
@@ -37,13 +38,14 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 	} = params;
 
 	// DEF-ORTHO-06: Канонический расчет стоимости в копейках (BIGINT)
+	// DEF-ORTHO-API-02: Канонический перевод копеек в рубли через formatKopecksToRubles
 	const effectiveKopecks: bigint =
 		unitCostKopecks !== undefined
 			? BigInt(unitCostKopecks)
 			: unitCostRub !== undefined
 				? BigInt(Math.round(unitCostRub * 100))
 				: 120_000n; // 1200 руб = 120000 коп
-	const costRubFormatted = (Number(effectiveKopecks) / 100).toFixed(2);
+	const costRubFormatted = formatKopecksToRubles(Number(effectiveKopecks));
 
 	try {
 		return await db.transaction(async (tx) => {

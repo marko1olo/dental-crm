@@ -94,19 +94,28 @@ export function Omnibar() {
 			setRemotePatients([]);
 			return;
 		}
+		const abortController = new AbortController();
 		const timer = setTimeout(async () => {
 			try {
-				const res = await fetch(`/api/patients?search=${encodeURIComponent(q)}&limit=15`);
+				const res = await fetch(`/api/patients?search=${encodeURIComponent(q)}&limit=15`, {
+					signal: abortController.signal,
+				});
 				if (res.ok) {
 					const data = await res.json();
 					const items = Array.isArray(data) ? data : (data.patients || data.items || []);
 					setRemotePatients(items);
 				}
 			} catch (err) {
+				if (err instanceof DOMException && err.name === "AbortError") {
+					return;
+				}
 				console.warn("[Omnibar] Remote patient search failed:", err);
 			}
 		}, 150);
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(timer);
+			abortController.abort();
+		};
 	}, [query]);
 
 	const mergedPatients = useMemo(() => {

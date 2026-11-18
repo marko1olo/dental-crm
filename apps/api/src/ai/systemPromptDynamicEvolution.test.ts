@@ -136,7 +136,7 @@ test("AI-REV-12: Total removal of Soviet stationery (043/u) and 54-FZ bureaucrac
 
 	// 1. Clinical protocol execution
 	const protocolResult = (await executeDentalTool(
-		"generate_form_043_entry",
+		"generate_clinical_protocol_entry",
 		{
 			toothNumber: 46,
 			diagnosisMkb: "K02.1",
@@ -144,7 +144,7 @@ test("AI-REV-12: Total removal of Soviet stationery (043/u) and 54-FZ bureaucrac
 		context,
 	)) as Record<string, unknown>;
 
-	const fullText = protocolResult.fullForm043Text as string;
+	const fullText = protocolResult.fullProtocolText as string;
 	assert.ok(
 		fullText.includes(
 			"Медицинская карта приёма стоматологического пациента / Протокол приёма SOAP",

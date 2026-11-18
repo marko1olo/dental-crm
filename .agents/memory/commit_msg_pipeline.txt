@@ -1,0 +1,26 @@
+feat(treatment-pipeline): воронка планов лечения, профилактика отвала и кураторская аналитика
+
+## Контекст и архитектурная цель (Why):
+- Реализация полноценной оперативной воронки планов лечения куратора (DentalPRO/IDENT-паритет) с возможностью интерактивного перетаскивания и смены этапов (Draft, Active, Approved, Completed, Rejected).
+- Устранение риска отвала пациентов: если утвержденный или активный план лечения находится без визитов более 14–21+ дней, система автоматически генерирует сервисные задачи куратору (patientRecalls, когорта treatment_plan_followup).
+- Исправление аналитических искажений: устранено неверное суммирование бюджетов при поиске по пациенту, деление на ноль в Acceptance Rate (CR) и утечки «Пауза NaN дн.» при отсутствии дат.
+- Ликвидация ловушек Red Team: пустые экраны (Empty State) снабжены первичным CTA «Создать первый план лечения» и «Добавить первую услугу в план», устранен сброс списка врачей при фильтрации.
+
+## Что конкретно сделано (What & Where):
+- apps/api/src/services/patients/treatmentPlanDropoutService.ts: создан сервис анти-отвала планов (checkAndGenerateDropoutRecalls, createSinglePlanDropoutRecall) со сканированием неактивных планов >=14д, дедупликацией по открытым реколлам и рассылкой через wsBroker.
+- apps/api/src/routes/treatmentPlan/stageTransitionHandler.ts: реализован обработчик смены этапов POST /api/v1/treatment-plans/:id/transition-stage с фиксацией в PostgreSQL 18, проставлением approvedAt, записью в auditEvents и рассылкой вебсокет-события.
+- apps/api/src/routes/treatmentPlan/pipelineDataAggregator.ts: глубокий рефакторинг агрегатора воронки — безопасный парсинг чисел (safeNum), расчет CR% и среднего чека, флаг isDropoutRisk, подсчет метрик строго по видимым отфильтрованным карточкам.
+- apps/api/src/routes/treatmentPlanRoutes.ts: зарегистрированы эндпоинты stage transition, dropout-prevention batch run и create-dropout-recall.
+- apps/web/src/pages/coordinator/pipeline/: обновлены PipelineCardItem (селектор этапа, 1-клик задача куратору, бейдж риска отвала), PipelineBoard (HTML5 drag-and-drop, prominent Empty State с кнопкой), PipelineKpiSummary (вывод CR% и среднего чека).
+- apps/web/src/pages/coordinator/TreatmentPipeline.tsx: интеграция реактивного обновления без F5, баннер анти-отвала со счетчиком риска, персистентный список докторов accumulatedDoctors.
+- apps/web/src/components/patients/TreatmentPlansList.tsx: добавлен CTA «Добавить первую услугу в план» при пустом плане.
+- docs/competitive-audit/FEATURES_REGISTRY.md: зарегистрирован аддендум 492.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Компиляция API: npx tsc --noEmit -p apps/api/tsconfig.json — Exit Code 0 (0 ошибок).
+- Интеграционные тесты: npx tsx --test apps/api/src/tests/routes/treatmentPipelineAndPublicBudget.test.ts — 9 passing, 0 failing, Exit Code 0 (7.99с).
+- Все проверки выполнены на живой PostgreSQL 18 без моков.
+
+## Синхронизация документации (Documentation Sync):
+- docs/competitive-audit/FEATURES_REGISTRY.md: обновлен статус (492 фичи, [ДА]).
+- .agents/memory/subagent_treatment_pipeline_recalls.mem.json: сохранен чекпоинт с деталями реализации.

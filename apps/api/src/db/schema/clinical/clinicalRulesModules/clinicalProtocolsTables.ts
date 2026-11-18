@@ -149,6 +149,8 @@ export const labOrders = pgTable(
 		 * Закрытые состояния (completed, cancelled) не могут быть открыты назад.
 		 */
 		status: text("status").notNull().default("draft"),
+		/** Клинический этап ортопедической конструкции (fitting_ready, glaze, modeling, in_clinic, etc.) */
+		stage: text("stage"),
 		dueDate: timestamp("due_date", { withTimezone: true }),
 		clinicalNotes: text("clinical_notes"),
 		labComments: text("lab_comments"),
@@ -219,14 +221,6 @@ export const labItems = pgTable(
 			scale: 2,
 		}),
 		tiBaseHeightMm: numeric("ti_base_height_mm", { precision: 4, scale: 2 }),
-		meshTriangleCount: integer("mesh_triangle_count"),
-		meshSurfaceAreaMm2: numeric("mesh_surface_area_mm2", {
-			precision: 10,
-			scale: 2,
-		}),
-		meshVolumeMm3: numeric("mesh_volume_mm3", { precision: 10, scale: 2 }),
-		meshBboxMm: jsonb("mesh_bbox_mm"),
-		isManifold: boolean("is_manifold").default(true),
 		priceRub: numeric("price_rub", { precision: 12, scale: 2 }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

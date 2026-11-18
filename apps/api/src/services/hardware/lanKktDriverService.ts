@@ -179,19 +179,86 @@ export class LanKktDriverService {
 			};
 		}
 
+		// For ATOL WebServer, execute real device status query
+		if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
+			try {
+				const controller = new AbortController();
+				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 3000);
+				let resp: Response;
+				try {
+					resp = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ type: "getDeviceStatus" }),
+						signal: controller.signal,
+					});
+				} finally {
+					clearTimeout(timeoutTimer);
+				}
+
+				if (resp.ok) {
+					const data = (await resp.json()) as Record<string, unknown>;
+					const results = Array.isArray(data.results)
+						? (data.results as Record<string, unknown>[])
+						: [data];
+					const first = results[0] ?? {};
+					const deviceInfo = (first.deviceInfo as Record<string, unknown> | undefined) || {};
+					const fnInfo = (first.fnInfo as Record<string, unknown> | undefined) || {};
+					const errorCode = typeof first.errorCode === "number" ? first.errorCode : 0;
+
+					const paperOk = deviceInfo.paperPresent !== undefined
+						? Boolean(deviceInfo.paperPresent)
+						: !first.outOfPaper && errorCode !== 2;
+					const coverClosed = deviceInfo.coverClosed !== undefined
+						? Boolean(deviceInfo.coverClosed)
+						: !first.coverOpen && errorCode !== 3;
+					const fnPresent = fnInfo.fnPresent !== undefined
+						? Boolean(fnInfo.fnPresent)
+						: errorCode !== 5;
+					const fnFiscalized = fnInfo.fiscalized !== undefined
+						? Boolean(fnInfo.fiscalized)
+						: true;
+
+					const kktSerialNumber = String(deviceInfo.serialNumber || first.kktSerialNumber || "");
+					const fnSerial = String(fnInfo.fnNumber || first.fnNumber || process.env.KKT_FN_SERIAL || "");
+					const firmwareVersion = deviceInfo.firmwareVersion ? String(deviceInfo.firmwareVersion) : undefined;
+					const modelName = String(deviceInfo.modelName || first.modelName || "АТОЛ 27Ф (LAN)");
+
+					return {
+						online: true,
+						paperOk,
+						coverClosed,
+						fnPresent,
+						fnFiscalized,
+						fnWarning: errorCode !== 0 ? this.mapAtolErrorCode(errorCode) : null,
+						modelName,
+						firmwareVersion,
+						fnSerial,
+						kktSerialNumber,
+						lastCheckAt: now,
+						latencyMs: ping.latencyMs,
+						error: errorCode !== 0 ? this.mapAtolErrorCode(errorCode) : null,
+					};
+				}
+			} catch {
+				// Protocol inquiry failed; do not fabricate fake telemetry
+			}
+		}
+
+		// Socket is reachable, but hardware telemetry has not been verified via vendor protocol
 		return {
 			online: true,
-			paperOk: true,
-			coverClosed: true,
-			fnPresent: true,
-			fnFiscalized: true,
-			fnWarning: null,
+			paperOk: false,
+			coverClosed: false,
+			fnPresent: false,
+			fnFiscalized: false,
+			fnWarning: "TCP-порт открыт, но телеметрия ККТ не подтверждена протокольным ответом",
 			modelName: cfg.model === "shtrikh_m_tcp" ? "ШТРИХ-М-01Ф (LAN)" : "АТОЛ 27Ф (LAN)",
-			firmwareVersion: "5.8.20",
-			fnSerial: process.env.KKT_FN_SERIAL || "9960440302145896",
-			kktSerialNumber: "0010670000012345",
+			fnSerial: process.env.KKT_FN_SERIAL || "",
+			kktSerialNumber: "",
 			lastCheckAt: now,
 			latencyMs: ping.latencyMs,
+			error: "Требуется подтверждение статуса через обмен командами с ККТ",
 		};
 	}
 

@@ -59,7 +59,7 @@ export const ActPrintActionBarButtons: React.FC<ActPrintActionBarButtonsProps> =
 								: "Провести списание ТМЦ"}
 					</span>
 					{hasDeficit && !isExecuting && (
-						<span className="px-1.5 py-0.5 rounded bg-amber-950/40 text-amber-200 text-[10px] font-mono font-bold uppercase tracking-wider border border-amber-300/40">
+						<span className="px-1.5 py-0.5 rounded bg-amber-950/40 text-amber-200 text-[10px] font-mono font-semibold border border-amber-300/40">
 							Овердрафт
 						</span>
 					)}

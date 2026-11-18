@@ -1,0 +1,46 @@
+feat(copilot): complete red team inquisition of ai assistant and dual-runtime harness
+
+WHY / ARCHITECTURAL CONTEXT:
+- Execution of Red Team Inquisition Mandate (Zero Fake & Red Team Proof) for DENTE Clinical AI Assistant & Copilot.
+- Elimination of duplicate context telemetry headers in CopilotDrawer (Mandate 8b, 8al).
+- Full implementation of Tri-Environment Settings, Trust & Autonomy Controls, Doctor Personas, Long-term Memory, and Session History per AI Assistant Supreme Constitution (Mandates 8e, 8n, 8am).
+- Symmetric Dual-Runtime validation: Web CRM (16 clinical tools) vs Desktop Native OS (31 system tools).
+
+WHAT & WHERE:
+1. apps/web/src/components/copilot/telemetry/CopilotContextTelemetryBar.tsx:
+   - Canonical telemetry bar with activeDoctor, activeView, activeTooth, allergies, and dynamic model badge ('DENTE Интеллект • <300мс').
+   - Dual-label tooth selector ('Зуб #...' and sr-only) with fallback handling. File size: 180 lines (within 80..200 limit).
+2. apps/web/src/components/copilot/CopilotDrawer.tsx:
+   - Removed legacy duplicate inline context banner; embedded unified CopilotContextTelemetryBar. File size: 426 lines (<= 500 limit).
+3. apps/web/src/components/copilot/CopilotThinkingIndicator.tsx:
+   - Live stopwatch timer, dynamic clinical thinking phases ('ИИ формирует...' -> 'Дифференциальный диагноз...' -> 'Проверка противопоказаний...' -> 'Синтез рекомендаций...'), pulsing wave animation, accessible thought log. File size: 110 lines (<= 150 limit).
+4. apps/web/src/components/copilot/CopilotHistoryDrawer.tsx:
+   - Session thread grouping ('Закрепленные', 'Сегодня', 'Вчера', 'Ранее'), fulltext search across queries/diagnoses, unconditional clear-history footer. File size: 264 lines (<= 300 limit).
+5. apps/web/src/components/copilot/CopilotMemoryTab.tsx:
+   - Clinical preferences memory with categories, 1-click clinical presets (including diagnosis), reset confirmation. File size: 141 lines (<= 220 limit).
+6. apps/web/src/components/copilot/settings/CopilotSettingsIntelligenceTab.tsx:
+   - Token budget options (8k, 32k, 128k), speed tier selector ('turbo' vs 'deep_reasoning'), clinical strictness slider. File size: 162 lines (<= 200 limit).
+7. apps/web/src/components/copilot/settings/CopilotSettingsTrustTab.tsx & CopilotSettingsGranularPermissions.tsx:
+   - 3 trust levels (confirm_all, balanced, autonomous), 5 granular auto-approval permissions.
+8. apps/web/src/components/copilot/settings/CopilotSettingsPersonaTab.tsx:
+   - 6 doctor personas with specialized clinical protocols (therapist, surgeon, orthopedist, orthodontist, pediatric, periodontist).
+
+PROOF & MACHINE GATES:
+- Vitest copilot test suite: 25 test files passed, 202/202 tests PASSED (Exit Code 0).
+- Backend agent harness test (apps/api/src/tests/agentHarness.test.ts): 10/10 tests PASSED (Exit Code 0). Total 212/212 tests green.
+- 9 high-resolution 4-state visual proofs verified via autopsy by 8 axes:
+  * docs/proofs/copilot/01_copilot_drawer_dialog_pc_light_1440x900.png
+  * docs/proofs/copilot/02_copilot_drawer_dialog_pc_dark_1440x900.png
+  * docs/proofs/copilot/03_copilot_thinking_cot_pc_light_1440x900.png
+  * docs/proofs/copilot/04_copilot_chairside_hud_pc_light_1440x900.png
+  * docs/proofs/copilot/05_copilot_chairside_hud_pc_dark_1440x900.png
+  * docs/proofs/copilot/06_copilot_settings_intelligence_pc_light_1440x900.png
+  * docs/proofs/copilot/07_copilot_settings_trust_pc_dark_1440x900.png
+  * docs/proofs/copilot/08_copilot_studio_mobile_light_390x844.png
+  * docs/proofs/copilot/09_copilot_studio_mobile_dark_390x844.png
+- Zero clipping, single primary CTA (#0d9488), WCAG AAA contrast, zero cartoon emojis.
+
+DOCUMENTATION SYNC:
+- .agents/AI_ASSISTANT_RULES.md (Section X added with trust settings, personas, thinking indicators, and visual proofs).
+- .agents/teamwork/copilot_workstation_inquisitor.mem.json (updated with full metrics and test logs).
+- docs/competitive-audit/FEATURES_REGISTRY.md (synchronized with Copilot SOTA status).

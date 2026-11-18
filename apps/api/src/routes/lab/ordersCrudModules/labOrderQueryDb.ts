@@ -25,6 +25,7 @@ export async function selectLabOrdersQuery(
 			material: labOrders.material,
 			colorVita: labOrders.colorVita,
 			status: labOrders.status,
+			stage: labOrders.stage,
 			dueDate: labOrders.dueDate,
 			clinicalNotes: labOrders.clinicalNotes,
 			labComments: labOrders.labComments,

@@ -59,6 +59,8 @@ export interface DmsGuaranteeLetterModalProps {
 		birthDate?: string | undefined;
 		policyNumber?: string | undefined;
 		cardNumber?: string | undefined;
+		phone?: string | null | undefined;
+		[key: string]: unknown;
 	} | undefined;
 	readonly initialLetter?: DmsGuaranteeLetter | undefined;
 	readonly billItems?: readonly DmsBillableItem[] | undefined;

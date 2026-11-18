@@ -1,0 +1,45 @@
+{
+  "domain": "diary/emk finisher",
+  "status": "COMPLETED",
+  "checkpoint_version": 7,
+  "updated_at": "2026-10-24T01:30:00+03:00",
+  "commit": "d0957dc08",
+  "commit_message": "fix(diary): re-shoot EMK diary proofs from live circuit, repair mobile phone clip & add truncation title",
+  "commit_paths": [
+    "apps/web/src/components/visit/emkTab/VisitEmkOdontogramBar.tsx",
+    "apps/web/src/components/visit/mobile-chairside-visit.css",
+    "docs/proofs/emk/01_emk_diary_pc_light.png",
+    "docs/proofs/emk/02_emk_diary_pc_dark.png",
+    "docs/proofs/emk/03_emk_diary_mobile_light.png",
+    "docs/proofs/emk/04_emk_diary_mobile_dark.png"
+  ],
+  "done": [
+    "v3 carried over: API fixes committed 9a30f45c4 (sync-progress Potemkin deleted, shifts guarded)",
+    "POTEMKIN DISCOVERY CLOSED: old docs/proofs/emk/01..04 were sandbox shots from apps/web/emk-preview.html (capture_diary_fast.cjs / capture_diary_proofs.cjs with mockDashboard) — Mandate 8al class; other *-preview.html sandboxes (anamnesis, anesthesia, documents, egisz, endo, pricelist) remain flagged for their domain owners",
+    "LIVE RE-SHOOT: all 4 states re-captured from the honest live circuit via scripts/capture_emk_live_proofs.mjs (gitignored, not committed): real POST /api/auth/login (clinic@example.com, doctor Д-р Соколов) -> #schedule -> «Сегодня» -> appointment card -> «✓ Начать приём» (PC inspector) / mobile sheet «Начать приём в кресле» -> tab «Карта» (EMK) -> honest 1-tap «✓ Соматически здоров / Норма»; zero /api mocks, zero data injection; demo contour day-rollover (ensureDemoShowcaseTenant) respected — no hardcoded dates",
+    "MOBILE DEFECT VERDICT: complaints collapse + mid-line clip on old proofs = emk-preview.html sandbox artifact; live DOM at 390px measured healthy (textarea mobile-chairside-visit-workspace-complaint-input 336x120px, min-height 120px, overflow auto, page drift 0px)",
+    "DEFECT 1 (mobile, fixed): phone in ChairsidePatientQuickBar ran under header action pills (last digit sliced) — cause: .mobile-chairside-phone-link flex-shrink:0 + nowrap inside nowrap subtext; fix in mobile-chairside-visit.css (min-width:0, overflow:hidden, ellipsis on inner span); verified on re-shot proof: graceful «+7 916 234-…»",
+    "DEFECT 2 (PC, fixed): odontogram bar summary truncated without tooltip; measured live row 100% full (516+594=1110px, gap 0) so ellipsis is honest; added title attr in VisitEmkOdontogramBar.tsx (UI_STANDARDS Part 7 §4)",
+    "ALL 4 final proofs eyeballed via Read (PC light/dark 1440x900, Mobile light/dark 390x844): full diary, honest norm texts, single primary CTA «Завершить приём», clean HUD, 0px horizontal drift, no blinding dark spots, no mid-word clipping",
+    "GATES GREEN: web typecheck 0 errors in touched files (179 чужой backlog untouched, file-filtered tsc); npm run check:encoding OK 19174 files; targeted tests 19/19 (mobileChairsideVisitWorkspace incl. phone-link HUD + CSS drift invariant, visitMobileHigErgonomics, emkPerioSection incl. OdontogramBar mounting); pre-commit iron gate OK (encoding, stub-overrides, fetch-response, dynamic-imports)"
+  ],
+  "gates": {
+    "web_typecheck_own_files": "0 errors",
+    "web_typecheck_backlog": "179 unrelated, untouched",
+    "check_encoding": "OK 19174 files",
+    "targeted_tests": "19/19 pass",
+    "pre_commit_iron_gate": "PASSED (gitleaks skipped: binary not in PATH)"
+  },
+  "proofs": [
+    "docs/proofs/emk/01_emk_diary_pc_light.png",
+    "docs/proofs/emk/02_emk_diary_pc_dark.png",
+    "docs/proofs/emk/03_emk_diary_mobile_light.png",
+    "docs/proofs/emk/04_emk_diary_mobile_dark.png"
+  ],
+  "evidence_scratch_untracked": [
+    "docs/proofs/emk/_diag/ (live-DOM diagnostics screenshots)",
+    "scripts/diag_emk_mobile_dom.mjs",
+    "scripts/measure_summary_truncation.mjs",
+    "scripts/capture_emk_live_proofs.mjs (gitignored)"
+  ]
+}

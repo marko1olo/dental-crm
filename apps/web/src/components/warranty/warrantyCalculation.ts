@@ -85,6 +85,22 @@ export function calculateWarrantyTerms(input: {
 	};
 }
 
+export function calculateItemWarrantyTerms(
+	item: WarrantyItem,
+	riskMultiplier = 1.0,
+): { warrantyMonths: number; serviceLifeMonths: number } {
+	const preset = getWarrantyPreset(item.category);
+	const baseWar = item.baseWarrantyMonths || preset.baseWarrantyMonths;
+	const baseLife = item.baseServiceLifeMonths || preset.baseServiceLifeMonths;
+	const rawWar = Math.round(baseWar * riskMultiplier);
+	const calcWar = Math.max(preset.minWarrantyMonths, Math.min(preset.maxWarrantyMonths, rawWar));
+	const warrantyMonths = item.customWarrantyMonths ?? calcWar;
+	const rawLife = Math.round(baseLife * Math.max(0.5, riskMultiplier));
+	const calcLife = Math.max(warrantyMonths, rawLife);
+	const serviceLifeMonths = item.customServiceLifeMonths ?? calcLife;
+	return { warrantyMonths, serviceLifeMonths };
+}
+
 export function calculateMultiItemWarrantyTerms(
 	items: WarrantyItem[],
 	riskFactors?: WarrantyRiskFactors | undefined,

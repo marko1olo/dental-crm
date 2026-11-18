@@ -8,7 +8,7 @@ import {
 } from "../staffUnlockState";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { getDemoShowcaseStaff } from "../../../utils/demoModeEngine";
-import type { StaffPinPadProps, StaffUser } from "./staffPinPadTypes";
+import { type StaffPinPadProps, type StaffUser, demoStaffToStaffUser } from "./staffPinPadTypes";
 import { requestStaffUnlock } from "./staffPinPadApi";
 
 export function useStaffPinPad({
@@ -31,7 +31,8 @@ export function useStaffPinPad({
 			const single = activeStaff[0];
 			if (single) setSelectedUser(single as StaffUser);
 		} else if (!selectedUser && (listPhase === "failed" || listPhase === "empty" || listPhase === "loading" || isDemoShowcaseMode())) {
-			const fallback = ((getDemoShowcaseStaff() as unknown as StaffUnlockMember[])[0] || DEMO_CHIEF_DOCTOR) as StaffUser;
+			const firstDemo = getDemoShowcaseStaff()[0];
+			const fallback: StaffUser = firstDemo ? demoStaffToStaffUser(firstDemo) : (DEMO_CHIEF_DOCTOR as StaffUser);
 			setSelectedUser(fallback);
 		}
 	}, [activeStaff, selectedUser, listPhase]);
@@ -68,7 +69,8 @@ export function useStaffPinPad({
 				targetUser = activeStaff[0] as StaffUser;
 				setSelectedUser(targetUser);
 			} else if (listPhase === "failed" || listPhase === "empty" || listPhase === "loading" || isDemoShowcaseMode()) {
-				targetUser = (((getDemoShowcaseStaff() as unknown as StaffUnlockMember[])[0] || DEMO_CHIEF_DOCTOR) as StaffUser);
+				const firstDemo = getDemoShowcaseStaff()[0];
+				targetUser = firstDemo ? demoStaffToStaffUser(firstDemo) : (DEMO_CHIEF_DOCTOR as StaffUser);
 				setSelectedUser(targetUser);
 			} else {
 				showToast("Сначала выберите сотрудника из списка", "info");

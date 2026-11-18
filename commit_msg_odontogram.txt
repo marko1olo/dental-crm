@@ -1,0 +1,43 @@
+refactor(odontogram): decompose odontogram.css into 16 modular stylesheets <=110 lines
+
+## Контекст и архитектурная цель (Why):
+- Ликвидация циклопического монолита apps/web/src/components/odontogram/odontogram.css (3 069L) в соответствии с МАНДАТОМ 8b.
+- Обеспечение строгой модульности стилей: каждый подмодуль в odontogramStyles/ строго <= 110 строк, мастер-фасад odontogram.css строго <= 20 строк, фасад тулбара OdontogramToolbar.css строго <= 20 строк.
+- Соблюдение МАНДАТА 8am (ровно 1 Primary CTA кнопка цвета var(--teal)), Apple HIG (тач-таргеты >= 44x44px на touch-устройствах, Q1..Q4 мобильные квадранты), 0px паразитного горизонтального скролла и 0 cartoon emoji в UI.
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/components/odontogram/odontogramStyles/: создано 16 изолированных модулей (все <= 110 строк):
+  * odontogramThemeTokens.css (94L): токены :root, light, dark, night, cyber_xray, ocean.
+  * odontogramThemePalette.css (108L): темы emerald, sakura, warm_sand, calm_teal, contrast.
+  * odontogramGrid.css (108L): сетка зубных дуг (min-height: 300px), срединная линия, адаптив.
+  * odontogramToothBase.css (105L): базовый юнит зуба (min-width: 44px, min-height: 48px), ::before хитбокс (44x44px), 60 FPS mesh, подавление фильтров на low-end tier.
+  * odontogramCariesShaders.css (86L): кариозные шейдеры, деминерализация, таргеты поверхностей.
+  * odontogramEndoShaders.css (83L): каналы, обтурация гуттаперчей, резекция верхушки.
+  * odontogramRestorations.css (91L): композиты, керамика, вкладки, коронки, импланты.
+  * odontogramPediatric.css (83L): молочные зубы 51..85, резорбция корней, кариограмма.
+  * odontogramToolbar.css (106L): 1-строчный тулбар (36px), 1 Primary CTA emerald, HUD-кнопки (32px desktop / 44px coarse).
+  * odontogramToolbarStamps.css (106L): штампы, палитра, триггеры действий, санация.
+  * odontogramMobileQuadrants.css (109L): Apple HIG мобильные квадранты Q1..Q4, тач-таргеты >= 44px.
+  * odontogramInteractive.css (96L): радиальное контекстное меню, каретка.
+  * odontogramEstimator.css (80L): живая смета, калькулятор лечения, итоги.
+  * odontogramGost.css (93L): таблица ГОСТ, клавиатурный кейпад ввода.
+  * odontogramHistory.css (88L): хроника истории зуба, таймлайн событий.
+  * odontogramPrint.css (54L): стили печати A4, @media print, скрытие на мобильных.
+- apps/web/src/components/odontogram/odontogram.css: заменен на ультра-тонкий мастер-фасад (19 строк, <= 20L).
+- apps/web/src/components/odontogram/OdontogramToolbar.css: заменен на ультра-тонкий фасад тулбара (6 строк, <= 20L).
+- apps/web/src/components/odontogram/chart/toolbar/ToothChartExpressActions.tsx: удален запрещенный cartoon emoji из текста кнопки "Все интактны / норма".
+- apps/web/src/components/odontogram/__tests__/: обновлены хелперы чтения CSS с резолвингом @import (odontogram60FpsVectorMesh, odontogramDebouncedStorageAndVirtualization, odontogramDeepClinicalParity, odontogramOverhaulAndVisualErgonomics, touchAndKeyboardOdontogramCalibration).
+- docs/proofs/odontogram/README.md: обновлена документация по декомпозиции и доказательной базе.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Vitest: 64 passed (64 test files), 586 passed (586 tests), Exit Code 0 (npm run test:run -- odontogram).
+- CSS Token Purity: node scripts/check-css-tokens.mjs -> 0 unresolvable CSS tokens across 1,209 files.
+- Red Team 4-State Visual Proofs (docs/proofs/odontogram/):
+  * 01_odontogram_pc_light.png (189.5 KB) — 1440x900 PC Light: 1-row toolbar (36px), 1 Primary CTA кнопка, FDI зубные дуги.
+  * 02_odontogram_pc_dark.png (189.2 KB) — 1440x900 PC Dark: Темная тема без белых вспышек (#0f172a / #0b132b).
+  * 03_odontogram_mobile_light.png (73.3 KB) — 390x844 Mobile Light: Q1..Q4 квадранты, тач-таргеты >= 44x44px.
+  * 04_odontogram_mobile_dark.png (70.7 KB) — 390x844 Mobile Dark: Мобильная темная тема, 0px горизонтального скролла.
+- Личный осмотр скриншотов через read_file: 8-осевой аудит пройден, дефектов не обнаружено.
+
+## Синхронизация документации (Documentation Sync):
+- docs/proofs/odontogram/README.md: раздел 6 с полным описанием модульной структуры и доказательств.

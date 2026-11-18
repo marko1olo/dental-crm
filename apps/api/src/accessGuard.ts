@@ -68,6 +68,15 @@ export async function requireClinicalMutationAccess(
 		return true;
 	}
 
+	const identity = getRequestIdentity(request);
+	if (
+		identity.verified &&
+		identity.organizationId &&
+		(identity.userId || identity.role)
+	) {
+		return true;
+	}
+
 	const adminSecret = configuredClinicalMutationSecret();
 	if (!adminSecret) {
 		if (clinicalMutationsUnguardedAllowed()) return true;
@@ -110,6 +119,15 @@ export async function requireClinicalReadAccess(
 	protectedArea = "clinical read",
 ): Promise<boolean> {
 	if (isDemoShowcaseTokenRequest(request)) {
+		return true;
+	}
+
+	const identity = getRequestIdentity(request);
+	if (
+		identity.verified &&
+		identity.organizationId &&
+		(identity.userId || identity.role)
+	) {
 		return true;
 	}
 

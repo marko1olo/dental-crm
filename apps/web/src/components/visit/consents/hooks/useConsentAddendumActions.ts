@@ -36,11 +36,11 @@ export function useConsentAddendumActions({
 				integrityHash: generateSha256(`ADDENDUM_${tplKey}_${patientId}_${nowStr}`),
 			};
 			next[tplKey] = rec;
-			void persistConsentToBackend(tplKey, title, rec);
+			void persistConsentToBackend(tplKey as ConsentTemplateKey, title, rec);
 		}
 		saveConsentRecords(next);
 		if (consentScopeMismatch.uncoveredTemplateKeys.length === 1 && consentScopeMismatch.uncoveredTemplateKeys[0]) {
-			handlePrintSingleFilled(consentScopeMismatch.uncoveredTemplateKeys[0]);
+			handlePrintSingleFilled(consentScopeMismatch.uncoveredTemplateKeys[0] as ConsentTemplateKey);
 		} else {
 			handlePrintTodayPackage();
 		}
@@ -63,7 +63,7 @@ export function useConsentAddendumActions({
 				integrityHash: generateSha256(`ADDENDUM_${tplKey}_${patientId}_${nowStr}`),
 			};
 			next[tplKey] = rec;
-			void persistConsentToBackend(tplKey, title, rec);
+			void persistConsentToBackend(tplKey as ConsentTemplateKey, title, rec);
 		}
 		saveConsentRecords(next);
 		showToast("Дополнительное согласие на новые процедуры отмечено подписанным", "success");

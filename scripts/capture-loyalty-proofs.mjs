@@ -32,7 +32,7 @@ async function main() {
 
 		console.log("Navigating to http://127.0.0.1:5173/?demo=true...");
 		const response = await page.goto("http://127.0.0.1:5173/?demo=true", {
-			waitUntil: "networkidle",
+			waitUntil: "domcontentloaded",
 			timeout: 30000,
 		});
 
@@ -81,8 +81,10 @@ async function main() {
 		});
 		await wait(600);
 		const pcLightPath = path.join(outputDir, "loyalty_pc_light.png");
+		const pcLightCanonPath = path.join(outputDir, "01_loyalty_pc_light.png");
 		await page.screenshot({ path: pcLightPath, fullPage: false });
-		console.log(`Saved: ${pcLightPath}`);
+		await page.screenshot({ path: pcLightCanonPath, fullPage: false });
+		console.log(`Saved: ${pcLightPath} & ${pcLightCanonPath}`);
 
 		// 2. PC Dark (1440x900)
 		console.log("Capturing PC Dark...");
@@ -93,8 +95,10 @@ async function main() {
 		});
 		await wait(600);
 		const pcDarkPath = path.join(outputDir, "loyalty_pc_dark.png");
+		const pcDarkCanonPath = path.join(outputDir, "02_loyalty_pc_dark.png");
 		await page.screenshot({ path: pcDarkPath, fullPage: false });
-		console.log(`Saved: ${pcDarkPath}`);
+		await page.screenshot({ path: pcDarkCanonPath, fullPage: false });
+		console.log(`Saved: ${pcDarkPath} & ${pcDarkCanonPath}`);
 
 		// Close current context and open mobile context for authentic emulation
 		await context.close();
@@ -115,7 +119,7 @@ async function main() {
 
 		const mobilePage = await mobileContext.newPage();
 		await mobilePage.goto("http://127.0.0.1:5173/?demo=true", {
-			waitUntil: "networkidle",
+			waitUntil: "domcontentloaded",
 			timeout: 30000,
 		});
 		console.log("Waiting for window.__useUiSurfaceStore on mobile...");
@@ -157,8 +161,10 @@ async function main() {
 		});
 		await wait(600);
 		const mobileDarkPath = path.join(outputDir, "loyalty_mobile_dark.png");
+		const mobileDarkCanonPath = path.join(outputDir, "04_loyalty_mobile_dark.png");
 		await mobilePage.screenshot({ path: mobileDarkPath, fullPage: false });
-		console.log(`Saved: ${mobileDarkPath}`);
+		await mobilePage.screenshot({ path: mobileDarkCanonPath, fullPage: false });
+		console.log(`Saved: ${mobileDarkPath} & ${mobileDarkCanonPath}`);
 
 		// 4. Mobile Light (390x844)
 		console.log("Capturing Mobile Light...");
@@ -169,8 +175,10 @@ async function main() {
 		});
 		await wait(600);
 		const mobileLightPath = path.join(outputDir, "loyalty_mobile_light.png");
+		const mobileLightCanonPath = path.join(outputDir, "03_loyalty_mobile_light.png");
 		await mobilePage.screenshot({ path: mobileLightPath, fullPage: false });
-		console.log(`Saved: ${mobileLightPath}`);
+		await mobilePage.screenshot({ path: mobileLightCanonPath, fullPage: false });
+		console.log(`Saved: ${mobileLightPath} & ${mobileLightCanonPath}`);
 
 		// Verification Report
 		console.log("\n=========================================");

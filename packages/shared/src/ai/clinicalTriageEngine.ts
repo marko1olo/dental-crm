@@ -193,7 +193,7 @@ export function evaluateClinicalTriage(rawQuery: string): ClinicalTriageEvaluati
 		const suggested: string[] = [];
 		if (detectedTooth) {
 			suggested.push("update_tooth_status");
-			suggested.push("generate_form_043_entry");
+			suggested.push("generate_clinical_protocol_entry");
 		}
 		if (/(?:запиш|запис|слот|расписан)/i.test(query)) suggested.push("create_appointment");
 		if (/(?:чек|касс|оплат|сч[её]т)/i.test(query)) suggested.push("create_invoice_draft");

@@ -165,9 +165,13 @@ export const DEMO_ROLES: DemoRoleOption[] = [
 	},
 ];
 
+import type { StaffUser } from "./staffPinPad/staffPinPadTypes";
+
 interface DemoTourSelectorProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	onSuccess: (clinicProfile: any, userProfile: any) => void;
+	onSuccess: (
+		clinicProfile: { id: string; organizationId: string; name: string; email: string; phone: string },
+		userProfile: StaffUser,
+	) => void;
 	onBackToLogin: () => void;
 }
 
@@ -317,8 +321,8 @@ export function DemoTourSelector({
 					disabled={loading}
 					onClick={() => {
 						const activeRole =
-							DEMO_ROLES.find((r) => r.id === selectedRole) || DEMO_ROLES[0]!;
-						handleLaunchRole(activeRole);
+							DEMO_ROLES.find((r) => r.id === selectedRole) ?? DEMO_ROLES[0];
+						if (activeRole) handleLaunchRole(activeRole);
 					}}
 					className="auth-submit-btn auth-submit-btn--glow"
 				>

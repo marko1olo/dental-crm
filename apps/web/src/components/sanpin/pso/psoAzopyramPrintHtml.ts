@@ -1,5 +1,5 @@
 import type { PsoPrintDocumentParams } from "./azopyramTypes";
-import { renderPsoForm366RowsHtml } from "./azopyramForm366RowsHtml";
+import { renderCleaningControlRowsHtml } from "./azopyramForm366RowsHtml";
 
 export function generatePsoAzopyramPrintHtml(params: PsoPrintDocumentParams): string {
 	const {
@@ -7,7 +7,7 @@ export function generatePsoAzopyramPrintHtml(params: PsoPrintDocumentParams): st
 		chiefDoctorFullName, headNurseFullName, dateRangeTextRu, records,
 	} = params;
 
-	const rowsHtml = renderPsoForm366RowsHtml(records);
+	const rowsHtml = renderCleaningControlRowsHtml(records);
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -78,4 +78,7 @@ export function generatePsoAzopyramPrintHtml(params: PsoPrintDocumentParams): st
 </html>`;
 }
 
-export { generatePsoAzopyramPrintHtml as generateStatutoryPsoForm366PrintHtml };
+export {
+	generatePsoAzopyramPrintHtml as generateCleaningControlPrintHtml,
+	generatePsoAzopyramPrintHtml as generateStatutoryPsoForm366PrintHtml,
+};

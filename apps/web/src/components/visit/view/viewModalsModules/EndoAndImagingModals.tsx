@@ -12,6 +12,8 @@ import { EndodonticStudioModal } from "../../../endo/EndodonticStudioModal";
 import { VisiographComparisonModal } from "../../../radiology/VisiographComparisonModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import type { VisitModalPatientEntity, VisitModalDashboardEntity } from "./visitViewModalsTypes";
+import type { VisitDashboardEntity } from "../VisitViewProps";
+import type { Dashboard } from "@dental/shared";
 
 export interface EndoAndImagingModalsProps {
 	effectiveActiveModal: string | null;
@@ -23,8 +25,8 @@ export interface EndoAndImagingModalsProps {
 	isVisiographComparisonModalOpen?: boolean | undefined;
 	setIsVisiographComparisonModalOpen?: ((v: boolean) => void) | undefined;
 	activePatient: VisitModalPatientEntity | null | undefined;
-	dashboard: VisitModalDashboardEntity | null | undefined;
-	patientAge?: string | null | undefined;
+	dashboard: VisitDashboardEntity | undefined;
+	patientAge?: string | number | null | undefined;
 	appendToEMKField: (field: string, text: string) => void;
 }
 
@@ -56,14 +58,12 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 					toothNumber={Number(endoModalToothNumber)}
 					toothState={endoModalToothState}
 					visitId={
-						dashboard?.activeVisit?.id ||
-						(typeof dashboard?.activeVisitId === "string" ? dashboard.activeVisitId : undefined)
+						((dashboard as Record<string, unknown> | null | undefined)?.activeVisit as { id?: string } | undefined)?.id ||
+						((dashboard as Record<string, unknown> | null | undefined)?.activeVisitId as string | undefined)
 					}
 					patientId={
 						activePatient?.id ||
-						(typeof dashboard?.activeVisit?.patientId === "string"
-							? dashboard.activeVisit.patientId
-							: undefined)
+						((dashboard as Record<string, unknown> | null | undefined)?.activeVisit as { patientId?: string } | undefined)?.patientId
 					}
 					onInsertToProtocol={(protocolText) => {
 						appendToEMKField("treatmentPlan", protocolText);
@@ -76,10 +76,16 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 				<VisiographComparisonModal
 					isOpen={Boolean(isVisiographComparisonModalOpen)}
 					onClose={() => setIsVisiographComparisonModalOpen?.(false)}
-					patientName={activePatient?.fullName || activePatient?.name}
-					patientCardNumber={activePatient?.cardNumber || activePatient?.medicalCardNumber}
+					patientName={(activePatient?.fullName || activePatient?.name) ?? undefined}
+					patientCardNumber={
+						(typeof activePatient?.cardNumber === "string"
+							? activePatient.cardNumber
+							: typeof activePatient?.medicalCardNumber === "string"
+								? activePatient.medicalCardNumber
+								: undefined)
+					}
 					activeToothFdi={endoModalToothNumber ?? undefined}
-					patientAge={patientAge ?? undefined}
+					patientAge={patientAge != null ? String(patientAge) : undefined}
 					onInsertProtocol={(note) => appendToEMKField("anamnesis", note)}
 				/>
 			)}

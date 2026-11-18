@@ -8,11 +8,11 @@ import type {
 	DepositTransferVoucher,
 	PatientClinicalSnapshot,
 	PatientDemographicsSnapshot,
-	PatientSignatureType,
 	SomaticAnamnesisSnapshot,
 	TreatmentPlanSnapshot,
 	VisitDiaryEntrySnapshot,
 } from "./transferSnapshotTypes.js";
+import type { PatientSignatureType } from "./transferConsentTypes.js";
 
 export interface SelectedTransferComponents {
 	readonly demographics: boolean;

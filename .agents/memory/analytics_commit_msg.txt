@@ -1,0 +1,41 @@
+feat(analytics): консолидация SSOT дашборда отчётов, чистка Diagnocat и 4-State Proof
+
+## Контекст и архитектурная цель (Why):
+- Ликвидация дублирования и наслоения дашбордов: в ManagementViewRouter.tsx одновременно рендерились AnalyticsDashboardView и ManagerReportsPanel друг под другом из-за устаревшего теста.
+- Искоренение стороннего бренда Diagnocat из бэкенда, маршрутов, типов и комментариев в соответствии с Мандатом 8ap (запрет чужих CRM и вендоров).
+- Устранение деления на ноль (NaN / null) в расчете среднего чека клиники и когортном анализе LTV при 0 завершенных визитов.
+- Приведение мобильной верстки к стандартам Apple HIG (тач-таргеты >= 44x44px, Grouped List Cards, Natural Thumb Zone, 0px горизонтального скролла) и десктопной плотности (32-36px кнопки, ровно 1 Primary CTA).
+- Устранение коллизии и наездов тулбаров при переключении между разделами аналитики.
+
+## Что конкретно сделано (What & Where):
+- apps/api/src/routes/analytics/diagnocatRoutes.ts: зарегистрирован канонический эндпоинт /api/analytics/ai-diagnostics (с сохранением безопасного алиаса для внешних клиентов), санитаризированы сообщения логов и типы на нейтральную клиническую терминологию («ИИ-скрининг рентгенологических снимков»).
+- packages/shared/src/analytics/executiveDashboard.ts: этап 4 переименован в «Осмотр + ИИ-диагностика снимков» с нейтральным описанием автоскрининга патологий.
+- packages/shared/src/clinical/cmoEmkQualityAuditEngine.ts: клинический дефект переименован в «Расхождение диагноза с КТ / ИИ-скринингом снимков».
+- apps/api/src/routes/analytics/cohortLtvCalculator.ts: добавлены гварды Number.isFinite для предотвращения NaN при делении на 0 в когортных расчетах.
+- apps/web/src/components/reports/reportsDashboardModules/ReportsDashboardDoctorsTable.tsx: средний чек при 0 завершенных визитов безопасно возвращает 0 ₽; добавлена адаптивная трансформация мобильных Grouped List Cards (sm:hidden) и десктопной таблицы (hidden sm:block).
+- apps/web/src/components/reports/reportsDashboardModules/ReportsDashboardHeader.tsx, ReportsDashboardKpis.tsx, ReportsDashboardScheduleLoad.tsx: полная токенизация Dark Mode на CSS-переменных (--canvas, --paper, --line, --ink), десктопные кнопки 32px (sm:h-8), ровно одна Primary CTA кнопка «Печать A4».
+- apps/web/src/pages/analyticsDashboard/AnalyticsHeaderBar.tsx: добавлен канонический таб «Отчёты» (reports) наряду с «Директор» и «Графики»; скрыта конфликтующая панель операционных фильтров при активном табе отчётов.
+- apps/web/src/pages/analyticsDashboard/AnalyticsSubDashboards.tsx: поддержан ленивый монтируемый вызов ManagerReportsPanel при analyticsSection === "reports".
+- apps/web/src/pages/analyticsDashboard/AnalyticsDashboardView.tsx: поддержана автоматическая инициализация секции по хэшу URL (#reports, #payout) и прослушивание события hashchange.
+- apps/web/src/components/appLayout/viewRouterModules/ManagementViewRouter.tsx: удален принудительный рендеринг дублирующего ManagerReportsPanel под AnalyticsDashboardView.
+- apps/web/src/utils/routeUtils.ts: хэши #reports и #report направляются в канонический вид analytics.
+- apps/web/src/components/appLayout/modalsContainerModules/standalone/ReportsStandaloneLauncher.tsx: создан легкий лаунчер (<= 120 строк) для автономного запуска по параметрам ?reports=1, #reports, ?analytics=1 (Мандат 8aq).
+- apps/web/src/components/appLayout/modalsContainerModules/StandaloneLaunchers.tsx: подключен renderReportsStandaloneLauncher.
+- apps/web/src/components/analytics/FinancialAnalyticsModal.tsx & analyticsMedicalPrivacy.test.ts: канцелярит «152-ФЗ и ст. 13 323-ФЗ» заменен на семантический доменный язык «Защита персональных данных и врачебной тайны: финансовый учёт оперирует исключительно агрегированными кассовыми суммами».
+- apps/web/src/tests/managerReportSlicesReachTheOwner.test.ts: актуализировано место монтирования панели в каноническом дереве компонентов.
+- scripts/take_analytics_redteam_proofs.cjs: создан надежный скрипт захвата 4 состояний в изолированных контекстах с ожиданием гидратации дашборда.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Unit-тесты аналитики: 43 passed (apps/web/src/components/analytics/__tests__/*.test.ts)
+- E2E тесты панели отчетов: 6 passed (apps/web/src/tests/managerReportSlicesReachTheOwner.test.ts)
+- Тесты экспорта CSV: 6 passed (apps/web/src/tests/reportsCsvExport.test.ts)
+- API тесты отчетов управляющего: 22 passed (apps/api/src/tests/routes/managerReports.test.ts)
+- API тесты когорт и таймзон клиники: 10 passed (apps/api/src/tests/analyticsCohortTimeZone.test.ts, analyticsPlanFunnelRoute.test.ts)
+- 4-State Visual Proofs (лично отсмотрены через read_file):
+  * docs/proofs/analytics/analytics_pc_light.png (117 КБ, PC Light 1440x900)
+  * docs/proofs/analytics/analytics_pc_dark.png (100 КБ, PC Dark 1440x900, 0 white flashes)
+  * docs/proofs/analytics/analytics_mobile_light.png (208 КБ, Mobile Light 390x844, touch targets >= 44px)
+  * docs/proofs/analytics/analytics_mobile_dark.png (174 КБ, Mobile Dark 390x844, Apple HIG)
+
+## Синхронизация документации (Documentation Sync):
+- docs/competitive-audit/BACKLOG.md: добавлена запись Волна 363 (Red Team инквизиция аналитики и отчетов).

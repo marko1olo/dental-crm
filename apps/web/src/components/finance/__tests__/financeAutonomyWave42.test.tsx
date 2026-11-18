@@ -18,7 +18,7 @@ import { validateBuyerInn54Fz } from "../cashboxInnValidation.js";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 import { WarehousePackageWriteOffBar } from "../../inventory/WarehousePackageWriteOffBar";
 import type { InventoryItem } from "../../inventory/useInventoryLogic.js";
-import { AutoclaveSterilizationLogModal } from "../../sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
+import { SanpinStudioModal } from "../../sanpin/SanpinStudioModal";
 import {
 	generateKraftBarcode,
 	calculateKraftSterilityExpiration,
@@ -117,18 +117,18 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 	});
 
 	describe("5. SanPiN 3.3686-21 Autoclave Batch Confirmation & Kraft Serial Tracking", () => {
-		it("Renders canonical sterilization log modal in AutoclaveSterilizationLogModal", () => {
+		it("Renders canonical sterilization log modal in SanpinStudioModal", () => {
 			const html = renderToString(
-				<AutoclaveSterilizationLogModal
+				<SanpinStudioModal
 					isOpen={true}
 					onClose={() => {}}
-					initialTab="new_cycle"
+					initialTab="autoclave"
 				/>,
 			);
 
 			assert.ok(
-				html.includes("autoclave-log-modal-container"),
-				"Must render canonical autoclave log modal container",
+				html.includes("sanpin-studio-modal"),
+				"Must render canonical autoclave studio modal container",
 			);
 		});
 

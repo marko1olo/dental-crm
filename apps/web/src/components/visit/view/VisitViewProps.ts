@@ -23,6 +23,22 @@ import type {
 import type React from "react";
 import type { VisitNoteField, VisitNoteForm } from "../../../AppHelpers";
 import type { ToothState } from "../../../store/visit/types";
+import type { TreatmentPlanLike } from "../visitPlanStageHandoff";
+
+export type VisitLoadedTreatmentPlan = TreatmentPlanLike;
+
+export type VisitDashboardEntity = (Dashboard & {
+	organization?: {
+		name?: string;
+		phone?: string;
+		address?: string;
+		inn?: string;
+		ogrn?: string;
+		licenseNumber?: string;
+		[key: string]: unknown;
+	} | null;
+	[key: string]: unknown;
+}) | null;
 
 export type VisitIconComponent = React.ComponentType<{
 	size?: number | string;
@@ -55,17 +71,18 @@ export interface VisitPatientEntity
 	> {
 	id: string;
 	fullName: string;
-	name?: string;
-	birthDate?: string | null;
-	phone?: string | null;
-	address?: string | null;
-	activeTreatmentPlanId?: string | null;
-	allergies?: string | null;
-	allergyHistory?: string | null;
-	somaticNotes?: string | null;
-	somaticHistory?: string | null;
-	concomitantDiseases?: string | null;
-	chronicDiseases?: string | null;
+	name?: string | undefined;
+	birthDate?: string | null | undefined;
+	phone?: string | null | undefined;
+	address?: string | null | undefined;
+	activeTreatmentPlanId?: string | null | undefined;
+	allergies?: string | null | undefined;
+	allergyHistory?: string | null | undefined;
+	somaticNotes?: string | null | undefined;
+	somaticHistory?: string | null | undefined;
+	concomitantDiseases?: string | null | undefined;
+	chronicDiseases?: string | null | undefined;
+	[key: string]: unknown;
 }
 
 export interface VisitAppointmentEntity
@@ -85,24 +102,25 @@ export interface VisitAppointmentEntity
 	> {
 	id: string;
 	patientId: string;
-	doctorUserId?: string | null;
-	chairId?: string | null;
-	status?: Appointment["status"] | "signed" | "closed" | string;
-	startsAt?: string | null;
-	endsAt?: string | null;
-	startTime?: string | null;
-	startAt?: string | null;
-	createdAt?: string | null;
-	date?: string | null;
-	reason?: string | null;
-	diagnosisMkb10?: string | null;
-	clinicalStage?: string | null;
-	stageIndex?: number | null;
-	toothNumber?: number | null;
-	treatmentPlanId?: string | null;
-	stageNumber?: number | null;
-	stageTitle?: string | null;
-	stageId?: string | null;
+	doctorUserId?: string | null | undefined;
+	chairId?: string | null | undefined;
+	status?: Appointment["status"] | "signed" | "closed" | string | undefined;
+	startsAt?: string | null | undefined;
+	endsAt?: string | null | undefined;
+	startTime?: string | null | undefined;
+	startAt?: string | null | undefined;
+	createdAt?: string | null | undefined;
+	date?: string | null | undefined;
+	reason?: string | null | undefined;
+	diagnosisMkb10?: string | null | undefined;
+	clinicalStage?: string | null | undefined;
+	stageIndex?: number | null | undefined;
+	toothNumber?: number | null | undefined;
+	treatmentPlanId?: string | null | undefined;
+	stageNumber?: number | null | undefined;
+	stageTitle?: string | null | undefined;
+	stageId?: string | null | undefined;
+	[key: string]: unknown;
 }
 
 export interface VisitDoctorEntity
@@ -110,13 +128,14 @@ export interface VisitDoctorEntity
 		Partial<StaffMember>,
 		"id" | "fullName" | "role" | "specialty" | "specialties"
 	> {
-	id?: string;
-	userId?: string;
-	fullName?: string;
-	name?: string;
-	role?: StaffRole;
-	specialty?: DentalSpecialty | string;
-	specialties?: DentalSpecialty[];
+	id?: string | undefined;
+	userId?: string | undefined;
+	fullName?: string | undefined;
+	name?: string | undefined;
+	role?: StaffRole | undefined;
+	specialty?: DentalSpecialty | string | undefined;
+	specialties?: DentalSpecialty[] | undefined;
+	[key: string]: unknown;
 }
 
 export interface VisitProtocolTemplateItem
@@ -124,9 +143,10 @@ export interface VisitProtocolTemplateItem
 	id: string;
 	title: string;
 	specialty: DentalSpecialty | string;
-	summary?: string;
-	primaryComplaint?: string;
-	diagnosisICD?: string;
+	summary?: string | undefined;
+	primaryComplaint?: string | undefined;
+	diagnosisICD?: string | undefined;
+	[key: string]: unknown;
 }
 
 export interface VisitNoteFormExtended extends VisitNoteForm {
@@ -134,6 +154,7 @@ export interface VisitNoteFormExtended extends VisitNoteForm {
 	complaints?: string | undefined;
 	objective?: string | undefined;
 	treatment?: string | undefined;
+	[key: string]: unknown;
 }
 
 export interface VisitPrimaryActionConfig {
@@ -222,6 +243,8 @@ export interface VisitViewProps {
 	handlePolishTranscriptWithAi?: (() => Promise<void> | void) | undefined;
 	onOpenLabOrderModal?: (() => void) | undefined;
 	onCloseVisit?: (() => void) | undefined;
+	visitSubViewTab?: string | undefined;
+	onVisitSubViewTabChange?: ((tab: string) => void) | undefined;
 	hasVisitTranscriptText: boolean;
 	imagingKindLabels: Record<ImagingStudyKind, string>;
 	isDraftAccepting: boolean;
@@ -279,7 +302,7 @@ export interface VisitViewProps {
 	toothStateByCode: Record<string, ToothState | string>;
 	transcript: string;
 	undoTranscriptClear: () => void;
-	updateVisitNoteField: (field: VisitNoteField | string, value: string) => void;
+	updateVisitNoteField: (field: VisitNoteField | string, value: unknown) => void;
 	visibleVisitSpecialtyFocusOptions: VisitSpecialtyFocusOption[];
 	visitDraftBuildMissingSteps: string[];
 	visitDraftMissingFieldLabel: (field: string) => string;

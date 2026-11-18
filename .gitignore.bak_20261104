@@ -1,0 +1,299 @@
+*.asar
+resources/
+node_modules/
+dist/
+.env
+.env.local
+.env.*
+!.env.example
+.DS_Store
+*.log
+coverage/
+.turbo/
+.vite/
+/storage/
+!apps/web/src/services/storage/
+.data/
+apps/api/.data/
+.logs/
+.tmp/
+.tmp*/
+tmp/
+test-results/
+artifacts/
+*.pid
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.session
+*.session-journal
+local-secrets/*.env
+local-secrets/*.local
+!local-secrets/*.example
+!local-secrets/README.md
+# Здесь стояло `scripts/smoke-speech-key-rotation.mjs`. Правило снято 2026-08-06:
+# ошибочным было ОНО, а не отслеживание. Скрипт живой — 7119 байт в HEAD, заведён
+# в package.json как `smoke:speech-key-rotation`, описан в README.md и в
+# docs/05-speech-transcription-plan.md. Ключи внутри синтетические
+# (`..._do_not_leak_111111111111111111`), и вся его работа — доказывать, что
+# настоящие ключи НЕ утекают в лог и в файл здоровья.
+# Правило пришло с самым первым коммитом 57d8a7817 (2026-05-28) и на шесть недель
+# опередило сам файл, созданный в 99bba4e0c (2026-07-08) — то есть добавлено не
+# из-за содержимого этого скрипта. Секрета в нём не было и нет.
+playwright-report/
+blob-report/
+*.tsbuildinfo
+*.onnx
+models/
+
+# PGlite database is a regenerable artifact (rebuilt via `npm run db:reset-seed`
+# from .data/dental-crm-state.json). Never track its raw Postgres page files.
+dente-db/
+apps/api/dente-db/
+.local-pg-data/
+dente_local_db_win/
+
+
+# Git internal leftover from a prior history rewrite; must never be tracked.
+.git-rewrite/
+
+.env*
+# Негация обязана стоять ПОСЛЕ широкого шаблона, а не до него.
+#
+# Строка 6 `!.env.example` перекрывалась строкой `.env*` выше: git применяет
+# ПОСЛЕДНЕЕ совпавшее правило, поэтому `.env.example` фактически игнорировался,
+# несмотря на явную негацию. Проверено `git check-ignore -v .env.example` —
+# печатался именно `.env*`, а не негация. Файл уцелел только потому, что был
+# добавлен в индекс раньше правила, а игнор не снимает с отслеживания.
+# Следствие для нового окружения: единственный документ, описывающий требуемые
+# переменные, молча не попал бы в репозиторий.
+!.env.example
+
+secrets.json
+
+keys.json
+
+# ---- Scratch / one-off agent scripts (never track) -------------------------
+check-*.cjs
+e2e*.cjs
+*.tmp
+fix*.cjs
+fix*.js
+fix*.py
+fix*.mjs
+patch_*.cjs
+patch_*.js
+# Каталоги `scratch/` и файлы `scratch_*` — целиком, на любой глубине.
+#
+# Прежние две строки (`scratch_*.cjs`, `scratch_*.js`) ловили только два
+# расширения и ни одного КАТАЛОГА, и мусор прошёл сквозь них. Измерено 2026-08-05
+# через `git check-ignore`: НЕ попадали под правила `apps/api/scratch_rewrite.ts`
+# (расширение `.ts`), `apps/api/scratch/find_routes.cjs` и
+# `apps/api/scratch/test_bypass.ts` (внутри каталога, имена не совпали ни с
+# `fix*`, ни с `patch_*`), а также любой `apps/web/scratch/*`.
+#
+# Эти скрипты — прямое нарушение мандата 9 «ZERO CRUTCH SCRIPTS» (.agents/AGENTS.md):
+# правка исходников регулярками вместо редактора. Ущерб не гипотетический —
+# обёртки `withTenantCtx` были вставлены без закрывающих скобок, и `npm run typecheck`
+# падал с 8 ошибками TS1005. Правило существует, чтобы следующий агент физически
+# не смог закоммитить такой мусор.
+#
+# ВАЖНО: игнор НЕ снимает файл с отслеживания. 64 файла с `scratch` в пути уже
+# в индексе (`apps/web/scratch/**`, корневые `scratch_screenshot_*`) — на них это
+# правило не действует, их вычищает только `git rm --cached`.
+scratch/
+scratch_*
+
+# Исключение: рекон-евиденция archon отслеживается намеренно, это приложения к
+# аудиту, а не одноразовые скрипты. Без этой строки новые файлы доказательств
+# молча переставали бы добавляться в индекс.
+!.agents/archon/**/scratch/
+
+script.cjs
+move_*.cjs
+take_screenshots*.cjs
+take_screenshots*.mjs
+apps/web/take_screenshots*.mjs
+apps/web/audit_capture.cjs
+test_dictation.cjs
+
+# ---- Diff / temp text dumps ------------------------------------------------
+diff_*.txt
+temp_*.txt
+
+# ---- Screenshot artifacts at repo root (use artifacts dir instead) ---------
+screenshot_*.png
+shot_*.png
+
+# ---- Python bytecode -------------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+.postgres/
+backups/
+*.sql.enc
+# Подписанные токены для съёмки панелей: выдаются заново скриптом,
+# в репозиторий попадать не должны.
+.ops-shot-tokens.json
+
+# Скриншоты проверки мастера переноса: образцы содержат сгенерированные ФИО,
+# а сами снимки пересоздаются скриптом при каждом прогоне.
+screenshots/migration-wizard/
+
+# ---- Одноразовые агентские скрипты (НИКОГДА не в git) ----------------------
+# Playwright-съёмки, дебаг-зонды, ручные пробы — создаются агентами на лету,
+# не несут ценности в истории. Полезные (smoke-*, verify-*, check-*, cleanup_*)
+# под эти паттерны не попадают.
+scripts/capture_*.cjs
+scripts/capture_*.mjs
+scripts/debug_*.cjs
+scripts/debug_*.mjs
+scripts/inspect_*.cjs
+scripts/inspect_*.mjs
+scripts/probe_*.cjs
+scripts/probe_*.mjs
+scripts/test_*.cjs
+scripts/test_*.mjs
+scripts/snap_*.cjs
+scripts/redteam_*.cjs
+scripts/sandbox_*.cjs
+!scripts/sandbox_hunter.cjs
+scripts/split_*.cjs
+scripts/split_*.py
+scripts/split.py
+scripts/generate_sample_*.cjs
+scripts/generate_apphelpers_*.cjs
+scripts/generate_and_capture_*.ts
+scripts/build_clean_*.cjs
+scripts/demo_*.ts
+scripts/diagnose_*.mjs
+scripts/wait_app_boot.cjs
+# Дампы и JSON-мусор сессий агентов
+scripts/*_debug.json
+scripts/*_parsed.json
+scripts/*_declarations.json
+scripts/*_exports.json
+scripts/file_limits_whitelist.json
+scripts/module_items_debug.json
+scripts/stmts_parsed.json
+scripts/apphelpers_declarations.json
+scripts/baseline_apphelpers_exports.json
+# .bak резервные копии перед рефактором
+scripts/*.bak
+**/*.original.tsx
+**/*.original.tsx.bak
+**/*.original.ts.bak
+
+# ---- Корневые пруф-скриншоты и папка screenshots/ --------------------------
+# Нужные скриншоты живут в docs/screenshots/ и docs/proofs/. Корневой мусор — игнорируем.
+/proof_*.png
+/schedule_pc_*.png
+/visit_diary_pc_*.png
+/screenshots/
+!/screenshots/migration-wizard/
+!docs/screenshots/
+!docs/proofs/
+
+# Файл с именем NUL — всегда следствие ошибки, а не чей-то замысел.
+#
+# `cmd > NUL` в cmd.exe выбрасывает вывод в устройство-пустышку, но в Git Bash
+# на этой машине NUL устройством не является, и та же строка СОЗДАЁТ ФАЙЛ с
+# перенаправленным выводом внутри. Найден apps/api/NUL с выводом ssh-keyscan:
+# ключ хоста публичный и секретом не является, но адрес сервера, к которому
+# ходят по SSH, в публичном репозитории лежать не должен.
+#
+# Хуже того, такой файл ЛОМАЕТ ПОИСК: NUL — зарезервированное имя устройства
+# Windows, поэтому rg спотыкается на нём с «os error 1» при каждом обходе
+# apps/api, а Win32 API не может его даже открыть по имени. Поиск — единственный
+# санкционированный инструмент разведки в этом репозитории, и шум в нём
+# маскирует настоящие ошибки обхода.
+NUL
+**/NUL
+
+# Копии исходников для мутационных проверок («докажи, что страж КУСАЕТ»).
+#
+# Закон волны требует от исполнителя двух кодов выхода: EXIT_PASS на своей правке
+# и EXIT_BITE на искусственно сломанной КОПИИ. Копию велено класть в /tmp — но у
+# копии компонента должны разрешаться его же импорты, а из /tmp относительные
+# пути не работают. Поэтому копия неизбежно ложится РЯДОМ с оригиналом, то есть
+# внутрь apps/*/src, где её компилирует typecheck и видят все переписи.
+#
+# Такие файлы обязан удалять сам исполнитель. Эти правила — сеть безопасности от
+# забытого остатка, а не разрешение оставлять мусор в исходниках.
+# Шаблон покрывает и `__biteFoo.tsx`, и `__revBiteAfter.test.ts`: ревьюеры называют
+# свои копии по-своему, и узкий `__bite*` их пропускал.
+#
+# ОСОБО ПРО ИМЕНА С `.test.`: копия, названная `*.test.ts`, попадает под тестовую
+# маску проекта (`src/**/*.test.ts` в apps/web/package.json) и ИСПОЛНЯЕТСЯ в общем
+# наборе. Это не сор, а изменение результата: замерено — число тестов web скакало
+# 1259 → 1250 между двумя прогонами ведущего именно из-за таких файлов, и разобрать
+# причину падений стало нельзя. Мутационную копию НЕЛЬЗЯ называть `*.test.*`.
+**/__*bite*
+**/__rev*
+**/_*tmp/
+**/_*tmp*.ts
+**/_*tmp*.tsx
+
+# Кэш инкрементальной сборки TypeScript. Отслеживать его нельзя.
+#
+# Файл перезаписывается при КАЖДОМ прогоне typecheck (`tsc -b`), поэтому
+# отслеживаемый он делает дерево грязным от простой проверки: измерено — md5
+# менялся между двумя прогонами подряд. Три следствия, и последнее хуже всех:
+#   • артефакт сборки может уехать в чей-то коммит;
+#   • он создаёт ЛОЖНЫЙ ШУМ в проверке «не подмёл ли я чужую незакоммиченную
+#     работу», которой в этой кампании пользуется каждый коммит и каждое ревью;
+#   • содержимое машинное и в diff нечитаемо, то есть проверить его глазами нельзя.
+# Пересоздаётся сам при первом typecheck, терять тут нечего.
+**/tsconfig.tsbuildinfo
+ 
+.tools/ 
+
+.dente-data/
+apps/api/.dente-data/
+
+# Каталог, куда приложение складывает ЗАГРУЖЕННЫЕ ФАЙЛЫ — вложения к визитам,
+# снимки, документы пациентов. Правила не было вовсе: проверено 2026-08-06
+# командой `git check-ignore --no-index -v apps/api/uploads/probe-big-a.bin`,
+# ответ — ни одного совпадения. То есть любой файл, загруженный при локальном
+# прогоне, попадал в индекс на общих основаниях.
+#
+# Риск не гипотетический. Прямо сейчас в HEAD лежат пять файлов, заведённых
+# агентом под опыт с исчерпанием пула соединений и удалённых с диска, но НЕ из
+# индекса (`git ls-tree -r -l HEAD`):
+#     apps/api/uploads/probe-big-a.bin        67 108 864 Б  (64 МиБ)
+#     probe-img-a.png / probe-img-b.png             по 91 Б
+#     probe-small-a.bin / probe-small-b.bin         по 24 Б
+# Одноразовая фикстура в 64 МиБ теперь в истории обоих зеркал. Это правило её
+# оттуда НЕ уберёт: игнор действует только на неотслеживаемые пути, снятие —
+# `git rm --cached`, а вычистка истории — отдельное решение владельца.
+#
+# Настоящая опасность здесь не размер, а предметная область. Продукт медицинский,
+# и вложение к визиту — это снимок или документ конкретного пациента. Без этого
+# правила первый же прогон на реальных данных отправил бы врачебную тайну в
+# репозиторий с двумя зеркалами, причём `git status` не показал бы ничего:
+# отслеживаемый файл не «untracked». Ловит это только `check:tracked-ignored`.
+apps/api/uploads/
+uploads/
+
+# Папка с материалами реверс-инжиниринга внешних систем (дампы, распакованные приложения)
+РЕВЕРС ИНЖИНИРИНГ*/
+docs/competitive-audit/РЕВЕРС ИНЖИНИРИНГ*/
+надо отсюда всё спиздить сука/
+reference_repos/
+.agents/orchestrator_*/
+.agents/sentinel_*/
+хули втсал, где субагенты -УДАЛЯТЬ ЗАПРЕЩЕНО.txt
+.mem*.json
+
+
+/*.png
+/scripts/*.png
+/scripts/*_commit_msg*.txt
+/scripts/*_commit*.txt
+/ts_web_errors.txt
+
+/scripts/commit_*.txt
+/scripts/*.txt

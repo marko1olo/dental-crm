@@ -1,7 +1,7 @@
 import React from "react";
 
 export interface ImagingHiddenInputsProps {
-	attachBrowserDirectoryInputRef?: React.RefObject<HTMLInputElement | null>;
+	attachBrowserDirectoryInputRef?: React.RefObject<HTMLInputElement | null> | undefined;
 	browserImagingFilesInputRef: React.RefObject<HTMLInputElement | null>;
 	cameraCaptureInputRef: React.RefObject<HTMLInputElement | null>;
 	browserImagingFileInputAccept?: string | undefined;

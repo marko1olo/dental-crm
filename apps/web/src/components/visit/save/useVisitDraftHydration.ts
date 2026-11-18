@@ -52,7 +52,7 @@ export function useVisitDraftHydration(params: UseVisitDraftHydrationParams): vo
 				const draftPayload = visitNoteDraftFromForm(formToSave, [
 					"Автосохранение при переключении кресла соло-врача.",
 				]);
-				void saveVisitDraft(oldVisitId, draftPayload, organizationId || activeVisitOrgId, { immediate: true });
+				void saveVisitDraft(oldVisitId, draftPayload, (organizationId || activeVisitOrgId) ?? undefined, { immediate: true });
 			}
 			lastSavedSignatureRef.current = "";
 			previousVisitIdRef.current = effectiveVisitId;

@@ -39,17 +39,17 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
 					</div>
 					<div className="mobile-chairside-patient-subtext">
 						{patientAge && <span>{patientAge}</span>}
-						{patientAge && activePatient?.phone && <span className="opacity-40">·</span>}
-						{activePatient?.phone && (
+						{Boolean(patientAge && activePatient?.phone) && <span className="opacity-40">·</span>}
+						{activePatient?.phone ? (
 							<a
-								href={`tel:${activePatient.phone}`}
+								href={`tel:${String(activePatient.phone)}`}
 								className="mobile-chairside-phone-link"
 								data-testid={`${testId}-phone-link`}
 							>
 								<Phone size={11} />
-								<span>{activePatient.phone}</span>
+								<span>{String(activePatient.phone)}</span>
 							</a>
-						)}
+						) : null}
 					</div>
 				</div>
 

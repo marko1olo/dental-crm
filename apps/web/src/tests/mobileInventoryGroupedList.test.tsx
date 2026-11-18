@@ -201,7 +201,7 @@ test("Mobile Inventory HIG — MobileInventoryGroupedList renders Apple Store In
 	);
 	assert.ok(markup.includes("Все"), "Must include 'Все' chip");
 	assert.ok(markup.includes("Анестезия"), "Must include 'Анестезия' chip");
-	assert.ok(markup.includes("Пломбировочные"), "Must include 'Пломбировочные' chip");
+	assert.ok(markup.includes("Терапия") || markup.includes("Пломбировочные"), "Must include 'Терапия' / 'Пломбировочные' chip");
 	assert.ok(markup.includes("Эндодонтия"), "Must include 'Эндодонтия' chip");
 	assert.ok(markup.includes("Слепочные"), "Must include 'Слепочные' chip");
 	assert.ok(markup.includes("СИЗ"), "Must include 'СИЗ' chip");

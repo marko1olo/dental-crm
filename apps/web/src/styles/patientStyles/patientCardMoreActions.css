@@ -1,0 +1,23 @@
+/* Patient Card Quick Actions Toolbar 36px Ergonomics & Breathing Space */
+.patient-card-more-btn {
+	width: 36px !important;
+	min-width: 36px !important;
+	height: 36px !important;
+	min-height: 36px !important;
+	padding: 0 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	border-radius: 8px !important;
+	box-sizing: border-box !important;
+}
+
+.patient-card-more-btn svg {
+	width: 16px !important;
+	height: 16px !important;
+	flex-shrink: 0 !important;
+}
+
+.patient-admin-panel {
+	padding-bottom: 24px !important;
+}

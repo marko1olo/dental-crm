@@ -53,6 +53,9 @@ export const patientReclamationCreateBodySchema = z.object({
 	complicationDetails: z.unknown().optional(),
 	proposedAction: z.unknown().optional(),
 	doctorId: z.unknown().optional(),
+	toothNumber: z.unknown().optional(),
+	warrantyCertificateId: z.unknown().optional(),
+	defectType: z.unknown().optional(),
 });
 
 export const patientReclamationStatusBodySchema = z.object({

@@ -28,6 +28,8 @@ export const PatientWhatsappSendPanel: React.FC<PatientWhatsappSendPanelProps> =
 				nameHint={state.nameHint}
 				error={state.error}
 				lastOk={state.lastOk}
+				channel={state.channel}
+				onChannelChange={state.setChannel}
 			/>
 
 			<WhatsappTemplatePicker
@@ -36,7 +38,7 @@ export const PatientWhatsappSendPanel: React.FC<PatientWhatsappSendPanelProps> =
 			/>
 
 			<label className="block mb-2">
-				<span className="sr-only">Текст сообщения WhatsApp</span>
+				<span className="sr-only">Текст сообщения</span>
 				<textarea
 					data-testid="patient-whatsapp-send-message"
 					value={state.message}
@@ -54,6 +56,7 @@ export const PatientWhatsappSendPanel: React.FC<PatientWhatsappSendPanelProps> =
 				cleanPhone={state.cleanPhone}
 				phoneHint={state.phoneHint}
 				message={state.message}
+				channel={state.channel}
 				onSend={() => void state.send()}
 				onOpenWebWhatsApp={state.handleOpenWebWhatsApp}
 			/>

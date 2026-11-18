@@ -456,4 +456,27 @@ describe("taxPaymentsForIssueSnapshot", () => {
 		assert.strictEqual(result.length, 1);
 		assert.strictEqual(result[0]?.id, "payment-1");
 	});
+
+	test("автоматически выбирает все проведенные фискальные оплаты за налоговый год, если selectedPaymentIds пуст или не передан", () => {
+		const documentWithoutSelection: GeneratedDocument = {
+			...baseDocument,
+			kind: "tax_deduction_certificate",
+			payload: null,
+		};
+
+		const payments: Payment[] = [
+			{ ...basePayment, id: "payment-1" },
+			{ ...basePayment, id: "payment-2" },
+			{ ...basePayment, id: "payment-other-year", paidAt: "2022-05-10T10:00:00Z" },
+		];
+
+		const result = taxPaymentsForIssueSnapshot(
+			documentWithoutSelection,
+			payments,
+			[],
+		);
+		assert.strictEqual(result.length, 2);
+		assert.strictEqual(result[0]?.id, "payment-1");
+		assert.strictEqual(result[1]?.id, "payment-2");
+	});
 });

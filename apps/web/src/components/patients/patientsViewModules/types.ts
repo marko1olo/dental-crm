@@ -14,7 +14,7 @@ export type PatientAdministrativeProfileSaveState =
 
 import type { PatientAdministrativeProfileDraft } from "../../../constants/onboardingConstants";
 
-export type { PatientCoreDraft, TextFieldChangeEvent, PatientAdministrativeProfileDraft };
+export type { PatientCoreDraft, PatientAdministrativeProfileDraft };
 
 export type WeekdayOption = {
 	label: string;

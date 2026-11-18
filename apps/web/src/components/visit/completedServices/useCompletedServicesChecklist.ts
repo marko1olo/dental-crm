@@ -12,16 +12,16 @@ import { useCompletedServicesAddActions } from "./useCompletedServicesAddActions
 import { useCompletedServicesCatalogSearch } from "./useCompletedServicesCatalogSearch";
 import { useCompletedServicesPlanSync } from "./useCompletedServicesPlanSync";
 import { useCompletedServicesRemovalAction } from "./useCompletedServicesRemovalAction";
-import type { VisitNoteForm } from "../../../hooks/domains/visit/types";
+import type { VisitNoteForm } from "../../../AppHelpers";
 import type { Dashboard, Patient } from "@dental/shared";
 
 interface CompletedServicesContextBridge {
-	visitNoteForm?: Partial<VisitNoteForm>;
-	updateVisitNoteField?: (field: string, value: string) => void;
-	dashboard?: Dashboard | null;
-	activeVisitPatient?: Patient | null;
-	selectedTooth?: string | number | null;
-	activeToothNumber?: string | number | null;
+	visitNoteForm?: Partial<VisitNoteForm> | undefined;
+	updateVisitNoteField?: ((field: string, value: unknown) => void) | undefined;
+	dashboard?: Dashboard | null | undefined;
+	activeVisitPatient?: Patient | null | undefined;
+	selectedTooth?: string | number | null | undefined;
+	activeToothNumber?: string | number | null | undefined;
 }
 
 export function useCompletedServicesChecklist(overrideCatalog?: readonly unknown[]) {

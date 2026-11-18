@@ -5,7 +5,59 @@ import {
 } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
 
-export function mapPatientToGeneralInfo(raw: any): PatientGeneralInfo {
+export interface RawPatientAdministrativeProfile {
+	identityDocument?: string | null | undefined;
+	snils?: string | null | undefined;
+	taxpayerInn?: string | null | undefined;
+	insurancePolicyNumber?: string | null | undefined;
+	dmsInsuranceCompany?: string | null | undefined;
+	dmsPolicyNumber?: string | null | undefined;
+	dmsGuaranteeLetterNumber?: string | null | undefined;
+	dmsCoverageLimitRub?: number | string | null | undefined;
+	dmsCoverageLimitKopecks?: number | null | undefined;
+	registrationAddress?: string | null | undefined;
+	residentialAddress?: string | null | undefined;
+	legalRepresentativeFullName?: string | null | undefined;
+	legalRepresentativeRelationship?: string | null | undefined;
+	legalRepresentativePhone?: string | null | undefined;
+	legalRepresentativeIdentityDocument?: string | null | undefined;
+	preferredDocumentRecipient?: string | null | undefined;
+	dataProcessingBasisNote?: string | null | undefined;
+	preferredAppointmentNote?: string | null | undefined;
+	clinicalSafetyProfile?: Record<string, unknown> | Partial<PatientClinicalSafetyProfile> | null | undefined;
+}
+
+export interface RawPatientInput {
+	id?: string | null | undefined;
+	fullName?: string | null | undefined;
+	notes?: string | null | undefined;
+	doctorClinicalNotes?: string | null | undefined;
+	balanceRub?: number | string | null | undefined;
+	patientBalanceRub?: number | string | null | undefined;
+	passportSeries?: string | null | undefined;
+	passportNumber?: string | null | undefined;
+	snils?: string | null | undefined;
+	inn?: string | null | undefined;
+	omsPolicyNumber?: string | null | undefined;
+	dmsInsuranceCompany?: string | null | undefined;
+	dmsPolicyNumber?: string | null | undefined;
+	dmsGuaranteeLetterNumber?: string | null | undefined;
+	dmsCoverageLimitRub?: number | string | null | undefined;
+	dmsCoverageLimitKopecks?: number | null | undefined;
+	registrationAddress?: string | null | undefined;
+	residentialAddress?: string | null | undefined;
+	representativeFullName?: string | null | undefined;
+	representativeType?: string | null | undefined;
+	representativePhone?: string | null | undefined;
+	representativeDoc?: string | null | undefined;
+	representativePassportDetails?: string | null | undefined;
+	preferredDocumentRecipient?: string | null | undefined;
+	dataProcessingBasisNote?: string | null | undefined;
+	acquisitionSource?: string | null | undefined;
+	administrativeProfile?: RawPatientAdministrativeProfile | null | undefined;
+}
+
+export function mapPatientToGeneralInfo(raw: RawPatientInput | null | undefined): PatientGeneralInfo {
 	if (!raw || typeof raw !== "object") return {};
 	const admin = raw.administrativeProfile && typeof raw.administrativeProfile === "object"
 		? raw.administrativeProfile
@@ -42,7 +94,7 @@ export function mapPatientToGeneralInfo(raw: any): PatientGeneralInfo {
 		dmsInsuranceCompany: raw.dmsInsuranceCompany ?? admin.dmsInsuranceCompany ?? "",
 		dmsPolicyNumber: raw.dmsPolicyNumber ?? admin.dmsPolicyNumber ?? "",
 		dmsGuaranteeLetterNumber: raw.dmsGuaranteeLetterNumber ?? admin.dmsGuaranteeLetterNumber ?? "",
-		dmsCoverageLimitRub: raw.dmsCoverageLimitRub ?? admin.dmsCoverageLimitRub ?? (admin.dmsCoverageLimitKopecks ? admin.dmsCoverageLimitKopecks / 100 : undefined),
+		dmsCoverageLimitRub: raw.dmsCoverageLimitRub ?? admin.dmsCoverageLimitRub ?? (admin.dmsCoverageLimitKopecks ? Number(admin.dmsCoverageLimitKopecks) / 100 : undefined),
 		dmsCoverageLimitKopecks: raw.dmsCoverageLimitKopecks ?? admin.dmsCoverageLimitKopecks ?? undefined,
 		registrationAddress: raw.registrationAddress ?? admin.registrationAddress ?? "",
 		residentialAddress: raw.residentialAddress ?? admin.residentialAddress ?? "",
@@ -60,28 +112,38 @@ export function mapPatientToGeneralInfo(raw: any): PatientGeneralInfo {
 }
 
 export function resolveInitialSafetyProfile(
-	rawPatient: any,
+	rawPatient: RawPatientInput | null | undefined,
 	explicitSafety?: Partial<PatientClinicalSafetyProfile> | null,
 ): PatientClinicalSafetyProfile {
-	const fromNotes = parseSafetyProfileFromText(rawPatient?.notes ?? rawPatient?.doctorClinicalNotes ?? "");
+	const notesText = (typeof rawPatient?.notes === "string" ? rawPatient.notes : "") ||
+		(typeof rawPatient?.doctorClinicalNotes === "string" ? rawPatient.doctorClinicalNotes : "");
+	const fromNotes = parseSafetyProfileFromText(notesText);
 	const fromAdmin = rawPatient?.administrativeProfile?.clinicalSafetyProfile ?? null;
-	const merged: Record<string, unknown> = {
+
+	const base: PatientClinicalSafetyProfile = {
 		...DEFAULT_SOMATIC_HEALTHY_NORM,
 		...fromNotes,
 		...(fromAdmin && typeof fromAdmin === "object" ? fromAdmin : {}),
 		...(explicitSafety ?? {}),
 	};
-	for (const key of Object.keys(fromNotes)) {
-		if ((fromNotes as unknown as Record<string, unknown>)[key] === true && !explicitSafety) {
-			merged[key] = true;
-		}
-	}
-	if (merged.hasArticaineAllergy || merged.hasLidocaineAllergy || merged.hasMepivacaineAllergy || merged.hasEsterAnestheticsAllergy) {
-		merged.hasAnestheticAllergy = true;
-	}
-	if (merged.takesAnticoagulants) merged.hasAnticoagulantTherapy = true;
-	if (merged.hasAnticoagulantTherapy) merged.takesAnticoagulants = true;
-	if (merged.takesBisphosphonates) merged.hasBisphosphonateTherapy = true;
-	if (merged.hasBisphosphonateTherapy) merged.takesBisphosphonates = true;
-	return merged as unknown as PatientClinicalSafetyProfile;
+
+	const hasAnestheticAllergy = Boolean(
+		base.hasAnestheticAllergy ||
+		base.hasArticaineAllergy ||
+		base.hasLidocaineAllergy ||
+		base.hasMepivacaineAllergy ||
+		base.hasEsterAnestheticsAllergy,
+	);
+
+	const takesAnticoagulants = Boolean(base.takesAnticoagulants || base.hasAnticoagulantTherapy);
+	const takesBisphosphonates = Boolean(base.takesBisphosphonates || base.hasBisphosphonateTherapy);
+
+	return {
+		...base,
+		hasAnestheticAllergy,
+		takesAnticoagulants,
+		hasAnticoagulantTherapy: takesAnticoagulants,
+		takesBisphosphonates,
+		hasBisphosphonateTherapy: takesBisphosphonates,
+	};
 }

@@ -1,0 +1,29 @@
+{
+  "role": "Red Team ZTL & Payroll finisher",
+  "started": "2026-10-25",
+  "task1_ztl_verdict": {
+    "step_read_mem": "DONE - inquisitor mem read, ssot_consolidation + print_and_messenger IN_PROGRESS since 2026-10-22",
+    "step_files_exist": "PENDING",
+    "step_mounted": "PENDING",
+    "step_tests": "PENDING",
+    "step_live_api": "PENDING",
+    "step_verdict": "PENDING"
+  },
+  "task2_payroll_fake": {
+    "step_read_demo": "PENDING",
+    "step_importers": "PENDING",
+    "step_routes": "PENDING",
+    "step_fix": "PENDING",
+    "step_tests": "PENDING"
+  },
+  "gates": {
+    "typecheck": "PENDING",
+    "encoding": "PENDING"
+  },
+  "commits": [],
+  "status": "COMPLETED_BY_ORCHESTRATOR",
+  "done": [
+    "ЗТЛ-вердикт: реальный модуль apps/web/src/components/lab/ — все канонические файлы на месте и смонтированы (OrderModal/OrderDrawer/CreateOrderModal/FdiOdontogramPicker/PrintBlank+share), тесты зелёные, честный контур /api/dental-lab/orders с авторизацией + полный API (orderItemsCrud/statusPatch/express/tracker); dental_lab_inquisitor.mem.json оба IN_PROGRESS-пункта закрыты в COMPLETED с фактами (агент-спавн умирал на concurrency — выполнено оркестратором инлайн)",
+    "payroll-фейк выжжен: PayrollStandaloneLauncher переписан честно (врачи из GET /api/settings/staff с denteAdminSecretRequestHeaders, заработки модалка сама тянет из /api/doctor/my-earnings, никаких хардкод-врачей/пациентов/процентов/периодов), demoPayrollServices.ts с фейками Михайлов/Смирнова/Ковалев/Федоров УДАЛЁН, ссылок ноль"
+  ]
+}

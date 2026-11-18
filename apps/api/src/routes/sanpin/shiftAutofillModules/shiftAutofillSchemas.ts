@@ -34,6 +34,7 @@ export const autofillShiftSchema = z
 		autoclaveId: z.string().optional(),
 		psoRecords: z.array(psoBatchItemSchema).optional(),
 		sterilizationRecords: z.array(sterilizationBatchItemSchema).optional(),
+		autoclaveCycle: z.array(z.record(z.string(), z.unknown())).optional(),
 		form257: z.array(z.record(z.string(), z.unknown())).optional(),
 		bactericidalDurationMinutes: z.number().int().positive().optional(),
 		operatingMode: z.string().optional(),

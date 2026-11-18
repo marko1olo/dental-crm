@@ -143,6 +143,7 @@ export const paymentMethod = pgEnum("payment_method", [
 	"online",
 	"insurance",
 	"family_wallet",
+	"split",
 	"other",
 ]);
 

@@ -73,18 +73,32 @@ export function useWarrantyPassportState(props: WarrantyPassportModalProps) {
 					const reclJson = (await reclRes.json().catch(() => null)) as PatientReclamationResponse[] | null;
 					if (Array.isArray(reclJson)) {
 						const mappedOrders: WarrantyRemediationOrder[] = reclJson.map((rec) => {
-							const toothMatch = rec.complicationDetails?.match(/зуб\s*([1-4][1-8])/i);
-							const tooth = toothMatch ? (toothMatch[1] ?? "—") : "—";
+							const formattedTooth = rec.toothNumber !== undefined && rec.toothNumber !== null
+								? (typeof rec.toothNumber === "number"
+									? (rec.toothNumber >= 11 && rec.toothNumber <= 85
+										? `${Math.floor(rec.toothNumber / 10)}.${rec.toothNumber % 10}`
+										: String(rec.toothNumber))
+									: String(rec.toothNumber).includes(".")
+										? String(rec.toothNumber)
+										: String(rec.toothNumber).length === 2
+											? `${String(rec.toothNumber)[0]}.${String(rec.toothNumber)[1]}`
+											: String(rec.toothNumber))
+								: "—";
+
+							const defectType = (rec.defectType as WarrantyRemediationOrder["defectType"]) || "custom_defect";
+
 							return {
 								id: rec.id,
 								orderNumber: `Р-${rec.id.slice(0, 6)}`,
-								certificateId: certBuild.certificateId,
-								toothNumber: tooth,
+								certificateId: rec.warrantyCertificateId || certBuild.certificateId,
+								toothNumber: formattedTooth,
 								originalWorkTitle: "Ранее выполненная работа",
-								defectType: "filling_loss",
+								defectType,
 								defectTitle: rec.complicationDetails?.split(".")[0] || "Рекламация",
 								clinicalFinding: rec.complicationDetails || "Гарантийный случай",
 								remediationAction: rec.proposedAction || "Гарантийная переделка (0 ₽)",
+								amountKopecks: 0n,
+								costToPatientKopecks: 0,
 								costToPatientRub: 0,
 								discountPercent: 100,
 								isFreeWarrantyService: true,

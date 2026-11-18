@@ -2,18 +2,54 @@
  * permissionChecks.ts — проверки прав ролей и формирование человекочитаемых отказов.
  */
 
-import { staffRoleSchema } from "@dental/shared";
+import { normalizeStaffRoleToCanonical, staffRoleSchema } from "@dental/shared";
 import {
 	type Permission,
 	ROLE_PERMISSIONS,
+	ROLES_IN_MATRIX,
 } from "./permissionMatrix.js";
+
+/**
+ * Соответствие прав Fastify бэкенда гранулярным ключам веб-интерфейса матрицы прав.
+ */
+export const BACKEND_TO_GRANULAR_PERMISSIONS_MAP: Record<Permission, readonly string[]> = {
+	"schedule.read": ["schedule.view"],
+	"schedule.write": ["schedule.manage"],
+	"patients.read": ["patients.view_basic", "patients.pii_full"],
+	"patients.write": ["patients.manage"],
+	"clinical.read": ["clinical.records.view"],
+	"clinical.write": ["clinical.records.write", "clinical.treatment_plans.manage"],
+	"finance.read": ["finance.cashier_operations", "finance.reports_pnl", "finance.tariffs_manage"],
+	"finance.write": ["finance.cashier_operations", "finance.refunds", "finance.tariffs_manage"],
+	"analytics.read": ["finance.reports_pnl"],
+	"payroll.read": ["payroll.view_all_staff"],
+	"payroll.read.own": ["payroll.view_own"],
+	"inventory.read": ["inventory.materials_writeoff", "inventory.warehouse_manage", "inventory.sanpin_journals"],
+	"inventory.write": ["inventory.materials_writeoff", "inventory.warehouse_manage", "inventory.sanpin_journals"],
+	"settings.read": ["settings.clinic_manage", "settings.staff_authority"],
+	"settings.write": ["settings.clinic_manage", "settings.staff_authority"],
+	"egisz.submit": ["egisz.send_records"],
+	"communications.read": ["communications.send_messages"],
+	"communications.write": ["communications.send_messages"],
+	"agent.read": ["agent.read"],
+	"agent.write": ["agent.write"],
+	"workstation.read": ["workstation.read"],
+	"workstation.write": ["workstation.write"],
+};
 
 /** Права роли. Неизвестная роль не получает ничего. */
 export function permissionsForRole(
 	role: string | null | undefined,
 ): readonly Permission[] {
 	if (!role) return [];
-	return ROLE_PERMISSIONS[role.toLowerCase()] ?? [];
+	const normalized = role.toLowerCase().trim();
+	const direct = ROLE_PERMISSIONS[normalized];
+	if (direct) return direct;
+	const canonical = normalizeStaffRoleToCanonical(normalized);
+	if (canonical && canonical !== "unknown") {
+		return ROLE_PERMISSIONS[canonical] ?? [];
+	}
+	return [];
 }
 
 export function roleHasPermission(
@@ -23,31 +59,91 @@ export function roleHasPermission(
 	return permissionsForRole(role).includes(permission);
 }
 
+/**
+ * Проверка прав роли с учетом сохраненных в БД переопределений матрицы прав (roleMatrixOverrides).
+ * Поддерживает как прямые ключи backend-прав (e.g. "finance.write"), так и гранулярные ключи UI.
+ */
+export function roleHasPermissionWithOverrides(
+	role: string | null | undefined,
+	permission: Permission,
+	overrides?: Record<string, Record<string, string | boolean>> | null,
+): boolean {
+	if (!role) return false;
+	const normalizedRole = role.toLowerCase().trim();
+
+	// Владелец и суперадминистратор обладают безусловным доступом (Мандат 8e / 8n)
+	if (normalizedRole === "owner" || normalizedRole === "admin") {
+		return true;
+	}
+
+	if (overrides && typeof overrides === "object") {
+		const canonical = normalizeStaffRoleToCanonical(normalizedRole);
+		const roleRules =
+			overrides[normalizedRole] ??
+			(canonical !== "unknown" ? overrides[canonical] : undefined);
+
+		if (roleRules && typeof roleRules === "object") {
+			// 1. Проверяем прямое совпадение по имени backend-права (например "clinical.write")
+			const directVal = roleRules[permission];
+			if (directVal !== undefined) {
+				if (directVal === "none" || directVal === false) return false;
+				if (
+					directVal === "full" ||
+					directVal === true ||
+					(permission.endsWith(".read") && (directVal === "read" || directVal === "own"))
+				) {
+					return true;
+				}
+			}
+
+			// 2. Проверяем соответствие гранулярным ключам интерфейса
+			const granularKeys = BACKEND_TO_GRANULAR_PERMISSIONS_MAP[permission] ?? [];
+			if (granularKeys.length > 0) {
+				const values = granularKeys
+					.map((k) => roleRules[k])
+					.filter((v): v is string | boolean => v !== undefined);
+
+				if (values.length > 0) {
+					const hasFull = values.some(
+						(v) => v === "full" || v === true,
+					);
+					const hasRead = values.some(
+						(v) => v === "read" || v === "own" || v === "full" || v === true,
+					);
+					const allNone = values.every(
+						(v) => v === "none" || v === false,
+					);
+
+					if (allNone) return false;
+					if (permission.endsWith(".read") && hasRead) return true;
+					if (hasFull) return true;
+				}
+			}
+		}
+	}
+
+	// По умолчанию проверяем базовую матрицу прав
+	return roleHasPermission(role, permission);
+}
+
 /* ==================================================================== */
 /*  ТЕКСТ ОТКАЗА ДЛЯ ЧЕЛОВЕКА                                            */
 /* ==================================================================== */
 
 /**
  * Русские подписи ролей.
- *
- * ЧТО БЫЛО. Отказ по роли — самая частая надпись отказа в продукте — звучал как
- * `Роль «doctor» не имеет права «finance.write».` То есть называл КЛЮЧ БАЗЫ
- * (`users.role`) и ВНУТРЕННИЙ ИДЕНТИФИКАТОР права. Вред двойной, и второй хуже
- * первого: латинское слово из шести и более букв целиком гасит фразу фильтром
- * клиента (`apps/web/src/AppHelpers.tsx`, `technicalWorkflowFailurePattern` под
- * флагом `/i`), поэтому до экрана не доходило вообще ничего, и человек получал
- * подсказку по коду 403 — «войдите в смену заново». Повторный вход прав не
- * добавляет никогда: это ложное указание, а не безликий текст.
- *
- * Полнота словаря проверяется тестом против `ROLE_PERMISSIONS`: роль, добавленная
- * в матрицу без подписи здесь, роняет набор, а не возвращает ключ базы на экран.
  */
 const ROLE_LABELS: Record<string, string> = {
 	owner: "владелец клиники",
 	admin: "администратор с полным доступом",
+	head_doctor: "главный врач",
 	manager: "управляющий",
+	accountant: "бухгалтер",
+	senior_admin: "старший администратор",
 	administrator: "администратор ресепшена",
+	registrar: "регистратор ресепшена",
 	doctor: "врач",
+	senior_nurse: "старшая медсестра",
 	assistant: "ассистент",
 	curator: "куратор лечения",
 };
@@ -95,7 +191,7 @@ const PERMISSION_ACTIONS: Record<Permission, string> = {
  * не участвует.
  */
 const ASSIGNABLE_ROLES: ReadonlySet<string> = new Set<string>(
-	staffRoleSchema.options,
+	ROLES_IN_MATRIX.filter((role) => role !== "admin"),
 );
 
 /**

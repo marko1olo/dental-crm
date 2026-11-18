@@ -604,16 +604,32 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 				<div className="ortho-tabs-bar">
 					<div className="ortho-tabs-scroll">
 						<button type="button" onClick={() => setActiveTab("brackets")} className={`ortho-tab-btn ${activeTab === "brackets" ? "active" : ""}`}>
-							<Layers className="w-3.5 h-3.5 shrink-0" /><span>Брекеты и дуги</span>
+							<Layers className="w-3.5 h-3.5 shrink-0" />
+							<span>
+								<span className="sm:hidden">Дуги</span>
+								<span className="hidden sm:inline">Брекеты и дуги</span>
+							</span>
 						</button>
 						<button type="button" onClick={() => setActiveTab("aligners")} className={`ortho-tab-btn ${activeTab === "aligners" ? "active" : ""}`}>
-							<Smile className="w-3.5 h-3.5 shrink-0" /><span>Элайнеры и капы</span>
+							<Smile className="w-3.5 h-3.5 shrink-0" />
+							<span>
+								<span className="sm:hidden">Каппы</span>
+								<span className="hidden sm:inline">Элайнеры и капы</span>
+							</span>
 						</button>
 						<button type="button" onClick={() => setActiveTab("photo_trg")} className={`ortho-tab-btn ${activeTab === "photo_trg" ? "active" : ""}`}>
-							<Camera className="w-3.5 h-3.5 shrink-0" /><span>Фото и ТРГ</span>
+							<Camera className="w-3.5 h-3.5 shrink-0" />
+							<span>
+								<span className="sm:hidden">ТРГ</span>
+								<span className="hidden sm:inline">Фото и ТРГ</span>
+							</span>
 						</button>
 						<button type="button" onClick={() => setActiveTab("diary")} className={`ortho-tab-btn ${activeTab === "diary" ? "active" : ""}`}>
-							<FileText className="w-3.5 h-3.5 shrink-0" /><span>Дневник и памятка</span>
+							<FileText className="w-3.5 h-3.5 shrink-0" />
+							<span>
+								<span className="sm:hidden">ЭМК</span>
+								<span className="hidden sm:inline">Дневник и памятка</span>
+							</span>
 						</button>
 					</div>
 					{feedbackToast && (

@@ -1,11 +1,20 @@
 import { AlertOctagon, HeartPulse, ShieldCheck } from "lucide-react";
 import React, { useCallback } from "react";
+import type { PatientCoreDraft } from "../../../AppConstants";
 import { showToast } from "../../GlobalToast";
+
+export interface SomaticRiskFlagItem {
+	id: string;
+	title?: string | undefined;
+	titleRu?: string | undefined;
+	desc?: string | undefined;
+	description?: string | undefined;
+}
 
 export interface MobilePatientSafetyAlertsSectionProps {
 	readonly allergyText: string;
-	readonly somaticRiskFlags: Array<{ id: string; title?: string; titleRu?: string; desc?: string; description?: string }>;
-	readonly updatePatientCoreDraft?: ((field: any, value: any) => void) | undefined;
+	readonly somaticRiskFlags: Array<SomaticRiskFlagItem>;
+	readonly updatePatientCoreDraft?: ((field: keyof PatientCoreDraft, value: string) => void) | undefined;
 }
 
 export function MobilePatientSafetyAlertsSection({
@@ -52,7 +61,7 @@ export function MobilePatientSafetyAlertsSection({
 							Соматический статус:
 						</div>
 						<div className="flex items-center gap-1.5 flex-wrap mt-1">
-							{somaticRiskFlags.map((flag: any) => (
+							{somaticRiskFlags.map((flag) => (
 								<span
 									key={flag.id}
 									className="px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-900 dark:text-purple-200 border border-purple-500/25 text-xs font-medium"

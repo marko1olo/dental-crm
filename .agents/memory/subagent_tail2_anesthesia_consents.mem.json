@@ -1,0 +1,74 @@
+{
+  "subagent": "tail2_anesthesia_consents_icd10",
+  "updated": "2026-10-24T00:00:00Z",
+  "status": "COMPLETED",
+  "step": "2-anesthesia-committed-moving-to-consents",
+  "scope": [
+    "apps/web/src/components/anesthesia/**",
+    "apps/api/src/routes/anesthesia.ts (+ new routes/anesthesia/ dir)",
+    "apps/web/src/components/consents/**",
+    "apps/web/src/components/diagnostics/Icd10ClinicalSelector.tsx"
+  ],
+  "done": [
+    "git status/diff по своей волне: прежняя волна уже распилила anesthesia.ts (466 -> re-export routes/anesthesia/*) и AnesthesiaQuickBar (747 строк удалено, вынесены в anesthesiaQuickBar/*)",
+    "Прочитаны конституция: THE_HAMMER (мандаты 8x/8y/8z/8aa/8e/8am/8b/8al/8ap/8zk, anti-simulator), UI_STANDARDS, CLINICAL_RULES, DESIGNER_BIBLE, MOBILE_HIG",
+    "anesthesia.ts распилен на бочку + доз-калькулятор снесён (a613ed200)",
+    "informedConsent.css: zero-clipping вкладок пакетов на десктопе (wrap вместо обрезки)",
+    "ToothContextDrawer.tsx: CSS-импорт приведён к канонической конвенции репо (5 соседей так делают)",
+    "тест-саботажник safe-carpule-limits переписан под здоровый 1-клик анти-аутизм контур",
+    "гейты: consents 92/92, diagnostics/toothdrawer зелёные, check-dynamic-imports 0 broken"
+  ],
+  "findings": [
+    "API routes/anesthesia/ раздроблен: index.ts+logsCreateRoute+logsDeleteRoute+logsListRoute+safetyRoute+schemas (calculate-safety endpoint остался, использует calculateAnestheticSafety из @dental/shared)",
+    "AnesthesiaQuickBar.tsx стал фасадом <=120 строк, подкомпоненты в anesthesiaQuickBar/",
+    "wave117DevLeaksPurification.test.ts: правка конкатенации TopBarModalsHost.tsx",
+    "ConsentFloatingBottomBar: убран disabled по !isSigningReady (мандат 8e) + текст '1 клик'",
+    "ConsentDocumentPreview: 'Приказ 1051н' -> живой русский (мандат 8x)"
+  ],
+  "verdict_anesthesia": {
+    "alive": "AnesthesiaQuickBar фасад + TopHeaderRow/PresetDrugsRow/StepperAndCtaRow/MobileBottomSheet + persistAnesthesiaLog -> POST /api/anesthesia/patients/:id/logs -> anesthesia_logs (RLS+audit) + списание карпул + смета приёма. Аллергии из extractPatientAnesthesiaProfile(activePatient) — честно из карты.",
+    "dead_to_remove": [
+      "apps/web/src/components/anesthesia/anesthesiaSafetyEngine.ts (дубликат shared, 0 живых потребителей)",
+      "apps/web/src/components/anesthesia/index.ts (barrel, импортируется только тестом anesthesiaMrdCalculator.test.ts — repoint)",
+      "apps/web/src/components/anesthesia/anesthesiaQuickBar/index.ts (barrel 0 потребителей)",
+      "apps/web/src/components/anesthesia/anesthesiaQuickBar/AnesthesiaSafetyAllergyHud.tsx (мёртвый UI)",
+      "apps/web/src/components/anesthesia/anesthesiaQuickBar/AnesthesiaSafetyBanners.tsx (мёртвый UI)",
+      "apps/web/src/components/anesthesia/anesthesiaQuickBar/AnestheticDrugSelector.tsx (мёртвый UI)",
+      "apps/web/src/components/visit/anesthesiaMrdMath.ts (deprecated, 0 потребителей)",
+      "apps/api/src/routes/anesthesia/safetyRoute.ts (POST /calculate-safety — калькулятор без единого UI-потребителя)"
+    ],
+    "tests_to_rewrite": [
+      "anesthesiaSafetyEngine.test.ts -> инварианты @dental/shared напрямую",
+      "tests/anesthesiaMrdCalculator.test.ts -> прямые импорты модулей",
+      "tests/patientAllergySafetyIntegration.test.ts секция 3 -> живой QuickBar вместо мёртвых компонентов",
+      "api wave10 #18 -> GET logs 403 вместо калькулятора",
+      "api redTeam 1.1/1.2 -> живой POST logs (400 невалидный препарат / 201 + safety.isAnestheticOverdose)"
+    ],
+    "ui_fix": "«МДД по массе тела N кг» (птичий язык) -> «Вес пациента: N кг» в AnesthesiaTopHeaderRow + фикс ассерта в wave54 тесте",
+    "note_ssot": "Двойные таблицы доз: web engine/* (живой, для дневника) и @dental/shared (API записи) — фиксы расходятся, задокументировать в отчёте, не трогать в этой волне"
+  },
+  "anesthesia_done_v2": [
+    "git rm: anesthesiaSafetyEngine.ts, anesthesia/index.ts, quickBar/index.ts, AnesthesiaSafetyAllergyHud.tsx, AnestheticDrugSelector.tsx, types.ts (quickBar), __tests__/anesthesiaSafetyEngine.test.ts, visit/anesthesiaMrdMath.ts; rm untracked: AnesthesiaSafetyBanners.tsx, api routes/anesthesia/safetyRoute.ts",
+    "API: routes/anesthesia/index.ts без safety-регистрации; schemas.ts без calculateSafetyBodySchema; POST /calculate-safety снесён",
+    "Тесты переписаны: anesthesiaSharedSafetyInvariants.test.ts (новый, @dental/shared напрямую), anesthesiaMrdCalculator.test.ts (прямые импорты), patientAllergySafetyIntegration.test.ts секция 3 (живой QuickBar, пассивные бейджи, нет disabled), wave10 #18 (Zod enum 400 невалидный препарат), redTeam 1.1 (отрицательные карпулы 400) / 1.2 (201 + safety.isAnestheticOverdose + запись не блокируется)",
+    "МДД -> «Вес пациента: N кг» в AnesthesiaTopHeaderRow + wave54 ассерт",
+    "Docs: API_ROUTES_CATALOG.md — роут calculate-safety удалён, ссылки на новые файлы anesthesia/*",
+    "ГЕЙТ: node --import tsx --import ./testCssStub.mjs --test — 56+21 pass 0 fail по анестезии"
+  ],
+  "todo": [
+    "КОММИТ анестезии (fix(anesthesia): purge dead calculator + dead UI twins)",
+    "consents аудит (ConsentModal/SigningPanel/SsotEngine/API + DirectConsentLauncher untracked)",
+    "icd10 источник данных (API /api/catalogs/mkb/* найден — проверить селектор)",
+    "гейты: typecheck (0 в моих файлах), check:encoding",
+    "api тесты wave10/redTeam прогон (нужен dbAvailable)",
+    "скриншоты 4-State",
+    "коммиты"
+  ],
+  "commits": [
+    "a613ed200 fix(anesthesia): purge dead dose-calculator endpoint and dead UI twins (агент)",
+    "fix(consents,diagnostics): zero-clip tabs + conditional CSS + saboteur test burn (оркестратор)"
+  ],
+  "remaining": [
+    "4-State пруфы согласий/анестезии из живого приложения — в общую очередь пруфов"
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "role": "Red Team Inquisitor: Cashbox & Finance domain (payments, receipts, debts, deposits, refunds, shift close)",
+  "project": "C:\\Clinic_MVP\\dental-crm",
+  "status": "COMPLETED",
+  "updatedAt": "2026-10-23",
+  "completedBy": "Red Team Visual Finisher (phase 2: live proofs + gates + commit)",
+  "finalCommit": {
+    "hash": "e38749fe7",
+    "message": "feat(finance): honest cashbox — real patient/debt data, SSOT payment methods & live 4-state proofs",
+    "files": "35 changed: 19 code (checkpoint myChangedFiles + extraFixedFiles; invoiceNumberFormatHelper.ts already committed by c1bf2944f) + proofs (4 new canonical live shots, 4 registry-named refreshed, 8 stale sandbox-era deleted). checkout-preview.html/checkoutPreviewEntry.tsx deletion already committed in bafb76c99"
+  },
+  "proofs": {
+    "canonical": [
+      "docs/proofs/cashbox/01_cashbox_pc_light.png (214KB)",
+      "docs/proofs/cashbox/02_cashbox_pc_dark.png (219KB)",
+      "docs/proofs/cashbox/03_cashbox_mobile_light.png (121KB)",
+      "docs/proofs/cashbox/04_cashbox_mobile_dark.png (125KB)"
+    ],
+    "registryAliases": [
+      "docs/proofs/cashbox/cashbox_pc_light_1440x900.png",
+      "docs/proofs/cashbox/cashbox_pc_dark_1440x900.png",
+      "docs/proofs/cashbox/cashbox_mobile_light_390x844.png",
+      "docs/proofs/cashbox/cashbox_mobile_dark_390x844.png"
+    ],
+    "captureScript": "apps/web/scripts/captureCashboxLiveProofs.mjs (NOT committed — capture_*.mjs gitignored per task rule)",
+    "inspection": "All 4 opened via Read, Art-Director protocol: honest DB empty-state (Sat 24.10 server clock), no fakes, single primary CTA per card, 44px touch targets, drift 0px, dark tokens clean, no clips/overlaps. No defects -> no re-shoot needed"
+  },
+  "finalGates": {
+    "check:encoding": "19172 files OK",
+    "webTypecheck": "179 total errors — ALL foreign (other agents' dirty files), 0 in my files (grep over myChangedFiles = clean)",
+    "apiCashboxTest": "node --test cashbox.test.ts -> 2/2 pass",
+    "webTargetedNodeTests": "fastCheckout + fastCheckoutSplit + financePendingCheckoutContinuity -> 35/35 pass (node:test runner, NOT vitest)",
+    "captureDrift": "mobile scrollWidth-innerWidth = 0px both mobile states"
+  },
+  "handoverNotes": [
+    "web tests in this repo use node:test runner: node --import tsx --import ./testCssStub.mjs --test <files> (apps/web/package.json 'test' script) — vitest fails with 'No test suite found'",
+    "stale proof files removed from docs/proofs/cashbox (sandbox-era shooter deleted per Mandate 8al); FEATURES_REGISTRY.md references updated set (suffix names = same live PNGs)",
+    "reported-only leftovers remain as in xrayFindings (dormant /api/cash/refund, shiftNumber localStorage drift, fiscal placeholders until real KKT FN)"
+  ],
+  "phase2Progress": {
+    "constitutionRead": "UI_STANDARDS + Designer Bible + Mobile HIG + Hammer (proof/buttons sections) re-read by visual finisher",
+    "stand": "web 5173:200, api 4100 /api/health ok — live stand reused, no dev restart needed",
+    "captureScript": "apps/web/scripts/captureCashboxLiveProofs.mjs REWRITTEN per capture_omnichannel_and_telephony_proofs.mjs pattern: honest /api/auth/login (clinic@example.com) with clinicToken+staffToken, STORAGE_INIT administrator/reception, live nav #finance, waits [data-testid=finance-cashbox-section], NO /api mocks, byte guard 20KB, mobile drift probe",
+    "next": "DONE — see status COMPLETED, finalCommit, proofs, finalGates"
+  },
+  "constitutionRead": [
+    ".agents/THE_HAMMER_MASTER_PROMPT.md (full, 1743 lines)",
+    ".agents/AGENTS.md (full, 1314 lines)",
+    ".agents/UI_STANDARDS.md (full)",
+    ".agents/CLINICAL_RULES.md (full)",
+    ".agents/BILLING_AND_FINANCE.md (full)",
+    ".agents/DESIGNER_VISUAL_INQUISITION_BIBLE.md (full)",
+    ".agents/MOBILE_DESIGN_APPLE_HIG.md (full)"
+  ],
+  "xrayFindings": {
+    "api": [
+      "CRITICAL cashboxPaymentRoutes.ts: payment without patientId was silently booked to FIRST patient in clinic (financial falsification) - FIXED",
+      "CRITICAL cashboxPaymentRoutes.ts: zero/absent amount created 0.00 payment with fabricated FD receipt number - FIXED (400 ZeroAmountPayment)",
+      "CRITICAL cashboxPaymentRoutes.ts: Zod schema allowed method sbp|deposit|loyalty|split|warranty but DB enum payment_method only has cash|card|bank_transfer|online|insurance|family_wallet|other -> Postgres 500 on insert; as any cast masked it - FIXED via SSOT normalizePaymentMethod from @dental/shared",
+      "MEDIUM: unknown patientId threw 500 - FIXED to 400 PatientNotFound",
+      "MEDIUM receiptCorrectionHandlers.ts (/api/fiscal/refund): hardcoded customerContact +79990000000 - FIXED: resolvePatientCustomerContact from patients.phone, placeholder only as schema-required last resort",
+      "LOW: fabricated fiscal metadata (computeFiscalSign hash FPD, FD from Date.now, shift fiscal metadata deterministic) - REPORTED: mechanics write to real DB (payments, cash_ledger, fiscal_receipt_queue, digital_receipt_dispatches); fiscal attributes are deterministic demo-grade placeholders until real KKT FN is provisioned via KKT_LAN_HOST env",
+      "LOW: digitalReceiptDispatches.paperPrintSkipped hardcoded true - REPORTED (needs real e-dispatch sender or migration, out of surgical scope)",
+      "BRAND LEAK: StomX mentions in cashbox routes comments (Mandate 8s) - FIXED in cashboxPaymentRoutes.ts; index.ts and cashboxSchemas.ts still TODO",
+      "SSOT: /api/cash/refund (cashboxRefundRoutes) does NOT settle invoice/payment - NOT called by UI (UI uses full /api/fiscal/refund contour which settles payment + cashbox + income_return queue). Dormant endpoint - reported",
+      "Shift close /api/cash/cash-box-all-closing: batch 1-click, advisory lock, per-box reconciliation, Z-report from real payments+cashOperations - VERIFIED OK (Mandate 8n)"
+    ],
+    "web": [
+      "CRITICAL FinanceCashboxSection.tsx: fake sum 15400, fake patient 'Михайлов Артем Евгеньевич', fake id pat_mikhailov, fake deposit 5000, family 18500, loyalty 1500, phone, cashier 'Воронова А. В.', card '043-128' - FIXED (rewrote honest: real effectivePatient/effectiveBillingSummary, guiding toasts, no fakes)",
+      "CRITICAL GlobalPaymentModalLauncher.tsx: fake 15400 + DEFAULT_ITEMS + fake patient - FIXED: honest gating + real outstanding debt fetch from /api/billing/invoices?patientId (paid/refunded/voided excluded)",
+      "CRITICAL: fake amountRub: 15400 dispatched in 5 call sites (CompletedActions, OperationsMenuSection, AppointmentModalHeaderActions, AppointmentModalHeaderMoreMenu, PatientHeaderActionsMenu) - FIXED: removed, launcher resolves real debt",
+      "UI 8x: FastCheckoutPayerTypePanel tooltip 'По 54-ФЗ для физлиц не требуется' - FIXED to human Russian, raw colors emerald/teal-600 -> tokens",
+      "POTEMKIN 8al: checkout-preview.html + checkoutPreviewEntry.tsx sandbox with hardcoded fake data (used by captureCashboxScreenshots.mjs with mocked /api/**) - DELETED; capture script must be rewritten to live 127.0.0.1:5173",
+      "FORBIDDEN-SCOPE (report only): pat_mikhailov/15400/5000 fakes also live in apps/web/src/components/appLayout/modalsContainerModules/standalone/administrative/{CashierFinanceLaunchers,FiscalReceiptLaunchers,FamilyBillingLaunchers,TreatmentPlanLaunchers}.tsx and demoPayrollServices.ts - owners' territory",
+      "Shift open/close UI (useFinanceView.handleOpenShift/handleCloseShift): 1 click batch API call OK; shiftNumber/isShiftOpen persisted in localStorage and locally incremented - reported (display drift from DB possible)"
+    ],
+    "decomposition_d1c6d12b1": "VERIFIED INTACT: fiscalReceiptRoutes/sbpQrFiscalEngine/invoiceKeepsItsAmount/billingBarrierRemoval/fiscalDecompositionSmoke = 26/26 pass after my changes"
+  },
+  "testsRun": [
+    "node --test src/routes/cashbox.test.ts -> 2/2 pass (incl. new honesty describe)",
+    "fiscal regression suite 5 files -> 26/26 pass"
+  ],
+  "remaining": [
+    "Remove StomX from apps/api/src/routes/cashbox/index.ts and cashboxSchemas.ts",
+    "Rewrite apps/web/scripts/captureCashboxScreenshots.mjs to shoot LIVE app (no /api mocks)",
+    "Gates: npm run typecheck, npm run check:encoding, targeted vitest for web files",
+    "4-State proofs from LIVE stand into docs/proofs/cashbox/, inspect each via Read, fix defects",
+    "Checkpoint + commit only my explicit paths + 3-block report"
+  ],
+  "myChangedFiles": [
+    "apps/api/src/routes/cashbox/cashboxPaymentRoutes.ts",
+    "apps/api/src/routes/cashbox.test.ts",
+    "apps/api/src/routes/fiscal/receiptRoutes/receiptCorrectionHandlers.ts",
+    "apps/web/src/views/financeView/FinanceCashboxSection.tsx",
+    "apps/web/src/components/billing/GlobalPaymentModalLauncher.tsx",
+    "apps/web/src/components/schedule/appointmentCardActions/CompletedActions.tsx",
+    "apps/web/src/components/schedule/appointmentContextMenu/OperationsMenuSection.tsx",
+    "apps/web/src/components/schedule/appointmentModalHeader/AppointmentModalHeaderActions.tsx",
+    "apps/web/src/components/schedule/appointmentModalHeader/AppointmentModalHeaderMoreMenu.tsx",
+    "apps/web/src/components/patients/headerModules/PatientHeaderActionsMenu.tsx",
+    "apps/web/src/components/finance/fastCheckoutModalModules/FastCheckoutPayerTypePanel.tsx",
+    "DELETED apps/web/checkout-preview.html",
+    "DELETED apps/web/src/checkoutPreviewEntry.tsx"
+  ],
+  "forbiddenUntouched": [
+    "diary files, communications/chat/telephony",
+    "apps/api/src/routes/pricelist/*, documents/issue.ts, outpatient.ts, patients/timelineRoutes.ts",
+    "apps/web/src/AppShell.tsx, AnesthesiaQuickBar.tsx",
+    "modalsContainerModules/standalone/**, serverModules/routeRegistrar.ts, sampleData/types.ts"
+  ],
+  "gatesPassed": {
+    "cashbox.test.ts (api)": "2/2 pass",
+    "fiscal regression 5 files": "26/26 pass",
+    "financePendingCheckoutContinuity (web)": "5/5 pass (fixed PaymentCheckoutBar primary CTA 52px mobile HIG)",
+    "fastCheckout.test.ts (web)": "15/15 pass",
+    "RefundServiceModalIntegration + kktZeroMockFiscalPipeline": "12/12 pass (rewrote decomposition-broken invariant #8 to grep whole omniPlatform module)",
+    "check:encoding": "19172 files OK",
+    "typecheck": "my api files clean; residual errors only in OTHER agents' dirty/untracked files (telegram/*, prescriptions, inventory, staffQueries)"
+  },
+  "extraFixedFiles": [
+    "apps/web/src/PaymentCheckoutBar.tsx (mobile primary CTA min-h 52px per Apple HIG 3.4, test #5 green)",
+    "apps/web/src/tests/kktZeroMockFiscalPipeline.test.ts (invariant #8 repointed from facade to omniPlatform module dir)",
+    "apps/api/src/routes/sbp/fiscalReceiptExecution.ts (exactOptionalPropertyTypes logWarn)",
+    "apps/api/src/routes/invoiceRoutes/helpers/invoiceNumberFormatHelper.ts (itemId undefined guard)",
+    "apps/api/src/routes/cashbox/types.ts, cashboxShiftRoutes.ts, cashboxShiftModules/index.ts, index.ts, cashboxSchemas.ts (StomX brand leak purge)"
+  ],
+  "captureScript": "apps/web/scripts/captureCashboxLiveProofs.mjs (live stand, no mocks; old preview-shooter removed)"
+}

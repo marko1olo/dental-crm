@@ -81,7 +81,7 @@ export function VisitEmkInteractiveStage({
 					fieldsDisabled={isLocked}
 					activePatient={activePatient}
 					diary={visitNoteForm as unknown as DiaryState}
-					doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
+					doctorName={((dashboard as Record<string, unknown> | null | undefined)?.activeDoctor as { fullName?: string } | undefined)?.fullName || "Лечащий врач"}
 					isLocked={isLocked}
 					isRevising={Boolean(visitNoteForm?.isRevising)}
 					beginRevise={() => {
@@ -174,7 +174,7 @@ export function VisitEmkInteractiveStage({
 									key={phrase}
 									type="button"
 									onClick={() => {
-										updateVisitNoteField("complaint", appendClinicalText(visitNoteForm?.complaint || "", phrase, ", "));
+										updateVisitNoteField("complaint", appendClinicalText(String(visitNoteForm?.complaint || ""), phrase, ", "));
 									}}
 									className="mobile-phrase-chip"
 								>
@@ -226,7 +226,7 @@ export function VisitEmkInteractiveStage({
 									key={phrase}
 									type="button"
 									onClick={() => {
-										updateVisitNoteField("objectiveStatus", appendClinicalText(visitNoteForm?.objectiveStatus || "", phrase, ", "));
+										updateVisitNoteField("objectiveStatus", appendClinicalText(String(visitNoteForm?.objectiveStatus || ""), phrase, ", "));
 									}}
 									className="mobile-phrase-chip"
 								>
@@ -355,7 +355,7 @@ export function VisitEmkInteractiveStage({
 										key={item}
 										type="button"
 										onClick={() => {
-											updateVisitNoteField("treatmentPlan", appendClinicalText(visitNoteForm?.treatmentPlan || "", item, ", "));
+											updateVisitNoteField("treatmentPlan", appendClinicalText(String(visitNoteForm?.treatmentPlan || ""), item, ", "));
 										}}
 										className="mobile-phrase-chip"
 									>
@@ -378,7 +378,7 @@ export function VisitEmkInteractiveStage({
 								fieldsDisabled={isLocked}
 								activePatient={activePatient}
 								diary={visitNoteForm as unknown as DiaryState}
-								doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
+								doctorName={((dashboard as Record<string, unknown> | null | undefined)?.activeDoctor as { fullName?: string } | undefined)?.fullName || "Лечащий врач"}
 								isLocked={isLocked}
 								isRevising={Boolean(visitNoteForm?.isRevising)}
 								beginRevise={() => {
@@ -424,7 +424,7 @@ export function VisitEmkInteractiveStage({
 						selectedTeeth={[effectiveActiveTooth || 16]}
 						patientId={activePatient?.id}
 						patientName={activePatient?.fullName}
-						doctorName={dashboard?.activeDoctor?.fullName || "Лечащий врач"}
+						doctorName={((dashboard as Record<string, unknown> | null | undefined)?.activeDoctor as { fullName?: string } | undefined)?.fullName || "Лечащий врач"}
 						isLocked={isLocked}
 					/>
 				</div>

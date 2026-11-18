@@ -24,21 +24,34 @@ import { PrescriptionModal } from "../../../prescriptions/PrescriptionModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../../store/visit";
 import { showToast } from "../../../GlobalToast";
+import type {
+	VisitModalPatientEntity,
+	VisitModalDoctorEntity,
+	VisitModalAppointmentEntity,
+	VisitModalDashboardEntity,
+} from "./visitViewModalsTypes";
+import type {
+	VisitPatientEntity,
+	VisitDoctorEntity,
+	VisitAppointmentEntity,
+	VisitDashboardEntity,
+} from "../VisitViewProps";
+import type { Dashboard } from "@dental/shared";
 
 export interface ClinicalSupportPatient {
 	readonly id?: string | undefined;
 	readonly fullName?: string | undefined;
 	readonly name?: string | undefined;
-	readonly birthDate?: string | undefined;
-	readonly phone?: string | undefined;
-	readonly passport?: string | undefined;
-	readonly snils?: string | undefined;
-	readonly address?: string | undefined;
-	readonly cardNumber?: string | undefined;
-	readonly medCardNumber?: string | undefined;
-	readonly medicalCardNumber?: string | undefined;
-	readonly allergies?: readonly string[] | string | undefined;
-	readonly chronicDiseases?: readonly string[] | string | undefined;
+	readonly birthDate?: string | Date | undefined;
+	readonly phone?: string | null | undefined;
+	readonly passport?: string | null | undefined;
+	readonly snils?: string | null | undefined;
+	readonly address?: string | null | undefined;
+	readonly cardNumber?: string | null | undefined;
+	readonly medCardNumber?: string | null | undefined;
+	readonly medicalCardNumber?: string | null | undefined;
+	readonly allergies?: readonly string[] | string | null | undefined;
+	readonly chronicDiseases?: readonly string[] | string | null | undefined;
 	readonly [key: string]: unknown;
 }
 
@@ -111,14 +124,19 @@ export interface ClinicalSupportModalsProps {
 	readonly setIsInformedConsentModalOpen: (v: boolean) => void;
 	readonly isPrescriptionModalOpen?: boolean | undefined;
 	readonly setIsPrescriptionModalOpen?: ((v: boolean) => void) | undefined;
-	readonly activePatient?: ClinicalSupportPatient | null | undefined;
-	readonly activeDoctor?: ClinicalSupportDoctor | null | undefined;
-	readonly dashboard?: ClinicalSupportDashboard | null | undefined;
-	readonly patientAge?: string | null | undefined;
-	readonly selectedToothForMenu?: number | string | null | undefined;
+	readonly activePatient?: VisitPatientEntity | null | undefined;
+	readonly activeDoctor?: VisitDoctorEntity | null | undefined;
+	readonly dashboard?: VisitDashboardEntity | undefined;
+	readonly patientAge?: string | number | null | undefined;
+	readonly selectedToothForMenu?:
+		| { code: string; label?: string | undefined; state?: string | undefined }
+		| number
+		| string
+		| null
+		| undefined;
 	readonly visitNoteForm?: ClinicalSupportVisitNoteForm | null | undefined;
-	readonly activeAppointment?: ClinicalSupportAppointment | null | undefined;
-	readonly setToothState: (code: string, state: unknown) => void;
+	readonly activeAppointment?: ClinicalSupportAppointment | VisitModalAppointmentEntity | VisitAppointmentEntity | null | undefined;
+	readonly setToothState?: ((code: string, state: string) => void) | undefined;
 	readonly appendToEMKField: (field: string, text: string) => void;
 }
 
@@ -165,21 +183,20 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 					}}
 					initialPatientName={activePatient?.fullName || activePatient?.name || ""}
 					initialPatientAgeYears={
-						patientAge
-							? Number.parseInt(patientAge, 10) || undefined
+						patientAge != null
+							? (typeof patientAge === "number" ? patientAge : Number.parseInt(String(patientAge), 10)) || undefined
 							: undefined
 					}
 					doctorFullName={
 						activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"
 					}
 					medCardNumber={
-						activePatient?.medCardNumber ||
-						activePatient?.cardNumber ||
-						activePatient?.id ||
-						""
+						(typeof activePatient?.cardNumber === "string" ? activePatient.cardNumber : undefined) ||
+						((activePatient as Record<string, unknown> | null | undefined)?.medCardNumber as string | undefined) ||
+						(typeof activePatient?.id === "string" ? activePatient.id : "")
 					}
 					clinicName={
-						dashboard?.organization?.name || "Стоматологическая клиника"
+						(dashboard?.organization as { name?: string } | undefined)?.name || "Стоматологическая клиника"
 					}
 				/>
 			)}
@@ -187,10 +204,12 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 			{/* Warranty Passport Modal (Мандаты 8e, 8k — Авто-заполнение из выполненных услуг визита и 0 ₽ переделка) */}
 			{(effectiveActiveModal === "warranty_passport" || isWarrantyModalOpen) && (() => {
 				const fromStore = useVisitStore.getState().completedServices || [];
+				const rawAppt = activeAppointment as Record<string, unknown> | null | undefined;
+				const rawActiveVisit = (dashboard as Record<string, unknown> | null | undefined)?.activeVisit as Record<string, unknown> | null | undefined;
 				const fromAppt =
-					activeAppointment?.completedServices ||
-					activeAppointment?.services ||
-					dashboard?.activeVisit?.completedServices ||
+					rawAppt?.completedServices ||
+					rawAppt?.services ||
+					rawActiveVisit?.completedServices ||
 					[];
 				const sourceList = fromStore.length > 0 ? fromStore : fromAppt;
 				const completedStagesForWarranty: CompletedTreatmentStage[] = Array.isArray(sourceList)
@@ -238,17 +257,17 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 							activePatient
 								? {
 										id: activePatient.id,
-										fullName: activePatient.fullName || activePatient.name,
-										birthDate: activePatient.birthDate,
-										phone: activePatient.phone,
+										fullName: activePatient.fullName || activePatient.name || "Пациент",
+										birthDate: (typeof activePatient.birthDate === "string" ? activePatient.birthDate : undefined) || undefined,
+										phone: activePatient.phone || undefined,
 									}
 								: null
 						}
-						doctorName={activeDoctor?.fullName || activeDoctor?.name}
+						doctorName={activeDoctor?.fullName || activeDoctor?.name || "Лечащий врач"}
 						doctorId={activeDoctor?.id}
 						clinicName={
-							dashboard?.clinicSettings?.profile?.brandName ||
-							dashboard?.organization?.name ||
+							((dashboard as Record<string, unknown> | null | undefined)?.clinicSettings as { profile?: { brandName?: string } } | undefined)?.profile?.brandName ||
+							(dashboard?.organization as { name?: string } | undefined)?.name ||
 							"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
 						}
 						initialDiagnosis={
@@ -299,8 +318,8 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 						setIsDoctorShiftModalOpen(false);
 						useUiSurfaceStore.getState().closePrimaryModal("doctor_mobile_shift");
 					}}
-					initialDoctorId={activeDoctor?.id}
-					initialDoctorName={activeDoctor?.fullName || activeDoctor?.name}
+					initialDoctorId={activeDoctor?.id || undefined}
+					initialDoctorName={(activeDoctor?.fullName || activeDoctor?.name) || undefined}
 				/>
 			)}
 
@@ -312,30 +331,31 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 						setIsInformedConsentModalOpen(false);
 						useUiSurfaceStore.getState().closePrimaryModal("informed_consent");
 					}}
-					patientId={activePatient?.id}
-					visitId={activeAppointment?.id || (dashboard?.activeVisit?.id as string | undefined)}
+					patientId={activePatient?.id || undefined}
+					visitId={activeAppointment?.id || ((dashboard as Record<string, unknown> | null | undefined)?.activeVisit as { id?: string } | undefined)?.id || undefined}
 					patient={
 						activePatient
 							? {
 									id: activePatient.id,
-									fullName: activePatient.fullName || activePatient.name,
-									birthDate: activePatient.birthDate,
-									phone: activePatient.phone,
-									passport: activePatient.passport,
-									snils: activePatient.snils,
-									address: activePatient.address,
-									cardNumber: activePatient.cardNumber || activePatient.medCardNumber || activePatient.id,
+									fullName: activePatient.fullName || activePatient.name || "Пациент",
+									birthDate: (typeof activePatient.birthDate === "string" ? activePatient.birthDate : undefined) || undefined,
+									phone: activePatient.phone || undefined,
+									passport: ((activePatient as Record<string, unknown>).passport as string | undefined) || undefined,
+									snils: ((activePatient as Record<string, unknown>).snils as string | undefined) || undefined,
+									address: activePatient.address || undefined,
+									cardNumber: (typeof activePatient.cardNumber === "string" ? activePatient.cardNumber : undefined) || ((activePatient as Record<string, unknown>).medCardNumber as string | undefined) || activePatient.id,
 								}
 							: undefined
 					}
-					doctorName={activeDoctor?.fullName || activeDoctor?.name}
+					doctorName={(activeDoctor?.fullName || activeDoctor?.name) || undefined}
 					clinicName={
-						dashboard?.clinicSettings?.profile?.brandName ||
-						dashboard?.organization?.name ||
+						((dashboard as Record<string, unknown> | null | undefined)?.clinicSettings as { profile?: { brandName?: string } } | undefined)?.profile?.brandName ||
+						(dashboard?.organization as { name?: string } | undefined)?.name ||
 						"ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
 					}
 					licenseNumber={
-						dashboard?.clinicSettings?.profile?.medicalLicenseNumber ||
+						((dashboard as Record<string, unknown> | null | undefined)?.clinicSettings as { profile?: { medicalLicenseNumber?: string } } | undefined)?.profile?.medicalLicenseNumber ||
+						(dashboard?.organization as { licenseNumber?: string } | undefined)?.licenseNumber ||
 						"ЛО41-01137-77/00368421"
 					}
 					diagnosisIcd={
@@ -377,32 +397,40 @@ export const ClinicalSupportModals: React.FC<ClinicalSupportModalsProps> = ({
 						activePatient
 							? {
 									id: activePatient.id,
-									fullName: activePatient.fullName || activePatient.name,
-									name: activePatient.name,
-									birthDate: activePatient.birthDate,
-									cardNumber: activePatient.cardNumber,
-									medicalCardNumber: activePatient.medicalCardNumber || activePatient.medCardNumber,
-									allergies: activePatient.allergies,
-									chronicDiseases: activePatient.chronicDiseases,
+									fullName: activePatient.fullName || activePatient.name || "Пациент",
+									name: activePatient.name || undefined,
+									birthDate: (typeof activePatient.birthDate === "string" ? activePatient.birthDate : undefined) || undefined,
+									cardNumber: (typeof activePatient.cardNumber === "string" ? activePatient.cardNumber : undefined),
+									medicalCardNumber: ((activePatient as Record<string, unknown>).medicalCardNumber as string | undefined) || ((activePatient as Record<string, unknown>).medCardNumber as string | undefined) || undefined,
+									allergies: activePatient.allergies || undefined,
+									chronicDiseases: activePatient.chronicDiseases || undefined,
 								}
 							: undefined
 					}
-					patientName={activePatient?.fullName || activePatient?.name}
-					allergies={activePatient?.allergies}
-					doctorName={activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог"}
+					patientName={(activePatient?.fullName || activePatient?.name) || undefined}
+					allergies={activePatient?.allergies || undefined}
+					doctorName={(activeDoctor?.fullName || activeDoctor?.name) || "Врач-стоматолог"}
 					doctorSpecialty={activeDoctor?.specialty || "Врач-стоматолог"}
 					clinicName={
-						dashboard?.clinicSettings?.profile?.brandName ||
-						dashboard?.organization?.name ||
+						((dashboard as Record<string, unknown> | null | undefined)?.clinicSettings as { profile?: { brandName?: string } } | undefined)?.profile?.brandName ||
+						(dashboard?.organization as { name?: string } | undefined)?.name ||
 						"Медицинская организация"
 					}
 					clinicAddress={
-						dashboard?.clinicSettings?.profile?.address || ""
+						((dashboard as Record<string, unknown> | null | undefined)?.clinicSettings as { profile?: { address?: string } } | undefined)?.profile?.address ||
+						(dashboard?.organization as { address?: string } | undefined)?.address ||
+						""
 					}
 					clinicPhone={
-						dashboard?.clinicSettings?.profile?.phone || ""
+						((dashboard as Record<string, unknown> | null | undefined)?.clinicSettings as { profile?: { phone?: string } } | undefined)?.profile?.phone ||
+						(dashboard?.organization as { phone?: string } | undefined)?.phone ||
+						""
 					}
-					clinicOgrn={dashboard?.clinicSettings?.profile?.ogrn || ""}
+					clinicOgrn={
+						((dashboard as Record<string, unknown> | null | undefined)?.clinicSettings as { profile?: { ogrn?: string } } | undefined)?.profile?.ogrn ||
+						(dashboard?.organization as { ogrn?: string } | undefined)?.ogrn ||
+						""
+					}
 					diary={{
 						diagnosisIcd10: visitNoteForm?.diagnosis || "",
 						notes: visitNoteForm?.treatmentDescription || visitNoteForm?.diary || "",

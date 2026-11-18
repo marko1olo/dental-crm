@@ -324,8 +324,17 @@ export function useMaxSettings() {
 	const [apiTokenDraft, setApiTokenDraft] = useState("");
 	const [webhookUrlDraft, setWebhookUrlDraft] = useState("");
 	const [isActiveDraft, setIsActiveDraft] = useState(false);
+	const [enabledFeaturesDraft, setEnabledFeaturesDraft] = useState<string[]>([]);
 	const [staffRoutingDraft, setStaffRoutingDraft] =
 		useState<MaxStaffRouting>(emptyMaxStaffRouting);
+
+	const toggleFeature = useCallback((featureKey: string) => {
+		setEnabledFeaturesDraft((prev) =>
+			prev.includes(featureKey)
+				? prev.filter((k) => k !== featureKey)
+				: [...prev, featureKey],
+		);
+	}, []);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -349,6 +358,7 @@ export function useMaxSettings() {
 			setBotIdDraft(data?.botId ?? "");
 			setWebhookUrlDraft(data?.webhookUrl ?? "");
 			setIsActiveDraft(data?.isActive ?? false);
+			setEnabledFeaturesDraft(data?.enabledFeatures ?? []);
 			setStaffRoutingDraft(data?.staffRouting ?? emptyMaxStaffRouting());
 			setDraftsSeeded(true);
 			setLoadState({ phase: "ready", configured: data !== null });
@@ -415,6 +425,7 @@ export function useMaxSettings() {
 				botId: botIdDraft.trim() || null,
 				webhookUrl: webhookUrlDraft.trim() || null,
 				isActive: isActiveDraft,
+				enabledFeatures: enabledFeaturesDraft,
 				staffRouting: staffRoutingDraft,
 			};
 			if (apiTokenDraft.trim()) {
@@ -462,6 +473,7 @@ export function useMaxSettings() {
 		apiTokenDraft,
 		webhookUrlDraft,
 		isActiveDraft,
+		enabledFeaturesDraft,
 		staffRoutingDraft,
 		loading,
 		draftsSeeded,
@@ -491,6 +503,9 @@ export function useMaxSettings() {
 		setWebhookUrlDraft,
 		isActiveDraft,
 		setIsActiveDraft,
+		enabledFeaturesDraft,
+		setEnabledFeaturesDraft,
+		toggleFeature,
 		staffRoutingDraft,
 		setStaffRoutingDraft,
 		save,

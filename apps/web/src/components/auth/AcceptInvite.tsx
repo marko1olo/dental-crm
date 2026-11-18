@@ -8,10 +8,14 @@ import {
 } from "../../lib/safeLocalStorage";
 import { showToast } from "../GlobalToast";
 
+import type { StaffUser } from "./staffPinPad/staffPinPadTypes";
+
 interface AcceptInviteProps {
 	token: string;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	onSuccess: (clinicProfile: any, userProfile: any) => void;
+	onSuccess: (
+		clinicProfile: { organizationId?: string; [key: string]: unknown },
+		userProfile?: StaffUser | Record<string, unknown> | null,
+	) => void;
 	onCancel: () => void;
 }
 
@@ -58,9 +62,9 @@ export function AcceptInvite({
 			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, data.staffToken);
 			showToast("Профиль успешно создан!", "success");
 			onSuccess({ organizationId: data.user.organizationId }, data.user);
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
-			showToast(err.message || "Ссылка недействительна", "error");
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Ссылка недействительна";
+			showToast(message, "error");
 			onCancel();
 		} finally {
 			setLoading(false);

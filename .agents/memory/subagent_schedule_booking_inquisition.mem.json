@@ -1,0 +1,54 @@
+{
+  "role": "Red Team Inquisitor: schedule & booking domain (dental-crm)",
+  "startedAt": "2026-10-24 (wave 2, revived after provider drop)",
+  "phases": {
+    "recon": "done",
+    "xray": "done",
+    "fix": "done",
+    "proof": "done",
+    "commit": "done",
+    "report": "done"
+  },
+  "commits": [
+    "82245a05b fix(schedule): emergency override only by explicit admin flag, honest suggested slots from clinic DB",
+    "92759b9e6 fix(schedule): free-slot engine honest to clinic DB — real work window, no phantom chair, no fabricated revenue",
+    "9f334d65a fix(booking): no fabricated doctor/chair ids in payloads — server resolves real entities from DB",
+    "ea26be662 refactor(settings): clinic schedule section decomposed into 4 focused modules (8b)"
+  ],
+  "findings": [
+    "RACE CLOSED at SQL: lockAppointmentResources FOR UPDATE chair->user->patient canonical order inside db.transaction on create+update; public booking same hierarchy (bookingMutationService .for(update) x3); expectedCurrentStatus optimistic guard on PATCH; LWW-safe partial UPDATE",
+    "ALIAS DISCOVERY: 'doctor-default'/'doctor-solo'/'default-doctor'/'chair-1'/'default-chair' are SERVER-recognized aliases (appointmentsSchemas.ts placeholders) resolved by prepareCreate/UpdateAppointmentRawBody into REAL doctor/chair from DB. Client fabrications were contract-driven; normalized to null/'' (identical server behavior, no client lie). 'chair-default' in AppointmentModalBanners was NOT an alias = genuine uuid bug, fixed to null",
+    "PHANTOM CHAIR in doctorFreeSlotsEngine burned (empty chairs -> 'В клинике нет активных кресел' dayOff, zero slots; busy chairs skip interval)",
+    "deriveClinicWorkingHours SSOT live: profile scheduleDefaults + staff weekly workingHours per doctor; empty weekly = vacation",
+    "tally revenue only real invoices; footer workday label real",
+    "emergency override: SSOT isEmergencyBookingOverride, flags-only (web sends allowOverbooking+allowEmergencyOverride structurally from drawer emergency toggle)",
+    "urgency field stripped by Zod on /api/appointments — only intercom uses it; not a defect",
+    "web typecheck backlog errors are pre-existing in OTHER schedule files (headerPrintActions, HoverHud, inspector etc ~179 web-wide) — NOT introduced by me, my files 0 errors"
+  ],
+  "gates": {
+    "tests": "engine 16/16, emergency override 5/5, QuickBookingDrawer+SlotConflict 20/20",
+    "typecheck_my_files": "0 errors",
+    "check:encoding": "OK 19182 files"
+  },
+  "remaining": [
+    "4-State visual proof PC/Mobile Light+Dark -> docs/proofs/schedule/ from LIVE 5173 (login clinic@example.com POST /api/auth/login), review each personally, fix defects, reshoot",
+    "final 3-block report"
+  ],
+  "status": "COMPLETED",
+  "commits_final": [
+    "82245a05b",
+    "92759b9e6",
+    "9f334d65a",
+    "ea26be662",
+    "proof(schedule) live 4-state (оркестратор добил мобильные после падения агента на Bad Gateway)"
+  ],
+  "proofs": [
+    "docs/proofs/schedule/schedule_grid_pc_light.png",
+    "schedule_grid_pc_dark.png",
+    "quick_booking_drawer_pc_light.png",
+    "quick_booking_drawer_pc_dark.png",
+    "03_schedule_mobile_light.png",
+    "04_schedule_mobile_dark.png"
+  ],
+  "note_final": "агент снял 4 PC-кадра и упал на Bad Gateway; оркестратор доснял 2 мобильных (дрейф 0px), отсмотрел все 6 глазами — дефектов нет"
+}

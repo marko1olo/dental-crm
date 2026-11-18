@@ -17,6 +17,8 @@ export function generateForm257RecordId(date: string, cycleNumber: number, steri
 	return `F257-${cleanDate}-${cleanCode}-C${paddedCycle}`;
 }
 
+export const generateAutoclaveRecordId = generateForm257RecordId;
+
 export function calculateDigitalStampHash(data: {
 	id: string;
 	date: string;
@@ -135,3 +137,5 @@ export function createForm257Record(params: {
 		createdAt: new Date().toISOString(),
 	};
 }
+
+export const createAutoclaveRecord = createForm257Record;

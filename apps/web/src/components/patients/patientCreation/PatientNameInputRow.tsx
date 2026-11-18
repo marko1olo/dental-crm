@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { ChangeEvent, RefObject } from "react";
+import type { PatientCoreDraft } from "../../../AppConstants";
 import { DictationHints } from "../../../DictationHints";
 import { parsePatientDictationLocal } from "../../../lib/smartPatientParser";
 import { type SmartParsedPayload, SmartParsePreview } from "../../../SmartParsePreview";
@@ -13,7 +14,7 @@ export interface PatientNameInputRowProps {
 	readonly fullNameError?: string | undefined;
 	readonly onPhoneChange: (phone: string) => void;
 	readonly onBirthDateChange: (birthDate: string) => void;
-	readonly updatePatientCoreDraft?: ((field: any, val: any) => void) | undefined;
+	readonly updatePatientCoreDraft?: ((field: keyof PatientCoreDraft, val: string) => void) | undefined;
 }
 
 export function PatientNameInputRow({

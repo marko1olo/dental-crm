@@ -24,6 +24,7 @@ import {
 	createCustomizedBundle,
 	exportCustomizedBundleToCashier54Fz,
 	kopecksToRubles,
+	createCanonicalService,
 	type CanonicalDiagnosisBundle,
 	type CanonicalDiagnosisService,
 	type CustomizedBundleItem,
@@ -269,15 +270,16 @@ export function resolveClinicalServiceBundlesAgainstCatalog(
 		let totalKopecks = 0;
 		const resolvedServices = bundle.services.map((svc) => {
 			const resolved = resolveServicePriceAgainstCatalog(
-				{
+				createCanonicalService({
 					id: `${bundle.id}_${svc.code804n}`,
+					serviceCode: svc.code804n,
 					code804n: svc.code804n,
 					title: svc.title,
 					defaultPriceKopecks: svc.priceKopecks ?? Math.round(svc.priceRub * 100),
 					defaultPriceRub: svc.priceRub,
 					requiredByDefault: true,
 					category: "Терапия",
-				},
+				}),
 				catalog,
 			);
 			totalKopecks += resolved.priceKopecks;

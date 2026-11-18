@@ -38,7 +38,8 @@ export async function executeShiftAutofillTransaction(
 
 	// 1. Пробы контроля очистки (ПСО)
 	const psoBatches = getShiftPsoBatches(body.psoRecords);
-	const form257 = getShiftSterilizationRecords(body.sterilizationRecords, body.form257);
+	const rawAutoclaveCycles = body.autoclaveCycle ?? body.form257;
+	const autoclaveCycles = getShiftSterilizationRecords(body.sterilizationRecords, rawAutoclaveCycles);
 
 	const psoRows = await tx
 		.insert(preSterilizationCleaningLogs)
@@ -64,7 +65,7 @@ export async function executeShiftAutofillTransaction(
 	const sterilRows = await tx
 		.insert(sterilizationLogs)
 		.values(
-			form257.map((f, idx: number) => ({
+			autoclaveCycles.map((f, idx: number) => ({
 				organizationId,
 				deviceName: String(f.sterilizerBrandModel || "Автоклав Euronda E9 Next (Класс B)"),
 				autoclaveId: String(f.sterilizerId || body.autoclaveId || "АК-01"),

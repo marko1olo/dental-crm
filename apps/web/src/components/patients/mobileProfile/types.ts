@@ -4,6 +4,7 @@
  */
 
 import type { Dashboard, Patient } from "@dental/shared";
+import type { PatientCoreDraft } from "../../../AppConstants";
 
 export type MobilePatientTab =
 	| "card"
@@ -21,9 +22,9 @@ export interface MobilePatientProfileWorkspaceProps {
 	onOpenVisit?: ((visitId: string) => void) | undefined;
 	onNewAppointment?: ((patientId: string) => void) | undefined;
 	money: (amountRub: number) => string;
-	patientCoreDraft?: any;
-	updatePatientCoreDraft?: ((field: any, value: any) => void) | undefined;
-	savePatientCore?: (() => Promise<any> | void) | undefined;
+	patientCoreDraft?: PatientCoreDraft | null | undefined;
+	updatePatientCoreDraft?: ((field: keyof PatientCoreDraft, value: string) => void) | undefined;
+	savePatientCore?: (() => Promise<unknown> | void) | undefined;
 	patientCoreDirty?: boolean | undefined;
 	patientCoreSaveState?: ("idle" | "saving" | "saved" | "error") | undefined;
 	className?: string | undefined;

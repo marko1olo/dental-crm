@@ -15,7 +15,7 @@ export const TreatmentPlansSummaryBar: React.FC<TreatmentPlansSummaryBarProps> =
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 			<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between">
-				<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
+				<span className="text-[11px] font-semibold text-[var(--muted)]">
 					Общий бюджет плана:
 				</span>
 				<span className="text-xs font-mono font-black text-[var(--ink)]">
@@ -23,7 +23,7 @@ export const TreatmentPlansSummaryBar: React.FC<TreatmentPlansSummaryBarProps> =
 				</span>
 			</div>
 			<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between">
-				<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
+				<span className="text-[11px] font-semibold text-[var(--muted)]">
 					Выполнено:
 				</span>
 				<span className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">
@@ -31,7 +31,7 @@ export const TreatmentPlansSummaryBar: React.FC<TreatmentPlansSummaryBarProps> =
 				</span>
 			</div>
 			<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between">
-				<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
+				<span className="text-[11px] font-semibold text-[var(--muted)]">
 					Остаток к реализации:
 				</span>
 				<span className="text-xs font-mono font-black text-[var(--teal)]">

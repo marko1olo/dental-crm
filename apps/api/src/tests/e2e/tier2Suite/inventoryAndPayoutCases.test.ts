@@ -9,7 +9,7 @@ import {
 	treatmentItems,
 	visits,
 } from "../../../db/schema.js";
-import { computeDoctorPayout } from "../../../services/finance/doctorPayouts.js";
+import { calculateDoctorPeriodPayroll } from "@dental/shared";
 import { deductMaterialsForVisit } from "../../../services/inventory/materialDeduction.js";
 import {
 	fixtureUuid,
@@ -29,82 +29,114 @@ import {
 
 export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void {
 	// ==========================================
-	// Feature 6: Doctor Payroll Boundaries
+	// Feature 6: Doctor Payroll Boundaries (SSOT in kopecks)
 	// ==========================================
-	describe("Feature 6: Doctor Payroll Boundaries & Corner Cases", () => {
-		it("6.1 retains signed negative payout when material deductions exceed earned commission", () => {
-			const result = computeDoctorPayout({
-				revenueRub: 10000,
-				materialCostRub: 5000,
-				materialMovements: 1,
-				commissionPct: 30,
-				materialDeductionPct: 100,
+	describe("Feature 6: Doctor Payroll Boundaries & Corner Cases (SSOT in kopecks)", () => {
+		it("6.1 handles materials deduction exceeding gross revenue (floored at zero net base)", () => {
+			const result = calculateDoctorPeriodPayroll({
+				doctorId: DOCTOR_1_ID,
+				doctorName: "Врач-1",
+				specialtyId: "therapy",
+				periodStartIso: "2029-03-01",
+				periodEndIso: "2029-03-31",
+				services: [
+					{
+						id: SERVICE_1_ID,
+						nameRu: "Терапия",
+						category: "therapy",
+						grossRevenueKop: 500000,
+						labCostKop: 0,
+						materialCostKop: 1000000,
+						doctorId: DOCTOR_1_ID,
+						isPaid: true,
+					},
+				],
+				customBasePercentage: 30,
 			});
-			assert.equal(result.state, "computed");
-			assert.equal(result.accruedRub, 3000);
-			assert.equal(result.withheldMaterialRub, 5000);
-			// По ТК РФ ст. 137, 192 выплата не может быть отрицательной (payout >= 0)
-			assert.equal(result.payoutRub, 0);
+			assert.equal(result.totalGrossRevenueKop, 500000);
+			assert.equal(result.totalMaterialDeductionsKop, 1000000);
+			assert.equal(result.totalNetBaseKop, 0);
+			assert.equal(result.grossPayoutBeforeTaxKop, 0);
 		});
 
 		it("6.2 handles 0% commission rate validly (accrued = 0, payout = 0)", () => {
-			const result = computeDoctorPayout({
-				revenueRub: 50000,
-				materialCostRub: 0,
-				materialMovements: 0,
-				commissionPct: 0,
-				materialDeductionPct: 0,
+			const result = calculateDoctorPeriodPayroll({
+				doctorId: DOCTOR_1_ID,
+				doctorName: "Врач-1",
+				specialtyId: "therapy",
+				periodStartIso: "2029-03-01",
+				periodEndIso: "2029-03-31",
+				services: [
+					{
+						id: SERVICE_1_ID,
+						nameRu: "Терапия",
+						category: "therapy",
+						grossRevenueKop: 5000000,
+						labCostKop: 0,
+						materialCostKop: 0,
+						doctorId: DOCTOR_1_ID,
+						isPaid: true,
+					},
+				],
+				customBasePercentage: 0,
 			});
-			assert.equal(result.state, "computed");
-			assert.equal(result.accruedRub, 0);
-			assert.equal(result.payoutRub, 0);
+			assert.equal(result.totalGrossRevenueKop, 5000000);
+			assert.equal(result.totalNetBaseKop, 5000000);
+			assert.equal(result.grossPayoutBeforeTaxKop, 0);
 		});
 
-		it("6.3 handles 100% commission rate boundary (accrued = revenue)", () => {
-			const result = computeDoctorPayout({
-				revenueRub: 45000.5,
-				materialCostRub: 0,
-				materialMovements: 0,
-				commissionPct: 100,
-				materialDeductionPct: 0,
+		it("6.3 handles 100% commission rate boundary (accrued = net base)", () => {
+			const result = calculateDoctorPeriodPayroll({
+				doctorId: DOCTOR_1_ID,
+				doctorName: "Врач-1",
+				specialtyId: "therapy",
+				periodStartIso: "2029-03-01",
+				periodEndIso: "2029-03-31",
+				services: [
+					{
+						id: SERVICE_1_ID,
+						nameRu: "Терапия",
+						category: "therapy",
+						grossRevenueKop: 4500050,
+						labCostKop: 0,
+						materialCostKop: 0,
+						doctorId: DOCTOR_1_ID,
+						isPaid: true,
+					},
+				],
+				customBasePercentage: 100,
 			});
-			assert.equal(result.state, "computed");
-			assert.equal(result.accruedRub, 45000.5);
-			assert.equal(result.payoutRub, 45000.5);
+			assert.equal(result.totalGrossRevenueKop, 4500050);
+			assert.equal(result.totalNetBaseKop, 4500050);
+			assert.equal(result.grossPayoutBeforeTaxKop, 4500050);
 		});
 
-		it("6.4 rejects invalid commission percentage (> 100% or < 0%) as rate_invalid", () => {
-			const resultHigh = computeDoctorPayout({
-				revenueRub: 10000,
-				materialCostRub: 0,
-				materialMovements: 0,
-				commissionPct: 150,
-				materialDeductionPct: 0,
+		it("6.4 handles mixed lab orders and material deductions correctly", () => {
+			const result = calculateDoctorPeriodPayroll({
+				doctorId: DOCTOR_1_ID,
+				doctorName: "Врач-1",
+				specialtyId: "orthopedics",
+				periodStartIso: "2029-03-01",
+				periodEndIso: "2029-03-31",
+				services: [
+					{
+						id: SERVICE_1_ID,
+						nameRu: "Коронка",
+						category: "orthopedics",
+						grossRevenueKop: 2000000,
+						labCostKop: 500000,
+						materialCostKop: 200000,
+						doctorId: DOCTOR_1_ID,
+						isPaid: true,
+					},
+				],
+				customBasePercentage: 25,
 			});
-			assert.equal(resultHigh.state, "rate_invalid");
-
-			const resultNeg = computeDoctorPayout({
-				revenueRub: 10000,
-				materialCostRub: 0,
-				materialMovements: 0,
-				commissionPct: -10,
-				materialDeductionPct: 0,
-			});
-			assert.equal(resultNeg.state, "rate_invalid");
-		});
-
-		it("6.5 flags material_policy_missing when material movements exist but deduction percentage is null", () => {
-			const result = computeDoctorPayout({
-				revenueRub: 20000,
-				materialCostRub: 3000,
-				materialMovements: 2,
-				commissionPct: 35,
-				materialDeductionPct: null,
-			});
-			assert.equal(result.state, "material_policy_missing");
-			assert.equal(result.accruedRub, 7000);
-			assert.equal(result.withheldMaterialRub, null);
-			assert.equal(result.payoutRub, null);
+			assert.equal(result.totalGrossRevenueKop, 2000000);
+			assert.equal(result.totalLabDeductionsKop, 500000);
+			assert.equal(result.totalMaterialDeductionsKop, 200000);
+			assert.equal(result.totalNetBaseKop, 1300000);
+			assert.equal(result.grossPayoutBeforeTaxKop, 325000);
 		});
 	});
 
