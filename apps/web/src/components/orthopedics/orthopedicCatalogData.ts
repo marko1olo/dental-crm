@@ -5,6 +5,8 @@
  * Исключены любые крякозябры (mojibake) — 100% чистый UTF-8.
  */
 
+import { DENTAL_LAB_CONSTRUCTIONS } from "@dental/shared";
+
 export type FixationTypeId = "cement" | "screw" | "clasp";
 
 export interface FixationTypePreset {
@@ -200,23 +202,34 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "single_crown", badge: "ZrO2 Multi",
 		description: "Монолитный диоксид циркония многослойной градиентной прозрачности",
 		warrantyMonths: 60, warrantyLabelRu: "5 лет",
-		pricePatientRub: 24000, costZtlRub: 7500, amountKopecks: 750000, costMaterialsRub: 1200,
-		turnaroundBusinessDays: 5, fixationType: "cement", hasAntagonists: true,
+		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks / 100),
+		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks / 100),
+		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks,
+		costMaterialsRub: 1200,
+		turnaroundBusinessDays: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.standardTurnaroundDays,
+		fixationType: "cement", hasAntagonists: true,
 	},
 	{
 		id: "emax", name: "Прессованная керамика E-max", material: "IPS e.max Press (дисиликат лития)",
 		constructionType: "single_crown", badge: "e.max Press",
 		description: "Прессованная дисиликатная стеклокерамика высокой эстетики для фронта",
 		warrantyMonths: 36, warrantyLabelRu: "3 года",
-		pricePatientRub: 26000, costZtlRub: 8500, amountKopecks: 850000, costMaterialsRub: 1300,
-		turnaroundBusinessDays: 5, fixationType: "cement", hasAntagonists: true,
+		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks / 100),
+		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks / 100),
+		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks,
+		costMaterialsRub: 1300,
+		turnaroundBusinessDays: DENTAL_LAB_CONSTRUCTIONS.crown_emax.standardTurnaroundDays,
+		fixationType: "cement", hasAntagonists: true,
 	},
 	{
 		id: "veneer_emax", name: "Керамический винир E-max", material: "IPS e.max Ceram / Press",
 		constructionType: "veneer", badge: "Винир e.max",
 		description: "Микропротезирование зоны улыбки с минимальным препарированием эмали",
 		warrantyMonths: 36, warrantyLabelRu: "3 года",
-		pricePatientRub: 28000, costZtlRub: 9000, amountKopecks: 900000, costMaterialsRub: 1500,
+		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks / 100) + 2000,
+		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks / 100) + 500,
+		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks + 50000,
+		costMaterialsRub: 1500,
 		turnaroundBusinessDays: 6, fixationType: "cement", hasAntagonists: true,
 	},
 	{
@@ -224,7 +237,10 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "bridge", badge: "Мост ZrO2",
 		description: "Мостовидный протез из диоксида циркония с промывным седловидным пространством",
 		warrantyMonths: 60, warrantyLabelRu: "5 лет",
-		pricePatientRub: 48000, costZtlRub: 15000, amountKopecks: 1500000, costMaterialsRub: 2200,
+		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks / 100) * 2,
+		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks / 100) * 2,
+		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks * 2,
+		costMaterialsRub: 2200,
 		turnaroundBusinessDays: 7, fixationType: "cement", hasAntagonists: true,
 	},
 	{
@@ -232,8 +248,12 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "single_crown", badge: "МК Co-Cr",
 		description: "Классическая металлокерамика на биосовместимом CoCr каркасе",
 		warrantyMonths: 24, warrantyLabelRu: "2 года",
-		pricePatientRub: 15000, costZtlRub: 5000, amountKopecks: 500000, costMaterialsRub: 1100,
-		turnaroundBusinessDays: 7, fixationType: "cement", hasAntagonists: true,
+		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultPatientPriceKopecks / 100),
+		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultZtlCostKopecks / 100),
+		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultZtlCostKopecks,
+		costMaterialsRub: 1100,
+		turnaroundBusinessDays: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.standardTurnaroundDays,
+		fixationType: "cement", hasAntagonists: true,
 	},
 	{
 		id: "pmma_temp", name: "Временная коронка PMMA", material: "PMMA CAD/CAM",
@@ -248,8 +268,12 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "clasp_denture", badge: "Бюгель CoCr",
 		description: "Дуговой съемный протез с опорно-удерживающими кламмерами или замками",
 		warrantyMonths: 24, warrantyLabelRu: "2 года",
-		pricePatientRub: 45000, costZtlRub: 16000, amountKopecks: 1600000, costMaterialsRub: 2500,
-		turnaroundBusinessDays: 10, fixationType: "clasp", hasAntagonists: true,
+		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultPatientPriceKopecks / 100),
+		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultZtlCostKopecks / 100),
+		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultZtlCostKopecks,
+		costMaterialsRub: 2500,
+		turnaroundBusinessDays: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.standardTurnaroundDays,
+		fixationType: "clasp", hasAntagonists: true,
 	},
 	{
 		id: "all_on_4", name: "All-on-4 (Винтовая)", material: "Балочный титан + диоксид циркония / композит",
@@ -272,11 +296,11 @@ export function getZtlPresetById(id: string): StandardZtlPreset | undefined {
 export function calculateOrthopedicEconomics(presetId: string, count: number = 1): OrthopedicEconomicsCalculation {
 	const safeCount = Math.max(1, count);
 	const fallbackPreset = STANDARD_ZTL_ORDER_PRESETS[0] ?? {
-		id: "crown_zirconia",
+		id: "zirconia",
 		name: "Коронка диоксид циркония",
-		pricePatientRub: 25000,
-		costZtlRub: 8000,
-		costMaterialsRub: 1500,
+		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks / 100),
+		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks / 100),
+		costMaterialsRub: 1200,
 	};
 	const preset = getZtlPresetById(presetId) ?? fallbackPreset;
 	const grossPriceRub = preset.pricePatientRub * safeCount;

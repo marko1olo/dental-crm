@@ -7,6 +7,7 @@ export interface LinkedChairsideLabOrderInfo {
 	readonly stumpShade?: string | undefined;
 	readonly workType?: string | undefined;
 	readonly constructionType?: string | undefined;
+	readonly laboratoryName?: string | undefined;
 	readonly technicianName?: string | undefined;
 	readonly warrantyPassport?: string | undefined;
 	readonly status?: string | undefined;
@@ -23,6 +24,8 @@ export interface OrthopedicsChairsideTopBarProps {
 	readonly onChangeJawScope: (scope: "upper" | "lower" | "both" | "none") => void;
 	readonly selectedMaterial: string;
 	readonly onChangeSelectedMaterial: (material: string) => void;
+	readonly is3dViewerOpen?: boolean | undefined;
+	readonly onToggle3dViewer?: (() => void) | undefined;
 }
 
 export interface OrthopedicsChairsideLabOrderBannerProps {

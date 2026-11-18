@@ -27,8 +27,8 @@ export interface LabOrderCardItemProps {
 interface StatusMeta {
 	label: string;
 	className: string;
-	nextStatus?: string;
-	nextActionLabel?: string;
+	nextStatus?: string | undefined;
+	nextActionLabel?: string | undefined;
 }
 
 function getStatusMeta(status: string): StatusMeta {
@@ -37,7 +37,7 @@ function getStatusMeta(status: string): StatusMeta {
 		case "draft":
 			return {
 				label: "Черновик",
-				className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700",
+				className: "bg-[var(--paper-soft)] text-[var(--ink-muted)] border-[var(--line)]",
 				nextStatus: "sent",
 				nextActionLabel: "Отправить в ЗТЛ",
 			};
@@ -45,7 +45,7 @@ function getStatusMeta(status: string): StatusMeta {
 		case "sent_to_lab":
 			return {
 				label: "Отправлен в ЗТЛ",
-				className: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+				className: "bg-[var(--primary-soft,rgba(13,148,136,0.1))] text-[var(--primary,#0d9488)] border-[var(--primary,#0d9488)]/25",
 				nextStatus: "in_progress",
 				nextActionLabel: "Взять в работу",
 			};
@@ -53,7 +53,7 @@ function getStatusMeta(status: string): StatusMeta {
 		case "processing":
 			return {
 				label: "В работе в ЗТЛ",
-				className: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+				className: "bg-[var(--warning-soft,rgba(245,158,11,0.12))] text-[var(--warning-ink,#92400e)] border-[var(--warning-line,rgba(245,158,11,0.3))]",
 				nextStatus: "refitting",
 				nextActionLabel: "На примерку",
 			};
@@ -63,7 +63,7 @@ function getStatusMeta(status: string): StatusMeta {
 		case "ready_for_fitting":
 			return {
 				label: "Примерка каркаса / керамики",
-				className: "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+				className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]",
 				nextStatus: "received",
 				nextActionLabel: "Готов в клинике",
 			};
@@ -72,7 +72,7 @@ function getStatusMeta(status: string): StatusMeta {
 		case "in_clinic":
 			return {
 				label: "Готов в клинике",
-				className: "bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300 border-teal-200 dark:border-teal-800",
+				className: "bg-[var(--primary-soft,rgba(13,148,136,0.12))] text-[var(--primary,#0d9488)] border-[var(--primary,#0d9488)]/30",
 				nextStatus: "completed",
 				nextActionLabel: "Сдать пациенту",
 			};
@@ -80,17 +80,17 @@ function getStatusMeta(status: string): StatusMeta {
 		case "installed":
 			return {
 				label: "Сдан пациенту",
-				className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+				className: "bg-[var(--success-soft,rgba(16,185,129,0.14))] text-[var(--success-ink,#065f46)] border-[var(--success-line,rgba(16,185,129,0.3))]",
 			};
 		case "cancelled":
 			return {
 				label: "Отменен",
-				className: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+				className: "bg-[var(--danger-soft,rgba(244,63,94,0.12))] text-[var(--danger,#f43f5e)] border-[var(--danger-soft,rgba(244,63,94,0.3))]",
 			};
 		default:
 			return {
 				label: status,
-				className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700",
+				className: "bg-[var(--paper-soft)] text-[var(--ink-muted)] border-[var(--line)]",
 			};
 	}
 }
@@ -117,14 +117,14 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 			{/* Верхняя строка: Номер наряда, статус и дата */}
 			<div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line-subtle,rgba(0,0,0,0.06))] pb-2.5">
 				<div className="flex items-center gap-2 flex-wrap">
-					<span className="font-mono text-xs font-bold text-[var(--teal,#0d9488)] bg-[var(--teal-soft,#f0fdfa)] px-2 py-0.5 rounded-md border border-[var(--teal,#0d9488)]/20">
+					<span className="font-mono text-xs font-bold text-[var(--primary,#0d9488)] bg-[var(--primary-soft,rgba(13,148,136,0.1))] px-2 py-0.5 rounded-md border border-[var(--primary,#0d9488)]/20">
 						{orderNum}
 					</span>
 					<span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${statusMeta.className}`}>
 						{statusMeta.label}
 					</span>
 					{order.isWarranty && (
-						<span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+						<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--warning-soft,rgba(245,158,11,0.12))] text-[var(--warning-ink,#92400e)] border border-[var(--warning-line,rgba(245,158,11,0.3))]">
 							Гарантия
 						</span>
 					)}
@@ -133,7 +133,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 				<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
 					{formattedDue ? (
 						<span className="inline-flex items-center gap-1 font-medium text-[var(--ink)]">
-							<Calendar className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+							<Calendar className="w-3.5 h-3.5 text-[var(--primary,#0d9488)]" />
 							<span>{`Срок: ${formattedDue}`}</span>
 						</span>
 					) : formattedCreated ? (
@@ -150,7 +150,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 				<div className="space-y-1">
 					<div className="flex items-center gap-2 flex-wrap">
 						<span className="text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
-							<Layers className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
+							<Layers className="w-4 h-4 text-[var(--primary,#0d9488)] shrink-0" />
 							{toothDisplay}
 						</span>
 						{order.material && (
@@ -161,7 +161,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 					<div className="flex items-center gap-2 flex-wrap text-xs text-[var(--muted)]">
 						{order.colorVita && (
 							<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] font-medium text-[var(--ink)]">
-								<Sparkles className="w-3 h-3 text-amber-500" />
+								<Sparkles className="w-3 h-3 text-[var(--warning,#f59e0b)]" />
 								<span>{`VITA: ${order.colorVita}`}</span>
 							</span>
 						)}
@@ -188,7 +188,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 						<button
 							type="button"
 							onClick={() => onStatusTransition(order.id, statusMeta.nextStatus!)}
-							className="w-full sm:w-auto min-h-[36px] px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 hover:border-[var(--teal,#0d9488)] transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
+							className="w-full sm:w-auto min-h-[36px] px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--primary-soft,rgba(13,148,136,0.1))] text-[var(--primary,#0d9488)] border border-[var(--primary,#0d9488)]/30 hover:border-[var(--primary,#0d9488)] transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
 							title={`Перевести статус наряд-заказа: ${statusMeta.nextActionLabel}`}
 						>
 							<CheckCircle2 className="w-3.5 h-3.5" />

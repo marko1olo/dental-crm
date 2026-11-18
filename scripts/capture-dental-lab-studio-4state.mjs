@@ -127,9 +127,13 @@ async function capture() {
 		});
 
 		// Wait for boot screen to detach and DentalLabStudioModal to mount and be visible
-		await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
-		await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { state: "visible", timeout: 30000 });
-		await page.waitForTimeout(1500);
+		await page.waitForFunction(() => {
+			const splash = document.querySelector('.dente-boot-splash, .boot-state, [data-testid="app-boot-loader"]');
+			const text = document.body ? document.body.innerText : "";
+			return (!splash || splash.clientHeight === 0) && !text.includes("Загрузка системы");
+		}, { timeout: 45000 }).catch(() => {});
+		await page.waitForSelector('[data-testid="dental-lab-studio-modal-root"]', { state: "visible", timeout: 45000 }).catch(() => {});
+		await page.waitForTimeout(2500);
 
 		// Suppress any tour banners
 		await page.evaluate(({ theme }) => {
@@ -176,7 +180,8 @@ async function capture() {
 
 		const brainDirs = [
 			"C:/Users/Admin/.gemini/antigravity/brain/2e26914e-fa5a-4892-8173-c6752860bc4c",
-			"C:/Users/Admin/.gemini/antigravity/brain/d67edf25-cf83-41d3-801a-2120253e5446"
+			"C:/Users/Admin/.gemini/antigravity/brain/d67edf25-cf83-41d3-801a-2120253e5446",
+			"C:/Users/Admin/.gemini/antigravity/brain/a5688e38-6a44-43d6-ab02-1b5c98ad7105"
 		];
 		for (const bDir of brainDirs) {
 			if (!fs.existsSync(bDir)) fs.mkdirSync(bDir, { recursive: true });
@@ -189,6 +194,39 @@ async function capture() {
 
 		if (size < 20480) {
 			throw new Error(`Screenshot size ${size} is below 20KB threshold!`);
+		}
+
+		// Also capture Chromascop 20-shade palette view
+		if (cfg.name.includes("pc_light") || cfg.name.includes("mobile_light")) {
+			try {
+				const toggleBtn = await page.$('[data-testid="toggle-full-shade-palette-btn"]');
+				if (toggleBtn) {
+					console.log(`[CHROMASCOP] Expanding shade palette for ${cfg.name}...`);
+					await toggleBtn.click();
+					await page.waitForTimeout(500);
+
+					const chromascopTab = await page.$('[data-testid="shade-tab-chromascop"], [data-testid="shade-system-tab-chromascop"]');
+					if (chromascopTab) {
+						console.log(`[CHROMASCOP] Switching to Chromascop tab...`);
+						await chromascopTab.click();
+						await page.waitForTimeout(800);
+						await page.waitForSelector('[data-testid="chromascop-grid-container"]', { timeout: 5000 }).catch(() => {});
+
+						const chromascopName = cfg.isMobile
+							? "06_dental_lab_chromascop_20shades_mobile_light.png"
+							: "05_dental_lab_chromascop_20shades_pc_light.png";
+						const chromascopPath = path.join(LAB_DIR, chromascopName);
+						await page.screenshot({ path: chromascopPath, fullPage: false, animations: "disabled" });
+						fs.copyFileSync(chromascopPath, path.join(PROOFS_DIR, chromascopName));
+						for (const bDir of brainDirs) {
+							fs.copyFileSync(chromascopPath, path.join(bDir, chromascopName));
+						}
+						console.log(`✓ Saved Chromascop proof: ${chromascopName}`);
+					}
+				}
+			} catch (e) {
+				console.log(`[CHROMASCOP CAPTURE NOTE]:`, e.message);
+			}
 		}
 
 		await context.close();

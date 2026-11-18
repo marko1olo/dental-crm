@@ -121,12 +121,19 @@ async function main() {
 
     const page = await context.newPage();
 
-    await page.goto("http://127.0.0.1:5173/?standalone=orthopedics#orthopedics", { waitUntil: "commit", timeout: 35000 });
+    await page.goto("http://127.0.0.1:5173/?standalone=orthopedics#orthopedics", { waitUntil: "networkidle", timeout: 45000 });
+
+    await page.waitForFunction(() => {
+      const splash = document.querySelector('.dente-boot-splash, .boot-state, [data-testid="app-boot-loader"]');
+      const text = document.body ? document.body.innerText : "";
+      return (!splash || splash.clientHeight === 0) && !text.includes("Загрузка системы");
+    }, { timeout: 45000 }).catch(() => {});
 
     await page.waitForSelector('[data-testid="orthopedics-chairside-panel"]', {
       state: "visible",
-      timeout: 35000,
+      timeout: 45000,
     });
+    await page.waitForTimeout(2000);
 
     await suppressOverlays(page);
     await applyTheme(page, st.theme);

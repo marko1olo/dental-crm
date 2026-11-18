@@ -9,6 +9,8 @@ import { STANDARD_ZTL_ORDER_PRESETS } from "../orthopedicCatalogData";
 import type { CanonicalManufacturing5StageItem } from "../../lab/labMath";
 import { calculateDueDateStr, type OrthopedicsChairsidePanelProps } from "./orthopedicsChairsideTypes";
 import type { OrthopedicsChairsideState } from "./useOrthopedicsChairsideState";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { PARTNER_LABS } from "../../lab/dentalLabCatalogData";
 
 export function useOrthopedicsChairsideActions(
 	state: OrthopedicsChairsideState,
@@ -32,10 +34,10 @@ export function useOrthopedicsChairsideActions(
 			try {
 				const res = await fetch(`/api/lab/orders/${state.activeOrderId}`, {
 					method: "PATCH",
-					headers: {
+					headers: denteAdminSecretRequestHeaders({
 						"Content-Type": "application/json",
 						"Idempotency-Key": crypto.randomUUID(),
-					},
+					}),
 					body: JSON.stringify({ stage: stage.id, techStage: stage.shortLabelRu }),
 				});
 				if (!res.ok) {
@@ -60,6 +62,10 @@ export function useOrthopedicsChairsideActions(
 		}
 		const orderNumber = `ЗТЛ-${Date.now().toString().slice(-6)}`;
 		state.setIsLabOrderSending(true);
+		const defaultLabName = PARTNER_LABS.find((l) => l.isDefault)?.name ?? PARTNER_LABS[0]?.name ?? "Арт-Дент Лаб (CAD/CAM центр)";
+		const laboratoryName = props.initialLabOrder?.laboratoryName?.trim()
+			|| (typeof window !== "undefined" && window.localStorage?.getItem("dente_default_lab_name")?.trim())
+			|| defaultLabName;
 		const labOrderPayload = {
 			orderNumber,
 			createdAt: new Date().toISOString(),
@@ -78,7 +84,7 @@ export function useOrthopedicsChairsideActions(
 			hasFacebow: state.hasFacebow,
 			attachedImageUrl: state.activeXrayUrl ?? undefined,
 			attachedXrayUrl: state.activeXrayUrl ?? undefined,
-			laboratoryName: "Основная лаборатория",
+			laboratoryName,
 			dueDate: state.dueDate,
 			patientId: props.patientId || undefined,
 			patientName: props.patientName || undefined,
@@ -94,10 +100,10 @@ export function useOrthopedicsChairsideActions(
 		try {
 			const res = await fetch("/api/lab/orders", {
 				method: "POST",
-				headers: {
+				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": crypto.randomUUID(),
-				},
+				}),
 				body: JSON.stringify(labOrderPayload),
 			});
 			if (res.ok) {
