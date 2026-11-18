@@ -14,7 +14,7 @@
  * Mandate 8e (zero cashier friction), Mandate 8i (exact kopecks), Mandate 8n.
  */
 
-import { generateQrCodeSvg } from "@dental/shared";
+import { generateQrCodeSvg, rublesToKopecks } from "@dental/shared";
 
 export interface SbpDynamicQrConfig {
 	readonly sumRub: number;
@@ -52,7 +52,7 @@ export interface SbpDynamicQrRequestResult {
  */
 export async function fetchSbpDynamicQr(config: SbpDynamicQrConfig): Promise<SbpDynamicQrRequestResult> {
 	const sumRub = Math.max(0, config.sumRub || 0);
-	const sumKopecks = Math.round(sumRub * 100);
+	const sumKopecks = rublesToKopecks(sumRub);
 	if (!config.operationId) {
 		return { qr: null, errorRu: "Не создан идентификатор операции — обновите QR." };
 	}

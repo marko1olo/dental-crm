@@ -367,6 +367,43 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 ---
 
+## 🧾 8.3. Реестр устранённых дефектов кассы, сплит-платежей и чеков 54-ФЗ (DEF-FIN-18 / DEF-CASHBOX-01...06, Red Team Fixer Домен E)
+
+1. **DEF-FIN-18 / DEF-CASHBOX-01 [ЗАКРЫТО] (Ликвидация дублирующего фасада, Мандаты 8bf, 8aq)**:
+   - Физически удален дублирующий фасад `apps/web/src/components/cashbox/cashboxCatalogData.ts` через `git rm`.
+   - Все импорты перенаправлены на единый канонический SSOT `apps/web/src/components/cashbox/cashRegisterCatalogData.ts`.
+   - Очищены ре-экспорты в `apps/web/src/components/cashbox/index.ts` и тестовые импорты в `cashboxSsotScreens.test.tsx`.
+2. **DEF-CASHBOX-02 [ЗАКРЫТО] (Нормализация денежных расчётов через `@dental/shared/src/money.ts`, Мандат 8bm)**:
+   - Ликвидированы все самодельные функции и кустарные вычисления `* 100` / `/ 100` в UI:
+     * `CheckoutSplitPaymentPanel.tsx`: удалена кустарная `rubToKopecks`, подключен канонический `rublesToKopecks` из `@dental/shared`.
+     * `CashierPaymentLauncherHosts.tsx`: вычисление `Math.round(debtRub * 100)` заменено на `rublesToKopecks(debtRub)`.
+     * `sbpQrEngine.ts`: вычисление `Math.round(sumRub * 100)` заменено на `rublesToKopecks(sumRub)`.
+     * `cashRegisterSplitsData.ts`: сырые деления `/ 100` заменены на `kopecksToRubles` и `formatKopecksToRubles` из `@dental/shared`.
+     * `cashShiftService.ts`: `Math.round((payload.netRevenueRub || 0) * 100)` заменено на `rublesToKopecks`.
+3. **DEF-CASHBOX-03 [ЗАКРЫТО] (Соблюдение контракта `exactOptionalPropertyTypes`, Мандат 8bl)**:
+   - В интерфейс `CashRegisterStudioModalProps` в `apps/web/src/components/cashbox/CashRegisterStudioModal.tsx` добавлено поле `readonly orderId?: string | undefined;` в строгом соответствии с `exactOptionalPropertyTypes: true`.
+   - Ошибка компилятора `TS2339` в строке 219 полностью устранена, `tsc --noEmit` по фронтенд-пакету чист.
+4. **DEF-CASHBOX-04 [ЗАКРЫТО] (Дизайн-токены и ликвидация сырого Tailwind, Мандат 8am)**:
+   - Вычищены все прямые утилитарные цвета Tailwind (`text-emerald-600`, `bg-emerald-500/10`, `text-amber-600`, `text-rose-600`, `text-blue-600`) из модулей `studioModules/`:
+     * `CashRegisterTapeSection.tsx`: иконка успешной печати переведена на семантический токен `text-[var(--success-ink)]`.
+     * `CashRegisterCheckoutSection.tsx`: плашки и статусы переведены на `bg-[var(--success-soft)]`, `text-[var(--success-ink)]`, `text-[var(--warning-ink)]`.
+     * `CheckoutDiscountAndPayerControls.tsx`: бейджи скидки оформлены через `text-[var(--success-ink)]`.
+     * `CheckoutPaymentMethods.tsx`: кнопки способов оплаты переведены на `text-[var(--success-ink)]`, `text-[var(--warning-ink)]`, `text-[var(--danger-ink)]`.
+     * `CheckoutSplitPaymentPanel.tsx`: сплиты и статус сходимости оформлены через семантические токены без неона.
+     * `CashRegisterShiftSection.tsx`: статусы смены переведены на токены дизайн-системы.
+5. **DEF-CASHBOX-05 [ЗАКРЫТО] (Фискальная очередь и DEF-FIN-13 соответствие в тестах)**:
+   - В тесте `apps/api/src/tests/routes/cashboxWalkInRetailPayment.test.ts` устаревшая проверка генерации номера чека до физической печати на ККТ заменена на валидацию постановки в фискальную очередь `fiscalReceiptQueueId` в полном соответствии со стандартом 54-ФЗ.
+6. **DEF-CASHBOX-06 [ЗАКРЫТО] (4-State Visual Proof и машинные гейты)**:
+   - Пройдены все машинные гейты: `check:encoding` (20 141 файл OK), `check:buttons` (0 violations), `check:css-tokens` (0 violations), `check:react-hooks` (3 031 файл OK), unit-тесты (11/11 web, 27/27 api).
+   - 4-State Visual Proof на живом приложении (Fastify 4100 + Vite 5173 + Postgres 5432) сняты и лично осмотрены через `read_file`:
+     * ☀️ PC Light 1440x900 (`01_cashbox_pc_light_1440x900.png` — 80.6 KB)
+     * 🌙 PC Dark 1440x900 (`02_cashbox_pc_dark_1440x900.png` — 78.4 KB)
+     * 📱 Mobile Light 390x844 (`03_cashbox_mobile_light_390x844.png` — 125.0 KB)
+     * 📱 Mobile Dark 390x844 (`04_cashbox_mobile_dark_390x844.png` — 124.1 KB)
+   - Подтверждено: Zero-Clipping, ровно 1 Primary CTA (`bg-[var(--primary)] text-white`), 0px горизонтального скролла, нативный Apple HIG Bottom Sheet на мобильных с Drag Handle 36x5px.
+
+---
+
 ## 🔗 9. Связанные документы архитектуры
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Центральный реестр документации проекта.

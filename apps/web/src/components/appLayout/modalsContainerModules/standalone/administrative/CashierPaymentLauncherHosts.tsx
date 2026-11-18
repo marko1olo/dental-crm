@@ -8,6 +8,7 @@
 
 import type React from "react";
 import { useEffect, useMemo } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import { showToast } from "../../../../GlobalToast";
@@ -99,7 +100,7 @@ export const StandaloneSbpPaymentHost: React.FC<{ onClose: () => void }> = ({ on
 			submitButtonTestId="btn-confirm-checkout-payment"
 			totalDueRub={debtRub}
 			amountRub={debtRub}
-			amountKopecks={Math.round(debtRub * 100)}
+			amountKopecks={rublesToKopecks(debtRub)}
 			defaultMethod={isSplit ? "split" : "sbp"}
 			initialPaymentMethod={isSplit ? "split" : "sbp"}
 			patientId={patient.id}

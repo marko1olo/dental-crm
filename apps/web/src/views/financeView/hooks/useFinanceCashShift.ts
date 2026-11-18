@@ -1,12 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Dashboard, Payment } from "@dental/shared";
+import { generateUuidV7 } from "@dental/shared";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	safeLocalStorageGetItem,
 	safeLocalStorageSetItem,
 	safeLocalStorageRemoveItem,
 } from "../../../lib/safeLocalStorage";
 import { localDayKey, summarizeCashDay } from "../../../components/finance/cashDaySummary";
-import { callCashShiftApi } from "../../../components/finance/cashShiftApi";
 
 export interface UseFinanceCashShiftParams {
 	readonly activePayments: Payment[];
@@ -69,14 +70,17 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 		if (propsOnOpenShift) {
 			await propsOnOpenShift();
 		} else {
-			await callCashShiftApi(
-				"/api/cash/cash-box-all-open",
-				"/api/fiscal/shift/open",
-				{
+			await fetch("/api/cashbox/shift/open", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				body: JSON.stringify({
 					cashierFullName: paymentFiscalCashierName || undefined,
 					openedAt: new Date().toISOString(),
-				},
-			);
+				}),
+			});
 		}
 		setIsShiftOpen(true);
 		safeLocalStorageSetItem("dente_cash_shift_open", "true");
@@ -91,16 +95,19 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			await propsOnCloseShift();
 		} else {
 			const zNumber = `Z-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${shiftNumber}`;
-			await callCashShiftApi(
-				"/api/cash/cash-box-all-closing",
-				"/api/fiscal/shift/close",
-				{
+			await fetch("/api/cashbox/shift/close", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
+				body: JSON.stringify({
 					cashierFullName: paymentFiscalCashierName || undefined,
 					zReportNumber: zNumber,
 					shiftNumber,
 					closedAt: new Date().toISOString(),
-				},
-			);
+				}),
+			});
 		}
 		setIsShiftOpen(false);
 		safeLocalStorageSetItem("dente_cash_shift_open", "false");
@@ -114,16 +121,19 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			if (propsOnCashIn) {
 				await propsOnCashIn(amountRub, basis, typeAlias);
 			} else {
-				await callCashShiftApi(
-					"/api/cash/cash-introduction",
-					"/api/fiscal/cash-in",
-					{
+				await fetch("/api/cash/cash-introduction", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
+					body: JSON.stringify({
 						amountRub,
 						reasonText: basis || "Служебное внесение разменного фонда",
 						typeAlias,
 						cashierFullName: paymentFiscalCashierName || undefined,
-					},
-				);
+					}),
+				});
 			}
 			setManualCashDeltaRub((prev) => {
 				const nextKop = Math.round(prev * 100) + Math.round(amountRub * 100);
@@ -146,10 +156,13 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 			if (propsOnCashOut) {
 				await propsOnCashOut(amountRub, basis, recipientFio, typeAlias);
 			} else {
-				await callCashShiftApi(
-					"/api/cash/cash-withdrawal",
-					"/api/fiscal/cash-out",
-					{
+				await fetch("/api/cash/cash-withdrawal", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
+					body: JSON.stringify({
 						amountRub,
 						reasonText:
 							basis ||
@@ -159,8 +172,8 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 						recipientFio,
 						typeAlias,
 						cashierFullName: paymentFiscalCashierName || undefined,
-					},
-				);
+					}),
+				});
 			}
 			setManualCashDeltaRub((prev) => {
 				const nextKop = Math.round(prev * 100) - Math.round(amountRub * 100);
@@ -174,14 +187,17 @@ export function useFinanceCashShift(params: UseFinanceCashShiftParams) {
 	);
 
 	const handlePrintXReport = useCallback(async () => {
-		await callCashShiftApi(
-			"/api/fiscal/x-report",
-			"/api/cash/x-report",
-			{
+		await fetch("/api/fiscal/x-report", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
+			}),
+			body: JSON.stringify({
 				cashierFullName: paymentFiscalCashierName || undefined,
 				shiftNumber,
-			},
-		);
+			}),
+		});
 	}, [paymentFiscalCashierName, shiftNumber]);
 
 	return {

@@ -67,6 +67,7 @@ export interface CashRegisterStudioModalProps {
 	readonly amountKopecks?: bigint | number | undefined;
 	readonly initialWarranty100?: boolean | undefined;
 	readonly invoiceId?: string | undefined;
+	readonly orderId?: string | undefined;
 	readonly visitId?: string | undefined;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
@@ -215,6 +216,8 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 							setPrintFormat={state.setPrintFormat}
 							onExecutePayment={state.handleExecutePayment}
 							appliedDmsSplit={state.appliedDmsSplit}
+							invoiceId={props.invoiceId}
+							orderId={props.orderId}
 						/>
 					)}
 

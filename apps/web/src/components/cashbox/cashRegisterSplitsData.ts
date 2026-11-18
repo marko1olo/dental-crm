@@ -5,6 +5,7 @@
  * Layer 4: Compliant with Mandate 8b (file size <= 400 lines) and integer kopeck precision.
  */
 
+import { kopecksToRubles, formatKopecksToRubles } from "@dental/shared";
 import { rubToKopecks, kopecksToRub } from "./cashRegisterCatalogData.js";
 
 export type CheckoutPaymentMethodType =
@@ -278,7 +279,7 @@ export function calculateFastCheckoutDiscount(params: {
 }): FastCheckoutDiscountResult {
 	const gross = Math.max(0, Math.round(params.grossKop));
 	if (gross === 0 || params.preset === "none") {
-		return { grossKop: gross, discountKop: 0, netKop: gross, discountRub: 0, netRub: gross / 100, savingsText: "0.00 ₽", effectivePercent: 0 };
+		return { grossKop: gross, discountKop: 0, netKop: gross, discountRub: 0, netRub: kopecksToRubles(gross), savingsText: "0.00 ₽", effectivePercent: 0 };
 	}
 
 	let discountKop = 0;
@@ -300,14 +301,14 @@ export function calculateFastCheckoutDiscount(params: {
 	discountKop = Math.max(0, Math.min(gross, discountKop));
 	const netKop = gross - discountKop;
 	const effectivePercent = gross > 0 ? Math.round((discountKop / gross) * 100) : 0;
-	const discountRub = discountKop / 100;
+	const discountRub = kopecksToRubles(discountKop);
 
 	return {
 		grossKop: gross,
 		discountKop,
 		netKop,
 		discountRub,
-		netRub: netKop / 100,
+		netRub: kopecksToRubles(netKop),
 		savingsText: `${discountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`,
 		effectivePercent,
 	};
@@ -826,7 +827,7 @@ export function validateCheckoutSplit(input: FastCheckoutInput): FastCheckoutVal
 			totalBillKop: input.totalBillKop,
 			remainingDueKop: remaining,
 			cashChangeDueKop: 0,
-			errorMessageRu: "Недоплата: " + (remaining / 100).toFixed(2) + " ₽",
+			errorMessageRu: "Недоплата: " + formatKopecksToRubles(remaining) + " ₽",
 		};
 	}
 
@@ -837,7 +838,7 @@ export function validateCheckoutSplit(input: FastCheckoutInput): FastCheckoutVal
 			totalBillKop: input.totalBillKop,
 			remainingDueKop: remaining,
 			cashChangeDueKop: 0,
-			errorMessageRu: "Переплата без сдачи: " + Math.abs(remaining / 100).toFixed(2) + " ₽",
+			errorMessageRu: "Переплата без сдачи: " + formatKopecksToRubles(Math.abs(remaining)) + " ₽",
 		};
 	}
 

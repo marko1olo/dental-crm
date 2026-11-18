@@ -78,6 +78,8 @@ export interface CashRegisterCheckoutSectionProps {
 		readonly insurerName?: string | undefined;
 		readonly letterNumber?: string | undefined;
 	} | null | undefined;
+	readonly invoiceId?: string | undefined;
+	readonly orderId?: string | undefined;
 }
 
 export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionProps> = ({
@@ -127,6 +129,8 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 	setPrintFormat,
 	onExecutePayment,
 	appliedDmsSplit,
+	invoiceId,
+	orderId,
 }) => {
 	const allergiesList = Array.isArray(patientAllergies)
 		? patientAllergies.filter(Boolean)
@@ -175,7 +179,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 							<span>{patientName}</span>
 							{allergiesList.length > 0 && (
 								<span
-									className="text-amber-600 dark:text-amber-400 font-medium text-[11px] flex items-center gap-1"
+									className="text-[var(--warning-ink)] font-medium text-[11px] flex items-center gap-1"
 									title="Аллергостатус пациента"
 								>
 									⚠️ Аллергия: {allergiesList.join(", ")}
@@ -189,7 +193,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 					<div className="text-right">
 						<div className="text-[var(--muted)]">{serviceTitle || "Приём стоматолога"}</div>
 						{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
-							<div className="text-emerald-600 font-medium">
+							<div className="text-[var(--success-ink)] font-medium">
 								{patientDepositRub > 0 ? `Аванс: ${formatRubles(patientDepositRub)} ` : ""}
 								{patientFamilyBalanceRub > 0 ? `· Семья: ${formatRubles(patientFamilyBalanceRub)}` : ""}
 							</div>
@@ -231,7 +235,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 					<span data-testid="display-total-amount-due">{formatRubles(effectiveTotalRub)}</span>
 				</div>
 				{isWarranty ? (
-					<div className="mt-2.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold">
+					<div className="mt-2.5 px-3 py-1 rounded-full bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)] text-xs font-bold">
 						100% Гарантийный расчёт врача (0 ₽) · Чек не фискализируется
 					</div>
 				) : effectiveTotalRub === 0 ? (
@@ -284,6 +288,9 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 				installmentMonths={installmentMonths}
 				setInstallmentMonths={setInstallmentMonths}
 				onExecutePayment={onExecutePayment}
+				invoiceId={invoiceId}
+				orderId={orderId}
+				patientName={patientName}
 			/>
 
 			{/* Integrated 1-Click Split Tender Panel */}

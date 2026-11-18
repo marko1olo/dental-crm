@@ -59,7 +59,7 @@ export const CheckoutDiscountAndPayerControls: React.FC<CheckoutDiscountAndPayer
 						</span>
 					)}
 					{isWarranty && (
-						<span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+						<span className="text-xs font-semibold text-[var(--success-ink)]">
 							100% Гарантия врача
 						</span>
 					)}

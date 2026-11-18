@@ -158,6 +158,7 @@ async function waitForCashboxModal(page) {
     await setTheme(pcPage, "light");
     const pcLight = path.join(PROOF_DIR, "01_cashbox_studio_pc_light_1440x900.png");
     await pcPage.screenshot({ path: pcLight, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(pcLight, path.join(PROOF_DIR, "01_cashbox_pc_light_1440x900.png"));
     fs.copyFileSync(pcLight, path.join(SCREEN_DIR, "01_cashbox_studio_pc_light_1440x900.png"));
     fs.copyFileSync(pcLight, path.join(INQUISITION_DIR, "01_cashbox_studio_pc_light_1440x900.png"));
     verifyProof(pcLight);
@@ -166,6 +167,7 @@ async function waitForCashboxModal(page) {
     await setTheme(pcPage, "dark");
     const pcDark = path.join(PROOF_DIR, "02_cashbox_studio_pc_dark_1440x900.png");
     await pcPage.screenshot({ path: pcDark, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(pcDark, path.join(PROOF_DIR, "02_cashbox_pc_dark_1440x900.png"));
     fs.copyFileSync(pcDark, path.join(SCREEN_DIR, "02_cashbox_studio_pc_dark_1440x900.png"));
     fs.copyFileSync(pcDark, path.join(INQUISITION_DIR, "02_cashbox_studio_pc_dark_1440x900.png"));
     verifyProof(pcDark);
@@ -194,6 +196,7 @@ async function waitForCashboxModal(page) {
     await setTheme(mobPage, "light");
     const mobLight = path.join(PROOF_DIR, "03_cashbox_studio_mobile_light_390x844.png");
     await mobPage.screenshot({ path: mobLight, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(mobLight, path.join(PROOF_DIR, "03_cashbox_mobile_light_390x844.png"));
     fs.copyFileSync(mobLight, path.join(SCREEN_DIR, "03_cashbox_studio_mobile_light_390x844.png"));
     fs.copyFileSync(mobLight, path.join(INQUISITION_DIR, "03_cashbox_studio_mobile_light_390x844.png"));
     verifyProof(mobLight);
@@ -202,6 +205,7 @@ async function waitForCashboxModal(page) {
     await setTheme(mobPage, "dark");
     const mobDark = path.join(PROOF_DIR, "04_cashbox_studio_mobile_dark_390x844.png");
     await mobPage.screenshot({ path: mobDark, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(mobDark, path.join(PROOF_DIR, "04_cashbox_mobile_dark_390x844.png"));
     fs.copyFileSync(mobDark, path.join(SCREEN_DIR, "04_cashbox_studio_mobile_dark_390x844.png"));
     fs.copyFileSync(mobDark, path.join(INQUISITION_DIR, "04_cashbox_studio_mobile_dark_390x844.png"));
     verifyProof(mobDark);

@@ -5,6 +5,7 @@
  * Calls KKT / cashbox endpoints with persistence and staff audit logging.
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import { StaffActionAuditService } from "../../services/audit/staffActionAuditService.js";
 import { safeLocalStorageGetItem } from "../../lib/safeLocalStorage.js";
 
@@ -66,8 +67,8 @@ export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload)
 	StaffActionAuditService.logShiftClose({
 		cashRegisterId: "kkt_main",
 		shiftNumber: payload.shiftNumber,
-		totalRevenueKopecks: Math.round((payload.netRevenueRub || 0) * 100),
-		closingCashKopecks: Math.round((payload.cashInDrawerRub || 0) * 100),
+		totalRevenueKopecks: rublesToKopecks(payload.netRevenueRub || 0),
+		closingCashKopecks: rublesToKopecks(payload.cashInDrawerRub || 0),
 	});
 
 	return succeeded;

@@ -157,9 +157,9 @@ export const CashRegisterShiftSection: React.FC<CashRegisterShiftSectionProps> =
 								Совпадает с кассой
 							</button>
 							{parsedCounted === initialCashDrawer ? (
-								<span className="text-emerald-600 text-xs font-bold">Сходится ✓</span>
+								<span className="text-[var(--success-ink)] text-xs font-bold">Сходится ✓</span>
 							) : (
-								<span className="text-amber-600 text-xs font-medium">
+								<span className="text-[var(--warning-ink)] text-xs font-medium">
 									Расхождение: {formatRubles(drawerDiff)}
 								</span>
 							)}

@@ -10,16 +10,12 @@
 
 import React from "react";
 import { CreditCard, QrCode, Split, Banknote, Wallet } from "lucide-react";
+import { rublesToKopecks } from "@dental/shared";
 import {
 	type CashChangeResult,
 	formatRubles,
 	kopecksToRub,
 } from "../../cashRegisterCatalogData.js";
-
-function rubToKopecks(rub: number): bigint {
-	if (!Number.isFinite(rub) || rub <= 0) return 0n;
-	return BigInt(Math.round(rub * 100));
-}
 
 export interface CheckoutSplitPaymentPanelProps {
 	readonly effectiveTotalRub: number;
@@ -70,10 +66,10 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 				<span
 					className={`text-xs font-semibold ${
 						isSplitBalanced
-							? "text-emerald-600"
+							? "text-[var(--success-ink)]"
 							: splitDiffKop > 0n
-								? "text-amber-600"
-								: "text-rose-600"
+								? "text-[var(--warning-ink)]"
+								: "text-[var(--danger-ink)]"
 					}`}
 					data-testid="split-balance-status"
 				>
@@ -176,7 +172,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<Banknote className="w-3.5 h-3.5 text-emerald-600" />
+							<Banknote className="w-3.5 h-3.5 text-[var(--success-ink)]" />
 							<span>Наличные</span>
 						</span>
 						<button
@@ -205,7 +201,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<QrCode className="w-3.5 h-3.5 text-blue-600" />
+							<QrCode className="w-3.5 h-3.5 text-[var(--primary)]" />
 							<span>СБП QR</span>
 						</span>
 						<button
@@ -230,7 +226,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 				<div className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] space-y-1.5">
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<Wallet className="w-3.5 h-3.5 text-amber-600" />
+							<Wallet className="w-3.5 h-3.5 text-[var(--warning-ink)]" />
 							<span>Аванс / Депозит ({formatRubles(patientDepositRub)})</span>
 						</span>
 						<button
@@ -238,7 +234,7 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 							onClick={() => {
 								const maxAllowed = Math.min(
 									patientDepositRub,
-									kopecksToRub(rubToKopecks(splitDepositRub) + splitDiffKop),
+									kopecksToRub(BigInt(rublesToKopecks(splitDepositRub)) + splitDiffKop),
 								);
 								setSplitDepositRub(Math.max(0, maxAllowed));
 							}}
@@ -272,13 +268,13 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					{splitCashChange && (
 						<span className="text-xs">
 							{splitCashChange.isSurplus && (
-								<span className="text-emerald-600 font-bold">
+								<span className="text-[var(--success-ink)] font-bold">
 									Сдача: {splitCashChange.formattedChange}
 								</span>
 							)}
 							{splitCashChange.isExact && <span className="text-[var(--muted)]">Без сдачи ✓</span>}
 							{splitCashChange.isShortage && (
-								<span className="text-rose-600">
+								<span className="text-[var(--danger-ink)]">
 									Не хватает: {formatRubles(splitCashRub - splitCashReceivedRub)}
 								</span>
 							)}

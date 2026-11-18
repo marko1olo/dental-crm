@@ -6,7 +6,7 @@
  * 2. CashShiftClosingModal: 4 revenue tenders, expected vs counted cash, terminal reconciliation, 1 Primary CTA.
  * 3. CashShiftJournalView: shift list, OFD status, print report buttons, 1 Primary CTA.
  * 4. Mandate 8e (0 disabled buttons), Mandate 8am (1 Primary CTA), Mandate 8x (Domain purity).
- * 5. cashboxCatalogData & DirectCashboxLauncher mounting and event contracts.
+ * 5. cashRegisterCatalogData & DirectCashboxLauncher mounting and event contracts.
  */
 
 import React from "react";
@@ -24,7 +24,7 @@ import {
 	PAYER_TYPE_PRESETS,
 	DOCTOR_DISCOUNT_PRESETS,
 	SPLIT_PAYMENT_PRESETS,
-} from "../cashboxCatalogData";
+} from "../cashRegisterCatalogData";
 
 describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 	describe("1. CashRegisterCheckoutModal (SSOT Checkout)", () => {

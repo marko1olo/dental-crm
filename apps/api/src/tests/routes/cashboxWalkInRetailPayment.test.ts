@@ -45,7 +45,7 @@ describe("Cashbox 54-FZ Walk-In Retail Payment & Barrier Removal", () => {
 			assert.equal(outcome.body.success, true);
 			const paymentData = (outcome.body as any).data;
 			assert.ok(paymentData.id, "Must return created payment ID");
-			assert.ok(paymentData.fiscalReceiptNumber, "Must generate fiscal receipt number");
+			assert.ok(paymentData.fiscalReceiptQueueId, "Must enqueue receipt for fiscalization");
 			assert.equal(paymentData.status, "paid", "Must mark payment as paid");
 		} finally {
 			await purgeFixtureOrganizations([orgId]);

@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { CreditCard, QrCode, ShieldCheck, Wallet } from "lucide-react";
+import { CreditCard, ShieldCheck, Wallet } from "lucide-react";
 import {
 	type CashboxTenderType,
 	type CashChangeResult,
@@ -17,6 +17,7 @@ import {
 	CASH_STUDIO_QUICK_BILLS,
 	formatRubles,
 } from "../../cashRegisterCatalogData.js";
+import { SbpDynamicQrCard } from "../../../billing/SbpDynamicQrCard.js";
 
 export interface CheckoutPaymentMethodsProps {
 	readonly method: CashboxTenderType;
@@ -40,6 +41,9 @@ export interface CheckoutPaymentMethodsProps {
 	readonly installmentMonths: 3 | 6 | 12;
 	readonly setInstallmentMonths: (val: 3 | 6 | 12) => void;
 	readonly onExecutePayment: () => void;
+	readonly invoiceId?: string | undefined;
+	readonly orderId?: string | undefined;
+	readonly patientName?: string | undefined;
 }
 
 export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
@@ -64,15 +68,10 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 	installmentMonths,
 	setInstallmentMonths,
 	onExecutePayment,
+	invoiceId,
+	orderId,
+	patientName,
 }) => {
-	const [sbpCheckState, setSbpCheckState] = React.useState<"idle" | "checking" | "waiting">("idle");
-
-	const handleCheckSbpStatus = () => {
-		setSbpCheckState("checking");
-		setTimeout(() => {
-			setSbpCheckState("waiting");
-		}, 800);
-	};
 	return (
 		<>
 			{/* Payment Method Selector */}
@@ -177,59 +176,16 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 
 			{/* SBP QR Dynamic Card */}
 			{method === "sbp" && (
-				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="sbp-qr-embedded-container">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<QrCode className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-							<span className="text-xs font-bold text-[var(--ink)]">Оплата по динамическому QR СБП</span>
-						</div>
-						<span className="text-xs font-mono font-bold text-[var(--ink)]">{formatRubles(effectiveTotalRub)}</span>
-					</div>
-					<div className="flex flex-col sm:flex-row items-center justify-center gap-4 py-2">
-						<div className="p-2.5 rounded-xl bg-white border border-[var(--line)] shadow-xs flex items-center justify-center" data-testid="sbp-dynamic-qr-svg">
-							<svg className="w-28 h-28 text-slate-900" viewBox="0 0 100 100" fill="currentColor">
-								<rect x="10" y="10" width="25" height="25" rx="3" />
-								<rect x="65" y="10" width="25" height="25" rx="3" />
-								<rect x="10" y="65" width="25" height="25" rx="3" />
-								<rect x="15" y="15" width="15" height="15" fill="white" />
-								<rect x="70" y="15" width="15" height="15" fill="white" />
-								<rect x="15" y="70" width="15" height="15" fill="white" />
-								<rect x="19" y="19" width="7" height="7" fill="currentColor" />
-								<rect x="74" y="19" width="7" height="7" fill="currentColor" />
-								<rect x="19" y="74" width="7" height="7" fill="currentColor" />
-								<circle cx="50" cy="50" r="10" fill="var(--teal, #0d9488)" />
-							</svg>
-						</div>
-						<div className="space-y-2 text-center sm:text-left text-xs">
-							<p className="font-semibold text-[var(--ink)]">Наведите камеру смартфона на QR-код</p>
-							<p className="text-[var(--muted)] text-[11px]">
-								Пациент подтверждает оплату в приложении любого банка РФ без комиссии
-							</p>
-							<div className="flex items-center gap-2 pt-1 justify-center sm:justify-start">
-								<button
-									type="button"
-									data-testid="btn-check-sbp-status"
-									onClick={handleCheckSbpStatus}
-									className="dente-btn dente-btn-secondary px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold hover:bg-[var(--paper-soft)] cursor-pointer"
-								>
-									{sbpCheckState === "checking" ? "Запрос в банк..." : "Проверить статус"}
-								</button>
-								<button
-									type="button"
-									data-testid="btn-manual-confirm-sbp"
-									onClick={onExecutePayment}
-									className="dente-btn dente-btn-secondary px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold hover:bg-[var(--paper-soft)] cursor-pointer"
-								>
-									Подтвердить вручную
-								</button>
-							</div>
-							{sbpCheckState === "waiting" && (
-								<p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium pt-1" data-testid="sbp-status-waiting-indicator">
-									⏳ Ожидание подтверждения банком · Если деньги поступили на счёт, нажмите «Подтвердить вручную»
-								</p>
-							)}
-						</div>
-					</div>
+				<div className="space-y-2" data-testid="sbp-qr-embedded-container">
+					<SbpDynamicQrCard
+						sumRub={effectiveTotalRub}
+						invoiceId={invoiceId}
+						orderId={orderId}
+						patientName={patientName}
+						onPaymentSuccess={() => {
+							onExecutePayment();
+						}}
+					/>
 				</div>
 			)}
 
@@ -241,7 +197,7 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 							<ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)]" />
 							<span className="text-xs font-bold text-[var(--ink)]">Беспроцентная рассрочка 0% для пациента</span>
 						</div>
-						<span className="text-xs font-bold text-emerald-600">0 ₽ переплаты</span>
+						<span className="text-xs font-bold text-[var(--success-ink)]">0 ₽ переплаты</span>
 					</div>
 					<p className="text-xs text-[var(--muted)]">
 						Клиника компенсирует банковскую комиссию. Пациент оплачивает лечение равными частями без переплаты.
@@ -274,8 +230,8 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 
 			{/* 100% Warranty Panel */}
 			{method === "warranty" && (
-				<div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2" data-testid="warranty-tender-panel">
-					<div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold text-sm">
+				<div className="p-4 rounded-xl border border-[var(--success-line)] bg-[var(--success-soft)] space-y-2" data-testid="warranty-tender-panel">
+					<div className="flex items-center gap-2 text-[var(--success-ink)] font-bold text-sm">
 						<ShieldCheck className="w-5 h-5 shrink-0" />
 						<span>100% Гарантийная переделка врача</span>
 					</div>
@@ -291,10 +247,10 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2" data-testid="deposit-tender-panel">
 					<div className="flex items-center justify-between">
 						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
-							<Wallet className="w-4 h-4 text-amber-600" />
+							<Wallet className="w-4 h-4 text-[var(--warning-ink)]" />
 							<span>Списание с баланса / депозита</span>
 						</span>
-						<span className="text-xs font-mono font-bold text-emerald-600">
+						<span className="text-xs font-mono font-bold text-[var(--success-ink)]">
 							Доступно: {formatRubles(patientDepositRub + patientFamilyBalanceRub)}
 						</span>
 					</div>
@@ -342,13 +298,13 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 						/>
 						<div className="text-sm">
 							{changeResult.isSurplus && (
-								<span className="text-emerald-600 font-bold" data-testid="display-cash-change">
+								<span className="text-[var(--success-ink)] font-bold" data-testid="display-cash-change">
 									Сдача: {changeResult.formattedChange}
 								</span>
 							)}
 							{changeResult.isExact && <span className="text-[var(--muted)] font-medium">Без сдачи ✓</span>}
 							{changeResult.isShortage && (
-								<span className="text-rose-600 font-medium" data-testid="display-cash-shortage">
+								<span className="text-[var(--danger-ink)] font-medium" data-testid="display-cash-shortage">
 									Не хватает: {formatRubles(effectiveTotalRub - cashReceivedRub)}
 								</span>
 							)}

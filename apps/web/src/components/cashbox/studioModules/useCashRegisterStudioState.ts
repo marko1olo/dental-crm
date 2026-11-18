@@ -570,8 +570,9 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				} else {
 					const headers = denteAdminSecretRequestHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					});
-					const res = await fetch("/api/cash/shift/close", {
+					const res = await fetch("/api/cashbox/shift/close", {
 						method: "POST",
 						headers,
 						body: JSON.stringify({
@@ -593,8 +594,9 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				} else {
 					const headers = denteAdminSecretRequestHeaders({
 						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
 					});
-					const res = await fetch("/api/cash/shift/open", {
+					const res = await fetch("/api/cashbox/shift/open", {
 						method: "POST",
 						headers,
 						body: JSON.stringify({

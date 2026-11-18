@@ -6,7 +6,6 @@
  */
 
 export * from "./cashRegisterCatalogData.js";
-export * from "./cashboxCatalogData.js";
 
 export * from "./CashRegisterStudioModal.js";
 export { CashRegisterStudioModal as default } from "./CashRegisterStudioModal.js";

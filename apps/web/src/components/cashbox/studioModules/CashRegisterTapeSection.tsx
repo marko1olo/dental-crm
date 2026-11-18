@@ -30,7 +30,7 @@ export const CashRegisterTapeSection: React.FC<CashRegisterTapeSectionProps> = (
 					onClick={onCopyTape}
 					className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 min-h-[36px] cursor-pointer transition-colors"
 				>
-					{isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+					{isCopied ? <Check className="w-3.5 h-3.5 text-[var(--success-ink)]" /> : <Copy className="w-3.5 h-3.5" />}
 					<span>{isCopied ? "Скопировано" : "Копировать"}</span>
 				</button>
 			</div>
