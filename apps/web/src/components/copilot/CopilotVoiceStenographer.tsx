@@ -314,17 +314,30 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
         )}
       </div>
 
-      {/* Actions Toolbar: ровно ОДНА Primary CTA кнопка var(--teal) (#0d9488) */}
-      <footer className="copilot-stenographer-actions">
-        <button
-          type="button"
-          onClick={toggleListening}
-          className={`copilot-stenographer-mic-btn ${isListening ? "copilot-stenographer-mic-btn--active" : ""}`}
-          aria-label={isListening ? "Остановить запись" : "Включить запись"}
-          data-testid="stenographer-mic-toggle"
-        >
-          {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-        </button>
+      {/* Actions Toolbar: Вторичные слева, ровно ОДНА Primary CTA справа */}
+      <footer className="copilot-stenographer-actions flex items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`copilot-stenographer-mic-btn ${isListening ? "copilot-stenographer-mic-btn--active" : ""}`}
+            aria-label={isListening ? "Остановить запись" : "Включить запись"}
+            data-testid="stenographer-mic-toggle"
+          >
+            {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleClear}
+            className="copilot-stenographer-clear-btn"
+            aria-label="Очистить черновик"
+            title="Очистить черновик"
+            data-testid="stenographer-clear-btn"
+          >
+            <RotateCcw size={16} />
+          </button>
+        </div>
 
         <button
           type="button"
@@ -334,17 +347,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
           data-testid="stenographer-apply-btn"
         >
           <Check size={16} />
-          Применить в карту
-        </button>
-
-        <button
-          type="button"
-          onClick={handleClear}
-          className="copilot-stenographer-clear-btn"
-          aria-label="Очистить текст"
-          data-testid="stenographer-clear-btn"
-        >
-          <RotateCcw size={14} />
+          <span>Применить в карту</span>
         </button>
       </footer>
     </div>
