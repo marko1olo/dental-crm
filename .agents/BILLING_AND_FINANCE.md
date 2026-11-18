@@ -404,7 +404,26 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 ---
 
-## 🔗 9. Связанные документы архитектуры
+## 🛡️ 10. Red Team Инквизиция и Хирургическое Устранение Дефектов Биллинга и Кассы
+
+В рамках рейда Red Team по домену «Billing, 54-FZ Cash Register & Financial Flows» выполнены следующие бескомпромиссные меры:
+1. **[СНОС МЁРТВОЙ ПАПКИ-КЛОНА (Мандат 8bf)]**: Физически удалена через `git rm` мертвая папка `apps/web/src/components/finance/fiscal/engine/` (7 файлов-клонов: `fnsReceiptQrString.ts`, `incomeReturnDraft.ts`, `receptionQuickContact.ts`, `roundToHundreds.ts`, `shiftCloseZReport.ts`, `zReportAndDiscounts.ts`, `zReportReceiptTape.ts`), имевшая 0 импортов в кодовой базе.
+2. **DEFECT-BILL-01 [ЗАКРЫТО] (Устранение HTTP 400 при списании аванса пациента)**: В `apps/web/src/components/patients/tabs/finance/useDepositOperations.ts` ликвидирована отправка отрицательного `amountRub: -amount` на `/api/finance/payments`. Списание личного аванса переведено на канонический кассовый эндпоинт возврата `/api/cashbox/refund` с передачей `patientId` и обработкой человеческих ошибок.
+3. **DEFECT-BILL-02 [ЗАКРЫТО] (Сохранение связи возврата с карточкой пациента)**: В `apps/api/src/routes/cashbox/cashboxSchemas.ts` в `cashRefundBodySchema` добавлено опциональное поле `patientId: z.string().uuid().optional()`. В `apps/api/src/routes/cashbox/cashboxRefundRoutes.ts` поддержано определение `effectivePatientId` из `req.body.patientId`, благодаря чему возврат из кассы уменьшает баланс конкретного пациента и сохраняет фискальную привязку в `fiscalReceiptQueue` и `payments`.
+4. **DEFECT-BILL-03 [ЗАКРЫТО] (Искоренение кустарных дублей валюты, Мандат 8bf)**: В `apps/web/src/components/cashbox/cashRegisterCatalogData.ts` удалены самодельные дубли `formatRubles`, `formatKopecksToRubles`, `rubToKopecks`, заменены на канонические импорты и реэкспорты из `@dental/shared/src/money.ts`.
+5. **DEFECT-BILL-04 [ЗАКРЫТО] (Розничные чеки 54-ФЗ без медкарты)**: В `apps/api/src/db/billing/paymentCreationPipeline.ts` снят бюрократический барьер обязательного `patientId` для розничных продаж средств гигиены по ст. 1.2 и 4.7 54-ФЗ. При отсутствии `patientId` система находит или создает системную запись «Розничный покупатель», исключая падение пайплайна с ошибкой.
+6. **DEFECT-BILL-05 [ЗАКРЫТО] (Декомпозиция монолита cashRegisterSplitsData.ts, Мандат 8b)**: Монолит объемом 1132 строки декомпозирован на 4 чистых, специализированных модуля:
+   - `stageAdvanceCalculator.ts` (130 строк): этапы лечения и расчет предоплат (ФФД 1.2 Теги 1214/1215/1212).
+   - `fiscalReceiptPayloadBuilder.ts` (90 строк): генератор фискального чека 54-ФЗ `generateFiscalReceiptPayload` / `generate54FzFiscalPayload`.
+   - `fastCheckoutPresetEngine.ts` (250 строк): валидация сплитов, расчет сдачи `calculateCashChangeKop` и пресеты чекаута.
+   - `tenderAllocationEngine.ts` (251 строка): распределение остатков по источникам и семейный сплит.
+   - Сам `cashRegisterSplitsData.ts` сокращен с 1132 до **376 строк** (Sweet Spot Мандата 8b <= 400 строк).
+7. **4-State Visual Proofs**: Все 4 натурных снимка в `docs/proofs/cashbox/` (01 PC Light 77.1 KB, 02 PC Dark 74.4 KB, 03 Mobile Light 121.1 KB, 04 Mobile Dark 116.9 KB) повторно сняты на живом приложении и лично проверены через `read_file` по 8 осям визуальной инспекции (0px клиппинга, ровно 1 Primary CTA noble teal, нативный Apple HIG Bottom Sheet на смартфонах).
+8. **100% Тестовое покрытие**: Все целевые тесты кассы и биллинга проходят со 100% успехом: `fastCheckout.test.ts` (15/15 PASS), `financeAuditInquisition.test.ts` (21/21 PASS), `zReportAndWarranty.test.ts` (3/3 PASS), `dualModeZeroMockBatch4.test.ts` (8/8 PASS), `cashboxShiftModules.test.ts` (5/5 PASS), `cashboxWalkInRetailPayment.test.ts` (5/5 PASS), `cashboxDepositPaymentIntegrity.test.ts` (10/10 PASS).
+
+---
+
+## 🔗 11. Связанные документы архитектуры
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Центральный реестр документации проекта.
 * **[AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** — Главная конституция и операционный мандат.

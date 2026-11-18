@@ -95,33 +95,79 @@ export async function createPaymentInDb(
 			}
 		}
 
-		if (!input.patientId) {
-			throw new Error("Идентификатор пациента (patientId) обязателен для создания платежа в биллинге.");
-		}
-		const targetPatientId = input.patientId;
+		let lockedPatient: {
+			id: string;
+			fullName: string | null;
+			administrativeProfile: unknown;
+			familyGroupId: string | null;
+		} | undefined;
 
-		// Pessimistic lock on the target patient to prevent concurrent balance race conditions
-		const [lockedPatient] = await tx
-			.select({
-				id: schema.patients.id,
-				fullName: schema.patients.fullName,
-				administrativeProfile: schema.patients.administrativeProfile,
-				familyGroupId: schema.patients.familyGroupId,
-			})
-			.from(schema.patients)
-			.where(
-				and(
-					eq(schema.patients.organizationId, organizationId),
-					eq(schema.patients.id, targetPatientId),
-				),
-			)
-			.for("update")
-			.limit(1);
+		if (input.patientId) {
+			// Pessimistic lock on the target patient to prevent concurrent balance race conditions
+			const [patient] = await tx
+				.select({
+					id: schema.patients.id,
+					fullName: schema.patients.fullName,
+					administrativeProfile: schema.patients.administrativeProfile,
+					familyGroupId: schema.patients.familyGroupId,
+				})
+				.from(schema.patients)
+				.where(
+					and(
+						eq(schema.patients.organizationId, organizationId),
+						eq(schema.patients.id, input.patientId),
+					),
+				)
+				.for("update")
+				.limit(1);
 
-		if (!lockedPatient) {
-			throw new Error(
-				`Пациент с идентификатором ${input.patientId} не найден или заблокирован другой операцией.`,
-			);
+			if (!patient) {
+				throw new Error(
+					`Пациент с идентификатором ${input.patientId} не найден или заблокирован другой операцией.`,
+				);
+			}
+			lockedPatient = patient;
+		} else {
+			// Розничная продажа средств гигиены / свободный чек (54-ФЗ ст. 1.2, 4.7)
+			// Обеспечиваем системную запись покупателя для внешнего ключа payments.patientId
+			const [existingRetail] = await tx
+				.select({
+					id: schema.patients.id,
+					fullName: schema.patients.fullName,
+					administrativeProfile: schema.patients.administrativeProfile,
+					familyGroupId: schema.patients.familyGroupId,
+				})
+				.from(schema.patients)
+				.where(
+					and(
+						eq(schema.patients.organizationId, organizationId),
+						eq(schema.patients.fullName, "Розничный покупатель"),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (existingRetail) {
+				lockedPatient = existingRetail;
+			} else {
+				const [createdRetail] = await tx
+					.insert(schema.patients)
+					.values({
+						organizationId,
+						fullName: "Розничный покупатель",
+						notes: "Системная запись для розничных чеков и продаж средств гигиены (54-ФЗ)",
+					})
+					.returning({
+						id: schema.patients.id,
+						fullName: schema.patients.fullName,
+						administrativeProfile: schema.patients.administrativeProfile,
+						familyGroupId: schema.patients.familyGroupId,
+					});
+				if (!createdRetail) {
+					throw new Error("Не удалось создать системную запись розничного покупателя для 54-ФЗ чека");
+				}
+				lockedPatient = createdRetail;
+			}
 		}
 
 		// 1. Проверка существования услуги в каталоге при передаче идентификатора
@@ -162,7 +208,7 @@ export async function createPaymentInDb(
 		// 4. Запись строк платежей и списание балансов (ДМС, семейный кошелек)
 		const primaryPayment = await executePaymentInsertAndBalanceDeductions(tx, {
 			organizationId,
-			input,
+			input: input.patientId ? input : { ...input, patientId: lockedPatient.id },
 			lockedPatient,
 			split,
 			effectivePaymentNote,

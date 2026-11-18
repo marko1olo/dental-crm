@@ -48,7 +48,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 			});
 		}
 
-		const { cashBoxId, amountRub, reasonText, operatorId, invoiceId, paymentId } = parsed.data;
+		const { cashBoxId, amountRub, reasonText, operatorId, invoiceId, paymentId, patientId } = parsed.data;
 
 		const result = await withTenantCtx(orgId, async (tx) => {
 			await ensureOrganizationCashBoxes(tx, orgId);
@@ -163,7 +163,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 			}
 
 			// Определяем пациента для проводки в payments
-			let effectivePatientId = linkedPayment?.patientId || linkedInvoice?.patientId || null;
+			let effectivePatientId = patientId || linkedPayment?.patientId || linkedInvoice?.patientId || null;
 			let patientName = "Розничный покупатель";
 
 			if (effectivePatientId) {

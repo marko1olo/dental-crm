@@ -199,7 +199,7 @@ export function useDepositOperations(
 							throw new Error(`Ошибка проведения финансовой операции (код ${resp.status})`);
 						}
 					} else {
-						// Списание личного аванса (расходная операция, уменьшающая баланс)
+						// Списание личного аванса (канонический возврат / расходная операция через кассу 54-ФЗ)
 						const refundResp = await fetch("/api/cashbox/refund", {
 							method: "POST",
 							headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
@@ -210,22 +210,8 @@ export function useDepositOperations(
 							}),
 						});
 						if (!refundResp.ok) {
-							// Фолбек: списание через кассу с отрицательным знаком
-							const fallbackResp = await fetch("/api/finance/payments", {
-								method: "POST",
-								headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-								body: JSON.stringify({
-									patientId: patient.id,
-									amountRub: -amount,
-									amountKopecks: -amountKopecks,
-									method: "cash",
-									clientMutationId: mutationId,
-									note: "Списание / зачёт аванса с лицевого счёта",
-								}),
-							});
-							if (!fallbackResp.ok) {
-								throw new Error(`Ошибка списания аванса (код ${refundResp.status})`);
-							}
+							const errData = (await refundResp.json().catch(() => null)) as { message?: string } | null;
+							throw new Error(errData?.message || `Ошибка списания аванса (код ${refundResp.status})`);
 						}
 					}
 				}

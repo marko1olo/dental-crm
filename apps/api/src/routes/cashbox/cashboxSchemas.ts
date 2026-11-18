@@ -82,6 +82,7 @@ export const cashRefundBodySchema = z.object({
 	invoiceId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
 	paymentId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
 	operatorId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
+	patientId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
 	cashierFullName: z.string().trim().optional(),
 });
 

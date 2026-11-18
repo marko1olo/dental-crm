@@ -10,7 +10,12 @@
  * - Sweet Spot size: 280-350 lines.
  */
 
-import { rublesToKopecks, kopecksToRubles, formatRubles as formatRublesShared } from "@dental/shared";
+import {
+	rublesToKopecks,
+	kopecksToRubles,
+	formatRubles,
+	formatKopecksToRub,
+} from "@dental/shared";
 
 export type CashboxTenderType = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty" | "installment";
 export type ClientPayerType = "physical_person" | "legal_entity" | "sole_proprietor";
@@ -86,20 +91,13 @@ export function kopecksToRub(kopecks: bigint | number): number {
 	return kopecksToRubles(kop);
 }
 
-/** Formats integer kopecks into clean Russian rubles: "15 400 ₽" or "15 400,50 ₽" */
+/** Formats integer kopecks into clean Russian rubles via canonical @dental/shared */
 export function formatKopecksToRubles(kopecks: bigint | number): string {
-	const rub = kopecksToRub(kopecks);
-	return formatRubles(rub);
+	return formatKopecksToRub(kopecks);
 }
 
-/** Formats rubles with Russian non-breaking thousand separators and currency symbol */
-export function formatRubles(rub: number): string {
-	if (!Number.isFinite(rub)) return "0 ₽";
-	const rounded = Math.round(rub * 100) / 100;
-	const parts = rounded.toFixed(rounded % 1 === 0 ? 0 : 2).split(".");
-	const integerPart = (parts[0] ?? "0").replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
-	return parts.length > 1 ? `${integerPart},${parts[1]} ₽` : `${integerPart} ₽`;
-}
+/** Canonical ruble formatter re-exported from @dental/shared SSOT (Mandate 8bf) */
+export { formatRubles };
 
 /**
  * Calculates cash change with exact integer precision and status indicators.
