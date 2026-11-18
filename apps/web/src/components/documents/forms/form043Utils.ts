@@ -1,4 +1,5 @@
 import type { CpitnIndex, FullForm043uPayload, OralMucosaStatus } from "@dental/shared";
+import { printHtmlViaIframe } from "../printHtmlViaIframe";
 
 export const DEFAULT_CPITN: CpitnIndex = {
 	sextant18_14: "0_healthy",
@@ -23,13 +24,17 @@ export const DEFAULT_ORAL_MUCOSA: OralMucosaStatus = {
 
 export const openPrintWindow = (html: string): void => {
 	if (typeof window === "undefined") return;
-	const w = window.open("", "_blank");
-	if (w) {
-		w.document.write(html);
-		w.document.close();
-		w.focus();
-		w.print();
-	} else {
-		window.print();
+	try {
+		const w = window.open("", "_blank");
+		if (w) {
+			w.document.write(html);
+			w.document.close();
+			w.focus();
+			w.print();
+			return;
+		}
+	} catch (e) {
+		console.warn("[openPrintWindow] window.open blocked by popup policy:", e);
 	}
+	printHtmlViaIframe(html, "dente-form043-print-iframe");
 };

@@ -416,8 +416,8 @@
 [data-theme="dark"] .dente-a4-paper-sheet {
 	background: var(--paper-strong, #1e293b);
 	color: var(--ink, #f8fafc);
-	border: 1px solid var(--line, #334155);
-	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line, #334155);
+	border: 1px solid var(--line);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line);
 }
 
 .dark .dente-a4-sheet-header,
@@ -447,7 +447,7 @@
 
 .dark .dente-a4-sheet-footer,
 [data-theme="dark"] .dente-a4-sheet-footer {
-	border-top: 1px solid var(--line, #334155);
+	border-top: 1px solid var(--line);
 	color: var(--ink-muted, #94a3b8);
 }
 

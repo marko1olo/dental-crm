@@ -1,11 +1,12 @@
 import { createSetter } from "../createSetter";
 import { loadUiPreferences } from "../../../utils/preferencesUtils";
 import type { IntakeConsentSliceState } from "../types/intakeConsentTypes";
+import type { DocumentStoreSet } from "../types";
 
 const initialUiPreferences = loadUiPreferences();
 
 export const createIntakeAndConsentSlice = (
-	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+	set: DocumentStoreSet,
 ): IntakeConsentSliceState => ({
 	intakeChiefComplaint: "",
 	setIntakeChiefComplaint: createSetter(set, "intakeChiefComplaint"),

@@ -139,16 +139,22 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 				if (onOpenPlanPresenter) {
 					onOpenPlanPresenter(planId ?? activePlan?.id, tier ?? selectedTier);
 				} else if (typeof window !== "undefined") {
-					const query = new URLSearchParams();
 					const targetId = planId ?? activePlan?.id;
 					const targetTier = tier ?? selectedTier;
-					if (targetId) query.set("id", targetId);
-					if (targetTier) query.set("tier", targetTier);
-					const qStr = query.toString();
-					window.location.hash = qStr ? `#treatment-plan?${qStr}` : "#treatment-plan";
+					window.dispatchEvent(
+						new CustomEvent("dente:open-treatment-plan", {
+							bubbles: true,
+							detail: {
+								planId: targetId,
+								patientId: effectivePatientId,
+								patientName: patient?.fullName,
+								tier: targetTier,
+							},
+						}),
+					);
 				}
 			},
-			[onOpenPlanPresenter, activePlan?.id, selectedTier],
+			[onOpenPlanPresenter, activePlan?.id, selectedTier, effectivePatientId, patient?.fullName],
 		);
 
 		// Индикатор загрузки планов лечения
@@ -323,7 +329,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 										<div className="flex items-start justify-between gap-2">
 											<div>
 												<div className="flex items-center gap-1.5">
-													<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+													<span className="text-xs font-semibold text-[var(--muted)]">
 														{tier.badgeText}
 													</span>
 													{tier.isRecommended && (
@@ -440,7 +446,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 				{/* 2. НИЖНИЙ БЛОК: ДЕТАЛИЗАЦИЯ ПОЗИЦИЙ ПЛАНА ЛЕЧЕНИЯ */}
 				<div className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-4 shadow-sm">
 					<div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-						<h4 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] m-0">
+						<h4 className="text-xs font-semibold text-[var(--muted)] m-0">
 							Позиции процедур ({effectiveItems.length})
 						</h4>
 						<button

@@ -6,7 +6,7 @@ import { DentalForm043 } from "../../icons/DentalIcons";
 export function MobileDocumentItemIcon({ kind }: { kind: DocumentKind }) {
 	if (kind === "paid_medical_services_contract") {
 		return (
-			<div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+			<div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 bg-[var(--primary)]/10 text-[var(--primary)]">
 				<FileText size={18} aria-hidden="true" />
 			</div>
 		);

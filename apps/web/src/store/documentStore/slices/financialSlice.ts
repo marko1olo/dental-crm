@@ -1,11 +1,12 @@
 import { createSetter } from "../createSetter";
 import { loadUiPreferences } from "../../../utils/preferencesUtils";
 import type { FinancialSliceState } from "../types/financialTypes";
+import type { DocumentStoreSet } from "../types";
 
 const initialUiPreferences = loadUiPreferences();
 
 export const createFinancialSlice = (
-	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+	set: DocumentStoreSet,
 ): FinancialSliceState => ({
 	paidContractNumber: "",
 	setPaidContractNumber: createSetter(set, "paidContractNumber"),

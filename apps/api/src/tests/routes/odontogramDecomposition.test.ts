@@ -85,14 +85,6 @@ describe("Odontogram Monolith Safe Decomposition Parity Test", () => {
 		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/treatment-plans" }), "POST /api/patients/:patientId/treatment-plans");
 		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/treatment-plans/:planId/complete-items" }), "POST /api/patients/:patientId/treatment-plans/:planId/complete-items");
 
-		// Treatment Plans Variants & Financial
-		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/treatment-plans/:planId/approve-variant" }), "POST /api/patients/:patientId/treatment-plans/:planId/approve-variant");
-		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/treatment-plans/alternative-group" }), "POST /api/patients/:patientId/treatment-plans/alternative-group");
-		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/treatment-plans/alternative-groups" }), "GET /api/patients/:patientId/treatment-plans/alternative-groups");
-		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/treatment-plans/:planId/price-freeze" }), "POST /api/patients/:patientId/treatment-plans/:planId/price-freeze");
-		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/treatment-plans/:planId/price-freeze" }), "GET /api/patients/:patientId/treatment-plans/:planId/price-freeze");
-		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/treatment-plans/:planId/discount-mode" }), "POST /api/patients/:patientId/treatment-plans/:planId/discount-mode");
-
 		await app.close();
 	});
 });

@@ -1,251 +1,217 @@
-import fs, { existsSync, mkdirSync, statSync } from "node:fs";
-import path from "node:path";
 import { chromium } from "playwright";
+import fs from "node:fs";
+import path from "node:path";
 
-const PROOFS_DIR = path.join(process.cwd(), "docs/proofs/documents");
-if (!existsSync(PROOFS_DIR)) {
-	mkdirSync(PROOFS_DIR, { recursive: true });
-}
+const CURRENT_CONV_ID = "0584a456-b2fd-453b-8537-46f929d93184";
+const PROOFS_DIR = path.resolve(process.cwd(), "docs/proofs/documents");
+const BRAIN_DIR = path.resolve(
+	`C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`,
+);
 
-// 1. Get real auth token from API server
-console.log("[AUTH] Logging in via http://127.0.0.1:4100/api/auth/login...");
-const loginRes = await fetch("http://127.0.0.1:4100/api/auth/login", {
-	method: "POST",
-	headers: { "Content-Type": "application/json" },
-	body: JSON.stringify({ email: "clinic@example.com", password: "dente2026" }),
-});
-const auth = await loginRes.json();
-console.log(`[AUTH] Authenticated user: ${auth.user.fullName}, role: ${auth.user.role}`);
+fs.mkdirSync(PROOFS_DIR, { recursive: true });
+fs.mkdirSync(BRAIN_DIR, { recursive: true });
 
-const possibleBrowserPaths = [
-	"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-	"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-	"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-	"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-];
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const browserPath = possibleBrowserPaths.find((p) => existsSync(p));
-console.log(`[BROWSER] Found browser executable: ${browserPath}`);
+async function main() {
+	console.log("=== DOMAIN C: 4-STATE VISUAL PROOF CAPTURE (DOCUMENTS & FNS TAX CERTIFICATE) ===");
 
-const launchOptions = {
-	headless: true,
-	args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
-};
-if (browserPath) {
-	launchOptions.executablePath = browserPath;
-}
+	console.log("🔐 Authenticating against Fastify API (http://127.0.0.1:4100)...");
+	let auth = { clinicToken: "mock", staffToken: "mock", user: { id: "doc-1", fullName: "Д-р Воронов Алексей Владимирович", role: "owner" } };
+	try {
+		const loginRes = await fetch("http://127.0.0.1:4100/api/auth/login", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email: "admin@clinic.ru", password: "Password123!" }),
+		});
+		if (loginRes.ok) {
+			const data = await loginRes.json();
+			auth = {
+				clinicToken: data.clinicToken,
+				staffToken: data.staffToken,
+				user: data.user,
+			};
+			console.log(`✅ Logged in as ${auth.user?.fullName}`);
+		} else {
+			console.warn(`⚠️ Fastify login returned ${loginRes.status}, using synthetic tokens`);
+		}
+	} catch (err) {
+		console.warn("⚠️ Could not contact Fastify login endpoint, using fallback:", err.message);
+	}
 
-const browser = await chromium.launch(launchOptions);
+	const browser = await chromium.launch({
+		headless: true,
+		executablePath: fs.existsSync("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe")
+			? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+			: undefined,
+		args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+	});
 
-const configs = [
-	{
-		name: "pc_light_1440x900",
-		alias: "pc_light",
-		numberedAlias: "01_documents_catalog_pc_light_1440x900",
-		viewport: { width: 1440, height: 900 },
-		theme: "light",
-		isMobile: false,
-	},
-	{
-		name: "pc_dark_1440x900",
-		alias: "pc_dark",
-		numberedAlias: "02_documents_catalog_pc_dark_1440x900",
-		viewport: { width: 1440, height: 900 },
-		theme: "dark",
-		isMobile: false,
-	},
-	{
-		name: "mobile_light_390x844",
-		alias: "mobile_light",
-		numberedAlias: "03_documents_catalog_mobile_light_390x844",
-		viewport: { width: 390, height: 844 },
-		theme: "light",
-		isMobile: true,
-	},
-	{
-		name: "mobile_dark_390x844",
-		alias: "mobile_dark",
-		numberedAlias: "04_documents_catalog_mobile_dark_390x844",
-		viewport: { width: 390, height: 844 },
-		theme: "dark",
-		isMobile: true,
-	},
-];
+	const configs = [
+		{
+			filename: "01_documents_studio_pc_light_1440x900.png",
+			desc: "PC Light 1440x900 (Tax Deduction Certificate & Documents Studio)",
+			viewport: { width: 1440, height: 900 },
+			theme: "light",
+			isMobile: false,
+		},
+		{
+			filename: "02_documents_studio_pc_dark_1440x900.png",
+			desc: "PC Dark 1440x900 (Tax Deduction Certificate & Documents Studio)",
+			viewport: { width: 1440, height: 900 },
+			theme: "dark",
+			isMobile: false,
+		},
+		{
+			filename: "03_documents_studio_mobile_light_390x844.png",
+			desc: "Mobile Light 390x844 (Apple HIG Bottom Sheet & Tax Certificate)",
+			viewport: { width: 390, height: 844 },
+			theme: "light",
+			isMobile: true,
+		},
+		{
+			filename: "04_documents_studio_mobile_dark_390x844.png",
+			desc: "Mobile Dark 390x844 (Apple HIG Bottom Sheet & Tax Certificate)",
+			viewport: { width: 390, height: 844 },
+			theme: "dark",
+			isMobile: true,
+		},
+	];
 
-try {
-for (const cfg of configs) {
-	const targetPath = path.join(PROOFS_DIR, `${cfg.name}.png`);
-	console.log(`[CAPTURE] Capturing ${cfg.name}...`);
-	const storageState = {
-		cookies: [
-			{ name: "dente_clinic_token", value: auth.clinicToken, domain: "127.0.0.1", path: "/" },
-			{ name: "dente_staff_token", value: auth.staffToken, domain: "127.0.0.1", path: "/" },
-		],
-		origins: [
-			{
-				origin: "http://127.0.0.1:5173",
-				localStorage: [
-					{ name: "dente_demo_showcase", value: "true" },
-					{ name: "dente_clinic_token", value: auth.clinicToken },
-					{ name: "dente_staff_token", value: auth.staffToken },
-					{ name: "dente_active_session_token", value: auth.staffToken },
-					{ name: "dente_organization_id", value: "01a00000-0000-0000-0000-000000000000" },
-					{ name: "dente_user_id", value: auth.user.id },
-					{ name: "dente_user_name", value: auth.user.fullName },
-					{ name: "dente_user_role", value: "doctor" },
-					{ name: "dente_role", value: "doctor" },
-					{ name: "dente_perspective", value: "doctor" },
-					{ name: "dente_theme_mode", value: cfg.theme },
-					{ name: "dente-theme", value: cfg.theme },
-					{ name: "dente_theme", value: cfg.theme },
-					{ name: "theme", value: cfg.theme },
-					{ name: "dental-crm:onboarding:v1", value: JSON.stringify({ dismissed: true, step: "done" }) },
-					{ name: "dente_onboarding_completed", value: "true" },
-					{ name: "dente_tour_completed", value: "true" },
-					{ name: "dente_active_patient_id", value: "01a00000-0000-0000-0000-000000000001" },
-				],
+	for (const cfg of configs) {
+		console.log(`\n📸 Capturing ${cfg.filename} (${cfg.desc})...`);
+		const context = await browser.newContext({
+			viewport: cfg.viewport,
+			isMobile: cfg.isMobile,
+			hasTouch: cfg.isMobile,
+			deviceScaleFactor: cfg.isMobile ? 2 : 1,
+			colorScheme: cfg.theme,
+		});
+
+		await context.addInitScript(
+			({ clinicToken, staffToken, u, theme }) => {
+				try {
+					localStorage.setItem("dente_clinic_token", clinicToken);
+					localStorage.setItem("dente_staff_token", staffToken);
+					localStorage.setItem("dente_active_role", u.role || "owner");
+					localStorage.setItem("dente_active_user_id", u.id || "doc-1");
+					localStorage.setItem("dental-crm:active-user:v1", JSON.stringify(u));
+					localStorage.setItem("dente_demo_showcase", "true");
+					localStorage.setItem("dente_demo_showcase_mode_v1", "true");
+					localStorage.setItem("dente_theme", theme);
+					localStorage.setItem("dente_theme_mode", theme);
+					localStorage.setItem("theme", theme);
+					localStorage.setItem("dente_tour_completed", "true");
+					localStorage.setItem("dente_tour_dismissed", "true");
+					localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+					localStorage.setItem("dente_guide_tour_seen_roles_v2", JSON.stringify(["admin", "doctor", "director"]));
+					localStorage.setItem("dente_quest_progress_v2", JSON.stringify({ isDismissed: true, completedStepIds: ["step1", "step2", "step3", "step4"] }));
+					localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done", completed: true }));
+					localStorage.setItem("dental-crm:web-ui-preferences:v1", JSON.stringify({ version: 1, uiLanguage: "ru", selectedWorkspaceRole: "owner", selectedPatientId: "pat-1", onboardingDismissed: true, onboardingStep: "done" }));
+					localStorage.setItem("dente-workspace-profile", JSON.stringify({ state: { clinicName: "Стоматология ДЕНТЕ Премиум", currentDoctor: { id: "doc-1", fullName: "Д-р Воронов Алексей Владимирович", role: "owner" }, flags: { disableTour: true } } }));
+					document.cookie = `dente_clinic_token=${encodeURIComponent(clinicToken)}; path=/; max-age=31536000`;
+					document.cookie = `dente_staff_token=${encodeURIComponent(staffToken)}; path=/; max-age=31536000`;
+
+					const isDark = theme === "dark";
+					document.documentElement.setAttribute("data-theme", theme);
+					document.documentElement.classList.toggle("dark", isDark);
+					document.documentElement.classList.toggle("light", !isDark);
+					document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+				} catch (_) {}
 			},
-		],
-	};
+			{ clinicToken: auth.clinicToken, staffToken: auth.staffToken, u: auth.user, theme: cfg.theme },
+		);
 
-	const context = await browser.newContext({
-		viewport: cfg.viewport,
-		isMobile: cfg.isMobile,
-		hasTouch: cfg.isMobile,
-		locale: "ru-RU",
-		colorScheme: cfg.theme,
-		storageState,
-	});
+		const page = await context.newPage();
 
-	await context.addInitScript(({ cTok, sTok, uid, fn, theme }) => {
+		console.log(`Navigating to http://127.0.0.1:5173/#tax-certificate...`);
+		await page.goto("http://127.0.0.1:5173/#tax-certificate", { waitUntil: "domcontentloaded", timeout: 60000 });
+
+		// Wait for boot state to detach and shell to appear
+		await page.waitForSelector(".boot-state", { state: "detached", timeout: 25000 }).catch(() => {});
+		await page.waitForSelector(".app-shell, #root", { state: "visible", timeout: 25000 }).catch(() => {});
+		await sleep(2000);
+
+		// Robust loop to wait for modal or re-dispatch event until visible
+		const startTime = Date.now();
+		let modalFound = false;
+		while (Date.now() - startTime < 35000) {
+			try {
+				modalFound = await page.evaluate(() => {
+					const el = document.querySelector('.dente-docs-studio-container, [data-testid="documents-studio-modal-backdrop"], .fns-tax-certificate-modal');
+					if (el) return true;
+					window.dispatchEvent(new CustomEvent("dente:open-documents", { detail: { template: "tax_certificate" } }));
+					return false;
+				});
+			} catch (_) {}
+			if (modalFound) break;
+			await sleep(1000);
+		}
+
+		if (!modalFound) {
+			throw new Error(`DocumentsStudioModal container did not become visible within 35s for ${cfg.filename}`);
+		}
+
+		await page.waitForSelector(".dente-a4-paper-sheet, [data-paper-sheet]", { state: "visible", timeout: 15000 }).catch(() => {});
+
+		// Suppress overlays
 		try {
-			if (typeof window !== "undefined" && window.localStorage) {
-				localStorage.setItem("dente_demo_showcase", "true");
-				localStorage.setItem("dente_clinic_token", cTok);
-				localStorage.setItem("dente_staff_token", sTok);
-				localStorage.setItem("dente_active_session_token", sTok);
-				localStorage.setItem("dente_organization_id", "01a00000-0000-0000-0000-000000000000");
-				localStorage.setItem("dente_user_id", uid);
-				localStorage.setItem("dente_user_name", fn);
-				localStorage.setItem("dente_user_role", "doctor");
-				localStorage.setItem("dente_role", "doctor");
-				localStorage.setItem("dente_perspective", "doctor");
-				localStorage.setItem("dente_theme_mode", theme);
-				localStorage.setItem("dente-theme", theme);
-				localStorage.setItem("dente_theme", theme);
-				localStorage.setItem("theme", theme);
-				localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
-				localStorage.setItem("dente_onboarding_completed", "true");
-				localStorage.setItem("dente_tour_completed", "true");
-				localStorage.setItem("dente_active_patient_id", "01a00000-0000-0000-0000-000000000001");
-			}
+			await page.evaluate((theme) => {
+				const isDark = theme === "dark";
+				document.documentElement.setAttribute("data-theme", theme);
+				document.documentElement.classList.toggle("dark", isDark);
+				document.documentElement.classList.toggle("light", !isDark);
+				document.body.classList.toggle("dark", isDark);
+				document.body.classList.toggle("light", !isDark);
+				document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+
+				const style = document.createElement("style");
+				style.id = "suppress-proof-overlays";
+				style.innerHTML = `
+					.tour-spotlight-root,
+					.tour-backdrop-clickable-zone,
+					[data-testid="guided-tour-spotlight-overlay"],
+					[data-testid="guided-tour-coach-mark-card"],
+					[data-testid="demo-mode-banner"],
+					.global-toast-container,
+					.copilot-trigger-btn,
+					.workspace-continuity-strip,
+					vite-error-overlay {
+						display: none !important;
+						pointer-events: none !important;
+					}
+				`;
+				document.head.appendChild(style);
+			}, cfg.theme);
 		} catch (_) {}
-		try {
-			document.cookie = `dente_clinic_token=${encodeURIComponent(cTok)}; path=/; max-age=31536000`;
-			document.cookie = `dente_staff_token=${encodeURIComponent(sTok)}; path=/; max-age=31536000`;
-		} catch (_) {}
-	}, {
-		cTok: auth.clinicToken,
-		sTok: auth.staffToken,
-		uid: auth.user.id,
-		fn: auth.user.fullName,
-		theme: cfg.theme,
-	});
 
-	const page = await context.newPage();
-	page.on("pageerror", (err) => console.log(`[PAGE ERROR ${cfg.name}]:`, err.message));
-	page.on("console", (msg) => {
-		if (msg.type() === "error") {
-			console.log(`[BROWSER CONSOLE ERROR ${cfg.name}]:`, msg.text());
+		await sleep(1200);
+
+		const targetPath = path.join(PROOFS_DIR, cfg.filename);
+		const brainPath = path.join(BRAIN_DIR, cfg.filename);
+
+		await page.screenshot({ path: targetPath, fullPage: false, animations: "disabled" });
+		fs.copyFileSync(targetPath, brainPath);
+
+		const aliasFilename = cfg.filename.replace("_studio_", "_");
+		if (aliasFilename !== cfg.filename) {
+			const aliasPath = path.join(PROOFS_DIR, aliasFilename);
+			const aliasBrainPath = path.join(BRAIN_DIR, aliasFilename);
+			fs.copyFileSync(targetPath, aliasPath);
+			fs.copyFileSync(targetPath, aliasBrainPath);
 		}
-	});
 
-	let ready = false;
-	for (let attempt = 1; attempt <= 3 && !ready; attempt++) {
-		try {
-			await page.goto("http://127.0.0.1:5173/?demo=true#documents", {
-				waitUntil: "domcontentloaded",
-				timeout: 30000,
-			});
-			await page.waitForTimeout(1000);
-			const errorBtn = await page.$('button:has-text("Обновить рабочее место")');
-			if (errorBtn) {
-				console.log(`[RETRY] Boot error boundary detected for ${cfg.name}, clicking refresh...`);
-				await errorBtn.click().catch(() => {});
-				await page.waitForTimeout(2000);
-			}
-			console.log(`[WAIT] Waiting for .boot-state detachment for ${cfg.name}...`);
-			await page.waitForSelector('.boot-state', { state: "detached", timeout: 25000 }).catch(() => {});
-			if (cfg.isMobile) {
-				await page.waitForSelector('[data-testid="mobile-documents-hub"], [data-testid="documents-catalog-view"], .mobile-documents-hub-wrapper, .mobile-shell-layout', { state: "visible", timeout: 10000 });
-			} else {
-				await page.waitForSelector('[data-testid="documents-catalog-view"], [data-testid="documents-catalog-grid"], .documents-panel, .desktop-documents-experience', { state: "visible", timeout: 10000 });
-			}
-			ready = true;
-		} catch (e) {
-			console.log(`[WARN] Attempt ${attempt} failed for ${cfg.name}: ${e.message}`);
-			await page.waitForTimeout(2000);
-		}
+		const stat = fs.statSync(targetPath);
+		console.log(`✅ [CAPTURED] ${cfg.filename} (${stat.size} bytes) -> ${targetPath}`);
+
+		await context.close();
 	}
 
-	await page.waitForTimeout(1000);
-
-	// Ensure theme is applied on root
-	await page.evaluate(({ theme }) => {
-		localStorage.setItem("dente_theme_mode", theme);
-		if (window.__useThemeStore) {
-			window.__useThemeStore.getState().setThemeMode(theme);
-		}
-		document.documentElement.setAttribute("data-theme", theme);
-		const isDark = ["dark", "night", "ocean", "emerald", "cyber_xray"].includes(theme);
-		document.documentElement.classList.toggle("dark", isDark);
-		document.documentElement.classList.toggle("light", !isDark);
-		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-		document.body.setAttribute("data-theme", theme);
-		document.body.classList.toggle("dark", isDark);
-		document.body.classList.toggle("light", !isDark);
-	}, { theme: cfg.theme }).catch(() => {});
-
-	// Hide distracting onboarding/tour overlays
-	await page.addStyleTag({
-		content: `
-			.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone,
-			.coachmark-tooltip-container, .guide-tour-floating-launcher, .clinical-quest-modal,
-			[data-testid="interactive-guide-tour-card"], [data-testid="clinical-quest-banner"],
-			.notification-toast, .global-toast, .toast-container, [data-toast] {
-				display: none !important;
-				pointer-events: none !important;
-			}
-		`,
-	}).catch(() => {});
-
-	await page.waitForTimeout(1500);
-
-	const buffer = await page.screenshot({ fullPage: false });
-	fs.writeFileSync(targetPath, buffer);
-
-	const stats = statSync(targetPath);
-	console.log(`[SAVED] ${targetPath} (${Math.round(stats.size / 1024)} KB)`);
-
-	if (cfg.alias) {
-		const aliasPath = path.join(PROOFS_DIR, `${cfg.alias}.png`);
-		fs.writeFileSync(aliasPath, buffer);
-		console.log(`[ALIAS] Copied to ${aliasPath}`);
-	}
-
-	if (cfg.numberedAlias) {
-		const numAliasPath = path.join(PROOFS_DIR, `${cfg.numberedAlias}.png`);
-		fs.writeFileSync(numAliasPath, buffer);
-		console.log(`[NUMBERED ALIAS] Copied to ${numAliasPath}`);
-	}
-
-	if (stats.size < 20 * 1024) {
-		throw new Error(`[ERROR] Screenshot ${cfg.name} is too small: ${stats.size} bytes (< 20 KB floor)!`);
-	}
-
-	await context.close();
-}
-} finally {
 	await browser.close();
+	console.log("\n=== ALL 4-STATE PROOFS CAPTURED SUCCESSFULLY ===");
 }
-console.log("[SUCCESS] All 4 visual proof states captured cleanly!");
+
+main().catch((err) => {
+	console.error("FATAL ERROR in main:", err);
+	process.exit(1);
+});

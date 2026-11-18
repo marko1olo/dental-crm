@@ -30,3 +30,17 @@ export interface DocumentState
 	 */
 	resetDocumentForms: () => void;
 }
+
+export type DocumentStoreSet = {
+	(
+		partial:
+			| DocumentState
+			| Partial<DocumentState>
+			| ((state: DocumentState) => DocumentState | Partial<DocumentState>),
+		replace?: false | undefined,
+	): void;
+	(
+		state: DocumentState | ((state: DocumentState) => DocumentState),
+		replace: true,
+	): void;
+};

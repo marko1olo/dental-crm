@@ -1,8 +1,9 @@
 import { createSetter } from "../createSetter";
 import type { MiscSliceState } from "../types/miscTypes";
+import type { DocumentStoreSet } from "../types";
 
 export const createMiscSlice = (
-	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+	set: DocumentStoreSet,
 ): MiscSliceState => ({
 	minorRepresentativeFullName: "",
 	setMinorRepresentativeFullName: createSetter(

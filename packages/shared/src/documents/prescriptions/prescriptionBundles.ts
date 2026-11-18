@@ -244,6 +244,23 @@ export function getDentalPrescriptionExpressBundle(bundleId: string): DentalPres
 	return DENTAL_PRESCRIPTION_EXPRESS_BUNDLES.find((b) => b.id === bundleId || b.testId === bundleId);
 }
 
+function mapBundleDrugItem(
+	item: DentalPrescriptionBundleDrugItem,
+	customId: string,
+): PrescriptionDrugItem {
+	return {
+		id: customId,
+		latinName: item.latinName,
+		tradeName: item.tradeName,
+		form: item.form,
+		dosage: item.dosage,
+		quantity: item.quantity,
+		dispenseLatin: item.dispenseLatin,
+		signaRussian: item.signaRussian,
+		category: item.category,
+	};
+}
+
 export function createPrescriptionDrugItemsFromBundle(
 	bundleId: string,
 	options?: {
@@ -258,156 +275,48 @@ export function createPrescriptionDrugItemsFromBundle(
 	const useAlt = options?.useAlternative || options?.penicillinAllergy;
 
 	if (bundle.id === "surgical") {
-		items.push({
-			id: `bundle-${bundle.id}-nimesulide`,
-			latinName: bundle.items[0]!.latinName,
-			tradeName: bundle.items[0]!.tradeName,
-			form: bundle.items[0]!.form,
-			dosage: bundle.items[0]!.dosage,
-			quantity: bundle.items[0]!.quantity,
-			dispenseLatin: bundle.items[0]!.dispenseLatin,
-			signaRussian: bundle.items[0]!.signaRussian,
-			category: bundle.items[0]!.category,
-		});
+		const item0 = bundle.items[0];
+		if (item0) items.push(mapBundleDrugItem(item0, `bundle-${bundle.id}-nimesulide`));
 
-		if (useAlt && bundle.alternativeItems?.[0]) {
-			items.push({
-				id: `bundle-${bundle.id}-ciprolet`,
-				latinName: bundle.alternativeItems[0].latinName,
-				tradeName: bundle.alternativeItems[0].tradeName,
-				form: bundle.alternativeItems[0].form,
-				dosage: bundle.alternativeItems[0].dosage,
-				quantity: bundle.alternativeItems[0].quantity,
-				dispenseLatin: bundle.alternativeItems[0].dispenseLatin,
-				signaRussian: bundle.alternativeItems[0].signaRussian,
-				category: bundle.alternativeItems[0].category,
-			});
+		const alt0 = bundle.alternativeItems?.[0];
+		if (useAlt && alt0) {
+			items.push(mapBundleDrugItem(alt0, `bundle-${bundle.id}-ciprolet`));
 		} else {
-			items.push({
-				id: `bundle-${bundle.id}-amoxiclav`,
-				latinName: bundle.items[1]!.latinName,
-				tradeName: bundle.items[1]!.tradeName,
-				form: bundle.items[1]!.form,
-				dosage: bundle.items[1]!.dosage,
-				quantity: bundle.items[1]!.quantity,
-				dispenseLatin: bundle.items[1]!.dispenseLatin,
-				signaRussian: bundle.items[1]!.signaRussian,
-				category: bundle.items[1]!.category,
-			});
+			const item1 = bundle.items[1];
+			if (item1) items.push(mapBundleDrugItem(item1, `bundle-${bundle.id}-amoxiclav`));
 		}
 
-		items.push({
-			id: `bundle-${bundle.id}-chlorhexidine`,
-			latinName: bundle.items[2]!.latinName,
-			tradeName: bundle.items[2]!.tradeName,
-			form: bundle.items[2]!.form,
-			dosage: bundle.items[2]!.dosage,
-			quantity: bundle.items[2]!.quantity,
-			dispenseLatin: bundle.items[2]!.dispenseLatin,
-			signaRussian: bundle.items[2]!.signaRussian,
-			category: bundle.items[2]!.category,
-		});
+		const item2 = bundle.items[2];
+		if (item2) items.push(mapBundleDrugItem(item2, `bundle-${bundle.id}-chlorhexidine`));
 	} else if (bundle.id === "endo-pain") {
-		if (useAlt && bundle.alternativeItems?.[0]) {
-			items.push({
-				id: `bundle-${bundle.id}-ibuprofen`,
-				latinName: bundle.alternativeItems[0].latinName,
-				tradeName: bundle.alternativeItems[0].tradeName,
-				form: bundle.alternativeItems[0].form,
-				dosage: bundle.alternativeItems[0].dosage,
-				quantity: bundle.alternativeItems[0].quantity,
-				dispenseLatin: bundle.alternativeItems[0].dispenseLatin,
-				signaRussian: bundle.alternativeItems[0].signaRussian,
-				category: bundle.alternativeItems[0].category,
-			});
+		const alt0 = bundle.alternativeItems?.[0];
+		if (useAlt && alt0) {
+			items.push(mapBundleDrugItem(alt0, `bundle-${bundle.id}-ibuprofen`));
 		} else {
-			items.push({
-				id: `bundle-${bundle.id}-ketorolac`,
-				latinName: bundle.items[0]!.latinName,
-				tradeName: bundle.items[0]!.tradeName,
-				form: bundle.items[0]!.form,
-				dosage: bundle.items[0]!.dosage,
-				quantity: bundle.items[0]!.quantity,
-				dispenseLatin: bundle.items[0]!.dispenseLatin,
-				signaRussian: bundle.items[0]!.signaRussian,
-				category: bundle.items[0]!.category,
-			});
+			const item0 = bundle.items[0];
+			if (item0) items.push(mapBundleDrugItem(item0, `bundle-${bundle.id}-ketorolac`));
 		}
 
-		items.push({
-			id: `bundle-${bundle.id}-drotaverine`,
-			latinName: bundle.items[1]!.latinName,
-			tradeName: bundle.items[1]!.tradeName,
-			form: bundle.items[1]!.form,
-			dosage: bundle.items[1]!.dosage,
-			quantity: bundle.items[1]!.quantity,
-			dispenseLatin: bundle.items[1]!.dispenseLatin,
-			signaRussian: bundle.items[1]!.signaRussian,
-			category: bundle.items[1]!.category,
-		});
+		const item1 = bundle.items[1];
+		if (item1) items.push(mapBundleDrugItem(item1, `bundle-${bundle.id}-drotaverine`));
 	} else if (bundle.id === "perio") {
-		items.push({
-			id: `bundle-${bundle.id}-metrogyl`,
-			latinName: bundle.items[0]!.latinName,
-			tradeName: bundle.items[0]!.tradeName,
-			form: bundle.items[0]!.form,
-			dosage: bundle.items[0]!.dosage,
-			quantity: bundle.items[0]!.quantity,
-			dispenseLatin: bundle.items[0]!.dispenseLatin,
-			signaRussian: bundle.items[0]!.signaRussian,
-			category: bundle.items[0]!.category,
-		});
+		const item0 = bundle.items[0];
+		if (item0) items.push(mapBundleDrugItem(item0, `bundle-${bundle.id}-metrogyl`));
 
-		if (useAlt && bundle.alternativeItems?.[0]) {
-			items.push({
-				id: `bundle-${bundle.id}-stomatophyt`,
-				latinName: bundle.alternativeItems[0].latinName,
-				tradeName: bundle.alternativeItems[0].tradeName,
-				form: bundle.alternativeItems[0].form,
-				dosage: bundle.alternativeItems[0].dosage,
-				quantity: bundle.alternativeItems[0].quantity,
-				dispenseLatin: bundle.alternativeItems[0].dispenseLatin,
-				signaRussian: bundle.alternativeItems[0].signaRussian,
-				category: bundle.alternativeItems[0].category,
-			});
+		const alt0 = bundle.alternativeItems?.[0];
+		if (useAlt && alt0) {
+			items.push(mapBundleDrugItem(alt0, `bundle-${bundle.id}-stomatophyt`));
 		} else {
-			items.push({
-				id: `bundle-${bundle.id}-chlorhexidine`,
-				latinName: bundle.items[1]!.latinName,
-				tradeName: bundle.items[1]!.tradeName,
-				form: bundle.items[1]!.form,
-				dosage: bundle.items[1]!.dosage,
-				quantity: bundle.items[1]!.quantity,
-				dispenseLatin: bundle.items[1]!.dispenseLatin,
-				signaRussian: bundle.items[1]!.signaRussian,
-				category: bundle.items[1]!.category,
-			});
+			const item1 = bundle.items[1];
+			if (item1) items.push(mapBundleDrugItem(item1, `bundle-${bundle.id}-chlorhexidine`));
 		}
 	} else if (bundle.id === "antihistamine") {
-		if (useAlt && bundle.alternativeItems?.[0]) {
-			items.push({
-				id: `bundle-${bundle.id}-suprastin`,
-				latinName: bundle.alternativeItems[0].latinName,
-				tradeName: bundle.alternativeItems[0].tradeName,
-				form: bundle.alternativeItems[0].form,
-				dosage: bundle.alternativeItems[0].dosage,
-				quantity: bundle.alternativeItems[0].quantity,
-				dispenseLatin: bundle.alternativeItems[0].dispenseLatin,
-				signaRussian: bundle.alternativeItems[0].signaRussian,
-				category: bundle.alternativeItems[0].category,
-			});
+		const alt0 = bundle.alternativeItems?.[0];
+		if (useAlt && alt0) {
+			items.push(mapBundleDrugItem(alt0, `bundle-${bundle.id}-suprastin`));
 		} else {
-			items.push({
-				id: `bundle-${bundle.id}-loratadine`,
-				latinName: bundle.items[0]!.latinName,
-				tradeName: bundle.items[0]!.tradeName,
-				form: bundle.items[0]!.form,
-				dosage: bundle.items[0]!.dosage,
-				quantity: bundle.items[0]!.quantity,
-				dispenseLatin: bundle.items[0]!.dispenseLatin,
-				signaRussian: bundle.items[0]!.signaRussian,
-				category: bundle.items[0]!.category,
-			});
+			const item0 = bundle.items[0];
+			if (item0) items.push(mapBundleDrugItem(item0, `bundle-${bundle.id}-loratadine`));
 		}
 	}
 

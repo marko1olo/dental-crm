@@ -429,7 +429,7 @@ export function generateFnsNdflPrintHtml(
   <div class="header-bar">
     <div>
       <div style="font-weight: bold; font-size: 11pt;">${escapeXmlAttr(clinic.name)}</div>
-      <div style="font-size: 8.5pt; color: #64748b;">Лицензия: № ${escapeXmlAttr(clinic.license?.number || "ЛО-77-01-019842")} от ${formatFnsRuDate(clinic.license?.date || "2021-04-12")}</div>
+      <div style="font-size: 8.5pt; color: #64748b;">${clinic.license?.number ? `Лицензия: № ${escapeXmlAttr(clinic.license.number)}${clinic.license?.date ? ` от ${formatFnsRuDate(clinic.license.date)}` : ""}` : "Лицензия: —"}</div>
     </div>
     <div style="text-align: right;">
       <div class="knd-badge">КНД 1151156</div>

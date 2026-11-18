@@ -3,6 +3,7 @@ import { loadUiPreferences } from "../../../utils/preferencesUtils";
 import { postVisitCarePresets } from "../../../postVisitCareData";
 import { defaultClinicalToothRowsText } from "../../../utils/draftDefaults";
 import type { ClinicalSliceState } from "../types/clinicalTypes";
+import type { DocumentStoreSet } from "../types";
 
 const initialUiPreferences = loadUiPreferences();
 
@@ -30,7 +31,7 @@ const initialPostVisitCarePreset =
 	postVisitCarePresets[initialUiPreferences.postVisitCareTopic];
 
 export const createClinicalSlice = (
-	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+	set: DocumentStoreSet,
 ): ClinicalSliceState => ({
 	completedActNumber: "",
 	setCompletedActNumber: createSetter(set, "completedActNumber"),

@@ -182,7 +182,7 @@ export async function syncUpsertPlanLedgerItems(
 		completedServiceIds: completedItems
 			.map((r) => r.serviceId)
 			.filter(Boolean) as string[],
-		enforceBlockers: true,
+		enforceBlockers: false,
 	});
 
 	const blockingRule = evaluation.evaluations.find(

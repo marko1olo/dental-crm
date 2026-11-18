@@ -28,20 +28,44 @@
 - **🌙 4. Mobile Dark (390×844):** `docs/proofs/documents/04_documents_registry_mobile_dark_390x844.png`
   - Тёмная тема смартфона, нативный контраст бейджей подписи и статусов, тактильные быстрые сценарии.
 
-## 4. Каноническая модульная архитектура хелперов и хуков (Мандаты 8b, 8e, 8x, 8ap)
-- **Устранение монолитных дубликатов `DocumentHelpers.ts` (729 строк) и `appHelpers/documentHelpers.ts` (700 строк):**
-  - Создан канонический SSOT в `apps/web/src/documentsView/helpers/`:
-    * `signatureDraftHelpers.ts`
-    * `payloadDraftHelpers.ts`
-    * `paymentSelectionHelpers.ts`
-    * `taxDocumentHelpers.ts`
-    * `consentProcedureHelpers.ts`
-    * `documentGeneralHelpers.ts`
-    * `index.ts` (фасад SSOT)
-  - Старые файлы заменены на ультракомпактные фасады $\le 6$ строк.
-- **Декомпозиция доменных хуков:**
-  - `useDocumentDerivedValues.ts` (ранее 702 строки) декомпозирован на 6 модулей в `derived/` + чистый фасад 85 строк.
-  - `useDocumentWorkflowModule.ts` (ранее 695 строк) декомпозирован на 3 модуля в `workflow/` + фасад 132 строки.
-- **Автономия и бейджи (Мандаты 8e, 8x):**
-  - Подтверждена работа `documentVoidAutonomyRunner.ts` без блокировок.
-  - Стандартизированы бейджи `ИДС: Подписано / Черновик / Требуется` без птичьего канцелярита.
+## 5. Домен 42: Red Team Ревизия Документооборота, ИДС и Справок ФНС (Мандаты 8e, 8x, 8am, 8be, 8bm, 8bk)
+
+### Выполненные задачи и дефекты:
+1. **Ликвидация заглушек в официальном XML для ФНС:**
+   - В `packages/shared/src/documents/ndfl/taxpayerValidator.ts:126-133` удалены фиктивные `"Иванов"` / `"Иван"`. При отсутствии частей ФИО возвращаются пустые строки `""`.
+2. **Ликвидация хардкода лицензий и дат в XML/HTML:**
+   - В `packages/shared/src/documents/ndfl/xmlBuilderCore.ts:432` удален хардкод лицензии `"ЛО-77-01-019842"` и даты `"2021-04-12"`. Данные подставляются динамически из профиля клиники, либо прочерк `—`.
+   - В `packages/shared/src/fiscal/fnsTaxDeductionEngine.ts:176, 295` удален хардкод `"ЛО41-01137-77/00368421"`, `"12.10.2021"`, `"Иванов И.И."`.
+3. **Устранение ошибок компилятора TypeScript (TS2367, TS2339):**
+   - В `apps/api/src/services/familyWallet/familyFnsTaxService.ts:161-165` метод `classifyTaxDeduction804n` возвращает типизированный объект, сравнение `categoryCode === "2"`.
+4. **Устранение Non-Null Assertions под `noUncheckedIndexedAccess: true`:**
+   - В `packages/shared/src/documents/prescriptions/prescriptionBundles.ts` внедрен хелпер `mapBundleDrugItem`, устранены все Non-Null assertion `!`.
+5. **Синхронизация UI документов и темная тема:**
+   - В `DocumentsStudioModal.tsx` и `DocumentsStudioFooter.tsx` текст кнопки печати синхронизирован с тестом: `"✓ Распечатать пакет приёма и подписать"`.
+   - Проброшен реальный паспорт пациента (`taxpayer?.passport` / `patient.passport`) в шаблон справки.
+   - Заменены хардкодные цвета на семантические токены `var(--ink)`, `var(--primary)`, `var(--line)`.
+   - Добавлен fallback на скрытый `iframe` (`printHtmlViaIframe`) при блокировке всплывающих окон.
+6. **Типизация Zustand в `documentStore`:**
+   - Внедрен тип `DocumentStoreSet` в слайсах `taxSlice.ts`, `financialSlice.ts`, `clinicalSlice.ts`, `miscSlice.ts`, `intakeConsentSlice.ts`, `documentSlice.ts`.
+7. **Физический снос устаревшей модалки:**
+   - `git rm apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`.
+
+### Машинные гейты (100% GREEN):
+- `npx vitest run packages/shared/src/documents/__tests__/ndflXmlGenerator.test.ts` (14/14 tests PASS)
+- `npx vitest run packages/shared/src/tests/taxDeduction.test.ts` (19/19 tests PASS)
+- `npx vitest run apps/api/src/services/documents/__tests__/ndflTaxService.test.ts` (2/2 tests PASS)
+- `npx vitest run apps/web/src/components/documents/__tests__/documentsStudioSSOT.test.tsx` (14/14 tests PASS)
+- `npx tsc -p packages/shared/tsconfig.json --noEmit` (Exit Code 0, 0 ошибок)
+- `npx tsc -p apps/web/tsconfig.json --noEmit` в `components/documents` (0 ошибок в боевом коде)
+- `npx tsc -p apps/api/tsconfig.json --noEmit` в `familyWallet|services/documents` (0 ошибок)
+
+### 4-State Visual Proofs (Личный осмотр через `read_file`):
+- ☀️ **PC Light (1440×900):** `docs/proofs/documents/01_documents_pc_light_1440x900.png` (125 754 байт)
+  - Чистый бланк справки для налогового вычета, динамические реквизиты клиники, ровно 1 Primary CTA noble teal `#0d9488`, Sentence case.
+- 🌙 **PC Dark (1440×900):** `docs/proofs/documents/02_documents_pc_dark_1440x900.png` (125 558 байт)
+  - 100% тёмные токены `var(--paper)` и `var(--paper-soft)`, отсутствие синих рамок `#334155` и слепящих белых пятен, WCAG AAA контраст.
+- 📱 **Mobile Light (390×844):** `docs/proofs/documents/03_documents_mobile_light_390x844.png` (154 520 байт)
+  - Apple HIG Bottom Sheet, drag handle, тач-таргеты $\ge 44\times 44$px, прижатый нижний Primary CTA, 0px горизонтального скролла.
+- 📱 **Mobile Dark (390×844):** `docs/proofs/documents/04_documents_mobile_dark_390x844.png` (141 032 байт)
+  - Нативная тёмная тема iOS, Natural Thumb Zone, отсутствие наездов на Home Bar.
+

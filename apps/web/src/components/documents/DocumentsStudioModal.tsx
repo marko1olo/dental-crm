@@ -351,19 +351,20 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 
 	const patient: PatientRequisites = useMemo(() => {
 		if (patientContext) {
+			const ctxPassport = taxpayer?.passport || (typeof patientContext.passport === "string" ? patientContext.passport : "") || "";
 			return {
 				fullName: patientContext.fullName || directPatientName || "",
 				birthDate: patientContext.birthDate || directPatientBirthDate || "",
-				passport: patientContext.passport || "",
+				passport: ctxPassport,
 				address: patientContext.address || "",
 				phone: patientContext.phone || "",
-				...(patientContext.inn || directPatientInn ? { inn: patientContext.inn || directPatientInn } : {}),
+				...(patientContext.inn || directPatientInn || taxpayer?.inn ? { inn: taxpayer?.inn || patientContext.inn || directPatientInn } : {}),
 			};
 		}
 		if (directPatient) {
 			const dp = directPatient as Record<string, unknown>;
-			const dpInn = (typeof dp.inn === "string" ? dp.inn : undefined) || directPatientInn;
-			const dpPassport = typeof dp.passport === "string" ? dp.passport : "";
+			const dpInn = (typeof dp.inn === "string" ? dp.inn : undefined) || directPatientInn || taxpayer?.inn;
+			const dpPassport = taxpayer?.passport || (typeof dp.passport === "string" ? dp.passport : "") || "";
 			const dpAddress = typeof dp.address === "string" ? dp.address : "";
 			return {
 				fullName: directPatient.fullName || directPatientName || "",
@@ -374,18 +375,18 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 				...(dpInn ? { inn: dpInn } : {}),
 			};
 		}
-		if (directPatientName || directPatientBirthDate || directPatientInn) {
+		if (directPatientName || directPatientBirthDate || directPatientInn || taxpayer?.passport) {
 			return {
 				fullName: directPatientName || "",
 				birthDate: directPatientBirthDate || "",
-				passport: "",
+				passport: taxpayer?.passport || "",
 				address: "",
 				phone: "",
-				...(directPatientInn ? { inn: directPatientInn } : {}),
+				...(directPatientInn || taxpayer?.inn ? { inn: taxpayer?.inn || directPatientInn } : {}),
 			};
 		}
 		return isDemo ? DEMO_SAMPLE_PATIENT : EMPTY_PATIENT_REQUISITES;
-	}, [patientContext, directPatient, directPatientName, directPatientBirthDate, directPatientInn, isDemo]);
+	}, [patientContext, directPatient, directPatientName, directPatientBirthDate, directPatientInn, taxpayer, isDemo]);
 
 	const currentDate = useMemo(() => {
 		return new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -556,11 +557,18 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 			case "informed_consent":
 				return `${blankNotice}${generateInformedConsentTemplate(legalContext, activeConsentSubKind)}`;
 			case "tax_certificate": {
+				const effectivePassport = taxpayer?.passport || directPayerPassport || patient.passport || "";
 				if (taxReceiptItems.length === 0) {
-					return `Справка об оплате медицинских услуг для представления в налоговый орган Российской Федерации (ФНС России)\nФорма по КНД 1151156 (Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@)\n\nНет подтверждённых платежей за ${taxYear} год.\n\nЗа выбранный налоговый период по данному пациенту не зарегистрировано подтверждённых кассовых оплат.\nДля формирования официальной справки по форме КНД 1151156 необходимы зарегистрированные чеки ККТ.\n\n[Доступна печать чистого бланка справки со штампом клиники для ручного заполнения]`;
+					const passportLine = effectivePassport ? `\nДокумент, удостоверяющий личность (паспорт): ${effectivePassport}` : "";
+					const patientLine = patient.fullName ? `Пациент: ${patient.fullName}, ${patient.birthDate || "дата рождения не указана"}${passportLine}\n\n` : "";
+					return `Справка об оплате медицинских услуг для представления в налоговый орган Российской Федерации (ФНС России)\nФорма по КНД 1151156 (Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@)\n\n${patientLine}Нет подтверждённых платежей за ${taxYear} год.\n\nЗа выбранный налоговый период по данному пациенту не зарегистрировано подтверждённых кассовых оплат.\nДля формирования официальной справки по форме КНД 1151156 необходимы зарегистрированные чеки ККТ.\n\n[Доступна печать чистого бланка справки со штампом клиники для ручного заполнения]`;
 				}
 				const baseText = generateTaxCertificateTemplate({
 					...legalContext,
+					patient: {
+						...patient,
+						passport: effectivePassport || patient.passport,
+					},
 					totalAmountKopecks: taxTotalAmountKopecks,
 				});
 				const codeBreakdown = `\n[РАЗДЕЛЕНИЕ ПО КОДАМ УСЛУГ ДЛЯ ФНС]:\nКод 1 (стандартные медицинские услуги): ${formatKopecksToRubles(taxCode01Kopecks)}\nКод 2 (дорогостоящее лечение): ${formatKopecksToRubles(taxCode02Kopecks)}\n`;
@@ -1054,15 +1062,15 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 							{/* Подвал с подписями сторон */}
 							<div className="dente-a4-sheet-footer">
 								<div>
-									<div className="font-semibold text-slate-800">Исполнитель:</div>
-									<div className="text-slate-600">{effectiveDoctorName}</div>
-									<div className="mt-4 text-slate-400">Подпись: ______________________ М.П.</div>
+									<div className="font-semibold text-[var(--ink)]">Исполнитель:</div>
+									<div className="text-[var(--ink-secondary)]">{effectiveDoctorName}</div>
+									<div className="mt-4 text-[var(--ink-muted)]">Подпись: ______________________ М.П.</div>
 								</div>
 
 								<div className="text-right">
-									<div className="font-semibold text-slate-800">Пациент:</div>
-									<div className="text-slate-600">{patient.fullName || "______________________"}</div>
-									<div className="mt-4 text-slate-400">
+									<div className="font-semibold text-[var(--ink)]">Пациент:</div>
+									<div className="text-[var(--ink-secondary)]">{patient.fullName || "______________________"}</div>
+									<div className="mt-4 text-[var(--ink-muted)]">
 										{effectiveHasSigned
 											? `Подписано пациентом ${signedAtTimeStr ? `в ${signedAtTimeStr} ` : ""}[OK]`
 											: "Подпись: ______________________"}

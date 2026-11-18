@@ -8,11 +8,12 @@ import {
 	type DocumentPackagePresetOptions,
 } from "../../../utils/documentPackages";
 import type { DocumentSliceState } from "../types/coreTypes";
+import type { DocumentStoreSet } from "../types";
 
 const initialUiPreferences = loadUiPreferences();
 
 export const createDocumentSlice = (
-	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+	set: DocumentStoreSet,
 ): DocumentSliceState => ({
 	documentCreateSavingKind: null,
 	setDocumentCreateSavingKind: createSetter(set, "documentCreateSavingKind"),

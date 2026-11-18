@@ -12,6 +12,7 @@ import {
 	getConsentDocumentById,
 	type ConsentDocumentId,
 } from "./consentCatalogData";
+import { printHtmlViaIframe } from "../documents/printHtmlViaIframe";
 
 export { generateConsentPrintHtml } from "./consentCatalogData";
 
@@ -799,25 +800,46 @@ export function renderConsentTemplate(
 
 export function printHtmlViaWindowOrIframe(html: string): void {
 	if (typeof window === "undefined") return;
-	const win = window.open("", "_blank");
-	if (win) {
-		win.document.open();
-		win.document.write(html);
-		win.document.close();
-		setTimeout(() => win.print(), 250);
+	try {
+		const win = window.open("", "_blank");
+		if (win) {
+			win.document.open();
+			win.document.write(html);
+			win.document.close();
+			setTimeout(() => win.print(), 250);
+			return;
+		}
+	} catch (e) {
+		console.warn("[printHtmlViaWindowOrIframe] window.open blocked by popup policy:", e);
 	}
+	printHtmlViaIframe(html, "dente-consent-print-iframe");
 }
 
-export function generateMinorConsentPrintHtml(params: {
+export interface GenerateMinorConsentPrintParams {
 	clinicName?: string;
 	representativeName?: string;
+	representativeRelation?: string;
+	representativeDocument?: string;
+	representativePhone?: string;
+	representativeBasis?: string;
 	childName?: string;
+	childBirthDate?: string;
+	childDocument?: string;
 	doctorName?: string;
+	interventionScope?: string;
+	diagnosisOrIndication?: string;
+	risks?: string;
+	alternatives?: string;
 	date?: string;
-}): string {
+	isBlank?: boolean;
+}
+
+export function generateMinorConsentPrintHtml(params?: GenerateMinorConsentPrintParams): string {
 	const clinicName = params?.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»";
 	const repName = params?.representativeName || "______________________________";
+	const repRel = params?.representativeRelation ? ` (${params.representativeRelation})` : "";
 	const childName = params?.childName || "______________________________";
+	const childBirth = params?.childBirthDate ? ` (${params.childBirthDate} г.р.)` : "";
 	const docName = params?.doctorName || "Детский врач-стоматолог";
 	const dateStr = params?.date || new Date().toLocaleDateString("ru-RU");
 
@@ -826,7 +848,7 @@ export function generateMinorConsentPrintHtml(params: {
 .header { border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 12px; } h1 { font-size: 13pt; font-weight: 700; margin: 6px 0 2px; }
 .meta { background: #fdf2f8; border: 1px solid #fbcfe8; padding: 8px; border-radius: 6px; margin: 10px 0; } .sig { margin-top: 20px; display: flex; justify-content: space-between; }</style></head>
 <body><div class="header"><div>${clinicName}</div><h1>ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ</h1><div>(на медицинское вмешательство несовершеннолетнему гражданину)</div></div>
-<div class="meta"><strong>Законный представитель:</strong> ${repName}<br><strong>Ребенок:</strong> ${childName}<br><strong>Врач:</strong> ${docName} • Дата: ${dateStr}</div>
+<div class="meta"><strong>Законный представитель:</strong> ${repName}${repRel}<br><strong>Ребенок:</strong> ${childName}${childBirth}<br><strong>Врач:</strong> ${docName} • Дата: ${dateStr}</div>
 <p>Я, являясь законным представителем несовершеннолетнего, даю согласие на стоматологическое лечение в соответствии с законодательством РФ.</p>
 <div class="sig"><div>Подпись представителя: ________________ / ${repName} /</div><div>Подпись врача: ________________ / ${docName} /</div></div>
 </body></html>`;

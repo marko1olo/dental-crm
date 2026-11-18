@@ -146,8 +146,8 @@ export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
 							: isConsent
 								? "Подписать пакет согласий и распечатать"
 								: hasSigned
-									? "Распечатать подписанный пакет приёма"
-									: "Распечатать пакет приёма и подписать"}
+									? "✓ Распечатать подписанный пакет приёма"
+									: "✓ Распечатать пакет приёма и подписать"}
 					</span>
 					<span className="sm:hidden">
 						{isTax ? "Печать справки (А4)" : isConsent ? "Подписать пакет" : "Распечатать"}

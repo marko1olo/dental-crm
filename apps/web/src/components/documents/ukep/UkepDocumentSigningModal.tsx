@@ -163,7 +163,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 															УКЭП ГОСТ
 														</span>
 													) : isSignedPep ? (
-														<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 shrink-0">
+														<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 shrink-0">
 															ПЭП врача
 														</span>
 													) : (
@@ -297,7 +297,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 							onClick={signSelectedDocumentPep}
 							className="secondary-button text-xs font-semibold px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-subtle)] flex items-center gap-1.5 transition-colors min-h-[44px] sm:min-h-[36px]"
 						>
-							<FileText className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+							<FileText className="w-4 h-4 text-[var(--primary)]" />
 							<span>Подписать ПЭП</span>
 						</button>
 

@@ -173,7 +173,7 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 	</div>
 	<div class="section-line">
 		<span class="label">Лицензия на медицинскую деятельность:</span>
-		№ ${escapeXml(params.clinic.licenseNumber || "ЛО41-01137-77/00368421")} от ${escapeXml(params.clinic.licenseDate || "12.10.2021")} г.
+		${params.clinic.licenseNumber ? `№ ${escapeXml(params.clinic.licenseNumber)}${params.clinic.licenseDate ? ` от ${escapeXml(params.clinic.licenseDate)} г.` : ""}` : "—"}
 	</div>
 	<div class="section-line">
 		<span class="label">Адрес места нахождения:</span> ${escapeXml(params.clinic.address)}
@@ -292,7 +292,7 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 
 	<div class="signatures-row">
 		<div style="flex: 1;">
-			<div>Руководитель организации / Главный врач: ________________ / ${escapeXml(params.clinic.chiefDoctorName || "Иванов И.И.")} /</div>
+			<div>Руководитель организации / Главный врач: ________________ / ${escapeXml(params.clinic.chiefDoctorName || "—")} /</div>
 			<div style="font-size: 8pt; color: #666; margin-top: 2px;">(подпись, расшифровка подписи)</div>
 			<div style="margin-top: 12px;">Ответственное лицо (кассир/бухгалтер): ________________ /</div>
 			<div style="font-size: 8pt; color: #666; margin-top: 2px;">(подпись, дата формирования: ${issueDateFormatted} г.)</div>

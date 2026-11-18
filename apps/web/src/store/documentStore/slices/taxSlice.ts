@@ -1,11 +1,12 @@
 import { createSetter } from "../createSetter";
 import { loadUiPreferences } from "../../../utils/preferencesUtils";
 import type { TaxSliceState } from "../types/coreTypes";
+import type { DocumentStoreSet } from "../types";
 
 const initialUiPreferences = loadUiPreferences();
 
 export const createTaxSlice = (
-	set: (updater: (state: Record<string, unknown>) => Record<string, unknown>) => void,
+	set: DocumentStoreSet,
 ): TaxSliceState => ({
 	taxDocumentPayerInn: "",
 	setTaxDocumentPayerInn: createSetter(set, "taxDocumentPayerInn"),

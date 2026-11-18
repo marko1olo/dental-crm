@@ -160,8 +160,8 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 			const amtKop = Math.round(amtRub * 100);
 			const isExpensive = Boolean(
 				p.taxDeductionCode === "2" ||
-				classifyTaxDeduction804n(p.code804n ?? "") === "2" ||
-				classifyNdflServiceCode(p.serviceName ?? p.note ?? "", p.code804n ?? "") === "2",
+				classifyTaxDeduction804n(p.note ?? undefined, p.note ?? undefined).categoryCode === "2" ||
+				classifyNdflServiceCode(p.note ?? undefined, p.note ?? undefined) === "2",
 			);
 			const paymentDateIso = (p.paidAt ? p.paidAt : p.createdAt ? p.createdAt : new Date()).toISOString();
 			const docNum = p.fiscalReceiptNumber ? p.fiscalReceiptNumber.replace(/\D/g, "") : p.id.slice(0, 8);

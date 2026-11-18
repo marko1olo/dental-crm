@@ -126,8 +126,8 @@ export function parseFio(fullNameStr: string): FnsFullName {
 	const parts = fullNameStr.trim().split(/\s+/).filter(Boolean);
 	const patronymic = parts.slice(2).join(" ");
 	return {
-		family: parts[0] || "Иванов",
-		given: parts[1] || "Иван",
+		family: parts[0] || "",
+		given: parts[1] || "",
 		...(patronymic ? { patronymic } : {}),
 	};
 }
