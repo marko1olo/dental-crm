@@ -1,15 +1,21 @@
 import React from "react";
-import { ImagingHeader, Imaging2dViewerSection, ImagingMprPanel } from "../../components/imaging";
+import {
+	ImagingHeader,
+	Imaging2dViewerSection,
+	ImagingMprPanel,
+	type Imaging2dViewerSectionProps,
+	type ImagingMprPanelProps,
+} from "../../components/imaging";
 import { ImagingSeriesGallery } from "./ImagingSeriesGallery";
 import { ImagingCbctActiveCard } from "./ImagingCbctActiveCard";
 import type { ImagingModalId, ImagingStudy, ImagingViewProps } from "./imagingViewTypes";
 
 export interface ImagingDesktopWorkspaceProps {
 	props: ImagingViewProps;
-	activePatient: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null;
-	activeAppointment: unknown;
+	activePatient: { id?: string; name?: string; fullName?: string; cardNumber?: string; medicalCardNumber?: string; [key: string]: unknown } | null | undefined;
+	activeAppointment?: { doctorName?: string | null; [key: string]: unknown } | null | undefined;
 	activeImagingStudies: ImagingStudy[];
-	selectedImagingStudy: ImagingStudy | null;
+	selectedImagingStudy: ImagingStudy | null | undefined;
 	selectedImagingViewerPlan: unknown;
 	isBrowserImagingFolderPicking: boolean;
 	isCapturingCameraPhoto: boolean;
@@ -21,7 +27,7 @@ export interface ImagingDesktopWorkspaceProps {
 	setImagingKindFilter: (val: string) => void;
 	imagingToothFilter: string;
 	setImagingToothFilter: (val: string) => void;
-	imagingKindOptions: Array<{ value: string; label: string; [key: string]: unknown }>;
+	imagingKindOptions?: Array<{ value: string; label: string; [key: string]: unknown }> | string[] | undefined;
 	imagingKindLabels: Record<string, string>;
 	imagingSourceLabels: Record<string, string>;
 	isCbctActive: boolean;
@@ -33,10 +39,10 @@ export interface ImagingDesktopWorkspaceProps {
 	visibleImagingStudies: ImagingStudy[];
 	imagingPreviewSource?: ((study: ImagingStudy) => string | undefined) | undefined;
 	imagingViewerHref?: ((study: ImagingStudy) => string) | undefined;
-	setSelectedImagingStudyId?: (id: string) => void;
-	formatShortDate?: ((date: string) => string) | undefined;
-	effectiveMprProps: Record<string, unknown>;
-	viewer2dProps: Record<string, unknown>;
+	setSelectedImagingStudyId?: ((id: string) => void) | undefined;
+	formatShortDate?: ((date: string | number | Date | null | undefined) => string) | undefined;
+	effectiveMprProps: ImagingMprPanelProps;
+	viewer2dProps: Imaging2dViewerSectionProps;
 }
 
 export function ImagingDesktopWorkspace({
@@ -68,7 +74,7 @@ export function ImagingDesktopWorkspace({
 				<article className="imaging-viewer">
 					{isCbctActive ? (
 						<ImagingCbctActiveCard
-							selectedImagingStudy={selectedImagingStudy} localImageIds={localImageIds}
+							selectedImagingStudy={selectedImagingStudy ?? null} localImageIds={localImageIds}
 							isDicomwebLoading={isDicomwebLoading} dicomwebLoadProgress={dicomwebLoadProgress}
 							onOpenCbctStudio={() => setActiveModal("cbct_studio")}
 							onLoadFromDicomweb={handleLoadFromDicomweb}
@@ -81,7 +87,7 @@ export function ImagingDesktopWorkspace({
 
 				<ImagingSeriesGallery
 					visibleImagingStudies={visibleImagingStudies} activeImagingStudies={activeImagingStudies}
-					selectedImagingStudy={selectedImagingStudy} activePatient={activePatient}
+					selectedImagingStudy={selectedImagingStudy ?? null} activePatient={activePatient ?? null}
 					imagingKindFilter={imagingKindFilter} setImagingKindFilter={setImagingKindFilter}
 					imagingToothFilter={imagingToothFilter} setImagingToothFilter={setImagingToothFilter}
 					imagingKindLabels={imagingKindLabels} imagingSourceLabels={imagingSourceLabels}

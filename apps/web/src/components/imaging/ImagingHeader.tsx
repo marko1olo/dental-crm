@@ -8,28 +8,30 @@ import { ImagingHeaderPatientBadge } from "./header/ImagingHeaderPatientBadge";
 import { ImagingHeaderFilterTabs } from "./header/ImagingHeaderFilterTabs";
 import { ImagingHeaderActions } from "./header/ImagingHeaderActions";
 
+import type { ImagingStudy } from "./types";
+
 export interface ImagingHeaderProps {
-	activePatient?: any;
-	activeAppointment?: any;
-	activeImagingStudies?: any[];
-	selectedImagingViewerPlan?: any;
-	isBrowserImagingFolderPicking?: boolean;
-	isCapturingCameraPhoto?: boolean;
+	activePatient?: { id?: string | number | undefined; fullName?: string | undefined; name?: string | undefined; cardNumber?: string | undefined; medicalCardNumber?: string | undefined; [key: string]: unknown } | null | undefined;
+	activeAppointment?: { id?: string | number | undefined; doctorName?: string | null | undefined; patientName?: string | undefined; date?: string | undefined; [key: string]: unknown } | null | undefined;
+	activeImagingStudies?: ImagingStudy[] | undefined;
+	selectedImagingViewerPlan?: unknown;
+	isBrowserImagingFolderPicking?: boolean | undefined;
+	isCapturingCameraPhoto?: boolean | undefined;
 	onPickFolder: () => void;
 	onPickFiles: () => void;
 	onCaptureCamera: () => void;
 	onOpenCbctStudio: () => void;
 	onOpenPanoramic: () => void;
 	onOpenRadiologyModule: () => void;
-	onOpenRvgCapture?: () => void;
-	onOpenCtSelector?: () => void;
-	onOpenPopoutStudio?: () => void;
-	onOpenExport?: () => void;
-	onOpenComparison?: () => void;
-	imagingKindFilter?: string;
-	setImagingKindFilter?: (filter: string) => void;
-	imagingKindOptions?: string[];
-	imagingKindLabels?: Record<string, string>;
+	onOpenRvgCapture?: (() => void) | undefined;
+	onOpenCtSelector?: (() => void) | undefined;
+	onOpenPopoutStudio?: (() => void) | undefined;
+	onOpenExport?: (() => void) | undefined;
+	onOpenComparison?: (() => void) | undefined;
+	imagingKindFilter?: string | undefined;
+	setImagingKindFilter?: ((filter: string) => void) | undefined;
+	imagingKindOptions?: Array<{ value: string; label: string; [key: string]: unknown }> | string[] | undefined;
+	imagingKindLabels?: Record<string, string> | undefined;
 }
 
 export function ImagingHeader(props: ImagingHeaderProps) {

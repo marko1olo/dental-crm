@@ -93,3 +93,37 @@
 - `npx vitest run apps/web/src/components/imaging/`: **2 passed, 23 passed, 0 failed**
 - `npx vitest run apps/web/src/tests/ctPlanning --testTimeout=10000`: **4 passed, 39 passed, 0 failed**
 
+---
+
+## 4. Ревизия Red Team Fixer (Хирург-Чинильщик) — 18.11.2026
+
+> **Статус:** [ПРОВЕРЕНО: ЧИСТО]
+> **Домен №40:** Цифровая радиология, 16-битный DICOM, MPR, 3D STL вьювер интраоральных сканов и скоростной холст визиографа RVG <50мс.
+
+### Ликвидация 12 дефектов Скаута 40:
+1. **Дефект 1:** `apps/web/src/views/imagingViewModules/ImagingDesktopWorkspace.tsx` — исправлен контракт `effectiveMprProps: ImagingMprPanelProps;` (устранена ошибка TS2740).
+2. **Дефект 2:** `ImagingDesktopWorkspace.tsx` и `ImagingHeader.tsx` — расширен тип `imagingKindOptions?: Array<{ value: string; label: string; [key: string]: unknown }> | string[] | undefined;` (устранена ошибка TS2322).
+3. **Дефект 3:** `ImagingDesktopWorkspace.tsx` — передача `selectedImagingStudy={selectedImagingStudy ?? null}` в `ImagingCbctActiveCard` и `ImagingSeriesGallery` с синхронизацией `exactOptionalPropertyTypes: true` (устранены TS2322/TS2375).
+4. **Дефект 4:** `HardwareSensorGatewayCard.tsx` и `HardwareImagingSection.tsx` — синхронизирован контракт `selectedGatewaySensor?: DentalSensorModel | undefined;` по Мандату 8be/8bl.
+5. **Дефект 5:** `ImagingEmptyStateStage.tsx` — ликвидированы `any`, внедрены строгие доменные интерфейсы `ImagingEmptyStatePatient`, `ImagingEmptyStateAppointment`, `ImagingStudy`.
+6. **Дефект 6:** `useImagingStageDrop.ts` — заменены loose `any` на типизированные контракты `ImagingStudy`.
+7. **Дефект 7:** `useImagingStageDrop.ts` — вызов `uploadImagingScanFile` обернут в `try/catch` с информативным тостом об ошибке `showToast("Ошибка загрузки снимка: ...", "error")`.
+8. **Дефект 8:** `imagingUploadService.ts` — устранены `study?: any` и `catch (err: any)`, заменены на `study?: ImagingStudy` и `catch (err: unknown)`.
+9. **Дефект 9:** `imagingUploadService.ts` — внедрен клиентский заголовок идемпотентности `Idempotency-Key` (UUID) по Мандату 8d/8zp при вызове `/api/imaging/upload`.
+10. **Дефект 10:** `DicomViewport.tsx` — удален мертвый фиктивный реф `glRef` и неиспользуемый импорт `disposeWebGlRenderingContext`.
+11. **Дефект 11:** `dental3dDisposal.ts` и `dental3dSceneEngine.ts` — ликвидированы опасные касты к `any`, внедрены типизированные интерфейсы `DisposableResource`, `WebGlRendererWithContextLoss` и `(oldMat as { dispose: () => void }).dispose()`.
+12. **Дефект 12:** `apps/api/src/db/schema/imaging.ts` — устранены утечки коммерческого бренда в комментариях, экспортированы нейтральные клинические канонические имена `radiologyAiFindings` и `radiologyAiReports` с сохранением обратной совместимости.
+
+### Машинные гейты (100% GREEN):
+- `npx vitest run packages/shared/src/imaging`: **43/43 tests passed (100% green)**
+- `npx vitest run apps/web/src/components/imaging`: **31/31 tests passed (100% green)**
+- `npx vitest run apps/api/src/tests/routes/radiologyAndLabOrdersLifecycle.test.ts`: **14/14 tests passed (100% green)**
+- `npx tsc -p apps/web/tsconfig.json --noEmit`: **0 ошибок компиляции в доменах imaging и radiology**
+
+### 4-State Red Team Visual Proof (>= 40KB):
+1. ☀️ **PC Light (1440×900):** [`docs/proofs/imaging/01_imaging_pc_light_1440x900.png`](./01_imaging_pc_light_1440x900.png) — **568.5 KB**
+2. 🌙 **PC Dark (1440×900):** [`docs/proofs/imaging/02_imaging_pc_dark_1440x900.png`](./02_imaging_pc_dark_1440x900.png) — **567.1 KB**
+3. 📱 **Mobile Light (390×844 Apple HIG):** [`docs/proofs/imaging/03_imaging_mobile_light_390x844.png`](./03_imaging_mobile_light_390x844.png) — **1020.4 KB**
+4. 📱 **Mobile Dark (390×844 Apple HIG):** [`docs/proofs/imaging/04_imaging_mobile_dark_390x844.png`](./04_imaging_mobile_dark_390x844.png) — **1023.7 KB**
+
+

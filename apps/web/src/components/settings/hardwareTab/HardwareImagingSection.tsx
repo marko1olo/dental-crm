@@ -1,5 +1,5 @@
 import React from "react";
-import type { DentalSensorModel } from "../radiology/sensorGateway.js";
+import type { DentalSensorModel } from "../../radiology/sensorGateway/index.js";
 import type {
 	HardwareDeviceCategory,
 	HardwareDeviceConfig,
@@ -22,7 +22,7 @@ interface Props {
 	activeGatewaySensorId: string;
 	isDetectingSensor: boolean;
 	gatewayStatusMessage: string;
-	selectedGatewaySensor?: DentalSensorModel;
+	selectedGatewaySensor?: DentalSensorModel | undefined;
 	activeDeviceId: string | null;
 	onFilterChange: (cat: HardwareDeviceCategory | "all") => void;
 	onTestAll: () => void;

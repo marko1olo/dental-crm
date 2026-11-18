@@ -8,25 +8,26 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js
 import { showToast } from "../GlobalToast.js";
 import { inferStudyKind, type InferredImagingKind } from "./upload/inferStudyKind.js";
 import { createLocalFallbackStudy } from "./upload/localFallbackStudy.js";
+import type { ImagingStudy } from "./types.js";
 
 export { inferStudyKind };
 export type { InferredImagingKind };
 
 export interface UploadImagingOptions {
-	patientId?: string | null;
-	visitId?: string | null;
-	doctorId?: string | null;
-	kind?: string;
-	title?: string;
-	toothCode?: string | null;
-	region?: string | null;
-	onProgress?: (pct: number) => void;
+	patientId?: string | null | undefined;
+	visitId?: string | null | undefined;
+	doctorId?: string | null | undefined;
+	kind?: string | undefined;
+	title?: string | undefined;
+	toothCode?: string | null | undefined;
+	region?: string | null | undefined;
+	onProgress?: ((pct: number) => void) | undefined;
 }
 
 export interface UploadImagingResult {
 	success: boolean;
-	study?: any;
-	error?: string;
+	study?: ImagingStudy | undefined;
+	error?: string | undefined;
 }
 
 export async function uploadImagingScanFile(
@@ -53,9 +54,16 @@ export async function uploadImagingScanFile(
 		if (options.toothCode) formData.append("toothCode", options.toothCode);
 		if (options.region) formData.append("region", options.region);
 
+		const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID()
+			: `imaging-upload-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
 		const res = await fetch("/api/imaging/upload", {
 			method: "POST",
-			headers: denteAdminSecretRequestHeaders(),
+			headers: {
+				...denteAdminSecretRequestHeaders(),
+				"Idempotency-Key": idempotencyKey,
+			},
 			body: formData,
 		});
 
@@ -75,13 +83,13 @@ export async function uploadImagingScanFile(
 		const errorMsg = errData?.message || `Ошибка сервера (${res.status})`;
 		showToast(`Не удалось загрузить снимок: ${errorMsg}`, "error");
 		return { success: false, error: errorMsg };
-	} catch (err: any) {
+	} catch (err: unknown) {
 		if (isDemoShowcaseMode() || !navigator.onLine) {
 			const fallbackStudy = createLocalFallbackStudy(file, { patientId: effectivePatientId, visitId: options.visitId, kind, title, toothCode: options.toothCode, region: options.region });
 			showToast(`Снимок «${title}» добавлен локально`, "info");
 			return { success: true, study: fallbackStudy };
 		}
-		const msg = err?.message || "Ошибка сетевого соединения при загрузке снимка";
+		const msg = err instanceof Error ? err.message : "Ошибка сетевого соединения при загрузке снимка";
 		showToast(msg, "error");
 		return { success: false, error: msg };
 	}

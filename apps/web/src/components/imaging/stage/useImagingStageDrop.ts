@@ -6,11 +6,12 @@
 import { useState } from "react";
 import { uploadImagingScanFile } from "../imagingUploadService.js";
 import { showToast } from "../../GlobalToast.js";
+import type { ImagingStudy } from "../types.js";
 
 interface Options {
-	activePatient?: any;
-	activeAppointment?: any;
-	onStudyUploaded?: ((study: any) => void) | undefined;
+	activePatient?: { id?: string | number | undefined; [key: string]: unknown } | null | undefined;
+	activeAppointment?: { id?: string | number | undefined; [key: string]: unknown } | null | undefined;
+	onStudyUploaded?: ((study: ImagingStudy) => void) | undefined;
 }
 
 export function useImagingStageDrop({ activePatient, activeAppointment, onStudyUploaded }: Options) {
@@ -38,13 +39,16 @@ export function useImagingStageDrop({ activePatient, activeAppointment, onStudyU
 			for (const file of files) {
 				setUploadStatus(`Загрузка «${file.name}»...`);
 				const res = await uploadImagingScanFile(file, {
-					patientId: activePatient.id,
-					visitId: activeAppointment?.id,
+					patientId: String(activePatient.id),
+					...(activeAppointment?.id ? { visitId: String(activeAppointment.id) } : {}),
 				});
 				if (res.success && res.study && onStudyUploaded) {
 					onStudyUploaded(res.study);
 				}
 			}
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : "Не удалось загрузить снимок";
+			showToast(`Ошибка загрузки снимка: ${message}`, "error");
 		} finally {
 			setIsUploading(false);
 			setUploadStatus(null);

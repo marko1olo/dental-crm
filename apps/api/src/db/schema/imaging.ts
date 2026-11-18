@@ -541,8 +541,8 @@ export const bulkImageOperationLogs = pgTable(
 	}),
 );
 
-// diagnocat AI findings (AI-based radiograph analysis)
-export const diagnocatAiFindings = pgTable(
+// Clinical AI findings & dental radiograph automated pathology analysis
+export const radiologyAiFindings = pgTable(
 	"diagnocat_ai_findings",
 	{
 		id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -565,8 +565,10 @@ export const diagnocatAiFindings = pgTable(
 		),
 	}),
 );
+export const diagnocatAiFindings = radiologyAiFindings;
 
-export const diagnocatReports = pgTable(
+// Clinical AI diagnostic reports & automated odontogram pathology interpretations
+export const radiologyAiReports = pgTable(
 	"diagnocat_reports",
 	{
 		id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -586,8 +588,8 @@ export const diagnocatReports = pgTable(
 		),
 	}),
 );
+export const diagnocatReports = radiologyAiReports;
 
-// Mandate 8ap canonical domain aliases (neutral clinic AI findings & reports)
-export const radiologyAiFindings = diagnocatAiFindings;
-export const radiologyAiReports = diagnocatReports;
+// Intraoral 3D Scan Sessions
+export * from "./intraoralScans.js";
 

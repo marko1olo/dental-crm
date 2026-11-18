@@ -6,7 +6,7 @@ interface Props {
 	activeGatewaySensorId: string;
 	isDetectingSensor: boolean;
 	gatewayStatusMessage: string;
-	selectedGatewaySensor?: DentalSensorModel;
+	selectedGatewaySensor?: DentalSensorModel | undefined;
 	onSensorSelect: (id: string) => void;
 	onAutoDetect: () => void;
 	onTestHealth: () => void;

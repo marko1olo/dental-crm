@@ -8,14 +8,33 @@ import { Film, Scan } from "lucide-react";
 import { useImagingStageDrop } from "./stage/useImagingStageDrop.js";
 import { ImagingStageButtons } from "./stage/ImagingStageButtons.js";
 
+import type { ImagingStudy } from "./types.js";
+
+export interface ImagingEmptyStatePatient {
+	id?: string | number | undefined;
+	name?: string | undefined;
+	fullName?: string | undefined;
+	cardNumber?: string | undefined;
+	medicalCardNumber?: string | undefined;
+	[key: string]: unknown;
+}
+
+export interface ImagingEmptyStateAppointment {
+	id?: string | number | undefined;
+	doctorName?: string | null | undefined;
+	patientName?: string | undefined;
+	date?: string | undefined;
+	[key: string]: unknown;
+}
+
 export interface ImagingEmptyStateStageProps {
-	activePatient?: any;
-	activeAppointment?: any;
+	activePatient?: ImagingEmptyStatePatient | null | undefined;
+	activeAppointment?: ImagingEmptyStateAppointment | null | undefined;
 	onPickFiles: () => void;
-	onPickFolder?: () => void;
-	onCaptureCamera?: () => void;
-	onOpenRvgCapture?: () => void;
-	onStudyUploaded?: (study: any) => void;
+	onPickFolder?: (() => void) | undefined;
+	onCaptureCamera?: (() => void) | undefined;
+	onOpenRvgCapture?: (() => void) | undefined;
+	onStudyUploaded?: ((study: ImagingStudy) => void) | undefined;
 }
 
 export function ImagingEmptyStateStage({

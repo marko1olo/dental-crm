@@ -7,7 +7,6 @@ import { useDicomViewportMouse } from "./dicomViewport/useDicomViewportMouse.js"
 import { useDicomViewportTouch } from "./dicomViewport/useDicomViewportTouch.js";
 import { useThrottledViewportUpdate } from "./dicomViewport/useThrottledViewportUpdate.js";
 import { teardownViewportCanvases } from "../../utils/viewportTeardownHelper.js";
-import { disposeWebGlRenderingContext } from "./rvgViewerEngine.js";
 
 export type { DicomViewportProps };
 
@@ -23,7 +22,6 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 	const rawImageRef = useRef<HTMLImageElement | null>(null);
 	const filteredCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const canvasRectRef = useRef<DOMRect | null>(null);
-	const glRef = useRef<Parameters<typeof disposeWebGlRenderingContext>[0]>(null);
 
 	const { scheduleViewportUpdate, flushViewportUpdate } = useThrottledViewportUpdate(onViewportChange);
 
@@ -89,7 +87,6 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 
 	useEffect(() => {
 		return () => {
-			if (glRef.current) disposeWebGlRenderingContext(glRef.current);
 			teardownViewportCanvases(containerRef.current);
 		};
 	}, []);
