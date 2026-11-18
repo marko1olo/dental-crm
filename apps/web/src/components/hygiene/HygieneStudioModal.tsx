@@ -264,7 +264,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 					<div className="space-y-2.5 p-3.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl">
 						<div className="flex items-center justify-between flex-wrap gap-2">
 							<div className="flex items-center gap-2">
-								<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+								<span className="text-xs font-bold text-[var(--ink-muted)]">
 									Индекс гигиены Грина-Вермиллиона (OHI-S)
 								</span>
 								<span className={`text-xs px-2.5 py-0.5 rounded-full border font-bold ${selectedOhiS.badgeClass}`}>
@@ -364,7 +364,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 							{/* 2. Express Cleaning Protocols */}
 							<div>
 								<div className="flex items-center justify-between mb-2">
-									<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+									<span className="text-xs font-bold text-[var(--ink-muted)]">
 										Экспресс-протокол чистки у кресла
 									</span>
 									<span className="text-xs text-[var(--ink-muted)]">
@@ -434,7 +434,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 							{/* Home Care Section */}
 							<div>
 								<div className="flex items-center justify-between mb-2">
-									<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+									<span className="text-xs font-bold text-[var(--ink-muted)]">
 										Профиль пациента
 									</span>
 								</div>
@@ -537,7 +537,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 							type="button"
 							data-testid="hygiene-commit-protocol-btn"
 							onClick={handleCommit}
-							className="flex-1 sm:flex-none px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-lg shadow-sm transition-all min-h-[44px] flex items-center justify-center gap-1.5 whitespace-nowrap"
+							className="flex-1 sm:flex-none px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-strong)] rounded-lg shadow-sm transition-all min-h-[44px] flex items-center justify-center gap-1.5 whitespace-nowrap"
 						>
 							{isSubmitting ? (
 								"Фиксация..."

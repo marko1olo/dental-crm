@@ -31,19 +31,19 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 	), [anatomicalToothName]);
 
 	return (
-		<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5 min-h-[36px]">
+		<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5 min-h-[36px]">
 			<div className="flex items-center gap-2 min-w-0">
 				<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
 					<ToothDeciduous className="h-4 w-4" />
 				</div>
 				<div className="flex items-center gap-1.5 min-w-0">
-					<span className="text-[11px] font-black uppercase tracking-wider text-[var(--muted,#64748b)] hidden sm:inline shrink-0">
+					<span className="text-xs font-semibold text-[var(--ink-muted)] hidden sm:inline shrink-0">
 						Детский приём у кресла:
 					</span>
-					<span className="inline-flex items-center gap-1 rounded-md bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 text-xs font-mono font-bold text-teal-700 dark:text-teal-300 shrink-0">
+					<span className="inline-flex items-center gap-1 rounded-md bg-[var(--primary)]/10 border border-[var(--primary)]/20 px-2 py-0.5 text-xs font-mono font-bold text-[var(--primary)] shrink-0">
 						Зуб {currentTooth}
 					</span>
-					<h2 className="text-xs sm:text-base font-extrabold text-[var(--ink,#0f172a)] truncate">
+					<h2 className="text-xs sm:text-base font-extrabold text-[var(--ink)] truncate">
 						<span className="sm:hidden">{compactAnatomicalName}</span>
 						<span className="hidden sm:inline">{anatomicalToothName}</span>
 					</h2>
@@ -101,7 +101,7 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 				<button
 					type="button"
 					onClick={onToggleDetailsAccordion}
-					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] text-xs font-semibold transition flex items-center gap-1 cursor-pointer shrink-0 touch-manipulation"
+					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] text-xs font-semibold transition flex items-center gap-1 cursor-pointer shrink-0 touch-manipulation"
 					title="Показать / скрыть подробности протокола"
 					data-testid="pediatric-details-accordion-btn"
 				>

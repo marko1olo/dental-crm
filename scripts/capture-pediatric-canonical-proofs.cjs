@@ -42,18 +42,22 @@ async function saveProof(page, filename, description) {
     "pediatric_pc_light_1440x900.png": [
       "01_pediatric_workspace_pc_light_1440x900.png",
       "01_pediatric_teeth_chart_pc_light_1440x900.png",
+      "01_pediatric_pc_light_1440x900.png",
     ],
     "pediatric_pc_dark_1440x900.png": [
       "02_pediatric_workspace_pc_dark_1440x900.png",
       "02_pediatric_teeth_chart_pc_dark_1440x900.png",
+      "02_pediatric_pc_dark_1440x900.png",
     ],
     "pediatric_mobile_light_390x844.png": [
       "03_pediatric_workspace_mobile_light_390x844.png",
       "03_pediatric_teeth_chart_mobile_light_390x844.png",
+      "03_pediatric_mobile_light_390x844.png",
     ],
     "pediatric_mobile_dark_390x844.png": [
       "04_pediatric_workspace_mobile_dark_390x844.png",
       "04_pediatric_teeth_chart_mobile_dark_390x844.png",
+      "04_pediatric_mobile_dark_390x844.png",
     ],
   };
   if (aliases[filename]) {
@@ -100,19 +104,27 @@ async function main() {
     for (let attempt = 1; attempt <= 3 && !loaded; attempt++) {
       try {
         await page.goto("http://127.0.0.1:5173/?demo=true#visit", { waitUntil: "domcontentloaded", timeout: 45000 });
-        await page.evaluate(() => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const ref = btns.find((b) => b.textContent && b.textContent.includes("Обновить рабочее место"));
-          if (ref) ref.click();
-        });
-        await page.waitForFunction(() => {
-          const txt = document.body.innerText || "";
-          return !txt.includes("Загрузка CRM") && !txt.includes("Загрузка рабочей смены") && txt.length > 50;
-        }, { timeout: 35000 });
-        loaded = true;
+        for (let i = 0; i < 30; i++) {
+          await sleep(800);
+          await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll("button"));
+            const ref = btns.find((b) => b.textContent && (b.textContent.includes("Обновить рабочее место") || b.textContent.includes("Перейти в автономный режим")));
+            if (ref) ref.click();
+          });
+          const isReady = await page.evaluate(() => {
+            const txt = document.body.innerText || "";
+            const isDoneLoading = !txt.includes("Загрузка CRM") && !txt.includes("Загрузка рабочей смены") && !txt.includes("Загрузка клинического приёма");
+            const hasOdontogram = Boolean(document.querySelector(".visit-panel, .odontogram-container, [data-testid='visit-view'], [data-tooth-number]"));
+            return (isDoneLoading && txt.length > 50) || hasOdontogram;
+          });
+          if (isReady) {
+            loaded = true;
+            break;
+          }
+        }
       } catch (err) {
         console.warn(`Attempt ${attempt} failed: ${err.message}. Retrying...`);
-        await sleep(3000);
+        await sleep(2000);
       }
     }
     if (!loaded) throw new Error("Could not load #visit after 3 attempts");
@@ -124,7 +136,16 @@ async function main() {
     console.log("2. Switching to Pediatric (Детский) dentition...");
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll("button"));
-      const childBtn = btns.find((b) => b.textContent && b.textContent.trim() === "Детский");
+      const offlineBtn = btns.find((b) => b.textContent && b.textContent.includes("Перейти в автономный режим"));
+      if (offlineBtn) offlineBtn.click();
+      const startNextBtn = document.querySelector("#btn-intake-start-next") || btns.find((b) => b.textContent && b.textContent.includes("Начать приём"));
+      if (startNextBtn) startNextBtn.click();
+    });
+    await sleep(2000);
+
+    await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll("button"));
+      const childBtn = btns.find((b) => b.textContent && b.textContent.trim().includes("Детский"));
       if (childBtn) childBtn.click();
     });
     await sleep(2000);
@@ -222,16 +243,41 @@ async function main() {
     // ─── 4. MOBILE VIEWPORTS (390x844 Apple HIG) ────────────────────────────
     console.log("6. Resizing to dedicated Mobile Viewport (390x844 Apple HIG)...");
     await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await page.goto("http://127.0.0.1:5173/?demo=true#visit", { waitUntil: "domcontentloaded", timeout: 45000 });
+    for (let i = 0; i < 25; i++) {
+      await sleep(800);
+      await page.evaluate(() => {
+        const btns = Array.from(document.querySelectorAll("button"));
+        const ref = btns.find((b) => b.textContent && (b.textContent.includes("Обновить рабочее место") || b.textContent.includes("Перейти в автономный режим")));
+        if (ref) ref.click();
+      });
+      const isReady = await page.evaluate(() => {
+        const txt = document.body.innerText || "";
+        const isDoneLoading = !txt.includes("Загрузка CRM") && !txt.includes("Загрузка рабочей смены") && !txt.includes("Загрузка клинического приёма");
+        const hasOdontogram = Boolean(document.querySelector(".visit-panel, .odontogram-container, [data-testid='visit-view'], [data-tooth-number]"));
+        return (isDoneLoading && txt.length > 50) || hasOdontogram;
+      });
+      if (isReady) break;
+    }
     await sleep(2000);
     await suppressOverlays(page);
 
     // Ensure pediatric dentition on mobile
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll("button"));
-      const childBtn = btns.find((b) => b.textContent && b.textContent.trim() === "Детский");
+      const offlineBtn = btns.find((b) => b.textContent && b.textContent.includes("Перейти в автономный режим"));
+      if (offlineBtn) offlineBtn.click();
+      const startNextBtn = document.querySelector("#btn-intake-start-next") || btns.find((b) => b.textContent && b.textContent.includes("Начать приём"));
+      if (startNextBtn) startNextBtn.click();
+    });
+    await sleep(2000);
+
+    await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll("button"));
+      const childBtn = btns.find((b) => b.textContent && b.textContent.trim().includes("Детский"));
       if (childBtn) childBtn.click();
     });
-    await sleep(1500);
+    await sleep(2000);
 
     // Mobile Light
     await page.evaluate(() => {

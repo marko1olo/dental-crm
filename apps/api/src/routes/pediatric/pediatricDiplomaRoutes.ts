@@ -24,11 +24,11 @@ const issueDiplomaSchema = z.object({
 });
 
 export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
-	app.get("/api/patients/:patientId/pediatric/bravery-diploma", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.get<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/bravery-diploma", async (request, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "pediatric diploma audit");
 		if (!organizationId) return;
 
-		const { patientId } = request.params as { patientId: string };
+		const { patientId } = request.params;
 		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
 		try {
@@ -66,11 +66,11 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 		}
 	});
 
-	app.post("/api/patients/:patientId/pediatric/bravery-diploma", async (request: FastifyRequest, reply: FastifyReply) => {
+	app.post<{ Params: { patientId: string } }>("/api/patients/:patientId/pediatric/bravery-diploma", async (request, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(request, reply, "issue pediatric diploma");
 		if (!organizationId) return;
 
-		const { patientId } = request.params as { patientId: string };
+		const { patientId } = request.params;
 		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
 		const parsed = issueDiplomaSchema.safeParse(request.body ?? {});

@@ -137,6 +137,7 @@ describe("Periodontal Charting & Clinical Indices (PerioStudioModal)", () => {
 
 			assert.ok(html.includes("Индексы гигиены полости рта (OHI-S, Федорова-Володкиной, PMA)"));
 			assert.ok(html.includes("OHI-S (Грин-Вермиллион)"));
+			assert.ok(html.includes("Silness-Löe"));
 			assert.ok(html.includes("Федорова-Володкиной (дети)"));
 			assert.ok(html.includes("РМА (Парма)"));
 

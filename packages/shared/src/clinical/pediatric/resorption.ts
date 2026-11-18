@@ -35,8 +35,8 @@ export const RESORPTION_STAGE_DEFINITIONS: Readonly<Record<ResorptionStagePercen
 		clinicalSignRu: "Зуб неподвижен, признаков начала смены нет.",
 		rootLengthRemainingRatio: 1.0,
 		expectedMobilityDegree: 0,
-		badgeColor: "#10b981",
-		badgeBg: "rgba(16, 185, 129, 0.12)",
+		badgeColor: "var(--success)",
+		badgeBg: "var(--success-soft)",
 	},
 	25: {
 		stage: 25,
@@ -46,8 +46,8 @@ export const RESORPTION_STAGE_DEFINITIONS: Readonly<Record<ResorptionStagePercen
 		clinicalSignRu: "Сглаживание верхушки корня на рентгенограмме, физиологическая подвижность 0 ст.",
 		rootLengthRemainingRatio: 0.75,
 		expectedMobilityDegree: 0,
-		badgeColor: "#3b82f6",
-		badgeBg: "rgba(59, 130, 246, 0.12)",
+		badgeColor: "var(--primary)",
+		badgeBg: "var(--primary-soft)",
 	},
 	50: {
 		stage: 50,
@@ -57,8 +57,8 @@ export const RESORPTION_STAGE_DEFINITIONS: Readonly<Record<ResorptionStagePercen
 		clinicalSignRu: "Легкая физиологическая подвижность I степени.",
 		rootLengthRemainingRatio: 0.5,
 		expectedMobilityDegree: 1,
-		badgeColor: "#f59e0b",
-		badgeBg: "rgba(245, 158, 11, 0.15)",
+		badgeColor: "var(--warning)",
+		badgeBg: "var(--warning-soft)",
 	},
 	75: {
 		stage: 75,
@@ -68,8 +68,8 @@ export const RESORPTION_STAGE_DEFINITIONS: Readonly<Record<ResorptionStagePercen
 		clinicalSignRu: "Подвижность II степени, близкая смена зуба в течение 1-3 месяцев.",
 		rootLengthRemainingRatio: 0.25,
 		expectedMobilityDegree: 2,
-		badgeColor: "#ea580c",
-		badgeBg: "rgba(234, 88, 12, 0.15)",
+		badgeColor: "var(--warning)",
+		badgeBg: "var(--warning-soft)",
 	},
 	100: {
 		stage: 100,
@@ -79,8 +79,8 @@ export const RESORPTION_STAGE_DEFINITIONS: Readonly<Record<ResorptionStagePercen
 		clinicalSignRu: "Подвижность III степени либо зуб эксфолиирован, прорезывание постоянного зуба.",
 		rootLengthRemainingRatio: 0.0,
 		expectedMobilityDegree: 3,
-		badgeColor: "#ef4444",
-		badgeBg: "rgba(239, 68, 68, 0.15)",
+		badgeColor: "var(--danger)",
+		badgeBg: "var(--danger-soft)",
 	},
 };
 
@@ -114,6 +114,6 @@ export const RESORPTION_AGE_PRESETS: readonly ResorptionAgePreset[] = [
 		label: "Поздний сменный",
 		ageRange: "9–12 лет",
 		targetAge: 10.5,
-		descriptionRu: "Резорбция клыков и премоляров (50–75%), резцы уже сменились",
+		descriptionRu: "Резорбция клыков и временных моляров (будущих премоляров) (50–75%)",
 	},
 ];

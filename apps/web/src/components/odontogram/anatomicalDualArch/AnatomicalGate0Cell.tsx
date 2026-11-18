@@ -93,8 +93,8 @@ export const AnatomicalGate0Cell: React.FC<AnatomicalGate0CellProps> = React.mem
 			onClick={handleClick}
 			className={`group relative flex flex-col items-center justify-start p-0.5 rounded-xl transition-all duration-150 cursor-pointer select-none shrink-0 ${widthClass} min-h-[104px] ${
 				isSelected
-					? "ring-2 ring-teal-500 bg-teal-500/10 dark:bg-teal-500/20 shadow-md shadow-teal-500/15"
-					: "hover:bg-slate-100/80 dark:hover:bg-slate-800/60 active:scale-95"
+					? "ring-2 ring-[var(--primary)] bg-[var(--primary)]/10 shadow-md shadow-[var(--primary)]/15"
+					: "hover:bg-[var(--paper-soft)] active:scale-95"
 			}`}
 		>
 			<AnatomicalTooth

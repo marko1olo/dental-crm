@@ -50,7 +50,7 @@ export function resolveClinicalRecallCohort(params: {
 		const intervalDays = 90; // 3 месяца
 		return {
 			nextDueDate: new Date(now.getTime() + intervalDays * 24 * 60 * 60 * 1000),
-			cohortType: "general",
+			cohortType: "pediatric",
 			reason: "Детский профилактический осмотр и минерализация эмали (3 мес.)",
 			intervalDays,
 		};

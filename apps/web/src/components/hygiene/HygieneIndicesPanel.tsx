@@ -42,7 +42,7 @@ import {
 	computeCanonicalOhiS,
 } from "./hygieneCatalogData";
 
-export type ActiveHygieneTab = "ohis" | "fedorov" | "pma" | "protocols";
+export type ActiveHygieneTab = "ohis" | "fedorov" | "silness_loe" | "pma" | "protocols";
 export type ActiveHygieneIndexTab = ActiveHygieneTab;
 
 export {
@@ -68,6 +68,14 @@ export {
 
 const FEDOROV_TEETH = [43, 42, 41, 31, 32, 33] as const;
 const PMA_INDEX_TEETH = [16, 11, 26, 36, 31, 46] as const;
+const SILNESS_LOE_TEETH = [16, 12, 24, 36, 32, 44] as const;
+type SilnessSurface = "vestibular" | "oral" | "mesial" | "distal";
+const SILNESS_SURFACES: readonly { key: SilnessSurface; label: string }[] = [
+	{ key: "vestibular", label: "Вестиб." },
+	{ key: "oral", label: "Оральн." },
+	{ key: "mesial", label: "Медиал." },
+	{ key: "distal", label: "Дистал." },
+] as const;
 
 export interface HygieneIndicesPanelProps {
 	readonly perioTeeth?: readonly PerioToothRecord[] | undefined;
@@ -115,6 +123,46 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		return calculatePmaScore(assessments);
 	}, [pmaScores]);
 
+	// Silness-Löe (6 ключевых зубов, 4 поверхности: вестибулярная, оральная, медиальная, дистальная)
+	const [silnessScores, setSilnessScores] = useState<Record<number, Record<SilnessSurface, number>>>({
+		16: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+		12: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+		24: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+		36: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+		32: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+		44: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+	});
+	const silnessResult = useMemo(() => {
+		let totalScore = 0;
+		for (const t of SILNESS_LOE_TEETH) {
+			const s = silnessScores[t] ?? { vestibular: 0, oral: 0, mesial: 0, distal: 0 };
+			const toothAvg = (s.vestibular + s.oral + s.mesial + s.distal) / 4;
+			totalScore += toothAvg;
+		}
+		const avg = Math.round((totalScore / SILNESS_LOE_TEETH.length) * 10) / 10;
+		let evaluation: "excellent" | "good" | "moderate" | "poor" = "excellent";
+		let ratingText = "Отличная гигиена (налет отсутствует)";
+		let badgeClass = "border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300";
+
+		if (avg === 0) {
+			evaluation = "excellent";
+			ratingText = "Отличная гигиена (налет отсутствует)";
+		} else if (avg <= 0.9) {
+			evaluation = "good";
+			ratingText = "Хорошая гигиена (тонкая пленка)";
+			badgeClass = "border-teal-500/30 bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300";
+		} else if (avg <= 1.9) {
+			evaluation = "moderate";
+			ratingText = "Удовлетворительная (умеренный налет)";
+			badgeClass = "border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300";
+		} else {
+			evaluation = "poor";
+			ratingText = "Плохая гигиена (обильные отложения)";
+			badgeClass = "border-rose-500/30 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300";
+		}
+		return { score: avg, ratingText, evaluation, badgeClass, isOptimal: avg === 0 };
+	}, [silnessScores]);
+
 	// 1-клик нормы
 	const handleSetIdealOhis = useCallback(() => {
 		setOhisTeeth(createIdealOhiSTeethScores());
@@ -128,6 +176,17 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		setPmaScores({ 16: 0, 11: 0, 26: 0, 36: 0, 31: 0, 46: 0 });
 	}, []);
 
+	const handleSetIdealSilness = useCallback(() => {
+		setSilnessScores({
+			16: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+			12: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+			24: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+			36: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+			32: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+			44: { vestibular: 0, oral: 0, mesial: 0, distal: 0 },
+		});
+	}, []);
+
 	// Вставка в ЭМК
 	const handleInsertCurrentToProtocol = useCallback(() => {
 		let text = "";
@@ -135,13 +194,15 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			text = `• Индекс гигиены Грина-Вермиллиона (OHI-S): ${ohisResult.score.toFixed(1)} (${ohisResult.label}). Налет DI: ${ohisResult.debris.toFixed(1)}, камень CI: ${ohisResult.calculus.toFixed(1)}. ${ohisResult.statusDescription}`;
 		} else if (activeTab === "fedorov") {
 			text = `• Детский индекс гигиены Федорова-Володкиной: ${fedorovResult.score.toFixed(1)} балла (${fedorovResult.ratingText}). Раствор Шиллера-Писарева (зубы 43..33).`;
+		} else if (activeTab === "silness_loe") {
+			text = `• Индекс зубного налета Silness-Löe: ${silnessResult.score.toFixed(1)} (${silnessResult.ratingText}). Ключевые зубы (16, 12, 24, 36, 32, 44), 4 поверхности.`;
 		} else if (activeTab === "pma") {
 			text = `• Папиллярно-маргинально-альвеолярный индекс РМА (Парма): ${pmaResult.pmaPercent}% (${pmaResult.ratingText}).`;
 		} else {
 			text = createClinicalProHygieneProtocolText();
 		}
 		onInsertToProtocol?.(text);
-	}, [activeTab, ohisResult, fedorovResult, pmaResult, onInsertToProtocol]);
+	}, [activeTab, ohisResult, fedorovResult, silnessResult, pmaResult, onInsertToProtocol]);
 
 	const handleApplyPreset = useCallback((presetName: string, protocolText: string) => {
 		onInsertToProtocol?.(protocolText);
@@ -175,16 +236,25 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					type="button"
 					onClick={() => setActiveTab("ohis")}
 					className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 cursor-pointer ${
-						activeTab === "ohis" ? "bg-teal-600 text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+						activeTab === "ohis" ? "bg-[var(--primary)] text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					OHI-S (Грин-Вермиллион)
 				</button>
 				<button
 					type="button"
+					onClick={() => setActiveTab("silness_loe")}
+					className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 cursor-pointer ${
+						activeTab === "silness_loe" ? "bg-[var(--primary)] text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+					}`}
+				>
+					Silness-Löe (налет)
+				</button>
+				<button
+					type="button"
 					onClick={() => setActiveTab("fedorov")}
 					className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 cursor-pointer ${
-						activeTab === "fedorov" ? "bg-teal-600 text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+						activeTab === "fedorov" ? "bg-[var(--primary)] text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					Федорова-Володкиной (дети)
@@ -193,7 +263,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					type="button"
 					onClick={() => setActiveTab("pma")}
 					className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 cursor-pointer ${
-						activeTab === "pma" ? "bg-teal-600 text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+						activeTab === "pma" ? "bg-[var(--primary)] text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					РМА (Парма)
@@ -202,7 +272,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					type="button"
 					onClick={() => setActiveTab("protocols")}
 					className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 cursor-pointer ${
-						activeTab === "protocols" ? "bg-teal-600 text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+						activeTab === "protocols" ? "bg-[var(--primary)] text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 					}`}
 				>
 					Экспресс-протоколы
@@ -252,7 +322,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 													return { ...p, [t.toothNumber]: { ...prevEntry, debris: val } };
 												})}
 												className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
-													current.debris === val ? "bg-teal-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
+													current.debris === val ? "bg-[var(--primary)] text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
 												}`}
 											>
 												{val}
@@ -275,6 +345,76 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 											>
 												{val}
 											</button>
+										))}
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			)}
+
+			{/* Вкладка: Silness-Löe (ключевые зубы: 16, 12, 24, 36, 32, 44, 4 поверхности) */}
+			{activeTab === "silness_loe" && (
+				<div className="space-y-3 p-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl" data-testid="hygiene-silness-loe-panel">
+					<div className="flex items-center justify-between flex-wrap gap-2">
+						<div className="flex items-center gap-2">
+							<span className="text-xs font-bold text-[var(--ink)]">
+								Silness-Löe = {silnessResult.score.toFixed(1)}
+							</span>
+							<span className={`text-[11px] px-2 py-0.5 rounded-full font-bold border ${silnessResult.badgeClass}`}>
+								{silnessResult.ratingText}
+							</span>
+						</div>
+						<button
+							type="button"
+							data-testid="hygiene-btn-ideal-silness"
+							onClick={handleSetIdealSilness}
+							className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer"
+						>
+							✓ Налета нет (0.0)
+						</button>
+					</div>
+
+					<p className="text-xs text-[var(--ink-muted)]">
+						Оценка зубного налета по 4 поверхностям ключевых зубов (16, 12, 24, 36, 32, 44): 0 — норма, 1 — тонкая пленка, 2 — умеренное скопление, 3 — обильные отложения.
+					</p>
+
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+						{SILNESS_LOE_TEETH.map((t) => {
+							const current = silnessScores[t] ?? { vestibular: 0, oral: 0, mesial: 0, distal: 0 };
+							const toothAvg = ((current.vestibular + current.oral + current.mesial + current.distal) / 4).toFixed(1);
+							return (
+								<div key={t} className="p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col gap-2">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-bold text-[var(--ink)]">Зуб {t}</span>
+										<span className="text-[11px] font-mono font-semibold text-[var(--ink-muted)]">Ср: {toothAvg}</span>
+									</div>
+									<div className="grid grid-cols-2 gap-1.5">
+										{SILNESS_SURFACES.map((surf) => (
+											<div key={surf.key} className="flex flex-col gap-0.5">
+												<span className="text-[10px] text-[var(--ink-muted)]">{surf.label}</span>
+												<div className="grid grid-cols-4 gap-0.5">
+													{[0, 1, 2, 3].map((val) => (
+														<button
+															key={val}
+															type="button"
+															onClick={() => setSilnessScores((p) => {
+																const prevTooth = p[t] ?? { vestibular: 0, oral: 0, mesial: 0, distal: 0 };
+																return { ...p, [t]: { ...prevTooth, [surf.key]: val } };
+															})}
+															className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
+																current[surf.key] === val
+																	? "bg-[var(--primary)] text-white"
+																	: "bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+															}`}
+															title={`${surf.label}: ${val} (${val === 0 ? "норма" : val === 1 ? "тонкая пленка" : val === 2 ? "умеренно" : "обильно"})`}
+														>
+															{val}
+														</button>
+													))}
+												</div>
+											</div>
 										))}
 									</div>
 								</div>

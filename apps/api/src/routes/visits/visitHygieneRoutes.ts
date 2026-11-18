@@ -9,7 +9,7 @@ import { db as database } from "../../db/client.js";
 import { visits } from "../../db/schema.js";
 
 export function registerVisitHygieneRoutes(app: FastifyInstance) {
-	app.get(
+	app.get<{ Params: { patientId: string } }>(
 		"/api/patients/:patientId/hygiene-indices/latest",
 		async (request, reply) => {
 			const context = await requireClinicalReadContext(
@@ -18,7 +18,7 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 				"patient latest hygiene indices",
 			);
 			if (!context) return;
-			const { patientId } = request.params as { patientId: string };
+			const { patientId } = request.params;
 			const [latest] = await database
 				.select({
 					id: visits.id,
@@ -48,14 +48,14 @@ export function registerVisitHygieneRoutes(app: FastifyInstance) {
 		},
 	);
 
-	app.post("/api/visits/:visitId/hygiene-indices", async (request, reply) => {
+	app.post<{ Params: { visitId: string } }>("/api/visits/:visitId/hygiene-indices", async (request, reply) => {
 		const context = await requireClinicalMutationContext(
 			request,
 			reply,
 			"update visit hygiene indices",
 		);
 		if (!context) return;
-		const { visitId } = request.params as { visitId: string };
+		const { visitId } = request.params;
 		const parsed = hygieneIndicesSchema.safeParse(request.body);
 		if (!parsed.success) {
 			reply.code(400);

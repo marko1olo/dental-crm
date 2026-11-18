@@ -58,7 +58,7 @@ export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(
 			data-testid={isUpper ? "anatomical-arch-upper" : "anatomical-arch-lower"}
 		>
 			{archTitle && isUpper && (
-				<div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wider mb-0.5">
+				<div className="text-[11px] font-bold text-[var(--ink-muted)] tracking-wider mb-0.5">
 					{archTitle}
 				</div>
 			)}
@@ -68,14 +68,14 @@ export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(
 					className="flex flex-col items-center justify-center mx-1 sm:mx-2 self-stretch select-none"
 					title="Сагиттальная линия (Facial Midline Guide)"
 				>
-					<div className="w-[2px] h-full min-h-[90px] bg-gradient-to-b from-transparent via-teal-500/50 dark:via-teal-400/50 to-transparent relative flex items-center justify-center">
-						<div className="w-2 h-2 rounded-full bg-teal-500/80 shadow-xs shadow-teal-500/40" />
+					<div className="w-[2px] h-full min-h-[90px] bg-gradient-to-b from-transparent via-[var(--primary)]/50 to-transparent relative flex items-center justify-center">
+						<div className="w-2 h-2 rounded-full bg-[var(--primary)] shadow-xs" />
 					</div>
 				</div>
 				{renderQuadrant(rightTeeth, isUpper ? "quadrant-2" : "quadrant-3")}
 			</div>
 			{archTitle && !isUpper && (
-				<div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wider mt-0.5">
+				<div className="text-[11px] font-bold text-[var(--ink-muted)] tracking-wider mt-0.5">
 					{archTitle}
 				</div>
 			)}

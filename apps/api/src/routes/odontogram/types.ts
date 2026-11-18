@@ -70,6 +70,12 @@ export const endoToothClinicalDataSchema = z
 		stageStamp: z.string().trim().max(50).optional(),
 		notes: z.string().trim().max(2000).optional(),
 		updatedAt: z.string().optional(),
+		mobility: z.number().int().min(0).max(4).optional(),
+		mobilityDegree: z.number().int().min(0).max(4).optional(),
+		resorptionStage: z.number().optional(),
+		pediatricCrownPresent: z.boolean().optional(),
+		secondaryCariesUnderFilling: z.boolean().optional(),
+		isPrimaryPediatric: z.boolean().optional(),
 	})
 	.passthrough();
 

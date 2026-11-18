@@ -24,6 +24,7 @@ import {
 import { wsBroker } from "../../services/websocketBroker.js";
 import { ensurePatientInOrganization } from "./planHelpers.js";
 import {
+	EndoToothClinicalData,
 	UUID_SHAPE,
 	batchToothStateSchema,
 	odontogramStatusMutationSchema,
@@ -58,7 +59,7 @@ async function applyToothStateMutation(
 		surfaces?: string[] | null | undefined;
 		notes?: string | null | undefined;
 		canalMeasurements?: unknown[] | null | undefined;
-		clinicalData?: Record<string, unknown> | null | undefined;
+		clinicalData?: EndoToothClinicalData | null | undefined;
 		mobility?: number | null | undefined;
 		mobilityDegree?: number | null | undefined;
 		isPrimaryPediatric?: boolean | null | undefined;
@@ -142,7 +143,7 @@ async function applyToothStateMutation(
 				(incomingTime === prevTime && incomingVersion >= prevVersion);
 
 			if (incomingWins) {
-				const prevClinical = parseClinicalDataFromNotes(prev?.notes) as Record<string, unknown> | null;
+				const prevClinical = parseClinicalDataFromNotes(prev?.notes);
 				const prevStateRaw = prev?.state ?? null;
 				const prevStateLower = (prevStateRaw ?? "").toLowerCase();
 
@@ -369,10 +370,10 @@ async function applyToothStateMutation(
 
 				// Обогащение канонического SSOT toothStates расширенными клиническими атрибутами (детство, подвижность, резорбция)
 				const isPrimaryTooth = (toothNumber >= 51 && toothNumber <= 85) || Boolean(data.isPrimaryPediatric) || Boolean(prevClinical?.isPrimaryPediatric);
-				const effectiveMobility = data.mobility ?? data.mobilityDegree ?? (data.clinicalData?.mobility as number | undefined) ?? (data.clinicalData?.mobilityDegree as number | undefined) ?? prevClinical?.mobility ?? prevClinical?.mobilityDegree;
-				const effectiveResorption = data.resorptionStage ?? (data.clinicalData?.resorptionStage as number | undefined) ?? prevClinical?.resorptionStage;
-				const effectivePediatricCrown = data.pediatricCrownPresent ?? (data.clinicalData?.pediatricCrownPresent as boolean | undefined) ?? prevClinical?.pediatricCrownPresent;
-				const effectiveSecondaryCaries = data.secondaryCariesUnderFilling ?? (data.clinicalData?.secondaryCariesUnderFilling as boolean | undefined) ?? prevClinical?.secondaryCariesUnderFilling;
+				const effectiveMobility = data.mobility ?? data.mobilityDegree ?? data.clinicalData?.mobility ?? data.clinicalData?.mobilityDegree ?? prevClinical?.mobility ?? prevClinical?.mobilityDegree;
+				const effectiveResorption = data.resorptionStage ?? data.clinicalData?.resorptionStage ?? prevClinical?.resorptionStage;
+				const effectivePediatricCrown = data.pediatricCrownPresent ?? data.clinicalData?.pediatricCrownPresent ?? prevClinical?.pediatricCrownPresent;
+				const effectiveSecondaryCaries = data.secondaryCariesUnderFilling ?? data.clinicalData?.secondaryCariesUnderFilling ?? prevClinical?.secondaryCariesUnderFilling;
 
 				if (isPrimaryTooth || effectiveMobility !== undefined || effectiveResorption !== undefined || effectivePediatricCrown !== undefined || effectiveSecondaryCaries !== undefined) {
 					const existingObj = parseClinicalDataFromNotes(effectiveNotes) || prevClinical || {};

@@ -236,8 +236,8 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 
 			// Primary CTA button
 			assert.ok(
-				html.includes("bg-teal-600"),
-				"Primary CTA button must use bg-teal-600",
+				html.includes("bg-[var(--primary)]") || html.includes("bg-teal-600"),
+				"Primary CTA button must use bg-[var(--primary)] or bg-teal-600",
 			);
 			assert.ok(
 				html.includes("✓ Зафиксировать протокол гигиены"),
@@ -245,11 +245,11 @@ describe("Red Team Hygiene SSOT Suite — Professional Hygiene & OHI-S Studio", 
 			);
 
 			// Count occurrences of Primary CTA styling
-			const primaryCtaMatches = html.match(/bg-teal-600/g) || [];
+			const primaryCtaMatches = html.match(/bg-\[var\(--primary\)\]/g) || html.match(/bg-teal-600/g) || [];
 			assert.equal(
 				primaryCtaMatches.length,
 				1,
-				"Must have strictly ONE Primary CTA button with bg-teal-600",
+				"Must have strictly ONE Primary CTA button with bg-[var(--primary)]",
 			);
 		});
 
