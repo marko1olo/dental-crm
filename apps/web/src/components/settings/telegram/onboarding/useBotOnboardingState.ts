@@ -2,7 +2,7 @@ import { useState, useEffect, useId, useMemo } from "react";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { CLINICAL_BOT_PRESETS, type BotPreset, type BotTone } from "../telegramBotPresets";
 import { downloadBotSourceZip } from "../botZipGenerator";
-import type { BotChannelType } from "../TelegramPhoneSimulator";
+import type { BotChannelType } from "../BotMessagePreviewCard";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import { showToast } from "../../../GlobalToast";
 import type {

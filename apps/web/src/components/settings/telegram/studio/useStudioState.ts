@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { CLINICAL_BOT_PRESETS, type BotPreset, type BotTone } from "../telegramBotPresets";
-import type { BotChannelType } from "../TelegramPhoneSimulator";
+import type { BotChannelType } from "../BotMessagePreviewCard";
 
 export function useStudioState(parentProps?: any, initialChannel: BotChannelType = "telegram") {
 	const [activeChannel, setActiveChannel] = useState<BotChannelType>(initialChannel);

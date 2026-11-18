@@ -20,9 +20,9 @@ import {
 	type BotTone,
 } from "./telegramBotPresets";
 import {
-	TelegramPhoneSimulator,
+	BotMessagePreviewCard,
 	type BotChannelType,
-} from "./TelegramPhoneSimulator";
+} from "./BotMessagePreviewCard";
 import { BotOnboardingWizard } from "./BotOnboardingWizard";
 import { BotStudioModal } from "./BotStudioModal";
 import { downloadBotSourceZip } from "./botZipGenerator";
@@ -295,10 +295,10 @@ export function TelegramBotStudioSection({
 					)}
 				</div>
 
-				{/* RIGHT COLUMN: Realistic Live Phone Simulator */}
+				{/* RIGHT COLUMN: Realistic Live Message Preview Card */}
 				<div className="tg-studio-right-col">
 					<div className="tg-simulator-sticky">
-						<TelegramPhoneSimulator
+						<BotMessagePreviewCard
 							preset={activePreset}
 							channel={activeChannel}
 							customClinicName={customClinicName}

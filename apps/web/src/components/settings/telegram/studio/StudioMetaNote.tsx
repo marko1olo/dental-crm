@@ -1,7 +1,7 @@
 import React from "react";
 import { Activity, Building2, Sparkles, Stethoscope, Users } from "lucide-react";
 import type { BotPreset } from "../telegramBotPresets";
-import type { BotChannelType } from "../TelegramPhoneSimulator";
+import type { BotChannelType } from "../BotMessagePreviewCard";
 
 function getPresetMetaIcon(iconName: string) {
 	switch (iconName) {

@@ -66,6 +66,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 				{(a.composite || a.zirconiaCrown) && (
 					<Tooth46RestorationOverlay
 						showComposite={Boolean(a.composite)} showZirconiaCrown={Boolean(a.zirconiaCrown)}
+						compositeSurface={a.compositeSurface} compositeSurfaces={a.compositeSurfaces}
 						crownMaterial={a.crownMaterial ?? "zirconia"} compositeCondition={a.compositeCondition ?? "adequate"}
 						crownCondition={a.crownCondition ?? "adequate"} translucent={Boolean(a.zirconiaCrown && (isEndo || a.postCore || a.implant))}
 						isDark={isDark} isImplant={Boolean(a.implant)}

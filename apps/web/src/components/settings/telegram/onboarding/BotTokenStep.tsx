@@ -8,7 +8,7 @@ import {
 	Info,
 	Radio,
 } from "lucide-react";
-import type { BotChannelType } from "../TelegramPhoneSimulator";
+import type { BotChannelType } from "../BotMessagePreviewCard";
 import type { BotTokenStepProps } from "./types";
 
 export function BotTokenStep({

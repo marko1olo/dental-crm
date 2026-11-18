@@ -123,63 +123,6 @@ export const inventoryTransactions = pgTable(
 	}),
 );
 
-/**
- * inventoryTransfers — Перемещение ТМЦ между складами и филиалами (ТОРГ-13).
- */
-export const inventoryTransfers = pgTable(
-	"inventory_transfers",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		senderOrganizationId: uuid("sender_organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		receiverOrganizationId: uuid("receiver_organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		status: text("status").notNull().default("draft"), // draft, in_transit, partially_received, completed, cancelled
-		notes: text("notes"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		senderOrgIdx: index("inventory_transfers_sender_org_idx").on(
-			t.senderOrganizationId,
-		),
-		receiverOrgIdx: index("inventory_transfers_receiver_org_idx").on(
-			t.receiverOrganizationId,
-		),
-		senderStatusIdx: index("inventory_transfers_sender_status_idx").on(
-			t.senderOrganizationId,
-			t.status,
-		),
-	}),
-);
-
-export const inventoryTransferItems = pgTable(
-	"inventory_transfer_items",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		transferId: uuid("transfer_id")
-			.notNull()
-			.references(() => inventoryTransfers.id),
-		inventoryItemId: uuid("inventory_item_id")
-			.notNull()
-			.references(() => inventoryItems.id),
-		quantitySent: numeric("quantity_sent", { precision: 10, scale: 3 }).notNull(),
-		quantityReceived: numeric("quantity_received", { precision: 10, scale: 3 }).default("0"),
-		quantityDamaged: numeric("quantity_damaged", { precision: 10, scale: 3 }).default("0"),
-		notes: text("notes"),
-	},
-	(t) => ({
-		transferIdIdx: index("inventory_transfer_items_transfer_idx").on(
-			t.transferId,
-		),
-		itemIdIdx: index("inventory_transfer_items_item_idx").on(
-			t.inventoryItemId,
-		),
-	}),
-);
 
 /**
  * mdlpItems — Маркированные лекарственные препараты Честный Знак (МДЛП).

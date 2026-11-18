@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 
 import { BotStudioModal } from "../components/settings/telegram/BotStudioModal";
 import { BotOnboardingWizard } from "../components/settings/telegram/BotOnboardingWizard";
-import { TelegramPhoneSimulator } from "../components/settings/telegram/TelegramPhoneSimulator";
+import { BotMessagePreviewCard as TelegramPhoneSimulator } from "../components/settings/telegram/BotMessagePreviewCard";
 import { CLINICAL_BOT_PRESETS } from "../components/settings/telegram/telegramBotPresets";
 import {
 	generateBotSourceEntries,

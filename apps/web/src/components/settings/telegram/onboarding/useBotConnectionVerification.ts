@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
-import type { BotChannelType } from "../TelegramPhoneSimulator";
+import type { BotChannelType } from "../BotMessagePreviewCard";
 import type { BotConnectionStatus } from "./types";
 
 interface UseBotConnectionVerificationParams {

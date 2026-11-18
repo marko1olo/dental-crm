@@ -1,4 +1,4 @@
-import type { BotChannelType } from "../TelegramPhoneSimulator";
+import type { BotChannelType } from "../BotMessagePreviewCard";
 import type { BotPreset, BotTone } from "../telegramBotPresets";
 
 export type WizardStepNumber = 1 | 2 | 3 | 4;

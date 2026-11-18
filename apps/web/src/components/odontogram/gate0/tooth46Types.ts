@@ -39,7 +39,9 @@ export interface Tooth46LayerFlags {
 	cervicalCaries?: boolean | undefined;
 	showCervical?: boolean | undefined;
 	composite?: boolean;
-	compositeCondition?: RestorationCondition;
+	compositeCondition?: RestorationCondition | undefined;
+	compositeSurface?: "O" | "M" | "D" | "MO" | "DO" | "MOD" | string | undefined;
+	compositeSurfaces?: readonly ("O" | "M" | "D" | "B" | "L" | "V")[] | undefined;
 	inlayOnlay?: InlayOnlayType;
 	zirconiaCrown?: boolean;
 	crownMaterial?: CrownMaterial;

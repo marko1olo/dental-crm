@@ -1,9 +1,9 @@
 import React from "react";
-import type { BotPreset } from "./telegramBotPresets";
+import type { BotPreset } from "./telegramBotPresets.js";
 
 export type BotChannelType = "telegram" | "vk" | "whatsapp" | "max";
 
-export interface TelegramPhoneSimulatorProps {
+export interface BotMessagePreviewCardProps {
 	preset: BotPreset;
 	channel?: BotChannelType;
 	customClinicName?: string;
@@ -54,7 +54,11 @@ const CHANNEL_MAP: Record<BotChannelType, ChannelInfo> = {
 	},
 };
 
-export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
+/**
+ * Карточка предпросмотра сообщений клинического бота в мессенджерах (Telegram, VK, WhatsApp, MAX).
+ * Отображает интерактивное оформление чата без бутафорского симулятора корпуса смартфона.
+ */
+export function BotMessagePreviewCard(props: BotMessagePreviewCardProps) {
 	const {
 		preset,
 		channel = "telegram",
@@ -125,16 +129,16 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 				margin: "0 auto",
 			}}
 		>
-			<div className={`p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm ${info.headerClass}`}>
-				<div className="flex items-center justify-between pb-3 border-b border-[var(--line)] text-xs text-[var(--muted)]">
-					<span className="font-semibold">{info.name}</span>
-					<span className="px-2 py-0.5 rounded-full bg-[var(--paper-soft)] border border-[var(--line)] text-[10px]">
+			<div className={`p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-xs ${info.headerClass}`}>
+				<div className="flex items-center justify-between pb-3 border-b border-[var(--line)] text-xs text-[var(--ink-muted)]">
+					<span className="font-semibold text-[var(--ink)]">{info.name}</span>
+					<span className="px-2 py-0.5 rounded-full bg-[var(--paper-soft)] border border-[var(--line)] text-[10px] text-[var(--ink-muted)]">
 						{info.statusText}
 					</span>
 				</div>
 
 				<div className="py-3 text-sm leading-relaxed whitespace-pre-line text-[var(--ink)]">
-					<div className="font-semibold text-xs mb-1.5 text-[var(--primary,#0d9488)]">{title}</div>
+					<div className="font-semibold text-xs mb-1.5 text-[var(--primary)]">{title}</div>
 					{text}
 				</div>
 
@@ -146,7 +150,11 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 									<button
 										key={bIdx}
 										type="button"
-										className={btn.isPrimary ? "dente-btn-primary flex-1 text-xs py-1.5" : "dente-btn-secondary flex-1 text-xs py-1.5"}
+										className={
+											btn.isPrimary
+												? "h-8 px-3 rounded-md bg-[var(--primary)] text-white text-xs font-medium flex-1 cursor-pointer hover:bg-[var(--primary-hover)] transition-colors"
+												: "h-8 px-3 rounded-md bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs font-medium flex-1 cursor-pointer hover:bg-[var(--paper-soft)] transition-colors"
+										}
 										onClick={() => {
 											if (btn.action.startsWith("screen:") && onScreenChange) {
 												onScreenChange(btn.action.replace("screen:", ""));
@@ -163,7 +171,10 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 
 				{customPrimaryActionLabel && (
 					<div className="pt-2">
-						<button type="button" className="dente-btn-primary w-full text-xs py-1.5">
+						<button
+							type="button"
+							className="h-8 px-3 rounded-md bg-[var(--primary)] text-white text-xs font-medium w-full cursor-pointer hover:bg-[var(--primary-hover)] transition-colors"
+						>
 							{customPrimaryActionLabel}
 						</button>
 					</div>
@@ -173,4 +184,6 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 	);
 }
 
-export default TelegramPhoneSimulator;
+/** Алиас для плавной обратной совместимости */
+export const TelegramPhoneSimulator = BotMessagePreviewCard;
+export default BotMessagePreviewCard;

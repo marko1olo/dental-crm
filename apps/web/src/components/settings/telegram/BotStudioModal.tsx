@@ -14,9 +14,9 @@ import { generateQrCodeSvg } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { BotOnboardingWizard } from "./BotOnboardingWizard";
 import {
-	TelegramPhoneSimulator,
+	BotMessagePreviewCard,
 	type BotChannelType,
-} from "./TelegramPhoneSimulator";
+} from "./BotMessagePreviewCard";
 import {
 	CLINICAL_BOT_PRESETS,
 	type BotPreset,
@@ -280,7 +280,7 @@ export function BotStudioModal({
 							</div>
 
 							{/* Live Message Bubble Card */}
-							<TelegramPhoneSimulator
+							<BotMessagePreviewCard
 								preset={activePreset}
 								channel={activeChannel}
 								customClinicName={customClinicName}

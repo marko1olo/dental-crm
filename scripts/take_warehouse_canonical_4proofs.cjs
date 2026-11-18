@@ -15,8 +15,8 @@ const fs = require("node:fs");
 
 const WEB_URL = "http://127.0.0.1:5173/?demo=true&warehouse=1";
 const PROOF_DIR = path.resolve(__dirname, "../docs/proofs/warehouse");
-const CURRENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/999af032-a580-4fe0-926a-6033bac4c0de");
-const PARENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/1a5ac924-43af-42a0-a684-00dbb822c536");
+const CURRENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/3cf85a21-6684-4f6a-a416-22f763fd7ee9");
+const PARENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/d8f4b35b-af3a-4c9f-91df-6a9f31e6364c");
 
 if (!fs.existsSync(PROOF_DIR)) fs.mkdirSync(PROOF_DIR, { recursive: true });
 if (!fs.existsSync(CURRENT_BRAIN_DIR)) fs.mkdirSync(CURRENT_BRAIN_DIR, { recursive: true });
@@ -105,8 +105,12 @@ async function capture() {
     console.log(`Navigating PC to ${WEB_URL}...`);
     await pcPage.goto(WEB_URL, { waitUntil: "domcontentloaded", timeout: 60000 });
     await pcPage.waitForSelector('[data-testid="warehouse-studio-modal"]', { timeout: 15000 });
+    await pcPage.waitForFunction(() => {
+      const text = document.body ? document.body.innerText : "";
+      return !text.includes("Загрузка склада...") && !text.includes("Загрузка...");
+    }, { timeout: 15000 }).catch(() => {});
     await suppressTransientOverlays(pcPage);
-    await pcPage.waitForTimeout(1000);
+    await pcPage.waitForTimeout(1500);
 
     // 1A. PC Light
     await setTheme(pcPage, "light");
@@ -132,8 +136,12 @@ async function capture() {
     console.log(`Navigating Mobile to ${WEB_URL}...`);
     await mobilePage.goto(WEB_URL, { waitUntil: "domcontentloaded", timeout: 30000 });
     await mobilePage.waitForSelector('[data-testid="warehouse-studio-modal"]', { timeout: 15000 });
+    await mobilePage.waitForFunction(() => {
+      const text = document.body ? document.body.innerText : "";
+      return !text.includes("Загрузка склада...") && !text.includes("Загрузка...");
+    }, { timeout: 15000 }).catch(() => {});
     await suppressTransientOverlays(mobilePage);
-    await mobilePage.waitForTimeout(1000);
+    await mobilePage.waitForTimeout(1500);
 
     // 2A. Mobile Light
     await setTheme(mobilePage, "light");

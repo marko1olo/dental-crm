@@ -92,6 +92,7 @@ export async function writeOffExpiredOrScrap(
 		inventoryItemId: inv.id,
 		batchId: batchId ?? null,
 		quantityChanged: String(-quantity),
+		qty: String(-quantity),
 		unitCostRub: batchFound?.purchasePricePerUnit ?? inv.unitCostRub,
 		transactionType: reason === "expired" ? "write_off_expired" : "write_off_scrap",
 		userId: userId ?? null,

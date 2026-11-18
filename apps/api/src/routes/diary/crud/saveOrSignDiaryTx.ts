@@ -62,9 +62,14 @@ export async function executeSaveOrSignDiaryTx(params: {
 				.for("update");
 
 			if (targetTooth) {
-				const unassignedDraft = candidateDiaries.find((d) => !d.diagnosisTooth && !d.isLocked);
-				if (unassignedDraft) {
-					existing = unassignedDraft;
+				const matchByTooth = candidateDiaries.find((d) => d.diagnosisTooth === targetTooth);
+				if (matchByTooth) {
+					existing = matchByTooth;
+				} else {
+					const unassignedDraft = candidateDiaries.find((d) => !d.diagnosisTooth && !d.isLocked);
+					if (unassignedDraft) {
+						existing = unassignedDraft;
+					}
 				}
 			} else {
 				const lockedDiary = candidateDiaries.find((d) => d.isLocked);
@@ -72,6 +77,11 @@ export async function executeSaveOrSignDiaryTx(params: {
 					existing = lockedDiary;
 				} else if (candidateDiaries.length === 1) {
 					existing = candidateDiaries[0];
+				} else {
+					const unassignedDraft = candidateDiaries.find((d) => !d.diagnosisTooth && !d.isLocked);
+					if (unassignedDraft) {
+						existing = unassignedDraft;
+					}
 				}
 			}
 		}
@@ -124,6 +134,28 @@ export async function executeSaveOrSignDiaryTx(params: {
 			.where(and(eq(visits.id, data.visitId), eq(visits.organizationId, orgId)))
 			.limit(1);
 
+		// Собираем консолидированный диагноз визита по всем зубам (Multi-Tooth ACID)
+		const allDiariesForVisit = await tx
+			.select({
+				diagnosisIcd10: visitDiaries.diagnosisIcd10,
+				diagnosisTooth: visitDiaries.diagnosisTooth,
+			})
+			.from(visitDiaries)
+			.where(and(eq(visitDiaries.visitId, data.visitId), eq(visitDiaries.organizationId, orgId)));
+
+		const toothDiagnosesMap = new Map<string, string>();
+		for (const d of allDiariesForVisit) {
+			if (d.diagnosisIcd10) {
+				const key = d.diagnosisTooth?.trim() || "general";
+				toothDiagnosesMap.set(key, d.diagnosisTooth ? `${d.diagnosisIcd10} (${d.diagnosisTooth})` : d.diagnosisIcd10);
+			}
+		}
+		if (data.diagnosisIcd10) {
+			const key = targetTooth || "general";
+			toothDiagnosesMap.set(key, targetTooth ? `${data.diagnosisIcd10} (${targetTooth})` : data.diagnosisIcd10);
+		}
+		const consolidatedDiagnosis = Array.from(toothDiagnosesMap.values()).join(", ");
+
 		const existingDraftAutosave = (currentVisit?.draftAutosave as Record<string, unknown> | null) || {};
 		const existingDraftObj = (existingDraftAutosave.draft as Record<string, unknown> | null) || {};
 		const updatedDraftAutosave = {
@@ -137,7 +169,7 @@ export async function executeSaveOrSignDiaryTx(params: {
 				...(data.complaint !== undefined ? { complaint: data.complaint } : {}),
 				...(data.anamnesis !== undefined ? { anamnesis: data.anamnesis } : {}),
 				...(data.statusLocalis !== undefined ? { objectiveStatus: data.statusLocalis } : {}),
-				...(data.diagnosisIcd10 !== undefined ? { diagnosis: data.diagnosisIcd10 } : {}),
+				...(data.diagnosisIcd10 !== undefined ? { diagnosis: consolidatedDiagnosis || data.diagnosisIcd10 } : {}),
 				...(data.treatmentDescription !== undefined ? { treatmentPlan: data.treatmentDescription } : {}),
 			},
 			baseRevision: currentVisit?.revision ?? null,
@@ -151,7 +183,7 @@ export async function executeSaveOrSignDiaryTx(params: {
 		if (data.complaint !== undefined) visitSyncData.complaint = data.complaint;
 		if (data.anamnesis !== undefined) visitSyncData.anamnesis = data.anamnesis;
 		if (data.statusLocalis !== undefined) visitSyncData.objectiveStatus = data.statusLocalis;
-		if (data.diagnosisIcd10 !== undefined) visitSyncData.diagnosis = data.diagnosisIcd10;
+		if (data.diagnosisIcd10 !== undefined) visitSyncData.diagnosis = consolidatedDiagnosis || data.diagnosisIcd10;
 		if (data.treatmentDescription !== undefined) visitSyncData.treatmentPlan = data.treatmentDescription;
 		await tx.update(visits).set(visitSyncData).where(and(eq(visits.id, data.visitId), eq(visits.organizationId, orgId)));
 
@@ -166,8 +198,8 @@ export async function executeSaveOrSignDiaryTx(params: {
 			await tx.update(visitDiaries).set({ diaryHash: draftHash, updatedAt: new Date() }).where(and(eq(visitDiaries.id, diaryId), eq(visitDiaries.organizationId, orgId), eq(visitDiaries.isLocked, false)));
 			await syncVisitEmkFromDiarySoap(tx, {
 				visitId: savedRow.visitId, organizationId: orgId, complaint: savedRow.complaint, anamnesis: savedRow.anamnesis,
-				statusLocalis: savedRow.statusLocalis, diagnosisIcd10: savedRow.diagnosisIcd10,
-				diagnosisTooth: savedRow.diagnosisTooth, treatmentDescription: savedRow.treatmentDescription,
+				statusLocalis: savedRow.statusLocalis, diagnosisIcd10: consolidatedDiagnosis || savedRow.diagnosisIcd10,
+				diagnosisTooth: consolidatedDiagnosis ? null : savedRow.diagnosisTooth, treatmentDescription: savedRow.treatmentDescription,
 			});
 			return { diaryId, signing: null, draftHash };
 		}

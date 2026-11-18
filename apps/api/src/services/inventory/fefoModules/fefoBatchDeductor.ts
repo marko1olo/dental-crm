@@ -59,6 +59,7 @@ export async function deductFromActiveBatches(
 			inventoryItemId: params.itemId,
 			batchId: batch.id,
 			warehouseId: batch.warehouseId ?? params.warehouseId ?? null,
+			qty: String(-take),
 			quantityChanged: String(-take),
 			unitCostRub: batch.purchasePricePerUnit ?? params.defaultUnitCostRub ?? null,
 			transactionType: params.transactionType,

@@ -75,7 +75,7 @@ describe("Wave 317 / Mandate 8b: Inventory Monolith Decomposition Audit (Part 2)
 		);
 	});
 
-	it("5. Verifies InventoryServiceUsagePanel renders BOM specifications and cost simulation", () => {
+	it("5. Verifies InventoryServiceUsagePanel renders BOM specifications (Mandates 8e, 8v)", () => {
 		const html = renderToString(
 			<InventoryServiceUsagePanel
 				organizationId="org-test-1"
@@ -85,7 +85,7 @@ describe("Wave 317 / Mandate 8b: Inventory Monolith Decomposition Audit (Part 2)
 
 		assert.ok(html.includes("Расход материалов по услугам") || html.includes("Технологические карты"), "Must render BOM title");
 		assert.ok(html.includes("Справочник техкарт"), "Must render BOM editor tab");
-		assert.ok(html.includes("Симулятор списания визита"), "Must render simulator tab");
+		assert.strictEqual(html.includes("Симулятор списания визита"), false, "Must NOT render mock simulator tab");
 	});
 
 	it("6. Verifies InventoryStockTable facade delegates properly", () => {

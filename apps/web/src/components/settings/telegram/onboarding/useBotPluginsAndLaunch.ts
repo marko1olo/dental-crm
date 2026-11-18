@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { showToast } from "../../../GlobalToast";
 import { downloadBotSourceZip } from "../botZipGenerator";
-import type { BotChannelType } from "../TelegramPhoneSimulator";
+import type { BotChannelType } from "../BotMessagePreviewCard";
 import type { BotLeadItem } from "./types";
 import { DEFAULT_LEADS } from "./launchDefaults";
 import { fetchLiveInboxLeads, registerLiveBot } from "./launchBotApi";

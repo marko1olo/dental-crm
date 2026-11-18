@@ -72,47 +72,46 @@ export function useMedicalRecordSave({
 				if (isUuid(effectiveVisitId) && isUuid(effectivePatientId)) {
 					const diariesToPersist = formData.visitDiaries.length > 0 ? formData.visitDiaries : [undefined];
 					try {
-						await Promise.all(
-							diariesToPersist.map(async (diary) => {
-								const diaryComplaint = formData.anamnesis.chiefComplaint || diary?.subjectiveComplaints || complaint;
-								const diaryAnamnesis = formData.anamnesis.historyOfPresentIllness || anamnesis;
-								const diaryStatusLocalis = diary?.objectiveStatusLocalis || statusLocalis;
-								const diaryDiagnosisIcd10 = formData.passport.primaryDiagnosisIcd10 || diary?.assessmentIcd10Code || diagnosisIcd10;
-								const diaryTreatmentDescription = formData.generalTreatmentPlan || diary?.procedureProtocol || treatmentDescription;
-								const diaryTooth = diary?.toothNumber ? String(diary.toothNumber) : undefined;
+						// Последовательное сохранение всех дневников приёма (Multi-Tooth SOAP Loop, Мандаты 8e, 8n)
+						for (const diary of diariesToPersist) {
+							const diaryComplaint = diary?.subjectiveComplaints || formData.anamnesis.chiefComplaint || complaint;
+							const diaryAnamnesis = formData.anamnesis.historyOfPresentIllness || anamnesis;
+							const diaryStatusLocalis = diary?.objectiveStatusLocalis || statusLocalis;
+							const diaryDiagnosisIcd10 = diary?.assessmentIcd10Code || formData.passport.primaryDiagnosisIcd10 || diagnosisIcd10;
+							const diaryTreatmentDescription = diary?.procedureProtocol || formData.generalTreatmentPlan || treatmentDescription;
+							const diaryTooth = diary?.toothNumber ? String(diary.toothNumber).trim() : undefined;
 
-								const idempotencyKey =
-									typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-										? crypto.randomUUID()
-										: undefined;
+							const idempotencyKey =
+								typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+									? crypto.randomUUID()
+									: undefined;
 
-								const diaryRes = await fetch("/api/diaries", {
-									method: "POST",
-									headers: {
-										"Content-Type": "application/json",
-										...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
-										...denteAdminSecretRequestHeaders(),
-									},
-									credentials: "same-origin",
-									body: JSON.stringify({
-										visitId: effectiveVisitId,
-										patientId: effectivePatientId,
-										complaint: diaryComplaint,
-										anamnesis: diaryAnamnesis,
-										statusLocalis: diaryStatusLocalis,
-										diagnosisIcd10: diaryDiagnosisIcd10 || undefined,
-										diagnosisTooth: diaryTooth,
-										treatmentDescription: diaryTreatmentDescription,
-										status: effectiveIsDraft ? "draft" : "signed",
-									}),
-								});
+							const diaryRes = await fetch("/api/diaries", {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+									...denteAdminSecretRequestHeaders(),
+								},
+								credentials: "same-origin",
+								body: JSON.stringify({
+									visitId: effectiveVisitId,
+									patientId: effectivePatientId,
+									complaint: diaryComplaint,
+									anamnesis: diaryAnamnesis,
+									statusLocalis: diaryStatusLocalis,
+									diagnosisIcd10: diaryDiagnosisIcd10 || undefined,
+									diagnosisTooth: diaryTooth,
+									treatmentDescription: diaryTreatmentDescription,
+									status: effectiveIsDraft ? "draft" : "signed",
+								}),
+							});
 
-								if (!diaryRes.ok && !effectiveIsDraft) {
-									const errJson = await diaryRes.json().catch(() => null);
-									console.warn("useMedicalRecordSave: ошибка сохранения дневника в /api/diaries", errJson);
-								}
-							}),
-						);
+							if (!diaryRes.ok && !effectiveIsDraft) {
+								const errJson = await diaryRes.json().catch(() => null);
+								console.warn("useMedicalRecordSave: ошибка сохранения дневника в /api/diaries", errJson);
+							}
+						}
 					} catch (diaryPersistErr) {
 						console.warn("useMedicalRecordSave: ошибка персистентности в /api/diaries", diaryPersistErr);
 					}
@@ -122,6 +121,23 @@ export function useMedicalRecordSave({
 					typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 						? crypto.randomUUID()
 						: undefined;
+
+				const aggregatedComplaints = formData.visitDiaries
+					.map((d) => d.subjectiveComplaints ? (d.toothNumber ? `Зуб ${d.toothNumber}: ${d.subjectiveComplaints}` : d.subjectiveComplaints) : null)
+					.filter(Boolean)
+					.join("\n");
+				const aggregatedStatus = formData.visitDiaries
+					.map((d) => d.objectiveStatusLocalis ? (d.toothNumber ? `Зуб ${d.toothNumber}: ${d.objectiveStatusLocalis}` : d.objectiveStatusLocalis) : null)
+					.filter(Boolean)
+					.join("\n");
+				const aggregatedDiagnoses = formData.visitDiaries
+					.map((d) => d.assessmentIcd10Code ? (d.toothNumber ? `${d.toothNumber}: ${d.assessmentIcd10Code}` : d.assessmentIcd10Code) : null)
+					.filter(Boolean)
+					.join(", ");
+				const aggregatedTreatments = formData.visitDiaries
+					.map((d) => d.procedureProtocol ? (d.toothNumber ? `Зуб ${d.toothNumber}: ${d.procedureProtocol}` : d.procedureProtocol) : null)
+					.filter(Boolean)
+					.join("\n");
 
 				const res = await fetch(`/api/visits/${effectiveVisitId}/draft/autosave`, {
 					method: "PUT",
@@ -136,11 +152,11 @@ export function useMedicalRecordSave({
 						selectedSpecialty: resolvedSpecialty,
 						transcript: "",
 						draft: {
-							complaint,
+							complaint: aggregatedComplaints || complaint,
 							anamnesis,
-							objectiveStatus: statusLocalis,
-							diagnosis: diagnosisIcd10,
-							treatmentPlan: treatmentDescription,
+							objectiveStatus: aggregatedStatus || statusLocalis,
+							diagnosis: aggregatedDiagnoses || diagnosisIcd10,
+							treatmentPlan: aggregatedTreatments || treatmentDescription,
 							warnings: [],
 						},
 						clientDraftId: `visit-draft-${effectiveVisitId}`,

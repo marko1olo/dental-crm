@@ -193,7 +193,11 @@ export const PediatricToothContainer: React.FC<
 								if (surfs.O) paths.push(surfs.O);
 								if (surfs.M) paths.push(surfs.M);
 								if (surfs.D) paths.push(surfs.D);
-							} else if (cType === "class5") {
+							} else if (cType === "class2_m" || a.cariesSurface === "M" || a.cariesSurface === "mesial") {
+								if (surfs.M) paths.push(surfs.M);
+							} else if (cType === "class2_d" || a.cariesSurface === "D" || a.cariesSurface === "distal") {
+								if (surfs.D) paths.push(surfs.D);
+							} else if (cType === "class5" || a.cervicalCaries) {
 								if (surfs.C) paths.push(surfs.C);
 								else if (surfs.V) paths.push(surfs.V);
 							} else {
@@ -212,13 +216,44 @@ export const PediatricToothContainer: React.FC<
 					</g>
 				)}
 
-				{/* 6. Реставрация: композитная пломба молочного зуба */}
+				{/* 6. Реставрация: композитная пломба молочного зуба (Wheeler MODBL-изоляция) */}
 				{a.composite && !a.zirconiaCrown && !a.missing && (
 					<g data-testid="pediatric-composite">
 						{(() => {
 							const surfs = geom.surfaces;
 							const paths: string[] = [];
-							if (surfs.O) paths.push(surfs.O);
+							const compSurf = a.compositeSurface;
+							const compSurfs = a.compositeSurfaces;
+
+							const hasM = compSurf === "M" || compSurf === "mesial" || compSurfs?.includes("M");
+							const hasD = compSurf === "D" || compSurf === "distal" || compSurfs?.includes("D");
+							const isMO = compSurf === "MO" || (hasM && (compSurf?.includes("O") || compSurfs?.includes("O")));
+							const isDO = compSurf === "DO" || (hasD && (compSurf?.includes("O") || compSurfs?.includes("O")));
+							const isMOD = compSurf === "MOD" || (hasM && hasD && (compSurf?.includes("O") || compSurfs?.includes("O")));
+
+							if (isMOD) {
+								if (surfs.M) paths.push(surfs.M);
+								if (surfs.O) paths.push(surfs.O);
+								if (surfs.D) paths.push(surfs.D);
+							} else if (isMO) {
+								if (surfs.M) paths.push(surfs.M);
+								if (surfs.O) paths.push(surfs.O);
+							} else if (isDO) {
+								if (surfs.D) paths.push(surfs.D);
+								if (surfs.O) paths.push(surfs.O);
+							} else if (hasM) {
+								if (surfs.M) paths.push(surfs.M);
+							} else if (hasD) {
+								if (surfs.D) paths.push(surfs.D);
+							} else {
+								// Если кариес уже занимает окклюзионную поверхность, пломба изолируется на M
+								if (a.caries && surfs.M) {
+									paths.push(surfs.M);
+								} else if (surfs.O) {
+									paths.push(surfs.O);
+								}
+							}
+
 							return paths.map((p, idx) => (
 								<path
 									key={`pediatric-comp-surf-${idx}`}

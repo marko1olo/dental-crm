@@ -8,7 +8,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { TelegramPhoneSimulator } from "../components/settings/telegram/TelegramPhoneSimulator";
+import { BotMessagePreviewCard as TelegramPhoneSimulator } from "../components/settings/telegram/BotMessagePreviewCard";
 import { CLINICAL_BOT_PRESETS } from "../components/settings/telegram/telegramBotPresets";
 import {
 	generateBotSourceEntries,

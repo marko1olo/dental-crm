@@ -50,6 +50,7 @@ export function buildReceiptTransaction(params: {
 		inventoryItemId: itemId,
 		batchId,
 		warehouseId: warehouseId ?? null,
+		qty: String(quantity),
 		quantityChanged: String(quantity),
 		unitCostRub: unitCostRub ?? null,
 		transactionType: "receipt",

@@ -2,10 +2,13 @@ import React from "react";
 import { Tooth46CrownOverlay } from "../../Tooth46CrownOverlay";
 import { TOOTH46_DEFECT_GEOMETRY } from "../../Tooth46DefectGeometry";
 import { TOOTH46_RESTORATION_GEOMETRY } from "../../Tooth46RestorationGeometry";
+import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "../../Tooth46CariesSpectrumGeometry";
 import type { CrownMaterial, RestorationCondition } from "../../tooth46Types";
 
 export interface Tooth46RestorationOverlayProps {
 	showComposite?: boolean | undefined;
+	compositeSurface?: "O" | "M" | "D" | "MO" | "DO" | "MOD" | string | undefined;
+	compositeSurfaces?: readonly ("O" | "M" | "D" | "B" | "L" | "V")[] | undefined;
 	showZirconiaCrown?: boolean | undefined;
 	crownMaterial?: CrownMaterial | undefined;
 	compositeCondition?: RestorationCondition | undefined;
@@ -20,6 +23,8 @@ export const Tooth46RestorationOverlay: React.FC<
 	Tooth46RestorationOverlayProps
 > = ({
 	showComposite = false,
+	compositeSurface,
+	compositeSurfaces,
 	showZirconiaCrown = false,
 	crownMaterial = "zirconia",
 	compositeCondition = "adequate",
@@ -31,6 +36,7 @@ export const Tooth46RestorationOverlay: React.FC<
 }) => {
 	const r = TOOTH46_RESTORATION_GEOMETRY;
 	const d = TOOTH46_DEFECT_GEOMETRY.defectiveComposite;
+	const sp = TOOTH46_CARIES_SPECTRUM_GEOMETRY;
 
 	// Submicron polymerized enamel margin & anatomical fissure stain
 	const compositeBorder = isDark
@@ -39,6 +45,16 @@ export const Tooth46RestorationOverlay: React.FC<
 	const fissureColor = isDark
 		? "rgba(217, 119, 6, 0.70)"
 		: "rgba(120, 53, 15, 0.75)";
+
+	// Wheeler 2.5D & MODBL Isolation: определение поверхностей пломбирования
+	const hasExplicitM = compositeSurface === "M" || compositeSurfaces?.includes("M");
+	const hasExplicitD = compositeSurface === "D" || compositeSurfaces?.includes("D");
+	const isMO = compositeSurface === "MO" || (hasExplicitM && compositeSurface?.includes("O"));
+	const isDO = compositeSurface === "DO" || (hasExplicitD && compositeSurface?.includes("O"));
+	const isMOD = compositeSurface === "MOD" || (hasExplicitM && hasExplicitD && compositeSurface?.includes("O"));
+	const isPureM = (hasExplicitM && !hasExplicitD && !compositeSurface?.includes("O")) && !isMO && !isMOD;
+	const isPureD = (hasExplicitD && !hasExplicitM && !compositeSurface?.includes("O")) && !isDO && !isMOD;
+	const renderOcclusal = !isPureM && !isPureD;
 
 	return (
 		<g id="tooth46-restorations" className={className}>
@@ -56,37 +72,67 @@ export const Tooth46RestorationOverlay: React.FC<
 			{/* Light-Cured Nanohybrid Composite (A2/A3 Enamel-Dentin) */}
 			{showComposite && (
 				<g id="tooth46-composite-filling" clipPath="url(#tooth46-crown-clip)">
-					<path
-						d={r.compositeFilling}
-						fill="url(#dente-composite-body)"
-						stroke={compositeBorder}
-						strokeWidth="0.75"
-						strokeLinejoin="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					{/* Specular Glaze Reflection */}
-					{r.compositeGlazeHighlight && (
-						<path
-							d={r.compositeGlazeHighlight}
-							fill="none"
-							stroke="#ffffff"
-							strokeWidth="0.55"
-							strokeOpacity="0.75"
-							strokeLinecap="round"
-						/>
+					{/* Окклюзионное тело пломбы (Class I / O / MO / DO / MOD) */}
+					{renderOcclusal && (
+						<>
+							<path
+								d={r.compositeFilling}
+								fill="url(#dente-composite-body)"
+								stroke={compositeBorder}
+								strokeWidth="0.75"
+								strokeLinejoin="round"
+								vectorEffect="non-scaling-stroke"
+							/>
+							{/* Specular Glaze Reflection */}
+							{r.compositeGlazeHighlight && (
+								<path
+									d={r.compositeGlazeHighlight}
+									fill="none"
+									stroke="#ffffff"
+									strokeWidth="0.55"
+									strokeOpacity="0.75"
+									strokeLinecap="round"
+								/>
+							)}
+							{/* Sculpted Secondary Anatomy Fissures */}
+							{r.compositeSculptedFissures.map((fissure) => (
+								<path
+									key={`comp-fissure-${fissure.id}`}
+									d={fissure.d}
+									fill="none"
+									stroke={fissureColor}
+									strokeWidth="0.6"
+									strokeLinecap="round"
+									vectorEffect="non-scaling-stroke"
+								/>
+							))}
+						</>
 					)}
-					{/* Sculpted Secondary Anatomy Fissures */}
-					{r.compositeSculptedFissures.map((fissure) => (
+
+					{/* Медиальная анатомическая реставрация M (MODBL-изоляция: кариес на O не затирается) */}
+					{(isPureM || isMO || isMOD) && (
 						<path
-							key={`comp-fissure-${fissure.id}`}
-							d={fissure.d}
-							fill="none"
-							stroke={fissureColor}
-							strokeWidth="0.6"
-							strokeLinecap="round"
+							d={sp.class2M.crater}
+							fill="url(#dente-composite-body)"
+							stroke={compositeBorder}
+							strokeWidth="0.75"
+							strokeLinejoin="round"
 							vectorEffect="non-scaling-stroke"
 						/>
-					))}
+					)}
+
+					{/* Дистальная анатомическая реставрация D (MODBL-изоляция) */}
+					{(isPureD || isDO || isMOD) && (
+						<path
+							d={sp.class2D.crater}
+							fill="url(#dente-composite-body)"
+							stroke={compositeBorder}
+							strokeWidth="0.75"
+							strokeLinejoin="round"
+							vectorEffect="non-scaling-stroke"
+						/>
+					)}
+
 					{/* Defective Composite: Marginal Breakdown & Recurrent Caries */}
 					{compositeCondition === "defective" && (
 						<g id="tooth46-defective-composite-manifestations">
