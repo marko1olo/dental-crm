@@ -4,6 +4,15 @@ import { formatDoctorShortName } from "../../AppointmentGridCard";
 import { CHAIR_SHIFT_PRESETS } from "../gridConstants";
 import type { ChairDoctorShiftAssignment, ChairDoctorSubShift } from "../gridTypes";
 
+const FALLBACK_FULL_PRESET = CHAIR_SHIFT_PRESETS[2] ?? {
+	id: "full" as const,
+	label: "Полный день",
+	hours: "08:00–20:00",
+	name: "Весь день 08:00–20:00",
+	startHour: 8,
+	endHour: 20,
+};
+
 export function buildChairShiftAssignment(
 	chairId: string,
 	docId: string,
@@ -56,7 +65,13 @@ export function buildChairShiftAssignment(
 				subShifts: [morningSubShift, existingEve],
 			};
 		}
-		const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset)!;
+		const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset) ?? {
+			id: shiftPreset,
+			label: isM9 ? "1 смена (09:00–15:00)" : "Утренняя смена",
+			hours: hoursLabel,
+			startHour,
+			endHour,
+		};
 		return { chairId, doctorId: docId, doctorName, doctorSpecialty: specialty, shiftPreset, shiftLabel: preset.label, shiftHours: preset.hours, startHour: preset.startHour, endHour: preset.endHour, subShifts: [morningSubShift] };
 	}
 
@@ -81,11 +96,17 @@ export function buildChairShiftAssignment(
 				subShifts: [existingMorn, eveningSubShift],
 			};
 		}
-		const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset)!;
+		const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset) ?? {
+			id: shiftPreset,
+			label: isE15 ? "2 смена (15:00–21:00)" : "Вечерняя смена",
+			hours: hoursLabel,
+			startHour,
+			endHour,
+		};
 		return { chairId, doctorId: docId, doctorName, doctorSpecialty: specialty, shiftPreset, shiftLabel: preset.label, shiftHours: preset.hours, startHour: preset.startHour, endHour: preset.endHour, subShifts: [eveningSubShift] };
 	}
 
-	const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset) || CHAIR_SHIFT_PRESETS[2]!;
+	const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset) ?? FALLBACK_FULL_PRESET;
 	return {
 		chairId, doctorId: docId, doctorName, doctorSpecialty: specialty, shiftPreset,
 		shiftLabel: preset.label, shiftHours: preset.hours, startHour: preset.startHour, endHour: preset.endHour,

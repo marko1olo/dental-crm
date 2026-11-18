@@ -281,7 +281,7 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 
 	const activeTierData = useMemo(() => {
 		if (effectiveTiers.length === 0) return null;
-		return effectiveTiers.find((t) => t.id === selectedTier) || effectiveTiers[0]!;
+		return effectiveTiers.find((t) => t.id === selectedTier) ?? effectiveTiers[0] ?? null;
 	}, [effectiveTiers, selectedTier]);
 
 	const activeCanonicalTier: TreatmentPlanTier = useMemo(() => {

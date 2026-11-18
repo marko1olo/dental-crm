@@ -38,7 +38,8 @@ export function useQuickAddDoctorSubmit({
 
 		const finalName = fullName.trim() || defaultDoctorName;
 		const shortName = formatDoctorShortName(finalName);
-		const specialtyOption = QUICK_DOCTOR_SPECIALTIES.find((s) => s.id === specialty) || QUICK_DOCTOR_SPECIALTIES[0]!;
+		const defaultSpecialty = QUICK_DOCTOR_SPECIALTIES[0] ?? { id: "therapist" as DentalSpecialty, label: "Терапевт" };
+		const specialtyOption = QUICK_DOCTOR_SPECIALTIES.find((s) => s.id === specialty) ?? defaultSpecialty;
 
 		if (!fullName.trim()) {
 			showToast(`Имя не указано. Заведено имя «${finalName}»`, "info", 3500);

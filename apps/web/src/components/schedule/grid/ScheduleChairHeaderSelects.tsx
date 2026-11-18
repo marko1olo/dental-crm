@@ -71,7 +71,7 @@ export const ScheduleChairHeaderSelects: React.FC<ScheduleChairHeaderSelectsProp
         value={currentPreset}
         onChange={(e) => {
           const newPreset = e.target.value;
-          const currentDocId = assignment?.doctorId || (doctors.length > 0 ? doctors[0]!.id : "");
+          const currentDocId = assignment?.doctorId || doctors[0]?.id || "";
           if (currentDocId) {
             handleConfirmAssignDoctor(chair.id, currentDocId, newPreset);
           }

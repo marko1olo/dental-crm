@@ -54,6 +54,16 @@ export const CLINIC_NETWORK_BRANCHES: readonly ClinicBranchInfo[] = [
 	},
 ];
 
+const DEFAULT_BRANCH: ClinicBranchInfo = CLINIC_NETWORK_BRANCHES[0] ?? {
+	id: "branch-central",
+	code: "ЦЕНТР",
+	nameRu: "Флагманский филиал «DENTE Центральный»",
+	shortNameRu: "DENTE Центр",
+	addressRu: "г. Москва, ул. Тверская, д. 12, стр. 2",
+	chiefDoctorRu: "Смирнов А. П.",
+	phone: "",
+};
+
 export function getClinicBranch(idOrCode: string): ClinicBranchInfo {
-	return CLINIC_NETWORK_BRANCHES.find((b) => b.id === idOrCode || b.code === idOrCode) || CLINIC_NETWORK_BRANCHES[0]!;
+	return CLINIC_NETWORK_BRANCHES.find((b) => b.id === idOrCode || b.code === idOrCode) ?? DEFAULT_BRANCH;
 }

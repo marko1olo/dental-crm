@@ -137,14 +137,16 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 
 				if (numDocs === 1) {
 					// Solo doctor works 1 morning shift per day (30h/week per TK RF Article 350)
-					mornDocs = [effectiveDoctors[0]!];
+					if (effectiveDoctors[0]) {
+						mornDocs = [effectiveDoctors[0]];
+					}
 				} else {
 					// Split doctors across morning and evening shifts with daily rotation
 					const half = Math.ceil(numDocs / 2);
 					const rotatedDocs = Array.from(
 						{ length: numDocs },
-						(_, i) => effectiveDoctors[(i + d) % numDocs]!,
-					);
+						(_, i) => effectiveDoctors[(i + d) % numDocs],
+					).filter((doc): doc is StaffMember => Boolean(doc));
 					mornDocs = rotatedDocs.slice(0, half);
 					eveDocs = rotatedDocs.slice(half);
 				}
@@ -153,7 +155,8 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 				const usedMornChairs = new Set<string>();
 				const usedMornAssistants = new Set<string>();
 				for (let j = 0; j < mornDocs.length; j++) {
-					const mornDoc = mornDocs[j]!;
+					const mornDoc = mornDocs[j];
+					if (!mornDoc) continue;
 					const mornChair = allocateChairForDoctor(mornDoc, usedMornChairs, j);
 					if (!mornChair) break;
 					const asst = allocateAssistantForDoctor(mornDoc, usedMornAssistants);
@@ -183,7 +186,8 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 				const usedEveChairs = new Set<string>();
 				const usedEveAssistants = new Set<string>();
 				for (let j = 0; j < eveDocs.length; j++) {
-					const eveDoc = eveDocs[j]!;
+					const eveDoc = eveDocs[j];
+					if (!eveDoc) continue;
 					const eveChair = allocateChairForDoctor(eveDoc, usedEveChairs, j);
 					if (!eveChair) break;
 					const asst = allocateAssistantForDoctor(eveDoc, usedEveAssistants);
@@ -218,7 +222,8 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 			for (let i = 0; i < activeCount; i++) {
 				const isPairAWorking = (d % 4 === 0 || d % 4 === 1);
 				const doctorPairIndex = isPairAWorking ? i : (i + activeCount) % effectiveDoctors.length;
-				const doc = effectiveDoctors[doctorPairIndex] || effectiveDoctors[i % effectiveDoctors.length]!;
+				const doc = effectiveDoctors[doctorPairIndex] || effectiveDoctors[i % effectiveDoctors.length];
+				if (!doc) continue;
 
 				const chair = allocateChairForDoctor(doc, usedChairs, i);
 				if (!chair) break;
@@ -251,7 +256,8 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 				const usedChairs = new Set<string>();
 				const usedAssistants = new Set<string>();
 				for (let i = 0; i < activeCount; i++) {
-					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length]!;
+					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length];
+					if (!doc) continue;
 					const chair = allocateChairForDoctor(doc, usedChairs, i + d);
 					if (!chair) break;
 					const asst = allocateAssistantForDoctor(doc, usedAssistants);
@@ -283,7 +289,8 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 				const usedChairs = new Set<string>();
 				const usedAssistants = new Set<string>();
 				for (let i = 0; i < activeCount; i++) {
-					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length]!;
+					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length];
+					if (!doc) continue;
 					const chair = allocateChairForDoctor(doc, usedChairs, i + d);
 					if (!chair) break;
 					const asst = allocateAssistantForDoctor(doc, usedAssistants);
@@ -315,7 +322,8 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 				const usedChairs = new Set<string>();
 				const usedAssistants = new Set<string>();
 				for (let i = 0; i < activeCount; i++) {
-					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length]!;
+					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length];
+					if (!doc) continue;
 					const chair = allocateChairForDoctor(doc, usedChairs, i + d);
 					if (!chair) break;
 					const asst = allocateAssistantForDoctor(doc, usedAssistants);

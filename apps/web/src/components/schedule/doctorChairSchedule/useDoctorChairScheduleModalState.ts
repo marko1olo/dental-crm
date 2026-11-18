@@ -70,8 +70,9 @@ export function useDoctorChairScheduleModalState(
 	const [rangeStartDate, setRangeStartDate] = useState<string>(dateKey);
 	const [rangeEndDate, setRangeEndDate] = useState<string>(() => {
 		if (!dateKey) return "";
-		const parts = dateKey.split("-").map(Number);
-		const d = new Date(Date.UTC(parts[0]!, parts[1]! - 1, parts[2]!));
+		const [year, month, day] = dateKey.split("-").map(Number);
+		if (year === undefined || month === undefined || day === undefined || Number.isNaN(year)) return "";
+		const d = new Date(Date.UTC(year, month - 1, day));
 		d.setUTCDate(d.getUTCDate() + 6);
 		return d.toISOString().slice(0, 10);
 	});
@@ -107,10 +108,12 @@ export function useDoctorChairScheduleModalState(
 	useEffect(() => {
 		if (dateKey) {
 			setRangeStartDate(dateKey);
-			const parts = dateKey.split("-").map(Number);
-			const d = new Date(Date.UTC(parts[0]!, parts[1]! - 1, parts[2]!));
-			d.setUTCDate(d.getUTCDate() + 6);
-			setRangeEndDate(d.toISOString().slice(0, 10));
+			const [year, month, day] = dateKey.split("-").map(Number);
+			if (year !== undefined && month !== undefined && day !== undefined && !Number.isNaN(year)) {
+				const d = new Date(Date.UTC(year, month - 1, day));
+				d.setUTCDate(d.getUTCDate() + 6);
+				setRangeEndDate(d.toISOString().slice(0, 10));
+			}
 		}
 	}, [dateKey]);
 
@@ -284,9 +287,9 @@ export function useDoctorChairScheduleModalState(
 				? crypto.randomUUID()
 				: `doc-${doctors.length + 1}`;
 
+		const defaultSpecialty = QUICK_DOCTOR_SPECIALTIES[0] ?? { id: "therapist" as DentalSpecialty, label: "Терапевт" };
 		const specialtyObj =
-			QUICK_DOCTOR_SPECIALTIES.find((s) => s.id === newDocSpecialty) ||
-			QUICK_DOCTOR_SPECIALTIES[0]!;
+			QUICK_DOCTOR_SPECIALTIES.find((s) => s.id === newDocSpecialty) ?? defaultSpecialty;
 
 		const newDoctorData: QuickAddDoctorData = {
 			id: newId,

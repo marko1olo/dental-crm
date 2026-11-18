@@ -296,14 +296,16 @@ export function useScheduleGridData({
       }));
 
     for (let i = 0; i < occupyingAppointments.length; i++) {
-      const item1 = occupyingAppointments[i]!;
+      const item1 = occupyingAppointments[i];
+      if (!item1) continue;
       const a1 = item1.appt;
       const s1 = item1.sMs;
       const e1 = item1.eMs;
       if (!Number.isFinite(s1) || !Number.isFinite(e1)) continue;
 
       for (let j = i + 1; j < occupyingAppointments.length; j++) {
-        const item2 = occupyingAppointments[j]!;
+        const item2 = occupyingAppointments[j];
+        if (!item2) continue;
         const a2 = item2.appt;
         const s2 = item2.sMs;
         const e2 = item2.eMs;

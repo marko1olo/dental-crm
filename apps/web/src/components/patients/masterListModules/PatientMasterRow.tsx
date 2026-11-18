@@ -60,9 +60,9 @@ export const PatientMasterRow: React.FC<PatientMasterRowProps> = ({
 							{insight.nextBestAction.length > 28 ? "Контроль оплат" : insight.nextBestAction}
 						</strong>
 					)}
-					{Boolean(insight?.balanceDueRub) && (
-						<span className="patient-row-chip shrink-0">{money(insight!.balanceDueRub)}</span>
-					)}
+					{insight?.balanceDueRub ? (
+						<span className="patient-row-chip shrink-0">{money(insight.balanceDueRub)}</span>
+					) : null}
 				</div>
 			) : null}
 		</div>

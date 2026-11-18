@@ -99,20 +99,23 @@ export const PatientRowContextMenu: React.FC<PatientRowContextMenuProps> = ({
 			<span>Печать согласия на лечение</span>
 		</button>
 
-		{patient.phone && (
+		{patient.phone ? (
 			<button
 				type="button"
 				className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 				role="menuitem"
 				onClick={() => {
 					onClose();
-					void initiateOutboundCall({ phone: patient.phone!, patientId: patient.id, patientName: patient.fullName });
+					const phone = patient.phone;
+					if (phone) {
+						void initiateOutboundCall({ phone, patientId: patient.id, patientName: patient.fullName });
+					}
 				}}
 				data-testid="row-call-patient-btn"
 			>
 				<Phone size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
 				<span>Позвонить ({patient.phone})</span>
 			</button>
-		)}
+		) : null}
 	</div>
 );
