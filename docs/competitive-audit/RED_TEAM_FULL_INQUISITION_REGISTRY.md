@@ -4263,3 +4263,77 @@ ead_file по 8 осям качества Хаммера:
   - ☀️ PC Light Quick Booking: `docs/proofs/schedule/05_schedule_quick_booking_pc_light_1440x900.png` (181.9 KB)
   - ☀️ PC Light Waitlist Drawer: `docs/proofs/schedule/06_schedule_waitlist_drawer_pc_light_1440x900.png` (46.8 KB)
   - 📱 Mobile Light Waitlist Bottom Sheet: `docs/proofs/schedule/07_schedule_waitlist_bottomsheet_mobile_light_390x844.png` (43.2 KB)
+
+---
+
+## 🏆 ВОЛНА 12: ПРОГРАММА ЛОЯЛЬНОСТИ, ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ (ЗТЛ), САНПИН И ЦИФРОВАЯ РАДИОЛОГИЯ / 3D DICOM (ДОМЕНЫ 37, 38, 39, 40)
+
+### 1. ДОМЕН 37: ПРОГРАММА ЛОЯЛЬНОСТИ, БОНУСНЫЙ БАЛАНС, КЭШБЭК И РЕФЕРАЛЫ
+- **Инквизитор (Scout):** Red Team Scout Auditor (`a2e7ba3b-6f81-4cf1-831d-d24599f57dcb`).
+- **Вердикт:** `[ПРОВЕРЕНО: ЧИСТО, ДЕФЕКТОВ НЕ ОБНАРУЖЕНО]`.
+- **Машинные гейты (Exit Code 0, 60/60 PASS):**
+  - Тесты лояльности и бонусов: 25 сьютов, 60 тестов прошли успешно (Exit Code 0).
+  - Строгая копеечная математика (`amountKopecks: bigint`), ноль float-ошибок.
+  - Честный Empty State для новых пациентов, семейный баланс депозитов.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/loyalty/01_loyalty_pc_light_1440x900.png` (112.4 KB)
+  - 🌙 PC Dark: `docs/proofs/loyalty/02_loyalty_pc_dark_1440x900.png` (124.0 KB)
+  - 📱 Mobile Light: `docs/proofs/loyalty/03_loyalty_mobile_light_390x844.png` (139.1 KB)
+  - 📱 Mobile Dark: `docs/proofs/loyalty/04_loyalty_mobile_dark_390x844.png` (147.5 KB)
+
+### 2. ДОМЕН 38: ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ (ЗТЛ), ЗУБОТЕХНИЧЕСКИЕ НАРЯДЫ И ШКАЛА VITA
+- **Хирург:** Red Team Fixer Surgeon (`fb4cbe2e-440c-45ce-a8d4-8149cd16889a`).
+- **Коммит:** `a5138c7ce` (`fix(lab): eliminate uppercase classes and resolve LabOrderCardsGrid filename shadowing`).
+- **Ликвидированные дефекты:**
+  1. **Ликвидация 8 нарушений `uppercase`**: Устранен капслок на кнопках и чипах в `MobileSheetStatusButtons.tsx:20`, `LabOrdersTableHeader.tsx:24`, `DentalLabExpressShadeNav.tsx:112`, `TimelineTrialDatesCards.tsx:12, 23, 34`, `LabTrackingPipelineStages.tsx:25, 48`, `LabTrackingRestorationSummary.tsx:33, 75`, `GuestLabPortalCourierWaybill.tsx:69`, `GuestLabPortalHeader.tsx:47`. Строго Sentence case.
+  2. **Устранение коллизии затенения имен файлов**: `LabOrderCard.tsx` переименован в `LabOrderCardsGrid.tsx` в `apps/web/src/components/lab/ordersView/`.
+- **Машинные гейты (Exit Code 0):**
+  - `labOrders.test.ts`: 21/21 PASS
+  - `labRedTeamConsolidation.test.ts`: 3/3 PASS
+  - `dentalLabSSOTSuite.test.tsx`: 12/12 PASS
+  - `tsc --noEmit` по `components/lab`: строго 0 ошибок.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/dental_lab/01_dental_lab_pc_light_1440x900.png` (138.4 KB)
+  - 🌙 PC Dark: `docs/proofs/dental_lab/02_dental_lab_pc_dark_1440x900.png` (137.0 KB)
+  - 📱 Mobile Light: `docs/proofs/dental_lab/03_dental_lab_mobile_light_390x844.png` (47.8 KB)
+  - 📱 Mobile Dark: `docs/proofs/dental_lab/04_dental_lab_mobile_dark_390x844.png` (47.0 KB)
+
+### 3. ДОМЕН 39: СТЕРИЛИЗАЦИЯ, АВТОКЛАВИРОВАНИЕ И ЖУРНАЛЫ САНПИН
+- **Хирург:** Red Team Fixer Surgeon (`50b724a8-3b0d-428e-91d3-7db251869053`).
+- **Коммит:** `639e87bde` (`fix(sanpin): fix kraft package diary link, parser validation, dark tokens and eradicate orphans`).
+- **Ликвидированные дефекты:**
+  1. **Интеграция крафт-пакетов с дневником приёма**: В `packages/shared/src/sanpin/kraftDiaryLink.ts` заглушка заменена на идемпотентную привязку к `appliedMaterials` визита.
+  2. **Валидация парсера штрихкодов**: В `packages/shared/src/sanpin/kraftBarcodeParser.ts` пустой и пробельный ввод строго возвращает `isValid: false`.
+  3. **Санация дизайн-токенов**: Хардкод `dark:border-[#334155]` заменен на семантический `var(--line)` в `SterilizationBatchCycleModal.tsx`, `SanPinSterilizationJournal.tsx`, `CleaningControlTab.tsx`, `sanpin.css`.
+  4. **Истребление сирот (`git rm`)**: Удалены `SanpinUvAndCleaningRegisterTab.tsx` и `SanpinUvAndCleaningSubHeader.tsx`.
+- **Машинные гейты (Exit Code 0, 310/310 PASS):**
+  - Web SanPin Suite: 310/310 passed (114 suites, 0 fail).
+  - Shared SanPin tests: 14/14 + 14/14 + 30/30 + 9/9 passed.
+  - `tsc --noEmit` packages/shared: 0 ошибок.
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/sanpin/01_sanpin_pc_light_1440x900.png` (127.3 KB)
+  - 🌙 PC Dark: `docs/proofs/sanpin/02_sanpin_pc_dark_1440x900.png` (162.1 KB)
+  - 📱 Mobile Light: `docs/proofs/sanpin/03_sanpin_mobile_light_390x844.png` (166.4 KB)
+  - 📱 Mobile Dark: `docs/proofs/sanpin/04_sanpin_mobile_dark_390x844.png` (175.0 KB)
+
+### 4. ДОМЕН 40: ЦИФРОВАЯ РАДИОЛОГИЯ, 16-БИТНЫЙ DICOM, MPR, 3D STL ВЬЮВЕР И ВИЗИОГРАФ RVG <50мс
+- **Хирург:** Red Team Fixer Surgeon (`6e09f5b7-9fa1-49ac-bccb-e8daff31e8df`).
+- **Коммит:** `f4262bf32` (`fix(imaging): eliminate 12 red team defects across radiology and 3D viewers`).
+- **Ликвидированные дефекты:**
+  1. **Связывание MPR-пропсов**: Устранен TS2740 в `ImagingDesktopWorkspace.tsx` через привязку канонического `ImagingMprPanelProps`.
+  2. **Синхронизация exactOptionalPropertyTypes**: В `ImagingHeader.tsx`, `HardwareSensorGatewayCard.tsx`, `HardwareImagingSection.tsx`, `ImagingSeriesGalleryProps` опциональные поля синхронизированы с `| undefined`.
+  3. **Искоренение `any`**: Устранены касты в `ImagingEmptyStateStage.tsx` и `useImagingStageDrop.ts`.
+  4. **Отказоустойчивость загрузки**: Добавлен `try/catch` с клиническим тостом при ошибках сети/сервера в `useImagingStageDrop.ts` и `imagingUploadService.ts`.
+  5. **Идемпотентность транзакций (Мандат 8d/8zp)**: Добавлен заголовок `Idempotency-Key` (UUIDv7) на `POST /api/imaging/upload`.
+  6. **Безопасная утилизация WebGL**: В `dental3dDisposal.ts` и `dental3dSceneEngine.ts` задействованы `DisposableResource` и `WebGlRendererWithContextLoss` без кастов к `any`. Удален фиктивный `glRef` в `DicomViewport.tsx`.
+  7. **Очистка от брендов конкурентов (Мандат 8x)**: Удалены коммерческие метки Diagnocat из `imaging.ts`.
+- **Машинные гейты (Exit Code 0, 88/88 PASS):**
+  - `@dental/shared/imaging`: 43/43 passed (100% green).
+  - `@dental/web` imaging: 31/31 passed (100% green).
+  - `@dental/api` radiology lifecycle: 14/14 passed (100% green).
+  - `tsc --noEmit` по `components/imaging` и `imagingViewModules`: СТРОГО 0 ОШИБОК!
+- **4-State Visual Proofs (Личный осмотр через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/imaging/01_imaging_pc_light_1440x900.png` (568.5 KB)
+  - 🌙 PC Dark: `docs/proofs/imaging/02_imaging_pc_dark_1440x900.png` (567.1 KB)
+  - 📱 Mobile Light: `docs/proofs/imaging/03_imaging_mobile_light_390x844.png` (1020.4 KB)
+  - 📱 Mobile Dark: `docs/proofs/imaging/04_imaging_mobile_dark_390x844.png` (1023.7 KB)
