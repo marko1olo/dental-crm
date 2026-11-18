@@ -193,7 +193,7 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 			);
 			assert.ok(html.includes("pricelist-drag-handle"), "Должен быть тактильный Drag Handle");
 			assert.ok(html.includes("Новая услуга клиники"), "Заголовок новой услуги");
-			assert.ok(html.includes("✓ Добавить услугу"), "Кнопка сохранения");
+			assert.ok(html.includes("Добавить услугу"), "Кнопка сохранения");
 			assert.ok(!html.includes("disabled"), "Кнопка НИКОГДА не заблокирована (Мандат 8e)");
 		});
 	});

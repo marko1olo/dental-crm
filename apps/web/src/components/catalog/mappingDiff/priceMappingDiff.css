@@ -676,14 +676,14 @@
 }
 
 .pricelist-diff-btn-primary {
-	background: var(--teal, #0d9488);
+	background: var(--primary);
 	color: #ffffff;
-	border-color: var(--teal, #0d9488);
+	border-color: var(--primary);
 }
 
 .pricelist-diff-btn-primary:hover {
-	background: var(--teal-dark, #0f766e);
-	border-color: var(--teal-dark, #0f766e);
+	background: var(--primary-hover);
+	border-color: var(--primary-hover);
 }
 
 /* Responsive */

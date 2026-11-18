@@ -125,7 +125,7 @@ export function PricesFilterToolbar({
 								className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 z-50 flex flex-col gap-1 p-2 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-xl min-w-[240px] max-w-[340px] animate-in fade-in zoom-in-95 duration-100 text-xs"
 								role="menu"
 							>
-								<div className="px-2 py-1 text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] mb-1">
+								<div className="px-2 py-1 text-xs font-semibold text-[var(--muted)] border-b border-[var(--line)] mb-1">
 									Быстрый выбор процедур
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">

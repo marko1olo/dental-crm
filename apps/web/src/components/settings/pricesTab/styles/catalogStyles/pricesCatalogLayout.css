@@ -52,7 +52,7 @@
 
 /* Dark Mode Hygiene */
 :is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-section-card {
-	background: var(--paper, #0f172a); border-color: var(--line, #334155);
+	background: var(--paper, #0f172a); border-color: var(--line);
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-tab-btn:hover:not(.active) {

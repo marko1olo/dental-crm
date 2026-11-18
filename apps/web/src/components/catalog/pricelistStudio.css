@@ -150,7 +150,7 @@
 
 /* Единственный Primary CTA по Мандату 8am */
 .pricelist-btn-primary {
-	background: var(--teal, #0d9488);
+	background: var(--primary);
 	color: #ffffff;
 	border-color: transparent;
 	font-weight: 600;
@@ -158,7 +158,7 @@
 }
 
 .pricelist-btn-primary:hover {
-	background: var(--teal-dark, #0f766e);
+	background: var(--primary-hover);
 	color: #ffffff;
 }
 
@@ -818,49 +818,49 @@
 	--paper-strong: rgba(15, 23, 42, 0.94);
 	--ink: #f8fafc;
 	--muted: #94a3b8;
-	--line: #334155;
-	--teal: #14b8a6;
+	--line: rgba(255, 255, 255, 0.1);
+	--teal: var(--primary);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn:not(.pricelist-btn-primary) {
 	background: rgba(255, 255, 255, 0.05);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: var(--ink, #f8fafc);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn:not(.pricelist-btn-primary):hover {
 	background: rgba(255, 255, 255, 0.09);
-	border-color: var(--line-strong, #475569);
+	border-color: var(--line-strong, rgba(255, 255, 255, 0.2));
 	color: var(--ink, #f8fafc);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn-primary,
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn.pricelist-btn-primary {
-	background: var(--teal, #0d9488) !important;
-	border-color: var(--teal, #0d9488) !important;
+	background: var(--primary) !important;
+	border-color: var(--primary) !important;
 	color: #ffffff !important;
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn-primary:hover,
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn.pricelist-btn-primary:hover {
-	background: var(--teal-dark, #0f766e) !important;
-	border-color: var(--teal-dark, #0f766e) !important;
+	background: var(--primary-hover) !important;
+	border-color: var(--primary-hover) !important;
 	color: #ffffff !important;
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-search-input {
 	background: rgba(255, 255, 255, 0.04);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: var(--ink, #f8fafc);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-drag-handle {
-	background: var(--line, #475569);
+	background: var(--line);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-chip-btn {
 	background: rgba(255, 255, 255, 0.05);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: var(--ink, #f8fafc);
 }
 
@@ -872,17 +872,17 @@
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-mobile-card {
 	background: rgba(255, 255, 255, 0.04);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-floating-bottom-bar {
 	background: var(--paper, #0f172a);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-price-cell:hover {
 	background: rgba(255, 255, 255, 0.06);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-price-input {
@@ -893,7 +893,7 @@
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-quick-bundle-chip {
 	background: rgba(255, 255, 255, 0.05);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: var(--ink, #f8fafc);
 }
 
@@ -904,12 +904,12 @@
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-form-drawer {
 	background: var(--paper, #0f172a);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 
 :is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-input {
 	background: var(--paper-soft, #1e293b);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: var(--ink, #f8fafc);
 }
 

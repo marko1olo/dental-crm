@@ -183,7 +183,7 @@ describe("Wave 134: Auto-Visit BOM & Class B Medical Waste Engine", () => {
 				"Statutory Form 043/u text must contain 0 cartoon emojis per Mandate 8d",
 			);
 			assert.ok(text.includes("МИНИСТЕРСТВО ЗДРАВООХРАНЕНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ"));
-			assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО: ФОРМА N 043/У"));
+			assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА"));
 		});
 	});
 

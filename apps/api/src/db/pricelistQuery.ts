@@ -36,6 +36,7 @@ import {
 	type DentalSpecialty,
 	type ServiceCatalogItem,
 	type ServiceCategory,
+	rublesToKopecks,
 	serviceCatalogItemSchema,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -207,7 +208,7 @@ export function projectServiceCatalogRows(
 			materialsCostRub: row.materialsCostRub !== null && row.materialsCostRub !== undefined ? Number(row.materialsCostRub) : 0,
 			labCostRub: row.labCostRub !== null && row.labCostRub !== undefined ? Number(row.labCostRub) : 0,
 			tierPrices: (row.tierPrices && typeof row.tierPrices === "object") ? (row.tierPrices as Record<string, unknown>) : {},
-			priceKopecks: Math.round(basePriceRub * 100),
+			priceKopecks: rublesToKopecks(basePriceRub),
 		});
 
 		if (!parsed.success) {
@@ -866,7 +867,10 @@ export async function upsertServiceBomInDb(
 				})
 				.where(eq(schema.procedureTechCards.id, techCard.id))
 				.returning();
-			techCard = updated!;
+			if (!updated) {
+				throw new Error(`Не удалось обновить технологическую карту для услуги: ${serviceId}`);
+			}
+			techCard = updated;
 			await tx
 				.delete(schema.procedureTechCardItems)
 				.where(eq(schema.procedureTechCardItems.techCardId, techCard.id));
@@ -882,7 +886,10 @@ export async function upsertServiceBomInDb(
 					description,
 				})
 				.returning();
-			techCard = inserted!;
+			if (!inserted) {
+				throw new Error(`Не удалось создать технологическую карту для услуги: ${serviceId}`);
+			}
+			techCard = inserted;
 		}
 
 		let totalCost = 0;

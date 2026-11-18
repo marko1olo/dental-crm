@@ -4,6 +4,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type {
 	ExistingCatalogReference,
 	IngestedMappingItem,
@@ -32,13 +33,13 @@ export interface ItemPriceDiffResult {
  */
 export function calculateItemPriceDiff(item: IngestedMappingItem): ItemPriceDiffResult {
 	const newPriceRub = Math.max(0, item.priceRub ?? 0);
-	const newPriceKopecks = item.priceKopecks ?? Math.round(newPriceRub * 100);
+	const newPriceKopecks = item.priceKopecks ?? rublesToKopecks(newPriceRub);
 
 	const hasExisting =
 		typeof item.matchedExistingPriceRub === "number" &&
 		Number.isFinite(item.matchedExistingPriceRub);
 	const oldPriceRub = hasExisting ? Math.max(0, item.matchedExistingPriceRub) : 0;
-	const oldPriceKopecks = Math.round(oldPriceRub * 100);
+	const oldPriceKopecks = rublesToKopecks(oldPriceRub);
 
 	if (!hasExisting || item.suggestedAction === "create_new") {
 		return {
@@ -142,7 +143,7 @@ export function usePriceDiffPanesState({
 		}
 
 		const avgConfidence = total > 0 ? Math.round((totalConfidence / total) * 100) : 0;
-		const totalDeltaRub = Math.round(totalDeltaKopecks / 100);
+		const totalDeltaRub = Math.round(kopecksToRubles(totalDeltaKopecks));
 
 		return {
 			total,

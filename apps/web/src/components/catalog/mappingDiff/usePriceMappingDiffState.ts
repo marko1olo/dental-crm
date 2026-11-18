@@ -4,6 +4,7 @@
  */
 
 import { useId, useMemo, useRef, useState } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import type {
 	ExistingCatalogReference,
 	IngestedMappingItem,
@@ -25,7 +26,7 @@ export function applyDeltaToItem(
 		return {
 			...it,
 			priceRub: nextPrice,
-			priceKopecks: Math.round(nextPrice * 100),
+			priceKopecks: rublesToKopecks(nextPrice),
 		};
 	});
 }
@@ -40,7 +41,7 @@ export function applyPriceToItem(
 		return {
 			...it,
 			priceRub: parsedRub,
-			priceKopecks: Math.round(parsedRub * 100),
+			priceKopecks: rublesToKopecks(parsedRub),
 		};
 	});
 }
@@ -56,7 +57,7 @@ export function applyMarkupToItems(
 		return {
 			...it,
 			priceRub: nextPrice,
-			priceKopecks: Math.round(nextPrice * 100),
+			priceKopecks: rublesToKopecks(nextPrice),
 		};
 	});
 }
@@ -72,7 +73,7 @@ export function applyRoundingToItems(
 		return {
 			...it,
 			priceRub: nextPrice,
-			priceKopecks: Math.round(nextPrice * 100),
+			priceKopecks: rublesToKopecks(nextPrice),
 		};
 	});
 }
