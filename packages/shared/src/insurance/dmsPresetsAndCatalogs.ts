@@ -82,7 +82,35 @@ export interface DmsPolicy {
 }
 
 export type PatientGuaranteeLetter = DmsGuaranteeLetter;
-export type DmsGuaranteeLetterRecord = DmsGuaranteeLetter;
+export type DmsGuaranteeLetterRecord = DmsGuaranteeLetter | {
+	readonly id: string;
+	readonly letterNumber: string;
+	readonly insurerId?: string | undefined;
+	readonly insurerName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientFullName: string;
+	readonly policyNumber: string;
+	readonly programKey?: string | undefined;
+	readonly issueDate: string;
+	readonly validFrom?: string | undefined;
+	readonly validTo?: string | undefined;
+	readonly validUntil?: string | undefined;
+	readonly totalLimitKopecks?: number | undefined;
+	readonly usedAmountKopecks?: number | undefined;
+	readonly limitKopecks?: number | undefined;
+	readonly usedKopecks?: number | undefined;
+	readonly remainingLimitKopecks?: number | undefined;
+	readonly defaultFranchisePercent?: number | undefined;
+	readonly approvedNomenclatureCodes?: readonly string[] | undefined;
+	readonly approvedTeeth?: readonly string[] | undefined;
+	readonly diagnosisMkb10?: readonly string[] | undefined;
+	readonly curatorFullName?: string | undefined;
+	readonly curatorPhone?: string | undefined;
+	readonly curatorEmail?: string | undefined;
+	readonly attachedXrayUris?: readonly string[] | undefined;
+	readonly status: DmsGuaranteeLetter["status"];
+	readonly notes?: string | undefined;
+};
 export type DmsBillItemInput = DmsBillableItem;
 
 export interface PatientPaymentSplit {
@@ -834,34 +862,63 @@ export function calculateDmsSplitInvoice(
 	};
 }
 
+export interface DmsServiceVerificationParams {
+	readonly serviceCode?: string | undefined;
+	readonly serviceCode804n?: string | undefined;
+	readonly serviceName?: string | undefined;
+	readonly toothNumber?: string | number | undefined;
+	readonly programKey?: string | undefined;
+	readonly requestedPriceKopecks?: number | undefined;
+	readonly guaranteeLetter?: DmsGuaranteeLetter | DmsGuaranteeLetterRecord | undefined;
+}
+
+export type DmsVerificationStatus =
+	| "approved"
+	| "requires_preauth"
+	| "requires_letter"
+	| "rejected_exclusion"
+	| "excluded";
+
+export interface DmsServiceVerificationResult {
+	readonly status: DmsVerificationStatus | string;
+	readonly isCovered: boolean;
+	readonly requiresPreAuth: boolean;
+	readonly dmsPayableKopecks: number;
+	readonly patientPayableKopecks: number;
+	readonly isExcludedByRule?: boolean | undefined;
+	readonly approvedByGuaranteeLetter?: boolean | undefined;
+}
+
 export function verifyServiceForDms(
-	paramsOrCode: string | {
-		serviceCode?: string | undefined;
-		serviceCode804n?: string | undefined;
-		serviceName?: string | undefined;
-		requestedPriceKopecks?: number | undefined;
-		guaranteeLetter?: DmsGuaranteeLetter | undefined;
-	},
-	letter?: DmsGuaranteeLetter,
-): boolean | {
-	status: string;
-	isCovered: boolean;
-	dmsPayableKopecks: number;
-	patientPayableKopecks: number;
-	isExcludedByRule?: boolean | undefined;
-	approvedByGuaranteeLetter?: boolean | undefined;
-} {
+	code: string,
+	letter?: DmsGuaranteeLetter | string | undefined,
+): boolean;
+export function verifyServiceForDms(
+	params: DmsServiceVerificationParams,
+	letter?: DmsGuaranteeLetter | undefined,
+): DmsServiceVerificationResult;
+export function verifyServiceForDms(
+	paramsOrCode: string | DmsServiceVerificationParams,
+	letter?: DmsGuaranteeLetter | string | undefined,
+): boolean | DmsServiceVerificationResult {
 	if (typeof paramsOrCode === "string") {
-		return isServiceCodeApprovedByLetter(paramsOrCode, letter);
+		const targetLetter = typeof letter === "object" && letter !== null ? letter : undefined;
+		return isServiceCodeApprovedByLetter(paramsOrCode, targetLetter);
 	}
 
 	const code = paramsOrCode.serviceCode804n || paramsOrCode.serviceCode || "";
 	const name = (paramsOrCode.serviceName || "").toLowerCase();
 	const price = paramsOrCode.requestedPriceKopecks || 0;
-	const gLetter = paramsOrCode.guaranteeLetter || letter;
+	const gLetter = paramsOrCode.guaranteeLetter || (typeof letter === "object" && letter !== null ? letter : undefined);
 
 	if (gLetter?.status === "expired") {
-		return { status: "requires_letter", isCovered: false, dmsPayableKopecks: 0, patientPayableKopecks: price };
+		return {
+			status: "requires_letter",
+			isCovered: false,
+			requiresPreAuth: true,
+			dmsPayableKopecks: 0,
+			patientPayableKopecks: price,
+		};
 	}
 
 	const normCode = code.trim();
@@ -872,6 +929,7 @@ export function verifyServiceForDms(
 		return {
 			status: "rejected_exclusion",
 			isCovered: false,
+			requiresPreAuth: false,
 			dmsPayableKopecks: 0,
 			patientPayableKopecks: price,
 			isExcludedByRule: true,
@@ -882,6 +940,7 @@ export function verifyServiceForDms(
 		return {
 			status: "approved",
 			isCovered: true,
+			requiresPreAuth: false,
 			dmsPayableKopecks: price,
 			patientPayableKopecks: 0,
 			approvedByGuaranteeLetter: true,
@@ -891,6 +950,7 @@ export function verifyServiceForDms(
 	return {
 		status: "approved",
 		isCovered: true,
+		requiresPreAuth: false,
 		dmsPayableKopecks: price,
 		patientPayableKopecks: 0,
 	};
@@ -1100,12 +1160,41 @@ export function generateBilateralAcceptanceActHtml(params: {
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Акт сдачи-приемки № ${actNum}</title><style>@page{size:A4 portrait;margin:15mm;}body{font-family:'Times New Roman',serif;font-size:11pt;line-height:1.3;color:#000;padding:10px;}table{width:100%;border-collapse:collapse;margin:12px 0;font-size:9.5pt;}th{border:1px solid #000;background:#f0f0f0;padding:5px;}</style></head><body><h2 style="text-align:center;">АКТ СДАЧИ-ПРИЕМКИ № ${actNum}</h2><p>По Договору ДМС № ${insurer.contractNumber} от ${insurer.contractDate} г.</p><p>Исполнитель: ${clinic.name}, ИНН ${clinic.inn}. Заказчик: ${insurer.name}</p><table><thead><tr><th>№</th><th>Дата</th><th>Пациент</th><th>Полис</th><th>Гар. письмо</th><th>Услуга</th><th>Кол-во</th><th>Тариф</th><th>ДМС</th><th>Пациент</th></tr></thead><tbody>${rows}</tbody></table><p>Всего к оплате Страховщиком: <strong>${formatRubKopecks(summary.totalDmsCoveredRub)}</strong>. Оплачено пациентом: <strong>${formatRubKopecks(summary.totalPatientPaidRub)}</strong>.</p><div style="display:flex;justify-content:space-between;margin-top:20px;"><div><strong>ОТ ИСПОЛНИТЕЛЯ:</strong> ${clinic.name}</div><div><strong>ОТ ЗАКАЗЧИКА:</strong> ${insurer.name}</div></div></body></html>`;
 }
 
-export function generateDmsPreAuthRequest(params: {
-	insurerId?: string | undefined;
-	patient?: { fullName?: string | undefined } | undefined;
-	diagnosisMkb10?: { code?: string | undefined } | undefined;
-	requestedServices?: readonly { priceKopecks?: number | undefined; quantity?: number | undefined; code804n?: string | undefined }[] | undefined;
-}): {
+export interface DmsPreAuthRequestParams {
+	readonly insurerId?: string | undefined;
+	readonly patient?: {
+		readonly id?: string | undefined;
+		readonly fullName?: string | undefined;
+		readonly policyNumber?: string | undefined;
+	} | undefined;
+	readonly programKey?: string | undefined;
+	readonly diagnosisMkb10?: {
+		readonly code?: string | undefined;
+		readonly title?: string | undefined;
+	} | undefined;
+	readonly toothNumber?: string | number | undefined;
+	readonly requestedServices?: readonly {
+		readonly code804n?: string | undefined;
+		readonly name?: string | undefined;
+		readonly quantity?: number | undefined;
+		readonly priceKopecks?: number | undefined;
+	}[] | undefined;
+	readonly clinicalJustification?: string | undefined;
+	readonly attachedXrayStudies?: readonly {
+		readonly id?: string | undefined;
+		readonly type?: string | undefined;
+		readonly title?: string | undefined;
+		readonly date?: string | undefined;
+		readonly uri?: string | undefined;
+	}[] | undefined;
+	readonly attendingDoctor?: {
+		readonly fullName?: string | undefined;
+		readonly specialty?: string | undefined;
+		readonly signatureDate?: string | undefined;
+	} | undefined;
+}
+
+export function generateDmsPreAuthRequest(params: DmsPreAuthRequestParams): {
 	documentId: string;
 	requestNumber: string;
 	totalRequestedKopecks: number;

@@ -543,7 +543,15 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						onClose={() => setIsPhotoProtocolOpen(false)}
 						patientId={selectedPatient.id}
 						patientName={selectedPatient.fullName}
-						patientCardNumber={selectedPatient.cardNumber || selectedPatient.medicalCardNumber}
+						patientCardNumber={
+							("cardNumber" in selectedPatient && typeof selectedPatient.cardNumber === "string"
+								? selectedPatient.cardNumber
+								: undefined) ??
+							("medicalCardNumber" in selectedPatient && typeof selectedPatient.medicalCardNumber === "string"
+								? selectedPatient.medicalCardNumber
+								: undefined) ??
+							(selectedPatient.id ? `№ ${String(selectedPatient.id).slice(0, 8)}` : undefined)
+						}
 					/>
 				</Suspense>
 			)}

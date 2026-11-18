@@ -75,10 +75,11 @@ export function usePatientCreationState({
 			const timeout = setTimeout(() => nameInputRef.current?.focus(), 50);
 			return () => clearTimeout(timeout);
 		}
+		return undefined;
 	}, [isOpen]);
 
 	useEffect(() => {
-		if (!isOpen) return;
+		if (!isOpen) return undefined;
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
 				e.preventDefault();

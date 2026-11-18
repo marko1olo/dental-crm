@@ -57,6 +57,8 @@ export type ClinicProfileDraft = {
 
 export type ClinicProfileSaveState = "idle" | "saving" | "saved" | "error";
 
+export type PatientCreationWizardStep = "general" | "administrative" | "insurance" | "consents";
+
 export type PatientCoreDraft = {
 	fullName: string;
 	birthDate: string;
@@ -98,26 +100,30 @@ export type PatientAdministrativeProfileDraft = {
 		| "dmsCoverageLimitRub"
 		| "telegramUserId"
 		| "telegramUsername"
+		| "treatmentPlanApprovals"
+		| "decree659Compliance"
 	>]: string;
 } & {
 	preferredAppointmentWeekdays: number[];
-	isAnonymous?: boolean | null;
-	anonymousCode?: string | null;
-	consentSignatures?: Record<string, unknown> | null;
-	clinicalSafetyProfile?: Record<string, unknown> | null;
-	dmsPolicyNumber?: string | null;
-	dmsInsuranceCompany?: string | null;
-	dmsGuaranteeLetterNumber?: string | null;
-	dmsCoverageLimitKopecks?: number | null;
-	dmsCoverageLimitRub?: number | null;
-	utmSource?: string | null;
-	utmMedium?: string | null;
-	utmCampaign?: string | null;
-	utmContent?: string | null;
-	utmTerm?: string | null;
-	leadSource?: string | null;
-	telegramUserId?: string | null;
-	telegramUsername?: string | null;
+	isAnonymous?: boolean | null | undefined;
+	anonymousCode?: string | null | undefined;
+	consentSignatures?: Record<string, unknown> | null | undefined;
+	clinicalSafetyProfile?: Record<string, unknown> | null | undefined;
+	treatmentPlanApprovals?: Record<string, unknown> | null | undefined;
+	decree659Compliance?: string | null | undefined;
+	dmsPolicyNumber?: string | null | undefined;
+	dmsInsuranceCompany?: string | null | undefined;
+	dmsGuaranteeLetterNumber?: string | null | undefined;
+	dmsCoverageLimitKopecks?: number | null | undefined;
+	dmsCoverageLimitRub?: number | null | undefined;
+	utmSource?: string | null | undefined;
+	utmMedium?: string | null | undefined;
+	utmCampaign?: string | null | undefined;
+	utmContent?: string | null | undefined;
+	utmTerm?: string | null | undefined;
+	leadSource?: string | null | undefined;
+	telegramUserId?: string | null | undefined;
+	telegramUsername?: string | null | undefined;
 };
 
 export type PatientAdministrativeProfileSaveState =
@@ -136,17 +142,17 @@ export type StaffScheduleDraft = {
 export type StaffScheduleSaveState = "idle" | "saving" | "saved" | "error";
 
 export type AppointmentScheduleDraft = {
-	patientId?: string | null;
+	patientId?: string | null | undefined;
 	doctorUserId: string;
-	assistantUserId?: string | null;
+	assistantUserId?: string | null | undefined;
 	chairId: string;
 	status: Appointment["status"];
 	startsAt: string;
 	endsAt: string;
-	reason?: string;
-	comment?: string;
-	notes?: string;
-	cancellationReason?: string;
+	reason?: string | undefined;
+	comment?: string | undefined;
+	notes?: string | undefined;
+	cancellationReason?: string | undefined;
 };
 
 export type AppointmentScheduleSaveState =

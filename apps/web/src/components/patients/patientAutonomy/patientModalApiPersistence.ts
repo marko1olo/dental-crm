@@ -114,7 +114,7 @@ export async function executePatientCardModalSaveAutonomy({
 	updatedGeneral: PatientGeneralInfo;
 	updatedSafety: PatientClinicalSafetyProfile;
 	updatePatientCoreDraft: (field: keyof PatientCoreDraft, value: string) => void;
-	updatePatientAdministrativeProfileDraft: (field: keyof PatientAdministrativeProfileDraft, value: unknown) => void;
+	updatePatientAdministrativeProfileDraft: (field: keyof PatientAdministrativeProfileDraft, value: string | number[]) => void;
 	setDashboard?: (updater: (curr: Dashboard | null | undefined) => Dashboard | null | undefined) => void;
 }) {
 	if (updatedGeneral.fullName?.trim()) updatePatientCoreDraft("fullName", updatedGeneral.fullName.trim());

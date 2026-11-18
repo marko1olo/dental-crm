@@ -1,10 +1,17 @@
 import { create } from "zustand";
 export type {
+	PatientCoreDraft,
+	PatientAdministrativeProfileDraft,
+	PatientCreationWizardStep,
+	PatientCoreSaveState,
+	PatientAdministrativeProfileSaveState,
+} from "../AppConstants.js";
+import type {
 	PatientAdministrativeProfileDraft,
 	PatientAdministrativeProfileSaveState,
 	PatientCoreDraft,
 	PatientCoreSaveState,
-} from "../AppConstants";
+} from "../AppConstants.js";
 import {
 	emptyPatientAdministrativeProfileDraft,
 	emptyPatientCoreDraft,

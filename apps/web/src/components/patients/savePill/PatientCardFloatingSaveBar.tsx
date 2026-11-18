@@ -32,6 +32,7 @@ export const PatientCardFloatingSaveBar: React.FC<PatientCardFloatingSaveBarProp
 			}, 3500);
 			return () => clearTimeout(timer);
 		}
+		return undefined;
 	}, [saveState]);
 
 	const isVisible = isDirty || saveState === "saving" || saveState === "error" || showSavedFeedback;

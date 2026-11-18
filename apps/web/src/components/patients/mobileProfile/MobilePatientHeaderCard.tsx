@@ -61,11 +61,11 @@ export const MobilePatientHeaderCard: React.FC<MobilePatientHeaderCardProps> = (
 	const upcomingAppointment = useMemo(() => {
 		const now = Date.now();
 		const list = (dashboard?.appointments ?? []).filter((a: Appointment) => a?.patientId === patient.id);
-		const upcoming = list.filter((a): a is Appointment & { startsAt: string } => {
+		const upcoming = list.filter((a: Appointment): a is Appointment & { startsAt: string } => {
 			if (a.status === "cancelled" || !a.startsAt) return false;
 			return new Date(a.startsAt).getTime() >= now - 3600000;
 		});
-		return upcoming.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0] ?? null;
+		return upcoming.sort((a: Appointment & { startsAt: string }, b: Appointment & { startsAt: string }) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0] ?? null;
 	}, [dashboard?.appointments, patient.id]);
 
 	const { allergyText, somaticRiskFlags } = useMobilePatientSafetyAlerts(patient);

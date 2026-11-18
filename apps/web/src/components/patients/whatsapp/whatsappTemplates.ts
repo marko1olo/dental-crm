@@ -29,13 +29,13 @@ export function getWhatsappTemplateText(
 		case "reminder":
 			return upcomingAppointment
 				? generateAppointmentConfirmationMessage({
-						patientName: nameHint,
-						doctorName: upcomingAppointment.doctorName,
+						patientName: nameHint || "Пациент",
+						doctorName: upcomingAppointment.doctorName ?? undefined,
 						appointmentStartsAt: upcomingAppointment.startsAt || new Date().toISOString(),
 						clinicName,
 						templateType: "reminder",
 					})
-				: `Здравствуйте, ${nameHint}! Напоминаем о вашем визите в ${clinicName}. Пожалуйста, приходите за 5–10 минут до начала приёма.`;
+				: `Здравствуйте, ${nameHint || "Пациент"}! Напоминаем о вашем визите в ${clinicName}. Пожалуйста, приходите за 5–10 минут до начала приёма.`;
 		case "confirmation":
 			return upcomingAppointment
 				? `Здравствуйте, ${nameHint}! Напоминаем: вы записаны в ${clinicName} на ${dateStr} к доктору ${doctor}. Пожалуйста, подтвердите визит ответным сообщением ДА или позвоните нам.`

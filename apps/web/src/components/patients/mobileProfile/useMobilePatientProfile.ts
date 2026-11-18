@@ -40,7 +40,7 @@ export function useMobilePatientProfile({
 			(a: Appointment) => a?.patientId === patient.id,
 		);
 		return list.sort(
-			(a, b) =>
+			(a: Appointment, b: Appointment) =>
 				new Date(b?.startsAt ?? 0).getTime() -
 				new Date(a?.startsAt ?? 0).getTime(),
 		);
@@ -48,12 +48,12 @@ export function useMobilePatientProfile({
 
 	const patientStudies = useMemo(() => {
 		const all = dashboard?.imagingStudies ?? [];
-		return all.filter((s) => String(s?.patientId) === String(patient.id));
+		return all.filter((s: NonNullable<Dashboard["imagingStudies"]>[number]) => String(s?.patientId) === String(patient.id));
 	}, [dashboard?.imagingStudies, patient.id]);
 
 	const patientInvoices = useMemo(() => {
 		const all = dashboard?.invoices ?? [];
-		return all.filter((inv) => String(inv?.patientId) === String(patient.id));
+		return all.filter((inv: NonNullable<Dashboard["invoices"]>[number]) => String(inv?.patientId) === String(patient.id));
 	}, [dashboard?.invoices, patient.id]);
 
 	const handleStartVisit = useCallback(() => {

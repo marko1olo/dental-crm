@@ -13,7 +13,7 @@
 import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity, Award, Calendar, CalendarCheck, Camera, ClipboardList, ExternalLink,
+	Activity, AlertTriangle, Award, Calendar, CalendarCheck, Camera, ClipboardList, ExternalLink,
 	FileCheck, FileText, FlaskConical, HeartPulse, History, Plus, Printer, Scan, ShieldAlert, ShieldCheck,
 	Stethoscope, User, Users, Wallet, X,
 } from "lucide-react";
@@ -342,7 +342,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						data-testid="patient-card-modal-somatic-banner"
 					>
 						<div className="flex items-center gap-2 min-w-0 flex-1">
-							<span className="text-sm shrink-0" aria-hidden="true">⚠️</span>
+							<AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
 							<div className="flex items-center gap-1.5 flex-wrap min-w-0">
 								<span className="text-[11px] font-bold shrink-0 tracking-wide">
 									<span className="sr-only">
