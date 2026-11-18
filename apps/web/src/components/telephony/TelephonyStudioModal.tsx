@@ -48,7 +48,7 @@ export const TelephonyStudioHeader: React.FC<TelephonyStudioHeaderProps> = ({
 		</div>
 		<div className="dnt-telephony-header">
 			<div className="flex items-center gap-2.5 min-w-0">
-				<div className="w-8 h-8 rounded-lg bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] flex items-center justify-center font-bold shrink-0">
+				<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center font-bold shrink-0">
 					<Phone className="w-4 h-4" />
 				</div>
 				<div className="min-w-0">
@@ -104,7 +104,7 @@ export const TelephonySoftphoneDialpad: React.FC<TelephonySoftphoneDialpadProps>
 	return (
 		<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-2.5 sm:p-3 shadow-xs">
 			<div className="flex items-center justify-between mb-2 px-1">
-				<span className="text-xs font-semibold text-[var(--ink-muted)] uppercase tracking-wider">Быстрый набор</span>
+				<span className="text-xs font-semibold text-[var(--ink-muted)]">Быстрый набор</span>
 				<div className="flex items-center gap-2">
 					<input
 						type="text"
@@ -157,11 +157,11 @@ export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> =
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<div className="flex items-center gap-2 mb-1">
-						<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] font-semibold border border-[var(--teal,#0d9488)]/20">
+						<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)] font-semibold border border-[var(--primary)]/20">
 							{selectedCall.patientCategory}
 						</span>
 						{selectedCall.balanceRub !== 0 && (
-							<span className={`text-xs px-2 py-0.5 rounded-md font-medium border ${selectedCall.balanceRub < 0 ? "bg-[var(--danger,#ef4444)]/10 text-[var(--danger,#ef4444)] border-[var(--danger,#ef4444)]/20" : "bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/20"}`}>
+							<span className={`text-xs px-2 py-0.5 rounded-md font-medium border ${selectedCall.balanceRub < 0 ? "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger)]/20" : "bg-[var(--success-soft)] text-[var(--success-ink)] border-[var(--success-line)]"}`}>
 								{selectedCall.balanceRub < 0 ? `Долг: ${Math.abs(selectedCall.balanceRub)} ₽` : `Баланс: +${selectedCall.balanceRub} ₽`}
 							</span>
 						)}
@@ -171,7 +171,7 @@ export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> =
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
 					{onCallPatient && (
-						<button type="button" onClick={onCallPatient} data-testid="telephony-call-patient-btn" title="Позвонить" aria-label="Позвонить" className="p-2 rounded-lg bg-[var(--paper-secondary,#f1f5f9)] hover:bg-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--teal,#0d9488)] transition-colors cursor-pointer">
+						<button type="button" onClick={onCallPatient} data-testid="telephony-call-patient-btn" title="Позвонить" aria-label="Позвонить" className="p-2 rounded-lg bg-[var(--paper-secondary,#f1f5f9)] hover:bg-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--primary)] transition-colors cursor-pointer">
 							<Phone className="w-4 h-4" />
 						</button>
 					)}
@@ -208,7 +208,7 @@ export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> =
 					onChange={(e) => onCallNoteChange(e.target.value)}
 					placeholder="Зафиксировать итог переговоров..."
 					data-testid="telephony-call-note-input"
-					className="w-full px-3 py-2 text-xs bg-[var(--paper-secondary,#f1f5f9)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder-[var(--ink-muted)] outline-hidden focus:border-[var(--teal,#0d9488)] transition-colors"
+					className="w-full px-3 py-2 text-xs bg-[var(--paper-secondary,#f1f5f9)] border border-[var(--line)] rounded-lg text-[var(--ink)] placeholder-[var(--ink-muted)] outline-hidden focus:border-[var(--primary)] transition-colors"
 				/>
 				<div className="flex flex-wrap gap-1.5 pt-1">
 					{QUICK_NOTE_PRESETS.map((preset) => (

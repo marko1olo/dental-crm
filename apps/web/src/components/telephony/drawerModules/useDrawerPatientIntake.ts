@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { Dashboard, Patient } from "@dental/shared";
 import type { IncomingCallPayload } from "../../../store/telephonyTypes";
 import type { UseIncomingCallDataResult } from "../useIncomingCallData";
 import type { AppLogicContextValue } from "../../../contexts/AppLogicContext";
@@ -48,7 +49,7 @@ export function useDrawerPatientIntake(params: {
 			const active = useTelephonyStore.getState().activeCall;
 			if (active) triggerIncomingCall({ ...active, patientId: createdPatient.id, patientName: createdPatient.fullName });
 			if (ctx?.setDashboard) {
-				ctx.setDashboard((curr) => curr ? { ...curr, patients: [createdPatient, ...curr.patients.filter((p) => p.id !== createdPatient.id)] } : curr);
+				ctx.setDashboard((curr: Dashboard | null | undefined) => curr ? { ...curr, patients: [createdPatient, ...curr.patients.filter((p: Patient) => p.id !== createdPatient.id)] } : curr);
 			}
 			showToast(`Создана амбулаторная карта: ${createdPatient.fullName} (${callData.formattedPhone})`, "success");
 		} catch (err: unknown) {

@@ -149,7 +149,7 @@ export function IncomingCallOutcomePanel({
 				onClick={onToggleOutcomePanel}
 				className="w-full min-h-[40px] px-3 py-2 flex items-center justify-between text-[11px] font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
 			>
-				<span className="uppercase tracking-wider flex items-center gap-1.5">
+				<span className="font-semibold text-xs flex items-center gap-1.5">
 					<History size={13} className="text-[var(--teal)]" />
 					Фиксация исхода звонка
 				</span>

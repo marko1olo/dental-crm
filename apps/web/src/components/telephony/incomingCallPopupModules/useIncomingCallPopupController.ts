@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { type Chair, type Dashboard, patientSchema, type Patient, type StaffMember } from "@dental/shared";
 import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
@@ -129,13 +130,13 @@ export function useIncomingCallPopupController(
 	// Quick Booking (1-click schedule reservation)
 	const handleQuickBook = (slotType: QuickSlotType = "today_standard") => {
 		const defaultDoctorId =
-			dashboard?.clinicSettings?.staff?.find((s) => s.active && (s.role === "doctor" || s.role === "owner"))?.id ||
-			dashboard?.clinicSettings?.staff?.find((s) => s.role === "doctor" || s.role === "owner")?.id ||
+			dashboard?.clinicSettings?.staff?.find((s: StaffMember) => s.active && (s.role === "doctor" || s.role === "owner"))?.id ||
+			dashboard?.clinicSettings?.staff?.find((s: StaffMember) => s.role === "doctor" || s.role === "owner")?.id ||
 			dashboard?.clinicSettings?.staff?.[0]?.id ||
 			DEFAULT_DOCTOR_FALLBACK_ID ||
 			"";
 		const defaultChairId =
-			dashboard?.clinicSettings?.chairs?.find((c) => c.active)?.id ||
+			dashboard?.clinicSettings?.chairs?.find((c: Chair) => c.active)?.id ||
 			dashboard?.clinicSettings?.chairs?.[0]?.id || "";
 
 		const { startsAt, endsAt } = getSlotInterval(slotType);
@@ -176,44 +177,84 @@ export function useIncomingCallPopupController(
 		showToast(`Запись подтверждена: ${slotLabel}. Слот зарезервирован в расписании.`, "success");
 	};
 
-	// Fast Patient Registration
+	// Fast Patient Registration (Mandates 8e, 8bm, 8bo)
 	const handleQuickCreatePatient = async (customName?: string) => {
 		if (!currentCall?.phone || isCreatingPatient) return;
 		setIsCreatingPatient(true);
 		try {
 			const entered = typeof customName === "string" ? customName : newPatientNameInput;
 			const targetName = entered.trim() || `Пациент ${formattedPhone}`;
+			const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `call-pat-${Date.now()}`;
 			const res = await fetch("/api/patients", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
 					"x-dente-clinic-token": readDenteClinicToken(),
 					"x-dente-staff-token": readDenteStaffToken(),
 				},
 				body: JSON.stringify({ fullName: targetName, phone: currentCall.phone }),
 			});
 			if (!res.ok) {
-				const data = await res.json().catch(() => ({}));
+				const data = (await res.json().catch(() => ({}))) as {
+					message?: string;
+					existingPatientId?: string;
+					existingPatient?: { id: string; fullName: string };
+				};
+				if (res.status === 409 && (data.existingPatientId || data.existingPatient?.id)) {
+					const existingId = data.existingPatientId || data.existingPatient?.id || "";
+					const existingName = data.existingPatient?.fullName || targetName;
+					setSelectedPatientId(existingId);
+					setNewPatientNameInput("");
+					const active = useTelephonyStore.getState().activeCall;
+					if (active) {
+						useTelephonyStore.getState().triggerIncomingCall({
+							...active,
+							patientId: existingId,
+							patientName: existingName,
+						});
+					}
+					showToast(`Привязана существующая карта: ${existingName} (${formattedPhone})`, "info");
+					return;
+				}
 				throw new Error(data.message || `Ошибка сервера: ${res.status}`);
 			}
-			const createdPatient = await res.json();
-			setSelectedPatientId(createdPatient.id);
+			const rawJson = (await res.json()) as unknown;
+			const unwrapped = (rawJson && typeof rawJson === "object" && "data" in rawJson && rawJson.data)
+				? rawJson.data
+				: rawJson;
+			const parsed = patientSchema.safeParse(unwrapped);
+			const createdPatient: Patient | null = parsed.success ? parsed.data : null;
+			const createdId = createdPatient?.id || (unwrapped && typeof unwrapped === "object" && "id" in unwrapped && typeof unwrapped.id === "string" ? unwrapped.id : null);
+			const createdName = createdPatient?.fullName || (unwrapped && typeof unwrapped === "object" && "fullName" in unwrapped && typeof unwrapped.fullName === "string" ? unwrapped.fullName : targetName);
+
+			if (createdId) {
+				setSelectedPatientId(createdId);
+			}
 			setNewPatientNameInput("");
 
 			const active = useTelephonyStore.getState().activeCall;
-			if (active) {
+			if (active && createdId) {
 				useTelephonyStore.getState().triggerIncomingCall({
-					...active, patientId: createdPatient.id, patientName: createdPatient.fullName,
+					...active,
+					patientId: createdId,
+					patientName: createdName,
 				});
 			}
-			if (ctx?.setDashboard) {
-				ctx.setDashboard((curr) =>
+			if (ctx?.setDashboard && createdPatient) {
+				ctx.setDashboard((curr: Dashboard | null | undefined) =>
 					curr
-						? { ...curr, patients: [createdPatient, ...curr.patients.filter((p) => p.id !== createdPatient.id)] }
+						? {
+								...curr,
+								patients: [
+									createdPatient,
+									...curr.patients.filter((p: Patient) => p.id !== createdPatient.id),
+								],
+							}
 						: curr,
 				);
 			}
-			showToast(`Создана амбулаторная карта: ${createdPatient.fullName} (${formattedPhone})`, "success");
+			showToast(`Создана амбулаторная карта: ${createdName} (${formattedPhone})`, "success");
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Не удалось сохранить пациента", "error");
 		} finally {

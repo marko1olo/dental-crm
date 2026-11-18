@@ -15,11 +15,11 @@ export const IncomingCallerStatusBadge: React.FC<IncomingCallerStatusBadgeProps>
 		if (resolvedCategory === "VIP") {
 			return (
 				<span
-					className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1 shadow-xs"
+					className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)] inline-flex items-center gap-1 shadow-xs"
 					data-testid="incoming-caller-status-vip"
 					title="VIP пациент клиники"
 				>
-					<Sparkles size={11} className="text-amber-600 dark:text-amber-400" />
+					<Sparkles size={11} className="text-[var(--warning-ink)]" />
 					VIP
 				</span>
 			);
@@ -27,22 +27,22 @@ export const IncomingCallerStatusBadge: React.FC<IncomingCallerStatusBadgeProps>
 		if (resolvedCategory === "Первичный") {
 			return (
 				<span
-					className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 inline-flex items-center gap-1"
+					className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 bg-[var(--primary-soft,var(--paper-soft))] text-[var(--primary)] border border-[var(--primary-soft,var(--line))] inline-flex items-center gap-1"
 					data-testid="incoming-caller-status-new"
 					title="Первичный пациент"
 				>
-					<UserPlus size={11} className="text-sky-600 dark:text-sky-400" />
+					<UserPlus size={11} className="text-[var(--primary)]" />
 					Первичный
 				</span>
 			);
 		}
 		return (
 			<span
-				className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1"
+				className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)] inline-flex items-center gap-1"
 				data-testid="incoming-caller-status-regular"
 				title="Постоянный пациент клиники"
 			>
-				<UserCheck size={11} className="text-emerald-600 dark:text-emerald-400" />
+				<UserCheck size={11} className="text-[var(--success-ink)]" />
 				Постоянный
 			</span>
 		);
@@ -50,11 +50,11 @@ export const IncomingCallerStatusBadge: React.FC<IncomingCallerStatusBadgeProps>
 
 	return (
 		<span
-			className="text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 inline-flex items-center gap-1"
+			className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)] inline-flex items-center gap-1"
 			data-testid="incoming-caller-status-unregistered"
 			title="Новый пациент (номер отсутствует в базе CRM)"
 		>
-			<UserPlus size={11} className="text-amber-600 dark:text-amber-400" />
+			<UserPlus size={11} className="text-[var(--warning-ink)]" />
 			Новый пациент / Лид
 		</span>
 	);

@@ -13,7 +13,7 @@ export const IncomingCallerSomaticAlerts: React.FC<IncomingCallerSomaticAlertsPr
 
 	return (
 		<div className="p-3 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger-soft)] text-[var(--ink)] space-y-1.5">
-			<div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--danger)]">
+			<div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--danger)]">
 				<AlertTriangle size={14} className="text-[var(--danger)]" />
 				<span>Медицинские предупреждения:</span>
 			</div>

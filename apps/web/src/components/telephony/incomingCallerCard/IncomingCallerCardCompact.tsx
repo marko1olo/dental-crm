@@ -92,7 +92,7 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 				{showFinancialTile && (
 					<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col justify-between gap-1 shadow-xs">
 						<div className="flex items-center justify-between gap-1">
-							<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
+							<span className="text-[10px] font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
 								<Wallet size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
 								Баланс
 							</span>
@@ -119,7 +119,7 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 				{/* Tile 2: Appointment / Last Visit */}
 				<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col justify-between gap-1 shadow-xs">
 					<div className="flex items-center justify-between gap-1">
-						<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
+						<span className="text-[10px] font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
 							{upcomingAppointment ? (
 								<>
 									<Calendar size={11} className="text-[var(--teal,#0d9488)] shrink-0" />

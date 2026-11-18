@@ -23,7 +23,7 @@ export function TelephonyDrawerTreatmentPlan({
 			data-testid="telephony-drawer-active-plan-card"
 		>
 			<div className="flex items-center justify-between gap-1">
-				<span className="font-bold text-[11px] uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5">
+				<span className="font-semibold text-xs text-[var(--teal)] flex items-center gap-1.5">
 					<Sparkles size={13} className="text-amber-500 shrink-0" />
 					<span>План лечения:</span>
 				</span>

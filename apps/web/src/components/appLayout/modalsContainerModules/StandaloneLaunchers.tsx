@@ -45,6 +45,10 @@ export function renderStandaloneLaunchers(
 		typeof window !== "undefined" &&
 		(window.location.search.includes("stand=") ||
 			window.location.search.includes("demo=true") ||
+			window.location.hash.includes("executive-studio") ||
+			window.location.hash.includes("analytics") ||
+			window.location.search.includes("executive_studio") ||
+			window.location.search.includes("analytics") ||
 			window.location.search.includes("endo") ||
 			window.location.hash.includes("endo") ||
 			window.location.search.includes("ortho") ||
@@ -54,7 +58,12 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("warranty") ||
 			window.location.hash.includes("capture") ||
 			window.location.hash.includes("rvg") ||
-			window.location.hash.includes("dicom"));
+			window.location.hash.includes("dicom") ||
+			window.location.hash.includes("telephony") ||
+			window.location.hash.includes("softphone") ||
+			window.location.hash.includes("calls") ||
+			window.location.search.includes("telephony") ||
+			window.location.search.includes("softphone"));
 
 	if (!isStandOrDemo && !isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;

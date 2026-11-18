@@ -19,7 +19,7 @@ export function IncomingCallHeaderBar({ ctrl }: IncomingCallHeaderBarProps): Rea
 					<span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCallAnswered ? "bg-teal-400" : "bg-emerald-400"}`} />
 					<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isCallAnswered ? "bg-teal-500" : "bg-emerald-500"}`} />
 				</span>
-				<span className="hidden sm:inline text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider shrink-0 whitespace-nowrap">
+				<span className="hidden sm:inline text-xs font-semibold text-[var(--ink,#0f172a)] shrink-0 whitespace-nowrap">
 					{isCallEnded ? "Завершён" : isCallAnswered ? "Разговор" : "Входящий"}
 				</span>
 				<span className="hidden md:inline-flex text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] shrink-0 whitespace-nowrap items-center" title={`Провайдер телефонии: ${providerLabel}`}>
@@ -34,7 +34,7 @@ export function IncomingCallHeaderBar({ ctrl }: IncomingCallHeaderBarProps): Rea
 				</div>
 				{!isCallAnswered ? (
 					<>
-						<button type="button" onClick={handleAnswerCall} className="min-h-[34px] px-2.5 sm:px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 shrink-0" title="Принять входящий звонок" data-testid="badge-header-answer-btn">
+						<button type="button" onClick={handleAnswerCall} className="min-h-[34px] px-2.5 sm:px-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 shrink-0" title="Принять входящий звонок" data-testid="badge-header-answer-btn">
 							<PhoneCall size={13} className="animate-pulse" />
 							<span>Ответить</span>
 						</button>

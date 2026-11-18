@@ -18,12 +18,12 @@ export const IncomingCallerFinancialStatus: React.FC<IncomingCallerFinancialStat
 	return (
 		<div className="p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] space-y-2">
 			<div className="flex items-center justify-between">
-				<span className="font-bold text-[11px] uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+				<span className="font-semibold text-xs text-[var(--muted,#64748b)] flex items-center gap-1.5">
 					<CreditCard size={12} className="text-[var(--teal)]" />
 					Финансовый статус:
 				</span>
 				{hasDms && (
-					<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center gap-1">
+					<span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center gap-1">
 						<Shield size={10} className="text-sky-500" />
 						ДМС активен
 					</span>
@@ -33,11 +33,11 @@ export const IncomingCallerFinancialStatus: React.FC<IncomingCallerFinancialStat
 				<div className="p-2.5 rounded-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)]">
 					<span className="text-[10px] text-[var(--muted,#64748b)] block">Баланс</span>
 					<span
-						className={`text-sm font-bold ${
+						className={`text-sm font-mono tracking-tight font-medium ${
 							hasDebt
-								? "text-rose-600"
+								? "text-[var(--danger)]"
 								: (financialSummary.balanceRub || 0) > 0
-									? "text-emerald-600"
+									? "text-[var(--success-ink)]"
 									: "text-[var(--ink,#0f172a)]"
 						}`}
 					>

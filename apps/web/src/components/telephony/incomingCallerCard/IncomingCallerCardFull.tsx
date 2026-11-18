@@ -49,12 +49,12 @@ export const IncomingCallerCardFull: React.FC<FullProps> = ({
 
 			{!isKnownPatient && (
 				<div className="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 space-y-1 shadow-xs" data-testid="incoming-call-new-patient-banner">
-					<div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+					<div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
 						<UserPlus size={14} className="text-amber-600 dark:text-amber-400" />
 						<span>Новый пациент</span>
 					</div>
 					<p className="text-[11px] text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
-						Номер <strong className="font-mono">{formattedPhone}</strong> не найден в базе CRM клиники. Создайте карту пациента за 5 секунд или запишите на приём без ручного ввода номера.
+						Номер <strong className="font-mono">{formattedPhone}</strong> не найден в базе CRM клиники. Создайте карту пациента или оформите запись на приём без ручного ввода номера.
 					</p>
 				</div>
 			)}
@@ -65,7 +65,7 @@ export const IncomingCallerCardFull: React.FC<FullProps> = ({
 			{upcomingAppointment && (
 				<div className="p-3.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] space-y-2">
 					<div className="flex items-center justify-between">
-						<span className="font-bold text-[11px] uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5">
+						<span className="font-semibold text-xs text-[var(--teal)] flex items-center gap-1.5">
 							<CalendarCheck size={13} /> Предстоящий приём:
 						</span>
 						<div className="flex items-center gap-1">
@@ -93,7 +93,7 @@ export const IncomingCallerCardFull: React.FC<FullProps> = ({
 
 			{lastVisitSummary && (
 				<div className="p-3 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--line,#e2e8f0)] space-y-1">
-					<span className="font-bold text-[10px] uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1">
+					<span className="font-semibold text-[11px] text-[var(--muted,#64748b)] flex items-center gap-1">
 						<Clock size={11} className="text-[var(--teal)]" /> Предыдущий визит:
 					</span>
 					<div className="text-xs text-[var(--ink,#0f172a)]">

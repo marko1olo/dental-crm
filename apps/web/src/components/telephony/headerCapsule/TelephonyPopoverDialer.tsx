@@ -48,14 +48,14 @@ export function TelephonyPopoverDialer({
 					value={dialNumber}
 					onChange={(e) => onDialNumberChange(e.target.value)}
 					placeholder="+7 (___) ___-__-__"
-					className="flex-1 bg-transparent px-2.5 py-1.5 text-sm font-mono font-bold text-[var(--ink)] placeholder:text-[var(--muted)] outline-hidden min-h-[48px] sm:min-h-[36px]"
+					className="flex-1 bg-transparent px-2.5 py-1.5 text-sm font-mono font-bold text-[var(--ink)] placeholder:text-[var(--ink-muted)] outline-hidden min-h-[48px] sm:min-h-[36px]"
 					aria-label="Номер телефона для набора"
 				/>
 				{dialNumber && (
 					<button
 						type="button"
 						onClick={handleBackspace}
-						className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg hover:bg-[var(--paper-subtle)] text-[var(--muted)] hover:text-rose-500 cursor-pointer"
+						className="min-h-[48px] min-w-[48px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg hover:bg-[var(--paper-subtle)] text-[var(--ink-muted)] hover:text-[var(--danger)] cursor-pointer"
 						title="Стереть"
 						aria-label="Стереть цифру"
 					>
@@ -72,8 +72,8 @@ export function TelephonyPopoverDialer({
 						onClick={() => handleDigit(d)}
 						className="min-h-[52px] h-[52px] sm:min-h-[40px] sm:h-auto rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] active:scale-95 border border-[var(--line)] flex flex-col items-center justify-center transition-all cursor-pointer group"
 					>
-						<span className="text-sm font-bold text-[var(--ink)] group-hover:text-[var(--teal)]">{d}</span>
-						{sub && <span className="text-[9px] font-mono text-[var(--muted)] -mt-0.5 leading-none">{sub}</span>}
+						<span className="text-sm font-bold text-[var(--ink)] group-hover:text-[var(--primary)]">{d}</span>
+						{sub && <span className="text-[9px] font-mono text-[var(--ink-muted)] -mt-0.5 leading-none">{sub}</span>}
 					</button>
 				))}
 			</div>

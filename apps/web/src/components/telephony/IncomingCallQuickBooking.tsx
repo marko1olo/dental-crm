@@ -29,27 +29,27 @@ export const QUICK_SLOT_PRESETS: QuickSlotOption[] = [
 		title: "Сегодня 10:00",
 		subtitle: "Острая боль",
 		time: "10:00",
-		badgeClass: "text-[var(--teal,#0d9488)]",
+		badgeClass: "text-[var(--primary)]",
 		buttonClass:
-			"bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-subtle,#f1f5f9)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)]",
+			"bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--primary)] text-[var(--ink)]",
 	},
 	{
 		type: "today_standard",
 		title: "Сегодня 14:30",
 		subtitle: "Консультация",
 		time: "14:30",
-		badgeClass: "text-[var(--teal,#0d9488)]",
+		badgeClass: "text-[var(--primary)]",
 		buttonClass:
-			"bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-subtle,#f1f5f9)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)]",
+			"bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--primary)] text-[var(--ink)]",
 	},
 	{
 		type: "tomorrow",
 		title: "Завтра 11:00",
 		subtitle: "Плановый",
 		time: "11:00",
-		badgeClass: "text-[var(--muted,#64748b)]",
+		badgeClass: "text-[var(--ink-muted)]",
 		buttonClass:
-			"bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-subtle,#f1f5f9)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)]",
+			"bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--primary)] text-[var(--ink)]",
 	},
 ];
 
@@ -117,27 +117,27 @@ export function computeQuickBookingSlots(
 			title: `Сегодня ${urgentTimeDisplay}`,
 			subtitle: "Острая боль",
 			time: urgentTimeDisplay,
-			badgeClass: "text-[var(--teal,#0d9488)]",
+			badgeClass: "text-[var(--primary)]",
 			buttonClass:
-				"bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-subtle,#f1f5f9)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)]",
+				"bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--primary)] text-[var(--ink)]",
 		},
 		{
 			type: "today_standard",
 			title: `Сегодня ${standardTimeDisplay}`,
 			subtitle: "Консультация",
 			time: standardTimeDisplay,
-			badgeClass: "text-[var(--teal,#0d9488)]",
+			badgeClass: "text-[var(--primary)]",
 			buttonClass:
-				"bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-subtle,#f1f5f9)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)]",
+				"bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--primary)] text-[var(--ink)]",
 		},
 		{
 			type: "tomorrow",
 			title: `Завтра ${tomorrowTimeDisplay}`,
 			subtitle: "Плановый",
 			time: tomorrowTimeDisplay,
-			badgeClass: "text-[var(--muted,#64748b)]",
+			badgeClass: "text-[var(--ink-muted)]",
 			buttonClass:
-				"bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-subtle,#f1f5f9)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)]",
+				"bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--primary)] text-[var(--ink)]",
 		},
 	];
 
@@ -167,10 +167,10 @@ export function IncomingCallQuickBooking({
 	const displaySlots = slots && slots.length > 0 ? slots : QUICK_SLOT_PRESETS;
 	return (
 		<div
-			className={`p-3.5 rounded-xl bg-[var(--paper-subtle,var(--paper-soft,#f8fafc))] border border-[var(--teal-soft)] space-y-2 animate-in fade-in ${className}`}
+			className={`p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2 animate-in fade-in ${className}`}
 			data-testid="incoming-call-quick-booking-slots"
 		>
-			<div className="flex items-center justify-between text-xs font-bold text-[var(--teal)] uppercase tracking-wider mb-1">
+			<div className="flex items-center justify-between text-xs font-semibold text-[var(--primary)] mb-1">
 				<div className="flex items-center gap-1.5">
 					<Calendar size={13} />
 					<span>Быстрая запись</span>
@@ -179,7 +179,7 @@ export function IncomingCallQuickBooking({
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-1 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
+						className="p-1 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-subtle)] transition-colors cursor-pointer"
 						title="Закрыть выбор слотов"
 						aria-label="Закрыть быструю запись"
 					>
@@ -198,13 +198,13 @@ export function IncomingCallQuickBooking({
 						data-testid={`quick-slot-${slot.type}`}
 					>
 						<div className="flex items-center justify-between w-full">
-							<span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${slot.badgeClass}`}>
-								{slot.type === "today_urgent" ? <Zap size={11} className="text-[var(--teal,#0d9488)]" /> : <Clock size={11} />}
+							<span className={`text-[10px] font-semibold flex items-center gap-1 ${slot.badgeClass}`}>
+								{slot.type === "today_urgent" ? <Zap size={11} className="text-[var(--primary)]" /> : <Clock size={11} />}
 								<span>{slot.subtitle}</span>
 							</span>
 							<span className="text-[11px] font-mono font-bold">{slot.time}</span>
 						</div>
-						<span className="text-xs font-bold mt-1 block truncate text-[var(--ink,#0f172a)]">{slot.title}</span>
+						<span className="text-xs font-bold mt-1 block truncate text-[var(--ink)]">{slot.title}</span>
 					</button>
 				))}
 			</div>

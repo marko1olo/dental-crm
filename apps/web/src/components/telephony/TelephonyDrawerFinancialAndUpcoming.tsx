@@ -26,11 +26,11 @@ export function TelephonyDrawerFinancialAndUpcoming({
 			{/* Financial Status Card */}
 			<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2">
 				<div className="flex items-center justify-between">
-					<span className="font-bold text-[11px] uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+					<span className="font-semibold text-xs text-[var(--muted)] flex items-center gap-1.5">
 						<CreditCard size={12} className="text-[var(--teal)]" />Финансовый статус:
 					</span>
 					{hasDms && (
-						<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center gap-1">
+						<span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center gap-1">
 							<Shield size={10} className="text-sky-500" />ДМС активен
 						</span>
 					)}
@@ -38,7 +38,7 @@ export function TelephonyDrawerFinancialAndUpcoming({
 				<div className="grid grid-cols-2 gap-2">
 					<div className="p-2.5 rounded-lg bg-[var(--paper-strong)] border border-[var(--line)]">
 						<span className="text-[10px] text-[var(--muted)] block">Баланс</span>
-						<span className={`text-sm font-bold ${hasDebt ? "text-rose-600" : financialSummary.balanceRub > 0 ? "text-emerald-600" : "text-[var(--ink)]"}`}>
+						<span className={`text-sm font-mono tracking-tight font-medium ${hasDebt ? "text-[var(--danger)]" : financialSummary.balanceRub > 0 ? "text-[var(--success-ink)]" : "text-[var(--ink)]"}`}>
 							{hasDebt ? `-${financialSummary.formattedDebt}` : financialSummary.formattedBalance}
 						</span>
 					</div>
@@ -53,7 +53,7 @@ export function TelephonyDrawerFinancialAndUpcoming({
 			{upcomingAppointment && (
 				<div className="p-3.5 rounded-xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] space-y-2">
 					<div className="flex items-center justify-between">
-						<span className="font-bold text-[11px] uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5">
+						<span className="font-semibold text-xs text-[var(--teal)] flex items-center gap-1.5">
 							<CalendarCheck size={13} />Предстоящий приём:
 						</span>
 						<div className="flex items-center gap-1">
@@ -78,7 +78,7 @@ export function TelephonyDrawerFinancialAndUpcoming({
 			{/* Previous Visit Summary */}
 			{lastVisitSummary && (
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1">
-					<span className="font-bold text-[10px] uppercase tracking-wider text-[var(--muted)] flex items-center gap-1">
+					<span className="font-semibold text-[11px] text-[var(--muted)] flex items-center gap-1">
 						<Clock size={11} className="text-[var(--teal)]" />Предыдущий визит:
 					</span>
 					<div className="text-xs text-[var(--ink)]">
