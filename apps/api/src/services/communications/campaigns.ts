@@ -49,7 +49,7 @@ import type {
 } from "./channelRouter.js";
 import { isMachineDeliverableChannel } from "./channelRouter.js";
 import { type CommunicationIntentCode, enqueueMessage } from "./dispatcher.js";
-import { checkChannelFit, renderTemplate } from "./templateRenderer.js";
+import { checkChannelFit, renderTemplate } from "./templateEngine/templateRenderer.js";
 
 type CampaignRow = typeof communicationCampaigns.$inferSelect;
 

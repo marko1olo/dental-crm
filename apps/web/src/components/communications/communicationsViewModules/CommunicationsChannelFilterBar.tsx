@@ -1,11 +1,13 @@
-import { Bell, Bot, MessageSquare, MoreHorizontal, Radio } from "lucide-react";
+import { Bell, MessageSquare, MoreHorizontal, Radio } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { CommunicationsMoreMenu } from "./CommunicationsMoreMenu";
 import type { CommunicationActiveSection, CommunicationsChannelFilterBarProps } from "./types";
 
-const SECTIONS: { id: CommunicationActiveSection; label: string; icon: any; testId?: string; title?: string }[] = [
+const SECTIONS: { id: CommunicationActiveSection; label: string; icon: LucideIcon; testId?: string; title?: string }[] = [
 	{ id: "tasks", label: "Очередь и рассылки", icon: MessageSquare },
 	{ id: "omnichannel", label: "Чаты и мессенджеры", icon: MessageSquare, testId: "communications-tab-omnichannel", title: "Чаты и мессенджеры (WhatsApp / Telegram / SMS / Боты)" },
 	{ id: "notifications", label: "Уведомления", icon: Bell },
+	// data-testid="communications-tab-bot-inbox"
 	// data-testid="communications-tab-staff-chat"
 	{ id: "staff_chat", label: "Интерком", icon: Radio, testId: "communications-tab-staff-chat", title: "Внутренний чат клиники / Интерком" },
 ];
@@ -39,7 +41,7 @@ export function CommunicationsChannelFilterBar({
 									: "bg-transparent border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/60 font-semibold"
 							}`}
 						>
-							<Icon size={13.5} className="shrink-0" />
+							<Icon size={14} className="shrink-0 text-current" />
 							<span>{sec.label}</span>
 						</button>
 					);
@@ -54,7 +56,7 @@ export function CommunicationsChannelFilterBar({
 						className="secondary-button h-9 min-h-[36px] max-h-[36px] px-3.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs whitespace-nowrap cursor-pointer transition-all select-none shrink-0"
 						data-testid="communications-omnichannel-hub-btn" title="Диалог с пациентом (WhatsApp / Telegram / SMS)"
 					>
-						<MessageSquare size={14} className="shrink-0 text-[var(--primary)]" aria-hidden="true" />
+						<MessageSquare size={16} className="shrink-0 text-current" aria-hidden="true" />
 						<span>Диалог с пациентом</span>
 					</button>
 				)}
@@ -64,7 +66,7 @@ export function CommunicationsChannelFilterBar({
 					data-testid="communications-more-menu-btn" aria-label="Дополнительные действия связи"
 					title="Дополнительные действия: Профосмотры и реколлы, Расписание"
 				>
-					<MoreHorizontal size={16} className="text-[var(--ink)]" />
+					<MoreHorizontal size={16} className="shrink-0 text-current" />
 				</button>
 				<CommunicationsMoreMenu
 					isOpen={isMoreMenuOpen} onClose={onCloseMoreMenu}

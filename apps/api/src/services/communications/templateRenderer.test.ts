@@ -9,7 +9,7 @@ import {
 	findTemplateVariable,
 	renderTemplate,
 	validateTemplateBody,
-} from "./templateRenderer.js";
+} from "./templateEngine/templateRenderer.js";
 
 describe("findTemplateVariable", () => {
 	test("finds template variable", () => {

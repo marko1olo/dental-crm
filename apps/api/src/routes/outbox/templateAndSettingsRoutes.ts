@@ -12,7 +12,7 @@ import {
 	communicationTemplateVariables,
 	renderTemplate,
 	validateTemplateBody,
-} from "../../services/communications/templateRenderer.js";
+} from "../../services/communications/templateEngine/templateRenderer.js";
 import {
 	insertTemplate,
 	saveSettingsRow,

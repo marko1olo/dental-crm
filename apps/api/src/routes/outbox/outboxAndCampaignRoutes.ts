@@ -5,7 +5,7 @@ import {
 } from "../../accessGuard.js";
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import { MessageTemplateEngine } from "../../services/communications/MessageTemplateEngine.js";
-import { renderTemplate } from "../../services/communications/templateRenderer.js";
+import { renderTemplate } from "../../services/communications/templateEngine/templateRenderer.js";
 import {
 	cancelCampaignRecord,
 	cancelQueuedMessage,

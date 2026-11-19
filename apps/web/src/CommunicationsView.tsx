@@ -24,15 +24,15 @@ export function CommunicationsView(
 		if (ctrl.activeSection === "omnichannel") {
 			return (
 				<div className="w-full max-w-full overflow-x-clip h-[calc(100dvh-196px)] bg-[var(--paper)] p-1.5 box-border flex flex-col gap-1" data-testid="communications-view">
-					<div className="flex items-center justify-between pb-1 border-b border-[var(--line)] shrink-0">
+					<div className="flex items-center justify-between pb-2 border-b border-[var(--line)] shrink-0 gap-2">
 						<button
 							type="button"
 							onClick={() => ctrl.setActiveSection("tasks")}
-							className="secondary-button text-xs font-bold py-1 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+							className="inline-flex items-center justify-center min-h-[44px] h-11 px-4 rounded-xl text-sm font-semibold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] transition-colors shrink-0"
 						>
 							← Очередь задач
 						</button>
-						<span className="text-xs font-bold text-[var(--ink)]">Омниканальный чат</span>
+						<span className="text-sm font-semibold text-[var(--ink)]">Омниканальный чат</span>
 					</div>
 					<div className="flex-1 min-h-0 overflow-hidden">
 						<Suspense fallback={null}>

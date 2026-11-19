@@ -14,7 +14,7 @@ import {
 import { and, asc, eq, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
-import { checkChannelFit, describeSmsPayload } from "./templateRenderer.js";
+import { checkChannelFit, describeSmsPayload } from "./templateEngine/templateRenderer.js";
 
 /**
  * Filter criteria for message template queries.
@@ -28,85 +28,30 @@ export interface MessageTemplateFilter {
 
 /**
  * Ensures standard clinical templates are seeded for an organization.
+ * SSOT: Каноническая таблица communication_templates (Мандат 8bf).
  */
 export async function ensureDefaultMessageTemplatesSeeded(
 	organizationId: string,
 ): Promise<number> {
-	const existing = await db
-		.select({ id: schema.messageTemplateCatalogs.id })
-		.from(schema.messageTemplateCatalogs)
-		.where(eq(schema.messageTemplateCatalogs.organizationId, organizationId))
-		.limit(1);
-
-	let insertedCount = 0;
-	if (existing.length === 0) {
-		for (const seed of DEFAULT_MESSAGE_TEMPLATES) {
-			await db.insert(schema.messageTemplateCatalogs).values({
-				organizationId,
-				title: seed.title,
-				channel: seed.channel,
-				intent: seed.intent,
-				templateText: seed.templateText,
-				variables: [...seed.variables],
-				isActive: true,
-			});
-			insertedCount++;
-		}
-	}
-
-	// SSOT: Каноническая таблица communication_templates для очередей и напоминаний
 	const existingCanonical = await db
 		.select({ id: schema.communicationTemplates.id })
 		.from(schema.communicationTemplates)
 		.where(eq(schema.communicationTemplates.organizationId, organizationId))
 		.limit(1);
 
+	let insertedCount = 0;
 	if (existingCanonical.length === 0) {
-		const canonicalTemplates = [
-			{
+		for (const seed of DEFAULT_MESSAGE_TEMPLATES) {
+			await db.insert(schema.communicationTemplates).values({
 				organizationId,
-				title: "Подтверждение приёма (WhatsApp)",
-				channel: "whatsapp" as const,
-				intent: "appointment_confirmation" as const,
+				title: seed.title,
+				channel: seed.channel as any,
+				intent: seed.intent as any,
 				audienceRole: "patient",
-				body: "Здравствуйте, {patient}! Напоминаем о вашей записи в клинику {clinic} на {date} в {time}. Пожалуйста, подтвердите визит.",
-				variablesJson: JSON.stringify(["patient", "clinic", "date", "time"]),
+				body: seed.templateText,
+				variablesJson: JSON.stringify(seed.variables),
 				isActive: true,
-			},
-			{
-				organizationId,
-				title: "Подтверждение приёма (Telegram)",
-				channel: "telegram" as const,
-				intent: "appointment_confirmation" as const,
-				audienceRole: "patient",
-				body: "Здравствуйте, {patient}! Напоминаем о вашей записи в клинику {clinic} на {date} в {time}. Ждём вас!",
-				variablesJson: JSON.stringify(["patient", "clinic", "date", "time"]),
-				isActive: true,
-			},
-			{
-				organizationId,
-				title: "Подтверждение приёма (SMS)",
-				channel: "sms" as const,
-				intent: "appointment_confirmation" as const,
-				audienceRole: "patient",
-				body: "{clinic}: запись на завтра {date} в {time}. Ждем вас! Тел: {clinicPhone}",
-				variablesJson: JSON.stringify(["clinic", "date", "time", "clinicPhone"]),
-				isActive: true,
-			},
-			{
-				organizationId,
-				title: "Рекомендации после приёма",
-				channel: "whatsapp" as const,
-				intent: "post_visit_instruction" as const,
-				audienceRole: "patient",
-				body: "Здравствуйте, {patient}! Благодарим за визит в {clinic}. Соблюдайте рекомендации лечащего врача. При возникновении вопросов звоните: {clinicPhone}.",
-				variablesJson: JSON.stringify(["patient", "clinic", "clinicPhone"]),
-				isActive: true,
-			},
-		];
-
-		for (const ct of canonicalTemplates) {
-			await db.insert(schema.communicationTemplates).values(ct);
+			});
 			insertedCount++;
 		}
 	}
@@ -125,34 +70,52 @@ export async function getMessageTemplates(
 	await ensureDefaultMessageTemplatesSeeded(organizationId);
 
 	const conditions: SQL[] = [
-		eq(schema.messageTemplateCatalogs.organizationId, organizationId),
+		eq(schema.communicationTemplates.organizationId, organizationId),
 	];
 
 	if (filter.channel && filter.channel !== "all") {
-		conditions.push(eq(schema.messageTemplateCatalogs.channel, filter.channel));
+		conditions.push(eq(schema.communicationTemplates.channel, filter.channel as any));
 	}
 
 	const intentFilter = filter.scenario ?? filter.intent;
 	if (intentFilter && intentFilter !== "all") {
-		conditions.push(eq(schema.messageTemplateCatalogs.intent, intentFilter));
+		conditions.push(eq(schema.communicationTemplates.intent, intentFilter as any));
 	}
 
 	if (filter.isActive !== undefined) {
 		conditions.push(
-			eq(schema.messageTemplateCatalogs.isActive, filter.isActive),
+			eq(schema.communicationTemplates.isActive, filter.isActive),
 		);
 	}
 
 	const rows = await db
 		.select()
-		.from(schema.messageTemplateCatalogs)
+		.from(schema.communicationTemplates)
 		.where(and(...conditions))
 		.orderBy(
-			asc(schema.messageTemplateCatalogs.intent),
-			asc(schema.messageTemplateCatalogs.title),
+			asc(schema.communicationTemplates.intent),
+			asc(schema.communicationTemplates.title),
 		);
 
-	return rows as MessageTemplate[];
+	return rows.map((r) => {
+		let vars: string[] = [];
+		try {
+			vars = JSON.parse(r.variablesJson || "[]");
+		} catch {
+			vars = [];
+		}
+		return {
+			id: r.id,
+			organizationId: r.organizationId,
+			title: r.title,
+			channel: r.channel as MessageTemplateChannel,
+			intent: r.intent,
+			templateText: r.body,
+			variables: vars,
+			isActive: r.isActive,
+			createdAt: new Date(),
+		};
+	});
 }
 
 /**
@@ -164,16 +127,33 @@ export async function getMessageTemplateById(
 ): Promise<MessageTemplate | null> {
 	const [row] = await db
 		.select()
-		.from(schema.messageTemplateCatalogs)
+		.from(schema.communicationTemplates)
 		.where(
 			and(
-				eq(schema.messageTemplateCatalogs.id, templateId),
-				eq(schema.messageTemplateCatalogs.organizationId, organizationId),
+				eq(schema.communicationTemplates.id, templateId),
+				eq(schema.communicationTemplates.organizationId, organizationId),
 			),
 		)
 		.limit(1);
 
-	return (row as MessageTemplate) ?? null;
+	if (!row) return null;
+	let vars: string[] = [];
+	try {
+		vars = JSON.parse(row.variablesJson || "[]");
+	} catch {
+		vars = [];
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		title: row.title,
+		channel: row.channel as MessageTemplateChannel,
+		intent: row.intent,
+		templateText: row.body,
+		variables: vars,
+		isActive: row.isActive,
+		createdAt: new Date(),
+	};
 }
 
 /**
@@ -189,14 +169,15 @@ export async function createMessageTemplate(
 			: extractTemplateMacroKeys(input.templateText);
 
 	const [row] = await db
-		.insert(schema.messageTemplateCatalogs)
+		.insert(schema.communicationTemplates)
 		.values({
 			organizationId,
 			title: input.title.trim(),
-			channel: input.channel ?? "telegram",
-			intent: input.intent ?? "general",
-			templateText: input.templateText,
-			variables: extractedVariables,
+			channel: (input.channel ?? "telegram") as any,
+			intent: (input.intent ?? "general") as any,
+			audienceRole: "patient",
+			body: input.templateText,
+			variablesJson: JSON.stringify(extractedVariables),
 			isActive: input.isActive ?? true,
 		})
 		.returning();
@@ -205,7 +186,17 @@ export async function createMessageTemplate(
 		throw new Error("Не удалось сохранить шаблон сообщения");
 	}
 
-	return row as MessageTemplate;
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		title: row.title,
+		channel: row.channel as MessageTemplateChannel,
+		intent: row.intent,
+		templateText: row.body,
+		variables: extractedVariables,
+		isActive: row.isActive,
+		createdAt: new Date(),
+	};
 }
 
 /**
@@ -216,27 +207,28 @@ export async function updateMessageTemplate(
 	templateId: string,
 	input: UpdateMessageTemplateInput,
 ): Promise<MessageTemplate> {
-	const updateData: Partial<typeof schema.messageTemplateCatalogs.$inferInsert> = {};
+	const updateData: Partial<typeof schema.communicationTemplates.$inferInsert> = {};
 
 	if (input.title !== undefined) updateData.title = input.title.trim();
-	if (input.channel !== undefined) updateData.channel = input.channel;
-	if (input.intent !== undefined) updateData.intent = input.intent;
+	if (input.channel !== undefined) updateData.channel = input.channel as any;
+	if (input.intent !== undefined) updateData.intent = input.intent as any;
 	if (input.templateText !== undefined) {
-		updateData.templateText = input.templateText;
-		updateData.variables =
+		updateData.body = input.templateText;
+		const vars =
 			input.variables && input.variables.length > 0
 				? input.variables
 				: extractTemplateMacroKeys(input.templateText);
+		updateData.variablesJson = JSON.stringify(vars);
 	}
 	if (input.isActive !== undefined) updateData.isActive = input.isActive;
 
 	const [row] = await db
-		.update(schema.messageTemplateCatalogs)
+		.update(schema.communicationTemplates)
 		.set(updateData)
 		.where(
 			and(
-				eq(schema.messageTemplateCatalogs.id, templateId),
-				eq(schema.messageTemplateCatalogs.organizationId, organizationId),
+				eq(schema.communicationTemplates.id, templateId),
+				eq(schema.communicationTemplates.organizationId, organizationId),
 			),
 		)
 		.returning();
@@ -245,7 +237,24 @@ export async function updateMessageTemplate(
 		throw new Error("Шаблон сообщения не найден или не принадлежит вашей клинике");
 	}
 
-	return row as MessageTemplate;
+	let vars: string[] = [];
+	try {
+		vars = JSON.parse(row.variablesJson || "[]");
+	} catch {
+		vars = [];
+	}
+
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		title: row.title,
+		channel: row.channel as MessageTemplateChannel,
+		intent: row.intent,
+		templateText: row.body,
+		variables: vars,
+		isActive: row.isActive,
+		createdAt: new Date(),
+	};
 }
 
 /**
@@ -256,11 +265,11 @@ export async function deleteMessageTemplate(
 	templateId: string,
 ): Promise<void> {
 	const [row] = await db
-		.delete(schema.messageTemplateCatalogs)
+		.delete(schema.communicationTemplates)
 		.where(
 			and(
-				eq(schema.messageTemplateCatalogs.id, templateId),
-				eq(schema.messageTemplateCatalogs.organizationId, organizationId),
+				eq(schema.communicationTemplates.id, templateId),
+				eq(schema.communicationTemplates.organizationId, organizationId),
 			),
 		)
 		.returning();

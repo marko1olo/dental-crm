@@ -46,7 +46,7 @@ import {
 	resolveCommunicationSettings,
 	resolveRecipientAddress,
 } from "./dispatcher.js";
-import { renderTemplate } from "./templateRenderer.js";
+import { renderTemplate } from "./templateEngine/templateRenderer.js";
 
 /** Статусы, при которых напоминание уместно. Отменённому приёму оно вредно. */
 const REMINDABLE_STATUSES = ["planned", "confirmed"] as const;

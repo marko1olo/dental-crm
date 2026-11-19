@@ -9,7 +9,6 @@ export type CommunicationsActiveChatPaneProps = {
 
 const OmnichannelOperatorDesk = lazy(() => import("../../chat/OmnichannelOperatorDesk").then((m) => ({ default: m.OmnichannelOperatorDesk })));
 const StaffMessengerPanel = lazy(() => import("../StaffMessengerPanel").then((m) => ({ default: m.StaffMessengerPanel })));
-const WhatsAppChatPanel = lazy(() => import("../../chat/WhatsAppChatPanel").then((m) => ({ default: m.WhatsAppChatPanel })));
 const PatientNotificationCenter = lazy(() => import("../../notifications/PatientNotificationCenter").then((m) => ({ default: m.PatientNotificationCenter })));
 
 export function CommunicationsActiveChatPane({ ctrl }: CommunicationsActiveChatPaneProps) {
@@ -22,9 +21,6 @@ export function CommunicationsActiveChatPane({ ctrl }: CommunicationsActiveChatP
 			)}
 			{ctrl.activeSection === "staff_chat" && (
 				<div className="h-full min-h-[580px] min-h-0 overflow-hidden flex flex-col mb-5 w-full max-w-full"><Suspense fallback={null}><StaffMessengerPanel /></Suspense></div>
-			)}
-			{ctrl.activeSection === "chat" && (
-				<div className="h-full min-h-[580px] min-h-0 overflow-hidden flex flex-col mb-5"><Suspense fallback={null}><WhatsAppChatPanel /></Suspense></div>
 			)}
 			{ctrl.activeSection === "notifications" && (
 				<div className="h-full min-h-[580px] min-h-0 overflow-hidden flex flex-col mb-5"><Suspense fallback={null}><PatientNotificationCenter /></Suspense></div>

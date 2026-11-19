@@ -63,7 +63,7 @@ import type {
 import { resolveTelegramChatId } from "./channelRouter.js";
 import { loadConsentsByPatient } from "./consentLoader.js";
 import { type ConsentRecord, decideConsent } from "./deliveryPolicy.js";
-import { describeSmsPayload } from "./templateRenderer.js";
+import { describeSmsPayload } from "./templateEngine/templateRenderer.js";
 
 /**
  * Признаки отбора. Все необязательные; заданные складываются по «и».

@@ -13,7 +13,7 @@ import {
 import {
 	checkChannelFit,
 	describeSmsPayload,
-} from "./templateRenderer.js";
+} from "./templateEngine/templateRenderer.js";
 
 describe("Message Templates Dynamic Macro Engine", () => {
 	const sampleMacroValues = {

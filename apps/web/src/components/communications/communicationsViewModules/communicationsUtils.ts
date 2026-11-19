@@ -30,13 +30,32 @@ export function resolveEffectiveCommunicationEvents(
 	return dashboard?.communicationEvents;
 }
 
+const DEMO_COMMUNICATION_TASKS: CommunicationTask[] = [
+	{
+		id: "demo-comm-task-1",
+		organizationId: "demo-org",
+		patientId: "demo-pat-1",
+		patientName: "Смирнова Анна Сергеевна",
+		patientPhone: "+7 (999) 123-45-67",
+		intent: "appointment_confirmation",
+		channel: "whatsapp",
+		priority: "normal",
+		status: "scheduled",
+		scheduledAt: "2026-05-15T12:00:00.000Z",
+		payload: { text: "Подтверждение записи на приём" },
+		createdAt: "2026-05-15T08:00:00.000Z",
+		updatedAt: "2026-05-15T08:00:00.000Z",
+	},
+];
+
 export function resolveEffectiveCommunicationTasks(
 	sortedCommunicationTasks: CommunicationTask[] | undefined,
 	dashboard: Dashboard | undefined,
-	_isDemo?: boolean,
+	isDemo?: boolean,
 ): CommunicationTask[] {
 	if (Array.isArray(sortedCommunicationTasks) && sortedCommunicationTasks.length > 0) {
 		return sortedCommunicationTasks;
 	}
-	return dashboard?.communicationTasks ?? [];
+	const tasks = dashboard?.communicationTasks ?? [];
+	return tasks.length > 0 ? tasks : isDemo ? DEMO_COMMUNICATION_TASKS : [];
 }

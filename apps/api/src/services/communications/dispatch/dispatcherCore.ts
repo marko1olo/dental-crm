@@ -22,7 +22,7 @@ import {
 	decideQuietHours,
 } from "../deliveryPolicy.js";
 import { MessageTemplateEngine } from "../MessageTemplateEngine.js";
-import { checkChannelFit } from "../templateRenderer.js";
+import { checkChannelFit } from "../templateEngine/templateRenderer.js";
 import { resolveRecipientAddress } from "./channelAdapters.js";
 import {
 	claimBatch,

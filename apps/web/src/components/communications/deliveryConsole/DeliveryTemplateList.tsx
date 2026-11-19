@@ -25,7 +25,7 @@ export function DeliveryTemplateList({
 				<p>Шаблонов пока нет. Без шаблона «Подтверждение приёма» автоматические напоминания не включаются.</p>
 				<button
 					type="button"
-					className="secondary-button"
+					className="h-9 px-3.5 rounded-lg text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors inline-flex items-center justify-center"
 					data-testid="btn-fill-default-confirmation-template"
 					onClick={() => {
 						setDraftTitle("Подтверждение приёма (SMS)");
@@ -52,7 +52,7 @@ export function DeliveryTemplateList({
 					</span>
 					<span className="ops-note">{template.body}</span>
 					<button
-						className="secondary-button"
+						className="h-8 px-2.5 rounded-md text-xs font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors inline-flex items-center justify-center shrink-0"
 						type="button"
 						onClick={() => {
 							setEditingId(template.id);

@@ -26,7 +26,6 @@ import {
 	appointments,
 	chairs,
 	clinics,
-	messageTemplateCatalogs,
 	organizations,
 	patients,
 	users,
