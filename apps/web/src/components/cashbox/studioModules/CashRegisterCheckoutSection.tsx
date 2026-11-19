@@ -313,6 +313,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 					splitCashChange={splitCashChange}
 					handleBalanceSplit={handleBalanceSplit}
 					patientDepositRub={patientDepositRub}
+					patientFamilyBalanceRub={patientFamilyBalanceRub}
 				/>
 			)}
 

@@ -310,7 +310,7 @@ export function useFinanceLogic({
 					patientName: documentPatient.fullName,
 					visitId: realActiveVisitId ?? undefined,
 					totalKopecks: Math.round(amountRub * 100),
-					paymentType: (paymentMethod === "cash" || paymentMethod === "card" || paymentMethod === "sbp" || paymentMethod === "deposit") ? paymentMethod : "mixed",
+					paymentType: (paymentMethod === "cash" || paymentMethod === "card") ? paymentMethod : "mixed",
 					items: [],
 				});
 

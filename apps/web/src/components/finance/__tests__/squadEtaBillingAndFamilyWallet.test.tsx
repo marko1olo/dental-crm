@@ -9,7 +9,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal";
 import { FamilyWalletModal } from "../../patients/family/FamilyWalletModal";
-import { calculateCashChange, getCashPresetSuggestions } from "../fiscal/fiscal54fzEngine";
+import { calculateCashChange, getCashPresetSuggestions } from "@dental/shared";
 
 describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () => {
 	it("Exact Cash Change Engine: calculates change down to kopecks without float drift", () => {

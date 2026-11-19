@@ -75,6 +75,10 @@ const STORAGE_INIT = () => {
   localStorage.setItem("dente_tour_dismissed", "true");
   localStorage.setItem("dente_demo_banner_dismissed", "true");
   localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+  localStorage.setItem("dente_demo_mode", "true");
+  localStorage.setItem("dente_demo_showcase", "true");
+  localStorage.setItem("demo_mode", "true");
+  sessionStorage.setItem("dente_unlocked", "true");
 };
 
 async function suppressOverlays(page) {
@@ -160,16 +164,40 @@ async function main() {
       waitUntil: "commit",
       timeout: 45000,
     });
-    console.log("Waiting for .boot-state to detach...");
-    await pcPage.waitForSelector('.boot-state', { state: 'detached', timeout: 30000 }).catch(() => {});
-    await pcPage.waitForTimeout(2000);
+    console.log("Waiting for .boot-state to detach on PC...");
+    for (let i = 0; i < 25; i++) {
+      await pcPage.waitForTimeout(1000);
+      const ready = await pcPage.evaluate(() => {
+        const text = document.body ? document.body.innerText : "";
+        return !text.includes("Загрузка системы") && text.length > 50;
+      }).catch(() => false);
+      if (ready) {
+        console.log(`[PC READY at ${i + 1}s] Boot screen detached!`);
+        break;
+      }
+    }
     await suppressOverlays(pcPage);
     await pcPage.evaluate(() => {
       window.location.hash = "#checkout";
+      window.dispatchEvent(
+        new CustomEvent("dente:open-cashbox", {
+          detail: {
+            mode: "checkout",
+            patientId: "pat-1",
+            patientName: "Иванов Иван Иванович",
+            amountRub: 5400,
+            patientDepositRub: 1200,
+            patientFamilyBalanceRub: 3500,
+          },
+        })
+      );
       window.dispatchEvent(new CustomEvent("dente:open-fast-checkout"));
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
-    await pcPage.waitForSelector('[data-testid="cash-register-checkout-modal"], [data-testid="cash-register-studio-modal"], button:has-text("Приём оплаты")', { timeout: 15000 }).catch(() => {});
+    await pcPage.waitForSelector(
+      '[data-testid="cash-register-checkout-modal"], [data-testid="cash-register-studio-modal"]',
+      { state: "visible", timeout: 20000 }
+    );
     await pcPage.waitForTimeout(1000);
     await setLightTheme(pcPage);
     await saveProof(pcPage, "01_cashbox_studio_pc_light_1440x900.png");
@@ -231,22 +259,45 @@ async function main() {
       timeout: 45000,
     });
     console.log("Waiting for mobile .boot-state to detach...");
-    await mobilePage.waitForSelector('.boot-state', { state: 'detached', timeout: 30000 }).catch(() => {});
-    await mobilePage.waitForTimeout(2000);
+    for (let i = 0; i < 25; i++) {
+      await mobilePage.waitForTimeout(1000);
+      const ready = await mobilePage.evaluate(() => {
+        const text = document.body ? document.body.innerText : "";
+        return !text.includes("Загрузка системы") && text.length > 50;
+      }).catch(() => false);
+      if (ready) {
+        console.log(`[MOBILE READY at ${i + 1}s] Boot screen detached!`);
+        break;
+      }
+    }
     await suppressOverlays(mobilePage);
     await mobilePage.evaluate(() => {
       window.location.hash = "#checkout";
       window.dispatchEvent(new CustomEvent("dente:open-fast-checkout"));
+      window.dispatchEvent(
+        new CustomEvent("dente:open-cashbox", {
+          detail: {
+            mode: "checkout",
+            patientId: "pat-1",
+            patientName: "Иванов Иван Иванович",
+            amountRub: 5400,
+            patientDepositRub: 1200,
+            patientFamilyBalanceRub: 3500,
+          },
+        })
+      );
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
-    await mobilePage.waitForSelector('[data-testid="cash-register-checkout-modal"], [data-testid="cash-register-studio-modal"], button:has-text("Приём оплаты")', { timeout: 15000 }).catch(() => {});
+    await mobilePage.waitForSelector('[data-testid="cash-register-checkout-modal"], [data-testid="cash-register-studio-modal"]', { state: "visible", timeout: 20000 }).catch(() => {});
     await mobilePage.waitForTimeout(1000);
     await setLightTheme(mobilePage);
+    await saveProof(mobilePage, "03_cashbox_studio_mobile_light_390x844.png");
     await saveProof(mobilePage, "05_cashbox_studio_mobile_light_390x844.png");
 
     // 2.2 Cashbox Mobile Dark
     console.log("Switching to Mobile Dark...");
     await setDarkTheme(mobilePage);
+    await saveProof(mobilePage, "04_cashbox_studio_mobile_dark_390x844.png");
     await saveProof(mobilePage, "06_cashbox_studio_mobile_dark_390x844.png");
 
     await mobileContext.close();

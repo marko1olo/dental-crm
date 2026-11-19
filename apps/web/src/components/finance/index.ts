@@ -9,7 +9,6 @@ export { DirectCashboxLauncher } from "../cashbox/DirectCashboxLauncher.js";
 export * from "./cashShift/index.js";
 export { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 export * from "./ServiceReceiptPrintDocument.js";
-export * from "./TaxExemptionBanner.js";
 export * from "./Billing1CExportModal.js";
 export * from "./FinanceView.js";
 export * from "./OneCExportButton.js";

@@ -11,7 +11,6 @@ import { rubToKopecks, kopecksToRub } from "./cashRegisterCatalogData.js";
 export * from "./stageAdvanceCalculator.js";
 export * from "./fiscalReceiptPayloadBuilder.js";
 export * from "./fastCheckoutPresetEngine.js";
-export * from "./tenderAllocationEngine.js";
 
 export type PaymentMethodTab =
 	| "card"

@@ -35,6 +35,7 @@ export interface CheckoutSplitPaymentPanelProps {
 	readonly splitCashChange: CashChangeResult | null;
 	readonly handleBalanceSplit: (field: "cash" | "card" | "sbp" | "deposit") => void;
 	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
 }
 
 export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps> = ({
@@ -55,7 +56,9 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 	splitCashChange,
 	handleBalanceSplit,
 	patientDepositRub = 0,
+	patientFamilyBalanceRub = 0,
 }) => {
+	const totalAvailableDepositRub = patientDepositRub + patientFamilyBalanceRub;
 	return (
 		<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="split-tender-panel">
 			<div className="flex items-center justify-between">
@@ -227,13 +230,13 @@ export const CheckoutSplitPaymentPanel: React.FC<CheckoutSplitPaymentPanelProps>
 					<div className="flex items-center justify-between">
 						<span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
 							<Wallet className="w-3.5 h-3.5 text-[var(--warning-ink)]" />
-							<span>Аванс / Депозит ({formatRubles(patientDepositRub)})</span>
+							<span>Аванс / Семья ({formatRubles(totalAvailableDepositRub)})</span>
 						</span>
 						<button
 							type="button"
 							onClick={() => {
 								const maxAllowed = Math.min(
-									patientDepositRub,
+									totalAvailableDepositRub,
 									kopecksToRub(BigInt(rublesToKopecks(splitDepositRub)) + splitDiffKop),
 								);
 								setSplitDepositRub(Math.max(0, maxAllowed));

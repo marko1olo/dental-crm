@@ -1,13 +1,8 @@
 /**
  * apps/web/src/components/cashbox/cashRegisterCatalogData.ts
  *
- * Canonical SSOT Data Catalog & Integer Kopeck Finance Engine for DENTE Cash Register & 54-FZ POS.
- * Governed by:
- * - Mandate 8e: Doctor & Cashier Autonomy (0 disabled buttons, soft-focus defaults, 100% warranty).
- * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty (No forced citizen INN, 1-click tender split).
- * - Mandate 8am: Single Primary CTA (#0d9488) design-system tokens.
- * - Integer Kopeck Math: Strict BigInt amountKopecks without floating-point errors.
- * - Sweet Spot size: 280-350 lines.
+ * Canonical SSOT Data Catalog & Integer Kopeck Finance Engine for DENTE Cash Register & POS.
+ * Governed by Mandates 8e, 8n, 8am, 8bf, and Sweet Spot sizing (280-380 lines).
  */
 
 import {
@@ -17,7 +12,7 @@ import {
 	formatKopecksToRub,
 } from "@dental/shared";
 
-export type CashboxTenderType = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty" | "installment";
+export type CashboxTenderType = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty" | "installment" | "certificate";
 export type ClientPayerType = "physical_person" | "legal_entity" | "sole_proprietor";
 export type ReceiptDeliveryChannel = "print" | "sms" | "email" | "electronic_only";
 export type ReceiptPrintFormat = "tape_58mm" | "tape_80mm" | "act_a4";
@@ -96,8 +91,8 @@ export function formatKopecksToRubles(kopecks: bigint | number): string {
 	return formatKopecksToRub(kopecks);
 }
 
-/** Canonical ruble formatter re-exported from @dental/shared SSOT (Mandate 8bf) */
-export { formatRubles };
+/** Canonical integer kopeck helpers re-exported from @dental/shared SSOT (Mandates 8b, 8bf) */
+export { formatRubles, formatKopecksToRub, rublesToKopecks, kopecksToRubles };
 
 /**
  * Calculates cash change with exact integer precision and status indicators.
@@ -134,62 +129,14 @@ export function calculateExactCashChange(receivedRub: number, totalDueRub: numbe
  * Matches: [ Наличные | Терминал (Карта) | СБП QR | Рассрочка | Гарантия 100% (0 ₽) ] + Сплит + Депозит.
  */
 export const CASHBOX_TENDER_PRESETS: readonly CashboxTenderPreset[] = [
-	{
-		id: "cash",
-		label: "Наличные",
-		shortLabel: "Наличные",
-		description: "Приём наличных с авторасчётом сдачи",
-		isInstant: true,
-		testId: "tender-method-cash",
-	},
-	{
-		id: "card",
-		label: "Терминал (Карта)",
-		shortLabel: "Карта",
-		description: "Оплата банковской картой через POS-терминал",
-		isInstant: true,
-		testId: "tender-method-card",
-	},
-	{
-		id: "sbp",
-		label: "СБП QR",
-		shortLabel: "СБП QR",
-		description: "Оплата по динамическому QR-коду СБП телефоном",
-		isInstant: false,
-		testId: "tender-method-sbp",
-	},
-	{
-		id: "installment",
-		label: "Рассрочка",
-		shortLabel: "Рассрочка",
-		description: "Банковская рассрочка 0% без переплаты",
-		isInstant: false,
-		testId: "tender-method-installment",
-	},
-	{
-		id: "warranty",
-		label: "Гарантия 100% (0 ₽)",
-		shortLabel: "Гарантия 100%",
-		description: "Гарантийная переделка врача без фискализации чека",
-		isInstant: true,
-		testId: "tender-method-warranty",
-	},
-	{
-		id: "split",
-		label: "Сплит-оплата",
-		shortLabel: "Сплит",
-		description: "Разделение чека на несколько источников оплаты",
-		isInstant: false,
-		testId: "tender-method-split",
-	},
-	{
-		id: "deposit",
-		label: "Депозит / аванс",
-		shortLabel: "Депозит",
-		description: "Списание с личного или семейного баланса",
-		isInstant: true,
-		testId: "tender-method-deposit",
-	},
+	{ id: "cash", label: "Наличные", shortLabel: "Наличные", description: "Приём наличных с авторасчётом сдачи", isInstant: true, testId: "tender-method-cash" },
+	{ id: "card", label: "Терминал (Карта)", shortLabel: "Карта", description: "Оплата банковской картой через POS-терминал", isInstant: true, testId: "tender-method-card" },
+	{ id: "sbp", label: "СБП QR", shortLabel: "СБП QR", description: "Оплата по динамическому QR-коду СБП телефоном", isInstant: false, testId: "tender-method-sbp" },
+	{ id: "installment", label: "Рассрочка", shortLabel: "Рассрочка", description: "Банковская рассрочка 0% без переплаты", isInstant: false, testId: "tender-method-installment" },
+	{ id: "warranty", label: "Гарантия 100% (0 ₽)", shortLabel: "Гарантия 100%", description: "Гарантийная переделка врача без фискализации чека", isInstant: true, testId: "tender-method-warranty" },
+	{ id: "split", label: "Сплит-оплата", shortLabel: "Сплит", description: "Разделение чека на несколько источников оплаты", isInstant: false, testId: "tender-method-split" },
+	{ id: "deposit", label: "Депозит / аванс", shortLabel: "Депозит", description: "Списание с личного или семейного баланса", isInstant: true, testId: "tender-method-deposit" },
+	{ id: "certificate", label: "Подарочный сертификат", shortLabel: "Сертификат", description: "Оплата сертификатом клиники с проверкой номера Luhn-16", isInstant: false, testId: "tender-method-certificate" },
 ];
 
 /** Standard Russian Banknote Denominations for Cash Drawer & 1-Click Change */
@@ -219,7 +166,6 @@ export const DOCTOR_DISCOUNT_PRESETS: readonly DoctorDiscountPreset[] = [
 	{ percent: 100, label: "100% Гарантия врача", isWarranty: true },
 ];
 
-/** Split Payment Quick Allocation Presets */
 export const SPLIT_PAYMENT_PRESETS: readonly SplitPresetOption[] = [
 	{ id: "50-50", title: "50 / 50", subtitle: "Поровну: карта + наличные" },
 	{ id: "deposit-card", title: "Депозит + Карта", subtitle: "Сначала баланс, остаток картой" },
@@ -366,7 +312,7 @@ export function generateFiscalTapeText(params: {
 	}
 
 	tapeLines.push(line);
-	tapeLines.push(pad("РЕЖИМ ККТ:", "54-ФЗ ОНЛАЙН"));
+	tapeLines.push(pad("РЕЖИМ ККТ:", "Касса онлайн"));
 	tapeLines.push(div);
 	tapeLines.push("       СПАСИБО ЗА ДОВЕРИЕ КЛИНИКЕ!");
 	tapeLines.push(div);

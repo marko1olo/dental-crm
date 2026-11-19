@@ -93,11 +93,7 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 								`Принять оплату ${formatRubles(effectiveTotalRub)}`
 							)}
 						</span>
-						<span className="sr-only">Принять оплату</span>
 						<span className="sr-only">Провести оплату и напечатать чек</span>
-						<span data-testid="execute-fast-checkout-btn" className="sr-only" aria-hidden="true" />
-						<span data-testid="btn-cash-submit-footer" className="sr-only" aria-hidden="true" />
-						<span data-testid="btn-sbp-submit-footer" className="sr-only" aria-hidden="true" />
 						<span data-testid="btn-submit-checkout-54fz" className="sr-only" aria-hidden="true" />
 					</button>
 				)}

@@ -43,7 +43,7 @@ describe("Subagent 4 Inquisitor: CashRegisterStudioModal 54-FZ Operations", () =
 
 		// Large centered total amount due
 		assert.ok(html.includes('data-testid="display-total-amount-due"'));
-		assert.ok(html.includes("12 500 ₽") || html.includes("12 500 ₽"));
+		assert.ok(html.includes("12 500 ₽") || html.includes("12 500 ₽") || html.includes("12 500 ₽") || /12[\s\u00A0]?500[\s\u00A0]?₽/.test(html));
 
 		// Fast tender tiles
 		assert.ok(html.includes('data-testid="btn-tender-card"'));
