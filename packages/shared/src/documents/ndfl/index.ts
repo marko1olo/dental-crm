@@ -5,7 +5,9 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "./types.js";
 export * from "./serviceCodeClassifier.js";
 export * from "./taxpayerValidator.js";
 export * from "./xmlBuilderCore.js";
+export * from "./fnsNdflXmlPresets.js";
+export * from "./types.js";
+export { type FnsKinshipCode, type SupportedTaxYear } from "./fnsNdflXmlPresets.js";

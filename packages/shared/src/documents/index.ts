@@ -19,6 +19,17 @@ export * from "./dentalFormulaRenderer.js";
 export * from "./formsContractAndConsents.js";
 export * from "./fnsSchema1151156.js";
 export * from "./ndflXmlGenerator.js";
+export {
+	DEFAULT_FNS_CLINIC_PRESET,
+	FNS_IDENTITY_DOC_TYPES,
+	FNS_KINSHIP_PRESETS,
+	FNS_SERVICE_CODE_PRESETS,
+	type FnsKinshipCode,
+	type FnsServiceDeductionCode,
+	NDFL_LIMITS,
+	SUPPORTED_TAX_YEARS,
+	type SupportedTaxYear,
+} from "./fnsSchema1151156.js";
 export * from "./templateEngine.js";
 export * from "./templateVariablesRegistry.js";
 export * from "./templates/index.js";

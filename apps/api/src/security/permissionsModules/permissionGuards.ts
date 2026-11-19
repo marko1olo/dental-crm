@@ -3,6 +3,8 @@
  */
 
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { db, type TenantDb } from "../../db/client.js";
+import { auditEvents } from "../../db/schema/system.js";
 import { getRequestIdentity } from "../identity.js";
 import {
 	permissionRefusalMessage,
@@ -34,8 +36,22 @@ export function invalidateRoleMatrixCache(organizationId?: string): void {
  * Получение переопределений матрицы прав организации из БД с кэшированием на 60 сек.
  */
 export async function fetchRoleMatrixOverrides(
-	organizationId: string,
+	orgIdOrTx: string | TenantDb,
+	maybeOrgIdOrTx?: string | TenantDb,
 ): Promise<Record<string, Record<string, string | boolean>> | null> {
+	let organizationId: string;
+	let tx: TenantDb | undefined;
+
+	if (typeof orgIdOrTx === "string") {
+		organizationId = orgIdOrTx;
+		tx = typeof maybeOrgIdOrTx === "object" ? maybeOrgIdOrTx : undefined;
+	} else {
+		tx = orgIdOrTx;
+		organizationId = typeof maybeOrgIdOrTx === "string" ? maybeOrgIdOrTx : "";
+	}
+
+	if (!organizationId) return null;
+
 	const now = Date.now();
 	const cached = roleMatrixCache.get(organizationId);
 	if (cached && cached.expiresAt > now) {
@@ -43,11 +59,11 @@ export async function fetchRoleMatrixOverrides(
 	}
 
 	try {
-		const { db } = await import("../../db/client.js");
 		const { organizations } = await import("../../db/schema.js");
 		const { eq } = await import("drizzle-orm");
 
-		const [org] = await db
+		const executor = tx ?? db;
+		const [org] = await executor
 			.select({ workspaceFeatureFlags: organizations.workspaceFeatureFlags })
 			.from(organizations)
 			.where(eq(organizations.id, organizationId))
@@ -87,14 +103,43 @@ export function getCachedRoleMatrixOverrides(
  * null, отправив ответ клиенту.
  *
  * 401 — сотрудник не опознан (нет токена), 403 — опознан, но роль не даёт права.
- * Различать важно: интерфейс в первом случае предлагает войти, во втором —
- * объясняет, что действие не положено этой роли.
+ * Фиксирует аудит-событие попытки доступа (granted/denied) в audit_events.
  */
+export async function requirePermission(
+	tx: TenantDb,
+	request: FastifyRequest,
+	reply: FastifyReply,
+	permission: Permission,
+): Promise<{ organizationId: string; userId: string; role: string } | null>;
 export async function requirePermission(
 	request: FastifyRequest,
 	reply: FastifyReply,
 	permission: Permission,
+	tx?: TenantDb,
+): Promise<{ organizationId: string; userId: string; role: string } | null>;
+export async function requirePermission(
+	first: TenantDb | FastifyRequest,
+	second: FastifyRequest | FastifyReply,
+	third: FastifyReply | Permission,
+	fourth?: Permission | TenantDb,
 ): Promise<{ organizationId: string; userId: string; role: string } | null> {
+	let tx: TenantDb | undefined;
+	let request: FastifyRequest;
+	let reply: FastifyReply;
+	let permission: Permission;
+
+	if (typeof third === "string") {
+		request = first as FastifyRequest;
+		reply = second as FastifyReply;
+		permission = third as Permission;
+		tx = fourth as TenantDb | undefined;
+	} else {
+		tx = first as TenantDb;
+		request = second as FastifyRequest;
+		reply = third as FastifyReply;
+		permission = fourth as Permission;
+	}
+
 	const identity = getRequestIdentity(request);
 
 	if (!identity.organizationId) {
@@ -113,8 +158,25 @@ export async function requirePermission(
 		return null;
 	}
 
-	const overrides = await fetchRoleMatrixOverrides(identity.organizationId);
-	if (!roleHasPermissionWithOverrides(identity.role, permission, overrides)) {
+	const overrides = await fetchRoleMatrixOverrides(identity.organizationId, tx);
+	const hasAccess = roleHasPermissionWithOverrides(identity.role, permission, overrides);
+
+	// ACID Transactional Audit Logging в единую таблицу audit_events
+	const targetDb = tx ?? db;
+	try {
+		await targetDb.insert(auditEvents).values({
+			organizationId: identity.organizationId,
+			actorUserId: identity.userId,
+			entityType: "rbac_permission",
+			entityId: permission,
+			action: hasAccess ? "permission_granted" : "permission_denied",
+			reason: hasAccess ? null : permissionRefusalMessage(identity.role, permission),
+		});
+	} catch (auditErr) {
+		request.log?.warn?.({ err: auditErr, permission }, "Failed to write rbac audit_event");
+	}
+
+	if (!hasAccess) {
 		reply.code(403).send({
 			error: "PermissionDenied",
 			permission,
@@ -130,6 +192,7 @@ export async function requirePermission(
 		role: identity.role,
 	};
 }
+
 
 /**
  * Строгий контроль полномочий (Fail-Closed Architecture).

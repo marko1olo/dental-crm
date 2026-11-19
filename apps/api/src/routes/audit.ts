@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -16,6 +16,10 @@ import { getMedicalAccessAuditTrailFromDb } from "../security/medicalAuditTrail.
 const auditQuerySchema = z.object({
 	entityType: z.string().optional(),
 	entityId: z.string().optional(),
+	actorUserId: z.string().uuid().optional(),
+	action: z.string().optional(),
+	startDate: z.string().optional(),
+	endDate: z.string().optional(),
 	limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
@@ -70,6 +74,24 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			}
 			if (query.entityId) {
 				conditions.push(eq(auditEvents.entityId, query.entityId));
+			}
+			if (query.actorUserId) {
+				conditions.push(eq(auditEvents.actorUserId, query.actorUserId));
+			}
+			if (query.action) {
+				conditions.push(eq(auditEvents.action, query.action));
+			}
+			if (query.startDate) {
+				const start = new Date(query.startDate);
+				if (!isNaN(start.getTime())) {
+					conditions.push(gte(auditEvents.createdAt, start));
+				}
+			}
+			if (query.endDate) {
+				const end = new Date(query.endDate);
+				if (!isNaN(end.getTime())) {
+					conditions.push(lte(auditEvents.createdAt, end));
+				}
 			}
 
 			const logs = await db
@@ -290,7 +312,9 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		}
 
 		if (validAuditEvents.length > 0) {
-			await db.insert(auditEvents).values(validAuditEvents);
+			await db.transaction(async (tx) => {
+				await tx.insert(auditEvents).values(validAuditEvents);
+			});
 		}
 
 		return reply.status(201).send({
