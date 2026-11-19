@@ -45,6 +45,8 @@ export const DirectInsuranceLauncher: React.FC = () => {
 		window.addEventListener("dente-open-insurance", handleOpen);
 		window.addEventListener("dente:open-dms", handleOpen);
 		window.addEventListener("dente-open-dms", handleOpen);
+		window.addEventListener("dente:open-dms-letters", handleOpen);
+		window.addEventListener("dente-open-dms-letters", handleOpen);
 
 		const handleHash = () => {
 			const s = window.location.search || "";
@@ -65,6 +67,8 @@ export const DirectInsuranceLauncher: React.FC = () => {
 			window.removeEventListener("dente-open-insurance", handleOpen);
 			window.removeEventListener("dente:open-dms", handleOpen);
 			window.removeEventListener("dente-open-dms", handleOpen);
+			window.removeEventListener("dente:open-dms-letters", handleOpen);
+			window.removeEventListener("dente-open-dms-letters", handleOpen);
 			window.removeEventListener("hashchange", handleHash);
 		};
 	}, []);

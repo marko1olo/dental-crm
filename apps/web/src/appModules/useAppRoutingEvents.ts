@@ -38,7 +38,7 @@ export function useAppRoutingEvents(
 			if (hasLocationToken(s, h, ["ceph", "trg"])) st.setIsCephDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["egisz", "remd"])) st.setIsEgiszRemdModalOpen(true);
 			if (hasLocationToken(s, h, ["opg"])) st.setIsSmartOpgDirectModalOpen(true);
-			if (hasLocationToken(s, h, ["visiograph"])) st.setIsVisiographDirectModalOpen(true);
+			if (hasLocationToken(s, h, ["visiograph", "rvg", "direct-rvg"])) st.setIsVisiographDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["imaging-export"])) st.setIsImagingExportDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["lab-create"])) st.setIsLabCreateOrderDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["dms"])) st.setIsDmsDirectModalOpen(true);
@@ -80,6 +80,15 @@ export function useAppRoutingEvents(
 		const onEmrCard = () => {
 			stateRef.current.setIsEmrCardDirectModalOpen(true);
 		};
+		const onDmsLetters = (e: Event) => {
+			const d = (e as CustomEvent<{ patientId?: string; patientFullName?: string }>).detail;
+			if (d?.patientId && typeof window !== "undefined") {
+				const url = new URL(window.location.href);
+				url.searchParams.set("patientId", d.patientId);
+				window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + url.hash);
+			}
+			stateRef.current.setIsDmsDirectModalOpen(true);
+		};
 		window.addEventListener("dente-open-medical-card", onEmrCard);
 		window.addEventListener("dente:open-medical-card", onEmrCard);
 		window.addEventListener("dente:open-prescriptions", onRx);
@@ -94,8 +103,8 @@ export function useAppRoutingEvents(
 		window.addEventListener("dente-open-visiograph-comparison", () => stateRef.current.setIsVisiographDirectModalOpen(true));
 		window.addEventListener("dente-open-imaging-export", () => stateRef.current.setIsImagingExportDirectModalOpen(true));
 		window.addEventListener("dente-open-create-lab-order", () => stateRef.current.setIsLabCreateOrderDirectModalOpen(true));
-		window.addEventListener("dente-open-dms-letters", () => stateRef.current.setIsDmsDirectModalOpen(true));
-		window.addEventListener("dente:open-dms-letters", () => stateRef.current.setIsDmsDirectModalOpen(true));
+		window.addEventListener("dente-open-dms-letters", onDmsLetters);
+		window.addEventListener("dente:open-dms-letters", onDmsLetters);
 		window.addEventListener("dente-open-plan-scenarios", () => stateRef.current.setIsPlanScenariosDirectModalOpen(true));
 		window.addEventListener("dente-open-case-presenter", () => stateRef.current.setIsCasePresenterDirectModalOpen(true));
 		window.addEventListener("dente-open-treatment-plan-presenter", () => stateRef.current.setIsCasePresenterDirectModalOpen(true));
@@ -161,6 +170,8 @@ export function useAppRoutingEvents(
 			window.removeEventListener("dente:open-prescriptions", onRx);
 			window.removeEventListener("dente-open-medical-card", onEmrCard);
 			window.removeEventListener("dente:open-medical-card", onEmrCard);
+			window.removeEventListener("dente-open-dms-letters", onDmsLetters);
+			window.removeEventListener("dente:open-dms-letters", onDmsLetters);
 		};
 	}, []);
 }

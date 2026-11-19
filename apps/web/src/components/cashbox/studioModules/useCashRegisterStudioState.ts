@@ -42,7 +42,7 @@ function resolveOfflinePaymentType(
 	isWarranty: boolean,
 ): PaymentMethodKind {
 	if (isWarranty || tender === "warranty") return "cash";
-	if (tender === "split" || tender === "installment") return "mixed";
+	if (tender === "split" || tender === "installment" || tender === "insurance") return "mixed";
 	if (tender === "card" || tender === "sbp" || tender === "deposit" || tender === "cash") {
 		return tender;
 	}
@@ -109,6 +109,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		patientRub: number;
 		insurerName?: string | undefined;
 		letterNumber?: string | undefined;
+		letterId?: string | undefined;
 	} | null>(null);
 
 	const baseDueRub = customBaseDueRub ?? rawBaseDueRub;
@@ -164,7 +165,8 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const splitCardKop = rubToKopecks(splitCardRub);
 	const splitSbpKop = rubToKopecks(splitSbpRub);
 	const splitDepositKop = rubToKopecks(splitDepositRub);
-	const totalSplitAllocatedKop = splitCashKop + splitCardKop + splitSbpKop + splitDepositKop;
+	const appliedDmsKop = appliedDmsSplit ? rubToKopecks(appliedDmsSplit.dmsRub) : 0n;
+	const totalSplitAllocatedKop = splitCashKop + splitCardKop + splitSbpKop + splitDepositKop + (method === "split" ? appliedDmsKop : 0n);
 	const splitDiffKop = effectiveTotalKop - totalSplitAllocatedKop;
 	const isSplitBalanced = splitDiffKop === 0n;
 
@@ -190,34 +192,52 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			const dms = d.dmsRub ?? 0;
 			const total = d.totalDueRub ?? (copay + dms);
 
-			setCustomBaseDueRub(copay > 0 ? copay : total);
+			setCustomBaseDueRub(total);
 			setAppliedDmsSplit({
 				totalDueRub: total,
 				dmsRub: dms,
 				patientRub: copay,
 				insurerName: d.insurerName,
 				letterNumber: d.letterNumber,
+				letterId: d.letterId,
 			});
 
-			if (
-				d.patientCashRub !== undefined &&
-				d.patientCardRub !== undefined &&
-				(d.patientCashRub > 0 || d.patientCardRub > 0)
-			) {
+			if (copay > 0 && dms > 0) {
 				setMethod("split");
-				setSplitCashRub(d.patientCashRub);
-				setSplitCardRub(d.patientCardRub);
-				setCashReceivedRub(d.patientCashRub);
-			} else if (d.patientMethod === "cash") {
-				setMethod("cash");
-				setCashReceivedRub(copay);
-				setSplitCashRub(copay);
-				setSplitCardRub(0);
-			} else {
-				setMethod("card");
-				setSplitCardRub(copay);
+				if (
+					d.patientCashRub !== undefined &&
+					d.patientCardRub !== undefined &&
+					(d.patientCashRub > 0 || d.patientCardRub > 0)
+				) {
+					setSplitCashRub(d.patientCashRub);
+					setSplitCardRub(d.patientCardRub);
+					setCashReceivedRub(d.patientCashRub);
+				} else if (d.patientMethod === "cash") {
+					setSplitCashRub(copay);
+					setSplitCardRub(0);
+					setCashReceivedRub(copay);
+				} else {
+					setSplitCardRub(copay);
+					setSplitCashRub(0);
+					setCashReceivedRub(0);
+				}
+			} else if (copay === 0 && dms > 0) {
+				setMethod("insurance");
 				setSplitCashRub(0);
+				setSplitCardRub(0);
 				setCashReceivedRub(0);
+			} else {
+				if (d.patientMethod === "cash") {
+					setMethod("cash");
+					setCashReceivedRub(copay);
+					setSplitCashRub(copay);
+					setSplitCardRub(0);
+				} else {
+					setMethod("card");
+					setSplitCardRub(copay);
+					setSplitCashRub(0);
+					setCashReceivedRub(0);
+				}
 			}
 			setSplitSbpRub(0);
 			setSplitDepositRub(0);
@@ -358,12 +378,20 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			note: isWarrantyCaseFinal ? "Гарантийный расчёт (скидка 100%)" : undefined,
 		};
 
+		if (appliedDmsSplit && appliedDmsSplit.dmsRub > 0) {
+			if (appliedDmsSplit.letterId) {
+				payload.guaranteeLetterId = appliedDmsSplit.letterId;
+			}
+			payload.dmsAmountKopecks = Number(rubToKopecks(appliedDmsSplit.dmsRub));
+			payload.dmsAmountRub = appliedDmsSplit.dmsRub;
+		}
+
 		if (method === "split" && !isWarrantyCaseFinal) {
 			payload.cashAmountKopecks = Number(splitCashKop);
 			payload.electronicAmountKopecks = Number(splitCardKop + splitSbpKop);
 			payload.depositAmountKopecks = Number(splitDepositKop);
 
-			const tenders: Array<{ method: string; amountKopecks: number; amountRub?: number }> = [];
+			const tenders: Array<{ method: string; amountKopecks: number; amountRub?: number | undefined; guaranteeLetterId?: string | undefined }> = [];
 			if (splitCashKop > 0n) {
 				tenders.push({ method: "cash", amountKopecks: Number(splitCashKop), amountRub: kopecksToRub(splitCashKop) });
 			}
@@ -375,6 +403,14 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			}
 			if (splitDepositKop > 0n) {
 				tenders.push({ method: "family_wallet", amountKopecks: Number(splitDepositKop), amountRub: kopecksToRub(splitDepositKop) });
+			}
+			if (appliedDmsSplit && appliedDmsSplit.dmsRub > 0) {
+				tenders.push({
+					method: "insurance",
+					amountKopecks: Number(rubToKopecks(appliedDmsSplit.dmsRub)),
+					amountRub: appliedDmsSplit.dmsRub,
+					...(appliedDmsSplit.letterId ? { guaranteeLetterId: appliedDmsSplit.letterId } : {}),
+				});
 			}
 			payload.splitTenders = tenders;
 		}
@@ -579,6 +615,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		payerType,
 		buyerInn,
 		printFormat,
+		appliedDmsSplit,
 		onClose,
 	]);
 

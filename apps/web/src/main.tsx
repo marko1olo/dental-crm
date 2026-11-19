@@ -219,6 +219,18 @@ const CopilotStudioStandaloneView = React.lazy(() =>
 		},
 	})),
 );
+const RvgStandaloneStudioView = React.lazy(() =>
+	import("./components/radiology/DirectRvgCaptureLauncher").then((m) => ({
+		default: () => (
+			<div
+				className="direct-rvg-studio-standalone fixed inset-0 z-[9999] bg-[var(--paper)]"
+				data-testid="rvg-studio-standalone-host"
+			>
+				<m.DirectRvgCaptureLauncher />
+			</div>
+		),
+	})),
+);
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import type { StudioMode } from "./components/radiology/standaloneStudio/types";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
@@ -931,6 +943,44 @@ if (publicPortalRoute) {
 	);
 } else if (
 	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=dms") ||
+		window.location.search.includes("standalone=dms") ||
+		window.location.search.includes("stand=insurance") ||
+		window.location.search.includes("standalone=insurance") ||
+		window.location.search.includes("dms=1") ||
+		window.location.search.includes("insurance=1") ||
+		window.location.hash === "#dms" ||
+		window.location.hash === "#insurance" ||
+		window.location.hash.startsWith("#dms?") ||
+		window.location.hash.startsWith("#insurance?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка модуля ДМС и страхования...
+						</div>
+					}
+				>
+					<DmsStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
 	(window.location.search.includes("stand=loyalty") ||
 		window.location.search.includes("standalone=loyalty") ||
 		window.location.search.includes("loyalty=1") ||
@@ -1106,6 +1156,45 @@ if (publicPortalRoute) {
 					}
 				>
 					<CopilotStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=rvg") ||
+		window.location.search.includes("standalone=rvg") ||
+		window.location.search.includes("stand=visiograph") ||
+		window.location.search.includes("standalone=visiograph") ||
+		window.location.search.includes("rvg-capture") ||
+		window.location.search.includes("direct-rvg") ||
+		window.location.hash === "#rvg-capture" ||
+		window.location.hash === "#direct-rvg" ||
+		window.location.hash === "#rvg" ||
+		window.location.hash.startsWith("#rvg?") ||
+		window.location.hash.startsWith("#direct-rvg?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка визиографа...
+						</div>
+					}
+				>
+					<RvgStandaloneStudioView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

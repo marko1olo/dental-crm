@@ -18,6 +18,7 @@ import {
 	bonusTransactions,
 	cashBoxes,
 	cashOperations,
+	dmsGuaranteeLetters,
 	familyGroups,
 	fiscalReceiptQueue,
 	giftCertificates,
@@ -203,6 +204,32 @@ export async function processCashboxPayment(
 		}
 	}
 
+	// [FIN-DMS] Вычисление требуемой суммы списания по ДМС (гарантийное письмо)
+	let requiredDmsKopecks = 0n;
+	let guaranteeLetterId: string | undefined = body.guaranteeLetterId?.trim();
+	const isDmsMethod = body.method === "insurance";
+	if (isDmsMethod) {
+		requiredDmsKopecks = totalKopecks;
+	} else if (body.dmsAmountKopecks !== undefined && body.dmsAmountKopecks > 0) {
+		requiredDmsKopecks = BigInt(body.dmsAmountKopecks);
+	} else if (body.dmsAmountRub !== undefined && body.dmsAmountRub > 0) {
+		requiredDmsKopecks = BigInt(Math.round(body.dmsAmountRub * 100));
+	} else if (body.splitTenders && body.splitTenders.length > 0) {
+		for (const tender of body.splitTenders) {
+			const rawMethod = tender.method?.trim().toLowerCase();
+			if (rawMethod === "insurance" || rawMethod === "dms") {
+				const tk =
+					tender.amountKopecks !== undefined
+						? BigInt(tender.amountKopecks)
+						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
+				requiredDmsKopecks += tk;
+				if (!guaranteeLetterId && tender.guaranteeLetterId) {
+					guaranteeLetterId = tender.guaranteeLetterId.trim();
+				}
+			}
+		}
+	}
+
 	// [DEF-CASH-04] Проверка равенства суммы сплит-частей итогу счета (54-ФЗ и Мандат 8e)
 	const isSplitMethod = body.method === "split";
 	const hasExplicitSplitTenders = Boolean(body.splitTenders && body.splitTenders.length > 0);
@@ -212,6 +239,7 @@ export async function processCashboxPayment(
 		body.depositAmountKopecks !== undefined || body.depositAmountRub !== undefined,
 		body.bonusAmountKopecks !== undefined || body.bonusAmountRub !== undefined,
 		body.certificateAmountKopecks !== undefined || body.certificateAmountRub !== undefined,
+		body.dmsAmountKopecks !== undefined || body.dmsAmountRub !== undefined,
 	].filter(Boolean).length >= 2;
 
 	if (isSplitMethod || hasExplicitSplitTenders || hasMultipleTenderFields) {
@@ -251,6 +279,11 @@ export async function processCashboxPayment(
 				sumSplitKopecks += BigInt(body.certificateAmountKopecks);
 			} else if (body.certificateAmountRub !== undefined) {
 				sumSplitKopecks += BigInt(Math.round(body.certificateAmountRub * 100));
+			}
+			if (body.dmsAmountKopecks !== undefined) {
+				sumSplitKopecks += BigInt(body.dmsAmountKopecks);
+			} else if (body.dmsAmountRub !== undefined) {
+				sumSplitKopecks += BigInt(Math.round(body.dmsAmountRub * 100));
 			}
 		}
 
@@ -761,6 +794,101 @@ export async function processCashboxPayment(
 			newCertBalanceRub = (Number(newBalKop) / 100).toFixed(2);
 		}
 
+		// [FIN-DMS] Проверка и блокировка списания по гарантийному письму ДМС (Мандаты 8e, 8bm, 8bo)
+		let lockedDmsLetter: typeof dmsGuaranteeLetters.$inferSelect | null = null;
+		let dmsAmountToDeductKop = 0n;
+		let newDmsUsedRub = 0;
+		let isDmsExhausted = false;
+		const isUrgentCarePayment = Boolean(
+			body.allowOverdraft ||
+			body.isUrgentCare ||
+			body.isEmergency ||
+			body.hasAcutePain ||
+			(body.note && /(острая боль|экстрен|неотлож|urgent|emergency|overdraft)/i.test(body.note)),
+		);
+		const isEmergencyLetterAlias = Boolean(
+			guaranteeLetterId === "emergency" ||
+			guaranteeLetterId === "emergency_pending_letter" ||
+			guaranteeLetterId === "none" ||
+			guaranteeLetterId === "acute-pain",
+		);
+
+		if (requiredDmsKopecks > 0n && !isWarrantyPayment) {
+			if (isEmergencyLetterAlias || (isUrgentCarePayment && !guaranteeLetterId)) {
+				// Mandate 8e: Acute pain / emergency bypass - proceed with pending letter
+				lockedDmsLetter = null;
+				dmsAmountToDeductKop = requiredDmsKopecks;
+			} else {
+				if (guaranteeLetterId) {
+					const [matched] = await tx
+						.select()
+						.from(dmsGuaranteeLetters)
+						.where(
+							and(
+								eq(dmsGuaranteeLetters.id, guaranteeLetterId),
+								eq(dmsGuaranteeLetters.organizationId, orgId),
+							),
+						)
+						.for("update")
+						.limit(1);
+					lockedDmsLetter = matched ?? null;
+				} else if (resolvedPatientId) {
+					const activeLetters = await tx
+						.select()
+						.from(dmsGuaranteeLetters)
+						.where(
+							and(
+								eq(dmsGuaranteeLetters.patientId, resolvedPatientId),
+								eq(dmsGuaranteeLetters.organizationId, orgId),
+								or(
+									eq(dmsGuaranteeLetters.status, "active"),
+									eq(dmsGuaranteeLetters.status, "approved"),
+								),
+							),
+						)
+						.for("update");
+					lockedDmsLetter = activeLetters[0] ?? null;
+				}
+
+				if (!lockedDmsLetter) {
+					if (isUrgentCarePayment) {
+						lockedDmsLetter = null;
+						dmsAmountToDeductKop = requiredDmsKopecks;
+					} else {
+						return {
+							kind: "dms_letter_not_found" as const,
+							guaranteeLetterId: guaranteeLetterId || "не указан",
+						};
+					}
+				} else {
+					const curUsedKop = BigInt(Math.round(Number(lockedDmsLetter.usedAmountRub || 0) * 100));
+					const maxCovKop = BigInt(Math.round(Number(lockedDmsLetter.maxCoverageRub || 0) * 100));
+
+					if (maxCovKop > 0n && curUsedKop + requiredDmsKopecks > maxCovKop) {
+						if (isUrgentCarePayment) {
+							// Soft Overdraft: Mandate 8e & 8v - do not abort transaction, record exhausted status
+							dmsAmountToDeductKop = requiredDmsKopecks;
+							const nextUsedKop = curUsedKop + dmsAmountToDeductKop;
+							newDmsUsedRub = Number(nextUsedKop) / 100;
+							isDmsExhausted = true;
+						} else {
+							return {
+								kind: "insufficient_dms_coverage" as const,
+								letterNumber: lockedDmsLetter.letterNumber,
+								availableRub: (Number(maxCovKop - curUsedKop) / 100).toFixed(2),
+								requiredRub: (Number(requiredDmsKopecks) / 100).toFixed(2),
+							};
+						}
+					} else {
+						dmsAmountToDeductKop = requiredDmsKopecks;
+						const nextUsedKop = curUsedKop + dmsAmountToDeductKop;
+						newDmsUsedRub = Number(nextUsedKop) / 100;
+						isDmsExhausted = maxCovKop > 0n && nextUsedKop >= maxCovKop;
+					}
+				}
+			}
+		}
+
 		// [FIN-02] Пессимистическая блокировка инвойса от двойной оплаты и связывание с приёмом
 		let effectiveVisitId = body.visitId || null;
 		let lockedInvoice: typeof patientInvoices.$inferSelect | null = null;
@@ -1022,6 +1150,17 @@ export async function processCashboxPayment(
 				.where(eq(giftCertificates.id, lockedCertificate.id));
 		}
 
+		// 2.3. Списание лимита гарантийного письма ДМС (Мандаты 8e, 8bm, 8bo)
+		if (lockedDmsLetter && dmsAmountToDeductKop > 0n) {
+			await tx
+				.update(dmsGuaranteeLetters)
+				.set({
+					usedAmountRub: newDmsUsedRub,
+					...(isDmsExhausted ? { status: "exhausted" } : {}),
+				})
+				.where(eq(dmsGuaranteeLetters.id, lockedDmsLetter.id));
+		}
+
 		// 3. Инициализируем и находим кассовые счета клиники с упорядоченной блокировкой строк
 		await ensureOrganizationCashBoxes(tx, orgId);
 		const boxes = await tx
@@ -1041,6 +1180,9 @@ export async function processCashboxPayment(
 			boxes.find((b) => b.isCashless) ||
 			boxes[1] ||
 			cashDeskBox;
+		const dmsBox =
+			boxes.find((b) => b.type === "dms" || b.type === "insurance") ||
+			cashlessBox;
 
 		// 4. Кассовые проводки в cashOperations
 		let resolvedCashKop = 0;
@@ -1187,6 +1329,22 @@ export async function processCashboxPayment(
 			});
 		}
 
+		if (requiredDmsKopecks > 0n && dmsBox) {
+			const dmsRub = Number(requiredDmsKopecks) / 100;
+			await tx.insert(cashOperations).values({
+				organizationId: orgId,
+				cashBoxId: dmsBox.id,
+				operationType: "income",
+				amountRub: dmsRub,
+				balanceBeforeRub: dmsBox.balanceRub || 0,
+				balanceAfterRub: dmsBox.balanceRub || 0,
+				patientId: resolvedPatientId,
+				kkmDocNumber: receiptNumber,
+				reasonText: `Оплата по гарантийному письму ДМС (${lockedDmsLetter?.letterNumber || (isEmergencyLetterAlias ? "ЭКСТРЕННО (досылка)" : "б/н")}): стоматологические услуги (${receiptNumber || "б/н"})`,
+				operatorName: body.cashierFullName || "Кассир",
+			});
+		}
+
 		// 5. Постановка чека в очередь фискализации (physical KKT printer spooler)
 		let enqueuedReceiptId: string | null = null;
 		if (!isWarrantyPayment && totalKopecks > 0n) {
@@ -1210,6 +1368,9 @@ export async function processCashboxPayment(
 						certificateOffsetRub: kopecksToRub(Number(requiredCertificateKopecks)),
 						certificateNumber: certificateNumber || null,
 						bonusOffsetRub: kopecksToRub(Number(requiredBonusKopecks)),
+						dmsOffsetRub: kopecksToRub(Number(requiredDmsKopecks)),
+						guaranteeLetterNumber: lockedDmsLetter?.letterNumber || (isEmergencyLetterAlias ? "ЭКСТРЕННО (досылка)" : null),
+						guaranteeLetterId: lockedDmsLetter?.id || (isEmergencyLetterAlias ? guaranteeLetterId : null),
 						fiscalReceiptNumber: receiptNumber,
 						patientId: resolvedPatientId,
 						patientName: patientRow?.fullName || patientName,
@@ -1232,6 +1393,8 @@ export async function processCashboxPayment(
 			amountRub: amountRubNumber,
 			bonusAmountKopecks: Number(requiredBonusKopecks),
 			certificateAmountKopecks: Number(requiredCertificateKopecks),
+			dmsAmountKopecks: Number(requiredDmsKopecks),
+			guaranteeLetterId: lockedDmsLetter?.id || (isEmergencyLetterAlias ? guaranteeLetterId : null),
 			method: newPayment.method,
 			status: "paid",
 			fiscalReceiptNumber: receiptNumber,
@@ -1348,6 +1511,26 @@ export async function processCashboxPayment(
 			body: {
 				error: "InsufficientCertificateBalance",
 				message: `Недостаточно средств на сертификате «${result.certificateNumber}». Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "dms_letter_not_found") {
+		return {
+			statusCode: 404,
+			body: {
+				error: "DmsLetterNotFound",
+				message: `Гарантийное письмо ДМС («${result.guaranteeLetterId}») не найдено для пациента в данной клинике.`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "insufficient_dms_coverage") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "InsufficientDmsCoverage",
+				message: `Превышен лимит покрытия по гарантийному письму ДМС «${result.letterNumber}». Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
 			},
 		};
 	}

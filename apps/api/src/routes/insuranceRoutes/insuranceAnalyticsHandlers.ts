@@ -1,5 +1,6 @@
 import {
 	calculateDmsRegistryTotals,
+	DEFAULT_CLINIC_PROFILE,
 	generateDmsRegistryCsv,
 	generateDmsRegistryXml,
 	type DmsRegistryClinicInfo,
@@ -12,6 +13,7 @@ import type { FastifyInstance } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import {
+	clinics,
 	dmsGuaranteeLetters,
 	insuranceContracts,
 	organizations,
@@ -87,23 +89,32 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 			}
 		}
 
-		// 2. Реквизиты клиники из organizations
+		// 2. Реквизиты клиники из organizations и clinics
 		const [org] = await db
 			.select()
 			.from(organizations)
 			.where(eq(organizations.id, orgId))
 			.limit(1);
 
+		const [clinicRow] = await db
+			.select()
+			.from(clinics)
+			.where(eq(clinics.organizationId, orgId))
+			.limit(1);
+
+		const clinicPhone = clinicRow?.phone || org?.website || "+7 (800) 200-00-00";
+		const clinicAddress = clinicRow?.address || org?.legalAddress || DEFAULT_CLINIC_PROFILE.address;
+
 		const clinicInfo: DmsRegistryClinicInfo = {
-			nameRu: org?.name || "ООО «Стоматологический Центр «ДЕНТЕ»",
-			inn: org?.inn || "7701984210",
+			nameRu: org?.name || DEFAULT_CLINIC_PROFILE.name,
+			inn: org?.inn || DEFAULT_CLINIC_PROFILE.inn,
 			kpp: org?.kpp || "770101001",
-			ogrn: org?.ogrn || "1157746890123",
-			addressRu: org?.legalAddress || "г. Москва, ул. Большая Спасская, д. 12, стр. 1",
-			phone: "+7 (495) 123-45-67",
+			ogrn: org?.ogrn || DEFAULT_CLINIC_PROFILE.ogrn,
+			addressRu: clinicAddress,
+			phone: clinicPhone,
 			email: org?.email || undefined,
 			medicalLicenseNumber: org?.medicalLicenseNumber || "ЛО-77-01-019842",
-			chiefDoctorNameRu: org?.signatoryName || "Главный врач",
+			chiefDoctorNameRu: org?.signatoryName || DEFAULT_CLINIC_PROFILE.chiefDoctor,
 			chiefAccountantNameRu: org?.signatoryName || "Руководитель организации",
 		};
 
@@ -121,18 +132,37 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				)
 				.limit(1);
 			contract = found || null;
+		} else if (insurerKey && insurerKey !== "all") {
+			const [found] = await db
+				.select()
+				.from(insuranceContracts)
+				.where(
+					and(
+						eq(insuranceContracts.organizationId, orgId),
+						eq(insuranceContracts.isActive, true),
+					),
+				)
+				.limit(1);
+			if (found) contract = found;
 		}
 
 		const matchedInsurer = insurerKey && insurerKey !== "all" ? INSURER_DIRECTORY[insurerKey] : null;
 		const insurerTitle = contract?.companyName || matchedInsurer?.name || (insurerKey && insurerKey !== "all" ? insurerKey : "Все страховые компании (Сводный отчет)");
-		const insurerInn = matchedInsurer?.inn || "7736035485";
+		const insurerInn = matchedInsurer?.inn || (insurerKey && insurerKey !== "all" ? "7700000000" : "0000000000");
+
+		const contractNumber = contract?.id
+			? `ДМС-${now.getFullYear()}/${contract.id.slice(0, 4).toUpperCase()}`
+			: `ДМС-${now.getFullYear()}/СВОД`;
+		const contractDate = contract?.createdAt
+			? contract.createdAt.toISOString().slice(0, 10)
+			: `${now.getFullYear()}-01-01`;
 
 		const insuranceCompanyInfo: DmsRegistryInsuranceCompanyInfo = {
 			companyId: contract?.id || insurerKey || "all",
 			nameRu: insurerTitle,
 			inn: insurerInn,
-			contractNumber: "ДМС-2026/01",
-			contractDate: "2026-01-12",
+			contractNumber,
+			contractDate,
 		};
 
 		// 4. Поиск гарантийных писем
@@ -396,7 +426,7 @@ export async function registerInsuranceAnalyticsRoutes(app: FastifyInstance) {
 				serviceDate: letterDateIso,
 				patientFullName: letter.patientFullName,
 				patientBirthDate: letter.patientBirthDate || "1990-01-01",
-				patientGender: "М",
+				patientGender: letter.patientFullName.trim().endsWith("на") || letter.patientFullName.trim().endsWith("ва") || letter.patientFullName.trim().endsWith("ая") ? "Ж" : "М",
 				policyNumber: letter.policyNumber,
 				guaranteeLetterNumber: letter.letterNumber,
 				guaranteeLetterDate: letter.issueDate,

@@ -65,14 +65,9 @@ function StandaloneDmsHost({ onClose }: { onClose: () => void }) {
 	const patient = useDmsPatientLoader(patientId);
 
 	if (!patientId && !patient) {
-		return (
-			<StandaloneDeepLinkMissingState
-				title="Пациент не указан"
-				message="Гарантийное письмо ДМС оформляется по конкретному пациенту. Откройте его из карты пациента или добавьте ?patientId= в ссылку."
-				testId="standalone-dms-missing-state"
-				onClose={onClose}
-			/>
-		);
+		// При отсутствии конкретного patientId в URL коллизия с deep-link #dms устраняется:
+		// реестр гарантийных писем клиники беспрепятственно монтируется через DirectInsuranceLauncher (Мандаты 8aq & 8e)
+		return null;
 	}
 	if (patient === undefined) return <AppLoadingState message="Загрузка карточки пациента..." />;
 

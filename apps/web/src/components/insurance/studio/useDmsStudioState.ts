@@ -285,6 +285,10 @@ export function useDmsStudioState({
 	}, [liveRegistryRecords, isDemo, patient, selectedLetter, currentInsurerTitle]);
 
 	const handleAddLetter = async () => {
+		if (!patient.id) {
+			showToast("Для прикрепления гарантийного письма выберите пациента", "warning");
+			return;
+		}
 		const fallbackCompany = DMS_INSURANCE_COMPANIES_CATALOG[0] ?? {
 			id: "sogaz",
 			shortNameRu: "АО «СОГАЗ»",
@@ -305,7 +309,7 @@ export function useDmsStudioState({
 		const newLetterItem: DmsGuaranteeLetter = {
 			id: `let-${Date.now()}`,
 			letterNumber: letNum,
-			patientId: patient.id || "00000000-0000-0000-0000-000000000001",
+			patientId: patient.id,
 			patientFullName: patient.fullName,
 			policyNumber: patient.policyNumber || "СГЗ-2026",
 			insurerKey: company.id,
@@ -338,7 +342,7 @@ export function useDmsStudioState({
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
-					patientId: patient.id || "00000000-0000-0000-0000-000000000001",
+					patientId: patient.id,
 					patientFullName: patient.fullName,
 					patientBirthDate: patient.birthDate || new Date().toISOString().slice(0, 10),
 					policyNumber: patient.policyNumber || "СГЗ-2026",
