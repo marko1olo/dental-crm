@@ -66,6 +66,8 @@ export interface DoctorPayrollCalculationInput {
 	readonly chairRentalSplitDoctorPercent?: number | undefined;
 	readonly chairRentalKop?: number | undefined;
 	readonly advancePayoutKop?: number | undefined;
+	readonly applyMinimumGuarantee?: boolean | undefined;
+	readonly guaranteeDaysRatio?: number | undefined;
 }
 
 export interface DoctorPayrollResult {

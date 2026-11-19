@@ -85,9 +85,3 @@ export function generateStaffPayrollCsv(summary: ConsolidatedStaffPayrollSummary
 
 // Canonical Clinical Exports
 export const generateStaffPayrollLedgerCsv = generateStaffPayrollCsv;
-
-// Backward Compatibility Aliases (Deprecated Soviet T-51 Forms)
-/** @deprecated Use generateDoctorPayrollCsv instead */
-export const generatePayrollT51Csv = generateDoctorPayrollCsv;
-/** @deprecated Use generateStaffPayrollCsv instead */
-export const generateStaffPayrollT51Csv = generateStaffPayrollCsv;

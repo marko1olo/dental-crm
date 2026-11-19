@@ -8,8 +8,6 @@ export {
 	generateDoctorPayrollCsv,
 	generateStaffPayrollCsv,
 	generateStaffPayrollLedgerCsv,
-	generateStaffPayrollT51Csv,
-	generatePayrollT51Csv,
 } from "./exports/payrollCsvExporter";
 export {
 	generateStaffPayrollAccountingCsv,
@@ -17,7 +15,6 @@ export {
 } from "./exports/staffPayrollAccountingCsvExporter";
 export {
 	generateStaffPayrollLedgerHtml,
-	generateFormT51Html,
 } from "./exports/staffPayrollLedgerHtmlExporter";
 export { generateDoctorPayslipHtml } from "./exports/doctorPayslipHtmlExporter";
 export { generateDoctorPayslipMessengerText } from "./exports/doctorPayslipMessengerExporter";

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	calculateConsolidatedStaffPayroll,
-	generateStaffPayrollT51Csv,
+	generateStaffPayrollCsv,
 } from "../../staffPayrollEngine";
 
 describe("Staff Multi-Role: Accounting Ledger & Guarantee Invariants", () => {
@@ -24,6 +24,7 @@ describe("Staff Multi-Role: Accounting Ledger & Guarantee Invariants", () => {
 				periodStartIso: "2026-08-01",
 				periodEndIso: "2026-08-31",
 				daysWorked: 12,
+				applyMinimumGuarantee: true,
 				services: [{
 					id: "srv-low",
 					dateIso: "2026-08-05",
@@ -47,10 +48,10 @@ describe("Staff Multi-Role: Accounting Ledger & Guarantee Invariants", () => {
 			assert.ok(doctorRecord.guaranteeTopUpKop && doctorRecord.guaranteeTopUpKop > 0);
 		}
 
-		const csv = generateStaffPayrollT51Csv(summary);
+		const csv = generateStaffPayrollCsv(summary);
 		const rows = csv.split("\n");
 		const doctorRow = rows.find((r) => r.includes("Новиков Денис Олегович"));
-		assert.ok(doctorRow, "Doctor must be listed in T-51 CSV");
+		assert.ok(doctorRow, "Doctor must be listed in Staff Payroll CSV");
 
 		const cols = doctorRow.split(";");
 		const col8Base = Number.parseFloat(cols[7] ?? "0");

@@ -48,8 +48,31 @@ export function calculateDoctorPeriodPayroll(
 	const manualAdj = input.manualAdjustmentKop ?? 0;
 	const earnedBaseCommission = isChairRental ? totalNetBase : serviceSummary.earnedBase;
 
+	let guaranteeRatio = 1;
+	if (typeof input.guaranteeDaysRatio === "number") {
+		guaranteeRatio = input.guaranteeDaysRatio;
+	} else if (input.periodStartIso && input.periodEndIso) {
+		const startMs = Date.parse(input.periodStartIso);
+		const endMs = Date.parse(input.periodEndIso);
+		if (!Number.isNaN(startMs) && !Number.isNaN(endMs) && endMs >= startMs) {
+			const startDate = new Date(startMs);
+			const diffDays = Math.max(1, Math.round((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1);
+			const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate() || 30;
+			if (diffDays < daysInMonth) {
+				guaranteeRatio = diffDays / daysInMonth;
+			}
+		}
+	}
+
 	const preGuaranteePayout = earnedBaseCommission + serviceSummary.earnedRetail + kpiBonusEarned + manualAdj - totalRefundClawbackKop;
-	const { grossPayout, guaranteeApplied } = applyMinimumGuarantee(preGuaranteePayout, preset.minGuaranteeMonthlyKop, isChairRental, doctorServices.length);
+	const { grossPayout, guaranteeApplied } = applyMinimumGuarantee(
+		preGuaranteePayout,
+		preset.minGuaranteeMonthlyKop,
+		isChairRental,
+		doctorServices.length,
+		input.applyMinimumGuarantee === true,
+		guaranteeRatio,
+	);
 
 	const isSoloOrSelfEmployed = isChairRental || input.taxRegime === "self_employed" ||
 		(input.taxRegime === undefined && (input.isSoloDoctor === true || preset.specialtyId === "solo_practitioner" || preset.specialtyId === "solo-doctor"));

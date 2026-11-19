@@ -70,6 +70,7 @@ describe("Red Team: Kopeck-Exact Arithmetic & Zero Rounding Drift (Mandate 8b)",
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			daysWorked: 21,
+			applyMinimumGuarantee: true,
 			services: [{
 				id: "s-1",
 				dateIso: "2026-08-12",
@@ -100,6 +101,7 @@ describe("Red Team: Kopeck-Exact Arithmetic & Zero Rounding Drift (Mandate 8b)",
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			daysWorked: 21,
+			applyMinimumGuarantee: true,
 			services: [],
 		};
 

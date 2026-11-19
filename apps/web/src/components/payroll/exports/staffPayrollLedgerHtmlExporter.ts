@@ -107,6 +107,3 @@ export function generateStaffPayrollLedgerHtml(summary: ConsolidatedStaffPayroll
 </body>
 </html>`;
 }
-
-// Backward Compatibility Alias
-export const generateFormT51Html = generateStaffPayrollLedgerHtml;

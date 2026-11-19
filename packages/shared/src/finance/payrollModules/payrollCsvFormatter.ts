@@ -25,6 +25,3 @@ export function generateDoctorPayrollCsv(results: readonly DoctorPayrollResult[]
 
 	return "\uFEFF" + header + rows.join("\n");
 }
-
-/** Алиас для обратной совместимости (устаревший ГосКомСтат код) */
-export const generatePayrollT51Csv = generateDoctorPayrollCsv;

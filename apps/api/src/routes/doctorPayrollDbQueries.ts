@@ -34,6 +34,8 @@ export interface PayrollOrderDto {
 	id: string;
 	orderNumber: string;
 	dateIso: string;
+	startsAtIso?: string | undefined;
+	endsAtIso?: string | undefined;
 	patientName: string;
 	medicalCardNumber: string;
 	serviceNameRu: string;
@@ -504,10 +506,15 @@ export async function fetchDoctorPayrollDataset(params: {
 			fiscalReceiptNumber: receiptNum,
 		});
 
+		const apptStartIso = appt?.startsAt ? appt.startsAt.toISOString() : undefined;
+		const apptEndIso = appt?.startsAt ? new Date(appt.startsAt.getTime() + 60 * 60 * 1000).toISOString() : undefined;
+
 		orders.push({
 			id: t.id,
 			orderNumber: `ОРД-${t.id.slice(0, 6).toUpperCase()}`,
 			dateIso: appt?.startsAt ? appt.startsAt.toISOString().slice(0, 10) : fromStr.slice(0, 10),
+			startsAtIso: apptStartIso,
+			endsAtIso: apptEndIso,
 			patientName: appt?.patientName || "Пациент",
 			medicalCardNumber: appt?.cardNumber || "—",
 			serviceNameRu: serviceTitle,

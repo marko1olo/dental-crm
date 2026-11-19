@@ -15,7 +15,7 @@ const path = require("node:path");
 
 const WEB_BASE = "http://127.0.0.1:5173";
 const PROOFS_DIR = path.resolve("docs/proofs/payroll");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/860de7d7-68e4-40c6-9506-5ccd8ebeb50d");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/3e434578-30d6-4790-9e45-38b04cd62e6e");
 
 for (const dir of [PROOFS_DIR, BRAIN_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

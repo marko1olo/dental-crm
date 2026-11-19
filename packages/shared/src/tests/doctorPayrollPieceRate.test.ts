@@ -4,7 +4,6 @@ import {
 	calculateDoctorPeriodPayroll,
 	calculateAssistantPeriodPayroll,
 	generateDoctorPayrollCsv,
-	generatePayrollT51Csv,
 	DOCTOR_SPECIALTY_PAYROLL_PRESETS,
 	ASSISTANT_SHIFT_RULE,
 	KPI_BONUS_TIERS,
@@ -12,7 +11,7 @@ import {
 } from "../finance/doctorPayrollEngine.js";
 
 describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
-	it("1.1 Calculates therapist commission with material deductions, min guarantee, and NDFL 13%", () => {
+	it("1.1 Calculates therapist commission with material deductions, NDFL 13%, without false guarantee inflation", () => {
 		const services: DoctorCompletedServiceItem[] = [
 			{
 				id: "srv-101",
@@ -41,11 +40,11 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.equal(res.totalNetBaseKop, 800000); // 8,000.00 RUB
 		assert.equal(res.baseCommissionPercent, 30);
 		// Pre-guarantee earned: 30% of 8,000 = 2,400 RUB (240,000 kop)
-		// Min guarantee for therapist is 60,000 RUB (6,000,000 kop)
-		assert.equal(res.minimumGuaranteeApplied, true);
-		assert.equal(res.grossPayoutBeforeTaxKop, 6000000);
-		assert.equal(res.ndfl13TaxKop, 780000); // 13% of 60,000 = 7,800 RUB
-		assert.equal(res.netPayoutToDoctorKop, 5220000); // 52,200 RUB
+		// Min guarantee is false by default: piece-rate fairness (no 60,000 RUB distortion for 1 filling)
+		assert.equal(res.minimumGuaranteeApplied, false);
+		assert.equal(res.grossPayoutBeforeTaxKop, 240000); // 2,400.00 RUB
+		assert.equal(res.ndfl13TaxKop, 31200); // 13% of 2,400 = 312.00 RUB
+		assert.equal(res.netPayoutToDoctorKop, 208800); // 2,088.00 RUB
 	});
 
 	it("1.2 Calculates orthopedist commission with dental lab (ЗТЛ) deductions", () => {
@@ -162,9 +161,13 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		// 15% of 2,500 = 375 RUB (37,500 kop)
 		assert.equal(res.earnedBaseCommissionKop, 240000);
 		assert.equal(res.earnedRetailCommissionKop, 37500);
-		// Min guarantee for hygienist is 45,000 RUB -> 4,500,000 kop
-		assert.equal(res.minimumGuaranteeApplied, true);
-		assert.equal(res.grossPayoutBeforeTaxKop, 4500000);
+		// Min guarantee is false by default
+		assert.equal(res.minimumGuaranteeApplied, false);
+		// Total earned: 2,400 + 375 = 2,775 RUB (277,500 kop)
+		assert.equal(res.grossPayoutBeforeTaxKop, 277500);
+		// NDFL 13%: 13% of 2,775 = 360.75 -> rounded to 361.00 RUB (36,100 kop) per Art. 225
+		assert.equal(res.ndfl13TaxKop, 36100);
+		assert.equal(res.netPayoutToDoctorKop, 241400);
 	});
 
 	it("1.5 Calculates assistant shift rate + radiograph & surgery bonuses", () => {
@@ -233,8 +236,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.ok(csv.startsWith("\uFEFF"));
 		assert.ok(csv.includes("Табельный ID;Врач;Специальность;Период"));
 		assert.ok(csv.includes("Д-р Смирнов А. В."));
-		assert.ok(csv.includes("52200.00")); // Net payout rub "На руки"
-		assert.ok(csv.includes("7800.00"));  // NDFL 13% tax rub
+		assert.ok(csv.includes("261.00")); // Net payout rub "На руки"
+		assert.ok(csv.includes("39.00"));  // NDFL 13% tax rub
 	});
 
 	it("1.7 Enforces NDFL 13% rounding to whole rubles per Art. 225 p. 6 Tax Code RF with non-trivial kopecks", () => {
@@ -409,7 +412,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		const resSelfEmployed = calculateDoctorPeriodPayroll({
 			doctorId: "doc-self-employed",
 			doctorName: "Д-р Свободный С. С.",
-			specialtyId: "therapist", // 25%
+			specialtyId: "general_dentist",
+			customBasePercentage: 25,
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			services,
@@ -417,11 +421,12 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		});
 
 		// Net base: 90,000 RUB -> 25% = 22,500 RUB (2,250,000 kop)
-		// Minimum guarantee for therapist is 60,000 RUB (6,000,000 kop)
-		assert.equal(resSelfEmployed.grossPayoutBeforeTaxKop, 6000000);
+		// Minimum guarantee is false by default: self-employed gets actual earned 22,500 RUB
+		assert.equal(resSelfEmployed.minimumGuaranteeApplied, false);
+		assert.equal(resSelfEmployed.grossPayoutBeforeTaxKop, 2250000);
 		assert.equal(resSelfEmployed.ndfl13TaxKop, 0);
 		assert.equal(resSelfEmployed.ndflTaxKop, 0);
-		assert.equal(resSelfEmployed.netPayoutToDoctorKop, 6000000);
+		assert.equal(resSelfEmployed.netPayoutToDoctorKop, 2250000);
 		assert.equal(resSelfEmployed.taxRegime, "self_employed");
 
 		const resSoloDoc = calculateDoctorPeriodPayroll({
@@ -482,5 +487,53 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.equal(res.mainPayoutKop, 10000000);
 		// Self-employed NPD 6%: 6% of 150,000 = 9,000.00 RUB (900,000 kop)
 		assert.equal(res.npd6TaxKop, 900000);
+	});
+
+	it("1.12 Explicitly applies minimum guarantee when applyMinimumGuarantee: true is passed", () => {
+		const services: DoctorCompletedServiceItem[] = [
+			{
+				id: "srv-guar-1",
+				dateIso: "2026-08-01",
+				patientName: "Пациент Гарантии",
+				medicalCardNumber: "043/у-01",
+				serviceNameRu: "Консультация",
+				category: "therapy",
+				grossRevenueKop: 100000, // 1,000 RUB
+				labCostKop: 0,
+				materialCostKop: 0,
+			},
+		];
+
+		// Month period: 2026-08-01 to 2026-08-31 (full month guarantee = 60,000 RUB)
+		const resMonth = calculateDoctorPeriodPayroll({
+			doctorId: "doc-guar-month",
+			doctorName: "Д-р Гарантированный Г. Г.",
+			specialtyId: "therapist", // 60,000 RUB min guarantee (6,000,000 kop)
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-31",
+			services,
+			applyMinimumGuarantee: true,
+		});
+
+		assert.equal(resMonth.minimumGuaranteeApplied, true);
+		assert.equal(resMonth.grossPayoutBeforeTaxKop, 6000000);
+		assert.equal(resMonth.ndfl13TaxKop, 780000);
+		assert.equal(resMonth.netPayoutToDoctorKop, 5220000);
+
+		// Single day period: 2026-08-01 to 2026-08-01 (1 of 31 days)
+		const resDay = calculateDoctorPeriodPayroll({
+			doctorId: "doc-guar-day",
+			doctorName: "Д-р Дневной Д. Д.",
+			specialtyId: "therapist",
+			periodStartIso: "2026-08-01",
+			periodEndIso: "2026-08-01",
+			services,
+			applyMinimumGuarantee: true,
+		});
+
+		// 1 day guarantee: 6,000,000 * (1/31) = 193,548 kop
+		// Doctor earned: 30% of 1,000 = 300 RUB (30,000 kop) < 193,548 kop
+		assert.equal(resDay.minimumGuaranteeApplied, true);
+		assert.equal(resDay.grossPayoutBeforeTaxKop, 193548);
 	});
 });

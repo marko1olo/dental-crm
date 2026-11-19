@@ -72,6 +72,7 @@ export interface DoctorStaffPayrollInput {
 	readonly manualAdjustmentNoteRu?: string | undefined;
 	readonly daysWorked?: number | undefined;
 	readonly hoursWorked?: number | undefined;
+	readonly applyMinimumGuarantee?: boolean | undefined;
 }
 
 export interface DoctorStaffPayrollResult {

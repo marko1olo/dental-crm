@@ -52,8 +52,9 @@ describe("Staff Multi-Role: Doctor Piecework & KPI Calculations", () => {
 		assert.equal(res.totalNetBaseKop, 1100000);
 		assert.equal(res.earnedBaseCommissionKop, 270000);
 		assert.equal(res.earnedRetailCommissionKop, 20000);
-		assert.equal(res.minimumGuaranteeApplied, true);
-		assert.equal(res.grossPayoutBeforeTaxKop, 6000000);
+		// By default piece-rate applies without artificial guarantee inflation (Mandate 8e/8n)
+		assert.equal(res.minimumGuaranteeApplied, false);
+		assert.equal(res.grossPayoutBeforeTaxKop, 290000);
 	});
 
 	it("1.2 Computes orthopedist piecework with lab deduction, high volume KPI, and plans bonus", () => {

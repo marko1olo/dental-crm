@@ -86,6 +86,8 @@ export function applyMinimumGuarantee(
 	minGuaranteeMonthlyKop: number,
 	isChairRental: boolean,
 	servicesCount: number,
+	shouldApplyGuarantee: boolean = false,
+	guaranteeDaysRatio: number = 1,
 ): GuaranteeResult {
 	let payout = preGuaranteePayout;
 	if (!Number.isFinite(payout)) {
@@ -93,8 +95,11 @@ export function applyMinimumGuarantee(
 	}
 
 	let guaranteeApplied = false;
-	if (!isChairRental && payout < minGuaranteeMonthlyKop && servicesCount > 0) {
-		payout = minGuaranteeMonthlyKop;
+	const safeRatio = Number.isFinite(guaranteeDaysRatio) ? Math.max(0, Math.min(1, guaranteeDaysRatio)) : 1;
+	const effectiveGuarantee = Math.round(minGuaranteeMonthlyKop * safeRatio);
+
+	if (shouldApplyGuarantee && !isChairRental && effectiveGuarantee > 0 && payout < effectiveGuarantee && servicesCount > 0) {
+		payout = effectiveGuarantee;
 		guaranteeApplied = true;
 	}
 

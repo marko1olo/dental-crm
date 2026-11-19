@@ -36,6 +36,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [apiOrders, setApiOrders] = useState<PayrollServiceOrder[] | null>(null);
 	const [apiClosedPeriods, setApiClosedPeriods] = useState<ClosedPayrollPeriodItem[] | null>(null);
 	const [apiSummary, setApiSummary] = useState<DoctorPayrollSummary | null>(null);
+	const [apiDoctorSummaries, setApiDoctorSummaries] = useState<Record<string, DoctorPayrollSummary>>({});
 
 	const doctors: readonly PayrollDoctorProfile[] = useMemo(() => {
 		if (doctorsList && doctorsList.length > 0) {
@@ -86,8 +87,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			if (Array.isArray(data.orders)) setApiOrders(data.orders);
 			if (Array.isArray(data.closedPeriods)) setApiClosedPeriods(data.closedPeriods);
 			if (typeof data.shiftsCount === "number") setShiftsCount(data.shiftsCount);
-			if (data.doctorSummaries && selectedDoctor && data.doctorSummaries[selectedDoctor.id]) {
-				setApiSummary(data.doctorSummaries[selectedDoctor.id]);
+			if (data.doctorSummaries && typeof data.doctorSummaries === "object") {
+				setApiDoctorSummaries(data.doctorSummaries);
+				if (selectedDoctor && data.doctorSummaries[selectedDoctor.id]) setApiSummary(data.doctorSummaries[selectedDoctor.id]);
 			} else if (data.summary && typeof data.summary === "object" && data.summary.doctorId !== "all") {
 				setApiSummary(data.summary);
 			}
@@ -111,8 +113,10 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 	const allDoctorsSummaries = useMemo(() => doctors.map((doc) => ({
 		doctor: doc,
-		summary: calculateDoctorPayrollSummary({ orders: effectiveOrders, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" }),
-	})), [doctors, effectiveOrders, payoutStatus]);
+		summary: (!isDemo && apiDoctorSummaries[doc.id])
+			? { ...apiDoctorSummaries[doc.id], payoutStatus }
+			: calculateDoctorPayrollSummary({ orders: effectiveOrders, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" }),
+	})), [doctors, effectiveOrders, payoutStatus, apiDoctorSummaries, isDemo]);
 
 	const clinicTotals = useMemo(() => allDoctorsSummaries.reduce((acc, item) => ({
 		gross: acc.gross + item.summary.totalGrossKopecks, lab: acc.lab + item.summary.totalLabCostKopecks,

@@ -237,11 +237,17 @@ export function calculateDoctorStaffPayroll(input: DoctorStaffPayrollInput): Doc
 	let guaranteeTopUpKop = 0;
 
 	if (hasActiveProductionOrAttendance && preset.minGuaranteeMonthlyKop > 0) {
-		const guaranteeRes = applyMinimumGuarantee(preGuaranteeGross, preset.minGuaranteeMonthlyKop, false, 1);
+		const guaranteeRes = applyMinimumGuarantee(
+			preGuaranteeGross,
+			preset.minGuaranteeMonthlyKop,
+			false,
+			input.services.length || 1,
+			input.applyMinimumGuarantee === true,
+		);
 		finalGross = guaranteeRes.grossPayout;
 		guaranteeApplied = guaranteeRes.guaranteeApplied;
 		if (guaranteeApplied) {
-			guaranteeTopUpKop = preset.minGuaranteeMonthlyKop - preGuaranteeGross;
+			guaranteeTopUpKop = finalGross - preGuaranteeGross;
 		}
 	}
 
@@ -506,14 +512,11 @@ export {
 	generateDoctorPayrollCsv,
 	generateStaffPayrollCsv,
 	generateStaffPayrollLedgerCsv,
-	generateStaffPayrollT51Csv,
-	generatePayrollT51Csv,
 	generateDoctorPayslipHtml,
 	generateDoctorPayslipMessengerText,
 	generateStaffPayrollAccountingCsv,
 	generate1CZup31Csv,
 	generateStaffPayrollLedgerHtml,
-	generateFormT51Html,
 } from "./staffPayrollExports.js";
 
 import { generateStaffPayrollCsv } from "./exports/payrollCsvExporter.js";
