@@ -11,7 +11,7 @@ export const ActLegalTermsSection: React.FC<ActLegalTermsSectionProps> = ({ pale
 			className="pt-3 border-t border-slate-300 text-xs text-slate-900 space-y-3 print:space-y-2 mb-6 print:mb-4 break-inside-avoid"
 			style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
 		>
-			<div className="font-bold uppercase tracking-wider text-[11px]" style={{ color: palette.primaryDark }}>
+			<div className="font-bold text-[11px]" style={{ color: palette.primaryDark }}>
 				3. Условия сдачи-приемки и гарантийные обязательства
 			</div>
 			<ol className="list-decimal pl-4 space-y-1.5 text-justify leading-relaxed text-[11px] text-slate-700">

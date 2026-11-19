@@ -31,7 +31,7 @@ export const TreatmentPlanActMaterialsTable: React.FC<TreatmentPlanActMaterialsT
 	return (
 		<div className="doc-soap-section mb-6 print:mb-4">
 			<div
-				className="doc-soap-heading flex items-center justify-between p-2 rounded-t-lg font-black text-xs uppercase tracking-wider text-slate-900 border-b-2"
+				className="doc-soap-heading flex items-center justify-between p-2 rounded-t-lg font-bold text-xs text-slate-900 border-b-2"
 				style={{
 					backgroundColor: palette.softBg,
 					borderColor: palette.primary,
@@ -76,8 +76,8 @@ export const TreatmentPlanActMaterialsTable: React.FC<TreatmentPlanActMaterialsT
 							className="font-bold text-xs"
 							style={{ backgroundColor: palette.softBg, color: palette.primaryDark }}
 						>
-							<td colSpan={6} className="border border-slate-300 p-2.5 text-right uppercase tracking-wide">
-								ИТОГО СЕБЕСТОИМОСТЬ СПИСАННЫХ МАТЕРИАЛОВ (ТМЦ):
+							<td colSpan={6} className="border border-slate-300 p-2.5 text-right tracking-normal font-semibold">
+								Итого себестоимость списанных материалов (ТМЦ):
 							</td>
 							<td className="border border-slate-300 p-2.5 text-right font-mono font-black text-sm text-slate-950">
 								{formatMoneyExact(netMaterialRub, netMaterialKopecks)}

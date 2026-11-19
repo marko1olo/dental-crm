@@ -17,7 +17,7 @@ export const TreatmentPlanContractServicesTable: React.FC<TreatmentPlanContractS
 
 	return (
 		<div className="space-y-2">
-			<h3 className="font-bold text-slate-900 uppercase tracking-wide text-[11px] flex items-center justify-between flex-wrap gap-2">
+			<h3 className="font-bold text-slate-900 text-[11px] flex items-center justify-between flex-wrap gap-2">
 				<span>2. Приложение № 1: Спецификация и этапы лечения (Клинический протокол)</span>
 				<div className="flex items-center gap-2">
 					<button type="button" onClick={() => setShowMicroConsumables(!showMicroConsumables)} className="print:hidden text-[10px] font-semibold text-teal-700 dark:text-teal-400 hover:underline cursor-pointer">
@@ -30,7 +30,7 @@ export const TreatmentPlanContractServicesTable: React.FC<TreatmentPlanContractS
 			<div className="overflow-x-auto">
 				<table className="w-full border-collapse border border-slate-300 text-[10px]">
 					<thead>
-						<tr className="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider text-[9px]">
+						<tr className="bg-slate-100 text-slate-700 font-semibold text-[9px]">
 							<th className="border border-slate-300 p-1.5 text-center w-8">№</th>
 							{viewMode === "official_appendix" && <th className="border border-slate-300 p-1.5 text-center w-20">Код услуги</th>}
 							<th className="border border-slate-300 p-1.5 text-center w-12">Зуб</th>

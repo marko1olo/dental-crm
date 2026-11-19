@@ -25,7 +25,6 @@
 	letter-spacing: -0.02em;
 	color: var(--tp-primary);
 	margin: 0 0 4px 0;
-	text-transform: uppercase;
 }
 
 .patient-stage-card {
@@ -79,8 +78,7 @@
 
 .patient-proc-table th {
 	font-size: 8pt;
-	font-weight: 800;
-	text-transform: uppercase;
+	font-weight: 700;
 	color: var(--tp-text-muted);
 	background: var(--tp-surface);
 }

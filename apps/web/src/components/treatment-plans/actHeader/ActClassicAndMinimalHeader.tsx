@@ -31,7 +31,7 @@ export const ActClassicCenteredHeader: React.FC<ActClinicHeaderProps> = ({
 				{clinicName}
 			</div>
 			{slogan && (
-				<div className="doc-brand-slogan text-xs text-slate-500 uppercase tracking-widest mt-1">
+				<div className="doc-brand-slogan text-xs text-slate-500 mt-1">
 					{slogan}
 				</div>
 			)}

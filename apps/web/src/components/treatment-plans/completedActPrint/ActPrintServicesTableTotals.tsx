@@ -45,8 +45,8 @@ export const ActPrintServicesTableTotals: React.FC<ActPrintServicesTableTotalsPr
 					color: palette.primaryDark,
 				}}
 			>
-				<td colSpan={6} className="border border-slate-300 p-2.5 text-right text-xs uppercase tracking-wide">
-					ИТОГО СТОИМОСТЬ ОКАЗАННЫХ МЕДИЦИНСКИХ УСЛУГ (НДС НЕ ОБЛАГАЕТСЯ):
+				<td colSpan={6} className="border border-slate-300 p-2.5 text-right text-xs tracking-normal font-semibold">
+					Итого стоимость оказанных медицинских услуг (НДС не облагается):
 				</td>
 				<td
 					className="border border-slate-300 p-2.5 text-right font-mono text-sm font-black"

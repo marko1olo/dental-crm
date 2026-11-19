@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, statSync, copyFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CONV_ID = "2cdc25c8-6e4a-4e25-b528-5d006c0ed01d";
+const CONV_ID = "b7390226-50db-43f5-9313-dbc1688fe2ea";
 const OUT_DIRS = [
 	path.resolve("docs/proofs/treatment_plans"),
 	path.resolve("docs/proofs/treatment-plans"),
@@ -162,37 +162,25 @@ async function openPatientCardAndTreatmentPlans(page) {
 	await waitForRealUI(page);
 	await page.waitForTimeout(1000);
 
-	// Если модалка карты пациента еще не открыта, открываем через клик по пациенту
-	const hasCardModal = await page.locator("[data-testid='patient-card-modal'], [data-testid='patient-studio-detail-view']").first().count() > 0;
-	if (!hasCardModal) {
-		try {
-			const row = page.locator('[data-patient-id], tr[data-id], .patient-row, [data-testid^="patient-row-"]').first();
-			if (await row.count() > 0) {
-				await row.click({ force: true });
-				await page.waitForTimeout(800);
-				const cardBtn = page.locator('button:has-text("В карту"), [data-testid="patient-action-open-card"], [data-testid="btn-open-patient-card"]').first();
-				if (await cardBtn.count() > 0) {
-					await cardBtn.click({ force: true });
-					await page.waitForTimeout(1200);
-				}
-			}
-		} catch (e) {
-			console.log("[Select row notice]", e.message);
-		}
-	}
-
 	// Ждем модалку карты пациента
-	await page.waitForSelector('[data-testid="patient-card-modal"], [data-testid="patient-studio-modal"]', { state: "attached", timeout: 20000 }).catch(() => {});
+	const modal = page.locator('[data-testid="patient-card-modal"]').first();
+	await modal.waitFor({ state: "visible", timeout: 20000 }).catch(() => {});
 
 	// Переключаемся на вкладку планов лечения через канонический data-testid="tab-patient-treatment-plans"
 	try {
-		const plansTab = page.locator('[data-testid="tab-patient-treatment-plans"], button:has-text("План лечения")').first();
+		const plansTab = modal.locator('[data-testid="tab-patient-treatment-plans"]').first();
 		await plansTab.waitFor({ state: "visible", timeout: 20000 });
-		console.log("Clicking 'tab-patient-treatment-plans' button...");
-		await plansTab.click({ force: true });
-		await page.waitForTimeout(1500);
-		await page.waitForSelector('[data-testid="tier-cards-selector"], [data-testid="treatment-plans-tab"]', { state: "visible", timeout: 20000 }).catch(() => {});
+		console.log("Clicking 'tab-patient-treatment-plans' button inside modal...");
+		await plansTab.click();
 		await page.waitForTimeout(1000);
+
+		// Ждем завершения загрузки планов лечения
+		await page.waitForFunction(() => {
+			const text = document.body ? document.body.innerText : "";
+			return !text.includes("Загрузка планов лечения");
+		}, { timeout: 15000 }).catch(() => {});
+
+		await page.waitForTimeout(1200);
 	} catch (e) {
 		console.log("[Plans Tab notice]", e.message);
 	}

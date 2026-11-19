@@ -23,7 +23,7 @@ export const ActSignatureGrid: React.FC<ActSignatureGridProps> = ({
 			{/* Left: Clinic / Doctor Signature & Stamp */}
 			<div className="space-y-4">
 				<div>
-					<div className="text-xs font-black uppercase tracking-wider" style={{ color: palette.primaryDark }}>
+					<div className="text-xs font-bold" style={{ color: palette.primaryDark }}>
 						От Исполнителя (Клиника):
 					</div>
 					<div className="text-[11px] text-slate-600 mt-0.5">
@@ -59,7 +59,7 @@ export const ActSignatureGrid: React.FC<ActSignatureGridProps> = ({
 			{/* Right: Patient Signature */}
 			<div className="space-y-4">
 				<div>
-					<div className="text-xs font-black uppercase tracking-wider text-slate-900">
+					<div className="text-xs font-bold text-slate-900">
 						От Заказчика (Пациент):
 					</div>
 					<div className="text-[11px] text-slate-600 mt-0.5">

@@ -13,6 +13,7 @@ import {
 import { organizations, users } from "../auth.js";
 import { patients } from "../patients.js";
 import { visits } from "../clinical.js";
+import { treatmentPlans } from "../clinical/treatmentPlans/treatmentPlansTable.js";
 
 // patient invoices (billing invoices sent to patients)
 export const patientInvoices = pgTable(
@@ -25,6 +26,10 @@ export const patientInvoices = pgTable(
 		patientId: uuid("patient_id")
 			.notNull()
 			.references(() => patients.id),
+		treatmentPlanId: uuid("treatment_plan_id").references(
+			() => treatmentPlans.id,
+			{ onDelete: "set null" },
+		),
 		visitId: uuid("visit_id"),
 		/**
 		 * @deprecated Legacy column created by migration 0118. Canonical field across @dental/shared Invoice SSOT, API, and Web UI is `totalAmountRub`.
@@ -75,6 +80,9 @@ export const patientInvoices = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("patient_invoices_patientId_idx").on(t.patientId),
+		treatmentPlanIdIdx: index("patient_invoices_treatment_plan_id_idx").on(
+			t.treatmentPlanId,
+		),
 		visitIdIdx: index("patient_invoices_visit_id_idx").on(t.visitId),
 		orgCreatedAtDescIdx: index("idx_patient_invoices_org_created_desc").on(
 			t.organizationId,

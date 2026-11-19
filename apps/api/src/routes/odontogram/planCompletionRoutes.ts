@@ -91,103 +91,96 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 
 			const body = parsed.data;
 
-			const [plan] = await db
-				.select()
-				.from(treatmentPlans)
-				.where(
-					and(
-						eq(treatmentPlans.id, planId),
-						eq(treatmentPlans.patientId, patientId),
-						eq(treatmentPlans.organizationId, organizationId),
-					),
-				)
-				.limit(1);
+			const result = await withTenantCtx(organizationId, async (tx) => {
+				const [plan] = await tx
+					.select()
+					.from(treatmentPlans)
+					.where(
+						and(
+							eq(treatmentPlans.id, planId),
+							eq(treatmentPlans.patientId, patientId),
+							eq(treatmentPlans.organizationId, organizationId),
+						),
+					)
+					.limit(1);
 
-			if (!plan) {
-				return reply.code(404).send({ error: "TreatmentPlanNotFound" });
-			}
+				if (!plan) {
+					return { notFound: true as const };
+				}
 
-			const planItems = await db
-				.select()
-				.from(treatmentPlanItemsNew)
-				.where(
-					and(
-						eq(treatmentPlanItemsNew.planId, planId),
-						eq(treatmentPlanItemsNew.organizationId, organizationId),
-					),
-				)
-				.orderBy(treatmentPlanItemsNew.createdAt);
+				const planItems = await tx
+					.select()
+					.from(treatmentPlanItemsNew)
+					.where(
+						and(
+							eq(treatmentPlanItemsNew.planId, planId),
+							eq(treatmentPlanItemsNew.organizationId, organizationId),
+						),
+					)
+					.orderBy(treatmentPlanItemsNew.createdAt);
 
-			if (planItems.length === 0) {
-				const updatedPlans = await loadTreatmentPlansForPatient(patientId, organizationId);
-				return reply.send({
-					success: true,
-					planId,
-					completedItemIds: [],
-					isFullyCompleted: true,
-					plan: updatedPlans.find((p) => p.id === planId) ?? null,
-				});
-			}
+				if (planItems.length === 0) {
+					return { empty: true as const };
+				}
 
-			// Определяем целевые индексы позиций плана
-			const targetIndices = new Set<number>();
+				// Определяем целевые индексы позиций плана
+				const targetIndices = new Set<number>();
 
-			if (body.phase !== undefined) {
-				planItems.forEach((item, idx) => {
-					if (item.phase === body.phase) {
-						targetIndices.add(idx);
-					}
-				});
-			}
-
-			if (body.itemIds && body.itemIds.length > 0) {
-				const idSet = new Set(body.itemIds.map((id) => id.toLowerCase()));
-				planItems.forEach((item, idx) => {
-					const ledgerId = ledgerRowId(planId, idx).toLowerCase();
-					if (idSet.has(item.id.toLowerCase()) || idSet.has(ledgerId)) {
-						targetIndices.add(idx);
-					}
-				});
-			}
-
-			if (body.renderedServices && body.renderedServices.length > 0) {
-				for (const srv of body.renderedServices) {
-					const srvTooth =
-						srv.toothNumber !== undefined && srv.toothNumber !== null
-							? Number(srv.toothNumber)
-							: null;
-					const srvCode = (srv.code || "").trim().toLowerCase();
-					const srvName = (srv.name || "").trim().toLowerCase();
-
+				if (body.phase !== undefined) {
 					planItems.forEach((item, idx) => {
-						const { priceId, name } = splitStoredPriceId(item.priceId);
-						const itemTooth = item.toothNumber;
-						const toothMatches =
-							srvTooth === null || itemTooth === null || srvTooth === itemTooth;
-						const codeMatches =
-							Boolean(srvCode) && priceId.toLowerCase().includes(srvCode);
-						const nameMatches =
-							Boolean(srvName) &&
-							(name.toLowerCase().includes(srvName) || srvName.includes(name.toLowerCase()));
-
-						if (toothMatches && (codeMatches || nameMatches)) {
+						if (item.phase === body.phase) {
 							targetIndices.add(idx);
 						}
 					});
 				}
-			}
 
-			// Если ничего конкретного не передано — завершаем все позиции плана
-			if (
-				body.phase === undefined &&
-				(!body.itemIds || body.itemIds.length === 0) &&
-				(!body.renderedServices || body.renderedServices.length === 0)
-			) {
-				planItems.forEach((_, idx) => targetIndices.add(idx));
-			}
+				if (body.itemIds && body.itemIds.length > 0) {
+					const idSet = new Set(body.itemIds.map((id) => id.toLowerCase()));
+					planItems.forEach((item, idx) => {
+						const ledgerId = ledgerRowId(planId, idx).toLowerCase();
+						if (idSet.has(item.id.toLowerCase()) || idSet.has(ledgerId)) {
+							targetIndices.add(idx);
+						}
+					});
+				}
 
-			// Записываем статус completed в treatmentItems
-			await withTenantCtx(organizationId, async (tx) => {
+				if (body.renderedServices && body.renderedServices.length > 0) {
+					for (const srv of body.renderedServices) {
+						const srvTooth =
+							srv.toothNumber !== undefined && srv.toothNumber !== null
+								? Number(srv.toothNumber)
+								: null;
+						const srvCode = (srv.code || "").trim().toLowerCase();
+						const srvName = (srv.name || "").trim().toLowerCase();
+
+						planItems.forEach((item, idx) => {
+							const { priceId, name } = splitStoredPriceId(item.priceId);
+							const itemTooth = item.toothNumber;
+							const toothMatches =
+								srvTooth === null || itemTooth === null || srvTooth === itemTooth;
+							const codeMatches =
+								Boolean(srvCode) && priceId.toLowerCase().includes(srvCode);
+							const nameMatches =
+								Boolean(srvName) &&
+								(name.toLowerCase().includes(srvName) || srvName.includes(name.toLowerCase()));
+
+							if (toothMatches && (codeMatches || nameMatches)) {
+								targetIndices.add(idx);
+							}
+						});
+					}
+				}
+
+				// Если ничего конкретного не передано — завершаем все позиции плана
+				if (
+					body.phase === undefined &&
+					(!body.itemIds || body.itemIds.length === 0) &&
+					(!body.renderedServices || body.renderedServices.length === 0)
+				) {
+					planItems.forEach((_, idx) => targetIndices.add(idx));
+				}
+
+				// Записываем статус completed в treatmentItems
 				let validVisitId: string | null = null;
 				if (body.visitId) {
 					const [visRow] = await tx
@@ -224,22 +217,28 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 
 				const existingIdSet = new Set(existingRows.map((r) => r.id));
 
-				const idsToUpdate = targetLedgerIds.filter((id) => existingIdSet.has(id));
-				if (idsToUpdate.length > 0) {
-					await tx
-						.update(treatmentItems)
-						.set({
-							status: "completed",
-							visitId: validVisitId,
-							isSynced: false,
-							version: sql`${treatmentItems.version} + 1`,
-						})
-						.where(
-							and(
-								inArray(treatmentItems.id, idsToUpdate),
-								eq(treatmentItems.organizationId, organizationId),
-							),
-						);
+				for (const idx of targetIndices) {
+					const item = planItems[idx];
+					if (!item) continue;
+					const ledgerId = ledgerRowId(planId, idx);
+					if (existingIdSet.has(ledgerId)) {
+						await tx
+							.update(treatmentItems)
+							.set({
+								status: "completed",
+								visitId: validVisitId,
+								treatmentPlanId: planId,
+								treatmentPlanItemId: item.id,
+								isSynced: false,
+								version: sql`${treatmentItems.version} + 1`,
+							})
+							.where(
+								and(
+									eq(treatmentItems.id, ledgerId),
+									eq(treatmentItems.organizationId, organizationId),
+								),
+							);
+					}
 				}
 
 				const itemsToInsert: (typeof treatmentItems.$inferInsert)[] = [];
@@ -253,6 +252,8 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							id: ledgerId,
 							organizationId,
 							patientId,
+							treatmentPlanId: planId,
+							treatmentPlanItemId: item.id,
 							visitId: validVisitId,
 							serviceId: UUID_SHAPE.test(item.priceId) ? item.priceId : null,
 							toothCode:
@@ -285,7 +286,10 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 						and(
 							eq(treatmentItems.organizationId, organizationId),
 							eq(treatmentItems.patientId, patientId),
-							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase()}`,
+							or(
+								eq(treatmentItems.treatmentPlanId, planId),
+								sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase()}`,
+							),
 						),
 					);
 
@@ -377,27 +381,56 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							),
 						);
 				}
+
+				const completedPlanItemIds = Array.from(targetIndices)
+					.map((idx) => planItems[idx]?.id)
+					.filter((id): id is string => Boolean(id));
+
+				return {
+					success: true as const,
+					allCompleted,
+					completedPlanItemIds,
+					targetCount: targetIndices.size,
+					totalCount: planItems.length,
+				};
 			});
+
+			if ("notFound" in result) {
+				return reply.code(404).send({ error: "TreatmentPlanNotFound" });
+			}
+
+			if ("empty" in result) {
+				const updatedPlans = await withTenantCtx(organizationId, async () =>
+					loadTreatmentPlansForPatient(patientId, organizationId),
+				);
+				return reply.send({
+					success: true,
+					planId,
+					completedItemIds: [],
+					isFullyCompleted: true,
+					plan: updatedPlans.find((p) => p.id === planId) ?? null,
+				});
+			}
 
 			wsBroker.broadcastToPatient(organizationId, patientId, {
 				type: "treatment_plan_updated",
 				planId,
-				completedItemCount: targetIndices.size,
-				totalItemCount: planItems.length,
+				completedItemCount: result.targetCount,
+				totalItemCount: result.totalCount,
 			});
 
-			const updatedPlans = await loadTreatmentPlansForPatient(patientId, organizationId);
+			const updatedPlans = await withTenantCtx(organizationId, async () =>
+				loadTreatmentPlansForPatient(patientId, organizationId),
+			);
 			const updatedPlan = updatedPlans.find((p) => p.id === planId) ?? null;
 
-			const completedPlanItemIds = Array.from(targetIndices)
-				.map((idx) => planItems[idx]?.id)
-				.filter((id): id is string => Boolean(id));
+			const completedPlanItemIds = result.completedPlanItemIds;
 
 			return reply.send({
 				success: true,
 				planId,
 				completedItemIds: completedPlanItemIds,
-				isFullyCompleted: updatedPlan?.status === "Completed",
+				isFullyCompleted: result.allCompleted || updatedPlan?.status === "Completed",
 				plan: updatedPlan,
 			});
 		},

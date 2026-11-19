@@ -37,7 +37,7 @@ export const ActDocumentTitleBanner: React.FC<ActDocumentTitleBannerProps> = ({
 						style={{ backgroundColor: palette.primaryDark }}
 					>
 						<FileText className="w-3.5 h-3.5" />
-						<span>АКТ&nbsp;№&nbsp;{actData.actNumber}</span>
+						<span>Акт&nbsp;№&nbsp;{actData.actNumber}</span>
 					</span>
 					<span className="text-xs font-bold text-slate-800">
 						к&nbsp;Договору на оказание платных медицинских услуг №&nbsp;
@@ -55,14 +55,14 @@ export const ActDocumentTitleBanner: React.FC<ActDocumentTitleBannerProps> = ({
 
 			<div className="doc-official-title-box text-center my-4 print:my-2">
 				<h1
-					className="text-base sm:text-lg font-black tracking-tight uppercase text-slate-900"
+					className="text-base sm:text-lg font-black tracking-tight text-slate-900"
 					style={{ color: palette.primaryDark }}
 				>
-					АКТ СДАЧИ-ПРИЕМКИ ОКАЗАННЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ
+					Акт сдачи-приемки оказанных стоматологических услуг
 				</h1>
-				<div className="doc-form-sub text-xs font-bold text-slate-600 uppercase tracking-wide mt-1">
-					И НАКЛАДНАЯ НА СПИСАНИЕ МАТЕРИАЛОВ И МЕДИКАМЕНТОВ (ТМЦ) •
-					ЭТАП&nbsp;№&nbsp;{actData.stageNumber} («
+				<div className="doc-form-sub text-xs font-semibold text-slate-600 mt-1">
+					И накладная на списание материалов и медикаментов (ТМЦ) •
+					Этап&nbsp;№&nbsp;{actData.stageNumber} («
 					{actData.stageTitle.replace(/^Этап\s*\d+\s*[:.—-]\s*/i, "")}»)
 				</div>
 				<p className="text-[10px] text-slate-500 mt-0.5">

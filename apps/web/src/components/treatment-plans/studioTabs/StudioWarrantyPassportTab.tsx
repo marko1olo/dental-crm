@@ -7,6 +7,7 @@
 import React from "react";
 import { ShieldCheck, Award, Calendar, CheckCircle2, FileText, Printer, Sparkles } from "lucide-react";
 import type { TreatmentPlanTier } from "../treatmentPlanTypes";
+import { printHtmlViaIframe } from "../../documents/printHtmlViaIframe";
 
 export interface StudioWarrantyPassportTabProps {
 	readonly activeTier: TreatmentPlanTier;
@@ -156,6 +157,116 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 		return standards;
 	}, [activeTier]);
 
+	const handlePrintPassport = () => {
+		const standardsRows = materialStandards
+			.map(
+				(m) =>
+					`<tr><td><strong>${m.name}</strong><br/><small style="color:#64748b">${m.cert}</small></td><td style="color:#0f766e;font-weight:600">${m.warranty}</td></tr>`,
+			)
+			.join("");
+
+		const html = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<title>Гарантийный паспорт — Тариф «${sanitizedTitle}»</title>
+<style>
+  @page { size: A4 portrait; margin: 15mm; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a; line-height: 1.5; margin: 0; padding: 0; font-size: 13px; }
+  .header { border-bottom: 2px solid #0d9488; padding-bottom: 12px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .clinic-name { font-size: 16px; font-weight: 800; color: #0d9488; letter-spacing: 0.5px; }
+  .doc-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px; }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; font-size: 13px; }
+  .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; }
+  .highlight-row { display: flex; gap: 16px; margin-bottom: 18px; }
+  .highlight-card { flex: 1; border: 1.5px solid #0d9488; border-radius: 8px; padding: 12px; background: #f0fdfa; text-align: center; }
+  .highlight-val { font-size: 22px; font-weight: 800; color: #0f766e; }
+  .highlight-lbl { font-size: 11px; color: #64748b; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 12px; }
+  th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+  th { background: #f1f5f9; font-weight: 700; color: #334155; }
+  .rules-box { border: 1px dashed #0d9488; border-radius: 8px; padding: 12px; font-size: 11px; color: #334155; margin-bottom: 20px; background: #fafafa; }
+  .rules-box ul { margin: 6px 0 0 16px; padding: 0; }
+  .footer-sign { display: flex; justify-content: space-between; margin-top: 28px; font-size: 12px; }
+  .sign-col { width: 220px; }
+  .sign-line { border-bottom: 1px solid #0f172a; margin-top: 40px; }
+  .sign-hint { font-size: 10px; color: #64748b; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="clinic-name">Стоматологическая клиника ДЕНТЕ</div>
+      <div class="doc-title">Гарантийный паспорт и сертификат качества</div>
+    </div>
+    <div style="text-align: right; font-size: 11px; color: #64748b;">
+      Дата выдачи: ${new Date().toLocaleDateString("ru-RU")}<br/>
+      Тариф лечения: <strong>«${sanitizedTitle}»</strong>
+    </div>
+  </div>
+
+  <div class="meta-grid">
+    <div class="meta-box">
+      <span style="color: #64748b; font-size: 11px;">Пациент:</span><br/>
+      <strong>${patientName}</strong>
+    </div>
+    <div class="meta-box">
+      <span style="color: #64748b; font-size: 11px;">Лечащий врач-стоматолог:</span><br/>
+      <strong>${doctorFullName}</strong>
+    </div>
+  </div>
+
+  <div class="highlight-row">
+    <div class="highlight-card">
+      <div class="highlight-val">${activeTier.warrantyYears} ${activeTier.warrantyYears === 1 ? "год" : activeTier.warrantyYears === 3 ? "года" : "лет"}</div>
+      <div class="highlight-lbl">Безусловная гарантия клиники</div>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-val">до ${serviceLifeYears} лет</div>
+      <div class="highlight-lbl">Прогнозируемый срок службы</div>
+    </div>
+  </div>
+
+  <h4 style="margin: 0 0 8px; font-size: 13px; color: #0f172a;">Спецификация сертифицированных биосовместимых материалов</h4>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 70%;">Материал и стандарт сертификации</th>
+        <th style="width: 30%;">Гарантийное обязательство</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${standardsRows}
+    </tbody>
+  </table>
+
+  <div class="rules-box">
+    <strong>Правила сохранения и пролонгации гарантии:</strong>
+    <ul>
+      <li>Прохождение профилактического осмотра и профессиональной гигиены не реже 1 раза в 6 месяцев.</li>
+      <li>Соблюдение рекомендаций врача по индивидуальной домашней гигиене полости рта.</li>
+      <li>При возникновении любого дискомфорта — немедленное обращение в клинику без самостоятельных вмешательств.</li>
+    </ul>
+  </div>
+
+  <div class="footer-sign">
+    <div class="sign-col">
+      Врач: ____________________<br/>
+      <div class="sign-line"></div>
+      <div class="sign-hint">подпись / личная печать врача</div>
+    </div>
+    <div class="sign-col">
+      Пациент: ____________________<br/>
+      <div class="sign-line"></div>
+      <div class="sign-hint">с условиями гарантии ознакомлен(а)</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+		printHtmlViaIframe(html, "dente-studio-warranty-print-iframe");
+	};
+
 	return (
 		<div className="space-y-5 max-w-3xl mx-auto" data-testid="studio-warranty-passport-tab">
 			{/* 1. Главная карточка гарантийного статуса */}
@@ -178,7 +289,7 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 
 					<button
 						type="button"
-						onClick={() => typeof window !== "undefined" && window.print()}
+						onClick={handlePrintPassport}
 						className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 						data-testid="print-warranty-passport-btn"
 					>

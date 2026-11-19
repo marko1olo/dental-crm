@@ -29,7 +29,7 @@ export const ActPrintServicesTable: React.FC<ActPrintServicesTableProps> = ({
 	return (
 		<div className="doc-soap-section mb-6 print:mb-4">
 			<div
-				className="doc-soap-heading flex items-center justify-between p-2 rounded-t-lg font-black text-xs uppercase tracking-wider text-slate-900 border-b-2"
+				className="doc-soap-heading flex items-center justify-between p-2 rounded-t-lg font-bold text-xs text-slate-900 border-b-2"
 				style={{
 					backgroundColor: palette.softBg,
 					borderColor: palette.primary,

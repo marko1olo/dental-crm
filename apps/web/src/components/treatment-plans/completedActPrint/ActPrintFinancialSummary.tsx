@@ -27,8 +27,8 @@ export const ActPrintFinancialSummary: React.FC<ActPrintFinancialSummaryProps> =
 			}}
 		>
 			<div className="space-y-1">
-				<span className="text-slate-600 block font-semibold text-[11px] uppercase tracking-wide">
-					Стоимость услуг (Выручка этапа):
+				<span className="text-slate-600 block font-semibold text-[11px]">
+					Стоимость услуг (выручка этапа):
 				</span>
 				<strong
 					className="text-base font-mono block"
@@ -42,7 +42,7 @@ export const ActPrintFinancialSummary: React.FC<ActPrintFinancialSummaryProps> =
 			</div>
 
 			<div className="space-y-1">
-				<span className="text-slate-600 block font-semibold text-[11px] uppercase tracking-wide">
+				<span className="text-slate-600 block font-semibold text-[11px]">
 					Себестоимость ТМЦ этапа:
 				</span>
 				<strong className="text-base font-mono text-slate-900 block">
@@ -54,7 +54,7 @@ export const ActPrintFinancialSummary: React.FC<ActPrintFinancialSummaryProps> =
 			</div>
 
 			<div className="space-y-1">
-				<span className="text-slate-600 block font-semibold text-[11px] uppercase tracking-wide">
+				<span className="text-slate-600 block font-semibold text-[11px]">
 					Валовая маржинальность этапа:
 				</span>
 				<strong className="text-base font-mono text-emerald-700 flex items-center gap-1.5">

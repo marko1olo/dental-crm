@@ -78,7 +78,7 @@ export const ActClinicHeader: React.FC<ActClinicHeaderProps> = (props) => {
 						{clinicName}
 					</div>
 					{slogan && (
-						<div className="doc-brand-slogan text-xs text-slate-500 font-semibold uppercase tracking-wider">
+						<div className="doc-brand-slogan text-xs text-slate-500 font-semibold mt-0.5">
 							{slogan}
 						</div>
 					)}

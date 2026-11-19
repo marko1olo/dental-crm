@@ -30,6 +30,7 @@ interface CreatedInvoiceSummary {
 	invoiceNumber: string;
 	patientId: string;
 	patientName: string;
+	treatmentPlanId: string | null;
 	visitId: string | null;
 	totalAmountRub: number;
 	status: string;
@@ -158,6 +159,7 @@ async function createInvoiceForApprovedPlan(
 		id: invoiceId,
 		organizationId,
 		patientId,
+		treatmentPlanId: planId,
 		visitId: null,
 		totalRub: String(totalAmountRubRounded),
 		totalAmountRub: totalAmountRubRounded,
@@ -176,6 +178,7 @@ async function createInvoiceForApprovedPlan(
 		invoiceNumber,
 		patientId,
 		patientName,
+		treatmentPlanId: planId,
 		visitId: null,
 		totalAmountRub: totalAmountRubRounded,
 		status: "draft",

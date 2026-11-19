@@ -31,8 +31,7 @@
 
 .patient-finance-card-label {
 	font-size: 8.5pt;
-	font-weight: 700;
-	text-transform: uppercase;
+	font-weight: 600;
 	color: var(--tp-text-muted);
 	margin-bottom: 4px;
 }

@@ -25,7 +25,7 @@ export const TreatmentPlanContractSignatures: React.FC<TreatmentPlanContractSign
 				className="space-y-1.5 text-[10px] text-[var(--muted)] print:text-neutral-700 treatment-print-warranties break-inside-avoid"
 				style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
 			>
-				<h3 className="font-bold text-[var(--ink)] print:text-black uppercase tracking-wide text-[11px] m-0">
+				<h3 className="font-bold text-[var(--ink)] print:text-black text-[11px] m-0">
 					4. Гарантийные обязательства, условия сохранения гарантии и согласие пациента
 				</h3>
 				<p className="text-justify m-0">
