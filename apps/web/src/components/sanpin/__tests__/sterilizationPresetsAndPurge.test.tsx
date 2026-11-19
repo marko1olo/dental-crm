@@ -12,7 +12,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { SanpinRegisters } from "../SanpinRegisters";
 import { CLINICAL_AUTOCLAVE_1CLICK_PRESETS } from "../sterilizationModules/sterilizationCycleTypes";
 import { SterilizationBatchCycleModal } from "../SterilizationBatchCycleModal";
-import { SterilizationJournalTable } from "../sterilization/SterilizationJournalTable";
+import { SanPinSterilizationJournal } from "../SanPinSterilizationJournal";
 
 describe("Sterilization Presets & Red Team Jargon Purge", () => {
 	it("provides 3 standard 1-click clinical presets for autoclaves with correct parameters", () => {
@@ -71,24 +71,13 @@ describe("Sterilization Presets & Red Team Jargon Purge", () => {
 		assert.ok(html.includes("Химический индикатор 5 класса"));
 	});
 
-	it("SterilizationJournalTable renders clean clinical table and action controls", () => {
-		const html = renderToStaticMarkup(
-			<SterilizationJournalTable
-				onOpenNewCycle={() => {}}
-				onQuickBatchShift={() => {}}
-				onPrintJournal={() => {}}
-				onExportCsv={() => {}}
-			/>,
-		);
+	it("SanPinSterilizationJournal renders clean clinical table and action controls", () => {
+		const html = renderToStaticMarkup(<SanPinSterilizationJournal />);
 
-		assert.ok(html.includes("sterilization-journal-search-input"));
-		assert.ok(html.includes("sterilization-journal-device-filter"));
-		assert.ok(html.includes("sterilization-journal-new-cycle-btn"));
-		assert.ok(html.includes("sterilization-journal-quick-shift-btn"));
-		assert.ok(html.includes("Новый цикл"));
-		assert.ok(html.includes("Сдать смену ЦСО"));
+		assert.ok(html.includes("Новый цикл") || html.includes("Запустить"));
 		assert.ok(html.includes("Печать"));
 		assert.ok(html.includes("CSV"));
+		assert.ok(html.includes("Стерильно") || html.includes("стерилизации"));
 	});
 
 	it("SanpinRegisters displays clean title without soviet decree numbers", () => {

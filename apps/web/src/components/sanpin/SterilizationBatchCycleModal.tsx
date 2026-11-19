@@ -62,7 +62,7 @@ export function SterilizationBatchCycleModal({
 
 	useEffect(() => {
 		if (resolvedOperator) {
-			setOperatorName((prev) => (!prev || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
+			setOperatorName((prev: string) => (!prev || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
 		}
 	}, [resolvedOperator]);
 	const [itemsDescription, setItemsDescription] = useState<string>("Терапевтический лоток базовый (10 шт: зеркала, зонды, пинцеты, боры)");

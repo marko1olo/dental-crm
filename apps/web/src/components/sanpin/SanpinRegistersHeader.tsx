@@ -23,9 +23,10 @@ export interface SanpinRegistersHeaderProps {
 	readonly onAutofillShift: () => void;
 	readonly onOpenRetroactiveBatchModal: () => void;
 	readonly onOpenKraftModal: () => void;
+	readonly onOpenAutoclaveJournalModal?: () => void;
 	readonly onOpenAutoclaveLogModal?: () => void;
 	readonly onOpenSterilizationLogModal?: () => void;
-	/** @deprecated Alias to onOpenAutoclaveLogModal */
+	/** @deprecated Alias to onOpenAutoclaveJournalModal */
 	readonly onOpenJournal257Modal?: () => void;
 }
 
@@ -33,9 +34,9 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 	summary, showExpandedKpi, onToggleExpandedKpi, autofillPeriod, setAutofillPeriod,
 	autoFilling, onAutofillByPeriod, exportContext, isExportMenuOpen, setIsExportMenuOpen,
 	onRefreshSummary, onAutofillShift, onOpenRetroactiveBatchModal, onOpenKraftModal,
-	onOpenAutoclaveLogModal, onOpenSterilizationLogModal, onOpenJournal257Modal,
+	onOpenAutoclaveJournalModal, onOpenAutoclaveLogModal, onOpenSterilizationLogModal, onOpenJournal257Modal,
 }) => {
-	const handleOpenLogModal = onOpenAutoclaveLogModal || onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
+	const handleOpenLogModal = onOpenAutoclaveJournalModal || onOpenAutoclaveLogModal || onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 	const exportMenuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -57,7 +58,7 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					type="button"
 					onClick={onAutofillShift}
 					aria-busy={autoFilling}
-					className="secondary-button sanpin-btn-shift-autofill sanpin-desktop-only-btn h-9 min-h-[36px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-[#334155] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#1e293b)] font-medium px-3.5 text-[13px] sm:inline-flex hidden items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation shadow-2xs"
+					className="secondary-button sanpin-btn-shift-autofill sanpin-desktop-only-btn h-9 min-h-[36px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#1e293b)] font-medium px-3.5 text-[13px] sm:inline-flex hidden items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation shadow-2xs"
 					data-testid="sanpin-shift-close-primary-btn"
 					data-action="shift-close"
 					title="Зафиксировать смену стерилизации (автоклавы 134°C, азопирам 100% норма, пакетное списание расходников)"
@@ -99,6 +100,7 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 							onRefreshSummary={onRefreshSummary} onAutofillShift={onAutofillShift}
 							onOpenRetroactiveBatchModal={onOpenRetroactiveBatchModal}
 							onOpenKraftModal={onOpenKraftModal}
+							onOpenAutoclaveJournalModal={handleOpenLogModal}
 							onOpenAutoclaveLogModal={handleOpenLogModal}
 							onOpenSterilizationLogModal={handleOpenLogModal}
 							onOpenJournal257Modal={handleOpenLogModal}

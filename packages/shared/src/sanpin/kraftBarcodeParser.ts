@@ -123,13 +123,22 @@ export function parseAndValidateKraftBarcode(
 		};
 	}
 
-	// Простой штрихкод или номер партии
+	// Простой штрихкод или номер партии: честное динамическое извлечение даты стерилизации
 	const clean = trimmed.toUpperCase();
 	let packDateIso = refDate;
-	if (clean.includes("240101") || clean.includes("2024-01-01")) {
-		packDateIso = "2024-01-01";
-	} else if (clean.includes("260825") || clean.includes("2026-08-25")) {
-		packDateIso = "2026-08-25";
+	const isoMatch = clean.match(/\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
+	const kbMatch = clean.match(/^KB([23]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
+	const yyyymmddMatch = clean.match(/(?:^|[^0-9])(20[23]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
+	const yymmddMatch = clean.match(/(?:^|[^0-9])([23]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
+
+	if (isoMatch?.[1] && isoMatch[2] && isoMatch[3]) {
+		packDateIso = `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+	} else if (kbMatch?.[1] && kbMatch[2] && kbMatch[3]) {
+		packDateIso = `20${kbMatch[1]}-${kbMatch[2]}-${kbMatch[3]}`;
+	} else if (yyyymmddMatch?.[1] && yyyymmddMatch[2] && yyyymmddMatch[3]) {
+		packDateIso = `${yyyymmddMatch[1]}-${yyyymmddMatch[2]}-${yyyymmddMatch[3]}`;
+	} else if (yymmddMatch?.[1] && yymmddMatch[2] && yymmddMatch[3]) {
+		packDateIso = `20${yymmddMatch[1]}-${yymmddMatch[2]}-${yymmddMatch[3]}`;
 	}
 
 	const expDateIso = addDaysToIso(packDateIso, 50);

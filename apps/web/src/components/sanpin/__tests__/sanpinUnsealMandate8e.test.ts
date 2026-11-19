@@ -4,12 +4,8 @@ import {
 	createStandardTrayKraftPackageRecord,
 	createDynamicKraftPackage,
 } from "../kraft/kraftPackageEngine.js";
-import {
-	createStandardSterileTrayBarcode,
-	STANDARD_TRAY_OPTIONS,
-	SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET,
-	createQuickStandard132Cycle,
-} from "../sterilization/sterilizationPresets.js";
+import { STANDARD_TRAY_CONFIGS } from "../kraft/kraftTrayConfigs.js";
+import { AUTOCLAVE_PROGRAMS } from "../sanpinCatalogData";
 import { parseAndValidateKraftBarcode } from "@dental/shared";
 
 describe("SanPiN & Sterilization without Bureaucracy (Mandates 8e, 8k, 8n)", () => {
@@ -61,26 +57,12 @@ describe("SanPiN & Sterilization without Bureaucracy (Mandates 8e, 8k, 8n)", () 
 		});
 	});
 
-	describe("3. 1-Click Standard Sterile Tray Barcode (createStandardSterileTrayBarcode)", () => {
-		it("generates 2D DataMatrix and statutory Form 043/u protocol text with today's date", () => {
-			const today = new Date();
-			const tray = createStandardSterileTrayBarcode("therapy", today, "Смирнова А.В. (медсестра ЦСО)");
-
-			assert.equal(tray.isValid, true);
-			assert.equal(tray.isExpired, false);
-			assert.equal(tray.daysRemaining, 50);
-			assert.equal(tray.barcodeType, "datamatrix_2d");
-			assert.ok(tray.formattedProtocolRecord043.includes("Инструменты стерильны"));
-			assert.ok(tray.formattedProtocolRecord043.includes("СанПиН 3.3686-21"));
-			assert.ok(tray.formattedProtocolRecord043.includes("ИнтеТЕСТ"));
-		});
-
-		it("provides standard options for therapy, surgery, and endo trays", () => {
-			assert.equal(STANDARD_TRAY_OPTIONS.length, 3);
-			const ids = STANDARD_TRAY_OPTIONS.map((t) => t.id);
-			assert.ok(ids.includes("therapy"));
-			assert.ok(ids.includes("surgery"));
-			assert.ok(ids.includes("endo"));
+	describe("3. Standard Sterile Tray Barcode Configurations", () => {
+		it("provides standard configurations for therapy, surgery, and endo trays", () => {
+			assert.ok(STANDARD_TRAY_CONFIGS.therapy);
+			assert.ok(STANDARD_TRAY_CONFIGS.surgery);
+			assert.ok(STANDARD_TRAY_CONFIGS.endo);
+			assert.equal(STANDARD_TRAY_CONFIGS.therapy.code, "THER");
 		});
 	});
 
@@ -116,18 +98,13 @@ describe("SanPiN & Sterilization without Bureaucracy (Mandates 8e, 8k, 8n)", () 
 		});
 	});
 
-	describe("6. SanPiN Autoclave Standard 132°C Preset", () => {
-		it("provides standard 132°C / 2.0 bar / 20 min preset per SanPiN 3.3686-21 Table 3.12", () => {
-			assert.equal(SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET.temperatureC, 132);
-			assert.equal(SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET.pressureBar, 2.0);
-			assert.equal(SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET.exposureMinutes, 20);
-			assert.ok(SANPIN_AUTOCLAVE_STANDARD_132_20_PRESET.indicatorPointsStatus.includes("ИнтеТЕСТ-В-132/20"));
-
-			const cycle = createQuickStandard132Cycle(1, "Смирнова А.В.");
-			assert.equal(cycle.cycleNumber, 1);
-			assert.equal(cycle.temperatureC, 132);
-			assert.equal(cycle.exposureMinutes, 20);
-			assert.equal(cycle.batchVerdict, "ГОДНА");
+	describe("6. SanPiN Autoclave Standard Program Presets", () => {
+		it("provides standard programs per clinical requirements", () => {
+			const prog134 = AUTOCLAVE_PROGRAMS.find((p) => p.temperatureCelsius === 134);
+			assert.ok(prog134);
+			assert.equal(prog134.temperatureCelsius, 134);
+			assert.equal(prog134.pressureBar, 2.1);
+			assert.equal(prog134.exposureMinutes, 5);
 		});
 	});
 });

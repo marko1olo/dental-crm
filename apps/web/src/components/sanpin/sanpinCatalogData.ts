@@ -46,29 +46,16 @@ export interface ClinicSterilizerDevice {
 }
 
 export interface SealingMachineDevice {
-	readonly id: string;
-	readonly model: string;
-	readonly seamWidthMm: number;
-	readonly sealTemperatureCelsius: number;
-	readonly locationRoom: string;
+	readonly id: string; readonly model: string; readonly seamWidthMm: number; readonly sealTemperatureCelsius: number; readonly locationRoom: string;
 }
 
 export interface BactericidalDeviceItem {
-	readonly id: string;
-	readonly name: string;
-	readonly roomName: string;
-	readonly lampModel: string;
-	readonly operatingHours: number;
-	readonly maxResourceHours: number;
-	readonly isCompliant: boolean;
+	readonly id: string; readonly name: string; readonly roomName: string; readonly lampModel: string;
+	readonly operatingHours: number; readonly maxResourceHours: number; readonly isCompliant: boolean;
 }
 
 export interface StockDeductionItem {
-	readonly sku: string;
-	readonly title: string;
-	readonly quantity: number;
-	readonly unit: string;
-	readonly purpose: string;
+	readonly sku: string; readonly title: string; readonly quantity: number; readonly unit: string; readonly purpose: string;
 }
 
 export interface SterilizationBatchCycleRecord {
@@ -257,20 +244,8 @@ export function getSanpinBatchRecords(isDemo = false): SterilizationBatchCycleRe
 	if (!isDemo) return [];
 	const today = new Date().toLocaleDateString("ru-RU");
 	return [
-		{
-			id: "demo-cycle-1", cycleNumber: 1, date: today, time: "09:30",
-			autoclaveId: "autoclave-01", autoclaveName: "Автоклав №1 (Melag Vacuklav 23 B+)", programId: "standard_134",
-			temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 5, packagesCount: 14,
-			chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Дежурный администратор / медицинская сестра",
-			itemsDescription: "Наборы терапевтические (4 шт.), наборы смотровые (6 шт.), наконечники (4 шт.)", status: "completed",
-		},
-		{
-			id: "demo-cycle-2", cycleNumber: 2, date: today, time: "14:15",
-			autoclaveId: "autoclave-02", autoclaveName: "Автоклав №2 (W&H Lisa 500)", programId: "delicate_121",
-			temperatureCelsius: 121, pressureBar: 1.15, exposureMinutes: 20, packagesCount: 8,
-			chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Дежурный администратор / медицинская сестра",
-			itemsDescription: "Силиконовые оттискные ложки, пластиковые держатели снимков, оптика", status: "completed",
-		},
+		{ id: "demo-cycle-1", cycleNumber: 1, date: today, time: "09:30", autoclaveId: "autoclave-01", autoclaveName: "Автоклав №1 (Melag Vacuklav 23 B+)", programId: "standard_134", temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 5, packagesCount: 14, chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Дежурный администратор / медицинская сестра", itemsDescription: "Наборы терапевтические (4 шт.), наборы смотровые (6 шт.), наконечники (4 шт.)", status: "completed" },
+		{ id: "demo-cycle-2", cycleNumber: 2, date: today, time: "14:15", autoclaveId: "autoclave-02", autoclaveName: "Автоклав №2 (W&H Lisa 500)", programId: "delicate_121", temperatureCelsius: 121, pressureBar: 1.15, exposureMinutes: 20, packagesCount: 8, chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Дежурный администратор / медицинская сестра", itemsDescription: "Силиконовые оттискные ложки, пластиковые держатели снимков, оптика", status: "completed" },
 	];
 }
 
@@ -313,3 +288,27 @@ export function loadSavedClinicAutoclaves(): ClinicAutoclaveDeviceItem[] {
 		{ id: "AUTO-EURONDA-01", code: "АК-02", brandModelRu: "Euronda E9 Next (B-класс)", serialNumber: "SN-EUR-99824", chamberVolumeLiters: 24, methodType: "steam_autoclave" },
 	];
 }
+
+/** Валидация физических параметров цикла стерилизации (Мандат 8e / DEF-STER-02) */
+export function validateSterilizationCycle(params: {
+	regimeId: AutoclaveRegimeId | string;
+	actualTemperatureCelsius: number;
+	actualPressureBar: number;
+	actualExposureMinutes: number;
+}): { isValid: boolean; failureReasons: readonly string[] } {
+	const res = validateSterilizationCycleParameters(
+		params.regimeId as AutoclaveRegimeId,
+		params.actualTemperatureCelsius,
+		params.actualPressureBar,
+		params.actualExposureMinutes,
+	);
+	return { isValid: res.valid, failureReasons: res.reason ? [res.reason] : [] };
+}
+
+/** Аудит пропущенных дней стерилизации (Мандат 8e / DEF-STER-02) */
+export function detectMissingSterilizationDays(records: readonly { date: string }[], visitsOrDates: readonly ({ date: string; hasVisits?: boolean } | string)[]) {
+	const sterilizationDates = new Set(records.map((r) => r.date.slice(0, 10)));
+	const missingDates = Array.from(new Set(visitsOrDates.map((item) => typeof item === "string" ? item.slice(0, 10) : (item.hasVisits ?? true) ? item.date.slice(0, 10) : "").filter((d) => d && !sterilizationDates.has(d)))).sort();
+	return { auditedDatesCount: visitsOrDates.length, missingDatesCount: missingDates.length, missingDates, isMissingAutoclaveLog: missingDates.length > 0 };
+}
+export { generateKraftBarcode, calculateKraftSterilityExpiration, SAMPLE_TEST_BARCODES } from "./kraftBarcodeMath";

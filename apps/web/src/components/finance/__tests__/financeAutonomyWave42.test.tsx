@@ -22,7 +22,7 @@ import { SanpinStudioModal } from "../../sanpin/SanpinStudioModal";
 import {
 	generateKraftBarcode,
 	calculateKraftSterilityExpiration,
-} from "../../sanpin/sterilizationSanpinEngine";
+} from "../../sanpin/sanpinCatalogData";
 
 describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => {
 	describe("1. 54-FZ Buyer INN Validation (Mandate 8e item 9 & FFD 1.2 Tag 1228)", () => {

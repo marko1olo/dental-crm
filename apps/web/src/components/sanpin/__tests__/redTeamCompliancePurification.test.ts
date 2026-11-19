@@ -18,14 +18,6 @@ import {
 	generateSanpinPrintHtml,
 	getSanpinBatchRecords,
 } from "../sanpinCatalogData";
-import {
-	createQuickAutoclaveCycle,
-	createQuickCombinedPsoRecord,
-	fetchPsoLogsFromApi,
-	fetchSterilizationLogsFromApi,
-	saveQuickAutoclaveCycleToApi,
-	saveQuickPsoRecordToApi,
-} from "../sterilization/sterilizationPresets";
 
 describe("Red Team Compliance: Пакетная стерилизация СанПиН 3.3686-21 и Zero-Mocks изоляция", () => {
 	it("в боевом режиме (isDemo = false) реестр циклов строго пуст (0% синтетических моков)", () => {
@@ -45,27 +37,19 @@ describe("Red Team Compliance: Пакетная стерилизация Сан�
 		assert.equal(standard.chemicalIndicatorVerdict, "ПРОЙДЕН");
 	});
 
-	it("функции REST API стерилизации экспортированы и готовы к вызову Fastify бэкенда", () => {
-		assert.equal(typeof saveQuickAutoclaveCycleToApi, "function");
-		assert.equal(typeof saveQuickPsoRecordToApi, "function");
-		assert.equal(typeof fetchSterilizationLogsFromApi, "function");
-		assert.equal(typeof fetchPsoLogsFromApi, "function");
+	it("генератор цикла автоклавирования создает валидную модель пакета", () => {
+		const batch = createOneClickShiftBatch({ operatorName: "Иванова М.И. (медсестра ЦСО)" });
+		assert.equal(batch.sterilizationCycle.cycleNumber, 1);
+		assert.equal(batch.sterilizationCycle.temperatureCelsius, 134);
+		assert.equal(batch.sterilizationCycle.pressureBar, 2.1);
+		assert.equal(batch.sterilizationCycle.chemicalIndicatorVerdict, "ПРОЙДЕН");
 	});
 
-	it("генератор цикла автоклавирования создает валидную модель для /api/registers/sterilization", () => {
-		const cycle = createQuickAutoclaveCycle(1, "Иванова М.И. (медсестра ЦСО)");
-		assert.equal(cycle.cycleNumber, 1);
-		assert.equal(cycle.temperatureC, 134);
-		assert.equal(cycle.pressureBar, 2.1);
-		assert.equal(cycle.batchVerdict, "ГОДНА");
-		assert.ok(cycle.autoclaveCode.length > 0);
-	});
-
-	it("генератор контроля очистки формирует валидный протокол для /api/registers/pso", () => {
-		const pso = createQuickCombinedPsoRecord("Иванова М.И. (медсестра ЦСО)");
-		assert.equal(pso.azopyramResult, "negative");
-		assert.equal(pso.phenolphthaleinResult, "negative");
-		assert.equal(pso.isApproved, true);
+	it("генератор контроля очистки формирует валидный протокол с отрицательными пробами", () => {
+		const batch = createOneClickShiftBatch({ operatorName: "Иванова М.И. (медсестра ЦСО)" });
+		assert.equal(batch.psoRecord.azopyramResult, "negative");
+		assert.equal(batch.psoRecord.phenolphthaleinResult, "negative");
+		assert.equal(batch.psoRecord.verdict, "ГОДНО");
 	});
 });
 

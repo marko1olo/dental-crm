@@ -76,12 +76,13 @@ export const HOURS = [
   "21:00",
 ];
 
-export const DEFAULT_SOLO_CHAIR: Chair = {
+export const DEFAULT_SOLO_CHAIR: Chair & { isActive?: boolean } = {
   id: "default-chair",
   organizationId: "default",
   name: "Кресло 1 (Основное)",
   room: "1",
   active: true,
+  isActive: true,
   color: "var(--teal, #0d9488)",
   specialization: null,
   hasXraySensor: false,

@@ -9,6 +9,7 @@ import type {
 	Order804nEndoItem,
 	Order804nNomenclatureCategory,
 } from "./types.js";
+import type { Kopecks } from "../../utils/money.js";
 import { getAnatomicalRootCanalCount } from "./toothCanalAnatomyMap.js";
 
 /**
@@ -20,6 +21,7 @@ export const ORDER_804N_INSTRUMENTATION: Record<AnatomicalCanalCount, Order804nE
 		title: "Инструментальная и медикаментозная обработка корневого канала (1-канальный зуб)",
 		category: "Эндодонтия",
 		price: 3500,
+		priceKopecks: 350_000 as Kopecks,
 		canalCount: 1,
 	},
 	2: {
@@ -27,6 +29,7 @@ export const ORDER_804N_INSTRUMENTATION: Record<AnatomicalCanalCount, Order804nE
 		title: "Инструментальная и медикаментозная обработка корневых каналов (2-канальный зуб)",
 		category: "Эндодонтия",
 		price: 5800,
+		priceKopecks: 580_000 as Kopecks,
 		canalCount: 2,
 	},
 	3: {
@@ -34,6 +37,7 @@ export const ORDER_804N_INSTRUMENTATION: Record<AnatomicalCanalCount, Order804nE
 		title: "Инструментальная и медикаментозная обработка корневых каналов (3-канальный зуб)",
 		category: "Эндодонтия",
 		price: 8200,
+		priceKopecks: 820_000 as Kopecks,
 		canalCount: 3,
 	},
 	4: {
@@ -41,6 +45,7 @@ export const ORDER_804N_INSTRUMENTATION: Record<AnatomicalCanalCount, Order804nE
 		title: "Инструментальная и медикаментозная обработка корневых каналов (4-канальный зуб)",
 		category: "Эндодонтия",
 		price: 10500,
+		priceKopecks: 1_050_000 as Kopecks,
 		canalCount: 4,
 	},
 };
@@ -54,6 +59,7 @@ export const ORDER_804N_OBTURATIONS: Record<AnatomicalCanalCount, Order804nEndoI
 		title: "Пломбирование корневого канала зуба гуттаперчей / биокерамикой (1 канал)",
 		category: "Эндодонтия",
 		price: 4000,
+		priceKopecks: 400_000 as Kopecks,
 		canalCount: 1,
 	},
 	2: {
@@ -61,6 +67,7 @@ export const ORDER_804N_OBTURATIONS: Record<AnatomicalCanalCount, Order804nEndoI
 		title: "Пломбирование корневых каналов двухканального зуба (2 канала)",
 		category: "Эндодонтия",
 		price: 6700,
+		priceKopecks: 670_000 as Kopecks,
 		canalCount: 2,
 	},
 	3: {
@@ -68,6 +75,7 @@ export const ORDER_804N_OBTURATIONS: Record<AnatomicalCanalCount, Order804nEndoI
 		title: "Пломбирование корневых каналов трехканального зуба (3 канала)",
 		category: "Эндодонтия",
 		price: 9500,
+		priceKopecks: 950_000 as Kopecks,
 		canalCount: 3,
 	},
 	4: {
@@ -75,6 +83,7 @@ export const ORDER_804N_OBTURATIONS: Record<AnatomicalCanalCount, Order804nEndoI
 		title: "Пломбирование корневых каналов четырехканального зуба (4 канала)",
 		category: "Эндодонтия",
 		price: 12000,
+		priceKopecks: 1_200_000 as Kopecks,
 		canalCount: 4,
 	},
 };
@@ -88,6 +97,7 @@ export const ORDER_804N_ENDODONTIC_PACKAGES: Record<AnatomicalCanalCount, Order8
 		title: "Эндодонтическое лечение 1-канального зуба (обработка и обтурация)",
 		category: "Эндодонтия",
 		price: 7500,
+		priceKopecks: 750_000 as Kopecks,
 		canalCount: 1,
 	},
 	2: {
@@ -95,6 +105,7 @@ export const ORDER_804N_ENDODONTIC_PACKAGES: Record<AnatomicalCanalCount, Order8
 		title: "Эндодонтическое лечение 2-канального зуба (обработка и обтурация)",
 		category: "Эндодонтия",
 		price: 12500,
+		priceKopecks: 1_250_000 as Kopecks,
 		canalCount: 2,
 	},
 	3: {
@@ -102,6 +113,7 @@ export const ORDER_804N_ENDODONTIC_PACKAGES: Record<AnatomicalCanalCount, Order8
 		title: "Эндодонтическое лечение 3-канального зуба (обработка и обтурация)",
 		category: "Эндодонтия",
 		price: 17700,
+		priceKopecks: 1_770_000 as Kopecks,
 		canalCount: 3,
 	},
 	4: {
@@ -109,6 +121,7 @@ export const ORDER_804N_ENDODONTIC_PACKAGES: Record<AnatomicalCanalCount, Order8
 		title: "Эндодонтическое лечение 4-канального зуба (обработка и обтурация)",
 		category: "Эндодонтия",
 		price: 22500,
+		priceKopecks: 2_250_000 as Kopecks,
 		canalCount: 4,
 	},
 };
@@ -121,6 +134,7 @@ export const ORDER_804N_MEDICATION_CAOH2: Order804nEndoItem = {
 	title: "Временное пломбирование лекарственным препаратом корневого канала (Ca(OH)2)",
 	category: "Эндодонтия",
 	price: 2000,
+	priceKopecks: 200_000 as Kopecks,
 	canalCount: 1,
 };
 
@@ -129,6 +143,7 @@ export const ORDER_804N_UNSEALING: Order804nEndoItem = {
 	title: "Распломбирование корневого канала зуба",
 	category: "Эндодонтия",
 	price: 2500,
+	priceKopecks: 250_000 as Kopecks,
 	canalCount: 1,
 };
 
@@ -344,13 +359,23 @@ export function getEndodonticOrder804nPair(canalCount: AnatomicalCanalCount): En
 	const count = Math.max(1, Math.min(4, canalCount)) as AnatomicalCanalCount;
 	const instrumentation = ORDER_804N_INSTRUMENTATION[count];
 	const obturation = ORDER_804N_OBTURATIONS[count];
+	const combinedPrice = instrumentation.price + obturation.price;
+	const combinedPriceKopecks = (instrumentation.priceKopecks + obturation.priceKopecks) as Kopecks;
 	return {
 		canalCount: count,
 		instrumentation,
 		obturation,
-		combinedPrice: instrumentation.price + obturation.price,
+		combinedPrice,
+		combinedPriceKopecks,
 	};
 }
+
+/**
+ * Clean clinical aliases (Mandate 8x)
+ */
+export const CLINICAL_ENDO_INSTRUMENTATION = ORDER_804N_INSTRUMENTATION;
+export const CLINICAL_ENDO_OBTURATIONS = ORDER_804N_OBTURATIONS;
+export const CLINICAL_ENDO_PACKAGES = ORDER_804N_ENDODONTIC_PACKAGES;
 
 /**
  * Returns the accurate Order 804n package procedure for a specific tooth number,

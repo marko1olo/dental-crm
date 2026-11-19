@@ -17,7 +17,7 @@ import {
 	exportForm257ToCsv,
 	generateForm257PrintHtml,
 } from "@dental/shared";
-import { detectMissingSterilizationDays } from "../sterilization/calculations.js";
+import { detectMissingSterilizationDays } from "../sanpinCatalogData";
 
 describe("Журнал автоклавирования — 1-клик пакетная обработка смены", () => {
 	it("1-клик пакетная норма: пустые контрольные точки автоматически принимаются как 100% норма", () => {

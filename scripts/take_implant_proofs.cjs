@@ -12,7 +12,7 @@ async function main() {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   
   console.log("Navigating to http://127.0.0.1:5173/?cbct=demo...");
-  await page.goto("http://127.0.0.1:5173/?cbct=demo", { waitUntil: "networkidle" });
+  await page.goto("http://127.0.0.1:5173/?cbct=demo", { waitUntil: "domcontentloaded", timeout: 45000 });
   await page.waitForTimeout(3000);
 
   console.log("Clicking implant tab...");
@@ -62,7 +62,8 @@ async function main() {
   console.log("Saved proof_implant_workspace_dark_clean.png");
 
   // Copy to brain directory for view_file
-  const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/5cbdd8b0-1a44-41e4-8bbf-039b9627b5ad");
+  const convId = process.env.CONV_ID || "fe642dbc-172b-4611-aeb6-da8e1a5c658c";
+  const brainDir = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${convId}`);
   if (!fs.existsSync(brainDir)) fs.mkdirSync(brainDir, { recursive: true });
 
   const files = [

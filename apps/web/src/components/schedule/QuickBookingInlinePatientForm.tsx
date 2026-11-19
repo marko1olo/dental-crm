@@ -54,7 +54,7 @@ export function QuickBookingInlinePatientForm(props: QuickBookingInlinePatientFo
       data-legacy-testid="appointment-inline-new-patient-panel"
     >
       <div className="flex justify-between items-center">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--teal)] flex items-center gap-1.5 m-0">
+        <h4 className="text-xs font-bold text-[var(--teal)] flex items-center gap-1.5 m-0">
           <UserPlus size={14} />
           <span>Создание нового пациента</span>
         </h4>

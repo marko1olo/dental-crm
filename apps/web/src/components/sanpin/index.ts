@@ -22,7 +22,6 @@ export * from "./CabinetReadinessTab";
 export * from "./RetroactiveBatchTab";
 export * from "./RetroactiveSanpinBatchModal";
 export * from "./retroactiveSanpinEngine";
-export { validateSterilizationCycle } from "./sterilizationSanpinEngine";
 export * from "./SterilizerEquipmentModal";
 export * from "./SterilizerFleetManager";
 export * from "./kraft/kraftPackagePresets";

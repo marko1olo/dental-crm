@@ -15,15 +15,18 @@
 import {
 	type CanonicalImplantSystemId,
 	NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS,
+	formatKopecksToRubles,
+	formatKopecksRu,
 } from "@dental/shared";
 
 export type { CanonicalImplantSystemId };
-export { SHARED_NORMALIZED_IMPLANT_SYSTEMS };
+export { SHARED_NORMALIZED_IMPLANT_SYSTEMS, formatKopecksToRubles, formatKopecksRu };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. BRAND IDENTIFIERS & METADATA (SSOT: implantBrandTypes.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { PlatformConnectionType, MischBoneDensity } from "./implantBrandTypes";
 export * from "./implantBrandTypes";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -225,11 +228,6 @@ export function getRecommendedTorqueZone(torqueNcm: number): {
 		return { status: "optimal_green", labelRu: "Оптимальная первичная стабильность (35–45 Н·см)", colorClass: "text-[var(--primary)]" };
 	}
 	return { status: "over_torque", labelRu: "Повышенный торк (>45 Н·см) — риск ишемии кортикала", colorClass: "text-[var(--danger,#f43f5e)]" };
-}
-
-export function formatKopecksToRubles(kopecks: bigint | number): string {
-	const rub = typeof kopecks === "bigint" ? Number(kopecks) / 100 : kopecks / 100;
-	return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(rub);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

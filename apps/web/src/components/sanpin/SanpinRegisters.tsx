@@ -72,6 +72,7 @@ function SanpinRegistersInner({
 				onAutofillShift={logic.handleAutofillShift}
 				onOpenRetroactiveBatchModal={() => logic.setIsRetroactiveBatchModalOpen(true)}
 				onOpenKraftModal={() => setIsDirectCycleModalOpen(true)}
+				onOpenAutoclaveJournalModal={() => setIsDirectCycleModalOpen(true)}
 				onOpenAutoclaveLogModal={() => setIsDirectCycleModalOpen(true)}
 				onOpenSterilizationLogModal={() => setIsDirectCycleModalOpen(true)}
 				onOpenJournal257Modal={() => setIsDirectCycleModalOpen(true)}

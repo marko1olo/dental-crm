@@ -19,7 +19,7 @@ export function QuickAppointmentTypeSelector({
         </span>
         {appointmentType === "emergency" && (
           <span
-            className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse"
+            className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold tracking-normal animate-pulse"
             data-testid="cito-slot-priority-badge-secondary"
           >
             Приоритетный слот

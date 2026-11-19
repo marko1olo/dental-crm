@@ -6,6 +6,7 @@
 
 import type { SurgicalServiceItem, SurgicalService804n, SurgicalOperationNorm, SurgicalWarehouseOverdraftStatus } from "@dental/shared";
 import { CANONICAL_SURGICAL_OPERATION_NORMS, NORMALIZED_IMPLANT_SYSTEMS as SHARED_NORMALIZED_IMPLANT_SYSTEMS } from "@dental/shared";
+import { CANONICAL_IMPLANT_SYSTEMS } from "../implants/implantCatalogData";
 import { DEFAULT_CANONICAL_IMPLANT_STOCK } from "../implants/implantQuickPresets";
 import {
 	quickDeductSurgicalMaterials,
@@ -37,6 +38,8 @@ export interface SurgeryScenarioDefinition {
 }
 export interface SurgeryImplantSystemSpec {
 	readonly id: string; readonly brandName: string; readonly unitCostRub: number; readonly popularLines: readonly string[]; readonly platformName: string; readonly screwdriverType: string; readonly screwdriverAliasRu: string; readonly minTorqueNcm: number; readonly defaultTorqueNcm: number; readonly maxSafeTorqueNcm: number; readonly isqOptimalRange: string; readonly standardDiametersMm: readonly number[]; readonly standardLengthsMm: readonly number[]; readonly defaultDiameterMm: number; readonly defaultLengthMm: number; readonly defaultArticle: string; readonly defaultLotNumber: string; readonly defaultSerialNumber: string; readonly defaultExpirationDate: string;
+	readonly implantCostKopecks?: bigint;
+	readonly patientPriceKopecks?: bigint;
 }
 export interface SurgeryWarehouseBatchItem {
 	readonly id: string; readonly brand: string; readonly model: string; readonly sku: string; readonly lotNumber: string; readonly serialNumber: string; readonly diameterMm: number; readonly lengthMm: number; readonly availableQuantity: number; readonly expirationDate: string;
@@ -88,47 +91,70 @@ export const CLOSED_SINUS_LIFT_NORM_TEXT = "Инфильтрационная а�
 export const PERIOSTOTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез слизистой и надкостницы длиной 2 см по переходной складке в проекции корня причинного зуба до кости. Эвакуация гнойного экссудата. Промывание 0.05% хлоргексидином. В рану введен перчаточный резиновый ленточный дренаж-выпускник. Гемостаз полный. Назначена антибиотикотерапия. Контрольный осмотр и смена дренажа завтра.";
 export const APICOECTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Трапециевидный разрез слизистой в проекции верхушки корня, отслоен лоскут. Трепанация кортикальной пластинки шаровидным бором. Резекция верхушки корня на 3 мм под углом 90°. Цистэктомия очага. Ретроградное пломбирование МТА (ProRoot). Контроль гемостаза. Ушивание раны узловыми швами Монофиламент 5-0. Рекомендации даны.";
 export const PERICORONITIS_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Иссечение воспаленного слизистого капюшона над коронкой ретинированного зуба скальпелем. Промывание антисептиками (хлоргексидин 0.05%), йодоформная турунда. Гемостаз полный. Рекомендации даны.";
-export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = Object.values(SHARED_NORMALIZED_IMPLANT_SYSTEMS).map((sys) => {
-	const brandName =
-		sys.name.includes("Nobel")
-			? "Nobel Biocare"
-			: sys.name.includes("Astra")
-				? "Astra Tech"
-				: sys.name.split(" ")[0] || sys.id;
-	const id = sys.id === "nobel" ? "nobel_biocare" : sys.id === "astra" ? "astra_tech" : sys.id;
+export const ANKYLOS_SURGERY_SPEC: SurgeryImplantSystemSpec = {
+	id: "ankylos",
+	brandName: "Ankylos",
+	unitCostRub: 28000,
+	popularLines: ["C/X TissueCare"],
+	platformName: "Коническое TissueCare Cone (Морзе)",
+	screwdriverType: "1.0 mm Hex / Ankylos Screwdriver",
+	screwdriverAliasRu: "Шестигранник 1.0 мм (Ankylos)",
+	minTorqueNcm: 25,
+	defaultTorqueNcm: 35,
+	maxSafeTorqueNcm: 45,
+	isqOptimalRange: "68–85",
+	standardDiametersMm: [3.5, 4.5, 5.5, 7.0],
+	standardLengthsMm: [6.6, 8.0, 9.5, 11.0, 14.0],
+	defaultDiameterMm: 4.5,
+	defaultLengthMm: 9.5,
+	defaultArticle: "ANK-4595",
+	defaultLotNumber: "LOT-ANK-2024",
+	defaultSerialNumber: "SN-ANK-01",
+	defaultExpirationDate: "2029-12-31",
+	implantCostKopecks: 2800000n,
+	patientPriceKopecks: 5500000n,
+};
 
-	const stockItem = DEFAULT_CANONICAL_IMPLANT_STOCK.find((item) =>
-		item.name.toLowerCase().includes(brandName.toLowerCase()) ||
-		item.id.toLowerCase().includes(id.toLowerCase()) ||
-		item.id.toLowerCase().includes(sys.id.toLowerCase()),
-	);
-	const lotNumber = stockItem?.lotNumber || `LOT-${id.slice(0, 3).toUpperCase()}-2024`;
-	const serialNumber = stockItem?.barcode ? stockItem.barcode.slice(-9) : `SN-${id.slice(0, 3).toUpperCase()}-01`;
-	const expirationDate = stockItem?.expirationDate || "2029-12-31";
-	const unitCostRub = stockItem?.pricePerUnit ? parseInt(stockItem.pricePerUnit, 10) || 35000 : 35000;
+export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = [
+	...Object.values(CANONICAL_IMPLANT_SYSTEMS).map((sys) => {
+		const id = sys.id;
+		const brandName = sys.brandName;
 
-	return {
-		id,
-		brandName,
-		unitCostRub,
-		popularLines: sys.platformTypes,
-		platformName: sys.platformTypes.join(", "),
-		screwdriverType: sys.driverTool,
-		screwdriverAliasRu: sys.driverTool,
-		minTorqueNcm: sys.minInsertionTorqueNcm,
-		defaultTorqueNcm: sys.defaultTorqueNcm,
-		maxSafeTorqueNcm: sys.maxSafeTorqueNcm,
-		isqOptimalRange: id === "straumann" || id === "nobel_biocare" ? "70–85" : "68–85",
-		standardDiametersMm: sys.diametersMm,
-		standardLengthsMm: sys.lengthsMm,
-		defaultDiameterMm: sys.defaultDiameterMm,
-		defaultLengthMm: sys.defaultLengthMm,
-		defaultArticle: stockItem?.sku || `${id.toUpperCase()}-${sys.defaultDiameterMm}-${sys.defaultLengthMm}`,
-		defaultLotNumber: lotNumber,
-		defaultSerialNumber: serialNumber,
-		defaultExpirationDate: expirationDate,
-	};
-});
+		const stockItem = DEFAULT_CANONICAL_IMPLANT_STOCK.find((item) =>
+			item.name.toLowerCase().includes(brandName.toLowerCase()) ||
+			item.id.toLowerCase().includes(id.toLowerCase()),
+		);
+		const lotNumber = stockItem?.lotNumber || `LOT-${id.slice(0, 3).toUpperCase()}-2024`;
+		const serialNumber = stockItem?.barcode ? stockItem.barcode.slice(-9) : `SN-${id.slice(0, 3).toUpperCase()}-01`;
+		const expirationDate = stockItem?.expirationDate || "2029-12-31";
+		const unitCostRub = Number(sys.implantCostKopecks) / 100;
+
+		return {
+			id,
+			brandName,
+			unitCostRub,
+			popularLines: [sys.lineName],
+			platformName: sys.connectionDescription,
+			screwdriverType: sys.screwdriverType,
+			screwdriverAliasRu: sys.screwdriverAliasRu,
+			minTorqueNcm: sys.minInsertionTorqueNcm,
+			defaultTorqueNcm: sys.defaultTorqueNcm,
+			maxSafeTorqueNcm: sys.maxSafeTorqueNcm,
+			isqOptimalRange: `${sys.recommendedIsqRange[0]}–${sys.recommendedIsqRange[1]}`,
+			standardDiametersMm: sys.diametersMm,
+			standardLengthsMm: sys.lengthsMm,
+			defaultDiameterMm: sys.defaultDiameterMm,
+			defaultLengthMm: sys.defaultLengthMm,
+			defaultArticle: stockItem?.sku || `${sys.defaultArticlePrefix}`,
+			defaultLotNumber: lotNumber,
+			defaultSerialNumber: serialNumber,
+			defaultExpirationDate: expirationDate,
+			implantCostKopecks: sys.implantCostKopecks,
+			patientPriceKopecks: sys.patientPriceKopecks,
+		};
+	}),
+	ANKYLOS_SURGERY_SPEC,
+];
 
 export const SURGERY_DEFAULT_BATCHES: readonly SurgeryWarehouseBatchItem[] = DEFAULT_CANONICAL_IMPLANT_STOCK.map((item) => {
 	const match = item.name.match(/Ø(\d+(?:\.\d+)?)[xх](\d+(?:\.\d+)?)мм/i);
@@ -226,6 +252,8 @@ const FALLBACK_IMPLANT_SYSTEM: SurgeryImplantSystemSpec = {
 	defaultLotNumber: "LOT-OSS-2024",
 	defaultSerialNumber: "SN-OSS-01",
 	defaultExpirationDate: "2029-12-31",
+	implantCostKopecks: 1250000n,
+	patientPriceKopecks: 3500000n,
 };
 
 export function getImplantSystemById(id: string): SurgeryImplantSystemSpec {
@@ -275,23 +303,27 @@ export function calculateSurgeryFinancials(params: {
 	if (params.scenario === "implant") {
 		const sys = getImplantSystemById(params.implantBrand || "Osstem");
 		const implantCostRub = sys.unitCostRub || 12500;
+		const implantCostKopecks = sys.implantCostKopecks ? Number(sys.implantCostKopecks) : Math.round(implantCostRub * 100);
 		const suture = SURGERY_SUTURE_CATALOG.find((s) => s.name === params.sutureName);
 		const sutureCost = suture?.unitPriceRub ?? 950;
 		const baseKitCost = 1550;
 		const consumablesCostRub = sutureCost + baseKitCost;
-		const totalDirectCost = implantCostRub + consumablesCostRub;
-		const doctorGrossMarginRub = Math.max(0, priceRub - totalDirectCost);
+		const consumablesCostKopecks = Math.round(consumablesCostRub * 100);
+		const operationPriceKopecks = Math.round(priceRub * 100);
+		const totalDirectCostKopecks = implantCostKopecks + consumablesCostKopecks;
+		const doctorGrossMarginKopecks = Math.max(0, operationPriceKopecks - totalDirectCostKopecks);
+		const doctorGrossMarginRub = Math.round(doctorGrossMarginKopecks / 100);
 		return {
 			operationPriceRub: priceRub,
 			implantCostRub,
 			consumablesCostRub,
 			doctorGrossMarginRub,
 			netDoctorIncomeRub: doctorGrossMarginRub,
-			operationPriceKopecks: Math.round(priceRub * 100),
-			implantCostKopecks: Math.round(implantCostRub * 100),
-			consumablesCostKopecks: Math.round(consumablesCostRub * 100),
-			doctorGrossMarginKopecks: Math.round(doctorGrossMarginRub * 100),
-			netDoctorIncomeKopecks: Math.round(doctorGrossMarginRub * 100),
+			operationPriceKopecks,
+			implantCostKopecks,
+			consumablesCostKopecks,
+			doctorGrossMarginKopecks,
+			netDoctorIncomeKopecks: doctorGrossMarginKopecks,
 		};
 	}
 	let consumablesCostRub = 1200;

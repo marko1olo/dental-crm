@@ -98,7 +98,7 @@ export function QuickBookingDrawerHeader({
             </h3>
             {isEmergencyMode && (
               <span
-                className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse shadow-xs shrink-0"
+                className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold tracking-normal animate-pulse shadow-xs shrink-0"
                 data-testid="cito-header-badge"
               >
                 Острая боль
@@ -157,7 +157,7 @@ export function QuickBookingDrawerFooter({
         onClick={onSubmit}
         aria-busy={isSubmitting}
         data-testid="quick-drawer-save-btn"
-        className="primary-button dente-btn dente-btn-primary w-full min-h-[44px] h-[52px] sm:h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs"
+        className="primary-button dente-btn dente-btn-primary w-full min-h-[44px] h-[52px] sm:h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--teal)] hover:bg-[var(--teal-hover)] text-white shadow-xs"
       >
         <Plus size={16} className="shrink-0 stroke-[2.5]" />
         <span className="whitespace-nowrap font-bold">
@@ -204,7 +204,7 @@ export function QuickBookingDrawerFooter({
             className="secondary-button min-h-[44px] px-2.5 sm:px-3 inline-flex items-center gap-1.5 text-xs shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
             title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
           >
-            <Copy size={14} className="text-[var(--primary)] shrink-0" />
+            <Copy size={14} className="text-[var(--teal)] shrink-0" />
             <span>Скопировать<span className="hidden sm:inline"> для пациента</span></span>
           </button>
         </div>

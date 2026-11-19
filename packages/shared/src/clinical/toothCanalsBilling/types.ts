@@ -24,30 +24,49 @@ export interface ToothCanalConfig {
 	readonly descriptionRu: string;
 }
 
-export interface Order804nEndoItem {
+export interface ClinicalEndoProcedureItem {
 	readonly code: string;
 	readonly title: string;
 	readonly category: string;
+	readonly priceKopecks: Kopecks;
+	/**
+	 * @deprecated Use `priceKopecks` per Mandate 8bm. Preserved for backward compatibility.
+	 */
 	readonly price: number;
 	readonly canalCount: AnatomicalCanalCount;
 }
 
+/**
+ * @deprecated Per Mandate 8x & 8bm. Use `ClinicalEndoProcedureItem`.
+ */
+export type Order804nEndoItem = ClinicalEndoProcedureItem;
+
 export interface EndodonticOrder804nPair {
 	readonly canalCount: AnatomicalCanalCount;
-	readonly instrumentation: Order804nEndoItem;
-	readonly obturation: Order804nEndoItem;
+	readonly instrumentation: ClinicalEndoProcedureItem;
+	readonly obturation: ClinicalEndoProcedureItem;
 	readonly combinedPrice: number;
+	readonly combinedPriceKopecks?: Kopecks;
 }
 
-export interface EndodonticFullTreatmentPlanItem {
+export interface EndoTreatmentPlanItem {
 	readonly fdiNumber: number;
 	readonly isMultiRooted: boolean;
 	readonly canalCount: AnatomicalCanalCount;
-	readonly instrumentation: Order804nEndoItem;
-	readonly obturation: Order804nEndoItem;
-	readonly medication?: Order804nEndoItem | undefined;
+	readonly instrumentation: ClinicalEndoProcedureItem;
+	readonly obturation: ClinicalEndoProcedureItem;
+	readonly medication?: ClinicalEndoProcedureItem | undefined;
+	readonly totalCompositePriceKopecks: Kopecks;
+	/**
+	 * @deprecated Use `totalCompositePriceKopecks` per Mandate 8bm. Preserved for backward compatibility.
+	 */
 	readonly totalCompositePrice: number;
 }
+
+/**
+ * @deprecated Per Mandate 8x & 8bm. Use `EndoTreatmentPlanItem`.
+ */
+export type EndodonticFullTreatmentPlanItem = EndoTreatmentPlanItem;
 
 export interface Order804nBillingLineItem {
 	readonly code: string;
@@ -89,7 +108,7 @@ export interface ClinicalCase804nOptions {
 	readonly cavityClass?: string | null | undefined;
 }
 
-export interface Order804nBillingEstimateResult {
+export interface EndoBillingEstimateResult {
 	readonly fdiNumber?: number | null;
 	readonly icd10Code: string;
 	readonly canalCount?: AnatomicalCanalCount | null;
@@ -107,6 +126,11 @@ export interface Order804nBillingEstimateResult {
 		readonly toothNumber?: string | null;
 	}[];
 }
+
+/**
+ * @deprecated Per Mandate 8x. Use `EndoBillingEstimateResult`.
+ */
+export type Order804nBillingEstimateResult = EndoBillingEstimateResult;
 
 /**
  * Категории стоматологических услуг по Приказу Минздрава РФ № 804н.

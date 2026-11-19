@@ -57,7 +57,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 
 	useEffect(() => {
 		if (resolvedOperator) {
-			setOperatorName((prev) => (!prev || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
+			setOperatorName((prev: string) => (!prev || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
 		}
 	}, [resolvedOperator]);
 

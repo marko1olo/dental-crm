@@ -109,7 +109,7 @@ export function InlinePatientFormInputs({
           aria-busy={isCreatingPatient}
           data-testid="quick-booking-create-inline-patient-btn"
           data-legacy-testid="appointment-quick-patient-save-btn"
-          className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+          className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal,var(--primary))] hover:bg-[var(--teal-hover,var(--primary-hover))] text-white font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
         >
           <Check size={14} className="shrink-0" />
           <span className="truncate">{isCreatingPatient ? "Создаю пациента…" : "Создать и выбрать"}</span>

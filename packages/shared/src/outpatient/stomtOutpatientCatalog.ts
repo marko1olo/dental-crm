@@ -23,7 +23,7 @@ export interface OutpatientSpecialtyMeta {
 	readonly iconName: string;
 }
 
-export const STOMX_SPECIALTIES: readonly OutpatientSpecialtyMeta[] = [
+export const CLINICAL_OUTPATIENT_SPECIALTIES: readonly OutpatientSpecialtyMeta[] = [
 	{
 		id: "therapy",
 		label: "Терапевтическая стоматология",
@@ -71,8 +71,11 @@ export const STOMX_SPECIALTIES: readonly OutpatientSpecialtyMeta[] = [
 	},
 ];
 
+/** @deprecated Use CLINICAL_OUTPATIENT_SPECIALTIES per Mandate 8x */
+export const STOMX_SPECIALTIES = CLINICAL_OUTPATIENT_SPECIALTIES;
+
 /**
- * Структурированный клинический протокол приема 043/у
+ * Структурированный клинический протокол приема (SOAP)
  */
 export interface OutpatientProtocolTemplate {
 	readonly id: string;
@@ -243,7 +246,7 @@ export function populateOutpatientTemplateText(
 }
 
 /**
- * Собирает целостный дневник приема Формы 043/у (SOAP) из протокола с подстановкой параметров
+ * Собирает целостный дневник амбулаторного приема (SOAP) из протокола с подстановкой параметров
  */
 export function formatFullSoapFromProtocol(
 	protocol: OutpatientProtocolTemplate,
@@ -371,6 +374,8 @@ export function findProtocolById(
 // Реэкспорт всех каталогов и дерева рубрик
 export { STOMX_KEY_CLINICAL_PROTOCOLS } from "./stomtProtocolsData.js";
 export {
+	CANONICAL_OUTPATIENT_TEMPLATES_INDEX,
+	OUTPATIENT_CATEGORY_TREE,
 	STOMX_ALL_448_TEMPLATES_INDEX,
 	STOMX_OUTPATIENT_CATEGORY_TREE,
 } from "./stomtTemplatesIndex.js";

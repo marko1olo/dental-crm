@@ -8,6 +8,8 @@ import {
 	multiplyKopecks,
 	parseKopecks,
 	sumKopecks,
+	kopecksToRubles,
+	formatKopecksRu,
 } from "../../utils/money.js";
 import type {
 	AnatomicalCanalCount,
@@ -62,6 +64,10 @@ export function calculateEndodonticCompositeTreatment(
 	const includeMed = options?.includeMedication ?? isPeriodontitis;
 	const medication = includeMed ? ORDER_804N_MEDICATION_CAOH2 : undefined;
 	const totalCompositePrice = pair.combinedPrice + (medication ? medication.price : 0);
+	const totalCompositePriceKopecks = (
+		(pair.combinedPriceKopecks ?? parseKopecks(pair.combinedPrice)) +
+		(medication ? medication.priceKopecks : 0)
+	) as Kopecks;
 
 	return {
 		fdiNumber,
@@ -71,6 +77,7 @@ export function calculateEndodonticCompositeTreatment(
 		obturation: pair.obturation,
 		medication,
 		totalCompositePrice,
+		totalCompositePriceKopecks,
 	};
 }
 
@@ -191,7 +198,7 @@ export function calculateEndoTreatmentPriceKopecks(
 		unsealingPriceKopecks: unsealingKopecks,
 		restorationPriceKopecks: restorationKopecks,
 		totalPriceKopecks,
-		totalRub: totalPriceKopecks / 100,
+		totalRub: kopecksToRubles(totalPriceKopecks),
 		lineItems,
 	};
 }
@@ -402,10 +409,8 @@ export function calculateOrder804nBillingEstimate(
 		: (canalOverride ? (Math.min(4, Math.max(1, Math.round(canalOverride))) as AnatomicalCanalCount) : 1);
 
 	const totalKopecks = sumKopecks(items.map((i) => i.totalKopecks));
-	const totalRub = totalKopecks / 100;
-	const rubles = Math.floor(totalKopecks / 100);
-	const kopecks = totalKopecks % 100;
-	const formattedTotal = `${rubles.toLocaleString("ru-RU")},${kopecks.toString().padStart(2, "0")} ₽`;
+	const totalRub = kopecksToRubles(totalKopecks);
+	const formattedTotal = formatKopecksRu(totalKopecks);
 
 	const invoiceLines = items.map((item) => ({
 		code: item.code,
@@ -428,3 +433,8 @@ export function calculateOrder804nBillingEstimate(
 		invoiceLines,
 	};
 }
+
+/**
+ * Clean clinical aliases (Mandate 8x)
+ */
+export const calculateEndoBillingEstimate = calculateOrder804nBillingEstimate;

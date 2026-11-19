@@ -26,9 +26,10 @@ export interface SanpinHeaderOptionsMenuProps {
 	readonly onAutofillShift: () => void;
 	readonly onOpenRetroactiveBatchModal: () => void;
 	readonly onOpenKraftModal: () => void;
+	readonly onOpenAutoclaveJournalModal?: () => void;
 	readonly onOpenAutoclaveLogModal?: () => void;
 	readonly onOpenSterilizationLogModal?: () => void;
-	/** @deprecated Alias to onOpenAutoclaveLogModal */
+	/** @deprecated Alias to onOpenAutoclaveJournalModal */
 	readonly onOpenJournal257Modal?: () => void;
 	readonly exportContext: FetchSanpinContext;
 }
@@ -43,12 +44,13 @@ export const SanpinHeaderOptionsMenu: React.FC<SanpinHeaderOptionsMenuProps> = (
 	onAutofillShift,
 	onOpenRetroactiveBatchModal,
 	onOpenKraftModal,
+	onOpenAutoclaveJournalModal,
 	onOpenAutoclaveLogModal,
 	onOpenSterilizationLogModal,
 	onOpenJournal257Modal,
 	exportContext,
 }) => {
-	const handleOpenLogModal = onOpenAutoclaveLogModal || onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
+	const handleOpenLogModal = onOpenAutoclaveJournalModal || onOpenAutoclaveLogModal || onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 	return (
 		<div className="sanpin-options-dropdown" role="menu">
 			<button type="button" role="menuitem" onClick={() => { onClose(); onRefreshSummary(); }} className="sanpin-dropdown-item">
