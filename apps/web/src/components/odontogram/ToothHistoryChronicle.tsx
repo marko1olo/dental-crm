@@ -13,7 +13,6 @@ const DicomViewerModal = React.lazy(() =>
 	})),
 );
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import {
 	actionFailureToast,
 	type PanelSubject,
@@ -32,32 +31,6 @@ import {
 
 export interface ChronicleMediaItem extends StoredMediaItem {
 	readonly encryptedPayloadRef?: string | undefined;
-}
-
-interface ImagingStudyDto {
-	readonly id: string;
-	readonly patientId: string;
-	readonly visitId?: string | undefined;
-	readonly toothCode?: string | number | undefined;
-	readonly kind?: string | undefined;
-	readonly capturedAt?: string | undefined;
-	readonly title?: string | undefined;
-	readonly fileSizeBytes?: number | undefined;
-	readonly previewUrl?: string | undefined;
-}
-
-interface XrayScanDto {
-	readonly id: string;
-	readonly patientId: string;
-	readonly visitId?: string | undefined;
-	readonly toothCode?: string | number | undefined;
-	readonly capturedAt?: string | undefined;
-	readonly createdAt?: string | undefined;
-	readonly mimeType?: string | undefined;
-	readonly originalFilename?: string | undefined;
-	readonly fileSizeBytes?: number | undefined;
-	readonly imageDataUri?: string | undefined;
-	readonly fileUrl?: string | undefined;
 }
 
 /**
@@ -117,99 +90,16 @@ export function ToothHistoryChronicle({
 		setToothMedia([]);
 		setLoad({ phase: "loading" });
 
-		// 1. Загрузка медиа-снимков зуба: локальные из Offline Media Vault + серверные из PostgreSQL 18
-		const clinicToken = readDenteClinicToken();
-		const staffToken = readDenteStaffToken();
-		const headers: Record<string, string> = {
-			...denteAdminSecretRequestHeaders(),
-			...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
-			...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
-		};
-
-		Promise.all([
-			listPatientMedia(patientId, toothNumber).catch((err) => {
+		// 1. Загрузка медиа-снимков зуба: локальные из Offline Media Vault (серверные снимки приходят в хронике events)
+		listPatientMedia(patientId, toothNumber)
+			.then((vaultItems) => {
+				if (!active) return;
+				setToothMedia(vaultItems);
+			})
+			.catch((err) => {
 				logger.error("[tooth history] Ошибка чтения снимков из offlineMediaVault", err);
-				return [] as StoredMediaItem[];
-			}),
-			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(patientId)}`, { headers })
-				.then(async (res) => {
-					if (!res.ok) return [];
-					const studies = (await res.json()) as unknown;
-					if (!Array.isArray(studies)) return [];
-					const toothStr = String(toothNumber).trim();
-					return (studies as readonly ImagingStudyDto[])
-						.filter((s) => String(s.toothCode ?? "").trim() === toothStr)
-						.map((s): ChronicleMediaItem => ({
-							mediaId: s.id,
-							patientId: s.patientId,
-							visitId: s.visitId,
-							toothNumber: toothNumber,
-							photoType:
-								s.kind === "rvg" || s.kind === "periapical"
-									? "periapical_xray"
-									: s.kind === "cbct"
-										? "computed_tomography_slice"
-										: s.kind === "panoramic" || s.kind === "opg"
-											? "panoramic_xray"
-											: "generic_clinical_media",
-							capturedAt: s.capturedAt || new Date().toISOString(),
-							capturedAtMs: s.capturedAt ? new Date(s.capturedAt).getTime() : Date.now(),
-							mimeType: "image/jpeg",
-							fileName: s.title || `Снимок зуба #${toothNumber}`,
-							sizeBytes: s.fileSizeBytes || 0,
-							thumbnailWebpDataUrl: s.previewUrl || `/api/imaging/studies/${s.id}/file`,
-							originalBlobKey: s.id,
-							syncStatus: "synced",
-							syncRetries: 0,
-							remoteUrl: `/api/imaging/studies/${s.id}/file`,
-						}));
-				})
-				.catch((err) => {
-					logger.warn("[tooth history] Ошибка чтения снимков из imaging/studies", err);
-					return [] as ChronicleMediaItem[];
-				}),
-			fetch(`/api/xray/scans?patientId=${encodeURIComponent(patientId)}`, { headers })
-				.then(async (res) => {
-					if (!res.ok) return [];
-					const scans = (await res.json()) as unknown;
-					if (!Array.isArray(scans)) return [];
-					const toothStr = String(toothNumber).trim();
-					return (scans as readonly XrayScanDto[])
-						.filter((s) => String(s.toothCode ?? "").trim() === toothStr)
-						.map((s): ChronicleMediaItem => ({
-							mediaId: s.id,
-							patientId: s.patientId,
-							visitId: s.visitId,
-							toothNumber: toothNumber,
-							photoType: "periapical_xray",
-							capturedAt: s.capturedAt || s.createdAt || new Date().toISOString(),
-							capturedAtMs: s.capturedAt ? new Date(s.capturedAt).getTime() : Date.now(),
-							mimeType: s.mimeType || "image/jpeg",
-							fileName: s.originalFilename || `Визиограф RVG (Зуб #${toothNumber})`,
-							sizeBytes: s.fileSizeBytes || 0,
-							thumbnailWebpDataUrl: s.imageDataUri || s.fileUrl || `/api/xray/scans/${s.id}/file`,
-							originalBlobKey: s.id,
-							syncStatus: "synced",
-							syncRetries: 0,
-							remoteUrl: s.fileUrl || `/api/xray/scans/${s.id}/file`,
-						}));
-				})
-				.catch((err) => {
-					logger.warn("[tooth history] Ошибка чтения снимков из xray/scans", err);
-					return [] as ChronicleMediaItem[];
-				}),
-		]).then(([vaultItems, dbItems, xrayItems]) => {
-			if (!active) return;
-			const seen = new Set<string>();
-			const merged: StoredMediaItem[] = [];
-			for (const item of [...vaultItems, ...dbItems, ...xrayItems]) {
-				if (!seen.has(item.mediaId)) {
-					seen.add(item.mediaId);
-					merged.push(item);
-				}
-			}
-			setToothMedia(merged);
-		});
+				if (active) setToothMedia([]);
+			});
 
 		// 2. Загрузка хроники клинических событий
 		const fetchHistory = async () => {
@@ -304,11 +194,11 @@ export function ToothHistoryChronicle({
 				{toothMedia.length > 0 && (
 					<section
 						aria-label={`Снимки зуба ${toothNumber}`}
-						className="tooth-media-section mb-4 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-xs"
+						className="tooth-media-section mb-4 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/80 backdrop-blur-xs"
 					>
 						<div className="flex items-center gap-2 mb-2">
 							<Camera className="w-4 h-4 text-[var(--teal)] shrink-0" />
-							<h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+							<h4 className="text-xs font-semibold text-[var(--ink)]">
 								Снимки зуба ({toothMedia.length})
 							</h4>
 						</div>
@@ -317,7 +207,7 @@ export function ToothHistoryChronicle({
 								<div
 									key={m.mediaId}
 									onClick={() => setSelectedViewerMedia(m)}
-									className="group relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-xs transition-transform hover:scale-[1.02] cursor-pointer hover:border-[var(--teal,#0d9488)]"
+									className="group relative rounded-lg overflow-hidden border border-[var(--line)] bg-[var(--paper)] shadow-xs transition-transform hover:scale-[1.02] cursor-pointer hover:border-[var(--teal,#0d9488)]"
 									title="Открыть снимок в RVG / DICOM просмотрщике"
 									data-testid={`tooth-media-card-${m.mediaId}`}
 								>
@@ -328,8 +218,8 @@ export function ToothHistoryChronicle({
 										loading="lazy"
 										decoding="async"
 									/>
-									<div className="p-1.5 text-[11px] bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-700">
-										<div className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+									<div className="p-1.5 text-[11px] bg-[var(--paper)]/95 border-t border-[var(--line)]">
+										<div className="font-semibold text-[var(--ink)] truncate">
 											{m.photoType === "intraoral_photo"
 												? "Внутриротовое фото"
 												: m.photoType === "periapical_xray"
@@ -340,7 +230,7 @@ export function ToothHistoryChronicle({
 															? "ОПТГ панорама"
 															: "Медиафайл"}
 										</div>
-										<div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+										<div className="flex items-center justify-between text-[10px] text-[var(--ink-muted)] mt-0.5">
 											<span>
 												{new Intl.DateTimeFormat("ru-RU", {
 													day: "2-digit",

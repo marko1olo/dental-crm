@@ -36,7 +36,7 @@ export const Tooth46StandToggles: React.FC<Tooth46StandTogglesProps> = ({
 		<div className="w-full max-w-5xl flex flex-col gap-1.5 py-1.5">
 			{/* Clinical States Segmented Preset Bar (Apple HIG Fade Mask & >= 44px Touch Targets) */}
 			<div className="w-full flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none touch-pan-x overscroll-x-contain [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent_100%)]">
-				<span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-0.5 shrink-0">
+				<span className="text-[11px] font-medium text-[var(--ink-muted)] mr-0.5 shrink-0">
 					Пресет:
 				</span>
 				{TOOTH46_PRESETS.map((preset) => {
@@ -51,7 +51,7 @@ export const Tooth46StandToggles: React.FC<Tooth46StandTogglesProps> = ({
 							className={`text-xs px-3 py-1.5 min-h-[44px] sm:min-h-[30px] rounded-lg border font-medium transition-all whitespace-nowrap shrink-0 flex items-center justify-center ${
 								isCurrent
 									? "bg-teal-600 text-white border-teal-500 shadow-sm"
-									: "dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700 bg-white text-slate-700 border-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							{preset.badge}
@@ -76,7 +76,7 @@ export const Tooth46StandToggles: React.FC<Tooth46StandTogglesProps> = ({
 
 			{/* Granular Architectural Layer Flags (Touch Targets >= 44px on Mobile) */}
 			<div className="w-full flex md:flex-wrap items-center gap-1.5 pt-1 border-t border-current/10 overflow-x-auto md:overflow-visible scrollbar-none touch-pan-x overscroll-x-contain [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent_100%)] md:[mask-image:none]">
-				<span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-0.5 shrink-0 hidden sm:inline">
+				<span className="text-[11px] font-medium text-[var(--ink-muted)] mr-0.5 shrink-0 hidden sm:inline">
 					Слои:
 				</span>
 				{LAYER_ITEMS.map(([key, label]) => {
@@ -89,7 +89,7 @@ export const Tooth46StandToggles: React.FC<Tooth46StandTogglesProps> = ({
 							className={`text-xs px-2.5 py-1 min-h-[44px] sm:min-h-[26px] rounded-md border transition-all whitespace-nowrap shrink-0 md:shrink flex items-center justify-center ${
 								active
 									? "bg-teal-500/15 border-teal-500/50 text-teal-600 dark:text-teal-300 font-medium"
-									: "dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-800 bg-white text-slate-600 border-slate-200 opacity-70 hover:opacity-100"
+									: "bg-[var(--paper)] text-[var(--ink-muted)] border-[var(--line)] opacity-70 hover:opacity-100 hover:bg-[var(--paper-soft)]"
 							}`}
 						>
 							{active ? "✓ " : ""}

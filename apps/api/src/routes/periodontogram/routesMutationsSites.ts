@@ -177,25 +177,27 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 					details: parsed.error.format(),
 				});
 			}
-			const [tooth] = await db
-				.select({ id: periodontogramTeeth.id })
-				.from(periodontogramTeeth)
-				.where(
-					and(
-						eq(periodontogramTeeth.snapshotId, id),
-						eq(periodontogramTeeth.toothNumber, toothNumber),
-					),
-				)
-				.limit(1);
+			const saved = await db.transaction(async (tx) => {
+				const [tooth] = await tx
+					.select({ id: periodontogramTeeth.id })
+					.from(periodontogramTeeth)
+					.where(
+						and(
+							eq(periodontogramTeeth.snapshotId, id),
+							eq(periodontogramTeeth.toothNumber, toothNumber),
+						),
+					)
+					.limit(1);
 
-			const saved = await upsertSingleSiteRecord(
-				db,
-				id,
-				tooth?.id ?? null,
-				toothNumber,
-				normalizedSiteCode,
-				parsed.data,
-			);
+				return await upsertSingleSiteRecord(
+					tx,
+					id,
+					tooth?.id ?? null,
+					toothNumber,
+					normalizedSiteCode,
+					parsed.data,
+				);
+			});
 			return reply.send({ success: true, data: saved });
 		},
 	);

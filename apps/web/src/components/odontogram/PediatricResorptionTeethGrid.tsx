@@ -45,7 +45,7 @@ export const PediatricResorptionTeethGrid: React.FC<PediatricResorptionTeethGrid
 						className={`min-w-[56px] min-h-[50px] px-2.5 py-1.5 rounded-xl text-sm font-mono font-black border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center select-none ${
 							isSelected
 								? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/30 scale-105"
-								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-700"
+								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-400 hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						<div className="flex items-center gap-1 leading-none">
@@ -68,13 +68,13 @@ export const PediatricResorptionTeethGrid: React.FC<PediatricResorptionTeethGrid
 	);
 
 	return (
-		<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 space-y-4">
+		<div className="p-4 sm:p-6 rounded-2xl bg-[var(--paper-soft)] dark:bg-[var(--paper-soft)]/70 border border-[var(--line)] space-y-4">
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 				<div>
-					<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
+					<h4 className="text-xs sm:text-sm font-semibold text-[var(--ink-muted)]">
 						Выберите молочный зуб для применения резорбции
 					</h4>
-					<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-300 font-medium mt-0.5">
+					<p className="text-xs sm:text-sm text-[var(--ink-muted)] font-medium mt-0.5">
 						Выбранный: <strong className="text-teal-600 dark:text-teal-400 font-mono text-sm sm:text-base font-black">Зуб {selectedPrimaryTooth}</strong> (преемник: постоянный {PRIMARY_TO_PERMANENT_SUCCESSOR_MAP[selectedPrimaryTooth] ?? "—"}) • Норма ({currentAge.toFixed(1)} лет): <span className="font-bold text-teal-700 dark:text-teal-300">{expectedForSelected}%</span>
 					</p>
 				</div>
@@ -92,11 +92,11 @@ export const PediatricResorptionTeethGrid: React.FC<PediatricResorptionTeethGrid
 				</div>
 			</div>
 			<div className="space-y-2">
-				<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">Верхний молочный ряд (55–65):</div>
+				<div className="text-xs sm:text-sm font-semibold text-[var(--ink-muted)]">Верхний молочный ряд (55–65):</div>
 				{renderTeethRow(UPPER_PRIMARY_TEETH)}
 			</div>
 			<div className="space-y-2">
-				<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">Нижний молочный ряд (85–75):</div>
+				<div className="text-xs sm:text-sm font-semibold text-[var(--ink-muted)]">Нижний молочный ряд (85–75):</div>
 				{renderTeethRow(LOWER_PRIMARY_TEETH)}
 			</div>
 		</div>

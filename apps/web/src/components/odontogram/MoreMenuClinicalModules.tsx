@@ -29,7 +29,7 @@ export const MoreMenuClinicalModules: React.FC<MoreMenuClinicalModulesProps> = (
 ) => {
 	return (
 		<div>
-			<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
+			<div className="text-[11px] font-medium text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
 				Клинические модули
 			</div>
 			<div className="flex flex-col gap-1">

@@ -136,12 +136,12 @@ export const OdontogramActiveViewSlot: React.FC<
 				{liveEstimateToast && !isLiveInvoiceOpen && (
 					<div
 						data-testid="live-estimate-toast"
-						className="live-estimate-toast w-full px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 border border-[var(--primary,#0d9488)]/40 shadow-sm flex items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-1 duration-200"
+						className="live-estimate-toast w-full px-3.5 py-2 rounded-xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper)] border border-[var(--primary,#0d9488)]/40 shadow-sm flex items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-1 duration-200"
 					>
 						<div className="flex items-center gap-2 min-w-0">
 							<span className="w-2 h-2 rounded-full bg-[var(--primary,#0d9488)] shrink-0 animate-pulse" />
 							<span className="text-[var(--ink-muted,#64748b)]">Добавлено в расчёт:</span>
-							<span className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100 truncate">
+							<span className="font-semibold text-[var(--ink,#0f172a)] dark:text-[var(--ink)] truncate">
 								Зуб {liveEstimateToast.toothNumbers.join(", ")} ({liveEstimateToast.state})
 							</span>
 							<span className="font-mono font-medium text-[var(--primary,#0d9488)] shrink-0">
@@ -164,7 +164,7 @@ export const OdontogramActiveViewSlot: React.FC<
 								type="button"
 								aria-label="Закрыть уведомление о смете"
 								onClick={() => setLiveEstimateToast(null)}
-								className="w-6 h-6 rounded-md hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-slate-800 text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors text-sm"
+								className="w-6 h-6 rounded-md hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-[var(--paper-soft)] text-[var(--ink-muted,#94a3b8)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors text-sm"
 							>
 								✕
 							</button>
@@ -175,7 +175,7 @@ export const OdontogramActiveViewSlot: React.FC<
 				{onQuickStateChange && (
 					<div
 						data-testid="odontogram-unified-console"
-						className="odontogram-unified-console w-full flex flex-col gap-2 p-2 sm:p-2.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/50 border border-[var(--line,#e2e8f0)] dark:border-slate-800/80 shadow-2xs"
+						className="odontogram-unified-console w-full flex flex-col gap-2 p-2 sm:p-2.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-soft)]/50 border border-[var(--line)] shadow-2xs"
 					>
 						<OdontogramBatchBar
 							selectedTeeth={selectedTeeth}
@@ -187,7 +187,7 @@ export const OdontogramActiveViewSlot: React.FC<
 							isMixed={isMixed ?? Boolean(sharedViewProps?.mixedDentition)}
 							className="bg-transparent border-0 p-0 shadow-none"
 						/>
-						<div className="w-full h-px bg-[var(--line,#e2e8f0)]/60 dark:bg-slate-800/60" />
+						<div className="w-full h-px bg-[var(--line)]/60" />
 						<OdontogramStampPalette
 							activeStampTool={activeStampTool}
 							setActiveStampTool={setActiveStampTool}
@@ -201,7 +201,7 @@ export const OdontogramActiveViewSlot: React.FC<
 							selectedTeeth={selectedTeeth}
 							className="bg-transparent border-0 p-0 shadow-none"
 						/>
-						<div className="w-full h-px bg-[var(--line,#e2e8f0)]/60 dark:bg-slate-800/60" />
+						<div className="w-full h-px bg-[var(--line)]/60" />
 						<OdontogramQuickTextInput
 							className="bg-transparent border-0 p-0 shadow-none"
 							onApplyBatch={(
@@ -227,7 +227,7 @@ export const OdontogramActiveViewSlot: React.FC<
 					teethData={teethData}
 					isOpen={isLiveInvoiceOpen}
 					onClose={() => setIsLiveInvoiceOpen(false)}
-					className="rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+					className="rounded-2xl border border-[var(--line)] overflow-hidden"
 				/>
 			)}
 		</div>

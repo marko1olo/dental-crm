@@ -20,7 +20,7 @@ export const MoreMenuDisplayModes: React.FC<MoreMenuDisplayModesProps> = (
 ) => {
 	return (
 		<div>
-			<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
+			<div className="text-[11px] font-medium text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
 				Анатомия и отображение
 			</div>
 			<div className="flex flex-col gap-1">

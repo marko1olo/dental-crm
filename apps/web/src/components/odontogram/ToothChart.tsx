@@ -87,9 +87,9 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 			{!hideExpressActions && (
 				<div
 					data-testid="tooth-chart-express-actions"
-					className="w-full flex items-center justify-between gap-1.5 px-3 py-1 mb-2 bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] rounded-xl flex-nowrap overflow-x-auto h-[36px] text-xs"
+					className="w-full flex items-center justify-between gap-1.5 px-3 py-1 mb-2 bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line)] rounded-xl flex-nowrap overflow-x-auto h-[36px] text-xs"
 				>
-					<div className="flex items-center gap-1.5 font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200 shrink-0">
+					<div className="flex items-center gap-1.5 font-semibold text-[var(--ink)] shrink-0">
 						<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 						<span>Экспресс-действия:</span>
 					</div>
@@ -99,7 +99,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							data-testid="mark-intact-dentition-btn"
 							onClick={handleMarkIntact}
 							title="Отметить все зубы интактными (здоровыми)"
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
 							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
 							<span>Санирован / Интактный</span>
@@ -109,9 +109,9 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							data-testid="mark-wisdom-missing-btn"
 							onClick={handleMarkWisdomMissing}
 							title="Отметить зубы мудрости (18, 28, 38, 48) как отсутствующие"
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
-							<Sparkle className="w-3.5 h-3.5 text-slate-500" />
+							<Sparkle className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 							<span>Без 8-ок</span>
 						</button>
 						<button
@@ -119,7 +119,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							data-testid="mark-front-intact-btn"
 							onClick={handleProHygiene}
 							title="Провести комплексную профессиональную гигиену"
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-sky-600" />
 							<span>Профгигиена</span>
@@ -129,7 +129,7 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							data-testid="tooth-chart-apply-fast-caries-btn"
 							onClick={handleFastCaries}
 							title="Зафиксировать кариес дентина K02.1"
-							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper,#ffffff)] dark:bg-slate-800 border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"
+							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
 							<HeartPulse className="w-3.5 h-3.5 text-amber-600" />
 							<span>Быстрая пломба K02.1</span>

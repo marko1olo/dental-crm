@@ -57,7 +57,7 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 				/>
 
 				<div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
-					<div className="text-xs font-black uppercase text-[var(--odontogram-ink-muted,#64748b)] tracking-wider">
+					<div className="text-xs font-medium text-[var(--odontogram-ink-muted,#64748b)]">
 						Выберите клиническое состояние или патологию:
 					</div>
 					<div className="flex flex-col gap-2">

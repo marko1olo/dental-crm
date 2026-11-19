@@ -41,7 +41,7 @@ export const MobileQuadrantGrid: React.FC<MobileQuadrantGridProps> = memo(
 							</div>
 
 							<span
-								className={`text-[11px] font-black font-mono px-1.5 py-0.5 rounded-md uppercase tracking-tight shrink-0 ${
+								className={`text-[11px] font-bold font-mono px-1.5 py-0.5 rounded-md shrink-0 ${
 									isActive
 										? "bg-black/30 text-white"
 										: "bg-[var(--odontogram-surface,var(--paper-soft))] text-[var(--odontogram-ink-muted,var(--muted))] border border-[var(--odontogram-border-subtle,var(--line))]"
