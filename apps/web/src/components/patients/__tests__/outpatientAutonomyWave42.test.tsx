@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_043_DATA } from "../../emr/MedicalRecordStudioModal.js";
+import { DEFAULT_MEDICAL_CARD_DATA } from "../../emr/medicalCardCatalogData.js";
 import { generateMedicalRecordPrintHtml } from "../../emr/clinicalDiaryMath.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,27 +31,27 @@ describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 		});
 
 		it("1.3. guarantees generateMedicalRecordPrintHtml produces ЧЕРНОВИК watermark when visit is draft", () => {
-			const draftHtml = generateMedicalRecordPrintHtml(DEFAULT_043_DATA, { isLocked: false });
+			const draftHtml = generateMedicalRecordPrintHtml(DEFAULT_MEDICAL_CARD_DATA, { isLocked: false });
 			assert.ok(draftHtml.includes('class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'));
 			assert.ok(!draftHtml.includes("ПОДПИСАНО ВРАЧОМ</div>"));
 		});
 
 		it("1.4. guarantees generateMedicalRecordPrintHtml produces ПОДПИСАНО ВРАЧОМ watermark when closed", () => {
-			const signedHtml = generateMedicalRecordPrintHtml(DEFAULT_043_DATA, { isLocked: true });
+			const signedHtml = generateMedicalRecordPrintHtml(DEFAULT_MEDICAL_CARD_DATA, { isLocked: true });
 			assert.ok(signedHtml.includes("ПОДПИСАНО ВРАЧОМ</div>"));
 		});
 
-		it("1.5. guarantees DEFAULT_043_DATA populates non-blocking defaults for secondary fields", () => {
+		it("1.5. guarantees DEFAULT_MEDICAL_CARD_DATA populates non-blocking defaults for secondary fields", () => {
 			assert.ok(
-				DEFAULT_043_DATA.formNumber === "Медицинская карта приёма" ||
-				DEFAULT_043_DATA.formNumber === "043/у",
+				DEFAULT_MEDICAL_CARD_DATA.formNumber === "Медицинская карта приёма" ||
+				DEFAULT_MEDICAL_CARD_DATA.formNumber === "043/у",
 				"formNumber must be clinical friendly or canonical"
 			);
-			assert.strictEqual(DEFAULT_043_DATA.clinic.clinicName, "Стоматологическая клиника «ДЕНТЕ»");
-			assert.strictEqual(DEFAULT_043_DATA.dentalStatus.odontogramTeeth.length, 32);
-			assert.strictEqual(DEFAULT_043_DATA.dentalStatus.dmftIndex.totalDmft, 0);
-			assert.strictEqual(DEFAULT_043_DATA.dentalStatus.cpitnIndex.treatmentNeedCategory, "0_none");
-			assert.strictEqual(DEFAULT_043_DATA.dentalStatus.biteType, "orthognathic");
+			assert.strictEqual(DEFAULT_MEDICAL_CARD_DATA.clinic.clinicName, "Стоматологическая клиника «ДЕНТЕ»");
+			assert.strictEqual(DEFAULT_MEDICAL_CARD_DATA.dentalStatus.odontogramTeeth.length, 32);
+			assert.strictEqual(DEFAULT_MEDICAL_CARD_DATA.dentalStatus.dmftIndex.totalDmft, 0);
+			assert.strictEqual(DEFAULT_MEDICAL_CARD_DATA.dentalStatus.cpitnIndex.treatmentNeedCategory, "0_none");
+			assert.strictEqual(DEFAULT_MEDICAL_CARD_DATA.dentalStatus.biteType, "orthognathic");
 		});
 	});
 });

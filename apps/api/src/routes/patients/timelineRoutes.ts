@@ -182,10 +182,14 @@ export function registerPatientTimelineRoutes(app: FastifyInstance) {
 			const doctorMap = new Map(clinicDoctors.map((d) => [d.id, d]));
 			const enrichedAppointments = patientAppointments.map((apt) => {
 				const doc = apt.doctorUserId ? doctorMap.get(apt.doctorUserId) : null;
+				const firstSpecialty =
+					Array.isArray(doc?.specialties) && typeof doc.specialties[0] === "string"
+						? doc.specialties[0]
+						: "Стоматолог";
 				return {
 					...apt,
 					doctorName: doc?.fullName || "Лечащий врач",
-					doctorSpecialtyRu: doc?.specialties?.[0] || "Стоматолог",
+					doctorSpecialtyRu: firstSpecialty,
 				};
 			});
 

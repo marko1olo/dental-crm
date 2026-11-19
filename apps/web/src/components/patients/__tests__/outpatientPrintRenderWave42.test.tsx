@@ -5,7 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { Form043PrintModal, DEFAULT_043_DATA } from "../../emr/MedicalRecordStudioModal.js";
+import { Form043PrintModal } from "../../emr/MedicalRecordStudioModal.js";
+import { DEFAULT_MEDICAL_CARD_DATA } from "../../emr/medicalCardCatalogData.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,7 +46,7 @@ describe("Form 043/u Emoji Cleanliness & Render (Mandates 8d & 8e)", () => {
 			React.createElement(Form043PrintModal, {
 				isOpen: true,
 				onClose: () => {},
-				initialData: { passport: { ...DEFAULT_043_DATA.passport, patientFullName: "Кузнецов Д. И." } },
+				initialData: { passport: { ...DEFAULT_MEDICAL_CARD_DATA.passport, patientFullName: "Кузнецов Д. И." } },
 				isDraft: true,
 				status: "draft",
 			}),
@@ -67,7 +68,7 @@ describe("Form 043/u Emoji Cleanliness & Render (Mandates 8d & 8e)", () => {
 			React.createElement(Form043PrintModal, {
 				isOpen: true,
 				onClose: () => {},
-				initialData: { passport: { ...DEFAULT_043_DATA.passport, patientFullName: "Кузнецов Д. И." } },
+				initialData: { passport: { ...DEFAULT_MEDICAL_CARD_DATA.passport, patientFullName: "Кузнецов Д. И." } },
 				isDraft: false,
 				status: "signed",
 				isLocked: true,

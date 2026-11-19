@@ -648,7 +648,7 @@ export const CONSENT_PAID_CONTRACT: ConsentTemplate = {
 		{
 			id: "s2",
 			title: "2. Налоговый вычет",
-			content: "По заявлению пациента клиника выдает комплект документов и справку об оплате медицинских услуг по форме КНД 1151156 для ФНС.",
+			content: "По заявлению пациента клиника выдает комплект документов и справку для налогового вычета (13% НДФЛ).",
 		},
 	],
 	aftercareInstructions: ["Сохранять чеки и договор для оформления социального налогового вычета."],
@@ -858,7 +858,7 @@ export function generateSingleConsentTemplatePrintHtml(
 	templateKey: string,
 	options?: { context?: ConsentSubstitutionContext },
 ): string {
-	const doc = getConsentDocumentById(templateKey as any);
+	const doc = getConsentDocumentById(templateKey);
 	const ctx = options?.context;
 	return generateConsentPrintHtml(doc, {
 		patientName: ctx?.patientName || "________________________________________________",
