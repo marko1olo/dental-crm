@@ -20,6 +20,7 @@ export const DirectRvgViewport: React.FC<DirectRvgViewportProps> = ({
 	isSplitCompare,
 	onToggleSplitCompare,
 	canvasRef,
+	isWebGL,
 	isDragOver,
 	onViewportDragOver,
 	onViewportDragLeave,
@@ -186,14 +187,13 @@ export const DirectRvgViewport: React.FC<DirectRvgViewportProps> = ({
 					</div>
 				)}
 
-				{capturedImage ? (
-					<img
-						src={capturedImage}
-						alt={`Снимок зуба ${selectedTeeth.join(", ")}`}
+				{capturedImage && isWebGL ? (
+					<canvas
+						ref={canvasRef}
 						className="rvg-render-canvas"
 						style={{
 							transform: `translate(${panZoom.pan.x}px, ${panZoom.pan.y}px) scale(${panZoom.zoom}) rotate(${panZoom.rotation}deg) scaleX(${panZoom.flipH ? -1 : 1}) scaleY(${panZoom.flipV ? -1 : 1})`,
-							filter: isSplitCompare ? "none" : cssFilterStyle,
+							filter: isSplitCompare ? "none" : undefined,
 							maxWidth: "92%",
 							maxHeight: "92%",
 							objectFit: "contain",
@@ -202,11 +202,34 @@ export const DirectRvgViewport: React.FC<DirectRvgViewportProps> = ({
 						}}
 						data-testid="rvg-render-canvas"
 					/>
-				) : null}
-				<canvas
-					ref={canvasRef}
-					style={{ display: "none" }}
-				/>
+				) : capturedImage ? (
+					<>
+						<img
+							src={capturedImage}
+							alt={`Снимок зуба ${selectedTeeth.join(", ")}`}
+							className="rvg-render-canvas"
+							style={{
+								transform: `translate(${panZoom.pan.x}px, ${panZoom.pan.y}px) scale(${panZoom.zoom}) rotate(${panZoom.rotation}deg) scaleX(${panZoom.flipH ? -1 : 1}) scaleY(${panZoom.flipV ? -1 : 1})`,
+								filter: isSplitCompare ? "none" : cssFilterStyle,
+								maxWidth: "92%",
+								maxHeight: "92%",
+								objectFit: "contain",
+								borderRadius: "0.5rem",
+								boxShadow: "0 10px 40px rgba(0, 0, 0, 0.8)",
+							}}
+							data-testid="rvg-render-canvas"
+						/>
+						<canvas
+							ref={canvasRef}
+							style={{ display: "none" }}
+						/>
+					</>
+				) : (
+					<canvas
+						ref={canvasRef}
+						style={{ display: "none" }}
+					/>
+				)}
 			</div>
 
 			{/* Viewport HUD Telemetry */}

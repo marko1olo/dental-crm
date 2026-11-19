@@ -26,7 +26,7 @@ export interface CbctTunerPlaygroundProps {
 export const CbctTunerPlayground: React.FC<CbctTunerPlaygroundProps> = ({
 	isOpen = true,
 	onClose,
-	initialPatientId = "zakharov",
+	initialPatientId = "",
 }) => {
 	const playgroundId = useId();
 	const state = useCbctTunerPlaygroundState(initialPatientId);

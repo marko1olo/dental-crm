@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react';
+import { formatKopecksToRub } from '@dental/shared';
 import { formatDateTime } from '../useCopilotFormat';
 import type { ArgHumanized, ClinicalDiff } from './actionConfirmTypes';
 import { ARG_LABELS } from './actionConfirmSSOT';
@@ -39,11 +40,33 @@ export function getClinicalDiff(
     return { target: 'Фармакотерапия', from: original, to: `Безопасный аналог: ${safeAlt}`, badge: 'Безопасность DDI' };
   }
 
-  // 4. Discount / Billing / Price
-  if (name.includes('discount') || name.includes('price') || name.includes('billing')) {
-    const pct = args.percent || args.discount_percent || args.amount || 10;
+  // 4. Discount / Billing / Price / Invoice / Cashbox
+  if (
+    name.includes('discount') ||
+    name.includes('price') ||
+    name.includes('billing') ||
+    name.includes('invoice') ||
+    name.includes('cashbox')
+  ) {
+    const total = args.totalRub
+      ? `${Number(args.totalRub).toLocaleString('ru-RU')} ₽`
+      : args.amountKopecks
+      ? formatKopecksToRub(Number(args.amountKopecks))
+      : args.totalKopecks
+      ? formatKopecksToRub(Number(args.totalKopecks))
+      : null;
+    const pct = args.percent || args.discount_percent;
     const reason = String(args.reason || 'Согласовано врачом');
-    return { target: 'Финансовый расчет', from: 'Базовый прейскурант (0%)', to: `Скидка ${pct}% (${reason})`, badge: 'Касса' };
+    const toText = total
+      ? `Счёт: ${total}${pct ? ` (скидка ${pct}%)` : ''} — ${reason}`
+      : `Скидка ${pct || 10}% (${reason})`;
+    return { target: 'Счёт в кассу', from: 'Касса свободна (0 ₽)', to: toText, badge: 'Касса' };
+  }
+
+  // Print / Document / Consent
+  if (name.includes('print') || name.includes('document') || name.includes('consent')) {
+    const template = String(args.template || args.templateId || args.docType || 'Медицинский документ');
+    return { target: `Печать: ${template}`, from: 'Документ не сформирован', to: 'Подготовка бланка к печати', badge: 'Документооборот' };
   }
 
   // 5. Appointment / Reschedule
@@ -57,7 +80,7 @@ export function getClinicalDiff(
   if (name.includes('estimate') || name.includes('treatment_estimate')) {
     const tooth = args.toothNumber || args.tooth || '46';
     const diag = String(args.diagnosis || 'План лечения');
-    const total = args.totalRub ? `${Number(args.totalRub).toLocaleString('ru-RU')} ₽` : args.totalKopecks ? `${Math.round(Number(args.totalKopecks) / 100).toLocaleString('ru-RU')} ₽` : '';
+    const total = args.totalRub ? `${Number(args.totalRub).toLocaleString('ru-RU')} ₽` : args.totalKopecks ? formatKopecksToRub(Number(args.totalKopecks)) : '';
     const servicesCount = Array.isArray(args.services) ? `${args.services.length} услуг(и)` : '';
     const summary = [servicesCount, total].filter(Boolean).join(' • ') || 'Расчёт сформирован';
     return { target: `План лечения: Зуб ${tooth}`, from: 'Первичный статус', to: `${diag} (${summary})`, badge: 'План лечения' };
@@ -104,7 +127,7 @@ export function getClinicalDiff(
     return { target: `Импорт: ${kind}`, from: 'Текущий каталог', to: `Загрузка из файла ${file}`, badge: 'Импорт данных' };
   }
 
-  // 7. Generic fallback if args have fields
+  // 13. Generic fallback if args have fields
   const keys = Object.keys(args);
   if (keys.length > 0) {
     const summary = keys.slice(0, 2).map((k) => `${k}: ${String(args[k])}`).join(', ');
@@ -113,6 +136,8 @@ export function getClinicalDiff(
 
   return null;
 }
+
+export const resolveActionDiff = getClinicalDiff;
 
 export function humanizeArg(
   key: string,
@@ -146,7 +171,7 @@ export function humanizeArg(
     return { label: meta.label, text: `${Number(value).toLocaleString('ru-RU')} ₽`, Icon: meta.icon };
   }
   if (key === 'totalKopecks') {
-    return { label: meta.label, text: `${Math.round(Number(value) / 100).toLocaleString('ru-RU')} ₽`, Icon: meta.icon };
+    return { label: meta.label, text: formatKopecksToRub(Number(value)), Icon: meta.icon };
   }
   if (key === 'toothNumber' || key === 'tooth') {
     return { label: meta.label, text: `Зуб ${value}`, Icon: meta.icon };

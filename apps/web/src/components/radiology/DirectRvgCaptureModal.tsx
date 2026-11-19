@@ -72,7 +72,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 					<DirectRvgViewport
 						modalId={logic.modalId} sensorStatus={logic.sensorStatus} acquisitionProgress={logic.acquisitionProgress} capturedImage={logic.capturedImage} selectedTeeth={logic.selectedTeeth} projectionType={logic.projectionType}
 						panZoom={logic.panZoom} filters={logic.filters} onFiltersChange={logic.setFilters} activePresetId={logic.activePresetId} onSelectPresetId={logic.setActivePresetId} isSplitCompare={logic.isSplitCompare} onToggleSplitCompare={logic.setIsSplitCompare}
-						canvasRef={logic.canvasRef} isDragOver={logic.isDragOver} onViewportDragOver={logic.handleViewportDragOver} onViewportDragLeave={logic.handleViewportDragLeave} onViewportDrop={logic.handleViewportDrop}
+						canvasRef={logic.canvasRef} isWebGL={logic.isWebGL} isDragOver={logic.isDragOver} onViewportDragOver={logic.handleViewportDragOver} onViewportDragLeave={logic.handleViewportDragLeave} onViewportDrop={logic.handleViewportDrop}
 						onTriggerCapture={logic.handleTriggerCapture} onUploadClick={() => logic.fileInputRef.current?.click()} onLoadDemo={logic.handleLoadDemo} isDemo={logic.isDemo} cssFilterStyle={logic.cssFilterStyle}
 					/>
 					<DirectRvgToothAssigner

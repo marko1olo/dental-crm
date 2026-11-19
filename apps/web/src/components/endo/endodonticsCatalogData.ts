@@ -128,7 +128,7 @@ export function getToothCanalAnatomySpec(toothNumber: number): ToothCanalAnatomy
 	if (t === 34 || t === 44) return { minWlMm: 19.0, maxWlMm: 24.5, avgWlMm: 21.5, typicalCanalsCount: 1, vertucciType: "Type I" };
 	if (t === 35 || t === 45) return { minWlMm: 19.5, maxWlMm: 25.0, avgWlMm: 22.0, typicalCanalsCount: 1, vertucciType: "Type I" };
 	// Моляры нижней челюсти
-	if (t === 36 || t === 46) return { minWlMm: 19.0, maxWlMm: 24.0, avgWlMm: 21.0, typicalCanalsCount: 3, vertucciType: "Type II/IV (Mesial)" };
+	if (t === 36 || t === 46) return { minWlMm: 19.0, maxWlMm: 24.0, avgWlMm: 21.0, typicalCanalsCount: 4, vertucciType: "Type II/IV (Mesial + Distal)" };
 	if (t === 37 || t === 47) return { minWlMm: 18.5, maxWlMm: 23.0, avgWlMm: 20.5, typicalCanalsCount: 3, vertucciType: "Type I/IV" };
 	if (t === 38 || t === 48) return { minWlMm: 16.5, maxWlMm: 21.5, avgWlMm: 19.0, typicalCanalsCount: 2, vertucciType: "Type I (C-Shape)" };
 	// Дефолтная норма
@@ -143,15 +143,73 @@ export function formatWorkingLengthDisplay(wl: unknown): string {
 }
 
 export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[] {
+	const t = Number(toothNumber);
+	// Мандаты 8e, 8n: нижние первые моляры 36 и 46 имеют 4 анатомических канала (MB, ML, DB, DL)
+	if (t === 36 || t === 46) {
+		return [
+			{
+				id: `c-mb-${Date.now()}-1`,
+				name: "MB",
+				workingLengthMm: 21.5,
+				masterApicalFile: "#25",
+				taper: ".06",
+				obturationType: "gutta_sealer",
+				sealer: "AH Plus",
+				isObliterated: false,
+				apexLocatorReading: "0.0 (Apex)",
+				referencePoint: "Щечный бугор (MB cusp)",
+			},
+			{
+				id: `c-ml-${Date.now()}-2`,
+				name: "ML",
+				workingLengthMm: 21.0,
+				masterApicalFile: "#25",
+				taper: ".06",
+				obturationType: "gutta_sealer",
+				sealer: "AH Plus",
+				isObliterated: false,
+				apexLocatorReading: "0.0 (Apex)",
+				referencePoint: "Медиально-язычный бугор (ML cusp)",
+			},
+			{
+				id: `c-db-${Date.now()}-3`,
+				name: "DB",
+				workingLengthMm: 21.5,
+				masterApicalFile: "#25",
+				taper: ".06",
+				obturationType: "gutta_sealer",
+				sealer: "AH Plus",
+				isObliterated: false,
+				apexLocatorReading: "0.0 (Apex)",
+				referencePoint: "Дистально-щечный бугор (DB cusp)",
+			},
+			{
+				id: `c-dl-${Date.now()}-4`,
+				name: "DL",
+				workingLengthMm: 21.0,
+				masterApicalFile: "#25",
+				taper: ".06",
+				obturationType: "gutta_sealer",
+				sealer: "AH Plus",
+				isObliterated: false,
+				apexLocatorReading: "0.0 (Apex)",
+				referencePoint: "Дистально-язычный бугор (DL cusp)",
+			},
+		];
+	}
+
 	const defaultCanals = getDefaultCanalsForTooth(toothNumber);
 	return defaultCanals.map((c, idx) => {
 		const rawLen = typeof c.workingLengthMm === "number" ? c.workingLengthMm : Number.parseFloat(String(c.workingLengthMm || ""));
 		const safeLen = Number.isFinite(rawLen) && rawLen > 0 ? rawLen : getAnatomicalWorkingLength(toothNumber, c.canalName);
+		const rawMaf = c.masterApicalFile || "#25";
+		const mafMatch = rawMaf.match(/(#\d+)/);
+		const masterApicalFile: string = (mafMatch && mafMatch[1]) ? mafMatch[1] : rawMaf;
 		return {
 			id: c.id || `c-${c.canalName.toLowerCase()}-${Date.now()}-${idx + 1}`,
 			name: c.canalName,
 			workingLengthMm: Math.max(10, Math.min(35, Math.round(safeLen * 2) / 2)),
-			masterApicalFile: c.masterApicalFile || "#25",
+			masterApicalFile,
 			taper: c.taper?.includes(".06") ? ".06" : ".04",
 			obturationType: "gutta_sealer",
 			sealer: "AH Plus",

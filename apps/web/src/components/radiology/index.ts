@@ -9,4 +9,4 @@ export * from "./DirectRadiologyLauncher.js";
 export * from "./SensorStudyViewer.js";
 export * from "./DirectRvgCaptureModal.js";
 export * from "./RadiologyPatientSearchModal.js";
-export * from "./VisiographComparisonModal.js";
+export { RadiologyConsultationSplit as VisiographComparisonModal, RadiologyConsultationSplit } from "./RadiologyConsultationSplit.js";

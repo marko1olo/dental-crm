@@ -81,6 +81,8 @@ export interface ConsultationChatMessage {
 export type ActiveConsultationTool = "pan" | "laser" | "arrow" | "pencil" | "eraser";
 
 export interface RadiologyConsultationSplitProps {
+	readonly isOpen?: boolean | undefined;
+	readonly asModal?: boolean | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientCardNumber?: string | undefined;
 	readonly patientAge?: string | number | undefined;
@@ -89,6 +91,9 @@ export interface RadiologyConsultationSplitProps {
 	readonly initialLeftStudy?: RadiologyStudy | RadiologyFilmstripItem | undefined;
 	readonly initialRightStudy?: RadiologyStudy | RadiologyFilmstripItem | undefined;
 	readonly patientStudiesHistory?: readonly (RadiologyStudy | RadiologyFilmstripItem)[] | undefined;
+	readonly currentStudy?: RadiologyStudy | RadiologyFilmstripItem | undefined;
+	readonly candidateStudy?: RadiologyStudy | RadiologyFilmstripItem | undefined;
+	readonly historyStudies?: readonly (RadiologyStudy | RadiologyFilmstripItem)[] | undefined;
 	readonly initialSplitMode?: ConsultationSplitMode | undefined;
 	readonly onClose?: (() => void) | undefined;
 	readonly onInsertProtocol?: ((note: string) => void) | undefined;

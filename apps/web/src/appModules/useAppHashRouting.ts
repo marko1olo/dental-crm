@@ -36,7 +36,7 @@ export function useAppHashRouting(
 	const [isEgiszRemdModalOpen, setIsEgiszRemdModalOpen] = useState(() => hasLocationToken(s, h, ["egisz", "remd"]));
 	const [isSmartOpgDirectModalOpen, setIsSmartOpgDirectModalOpen] = useState(() => hasLocationToken(s, h, ["opg"]));
 	const [isCtSelectorDirectModalOpen, setIsCtSelectorDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ct-selector", "ct_selector"]));
-	const [isVisiographDirectModalOpen, setIsVisiographDirectModalOpen] = useState(() => hasLocationToken(s, h, ["visiograph"]));
+	const [isVisiographDirectModalOpen, setIsVisiographDirectModalOpen] = useState(() => hasLocationToken(s, h, ["visiograph", "rvg", "direct-rvg"]));
 	const [isImagingExportDirectModalOpen, setIsImagingExportDirectModalOpen] = useState(() => hasLocationToken(s, h, ["imaging-export"]));
 	const [isLabCreateOrderDirectModalOpen, setIsLabCreateOrderDirectModalOpen] = useState(() => hasLocationToken(s, h, ["lab-create"]));
 	const [isDmsDirectModalOpen, setIsDmsDirectModalOpen] = useState(() => hasLocationToken(s, h, ["dms"]));

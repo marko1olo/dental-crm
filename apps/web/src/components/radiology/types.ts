@@ -191,15 +191,15 @@ export const DEFAULT_WW_WL_PRESETS: readonly WindowLevelPreset[] = [
 
 /** Метаданные исследования */
 export interface RadiologyStudyMetadata {
-	kv?: number; // Напряжение на трубке (кВ)
-	ma?: number; // Ток трубки (мА)
-	exposureSec?: number; // Время экспозиции (сек)
-	pixelSpacingMm?: number; // Разрешение калибровки: мм на пиксель (по умолчанию 0.1)
-	apparatusModel?: string; // Модель аппарата
-	sensorType?: string; // Тип сенсора (CCD, CMOS, PSP)
-	dimensions?: { width: number; height: number };
-	dicomSeriesUid?: string;
-	dicomStudyUid?: string;
+	kv?: number | undefined; // Напряжение на трубке (кВ)
+	ma?: number | undefined; // Ток трубки (мА)
+	exposureSec?: number | undefined; // Время экспозиции (сек)
+	pixelSpacingMm?: number | undefined; // Разрешение калибровки: мм на пиксель (по умолчанию 0.1)
+	apparatusModel?: string | undefined; // Модель аппарата
+	sensorType?: string | undefined; // Тип сенсора (CCD, CMOS, PSP)
+	dimensions?: { width: number; height: number } | undefined;
+	dicomSeriesUid?: string | undefined;
+	dicomStudyUid?: string | undefined;
 }
 
 /** Диагностические находки AI */

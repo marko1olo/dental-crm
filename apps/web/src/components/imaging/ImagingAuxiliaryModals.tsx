@@ -9,7 +9,7 @@ import { convertImagingStudyToRadiologyStudy } from "../radiology/archive/radiol
 import { lazyWithRetry } from "../../lib/lazyWithRetry.js";
 import { RadiologyModule } from "../radiology/RadiologyModule.js";
 import { ImagingExportModal } from "./ImagingExportModal.js";
-import { VisiographComparisonModal } from "../radiology/VisiographComparisonModal.js";
+import { RadiologyConsultationSplit } from "../radiology/RadiologyConsultationSplit.js";
 
 const CbctMprImplantStudioModal = lazyWithRetry(() =>
 	import("../radiology/CbctMprImplantStudioModal.js").then((m) => ({
@@ -114,8 +114,9 @@ export function ImagingAuxiliaryModals({
 				reportSummary={selectedStudySummary ?? null}
 			/>
 
-			<VisiographComparisonModal
+			<RadiologyConsultationSplit
 				isOpen={Boolean(isComparisonOpen)}
+				asModal={true}
 				onClose={() => setIsComparisonOpen?.(false)}
 				patientName={activePatient?.fullName || activePatient?.name || undefined}
 				patientCardNumber={activePatient?.cardNumber || activePatient?.medicalCardNumber || undefined}

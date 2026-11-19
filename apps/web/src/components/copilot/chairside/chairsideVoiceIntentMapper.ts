@@ -3,6 +3,7 @@
  * Выделено из ChairsideCopilotHUD.tsx для соблюдения лимита Sweet Spot 300–480 строк (Мандат 8b).
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import type { DentalVoiceIntent } from "../../../services/voice";
 import type {
   ChairsideToothProposal,
@@ -59,14 +60,15 @@ export function mapVoiceIntentToHUDProposals(
   const procs = intent.procedures804n;
   if (procs && procs.length > 0) {
     result.servicesProposal = procs.map((p, idx: number) => {
-      const priceRub = p.priceRub || 1500;
+      const priceRub = typeof p.priceRub === "number" && Number.isFinite(p.priceRub) ? p.priceRub : 0;
+      const priceKopecks = rublesToKopecks(priceRub);
       return {
         id: `proc-voice-${idx}-${Date.now()}`,
         serviceCode: p.code804n || "A16.07.001",
         regulatoryCode: p.code804n || "A16.07.001",
         code804n: p.code804n || "A16.07.001",
         title: p.name || "Медицинская услуга",
-        priceKopecks: priceRub * 100,
+        priceKopecks,
         priceRub,
         quantity: p.quantity || 1,
         applied: false,

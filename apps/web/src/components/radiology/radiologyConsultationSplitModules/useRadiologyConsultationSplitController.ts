@@ -46,11 +46,18 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 		initialLeftStudy,
 		initialRightStudy,
 		patientStudiesHistory = [],
+		currentStudy,
+		candidateStudy,
+		historyStudies,
 		initialSplitMode,
 		onClose,
 		onInsertProtocol,
 		onSaveSnapshot,
 	} = props;
+
+	const effectiveLeftStudy = initialLeftStudy ?? currentStudy;
+	const effectiveRightStudy = initialRightStudy ?? candidateStudy;
+	const effectiveHistory = patientStudiesHistory.length > 0 ? patientStudiesHistory : (historyStudies ?? []);
 
 	// Mode: "comparison" (Pre/Post-op patient X-ray comparison) vs "atlas" (Anatomical pathologies)
 	const [splitMode, setSplitMode] = useState<ConsultationSplitMode>(() => {
@@ -66,14 +73,14 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 
 	// Effective guaranteed patient studies list
 	const effectivePatientStudies = useMemo(
-		() => createDefaultEffectivePatientStudies(patientStudiesHistory),
-		[patientStudiesHistory],
+		() => createDefaultEffectivePatientStudies(effectiveHistory),
+		[effectiveHistory],
 	);
 
 	// Viewports state
 	const [leftViewport, setLeftViewport] = useState<ViewportState>(() =>
 		createInitialLeftViewport({
-			initialLeftStudy,
+			initialLeftStudy: effectiveLeftStudy,
 			effectiveStudies: effectivePatientStudies,
 			activeToothFdi,
 		}),
@@ -81,7 +88,7 @@ export function useRadiologyConsultationSplitController(props: RadiologyConsulta
 
 	const [rightViewport, setRightViewport] = useState<ViewportState>(() =>
 		createInitialRightViewport({
-			initialRightStudy,
+			initialRightStudy: effectiveRightStudy,
 			effectiveStudies: effectivePatientStudies,
 			splitMode,
 			activeToothFdi,

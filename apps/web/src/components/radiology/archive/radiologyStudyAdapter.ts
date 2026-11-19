@@ -5,11 +5,32 @@ import type { RadiologyModality, RadiologyStudy } from "../types";
  * Конвертер ImagingStudy (DTO сервера) в RadiologyStudy (для вьюеров и 3D MPR Студии).
  * Гарантирует строгую типизацию без loose any и с соблюдением всех обязательных полей.
  */
+export interface AdaptableStudyInput {
+	id: string;
+	kind?: string | null | undefined;
+	title?: string | null | undefined;
+	region?: string | null | undefined;
+	toothCode?: string | number | null | undefined;
+	sliceCount?: number | null | undefined;
+	capturedAt?: string | null | undefined;
+	studyDate?: string | null | undefined;
+	patientId?: string | null | undefined;
+	patientFullName?: string | null | undefined;
+	dicomPatientName?: string | null | undefined;
+	dicomBirthDate?: string | null | undefined;
+	previewUrl?: string | null | undefined;
+	sourceName?: string | null | undefined;
+	aiSummary?: string | null | undefined;
+	dicomStudyUid?: string | null | undefined;
+	seriesInstanceUid?: string | null | undefined;
+	[key: string]: unknown;
+}
+
 export function convertImagingStudyToRadiologyStudy(
-	study: ImagingStudy,
+	study: AdaptableStudyInput,
 	fallbackDoctorName = "Лечащий врач",
 ): RadiologyStudy {
-	const isCbct = study.kind === "cbct" || (study.sliceCount !== null && study.sliceCount !== undefined && study.sliceCount > 1);
+	const isCbct = study.kind === "cbct" || (typeof study.sliceCount === "number" && study.sliceCount > 1);
 	const isOpg = study.kind === "opg";
 
 	let modality: RadiologyModality = "intraoral_rvg";
@@ -34,30 +55,38 @@ export function convertImagingStudyToRadiologyStudy(
 		typicalDoseMicrosv = 10.0;
 	}
 
-	const effectivePatientName = study.patientFullName || study.dicomPatientName || "Пациент";
+	const effectivePatientName = (typeof study.patientFullName === "string" && study.patientFullName.trim().length > 0)
+		? study.patientFullName
+		: (typeof study.dicomPatientName === "string" && study.dicomPatientName.trim().length > 0)
+			? study.dicomPatientName
+			: "Пациент";
+
+	const effectiveStudyDate = (typeof study.capturedAt === "string" && study.capturedAt)
+		|| (typeof study.studyDate === "string" && study.studyDate)
+		|| new Date().toISOString();
 
 	return {
 		id: study.id,
-		...(study.patientId ? { patientId: study.patientId } : {}),
+		...(typeof study.patientId === "string" && study.patientId ? { patientId: study.patientId } : {}),
 		patientName: effectivePatientName,
-		...(study.dicomBirthDate ? { patientBirthDate: study.dicomBirthDate } : {}),
-		studyDate: study.capturedAt || study.studyDate || new Date().toISOString(),
+		...(typeof study.dicomBirthDate === "string" && study.dicomBirthDate ? { patientBirthDate: study.dicomBirthDate } : {}),
+		studyDate: effectiveStudyDate,
 		studyType,
 		modality,
 		modalityLabel,
-		anatomicalArea: study.region || (study.toothCode ? `Зуб ${study.toothCode}` : "Челюстно-лицевая область"),
-		teethFdi: study.toothCode ? [study.toothCode] : [],
+		anatomicalArea: (typeof study.region === "string" && study.region) || (study.toothCode ? `Зуб ${study.toothCode}` : "Челюстно-лицевая область"),
+		teethFdi: study.toothCode ? [String(study.toothCode)] : [],
 		effectiveDoseMicrosv: typicalDoseMicrosv,
 		effectiveDoseMsv: typicalDoseMicrosv / 1000.0,
-		imageUrl: study.previewUrl,
-		thumbnailUrl: study.previewUrl,
+		imageUrl: typeof study.previewUrl === "string" ? study.previewUrl : undefined,
+		thumbnailUrl: typeof study.previewUrl === "string" ? study.previewUrl : undefined,
 		doctorName: fallbackDoctorName,
 		status: "completed",
-		...(study.aiSummary ? { diagnosticNotes: study.aiSummary } : {}),
+		...(typeof study.aiSummary === "string" && study.aiSummary ? { diagnosticNotes: study.aiSummary } : {}),
 		metadata: {
-			apparatusModel: study.sourceName,
-			...(study.dicomStudyUid ? { dicomStudyUid: study.dicomStudyUid } : {}),
-			...(study.seriesInstanceUid ? { dicomSeriesUid: study.seriesInstanceUid } : {}),
+			apparatusModel: typeof study.sourceName === "string" ? study.sourceName : undefined,
+			...(typeof study.dicomStudyUid === "string" && study.dicomStudyUid ? { dicomStudyUid: study.dicomStudyUid } : {}),
+			...(typeof study.seriesInstanceUid === "string" && study.seriesInstanceUid ? { dicomSeriesUid: study.seriesInstanceUid } : {}),
 		},
 	};
 }

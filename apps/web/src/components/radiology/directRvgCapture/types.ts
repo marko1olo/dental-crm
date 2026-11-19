@@ -93,6 +93,7 @@ export interface DirectRvgViewportProps {
 	isSplitCompare: boolean;
 	onToggleSplitCompare: (split: boolean) => void;
 	canvasRef: React.RefObject<HTMLCanvasElement | null>;
+	isWebGL?: boolean | undefined;
 	isDragOver: boolean;
 	onViewportDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
 	onViewportDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;

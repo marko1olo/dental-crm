@@ -4,6 +4,9 @@ import { buildRulerMeasurement, clientToImagePercent } from "./transformHelpers.
 
 export interface UseClinicalImageInteractionsProps {
 	readonly containerRef: React.RefObject<HTMLDivElement | null>;
+	readonly imageRef?: React.RefObject<HTMLImageElement | null> | undefined;
+	readonly naturalWidth?: number | undefined;
+	readonly naturalHeight?: number | undefined;
 	readonly transformStr?: string | undefined;
 	readonly isRulerActive: boolean;
 	readonly isPanActive: boolean;
@@ -18,6 +21,9 @@ export interface UseClinicalImageInteractionsProps {
 
 export function useClinicalImageInteractions({
 	containerRef,
+	imageRef,
+	naturalWidth,
+	naturalHeight,
 	transformStr,
 	isRulerActive,
 	isPanActive,
@@ -67,10 +73,19 @@ export function useClinicalImageInteractions({
 			if (isPanning) setIsPanning(false);
 			if (drawingRuler && containerRef.current) {
 				const { x, y } = toPercent(e.clientX, e.clientY);
+				const imgEl = imageRef?.current;
+				const natW = naturalWidth ?? imgEl?.naturalWidth ?? (imgEl?.clientWidth || 1600);
+				const natH = naturalHeight ?? imgEl?.naturalHeight ?? (imgEl?.clientHeight || 1200);
 				const newM = buildRulerMeasurement({
-					startX: drawingRuler.startX, startY: drawingRuler.startY,
-					endX: x, endY: y, rect: containerRef.current.getBoundingClientRect(),
-					pixelSpacingMm: pixelSpacingMm || 0.04, toothCode,
+					startX: drawingRuler.startX,
+					startY: drawingRuler.startY,
+					endX: x,
+					endY: y,
+					rect: containerRef.current.getBoundingClientRect(),
+					naturalWidth: natW > 0 ? natW : 1600,
+					naturalHeight: natH > 0 ? natH : 1200,
+					pixelSpacingMm: pixelSpacingMm || 0.04,
+					toothCode,
 				});
 				if (newM) {
 					const next = [...activeMeasurements, newM];
@@ -88,7 +103,7 @@ export function useClinicalImageInteractions({
 			window.removeEventListener("mousemove", onMove);
 			window.removeEventListener("mouseup", onUp);
 		};
-	}, [isPanning, drawingRuler, toPercent, activePan, onPanChange, activeMeasurements, onMeasurementsChange, pixelSpacingMm, toothCode, onMeasureApexLength, containerRef]);
+	}, [isPanning, drawingRuler, toPercent, activePan, onPanChange, activeMeasurements, onMeasurementsChange, pixelSpacingMm, toothCode, onMeasureApexLength, containerRef, imageRef, naturalWidth, naturalHeight]);
 
 	const handleMouseDown = (e: React.MouseEvent) => {
 		if (e.button !== 0) return;

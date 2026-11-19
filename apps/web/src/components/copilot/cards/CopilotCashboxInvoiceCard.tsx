@@ -6,6 +6,7 @@
 
 import React, { useState } from "react";
 import { ArrowRight, CheckCircle2, CreditCard, QrCode, Receipt, ShieldCheck } from "lucide-react";
+import { formatKopecksToRub } from "@dental/shared";
 import { formatMoney } from "../useCopilotFormat";
 
 export interface InvoiceCardItem {
@@ -36,7 +37,6 @@ export const CopilotCashboxInvoiceCard: React.FC<CopilotCashboxInvoiceCardProps>
 	onOpenCashbox,
 }) => {
 	const [paid, setPaid] = useState(Boolean(data.isFiscalized));
-	const totalRub = Math.round(data.totalKopecks / 100);
 
 	const handleOpen = () => {
 		if (onOpenCashbox) {
@@ -63,7 +63,7 @@ export const CopilotCashboxInvoiceCard: React.FC<CopilotCashboxInvoiceCardProps>
 		<div
 			className={`p-3.5 rounded-xl border transition-all text-xs shadow-xs ${
 				paid
-					? "border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/20"
+					? "border-[var(--success-line,rgba(16,185,129,0.3))] bg-[var(--success-soft,rgba(16,185,129,0.1))]"
 					: "border-[var(--teal,#0d9488)]/30 bg-[var(--paper)]"
 			}`}
 			data-testid="copilot-cashbox-invoice-card"
@@ -83,7 +83,7 @@ export const CopilotCashboxInvoiceCard: React.FC<CopilotCashboxInvoiceCardProps>
 				<span
 					className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${
 						paid
-							? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+							? "bg-[var(--success-soft,rgba(16,185,129,0.12))] text-[var(--success-ink,#047857)]"
 							: "bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)]"
 					}`}
 				>
@@ -112,10 +112,10 @@ export const CopilotCashboxInvoiceCard: React.FC<CopilotCashboxInvoiceCardProps>
 				<div>
 					<div className="text-[10px] text-[var(--muted)]">Итого к оплате</div>
 					<div className="text-base font-extrabold text-[var(--teal,#0d9488)] tabular-nums">
-						{formatMoney(totalRub)}
+						{formatKopecksToRub(data.totalKopecks)}
 					</div>
 					{data.doctorDiscountPercent && data.doctorDiscountPercent > 0 && (
-						<div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+						<div className="text-[10px] font-bold text-[var(--warning-ink,#b45309)] flex items-center gap-1">
 							<ShieldCheck size={11} />
 							<span>Скидка врача {data.doctorDiscountPercent}% (Гарантия)</span>
 						</div>

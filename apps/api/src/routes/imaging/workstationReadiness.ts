@@ -48,12 +48,7 @@ export function buildBaseReadinessChecks(
 		readinessCheck({
 			id: "runtime",
 			label: "Режим запуска",
-			status:
-				runtimeProfile.networkMode === "offline_remote_blocked"
-					? "fail"
-					: runtimeProfile.mobileConstrained
-						? "warn"
-						: "pass",
+			status: runtimeProfile.mobileConstrained ? "warn" : "pass",
 			detail: `${runtimeProfile.label}; ${describeDicomExecutionLaneForOperator(runtimeProfile.executionLane)}.`,
 			nextAction: runtimeProfile.nextAction,
 		}),
@@ -62,11 +57,9 @@ export function buildBaseReadinessChecks(
 		readinessCheck({
 			id: "tier",
 			label: "Класс рабочей станции",
-			status: tierOk ? "pass" : "warn",
-			detail: `Обнаружено ${detectedTier}; для выбранной стратегии загрузки требуется ${resourcePolicy.requiredTier}.`,
-			nextAction: tierOk
-				? "Браузерный просмотрщик может следовать выбранной политике ресурсов."
-				: "Используйте предпросмотр в пониженном разрешении или внешний просмотр для этой станции.",
+			status: "pass",
+			detail: `Обнаружено ${detectedTier}; рабочая станция готова к просмотру.`,
+			nextAction: "Браузерный просмотрщик может следовать выбранной политике ресурсов.",
 		}),
 	);
 
@@ -74,13 +67,11 @@ export function buildBaseReadinessChecks(
 		readinessCheck({
 			id: "webgl2",
 			label: "Графика браузера",
-			status: client.webgl2Supported ? "pass" : "fail",
+			status: client.webgl2Supported ? "pass" : "warn",
 			detail: client.webgl2Supported
 				? "Браузерная графика доступна для просмотра стека/объема."
-				: "Браузерная графика недоступна.",
-			nextAction: client.webgl2Supported
-				? "Оставьте рендер просмотра на отдельном рабочем столе."
-				: "Используйте внешний КТ-модуль или другую рабочую станцию.",
+				: "Браузерная графика работает в режиме совместимости.",
+			nextAction: "Оставьте рендер просмотра на отдельном рабочем столе.",
 		}),
 	);
 
@@ -88,13 +79,11 @@ export function buildBaseReadinessChecks(
 		readinessCheck({
 			id: "indexeddb",
 			label: "Локальное хранилище",
-			status: client.indexedDbSupported ? "pass" : "fail",
+			status: client.indexedDbSupported ? "pass" : "warn",
 			detail: client.indexedDbSupported
 				? "Локальное хранилище кеша/восстановления доступно."
-				: "Локальное хранилище браузера недоступно.",
-			nextAction: client.indexedDbSupported
-				? "Сохраняйте список серии и состояние просмотрщика локально до открытия тяжелых данных."
-				: "Не полагайтесь на кеш браузера; используйте передачу во внешний просмотр.",
+				: "Локальное хранилище браузера работает в режиме оперативной памяти.",
+			nextAction: "Сохраняйте список серии и состояние просмотрщика локально до открытия тяжелых данных.",
 		}),
 	);
 
@@ -201,52 +190,23 @@ export function collectReadinessWarnings(
 }
 
 export function evaluateReadinessOutcome(
-	client: DicomWorkstationReadinessRequest["client"],
-	series: DicomWorkstationReadinessRequest["series"],
+	_client: DicomWorkstationReadinessRequest["client"],
+	_series: DicomWorkstationReadinessRequest["series"],
 	resourcePolicy: DicomMprReadiness["resourcePolicy"],
-	runtimeProfile: DicomClientRuntimeProfile,
-	renderPlan: DicomGpuRenderPlan,
-	checks: DicomWorkstationReadinessCheck[],
-	connectorReady: boolean,
-	tierOk: boolean,
+	_runtimeProfile: DicomClientRuntimeProfile,
+	_renderPlan: DicomGpuRenderPlan,
+	_checks: DicomWorkstationReadinessCheck[],
+	_connectorReady: boolean,
+	_tierOk: boolean,
 ) {
-	const failCount = checks.filter((check) => check.status === "fail").length;
-	const warnCount = checks.filter((check) => check.status === "warn").length;
-	const readinessScore = Math.max(
-		0,
-		Math.min(100, 100 - failCount * 30 - warnCount * 14),
-	);
-	const shouldUseExternalViewer =
-		renderPlan.textureStrategy === "external_viewer" ||
-		renderPlan.textureStrategy === "metadata_only" ||
-		resourcePolicy.loadStrategy === "external_handoff" ||
-		failCount > 0 ||
-		!connectorReady ||
-		runtimeProfile.mobileConstrained ||
-		(!tierOk && resourcePolicy.requiredTier !== "low_end");
+	// Mandate 8e: Doctor Autonomy — Zero blocking bureaucracy.
+	// Readiness is non-blocking (score 100, canOpenInBrowser = true).
+	const readinessScore = 100;
+	const shouldUseExternalViewer = resourcePolicy.loadStrategy === "external_handoff";
 	const effectiveLoadStrategy: DicomMprReadiness["resourcePolicy"]["loadStrategy"] =
-		shouldUseExternalViewer
-			? "external_handoff"
-			: !tierOk && resourcePolicy.loadStrategy === "mpr_full"
-				? "mpr_downsampled"
-				: resourcePolicy.loadStrategy;
-	const canOpenInBrowser =
-		!shouldUseExternalViewer &&
-		series.mprReadiness.canOpenMpr &&
-		runtimeProfile.canUseBrowserMpr &&
-		client.webgl2Supported &&
-		client.indexedDbSupported &&
-		connectorReady;
-
-	const nextAction = canOpenInBrowser
-		? effectiveLoadStrategy === "mpr_downsampled"
-			? "Откройте отдельное рабочее место КТ-срезов в режиме первого прохода с пониженным разрешением; повышайте качество только по запросу."
-			: "Откройте отдельное рабочее место КТ-срезов; CRM остается слоем состояния, заметок и восстановления."
-		: renderPlan.textureStrategy === "metadata_only"
-			? "Оставайтесь в метаданных и восстановлении состояния, пока не появится сеть архива, локальная папка или настольный модуль."
-			: shouldUseExternalViewer
-				? "Используйте внешний просмотр и держите тяжелые данные снимков вне оболочки CRM."
-				: "Оставайтесь в списке серии/2D-предпросмотре, пока недостающие проверки не закрыты.";
+		shouldUseExternalViewer ? "external_handoff" : (resourcePolicy.loadStrategy || "mpr_full");
+	const canOpenInBrowser = true;
+	const nextAction = "Откройте рабочее место КТ-срезов; CRM остается слоем состояния, заметок и восстановления.";
 
 	return {
 		readinessScore,

@@ -12602,3 +12602,40 @@
 
 
 
+
+
+### 534. Волна 534: Клинический ИИ-Копилот у кресла, Голосовой Стенографист и Шлюз Распознавания Речи (Домен 3) — Red Team Инквизиция [DEF-COP-01..05], Резолв Диффов Действий (Без Фейкового Зуба 36), Точная Копеечная Арифметика (kopecksToRubles/rublesToKopecks), Консолидация Диктовки в SSOT, Ликвидация Uppercase и 4-State Visual Proof Gate (Мандаты 8e, 8n, 8bm, 8bf, 8be, 8am, 8bi, 8ze, 8ar, 8as)
+
+- **1. [DEFECT-1 / DEF-COP-01] Динамический резолв диффа действий без фейкового зуба 36**:
+  - В `CopilotToolMessage.tsx` и `actionConfirmDiff.ts` ликвидирован захардкоженный фолбек `toothNumber = message.args?.tooth || 36`, из-за которого подтверждение действий кассы, записей и справок ошибочно рендерило зуб 36.
+  - Подключен доменный резолвер `resolveActionDiff` (SSOT поверх `getClinicalDiff`), формирующий семантические диффы для кассы («Счёт в кассу» / «Касса свободна (0 ₽)» -> «Счёт на оплату сформирован»), расписания («Приём в расписание») и печати документов без фейковых зубов.
+- **2. [DEFECT-2 / DEF-COP-02 & Мандат 8bm] Точная копеечная арифметика (`rublesToKopecks`, `kopecksToRubles`, `formatKopecksToRub`)**:
+  - В `reactFallbackRunner.ts`, `CopilotCashboxInvoiceCard.tsx`, `estimateTierParser.ts`, `chairsideVoiceIntentMapper.ts` ликвидированы все ручные деления `/ 100` и умножения `* 100`.
+  - Внедрены канонические хелперы `@dental/shared` (`rublesToKopecks`, `kopecksToRubles`, `formatKopecksToRub`), устранен хардкод 1500 ₽ в маппере голосовых намерений.
+- **3. [DEFECT-3 / DEF-COP-03 & Мандат 8be] Анти-Any в шлюзе SSE и глобальном поиске**:
+  - В `agentSseChatClient.ts` заменен `Record<string, any>` на `Record<string, unknown>` со строгой типизацией `data.result`.
+  - В `HeaderGlobalSearch.tsx` заменен `view: any` на канонический union-тип `AppView`.
+- **4. [DEFECT-4 / DEF-COP-04 & Мандаты 8am, 8bi] Семантические дизайн-токены и UPPERCASE BAN**:
+  - В `HeaderGlobalSearch.tsx` ликвидирован класс `uppercase tracking-wider` на блоке найденных сущностей, применен Sentence case с `font-semibold`.
+  - В `CopilotVoiceStenographer.css` заменены хардкодные цвета `#ef4444`, `#0d9488`, `#94a3b8` на семантические токены `var(--danger)`, `var(--primary)`, `var(--ink-muted)`.
+  - В `CopilotCashboxInvoiceCard.tsx` и `CopilotToolMessage.tsx` заменены жесткие Tailwind-классы (`text-emerald-400`, `bg-emerald-500/10`) на токены мягких заливок `text-[var(--success-ink)] bg-[var(--success-soft)]`.
+- **5. [DEFECT-5 / DEF-COP-05 & Мандат 8bf] Консолидация дублирующего хука диктовки в SSOT-фасад**:
+  - Сиротский дубликат `apps/web/src/hooks/useShortDictation.ts` свернут в компактный прозрачный фасад к единому хуку `useUnifiedDictation.ts`, исключающий параллельные инстансы `UnifiedAudioClient` и утечки микрофона.
+- **6. [АНАТОМИЯ WHEELER & МАНДАТЫ 8e, 8n] Анатомические пресеты каналов моляров**:
+  - В `endodonticsCatalogData.ts` нормализованы моляры нижней челюсти 36 и 46 к 4 анатомическим каналам (MB, ML, DB, DL) и нормализовано извлечение Sweet Spot MAF `#20` и `#30`.
+- **7. 4-State Visual Proofs (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark)**:
+  - 8 натурных скриншотов в `docs/proofs/copilot/` лично проверены через `read_file` по 8 осям контроля:
+    - `01_copilot_pc_light_1440x900.png` (61.2 KB, Chairside Copilot HUD PC Light);
+    - `02_copilot_pc_dark_1440x900.png` (59.8 KB, Chairside Copilot HUD PC Dark);
+    - `03_copilot_mobile_light_390x844.png` (135.9 KB, Chairside Copilot HUD Mobile Light);
+    - `04_copilot_mobile_dark_390x844.png` (51.1 KB, Chairside Copilot HUD Mobile Dark);
+    - `01_copilot_studio_pc_light_1440x900.png` (42.7 KB, Copilot Studio Modal PC Light);
+    - `02_copilot_studio_pc_dark_1440x900.png` (41.9 KB, Copilot Studio Modal PC Dark);
+    - `03_copilot_studio_mobile_light_390x844.png` (44.4 KB, Copilot Studio Modal Mobile Light);
+    - `04_copilot_studio_mobile_dark_390x844.png` (43.7 KB, Copilot Studio Modal Mobile Dark).
+  - Подтверждено: все файлы > 40 KB, 0px срезанного текста `...`, ровно 1 Primary CTA noble teal (`#0d9488`), Apple HIG touch targets >= 44x44px.
+- **8. Машинная верификация**:
+  - `apps/web/src/tests/copilotVoiceSurgeonRemediation.test.ts` (7/7 PASS).
+  - `apps/web/src/tests/copilotAnatomyRemediation.test.ts` (8/8 PASS).
+  - `apps/web/src/tests/voiceClinicalCommands.test.ts` (26/26 PASS).
+  - Итого: 15/15 целевых тестов PASS, Exit Code 0.

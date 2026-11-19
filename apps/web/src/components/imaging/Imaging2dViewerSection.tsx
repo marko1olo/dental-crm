@@ -11,6 +11,7 @@ import { ImagingEmptyStateStage } from "./ImagingEmptyStateStage.js";
 import type { Imaging2dViewerSectionProps } from "./imaging2dViewer/types.js";
 import { Imaging2dToolbarWrapper } from "./imaging2dViewer/Imaging2dToolbarWrapper.js";
 import { defaultImagingViewerState } from "../../constants/imagingConstants.js";
+import { ImagingMeasurements } from "./ImagingMeasurements.js";
 
 export type { Imaging2dViewerSectionProps };
 
@@ -20,7 +21,7 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 		computedViewerImageStyle, effectivePreviewUrl, isPreviewLoading,
 		previewLoadError, selectedStudyHasFile, imagingKindLabels,
 		isDicomwebLoading, dicomwebLoadProgress, onOpenCbctStudio,
-		onLoadFromDicomweb, enhancementOn, isRulerActive, currentPixelSpacingMm,
+		onLoadFromDicomweb, enhancementOn, isRulerActive, setIsRulerActive, currentPixelSpacingMm,
 		rulerMeasurements, setRulerMeasurements, isPanActive, pickBrowserImagingFiles,
 		isAnalyzingAI, onAnalyzeAI, selectedStudySummary, selectedStudyToothUpdates,
 		pendingAiProposal, setPendingAiProposal, activeAppointment, activePatient,
@@ -78,6 +79,18 @@ export function Imaging2dViewerSection(props: Imaging2dViewerSectionProps) {
 				setPendingAiProposal={setPendingAiProposal}
 				{...(onStudyUploaded ? { onStudyUploaded } : {})}
 			/>
+
+			{(isRulerActive || rulerMeasurements.length > 0) && (
+				<div className="imaging-measurements-dock border-t border-[var(--line)] bg-[var(--paper-soft)] p-2">
+					<ImagingMeasurements
+						measurements={rulerMeasurements}
+						onMeasurementsChange={setRulerMeasurements}
+						pixelSpacingMm={currentPixelSpacingMm}
+						isRulerActive={isRulerActive}
+						onToggleRuler={() => setIsRulerActive?.(!isRulerActive)}
+					/>
+				</div>
+			)}
 
 			<div className="imaging-notes-dock border-t border-[var(--line)] bg-[var(--paper-soft)] p-2">
 				<ImagingSessionNotesSection

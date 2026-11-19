@@ -48,12 +48,23 @@ export function buildRulerMeasurement(params: {
 	startY: number;
 	endX: number;
 	endY: number;
-	rect: DOMRect;
+	rect?: DOMRect | undefined;
+	naturalWidth?: number | undefined;
+	naturalHeight?: number | undefined;
 	pixelSpacingMm: number;
 	toothCode?: string | number | null | undefined;
 }): ViewerRulerMeasurement | null {
-	const dxPx = ((params.endX - params.startX) / 100) * params.rect.width;
-	const dyPx = ((params.endY - params.startY) / 100) * params.rect.height;
+	// Physical measurement invariant to window size and zoom:
+	// calculate distance in natural detector pixels of the dental radiograph.
+	const naturalW = params.naturalWidth && params.naturalWidth > 0
+		? params.naturalWidth
+		: (params.rect?.width ?? 1600);
+	const naturalH = params.naturalHeight && params.naturalHeight > 0
+		? params.naturalHeight
+		: (params.rect?.height ?? 1200);
+
+	const dxPx = ((params.endX - params.startX) / 100) * naturalW;
+	const dyPx = ((params.endY - params.startY) / 100) * naturalH;
 	const distPx = Math.hypot(dxPx, dyPx);
 	if (distPx <= 8) return null;
 	const lengthMm = Math.round(distPx * (params.pixelSpacingMm || 0.04) * 10) / 10;

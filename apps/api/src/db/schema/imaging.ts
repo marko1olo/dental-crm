@@ -543,7 +543,7 @@ export const bulkImageOperationLogs = pgTable(
 
 // Clinical AI findings & dental radiograph automated pathology analysis
 export const radiologyAiFindings = pgTable(
-	"diagnocat_ai_findings",
+	"radiology_ai_findings",
 	{
 		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
@@ -560,16 +560,17 @@ export const radiologyAiFindings = pgTable(
 			.defaultNow(),
 	},
 	(t) => ({
-		organizationIdIdx: index("diagnocat_ai_findings_organizationId_idx").on(
+		organizationIdIdx: index("radiology_ai_findings_organizationId_idx").on(
 			t.organizationId,
 		),
 	}),
 );
 export const diagnocatAiFindings = radiologyAiFindings;
+export const clinicalAiFindings = radiologyAiFindings;
 
 // Clinical AI diagnostic reports & automated odontogram pathology interpretations
 export const radiologyAiReports = pgTable(
-	"diagnocat_reports",
+	"radiology_ai_reports",
 	{
 		id: uuid("id").primaryKey().default(sql`uuidv7()`),
 		organizationId: uuid("organization_id")
@@ -583,12 +584,13 @@ export const radiologyAiReports = pgTable(
 			.defaultNow(),
 	},
 	(t) => ({
-		organizationIdIdx: index("diagnocat_reports_organization_id_idx").on(
+		organizationIdIdx: index("radiology_ai_reports_organization_id_idx").on(
 			t.organizationId,
 		),
 	}),
 );
 export const diagnocatReports = radiologyAiReports;
+export const clinicalAiReports = radiologyAiReports;
 
 // Intraoral 3D Scan Sessions
 export * from "./intraoralScans.js";

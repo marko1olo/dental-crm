@@ -102,25 +102,25 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 			aria-labelledby="sensor-catalog-title"
 		>
 			<div
-				className="w-full flex flex-col bg-[var(--paper,#0d1117)] border border-[var(--line,#30363d)] shadow-2xl transition-all duration-200 overflow-hidden h-[92dvh] sm:h-[85vh] sm:max-w-4xl rounded-t-[24px] sm:rounded-2xl"
+				className="w-full flex flex-col bg-[var(--paper)] border border-[var(--line)] shadow-2xl transition-all duration-200 overflow-hidden h-[92dvh] sm:h-[85vh] sm:max-w-4xl rounded-t-[24px] sm:rounded-2xl"
 				style={{ maxWidth: "100vw" }}
 			>
 				{/* iOS Drag Handle на мобильных экранах (Apple HIG) */}
 				<div className="flex sm:hidden justify-center pt-2 pb-1 shrink-0">
-					<div className="w-9 h-1 rounded-full bg-[var(--line,#30363d)] opacity-70" aria-hidden="true" />
+					<div className="w-9 h-1 rounded-full bg-[var(--line)] opacity-70" aria-hidden="true" />
 				</div>
 
 				{/* Шапка модального окна */}
-				<header className="flex items-center justify-between px-4 py-3 border-b border-[var(--line,#30363d)] bg-[var(--paper-soft,#161b22)] shrink-0 gap-2 min-h-[52px]">
+				<header className="flex items-center justify-between px-4 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-2 min-h-[52px]">
 					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="w-8 h-8 rounded-lg bg-teal-500/15 text-teal-400 flex items-center justify-center font-bold shrink-0">
 							<HardDrive size={18} />
 						</div>
 						<div className="min-w-0">
-							<h3 id="sensor-catalog-title" className="text-sm sm:text-base font-bold text-[var(--ink,#e2e8f0)] truncate">
+							<h3 id="sensor-catalog-title" className="text-sm sm:text-base font-bold text-[var(--ink)] truncate">
 								Каталог радиовизиографов и датчиков
 							</h3>
-							<p className="text-xs text-[var(--muted,#94a3b8)] truncate hidden sm:block">
+							<p className="text-xs text-[var(--muted)] truncate hidden sm:block">
 								30+ сертифицированных моделей: Vatech, Carestream, Dexis, Planmeca, Sirona, Woodpecker
 							</p>
 						</div>
@@ -129,7 +129,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#ffffff)] bg-transparent hover:bg-[var(--line,#30363d)] border border-[var(--line,#30363d)] cursor-pointer shrink-0 transition-colors"
+						className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer shrink-0 transition-colors"
 						aria-label="Закрыть окно"
 						data-testid="btn-close-sensor-catalog"
 					>
@@ -138,15 +138,15 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 				</header>
 
 				{/* Панель поиска и фильтрации */}
-				<div className="p-3 sm:p-4 border-b border-[var(--line,#30363d)] bg-[var(--paper,#0d1117)] space-y-2.5 shrink-0">
+				<div className="p-3 sm:p-4 border-b border-[var(--line)] bg-[var(--paper)] space-y-2.5 shrink-0">
 					<div className="relative">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted,#94a3b8)] pointer-events-none" />
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)] pointer-events-none" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по модели, производителю, технологии или оптическому разрешению..."
-							className="w-full h-9 pl-9 pr-3 rounded-lg bg-[var(--paper-soft,#161b22)] border border-[var(--line,#30363d)] text-xs sm:text-sm text-[var(--ink,#ffffff)] placeholder:text-[var(--muted,#64748b)] outline-none focus:border-teal-500 transition-colors"
+							className="w-full h-9 pl-9 pr-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs sm:text-sm text-[var(--ink)] placeholder:text-[var(--muted)] outline-none focus:border-teal-500 transition-colors"
 							data-testid="sensor-catalog-search-input"
 						/>
 					</div>
@@ -161,7 +161,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 								className={`min-h-[28px] px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors border cursor-pointer ${
 									activeBrand === brand.id
 										? "bg-[var(--teal,#0d9488)] text-white border-teal-500"
-										: "bg-[var(--paper-soft,#161b22)] text-[var(--muted,#94a3b8)] border-[var(--line,#30363d)] hover:text-[var(--ink,#ffffff)]"
+										: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
 								}`}
 								data-testid={`brand-filter-${brand.id}`}
 							>
@@ -174,7 +174,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 				{/* Список моделей визиографов */}
 				<div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5" data-testid="sensor-catalog-list">
 					{filteredSensors.length === 0 ? (
-						<div className="py-12 text-center text-[var(--muted,#94a3b8)] space-y-2">
+						<div className="py-12 text-center text-[var(--muted)] space-y-2">
 							<HardDrive size={32} className="mx-auto opacity-40 text-teal-400" />
 							<p className="text-sm font-semibold">Модели по запросу не найдены</p>
 							<p className="text-xs">Попробуйте изменить поисковый запрос или фильтр по бренду</p>
@@ -190,16 +190,16 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 									className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
 										isSelected
 											? "bg-teal-500/10 border-teal-500/40 shadow-sm"
-											: "bg-[var(--paper-soft,#161b22)] border-[var(--line,#30363d)] hover:border-teal-500/30"
+											: "bg-[var(--paper-soft)] border-[var(--line)] hover:border-teal-500/30"
 									}`}
 									data-testid={`sensor-card-${sensor.id}`}
 								>
 									<div className="space-y-1 min-w-0 flex-1">
 										<div className="flex items-center gap-2 flex-wrap">
-											<span className="text-xs sm:text-sm font-bold text-[var(--ink,#ffffff)]">
+											<span className="text-xs sm:text-sm font-bold text-[var(--ink)]">
 												{sensor.name}
 											</span>
-											<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--line,#30363d)] text-teal-400">
+											<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--paper)] border border-[var(--line)] text-teal-400">
 												{sensor.brandName}
 											</span>
 											<span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
@@ -213,7 +213,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 											)}
 										</div>
 
-										<div className="flex items-center gap-3 text-xs text-[var(--muted,#94a3b8)] flex-wrap pt-0.5">
+										<div className="flex items-center gap-3 text-xs text-[var(--muted)] flex-wrap pt-0.5">
 											<span className="font-mono text-teal-300">
 												{sensor.resolution} ({sensor.pixelSpacing} мм)
 											</span>
@@ -234,7 +234,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 											type="button"
 											onClick={(e) => handleTestConnection(sensor, e)}
 											disabled={isTesting}
-											className="min-h-[32px] px-2.5 py-1 rounded-lg border border-[var(--line,#30363d)] bg-[var(--paper,#0d1117)] hover:bg-[var(--line,#30363d)] text-[var(--ink,#e2e8f0)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+											className="min-h-[32px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 											title="Проверить отклик сенсора"
 											data-testid={`btn-test-sensor-${sensor.id}`}
 										>
@@ -251,7 +251,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 											className={`min-h-[32px] px-3.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer border-0 ${
 												isSelected
 													? "bg-teal-500 text-white shadow-xs"
-													: "bg-[var(--line,#30363d)] hover:bg-teal-600 text-[var(--ink,#ffffff)]"
+													: "border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)]"
 											}`}
 											data-testid={`btn-select-sensor-${sensor.id}`}
 										>
@@ -272,7 +272,7 @@ export const UniversalSensorCatalogModal: React.FC<UniversalSensorCatalogModalPr
 				</div>
 
 				{/* Нижняя информационная плашка */}
-				<footer className="px-4 py-2.5 border-t border-[var(--line,#30363d)] bg-[var(--paper-soft,#161b22)] shrink-0 flex items-center justify-between text-xs text-[var(--muted,#94a3b8)]">
+				<footer className="px-4 py-2.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 flex items-center justify-between text-xs text-[var(--muted)]">
 					<div className="flex items-center gap-1.5 truncate">
 						<ShieldCheck size={14} className="text-teal-400 shrink-0" />
 						<span className="truncate">Бесконфликтный захват: совместим с EzDent-i, Romexis, Sidexis, CS Imaging</span>

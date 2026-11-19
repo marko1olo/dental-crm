@@ -3,7 +3,8 @@
  * Facade Architecture (Layer 5) — Mandate 8b (<120 lines facade limit)
  */
 
-import React from "react";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ConsultationBottomDock } from "./ConsultationBottomDock.js";
 import {
 	type ConsultationSlot,
@@ -22,7 +23,21 @@ export type { ConsultationSlot, ViewportAnnotation, ViewportState, RadiologyCons
 export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProps> = (props) => {
 	const ctrl = useRadiologyConsultationSplitController(props);
 
-	return (
+	useEffect(() => {
+		if (props.isOpen === false || (!props.isOpen && !props.asModal)) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				e.stopPropagation();
+				props.onClose?.();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [props.isOpen, props.asModal, props.onClose]);
+
+	if (props.isOpen === false) return null;
+
+	const content = (
 		<div
 			ref={ctrl.containerRef}
 			data-testid="radiology-consultation-split"
@@ -110,6 +125,39 @@ export const RadiologyConsultationSplit: React.FC<RadiologyConsultationSplitProp
 			/>
 		</div>
 	);
+
+	if (props.asModal || props.isOpen !== undefined) {
+		if (typeof document === "undefined") return null;
+		return createPortal(
+			<div
+				className="fixed inset-0 z-[99999] flex flex-col p-2 sm:p-4 select-none"
+				style={{
+					backgroundColor: "rgba(15, 23, 42, 0.72)",
+					backdropFilter: "blur(4px)",
+				}}
+				onClick={(e) => {
+					if (e.target === e.currentTarget) props.onClose?.();
+				}}
+			>
+				<div
+					className="w-full h-full flex flex-col rounded-2xl overflow-hidden border border-[#334155] shadow-2xl bg-[#020617]"
+					style={{
+						backgroundColor: "#020617",
+						borderColor: "#334155",
+					}}
+					data-testid="visiograph-comparison-modal"
+					role="dialog"
+					aria-modal="true"
+					aria-label="Сплит-сравнение визиограмм и консультация"
+				>
+					{content}
+				</div>
+			</div>,
+			document.body,
+		);
+	}
+
+	return content;
 };
 
 export default RadiologyConsultationSplit;

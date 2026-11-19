@@ -25,7 +25,7 @@ import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceL
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
-import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
+import { DirectDoctorWalletLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/DoctorWalletLaunchers";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramModuleLauncher } from "./components/odontogram/DirectOdontogramModuleLauncher";
 import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyLauncher";
@@ -37,6 +37,8 @@ import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLaunche
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
 import { DirectWarrantyLauncher } from "./components/warranty/DirectWarrantyLauncher";
+import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
+import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { useAppStore } from "./store/appStore";
@@ -172,6 +174,10 @@ function isStandaloneActive(): boolean {
 		h.includes("visiograph") ||
 		s.includes("rvg") ||
 		h.includes("rvg") ||
+		s.includes("hardware") ||
+		h.includes("hardware") ||
+		s.includes("equipment") ||
+		h.includes("equipment") ||
 		s.includes("implant-passport") ||
 		h.includes("implant-passport") ||
 		s.includes("implant_passport") ||
@@ -315,7 +321,15 @@ function isStandaloneActive(): boolean {
 		s.includes("ceph") ||
 		h.includes("ceph") ||
 		s.includes("trg") ||
-		h.includes("trg")
+		h.includes("trg") ||
+		s.includes("settings") ||
+		h.includes("settings") ||
+		s.includes("access") ||
+		h.includes("access") ||
+		s.includes("staff") ||
+		h.includes("staff") ||
+		s.includes("rbac") ||
+		h.includes("rbac")
 	);
 }
 
@@ -397,6 +411,8 @@ export function AppShell() {
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
 			<DirectWarrantyLauncher />
+			<DirectRvgCaptureLauncher />
+			<DirectSettingsLauncher />
 			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />
 			)}

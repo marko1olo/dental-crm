@@ -6,10 +6,12 @@
 import React, { useState } from 'react';
 import {
   Loader2, CheckCircle2, XCircle, AlertCircle, ChevronDown,
-  Activity, FileText, Receipt, Calendar, Camera, Wrench, Check, X
+  Activity, FileText, Receipt, Calendar, Camera, Wrench, Check, X, Zap
 } from 'lucide-react';
+import { formatKopecksToRub } from '@dental/shared';
 import type { CopilotUiMessage, SelectIdHandler, BookSlotHandler, ConfirmHandler } from '../copilotTypes';
 import { CopilotResultCard } from '../CopilotResultCard';
+import { resolveActionDiff } from '../actionConfirm/actionConfirmDiff';
 
 export interface CopilotToolMessageProps {
   message: Extract<CopilotUiMessage, { kind: 'tool' }>;
@@ -36,7 +38,7 @@ function resolveToolMeta(toolName: string, args?: Record<string, unknown>) {
   } else if (lower.includes('invoice') || lower.includes('billing') || lower.includes('estimate')) {
     Icon = Receipt;
     cleanName = 'createInvoiceDraftTool';
-    if (args?.amountKopecks) paramHint = `${Math.round(Number(args.amountKopecks) / 100).toLocaleString('ru-RU').replace(/\u00A0/g, ' ')} ₽`;
+    if (args?.amountKopecks) paramHint = formatKopecksToRub(Number(args.amountKopecks));
     else if (args?.amount_rub) paramHint = `${Number(args.amount_rub).toLocaleString('ru-RU').replace(/\u00A0/g, ' ')} ₽`;
   } else if (lower.includes('appointment') || lower.includes('slot') || lower.includes('agenda')) {
     Icon = Calendar;
@@ -73,9 +75,10 @@ export const CopilotToolMessage: React.FC<CopilotToolMessageProps> = ({
     ? message.durationMs < 1000 ? `${message.durationMs}мс` : `${(message.durationMs / 1000).toFixed(1)}с`
     : null;
 
-  const toothNumber = message.args?.tooth || 36;
-  const oldState = String(message.args?.old_status || message.args?.previous_status || 'Без патологии / Интактный');
-  const newState = String(message.args?.treatment || message.args?.diagnosis || (message.args?.state === 'C' ? 'K02.1 Кариес дентина, пломба нанокомпозит' : 'Обновление статуса'));
+  const clinicalDiff = resolveActionDiff(message.name, (message.args || {}) as Record<string, unknown>, title);
+  const diffFrom = clinicalDiff?.from ?? 'Текущее состояние';
+  const diffTo = clinicalDiff?.to ?? 'Применение изменений';
+  const diffTarget = clinicalDiff?.target ?? title;
 
   return (
     <div className="copilot-tool-box my-2 p-3 rounded-xl border border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper,#ffffff)] shadow-sm text-xs">
@@ -126,14 +129,25 @@ export const CopilotToolMessage: React.FC<CopilotToolMessageProps> = ({
       {/* Двухфазный визуальный дифф изменений (Two-Phase Contiguous Diff) */}
       {isConfirmation && (
         <div className="mt-2.5 pt-2 border-t border-[var(--line,rgba(15,118,110,0.15))] space-y-2">
+          {diffTarget && (
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink)]">
+              <Zap size={12} className="text-[var(--primary)]" />
+              <span>{diffTarget}</span>
+              {clinicalDiff?.badge && (
+                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink-muted)]">
+                  {clinicalDiff.badge}
+                </span>
+              )}
+            </div>
+          )}
           <div className="copilot-contiguous-diff p-2 rounded-lg bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line,rgba(15,118,110,0.15))] font-mono text-[11px] space-y-1">
             <div className="diff-line diff-del flex items-center gap-1.5 text-[var(--danger,#e11d48)] bg-[var(--danger-soft,rgba(244,63,94,0.1))] px-2 py-1 rounded">
               <span className="font-bold select-none">-</span>
-              <span className="line-through opacity-85">{`Зуб ${toothNumber}: ${oldState}`}</span>
+              <span className="line-through opacity-85">{diffFrom}</span>
             </div>
-            <div className="diff-line diff-add flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded font-medium">
+            <div className="diff-line diff-add flex items-center gap-1.5 text-[var(--success-ink,#047857)] bg-[var(--success-soft,rgba(16,185,129,0.1))] px-2 py-1 rounded font-medium">
               <span className="font-bold select-none">+</span>
-              <span>{`Зуб ${toothNumber}: ${newState}`}</span>
+              <span>{diffTo}</span>
             </div>
           </div>
 
@@ -152,7 +166,7 @@ export const CopilotToolMessage: React.FC<CopilotToolMessageProps> = ({
               className="h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] text-white hover:opacity-95 font-bold flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
             >
               <Check size={13} />
-              <span>Применить в карту</span>
+              <span>Применить действие</span>
             </button>
           </div>
         </div>

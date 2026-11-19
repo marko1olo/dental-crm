@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { usePatientStore } from "../../store/patientStore";
 import { useVisitStore } from "../../store/visitStore";
 import { DirectRvgCaptureModal } from "./DirectRvgCaptureModal";
@@ -28,6 +29,8 @@ export const DirectRvgCaptureLauncher: React.FC = () => {
 			h.includes("rvg-hardware") ||
 			s.includes("rvg=1") ||
 			s.includes("stand=rvg-capture") ||
+			s.includes("stand=rvg") ||
+			s.includes("stand=visiograph") ||
 			h === "#rvg-capture" ||
 			h.startsWith("#rvg-capture?") ||
 			h === "#direct-rvg" ||
@@ -95,10 +98,11 @@ export const DirectRvgCaptureLauncher: React.FC = () => {
 	const patientCoreDraft = usePatientStore((s) => s.patientCoreDraft);
 	const activeToothNumber = useVisitStore((s) => s.activeToothNumber);
 
+	const isDemo = isDemoShowcaseMode();
 	const patientName =
 		patientCoreDraft.fullName?.trim() ||
-		(selectedPatientId ? `Пациент #${selectedPatientId}` : "Пациент не выбран");
-	const patientCardNumber = selectedPatientId ? `ЭМК №${selectedPatientId}` : "Карта не выбрана";
+		(selectedPatientId ? `Пациент #${selectedPatientId}` : (isDemo ? "Иванов Иван Иванович" : "Пациент не выбран"));
+	const patientCardNumber = selectedPatientId ? `ЭМК №${selectedPatientId}` : (isDemo ? "МК-2026/891" : "Карта не выбрана");
 	const initialToothFdi = activeToothNumber ? String(activeToothNumber) : undefined;
 
 	if (!isOpen) return null;

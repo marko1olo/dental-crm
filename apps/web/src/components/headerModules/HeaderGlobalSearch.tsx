@@ -12,6 +12,7 @@ import { showToast } from "../GlobalToast";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { useAppStore } from "../../store/appStore";
+import type { AppView } from "../../utils/routeUtils";
 import type { HeaderGlobalSearchProps } from "./types";
 
 interface SearchResultItem {
@@ -110,7 +111,7 @@ export function HeaderGlobalSearch({
 		const clean = raw.toLowerCase();
 
 		// 1. Клинические и навигационные команды
-		const navMap: Array<{ test: (c: string) => boolean; view: any; label: string }> = [
+		const navMap: Array<{ test: (c: string) => boolean; view: AppView; label: string }> = [
 			{ test: (c) => c.includes("касс") || c.includes("оплат") || c.includes("платеж") || c.includes("чек"), view: "finance", label: "Касса и чеки" },
 			{ test: (c) => c.includes("расписан") || c.includes("запис") || c.includes("календар"), view: "schedule", label: "Расписание приёмов" },
 			{ test: (c) => c.includes("пациент") && (c.includes("картотек") || c.includes("баз") || c.includes("все") || c === "пациенты"), view: "patients", label: "Картотека пациентов" },
@@ -365,7 +366,7 @@ export function HeaderGlobalSearch({
 					className="absolute top-full left-0 right-0 mt-1.5 p-1 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--line,#e2e8f0)] shadow-xl z-50 max-h-72 overflow-y-auto"
 					role="listbox"
 				>
-					<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] border-b border-[var(--line-subtle,#f1f5f9)] flex items-center justify-between">
+					<div className="px-2.5 py-1 text-[10px] font-semibold text-[var(--muted,#64748b)] border-b border-[var(--line-subtle,#f1f5f9)] flex items-center justify-between">
 						<span>Найдено: {filteredPatients.length}</span>
 						{isLoading && (
 							<Loader2
