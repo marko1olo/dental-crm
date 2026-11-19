@@ -4,6 +4,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import {
 	assistantPayrollReport,
 	clinicTimeZone,
@@ -11,8 +12,21 @@ import {
 	doctorPerformance,
 	serviceSales,
 } from "../../services/reports/managerReports.js";
-import { badRequest, periodQuerySchema, resolvePeriod, scopeForReport } from "./reportsShared.js";
+import {
+	badRequest,
+	periodBoundarySchema,
+	periodQuerySchema,
+	resolvePeriod,
+	scopeForReport,
+} from "./reportsShared.js";
 import { requirePayoutAccess } from "../billingRoutes/payoutAccessService.js";
+
+export const doctorPayrollReportQuerySchema = periodQuerySchema.extend({
+	doctorId: z.string().optional(),
+	startDate: periodBoundarySchema.optional(),
+	endDate: periodBoundarySchema.optional(),
+});
+export type DoctorPayrollReportQuery = z.infer<typeof doctorPayrollReportQuerySchema>;
 
 export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstance) {
 	/**
@@ -41,7 +55,7 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 		const payoutAccess = await requirePayoutAccess(request, reply);
 		if (!payoutAccess) return;
 
-		const parsed = periodQuerySchema.safeParse(request.query);
+		const parsed = doctorPayrollReportQuerySchema.safeParse(request.query);
 		if (!parsed.success) {
 			badRequest(
 				reply,
@@ -50,8 +64,14 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 			return;
 		}
 
+		const queryData = {
+			...parsed.data,
+			from: parsed.data.from ?? parsed.data.startDate,
+			to: parsed.data.to ?? parsed.data.endDate,
+		};
+
 		const timeZone = await clinicTimeZone(payoutAccess.organizationId);
-		const period = resolvePeriod(parsed.data, timeZone);
+		const period = resolvePeriod(queryData, timeZone);
 		if (!period.ok) {
 			badRequest(reply, period.message);
 			return;
@@ -68,8 +88,8 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 		if (payoutAccess.scope === "own") {
 			filterDoctorId = payoutAccess.userId;
 		} else {
-			const queryDoctorId = (request.query as Record<string, unknown>)?.doctorId;
-			if (typeof queryDoctorId === "string" && queryDoctorId !== "all") {
+			const queryDoctorId = parsed.data.doctorId;
+			if (queryDoctorId && queryDoctorId !== "all") {
 				filterDoctorId = queryDoctorId;
 			}
 		}

@@ -46,7 +46,7 @@ test("Prescription 107-1/u and Booking: Series and booking numbers are determini
 });
 
 test("Executive CSV export: RFC 4180 compliance with UTF-8 BOM, CRLF, and payment breakdown", async () => {
-	const { buildRfc4180Csv } = await import("../../reports/reportsCsvExport.js");
+	const { buildRfc4180Csv } = await import("../analyticsCsvUtils.js");
 
 	const sampleRows = [
 		["Показатель", "Значение", "Период"],

@@ -237,10 +237,10 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						type="button"
 						onClick={() => setIsStudioOpen(true)}
 						data-testid="payroll-open-studio-cta"
-						className="primary-button min-h-[32px] h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--teal-dark,#0f766e)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
+						className="primary-button min-h-[32px] h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs shrink-0"
 					>
 						<Calculator size={14} aria-hidden="true" />
-						<span className="hidden sm:inline">Открыть ведомость / закрыть период</span>
+						<span className="hidden sm:inline">Расчетная ведомость</span>
 						<span className="sm:hidden">Ведомость</span>
 					</button>
 				</div>

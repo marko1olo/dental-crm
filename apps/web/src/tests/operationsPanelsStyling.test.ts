@@ -27,7 +27,6 @@ const OPERATIONS_PANELS = [
 	"components/schedule/DayConfirmationsPanel.tsx",
 	"components/communications/MessageDeliveryConsole.tsx",
 	"components/communications/campaignPanel/index.tsx",
-	"components/reports/ManagerReportsPanel.tsx",
 ];
 
 /**
@@ -226,11 +225,6 @@ test("числовые колонки помечены для моноширин
 		"нет правила для моноширинных цифр",
 	);
 
-	const reports = read("components/reports/ManagerReportsPanel.tsx");
-	assert.ok(
-		reports.includes('className="ops-num"'),
-		"в отчётах числовые колонки не помечены",
-	);
 	const confirmations = read("components/schedule/DayConfirmationsTable.tsx");
 	assert.ok(
 		confirmations.includes('className="ops-time"'),

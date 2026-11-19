@@ -36,7 +36,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [apiOrders, setApiOrders] = useState<PayrollServiceOrder[] | null>(null);
 	const [apiClosedPeriods, setApiClosedPeriods] = useState<ClosedPayrollPeriodItem[] | null>(null);
 	const [apiSummary, setApiSummary] = useState<DoctorPayrollSummary | null>(null);
-	const [apiDoctorSummaries, setApiDoctorSummaries] = useState<Record<string, DoctorPayrollSummary>>({});
+	const [apiDoctorSummaries, setApiDoctorSummaries] = useState<Record<string, Partial<DoctorPayrollSummary>>>({});
 
 	const doctors: readonly PayrollDoctorProfile[] = useMemo(() => {
 		if (doctorsList && doctorsList.length > 0) {
@@ -111,16 +111,35 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const doctorOrders = useMemo(() => !selectedDoctor ? [] : effectiveOrders.filter((o) => o.doctorId === selectedDoctor.id && o.isPaid54Fz), [selectedDoctor, effectiveOrders]);
 	const pendingPaymentOrders = useMemo(() => !selectedDoctor ? [] : effectiveOrders.filter((o) => o.doctorId === selectedDoctor.id && !o.isPaid54Fz), [selectedDoctor, effectiveOrders]);
 
-	const allDoctorsSummaries = useMemo(() => doctors.map((doc) => ({
-		doctor: doc,
-		summary: (!isDemo && apiDoctorSummaries[doc.id])
-			? { ...apiDoctorSummaries[doc.id], payoutStatus }
-			: calculateDoctorPayrollSummary({ orders: effectiveOrders, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" }),
-	})), [doctors, effectiveOrders, payoutStatus, apiDoctorSummaries, isDemo]);
+	const allDoctorsSummaries: readonly { readonly doctor: PayrollDoctorProfile; readonly summary: DoctorPayrollSummary }[] = useMemo(() => doctors.map((doc) => {
+		const cached = (!isDemo && apiDoctorSummaries[doc.id]) ? apiDoctorSummaries[doc.id] : undefined;
+		const docSummary: DoctorPayrollSummary = cached
+			? {
+				doctorId: cached.doctorId ?? doc.id,
+				doctorName: cached.doctorName ?? doc.name,
+				schemeType: cached.schemeType ?? "net_percentage",
+				totalGrossKopecks: cached.totalGrossKopecks ?? 0,
+				totalLabCostKopecks: cached.totalLabCostKopecks ?? 0,
+				totalMaterialCostKopecks: cached.totalMaterialCostKopecks ?? 0,
+				totalNetBaseKopecks: cached.totalNetBaseKopecks ?? 0,
+				doctorAccruedKopecks: cached.doctorAccruedKopecks ?? 0,
+				chairRentalKopecks: cached.chairRentalKopecks ?? 0,
+				advanceKopecks: cached.advanceKopecks ?? 0,
+				ndfl13TaxKopecks: cached.ndfl13TaxKopecks ?? 0,
+				payoutKopecks: cached.payoutKopecks ?? 0,
+				payoutStatus: payoutStatus,
+				servicesCount: cached.servicesCount ?? 0,
+				minimumGuaranteeApplied: Boolean(cached.minimumGuaranteeApplied),
+			}
+			: calculateDoctorPayrollSummary({ orders: effectiveOrders, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" });
+		return { doctor: doc, summary: docSummary };
+	}), [doctors, effectiveOrders, payoutStatus, apiDoctorSummaries, isDemo]);
 
 	const clinicTotals = useMemo(() => allDoctorsSummaries.reduce((acc, item) => ({
-		gross: acc.gross + item.summary.totalGrossKopecks, lab: acc.lab + item.summary.totalLabCostKopecks,
-		netBase: acc.netBase + item.summary.totalNetBaseKopecks, payout: acc.payout + item.summary.payoutKopecks,
+		gross: acc.gross + item.summary.totalGrossKopecks,
+		lab: acc.lab + item.summary.totalLabCostKopecks,
+		netBase: acc.netBase + item.summary.totalNetBaseKopecks,
+		payout: acc.payout + item.summary.payoutKopecks,
 	}), { gross: 0, lab: 0, netBase: 0, payout: 0 }), [allDoctorsSummaries]);
 
 	const rub = formatKopecksToRubles;
@@ -188,7 +207,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				}
 				await closeSettlementPeriodApi({
 					doctorId: selectedDoctor.id, periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
-					payoutModel: selectedDoctor.payoutModel, chairRentalRub: Math.round(summary.chairRentalKopecks / 100),
+					payoutModel: selectedDoctor.payoutModel, chairRentalKopecks: summary.chairRentalKopecks, chairRentalRub: summary.chairRentalKopecks > 0 ? Math.round(summary.chairRentalKopecks / 100) : 0,
 					advanceRub, grossRevenueKop: summary.totalGrossKopecks, labCostKop: summary.totalLabCostKopecks,
 					materialCostKop: summary.totalMaterialCostKopecks, netBaseKop: summary.totalNetBaseKopecks,
 					categoryPercent: customPercent ?? selectedDoctor.commissionPercent,

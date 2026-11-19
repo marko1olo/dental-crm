@@ -2,11 +2,16 @@ import type { CallOutcome } from "./outcomeTypes.js";
 
 /**
  * Telephony & WebRTC Softphone Call & Line Contracts
+ * Canonical SSOT for @dental/shared, @dental/api, and @dental/web
  */
 
 export type TelephonyProvider = "sip" | "webrtc" | "cloud_pbx" | "local_pbx" | "asterisk" | "mango" | "uis" | "zadarma" | "unknown";
 export type TelephonyCallStatus = "ringing" | "answered" | "connected" | "ended" | "rejected" | "missed";
+export type CallStatus = TelephonyCallStatus;
+export type CallDirection = "inbound" | "outbound";
+export type AgentPresenceState = "available" | "busy" | "away" | "offline";
 export type TelephonyAgentState = "online" | "dnd" | "pause" | "offline";
+export type PatientCategory = "vip" | "primary" | "regular" | "debtor" | "risk";
 export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;
 export type CallTransferType = "blind" | "attended";
 
@@ -26,8 +31,10 @@ export interface SpeechTranscriptUtterance {
 	confidence: number;
 	sentiment: "neutral" | "positive" | "negative";
 }
+export type CallTranscriptUtterance = SpeechTranscriptUtterance;
 
 export interface IncomingCallPayload {
+	id?: string | undefined;
 	callId?: string | undefined;
 	phone: string;
 	patientId: string | null;
@@ -41,14 +48,30 @@ export interface IncomingCallPayload {
 	callStartedAt?: number | undefined;
 	endedAt?: number | undefined;
 	lineId?: 1 | 2 | undefined;
-	direction?: "inbound" | "outbound" | undefined;
+	direction?: CallDirection | undefined;
 	acutePain?: boolean | undefined;
+	transcript?: SpeechTranscriptUtterance[] | undefined;
+	virtualNumber?: string | undefined;
+	calledDid?: string | undefined;
+	utmSource?: string | undefined;
+	utmMedium?: string | undefined;
+	utmCampaign?: string | undefined;
+	utmContent?: string | undefined;
+	utmTerm?: string | undefined;
+	advertisingChannel?: string | undefined;
+	leadId?: string | null | undefined;
+	isLeadCaptured?: boolean | undefined;
+	actionTaken?: string | undefined;
+	outcome?: CallOutcome | undefined;
 }
+
+export type TelephonyCallPayload = IncomingCallPayload;
 
 export interface CallHistoryItem extends IncomingCallPayload {
 	id: string;
 	status: TelephonyCallStatus;
-	actionTaken?: CallOutcome | undefined;
+	direction?: CallDirection | undefined;
+	actionTaken?: CallOutcome | string | undefined;
 	outcome?: CallOutcome | undefined;
 	outcomeNote?: string | undefined;
 	transferTarget?: string | undefined;
@@ -64,3 +87,4 @@ export interface TelephonyLineSession {
 	durationSeconds: number;
 	isMuted: boolean;
 }
+

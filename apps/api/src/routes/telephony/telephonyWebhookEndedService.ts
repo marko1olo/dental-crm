@@ -6,6 +6,7 @@ import {
 	type NormalizedPhone,
 	validateSsrfSafeRecordingUrl,
 } from "../../services/telephony/telephonySecurity.js";
+import { wsBroker } from "../../services/websocketBroker.js";
 
 export interface HandleEndedParams {
 	request: FastifyRequest;
@@ -120,6 +121,16 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 			p.request.log.warn({ updateErr, orgId: p.resolvedOrgId }, "[Telephony] Lead recording update warning");
 		}
 	}
+
+	wsBroker.broadcastToOrganization(p.resolvedOrgId, {
+		type: "TELEPHONY_CALL_ENDED",
+		payload: {
+			callId: p.callId,
+			phone: p.callerPhone.e164,
+			durationSeconds: p.durationSeconds,
+			timestamp: new Date().toISOString(),
+		},
+	});
 
 	return { success: true, event: "ended", durationSeconds: p.durationSeconds };
 }

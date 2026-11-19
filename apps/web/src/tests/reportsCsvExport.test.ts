@@ -7,7 +7,7 @@ import {
 	formatCsvRow,
 	buildRfc4180Csv,
 	generateManagerReportsCsv,
-} from "../components/reports/reportsCsvExport.js";
+} from "../components/analytics/analyticsCsvUtils.js";
 
 describe("reportsCsvExport — RFC 4180 CSV Engine & Safe Division (Mandates 8d, 8e, 8n)", () => {
 	it("safeDivide guarantees 0 occurrences of division by zero", () => {

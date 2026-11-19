@@ -19,12 +19,6 @@ const ManagerialPnlDashboardModal = lazy(() =>
 	})),
 );
 
-const ManagerReportsPanel = lazy(() =>
-	import("../../components/reports/ManagerReportsPanel").then((module) => ({
-		default: module.ManagerReportsPanel,
-	})),
-);
-
 export function AnalyticsSubDashboards({
 	analyticsSection,
 	setAnalyticsSection,
@@ -37,10 +31,10 @@ export function AnalyticsSubDashboards({
 }: AnalyticsSubDashboardsProps) {
 	return (
 		<>
-			{(analyticsSection === "executive" || analyticsSection === "clinic" || analyticsSection === "operational") && (
+			{(analyticsSection === "executive" || analyticsSection === "clinic" || analyticsSection === "operational" || analyticsSection === "reports") && (
 				<ExecutiveDashboard
 					hideHeaderToolbar={false}
-					initialTab={analyticsSection === "operational" ? "chairs" : undefined}
+					initialTab={analyticsSection === "operational" ? "chairs" : (analyticsSection === "reports" ? "financial" : undefined)}
 					period={
 						dateRange === "today"
 							? "day"
@@ -82,12 +76,6 @@ export function AnalyticsSubDashboards({
 				/>
 			)}
 
-			{analyticsSection === "reports" && (
-				<Suspense fallback={<div className="p-8 text-center text-[var(--muted)]">Загрузка отчётов управляющего...</div>}>
-					<ManagerReportsPanel />
-				</Suspense>
-			)}
-
 			{analyticsSection === "marketing" && (
 				<div className="space-y-6">
 					<MarketingAttributionDashboard />
@@ -107,7 +95,7 @@ export function AnalyticsSubDashboards({
 					>
 						<div className="space-y-1">
 							<h3 className="font-semibold text-base flex items-center gap-2">
-								<Sparkles className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+								<Sparkles className="w-4 h-4 text-[var(--primary)]" />
 								Централизованный хаб профосмотров и реколлов
 							</h3>
 							<p className="text-xs sm:text-sm text-[var(--muted)]">
