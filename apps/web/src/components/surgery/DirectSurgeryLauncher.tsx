@@ -95,9 +95,15 @@ export const DirectSurgeryLauncher: React.FC = () => {
 	}, [storeActivePatient, storeDoctorName]);
 
 	const handleOpenEvent = useCallback((e: Event) => {
-		const detail = (e as CustomEvent<{ scenario?: SurgeryScenarioType; toothFdi?: number; tab?: SurgeryHubTab }>).detail;
+		const detail = (e as CustomEvent<{
+			scenario?: SurgeryScenarioType;
+			tooth?: number;
+			toothFdi?: number;
+			tab?: SurgeryHubTab;
+		}>).detail;
 		if (detail?.scenario) setInitialScenario(detail.scenario);
-		if (detail?.toothFdi) setInitialTooth(detail.toothFdi);
+		const targetTooth = detail?.toothFdi ?? detail?.tooth;
+		if (targetTooth && targetTooth >= 11 && targetTooth <= 48) setInitialTooth(targetTooth);
 		if (detail?.tab) setInitialTab(detail.tab);
 		setIsOpen(true);
 	}, []);
@@ -147,9 +153,12 @@ export const DirectSurgeryLauncher: React.FC = () => {
 	useEffect(() => {
 		window.addEventListener("dente:open-surgery", handleOpenEvent);
 		window.addEventListener("dente-open-surgery", handleOpenEvent);
+		window.addEventListener("dente:open-surgery-hub", handleOpenEvent);
+		window.addEventListener("dente-open-surgery-hub", handleOpenEvent);
 		window.addEventListener("dente:open-implant-passport", handleOpenImplantPassport);
 		window.addEventListener("dente-open-implant-passport", handleOpenImplantPassport);
 		window.addEventListener("dente:open-implant-studio", handleOpenImplantStudio);
+		window.addEventListener("dente-open-implant-studio", handleOpenImplantStudio);
 
 		const handleHash = () => {
 			if (checkUrlMatches()) {
@@ -188,9 +197,12 @@ export const DirectSurgeryLauncher: React.FC = () => {
 		return () => {
 			window.removeEventListener("dente:open-surgery", handleOpenEvent);
 			window.removeEventListener("dente-open-surgery", handleOpenEvent);
+			window.removeEventListener("dente:open-surgery-hub", handleOpenEvent);
+			window.removeEventListener("dente-open-surgery-hub", handleOpenEvent);
 			window.removeEventListener("dente:open-implant-passport", handleOpenImplantPassport);
 			window.removeEventListener("dente-open-implant-passport", handleOpenImplantPassport);
 			window.removeEventListener("dente:open-implant-studio", handleOpenImplantStudio);
+			window.removeEventListener("dente-open-implant-studio", handleOpenImplantStudio);
 			window.removeEventListener("hashchange", handleHash);
 			window.removeEventListener("popstate", handleHash);
 		};

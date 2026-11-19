@@ -6,7 +6,7 @@
  * На смартфонах — нативный Bottom Sheet Apple HIG с Drag Handle 36x5px и тач-таргетами >= 44x44px.
  */
 
-import React, { useState, useEffect, useCallback, useId, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useId, useMemo, useRef } from "react";
 import { createPortal, flushSync } from "react-dom";
 import { AlertTriangle, Award, Check, FileText, MessageSquare, Printer, ShieldCheck, Stethoscope, Wrench, X } from "lucide-react";
 import { DentalImplant } from "../icons/DentalIcons";
@@ -347,6 +347,60 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 	const scenarioConfig = SURGERY_SCENARIOS[activeScenario];
 	const currentSystem = useMemo(() => getImplantSystemById(selectedBrand), [selectedBrand]);
 
+	// Мандат 8zq (Zero-Leak Draft): Гарантированный сброс локального состояния хирурга
+	const resetDraftState = useCallback(() => {
+		const resetTooth = initialTooth || 46;
+		setActiveScenario(initialScenario);
+		setActiveTab(initialTab);
+		setToothFdi(resetTooth);
+		setSelectedTeeth(initialTeeth && initialTeeth.length > 0 ? [...initialTeeth] : [resetTooth]);
+		setIsOverdraftNoticeDismissed(false);
+		const defaultBrand = initialBrand || "Osstem";
+		setSelectedBrand(defaultBrand);
+		const sys = getImplantSystemById(defaultBrand);
+		setDiameterMm(initialDiameterMm || sys.defaultDiameterMm || 4.0);
+		setLengthMm(initialLengthMm || sys.defaultLengthMm || 10.0);
+		setTorqueNcm(initialTorqueNcm || sys.defaultTorqueNcm || 35);
+		setBoneDensity("D2");
+		setIsqValue(74);
+		setCapType("fdm");
+		setLotNumber(initialLotNumber || generateSystemSurgeryLot(resetTooth));
+		setSerialNumber("");
+		setCatalogArticle(sys.defaultArticle || "TS3S4010S");
+		setSelectedInventoryItemId(null);
+		setApiPassportData(null);
+	}, [initialTooth, initialScenario, initialTab, initialTeeth, initialBrand, initialDiameterMm, initialLengthMm, initialTorqueNcm, initialLotNumber]);
+
+	const handleClose = useCallback(() => {
+		resetDraftState();
+		onClose();
+	}, [resetDraftState, onClose]);
+
+	// Защита от утечки черновика при смене пациента или закрытии модального хаба
+	const prevPatientIdRef = useRef(patientId);
+	useEffect(() => {
+		if (prevPatientIdRef.current !== patientId) {
+			prevPatientIdRef.current = patientId;
+			resetDraftState();
+		}
+	}, [patientId, resetDraftState]);
+
+	useEffect(() => {
+		if (!isOpen) {
+			resetDraftState();
+		}
+	}, [isOpen, resetDraftState]);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && isOpen) {
+				handleClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, handleClose]);
+
 	const handleSelectBrand = useCallback((brand: string) => {
 		setSelectedBrand(brand);
 		setSelectedInventoryItemId(null);
@@ -536,8 +590,8 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		}
 
 		showToast(`✓ Операция «${scenarioConfig.titleRu} #${teethToProcess.join(", #")}» зафиксирована в карте приёма`, "success");
-		onClose();
-	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, diameterMm, lengthMm, lotNumber, serialNumber, boneDensity, torqueNcm, selectedGraft, selectedMembrane, selectedSuture, financials, selectedBrand, patientId, patientName, onClose]);
+		handleClose();
+	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, diameterMm, lengthMm, lotNumber, serialNumber, boneDensity, torqueNcm, selectedGraft, selectedMembrane, selectedSuture, financials, selectedBrand, patientId, patientName, handleClose]);
 
 	const memoText = useMemo((): string => {
 		return buildSurgicalPostOpMemoText(activeScenario, {
@@ -579,7 +633,15 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div className="surgery-hub-modal-backdrop" data-testid="chairside-surgery-hub-backdrop">
+		<div
+			className="surgery-hub-modal-backdrop"
+			data-testid="chairside-surgery-hub-backdrop"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) {
+					handleClose();
+				}
+			}}
+		>
 			<div className={`surgery-hub-card-container ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} data-testid="chairside-surgery-hub-modal">
 				<div className="surgery-hub-drag-handle" aria-hidden="true" />
 				<header className="surgery-hub-header-bar">
@@ -599,7 +661,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 						<button type="button" onClick={handlePrintDocument} className="secondary-button min-h-[44px] h-11 px-3.5 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center gap-1.5" data-testid="btn-print-surgery-hub" title="Распечатать медицинскую документацию">
 							<Printer size={15} className="text-[var(--primary)] shrink-0" /><span className="hidden sm:inline">Печать</span>
 						</button>
-						<button type="button" onClick={onClose} className="min-h-[44px] h-11 w-11 rounded-xl flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" aria-label="Закрыть хирургический хаб" data-testid="btn-close-surgery-hub">
+						<button type="button" onClick={handleClose} className="min-h-[44px] h-11 w-11 rounded-xl flex items-center justify-center border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" aria-label="Закрыть хирургический хаб" data-testid="btn-close-surgery-hub">
 							<X size={18} />
 						</button>
 					</div>
