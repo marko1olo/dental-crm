@@ -247,6 +247,10 @@ export const createPaymentSchema = z
 		bonusAmountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		pointsToRedeem: z.number().nonnegative().nullable().optional(),
 		guaranteeLetterId: z.string().trim().max(120).nullable().optional(),
+		allowOverdraft: z.boolean().nullable().optional(),
+		isUrgentCare: z.boolean().nullable().optional(),
+		isEmergency: z.boolean().nullable().optional(),
+		hasAcutePain: z.boolean().nullable().optional(),
 		fiscalReceiptNumber: z.string().trim().max(120).nullable().optional(),
 		fiscalReceiptIssuedAt: strictFiscalReceiptIssuedAtSchema
 			.nullable()

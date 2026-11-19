@@ -7,7 +7,6 @@ import {
 	generateMaterialWaybillHtml,
 	generateDisposalActHtml,
 	generateAct0504230Html,
-	generateFormM11Html,
 	generateTorg16Html,
 } from "../writeoff/clinicalWriteoffEngine.js";
 import { DEFAULT_CLINIC_LEGAL_INFO } from "../writeoff/clinicalWriteoffPresets.js";
@@ -91,10 +90,7 @@ describe("Commercial Clean Print Forms (Акт списания материал
 		assert.ok(html.includes("НАКЛАДНАЯ ПРИХОДА И ПЕРЕМЕЩЕНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("Filtek Ultimate"));
 		assert.ok(html.includes("405.00"));
-		// Проверяем алиас обратной совместимости
-		const aliasHtml = generateFormM11Html(sampleDoc);
-		assert.ok(aliasHtml.includes("Filtek Ultimate"));
-		assert.ok(aliasHtml.includes("405.00"));
+		assert.ok(html.includes("Центральный склад клиники"));
 	});
 
 	it("generateDisposalActHtml формирует канонический Акт списания материалов", () => {

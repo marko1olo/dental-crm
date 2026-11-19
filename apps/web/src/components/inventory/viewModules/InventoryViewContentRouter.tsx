@@ -3,23 +3,26 @@ import { InventoryServiceUsagePanel } from "../../InventoryServiceUsagePanel.js"
 import { WarehouseWaybillsTab } from "../WarehouseWaybillsTab.js";
 import { WarehouseInventoryTab } from "../WarehouseInventoryTab.js";
 import { InventoryBatchFefoPanel } from "../../InventoryBatchFefoPanel.js";
-import { InventoryStockTable } from "../WarehouseStockTable.js";
+import { InventoryStockTable, type WarehouseStockItem } from "../WarehouseStockTable.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
+import { inventoryItemFromServer } from "../inventoryDataMappers.js";
+import type { WarehouseInventoryAuditDocument } from "../warehouseInventoryEngine.js";
+import type { sliceDomList } from "../../../utils/domVirtualizationHelper.js";
 
 export interface InventoryViewContentRouterProps {
 	readonly activeSubTab: string;
 	readonly stockViewMode: "standard" | "fefo";
 	readonly organizationId: string;
 	readonly items: readonly InventoryItem[];
-	readonly rulesList: any[];
+	readonly rulesList: readonly unknown[];
 	readonly isLoading: boolean;
 	readonly loadError: string | null;
 	readonly searchQuery: string;
-	readonly inventorySlice: any;
+	readonly inventorySlice: ReturnType<typeof sliceDomList<InventoryItem>>;
 	readonly setDisplayLimit: React.Dispatch<React.SetStateAction<number>>;
 	readonly fetchItems: () => Promise<void> | void;
 	readonly getHeaders: (h?: Record<string, string>) => Record<string, string>;
-	readonly handleApplyInventoryAudit: (doc: any) => Promise<void>;
+	readonly handleApplyInventoryAudit: (doc: WarehouseInventoryAuditDocument) => Promise<void>;
 	readonly openEditModal: (it: InventoryItem) => void;
 	readonly openAddModal: () => void;
 	readonly setAdjustingItem: (it: InventoryItem | null) => void;
@@ -30,7 +33,7 @@ export interface InventoryViewContentRouterProps {
 	readonly setIsWarehouseManagerOpen: (b: boolean) => void;
 	readonly setIsInventoryAuditOpen: (b: boolean) => void;
 	readonly setIsClinicalWriteoffOpen: (b: boolean) => void;
-	readonly handleQuickWriteoffCarpules: () => Promise<any> | void;
+	readonly handleQuickWriteoffCarpules: () => Promise<unknown> | void;
 }
 
 export const InventoryViewContentRouter: React.FC<InventoryViewContentRouterProps> = (props) => {
@@ -41,6 +44,21 @@ export const InventoryViewContentRouter: React.FC<InventoryViewContentRouterProp
 		handleDeleteItem, setIsAcceptanceWaybillsOpen, setIsWarehouseManagerOpen,
 		setIsInventoryAuditOpen, setIsClinicalWriteoffOpen, handleQuickWriteoffCarpules,
 	} = props;
+
+	const toInventoryItem = (item: WarehouseStockItem | string | null | undefined): InventoryItem => {
+		if (!item) {
+			return inventoryItemFromServer({});
+		}
+		if (typeof item === "string") {
+			const found = items.find((it) => it.id === item);
+			return found ?? inventoryItemFromServer({ id: item, name: item });
+		}
+		const found = items.find((it) => it.id === item.id);
+		if (found) {
+			return found;
+		}
+		return inventoryItemFromServer(item);
+	};
 
 	if (activeSubTab === "rules") {
 		return <InventoryServiceUsagePanel organizationId={organizationId} inventoryItems={items} rulesList={rulesList} onRulesUpdated={fetchItems} getHeaders={getHeaders} />;
@@ -71,10 +89,10 @@ export const InventoryViewContentRouter: React.FC<InventoryViewContentRouterProp
 			items={inventorySlice.visibleItems} isLoading={isLoading} organizationId={organizationId}
 			searchQuery={searchQuery} loadError={loadError} hasMore={inventorySlice.hasMore}
 			remainingCount={inventorySlice.remainingCount} onShowMore={() => setDisplayLimit((prev) => prev + 40)}
-			onSelectItem={(item) => openEditModal(item as any)} onEditItem={(item) => openEditModal(item as any)}
-			onDeductItem={(item) => { setAdjustingItem(item as any); setAdjustType("out"); setAdjustAmount(""); }}
-			onReceiveItem={(item) => { setAdjustingItem(item as any); setAdjustType("in"); setAdjustAmount(""); }}
-			onDeleteItem={(item) => handleDeleteItem(typeof item === "string" ? item : item?.id, typeof item === "string" ? item : item?.name)} onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
+			onSelectItem={(item) => openEditModal(toInventoryItem(item))} onEditItem={(item) => openEditModal(toInventoryItem(item))}
+			onDeductItem={(item) => { setAdjustingItem(toInventoryItem(item)); setAdjustType("out"); setAdjustAmount(""); }}
+			onReceiveItem={(item) => { setAdjustingItem(toInventoryItem(item)); setAdjustType("in"); setAdjustAmount(""); }}
+			onDeleteItem={(item) => handleDeleteItem(typeof item === "string" ? item : (item?.id ?? ""), typeof item === "string" ? item : (item?.name ?? ""))} onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
 			onOpenAddModal={openAddModal} onOpenWarehouseManager={() => setIsWarehouseManagerOpen(true)}
 			onOpenInventoryAudit={() => setIsInventoryAuditOpen(true)} onRetry={fetchItems}
 			hideInternalToolbar={true}

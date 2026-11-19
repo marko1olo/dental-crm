@@ -12,12 +12,13 @@ export interface WarehouseAuditToolbarProps {
 	readonly sortOrder: "default" | "fefo" | "discrepancy" | "name";
 	readonly onSortOrderChange: (order: "default" | "fefo" | "discrepancy" | "name") => void;
 	readonly onAutofillFactByBook: () => void;
-	readonly onCreateTorg16: () => void;
+	readonly onCreateWriteoffAct?: () => void;
+	readonly onCreateTorg16?: () => void;
 }
 
 export const WarehouseAuditToolbar: React.FC<WarehouseAuditToolbarProps> = ({
 	searchQuery, onSearchChange, filterTab, onFilterTabChange, totalItemsCount,
-	totals, sortOrder, onSortOrderChange, onAutofillFactByBook, onCreateTorg16,
+	totals, sortOrder, onSortOrderChange, onAutofillFactByBook, onCreateWriteoffAct, onCreateTorg16,
 }) => {
 	return (
 		<div className="warehouse-inventory-toolbar">
@@ -88,7 +89,7 @@ export const WarehouseAuditToolbar: React.FC<WarehouseAuditToolbarProps> = ({
 					title="Приравнять фактическое количество к учетному (все совпадают с учётом)"
 					data-testid="btn-match-all-book-quantities"
 				>
-					<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
+					<CheckCircle2 size={14} className="text-[var(--success)]" />
 					<span>✓ Все совпадают с учётом</span>
 				</button>
 
@@ -96,7 +97,7 @@ export const WarehouseAuditToolbar: React.FC<WarehouseAuditToolbarProps> = ({
 					<button
 						type="button"
 						className="warehouse-btn warehouse-btn-danger"
-						onClick={onCreateTorg16}
+						onClick={onCreateWriteoffAct ?? onCreateTorg16}
 						title="Сформировать акт списания просроченных материалов"
 					>
 						<PackageX size={14} />

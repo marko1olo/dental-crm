@@ -80,6 +80,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 					sortOrder={state.sortOrder}
 					onSortOrderChange={state.setSortOrder}
 					onAutofillFactByBook={state.handleAutofillFactByBook}
+					onCreateWriteoffAct={state.handleCreateTorg16}
 					onCreateTorg16={state.handleCreateTorg16}
 				/>
 

@@ -43,6 +43,16 @@ describe("ConsumablesBatchWriteoffModal SSOT Invariants (Mandates 8e, 8n, 8am, 8
 				isOpen={true}
 				onClose={() => {}}
 				organizationId="test-org-uuid"
+				initialShiftData={{
+					date: "2026-11-20",
+					shiftStats: { completedVisitsCount: 1, totalProceduresCount: 1, breakdown: [] },
+					consumablesSummary: [
+						{ itemId: "4", itemName: "Иглы инъекционные стоматологические", category: "Расходные материалы", unit: "шт.", qtyToDeduct: 12, currentStock: 2, projectedStock: -10, isOverdraft: true, deficit: 10 },
+					],
+					totalItemsCount: 1,
+					overdraftItemsCount: 1,
+					isAlreadyDeducted: false,
+				}}
 			/>,
 		);
 

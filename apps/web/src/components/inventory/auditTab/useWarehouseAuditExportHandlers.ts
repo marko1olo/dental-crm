@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { formatKopecksToRub } from "@dental/shared";
 import {
 	type WarehouseInventoryAuditDocument,
 	type WarehouseTorg16WriteoffAct,
@@ -75,7 +76,7 @@ export function useWarehouseAuditExportHandlers({
 	const handleCreateTorg16 = useCallback(() => {
 		const act = generateTorg16ActFromInventory(currentDocument);
 		onTorg16Generated?.(act);
-		showToast(`Сформирован акт списания ТОРГ-16 № ${act.actNumber} на сумму ${(act.totalCostKopecks / 100).toFixed(2)} ₽`);
+		showToast(`Сформирован акт списания материалов № ${act.actNumber} на сумму ${formatKopecksToRub(act.totalCostKopecks)}`);
 	}, [currentDocument, onTorg16Generated, showToast]);
 
 	const handleSave = useCallback(() => {

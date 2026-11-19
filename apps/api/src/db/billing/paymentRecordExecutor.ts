@@ -17,6 +17,7 @@ import type { TenantDb } from "../client.js";
 import * as schema from "../schema.js";
 import { deductUnspentPointsFifo, processPatientExpiredBonuses } from "../../routes/loyaltyModules/bonusBalanceService.js";
 import { buildPatientLedgers, patientAccountBalanceKopecks } from "../../money/patientDebt.js";
+import { verifyFamilySpendAuthorization } from "../../services/familyWallet/modules/familySpendAuthorization.js";
 import type { ResolvedPaymentSplit } from "./paymentSplitValidation.js";
 import type { LockedPatientForBilling } from "./types.js";
 
@@ -186,8 +187,23 @@ export async function executePaymentInsertAndBalanceDeductions(
 					.limit(1);
 
 				if (letter) {
-					const nextUsed = Number(letter.usedAmountRub) + dmsAmountRub;
-					const nextStatus = nextUsed >= Number(letter.maxCoverageRub) ? "exhausted" : letter.status;
+					const curUsedKop = Math.round(Number(letter.usedAmountRub || 0) * 100);
+					const maxCovKop = Math.round(Number(letter.maxCoverageRub || 0) * 100);
+					const isOverdraftAllowed = Boolean(
+						input.allowOverdraft ||
+						input.isUrgentCare ||
+						input.isEmergency ||
+						input.hasAcutePain ||
+						(input.note && /(острая боль|экстрен|неотлож|urgent|emergency|overdraft)/i.test(input.note)),
+					);
+					if (maxCovKop > 0 && curUsedKop + resolvedDmsKop > maxCovKop && !isOverdraftAllowed) {
+						const availableRub = ((maxCovKop - curUsedKop) / 100).toFixed(2);
+						throw new Error(
+							`Превышен лимит покрытия гарантийного письма ДМС (доступно: ${availableRub} ₽, запрошено: ${dmsAmountRub.toFixed(2)} ₽). Оформите доплату пациентом.`,
+						);
+					}
+					const nextUsed = Number(((curUsedKop + resolvedDmsKop) / 100).toFixed(2));
+					const nextStatus = (maxCovKop > 0 && curUsedKop + resolvedDmsKop >= maxCovKop) ? "exhausted" : letter.status;
 					await tx
 						.update(schema.dmsGuaranteeLetters)
 						.set({
@@ -408,8 +424,24 @@ export async function executePaymentInsertAndBalanceDeductions(
 			.limit(1);
 
 		if (letter) {
-			const nextUsed = Number(letter.usedAmountRub) + input.amountRub;
-			const nextStatus = nextUsed >= Number(letter.maxCoverageRub) ? "exhausted" : letter.status;
+			const curUsedKop = Math.round(Number(letter.usedAmountRub || 0) * 100);
+			const maxCovKop = Math.round(Number(letter.maxCoverageRub || 0) * 100);
+			const requestedKop = Math.round(input.amountRub * 100);
+			const isOverdraftAllowed = Boolean(
+				input.allowOverdraft ||
+				input.isUrgentCare ||
+				input.isEmergency ||
+				input.hasAcutePain ||
+				(input.note && /(острая боль|экстрен|неотлож|urgent|emergency|overdraft)/i.test(input.note)),
+			);
+			if (maxCovKop > 0 && curUsedKop + requestedKop > maxCovKop && !isOverdraftAllowed) {
+				const availableRub = ((maxCovKop - curUsedKop) / 100).toFixed(2);
+				throw new Error(
+					`Превышен лимит покрытия гарантийного письма ДМС (доступно: ${availableRub} ₽, запрошено: ${input.amountRub.toFixed(2)} ₽). Оформите доплату пациентом.`,
+				);
+			}
+			const nextUsed = Number(((curUsedKop + requestedKop) / 100).toFixed(2));
+			const nextStatus = (maxCovKop > 0 && curUsedKop + requestedKop >= maxCovKop) ? "exhausted" : letter.status;
 			await tx
 				.update(schema.dmsGuaranteeLetters)
 				.set({
@@ -428,8 +460,8 @@ export async function executePaymentInsertAndBalanceDeductions(
  * verifyFamilySpendPermission
  *
  * Implements strict BOLA/IDOR protection ([LOY-06]):
- * Verifies relationships and spending authorization flags in `patient_relationships`
- * BEFORE any records or deductions are performed.
+ * Delegates to centralized `verifyFamilySpendAuthorization` (SSOT) for family wallet authorization.
+ * For solo patients without family group, verifies personal advance deposit.
  */
 async function verifyFamilySpendPermission(
 	tx: TenantDb,
@@ -540,62 +572,14 @@ async function verifyFamilySpendPermission(
 		throw new Error("Семейная группа не найдена или заблокирована другой операцией.");
 	}
 
-	// [LOY-06] Relationship verification: if patient is not head or primary patient, verify canSpendFamilyWallet
-	const walletOwnerId = famGroup.headPatientId || famGroup.primaryPatientId;
-	if (walletOwnerId && patientId !== walletOwnerId) {
-		const [rel] = await tx
-			.select()
-			.from(schema.patientRelationships)
-			.where(
-				and(
-					eq(schema.patientRelationships.organizationId, organizationId),
-					or(
-						and(
-							eq(schema.patientRelationships.patientId, walletOwnerId),
-							eq(schema.patientRelationships.relatedPatientId, patientId),
-						),
-						and(
-							eq(schema.patientRelationships.patientId, patientId),
-							eq(schema.patientRelationships.relatedPatientId, walletOwnerId),
-						),
-					),
-				),
-			)
-			.limit(1);
-
-		// [LOY-06] BOLA/IDOR: non-owner family member must have confirmed permission in patient_relationships
-		if (!rel || rel.canSpendFamilyWallet !== true) {
-			throw new Error(
-				`Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).`,
-			);
-		}
-
-		let spendLimitKop: number | undefined;
-		if ((rel as Record<string, unknown> | undefined)?.["spendLimitKopecks"] !== undefined) {
-			spendLimitKop = Number((rel as Record<string, unknown>)["spendLimitKopecks"]);
-		} else if (rel?.notes) {
-			try {
-				const parsed = JSON.parse(rel.notes);
-				if (typeof parsed?.spendLimitKopecks === "number") {
-					spendLimitKop = parsed.spendLimitKopecks;
-				}
-			} catch {
-				// plain text
-			}
-		}
-		if (spendLimitKop !== undefined && spendLimitKop >= 0 && deductionKop > spendLimitKop) {
-			throw new Error(
-				`Превышен установленный лимит списания с семейного депозита (лимит: ${(spendLimitKop / 100).toFixed(2)} ₽, запрошено: ${(deductionKop / 100).toFixed(2)} ₽).`,
-			);
-		}
-	}
-
-	const currentFamKop = Math.round(Number(famGroup.balance || 0) * 100);
-	if (currentFamKop < deductionKop) {
-		throw new Error(
-			`Недостаточно средств на семейном счете. Доступно: ${(currentFamKop / 100).toFixed(2)} ₽, требуется: ${(deductionKop / 100).toFixed(2)} ₽.`,
-		);
-	}
+	// [LOY-06] & Mandate 8bf: Delegated to canonical SSOT verifyFamilySpendAuthorization
+	await verifyFamilySpendAuthorization({
+		tx,
+		organizationId,
+		family: famGroup,
+		patientId,
+		debitKopecks: deductionKop,
+	});
 }
 
 async function deductFamilyWalletBalance(
@@ -627,8 +611,61 @@ async function deductFamilyWalletBalance(
 		}
 	}
 
-	// Для соло-пациента без семейной группы списание фиксируется записью в payments, семейный баланс не трогаем
-	if (!targetFamilyGroupId) return;
+	// Для соло-пациента без семейной группы: списываем строки из advanceDepositTaggings (защита от Double-Spend)
+	if (!targetFamilyGroupId) {
+		const activeTaggings = await tx
+			.select()
+			.from(schema.advanceDepositTaggings)
+			.where(
+				and(
+					eq(schema.advanceDepositTaggings.organizationId, organizationId),
+					eq(schema.advanceDepositTaggings.patientId, patientId),
+					eq(schema.advanceDepositTaggings.allocationStatus, "unallocated"),
+				),
+			)
+			.for("update");
+
+		let remainingToDeductKop = deductionKop;
+		for (const tag of activeTaggings) {
+			if (remainingToDeductKop <= 0) break;
+			const tagKop = Math.round(Number(tag.depositAmountRub || 0) * 100);
+			if (tagKop <= remainingToDeductKop) {
+				remainingToDeductKop -= tagKop;
+				await tx
+					.update(schema.advanceDepositTaggings)
+					.set({ allocationStatus: "spent" })
+					.where(eq(schema.advanceDepositTaggings.id, tag.id));
+			} else {
+				const nextTagKop = tagKop - remainingToDeductKop;
+				remainingToDeductKop = 0;
+				await tx
+					.update(schema.advanceDepositTaggings)
+					.set({ depositAmountRub: (nextTagKop / 100).toFixed(2) })
+					.where(eq(schema.advanceDepositTaggings.id, tag.id));
+			}
+		}
+
+		if (remainingToDeductKop > 0) {
+			const [pat] = await tx
+				.select({ fullName: schema.patients.fullName })
+				.from(schema.patients)
+				.where(and(eq(schema.patients.id, patientId), eq(schema.patients.organizationId, organizationId)))
+				.limit(1);
+
+			// Если аванс был зафиксирован через общий леджер без предварительного тегирования,
+			// фиксируем списание аванса через advanceDepositTaggings со статусом spent
+			await tx.insert(schema.advanceDepositTaggings).values({
+				organizationId,
+				patientId,
+				patientName: pat?.fullName || "Пациент клиники",
+				depositAmountRub: (remainingToDeductKop / 100).toFixed(2),
+				taggedTargetType: "treatment_plan",
+				taggedTargetName: "Списание личного аванса по платежу",
+				allocationStatus: "spent",
+			});
+		}
+		return;
+	}
 
 	const [famGroup] = await tx
 		.select()
@@ -651,6 +688,7 @@ async function deductFamilyWalletBalance(
 		.update(schema.familyGroups)
 		.set({
 			balance: newFamRub,
+			updatedAt: new Date(),
 		})
 		.where(eq(schema.familyGroups.id, famGroup.id));
 }

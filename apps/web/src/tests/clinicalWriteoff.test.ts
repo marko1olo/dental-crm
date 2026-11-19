@@ -26,7 +26,7 @@ import {
 	exportClinicalWriteoffToCsv,
 	findBestBatchFefo,
 	generateAct0504230Html,
-	generateFormM11Html,
+	generateMaterialWaybillHtml,
 	generateTorg16Html,
 	getClinicalMaterialById,
 	getDaysUntilExpiration,
@@ -245,7 +245,7 @@ describe("Multi-Service Aggregation & Quantity Scaling", () => {
 		const lines = aggregateWriteoffFromServices(
 			services,
 			DENTAL_CABINET_STOCK_PRESETS,
-			"cab_01_therapy",
+			"cab-01",
 			"2026-08-22",
 		);
 
@@ -261,7 +261,7 @@ describe("Multi-Service Aggregation & Quantity Scaling", () => {
 		const anesLine = lines.find((l) => l.materialId === "mat_articaine_ultracain");
 		assert.ok(anesLine);
 		assert.equal(anesLine.standardQuantity, 1);
-		assert.equal(anesLine.lotNumber, "LOT-ULTRA-2026F");
+		assert.equal(anesLine.lotNumber, "LOT-ART-2026");
 	});
 
 	it("Масштабирует расход при множителе услуги (например, 3 канала в эндодонтии)", () => {
@@ -676,11 +676,10 @@ describe("Statutory Write-off Act HTML Generators (0504230, M-11, TORG-16)", () 
 		assert.ok(html.includes("405.00"));
 	});
 
-	it("generateFormM11Html формирует Требование-накладную на выдачу материалов", () => {
-		const html = generateFormM11Html(sampleDoc);
+	it("generateMaterialWaybillHtml формирует Накладную прихода и перемещения материалов", () => {
+		const html = generateMaterialWaybillHtml(sampleDoc);
 
-		assert.ok(html.includes("ТРЕБОВАНИЕ НА ВЫДАЧУ МАТЕРИАЛОВ"));
-		assert.ok(html.includes("Требование-накладная на выдачу материалов"));
+		assert.ok(html.includes("НАКЛАДНАЯ ПРИХОДА И ПЕРЕМЕЩЕНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("COMP-FILT-ULT"));
 		assert.ok(html.includes("405.00"));
 	});

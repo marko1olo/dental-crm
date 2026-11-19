@@ -12,7 +12,7 @@ import {
 	formatKopecksToRub,
 } from "@dental/shared";
 
-export type CashboxTenderType = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty" | "installment" | "certificate";
+export type CashboxTenderType = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty" | "installment" | "certificate" | "insurance";
 export type ClientPayerType = "physical_person" | "legal_entity" | "sole_proprietor";
 export type ReceiptDeliveryChannel = "print" | "sms" | "email" | "electronic_only";
 export type ReceiptPrintFormat = "tape_58mm" | "tape_80mm" | "act_a4";

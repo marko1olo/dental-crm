@@ -44,11 +44,11 @@ export const BatchWriteoffConsumablesTable: React.FC<BatchWriteoffConsumablesTab
 							<div className="text-[11px] text-[var(--muted,#64748b)]">
 								Остаток: {item.currentStock} ➔{" "}
 								{item.isOverdraft ? (
-									<span className="font-bold text-amber-600 dark:text-amber-400">
+									<span className="font-bold text-[var(--warning)]">
 										⚠️ {item.projectedStock} (дефицит)
 									</span>
 								) : (
-									<span className="font-semibold text-emerald-600 dark:text-emerald-400">
+									<span className="font-semibold text-[var(--success)]">
 										{item.projectedStock}
 									</span>
 								)}

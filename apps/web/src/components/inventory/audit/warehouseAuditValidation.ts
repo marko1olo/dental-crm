@@ -41,7 +41,7 @@ export function validateInventoryAuditDraft(doc: Partial<WarehouseInventoryAudit
 				warnings.push(`Товар «${it.nameRu}» не имеет номера серии (LOT).`);
 			}
 			if (it.fefoStatus === "expired") {
-				warnings.push(`Товар «${it.nameRu}» (партия ${it.batchNumber}) просрочен и подлежит списанию по ТОРГ-16.`);
+				warnings.push(`Товар «${it.nameRu}» (партия ${it.batchNumber}) просрочен и подлежит списанию по акту утилизации материалов.`);
 			}
 		}
 	}
@@ -76,7 +76,7 @@ export function generateTorg16ActFromInventory(
 	});
 
 	return {
-		actNumber: `ТОРГ-16-${doc.documentNumber.replace(/[^0-9a-zA-Zа-яА-Я-]/g, "")}`,
+		actNumber: `АКТ-СПИС-${doc.documentNumber.replace(/[^0-9a-zA-Zа-яА-Я-]/g, "")}`,
 		actDate: doc.auditDate || new Date().toISOString().slice(0, 10),
 		inventoryDocNumber: doc.documentNumber, organizationNameRu: doc.organizationNameRu,
 		organizationOkpo: doc.organizationOkpo, organizationInn: doc.organizationInn,

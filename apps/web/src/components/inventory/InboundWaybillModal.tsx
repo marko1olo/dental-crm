@@ -9,6 +9,7 @@
 import React, { useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, CheckCircle2, Loader2, PackagePlus, Plus, X, Zap, Box } from "lucide-react";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { InboundWaybillItemsTable } from "./InboundWaybillItemsTable.js";
 import { CANONICAL_DENTAL_SUPPLIERS } from "./acceptanceWaybills/acceptanceCanonicalSuppliers.js";
 import { generateAcceptanceWaybillHtml } from "./acceptanceWaybills/acceptanceWaybillPrintDocument.js";
@@ -151,8 +152,8 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 				inventoryItemId: it.inventoryItemId || it.itemId,
 				name: it.name || "",
 				quantity: Number(it.quantity) || 1,
-				priceRub: Number(it.unitPriceKopecks ? it.unitPriceKopecks / 100 : (it.unitCostRub || it.priceRub)) || 0,
-				priceKopecks: Number(it.unitPriceKopecks || (it.unitCostRub ? Number(it.unitCostRub) * 100 : 0)) || 0,
+				priceRub: Number(it.unitPriceKopecks ? kopecksToRubles(it.unitPriceKopecks) : (it.unitCostRub || it.priceRub)) || 0,
+				priceKopecks: Number(it.unitPriceKopecks || (it.unitCostRub ? rublesToKopecks(Number(it.unitCostRub)) : 0)) || 0,
 				unit: it.unit || "шт.",
 				lotNumber: it.batchNumber || it.lotNumber || it.lot || `LOT-${idx + 1}`,
 				expirationDate: it.expirationDate || new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
@@ -187,7 +188,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 			if (field === "priceRub") {
 				const rub = Math.max(0, Number(val) || 0);
 				updated.priceRub = rub;
-				updated.priceKopecks = Math.round(rub * 100);
+				updated.priceKopecks = rublesToKopecks(rub);
 				updated.unitCostRub = rub;
 			}
 			if (field === "quantity") {
@@ -201,7 +202,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 					if (matched.unitCostRub) {
 						const rub = Number(matched.unitCostRub);
 						updated.priceRub = rub;
-						updated.priceKopecks = Math.round(rub * 100);
+						updated.priceKopecks = rublesToKopecks(rub);
 						updated.unitCostRub = rub;
 					}
 				}
@@ -216,7 +217,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 			name: it.name,
 			quantity: it.quantity,
 			priceRub: it.priceRub,
-			priceKopecks: Math.round(it.priceRub * 100),
+			priceKopecks: rublesToKopecks(it.priceRub),
 			unit: it.unit,
 			lotNumber: it.lot,
 			expirationDate: it.exp,
@@ -233,7 +234,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 				name: newItemName.trim(),
 				quantity: 1,
 				priceRub: cost,
-				priceKopecks: Math.round(cost * 100),
+				priceKopecks: rublesToKopecks(cost),
 				unit: newItemUnit,
 				lotNumber: `LOT-${Date.now().toString().slice(-4)}`,
 				expirationDate: "2028-12-31",
@@ -244,7 +245,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 	};
 
 	const totalKopecks = useMemo(() => lines.reduce((acc, l) => acc + (Number(l.quantity) || 0) * (Number(l.priceKopecks) || 0), 0), [lines]);
-	const totalRub = totalKopecks / 100;
+	const totalRub = kopecksToRubles(totalKopecks);
 
 	const handlePrintWaybill = () => {
 		const supplierObj = CANONICAL_DENTAL_SUPPLIERS.find(

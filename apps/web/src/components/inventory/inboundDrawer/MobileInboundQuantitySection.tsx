@@ -16,7 +16,7 @@ export const MobileInboundQuantitySection: React.FC<MobileInboundQuantitySection
 		<>
 			{/* Large Quantity Stepper */}
 			<div className="text-center">
-				<span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+				<span className="text-xs font-medium text-[var(--muted)]">
 					Количество к поступлению
 				</span>
 				<div className="mobile-inventory-stepper-wrap">

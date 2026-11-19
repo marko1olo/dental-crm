@@ -28,6 +28,16 @@ describe("ShiftBatchDeductionModal SSR & Component Verification (Mandates 8e, 8n
 				isOpen={true}
 				onClose={() => {}}
 				organizationId="test-org-uuid"
+				initialShiftData={{
+					date: "2026-11-20",
+					shiftStats: { completedVisitsCount: 1, totalProceduresCount: 1, breakdown: [] },
+					consumablesSummary: [
+						{ itemId: "1", itemName: "Перчатки смотровые", category: "Расходники", unit: "пар", qtyToDeduct: 2, currentStock: 0, projectedStock: -2, isOverdraft: true, deficit: 2 },
+					],
+					totalItemsCount: 1,
+					overdraftItemsCount: 1,
+					isAlreadyDeducted: false,
+				}}
 			/>,
 		);
 

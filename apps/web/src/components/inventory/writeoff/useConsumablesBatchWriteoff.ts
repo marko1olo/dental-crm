@@ -51,6 +51,7 @@ export const DEFAULT_SHIFT_DATA: ShiftBatchWriteoffData = {
 export interface UseConsumablesBatchWriteoffOptions {
 	isOpen: boolean;
 	organizationId?: string | undefined;
+	initialShiftData?: ShiftBatchWriteoffData | undefined;
 	getHeaders?: ((extra?: Record<string, string> | undefined) => Record<string, string>) | undefined;
 	stockBatches?: readonly unknown[] | undefined;
 	onWriteoffCompleted?: (() => void | Promise<void>) | undefined;
@@ -62,6 +63,7 @@ export interface UseConsumablesBatchWriteoffOptions {
 export function useConsumablesBatchWriteoff({
 	isOpen,
 	organizationId = "",
+	initialShiftData,
 	getHeaders,
 	stockBatches,
 	onWriteoffCompleted,
@@ -69,7 +71,7 @@ export function useConsumablesBatchWriteoff({
 	onConfirmWriteoff,
 	onClose,
 }: UseConsumablesBatchWriteoffOptions) {
-	const [data, setData] = useState<ShiftBatchWriteoffData>(DEFAULT_SHIFT_DATA);
+	const [data, setData] = useState<ShiftBatchWriteoffData>(initialShiftData || DEFAULT_SHIFT_DATA);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);

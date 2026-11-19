@@ -73,6 +73,7 @@ export interface ConsumablesBatchWriteoffModalProps {
 	readonly defaultFormType?: string | undefined;
 	readonly confirmTestId?: string | undefined;
 	readonly confirmLabel?: string | undefined;
+	readonly initialShiftData?: ShiftBatchWriteoffData | undefined;
 }
 
 export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffModalProps> = ({
@@ -98,6 +99,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 	getHeaders,
 	confirmTestId,
 	confirmLabel,
+	initialShiftData,
 }) => {
 	const effectiveDoctor = doctorFullName || doctorName;
 	const firstService = Array.isArray(initialServices) && initialServices.length > 0 ? initialServices[0] : null;
@@ -120,6 +122,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 	} = useConsumablesBatchWriteoff({
 		isOpen,
 		organizationId,
+		initialShiftData,
 		getHeaders,
 		stockBatches,
 		onWriteoffCompleted,
