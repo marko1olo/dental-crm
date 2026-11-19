@@ -1,7 +1,17 @@
 import { useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import { type Dashboard, getPatientActiveLabStatus } from "@dental/shared";
 import type { QuickBookingAppointmentType } from "./patientReliabilityScore";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+
+export interface QuickBookingLabCollisionInfo {
+  hasCollision: boolean;
+  message: string;
+  orderNumber: string;
+  dueDate: string;
+  dueDateLocal: string;
+  orderId?: string | undefined;
+  workType?: string | undefined;
+}
 
 export interface UseQuickBookingCollisionParams {
   startsAtLocal: string;
@@ -40,13 +50,14 @@ export function useQuickBookingCollision({
         conflictingAppointment: null,
         message: null,
         suggestedSlot: null,
+        labCollision: null as QuickBookingLabCollisionInfo | null,
       };
     }
     const startsAtIso = fromLocal(startsAtLocal);
     const startMs = Date.parse(startsAtIso);
     const endsAtIso = new Date(startMs + durationMinutes * 60_000).toISOString();
 
-    return checkAppointmentResourceCollision(
+    const resourceCollision = checkAppointmentResourceCollision(
       {
         startsAt: startsAtIso,
         endsAt: endsAtIso,
@@ -68,6 +79,46 @@ export function useQuickBookingCollision({
         allowCitoOverbooking: appointmentType === "emergency",
       },
     );
+
+    // Проверка коллизии готовности работы ЗТЛ со временем визита (Мандат 8e / 8bd)
+    let labCollision: QuickBookingLabCollisionInfo | null = null;
+    const labOrders = dashboard && "labOrders" in dashboard
+      ? (dashboard as { labOrders?: Array<Record<string, unknown>> }).labOrders
+      : undefined;
+    if (patientId && startsAtLocal) {
+      const activeLabStatus = getPatientActiveLabStatus(
+        labOrders as any,
+        patientId,
+        startsAtIso,
+      );
+      if (
+        activeLabStatus &&
+        activeLabStatus.state !== "ready_in_clinic" &&
+        activeLabStatus.dueDateIso
+      ) {
+        const dueMs = Date.parse(activeLabStatus.dueDateIso);
+        if (Number.isFinite(dueMs) && startMs < dueMs) {
+          const dueDateObj = new Date(dueMs);
+          const dueDayMonthRu = `${String(dueDateObj.getDate()).padStart(2, "0")}.${String(dueDateObj.getMonth() + 1).padStart(2, "0")}.${dueDateObj.getFullYear()}`;
+          const orderNum = activeLabStatus.orderNumber || (activeLabStatus.orderId ? `ЗТЛ-${activeLabStatus.orderId.slice(0, 6).toUpperCase()}` : "ЗТЛ");
+          const workTypeStr = activeLabStatus.workTypeRu ? ` (${activeLabStatus.workTypeRu})` : "";
+          labCollision = {
+            hasCollision: true,
+            message: `Работа по наряду ${orderNum}${workTypeStr} будет готова только ${dueDayMonthRu}. Визит назначен раньше срока готовности из ЗТЛ.`,
+            orderNumber: orderNum,
+            dueDate: activeLabStatus.dueDateIso,
+            dueDateLocal: toLocal(activeLabStatus.dueDateIso),
+            orderId: activeLabStatus.orderId,
+            workType: activeLabStatus.workTypeRu || undefined,
+          };
+        }
+      }
+    }
+
+    return {
+      ...resourceCollision,
+      labCollision,
+    };
   }, [
     startsAtLocal,
     durationMinutes,
@@ -84,6 +135,7 @@ export function useQuickBookingCollision({
     dashboard?.clinicSettings?.staff,
     dashboard?.clinicSettings?.chairs,
     dashboard?.patients,
+    (dashboard as any)?.labOrders,
   ]);
 
   return collision;

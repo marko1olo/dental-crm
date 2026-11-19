@@ -149,10 +149,10 @@ describe("Red Team Inquisitor 1: Anti-Mock & Zero-Stubs Verification Suite", () 
 				"DentalLabStudioModal missing live POST /api/lab/orders persistence",
 			);
 
-			// Must dispatch reactive event
+			// Must dispatch reactive event (canonical dente:lab:order-created)
 			assert.ok(
-				content.includes("dente-lab-order-created"),
-				"DentalLabStudioModal missing dente-lab-order-created reactive event dispatch",
+				content.includes("dente:lab:order-created") || content.includes("dente-lab-order-created"),
+				"DentalLabStudioModal missing dente:lab:order-created reactive event dispatch",
 			);
 
 			// Must include authorization headers

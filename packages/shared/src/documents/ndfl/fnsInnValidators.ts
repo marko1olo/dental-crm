@@ -6,7 +6,7 @@ export function validateRussianInn(inn: string | null | undefined): {
 	isValid: boolean;
 	type: "individual" | "legal" | "invalid";
 	cleanInn: string;
-	error?: string;
+	error?: string | undefined;
 } {
 	const clean = String(inn ?? "").replace(/\D/g, "");
 
@@ -72,46 +72,64 @@ export function validateRussianInn(inn: string | null | undefined): {
 export function validateRussianKpp(kpp: string | null | undefined): {
 	isValid: boolean;
 	cleanKpp: string;
-	error?: string;
-	errorMessageRu?: string;
+	error?: string | undefined;
+	errorMessageRu?: string | undefined;
 } {
 	const clean = String(kpp ?? "").replace(/\D/g, "");
 	const isValid = clean.length === 9;
+	if (!isValid) {
+		return {
+			isValid: false,
+			cleanKpp: clean,
+			error: "КПП должен содержать ровно 9 цифр",
+			errorMessageRu: "КПП должен содержать ровно 9 цифр",
+		};
+	}
 	return {
-		isValid,
+		isValid: true,
 		cleanKpp: clean,
-		error: isValid ? undefined : "КПП должен содержать ровно 9 цифр",
-		errorMessageRu: isValid ? undefined : "КПП должен содержать ровно 9 цифр",
 	};
 }
 
 export function validateRussianOgrn(ogrn: string | null | undefined): {
 	isValid: boolean;
 	cleanOgrn: string;
-	error?: string;
-	errorMessageRu?: string;
+	error?: string | undefined;
+	errorMessageRu?: string | undefined;
 } {
 	const clean = String(ogrn ?? "").replace(/\D/g, "");
 	if (clean.length === 13) {
 		const num12 = BigInt(clean.slice(0, 12));
 		const checkDigit = Number(num12 % 11n % 10n);
 		const isValid = checkDigit === Number(clean[12]);
+		if (!isValid) {
+			return {
+				isValid: false,
+				cleanOgrn: clean,
+				error: "Неверная контрольная сумма 13-значного ОГРН организации",
+				errorMessageRu: "Неверная контрольная сумма 13-значного ОГРН организации",
+			};
+		}
 		return {
-			isValid,
+			isValid: true,
 			cleanOgrn: clean,
-			error: isValid ? undefined : "Неверная контрольная сумма 13-значного ОГРН организации",
-			errorMessageRu: isValid ? undefined : "Неверная контрольная сумма 13-значного ОГРН организации",
 		};
 	}
 	if (clean.length === 15) {
 		const num14 = BigInt(clean.slice(0, 14));
 		const checkDigit = Number(num14 % 13n % 10n);
 		const isValid = checkDigit === Number(clean[14]);
+		if (!isValid) {
+			return {
+				isValid: false,
+				cleanOgrn: clean,
+				error: "Неверная контрольная сумма 15-значного ОГРНИП",
+				errorMessageRu: "Неверная контрольная сумма 15-значного ОГРНИП",
+			};
+		}
 		return {
-			isValid,
+			isValid: true,
 			cleanOgrn: clean,
-			error: isValid ? undefined : "Неверная контрольная сумма 15-значного ОГРНИП",
-			errorMessageRu: isValid ? undefined : "Неверная контрольная сумма 15-значного ОГРНИП",
 		};
 	}
 	return {

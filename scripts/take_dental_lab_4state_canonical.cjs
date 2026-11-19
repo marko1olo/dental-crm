@@ -12,28 +12,30 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const ORCH_ID = "2e26914e-fa5a-4892-8173-c6752860bc4c";
-const SUBAGENT_ID = "d67edf25-cf83-41d3-801a-2120253e5446";
-const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/lab");
+const ORCH_ID = "1a5ac924-43af-42a0-a684-00dbb822c536";
+const SUBAGENT_ID = "e11aca57-3fd4-4ad6-b6cd-48664d10630d";
+const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/dental_lab");
+const OUT_LAB = path.resolve(__dirname, "../docs/proofs/lab");
 const OUT_ORCH = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${ORCH_ID}`);
 const OUT_SELF = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${SUBAGENT_ID}`);
 
-[OUT_DOCS, OUT_ORCH, OUT_SELF].forEach((dir) => {
+[OUT_DOCS, OUT_LAB, OUT_ORCH, OUT_SELF].forEach((dir) => {
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-async function saveProof(page, baseFilename, aliasFilename) {
+async function saveProof(page, baseFilename, ...aliasFilenames) {
 	await page.waitForTimeout(1000);
-	const targets = [baseFilename];
-	if (aliasFilename) targets.push(aliasFilename);
+	const targets = [baseFilename, ...aliasFilenames].filter(Boolean);
 
 	let firstDocsPath = "";
 	for (const filename of targets) {
 		const pDocs = path.join(OUT_DOCS, filename);
+		const pLab = path.join(OUT_LAB, filename);
 		const pOrch = path.join(OUT_ORCH, filename);
 		const pSelf = path.join(OUT_SELF, filename);
 
 		await page.screenshot({ path: pDocs, fullPage: false, animations: "disabled" });
+		fs.copyFileSync(pDocs, pLab);
 		fs.copyFileSync(pDocs, pOrch);
 		fs.copyFileSync(pDocs, pSelf);
 
@@ -126,6 +128,9 @@ async function main() {
 			localStorage.setItem("dente_guide_tour_seen_roles_v2", JSON.stringify(["admin", "doctor", "director", "owner"]));
 			localStorage.setItem("dente_demo_banner_dismissed", "true");
 			localStorage.setItem("dente_workspace_features", JSON.stringify({ hasDentalLab: true }));
+			localStorage.setItem("dente-workspace-profile", JSON.stringify({ mode: "network", role: "owner", activeRole: "owner", hasDentalLab: true }));
+			localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done", completed: true }));
+			localStorage.setItem("dente_user_name", "Д-р Смирнова Екатерина Васильевна");
 			localStorage.setItem("dente_theme", "light");
 			localStorage.setItem("dente_theme_mode", "light");
 			localStorage.setItem("dente_quest_progress_v2", JSON.stringify({
@@ -175,27 +180,27 @@ async function main() {
 		console.log("Dental Lab Studio Modal is visible and ready for capture!");
 
 		// 1. PC Light (1440x900)
-		console.log("\n--- Capturing: 01_lab_orders_pc_light_1440x900.png ---");
+		console.log("\n--- Capturing: 01_lab_orders_pc_light_1440x900.png & 05_dental_lab_studio_pc_light_1440x900.png ---");
 		await setTheme(page, "light");
-		await saveProof(page, "01_lab_orders_pc_light_1440x900.png", "01_dental_lab_studio_pc_light_1440x900.png");
+		await saveProof(page, "01_lab_orders_pc_light_1440x900.png", "01_dental_lab_studio_pc_light_1440x900.png", "05_dental_lab_studio_pc_light_1440x900.png");
 
 		// 2. PC Dark (1440x900)
-		console.log("\n--- Capturing: 02_lab_orders_pc_dark_1440x900.png ---");
+		console.log("\n--- Capturing: 02_lab_orders_pc_dark_1440x900.png & 06_dental_lab_studio_pc_dark_1440x900.png ---");
 		await setTheme(page, "dark");
-		await saveProof(page, "02_lab_orders_pc_dark_1440x900.png", "02_dental_lab_studio_pc_dark_1440x900.png");
+		await saveProof(page, "02_lab_orders_pc_dark_1440x900.png", "02_dental_lab_studio_pc_dark_1440x900.png", "06_dental_lab_studio_pc_dark_1440x900.png");
 
 		// 3. Mobile Light (390x844)
-		console.log("\n--- Capturing: 03_lab_orders_mobile_light_390x844.png ---");
+		console.log("\n--- Capturing: 03_lab_orders_mobile_light_390x844.png & 07_dental_lab_studio_mobile_light_390x844.png ---");
 		await page.setViewportSize({ width: 390, height: 844 });
 		await setTheme(page, "light");
 		await page.waitForTimeout(1500);
-		await saveProof(page, "03_lab_orders_mobile_light_390x844.png", "03_dental_lab_studio_mobile_light_390x844.png");
+		await saveProof(page, "03_lab_orders_mobile_light_390x844.png", "03_dental_lab_studio_mobile_light_390x844.png", "07_dental_lab_studio_mobile_light_390x844.png");
 
 		// 4. Mobile Dark (390x844)
-		console.log("\n--- Capturing: 04_lab_orders_mobile_dark_390x844.png ---");
+		console.log("\n--- Capturing: 04_lab_orders_mobile_dark_390x844.png & 08_dental_lab_studio_mobile_dark_390x844.png ---");
 		await setTheme(page, "dark");
 		await page.waitForTimeout(1500);
-		await saveProof(page, "04_lab_orders_mobile_dark_390x844.png", "04_dental_lab_studio_mobile_dark_390x844.png");
+		await saveProof(page, "04_lab_orders_mobile_dark_390x844.png", "04_dental_lab_studio_mobile_dark_390x844.png", "08_dental_lab_studio_mobile_dark_390x844.png");
 
 		await context.close();
 

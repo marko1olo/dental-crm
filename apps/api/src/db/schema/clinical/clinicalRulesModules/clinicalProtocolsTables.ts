@@ -7,6 +7,7 @@
 import type { StaffRole } from "@dental/shared";
 import { sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -156,8 +157,12 @@ export const labOrders = pgTable(
 		labComments: text("lab_comments"),
 		attachedImageUrl: text("attached_image_url"),
 		priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }),
+		/** Цена для пациента в копейках (Мандат 8bm) */
+		priceKopecks: bigint("price_kopecks", { mode: "number" }),
 		/** Себестоимость работы зуботехнической лаборатории (удерживается из зарплатной базы врача) */
 		labCostRub: numeric("lab_cost_rub", { precision: 12, scale: 2, mode: "number" }),
+		/** Себестоимость работы зуботехнической лаборатории в копейках (Мандат 8bm) */
+		labCostKopecks: bigint("lab_cost_kopecks", { mode: "number" }),
 		/** Гарантийная переделка (относится на клинику, 0 вычетов с врача) */
 		isWarranty: boolean("is_warranty").notNull().default(false),
 		/** Статус сдачи и фиксации installed (клинический стандарт фиксации) */
@@ -178,6 +183,10 @@ export const labOrders = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("lab_orders_patientId_idx").on(t.patientId),
+		organizationPatientIdx: index("lab_orders_org_patient_idx").on(
+			t.organizationId,
+			t.patientId,
+		),
 		treatmentPlanIdIdx: index("lab_orders_treatment_plan_id_idx").on(
 			t.treatmentPlanId,
 		),
@@ -222,6 +231,8 @@ export const labItems = pgTable(
 		}),
 		tiBaseHeightMm: numeric("ti_base_height_mm", { precision: 4, scale: 2 }),
 		priceRub: numeric("price_rub", { precision: 12, scale: 2 }),
+		/** Стоимость реставрации в копейках (Мандат 8bm) */
+		priceKopecks: bigint("price_kopecks", { mode: "number" }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),

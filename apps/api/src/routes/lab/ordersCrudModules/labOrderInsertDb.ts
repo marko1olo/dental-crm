@@ -248,7 +248,9 @@ export async function insertLabOrderInDb(
 			clinicalNotes: structuredNotes.trim() || null,
 			attachedImageUrl: effectiveAttachedImage,
 			priceRub: finalPriceRub,
+			priceKopecks: finalPriceKopecks,
 			labCostRub: finalLabCostRub,
+			labCostKopecks: finalLabCostKopecks,
 			isWarranty,
 			status: effectiveStatus,
 			stage: effectiveStage,
@@ -281,6 +283,7 @@ export async function insertLabOrderInDb(
 				implantPlatformDiameterMm: item.implantPlatformDiameterMm ?? null,
 				tiBaseHeightMm: item.tiBaseHeightMm ?? null,
 				priceRub: itemKopecks != null ? kopecksToNumericString(itemKopecks) : null,
+				priceKopecks: itemKopecks != null ? itemKopecks : null,
 			});
 		}
 	} else if (effectiveToothFdi != null) {
@@ -309,6 +312,7 @@ export async function insertLabOrderInDb(
 					shadeFinal: normalizedColor,
 					shadeStump: data.stumpShade || null,
 					priceRub: itemPriceRub,
+					priceKopecks: toothKopecks,
 				});
 			}
 		}

@@ -35,7 +35,8 @@ describe("chairsideLabOrder — Working Days & Collision Guard", () => {
 		assert.equal(calculateLabReadinessDate(startDate, pmmaPreset.standardTurnaroundWorkingDays), "2026-10-07");
 
 		const claspPreset = ORTHOPEDIC_WORK_TYPES.clasp_prosthesis;
-		assert.equal(calculateLabReadinessDate(startDate, claspPreset.standardTurnaroundWorkingDays), "2026-10-19");
+		assert.equal(claspPreset.standardTurnaroundWorkingDays, 8);
+		assert.equal(calculateLabReadinessDate(startDate, claspPreset.standardTurnaroundWorkingDays), "2026-10-15");
 	});
 
 	test("Автоматический расчет даты примерки: следующий рабочий день после готовности", () => {

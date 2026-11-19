@@ -2,7 +2,9 @@ import React from "react";
 import { createPortal } from "react-dom";
 import type { Appointment } from "@dental/shared";
 import {
+  AlertTriangle,
   ChevronDown,
+  Clock,
   Copy,
   Flame,
   FlaskConical,
@@ -308,9 +310,60 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
     return allLab.filter((lo) => lo.patientId === selectedPatient.id);
   }, [dashboard, selectedPatient?.id]);
 
+  // Реактивное раскрытие секции ЗТЛ при выборе пациента с активным нарядом (SEV-1 Fix / Мандат 8e / 8bd)
+  React.useEffect(() => {
+    if (!selectedPatient?.id) return;
+    const allLab = (dashboard && "labOrders" in dashboard ? (dashboard as { labOrders?: Array<{ patientId?: string; status?: string; dueDate?: string | Date; expectedDate?: string | Date }> }).labOrders : []) || [];
+    const hasActiveUpcomingOrder = allLab.some((lo) => {
+      if (lo.patientId !== selectedPatient.id) return false;
+      const st = (lo.status || "").toLowerCase();
+      if (st === "delivered" || st === "completed" || st === "cancelled" || st === "installed") return false;
+      return true;
+    });
+    if (hasActiveUpcomingOrder || activeLabOrders.length > 0) {
+      setIsLabSectionOpen(true);
+    }
+  }, [selectedPatient?.id, activeLabOrders.length, dashboard]);
+
   return (
     <div className="flex-1 overflow-y-auto p-5 pb-8 space-y-4" data-testid="quick-booking-scroll-body">
       <QuickBookingDrawerPatientPart state={state} props={props} />
+
+      {/* Мягкий бейдж/алерт коллизии расписания со сроком готовности ЗТЛ (Мандат 8e) */}
+      {state.collision?.labCollision?.hasCollision && (
+        <div
+          className="rounded-xl border border-amber-500/40 bg-amber-500/15 p-3 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xs"
+          data-testid="quick-booking-lab-collision-alert"
+        >
+          <div className="flex items-start sm:items-center gap-2 min-w-0">
+            <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+            <div className="space-y-0.5 min-w-0">
+              <div className="font-bold flex items-center gap-1.5 flex-wrap">
+                <span>Внимание: заказ ЗТЛ еще не будет готов к этому визиту!</span>
+                <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30">
+                  {state.collision.labCollision.orderNumber}
+                </span>
+              </div>
+              <p className="text-[11px] leading-tight text-amber-800 dark:text-amber-300">
+                {state.collision.labCollision.message}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (state.collision?.labCollision?.dueDateLocal) {
+                setStartsAtLocal(state.collision.labCollision.dueDateLocal);
+              }
+            }}
+            className="h-8 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-2xs"
+            data-testid="btn-shift-appointment-to-lab-ready"
+          >
+            <Clock size={13} />
+            <span>Сдвинуть визит на дату готовности ЗТЛ</span>
+          </button>
+        </div>
+      )}
 
       <QuickBookingServiceSection
         appointmentType={appointmentType}

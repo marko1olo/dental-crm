@@ -1207,13 +1207,15 @@ export interface PatientLabOrderDto {
 	clinicalNotes?: string | null;
 	labComments?: string | null;
 	attachedImageUrl?: string | null;
-	priceRub?: number | null;
-	labCostRub?: number | null;
-	costRub?: number | null;
+	/** Канонические финансовые поля в целочисленных копейках (Мандат 8bm) */
 	priceKopecks?: number | null;
 	amountKopecks?: number | null;
 	labCostKopecks?: number | null;
 	costKopecks?: number | null;
+	/** Устаревшие рублёвые поля (поддерживаются для совместимости) */
+	priceRub?: number | null;
+	labCostRub?: number | null;
+	costRub?: number | null;
 	isWarranty?: boolean | null;
 	isLockedInstalled?: boolean | null;
 	orderNumber?: string | null;

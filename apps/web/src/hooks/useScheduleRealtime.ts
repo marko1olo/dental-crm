@@ -77,9 +77,13 @@ export function useScheduleRealtime(
 		const handleLabStatusSync = () => {
 			handlerRef.current?.();
 		};
+		window.addEventListener("dente:lab:order-status-changed", handleLabStatusSync);
+		window.addEventListener("dente:lab:order-created", handleLabStatusSync);
 		window.addEventListener("dente-lab-order-ready", handleLabStatusSync);
 		window.addEventListener("dente-lab-order-status-changed", handleLabStatusSync);
 		return () => {
+			window.removeEventListener("dente:lab:order-status-changed", handleLabStatusSync);
+			window.removeEventListener("dente:lab:order-created", handleLabStatusSync);
 			window.removeEventListener("dente-lab-order-ready", handleLabStatusSync);
 			window.removeEventListener("dente-lab-order-status-changed", handleLabStatusSync);
 		};
