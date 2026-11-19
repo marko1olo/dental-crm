@@ -26,7 +26,7 @@ export function buildA4TodayRu(): string {
 export function buildA4ClinicRequisites(
 	clinicProfileDraft?: Partial<A4ClinicRequisites> | Record<string, unknown> | null,
 ): A4ClinicRequisites {
-	const draft = clinicProfileDraft || {};
+	const draft = (clinicProfileDraft || {}) as Record<string, unknown>;
 	const getString = (key: string): string => {
 		const val = draft[key];
 		return typeof val === "string" ? val : "";

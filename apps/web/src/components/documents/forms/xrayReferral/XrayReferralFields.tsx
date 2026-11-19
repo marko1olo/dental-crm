@@ -17,10 +17,10 @@ export const XrayReferralFields: React.FC<XrayReferralFieldsProps> = React.memo(
 	function XrayReferralFields({
 		renderClinicalToothRowsEditor,
 		inferredTreatmentArea,
-		normalizedXrayStudyType = (v) => v as XrayCbctReferralStudyType,
+		normalizedXrayStudyType = (v: string) => v as XrayCbctReferralStudyType,
 		typedXrayStudyTypeOptions = [],
-		normalizedXrayPriority = (v) => v,
-		normalizedXrayPregnancyStatus = (v) => v as XrayCbctReferralPregnancyStatus,
+		normalizedXrayPriority = (v: string) => v as XrayCbctReferralPriority,
+		normalizedXrayPregnancyStatus = (v: string) => v as XrayCbctReferralPregnancyStatus,
 		typedXrayPregnancyStatusOptions = [],
 		activeDoctorFullName,
 	}) {

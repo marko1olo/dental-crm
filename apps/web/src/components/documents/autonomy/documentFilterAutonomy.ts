@@ -10,10 +10,8 @@ export function documentRowLifecycleGuidance(
 	documentSourceStatusLabels?: Record<DocumentSourceStatus, string>,
 	documentKindMetadataMap?: Record<DocumentKind, DocumentKindMetadata>,
 ): string {
-	const sourceLabel =
-		documentSourceStatusLabels?.[
-			documentKindMetadataMap?.[document.kind]?.sourceStatus ?? "manual_only"
-		] ?? "Ручной ввод";
+	const statusKey = documentKindMetadataMap?.[document.kind]?.sourceStatus;
+	const sourceLabel = (statusKey && documentSourceStatusLabels?.[statusKey]) ?? "Ручной ввод";
 	if (document.status === "draft") {
 		return `Черновик (требует проверки). Источник: ${sourceLabel}. Паспорт покажет источник, блокеры и доступные действия.`;
 	}

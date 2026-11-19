@@ -34,7 +34,7 @@ export function useFnsTaxState(
 	const [taxPatientName, setTaxPatientName] = useState<string>(initialFnsPayload?.patient?.fullName || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.patient.fullName : ""));
 	const [taxPatientSnils, setTaxPatientSnils] = useState<string>(initialFnsPayload?.patient?.snils || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.patient.snils || "" : ""));
 	const [taxRelCode, setTaxRelCode] = useState<"1" | "2" | "3" | "4">(initialFnsPayload?.patient?.relationshipCode || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.patient.relationshipCode : "1"));
-	const [taxPayments, setTaxPayments] = useState<FnsTaxPaymentItem[]>(initialFnsPayload?.payments || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.payments : []));
+	const [taxPayments, setTaxPayments] = useState<readonly FnsTaxPaymentItem[]>(initialFnsPayload?.payments || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.payments : []));
 	const [taxSignerName, setTaxSignerName] = useState<string>(initialFnsPayload?.signer?.fullName || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.signer.fullName : ""));
 	const [taxSignerPos] = useState<string>(initialFnsPayload?.signer?.position || (isDemo ? SAMPLE_FNS_TAX_1151156_PRESET.signer.position : "Главный врач"));
 

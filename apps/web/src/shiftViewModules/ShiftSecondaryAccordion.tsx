@@ -5,11 +5,11 @@ import { ShiftIntelligenceSection } from "../components/shift";
 import { EmkControlBoard } from "../components/visit/EmkControlBoard";
 
 export interface ShiftSecondaryAccordionProps {
-	dashboard?: Dashboard;
+	dashboard?: Dashboard | undefined;
 	mostLoadedResource?: string | undefined;
 	activeQueueRole?: string | undefined;
 	rolesWorthShowing?: boolean | undefined;
-	staffRoleLabels?: Record<string, string>;
+	staffRoleLabels?: Record<string, string> | undefined;
 }
 
 export const ShiftSecondaryAccordion: React.FC<ShiftSecondaryAccordionProps> = ({

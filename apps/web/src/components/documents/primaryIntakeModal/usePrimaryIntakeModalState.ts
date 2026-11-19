@@ -9,15 +9,15 @@ import { INTAKE_STATUTORY_ITEMS } from "./types";
 
 interface UsePrimaryIntakeModalStateProps {
 	patient: Patient | null;
-	existingDocuments: GeneratedDocument[];
-	onCreateDocument: (kind: DocumentKind) => void;
+	existingDocuments?: readonly GeneratedDocument[] | undefined;
+	onCreateDocument?: ((kind: DocumentKind) => void) | undefined;
 	doctorFullName?: string | null | undefined;
 	clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 }
 
 export function usePrimaryIntakeModalState({
 	patient,
-	existingDocuments,
+	existingDocuments = [],
 	onCreateDocument,
 	doctorFullName,
 	clinicProfileDraft,
@@ -55,7 +55,7 @@ export function usePrimaryIntakeModalState({
 
 	const handleBatchCreate = () => {
 		for (const kind of missingKinds) {
-			onCreateDocument(kind);
+			onCreateDocument?.(kind);
 		}
 	};
 
@@ -75,14 +75,14 @@ export function usePrimaryIntakeModalState({
 		setIsNormApplied(true);
 
 		if (!documentsByKind.has("patient_intake_questionnaire")) {
-			onCreateDocument("patient_intake_questionnaire");
+			onCreateDocument?.("patient_intake_questionnaire");
 		}
 		showToast("Анкета здоровья заполнена нормой: соматически здоров, противопоказаний нет", "success", 3500);
 	};
 
 	const handleConfirmSignatureFromTablet = async (signatureData?: DigitalSignatureData | undefined) => {
 		for (const kind of missingKinds) {
-			onCreateDocument(kind);
+			onCreateDocument?.(kind);
 		}
 		setIsNormApplied(true);
 		setIsSignedPep(true);

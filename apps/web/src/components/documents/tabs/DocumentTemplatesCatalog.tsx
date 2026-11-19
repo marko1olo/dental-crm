@@ -63,7 +63,7 @@ export const DocumentTemplatesCatalog: React.FC<
 						<div>
 							{(group?.kinds ?? []).map((kind) => {
 								const metadata = documentKindMetadata?.[kind];
-								const sourceStatus = metadata?.sourceStatus ?? "manual_only";
+								const sourceStatus = metadata?.sourceStatus;
 								const isCurrentSaving = documentCreateSavingKind === kind;
 								return (
 									<button
@@ -91,13 +91,13 @@ export const DocumentTemplatesCatalog: React.FC<
 											<span>{documentLabels?.[kind] ?? kind}</span>
 											<small
 												className={
-													documentSourceStatusClassNames?.[sourceStatus] ??
+													(sourceStatus && documentSourceStatusClassNames?.[sourceStatus]) ??
 													"pill-gray"
 												}
 											>
 												{documentCreateSavingKind === kind
 													? "Создаю"
-													: documentSourceStatusLabels?.[sourceStatus] ??
+													: (sourceStatus && documentSourceStatusLabels?.[sourceStatus]) ??
 														"Ручной ввод"}
 											</small>
 										</span>

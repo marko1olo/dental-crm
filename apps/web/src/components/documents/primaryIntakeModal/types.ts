@@ -5,10 +5,10 @@ export interface PrimaryIntakePackageModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly patient: Patient | null;
-	readonly existingDocuments: GeneratedDocument[];
-	readonly onCreateDocument: (kind: DocumentKind) => void;
-	readonly onOpenDocument: (documentId: string) => void;
-	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
+	readonly existingDocuments?: readonly GeneratedDocument[] | undefined;
+	readonly onCreateDocument?: ((kind: DocumentKind) => void) | undefined;
+	readonly onOpenDocument?: ((documentId: string) => void) | undefined;
+	readonly onSelectDocumentKind?: ((kind: DocumentKind) => void) | undefined;
 	readonly doctorFullName?: string | null | undefined;
 	readonly clinicProfileDraft?: DocumentClinicProfileRequisites | Record<string, unknown> | null | undefined;
 }

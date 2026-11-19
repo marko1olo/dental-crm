@@ -39,7 +39,7 @@ export interface FnsTaxCertificatePayload {
 		relationshipCode: "1" | "2" | "3" | "4";
 		relationshipName?: string | undefined;
 	};
-	payments: FnsTaxPaymentItem[];
+	readonly payments: readonly FnsTaxPaymentItem[];
 	signer: {
 		fullName: string;
 		position: string;

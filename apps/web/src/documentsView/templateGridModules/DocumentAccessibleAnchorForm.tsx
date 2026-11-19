@@ -10,9 +10,9 @@ import { normalizedDocumentKind } from "../../AppHelpers";
 import { CANONICAL_TEMPLATES } from "./canonicalTemplatesData";
 
 export interface DocumentAccessibleAnchorFormProps {
-	readonly selectedDocumentKind: DocumentKind;
-	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
-	readonly onCreateDocument: (kind: DocumentKind) => void | Promise<void>;
+	readonly selectedDocumentKind: DocumentKind | (string & {});
+	readonly onSelectDocumentKind: (kind: DocumentKind | (string & {})) => void;
+	readonly onCreateDocument: (kind: DocumentKind | (string & {})) => void | Promise<void>;
 	readonly sanitizedDocumentFactoryGroups?:
 		| Array<{ title: string; kinds: DocumentKind[] }>
 		| undefined;

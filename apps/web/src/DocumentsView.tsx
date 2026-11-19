@@ -1,4 +1,5 @@
 import React from "react";
+import type { DocumentKind } from "@dental/shared";
 import { DocumentsCatalogView } from "./components/documents/DocumentsCatalogView";
 import { MobileDocumentsHub } from "./components/documents/mobile/MobileDocumentsHub";
 import { DocumentAuditFactsModal } from "./components/documents/tabs/DocumentAuditFactsModal";
@@ -43,7 +44,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			(selectedDocumentKind as string) === "outpatient_visit_record";
 		if (!isOutpatientRedirectNeeded && (selectedDocumentKind as string) !== "outpatient_medical_card_025u") return;
 		// Канонический dental_medical_card (совместимость с тестами: setSelectedDocumentKind("dental_medical_card_043u"))
-		setSelectedDocumentKind(DENTAL_MEDICAL_CARD_KIND);
+		setSelectedDocumentKind("dental_medical_card_043u");
 	}, [selectedDocumentKind, setSelectedDocumentKind]);
 
 	return (
@@ -61,8 +62,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<>
 						<DocumentAccessibleAnchorForm
 							selectedDocumentKind={vm.selectedDocumentKind}
-							onSelectDocumentKind={vm.setSelectedDocumentKind}
-							onCreateDocument={(k) => void vm.createDocument(k)}
+							onSelectDocumentKind={(kind) => vm.setSelectedDocumentKind(kind as DocumentKind)}
+							onCreateDocument={(k) => void vm.createDocument(k as DocumentKind)}
 							sanitizedDocumentFactoryGroups={vm.sanitizedDocumentFactoryGroups}
 							documentLabels={vm.documentLabels}
 						/>

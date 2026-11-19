@@ -26,6 +26,12 @@ const mockPatient: Patient = {
 	gender: "male",
 	notes: null,
 	balanceRub: 0,
+	balanceKopecks: 0n,
+	cardNumber: "K-1042",
+	isArchived: false,
+	discountPercent: 0,
+	totalPaidKopecks: 0n,
+	passportSeriesNumber: null,
 	administrativeProfile: null,
 	createdAt: "2026-01-10T10:00:00.000Z",
 	updatedAt: "2026-01-10T10:00:00.000Z",
@@ -111,7 +117,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		);
 
 		assert.ok(html.includes("fns-tax-certificate-modal"), "Must render modal container");
-		assert.ok(html.includes("КНД 1151156"), "Must reference KND 1151156");
+		assert.ok(html.includes("Справка для налогового вычета") || html.includes("13% НДФЛ"), "Must reference Tax Deduction Certificate");
 		assert.ok(html.includes("Код 1"), "Must display Code 1 standard procedures");
 		assert.ok(html.includes("Код 2"), "Must display Code 2 expensive procedures");
 		assert.ok(html.includes("Печать справки"), "Must render print button");

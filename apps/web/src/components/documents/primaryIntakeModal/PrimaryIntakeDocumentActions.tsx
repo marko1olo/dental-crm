@@ -9,9 +9,9 @@ interface PrimaryIntakeDocumentActionsProps {
 	isQuestionnaire: boolean;
 	isNormApplied: boolean;
 	onFillSomaticNorm: () => void;
-	onOpenDocument: (documentId: string) => void;
-	onSelectDocumentKind: (kind: DocumentKind) => void;
-	onCreateDocument: (kind: DocumentKind) => void;
+	onOpenDocument?: ((documentId: string) => void) | undefined;
+	onSelectDocumentKind?: ((kind: DocumentKind) => void) | undefined;
+	onCreateDocument?: ((kind: DocumentKind) => void) | undefined;
 	onClose: () => void;
 }
 
@@ -56,7 +56,7 @@ export function PrimaryIntakeDocumentActions({
 					<button
 						type="button"
 						className="secondary-button"
-						onClick={() => onOpenDocument(latestDoc.id)}
+						onClick={() => onOpenDocument?.(latestDoc.id)}
 					>
 						Открыть
 					</button>
@@ -64,7 +64,7 @@ export function PrimaryIntakeDocumentActions({
 						type="button"
 						className="secondary-button"
 						onClick={() => {
-							onSelectDocumentKind(kind);
+							onSelectDocumentKind?.(kind);
 							onClose();
 						}}
 					>
@@ -76,8 +76,8 @@ export function PrimaryIntakeDocumentActions({
 					type="button"
 					className="primary-button"
 					onClick={() => {
-						onSelectDocumentKind(kind);
-						onCreateDocument(kind);
+						onSelectDocumentKind?.(kind);
+						onCreateDocument?.(kind);
 					}}
 				>
 					<Zap size={14} aria-hidden="true" />

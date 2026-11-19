@@ -7,14 +7,14 @@ import { PrimaryIntakeDocumentActions } from "./PrimaryIntakeDocumentActions";
 
 interface PrimaryIntakeDocumentItemProps {
 	item: StatutoryIntakeItem;
-	existingDocs: GeneratedDocument[];
+	existingDocs: readonly GeneratedDocument[];
 	isSignedPep: boolean;
 	isNormApplied: boolean;
 	activeInterventionLabels: string;
 	onFillSomaticNorm: () => void;
-	onOpenDocument: (documentId: string) => void;
-	onSelectDocumentKind: (kind: DocumentKind) => void;
-	onCreateDocument: (kind: DocumentKind) => void;
+	onOpenDocument?: ((documentId: string) => void) | undefined;
+	onSelectDocumentKind?: ((kind: DocumentKind) => void) | undefined;
+	onCreateDocument?: ((kind: DocumentKind) => void) | undefined;
 	onClose: () => void;
 }
 

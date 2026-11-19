@@ -44,10 +44,10 @@ describe("DocumentIssueConfirmationModal Non-blocking Execution", () => {
 					patients={[{ id: "patient-123", organizationId: "org-1", fullName: "Ковалев Д.С.", phone: "+79055554433", status: "active", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" } as Patient]}
 					patientName={(_, id) => (id === "patient-123" ? "Ковалев Д.С." : "")}
 					money={(v) => `${v} ₽`}
-					documentIssueSignatureMode="paper_handwritten"
+					documentIssueSignatureMode="paper_signed"
 					setDocumentIssueSignatureMode={() => {}}
 					normalizedDocumentIssueSignatureMode={(v) => v}
-					documentIssueSignatureModeLabels={{ paper_handwritten: "Бумажный оригинал" }}
+					documentIssueSignatureModeLabels={{ paper_signed: "Бумажный оригинал" }}
 					documentIssueSignedAt="2026-03-15T12:00:00.000Z"
 					setDocumentIssueSignedAt={() => {}}
 					documentIssueRecipientFullName="Ковалев Д.С."

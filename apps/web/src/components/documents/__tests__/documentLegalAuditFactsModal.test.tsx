@@ -20,6 +20,15 @@ describe("DocumentAuditFactsModal Mount and Render Compliance", () => {
 	it("DocumentAuditFactsModal mounts via createPortal and displays complete legal facts", async () => {
 		const facts = {
 			documentId: "doc-uuid-12345",
+			organizationId: "b1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+			patientId: "patient-123",
+			voidAttestation: null,
+			releaseJournalEntry: null,
+			generatedAt: "2026-03-15T10:00:00.000Z",
+			immutableSnapshotReady: true,
+			sourceStatus: "official_workflow" as const,
+			sourceAuthority: "Минздрав РФ",
+			sourceReference: "Прейскурант услуг",
 			kind: "treatment_contract",
 			status: "issued",
 			createdAt: "2026-03-15T10:00:00.000Z",

@@ -41,11 +41,12 @@ export function MobileDocumentPreviewSheet({
 	activeDoctorName,
 }: MobileDocumentPreviewSheetProps): React.JSX.Element | null {
 	useEffect(() => {
-		if (isOpen) {
-			const orig = window.document.body.style.overflow;
-			window.document.body.style.overflow = "hidden";
-			return () => { window.document.body.style.overflow = orig; };
-		}
+		if (!isOpen) return;
+		const orig = window.document.body.style.overflow;
+		window.document.body.style.overflow = "hidden";
+		return () => {
+			window.document.body.style.overflow = orig;
+		};
 	}, [isOpen]);
 
 	if (!isOpen || !document) return null;

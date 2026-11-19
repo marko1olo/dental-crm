@@ -29,7 +29,7 @@ export const DocumentRegistryRow: React.FC<DocumentRowProps> = React.memo(
 
 		const documentActionLabel = documentActionLabels?.[document.kind] ?? "Документ";
 		const documentKindLabel = documentLabels?.[document.kind] ?? document.kind;
-		const docSourceStatus = documentKindMetadata?.[document.kind]?.sourceStatus ?? "manual_only";
+		const docSourceStatus = documentKindMetadata?.[document.kind]?.sourceStatus;
 		const documentTaxYearContext = document.taxYear ? `, ${document.taxYear}` : "";
 		const actionContext = `${documentActionLabel}: ${documentKindLabel}${documentTaxYearContext}`;
 		const isSaving = documentStatusSavingId === document.id;
@@ -43,8 +43,8 @@ export const DocumentRegistryRow: React.FC<DocumentRowProps> = React.memo(
 					<h3>{documentActionLabel}</h3>
 					<p>
 						{documentKindLabel} · {documentStatusLabels?.[document.status] ?? CANONICAL_DOCUMENT_STATUS_LABELS[document.status] ?? document.status}
-						<span className={documentSourceStatusClassNames?.[docSourceStatus] ?? "pill-gray"}>
-							{documentSourceStatusLabels?.[docSourceStatus] ?? "Ручной ввод"}
+						<span className={(docSourceStatus && documentSourceStatusClassNames?.[docSourceStatus]) ?? "pill-gray"}>
+							{(docSourceStatus && documentSourceStatusLabels?.[docSourceStatus]) ?? "Ручной ввод"}
 						</span>
 						{document.taxYear ? ` · ${document.taxYear}` : ""}
 						{(document.doctorSignedAt || document.cryptoSignaturePkcs7) && (

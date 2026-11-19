@@ -14,11 +14,11 @@ import "./egiszRemd.css";
 
 export interface TaxDeductionCertificateDrawerProps {
 	readonly patientName: string;
-	readonly patientInn?: string;
-	readonly payments?: readonly FnsTaxPaymentItem[];
-	readonly defaultYear?: number;
-	readonly onPrintCertificate?: (year: number) => void;
-	readonly onExportPdf?: (year: number) => void;
+	readonly patientInn?: string | undefined;
+	readonly payments?: readonly FnsTaxPaymentItem[] | undefined;
+	readonly defaultYear?: number | undefined;
+	readonly onPrintCertificate?: ((year: number) => void) | undefined;
+	readonly onExportPdf?: ((year: number) => void) | undefined;
 }
 
 export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDrawerProps> = ({
@@ -128,14 +128,14 @@ export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDraw
 export type EgiszHubSection = "queue" | "tax_deduction" | "extracts";
 
 export interface EgiszCertificatesHubModalProps {
-	readonly isOpen?: boolean;
+	readonly isOpen?: boolean | undefined;
 	readonly onClose: () => void;
-	readonly initialSection?: EgiszHubSection;
-	readonly patientName?: string;
-	readonly patientInn?: string;
-	readonly payments?: readonly FnsTaxPaymentItem[];
-	readonly records?: readonly RemdDocumentRecord[];
-	readonly onRetryRecord?: (record: RemdDocumentRecord) => void;
+	readonly initialSection?: EgiszHubSection | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientInn?: string | undefined;
+	readonly payments?: readonly FnsTaxPaymentItem[] | undefined;
+	readonly records?: readonly RemdDocumentRecord[] | undefined;
+	readonly onRetryRecord?: ((record: RemdDocumentRecord) => void) | undefined;
 }
 
 export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps> = ({
@@ -171,7 +171,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 			clinic: { name: "ООО «ДЕНТЕ КЛИНИК»", inn: "7701987654", ogrn: "1157746000000" },
 			taxpayer: { fullName: patientName, inn: patientInn || undefined },
 			patient: { fullName: patientName, relationshipCode: "1" },
-			payments: effectivePayments,
+			payments: [...effectivePayments],
 			signer: { fullName: "Главврач Клиники", position: "Главный врач" },
 		}));
 	};
