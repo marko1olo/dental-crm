@@ -26,7 +26,7 @@ import {
 	stockBatches,
 	users,
 } from "../../db/schema.js";
-import { warehouseRoutes } from "../../routes/warehouse.js";
+import { inventoryRoutes as warehouseRoutes } from "../../routes/inventory.js";
 import { FefoStockService } from "../../services/inventory/fefoStockService.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";

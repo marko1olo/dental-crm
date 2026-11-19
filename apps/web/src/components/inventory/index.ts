@@ -2,8 +2,6 @@ export * from "./WarehouseStockTable.js";
 export * from "./InboundWaybillModal.js";
 export * from "./InboundWaybillItemsTable.js";
 export * from "./ConsumablesBatchWriteoffModal.js";
-export * from "./AutoBomDeductionBanner.js";
-export * from "./AutoBomDeductionBannerActions.js";
 export {
 	type AcceptanceFefoStatus,
 	type AcceptanceSupplier,

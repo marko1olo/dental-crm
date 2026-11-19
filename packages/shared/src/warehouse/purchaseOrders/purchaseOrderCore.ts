@@ -766,8 +766,3 @@ export function formatMaterialReceiptStatementA4(
 		sep,
 	].join("\n");
 }
-
-/**
- * @deprecated Use formatMaterialReceiptStatementA4 (Мандат 8x: искоренение советских форм М-7 Госкомстата 1997 г.)
- */
-export const formatMaterialReceiptActM7A4 = formatMaterialReceiptStatementA4;

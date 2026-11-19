@@ -41,7 +41,7 @@ import {
 } from "../../db/schema.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
-import { treatmentConsumablesRoutes } from "../../routes/treatmentConsumables.js";
+import { treatmentConsumablesRoutes } from "../../routes/inventory/consumables/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {

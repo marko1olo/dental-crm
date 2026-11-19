@@ -72,9 +72,19 @@
 			"default": "./dist/geometry/index.js"
 		},
 		"./inventory/consumables": {
-			"types": "./dist/inventory/consumables.d.ts",
-			"import": "./dist/inventory/consumables.js",
-			"default": "./dist/inventory/consumables.js"
+			"types": "./dist/warehouse/consumables.d.ts",
+			"import": "./dist/warehouse/consumables.js",
+			"default": "./dist/warehouse/consumables.js"
+		},
+		"./warehouse": {
+			"types": "./dist/warehouse/index.d.ts",
+			"import": "./dist/warehouse/index.js",
+			"default": "./dist/warehouse/index.js"
+		},
+		"./warehouse/consumables": {
+			"types": "./dist/warehouse/consumables.d.ts",
+			"import": "./dist/warehouse/consumables.js",
+			"default": "./dist/warehouse/consumables.js"
 		},
 		"./inventory": {
 			"types": "./dist/inventory/index.d.ts",

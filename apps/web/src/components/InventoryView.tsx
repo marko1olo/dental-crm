@@ -11,7 +11,7 @@ import { useInventoryViewAudit } from "./inventory/viewModules/useInventoryViewA
 import { InventoryViewMobileLayout } from "./inventory/viewModules/InventoryViewMobileLayout.js";
 import { InventoryViewContentRouter } from "./inventory/viewModules/InventoryViewContentRouter.js";
 import { InventoryViewModalsContainer } from "./inventory/viewModules/InventoryViewModalsContainer.js";
-import { SanpinStudioModal } from "./sanpin/SanpinStudioModal.js";
+import { SterilizationBatchCycleModal } from "./sanpin/SterilizationBatchCycleModal.js";
 import {
 	InboundWaybillModal,
 	WarehouseInboundInvoiceModal,
@@ -180,7 +180,6 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 				setIsMdlpScanningOpen={() => setIsMdlpScanningOpen(true)}
 				setIsClinicalWriteoffOpen={() => setIsBatchWriteoffOpen(true)}
 				setIsProcedureDeductionOpen={() => setIsBatchWriteoffOpen(true)}
-				setIsWarehouseTransferOpen={() => {}}
 				setIsInventoryAuditOpen={setIsInventoryAuditOpen}
 				setIsMdlpDisposalOpen={() => setIsMdlpScanningOpen(true)}
 				onOpenShiftDeductionModal={() => setIsBatchWriteoffOpen(true)}
@@ -281,7 +280,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 				setIsBatchWriteoffOpen={setIsBatchWriteoffOpen}
 			/>
 
-			<SanpinStudioModal
+			<SterilizationBatchCycleModal
 				isOpen={isSterilizationCycleOpen}
 				onClose={() => setIsSterilizationCycleOpen(false)}
 				onCycleCompleted={() => fetchItems()}

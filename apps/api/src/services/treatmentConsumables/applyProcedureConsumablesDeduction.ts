@@ -1,8 +1,9 @@
 /**
  * applyProcedureConsumablesDeduction.ts — Procedure consumable auto-deductions (Mandates 8e, 8n).
  *
- * Implements Mandate 8e (Doctor Autonomy):
- * - clamp_at_zero = true (Soft overdraft: zeroes remaining stock in DB, logs shortage warning, NEVER blocks visit completion)
+ * Implements Mandate 8e & 8v (Doctor Autonomy & Soft Negative Stock):
+ * - Soft overdraft: honestly records negative stock in DB (currentQty), logs shortage warning, NEVER blocks visit completion
+ * - Eliminates artificial zero-clamping (clampAtZero removed per Mandate 8v)
  * - Idempotency guaranteed via unique treatment_reference_id in treatment_consumable_deductions table.
  * - Deadlock-free locking: acquires SELECT ... FOR UPDATE in deterministic item ID order.
  * - FEFO batch deduction and OKEI unit conversions for chairside clinical protocol.
@@ -234,7 +235,8 @@ export async function applyProcedureConsumablesDeduction(
 		};
 	}
 
-	const clampAtZero = request.clamp_at_zero !== false;
+	// Soft Negative Stock (Mandate 8v): Never clamp negative stock at zero.
+	// Negative stock honestly records deficit until delivery invoice arrives.
 	let hasOverdraft = false;
 	const deductions: TreatmentConsumableDeductionRecord[] = [];
 	const warnings: TreatmentConsumableDeductionWarning[] = [];
@@ -349,11 +351,8 @@ export async function applyProcedureConsumablesDeduction(
 				isDeficit = true;
 				deficit = convertedRequestedQty - Math.max(0, currentQty);
 
-				if (clampAtZero) {
-					stockAfter = 0;
-				} else {
-					stockAfter = currentQty - convertedRequestedQty;
-				}
+				// Soft Negative Stock (Mandate 8v): Honestly record actual deficit (e.g. -4.00)
+				stockAfter = Number((currentQty - convertedRequestedQty).toFixed(4));
 
 				warnings.push({
 					type: "deficit",
@@ -363,10 +362,10 @@ export async function applyProcedureConsumablesDeduction(
 					deficit,
 				});
 			} else {
-				stockAfter = currentQty - convertedRequestedQty;
+				stockAfter = Number((currentQty - convertedRequestedQty).toFixed(4));
 			}
 
-			// Execute FEFO batch deduction
+			// Execute FEFO batch deduction (fefoStockService records the true newStock, including negative overdraft, in inventoryItems)
 			await fefoStockService.deductFefo(tx as DbTransaction, {
 				organizationId,
 				inventoryItemId: item.id,
@@ -379,18 +378,6 @@ export async function applyProcedureConsumablesDeduction(
 					isDeficit ? ` [Мягкий овердрафт: дефицит ${deficit} ${item.unit}]` : ""
 				}`,
 			});
-
-			// If clampAtZero is true, synchronize remaining stock to 0 in inventoryItems
-			if (clampAtZero && stockAfter === 0 && currentQty < convertedRequestedQty) {
-				await tx
-					.update(inventoryItems)
-					.set({
-						currentQty: "0",
-						stockQuantity: "0",
-						updatedAt: new Date(),
-					})
-					.where(eq(inventoryItems.id, item.id));
-			}
 
 			deductions.push({
 				inventoryItemId: item.id,

@@ -9,7 +9,7 @@ import {
 	getCanonicalProcedureRecipe,
 	normalizeInventoryUnit,
 	resolveProcedureDeductionItems,
-} from "../inventory/index.js";
+} from "../warehouse/index.js";
 
 describe("Inventory Materials SSOT & Auto-Deduction Engine (materialsAutoDeductionSsot.ts)", () => {
 	it("1. Canonical procedure recipes cover all core dental procedures with 804n codes", () => {

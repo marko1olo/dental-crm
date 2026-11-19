@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, mock, test } from "node:test";
 import Fastify from "fastify";
 import { inventoryQuery } from "../../db/inventoryQuery.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
-import { warehouseRoutes } from "../../routes/warehouse.js";
 
 /**
  * Red Team Inquisitor Test for Warehouse & Inventory Stock & Batches Endpoints:
@@ -119,7 +118,7 @@ describe("Warehouse & Inventory Endpoints SSOT & Tenant Isolation", () => {
 		});
 
 		app = Fastify();
-		await app.register(warehouseRoutes, { prefix: "/api/warehouse" });
+		await app.register(inventoryRoutes, { prefix: "/api/warehouse" });
 		await app.register(inventoryRoutes, { prefix: "/api/inventory" });
 	});
 

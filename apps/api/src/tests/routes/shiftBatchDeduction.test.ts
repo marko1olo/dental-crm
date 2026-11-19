@@ -22,7 +22,6 @@ import {
 	visits,
 } from "../../db/schema.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
-import { warehouseRoutes } from "../../routes/warehouse.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -143,7 +142,7 @@ describe("Shift Batch Auto-Deduction & Soft Overdraft (Mandates 8e, 8n)", () => 
 		app = createTenantTestApp();
 
 		await app.register(inventoryRoutes, { prefix: "/api/inventory" });
-		await app.register(warehouseRoutes, { prefix: "/api/warehouse" });
+		await app.register(inventoryRoutes, { prefix: "/api/warehouse" });
 		await app.ready();
 
 		staffToken = signToken(

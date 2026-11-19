@@ -218,8 +218,9 @@ export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
 export * from "./portal/index.js";
-export { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "./finance/index.js";
+export * from "./finance/index.js";
 export * from "./doctor-portal/index.js";
+export { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "./doctor-portal/index.js";
 export * from "./crypto/index.js";
 export * from "./doctor/index.js";
 export * from "./treatment-plans/index.js";
@@ -241,7 +242,6 @@ export * from "./security/index.js";
 export * from "./types/pricing.js";
 export * from "./staff/index.js";
 export * from "./anesthesia/index.js";
-export * from "./inventory/consumables.js";
 export * from "./lab/index.js";
 export * from "./knowledge/index.js";
 export * from "./demo/demoConstants.js";
@@ -254,3 +254,8 @@ export * from "./types/ai.js";
 export * from "./marketing/index.js";
 export * from "./fuzzing/index.js";
 export { generateUuidV7 } from "./sync/hashing.js";
+export {
+	fdiToothNumberSchema,
+	VALID_FDI_TOOTH_NUMBERS,
+} from "./schemas/installmentAndLabOrderSchemas.js";
+

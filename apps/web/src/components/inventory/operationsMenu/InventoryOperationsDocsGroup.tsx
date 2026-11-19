@@ -1,4 +1,4 @@
-import { FileText, Package, PackageCheck, QrCode, Truck, Warehouse } from "lucide-react";
+import { FileText, Package, PackageCheck, QrCode, Warehouse } from "lucide-react";
 import React from "react";
 
 export interface InventoryOperationsDocsGroupProps {
@@ -7,14 +7,13 @@ export interface InventoryOperationsDocsGroupProps {
 	readonly onOpenWarehouseManager: () => void;
 	readonly onOpenMdlpScanning: () => void;
 	readonly onOpenClinicalWriteoff: () => void;
-	readonly onOpenWarehouseTransfer: () => void;
 	readonly onOpenInventoryAudit: () => void;
 	readonly onOpenMdlpDisposal: () => void;
 }
 
 export const InventoryOperationsDocsGroup: React.FC<InventoryOperationsDocsGroupProps> = ({
 	onClose, onOpenAcceptanceWaybills, onOpenWarehouseManager, onOpenMdlpScanning,
-	onOpenClinicalWriteoff, onOpenWarehouseTransfer, onOpenInventoryAudit, onOpenMdlpDisposal,
+	onOpenClinicalWriteoff, onOpenInventoryAudit, onOpenMdlpDisposal,
 }) => {
 	const handleAction = (action: () => void) => {
 		action();
@@ -69,18 +68,6 @@ export const InventoryOperationsDocsGroup: React.FC<InventoryOperationsDocsGroup
 			>
 				<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
 				<span>Списание по наряду</span>
-			</button>
-
-			<button
-				type="button"
-				className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
-				data-testid="warehouse-transfer-trigger"
-				onClick={() => handleAction(onOpenWarehouseTransfer)}
-				role="menuitem"
-				title="Межфилиальное перемещение материалов и препаратов"
-			>
-				<Truck size={15} className="text-[var(--primary)] shrink-0" />
-				<span>Перемещение материалов</span>
 			</button>
 
 			<button

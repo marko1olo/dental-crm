@@ -31,7 +31,7 @@ import {
 	formatPurchaseOrderPrintSummary,
 	createPurchaseOrderRecord,
 	receiveDeliveryBatch,
-	formatMaterialReceiptActM7A4,
+	formatMaterialReceiptStatementA4,
 } from "../purchaseOrderEngine.js";
 
 describe("Warehouse Purchase Orders: Decomposed Modules & Invariants", () => {
@@ -169,18 +169,18 @@ describe("Warehouse Purchase Orders: Decomposed Modules & Invariants", () => {
 			],
 		});
 
-		const actM7 = formatMaterialReceiptActM7A4(order, {
+		const actStatement = formatMaterialReceiptStatementA4(order, {
 			clinicName: 'ООО "ДЕНТЕ"',
 			actNumber: "М7-ТЕСТ-01",
 		});
 
-		assert.ok(actM7.includes("ВЕДОМОСТЬ ПРИЕМКИ МАТЕРИАЛОВ КЛИНИКИ"));
-		assert.ok(actM7.includes("АКТ О ПРИЕМКЕ МАТЕРИАЛОВ"));
-		assert.ok(!actM7.includes("Госкомстата"));
-		assert.ok(actM7.includes("М7-ТЕСТ-01"));
-		assert.ok(actM7.includes("Артикаин 1:100000"));
+		assert.ok(actStatement.includes("ВЕДОМОСТЬ ПРИЕМКИ МАТЕРИАЛОВ КЛИНИКИ"));
+		assert.ok(actStatement.includes("АКТ О ПРИЕМКЕ МАТЕРИАЛОВ"));
+		assert.ok(!actStatement.includes("Госкомстата"));
+		assert.ok(actStatement.includes("М7-ТЕСТ-01"));
+		assert.ok(actStatement.includes("Артикаин 1:100000"));
 		// Mandate 8d zero emojis check
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}]/u;
-		assert.equal(emojiRegex.test(actM7), false);
+		assert.equal(emojiRegex.test(actStatement), false);
 	});
 });

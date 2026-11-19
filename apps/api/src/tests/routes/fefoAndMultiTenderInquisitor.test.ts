@@ -32,7 +32,7 @@ import { withTenantCtx } from "../../db/rls.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { registerCashboxRoutes } from "../../routes/cashbox.js";
-import { warehouseRoutes } from "../../routes/warehouse.js";
+import { inventoryRoutes as warehouseRoutes } from "../../routes/inventory.js";
 import { fefoStockService } from "../../services/inventory/fefoStockService.js";
 import { sortBatchesByFefo } from "../../services/inventory/fefo/batchSelector.js";
 import { validateAndResolvePaymentSplit } from "../../db/billing/paymentSplitValidation.js";

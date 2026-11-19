@@ -20,7 +20,7 @@ import {
 	RECEIVABLE_PROCUREMENT_STATUSES,
 	computePurchaseOrderLineStatus,
 	createPurchaseOrderRecord,
-	formatMaterialReceiptActM7A4,
+	formatMaterialReceiptStatementA4,
 	procurementOrderStatusSchema,
 	purchaseOrderLineSchema,
 	purchaseOrderLineStatusSchema,
@@ -53,7 +53,7 @@ describe("Wave 136 — Procurement & Purchase Orders Engine (DentalPin Adapter)"
 			assert.ok(inventoryExports.createPurchaseOrderRecord, "createPurchaseOrderRecord must be exported");
 			assert.ok(inventoryExports.receiveDeliveryBatch, "receiveDeliveryBatch must be exported");
 			assert.ok(inventoryExports.validateThreeWayMatching, "validateThreeWayMatching must be exported");
-			assert.ok(inventoryExports.formatMaterialReceiptActM7A4, "formatMaterialReceiptActM7A4 must be exported");
+			assert.ok(inventoryExports.formatMaterialReceiptStatementA4, "formatMaterialReceiptStatementA4 must be exported");
 		});
 
 		it("validates Zod schemas against compliant payloads", () => {
@@ -653,7 +653,7 @@ describe("Wave 136 — Procurement & Purchase Orders Engine (DentalPin Adapter)"
 				],
 			});
 
-			const printM7 = formatMaterialReceiptActM7A4(receiptResult.updatedOrder, {
+			const printStatement = formatMaterialReceiptStatementA4(receiptResult.updatedOrder, {
 				clinicName: 'ООО "ДЕНТЕ КЛИНИК"',
 				actNumber: "М7-2026/089",
 				actDate: "2026-09-12",
@@ -663,22 +663,22 @@ describe("Wave 136 — Procurement & Purchase Orders Engine (DentalPin Adapter)"
 				supplierDocumentNumber: "ТОРГ12-7788",
 			});
 
-			assert.ok(printM7.includes("ВЕДОМОСТЬ ПРИЕМКИ МАТЕРИАЛОВ КЛИНИКИ"));
-			assert.ok(printM7.includes("АКТ О ПРИЕМКЕ МАТЕРИАЛОВ № М7-2026/089"));
-			assert.ok(!printM7.includes("Госкомстата"));
-			assert.ok(printM7.includes('ООО "ДЕНТЕ КЛИНИК"'));
-			assert.ok(printM7.includes('АО "РосДентХим"'));
-			assert.ok(printM7.includes("Септанест с адреналином"));
-			assert.ok(printM7.includes("Иглы карпульные"));
-			assert.ok(printM7.includes("Принято годных: 9 шт. | Брак/дефект: 1 шт."));
-			assert.ok(printM7.includes("Ильин М.А."));
-			assert.ok(printM7.includes("ПОДПИСИ СТОРОН"));
+			assert.ok(printStatement.includes("ВЕДОМОСТЬ ПРИЕМКИ МАТЕРИАЛОВ КЛИНИКИ"));
+			assert.ok(printStatement.includes("АКТ О ПРИЕМКЕ МАТЕРИАЛОВ № М7-2026/089"));
+			assert.ok(!printStatement.includes("Госкомстата"));
+			assert.ok(printStatement.includes('ООО "ДЕНТЕ КЛИНИК"'));
+			assert.ok(printStatement.includes('АО "РосДентХим"'));
+			assert.ok(printStatement.includes("Септанест с адреналином"));
+			assert.ok(printStatement.includes("Иглы карпульные"));
+			assert.ok(printStatement.includes("Принято годных: 9 шт. | Брак/дефект: 1 шт."));
+			assert.ok(printStatement.includes("Ильин М.А."));
+			assert.ok(printStatement.includes("ПОДПИСИ СТОРОН"));
 
 			// MANDATE 8d ITEM 7 INVARIANT: STRICTLY 0 EMOJIS!
 			// Unicode emoji blocks: Emoticons, Misc Symbols, Transport, Dingbats, Supplemental, Pictographs
 			const emojiRegex =
 				/[\u{1F300}-\u{1F9FF}\u{1FA00}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu;
-			const emojiMatches = printM7.match(emojiRegex);
+			const emojiMatches = printStatement.match(emojiRegex);
 			assert.strictEqual(
 				emojiMatches,
 				null,
@@ -711,7 +711,7 @@ describe("Wave 136 — Procurement & Purchase Orders Engine (DentalPin Adapter)"
 				lines: [{ purchaseOrderLineId: "line-1", quantityReceived: 5, quality: "good" }],
 			});
 
-			const doc = formatMaterialReceiptActM7A4(received.updatedOrder);
+			const doc = formatMaterialReceiptStatementA4(received.updatedOrder);
 			assert.ok(doc.includes("Материалы поступили в полном объеме, надлежащего качества"));
 			assert.ok(!doc.includes("ВНИМАНИЕ: При приемке выявлены расхождения"));
 		});

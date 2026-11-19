@@ -33,7 +33,7 @@ import {
 import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerFiscalReceiptRoutes } from "../../routes/fiscal/fiscalReceiptRoutes.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
-import { treatmentConsumablesRoutes } from "../../routes/treatmentConsumables.js";
+import { treatmentConsumablesRoutes } from "../../routes/inventory/consumables/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";

@@ -25,7 +25,7 @@ import {
 	users,
 } from "../../db/schema.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
-import { treatmentConsumablesRoutes } from "../../routes/treatmentConsumables.js";
+import { treatmentConsumablesRoutes } from "../../routes/inventory/consumables/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -343,13 +343,13 @@ describe("Treatment Consumables & Predictive Reorder Engine API", () => {
 		assert.strictEqual(glovesDeduction.stockBefore, 2);
 		assert.strictEqual(glovesDeduction.stockAfter, 0);
 
-		// Composite: had 0, needed 0.35 -> clamp_at_zero = true -> stockAfter = 0, deficit = 0.35
+		// Composite: had 0, needed 0.35 -> Mandate 8v Soft Negative Stock (-0.35), deficit = 0.35
 		const compositeDeduction = data.deductions.find(
 			(d: any) => d.inventoryItemId === ITEM_COMPOSITE_ID,
 		);
 		assert.ok(compositeDeduction);
 		assert.strictEqual(compositeDeduction.stockBefore, 0);
-		assert.strictEqual(compositeDeduction.stockAfter, 0);
+		assert.strictEqual(compositeDeduction.stockAfter, -0.35);
 		assert.strictEqual(compositeDeduction.isDeficit, true);
 		assert.strictEqual(compositeDeduction.deficit, 0.35);
 
@@ -372,7 +372,7 @@ describe("Treatment Consumables & Predictive Reorder Engine API", () => {
 				.select()
 				.from(inventoryItems)
 				.where(eq(inventoryItems.id, ITEM_COMPOSITE_ID));
-			assert.strictEqual(Number(dbComposite?.currentQty), 0);
+			assert.strictEqual(Number(dbComposite?.currentQty), -0.35);
 		});
 	});
 

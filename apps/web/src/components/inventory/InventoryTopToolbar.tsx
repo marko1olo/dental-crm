@@ -29,7 +29,6 @@ export interface InventoryTopToolbarProps {
 	setIsMdlpScanningOpen: (open: boolean) => void;
 	setIsClinicalWriteoffOpen: (open: boolean) => void;
 	setIsProcedureDeductionOpen: (open: boolean) => void;
-	setIsWarehouseTransferOpen: (open: boolean) => void;
 	setIsInventoryAuditOpen: (open: boolean) => void;
 	setIsMdlpDisposalOpen: (open: boolean) => void;
 	setIsNurseCarpuleModalOpen?: (open: boolean) => void;

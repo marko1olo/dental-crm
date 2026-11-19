@@ -12,7 +12,6 @@ export interface InventoryOperationsMenuProps {
 	readonly onOpenMdlpScanning: () => void;
 	readonly onOpenClinicalWriteoff: () => void;
 	readonly onOpenProcedureDeduction?: (() => void) | undefined;
-	readonly onOpenWarehouseTransfer: () => void;
 	readonly onOpenInventoryAudit: () => void;
 	readonly onOpenMdlpDisposal: () => void;
 	readonly onOpenNurseCarpuleModal?: (() => void) | undefined;
@@ -40,7 +39,6 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 	onOpenWarehouseManager,
 	onOpenMdlpScanning,
 	onOpenClinicalWriteoff,
-	onOpenWarehouseTransfer,
 	onOpenInventoryAudit,
 	onOpenMdlpDisposal,
 	onOpenShiftDeductionModal,
@@ -92,7 +90,6 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 						onOpenWarehouseManager={onOpenWarehouseManager}
 						onOpenMdlpScanning={onOpenMdlpScanning}
 						onOpenClinicalWriteoff={onOpenClinicalWriteoff}
-						onOpenWarehouseTransfer={onOpenWarehouseTransfer}
 						onOpenInventoryAudit={onOpenInventoryAudit}
 						onOpenMdlpDisposal={onOpenMdlpDisposal}
 					/>

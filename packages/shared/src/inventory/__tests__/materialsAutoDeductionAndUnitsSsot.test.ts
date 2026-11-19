@@ -12,14 +12,14 @@ import {
 	getOkeiCodeForUnit,
 	isFractionalQuantityAllowed,
 	normalizeInventoryUnit,
-} from "../inventoryUnitsSsot.js";
+} from "../../warehouse/inventoryUnitsSsot.js";
 import {
 	CANONICAL_PROCEDURE_RECIPES,
 	calculateProcedureDeductionSummary,
 	generateSanpinClassBWasteRecords,
 	getCanonicalProcedureRecipe,
 	resolveProcedureDeductionItems,
-} from "../materialsAutoDeductionSsot.js";
+} from "../../warehouse/materialsAutoDeductionSsot.js";
 
 describe("Inventory Units SSOT (ОКЕИ & Medical Nomenclature)", () => {
 	it("нормализует гетерогенные строки к каноническим ключам", () => {

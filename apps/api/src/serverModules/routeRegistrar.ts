@@ -50,7 +50,6 @@ import { registerFlexbeRoutes } from "../routes/integrations/flexbe.js";
 import { registerProdoctorovRoutes } from "../routes/integrations/prodoctorov.js";
 import { registerDadataLandingIntegrationRoutes } from "../routes/integrations/dadataLandingIntegrationRoutes.js";
 import { inventoryRoutes } from "../routes/inventory.js";
-import { warehouseRoutes } from "../routes/warehouse.js";
 import { registerLabRoutes } from "../routes/lab/index.js";
 import { registerLeadsRoutes } from "../routes/leads.js";
 import { registerLoyaltyRoutes } from "../routes/loyalty.js";
@@ -91,7 +90,6 @@ import { registerScheduleRoutes } from "../routes/schedule.js";
 import { registerSettingsRoutes } from "../routes/settings.js";
 import { registerDoctorPreferencesRoutes } from "../routes/doctorPreferencesRoutes.js";
 import { registerPayrollRoutes } from "../routes/payroll.js";
-import { registerDoctorReportsRoutes } from "../routes/doctorReports.js";
 import { registerStaffRoutes } from "../routes/staff.js";
 import { registerStaffChatRoutes } from "../routes/staffChat.js";
 import { registerSmartImportRoutes } from "../routes/smartImports.js";
@@ -106,7 +104,7 @@ import { registerTelegramReferralLoyaltyRoutes } from "../routes/telegramReferra
 import { registerTasksRoutes } from "../routes/tasks.js";
 import { telephonyRoutes } from "../routes/telephony.js";
 import registerTemplateRoutes from "../routes/templates.js";
-import { treatmentConsumablesRoutes } from "../routes/treatmentConsumables.js";
+import { treatmentConsumablesRoutes } from "../routes/inventory/consumables/index.js";
 import { registerVisitRoutes } from "../routes/visits.js";
 import { registerVkRoutes } from "../routes/vk.js";
 import { registerWaitlistRoutes } from "../routes/waitlist.js";
@@ -220,7 +218,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerSettingsRoutes(app);
 	await registerDoctorPreferencesRoutes(app);
 	await registerPayrollRoutes(app);
-	await registerDoctorReportsRoutes(app);
 	await registerStaffRoutes(app);
 	await registerStaffChatRoutes(app);
 	await registerSpeechRoutes(app);
@@ -258,8 +255,8 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerTemplateRoutes(app);
 	await app.register(inventoryRoutes, { prefix: "/api/inventory" });
 	await app.register(inventoryRoutes, { prefix: "/api/v1/inventory" });
-	await app.register(warehouseRoutes, { prefix: "/api/warehouse" });
-	await app.register(warehouseRoutes, { prefix: "/api/v1/warehouse" });
+	await app.register(inventoryRoutes, { prefix: "/api/warehouse" });
+	await app.register(inventoryRoutes, { prefix: "/api/v1/warehouse" });
 	await app.register(treatmentConsumablesRoutes, {
 		prefix: "/api/treatment-consumables",
 	});

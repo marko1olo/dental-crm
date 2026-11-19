@@ -433,18 +433,18 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)]">
 						<div>
 							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Номер приходной накладной</label>
-							<input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden" data-testid="inbound-invoice-number-input" />
+							<input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-number-input" />
 						</div>
 						<div>
 							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Поставщик</label>
-							<input type="text" value={supplierName} onChange={(e) => setSupplierName(e.target.value)} list={`sup-list-${defaultId}`} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden" data-testid="inbound-invoice-supplier-input" />
+							<input type="text" value={supplierName} onChange={(e) => setSupplierName(e.target.value)} list={`sup-list-${defaultId}`} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-supplier-input" />
 							<datalist id={`sup-list-${defaultId}`}>
 								{DEFAULT_SUPPLIERS.map((s) => <option key={s} value={s}>{s}</option>)}
 							</datalist>
 						</div>
 						<div>
 							<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">Дата поступления</label>
-							<input type="date" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden" data-testid="inbound-invoice-date-input" />
+							<input type="date" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none" data-testid="inbound-invoice-date-input" />
 						</div>
 					</div>
 
@@ -478,14 +478,14 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 									placeholder="Наименование материала"
 									value={newItemName}
 									onChange={(e) => setNewItemName(e.target.value)}
-									className="sm:col-span-2 px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden"
+									className="sm:col-span-2 px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none"
 								/>
 								<input
 									type="text"
 									placeholder="Ед. (шт, уп)"
 									value={newItemUnit}
 									onChange={(e) => setNewItemUnit(e.target.value)}
-									className="px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden"
+									className="px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none"
 								/>
 								<div className="flex items-center gap-2">
 									<input
@@ -493,7 +493,7 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 										placeholder="Цена ₽"
 										value={newItemCost}
 										onChange={(e) => setNewItemCost(e.target.value)}
-										className="w-full px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden"
+										className="w-full px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-none"
 									/>
 									<button
 										type="button"

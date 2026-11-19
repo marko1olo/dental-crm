@@ -12,7 +12,6 @@ export interface InventoryToolbarActionsProps {
 	readonly setIsMdlpScanningOpen: (open: boolean) => void;
 	readonly setIsClinicalWriteoffOpen: (open: boolean) => void;
 	readonly setIsProcedureDeductionOpen: (open: boolean) => void;
-	readonly setIsWarehouseTransferOpen: (open: boolean) => void;
 	readonly setIsInventoryAuditOpen: (open: boolean) => void;
 	readonly setIsMdlpDisposalOpen: (open: boolean) => void;
 	readonly setIsNurseCarpuleModalOpen?: (open: boolean) => void;
@@ -84,7 +83,7 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 				isOpen={isOpsMenuOpen} onToggle={() => setIsOpsMenuOpen((prev) => !prev)} onClose={() => setIsOpsMenuOpen(false)}
 				onOpenAcceptanceWaybills={() => props.setIsAcceptanceWaybillsOpen(true)} onOpenWarehouseManager={() => props.setIsWarehouseManagerOpen(true)}
 				onOpenMdlpScanning={() => props.setIsMdlpScanningOpen(true)} onOpenClinicalWriteoff={() => props.setIsClinicalWriteoffOpen(true)}
-				onOpenProcedureDeduction={() => props.setIsProcedureDeductionOpen(true)} onOpenWarehouseTransfer={() => props.setIsWarehouseTransferOpen(true)}
+				onOpenProcedureDeduction={() => props.setIsProcedureDeductionOpen(true)}
 				onOpenInventoryAudit={() => props.setIsInventoryAuditOpen(true)} onOpenMdlpDisposal={() => props.setIsMdlpDisposalOpen(true)}
 				onOpenShiftDeductionModal={props.onOpenShiftDeductionModal} onOpenSterilizationCycleModal={props.onOpenSterilizationCycleModal}
 				onQuickWriteoffStandardKit={props.handleQuickWriteoffStandardKit} onQuickWriteoffAnestheticCarpule={props.handleQuickWriteoffAnestheticCarpule}

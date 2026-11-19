@@ -6,7 +6,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { WarehouseBatchTrackingModal } from "../WarehouseBatchTrackingModal.js";
 import { ConsumablesBatchWriteoffModal as ConsumablesDeductionModal } from "../ConsumablesBatchWriteoffModal.js";
-import { AutoBomDeductionBanner } from "../AutoBomDeductionBanner.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 
 const SAMPLE_ITEMS: readonly InventoryItem[] = [
@@ -53,16 +52,5 @@ describe("Warehouse Suite: Components Rendering (Part 2)", () => {
 		);
 		assert.ok(html.includes("consumables-deduction-modal"));
 		assert.ok(html.includes("Расходные материалы приёма"));
-	});
-
-	it("AutoBomDeductionBanner рендерит статус расходников к услуге", () => {
-		const html = renderToStaticMarkup(
-			<AutoBomDeductionBanner
-				procedureTitle="Пломбирование зуба световым композитом"
-				onConfirmOneClick={() => {}}
-			/>,
-		);
-		assert.ok(html.includes("auto-bom-deduction-banner"));
-		assert.ok(html.includes("Автоматическое списание материалов по приёму:"));
 	});
 });

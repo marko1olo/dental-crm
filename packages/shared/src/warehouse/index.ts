@@ -5,5 +5,9 @@ export * from "./defaultServiceBomCatalog.js";
 export * from "./autoVisitBomEngine.js";
 export * from "./clinicalMaterialWriteoffEngine.js";
 export * from "./warehouseAcceptance.js";
+export * from "./consumables.js";
+export * from "./inventoryUnitsSsot.js";
+export * from "./materialsAutoDeductionSsot.js";
+export * from "./treatmentConsumablesSchema.js";
 export { calculateClassBWasteWeightKg } from "./autoVisitBomEngine.js";
 

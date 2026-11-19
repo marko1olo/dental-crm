@@ -53,7 +53,7 @@ import { registerLabRoutes } from "../../routes/lab/index.js";
 import { registerOdontogramRoutes } from "../../routes/odontogram.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
-import { treatmentConsumablesRoutes } from "../../routes/treatmentConsumables.js";
+import { treatmentConsumablesRoutes } from "../../routes/inventory/consumables/index.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";

@@ -156,7 +156,7 @@ export const treatmentConsumableDeductionRequestSchema = z.object({
 		.optional(),
 	visit_id: z.string().nullable().optional(),
 	doctor_id: z.string().nullable().optional(),
-	clamp_at_zero: z.boolean().default(true),
+	clamp_at_zero: z.boolean().default(false).optional(),
 	notes: z.string().nullable().optional(),
 });
 
