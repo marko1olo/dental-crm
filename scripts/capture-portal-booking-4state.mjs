@@ -88,7 +88,7 @@ async function main() {
 		}
 
 		// 1. PC Light (1440x900)
-		console.log("Capturing 01_patient_portal_pc_light_1440x900.png and 01_public_booking_pc_light_1440x900.png...");
+		console.log("Capturing PC Light...");
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await page.evaluate(() => {
 			document.documentElement.classList.remove("dark");
@@ -97,9 +97,11 @@ async function main() {
 		});
 		await page.waitForTimeout(800);
 		await saveProof(page, "01_patient_portal_pc_light_1440x900.png", "01_public_booking_pc_light_1440x900.png");
+		fs.copyFileSync(path.join(PORTAL_PROOFS_DIR, "01_patient_portal_pc_light_1440x900.png"), path.join(PORTAL_PROOFS_DIR, "01_booking_portal_pc_light_1440x900.png"));
+		fs.copyFileSync(path.join(PORTAL_PROOFS_DIR, "01_patient_portal_pc_light_1440x900.png"), path.join(BOOKING_PROOFS_DIR, "01_booking_portal_pc_light_1440x900.png"));
 
 		// 2. PC Dark (1440x900)
-		console.log("Capturing 02_patient_portal_pc_dark_1440x900.png and 02_public_booking_pc_dark_1440x900.png...");
+		console.log("Capturing PC Dark...");
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await page.evaluate(() => {
 			document.documentElement.classList.remove("light");
@@ -108,9 +110,11 @@ async function main() {
 		});
 		await page.waitForTimeout(800);
 		await saveProof(page, "02_patient_portal_pc_dark_1440x900.png", "02_public_booking_pc_dark_1440x900.png");
+		fs.copyFileSync(path.join(PORTAL_PROOFS_DIR, "02_patient_portal_pc_dark_1440x900.png"), path.join(PORTAL_PROOFS_DIR, "02_booking_portal_pc_dark_1440x900.png"));
+		fs.copyFileSync(path.join(PORTAL_PROOFS_DIR, "02_patient_portal_pc_dark_1440x900.png"), path.join(BOOKING_PROOFS_DIR, "02_booking_portal_pc_dark_1440x900.png"));
 
 		// 3. Mobile Light (390x844)
-		console.log("Capturing 03_patient_portal_mobile_light_390x844.png and 03_public_booking_mobile_light_390x844.png...");
+		console.log("Capturing Mobile Light...");
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.evaluate(() => {
 			document.documentElement.classList.remove("dark");
@@ -119,9 +123,11 @@ async function main() {
 		});
 		await page.waitForTimeout(800);
 		await saveProof(page, "03_patient_portal_mobile_light_390x844.png", "03_public_booking_mobile_light_390x844.png");
+		fs.copyFileSync(path.join(PORTAL_PROOFS_DIR, "03_patient_portal_mobile_light_390x844.png"), path.join(PORTAL_PROOFS_DIR, "03_booking_portal_mobile_light_390x844.png"));
+		fs.copyFileSync(path.join(PORTAL_PROOFS_DIR, "03_patient_portal_mobile_light_390x844.png"), path.join(BOOKING_PROOFS_DIR, "03_booking_portal_mobile_light_390x844.png"));
 
 		// 4. Mobile Dark (390x844)
-		console.log("Capturing 04_patient_portal_mobile_dark_390x844.png and 04_public_booking_mobile_dark_390x844.png...");
+		console.log("Capturing Mobile Dark...");
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.evaluate(() => {
 			document.documentElement.classList.remove("light");
@@ -130,6 +136,8 @@ async function main() {
 		});
 		await page.waitForTimeout(800);
 		await saveProof(page, "04_patient_portal_mobile_dark_390x844.png", "04_public_booking_mobile_dark_390x844.png");
+		fs.copyFileSync(path.join(PORTAL_PROOFS_DIR, "04_patient_portal_mobile_dark_390x844.png"), path.join(PORTAL_PROOFS_DIR, "04_booking_portal_mobile_dark_390x844.png"));
+		fs.copyFileSync(path.join(PORTAL_PROOFS_DIR, "04_patient_portal_mobile_dark_390x844.png"), path.join(BOOKING_PROOFS_DIR, "04_booking_portal_mobile_dark_390x844.png"));
 
 		await context.close();
 		console.log("\n>>> PUBLIC BOOKING 4-STATE PROOFS SUCCESSFULLY CAPTURED! <<<");

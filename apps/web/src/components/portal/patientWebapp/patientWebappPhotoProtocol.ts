@@ -1,5 +1,7 @@
 import type { BeforeAfterComparisonPair } from "./patientWebappPlanTypes";
 
+export type { BeforeAfterComparisonPair };
+
 export function calculateSplitClipPath(
 	percent: number,
 	direction: "vertical" | "horizontal" = "vertical",

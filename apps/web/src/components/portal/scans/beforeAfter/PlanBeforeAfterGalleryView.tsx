@@ -4,7 +4,7 @@ import {
 	type PatientBeforeAfterCase,
 	PATIENT_PORTAL_BEFORE_AFTER_CASES,
 } from "../../patientCabinet/patientCabinetAppointments.js";
-import type { BeforeAfterComparisonPair } from "../../patientWebapp/patientWebappPhotoProtocol.js";
+import type { BeforeAfterComparisonPair } from "../../patientWebapp/patientWebappPlanTypes.js";
 import { PlanBeforeAfterEmpty } from "./PlanBeforeAfterEmpty";
 import { PlanBeforeAfterCategories } from "./PlanBeforeAfterCategories";
 import { PlanBeforeAfterWiper } from "./PlanBeforeAfterWiper";

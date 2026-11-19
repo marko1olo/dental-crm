@@ -29,9 +29,24 @@ describe("Booking Ergonomics: Step 4 Frictionless Booking & Callback Notice (Man
 					],
 				} as any;
 			}
+			if (urlStr.includes("/doctors")) {
+				return {
+					ok: true,
+					json: async () => [
+						{
+							id: "doc-1",
+							fullName: "Д-р Смирнов Алексей Васильевич",
+							specialties: ["Терапевт-эндодонтист"],
+							experienceYears: 12,
+							rating: 4.9,
+							reviewsCount: 38,
+						},
+					],
+				} as any;
+			}
 			return {
 				ok: true,
-				json: async () => ({ organizationId: "org-test-123" }),
+				json: async () => ({ organizationId: "org-test-123", bookingId: "book-test-123" }),
 			} as any;
 		}) as any;
 
@@ -68,6 +83,10 @@ describe("Booking Ergonomics: Step 4 Frictionless Booking & Callback Notice (Man
 			const confirmBtn = findNodeByTestId(rootContainer, "step4-confirm-btn");
 			expect(confirmBtn).not.toBeNull();
 			await clickNode(confirmBtn!);
+
+			await act(async () => {
+				await new Promise((r) => setTimeout(r, 100));
+			});
 
 			expect(stepChangeSpy).toHaveBeenCalledWith(5);
 		} finally {
