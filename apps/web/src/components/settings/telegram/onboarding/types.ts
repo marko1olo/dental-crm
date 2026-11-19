@@ -29,8 +29,7 @@ export interface BotOnboardingWizardProps {
 	onWelcomeTextChange?: (text: string) => void;
 	customPrimaryActionLabel?: string;
 	onPrimaryActionLabelChange?: (label: string) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: integration with settings bag
-	parentProps?: any;
+	parentProps?: Record<string, unknown> | undefined;
 	className?: string;
 }
 

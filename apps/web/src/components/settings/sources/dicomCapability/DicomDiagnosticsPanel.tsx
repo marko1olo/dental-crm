@@ -394,14 +394,14 @@ export function DicomDiagnosticsPanel({
 					</article>
 					<p>{typedDicomRenderCachePlan.nextAction}</p>
 					<div className="dicom-cache-task-list">
-						{typedDicomRenderCachePlan.tasks.slice(0, 5).map((task: any) => (
+						{typedDicomRenderCachePlan.tasks.slice(0, 5).map((task) => (
 							<span key={task.id}>
 								{dicomRenderCachePriorityLabels[task.priority]}: {task.label}
 							</span>
 						))}
 					</div>
 					<div className="dicom-cache-phase-list">
-						{typedDicomRenderCachePlan.interactionPhases.map((phase: any) => (
+						{typedDicomRenderCachePlan.interactionPhases.map((phase) => (
 							<span key={phase.id}>
 								{phase.label}: {phase.targetFrameMs} мс / окно{" "}
 								{phase.maxResidentSlices}
@@ -409,7 +409,7 @@ export function DicomDiagnosticsPanel({
 						))}
 					</div>
 					<div className="dicom-cache-progressive-list">
-						{typedDicomRenderCachePlan.progressiveStages.map((stage: any) => (
+						{typedDicomRenderCachePlan.progressiveStages.map((stage) => (
 							<span key={stage.id}>
 								{stage.label}: шаг {stage.decimationFactor} / заявок{" "}
 								{stage.sliceOrder.length} / окно {stage.maxResidentSlices}

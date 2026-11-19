@@ -1,15 +1,15 @@
 import React from "react";
 import { Calculator } from "lucide-react";
+import type { StaffProfileExtended } from "@dental/shared";
 import { StaffMemberCard } from "./StaffMemberCard";
 import type { StaffCredentialKind } from "../staffMutationRequest";
 
 interface StaffActiveListProps {
-	// biome-ignore lint/suspicious/noExplicitAny: staff row
-	staff: any[];
+	staff: readonly StaffProfileExtended[] | StaffProfileExtended[];
 	clinicDataLoaded: boolean;
-	onOpenPayroll?: () => void;
-	onOpenTimesheet?: () => void;
-	onOpenProfile: (member: any) => void;
+	onOpenPayroll?: (() => void) | undefined;
+	onOpenTimesheet?: (() => void) | undefined;
+	onOpenProfile: (member: StaffProfileExtended) => void;
 	onUpdatePhone: (staffId: string, phone: string) => Promise<void>;
 	onUpdateCredential: (staffId: string, kind: StaffCredentialKind, value: string) => Promise<void>;
 	loading: boolean;
@@ -53,7 +53,7 @@ export const StaffActiveList: React.FC<StaffActiveListProps> = ({
 			)}
 
 			<div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] w-full min-w-0">
-				{staff.map((member: any) => (
+				{staff.map((member) => (
 					<StaffMemberCard
 						key={member.id}
 						member={member}

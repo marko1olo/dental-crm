@@ -10,6 +10,8 @@ export interface CloseSettlementPeriodParams {
 	readonly periodEnd: string;
 	readonly payoutModel: "percentage" | "chair_rental";
 	readonly chairRentalRub?: number;
+	readonly chairRentalKopecks?: number;
+	readonly advanceKopecks?: number;
 	readonly advanceRub?: number;
 	readonly taxRegime?: "employee" | "self_employed";
 	readonly grossRevenueKop: number;

@@ -10,10 +10,9 @@ export * from "./cashShift/index.js";
 export { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 export * from "./ServiceReceiptPrintDocument.js";
 export * from "./Billing1CExportModal.js";
-export * from "./FinanceView.js";
+export * from "../../views/financeView/index.js";
 export * from "./OneCExportButton.js";
 export * from "./fiscalReceiptEngine.js";
-export * from "./taxDeductionEngine.js";
 export * from "./invoiceEngine.js";
 export * from "./cashDaySummary.js";
 export * from "./cashboxInnValidation.js";
@@ -24,4 +23,23 @@ export {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
 	type TaxDeductionRelationship,
-} from "./taxDeductionEngine.js";
+	type TaxDeductionPaymentItem,
+	type TaxDeductionCertificateParams,
+	type TaxDeductionBatchParams,
+	calculateTaxDeductionSummary,
+	normalizePaymentsForTaxCertificate,
+	generateFnsTaxDeductionXml,
+	generateFnsNoMedoplXml,
+	generateFnsTaxDeductionBatchXml,
+	generateFnsBatchNoMedoplXml,
+	generateFamilyTaxDeductionBatch,
+	renderOfficialTaxCertificateKnd1151156Html,
+	renderOfficialTaxCertificateBatchKnd1151156Html,
+	downloadFnsTaxXmlFile,
+	downloadFnsNoMedoplXmlFile,
+	downloadFnsBatchTaxXmlFile,
+	downloadFnsBatchNoMedoplXmlFile,
+	renderTaxDeductionCertificateHtml,
+	renderTaxDeductionBatchCertificateHtml,
+	printTaxCertificateKnd1151156,
+} from "../documents/taxCertificateEngine.js";

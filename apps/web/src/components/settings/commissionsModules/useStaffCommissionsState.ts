@@ -80,8 +80,7 @@ export function useStaffCommissionsState() {
 				method: "GET",
 				headers: denteAdminSecretRequestHeaders(
 					undefined,
-					// biome-ignore lint/suspicious/noExplicitAny: admin session
-					(authRef.current as any)?.settingsAdminSecretSession,
+					(authRef.current as { settingsAdminSecretSession?: string } | undefined)?.settingsAdminSecretSession,
 				),
 			});
 			const payload = (await response.json().catch((err) => {

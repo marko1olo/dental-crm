@@ -17,7 +17,7 @@ export interface StaffProfileCardProps {
 
 export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 	staffMember,
-	callerRole = "owner",
+	callerRole = "doctor",
 	isOpen,
 	onClose,
 	onSaved,

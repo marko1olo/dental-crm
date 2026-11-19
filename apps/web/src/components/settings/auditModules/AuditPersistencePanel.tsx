@@ -41,6 +41,28 @@ export type PersistenceIntegrityReport = {
 	nextAction: string;
 };
 
+export type BrowserContinuityInfo = {
+	checkedAt: string;
+	warnings: string[];
+	storagePersisted?: boolean;
+} | null | undefined;
+
+export type StatusValueHolder = { status?: string } | string | number | null | undefined;
+
+export type AuditClinicSettings = { name?: string; [key: string]: unknown } | null | undefined;
+
+export type PersistenceHealthInfo = {
+	enabled?: boolean;
+	exists?: boolean;
+	savedAt?: string | null;
+	checksum?: string | null;
+	version?: string | number | null;
+	backupCount?: number;
+	maxBackupCount?: number;
+	latestBackupAt?: string | null;
+	filePath?: string | null;
+} | null | undefined;
+
 function localBridgeEndpointSummary(
 	bridge: LocalBridgeReadinessResponse["bridges"][number],
 ): string {
@@ -52,11 +74,11 @@ function localBridgeEndpointSummary(
 
 export interface AuditPersistencePanelProps {
 	browserCanRequestPersistentStorage: boolean;
-	browserContinuity: any;
+	browserContinuity: BrowserContinuityInfo;
 	browserContinuityChecks: BrowserContinuityCheck[];
 	browserContinuityState: string;
-	browserContinuityValue: any;
-	clinicSettings: any;
+	browserContinuityValue: StatusValueHolder;
+	clinicSettings: AuditClinicSettings;
 	downloadPersistenceExport: () => void;
 	formatDateTime: (iso: string) => string;
 	formatTime: (iso: string) => string;
@@ -67,11 +89,11 @@ export interface AuditPersistencePanelProps {
 	localBridgeReadiness: LocalBridgeReadinessResponse | null;
 	localBridgeStatusLabels: Record<string, string>;
 	localBridgeStatusState: string;
-	localBridgeStatusValue: any;
+	localBridgeStatusValue: StatusValueHolder;
 	localBridgeUsePathLabels: Record<string, string>;
 	localBridgeUsePlans: LocalBridgeUsePlansResponse | null;
 	organizationId?: string;
-	persistenceHealth: any;
+	persistenceHealth: PersistenceHealthInfo;
 	persistenceIntegrity: PersistenceIntegrityReport | null;
 	refreshBrowserContinuity: (opts?: { silent?: boolean }) => Promise<void>;
 	requestBrowserStoragePersistence: () => Promise<void>;
@@ -148,7 +170,7 @@ export function AuditPersistencePanel({
 						</div>
 						<span>
 							{typeof browserContinuityValue === "object" && browserContinuityValue !== null
-								? (browserContinuityValue as any).status ?? "—"
+								? ("status" in browserContinuityValue ? browserContinuityValue.status : undefined) ?? "—"
 								: String(browserContinuityValue ?? "—")}
 						</span>
 					</article>
@@ -200,7 +222,7 @@ export function AuditPersistencePanel({
 						</div>
 						<span>
 							{typeof localBridgeStatusValue === "object" && localBridgeStatusValue !== null
-								? (localBridgeStatusValue as any).status ?? "—"
+								? ("status" in localBridgeStatusValue ? localBridgeStatusValue.status : undefined) ?? "—"
 								: String(localBridgeStatusValue ?? "—")}
 						</span>
 					</article>

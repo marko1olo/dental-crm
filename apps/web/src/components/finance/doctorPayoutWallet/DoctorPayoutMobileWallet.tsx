@@ -47,9 +47,9 @@ export function DoctorPayoutMobileWallet({
 					<div className="doctor-wallet-empty-icon"><Wallet size={24} /></div>
 					<h3 className="doctor-wallet-empty-title">Нет начислений за выбранный месяц</h3>
 					<p className="doctor-wallet-empty-sub">В периоде {monthLabel} отсутствуют закрытые приёмы или наряды лаборатории.</p>
-					<button type="button" className="doctor-wallet-primary-cta" onClick={onRefresh} disabled={isLoading}>
-						<RefreshCw size={16} />
-						<span>Обновить данные</span>
+					<button type="button" data-testid="doctor-wallet-primary-cta" className="doctor-wallet-primary-cta" onClick={onRefresh}>
+						<RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+						<span>{isLoading ? "Обновление..." : "Обновить данные"}</span>
 					</button>
 				</div>
 			</div>
@@ -94,11 +94,10 @@ export function DoctorPayoutMobileWallet({
 					type="button"
 					className="doctor-wallet-sec-cta"
 					onClick={onRefresh}
-					disabled={isLoading}
 					aria-label="Обновить расчёт выплат"
 					title="Обновить"
 				>
-					<RefreshCw size={18} />
+					<RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
 				</button>
 			</div>
 		</div>

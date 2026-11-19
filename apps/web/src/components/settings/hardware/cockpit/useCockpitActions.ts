@@ -5,8 +5,8 @@ import { showToast } from "../../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders.js";
 
 interface Options {
-	onTestHotFolder?: () => void;
-	hotFolderStatus?: string;
+	onTestHotFolder?: (() => void) | undefined;
+	hotFolderStatus?: string | undefined;
 }
 
 export function useCockpitActions({ onTestHotFolder, hotFolderStatus }: Options) {

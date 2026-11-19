@@ -1,14 +1,14 @@
 import type React from "react";
 import { useState } from "react";
+import type { StaffProfileExtended } from "@dental/shared";
 import { staffRoleTitle } from "../settingsInviteRoles";
 import type { StaffCredentialKind } from "../staffMutationRequest";
 import { StaffMemberCardActions } from "./StaffMemberCardActions";
 import { StaffMemberCredentialsForm } from "./StaffMemberCredentialsForm";
 
 interface StaffMemberCardProps {
-	// biome-ignore lint/suspicious/noExplicitAny: staff row
-	member: any;
-	onOpenProfile: (member: any) => void;
+	member: StaffProfileExtended;
+	onOpenProfile: (member: StaffProfileExtended) => void;
 	onUpdatePhone: (staffId: string, phone: string) => Promise<void>;
 	onUpdateCredential: (staffId: string, kind: StaffCredentialKind, value: string) => Promise<void>;
 	loading: boolean;

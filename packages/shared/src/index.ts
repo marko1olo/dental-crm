@@ -14,6 +14,15 @@ export type DmsGuaranteeLineSplit = DmsSplitLineResult;
 export type PatientRecord = import("./patients/patientSchemas.js").Patient;
 export type DashboardResponse = import("./schemas/documentChainAndDmsSchemas.js").Dashboard;
 export type User = import("./schemas/speechProviderSchemas.js").StaffMember;
+export type Chair = import("./schemas/speechProviderSchemas.js").Chair;
+export type ClinicBranch = import("./branches/multiBranchEngine.js").BranchProfile | {
+	id: string;
+	name: string;
+	address?: string | null;
+	phone?: string | null;
+	workHours?: string;
+	isMain?: boolean;
+};
 // Explicit re-exports to resolve wildcard collision between schemas and domain modules (TS2308)
 export {
 	SanPiNSterilizationEngine,

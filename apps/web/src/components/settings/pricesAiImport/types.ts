@@ -40,8 +40,7 @@ export interface SettingsPricesAiImportSectionProps {
 	readonly pricelistSourceKind?: string | undefined;
 	readonly setPricelistSourceKind?: ((val: string) => void) | undefined;
 	readonly clearPricelistImage?: (() => void) | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: generic analysis payload
-	readonly setPricelistAnalysis?: ((analysis: any) => void) | undefined;
+	readonly setPricelistAnalysis?: ((analysis: unknown) => void) | undefined;
 	readonly pricelistRecognitionServiceGroups?: Array<{
 		title: string;
 		items: string[];
@@ -59,8 +58,7 @@ export interface SettingsPricesAiImportSectionProps {
 	readonly analyzePricelist?: (() => void) | undefined;
 	readonly isPricelistAnalyzing?: boolean | undefined;
 	readonly pricelistImageBase64?: string | null | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: generic analysis result
-	readonly pricelistAnalysis?: any | undefined;
+	readonly pricelistAnalysis?: unknown | undefined;
 	readonly pricelistParserModeLabels?: Record<string, string> | undefined;
 	readonly serviceCategoryLabels?: Record<string, string> | undefined;
 	readonly specialtyLabels?: Record<string, string> | undefined;

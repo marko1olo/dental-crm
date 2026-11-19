@@ -23,6 +23,7 @@ import {
 	Wallet,
 } from "lucide-react";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
+import { formatKopecksToRub } from "@dental/shared";
 
 export interface PaymentBreakdownItem {
 	readonly method: "cash" | "card" | "sbp" | "deposit";
@@ -60,9 +61,14 @@ export interface ExecutiveFinancialSummaryProps {
 	readonly onPrint?: () => void;
 }
 
-function formatRub(val: number): string {
-	const rounded = Math.round(val || 0);
-	return `${rounded.toLocaleString("ru-RU")} ₽`;
+function formatMoneyKopecks(kopecks?: number, rubFallback?: number): string {
+	if (typeof kopecks === "number" && !isNaN(kopecks) && kopecks !== 0) {
+		return formatKopecksToRub(kopecks);
+	}
+	if (typeof rubFallback === "number" && !isNaN(rubFallback)) {
+		return formatKopecksToRub(Math.round(rubFallback * 100));
+	}
+	return formatKopecksToRub(kopecks ?? 0);
 }
 
 const createEmptySummary = (): FinancialSummaryData => ({
@@ -110,7 +116,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 	const fetchSummary = useCallback(async (p: string) => {
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/reports/financial-summary?period=${encodeURIComponent(p)}`, {
+			const res = await fetch(`/api/v1/manager/reports/financial?period=${encodeURIComponent(p)}`, {
 				headers: denteClinicalReadHeaders(),
 			});
 			if (res.ok) {
@@ -184,7 +190,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 						<DollarSign size={16} className="text-[var(--teal)]" />
 					</div>
 					<div className="text-2xl sm:text-3xl font-bold text-[var(--ink)] tracking-tight">
-						{loading ? "..." : formatRub(data?.totalRevenueRub || 0)}
+						{loading ? "..." : formatMoneyKopecks(data?.totalRevenueKopecks, data?.totalRevenueRub)}
 					</div>
 					<div className="text-[11px] text-[var(--muted)] mt-1">
 						Фактически поступило за {PERIOD_LABELS[activePeriod]?.toLowerCase() || "период"}
@@ -200,7 +206,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 						{loading ? "..." : (data?.invoicesCount || 0).toLocaleString("ru-RU")}
 					</div>
 					<div className="text-[11px] text-[var(--muted)] mt-1">
-						Всего выставлено на сумму {formatRub(data?.totalInvoicedRub || 0)}
+						Всего выставлено на сумму {formatMoneyKopecks(data?.totalInvoicedKopecks, data?.totalInvoicedRub)}
 					</div>
 				</div>
 
@@ -210,7 +216,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 						<TrendingUp size={16} className="text-[var(--teal)]" />
 					</div>
 					<div className="text-2xl sm:text-3xl font-bold text-[var(--ink)] tracking-tight">
-						{loading ? "..." : formatRub(data?.averageCheckRub || 0)}
+						{loading ? "..." : formatMoneyKopecks(data?.averageCheckKopecks, data?.averageCheckRub)}
 					</div>
 					<div className="text-[11px] text-[var(--muted)] mt-1">
 						Выручка на один завершённый наряд
@@ -226,7 +232,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 						<span>Разбивка оплат по способам расчёта</span>
 					</h3>
 					<span className="text-xs font-medium text-[var(--muted)]">
-						Итого: {formatRub(data?.totalRevenueRub || 0)}
+						Итого: {formatMoneyKopecks(data?.totalRevenueKopecks, data?.totalRevenueRub)}
 					</span>
 				</div>
 
@@ -243,7 +249,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 							</span>
 						</div>
 						<div className="text-lg font-bold text-[var(--ink)]">
-							{formatRub(data?.paymentBreakdown.cash.amountRub || 0)}
+							{formatMoneyKopecks(data?.paymentBreakdown.cash.amountKopecks, data?.paymentBreakdown.cash.amountRub)}
 						</div>
 						<div className="w-full bg-[var(--line)] h-1.5 rounded-full overflow-hidden">
 							<div
@@ -268,7 +274,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 							</span>
 						</div>
 						<div className="text-lg font-bold text-[var(--ink)]">
-							{formatRub(data?.paymentBreakdown.card.amountRub || 0)}
+							{formatMoneyKopecks(data?.paymentBreakdown.card.amountKopecks, data?.paymentBreakdown.card.amountRub)}
 						</div>
 						<div className="w-full bg-[var(--line)] h-1.5 rounded-full overflow-hidden">
 							<div
@@ -293,7 +299,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 							</span>
 						</div>
 						<div className="text-lg font-bold text-[var(--ink)]">
-							{formatRub(data?.paymentBreakdown.sbp.amountRub || 0)}
+							{formatMoneyKopecks(data?.paymentBreakdown.sbp.amountKopecks, data?.paymentBreakdown.sbp.amountRub)}
 						</div>
 						<div className="w-full bg-[var(--line)] h-1.5 rounded-full overflow-hidden">
 							<div
@@ -318,7 +324,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 							</span>
 						</div>
 						<div className="text-lg font-bold text-[var(--ink)]">
-							{formatRub(data?.paymentBreakdown.deposit.amountRub || 0)}
+							{formatMoneyKopecks(data?.paymentBreakdown.deposit.amountKopecks, data?.paymentBreakdown.deposit.amountRub)}
 						</div>
 						<div className="w-full bg-[var(--line)] h-1.5 rounded-full overflow-hidden">
 							<div

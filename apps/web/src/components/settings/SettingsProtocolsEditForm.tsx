@@ -73,8 +73,7 @@ export const SettingsProtocolsEditForm: React.FC<
 						onChange={(e) =>
 							setEditForm((prev) => ({
 								...prev,
-								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-								specialty: e.target.value as any,
+								specialty: e.target.value as ProtocolTemplate["specialty"],
 							}))
 						}
 					>

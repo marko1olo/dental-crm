@@ -16,8 +16,8 @@
 .mobile-exec-section-title {
 	font-size: 12px;
 	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	text-transform: none;
+	letter-spacing: normal;
 	color: var(--muted);
 }
 .mobile-exec-section-count {

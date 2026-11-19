@@ -1,9 +1,27 @@
 import React, { type ChangeEvent } from "react";
 import type { DenteTelegramFeature } from "@dental/shared";
 
+export type TelegramPrivacyAndFeaturesPropsBag = {
+	telegramPrivacyModeLabels?: Record<string, string>;
+	telegramPrivacyModeDraft?: string;
+	setTelegramPrivacyModeDraft?: (val: string) => void;
+	normalizedTelegramPrivacyMode?: string;
+	telegramPrivacyModeHints?: Record<string, string>;
+	telegramModeDraft?: string;
+	typedTelegramFeatureOptions?: readonly DenteTelegramFeature[] | DenteTelegramFeature[];
+	typedTelegramEnabledFeaturesDraft?: readonly DenteTelegramFeature[] | DenteTelegramFeature[];
+	toggleTelegramFeature?: (feature: DenteTelegramFeature) => void;
+	telegramFeatureLabel?: (feature: string) => string;
+	telegramFeatureHelp?: Record<string, string>;
+	telegramAllowVoiceIntakeDraft?: boolean;
+	setTelegramAllowVoiceIntakeDraft?: (val: boolean) => void;
+	setTelegramEnabledFeaturesDraft?: (features: DenteTelegramFeature[]) => void;
+	markTelegramSettingsDirty?: () => void;
+	[key: string]: unknown;
+};
+
 interface TelegramPrivacyAndFeaturesSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	props: any;
+	props: TelegramPrivacyAndFeaturesPropsBag;
 }
 
 export function TelegramPrivacyAndFeaturesSection({ props }: TelegramPrivacyAndFeaturesSectionProps) {

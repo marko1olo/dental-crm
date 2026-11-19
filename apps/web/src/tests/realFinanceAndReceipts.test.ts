@@ -18,7 +18,7 @@ import {
 	useFinanceView,
 	EMPTY_CLINICAL_RULE_SUMMARY,
 	noLabels,
-} from "../FinanceView";
+} from "../views/financeView/index";
 import { localDayKey, summarizeCashDay } from "../components/finance/cashDaySummary";
 import { rubAmountForInput } from "../rubAmountInput.js";
 
@@ -26,11 +26,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("REAL FINANCE & RECEIPTS INTEGRATION SUITE (Wave 21 Decomposed Modules)", () => {
-	const facadePath = path.resolve(__dirname, "../FinanceView.tsx");
+	const facadePath = path.resolve(__dirname, "../views/financeView/index.tsx");
 	const viewsDirPath = path.resolve(__dirname, "../views/financeView");
 
 	it("1. Verifies thin facade budget and exports parity", () => {
-		assert.ok(fs.existsSync(facadePath), "Facade FinanceView.tsx must exist");
+		assert.ok(fs.existsSync(facadePath), "Canonical views/financeView/index.tsx must exist");
 		const facadeContent = fs.readFileSync(facadePath, "utf-8");
 		const lineCount = facadeContent.split("\n").length;
 		assert.ok(

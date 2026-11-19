@@ -45,7 +45,12 @@ export const BookingDoctorsAndServicesCard: React.FC<Props> = ({ config, onChang
 						</label>
 						<select
 							value={config.allowedServicesMode}
-							onChange={(e) => update({ allowedServicesMode: e.target.value as any })}
+							onChange={(e) => {
+								const val = e.target.value;
+								if (val === "consultations_only" || val === "basic_treatments" || val === "all_services") {
+									update({ allowedServicesMode: val });
+								}
+							}}
 							className="w-full h-9 px-3 text-xs rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 						>
 							<option value="consultations_only">Только первичные консультации</option>

@@ -3,9 +3,18 @@ import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import type { BotChannelType } from "../BotMessagePreviewCard";
 import type { BotConnectionStatus } from "./types";
 
+export interface BotConnectionParentPropsBag {
+	telegramStatus?: {
+		tokenConfigured?: boolean;
+		botUsername?: string;
+		[key: string]: unknown;
+	} | null;
+	[key: string]: unknown;
+}
+
 interface UseBotConnectionVerificationParams {
 	activeChannel: BotChannelType;
-	parentProps?: any;
+	parentProps?: BotConnectionParentPropsBag | undefined;
 	defaultUsername: string;
 }
 

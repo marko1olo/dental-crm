@@ -1,8 +1,27 @@
 import React, { type ChangeEvent } from "react";
 
+export interface PostVisitDelayField {
+	key: string;
+	label: string;
+	help?: string;
+}
+
+export type TelegramNotificationTimingsPropsBag = {
+	telegramReminderLeadTimesDraft?: string;
+	setTelegramReminderLeadTimesDraft?: (val: string) => void;
+	telegramReviewRequestDelayDraft?: string | number;
+	setTelegramReviewRequestDelayDraft?: (val: string) => void;
+	telegramPostVisitCheckupDelayFields?: readonly PostVisitDelayField[];
+	typedTelegramPostVisitCheckupDelayDrafts?: Record<string, string>;
+	updateTelegramPostVisitCheckupDelayDraft?: (key: string, value: string) => void;
+	telegramStaffEscalationChannelDraft?: string;
+	setTelegramStaffEscalationChannelDraft?: (val: string) => void;
+	markTelegramSettingsDirty?: () => void;
+	[key: string]: unknown;
+};
+
 interface TelegramNotificationTimingsSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	props: any;
+	props: TelegramNotificationTimingsPropsBag;
 }
 
 export function TelegramNotificationTimingsSection({ props }: TelegramNotificationTimingsSectionProps) {
@@ -19,8 +38,7 @@ export function TelegramNotificationTimingsSection({ props }: TelegramNotificati
 		markTelegramSettingsDirty,
 	} = props;
 
-	// biome-ignore lint/suspicious/noExplicitAny: post-visit delay list
-	const delayFields = (telegramPostVisitCheckupDelayFields || []) as any[];
+	const delayFields = (telegramPostVisitCheckupDelayFields || []) as readonly PostVisitDelayField[];
 
 	return (
 		<>

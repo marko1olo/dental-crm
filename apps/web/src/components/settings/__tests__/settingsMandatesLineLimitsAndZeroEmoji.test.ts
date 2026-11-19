@@ -17,8 +17,6 @@ const DECOMPOSED_FILES = [
 	"access/useInviteStaffForm.ts",
 	"access/InviteStaffCard.tsx",
 	"access/ActiveWorkspaceProfileCard.tsx",
-	"access/WorkspaceProfilesGrid.tsx",
-	"access/AccessPoliciesGrid.tsx",
 	"AiRecognitionJobsPanel.tsx",
 	"ai/useAiRecognitionJobs.ts",
 	"admin/AdminCadenceCard.tsx",

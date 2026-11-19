@@ -20,7 +20,7 @@ const DocumentsView = lazyWithRetry(() =>
 	import("../../../DocumentsView").then((m) => ({ default: m.DocumentsView })),
 );
 const FinanceView = lazyWithRetry(() =>
-	import("../../../FinanceView").then((m) => ({ default: m.FinanceView })),
+	import("../../../views/financeView").then((m) => ({ default: m.FinanceView })),
 );
 const CommunicationsView = lazyWithRetry(() =>
 	import("../../../CommunicationsView").then((m) => ({ default: m.CommunicationsView })),

@@ -4,14 +4,14 @@ import { BOT_TOKEN_REGEX } from "../constants";
 import type { BotStatus } from "../types";
 
 interface UseBotApiParams {
-	clinicId: string;
+	clinicId?: string | undefined;
 	botTokenInput: string;
 	setBotTokenInput: (val: string) => void;
 	setIsConnectingBot: (val: boolean) => void;
 	setIsTestingBot: (val: boolean) => void;
 	setIsDisconnectingBot: (val: boolean) => void;
-	onRefreshStatus: () => Promise<void>;
-	onBotStatusChange?: (newStatus: Partial<BotStatus>) => void;
+	onRefreshStatus: () => Promise<void> | void;
+	onBotStatusChange?: ((newStatus: Partial<BotStatus>) => void) | undefined;
 }
 
 export function useBotApiHandlers({

@@ -35,7 +35,7 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 		? path.resolve(__dirname, "../../view/visitHeader/VisitActionButtonsToolbar.tsx")
 		: path.resolve(__dirname, "../../view/VisitHeaderMonolith.tsx");
 	const financeToolbarPath = path.resolve(__dirname, "../../../finance/FinanceToolbar.tsx");
-	const financeViewPath = path.resolve(__dirname, "../../../../FinanceView.tsx");
+	const financeViewPath = path.resolve(__dirname, "../../../../views/financeView/index.tsx");
 
 	it("1. EmkComplaintsSection is purged of hardcoded accordion spoilers in favor of clean clinical textareas and Protocols Catalog", () => {
 		const source = fs.readFileSync(complaintsPath, "utf8");

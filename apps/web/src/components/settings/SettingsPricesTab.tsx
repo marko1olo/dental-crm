@@ -12,7 +12,7 @@ import {
 import type { CreateServicePayload } from "./pricesTab/types";
 
 type SettingsPricesTabContract = {
-	readonly dashboard?: unknown;
+	readonly dashboard?: import("./pricesTab/types").ClinicDashboardResponse | undefined;
 	readonly pricelistSourceKindLabels?: Record<string, string> | undefined;
 	readonly pricelistSourceKind?: string | undefined;
 	readonly setPricelistSourceKind?: ((val: string) => void) | undefined;
@@ -70,7 +70,7 @@ export function SettingsPricesTab() {
 	} = mergedProps;
 
 	const prices = useSettingsPricesLogic({
-		dashboard: dashboard as any, serviceCategoryLabels, specialtyLabels,
+		dashboard, serviceCategoryLabels, specialtyLabels,
 		createServiceCatalogItem, updateServiceCatalogItem, deleteServiceCatalogItem,
 	});
 

@@ -17,17 +17,12 @@ import type {
 } from "@dental/shared";
 
 export function buildSettingsProps(
-	// biome-ignore lint/suspicious/noExplicitAny: universal bag of props
-	appLogic: Record<string, any> = {},
-	// biome-ignore lint/suspicious/noExplicitAny: universal bag of props
-	settingsStore: Record<string, any> = {},
-	// biome-ignore lint/suspicious/noExplicitAny: universal bag of props
-	derivations: Record<string, any> = {},
-	// biome-ignore lint/suspicious/noExplicitAny: active staff user
-	activeStaffUser?: any,
-	// biome-ignore lint/suspicious/noExplicitAny: additional contextual overrides
-	extra: Record<string, any> = {},
-): Record<string, any> {
+	appLogic: Record<string, unknown> = {},
+	settingsStore: Record<string, unknown> = {},
+	derivations: Record<string, unknown> = {},
+	activeStaffUser?: unknown,
+	extra: Record<string, unknown> = {},
+): Record<string, unknown> {
 	const typedTelegramChatLinks =
 		(settingsStore?.telegramChatLinks as DenteTelegramChatLinkPublic[]) ??
 		(appLogic?.telegramChatLinks as DenteTelegramChatLinkPublic[]) ??

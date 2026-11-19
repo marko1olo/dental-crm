@@ -1,29 +1,34 @@
 import type React from "react";
 import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
 import { GranularRoleMatrixView } from "./GranularRoleMatrixView";
-import { AccessPoliciesGrid } from "./access/AccessPoliciesGrid";
 import { AccessSecurityGuaranteesGrid } from "./access/AccessSecurityGuaranteesGrid";
 import { AccessSecurityHero } from "./access/AccessSecurityHero";
 import { ActiveWorkspaceProfileCard } from "./access/ActiveWorkspaceProfileCard";
 import { InviteStaffCard } from "./access/InviteStaffCard";
-import { WorkspaceProfilesGrid } from "./access/WorkspaceProfilesGrid";
 
 export interface SettingsAccessTabProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	props?: any;
+	props?: {
+		dashboard?: {
+			clinicSettings?: {
+				profile?: { mode?: string };
+			};
+		};
+		activeWorkspaceProfile?: import("./access/ActiveWorkspaceProfileCard").WorkspaceProfileItem | null | undefined;
+		workspaceScopeLabels?: Record<string, string>;
+		staffRoleLabels?: Record<string, string>;
+		clinicModeLabels?: Record<string, { title?: string }>;
+		policyAuditEventLabels?: Record<string, string>;
+		[key: string]: unknown;
+	};
 	settingsTab?: string;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 export function SettingsAccessTab({ props = {} }: SettingsAccessTabProps) {
 	const {
-		dashboard,
 		activeWorkspaceProfile,
 		workspaceScopeLabels = {},
 		staffRoleLabels = {},
-		clinicModeLabels = {},
-		policyAuditEventLabels = {},
 	} = props || {};
 	const viewLabels = (workspaceViewLabels || {}) as Record<string, string>;
 
@@ -41,18 +46,6 @@ export function SettingsAccessTab({ props = {} }: SettingsAccessTabProps) {
 				workspaceScopeLabels={workspaceScopeLabels}
 				staffRoleLabels={staffRoleLabels}
 				viewLabels={viewLabels}
-			/>
-			<WorkspaceProfilesGrid
-				profiles={dashboard?.clinicSettings?.workspaceProfiles ?? []}
-				activeMode={dashboard?.clinicSettings?.profile?.mode}
-				clinicModeLabels={clinicModeLabels}
-				viewLabels={viewLabels}
-			/>
-			<AccessPoliciesGrid
-				policies={dashboard?.clinicSettings?.roleAccessPolicies ?? []}
-				workspaceScopeLabels={workspaceScopeLabels}
-				viewLabels={viewLabels}
-				policyAuditEventLabels={policyAuditEventLabels}
 			/>
 			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
 		</section>

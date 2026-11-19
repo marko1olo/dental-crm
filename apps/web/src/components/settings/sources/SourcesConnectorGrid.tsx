@@ -23,7 +23,7 @@ import { imagingConnectorCards } from "../../../settingsStaticData";
  * ошибкой TS2305 на импорте — то есть проверка, которой мешок пропсов не давал.
  *
  * Что было до пакета: семнадцать имён читались из
- * `Object.assign({}, appLogic, derivations) as any` и «отмывались» через
+ * `Object.assign({}, appLogic, derivations)` без строгой типизации и «отмывались» через
  * промежуточные `const typed*`; разметка ниже использует два. Измерено
  * `npx tsc -p apps/web/tsconfig.json --noEmit --noUnusedLocals`: 29 TS6133 в этом
  * файле, из них 17 — мёртвые локали `typed*`.

@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import { CLINICAL_BOT_PRESETS, type BotPreset, type BotTone } from "../telegramBotPresets";
 import type { BotChannelType } from "../BotMessagePreviewCard";
 
-export function useStudioState(parentProps?: any, initialChannel: BotChannelType = "telegram") {
+export interface StudioParentPropsBag {
+	telegramPatientPortalBaseUrlDraft?: string;
+	telegramMapsUrlDraft?: string;
+	telegramAllowVoiceIntakeDraft?: boolean;
+	[key: string]: unknown;
+}
+
+export function useStudioState(parentProps?: StudioParentPropsBag, initialChannel: BotChannelType = "telegram") {
 	const [activeChannel, setActiveChannel] = useState<BotChannelType>(initialChannel);
 	const [selectedPresetId, setSelectedPresetId] = useState<BotPreset["id"]>("premium");
 	const activePreset = CLINICAL_BOT_PRESETS[selectedPresetId];

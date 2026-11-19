@@ -13,11 +13,11 @@ export interface BotInfo {
 }
 
 export interface BotConfigurationCardProps {
-	clinicId: string;
+	clinicId?: string | undefined;
 	botStatus: BotStatus | null;
 	isBotLoading: boolean;
-	onRefreshStatus: () => Promise<void>;
-	onBotStatusChange?: (newStatus: Partial<BotStatus>) => void;
+	onRefreshStatus: () => Promise<void> | void;
+	onBotStatusChange?: ((newStatus: Partial<BotStatus>) => void) | undefined;
 }
 
 export interface BotConfigurationLogic {

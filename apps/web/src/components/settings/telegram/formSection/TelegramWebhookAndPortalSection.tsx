@@ -2,9 +2,21 @@ import React, { type ChangeEvent, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { PatientCabinetModal } from "../../../portal/patientCabinet/PatientCabinetModal";
 
+export type TelegramWebhookAndPortalPropsBag = {
+	telegramWebhookBaseUrlDraft?: string;
+	setTelegramWebhookBaseUrlDraft?: (val: string) => void;
+	telegramPatientPortalBaseUrlDraft?: string;
+	setTelegramPatientPortalBaseUrlDraft?: (val: string) => void;
+	telegramWelcomeImageUrlDraft?: string;
+	setTelegramWelcomeImageUrlDraft?: (val: string) => void;
+	telegramTokenTtlDraft?: string | number;
+	setTelegramTokenTtlDraft?: (val: string) => void;
+	markTelegramSettingsDirty?: () => void;
+	[key: string]: unknown;
+};
+
 interface TelegramWebhookAndPortalSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	props: any;
+	props: TelegramWebhookAndPortalPropsBag;
 }
 
 export function TelegramWebhookAndPortalSection({ props }: TelegramWebhookAndPortalSectionProps) {

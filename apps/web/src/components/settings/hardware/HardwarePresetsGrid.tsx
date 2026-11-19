@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import type { HardwarePreset } from "../../../services/hardware/hardwarePresets.js";
 
 interface Props {
-	presets: HardwarePreset[];
+	presets: readonly HardwarePreset[];
 	selectedPresetId: string;
 	onSelectPreset: (id: string) => void;
 	onAddDevice: (presetId: string) => void;
@@ -33,7 +33,7 @@ export const HardwarePresetsGrid: React.FC<Props> = ({
 					<button
 						key={preset.id}
 						type="button"
-						className={`hw-preset-card ${selectedPresetId === preset.id ? "border-[var(--primary,#0284c7)] bg-[var(--paper-soft)]" : ""}`}
+						className={`hw-preset-card ${selectedPresetId === preset.id ? "border-[var(--primary)] bg-[var(--paper-soft)]" : ""}`}
 						onClick={() => {
 							onSelectPreset(preset.id);
 							onAddDevice(preset.id);

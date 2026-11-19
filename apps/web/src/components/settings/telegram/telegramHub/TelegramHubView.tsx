@@ -12,15 +12,15 @@ import type {
 } from "./types";
 
 export interface TelegramHubViewProps {
-	clinicId?: string;
-	userId?: string;
+	clinicId?: string | undefined;
+	userId?: string | undefined;
 	botStatus: TelegramBotStatus | null;
 	isBotLoading: boolean;
 	accountStatus: TelegramAccountStatus | null;
 	isAccountLoading: boolean;
 	loadBotStatus: () => Promise<void> | void;
 	loadAccountStatus: () => Promise<void> | void;
-	onBotStatusChange?: (status: unknown) => void;
+	onBotStatusChange?: ((status: unknown) => void) | undefined;
 }
 
 export function TelegramHubView({

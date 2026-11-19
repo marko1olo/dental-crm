@@ -1,8 +1,23 @@
 import React, { type ChangeEvent } from "react";
 
+export type TelegramBotModeAndUsernamesPropsBag = {
+	telegramModeLabels?: Record<string, string>;
+	telegramModeDraft?: string;
+	setTelegramModeDraft?: (val: string) => void;
+	normalizedTelegramBotMode?: string;
+	telegramModeHints?: Record<string, string>;
+	telegramBotUsernameDraft?: string;
+	setTelegramBotUsernameDraft?: (val: string) => void;
+	telegramOwnBotUsernameDraft?: string;
+	setTelegramOwnBotUsernameDraft?: (val: string) => void;
+	telegramBotConfigId?: string;
+	setTelegramBotConfigId?: (val: string) => void;
+	markTelegramSettingsDirty?: () => void;
+	[key: string]: unknown;
+};
+
 interface TelegramBotModeAndUsernamesProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	props: any;
+	props: TelegramBotModeAndUsernamesPropsBag;
 }
 
 export function TelegramBotModeAndUsernames({ props }: TelegramBotModeAndUsernamesProps) {

@@ -62,14 +62,30 @@ export function buildDefaultTelegramPreview(
 	};
 }
 
+export interface SettingsTelegramTabProps {
+	props?: {
+		clinicId?: string;
+		dashboard?: {
+			clinicSettings?: {
+				profile?: {
+					organizationId?: string;
+				};
+			};
+		};
+		userId?: string;
+		currentUser?: {
+			id?: string;
+		};
+		onBotStatusChange?: (status: unknown) => void;
+		[key: string]: unknown;
+	};
+	settingsTab: string;
+}
+
 export function SettingsTelegramTab({
 	props,
 	settingsTab,
-}: {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	props?: any;
-	settingsTab: string;
-}) {
+}: SettingsTelegramTabProps) {
 	if (settingsTab !== "telegram") return null;
 
 	const clinicId =

@@ -27,8 +27,7 @@ export interface BotStudioModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	initialChannel?: BotChannelType;
-	// biome-ignore lint/suspicious/noExplicitAny: integration with settings bag
-	parentProps?: any;
+	parentProps?: Record<string, unknown> | undefined;
 }
 
 export function BotStudioModal({

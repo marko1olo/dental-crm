@@ -24,7 +24,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const invoicesFilePath = path.resolve(__dirname, "../../billing/InvoicesView.tsx");
-const financeFilePath = path.resolve(__dirname, "../../../FinanceView.tsx");
+const financeFilePath = path.resolve(__dirname, "../../../views/financeView/index.tsx");
 
 describe("Wave 61 (Feature 250): Invoices Server Sync, FinanceView Mounting & Zero Mocks", () => {
 	const sampleInvoices: BillingInvoice[] = [

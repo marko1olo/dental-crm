@@ -3,9 +3,32 @@ import { Bot, Lock, ShieldCheck } from "lucide-react";
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
+export interface TelegramConnectionStatus {
+	botUsername?: string;
+	mode: string;
+	tokenConfigured?: boolean;
+	webhookReady?: boolean;
+	webhookSecretConfigured?: boolean;
+	activeChatLinkCount?: number;
+	pendingLinkCodeCount?: number;
+	[key: string]: unknown;
+}
+
+export type TelegramConnectionHeaderPropsBag = {
+	telegramStatus?: TelegramConnectionStatus | null;
+	telegramModeLabels?: Record<string, string>;
+	adminSecretScopeWarning?: string;
+	telegramAdminSecretDraft?: string;
+	setTelegramAdminSecretDraft?: (val: string) => void;
+	adminSecretReady?: boolean;
+	unlockTelegramAdminSession?: (secret: string) => Promise<void> | void;
+	lockTelegramAdminSession?: () => void;
+	telegramAdminSecretSession?: string | null;
+	[key: string]: unknown;
+};
+
 export interface TelegramConnectionHeaderSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: integration with legacy settings props bag
-	props: any;
+	props: TelegramConnectionHeaderPropsBag;
 }
 
 export function TelegramConnectionHeaderSection({
@@ -27,8 +50,7 @@ export function TelegramConnectionHeaderSection({
 		telegramAdminSecretSession,
 	} = props;
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedTelegramStatus = telegramStatus as any | null;
+	const typedTelegramStatus = telegramStatus ?? null;
 
 	return (
 		<>

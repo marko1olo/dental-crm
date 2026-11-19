@@ -36,7 +36,12 @@ export const ScannerConfigForm: React.FC<Props> = ({
 				<select
 					className="hw-field-select"
 					value={scannerMode}
-					onChange={(e) => onScannerModeChange(e.target.value as any)}
+					onChange={(e) => {
+						const val = e.target.value;
+						if (val === "usb_hid_keyboard" || val === "usb_com_serial") {
+							onScannerModeChange(val);
+						}
+					}}
 				>
 					<option value="usb_hid_keyboard">USB HID (Эмуляция клавиатуры / Fast Burst)</option>
 					<option value="usb_com_serial">Virtual COM-порт (CDC ACM / Прямой порт)</option>
@@ -64,7 +69,12 @@ export const ScannerConfigForm: React.FC<Props> = ({
 					<select
 						className="hw-field-select"
 						value={gs1Separator}
-						onChange={(e) => onGs1SeparatorChange(e.target.value as any)}
+						onChange={(e) => {
+							const val = e.target.value;
+							if (val === "ascii29" || val === "tilde" || val === "auto") {
+								onGs1SeparatorChange(val);
+							}
+						}}
 					>
 						<option value="ascii29">ASCII 29 (GS / 0x1D Стандарт GS1)</option>
 						<option value="tilde">Тильда (~) в потоке данных</option>

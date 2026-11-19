@@ -19,7 +19,7 @@ import {
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
-import { SanpinStudioModal as AutoclaveSterilizationLogModal } from "../sanpin/SanpinStudioModal";
+import { SterilizationBatchCycleModal as AutoclaveSterilizationLogModal } from "../sanpin/SterilizationBatchCycleModal";
 import "./SettingsProtocolsTab.css";
 import { logger } from "../../utils/logger";
 import {
@@ -54,16 +54,13 @@ async function refusalMessage(
 export function SettingsProtocolsTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const { dashboard, loadDashboard } = appLogic;
 	const {
-		dashboard,
-		loadDashboard,
 		specialtyLabels,
 		documentLabels,
 		imagingKindLabels,
 		auth,
-	} = mergedProps;
+	} = derivations;
 
 	const typedProtocolTemplates = (dashboard?.protocolTemplates ||
 		[]) as ProtocolTemplate[];
@@ -159,14 +156,13 @@ export function SettingsProtocolsTab() {
 			setEditingId(null);
 			setEditForm({});
 			showToast("Шаблон сохранён", "success");
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
+		} catch (err: unknown) {
 			logger.error(err);
+			const errStatus = typeof err === "object" && err !== null && "status" in err && typeof (err as { status?: unknown }).status === "number"
+				? ((err as { status: number }).status)
+				: null;
 			showToast(
-				actionFailureToast(
-					"Шаблон не сохранён",
-					(err as { status?: number })?.status ?? null,
-				),
+				actionFailureToast("Шаблон не сохранён", errStatus),
 				"error",
 			);
 			setError(`Шаблон не сохранён: ${NO_RESPONSE_CAUSE}.`);
@@ -192,14 +188,13 @@ export function SettingsProtocolsTab() {
 				await loadDashboard();
 			}
 			showToast("Шаблон удалён", "success");
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		} catch (err: any) {
+		} catch (err: unknown) {
 			logger.error(err);
+			const errStatus = typeof err === "object" && err !== null && "status" in err && typeof (err as { status?: unknown }).status === "number"
+				? ((err as { status: number }).status)
+				: null;
 			showToast(
-				actionFailureToast(
-					"Шаблон не удалён",
-					(err as { status?: number })?.status ?? null,
-				),
+				actionFailureToast("Шаблон не удалён", errStatus),
 				"error",
 			);
 			setLoading(false);

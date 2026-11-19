@@ -1,9 +1,22 @@
+export interface MprClinicalChecklistItem {
+	id: string;
+	title: string;
+	detail: string;
+	status: string;
+}
+
+export interface MprOperatorSummaryCardItem {
+	id: string;
+	title: string;
+	value: string | number;
+	detail: string;
+	tone: string;
+}
+
 export interface DicomMprRoadmapPanelProps {
 	mprClinicalNextStep: string;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	mprClinicalChecklist: Array<any>;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	mprOperatorSummaryCards: Array<any>;
+	mprClinicalChecklist: readonly MprClinicalChecklistItem[] | MprClinicalChecklistItem[];
+	mprOperatorSummaryCards: readonly MprOperatorSummaryCardItem[] | MprOperatorSummaryCardItem[];
 }
 
 export function DicomMprRoadmapPanel({

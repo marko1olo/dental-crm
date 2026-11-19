@@ -1,7 +1,7 @@
 import { AtolKkt10Emulator, ShtrihMKktEmulator } from "../../../../services/hardware/hardwareEmulators.js";
 import type { TestReceiptResult } from "./kktTypes.js";
 
-export async function printEmulatorReceipt(protocol: "atol" | "shtrih", cashier: string): Promise<{ result: TestReceiptResult | null; error?: string }> {
+export async function printEmulatorReceipt(protocol: "atol" | "shtrih", cashier: string): Promise<{ result: TestReceiptResult | null; error?: string | undefined }> {
 	await new Promise((r) => setTimeout(r, 300));
 	if (protocol === "atol") {
 		const emulator = new AtolKkt10Emulator();

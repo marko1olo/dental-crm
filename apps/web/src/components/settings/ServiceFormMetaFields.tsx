@@ -2,24 +2,26 @@ import type React from "react";
 import { CheckCircle2, ReceiptText } from "lucide-react";
 import type { DentalSpecialty, ServiceCategory } from "@dental/shared";
 
+export interface ServiceFormState {
+	title: string;
+	code: string;
+	catalogCode?: string;
+	standardCode?: string;
+	order804nCode?: string;
+	category: ServiceCategory;
+	specialty: DentalSpecialty;
+	basePriceRub: number;
+	materialsCostRub?: number;
+	durationMinutes: number;
+	taxDeductible: boolean;
+	vatRate?: "vat_exempt" | "vat_0" | "vat_20" | undefined;
+	active: boolean;
+}
+
 export interface ServiceFormMetaFieldsProps {
-	readonly editServiceForm: {
-		title: string;
-		code: string;
-		catalogCode?: string;
-		standardCode?: string;
-		order804nCode?: string;
-		category: ServiceCategory;
-		specialty: DentalSpecialty;
-		basePriceRub: number;
-		materialsCostRub?: number;
-		durationMinutes: number;
-		taxDeductible: boolean;
-		vatRate?: "vat_exempt" | "vat_0" | "vat_20" | undefined;
-		active: boolean;
-	};
+	readonly editServiceForm: ServiceFormState;
 	readonly setEditServiceForm: React.Dispatch<
-		React.SetStateAction<any>
+		React.SetStateAction<ServiceFormState>
 	>;
 	readonly serviceCategoryLabels: Record<string, string>;
 	readonly specialtyLabels: Record<string, string>;
@@ -40,7 +42,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						id="service-category-select"
 						value={editServiceForm.category}
 						onChange={(e) =>
-							setEditServiceForm((prev: any) => ({
+							setEditServiceForm((prev) => ({
 								...prev,
 								category: e.target.value as ServiceCategory,
 							}))
@@ -61,7 +63,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						id="service-specialty-select"
 						value={editServiceForm.specialty}
 						onChange={(e) =>
-							setEditServiceForm((prev: any) => ({
+							setEditServiceForm((prev) => ({
 								...prev,
 								specialty: e.target.value as DentalSpecialty,
 							}))
@@ -85,7 +87,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						id="service-duration-select"
 						value={editServiceForm.durationMinutes}
 						onChange={(e) =>
-							setEditServiceForm((prev: any) => ({
+							setEditServiceForm((prev) => ({
 								...prev,
 								durationMinutes: Number.parseInt(e.target.value, 10),
 							}))
@@ -118,7 +120,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						type="checkbox"
 						checked={editServiceForm.taxDeductible}
 						onChange={(e) =>
-							setEditServiceForm((prev: any) => ({
+							setEditServiceForm((prev) => ({
 								...prev,
 								taxDeductible: e.target.checked,
 							}))
@@ -137,7 +139,7 @@ export const ServiceFormMetaFields: React.FC<ServiceFormMetaFieldsProps> = ({
 						type="checkbox"
 						checked={editServiceForm.active}
 						onChange={(e) =>
-							setEditServiceForm((prev: any) => ({
+							setEditServiceForm((prev) => ({
 								...prev,
 								active: e.target.checked,
 							}))

@@ -19,11 +19,10 @@ import { DicomMprRoadmapPanel } from "./DicomMprRoadmapPanel";
 import { DicomMprVisualizerPanel } from "./DicomMprVisualizerPanel";
 import { DicomOhifBridgePanel } from "./DicomOhifBridgePanel";
 import { DicomResourcePolicyPanel } from "./DicomResourcePolicyPanel";
-import type { CbctWorkbenchPlane } from "./types";
+import type { CbctWorkbenchPlane, DicomMprWorkbenchPropsBag } from "./types";
 
 export interface DicomMprWorkbenchPanelProps {
-	// biome-ignore lint/suspicious/noExplicitAny: composite legacy settings props bag
-	mergedProps: any;
+	mergedProps: DicomMprWorkbenchPropsBag;
 }
 
 export function DicomMprWorkbenchPanel({

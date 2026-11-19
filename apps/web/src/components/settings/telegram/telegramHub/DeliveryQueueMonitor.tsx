@@ -33,20 +33,20 @@ export function DeliveryQueueMonitor({ clinicId: _clinicId }: DeliveryQueueMonit
 				const query = _clinicId ? `?organizationId=${encodeURIComponent(_clinicId)}` : "";
 				const res = await fetch(`/api/telegram/outbox${query}`);
 				if (res.ok) {
-					const data = (await res.json()) as { items?: any[] };
+					const data = (await res.json()) as { items?: Array<Record<string, unknown>> };
 					if (isMounted && Array.isArray(data?.items) && data.items.length > 0) {
 						const mapped: TelegramDeliveryQueueItem[] = data.items.map((item) => ({
-							id: item.id || `msg_${Math.random()}`,
-							recipientName: item.recipientName || "Пациент",
-							recipientPhone: item.recipientPhone || "",
-							recipientChatId: item.chatId || undefined,
-							templateCode: item.templateKind || "appointment_reminder",
-							messageText: item.text || item.messageText || "",
+							id: String(item.id || `msg_${Math.random()}`),
+							recipientName: String(item.recipientName || "Пациент"),
+							recipientPhone: String(item.recipientPhone || ""),
+							recipientChatId: item.chatId ? String(item.chatId) : undefined,
+							templateCode: String(item.templateKind || "appointment_reminder"),
+							messageText: String(item.text || item.messageText || ""),
 							status: item.deliveryStatus === "delivered" ? "sent" : item.deliveryStatus === "failed" ? "failed" : "queued",
-							attempts: item.attemptCount || 1,
+							attempts: Number(item.attemptCount || 1),
 							maxAttempts: 3,
-							lastAttemptAt: item.updatedAt || new Date().toISOString(),
-							createdAt: item.createdAt || new Date().toISOString(),
+							lastAttemptAt: String(item.updatedAt || new Date().toISOString()),
+							createdAt: String(item.createdAt || new Date().toISOString()),
 						}));
 						setQueueItems(mapped);
 					}

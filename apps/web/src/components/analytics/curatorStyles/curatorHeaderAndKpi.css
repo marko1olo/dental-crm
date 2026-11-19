@@ -98,8 +98,8 @@
 	font-size: 13px;
 	font-weight: 600;
 	color: var(--ink-muted, #64748b);
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
+	text-transform: none;
+	letter-spacing: normal;
 }
 .curator-kpi-value {
 	font-size: 26px;

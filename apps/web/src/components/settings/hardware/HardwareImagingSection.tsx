@@ -17,7 +17,7 @@ interface Props {
 	stats: { ready: number; notFound: number; untested: number };
 	testingDeviceIds: Set<string>;
 	isPresetsPickerOpen: boolean;
-	presets: HardwarePreset[];
+	presets: readonly HardwarePreset[];
 	selectedNewPresetId: string;
 	activeGatewaySensorId: string;
 	isDetectingSensor: boolean;

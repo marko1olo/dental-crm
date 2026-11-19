@@ -1,11 +1,11 @@
 import { KeyRound, MoreVertical, Phone, ShieldCheck, UserPlus } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import type { StaffProfileExtended } from "@dental/shared";
 
 export interface StaffMemberCardActionsProps {
-	// biome-ignore lint/suspicious/noExplicitAny: member data
-	member: any;
-	onOpenProfile: (member: any) => void;
+	member: StaffProfileExtended;
+	onOpenProfile: (member: StaffProfileExtended) => void;
 	onStartEdit: (mode: "phone" | "pin" | "password", initial?: string) => void;
 }
 

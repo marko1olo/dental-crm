@@ -65,7 +65,7 @@
 .curator-fin-label {
 	font-size: 11px;
 	color: var(--ink-muted, #64748b);
-	text-transform: uppercase;
+	text-transform: none;
 }
 .curator-fin-value {
 	font-size: 14px;

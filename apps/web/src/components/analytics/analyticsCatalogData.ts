@@ -12,6 +12,7 @@
  */
 
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { formatKopecksToRub, kopecksToRubles } from "@dental/shared";
 
 export type AnalyticsPeriod = "day" | "yesterday" | "week" | "month" | "quarter" | "year" | "custom";
 
@@ -106,12 +107,14 @@ export interface ClinicAnalyticsSSOT {
 }
 
 /**
- * Каноническое безопасное форматирование рублей из целочисленных копеек.
+ * Каноническое безопасное форматирование рублей из целочисленных копеек (Мандат 8bm).
  */
 export function formatKopecksToRubles(kopecks: number): string {
-	const rubles = Math.round(Number(kopecks || 0) / 100);
+	const rubles = Math.round(kopecksToRubles(kopecks || 0));
 	return `${rubles.toLocaleString("ru-RU")} ₽`;
 }
+
+export { kopecksToRubles, formatKopecksToRub };
 
 /**
  * Нормализация категории медицинских услуг и направлений на чистый клинический русский язык (Мандат 8x).
@@ -416,8 +419,8 @@ export function exportAnalyticsToCsv(data: ClinicAnalyticsSSOT, clinicName?: str
 		`"${resolvedClinicName} — УПРАВЛЕНЧЕСКАЯ АНАЛИТИКА И ФИНАНСОВЫЙ ОТЧЕТ"`,
 		`"Период:","${data.periodLabel}"`,
 		`"Дата выгрузки:","${new Date().toLocaleDateString("ru-RU")} ${new Date().toLocaleTimeString("ru-RU")}"`,
-		`"Выручка кассы (₽):",${Math.round(data.revenueKopecks / 100)}`,
-		`"Средний чек (₽):",${Math.round(data.averageCheckKopecks / 100)}`,
+		`"Выручка кассы (₽):",${kopecksToRubles(data.revenueKopecks)}`,
+		`"Средний чек (₽):",${kopecksToRubles(data.averageCheckKopecks)}`,
 		`"Загрузка кресел (%):",${data.chairOccupancyPercent}`,
 		`"Повторная явка пациентов (%):",${data.rebookingRatePercent}`,
 		`"Всего визитов:",${data.totalVisitsCount}`,
@@ -427,14 +430,14 @@ export function exportAnalyticsToCsv(data: ClinicAnalyticsSSOT, clinicName?: str
 		`"СТРУКТУРА ОПЛАТ (КАССА)"`,
 		`"Способ оплаты","Сумма (₽)","Доля (%)"`,
 		...data.paymentBreakdown.methods.map(
-			(m) => `"${m.label}",${Math.round(m.amountKopecks / 100)},${m.percent}`,
+			(m) => `"${m.label}",${kopecksToRubles(m.amountKopecks)},${m.percent}`,
 		),
 		"",
 		`"РЕЙТИНГ ВРАЧЕЙ КЛИНИКИ"`,
 		`"Врач","Специальность","Выручка (₽)","Приёмов","Часов в кресле","Средний чек (₽)","Повторная запись (%)"`,
 		...data.doctors.map(
 			(d) =>
-				`"${d.name}","${d.specialty}",${Math.round(d.revenueKopecks / 100)},${d.visitsCount},${d.chairHours},${Math.round(d.averageCheckKopecks / 100)},${d.rebookingPercent}`,
+				`"${d.name}","${d.specialty}",${kopecksToRubles(d.revenueKopecks)},${d.visitsCount},${d.chairHours},${kopecksToRubles(d.averageCheckKopecks)},${d.rebookingPercent}`,
 		),
 	];
 

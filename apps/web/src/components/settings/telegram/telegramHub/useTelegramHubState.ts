@@ -3,8 +3,8 @@ import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import type { TelegramAccountStatus, TelegramBotStatus } from "./types";
 
 export interface UseTelegramHubStateProps {
-	clinicId?: string;
-	onBotStatusChange?: (status: unknown) => void;
+	clinicId?: string | undefined;
+	onBotStatusChange?: ((status: unknown) => void) | undefined;
 }
 
 export function useTelegramHubState({

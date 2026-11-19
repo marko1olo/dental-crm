@@ -1,5 +1,6 @@
 import type {
 	DatabaseSnapshot,
+	DryRunRestoreResult,
 	OfflineSyncQueueStatus,
 } from "@dental/shared";
 import {
@@ -48,6 +49,8 @@ import {
 	LocalVaultStorageIndicator,
 } from "./backupVaultModules";
 
+type VaultSection = "export" | "restore" | "snapshots" | "scheduler" | "wizard" | "integrity";
+
 interface OfflineBackupVaultPanelProps {
 	organizationId?: string | undefined;
 	clinicName?: string | undefined;
@@ -57,9 +60,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 	organizationId,
 	clinicName,
 }) => {
-	const [activeSection, setActiveSection] = useState<
-		"export" | "restore" | "snapshots" | "scheduler" | "wizard" | "integrity"
-	>("export");
+	const [activeSection, setActiveSection] = useState<VaultSection>("export");
 	const [isSyncGuardOpen, setIsSyncGuardOpen] = useState(false);
 
 	// Export state
@@ -75,7 +76,7 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 	const [showImportPassphrase, setShowImportPassphrase] = useState(false);
 	const [importRawText, setImportRawText] = useState<string | null>(null);
 	const [importFileName, setImportFileName] = useState<string | null>(null);
-	const [dryRunResult, setDryRunResult] = useState<any>(null);
+	const [dryRunResult, setDryRunResult] = useState<DryRunRestoreResult | null>(null);
 	const [inspectError, setInspectError] = useState<string | null>(null);
 	const [isImporting, setIsImporting] = useState(false);
 	const [isExecutingDryRun, setIsExecutingDryRun] = useState(false);
@@ -165,8 +166,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			});
 			setLastExportResult(result);
 			refreshVaultSnapshots();
-		} catch (err: any) {
-			setExportError(err?.message || "Ошибка создания резервной копии");
+		} catch (err: unknown) {
+			setExportError(err instanceof Error ? err.message : "Ошибка создания резервной копии");
 		} finally {
 			setIsExporting(false);
 		}
@@ -197,8 +198,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 		try {
 			const dryRun = runDryRunRestoreVerification(rawText, { passphrase: pass || undefined, targetOrganizationId: organizationId });
 			setDryRunResult(dryRun);
-		} catch (err: any) {
-			setInspectError(err?.message || "Ошибка проверки архива");
+		} catch (err: unknown) {
+			setInspectError(err instanceof Error ? err.message : "Ошибка проверки архива");
 		} finally {
 			setIsExecutingDryRun(false);
 		}
@@ -213,8 +214,8 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 			setLastRestoreResult(result);
 			runIntegrityCheck(false);
 			refreshVaultSnapshots();
-		} catch (err: any) {
-			setRestoreError(err?.message || "Ошибка восстановления из резервной копии");
+		} catch (err: unknown) {
+			setRestoreError(err instanceof Error ? err.message : "Ошибка восстановления из резервной копии");
 		} finally {
 			setIsImporting(false);
 		}
@@ -251,6 +252,15 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 		deleteLocalVaultSnapshot(snapshotId);
 		refreshVaultSnapshots();
 	};
+
+	const SECTIONS: Array<{ id: VaultSection; label: string; icon: React.ReactNode }> = [
+		{ id: "export", label: "Экспорт архива (.dente)", icon: <HardDrive size={15} /> },
+		{ id: "restore", label: "Восстановление и проверка", icon: <UploadCloud size={15} /> },
+		{ id: "snapshots", label: "Журнал копий", icon: <Database size={15} /> },
+		{ id: "scheduler", label: "Автобэкап (Расписание)", icon: <Clock size={15} /> },
+		{ id: "wizard", label: "Аварийный визард", icon: <ShieldCheck size={15} /> },
+		{ id: "integrity", label: "Целостность и здоровье", icon: <ShieldCheck size={15} /> },
+	];
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "4px 0 12px 0", boxSizing: "border-box" }} data-testid="offline-vault-modal">
@@ -320,17 +330,10 @@ export const OfflineBackupVaultPanel: React.FC<OfflineBackupVaultPanelProps> = (
 
 			{/* SECTION TABS */}
 			<div style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "4px", borderRadius: "10px", background: "var(--paper-soft)", border: "1px solid var(--line)", width: "100%", boxSizing: "border-box" }} role="tablist">
-				{[
-					{ id: "export", label: "Экспорт архива (.dente)", icon: <HardDrive size={15} /> },
-					{ id: "restore", label: "Восстановление и проверка", icon: <UploadCloud size={15} /> },
-					{ id: "snapshots", label: "Журнал копий", icon: <Database size={15} /> },
-					{ id: "scheduler", label: "Автобэкап (Расписание)", icon: <Clock size={15} /> },
-					{ id: "wizard", label: "Аварийный визард", icon: <ShieldCheck size={15} /> },
-					{ id: "integrity", label: "Целостность и здоровье", icon: <ShieldCheck size={15} /> },
-				].map((tab) => {
+				{SECTIONS.map((tab) => {
 					const isActive = activeSection === tab.id;
 					return (
-						<button key={tab.id} type="button" role="tab" aria-selected={isActive} onClick={() => setActiveSection(tab.id as any)} style={{ flex: "1 1 auto", minHeight: "34px", padding: "6px 12px", borderRadius: "7px", border: isActive ? "1px solid var(--teal)" : "1px solid var(--line)", background: isActive ? "var(--teal-surface, rgba(13, 148, 136, 0.14))" : "var(--paper)", color: isActive ? "var(--ink)" : "var(--muted)", fontWeight: isActive ? 600 : 500, fontSize: "12.5px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+						<button key={tab.id} type="button" role="tab" aria-selected={isActive} onClick={() => setActiveSection(tab.id)} style={{ flex: "1 1 auto", minHeight: "34px", padding: "6px 12px", borderRadius: "7px", border: isActive ? "1px solid var(--teal)" : "1px solid var(--line)", background: isActive ? "var(--teal-surface, rgba(13, 148, 136, 0.14))" : "var(--paper)", color: isActive ? "var(--ink)" : "var(--muted)", fontWeight: isActive ? 600 : 500, fontSize: "12.5px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
 							<span style={{ color: isActive ? "var(--teal)" : "var(--muted)" }}>{tab.icon}</span>
 							<span>{tab.label}</span>
 						</button>

@@ -1,9 +1,12 @@
+import type React from "react";
+import type { DicomSeriesPreviewGroup, DicomSeriesPreviewResponse } from "@dental/shared";
 import { useAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useSettingsDerivations } from "../../../useSettingsDerivations";
 import {
 	DicomCapabilityHeader,
 	DicomMprWorkbenchPanel,
 	DicomSeriesLabPanel,
+	type DicomMprWorkbenchPropsBag,
 } from "./dicomCapability";
 
 export type * from "./dicomCapability";
@@ -12,25 +15,21 @@ export * from "./dicomCapability";
 export function SourcesDicomCapability() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const mergedProps = Object.assign({}, appLogic, derivations) as DicomMprWorkbenchPropsBag;
 
-	const {
-		imagingViewerCapabilities,
-		previewDicomSeries,
-		isDicomSeriesPreviewLoading,
-		dicomSeriesPreview,
-		imagingKindLabels,
-		dicomSeriesViewerLabels,
-		mprLoadStrategyLabels,
-		mprResourceTierLabels,
-	} = mergedProps;
+	const imagingViewerCapabilities = mergedProps["imagingViewerCapabilities"];
+	const previewDicomSeries = typeof mergedProps["previewDicomSeries"] === "function" ? (mergedProps["previewDicomSeries"] as () => void | Promise<void>) : () => {};
+	const isDicomSeriesPreviewLoading = Boolean(mergedProps["isDicomSeriesPreviewLoading"]);
+	const dicomSeriesPreview = (mergedProps["dicomSeriesPreview"] ?? null) as DicomSeriesPreviewResponse | null;
+	const imagingKindLabels = (mergedProps["imagingKindLabels"] as Record<string, string>) ?? {};
+	const dicomSeriesViewerLabels = (mergedProps["dicomSeriesViewerLabels"] as Record<string, string>) ?? {};
+	const mprLoadStrategyLabels = (mergedProps["mprLoadStrategyLabels"] as Record<string, string>) ?? {};
+	const mprResourceTierLabels = (mergedProps["mprResourceTierLabels"] as Record<string, string>) ?? {};
 
 	const typedImagingViewerCapabilities = (
 		Array.isArray(imagingViewerCapabilities) ? imagingViewerCapabilities : []
 	) as Array<{
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		icon: any;
+		icon: React.ReactNode;
 		title: string;
 		detail: string;
 		state: string;
@@ -38,8 +37,7 @@ export function SourcesDicomCapability() {
 
 	const typedDicomSeriesPreviewSeries = (
 		Array.isArray(dicomSeriesPreview?.series) ? dicomSeriesPreview.series : []
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	) as Array<any>;
+	) as DicomSeriesPreviewGroup[];
 
 	const typedDicomSeriesPreviewParserNotes = (
 		Array.isArray(dicomSeriesPreview?.parserNotes)

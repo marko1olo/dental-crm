@@ -10,7 +10,7 @@
 
 import React from "react";
 import { Building2, DollarSign, Stethoscope } from "lucide-react";
-import type { StaffRole } from "@dental/shared";
+import type { StaffRole, ClinicBranch, Chair } from "@dental/shared";
 import { CREATABLE_STAFF_ROLES, staffRoleTitle } from "./settingsInviteRoles";
 
 export const DENTAL_SPECIALTIES_LIST = [
@@ -38,12 +38,10 @@ export interface StaffProfilePayrollSectionProps {
 	readonly setRole: (r: StaffRole) => void;
 	readonly specialties: string[];
 	readonly handleSpecialtyToggle: (id: string) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: dashboard clinic model
-	readonly clinicsList: any[];
+	readonly clinicsList: readonly ClinicBranch[];
 	readonly assignedBranches: string[];
 	readonly handleBranchToggle: (id: string) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: dashboard chair model
-	readonly chairsList: any[];
+	readonly chairsList: readonly Chair[];
 	readonly assignedChairIds: string[];
 	readonly handleChairToggle: (id: string) => void;
 	readonly priceCategory: string;
@@ -151,7 +149,7 @@ export const StaffProfilePayrollSection: React.FC<StaffProfilePayrollSectionProp
 						</span>
 					) : (
 						<div className="flex flex-col gap-1.5">
-							{clinicsList.map((clinic: any) => {
+							{clinicsList.map((clinic) => {
 								const checked = assignedBranches.includes(clinic.id);
 								return (
 									<label
@@ -180,7 +178,7 @@ export const StaffProfilePayrollSection: React.FC<StaffProfilePayrollSectionProp
 						</span>
 					) : (
 						<div className="grid grid-cols-2 gap-1.5">
-							{chairsList.map((chair: any) => {
+							{chairsList.map((chair) => {
 								const checked = assignedChairIds.includes(chair.id);
 								return (
 									<label

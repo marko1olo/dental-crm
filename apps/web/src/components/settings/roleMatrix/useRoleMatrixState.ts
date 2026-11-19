@@ -4,46 +4,44 @@
  */
 import { type GranularStaffRole, GRANULAR_ROLE_MATRIX, PERMISSION_DEFINITIONS } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../../lib/safeLocalStorage";
 import { showToast } from "../../GlobalToast";
 import { CLINICAL_ROLES, ROLE_DISPLAY_NAMES } from "./roleMatrixConstants";
 import type { RoleCategory, RoleMatrixState, RolePermissionsMap } from "./roleMatrixTypes";
 const STORAGE_KEY = "dente_custom_role_matrix";
 
-const syncMatrix = (matrix: Record<string, RolePermissionsMap>) => {
-	if (typeof fetch !== "undefined") {
-		fetch("/api/settings/role-matrix", {
-			method: "PUT",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ matrix }),
-		}).catch(() => null);
+const syncMatrix = async (matrix: Record<string, RolePermissionsMap>): Promise<boolean> => {
+	if (typeof fetch === "undefined") return true;
+	try {
+		const res = await fetch("/api/settings/role-matrix", { method: "PUT", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ matrix }) });
+		if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { message?: string }).message || `Ошибка сервера (${res.status})`);
+		return true;
+	} catch (e: unknown) {
+		showToast(e instanceof Error ? e.message : "Ошибка сохранения матрицы", "error");
+		return false;
 	}
 };
 
 export function useRoleMatrixState(initialRole: GranularStaffRole = "doctor"): RoleMatrixState {
 	const [selectedRole, setSelectedRoleState] = useState<GranularStaffRole>(initialRole);
-	const [activeCategory, setActiveCategory] = useState<RoleCategory>(() =>
-		CLINICAL_ROLES.includes(initialRole) ? "clinical" : "administrative");
+	const [activeCategory, setActiveCategory] = useState<RoleCategory>(() => CLINICAL_ROLES.includes(initialRole) ? "clinical" : "administrative");
 	const [showAdvancedRoles, setShowAdvancedRoles] = useState(false);
 	const [selectedModuleFilter, setSelectedModuleFilter] = useState("all");
 	const [onlySuperRights, setOnlySuperRights] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-	const [customOverrides, setCustomOverrides] = useState<Record<string, RolePermissionsMap>>(() =>
-		safeLocalStorageGetJson<Record<string, RolePermissionsMap>>(STORAGE_KEY, {}) || {});
+	const [customOverrides, setCustomOverrides] = useState<Record<string, RolePermissionsMap>>(() => safeLocalStorageGetJson<Record<string, RolePermissionsMap>>(STORAGE_KEY, {}) || {});
 
 	useEffect(() => {
 		if (typeof fetch === "undefined") return;
-		fetch("/api/settings/role-matrix").then((r) => (r.ok ? r.json() : null)).then((d) => {
-			if (d?.matrix && typeof d.matrix === "object" && Object.keys(d.matrix).length > 0) {
-				setCustomOverrides((prev) => ({ ...prev, ...d.matrix }));
-			}
+		fetch("/api/settings/role-matrix", { headers: getDenteAuthHeaders() }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+			if (d?.matrix && typeof d.matrix === "object") setCustomOverrides(d.matrix);
 		}).catch(() => null);
 	}, []);
 
 	const currentPermissions = useMemo<RolePermissionsMap>(() => ({
-		...(GRANULAR_ROLE_MATRIX[selectedRole] || {}),
-		...(customOverrides[selectedRole] || {}),
+		...(GRANULAR_ROLE_MATRIX[selectedRole] || {}), ...(customOverrides[selectedRole] || {}),
 	}), [selectedRole, customOverrides]);
 
 	const setSelectedRole = useCallback((role: GranularStaffRole) => {
@@ -73,20 +71,20 @@ export function useRoleMatrixState(initialRole: GranularStaffRole = "doctor"): R
 	const savePermissions = useCallback(async () => {
 		setIsSaving(true);
 		safeLocalStorageSetJson(STORAGE_KEY, customOverrides);
-		syncMatrix(customOverrides);
+		const ok = await syncMatrix(customOverrides);
 		setIsSaving(false);
-		setHasUnsavedChanges(false);
-		showToast(`Права роли «${ROLE_DISPLAY_NAMES[selectedRole] || selectedRole}» успешно сохранены`, "success");
+		if (ok) { setHasUnsavedChanges(false); showToast(`Права роли «${ROLE_DISPLAY_NAMES[selectedRole] || selectedRole}» успешно сохранены`, "success"); }
 	}, [customOverrides, selectedRole]);
 
 	const resetToStandard = useCallback(async () => {
+		setIsSaving(true);
 		const next = { ...customOverrides };
 		delete next[selectedRole];
 		setCustomOverrides(next);
 		safeLocalStorageSetJson(STORAGE_KEY, next);
-		syncMatrix(next);
-		setHasUnsavedChanges(false);
-		showToast("Права сброшены к клиническому стандарту", "info");
+		const ok = await syncMatrix(next);
+		setIsSaving(false);
+		if (ok) { setHasUnsavedChanges(false); showToast("Права сброшены к клиническому стандарту", "info"); }
 	}, [customOverrides, selectedRole]);
 
 	const applyDoctorAutonomyPreset = useCallback(() => {

@@ -37,11 +37,51 @@ const _clinicalRuleOwnerRoles: StaffRole[] = [
 	"manager",
 ];
 
+type SettingsRulesTabContract = {
+	dashboard?: unknown;
+	newRuleAction?: ClinicalRuleAction;
+	newRuleBlockedServiceId?: string;
+	newRuleCategory?: ServiceCategory;
+	newRuleCompletedServiceId?: string;
+	newRuleOwnerRole?: StaffRole;
+	newRulePatientText?: string;
+	newRuleRequiredServiceId?: string;
+	newRuleSeverity?: ClinicalRuleSeverity;
+	newRuleSpecialty?: DentalSpecialty;
+	newRuleTitle?: string;
+	newRuleTriggerServiceId?: string;
+	newRuleWarningText?: string;
+	setNewRuleAction?: (val: ClinicalRuleAction) => void;
+	setNewRuleBlockedServiceId?: (val: string) => void;
+	setNewRuleCategory?: (val: ServiceCategory) => void;
+	setNewRuleCompletedServiceId?: (val: string) => void;
+	setNewRuleOwnerRole?: (val: StaffRole) => void;
+	setNewRulePatientText?: (val: string) => void;
+	setNewRuleRequiredServiceId?: (val: string) => void;
+	setNewRuleSeverity?: (val: ClinicalRuleSeverity) => void;
+	setNewRuleSpecialty?: (val: DentalSpecialty) => void;
+	setNewRuleTitle?: (val: string) => void;
+	setNewRuleTriggerServiceId?: (val: string) => void;
+	setNewRuleWarningText?: (val: string) => void;
+	submitClinicalRule?: (e: React.FormEvent) => void;
+	removeClinicalRule?: (id: string) => void;
+	specialtyLabels?: Record<string, string>;
+	toggleClinicalRule?: (id: string, active: boolean) => void;
+	isClinicalRuleSaving?: boolean;
+	createClinicalRuleFromSettings?: () => void;
+	serviceTitle?: (id: string) => string;
+	clinicalRuleActionLabels?: Record<ClinicalRuleAction, string>;
+	clinicalRuleSeverityLabels?: Record<ClinicalRuleSeverity, string>;
+	serviceCategoryLabels?: Record<ServiceCategory, string>;
+	staffRoleLabels?: Record<string, string>;
+	clinicalRuleSummary?: unknown;
+	[key: string]: unknown;
+};
+
 export function SettingsRulesTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const mergedProps = Object.assign({}, appLogic, derivations) as any;
+	const mergedProps: SettingsRulesTabContract = Object.assign({}, appLogic, derivations);
 	const {
 		dashboard,
 		newRuleAction,

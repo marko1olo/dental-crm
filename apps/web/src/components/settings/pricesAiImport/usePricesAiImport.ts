@@ -212,7 +212,7 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 						costRub: r.costRub,
 						durationMinutes: r.durationMinutes,
 						warrantyMonths: r.warrantyMonths,
-						suggestedAction: r.suggestedAction,
+						suggestedAction: r.suggestedAction === "update_existing" || r.suggestedAction === "link_existing" ? r.suggestedAction : "create_new",
 						matchedExistingServiceId: r.matchedExistingServiceId,
 					}));
 
@@ -277,7 +277,7 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 				matchedExistingServiceId: r.matchedExistingServiceId,
 				matchedExistingTitle: r.matchedExistingTitle,
 				matchedExistingPriceRub: r.matchedExistingPriceRub,
-				suggestedAction: r.suggestedAction,
+				suggestedAction: r.suggestedAction === "update_existing" || r.suggestedAction === "link_existing" ? r.suggestedAction : "create_new",
 				isApproved: r.validationStatus === "valid",
 			}))
 		: [];

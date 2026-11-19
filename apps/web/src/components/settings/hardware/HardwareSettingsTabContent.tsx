@@ -3,11 +3,11 @@ import { UNIVERSAL_SENSOR_CATALOG, autoDetectConnectedSensor, testSensorConnecti
 import { useHardwareSettings } from "../../../hooks/useHardwareSettings.js";
 import type { HardwareDeviceConfig } from "../../../services/hardware/hardwarePresets.js";
 import { showToast } from "../../GlobalToast.js";
-import { HardwareCockpitBar } from "../hardware/HardwareCockpitBar.js";
-import { HardwareKktSection } from "../hardware/HardwareKktSection.js";
-import { HardwareScannerSection } from "../hardware/HardwareScannerSection.js";
-import { HardwareLabelPrinterSection } from "../hardware/HardwareLabelPrinterSection.js";
-import { HardwareAudioSection } from "../hardware/HardwareAudioSection.js";
+import { HardwareCockpitBar } from "./HardwareCockpitBar.js";
+import { HardwareKktSection } from "./HardwareKktSection.js";
+import { HardwareScannerSection } from "./HardwareScannerSection.js";
+import { HardwareLabelPrinterSection } from "./HardwareLabelPrinterSection.js";
+import { HardwareAudioSection } from "./HardwareAudioSection.js";
 import { HardwareDomainTabs, type HardwareDomainTab } from "./HardwareDomainTabs.js";
 import { HardwareImagingSection } from "./HardwareImagingSection.js";
 

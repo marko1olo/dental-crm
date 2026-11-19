@@ -10,7 +10,7 @@ export const workspaceViewPreloaders: Partial<
 	schedule: () => import("../ScheduleView"),
 	patients: () => import("../PatientsView"),
 	documents: () => import("../DocumentsView"),
-	finance: () => import("../FinanceView"),
+	finance: () => import("../views/financeView"),
 	communications: () => import("../CommunicationsView"),
 	settings: () => import("../SettingsView"),
 	marketing: () => import("../MarketingView"),

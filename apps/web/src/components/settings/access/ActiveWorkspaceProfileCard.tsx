@@ -1,8 +1,16 @@
 import type React from "react";
 
+export interface WorkspaceProfileItem {
+	scope: string;
+	title: string;
+	description?: string;
+	defaultSection: string;
+	primaryRoles?: readonly string[];
+	[key: string]: unknown;
+}
+
 export interface ActiveWorkspaceProfileCardProps {
-	// biome-ignore lint/suspicious/noExplicitAny: profile payload
-	profile: any;
+	profile?: WorkspaceProfileItem | null | undefined;
 	workspaceScopeLabels: Record<string, string>;
 	staffRoleLabels: Record<string, string>;
 	viewLabels: Record<string, string>;

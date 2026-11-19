@@ -1,21 +1,34 @@
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import type { BotLeadItem } from "./types";
 
+interface LiveConversationItem {
+	key?: string;
+	patientName?: string;
+	phone?: string;
+	senderId?: string;
+	channel?: string;
+	lastMessage?: string;
+	isIntercepted?: boolean;
+	lastMessageAt?: string | number | Date;
+}
+
 export async function fetchLiveInboxLeads(): Promise<BotLeadItem[] | null> {
 	try {
 		const res = await fetch("/api/bots/inbox", { headers: denteAdminSecretRequestHeaders() });
 		if (!res.ok) return null;
 		const data = await res.json();
 		if (!Array.isArray(data.conversations) || data.conversations.length === 0) return null;
-		return data.conversations.map((c: any, idx: number) => ({
+		return data.conversations.map((c: LiveConversationItem, idx: number) => ({
 			id: c.key || `lead-${idx}`,
-			patientName: c.patientName,
-			phone: c.phone || c.senderId,
+			patientName: c.patientName || "Пациент",
+			phone: c.phone || c.senderId || "",
 			action: `Диалог ${c.channel?.toUpperCase?.() || "TG"}`,
 			detail: c.lastMessage || "Новое сообщение",
 			status: c.isIntercepted ? "inquiry" : "confirmed",
 			statusLabel: c.isIntercepted ? "Оператор" : "Отвечает бот",
-			time: new Date(c.lastMessageAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+			time: c.lastMessageAt
+				? new Date(c.lastMessageAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+				: "—",
 		}));
 	} catch {
 		return null;

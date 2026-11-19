@@ -1,9 +1,32 @@
 import React, { type ChangeEvent } from "react";
 import { ExternalLink } from "lucide-react";
 
+export interface TelegramVisualCardField {
+	key: string;
+	label: string;
+	placeholder?: string;
+	help?: string;
+}
+
+export type TelegramVisualCardsPropsBag = {
+	telegramVisualCardFields?: readonly TelegramVisualCardField[];
+	telegramVisualCardUrlDrafts?: Record<string, string>;
+	updateTelegramVisualCardUrlDraft?: (key: string, value: string) => void;
+	telegramReviewUrlDraft?: string;
+	setTelegramReviewUrlDraft?: (val: string) => void;
+	telegramMapsUrlDraft?: string;
+	setTelegramMapsUrlDraft?: (val: string) => void;
+	saveTelegramSettings?: () => Promise<void> | void;
+	isTelegramSettingsSaving?: boolean;
+	telegramSettingsSaveState?: string;
+	telegramSettingsSaveError?: string | null;
+	telegramSettingsDirty?: boolean;
+	markTelegramSettingsDirty?: () => void;
+	[key: string]: unknown;
+};
+
 interface TelegramVisualCardsAndLinksSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: props bag
-	props: any;
+	props: TelegramVisualCardsPropsBag;
 }
 
 export function TelegramVisualCardsAndLinksSection({ props }: TelegramVisualCardsAndLinksSectionProps) {
@@ -23,8 +46,7 @@ export function TelegramVisualCardsAndLinksSection({ props }: TelegramVisualCard
 		markTelegramSettingsDirty,
 	} = props;
 
-	// biome-ignore lint/suspicious/noExplicitAny: visual card list
-	const visualFields = (telegramVisualCardFields || []) as any[];
+	const visualFields = (telegramVisualCardFields || []) as readonly TelegramVisualCardField[];
 
 	return (
 		<>

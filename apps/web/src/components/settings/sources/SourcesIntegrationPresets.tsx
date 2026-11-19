@@ -41,7 +41,7 @@ import { humanizeIntegrationInput } from "../SettingsViewHelpers";
  * ЧТО БЫЛО СЛОМАНО ПО СУТИ. Файл читал `integrationPresets` прямо из мешка пропсов,
  * а такого поля нет ни в возврате `useAppLogic` (return на строке 13771), ни в
  * возврате `useSettingsDerivations` (return на строке 2254) — есть только
- * `dashboard.clinicSettings.integrationPresets`. Под `as any` чтение давало
+ * `dashboard.clinicSettings.integrationPresets`. Под нестрогим приведением типов чтение давало
  * `undefined`, `?? []` превращало его в пустой массив, и `.preset-grid` рендерился
  * БЕЗ ЕДИНОЙ КАРТОЧКИ: заголовок над пустым местом, ни ошибки в компиляторе, ни
  * ошибки в консоли. Ещё девятнадцать имён читались тем же способом, до разметки

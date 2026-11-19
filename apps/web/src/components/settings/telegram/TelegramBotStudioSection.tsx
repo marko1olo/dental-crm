@@ -29,8 +29,7 @@ import { downloadBotSourceZip } from "./botZipGenerator";
 import { TelegramBotSettingsStudio } from "./TelegramBotSettingsStudio";
 
 export interface TelegramBotStudioProps {
-	// biome-ignore lint/suspicious/noExplicitAny: integration with legacy bag
-	parentProps?: any;
+	parentProps?: Record<string, unknown> | undefined;
 	initialWizardStep?: 1 | 2 | 3 | 4;
 	initialChannel?: BotChannelType;
 }

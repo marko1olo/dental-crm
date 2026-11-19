@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState } from "react";
+import type { StaffProfileExtended } from "@dental/shared";
 import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
 import { StaffAuthorityPanel } from "./StaffAuthorityPanel";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
@@ -10,8 +11,23 @@ import { useStaffMutations } from "./staff/useStaffMutations";
 import { reloadStaffList, type SettingsAccessHeaders } from "./staffMutationRequest";
 
 interface SettingsStaffTabProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	props: Record<string, any>;
+	props: {
+		dashboard?: {
+			clinicSettings?: {
+				staff?: StaffProfileExtended[];
+				name?: string;
+			};
+			clinicName?: string;
+		};
+		loadDashboard?: (() => Promise<unknown>) | undefined;
+		auth?: {
+			settingsAccessHeaders?: SettingsAccessHeaders;
+			user?: {
+				role?: string;
+			};
+		};
+		[key: string]: unknown;
+	};
 }
 
 export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
@@ -21,8 +37,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 	const clinicDataLoaded = Boolean(dashboard?.clinicSettings);
 
 	const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
-	// biome-ignore lint/suspicious/noExplicitAny: staff row
-	const [selectedStaffForCard, setSelectedStaffForCard] = useState<any | null>(null);
+	const [selectedStaffForCard, setSelectedStaffForCard] = useState<StaffProfileExtended | null>(null);
 
 	const { loading, updatePhone, updateCredential } = useStaffMutations(accessHeaders, loadDashboard);
 
@@ -57,7 +72,7 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 			{selectedStaffForCard && (
 				<StaffProfileCard
 					staffMember={selectedStaffForCard}
-					callerRole={auth?.user?.role || "owner"}
+					callerRole={auth?.user?.role || "doctor"}
 					isOpen={Boolean(selectedStaffForCard)}
 					onClose={() => setSelectedStaffForCard(null)}
 					onSaved={async () => {
@@ -72,11 +87,13 @@ export function SettingsStaffTab({ props }: SettingsStaffTabProps) {
 					isOpen={isPayrollModalOpen}
 					onClose={() => setIsPayrollModalOpen(false)}
 					clinicName={dashboard?.clinicSettings?.name || dashboard?.clinicName}
-					doctorsList={staff.filter((s: any) => s.role === "doctor" || s.role === "owner").map((s: any) => ({
-						id: s.id,
-						name: s.fullName || s.name,
-						specialtyId: s.specialties?.[0] || "general_dentist",
-					}))}
+					doctorsList={staff
+						.filter((s: StaffProfileExtended) => s.role === "doctor" || s.role === "owner")
+						.map((s: StaffProfileExtended) => ({
+							id: s.id,
+							name: s.fullName || (s as { name?: string }).name || "",
+							specialtyId: (s as { specialties?: string[] }).specialties?.[0] || "general_dentist",
+						}))}
 				/>
 			)}
 		</section>

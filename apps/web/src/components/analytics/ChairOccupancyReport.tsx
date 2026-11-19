@@ -92,14 +92,9 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 	const fetchChairs = useCallback(async (p: string) => {
 		setLoading(true);
 		try {
-			let res = await fetch(`/api/v1/manager/reports/chair-occupancy?period=${encodeURIComponent(p)}`, {
+			const res = await fetch(`/api/v1/manager/reports/chair-occupancy?period=${encodeURIComponent(p)}`, {
 				headers: denteClinicalReadHeaders(),
 			});
-			if (!res.ok) {
-				res = await fetch(`/api/reports/chairs?period=${encodeURIComponent(p)}`, {
-					headers: denteClinicalReadHeaders(),
-				});
-			}
 			if (res.ok) {
 				const json = await res.json();
 				const payload = json?.data ?? json;

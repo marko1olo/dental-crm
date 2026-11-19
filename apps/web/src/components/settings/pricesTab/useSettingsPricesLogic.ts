@@ -49,11 +49,32 @@ import type {
 	UseSettingsPricesLogicProps,
 } from "./types";
 
+export interface SettingsPricesBag extends UseSettingsPricesLogicProps {
+	pricelistSourceKindLabels?: Record<string, string>;
+	pricelistSourceKind?: string;
+	setPricelistSourceKind?: (val: string) => void;
+	clearPricelistImage?: () => void;
+	setPricelistAnalysis?: (analysis: unknown) => void;
+	pricelistRecognitionServiceGroups?: Array<{ title: string; items: string[] }>;
+	pricelistRecognitionBrandGroups?: Array<{ title: string; items: string[] }>;
+	pricelistText?: string;
+	setPricelistText?: (val: string) => void;
+	pricelistImageName?: string | null;
+	attachPricelistImage?: (file: File) => void;
+	usePricelistAi?: boolean;
+	setUsePricelistAi?: (val: boolean) => void;
+	analyzePricelist?: () => void;
+	isPricelistAnalyzing?: boolean;
+	pricelistImageBase64?: string | null;
+	pricelistAnalysis?: unknown;
+	pricelistParserModeLabels?: Record<string, string>;
+	[key: string]: unknown;
+}
+
 export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicProps) {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const mergedProps = Object.assign({}, appLogic, derivations, propsOverrides) as any;
+	const mergedProps: SettingsPricesBag = Object.assign({}, appLogic, derivations, propsOverrides);
 	const {
 		dashboard, pricelistSourceKindLabels, pricelistSourceKind, setPricelistSourceKind,
 		clearPricelistImage, setPricelistAnalysis, pricelistRecognitionServiceGroups,

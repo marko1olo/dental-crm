@@ -77,8 +77,8 @@ export const EmergencyRestoreWizard: React.FC<EmergencyRestoreWizardProps> = ({
 			const result = onDryRunVerify(payloadText, passphrase || undefined);
 			setDryRunResult(result);
 			setCurrentStep(2);
-		} catch (err: any) {
-			setErrorMessage(err?.message || "Ошибка предварительной проверки архива");
+		} catch (err: unknown) {
+			setErrorMessage(err instanceof Error ? err.message : "Ошибка предварительной проверки архива");
 		}
 	};
 
@@ -90,8 +90,8 @@ export const EmergencyRestoreWizard: React.FC<EmergencyRestoreWizardProps> = ({
 			const res = await onExecuteRestore(payload, passphrase || undefined);
 			setRestoreResult(res);
 			setCurrentStep(4);
-		} catch (err: any) {
-			setErrorMessage(err?.message || "Ошибка применения резервной копии");
+		} catch (err: unknown) {
+			setErrorMessage(err instanceof Error ? err.message : "Ошибка применения резервной копии");
 		} finally {
 			setIsExecuting(false);
 		}

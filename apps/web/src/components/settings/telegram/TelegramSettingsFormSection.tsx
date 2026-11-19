@@ -5,9 +5,79 @@ import { PatientCabinetModal } from "../../portal/patientCabinet/PatientCabinetM
 
 type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
+export interface TelegramDelayFieldItem {
+	key: string;
+	label: string;
+	help?: string;
+}
+
+export interface TelegramVisualCardFieldItem {
+	key: string;
+	label: string;
+	placeholder?: string;
+	help?: string;
+}
+
+export type TelegramSettingsFormPropsBag = {
+	updateTelegramPostVisitCheckupDelayDraft?: (key: string, value: string) => void;
+	telegramPostVisitCheckupDelayFields?: readonly TelegramDelayFieldItem[];
+	telegramVisualCardFields?: readonly TelegramVisualCardFieldItem[];
+	telegramFeatureHelp?: Record<string, string>;
+	setTelegramMapsUrlDraft?: (val: string) => void;
+	markTelegramSettingsDirty?: () => void;
+	saveTelegramSettings?: () => Promise<void> | void;
+	isTelegramSettingsSaving?: boolean;
+	telegramSettingsSaveState?: string;
+	telegramSettingsSaveError?: string | null;
+	telegramSettingsDirty?: boolean;
+	telegramModeLabels?: Record<string, string>;
+	telegramModeDraft?: string;
+	setTelegramModeDraft?: (val: string) => void;
+	normalizedTelegramBotMode?: string;
+	telegramModeHints?: Record<string, string>;
+	telegramBotUsernameDraft?: string;
+	setTelegramBotUsernameDraft?: (val: string) => void;
+	telegramOwnBotUsernameDraft?: string;
+	setTelegramOwnBotUsernameDraft?: (val: string) => void;
+	telegramBotConfigId?: string;
+	setTelegramBotConfigId?: (val: string) => void;
+	telegramWebhookBaseUrlDraft?: string;
+	setTelegramWebhookBaseUrlDraft?: (val: string) => void;
+	telegramPatientPortalBaseUrlDraft?: string;
+	setTelegramPatientPortalBaseUrlDraft?: (val: string) => void;
+	telegramWelcomeImageUrlDraft?: string;
+	setTelegramWelcomeImageUrlDraft?: (val: string) => void;
+	telegramTokenTtlDraft?: string | number;
+	setTelegramTokenTtlDraft?: (val: string) => void;
+	telegramReminderLeadTimesDraft?: string;
+	setTelegramReminderLeadTimesDraft?: (val: string) => void;
+	telegramReviewRequestDelayDraft?: string | number;
+	setTelegramReviewRequestDelayDraft?: (val: string) => void;
+	typedTelegramPostVisitCheckupDelayDrafts?: Record<string, string>;
+	telegramStaffEscalationChannelDraft?: string;
+	setTelegramStaffEscalationChannelDraft?: (val: string) => void;
+	telegramPrivacyModeLabels?: Record<string, string>;
+	telegramPrivacyModeDraft?: string;
+	setTelegramPrivacyModeDraft?: (val: string) => void;
+	normalizedTelegramPrivacyMode?: string;
+	telegramPrivacyModeHints?: Record<string, string>;
+	typedTelegramFeatureOptions?: DenteTelegramFeature[];
+	typedTelegramEnabledFeaturesDraft?: DenteTelegramFeature[];
+	toggleTelegramFeature?: (feature: DenteTelegramFeature) => void;
+	telegramFeatureLabel?: (feature: string) => string;
+	telegramAllowVoiceIntakeDraft?: boolean;
+	setTelegramAllowVoiceIntakeDraft?: (val: boolean) => void;
+	setTelegramEnabledFeaturesDraft?: (features: DenteTelegramFeature[]) => void;
+	telegramVisualCardUrlDrafts?: Record<string, string>;
+	updateTelegramVisualCardUrlDraft?: (key: string, value: string) => void;
+	telegramReviewUrlDraft?: string;
+	setTelegramReviewUrlDraft?: (val: string) => void;
+	telegramMapsUrlDraft?: string;
+	[key: string]: unknown;
+};
+
 export interface TelegramSettingsFormSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: integration with legacy settings props bag
-	props: any;
+	props: TelegramSettingsFormPropsBag;
 }
 
 export function TelegramSettingsFormSection({
@@ -82,12 +152,10 @@ export function TelegramSettingsFormSection({
 		useState(false);
 
 	const typedTelegramPostVisitCheckupDelayFields =
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		(telegramPostVisitCheckupDelayFields || []) as any[];
+		(telegramPostVisitCheckupDelayFields || []) as readonly TelegramDelayFieldItem[];
 
 	const typedTelegramVisualCardFields =
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		(telegramVisualCardFields || []) as any[];
+		(telegramVisualCardFields || []) as readonly TelegramVisualCardFieldItem[];
 	const typedTelegramFeatureHelp = (telegramFeatureHelp || {}) as Record<
 		DenteTelegramFeature,
 		string

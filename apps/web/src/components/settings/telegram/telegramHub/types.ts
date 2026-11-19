@@ -1,7 +1,7 @@
 export interface TelegramIntegrationHubProps {
-	clinicId?: string;
-	userId?: string;
-	onBotStatusChange?: (status: unknown) => void;
+	clinicId?: string | undefined;
+	userId?: string | undefined;
+	onBotStatusChange?: ((status: unknown) => void) | undefined;
 }
 
 export interface TelegramBotInfo {
@@ -13,13 +13,15 @@ export interface TelegramBotInfo {
 	supportsInlineQueries: boolean;
 	tokenMasked: string;
 	webhookActive: boolean;
-	lastCheckedAt?: string;
+	lastCheckedAt?: string | undefined;
 }
 
 export interface TelegramBotStatus {
 	configured: boolean;
-	bot?: TelegramBotInfo;
+	bot?: TelegramBotInfo | undefined;
 }
+
+export type BotStatus = TelegramBotStatus;
 
 export interface TelegramAccountInfo {
 	id: string;
@@ -87,18 +89,18 @@ export interface StaffTelegramBinding {
 }
 
 export interface BotConfigurationCardProps {
-	clinicId?: string;
+	clinicId?: string | undefined;
 	botStatus: TelegramBotStatus | null;
 	isBotLoading: boolean;
 	onRefreshStatus: () => Promise<void> | void;
-	onBotStatusChange?: (status: unknown) => void;
+	onBotStatusChange?: ((status: unknown) => void) | undefined;
 }
 
 export interface StaffBindingCardProps {
-	clinicId?: string;
-	userId?: string;
+	clinicId?: string | undefined;
+	userId?: string | undefined;
 	accountStatus: TelegramAccountStatus | null;
 	isAccountLoading: boolean;
 	onRefreshStatus: () => Promise<void> | void;
-	onAccountStatusChange?: (status: unknown) => void;
+	onAccountStatusChange?: ((status: unknown) => void) | undefined;
 }

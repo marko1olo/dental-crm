@@ -1,6 +1,7 @@
+import type { DicomSeriesPreviewGroup } from "./types";
+
 export interface DicomResourcePolicyPanelProps {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	cbctWorkbenchSeries: any;
+	cbctWorkbenchSeries?: DicomSeriesPreviewGroup | null | undefined;
 	mprLoadStrategyLabels: Record<string, string>;
 	mprResourceTierLabels: Record<string, string>;
 	mprCacheModeLabels: Record<string, string>;
@@ -14,7 +15,8 @@ export function DicomResourcePolicyPanel({
 	mprCacheModeLabels,
 	cbctResourceSafetyCaps,
 }: DicomResourcePolicyPanelProps) {
-	if (!cbctWorkbenchSeries) return null;
+	const policy = cbctWorkbenchSeries?.mprReadiness?.resourcePolicy;
+	if (!policy) return null;
 
 	return (
 		<section
@@ -25,14 +27,14 @@ export function DicomResourcePolicyPanel({
 				<strong>
 					{
 						mprLoadStrategyLabels[
-							cbctWorkbenchSeries.mprReadiness.resourcePolicy.loadStrategy
+							policy.loadStrategy
 						]
 					}
 				</strong>
 				<span>
 					{
 						mprResourceTierLabels[
-							cbctWorkbenchSeries.mprReadiness.resourcePolicy.requiredTier
+							policy.requiredTier
 						]
 					}
 				</span>
@@ -40,16 +42,14 @@ export function DicomResourcePolicyPanel({
 			<article>
 				<strong>
 					{
-						cbctWorkbenchSeries.mprReadiness.resourcePolicy
-							.estimatedMemoryMb
+						policy.estimatedMemoryMb
 					}{" "}
 					МБ
 				</strong>
 				<span>
 					лимит срезов:{" "}
 					{
-						cbctWorkbenchSeries.mprReadiness.resourcePolicy
-							.maxClientSlices
+						policy.maxClientSlices
 					}
 				</span>
 			</article>
@@ -57,17 +57,17 @@ export function DicomResourcePolicyPanel({
 				<strong>
 					{
 						mprCacheModeLabels[
-							cbctWorkbenchSeries.mprReadiness.resourcePolicy.cacheMode
+							policy.cacheMode
 						]
 					}
 				</strong>
 				<span>
-					{cbctWorkbenchSeries.mprReadiness.resourcePolicy.thumbnailFirst
+					{policy.thumbnailFirst
 						? "сначала миниатюры"
 						: "прямая загрузка"}
 				</span>
 			</article>
-			<p>{cbctWorkbenchSeries.mprReadiness.resourcePolicy.nextAction}</p>
+			<p>{policy.nextAction}</p>
 			{cbctResourceSafetyCaps.slice(0, 4).map((cap) => (
 				<small key={cap}>{cap}</small>
 			))}

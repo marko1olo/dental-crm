@@ -81,7 +81,7 @@ export const MessageTemplateListCard: React.FC<Props> = ({
 										</span>
 									</div>
 									<span className="text-[11px] text-[var(--muted)] block break-words">
-										{SCENARIO_LABELS[(tpl as any).scenario || tpl.intent] || (tpl as any).scenario || tpl.intent}
+										{SCENARIO_LABELS[(tpl as { scenario?: string }).scenario || tpl.intent] || (tpl as { scenario?: string }).scenario || tpl.intent}
 									</span>
 								</div>
 								<div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>

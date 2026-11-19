@@ -31,14 +31,14 @@ export type MessengerTabId =
 
 /*
  * Контракт вкладки: только то, что она реально читает из объединённого мешка.
- * Аннотация обязательна — useAppLogic объявлен как `(): any`
+ * Аннотация обязательна — useAppLogic объявлен с динамическим возвратом
  * (apps/web/src/useAppLogic.tsx:934), поэтому appLogic, derivations и результат
- * Object.assign имеют тип any, и снятие `as any` само по себе не включает ни
+ * Object.assign имеют динамический тип, и снятие кастов само по себе не включает ни
  * одной проверки. С этой аннотацией опечатка в имени пропса становится ошибкой.
  *
  * serverBaseUrl — шов для развёртываний, где API живёт не на том же хосте, что
  * SPA. Сегодня его НИКТО не заполняет: производителя нет ни в useAppLogic, ни в
- * SettingsView.settingsProps (там `Record<string, any>`, тоже стирающий типы).
+ * SettingsView.settingsProps (там `Record<string, unknown>`, тоже стирающий типы).
  * Поэтому значение всегда undefined, и WhatsappSettingsPanel/MaxSettingsPanel
  * всегда уходят на свой запасной путь window.location.origin. Шов сохранён и
  * типизирован, но URL здесь не выдумывается: VITE_API_URL несёт суффикс /api,

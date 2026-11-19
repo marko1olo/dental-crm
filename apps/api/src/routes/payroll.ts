@@ -507,7 +507,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			? Math.max(0, body.ndflKopecks ?? body.ndflKop ?? 0)
 			: Math.round(Math.max(0, body.ndfl13Rub ?? 0) * 100);
 
-		const chairRentalKop = body.chairRentalRub !== undefined ? Math.round(Math.max(0, body.chairRentalRub) * 100) : 0;
+		const chairRentalKop = body.chairRentalKopecks !== undefined ? Math.max(0, body.chairRentalKopecks) : body.chairRentalRub !== undefined ? Math.round(Math.max(0, body.chairRentalRub) * 100) : 0;
 
 		const result = await closeSettlementPeriodInDb({
 			organizationId: orgId,

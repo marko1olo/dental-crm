@@ -1,6 +1,6 @@
 import React from "react";
 import { Activity, RotateCcw, Trash2 } from "lucide-react";
-import type { HardwareDeviceConfig, HardwareDeviceProtocol } from "../../../services/hardware/hardwarePresets.js";
+import type { HardwareDeviceConfig, HardwareProtocolType } from "../../../services/hardware/hardwarePresets.js";
 
 interface Props {
 	dev: HardwareDeviceConfig;
@@ -40,7 +40,16 @@ export const HardwareDeviceEditor: React.FC<Props> = ({
 
 				<div className="hw-field-group">
 					<label className="hw-field-label"><span>Протокол сопряжения</span></label>
-					<select className="hw-field-select" value={dev.protocol} onChange={(e) => onUpdate(dev.id, { protocol: e.target.value as HardwareDeviceProtocol })}>
+					<select
+						className="hw-field-select"
+						value={dev.protocol}
+						onChange={(e) => {
+							const val = e.target.value;
+							if (val === "hot_folder" || val === "slida" || val === "vdds" || val === "cli_launch" || val === "twain" || val === "smb_scan") {
+								onUpdate(dev.id, { protocol: val as HardwareProtocolType });
+							}
+						}}
+					>
 						<option value="hot_folder">Папка автозахвата снимков (автоимпорт TWAIN/DICOM)</option>
 						<option value="slida">SLIDA (Sirona Command Link SiCoIn)</option>
 						<option value="vdds">VDDS-Media (Немецкий стоматологический стандарт)</option>

@@ -4,9 +4,60 @@ import { EmptyState } from "../../EmptyState";
 
 type TelegramInlineButtonRow = { text: string; target: string; kind: string }[];
 
+export interface TelegramOutboxItem {
+	id: string;
+	title: string;
+	previewText?: string | null;
+	deliveryStatus: string;
+	blockedReason?: string | null;
+	warnings?: string[];
+	photoUrl?: string | null;
+	replyMarkup?: Record<string, unknown> | null;
+	templateKind: string;
+	scheduledAt: string;
+	chatLinkId?: string | null;
+}
+
+export interface TelegramOutboxData {
+	filteredCount: number;
+	totalCount: number;
+	dueCount: number;
+	readyCount: number;
+	blockedCount: number;
+	items?: TelegramOutboxItem[];
+	nextCursor?: string | null;
+	warnings?: string[];
+}
+
+export interface TelegramOutboxPropsBag {
+	formatDateTime: (date: string | Date) => string;
+	filteredTelegramOutboxItems?: TelegramOutboxItem[];
+	typedTelegramInlineButtonKindLabels?: Record<string, string>;
+	telegramHumanMessage: (msg?: string | null) => string;
+	telegramOutbox?: TelegramOutboxData | null;
+	sendDueTelegramOutbox: () => Promise<void> | void;
+	isTelegramSendingDue?: boolean;
+	telegramSendingItemId?: string | null;
+	isTelegramLoading?: boolean;
+	telegramOutboxStatusFilterOptions?: string[];
+	telegramOutboxStatusFilter?: string;
+	setTelegramOutboxStatusFilter: (status: string) => void;
+	telegramOutboxStatusFilterLabels?: Record<string, string>;
+	telegramOutboxTemplateFilterOptions?: string[];
+	telegramOutboxTemplateFilter?: string;
+	setTelegramOutboxTemplateFilter: (templateKind: string) => void;
+	telegramOutboxTemplateFilterLabels?: Record<string, string>;
+	visibleTelegramOutboxItems?: TelegramOutboxItem[];
+	telegramTemplateLabels?: Record<string, string>;
+	telegramDeliveryStatusLabels?: Record<string, string>;
+	sendTelegramOutboxItem: (id: string) => Promise<void> | void;
+	isTelegramOutboxItemDueForUi?: (item: TelegramOutboxItem) => boolean;
+	loadMoreTelegramOutbox: () => Promise<void> | void;
+	isTelegramOutboxLoadingMore?: boolean;
+}
+
 export interface TelegramOutboxSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: legacy props bag
-	props: any;
+	props: TelegramOutboxPropsBag;
 }
 
 export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
@@ -17,9 +68,9 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 		telegramHumanMessage,
 		telegramOutbox,
 		sendDueTelegramOutbox,
-		isTelegramSendingDue,
-		telegramSendingItemId,
-		isTelegramLoading,
+		isTelegramSendingDue = false,
+		telegramSendingItemId = null,
+		isTelegramLoading = false,
 		telegramOutboxStatusFilterOptions = [],
 		telegramOutboxStatusFilter,
 		setTelegramOutboxStatusFilter,
@@ -32,20 +83,17 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 		telegramTemplateLabels = {},
 		telegramDeliveryStatusLabels = {},
 		sendTelegramOutboxItem,
-		isTelegramOutboxItemDueForUi,
 		loadMoreTelegramOutbox,
-		isTelegramOutboxLoadingMore,
+		isTelegramOutboxLoadingMore = false,
 	} = props;
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedTelegramOutbox = telegramOutbox as any | null;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedVisibleTelegramOutboxItems = visibleTelegramOutboxItems as any[];
+	const typedTelegramOutbox = telegramOutbox ?? null;
+	const typedVisibleTelegramOutboxItems = visibleTelegramOutboxItems;
 	const telegramOutboxRemainingCount = typedTelegramOutbox
 		? Math.max(0, typedTelegramOutbox.filteredCount - typedVisibleTelegramOutboxItems.length)
 		: 0;
-	const typedTelegramOutboxStatusFilterOptions = telegramOutboxStatusFilterOptions as string[];
-	const typedTelegramOutboxTemplateFilterOptions = telegramOutboxTemplateFilterOptions as string[];
+	const typedTelegramOutboxStatusFilterOptions = telegramOutboxStatusFilterOptions;
+	const typedTelegramOutboxTemplateFilterOptions = telegramOutboxTemplateFilterOptions;
 	const telegramOutboxSendGuidanceId = "telegram-outbox-send-guidance";
 	const telegramOutboxBulkSendGuidance = isTelegramLoading
 		? "Загрузка..."
@@ -53,9 +101,13 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 			? "Отправка..."
 			: "";
 
-	const getTypedTelegramInlineButtonRows = (replyMarkup: Record<string, unknown> | null) => {
-		if (!replyMarkup) return [] as TelegramInlineButtonRow[];
-		return (replyMarkup.inline_keyboard ?? []) as TelegramInlineButtonRow[];
+	const getTypedTelegramInlineButtonRows = (replyMarkup: Record<string, unknown> | null | undefined): TelegramInlineButtonRow[] => {
+		if (!replyMarkup) return [];
+		const rawKeyboard = replyMarkup["inline_keyboard"];
+		if (Array.isArray(rawKeyboard)) {
+			return rawKeyboard as TelegramInlineButtonRow[];
+		}
+		return [];
 	};
 
 	return (
@@ -95,8 +147,7 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 								key={status}
 								type="button"
 								className={`quick-chip ${telegramOutboxStatusFilter === status ? "selected" : ""}`}
-								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-								onClick={() => setTelegramOutboxStatusFilter(status as any)}
+								onClick={() => setTelegramOutboxStatusFilter(status)}
 							>
 								{telegramOutboxStatusFilterLabels[status]}
 							</button>
@@ -111,8 +162,7 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 								key={templateKind}
 								type="button"
 								className={`quick-chip ${telegramOutboxTemplateFilter === templateKind ? "selected" : ""}`}
-								// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-								onClick={() => setTelegramOutboxTemplateFilter(templateKind as any)}
+								onClick={() => setTelegramOutboxTemplateFilter(templateKind)}
 							>
 								{telegramOutboxTemplateFilterLabels[templateKind]}
 							</button>
@@ -125,13 +175,11 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 				</span>
 			</fieldset>
 			<div className="telegram-outbox-list">
-				{/* biome-ignore lint/suspicious/noExplicitAny: outbox item */}
-				{typedVisibleTelegramOutboxItems.map((item: any) => {
+				{typedVisibleTelegramOutboxItems.map((item) => {
 					const itemButtonRows = getTypedTelegramInlineButtonRows(item.replyMarkup);
 					const itemBlockingNote = item.blockedReason ? telegramHumanMessage(item.blockedReason) : "";
 					const itemWarningNotes = (item?.warnings ?? [])
-						// biome-ignore lint/suspicious/noExplicitAny: warning note
-						.map((warning: any) => telegramHumanMessage(warning as string))
+						.map((warning) => telegramHumanMessage(warning))
 						.filter(Boolean);
 					return (
 						<article className={`telegram-outbox-item outbox-${item.deliveryStatus}`} key={item.id}>
@@ -165,8 +213,7 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 								{itemBlockingNote || itemWarningNotes.length ? (
 									<fieldset className="telegram-outbox-notes" aria-label="Причины и предупреждения Telegram" style={{ border: "none", padding: 0, margin: 0 }}>
 										{itemBlockingNote ? <small>{itemBlockingNote}</small> : null}
-										{/* biome-ignore lint/suspicious/noExplicitAny: warning note */}
-										{itemWarningNotes.map((warning: any) => (
+										{itemWarningNotes.map((warning) => (
 											<small key={`${item.id}:${warning}`}>{warning}</small>
 										))}
 									</fieldset>
@@ -208,8 +255,7 @@ export function TelegramOutboxSection({ props }: TelegramOutboxSectionProps) {
 			</div>
 			{typedTelegramOutbox?.warnings?.length ? (
 				<div className="telegram-warning-strip compact">
-					{/* biome-ignore lint/suspicious/noExplicitAny: warning string */}
-					{(typedTelegramOutbox.warnings ?? []).map((warning: any) => (
+					{(typedTelegramOutbox.warnings ?? []).map((warning) => (
 						<span key={warning}>{telegramHumanMessage(warning)}</span>
 					))}
 				</div>

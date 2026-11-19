@@ -1,12 +1,47 @@
 import React, { type ChangeEvent } from "react";
 import { Bot, Copy, Download, ExternalLink, RefreshCw } from "lucide-react";
+import type { DenteTelegramChatLinkPublic, DenteTelegramLinkCodePublic } from "@dental/shared";
 import { EmptyState } from "../../EmptyState";
 
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 
+export type TelegramLinkPropsBag = {
+	createTelegramLinkCode?: (options?: unknown) => void;
+	copyTelegramTextToClipboard?: (text: string, label: string) => void;
+	downloadTelegramQrSvg?: (svg: string, filename: string) => void;
+	formatDateTime?: (date: string | Date | undefined) => string;
+	isTelegramLoading?: boolean;
+	loadTelegramControlPlane?: () => void;
+	telegramLinkSubjectType?: string;
+	setTelegramLinkSubjectType?: (type: string) => void;
+	normalizedTelegramLinkSubjectType?: string;
+	setTelegramLinkCode?: (code: unknown) => void;
+	setTelegramLinkActionState?: (state: string) => void;
+	telegramLinkStaffId?: string;
+	setTelegramLinkStaffId?: (id: string) => void;
+	isTelegramLinkCreating?: boolean;
+	telegramLinkCode?: { code?: string; qrSvg?: string; botDeepLink?: string } | null;
+	telegramLinkActionState?: string;
+	telegramQrSvgToDataUrl?: (svg: string) => string;
+	telegramChatLinkLedger?: { nextCursor?: string; filteredCount?: number };
+	typedTelegramChatLinks?: DenteTelegramChatLinkPublic[];
+	telegramSubjectName?: (type: string, id: string) => string;
+	revokeTelegramChatLink?: (id: string) => Promise<void> | void;
+	telegramRevokingLinkId?: string | null;
+	loadMoreTelegramChatLinks?: () => Promise<void> | void;
+	isTelegramChatLinksLoadingMore?: boolean;
+	telegramLinkCodeLedger?: { nextCursor?: string; filteredCount?: number; pendingCount?: number };
+	typedTelegramLinkCodes?: DenteTelegramLinkCodePublic[];
+	telegramLinkCodeStatusLabels?: Record<string, string>;
+	loadMoreTelegramLinkCodes?: () => Promise<void> | void;
+	isTelegramLinkCodesLoadingMore?: boolean;
+	activePatient?: { id: string; fullName?: string };
+	typedTelegramLinkStaffOptions?: Array<{ id: string; fullName: string }>;
+	[key: string]: unknown;
+};
+
 export interface TelegramLinkPanelSectionProps {
-	// biome-ignore lint/suspicious/noExplicitAny: integration with legacy settings props bag
-	props: any;
+	props: TelegramLinkPropsBag;
 }
 
 export function TelegramLinkPanelSection({
@@ -243,8 +278,7 @@ export function TelegramLinkPanelSection({
 					</div>
 					{typedTelegramChatLinks.length > 0 ? (
 						<div className="telegram-link-ledger-rows">
-							{/* biome-ignore lint/suspicious/noExplicitAny: chat links */}
-							{typedTelegramChatLinks.map((link: any) => (
+							{typedTelegramChatLinks.map((link: DenteTelegramChatLinkPublic) => (
 								<article className="telegram-link-ledger-row" key={link.id}>
 									<div>
 										<strong>
@@ -300,8 +334,7 @@ export function TelegramLinkPanelSection({
 								? ` · показано ${typedTelegramLinkCodes.length} из ${telegramLinkCodeLedger.filteredCount}`
 								: ""}
 						</span>
-						{/* biome-ignore lint/suspicious/noExplicitAny: link codes */}
-						{typedTelegramLinkCodes.map((code: any) => (
+						{typedTelegramLinkCodes.map((code: DenteTelegramLinkCodePublic) => (
 							<small key={code.id}>
 								{telegramSubjectName(code.subjectType, code.subjectId)} · *
 								{code.codeLast4} ·{" "}

@@ -155,19 +155,29 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 					const data = await res.json();
 					if (Array.isArray(data.conversations) && data.conversations.length > 0 && isMounted) {
 						setLiveLeads(
-							// biome-ignore lint/suspicious/noExplicitAny: external API response
-							data.conversations.map((c: any, idx: number) => ({
+							data.conversations.map((c: {
+								key?: string;
+								patientName?: string;
+								phone?: string;
+								senderId?: string;
+								channel?: string;
+								lastMessage?: string;
+								isIntercepted?: boolean;
+								lastMessageAt?: string | number | Date;
+							}, idx: number) => ({
 								id: c.key || `lead-${idx}`,
-								patientName: c.patientName,
-								phone: c.phone || c.senderId,
-								action: `Диалог ${c.channel.toUpperCase()}`,
+								patientName: c.patientName || "Пациент",
+								phone: c.phone || c.senderId || "",
+								action: `Диалог ${c.channel ? c.channel.toUpperCase() : "TG"}`,
 								detail: c.lastMessage || "Новое сообщение",
 								status: c.isIntercepted ? "inquiry" : "confirmed",
 								statusLabel: c.isIntercepted ? "Оператор" : "Отвечает бот",
-								time: new Date(c.lastMessageAt).toLocaleTimeString("ru-RU", {
-									hour: "2-digit",
-									minute: "2-digit",
-								}),
+								time: c.lastMessageAt
+									? new Date(c.lastMessageAt).toLocaleTimeString("ru-RU", {
+											hour: "2-digit",
+											minute: "2-digit",
+										})
+									: "—",
 							})),
 						);
 					}

@@ -18,8 +18,9 @@ export function useMessageTemplateEditor(
 	const auth = appLogic?.auth;
 	const [title, setTitle] = useState(template?.title || "");
 	const [channel, setChannel] = useState<MessageTemplateChannel>(template?.channel || "telegram");
+	const rawScenario = (template as { scenario?: string } | null | undefined)?.scenario;
 	const [scenario, setScenario] = useState<MessageTemplateScenario>(
-		((template as any)?.scenario as MessageTemplateScenario) ||
+		(rawScenario as MessageTemplateScenario) ||
 		(template?.intent as MessageTemplateScenario) ||
 		"appointment_reminder_24h",
 	);

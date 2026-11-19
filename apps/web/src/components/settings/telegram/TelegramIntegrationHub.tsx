@@ -10,21 +10,19 @@ export function TelegramIntegrationHub({
 	userId,
 	onBotStatusChange,
 }: TelegramIntegrationHubProps) {
-	const state = useTelegramHubState({ clinicId: clinicId || "", onBotStatusChange } as any);
+	const state = useTelegramHubState({ clinicId: clinicId || "", onBotStatusChange });
 
 	return (
 		<TelegramHubView
-			{...({
-				clinicId: clinicId || "",
-				userId: userId || "",
-				botStatus: state.botStatus,
-				isBotLoading: state.isBotLoading,
-				accountStatus: state.accountStatus,
-				isAccountLoading: state.isAccountLoading,
-				loadBotStatus: state.loadBotStatus,
-				loadAccountStatus: state.loadAccountStatus,
-				onBotStatusChange,
-			} as any)}
+			clinicId={clinicId || ""}
+			userId={userId || ""}
+			botStatus={state.botStatus}
+			isBotLoading={state.isBotLoading}
+			accountStatus={state.accountStatus}
+			isAccountLoading={state.isAccountLoading}
+			loadBotStatus={state.loadBotStatus}
+			loadAccountStatus={state.loadAccountStatus}
+			onBotStatusChange={onBotStatusChange}
 		/>
 	);
 }

@@ -7,8 +7,8 @@ import { CockpitFeedbackRow } from "./cockpit/CockpitFeedbackRow.js";
 import { useCockpitActions } from "./cockpit/useCockpitActions.js";
 
 interface Props {
-	onTestHotFolder?: () => void;
-	hotFolderStatus?: string;
+	onTestHotFolder?: (() => void) | undefined;
+	hotFolderStatus?: string | undefined;
 }
 
 export function HardwareCockpitBar({ onTestHotFolder, hotFolderStatus }: Props) {
