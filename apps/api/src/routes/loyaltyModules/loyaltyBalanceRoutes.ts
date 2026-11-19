@@ -1,8 +1,12 @@
-import { calculateCashbackPoints } from "@dental/shared";
+import {
+	calculateCashbackPoints,
+	manualAccrueBodySchema,
+	accrueCashbackBodySchema,
+	processExpiredBodySchema,
+} from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireOrganizationId } from "../../security/identity.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { manualAccrueBodySchema, accrueCashbackBodySchema, processExpiredBodySchema } from "./loyaltySchemas.js";
 import { executeBonusAccrual, getPatientBonusBalance, processExpiredBonuses } from "./bonusBalanceService.js";
 
 export async function registerLoyaltyBalanceRoutes(app: FastifyInstance) {

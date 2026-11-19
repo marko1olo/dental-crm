@@ -5,7 +5,7 @@ import { requireOrganizationId } from "../../security/identity.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { patientReferrals, patientReferralCodes, patients, payments } from "../../db/schema.js";
-import { referralRegisterBodySchema } from "./loyaltySchemas.js";
+import { referralRegisterBodySchema } from "@dental/shared";
 import { executeBonusAccrual } from "./bonusBalanceService.js";
 
 const creditReferralSchema = z.object({

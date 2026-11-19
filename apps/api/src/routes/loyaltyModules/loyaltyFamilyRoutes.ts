@@ -1,12 +1,11 @@
 import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { kopecksToNumericString, parseKopecks } from "@dental/shared";
+import { familyDebitBodySchema, kopecksToNumericString, parseKopecks } from "@dental/shared";
 import { requireOrganizationId } from "../../security/identity.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patientBonusBalances, patientRelationships, patients } from "../../db/schema.js";
-import { familyDebitBodySchema } from "./loyaltySchemas.js";
 import { executeBonusRedeem } from "./bonusRedemptionService.js";
 
 const familyLinkSchema = z.object({

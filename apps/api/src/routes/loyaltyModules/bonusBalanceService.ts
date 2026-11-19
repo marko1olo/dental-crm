@@ -4,7 +4,7 @@ import { db } from "../../db/client.js";
 import type { TenantDb } from "../../db/rls.js";
 import { bonusTransactions, patientBonusBalances, patients } from "../../db/schema.js";
 
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0] | TenantDb;
+type DatabaseTransaction = TenantDb;
 
 export interface AccruePointsParams {
 	readonly orgId: string;

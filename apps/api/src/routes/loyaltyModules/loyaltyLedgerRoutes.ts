@@ -4,7 +4,12 @@ import { requireOrganizationId } from "../../security/identity.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { bonusTransactions } from "../../db/schema.js";
-import { redeemPointsBodySchema, holdPointsBodySchema, confirmHoldBodySchema, releaseHoldBodySchema } from "./loyaltySchemas.js";
+import {
+	redeemPointsBodySchema,
+	holdPointsBodySchema,
+	confirmHoldBodySchema,
+	releaseHoldBodySchema,
+} from "@dental/shared";
 import { executeBonusRedeem, executeBonusHold, executeBonusConfirm, executeBonusRelease } from "./bonusRedemptionService.js";
 
 export async function registerLoyaltyLedgerRoutes(app: FastifyInstance) {

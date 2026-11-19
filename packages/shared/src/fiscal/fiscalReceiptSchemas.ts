@@ -92,6 +92,9 @@ export function normalizePaymentMethod(alias: string | null | undefined): Paymen
 		case "patient_deposit":
 		case "advance_deposit":
 		case "deposit":
+		case "certificate":
+		case "gift_certificate":
+		case "сертификат":
 		case "аванс":
 		case "депозит":
 			return "family_wallet";
@@ -145,9 +148,12 @@ export function resolveFfd12PaymentTag(alias: string | null | undefined): 1031 |
 		case "advance_deposit":
 		case "deposit":
 		case "advance":
+		case "certificate":
+		case "gift_certificate":
+		case "сертификат":
 		case "аванс":
 		case "депозит":
-			return 1215; // Зачет аванса / предоплаты
+			return 1215; // Зачет аванса / предоплаты (включая подарочный сертификат)
 		case "credit":
 		case "рассрочка":
 		case "кредит":
@@ -156,10 +162,8 @@ export function resolveFfd12PaymentTag(alias: string | null | undefined): 1031 |
 		case "dms_insurance":
 		case "certificate_or_bonus":
 		case "loyalty_points":
-		case "certificate":
 		case "bonus":
 		case "бонусы":
-		case "сертификат":
 		case "дмс":
 		case "страховая":
 			return 1217; // Встречное предоставление

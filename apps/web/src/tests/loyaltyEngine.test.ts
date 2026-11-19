@@ -336,7 +336,7 @@ describe("Statutory Dental Loyalty Math Engine", () => {
 					timestampIso: "2026-08-22 11:00",
 					patientId: "p1",
 					patientName: 'Иванов Иван "Тестовый"',
-					medicalCardNumber: "043/у-01",
+					medicalCardNumber: "Дневник визита / Медкарта № 01",
 					operationType: "accrual",
 					operationTypeRu: "Начисление кэшбэка",
 					invoiceAmountKop: 1000000,

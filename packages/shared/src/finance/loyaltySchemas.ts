@@ -11,6 +11,8 @@ export const redeemPointsBodySchema = z.object({
 	patientId: z.string().uuid(),
 	invoiceId: z.string().uuid().optional().nullable(),
 	invoiceAmountRub: z.number().positive().finite().multipleOf(0.01),
+	invoiceAmountKopecks: z.number().int().positive().optional(),
+	amountKopecks: z.number().int().positive().optional(),
 	pointsToRedeem: z.number().positive().finite().multipleOf(0.01),
 	/**
 	 * [LOY-01] allowFullCoverage defaults strictly to FALSE.
@@ -63,3 +65,36 @@ export const referralRegisterBodySchema = z.object({
 });
 
 export type ReferralRegisterBody = z.infer<typeof referralRegisterBodySchema>;
+
+export const holdPointsBodySchema = z.object({
+	patientId: z.string().uuid(),
+	invoiceId: z.string().uuid().optional().nullable(),
+	invoiceAmountRub: z.number().positive().finite().multipleOf(0.01),
+	pointsToHold: z.number().positive().finite().multipleOf(0.01),
+	allowFullCoverage: z.boolean().optional().default(false),
+	clientMutationId: z.string().optional(),
+	description: z.string().default("Холдирование баллов для кассового чека"),
+});
+
+export type HoldPointsBody = z.infer<typeof holdPointsBodySchema>;
+
+export const confirmHoldBodySchema = z.object({
+	holdId: z.string().uuid(),
+	paymentId: z.string().uuid().optional().nullable(),
+	clientMutationId: z.string().optional(),
+});
+
+export type ConfirmHoldBody = z.infer<typeof confirmHoldBodySchema>;
+
+export const releaseHoldBodySchema = z.object({
+	holdId: z.string().uuid(),
+	reason: z.string().default("Отмена фискализации чека"),
+});
+
+export type ReleaseHoldBody = z.infer<typeof releaseHoldBodySchema>;
+
+export const processExpiredBodySchema = z.object({
+	asOfDate: z.string().datetime().optional(),
+});
+
+export type ProcessExpiredBody = z.infer<typeof processExpiredBodySchema>;

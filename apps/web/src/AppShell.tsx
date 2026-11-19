@@ -91,6 +91,10 @@ function isStandaloneActive(): boolean {
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
 	return (
+		s.includes("loyalty") ||
+		h.includes("loyalty") ||
+		s.includes("bonuses") ||
+		h.includes("bonuses") ||
 		s.includes("standalone") ||
 		h.includes("standalone") ||
 		h.includes("cashbox") ||

@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { CreditCard, ShieldCheck, Wallet } from "lucide-react";
+import { CreditCard, Gift, ShieldCheck, Wallet } from "lucide-react";
 import {
 	type CashboxTenderType,
 	type CashChangeResult,
@@ -44,6 +44,8 @@ export interface CheckoutPaymentMethodsProps {
 	readonly invoiceId?: string | undefined;
 	readonly orderId?: string | undefined;
 	readonly patientName?: string | undefined;
+	readonly certificateNumber?: string | undefined;
+	readonly setCertificateNumber?: ((val: string) => void) | undefined;
 }
 
 export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
@@ -71,6 +73,8 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 	invoiceId,
 	orderId,
 	patientName,
+	certificateNumber,
+	setCertificateNumber,
 }) => {
 	return (
 		<>
@@ -257,6 +261,35 @@ export const CheckoutPaymentMethods: React.FC<CheckoutPaymentMethodsProps> = ({
 					<p className="text-xs text-[var(--muted)]">
 						Средства будут автоматически списаны с персонального аванса пациента или общего семейного счёта.
 					</p>
+				</div>
+			)}
+
+			{/* Gift Certificate Tender Panel */}
+			{method === "certificate" && (
+				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2.5" data-testid="certificate-tender-panel">
+					<div className="flex items-center justify-between">
+						<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
+							<Gift className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<span>Оплата подарочным сертификатом клиники</span>
+						</span>
+						<span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]">
+							54-ФЗ: Тег 1215 (Зачёт аванса)
+						</span>
+					</div>
+					<p className="text-xs text-[var(--muted)]">
+						Введите 16-значный номер сертификата (алгоритм Луна). Сумма зачёта списывается с номинала сертификата.
+					</p>
+					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+						<input
+							type="text"
+							data-testid="input-cashbox-certificate-number"
+							value={certificateNumber || ""}
+							onChange={(e) => setCertificateNumber?.(e.target.value)}
+							placeholder="7701-XXXX-XXXX-XXXX"
+							maxLength={19}
+							className="flex-1 px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] font-mono text-sm tracking-wide text-[var(--ink)] min-h-[44px] focus:outline-none focus:border-[var(--primary)]"
+						/>
+					</div>
 				</div>
 			)}
 

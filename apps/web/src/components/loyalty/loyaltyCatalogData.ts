@@ -183,39 +183,19 @@ export const GIFT_CERTIFICATE_CATALOG: readonly GiftCertificatePreset[] = [
 	{ id: "cert_custom", nominalKop: 0, nominalRub: 0, titleRu: "Сертификат со свободным номиналом", validityDays: 365, isCustomNominal: true, badgeRu: "Индивидуальный", descriptionRu: "Сумма сертификата указывается на кассе." },
 ];
 
-export function generateGiftCertificateSerial(randomSeed?: number): string {
-	const prefix = "7701"; let digits = prefix, cryptoBytes: Uint8Array | null = null;
-	if (randomSeed === undefined && typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-		cryptoBytes = new Uint8Array(11); crypto.getRandomValues(cryptoBytes);
-	}
-	for (let i = 0; i < 11; i++) {
-		const cryptoByte = cryptoBytes?.[i];
-		const rand = randomSeed !== undefined ? (randomSeed * (i + 1) * 7) % 10 : cryptoByte !== undefined ? cryptoByte % 10 : Math.abs(((Date.now() + i * 17) ^ (i * 31)) % 10);
-		digits += rand.toString();
-	}
-	let sum = 0;
-	for (let i = 0; i < 15; i++) {
-		const char = digits[i];
-		let d = char ? parseInt(char, 10) : 0;
-		if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
-		sum += d;
-	}
-	digits += ((10 - (sum % 10)) % 10).toString();
-	return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8, 12)}-${digits.slice(12, 16)}`;
-}
+import {
+	generateLuhn16Certificate,
+	validateLuhn16Certificate,
+	generateLuhn16Certificate as generateGiftCertificateSerial,
+	validateLuhn16Certificate as validateGiftCertificateSerial,
+} from "@dental/shared";
 
-export function validateGiftCertificateSerial(formattedSerial: string): boolean {
-	const cleaned = formattedSerial.replace(/[\s-]/g, "");
-	if (!/^\d{16}$/.test(cleaned)) return false;
-	let sum = 0;
-	for (let i = 0; i < 16; i++) {
-		const char = cleaned[i];
-		let d = char ? parseInt(char, 10) : 0;
-		if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
-		sum += d;
-	}
-	return sum % 10 === 0;
-}
+export {
+	generateLuhn16Certificate,
+	validateLuhn16Certificate,
+	generateGiftCertificateSerial,
+	validateGiftCertificateSerial,
+};
 
 export interface GiftCertificateRedemptionResult {
 	readonly success: boolean; readonly certificateId: string; readonly serialNumber: string; readonly previousBalanceKop: number; readonly redeemedAmountKop: number; readonly newBalanceKop: number; readonly coveredInvoiceAmountKop: number; readonly remainingInvoiceAmountKop: number; readonly newStatus: "active" | "depleted" | "expired" | "cancelled"; readonly errorMessageRu?: string;

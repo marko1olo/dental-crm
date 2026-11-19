@@ -56,7 +56,7 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 	const [requestedPointsRub, setRequestedPointsRub] = useState<number>(500), [isDoctorOverride, setIsDoctorOverride] = useState<boolean>(false), [selectedFamilyMemberId, setSelectedFamilyMemberId] = useState<string | null>(null);
 	const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>(() => isDemo ? DEFAULT_FAMILY_MEMBERS : []), [familyName, setFamilyName] = useState<string>(() => isDemo ? "Семья Ивановых" : ""), [hasFamilyGroup, setHasFamilyGroup] = useState<boolean>(() => isDemo);
 	const [isCreateFamilyOpen, setIsCreateFamilyOpen] = useState<boolean>(false), [newFamilyGroupName, setNewFamilyGroupName] = useState<string>(""), [relativePatientIdInput, setRelativePatientIdInput] = useState<string>(""), [relativeRoleInput, setRelativeRoleInput] = useState<string>("Супруг / Супруга");
-	const [certSerial, setCertSerial] = useState<string>(""), [certFeedback, setCertFeedback] = useState<string | null>(null), [refFriendName, setRefFriendName] = useState<string>(""), [refFriendPhone, setRefFriendPhone] = useState<string>("");
+	const [certSerial, setCertSerial] = useState<string>(""), [certFeedback, setCertFeedback] = useState<string | null>(null), [verifiedCertificate, setVerifiedCertificate] = useState<{ id: string; serialNumber: string; nominalRub: number; currentBalanceRub: number; currentBalanceKop: number; status: string } | null>(null), [refFriendName, setRefFriendName] = useState<string>(""), [refFriendPhone, setRefFriendPhone] = useState<string>("");
 	const [accrueInputRub, setAccrueInputRub] = useState<string>(""), [isAccrueOpen, setIsAccrueOpen] = useState<boolean>(false), [ledger, setLedger] = useState<readonly LoyaltyLedgerEntry[]>([]);
 
 	// 1. Live API Data Sync & Family Ecosystem Sync (Мандат 8wy, zero-mocks)
@@ -244,19 +244,85 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 				const certData = await res.json();
 				if (certData.certificate) {
 					const cert = certData.certificate;
-					if (cert.status === "depleted") { setCertFeedback("Баланс сертификата полностью исчерпан"); showToast("Баланс сертификата исчерпан", "warning"); return; }
-					if (cert.status === "cancelled") { setCertFeedback("Сертификат аннулирован администрацией клиники"); showToast("Сертификат аннулирован", "warning"); return; }
-					if (cert.status === "expired") { setCertFeedback("Срок действия сертификата истек"); showToast("Срок действия сертификата истек", "warning"); return; }
+					if (cert.status === "depleted") { setCertFeedback("Баланс сертификата полностью исчерпан"); showToast("Баланс сертификата исчерпан", "warning"); setVerifiedCertificate(null); return; }
+					if (cert.status === "cancelled") { setCertFeedback("Сертификат аннулирован администрацией клиники"); showToast("Сертификат аннулирован", "warning"); setVerifiedCertificate(null); return; }
+					if (cert.status === "expired") { setCertFeedback("Срок действия сертификата истек"); showToast("Срок действия сертификата истек", "warning"); setVerifiedCertificate(null); return; }
 					const redeemRes = redeemGiftCertificate(cert, currentInvoiceAmountKop);
 					const coveredMsg = redeemRes.coveredInvoiceAmountKop > 0 ? `, к зачёту: ${formatKopecksToRubles(redeemRes.coveredInvoiceAmountKop)}` : "";
 					setCertFeedback(`Сертификат подтвержден! Номинал: ${formatKopecksToRubles(cert.nominalKop || cert.nominalRub * 100)}, баланс: ${formatKopecksToRubles(cert.currentBalanceKop || cert.currentBalanceRub * 100)}${coveredMsg}`);
+					setVerifiedCertificate({
+						id: cert.id,
+						serialNumber: cert.serialNumber,
+						nominalRub: Number(cert.nominalRub || 0),
+						currentBalanceRub: Number(cert.currentBalanceRub || 0),
+						currentBalanceKop: Number(cert.currentBalanceKop || cert.currentBalanceRub * 100),
+						status: cert.status,
+					});
 					showToast("Сертификат подтвержден через базу клиники", "success"); return;
 				}
 			}
 			const err = await res.json().catch(() => ({}));
 			const msg = err.message || "Сертификат не найден в базе клиники или аннулирован";
-			setCertFeedback(msg); showToast(msg, "warning");
-		} catch { setCertFeedback("Сертификат не найден в базе клиники или аннулирован"); showToast("Сертификат не найден в базе клиники или аннулирован", "warning"); }
+			setCertFeedback(msg); setVerifiedCertificate(null); showToast(msg, "warning");
+		} catch { setCertFeedback("Сертификат не найден в базе клиники или аннулирован"); setVerifiedCertificate(null); showToast("Сертификат не найден в базе клиники или аннулирован", "warning"); }
+	};
+
+	const handleRedeemCertificate = async () => {
+		if (!verifiedCertificate) return;
+		try {
+			const invoiceRub = currentInvoiceAmountKop > 0 ? currentInvoiceAmountKop / 100 : verifiedCertificate.currentBalanceRub;
+			const amountToRedeemRub = Math.min(verifiedCertificate.currentBalanceRub, invoiceRub);
+			const res = await postLoyaltyJson("/api/loyalty/certificates/redeem", {
+				serialNumber: verifiedCertificate.serialNumber,
+				invoiceAmountRub: invoiceRub,
+				amountToRedeemRub,
+				patientId,
+				description: `Погашение сертификата ${verifiedCertificate.serialNumber} в Студии лояльности`,
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				showToast(err.message || "Не удалось списать сертификат", "warning");
+				return;
+			}
+			const data = await res.json();
+			showToast(`Сертификат успешно зачтён на сумму ${data.redeemedAmountRub} ₽! (Чек 54-ФЗ тег 1215)`, "success");
+			setCertFeedback(`Зачтено ${data.redeemedAmountRub} ₽. Новый остаток: ${data.newBalanceRub} ₽`);
+			setVerifiedCertificate(null);
+			setCertSerial("");
+			setLedger((prev) => [
+				{
+					id: `redeem-cert-${Date.now().toString().slice(-4)}`,
+					timestampIso: new Date().toLocaleString("ru-RU"),
+					patientId,
+					patientName,
+					medicalCardNumber,
+					operationType: "redemption",
+					operationTypeRu: "Зачёт сертификата",
+					invoiceAmountKop: Math.round(data.redeemedAmountRub * 100),
+					pointsDeltaRub: 0,
+					balanceAfterRub: pointsBalance,
+					paymentMethodRu: "Сертификат (аванс 1215)",
+					fiscalReceiptNumber: `CERT-${Date.now().toString().slice(-6)}`,
+					staffNameRu: "Администратор",
+					noteRu: `Погашение сертификата ${verifiedCertificate.serialNumber} на ${data.redeemedAmountRub} ₽`,
+				},
+				...prev,
+			]);
+			if (onRedeemSuccess) {
+				const certKop = Math.round((Number(data.redeemedAmountRub) || 0) * 100);
+				onRedeemSuccess(0, {
+					tag1031CashKop: 0,
+					tag1081ElectronicCardKop: Math.max(0, currentInvoiceAmountKop - certKop),
+					tag1215AdvancePrepaymentBonusKop: certKop,
+					tag1043DiscountKop: 0,
+					totalGrossKop: currentInvoiceAmountKop || certKop,
+					totalNetPayableKop: Math.max(0, currentInvoiceAmountKop - certKop),
+				});
+			}
+		} catch (err) {
+			console.error("[LoyaltyStudioModal] Redeem certificate call failed:", err);
+			showToast("Ошибка сети при списании сертификата", "error");
+		}
 	};
 
 	const handleIssueCertificate = async (nominalRub: number, title: string) => {
@@ -401,6 +467,21 @@ export const LoyaltyStudioModal: React.FC<LoyaltyStudioModalProps> = (props) => 
 								<div className="loyalty-card-title"><span>Активация подарочного сертификата</span></div>
 								<div className="loyalty-input-row"><input type="text" className="loyalty-input" value={certSerial} onChange={(e) => setCertSerial(e.target.value)} placeholder="7701-XXXX-XXXX-XXXX" /><button type="button" className="loyalty-secondary-btn" onClick={handleVerifyCertificate}>Проверить</button></div>
 								{certFeedback && <div style={{ fontSize: "0.8125rem", color: "var(--teal)", fontWeight: 600 }}>{certFeedback}</div>}
+								{verifiedCertificate && verifiedCertificate.currentBalanceRub > 0 && (
+									<div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--line)" }}>
+										<button
+											type="button"
+											className="loyalty-primary-btn"
+											style={{ width: "100%", justifyContent: "center" }}
+											onClick={handleRedeemCertificate}
+										>
+											Зачесть сертификат в счёт ({formatKopecksToRubles(currentInvoiceAmountKop > 0 ? Math.min(verifiedCertificate.currentBalanceKop, currentInvoiceAmountKop) : verifiedCertificate.currentBalanceKop)})
+										</button>
+										<div style={{ fontSize: "0.75rem", color: "var(--muted)", textAlign: "center", marginTop: "0.25rem" }}>
+											Фискализация по 54-ФЗ (тег 1215: зачёт аванса)
+										</div>
+									</div>
+								)}
 							</div>
 							<div className="loyalty-card">
 								<div className="loyalty-card-title"><span>Номиналы сертификатов в клинике</span></div>

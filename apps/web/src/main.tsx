@@ -133,6 +133,23 @@ const CashboxStandaloneView = React.lazy(() =>
 		default: m.DirectCashboxLauncher,
 	})),
 );
+const LoyaltyStudioStandaloneView = React.lazy(() =>
+	import("./components/loyalty/LoyaltyStudioModal").then((m) => ({
+		default: () => (
+			<m.LoyaltyStudioModal
+				isOpen={true}
+				onClose={() => {
+					if (typeof window !== "undefined") window.location.hash = "";
+				}}
+				patientId="01a00000-0000-0000-0000-000000000001"
+				patientName="Воронова Светлана Николаевна"
+				medicalCardNumber="№ 4821-Л"
+				initialPointsBalance={2500}
+				currentInvoiceAmountKop={500000}
+			/>
+		),
+	})),
+);
 const EmrMedicalRecordStandaloneView = React.lazy(() =>
 	import("./components/appLayout/modalsContainerModules/standalone/clinical/StandaloneEmrMedicalRecordHost").then((m) => ({
 		default: m.StandaloneEmrMedicalRecordHost,
@@ -902,6 +919,42 @@ if (publicPortalRoute) {
 					}
 				>
 					<CashboxStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("stand=loyalty") ||
+		window.location.search.includes("standalone=loyalty") ||
+		window.location.search.includes("loyalty=1") ||
+		window.location.search.includes("bonuses=1") ||
+		window.location.hash === "#loyalty" ||
+		window.location.hash === "#bonuses" ||
+		window.location.hash.startsWith("#loyalty?") ||
+		window.location.hash.startsWith("#bonuses?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка программы лояльности...
+						</div>
+					}
+				>
+					<LoyaltyStudioStandaloneView />
 				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>

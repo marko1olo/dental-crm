@@ -11,7 +11,7 @@
  */
 
 import { and, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
-import { kopecksToRub, normalizePaymentMethod, rubToKopecks } from "@dental/shared";
+import { kopecksToRub, normalizePaymentMethod, rubToKopecks, validateLuhn16Certificate } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	advanceDepositTaggings,
@@ -20,6 +20,7 @@ import {
 	cashOperations,
 	familyGroups,
 	fiscalReceiptQueue,
+	giftCertificates,
 	patientBonusBalances,
 	patientInvoices,
 	patientRelationships,
@@ -176,6 +177,32 @@ export async function processCashboxPayment(
 		}
 	}
 
+	// [FIN-07] Вычисление требуемой суммы списания с подарочного сертификата
+	let requiredCertificateKopecks = 0n;
+	let certificateNumber: string | undefined = body.certificateNumber?.trim();
+	const isCertificateMethod = body.method === "certificate";
+	if (isCertificateMethod) {
+		requiredCertificateKopecks = totalKopecks;
+	} else if (body.certificateAmountKopecks !== undefined && body.certificateAmountKopecks > 0) {
+		requiredCertificateKopecks = BigInt(body.certificateAmountKopecks);
+	} else if (body.certificateAmountRub !== undefined && body.certificateAmountRub > 0) {
+		requiredCertificateKopecks = BigInt(Math.round(body.certificateAmountRub * 100));
+	} else if (body.splitTenders && body.splitTenders.length > 0) {
+		for (const tender of body.splitTenders) {
+			const rawMethod = tender.method?.trim().toLowerCase();
+			if (rawMethod === "certificate" || rawMethod === "gift_certificate") {
+				const tk =
+					tender.amountKopecks !== undefined
+						? BigInt(tender.amountKopecks)
+						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
+				requiredCertificateKopecks += tk;
+				if (!certificateNumber && tender.certificateNumber) {
+					certificateNumber = tender.certificateNumber.trim();
+				}
+			}
+		}
+	}
+
 	// [DEF-CASH-04] Проверка равенства суммы сплит-частей итогу счета (54-ФЗ и Мандат 8e)
 	const isSplitMethod = body.method === "split";
 	const hasExplicitSplitTenders = Boolean(body.splitTenders && body.splitTenders.length > 0);
@@ -184,6 +211,7 @@ export async function processCashboxPayment(
 		body.electronicAmountKopecks !== undefined || body.electronicAmountRub !== undefined,
 		body.depositAmountKopecks !== undefined || body.depositAmountRub !== undefined,
 		body.bonusAmountKopecks !== undefined || body.bonusAmountRub !== undefined,
+		body.certificateAmountKopecks !== undefined || body.certificateAmountRub !== undefined,
 	].filter(Boolean).length >= 2;
 
 	if (isSplitMethod || hasExplicitSplitTenders || hasMultipleTenderFields) {
@@ -219,6 +247,11 @@ export async function processCashboxPayment(
 			} else if (body.bonusAmountRub !== undefined) {
 				sumSplitKopecks += BigInt(Math.round(body.bonusAmountRub * 100));
 			}
+			if (body.certificateAmountKopecks !== undefined) {
+				sumSplitKopecks += BigInt(body.certificateAmountKopecks);
+			} else if (body.certificateAmountRub !== undefined) {
+				sumSplitKopecks += BigInt(Math.round(body.certificateAmountRub * 100));
+			}
 		}
 
 		if (sumSplitKopecks !== totalKopecks) {
@@ -232,6 +265,27 @@ export async function processCashboxPayment(
 						sumSplitKopecks: Number(sumSplitKopecks),
 						diffKopecks: Number(totalKopecks - sumSplitKopecks),
 					},
+				},
+			};
+		}
+	}
+
+	if (requiredCertificateKopecks > 0n && !isWarrantyPayment) {
+		if (!certificateNumber) {
+			return {
+				statusCode: 400,
+				body: {
+					error: "CertificateNumberRequired",
+					message: "Для оплаты подарочным сертификатом укажите номер сертификата.",
+				},
+			};
+		}
+		if (!validateLuhn16Certificate(certificateNumber)) {
+			return {
+				statusCode: 400,
+				body: {
+					error: "InvalidCertificateNumber",
+					message: "Номер подарочного сертификата не прошел проверку контрольной суммы Луна (16 цифр).",
 				},
 			};
 		}
@@ -504,6 +558,21 @@ export async function processCashboxPayment(
 				}
 			}
 
+			// [DEF-DEP-01] Если аванс списывался по леджеру соло-пациента без предварительного тегирования:
+			// фиксируем списание аванса через advanceDepositTaggings со статусом spent для защиты от Double-Spend
+			if (remainingToDeductKop > 0n && !lockedFamilyGroup) {
+				await tx.insert(advanceDepositTaggings).values({
+					organizationId: orgId,
+					patientId: resolvedPatientId,
+					patientName: patientRow?.fullName || "Пациент клиники",
+					depositAmountRub: (Number(remainingToDeductKop) / 100).toFixed(2),
+					taggedTargetType: "treatment_plan",
+					taggedTargetName: `Зачёт аванса по леджеру (счёт ${body.invoiceId || "б/н"})`,
+					allocationStatus: "spent",
+				});
+				remainingToDeductKop = 0n;
+			}
+
 			// Если осталась сумма для списания, списываем из семейного баланса familyGroups
 			if (remainingToDeductKop > 0n && lockedFamilyGroup) {
 				const walletOwnerId = lockedFamilyGroup.headPatientId || lockedFamilyGroup.primaryPatientId;
@@ -620,6 +689,76 @@ export async function processCashboxPayment(
 			lockedBonusBalance = bonusBalance ?? null;
 			pointsToDeduct = Number((Number(requiredBonusKopecks) / 100).toFixed(2));
 			newActiveBonusPoints = Math.max(0, Number((currentActivePoints - pointsToDeduct).toFixed(2)));
+		}
+
+		// [FIN-07] Проверка и блокировка списания подарочного сертификата
+		let lockedCertificate: typeof giftCertificates.$inferSelect | null = null;
+		let certAmountToDeductKop = 0n;
+		let newCertBalanceRub = "0.00";
+
+		if (requiredCertificateKopecks > 0n && !isWarrantyPayment && certificateNumber) {
+			const cleanCertNumber = certificateNumber.replace(/[\s-]/g, "");
+			const [cert] = await tx
+				.select()
+				.from(giftCertificates)
+				.where(
+					and(
+						eq(giftCertificates.organizationId, orgId),
+						or(
+							eq(giftCertificates.serialNumber, certificateNumber),
+							sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleanCertNumber}`,
+						),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (!cert) {
+				return {
+					kind: "certificate_not_found" as const,
+					certificateNumber,
+				};
+			}
+
+			if (cert.status === "depleted") {
+				return {
+					kind: "certificate_depleted" as const,
+					certificateNumber,
+				};
+			}
+
+			if (cert.status === "cancelled") {
+				return {
+					kind: "certificate_cancelled" as const,
+					certificateNumber,
+				};
+			}
+
+			const now = new Date();
+			if (cert.expiresAt && new Date(cert.expiresAt) < now) {
+				return {
+					kind: "certificate_expired" as const,
+					certificateNumber,
+					expiresAt: cert.expiresAt.toISOString(),
+				};
+			}
+
+			const currentBalRub = Number(cert.currentBalanceRub ?? 0);
+			const currentBalKop = BigInt(rubToKopecks(currentBalRub));
+
+			if (currentBalKop < requiredCertificateKopecks) {
+				return {
+					kind: "insufficient_certificate" as const,
+					certificateNumber,
+					availableRub: (Number(currentBalKop) / 100).toFixed(2),
+					requiredRub: (Number(requiredCertificateKopecks) / 100).toFixed(2),
+				};
+			}
+
+			lockedCertificate = cert;
+			certAmountToDeductKop = requiredCertificateKopecks;
+			const newBalKop = currentBalKop - certAmountToDeductKop;
+			newCertBalanceRub = (Number(newBalKop) / 100).toFixed(2);
 		}
 
 		// [FIN-02] Пессимистическая блокировка инвойса от двойной оплаты и связывание с приёмом
@@ -756,13 +895,29 @@ export async function processCashboxPayment(
 			};
 		}
 
-		// Если передан invoiceId или visitId для обычного платежа — закрываем счёт со статусом paid
+		// Если передан invoiceId или visitId для обычного платежа — обновляем счёт с проверкой полного или частичного покрытия
 		if (body.invoiceId) {
+			const [invoicePayments] = await tx
+				.select({
+					totalPaidRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+				})
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.documentId, body.invoiceId),
+						eq(payments.status, "paid"),
+					),
+				);
+			const invoiceTotalRub = Number(lockedInvoice?.totalAmountRub || lockedInvoice?.totalRub || 0);
+			const totalPaidRub = Number(invoicePayments?.totalPaidRub || 0);
+			const nextStatus = totalPaidRub >= invoiceTotalRub ? "paid" : "partially_paid";
+
 			await tx
 				.update(patientInvoices)
 				.set({
-					status: "paid",
-					paidAt: new Date(),
+					status: nextStatus,
+					paidAt: nextStatus === "paid" ? new Date() : null,
 				})
 				.where(
 					and(
@@ -772,18 +927,38 @@ export async function processCashboxPayment(
 				);
 		}
 		if (effectiveVisitId) {
-			await tx
-				.update(patientInvoices)
-				.set({
-					status: "paid",
-					paidAt: new Date(),
-				})
+			const visitInvoices = await tx
+				.select({ id: patientInvoices.id, status: patientInvoices.status, totalRub: patientInvoices.totalAmountRub })
+				.from(patientInvoices)
 				.where(
 					and(
 						eq(patientInvoices.visitId, effectiveVisitId),
 						eq(patientInvoices.organizationId, orgId),
 					),
 				);
+
+			for (const inv of visitInvoices) {
+				const [invPaid] = await tx
+					.select({ totalPaidRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)` })
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.documentId, inv.id),
+							eq(payments.status, "paid"),
+						),
+					);
+				const totalDue = Number(inv.totalRub || 0);
+				const totalPaid = Number(invPaid?.totalPaidRub || 0);
+				const invStatus = totalPaid >= totalDue ? "paid" : totalPaid > 0 ? "partially_paid" : inv.status;
+				await tx
+					.update(patientInvoices)
+					.set({
+						status: invStatus,
+						paidAt: invStatus === "paid" ? new Date() : null,
+					})
+					.where(eq(patientInvoices.id, inv.id));
+			}
 
 			await tx
 				.update(visits)
@@ -831,6 +1006,22 @@ export async function processCashboxPayment(
 			});
 		}
 
+		// 2.2. Списание номинала с подарочного сертификата
+		if (lockedCertificate && certAmountToDeductKop > 0n) {
+			const isDepleted = Number(newCertBalanceRub) <= 0;
+			await tx
+				.update(giftCertificates)
+				.set({
+					currentBalanceRub: newCertBalanceRub,
+					status: isDepleted ? "depleted" : "active",
+					notes: body.invoiceId
+						? `${lockedCertificate.notes || ""}; Оплата счета ${body.invoiceId}`.trim().slice(0, 500)
+						: lockedCertificate.notes,
+					updatedAt: new Date(),
+				})
+				.where(eq(giftCertificates.id, lockedCertificate.id));
+		}
+
 		// 3. Инициализируем и находим кассовые счета клиники с упорядоченной блокировкой строк
 		await ensureOrganizationCashBoxes(tx, orgId);
 		const boxes = await tx
@@ -852,31 +1043,37 @@ export async function processCashboxPayment(
 			cashDeskBox;
 
 		// 4. Кассовые проводки в cashOperations
-		let resolvedCashKop =
-			body.cashAmountKopecks ??
-			(body.cashAmountRub !== undefined ? Math.round(body.cashAmountRub * 100) : undefined) ??
-			(body.method === "cash" ? Number(totalKopecks) : 0);
-		let resolvedElecKop =
-			body.electronicAmountKopecks ??
-			(body.electronicAmountRub !== undefined ? Math.round(body.electronicAmountRub * 100) : undefined) ??
-			(["card", "sbp", "online"].includes(body.method || "")
-				? Number(totalKopecks)
-				: 0);
+		let resolvedCashKop = 0;
+		let resolvedElecKop = 0;
 
 		if (body.splitTenders && body.splitTenders.length > 0) {
 			for (const tender of body.splitTenders) {
 				const tk = tender.amountKopecks ?? Math.round((tender.amountRub ?? 0) * 100);
 				const norm = normalizePaymentMethod(tender.method);
-				if (norm === "cash" && body.cashAmountKopecks === undefined) {
+				if (norm === "cash") {
 					resolvedCashKop += tk;
-				} else if (["card", "sbp", "online"].includes(norm) && body.electronicAmountKopecks === undefined) {
+				} else if (["card", "sbp", "online"].includes(norm)) {
 					resolvedElecKop += tk;
 				}
 			}
+		} else {
+			resolvedCashKop =
+				body.cashAmountKopecks ??
+				(body.cashAmountRub !== undefined ? Math.round(body.cashAmountRub * 100) : undefined) ??
+				(body.method === "cash" ? Number(totalKopecks) : 0);
+			resolvedElecKop =
+				body.electronicAmountKopecks ??
+				(body.electronicAmountRub !== undefined ? Math.round(body.electronicAmountRub * 100) : undefined) ??
+				(["card", "sbp", "online"].includes(body.method || "")
+					? Number(totalKopecks)
+					: 0);
 		}
 
 		if (resolvedCashKop > 0 && cashDeskBox) {
-			const curBalKop = rubToKopecks(cashDeskBox.balanceRub || 0);
+			const curBalKop =
+				cashDeskBox.balanceKopecks !== undefined && cashDeskBox.balanceKopecks !== null
+					? Number(cashDeskBox.balanceKopecks)
+					: rubToKopecks(cashDeskBox.balanceRub || 0);
 			const newBalKop = curBalKop + resolvedCashKop;
 			const curBal = kopecksToRub(curBalKop);
 			const addRub = kopecksToRub(resolvedCashKop);
@@ -899,12 +1096,19 @@ export async function processCashboxPayment(
 
 			await tx
 				.update(cashBoxes)
-				.set({ balanceRub: newBal, updatedAt: new Date() })
+				.set({
+					balanceRub: newBal,
+					balanceKopecks: newBalKop,
+					updatedAt: new Date(),
+				})
 				.where(eq(cashBoxes.id, cashDeskBox.id));
 		}
 
 		if (resolvedElecKop > 0 && cashlessBox) {
-			const curBalKop = rubToKopecks(cashlessBox.balanceRub || 0);
+			const curBalKop =
+				cashlessBox.balanceKopecks !== undefined && cashlessBox.balanceKopecks !== null
+					? Number(cashlessBox.balanceKopecks)
+					: rubToKopecks(cashlessBox.balanceRub || 0);
 			const newBalKop = curBalKop + resolvedElecKop;
 			const curBal = kopecksToRub(curBalKop);
 			const addRub = kopecksToRub(resolvedElecKop);
@@ -927,7 +1131,11 @@ export async function processCashboxPayment(
 
 			await tx
 				.update(cashBoxes)
-				.set({ balanceRub: newBal, updatedAt: new Date() })
+				.set({
+					balanceRub: newBal,
+					balanceKopecks: newBalKop,
+					updatedAt: new Date(),
+				})
 				.where(eq(cashBoxes.id, cashlessBox.id));
 		}
 
@@ -963,9 +1171,26 @@ export async function processCashboxPayment(
 			});
 		}
 
+		if (requiredCertificateKopecks > 0n && cashDeskBox) {
+			const certRub = Number(requiredCertificateKopecks) / 100;
+			await tx.insert(cashOperations).values({
+				organizationId: orgId,
+				cashBoxId: cashDeskBox.id,
+				operationType: "income",
+				amountRub: certRub,
+				balanceBeforeRub: cashDeskBox.balanceRub || 0,
+				balanceAfterRub: cashDeskBox.balanceRub || 0,
+				patientId: resolvedPatientId,
+				kkmDocNumber: receiptNumber,
+				reasonText: `Зачёт аванса (сертификат №${certificateNumber}): оплата стоматологических услуг (${receiptNumber || "б/н"})`,
+				operatorName: body.cashierFullName || "Кассир",
+			});
+		}
+
 		// 5. Постановка чека в очередь фискализации (physical KKT printer spooler)
 		let enqueuedReceiptId: string | null = null;
 		if (!isWarrantyPayment && totalKopecks > 0n) {
+			const totalAdvanceOffsetKop = requiredDepositKopecks + requiredCertificateKopecks;
 			const [enqueued] = await tx
 				.insert(fiscalReceiptQueue)
 				.values({
@@ -981,7 +1206,9 @@ export async function processCashboxPayment(
 						method: normalizePaymentMethod(body.method),
 						cashRub: kopecksToRub(resolvedCashKop),
 						electronicRub: kopecksToRub(resolvedElecKop),
-						advanceOffsetRub: kopecksToRub(Number(requiredDepositKopecks)),
+						advanceOffsetRub: kopecksToRub(Number(totalAdvanceOffsetKop)),
+						certificateOffsetRub: kopecksToRub(Number(requiredCertificateKopecks)),
+						certificateNumber: certificateNumber || null,
 						bonusOffsetRub: kopecksToRub(Number(requiredBonusKopecks)),
 						fiscalReceiptNumber: receiptNumber,
 						patientId: resolvedPatientId,
@@ -989,6 +1216,7 @@ export async function processCashboxPayment(
 						cashierFullName: body.cashierFullName || "Кассир",
 						invoiceId: body.invoiceId || null,
 						note: newPayment.note,
+						splitTenders: body.splitTenders ?? null,
 					},
 					retryCount: 0,
 				})
@@ -1003,6 +1231,7 @@ export async function processCashboxPayment(
 			amountKopecks: Number(totalKopecks),
 			amountRub: amountRubNumber,
 			bonusAmountKopecks: Number(requiredBonusKopecks),
+			certificateAmountKopecks: Number(requiredCertificateKopecks),
 			method: newPayment.method,
 			status: "paid",
 			fiscalReceiptNumber: receiptNumber,
@@ -1069,6 +1298,56 @@ export async function processCashboxPayment(
 			body: {
 				error: "InsufficientBonusBalance",
 				message: `Недостаточно бонусов на счете пациента. Доступно: ${result.availableRub} б., требуется: ${result.requiredRub} б.`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "certificate_not_found") {
+		return {
+			statusCode: 404,
+			body: {
+				error: "CertificateNotFound",
+				message: `Подарочный сертификат с номером «${result.certificateNumber}» не найден в клинике.`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "certificate_depleted") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "CertificateDepleted",
+				message: `Баланс подарочного сертификата «${result.certificateNumber}» полностью исчерпан.`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "certificate_cancelled") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "CertificateCancelled",
+				message: `Подарочный сертификат «${result.certificateNumber}» аннулирован администрацией клиники.`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "certificate_expired") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "CertificateExpired",
+				message: `Срок действия подарочного сертификата «${result.certificateNumber}» истек (${result.expiresAt.slice(0, 10)}).`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "insufficient_certificate") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "InsufficientCertificateBalance",
+				message: `Недостаточно средств на сертификате «${result.certificateNumber}». Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
 			},
 		};
 	}

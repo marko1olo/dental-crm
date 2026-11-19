@@ -11,6 +11,9 @@ import { requireOrganizationId } from "../security/identity.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
+	cashBoxes,
+	cashOperations,
+	fiscalReceiptQueue,
 	giftCertificates,
 	patientInvoices,
 	patients,
@@ -414,7 +417,7 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 							patientId: targetPatientId,
 							documentId: invoiceId,
 							amountRub: redeemedRub,
-							method: "other",
+							method: "family_wallet",
 							status: "paid",
 							paidAt: new Date(),
 							note: description || `Зачёт аванса: подарочный сертификат ${cert.serialNumber} (тег 1215: ${redeemedRub} ₽)`,
@@ -422,6 +425,49 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 						.returning({ id: payments.id });
 
 					paymentId = payRecord?.id ?? null;
+
+					// Проводка зачета аванса по сертификату в кассовый журнал
+					const [cashDeskBox] = await tx
+						.select()
+						.from(cashBoxes)
+						.where(eq(cashBoxes.organizationId, orgId))
+						.limit(1);
+
+					if (cashDeskBox) {
+						await tx.insert(cashOperations).values({
+							organizationId: orgId,
+							cashBoxId: cashDeskBox.id,
+							operationType: "income",
+							amountRub: redeemedRub,
+							balanceBeforeRub: cashDeskBox.balanceRub || 0,
+							balanceAfterRub: cashDeskBox.balanceRub || 0,
+							patientId: targetPatientId,
+							kkmDocNumber: `CERT-${Date.now().toString().slice(-6)}`,
+							reasonText: `Зачёт аванса (сертификат №${cert.serialNumber}): оплата стоматологических услуг`,
+							operatorName: "Администратор",
+						});
+					}
+
+					// Фискализация чека 54-ФЗ (тег 1215: зачет аванса)
+					await tx.insert(fiscalReceiptQueue).values({
+						organizationId: orgId,
+						paymentId: payRecord?.id,
+						receiptType: "income",
+						status: "pending_print",
+						payloadJson: {
+							amountRub: redeemedRub,
+							amountKopecks: Number(redeemedKop),
+							method: "family_wallet",
+							advanceOffsetRub: redeemedRub,
+							certificateOffsetRub: redeemedRub,
+							certificateNumber: cert.serialNumber,
+							fiscalReceiptNumber: `CERT-${Date.now().toString().slice(-6)}`,
+							patientId: targetPatientId,
+							invoiceId: invoiceId || null,
+							note: `Зачёт аванса: подарочный сертификат ${cert.serialNumber} (тег 1215)`,
+						},
+						retryCount: 0,
+					});
 
 					const existingPayments = await tx
 						.select({ amountRub: payments.amountRub })

@@ -71,6 +71,8 @@ export interface CashRegisterCheckoutSectionProps {
 	readonly printFormat: string;
 	readonly setPrintFormat: (val: string) => void;
 	readonly onExecutePayment: () => void;
+	readonly certificateNumber?: string | undefined;
+	readonly setCertificateNumber?: ((val: string) => void) | undefined;
 	readonly appliedDmsSplit?: {
 		readonly totalDueRub: number;
 		readonly dmsRub: number;
@@ -128,6 +130,8 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 	printFormat,
 	setPrintFormat,
 	onExecutePayment,
+	certificateNumber,
+	setCertificateNumber,
 	appliedDmsSplit,
 	invoiceId,
 	orderId,
@@ -291,6 +295,8 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 				invoiceId={invoiceId}
 				orderId={orderId}
 				patientName={patientName}
+				certificateNumber={certificateNumber}
+				setCertificateNumber={setCertificateNumber}
 			/>
 
 			{/* Integrated 1-Click Split Tender Panel */}

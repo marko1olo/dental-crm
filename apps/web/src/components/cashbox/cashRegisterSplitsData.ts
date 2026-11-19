@@ -118,7 +118,9 @@ export function reconcileShiftCounters(params: {
 	const expectedCashRub = kopecksToRub(expectedKop);
 
 	const actualProvided = typeof params.actualCashRub === "number" && !Number.isNaN(params.actualCashRub);
-	const actualKop = actualProvided ? Number(rubToKopecks(Math.max(0, params.actualCashRub!))) : expectedKop;
+	const actualKop = actualProvided && params.actualCashRub !== undefined
+		? Number(rubToKopecks(Math.max(0, params.actualCashRub)))
+		: expectedKop;
 	const actualCashRub = kopecksToRub(actualKop);
 
 	const discrepancyKop = actualKop - expectedKop;

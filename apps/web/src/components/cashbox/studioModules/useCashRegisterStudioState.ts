@@ -137,6 +137,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	const [printFormat, setPrintFormat] = useState<string>(initialPrintFormat);
 	const [countedCashInput, setCountedCashInput] = useState<string>(String(initialCashDrawer));
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12>(6);
+	const [certificateNumber, setCertificateNumber] = useState<string>("");
 
 	// Split tender state (honest multi-tender allocation in kopecks)
 	const [splitCashRub, setSplitCashRub] = useState<number>(0);
@@ -170,7 +171,8 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 	// DMS Split Event Bus Listener (Mandates 8aq & 8e: Seamless DMS-to-Cashbox Bridge)
 	useEffect(() => {
 		const handleApplySplit = (e: Event) => {
-			const ce = e as CustomEvent<{
+			if (!("detail" in e) || typeof e.detail !== "object" || e.detail === null) return;
+			const d = e.detail as {
 				totalDueRub?: number | undefined;
 				dmsRub?: number | undefined;
 				patientRub?: number | undefined;
@@ -182,9 +184,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				letterNumber?: string | undefined;
 				insurerName?: string | undefined;
 				invoiceId?: string | undefined;
-			}>;
-			const d = ce.detail;
-			if (!d) return;
+			};
 
 			const copay = d.patientRub ?? d.patientCopayRub ?? 0;
 			const dms = d.dmsRub ?? 0;
@@ -282,10 +282,11 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				});
 				if (!res.ok) return;
 				const json = await res.json().catch(() => null);
-				if (!isCancelled && json?.data && Array.isArray(json.data)) {
+				if (!isCancelled && json && typeof json === "object" && "data" in json && Array.isArray(json.data)) {
 					setRecentOperations(json.data.slice(0, 10));
 				}
-			} catch {
+			} catch (fetchErr: unknown) {
+				console.warn("[useCashRegisterStudioState] Не удалось загрузить недавние операции кассы:", fetchErr);
 				// non-blocking / offline fallback
 			}
 		}
@@ -361,6 +362,27 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			payload.cashAmountKopecks = Number(splitCashKop);
 			payload.electronicAmountKopecks = Number(splitCardKop + splitSbpKop);
 			payload.depositAmountKopecks = Number(splitDepositKop);
+
+			const tenders: Array<{ method: string; amountKopecks: number; amountRub?: number }> = [];
+			if (splitCashKop > 0n) {
+				tenders.push({ method: "cash", amountKopecks: Number(splitCashKop), amountRub: kopecksToRub(splitCashKop) });
+			}
+			if (splitCardKop > 0n) {
+				tenders.push({ method: "card", amountKopecks: Number(splitCardKop), amountRub: kopecksToRub(splitCardKop) });
+			}
+			if (splitSbpKop > 0n) {
+				tenders.push({ method: "sbp", amountKopecks: Number(splitSbpKop), amountRub: kopecksToRub(splitSbpKop) });
+			}
+			if (splitDepositKop > 0n) {
+				tenders.push({ method: "family_wallet", amountKopecks: Number(splitDepositKop), amountRub: kopecksToRub(splitDepositKop) });
+			}
+			payload.splitTenders = tenders;
+		}
+
+		if (method === "certificate" && !isWarrantyCaseFinal) {
+			payload.certificateNumber = certificateNumber.trim() || undefined;
+			payload.certificateAmountKopecks = Number(effectiveTotalKop);
+			payload.certificateAmountRub = effectiveTotalRub;
 		}
 
 		// Fast offline-first path: if network is already down, enqueue immediately without freeze
@@ -467,12 +489,12 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			if (props.onConfirmPayment) props.onConfirmPayment(paymentResult);
 			onClose();
 		} catch (err: unknown) {
-			const status =
-				err instanceof CashRegisterNetworkError
-					? err.status
-					: typeof err === "object" && err !== null && "status" in err && typeof (err as { status?: unknown }).status === "number"
-						? (err as { status: number }).status
-						: undefined;
+			let status: number | undefined;
+			if (err instanceof CashRegisterNetworkError) {
+				status = err.status;
+			} else if (typeof err === "object" && err !== null && "status" in err && typeof err.status === "number") {
+				status = err.status;
+			}
 			if (isNetworkFailure(err, status)) {
 				// Resilient Offline Queue (Mandates 8e & 8n: Solo Doctor & Small Clinic Resilience)
 				try {
@@ -546,6 +568,7 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		effectiveTotalRub,
 		effectiveTotalKop,
 		method,
+		certificateNumber,
 		splitCashKop,
 		splitCardKop,
 		splitSbpKop,
@@ -668,6 +691,8 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 		setCountedCashInput,
 		installmentMonths,
 		setInstallmentMonths,
+		certificateNumber,
+		setCertificateNumber,
 		splitCashRub,
 		setSplitCashRub,
 		splitCardRub,
