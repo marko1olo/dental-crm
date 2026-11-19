@@ -13,6 +13,7 @@ import { z } from "zod";
 
 export const appointmentLabBadgeStateSchema = z.enum([
 	"in_lab",          // «В лаборатории» — в производстве у техника, срок еще не наступил
+	"in_transit",      // «В пути» — отправлен лабораторией курьером, ожидается в клинике
 	"ready_in_clinic", // «Поступил в клинику» — работа доставлена в клинику, готова к примерке/фиксации
 	"overdue",         // «Просрочен» — плановый срок сдачи ЗТЛ истек, работа не поступила в клинику
 ]);
@@ -112,7 +113,6 @@ export function evaluateAppointmentLabStatus(
 		rawStatus === "delivered_to_clinic" ||
 		rawStatus === "received" ||
 		rawStatus === "delivered" ||
-		rawStatus === "shipped" ||
 		rawStatus === "в клинике" ||
 		rawStatus === "готов в клинике" ||
 		rawStatus === "готовая работа" ||
@@ -184,7 +184,39 @@ export function evaluateAppointmentLabStatus(
 		};
 	}
 
-	// 3. Статус «В лаборатории» (в работе у техника, в пределах планового срока)
+	// 3. Статус «В пути» (отправлен лабораторией курьером, еще не поступил в клинику)
+	const isInTransit =
+		rawStatus === "shipped" ||
+		rawStatus === "shipped_to_clinic" ||
+		rawStatus === "в пути" ||
+		rawStatus === "отправлен лабораторией" ||
+		rawStage === "shipped" ||
+		rawStage === "shipped_to_clinic" ||
+		rawStage === "в пути";
+
+	if (isInTransit) {
+		return {
+			state: "in_transit",
+			labelRu: "В пути (курьер везет из ЗТЛ)",
+			shortLabelRu: "В пути",
+			readinessText: "Работа отправлена лабораторией и находится в пути",
+			badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/40",
+			borderClass: "border-sky-500",
+			textClass: "text-sky-700 dark:text-sky-300",
+			bgClass: "bg-sky-500/15",
+			orderId,
+			orderNumber,
+			toothFdi: order.toothFdi ?? null,
+			workTypeRu: order.workTypeRu ?? order.workType ?? null,
+			materialRu: order.material ?? null,
+			colorVita: order.colorVita ?? null,
+			dueDateIso: rawDueDate ? new Date(rawDueDate).toISOString() : null,
+			isOverdue: false,
+			daysOverdue: 0,
+		};
+	}
+
+	// 4. Статус «В лаборатории» (в работе у техника, в пределах планового срока)
 	return {
 		state: "in_lab",
 		labelRu: "В лаборатории (изготавливается)",
@@ -239,6 +271,8 @@ export function getPatientActiveLabStatus(
 		}
 
 		if (evaluated.state === "ready_in_clinic" && bestStatus.state !== "overdue") {
+			bestStatus = evaluated;
+		} else if (evaluated.state === "in_transit" && bestStatus.state === "in_lab") {
 			bestStatus = evaluated;
 		}
 	}

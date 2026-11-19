@@ -89,6 +89,22 @@ describe("labScheduleIntegration — Клиническая связка ЗТЛ 
 		assert.ok(result.badgeClass.includes("amber"));
 	});
 
+	test("4b. Статус «В пути» (голубой / in_transit для shipped, курьер везет из ЗТЛ)", () => {
+		const order: MinimalLabOrderForSchedule = {
+			id: "ord-104b",
+			status: "shipped",
+			dueDate: "2026-10-20T00:00:00Z",
+		};
+
+		const result = evaluateAppointmentLabStatus(order, refDate);
+		assert.ok(result);
+		assert.strictEqual(result.state, "in_transit");
+		assert.strictEqual(result.isOverdue, false);
+		assert.strictEqual(result.shortLabelRu, "В пути");
+		assert.strictEqual(result.labelRu, "В пути (курьер везет из ЗТЛ)");
+		assert.ok(result.badgeClass.includes("sky"));
+	});
+
 	test("5. Закрытые наряды (completed, delivered_to_patient) не выводятся в расписании", () => {
 		const orderCompleted: MinimalLabOrderForSchedule = {
 			status: "completed",

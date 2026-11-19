@@ -640,6 +640,8 @@ export function mapTo5StageLabStatus(rawStatus?: string | null): Canonical5LabSt
 	}
 	if (
 		s === "ready" ||
+		s === "ready_in_clinic" ||
+		s === "in_clinic" ||
 		s === "shipped" ||
 		s === "received" ||
 		s === "delivered" ||
@@ -662,9 +664,13 @@ export const CANONICAL_PG_LAB_STATUSES = [
 	"draft",
 	"sent",
 	"in_progress",
+	"ready",
+	"ready_in_clinic",
+	"fitting",
+	"fitted",
+	"refitting",
 	"shipped",
 	"received",
-	"refitting",
 	"completed",
 	"cancelled",
 ] as const;
@@ -673,19 +679,19 @@ export const canonicalPgLabStatusSchema = z.enum(CANONICAL_PG_LAB_STATUSES);
 export type CanonicalPgLabStatus = z.infer<typeof canonicalPgLabStatusSchema>;
 
 /**
- * Канонический маппинг из 5 клинических стадий UI в строго 8 допустимых статусов PostgreSQL CHECK constraint.
+ * Канонический маппинг из 5 клинических стадий UI в 12 допустимых статусов PostgreSQL CHECK constraint (0231).
  * Защищает от ошибки "violates check constraint lab_orders_status_check".
  */
 export const STAGE_TO_CANONICAL_PG_STATUS: Record<Canonical5LabStatus, CanonicalPgLabStatus> = {
 	sent: "sent",
 	in_progress: "in_progress",
-	fitting: "received",       // работа прибыла в клинику для клинической примерки у пациента
-	ready: "received",         // работа завершена лабораторией и получена клиникой
-	completed: "completed",    // конструкция зафиксирована во рту
+	fitting: "fitting",       // работа на клинической примерке у пациента
+	ready: "ready_in_clinic", // работа завершена лабораторией и готова в клинике
+	completed: "completed",   // конструкция зафиксирована во рту
 };
 
 /**
- * Двусторонний канонический маппер: преобразует любой входной этап/стадию в строго один из 8 статусов PostgreSQL CHECK-constraint.
+ * Двусторонний канонический маппер: преобразует любой входной этап/стадию в канонический статус PostgreSQL (12 статусов).
  */
 export function mapStageToCanonicalPgStatus(rawStage?: string | null): CanonicalPgLabStatus {
 	if (!rawStage) return "sent";
@@ -711,25 +717,36 @@ export function mapStageToCanonicalPgStatus(rawStage?: string | null): Canonical
 		s === "фиксация" ||
 		s === "сдан"
 	) {
-		return "completed";
+		return s === "fitted" ? "fitted" : "completed";
 	}
 	if (
-		s === "ready" ||
-		s === "received" ||
-		s === "ready_in_clinic" ||
-		s === "in_clinic" ||
-		s === "delivered_to_clinic" ||
 		s === "fitting" ||
 		s === "fitting_ready" ||
 		s === "framework_fitting" ||
 		s === "fitting_scheduled" ||
 		s === "fitting_in_mouth" ||
-		s === "готовая работа" ||
-		s === "примерка"
+		s === "примерка" ||
+		s === "примерка во рту"
 	) {
+		return "fitting";
+	}
+	if (
+		s === "ready_in_clinic" ||
+		s === "in_clinic" ||
+		s === "delivered_to_clinic" ||
+		s === "ready_fixation" ||
+		s === "готов в клинике" ||
+		s === "готовая работа"
+	) {
+		return "ready_in_clinic";
+	}
+	if (s === "ready" || s === "final_glaze" || s === "glaze_finish" || s === "готов в зтл") {
+		return "ready";
+	}
+	if (s === "received" || s === "доставлен в клинику" || s === "получен клиникой") {
 		return "received";
 	}
-	if (s === "shipped" || s === "shipped_to_clinic") {
+	if (s === "shipped" || s === "shipped_to_clinic" || s === "в пути" || s === "отправлен лабораторией") {
 		return "shipped";
 	}
 	if (
@@ -886,7 +903,7 @@ export const LAB_IMPRESSION_LABELS_RU: Record<ImpressionType, string> = {
 	other: "Прочее",
 };
 
-export const vitaShadeSchema = z.enum([
+export const rawVitaShadeEnum = z.enum([
 	"A1",
 	"A2",
 	"A3",
@@ -944,7 +961,19 @@ export const vitaShadeSchema = z.enum([
 	"5M2",
 	"5M3",
 ]);
-export type VitaShade = z.infer<typeof vitaShadeSchema>;
+
+export const vitaShadeSchema = z.preprocess((val) => {
+	if (typeof val === "string") {
+		const trimmed = val.trim();
+		if (/^bleach_[1-4]$/i.test(trimmed)) {
+			return trimmed.toLowerCase();
+		}
+		return normalizeVitaShade(trimmed);
+	}
+	return val;
+}, rawVitaShadeEnum);
+
+export type VitaShade = z.infer<typeof rawVitaShadeEnum>;
 
 export const labOrderRecordSchema = z.object({
 	id: z.string().uuid().optional(),

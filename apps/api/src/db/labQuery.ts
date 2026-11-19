@@ -32,6 +32,7 @@ export type LabOrderStatus =
 	| "received"
 	| "ready"
 	| "ready_in_clinic"
+	| "fitting"
 	| "refitting"
 	| "fitted"
 	| "completed"
@@ -49,13 +50,14 @@ export const LAB_ORDER_CLINIC_TRANSITIONS: Readonly<
 	Record<LabOrderStatus, readonly LabOrderStatus[]>
 > = {
 	draft: ["sent", "cancelled"],
-	sent: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "completed", "cancelled"],
-	in_progress: ["shipped", "received", "ready", "ready_in_clinic", "refitting", "completed", "cancelled", "rejected_remake"],
-	shipped: ["received", "ready", "ready_in_clinic", "refitting", "completed", "cancelled", "rejected_remake"],
-	received: ["ready", "ready_in_clinic", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
-	ready: ["ready_in_clinic", "received", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
-	ready_in_clinic: ["ready", "received", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
-	refitting: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "completed", "cancelled"],
+	sent: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "fitting", "completed", "cancelled"],
+	in_progress: ["shipped", "received", "ready", "ready_in_clinic", "fitting", "refitting", "completed", "cancelled", "rejected_remake"],
+	shipped: ["received", "ready", "ready_in_clinic", "fitting", "refitting", "completed", "cancelled", "rejected_remake"],
+	received: ["ready", "ready_in_clinic", "fitting", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
+	ready: ["ready_in_clinic", "received", "fitting", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
+	ready_in_clinic: ["ready", "received", "fitting", "fitted", "completed", "refitting", "cancelled", "rejected_remake"],
+	fitting: ["fitted", "ready_in_clinic", "ready", "received", "refitting", "completed", "cancelled", "rejected_remake"],
+	refitting: ["in_progress", "shipped", "received", "ready", "ready_in_clinic", "fitting", "completed", "cancelled"],
 	fitted: ["completed", "refitting", "cancelled", "rejected_remake"],
 	completed: ["refitting", "rejected_remake"],
 	cancelled: ["draft", "sent"],
@@ -71,11 +73,12 @@ export const LAB_ORDER_TECHNICIAN_TRANSITIONS: Readonly<
 > = {
 	draft: [],
 	sent: ["in_progress"],
-	in_progress: ["shipped", "ready", "ready_in_clinic", "refitting"],
-	shipped: ["received", "ready", "ready_in_clinic"],
-	received: ["completed", "fitted", "refitting"],
-	ready: ["ready_in_clinic", "completed", "refitting"],
-	ready_in_clinic: ["completed", "fitted", "refitting"],
+	in_progress: ["shipped", "ready", "ready_in_clinic", "fitting", "refitting"],
+	shipped: ["received", "ready", "ready_in_clinic", "fitting"],
+	received: ["ready_in_clinic", "fitting", "completed", "fitted", "refitting"],
+	ready: ["ready_in_clinic", "fitting", "completed", "refitting"],
+	ready_in_clinic: ["fitting", "completed", "fitted", "refitting"],
+	fitting: ["fitted", "completed", "refitting"],
 	refitting: ["in_progress", "shipped"],
 	fitted: ["completed"],
 	completed: [],

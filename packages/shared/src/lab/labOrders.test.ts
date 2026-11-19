@@ -344,23 +344,36 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 		});
 	});
 
-	test("CANONICAL_PG_LAB_STATUSES and bidirectional stage-status mappers satisfy Postgres 0042 CHECK constraint", () => {
-		// Strict 8 statuses matching PostgreSQL CHECK constraint (0042)
-		assert.equal(CANONICAL_PG_LAB_STATUSES.length, 8);
-		const expectedPgStatuses = ["draft", "sent", "in_progress", "shipped", "received", "refitting", "completed", "cancelled"];
+	test("CANONICAL_PG_LAB_STATUSES and bidirectional stage-status mappers satisfy Postgres 0231 CHECK constraint", () => {
+		// Strict 12 statuses matching PostgreSQL CHECK constraint (0231)
+		assert.equal(CANONICAL_PG_LAB_STATUSES.length, 12);
+		const expectedPgStatuses: readonly CanonicalPgLabStatus[] = [
+			"draft",
+			"sent",
+			"in_progress",
+			"ready",
+			"ready_in_clinic",
+			"fitting",
+			"fitted",
+			"refitting",
+			"shipped",
+			"received",
+			"completed",
+			"cancelled",
+		];
 		expectedPgStatuses.forEach((st) => {
-			assert.ok(CANONICAL_PG_LAB_STATUSES.includes(st as any));
+			assert.ok(CANONICAL_PG_LAB_STATUSES.includes(st));
 			assert.equal(canonicalPgLabStatusSchema.parse(st), st);
 		});
 
-		// UI 5-stages to PG status mapping: no arbitrary unconstrained strings
+		// UI 5-stages to PG status mapping: no arbitrary unconstrained strings and no downgrade of fitting/ready into received
 		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.sent, "sent");
 		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.in_progress, "in_progress");
-		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.fitting, "received");
-		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.ready, "received");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.fitting, "fitting");
+		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.ready, "ready_in_clinic");
 		assert.equal(STAGE_TO_CANONICAL_PG_STATUS.completed, "completed");
 
-		// mapStageToCanonicalPgStatus: resilient handling of ad-hoc stage names into strict 8 statuses
+		// mapStageToCanonicalPgStatus: resilient handling of ad-hoc stage names into strict 12 statuses without forced collapse to received
 		assert.equal(mapStageToCanonicalPgStatus("draft"), "draft");
 		assert.equal(mapStageToCanonicalPgStatus("sent"), "sent");
 		assert.equal(mapStageToCanonicalPgStatus("scan_sent"), "sent");
@@ -369,10 +382,12 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 		assert.equal(mapStageToCanonicalPgStatus("in_production"), "in_progress");
 		assert.equal(mapStageToCanonicalPgStatus("cad_modeling"), "in_progress");
 		assert.equal(mapStageToCanonicalPgStatus("shipped"), "shipped");
-		assert.equal(mapStageToCanonicalPgStatus("ready"), "received");
-		assert.equal(mapStageToCanonicalPgStatus("in_clinic"), "received");
-		assert.equal(mapStageToCanonicalPgStatus("fitting"), "received");
-		assert.equal(mapStageToCanonicalPgStatus("fitting_ready"), "received");
+		assert.equal(mapStageToCanonicalPgStatus("ready"), "ready");
+		assert.equal(mapStageToCanonicalPgStatus("ready_in_clinic"), "ready_in_clinic");
+		assert.equal(mapStageToCanonicalPgStatus("in_clinic"), "ready_in_clinic");
+		assert.equal(mapStageToCanonicalPgStatus("fitting"), "fitting");
+		assert.equal(mapStageToCanonicalPgStatus("fitting_ready"), "fitting");
+		assert.equal(mapStageToCanonicalPgStatus("fitted"), "fitted");
 		assert.equal(mapStageToCanonicalPgStatus("refitting"), "refitting");
 		assert.equal(mapStageToCanonicalPgStatus("rework"), "refitting");
 		assert.equal(mapStageToCanonicalPgStatus("completed"), "completed");
@@ -382,9 +397,13 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 		// mapPgStatusTo5Stage returns canonical 5-stage progression
 		assert.equal(mapPgStatusTo5Stage("sent"), "sent");
 		assert.equal(mapPgStatusTo5Stage("in_progress"), "in_progress");
+		assert.equal(mapPgStatusTo5Stage("fitting"), "fitting");
 		assert.equal(mapPgStatusTo5Stage("refitting"), "fitting");
+		assert.equal(mapPgStatusTo5Stage("ready"), "ready");
+		assert.equal(mapPgStatusTo5Stage("ready_in_clinic"), "ready");
 		assert.equal(mapPgStatusTo5Stage("received"), "ready");
 		assert.equal(mapPgStatusTo5Stage("completed"), "completed");
+		assert.equal(mapPgStatusTo5Stage("fitted"), "completed");
 	});
 });
 

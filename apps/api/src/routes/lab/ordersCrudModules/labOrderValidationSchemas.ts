@@ -14,9 +14,14 @@ import {
 export const labOrdersQuerySchema = z.object({
 	patientId: z
 		.string()
+		.trim()
 		.optional()
 		.nullable()
-		.transform((val) => (val && val !== "pat_direct" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : undefined)),
+		.refine(
+			(val) => !val || val === "pat_direct" || /^[0-9a-fA-F-]{36}$/.test(val),
+			{ message: "Параметр patientId должен быть валидным UUID." },
+		)
+		.transform((val) => (val && val !== "pat_direct" ? val : undefined)),
 });
 export type LabOrdersQuery = z.infer<typeof labOrdersQuerySchema>;
 
@@ -40,10 +45,12 @@ export const updateLabOrderSchema = z.object({
 	priceRub: labOrderPriceRubSchema.optional().nullable(),
 	costRub: labOrderPriceRubSchema.optional().nullable(),
 	labCostRub: labOrderPriceRubSchema.optional().nullable(),
+	patientPriceRub: labOrderPriceRubSchema.optional().nullable(),
 	priceKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
 	costKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
 	labCostKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
 	amountKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
+	patientPriceKopecks: z.union([z.number(), z.string(), z.bigint()]).optional().nullable(),
 	status: z.string().trim().optional(),
 	stage: z.string().trim().optional().nullable(),
 	techStage: z.string().trim().optional().nullable(),

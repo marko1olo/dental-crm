@@ -22,6 +22,7 @@ export interface LabOrderDetailsDrawerProps {
 	readonly onCloseTrackingDrawer?: () => void;
 	readonly selectedOrderForTracking?: DentalLabOrderData | null;
 	readonly onStageUpdate?: (orderId: string, newStage: string) => Promise<void>;
+	readonly onFittingDateUpdate?: ((orderId: string, dates: { frameworkTrialDate?: string | undefined; ceramicTrialDate?: string | undefined; deliveryDate?: string | undefined }) => Promise<void> | void) | undefined;
 	readonly promptState?: LabPromptDialogState | null;
 	readonly onClosePromptState?: () => void;
 	readonly isScanModalOpen?: boolean;
@@ -61,6 +62,7 @@ export function LabOrderDetailsDrawer({
 	onCloseTrackingDrawer,
 	selectedOrderForTracking,
 	onStageUpdate,
+	onFittingDateUpdate,
 	promptState,
 	onClosePromptState,
 	isScanModalOpen,
@@ -82,23 +84,29 @@ export function LabOrderDetailsDrawer({
 
 	return (
 		<>
-			{(isOrderDrawerOpen || isWorkOrderModalOpen) && (
+			{(isOrderDrawerOpen || isWorkOrderModalOpen || isHubModalOpen) && (
 				<DentalLabStudioModal
-					isOpen={Boolean(isOrderDrawerOpen || isWorkOrderModalOpen)}
-					onClose={isOrderDrawerOpen ? (onCloseOrderDrawer || (() => {})) : (onCloseWorkOrderModal || (() => {}))}
-					initialOrder={selectedOrderForEdit}
-					editingOrder={selectedOrderForEdit}
-					treatmentPlanId={selectedOrderForEdit?.treatmentPlanId ?? undefined}
-					stageNumber={selectedOrderForEdit?.stageNumber ?? undefined}
-					stageTitle={selectedOrderForEdit?.stageTitle ?? undefined}
-					stageId={selectedOrderForEdit?.stageId ?? undefined}
-					patientId={selectedOrderForEdit?.patientId ?? undefined}
-					patientName={selectedOrderForEdit?.patientName ?? undefined}
-					doctorId={selectedOrderForEdit?.doctorId ?? undefined}
-					doctorName={selectedOrderForEdit?.doctorName ?? undefined}
-					currentToothNumber={selectedOrderForEdit?.toothFdi ?? undefined}
-					initialToothFdi={selectedOrderForEdit?.toothFdi ?? undefined}
-					initialTeeth={selectedOrderForEdit?.selectedTeeth ?? selectedOrderForEdit?.teeth ?? undefined}
+					isOpen={Boolean(isOrderDrawerOpen || isWorkOrderModalOpen || isHubModalOpen)}
+					onClose={
+						isHubModalOpen
+							? (onCloseHubModal || (() => {}))
+							: isOrderDrawerOpen
+								? (onCloseOrderDrawer || (() => {}))
+								: (onCloseWorkOrderModal || (() => {}))
+					}
+					initialOrder={isHubModalOpen ? null : selectedOrderForEdit}
+					editingOrder={isHubModalOpen ? null : selectedOrderForEdit}
+					treatmentPlanId={isHubModalOpen ? undefined : (selectedOrderForEdit?.treatmentPlanId ?? undefined)}
+					stageNumber={isHubModalOpen ? undefined : (selectedOrderForEdit?.stageNumber ?? undefined)}
+					stageTitle={isHubModalOpen ? undefined : (selectedOrderForEdit?.stageTitle ?? undefined)}
+					stageId={isHubModalOpen ? undefined : (selectedOrderForEdit?.stageId ?? undefined)}
+					patientId={isHubModalOpen ? undefined : (selectedOrderForEdit?.patientId ?? undefined)}
+					patientName={isHubModalOpen ? undefined : (selectedOrderForEdit?.patientName ?? undefined)}
+					doctorId={isHubModalOpen ? undefined : (selectedOrderForEdit?.doctorId ?? undefined)}
+					doctorName={isHubModalOpen ? undefined : (selectedOrderForEdit?.doctorName ?? undefined)}
+					currentToothNumber={isHubModalOpen ? undefined : (selectedOrderForEdit?.toothFdi ?? undefined)}
+					initialToothFdi={isHubModalOpen ? undefined : (selectedOrderForEdit?.toothFdi ?? undefined)}
+					initialTeeth={isHubModalOpen ? undefined : (selectedOrderForEdit?.selectedTeeth ?? selectedOrderForEdit?.teeth ?? undefined)}
 					onSaveOrder={() => onOrderSaved()}
 					onOrderSaved={onOrderSaved}
 				/>
@@ -118,20 +126,27 @@ export function LabOrderDetailsDrawer({
 				/>
 			)}
 
-			{isHubModalOpen && (
-				<DentalLabStudioModal
-					isOpen={Boolean(isHubModalOpen)}
-					onClose={onCloseHubModal || (() => {})}
-					onSaveOrder={() => onOrderSaved()}
-				/>
-			)}
-
 			{(isTrackingDrawerOpen || isTrackerModalOpen) && selectedOrderForTracking && (
 				<LabTrackingDrawer
 					isOpen={Boolean(isTrackingDrawerOpen || isTrackerModalOpen)}
 					onClose={onCloseTrackingDrawer || onCloseTrackerModal || (() => {})}
 					order={selectedOrderForTracking}
 					onStageUpdate={onStageUpdate}
+					onFittingDateUpdate={onFittingDateUpdate ?? (async (orderId, dates: { frameworkTrialDate?: string | undefined; ceramicTrialDate?: string | undefined; deliveryDate?: string | undefined }) => {
+						const res = await fetch(`/api/clinical/lab-orders/${encodeURIComponent(orderId)}/status`, {
+							method: "PATCH",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								frameworkTrialDate: dates.frameworkTrialDate ?? null,
+								ceramicTrialDate: dates.ceramicTrialDate ?? null,
+								deliveryDate: dates.deliveryDate ?? null,
+							}),
+						});
+						if (!res.ok) {
+							const err = await res.json().catch(() => ({}));
+							throw new Error(err.message || "Ошибка обновления дат примерки");
+						}
+					})}
 				/>
 			)}
 

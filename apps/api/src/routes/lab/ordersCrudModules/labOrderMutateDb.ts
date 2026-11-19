@@ -88,9 +88,14 @@ export async function updateLabOrderInDb(
 	if (normalizedColor !== undefined) updatePayload.colorVita = normalizedColor;
 	if (parsedDueDate !== undefined) updatePayload.dueDate = parsedDueDate;
 	if (effectiveNotes !== undefined) updatePayload.clinicalNotes = effectiveNotes;
-	if (updateData.priceRub !== undefined) updatePayload.priceRub = updateData.priceRub;
-	else if (updateData.amountKopecks !== undefined) updatePayload.priceRub = updateData.amountKopecks === null ? null : Math.round(Number(updateData.amountKopecks)) / 100;
-	else if (updateData.priceKopecks !== undefined) updatePayload.priceRub = updateData.priceKopecks === null ? null : Math.round(Number(updateData.priceKopecks)) / 100;
+	const rawUpdatePatientKopecks = updateData.patientPriceKopecks !== undefined
+		? updateData.patientPriceKopecks
+		: updateData.amountKopecks !== undefined
+			? updateData.amountKopecks
+			: updateData.priceKopecks;
+	if (updateData.patientPriceRub !== undefined) updatePayload.priceRub = updateData.patientPriceRub;
+	else if (updateData.priceRub !== undefined) updatePayload.priceRub = updateData.priceRub;
+	else if (rawUpdatePatientKopecks !== undefined) updatePayload.priceRub = rawUpdatePatientKopecks === null ? null : Math.round(Number(rawUpdatePatientKopecks)) / 100;
 
 	if (updateData.labCostRub !== undefined) updatePayload.labCostRub = updateData.labCostRub;
 	else if (updateData.costRub !== undefined) updatePayload.labCostRub = updateData.costRub;
@@ -117,6 +122,7 @@ export async function updateLabOrderInDb(
 		...updated,
 		priceKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),
 		amountKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),
+		patientPriceKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),
 		labCostKopecks: Math.round(Number(updated.labCostRub ?? 0) * 100),
 		costKopecks: Math.round(Number(updated.labCostRub ?? 0) * 100),
 	};

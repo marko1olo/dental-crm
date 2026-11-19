@@ -187,6 +187,65 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		);
 	});
 
+	test("SEV-1: заказ ЗТЛ с patientPriceKopecks сохраняет точную цену для пациента в price_rub (не 0 ₽)", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
+
+		const created = await createOrder({
+			patientId: PATIENT_ID,
+			doctorId: DOCTOR_ID,
+			toothFdi: "14",
+			material: "ZrO2",
+			patientPriceKopecks: 2450000,
+			labCostKopecks: 800000,
+		});
+
+		assert.equal(created.statusCode, 201, `маршрут не создал заказ: ${created.body}`);
+		assert.ok(created.json.id, "маршрут не вернул id заказа");
+		const orderId = String(created.json.id);
+
+		const row = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ price_rub: string; lab_cost_rub: string }>(sql`
+				select price_rub::text as price_rub, lab_cost_rub::text as lab_cost_rub from lab_orders
+				 where id = ${orderId}::uuid
+			`),
+		);
+		assert.equal(
+			row.rows[0]?.price_rub,
+			"24500.00",
+			`в базе ${row.rows[0]?.price_rub} вместо 24500.00 (цена не должна сбрасываться в 0 ₽)`,
+		);
+		assert.equal(
+			row.rows[0]?.lab_cost_rub,
+			"8000.00",
+			`в базе себестоимость ${row.rows[0]?.lab_cost_rub} вместо 8000.00`,
+		);
+
+		const putResponse = await app.inject({
+			method: "PUT",
+			url: `/api/lab/orders/${orderId}`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				patientPriceKopecks: 2900000,
+			},
+		});
+		assert.equal(putResponse.statusCode, 200, `PUT вернул ${putResponse.statusCode}: ${putResponse.body}`);
+
+		const updatedRow = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
+			tx.execute<{ price_rub: string }>(sql`
+				select price_rub::text as price_rub from lab_orders
+				 where id = ${orderId}::uuid
+			`),
+		);
+		assert.equal(
+			updatedRow.rows[0]?.price_rub,
+			"29000.00",
+			`в базе обновленная цена ${updatedRow.rows[0]?.price_rub} вместо 29000.00`,
+		);
+	});
+
 	test("отрицательная цена отклоняется", async (t) => {
 		if (!databaseReady) return t.skip("база недоступна");
 
@@ -338,11 +397,13 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		assert.equal(created.statusCode, 201);
 		const orderId = String(created.json.id);
 
-		// 2. Устанавливаем лабораторию в БД
+		// 2. Устанавливаем лабораторию и завершаем наряд в БД
 		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
 			await tx.execute(sql`
 				update lab_orders
-				   set laboratory_name = 'Лаборатория Престиж-Дент CAD/CAM'
+				   set laboratory_name = 'Лаборатория Престиж-Дент CAD/CAM',
+				       status = 'completed',
+				       completed_at = now()
 				 where id = ${orderId}::uuid
 			`);
 		});
