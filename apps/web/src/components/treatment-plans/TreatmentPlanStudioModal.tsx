@@ -87,6 +87,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	teeth,
 	isDemoMode: explicitDemoMode,
 	planId: propPlanId,
+	clinicName: propClinicName,
 }) => {
 	const isDemo = explicitDemoMode ?? isDemoShowcaseMode();
 	const patientName = propPatientName ?? (isDemo ? "Демо-пациент" : "");
@@ -122,6 +123,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		handleAddBundleToStages,
 		handleAddItemToStage,
 		handleRemoveItemFromStage,
+		handleGenerateStageInvoice,
 		handleApprove,
 		handleSaveDraft,
 		handleExportPdf,
@@ -332,6 +334,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							hideMicroConsumablesForPatient={true}
 							onAddItemToStage={handleAddItemToStage}
 							onRemoveItemFromStage={handleRemoveItemFromStage}
+							onGenerateStageInvoice={handleGenerateStageInvoice}
 							onGenerateFromTeeth={handleGenerateFromTeeth}
 							onAddCustomStage={handleAddCustomStage}
 						/>
@@ -351,6 +354,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							activeTier={activeTier}
 							patientName={patientName || undefined}
 							doctorFullName={doctorFullName || undefined}
+							patientId={patientId || undefined}
+							clinicName={propClinicName || undefined}
 						/>
 					)}
 

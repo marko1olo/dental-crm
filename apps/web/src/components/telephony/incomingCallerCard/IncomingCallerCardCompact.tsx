@@ -109,7 +109,7 @@ export const IncomingCallerCardCompact: React.FC<CompactProps> = ({
 								</span>
 							) : (
 								<span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-									Аванс: +{financialSummary.formattedBalance || `${financialSummary.balanceRub || 0} ₽`}
+									Аванс: {financialSummary.formattedBalance || (financialSummary.balanceRub ? `+${financialSummary.balanceRub} ₽` : "0 ₽")}
 								</span>
 							)}
 						</div>

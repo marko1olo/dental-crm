@@ -9,6 +9,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { TelephonyStudioModal } from "./TelephonyStudioModal";
 import { TelephonySoftphonePopover } from "./headerCapsule/TelephonySoftphonePopover";
+import { IncomingCallPopup } from "./IncomingCallPopup";
+import { useTelephonyStore } from "../../store/telephonyStore";
 
 function checkIsTelephonyActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -20,9 +22,11 @@ function checkIsTelephonyActive(): boolean {
 		h.includes("telephony") ||
 		h.includes("calls") ||
 		h.includes("softphone") ||
+		h.includes("incoming") ||
 		params.get("telephony") === "1" ||
 		params.get("calls") === "1" ||
-		params.get("softphone") === "1"
+		params.get("softphone") === "1" ||
+		params.get("incoming") === "1"
 	);
 }
 
@@ -57,13 +61,47 @@ export const DirectTelephonyLauncher: React.FC = () => {
 		setIsActive(false);
 		if (typeof window !== "undefined") {
 			const h = window.location.hash;
-			if (h.includes("telephony") || h.includes("calls") || h.includes("softphone")) {
+			if (h.includes("telephony") || h.includes("calls") || h.includes("softphone") || h.includes("incoming")) {
 				window.history.replaceState(null, "", window.location.pathname + window.location.search);
 			}
 		}
 	}, []);
 
+	const isIncoming = typeof window !== "undefined" && (
+		window.location.hash.includes("incoming") ||
+		new URLSearchParams(window.location.search).get("incoming") === "1"
+	);
+
+	useEffect(() => {
+		if (isIncoming) {
+			const st = useTelephonyStore.getState();
+			if (!st.activeCall) {
+				st.triggerIncomingCall({
+					callId: "call-live-incoming-" + Date.now(),
+					phone: "+7 (926) 555-12-34",
+					patientName: "Смирнова Анна Сергеевна",
+					patientId: "01a00000-0000-0000-0000-000000000001",
+					provider: "mango",
+					timestamp: new Date().toISOString(),
+					status: "ringing",
+					acutePain: true,
+				});
+			}
+		}
+	}, [isIncoming]);
+
 	if (!isActive) return null;
+
+	if (isIncoming) {
+		return (
+			<main
+				data-testid="direct-telephony-launcher-root"
+				className="fixed inset-0 z-[100000] w-full h-full bg-[var(--paper-soft)]/60 backdrop-blur-md text-[var(--ink)] flex flex-col items-center justify-start p-4 pt-12 overflow-y-auto"
+			>
+				<IncomingCallPopup defaultExpanded={true} />
+			</main>
+		);
+	}
 
 	const isSoftphone = typeof window !== "undefined" && (
 		window.location.hash.includes("softphone") ||

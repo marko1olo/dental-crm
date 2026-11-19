@@ -5,6 +5,7 @@ import { describe, it } from "node:test";
 import { TelephonyHeaderCapsule } from "../headerCapsule/TelephonyHeaderCapsule";
 import { TelephonySoftphonePopover } from "../headerCapsule/TelephonySoftphonePopover";
 import { IncomingCallCapsuleBar } from "../incomingCallPopupModules/IncomingCallCapsuleBar";
+import { IncomingCallerCardCompact } from "../incomingCallerCard/IncomingCallerCardCompact";
 import { useTelephonyStore } from "../../../store/telephonyStore";
 
 import { createMockIncomingCallController } from "./telephonyTestFixtures";
@@ -86,5 +87,47 @@ describe("Telephony Ambient Header Capsule & Dynamic Island Suite (Mandates 8e, 
 		assert.ok(html.includes('data-testid="capsule-collapse-btn"'), "Must provide collapse button");
 		assert.ok(html.includes('data-testid="capsule-answer-call-btn"'), "Must provide answer button");
 		assert.ok(html.includes('data-testid="capsule-reject-call-btn"'), "Must provide reject button");
+	});
+
+	it("6. TelephonyHeaderCapsule suppresses duplicate answer/reject buttons when IncomingCallPopup is expanded on screen", () => {
+		const ringingCall = {
+			id: "call-ringing-1", patientId: null, phone: "+7 (999) 777-66-55", patientName: "Кузнецов Алексей Петрович",
+			status: "ringing" as const,
+		};
+		const html = renderToString(<TelephonyHeaderCapsule activeCall={ringingCall} isPopupExpanded={true} />);
+		assert.ok(!html.includes('data-testid="header-capsule-answer-btn"'), "Must not duplicate answer button when popup is expanded");
+		assert.ok(!html.includes('data-testid="header-capsule-reject-btn"'), "Must not duplicate reject button when popup is expanded");
+		assert.ok(html.includes("Кузнецов Алексей Петрович"), "Must display caller name without 130px clipping");
+	});
+
+	it("7. IncomingCallerCardCompact displays advance balance cleanly without double plus (DEF-01)", () => {
+		const html = renderToString(
+			<IncomingCallerCardCompact
+				callerName="Иванова Ольга"
+				formattedPhone="+7 (916) 123-45-67"
+				initials="ИО"
+				avatarColors={{ bg: "#0d9488", text: "#ffffff" }}
+				isKnownPatient={true}
+				resolvedCategory="Постоянный"
+				hasDebt={false}
+				hasDms={false}
+				financialSummary={{
+					balanceRub: 15000,
+					formattedBalance: "+15 000 ₽",
+					hasDebt: false,
+					debtRub: 0,
+					formattedDebt: "0 ₽",
+					hasInsurance: false,
+					insuranceName: null,
+					policyNumber: null,
+				}}
+				somaticAlerts={[]}
+				allergyAlerts={[]}
+				acutePainAlerts={[]}
+			/>
+		);
+		assert.ok(html.includes("Аванс:"), "Must render advance label");
+		assert.ok(html.includes("+15") && html.includes("₽"), "Must render single plus with advance balance");
+		assert.ok(!html.includes("++"), "Must strictly prevent double plus ++");
 	});
 });

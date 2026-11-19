@@ -4,7 +4,13 @@
  */
 
 import { z } from "zod";
-import { kopecksToRubles, rublesToKopecks, type Kopecks } from "@dental/shared";
+import {
+	kopecksToRubles,
+	rublesToKopecks,
+	formatKopecksToRub,
+	formatRubles,
+	type Kopecks,
+} from "@dental/shared";
 import type {
 	TreatmentPlanStatus,
 	TreatmentPlanStageKind,
@@ -90,19 +96,11 @@ export const treatmentPlanSchema = z.object({
 
 export type TreatmentPlan = z.infer<typeof treatmentPlanSchema>;
 
-export { kopecksToRubles, rublesToKopecks };
+export { kopecksToRubles, rublesToKopecks, formatKopecksToRub, formatRubles };
 
-export function kopecksToRub(kopecks: number): number {
-	return kopecksToRubles(kopecks);
-}
-
-export function rubToKopecks(rub: number): Kopecks {
-	return rublesToKopecks(rub);
-}
-
-export function formatRubles(rub: number): string {
-	return (rub || 0).toLocaleString("ru-RU").replace(/[\u00A0\u202F]/g, " ") + " ₽";
-}
+// Канонические алиасы для обратной совместимости (Мандат 8bm)
+export const kopecksToRub = kopecksToRubles;
+export const rubToKopecks = rublesToKopecks;
 
 export function romanizeStageNumber(num: number): string {
 	const romanMap: Record<number, string> = {

@@ -8,12 +8,14 @@ export interface TelephonyHeaderCapsuleProps {
 	className?: string;
 	id?: string;
 	activeCall?: IncomingCallPayload | null;
+	isPopupExpanded?: boolean;
 }
 
 export function TelephonyHeaderCapsule({
 	className,
 	id = "topbar-chairside-telephony-btn",
 	activeCall: propActiveCall,
+	isPopupExpanded: propIsPopupExpanded,
 }: TelephonyHeaderCapsuleProps): React.JSX.Element | null {
 	const [isOpen, setIsOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
@@ -78,6 +80,26 @@ export function TelephonyHeaderCapsule({
 	const isAnswered = Boolean(activeCall && activeCall.status !== "ringing");
 	const durationSeconds = activeCall?.callStartedAt ? Math.floor((Date.now() - activeCall.callStartedAt) / 1000) : 0;
 
+	// Streamline Header Capsule & Prevent UI competition (Defect #2):
+	// When full-sized IncomingCallPopup banner is expanded on screen, do not duplicate
+	// answer/reject buttons inside capsule and give caller name adequate breathing room (no 130px clipping).
+	const [hasExpandedPopupInDom, setHasExpandedPopupInDom] = useState(false);
+
+	useEffect(() => {
+		if (typeof document === "undefined") return;
+		const checkPopup = () => {
+			const fullPopup = document.querySelector('[data-testid="incoming-call-popup"]');
+			setHasExpandedPopupInDom(Boolean(fullPopup));
+		};
+		checkPopup();
+		const observer = new MutationObserver(checkPopup);
+		observer.observe(document.body, { childList: true, subtree: true });
+		return () => observer.disconnect();
+	}, []);
+
+	const isFullBannerActive = propIsPopupExpanded !== undefined ? propIsPopupExpanded : hasExpandedPopupInDom;
+	const shouldShowActionButtons = isRinging && !isFullBannerActive;
+
 	const dotClass = activeCall
 		? isRinging ? "bg-emerald-400 animate-ping" : "bg-teal-400 animate-pulse"
 		: agentState === "online" ? "bg-emerald-500" : agentState === "dnd" ? "bg-rose-500" : "bg-amber-500";
@@ -117,7 +139,13 @@ export function TelephonyHeaderCapsule({
 						<Headphones className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" aria-hidden="true" />
 					)}
 
-					<span className="truncate max-w-[130px] font-medium">
+					<span
+						className={`truncate font-medium transition-all ${
+							isFullBannerActive
+								? "max-w-[200px] sm:max-w-[300px]"
+								: "max-w-[140px] sm:max-w-[190px]"
+						}`}
+					>
 						{activeCall
 							? isAnswered
 								? `${activeCall.patientName ? `${activeCall.patientName} (${formatDurationTimer(durationSeconds)})` : formatDurationTimer(durationSeconds)}`
@@ -126,8 +154,8 @@ export function TelephonyHeaderCapsule({
 					</span>
 				</button>
 
-				{/* 1-Click Fast Actions for Receptionist within the Top Ambient Event Capsule */}
-				{isRinging && (
+				{/* 1-Click Fast Actions for Receptionist within the Top Ambient Event Capsule (hidden when full IncomingCallPopup is expanded on screen) */}
+				{shouldShowActionButtons && (
 					<div className="inline-flex items-center gap-1 pl-1 ml-0.5 border-l border-emerald-500/30">
 						<button
 							type="button"

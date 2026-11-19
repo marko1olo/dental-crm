@@ -2485,6 +2485,30 @@
   - Vitest пакет планов лечения `npx vitest run apps/web/src/components/treatment-plans/` -> 69/69 тест-сьютов PASS, 256/256 тестов PASS (Exit Code 0).
   - Fastify роут-тест `npx tsx --test apps/api/src/__tests__/treatmentPlansRoutesFacade.test.ts` -> 3/3 PASS (Exit Code 0).
 
+### [PLN-16] [SEV-1] [ИСПРАВЛЕНО] [PLAN-06] Архитектурная интеграция гарантийного контура со сквозным API POST /api/warranty/certificates, декомпозиция монолита каталога treatmentPlanCatalogData.ts (1 254 строки), устранение самодельного калькулятора валют и физический снос сиротских файлов
+- **Файлы:**
+  - [`apps/web/src/components/treatment-plans/studioTabs/StudioWarrantyPassportTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/studioTabs/StudioWarrantyPassportTab.tsx) (интеграция вызова `POST /api/warranty/certificates` с регистрацией в БД, генерацией QR и SHA-256 хеша, убран хардкод имени клиники)
+  - [`apps/web/src/components/treatment-plans/treatmentPlanTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/treatmentPlanTypes.ts) (устранен самодельный калькулятор / 100, переведен на канонический `@dental/shared/src/money.ts`)
+  - [`apps/web/src/components/treatment-plans/studioTabs/StudioTiersAndStagesTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/studioTabs/StudioTiersAndStagesTab.tsx) (заменены хардкод-цвета #0d9488 на `var(--primary)` и `var(--primary-soft)`)
+  - [`apps/web/src/components/treatment-plans/treatmentPlanCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/treatmentPlanCatalogData.ts) (монолит на 1 254 строки декомпозирован на модули `catalogPresets/`, фасад сокращен до 265 строк)
+  - [`apps/web/src/components/treatment-plans/catalogPresets/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/catalogPresets/) (`presetHelpers.ts`, `presetK02Caries.ts`, `presetK04Pulpitis.ts`, `presetK08Implant.ts`, `presetCanonicalTiers.ts`, `presetTeethGenerator.ts`)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx) (проброс `clinicName` в гарантийный таб)
+  - [`scripts/capture_treatment_plans_canonical_4state_proofs.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/capture_treatment_plans_canonical_4state_proofs.mjs) (актуальный скрипт захвата 4-State + Warranty с реальной регистрацией в БД)
+- **Удалены через `git rm` (мертвый код без импортов по Мандату 8bj):**
+  - `apps/web/src/components/treatment-plans/TreatmentPlanStagesEmptyState.tsx`
+  - `apps/web/src/components/treatment-plans/useTreatmentPlanTeeth.ts`
+- **Визуальные пруфы (4-State Visual Proof, личный осмотр через `read_file` по 8 осям интерфейса):**
+  - [`docs/proofs/treatment_plans/01_treatment_plan_3tier_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/01_treatment_plan_3tier_pc_light_1440x900.png) (80.1 KB, 3-Tier сравнение PC Light)
+  - [`docs/proofs/treatment_plans/02_treatment_plan_3tier_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/02_treatment_plan_3tier_pc_dark_1440x900.png) (80.9 KB, 3-Tier сравнение PC Dark, 100% тёмные токены)
+  - [`docs/proofs/treatment_plans/03_treatment_plan_3tier_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/03_treatment_plan_3tier_mobile_light_390x844.png) (118.7 KB, Mobile Light, Apple HIG Bottom Sheet, Segmented Switcher)
+  - [`docs/proofs/treatment_plans/04_treatment_plan_3tier_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/04_treatment_plan_3tier_mobile_dark_390x844.png) (120.1 KB, Mobile Dark, sticky bottom bar, ровно 1 Primary CTA)
+  - [`docs/proofs/treatment_plans/05_treatment_plan_warranty_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/05_treatment_plan_warranty_pc_light_1440x900.png) (88.8 KB, Гарантийный паспорт Light с бейджем реестра № WAR-2026-00001)
+  - [`docs/proofs/treatment_plans/06_treatment_plan_warranty_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/treatment_plans/06_treatment_plan_warranty_pc_dark_1440x900.png) (87.6 KB, Гарантийный паспорт Dark с SHA-256 хешем)
+- **Тесты и гейты (Definition of Done):**
+  - Тесты домена планов лечения Vitest (`apps/web/src/components/treatment-plans/`): 60/60 файлов PASS, 231/231 тестов PASS (Exit Code 0).
+  - Интеграционные тесты API (`treatmentPlanCrudAndPepSignature.test.ts`, `warrantyRoutes.test.ts`): 2/2 файлов PASS, 13/13 тестов PASS (Exit Code 0).
+  - TypeScript компилятор (`npx tsc -p apps/web/tsconfig.json --noEmit`): 0 ошибок по домену `treatment-plans`.
+
 
 
 ## 15. 💊 КЛИНИЧЕСКИЙ ПРОТОКОЛ (SOAP), РЕЦЕПТЫ И АЛЛЕРГИИ НА АНЕСТЕТИКИ
