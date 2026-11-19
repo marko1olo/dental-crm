@@ -184,8 +184,8 @@ export async function getDocumentById(
 
 const documentTitles: Record<string, string> = {
 	medical_record_extract: "Выписка из медицинской карты стоматологического пациента (Форма 043/у)",
-	dental_medical_card_043u: "Медицинская карта 043/у",
-	orthodontic_medical_card_043_1u: "Ортодонтическая карта 043-1/у",
+	dental_medical_card_043u: "Медицинская карта стоматологического приёма",
+	orthodontic_medical_card_043_1u: "Ортодонтическая карта приёма",
 	daily_dentist_diary_037u: "Листок ежедневного учета 037/у-88",
 	summary_dentist_statement_039u: "Сводная ведомость 039/у-88",
 	radiation_dose_sheet: "Лист учета дозовых нагрузок",

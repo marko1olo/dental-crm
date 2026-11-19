@@ -23,7 +23,7 @@ export function renderClinicalConsentSheet(ctx: ClinicalRequisitesContext): stri
       </div>
 
       <h1>Информированное добровольное согласие на терапевтическое стоматологическое лечение</h1>
-      <div class="sheet-subtitle">Информированное добровольное согласие пациента на медицинское вмешательство (ФЗ № 323-ФЗ ст. 20, 1051н)</div>
+      <div class="sheet-subtitle">Информированное добровольное согласие пациента на медицинское вмешательство (ФЗ № 323-ФЗ ст. 20, Приказ Минздрава РФ № 1051н)</div>
 
       <div class="parties-block">
         Я, <strong>${ptName}</strong>, дата рождения: <strong>${ptBirthDate}</strong>,

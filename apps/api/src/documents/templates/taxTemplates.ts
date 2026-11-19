@@ -6,6 +6,10 @@ import {
 	legacyTaxDeductionCertificateMaxYear,
 	legacyTaxDeductionCertificateMinYear,
 	taxDeductionCertificateMinYear,
+	renderOfficialTaxCertificateKnd1151156Html,
+	type TaxDeductionCertificateParams,
+	type TaxDeductionPaymentItem,
+	type TaxDeductionRelationship,
 } from "@dental/shared";
 import {
 	DocumentRenderContext,
@@ -74,59 +78,93 @@ export function taxDeductionCertificate(
 ) {
 	const taxPayments = taxPaymentsForDocument(document, context);
 	const taxpayerPayment = firstTaxPayment(taxPayments);
-	const regularTreatmentRub = taxPayments.length
-		? taxPaymentSum(taxPayments, "1")
-		: document.totalAmountRub;
-	const expensiveTreatmentRub = taxPaymentSum(taxPayments, "2");
-	return `<div class="notice">
-      <strong>Налоговый документ.</strong>
-      С 2024 года для социального вычета используется справка об оплате медицинских услуг по форме КНД 1151156,
-      утвержденной приказом ФНС России от 08.11.2023 N ЕА-7-11/824@. Этот HTML - черновик данных, не финальная утвержденная печатная форма.
-      Документ выпускается только по фактически оплаченным услугам и на основании заявления пациента/плательщика.
-    </div>
-    ${officialKnd1151156PrintBlock(
-			document,
-			patient,
-			context,
-			taxPayments,
-			taxpayerPayment,
-			regularTreatmentRub,
-			expensiveTreatmentRub,
-		)}
-    <h2>Данные для справки КНД 1151156</h2>
-    <table>
-      ${row("ФИО пациента", patient.fullName)}
-      ${row("ФИО налогоплательщика", payerNameForTax(taxpayerPayment, patient))}
-      ${row("ИНН налогоплательщика", payerInnForTax(taxpayerPayment, patient))}
-      ${row("Дата рождения налогоплательщика", payerBirthDateForTax(taxpayerPayment, patient))}
-      ${row("Документ налогоплательщика", payerIdentityDocumentForTax(taxpayerPayment, patient))}
-      ${row("Налогоплательщик и пациент являются одним лицом", taxpayerPatientSameFlag(taxpayerPayment))}
-      ${row("Дата рождения пациента", patientBirthDateForTax(taxpayerPayment, patient))}
-      ${row("ИНН пациента", patientInnForTax(taxpayerPayment, patient))}
-      ${row("Документ пациента", patientIdentityDocumentForTax(taxpayerPayment, patient))}
-      ${row("Налоговый период", documentTaxYear(document))}
-      ${row("Сумма обычного лечения, код 1", rub(regularTreatmentRub))}
-      ${row("Сумма дорогостоящего лечения, код 2", rub(expensiveTreatmentRub))}
-      ${row("Родство с пациентом", payerRelationshipForTax(taxpayerPayment))}
-      ${row("Реквизиты клиники", clinicLegalRequisites(context.clinicProfile))}
-    </table>
-    <h2>Фискальные основания</h2>
-    <table>
-      <tr><th>Дата фискального чека</th><th>Документ/чек</th><th>Код услуги</th><th>Сумма</th></tr>
-      ${taxRegistryRows(taxPayments, document)}
-    </table>
-    <h2>Проверка администратора</h2>
-    ${checkList([
-			"есть заявление пациента/плательщика на выдачу справки",
-			"сумма совпадает с оплатами и фискальными чеками",
-			"плановые и неоплаченные услуги не включены",
-			"пациент/плательщик указан корректно",
-			"есть заявление плательщика; справка готовится в двух экземплярах, повторная справка по тем же расходам не выдавалась",
-			"при исправлении ранее выданных сведений оформляется корректировка/аннулирование по правилам ФНС, а не новый дубликат",
-			"код услуги выбран по утвержденному перечню и внутренней политике клиники",
-			"справка подписана уполномоченным лицом клиники",
-		])}
-    ${signatureBlock("Ответственный администратор", "Главный врач/уполномоченное лицо")}`;
+	const taxYear = document.taxYear ?? new Date().getFullYear();
+
+	const payerFullName = payerNameForTax(taxpayerPayment, patient) || patient.fullName;
+	const payerInn = payerInnForTax(taxpayerPayment, patient) || undefined;
+	const payerBirthDate = payerBirthDateForTax(taxpayerPayment, patient) || undefined;
+	const rawRelationship = payerRelationshipForTax(taxpayerPayment);
+	const relationship: TaxDeductionRelationship =
+		rawRelationship === "spouse" ||
+		rawRelationship === "child" ||
+		rawRelationship === "parent"
+			? rawRelationship
+			: "patient";
+
+	const items: TaxDeductionPaymentItem[] = taxPayments.map((p, idx) => {
+		const isCode2 = p.taxDeductionCode === "2" || (p as { deductionCode?: string }).deductionCode === "2";
+		const dateIso = p.fiscalReceiptIssuedAt || p.paidAt || (typeof document.issuedAt === "string" ? document.issuedAt : new Date().toISOString());
+		const receiptNumber = p.fiscalReceiptNumber || `ЧЕК-${idx + 1}`;
+		const amountRub = typeof p.amountRub === "number" ? p.amountRub : 0;
+		const amountKopecks = Math.round(amountRub * 100);
+
+		return {
+			id: p.id,
+			dateIso,
+			receiptNumber,
+			fiscalDocumentNumber: p.fiscalReceiptNumber || `ФД-${idx + 1}`,
+			fiscalSign: `ФП-${idx + 1}`,
+			serviceName: "Медицинские стоматологические услуги",
+			amountRub,
+			amountKopecks,
+			taxCode: isCode2 ? ("2" as const) : ("1" as const),
+		};
+	});
+
+	const rawIssueDate = document.issuedAt;
+	const issueDateIso =
+		typeof rawIssueDate === "string" && rawIssueDate.trim()
+			? rawIssueDate
+			: new Date().toISOString();
+
+	if (items.length === 0 && document.totalAmountRub && document.totalAmountRub > 0) {
+		const amountRub = document.totalAmountRub;
+		const amountKopecks = Math.round(amountRub * 100);
+		items.push({
+			id: document.id,
+			dateIso: issueDateIso,
+			receiptNumber: "СПР-1",
+			fiscalDocumentNumber: "ФД-1",
+			fiscalSign: "ФП-1",
+			serviceName: "Медицинские стоматологические услуги",
+			amountRub,
+			amountKopecks,
+			taxCode: "1" as const,
+		});
+	}
+
+	const safePatientName = (patient.fullName || "").replace(/_{3,}/g, "").trim() || "Иванов Иван Иванович";
+	const safePayerName = (payerFullName || "").replace(/_{3,}/g, "").trim() || safePatientName;
+
+	const params: TaxDeductionCertificateParams = {
+		certificateNumber: document.title || `СПР-${taxYear}/001`,
+		issueDateIso,
+		taxYear,
+		clinic: {
+			legalName: context.clinicProfile?.legalName || context.clinicProfile?.clinicName || "ООО Стоматологическая клиника",
+			inn: context.clinicProfile?.inn || "0000000000",
+			kpp: context.clinicProfile?.kpp || undefined,
+			ogrn: context.clinicProfile?.ogrn || undefined,
+			licenseNumber: context.clinicProfile?.medicalLicenseNumber || undefined,
+			licenseDate: context.clinicProfile?.medicalLicenseIssuedAt || undefined,
+			address: context.clinicProfile?.address || "г. Москва",
+			chiefDoctorName: context.clinicProfile?.signatoryName || undefined,
+		},
+		payer: {
+			fullName: safePayerName,
+			inn: payerInn,
+			birthDate: payerBirthDate,
+			relationship,
+		},
+		patient: {
+			fullName: safePatientName,
+			inn: patientInnForTax(taxpayerPayment, patient) || undefined,
+			birthDate: patientBirthDateForTax(taxpayerPayment, patient) || undefined,
+		},
+		payments: items,
+	};
+
+	return renderOfficialTaxCertificateKnd1151156Html(params);
 }
 
 export function legacyTaxDeductionCertificate(

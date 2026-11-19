@@ -4,13 +4,13 @@
  */
 
 import { parseKopecks } from "../../money.js";
+import { extractTaxYearFromDate } from "../../finance/tax/calculation.js";
 import {
-	extractTaxYearFromDate,
 	validateRussianInn,
 	validateRussianKpp,
 	validateRussianOgrn,
-	validateRussianSnils,
-} from "../../finance/taxDeduction.js";
+} from "./fnsInnValidators.js";
+import { validateRussianSnils } from "./fnsSnilsValidators.js";
 import type {
 	FnsFullName,
 	FnsPreflightIssue,
@@ -226,15 +226,15 @@ export function validateFnsFiscalReceiptsChecksums(
 	let declaredCode1Kopecks: number | undefined;
 	let declaredCode2Kopecks: number | undefined;
 
-	if (typeof payload.expenses.code1AmountKopecks === "number") {
+	if (typeof payload.expenses?.code1AmountKopecks === "number") {
 		declaredCode1Kopecks = payload.expenses.code1AmountKopecks;
-	} else if (payload.expenses.code1AmountRub != null) {
+	} else if (payload.expenses?.code1AmountRub != null) {
 		declaredCode1Kopecks = parseKopecks(payload.expenses.code1AmountRub);
 	}
 
-	if (typeof payload.expenses.code2AmountKopecks === "number") {
+	if (typeof payload.expenses?.code2AmountKopecks === "number") {
 		declaredCode2Kopecks = payload.expenses.code2AmountKopecks;
-	} else if (payload.expenses.code2AmountRub != null) {
+	} else if (payload.expenses?.code2AmountRub != null) {
 		declaredCode2Kopecks = parseKopecks(payload.expenses.code2AmountRub);
 	}
 
@@ -308,7 +308,7 @@ export function preflightValidatePayload(payload: FnsTaxPayload): FnsPreflightIs
 		if (!clinicInnValidation.isValid) {
 			issues.push({
 				field: "clinic.inn",
-				message: `ИНН клиники некорректен: ${clinicInnValidation.errorMessageRu || "неверный формат"}`,
+				message: `ИНН клиники некорректен: ${clinicInnValidation.error || "неверный формат"}`,
 				severity: "error",
 			});
 		}
@@ -327,7 +327,7 @@ export function preflightValidatePayload(payload: FnsTaxPayload): FnsPreflightIs
 	}
 
 	if (!payload.clinic.isIndividualEntrepreneur && cleanDigits(payload.clinic.inn).length === 10) {
-		if (!payload.clinic.kpp || !validateRussianKpp(payload.clinic.kpp)) {
+		if (!payload.clinic.kpp || !validateRussianKpp(payload.clinic.kpp).isValid) {
 			issues.push({
 				field: "clinic.kpp",
 				message: "Для юридического лица обязателен корректный 9-значный КПП",
@@ -336,7 +336,7 @@ export function preflightValidatePayload(payload: FnsTaxPayload): FnsPreflightIs
 		}
 	}
 
-	if (!payload.clinic.ogrn || !validateRussianOgrn(payload.clinic.ogrn)) {
+	if (!payload.clinic.ogrn || !validateRussianOgrn(payload.clinic.ogrn).isValid) {
 		issues.push({
 			field: "clinic.ogrn",
 			message: "Укажите корректный ОГРН (13 знаков) или ОГРНИП (15 знаков)",
@@ -351,7 +351,7 @@ export function preflightValidatePayload(payload: FnsTaxPayload): FnsPreflightIs
 		if (!payerInnVal.isValid || payerInnClean.length !== 12) {
 			issues.push({
 				field: "payer.inn",
-				message: `ИНН налогоплательщика некорректен: ${payerInnVal.errorMessageRu || "требуется 12 цифр ФЛ"}`,
+				message: `ИНН налогоплательщика некорректен: ${payerInnVal.error || "требуется 12 цифр ФЛ"}`,
 				severity: "error",
 			});
 		}
@@ -376,7 +376,7 @@ export function preflightValidatePayload(payload: FnsTaxPayload): FnsPreflightIs
 		if (!snilsVal.isValid) {
 			issues.push({
 				field: "payer.snils",
-				message: `СНИЛС плательщика некорректен: ${snilsVal.errorMessageRu || "неверный формат"}`,
+				message: `СНИЛС плательщика некорректен: ${snilsVal.error || "неверный формат"}`,
 				severity: "warning",
 			});
 		}
@@ -401,8 +401,8 @@ export function preflightValidatePayload(payload: FnsTaxPayload): FnsPreflightIs
 	}
 
 	// 4. Проверка расходов и чеков
-	const hasCode1 = (payload.expenses.code1AmountKopecks ?? 0) > 0 || (payload.expenses.code1AmountRub ?? 0) > 0;
-	const hasCode2 = (payload.expenses.code2AmountKopecks ?? 0) > 0 || (payload.expenses.code2AmountRub ?? 0) > 0;
+	const hasCode1 = (payload.expenses?.code1AmountKopecks ?? 0) > 0 || (payload.expenses?.code1AmountRub ?? 0) > 0;
+	const hasCode2 = (payload.expenses?.code2AmountKopecks ?? 0) > 0 || (payload.expenses?.code2AmountRub ?? 0) > 0;
 	const hasReceipts = payload.receipts && payload.receipts.length > 0;
 
 	if (!hasCode1 && !hasCode2 && !hasReceipts) {

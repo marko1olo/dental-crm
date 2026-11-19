@@ -10,15 +10,13 @@ import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders
 import {
 	printTaxCertificate,
 	buildTaxCertificateDocumentData,
-} from "../taxCertificateEngine";
-import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
-import { printHtmlViaIframe } from "../printHtmlViaIframe";
-import {
 	downloadFnsTaxXmlFile,
 	downloadFnsNoMedoplXmlFile,
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
-} from "../../finance/taxDeductionEngine";
+} from "../taxCertificateEngine";
+import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
+import { printHtmlViaIframe } from "../printHtmlViaIframe";
 import { generateA4PrintHtml } from "../studio/generateA4PrintHtml";
 import type {
 	ConsentSubKind,
@@ -328,15 +326,83 @@ export function useDocumentStudioSignAndIssue(options: UseDocumentStudioSignAndI
 							: "Договор на оказание платных медицинских услуг";
 
 				const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+				const totalRub = options.totalAmountKopecks > 0 ? options.totalAmountKopecks / 100 : 0;
+				const effectiveDoctor = options.effectiveDoctorName || "Врач-стоматолог";
+				const effectivePayerName = options.taxpayer?.fullName || options.directPayerFullName || options.patient.fullName.trim() || "Пациент";
+
+				let structuredPayload: Record<string, unknown> | undefined;
+
+				if (docKind === "paid_medical_services_contract") {
+					structuredPayload = {
+						paidMedicalServicesContract: {
+							contractNumber: `ДОГ-${new Date().getFullYear()}/${(options.patient.fullName.slice(0, 3) || "ПАЦ").toUpperCase()}`,
+							contractDate: nowIso.slice(0, 10),
+							serviceStart: nowIso.slice(0, 10),
+							serviceEndOrCondition: "До полного оказания согласованного объема медицинских услуг",
+							customerFullName: effectivePayerName,
+							representativeFullName: null,
+							plannedCareReason: "Оказание стоматологических услуг согласно плану лечения",
+							serviceScopeSummary: "Стоматологические услуги по прейскуранту клиники и плану лечения",
+							estimatedTotalRub: totalRub,
+							paymentTerms: "Оплата по факту оказания услуг либо авансовым платежом",
+							priceChangeRules: "Изменение плана лечения и стоимости оформляется дополнительным соглашением",
+							freeCareAvailabilityNotice: "Пациент уведомлен о возможности получения бесплатной медицинской помощи по программе государственных гарантий",
+							medicalRecommendationWarning: "Пациент предупрежден о необходимости соблюдения предписаний и рекомендаций врача",
+							refusalAndRefundTerms: "Пациент вправе отказаться от исполнения договора при условии оплаты фактически понесенных расходов",
+							warrantyAndClaimsTerms: "Гарантийные обязательства исчисляются с момента завершения лечения по положению о гарантиях",
+							doctorFullName: effectiveDoctor,
+							signedAt: nowIso.slice(0, 10),
+							patientReceivedClinicInfo: true,
+							patientReceivedPriceAndServiceList: true,
+							patientUnderstandsPaidBasis: true,
+							changesRequireWrittenAgreement: true,
+						},
+					};
+				} else if (docKind === "informed_consent") {
+					structuredPayload = {
+						informedConsent: {
+							intervention: `Стоматологическое вмешательство: ${options.activeConsentSubKind || "терапевтическое/хирургическое лечение"}`,
+							toothOrArea: "Полость рта",
+							diagnosisOrIndication: "Санация полости рта по клиническим показаниям",
+							expectedBenefit: "Восстановление анатомической формы, функции зубочелюстной системы и эстетики",
+							plannedAnesthesia: "Местная инфильтрационная или проводниковая анестезия",
+							materialOrMedicationNotes: "Сертифицированные стоматологические материалы",
+							trustedContactForMedicalInfo: null,
+							explainedRisks: [
+								"Возможная индивидуальная чувствительность или аллергическая реакция",
+								"Кратковременный отек или болезненность в зоне вмешательства",
+								"Необходимость коррекции пломбы или ортопедической конструкции по прикусу",
+							],
+							alternatives: [
+								"Отказ от медицинского вмешательства с сохранением риска прогрессирования заболевания",
+								"Альтернативные методы лечения в соответствии с клиническими рекомендациями",
+							],
+							aftercareRequirements: [
+								"Воздержаться от приема пищи в течение 2 часов до окончания действия анестезии",
+								"Соблюдать гигиену полости рта и щадящий температурный режим",
+								"При возникновении боли или дискомфорта незамедлительно обратиться к лечащему врачу",
+							],
+							doctorFullName: effectiveDoctor,
+							consentConfirmedAt: nowIso.slice(0, 10),
+							patientQuestionsAnswered: true,
+							patientUnderstandsRisks: true,
+							patientMayWithdrawBeforeIntervention: true,
+						},
+					};
+				}
+
 				const createPayload: Record<string, unknown> = {
 					patientId: options.effectivePatientId,
 					kind: docKind,
 					title: docTitle,
-					totalAmountRub: options.totalAmountKopecks > 0 ? options.totalAmountKopecks / 100 : 0,
+					totalAmountRub: totalRub,
+					...(structuredPayload ? { payload: structuredPayload } : {}),
 				};
 				if (options.activePackage === "tax_certificate") {
 					createPayload.taxYear = options.taxYear;
-					if (options.patient.inn) createPayload.taxPayerInn = options.patient.inn;
+					// Мандат 8n / Red Team: при оплате третьими лицами (супруг, родитель) используем ИНН реального плательщика
+					const effectivePayerInn = options.taxpayer?.inn || options.directPayerInn || options.patient.inn;
+					if (effectivePayerInn) createPayload.taxPayerInn = effectivePayerInn;
 				}
 
 				try {

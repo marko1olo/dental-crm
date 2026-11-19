@@ -76,7 +76,11 @@ export function paymentMatchesTaxPayer(
 ): boolean {
 	const normalizedPayerInn = normalizeInnDigits(payerInn);
 	if (!normalizedPayerInn) return true;
-	return normalizeInnDigits(payment.payerInn) === normalizedPayerInn;
+	const normalizedPaymentInn = normalizeInnDigits(payment.payerInn);
+	// Мандат 8n: касса по 54-ФЗ пробивает чеки физлицам без ИНН покупателя.
+	// Если в чеке ИНН не указан, чек относится к пациенту/плательщику и принимается к вычету.
+	if (!normalizedPaymentInn) return true;
+	return normalizedPaymentInn === normalizedPayerInn;
 }
 
 export function taxDocumentSelectionScope(input: CreateDocumentInput): {

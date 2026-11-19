@@ -315,8 +315,6 @@ export function buildKnd1151156Xml(
 		const c1Explicit = pAny.code1AmountKopecks ?? (pAny.code1AmountRub != null ? parseKopecks(pAny.code1AmountRub) : undefined);
 		const c2Explicit = pAny.code2AmountKopecks ?? (pAny.code2AmountRub != null ? parseKopecks(pAny.code2AmountRub) : undefined);
 		const items = pAny.items || pAny.fiscalReceipt?.items || [];
-		const noteText = typeof pAny.note === "string" ? pAny.note : "";
-		const c2Match = noteText.match(/код\s*2\s*[:=]\s*(\d+(?:[.,]\d+)?)/i);
 
 		if (c1Explicit !== undefined || c2Explicit !== undefined) {
 			code1Kopecks += c1Explicit ?? Math.max(0, rawAmountKop - (c2Explicit ?? 0));
@@ -335,20 +333,6 @@ export function buildKnd1151156Xml(
 					code1Kopecks += itKop;
 				}
 			}
-		} else if (c2Match && c2Match[1]) {
-			const cleanVal = c2Match[1].replace(",", ".").trim();
-			const parsedRub = parseFloat(cleanVal);
-			let c2Kop = 0;
-			if (Number.isFinite(parsedRub) && parsedRub > 0) {
-				try {
-					c2Kop = Math.max(0, Math.min(rawAmountKop, parseKopecks(parsedRub)));
-				} catch {
-					c2Kop = 0;
-				}
-			}
-			const c1Kop = Math.max(0, rawAmountKop - c2Kop);
-			code1Kopecks += c1Kop;
-			code2Kopecks += c2Kop;
 		} else if (pAny.taxDeductionCode === "2") {
 			code2Kopecks += rawAmountKop;
 		} else {

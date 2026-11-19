@@ -38,7 +38,7 @@ export const DocumentsStudioHeader: React.FC<DocumentsStudioHeaderProps> = ({
 				<h2 id="dente-docs-studio-title" className="dente-docs-header-title">
 					<span className="hidden sm:inline">
 						{isTax
-							? "Справка для налогового вычета (13% НДФЛ) · Вычет 13%"
+							? "Справка для налогового вычета (ФНС) · 13% НДФЛ"
 							: isConsent
 								? "Студия информированных согласий (Согласия и договоры)"
 								: "Студия документов и печати"}

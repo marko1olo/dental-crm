@@ -114,106 +114,108 @@ export async function recordPatientConsentEntry(
 	const effectiveKind = body.consentType || body.kind || "informed_consent";
 	let effectiveDocId: string | null = body.documentId ?? null;
 
-	// 2. Если documentId не передан, создаем юридическую запись в generatedDocuments
-	if (!effectiveDocId) {
-		const targetKind = mapConsentKindToDocumentKind(effectiveKind);
-		const docTitle = body.title || "Информированное добровольное согласие";
+	// ACID-транзакция (Мандаты 8bo, 8d/8zp): атомарная запись в generatedDocuments и patientConsents
+	const savedConsent = await db.transaction(async (tx) => {
+		// 2. Если documentId не передан, создаем юридическую запись в generatedDocuments
+		if (!effectiveDocId) {
+			const targetKind = mapConsentKindToDocumentKind(effectiveKind);
+			const docTitle = body.title || "Информированное добровольное согласие";
 
-		const [createdDoc] = await db
-			.insert(generatedDocuments)
-			.values({
-				organizationId: orgId,
-				patientId,
-				visitId: body.visitId ?? null,
-				kind: targetKind,
-				status: "issued",
-				title: docTitle,
-				signatureSvg: body.signatureSvg ?? null,
-				issuedSnapshotSha256: body.integrityHash ?? null,
-				issuedAt: now,
-				signatureAttestation: {
-					mode: isDigital ? "simple_electronic_signature" : "paper_signed",
-					signedAt: now.toISOString(),
-					recipientFullName: patientFullName,
-					recipientRole: "patient",
-					staffFullName: effectiveDoctorName,
-					staffRole: "doctor",
-					identityChecked: true,
-					documentOpenedAndChecked: true,
-					recipientSigned: true,
-					clinicRepresentativeSigned: true,
-					note: attestationNote,
-				},
-				payloadJson: body.payload ? JSON.stringify(body.payload) : null,
-			})
-			.returning();
+			const [createdDoc] = await tx
+				.insert(generatedDocuments)
+				.values({
+					organizationId: orgId,
+					patientId,
+					visitId: body.visitId ?? null,
+					kind: targetKind,
+					status: "issued",
+					title: docTitle,
+					signatureSvg: body.signatureSvg ?? null,
+					issuedSnapshotSha256: body.integrityHash ?? null,
+					issuedAt: now,
+					signatureAttestation: {
+						mode: isDigital ? "simple_electronic_signature" : "paper_signed",
+						signedAt: now.toISOString(),
+						recipientFullName: patientFullName,
+						recipientRole: "patient",
+						staffFullName: effectiveDoctorName,
+						staffRole: "doctor",
+						identityChecked: true,
+						documentOpenedAndChecked: true,
+						recipientSigned: true,
+						clinicRepresentativeSigned: true,
+						note: attestationNote,
+					},
+					payloadJson: body.payload ? JSON.stringify(body.payload) : null,
+				})
+				.returning();
 
-		if (createdDoc) {
-			effectiveDocId = createdDoc.id;
+			if (createdDoc) {
+				effectiveDocId = createdDoc.id;
+			}
+		} else {
+			// Если documentId уже передан, обновляем подпись и хеш целостности в существующем документе
+			await tx
+				.update(generatedDocuments)
+				.set({
+					status: "issued",
+					issuedAt: now,
+					...(body.signatureSvg ? { signatureSvg: body.signatureSvg } : {}),
+					...(body.integrityHash ? { issuedSnapshotSha256: body.integrityHash } : {}),
+					signatureAttestation: {
+						mode: isDigital ? "simple_electronic_signature" : "paper_signed",
+						signedAt: now.toISOString(),
+						recipientFullName: patientFullName,
+						recipientRole: "patient",
+						staffFullName: effectiveDoctorName,
+						staffRole: "doctor",
+						identityChecked: true,
+						documentOpenedAndChecked: true,
+						recipientSigned: true,
+						clinicRepresentativeSigned: true,
+						note: attestationNote,
+					},
+				})
+				.where(
+					and(
+						eq(generatedDocuments.id, effectiveDocId),
+						eq(generatedDocuments.organizationId, orgId),
+					),
+				);
 		}
-	} else {
-		// Если documentId уже передан, обновляем подпись и хеш целостности в существующем документе
-		await db
-			.update(generatedDocuments)
-			.set({
-				status: "issued",
-				issuedAt: now,
-				...(body.signatureSvg ? { signatureSvg: body.signatureSvg } : {}),
-				...(body.integrityHash ? { issuedSnapshotSha256: body.integrityHash } : {}),
-				signatureAttestation: {
-					mode: isDigital ? "simple_electronic_signature" : "paper_signed",
-					signedAt: now.toISOString(),
-					recipientFullName: patientFullName,
-					recipientRole: "patient",
-					staffFullName: effectiveDoctorName,
-					staffRole: "doctor",
-					identityChecked: true,
-					documentOpenedAndChecked: true,
-					recipientSigned: true,
-					clinicRepresentativeSigned: true,
-					note: attestationNote,
-				},
-			})
+
+		// 3. Записываем / обновляем согласие в patientConsents со связью на documentId
+		const existing = await tx
+			.select({ id: patientConsents.id })
+			.from(patientConsents)
 			.where(
 				and(
-					eq(generatedDocuments.id, effectiveDocId),
-					eq(generatedDocuments.organizationId, orgId),
-				),
-			);
-	}
-
-	// 3. Записываем / обновляем согласие в patientConsents со связью на documentId
-	const existing = await db
-		.select({ id: patientConsents.id })
-		.from(patientConsents)
-		.where(
-			and(
-				eq(patientConsents.organizationId, orgId),
-				eq(patientConsents.patientId, patientId),
-				eq(patientConsents.kind, effectiveKind),
-			),
-		)
-		.limit(1);
-
-	let savedConsent;
-	if (existing.length > 0 && existing[0]) {
-		const [updated] = await db
-			.update(patientConsents)
-			.set({
-				grantedAt: now,
-				revokedAt: null,
-				documentId: effectiveDocId,
-			})
-			.where(
-				and(
-					eq(patientConsents.id, existing[0].id),
 					eq(patientConsents.organizationId, orgId),
+					eq(patientConsents.patientId, patientId),
+					eq(patientConsents.kind, effectiveKind),
 				),
 			)
-			.returning();
-		savedConsent = updated;
-	} else {
-		const [created] = await db
+			.limit(1);
+
+		if (existing.length > 0 && existing[0]) {
+			const [updated] = await tx
+				.update(patientConsents)
+				.set({
+					grantedAt: now,
+					revokedAt: null,
+					documentId: effectiveDocId,
+				})
+				.where(
+					and(
+						eq(patientConsents.id, existing[0].id),
+						eq(patientConsents.organizationId, orgId),
+					),
+				)
+				.returning();
+			return updated;
+		}
+
+		const [created] = await tx
 			.insert(patientConsents)
 			.values({
 				organizationId: orgId,
@@ -223,8 +225,8 @@ export async function recordPatientConsentEntry(
 				documentId: effectiveDocId,
 			})
 			.returning();
-		savedConsent = created;
-	}
+		return created;
+	});
 
 	return {
 		...savedConsent,

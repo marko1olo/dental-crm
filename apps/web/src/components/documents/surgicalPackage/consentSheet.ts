@@ -23,7 +23,7 @@ export function renderSurgicalConsentSheet(ctx: SurgicalRequisitesContext): stri
       </div>
 
       <h1>Информированное добровольное согласие на хирургическое стоматологическое вмешательство и дентальную имплантацию</h1>
-      <div class="sheet-subtitle">Утверждено в соответствии с ФЗ № 323-ФЗ ст. 20</div>
+      <div class="sheet-subtitle">Информированное добровольное согласие пациента на медицинское вмешательство (ФЗ № 323-ФЗ ст. 20)</div>
 
       <div class="parties-block">
         Я, <strong>${ptName}</strong>, дата рождения: <strong>${ptBirthDate}</strong>,

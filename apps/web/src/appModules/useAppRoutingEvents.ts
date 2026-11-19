@@ -34,7 +34,7 @@ export function useAppRoutingEvents(
 			if (hasLocationToken(s, h, ["cbct=tuner"])) { st.setIsCbctTunerOpen(true); return; }
 			if (hasLocationToken(s, h, ["cbct=", "cbct=1", "cbct=demo", "cbct"])) st.setIsCbctDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["ct-selector", "ct_selector"])) st.setIsCtSelectorDirectModalOpen(true);
-			if (hasLocationToken(s, h, ["consent", "ids"])) st.setIsConsentDirectModalOpen(true);
+			if (hasLocationToken(s, h, ["consent", "ids", "documents", "tax-certificate"])) st.setIsConsentDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["ceph", "trg"])) st.setIsCephDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["egisz", "remd"])) st.setIsEgiszRemdModalOpen(true);
 			if (hasLocationToken(s, h, ["opg"])) st.setIsSmartOpgDirectModalOpen(true);
@@ -86,6 +86,9 @@ export function useAppRoutingEvents(
 		window.addEventListener("dente-open-cbct", () => stateRef.current.setIsCbctDirectModalOpen(true));
 		window.addEventListener("dente-open-tuner", () => stateRef.current.setIsCbctTunerOpen(true));
 		window.addEventListener("dente-open-consent", () => stateRef.current.setIsConsentDirectModalOpen(true));
+		window.addEventListener("dente:open-consent", () => stateRef.current.setIsConsentDirectModalOpen(true));
+		window.addEventListener("dente-open-documents", () => stateRef.current.setIsConsentDirectModalOpen(true));
+		window.addEventListener("dente:open-documents", () => stateRef.current.setIsConsentDirectModalOpen(true));
 		window.addEventListener("dente-open-ceph", () => stateRef.current.setIsCephDirectModalOpen(true));
 		window.addEventListener("dente-open-opg", () => stateRef.current.setIsSmartOpgDirectModalOpen(true));
 		window.addEventListener("dente-open-visiograph-comparison", () => stateRef.current.setIsVisiographDirectModalOpen(true));

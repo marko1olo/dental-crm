@@ -31,7 +31,7 @@ export function useAppHashRouting(
 	const [clinicalTasksPatientId, setClinicalTasksPatientId] = useState<string | null>(null);
 	const [isCbctTunerOpen, setIsCbctTunerOpen] = useState(() => isCbctTunerActive());
 	const [isCbctDirectModalOpen, setIsCbctDirectModalOpen] = useState(() => isCbctDirectActive());
-	const [isConsentDirectModalOpen, setIsConsentDirectModalOpen] = useState(() => hasLocationToken(s, h, ["consent", "ids"]));
+	const [isConsentDirectModalOpen, setIsConsentDirectModalOpen] = useState(() => hasLocationToken(s, h, ["consent", "ids", "documents", "tax-certificate"]));
 	const [isCephDirectModalOpen, setIsCephDirectModalOpen] = useState(() => hasLocationToken(s, h, ["ceph", "trg"]));
 	const [isEgiszRemdModalOpen, setIsEgiszRemdModalOpen] = useState(() => hasLocationToken(s, h, ["egisz", "remd"]));
 	const [isSmartOpgDirectModalOpen, setIsSmartOpgDirectModalOpen] = useState(() => hasLocationToken(s, h, ["opg"]));

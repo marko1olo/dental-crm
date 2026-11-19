@@ -102,6 +102,11 @@ export const FinancialDocumentForms: React.FC<DocumentFormSwitchProps> = React.m
 					<TaxDeductionApplicationForm
 						relationshipOptions={props.taxApplicationRelationshipOptions ?? []} formOptions={props.taxApplicationFormOptions ?? []}
 						deliveryChannelOptions={props.taxApplicationDeliveryChannelOptions ?? []}
+						patientId={(props.activePatient?.id ?? props.documentPatient?.id) ?? undefined}
+						patientName={(props.documentPatient?.fullName ?? props.activePatient?.fullName) ?? undefined}
+						patientBirthDate={(props.activePatient?.birthDate ?? props.documentPatient?.birthDate) ?? undefined}
+						patientInn={((props.activePatient as { inn?: string | null } | null | undefined)?.inn ?? (props.documentPatient as { inn?: string | null } | null | undefined)?.inn) ?? undefined}
+						doctorName={props.activeDoctor?.fullName ?? undefined}
 						normalizeRelationship={
 							props.normalizedTaxApplicationRelationshipSelect ??
 							((v: string): TaxDeductionApplicationRelationship =>

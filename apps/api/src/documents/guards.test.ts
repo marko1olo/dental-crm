@@ -250,6 +250,28 @@ describe("taxPaymentSelectionErrorForDocument", () => {
 			"Выбранный фискальный чек относится к другому ИНН плательщика.",
 		);
 	});
+
+	test("returns null when selected payment has empty payerInn (54-FZ individual cash/card receipt)", () => {
+		const payments = [
+			...basePayments,
+			{
+				id: "payment-3",
+				patientId: "patient-1",
+				status: "paid",
+				amountRub: 100,
+				fiscalReceiptIssuedAt: "2023-01-01",
+				payerInn: null,
+			} as Payment,
+		];
+		const input = {
+			...baseInput,
+			payload: {
+				taxPaymentSelection: { selectedPaymentIds: ["payment-1", "payment-3"] },
+			},
+		};
+		const error = taxPaymentSelectionErrorForDocument(input, payments);
+		assert.strictEqual(error, null);
+	});
 });
 
 describe("taxDocumentSelectionScope - edge cases", () => {

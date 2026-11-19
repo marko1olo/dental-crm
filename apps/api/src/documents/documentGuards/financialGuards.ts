@@ -227,7 +227,7 @@ export function installmentScheduleMismatchReason(
 
 export function paidContractMismatchReason(
 	payload: PaidMedicalServicesContractPayload,
-	facts: DocumentCreationFacts,
+	_facts: DocumentCreationFacts,
 ): string | null {
 	// Регистратор имеет право распечатать пустой договор со строками "_______" (0 руб.) до осмотра врача.
 	if (payload.estimatedTotalRub === 0) {
@@ -236,11 +236,9 @@ export function paidContractMismatchReason(
 	if (!payload.customerFullName.trim()) {
 		return "Договор платных медицинских услуг: укажите заказчика. Для взрослого пациента это сам пациент, для ребенка или оплаты третьим лицом - законный представитель или плательщик.";
 	}
-	return plannedFactsTotalMismatchReason(
-		payload.estimatedTotalRub,
-		facts,
-		"Договор платных медицинских услуг",
-	);
+	// Мандат 8e (Автономия врача): договор заключается на этап лечения, процедурный блок
+	// или согласованную сумму без блокировки комплексным планом лечения.
+	return null;
 }
 
 export function completedWorksActMismatchReason(

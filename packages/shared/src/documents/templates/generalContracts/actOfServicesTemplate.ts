@@ -262,8 +262,7 @@ export const FNS_PAYMENT_CERTIFICATE_TEMPLATE = `
   <!-- ВЕРХНЯЯ ЧАСТЬ: КОРЕШОК К СПРАВКЕ (хранится в клинике 3 года) -->
   <div style="border: 1px solid #cbd5e1; padding: 12px 16px; background: #fafafa; border-radius: 4px; font-size: 8.5pt;">
     <div style="text-align: right; font-size: 7.5pt; color: #64748b; line-height: 1.2;">
-      Утверждено Приказом Минздрава России и МНС России от 25.07.2001 № 289/БГ-3-04/256<br/>
-      (с учетом формы КНД 1151156, утв. Приказом ФНС России от 08.11.2023 № ЕА-7-11/824@)
+      Справка для налогового вычета (13% НДФЛ)
     </div>
     <div style="text-align: center; font-weight: bold; font-size: 9.5pt; margin: 6px 0; text-transform: uppercase; letter-spacing: 0.5px;">
       КОРЕШОК К СПРАВКЕ ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ ПРЕДСТАВЛЕНИЯ В НАЛОГОВЫЕ ОРГАНЫ РФ № {{СправкаФНС.Номер}}
@@ -338,9 +337,7 @@ export const FNS_PAYMENT_CERTIFICATE_TEMPLATE = `
           <div>Тел: {{Клиника.Телефон}}</div>
         </td>
         <td style="width: 35%; text-align: right; vertical-align: top; font-size: 8pt; color: #475569;">
-          <div>Утверждено Приказом Минздрава России<br/>и МНС России от 25.07.2001 № 289/БГ-3-04/256</div>
-          <div style="margin-top: 4px; font-weight: 600;">Форма по КНД 1151156</div>
-          <div style="color: #64748b;">(Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@)</div>
+          <div style="font-weight: 600;">Справка для налогового вычета (13% НДФЛ)</div>
         </td>
       </tr>
     </table>

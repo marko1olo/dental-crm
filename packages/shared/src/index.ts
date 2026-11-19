@@ -75,6 +75,8 @@ export * from "./onboarding/index.js";
 export * from "./omniPlatformAdapter.js";
 export { formatSnils, isValidSnils, normalizeSnils } from "./utils/snils.js";
 export { escapeHtml } from "./utils/index.js";
+import { validateRussianSnils as canonicalValidateRussianSnils } from "./finance/taxDeduction.js";
+export const validateRussianSnils = canonicalValidateRussianSnils;
 export {
 	validateRussianInn, validateRussianOgrn, validateRussianKpp, ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024, ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
@@ -113,6 +115,7 @@ export {
 export * from "./clinical/therapyProtocolEngine.js";
 export * from "./pricelist/index.js";
 export { ORDER_804N_CODE_REGEX } from "./pricelist/index.js";
+export type { Order804nServiceItem } from "./pricelist/index.js";
 export * from "./perio/index.js";
 export * from "./emr/index.js";
 export * from "./egisz/index.js";

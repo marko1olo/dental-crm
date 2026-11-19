@@ -50,6 +50,17 @@ export function baseDocument(
 	body: string,
 	context: DocumentRenderContext,
 ) {
+	// Если тело уже является самостоятельным сформированным HTML-документом (например, официальный бланк КНД 1151156),
+	// не оборачиваем его повторно во второй <!doctype html>.
+	const trimmedBody = body.trimStart();
+	if (
+		trimmedBody.startsWith("<!doctype html") ||
+		trimmedBody.startsWith("<!DOCTYPE html") ||
+		trimmedBody.startsWith("<html")
+	) {
+		return body;
+	}
+
 	const clinicProfile = context.clinicProfile;
 	const clinicName = clinicDisplayName(clinicProfile);
 	const clinicLegalName = present(clinicProfile?.legalName);

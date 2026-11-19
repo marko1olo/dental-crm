@@ -22,6 +22,11 @@ export interface TaxDeductionApplicationFormProps {
 	normalizeDeliveryChannel: (
 		value: string,
 	) => TaxDeductionApplicationDeliveryChannel;
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	patientBirthDate?: string | undefined;
+	patientInn?: string | undefined;
+	doctorName?: string | undefined;
 }
 
 /**
@@ -45,6 +50,11 @@ export function TaxDeductionApplicationForm({
 	normalizeForm,
 	normalizeRelationship,
 	relationshipOptions,
+	patientId,
+	patientName,
+	patientBirthDate,
+	patientInn,
+	doctorName,
 }: TaxDeductionApplicationFormProps) {
 		const {
 			taxApplicationAuthorityDocument,
@@ -287,7 +297,19 @@ export function TaxDeductionApplicationForm({
 					</button>
 				</div>
 				{isCalculatorOpen && (
-					<TaxDeductionCertificateModal isOpen={true} onClose={() => setIsCalculatorOpen(false)} />
+					<TaxDeductionCertificateModal
+						isOpen={true}
+						onClose={() => setIsCalculatorOpen(false)}
+						patientId={patientId}
+						patientName={patientName}
+						patientBirthDate={patientBirthDate}
+						patientInn={patientInn}
+						doctorName={doctorName}
+						payerFullName={taxApplicationTaxpayerFullName || undefined}
+						payerInn={taxApplicationTaxpayerInn || undefined}
+						payerBirthDate={taxApplicationTaxpayerBirthDate || undefined}
+						payerPassport={taxApplicationTaxpayerIdentityDocument || undefined}
+					/>
 				)}
 			</DocumentPayloadCard>
 		);

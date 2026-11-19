@@ -39,6 +39,15 @@ export function payloadKindMismatchReason(input: CreateDocumentInput): string | 
 export function structuredPayloadMissingReason(
 	input: CreateDocumentInput,
 ): string | null {
+	// Мандат 8e / Red Team: при создании базового черновика документа (быстрая печать бланка "_______",
+	// регистрация первичного договора/ИДС) пустой payload не блокирует создание документа 409-й ошибкой.
+	if (!input.payload || Object.keys(input.payload).length === 0) {
+		if (input.kind === "payment_refund_correction_request") {
+			return "Для возврата или коррекции оплаты нужны структурированные данные: действие, сумма, основание, способ, получатель, исходный чек и решение ответственного.";
+		}
+		return null;
+	}
+
 	const consentMissing = checkConsentPayloadMissingReason(input);
 	if (consentMissing) return consentMissing;
 

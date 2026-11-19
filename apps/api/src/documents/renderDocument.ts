@@ -88,8 +88,6 @@ import {
 import {
 	dentalMedicalCard043u,
 	orthodonticMedicalCard043_1u,
-	dailyDentistDiary037u,
-	summaryDentistStatement039u,
 	radiationDoseSheet,
 } from "./templates/statutoryTemplates.js";
 
@@ -134,82 +132,90 @@ export function renderDocumentHtml(
 	patient: Patient,
 	context: DocumentRenderContext = {},
 ) {
-	const bodyByKind: Record<DocumentKind, string> = {
-		paid_medical_services_contract: paidMedicalServicesContract(
-			document,
-			context,
-		),
-		completed_works_act: completedWorksAct(document, context),
-		tax_deduction_certificate: taxDeductionCertificate(
-			document,
-			patient,
-			context,
-		),
-		informed_consent: informedConsent(document),
-		procedure_specific_consent_packet: procedureSpecificConsentPacket(document),
-		treatment_plan: treatmentPlan(document),
-		treatment_plan_acceptance: treatmentPlanAcceptance(document),
-		anesthesia_consent_log: anesthesiaConsentLog(document),
-		prescription_medication_order: prescriptionMedicationOrder(document),
-		personal_data_processing_consent: personalDataConsent(document, patient),
-		minor_legal_representative_consent: minorLegalRepresentativeConsent(
-			document,
-			patient,
-		),
-		photo_video_consent: photoVideoConsent(document),
-		medical_intervention_refusal: medicalInterventionRefusal(document),
-		treatment_cost_estimate: treatmentCostEstimate(document, context),
-		payment_invoice: paymentInvoice(document, context),
-		payment_receipt: paymentReceipt(document, context),
-		installment_payment_schedule: installmentPaymentSchedule(document, context),
-		post_visit_recommendations: postVisitRecommendations(document),
-		medical_record_extract: document.payload?.medicalCardExtract003vu
-			? renderForm003vuHtml(document.payload.medicalCardExtract003vu)
-			: medicalRecordExtract(document, patient),
-		outpatient_medical_card_025u: dentalMedicalCard043u(document, patient),
-		dental_medical_card_043u: dentalMedicalCard043u(document, patient),
-		orthodontic_medical_card_043_1u: orthodonticMedicalCard043_1u(
-			document,
-			patient,
-		),
-		daily_dentist_diary_037u: dailyDentistDiary037u(document),
-		summary_dentist_statement_039u: summaryDentistStatement039u(document),
-		medical_record_copy_request: structuredMedicalRecordCopyRequest(
-			document,
-			patient,
-		),
-		medical_document_release_receipt: medicalDocumentReleaseReceipt(
-			document,
-			patient,
-		),
-		xray_cbct_referral: xrayCbctReferral(document),
-		radiation_dose_sheet: radiationDoseSheet(document, patient),
-		lab_work_order: labWorkOrder(document),
-		visit_attendance_certificate: visitAttendanceCertificate(document, patient),
-		warranty_service_memo: warrantyServiceMemo(document),
-		payment_refund_correction_request: paymentRefundCorrectionRequest(
-			document,
-			context,
-		),
-		tax_deduction_application: taxDeductionApplication(
-			document,
-			patient,
-			context,
-		),
-		legacy_tax_deduction_certificate: legacyTaxDeductionCertificate(
-			document,
-			patient,
-			context,
-		),
-		tax_deduction_registry: taxDeductionRegistry(document, context),
-		patient_intake_questionnaire: patientIntakeQuestionnaire(document),
+	const renderBody = (): string => {
+		switch (document.kind) {
+			case "paid_medical_services_contract":
+				return paidMedicalServicesContract(document, context);
+			case "completed_works_act":
+				return completedWorksAct(document, context);
+			case "tax_deduction_certificate":
+				return taxDeductionCertificate(document, patient, context);
+			case "informed_consent":
+				return informedConsent(document);
+			case "procedure_specific_consent_packet":
+				return procedureSpecificConsentPacket(document);
+			case "treatment_plan":
+				return treatmentPlan(document);
+			case "treatment_plan_acceptance":
+				return treatmentPlanAcceptance(document);
+			case "anesthesia_consent_log":
+				return anesthesiaConsentLog(document);
+			case "prescription_medication_order":
+				return prescriptionMedicationOrder(document);
+			case "personal_data_processing_consent":
+				return personalDataConsent(document, patient);
+			case "minor_legal_representative_consent":
+				return minorLegalRepresentativeConsent(document, patient);
+			case "photo_video_consent":
+				return photoVideoConsent(document);
+			case "medical_intervention_refusal":
+				return medicalInterventionRefusal(document);
+			case "treatment_cost_estimate":
+				return treatmentCostEstimate(document, context);
+			case "payment_invoice":
+				return paymentInvoice(document, context);
+			case "payment_receipt":
+				return paymentReceipt(document, context);
+			case "installment_payment_schedule":
+				return installmentPaymentSchedule(document, context);
+			case "post_visit_recommendations":
+				return postVisitRecommendations(document);
+			case "medical_record_extract":
+				return document.payload?.medicalCardExtract003vu
+					? renderForm003vuHtml(document.payload.medicalCardExtract003vu)
+					: medicalRecordExtract(document, patient);
+			case "outpatient_medical_card_025u":
+			case "dental_medical_card_043u":
+				return dentalMedicalCard043u(document, patient);
+			case "orthodontic_medical_card_043_1u":
+				return orthodonticMedicalCard043_1u(document, patient);
+			case "daily_dentist_diary_037u":
+			case "summary_dentist_statement_039u":
+				return `<section><h2>Архивная форма</h2><p class="notice">Советские формы 037/у и 039/у (УЕТ 1988 г.) выведены из эксплуатации. Вся медицинская деятельность ведется в цифровой ЭМК (форма 043/у).</p></section>`;
+			case "medical_record_copy_request":
+				return structuredMedicalRecordCopyRequest(document, patient);
+			case "medical_document_release_receipt":
+				return medicalDocumentReleaseReceipt(document, patient);
+			case "xray_cbct_referral":
+				return xrayCbctReferral(document);
+			case "radiation_dose_sheet":
+				return radiationDoseSheet(document, patient);
+			case "lab_work_order":
+				return labWorkOrder(document);
+			case "visit_attendance_certificate":
+				return visitAttendanceCertificate(document, patient);
+			case "warranty_service_memo":
+				return warrantyServiceMemo(document);
+			case "payment_refund_correction_request":
+				return paymentRefundCorrectionRequest(document, context);
+			case "tax_deduction_application":
+				return taxDeductionApplication(document, patient, context);
+			case "legacy_tax_deduction_certificate":
+				return legacyTaxDeductionCertificate(document, patient, context);
+			case "tax_deduction_registry":
+				return taxDeductionRegistry(document, context);
+			case "patient_intake_questionnaire":
+				return patientIntakeQuestionnaire(document);
+			default:
+				return "";
+		}
 	};
 
 	const rawHtml = baseDocument(
 		document.title,
 		patient,
 		document,
-		bodyByKind[document.kind],
+		renderBody(),
 		context,
 	);
 

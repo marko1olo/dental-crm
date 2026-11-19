@@ -19,13 +19,13 @@ export function renderContractSheet(ctx: IntakeRequisitesContext): string {
             Сайт клиники: ${clinicWebsite} · Лицензирующий орган: Росздравнадзор (roszdravnadzor.gov.ru)
           </div>
           <div style="text-align: right;">
-            <span class="statutory-badge">Договор на оказание медицинских услуг (ПП РФ от 11.05.2023 № 736)</span><br>
+            <span class="statutory-badge">Официальный договор на оказание медицинских услуг</span><br>
             Экземпляр Пациента и Клиники<br>
             ${clinicCity} · ${todayFormatted}
           </div>
         </div>
         <h1>ДОГОВОР № ДЕНТЕ-${new Date().getFullYear()}-${patientCardNumber}</h1>
-        <div class="sheet-subtitle">на оказание платных стоматологических медицинских услуг</div>
+        <div class="sheet-subtitle">на оказание платных стоматологических медицинских услуг (ПП РФ от 11.05.2023 № 736)</div>
       </div>
 
       <div class="parties-block">
