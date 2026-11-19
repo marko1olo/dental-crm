@@ -9,7 +9,7 @@ import { Plus, ShieldAlert, ShieldCheck, Sparkles, Stethoscope } from "lucide-re
 import { SomaticSafetyBanner } from "./SomaticSafetyBanner";
 
 export interface SomaticQuickNormBarProps {
-	readonly activePat?: { fullName?: string } | null | undefined;
+	readonly activePat?: { fullName?: string | undefined; [key: string]: unknown } | null | undefined;
 	readonly totalCriticalAlerts: boolean;
 	readonly selectedRisks: readonly string[];
 	readonly selectedAllergies: Record<string, string>;

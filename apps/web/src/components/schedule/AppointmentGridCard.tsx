@@ -281,7 +281,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 							<button
 								type="button"
 								onClick={handleOpenVisitRecord}
-								className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
+								className="p-1 min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 								title="Перейти в медицинскую карту приёма (/visit)"
 								data-testid={`appointment-open-visit-btn-${a.id}`}
 							>

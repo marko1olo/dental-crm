@@ -80,7 +80,7 @@ export interface MobileChairsideVisitWorkspaceProps {
   activeAppointment?: ChairsideAppointmentEntity | VisitAppointmentEntity | null | undefined;
   activeDoctor?: ChairsideDoctorEntity | VisitDoctorEntity | null | undefined;
   visitNoteForm?: ChairsideVisitNoteForm | VisitNoteFormExtended | Record<string, unknown> | null | undefined;
-  updateVisitNoteField: (field: string, value: any) => void;
+  updateVisitNoteField: (field: string, value: unknown) => void;
   flushPendingVisitSaves?: (() => Promise<void> | void) | undefined;
   handleApplySomaticNormQuick?: (() => void) | undefined;
   handleFinishVisitAction?: (() => Promise<void> | void) | undefined;

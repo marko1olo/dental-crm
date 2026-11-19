@@ -22,6 +22,7 @@ import type {
 } from "@dental/shared";
 import type React from "react";
 import type { VisitNoteField, VisitNoteForm } from "../../../AppHelpers";
+export type { VisitNoteField, VisitNoteForm };
 import type { ToothState } from "../../../store/visit/types";
 import type { TreatmentPlanLike } from "../visitPlanStageHandoff";
 
@@ -149,13 +150,13 @@ export interface VisitProtocolTemplateItem
 	[key: string]: unknown;
 }
 
-export interface VisitNoteFormExtended extends VisitNoteForm {
+export type VisitNoteFormExtended = VisitNoteForm & {
 	status?: string | undefined;
 	complaints?: string | undefined;
 	objective?: string | undefined;
 	treatment?: string | undefined;
 	[key: string]: unknown;
-}
+};
 
 export interface VisitPrimaryActionConfig {
 	label: string;

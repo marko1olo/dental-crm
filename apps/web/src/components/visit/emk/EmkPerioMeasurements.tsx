@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { Stethoscope } from "lucide-react";
-import { rublesToKopecks, type PerioToothRecord } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, type PerioToothRecord } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
@@ -120,13 +120,13 @@ export function EmkPerioMeasurements({
 		}
 
 		// 3. Добавляем услуги кюретажа и гигиены в смету визита
-		const prophyPrice = prophyService.price ?? 0;
+		const prophyPrice = kopecksToRubles(prophyService.priceKopecks);
 		useVisitStore.getState().addCompletedService({
 			serviceId: prophyService.code804n, code804n: prophyService.code804n, name: prophyService.name,
 			title: prophyService.name, priceRub: prophyPrice, price: prophyPrice, quantity: 1,
 		});
 		for (const cur of curettageServices) {
-			const curPrice = cur.price ?? 0;
+			const curPrice = kopecksToRubles(cur.priceKopecks);
 			useVisitStore.getState().addCompletedService({
 				serviceId: cur.code804n, code804n: cur.code804n, name: cur.name, title: cur.name,
 				priceRub: curPrice, price: curPrice, quantity: 1, toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,
@@ -135,7 +135,7 @@ export function EmkPerioMeasurements({
 
 		// 4. Диспатчим событие сметы для кассы и мягкого списания расходников
 		if (typeof window !== "undefined") {
-			const prophyKop = rublesToKopecks(prophyPrice);
+			const prophyKop = prophyService.priceKopecks;
 			const allServices = [
 				{
 					serviceId: prophyService.code804n, name: prophyService.name, title: prophyService.name,
@@ -144,8 +144,8 @@ export function EmkPerioMeasurements({
 					quantity: 1, category: "hygiene", stageKind: "hygiene",
 				},
 				...curettageServices.map((cur) => {
-					const curPrice = cur.price ?? 0;
-					const curKop = rublesToKopecks(curPrice);
+					const curPrice = kopecksToRubles(cur.priceKopecks);
+					const curKop = cur.priceKopecks;
 					return {
 						serviceId: cur.code804n, name: cur.name, title: cur.name,
 						code: cur.code804n, code804n: cur.code804n, unitPriceRub: curPrice,

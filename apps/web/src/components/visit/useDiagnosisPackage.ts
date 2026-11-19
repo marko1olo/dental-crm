@@ -19,15 +19,15 @@ import {
 } from "@dental/shared";
 
 export interface DiagnosisPackageCatalogItem {
-	id?: string | undefined;
-	code?: string | undefined;
-	code804n?: string | undefined;
-	title?: string | undefined;
-	name?: string | undefined;
-	price?: number | undefined;
-	priceRub?: number | undefined;
-	basePriceRub?: number | undefined;
-	priceKopecks?: number | undefined;
+	id?: string | null | undefined;
+	code?: string | null | undefined;
+	code804n?: string | null | undefined;
+	title?: string | null | undefined;
+	name?: string | null | undefined;
+	price?: number | null | undefined;
+	priceRub?: number | null | undefined;
+	basePriceRub?: number | null | undefined;
+	priceKopecks?: number | null | undefined;
 	[key: string]: unknown;
 }
 

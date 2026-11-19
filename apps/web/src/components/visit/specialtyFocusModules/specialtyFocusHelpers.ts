@@ -28,15 +28,30 @@ export function computePatientAgeYears(activePatient?: { birthDate?: string | Da
 	return undefined;
 }
 
-export function formatInvoiceServices(services: any, activeTooth: number | null) {
-	const list = Array.isArray(services) ? services : [services];
+export interface SpecialtyInvoiceServiceCandidate {
+	readonly code804n?: string | undefined;
+	readonly code?: string | undefined;
+	readonly title?: string | undefined;
+	readonly name?: string | undefined;
+	readonly nameRu?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly price?: number | undefined;
+	readonly quantity?: number | undefined;
+	readonly [key: string]: unknown;
+}
+
+export function formatInvoiceServices(
+	services: unknown,
+	activeTooth: number | null,
+) {
+	const list: unknown[] = Array.isArray(services) ? services : services ? [services] : [];
 	return list
-		.filter(Boolean)
+		.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
 		.map((item) => ({
-			code: item.code804n || item.code || "A16.07.002",
-			title: item.title || item.name || item.nameRu || "Стоматологическая услуга",
-			price: item.priceRub || item.price || 0,
-			quantity: item.quantity || 1,
+			code: typeof item.code804n === "string" ? item.code804n : typeof item.code === "string" ? item.code : "A16.07.002",
+			title: typeof item.title === "string" ? item.title : typeof item.name === "string" ? item.name : typeof item.nameRu === "string" ? item.nameRu : "Стоматологическая услуга",
+			price: typeof item.priceRub === "number" ? item.priceRub : typeof item.price === "number" ? item.price : 0,
+			quantity: typeof item.quantity === "number" ? item.quantity : 1,
 			toothCode: activeTooth ? String(activeTooth) : undefined,
 		}));
 }

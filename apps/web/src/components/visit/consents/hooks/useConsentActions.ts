@@ -9,10 +9,16 @@ import type { ConsentRecordState } from "../visitConsentTypes";
 
 export type ConsentPackageKey = "PACKAGE_PRIMARY_VISIT" | "PACKAGE_SURGERY" | "PACKAGE_ORTHOPEDICS" | string;
 
+export interface UnsignedRequiredConsentItem {
+	readonly key: ConsentTemplateKey;
+	readonly title: string;
+	readonly [key: string]: unknown;
+}
+
 interface UseConsentActionsParams {
 	patientId: string;
 	consentRecords: Record<string, ConsentRecordState>;
-	unsignedRequiredItems: any[];
+	unsignedRequiredItems: readonly UnsignedRequiredConsentItem[];
 	signedConsentKeys: ConsentTemplateKey[];
 	requiredFlags: Partial<Record<ConsentTemplateKey, boolean>>;
 	substitutionContext: ConsentSubstitutionContext;

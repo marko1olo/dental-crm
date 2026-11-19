@@ -82,12 +82,23 @@ export const CHAIRSIDE_EXPRESS_SERVICES: readonly ChairsideExpressService[] = [
 	},
 ];
 
+export interface RawCatalogItem {
+	active?: boolean | undefined;
+	code?: string | undefined;
+	code804n?: string | undefined;
+	basePriceRub?: number | string | null | undefined;
+	priceRub?: number | string | null | undefined;
+	price?: number | string | null | undefined;
+	id?: string | number | undefined;
+	title?: string | undefined;
+	category?: string | undefined;
+}
+
 /**
  * Разрешает 9 экспресс-услуг у кресла против живого прейскуранта клиники (service_catalog_items).
  */
-// biome-ignore lint/suspicious/noExplicitAny: dynamic catalog array
 export function resolveExpressServicesAgainstCatalog(
-	catalog: readonly any[] = [],
+	catalog: readonly RawCatalogItem[] = [],
 ): readonly ChairsideExpressService[] {
 	if (!Array.isArray(catalog) || catalog.length === 0) {
 		return CHAIRSIDE_EXPRESS_SERVICES;
@@ -96,8 +107,8 @@ export function resolveExpressServicesAgainstCatalog(
 	return CHAIRSIDE_EXPRESS_SERVICES.map((svc) => {
 		const targetCode = svc.code804n.trim().toUpperCase();
 		const byCode = catalog.find((c) => {
-			if (c?.active === false) return false;
-			const cCode = String(c?.code || c?.code804n || "").trim().toUpperCase();
+			if (!c || c.active === false) return false;
+			const cCode = String(c.code || c.code804n || "").trim().toUpperCase();
 			return cCode === targetCode;
 		});
 		if (byCode) {
@@ -302,7 +313,7 @@ export interface FilteredCatalogService {
 	code: string;
 	title: string;
 	priceRub: number;
-	category?: string;
+	category?: string | undefined;
 }
 
 /**
@@ -322,14 +333,13 @@ export function filterServiceCatalog(
 
 	for (const item of catalog) {
 		if (!item || typeof item !== "object") continue;
-		// biome-ignore lint/suspicious/noExplicitAny: dynamic catalog item
-		const anyItem = item as any;
-		if (anyItem.active === false) continue;
+		const catItem = item as Record<string, unknown>;
+		if (catItem.active === false) continue;
 
-		const code = typeof anyItem.code === "string" ? anyItem.code.trim() : "";
-		const title = typeof anyItem.title === "string" ? anyItem.title.trim() : "";
+		const code = typeof catItem.code === "string" ? catItem.code.trim() : "";
+		const title = typeof catItem.title === "string" ? catItem.title.trim() : "";
 		const rawPrice =
-			anyItem.basePriceRub ?? anyItem.priceRub ?? anyItem.price;
+			catItem.basePriceRub ?? catItem.priceRub ?? catItem.price;
 		const priceRub = parseRubAmount(rawPrice) ?? 0;
 
 		const matchCode = code.toLowerCase().includes(trimmed);
@@ -337,12 +347,12 @@ export function filterServiceCatalog(
 
 		if (matchCode || matchTitle) {
 			results.push({
-				id: String(anyItem.id || code || title),
+				id: String(catItem.id || code || title),
 				code: code || "Услуга",
 				title: title || "Услуга без названия",
 				priceRub,
 				category:
-					typeof anyItem.category === "string" ? anyItem.category : undefined,
+					typeof catItem.category === "string" ? catItem.category : undefined,
 			});
 			if (results.length >= limit) break;
 		}

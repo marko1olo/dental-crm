@@ -8,6 +8,24 @@
 
 import type { DiaryState } from "../../../lib/protocols/protocolTypes";
 import type { AutoVisitBomDeductionResult } from "@dental/shared";
+import type { VisitPlanItemLike } from "../completedServicesPlan";
+
+export interface RawOrder804nService {
+	readonly id?: string | undefined;
+	readonly code?: string | undefined;
+	readonly code804n?: string | undefined;
+	readonly name?: string | undefined;
+	readonly nameRu?: string | undefined;
+	readonly title?: string | undefined;
+	readonly quantity?: number | string | undefined;
+	readonly defaultQuantity?: number | string | undefined;
+	readonly priceRub?: number | string | undefined;
+	readonly unitPriceRub?: number | string | undefined;
+	readonly price?: number | string | undefined;
+	readonly priceKopecks?: number | undefined;
+	readonly toothNumber?: number | string | undefined;
+	readonly [key: string]: unknown;
+}
 
 export type ProcedureCategory =
 	| "anesthesia"
@@ -51,14 +69,17 @@ export interface ClinicalVisitCompletionInput {
 		readonly diagnosisTooth?: string | null;
 		readonly treatmentDescription?: string | null;
 		readonly recommendations?: string | null | undefined;
-		readonly order804nServices?: readonly any[] | undefined;
+		readonly order804nServices?: readonly RawOrder804nService[] | undefined;
 	};
-	readonly completedPlanItems?: readonly any[] | undefined;
+	readonly completedPlanItems?: readonly VisitPlanItemLike[] | undefined;
 	readonly additionalServices?: readonly ClinicalEstimateItem[] | undefined;
 	readonly discountPercent?: number | undefined;
 	readonly completionMode?: "standard" | "aborted" | "rescheduled" | "emergency_interrupted" | undefined;
 	readonly interruptionReason?: string | undefined;
 	readonly rescheduledDateIso?: string | undefined;
+	readonly form043uSaved?: boolean | undefined;
+	readonly emkSaved?: boolean | undefined;
+	readonly medicalCardSaved?: boolean | undefined;
 }
 
 export type ClinicalVisitStatus =
@@ -184,5 +205,5 @@ export interface ClinicalWorkflowStepValidationResult {
 	readonly softFocusFieldId?: string | undefined;
 	readonly guidingHint?: string | undefined;
 	readonly safeDefaultsApplied?: boolean | undefined;
-	readonly resolvedData: Record<string, any>;
+	readonly resolvedData: Record<string, unknown>;
 }

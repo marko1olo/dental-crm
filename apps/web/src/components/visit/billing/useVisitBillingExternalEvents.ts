@@ -11,12 +11,16 @@ import {
 	DEFAULT_CHAIRSIDE_SERVICES,
 	syncBillingItemsToVisitStore,
 } from "../visitBillingTypes.js";
-import { parseBillingServicesList, parseSingleBillingItem } from "./billingEventItemParser.js";
+import {
+	parseBillingServicesList,
+	parseSingleBillingItem,
+	type RawBillingEventItem,
+} from "./billingEventItemParser.js";
 
 export interface UseVisitBillingExternalEventsParams {
 	setServices: React.Dispatch<React.SetStateAction<VisitBillingServiceItem[]>>;
 	onServicesChange?: ((items: VisitBillingServiceItem[]) => void) | undefined;
-	onAddBillingItem?: ((item: any) => void) | undefined;
+	onAddBillingItem?: ((item: { code804n?: string | undefined; title: string; priceRub: number; toothNumber?: number | undefined; quantity?: number | undefined }) => void) | undefined;
 }
 
 export function useVisitBillingExternalEvents({
@@ -28,7 +32,7 @@ export function useVisitBillingExternalEvents({
 		const handleAddServicesToInvoice = (e: Event) => {
 			const detail = (e as CustomEvent)?.detail;
 			if (!detail) return;
-			const rawList: any[] = Array.isArray(detail) ? detail : Array.isArray(detail.services) ? detail.services : Array.isArray(detail.items) ? detail.items : detail.service ? [detail.service] : [];
+			const rawList: RawBillingEventItem[] = Array.isArray(detail) ? detail : Array.isArray(detail.services) ? detail.services : Array.isArray(detail.items) ? detail.items : detail.service ? [detail.service] : [];
 			if (rawList.length === 0) return;
 
 			const newItems = parseBillingServicesList(rawList, detail);
@@ -67,7 +71,7 @@ export function useVisitBillingExternalEvents({
 		const handleAddBillingEvent = (e: Event) => {
 			const detail = (e as CustomEvent)?.detail;
 			if (!detail) return;
-			const item = detail.item || detail;
+			const item = (detail.item || detail) as RawBillingEventItem;
 			const newItem = parseSingleBillingItem(item);
 			setServices((prev) => {
 				const isPlaceholder = prev.length === 0 || (prev.length === DEFAULT_CHAIRSIDE_SERVICES.length && prev.every((p, i) => p.id === DEFAULT_CHAIRSIDE_SERVICES[i]?.id));
@@ -80,15 +84,24 @@ export function useVisitBillingExternalEvents({
 				});
 				return next;
 			});
-			onAddBillingItem?.(item);
+			if (onAddBillingItem) {
+				const toothNum = newItem.toothCode ? Number(newItem.toothCode) || undefined : undefined;
+				onAddBillingItem({
+					code804n: newItem.code804n,
+					title: newItem.title,
+					priceRub: newItem.unitPriceRub,
+					quantity: newItem.quantity,
+					...(toothNum !== undefined ? { toothNumber: toothNum } : {}),
+				});
+			}
 		};
 
 		const handleRemoveBillingEvent = (e: Event) => {
 			const detail = (e as CustomEvent)?.detail;
 			if (!detail) return;
-			const targets = detail.items || [detail.item || detail];
+			const targets: Array<RawBillingEventItem | string> = detail.items || [detail.item || detail];
 			setServices((prev) => {
-				const next = prev.filter((s) => !targets.some((t: any) => typeof t === "string" ? s.code804n === t || s.title === t : (t.code804n && s.code804n === t.code804n) || (t.title && s.title === t.title)));
+				const next = prev.filter((s) => !targets.some((t) => typeof t === "string" ? s.code804n === t || s.title === t : (t.code804n && s.code804n === t.code804n) || (t.title && s.title === t.title)));
 				queueMicrotask(() => {
 					syncBillingItemsToVisitStore(next);
 					onServicesChange?.(next);

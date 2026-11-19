@@ -7,6 +7,7 @@ import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { familyGroups, patientBonusBalances, patientRelationships, patients } from "../../db/schema.js";
 import { executeBonusRedeem } from "./bonusRedemptionService.js";
+import { ensureFamilyMemberSpendAuthorization } from "../family/familyGroupWriteRoutes.js";
 
 const familyLinkSchema = z.object({
 	primaryPatientId: z.string().uuid(),
@@ -252,16 +253,7 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 					.set({ familyGroupId: targetGroupId, updatedAt: new Date() })
 					.where(and(eq(patients.organizationId, orgId), eq(patients.id, relative.id)));
 
-				await db
-					.insert(patientRelationships)
-					.values({
-						organizationId: orgId,
-						patientId: primary.id,
-						relatedPatientId: relative.id,
-						relationshipType: relationRole,
-						canSpendFamilyWallet: true,
-					})
-					.onConflictDoNothing();
+				await ensureFamilyMemberSpendAuthorization(db, orgId, primary.id, relative.id, true);
 			}
 
 			const [balance] = await db

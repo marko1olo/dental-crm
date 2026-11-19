@@ -18,6 +18,7 @@ import {
 } from "./familyFinanceTypes.js";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbOrTx = DatabaseTransaction | typeof db;
 
 /**
  * ensureFamilyMemberSpendAuthorization
@@ -28,7 +29,7 @@ type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
  * This guarantees that `familySpendAuthorization.ts` does NOT reject member debits with 403 Forbidden!
  */
 export async function ensureFamilyMemberSpendAuthorization(
-	tx: DatabaseTransaction,
+	tx: DbOrTx,
 	organizationId: string,
 	walletOwnerId: string,
 	memberId: string,

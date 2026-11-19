@@ -1,8 +1,11 @@
 import React from "react";
 import { Tag } from "lucide-react";
+import type { PlanStageItem } from "./visitPlanStageHandoff";
+
+export type VisitPlanStageHandoffItem = PlanStageItem;
 
 export interface VisitPlanStageHandoffItemsPreviewProps {
-	readonly selectedItems: readonly any[];
+	readonly selectedItems: readonly VisitPlanStageHandoffItem[];
 }
 
 export const VisitPlanStageHandoffItemsPreview: React.FC<VisitPlanStageHandoffItemsPreviewProps> = ({

@@ -10,6 +10,10 @@ import { PHYSIOLOGICAL_NORM } from "./anamnesisDefaults";
 import { formatAnamnesisStrings } from "./useAnamnesisAutosave";
 import type { AnamnesisDraftPayload } from "./anamnesisDraftStorage";
 
+export interface AnamnesisAppLogicContext {
+	updateVisitNoteField?: (field: string, value: string) => void;
+}
+
 interface UseAnamnesisActionsParams {
 	allergies: {
 		selectedAllergies: Record<string, string>;
@@ -32,8 +36,7 @@ interface UseAnamnesisActionsParams {
 	setCustomNotes: (v: string) => void;
 	syncWithPatient: (payload: AnamnesisDraftPayload) => void;
 	currentPayload: AnamnesisDraftPayload;
-	// biome-ignore lint/suspicious/noExplicitAny: AppLogic Context
-	appLogic: any;
+	appLogic?: AnamnesisAppLogicContext | null | undefined;
 	onAppendAnamnesis?: ((text: string) => void) | undefined;
 	onAppendComorbidities?: ((text: string) => void) | undefined;
 }

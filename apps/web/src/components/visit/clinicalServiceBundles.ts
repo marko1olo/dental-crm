@@ -32,6 +32,7 @@ import {
 	type Cashier54FzItemPayload,
 	type Cashier54FzBundleExport,
 	type ClinicalBundleDefinition,
+	type CatalogItemLike,
 } from "@dental/shared";
 
 export {
@@ -260,7 +261,7 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 ];
 
 export function resolveClinicalServiceBundlesAgainstCatalog(
-	catalog: readonly any[] = [],
+	catalog: readonly CatalogItemLike[] = [],
 ): readonly ClinicalServiceBundle[] {
 	if (!Array.isArray(catalog) || catalog.length === 0) {
 		return CLINICAL_SERVICE_BUNDLES;

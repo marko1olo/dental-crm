@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { CalendarPlus, FastForward, Printer } from "lucide-react";
+import { CalendarPlus, FastForward, Printer, Sparkles } from "lucide-react";
 import { VisitPlanStageHandoffBanner } from "../VisitPlanStageHandoffBanner";
 import { VisitSecondaryPanelsInner } from "./VisitSecondaryPanelsInner";
 import { executePolishTranscriptAutonomy } from "./visitViewAutonomyActions";
 import { showToast } from "../../GlobalToast";
-import type { VisitActionFooterProps } from "./types";
+import type { VisitActionFooterProps, VisitNoteForm, VisitNoteFormExtended } from "./types";
+import { useVisitStore } from "../../../store/visitStore";
 import {
 	createSmartSequentialAppointment,
 	detectRecommendedProtocol,
@@ -193,6 +194,26 @@ export function VisitActionFooter({
 						<Printer size={15} className="text-[var(--ink-muted)]" />
 						<span>Печать (Медкарта, Акт, Смета)</span>
 					</button>
+					<button
+						type="button"
+						data-testid="btn-polish-transcript"
+						className="secondary-button min-h-[44px] px-3 py-2"
+						disabled={isTranscriptPolishing}
+						onClick={() =>
+							executePolishTranscriptAutonomy({
+								hasVisitTranscriptText: Boolean(transcript),
+								...(setTranscript ? { setTranscript } : {}),
+								...(updateVisitNoteField ? { updateVisitNoteField } : {}),
+								visitNoteForm: visitNoteForm ?? null,
+								...(polishTranscript ? { polishTranscript } : {}),
+								showToastFn: showToast,
+							})
+						}
+						title="Полировать аудиозапись/диктовку приёма с помощью ИИ"
+					>
+						<Sparkles size={15} className="text-[var(--ink-muted)]" />
+						<span>{isTranscriptPolishing ? "Обработка..." : "Полировать ИИ"}</span>
+					</button>
 					<span className="text-xs text-[var(--muted)]">{safeVisitPrimaryAction.detail}</span>
 				</div>
 				{isTreatmentPlanExpiredSoft && (
@@ -200,56 +221,6 @@ export function VisitActionFooter({
 						План лечения составлен {treatmentPlanAgeDays} дней назад (рекомендуется актуализация)
 					</div>
 				)}
-			</div>
-
-			{/* ── СТЕРИЛЬНОСТЬ ЭКРАНА ВРАЧА У КРЕСЛА (ДЫМОВОЙ ТЕСТОВЫЙ ХАРНЕСС ВЫНЕСЕН ИЗ ВИДИМОЙ ЗОНЫ) ── */}
-			<div
-				className="smoke-compat-container sr-only"
-				style={{
-					position: "absolute",
-					width: "1px",
-					height: "1px",
-					padding: 0,
-					margin: "-1px",
-					overflow: "hidden",
-					clip: "rect(0, 0, 0, 0)",
-					whiteSpace: "nowrap",
-					border: 0,
-					opacity: 0,
-					pointerEvents: "none",
-				}}
-				aria-hidden="true"
-			>
-				<button
-					type="button"
-					data-testid="btn-polish-transcript"
-					className="secondary-button min-h-[44px] px-3 py-2"
-					disabled={isTranscriptPolishing}
-					onClick={() =>
-						executePolishTranscriptAutonomy({
-							hasVisitTranscriptText: Boolean(transcript),
-							...(setTranscript ? { setTranscript } : {}),
-							...(updateVisitNoteField ? { updateVisitNoteField } : {}),
-							visitNoteForm: visitNoteForm ?? null,
-							...(polishTranscript ? { polishTranscript } : {}),
-							showToastFn: showToast,
-						})
-					}
-				>
-					Полировать ИИ
-				</button>
-				<button
-					type="button"
-					data-testid="visit-more-action-print-043u"
-					onClick={() => {
-						const printAction = handlePrintClinicalDiaryFast ?? handlePrintMedicalCardFast ?? handlePrintForm043uFast;
-						if (printAction) printAction();
-						setFastPrintDocType("medical_card");
-						setIsFastPrintModalOpen(true);
-					}}
-				>
-					Печать дневника
-				</button>
 			</div>
 
 			{/* ── ВСПОМОГАТЕЛЬНЫЕ ПАНЕЛИ ПРИЁМА (ШАБЛОНЫ, ЗАДАЧИ, КОНТРОЛЬ ЦЕН) ── */}
@@ -284,7 +255,14 @@ export function VisitActionFooter({
 						setIsPriceValidatorModalOpen={setIsPriceValidatorModalOpen}
 						setIsStagePaymentModalOpen={setIsStagePaymentModalOpen}
 						transcript={transcript}
-						setVisitNoteForm={() => {}}
+						setVisitNoteForm={(action) => {
+							useVisitStore.getState().setVisitNoteForm((prev: VisitNoteForm): VisitNoteForm => {
+								if (typeof action === "function") {
+									return action(prev as VisitNoteFormExtended) as VisitNoteForm;
+								}
+								return action as VisitNoteForm;
+							});
+						}}
 						visitCloseChecklist={props.visitCloseChecklist}
 						openCloseChecklistSection={props.openCloseChecklistSection}
 					/>

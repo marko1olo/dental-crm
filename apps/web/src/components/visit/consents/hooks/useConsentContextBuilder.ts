@@ -16,7 +16,7 @@ interface UseConsentContextBuilderParams {
 	activeDoctor?: VisitConsentsTabDoctor | null | undefined;
 	dashboard?: VisitConsentsTabDashboard | null | undefined;
 	visitNoteForm?: VisitConsentsTabNoteForm | null | undefined;
-	selectedToothForMenu?: any;
+	selectedToothForMenu?: number | string | { code?: string | undefined; [key: string]: unknown } | null | undefined;
 	consentRecords: Record<string, ConsentRecordState>;
 	isVisitClosed: boolean;
 }
@@ -32,7 +32,10 @@ export function useConsentContextBuilder({
 		const clinicBrand =
 			dashboard?.clinicSettings?.profile?.brandName || dashboard?.organization?.name || "Стоматологическая клиника «DENTE»";
 		const clinicLegal = dashboard?.clinicSettings?.profile?.legalEntityName || clinicBrand;
-		const toothLabel = typeof selectedToothForMenu === "number" ? String(selectedToothForMenu) : (selectedToothForMenu?.code || "По клиническому плану");
+		const toothLabel =
+			typeof selectedToothForMenu === "number" || typeof selectedToothForMenu === "string"
+				? String(selectedToothForMenu)
+				: (selectedToothForMenu && typeof selectedToothForMenu === "object" && "code" in selectedToothForMenu && typeof selectedToothForMenu.code === "string" ? selectedToothForMenu.code : "По клиническому плану");
 
 		return sanitizeConsentContext({
 			patientName: activePatient?.fullName || activePatient?.name || "Пациент",
@@ -83,7 +86,7 @@ export function useConsentContextBuilder({
 			signedConsentKeys,
 			...(combinedClinicalText ? { treatmentPlanText: combinedClinicalText } : {}),
 			additionalProcedures: selectedToothForMenu
-				? [typeof selectedToothForMenu === "number" ? String(selectedToothForMenu) : (selectedToothForMenu?.code || "")]
+				? [typeof selectedToothForMenu === "number" || typeof selectedToothForMenu === "string" ? String(selectedToothForMenu) : (typeof selectedToothForMenu === "object" && "code" in selectedToothForMenu && typeof selectedToothForMenu.code === "string" ? selectedToothForMenu.code : "")]
 				: [],
 		});
 	}, [signedConsentKeys, visitNoteForm, selectedToothForMenu]);

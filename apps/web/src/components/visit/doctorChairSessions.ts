@@ -333,7 +333,7 @@ export interface ChairsideVisitDraftPayload {
 	readonly version?: number | undefined;
 	readonly activeTooth?: number | string | undefined;
 	readonly activeTab?: string | undefined;
-	readonly noteForm?: Record<string, any> | undefined;
+	readonly noteForm?: Record<string, unknown> | undefined;
 	readonly diary?: {
 		readonly complaint?: string | undefined;
 		readonly anamnesis?: string | undefined;
@@ -343,7 +343,7 @@ export interface ChairsideVisitDraftPayload {
 		readonly recommendations?: string | undefined;
 		readonly icd10?: string | undefined;
 		readonly toothNumber?: number | string | undefined;
-		readonly [key: string]: any;
+		readonly [key: string]: unknown;
 	} | undefined;
 }
 
@@ -363,7 +363,7 @@ export function saveChairsideVisitDraft(
 
 	if (typeof visitIdOrDraft === "string") {
 		visitId = visitIdOrDraft;
-		draftData = (maybeDraft as unknown as Partial<ChairsideVisitDraftPayload>) || { diary: {} };
+		draftData = maybeDraft ?? { diary: {} };
 	} else {
 		visitId = visitIdOrDraft.visitId;
 		draftData = visitIdOrDraft;
@@ -379,7 +379,7 @@ export function saveChairsideVisitDraft(
 		savedAtIso: draftData.savedAtIso || new Date(now).toISOString(),
 		timestamp: draftData.timestamp ?? now,
 		version: draftData.version ?? 1,
-		activeTooth: draftData.activeTooth ?? (draftData.diary as any)?.toothNumber,
+		activeTooth: draftData.activeTooth ?? draftData.diary?.toothNumber,
 		activeTab: draftData.activeTab,
 		noteForm: draftData.noteForm,
 		diary: draftData.diary || {},

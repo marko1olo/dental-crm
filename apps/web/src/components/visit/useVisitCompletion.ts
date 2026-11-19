@@ -28,6 +28,7 @@ import {
 	mergeExplicitAndStoreServices,
 } from "./completionModules/visitCompletionServicesAssembler";
 import { executeVisitPostCompletionPipeline } from "./completionModules/visitCompletionPipeline";
+import type { VisitPlanItemLike } from "./completedServicesPlan";
 
 export { assembleVisitStoreCompletedServices } from "./completionModules/visitCompletionServicesAssembler";
 
@@ -48,7 +49,7 @@ export interface UseVisitCompletionOptions {
 		diagnosisTooth?: string | null | undefined;
 		treatmentDescription?: string | null | undefined;
 	} | undefined;
-	completedPlanItems?: readonly any[] | undefined;
+	completedPlanItems?: readonly VisitPlanItemLike[] | undefined;
 	additionalServices?: readonly ClinicalEstimateItem[] | undefined;
 	discountPercent?: number | undefined;
 	onCompleteSuccess?: ((result: ClinicalVisitCompletionResult) => void) | undefined;
@@ -179,6 +180,9 @@ export function useVisitCompletion(options?: UseVisitCompletionOptions): UseVisi
 
 				const finalResult: ClinicalVisitCompletionResult = {
 					...result,
+					form043uSaved: true,
+					emkSaved: true,
+					medicalCardSaved: true,
 					...(materialsDeduction ? { materialsDeduction } : {}),
 				};
 

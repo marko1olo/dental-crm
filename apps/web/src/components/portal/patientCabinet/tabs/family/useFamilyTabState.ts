@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import type { PatientCabinetFamilyMember, PatientPersonalCabinetData } from "../../patientCabinetEngine";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../../../lib/demoMode.js";
+import { denteAdminSecretRequestHeaders } from "../../../../../lib/denteRequestHeaders.js";
 import { RELATIONSHIP_OPTIONS, DEFAULT_FAMILY_MEMBERS } from "./familyConstants";
 
 export function useFamilyTabState(
@@ -27,20 +28,68 @@ export function useFamilyTabState(
 	const familyBalance = data.familyBalanceRub ?? (isDemo ? 84000 : 0);
 	const familyBonusPool = data.familyBonusPool ?? (isDemo ? 18500 : 0);
 
-	const handleToggleBalancePermission = useCallback((memberId: string) => {
+	const handleToggleBalancePermission = useCallback(async (memberId: string) => {
+		const targetMember = members.find((m) => m.id === memberId);
+		if (!targetMember) return;
+		const nextPermission = !targetMember.allowSpendFamilyBalance;
+
+		// Оптимистичное обновление UI
 		setMembers((prev) =>
 			prev.map((m) => {
 				if (m.id === memberId) {
-					const updated = !m.allowSpendFamilyBalance;
-					onShowToast?.(updated ? `Оплата с семейного баланса разрешена для: ${m.fullName}` : `Оплата с семейного баланса приостановлена для: ${m.fullName}`);
-					return { ...m, allowSpendFamilyBalance: updated };
+					return { ...m, allowSpendFamilyBalance: nextPermission };
 				}
 				return m;
 			}),
 		);
-	}, [onShowToast]);
 
-	const handleAddMemberSubmit = useCallback((e: React.FormEvent) => {
+		if (isDemo) {
+			onShowToast?.(
+				nextPermission
+					? `Оплата с семейного баланса разрешена для: ${targetMember.fullName}`
+					: `Оплата с семейного баланса приостановлена для: ${targetMember.fullName}`,
+			);
+			return;
+		}
+
+		try {
+			const headers = { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
+			const resp = await fetch("/api/finance/family/permissions", {
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					patientId: data.patientId,
+					memberId,
+					canSpendFamilyWallet: nextPermission,
+				}),
+			});
+
+			if (!resp.ok) {
+				const errBody = (await resp.json().catch(() => null)) as { message?: string } | null;
+				throw new Error(errBody?.message || `Ошибка сохранения прав (код ${resp.status})`);
+			}
+
+			onShowToast?.(
+				nextPermission
+					? `Оплата с семейного баланса разрешена для: ${targetMember.fullName}`
+					: `Оплата с семейного баланса приостановлена для: ${targetMember.fullName}`,
+			);
+		} catch (err: unknown) {
+			// Откат при сетевой ошибке
+			setMembers((prev) =>
+				prev.map((m) => {
+					if (m.id === memberId) {
+						return { ...m, allowSpendFamilyBalance: !nextPermission };
+					}
+					return m;
+				}),
+			);
+			const errMsg = err instanceof Error ? err.message : "Не удалось обновить права списания";
+			onShowToast?.(errMsg);
+		}
+	}, [data.patientId, isDemo, members, onShowToast]);
+
+	const handleAddMemberSubmit = useCallback(async (e: React.FormEvent) => {
 		e.preventDefault();
 		const cleanName = newFullName.trim();
 		if (!cleanName) {
@@ -59,11 +108,71 @@ export function useFamilyTabState(
 			cardNumber: assignedCard, avatarInitials: initials || "ФС",
 			allowSpendFamilyBalance: newAllowSpend, allowBooking: newAllowBooking,
 		};
-		setMembers((prev) => [...prev, newMember]);
-		setIsAddingMember(false);
-		setNewFullName(""); setNewBirthDate(""); setNewPhone(""); setNewCardNumber("");
-		onShowToast?.(`Член семьи ${cleanName} успешно добавлен в семейный профиль`);
-	}, [newFullName, newRelationship, newBirthDate, newPhone, newCardNumber, newAllowSpend, newAllowBooking, data.cardNumber, data.patientId, members.length, onShowToast]);
+
+		if (isDemo) {
+			setMembers((prev) => [...prev, newMember]);
+			setIsAddingMember(false);
+			setNewFullName(""); setNewBirthDate(""); setNewPhone(""); setNewCardNumber("");
+			onShowToast?.(`Член семьи ${cleanName} успешно добавлен в семейный профиль`);
+			return;
+		}
+
+		try {
+			const headers = { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
+			const linkResp = await fetch("/api/loyalty/family/link", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					primaryPatientId: data.patientId,
+					relativePatientId: cleanName,
+					relationRole: newRelationship,
+				}),
+			});
+
+			if (!linkResp.ok) {
+				const errBody = (await linkResp.json().catch(() => null)) as { message?: string } | null;
+				// Если пациента нет в клинике, создаем карту и привязываем
+				if (linkResp.status === 404 && newPhone.trim()) {
+					const createResp = await fetch("/api/patients", {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							fullName: cleanName,
+							phone: newPhone.trim(),
+							birthDate: newBirthDate || undefined,
+						}),
+					});
+					if (createResp.ok) {
+						const created = (await createResp.json()) as { id?: string; data?: { id: string } };
+						const createdId = created?.id || created?.data?.id;
+						if (createdId) {
+							await fetch("/api/loyalty/family/link", {
+								method: "POST",
+								headers,
+								body: JSON.stringify({
+									primaryPatientId: data.patientId,
+									relativePatientId: createdId,
+									relationRole: newRelationship,
+								}),
+							});
+						}
+					} else {
+						throw new Error("Не удалось создать карточку нового члена семьи");
+					}
+				} else {
+					throw new Error(errBody?.message || `Ошибка привязки члена семьи (код ${linkResp.status})`);
+				}
+			}
+
+			setMembers((prev) => [...prev, newMember]);
+			setIsAddingMember(false);
+			setNewFullName(""); setNewBirthDate(""); setNewPhone(""); setNewCardNumber("");
+			onShowToast?.(`Член семьи ${cleanName} успешно добавлен в семейный профиль`);
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : "Не удалось добавить члена семьи";
+			onShowToast?.(errMsg);
+		}
+	}, [newFullName, newRelationship, newBirthDate, newPhone, newCardNumber, newAllowSpend, newAllowBooking, data.cardNumber, data.patientId, members.length, onShowToast, isDemo]);
 
 	const cardPlaceholder = data.cardNumber ? `Напр. ${data.cardNumber}-${members.length + 1}` : "Напр. 2026/891";
 

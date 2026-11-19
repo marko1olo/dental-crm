@@ -62,7 +62,6 @@ export {
 
 export interface UseVisitEmkToothSyncParams {
 	readonly patientId: string | null | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: visitNoteForm is dynamic
-	readonly visitNoteForm: any;
+	readonly visitNoteForm?: Record<string, unknown> | null | undefined;
 	readonly updateVisitNoteField: (field: string, value: string) => void;
 }

@@ -8,6 +8,43 @@ import {
 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 
+interface RawQualityControlRow {
+	id: string;
+	organizationId?: string | undefined;
+	patientId: string;
+	patientFullName?: string | undefined;
+	patientName?: string | undefined;
+	patientCardCode?: string | undefined;
+	patientBirthDate?: string | null | undefined;
+	patientPhone?: string | null | undefined;
+	doctorUserId?: string | undefined;
+	doctorId?: string | undefined;
+	doctorFullName?: string | undefined;
+	doctorName?: string | undefined;
+	doctorSpecialty?: string | undefined;
+	chairName?: string | undefined;
+	createdAt?: string | undefined;
+	status?: string | undefined;
+	qualityControlStatus?: string | undefined;
+	complaint?: string | null | undefined;
+	anamnesis?: string | null | undefined;
+	objectiveStatus?: string | null | undefined;
+	diagnosis?: string | null | undefined;
+	diagnosisIcd10?: string | null | undefined;
+	diagnosisTooth?: string | null | undefined;
+	treatmentPlan?: string | null | undefined;
+	doctorSummary?: string | null | undefined;
+	signedAt?: string | null | undefined;
+	pepHash?: string | null | undefined;
+	cmoReviewedAt?: string | null | undefined;
+	cmoReviewedByName?: string | null | undefined;
+	cmoRemarks?: string | null | undefined;
+	cmoDefectTags?: EmkDefectTag[] | undefined;
+	servicesCount?: number | undefined;
+	odontogramTeeth?: CmoAuditVisitItem["odontogramTeeth"] | undefined;
+	[key: string]: unknown;
+}
+
 export function useEmkControlBoard() {
 	const [rawVisits, setRawVisits] = useState<CmoAuditVisitItem[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -38,8 +75,7 @@ export function useEmkControlBoard() {
 			}
 			const data = await res.json();
 			const visitsList = (data.visits || []).map(
-				// biome-ignore lint/suspicious/noExplicitAny: backend row map
-				(row: any): CmoAuditVisitItem => ({
+				(row: RawQualityControlRow): CmoAuditVisitItem => ({
 					id: row.id,
 					organizationId: row.organizationId || "org-1",
 					patientId: row.patientId,
@@ -54,7 +90,7 @@ export function useEmkControlBoard() {
 					doctorSpecialty: row.doctorSpecialty || "Врач-стоматолог",
 					chairName: row.chairName || "Кресло 1",
 					visitDateIso: row.createdAt || new Date().toISOString(),
-					status: row.status || "signed",
+					status: (row.status === "completed" || row.status === "cancelled" || row.status === "draft" || row.status === "in_progress" || row.status === "signed") ? row.status : "signed",
 					qualityControlStatus:
 						(row.qualityControlStatus as EmkQualityStatus) || "pending",
 					chiefComplaint: row.complaint || null,

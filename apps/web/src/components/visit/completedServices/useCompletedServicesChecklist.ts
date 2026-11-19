@@ -14,6 +14,7 @@ import { useCompletedServicesPlanSync } from "./useCompletedServicesPlanSync";
 import { useCompletedServicesRemovalAction } from "./useCompletedServicesRemovalAction";
 import type { VisitNoteForm } from "../../../AppHelpers";
 import type { Dashboard, Patient } from "@dental/shared";
+import type { DiagnosisPackageCatalogItem } from "../useDiagnosisPackage";
 
 interface CompletedServicesContextBridge {
 	visitNoteForm?: Partial<VisitNoteForm> | undefined;
@@ -24,8 +25,8 @@ interface CompletedServicesContextBridge {
 	activeToothNumber?: string | number | null | undefined;
 }
 
-export function useCompletedServicesChecklist(overrideCatalog?: readonly unknown[]) {
-	const context = useAppLogicContext() as unknown as CompletedServicesContextBridge;
+export function useCompletedServicesChecklist(overrideCatalog?: readonly DiagnosisPackageCatalogItem[] | undefined) {
+	const context = useAppLogicContext() as (Partial<CompletedServicesContextBridge> & Record<string, unknown>) | null;
 	const {
 		visitNoteForm = {},
 		updateVisitNoteField,

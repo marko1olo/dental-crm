@@ -4,10 +4,10 @@ import {
 	parseCompletedServiceLine,
 	type ParsedCompletedLine,
 } from "../completedServicesPlan";
-import type { ProcedureCategory, ClinicalEstimateItem } from "./clinicalWorkflowTypes";
+import type { ProcedureCategory, ClinicalEstimateItem, RawOrder804nService } from "./clinicalWorkflowTypes";
 
 export function extractFromOrderServices(
-	rawOrderServices: readonly any[] | undefined,
+	rawOrderServices: readonly RawOrder804nService[] | undefined,
 	toothNumber?: number | undefined,
 ): ClinicalEstimateItem[] | null {
 	if (!Array.isArray(rawOrderServices) || rawOrderServices.length === 0) return null;

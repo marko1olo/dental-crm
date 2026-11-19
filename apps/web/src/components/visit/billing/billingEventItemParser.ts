@@ -6,11 +6,56 @@
 
 import type { VisitBillingServiceItem } from "../visitBillingTypes.js";
 
-export function parseBillingServicesList(rawList: any[], detail: any): VisitBillingServiceItem[] {
-	return rawList.map((s: any, idx: number) => {
+export interface RawBillingEventItem {
+	id?: string | undefined;
+	code?: string | undefined;
+	code804n?: string | undefined;
+	priceId?: string | undefined;
+	title?: string | undefined;
+	name?: string | undefined;
+	nameRu?: string | undefined;
+	price?: number | string | undefined;
+	priceRub?: number | string | undefined;
+	basePriceRub?: number | string | undefined;
+	unitPriceRub?: number | string | undefined;
+	priceKopecks?: number | undefined;
+	quantity?: number | string | undefined;
+	toothCode?: string | number | undefined;
+	toothNumber?: string | number | undefined;
+	discountPercent?: number | string | undefined;
+	discountRub?: number | string | undefined;
+	discount?: number | string | undefined;
+	isWarranty?: boolean | undefined;
+	labCostRub?: number | string | undefined;
+	labOrderId?: string | undefined;
+	labOrderNumber?: string | undefined;
+	technicianName?: string | undefined;
+	materialName?: string | undefined;
+	material?: string | undefined;
+	warrantyPassport?: string | undefined;
+	fittingConfirmed?: boolean | undefined;
+	[key: string]: unknown;
+}
+
+export interface RawBillingEventDetail {
+	toothCode?: string | number | undefined;
+	toothNumber?: string | number | undefined;
+	labOrderId?: string | undefined;
+	labOrderNumber?: string | undefined;
+	technicianName?: string | undefined;
+	material?: string | undefined;
+	warrantyPassport?: string | undefined;
+	[key: string]: unknown;
+}
+
+export function parseBillingServicesList(
+	rawList: readonly RawBillingEventItem[],
+	detail?: RawBillingEventDetail | null | undefined,
+): VisitBillingServiceItem[] {
+	return rawList.map((s, idx) => {
 		const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID().slice(0, 8) : `${Date.now()}-${idx}`;
 		const priceRub = Number(s.unitPriceRub ?? s.priceRub ?? s.price ?? (typeof s.priceKopecks === "number" ? s.priceKopecks / 100 : 0));
-		let tooth = s.toothCode ?? s.toothNumber ?? detail.toothCode ?? detail.toothNumber;
+		let tooth = s.toothCode ?? s.toothNumber ?? detail?.toothCode ?? detail?.toothNumber;
 		if (!tooth) {
 			const match = (s.title || s.name || s.nameRu || "").match(/(?:\(?зуб(?:ы)?\s+([A-Za-z0-9,\s]+)\)?|^зуб(?:ы)?\s+([A-Za-z0-9,\s]+):)/i);
 			if (match) tooth = (match[1] || match[2] || "").trim();
@@ -26,17 +71,17 @@ export function parseBillingServicesList(rawList: any[], detail: any): VisitBill
 			discountRub: Number(s.discountRub) || 0,
 			isWarranty: Boolean(s.isWarranty),
 			labCostRub: Number(s.labCostRub) > 0 ? Number(s.labCostRub) : undefined,
-			labOrderId: s.labOrderId || detail.labOrderId,
-			labOrderNumber: s.labOrderNumber || detail.labOrderNumber,
-			technicianName: s.technicianName || detail.technicianName,
-			materialName: s.materialName || s.material || detail.material,
-			warrantyPassport: s.warrantyPassport || detail.warrantyPassport,
+			labOrderId: s.labOrderId || detail?.labOrderId,
+			labOrderNumber: s.labOrderNumber || detail?.labOrderNumber,
+			technicianName: s.technicianName || detail?.technicianName,
+			materialName: s.materialName || s.material || detail?.material,
+			warrantyPassport: s.warrantyPassport || detail?.warrantyPassport,
 			fittingConfirmed: Boolean(s.fittingConfirmed),
 		};
 	});
 }
 
-export function parseSingleBillingItem(item: any): VisitBillingServiceItem {
+export function parseSingleBillingItem(item: RawBillingEventItem): VisitBillingServiceItem {
 	const idSuffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID().slice(0, 8) : Date.now().toString(36);
 	let tooth = item.toothNumber !== undefined && item.toothNumber !== null && item.toothNumber !== ""
 		? String(item.toothNumber)

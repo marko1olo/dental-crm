@@ -45,11 +45,27 @@ export function formatAnamnesisStrings(p: SyncAnamnesisParams) {
 	return { formattedAllergies, formattedSomatic, fullAnamnesisText: parts.join(" ") };
 }
 
+export interface AnamnesisPatientSyncRecord {
+	id?: string | undefined;
+	fullName?: string | undefined;
+	allergies?: string | string[] | undefined;
+	somaticNotes?: string | undefined;
+	concomitantDiseases?: string | undefined;
+	[key: string]: unknown;
+}
+
+export interface AnamnesisAutosaveContext {
+	activePatient?: AnamnesisPatientSyncRecord | null | undefined;
+	dashboard?: {
+		patients?: AnamnesisPatientSyncRecord[] | undefined;
+	} | undefined;
+	updateVisitNoteField?: ((field: string, value: string) => void) | undefined;
+}
+
 export function useAnamnesisAutosave(
 	storageKey: string,
 	currentPayload: AnamnesisDraftPayload,
-	// biome-ignore lint/suspicious/noExplicitAny: AppLogic Context
-	appLogic: any,
+	appLogic?: AnamnesisAutosaveContext | null | undefined,
 ) {
 	const stateRef = useRef(currentPayload);
 	useEffect(() => {
@@ -75,7 +91,7 @@ export function useAnamnesisAutosave(
 				curPat.somaticNotes = formattedSomatic;
 				const allPatients = appLogic?.dashboard?.patients;
 				if (Array.isArray(allPatients)) {
-					const match = allPatients.find((p: any) => p.id === curPat.id);
+					const match = allPatients.find((p) => p && p.id === curPat.id);
 					if (match) {
 						match.allergies = formattedAllergies;
 						match.somaticNotes = formattedSomatic;

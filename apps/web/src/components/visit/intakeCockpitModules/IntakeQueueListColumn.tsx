@@ -220,7 +220,7 @@ export function IntakeQueueListColumn({
 											{formatQueueTime(apt.startsAt)}
 										</div>
 										<div className="text-[10px] text-[var(--muted)] font-medium truncate">
-											Каб. {formatQueueCabinet((apt as any).room, apt.chairId)}
+											Каб. {formatQueueCabinet((apt as { room?: string | null | undefined }).room, apt.chairId)}
 										</div>
 									</div>
 

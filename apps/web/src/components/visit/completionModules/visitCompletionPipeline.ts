@@ -42,8 +42,9 @@ export interface CompletedPlanItemReference {
 	readonly name?: string | undefined;
 	readonly title?: string | undefined;
 	readonly code?: string | undefined;
-	readonly toothNumber?: number | string | undefined;
-	readonly priceRub?: number | undefined;
+	readonly toothNumber?: number | string | null | undefined;
+	readonly priceRub?: number | string | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface ActiveVisitCompletionContext {
@@ -138,7 +139,7 @@ export async function executeBomDeduction(
 				if (it.category) item.category = it.category;
 				return item;
 			}),
-			fetchFn: fetchWithHandling as unknown as typeof fetch,
+			fetchFn: (input, init) => fetchWithHandling(String(input), init),
 		});
 	} catch (deductionErr) {
 		logger.warn(

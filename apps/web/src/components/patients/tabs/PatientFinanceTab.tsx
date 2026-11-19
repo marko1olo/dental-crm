@@ -3,6 +3,7 @@
  * Декомпозирован по Мандату 8b (Layer 5: Тонкий фасад <= 120 строк).
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import React, { useMemo } from "react";
 import type { PatientFinanceTabProps } from "./finance/types";
 import {
@@ -27,26 +28,26 @@ export const PatientFinanceTab: React.FC<PatientFinanceTabProps> = React.memo(
 	}) {
 		const initialPersonalBalance = useMemo(() => {
 			if (typeof patient?.balanceKopecks === "number") {
-				return Math.round(patient.balanceKopecks / 100);
+				return kopecksToRubles(patient.balanceKopecks);
 			}
 			if (typeof patient?.patientBalanceRub === "number") {
-				return Math.round(patient.patientBalanceRub);
+				return patient.patientBalanceRub;
 			}
 			if (typeof patient?.balanceRub === "number") {
-				return Math.round(patient.balanceRub);
+				return patient.balanceRub;
 			}
 			return 0;
 		}, [patient?.patientBalanceRub, patient?.balanceRub, patient?.balanceKopecks]);
 
 		const initialFamilyBalance = useMemo(() => {
 			if (typeof patient?.familyBalanceKopecks === "number") {
-				return Math.round(patient.familyBalanceKopecks / 100);
+				return kopecksToRubles(patient.familyBalanceKopecks);
 			}
 			if (typeof patient?.familyBalanceRub === "number") {
-				return Math.round(Number(patient.familyBalanceRub));
+				return Number(patient.familyBalanceRub);
 			}
 			if (typeof patient?.familyGroup?.totalBalanceRub === "number") {
-				return Math.round(patient.familyGroup.totalBalanceRub);
+				return patient.familyGroup.totalBalanceRub;
 			}
 			return 0;
 		}, [patient?.familyBalanceRub, patient?.familyGroup?.totalBalanceRub, patient?.familyBalanceKopecks]);

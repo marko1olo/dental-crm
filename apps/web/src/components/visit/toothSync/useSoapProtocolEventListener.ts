@@ -15,8 +15,7 @@ import { useVisitStore } from "../../../store/visitStore";
 import { toVisitToothUiState } from "./toothStateConverters.js";
 
 interface UseSoapProtocolEventListenerParams {
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic form
-	visitNoteFormRef: MutableRefObject<any>;
+	visitNoteFormRef: MutableRefObject<Record<string, unknown> | null | undefined>;
 	updateVisitNoteFieldRef: MutableRefObject<(field: string, value: string) => void>;
 }
 

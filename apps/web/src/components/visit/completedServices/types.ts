@@ -24,7 +24,7 @@ export {
 
 export interface CompletedServicesChecklistProps {
 	/** Прямая передача прейскуранта клиники (удобно для модульных тестов и изоляции) */
-	serviceCatalog?: unknown[];
+	serviceCatalog?: readonly DiagnosisPackageCatalogItem[] | undefined;
 }
 
 export interface QuickServiceSearchAndPresetsProps {

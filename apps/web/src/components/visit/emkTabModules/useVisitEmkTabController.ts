@@ -11,9 +11,7 @@ import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import { denteQueryClient } from "../../../lib/queryClient";
 import {
-	inferProcedureServiceFromStamp,
-	inferCatalogServiceFromStamp,
-	infer804nServiceFromStamp,
+	inferProcedureServiceFromStamp, inferCatalogServiceFromStamp, infer804nServiceFromStamp,
 } from "../clinicalProcedureCatalogService";
 import { useVisitEmkToothSync } from "../useVisitEmkToothSync";
 import { useVisitSave } from "../useVisitSave";
@@ -27,12 +25,7 @@ import type { VisitEmkTabProps } from "./emkTabTypes";
 
 export function useVisitEmkTabController(props: VisitEmkTabProps) {
 	const {
-		dashboard,
-		activePatient,
-		noteTextOfAnotherVisit,
-		openVisitId,
-		isDraftAccepting,
-		onSaveVisitNote,
+		dashboard, activePatient, noteTextOfAnotherVisit, openVisitId, isDraftAccepting, onSaveVisitNote,
 	} = props;
 	const visitNoteForm: Record<string, unknown> = props.visitNoteForm ?? {};
 	const updateVisitNoteField: (field: string, value: unknown) => void =

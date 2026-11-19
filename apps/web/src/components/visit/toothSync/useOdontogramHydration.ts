@@ -18,8 +18,7 @@ import { toVisitToothUiState } from "./toothStateConverters.js";
 
 interface UseOdontogramHydrationParams {
 	patientId: string | null | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic form
-	visitNoteFormRef: MutableRefObject<any>;
+	visitNoteFormRef: MutableRefObject<Record<string, unknown> | null | undefined>;
 	updateVisitNoteFieldRef: MutableRefObject<(field: string, value: string) => void>;
 }
 

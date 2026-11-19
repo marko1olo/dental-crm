@@ -60,8 +60,7 @@ export function useCompletedServicesBundleActions({
 		);
 	};
 
-	// biome-ignore lint/suspicious/noExplicitAny: dynamic invoice payload
-	const handleApplyDiagnosisPackage = (newLines: string[], invoicePayload: any) => {
+	const handleApplyDiagnosisPackage = (newLines: string[], invoicePayload: unknown) => {
 		if (!updateVisitNoteField) return;
 		const base = (planText ?? "").replace(/\s+$/, "");
 		const updated = base ? `${base}\n${newLines.join("\n")}` : newLines.join("\n");

@@ -12,14 +12,13 @@ import { getAnamnesisStorageKey, loadAnamnesisDraft } from "./anamnesisDraftStor
 import { extractPatientSafetyDefaults } from "./anamnesisDefaults";
 import { useAnamnesisAllergies } from "./useAnamnesisAllergies";
 import { useAnamnesisRisks } from "./useAnamnesisRisks";
-import { useAnamnesisAutosave } from "./useAnamnesisAutosave";
+import { useAnamnesisAutosave, type AnamnesisAutosaveContext } from "./useAnamnesisAutosave";
 import { useAnamnesisActions } from "./useAnamnesisActions";
 
 export function useAnamnesisState(props: VisitAnamnesisTabProps) {
 	const { onAppendAnamnesis, onAppendComorbidities } = props;
 	const appLogic = useAppLogicContext();
-	// biome-ignore lint/suspicious/noExplicitAny: patient identifier
-	const activePat = (appLogic as any)?.activePatient;
+	const activePat = (appLogic as AnamnesisAutosaveContext | null)?.activePatient;
 	const storageKey = getAnamnesisStorageKey(activePat?.id);
 
 	const allergies = useAnamnesisAllergies({});

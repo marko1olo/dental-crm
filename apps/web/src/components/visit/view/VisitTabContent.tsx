@@ -60,6 +60,19 @@ export function VisitTabContent({
 	const [isPresenterModalOpen, setIsPresenterModalOpen] = useState(false);
 	const onPrintMedicalCard = handlePrintMedicalCardFast ?? handlePrintForm043uFast ?? (() => {});
 
+	const odontogramPatient: VisitOdontogramTabPatient | null = activePatient?.id
+		? {
+				...activePatient,
+				id: activePatient.id,
+				birthDate: activePatient.birthDate ? String(activePatient.birthDate) : undefined,
+			}
+		: null;
+	const odontogramAppointment: VisitOdontogramTabAppointment | null = activeAppointment
+		? {
+				...activeAppointment,
+			}
+		: null;
+
 	return (
 		<ClinicalErrorBoundary
 			workspaceName="Клинические вкладки приёма"
@@ -70,8 +83,8 @@ export function VisitTabContent({
 				style={{ display: visitSubViewTab === "odontogram" ? "block" : "none" }}
 			>
 				<VisitOdontogramTab
-					activePatient={activePatient ? (activePatient as unknown as VisitOdontogramTabPatient) : null}
-					activeAppointment={activeAppointment ? (activeAppointment as unknown as VisitOdontogramTabAppointment) : null}
+					activePatient={odontogramPatient}
+					activeAppointment={odontogramAppointment}
 					dashboard={dashboard}
 				/>
 			</div>

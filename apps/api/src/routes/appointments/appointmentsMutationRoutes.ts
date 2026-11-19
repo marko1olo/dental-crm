@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { and, eq, notInArray } from "drizzle-orm";
 import {
 	createAppointmentInDb,
 	getAppointmentByIdInDb,
@@ -6,6 +7,7 @@ import {
 } from "../../db/appointmentsQuery.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { db } from "../../db/client.js";
+import { labOrders } from "../../db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { invalidateAppointmentReminders } from "../../services/communications/appointmentReminders.js";
 import { syncRecallOnAppointmentCreated } from "../../services/patients/recallSyncService.js";
@@ -47,6 +49,60 @@ import type {
 	AppointmentOptionalIdParams,
 } from "./types.js";
 
+async function checkLabOrderScheduleCollision(
+	orgId: string,
+	patientId: string | null | undefined,
+	startsAtStr: string,
+	allowOverride: boolean | undefined,
+): Promise<{
+	hasCollision: boolean;
+	conflictingOrder?: { id: string; dueDate: Date | null } | undefined;
+}> {
+	if (!patientId || !startsAtStr || allowOverride) {
+		return { hasCollision: false };
+	}
+	const startsAtDate = new Date(startsAtStr);
+	if (Number.isNaN(startsAtDate.getTime())) {
+		return { hasCollision: false };
+	}
+
+	try {
+		const activeOrders = await db
+			.select({
+				id: labOrders.id,
+				dueDate: labOrders.dueDate,
+				status: labOrders.status,
+			})
+			.from(labOrders)
+			.where(
+				and(
+					eq(labOrders.organizationId, orgId),
+					eq(labOrders.patientId, patientId),
+					notInArray(labOrders.status, [
+						"ready_in_clinic",
+						"received",
+						"delivered",
+						"completed",
+						"cancelled",
+						"installed",
+					]),
+				),
+			);
+
+		const conflict = activeOrders.find((order) => {
+			if (!order.dueDate) return false;
+			return startsAtDate.getTime() < new Date(order.dueDate).getTime();
+		});
+
+		if (conflict && conflict.dueDate) {
+			return { hasCollision: true, conflictingOrder: conflict };
+		}
+	} catch (_err) {
+		// Non-blocking in case of schema discrepancy or memory mock
+	}
+	return { hasCollision: false };
+}
+
 export const createAppointmentHandler = async (
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -73,6 +129,29 @@ export const createAppointmentHandler = async (
 		return reply.code(400).send({
 			code: "AppointmentValidationError",
 			message: appointmentCreateValidationMessage,
+		});
+	}
+
+	const allowOverride = Boolean(
+		(input as { allowLabCollisionOverride?: boolean }).allowLabCollisionOverride ||
+		input.allowEmergencyOverride ||
+		input.allowOverbooking,
+	);
+	const labCollisionCheck = await checkLabOrderScheduleCollision(
+		orgId,
+		input.patientId,
+		input.startsAt,
+		allowOverride,
+	);
+	if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
+		const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();
+		const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU");
+		return reply.code(409).send({
+			code: "AppointmentLabOrderConflict",
+			conflictType: "lab_order_not_ready",
+			message: `Заказ-наряд ЗТЛ еще не готов: плановый срок сдачи ${dueRu}. Выберите время позже готовности или подтвердите приём с наложением.`,
+			suggestedStartsAt: dueIso,
+			orderId: labCollisionCheck.conflictingOrder.id,
 		});
 	}
 	try {
@@ -166,6 +245,33 @@ export const updateAppointmentHandler = async (
 			code: "AppointmentValidationError",
 			message: appointmentUpdateValidationMessage,
 		});
+	}
+
+	if (input.startsAt) {
+		const existingAppt = await getAppointmentByIdInDb(orgId, appointmentId);
+		const effectivePatientId = input.patientId ?? existingAppt?.patientId;
+		const allowOverride = Boolean(
+			(input as { allowLabCollisionOverride?: boolean }).allowLabCollisionOverride ||
+			input.allowEmergencyOverride ||
+			input.allowOverbooking,
+		);
+		const labCollisionCheck = await checkLabOrderScheduleCollision(
+			orgId,
+			effectivePatientId,
+			input.startsAt,
+			allowOverride,
+		);
+		if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
+			const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();
+			const dueRu = labCollisionCheck.conflictingOrder.dueDate?.toLocaleDateString("ru-RU");
+			return reply.code(409).send({
+				code: "AppointmentLabOrderConflict",
+				conflictType: "lab_order_not_ready",
+				message: `Заказ-наряд ЗТЛ еще не готов: плановый срок сдачи ${dueRu}. Выберите время позже готовности или подтвердите приём с наложением.`,
+				suggestedStartsAt: dueIso,
+				orderId: labCollisionCheck.conflictingOrder.id,
+			});
+		}
 	}
 	try {
 		const updatedAppt = await updateAppointmentInDb(

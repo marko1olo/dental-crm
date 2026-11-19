@@ -35,7 +35,7 @@ export interface ExtractedSafetyProfile {
 }
 
 export function extractPatientSafetyDefaults(
-	activePat: { allergies?: string | string[]; somaticNotes?: string; concomitantDiseases?: string } | null | undefined,
+	activePat: { allergies?: string | string[] | undefined; somaticNotes?: string | undefined; concomitantDiseases?: string | undefined; [key: string]: unknown } | null | undefined,
 ): ExtractedSafetyProfile {
 	const allergies: Record<string, string> = {};
 	const risks: string[] = [];

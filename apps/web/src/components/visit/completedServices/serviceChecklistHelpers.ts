@@ -5,24 +5,31 @@ import {
 	parseCompletedServiceLine,
 	planLineQuantity,
 	planLineTotalRub,
+	type VisitPlanItemLike,
 } from "../completedServicesPlan";
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export function serviceTitleOf(item: any): string {
+export function serviceTitleOf(item: VisitPlanItemLike | null | undefined): string {
 	const title =
 		typeof item?.snapshotServiceName === "string"
 			? item.snapshotServiceName.trim()
-			: "";
+			: typeof item?.title === "string"
+				? item.title.trim()
+				: typeof item?.name === "string"
+					? item.name.trim()
+					: "";
 	if (title) return title;
 	const serviceId =
 		typeof item?.serviceId === "string" ? item.serviceId.trim() : "";
 	return serviceId || "Услуга без названия";
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export function toothSuffixOf(item: any): string {
+export function toothSuffixOf(item: VisitPlanItemLike | null | undefined): string {
 	const tooth =
-		typeof item?.toothCode === "string" ? item.toothCode.trim() : "";
+		typeof item?.toothCode === "string"
+			? item.toothCode.trim()
+			: item?.toothNumber !== undefined && item?.toothNumber !== null
+				? String(item.toothNumber).trim()
+				: "";
 	return tooth ? ` (зуб ${tooth})` : "";
 }
 
@@ -30,8 +37,7 @@ export function toothSuffixOf(item: any): string {
  * Строка, которой отметка записывается в поле «План» карты приёма.
  * Формат фиксированный: по нему же отметка потом находится и снимается.
  */
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export function completedLineOf(item: any): string {
+export function completedLineOf(item: VisitPlanItemLike | null | undefined): string {
 	const quantity = planLineQuantity(item);
 	const quantityPart =
 		quantity !== null && quantity > 1 ? `, ${quantity} шт.` : "";

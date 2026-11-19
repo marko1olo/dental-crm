@@ -1,5 +1,5 @@
 import { kopecksToRub, parseKopecks } from "@dental/shared";
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { familyGroups, patients, payments } from "../../db/schema.js";
 
@@ -76,9 +76,21 @@ export async function getFamilyHistoryRecords(
 				inArray(payments.patientId, memberIds),
 				or(
 					eq(payments.method, "family_wallet"),
-					eq(payments.status, "planned"),
 					eq(payments.status, "refunded"),
 					sql`${payments.amountRub} < 0`,
+					and(
+						ne(payments.method, "family_wallet"),
+						eq(payments.status, "paid"),
+						or(
+							ilike(payments.clientMutationId, "%fam-topup%"),
+							ilike(payments.clientMutationId, "%family-topup%"),
+							ilike(payments.note, "%семейного депозита%"),
+							ilike(payments.note, "%семейный депозит%"),
+							ilike(payments.note, "%семейного сч%"),
+							ilike(payments.note, "%пополнение семейного%"),
+							ilike(payments.note, "%внесение семейного%"),
+						),
+					),
 				),
 			),
 		)
@@ -87,7 +99,18 @@ export async function getFamilyHistoryRecords(
 
 	return paymentRows.map((p) => {
 		const isRefund = p.status === "refunded" || parseKopecks(p.amountRub) < 0;
-		const isTopup = !isRefund && p.status === "planned";
+		const isTopup =
+			!isRefund &&
+			p.method !== "family_wallet" &&
+			p.status === "paid" &&
+			Boolean(
+				(p.clientMutationId &&
+					(p.clientMutationId.includes("fam-topup") || p.clientMutationId.includes("family-topup"))) ||
+					(p.note &&
+						/семейного депозита|семейный депозит|семейного сч|пополнение семейного|внесение семейного/i.test(
+							p.note,
+						)),
+			);
 		const operationType: "topup" | "spend" | "refund" = isRefund ? "refund" : isTopup ? "topup" : "spend";
 		const patientName = memberMap.get(p.patientId) || p.payerFullName || "Член семьи";
 		const headName = (family.headPatientId && memberMap.get(family.headPatientId)) || "Семейный счёт";

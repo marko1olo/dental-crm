@@ -5,13 +5,20 @@
  * Layer 4: Patient Balance Hero Card, Invoices List, POS Tender Trigger.
  */
 
-import type { Patient } from "@dental/shared";
+import { kopecksToRubles, type Patient } from "@dental/shared";
 import { Receipt } from "lucide-react";
 import React, { useMemo } from "react";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";
 import { FamilyBalanceCard } from "../tabs/finance/FamilyBalanceCard";
+
+export interface MobilePatientFinancePatient extends Patient {
+	familyBalanceKopecks?: number | undefined;
+	familyBalanceRub?: number | string | undefined;
+	familyGroupName?: string | null | undefined;
+	familyGroup?: { totalBalanceRub?: number | undefined } | null | undefined;
+}
 
 export interface MobilePatientFinanceInvoiceItem {
 	id: string;
@@ -24,7 +31,7 @@ export interface MobilePatientFinanceInvoiceItem {
 }
 
 export interface MobilePatientFinanceTabProps {
-	patient: Patient;
+	patient: Patient | MobilePatientFinancePatient;
 	patientInvoices: readonly MobilePatientFinanceInvoiceItem[];
 	balanceRub: number;
 	money: (amountRub: number) => string;
@@ -45,24 +52,24 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 	const fullName = patient.fullName || "Пациент";
 
 	const familyBalance = useMemo(() => {
-		const p = patient as unknown as {
-			familyBalanceKopecks?: number | undefined;
-			familyBalanceRub?: number | string | undefined;
-			familyGroup?: { totalBalanceRub?: number | undefined } | undefined;
-		};
-		if (typeof p?.familyBalanceKopecks === "number") {
-			return Math.round(p.familyBalanceKopecks / 100);
+		const p = patient as Partial<MobilePatientFinancePatient>;
+		if (typeof p.familyBalanceKopecks === "number") {
+			return kopecksToRubles(p.familyBalanceKopecks);
 		}
-		if (typeof p?.familyBalanceRub === "number" || typeof p?.familyBalanceRub === "string") {
-			return Math.round(Number(p.familyBalanceRub) || 0);
+		if (typeof p.familyBalanceRub === "number") {
+			return p.familyBalanceRub;
 		}
-		if (typeof p?.familyGroup?.totalBalanceRub === "number") {
-			return Math.round(p.familyGroup.totalBalanceRub);
+		if (typeof p.familyBalanceRub === "string") {
+			const parsed = Number(p.familyBalanceRub);
+			return Number.isFinite(parsed) ? parsed : 0;
+		}
+		if (typeof p.familyGroup?.totalBalanceRub === "number") {
+			return p.familyGroup.totalBalanceRub;
 		}
 		return 0;
 	}, [patient]);
 
-	const familyGroupName = (patient as unknown as { familyGroupName?: string | null | undefined })?.familyGroupName;
+	const familyGroupName = (patient as Partial<MobilePatientFinancePatient>).familyGroupName;
 
 	const handleOpenCashier = () => {
 		if (onOpenCashier) {
@@ -143,7 +150,7 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 							</div>
 							<div className="text-right">
 								<div className="font-mono font-bold text-[var(--ink)]">{money(Number(inv.totalAmountRub ?? inv.totalRub ?? inv.amount ?? 0))}</div>
-								<span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold">
+								<span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--success-soft)] text-[var(--success-ink)] font-bold">
 									Оплачен
 								</span>
 							</div>

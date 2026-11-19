@@ -3,6 +3,7 @@ import type {
 	CmoAuditVisitItem,
 	EmkDefectTag,
 	EmkQualityStatus,
+	Dashboard,
 } from "@dental/shared";
 
 /**
@@ -35,8 +36,7 @@ export type EmkVisitHandoffModalProps = RejectionModalProps;
  * Props for the main EMK Control Board.
  */
 export interface EmkControlBoardProps {
-	// biome-ignore lint/suspicious/noExplicitAny: integration dashboard prop
-	readonly dashboard?: any;
+	readonly dashboard?: Dashboard | null | undefined;
 }
 
 /**

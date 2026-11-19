@@ -10,6 +10,7 @@
 import type {
 	ClinicalEstimateItem,
 	ClinicalVisitCompletionInput,
+	RawOrder804nService,
 } from "./clinicalWorkflowTypes";
 import { CLINICAL_STANDARD_PRICE_CATALOG } from "./clinicalStandardCatalog";
 import {
@@ -30,7 +31,10 @@ export function extractProceduresFromDiary(
 	const toothNumber = toothMatch ? parseInt(toothMatch, 10) : undefined;
 
 	// ПРИОРИТЕТ 1: Явно переданные структурированные услуги 804н из протокола приёма
-	const rawOrderServices = (diary as { order804nServices?: readonly any[] }).order804nServices;
+	const rawOrderServices =
+		typeof diary === "object" && diary !== null && "order804nServices" in diary
+			? (diary as { order804nServices?: readonly RawOrder804nService[] | undefined }).order804nServices
+			: undefined;
 	const protocolItems = extractFromOrderServices(rawOrderServices, toothNumber);
 	if (protocolItems) return protocolItems;
 

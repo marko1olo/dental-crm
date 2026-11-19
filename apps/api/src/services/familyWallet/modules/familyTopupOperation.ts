@@ -60,8 +60,8 @@ export async function processFamilyTopup(params: FamilyTopupParams): Promise<Fam
 
 		const [payment] = await tx.insert(payments).values({
 			organizationId, patientId: targetPatientId, amountRub: kopecksToRub(creditKopecks),
-			method, status: "planned", clientMutationId: clientMutationId.trim(),
-			note: params.notes?.trim() || `Пополнение семейного депозита (${method})`,
+			method, status: "paid", clientMutationId: clientMutationId.trim(),
+			note: params.notes?.trim() || `Внесение семейного депозита (${method})`,
 		}).returning();
 		if (!payment) throw new FamilyWalletError("Не удалось создать запись платежа", 500, "PAYMENT_CREATION_FAILED");
 

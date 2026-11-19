@@ -79,11 +79,23 @@ export function VisitEmkCanvas({
 				? (rawCatalog as readonly ClinicServiceItem[])
 				: [];
 
+			const currentDiary: DiaryState = {
+				patientId: activePatient?.id,
+				complaint: typeof visitNoteForm?.complaint === "string" ? visitNoteForm.complaint : "",
+				anamnesis: typeof visitNoteForm?.anamnesis === "string" ? visitNoteForm.anamnesis : "",
+				statusLocalis: typeof visitNoteForm?.objectiveStatus === "string" ? visitNoteForm.objectiveStatus : "",
+				diagnosisIcd10: typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis : "",
+				diagnosisTooth: String(effectiveActiveTooth ?? snapshot.toothNumber ?? ""),
+				treatmentDescription: typeof visitNoteForm?.treatmentPlan === "string" ? visitNoteForm.treatmentPlan : "",
+				complications: "",
+				comorbidities: "",
+			};
+
 			const result = transformEndoStage1ToStage2({
 				snapshot,
 				toothNumber: snapshot.toothNumber,
 				serviceCatalog,
-				currentDiary: visitNoteForm as unknown as DiaryState,
+				currentDiary,
 			});
 
 			// 1. Анамнез заболевания, диагноз, жалобы, осмотр, протокол дневника приёма (Медицинская карта)

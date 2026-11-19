@@ -18,7 +18,7 @@ export interface UseVisitConsentsLogicParams {
 	readonly activeAppointment?: VisitConsentsTabAppointment | null | undefined;
 	readonly visitNoteForm?: VisitConsentsTabNoteForm | null | undefined;
 	readonly dashboard?: VisitConsentsTabDashboard | null | undefined;
-	readonly selectedToothForMenu?: any;
+	readonly selectedToothForMenu?: number | string | { code?: string | undefined; [key: string]: unknown } | null | undefined;
 	readonly onFastPrintInformedConsent?: () => void;
 	readonly onOpenInformedConsentModal?: () => void;
 }

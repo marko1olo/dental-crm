@@ -80,7 +80,7 @@ export function VisitEmkInteractiveStage({
 				<VisitDiaryAnesthesiaBar
 					fieldsDisabled={isLocked}
 					activePatient={activePatient}
-					diary={visitNoteForm as unknown as DiaryState}
+					diary={visitNoteForm ?? {}}
 					doctorName={((dashboard as Record<string, unknown> | null | undefined)?.activeDoctor as { fullName?: string } | undefined)?.fullName || "Лечащий врач"}
 					isLocked={isLocked}
 					isRevising={Boolean(visitNoteForm?.isRevising)}
@@ -377,7 +377,7 @@ export function VisitEmkInteractiveStage({
 							<VisitDiaryAnesthesiaBar
 								fieldsDisabled={isLocked}
 								activePatient={activePatient}
-								diary={visitNoteForm as unknown as DiaryState}
+								diary={visitNoteForm ?? {}}
 								doctorName={((dashboard as Record<string, unknown> | null | undefined)?.activeDoctor as { fullName?: string } | undefined)?.fullName || "Лечащий врач"}
 								isLocked={isLocked}
 								isRevising={Boolean(visitNoteForm?.isRevising)}

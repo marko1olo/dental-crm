@@ -42,6 +42,7 @@ export interface VisitPlanItemLike {
 	readonly status?: string;
 	readonly name?: string;
 	readonly title?: string;
+	readonly snapshotServiceName?: string;
 	readonly code?: string;
 	readonly serviceCode?: string;
 	readonly code804n?: string;

@@ -1,12 +1,13 @@
 import React from "react";
+import type { DiagnosisPackageCatalogItem } from "../useDiagnosisPackage";
 import {
 	filterServiceCatalog,
 	type FilteredCatalogService,
 } from "../completedServicesPlan";
 
 export function useCompletedServicesCatalogSearch(
-	overrideCatalog?: readonly any[],
-	dashboardServiceCatalog?: readonly any[],
+	overrideCatalog?: readonly DiagnosisPackageCatalogItem[] | undefined,
+	dashboardServiceCatalog?: readonly DiagnosisPackageCatalogItem[] | undefined,
 ) {
 	const [catalogSearch, setCatalogSearch] = React.useState<string>("");
 	const [debouncedCatalogSearch, setDebouncedCatalogSearch] = React.useState<string>("");

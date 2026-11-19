@@ -9,11 +9,29 @@ export interface ReceiptItemPayload {
 	toothNumber?: number | undefined;
 }
 
+export interface ReceiptServiceInput {
+	readonly id?: string | undefined;
+	readonly title?: string | undefined;
+	readonly name?: string | undefined;
+	readonly serviceName?: string | undefined;
+	readonly code804n?: string | undefined;
+	readonly code?: string | undefined;
+	readonly quantity?: number | string | undefined;
+	readonly unitPriceRub?: number | string | undefined;
+	readonly priceRub?: number | string | undefined;
+	readonly price?: number | string | undefined;
+	readonly totalRub?: number | string | undefined;
+	readonly discountRub?: number | string | undefined;
+	readonly toothNumber?: number | string | undefined;
+	readonly toothCode?: number | string | undefined;
+	readonly [key: string]: unknown;
+}
+
 export function buildEnrichedReceiptItems(
-	services: readonly any[] | undefined,
+	services: readonly ReceiptServiceInput[] | undefined,
 	effectiveTooth?: number | undefined,
 ): ReceiptItemPayload[] {
-	return (services || []).map((s: any, idx: number) => {
+	return (services || []).map((s, idx) => {
 		const tooth = s.toothNumber ? Number(s.toothNumber) : s.toothCode ? Number(s.toothCode) : effectiveTooth;
 		const price = Number(s.unitPriceRub ?? s.priceRub ?? s.price ?? 0);
 		const qty = Number(s.quantity ?? 1);
