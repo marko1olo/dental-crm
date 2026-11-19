@@ -61,13 +61,13 @@ export function TelephonySoftphonePopover({ onClose, isMobile, isStandalone, cla
 					<span className="text-xs font-bold text-[var(--ink)]">{`АТС · Л${tel.activeLineId}`}</span>
 				</div>
 				<div className="flex items-center gap-1">
-					<button type="button" onClick={() => tel.switchLine(tel.activeLineId === 1 ? 2 : 1)} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] px-2 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-[11px] font-mono hover:bg-[var(--paper-subtle)] cursor-pointer" title="Переключить линию">
+					<button type="button" onClick={() => tel.switchLine(tel.activeLineId === 1 ? 2 : 1)} className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8 px-2 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-[11px] font-mono hover:bg-[var(--paper-subtle)] inline-flex items-center justify-center cursor-pointer" title="Переключить линию">
 						Л{tel.activeLineId}
 					</button>
-					<button type="button" onClick={tel.toggleMute} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center hover:bg-[var(--paper-subtle)] cursor-pointer" title={tel.isMuted ? "Включить звук" : "Выключить звук"}>
+					<button type="button" onClick={tel.toggleMute} className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8 p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center justify-center hover:bg-[var(--paper-subtle)] cursor-pointer" title={tel.isMuted ? "Включить звук" : "Выключить звук"}>
 						{tel.isMuted ? <VolumeX size={14} className="text-[var(--danger)]" /> : <Volume2 size={14} />}
 					</button>
-					<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] sm:min-h-[30px] sm:min-w-[30px] p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--danger-soft)] text-[var(--ink-muted)] hover:text-[var(--danger)] flex items-center justify-center cursor-pointer" title="Закрыть софтфон" aria-label="Закрыть">
+					<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8 p-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--danger-soft)] text-[var(--ink-muted)] hover:text-[var(--danger)] inline-flex items-center justify-center cursor-pointer" title="Закрыть софтфон" aria-label="Закрыть">
 						<X size={16} />
 					</button>
 				</div>

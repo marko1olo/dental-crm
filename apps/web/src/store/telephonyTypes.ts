@@ -1,92 +1,71 @@
-import type { TelephonyPatientLike, DashboardResponse } from "@dental/shared";
+import type {
+	TelephonyPatientLike,
+	DashboardResponse,
+	TelephonyProvider,
+	TelephonyCallStatus,
+	CallStatus,
+	CallDirection,
+	AgentPresenceState,
+	TelephonyAgentState,
+	PatientCategory,
+	PlaybackSpeed,
+	CallTransferType,
+	CallTransferState,
+	SpeechTranscriptUtterance,
+	CallTranscriptUtterance,
+	IncomingCallPayload,
+	TelephonyCallPayload,
+	CallOutcome,
+	CallHistoryItem,
+	TelephonyLineSession,
+	PatientFinancialSummary,
+	PatientLastVisitSummary,
+	PatientUpcomingAppointmentSummary,
+	PatientSomaticAlert,
+	PatientNextVisitSummary,
+	TelephonyPatientCategory,
+	PatientActiveTreatmentPlanSummary,
+	PatientTreatmentPlanSummary,
+	CallerLookupResult,
+} from "@dental/shared";
+
 export type PatientRecord = TelephonyPatientLike;
-export type { DashboardResponse, TelephonyPatientLike };
+export type {
+	DashboardResponse,
+	TelephonyPatientLike,
+	TelephonyProvider,
+	TelephonyCallStatus,
+	CallStatus,
+	CallDirection,
+	AgentPresenceState,
+	TelephonyAgentState,
+	PatientCategory,
+	PlaybackSpeed,
+	CallTransferType,
+	CallTransferState,
+	SpeechTranscriptUtterance,
+	CallTranscriptUtterance,
+	IncomingCallPayload,
+	TelephonyCallPayload,
+	CallOutcome,
+	CallHistoryItem,
+	TelephonyLineSession,
+	PatientFinancialSummary,
+	PatientLastVisitSummary,
+	PatientUpcomingAppointmentSummary,
+	PatientSomaticAlert,
+	PatientNextVisitSummary,
+	TelephonyPatientCategory,
+	PatientActiveTreatmentPlanSummary,
+	PatientTreatmentPlanSummary,
+	CallerLookupResult,
+};
 
-export type TelephonyProvider =
-	| "sip"
-	| "webrtc"
-	| "cloud_pbx"
-	| "local_pbx"
-	| "asterisk"
-	| "mango"
-	| "uis"
-	| "zadarma"
-	| "unknown";
-export type TelephonyCallStatus =
-	| "ringing"
-	| "answered"
-	| "connected"
-	| "ended"
-	| "rejected"
-	| "missed";
-export type CallStatus = TelephonyCallStatus;
-export type CallDirection = "inbound" | "outbound";
-export type AgentPresenceState = "available" | "busy" | "away" | "offline";
-export type PatientCategory = "vip" | "primary" | "regular" | "debtor" | "risk";
-export type PlaybackSpeed = 1 | 1.25 | 1.5 | 2;
-export type CallTransferType = "blind" | "attended";
+export type PatientUpcomingAppointment = PatientUpcomingAppointmentSummary;
+export type SomaticAlertItem = PatientSomaticAlert;
+export type PatientFinancialStatus = PatientFinancialSummary;
+export type PatientTreatmentPlanSummaryAlias = PatientActiveTreatmentPlanSummary;
 
-export interface CallTransferState {
-	isTransferring: boolean;
-	targetExtension: string;
-	transferType: CallTransferType;
-	status: "idle" | "dialing" | "transferred" | "failed";
-	failureReason?: string | undefined;
-}
-
-export interface SpeechTranscriptUtterance {
-	speaker: "operator" | "patient";
-	startTimeSeconds: number;
-	endTimeSeconds: number;
-	text: string;
-	confidence: number;
-	sentiment: "neutral" | "positive" | "negative";
-}
-export type CallTranscriptUtterance = SpeechTranscriptUtterance;
-
-export interface IncomingCallPayload {
-	id?: string | undefined;
-	callId?: string | undefined;
-	phone: string;
-	patientId: string | null;
-	patientName: string;
-	provider?: TelephonyProvider | undefined;
-	timestamp?: string | undefined;
-	status?: TelephonyCallStatus | undefined;
-	durationSeconds?: number | undefined;
-	clinicPhone?: string | undefined;
-	recordingUrl?: string | undefined;
-	callStartedAt?: number | undefined;
-	endedAt?: number | undefined;
-	transcript?: SpeechTranscriptUtterance[] | undefined;
-	virtualNumber?: string | undefined;
-	calledDid?: string | undefined;
-	utmSource?: string | undefined;
-	utmMedium?: string | undefined;
-	utmCampaign?: string | undefined;
-	utmContent?: string | undefined;
-	utmTerm?: string | undefined;
-	advertisingChannel?: string | undefined;
-	leadId?: string | null | undefined;
-	isLeadCaptured?: boolean | undefined;
-	direction?: CallDirection | undefined;
-	actionTaken?: string | undefined;
-	outcome?: CallOutcome | undefined;
-	acutePain?: boolean | undefined;
-}
-
-export type TelephonyCallPayload = IncomingCallPayload;
-
-export type CallOutcome =
-	| "booked"
-	| "consultation_booked"
-	| "callback_15m"
-	| "consultation"
-	| "spam"
-	| "accepted"
-	| "rejected"
-	| "dismissed"
-	| "transferred";
 
 export interface CallOutcomeConfig {
 	id: CallOutcome;
@@ -196,32 +175,39 @@ export const CALL_OUTCOME_REGISTRY: Record<CallOutcome, CallOutcomeConfig> = {
 		badgeBorder: "rgba(225, 29, 72, 0.35)",
 		descriptionRu: "Спам-звонок, рекламный робот или ошибочный номер",
 	},
+	missed: {
+		id: "missed",
+		label: "Пропущенный вызов",
+		shortLabel: "Пропущен",
+		iconName: "PhoneMissed",
+		color: "#ef4444",
+		badgeBg: "rgba(239, 68, 68, 0.12)",
+		badgeBorder: "rgba(239, 68, 68, 0.35)",
+		descriptionRu: "Пропущенный входящий вызов от пациента",
+	},
+	whatsapp_sent: {
+		id: "whatsapp_sent",
+		label: "Отправлено в WhatsApp",
+		shortLabel: "WhatsApp",
+		iconName: "MessageCircle",
+		color: "#22c55e",
+		badgeBg: "rgba(34, 197, 94, 0.12)",
+		badgeBorder: "rgba(34, 197, 94, 0.35)",
+		descriptionRu: "Пациенту отправлено сервисное сообщение в WhatsApp",
+	},
+	sms_sent: {
+		id: "sms_sent",
+		label: "Отправлено SMS",
+		shortLabel: "SMS",
+		iconName: "MessageSquare",
+		color: "#0284c7",
+		badgeBg: "rgba(2, 132, 199, 0.12)",
+		badgeBorder: "rgba(2, 132, 199, 0.35)",
+		descriptionRu: "Пациенту отправлено SMS-напоминание или подтверждение",
+	},
 };
 
 export const CALL_OUTCOME_PRESETS = CALL_OUTCOME_REGISTRY;
-
-export interface CallHistoryItem extends IncomingCallPayload {
-	id: string;
-	status: TelephonyCallStatus;
-	direction?: CallDirection | undefined;
-	actionTaken?: CallOutcome | string | undefined;
-	outcome?: CallOutcome | undefined;
-	outcomeNote?: string | undefined;
-	transferTarget?: string | undefined;
-	transcript?: SpeechTranscriptUtterance[] | undefined;
-	acutePain?: boolean | undefined;
-	callbackDueAt?: string | undefined;
-}
-
-export type TelephonyAgentState = "online" | "dnd" | "pause" | "offline";
-
-export interface TelephonyLineSession {
-	lineId: 1 | 2;
-	call: IncomingCallPayload | null;
-	state: "idle" | "ringing" | "connected" | "held";
-	durationSeconds: number;
-	isMuted: boolean;
-}
 
 export interface TelephonyStore {
 	activeCall: IncomingCallPayload | null;
@@ -285,83 +271,11 @@ export interface TelephonyStore {
 	updateCallNote: (callId: string, note: string) => void;
 }
 
-export interface PatientUpcomingAppointmentSummary {
-	readonly appointmentId: string;
-	readonly startsAt: string;
-	readonly endsAt: string;
-	readonly formattedDate: string;
-	readonly formattedTime: string;
-	readonly doctorName: string | null;
-	readonly chairName: string | null;
-	readonly reason: string | null;
-	readonly status: string;
-	readonly isToday: boolean;
-	readonly isTomorrow: boolean;
-}
-export type PatientUpcomingAppointment = PatientUpcomingAppointmentSummary;
-
-export interface PatientSomaticAlert {
-	readonly id: string;
-	readonly label: string;
-	readonly category: "allergy" | "chronic" | "alert" | "pain" | "risk";
-	readonly severity: "high" | "medium" | "info";
-	readonly icon: string;
-}
-export type SomaticAlertItem = PatientSomaticAlert;
-
-export interface PatientFinancialSummary {
-	readonly balanceRub: number;
-	readonly formattedBalance: string;
-	readonly hasDebt: boolean;
-	readonly debtRub: number;
-	readonly formattedDebt: string;
-	readonly hasInsurance: boolean;
-	readonly insuranceName: string | null;
-	readonly policyNumber: string | null;
-}
-export type PatientFinancialStatus = PatientFinancialSummary;
-
-export interface PatientLastVisitSummary {
-	lastVisitDate: string | null;
-	formattedLastVisit: string;
-	doctorName: string | null;
-	doctorSpecialty: string | null;
-	appointmentReason: string | null;
-	isNewPatient: boolean;
-}
-
 export interface PatientInsuranceSummary {
 	readonly hasInsurance: boolean;
 	readonly insuranceName: string | null;
 	readonly policyNumber: string | null;
 }
-
-export interface PatientNextVisitSummary {
-	readonly hasNextVisit: boolean;
-	readonly appointmentId: string | null;
-	readonly formattedDate: string;
-	readonly formattedTime: string;
-	readonly doctorName: string | null;
-	readonly doctorSpecialty: string | null;
-	readonly reason: string | null;
-	readonly isToday: boolean;
-	readonly isTomorrow: boolean;
-	readonly startsAt: string | null;
-	readonly fullTextRu: string;
-}
-
-export interface PatientActiveTreatmentPlanSummary {
-	readonly hasActivePlan: boolean;
-	readonly planTitle: string | null;
-	readonly totalCostRub: number;
-	readonly formattedTotalCost: string;
-	readonly itemsCount: number;
-	readonly completedCount: number;
-	readonly pendingCount: number;
-	readonly progressPercent: number;
-	readonly nextService: string | null;
-}
-export type PatientTreatmentPlanSummary = PatientActiveTreatmentPlanSummary;
 
 export interface CallerIdentificationResult {
 	readonly isKnownPatient: boolean;
@@ -378,33 +292,4 @@ export interface CallerIdentificationResult {
 	readonly patientCategory?: TelephonyPatientCategory;
 }
 
-export type TelephonyPatientCategory = "VIP" | "Постоянный" | "Первичный";
-
-export interface CallerLookupResult {
-	found: boolean;
-	patient: {
-		id: string;
-		fullName: string;
-		phone: string | null;
-		birthDate: string | null;
-		notes: string | null;
-		status: string;
-		administrativeProfile?: Record<string, unknown> | null;
-	} | null;
-	lead: {
-		id: string;
-		name: string;
-		phone: string;
-		status: string;
-		source: string | null;
-	} | null;
-	financialSummary: PatientFinancialSummary;
-	upcomingAppointment: PatientUpcomingAppointmentSummary | null;
-	lastVisitSummary: PatientLastVisitSummary | null;
-	somaticAlerts: PatientSomaticAlert[];
-	allergyAlerts: PatientSomaticAlert[];
-	acutePainAlerts: PatientSomaticAlert[];
-	activeTreatmentPlan: PatientActiveTreatmentPlanSummary;
-	patientCategory: TelephonyPatientCategory;
-}
 

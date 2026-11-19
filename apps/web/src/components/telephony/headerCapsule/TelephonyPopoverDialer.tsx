@@ -1,13 +1,7 @@
 import React from "react";
 import { Delete, PhoneCall } from "lucide-react";
 import { showToast } from "../../GlobalToast";
-
-const KEYPAD_DIGITS = [
-	{ d: "1", sub: "" }, { d: "2", sub: "ABC" }, { d: "3", sub: "DEF" },
-	{ d: "4", sub: "GHI" }, { d: "5", sub: "JKL" }, { d: "6", sub: "MNO" },
-	{ d: "7", sub: "PQRS" }, { d: "8", sub: "TUV" }, { d: "9", sub: "WXYZ" },
-	{ d: "*", sub: "" }, { d: "0", sub: "+" }, { d: "#", sub: "" },
-];
+import { DIALPAD_KEYS } from "../telephonyCatalogData";
 
 export interface TelephonyPopoverDialerProps {
 	dialNumber: string;
@@ -65,14 +59,14 @@ export function TelephonyPopoverDialer({
 			</div>
 
 			<div className="grid grid-cols-3 gap-1.5">
-				{KEYPAD_DIGITS.map(({ d, sub }) => (
+				{DIALPAD_KEYS.map(({ digit, sub }) => (
 					<button
-						key={d}
+						key={digit}
 						type="button"
-						onClick={() => handleDigit(d)}
+						onClick={() => handleDigit(digit)}
 						className="min-h-[52px] h-[52px] sm:min-h-[40px] sm:h-auto rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] active:scale-95 border border-[var(--line)] flex flex-col items-center justify-center transition-all cursor-pointer group"
 					>
-						<span className="text-sm font-bold text-[var(--ink)] group-hover:text-[var(--primary)]">{d}</span>
+						<span className="text-sm font-bold text-[var(--ink)] group-hover:text-[var(--primary)]">{digit}</span>
 						{sub && <span className="text-[9px] font-mono text-[var(--ink-muted)] -mt-0.5 leading-none">{sub}</span>}
 					</button>
 				))}

@@ -156,7 +156,7 @@ export function TelephonyHeaderCapsule({
 
 				{/* 1-Click Fast Actions for Receptionist within the Top Ambient Event Capsule (hidden when full IncomingCallPopup is expanded on screen) */}
 				{shouldShowActionButtons && (
-					<div className="inline-flex items-center gap-1 pl-1 ml-0.5 border-l border-emerald-500/30">
+					<div className="inline-flex items-center gap-1 pl-1 ml-0.5 border-l border-[var(--line)]">
 						<button
 							type="button"
 							onClick={(e) => {
@@ -164,7 +164,7 @@ export function TelephonyHeaderCapsule({
 								answerCall();
 							}}
 							data-testid="header-capsule-answer-btn"
-							className="px-2 py-0.5 rounded-md bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-strong,#0f766e)] text-[11px] font-semibold cursor-pointer transition-colors shadow-xs"
+							className="px-2 py-0.5 rounded-md bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] text-[11px] font-semibold cursor-pointer transition-colors shadow-xs"
 							title="Ответить на звонок"
 						>
 							Ответить
@@ -186,7 +186,7 @@ export function TelephonyHeaderCapsule({
 				)}
 
 				{isAnswered && (
-					<div className="inline-flex items-center pl-1 ml-0.5 border-l border-teal-500/30">
+					<div className="inline-flex items-center pl-1 ml-0.5 border-l border-[var(--line)]">
 						<button
 							type="button"
 							onClick={(e) => {

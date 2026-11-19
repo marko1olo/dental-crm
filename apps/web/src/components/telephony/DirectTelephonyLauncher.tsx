@@ -7,9 +7,10 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { PhoneIncoming } from "lucide-react";
 import { TelephonyStudioModal } from "./TelephonyStudioModal";
 import { TelephonySoftphonePopover } from "./headerCapsule/TelephonySoftphonePopover";
-import { IncomingCallPopup } from "./IncomingCallPopup";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useTelephonyStore } from "../../store/telephonyStore";
 
 function checkIsTelephonyActive(): boolean {
@@ -73,7 +74,7 @@ export const DirectTelephonyLauncher: React.FC = () => {
 	);
 
 	useEffect(() => {
-		if (isIncoming) {
+		if (isIncoming && isDemoShowcaseMode()) {
 			const st = useTelephonyStore.getState();
 			if (!st.activeCall) {
 				st.triggerIncomingCall({
@@ -96,9 +97,28 @@ export const DirectTelephonyLauncher: React.FC = () => {
 		return (
 			<main
 				data-testid="direct-telephony-launcher-root"
-				className="fixed inset-0 z-[100000] w-full h-full bg-[var(--paper-soft)]/60 backdrop-blur-md text-[var(--ink)] flex flex-col items-center justify-start p-4 pt-12 overflow-y-auto"
+				className="fixed inset-0 z-[100000] w-full h-full bg-[var(--paper-soft)]/60 backdrop-blur-md text-[var(--ink)] flex flex-col items-center justify-center p-4"
 			>
-				<IncomingCallPopup defaultExpanded={true} />
+				<div className="max-w-md w-full bg-[var(--paper)] border border-[var(--line)] rounded-2xl p-6 shadow-xl text-center space-y-4">
+					<div className="w-12 h-12 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] mx-auto flex items-center justify-center">
+						<PhoneIncoming className="w-6 h-6 animate-pulse" />
+					</div>
+					<div className="space-y-1">
+						<h2 className="text-base font-semibold text-[var(--ink)]">Входящий вызов телефонии</h2>
+						<p className="text-sm text-[var(--ink-muted)]">
+							{isDemoShowcaseMode()
+								? "Демонстрационный звонок активирован в верхней панели управления."
+								: "Ожидание входящего звонка от облачной АТС..."}
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={handleClose}
+						className="h-9 px-4 rounded-lg border border-[var(--line)] text-sm font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+					>
+						Закрыть
+					</button>
+				</div>
 			</main>
 		);
 	}

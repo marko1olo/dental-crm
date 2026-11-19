@@ -66,6 +66,12 @@ export function useTelephonyRealtime() {
 				advertisingChannel: p.advertisingChannel,
 				leadId: p.leadId,
 			});
+		} else if (lastMessage.type === "TELEPHONY_CALL_ANSWERED") {
+			useTelephonyStore.getState().connectCall();
+			void fetchCallHistory();
+		} else if (lastMessage.type === "TELEPHONY_CALL_ENDED") {
+			useTelephonyStore.getState().endCall();
+			void fetchCallHistory();
 		} else if (lastMessage.type === "TELEPHONY_CALL_STATUS") {
 			const status = lastMessage.payload?.status;
 			if (status === "connected" || status === "answered") {
@@ -87,14 +93,13 @@ export function useTelephonyRealtime() {
 			return;
 		}
 		const handleMock = (e: Event) => {
-			if (isDoctorMode) return;
 			if (process.env.NODE_ENV === "production" && !isDemoShowcaseMode()) return;
 			const custom = e as CustomEvent<IncomingCallPayload>;
 			if (custom.detail) triggerIncomingCall(custom.detail);
 		};
 		window.addEventListener("dente:telephony-mock-incoming", handleMock);
 		return () => window.removeEventListener("dente:telephony-mock-incoming", handleMock);
-	}, [triggerIncomingCall, isDoctorMode]);
+	}, [triggerIncomingCall]);
 
 	return { isConnected };
 }
