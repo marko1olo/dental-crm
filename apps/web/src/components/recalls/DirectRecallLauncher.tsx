@@ -33,7 +33,13 @@ export const DirectRecallLauncher: React.FC = () => {
 	useEffect(() => {
 		syncOpenState();
 		const handleHashChange = () => syncOpenState();
-		const handleCustomOpen = () => setIsOpen(true);
+		const handleCustomOpen = () => {
+			// Предотвращение паразитного мульти-монтирования, если модалка уже открыта в DOM
+			if (typeof document !== "undefined" && document.querySelector('[data-testid="patient-recalls-hub-modal"]')) {
+				return;
+			}
+			setIsOpen(true);
+		};
 
 		window.addEventListener("hashchange", handleHashChange);
 		window.addEventListener("popstate", handleHashChange);

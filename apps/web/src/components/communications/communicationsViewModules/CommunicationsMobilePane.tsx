@@ -1,12 +1,5 @@
-import { lazy, Suspense } from "react";
 import { MobileCommunicationsMessenger } from "../MobileCommunicationsMessenger";
 import type { CommunicationsViewControllerResult } from "./useCommunicationsViewController";
-
-const PatientRecallsHubModal = lazy(() =>
-	import("../../recalls/PatientRecallsHubModal").then((module) => ({
-		default: module.PatientRecallsHubModal,
-	})),
-);
 
 export function CommunicationsMobilePane({
 	ctrl,
@@ -48,14 +41,6 @@ export function CommunicationsMobilePane({
 				staffRoleLabels={ctrl.staffRoleLabels}
 				formatDateTime={ctrl.formatDateTime}
 			/>
-			{ctrl.isRecallsHubOpen && (
-				<Suspense fallback={null}>
-					<PatientRecallsHubModal
-						isOpen={ctrl.isRecallsHubOpen}
-						onClose={() => ctrl.setIsRecallsHubOpen(false)}
-					/>
-				</Suspense>
-			)}
 		</div>
 	);
 }

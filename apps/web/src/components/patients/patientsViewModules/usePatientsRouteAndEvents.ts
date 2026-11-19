@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 export interface UsePatientsRouteAndEventsOptions {
-	setIsRecallsHubOpen: (open: boolean) => void;
+	setIsRecallsHubOpen?: ((open: boolean) => void) | undefined;
 	setIsPatientCardModalOpen: (open: boolean) => void;
 	handleSelectPatient: (patientId: string) => void;
 	setIsFamilyWalletModalOpen?: (open: boolean) => void;
@@ -20,7 +20,7 @@ export function usePatientsRouteAndEvents({
 					? window.location.hash.toLowerCase()
 					: "";
 			if (hash.includes("recall") || hash.includes("prevention")) {
-				setIsRecallsHubOpen(true);
+				setIsRecallsHubOpen?.(true);
 			}
 			if (hash.includes("family-wallet") || hash.includes("family")) {
 				setIsFamilyWalletModalOpen?.(true);
@@ -28,7 +28,7 @@ export function usePatientsRouteAndEvents({
 		};
 		checkRoute();
 		window.addEventListener("hashchange", checkRoute);
-		const onOpen = () => setIsRecallsHubOpen(true);
+		const onOpen = () => setIsRecallsHubOpen?.(true);
 		window.addEventListener("dente:open-recalls-hub", onOpen);
 		window.addEventListener("dente-open-recalls-hub", onOpen);
 		return () => {

@@ -1,7 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import React from "react";
 import { createPortal } from "react-dom";
-import { TelephonyStudioModal } from "./TelephonyStudioModal";
 import { TelephonyDrawerHeader } from "./TelephonyDrawerHeader";
 import { TelephonyActiveCallPanel } from "./drawerModules/TelephonyActiveCallPanel";
 import { TelephonyCallLogList } from "./TelephonyCallList";
@@ -23,7 +22,7 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 	const {
 		isDrawerOpen, handleClose, currentCall, hasPrimaryModal, isFullScreenStudioActive,
 		dashboard, callHistory, activeTab, setActiveTab, activeFilter, setActiveFilter,
-		isDialerOpen, setIsDialerOpen, isCallAnswered, callData, handleSendWhatsAppConfirmation,
+		isCallAnswered, callData, handleSendWhatsAppConfirmation,
 		handleCopySmsConfirmation, handleOpenFullPatientView, handleCaptureLead,
 		handleQuickBookFromLog, handleCallbackFromLog, handleOpenPatientFromLog,
 		setShowTransferPanel, setShowOutcomePanel, isCapturingLead, smsCopied,
@@ -35,13 +34,12 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 	}
 
 	const content = (
-		<>
-			<section
-				className="dnt-telephony-patient-drawer fixed right-0 top-0 bottom-0 w-full sm:w-[480px] max-w-full z-[9995] bg-[var(--paper-strong)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col pointer-events-auto animate-slide-in-right overflow-hidden"
-				style={{ zIndex: 9995 }}
-				aria-label="Боковая шторка телефонии"
-				data-testid="telephony-patient-side-drawer"
-			>
+		<section
+			className="dnt-telephony-patient-drawer fixed right-0 top-0 bottom-0 w-full sm:w-[480px] max-w-full z-[9995] bg-[var(--paper-strong)] text-[var(--ink)] border-l border-[var(--line)] shadow-2xl flex flex-col pointer-events-auto animate-slide-in-right overflow-hidden"
+			style={{ zIndex: 9995 }}
+			aria-label="Боковая шторка телефонии"
+			data-testid="telephony-patient-side-drawer"
+		>
 				<div className="sm:hidden flex justify-center pt-2.5 pb-1 bg-[var(--paper-soft)] shrink-0" aria-hidden="true">
 					<div className="w-9 h-1 rounded-full bg-[var(--line-strong,rgba(0,0,0,0.25))] dark:bg-[rgba(255,255,255,0.25)]" />
 				</div>
@@ -92,9 +90,6 @@ export function TelephonyDrawer(props: TelephonyDrawerProps = {}): React.JSX.Ele
 					</button>
 				</div>
 			</section>
-
-			<TelephonyStudioModal isOpen={isDialerOpen} onClose={() => setIsDialerOpen(false)} />
-		</>
 	);
 
 	if (typeof document === "undefined") {

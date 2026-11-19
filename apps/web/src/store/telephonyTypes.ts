@@ -282,6 +282,7 @@ export interface TelephonyStore {
 	stopRecording: () => void;
 	clearHistory: () => void;
 	fetchCallHistory: () => Promise<void>;
+	updateCallNote: (callId: string, note: string) => void;
 }
 
 export interface PatientUpcomingAppointmentSummary {

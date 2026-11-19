@@ -39,7 +39,7 @@ describe("Telephony Facades & Chairside Sterile Zone Invariants (Mandates 8e, 8n
 					<IncomingCallPopup suppressCallModal={true} />
 				</AppLogicProvider>,
 			);
-			assert.ok(typeof html === "string", "IncomingCallPopup handles doctor mode without error");
+			assert.equal(html, "", "Doctor screen must be 100% sterile: IncomingCallPopup returns null/empty string");
 		});
 
 		it("IncomingCallActionFooter renders 1-click callback and quick booking buttons for receptionist", () => {

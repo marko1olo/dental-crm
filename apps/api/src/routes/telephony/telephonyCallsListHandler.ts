@@ -8,7 +8,10 @@ import { db } from "../../db/client.js";
 import { communicationEvents, patients } from "../../db/schema.js";
 
 export async function telephonyCallsListHandler(
-	request: FastifyRequest<{ Params: { organizationId?: string } }>,
+	request: FastifyRequest<{
+		Params: { organizationId?: string };
+		Querystring: { limit?: string | number; offset?: string | number };
+	}>,
 	reply: FastifyReply,
 ) {
 	if (
@@ -27,6 +30,18 @@ export async function telephonyCallsListHandler(
 		"list telephony calls",
 	);
 	if (!orgId) return;
+
+	const rawLimit = Number(request.query?.limit);
+	const limit =
+		Number.isFinite(rawLimit) && rawLimit > 0
+			? Math.min(Math.max(1, Math.floor(rawLimit)), 100)
+			: 50;
+
+	const rawOffset = Number(request.query?.offset);
+	const offset =
+		Number.isFinite(rawOffset) && rawOffset >= 0
+			? Math.floor(rawOffset)
+			: 0;
 
 	const calls = await db
 		.select({
@@ -52,7 +67,8 @@ export async function telephonyCallsListHandler(
 			),
 		)
 		.orderBy(desc(communicationEvents.createdAt))
-		.limit(50);
+		.limit(limit)
+		.offset(offset);
 
 	return reply.send({
 		success: true,

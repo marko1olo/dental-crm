@@ -94,15 +94,13 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
 	const [isMedicalRecordStudioOpen, setIsMedicalRecordStudioOpen] = React.useState(false);
-	const [isRecallsHubOpen, setIsRecallsHubOpen] = React.useState(false);
 
 	const isAnySubModalOpen = Boolean(
 		isMedicalRecordStudioOpen ||
 		isPhotoModalOpen ||
 		isDiplomaModalOpen ||
 		isDmsLetterModalOpen ||
-		isTaxDeductionModalOpen ||
-		isRecallsHubOpen
+		isTaxDeductionModalOpen
 	);
 
 	// Каноническое закрытие с очисткой черновика (Мандат 8d/8zq, 8bn — Zero-Leak Draft Invariant)
@@ -284,9 +282,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							</button>
 						)}
 						{!isCreateMode && (
-							<button type="button" data-testid="btn-patient-recalls-hub" onClick={() => setIsRecallsHubOpen(true)}
+							<button type="button" data-testid="btn-patient-recalls-hub"
+								onClick={() => {
+									window.dispatchEvent(
+										new CustomEvent("dente:open-recalls-hub", { detail: { patientId: patientData.id } }),
+									);
+								}}
 								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Диспансерный график и профосмотры (Рекаллы)">
+								title="Плановые профосмотры и профгигиена">
 								<CalendarCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span>Профосмотры</span>
 							</button>
@@ -623,7 +626,6 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						initialTaxTab={initialTaxTab}
 						isPhotoModalOpen={isPhotoModalOpen} setIsPhotoModalOpen={setIsPhotoModalOpen}
 						isMedicalRecordStudioOpen={isMedicalRecordStudioOpen} setIsMedicalRecordStudioOpen={setIsMedicalRecordStudioOpen}
-						isRecallsHubOpen={isRecallsHubOpen} setIsRecallsHubOpen={setIsRecallsHubOpen}
 						patientData={patientData} onUpdatePatientField={handleUpdatePatientField}
 						onSave={handleSave}
 					/>

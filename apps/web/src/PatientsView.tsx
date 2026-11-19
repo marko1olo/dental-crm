@@ -59,11 +59,6 @@ const PatientCreationModal = lazy(() =>
 	})),
 );
 const CreatePatientModal = PatientCreationModal;
-const PatientRecallsHubModal = lazy(() =>
-	import("./components/recalls/PatientRecallsHubModal").then((module) => ({
-		default: module.PatientRecallsHubModal,
-	})),
-);
 const ClinicalPhotoProtocolModal = lazy(() =>
 	import("./components/photography/ClinicalPhotoProtocolModal").then((module) => ({
 		default: module.ClinicalPhotoProtocolModal,
@@ -136,7 +131,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isPatientCardModalOpen, setIsPatientCardModalOpen] = useState(false);
 	const [isFamilyWalletModalOpen, setIsFamilyWalletModalOpen] = useState(false);
-	const [isRecallsHubOpen, setIsRecallsHubOpen] = useState(false);
 	const [showTactileSearch, setShowTactileSearch] = useState(false);
 	const [tactileFilters, setTactileFilters] =
 		useState<RadiologyTactileFilterState>(DEFAULT_TACTILE_FILTERS);
@@ -220,7 +214,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	});
 
 	usePatientsRouteAndEvents({
-		setIsRecallsHubOpen,
 		setIsPatientCardModalOpen,
 		handleSelectPatient,
 		setIsFamilyWalletModalOpen,
@@ -362,7 +355,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 				searchInputRef={searchInputRef}
 				filteredPatients={props.filteredPatients}
 				onSelectPatient={(id) => setSelectedPatientId(id)}
-				onOpenRecallsHub={() => setIsRecallsHubOpen(true)}
+				onOpenRecallsHub={() => window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"))}
 				onOpenTactileSearch={() => setShowTactileSearch(true)}
 				showLostPatientsOnly={showLostPatientsOnly}
 				onToggleLostPatients={toggleLostPatients}
@@ -514,15 +507,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 								? `№ ${String(selectedPatient.id).slice(0, 8)}`
 								: "—"
 						}
-					/>
-				</Suspense>
-			)}
-
-			{isRecallsHubOpen && (
-				<Suspense fallback={null}>
-					<PatientRecallsHubModal
-						isOpen={isRecallsHubOpen}
-						onClose={() => setIsRecallsHubOpen(false)}
 					/>
 				</Suspense>
 			)}

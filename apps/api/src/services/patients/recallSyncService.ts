@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx, type TenantDb } from "../../db/rls.js";
 import { appointments } from "../../db/schema/schedule.js";
@@ -165,7 +165,7 @@ export async function syncRecallOnAppointmentCreated(
 
 	try {
 		await withTenantCtx(organizationId, async (tx: TenantDb) => {
-			// Ищем открытый recall со статусом 'pending'
+			// Ищем открытый незавершенный recall
 			const [pendingRecall] = await tx
 				.select({ id: patientRecalls.id })
 				.from(patientRecalls)
@@ -173,7 +173,8 @@ export async function syncRecallOnAppointmentCreated(
 					and(
 						eq(patientRecalls.organizationId, organizationId),
 						eq(patientRecalls.patientId, patientId),
-						eq(patientRecalls.status, "pending"),
+						isNull(patientRecalls.completedAt),
+						sql`${patientRecalls.status} NOT IN ('completed', 'declined')`,
 					),
 				)
 				.orderBy(desc(patientRecalls.createdAt))
@@ -253,7 +254,8 @@ export async function syncRecallOnAppointmentCompleted(
 					and(
 						eq(patientRecalls.organizationId, organizationId),
 						eq(patientRecalls.patientId, appt.patientId),
-						inArray(patientRecalls.status, ["scheduled", "pending"]),
+						isNull(patientRecalls.completedAt),
+						sql`${patientRecalls.status} NOT IN ('completed', 'declined')`,
 					),
 				)
 				.orderBy(desc(patientRecalls.createdAt))
@@ -379,7 +381,8 @@ export async function syncRecallOnVisitCompleted(
 					and(
 						eq(patientRecalls.organizationId, organizationId),
 						eq(patientRecalls.patientId, v.patientId),
-						inArray(patientRecalls.status, ["scheduled", "pending"]),
+						isNull(patientRecalls.completedAt),
+						sql`${patientRecalls.status} NOT IN ('completed', 'declined')`,
 					),
 				)
 				.orderBy(desc(patientRecalls.createdAt))

@@ -6,7 +6,7 @@
  * Mandates: 8b (Sweet Spot 350-430 lines), 8e (Doctor Autonomy), 8am (Single CTA), 8x (Domain Purity).
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
 	Phone, PhoneCall, X, Delete, User, MessageCircle, AlertTriangle, Calendar, Check,
 } from "lucide-react";
@@ -268,16 +268,24 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 }) => {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeFilter, setActiveFilter] = useState<TelephonyFilterType>("all");
-	const [dbCalls, setDbCalls] = useState<TelephonyCatalogCall[]>([]);
 	const [selectedCallId, setSelectedCallId] = useState<string>(initialSelectedCallId || "");
 	const [dialedNumber, setDialedNumber] = useState("");
 	const [activeMobileTab, setActiveMobileTab] = useState<"journal" | "dialer">("journal");
 	const [callNote, setCallNote] = useState("");
 	const [isNoteSaved, setIsNoteSaved] = useState(false);
+	const noteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const activeLineId = useTelephonyStore((s) => s.activeLineId);
 	const callHistory = useTelephonyStore((s) => s.callHistory);
 	const fetchCallHistory = useTelephonyStore((s) => s.fetchCallHistory);
+
+	useEffect(() => {
+		return () => {
+			if (noteTimerRef.current) {
+				clearTimeout(noteTimerRef.current);
+			}
+		};
+	}, []);
 
 	const storeCatalogCalls = useMemo<TelephonyCatalogCall[]>(() => {
 		if (!callHistory || callHistory.length === 0) return [];
@@ -310,10 +318,16 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		});
 	}, [callHistory]);
 
+	const isDemo = isDemoShowcaseMode();
+
+	const baseCalls = useMemo(() => {
+		if (storeCatalogCalls.length > 0) return storeCatalogCalls;
+		return isDemo ? TELEPHONY_CATALOG_DATA : [];
+	}, [storeCatalogCalls, isDemo]);
+
 	useEffect(() => {
 		if (!isOpen) return;
 		if (isDemoShowcaseMode()) {
-			setDbCalls(TELEPHONY_CATALOG_DATA);
 			if (!selectedCallId && TELEPHONY_CATALOG_DATA[0]) {
 				setSelectedCallId(TELEPHONY_CATALOG_DATA[0].id);
 			}
@@ -321,55 +335,13 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		}
 
 		void fetchCallHistory();
-
-		let isMounted = true;
-		const staffToken = readDenteStaffToken();
-		const clinicToken = readDenteClinicToken();
-
-		fetch("/api/telephony/calls", {
-			headers: { ...(staffToken ? { "x-dente-staff-token": staffToken } : {}), ...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}) },
-		})
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data: { success?: boolean; calls?: TelephonyCallApiRecord[] } | null) => {
-				if (!isMounted) return;
-				if (data?.calls && Array.isArray(data.calls)) {
-					const mapped: TelephonyCatalogCall[] = data.calls.map((c) => {
-						const callType = resolveCanonicalCallType(c.direction, c.status, c.durationSeconds);
-						const phone = c.patientPhone || c.callerPhone || "";
-						const callerName = c.patientName || (phone ? `Абонент ${formatPhoneRu(phone)}` : "Неизвестный абонент");
-						const dateObj = c.createdAt ? new Date(c.createdAt) : new Date();
-						const timestampText = dateObj.toLocaleDateString("ru-RU", {
-							day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-						});
-						return {
-							id: String(c.id), callType, phone, callerName, patientId: c.patientId ? String(c.patientId) : null,
-							patientCategory: c.patientId ? "Постоянный" : "Первичный", balanceRub: 0, lastVisitDate: null, attendingDoctor: null,
-							clinicalNote: c.message || undefined, somaticAlert: null, durationSeconds: c.durationSeconds || 0, timestampText,
-							hasRecording: Boolean(c.recordingUrl), recordingUrl: c.recordingUrl || undefined, transcriptSnippet: undefined,
-						};
-					});
-					setDbCalls(mapped);
-					if (!selectedCallId && mapped[0]) setSelectedCallId(mapped[0].id);
-				} else {
-					setDbCalls([]);
-				}
-			})
-			.catch(() => {
-				if (isMounted) setDbCalls([]);
-			});
-
-		return () => {
-			isMounted = false;
-		};
 	}, [isOpen, selectedCallId, fetchCallHistory]);
 
-	const isDemo = isDemoShowcaseMode();
-
-	const baseCalls = useMemo(() => {
-		if (storeCatalogCalls.length > 0) return storeCatalogCalls;
-		if (dbCalls.length > 0) return dbCalls;
-		return isDemo ? TELEPHONY_CATALOG_DATA : [];
-	}, [storeCatalogCalls, dbCalls, isDemo]);
+	useEffect(() => {
+		if (!selectedCallId && baseCalls[0]) {
+			setSelectedCallId(baseCalls[0].id);
+		}
+	}, [baseCalls, selectedCallId]);
 
 	const filteredCalls = useMemo(() => {
 		return baseCalls.filter((call) => {
@@ -442,7 +414,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		if (selectedCall?.id) {
 			const staffToken = readDenteStaffToken();
 			const clinicToken = readDenteClinicToken();
-			setDbCalls((prev) => prev.map((c) => (c.id === selectedCall.id ? { ...c, clinicalNote: noteToSave } : c)));
+			useTelephonyStore.getState().updateCallNote(selectedCall.id, noteToSave);
 			fetch(`/api/telephony/calls/${encodeURIComponent(selectedCall.id)}`, {
 				method: "PATCH",
 				headers: {
@@ -459,7 +431,10 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		window.dispatchEvent(new CustomEvent("dente:telephony-note-saved", {
 			detail: { callId: selectedCall?.id, patientId: selectedCall?.patientId, note: noteToSave, timestamp: new Date().toISOString() },
 		}));
-		setTimeout(() => setIsNoteSaved(false), 2500);
+		if (noteTimerRef.current) {
+			clearTimeout(noteTimerRef.current);
+		}
+		noteTimerRef.current = setTimeout(() => setIsNoteSaved(false), 2500);
 	}, [dialedNumber, selectedCall, callNote, onClose]);
 
 	if (!isOpen) return null;

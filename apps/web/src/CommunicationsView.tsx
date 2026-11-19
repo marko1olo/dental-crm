@@ -7,12 +7,6 @@ import {
 } from "./components/communications/communicationsViewModules";
 import type { CommunicationsViewProps } from "./components/communications/communicationsViewModules";
 
-const PatientRecallsHubModal = lazy(() =>
-	import("./components/recalls/PatientRecallsHubModal").then((module) => ({
-		default: module.PatientRecallsHubModal,
-	})),
-);
-
 const OmnichannelOperatorDesk = lazy(() =>
 	import("./components/chat/OmnichannelOperatorDesk").then((module) => ({
 		default: module.OmnichannelOperatorDesk,
@@ -62,7 +56,7 @@ export function CommunicationsView(
 				onSelectSection={ctrl.setActiveSection}
 				onOpenRecallsHub={() => {
 					ctrl.setIsOmnichannelHubOpen(false);
-					ctrl.setIsRecallsHubOpen(true);
+					window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"));
 				}}
 				onOpenOmnichannelHub={() => {
 					ctrl.setIsRecallsHubOpen(false);
@@ -75,15 +69,6 @@ export function CommunicationsView(
 			/>
 
 			<CommunicationsActiveChatPane ctrl={ctrl} />
-
-			{ctrl.isRecallsHubOpen && (
-				<Suspense fallback={null}>
-					<PatientRecallsHubModal
-						isOpen={ctrl.isRecallsHubOpen}
-						onClose={() => ctrl.setIsRecallsHubOpen(false)}
-					/>
-				</Suspense>
-			)}
 		</div>
 	);
 }

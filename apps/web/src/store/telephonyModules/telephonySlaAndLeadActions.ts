@@ -1,5 +1,4 @@
 import type { StoreApi } from "zustand";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -162,15 +161,9 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 			const rawCalls = data.calls as ApiCallRecord[];
 			const mapped: CallHistoryItem[] = rawCalls.map((c) => {
 				const resolvedPhone = c.patientPhone || c.callerPhone || "";
-				const digits = resolvedPhone.replace(/\D/g, "").slice(-10);
-				let patientName = c.patientName && !c.patientName.startsWith("Входящий вызов")
+				const patientName = c.patientName && !c.patientName.startsWith("Входящий вызов")
 					? c.patientName
-					: c.patientName || "Неизвестный номер";
-				if (isDemoShowcaseMode()) {
-					if (digits === "9162345678") patientName = "Смирнова Анна Сергеевна";
-					else if (digits === "9267778899") patientName = "Кузнецов Дмитрий Игоревич";
-					else if (digits === "9035551122") patientName = "Первичный абонент";
-				}
+					: c.patientName || (resolvedPhone ? `Абонент ${resolvedPhone}` : "Неизвестный номер");
 				const status: CallHistoryItem["status"] = resolveCanonicalCallStatus(
 					c.status,
 					typeof c.durationSeconds === "number" ? c.durationSeconds : undefined,

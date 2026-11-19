@@ -13,12 +13,6 @@ const DmsGuaranteeLetterModal = React.lazy(() =>
 	})),
 );
 
-const PatientRecallsHubModal = React.lazy(() =>
-	import("../../recalls/PatientRecallsHubModal").then((m) => ({
-		default: m.PatientRecallsHubModal,
-	})),
-);
-
 export interface PatientCardModalSubModalsProps {
 	readonly isDiplomaModalOpen: boolean;
 	readonly setIsDiplomaModalOpen: (open: boolean) => void;
@@ -31,8 +25,6 @@ export interface PatientCardModalSubModalsProps {
 	readonly setIsPhotoModalOpen?: ((open: boolean) => void) | undefined;
 	readonly isMedicalRecordStudioOpen?: boolean | undefined;
 	readonly setIsMedicalRecordStudioOpen?: ((open: boolean) => void) | undefined;
-	readonly isRecallsHubOpen?: boolean | undefined;
-	readonly setIsRecallsHubOpen?: ((open: boolean) => void) | undefined;
 	readonly patientData: PatientGeneralInfo;
 	readonly onUpdatePatientField: (field: keyof PatientGeneralInfo, value: PatientGeneralInfoFieldValue) => void;
 	readonly onSave?: (() => Promise<void>) | undefined;
@@ -50,8 +42,6 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 	setIsPhotoModalOpen,
 	isMedicalRecordStudioOpen = false,
 	setIsMedicalRecordStudioOpen,
-	isRecallsHubOpen = false,
-	setIsRecallsHubOpen,
 	patientData,
 	onUpdatePatientField,
 	onSave,
@@ -159,15 +149,6 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 					},
 				}}
 			/>
-		)}
-		{isRecallsHubOpen && setIsRecallsHubOpen && (
-			<React.Suspense fallback={null}>
-				<PatientRecallsHubModal
-					isOpen={isRecallsHubOpen}
-					onClose={() => setIsRecallsHubOpen(false)}
-					clinicName="DENTE Clinic"
-				/>
-			</React.Suspense>
 		)}
 	</>
 );

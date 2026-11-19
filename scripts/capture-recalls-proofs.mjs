@@ -17,7 +17,7 @@ const APP_BASE = "http://127.0.0.1:5173";
 
 const OUT_DIRS = [
   path.join(process.cwd(), "docs/proofs/recalls"),
-  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c863cc69-331e-44bc-b455-680d94780f34"),
+  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/35c192cf-d536-43c9-8e7f-396491f31967"),
 ];
 
 for (const dir of OUT_DIRS) {
@@ -165,19 +165,13 @@ async function main() {
 
     const mobilePage = await mobileContext.newPage();
     console.log("[MOBILE] Navigating to http://127.0.0.1:5173/?recalls=1#recalls ...");
-    await mobilePage.goto(`${APP_BASE}/?recalls=1#recalls`, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await wait(2000);
+    await mobilePage.goto(`${APP_BASE}/?recalls=1#recalls`, { waitUntil: "commit", timeout: 90000 });
+    console.log("[MOBILE] Navigation committed. Waiting for modal element...");
 
     const mobileModal = mobilePage.locator('[data-testid="patient-recalls-hub-modal"]');
-    if ((await mobileModal.count()) === 0) {
-      console.log("[MOBILE] Dispatching dente:open-recalls-hub...");
-      await mobilePage.evaluate(() => {
-        window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"));
-      });
-    }
-    await mobileModal.waitFor({ state: "visible", timeout: 20000 });
+    await mobileModal.waitFor({ state: "visible", timeout: 60000 });
     console.log("[MOBILE] PatientRecallsHubModal is visible on mobile!");
-    await wait(1500);
+    await wait(2000);
 
     // Capture Proof 3: Mobile Light (390x844)
     console.log("[PROOF 3] Capturing Mobile Light (390x844)...");

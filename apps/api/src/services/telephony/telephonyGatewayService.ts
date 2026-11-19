@@ -169,33 +169,28 @@ export class TelephonyGatewayService {
 		let localPbxOnline = false;
 		let latencyMs = 0;
 
-		if (process.env.NODE_ENV === "test") {
-			localPbxOnline = true;
-			latencyMs = 4;
-		} else {
-			const start = Date.now();
-			try {
-				const socket = new net.Socket();
-				localPbxOnline = await new Promise<boolean>((resolve) => {
-					socket.setTimeout(2000);
-					socket.once("connect", () => {
-						latencyMs = Date.now() - start;
-						socket.destroy();
-						resolve(true);
-					});
-					socket.once("timeout", () => {
-						socket.destroy();
-						resolve(false);
-					});
-					socket.once("error", () => {
-						socket.destroy();
-						resolve(false);
-					});
-					socket.connect(cfg.wsPort, cfg.host);
+		const start = Date.now();
+		try {
+			const socket = new net.Socket();
+			localPbxOnline = await new Promise<boolean>((resolve) => {
+				socket.setTimeout(2000);
+				socket.once("connect", () => {
+					latencyMs = Date.now() - start;
+					socket.destroy();
+					resolve(true);
 				});
-			} catch {
-				localPbxOnline = false;
-			}
+				socket.once("timeout", () => {
+					socket.destroy();
+					resolve(false);
+				});
+				socket.once("error", () => {
+					socket.destroy();
+					resolve(false);
+				});
+				socket.connect(cfg.wsPort, cfg.host);
+			});
+		} catch {
+			localPbxOnline = false;
 		}
 
 		const activeMode: TelephonyMode = localPbxOnline ? "local_webrtc_sip" : "cloud_webhooks";

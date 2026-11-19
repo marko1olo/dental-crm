@@ -7,12 +7,27 @@ if (!fs.existsSync(OUT_DOCS)) {
 	fs.mkdirSync(OUT_DOCS, { recursive: true });
 }
 
+const BRAIN_DIR = process.env.CONVERSATION_ID
+	? path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${process.env.CONVERSATION_ID}`)
+	: "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\b0669cb3-4b24-487a-9e5c-aa5626f48852";
+if (!fs.existsSync(BRAIN_DIR)) {
+	fs.mkdirSync(BRAIN_DIR, { recursive: true });
+}
+
 async function saveProof(page, filename) {
 	await page.waitForTimeout(600);
 	const pDocs = path.join(OUT_DOCS, filename);
-	await page.screenshot({ path: pDocs, fullPage: false, animations: "disabled" });
+	try {
+		await page.screenshot({ path: pDocs, fullPage: false, timeout: 10000 });
+	} catch (err) {
+		console.warn(`[Screenshot retry]: ${err.message}`);
+		await page.screenshot({ path: pDocs, fullPage: false, timeout: 10000 });
+	}
 	const size = fs.statSync(pDocs).size;
 	console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 20000}`);
+	try {
+		fs.copyFileSync(pDocs, path.join(BRAIN_DIR, filename));
+	} catch (_) {}
 }
 
 async function setTheme(page, theme) {

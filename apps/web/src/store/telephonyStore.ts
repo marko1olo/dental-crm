@@ -82,6 +82,15 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 		}),
 
 	clearHistory: () => set({ callHistory: [] }),
+
+	updateCallNote: (callId: string, note: string) =>
+		set((state) => ({
+			callHistory: state.callHistory.map((item) =>
+				item.id === callId || item.callId === callId
+					? { ...item, outcomeNote: note }
+					: item,
+			),
+		})),
 }));
 
 export function resolveTelephonyWsUrl(): string {

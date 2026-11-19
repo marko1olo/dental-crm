@@ -72,14 +72,14 @@ export function PatientTopHeaderMenu({
 				onClick={() => {
 					onClose();
 					window.dispatchEvent(
-						new CustomEvent("dente-open-recalls-hub", { detail: { patientId: selectedPatient?.id } }),
+						new CustomEvent("dente:open-recalls-hub", { detail: { patientId: selectedPatient?.id } }),
 					);
 				}}
 				className={itemCls}
 				data-testid="header-open-recalls-btn"
 			>
 				<CalendarCheck size={13} className="text-[var(--primary)] shrink-0" />
-				<span>Профосмотры и диспансерное наблюдение</span>
+				<span>Плановые профосмотры</span>
 			</button>
 			<div className="h-px bg-[var(--line)] my-0.5" />
 			<button type="button" onClick={() => { onClose(); void printBlankMedicalContract(selectedPatient); }} className={itemCls} data-testid="header-print-blank-contract-btn">

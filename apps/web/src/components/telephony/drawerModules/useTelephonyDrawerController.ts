@@ -58,7 +58,6 @@ export function useTelephonyDrawerController(
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
 	const [transferType, setTransferType] = useState<"blind" | "attended">("blind");
 	const [showOutcomePanel, setShowOutcomePanel] = useState(false);
-	const [isDialerOpen, setIsDialerOpen] = useState(false);
 
 	useEffect(() => {
 		if (currentCall) setActiveTab("call");
@@ -102,7 +101,7 @@ export function useTelephonyDrawerController(
 		isCreatingPatient: bookingActions.isCreatingPatient,
 		isCapturingLead: bookingActions.isCapturingLead,
 		smsCopied: bookingActions.smsCopied,
-		isDialerOpen, setIsDialerOpen, isCallAnswered, callData,
+		isCallAnswered, callData,
 		handleSendWhatsAppConfirmation: bookingActions.handleSendWhatsAppConfirmation,
 		handleCopySmsConfirmation: bookingActions.handleCopySmsConfirmation,
 		handleOpenFullPatientView: bookingActions.handleOpenFullPatientView,
