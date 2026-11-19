@@ -3,11 +3,9 @@ import {
 	readDenteClinicToken,
 	readDenteStaffToken,
 } from "../../lib/safeLocalStorage";
-import { normalizePhone } from "../telephonyHelpers";
 import { resolveCanonicalCallStatus } from "../../components/telephony/telephonyCatalogData";
 import {
 	type CallHistoryItem,
-	type IncomingCallPayload,
 	type MissedCallSlaItem,
 	type MissedCallsSlaSummary,
 	type TelephonyStore,
@@ -73,62 +71,6 @@ export function computeMissedCallsSlaSummary(
 		nearestRemainingSeconds,
 		items,
 	};
-}
-
-export async function createLeadFromUnknownNumber(
-	call: IncomingCallPayload,
-	set?: SetState,
-	get?: GetState,
-	customName?: string,
-): Promise<{ success: boolean; leadId?: string; message: string }> {
-	const cleanPhone = normalizePhone(call.phone) || call.phone;
-	const targetName =
-		customName?.trim() ||
-		(call.patientName && call.patientName !== "Неизвестный номер"
-			? call.patientName
-			: `Звонок ${cleanPhone}`);
-	try {
-		const res = await fetch("/api/leads", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"x-dente-staff-token": readDenteStaffToken(),
-				"x-dente-clinic-token": readDenteClinicToken(),
-			},
-			body: JSON.stringify({
-				name: targetName,
-				patientName: targetName,
-				phone: cleanPhone,
-				source: call.utmSource || "other",
-				status: "new",
-				notes: `Создан из неизвестного номера (${cleanPhone})`,
-			}),
-		});
-		if (!res.ok) {
-			return { success: false, message: "Не удалось создать лид" };
-		}
-		const data = await res.json();
-		const leadId = String(data?.id || `lead-${Date.now()}`);
-		if (set && get) {
-			const state = get();
-			const updatedHistory = state.callHistory.map((item) =>
-				item.phone === call.phone ||
-				(call.callId && item.callId === call.callId)
-					? { ...item, leadId, isLeadCaptured: true }
-					: item,
-			);
-			set({
-				activeCall:
-					state.activeCall && state.activeCall.phone === call.phone
-						? { ...state.activeCall, leadId, isLeadCaptured: true }
-						: state.activeCall,
-				callHistory: updatedHistory,
-			});
-		}
-		return { success: true, leadId, message: `Лид создан: ${targetName}` };
-	} catch {
-		return { success: false, message: "Ошибка сети при создании лида" };
-	}
 }
 
 interface ApiCallRecord {

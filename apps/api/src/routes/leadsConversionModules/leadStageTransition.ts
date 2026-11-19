@@ -22,7 +22,8 @@ export interface RecordStageTransitionParams {
 	toStage: string;
 	stageEnteredAt: Date | null;
 	changedByUserId: string | null;
-	patientId?: string | null;
+	patientId?: string | null | undefined;
+	metadata?: Record<string, unknown> | null | undefined;
 }
 
 /**
@@ -30,7 +31,7 @@ export interface RecordStageTransitionParams {
  * and updates stageEnteredAt and status in crmLeads (persisting patientId on conversion).
  */
 export async function recordLeadStageTransition(params: RecordStageTransitionParams): Promise<Date> {
-	const { tx, organizationId, leadId, fromStage, toStage, stageEnteredAt, changedByUserId, patientId } = params;
+	const { tx, organizationId, leadId, fromStage, toStage, stageEnteredAt, changedByUserId, patientId, metadata } = params;
 	const now = new Date();
 	const stageStart = stageEnteredAt || now;
 	const durationSeconds = Math.max(0, Math.floor((now.getTime() - stageStart.getTime()) / 1000));
@@ -48,6 +49,9 @@ export async function recordLeadStageTransition(params: RecordStageTransitionPar
 	const updateValues: Record<string, unknown> = { status: toStage, stageEnteredAt: now };
 	if (patientId) {
 		updateValues.patientId = patientId;
+	}
+	if (metadata !== undefined) {
+		updateValues.metadata = metadata;
 	}
 
 	await tx

@@ -150,6 +150,11 @@ const LoyaltyStudioStandaloneView = React.lazy(() =>
 		),
 	})),
 );
+const DmsStudioStandaloneView = React.lazy(() =>
+	import("./components/insurance/DirectInsuranceLauncher").then((m) => ({
+		default: m.DirectInsuranceLauncher,
+	})),
+);
 const EmrMedicalRecordStandaloneView = React.lazy(() =>
 	import("./components/appLayout/modalsContainerModules/standalone/clinical/StandaloneEmrMedicalRecordHost").then((m) => ({
 		default: m.StandaloneEmrMedicalRecordHost,

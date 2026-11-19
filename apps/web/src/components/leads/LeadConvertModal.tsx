@@ -291,7 +291,7 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 					{/* Единственная Primary CTA кнопка (Мандаты 8am, 8e) */}
 					<button
 						type="submit"
-						className="primary-button"
+						className="primary-button bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] border-transparent"
 						data-testid="lead-convert-submit-btn"
 						aria-busy={isBooking}
 						title={submitTitle}
@@ -304,9 +304,6 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 							justifyContent: "center",
 							fontSize: 14,
 							fontWeight: 700,
-							background: "var(--teal, #0d9488)",
-							borderColor: "var(--teal, #0d9488)",
-							color: "#ffffff",
 						}}
 					>
 						{submitTitle}

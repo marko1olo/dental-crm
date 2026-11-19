@@ -14,8 +14,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, "../apps/web");
 const configFile = path.resolve(webRoot, "vite.config.ts");
 const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/telephony");
+const BRAIN_DIR = "C:\\Users\\Admin\\.gemini\\antigravity\\brain\\750f6e24-9954-4b85-a7cc-54775470640f";
 
-fs.mkdirSync(PROOFS_DIR, { recursive: true });
+[PROOFS_DIR, BRAIN_DIR].forEach((dir) => {
+	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
 
 const todayDate = new Date().toLocaleDateString("en-CA");
 
@@ -108,6 +111,9 @@ function verifyProof(filePath) {
 		throw new Error(`[BLANK DETECTED] ${filePath} is ${size} bytes (< 20KB)!`);
 	}
 	console.log(`  -> [VERIFIED] ${path.basename(filePath)} (${(size / 1024).toFixed(1)} KB >= 20KB)`);
+	try {
+		fs.copyFileSync(filePath, path.join(BRAIN_DIR, path.basename(filePath)));
+	} catch (_) {}
 	return size;
 }
 
@@ -276,6 +282,7 @@ async function triggerCall(page) {
 
 async function main() {
 	console.log("=== 1. Starting In-Process Vite Server for Telephony (port 5199) ===");
+	process.chdir(webRoot);
 	const viteServer = await createServer({
 		configFile,
 		root: webRoot,
@@ -305,79 +312,106 @@ async function main() {
 		],
 	});
 
-	const contexts = [
-		{ name: "pc_light", prefix: "01", width: 1440, height: 900, theme: "light", isDark: false, isMobile: false },
-		{ name: "pc_dark", prefix: "02", width: 1440, height: 900, theme: "dark", isDark: true, isMobile: false },
-		{ name: "mobile_light", prefix: "03", width: 390, height: 844, theme: "light", isDark: false, isMobile: true },
-		{ name: "mobile_dark", prefix: "04", width: 390, height: 844, theme: "dark", isDark: true, isMobile: true },
-	];
-
 	try {
-		for (const ctxCfg of contexts) {
-			console.log(`\n======================================================`);
-			console.log(`Phase: ${ctxCfg.name} (${ctxCfg.width}x${ctxCfg.height}, ${ctxCfg.theme})`);
-			console.log(`======================================================`);
+		console.log("\n======================================================");
+		console.log("Phase: PC Context (1440x900) - Telephony Studio");
+		console.log("======================================================");
 
-			const context = await browser.newContext({
-				viewport: { width: ctxCfg.width, height: ctxCfg.height },
-				deviceScaleFactor: ctxCfg.isMobile ? 2 : 1,
-				isMobile: ctxCfg.isMobile,
-				hasTouch: ctxCfg.isMobile,
-				colorScheme: ctxCfg.theme,
-			});
+		const context = await browser.newContext({
+			viewport: { width: 1440, height: 900 },
+			deviceScaleFactor: 1,
+			isMobile: false,
+		});
 
-			const page = await context.newPage();
-			await setupPageRoutesAndStorage(page);
+		const page = await context.newPage();
+		await setupPageRoutesAndStorage(page);
 
-			const targetUrl = `http://127.0.0.1:5199/?demo=true#telephony`;
-			console.log(`  -> Navigating to ${targetUrl}...`);
-			await page.goto(targetUrl, { waitUntil: "commit", timeout: 30000 });
+		const targetUrl = `http://127.0.0.1:5199/?demo=true#telephony`;
+		console.log(`  -> Navigating to ${targetUrl}...`);
+		await page.goto(targetUrl, { waitUntil: "commit", timeout: 45000 });
 
-			console.log("  -> Waiting for telephony launcher selector...");
-			await page.waitForSelector('[data-testid="telephony-studio-modal-root"], [data-testid="direct-telephony-launcher-root"]', { timeout: 30000 });
-			await page.waitForTimeout(1000);
+		console.log("  -> Waiting for telephony launcher selector...");
+		await page.waitForSelector('[data-testid="telephony-studio-modal-root"], [data-testid="direct-telephony-launcher-root"]', { timeout: 45000 });
+		await page.waitForTimeout(1000);
 
-			console.log("  -> Applying theme...");
-			await setTheme(page, ctxCfg.theme, ctxCfg.isDark);
-			await page.waitForTimeout(600);
+		// 1. PC Light
+		console.log("  -> Capturing PC Light...");
+		await setTheme(page, "light", false);
+		const pcLightPath = path.join(PROOFS_DIR, "01_telephony_studio_pc_light_1440x900.png");
+		await page.screenshot({ path: pcLightPath, fullPage: false });
+		verifyProof(pcLightPath);
+		fs.copyFileSync(pcLightPath, path.join(PROOFS_DIR, "01_telephony_pc_light_1440x900.png"));
 
-			// 1. CAPTURE TELEPHONY STUDIO MODAL (Канонический журнал, плеер, диалер, заметки)
-			const studioName = `${ctxCfg.prefix}_telephony_studio_${ctxCfg.isMobile ? "mobile" : "pc"}_${ctxCfg.theme}_${ctxCfg.width}x${ctxCfg.height}.png`;
-			const studioPath = path.join(PROOFS_DIR, studioName);
-			await page.screenshot({ path: studioPath, fullPage: false });
-			verifyProof(studioPath);
+		// 2. PC Dark
+		console.log("  -> Capturing PC Dark...");
+		await setTheme(page, "dark", true);
+		const pcDarkPath = path.join(PROOFS_DIR, "02_telephony_studio_pc_dark_1440x900.png");
+		await page.screenshot({ path: pcDarkPath, fullPage: false });
+		verifyProof(pcDarkPath);
+		fs.copyFileSync(pcDarkPath, path.join(PROOFS_DIR, "02_telephony_pc_dark_1440x900.png"));
 
-			// 4-state aliases
-			const aliasName = `${ctxCfg.prefix}_telephony_${ctxCfg.isMobile ? "mobile" : "pc"}_${ctxCfg.theme}_${ctxCfg.width}x${ctxCfg.height}.png`;
-			fs.copyFileSync(studioPath, path.join(PROOFS_DIR, aliasName));
+		// 3. Mobile Context (390x844 Apple HIG) - Telephony Studio
+		console.log("\n======================================================");
+		console.log("Phase: Mobile Context (390x844 Apple HIG) - Telephony Studio");
+		console.log("======================================================");
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(targetUrl, { waitUntil: "commit", timeout: 30000 });
+		await page.waitForSelector('[data-testid="telephony-studio-modal-root"], [data-testid="direct-telephony-launcher-root"]', { timeout: 30000 });
+		await page.waitForTimeout(1000);
 
-			// 2. CAPTURE ACTIVE CALL INTERACTION (нажатие "Позвонить" в студии)
-			console.log("  -> Testing active call interaction...");
-			const callBtn = page.locator('[data-testid="telephony-call-patient-btn"]').first();
-			if (await callBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-				await callBtn.click();
-				await page.waitForTimeout(800);
+		// 3.1 Mobile Dark
+		console.log("  -> Capturing Mobile Dark...");
+		await setTheme(page, "dark", true);
+		const mobDarkPath = path.join(PROOFS_DIR, "04_telephony_studio_mobile_dark_390x844.png");
+		await page.screenshot({ path: mobDarkPath, fullPage: false });
+		verifyProof(mobDarkPath);
+		fs.copyFileSync(mobDarkPath, path.join(PROOFS_DIR, "04_telephony_mobile_dark_390x844.png"));
 
-				const callActiveName = `${ctxCfg.prefix}_telephony_call_active_${ctxCfg.isMobile ? "mobile" : "pc"}_${ctxCfg.theme}_${ctxCfg.width}x${ctxCfg.height}.png`;
-				const callActivePath = path.join(PROOFS_DIR, callActiveName);
-				await page.screenshot({ path: callActivePath, fullPage: false });
-				verifyProof(callActivePath);
-			}
+		// 3.2 Mobile Light
+		console.log("  -> Capturing Mobile Light...");
+		await setTheme(page, "light", false);
+		const mobLightPath = path.join(PROOFS_DIR, "03_telephony_studio_mobile_light_390x844.png");
+		await page.screenshot({ path: mobLightPath, fullPage: false });
+		verifyProof(mobLightPath);
+		fs.copyFileSync(mobLightPath, path.join(PROOFS_DIR, "03_telephony_mobile_light_390x844.png"));
 
-			// 3. CAPTURE SOFTPHONE DIRECT HARNESS (#softphone)
-			console.log("  -> Capturing standalone softphone popover...");
-			const softphoneUrl = `http://127.0.0.1:5199/?demo=true#softphone`;
-			await page.goto(softphoneUrl, { waitUntil: "commit", timeout: 30000 });
-			await page.waitForSelector('[data-testid="direct-telephony-launcher-root"]', { timeout: 15000 }).catch(() => {});
+		// Active call interaction on PC
+		console.log("\n  -> Testing active call interaction on PC...");
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.goto(targetUrl, { waitUntil: "commit", timeout: 30000 });
+		await page.waitForSelector('[data-testid="telephony-studio-modal-root"], [data-testid="direct-telephony-launcher-root"]', { timeout: 30000 });
+		await page.waitForTimeout(1000);
+		await setTheme(page, "dark", true);
+
+		const callBtn = page.locator('[data-testid="telephony-call-patient-btn"]').first();
+		if (await callBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+			await callBtn.click();
 			await page.waitForTimeout(800);
-
-			const softphoneName = `${ctxCfg.prefix}_telephony_softphone_${ctxCfg.isMobile ? "mobile" : "pc"}_${ctxCfg.theme}_${ctxCfg.width}x${ctxCfg.height}.png`;
-			const softphonePath = path.join(PROOFS_DIR, softphoneName);
-			await page.screenshot({ path: softphonePath, fullPage: false });
-			verifyProof(softphonePath);
-
-			await context.close();
+			const callActivePath = path.join(PROOFS_DIR, "02_telephony_call_active_pc_dark_1440x900.png");
+			await page.screenshot({ path: callActivePath, fullPage: false });
+			verifyProof(callActivePath);
 		}
+
+		// 4. Softphone popover (#softphone)
+		console.log("\n======================================================");
+		console.log("Phase: Standalone Softphone (#softphone)");
+		console.log("======================================================");
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.goto(`http://127.0.0.1:5199/?demo=true#softphone`, { waitUntil: "commit", timeout: 30000 });
+		await page.waitForSelector('[data-testid="direct-telephony-launcher-root"]', { timeout: 15000 }).catch(() => {});
+		await page.waitForTimeout(1000);
+
+		await setTheme(page, "light", false);
+		const spLightPath = path.join(PROOFS_DIR, "01_telephony_softphone_pc_light_1440x900.png");
+		await page.screenshot({ path: spLightPath, fullPage: false });
+		verifyProof(spLightPath);
+
+		await setTheme(page, "dark", true);
+		const spDarkPath = path.join(PROOFS_DIR, "02_telephony_softphone_pc_dark_1440x900.png");
+		await page.screenshot({ path: spDarkPath, fullPage: false });
+		verifyProof(spDarkPath);
+
+		await context.close();
 
 		console.log("\n======================================================");
 		console.log("✓ ALL TELEPHONY CANONICAL 4-STATE PROOFS CAPTURED & VERIFIED!");

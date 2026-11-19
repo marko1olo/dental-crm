@@ -31,8 +31,20 @@ import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescri
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
 import { DirectWaitlistMatchesLauncher } from "../../../schedule/DirectWaitlistMatchesLauncher";
+import { HardwareSettingsTab } from "../../../settings/HardwareSettingsTab";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
+
+function DirectSettingsTransition(): null {
+	React.useEffect(() => {
+		import("../../../../store/appStore").then((m) => {
+			if (m.useAppStore.getState().currentView !== "settings") {
+				m.useAppStore.getState().setCurrentView("settings");
+			}
+		});
+	}, []);
+	return null;
+}
 
 export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<StandaloneLaunchersProps>[] = [
 	// 0. Студия зарплат и сдельной мотивации врачей (SSOT)
@@ -208,7 +220,7 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		id: "telephony-studio",
 		title: "Телефония и журнал звонков",
 		criteria: {
-			tokens: ["telephony", "calls", "softphone"],
+			tokens: ["telephony", "calls", "softphone", "incoming"],
 			exclude: ["recalls", "recall-hub", "prophylaxis"],
 		},
 		render: () => <DirectTelephonyLauncher />,
@@ -396,19 +408,12 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		id: "settings-studio",
 		title: "Студия настроек клиники и реквизитов",
 		criteria: {
-			tokens: ["settings", "clinic-setup", "clinic-requisites", "settings-studio"],
-			searchIncludes: ["settings=1", "clinic_setup=1", "standalone=settings", "standalone=clinic_setup"],
-			exactHashes: ["#settings", "#clinic-setup", "#clinic-requisites", "#settings-studio"],
-			hashPrefixes: ["#settings?", "#settings/", "#clinic-setup?", "#clinic-requisites?"],
+			tokens: ["clinic-setup", "clinic-requisites", "settings-studio"],
+			searchIncludes: ["clinic_setup=1", "standalone=settings", "standalone=clinic_setup"],
+			exactHashes: ["#clinic-setup", "#clinic-requisites", "#settings-studio"],
+			hashPrefixes: ["#settings-studio?", "#clinic-setup?", "#clinic-requisites?"],
 		},
-		render: () => {
-			if (typeof window !== "undefined") {
-				import("../../../../store/appStore").then((m) => {
-					m.useAppStore.getState().setCurrentView("settings");
-				});
-			}
-			return null;
-		},
+		render: () => <DirectSettingsTransition />,
 	},
 	// 21. Лист ожидания и подбор пациентов в освободившийся слот (SSOT)
 	{
@@ -421,6 +426,22 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			hashPrefixes: ["#waitlist-matches?", "#waitlist_matches?"],
 		},
 		render: () => <DirectWaitlistMatchesLauncher />,
+	},
+	// 22. Студия оборудования и аппаратных шлюзов клиники
+	{
+		id: "hardware-studio",
+		title: "Студия оборудования и аппаратных шлюзов",
+		criteria: {
+			tokens: ["hardware", "hardware-studio", "equipment", "sensor-gateway"],
+			searchIncludes: ["hardware=1", "standalone=hardware", "hardware-studio=1"],
+			exactHashes: ["#hardware", "#hardware-studio", "#equipment", "#settings/hardware"],
+			hashPrefixes: ["#hardware?", "#hardware-studio?", "#equipment?"],
+		},
+		render: () => (
+			<div className="min-h-screen w-full bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6" data-testid="hardware-standalone-view">
+				<HardwareSettingsTab />
+			</div>
+		),
 	},
 ];
 

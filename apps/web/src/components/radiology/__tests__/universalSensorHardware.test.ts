@@ -199,7 +199,7 @@ describe("Universal Sensor Hardware & Telemetry Suite", () => {
 
 		it("verifies HardwareSettingsTab renders universal-sensor-gateway-card with 1-click diagnostics", () => {
 			let tabSrc = readSource("components/settings/HardwareSettingsTab.tsx");
-			const cardPath = path.join(webSrcRoot, "components/settings/hardwareTab/HardwareSensorGatewayCard.tsx");
+			const cardPath = path.join(webSrcRoot, "components/settings/hardware/HardwareSensorGatewayCard.tsx");
 			if (existsSync(cardPath)) {
 				tabSrc += "\n" + readFileSync(cardPath, "utf8");
 			}

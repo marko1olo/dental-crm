@@ -387,7 +387,8 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 					),
 				);
 			}
-			const result = (await res.json()) as ConvertLeadResult;
+			const json = await res.json();
+			const result = ((json?.data ?? json) as unknown) as ConvertLeadResult;
 			const nextStatus: LeadStatus =
 				(result?.hasAppointmentDates ?? Boolean(payload.appointmentStart))
 					? "consult_booked"

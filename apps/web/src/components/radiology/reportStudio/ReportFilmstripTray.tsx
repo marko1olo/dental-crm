@@ -78,8 +78,9 @@ export const ReportFilmstripTray: React.FC<ReportFilmstripTrayProps> = ({
 									src={study.imageUrl}
 									alt={`Зуб #${study.toothFdi}`}
 									onError={(e) => {
+										const label = study.toothFdi ? `RVG #${study.toothFdi}` : "RVG";
 										(e.target as HTMLImageElement).src =
-											"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='70' viewBox='0 0 100 70'><rect width='100' height='70' fill='%23111'/><text x='50%25' y='50%25' fill='%2310b981' font-family='sans-serif' font-size='10' text-anchor='middle'>RVG #16</text></svg>";
+											`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='70' viewBox='0 0 100 70'><rect width='100' height='70' fill='%23111'/><text x='50%25' y='50%25' fill='%2310b981' font-family='sans-serif' font-size='10' text-anchor='middle'>${label}</text></svg>`;
 									}}
 								/>
 								<div className="radiology-thumb-badge">

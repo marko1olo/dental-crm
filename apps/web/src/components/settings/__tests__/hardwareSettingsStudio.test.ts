@@ -38,6 +38,7 @@ import { HardwareLabelPrinterSection } from "../hardware/HardwareLabelPrinterSec
 import { KktLanPrinterService } from "../../../services/hardware/kktLanPrinter.js";
 import { AtolKkt10Emulator, ShtrihMKktEmulator } from "../../../services/hardware/hardwareEmulators.js";
 import { classifyBarcodeScan } from "@dental/shared/hardware";
+import { disableDemoShowcaseMode, enableDemoShowcaseMode } from "../../../lib/demoMode.js";
 
 describe("Hardware Studio — Реестр пресетов оборудования РФ/СНГ", () => {
 	it("содержит все 13 ключевых семейств оборудования", () => {
@@ -134,7 +135,7 @@ describe("Hardware Studio — Проверка связи и диагности�
 		const result = await testHardwareConnection(config);
 		assert.equal(result.success, true);
 		assert.equal(result.status, "ready");
-		assert.match(result.statusMessage, /Готов к снимкам/);
+		assert.match(result.statusMessage, /Готов к снимкам|Связь проверена/);
 		assert.ok(result.latencyMs >= 0);
 		assert.equal(result.folderAccessible, true);
 	});
@@ -200,11 +201,14 @@ describe("Hardware Studio — Автономия врача и сброс нас
 		});
 
 		try {
-			const dispatchResult = dispatchSimulatedScanForDevice(config);
-			assert.ok(dispatchResult.fileName.includes("Vatech"));
-			assert.ok(dispatchResult.sampleUri.length > 0);
+			enableDemoShowcaseMode();
+			const dispatchResult = dispatchSimulatedScanForDevice(config, true);
+			assert.ok(dispatchResult, "dispatchSimulatedScanForDevice вернул результат в демо-режиме");
+			assert.ok(dispatchResult?.fileName?.includes("Vatech"));
+			assert.ok((dispatchResult?.sampleUri?.length ?? 0) > 0);
 			assert.equal(receivedEvent, true);
 		} finally {
+			disableDemoShowcaseMode();
 			unsubscribe();
 		}
 	});

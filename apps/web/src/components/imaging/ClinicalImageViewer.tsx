@@ -30,6 +30,7 @@ export function ClinicalImageViewer({
 	const resolvedImageUrl = useSafeObjectUrl(imageUrl, { autoRevokeBlobStrings: autoRevokeBlobUrl });
 	const [imageLoadError, setImageLoadError] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
+	const imageRef = useRef<HTMLImageElement>(null);
 
 	useEffect(() => {
 		setImageLoadError(false);
@@ -43,6 +44,7 @@ export function ClinicalImageViewer({
 		isPanning,
 	} = useClinicalImageInteractions({
 		containerRef,
+		imageRef,
 		transformStr: viewerStyle?.transform as string | undefined,
 		isRulerActive,
 		isPanActive,
@@ -64,14 +66,14 @@ export function ClinicalImageViewer({
 
 	return (
 		<div
-			className="clinical-image-container relative w-full h-full min-h-[300px] max-h-full flex-1 flex items-center justify-center overflow-hidden bg-[#090d16] rounded-xl border border-[#1e293b] shadow-inner"
+			className="clinical-image-container relative w-full h-full min-h-[300px] max-h-full flex-1 flex items-center justify-center overflow-hidden bg-[var(--paper)] rounded-xl border border-[var(--line)] shadow-inner"
 			ref={containerRef}
 			role={isRulerActive || isPanActive ? "region" : "img"}
 			tabIndex={0}
 			aria-label={isRulerActive ? "Измерение длины корневого канала" : isPanActive ? "Панорамирование снимка" : "Просмотрщик снимка"}
 			onMouseDown={handleMouseDown}
 			style={{
-				backgroundColor: "#090d16",
+				backgroundColor: "var(--paper)",
 				"--clinical-viewer-filter": viewerFilter,
 				"--clinical-viewer-transform": (viewerStyle?.transform as string) ?? "none",
 				cursor: cursorStyle,
@@ -85,6 +87,7 @@ export function ClinicalImageViewer({
 			)}
 
 			<img
+				ref={imageRef}
 				src={resolvedImageUrl}
 				alt={studyTitle || "Рентгеновский снимок"}
 				decoding="async"

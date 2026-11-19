@@ -87,6 +87,7 @@ export async function convertLeadToAppointment(params: {
 		});
 
 		let appointment: Appointment | null = null;
+		const existingMeta = (lead.metadata as Record<string, unknown> | null) || {};
 		if (hasDates && doctor && apptStart && apptEnd) {
 			const utm = extractUtmAttribution(lead.source, (lead.metadata as Record<string, unknown> | null) ?? null);
 			const reason = payload.reason || (Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 ? `Первичная консультация: ${lead.clinicalTags.join(", ")}` : (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"));
@@ -103,7 +104,8 @@ export async function convertLeadToAppointment(params: {
 				comment: commentParts.length > 0 ? commentParts.join(" | ") : null,
 			}, tx);
 
-			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "consult_booked", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId, patientId: patient.id });
+			const updatedMeta = { ...existingMeta, appointmentId: appointment.id };
+			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "consult_booked", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId, patientId: patient.id, metadata: updatedMeta });
 		} else {
 			await recordLeadStageTransition({ tx, organizationId, leadId: lead.id, fromStage: lead.status, toStage: "converted", stageEnteredAt: lead.stageEnteredAt || lead.createdAt, changedByUserId, patientId: patient.id });
 		}

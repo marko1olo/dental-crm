@@ -62,8 +62,16 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("telephony") ||
 			window.location.hash.includes("softphone") ||
 			window.location.hash.includes("calls") ||
+			window.location.hash.includes("incoming") ||
+			window.location.search.includes("incoming") ||
 			window.location.search.includes("telephony") ||
-			window.location.search.includes("softphone"));
+			window.location.search.includes("softphone") ||
+			window.location.hash.includes("dms") ||
+			window.location.search.includes("dms") ||
+			window.location.hash.includes("insurance") ||
+			window.location.search.includes("insurance") ||
+			window.location.hash.includes("hardware") ||
+			window.location.search.includes("hardware"));
 
 	if (!isStandOrDemo && !isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;

@@ -85,14 +85,14 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 	return (
 		<div
 			data-testid="consultation-bottom-dock"
-			className="flex bg-[#070b14] border-t border-[#1e293b] select-none shrink-0"
+			className="flex bg-[var(--paper)] border-t border-[var(--line)] select-none shrink-0"
 			style={{ height: "148px", minHeight: "148px", maxHeight: "148px" }}
 		>
 			{/* ═══════════════════════════════════════════════════════════════════
 			    LEFT SECTION: ЗАХВАЧЕННЫЕ СНИМКИ (Screenshot 25 Patient Captured)
 			    ═══════════════════════════════════════════════════════════════════ */}
-			<div className="w-1/2 flex flex-col border-r border-[#1e293b] p-1.5 overflow-hidden">
-				<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold text-slate-300 border-b border-[#1e293b]/70">
+			<div className="w-1/2 flex flex-col border-r border-[var(--line)] p-1.5 overflow-hidden">
+				<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold text-slate-300 border-b border-[var(--line)]/70">
 					<div className="flex items-center gap-1.5">
 						<Camera size={13} className="text-[#00C853]" />
 						<span className="tracking-wider uppercase">СНИМКИ ПАЦИЕНТА</span>
@@ -104,7 +104,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 				</div>
 
 				{/* Horizontal Scroll of Patient Images or Honest Empty State */}
-				<div className="flex items-center gap-2 pt-1.5 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[#334155] flex-1">
+				<div className="flex items-center gap-2 pt-1.5 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--line)] flex-1">
 					{effectivePatientStudies.length === 0 ? (
 						<div
 							data-testid="consultation-empty-patient-studies"
@@ -132,7 +132,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 									style={{
 										width: "105px",
 										minWidth: "105px",
-										border: isCurrentlyActive ? "2px solid #00C853" : "1px solid #334155",
+										border: isCurrentlyActive ? "2px solid #00C853" : "1px solid var(--line)",
 										boxShadow: isCurrentlyActive ? "0 0 10px rgba(0, 200, 83, 0.4)" : "none",
 									}}
 									className="group flex flex-col rounded bg-[#0c1322] cursor-pointer overflow-hidden shrink-0 transition-all hover:border-[#00C853] relative"
@@ -219,7 +219,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 				{!isAtlasMode ? (
 					<>
 						{/* Mode: Clinical Comparison Post-op studies */}
-						<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold border-b border-[#1e293b]/70">
+						<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold border-b border-[var(--line)]/70">
 							<div className="flex items-center gap-1.5 text-slate-300">
 								<Scan size={13} className="text-[#38bdf8]" />
 								<span className="tracking-wider uppercase text-cyan-300">
@@ -231,7 +231,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 							</span>
 						</div>
 
-						<div className="flex items-center gap-2 pt-1.5 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[#334155] flex-1">
+						<div className="flex items-center gap-2 pt-1.5 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--line)] flex-1">
 							{effectivePatientStudies.map((st) => {
 								const { dateStr } = formatFilmstripDateTime(st.studyDate);
 								const badge = getModalityBadge(st.modality || "rvg");
@@ -250,7 +250,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 											}
 										}}
 										style={{ width: "105px", minWidth: "105px" }}
-										className="group flex flex-col rounded border border-[#334155] hover:border-[#38bdf8] bg-[#0c1322] cursor-pointer overflow-hidden shrink-0 transition-all"
+										className="group flex flex-col rounded border border-[var(--line)] hover:border-[#38bdf8] bg-[var(--paper-soft)] cursor-pointer overflow-hidden shrink-0 transition-all"
 									>
 										<div className="h-16 bg-black flex items-center justify-center overflow-hidden relative">
 											{src ? (
@@ -283,7 +283,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 				) : (
 					<>
 						{/* Mode: 8 Disciplines Pathology Library (Screenshot 26) */}
-						<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold border-b border-[#1e293b]/70">
+						<div className="flex items-center justify-between pb-1 px-1 text-[11px] font-bold border-b border-[var(--line)]/70">
 							<div className="flex items-center gap-1.5 text-slate-300">
 								<Sparkles size={13} className="text-[#06b6d4]" />
 								<span className="tracking-wider uppercase">АНАТОМИЧЕСКИЙ АТЛАС</span>
@@ -294,7 +294,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 								<button
 									type="button"
 									onClick={() => setDisciplineDropdownOpen((prev) => !prev)}
-									className="px-2 py-0.5 rounded bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+									className="px-2 py-0.5 rounded bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
 									data-testid="btn-discipline-selector"
 								>
 									<span>ДИСЦИПЛИНА:</span>
@@ -312,8 +312,8 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 											right: 0,
 											marginBottom: "4px",
 											width: "290px",
-											backgroundColor: "#0f172a",
-											border: "1px solid #334155",
+											backgroundColor: "var(--paper-soft)",
+											border: "1px solid var(--line)",
 											borderRadius: "6px",
 											boxShadow: "0 -10px 25px rgba(0,0,0,0.8)",
 											zIndex: 10000,
@@ -321,7 +321,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 										}}
 										data-testid="discipline-dropdown-menu"
 									>
-										<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-[#1e293b]">
+										<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-[var(--line)]">
 											8 клинических дисциплин
 										</div>
 										{DENTAL_DISCIPLINES.map((d) => (
@@ -335,7 +335,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 												className={`w-full text-left px-2 py-1.5 rounded text-[11px] flex items-center justify-between cursor-pointer transition-colors ${
 													selectedDiscipline === d.id
 														? "bg-[#134e4a] text-[#5eead4] font-bold"
-														: "text-slate-200 hover:bg-[#1e293b]"
+														: "text-slate-200 hover:bg-[var(--paper)]"
 												}`}
 												data-testid={`option-discipline-${d.id}`}
 											>
@@ -355,14 +355,14 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 						</div>
 
 						{/* Horizontal Demonstration Cards */}
-						<div className="flex items-center gap-2 pt-1.5 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[#334155] flex-1">
+						<div className="flex items-center gap-2 pt-1.5 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-[var(--line)] flex-1">
 							{activePathologies.map((pathology) => (
 								<div
 									key={pathology.id}
 									data-testid={`pathology-card-${pathology.id}`}
 									onClick={() => onSelectPathology(pathology)}
 									style={{ width: "140px", minWidth: "140px" }}
-									className="group flex flex-col rounded border border-[#334155] hover:border-[#38bdf8] bg-[#0c1322] cursor-pointer overflow-hidden shrink-0 transition-all"
+									className="group flex flex-col rounded border border-[var(--line)] hover:border-[#38bdf8] bg-[var(--paper-soft)] cursor-pointer overflow-hidden shrink-0 transition-all"
 									title={`${pathology.titleRu} — ${pathology.descriptionRu}`}
 								>
 									<div className="h-16 bg-black flex items-center justify-center overflow-hidden relative">
@@ -372,7 +372,7 @@ export const ConsultationBottomDock: React.FC<ConsultationBottomDockProps> = ({
 											className="w-full h-full object-cover group-hover:scale-105 transition-transform"
 										/>
 										{pathology.icd10 && (
-											<span className="absolute top-0.5 right-0.5 px-1 rounded text-[8px] font-mono font-bold bg-[#1e293b]/90 text-[#38bdf8] border border-[#334155]">
+											<span className="absolute top-0.5 right-0.5 px-1 rounded text-[8px] font-mono font-bold bg-[var(--paper)]/90 text-[#38bdf8] border border-[var(--line)]">
 												{pathology.icd10}
 											</span>
 										)}

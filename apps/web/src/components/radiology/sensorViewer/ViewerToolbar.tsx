@@ -81,7 +81,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 		return (
 			<div
 				data-testid="sensor-viewer-mobile-top-bar"
-				className="flex items-center justify-between px-3 py-2 bg-[#070b14] border-b border-[#1e293b] text-xs shrink-0 select-none"
+				className="flex items-center justify-between px-3 py-2 bg-[var(--paper)] border-b border-[var(--line)] text-xs shrink-0 select-none"
 				style={{ paddingTop: "max(8px, env(safe-area-inset-top, 8px))" }}
 			>
 				<div className="flex items-center gap-2 min-w-0">
@@ -116,7 +116,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					<button
 						type="button"
 						onClick={() => setIsFullscreen((prev) => !prev)}
-						className="p-1.5 rounded bg-[#1e293b] text-slate-300 border border-[#334155] cursor-pointer"
+						className="p-1.5 rounded bg-[var(--paper-soft)] text-slate-300 border border-[var(--line)] cursor-pointer"
 						title="Полноэкранный режим"
 					>
 						{isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -126,7 +126,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 						<button
 							type="button"
 							onClick={handleClose}
-							className="p-1.5 rounded bg-transparent text-slate-400 hover:text-white border border-[#334155] cursor-pointer"
+							className="p-1.5 rounded bg-transparent text-slate-400 hover:text-white border border-[var(--line)] cursor-pointer"
 							title="Закрыть"
 						>
 							<X size={14} />
@@ -140,7 +140,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 	return (
 		<div
 			data-testid="sensor-viewer-top-toolbar"
-			className="flex items-center justify-between px-3 py-1 bg-[#070b14] border-b border-[#1e293b] text-xs h-9 min-h-[34px] max-h-[36px] shrink-0"
+			className="flex items-center justify-between px-3 py-1 bg-[var(--paper)] border-b border-[var(--line)] text-xs h-9 min-h-[34px] max-h-[36px] shrink-0"
 		>
 			{/* Left: Brand Badge & Interactive Tools */}
 			<div className="flex items-center gap-2">
@@ -150,8 +150,8 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 
 				{/* Tool Toggle: Pan / Ruler / Curved Canal / Loupe */}
 				<div
-					className="dente-segmented-bar bg-[#0f172a] border-[#1e293b]"
-					style={{ background: "#0f172a", borderColor: "#1e293b" }}
+					className="dente-segmented-bar bg-[var(--paper-soft)] border-[var(--line)]"
+					style={{ background: "var(--paper-soft)", borderColor: "var(--line)" }}
 					data-testid="sensor-tools-segmented-bar"
 				>
 					<button
@@ -211,7 +211,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					<button
 						type="button"
 						onClick={handleFinishCurvedCanal}
-						className="h-7 px-2.5 rounded-lg bg-[#0284c7] hover:bg-[#0369a1] text-white text-[11px] font-bold cursor-pointer transition-colors"
+						className="h-8 px-2.5 rounded-lg bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-medium cursor-pointer transition-colors"
 						title="Зафиксировать рабочую длину канала (WL)"
 						data-testid="btn-finish-canal"
 					>
@@ -224,7 +224,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					<button
 						type="button"
 						onClick={handleFinishLesionContour}
-						className="h-7 px-2.5 rounded-lg bg-[#f59e0b] hover:bg-[#d97706] text-black text-[11px] font-bold cursor-pointer transition-colors"
+						className="h-8 px-2.5 rounded-lg bg-[#f59e0b] hover:bg-[#d97706] text-black text-xs font-medium cursor-pointer transition-colors"
 						title="Зафиксировать площадь очага деструкции (мм²)"
 						data-testid="btn-finish-lesion"
 					>
@@ -237,7 +237,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					<button
 						type="button"
 						onClick={handleClearMeasurements}
-						className="h-8 px-2 rounded-lg border border-[#334155] bg-[#1e293b] text-slate-400 hover:text-red-400 hover:border-red-400/50 cursor-pointer transition-colors flex items-center justify-center"
+						className="h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-slate-400 hover:text-red-400 hover:border-red-400/50 cursor-pointer transition-colors flex items-center justify-center"
 						title="Очистить все линейки и каналы"
 						data-testid="btn-clear-measurements"
 					>
@@ -249,7 +249,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 				<button
 					type="button"
 					onClick={handleResetView}
-					className="h-8 px-2.5 rounded-lg border border-[#334155] bg-[#1e293b] hover:bg-[#334155] text-slate-200 hover:text-white text-xs font-medium cursor-pointer transition-colors shadow-2xs"
+					className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-slate-200 hover:text-white text-xs font-medium cursor-pointer transition-colors shadow-2xs"
 					title="Сбросить масштаб и положение (0)"
 					data-testid="btn-reset-view"
 				>
@@ -273,7 +273,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 				<button
 					type="button"
 					onClick={handleInsertNorma}
-					className={`px-2.5 py-1 rounded font-bold text-[11px] border transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+					className={`h-8 px-2.5 rounded-lg font-medium text-xs border transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
 						isNormaApplied
 							? "bg-[#10b981]/25 border-[#10b981] text-[#a7f3d0]"
 							: "bg-[#064e3b] border-[#10b981] text-[#a7f3d0] hover:bg-[#047857]"
@@ -290,7 +290,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					<button
 						type="button"
 						onClick={() => setIsProtocolsOpen((prev) => !prev)}
-						className="px-2 py-1 rounded bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+						className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-slate-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
 						data-testid="btn-sensor-protocols"
 					>
 						<FileText size={12} className="text-[#2dd4bf]" />
@@ -306,8 +306,8 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 								right: 0,
 								marginTop: "4px",
 								minWidth: "260px",
-								backgroundColor: "#0f172a",
-								border: "1px solid #334155",
+								backgroundColor: "var(--paper-soft)",
+								border: "1px solid var(--line)",
 								borderRadius: "6px",
 								boxShadow: "0 10px 25px rgba(0,0,0,0.7)",
 								zIndex: 10000,
@@ -333,7 +333,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					type="button"
 					onClick={handleExportImage}
 					disabled={isExporting}
-					className="px-2 py-1 rounded bg-[#0f172a] hover:bg-[#1e293b] border border-[#334155] text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-slate-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
 					data-testid="btn-sensor-export-png"
 					title="Экспортировать снимок с калибровочной шкалой 5 мм и метаданными клиники (PNG)"
 				>
@@ -345,7 +345,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 				<button
 					type="button"
 					onClick={() => setShowConsultationSplit(true)}
-					className="px-2 py-1 rounded bg-[#0f172a] hover:bg-[#1e293b] border border-[#334155] text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+					className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-slate-200 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
 					data-testid="btn-sensor-open-consultation"
 					title="Перейти в режим сплит-консультации и библиотеки 8 дисциплин"
 				>
@@ -357,7 +357,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 				<button
 					type="button"
 					onClick={() => setIsFullscreen((prev) => !prev)}
-					className="p-1 rounded bg-[#1e293b] hover:bg-[#334155] text-slate-300 border border-[#334155] cursor-pointer"
+					className="h-8 w-8 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-slate-300 border border-[var(--line)] cursor-pointer flex items-center justify-center"
 					title={isFullscreen ? "Выйти из полного экрана (F / Esc)" : "Полноэкранный режим (F)"}
 					data-testid="btn-sensor-fullscreen"
 				>
@@ -369,7 +369,7 @@ export const ViewerToolbar: React.FC<ViewerToolbarProps> = ({ state, props }) =>
 					<button
 						type="button"
 						onClick={handleClose}
-						className="p-1 rounded bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white border border-[#334155] cursor-pointer"
+						className="h-8 w-8 rounded-lg bg-transparent hover:bg-[var(--paper-soft)] text-slate-400 hover:text-white border border-[var(--line)] cursor-pointer flex items-center justify-center"
 						title="Закрыть просмотрщик (Esc)"
 						data-testid="btn-sensor-close"
 					>
