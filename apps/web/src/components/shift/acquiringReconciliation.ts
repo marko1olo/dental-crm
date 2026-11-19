@@ -1,16 +1,70 @@
 /**
  * acquiringReconciliation.ts — Layer 2: Acquiring vs KKT Reconciliation Engine ("Копейка в копейку").
+ * Canonical implementation consolidated in shift domain.
  */
 
-import {
-	kopecksToRub,
-} from "@dental/shared";
-import type {
-	AcquiringReconciliationReport,
-	AcquiringTerminalTransaction,
-	KktFiscalElectronicRecord,
-	ReconciledTransaction,
-} from "./types";
+import { kopecksToRub } from "@dental/shared";
+
+export interface AcquiringTerminalTransaction {
+	readonly id: string;
+	readonly rrn: string;
+	readonly authCode: string;
+	readonly panMasked: string;
+	readonly paymentType: "card_contactless" | "card_chip" | "sbp_qr" | "mir_pay";
+	readonly amountRub: number;
+	readonly amountKopecks: number;
+	readonly timestamp: string;
+	readonly terminalId: string;
+	readonly status: "approved" | "declined";
+}
+
+export interface KktFiscalElectronicRecord {
+	readonly id: string;
+	readonly fiscalDocNumber: string;
+	readonly fiscalSign: string;
+	readonly patientName: string;
+	readonly electronicAmountRub: number; // Tag 1081
+	readonly electronicAmountKopecks: number;
+	readonly operationType: "income" | "income_return";
+	readonly timestamp: string;
+	readonly terminalRrn?: string;
+	readonly authCode?: string;
+}
+
+export type ReconciliationDiscrepancyType =
+	| "matched" // 100% сошлось
+	| "missing_kkt_receipt" // Деньги с карты списаны, чек ККТ не пробит (требуется пробитие чека)
+	| "missing_terminal_charge" // В кассе пробит безнал, но в терминале нет транзакции (ошибка кассира / откат)
+	| "amount_mismatch"; // Суммы расходятся на копейки
+
+export interface ReconciledTransaction {
+	readonly id: string;
+	readonly status: ReconciliationDiscrepancyType;
+	readonly terminalTx?: AcquiringTerminalTransaction;
+	readonly kktRecord?: KktFiscalElectronicRecord;
+	readonly terminalAmountRub: number;
+	readonly kktAmountRub: number;
+	readonly diffRub: number;
+	readonly diffKopecks: number;
+	readonly explanationRu: string;
+	readonly suggestedActionRu: string;
+}
+
+export interface AcquiringReconciliationReport {
+	readonly totalTerminalRub: number;
+	readonly totalTerminalKopecks: number;
+	readonly totalKktRub: number;
+	readonly totalKktKopecks: number;
+	readonly totalDiffRub: number;
+	readonly totalDiffKopecks: number;
+	readonly isExactMatch: boolean;
+	readonly matchedCount: number;
+	readonly missingKktCount: number;
+	readonly missingTerminalCount: number;
+	readonly mismatchAmountCount: number;
+	readonly reconciledItems: readonly ReconciledTransaction[];
+	readonly summaryTitleRu: string;
+}
 
 export function reconcileAcquiringWithKkt(
 	terminalTxs: readonly AcquiringTerminalTransaction[],

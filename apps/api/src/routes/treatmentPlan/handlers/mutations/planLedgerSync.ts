@@ -12,6 +12,7 @@ import {
 } from "../../../odontogram/types.js";
 
 export interface SyncPlanLedgerItemInput {
+	treatmentPlanItemId?: string | null | undefined;
 	priceId?: string | null | undefined;
 	name?: string | null | undefined;
 	toothNumber?: number | null | undefined;
@@ -62,6 +63,7 @@ export async function syncUpsertPlanLedgerItems(
 			id: treatmentItems.id,
 			status: treatmentItems.status,
 			visitId: treatmentItems.visitId,
+			treatmentPlanItemId: treatmentItems.treatmentPlanItemId,
 		})
 		.from(treatmentItems)
 		.where(
@@ -194,7 +196,7 @@ export async function syncUpsertPlanLedgerItems(
 				patientId,
 				planId: savedPlanId,
 				blockingRule: blockingRule.message,
-				overrideReason: clinicalBlockerOverrideReason ?? "Автономия врача (Мандат 8e)",
+				overrideReason: clinicalBlockerOverrideReason ?? "Переопределение клинических ограничений",
 			},
 			`[Автономия врача] План лечения сохранен под ответственность врача: ${blockingRule.message}`,
 		);
@@ -246,6 +248,7 @@ export async function syncUpsertPlanLedgerItems(
 			organizationId,
 			patientId,
 			treatmentPlanId: savedPlanId,
+			treatmentPlanItemId: item.treatmentPlanItemId ?? null,
 			visitId: null,
 			serviceId: resolvedServiceId,
 			toothCode:

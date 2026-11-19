@@ -54,7 +54,7 @@ export const MobilePatientPlansTab: React.FC<MobilePatientPlansTabProps> = ({
 						if (onCreatePlan) onCreatePlan();
 						else showToast("Создание плана лечения доступно в приёме врача", "info");
 					}}
-					className="h-8 px-2.5 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-bold inline-flex items-center gap-1 shadow-xs active:scale-95 cursor-pointer"
+					className="min-h-[44px] h-11 px-4 rounded-xl bg-[var(--primary)] text-white text-base font-bold inline-flex items-center gap-2 shadow-xs active:scale-95 cursor-pointer"
 					data-testid="mobile-btn-create-plan"
 				>
 					<Plus size={13} />
@@ -89,8 +89,8 @@ export const MobilePatientPlansTab: React.FC<MobilePatientPlansTabProps> = ({
 									<span
 										className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
 											isApproved
-												? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
-												: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30"
+												? "bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)]"
+												: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]"
 										}`}
 									>
 										{isApproved ? "Согласован" : "Черновик"}

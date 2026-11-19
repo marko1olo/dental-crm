@@ -75,7 +75,7 @@ export const TreatmentPlansList: React.FC<TreatmentPlansListProps> = React.memo(
 							<button
 								type="button"
 								onClick={onNewPlanItem}
-								className="dente-btn dente-btn-primary h-9 px-4 text-xs font-semibold rounded-xl bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--teal-dark,#0f766e)] inline-flex items-center gap-1.5 mt-2 transition-colors cursor-pointer"
+								className="dente-btn dente-btn-primary h-9 px-4 text-xs font-semibold rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] inline-flex items-center gap-1.5 mt-2 transition-colors cursor-pointer"
 								data-testid="btn-add-first-plan-position"
 							>
 								<Plus size={15} />

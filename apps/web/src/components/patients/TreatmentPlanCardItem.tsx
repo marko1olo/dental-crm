@@ -70,7 +70,7 @@ export const TreatmentPlanCardItem: React.FC<TreatmentPlanCardItemProps> = React
 								? money(item.unitPriceRub)
 								: "—"}
 						</span>
-						<span className="inline-flex items-center gap-0.5 text-[10px] text-teal-700 dark:text-teal-300 font-medium">
+						<span className="inline-flex items-center gap-0.5 text-[10px] text-[var(--primary)] font-medium">
 							<Shield className="w-2.5 h-2.5" /> Согласовано
 						</span>
 					</div>
