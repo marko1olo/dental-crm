@@ -20,7 +20,7 @@ import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 
-const CURRENT_CONV_ID = "a46afd4e-7bcd-4b72-8b2d-bc40493beb15";
+const CURRENT_CONV_ID = "79b1ca4f-e925-4ccc-acec-1d9b3d576614";
 const PROOFS_DIR = path.resolve(process.cwd(), "docs/proofs/emr");
 const BRAIN_DIR = path.resolve(
 	`C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`,

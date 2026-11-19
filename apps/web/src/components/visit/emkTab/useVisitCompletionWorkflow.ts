@@ -98,7 +98,10 @@ export function useVisitCompletionWorkflow({
 
 			const additionalServices = assembleVisitStoreCompletedServices();
 			const effectiveVisitId = openVisitId || `VIS-${Date.now()}`;
-			const effectivePatientId = activePatient?.id || "pat-default";
+			const effectivePatientId = activePatient?.id;
+			if (!effectivePatientId) {
+				throw new Error("Не указан пациент для завершения приёма и формирования счёта.");
+			}
 			const effectivePatientName = activePatient?.fullName || "Пациент";
 			const effectiveDoctorName =
 				activeDoctor?.fullName ||
@@ -191,7 +194,7 @@ export function useVisitCompletionWorkflow({
 			});
 
 			const pendingCheckout = {
-				patientId: activePatient?.id || "pat-default",
+				patientId: effectivePatientId,
 				patientName:
 					activePatient?.fullName ||
 					(typeof (activePatient as { name?: string } | undefined)?.name === "string"

@@ -98,7 +98,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			[initialData?.clinic, profile, staff],
 		);
 
-		const [formData, setFormData] = useState<MedicalRecordData>(() => ({
+		const buildInitialFormData = useCallback((): MedicalRecordData => ({
 			...DEFAULT_MEDICAL_CARD_DATA,
 			...initialData,
 			clinic: { ...DEFAULT_MEDICAL_CARD_DATA.clinic, ...resolvedClinic, ...(initialData?.clinic || {}) },
@@ -106,7 +106,18 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			anamnesis: { ...DEFAULT_MEDICAL_CARD_DATA.anamnesis, ...(initialData?.anamnesis || {}) },
 			dentalStatus: { ...DEFAULT_MEDICAL_CARD_DATA.dentalStatus, ...(initialData?.dentalStatus || {}) },
 			epicrisis: { ...DEFAULT_MEDICAL_CARD_DATA.epicrisis, ...(initialData?.epicrisis || {}) },
-		}));
+		}), [initialData, resolvedClinic]);
+
+		const [formData, setFormData] = useState<MedicalRecordData>(buildInitialFormData);
+
+		// Zero-Leak Draft (Мандаты 8zq/8bn): Сброс и гидратация formData при смене patientId
+		const lastPatientIdRef = useRef<string | undefined>(patientId);
+		useEffect(() => {
+			if (lastPatientIdRef.current !== patientId) {
+				lastPatientIdRef.current = patientId;
+				setFormData(buildInitialFormData());
+			}
+		}, [patientId, buildInitialFormData]);
 
 		const [activeTab, setActiveTab] = useState<RecordTabType>(initialTab || "overview");
 		const [zoomScale, setZoomScale] = useState<number>(1.0);
@@ -124,14 +135,15 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			[formData.passport.patientBirthDate, formData.passport.cardOpenedDate],
 		);
 
-		// Debounced автосейв всей карты на лету (Zero Keystroke Loss)
+		// Debounced автосейв всей карты на лету (Zero Keystroke Loss & Zero-Leak Draft строго под изолированным patientId)
 		const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		useEffect(() => {
+			if (!patientId) return;
 			if (autosaveRef.current) clearTimeout(autosaveRef.current);
 			autosaveRef.current = setTimeout(() => {
 				try {
 					if (typeof sessionStorage !== "undefined") {
-						const draftKey = `dente:medical_card_autosave:${formData.passport.medicalCardNumber || "common"}`;
+						const draftKey = `dente:medical_card_autosave:${patientId}`;
 						sessionStorage.setItem(draftKey, JSON.stringify(formData));
 					}
 				} catch (err) {
@@ -139,7 +151,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 				}
 			}, 600);
 			return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
-		}, [formData]);
+		}, [formData, patientId]);
 
 		// Закрытие выпадающего меню по клику вне
 		useEffect(() => {
@@ -160,43 +172,23 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		});
 
 		const handleApplyNorm = useCallback(() => {
-			setFormData((prev) => {
-				const updated = applyMedicalCardPhysiologicalNorm(prev);
-				onSave?.(updated);
-				return updated;
-			});
+			setFormData((prev) => { const updated = applyMedicalCardPhysiologicalNorm(prev); onSave?.(updated); return updated; });
 		}, [onSave]);
 
 		const handleUpdatePassport = useCallback((patch: Partial<ClinicalPassportData>) => {
-			setFormData((prev) => {
-				const updated = { ...prev, passport: { ...prev.passport, ...patch } };
-				onSave?.(updated);
-				return updated;
-			});
+			setFormData((prev) => { const updated = { ...prev, passport: { ...prev.passport, ...patch } }; onSave?.(updated); return updated; });
 		}, [onSave]);
 
 		const handleUpdateAnamnesis = useCallback((patch: Partial<ClinicalAnamnesisData>) => {
-			setFormData((prev) => {
-				const updated = { ...prev, anamnesis: { ...prev.anamnesis, ...patch } };
-				onSave?.(updated);
-				return updated;
-			});
+			setFormData((prev) => { const updated = { ...prev, anamnesis: { ...prev.anamnesis, ...patch } }; onSave?.(updated); return updated; });
 		}, [onSave]);
 
 		const handleAddDiary = useCallback((newDiary: ClinicalVisitDiaryEntry) => {
-			setFormData((prev) => {
-				const updated = { ...prev, visitDiaries: [newDiary, ...prev.visitDiaries] };
-				onSave?.(updated);
-				return updated;
-			});
+			setFormData((prev) => { const updated = { ...prev, visitDiaries: [newDiary, ...prev.visitDiaries] }; onSave?.(updated); return updated; });
 		}, [onSave]);
 
 		const handleDeleteDiary = useCallback((index: number) => {
-			setFormData((prev) => {
-				const updated = { ...prev, visitDiaries: prev.visitDiaries.filter((_, i) => i !== index) };
-				onSave?.(updated);
-				return updated;
-			});
+			setFormData((prev) => { const updated = { ...prev, visitDiaries: prev.visitDiaries.filter((_, i) => i !== index) }; onSave?.(updated); return updated; });
 		}, [onSave]);
 
 		if (!isOpen) return null;
@@ -210,18 +202,17 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					onApplyPatch={(patch) => {
 						handleAddDiary({
 							id: generateUuidV7(),
-							visitDate: new Date().toISOString().split("T")[0],
+							entryDate: new Date().toISOString().split("T")[0] || "",
+							entryTime: new Date().toTimeString().slice(0, 5),
+							doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач",
+							doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Стоматолог-терапевт",
 							toothNumber: "16",
 							subjectiveComplaints: patch.complaint || "",
-							anamnesisMorbi: patch.anamnesis || "",
 							objectiveStatusLocalis: patch.objectiveStatus || "",
 							assessmentDiagnosisText: patch.diagnosis || "",
 							assessmentIcd10Code: (patch.diagnosis || "").split(" ")[0] || "K02.1",
 							procedureProtocol: patch.treatmentPlan || "",
 							homeCareRecommendations: patch.recommendations || "",
-							nextVisitRecommendations: "",
-							doctorSignature: formData.passport.attendingDoctorFullName || "Лечащий врач",
-							isSigned: false,
 						});
 						setIsProtocolGeneratorOpen(false);
 					}}

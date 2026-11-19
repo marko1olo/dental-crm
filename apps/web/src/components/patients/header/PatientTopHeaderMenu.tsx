@@ -79,7 +79,7 @@ export function PatientTopHeaderMenu({
 				data-testid="header-open-recalls-btn"
 			>
 				<CalendarCheck size={13} className="text-[var(--primary)] shrink-0" />
-				<span>Профосмотры и диспансеризация</span>
+				<span>Профосмотры и диспансерное наблюдение</span>
 			</button>
 			<div className="h-px bg-[var(--line)] my-0.5" />
 			<button type="button" onClick={() => { onClose(); void printBlankMedicalContract(selectedPatient); }} className={itemCls} data-testid="header-print-blank-contract-btn">

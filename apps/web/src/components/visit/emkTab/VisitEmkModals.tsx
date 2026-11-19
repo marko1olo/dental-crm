@@ -234,6 +234,7 @@ export function VisitEmkModals({
 
 			{/* Интерактивное модальное окно медицинской карты */}
 			<MedicalRecordStudioModal
+				key={activePatient?.id || "empty-patient"}
 				isOpen={isPrintModalOpen}
 				onClose={() => setIsPrintModalOpen(false)}
 				visitId={dashboard?.activeVisit?.id ?? undefined}
