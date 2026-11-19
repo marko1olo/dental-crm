@@ -12,9 +12,9 @@ export const HardwareDomainTabs: React.FC<Props> = ({ activeDomain, onSelectDoma
 	const tabs: Array<{ id: HardwareDomainTab; label: string; icon: React.ReactNode; testId: string }> = [
 		{ id: "imaging", label: "Рентген и Визиографы", icon: <Scan size={14} />, testId: "domain-tab-imaging" },
 		{ id: "kkt", label: "Касса и чеки", icon: <Printer size={14} />, testId: "domain-tab-kkt" },
-		{ id: "scanners", label: "Сканеры маркировки и штрихкодов", icon: <Barcode size={14} />, testId: "domain-tab-scanners" },
-		{ id: "labels", label: "Принтеры этикеток (Стерилизация)", icon: <Tag size={14} />, testId: "domain-tab-labels" },
-		{ id: "audio", label: "Микрофоны и звук (DSP)", icon: <Mic size={14} />, testId: "domain-tab-audio" },
+		{ id: "scanners", label: "Сканеры маркировки", icon: <Barcode size={14} />, testId: "domain-tab-scanners" },
+		{ id: "labels", label: "Принтеры этикеток", icon: <Tag size={14} />, testId: "domain-tab-labels" },
+		{ id: "audio", label: "Микрофоны (DSP)", icon: <Mic size={14} />, testId: "domain-tab-audio" },
 	];
 
 	return (

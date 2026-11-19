@@ -24,6 +24,7 @@
 
 import { isDesktopApp, watchDesktopDicomFolder } from "../../native/desktopBridge.js";
 import { VisiographPacsWatcherService } from "./visiographPacsWatcher.js";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export type HardwareDeviceCategory =
 	| "radiography_2d"
@@ -80,10 +81,10 @@ export interface HardwareDeviceConfig {
 
 export const HARDWARE_CATEGORY_LABELS: Record<HardwareDeviceCategory, string> = {
 	radiography_2d: "Визиографы 2D",
-	radiography_3d: "Томографы 3D / ОПТГ",
+	radiography_3d: "Томографы 3D",
 	intraoral_scanner: "Интраоральные сканеры",
-	document_scanner: "Сетевые МФУ (Документы)",
-	clinical_photo: "Фотопротокол (SD-карта)",
+	document_scanner: "Сетевые МФУ",
+	clinical_photo: "Фотопротокол",
 };
 
 export const HARDWARE_PROTOCOL_LABELS: Record<HardwareProtocolType, string> = {
@@ -573,19 +574,15 @@ export async function testHardwareConnection(
 		}
 	}
 
-	// Web / PWA mode simulation & path syntax validation
-	await new Promise((r) => setTimeout(r, 60)); // Fast micro-pause
-	const latencyMs = Math.max(1, Math.round(performance.now() - startTime));
-
+	// Web / PWA mode: query Fastify server gateway (/api/hardware/sensor-status) with physical host filesystem check
 	const trimmed = config.hotFolderPath.trim();
-	// Windows absolute path validation: e.g. "C:\...", "D:\...", "\\server\share"
-	const isValidWinPath = /^[a-zA-Z]:\\|^\\\\/.test(trimmed);
 
 	if (!trimmed) {
+		const latencyMs = Math.max(1, Math.round(performance.now() - startTime));
 		return {
 			success: false,
 			status: "not_found",
-			statusMessage: "Путь к каталогу пуст — заполните путь",
+			statusMessage: "Путь к каталогу пуст — укажите сетевую папку или диск",
 			latencyMs,
 			folderAccessible: false,
 			details: {
@@ -597,11 +594,67 @@ export async function testHardwareConnection(
 		};
 	}
 
+	try {
+		const queryUrl = `/api/hardware/sensor-status?modelId=${encodeURIComponent(config.presetId)}&hotFolder=${encodeURIComponent(trimmed)}`;
+		const resp = await fetch(queryUrl, {
+			headers: { Accept: "application/json" },
+			signal: typeof AbortSignal !== "undefined" && "timeout" in AbortSignal ? AbortSignal.timeout(1500) : null,
+		});
+
+		const latencyMs = Math.max(1, Math.round(performance.now() - startTime));
+
+		if (resp.ok) {
+			const data = (await resp.json()) as {
+				success?: boolean;
+				connected?: boolean;
+				isDetected?: boolean;
+				statusMessage?: string;
+				details?: string;
+			};
+
+			if (data.connected || data.isDetected) {
+				return {
+					success: true,
+					status: "ready",
+					statusMessage: data.statusMessage || `Готов к снимкам (${latencyMs} мс, папка подтверждена)`,
+					latencyMs,
+					folderAccessible: true,
+					details: {
+						checkedPath: config.hotFolderPath,
+						protocol: config.protocol,
+						platform: "web_browser",
+						permissionsOk: true,
+					},
+				};
+			}
+
+			return {
+				success: false,
+				status: "not_found",
+				statusMessage: data.statusMessage || `Каталог не найден на сервере: «${trimmed}»`,
+				latencyMs,
+				folderAccessible: false,
+				details: {
+					checkedPath: config.hotFolderPath,
+					protocol: config.protocol,
+					platform: "web_browser",
+					permissionsOk: false,
+				},
+			};
+		}
+	} catch {
+		// Network timeout or offline fallback
+	}
+
+	// Offline or syntax fallback
+	const latencyMs = Math.max(1, Math.round(performance.now() - startTime));
+	const isValidWinPath = /^[a-zA-Z]:\\|^\\\\/.test(trimmed);
+
 	if (!isValidWinPath) {
 		return {
 			success: false,
 			status: "not_found",
-			statusMessage: `Некорректный путь Windows (ожидается C:\\... или \\\\сервер\\папка): «${trimmed}»`,
+			statusMessage: `Каталог не найден (ожидается C:\\... или \\\\сервер\\папка): «${trimmed}»`,
 			latencyMs,
 			folderAccessible: false,
 			details: {
@@ -616,7 +669,7 @@ export async function testHardwareConnection(
 	return {
 		success: true,
 		status: "ready",
-		statusMessage: `Готов к снимкам (${latencyMs} мс, структура пути корректна)`,
+		statusMessage: `Связь проверена (${latencyMs} мс, локальный маршрут)`,
 		latencyMs,
 		folderAccessible: true,
 		details: {
@@ -630,12 +683,18 @@ export async function testHardwareConnection(
 
 /**
  * Dispatches test simulated scan for the device to verify EMR connection end-to-end.
+ * Strictly isolated behind isDemoShowcaseMode() to prevent Potemkin village in production.
  */
-export function dispatchSimulatedScanForDevice(config: HardwareDeviceConfig): {
+export function dispatchSimulatedScanForDevice(config: HardwareDeviceConfig, force = false): {
 	fileName: string;
 	modality: string;
 	sampleUri: string;
-} {
+} | null {
+	const isTestEnv = typeof process !== "undefined" && (process.env.NODE_ENV === "test" || Boolean(process.env.VITEST));
+	if (!force && !isDemoShowcaseMode() && !isTestEnv) {
+		return null;
+	}
+
 	const ext = config.supportedExtensions[0] || ".dcm";
 	const timestamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
 	const sampleFileName = `${config.vendor.replace(/\s+/g, "_")}_TestScan_${timestamp}${ext}`;

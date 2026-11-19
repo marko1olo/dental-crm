@@ -510,10 +510,19 @@
 
 /* Mobile Touch & Apple HIG Responsive Layer (<= 768px) */
 @media (max-width: 768px) {
+	.hw-studio-domain-tabs {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 6px;
+		scrollbar-width: none;
+	}
+
 	.hw-studio-domain-tabs .hw-studio-category-tab {
 		min-height: 44px;
 		padding: 0 14px;
 		font-size: 13px;
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	.hw-studio-toolbar {
@@ -527,13 +536,17 @@
 	.hw-studio-toolbar-left {
 		width: 100%;
 		overflow-x: auto;
-		padding-bottom: 2px;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 4px;
 		gap: 6px;
+		scrollbar-width: none;
 	}
 
 	.hw-studio-toolbar-left .hw-studio-category-tab {
 		min-height: 38px;
 		padding: 0 12px;
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	.hw-studio-toolbar-right {

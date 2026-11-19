@@ -5,6 +5,7 @@ import {
 	HARDWARE_PROTOCOL_LABELS,
 	type HardwareDeviceConfig,
 } from "../../../services/hardware/hardwarePresets.js";
+import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 
 interface Props {
 	dev: HardwareDeviceConfig;
@@ -69,15 +70,17 @@ export const HardwareDeviceRow: React.FC<Props> = ({
 					{statusLabel}
 				</button>
 
-				<button
-					type="button"
-					className="hw-btn-compact"
-					onClick={onSimulateScan}
-					title="Сгенерировать тестовый снимок в карту пациента"
-				>
-					<Camera size={13} />
-					Тест снимка
-				</button>
+				{isDemoShowcaseMode() && (
+					<button
+						type="button"
+						className="hw-btn-compact"
+						onClick={onSimulateScan}
+						title="Сгенерировать тестовый снимок в карту пациента (только в демонстрационном режиме)"
+					>
+						<Camera size={13} />
+						Тест снимка
+					</button>
+				)}
 
 				<button
 					type="button"

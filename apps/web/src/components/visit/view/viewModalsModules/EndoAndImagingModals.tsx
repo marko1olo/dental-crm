@@ -9,7 +9,7 @@
 
 import React from "react";
 import { EndodonticStudioModal } from "../../../endo/EndodonticStudioModal";
-import { VisiographComparisonModal } from "../../../radiology/VisiographComparisonModal";
+import { RadiologyConsultationSplit } from "../../../radiology/RadiologyConsultationSplit";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import type { VisitModalPatientEntity, VisitModalDashboardEntity } from "./visitViewModalsTypes";
 import type { VisitDashboardEntity } from "../VisitViewProps";
@@ -73,8 +73,9 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 
 			{/* Модальное окно сплит-сравнения визиографа (EzDent-i Dual View) */}
 			{isVisiographComparisonModalOpen && effectiveActiveModal === "visiograph_comparison" && (
-				<VisiographComparisonModal
+				<RadiologyConsultationSplit
 					isOpen={Boolean(isVisiographComparisonModalOpen)}
+					asModal={true}
 					onClose={() => setIsVisiographComparisonModalOpen?.(false)}
 					patientName={(activePatient?.fullName || activePatient?.name) ?? undefined}
 					patientCardNumber={

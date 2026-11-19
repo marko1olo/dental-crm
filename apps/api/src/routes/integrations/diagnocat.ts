@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId as requireOrganizationContext } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { diagnocatReports, patients } from "../../db/schema.js";
@@ -8,7 +8,7 @@ import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 
 export async function registerDiagnocatRoutes(app: FastifyInstance) {
-	app.post("/api/integrations/diagnocat/webhook", async (request, reply) => {
+	const webhookHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const body = request.body as {
 			patientId?: string;
 			reportUrl?: string;
@@ -32,73 +32,80 @@ export async function registerDiagnocatRoutes(app: FastifyInstance) {
 			.returning();
 
 		return reply.send({ success: true, reportId: inserted[0]?.id });
-	});
+	};
 
-	app.get(
-		"/api/integrations/diagnocat/reports/:patientId",
-		async (request, reply) => {
-			const organizationId = await requireOrganizationContext(request, reply);
-			if (!organizationId) return;
+	const reportsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+		const organizationId = await requireOrganizationContext(request, reply);
+		if (!organizationId) return;
 
-			// 152-ФЗ / 323-ФЗ: Отчеты Diagnocat содержат врачебную тайну (AI-диагностику зубов)
-			const identity = getRequestIdentity(request);
-			const access = evaluateClinicalAccess(identity.role);
-			if (!access.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "integrations.diagnocat.read",
-					role: identity.role,
-					message:
-						"Доступ к AI-отчетам Diagnocat (врачебная тайна) ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
-				});
-			}
-
-			const { patientId } = request.params as { patientId: string };
-
-			// 152-ФЗ: Защита архивированного пациента
-			const [patient] = await db
-				.select({ status: patients.status })
-				.from(patients)
-				.where(
-					and(
-						eq(patients.id, patientId),
-						eq(patients.organizationId, organizationId),
-					),
-				)
-				.limit(1);
-
-			if (patient?.status === "archived" && !access.hasClinicalAccess) {
-				return reply.code(403).send({
-					error: "PermissionDenied",
-					permission: "patients.archived.diagnocat",
-					role: identity.role,
-					message:
-						"Отказ в доступе к снимкам и отчетам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
-				});
-			}
-
-			const reports = await db
-				.select()
-				.from(diagnocatReports)
-				.where(
-					and(
-						eq(diagnocatReports.patientId, patientId),
-						eq(diagnocatReports.organizationId, organizationId),
-					),
-				)
-				.orderBy(diagnocatReports.createdAt);
-
-			await auditMedicalAccessFromRequest(request, {
-				organizationId,
-				patientId,
-				action: "VIEW_DIAGNOSIS",
-				metadata: {
-					resourceType: "diagnocat_ai_report",
-					justification: "Просмотр радиологического AI-отчета Diagnocat",
-				},
+		// 152-ФЗ / 323-ФЗ: Отчеты Clinical AI содержат врачебную тайну (AI-диагностику зубов)
+		const identity = getRequestIdentity(request);
+		const access = evaluateClinicalAccess(identity.role);
+		if (!access.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "integrations.diagnocat.read",
+				role: identity.role,
+				message:
+					"Доступ к AI-отчетам (врачебная тайна) ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
 			});
+		}
 
-			return reply.send({ success: true, reports });
-		},
-	);
+		const { patientId } = request.params as { patientId: string };
+
+		// 152-ФЗ: Защита архивированного пациента
+		const [patient] = await db
+			.select({ status: patients.status })
+			.from(patients)
+			.where(
+				and(
+					eq(patients.id, patientId),
+					eq(patients.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (patient?.status === "archived" && !access.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "patients.archived.diagnocat",
+				role: identity.role,
+				message:
+					"Отказ в доступе к снимкам и отчетам архивированного пациента (152-ФЗ / 323-ФЗ ст. 13).",
+			});
+		}
+
+		const reports = await db
+			.select()
+			.from(diagnocatReports)
+			.where(
+				and(
+					eq(diagnocatReports.patientId, patientId),
+					eq(diagnocatReports.organizationId, organizationId),
+				),
+			)
+			.orderBy(diagnocatReports.createdAt);
+
+		await auditMedicalAccessFromRequest(request, {
+			organizationId,
+			patientId,
+			action: "VIEW_DIAGNOSIS",
+			metadata: {
+				resourceType: "clinical_ai_report",
+				justification: "Просмотр радиологического AI-отчета",
+			},
+		});
+
+		return reply.send({ success: true, reports });
+	};
+
+	// Canonical neutral routes (Mandate 8ap)
+	app.post("/api/clinical-ai/webhook", webhookHandler);
+	app.get("/api/clinical-ai/reports/:patientId", reportsHandler);
+
+	// Legacy compatibility aliases
+	app.post("/api/integrations/diagnocat/webhook", webhookHandler);
+	app.get("/api/integrations/diagnocat/reports/:patientId", reportsHandler);
 }
+
+export const registerClinicalAiRoutes = registerDiagnocatRoutes;

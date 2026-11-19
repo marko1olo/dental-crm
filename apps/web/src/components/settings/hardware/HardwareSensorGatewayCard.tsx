@@ -1,5 +1,5 @@
 import React from "react";
-import { Activity, CheckCircle2, Scan } from "lucide-react";
+import { Activity, AlertCircle, CheckCircle2, Scan } from "lucide-react";
 import { UNIVERSAL_SENSOR_CATALOG, type DentalSensorModel } from "../../radiology/sensorGateway/index.js";
 
 interface Props {
@@ -39,7 +39,7 @@ export const HardwareSensorGatewayCard: React.FC<Props> = ({
 						type="button"
 						onClick={onAutoDetect}
 						disabled={isDetectingSensor}
-						className="min-h-[32px] px-3 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+						className="min-h-[32px] px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
 						data-testid="hw-btn-auto-detect-sensor"
 						title="Автоматическое сканирование подключенных USB-датчиков и TWAIN DSM"
 					>
@@ -91,10 +91,17 @@ export const HardwareSensorGatewayCard: React.FC<Props> = ({
 
 				<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-1">
 					<span className="text-[11px] font-bold text-[var(--muted)] block">Статус готовности к снимкам</span>
-					<div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5" data-testid="hw-sensor-gateway-status">
-						<CheckCircle2 size={13} className="shrink-0" />
-						<span className="truncate">{gatewayStatusMessage}</span>
-					</div>
+					{gatewayStatusMessage.toLowerCase().includes("не обнаружен") || gatewayStatusMessage.toLowerCase().includes("не подключен") ? (
+						<div className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5" data-testid="hw-sensor-gateway-status">
+							<AlertCircle size={13} className="shrink-0 text-amber-500" />
+							<span className="truncate">{gatewayStatusMessage}</span>
+						</div>
+					) : (
+						<div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5" data-testid="hw-sensor-gateway-status">
+							<CheckCircle2 size={13} className="shrink-0" />
+							<span className="truncate">{gatewayStatusMessage}</span>
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

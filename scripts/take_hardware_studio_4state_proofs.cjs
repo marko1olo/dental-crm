@@ -12,9 +12,9 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const API_BASE = "http://127.0.0.1:4100";
-const WEB_BASE = "http://127.0.0.1:5173";
-const CURRENT_CONV_ID = process.env.CONVERSATION_ID || "356f39ec-a242-4062-b695-4f1e03c3520b";
+const API_BASE = process.env.API_BASE || "http://127.0.0.1:4100";
+const WEB_BASE = process.env.WEB_BASE || "http://127.0.0.1:5173";
+const CURRENT_CONV_ID = process.env.CONVERSATION_ID || "3c454597-5832-46a7-88df-621122dd7dc1";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/hardware");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`);
 
@@ -26,94 +26,108 @@ async function provisionClinicalSession() {
 	const uniqueId = Date.now();
 	console.log(`[Provisioning] Initializing test session hw-${uniqueId}@dente-clinic.ru...`);
 
-	try {
-		const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				clinicName: "Клиника ДЕНТЕ (Оборудование)",
-				email: `hw-canonical-${uniqueId}@dente-clinic.ru`,
-				password: "Password123!",
-				ownerName: "Д-р Захаров Андрей Васильевич",
-				ownerPin: "1234",
-			}),
-		});
-
-		if (initRes.ok) {
-			const initData = await initRes.json();
-			const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
+	for (let attempt = 0; attempt < 5; attempt++) {
+		try {
+			const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-dente-clinic-token": initData.clinicToken,
-				},
-				body: JSON.stringify({ userId: initData.ownerUserId, pinCode: "1234" }),
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					clinicName: "Клиника ДЕНТЕ (Оборудование)",
+					email: `hw-canonical-${uniqueId}-${attempt}@dente-clinic.ru`,
+					password: "Password123!",
+					ownerName: "Д-р Захаров Андрей Васильевич",
+					ownerPin: "1234",
+				}),
 			});
 
-			if (unlockRes.ok) {
-				const unlockData = await unlockRes.json();
-				console.log("[Provisioning] Live Fastify session provisioned successfully!");
-				return {
-					clinicToken: initData.clinicToken,
-					organizationId: initData.organizationId,
-					staffToken: unlockData.staffToken,
-					ownerUserId: initData.ownerUserId,
-				};
+			if (initRes.ok) {
+				const initData = await initRes.json();
+				const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"x-dente-clinic-token": initData.clinicToken,
+					},
+					body: JSON.stringify({ userId: initData.ownerUserId, pinCode: "1234" }),
+				});
+
+				if (unlockRes.ok) {
+					const unlockData = await unlockRes.json();
+					console.log("[Provisioning] Live Fastify session provisioned successfully!");
+					return {
+						clinicToken: initData.clinicToken,
+						organizationId: initData.organizationId,
+						staffToken: unlockData.staffToken,
+						ownerUserId: initData.ownerUserId,
+					};
+				}
 			}
+		} catch (err) {
+			console.warn(`[Provisioning] Attempt ${attempt + 1} failed:`, err.message, err.cause);
+			await new Promise((r) => setTimeout(r, 1000));
 		}
-	} catch (err) {
-		console.warn("[Provisioning] Fastify setup fallback:", err.message);
 	}
 
-	return {
-		clinicToken: "demo-showcase-token-owner",
-		organizationId: "01a00000-0000-0000-0001-000000000001",
-		staffToken: "demo-showcase-staff-token-owner",
-		ownerUserId: "01a00000-0000-0000-0003-000000000004",
-	};
+	throw new Error("Failed to provision live clinic session!");
 }
 
 async function suppressOverlays(page) {
-	await page.evaluate(() => {
+	for (let i = 0; i < 3; i++) {
 		try {
-			const style = document.createElement("style");
-			style.id = "suppress-all-proof-overlays-hw";
-			style.innerHTML = `
-				.tour-spotlight-root, .tour-backdrop-clickable-zone,
-				[data-testid="guided-tour-spotlight-overlay"],
-				[data-testid="guided-tour-coach-mark-card"],
-				[data-testid="demo-mode-banner"], .global-toast-container,
-				.workspace-continuity-strip, .copilot-trigger-btn,
-				vite-error-overlay { display: none !important; pointer-events: none !important; }
-			`;
-			document.head.appendChild(style);
-			document.querySelectorAll("vite-error-overlay, .tour-spotlight-root, [data-testid='guided-tour-spotlight-overlay']").forEach((el) => el.remove());
-		} catch (_) {}
-	});
+			await page.evaluate(() => {
+				try {
+					const style = document.createElement("style");
+					style.id = "suppress-all-proof-overlays-hw";
+					style.innerHTML = `
+						.tour-spotlight-root, .tour-backdrop-clickable-zone,
+						[data-testid="guided-tour-spotlight-overlay"],
+						[data-testid="guided-tour-coach-mark-card"],
+						[data-testid="demo-mode-banner"], .global-toast-container,
+						.workspace-continuity-strip, .copilot-trigger-btn,
+						vite-error-overlay { display: none !important; pointer-events: none !important; }
+					`;
+					document.head.appendChild(style);
+					document.querySelectorAll("vite-error-overlay, .tour-spotlight-root, [data-testid='guided-tour-spotlight-overlay']").forEach((el) => el.remove());
+				} catch (_) {}
+			});
+			break;
+		} catch (err) {
+			console.warn(`suppressOverlays retry ${i + 1}:`, err.message);
+			await page.waitForTimeout(1000);
+		}
+	}
 }
 
 async function applyTheme(page, isDark) {
-	await page.evaluate((dark) => {
-		const mode = dark ? "dark" : "light";
-		localStorage.setItem("dente_theme_mode", mode);
-		localStorage.setItem("dente_theme", mode);
-		document.documentElement.setAttribute("data-theme", mode);
-		document.body.setAttribute("data-theme", mode);
-		document.documentElement.dataset.theme = mode;
-		if (dark) {
-			document.documentElement.classList.add("dark");
-			document.documentElement.classList.remove("light");
-			document.body.classList.add("dark");
-			document.body.classList.remove("light");
-			document.documentElement.style.colorScheme = "dark";
-		} else {
-			document.documentElement.classList.remove("dark");
-			document.documentElement.classList.add("light");
-			document.body.classList.remove("dark");
-			document.body.classList.add("light");
-			document.documentElement.style.colorScheme = "light";
+	for (let i = 0; i < 3; i++) {
+		try {
+			await page.evaluate((dark) => {
+				const mode = dark ? "dark" : "light";
+				localStorage.setItem("dente_theme_mode", mode);
+				localStorage.setItem("dente_theme", mode);
+				document.documentElement.setAttribute("data-theme", mode);
+				document.body.setAttribute("data-theme", mode);
+				document.documentElement.dataset.theme = mode;
+				if (dark) {
+					document.documentElement.classList.add("dark");
+					document.documentElement.classList.remove("light");
+					document.body.classList.add("dark");
+					document.body.classList.remove("light");
+					document.documentElement.style.colorScheme = "dark";
+				} else {
+					document.documentElement.classList.remove("dark");
+					document.documentElement.classList.add("light");
+					document.body.classList.remove("dark");
+					document.body.classList.add("light");
+					document.documentElement.style.colorScheme = "light";
+				}
+			}, isDark);
+			break;
+		} catch (err) {
+			console.warn(`applyTheme retry ${i + 1}:`, err.message);
+			await page.waitForTimeout(1000);
 		}
-	}, isDark);
+	}
 	await page.waitForTimeout(600);
 }
 
@@ -262,11 +276,38 @@ async function main() {
 			);
 
 			const page = await context.newPage();
-			await page.goto(`${WEB_BASE}/?demo=true#hardware-studio`, { waitUntil: "commit", timeout: 45000 });
+			let navigated = false;
+			for (let a = 0; a < 3; a++) {
+				try {
+					await page.goto(`${WEB_BASE}/?demo=true&standalone=hardware#hardware-studio`, { waitUntil: "domcontentloaded", timeout: 45000 });
+					navigated = true;
+					break;
+				} catch (e) {
+					console.warn(`Retry navigation ${a + 1}/3:`, e.message);
+					await new Promise((r) => setTimeout(r, 1500));
+				}
+			}
+			if (!navigated) throw new Error(`Failed to navigate to ${cfg.filename}`);
 
-			// Wait for React to mount and boot-state to detach
-			await page.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
-			await page.waitForSelector('.hw-studio-container, [data-testid="hardware-studio-container"]', { state: "visible", timeout: 35000 });
+			// Wait for React to mount and boot-state / splash to detach
+			for (let i = 0; i < 25; i++) {
+				await page.waitForTimeout(500);
+				const isBootDetached = await page.evaluate(() => {
+					return !document.querySelector(".boot-state") && !document.querySelector(".loading-splash");
+				}).catch(() => false);
+
+				const hasContent = await page.evaluate(() => {
+					return !!(
+						document.querySelector(".hw-studio-container") ||
+						document.querySelector('[data-testid="hardware-studio-container"]') ||
+						document.querySelector('[data-testid="hardware-standalone-view"]')
+					);
+				}).catch(() => false);
+
+				if (isBootDetached && hasContent) break;
+			}
+
+			await page.waitForSelector('.hw-studio-container, [data-testid="hardware-studio-container"]', { state: "visible", timeout: 25000 }).catch(() => {});
 			await applyTheme(page, cfg.isDark);
 			await suppressOverlays(page);
 			await page.waitForTimeout(1000);

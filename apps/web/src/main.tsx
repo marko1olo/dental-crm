@@ -231,6 +231,12 @@ const RvgStandaloneStudioView = React.lazy(() =>
 		),
 	})),
 );
+import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
+const HardwareStudioStandaloneView = React.lazy(() =>
+	import("./components/hardware/DirectHardwareLauncher").then((m) => ({
+		default: m.DirectHardwareLauncher,
+	})),
+);
 import { parseCbctStudioRoute, parseCephStudioRoute } from "./utils/runtimeRouter";
 import type { StudioMode } from "./components/radiology/standaloneStudio/types";
 import { isPatientPresentationRoute } from "./components/photography/presentationSyncProtocol";
@@ -1196,6 +1202,78 @@ if (publicPortalRoute) {
 				>
 					<RvgStandaloneStudioView />
 				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("standalone=hardware") ||
+		window.location.search.includes("hardware=1") ||
+		window.location.search.includes("hardware-studio=1") ||
+		window.location.hash === "#hardware" ||
+		window.location.hash === "#hardware-studio" ||
+		window.location.hash === "#equipment" ||
+		window.location.hash.startsWith("#hardware?") ||
+		window.location.hash.startsWith("#hardware-studio?") ||
+		window.location.hash.startsWith("#equipment?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<React.Suspense
+					fallback={
+						<div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-teal-400 font-mono text-sm">
+							Загрузка оборудования клиники...
+						</div>
+					}
+				>
+					<HardwareStudioStandaloneView />
+				</React.Suspense>
+				<GlobalToast />
+			</BootErrorBoundary>
+		</React.StrictMode>,
+	);
+} else if (
+	typeof window !== "undefined" &&
+	(window.location.search.includes("standalone=settings") ||
+		window.location.search.includes("stand=settings") ||
+		window.location.search.includes("settings=1") ||
+		window.location.search.includes("access=1") ||
+		window.location.search.includes("staff=1") ||
+		window.location.search.includes("rbac=1") ||
+		window.location.hash === "#settings" ||
+		window.location.hash.startsWith("#settings/") ||
+		window.location.hash.startsWith("#settings?") ||
+		window.location.hash === "#access" ||
+		window.location.hash.startsWith("#access?") ||
+		window.location.hash === "#staff" ||
+		window.location.hash.startsWith("#staff?") ||
+		window.location.hash === "#rbac" ||
+		window.location.hash.startsWith("#rbac?"))
+) {
+	applyThemeToRoot(
+		document.documentElement,
+		resolveTheme(
+			"auto",
+			window.matchMedia("(prefers-color-scheme: dark)").matches,
+		),
+	);
+	installApiAuthFetch();
+
+	appRoot.render(
+		<React.StrictMode>
+			<BootErrorBoundary audience="clinic">
+				<DirectSettingsLauncher />
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,

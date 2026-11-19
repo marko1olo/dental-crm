@@ -39,6 +39,7 @@ import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricL
 import { DirectWarrantyLauncher } from "./components/warranty/DirectWarrantyLauncher";
 import { DirectRvgCaptureLauncher } from "./components/radiology/DirectRvgCaptureLauncher";
 import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
+import { DirectHardwareLauncher } from "./components/hardware/DirectHardwareLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { useAppStore } from "./store/appStore";
@@ -413,6 +414,7 @@ export function AppShell() {
 			<DirectWarrantyLauncher />
 			<DirectRvgCaptureLauncher />
 			<DirectSettingsLauncher />
+			<DirectHardwareLauncher />
 			{standalone && (window.location.hash.includes("patient") || window.location.search.includes("patient")) && (
 				<StandalonePatientCardHost onClose={() => { window.location.hash = ""; setStandalone(false); }} />
 			)}

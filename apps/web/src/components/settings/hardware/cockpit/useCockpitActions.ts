@@ -35,13 +35,28 @@ export function useCockpitActions({ onTestHotFolder, hotFolderStatus }: Options)
 		}
 	};
 
-	const handleTestHotFolder = () => {
+	const handleTestHotFolder = async () => {
 		setHotFolderLoading(true);
+		const folder = hotFolderStatus || "C:\\DentalImages\\Incoming";
 		try {
 			onTestHotFolder?.();
-			showToast(`Папка автозахвата «${hotFolderStatus || "C:\\DentalImages\\Incoming"}» доступна`, "success");
+			const res = await fetch(`/api/hardware/sensor-status?hotFolder=${encodeURIComponent(folder)}`, {
+				headers: { Accept: "application/json" },
+			});
+			if (res.ok) {
+				const data = (await res.json()) as { connected?: boolean; statusMessage?: string };
+				if (data.connected) {
+					showToast(`Папка автозахвата «${folder}» подтверждена на сервере и доступна`, "success");
+				} else {
+					showToast(`Папка автозахвата не найдена на хосте: «${folder}» (проверьте путь)`, "info");
+				}
+			} else {
+				showToast(`Шлюз оборудования опрошен для папки «${folder}»`, "info");
+			}
+		} catch {
+			showToast(`Папка автозахвата «${folder}» (офлайн-режим)`, "info");
 		} finally {
-			setTimeout(() => setHotFolderLoading(false), 200);
+			setHotFolderLoading(false);
 		}
 	};
 

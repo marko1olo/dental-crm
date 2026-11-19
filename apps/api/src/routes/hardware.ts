@@ -10,6 +10,10 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { and, desc, eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { clinicHardwareDevices } from "../db/schema/hardware.js";
+import { requireResolvedOrganizationId } from "../accessGuard.js";
 
 import {
 	deviceInterfaceSchema,
@@ -28,6 +32,7 @@ import {
 // ============================================================================
 
 const getDevicesQuerySchema = z.object({
+	scope: z.string().optional(),
 	probeNetwork: z
 		.union([z.boolean(), z.string()])
 		.optional()
@@ -96,6 +101,22 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				});
 			}
 			const query = parsedQuery.data;
+
+			if (query.scope === "configured") {
+				const organizationId = await requireResolvedOrganizationId(request, reply, "get hardware devices");
+				if (!organizationId) return;
+
+				const devices = await db
+					.select()
+					.from(clinicHardwareDevices)
+					.where(eq(clinicHardwareDevices.organizationId, organizationId))
+					.orderBy(desc(clinicHardwareDevices.createdAt));
+
+				return reply.status(200).send({
+					success: true,
+					devices,
+				});
+			}
 
 			const subnets = query.subnets
 				? query.subnets.split(",").map((s) => s.trim()).filter(Boolean)
@@ -279,6 +300,166 @@ export async function registerHardwareRoutes(app: FastifyInstance): Promise<void
 				intakeChannel: "hot_folder",
 				latencyMs: 2,
 				timestamp: new Date().toISOString(),
+			});
+		},
+	);
+
+	/**
+	 * POST /api/hardware/devices
+	 * Persists a new hardware device configuration into PostgreSQL 18.
+	 */
+	app.post(
+		"/api/hardware/devices",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(request, reply, "create hardware device");
+			if (!organizationId) return;
+
+			const body = (request.body || {}) as Record<string, unknown>;
+			const inserted = await db
+				.insert(clinicHardwareDevices)
+				.values({
+					organizationId,
+					presetId: String(body.presetId || "custom"),
+					name: String(body.name || "Новое устройство"),
+					vendor: String(body.vendor || "Универсальный"),
+					category: String(body.category || "visiograph"),
+					executablePath: String(body.executablePath || ""),
+					hotFolderPath: String(body.hotFolderPath || ""),
+					protocol: String(body.protocol || "hot_folder"),
+					protocolTemplate: String(body.protocolTemplate || ""),
+					supportedExtensions: Array.isArray(body.supportedExtensions) ? (body.supportedExtensions as string[]) : [".dcm"],
+					isActive: body.isActive !== false,
+					autoAttachToVisit: body.autoAttachToVisit !== false,
+					status: String(body.status || "untested"),
+					statusMessage: String(body.statusMessage || "Нажмите для проверки связи"),
+					latencyMs: typeof body.latencyMs === "number" ? body.latencyMs : null,
+					lastCheckedAt: body.lastCheckedAt ? new Date(String(body.lastCheckedAt)) : null,
+				})
+				.returning();
+
+			return reply.status(201).send({
+				success: true,
+				device: inserted[0],
+			});
+		},
+	);
+
+	/**
+	 * PUT /api/hardware/devices/:id
+	 * Updates an existing hardware device in PostgreSQL 18.
+	 */
+	app.put(
+		"/api/hardware/devices/:id",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(request, reply, "update hardware device");
+			if (!organizationId) return;
+
+			const { id } = request.params as { id: string };
+			const body = (request.body || {}) as Record<string, unknown>;
+
+			const patch: Record<string, unknown> = {
+				updatedAt: new Date(),
+			};
+			if (typeof body.name === "string") patch.name = body.name;
+			if (typeof body.vendor === "string") patch.vendor = body.vendor;
+			if (typeof body.executablePath === "string") patch.executablePath = body.executablePath;
+			if (typeof body.hotFolderPath === "string") patch.hotFolderPath = body.hotFolderPath;
+			if (typeof body.protocol === "string") patch.protocol = body.protocol;
+			if (typeof body.protocolTemplate === "string") patch.protocolTemplate = body.protocolTemplate;
+			if (Array.isArray(body.supportedExtensions)) patch.supportedExtensions = body.supportedExtensions;
+			if (typeof body.isActive === "boolean") patch.isActive = body.isActive;
+			if (typeof body.autoAttachToVisit === "boolean") patch.autoAttachToVisit = body.autoAttachToVisit;
+			if (typeof body.status === "string") patch.status = body.status;
+			if (typeof body.statusMessage === "string") patch.statusMessage = body.statusMessage;
+			if (typeof body.latencyMs === "number" || body.latencyMs === null) patch.latencyMs = body.latencyMs;
+			if (body.lastCheckedAt) patch.lastCheckedAt = new Date(String(body.lastCheckedAt));
+
+			const updated = await db
+				.update(clinicHardwareDevices)
+				.set(patch)
+				.where(and(eq(clinicHardwareDevices.id, id), eq(clinicHardwareDevices.organizationId, organizationId)))
+				.returning();
+
+			if (!updated.length) {
+				return reply.status(404).send({ error: "DeviceNotFound", message: "Устройство не найдено" });
+			}
+
+			return reply.status(200).send({
+				success: true,
+				device: updated[0],
+			});
+		},
+	);
+
+	/**
+	 * DELETE /api/hardware/devices/:id
+	 * Removes a hardware device from PostgreSQL 18.
+	 */
+	app.delete(
+		"/api/hardware/devices/:id",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(request, reply, "delete hardware device");
+			if (!organizationId) return;
+
+			const { id } = request.params as { id: string };
+			await db
+				.delete(clinicHardwareDevices)
+				.where(and(eq(clinicHardwareDevices.id, id), eq(clinicHardwareDevices.organizationId, organizationId)));
+
+			return reply.status(200).send({ success: true, deletedId: id });
+		},
+	);
+
+	/**
+	 * POST /api/hardware/devices/sync
+	 * Synchronizes full device configurations list with PostgreSQL 18 for the organization.
+	 */
+	app.post(
+		"/api/hardware/devices/sync",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const organizationId = await requireResolvedOrganizationId(request, reply, "sync hardware devices");
+			if (!organizationId) return;
+
+			const body = (request.body || {}) as { devices?: unknown[] };
+			const rawDevices = Array.isArray(body?.devices) ? body.devices : [];
+
+			await db.transaction(async (tx) => {
+				await tx
+					.delete(clinicHardwareDevices)
+					.where(eq(clinicHardwareDevices.organizationId, organizationId));
+
+				if (rawDevices.length > 0) {
+					const values = rawDevices.map((dev: any) => ({
+						organizationId,
+						presetId: String(dev.presetId || "custom"),
+						name: String(dev.name || "Устройство"),
+						vendor: String(dev.vendor || "Универсальный"),
+						category: String(dev.category || "visiograph"),
+						executablePath: String(dev.executablePath || ""),
+						hotFolderPath: String(dev.hotFolderPath || ""),
+						protocol: String(dev.protocol || "hot_folder"),
+						protocolTemplate: String(dev.protocolTemplate || ""),
+						supportedExtensions: Array.isArray(dev.supportedExtensions) ? dev.supportedExtensions : [".dcm"],
+						isActive: dev.isActive !== false,
+						autoAttachToVisit: dev.autoAttachToVisit !== false,
+						status: String(dev.status || "untested"),
+						statusMessage: String(dev.statusMessage || "Нажмите для проверки связи"),
+						latencyMs: typeof dev.latencyMs === "number" ? dev.latencyMs : null,
+						lastCheckedAt: dev.lastCheckedAt ? new Date(String(dev.lastCheckedAt)) : null,
+					}));
+					await tx.insert(clinicHardwareDevices).values(values);
+				}
+			});
+
+			const updated = await db
+				.select()
+				.from(clinicHardwareDevices)
+				.where(eq(clinicHardwareDevices.organizationId, organizationId))
+				.orderBy(desc(clinicHardwareDevices.createdAt));
+
+			return reply.status(200).send({
+				success: true,
+				devices: updated,
 			});
 		},
 	);

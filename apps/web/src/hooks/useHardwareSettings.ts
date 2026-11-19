@@ -45,6 +45,36 @@ export function useHardwareSettings() {
 		};
 	}, []);
 
+	// Server synchronization with PostgreSQL 18 on mount
+	useEffect(() => {
+		let isMounted = true;
+		fetch("/api/hardware/devices?scope=configured")
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data: { success?: boolean; devices?: HardwareDeviceConfig[] } | null) => {
+				if (isMounted && data?.success && Array.isArray(data.devices) && data.devices.length > 0) {
+					setDevices(data.devices);
+					saveHardwareConfigs(data.devices);
+				}
+			})
+			.catch(() => {
+				// Offline or server unavailable fallback to localStorage
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
+	const syncDevicesToServer = useCallback((nextDevices: HardwareDeviceConfig[]) => {
+		fetch("/api/hardware/devices/sync", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ devices: nextDevices }),
+		}).catch(() => {
+			// Silent background sync fallback
+		});
+	}, []);
+
 	// Add new device from preset
 	const addDeviceFromPreset = useCallback((presetId: string): HardwareDeviceConfig => {
 		const preset = getHardwarePresetById(presetId) || HARDWARE_PRESETS[0]!;
@@ -52,30 +82,33 @@ export function useHardwareSettings() {
 		const updated = [newConfig, ...devices];
 		setDevices(updated);
 		saveHardwareConfigs(updated);
+		syncDevicesToServer(updated);
 		setActiveDeviceId(newConfig.id);
 		return newConfig;
-	}, [devices]);
+	}, [devices, syncDevicesToServer]);
 
 	// Update existing device
 	const updateDevice = useCallback((id: string, patch: Partial<HardwareDeviceConfig>) => {
 		setDevices((prev) => {
 			const updated = prev.map((dev) => (dev.id === id ? { ...dev, ...patch } : dev));
 			saveHardwareConfigs(updated);
+			syncDevicesToServer(updated);
 			return updated;
 		});
-	}, []);
+	}, [syncDevicesToServer]);
 
 	// Remove device
 	const removeDevice = useCallback((id: string) => {
 		setDevices((prev) => {
 			const updated = prev.filter((dev) => dev.id !== id);
 			saveHardwareConfigs(updated);
+			syncDevicesToServer(updated);
 			return updated;
 		});
 		if (activeDeviceId === id) {
 			setActiveDeviceId(null);
 		}
-	}, [activeDeviceId]);
+	}, [activeDeviceId, syncDevicesToServer]);
 
 	// Reset device paths to preset defaults in 1 click
 	const resetDeviceToDefaults = useCallback((id: string) => {
@@ -100,9 +133,10 @@ export function useHardwareSettings() {
 					: dev,
 			);
 			saveHardwareConfigs(updated);
+			syncDevicesToServer(updated);
 			return updated;
 		});
-	}, []);
+	}, [syncDevicesToServer]);
 
 	// Test connection for a single device
 	const testDeviceConnection = useCallback(async (id: string) => {

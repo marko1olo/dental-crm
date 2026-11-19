@@ -20,7 +20,7 @@ export function HardwareSettingsTabContent() {
 	const [selectedNewPresetId, setSelectedNewPresetId] = useState(hw.presets[0]?.id || "vatech_ezdent");
 	const [activeGatewaySensorId, setActiveGatewaySensorId] = useState<string>("vatech_ezsensor_hd");
 	const [isDetectingSensor, setIsDetectingSensor] = useState<boolean>(false);
-	const [gatewayStatusMessage, setGatewayStatusMessage] = useState<string>("Статус: Сенсор готов к экспозиции");
+	const [gatewayStatusMessage, setGatewayStatusMessage] = useState<string>("Статус: Датчик не обнаружен (проверьте подключение)");
 
 	const selectedGatewaySensor = useMemo(() => {
 		return UNIVERSAL_SENSOR_CATALOG.find((s) => s.id === activeGatewaySensorId) || UNIVERSAL_SENSOR_CATALOG[0];
@@ -30,11 +30,17 @@ export function HardwareSettingsTabContent() {
 		setIsDetectingSensor(true);
 		try {
 			const res = await autoDetectConnectedSensor();
-			setActiveGatewaySensorId(res.sensorModelId);
-			setGatewayStatusMessage(`Статус: ${res.sensorModelName} готов к экспозиции`);
-			showToast(`Обнаружен сенсор: ${res.sensorModelName} (${res.calibratedResolution})`, "success");
+			if (res.isDetected) {
+				setActiveGatewaySensorId(res.sensorModelId);
+				setGatewayStatusMessage(`Статус: ${res.sensorModelName} готов к экспозиции`);
+				showToast(`Обнаружен сенсор: ${res.sensorModelName} (${res.calibratedResolution})`, "success");
+			} else {
+				setGatewayStatusMessage("Статус: Датчик не обнаружен (проверьте подключение)");
+				showToast("Датчик не обнаружен (проверьте подключение)", "info");
+			}
 		} catch {
-			showToast("Датчик определен по умолчанию: Vatech EzSensor HD", "info");
+			setGatewayStatusMessage("Статус: Датчик не обнаружен (проверьте подключение)");
+			showToast("Датчик не обнаружен (проверьте подключение)", "info");
 		} finally {
 			setIsDetectingSensor(false);
 		}
