@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { createWarrantyRemediationOrder, type WarrantyItem, type WarrantyRemediationOrder } from "../../warrantyEngine.js";
 import { getWarrantyDefectTemplate, type WarrantyDefectType, type WarrantyRemediationMaterialItem } from "../../warrantyPresets.js";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { showToast } from "../../../GlobalToast";
 import type { WarrantyPatientMeta } from "../types";
 
 export interface UseWarrantyRemediationParams {
@@ -54,6 +55,34 @@ export function useWarrantyRemediationState({
 
 		setRemediationSuccessNotice(`Акт ${order.orderNumber} (0 ₽) успешно сформирован!${isLab ? " Рекламация в ЗТЛ создана." : ""} Материалы списаны со склада.`);
 
+		// Мандат 8v: Реальное фоновое списание расходных материалов со склада по гарантийному акту
+		if (remediationMaterials && remediationMaterials.length > 0) {
+			try {
+				await fetch("/api/warehouse/inventory/write-off", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key":
+							typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+								? crypto.randomUUID()
+								: `warranty-writeoff-${order.id}-${Date.now()}`,
+					}),
+					body: JSON.stringify({
+						reason: `Списание по гарантийному акту ${order.orderNumber} (Зуб ${tooth}): ${order.defectTitle}`,
+						operationTitle: `Гарантийное устранение ${order.orderNumber}`,
+						allowOverdraft: true,
+						items: remediationMaterials.map((m) => ({
+							itemName: m.name,
+							quantity: m.quantity || 1,
+							allowOverdraft: true,
+						})),
+					}),
+				});
+			} catch (whErr) {
+				console.warn("Soft Stock Notice: non-blocking warehouse write-off:", whErr);
+			}
+		}
+
 		if (patient?.id) {
 			try {
 				let effectiveDoctorId =
@@ -74,7 +103,7 @@ export function useWarrantyRemediationState({
 
 				const numericTooth = Number.parseInt(tooth.replace(/\D/g, ""), 10);
 
-				await fetch(`/api/patients/${patient.id}/reclamations`, {
+				const reclRes = await fetch(`/api/patients/${patient.id}/reclamations`, {
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({
@@ -86,9 +115,21 @@ export function useWarrantyRemediationState({
 						defectType: selectedDefectType,
 					}),
 				});
-			} catch (err) {
+
+				if (!reclRes.ok) {
+					const errBody = (await reclRes.json().catch(() => null)) as { message?: string; error?: string } | null;
+					const errMsg = errBody?.message || errBody?.error || `Код ошибки ${reclRes.status}`;
+					showToast(`Внимание: рекламация не зафиксирована на сервере (${errMsg})`, "error");
+				} else {
+					showToast(`Акт ${order.orderNumber} (0 ₽) оформлен. Расходники списаны по гарантии.`, "success");
+				}
+			} catch (err: unknown) {
+				const errMsg = err instanceof Error ? err.message : "Не удалось связаться с сервером";
 				console.error("Non-blocking: Failed to persist warranty reclamation to backend:", err);
+				showToast(`Сбой сохранения рекламации: ${errMsg}`, "error");
 			}
+		} else {
+			showToast(`Акт ${order.orderNumber} (0 ₽) сформирован локально.`, "info");
 		}
 		if (onRemediationCreated) onRemediationCreated(order);
 	};

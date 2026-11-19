@@ -11,6 +11,20 @@ import { usePatientStore } from "../../store/patientStore";
 import { useAppStore } from "../../store/appStore";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 
+export interface DirectWarrantyEventDetail {
+	patientId?: string | undefined;
+	patient?: {
+		id?: string | undefined;
+		fullName?: string | null | undefined;
+		cardNumber?: string | null | undefined;
+		phone?: string | null | undefined;
+		birthDate?: string | null | undefined;
+	} | undefined;
+	visitId?: string | null | undefined;
+	doctorId?: string | null | undefined;
+	doctorName?: string | null | undefined;
+}
+
 export function DirectWarrantyLauncher(): React.ReactElement | null {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
 		if (typeof window === "undefined") return false;
@@ -21,20 +35,34 @@ export function DirectWarrantyLauncher(): React.ReactElement | null {
 			s.includes("warranty_passport") ||
 			s.includes("warranty-studio") ||
 			s.includes("warranty=true") ||
-			h.includes("warranty-passport")
+			s.includes("warranty") ||
+			h.includes("warranty-passport") ||
+			h.includes("warranty=true") ||
+			h.includes("warranty")
 		);
 	});
+	const [eventDetail, setEventDetail] = useState<DirectWarrantyEventDetail | null>(null);
 	const storePatientId = usePatientStore((s) => s.selectedPatientId);
 	const storePatientCore = usePatientStore((s) => s.patientCoreDraft);
 	const storeActiveDoctorName = useAppStore((s) => s.activeDoctorName);
 
 	const handleClose = () => {
 		setIsOpen(false);
+		setEventDetail(null);
 		clearUrlTokens(["warranty-passport", "warranty_passport", "warranty-studio", "warranty"]);
 	};
 
 	useEffect(() => {
-		const handleOpen = () => setIsOpen(true);
+		const handleOpen = (e: Event) => {
+			const ce = e as CustomEvent<DirectWarrantyEventDetail | undefined>;
+			if (ce.detail) {
+				setEventDetail(ce.detail);
+				if (ce.detail.patientId && typeof usePatientStore.getState().setSelectedPatientId === "function") {
+					usePatientStore.getState().setSelectedPatientId(ce.detail.patientId);
+				}
+			}
+			setIsOpen(true);
+		};
 		window.addEventListener("dente:open-warranty-passport", handleOpen);
 		window.addEventListener("dente-open-warranty-passport", handleOpen);
 		return () => {
@@ -46,7 +74,8 @@ export function DirectWarrantyLauncher(): React.ReactElement | null {
 	if (!isOpen) return null;
 
 	const isDemo = isDemoShowcaseMode();
-	const hasActivePatient = Boolean(storePatientId && storePatientId.trim());
+	const effectivePatientId = eventDetail?.patient?.id || eventDetail?.patientId || storePatientId;
+	const hasActivePatient = Boolean(effectivePatientId && effectivePatientId.trim());
 
 	if (!hasActivePatient && !isDemo) {
 		return (
@@ -94,11 +123,13 @@ export function DirectWarrantyLauncher(): React.ReactElement | null {
 
 	const patient = hasActivePatient
 		? {
-				id: storePatientId as string,
-				fullName: storePatientCore?.fullName || "Пациент клиники",
-				cardNumber: (storePatientCore as Record<string, unknown>)?.cardNumber as string | undefined,
-				phone: storePatientCore?.phone || undefined,
-				birthDate: storePatientCore?.birthDate || undefined,
+				id: effectivePatientId as string,
+				fullName: eventDetail?.patient?.fullName || storePatientCore?.fullName || "Пациент клиники",
+				cardNumber:
+					eventDetail?.patient?.cardNumber ||
+					((storePatientCore as Record<string, unknown>)?.cardNumber as string | undefined),
+				phone: eventDetail?.patient?.phone || storePatientCore?.phone || undefined,
+				birthDate: eventDetail?.patient?.birthDate || storePatientCore?.birthDate || undefined,
 			}
 		: {
 				id: "01a00000-0000-0000-0000-000000000001",
@@ -109,8 +140,9 @@ export function DirectWarrantyLauncher(): React.ReactElement | null {
 			};
 
 	const sessionDoctorId = typeof window !== "undefined" ? sessionStorage.getItem("dente_staff_id") : null;
-	const doctorId = sessionDoctorId || (isDemo ? "doc-1" : undefined);
-	const doctorName = storeActiveDoctorName || (isDemo ? "Д-р Соколов А. В." : undefined);
+	const doctorId = eventDetail?.doctorId || sessionDoctorId || (isDemo ? "doc-1" : undefined);
+	const doctorName = eventDetail?.doctorName || storeActiveDoctorName || (isDemo ? "Д-р Соколов А. В." : undefined);
+	const visitId = eventDetail?.visitId ?? undefined;
 
 	return (
 		<div data-testid="warranty-standalone-workspace" className="w-screen h-screen">
@@ -118,6 +150,7 @@ export function DirectWarrantyLauncher(): React.ReactElement | null {
 				isOpen={true}
 				onClose={handleClose}
 				patient={patient}
+				visitId={visitId}
 				doctorId={doctorId}
 				doctorName={doctorName}
 				clinicName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"

@@ -92,6 +92,8 @@ export async function registerFefoPartiesRoutes(server: FastifyInstance): Promis
 	registerDeduct("/deduct");
 	registerDeduct("/:organizationId/write-off");
 	registerDeduct("/write-off");
+	registerDeduct("/:organizationId/inventory/write-off");
+	registerDeduct("/inventory/write-off");
 	registerDeduct("/:organizationId/writeoff");
 	registerDeduct("/writeoff");
 	registerDeduct("/:organizationId/transactions");

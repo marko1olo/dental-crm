@@ -1,6 +1,7 @@
 import type { PatientWarrantyCard } from "../patientCabinetEngine";
+import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 
-export const ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = [
+const DEMO_ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = [
 	{
 		certificateId: "WAR-2026-8842-01",
 		issueDateIso: "2026-06-25",
@@ -60,3 +61,58 @@ export const ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = [
 		],
 	},
 ];
+
+export const ALEXEY_WARRANTIES: readonly PatientWarrantyCard[] = isDemoShowcaseMode()
+	? DEMO_ALEXEY_WARRANTIES
+	: [];
+
+export async function fetchPatientWarranties(patientId: string): Promise<PatientWarrantyCard[]> {
+	if (!patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+		return [];
+	}
+	try {
+		const res = await fetch(`/api/warranty/patient/${patientId}`);
+		if (!res.ok) return [];
+		const json = (await res.json()) as { success?: boolean; certificates?: Array<Record<string, unknown>> };
+		if (!json?.certificates || !Array.isArray(json.certificates)) return [];
+		return json.certificates.map((c) => {
+			const issueDateIso = c.issuedAt ? String(c.issuedAt).slice(0, 10) : new Date().toISOString().slice(0, 10);
+			const expirationDateIso = c.expiresAt ? String(c.expiresAt).slice(0, 10) : issueDateIso;
+			const nextCheckupDueDateIso = c.nextRecallDate ? String(c.nextRecallDate).slice(0, 10) : issueDateIso;
+			const rawStatus = String(c.status || "active");
+			const status: "active" | "at_risk" | "expired" =
+				rawStatus === "expired" || rawStatus === "voided"
+					? "expired"
+					: rawStatus === "at_risk" || rawStatus === "conditional"
+						? "at_risk"
+						: "active";
+
+			return {
+				certificateId: (c.certificateNumber as string) || (c.id as string) || "WAR-001",
+				issueDateIso,
+				expirationDateIso,
+				adjustedWarrantyMonths: Number(c.warrantyMonths || 12),
+				doctorName:
+					typeof c.notes === "string" && c.notes.includes("Врач:")
+						? c.notes.split("Врач:")[1]?.split(".")[0]?.trim() || "Лечащий врач"
+						: "Лечащий врач",
+				status,
+				nextCheckupDueDateIso,
+				checkupIntervalMonths: 6,
+				checkupScheduleCount: 4,
+				verificationUrl: `https://dente-clinic.ru/portal/warranty?cert=${c.certificateNumber || c.id}`,
+				items: Array.isArray(c.itemsJson)
+					? (c.itemsJson as Array<Record<string, unknown>>).map((it) => ({
+							toothFdi: (it.toothNumber as string) || "—",
+							workTitleRu: (it.clinicalWorkTitle as string) || (it.workTitle as string) || "Стоматологическая работа",
+							materialName: (it.materialName as string) || "Стоматологический материал",
+							manufacturer: (it.manufacturer as string) || "Сертифицированный производитель",
+							lotNumber: (it.lotNumber as string) || undefined,
+						}))
+					: [],
+			};
+		});
+	} catch {
+		return [];
+	}
+}

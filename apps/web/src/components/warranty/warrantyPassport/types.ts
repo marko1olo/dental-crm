@@ -83,6 +83,7 @@ export interface WarrantyPassportModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	patient?: WarrantyPatientMeta | null | undefined;
+	visitId?: string | null | undefined;
 	doctorName?: string | null | undefined;
 	doctorId?: string | null | undefined;
 	doctorSpecialty?: string | null | undefined;

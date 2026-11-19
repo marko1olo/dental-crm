@@ -95,6 +95,7 @@ export interface ImplantWarrantyPassportData {
 export function generateWarrantyPassportRecord(params: {
 	toothFdi: number;
 	systemId: CanonicalImplantSystemId;
+	passportId?: string | undefined;
 	diameterMm?: number | undefined;
 	lengthMm?: number | undefined;
 	torqueNcm?: number | undefined;
@@ -124,20 +125,31 @@ export function generateWarrantyPassportRecord(params: {
 	const expectedDate = new Date(now.getTime() + osteoMonths * 30 * 24 * 60 * 60 * 1000);
 	const expectedDateIso = expectedDate.toISOString().slice(0, 10);
 
-	const lotNumber = params.lotNumber || `LOT-${sys.id.toUpperCase().slice(0, 3)}-${now.getFullYear()}${Math.floor(1000 + Math.random() * 9000)}`;
-	const serialNumber = params.serialNumber || `SN-${Math.floor(100000 + Math.random() * 900000)}`;
-	const passportId = `PASS-IMP-${toothFdi}-${Date.now().toString(36).toUpperCase()}`;
+	const dateDigits = surgeryDateIso.replace(/\D/g, "");
+	const lotNumber =
+		params.lotNumber?.trim() ||
+		`LOT-${sys.id.toUpperCase().slice(0, 3)}-${dateDigits || "20260101"}`;
+	const serialNumber =
+		params.serialNumber?.trim() ||
+		`SN-${toothFdi}-${params.patientId ? params.patientId.slice(0, 6).toUpperCase() : dateDigits || "000000"}`;
+	const passportId =
+		params.passportId?.trim() ||
+		(params.patientId
+			? `PASS-IMP-${toothFdi}-${params.patientId.slice(0, 8).toUpperCase()}`
+			: `PASS-IMP-${toothFdi}-${dateDigits || "20260101"}`);
 	const article = `${sys.defaultArticlePrefix}-${Math.round(diameterMm * 10)}${Math.round(lengthMm * 10)}`;
 
 	const verificationQrPayload = JSON.stringify({
 		passportId,
 		toothFdi,
 		brand: sys.brandName,
+		article,
 		lot: lotNumber,
 		sn: serialNumber,
 		date: surgeryDateIso,
 		osteoDate: expectedDateIso,
 		warranty: "Lifetime Manufacturer Osseointegration Guarantee",
+		verificationUrl: `https://dente-clinic.ru/portal/warranty?cert=${encodeURIComponent(passportId)}`,
 	});
 
 	return {

@@ -1,4 +1,5 @@
-import type { Dashboard, GeneratedDocument } from "@dental/shared";
+import type { Dashboard, GeneratedDocument, PostVisitCareTopic } from "@dental/shared";
+import type { DocumentState } from "../../../../store/documentStore";
 import {
 	telegramCareRequestTaskCareTopics,
 	telegramCareRequestWorkflowCareTopics,
@@ -10,8 +11,8 @@ import { documentLabels } from "../../../../workspaceUiLabels";
 
 export interface UseDocumentCommunicationTaskProps {
 	dashboard: Dashboard | null;
-	documentState: any;
-	changePostVisitCareTopic: (topic: any) => void;
+	documentState: DocumentState;
+	changePostVisitCareTopic: (topic: PostVisitCareTopic) => void;
 	setCurrentView: (view: any) => void;
 	setError: (err: string | null) => void;
 }

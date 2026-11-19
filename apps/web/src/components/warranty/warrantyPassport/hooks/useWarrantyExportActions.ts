@@ -7,13 +7,14 @@ export interface UseWarrantyExportActionsParams {
 	certificateData: WarrantyCertificateData;
 	certificateHtml: string;
 	patient?: WarrantyPatientMeta | null | undefined;
+	visitId?: string | null | undefined;
 	doctorName?: string | null | undefined;
 	onAttachToClinicalNote?: ((payload: AttachedWarrantyPayload) => void) | undefined;
 	onCertificateIssued?: ((data: WarrantyCertificateData) => void) | undefined;
 }
 
 export function useWarrantyExportActions({
-	certificateData, certificateHtml, patient, doctorName, onAttachToClinicalNote, onCertificateIssued,
+	certificateData, certificateHtml, patient, visitId, doctorName, onAttachToClinicalNote, onCertificateIssued,
 }: UseWarrantyExportActionsParams) {
 	const [copiedLink, setCopiedLink] = useState(false);
 	const [copiedMemo, setCopiedMemo] = useState(false);
@@ -27,11 +28,16 @@ export function useWarrantyExportActions({
 			const status = certificateData.calculation.warrantyStatus === "void_risk" ? "voided"
 				: certificateData.calculation.warrantyStatus === "conditional" || certificateData.calculation.warrantyStatus === "reduced"
 					? "conditional" : "active";
+			const cleanVisitId =
+				visitId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(visitId)
+					? visitId
+					: null;
 			await fetch("/api/warranty/certificates", {
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					patientId: patient.id,
+					visitId: cleanVisitId,
 					certificateNumber: certificateData.certificateId,
 					status,
 					items: certificateData.items,
@@ -47,7 +53,7 @@ export function useWarrantyExportActions({
 		} catch (err) {
 			console.error("Failed to persist warranty certificate to backend:", err);
 		}
-	}, [certificateData, doctorName, onCertificateIssued, patient?.id]);
+	}, [certificateData, doctorName, onCertificateIssued, patient?.id, visitId]);
 
 	const handlePrint = useCallback(() => {
 		void persistCertificateToBackend();

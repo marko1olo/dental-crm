@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { ClinicalToothRow, TreatmentPlanItem, Dashboard } from "@dental/shared";
+import type { DocumentState } from "../../../../store/documentStore";
 import {
 	clinicalToothStatusValue,
 	clinicalToothSurfacesValue,
@@ -9,7 +10,7 @@ import {
 export interface UseDocumentClinicalAreaProps {
 	activeTreatmentPlanItems: TreatmentPlanItem[];
 	dashboard: Dashboard | null;
-	documentState: any;
+	documentState: DocumentState;
 	recordExtractDiagnosisValue: () => string;
 	recordExtractComplaintAndAnamnesisValue: () => string;
 }

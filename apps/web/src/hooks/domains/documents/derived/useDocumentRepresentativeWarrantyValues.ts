@@ -1,9 +1,10 @@
 import type { Dashboard, GeneratedDocument, Patient } from "@dental/shared";
+import type { DocumentState } from "../../../../store/documentStore";
 
 export interface UseDocumentRepresentativeWarrantyProps {
 	dashboard: Dashboard | null;
 	documentPatient: Patient | null;
-	documentState: any;
+	documentState: DocumentState;
 	activeUsableDocuments: GeneratedDocument[];
 	inferredTreatmentArea: string;
 }

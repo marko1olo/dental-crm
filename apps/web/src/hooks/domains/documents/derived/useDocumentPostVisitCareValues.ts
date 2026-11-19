@@ -1,9 +1,10 @@
 import type { PostVisitCareTopic } from "@dental/shared";
+import type { DocumentState } from "../../../../store/documentStore";
 import { postVisitCarePresets } from "../../../../postVisitCareData";
 import { postVisitCareTopicOptions } from "../../../../workspaceStaticOptions";
 
 export interface UseDocumentPostVisitCareProps {
-	documentState: any;
+	documentState: DocumentState;
 }
 
 export function useDocumentPostVisitCareValues({
