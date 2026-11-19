@@ -5,10 +5,29 @@
 
 import type { ViewerRulerMeasurement } from "../types.js";
 
+interface RawMeasurementItem {
+	id?: string;
+	coordinates?: {
+		startX?: number;
+		startY?: number;
+		endX?: number;
+		endY?: number;
+		start?: { x?: number; y?: number };
+		end?: { x?: number; y?: number };
+	};
+	measurements?: {
+		lengthMm?: number;
+		distanceMm?: number;
+		value?: number;
+	};
+	notes?: string | null;
+	toothCode?: string | null;
+}
+
 export async function fetchStudyMeasurementsAndSession(
 	studyId: string,
 	headers: Record<string, string>,
-): Promise<{ measurements: ViewerRulerMeasurement[]; sessionState?: any }> {
+): Promise<{ measurements: ViewerRulerMeasurement[]; sessionState?: Record<string, unknown> | undefined }> {
 	const [measRes, sessionRes] = await Promise.all([
 		fetch(`/api/imaging/studies/${studyId}/measurements`, { headers }),
 		fetch(`/api/imaging/studies/${studyId}/viewer-session`, { headers }),
@@ -18,7 +37,7 @@ export async function fetchStudyMeasurementsAndSession(
 	if (measRes.ok) {
 		const data = await measRes.json();
 		if (Array.isArray(data)) {
-			measurements = data.map((item: any) => {
+			measurements = (data as RawMeasurementItem[]).map((item) => {
 				const coords = item.coordinates || {};
 				const measures = item.measurements || {};
 				return {
@@ -35,7 +54,7 @@ export async function fetchStudyMeasurementsAndSession(
 		}
 	}
 
-	let sessionState: any = undefined;
+	let sessionState: Record<string, unknown> | undefined = undefined;
 	if (sessionRes.ok) {
 		const sessionData = await sessionRes.json();
 		sessionState = sessionData.session?.state;

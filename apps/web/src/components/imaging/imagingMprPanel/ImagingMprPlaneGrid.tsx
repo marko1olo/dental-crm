@@ -1,7 +1,8 @@
 import React from "react";
+import type { CbctWorkbenchPlane } from "../../../constants/imagingConstants";
 
 export interface ImagingMprPlaneGridProps {
-	cbctWorkbenchPlanes?: any[] | undefined;
+	cbctWorkbenchPlanes?: CbctWorkbenchPlane[] | undefined;
 	cbctWorkbenchProjections?: string[] | undefined;
 	mprControlsReady: boolean;
 	mprSeriesRequiredProjectionLabel?: string | undefined;
@@ -21,7 +22,7 @@ export function ImagingMprPlaneGrid({
 }: ImagingMprPlaneGridProps) {
 	return (
 		<div className="mpr-plane-grid">
-			{(cbctWorkbenchPlanes ?? []).map((plane: any) => {
+			{(cbctWorkbenchPlanes ?? []).map((plane) => {
 				const planeSupported = (cbctWorkbenchProjections ?? []).includes(plane.key);
 				const planeAvailable = mprControlsReady && planeSupported;
 				const planeUnavailableReason = !mprControlsReady

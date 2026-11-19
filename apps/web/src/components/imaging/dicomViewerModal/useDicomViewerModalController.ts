@@ -87,8 +87,8 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 	const processFile = useCallback((file: File) => {
 		const reader = new FileReader();
 		reader.onload = async () => {
+			setCurrentImageSrc(reader.result as string);
 			const dataUrl = reader.result as string;
-			setCurrentImageSrc(dataUrl);
 			ai.resetAiState();
 			setMeasurements([]);
 			setViewportState(DEFAULT_DICOM_VIEWPORT_STATE);

@@ -87,16 +87,14 @@ export function useQuickBookingDrawerState(props: QuickBookingDrawerProps) {
   }, [slotSync]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || typeof window === "undefined") return;
     const handleOverbook = () => {
       void submit.handleSubmitBooking(undefined, { overbookOverride: true });
     };
-    if (typeof window !== "undefined") {
-      window.addEventListener("dente-quick-booking-overbook", handleOverbook);
-      return () => {
-        window.removeEventListener("dente-quick-booking-overbook", handleOverbook);
-      };
-    }
+    window.addEventListener("dente-quick-booking-overbook", handleOverbook);
+    return () => {
+      window.removeEventListener("dente-quick-booking-overbook", handleOverbook);
+    };
   }, [isOpen, submit.handleSubmitBooking]);
 
   return {

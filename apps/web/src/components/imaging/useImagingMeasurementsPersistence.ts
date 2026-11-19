@@ -3,17 +3,21 @@
  * Mandate 8b: строго <= 120 строк.
  */
 
-import { useEffect, useRef, useState } from "react";
-import type { ViewerRulerMeasurement } from "./types.js";
+import React, { useEffect, useRef, useState } from "react";
+import type { ImagingStudy, ImagingViewerState, ViewerRulerMeasurement } from "./types.js";
 import {
 	fetchStudyMeasurementsAndSession,
 	saveStudyMeasurements,
 } from "./persistence/imagingMeasurementsApi.js";
 
 export interface UseImagingMeasurementsPersistenceOptions {
-	selectedImagingStudy: any;
-	auth: any;
-	setImagingViewerState?: any;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
+	auth?: {
+		denteClinicalReadHeaders?: () => Record<string, string>;
+		denteClinicalMutationHeaders?: (headers?: Record<string, string>) => Record<string, string>;
+		[key: string]: unknown;
+	} | null | undefined;
+	setImagingViewerState?: React.Dispatch<React.SetStateAction<ImagingViewerState>> | undefined;
 }
 
 export function useImagingMeasurementsPersistence({
@@ -44,15 +48,18 @@ export function useImagingMeasurementsPersistence({
 					setRulerMeasurements(measurements);
 					lastSavedMeasurementsHashRef.current = JSON.stringify(measurements);
 					if (sessionState && setImagingViewerState) {
-						setImagingViewerState((prev: any) => ({
+						setImagingViewerState((prev) => ({
 							...prev,
-							brightness: sessionState.brightness ?? prev?.brightness ?? 1,
-							contrast: sessionState.contrast ?? prev?.contrast ?? 1,
-							inverted: sessionState.inverted ?? prev?.inverted ?? false,
-							rotation: sessionState.rotationDeg ?? prev?.rotation ?? 0,
-							flipHorizontal: sessionState.flipHorizontal ?? prev?.flipHorizontal ?? false,
-							zoom: sessionState.zoom ?? prev?.zoom ?? 1,
-							pan: { x: sessionState.panX ?? prev?.pan?.x ?? 0, y: sessionState.panY ?? prev?.pan?.y ?? 0 },
+							brightness: Number(sessionState.brightness ?? prev?.brightness ?? 1),
+							contrast: Number(sessionState.contrast ?? prev?.contrast ?? 1),
+							inverted: Boolean(sessionState.inverted ?? prev?.inverted ?? false),
+							rotationDeg: Number(sessionState.rotationDeg ?? prev?.rotationDeg ?? 0),
+							flipHorizontal: Boolean(sessionState.flipHorizontal ?? prev?.flipHorizontal ?? false),
+							zoom: Number(sessionState.zoom ?? prev?.zoom ?? 1),
+							pan: {
+								x: Number(sessionState.panX ?? prev?.pan?.x ?? 0),
+								y: Number(sessionState.panY ?? prev?.pan?.y ?? 0),
+							},
 						}));
 					}
 				}

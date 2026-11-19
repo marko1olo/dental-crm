@@ -9,7 +9,7 @@ import { Loader2, Maximize2, Minimize2, Sparkles, X, Zap } from "lucide-react";
 export interface DicomQuickAccessActionsProps {
 	onAiAnalyze?: (() => void) | undefined;
 	isAiAnalyzing?: boolean | undefined;
-	aiReport?: any;
+	aiReport?: unknown;
 	hasAiFindings?: boolean | undefined;
 	onToggleFindingsDrawer?: (() => void) | undefined;
 	onNormaClick?: (() => void) | undefined;

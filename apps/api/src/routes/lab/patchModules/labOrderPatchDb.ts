@@ -77,6 +77,7 @@ export async function executeLabOrderPatch(
 		if (isWarrantyRequest) updateValues.isLockedInstalled = false;
 		if (updatedClinicalNotes !== undefined) updateValues.clinicalNotes = updatedClinicalNotes;
 		if (body.labComments !== undefined) updateValues.labComments = body.labComments;
+		if (body.attachedImageUrl !== undefined) updateValues.attachedImageUrl = body.attachedImageUrl;
 		if (body.dueDate !== undefined) updateValues.dueDate = body.dueDate ? new Date(body.dueDate) : null;
 
 		const [updated] = await tx

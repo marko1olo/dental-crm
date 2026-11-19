@@ -1,7 +1,17 @@
 import type React from "react";
 
+export interface ViewerDisplayState {
+	brightness?: number | undefined;
+	contrast?: number | undefined;
+	inverted?: boolean | undefined;
+	pan?: { x: number; y: number } | undefined;
+	zoom?: number | undefined;
+	rotationDeg?: number | undefined;
+	flipHorizontal?: boolean | undefined;
+}
+
 export function computeViewerImageStyle(
-	s?: any,
+	s?: ViewerDisplayState | undefined,
 	isPanActive = false,
 	overrideStyle?: React.CSSProperties,
 ): React.CSSProperties {

@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import type { Appointment } from "@dental/shared";
 import { appointmentScheduleMissingFields } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
 import { useScheduleStore } from "../../../store/scheduleStore";
@@ -155,7 +156,7 @@ export function useScheduleViewController(rawProps?: Partial<ScheduleViewProps>)
 
   const pendingOnlineBookings = useMemo(() => {
     if (!effectiveDashboard?.appointments) return [];
-    return effectiveDashboard.appointments.filter((a) => {
+    return effectiveDashboard.appointments.filter((a: Appointment) => {
       if (a.status !== "planned") return false;
       return Boolean(
         (a.comment && /онлайн|виджет|online|сайт/i.test(a.comment)) ||

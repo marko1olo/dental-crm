@@ -43,11 +43,18 @@ export function QuickDoctorSelector({
         data-legacy-testid="select-appointment-doctor"
       >
         <option value="">-- Выберите врача --</option>
-        {doctors.map((d) => (
-          <option key={d.id} value={d.id}>
-            {d.fullName} {d.specialties?.[0] ? `(${specialtyLabels[d.specialties[0]] || d.specialties[0]})` : ""}
-          </option>
-        ))}
+        {doctors.map((d) => {
+          const specKey = d.specialties?.[0];
+          const specLabel =
+            specKey && specKey in specialtyLabels
+              ? specialtyLabels[specKey as keyof typeof specialtyLabels]
+              : specKey;
+          return (
+            <option key={d.id} value={d.id}>
+              {d.fullName} {specLabel ? `(${specLabel})` : ""}
+            </option>
+          );
+        })}
       </select>
       {dutyDoc && (
         <div

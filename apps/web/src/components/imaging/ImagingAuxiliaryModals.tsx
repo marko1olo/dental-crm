@@ -4,7 +4,6 @@
  */
 
 import React, { Suspense } from "react";
-import type { Appointment, ImagingStudy, Patient } from "@dental/shared";
 import type { ImagingStudy as LocalImagingStudy } from "./types.js";
 import { convertImagingStudyToRadiologyStudy } from "../radiology/archive/radiologyStudyAdapter.js";
 import { lazyWithRetry } from "../../lib/lazyWithRetry.js";
@@ -27,8 +26,8 @@ export interface ImagingAuxiliaryModalsProps {
 	setIsExportModalOpen: (open: boolean) => void;
 	isComparisonOpen?: boolean | undefined;
 	setIsComparisonOpen?: ((open: boolean) => void) | undefined;
-	activeImagingStudies?: (ImagingStudy | LocalImagingStudy)[] | undefined;
-	selectedImagingStudy?: (ImagingStudy | LocalImagingStudy) | null | undefined;
+	activeImagingStudies?: LocalImagingStudy[] | undefined;
+	selectedImagingStudy?: LocalImagingStudy | null | undefined;
 	activePatient?: { id?: string | null; fullName?: string | null; name?: string | null; birthDate?: string | null; phone?: string | null; cardNumber?: string | null; medicalCardNumber?: string | null; gender?: string | null } | null | undefined;
 	activeAppointment?: { doctorName?: string | null; [key: string]: unknown } | null | undefined;
 	authClinicName?: string | undefined;
@@ -61,7 +60,7 @@ export function ImagingAuxiliaryModals({
 					<CbctMprImplantStudioModal
 						isOpen={isPanoramicWindowOpen}
 						onClose={() => setIsPanoramicWindowOpen(false)}
-						study={selectedImagingStudy ? convertImagingStudyToRadiologyStudy(selectedImagingStudy as any) : undefined}
+						study={selectedImagingStudy ? convertImagingStudyToRadiologyStudy(selectedImagingStudy) : undefined}
 						patientId={activePatient?.id ?? undefined}
 						patientName={activePatient?.name ?? activePatient?.fullName ?? undefined}
 						initialStudioMode="panoramic"
@@ -100,7 +99,7 @@ export function ImagingAuxiliaryModals({
 			<ImagingExportModal
 				isOpen={isExportModalOpen}
 				onClose={() => setIsExportModalOpen(false)}
-				study={selectedImagingStudy as any}
+				study={selectedImagingStudy}
 				patient={activePatient ? {
 					fullName: activePatient.fullName || activePatient.name || undefined,
 					name: activePatient.name || undefined,
@@ -120,8 +119,8 @@ export function ImagingAuxiliaryModals({
 				onClose={() => setIsComparisonOpen?.(false)}
 				patientName={activePatient?.fullName || activePatient?.name || undefined}
 				patientCardNumber={activePatient?.cardNumber || activePatient?.medicalCardNumber || undefined}
-				currentStudy={selectedImagingStudy ? convertImagingStudyToRadiologyStudy(selectedImagingStudy as any) : undefined}
-				historyStudies={activeImagingStudies ? activeImagingStudies.map((s) => convertImagingStudyToRadiologyStudy(s as any)) : undefined}
+				currentStudy={selectedImagingStudy ? convertImagingStudyToRadiologyStudy(selectedImagingStudy) : undefined}
+				historyStudies={activeImagingStudies ? activeImagingStudies.map((s) => convertImagingStudyToRadiologyStudy(s)) : undefined}
 			/>
 		</>
 	);

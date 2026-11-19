@@ -16,11 +16,12 @@ export const ScheduleMobileBottomBar: React.FC<ScheduleMobileBottomBarProps> = (
 
   return (
     <div
-      className="schedule-mobile-bottom-bar fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 w-full z-40 px-3 py-2 bg-[var(--paper-strong)] border-t border-[var(--line)] box-border shadow-md"
+      className="schedule-mobile-bottom-bar fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 w-full max-w-[100vw] overflow-x-clip z-50 px-3 py-2 bg-[var(--paper-strong)] border-t border-[var(--line)] box-border shadow-md"
+      style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
     >
       <button
         type="button"
-        className="primary-button schedule-mobile-primary-action-btn w-full h-[52px] min-h-[44px] min-h-[52px] rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] font-semibold text-base flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+        className="primary-button schedule-mobile-primary-action-btn w-full h-[52px] min-h-[44px] rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] font-semibold text-base flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
         onClick={onAction}
         data-testid="schedule-mobile-add-btn"
       >

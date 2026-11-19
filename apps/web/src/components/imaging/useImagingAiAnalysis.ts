@@ -1,12 +1,28 @@
 import { useState, useCallback } from "react";
 import { showToast } from "../GlobalToast";
 import { logger } from "../../utils/logger";
-import { imagingStudyHasFile } from "./types";
+import { type ImagingStudy, imagingStudyHasFile } from "./types";
 import type { ToothUpdate } from "./xrayProtocol/types";
 
 export interface UseImagingAiAnalysisOptions {
-	selectedImagingStudy: any;
-	auth?: any;
+	selectedImagingStudy: ImagingStudy | null | undefined;
+	auth?: {
+		denteClinicalMutationHeaders?: (headers?: Record<string, string>) => Record<string, string>;
+		[key: string]: unknown;
+	} | undefined;
+}
+
+interface ImagingAiAnalysisPayload {
+	message?: string;
+	analysisResult?: {
+		summary?: string;
+		toothUpdates?: Array<{
+			code?: string | number;
+			state?: string;
+			diagnosisOrFinding?: string;
+			diagnosis?: string;
+		}>;
+	};
 }
 
 export function useImagingAiAnalysis({
@@ -33,7 +49,7 @@ export function useImagingAiAnalysis({
 		const studyId = selectedImagingStudy.id;
 		setIsAnalyzingAI(true);
 		try {
-			const headers = auth
+			const headers = auth && typeof auth.denteClinicalMutationHeaders === "function"
 				? auth.denteClinicalMutationHeaders({
 						"Content-Type": "application/json",
 					})
@@ -43,9 +59,9 @@ export function useImagingAiAnalysis({
 				headers,
 			});
 			const rawBody = await res.text();
-			let payload: any = null;
+			let payload: ImagingAiAnalysisPayload | null = null;
 			try {
-				payload = rawBody.trim() ? JSON.parse(rawBody) : null;
+				payload = rawBody.trim() ? (JSON.parse(rawBody) as ImagingAiAnalysisPayload) : null;
 			} catch {
 				payload = null;
 			}
@@ -65,7 +81,7 @@ export function useImagingAiAnalysis({
 
 			const summary = typeof payload.analysisResult.summary === "string" ? payload.analysisResult.summary : "";
 			const toothUpdates: ToothUpdate[] = Array.isArray(payload.analysisResult.toothUpdates)
-				? payload.analysisResult.toothUpdates.map((item: any) => ({
+				? payload.analysisResult.toothUpdates.map((item) => ({
 						code: String(item?.code ?? ""),
 						state: String(item?.state ?? ""),
 						diagnosisOrFinding: String(item?.diagnosisOrFinding ?? item?.diagnosis ?? ""),

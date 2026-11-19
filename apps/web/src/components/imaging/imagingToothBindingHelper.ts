@@ -94,8 +94,8 @@ export function isSupportedToothFdi(code: unknown): boolean {
 	if (typeof code !== "string") return false;
 	const trimmed = code.trim();
 	return (
-		PERMANENT_TEETH_FDI.includes(trimmed as any) ||
-		PRIMARY_TEETH_FDI.includes(trimmed as any)
+		PERMANENT_TEETH_FDI.includes(trimmed) ||
+		PRIMARY_TEETH_FDI.includes(trimmed)
 	);
 }
 

@@ -8,6 +8,7 @@ export const labOrderPatchSchema = z.object({
 	notes: z.string().trim().max(2000).optional().nullable(),
 	clinicalNotes: z.string().trim().max(2000).optional().nullable(),
 	labComments: z.string().trim().max(2000).optional().nullable(),
+	attachedImageUrl: z.string().trim().optional().nullable(),
 	dueDate: z.string().optional().nullable(),
 });
 

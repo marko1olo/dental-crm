@@ -4,9 +4,10 @@
 
 import React from "react";
 import { HardDrive } from "lucide-react";
+import type { DicomDaemonStatus } from "./types";
 
 interface DicomImportSettingsTabProps {
-	daemonStatus: any;
+	daemonStatus: DicomDaemonStatus | null;
 }
 
 export const DicomImportSettingsTab: React.FC<DicomImportSettingsTabProps> = ({ daemonStatus }) => {

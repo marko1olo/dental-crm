@@ -7,6 +7,12 @@ import {
 	DEFAULT_CLINIC_CREDENTIALS,
 	DEFAULT_DOCTOR_SIGNATURE,
 } from "../../radiology/radiologyLegalWatermark.js";
+import type {
+	AngleMeasurement,
+	CalibrationReference,
+	PeriapicalLesion,
+	RulerMeasurement,
+} from "../../radiology/radiologyMeasurementMath.js";
 import {
 	createDicomSecondaryCaptureFile,
 	exportCanvasToJpeg,
@@ -26,11 +32,11 @@ export interface CanvasExportParams {
 	studyId?: string | null | undefined;
 	effectiveStudy: { id: string; capturedAt?: string | undefined };
 	toothCode?: string | null | undefined;
-	calibration?: any;
+	calibration?: CalibrationReference | undefined;
 	isCalibrated?: boolean | undefined;
-	rulers?: any[] | undefined;
-	angles?: any[] | undefined;
-	lesions?: any[] | undefined;
+	rulers?: RulerMeasurement[] | undefined;
+	angles?: AngleMeasurement[] | undefined;
+	lesions?: PeriapicalLesion[] | undefined;
 }
 
 export async function processCanvasDownload(params: CanvasExportParams): Promise<HTMLCanvasElement> {

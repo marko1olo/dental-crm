@@ -222,9 +222,10 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 					setLoadingMessage("Генерация анатомической модели челюстей...");
 					engine.loadProceduralDefaultArches();
 				}
-			} catch (err: any) {
+			} catch (err: unknown) {
 				if (!isCancelled) {
-					setErrorMessage(`Ошибка загрузки: ${err?.message || "Не удалось загрузить 3D модель"}`);
+					const msg = err instanceof Error ? err.message : "Не удалось загрузить 3D модель";
+					setErrorMessage(`Ошибка загрузки: ${msg}`);
 				}
 			} finally {
 				if (!isCancelled) {
@@ -317,8 +318,9 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 				setLoadingMessage(`Чтение 3D скана: ${file.name}...`);
 				await engine.loadArchFromFile(file);
 			}
-		} catch (err: any) {
-			setErrorMessage(err?.message || "Не удалось прочитать файл");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Не удалось прочитать файл";
+			setErrorMessage(msg);
 		} finally {
 			setIsLoading(false);
 		}

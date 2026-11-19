@@ -23,6 +23,16 @@ export interface PendingStudyItem {
 	aiSummary: string | null;
 }
 
+export interface DicomDaemonStatus {
+	isRunning?: boolean | undefined;
+	activeRoots?: string[] | undefined;
+	autoBoundCount?: number | undefined;
+	pendingReviewCount?: number | undefined;
+	unassignedCount?: number | undefined;
+	lastScanAt?: string | null | undefined;
+	[key: string]: unknown;
+}
+
 export interface DicomImportManagerModalProps {
 	isOpen: boolean;
 	onClose: () => void;

@@ -360,18 +360,14 @@ export function useScheduleShortcuts({
     };
     const weekAhead = new Date(nextSameWeekdayMs());
 
-    const fallbackAssistant = (dashboard?.clinicSettings?.staff ?? []).find(
-      (member) => member.active && member.role === "assistant",
-    );
-    const repeatAssistantId =
-      appointment.assistantUserId ??
-      (dashboard?.clinicSettings?.profile?.mode === "solo_doctor"
-        ? null
-        : (fallbackAssistant?.id ?? null));
+    // Mandate 8n / 8e: Assistant assignment is strictly optional.
+    // Repeating an appointment preserves assistantUserId if originally set, otherwise defaults to null.
+    // Never auto-force staff assistants onto solo doctor or clinic appointments.
+    const repeatAssistantId = appointment.assistantUserId ?? null;
 
     updateNewAppointmentDraft("patientId", appointment.patientId);
     updateNewAppointmentDraft("doctorUserId", appointment.doctorUserId);
-    updateNewAppointmentDraft("assistantUserId", repeatAssistantId ?? "");
+    updateNewAppointmentDraft("assistantUserId", repeatAssistantId);
     updateNewAppointmentDraft("chairId", appointment.chairId);
     updateNewAppointmentDraft("status", "planned");
     updateNewAppointmentDraft("startsAt", weekAhead.toISOString());

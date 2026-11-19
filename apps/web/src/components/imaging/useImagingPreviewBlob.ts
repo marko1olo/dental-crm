@@ -4,9 +4,12 @@ import type { ImagingStudy } from "./types";
 import { resolveStudyPreviewEndpoint } from "./studyPreviewResolver";
 
 export interface UseImagingPreviewBlobOptions {
-	selectedImagingStudy?: ImagingStudy | null;
-	imagingPreviewSource?: (study: any) => string | undefined;
-	auth?: any;
+	selectedImagingStudy?: ImagingStudy | null | undefined;
+	imagingPreviewSource?: (study: ImagingStudy) => string | undefined;
+	auth?: {
+		denteClinicalReadHeaders?: () => Record<string, string>;
+		[key: string]: unknown;
+	} | null | undefined;
 }
 
 export function useImagingPreviewBlob({
@@ -31,7 +34,7 @@ export function useImagingPreviewBlob({
 
 		const rawPreviewUrl = imagingPreviewSource
 			? imagingPreviewSource(selectedImagingStudy)
-			: (selectedImagingStudy as any).previewUrl;
+			: (selectedImagingStudy.previewUrl as string | undefined);
 		if (
 			typeof rawPreviewUrl === "string" &&
 			(rawPreviewUrl.startsWith("blob:") || rawPreviewUrl.startsWith("data:"))
@@ -96,7 +99,7 @@ export function useImagingPreviewBlob({
 			isCancelled = true;
 			if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
 		};
-	}, [selectedImagingStudy?.id, (selectedImagingStudy as any)?.storagePath, auth, imagingPreviewSource]);
+	}, [selectedImagingStudy?.id, selectedImagingStudy?.storagePath, auth, imagingPreviewSource]);
 
 	return {
 		effectivePreviewUrl: authedPreviewBlobUrl,

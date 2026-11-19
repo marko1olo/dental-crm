@@ -4,12 +4,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { showToast } from "../../GlobalToast.js";
-import type { PendingStudyItem, DicomImportTabType } from "./types";
+import type { PendingStudyItem, DicomImportTabType, DicomDaemonStatus } from "./types";
 
 export function useDicomImportManager(isOpen: boolean, onStudyBound?: () => void) {
 	const [activeTab, setActiveTab] = useState<DicomImportTabType>("pending");
 	const [studies, setStudies] = useState<PendingStudyItem[]>([]);
-	const [daemonStatus, setDaemonStatus] = useState<any>(null);
+	const [daemonStatus, setDaemonStatus] = useState<DicomDaemonStatus | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isScanning, setIsScanning] = useState<boolean>(false);
 	const [actionPendingId, setActionPendingId] = useState<string | null>(null);

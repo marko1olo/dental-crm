@@ -62,7 +62,7 @@ export const DicomViewerModalHeader: React.FC<DicomViewerModalHeaderProps> = ({
 					<span>{isNormaApplied ? "Норма внесена" : "Норма: патологии нет"}</span>
 				</button>
 
-				<div className="relative" ref={protocolsDropdownRef as any}>
+				<div className="relative" ref={protocolsDropdownRef}>
 					<button type="button" data-testid="btn-dicom-protocols-menu" onClick={() => setIsProtocolsDropdownOpen((p) => !p)} className={btnStyle}>
 						<FileText size={13} className="text-[var(--teal)]" /> <span>Протоколы</span> <ChevronDown size={11} />
 					</button>

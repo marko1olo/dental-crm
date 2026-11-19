@@ -39,7 +39,8 @@ export async function captureDicomCanvas(
 			a.click();
 			showToast("Снимок высокого разрешения сохранён (PNG)", "success");
 		}
-	} catch (err: any) {
-		showToast("Ошибка при захвате снимка: " + (err?.message || "сбой"), "error");
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : "сбой";
+		showToast("Ошибка при захвате снимка: " + message, "error");
 	}
 }

@@ -47,7 +47,7 @@ export const DicomClippingControls: React.FC<Props> = ({
 		<>
 			<div style={{ marginBottom: "6px" }}>
 				<label style={{ display: "block", color: "#94a3b8", marginBottom: "3px" }}>Плоскость:</label>
-				<select value={clippingPlane} onChange={(e) => onChangeClippingPlane(e.target.value as any)} style={selectInputStyle}>
+				<select value={clippingPlane} onChange={(e) => onChangeClippingPlane(e.target.value as ClippingPlane)} style={selectInputStyle}>
 					<option value="sagittal">Сагиттальная</option>
 					<option value="coronal">Фронтальная (Корональная)</option>
 					<option value="axial">Аксиальная</option>
@@ -57,7 +57,7 @@ export const DicomClippingControls: React.FC<Props> = ({
 
 			<div style={{ marginBottom: "8px" }}>
 				<label style={{ display: "block", color: "#94a3b8", marginBottom: "3px" }}>Ориентир:</label>
-				<select value={clippingRef} onChange={(e) => onChangeClippingRef(e.target.value as any)} style={selectInputStyle}>
+				<select value={clippingRef} onChange={(e) => onChangeClippingRef(e.target.value as ClippingRef)} style={selectInputStyle}>
 					<option value="user">Пользователь</option>
 					<option value="arch_center">Центр зубной дуги</option>
 					<option value="symphysis">Симфиз подбородка</option>

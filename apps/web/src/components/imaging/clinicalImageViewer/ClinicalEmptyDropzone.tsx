@@ -13,7 +13,7 @@ export const ClinicalEmptyDropzone: React.FC<ClinicalEmptyDropzoneProps> = ({
 	return (
 		<div
 			className="clinical-image-container flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] min-h-[400px] h-[480px] max-h-[calc(100vh-280px)] flex-1 w-full"
-			ref={containerRef as any}
+			ref={containerRef}
 			data-testid="clinical-image-placeholder"
 		>
 			<UploadCloud size={40} className="mb-2 text-[var(--teal,#0d9488)] opacity-75" />

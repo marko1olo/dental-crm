@@ -1,11 +1,13 @@
 import React from "react";
+import type { MprAxisGuidance, MprProjectionCompassLabels } from "../../../mprControlMath";
+import type { MprClinicalPresetFit } from "../../../mprClinicalStatus";
 
 export interface ImagingMprAxisVisualizerProps {
 	mprControlsReady: boolean;
 	mprAxisVisualizerStyle?: React.CSSProperties | undefined;
 	mprAxisVisualizerLabel?: string | undefined;
 	handleMprKeyboardNavigation?: ((e: React.KeyboardEvent) => void) | undefined;
-	mprProjectionCompass?: any;
+	mprProjectionCompass?: MprProjectionCompassLabels | null | undefined;
 	mprCrosshairEnabled?: boolean | undefined;
 	mprAxisAngleBadge?: string | undefined;
 	mprSlabBadge?: string | undefined;
@@ -15,10 +17,10 @@ export interface ImagingMprAxisVisualizerProps {
 	mprAxisDirectionLabel?: string | undefined;
 	mprSlabMm?: number | undefined;
 	mprSliceLabel?: string | undefined;
-	mprAxisGuidance?: any;
+	mprAxisGuidance?: MprAxisGuidance | null | undefined;
 	mprWorkbenchSummaryText?: string | undefined;
 	mprLinkedPlanesEnabled?: boolean | undefined;
-	mprNearestClinicalPreset?: any;
+	mprNearestClinicalPreset?: MprClinicalPresetFit | null | undefined;
 	applyNearestMprClinicalPreset?: (() => void) | undefined;
 }
 

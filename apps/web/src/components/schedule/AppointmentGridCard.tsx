@@ -81,7 +81,24 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 	const docObj = a.doctorUserId ? staffLookupMap.get(a.doctorUserId) : undefined;
 	const doctorSpecialty = (docObj as { specialty?: string; specialties?: string[]; role?: string } | undefined)?.specialty || (Array.isArray(docObj?.specialties) ? docObj?.specialties[0] : undefined) || docObj?.role;
 	const docTheme = getDoctorSpecialtyTheme(doctorSpecialty);
-	const collision = collisionMap.get(a.id);
+	// Mandate 8n: Solo Doctor Scale Sovereignty.
+	// If an appointment has no assistant assigned (!a.assistantUserId),
+	// collision on assistant (sameAssistant) is irrelevant and must be ignored.
+	const rawCollision = collisionMap.get(a.id);
+	const effectiveCollision = rawCollision
+		? {
+				...rawCollision,
+				sameAssistant: Boolean(a.assistantUserId && rawCollision.sameAssistant),
+		  }
+		: undefined;
+	const collision =
+		effectiveCollision &&
+		(effectiveCollision.sameDoctor ||
+			effectiveCollision.sameChair ||
+			effectiveCollision.sameAssistant ||
+			effectiveCollision.samePatient)
+			? effectiveCollision
+			: undefined;
 	const isCito = isAppointmentCito(a);
 	const pBalance = resolvePatientBalance(patObj);
 	const pAllergyAlert = getPatientAllergyAlert(patObj, a?.reason);
