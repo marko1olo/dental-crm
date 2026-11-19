@@ -143,6 +143,17 @@ export function mergeTeethWithLocalCache(
 					: [];
 		const surfacePatch = { surfaces: [...resolvedSurfaces] };
 
+		const resolvedResorption =
+			found.rootResorptionStage ??
+			found.rootResorption ??
+			cachedTooth.rootResorptionStage ??
+			cachedTooth.rootResorption;
+		const resolvedMobility = found.mobility ?? cachedTooth.mobility;
+		const pediatricPatch = {
+			...(resolvedResorption !== undefined ? { rootResorptionStage: resolvedResorption, rootResorption: resolvedResorption } : {}),
+			...(resolvedMobility !== undefined ? { mobility: resolvedMobility } : {}),
+		};
+
 		const localTime = cachedTooth.updatedAt ? new Date(cachedTooth.updatedAt).getTime() : 0;
 		const serverTime = found.updatedAt ? new Date(found.updatedAt).getTime() : 0;
 
@@ -152,12 +163,14 @@ export function mergeTeethWithLocalCache(
 					...found,
 					...cachedTooth,
 					...surfacePatch,
+					...pediatricPatch,
 				};
 			}
 			return {
 				...cachedTooth,
 				...found,
 				...surfacePatch,
+				...pediatricPatch,
 			};
 		}
 
@@ -166,6 +179,7 @@ export function mergeTeethWithLocalCache(
 				...found,
 				...cachedTooth,
 				...surfacePatch,
+				...pediatricPatch,
 			};
 		}
 
@@ -173,6 +187,7 @@ export function mergeTeethWithLocalCache(
 			...cachedTooth,
 			...found,
 			...surfacePatch,
+			...pediatricPatch,
 		};
 	});
 

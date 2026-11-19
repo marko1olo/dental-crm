@@ -93,9 +93,20 @@ export const toothEndoUpsertSchema = z.object({
 export const UUID_SHAPE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export const individualToothUpdateSchema = z.object({
+	toothNumber: fdiToothNumberSchema,
+	state: clinicalToothStateSchema.optional(),
+	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
+	resorptionStage: z.number().optional().nullable(),
+	mobility: z.number().int().min(0).max(4).optional().nullable(),
+	mobilityDegree: z.number().int().min(0).max(4).optional().nullable(),
+	isPrimaryPediatric: z.boolean().optional().nullable(),
+	notes: z.string().max(10000).optional().nullable(),
+});
+
 export const batchToothStateSchema = z.object({
-	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64),
-	state: clinicalToothStateSchema,
+	toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64).optional(),
+	state: clinicalToothStateSchema.optional().default("Healthy"),
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 	notes: z.string().max(10000).optional().nullable(),
 	canalMeasurements: z.array(endoCanalMeasurementSchema).optional().nullable(),
@@ -106,6 +117,7 @@ export const batchToothStateSchema = z.object({
 	resorptionStage: z.number().optional().nullable(),
 	pediatricCrownPresent: z.boolean().optional().nullable(),
 	secondaryCariesUnderFilling: z.boolean().optional().nullable(),
+	updates: z.array(individualToothUpdateSchema).max(64).optional(),
 	visitId: z
 		.string()
 		.optional()
@@ -114,7 +126,10 @@ export const batchToothStateSchema = z.object({
 	updatedAt: z.string().optional().nullable(),
 	version: z.number().int().nonnegative().optional().nullable(),
 	reason: z.string().max(1000).optional().nullable(),
-});
+}).refine(
+	(data) => (data.toothNumbers && data.toothNumbers.length > 0) || (data.updates && data.updates.length > 0),
+	{ message: "Необходимо указать toothNumbers или updates" },
+);
 
 export const odontogramStatusMutationSchema = z
 	.object({

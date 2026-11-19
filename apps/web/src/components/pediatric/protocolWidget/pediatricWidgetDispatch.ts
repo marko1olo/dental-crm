@@ -2,13 +2,22 @@ import { useVisitStore } from "../../../store/visitStore";
 import type { ClinicalCalculationResult } from "./protocolCalculation";
 import type { PediatricServiceItem } from "./types";
 
+let lastDispatchedSoapSignature = "";
+let lastDispatchedSoapTimestamp = 0;
+
 export function updateVisitNoteStore(textToApply: string) {
 	try {
+		const cleanText = textToApply.trim();
+		if (!cleanText) return;
+
 		useVisitStore.getState().setVisitNoteForm((prev) => {
 			const existing = prev.objectiveStatus?.trim() || "";
+			if (existing.includes(cleanText)) {
+				return prev;
+			}
 			return {
 				...prev,
-				objectiveStatus: existing ? `${existing}\n\n${textToApply}` : textToApply,
+				objectiveStatus: existing ? `${existing}\n\n${cleanText}` : cleanText,
 			};
 		});
 	} catch (err) {
@@ -22,6 +31,15 @@ export function dispatchApplySoapProtocol(
 	selectedSurfaces: readonly string[],
 ) {
 	try {
+		const surfacesKey = [...selectedSurfaces].sort().join(",");
+		const signature = `${currentTooth}:${clinicalCalculation.diagnosisIcd10 || ""}:${clinicalCalculation.treatmentDescription || ""}:${surfacesKey}`;
+		const now = Date.now();
+		if (signature === lastDispatchedSoapSignature && now - lastDispatchedSoapTimestamp < 1200) {
+			return; // Suppress duplicate event within idempotency window
+		}
+		lastDispatchedSoapSignature = signature;
+		lastDispatchedSoapTimestamp = now;
+
 		window.dispatchEvent(
 			new CustomEvent("dente-apply-soap-protocol", {
 				detail: {
@@ -38,6 +56,7 @@ export function dispatchApplySoapProtocol(
 					},
 					mode: "smart_append",
 					immediate: true,
+					origin: "pediatric-protocol-widget",
 				},
 			}),
 		);

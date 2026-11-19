@@ -481,15 +481,21 @@ async function applyToothStateMutation(
 				),
 			);
 
-		return currentStates.map((row) => ({
-			toothNumber: row.toothNumber,
-			state: row.state,
-			surfaces: row.surfaces,
-			notes: row.notes,
-			canalMeasurements: row.canalMeasurements ?? null,
-			updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
-			clinicalData: parseClinicalDataFromNotes(row.notes),
-		}));
+		return currentStates.map((row) => {
+			const clin = parseClinicalDataFromNotes(row.notes);
+			return {
+				toothNumber: row.toothNumber,
+				state: row.state,
+				surfaces: row.surfaces,
+				notes: row.notes,
+				canalMeasurements: row.canalMeasurements ?? null,
+				updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
+				clinicalData: clin,
+				rootResorptionStage: clin?.resorptionStage ?? undefined,
+				rootResorption: clin?.resorptionStage ?? undefined,
+				mobility: (clin?.mobility ?? clin?.mobilityDegree) as number | undefined,
+			};
+		});
 	});
 
 	wsBroker.broadcastToOrganization(organizationId, {
@@ -583,15 +589,21 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			diagnosis: "Зубная формула и одонтограмма (32 зуба)",
 		});
 
-		const states = rawStates.map((row) => ({
-			toothNumber: row.toothNumber,
-			state: row.state,
-			surfaces: row.surfaces,
-			notes: row.notes,
-			canalMeasurements: row.canalMeasurements ?? null,
-			updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
-			clinicalData: parseClinicalDataFromNotes(row.notes),
-		}));
+		const states = rawStates.map((row) => {
+			const clin = parseClinicalDataFromNotes(row.notes);
+			return {
+				toothNumber: row.toothNumber,
+				state: row.state,
+				surfaces: row.surfaces,
+				notes: row.notes,
+				canalMeasurements: row.canalMeasurements ?? null,
+				updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
+				clinicalData: clin,
+				rootResorptionStage: clin?.resorptionStage ?? undefined,
+				rootResorption: clin?.resorptionStage ?? undefined,
+				mobility: (clin?.mobility ?? clin?.mobilityDegree) as number | undefined,
+			};
+		});
 
 		return reply.send({ success: true, states });
 	};
@@ -740,12 +752,49 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			}
 
 			const actorUserId = getRequestIdentity(request).userId;
+
+			if (parsed.data.updates && parsed.data.updates.length > 0) {
+				const allInserted: unknown[] = [];
+				for (const u of parsed.data.updates) {
+					const res = await applyToothStateMutation(
+						organizationId,
+						patientId,
+						actorUserId,
+						{
+							toothNumbers: [u.toothNumber],
+							state: u.state ?? "Healthy",
+							surfaces: u.surfaces,
+							resorptionStage: u.resorptionStage,
+							mobility: u.mobility ?? u.mobilityDegree,
+							mobilityDegree: u.mobilityDegree ?? u.mobility,
+							isPrimaryPediatric: u.isPrimaryPediatric ?? (u.toothNumber >= 51 && u.toothNumber <= 85),
+							notes: u.notes,
+							visitId: parsed.data.visitId,
+							updatedAt: parsed.data.updatedAt,
+							reason: parsed.data.reason || "Резорбция корней / подвижность молочного зуба",
+						},
+					);
+					allInserted.push(...res);
+				}
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "UPDATE_ODONTOGRAM",
+					payload: { patientId, states: allInserted },
+				});
+				return reply.send({ success: true, states: allInserted });
+			}
+
+			const toothNumbers =
+				parsed.data.toothNumbers && parsed.data.toothNumbers.length > 0
+					? parsed.data.toothNumbers
+					: [];
+
 			const inserted = await applyToothStateMutation(
 				organizationId,
 				patientId,
 				actorUserId,
 				{
 					...parsed.data,
+					toothNumbers,
 					surfaces: parsed.data.surfaces as string[] | undefined,
 				},
 			);

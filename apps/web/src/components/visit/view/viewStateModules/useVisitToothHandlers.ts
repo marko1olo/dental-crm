@@ -77,6 +77,8 @@ export function useVisitToothHandlers({
 			setToothState(code, activeStamp);
 			if (activePatient?.id && num && Number.isFinite(num)) {
 				const canonicalState = toCanonicalDbToothState(activeStamp);
+				const existingTeeth = loadStoredTeethData(activePatient.id) ?? [];
+				const cachedTooth = existingTeeth.find((t) => t.toothNumber === num);
 				fetch(`/api/patients/${activePatient.id}/tooth-states/batch`, {
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({
@@ -85,6 +87,14 @@ export function useVisitToothHandlers({
 					body: JSON.stringify({
 						toothNumbers: [num],
 						state: canonicalState,
+						...(cachedTooth?.rootResorptionStage !== undefined
+							? { resorptionStage: cachedTooth.rootResorptionStage }
+							: cachedTooth?.rootResorption !== undefined
+								? { resorptionStage: cachedTooth.rootResorption }
+								: {}),
+						...(cachedTooth?.mobility !== undefined
+							? { mobility: cachedTooth.mobility, mobilityDegree: cachedTooth.mobility }
+							: {}),
 					}),
 				}).catch((err) => {
 					logger.warn("[useVisitToothHandlers] Stamp batch sync failed:", err);
@@ -170,6 +180,7 @@ export function useVisitToothHandlers({
 
 				// Async background persist to PostgreSQL with surfaces MODPV
 				const canonicalState = toCanonicalDbToothState(state);
+				const targetTooth = idx >= 0 ? updatedTeeth[idx] : undefined;
 				fetch(`/api/patients/${activePatient.id}/tooth-states/batch`, {
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({
@@ -179,6 +190,14 @@ export function useVisitToothHandlers({
 						toothNumbers: [toothNum],
 						state: canonicalState,
 						surfaces: selectedSurfaces.length > 0 ? selectedSurfaces : undefined,
+						...(targetTooth?.rootResorptionStage !== undefined
+							? { resorptionStage: targetTooth.rootResorptionStage }
+							: targetTooth?.rootResorption !== undefined
+								? { resorptionStage: targetTooth.rootResorption }
+								: {}),
+						...(targetTooth?.mobility !== undefined
+							? { mobility: targetTooth.mobility, mobilityDegree: targetTooth.mobility }
+							: {}),
 					}),
 				}).catch((err) => {
 					logger.warn("[useVisitToothHandlers] Background tooth-state batch sync failed:", err);

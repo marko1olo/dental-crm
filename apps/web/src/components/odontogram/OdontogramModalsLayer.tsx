@@ -15,6 +15,8 @@ import {
 	type ToothState,
 } from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
+import { persistTeethLocally } from "./syncModules/odontogramIndexedDbSync";
+import { sendToothResorptionBatch } from "./syncModules/odontogramApiBatchSync";
 import type { EndoToothClinicalData } from "@dental/shared";
 import type {
 	CashboxTenderType,
@@ -447,22 +449,49 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 						onUpdateToothResorption={(toothNumber, resorptionStage) => {
 							const mobility: 0 | 1 | 2 | 3 =
 								resorptionStage === 100 ? 3 : resorptionStage === 75 ? 2 : resorptionStage === 50 ? 1 : 0;
-							setTeethData((prev) =>
-								prev.map((t) =>
+							const nowIso = new Date().toISOString();
+							setTeethData((prev) => {
+								const next = prev.map((t) =>
 									t.toothNumber === toothNumber
 										? {
 												...t,
 												rootResorptionStage: resorptionStage,
 												rootResorption: resorptionStage,
 												mobility,
+												updatedAt: nowIso,
 											}
 										: t,
-								),
-							);
+								);
+								if (!next.some((t) => t.toothNumber === toothNumber)) {
+									next.push({
+										toothNumber,
+										state: "Healthy",
+										rootResorptionStage: resorptionStage,
+										rootResorption: resorptionStage,
+										mobility,
+										updatedAt: nowIso,
+									});
+								}
+								persistTeethLocally(patientId, next, true);
+								if (typeof window !== "undefined") {
+									window.dispatchEvent(
+										new CustomEvent("dente-odontogram-update", {
+											detail: { patientId, states: next, teeth: next },
+										}),
+									);
+								}
+								return next;
+							});
+							if (patientId) {
+								void sendToothResorptionBatch(patientId, [
+									{ toothNumber, resorptionStage, mobility },
+								]);
+							}
 						}}
 						onBatchUpdateResorption={(updates) => {
-							setTeethData((prev) =>
-								prev.map((t) => {
+							const nowIso = new Date().toISOString();
+							setTeethData((prev) => {
+								const next = prev.map((t) => {
 									const item = updates.find((u) => u.toothNumber === t.toothNumber);
 									if (!item) return t;
 									const mobility: 0 | 1 | 2 | 3 =
@@ -472,9 +501,36 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 										rootResorptionStage: item.resorptionStage,
 										rootResorption: item.resorptionStage,
 										mobility,
+										updatedAt: nowIso,
 									};
-								}),
-							);
+								});
+								for (const u of updates) {
+									if (!next.some((t) => t.toothNumber === u.toothNumber)) {
+										const mobility: 0 | 1 | 2 | 3 =
+											u.resorptionStage === 100 ? 3 : u.resorptionStage === 75 ? 2 : u.resorptionStage === 50 ? 1 : 0;
+										next.push({
+											toothNumber: u.toothNumber,
+											state: "Healthy",
+											rootResorptionStage: u.resorptionStage,
+											rootResorption: u.resorptionStage,
+											mobility,
+											updatedAt: nowIso,
+										});
+									}
+								}
+								persistTeethLocally(patientId, next, true);
+								if (typeof window !== "undefined") {
+									window.dispatchEvent(
+										new CustomEvent("dente-odontogram-update", {
+											detail: { patientId, states: next, teeth: next },
+										}),
+									);
+								}
+								return next;
+							});
+							if (patientId) {
+								void sendToothResorptionBatch(patientId, updates);
+							}
 						}}
 					/>
 				</React.Suspense>

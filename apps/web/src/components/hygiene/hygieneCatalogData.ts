@@ -262,13 +262,43 @@ export const HOME_CARE_PLANS: readonly HomeCarePlan[] = [
 	},
 ];
 
+export function resolveHygieneOrganizationId(overrideOrgId?: string | undefined): string {
+	if (overrideOrgId && overrideOrgId.trim().length > 0) {
+		return overrideOrgId.trim();
+	}
+	if (typeof window !== "undefined") {
+		try {
+			const directOrg = localStorage.getItem("dente_organization_id");
+			if (directOrg && directOrg.trim().length > 0) return directOrg.trim();
+
+			const cachedStaff =
+				localStorage.getItem("dente_cached_active_staff_user") ||
+				localStorage.getItem("dental-crm:active-user:v1");
+			if (cachedStaff) {
+				const parsed = JSON.parse(cachedStaff);
+				if (parsed?.organizationId) return String(parsed.organizationId).trim();
+			}
+
+			const sessionAuth = localStorage.getItem("dente_session_auth");
+			if (sessionAuth) {
+				const parsed = JSON.parse(sessionAuth);
+				if (parsed?.user?.organizationId) return String(parsed.user.organizationId).trim();
+				if (parsed?.organizationId) return String(parsed.organizationId).trim();
+			}
+		} catch {
+			// Fallback to safe default tenant
+		}
+	}
+	return "01a00000-0000-0000-0000-000000000000";
+}
+
 export async function deductWarehouseHygieneConsumables(options: {
 	readonly organizationId?: string | undefined;
 	readonly visitId?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly protocolTitle?: string | undefined;
 }): Promise<boolean> {
-	const orgId = options.organizationId || "00000000-0000-0000-0000-000000000001";
+	const orgId = resolveHygieneOrganizationId(options.organizationId);
 	try {
 		const response = await fetch(`/api/inventory/${encodeURIComponent(orgId)}/quick-writeoff-visit-bundle`, {
 			method: "POST",
