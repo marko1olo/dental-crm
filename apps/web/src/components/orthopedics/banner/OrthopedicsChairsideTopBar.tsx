@@ -109,7 +109,7 @@ export function OrthopedicsChairsideTopBar({
 						onClick={onToggle3dViewer}
 						className={`min-h-[44px] sm:min-h-[34px] px-2.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
 							is3dViewerOpen
-								? "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/40 shadow-xs"
+								? "bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/40 shadow-xs"
 								: "bg-[var(--paper-subtle)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 						}`}
 						title="3D Интраоральный просмотрщик челюстей и прикуса"

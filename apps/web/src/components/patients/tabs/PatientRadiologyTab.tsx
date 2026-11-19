@@ -2,7 +2,7 @@ import React from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
-import { PatientTimeline } from "../PatientTimeline";
+import { PatientRadiologyGallery } from "../PatientRadiologyGallery";
 import { usePatientRadiologyLogic } from "./radiology/usePatientRadiologyLogic";
 import { PatientRadiologyToolbar } from "./radiology/PatientRadiologyToolbar";
 import { PatientRadiologyEmptyState } from "./radiology/PatientRadiologyEmptyState";
@@ -48,7 +48,7 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 
 			{logic.isLoading ? (
 				<div className="flex items-center justify-center p-12 text-[var(--muted)] gap-2">
-					<RefreshCw className="w-4 h-4 animate-spin text-teal-500" />
+					<RefreshCw className="w-4 h-4 animate-spin text-[var(--primary)]" />
 					<span className="text-xs font-semibold">Загрузка снимков пациента...</span>
 				</div>
 			) : logic.error ? (
@@ -69,7 +69,7 @@ export const PatientRadiologyTab: React.FC<PatientRadiologyTabProps> = ({
 				<PatientRadiologyEmptyState onUpload={() => logic.setShowHotFolder(true)} />
 			) : (
 				<div className="flex flex-col gap-2.5 min-h-[460px]" data-testid="patient-radiology-list">
-					<PatientTimeline
+					<PatientRadiologyGallery
 						studies={logic.filteredStudies}
 						activeStudyId={logic.activeStudyId || logic.filteredStudies[0]?.id || null}
 						onSelectStudy={(study) => logic.setActiveStudyId(study.id)}

@@ -2,8 +2,8 @@
  * @dental/web/components/orthodontics/cephAiInferenceService.ts
  *
  * Сервис калиброванных анатомических шаблонов ТРГ (Мандаты 8b, 8e, 8x, 8ap).
- * Честная доменная логика: калиброванный анатомический шаблон I класса (норма)
- * без фиктивных нейросетей, симуляций WebGPU/WebGL и искусственных задержек.
+ * Честная доменная логика: детерминированный анатомический шаблон нормы I класса
+ * без фиктивных нейросетей, симуляций WebGPU/WebGL и скрытого обмана пользователя.
  */
 
 import type { LandmarkMap } from "./cephalometric";
@@ -13,7 +13,6 @@ export type CephAiBackendPreference = "auto" | "template_norm" | "class_1" | "ma
 
 export interface CephBackendInfo {
 	backend: string;
-	isGpuAccelerated: boolean;
 	label: string;
 	labelRu: string;
 	badge: string;
@@ -29,14 +28,16 @@ export interface CephAiInferenceResult {
 export function detectOptimalCephBackend(_pref?: CephAiBackendPreference): CephBackendInfo {
 	return {
 		backend: "template_norm",
-		isGpuAccelerated: false,
 		label: "Анатомический шаблон (Норма I класса)",
 		labelRu: "Анатомический шаблон (Норма I класса)",
 		badge: "Норма I класса",
 	};
 }
 
-export const cephAiInferenceService = {
+/**
+ * Честный сервис применения калиброванного анатомического шаблона ТРГ нормы I класса.
+ */
+export const cephTemplateService = {
 	async detectLandmarks(): Promise<LandmarkMap> {
 		return { ...DEFAULT_CEPH_LANDMARKS_PRESET };
 	},
@@ -56,4 +57,6 @@ export const cephAiInferenceService = {
 	},
 };
 
+/** Обратная совместимость для существующих вызовов */
+export const cephAiInferenceService = cephTemplateService;
 export default cephAiInferenceService;

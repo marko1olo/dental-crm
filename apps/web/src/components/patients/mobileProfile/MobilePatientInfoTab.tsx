@@ -61,13 +61,13 @@ export const MobilePatientInfoTab: React.FC<MobilePatientInfoTabProps> = ({
 			<div className="p-3.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs flex flex-col gap-2.5">
 				<div className="flex items-center justify-between">
 					<h3 className="text-xs font-bold text-[var(--muted)] m-0">Клинические заметки и анамнез</h3>
-					<button type="button" onClick={onApplySomaticNorm} className="text-xs font-bold text-[var(--teal)] underline cursor-pointer">
+					<button type="button" onClick={onApplySomaticNorm} className="text-xs font-bold text-[var(--primary)] underline cursor-pointer">
 						+ Норма
 					</button>
 				</div>
 				<textarea
 					rows={3}
-					className="w-full p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] outline-none focus:border-[var(--teal)] transition-all resize-none"
+					className="w-full p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] outline-none focus:border-[var(--primary)] transition-all resize-none"
 					value={patientCoreDraft?.notes ?? patient.notes ?? ""}
 					onChange={(e) => updatePatientCoreDraft?.("notes", e.target.value)}
 					placeholder="Клинические особенности, аллергии, дентофобия..."
@@ -92,7 +92,7 @@ export const MobilePatientInfoTab: React.FC<MobilePatientInfoTabProps> = ({
 				</div>
 			</div>
 
-			<MobilePatientToothQuadrantSelector />
+			<MobilePatientToothQuadrantSelector patientId={patient.id} />
 		</div>
 	);
 };

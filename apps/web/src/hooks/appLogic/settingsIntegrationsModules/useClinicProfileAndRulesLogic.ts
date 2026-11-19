@@ -25,11 +25,18 @@ import { showToast } from "../../../components/GlobalToast";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { useAppStore } from "../../../store/appStore";
 
+export interface ClinicProfileAndRulesAuthContext {
+	settingsAccessHeaders: (headers?: Record<string, string>) => Record<string, string>;
+	denteClinicalReadHeaders: (headers?: Record<string, string>) => Record<string, string>;
+	denteClinicalMutationHeaders: (headers?: Record<string, string>) => Record<string, string>;
+	[key: string]: unknown;
+}
+
 export interface UseClinicProfileAndRulesLogicProps {
-	auth: any;
+	auth: ClinicProfileAndRulesAuthContext;
 	dashboard: Dashboard | null;
 	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
-	loadDashboard: () => Promise<void>;
+	loadDashboard: (options?: { adminSecret?: string }) => Promise<void>;
 	setError: (err: string | null) => void;
 }
 

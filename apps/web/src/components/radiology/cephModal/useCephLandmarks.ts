@@ -156,7 +156,7 @@ export function useCephLandmarks({
 		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId || "");
 		if (!imageUrl && !isDemo) {
 			showToast(
-				"Для запуска AI авторазметки необходимо загрузить реальный снимок ТРГ пациента",
+				"Для применения анатомического шаблона нормы необходимо загрузить снимок ТРГ пациента",
 				"warning",
 			);
 			return;
@@ -192,7 +192,7 @@ export function useCephLandmarks({
 			);
 		} catch (err) {
 			showToast(
-				`Ошибка AI авторазметки: ${err instanceof Error ? err.message : String(err)}`,
+				`Не удалось применить анатомический шаблон: ${err instanceof Error ? err.message : String(err)}`,
 				"error",
 			);
 		} finally {

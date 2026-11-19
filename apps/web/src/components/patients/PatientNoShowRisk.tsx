@@ -122,11 +122,11 @@ export function PatientNoShowRiskStats({ riskData }: PatientNoShowRiskStatsProps
 			{history && (
 				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
 					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Визитов</div>
+						<div className="text-[10px] font-bold text-[var(--muted)]">Визитов</div>
 						<div className="text-base font-black text-emerald-600 dark:text-emerald-400">{history.attended}</div>
 					</div>
 					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Неявок</div>
+						<div className="text-[10px] font-bold text-[var(--muted)]">Неявок</div>
 						<div
 							className={`text-base font-black ${
 								history.noShows > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
@@ -136,12 +136,12 @@ export function PatientNoShowRiskStats({ riskData }: PatientNoShowRiskStatsProps
 						</div>
 					</div>
 					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Отмен</div>
+						<div className="text-[10px] font-bold text-[var(--muted)]">Отмен</div>
 						<div className="text-base font-black text-[var(--ink)]">{history.cancellations}</div>
 					</div>
 					<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
-						<div className="text-[10px] uppercase font-bold text-[var(--muted)]">Дисциплина</div>
-						<div className="text-base font-black text-[var(--teal,var(--brand-primary))]">
+						<div className="text-[10px] font-bold text-[var(--muted)]">Дисциплина</div>
+						<div className="text-base font-black text-[var(--primary)]">
 							{history.consideredAppointments > 0
 								? `${Math.round((history.attended / history.consideredAppointments) * 100)}%`
 								: "100%"}
@@ -266,8 +266,7 @@ export const PatientNoShowRisk: React.FC<PatientNoShowRiskProps> = ({ patientId 
 					<button
 						type="button"
 						onClick={() => setReloadToken((t) => t + 1)}
-						disabled={loading}
-						className="px-3.5 py-1.5 min-h-[34px] text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] transition-colors shadow-2xs cursor-pointer"
+						className="h-9 px-3.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] transition-colors shadow-2xs cursor-pointer inline-flex items-center justify-center"
 					>
 						{loading ? "Загрузка…" : "Обновить статистику"}
 					</button>

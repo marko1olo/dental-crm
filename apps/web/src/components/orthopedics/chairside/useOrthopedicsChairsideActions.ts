@@ -60,14 +60,13 @@ export function useOrthopedicsChairsideActions(
 			inFlightRef.current = false;
 			return;
 		}
-		const orderNumber = `ЗТЛ-${Date.now().toString().slice(-6)}`;
 		state.setIsLabOrderSending(true);
 		const defaultLabName = PARTNER_LABS.find((l) => l.isDefault)?.name ?? PARTNER_LABS[0]?.name ?? "Арт-Дент Лаб (CAD/CAM центр)";
 		const laboratoryName = props.initialLabOrder?.laboratoryName?.trim()
 			|| (typeof window !== "undefined" && window.localStorage?.getItem("dente_default_lab_name")?.trim())
 			|| defaultLabName;
 		const labOrderPayload = {
-			orderNumber,
+			orderNumber: props.initialLabOrder?.orderNumber || undefined,
 			createdAt: new Date().toISOString(),
 			teeth: teethParts.length > 0 ? teethParts : [],
 			teethFdi: teethParts.length > 0 ? teethParts.join(", ") : undefined,
@@ -109,15 +108,18 @@ export function useOrthopedicsChairsideActions(
 			if (res.ok) {
 				const json = await res.json().catch(() => null);
 				const payload = json?.data ?? json;
-				if (payload?.id) state.setActiveOrderId(payload.id);
-				state.setLabOrderSentNumber(orderNumber);
-				showToast(`Наряд ${orderNumber} в ЗТЛ успешно отправлен!`, "success", 3000);
+				const serverOrderId = payload?.id;
+				const serverOrderNumber = payload?.orderNumber
+					|| (serverOrderId ? `ЗТЛ-${String(serverOrderId).slice(0, 6).toUpperCase()}` : "ЗТЛ");
+				if (serverOrderId) state.setActiveOrderId(serverOrderId);
+				state.setLabOrderSentNumber(serverOrderNumber);
+				showToast(`Наряд ${serverOrderNumber} в ЗТЛ успешно отправлен!`, "success", 3000);
 			} else {
-				showToast(`Ошибка отправки наряда ${orderNumber} на сервере`, "error", 4000);
+				showToast(`Ошибка отправки наряда на сервере (${res.status})`, "error", 4000);
 			}
 		} catch (err) {
 			console.error("Failed to send lab order:", err);
-			showToast(`Сетевая ошибка при отправке наряда ${orderNumber}`, "error", 4000);
+			showToast("Сетевая ошибка при отправке наряда ЗТЛ", "error", 4000);
 		} finally {
 			inFlightRef.current = false;
 			state.setIsLabOrderSending(false);

@@ -5,34 +5,54 @@
  */
 
 import type { StaffRole } from "@dental/shared";
+import type { AppStore } from "../../../../store/appStore.js";
+import type { useSettingsStore } from "../../../../store/settingsStore.js";
+import type { ImagingStore } from "../../../../store/imagingStore.js";
+import type {
+	BillingModalLogicSlice,
+	ClinicalSessionLogicSlice,
+	ModalControllerSlice,
+	NavigationStateSlice,
+	OfflineSyncLogicSlice,
+	PatientSelectionStateSlice,
+	ScheduleLogicSlice,
+	SettingsAndIntegrationsLogicSlice,
+} from "../../types.js";
+import type {
+	AppLogicEmergencyTriage,
+	AppLogicNavigationSyncState,
+	AppLogicSoundNotifications,
+} from "../appLogicStateTypes.js";
 
-// biome-ignore lint/suspicious/noExplicitAny: legacy compatibility bag contracts
+type SettingsStoreState = ReturnType<typeof useSettingsStore.getState>;
+
 export interface AppLogicCompatibilityInputParams {
-	readonly appStore: any;
-	readonly settingsStore: any;
-	readonly imagingStore: any;
-	readonly soundNotifications: any;
-	readonly auth: any;
-	readonly navigationState: any;
-	readonly patientSelection: any;
-	readonly scheduleLogic: any;
-	readonly clinicalSession: any;
-	readonly billingModal: any;
-	readonly modalController: any;
-	readonly offlineSync: any;
-	readonly settingsAndIntegrations: any;
-	readonly staffSettingsLogic: any;
-	readonly migrationQueries: any;
-	readonly imagingQueries: any;
-	readonly communicationsQueries: any;
-	readonly emergencyTriage: any;
-	readonly navigationSync: any;
-	readonly browserDirectoryInputRef?: any;
-	readonly browserMigrationInputRef?: any;
-	readonly refreshSpeechRuntimeRef?: any;
-	readonly paymentMutationIdRef?: any;
-	readonly loadDashboard?: any;
-	readonly recentPatientViewsVersion?: any;
+	readonly appStore: AppStore | Record<string, unknown>;
+	readonly settingsStore: SettingsStoreState | Record<string, unknown>;
+	readonly imagingStore: ImagingStore | Record<string, unknown>;
+	readonly soundNotifications: AppLogicSoundNotifications | Record<string, unknown>;
+	readonly auth: Record<string, unknown>;
+	readonly navigationState: NavigationStateSlice | Record<string, unknown>;
+	readonly patientSelection: PatientSelectionStateSlice | Record<string, unknown>;
+	readonly scheduleLogic: ScheduleLogicSlice | Record<string, unknown>;
+	readonly clinicalSession: ClinicalSessionLogicSlice | Record<string, unknown>;
+	readonly billingModal: BillingModalLogicSlice | Record<string, unknown>;
+	readonly modalController: ModalControllerSlice | Record<string, unknown>;
+	readonly offlineSync: OfflineSyncLogicSlice | Record<string, unknown>;
+	readonly settingsAndIntegrations: SettingsAndIntegrationsLogicSlice | Record<string, unknown>;
+	readonly staffSettingsLogic: Record<string, unknown>;
+	readonly migrationQueries: Record<string, unknown>;
+	readonly imagingQueries: Record<string, unknown>;
+	readonly communicationsQueries: Record<string, unknown>;
+	readonly emergencyTriage: AppLogicEmergencyTriage | Record<string, unknown>;
+	readonly navigationSync: AppLogicNavigationSyncState | Record<string, unknown>;
+	readonly browserDirectoryInputRef?: React.RefObject<HTMLInputElement | null> | Record<string, unknown> | undefined;
+	readonly browserMigrationInputRef?: React.RefObject<HTMLInputElement | null> | Record<string, unknown> | undefined;
+	readonly refreshSpeechRuntimeRef?: React.MutableRefObject<(() => void) | null> | Record<string, unknown> | undefined;
+	readonly paymentMutationIdRef?: React.MutableRefObject<string | null> | Record<string, unknown> | undefined;
+	readonly loadDashboard?: ((options?: { adminSecret?: string }) => Promise<void>) | (() => Promise<void>) | undefined;
+	readonly recentPatientViewsVersion?: number | undefined;
+	readonly [key: string]: unknown;
 }
 
 export interface LegacyStubsAndFallbacks {
@@ -59,6 +79,22 @@ export interface LegacyStubsAndFallbacks {
 	readonly visitToothStateByCode: Record<string, unknown>;
 	readonly serviceTitle: (serviceId: string) => string;
 	readonly money: (v: unknown) => string;
+	readonly activeCommunicationTasks: null;
+	readonly addImagingViewerNoteAnnotation: null;
+	readonly applyProtocolTemplate: null;
+	readonly applyProtocolTemplateDirectly: null;
+	readonly assembleSpeechRecording: () => Promise<void>;
+	readonly chooseRecognitionPreset: null;
+	readonly selectedPaymentReceiptTotalRub: 0;
+	readonly selectedProtocolTemplate: null;
+	readonly selectedTaxPaymentTotalRub: 0;
+	readonly shiftWarnings: null;
+	readonly specialtiesWithTemplates: readonly unknown[];
+	readonly specialtyProtocolTemplates: readonly unknown[];
+	readonly visibleVisitSpecialtyFocusOptions: readonly unknown[];
+	readonly visitPrimaryAction: null;
+	readonly visitSafetyCards: readonly unknown[];
+	readonly visitWorkflowSteps: readonly unknown[];
 }
 
 export interface ProfileAndLegalCompatibility {

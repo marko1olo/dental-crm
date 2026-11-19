@@ -118,8 +118,8 @@ describe("Patient SSOT, Express Registration & Family Wallet Suite (Mandates 8e,
 		assert.ok(markup.includes('data-testid="patient-studio-primary-cta"'));
 		assert.ok(!markup.includes('disabled=""') && !markup.includes("disabled "), "Primary CTA не должна блокироваться disabled!");
 
-		// Проверка Мандата 8am: ровно ОДНА Primary CTA кнопка bg-[var(--teal)]
-		const primaryCtaMatches = markup.match(/class="[^"]*bg-\[var\(--teal\)\](?![\w/])[^"]*"/g);
+		// Проверка Мандата 8am: ровно ОДНА Primary CTA кнопка bg-[var(--primary)]
+		const primaryCtaMatches = markup.match(/class="[^"]*bg-\[var\(--primary\)\](?![\w/])[^"]*"/g);
 		assert.equal(primaryCtaMatches?.length, 1, "Ровно 1 Primary CTA кнопка на видимый экран!");
 	});
 

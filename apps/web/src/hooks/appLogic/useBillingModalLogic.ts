@@ -1,16 +1,17 @@
 import { useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, Patient } from "@dental/shared";
+import type { useAuthLogic } from "../domains/useAuthLogic";
 import { useFinanceLogic } from "../domains/useFinanceLogic";
 import type { BillingModalLogicSlice } from "./types";
 
 interface UseBillingModalLogicProps {
-	auth: any;
+	auth: ReturnType<typeof useAuthLogic>;
 	dashboard: Dashboard | null;
-	documentPatient: any;
+	documentPatient: Patient | null;
 	paymentPatientContextReady: boolean;
 	paymentPatientContextMessage: string;
 	realActiveVisitId: string | null;
-	loadDashboard: () => Promise<void>;
+	loadDashboard: (options?: { adminSecret?: string }) => Promise<void>;
 	setError: (err: string | null) => void;
 }
 

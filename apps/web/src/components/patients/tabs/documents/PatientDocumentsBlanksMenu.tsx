@@ -2,7 +2,7 @@ import React from "react";
 import type { Patient } from "@dental/shared";
 import { FileText, Printer, Receipt, Share2, ShieldCheck, Users } from "lucide-react";
 import { printBlankMedicalConsent, printBlankMedicalContract } from "../../blankContractPrint";
-import { printPatientBranchTransferAct } from "../../transfer/branchTransferEngine";
+import { printPatientBranchTransferAct } from "./printPatientBranchTransferAct";
 import type { FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
 
 interface PatientDocumentsBlanksMenuProps {
@@ -24,28 +24,28 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 			<button
 				type="button"
 				onClick={() => { onClose(); void printBlankMedicalContract(patient); }}
-				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--primary)] flex items-center gap-2 cursor-pointer transition-colors"
 				data-testid="btn-print-blank-contract"
 			>
-				<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<FileText size={13} className="text-[var(--primary)] shrink-0" />
 				<span className="truncate">Бланк договора</span>
 			</button>
 			<button
 				type="button"
 				onClick={() => { onClose(); void printBlankMedicalConsent(patient); }}
-				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--primary)] flex items-center gap-2 cursor-pointer transition-colors"
 				data-testid="btn-print-blank-consent"
 			>
-				<ShieldCheck size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<ShieldCheck size={13} className="text-[var(--primary)] shrink-0" />
 				<span className="truncate">Бланк согласия на лечение</span>
 			</button>
 			<button
 				type="button"
 				onClick={() => { onClose(); onOpenFastPrint("clinical_protocol_entry"); }}
-				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--primary)] flex items-center gap-2 cursor-pointer transition-colors"
 				data-testid="btn-patient-print-insert"
 			>
-				<Printer size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<Printer size={13} className="text-[var(--primary)] shrink-0" />
 				<span className="truncate">Вкладыш в амбулаторную карту</span>
 			</button>
 			<button
@@ -55,10 +55,10 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 					if (onPrintOutpatientCard) onPrintOutpatientCard();
 					else onOpenFastPrint("medical_card");
 				}}
-				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--primary)] flex items-center gap-2 cursor-pointer transition-colors"
 				data-testid="btn-print-outpatient-card"
 			>
-				<FileText size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<FileText size={13} className="text-[var(--primary)] shrink-0" />
 				<span className="truncate">Выписка из карты</span>
 			</button>
 			<button
@@ -67,10 +67,10 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 					onClose();
 					printPatientBranchTransferAct(patient);
 				}}
-				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--primary)] flex items-center gap-2 cursor-pointer transition-colors"
 				data-testid="btn-print-branch-transfer-act"
 			>
-				<Share2 size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<Share2 size={13} className="text-[var(--primary)] shrink-0" />
 				<span className="truncate">Акт перевода в филиал</span>
 			</button>
 			<button
@@ -80,10 +80,10 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 					if (onOpenTaxCert) onOpenTaxCert("form");
 					else onOpenFastPrint("act_and_receipt");
 				}}
-				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+				className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--primary)] flex items-center gap-2 cursor-pointer transition-colors"
 				data-testid="btn-print-tax-certificate"
 			>
-				<Receipt size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+				<Receipt size={13} className="text-[var(--primary)] shrink-0" />
 				<span className="truncate">Справка для налогового вычета (13% НДФЛ)</span>
 			</button>
 			{Boolean(patient.familyGroupId) && (
@@ -94,10 +94,10 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 						if (onOpenTaxCert) onOpenTaxCert("family");
 						else onOpenFastPrint("act_and_receipt");
 					}}
-					className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--teal,#0d9488)] flex items-center gap-2 cursor-pointer transition-colors"
+					className="w-full h-8 px-2.5 rounded-lg text-left text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:text-[var(--primary)] flex items-center gap-2 cursor-pointer transition-colors"
 					data-testid="btn-print-family-tax-certificates"
 				>
-					<Users size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<Users size={13} className="text-[var(--primary)] shrink-0" />
 					<span className="truncate">Семейный пакет вычетов (13% НДФЛ)</span>
 				</button>
 			)}

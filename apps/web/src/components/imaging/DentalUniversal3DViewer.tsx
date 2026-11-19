@@ -12,7 +12,8 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { UploadCloud, FileBox, AlertCircle, Loader2 } from "lucide-react";
+import { UploadCloud, FileBox, AlertCircle, Loader2, Box } from "lucide-react";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import type {
 	DentalArchLayer,
 	DentalMaterialMode,
@@ -59,6 +60,7 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [isFullscreen, setIsFullscreen] = useState(false);
+	const [hasModelsLoaded, setHasModelsLoaded] = useState(false);
 
 	// Viewer Controls State
 	const [materialMode, setMaterialMode] = useState<DentalMaterialMode>(initialMaterialMode);
@@ -217,10 +219,10 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 					loadedAny = true;
 				}
 
-				if (!loadedAny) {
-					// Fallback to high-fidelity anatomical TrueColor arches for instantaneous doctor review
-					setLoadingMessage("Генерация анатомической модели челюстей...");
-					engine.loadProceduralDefaultArches();
+				if (loadedAny) {
+					setHasModelsLoaded(true);
+				} else {
+					setHasModelsLoaded(false);
 				}
 			} catch (err: unknown) {
 				if (!isCancelled) {
@@ -314,13 +316,28 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 				for (const item of extracted) {
 					await engine.loadGeometryFromBuffer(item.buffer, item.format, item.layer, item.name);
 				}
+				setHasModelsLoaded(true);
 			} else {
 				setLoadingMessage(`Чтение 3D скана: ${file.name}...`);
 				await engine.loadArchFromFile(file);
+				setHasModelsLoaded(true);
 			}
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : "Не удалось прочитать файл";
 			setErrorMessage(msg);
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
+
+	const handleLoadDemoPreset = useCallback(() => {
+		const engine = engineRef.current;
+		if (!engine) return;
+		setIsLoading(true);
+		setLoadingMessage("Загрузка демонстрационного образца челюстей...");
+		try {
+			engine.loadProceduralDefaultArches();
+			setHasModelsLoaded(true);
 		} finally {
 			setIsLoading(false);
 		}
@@ -418,6 +435,45 @@ export const DentalUniversal3DViewer: React.FC<DentalUniversal3DViewerProps> = (
 				visible={materialMode === "occlusion"}
 				stats={occlusionStats}
 			/>
+
+			{/* Честный пустой стейт при отсутствии реального файла скана */}
+			{!hasModelsLoaded && !isLoading && (
+				<div
+					className="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center bg-slate-950/90 backdrop-blur-xs select-text"
+					data-testid="3d-viewer-empty-state"
+				>
+					<div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-[var(--primary)] mb-3 shadow-inner">
+						<Box className="w-7 h-7" />
+					</div>
+					<h4 className="text-base font-semibold text-slate-100 tracking-tight">
+						Интраоральный 3D-скан отсутствует
+					</h4>
+					<p className="text-xs text-slate-400 mt-1 max-w-md leading-relaxed">
+						Загрузите файлы сканирования челюстей (.stl, .ply, .obj) со сканера 3Shape, Medit, iTero или перетащите их в это окно
+					</p>
+					<div className="mt-4 flex items-center gap-2.5 flex-wrap justify-center">
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							className="h-9 px-4 rounded-lg bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] text-xs font-semibold inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+							data-testid="load-3d-scan-file-btn"
+						>
+							<UploadCloud className="w-4 h-4" />
+							<span>Загрузить скан (.stl / .ply)</span>
+						</button>
+						{isDemoShowcaseMode() && (
+							<button
+								type="button"
+								onClick={handleLoadDemoPreset}
+								className="h-9 px-3.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-xs font-medium transition-all cursor-pointer"
+								data-testid="load-demo-3d-model-btn"
+							>
+								Загрузить демо-образец
+							</button>
+						)}
+					</div>
+				</div>
+			)}
 
 			{/* Loading Spinner Indicator */}
 			{isLoading && (

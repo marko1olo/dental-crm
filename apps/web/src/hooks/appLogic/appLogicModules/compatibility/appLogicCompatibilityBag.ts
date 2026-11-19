@@ -1,7 +1,6 @@
-import type { StaffRole } from "@dental/shared";
+import type { Dashboard, Patient, StaffRole } from "@dental/shared";
 import {
 	defaultUiLanguageOption, operatorWorkflowFailureMessage, patientName as patientNameHelper,
-	responseErrorMessage,
 	visitDraftMissingFieldLabel, visitDraftQualityLabels, visitDraftSignalLabel,
 	visitNoteFieldDefinitions, visitSaveReceiptText,
 } from "../../../../AppHelpers";
@@ -18,42 +17,37 @@ import {
 	buildProfileAndLegalHelpers,
 	sortCommunicationTasks,
 } from "./appLogicLegacyBridge";
+import { buildServiceCatalogCompatibility } from "./appLogicCatalogCompatibility";
+import type { AppLogicCompatibilityInputParams } from "./appLogicCompatibilityTypes";
 
 export type { AppLogicCompatibilityInputParams as BuildAppLogicCompatibilityBagParams } from "./appLogicCompatibilityTypes";
 
-// biome-ignore lint/suspicious/noExplicitAny: master compatibility bag builder
-export function buildAppLogicCompatibilityBag(params: any): any {
+export function buildAppLogicCompatibilityBag(
+	params: AppLogicCompatibilityInputParams,
+): Record<string, unknown> {
 	const {
-		appStore,
-		settingsStore,
-		imagingStore,
-		soundNotifications,
-		auth,
-		navigationState,
-		patientSelection,
-		scheduleLogic,
-		clinicalSession,
-		billingModal,
-		modalController,
-		offlineSync,
-		settingsAndIntegrations,
-		staffSettingsLogic,
-		migrationQueries,
-		imagingQueries,
-		communicationsQueries,
-		emergencyTriage,
-		navigationSync,
+		appStore, settingsStore, imagingStore, soundNotifications, auth,
+		navigationState, patientSelection, scheduleLogic, clinicalSession, billingModal,
+		modalController, offlineSync, settingsAndIntegrations, staffSettingsLogic,
+		migrationQueries, imagingQueries, communicationsQueries, emergencyTriage, navigationSync,
 	} = params;
 
-	const { dashboard } = appStore;
-	const { selectedWorkspaceRole } = navigationState;
-	const { patient } = patientSelection;
-	const { documentPatient } = patient;
-	const { dicomWorkbenchModule, documentWorkflow, telegram, telegramSettingsModule } =
-		settingsAndIntegrations;
+	const dashboard = appStore.dashboard as Dashboard | null | undefined;
+	const selectedWorkspaceRole = navigationState.selectedWorkspaceRole as StaffRole | string | undefined;
+	const patientRecord = (patientSelection.patient ?? {}) as Record<string, unknown>;
+	const documentPatient = patientRecord.documentPatient as Patient | null | undefined;
+	const scheduleRecord = (scheduleLogic ?? {}) as Record<string, unknown>;
+	const innerSchedule = (scheduleRecord.schedule ?? {}) as Record<string, unknown>;
+	const patientSelectionRecord = (patientSelection ?? {}) as Record<string, unknown>;
+	const innerPatient = (patientSelectionRecord.patient ?? {}) as Record<string, unknown>;
+	const settingsIntegrationsRecord = (settingsAndIntegrations ?? {}) as Record<string, unknown>;
+	const dicomWorkbenchModule = (settingsIntegrationsRecord.dicomWorkbenchModule ?? {}) as Record<string, unknown>;
+	const documentWorkflow = (settingsIntegrationsRecord.documentWorkflow ?? {}) as Record<string, unknown>;
+	const telegram = (settingsIntegrationsRecord.telegram ?? {}) as Record<string, unknown>;
+	const telegramSettingsModule = (settingsIntegrationsRecord.telegramSettingsModule ?? {}) as Record<string, unknown>;
 
 	const activeQueueRole: StaffRole =
-		(selectedWorkspaceRole as string) === "all" ? "doctor" : selectedWorkspaceRole;
+		(selectedWorkspaceRole as string) === "all" ? "doctor" : (selectedWorkspaceRole as StaffRole) ?? "doctor";
 
 	const profileAndLegal = buildProfileAndLegalHelpers(appStore);
 	const legacyStubs = buildLegacyStubsAndFallbacks();
@@ -61,7 +55,14 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 	const legacyAppStore = buildLegacyAppStoreBindings(appStore);
 	const legacyNavigation = buildLegacyNavigationAndClinicalBindings(clinicalSession, navigationState);
 
-	const appLogicBag: any = {
+	const modalOrchestrator = (modalController.modalOrchestrator ?? {}) as Record<string, unknown>;
+	const patientIntakeLogic = (patientSelection.patientIntakeLogic ?? {}) as Record<string, unknown>;
+	const scheduleFilterController = (scheduleLogic.scheduleFilterController ?? {}) as Record<string, unknown>;
+	const navigationRouter = (navigationState.navigationRouter ?? {}) as Record<string, unknown>;
+	const clinicalVisitLogic = (clinicalSession.clinicalVisitLogic ?? {}) as Record<string, unknown>;
+	const finance = (billingModal.finance ?? {}) as Record<string, unknown>;
+
+	const appLogicBag: Record<string, unknown> = {
 		...appStore,
 		...settingsStore,
 		...imagingStore,
@@ -69,14 +70,14 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 		...settingsAndIntegrations,
 		...dicomWorkbenchModule,
 		...documentWorkflow,
-		...modalController.modalOrchestrator,
+		...modalOrchestrator,
 		...staffSettingsLogic,
-		...patientSelection.patientIntakeLogic,
+		...patientIntakeLogic,
 		...migrationQueries,
 		...imagingQueries,
 		...communicationsQueries,
-		...scheduleLogic.scheduleFilterController,
-		...navigationState.navigationRouter,
+		...scheduleFilterController,
+		...navigationRouter,
 		...patientSelection,
 		...billingModal,
 		...scheduleLogic,
@@ -103,81 +104,11 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 	const legacyPatient = buildLegacyPatientFields(documentPatient, dashboard);
 	const sortedCommunicationTasks = sortCommunicationTasks(dashboard?.communicationTasks);
 
-	const createServiceCatalogItem = async (data: any) => {
-		try {
-			const headers = auth?.settingsAccessHeaders
-				? auth.settingsAccessHeaders({ "Content-Type": "application/json" })
-				: { "Content-Type": "application/json" };
-			const response = await fetch("/api/settings/catalog", {
-				method: "POST",
-				headers,
-				body: JSON.stringify(data),
-			});
-			if (!response.ok) {
-				const errMsg = await responseErrorMessage(response, "Ошибка создания услуги");
-				appStore?.setError?.(errMsg);
-				return null;
-			}
-			const result = await response.json();
-			if (typeof params.loadDashboard === "function") {
-				await params.loadDashboard();
-			}
-			return result;
-		} catch {
-			appStore?.setError?.("Сбой сети при создании услуги");
-			return null;
-		}
-	};
-
-	const updateServiceCatalogItem = async (serviceId: string, updates: any) => {
-		try {
-			const headers = auth?.settingsAccessHeaders
-				? auth.settingsAccessHeaders({ "Content-Type": "application/json" })
-				: { "Content-Type": "application/json" };
-			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
-				method: "PUT",
-				headers,
-				body: JSON.stringify(updates),
-			});
-			if (!response.ok) {
-				const errMsg = await responseErrorMessage(response, "Ошибка обновления услуги");
-				appStore?.setError?.(errMsg);
-				return null;
-			}
-			const result = await response.json();
-			if (typeof params.loadDashboard === "function") {
-				await params.loadDashboard();
-			}
-			return result;
-		} catch {
-			appStore?.setError?.("Сбой сети при обновлении услуги");
-			return null;
-		}
-	};
-
-	const deleteServiceCatalogItem = async (serviceId: string) => {
-		try {
-			const headers = auth?.settingsAccessHeaders
-				? auth.settingsAccessHeaders()
-				: {};
-			const response = await fetch(`/api/settings/catalog/${serviceId}`, {
-				method: "DELETE",
-				headers,
-			});
-			if (!response.ok) {
-				const errMsg = await responseErrorMessage(response, "Ошибка удаления услуги");
-				appStore?.setError?.(errMsg);
-				return false;
-			}
-			if (typeof params.loadDashboard === "function") {
-				await params.loadDashboard();
-			}
-			return true;
-		} catch {
-			appStore?.setError?.("Сбой сети при удалении услуги");
-			return false;
-		}
-	};
+	const serviceCatalog = buildServiceCatalogCompatibility(
+		(auth ?? {}) as Record<string, unknown>,
+		(appStore ?? {}) as Record<string, unknown>,
+		params.loadDashboard,
+	);
 
 	return {
 		...documentWorkflow,
@@ -185,15 +116,15 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 		...telegramSettingsModule,
 		...telegram,
 		...auth,
-		...clinicalSession.clinicalVisitLogic,
+		...clinicalVisitLogic,
 		...staffSettingsLogic,
-		...patientSelection.patientIntakeLogic,
+		...patientIntakeLogic,
 		...migrationQueries,
 		...imagingQueries,
 		...communicationsQueries,
-		...modalController.modalOrchestrator,
-		...scheduleLogic.scheduleFilterController,
-		...navigationState.navigationRouter,
+		...modalOrchestrator,
+		...scheduleFilterController,
+		...navigationRouter,
 		...patientSelection,
 		...billingModal,
 		...scheduleLogic,
@@ -225,33 +156,36 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 		buildDraft: appLogicBag.buildDraft ?? (() => null),
 		buildOfflineDraft: appLogicBag.buildOfflineDraft ?? (() => null),
 		clinicPublicLookup: appLogicBag.clinicPublicLookup ?? null,
-		closeAppointmentEditor: scheduleLogic.closeAppointmentEditor ?? (() => {}),
+		closeAppointmentEditor: scheduleRecord.closeAppointmentEditor ?? innerSchedule.closeAppointmentEditor ?? (() => {}),
 		completeCommunicationTask: settingsAndIntegrations.completeCommunicationTask,
-		createAppointmentFromDraft: scheduleLogic.createAppointmentFromDraft ?? (async () => {}),
+		createAppointmentFromDraft: scheduleRecord.createAppointmentFromDraft ?? innerSchedule.createAppointmentFromDraft ?? (async () => {}),
 		createClinicalRuleFromSettings: settingsAndIntegrations.createClinicalRuleFromSettings,
-		createServiceCatalogItem,
-		updateServiceCatalogItem,
-		deleteServiceCatalogItem,
+		...serviceCatalog,
 		dashboard,
 		documentFactoryGroups: appLogicBag.documentFactoryGroups ?? [],
 		documentPatient,
 		editingAppointmentId: scheduleLogic.editingAppointmentId,
-		filteredPatients: patientSelection.filteredPatients,
+		filteredPatients: patientSelectionRecord.filteredPatients ?? innerPatient.filteredPatients ?? [],
 		flushPendingVisitSaves: appLogicBag.flushPendingVisitSaves ?? (async () => {}),
 		isPaymentSaving: appLogicBag.isPaymentSaving ?? false,
 		isRecognitionLoading: appLogicBag.isRecognitionLoading ?? false,
 		isVisitNoteDirty: appLogicBag.isVisitNoteDirty ?? false,
-		openAppointmentEditor: scheduleLogic.openAppointmentEditor ?? (() => {}),
-		openScheduleWarning: scheduleLogic.openScheduleWarning ?? (() => {}),
+		openAppointmentEditor: scheduleRecord.openAppointmentEditor ?? innerSchedule.openAppointmentEditor ?? (() => {}),
+		openScheduleWarning: scheduleRecord.openScheduleWarning ?? innerSchedule.openScheduleWarning ?? (() => {}),
 		openVisitWarningAction: appLogicBag.openVisitWarningAction ?? (() => {}),
-		patientAdministrativeProfileValidationMessage: patientSelection.patientAdministrativeProfileValidationMessage,
-		patientInsightById: patientSelection.patientInsightById,
+		patientAdministrativeProfileValidationMessage:
+			patientSelectionRecord.patientAdministrativeProfileValidationMessage ??
+			innerPatient.patientAdministrativeProfileValidationMessage ??
+			null,
+		patientInsightById: patientSelectionRecord.patientInsightById ?? innerPatient.patientInsightById ?? {},
 		patientInsightRiskLabels: appLogicBag.patientInsightRiskLabels ?? {},
 		patientIntakePregnancyStatusOptions: appLogicBag.patientIntakePregnancyStatusOptions ?? [],
 		patientName: patientNameHelper,
 		paymentMutationIdRef: params.paymentMutationIdRef,
-		paymentPatientContextMessage: patientSelection.paymentPatientContextMessage,
-		paymentPatientContextReady: patientSelection.paymentPatientContextReady,
+		paymentPatientContextMessage:
+			patientSelectionRecord.paymentPatientContextMessage ?? innerPatient.paymentPatientContextMessage ?? null,
+		paymentPatientContextReady:
+			patientSelectionRecord.paymentPatientContextReady ?? innerPatient.paymentPatientContextReady ?? false,
 		photoVideoMaterialOptions: appLogicBag.photoVideoMaterialOptions ?? [],
 		policyAuditEventLabels: appLogicBag.policyAuditEventLabels ?? {},
 		pricelistParserModeLabels: appLogicBag.pricelistParserModeLabels ?? {},
@@ -259,13 +193,14 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 		procedureSpecificConsentProcedureOptions: appLogicBag.procedureSpecificConsentProcedureOptions ?? [],
 		query: patientSelection.query,
 		recommendedActionPriorityLabels: appLogicBag.recommendedActionPriorityLabels ?? {},
-		recordPayment: billingModal.finance?.recordPayment ?? (async () => {}),
-		resetNewAppointmentDraft: scheduleLogic.resetNewAppointmentDraft ?? (() => {}),
+		recordPayment: typeof finance.recordPayment === "function" ? (finance.recordPayment as () => Promise<void>) : (async () => {}),
+		resetNewAppointmentDraft: scheduleRecord.resetNewAppointmentDraft ?? innerSchedule.resetNewAppointmentDraft ?? (() => {}),
 		roleFocusOrder: appLogicBag.roleFocusOrder ?? [],
-		saveAppointmentSchedule: scheduleLogic.saveAppointmentSchedule ?? (async () => {}),
-		saveChairSchedule: scheduleLogic.saveChairSchedule ?? (async () => {}),
+		saveAppointmentSchedule: scheduleRecord.saveAppointmentSchedule ?? innerSchedule.saveAppointmentSchedule ?? (async () => {}),
+		saveChairSchedule: scheduleRecord.saveChairSchedule ?? innerSchedule.saveChairSchedule ?? (async () => {}),
 		saveClinicProfileFromDraft: settingsAndIntegrations.saveClinicProfileFromDraft,
-		savePatientAdministrativeProfile: patientSelection.savePatientAdministrativeProfile,
+		savePatientAdministrativeProfile:
+			patientSelectionRecord.savePatientAdministrativeProfile ?? innerPatient.savePatientAdministrativeProfile,
 		savePatientCore: patientSelection.savePatientCore,
 		createPatient: patientSelection.createPatient,
 		saveStaffSchedule: scheduleLogic.saveStaffSchedule,
@@ -298,29 +233,13 @@ export function buildAppLogicCompatibilityBag(params: any): any {
 		visitSaveReceiptText,
 		loadDashboard: params.loadDashboard,
 		operatorWorkflowFailureMessage,
-		activeCommunicationTasks: null,
 		activePayments: billingModal.activePayments,
 		activeTreatmentPlanItems: billingModal.activeTreatmentPlanItems,
-		addImagingViewerNoteAnnotation: null,
 		analyzePricelist: settingsAndIntegrations.analyzePricelist,
-		applyProtocolTemplate: null,
-		applyProtocolTemplateDirectly: null,
-		assembleSpeechRecording: async () => {},
-		chooseRecognitionPreset: null,
 		clinicalMutationHeaders: auth.denteClinicalMutationHeaders,
 		clinicalReadHeaders: auth.denteClinicalReadHeaders,
-		selectedPaymentReceiptTotalRub: 0,
-		selectedProtocolTemplate: null,
-		selectedTaxPaymentTotalRub: 0,
 		setSelectedPatientId: patientSelection.setSelectedPatientId,
-		shiftWarnings: null,
 		sortedCommunicationTasks,
-		specialtiesWithTemplates: [],
-		specialtyProtocolTemplates: [],
-		visibleVisitSpecialtyFocusOptions: [],
-		visitPrimaryAction: null,
-		visitSafetyCards: [],
-		visitWorkflowSteps: [],
 		recentPatientViewsVersion: params.recentPatientViewsVersion,
 	};
 }

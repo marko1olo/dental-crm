@@ -38,11 +38,18 @@ export const PATIENT_PHONE_QUERY_MIN_DIGITS = 3;
 
 export type PatientSaveState = "idle" | "saving" | "saved" | "error";
 
+export interface PatientMutationAuthContext {
+	denteClinicalMutationHeaders: (
+		headers?: Record<string, string>,
+	) => Record<string, string>;
+	[key: string]: unknown;
+}
+
 export interface UsePatientLogicProps {
 	dashboard: Dashboard | null | undefined;
 	query: string;
 	setError: (error: string | null) => void;
-	auth: any;
+	auth: PatientMutationAuthContext;
 	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
 	setQuery: (query: string) => void;
 }
@@ -72,7 +79,7 @@ export interface UsePatientMutationsProps {
 	dashboard: Dashboard | null | undefined;
 	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
 	setError: (error: string | null) => void;
-	auth: any;
+	auth: PatientMutationAuthContext;
 	selectedPatient: Patient | null;
 	setSelectedPatientId: (id: string | null) => void;
 	setQuery: (query: string) => void;

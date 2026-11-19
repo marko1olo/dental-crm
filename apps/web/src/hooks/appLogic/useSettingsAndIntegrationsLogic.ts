@@ -12,10 +12,18 @@
  * Mandate 8b: File line count strictly <= 500 lines (facade <= 250 lines).
  */
 
-import type { Dashboard } from "@dental/shared";
+import type {
+	Appointment,
+	Dashboard,
+	Patient,
+	Payment,
+	StaffMember,
+	TreatmentPlanItem,
+} from "@dental/shared";
 import type { OnboardingStep, VisitNoteForm } from "../../AppHelpers";
 import { useAppStore } from "../../store/appStore";
 import type { AppView } from "../../utils/routeUtils";
+import type { useAuthLogic } from "../domains/useAuthLogic";
 import { useDocumentWorkflowModule } from "../domains/useDocumentWorkflowModule";
 import { useTelegramModule } from "../domains/useTelegramModule";
 import { useClinicProfileAndRulesLogic } from "./settingsIntegrationsModules/useClinicProfileAndRulesLogic";
@@ -23,25 +31,25 @@ import { useImagingAndDicomLogic } from "./settingsIntegrationsModules/useImagin
 import type { SettingsAndIntegrationsLogicSlice } from "./types";
 
 interface UseSettingsAndIntegrationsLogicProps {
-	auth: any;
+	auth: ReturnType<typeof useAuthLogic>;
 	dashboard: Dashboard | null;
 	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
-	loadDashboard: () => Promise<void>;
+	loadDashboard: (options?: { adminSecret?: string }) => Promise<void>;
 	setError: (err: string | null) => void;
 	currentView: AppView;
 	setCurrentView: (view: AppView) => void;
 	settingsTab: string;
 	onboardingDismissed: boolean;
 	onboardingStep: OnboardingStep;
-	activePatient: any;
-	activeDoctor: any;
-	activeAppointment: any;
-	documentPatient: any;
+	activePatient: Patient | null;
+	activeDoctor: StaffMember | null;
+	activeAppointment: Appointment | null;
+	documentPatient: Patient | null;
 	selectedPatientId: string;
 	uiPreferencesHydrated: boolean;
-	setSelectedDocumentKind: (kind: any) => void;
-	activePayments: any[];
-	activeTreatmentPlanItems: any[];
+	setSelectedDocumentKind: (kind: string | null) => void;
+	activePayments: Payment[];
+	activeTreatmentPlanItems: TreatmentPlanItem[];
 	visitNoteForm: VisitNoteForm;
 	clinicalAdminSecretSession: string;
 	settingsAdminSecretSession: string;

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const PROOFS_DIR = path.resolve("C:/Clinic_MVP/dental-crm/docs/proofs/orthopedics");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c33839fb-d493-4aa5-94bd-b1fc3ddbe680");
+const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/aae67383-520b-4d6a-86c5-963da1bb0e49");
 
 for (const dir of [PROOFS_DIR, BRAIN_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -121,7 +121,7 @@ async function main() {
 
     const page = await context.newPage();
 
-    await page.goto("http://127.0.0.1:5173/?standalone=orthopedics#orthopedics", { waitUntil: "networkidle", timeout: 45000 });
+    await page.goto("http://127.0.0.1:5173/?standalone=orthopedics#orthopedics", { waitUntil: "domcontentloaded", timeout: 45000 });
 
     await page.waitForFunction(() => {
       const splash = document.querySelector('.dente-boot-splash, .boot-state, [data-testid="app-boot-loader"]');

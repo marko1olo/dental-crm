@@ -16,12 +16,13 @@ import { shouldResetPatientDraftState } from "../../../../components/patients/pa
 import { actionFailureToast } from "../../../../lib/panelStateText";
 import { usePatientStore } from "../../../../store/patientStore";
 import { fetchWithHandling } from "../../../../utils/networkUtils";
+import type { PatientMutationAuthContext } from "../patientLogicTypes";
 
 export interface UsePatientAdministrativeSaveProps {
 	dashboard: Dashboard | null | undefined;
 	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
 	setError: (error: string | null) => void;
-	auth: any;
+	auth: PatientMutationAuthContext;
 	selectedPatient: Patient | null;
 	savedByThisScreenUpdatedAtRef: React.MutableRefObject<string | null>;
 }
@@ -233,7 +234,7 @@ export function usePatientAdministrativeSave({
 	function updatePatientAdministrativeProfileDraft<
 		K extends keyof PatientAdministrativeProfileDraft,
 	>(key: K, value: PatientAdministrativeProfileDraft[K]) {
-		setPatientAdministrativeProfileDraft((current: any) => ({
+		setPatientAdministrativeProfileDraft((current) => ({
 			...current,
 			[key]: value,
 		}));

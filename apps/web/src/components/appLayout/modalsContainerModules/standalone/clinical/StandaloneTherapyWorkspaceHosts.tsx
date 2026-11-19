@@ -14,7 +14,7 @@ import { clearUrlTokens } from "../deepLinkUrl";
 import { HygieneIndicesPanel } from "../../../../hygiene/HygieneIndicesPanel";
 import { PerioStudioModal } from "../../../../perio/PerioStudioModal";
 import { EmkPerioSection } from "../../../../visit/emk/EmkPerioSection";
-import { PatientAnamnesisTab } from "../../../../patients/PatientAnamnesisTab";
+import { SomaticAnamnesisCard } from "../../../../clinical/SomaticAnamnesisCard";
 import { PatientRecallsHubModal } from "../../../../recalls/PatientRecallsHubModal";
 
 export function MissingPatientGuard({ testId, onClose, message }: { testId: string; onClose: () => void; message: string }): React.ReactElement {
@@ -99,7 +99,7 @@ export const StandaloneAnamnesisHost: React.FC<{ onClose: () => void }> = ({ onC
 		<StandaloneTreatmentPlanWorkspaceShell title="Соматический статус" onClose={onClose}>
 			<div className="w-full p-3 sm:p-6 overflow-y-auto" data-testid="anamnesis-standalone-workspace">
 				<div className="max-w-4xl mx-auto">
-					<PatientAnamnesisTab patientId={patientId} patientName={patientName} />
+					<SomaticAnamnesisCard patientId={patientId} patientName={patientName} />
 				</div>
 			</div>
 		</StandaloneTreatmentPlanWorkspaceShell>

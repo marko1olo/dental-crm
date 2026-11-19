@@ -6,17 +6,18 @@
  */
 
 import { useMemo } from "react";
-import type { Dashboard } from "@dental/shared";
+import type { Dashboard, Patient } from "@dental/shared";
 import { buildMprAxisGuidance, mprProjectionCompassLabels } from "../../../mprControlMath";
 import { useImagingStore } from "../../../store/imagingStore";
 import type { AppView } from "../../../utils/routeUtils";
 import { useDicomWorkbenchModule } from "../../domains/useDicomWorkbenchModule";
+import type { DicomAuthContext } from "../../domains/dicomWorkbench/types";
 
 export interface UseImagingAndDicomLogicProps {
-	auth: any;
+	auth: DicomAuthContext;
 	currentView: AppView;
 	dashboard: Dashboard | null;
-	documentPatient: any;
+	documentPatient: Patient | null;
 	selectedPatientId: string;
 }
 

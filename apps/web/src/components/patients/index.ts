@@ -8,7 +8,6 @@
 export * from "./PatientCardModal";
 export * from "./PatientHistoryTab";
 export * from "./TreatmentPlansList";
-export * from "./PatientAnamnesisTab";
 export * from "./PatientCreationModal";
 export * from "./MobilePatientProfileWorkspace";
 export * from "./mobile/MobilePatientsGroupedList";

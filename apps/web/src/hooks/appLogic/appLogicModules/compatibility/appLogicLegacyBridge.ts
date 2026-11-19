@@ -4,16 +4,23 @@
  * Adapters, normalizers, and fallback signatures for backward compatibility.
  */
 
+import type { CommunicationTask, Dashboard, Patient } from "@dental/shared";
+import type { AppStore } from "../../../../store/appStore.js";
+import type { ClinicalSessionLogicSlice, NavigationStateSlice } from "../../types.js";
 import {
 	type ClinicProfileDraft,
 	clinicLegalMissingFields,
 	clinicLegalReadinessPercent,
 } from "../../../../AppHelpers";
-import type { LegacyStubsAndFallbacks, ProfileAndLegalCompatibility } from "./appLogicCompatibilityTypes.js";
+import type { LegacyStubsAndFallbacks, ProfileAndLegalCompatibility, AppLogicCompatibilityInputParams } from "./appLogicCompatibilityTypes.js";
 
-// biome-ignore lint/suspicious/noExplicitAny: compatibility bag helper
-export function buildProfileAndLegalHelpers(appStore: any): ProfileAndLegalCompatibility {
-	const { dashboard, setClinicProfileDraft, setClinicProfileDirty } = appStore;
+export function buildProfileAndLegalHelpers(
+	appStore: AppStore | Record<string, unknown>,
+): ProfileAndLegalCompatibility {
+	const store = appStore as Record<string, unknown>;
+	const dashboard = store.dashboard as Dashboard | null | undefined;
+	const setClinicProfileDraft = store.setClinicProfileDraft as ((updater: (prev: ClinicProfileDraft) => ClinicProfileDraft) => void) | undefined;
+	const setClinicProfileDirty = store.setClinicProfileDirty as ((dirty: boolean) => void) | undefined;
 
 	const legalMissingFields = dashboard?.clinicSettings?.profile
 		? clinicLegalMissingFields(dashboard.clinicSettings.profile)
@@ -26,8 +33,12 @@ export function buildProfileAndLegalHelpers(appStore: any): ProfileAndLegalCompa
 		field: string,
 		value: unknown,
 	) => {
-		setClinicProfileDraft((prev: any) => ({ ...prev, [field]: value }));
-		setClinicProfileDirty(true);
+		if (typeof setClinicProfileDraft === "function") {
+			setClinicProfileDraft((prev: ClinicProfileDraft) => ({ ...prev, [field]: value }));
+		}
+		if (typeof setClinicProfileDirty === "function") {
+			setClinicProfileDirty(true);
+		}
 	};
 
 	return {
@@ -37,8 +48,7 @@ export function buildProfileAndLegalHelpers(appStore: any): ProfileAndLegalCompa
 	};
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: stubs and fallbacks
-export function buildLegacyStubsAndFallbacks(): any {
+export function buildLegacyStubsAndFallbacks(): LegacyStubsAndFallbacks {
 	return {
 		attachPricelistImage: async (_file: File) => {},
 		clearPricelistImage: () => {},
@@ -82,50 +92,62 @@ export function buildLegacyStubsAndFallbacks(): any {
 	};
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: legacy normalizers mapper
-export function buildLegacyNormalizers(appLogicBag: any): Record<string, any> {
+export function buildLegacyNormalizers(
+	appLogicBag: Record<string, unknown>,
+): Record<string, (val: unknown) => unknown> {
+	const getFn = (name: string): ((val: unknown) => unknown) => {
+		const fn = appLogicBag[name];
+		if (typeof fn === "function") {
+			return fn as (val: unknown) => unknown;
+		}
+		return (v: unknown) => v;
+	};
+
 	return {
-		normalizeOptionalWorkingDaysDraft: appLogicBag.normalizeOptionalWorkingDaysDraft ?? ((d: any) => d),
-		normalizeUiLanguageInput: appLogicBag.normalizeUiLanguageInput ?? ((l: any) => l),
-		normalizedAppointmentStatus: appLogicBag.normalizedAppointmentStatus ?? ((s: any) => s),
-		normalizedAppointmentStatusFilter: appLogicBag.normalizedAppointmentStatusFilter ?? ((f: any) => f),
-		normalizedClinicalRuleAction: appLogicBag.normalizedClinicalRuleAction ?? ((a: any) => a),
-		normalizedClinicalRuleSeverity: appLogicBag.normalizedClinicalRuleSeverity ?? ((s: any) => s),
-		normalizedDentalSpecialty: appLogicBag.normalizedDentalSpecialty ?? ((s: any) => s),
-		normalizedDocumentIssueSignatureMode: appLogicBag.normalizedDocumentIssueSignatureMode ?? ((m: any) => m),
-		normalizedDocumentKind: appLogicBag.normalizedDocumentKind ?? ((k: any) => k),
-		normalizedDocumentVoidReasonCode: appLogicBag.normalizedDocumentVoidReasonCode ?? ((c: any) => c),
-		normalizedMedicalDocumentReleaseChannel: appLogicBag.normalizedMedicalDocumentReleaseChannel ?? ((c: any) => c),
-		normalizedPatientIntakePregnancyStatus: appLogicBag.normalizedPatientIntakePregnancyStatus ?? ((p: any) => p),
-		normalizedPaymentRefundCorrectionAction: appLogicBag.normalizedPaymentRefundCorrectionAction ?? ((a: any) => a),
-		normalizedPaymentRefundCorrectionMethod: appLogicBag.normalizedPaymentRefundCorrectionMethod ?? ((m: any) => m),
-		normalizedPostVisitCareTopic: appLogicBag.normalizedPostVisitCareTopic ?? ((t: any) => t),
-		normalizedProcedureSpecificConsentProcedure: appLogicBag.normalizedProcedureSpecificConsentProcedure ?? ((p: any) => p),
-		normalizedServiceCategory: appLogicBag.normalizedServiceCategory ?? ((c: any) => c),
-		normalizedStaffRole: appLogicBag.normalizedStaffRole ?? ((r: any) => r),
-		normalizedTaxApplicationDeliveryChannel: appLogicBag.normalizedTaxApplicationDeliveryChannel ?? ((d: any) => d),
-		normalizedTaxApplicationForm: appLogicBag.normalizedTaxApplicationForm ?? ((f: any) => f),
-		normalizedTaxApplicationRelationshipSelect: appLogicBag.normalizedTaxApplicationRelationshipSelect ?? ((r: any) => r),
-		normalizedTreatmentPlanAcceptanceVariant: appLogicBag.normalizedTreatmentPlanAcceptanceVariant ?? ((v: any) => v),
-		normalizedXrayPregnancyStatus: appLogicBag.normalizedXrayPregnancyStatus ?? ((p: any) => p),
-		normalizedXrayPriority: appLogicBag.normalizedXrayPriority ?? ((p: any) => p),
-		normalizedXrayStudyType: appLogicBag.normalizedXrayStudyType ?? ((t: any) => t),
+		normalizeOptionalWorkingDaysDraft: getFn("normalizeOptionalWorkingDaysDraft"),
+		normalizeUiLanguageInput: getFn("normalizeUiLanguageInput"),
+		normalizedAppointmentStatus: getFn("normalizedAppointmentStatus"),
+		normalizedAppointmentStatusFilter: getFn("normalizedAppointmentStatusFilter"),
+		normalizedClinicalRuleAction: getFn("normalizedClinicalRuleAction"),
+		normalizedClinicalRuleSeverity: getFn("normalizedClinicalRuleSeverity"),
+		normalizedDentalSpecialty: getFn("normalizedDentalSpecialty"),
+		normalizedDocumentIssueSignatureMode: getFn("normalizedDocumentIssueSignatureMode"),
+		normalizedDocumentKind: getFn("normalizedDocumentKind"),
+		normalizedDocumentVoidReasonCode: getFn("normalizedDocumentVoidReasonCode"),
+		normalizedMedicalDocumentReleaseChannel: getFn("normalizedMedicalDocumentReleaseChannel"),
+		normalizedPatientIntakePregnancyStatus: getFn("normalizedPatientIntakePregnancyStatus"),
+		normalizedPaymentRefundCorrectionAction: getFn("normalizedPaymentRefundCorrectionAction"),
+		normalizedPaymentRefundCorrectionMethod: getFn("normalizedPaymentRefundCorrectionMethod"),
+		normalizedPostVisitCareTopic: getFn("normalizedPostVisitCareTopic"),
+		normalizedProcedureSpecificConsentProcedure: getFn("normalizedProcedureSpecificConsentProcedure"),
+		normalizedServiceCategory: getFn("normalizedServiceCategory"),
+		normalizedStaffRole: getFn("normalizedStaffRole"),
+		normalizedTaxApplicationDeliveryChannel: getFn("normalizedTaxApplicationDeliveryChannel"),
+		normalizedTaxApplicationForm: getFn("normalizedTaxApplicationForm"),
+		normalizedTaxApplicationRelationshipSelect: getFn("normalizedTaxApplicationRelationshipSelect"),
+		normalizedTreatmentPlanAcceptanceVariant: getFn("normalizedTreatmentPlanAcceptanceVariant"),
+		normalizedXrayPregnancyStatus: getFn("normalizedXrayPregnancyStatus"),
+		normalizedXrayPriority: getFn("normalizedXrayPriority"),
+		normalizedXrayStudyType: getFn("normalizedXrayStudyType"),
 	};
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: legacy task sorter
-export function sortCommunicationTasks(tasks: any[]): any[] {
+export function sortCommunicationTasks(
+	tasks: CommunicationTask[] | null | undefined,
+): CommunicationTask[] {
 	const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
-	return (tasks ?? []).slice().sort((a: any, b: any) => {
-		const pA = priorityOrder[a.priority] ?? 2;
-		const pB = priorityOrder[b.priority] ?? 2;
+	return (tasks ?? []).slice().sort((a, b) => {
+		const pA = priorityOrder[a.priority ?? ""] ?? 2;
+		const pB = priorityOrder[b.priority ?? ""] ?? 2;
 		if (pA !== pB) return pA - pB;
 		return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
 	});
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: patient & document fields
-export function buildLegacyPatientFields(documentPatient: any, dashboard: any): Record<string, any> {
+export function buildLegacyPatientFields(
+	documentPatient: Patient | null | undefined,
+	dashboard: Dashboard | null | undefined,
+): Record<string, unknown> {
 	return {
 		address: documentPatient?.administrativeProfile?.registrationAddress ?? "",
 		clinic: dashboard?.clinicSettings?.profile ?? null,
@@ -143,15 +165,27 @@ export function buildLegacyPatientFields(documentPatient: any, dashboard: any): 
 	};
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: schedule & billing field bindings
-export function buildLegacyFieldBindings(params: any): Record<string, any> {
-	const { scheduleLogic, billingModal } = params;
+export function buildLegacyFieldBindings(params: AppLogicCompatibilityInputParams | {
+	readonly scheduleLogic?: Record<string, unknown> | null | undefined;
+	readonly billingModal?: Record<string, unknown> | null | undefined;
+	readonly [key: string]: unknown;
+}): Record<string, unknown> {
+	const scheduleLogic = (params.scheduleLogic ?? {}) as Record<string, unknown>;
+	const billingModal = (params.billingModal ?? {}) as Record<string, unknown>;
+	const chairScheduleDirty = scheduleLogic.chairScheduleDirtyIds;
+	const chairScheduleDirtyIds =
+		chairScheduleDirty instanceof Set
+			? chairScheduleDirty
+			: new Set(Array.isArray(chairScheduleDirty) ? chairScheduleDirty : []);
+
+	const staffScheduleDirty = scheduleLogic.staffScheduleDirtyIds;
+	const staffScheduleDirtyIds =
+		staffScheduleDirty instanceof Set
+			? staffScheduleDirty
+			: new Set(Array.isArray(staffScheduleDirty) ? staffScheduleDirty : []);
 
 	return {
-		chairScheduleDirtyIds:
-			scheduleLogic.chairScheduleDirtyIds instanceof Set
-				? scheduleLogic.chairScheduleDirtyIds
-				: new Set(scheduleLogic.chairScheduleDirtyIds ?? []),
+		chairScheduleDirtyIds,
 		chairScheduleDrafts: scheduleLogic.chairScheduleDrafts ?? {},
 		chairScheduleSaveStates: scheduleLogic.chairScheduleSaveStates ?? {},
 		chairScheduleSavingId: scheduleLogic.chairScheduleSavingId ?? null,
@@ -195,10 +229,7 @@ export function buildLegacyFieldBindings(params: any): Record<string, any> {
 		setPaymentPayerRelationship: billingModal.setPaymentPayerRelationship,
 		setPaymentTaxDeductionCode: billingModal.setPaymentTaxDeductionCode,
 		setPaymentFeedback: billingModal.setPaymentFeedback,
-		staffScheduleDirtyIds:
-			scheduleLogic.staffScheduleDirtyIds instanceof Set
-				? scheduleLogic.staffScheduleDirtyIds
-				: new Set(scheduleLogic.staffScheduleDirtyIds ?? []),
+		staffScheduleDirtyIds,
 		staffScheduleDrafts: scheduleLogic.staffScheduleDrafts,
 		staffScheduleSaveStates: scheduleLogic.staffScheduleSaveStates,
 		staffScheduleSavingId: scheduleLogic.staffScheduleSavingId,
@@ -214,105 +245,109 @@ export function buildLegacyFieldBindings(params: any): Record<string, any> {
 	};
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: appStore state bindings
-export function buildLegacyAppStoreBindings(appStore: any): Record<string, any> {
+export function buildLegacyAppStoreBindings(appStore: AppStore | Record<string, unknown>): Record<string, unknown> {
+	const store = appStore as Record<string, unknown>;
 	return {
-		clinicProfileDraft: appStore.clinicProfileDraft,
-		clinicProfileSaveState: appStore.clinicProfileSaveState,
-		communicationNote: appStore.communicationNote,
-		communicationSavingTaskId: appStore.communicationSavingTaskId,
-		error: appStore.error,
-		isClinicalRuleSaving: appStore.isClinicalRuleSaving,
-		isPricelistAnalyzing: appStore.isPricelistAnalyzing,
-		newRuleAction: appStore.newRuleAction,
-		newRuleBlockedServiceId: appStore.newRuleBlockedServiceId,
-		newRuleCategory: appStore.newRuleCategory,
-		newRuleCompletedServiceId: appStore.newRuleCompletedServiceId,
-		newRuleOwnerRole: appStore.newRuleOwnerRole,
-		newRuleRequiredServiceId: appStore.newRuleRequiredServiceId,
-		newRuleSeverity: appStore.newRuleSeverity,
-		newRuleSpecialty: appStore.newRuleSpecialty,
-		newRuleTitle: appStore.newRuleTitle,
-		newRuleTriggerServiceId: appStore.newRuleTriggerServiceId,
-		newRuleWarningText: appStore.newRuleWarningText,
-		newRulePatientText: appStore.newRulePatientText,
-		ohifBaseUrl: appStore.ohifBaseUrl,
-		pricelistAnalysis: appStore.pricelistAnalysis,
-		pricelistImageBase64: appStore.pricelistImageBase64,
-		pricelistImageName: appStore.pricelistImageName,
-		pricelistImageNote: appStore.pricelistImageNote,
-		pricelistSourceKind: appStore.pricelistSourceKind,
-		pricelistText: appStore.pricelistText,
-		recognitionJob: appStore.recognitionJob,
-		recognitionKind: appStore.recognitionKind,
-		recognitionTarget: appStore.recognitionTarget,
-		recognitionText: appStore.recognitionText,
-		releaseProtectionNote: appStore.releaseProtectionNote,
-		setCommunicationNote: appStore.setCommunicationNote,
-		setError: appStore.setError,
-		setNewRuleAction: appStore.newRuleAction,
-		setNewRuleBlockedServiceId: appStore.newRuleBlockedServiceId,
-		setNewRuleCategory: appStore.newRuleCategory,
-		setNewRuleCompletedServiceId: appStore.newRuleCompletedServiceId,
-		setNewRuleOwnerRole: appStore.newRuleOwnerRole,
-		setNewRuleRequiredServiceId: appStore.newRuleRequiredServiceId,
-		setNewRuleSeverity: appStore.newRuleSeverity,
-		setNewRuleSpecialty: appStore.newRuleSpecialty,
-		setNewRuleTitle: appStore.newRuleTitle,
-		setNewRuleTriggerServiceId: appStore.newRuleTriggerServiceId,
-		setNewRuleWarningText: appStore.newRuleWarningText,
-		setNewRulePatientText: appStore.newRulePatientText,
-		setPricelistAnalysis: appStore.setPricelistAnalysis,
-		setPricelistSourceKind: appStore.setPricelistSourceKind,
-		setPricelistText: appStore.setPricelistText,
-		setRecognitionJob: appStore.recognitionJob,
-		setRecognitionText: appStore.recognitionText,
-		setReleaseProtectionNote: appStore.releaseProtectionNote,
-		setUiLanguage: appStore.setUiLanguage,
-		setUiPreferencesSyncError: appStore.setUiPreferencesSyncError,
-		setUsePricelistAi: appStore.usePricelistAi,
-		uiLanguage: appStore.uiLanguage,
-		uiPreferencesSyncError: appStore.uiPreferencesSyncError,
-		usePricelistAi: appStore.usePricelistAi,
+		clinicProfileDraft: store.clinicProfileDraft,
+		clinicProfileSaveState: store.clinicProfileSaveState,
+		communicationNote: store.communicationNote,
+		communicationSavingTaskId: store.communicationSavingTaskId,
+		error: store.error,
+		isClinicalRuleSaving: store.isClinicalRuleSaving,
+		isPricelistAnalyzing: store.isPricelistAnalyzing,
+		newRuleAction: store.newRuleAction,
+		newRuleBlockedServiceId: store.newRuleBlockedServiceId,
+		newRuleCategory: store.newRuleCategory,
+		newRuleCompletedServiceId: store.newRuleCompletedServiceId,
+		newRuleOwnerRole: store.newRuleOwnerRole,
+		newRuleRequiredServiceId: store.newRuleRequiredServiceId,
+		newRuleSeverity: store.newRuleSeverity,
+		newRuleSpecialty: store.newRuleSpecialty,
+		newRuleTitle: store.newRuleTitle,
+		newRuleTriggerServiceId: store.newRuleTriggerServiceId,
+		newRuleWarningText: store.newRuleWarningText,
+		newRulePatientText: store.newRulePatientText,
+		ohifBaseUrl: store.ohifBaseUrl,
+		pricelistAnalysis: store.pricelistAnalysis,
+		pricelistImageBase64: store.pricelistImageBase64,
+		pricelistImageName: store.pricelistImageName,
+		pricelistImageNote: store.pricelistImageNote,
+		pricelistSourceKind: store.pricelistSourceKind,
+		pricelistText: store.pricelistText,
+		recognitionJob: store.recognitionJob,
+		recognitionKind: store.recognitionKind,
+		recognitionTarget: store.recognitionTarget,
+		recognitionText: store.recognitionText,
+		releaseProtectionNote: store.releaseProtectionNote,
+		setCommunicationNote: store.setCommunicationNote,
+		setError: store.setError,
+		setNewRuleAction: store.newRuleAction,
+		setNewRuleBlockedServiceId: store.newRuleBlockedServiceId,
+		setNewRuleCategory: store.newRuleCategory,
+		setNewRuleCompletedServiceId: store.newRuleCompletedServiceId,
+		setNewRuleOwnerRole: store.newRuleOwnerRole,
+		setNewRuleRequiredServiceId: store.newRuleRequiredServiceId,
+		setNewRuleSeverity: store.newRuleSeverity,
+		setNewRuleSpecialty: store.newRuleSpecialty,
+		setNewRuleTitle: store.newRuleTitle,
+		setNewRuleTriggerServiceId: store.newRuleTriggerServiceId,
+		setNewRuleWarningText: store.newRuleWarningText,
+		setNewRulePatientText: store.newRulePatientText,
+		setPricelistAnalysis: store.setPricelistAnalysis,
+		setPricelistSourceKind: store.setPricelistSourceKind,
+		setPricelistText: store.setPricelistText,
+		setRecognitionJob: store.recognitionJob,
+		setRecognitionText: store.recognitionText,
+		setReleaseProtectionNote: store.releaseProtectionNote,
+		setUiLanguage: store.setUiLanguage,
+		setUiPreferencesSyncError: store.setUiPreferencesSyncError,
+		setUsePricelistAi: store.usePricelistAi,
+		uiLanguage: store.uiLanguage,
+		uiPreferencesSyncError: store.uiPreferencesSyncError,
+		usePricelistAi: store.usePricelistAi,
 	};
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: navigation & clinical session bindings
-export function buildLegacyNavigationAndClinicalBindings(clinicalSession: any, navigationState: any): Record<string, any> {
+export function buildLegacyNavigationAndClinicalBindings(
+	clinicalSession: ClinicalSessionLogicSlice | Record<string, unknown>,
+	navigationState: NavigationStateSlice | Record<string, unknown>,
+): Record<string, unknown> {
+	const session = clinicalSession as Record<string, unknown>;
+	const nav = navigationState as Record<string, unknown>;
 	return {
-		currentView: navigationState.currentView,
-		activeRolePolicy: navigationState.activeRolePolicy,
-		activeRoleQueue: navigationState.activeRoleQueue,
-		activeRoleRestrictedSections: navigationState.activeRoleRestrictedSections,
-		activeRoleWritableSections: navigationState.activeRoleWritableSections,
-		activeSettingsTabButtonRef: navigationState.activeSettingsTabButtonRef,
-		setCurrentView: navigationState.setCurrentView,
-		setSelectedWorkspaceRole: navigationState.setSelectedWorkspaceRole,
-		setSettingsTab: navigationState.setSettingsTab,
-		settingsTab: navigationState.settingsTab,
-		showAdministrationTopActions: navigationState.showAdministrationTopActions,
-		showDoctorVisitShortcut: navigationState.showDoctorVisitShortcut,
-		isDoctorShiftCockpitOpen: navigationState.isDoctorShiftCockpitOpen,
-		openDoctorShiftCockpit: navigationState.openDoctorShiftCockpit,
-		closeDoctorShiftCockpit: navigationState.closeDoctorShiftCockpit,
-		toggleDoctorShiftCockpit: navigationState.toggleDoctorShiftCockpit,
-		visibleRecommendedActions: navigationState.visibleRecommendedActions,
-		visibleScheduleSuggestions: navigationState.visibleScheduleSuggestions,
-		acceptDraftToVisit: clinicalSession.acceptDraftToVisit,
-		scrollToVisitArea: clinicalSession.scrollToVisitArea,
-		toothRows: clinicalSession.toothRows,
-		setToothState: clinicalSession.setToothState,
-		updateVisitNoteField: clinicalSession.updateVisitNoteField,
-		visitCloseChecklist: clinicalSession.visitCloseChecklist,
-		visitDraftBuildMissingSteps: clinicalSession.visitDraftBuildMissingSteps,
-		visitDraftReadyToBuild: clinicalSession.visitDraftReadyToBuild,
-		visitDraftUserEditedRef: clinicalSession.visitDraftUserEditedRef,
-		visitNoteAcceptMissingSteps: clinicalSession.visitNoteAcceptMissingSteps,
-		visitNoteActionLabel: clinicalSession.visitNoteActionLabel,
-		visitNoteForm: clinicalSession.visitNoteForm,
-		visitNoteReadyToAccept: clinicalSession.visitNoteReadyToAccept,
-		visitNoteStatusLabel: clinicalSession.visitNoteStatusLabel,
-		visitWarnings: clinicalSession.visitWarnings,
-		renderClinicalToothRowsEditor: clinicalSession.renderClinicalToothRowsEditor,
+		currentView: nav.currentView,
+		activeRolePolicy: nav.activeRolePolicy,
+		activeRoleQueue: nav.activeRoleQueue,
+		activeRoleRestrictedSections: nav.activeRoleRestrictedSections,
+		activeRoleWritableSections: nav.activeRoleWritableSections,
+		activeSettingsTabButtonRef: nav.activeSettingsTabButtonRef,
+		setCurrentView: nav.setCurrentView,
+		setSelectedWorkspaceRole: nav.setSelectedWorkspaceRole,
+		setSettingsTab: nav.setSettingsTab,
+		settingsTab: nav.settingsTab,
+		showAdministrationTopActions: nav.showAdministrationTopActions,
+		showDoctorVisitShortcut: nav.showDoctorVisitShortcut,
+		isDoctorShiftCockpitOpen: nav.isDoctorShiftCockpitOpen,
+		openDoctorShiftCockpit: nav.openDoctorShiftCockpit,
+		closeDoctorShiftCockpit: nav.closeDoctorShiftCockpit,
+		toggleDoctorShiftCockpit: nav.toggleDoctorShiftCockpit,
+		visibleRecommendedActions: nav.visibleRecommendedActions,
+		visibleScheduleSuggestions: nav.visibleScheduleSuggestions,
+		acceptDraftToVisit: session.acceptDraftToVisit,
+		scrollToVisitArea: session.scrollToVisitArea,
+		toothRows: session.toothRows,
+		setToothState: session.setToothState,
+		updateVisitNoteField: session.updateVisitNoteField,
+		visitCloseChecklist: session.visitCloseChecklist,
+		visitDraftBuildMissingSteps: session.visitDraftBuildMissingSteps,
+		visitDraftReadyToBuild: session.visitDraftReadyToBuild,
+		visitDraftUserEditedRef: session.visitDraftUserEditedRef,
+		visitNoteAcceptMissingSteps: session.visitNoteAcceptMissingSteps,
+		visitNoteActionLabel: session.visitNoteActionLabel,
+		visitNoteForm: session.visitNoteForm,
+		visitNoteReadyToAccept: session.visitNoteReadyToAccept,
+		visitNoteStatusLabel: session.visitNoteStatusLabel,
+		visitWarnings: session.visitWarnings,
+		renderClinicalToothRowsEditor: session.renderClinicalToothRowsEditor,
 	};
 }

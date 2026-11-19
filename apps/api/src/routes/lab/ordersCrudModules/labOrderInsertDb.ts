@@ -1,8 +1,17 @@
 import crypto from "node:crypto";
-import { normalizeVitaShade, VALID_FDI_TOOTH_NUMBERS } from "@dental/shared";
+import {
+	normalizeVitaShade,
+	VALID_FDI_TOOTH_NUMBERS,
+	labOrderStatusSchema,
+	rublesToKopecks,
+	kopecksToRubles,
+	kopecksToNumericString,
+	splitKopecks,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../../db/rls.js";
-import { labItems, labOrders, patients, users, visits } from "../../../db/schema.js";
+import { appointments, labItems, labOrders, patients, treatmentPlans, users, visits } from "../../../db/schema.js";
+import type { LabOrderStatus } from "../../../db/labQuery.js";
 import {
 	calculateBusinessDaysDueDate,
 	mapStageToLabOrderStatus,
@@ -74,15 +83,54 @@ export async function insertLabOrderInDb(
 		return { kind: "patient_not_found" as const };
 	}
 
-	let effectiveAppointmentId = data.appointmentId ?? null;
-	if (!effectiveAppointmentId && data.visitId) {
+	let effectiveAppointmentId: string | null = null;
+	if (data.appointmentId) {
+		const [appt] = await tx
+			.select({ id: appointments.id })
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.id, data.appointmentId),
+					eq(appointments.organizationId, orgId),
+					eq(appointments.patientId, effectivePatientId),
+				),
+			)
+			.limit(1);
+		if (appt) {
+			effectiveAppointmentId = appt.id;
+		}
+	} else if (data.visitId) {
 		const [visit] = await tx
 			.select({ appointmentId: visits.appointmentId })
 			.from(visits)
-			.where(and(eq(visits.id, data.visitId), eq(visits.organizationId, orgId)))
+			.where(
+				and(
+					eq(visits.id, data.visitId),
+					eq(visits.organizationId, orgId),
+					eq(visits.patientId, effectivePatientId),
+				),
+			)
 			.limit(1);
 		if (visit?.appointmentId) {
 			effectiveAppointmentId = visit.appointmentId;
+		}
+	}
+
+	let effectiveTreatmentPlanId: string | null = null;
+	if (data.treatmentPlanId) {
+		const [plan] = await tx
+			.select({ id: treatmentPlans.id })
+			.from(treatmentPlans)
+			.where(
+				and(
+					eq(treatmentPlans.id, data.treatmentPlanId),
+					eq(treatmentPlans.organizationId, orgId),
+					eq(treatmentPlans.patientId, effectivePatientId),
+				),
+			)
+			.limit(1);
+		if (plan) {
+			effectiveTreatmentPlanId = plan.id;
 		}
 	}
 
@@ -99,6 +147,8 @@ export async function insertLabOrderInDb(
 		if (doctor) {
 			effectiveDoctorId = doctor.id;
 			doctorName = doctor.fullName;
+		} else {
+			return { kind: "doctor_not_found" as const };
 		}
 	}
 
@@ -116,25 +166,31 @@ export async function insertLabOrderInDb(
 	const effectiveMaterial = data.material || data.materialName || data.construction || data.materialId || null;
 	const effectiveNotes = data.clinicalNotes || data.doctorNotes || null;
 	const effectiveStage = data.stage || data.techStage || null;
-	const effectiveStatus = (data.status ? mapStageToLabOrderStatus(data.status) : null) ?? (effectiveStage ? mapStageToLabOrderStatus(effectiveStage) : null) ?? "draft";
+	
+	const effectiveStatus = (data.status && (labOrderStatusSchema.options as readonly string[]).includes(data.status))
+		? (data.status as LabOrderStatus)
+		: (data.status ? mapStageToLabOrderStatus(data.status) : null) ?? (effectiveStage ? mapStageToLabOrderStatus(effectiveStage) : null) ?? "draft";
 
 	const effectiveLabName = data.laboratoryName || data.labName || null;
-	const effectiveLabCost = data.labCostRub != null
-		? data.labCostRub
-		: data.costRub != null
-			? data.costRub
-			: data.labCostKopecks != null
-				? Math.round(Number(data.labCostKopecks)) / 100
-				: data.costKopecks != null
-					? Math.round(Number(data.costKopecks)) / 100
+
+	// Канонический расчет себестоимости и цен в целочисленных копейках (Мандат 8bm)
+	const effectiveLabCostKopecks: number = data.labCostKopecks != null
+		? Math.round(Number(data.labCostKopecks))
+		: data.costKopecks != null
+			? Math.round(Number(data.costKopecks))
+			: data.labCostRub != null
+				? rublesToKopecks(data.labCostRub)
+				: data.costRub != null
+					? rublesToKopecks(data.costRub)
 					: 0;
 
-	const effectivePriceRub = data.priceRub != null
-		? data.priceRub
-		: data.amountKopecks != null
-			? Math.round(Number(data.amountKopecks)) / 100
-			: data.priceKopecks != null
-				? Math.round(Number(data.priceKopecks)) / 100
+	const rawPatientKopecks = data.patientPriceKopecks ?? data.priceKopecks ?? data.amountKopecks;
+	const effectivePriceKopecks: number = rawPatientKopecks != null
+		? Math.round(Number(rawPatientKopecks))
+		: data.patientPriceRub != null
+			? rublesToKopecks(data.patientPriceRub)
+			: data.priceRub != null
+				? rublesToKopecks(data.priceRub)
 				: 0;
 
 	// Нормализация гарантийных обязательств (Мандаты 8e, 8n):
@@ -142,8 +198,11 @@ export async function insertLabOrderInDb(
 	// При браке лаборатории (lab_defect) лаборатория переделывает бесплатно (labCostRub = 0).
 	// При гарантии клиники (clinic_warranty) клиника оплачивает ЗТЛ (labCostRub сохраняется).
 	const isWarranty = Boolean(data.isWarrantyRework || data.isWarranty || data.isWarrantyRemake);
-	const finalPriceRub = isWarranty ? 0 : effectivePriceRub;
-	const finalLabCostRub = isWarranty && data.warrantyLiabilityType === "lab_defect" ? 0 : effectiveLabCost;
+	const finalPriceKopecks = isWarranty ? 0 : effectivePriceKopecks;
+	const finalLabCostKopecks = isWarranty && data.warrantyLiabilityType === "lab_defect" ? 0 : effectiveLabCostKopecks;
+
+	const finalPriceRub = kopecksToRubles(finalPriceKopecks);
+	const finalLabCostRub = kopecksToRubles(finalLabCostKopecks);
 
 	let structuredNotes = effectiveNotes || "";
 	const clinicalSpecs: string[] = [];
@@ -172,7 +231,7 @@ export async function insertLabOrderInDb(
 		.values({
 			organizationId: orgId,
 			patientId: effectivePatientId,
-			treatmentPlanId: data.treatmentPlanId ?? null,
+			treatmentPlanId: effectiveTreatmentPlanId,
 			appointmentId: effectiveAppointmentId,
 			doctorId: effectiveDoctorId,
 			doctorName: doctorName || data.doctorName || null,
@@ -203,6 +262,7 @@ export async function insertLabOrderInDb(
 	// [LAB-04]: Нормализация зубов и запись в lab_items
 	if (Array.isArray(data.items) && data.items.length > 0) {
 		for (const item of data.items) {
+			const itemKopecks = item.priceRub != null ? rublesToKopecks(item.priceRub) : null;
 			await tx.insert(labItems).values({
 				organizationId: orgId,
 				labOrderId: createdOrder.id,
@@ -220,19 +280,25 @@ export async function insertLabOrderInDb(
 				implantSystem: item.implantSystem ?? null,
 				implantPlatformDiameterMm: item.implantPlatformDiameterMm ?? null,
 				tiBaseHeightMm: item.tiBaseHeightMm ?? null,
-				priceRub: item.priceRub ? String(item.priceRub) : null,
+				priceRub: itemKopecks != null ? kopecksToNumericString(itemKopecks) : null,
 			});
 		}
 	} else if (effectiveToothFdi != null) {
 		const rawStr = Array.isArray(effectiveToothFdi) ? effectiveToothFdi.join(",") : String(effectiveToothFdi);
 		const parts = rawStr.split(/[\s,;-]+/).filter(Boolean);
-		const validTeeth = parts
+		const rawTeeth = parts
 			.map((p) => Number.parseInt(p, 10))
 			.filter((num) => !Number.isNaN(num) && VALID_FDI_TOOTH_NUMBERS.has(num));
+		const validTeeth = Array.from(new Set(rawTeeth));
 
 		if (validTeeth.length > 0) {
-			const pricePerTooth = finalPriceRub / validTeeth.length;
-			for (const toothNum of validTeeth) {
+			const splits = splitKopecks(finalPriceKopecks, validTeeth.length);
+
+			for (let i = 0; i < validTeeth.length; i++) {
+				const toothNum = validTeeth[i]!;
+				const toothKopecks = splits[i] ?? 0;
+				const itemPriceRub = kopecksToNumericString(toothKopecks);
+
 				await tx.insert(labItems).values({
 					organizationId: orgId,
 					labOrderId: createdOrder.id,
@@ -242,7 +308,7 @@ export async function insertLabOrderInDb(
 					shadeSystem: "VITA_CLASSICAL",
 					shadeFinal: normalizedColor,
 					shadeStump: data.stumpShade || null,
-					priceRub: String(pricePerTooth.toFixed(2)),
+					priceRub: itemPriceRub,
 				});
 			}
 		}
@@ -250,16 +316,18 @@ export async function insertLabOrderInDb(
 
 	const enrichedOrder = {
 		...createdOrder,
+		orderNumber: data.orderNumber || `ЗТЛ-${createdOrder.id.slice(0, 6).toUpperCase()}`,
 		stage: createdOrder.stage ?? effectiveStage,
-		treatmentPlanId: data.treatmentPlanId ?? null,
-		appointmentId: data.appointmentId ?? null,
+		treatmentPlanId: createdOrder.treatmentPlanId ?? null,
+		appointmentId: createdOrder.appointmentId ?? null,
 		visitId: data.visitId ?? null,
 		isWarranty,
 		warrantyLiabilityType: data.warrantyLiabilityType ?? (isWarranty ? "clinic_warranty" : null),
-		priceKopecks: Math.round(Number(createdOrder.priceRub ?? 0) * 100),
-		amountKopecks: Math.round(Number(createdOrder.priceRub ?? 0) * 100),
-		labCostKopecks: Math.round(Number(createdOrder.labCostRub ?? 0) * 100),
-		costKopecks: Math.round(Number(createdOrder.labCostRub ?? 0) * 100),
+		priceKopecks: finalPriceKopecks,
+		amountKopecks: finalPriceKopecks,
+		patientPriceKopecks: finalPriceKopecks,
+		labCostKopecks: finalLabCostKopecks,
+		costKopecks: finalLabCostKopecks,
 	};
 
 	return { kind: "ok" as const, order: enrichedOrder };

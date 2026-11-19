@@ -73,8 +73,8 @@ describe("Patient Studio SSOT, 10-Second Intake & Family Wallet Suite (Mandates 
 		// Кнопка сохранения НЕ содержит disabled
 		assert.ok(!markup.includes('disabled=""') && !markup.includes("disabled "), "Primary CTA не должна быть disabled!");
 
-		// Ровно 1 Primary CTA кнопка bg-[var(--teal)]
-		const primaryCtaMatches = markup.match(/class="[^"]*bg-\[var\(--teal\)\](?![\w/])[^"]*"/g);
+		// Ровно 1 Primary CTA кнопка bg-[var(--primary)]
+		const primaryCtaMatches = markup.match(/class="[^"]*bg-\[var\(--primary\)\](?![\w/])[^"]*"/g);
 		assert.equal(primaryCtaMatches?.length, 1, "Ровно 1 Primary CTA кнопка на видимый экран!");
 	});
 

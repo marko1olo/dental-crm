@@ -470,6 +470,7 @@ const KNOWN_NON_HOOK_BAGS = new Set([
 	"modalOrchestrator",
 	"scheduleFilterController",
 	"navigationRouter",
+	"serviceCatalog",
 ]);
 
 for (const prop of target.properties) {

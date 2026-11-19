@@ -168,7 +168,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 					isAnySubModalOpen ? "max-sm:hidden" : ""
 				}`}>
 					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shrink-0 shadow-2xs">
+						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--primary,var(--brand-primary))] text-white flex items-center justify-center shrink-0 shadow-2xs">
 							<User className="w-4 h-4 sm:w-5 sm:h-5" />
 						</div>
 						<div className="min-w-0 flex-1">
@@ -244,7 +244,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 						{!isCreateMode && isChildPatient && (
 							<button type="button" data-testid="btn-patient-card-diploma" onClick={() => setIsDiplomaModalOpen(true)}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
 								title="Распечатать «Диплом за храбрость» маленькому пациенту">
 								<Award className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 							</button>
@@ -252,9 +252,9 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 						{!isCreateMode && (
 							<button type="button" data-testid="btn-patient-photo-protocol" onClick={() => setIsPhotoModalOpen(true)}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
 								title="Клинический фотопротокол (12 ракурсов, QR-мост)">
-								<Camera className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<Camera className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							</button>
 						)}
 
@@ -267,17 +267,17 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 									}
 									setIsTaxDeductionModalOpen(true);
 								}}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
 								title="Справка об оплате медицинских услуг для налогового вычета (13%)">
-								<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<FileCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
 								<span className="sr-only">Справка для вычета (13%)</span>
 							</button>
 						)}
 						{!isCreateMode && (
 							<button type="button" data-testid="btn-patient-open-emr-studio" onClick={() => setIsMedicalRecordStudioOpen(true)}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
 								title="Открыть электронную карту (ЭМК)">
-								<ClipboardList className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<ClipboardList className="w-4 h-4 text-[var(--primary)] shrink-0" />
 								<span>ЭМК</span>
 							</button>
 						)}
@@ -288,22 +288,22 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 										new CustomEvent("dente:open-recalls-hub", { detail: { patientId: patientData.id } }),
 									);
 								}}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
 								title="Плановые профосмотры и профгигиена">
-								<CalendarCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<CalendarCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
 								<span>Профосмотры</span>
 							</button>
 						)}
 						{isCreateMode ? (
 							<button type="button" data-testid="patient-creation-print-blank-contract-btn" onClick={creationForm.handlePrintBlankContract}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
 								title="Распечатать чистый бланк договора">
 								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать бланка договора</span>
 							</button>
 						) : (
 							<button type="button" data-testid="btn-print-patient-card" onClick={handlePrint}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg h-8 px-2.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
+								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg h-8 px-2.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[44px] sm:min-h-[32px] text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
 								title="Печать карты пациента">
 								<Printer className="w-4 h-4 shrink-0" />
 								<span>Печать</span>
@@ -318,14 +318,14 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 									if (typeof window !== "undefined") window.location.hash = "patients";
 									handleClose();
 								}}
-								className="mobile-hide hidden md:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg h-8 w-8 p-0 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[32px] text-xs items-center justify-center cursor-pointer shrink-0 select-none"
+								className="mobile-hide hidden md:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg h-8 w-8 p-0 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[32px] text-xs items-center justify-center cursor-pointer shrink-0 select-none"
 								title="Перейти в полную рабочую область пациента (PatientWorkspace)">
 								<ExternalLink className="w-4 h-4 shrink-0" />
 							</button>
 						)}
 
 						<button type="button" data-testid="btn-close-patient-card-modal" onClick={handleClose}
-							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
+							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong)] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
 							aria-label="Закрыть окно">
 							<span data-testid="patient-studio-close-btn" className="sr-only">Закрыть</span>
 							<X className="w-4 h-4" />
@@ -373,7 +373,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<button
 							type="button"
 							onClick={() => setActiveTab("anamnesis")}
-							className="text-xs font-semibold text-[var(--teal)] hover:underline cursor-pointer shrink-0 transition-opacity"
+							className="text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer shrink-0 transition-opacity"
 						>
 							Открыть статус
 						</button>
@@ -396,8 +396,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 										data-testid={tab.testId}
 										className={`min-h-[44px] sm:min-h-[32px] h-8 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap select-none ${
 											isActive
-												? "border border-[var(--teal)] bg-[var(--teal)] text-white shadow-xs font-bold"
-												: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] shadow-2xs font-semibold"
+												? "border border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] shadow-xs font-bold"
+												: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)] shadow-2xs font-semibold"
 										}`}
 										onClick={() => setActiveTab(tab.id as PatientCardTab)}
 									>
@@ -412,7 +412,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<button
 							type="button"
 							data-testid="btn-somatic-healthy-norm"
-							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs inline-flex items-center gap-1 sm:gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap select-none ml-auto"
+							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs inline-flex items-center gap-1 sm:gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap select-none ml-auto"
 							onClick={handleApplyNorm}
 							title="Зафиксировать физиологическую норму: соматически здоров / интактные зубы"
 						>
@@ -556,12 +556,12 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 						<div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap justify-end">
 							<button
 								type="button"
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-4 min-h-[44px] h-11 text-xs cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)]"
+								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-4 min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)]"
 								onClick={handleClose}
 							>Отмена</button>
 							<button
 								type="button"
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-4 min-h-[44px] h-11 text-xs cursor-pointer select-none transition-all hover:border-[var(--teal)] inline-flex items-center gap-1.5"
+								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-4 min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] inline-flex items-center gap-1.5"
 								onClick={() => void creationForm.handleCreateAndBook()}
 								disabled={false}
 								data-testid="patient-creation-submit-and-book-btn"
@@ -572,7 +572,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							</button>
 							<button
 								type="button"
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-4 min-h-[44px] h-11 text-xs cursor-pointer select-none transition-all hover:border-[var(--teal)] inline-flex items-center gap-1.5"
+								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-4 min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] inline-flex items-center gap-1.5"
 								onClick={() => void creationForm.handleCreateAndOpenVisit()}
 								disabled={false}
 								data-testid="patient-creation-submit-and-visit-btn"
@@ -581,10 +581,10 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								<Stethoscope size={15} aria-hidden="true" />
 								<span>Создать и начать приём</span>
 							</button>
-							{/* Ровно ОДНА Primary CTA кнопка var(--teal) */}
+							{/* Ровно ОДНА Primary CTA кнопка var(--primary) */}
 							<button
 								type="button"
-								className="border-0 bg-[var(--teal)] text-white hover:opacity-95 min-h-[44px] h-11 px-5 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 inline-flex items-center gap-1.5 whitespace-nowrap"
+								className="border-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-5 text-sm font-medium rounded-xl sm:rounded-lg shadow-sm cursor-pointer select-none transition-all active:scale-95 inline-flex items-center gap-1.5 whitespace-nowrap"
 								onClick={() => void creationForm.handleCreate()}
 								disabled={false}
 								data-testid="patient-creation-submit-btn"
@@ -601,15 +601,15 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							<button
 								type="button"
 								onClick={handleClose}
-								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
+								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
 							>Закрыть</button>
-							{/* Ровно ОДНА Primary CTA кнопка var(--teal) (Мандат 8e, Мандат 8am) */}
+							{/* Ровно ОДНА Primary CTA кнопка var(--primary) (Мандат 8e, Мандат 8am) */}
 							<button
 								type="button"
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
 								disabled={false}
-								className="flex-1 sm:flex-none border-0 bg-[var(--teal)] text-white hover:opacity-95 min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-6 text-xs sm:text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[130px]"
+								className="flex-1 sm:flex-none border-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-6 text-xs sm:text-sm font-medium rounded-xl sm:rounded-lg shadow-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[130px]"
 							>
 								<span data-testid="patient-studio-primary-cta">Сохранить</span>
 							</button>

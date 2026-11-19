@@ -1,19 +1,7 @@
 /**
- * ============================================================================
- * PATIENT BRANCH TRANSFER & CENTRALIZED LAB SYNC ENGINE (THIN FACADE)
- *
- * Re-exports all domain types, branch registry constants, validation rules,
- * financial deposit voucher handlers, 043/u EMR serializers, and the master
- * coordinator from `./transferEngineModules/index.js`.
- * ============================================================================
- */
-
-export * from "./transferEngineModules/index.js";
-
-/**
  * Печать акта трансфера пациента и передачи медицинской документации между филиалами (152-ФЗ)
  */
-export function printPatientBranchTransferAct(patient: { fullName?: string; id?: string }) {
+export function printPatientBranchTransferAct(patient: { fullName?: string; id?: string }): void {
 	if (typeof window === "undefined") return;
 	const w = window.open("", "_blank");
 	if (!w) return;
@@ -25,4 +13,3 @@ export function printPatientBranchTransferAct(patient: { fullName?: string; id?:
 	w.focus();
 	w.print();
 }
-

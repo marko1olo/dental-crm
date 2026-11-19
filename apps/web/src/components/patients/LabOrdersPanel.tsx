@@ -53,8 +53,8 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 			{/* Верхняя шапка: Заголовок, счетчик и единственная Primary CTA кнопка */}
 			<header className="flex flex-wrap items-center justify-between gap-2.5 p-3 sm:p-4 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs">
 				<div className="flex items-center gap-2.5 min-w-0">
-					<div className="w-9 h-9 rounded-xl bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/25 flex items-center justify-center shrink-0">
-						<FlaskConical className="w-5 h-5 text-[var(--teal,#0d9488)]" />
+					<div className="w-9 h-9 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/25 flex items-center justify-center shrink-0">
+						<FlaskConical className="w-5 h-5 text-[var(--primary)]" />
 					</div>
 					<div className="min-w-0">
 						<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] truncate">
@@ -116,7 +116,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 								<span
 									className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
 										isActive
-											? "bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] font-bold"
+											? "bg-[var(--primary)]/10 text-[var(--primary)] font-bold"
 											: "bg-[var(--paper)] text-[var(--muted)]"
 									}`}
 								>
@@ -150,7 +150,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 
 			{logic.loading && logic.orders.length === 0 ? (
 				<div className="p-8 text-center bg-[var(--paper-soft)] rounded-2xl border border-[var(--line)] flex flex-col items-center justify-center gap-2">
-					<Loader2 className="w-6 h-6 animate-spin text-[var(--teal,#0d9488)]" />
+					<Loader2 className="w-6 h-6 animate-spin text-[var(--primary)]" />
 					<span className="text-xs text-[var(--muted)]">Загрузка нарядов лаборатории...</span>
 				</div>
 			) : logic.orders.length === 0 ? (
@@ -159,7 +159,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 					data-testid="lab-orders-empty-state"
 				>
 					<div className="w-14 h-14 rounded-2xl bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center shadow-2xs">
-						<FlaskConical className="w-7 h-7 text-[var(--teal,#0d9488)]" />
+						<FlaskConical className="w-7 h-7 text-[var(--primary)]" />
 					</div>
 					<div className="space-y-1">
 						<h3 className="font-bold text-sm text-[var(--ink)]">Нет оформленных заказов в лабораторию</h3>

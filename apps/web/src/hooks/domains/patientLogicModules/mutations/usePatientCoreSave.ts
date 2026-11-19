@@ -17,12 +17,13 @@ import { shouldResetPatientDraftState } from "../../../../components/patients/pa
 import { actionFailureToast } from "../../../../lib/panelStateText";
 import { usePatientStore } from "../../../../store/patientStore";
 import { fetchWithHandling } from "../../../../utils/networkUtils";
+import type { PatientMutationAuthContext } from "../patientLogicTypes";
 
 export interface UsePatientCoreSaveProps {
 	dashboard: Dashboard | null | undefined;
 	setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
 	setError: (error: string | null) => void;
-	auth: any;
+	auth: PatientMutationAuthContext;
 	selectedPatient: Patient | null;
 	setSelectedPatientId: (id: string | null) => void;
 	setQuery: (query: string) => void;
@@ -88,7 +89,7 @@ export function usePatientCoreSave({
 		key: K,
 		value: PatientCoreDraft[K],
 	) {
-		setPatientCoreDraft((current: any) => ({ ...current, [key]: value }));
+		setPatientCoreDraft((current) => ({ ...current, [key]: value }));
 		setPatientCoreDirty(true);
 		setPatientCoreSaveState("idle");
 	}
@@ -256,14 +257,15 @@ export function usePatientCoreSave({
 			);
 			setError(null);
 			return patient;
-		} catch (patientError: any) {
-			if (patientError?.status === 409 || patientError?.duplicateData) {
+		} catch (patientError: unknown) {
+			const candidate = patientError as { status?: number; duplicateData?: unknown } | null | undefined;
+			if (candidate?.status === 409 || candidate?.duplicateData) {
 				throw patientError;
 			}
 			showToast(
 				actionFailureToast(
 					"Пациент не создан",
-					(patientError as { status?: number })?.status ?? null,
+					candidate?.status ?? null,
 				),
 				"error",
 			);

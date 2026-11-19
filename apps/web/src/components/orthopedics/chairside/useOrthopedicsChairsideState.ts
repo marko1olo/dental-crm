@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { ShadeSystemKey } from "../../lab/shades/dentalLabShadePickerTypes";
 import type { OrthopedicsChairsidePanelProps } from "./orthopedicsChairsideTypes";
 import { calculateDueDateStr } from "./orthopedicsChairsideTypes";
 import { calculateOrthopedicEconomics } from "../orthopedicCatalogData";
@@ -21,7 +22,7 @@ export function useOrthopedicsChairsideState({
 	const [selectedMaterial, setSelectedMaterial] = useState<string>(initialLabOrder?.material || "ZrO2 Multi-Layer");
 	const [selectedShade, setSelectedShade] = useState<string>(initialLabOrder?.colorVita || "A2");
 	const [selectedStumpShade, setSelectedStumpShade] = useState<string>(initialLabOrder?.stumpShade || "ND2");
-	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master" | "bleach" | "stump">("classical");
+	const [shadeSystem, setShadeSystem] = useState<ShadeSystemKey>("classical");
 	const [activeZtlPresetId, setActiveZtlPresetId] = useState<string>("zirconia");
 	const [preparationMargin, setPreparationMargin] = useState<string>("chamfer");
 	const [selectedStageId, setSelectedStageId] = useState<string>("impression_scan");

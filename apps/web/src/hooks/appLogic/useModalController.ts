@@ -78,10 +78,10 @@ export function useModalController({
 		settingsTab === "clinic" &&
 		onboardingGuideExpanded;
 
-	const onboardingFirstAppointmentIssues: any[] = [];
-	const onboardingDocumentReadinessIssues: any[] = [];
-	const onboardingBlockingIssues: any[] = [];
-	const onboardingTelegramRecommendations: any[] = [];
+	const onboardingFirstAppointmentIssues: string[] = [];
+	const onboardingDocumentReadinessIssues: string[] = [];
+	const onboardingBlockingIssues: string[] = [];
+	const onboardingTelegramRecommendations: string[] = [];
 	const onboardingReadyToFinish = true;
 	const onboardingDocumentsReady = true;
 	const onboardingStaffCreateGuidanceId = "onboarding-staff-create-guidance";
@@ -101,7 +101,7 @@ export function useModalController({
 		setOnboardingDraftMode(false);
 	}
 
-	async function continueOnboardingInDraftMode(targetView?: AppView) {
+	async function continueOnboardingInDraftMode(targetView?: AppView | undefined) {
 		const dismissalSavedAt = new Date().toISOString();
 		saveOnboardingDismissed(
 			true,
@@ -140,7 +140,7 @@ export function useModalController({
 		}
 	}
 
-	function openOnboardingGuide(step?: OnboardingStep) {
+	function openOnboardingGuide(step?: OnboardingStep | undefined) {
 		if (step) setOnboardingStep(step);
 		setOnboardingGuideExpanded(true);
 		setCurrentView("settings");
