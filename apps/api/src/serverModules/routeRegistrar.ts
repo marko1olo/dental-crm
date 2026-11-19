@@ -30,7 +30,6 @@ import { registerFilesRoutes } from "../routes/files.js";
 import { registerExpensesRoutes } from "../routes/expenses.js";
 import { registerBankStatementsRoutes } from "../routes/bankStatements.js";
 import { registerCashboxRoutes } from "../routes/cashbox.js";
-import { registerCrmLeakDetectorRoutes } from "../routes/crmLeakDetector.js";
 import { registerFinancialPnlRoutes } from "../routes/financialPnl.js";
 import { registerPatientRelationshipsRoutes } from "../routes/patientRelationships.js";
 import { registerFamilyFinanceRoutes } from "../routes/finance_family.js";
@@ -270,7 +269,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await app.register(registerExpensesRoutes);
 	await app.register(registerBankStatementsRoutes);
 	await registerCashboxRoutes(app);
-	await registerCrmLeakDetectorRoutes(app);
 	await registerFinancialPnlRoutes(app);
 	await registerPatientRelationshipsRoutes(app);
 	await app.register(registerPublicBookingRoutes, {

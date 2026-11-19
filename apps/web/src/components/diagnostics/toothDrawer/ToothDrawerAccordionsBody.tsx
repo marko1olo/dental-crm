@@ -2,6 +2,7 @@ import React from "react";
 import { ToothDrawerSurfacesAccordion } from "./ToothDrawerSurfacesAccordion";
 import { ToothDrawerAnesthesiaAccordion } from "./ToothDrawerAnesthesiaAccordion";
 import { ToothDrawerRvgAccordion } from "./ToothDrawerRvgAccordion";
+import { ToothDrawerPerioAccordion } from "./ToothDrawerPerioAccordion";
 import { ToothDrawerPediatricAccordion } from "./ToothDrawerPediatricAccordion";
 import type { ToothContextDrawerProps, WarmAccordionSection } from "./toothDrawerTypes";
 import type { ToothData } from "../../odontogram/ToothChart";
@@ -20,6 +21,7 @@ interface ToothDrawerAccordionsBodyProps {
 	onOpenFamilyBilling?: (() => void) | undefined;
 	onOpenParentMemo?: (() => void) | undefined;
 	onOpenEndo?: ((toothNumber: number) => void) | undefined;
+	onOpenPerio?: ((toothNumber: number) => void) | undefined;
 	onApplyAnesthesia?: ToothContextDrawerProps["onApplyAnesthesia"];
 }
 
@@ -37,6 +39,7 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 	onOpenFamilyBilling,
 	onOpenParentMemo,
 	onOpenEndo,
+	onOpenPerio,
 	onApplyAnesthesia,
 }) => {
 	return (
@@ -70,6 +73,16 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 				onOpenFullRadiology={onOpenFullRadiology}
 				onInsertToProtocol={onInsertToProtocol}
 				onUpdateTooth={onUpdateTooth}
+			/>
+
+			<ToothDrawerPerioAccordion
+				toothNumber={toothNumber}
+				patientId={patient?.id}
+				patientName={patient?.fullName}
+				activeSection={activeSection}
+				toggleSection={toggleSection}
+				onInsertToProtocol={onInsertToProtocol}
+				onOpenPerio={onOpenPerio}
 			/>
 
 			{isPediatricTooth && (

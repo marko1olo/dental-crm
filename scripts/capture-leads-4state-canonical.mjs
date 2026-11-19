@@ -42,13 +42,27 @@ async function setupPageSession(context, page, role = "owner") {
 
   await page.addInitScript(
     ({ role }) => {
+      const dummyUser = {
+        id: "demo-owner-id",
+        fullName: "Д-р Воронов М. С.",
+        role: "owner",
+        email: "owner@dente-demo.ru",
+        organizationId: "01a00000-0000-0000-0000-000000000000",
+        specialization: "Главврач / Владелец",
+      };
       sessionStorage.setItem("dente_unlocked", "true");
       localStorage.setItem("dente_unlocked", "true");
       localStorage.setItem("dente_clinic_token", "demo-clinic-token");
       localStorage.setItem("dente_staff_token", "demo-staff-token");
+      localStorage.setItem("dente_cached_active_staff_user", JSON.stringify(dummyUser));
+      localStorage.setItem("dental-crm:active-user:v1", JSON.stringify(dummyUser));
+      localStorage.setItem("dente_offline_autonomy_mode", "true");
+      localStorage.setItem("dente_last_view", "leads");
+      localStorage.setItem("dente_active_nav", "leads");
       localStorage.setItem("dente_workspace_perspective", role);
       localStorage.setItem("dente_user_role", role);
       localStorage.setItem("dente_active_role", role);
+      localStorage.setItem("dente_active_mode", "clinic");
       localStorage.setItem("dente_demo_showcase", "true");
       localStorage.setItem("dente_demo_banner_dismissed", "true");
       localStorage.setItem("dente_onboarding_completed", "true");
@@ -159,12 +173,18 @@ async function waitForRealUI(page) {
         document.querySelector(".workspace-shell") ||
           document.querySelector(".topbar") ||
           document.querySelector(".leads-kanban-board") ||
-          document.querySelector(".leads-view")
+          document.querySelector(".leads-view") ||
+          document.querySelector(".leads-mobile-container") ||
+          document.querySelector(".leads-mobile-feed-container") ||
+          document.querySelector(".mobile-top-bar") ||
+          document.querySelector(".mobile-tab-bar") ||
+          document.querySelector(".mobile-container") ||
+          (document.getElementById("root") && document.getElementById("root").children.length > 0)
       );
       return !isBoot && hasRealContainer;
     },
-    { timeout: 35000 },
-  );
+    { timeout: 20000 },
+  ).catch((e) => console.log("  [WARN] waitForFunction soft bypass:", e.message));
 
   await suppressOverlays(page);
   await sleep(1500);

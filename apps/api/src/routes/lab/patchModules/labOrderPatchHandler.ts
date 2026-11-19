@@ -38,6 +38,18 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 		});
 	}
 
+	const rawIdempotencyKey = request.headers["idempotency-key"];
+	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : null;
+	if (idempotencyKey) {
+		if (!UUID_REGEX.test(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const parsed = labOrderPatchSchema.safeParse(request.body);
 	if (!parsed.success) {
 		const firstError = parsed.error.issues[0]?.message ?? "Некорректные параметры обновления заказа ЗТЛ.";
@@ -50,39 +62,51 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 	const body = parsed.data;
 	const targetStatus = resolveTargetLabStatus(body);
 
-	const result = await executeLabOrderPatch(orgId, id, body, targetStatus);
+	try {
+		const result = await executeLabOrderPatch(orgId, id, body, targetStatus);
 
-	if (result.kind === "not_found") {
-		return reply.code(404).send({
-			error: "LabOrderNotFound",
-			message: "Заказ ЗТЛ не найден.",
+		if (result.kind === "not_found") {
+			return reply.code(404).send({
+				error: "LabOrderNotFound",
+				message: "Заказ ЗТЛ не найден.",
+			});
+		}
+
+		if (result.kind === "locked_installed") {
+			return reply.code(409).send({
+				error: "LabOrderLockedInstalled",
+				message: "Заказ-наряд ЗТЛ находится в статусе installed (припасован и сдан) и намертво заблокирован от редактирования.",
+			});
+		}
+
+		if (result.kind === "invalid_transition") {
+			return reply.code(409).send({
+				error: "InvalidStateTransition",
+				message: `Недопустимый переход статуса заказа ЗТЛ из «${result.currentStatus}» в «${result.targetStatus}».`,
+			});
+		}
+
+		const updated = result.updated;
+
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "LAB_ORDER_UPDATED",
+			payload: {
+				patientId: updated.patientId,
+				orderId: updated.id,
+				status: updated.status,
+			},
+		});
+
+		return reply.send({ success: true, order: updated });
+	} catch (err: unknown) {
+		request.log.error(
+			{ err, id, orgId },
+			"Failed to patch dental laboratory order in patchLabOrderHandler",
+		);
+		return reply.code(500).send({
+			error: "DatabaseError",
+			message: "Не удалось обновить наряд зуботехнической лаборатории. Повторите попытку позже.",
+			details: err instanceof Error ? err.message : String(err),
 		});
 	}
-
-	if (result.kind === "locked_installed") {
-		return reply.code(409).send({
-			error: "LabOrderLockedInstalled",
-			message: "Заказ-наряд ЗТЛ находится в статусе installed (припасован и сдан) и намертво заблокирован от редактирования.",
-		});
-	}
-
-	if (result.kind === "invalid_transition") {
-		return reply.code(409).send({
-			error: "InvalidStateTransition",
-			message: `Недопустимый переход статуса заказа ЗТЛ из «${result.currentStatus}» в «${result.targetStatus}».`,
-		});
-	}
-
-	const updated = result.updated;
-
-	wsBroker.broadcastToOrganization(orgId, {
-		type: "LAB_ORDER_UPDATED",
-		payload: {
-			patientId: updated.patientId,
-			orderId: updated.id,
-			status: updated.status,
-		},
-	});
-
-	return reply.send({ success: true, order: updated });
 }

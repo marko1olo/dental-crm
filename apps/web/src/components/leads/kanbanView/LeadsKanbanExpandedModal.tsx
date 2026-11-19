@@ -4,9 +4,9 @@
  */
 
 import React from "react";
-import type { Lead } from "../../../store/leadsStore";
+import type { Lead, LeadStatus } from "../../../store/leadsStore";
 import { ExpandedColumnFocusModal } from "../ExpandedColumnFocusModal";
-import { COLUMNS } from "../leadsKanbanConstants";
+import { COLUMNS, type ColumnConfig } from "../leadsKanbanConstants";
 import type { BookableDoctor } from "../leadsKanbanTypes";
 
 interface LeadsKanbanExpandedModalProps {
@@ -14,9 +14,9 @@ interface LeadsKanbanExpandedModalProps {
 	onClose: () => void;
 	leads: Lead[];
 	staff: BookableDoctor[];
-	updateLeadStatus: (id: string, s: any) => Promise<any>;
-	batchUpdateStage: (ids: string[], s: any) => Promise<any>;
-	updateLeadDetails: (id: string, payload: any) => Promise<any>;
+	updateLeadStatus: (id: string, s: LeadStatus) => Promise<unknown>;
+	batchUpdateStage: (ids: string[], s: LeadStatus) => Promise<unknown>;
+	updateLeadDetails: (id: string, payload: Partial<Lead>) => Promise<unknown>;
 	fetchLeads: () => void;
 	onEditLead: (l: Lead) => void;
 	onScheduleLead: (id: string) => void;
@@ -41,8 +41,8 @@ export const LeadsKanbanExpandedModal: React.FC<
 	onQuickSchedule,
 }) => {
 	if (!expandedColumnId) return null;
-	const activeCol = COLUMNS.find((c) => c.id === expandedColumnId) || {
-		id: (expandedColumnId as any) || "new",
+	const activeCol: ColumnConfig = COLUMNS.find((c) => c.id === expandedColumnId) ?? {
+		id: "new",
 		label: "Этап воронки",
 		color: "var(--teal-soft)",
 		icon: null,

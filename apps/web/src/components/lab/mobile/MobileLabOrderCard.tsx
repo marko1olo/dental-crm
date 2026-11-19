@@ -27,15 +27,15 @@ export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps)
 	const statusBadge = (() => {
 		const st = (order.status || "").toLowerCase();
 		if (["ready", "ready_in_clinic", "shipped"].includes(st)) {
-			return { label: "Готово в клинике", className: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30" };
+			return { label: "Готово в клинике", className: "bg-[var(--success-soft)] text-[var(--success-ink)] border-[var(--success-line)]" };
 		}
 		if (["fitting", "refitting", "try_in"].includes(st)) {
-			return { label: "Примерка", className: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30" };
+			return { label: "Примерка", className: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border-[var(--warning-line)]" };
 		}
 		if (["completed", "delivered_to_patient"].includes(st)) {
-			return { label: "Сдано", className: "bg-slate-500/15 text-slate-800 dark:text-slate-300 border-slate-500/30" };
+			return { label: "Сдано", className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
 		}
-		return { label: "В работе", className: "bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30" };
+		return { label: "В работе", className: "bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)]/30" };
 	})();
 
 	return (
@@ -90,7 +90,7 @@ export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps)
 					return (
 						<div key={st.id} className={`mobile-lab-stage-item ${isDone ? "is-done" : ""} ${isCurrent ? "is-current" : ""}`}>
 							<div className="mobile-lab-stage-circle">
-								{isDone ? <Check size={12} strokeWidth={3} /> : isCurrent ? <span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)]" /> : <span>{idx + 1}</span>}
+								{isDone ? <Check size={12} strokeWidth={3} /> : isCurrent ? <span className="w-2 h-2 rounded-full bg-[var(--primary)]" /> : <span>{idx + 1}</span>}
 							</div>
 							<span className="mobile-lab-stage-label">{st.label}</span>
 						</div>
@@ -100,7 +100,7 @@ export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps)
 
 			<div className="mobile-lab-footer-row">
 				<div className={`mobile-lab-deadline-badge ${deadline.isUrgent ? "is-urgent" : deadline.isReady ? "is-ready" : ""}`}>
-					{deadline.isUrgent ? <AlertTriangle size={13} className="shrink-0 text-rose-600" /> : <Clock size={13} className="shrink-0 text-[var(--teal,#0d9488)]" />}
+					{deadline.isUrgent ? <AlertTriangle size={13} className="shrink-0 text-rose-600" /> : <Clock size={13} className="shrink-0 text-[var(--primary)]" />}
 					<span>{deadline.text}</span>
 				</div>
 				<div className="flex items-center gap-1.5 font-mono font-bold text-xs">

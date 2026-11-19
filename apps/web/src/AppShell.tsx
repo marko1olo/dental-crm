@@ -23,7 +23,6 @@ import { DirectReportsLauncher } from "./components/appLayout/modalsContainerMod
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
-import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectDoctorWalletLauncher } from "./components/finance/doctorPayoutWallet/DirectDoctorWalletLauncher";
@@ -384,7 +383,6 @@ export function AppShell() {
 			<DirectClinicalBundlesLauncher />
 			<DirectInsuranceLauncher />
 			<DirectLoyaltyLauncher />
-			<DirectPerioLauncher />
 			<DirectRecallLauncher />
 			<DirectOrthodonticsLauncher />
 			<DirectDoctorWalletLauncher />

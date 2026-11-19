@@ -236,5 +236,29 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("btn-quick-norm") || html.includes("Норма"), "Anatomical norm button should render");
 		assert.ok(html.includes("Apex 0.0"), "Apex locator reading should be present");
 	});
+
+	it("ToothContextDrawer renders periodontal accordion with probing depth and mobility", () => {
+		const html = renderToString(
+			<ToothContextDrawer
+				isOpen={true}
+				onClose={() => {}}
+				toothNumber={16}
+				initialSection="perio"
+				patient={{
+					id: "pat-perio",
+					fullName: "Пародонтологический Пациент",
+				}}
+			/>,
+		);
+
+		assert.ok(html.includes("tooth-perio-accordion"), "Perio accordion should render in tooth context drawer");
+		assert.ok(html.includes("4. Пародонтология"), "Perio accordion title should be present");
+		assert.ok(html.includes("perio-probing-depth-section"), "Probing depth section should be present");
+		assert.ok(html.includes("perio-mobility-section"), "Tooth mobility section should be present");
+		assert.ok(html.includes("perio-bop-toggle-btn"), "BOP toggle button should be present");
+		assert.ok(html.includes("perio-set-norm-btn"), "1-click norm button should be present");
+		assert.ok(html.includes("perio-open-studio-btn"), "Perio studio link button should be present");
+		assert.ok(html.includes("perio-insert-diary-btn"), "Insert to diary button should be present");
+	});
 });
 

@@ -15,7 +15,7 @@ import type { EndoCanalData, EndoToothClinicalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { printHtmlViaIframe } from "../documents/printHtmlViaIframe";
 import {
 	CANONICAL_ENDO_PROTOCOLS, CANONICAL_IRRIGATION_SOLUTIONS, NITI_SYSTEM_OPTIONS,
@@ -79,7 +79,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		if (!props.isOpen || !props.patientId || props.initialCanals?.length) return;
 		let cancelled = false;
 		setIsLoadingFromDb(true);
-		fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, { headers: denteAdminSecretRequestHeaders() })
+		fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, { headers: getDenteAuthHeaders() })
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => {
 				if (!cancelled && data?.clinicalData?.canals?.length) {
@@ -274,25 +274,54 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		};
 
 		try {
-			// Протокол эндодонтического лечения направляется строго в дневник приёма / treatmentPlan (без засорения objectiveStatus)
-			useVisitStore.getState().setVisitNoteForm((prev) => ({
-				...prev,
-				treatmentPlan: prev.treatmentPlan?.trim() ? `${prev.treatmentPlan.trim()}\n\n${generatedProtocolText}` : generatedProtocolText,
-			}));
+			// Протокол эндодонтического лечения направляется в treatment (SOAP-дневник) и treatmentPlan без засорения objectiveStatus
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existingTreatment = prev.treatment?.trim() || "";
+				const updatedTreatment = existingTreatment ? `${existingTreatment}\n\n${generatedProtocolText}` : generatedProtocolText;
+				const existingPlan = prev.treatmentPlan?.trim() || "";
+				const updatedPlan = existingPlan ? `${existingPlan}\n\n${generatedProtocolText}` : generatedProtocolText;
+				return {
+					...prev,
+					treatment: updatedTreatment,
+					treatmentPlan: updatedPlan,
+				};
+			});
 		} catch { /* safe */ }
 
 		try {
-			if (typeof window !== "undefined" && costEstimate.services.length > 0) {
-				window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
-					detail: {
-						toothNumber: activeTooth, teethNumbers: [activeTooth],
-						services: costEstimate.services.map((s) => ({
-							code: s.code, code804n: s.code, name: s.title, nameRu: s.title,
-							price: Number(s.priceKopecks / 100n), priceRub: Number(s.priceKopecks / 100n),
-							amountKopecks: Number(s.priceKopecks), quantity: s.quantity || 1, toothNumber: activeTooth, category: "Эндодонтия",
-						})),
-					},
-				}));
+			if (costEstimate.services.length > 0) {
+				const store = useVisitStore.getState();
+				for (const s of costEstimate.services) {
+					store.addCompletedService({
+						code: s.code,
+						title: s.title,
+						price: Number(s.priceKopecks / 100n),
+						toothNumber: activeTooth,
+						toothCode: String(activeTooth),
+					});
+				}
+				store.applyServicesToToothState({
+					toothNumber: activeTooth,
+					services: costEstimate.services.map((s) => ({
+						code: s.code,
+						name: s.title,
+						price: Number(s.priceKopecks / 100n),
+						toothNumber: activeTooth,
+					})),
+				});
+
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							toothNumber: activeTooth, teethNumbers: [activeTooth],
+							services: costEstimate.services.map((s) => ({
+								code: s.code, code804n: s.code, name: s.title, nameRu: s.title,
+								price: Number(s.priceKopecks / 100n), priceRub: Number(s.priceKopecks / 100n),
+								amountKopecks: Number(s.priceKopecks), quantity: s.quantity || 1, toothNumber: activeTooth, category: "Эндодонтия",
+							})),
+						},
+					}));
+				}
 			}
 		} catch { /* soft */ }
 
@@ -331,7 +360,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		if (materialsEstimate.materials.length > 0) {
 			fetch("/api/inventory/deduct", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					materials: materialsEstimate.materials.map((m) => ({
 						inventoryItemId: m.itemId,
@@ -368,7 +397,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		}
 		if (props.patientId) {
 			fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
-				method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
 					toothNumber: activeTooth,
 					canals: sanitized,

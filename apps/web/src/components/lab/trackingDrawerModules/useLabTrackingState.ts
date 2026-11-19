@@ -79,8 +79,10 @@ export function useLabTrackingState({
 					...(ceramicTrialDate ? { ceramicTrialDate } : {}),
 					...(deliveryDate ? { deliveryDate } : {}),
 				});
+				showToast("Даты клинических примерок сохранены", "success");
+			} else {
+				showToast("Сохранение дат примерок не настроено в данном контексте", "error");
 			}
-			showToast("Даты клинических примерок сохранены", "success");
 		} catch (err: unknown) {
 			showToast(err instanceof Error ? err.message : "Ошибка сохранения дат", "error");
 		} finally { setIsUpdating(false); }

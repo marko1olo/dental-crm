@@ -5,9 +5,8 @@
  *
  * Verifies strict data isolation between tenants (Clinic A vs Clinic B):
  * 1. Document templates (custom templates, rendering with patient/visit PII gating, system template isolation).
- * 2. CRM Leak Detector (cross-tenant lead tampering and updates blocked with 404).
- * 3. Periodontogram (cross-tenant examination closing and deletion blocked with 404).
- * 4. Cash installments (cross-tenant contract and tranche inspection blocked with 404).
+ * 2. Periodontogram (cross-tenant examination closing and deletion blocked with 404).
+ * 3. Cash installments (cross-tenant contract and tranche inspection blocked with 404).
  */
 
 import assert from "node:assert/strict";
@@ -15,7 +14,6 @@ import test, { after, before } from "node:test";
 import type { FastifyInstance } from "fastify";
 import {
 	clinics,
-	crmLeakDetectorLeads,
 	documentTemplateCategories,
 	documentTemplates,
 	installmentContracts,
@@ -26,7 +24,6 @@ import {
 	users,
 } from "../db/schema.js";
 import { registerCashInstallmentsRoutes } from "../routes/cashInstallmentsRoutes.js";
-import { registerCrmLeakDetectorRoutes } from "../routes/crmLeakDetector.js";
 import { registerDocumentTemplateRoutes } from "../routes/documentTemplates.js";
 import { registerPeriodontogramRoutes } from "../routes/periodontogram/index.js";
 import { authTokenSecret } from "../security/authSecret.js";
@@ -51,7 +48,6 @@ const DOCTOR_B_ID = fixtureUuid(NAMESPACE, 13);
 const PATIENT_B_ID = fixtureUuid(NAMESPACE, 14);
 
 const TEMPLATE_A_ID = fixtureUuid(NAMESPACE, 21);
-const LEAD_A_ID = fixtureUuid(NAMESPACE, 22);
 const PERIO_A_ID = fixtureUuid(NAMESPACE, 23);
 const CONTRACT_A_ID = fixtureUuid(NAMESPACE, 24);
 const TRANCHE_A_ID = fixtureUuid(NAMESPACE, 25);
@@ -126,23 +122,6 @@ test("RED-TEAM INQUISITION: Multi-Tenancy & Database Cross-Tenant Isolation Gate
 					name: "Специфический договор клиники Альфа",
 					type: "common",
 					contentHtml: "<p>Договор клиники Альфа: {{patient.fullName}}</p>",
-				});
-
-				// CRM Leak Lead in Org A
-				await tx.insert(crmLeakDetectorLeads).values({
-					id: LEAD_A_ID,
-					organizationId: ORG_A_ID,
-					patientId: PATIENT_A_ID,
-					daysSinceLastVisit: 90,
-					lastVisitDate: new Date(),
-					lastDoctorId: DOCTOR_A_ID,
-					lastDoctorName: "Доктор Альфа Первый",
-					lastSpecialty: "Терапевт",
-					uncompletedPlanSumRub: 25000,
-					hasUncompletedPlan: true,
-					clinicalRiskReason: "Не завершено эндодонтическое лечение",
-					leadStatus: "new",
-					contactAttemptsCount: 0,
 				});
 
 				// Periodontogram Snapshot in Org A
@@ -225,7 +204,6 @@ test("RED-TEAM INQUISITION: Multi-Tenancy & Database Cross-Tenant Isolation Gate
 			// Setup Fastify App
 			app = createTenantTestApp();
 			await registerDocumentTemplateRoutes(app);
-			await registerCrmLeakDetectorRoutes(app);
 			await registerPeriodontogramRoutes(app);
 			await registerCashInstallmentsRoutes(app);
 			await app.ready();
@@ -381,40 +359,6 @@ test("RED-TEAM INQUISITION: Multi-Tenancy & Database Cross-Tenant Isolation Gate
 				0,
 				`Unauthenticated endpoint leaked ${leakedPrivateTemplates.length} private templates!`,
 			);
-		},
-	);
-
-	await suite.test(
-		"ATTACK 5: Doctor B cannot start, cancel or update CRM Leak Lead of Clinic A",
-		async () => {
-			if (!databaseReady) return;
-
-			// 1. Start lead
-			const startRes = await app.inject({
-				method: "POST",
-				url: `/api/crm/leak-detector/${LEAD_A_ID}/start-lead`,
-				headers: authHeadersB,
-			});
-			assert.equal(startRes.statusCode, 404, "Start lead of another tenant must return 404");
-
-			// 2. Cancel lead
-			const cancelRes = await app.inject({
-				method: "POST",
-				url: `/api/crm/leak-detector/${LEAD_A_ID}/cancel-lead`,
-				headers: authHeadersB,
-				payload: {
-					declineReason: "expensive",
-				},
-			});
-			assert.equal(cancelRes.statusCode, 404, "Cancel lead of another tenant must return 404");
-
-			// 3. Create task
-			const taskRes = await app.inject({
-				method: "POST",
-				url: `/api/crm/leak-detector/${LEAD_A_ID}/create-task`,
-				headers: authHeadersB,
-			});
-			assert.equal(taskRes.statusCode, 404, "Create task on foreign lead must return 404");
 		},
 	);
 

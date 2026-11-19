@@ -1,5 +1,5 @@
 import React from "react";
-import { Scan } from "lucide-react";
+import { Activity, Scan } from "lucide-react";
 import { ToothMolar, DentalSyringe, ToothDeciduous } from "../../icons/DentalIcons";
 import type { WarmAccordionSection } from "./toothDrawerTypes";
 
@@ -43,6 +43,16 @@ export const ToothDrawerQuickTabs: React.FC<ToothDrawerQuickTabsProps> = ({
 				<span>3. Снимок RVG</span>
 			</button>
 
+			<button
+				type="button"
+				onClick={() => setActiveSection("perio")}
+				className={`dente-quick-tab-btn ${activeSection === "perio" ? "active" : ""}`}
+				data-testid="tooth-quick-tab-perio"
+			>
+				<Activity size={14} />
+				<span>4. Пародонт</span>
+			</button>
+
 			{isPediatricTooth && (
 				<button
 					type="button"
@@ -50,7 +60,7 @@ export const ToothDrawerQuickTabs: React.FC<ToothDrawerQuickTabsProps> = ({
 					className={`dente-quick-tab-btn pediatric ${activeSection === "pediatric" ? "active" : ""}`}
 				>
 					<ToothDeciduous size={14} />
-					<span>4. Детский (Франкл)</span>
+					<span>5. Детский (Франкл)</span>
 				</button>
 			)}
 		</nav>

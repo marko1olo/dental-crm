@@ -28,7 +28,7 @@ export const ToothPediatricFooter: React.FC<ToothPediatricFooterProps> = ({
 				className="dente-primary-action-btn min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
 			>
 				<Printer size={15} />
-				<span>Печать памятки родителям</span>
+				<span>Печать памятки для родителей</span>
 			</button>
 		</div>
 	);

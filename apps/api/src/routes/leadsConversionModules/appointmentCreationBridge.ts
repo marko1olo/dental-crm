@@ -6,6 +6,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import type { Appointment } from "@dental/shared";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import type { db } from "../../db/client.js";
 import { chairs, crmLeads, users } from "../../db/schema.js";
@@ -22,7 +23,7 @@ type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export async function resolveDoctorAndChair(tx: DbTransaction, orgId: string, payload: ConvertLeadPayload) {
 	let doctor: { id: string } | undefined;
 	const candDoc = payload.doctorId;
-	if (candDoc && candDoc !== "default-doctor" && z.string().uuid().safeParse(candDoc).success) {
+	if (candDoc && z.string().uuid().safeParse(candDoc).success) {
 		const [found] = await tx.select({ id: users.id }).from(users).where(and(eq(users.id, candDoc), eq(users.organizationId, orgId), eq(users.isActive, true))).limit(1);
 		doctor = found;
 	}
@@ -31,10 +32,9 @@ export async function resolveDoctorAndChair(tx: DbTransaction, orgId: string, pa
 		doctor = fallback;
 	}
 
-	let resolvedChairId: string | undefined;
+	let resolvedChairId: string | null = null;
 	const candChair = payload.chairId;
-	const validChairUuid = candChair && candChair !== "default-chair" && z.string().uuid().safeParse(candChair).success;
-	if (validChairUuid && candChair) {
+	if (candChair && z.string().uuid().safeParse(candChair).success) {
 		const [c2] = await tx.select({ id: chairs.id }).from(chairs).where(
 			and(eq(chairs.id, candChair), eq(chairs.organizationId, orgId)),
 		).limit(1);
@@ -59,7 +59,9 @@ export async function convertLeadToAppointment(params: {
 	reply: FastifyReply;
 }) {
 	const { db, wsBroker, organizationId, leadId, payload, req, reply } = params;
-	const hasDates = Boolean(payload.appointmentStart?.trim() && payload.appointmentEnd?.trim());
+	const apptStart = payload.appointmentStart?.trim();
+	const apptEnd = payload.appointmentEnd?.trim();
+	const hasDates = Boolean(apptStart && apptEnd);
 
 	const result = await db.transaction(async (tx) => {
 		const [lead] = await tx.select().from(crmLeads).where(
@@ -84,8 +86,8 @@ export async function convertLeadToAppointment(params: {
 			decidedByUserId: changedByUserId,
 		});
 
-		let appointment: unknown = null;
-		if (hasDates && doctor) {
+		let appointment: Appointment | null = null;
+		if (hasDates && doctor && apptStart && apptEnd) {
 			const utm = extractUtmAttribution(lead.source, (lead.metadata as Record<string, unknown> | null) ?? null);
 			const reason = payload.reason || (Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 ? `Первичная консультация: ${lead.clinicalTags.join(", ")}` : (lead.notes ? `Первичная консультация: ${lead.notes.slice(0, 100)}` : "Первичная консультация"));
 			const commentParts = [payload.comment, lead.notes ? `Жалоба: ${lead.notes}` : null, lead.source ? `Канал: ${lead.source}` : null, utm.formattedUtm, Array.isArray(lead.clinicalTags) && lead.clinicalTags.length > 0 ? `Теги: ${lead.clinicalTags.join(", ")}` : null, lead.audioRecordUrl ? `Аудио: ${lead.audioRecordUrl}` : null, lead.transcriptionSnippet ? `Транскрипт: ${lead.transcriptionSnippet}` : null].filter(Boolean);
@@ -93,9 +95,9 @@ export async function convertLeadToAppointment(params: {
 			appointment = await createAppointmentInDb(organizationId, {
 				patientId: patient.id,
 				doctorUserId: doctor.id,
-				chairId: resolvedChairId,
-				startsAt: payload.appointmentStart!,
-				endsAt: payload.appointmentEnd!,
+				chairId: resolvedChairId ?? undefined,
+				startsAt: apptStart,
+				endsAt: apptEnd,
 				status: "planned",
 				reason,
 				comment: commentParts.length > 0 ? commentParts.join(" | ") : null,

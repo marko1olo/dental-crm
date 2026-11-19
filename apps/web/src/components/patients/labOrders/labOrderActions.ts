@@ -1,3 +1,4 @@
+import { generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
 import { type Canonical5LabStatus, buildLabAppointmentDraft } from "../../lab/labMath";
@@ -7,12 +8,42 @@ export async function transitionLabOrderStatus(orderId: string, targetStatus: Ca
 	try {
 		const res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, {
 			method: "PATCH",
-			headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+			headers: {
+				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
+				...denteAdminSecretRequestHeaders(),
+			},
 			body: JSON.stringify({ status: targetStatus }),
 		});
 		if (res.ok) {
-			showToast(`Статус наряда изменен: ${targetStatus}`, "success");
+			const labelMap: Record<string, string> = {
+				new: "Новый",
+				sent: "Отправлен в ЗТЛ",
+				in_progress: "В работе",
+				fitting: "На примерке",
+				received: "Получен в клинике",
+				ready: "Готов к сдаче",
+				completed: "Сдан пациенту",
+				installed: "Установлен",
+				refitting: "На переделке",
+				cancelled: "Отменен",
+			};
+			const statusLabel = labelMap[targetStatus] || targetStatus;
+			showToast(`Статус наряда изменен: ${statusLabel}`, "success");
 			onDone();
+			return;
+		}
+
+		const errData = await res.json().catch(() => null) as { error?: string; message?: string } | null;
+		const errorMessage = errData?.error || errData?.message;
+		if (res.status === 409) {
+			showToast(errorMessage || "Наряд уже зафиксирован (сдан) и заблокирован от изменений", "error");
+		} else if (res.status === 403) {
+			showToast(errorMessage || "Недостаточно прав для изменения статуса наряда ЗТЛ", "error");
+		} else if (res.status === 404) {
+			showToast(errorMessage || "Наряд ЗТЛ не найден", "error");
+		} else {
+			showToast(errorMessage || `Ошибка изменения статуса (${res.status})`, "error");
 		}
 	} catch {
 		showToast("Ошибка сети при смене статуса", "error");
@@ -60,13 +91,26 @@ export async function deleteLabOrder(id: string, onDone: () => void) {
 	try {
 		const res = await fetch(`/api/clinical/lab-orders/${id}`, {
 			method: "DELETE",
-			headers: denteAdminSecretRequestHeaders(),
+			headers: {
+				"Idempotency-Key": generateUuidV7(),
+				...denteAdminSecretRequestHeaders(),
+			},
 		});
 		if (res.ok) {
 			showToast("Заказ ЗТЛ удален", "success");
 			onDone();
+			return;
+		}
+		const errData = await res.json().catch(() => null) as { error?: string; message?: string } | null;
+		const errorMessage = errData?.error || errData?.message;
+		if (res.status === 409) {
+			showToast(errorMessage || "Невозможно удалить завершенный или заблокированный наряд", "error");
+		} else if (res.status === 403) {
+			showToast(errorMessage || "Недостаточно прав для удаления наряда", "error");
+		} else {
+			showToast(errorMessage || `Ошибка удаления (${res.status})`, "error");
 		}
 	} catch {
-		showToast("Ошибка удаления", "error");
+		showToast("Ошибка сети при удалении наряда", "error");
 	}
 }

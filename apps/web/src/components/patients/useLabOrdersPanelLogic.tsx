@@ -198,28 +198,39 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		presetsMenuRef,
 		showQuickForm,
 		setShowQuickForm,
-		selectedTeeth: [] as number[],
-		setSelectedTeeth: () => {},
-		restorationType: "crown",
-		setRestorationType: () => {},
-		material: "zirconia",
-		setMaterial: () => {},
-		shadeSystem: "vita_classical",
-		setShadeSystem: () => {},
-		colorVita: "A2",
-		setColorVita: () => {},
-		stumpShade: "ND2",
-		setStumpShade: () => {},
-		fittingDate: "",
-		setFittingDate: () => {},
-		dueDate: "",
-		setDueDate: () => {},
-		clinicalNotes: "",
-		setClinicalNotes: () => {},
-		calculatedMaterialCostKopecks: 0,
-		submitting: false,
-		handleQuickSubmit: async () => {},
-		handleOneClickCreate: async () => {},
+		handleFittingDateUpdate: async (
+			orderId: string,
+			dates: { frameworkTrialDate?: string | undefined; ceramicTrialDate?: string | undefined; deliveryDate?: string | undefined },
+		) => {
+			if (!orderId) return;
+			try {
+				const parts: string[] = [];
+				if (dates.frameworkTrialDate) parts.push(`Примерка каркаса: ${dates.frameworkTrialDate}`);
+				if (dates.ceramicTrialDate) parts.push(`Примерка керамики: ${dates.ceramicTrialDate}`);
+				if (dates.deliveryDate) parts.push(`Сдача: ${dates.deliveryDate}`);
+
+				const body: Record<string, unknown> = {
+					...(dates.deliveryDate ? { dueDate: dates.deliveryDate } : {}),
+					...(parts.length > 0 ? { notes: `Даты примерок: ${parts.join("; ")}` } : {}),
+				};
+
+				const res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					body: JSON.stringify(body),
+				});
+
+				if (!res.ok) {
+					const err = await res.json().catch(() => ({}));
+					throw new Error(err.message || "Ошибка обновления дат примерок");
+				}
+				void fetchOrders();
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : "Сбой сети при сохранении дат примерок";
+				showToast(msg, "error");
+				throw err;
+			}
+		},
 		fetchOrders,
 		handleStatusTransition,
 		handleScheduleAppointment,

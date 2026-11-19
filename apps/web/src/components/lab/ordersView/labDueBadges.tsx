@@ -53,29 +53,29 @@ export function renderLabDueBadge(order?: DentalLabOrderData | null): React.JSX.
 	switch (info.status) {
 		case "burning":
 			return (
-				<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800" data-testid="lab-due-burning">
-					<AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400 shrink-0 animate-pulse" />
+				<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--danger-soft)] text-[var(--danger-ink)] border border-[var(--danger-line)]" data-testid="lab-due-burning">
+					<AlertTriangle className="w-3 h-3 text-[var(--danger-ink)] shrink-0 animate-pulse" />
 					<span>Горит ({info.dateStr})</span>
 				</span>
 			);
 		case "today":
 			return (
-				<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700" data-testid="lab-due-today">
-					<Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+				<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]" data-testid="lab-due-today">
+					<Clock className="w-3 h-3 text-[var(--warning-ink)] shrink-0" />
 					<span>Сегодня</span>
 				</span>
 			);
 		case "in_transit":
 			return (
-				<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700" data-testid="lab-due-in-transit">
-					<Truck className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
+				<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/25" data-testid="lab-due-in-transit">
+					<Truck className="w-3 h-3 text-[var(--primary)] shrink-0" />
 					<span>В пути ({info.dateStr})</span>
 				</span>
 			);
 		case "ready":
 			return (
-				<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700" data-testid="lab-due-ready">
-					<CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+				<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)]" data-testid="lab-due-ready">
+					<CheckCircle2 className="w-3 h-3 text-[var(--success-ink)] shrink-0" />
 					<span>Готов ({info.dateStr})</span>
 				</span>
 			);

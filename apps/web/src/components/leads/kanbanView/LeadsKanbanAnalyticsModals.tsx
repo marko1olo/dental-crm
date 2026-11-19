@@ -13,9 +13,9 @@ const LeadsFunnelAnalyticsModal = lazy(() =>
 	})),
 );
 
-const CrmLeakDetectorDrawer = lazy(() =>
-	import("../../crm/CrmLeakDetectorDrawer").then((module) => ({
-		default: module.CrmLeakDetectorDrawer,
+const PatientRecallsHubModal = lazy(() =>
+	import("../../recalls/PatientRecallsHubModal").then((module) => ({
+		default: module.PatientRecallsHubModal,
 	})),
 );
 
@@ -53,7 +53,7 @@ export const LeadsKanbanAnalyticsModals: React.FC<
 
 			{isLeakDetectorOpen && (
 				<Suspense fallback={null}>
-					<CrmLeakDetectorDrawer
+					<PatientRecallsHubModal
 						isOpen={isLeakDetectorOpen}
 						onClose={onCloseLeakDetector}
 					/>

@@ -4,7 +4,7 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import { labItems, labOrders } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -33,11 +33,13 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 
 		const labOrderId = request.params.id;
 
-		const items = await db
-			.select()
-			.from(labItems)
-			.where(and(eq(labItems.organizationId, orgId), eq(labItems.labOrderId, labOrderId)))
-			.orderBy(labItems.toothFdi);
+		const items = await withTenantCtx(orgId, async (tx) => {
+			return tx
+				.select()
+				.from(labItems)
+				.where(and(eq(labItems.organizationId, orgId), eq(labItems.labOrderId, labOrderId)))
+				.orderBy(labItems.toothFdi);
+		});
 
 		return reply.send({ items });
 	});
@@ -64,16 +66,19 @@ export async function registerOrderItemsRoutes(app: FastifyInstance) {
 
 		const labOrderId = request.params.id;
 
-		const [order] = await db
-			.select({ id: labOrders.id })
-			.from(labOrders)
-			.where(
-				and(
-					eq(labOrders.id, labOrderId),
-					eq(labOrders.organizationId, orgId),
-				),
-			)
-			.limit(1);
+		const order = await withTenantCtx(orgId, async (tx) => {
+			const [found] = await tx
+				.select({ id: labOrders.id })
+				.from(labOrders)
+				.where(
+					and(
+						eq(labOrders.id, labOrderId),
+						eq(labOrders.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			return found;
+		});
 
 		if (!order) {
 			return reply.code(404).send({

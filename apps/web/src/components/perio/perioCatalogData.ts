@@ -12,6 +12,7 @@ import {
 	isFurcationEligibleTooth, PERIO_SITE_KEYS, PSR_SEXTANTS, rublesToKopecks,
 } from "@dental/shared";
 import { useVisitStore } from "../../store/visitStore";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 
 export {
@@ -171,23 +172,27 @@ export async function deductPeriodontalConsumablesSoftOverdraft(
 	const items = PERIODONTAL_CONSUMABLES_CATALOG[procedureKind] || [];
 	if (!items.length) return { success: true, deductedCount: 0, messageRu: "Расходные материалы не требуются (норма)" };
 	try {
-		for (const item of items) {
-			const payload = {
-				itemId: item.itemId, itemName: item.itemName, quantity: item.quantity,
-				reason: `Пародонтология: списание по протоколу (${procedureKind})`,
-				...(visitId ? { visitId } : {}), allowOverdraft: true,
-			};
-			try {
-				await fetch("/api/warehouse/soft-overdraft-deduct", {
-					method: "POST", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				});
-			} catch {
-				await fetch("/api/inventory/soft-overdraft-deduct", {
-					method: "POST", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				});
-			}
+		const payload = {
+			materials: items.map((it) => ({
+				inventoryItemId: it.itemId,
+				itemId: it.itemId,
+				name: it.itemName,
+				itemName: it.itemName,
+				quantity: it.quantity,
+			})),
+			reason: `Пародонтология: списание по протоколу (${procedureKind})`,
+			notes: `Протокол ${procedureKind}`,
+			allowOverdraft: true,
+			...(visitId ? { visitId } : {}),
+		};
+
+		const res = await fetch("/api/inventory/soft-overdraft-deduct", {
+			method: "POST",
+			headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+			body: JSON.stringify(payload),
+		});
+		if (!res.ok) {
+			console.warn("[PerioCatalog] Фоновое пакетное списание материалов завершилось со статусом:", res.status);
 		}
 		return { success: true, deductedCount: items.length, messageRu: `Списано ${items.length} наим. материалов (Soft Negative Stock)` };
 	} catch (err) {
@@ -393,10 +398,31 @@ export function applyTherapistPathologyPreset(teeth: readonly PerioToothRecord[]
 export function dispatchPresetSideEffects(result: PresetApplyResult, onInsertToProtocol?: (text: string) => void): void {
 	const { protocolText, service } = result;
 	if (protocolText) {
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n\n${protocolText}` : protocolText,
-		}));
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => ({
+				...prev,
+				objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n\n${protocolText}` : protocolText,
+			}));
+		} catch { /* safe */ }
+	}
+	if (service) {
+		try {
+			const priceKopecks = service.priceKopecks || rublesToKopecks(service.price || 0);
+			const priceRub = Math.round(Number(priceKopecks) / 100);
+			const store = useVisitStore.getState();
+			store.addCompletedService({
+				code: service.serviceCode || service.code,
+				title: service.name,
+				price: priceRub,
+			});
+			store.applyServicesToToothState({
+				services: [{
+					code: service.serviceCode || service.code,
+					name: service.name,
+					price: priceRub,
+				}],
+			});
+		} catch { /* safe store update */ }
 	}
 	if (typeof window !== "undefined") {
 		window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { soap: protocolText, mode: "smart_append" } }));

@@ -40,6 +40,18 @@ export async function deleteLabOrderHandler(request: FastifyRequest<{ Params: { 
 		});
 	}
 
+	const rawIdempotencyKey = request.headers["idempotency-key"];
+	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : null;
+	if (idempotencyKey) {
+		if (!UUID_REGEX.test(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный заголовок Idempotency-Key (ожидается UUID).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	const result = await withTenantCtx(orgId, async (tx) => {
 		return deleteLabOrderInDb(tx, orgId, id);
 	});

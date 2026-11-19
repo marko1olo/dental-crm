@@ -4,8 +4,6 @@ import { formatDurationTimer } from "../../../store/telephonyStore";
 import type { IncomingCallHeaderBarProps } from "./types";
 import { IncomingCallCapsuleBar } from "./IncomingCallCapsuleBar";
 
-export { IncomingCallCapsuleBar } from "./IncomingCallCapsuleBar";
-
 // Invariant test markers for tests inspecting IncomingCallHeaderBar:
 // data-testid="incoming-call-capsule"
 // data-testid="capsule-switch-secondary-line-btn"

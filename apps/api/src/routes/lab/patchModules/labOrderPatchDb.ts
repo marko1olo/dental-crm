@@ -9,15 +9,15 @@ import type { LabOrderPatchBody } from "./labOrderPatchSchema.js";
 
 const VALID_LAB_ORDER_STATUSES = new Set<string>(CANONICAL_PG_LAB_STATUSES);
 
-function toLabOrderStatus(status: string): LabOrderStatus {
+function toLabOrderStatus(status: string): LabOrderStatus | null {
 	const canonical = mapStageToCanonicalPgStatus(status);
-	return VALID_LAB_ORDER_STATUSES.has(canonical) ? (canonical as LabOrderStatus) : "draft";
+	return VALID_LAB_ORDER_STATUSES.has(canonical) ? (canonical as LabOrderStatus) : null;
 }
 
 export type PatchDbResult =
 	| { kind: "not_found" }
 	| { kind: "locked_installed" }
-	| { kind: "invalid_transition"; currentStatus: LabOrderStatus; targetStatus: LabOrderStatus }
+	| { kind: "invalid_transition"; currentStatus: LabOrderStatus; targetStatus: string }
 	| { kind: "ok"; updated: typeof labOrders.$inferSelect };
 
 export async function executeLabOrderPatch(
@@ -42,24 +42,44 @@ export async function executeLabOrderPatch(
 			body.stage === "correction_required" ||
 			body.stage === "refitting";
 
-		if (currentOrder.isLockedInstalled && !isWarrantyRequest) {
+		const isClinicalNotesOnly =
+			!targetStatus &&
+			!body.stage &&
+			!body.dueDate &&
+			(body.clinicalNotes !== undefined ||
+				body.labComments !== undefined ||
+				body.notes !== undefined ||
+				body.attachedImageUrl !== undefined);
+
+		if (currentOrder.isLockedInstalled && !isWarrantyRequest && !isClinicalNotesOnly) {
 			return { kind: "locked_installed" };
 		}
 
-		const canonicalTarget = targetStatus ? toLabOrderStatus(targetStatus) : undefined;
+		let canonicalTarget: LabOrderStatus | undefined = undefined;
+		if (targetStatus) {
+			const resolved = toLabOrderStatus(targetStatus);
+			if (!resolved) {
+				const currentStatus = toLabOrderStatus(currentOrder.status) ?? "draft";
+				return { kind: "invalid_transition", currentStatus, targetStatus };
+			}
+			canonicalTarget = resolved;
+		}
 
 		if (canonicalTarget && canonicalTarget !== currentOrder.status) {
-			const currentStatus = toLabOrderStatus(currentOrder.status);
+			const currentStatus = toLabOrderStatus(currentOrder.status) ?? "draft";
 			if (!isPermittedLabStatusTransition(currentStatus, canonicalTarget)) {
 				return { kind: "invalid_transition", currentStatus, targetStatus: canonicalTarget };
 			}
 		}
 
 		const now = new Date();
-		const auditFields: Partial<{ sentAt: Date; completedAt: Date; cancelledAt: Date }> = {};
+		const auditFields: Partial<{ sentAt: Date | null; completedAt: Date | null; cancelledAt: Date | null }> = {};
 		if (canonicalTarget === "sent" && !currentOrder.sentAt) auditFields.sentAt = now;
 		else if (canonicalTarget === "completed" && !currentOrder.completedAt) auditFields.completedAt = now;
 		else if (canonicalTarget === "cancelled" && !currentOrder.cancelledAt) auditFields.cancelledAt = now;
+		else if (canonicalTarget && canonicalTarget !== "cancelled" && currentOrder.cancelledAt) {
+			auditFields.cancelledAt = null; // Сброс метки отмены при реактивации наряда
+		}
 
 		let updatedClinicalNotes = currentOrder.clinicalNotes;
 		if (body.clinicalNotes !== undefined) {
@@ -78,7 +98,14 @@ export async function executeLabOrderPatch(
 		if (updatedClinicalNotes !== undefined) updateValues.clinicalNotes = updatedClinicalNotes;
 		if (body.labComments !== undefined) updateValues.labComments = body.labComments;
 		if (body.attachedImageUrl !== undefined) updateValues.attachedImageUrl = body.attachedImageUrl;
-		if (body.dueDate !== undefined) updateValues.dueDate = body.dueDate ? new Date(body.dueDate) : null;
+		if (body.dueDate !== undefined) {
+			if (body.dueDate) {
+				const parsedDate = new Date(body.dueDate);
+				updateValues.dueDate = Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+			} else {
+				updateValues.dueDate = null;
+			}
+		}
 
 		const [updated] = await tx
 			.update(labOrders)

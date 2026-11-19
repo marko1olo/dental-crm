@@ -124,6 +124,7 @@ export type VisitNoteField =
 	| "treatmentPlan";
 export type VisitNoteForm = Record<VisitNoteField, string> & {
 	recommendations?: string;
+	treatment?: string;
 };
 
 export const emptyVisitNoteForm: VisitNoteForm = {

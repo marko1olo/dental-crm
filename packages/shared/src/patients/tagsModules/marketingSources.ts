@@ -69,13 +69,6 @@ export const DENTE_MARKETING_CHANNELS = MARKETING_CHANNELS;
 export const DENTE_MARKETING_SOURCES_CATALOG = MARKETING_SOURCES_CATALOG;
 export const DENTE_MARKETING_BY_CHANNEL = MARKETING_BY_CHANNEL;
 
-// Deprecated aliases for backward compatibility (Mandates 8x/8ap: use DENTE_* or MARKETING_*)
-export const STOMX_MARKETING_CHANNELS = MARKETING_CHANNELS;
-export const STOMX_MARKETING_SOURCES = MARKETING_SOURCES;
-export const STOMX_MARKETING_SOURCES_CATALOG = MARKETING_SOURCES_CATALOG;
-export const STOMX_MARKETING_BY_CHANNEL = MARKETING_BY_CHANNEL;
-export const stomxMarketingChannelSchema = marketingChannelSchema;
-
 export function getMarketingChannelLabel(channel: MarketingChannel | string): string {
 	return MARKETING_BY_CHANNEL[channel as MarketingChannel]?.nameRu ?? channel;
 }

@@ -54,8 +54,8 @@ function getStatusMeta(status: string): StatusMeta {
 			return {
 				label: "В работе в ЗТЛ",
 				className: "bg-[var(--warning-soft,rgba(245,158,11,0.12))] text-[var(--warning-ink,#92400e)] border-[var(--warning-line,rgba(245,158,11,0.3))]",
-				nextStatus: "refitting",
-				nextActionLabel: "На примерку",
+				nextStatus: "received",
+				nextActionLabel: "Получен в клинике",
 			};
 		case "shipped":
 		case "fitting":

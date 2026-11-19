@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { isValidUuid } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../../security/medicalAuditTrail.js";
@@ -14,6 +15,25 @@ import { insertExpressLabOrder } from "./expressOrderDbOperations.js";
 export async function handleCreateExpressOrder(request: FastifyRequest, reply: FastifyReply) {
 	const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
 	if (!orgId) return;
+
+	const rawIdempotencyKey =
+		(request.headers["idempotency-key"] as string | undefined) ??
+		(request.headers["x-idempotency-key"] as string | undefined) ??
+		(request.body && typeof request.body === "object"
+			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+			  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+			: undefined);
+
+	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+	if (idempotencyKey) {
+		if (!isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Заголовок Idempotency-Key должен содержать корректный UUID (рекомендуется UUIDv7).",
+			});
+		}
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
 
 	const identity = getRequestIdentity(request);
 	const staffRole = identity.role ?? request.user?.role ?? null;

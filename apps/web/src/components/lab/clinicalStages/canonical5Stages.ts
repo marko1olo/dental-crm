@@ -32,7 +32,7 @@ export const CANONICAL_5_CLINICAL_LAB_STATUSES: readonly Canonical5LabStatusItem
 		labelRu: "3. Нанесение керамики (Примерка у пациента)",
 		shortLabelRu: "Нанесение керамики",
 		descRu: "Клиническая примерка каркаса, нанесение керамики, восковой моделировки или бисквита",
-		badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+		badgeClass: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]",
 	},
 	{
 		id: "ready",
@@ -84,7 +84,7 @@ export const CANONICAL_MANUFACTURING_5_STAGES: readonly CanonicalManufacturing5S
 		labelRu: "3. Нанесение керамики",
 		shortLabelRu: "Нанесение керамики",
 		descRu: "Послойная облицовка керамикой, глазурование и индивидуализация",
-		badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+		badgeClass: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]",
 	},
 	{
 		id: "ready_in_clinic",
@@ -128,7 +128,7 @@ export const CANONICAL_6_ORTHOPEDIC_LIFECYCLE_STAGES: readonly CanonicalOrthoped
 	{ id: "impression_taken", step: 1, labelRu: "1. Снят слепок (интраоральный скан)", shortLabelRu: "Снят слепок", descRu: "Сняты рабочие и вспомогательные оттиски или получен оптический 3D-скан челюстей", badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300" },
 	{ id: "courier_sent", step: 2, labelRu: "2. Отправлен курьером в ЗТЛ", shortLabelRu: "Курьер в ЗТЛ", descRu: "Оттиски / модели и наряд-заказ переданы курьерской службе для доставки в лабораторию", badgeClass: "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300" },
 	{ id: "framework_fitting", step: 3, labelRu: "3. Каркас на примерку", shortLabelRu: "Каркас на примерку", descRu: "Каркас (металл / цирконий / PEEK) поступил в клинику для клинической примерки", badgeClass: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300" },
-	{ id: "ceramic_layering", step: 4, labelRu: "4. Нанесение керамики", shortLabelRu: "Нанесение керамики", descRu: "Послойная облицовка керамической массой, индивидуализация, глазурование", badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300" },
+	{ id: "ceramic_layering", step: 4, labelRu: "4. Нанесение керамики", shortLabelRu: "Нанесение керамики", descRu: "Послойная облицовка керамической массой, индивидуализация, глазурование", badgeClass: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]" },
 	{ id: "ready_in_clinic", step: 5, labelRu: "5. Готовая работа в клинике", shortLabelRu: "Готовая работа", descRu: "Готовая ортопедическая конструкция доставлена в клинику и прошла входной контроль", badgeClass: "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300" },
 	{ id: "patient_fixation", step: 6, labelRu: "6. Фиксация в полости рта", shortLabelRu: "Фиксация", descRu: "Конструкция окончательно зафиксирована в полости рта (постоянный цемент / винт)", badgeClass: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300" },
 ] as const;

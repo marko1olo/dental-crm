@@ -34,6 +34,7 @@ export type WarmAccordionSection =
 	| "surfaces_endo"
 	| "anesthesia"
 	| "rvg_xray"
+	| "perio"
 	| "pediatric"
 	| null;
 
@@ -62,6 +63,7 @@ export interface ToothContextDrawerProps {
 	readonly onOpenParentMemo?: (() => void) | undefined;
 	readonly onOpenHistory?: ((toothNumber: number) => void) | undefined;
 	readonly onOpenEndo?: ((toothNumber: number) => void) | undefined;
+	readonly onOpenPerio?: ((toothNumber: number) => void) | undefined;
 	readonly onSetRecall?: ((toothNumber: number, cycleType: string, monthsOffset: number) => void) | undefined;
 	readonly initialSection?: WarmAccordionSection | undefined;
 	readonly className?: string | undefined;

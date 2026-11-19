@@ -63,11 +63,11 @@ import {
 	isStatutoryLegalRepresentative,
 	stomxRepresentativeTypeSchema,
 	// 3. Marketing sources
-	STOMX_MARKETING_BY_CHANNEL,
-	STOMX_MARKETING_CHANNELS,
-	STOMX_MARKETING_SOURCES,
-	STOMX_MARKETING_SOURCES_CATALOG,
-	stomxMarketingChannelSchema,
+	DENTE_MARKETING_BY_CHANNEL,
+	DENTE_MARKETING_CHANNELS,
+	DENTE_MARKETING_SOURCES,
+	DENTE_MARKETING_SOURCES_CATALOG,
+	marketingChannelSchema,
 	// 4. Appointment reasons & doctor blocks
 	STOMX_APPT_REASON_TYPES,
 	STOMX_APPT_REASONS,
@@ -130,19 +130,19 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 		});
 
 		it("1.3 Marketing channels & lead sources catalogs are fully exported and valid", () => {
-			assert.ok(Array.isArray(STOMX_MARKETING_CHANNELS), "STOMX_MARKETING_CHANNELS must be an array");
-			assert.ok(STOMX_MARKETING_CHANNELS.includes("yandex"));
-			assert.ok(STOMX_MARKETING_CHANNELS.includes("gis2"));
-			assert.ok(STOMX_MARKETING_CHANNELS.includes("prodoctorov"));
+			assert.ok(Array.isArray(DENTE_MARKETING_CHANNELS), "DENTE_MARKETING_CHANNELS must be an array");
+			assert.ok(DENTE_MARKETING_CHANNELS.includes("yandex"));
+			assert.ok(DENTE_MARKETING_CHANNELS.includes("gis2"));
+			assert.ok(DENTE_MARKETING_CHANNELS.includes("prodoctorov"));
 
-			assert.ok(Array.isArray(STOMX_MARKETING_SOURCES_CATALOG), "STOMX_MARKETING_SOURCES_CATALOG must be an array");
-			assert.ok(STOMX_MARKETING_SOURCES_CATALOG.length >= 10);
-			assert.ok(STOMX_MARKETING_BY_CHANNEL.yandex !== undefined);
+			assert.ok(Array.isArray(DENTE_MARKETING_SOURCES_CATALOG), "DENTE_MARKETING_SOURCES_CATALOG must be an array");
+			assert.ok(DENTE_MARKETING_SOURCES_CATALOG.length >= 10);
+			assert.ok(DENTE_MARKETING_BY_CHANNEL.yandex !== undefined);
 
-			assert.ok(Array.isArray(STOMX_MARKETING_SOURCES), "STOMX_MARKETING_SOURCES must be an array");
-			assert.ok(STOMX_MARKETING_SOURCES.length >= 8);
+			assert.ok(Array.isArray(DENTE_MARKETING_SOURCES), "DENTE_MARKETING_SOURCES must be an array");
+			assert.ok(DENTE_MARKETING_SOURCES.length >= 8);
 
-			assert.ok(stomxMarketingChannelSchema.safeParse("yandex").success);
+			assert.ok(marketingChannelSchema.safeParse("yandex").success);
 		});
 
 		it("1.4 Appointment visit reasons & doctor blocking intervals catalog is fully exported and valid", () => {

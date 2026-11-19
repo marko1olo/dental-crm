@@ -12,8 +12,8 @@ export const LAB_ORDER_STAGES = [
 		name: "2. Примерка назначена",
 		desc: "Работа изготовлена ЗТЛ, назначена дата клинической примерки в расписании",
 		step: 2,
-		color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300",
-		badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+		color: "text-[var(--warning-ink)] bg-[var(--warning-soft)] border-[var(--warning-line)]",
+		badgeColor: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]",
 	},
 	{
 		id: "delivered_completed" as const,

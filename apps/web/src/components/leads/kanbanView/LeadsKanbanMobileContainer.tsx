@@ -7,6 +7,7 @@ import React from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import type { Lead } from "../../../store/leadsStore";
 import { LeadsMobileFeedView } from "../LeadsMobileFeedView";
+import type { LeadQuickStatusChangeHandler } from "./types";
 
 interface LeadsKanbanMobileContainerProps {
 	leads: Lead[];
@@ -15,12 +16,7 @@ interface LeadsKanbanMobileContainerProps {
 	modals: React.ReactNode;
 	onNewLead: () => void;
 	onEditLead: (lead: Lead) => void;
-	onStatusChange: (
-		e: React.DragEvent | unknown,
-		id: string,
-		status: Lead["status"],
-		options?: Record<string, unknown> | undefined,
-	) => void;
+	onStatusChange: LeadQuickStatusChangeHandler;
 	onSchedule: (id: string) => void;
 	onQuickSchedule: (id: string) => void;
 	onCreatePatient: (lead: Lead) => void;

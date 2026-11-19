@@ -222,7 +222,15 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				dueDate: effectiveDueDate, labCostKopecks: totalLabCostKopecks, patientPriceKopecks: totalPatientPriceKopecks, isUrgent,
 				notes: notes.trim() || undefined, status: "sent",
 			};
-			const reqOpts = { method: "POST", headers: { ...denteAdminSecretRequestHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(payload) };
+			const reqOpts = {
+				method: "POST",
+				headers: {
+					...denteAdminSecretRequestHeaders(),
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				},
+				body: JSON.stringify(payload),
+			};
 			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, reqOpts);
 			if (res.ok) {
 				const responseData = await res.json().catch(() => null);

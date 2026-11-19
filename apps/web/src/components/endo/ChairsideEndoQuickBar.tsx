@@ -12,7 +12,7 @@ import type { EndoCanalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
 	calculateEndoBillingAndMaterialsEstimate, getChairsideDefaultCanals, getAnatomicalWorkingLength,
 	type EndoStageStamp, type QuickCanalState,
@@ -75,11 +75,11 @@ export function executeChairsideTransferToDiary({
 	const soapProtocol = generateSoapEndoProtocol({ activeTooth, toothAnatomicalName, currentCanals: canals, toothState });
 
 	try {
-		// Протокол направляется строго в treatmentPlan (дневник лечения) без засорения objectiveStatus
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			treatmentPlan: prev.treatmentPlan?.trim() ? `${prev.treatmentPlan.trim()}\n\n${soapProtocol}` : soapProtocol,
-		}));
+		// Протокол направляется в treatment (SOAP-дневник) и treatmentPlan без засорения objectiveStatus
+		useVisitStore.getState().setVisitNoteForm((prev) => {
+			const tr = prev.treatment?.trim() || "", pl = prev.treatmentPlan?.trim() || "";
+			return { ...prev, treatment: tr ? `${tr}\n\n${soapProtocol}` : soapProtocol, treatmentPlan: pl ? `${pl}\n\n${soapProtocol}` : soapProtocol };
+		});
 	} catch { /* safe */ }
 
 	const sharedCanals: EndoCanalData[] = canals.map((c) => ({
@@ -101,51 +101,47 @@ export function executeChairsideTransferToDiary({
 			obturationTechnique: isTemp ? "Временная обтурация Ca(OH)2" : isBio ? "Биокерамика (гуттаперча + биокерамический силер)" : "Гуттаперча + Силер (AH Plus)", sealer: canals[0]?.sealer || "AH Plus",
 		});
 
-		if (typeof window !== "undefined" && billing.services804n.length > 0) {
-			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
-				detail: {
-					toothNumber: activeTooth, teethNumbers: [activeTooth],
-					services: billing.services804n.map((s) => ({
-						code: s.code804n, code804n: s.code804n, name: s.title, nameRu: s.title,
-						price: s.priceRub, priceRub: s.priceRub, quantity: s.quantity || 1, toothNumber: activeTooth, category: "Эндодонтия",
-					})),
-				},
-			}));
+		if (billing.services804n.length > 0) {
+			try {
+				const store = useVisitStore.getState();
+				for (const s of billing.services804n) {
+					store.addCompletedService({ code: s.code804n, title: s.title, price: s.priceRub, toothNumber: activeTooth, toothCode: String(activeTooth) });
+				}
+				store.applyServicesToToothState({ toothNumber: activeTooth, services: billing.services804n.map((s) => ({ code: s.code804n, name: s.title, price: s.priceRub, toothNumber: activeTooth })) });
+			} catch { /* safe store update */ }
 
-			if (billing.materials.length > 0) {
-				window.dispatchEvent(new CustomEvent("dente-warehouse-material-deducted", {
-					detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Обтурация каналов зуба #${activeTooth} (Мандат 8aa Soft Negative Stock)` },
-				}));
-				window.dispatchEvent(new CustomEvent("dente-inventory-writeoff-batch", {
-					detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})` },
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						toothNumber: activeTooth, teethNumbers: [activeTooth],
+						services: billing.services804n.map((s) => ({ code: s.code804n, code804n: s.code804n, name: s.title, nameRu: s.title, price: s.priceRub, priceRub: s.priceRub, quantity: s.quantity || 1, toothNumber: activeTooth, category: "Эндодонтия" })),
+					},
 				}));
 
-				fetch("/api/inventory/deduct", {
-					method: "POST",
-					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({
-						materials: billing.materials.map((m) => ({
-							inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName,
-							quantity: m.quantity, unitCostRub: m.costPriceKopecks ? (m.costPriceKopecks / 100) : 0,
-						})),
-						allowOverdraft: true,
-						reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
-						notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
-					}),
-				})
-					.then(async (res) => {
-						if (!res.ok) console.warn("[ChairsideEndoQuickBar] Списание завершилось со статусом:", res.status);
-					})
-					.catch((err) => {
-						console.error("[ChairsideEndoQuickBar] Ошибка списания:", err);
-						showToast("Склад: задержка фонового списания (Soft Overdraft сохранён)", "warning", 3000);
-					});
+				if (billing.materials.length > 0) {
+					window.dispatchEvent(new CustomEvent("dente-warehouse-material-deducted", {
+						detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Обтурация каналов зуба #${activeTooth} (Мандат 8aa Soft Negative Stock)` },
+					}));
+					window.dispatchEvent(new CustomEvent("dente-inventory-writeoff-batch", {
+						detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})` },
+					}));
+
+					fetch("/api/inventory/deduct", {
+						method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({
+							materials: billing.materials.map((m) => ({ inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName, quantity: m.quantity, unitCostRub: m.costPriceKopecks ? (m.costPriceKopecks / 100) : 0 })),
+							allowOverdraft: true, reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
+							notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
+						}),
+					}).then(async (res) => { if (!res.ok) console.warn("[ChairsideEndoQuickBar] Списание завершилось со статусом:", res.status); })
+						.catch((err) => { console.error("[ChairsideEndoQuickBar] Ошибка списания:", err); showToast("Склад: задержка фонового списания (Soft Overdraft сохранён)", "warning", 3000); });
+				}
 			}
 		}
 	} catch { /* soft */ }
 	if (patientId) {
 		fetch(`/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
-			method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+			method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({
 				toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi",
 				radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, ...(visitId ? { visitId } : {}),

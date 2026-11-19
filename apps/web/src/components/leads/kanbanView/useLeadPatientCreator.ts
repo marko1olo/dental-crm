@@ -7,10 +7,18 @@ import { useState } from "react";
 import type { Lead } from "../../../store/leadsStore";
 import { showToast } from "../../GlobalToast";
 
+export interface LeadPatientCreationResult {
+	success?: boolean | undefined;
+	alreadyExisted?: boolean | undefined;
+	patient?: unknown;
+	patientId?: string | undefined;
+	message?: string | undefined;
+}
+
 export function useLeadPatientCreator(
 	createPatientFromLead: (
 		leadId: string,
-	) => Promise<{ alreadyExisted?: boolean; patient?: any; patientId?: string; message?: string }>,
+	) => Promise<LeadPatientCreationResult>,
 	fetchLeads: () => Promise<void> | void,
 	handleOpenPatientCard: (id: string) => void,
 ) {
@@ -35,7 +43,14 @@ export function useLeadPatientCreator(
 		setCreatingPatientLeadId(lead.id);
 		try {
 			const res = await createPatientFromLead(lead.id);
-			const targetPatientId = res.patientId || (res.patient as any)?.id;
+			const patientObj =
+				res.patient &&
+				typeof res.patient === "object" &&
+				"id" in res.patient &&
+				typeof (res.patient as { id: unknown }).id === "string"
+					? (res.patient as { id: string })
+					: null;
+			const targetPatientId = res.patientId || patientObj?.id;
 			if (res.alreadyExisted) {
 				showToast(
 					res.message || "Пациент с таким номером уже есть в базе клиники",

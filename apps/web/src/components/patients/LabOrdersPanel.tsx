@@ -227,6 +227,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 					onStageUpdate={async (orderId, newStage) => {
 						logic.handleStatusTransition(orderId, newStage);
 					}}
+					onFittingDateUpdate={logic.handleFittingDateUpdate}
 				/>
 			)}
 		</div>

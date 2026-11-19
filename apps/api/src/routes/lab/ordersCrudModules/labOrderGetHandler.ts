@@ -21,7 +21,7 @@ export async function getLabOrdersHandler(request: FastifyRequest, reply: Fastif
 		reply,
 		"lab orders read",
 	);
-	if (!orgId) return reply;
+	if (!orgId) return;
 
 	const identity = getRequestIdentity(request);
 	const staffRole = identity.role ?? request.user?.role ?? null;
@@ -51,18 +51,30 @@ export async function getLabOrdersHandler(request: FastifyRequest, reply: Fastif
 	}
 	const patientId = parsedQuery.data.patientId;
 
-	const orders = await withTenantCtx(orgId, async (tx) => {
-		const current = await selectLabOrdersQuery(tx, orgId, patientId);
-		if (
-			current.length === 0 &&
-			!patientId &&
-			(orgId === DEMO_SHOWCASE_ORG_ID || isDemoOrganizationId(orgId))
-		) {
-			await seedDemoLabOrdersIfEmpty(tx, orgId);
-			return selectLabOrdersQuery(tx, orgId, patientId);
-		}
-		return current;
-	});
+	try {
+		const orders = await withTenantCtx(orgId, async (tx) => {
+			const current = await selectLabOrdersQuery(tx, orgId, patientId);
+			if (
+				current.length === 0 &&
+				!patientId &&
+				(orgId === DEMO_SHOWCASE_ORG_ID || isDemoOrganizationId(orgId))
+			) {
+				await seedDemoLabOrdersIfEmpty(tx, orgId);
+				return selectLabOrdersQuery(tx, orgId, patientId);
+			}
+			return current;
+		});
 
-	return orders;
+		return reply.code(200).send(orders);
+	} catch (err: unknown) {
+		request.log.error(
+			{ err, orgId, patientId },
+			"Failed to load dental laboratory orders in labOrderGetHandler",
+		);
+		return reply.code(500).send({
+			error: "DatabaseError",
+			message: "Не удалось загрузить наряд-заказы зуботехнической лаборатории. Повторите попытку позже.",
+			details: err instanceof Error ? err.message : String(err),
+		});
+	}
 }

@@ -49,7 +49,7 @@ export const LeadKanbanColumn: React.FC<LeadKanbanColumnProps> = ({
 				count={columnLeads.length}
 				revenue={columnRevenue}
 				breachedCount={breachedLeadsCount}
-				onExpandColumn={(id) => onExpandColumn(id as any)}
+				onExpandColumn={onExpandColumn}
 			/>
 
 			<div className="leads-kanban-column-cards">

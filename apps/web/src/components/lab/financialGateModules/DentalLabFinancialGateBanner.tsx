@@ -28,8 +28,8 @@ export function DentalLabFinancialGateBanner({
 		<div
 			className={`flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2 rounded-xl text-xs font-medium border shadow-2xs ${
 				isCleared
-					? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
-					: "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300"
+					? "bg-[var(--success-soft)] border-[var(--success-line)] text-[var(--success-ink)]"
+					: "bg-[var(--warning-soft)] border-[var(--warning-line)] text-[var(--warning-ink)]"
 			}`}
 			data-testid={
 				isCleared ? "lab-gate-banner-cleared" : "lab-gate-banner-blocked"
@@ -39,12 +39,12 @@ export function DentalLabFinancialGateBanner({
 				{isCleared ? (
 					<CheckCircle2
 						size={16}
-						className="text-emerald-600 dark:text-emerald-400 shrink-0"
+						className="text-[var(--success-ink)] shrink-0"
 					/>
 				) : (
 					<AlertCircle
 						size={16}
-						className="text-amber-600 dark:text-amber-400 shrink-0"
+						className="text-[var(--warning-ink)] shrink-0"
 					/>
 				)}
 				<div className="flex flex-col">
@@ -61,7 +61,7 @@ export function DentalLabFinancialGateBanner({
 
 			{hasOverride ? (
 				<span
-					className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-800 dark:text-emerald-200 font-semibold text-xs inline-flex items-center gap-1.5"
+					className="px-2.5 py-1 rounded-lg bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] font-semibold text-xs inline-flex items-center gap-1.5"
 					data-testid="lab-override-active-badge"
 				>
 					<Check size={14} className="shrink-0" />
@@ -79,7 +79,7 @@ export function DentalLabFinancialGateBanner({
 								reason: "Клиническое решение лечащего врача",
 							})
 						}
-						className="min-h-[34px] px-3 py-1.5 rounded-lg border border-teal-600/40 bg-teal-500/15 hover:bg-teal-500/25 text-teal-900 dark:text-teal-100 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-[0.98]"
+						className="min-h-[34px] px-3 py-1.5 rounded-lg border border-[var(--primary)]/40 bg-[var(--primary)]/15 hover:bg-[var(--primary)]/25 text-[var(--primary)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs active:scale-[0.98]"
 						data-testid="btn-lab-override-financial-gate"
 						title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
 					>

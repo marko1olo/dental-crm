@@ -15,6 +15,8 @@ import {
 } from "@dental/shared";
 import { Activity, Check, FileText, Info, Printer, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { useVisitStore } from "../../store/visitStore";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
 	applyExpressPerioPreset, applyHealthyPeriodontiumPreset, applyUpperJawNormPreset,
 	applyLowerJawNormPreset, applyZeroBopPreset, applyZeroCalculusAndPlaquePreset,
@@ -70,7 +72,9 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 		async function fetchPerio() {
 			try {
-				const res = await fetch(`/api/periodontogram/${encodeURIComponent(safePatientId)}`);
+				const res = await fetch(`/api/periodontogram/${encodeURIComponent(safePatientId)}`, {
+					headers: getDenteAuthHeaders(),
+				});
 				if (!res.ok) { console.warn("[PerioStudio] Server responded with error status:", res.status); return; }
 				const json = await res.json();
 				if (isCancelled || !json.success || !json.data) return;
@@ -124,6 +128,12 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const dispatchPerioSoapSync = useCallback((currentTeeth: readonly PerioToothRecord[]) => {
 		const text = generatePerioProtocolText(currentTeeth);
 		if (onInsertToProtocol) onInsertToProtocol(text);
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existing = prev.objectiveStatus?.trim() || "";
+				return { ...prev, objectiveStatus: existing ? `${existing}\n\n${text}` : text };
+			});
+		} catch { /* safe */ }
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { statusLocalis: text, objectiveStatus: text, mode: "smart_append" } }));
 		}
@@ -141,7 +151,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					plaque: Boolean(s.plaque), calculus: Boolean(s.calculus), suppuration: Boolean(s.suppuration),
 				})));
 				const res = await fetch(`/api/periodontogram/${encodeURIComponent(patientId)}`, {
-					method: "POST", headers: { "Content-Type": "application/json" },
+					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({
 						teeth: sepaTeeth.map((t) => ({ toothNumber: t.toothNumber, isPresent: t.isPresent, isImplant: t.isImplant, mobility: t.mobility, furcationBuccal: t.furcationBuccal, furcationLingual: t.furcationLingual })),
 						sites: allSites, notes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})`,
