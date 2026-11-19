@@ -229,6 +229,7 @@ describe("buildBillingSummary", () => {
 			category: "therapy",
 			specialty: "therapist",
 			basePriceRub: 1000,
+			priceKopecks: 100000,
 			durationMinutes: 30,
 			taxDeductible: true,
 			active: true,

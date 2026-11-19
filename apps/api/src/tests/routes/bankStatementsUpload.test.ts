@@ -6,7 +6,7 @@ import { registerBankStatementsRoutes } from "../../routes/bankStatements.js";
 describe("DEF-FIN-04: Bank Statement Upload API", () => {
 	const buildServer = async () => {
 		const app = Fastify();
-		app.decorateRequest("__denteIdentity", null);
+		app.decorateRequest("__denteIdentity", undefined);
 		app.addHook("preHandler", async (request) => {
 			(request as any).__denteIdentity = {
 				userId: "00000000-0000-0000-0000-000000000001",

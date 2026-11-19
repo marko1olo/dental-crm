@@ -324,7 +324,7 @@ async function organizationScopedTables(): Promise<OrganizationScopedTable[]> {
 		  AND t.table_type = 'BASE TABLE'
 		ORDER BY c.table_name
 	`);
-	return catalog.rows.map((row) => ({
+	return catalog.rows.map((row: { table_name: string; deletable: boolean }) => ({
 		name: row.table_name,
 		deletable:
 			row.deletable && !KNOWN_APPEND_ONLY_TABLES.has(row.table_name),

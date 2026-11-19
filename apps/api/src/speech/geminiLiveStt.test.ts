@@ -334,7 +334,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				apiKey: "mock_live_test_key",
 				wsFactory: (url) => {
 					createdSocket = new MockWebSocket(url);
-					return createdSocket;
+					return createdSocket as unknown as WebSocket;
 				},
 			});
 
@@ -416,7 +416,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				apiKey: "test-api-key-finish",
 				wsFactory: (url) => {
 					createdSocket = new MockWebSocket(url);
-					return createdSocket;
+					return createdSocket as unknown as WebSocket;
 				},
 			});
 
@@ -447,7 +447,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url) => {
 					const s = new MockWebSocket(url);
 					sockets.push(s);
-					return s;
+					return s as unknown as WebSocket;
 				},
 			});
 
@@ -516,7 +516,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url) => {
 					const s = new MockWebSocket(url);
 					sockets.push(s);
-					return s;
+					return s as unknown as WebSocket;
 				},
 			});
 
@@ -552,7 +552,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url) => {
 					const s = new MockWebSocket(url);
 					sockets.push(s);
-					return s;
+					return s as unknown as WebSocket;
 				},
 			});
 
@@ -590,7 +590,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url) => {
 					const s = new MockWebSocket(url);
 					sockets.push(s);
-					return s;
+					return s as unknown as WebSocket;
 				},
 			});
 
@@ -656,13 +656,13 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 				wsFactory: (url, _protocols, opts) => {
 					capturedOptions = opts;
 					const s = new MockWebSocket(url);
-					return s;
+					return s as unknown as WebSocket;
 				},
 			});
 
 			await session.connect();
 			assert.ok(capturedOptions, "Expected wsFactory to receive options");
-			assert.ok(capturedOptions.agent, "Expected wsFactory options to contain agent");
+			assert.ok((capturedOptions as { agent?: unknown } | undefined)?.agent, "Expected wsFactory options to contain agent");
 
 			session.close();
 		});
@@ -684,7 +684,7 @@ describe("Gemini 3.5 Transcribe Live WebSocket Engine", () => {
 						process.nextTick(() => {
 							socket!.simulateServerMessage({ setupComplete: {} });
 						});
-						return socket;
+						return socket as unknown as WebSocket;
 					},
 				},
 			});

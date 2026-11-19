@@ -187,7 +187,7 @@ async function auditNullableOrganizationColumns(): Promise<void> {
 			  AND t.table_type = 'BASE TABLE'
 			ORDER BY c.is_nullable DESC, c.table_name
 		`);
-		const nullable = catalog.rows.filter((row) => row.is_nullable === "YES");
+		const nullable = catalog.rows.filter((row: { is_nullable: string; table_name: string }) => row.is_nullable === "YES");
 		console.log(
 			`всего таблиц с organization_id: ${catalog.rows.length}, из них nullable: ${nullable.length}`,
 		);

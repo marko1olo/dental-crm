@@ -123,6 +123,18 @@ describe("Patient Portal API & Telemedicine Suite", () => {
 		});
 		assert.strictEqual(resHtml.statusCode, 401);
 
+		const resMedicalCard = await app.inject({
+			method: "GET",
+			url: "/api/portal/medical-card/html",
+		});
+		assert.strictEqual(resMedicalCard.statusCode, 401);
+
+		const resClinicalExtract = await app.inject({
+			method: "GET",
+			url: "/api/portal/clinical-extract/html",
+		});
+		assert.strictEqual(resClinicalExtract.statusCode, 401);
+
 		const resForm043 = await app.inject({
 			method: "GET",
 			url: "/api/portal/form-043/html",

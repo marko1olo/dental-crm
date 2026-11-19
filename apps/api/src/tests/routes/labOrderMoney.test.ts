@@ -271,4 +271,99 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		assert.equal(checkRow.rows[0]?.is_locked_installed, false, "Гарантийная рекламация должна разблокировать наряд");
 		assert.equal(checkRow.rows[0]?.status, "refitting", "Статус должен перейти в refitting");
 	});
+
+	test("PATCH наряда с isLockedInstalled=true разрешен для клинических заметок врача (Мандат 8e Автономия)", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
+
+		// 1. Создаем наряд
+		const created = await createOrder({
+			patientId: PATIENT_ID,
+			doctorId: DOCTOR_ID,
+			toothFdi: "21",
+			material: "E.max Press",
+			priceRub: 18000,
+		});
+		assert.equal(created.statusCode, 201);
+		const orderId = String(created.json.id);
+
+		// 2. Имитируем фиксацию во рту (isLockedInstalled = true, status = 'completed')
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx.execute(sql`
+				update lab_orders
+				   set is_locked_installed = true,
+				       status = 'completed'
+				 where id = ${orderId}::uuid
+			`);
+		});
+
+		// 3. Врач вносит клинические правки фиксации через PATCH (Мандат 8e: автономия врача без 409 блокировок)
+		const patchResponse = await app.inject({
+			method: "PATCH",
+			url: `/api/lab/orders/${orderId}`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				clinicalNotes: "Фиксация на цемент Variolink Esthetic DC, краевое прилегание идеальное, окклюзия в норме",
+				labComments: "Отличная анатомия фиссур от техника",
+			},
+		});
+
+		assert.equal(
+			patchResponse.statusCode,
+			200,
+			`Ожидали 200 OK для клинических заметок врача, получили ${patchResponse.statusCode}: ${patchResponse.body}`,
+		);
+		const patchJson = JSON.parse(patchResponse.body) as {
+			success: boolean;
+			order: { clinicalNotes?: string; labComments?: string };
+		};
+		assert.equal(patchJson.success, true);
+		assert.ok(patchJson.order.clinicalNotes?.includes("Variolink Esthetic DC"));
+		assert.ok(patchJson.order.labComments?.includes("Отличная анатомия"));
+	});
+
+	test("гарантийный паспорт наряда возвращает динамическое имя лаборатории из БД, а не хардкод", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
+
+		// 1. Создаем наряд с конкретным именем лаборатории
+		const created = await createOrder({
+			patientId: PATIENT_ID,
+			doctorId: DOCTOR_ID,
+			toothFdi: "16",
+			material: "ZrO2 Prettau",
+			priceRub: 22000,
+		});
+		assert.equal(created.statusCode, 201);
+		const orderId = String(created.json.id);
+
+		// 2. Устанавливаем лабораторию в БД
+		await withFixtureTenant(ORGANIZATION_ID, async (tx) => {
+			await tx.execute(sql`
+				update lab_orders
+				   set laboratory_name = 'Лаборатория Престиж-Дент CAD/CAM'
+				 where id = ${orderId}::uuid
+			`);
+		});
+
+		// 3. Запрашиваем гарантийный паспорт
+		const passportRes = await app.inject({
+			method: "GET",
+			url: `/api/clinical/lab-orders/${orderId}/warranty-passport`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+		});
+
+		assert.equal(passportRes.statusCode, 200, `Паспорт вернул ${passportRes.statusCode}: ${passportRes.body}`);
+		const passportJson = JSON.parse(passportRes.body) as {
+			success: boolean;
+			passport: { technicianLabName: string };
+		};
+		assert.equal(passportJson.success, true);
+		assert.equal(passportJson.passport.technicianLabName, "Лаборатория Престиж-Дент CAD/CAM");
+		assert.notEqual(passportJson.passport.technicianLabName, "Цифровая зуботехническая лаборатория CAD/CAM");
+	});
 });

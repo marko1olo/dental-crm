@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import test, { describe } from "node:test";
-import fastify from "fastify";
+import fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 
 /**
  * Область действия хуков маршрутных модулей.
@@ -28,8 +28,8 @@ import fastify from "fastify";
 
 describe("область действия preHandler у маршрутного модуля", () => {
 	// Модуль, устроенный как routes/max.ts: свой маршрут и свой хук.
-	async function moduleWithOwnHook(app: ReturnType<typeof fastify>) {
-		app.addHook("preHandler", async (_request, reply) => {
+	async function moduleWithOwnHook(app: FastifyInstance) {
+		app.addHook("preHandler", async (_request: FastifyRequest, reply: FastifyReply) => {
 			reply.code(403).send({ error: "ModuleGuard" });
 			return reply;
 		});

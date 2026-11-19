@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import Fastify, { type FastifyInstance } from "fastify";
-import { afterEach, beforeEach, describe, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { TOKEN_SECRET } from "../../routes/auth.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { db } from "../../db/client.js";
 
 const ORG_ID = "123e4567-e89b-12d3-a456-4266141740ff";
 const VISIT_ID = "123e4567-e89b-12d3-a456-426614174000";
@@ -30,7 +29,6 @@ describe("visitPerioRoutes integration", () => {
 	afterEach(async () => {
 		await app.close();
 		process.env = originalEnv;
-		vi.restoreAllMocks();
 	});
 
 	it("1. GET /api/visits/:visitId/perio rejects unauthenticated call (401)", async () => {

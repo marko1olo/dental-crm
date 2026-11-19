@@ -189,6 +189,10 @@ describe("Treatment Plan Closed-Loop Item & Stage Completion API", () => {
 		assert.equal(ledgerRows.length, 2);
 		assert.ok(ledgerRows.every((r) => r.status === "completed"));
 		assert.ok(ledgerRows.every((r) => r.visitId === VISIT_ID));
+		assert.ok(ledgerRows.every((r) => r.treatmentPlanId === planId));
+		const completedItemIds = new Set(ledgerRows.map((r) => r.treatmentPlanItemId));
+		assert.ok(completedItemIds.has(itemId1));
+		assert.ok(completedItemIds.has(itemId2));
 
 		// Проверяем, что GET /api/patients/:patientId/treatment-plans возвращает isCompleted = true для первых 2
 		const listRes = await app.inject({

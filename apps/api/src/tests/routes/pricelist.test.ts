@@ -374,6 +374,7 @@ describe("Pricelist Routes, 804n Nomenclature & Category Validation", () => {
 					category: "therapy" as const,
 					specialty: "therapist" as const,
 					basePriceRub: 5500,
+					priceKopecks: 550000,
 					durationMinutes: 45,
 					taxDeductible: true,
 					active: true,

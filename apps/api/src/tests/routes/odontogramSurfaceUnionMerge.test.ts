@@ -50,7 +50,6 @@ describe("Domain 27: Odontogram MODBL Surface Union Merge & Pediatric Dentition"
 			.values({
 				id: testOrgId,
 				name: "Dente Test Clinic",
-				currency: "RUB",
 			})
 			.onConflictDoNothing();
 

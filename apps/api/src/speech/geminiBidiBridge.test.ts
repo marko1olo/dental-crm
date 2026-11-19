@@ -31,9 +31,9 @@ class MockBridgeWebSocket extends EventEmitter {
 	public readyState: number = MockBridgeWebSocket.CONNECTING;
 	public sentMessages: string[] = [];
 	public url: string;
-	public options?: ClientOptions;
+	public options?: ClientOptions | undefined;
 
-	constructor(url: string, options?: ClientOptions) {
+	constructor(url: string, options?: ClientOptions | undefined) {
 		super();
 		this.url = url;
 		this.options = options;
@@ -238,9 +238,9 @@ describe("GeminiBidiBridge & Dental STT Protocol", () => {
 
 			const bridge = new GeminiBidiBridge({
 				apiKey: "mock_bidi_test_key",
-				wsFactory: (url, _protocols, options) => {
+				wsFactory: (url: string, _protocols?: string | string[] | undefined, options?: ClientOptions | undefined) => {
 					createdWs = new MockBridgeWebSocket(url, options);
-					return createdWs;
+					return createdWs as unknown as WebSocket;
 				},
 			});
 

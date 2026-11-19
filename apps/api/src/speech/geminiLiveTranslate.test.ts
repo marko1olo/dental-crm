@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, describe, it } from "node:test";
+import WebSocket, { type ClientOptions } from "ws";
 import {
 	createGeminiLiveTranslateSession,
 	GeminiLiveTranslateSession,
@@ -55,7 +56,7 @@ describe("geminiLiveTranslate", () => {
 		const session = createGeminiLiveTranslateSession({
 			sourceLanguageCode: "ru",
 			targetLanguageCode: "en",
-			WebSocketClass: MockWebSocket,
+			WebSocketClass: MockWebSocket as unknown as typeof WebSocket,
 		});
 
 		await assert.rejects(
@@ -80,7 +81,7 @@ describe("geminiLiveTranslate", () => {
 			targetLanguageCode: "en",
 			apiKey: "test-live-key",
 			voiceName: "Puck",
-			WebSocketClass: MockWebSocket,
+			WebSocketClass: MockWebSocket as unknown as typeof WebSocket,
 			onReady: () => {
 				readyCalled = true;
 			},
@@ -98,7 +99,7 @@ describe("geminiLiveTranslate", () => {
 		await new Promise((r) => setTimeout(r, 25));
 		const rawSocket = session.getRawSocket();
 		assert.ok(rawSocket);
-		const wsInstance = rawSocket as MockWebSocket;
+		const wsInstance = rawSocket as unknown as MockWebSocket;
 		assert.strictEqual(wsInstance.sentMessages.length, 1);
 
 		const setupMessage = JSON.parse(wsInstance.sentMessages[0] || "{}");

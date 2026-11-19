@@ -77,7 +77,7 @@ describe("Инструмент search_workstation_files — Рекурсивны
 		assert.strictEqual(res.success, true);
 		assert.ok(res.totalFound >= 5);
 		assert.strictEqual(res.timedOut, false);
-		const fileNames = res.files.map((f) => f.fileName);
+		const fileNames = res.files.map((f: { fileName: string }) => f.fileName);
 		assert.ok(fileNames.includes("tooth_16.dcm"));
 		assert.ok(fileNames.includes("panoramic_study.rvg"));
 		assert.ok(fileNames.includes("clinic_pricelist_2026.csv"));
@@ -129,7 +129,7 @@ describe("Инструмент search_workstation_files — Рекурсивны
 
 		assert.strictEqual(res.success, true);
 		assert.strictEqual(res.totalFound, 2);
-		assert.ok(res.files.every((f) => f.category === "xray_study"));
+		assert.ok(res.files.every((f: { category: string }) => f.category === "xray_study"));
 	});
 
 	test("Ограничивает глубину сканирования (maxDepth: 1)", async () => {

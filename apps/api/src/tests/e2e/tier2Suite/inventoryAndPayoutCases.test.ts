@@ -42,7 +42,10 @@ export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void 
 				services: [
 					{
 						id: SERVICE_1_ID,
-						nameRu: "Терапия",
+						dateIso: "2029-03-15",
+						patientName: "Тестовый Пациент",
+						medicalCardNumber: "043/у-001",
+						serviceNameRu: "Терапия",
 						category: "therapy",
 						grossRevenueKop: 500000,
 						labCostKop: 0,
@@ -56,7 +59,7 @@ export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void 
 			assert.equal(result.totalGrossRevenueKop, 500000);
 			assert.equal(result.totalMaterialDeductionsKop, 1000000);
 			assert.equal(result.totalNetBaseKop, 0);
-			assert.equal(result.grossPayoutBeforeTaxKop, 0);
+			assert.equal(result.earnedBaseCommissionKop, 0);
 		});
 
 		it("6.2 handles 0% commission rate validly (accrued = 0, payout = 0)", () => {
@@ -69,7 +72,10 @@ export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void 
 				services: [
 					{
 						id: SERVICE_1_ID,
-						nameRu: "Терапия",
+						dateIso: "2029-03-15",
+						patientName: "Тестовый Пациент",
+						medicalCardNumber: "043/у-001",
+						serviceNameRu: "Терапия",
 						category: "therapy",
 						grossRevenueKop: 5000000,
 						labCostKop: 0,
@@ -82,7 +88,7 @@ export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void 
 			});
 			assert.equal(result.totalGrossRevenueKop, 5000000);
 			assert.equal(result.totalNetBaseKop, 5000000);
-			assert.equal(result.grossPayoutBeforeTaxKop, 0);
+			assert.equal(result.earnedBaseCommissionKop, 0);
 		});
 
 		it("6.3 handles 100% commission rate boundary (accrued = net base)", () => {
@@ -95,7 +101,10 @@ export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void 
 				services: [
 					{
 						id: SERVICE_1_ID,
-						nameRu: "Терапия",
+						dateIso: "2029-03-15",
+						patientName: "Тестовый Пациент",
+						medicalCardNumber: "043/у-001",
+						serviceNameRu: "Терапия",
 						category: "therapy",
 						grossRevenueKop: 4500050,
 						labCostKop: 0,
@@ -108,7 +117,7 @@ export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void 
 			});
 			assert.equal(result.totalGrossRevenueKop, 4500050);
 			assert.equal(result.totalNetBaseKop, 4500050);
-			assert.equal(result.grossPayoutBeforeTaxKop, 4500050);
+			assert.equal(result.earnedBaseCommissionKop, 4500050);
 		});
 
 		it("6.4 handles mixed lab orders and material deductions correctly", () => {
@@ -121,7 +130,10 @@ export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void 
 				services: [
 					{
 						id: SERVICE_1_ID,
-						nameRu: "Коронка",
+						dateIso: "2029-03-15",
+						patientName: "Тестовый Пациент",
+						medicalCardNumber: "043/у-001",
+						serviceNameRu: "Коронка",
 						category: "orthopedics",
 						grossRevenueKop: 2000000,
 						labCostKop: 500000,
@@ -136,7 +148,7 @@ export function registerInventoryAndPayoutCases(ctx: Tier2FixtureContext): void 
 			assert.equal(result.totalLabDeductionsKop, 500000);
 			assert.equal(result.totalMaterialDeductionsKop, 200000);
 			assert.equal(result.totalNetBaseKop, 1300000);
-			assert.equal(result.grossPayoutBeforeTaxKop, 325000);
+			assert.equal(result.earnedBaseCommissionKop, 325000);
 		});
 	});
 

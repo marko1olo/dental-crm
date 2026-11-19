@@ -16,6 +16,7 @@ import { db } from "../../db/client.js";
 import {
 	familyGroups,
 	organizations,
+	patientRelationships,
 	patients,
 	payments,
 	serviceCatalogItems,
@@ -106,6 +107,16 @@ describe("Family Deposit Atomic Deduction & History Route Integrity", () => {
 					familyGroupId: FAMILY_ID,
 				},
 			]);
+
+			await tx.insert(patientRelationships).values({
+				id: fixtureUuid(NAMESPACE, 10),
+				organizationId: ORG_ID,
+				patientId: HEAD_PATIENT_ID,
+				relatedPatientId: MEMBER_PATIENT_ID,
+				relationshipType: "child",
+				canSpendFamilyWallet: true,
+				isPrimaryPayer: true,
+			});
 
 			await tx.insert(serviceCatalogItems).values({
 				id: fixtureUuid(NAMESPACE, 99),

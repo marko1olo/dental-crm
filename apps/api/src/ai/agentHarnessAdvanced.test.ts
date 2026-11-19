@@ -602,7 +602,9 @@ test("13. runDeterministicClinicalFallback executes real tooth tool and register
 		messages: [{ role: "user", content: "У пациента кариес на зубе 16" }],
 		context: dummyContext,
 		trustLevel: "confirm_all",
-		onEvent: (evt) => events.push(evt),
+		onEvent: (evt) => {
+			events.push(evt);
+		},
 	};
 	const res = await runDeterministicClinicalFallback(
 		params,

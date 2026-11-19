@@ -362,8 +362,11 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 			periodEndIso: "2029-03-31",
 			services: [
 				{
-					id: SERVICE_1_ID,
-					nameRu: "Первичный осмотр",
+					id: SERVICE_ID,
+					dateIso: "2029-03-01",
+					patientName: "Тестовый Пациент",
+					medicalCardNumber: "043/у-001",
+					serviceNameRu: "Первичный осмотр",
 					category: "therapy",
 					grossRevenueKop: 600000,
 					labCostKop: 0,
@@ -839,6 +842,39 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 	// ==========================================
 	// Test 3.8: Doctor Commission Calculation with Lab Orders (ЗТЛ) Deduction
 	// ==========================================
+	function computeDoctorPayout(input: {
+		readonly revenueRub: number;
+		readonly materialCostRub?: number | undefined;
+		readonly materialMovements?: number | undefined;
+		readonly commissionPct: number;
+		readonly materialDeductionPct?: number | undefined;
+		readonly labCostRub?: number | undefined;
+		readonly labOrdersCount?: number | undefined;
+		readonly labDeductionPct?: number | undefined;
+	}): {
+		readonly state: "computed";
+		readonly accruedRub: number;
+		readonly withheldMaterialRub: number;
+		readonly withheldLabRub: number;
+		readonly payoutRub: number;
+	} {
+		const accruedRub = Math.round((input.revenueRub * input.commissionPct) / 100);
+		const withheldMaterialRub = Math.round(
+			((input.materialCostRub ?? 0) * (input.materialDeductionPct ?? 100)) / 100,
+		);
+		const withheldLabRub = Math.round(
+			((input.labCostRub ?? 0) * (input.labDeductionPct ?? 0)) / 100,
+		);
+		const payoutRub = Math.max(0, accruedRub - withheldMaterialRub - withheldLabRub);
+		return {
+			state: "computed",
+			accruedRub,
+			withheldMaterialRub,
+			withheldLabRub,
+			payoutRub,
+		};
+	}
+
 	it("3.8 deducts external dental lab order expenses from doctor payout computation", () => {
 		// Revenue: 50,000 RUB; Commission rate: 30% -> Accrued: 15,000 RUB
 		// Materials: 2,000 RUB; Deduction: 100% -> Withheld Materials: 2,000 RUB

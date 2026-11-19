@@ -95,7 +95,7 @@ async function liveEnumLabels(): Promise<string[]> {
 		WHERE t.typname = 'treatment_plan_status'
 		ORDER BY e.enumsortorder
 	`);
-	return rows.rows.map((row) => row.enumlabel);
+	return rows.rows.map((row: { enumlabel: string }) => row.enumlabel);
 }
 
 /**

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
+import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	organizations,
+	patientInvoices,
 	patients,
 	treatmentPlans,
 	users,
@@ -330,6 +332,14 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 		assert.equal(approveBody.success, true);
 		assert.equal(approveBody.plan.status, "Approved");
 		assert.ok(approveBody.plan.approvedAt);
+		assert.ok(approveBody.invoice);
+		assert.equal(approveBody.invoice.treatmentPlanId, planId);
+
+		const [dbInvoice] = await db
+			.select({ treatmentPlanId: patientInvoices.treatmentPlanId })
+			.from(patientInvoices)
+			.where(eq(patientInvoices.id, approveBody.invoice.id));
+		assert.equal(dbInvoice?.treatmentPlanId, planId);
 	});
 
 	test("7. PATCH /api/v1/treatment-plans/:id/status updates status directly", async () => {
@@ -362,5 +372,13 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 		assert.equal(patchStatusBody.success, true);
 		assert.equal(patchStatusBody.plan.status, "Approved");
 		assert.ok(patchStatusBody.plan.approvedAt);
+		assert.ok(patchStatusBody.invoice);
+		assert.equal(patchStatusBody.invoice.treatmentPlanId, planId);
+
+		const [dbStatusInvoice] = await db
+			.select({ treatmentPlanId: patientInvoices.treatmentPlanId })
+			.from(patientInvoices)
+			.where(eq(patientInvoices.id, patchStatusBody.invoice.id));
+		assert.equal(dbStatusInvoice?.treatmentPlanId, planId);
 	});
 });

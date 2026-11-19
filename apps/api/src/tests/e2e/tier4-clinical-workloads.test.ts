@@ -641,7 +641,10 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 			services: [
 				{
 					id: "s1",
-					nameRu: "Терапия",
+					dateIso: "2029-03-15",
+					patientName: "Тестовый Пациент",
+					medicalCardNumber: "043/у-001",
+					serviceNameRu: "Терапия",
 					category: "therapy",
 					grossRevenueKop: 10000000,
 					labCostKop: 0,
@@ -667,7 +670,10 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 			services: [
 				{
 					id: "s2",
-					nameRu: "Хирургия",
+					dateIso: "2029-03-15",
+					patientName: "Тестовый Пациент",
+					medicalCardNumber: "043/у-001",
+					serviceNameRu: "Хирургия",
 					category: "surgery",
 					grossRevenueKop: 20000000,
 					labCostKop: 0,
@@ -692,7 +698,10 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 			services: [
 				{
 					id: "s3",
-					nameRu: "Ортопедия",
+					dateIso: "2029-03-15",
+					patientName: "Тестовый Пациент",
+					medicalCardNumber: "043/у-001",
+					serviceNameRu: "Ортопедия",
 					category: "orthopedics",
 					grossRevenueKop: 30000000,
 					labCostKop: 1800000,

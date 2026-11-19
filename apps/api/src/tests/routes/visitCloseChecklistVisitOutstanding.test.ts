@@ -235,7 +235,7 @@ describe("карточка закрытия приёма: остаток ПО Э
 				OVERPAID_VISIT_ID,
 				EMPTY_VISIT_ID,
 			]) {
-				const response = await app.inject({
+				const response: Awaited<ReturnType<FastifyInstance["inject"]>> = await app.inject({
 					method: "POST",
 					url: `/api/visits/${visitId}/draft/accept`,
 					headers: {

@@ -91,10 +91,6 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 				id: patientId,
 				organizationId: orgId,
 				fullName: "Смирнова Е.А.",
-				administrativeProfile: {
-					cardNumber: "К-1234",
-					medicalCardNumber: "К-1234",
-				},
 			});
 
 			// Appointment in June
@@ -114,7 +110,6 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 				organizationId: orgId,
 				appointmentId: apptJuneId,
 				patientId,
-				doctorId,
 				status: "signed",
 			});
 
@@ -127,7 +122,7 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 				title: "Лечение кариеса зуба 36",
 				priceRub: 10000,
 				unitPriceRub: 10000,
-				quantity: 1,
+				quantity: "1",
 			});
 
 			// Payment in July (Cash method)
@@ -168,8 +163,8 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 				itemId: itemDirectId,
 				inventoryItemId: itemDirectId,
 				transactionType: "usage",
-				quantityChanged: -1,
-				unitCostRub: 500,
+				quantityChanged: "-1",
+				unitCostRub: "500",
 			});
 
 			// Transaction 2: Direct material with 'emergency_overdraft' type: 1 * 300 rub = 300 rub
@@ -180,8 +175,8 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 				itemId: itemDirectId,
 				inventoryItemId: itemDirectId,
 				transactionType: "emergency_overdraft",
-				quantityChanged: -1,
-				unitCostRub: 300,
+				quantityChanged: "-1",
+				unitCostRub: "300",
 			});
 
 			// Transaction 3: Overhead item: 1 * 100 rub = 100 rub (must be excluded!)
@@ -192,8 +187,8 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 				itemId: itemOverheadId,
 				inventoryItemId: itemOverheadId,
 				transactionType: "auto_deduct",
-				quantityChanged: -1,
-				unitCostRub: 100,
+				quantityChanged: "-1",
+				unitCostRub: "100",
 			});
 		});
 
@@ -273,7 +268,6 @@ describe("Doctor Payroll SSOT & DbQueries Integration", () => {
 				netBaseRevenueRub: 430000,
 				netPayoutKopecks: 12900000,
 				netPayoutRub: 129000,
-				payoutModel: "percentage",
 				categoryPercent: 30,
 				paidAt: new Date("2026-07-01T12:00:00Z"),
 			});

@@ -381,7 +381,7 @@ describe("месяц когорты берётся в поясе клиники"
 			db.execute(sql`select id from bi_analytics_snapshots`),
 		);
 		const existingIds = new Set(
-			existing.rows.map((row) => (row as { id: string }).id),
+			existing.rows.map((row: { id?: unknown }) => String(row.id)),
 		);
 
 		try {
@@ -425,8 +425,8 @@ describe("месяц когорты берётся в поясе клиники"
 					sql`select id from bi_analytics_snapshots`,
 				);
 				const created = written.rows
-					.map((row) => (row as { id: string }).id)
-					.filter((id) => !existingIds.has(id));
+					.map((row: { id?: unknown }) => String(row.id))
+					.filter((id: string) => !existingIds.has(id));
 				for (const id of created) {
 					await db.execute(
 						sql`delete from bi_analytics_snapshots where id = ${id}`,

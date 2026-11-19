@@ -189,20 +189,28 @@ export async function seedFixtureRows(
 			})
 			.onConflictDoNothing();
 
-		const paymentRows = [
+		const paymentRows: Array<{
+			organizationId: string;
+			patientId: string;
+			visitId?: string | undefined;
+			amountRub: number;
+			status: "planned" | "paid" | "refunded" | "voided";
+			paidAt: Date;
+		}> = [
 			{
 				organizationId: cfg.orgId,
 				patientId: cfg.patientOld,
 				visitId: cfg.visitId,
 				amountRub: 10_000,
-				status: "paid" as const,
+				status: "paid",
 				paidAt: inPeriod,
 			},
 			{
 				organizationId: cfg.orgId,
 				patientId: cfg.patientOld,
+				visitId: cfg.visitId,
 				amountRub: 50_000,
-				status: "planned" as const,
+				status: "planned",
 				paidAt: inPeriod,
 			},
 		];
@@ -213,7 +221,7 @@ export async function seedFixtureRows(
 				patientId: cfg.patientNew,
 				visitId: undefined,
 				amountRub: 7_000,
-				status: "refunded" as const,
+				status: "refunded",
 				paidAt: inPeriod,
 			});
 		}

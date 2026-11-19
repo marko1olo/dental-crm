@@ -169,7 +169,8 @@ export function registerFiscalAndTaxCases(): void {
 			const badContactReceipt = {
 				patientId: PATIENT_1_ID,
 				visitId: VISIT_1_ID,
-				customerContact: "", // Violates min(5)
+				isElectronicReceiptOnly: true,
+				customerContact: "", // Violates min(5) when isElectronicReceiptOnly: true
 				totalKopecks: 100000,
 				cashKopecks: 100000,
 				items: [
