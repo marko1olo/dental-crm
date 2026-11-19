@@ -161,7 +161,7 @@ const idempotencyKey = `${orgId}:${orderId}:${totalKopecks}:${timestamp}`;
   * **Лимит отсутствует**: налоговый вычет 13% рассчитывается со **всей фактически уплаченной суммы** без ограничений в 150 000 ₽.
 
 ### 4.2. Автоматическая классификация услуг по Номенклатуре 804н:
-Движок `taxDeductionEngine.ts` на лету анализирует чеки пациента и автоматически группирует суммы по кодам 1 и 2:
+Канонический движок `@dental/shared/src/fiscal/fnsTaxDeductionEngine.ts` и `taxCertificateEngine.ts` на лету анализируют чеки пациента и автоматически группируют суммы по кодам 1 и 2:
 ```typescript
 export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
   if (EXPENSIVE_TREATMENT_804N_CODES.includes(code804n)) {
@@ -221,7 +221,7 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 | **Комбинированная оплата семьи (Мульти-тендер SSOT)** | [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) | `POST /api/cashbox/payments` (единый атомарный мульти-тендер) |
 | **Кассовый мульти-сплит и экспресс-чекаут** | [`cashRegisterSplitsData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/cashRegisterSplitsData.ts) | `POST /api/cashbox/payments` |
 | **Семейный кошелек** | [`FamilyWalletModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FamilyWalletModal.tsx) | [`finance_family.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/finance_family.ts) |
-| **Справка ФНС КНД 1151156**| [`TaxDeductionCertificateModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/TaxDeductionCertificateModal.tsx) | [`taxDeductionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/taxDeductionEngine.ts) |
+| **Справка ФНС КНД 1151156**| [`TaxDeductionCertificateModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/TaxDeductionCertificateModal.tsx) | [`taxCertificateEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/taxCertificateEngine.ts) |
 | **Экспорт 1С CommerceML** | [`Billing1CExportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/Billing1CExportModal.tsx) | [`commerceMl.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/commerceMl.ts) |
 | **Управленческая аналитика SSOT** | [`ExecutiveAnalyticsStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ExecutiveAnalyticsStudioModal.tsx) | [`reports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/reports.ts) |
 | **Ведомость зарплат Net Revenue** | [`DoctorPayrollReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DoctorPayrollReport.tsx) | `GET /api/reports/doctor-payroll` |

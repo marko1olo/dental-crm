@@ -7,10 +7,11 @@
 
 import type { Patient } from "@dental/shared";
 import { Receipt } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";
+import { FamilyBalanceCard } from "../tabs/finance/FamilyBalanceCard";
 
 export interface MobilePatientFinanceInvoiceItem {
 	id: string;
@@ -28,6 +29,8 @@ export interface MobilePatientFinanceTabProps {
 	balanceRub: number;
 	money: (amountRub: number) => string;
 	onOpenCashier?: (() => void) | undefined;
+	onOpenTaxCertificate?: (() => void) | undefined;
+	onOpenFamilyTaxCertificate?: (() => void) | undefined;
 }
 
 export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = ({
@@ -36,8 +39,30 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 	balanceRub,
 	money,
 	onOpenCashier,
+	onOpenTaxCertificate,
+	onOpenFamilyTaxCertificate,
 }) => {
 	const fullName = patient.fullName || "Пациент";
+
+	const familyBalance = useMemo(() => {
+		const p = patient as unknown as {
+			familyBalanceKopecks?: number | undefined;
+			familyBalanceRub?: number | string | undefined;
+			familyGroup?: { totalBalanceRub?: number | undefined } | undefined;
+		};
+		if (typeof p?.familyBalanceKopecks === "number") {
+			return Math.round(p.familyBalanceKopecks / 100);
+		}
+		if (typeof p?.familyBalanceRub === "number" || typeof p?.familyBalanceRub === "string") {
+			return Math.round(Number(p.familyBalanceRub) || 0);
+		}
+		if (typeof p?.familyGroup?.totalBalanceRub === "number") {
+			return Math.round(p.familyGroup.totalBalanceRub);
+		}
+		return 0;
+	}, [patient]);
+
+	const familyGroupName = (patient as unknown as { familyGroupName?: string | null | undefined })?.familyGroupName;
 
 	const handleOpenCashier = () => {
 		if (onOpenCashier) {
@@ -60,9 +85,9 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 					<span
 						className={`text-2xl font-black font-mono ${
 							balanceRub > 0
-								? "text-emerald-600 dark:text-emerald-400"
+								? "text-[var(--success-ink)]"
 								: balanceRub < 0
-									? "text-rose-600 dark:text-rose-400"
+									? "text-[var(--danger-ink)]"
 									: "text-[var(--ink)]"
 						}`}
 						data-testid="mobile-patient-balance-value"
@@ -78,14 +103,21 @@ export const MobilePatientFinanceTab: React.FC<MobilePatientFinanceTabProps> = (
 					<button
 						type="button"
 						onClick={handleOpenCashier}
-						className="flex-1 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
+						className="flex-1 min-h-[44px] h-11 px-4 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-sm inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-98 transition-colors"
 						data-testid="mobile-btn-open-cashier"
 					>
-						<Receipt size={15} />
+						<Receipt size={16} className="shrink-0" />
 						<span>Касса и оплата</span>
 					</button>
 				</div>
 			</div>
+
+			{/* Family Balance Card (Мандат 8aw, 8al — Симметрия Десктопа и Мобильных) */}
+			<FamilyBalanceCard
+				familyGroupName={familyGroupName}
+				familyBalance={familyBalance}
+				onOpenFamilyTaxCertificate={onOpenFamilyTaxCertificate ?? onOpenTaxCertificate}
+			/>
 
 			{/* Invoices List */}
 			<div className="flex flex-col gap-2">

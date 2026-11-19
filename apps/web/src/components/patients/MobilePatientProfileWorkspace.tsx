@@ -94,7 +94,14 @@ export const MobilePatientProfileWorkspace: React.FC<MobilePatientProfileWorkspa
 				)}
 				{activeTab === "plans" && <MobilePatientPlansTab patient={patient} dashboard={dashboard} money={money} />}
 				{activeTab === "finance" && (
-					<MobilePatientFinanceTab patient={patient} patientInvoices={patientInvoices} balanceRub={balanceRub} money={money} />
+					<MobilePatientFinanceTab
+						patient={patient}
+						patientInvoices={patientInvoices}
+						balanceRub={balanceRub}
+						money={money}
+						onOpenTaxCertificate={() => setIsTaxModalOpen(true)}
+						onOpenFamilyTaxCertificate={() => setIsTaxModalOpen(true)}
+					/>
 				)}
 				{activeTab === "documents" && (
 					<MobilePatientDocumentsTab patient={patient} onOpenTaxModal={() => setIsTaxModalOpen(true)} />

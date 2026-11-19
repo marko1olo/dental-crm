@@ -43,7 +43,7 @@ export const FamilyWalletSpendSection: React.FC<FamilyWalletSpendSectionProps> =
 					<span className="text-xs text-[var(--muted)]">
 						Доступный семейный остаток:
 					</span>
-					<span className="text-base font-bold text-[var(--teal)]">
+					<span className="text-base font-bold text-[var(--primary)] font-mono">
 						{money(familyBalanceNumeric)}
 					</span>
 				</div>
@@ -59,7 +59,7 @@ export const FamilyWalletSpendSection: React.FC<FamilyWalletSpendSectionProps> =
 						id={spendPatientSelectId}
 						value={spendPatientId}
 						onChange={(e) => setSpendPatientId(e.target.value)}
-						className="w-full min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--teal)] cursor-pointer shadow-2xs"
+						className="w-full min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--primary)] cursor-pointer shadow-2xs"
 					>
 						{membersList.map((m) => (
 							<option key={m.id} value={m.id}>
@@ -85,7 +85,7 @@ export const FamilyWalletSpendSection: React.FC<FamilyWalletSpendSectionProps> =
 						placeholder="Сумма по плану лечения или чеку"
 						value={spendAmount}
 						onChange={(e) => setSpendAmount(e.target.value)}
-						className="w-full min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-semibold outline-none focus:border-[var(--teal)] shadow-2xs"
+						className="w-full min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-semibold outline-none focus:border-[var(--primary)] shadow-2xs font-mono"
 					/>
 				</div>
 
@@ -93,9 +93,9 @@ export const FamilyWalletSpendSection: React.FC<FamilyWalletSpendSectionProps> =
 					type="button"
 					data-testid="family-spend-submit-btn"
 					onClick={onSubmitSpend}
-					className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 w-full px-4 bg-[var(--teal)] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs hover:opacity-95 transition-all cursor-pointer inline-flex items-center justify-center gap-2 active:scale-98"
+					className="h-9 px-3.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] rounded-lg text-sm font-medium shadow-xs w-full min-h-[44px] sm:min-h-[36px] inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
 				>
-					<ArrowDownRight className="w-4 h-4" />
+					<ArrowDownRight className="w-4 h-4 shrink-0" />
 					<span>
 						{submitting ? "Списание..." : "Списать с семейного баланса"}
 					</span>

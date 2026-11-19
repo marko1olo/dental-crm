@@ -6,11 +6,9 @@ import {
 	type PatientRelationshipKind,
 } from "@dental/shared";
 import { and, eq, or } from "drizzle-orm";
-import type { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/client.js";
 import { patientRelationships, patients } from "../../../db/schema.js";
 import { FamilyWalletError, type FamilyGroupRow } from "../familyWalletTypes.js";
-
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * verifyFamilySpendAuthorization
@@ -27,7 +25,7 @@ type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
  * 3. Client parameter `payerPatientId` CANNOT bypass relationship and spend authorization checks!
  */
 export async function verifyFamilySpendAuthorization(params: {
-	readonly tx: DatabaseTransaction;
+	readonly tx: TenantDb;
 	readonly organizationId: string;
 	readonly family: FamilyGroupRow;
 	readonly patientId: string;
@@ -35,15 +33,7 @@ export async function verifyFamilySpendAuthorization(params: {
 	readonly debitKopecks: number;
 }): Promise<void> {
 	const { tx, organizationId, family, patientId, debitKopecks } = params;
-	const walletOwnerId = family.headPatientId || family.primaryPatientId;
-
-	if (!walletOwnerId) {
-		throw new FamilyWalletError(
-			"Семейный кошелек не имеет назначенного владельца (headPatientId)",
-			400,
-			"MISSING_WALLET_OWNER",
-		);
-	}
+	let walletOwnerId = family.headPatientId || family.primaryPatientId;
 
 	const currentBalKop = parseKopecks(family.balance);
 	if (currentBalKop < debitKopecks) {
@@ -55,12 +45,37 @@ export async function verifyFamilySpendAuthorization(params: {
 	}
 
 	// Case 1: Wallet owner is spending for themselves
+	if (walletOwnerId && patientId === walletOwnerId) {
+		return;
+	}
+
+	const [patientRow] = await tx
+		.select({ id: patients.id, familyGroupId: patients.familyGroupId })
+		.from(patients)
+		.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+		.limit(1);
+
+	const isDirectFamilyMember = Boolean(
+		patientRow?.familyGroupId && family.id && patientRow.familyGroupId === family.id,
+	);
+
+	// Fallback: If family wallet has no explicit headPatientId, but the patient belongs to this family group
+	if (!walletOwnerId && isDirectFamilyMember) {
+		walletOwnerId = patientId;
+	}
+
+	if (!walletOwnerId) {
+		throw new FamilyWalletError(
+			"Семейный кошелек не имеет назначенного владельца (headPatientId)",
+			400,
+			"MISSING_WALLET_OWNER",
+		);
+	}
+
 	if (patientId === walletOwnerId) {
 		return;
 	}
 
-	// Case 2: Family member spending from the wallet owner's deposit.
-	// BOLA/IDOR Fix [LOY-05] & Mandate 8n canonical alignment.
 	const [rel] = await tx
 		.select()
 		.from(patientRelationships)
@@ -81,30 +96,32 @@ export async function verifyFamilySpendAuthorization(params: {
 		)
 		.limit(1);
 
-	// 1. Check if patient belongs to the confirmed family group
-	const [patientRow] = await tx
-		.select({
-			id: patients.id,
-			familyGroupId: patients.familyGroupId,
-		})
-		.from(patients)
-		.where(
-			and(
-				eq(patients.id, patientId),
-				eq(patients.organizationId, organizationId),
-			),
-		)
-		.limit(1);
-
-	const isConfirmedFamilyMember = Boolean(
-		patientRow?.familyGroupId && patientRow.familyGroupId === family.id,
-	);
-
-	if (!rel && !isConfirmedFamilyMember) {
+	// 1. Проверка полномочий списания семейного депозита:
+	// Если нет подтвержденного родства и пациент не входит в семейную группу — блокируем
+	if (!rel && !isDirectFamilyMember) {
 		throw new FamilyWalletError(
 			"Пациент не связан подтвержденным родством или семейной группой с владельцем семейного депозита",
 			403,
 			"NOT_AUTHORIZED_KINSHIP",
+		);
+	}
+
+	// Явный запрет в patient_relationships (canSpendFamilyWallet === false) блокирует списание
+	if (rel && rel.canSpendFamilyWallet === false) {
+		throw new FamilyWalletError(
+			"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
+			403,
+			"UNAUTHORIZED_FAMILY_SPEND",
+		);
+	}
+
+	// Защита от BOLA/IDOR [LOY-05]: Списание со счета другого лица требует явного подтверждения полномочий
+	// в patient_relationships (canSpendFamilyWallet === true или статус законного представителя isLegalRepresentative === true).
+	if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
+		throw new FamilyWalletError(
+			"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
+			403,
+			"UNAUTHORIZED_FAMILY_SPEND",
 		);
 	}
 
@@ -131,29 +148,14 @@ export async function verifyFamilySpendAuthorization(params: {
 	}
 
 	// 3. Validate spend with shared logic
-	// Для подтвержденного члена семьи (isConfirmedFamilyMember === true) выставляем canSpendFamilyWallet: true по умолчанию (Мандат 8n),
-	// если нет явного запрета canSpendFamilyWallet === false.
-	const effectiveCanSpend = rel
-		? (rel.canSpendFamilyWallet !== null && rel.canSpendFamilyWallet !== undefined
-				? rel.canSpendFamilyWallet
-				: isConfirmedFamilyMember)
-		: isConfirmedFamilyMember;
-
-	const effectiveRel = rel
-		? {
-				canSpendFamilyWallet: effectiveCanSpend,
-				isLegalRepresentative: rel.isLegalRepresentative === true,
-				relationshipType: (rel.patientId === patientId
-					? rel.relationshipType
-					: invertRelationshipKind(rel.relationshipType as PatientRelationshipKind)) as PatientRelationshipKind,
-				spendLimitKopecks: spendLimitKop,
-			}
-		: {
-				canSpendFamilyWallet: effectiveCanSpend,
-				isLegalRepresentative: false,
-				relationshipType: "relative" as PatientRelationshipKind,
-				spendLimitKopecks: undefined,
-			};
+	const effectiveRel = {
+		canSpendFamilyWallet: rel.canSpendFamilyWallet === true,
+		isLegalRepresentative: rel.isLegalRepresentative === true,
+		relationshipType: (rel.patientId === patientId
+			? rel.relationshipType
+			: invertRelationshipKind(rel.relationshipType as PatientRelationshipKind)) as PatientRelationshipKind,
+		spendLimitKopecks: spendLimitKop,
+	};
 
 	const spendValidation = validateFamilyWalletSpend({
 		spenderPatientId: patientId,

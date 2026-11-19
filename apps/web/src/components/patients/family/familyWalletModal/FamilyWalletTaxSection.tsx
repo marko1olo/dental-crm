@@ -245,11 +245,11 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 							</div>
 						</div>
 
-						<div className="p-2.5 px-3.5 rounded-xl bg-[var(--paper)] border border-teal-500/30 text-left sm:text-right shadow-2xs shrink-0">
-							<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider block">
+						<div className="p-2.5 px-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-left sm:text-right shadow-2xs shrink-0">
+							<span className="text-xs font-medium text-[var(--ink-muted)] block">
 								Возврат 13% семьи
 							</span>
-							<span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 block mt-0.5">
+							<span className="text-lg sm:text-xl font-black text-[var(--success-ink)] block mt-0.5 font-mono">
 								+{money(totalRefund13)}
 							</span>
 						</div>
@@ -353,10 +353,10 @@ export const FamilyWalletTaxSection: React.FC<FamilyWalletTaxSectionProps> =
 
 									<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--line)]">
 										<div className="text-left sm:text-right">
-											<span className="text-[10px] text-[var(--muted)] uppercase tracking-wider block">
+											<span className="text-xs font-medium text-[var(--ink-muted)] block">
 												К возврату 13%
 											</span>
-											<span className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono block">
+											<span className="text-sm sm:text-base font-bold text-[var(--success-ink)] font-mono block">
 												+{money(cert.estimated13PercentRefundRub)}
 											</span>
 										</div>

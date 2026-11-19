@@ -1,5 +1,6 @@
 import { Users, Wallet } from "lucide-react";
 import React from "react";
+import { money } from "../../../utils/formatters";
 import type { FamilyGroupData } from "./familyWidgetTypes";
 
 export interface FamilyWalletSectionProps {
@@ -22,7 +23,7 @@ export const FamilyWalletSection: React.FC<FamilyWalletSectionProps> = React.mem
 				</span>
 				{familyData ? (
 					<span className="font-mono font-bold text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded">
-						Баланс: {Number(familyData.balance ?? familyData.sharedBalanceRub ?? 0).toLocaleString("ru-RU")} ₽
+						Баланс: {money(familyData.balance ?? familyData.sharedBalanceRub ?? 0)}
 					</span>
 				) : (
 					<span className="text-[11px] text-[var(--muted)]">

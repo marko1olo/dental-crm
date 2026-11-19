@@ -1,5 +1,6 @@
 import React from "react";
 import { FileCheck, Users } from "lucide-react";
+import { money } from "../../../../utils/formatters";
 
 export interface FamilyBalanceCardProps {
 	readonly familyGroupName?: string | null | undefined;
@@ -19,11 +20,11 @@ export const FamilyBalanceCard: React.FC<FamilyBalanceCardProps> = ({
 		>
 			<div className="flex items-start justify-between gap-2.5">
 				<div className="flex items-center gap-3">
-					<div className="w-11 h-11 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+					<div className="w-11 h-11 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0 border border-[var(--primary)]/20">
 						<Users className="w-6 h-6" />
 					</div>
 					<div>
-						<span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
+						<span className="text-xs font-medium text-[var(--ink-muted)] block">
 							Общий семейный аванс
 						</span>
 						<span className="text-xs text-[var(--muted)] block mt-0.5">
@@ -32,7 +33,7 @@ export const FamilyBalanceCard: React.FC<FamilyBalanceCardProps> = ({
 					</div>
 				</div>
 
-				<span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 shrink-0">
+				<span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] shrink-0">
 					Общий доступ семьи
 				</span>
 			</div>
@@ -40,10 +41,10 @@ export const FamilyBalanceCard: React.FC<FamilyBalanceCardProps> = ({
 			<div className="flex items-baseline gap-2 pt-1 flex-wrap sm:flex-nowrap justify-between">
 				<div className="flex items-baseline gap-2">
 					<span
-						className="text-2xl sm:text-3xl font-black tracking-tight text-indigo-600 dark:text-indigo-400"
+						className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--primary)] font-mono"
 						data-testid="family-balance-amount-display"
 					>
-						{familyBalance.toLocaleString("ru-RU")} ₽
+						{money(familyBalance)}
 					</span>
 					<span className="text-xs text-[var(--muted)] font-medium">
 						(единый баланс)
@@ -55,10 +56,10 @@ export const FamilyBalanceCard: React.FC<FamilyBalanceCardProps> = ({
 						type="button"
 						onClick={onOpenFamilyTaxCertificate}
 						data-testid="btn-family-tax-certificate"
-						className="min-h-[34px] h-8 px-3 rounded-lg border border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer hover:bg-indigo-500/20 transition-all self-start sm:self-auto"
+						className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors self-start sm:self-auto shadow-2xs"
 						title="Оформить единую справку ФНС на семью (КНД 1151156, вычет 13%)"
 					>
-						<FileCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+						<FileCheck className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 						<span>Справка ФНС на семью (13%)</span>
 					</button>
 				)}

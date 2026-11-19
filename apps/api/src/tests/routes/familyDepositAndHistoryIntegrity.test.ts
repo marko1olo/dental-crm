@@ -207,7 +207,7 @@ describe("Family Deposit Atomic Deduction & History Route Integrity", () => {
 				});
 			},
 			(err: Error) => {
-				assert.match(err.message, /Недостаточно средств на семейном счете/);
+				assert.match(err.message, /Недостаточно средств на семейном (счете|кошельке)/);
 				return true;
 			},
 		);
