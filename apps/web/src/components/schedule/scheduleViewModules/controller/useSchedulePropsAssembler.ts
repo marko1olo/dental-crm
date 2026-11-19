@@ -5,6 +5,7 @@
  */
 
 import { showToast } from "../../../GlobalToast";
+import { fromDateTimeLocalValue, toDateTimeLocalValue } from "../../../../utils/dateTimeUtils";
 import type {
   ScheduleHeaderToolbarProps,
   ScheduleActiveViewPortProps,
@@ -212,9 +213,9 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
     resetNewAppointmentDraft:
       props.resetNewAppointmentDraft as ScheduleHeaderToolbarProps["resetNewAppointmentDraft"],
     toDateTimeLocalValue:
-      props.toDateTimeLocalValue as ScheduleHeaderToolbarProps["toDateTimeLocalValue"],
+      (props.toDateTimeLocalValue as ScheduleHeaderToolbarProps["toDateTimeLocalValue"]) ?? toDateTimeLocalValue,
     fromDateTimeLocalValue:
-      props.fromDateTimeLocalValue as ScheduleHeaderToolbarProps["fromDateTimeLocalValue"],
+      (props.fromDateTimeLocalValue as ScheduleHeaderToolbarProps["fromDateTimeLocalValue"]) ?? fromDateTimeLocalValue,
     useManualSelects: modalStates.useManualSelects,
     setUseManualSelects: modalStates.setUseManualSelects,
     showCreateForm: modalStates.showCreateForm,
@@ -258,9 +259,9 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
     patientName: props.patientName as ScheduleActiveViewPortProps["patientName"],
     formatTime: props.formatTime as ScheduleActiveViewPortProps["formatTime"],
     toDateTimeLocalValue:
-      props.toDateTimeLocalValue as ScheduleActiveViewPortProps["toDateTimeLocalValue"],
+      (props.toDateTimeLocalValue as ScheduleActiveViewPortProps["toDateTimeLocalValue"]) ?? toDateTimeLocalValue,
     fromDateTimeLocalValue:
-      props.fromDateTimeLocalValue as ScheduleActiveViewPortProps["fromDateTimeLocalValue"],
+      (props.fromDateTimeLocalValue as ScheduleActiveViewPortProps["fromDateTimeLocalValue"]) ?? fromDateTimeLocalValue,
     appointmentLabels:
       props.appointmentLabels as ScheduleActiveViewPortProps["appointmentLabels"],
     showToast: showToast as ScheduleActiveViewPortProps["showToast"],
@@ -365,9 +366,9 @@ export function buildScheduleComponentProps(input: SchedulePropsAssemblerInput):
     formatTime: props.formatTime as ScheduleModalsLayerProps["formatTime"],
     patientName: props.patientName as ScheduleModalsLayerProps["patientName"],
     toDateTimeLocalValue:
-      props.toDateTimeLocalValue as ScheduleModalsLayerProps["toDateTimeLocalValue"],
+      (props.toDateTimeLocalValue as ScheduleModalsLayerProps["toDateTimeLocalValue"]) ?? toDateTimeLocalValue,
     fromDateTimeLocalValue:
-      props.fromDateTimeLocalValue as ScheduleModalsLayerProps["fromDateTimeLocalValue"],
+      (props.fromDateTimeLocalValue as ScheduleModalsLayerProps["fromDateTimeLocalValue"]) ?? fromDateTimeLocalValue,
     appointmentLabels:
       props.appointmentLabels as ScheduleModalsLayerProps["appointmentLabels"],
     activeVisitLockedAppointmentStatuses:

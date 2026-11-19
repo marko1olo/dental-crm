@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
 import { motionSafeScrollIntoView } from "../../../motionPreference";
+import { fromDateTimeLocalValue } from "../../../utils/dateTimeUtils";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import type { QuickBookingSlotInfo } from "../QuickBookingDrawer";
@@ -105,11 +106,12 @@ export function useScheduleShortcuts({
     const urgentTimeStr = `${hoursStr}:${minsStr}`;
 
     const targetDate = scheduleDateFilter || clinicToday || todayScheduleDate();
+    const clinicTz = (dashboard as { clinicSettings?: { profile?: { timezone?: string } } } | null | undefined)?.clinicSettings?.profile?.timezone;
 
     setQuickBookingSlot({
       dateKey: targetDate,
       startTime: urgentTimeStr,
-      startsAt: `${targetDate}T${urgentTimeStr}:00.000Z`,
+      startsAt: fromDateTimeLocalValue(`${targetDate}T${urgentTimeStr}`, clinicTz),
       doctorUserId: dutyDoctor?.id || null,
       chairId: chair?.id || null,
       durationMinutes: 20,

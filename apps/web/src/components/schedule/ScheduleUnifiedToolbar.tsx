@@ -23,8 +23,11 @@ import type { Appointment } from "@dental/shared";
 import { Plus } from "lucide-react";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { QuickAddChairModal } from "./QuickAddChairModal";
-import { DEFAULT_CLINIC_CHAIRS } from "./filterStrip/constants";
-import type { ScheduleFilterStripProps, ScheduleChair } from "./filterStrip/types";
+import { DEFAULT_CLINIC_CHAIRS } from "./toolbarModules/toolbarConstants";
+import type { ScheduleFilterStripProps, ScheduleChair } from "./toolbarModules/toolbarTypes";
+
+export { DEFAULT_CLINIC_CHAIRS } from "./toolbarModules/toolbarConstants";
+export type { ScheduleFilterStripProps, ScheduleChair } from "./toolbarModules/toolbarTypes";
 
 // Toolbar decomposed modules (Mandate 8b Sweet Spot)
 import { DateNavigator } from "./toolbarModules/DateNavigator";

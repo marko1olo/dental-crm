@@ -69,23 +69,18 @@ export function useScheduleRosterData({
             Array.isArray(data.shifts) &&
             data.shifts.length > 0
           ) {
-            setSavedDoctorShifts((prev) => {
-              if (prev.length === 0) {
-                try {
-                  safeLocalStorageSetItem(
-                    "dente_doctor_shifts",
-                    JSON.stringify(data.shifts),
-                  );
-                } catch (storageErr: unknown) {
-                  console.warn(
-                    "[ScheduleView] Error saving dente_doctor_shifts to storage:",
-                    storageErr,
-                  );
-                }
-                return data.shifts;
-              }
-              return prev;
-            });
+            try {
+              safeLocalStorageSetItem(
+                "dente_doctor_shifts",
+                JSON.stringify(data.shifts),
+              );
+            } catch (storageErr: unknown) {
+              console.warn(
+                "[ScheduleView] Error saving dente_doctor_shifts to storage:",
+                storageErr,
+              );
+            }
+            setSavedDoctorShifts(data.shifts);
           }
         }
       } catch (fetchErr: unknown) {

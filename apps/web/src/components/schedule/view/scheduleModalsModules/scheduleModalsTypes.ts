@@ -84,8 +84,8 @@ export interface ScheduleViewModalsProps {
   currentDateKey: string;
   formatTime: (iso: string) => string;
   patientName: (patients: Dashboard["patients"], id: string | null) => string;
-  toDateTimeLocalValue: (iso: string) => string;
-  fromDateTimeLocalValue: (val: string) => string;
+  toDateTimeLocalValue: (iso: string, timeZone?: string | null) => string;
+  fromDateTimeLocalValue: (val: string, timeZone?: string | null) => string;
   appointmentLabels: Record<string, string>;
   activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
   appointmentReadinessById: Map<string, AppointmentReadiness>;

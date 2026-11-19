@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const API_BASE = "http://127.0.0.1:4100";
 const APP_BASE = "http://127.0.0.1:5173";
-const CONV_ID = "8f10489c-08e1-482c-9f6a-d69fa29efad0";
+const CONV_ID = process.env.CONVERSATION_ID || "35df0a2e-cbd8-4a53-a5e5-77ef67f3bad0";
 const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/schedule");
 
@@ -130,14 +130,27 @@ async function main() {
     ]);
 
     const pcPage = await pcContext.newPage();
+    pcPage.on("console", (msg) => console.log(`[BROWSER ${msg.type()}]:`, msg.text()));
+    pcPage.on("pageerror", (err) => console.error("[BROWSER UNCAUGHT]:", err));
+    pcPage.on("requestfailed", (req) => console.error("[REQ FAILED]:", req.method(), req.url(), req.failure()?.errorText));
+    pcPage.on("response", (res) => {
+      if (res.status() >= 400) console.warn(`[HTTP ${res.status()}]:`, res.url());
+    });
 
     await pcPage.addInitScript(({ cToken, sToken, pId, doc }) => {
       localStorage.setItem("dente_clinic_token", cToken);
       localStorage.setItem("dente_staff_token", sToken);
-      localStorage.setItem("dente_workspace_perspective", "doctor");
+      localStorage.setItem("dente_active_session_token", sToken);
+      localStorage.setItem("dente_user_id", doc?.id || "doc-1");
+      localStorage.setItem("dente_user_name", doc?.fullName || "Доктор");
       localStorage.setItem("dente_user_role", "doctor");
+      localStorage.setItem("dente_role", "doctor");
+      localStorage.setItem("dente_perspective", "doctor");
+      localStorage.setItem("dente_workspace_perspective", "doctor");
+      localStorage.setItem("dente_active_view", "schedule");
       localStorage.setItem("dente_active_staff_user", JSON.stringify(doc));
       localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ dismissed: true, step: "done" }));
+      localStorage.setItem("dente_onboarding_completed", "true");
       localStorage.setItem("dente_tour_completed", "true");
       localStorage.setItem("dente_tour_dismissed", "true");
       localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
@@ -154,12 +167,27 @@ async function main() {
 
     console.log("Navigating to Schedule: http://127.0.0.1:5173/#schedule");
     await pcPage.goto(`${APP_BASE}/#schedule`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    console.log("Waiting for boot state (.boot-state) to clear...");
+    await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
+    await sleep(2000);
+    const currentUrl = pcPage.url();
+    const pageText = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
+    const rootHtml = await pcPage.evaluate(() => document.getElementById("root")?.innerHTML || "no root");
+    console.log("Current URL:", currentUrl);
+    console.log("Root HTML preview (500 chars):", rootHtml.slice(0, 500));
+    console.log("Page text preview (300 chars):", pageText.slice(0, 300));
 
-    console.log("Waiting for schedule toolbar / grid...");
-    await pcPage.waitForSelector('[data-testid="schedule-toolbar"], [data-testid="schedule-unified-toolbar"], .schedule-grid-container', {
-      state: "visible",
-      timeout: 30000,
-    });
+    console.log("Waiting for schedule view (#schedule, [data-testid='schedule-view'])...");
+    try {
+      await pcPage.waitForSelector('[data-testid="schedule-view"], #schedule, .schedule-panel', {
+        state: "visible",
+        timeout: 35000,
+      });
+    } catch (e) {
+      console.warn("waitForSelector timed out! Taking diagnostic screenshot...");
+      await pcPage.screenshot({ path: path.join(OUT_DOCS, "diagnostic_schedule_fail.png") });
+      throw e;
+    }
     await sleep(1500);
 
     // 1. PC Light
@@ -167,12 +195,14 @@ async function main() {
     await setTheme(pcPage, "light");
     await saveProof(pcPage, "schedule_pc_light_1440x900.png", "Desktop Schedule Grid Light Mode");
     copyFileSync(path.join(OUT_DOCS, "schedule_pc_light_1440x900.png"), path.join(OUT_DOCS, "pc_light_1440x900.png"));
+    copyFileSync(path.join(OUT_DOCS, "schedule_pc_light_1440x900.png"), path.join(OUT_DOCS, "01_schedule_grid_pc_light_1440x900.png"));
 
     // 2. PC Dark
     console.log("Capturing 🌙 PC Dark (1440x900)...");
     await setTheme(pcPage, "dark");
     await saveProof(pcPage, "schedule_pc_dark_1440x900.png", "Desktop Schedule Grid Dark Mode");
     copyFileSync(path.join(OUT_DOCS, "schedule_pc_dark_1440x900.png"), path.join(OUT_DOCS, "pc_dark_1440x900.png"));
+    copyFileSync(path.join(OUT_DOCS, "schedule_pc_dark_1440x900.png"), path.join(OUT_DOCS, "02_schedule_grid_pc_dark_1440x900.png"));
 
     // ----------------------------------------------------
     // PHASE 2: Mobile Apple HIG Agenda View (390x844)
@@ -186,12 +216,14 @@ async function main() {
     await setTheme(pcPage, "light");
     await saveProof(pcPage, "schedule_mobile_light_390x844.png", "Mobile Schedule Agenda Light Mode");
     copyFileSync(path.join(OUT_DOCS, "schedule_mobile_light_390x844.png"), path.join(OUT_DOCS, "mobile_light_390x844.png"));
+    copyFileSync(path.join(OUT_DOCS, "schedule_mobile_light_390x844.png"), path.join(OUT_DOCS, "03_schedule_agenda_mobile_light_390x844.png"));
 
     // 4. Mobile Dark (390x844)
     console.log("Capturing 🌙 Mobile Dark (390x844)...");
     await setTheme(pcPage, "dark");
     await saveProof(pcPage, "schedule_mobile_dark_390x844.png", "Mobile Schedule Agenda Dark Mode");
     copyFileSync(path.join(OUT_DOCS, "schedule_mobile_dark_390x844.png"), path.join(OUT_DOCS, "mobile_dark_390x844.png"));
+    copyFileSync(path.join(OUT_DOCS, "schedule_mobile_dark_390x844.png"), path.join(OUT_DOCS, "04_schedule_agenda_mobile_dark_390x844.png"));
 
     await pcContext.close();
 

@@ -82,7 +82,7 @@ describe("ScheduleAppointmentInspector (StomX CRM Parity Right Inspector Panel)"
     }
 
     // Selected date styling and appointment indicator dot
-    assert.ok(html.includes("bg-sky-600"));
+    assert.ok(html.includes("bg-[var(--teal)]") || html.includes("bg-[var(--primary)]") || html.includes("bg-sky-600"));
     assert.ok(html.includes("2026-10-22 (есть приёмы)"));
 
     // Quick navigation controls

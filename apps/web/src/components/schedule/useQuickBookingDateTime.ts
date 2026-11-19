@@ -1,4 +1,8 @@
 import { useCallback } from "react";
+import {
+  fromDateTimeLocalValue as canonicalFromDateTimeLocalValue,
+  toDateTimeLocalValue as canonicalToDateTimeLocalValue,
+} from "../../utils/dateTimeUtils";
 
 export function useQuickBookingDateTime(
   timezone: string,
@@ -6,17 +10,20 @@ export function useQuickBookingDateTime(
   fromDateTimeLocalValue?: ((local: string, tz?: string | null) => string) | undefined,
 ) {
   const toLocal = useCallback(
-    (iso: string) => (typeof toDateTimeLocalValue === "function" ? toDateTimeLocalValue(iso, timezone) : new Date(iso).toISOString().slice(0, 16)),
+    (iso: string) =>
+      typeof toDateTimeLocalValue === "function"
+        ? toDateTimeLocalValue(iso, timezone)
+        : canonicalToDateTimeLocalValue(iso, timezone),
     [toDateTimeLocalValue, timezone],
   );
 
   const fromLocal = useCallback(
     (local: string) => {
-      if (typeof fromDateTimeLocalValue === "function") return fromDateTimeLocalValue(local, timezone);
+      if (typeof fromDateTimeLocalValue === "function") {
+        return fromDateTimeLocalValue(local, timezone);
+      }
       if (!local) return new Date().toISOString();
-      const withZ = local.includes("Z") ? local : `${local}:00.000Z`;
-      const parsed = new Date(withZ);
-      return Number.isNaN(parsed.getTime()) ? new Date(local).toISOString() : parsed.toISOString();
+      return canonicalFromDateTimeLocalValue(local, timezone);
     },
     [fromDateTimeLocalValue, timezone],
   );

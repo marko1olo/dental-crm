@@ -1,8 +1,8 @@
 import React from "react";
 import { Users, Armchair, PhoneCall } from "lucide-react";
-import { formatChairSpecialtyLabel } from "../filterStrip/constants";
+import { formatChairSpecialtyLabel } from "./toolbarConstants";
 import { formatDoctorShortName } from "../rosterMath/timeSlotGeometry";
-import type { ScheduleChair } from "../filterStrip/types";
+import type { ScheduleChair } from "./toolbarTypes";
 
 export interface ScheduleFilterChipsProps {
 	isAllActive: boolean;

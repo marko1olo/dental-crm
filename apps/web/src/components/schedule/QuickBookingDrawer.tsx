@@ -160,7 +160,7 @@ export function QuickBookingDrawerFooter({
         onClick={onSubmit}
         aria-busy={isSubmitting}
         data-testid="quick-drawer-save-btn"
-        className="primary-button dente-btn dente-btn-primary w-full h-[52px] min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--teal)] hover:bg-[var(--teal-hover)] text-white shadow-xs"
+        className="primary-button dente-btn dente-btn-primary w-full h-[52px] min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--primary)] bg-[var(--teal)] hover:bg-[var(--primary-hover)] text-white shadow-xs"
       >
         <Plus size={16} className="shrink-0 stroke-[2.5]" />
         <span className="whitespace-nowrap font-bold">

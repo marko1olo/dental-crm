@@ -8,6 +8,7 @@ import { PendingOnlineBookingsModal } from "../../PendingOnlineBookingsModal";
 import { usePatientStore } from "../../../../store/patientStore";
 import { useAppStore } from "../../../../store/appStore";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
+import { fromDateTimeLocalValue as canonicalFromDateTimeLocalValue } from "../../../../utils/dateTimeUtils";
 import type { ScheduleViewModalsProps } from "./scheduleModalsTypes";
 
 export function ScheduleActionModals(props: ScheduleViewModalsProps) {
@@ -62,10 +63,12 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
               .transitionModalToDrawer("doctor_free_slots", "quick_booking");
             if (waitlistOpen) setWaitlistOpen(false);
             if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
+            const clinicTz = (dashboard as { clinicSettings?: { profile?: { timezone?: string } } } | null | undefined)?.clinicSettings?.profile?.timezone;
+            const parseDateTime = props.fromDateTimeLocalValue ?? canonicalFromDateTimeLocalValue;
             setQuickBookingSlot({
               dateKey: slot.date,
               startTime: slot.startTime,
-              startsAt: `${slot.date}T${slot.startTime}:00.000Z`,
+              startsAt: parseDateTime(`${slot.date}T${slot.startTime}`, clinicTz),
               doctorUserId: slot.doctorId || scheduleDoctorFilterId || null,
               chairId: slot.chairId || null,
               durationMinutes: slot.durationMinutes,

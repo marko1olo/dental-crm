@@ -334,7 +334,7 @@ describe("Wave 60: Chair Management, Doctor Duty Binding and Shift Resolution", 
 			);
 
 			expect(html).toContain("duty-doctor-override-note");
-			expect(html).toContain("Запись оформляется к выбранному врачу");
+			expect(html).toContain("Запись создается к выбранному врачу");
 			assert.ok(!html.includes('data-testid="btn-save-appointment" disabled'));
 		});
 	});

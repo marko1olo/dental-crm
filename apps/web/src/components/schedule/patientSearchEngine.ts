@@ -4,10 +4,13 @@
  */
 
 import { parseSearchQueryForQuickPatient as parseSearchQueryImpl } from "./patientSearchEngine/quickPatientPrefill";
-import type { QuickPatientPrefill } from "./patientSearchEngine/searchEngineTypes";
+
+export interface QuickPatientPrefill {
+	readonly fullName: string;
+	readonly phone: string;
+}
 
 export type {
-	QuickPatientPrefill,
 	SearchablePatient,
 	SearchMatchHighlightPart,
 	PatientSearchResultItem,

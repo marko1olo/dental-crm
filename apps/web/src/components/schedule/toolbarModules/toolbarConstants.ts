@@ -1,6 +1,6 @@
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../../workspaceUiLabels";
-import type { ScheduleChair } from "./types";
+import type { ScheduleChair } from "./toolbarTypes";
 
 export const DEFAULT_CLINIC_CHAIRS: readonly ScheduleChair[] = [
 	{ id: "chair-1", name: "Кресло 1", specialization: "therapist", room: "Каб. 1 (Терапия)", active: true },
