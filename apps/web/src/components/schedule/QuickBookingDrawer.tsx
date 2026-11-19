@@ -26,6 +26,8 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 import { QuickBookingDrawerPatientPart } from "./quickBookingDrawer/QuickBookingDrawerPatientPart";
 import { QuickBookingServiceSection } from "./QuickBookingServiceSection";
 import { AppointmentModalLabSection } from "./AppointmentModalLabSection";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { SEED_LAB_ORDERS } from "../lab/dentalLabCatalogData";
 
 // Anti-Matryoshka Law (Mandate 8d): <SlotConflictModal inline={true} /> renders non-blocking conflict options inside QuickBookingServiceSection.
 
@@ -307,17 +309,29 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
   const activeLabOrders = React.useMemo(() => {
     if (!selectedPatient?.id) return [];
     const allLab = (dashboard && "labOrders" in dashboard ? (dashboard as { labOrders?: Array<{ patientId?: string; [key: string]: unknown }> }).labOrders : []) || [];
-    return allLab.filter((lo) => lo.patientId === selectedPatient.id);
+    const directMatches = allLab.filter((lo) => lo.patientId === selectedPatient.id);
+    if (directMatches.length > 0) return directMatches;
+    if (isDemoShowcaseMode()) {
+      return (SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id) as unknown as Array<{ patientId?: string; [key: string]: unknown }>);
+    }
+    return [];
   }, [dashboard, selectedPatient?.id]);
 
   // Реактивное раскрытие секции ЗТЛ при выборе пациента с активным нарядом (SEV-1 Fix / Мандат 8e / 8bd)
   React.useEffect(() => {
     if (!selectedPatient?.id) return;
     const allLab = (dashboard && "labOrders" in dashboard ? (dashboard as { labOrders?: Array<{ patientId?: string; status?: string; dueDate?: string | Date; expectedDate?: string | Date }> }).labOrders : []) || [];
-    const hasActiveUpcomingOrder = allLab.some((lo) => {
+    const fallbackDemo = isDemoShowcaseMode() ? SEED_LAB_ORDERS.filter((lo) => lo.patientId === selectedPatient.id) : [];
+    const combined = [...allLab, ...fallbackDemo];
+    const hasActiveUpcomingOrder = combined.some((lo) => {
       if (lo.patientId !== selectedPatient.id) return false;
-      const st = (lo.status || "").toLowerCase();
-      if (st === "delivered" || st === "completed" || st === "cancelled" || st === "installed") return false;
+      const rawStatus = "status" in lo && typeof (lo as { status?: unknown }).status === "string"
+        ? (lo as { status?: string }).status
+        : "stage" in lo && typeof (lo as { stage?: unknown }).stage === "string"
+          ? (lo as { stage?: string }).stage
+          : "";
+      const st = (rawStatus || "").toLowerCase();
+      if (st === "delivered" || st === "completed" || st === "cancelled" || st === "installed" || st === "seated") return false;
       return true;
     });
     if (hasActiveUpcomingOrder || activeLabOrders.length > 0) {
@@ -332,19 +346,19 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
       {/* Мягкий бейдж/алерт коллизии расписания со сроком готовности ЗТЛ (Мандат 8e) */}
       {state.collision?.labCollision?.hasCollision && (
         <div
-          className="rounded-xl border border-amber-500/40 bg-amber-500/15 p-3 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xs"
+          className="rounded-xl border border-amber-500/40 bg-amber-500/15 p-3.5 text-xs text-amber-900 dark:text-amber-200 flex flex-col items-start gap-2.5 shadow-2xs"
           data-testid="quick-booking-lab-collision-alert"
         >
-          <div className="flex items-start sm:items-center gap-2 min-w-0">
-            <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
-            <div className="space-y-0.5 min-w-0">
-              <div className="font-bold flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-start gap-2.5 min-w-0 w-full">
+            <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1 min-w-0 flex-1">
+              <div className="font-semibold flex items-center gap-1.5 flex-wrap">
                 <span>Внимание: заказ ЗТЛ еще не будет готов к этому визиту!</span>
                 <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30">
                   {state.collision.labCollision.orderNumber}
                 </span>
               </div>
-              <p className="text-[11px] leading-tight text-amber-800 dark:text-amber-300">
+              <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
                 {state.collision.labCollision.message}
               </p>
             </div>
@@ -356,7 +370,7 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
                 setStartsAtLocal(state.collision.labCollision.dueDateLocal);
               }
             }}
-            className="h-8 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-2xs"
+            className="h-8 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs inline-flex items-center gap-1.5 cursor-pointer self-start transition-colors shadow-2xs"
             data-testid="btn-shift-appointment-to-lab-ready"
           >
             <Clock size={13} />

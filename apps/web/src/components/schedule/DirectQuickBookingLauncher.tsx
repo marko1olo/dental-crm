@@ -19,6 +19,7 @@ function parseSlotFromUrl(): QuickBookingSlotInfo | null {
 	const chairName = params.get("chairName") || (isDemo ? "Кресло 1" : undefined);
 	const doctorUserId = params.get("doctorId") || params.get("doctorUserId") || (isDemo ? "doctor-1" : undefined);
 	const doctorName = params.get("doctorName") || (isDemo ? "Д-р Смирнова Е. В." : undefined);
+	const patientId = params.get("patientId") || undefined;
 	const patientName = params.get("patientName") || (isDemo ? "Иванов Иван Иванович" : undefined);
 	const patientPhone = params.get("patientPhone") || (isDemo ? "+7 (999) 123-45-67" : undefined);
 	const reason = params.get("reason") || (isDemo ? "Консультация" : undefined);
@@ -32,6 +33,7 @@ function parseSlotFromUrl(): QuickBookingSlotInfo | null {
 		...(chairName ? { chairName } : {}),
 		...(doctorUserId ? { doctorUserId } : {}),
 		...(doctorName ? { doctorName } : {}),
+		...(patientId ? { patientId } : {}),
 		...(patientName ? { patientName } : {}),
 		...(patientPhone ? { patientPhone } : {}),
 		...(reason ? { reason } : {}),

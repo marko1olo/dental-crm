@@ -29,7 +29,7 @@ export function QuickPresetChipsBar({
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+        <label className="text-xs sm:text-sm font-medium text-[var(--ink-muted)] block mb-1.5">
           Повод обращения / Услуга
         </label>
         <input
@@ -78,7 +78,7 @@ export function QuickPresetChipsBar({
       </div>
 
       <div>
-        <label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
+        <label className="text-xs sm:text-sm font-medium text-[var(--ink-muted)] block mb-1.5">
           Комментарий для врача / регистратуры
         </label>
         <textarea

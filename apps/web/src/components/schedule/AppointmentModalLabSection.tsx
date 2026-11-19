@@ -217,7 +217,7 @@ export function AppointmentModalLabSection({
 
   return (
     <div className="sm:col-span-2 space-y-2" data-testid="appointment-modal-lab-section">
-      <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+      <div className="flex items-center justify-between text-xs font-medium text-[var(--ink-muted)]">
         <span className="flex items-center gap-1.5 text-[var(--teal)]">
           <FlaskConical size={13} />
           <span>Заказ в лабораторию (ЗТЛ)</span>
@@ -282,7 +282,7 @@ export function AppointmentModalLabSection({
                 </span>
               </div>
               <span
-                className={`px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider font-extrabold border ${item.statusInfo.badgeClass}`}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${item.statusInfo.badgeClass}`}
                 data-testid="appointment-modal-lab-status"
               >
                 {item.statusInfo.isOverdue

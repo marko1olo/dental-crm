@@ -31,20 +31,9 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
     try {
       const isTechBreak = isTechnicalBreakAppointment({ reason: params.reason, comment: params.comment });
       const activePatientId = isTechBreak ? null : await resolveOrAutoCreateSubmitPatient(patientSearch, appointmentType);
+      // Mandate 8e / 8n (1-Click Booking & Auto-Defaults):
+      // Если пациент не выбран, не блокируем создание записи, а сохраняем слот как анонимную бронь / резерв времени приёма
       const effectivePatientId = activePatientId;
-      if (!effectivePatientId && !isTechBreak) {
-        if (appointmentType !== "emergency") {
-          const msg = "Укажите пациента из списка или начните вводить фамилию/телефон для быстрой записи";
-          setSubmitError(msg);
-          showToast(msg, "warning");
-          if (patientSearch.showInlineNewPatient && patientSearch.newPatientFullNameInputRef?.current) {
-            patientSearch.newPatientFullNameInputRef.current.focus();
-          } else if (patientSearch.searchInputRef?.current) {
-            patientSearch.searchInputRef.current.focus();
-          }
-          return;
-        }
-      }
 
       const startsAtIso = startsAtLocal ? fromLocal(startsAtLocal) : new Date(Math.ceil(Date.now() / 900000) * 900000).toISOString();
       const endsAtIso = new Date(Date.parse(startsAtIso) + durationMinutes * 60_000).toISOString();
@@ -104,9 +93,9 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
         await loadDashboard();
       }
 
-      const patientName = patientSearch.selectedPatient?.fullName || patientSearch.newPatientFullName.trim() || (isTechBreak ? "Технический перерыв" : "Пациент");
+      const patientName = patientSearch.selectedPatient?.fullName || patientSearch.newPatientFullName.trim() || (isTechBreak ? "Технический перерыв" : (activePatientId ? "Пациент" : "Бронь слота"));
       if (isEditing) {
-        showToast(`Запись для «${patientName}» обновлена!`, "success", 4000);
+        showToast(activePatientId ? `Запись для «${patientName}» обновлена!` : `Бронь слота обновлена!`, "success", 4000);
         const updatedAppt =
           result?.appointment ||
           ({
@@ -123,7 +112,13 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
           } as Appointment);
         if (typeof onAppointmentUpdated === "function") onAppointmentUpdated(updatedAppt);
       } else {
-        showToast(`Запись для «${patientName}» создана на ${startsAtLocal.slice(11, 16)}!`, "success", 5000);
+        showToast(
+          activePatientId
+            ? `Запись для «${patientName}» создана на ${startsAtLocal.slice(11, 16)}!`
+            : `Бронь слота на ${startsAtLocal.slice(11, 16)} зафиксирована!`,
+          "success",
+          5000,
+        );
         const createdAppt =
           result?.appointment ||
           result?.dashboard?.appointments?.find((a) => (a.patientId === activePatientId || a.patientId === patientSearch.patientId) && a.startsAt === startsAtIso) ||

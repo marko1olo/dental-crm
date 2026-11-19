@@ -203,6 +203,7 @@ export const CLINIC_LABORATORIES: readonly string[] = Object.freeze([
 export interface DentalLabOrderEntry {
 	readonly id: string;
 	readonly orderNumber?: string | number | undefined;
+	readonly patientId?: string | undefined;
 	readonly patientName: string;
 	readonly doctorName: string;
 	readonly teeth: readonly number[];
@@ -261,25 +262,25 @@ export function isOrderOverdue(order: DentalLabOrderEntry): boolean {
 
 export const SEED_LAB_ORDERS: readonly DentalLabOrderEntry[] = Object.freeze([
 	{
-		id: "lab-ord-1", orderNumber: "ЗТЛ-101", patientName: "Воронов Артем Михайлович", doctorName: "Д-р Смирнова Е. В. (Ортопед)",
-		teeth: [16], materialId: "zirconia_multilayer", shadeCode: "A2", stage: "in_production",
+		id: "lab-ord-1", orderNumber: "ЗТЛ-100", patientId: "01a00000-0000-0000-0000-000000000002", patientName: "Воронов Дмитрий Игоревич", doctorName: "Д-р Смирнова Е. В. (Ортопед)",
+		teeth: [11], materialId: "zirconia_multilayer", shadeCode: "A2", stage: "in_production",
 		labCostKopecks: 750000, patientPriceKopecks: 2400000, laboratoryName: "Арт-Дент Лаб (CAD/CAM центр)",
-		createdAt: "2026-10-25T09:30:00Z", dueDate: "2026-11-02", notes: "Уступ 0.8мм с круговым скосом, выраженный окклюзионный рельеф", isUrgent: false,
+		createdAt: "2026-10-25T09:30:00Z", dueDate: "2026-11-07", notes: "Циркониевая коронка Multi-layer (многослойный диоксид циркония)", isUrgent: false,
 	},
 	{
-		id: "lab-ord-2", orderNumber: "ЗТЛ-102", patientName: "Кузнецова Ирина Павловна", doctorName: "Д-р Смирнова Е. В. (Ортопед)",
-		teeth: [11, 21], materialId: "emax_press", shadeCode: "BL2", stage: "fitting_ready",
-		labCostKopecks: 1700000, patientPriceKopecks: 5200000, laboratoryName: "Премиум-Смайл Лаб (Эстетическая керамика)",
-		createdAt: "2026-10-22T14:15:00Z", dueDate: "2026-10-30", notes: "Виниры во фронтальной зоне, текстурированная эмаль, прозрачный режущий край", isUrgent: true,
+		id: "lab-ord-2", orderNumber: "ЗТЛ-101", patientId: "01a00000-0000-0000-0000-000000000001", patientName: "Ковалева Елена Павловна", doctorName: "Д-р Смирнова Е. В. (Ортопед)",
+		teeth: [16], materialId: "zirconia_multilayer", shadeCode: "A1", stage: "in_clinic",
+		labCostKopecks: 750000, patientPriceKopecks: 2400000, laboratoryName: "Арт-Дент Лаб (CAD/CAM центр)",
+		createdAt: "2026-10-22T14:15:00Z", dueDate: "2026-11-05", notes: "Готово в клинике", isUrgent: false,
 	},
 	{
-		id: "lab-ord-3", orderNumber: "ЗТЛ-103", patientName: "Морозов Денис Сергеевич", doctorName: "Д-р Смирнова Е. В. (Ортопед)",
-		teeth: [36], materialId: "zirconia_abutment", shadeCode: "A3", stage: "in_clinic",
-		labCostKopecks: 650000, patientPriceKopecks: 1800000, laboratoryName: "Орто-Мастер ЗТЛ (Прецизионная ортопедия)",
-		createdAt: "2026-10-20T11:00:00Z", dueDate: "2026-10-28", notes: "Винтовая фиксация, шахта выведена на окклюзионную поверхность", isUrgent: false,
+		id: "lab-ord-3", orderNumber: "ЗТЛ-102", patientId: "01a00000-0000-0000-0000-000000000003", patientName: "Кузнецов Михаил Викторович", doctorName: "Д-р Смирнова Е. В. (Ортопед)",
+		teeth: [36], materialId: "zirconia_multilayer", shadeCode: "A3", stage: "seated",
+		labCostKopecks: 750000, patientPriceKopecks: 2400000, laboratoryName: "Арт-Дент Лаб (CAD/CAM центр)",
+		createdAt: "2026-10-20T11:00:00Z", dueDate: "2026-11-03", notes: "Зафиксировано во рту", isUrgent: false,
 	},
 	{
-		id: "lab-ord-4", orderNumber: "ЗТЛ-104", patientName: "Алексеева Наталья Григорьевна", doctorName: "Д-р Смирнова Е. В. (Ортопед)",
+		id: "lab-ord-4", orderNumber: "ЗТЛ-104", patientId: "01a00000-0000-0000-0000-000000000004", patientName: "Алексеева Наталья Григорьевна", doctorName: "Д-р Смирнова Е. В. (Ортопед)",
 		teeth: [45, 46, 47], materialId: "metal_ceramic_cocr", shadeCode: "A3.5", stage: "scan_sent",
 		labCostKopecks: 1140000, patientPriceKopecks: 4200000, laboratoryName: "Арт-Дент Лаб (CAD/CAM центр)",
 		createdAt: "2026-10-30T16:45:00Z", dueDate: "2026-11-06", notes: "Мостовидный протез с промывным пространством в области 46", isUrgent: false,

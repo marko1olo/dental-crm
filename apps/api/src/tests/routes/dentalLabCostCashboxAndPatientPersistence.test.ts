@@ -138,7 +138,7 @@ describe("Dental Lab Red Team Fixer: Cashbox Cost Invariant & Patient Persistenc
 	describe("3. Канонические статусы ЗТЛ (Миграция 0231)", () => {
 		it("маппинг этапов возвращает канонические статусы ЗТЛ", () => {
 			assert.strictEqual(mapStageToLabOrderStatus("Готовая работа"), "ready_in_clinic");
-			assert.strictEqual(mapStageToLabOrderStatus("Примерка"), "fitted");
+			assert.strictEqual(mapStageToLabOrderStatus("Примерка"), "fitting");
 			assert.strictEqual(mapStageToLabOrderStatus("Слепок/Скан"), "sent");
 			assert.strictEqual(mapStageToLabOrderStatus("cad_cam"), "in_progress");
 			assert.strictEqual(mapStageToLabOrderStatus("Фиксация"), "completed");

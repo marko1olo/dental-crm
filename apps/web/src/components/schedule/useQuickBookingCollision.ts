@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { type Dashboard, getPatientActiveLabStatus } from "@dental/shared";
 import type { QuickBookingAppointmentType } from "./patientReliabilityScore";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { SEED_LAB_ORDERS } from "../lab/dentalLabCatalogData";
 
 export interface QuickBookingLabCollisionInfo {
   hasCollision: boolean;
@@ -82,9 +84,23 @@ export function useQuickBookingCollision({
 
     // Проверка коллизии готовности работы ЗТЛ со временем визита (Мандат 8e / 8bd)
     let labCollision: QuickBookingLabCollisionInfo | null = null;
-    const labOrders = dashboard && "labOrders" in dashboard
+    const rawDashLab = dashboard && "labOrders" in dashboard
       ? (dashboard as { labOrders?: Array<Record<string, unknown>> }).labOrders
       : undefined;
+    const labOrders = Array.isArray(rawDashLab) && rawDashLab.length > 0
+      ? rawDashLab
+      : (isDemoShowcaseMode()
+          ? SEED_LAB_ORDERS.map((o) => ({
+              id: o.id,
+              orderNumber: typeof o.orderNumber === "string" ? o.orderNumber : `ЗТЛ-${o.orderNumber || 100}`,
+              patientId: o.patientId || null,
+              dueDate: o.dueDate,
+              status: o.stage === "in_production" ? "in_progress" : o.stage === "in_clinic" ? "ready_in_clinic" : o.stage === "seated" ? "completed" : "sent",
+              stage: o.stage,
+              material: o.materialId,
+              workTypeRu: o.notes,
+            }))
+          : undefined);
     if (patientId && startsAtLocal) {
       const activeLabStatus = getPatientActiveLabStatus(
         labOrders as any,
