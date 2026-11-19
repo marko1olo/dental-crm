@@ -59,7 +59,7 @@ export const STATUTORY_EMR_TEMPLATES: readonly StatutoryEmrTemplateItem[] = [
 	{
 		id: "prophy_exam_normal",
 		title: "Профилактический осмотр: Полость рта санирована / Здоров (Z01.2)",
-		shortTitle: "Санирован / Здоров (1 клик)",
+		shortTitle: "Физиологическая норма (санирован)",
 		category: "preventive",
 		icd10Code: "Z01.2",
 		icd10Title: "Стоматологическое обследование (Здоров)",

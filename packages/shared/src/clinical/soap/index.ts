@@ -11,4 +11,5 @@ export * from "./soapOrthopedicsProtocols.js";
 export * from "./soapPeriodontProtocols.js";
 export * from "./soapPediatricProtocols.js";
 export * from "./soapHygieneProtocols.js";
+export * from "./templateInterpolator.js";
 export * from "./soapMasterCatalog.js";

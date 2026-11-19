@@ -33,7 +33,7 @@ import type {
 import {
 	type PopulateTemplateParams,
 	populateOutpatientTemplateText,
-} from "../../outpatient/stomtOutpatientCatalog.js";
+} from "./templateInterpolator.js";
 
 /**
  * Полный объединенный реестр эталонных клинических SOAP-протоколов (SSOT).

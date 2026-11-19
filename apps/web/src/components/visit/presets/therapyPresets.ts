@@ -8,4 +8,4 @@
 import { THERAPY_SOAP_PRESETS as SHARED_THERAPY_SOAP_PRESETS } from "@dental/shared";
 import type { ClinicalSoapPreset } from "../clinicalSoapTypes";
 
-export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = SHARED_THERAPY_SOAP_PRESETS as unknown as readonly ClinicalSoapPreset[];
+export const THERAPY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = SHARED_THERAPY_SOAP_PRESETS;

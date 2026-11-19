@@ -6,7 +6,10 @@
  */
 
 import React from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteQueryClient } from "../../../lib/queryClient";
 import {
 	inferProcedureServiceFromStamp,
 	inferCatalogServiceFromStamp,
@@ -136,7 +139,7 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 	} = useVisitSave({
 		visitId: openVisitId ?? dashboard?.activeVisit?.id ?? null,
 		patientId: activePatient?.id ?? dashboard?.activeVisit?.patientId ?? null,
-		visitNoteForm: visitNoteForm as unknown as VisitNoteForm,
+		visitNoteForm: visitNoteForm as VisitNoteForm,
 		onSaveSuccess: () => {
 			if (typeof onSaveVisitNote === "function") {
 				void (onSaveVisitNote as () => Promise<void> | void)();
@@ -216,7 +219,17 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 				setIsRevisingVisitNote(true);
 			}
 			const toothPrefix = targetTooth ? `Зуб ${targetTooth}: ` : "";
-			const p = preset as unknown as Record<string, string | undefined>;
+			const p = preset as {
+				statusLocalis?: string | undefined;
+				objectiveStatus?: string | undefined;
+				icd10Label?: string | undefined;
+				diagnosis?: string | undefined;
+				treatmentDescription?: string | undefined;
+				treatmentPlan?: string | undefined;
+				shortBadge?: string | undefined;
+				shortLabel?: string | undefined;
+				title?: string | undefined;
+			};
 			const statusLocalis = p.statusLocalis || p.objectiveStatus || "";
 			const diagnosisText = p.icd10Label || p.diagnosis || "";
 			const treatmentText = p.treatmentDescription || p.treatmentPlan || "";
@@ -300,6 +313,88 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 			);
 		}
 		await flushSoloPendingSave();
+
+		// DEF-EMR-01 / SEV-1: Мгновенная синхронизация дневника с PostgreSQL 18 через POST /api/diaries (draft)
+		// Устраняет Hydration Gap (амнезию) между экраном кресла и ЭМК (MedicalRecordStudioModal)
+		const effectiveVisitId = openVisitId || (dashboard?.activeVisit?.id as string | undefined) || "";
+		const effectivePatientId = activePatient?.id || (dashboard?.activeVisit?.patientId as string | undefined) || "";
+		const isUuid = (val: unknown): val is string =>
+			typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+		if (isUuid(effectiveVisitId) && isUuid(effectivePatientId)) {
+			try {
+				const complaintText = String(visitNoteForm?.complaint || "").trim();
+				const anamnesisText = String(visitNoteForm?.anamnesis || "").trim();
+				const statusLocalisText = String(visitNoteForm?.objectiveStatus || "").trim();
+				const diagnosisRaw = String(visitNoteForm?.diagnosis || "").trim();
+				const diagnosisIcd10Code =
+					String(visitNoteForm?.diagnosisIcd10 || "").trim() ||
+					(diagnosisRaw.match(/^[A-Z]\d{2}(?:\.\d{1,2})?/i)?.[0]?.toUpperCase());
+				const treatmentText = String(visitNoteForm?.treatmentPlan || "").trim();
+				const toothRaw = effectiveActiveTooth
+					? String(effectiveActiveTooth)
+					: visitNoteForm?.diagnosisTooth
+						? String(visitNoteForm.diagnosisTooth)
+						: undefined;
+
+				const idempotencyKey =
+					typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+						? crypto.randomUUID()
+						: generateUuidV7();
+
+				const diaryRes = await fetch("/api/diaries", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+						...denteAdminSecretRequestHeaders(),
+					},
+					credentials: "same-origin",
+					body: JSON.stringify({
+						visitId: effectiveVisitId,
+						patientId: effectivePatientId,
+						complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
+						anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
+						statusLocalis: statusLocalisText || "Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+						diagnosisIcd10: diagnosisIcd10Code || undefined,
+						diagnosisTooth: toothRaw,
+						treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
+						status: isSignedVisit ? "signed" : "draft",
+					}),
+				});
+
+				if (!diaryRes.ok) {
+					const errJson = (await diaryRes.json().catch(() => null)) as { error?: string; message?: string } | null;
+					console.warn("useVisitEmkTabController: ошибка сохранения дневника в /api/diaries", errJson);
+				} else {
+					void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["patient", effectivePatientId] });
+
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(
+							new CustomEvent("dente:diary-saved", {
+								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
+							}),
+						);
+						window.dispatchEvent(
+							new CustomEvent("dente:emk-updated", {
+								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
+							}),
+						);
+						window.dispatchEvent(
+							new CustomEvent("dente:visit-updated", {
+								detail: { visitId: effectiveVisitId },
+							}),
+						);
+					}
+				}
+			} catch (diaryErr) {
+				console.warn("useVisitEmkTabController: сетевая ошибка сохранения дневника в /api/diaries", diaryErr);
+			}
+		}
+
 		if (typeof onSaveVisitNote === "function") {
 			await (onSaveVisitNote as () => Promise<void> | void)();
 		}
@@ -314,10 +409,16 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 			3000,
 		);
 	}, [
+		activePatient?.id,
+		dashboard?.activeVisit?.id,
+		dashboard?.activeVisit?.patientId,
+		effectiveActiveTooth,
 		flushSoloPendingSave,
 		isRevisingVisitNote,
+		isSignedVisit,
 		noteTextOfAnotherVisit,
 		onSaveVisitNote,
+		openVisitId,
 		updateVisitNoteField,
 		visitNoteForm,
 	]);

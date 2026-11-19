@@ -7,9 +7,10 @@
  */
 
 import { useCallback, useState } from "react";
-import { resolveDentalSpecialty } from "@dental/shared";
+import { resolveDentalSpecialty, generateUuidV7 } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { denteQueryClient } from "../../../lib/queryClient";
 import type { MedicalRecordData } from "../types/recordDataTypes";
 
 /** Канонический ключ черновика дневника приёма (Мандаты 8x/8ap) */
@@ -84,13 +85,13 @@ export function useMedicalRecordSave({
 							const idempotencyKey =
 								typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 									? crypto.randomUUID()
-									: undefined;
+									: generateUuidV7();
 
 							const diaryRes = await fetch("/api/diaries", {
 								method: "POST",
 								headers: {
 									"Content-Type": "application/json",
-									...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+									"Idempotency-Key": idempotencyKey,
 									...denteAdminSecretRequestHeaders(),
 								},
 								credentials: "same-origin",
@@ -107,20 +108,23 @@ export function useMedicalRecordSave({
 								}),
 							});
 
-							if (!diaryRes.ok && !effectiveIsDraft) {
-								const errJson = await diaryRes.json().catch(() => null);
+							if (!diaryRes.ok) {
+								const errJson = (await diaryRes.json().catch(() => null)) as { error?: string; message?: string } | null;
+								const errorMessage = errJson?.message || errJson?.error || "Ошибка сохранения дневника приёма в базу данных";
 								console.warn("useMedicalRecordSave: ошибка сохранения дневника в /api/diaries", errJson);
+								showToast(errorMessage, "error", 5000);
 							}
 						}
 					} catch (diaryPersistErr) {
 						console.warn("useMedicalRecordSave: ошибка персистентности в /api/diaries", diaryPersistErr);
+						showToast("Сетевая ошибка при сохранении дневника приёма", "error", 5000);
 					}
 				}
 
 				const autosaveIdempotency =
 					typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
 						? crypto.randomUUID()
-						: undefined;
+						: generateUuidV7();
 
 				const aggregatedComplaints = formData.visitDiaries
 					.map((d) => d.subjectiveComplaints ? (d.toothNumber ? `Зуб ${d.toothNumber}: ${d.subjectiveComplaints}` : d.subjectiveComplaints) : null)
@@ -143,7 +147,7 @@ export function useMedicalRecordSave({
 					method: "PUT",
 					headers: {
 						"Content-Type": "application/json",
-						...(autosaveIdempotency ? { "Idempotency-Key": autosaveIdempotency } : {}),
+						"Idempotency-Key": autosaveIdempotency,
 						...denteAdminSecretRequestHeaders(),
 					},
 					credentials: "same-origin",
@@ -165,6 +169,17 @@ export function useMedicalRecordSave({
 				});
 
 				if (res.ok) {
+					if (typeof sessionStorage !== "undefined" && effectivePatientId) {
+						try {
+							sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
+						} catch { /* ignore storage error */ }
+					}
+					void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
+					if (effectivePatientId) {
+						void denteQueryClient.invalidateQueries({ queryKey: ["patient", effectivePatientId] });
+					}
 					if (typeof window !== "undefined") {
 						window.dispatchEvent(
 							new CustomEvent("dente:diary-saved", {

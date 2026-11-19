@@ -15,7 +15,7 @@ import { chromium } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONV_ID = process.env.CONV_ID || "25e34528-ec30-4e83-8f18-0fd75d18cc19";
+const CONV_ID = process.env.CONV_ID || "a11acdee-8a25-44e7-b018-b764be1fcc4b";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}/screenshots/emr`;
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/emr");
 const OUT_SCREENSHOTS = path.resolve(__dirname, "../docs/screenshots/emr");
@@ -225,7 +225,8 @@ async function run() {
 		const page = await context.newPage();
 		await setupPageSession(context, page, "doctor");
 		console.log("Navigating to http://127.0.0.1:5173/?demo=true#medical-card ...");
-		await page.goto("http://127.0.0.1:5173/?demo=true#medical-card", { waitUntil: "domcontentloaded", timeout: 45000 });
+		await page.goto("http://127.0.0.1:5173/?demo=true#medical-card", { waitUntil: "commit", timeout: 60000 });
+		await page.waitForLoadState("domcontentloaded", { timeout: 60000 }).catch(() => {});
 		await waitForRealUI(page);
 		await openEmrModal(page);
 		await suppressOverlays(page);
