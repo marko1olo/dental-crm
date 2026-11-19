@@ -113,8 +113,8 @@ export const STAMP_OPTIONS: readonly StampOption[] = [
 	{
 		state: "Periodontitis",
 		label: "Периодонтит",
-		shortLabel: "Pt",
-		abbr: "Pt",
+		shortLabel: "Пе",
+		abbr: "Пе",
 		testId: "quick-trigger-periodontitis-btn",
 		colorDotClass: "bg-[#ea580c]",
 		colorStyleClass: "odontogram-stamp-tool-btn--periodontitis",
@@ -135,8 +135,8 @@ export const STAMP_OPTIONS: readonly StampOption[] = [
 	{
 		state: "Root",
 		label: "Корень",
-		shortLabel: "R",
-		abbr: "R",
+		shortLabel: "Кн",
+		abbr: "Кн",
 		testId: "quick-trigger-root-btn",
 		colorDotClass: "bg-[#dc2626]",
 		colorStyleClass: "odontogram-stamp-tool-btn--root",
@@ -201,12 +201,12 @@ export const STAMP_OPTIONS: readonly StampOption[] = [
 	{
 		state: "Missing",
 		label: "Удален",
-		shortLabel: "0",
-		abbr: "0",
+		shortLabel: "✕",
+		abbr: "✕",
 		testId: "quick-trigger-extracted-btn",
 		colorDotClass: "bg-[#64748b]",
 		colorStyleClass: "odontogram-stamp-tool-btn--missing",
-		description: "Отсутствует / Адентия (0)",
+		description: "Отсутствует / Адентия (✕)",
 		categories: ["endo_surgery"],
 	},
 	{

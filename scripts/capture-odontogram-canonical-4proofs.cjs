@@ -7,6 +7,11 @@ if (!existsSync(PROOF_DIR)) {
   mkdirSync(PROOF_DIR, { recursive: true });
 }
 
+const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/c5acd84e-519f-40d1-b598-b6040f2f789c';
+if (!existsSync(BRAIN_DIR)) {
+  mkdirSync(BRAIN_DIR, { recursive: true });
+}
+
 const WEB_URL = 'http://127.0.0.1:5173/?stand=odontogram';
 
 async function suppressOverlays(page) {
@@ -58,12 +63,7 @@ async function setTheme(page, theme) {
     document.documentElement.style.colorScheme = th;
   }, theme);
   await suppressOverlays(page);
-  await page.waitForTimeout(400);
-}
-
-const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/c5acd84e-519f-40d1-b598-b6040f2f789c';
-if (!existsSync(BRAIN_DIR)) {
-  mkdirSync(BRAIN_DIR, { recursive: true });
+  await page.waitForTimeout(600);
 }
 
 function verifyAndSaveScreenshot(buffer, filename, description) {
@@ -80,6 +80,24 @@ function verifyAndSaveScreenshot(buffer, filename, description) {
   return dest;
 }
 
+async function waitForOdontogram(page, maxSeconds = 15) {
+  for (let s = 1; s <= maxSeconds; s++) {
+    await page.waitForTimeout(1000);
+    const ready = await page.evaluate(() => {
+      const wheeler = document.querySelector('[data-testid="wheeler-tooth-arch"]');
+      const launcher = document.querySelector('[data-testid="direct-odontogram-module-launcher"]');
+      return !!wheeler && !!launcher;
+    });
+    if (ready) {
+      console.log(`Odontogram mounted successfully at second ${s}`);
+      await suppressOverlays(page);
+      await page.waitForTimeout(1000);
+      return true;
+    }
+  }
+  throw new Error(`Odontogram failed to mount within ${maxSeconds}s`);
+}
+
 (async () => {
   console.log('=== CAPTURING 4-STATE CANONICAL WHEELER 2.5D ODONTOGRAM PROOFS ===');
   const browser = await chromium.launch({ headless: true });
@@ -87,29 +105,13 @@ function verifyAndSaveScreenshot(buffer, filename, description) {
   try {
     // 1. PC 1440x900
     console.log('1. Setting up PC context (1440x900)...');
-    const pcContext = await browser.newContext({
+    const pcPage = await browser.newPage({
       viewport: { width: 1440, height: 900 },
       deviceScaleFactor: 1,
     });
-    await pcContext.addInitScript(() => {
-      localStorage.setItem('dente_theme_mode', 'light');
-      localStorage.setItem('dente_onboarding_completed', 'true');
-      localStorage.setItem('dente_tour_completed', 'true');
-      localStorage.setItem('dente_tour_dismissed', 'true');
-      localStorage.setItem('dente_guide_tour_dismissed_v2', 'true');
-      localStorage.setItem('dente_demo_banner_dismissed', 'true');
-      localStorage.setItem('dental-crm:onboarding:v1', JSON.stringify({ completed: true, dismissed: true }));
-    });
-
-    const pcPage = await pcContext.newPage();
-    console.log(`Navigating to ${WEB_URL}...`);
-    await pcPage.goto(WEB_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    
-    console.log('Waiting for odontogram launcher and Wheeler arch to render...');
-    await pcPage.waitForSelector('[data-testid="direct-odontogram-module-launcher"]', { timeout: 45000 });
-    await pcPage.waitForSelector('[data-testid="wheeler-tooth-arch"]', { timeout: 45000 });
-    await suppressOverlays(pcPage);
-    await pcPage.waitForTimeout(1500);
+    console.log(`Navigating PC to ${WEB_URL}...`);
+    await pcPage.goto(WEB_URL, { timeout: 60000 });
+    await waitForOdontogram(pcPage);
 
     // 1.1 PC Light
     await setTheme(pcPage, 'light');
@@ -121,70 +123,37 @@ function verifyAndSaveScreenshot(buffer, filename, description) {
     const pcDarkBuf = await pcPage.screenshot({ fullPage: false });
     verifyAndSaveScreenshot(pcDarkBuf, '02_odontogram_pc_dark_1440x900.png', 'Wheeler 2.5D Odontogram (PC Dark 1440x900)');
 
-    // 1.3 Pediatric Odontogram PC Light & Dark
+    // 1.3 Pediatric PC (optional extra proof)
     try {
-      const pedToolbarBtn = pcPage.locator('[data-testid="toolbar-dentition-pediatric"]');
-      if (await pedToolbarBtn.count() > 0) {
-        await pedToolbarBtn.first().click();
+      const pedBtn = pcPage.locator('button:has-text("Детский"), [data-testid="toolbar-dentition-pediatric"]');
+      if (await pedBtn.count() > 0) {
+        await pedBtn.first().click();
         await pcPage.waitForTimeout(1000);
         await setTheme(pcPage, 'light');
-        const pedPcLightBuf = await pcPage.screenshot({ fullPage: false });
-        verifyAndSaveScreenshot(pedPcLightBuf, '03_odontogram_pediatric_pc_light_1440x900.png', 'Pediatric Odontogram (PC Light 1440x900)');
+        const pedLight = await pcPage.screenshot({ fullPage: false });
+        verifyAndSaveScreenshot(pedLight, '03_odontogram_pediatric_pc_light_1440x900.png', 'Pediatric Odontogram (PC Light 1440x900)');
         await setTheme(pcPage, 'dark');
-        const pedPcDarkBuf = await pcPage.screenshot({ fullPage: false });
-        verifyAndSaveScreenshot(pedPcDarkBuf, '06_odontogram_pediatric_pc_dark_1440x900.png', 'Pediatric Odontogram (PC Dark 1440x900)');
-      } else {
-        const moreBtn = pcPage.locator('[data-testid="btn-odontogram-more-menu"]');
-        if (await moreBtn.count() > 0) {
-          await moreBtn.first().click();
-          await pcPage.waitForTimeout(300);
-          const pedBtn = pcPage.locator('[data-testid="btn-more-menu-pediatric"]');
-          if (await pedBtn.count() > 0) {
-            await pedBtn.first().click();
-            await pcPage.waitForSelector('[aria-labelledby="pediatric-modal-title"]', { timeout: 15000 });
-            await pcPage.waitForTimeout(500);
-            await setTheme(pcPage, 'light');
-            const pedPcLightBuf = await pcPage.screenshot({ fullPage: false });
-            verifyAndSaveScreenshot(pedPcLightBuf, '03_odontogram_pediatric_pc_light_1440x900.png', 'Pediatric Modal (PC Light 1440x900)');
-            await setTheme(pcPage, 'dark');
-            const pedPcDarkBuf = await pcPage.screenshot({ fullPage: false });
-            verifyAndSaveScreenshot(pedPcDarkBuf, '06_odontogram_pediatric_pc_dark_1440x900.png', 'Pediatric Modal (PC Dark 1440x900)');
-          }
-        }
+        const pedDark = await pcPage.screenshot({ fullPage: false });
+        verifyAndSaveScreenshot(pedDark, '06_odontogram_pediatric_pc_dark_1440x900.png', 'Pediatric Odontogram (PC Dark 1440x900)');
       }
     } catch (e) {
-      console.warn('Pediatric PC capture warning:', e.message);
+      console.warn('Pediatric PC capture note:', e.message);
     }
 
-    await pcContext.close();
+    await pcPage.close();
+    await new Promise(r => setTimeout(r, 2000));
 
     // 2. Mobile 390x844 Apple HIG
     console.log('2. Setting up Mobile context (390x844 Apple HIG)...');
-    const mobileContext = await browser.newContext({
+    const mobilePage = await browser.newPage({
       viewport: { width: 390, height: 844 },
       deviceScaleFactor: 2,
       isMobile: true,
       hasTouch: true,
     });
-    await mobileContext.addInitScript(() => {
-      localStorage.setItem('dente_theme_mode', 'light');
-      localStorage.setItem('dente_onboarding_completed', 'true');
-      localStorage.setItem('dente_tour_completed', 'true');
-      localStorage.setItem('dente_tour_dismissed', 'true');
-      localStorage.setItem('dente_guide_tour_dismissed_v2', 'true');
-      localStorage.setItem('dente_demo_banner_dismissed', 'true');
-      localStorage.setItem('dental-crm:onboarding:v1', JSON.stringify({ completed: true, dismissed: true }));
-    });
-
-    const mobilePage = await mobileContext.newPage();
     console.log(`Navigating Mobile to ${WEB_URL}...`);
-    await mobilePage.goto(WEB_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    
-    console.log('Waiting for odontogram launcher on mobile...');
-    await mobilePage.waitForSelector('[data-testid="direct-odontogram-module-launcher"]', { timeout: 45000 });
-    await mobilePage.waitForSelector('[data-testid="wheeler-tooth-arch"]', { timeout: 45000 });
-    await suppressOverlays(mobilePage);
-    await mobilePage.waitForTimeout(1500);
+    await mobilePage.goto(WEB_URL, { timeout: 60000 });
+    await waitForOdontogram(mobilePage);
 
     // 2.1 Mobile Light
     await setTheme(mobilePage, 'light');
@@ -196,42 +165,24 @@ function verifyAndSaveScreenshot(buffer, filename, description) {
     const mobDarkBuf = await mobilePage.screenshot({ fullPage: false });
     verifyAndSaveScreenshot(mobDarkBuf, '04_odontogram_mobile_dark_390x844.png', 'Wheeler 2.5D Odontogram Apple HIG (Mobile Dark 390x844)');
 
-    // 2.3 Pediatric Odontogram Mobile Light & Dark
+    // 2.3 Pediatric Mobile (optional extra proof)
     try {
-      const pedToolbarBtnMob = mobilePage.locator('[data-testid="toolbar-dentition-pediatric"]');
-      if (await pedToolbarBtnMob.count() > 0) {
-        await pedToolbarBtnMob.first().click();
+      const pedBtnMob = mobilePage.locator('button:has-text("Детский"), [data-testid="toolbar-dentition-pediatric"]');
+      if (await pedBtnMob.count() > 0) {
+        await pedBtnMob.first().click();
         await mobilePage.waitForTimeout(1000);
         await setTheme(mobilePage, 'light');
-        const pedMobLightBuf = await mobilePage.screenshot({ fullPage: false });
-        verifyAndSaveScreenshot(pedMobLightBuf, '03_pediatric_mobile_light_390x844.png', 'Pediatric Odontogram Apple HIG (Mobile Light 390x844)');
+        const pedMobLight = await mobilePage.screenshot({ fullPage: false });
+        verifyAndSaveScreenshot(pedMobLight, '03_pediatric_mobile_light_390x844.png', 'Pediatric Mobile Light 390x844');
         await setTheme(mobilePage, 'dark');
-        const pedMobDarkBuf = await mobilePage.screenshot({ fullPage: false });
-        verifyAndSaveScreenshot(pedMobDarkBuf, '04_pediatric_mobile_dark_390x844.png', 'Pediatric Odontogram Apple HIG (Mobile Dark 390x844)');
-      } else {
-        const moreBtnMob = mobilePage.locator('[data-testid="btn-odontogram-more-menu"]');
-        if (await moreBtnMob.count() > 0) {
-          await moreBtnMob.first().click();
-          await mobilePage.waitForTimeout(300);
-          const pedBtnMob = mobilePage.locator('[data-testid="btn-more-menu-pediatric"]');
-          if (await pedBtnMob.count() > 0) {
-            await pedBtnMob.first().click();
-            await mobilePage.waitForSelector('[aria-labelledby="pediatric-modal-title"]', { timeout: 15000 });
-            await mobilePage.waitForTimeout(500);
-            await setTheme(mobilePage, 'light');
-            const pedMobLightBuf = await mobilePage.screenshot({ fullPage: false });
-            verifyAndSaveScreenshot(pedMobLightBuf, '03_pediatric_mobile_light_390x844.png', 'Pediatric Modal Apple HIG (Mobile Light 390x844)');
-            await setTheme(mobilePage, 'dark');
-            const pedMobDarkBuf = await mobilePage.screenshot({ fullPage: false });
-            verifyAndSaveScreenshot(pedMobDarkBuf, '04_pediatric_mobile_dark_390x844.png', 'Pediatric Modal Apple HIG (Mobile Dark 390x844)');
-          }
-        }
+        const pedMobDark = await mobilePage.screenshot({ fullPage: false });
+        verifyAndSaveScreenshot(pedMobDark, '04_pediatric_mobile_dark_390x844.png', 'Pediatric Mobile Dark 390x844');
       }
     } catch (e) {
-      console.warn('Pediatric Mobile capture warning:', e.message);
+      console.warn('Pediatric Mobile capture note:', e.message);
     }
 
-    await mobileContext.close();
+    await mobilePage.close();
     console.log('=== ALL 4 4-STATE VISUAL PROOFS CAPTURED SUCCESSFULLY ===');
   } finally {
     await browser.close();
