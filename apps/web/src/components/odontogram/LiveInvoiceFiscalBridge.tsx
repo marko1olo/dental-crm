@@ -17,6 +17,12 @@ export const LiveInvoiceFiscalBridge: React.FC<
 > = ({ isOpen, baseItems, patientId, patientName, netTotalPrice, onClose }) => {
 	if (!isOpen) return null;
 
+	if (!patientId) {
+		showToast("Для проведения оплаты привяжите пациента к приёму", "warning");
+		onClose();
+		return null;
+	}
+
 	const serviceTitle = baseItems.length > 0
 		? baseItems.map((b) => b.title).join(", ")
 		: undefined;
@@ -28,7 +34,7 @@ export const LiveInvoiceFiscalBridge: React.FC<
 			initialTab="checkout"
 			totalDueRub={netTotalPrice}
 			amountRub={netTotalPrice}
-			patientId={patientId || "patient-001"}
+			patientId={patientId}
 			patientName={patientName || "Пациент"}
 			serviceTitle={serviceTitle}
 			onClose={onClose}

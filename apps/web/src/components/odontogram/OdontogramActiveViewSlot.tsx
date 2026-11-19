@@ -2,7 +2,7 @@ import type { OdontogramViewMode } from "@dental/shared";
 import React, { useState, useEffect, useCallback } from "react";
 import { WheelerToothArch } from "./WheelerToothArch";
 import { OdontogramBatchBar } from "./OdontogramBatchBar";
-import { OdontogramGostTableView } from "./OdontogramGostTableView";
+
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { OdontogramQuickTextInput } from "./OdontogramQuickTextInput";
 import { OdontogramStampPalette } from "./OdontogramStampPalette";
@@ -108,7 +108,7 @@ export const OdontogramActiveViewSlot: React.FC<
 	return (
 		<div className="flex flex-col lg:flex-row gap-3 w-full items-start relative">
 			<div className="odontogram-active-view-slot w-full flex-1 min-w-0 flex flex-col gap-2.5">
-				{activeMode === "anatomical_svg" && (
+				{(activeMode === "anatomical_svg" || activeMode === "classic_gost") && (
 					<WheelerToothArch
 						{...sharedViewProps}
 						teethData={teethData}
@@ -128,17 +128,7 @@ export const OdontogramActiveViewSlot: React.FC<
 						showPulpAndCanals={showPulpAndCanals}
 						showPeriapicalHalos={true}
 						showPeriodontalBoneLoss={true}
-					/>
-				)}
-				{activeMode === "classic_gost" && (
-					<OdontogramGostTableView
-						teethData={teethData}
-						selectedTeeth={selectedTeeth}
-						activeStamp={activeStampTool}
-						onQuickStateChange={handleInterceptedQuickStateChange}
-						onToothClick={typeof sharedViewProps?.onToothClick === "function" ? (num) => (sharedViewProps.onToothClick as (n: number) => void)(num) : undefined}
-						isPediatric={isPediatric}
-						isMixed={isMixed}
+						hideExpressActions={true}
 					/>
 				)}
 

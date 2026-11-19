@@ -66,8 +66,7 @@ export const PediatricToothContainer: React.FC<
 	const rootFill = isDark ? "url(#dente-root-dentin)" : "url(#dente-root-dentin)";
 
 	// Физиологическая резорбция корней
-	const resorptionStage: RootResorptionStage =
-		a.periapicalCondition === "resorption" ? 50 : 0;
+	const resorptionStage: RootResorptionStage = a.rootResorptionStage ?? (a.periapicalCondition === "resorption" ? 50 : 0);
 	const resorptionGeom = getPhysiologicalRootResorptionGeometry(num, resorptionStage);
 	const activeRootPath = resorptionGeom.isResorbed && resorptionGeom.rootPath
 		? resorptionGeom.rootPath

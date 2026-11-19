@@ -15,8 +15,10 @@ import type {
 	PostCoreType,
 	RestorationCondition,
 } from "./tooth46PresetTypes";
+import type { RootResorptionStage } from "../anatomicalTypes/periodontalResorptionTypes";
 
 export * from "./tooth46PresetTypes";
+export type { RootResorptionStage };
 
 export interface Tooth46LayerFlags {
 	roots?: boolean;
@@ -31,6 +33,7 @@ export interface Tooth46LayerFlags {
 	canalCondition?: CanalCondition;
 	periapicalHalo?: boolean;
 	periapicalCondition?: PeriapicalCondition;
+	rootResorptionStage?: RootResorptionStage;
 	caries?: boolean;
 	cariesType?: CariesType;
 	cariesChronicity?: CariesChronicity;

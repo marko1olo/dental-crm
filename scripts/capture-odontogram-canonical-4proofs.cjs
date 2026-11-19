@@ -61,7 +61,7 @@ async function setTheme(page, theme) {
   await page.waitForTimeout(400);
 }
 
-const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/3e0c24a7-5b2e-4765-9ea6-b4ca2ea10302';
+const BRAIN_DIR = 'C:/Users/Admin/.gemini/antigravity/brain/c5acd84e-519f-40d1-b598-b6040f2f789c';
 if (!existsSync(BRAIN_DIR)) {
   mkdirSync(BRAIN_DIR, { recursive: true });
 }
@@ -103,7 +103,7 @@ function verifyAndSaveScreenshot(buffer, filename, description) {
 
     const pcPage = await pcContext.newPage();
     console.log(`Navigating to ${WEB_URL}...`);
-    await pcPage.goto(WEB_URL, { waitUntil: 'commit', timeout: 45000 });
+    await pcPage.goto(WEB_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     
     console.log('Waiting for odontogram launcher and Wheeler arch to render...');
     await pcPage.waitForSelector('[data-testid="direct-odontogram-module-launcher"]', { timeout: 45000 });
@@ -178,7 +178,7 @@ function verifyAndSaveScreenshot(buffer, filename, description) {
 
     const mobilePage = await mobileContext.newPage();
     console.log(`Navigating Mobile to ${WEB_URL}...`);
-    await mobilePage.goto(WEB_URL, { waitUntil: 'commit', timeout: 45000 });
+    await mobilePage.goto(WEB_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     
     console.log('Waiting for odontogram launcher on mobile...');
     await mobilePage.waitForSelector('[data-testid="direct-odontogram-module-launcher"]', { timeout: 45000 });

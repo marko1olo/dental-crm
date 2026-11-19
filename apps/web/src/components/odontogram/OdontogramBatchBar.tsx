@@ -254,7 +254,7 @@ export const OdontogramBatchBar: React.FC<OdontogramBatchBarProps> = React.memo(
 							title="Выделить 18, 28, 38, 48"
 							data-testid="batch-select-wisdom-btn"
 						>
-							{`8-ки (4)`}
+							{`Зубы мудрости (8-ки)`}
 						</button>
 					)}
 				</div>

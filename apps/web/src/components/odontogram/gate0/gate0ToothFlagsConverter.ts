@@ -248,6 +248,8 @@ function applyPathologiesAndLesions(flags: Tooth46LayerFlags, tooth: ToothData, 
 	if (tooth.rootResorption || tooth.rootResorptionStage || clin.rootResorption || clin.resorption || state === "resorption" || state === "Рз") {
 		flags.periapicalHalo = true;
 		flags.periapicalCondition = "resorption";
+		const stage = tooth.rootResorptionStage ?? (typeof tooth.rootResorption === "number" ? tooth.rootResorption : undefined);
+		flags.rootResorptionStage = stage === 0 || stage === 25 || stage === 50 || stage === 75 || stage === 100 ? stage : 50;
 	}
 
 	// 4. Dental Calculus (Supra- and Subgingival)

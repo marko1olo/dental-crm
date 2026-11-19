@@ -29,7 +29,7 @@ describe("OdontogramBatchBar SSOT Suite (Mandates 8ar, 8ba, 8e)", () => {
 		assert.ok(html.includes("Фронт (12)"));
 		assert.ok(html.includes('data-testid="batch-select-all-teeth-btn"'));
 		assert.ok(html.includes("Все (32)"));
-		assert.ok(html.includes("8-ки (4)"));
+		assert.ok(html.includes("Зубы мудрости (8-ки)"));
 	});
 
 	it("2. Pediatric mode macro buttons reflect 20 primary teeth", () => {
@@ -45,7 +45,7 @@ describe("OdontogramBatchBar SSOT Suite (Mandates 8ar, 8ba, 8e)", () => {
 		assert.ok(html.includes("Фронт (12)"));
 		assert.ok(html.includes("Все (20)"));
 		// Wisdom teeth button must NOT be present in pediatric mode
-		assert.ok(!html.includes("8-ки (4)"));
+		assert.ok(!html.includes("Зубы мудрости (8-ки)"));
 	});
 
 	it("3. When teeth are selected, displays selection counter, clear, invert and 8 action buttons", () => {
