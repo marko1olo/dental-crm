@@ -46,8 +46,17 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
     );
   }
 
+  const isDrugTool =
+    tool.includes('drug') ||
+    tool.includes('interaction') ||
+    tool.includes('allergy') ||
+    tool.includes('ddi') ||
+    obj.ddiAlert !== undefined ||
+    obj.alertType === 'ddi_allergy';
+
   const drugView = renderDrugSection(tool, obj, result);
   if (drugView) return drugView;
+  if (isDrugTool) return null;
 
   const labView = renderLabSection(tool, obj, result, onSelectOrder);
   if (labView) return labView;

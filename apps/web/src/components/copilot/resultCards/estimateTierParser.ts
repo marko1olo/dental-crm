@@ -1,3 +1,4 @@
+import { kopecksToRubles } from '@dental/shared';
 import type { EstimateTierOption, EstimateStageBreakdown } from '../cards/types';
 
 export function parseTierOption(rawT: unknown): EstimateTierOption {
@@ -7,7 +8,7 @@ export function parseTierOption(rawT: unknown): EstimateTierOption {
     : typeof t.totalCostRub === 'number'
     ? t.totalCostRub
     : typeof t.totalCostKopecks === 'number'
-    ? Math.round(t.totalCostKopecks / 100)
+    ? kopecksToRubles(t.totalCostKopecks)
     : 0;
   const taxDed = typeof t.taxDeductionRub === 'number'
     ? t.taxDeductionRub
@@ -24,7 +25,7 @@ export function parseTierOption(rawT: unknown): EstimateTierOption {
     : typeof installmentsObj?.months12Rub === 'number'
     ? installmentsObj.months12Rub
     : typeof installmentObj?.monthlyPaymentKopecks === 'number'
-    ? Math.round(installmentObj.monthlyPaymentKopecks / 100)
+    ? kopecksToRubles(installmentObj.monthlyPaymentKopecks)
     : Math.round(total / 12);
 
   const rawStages = Array.isArray(t.stages) ? (t.stages as Record<string, unknown>[]) : undefined;
@@ -43,7 +44,7 @@ export function parseTierOption(rawT: unknown): EstimateTierOption {
           : typeof st.stageCostRub === 'number'
           ? st.stageCostRub
           : typeof st.stageCostKopecks === 'number'
-          ? Math.round(st.stageCostKopecks / 100)
+          ? kopecksToRubles(st.stageCostKopecks)
           : 0,
       }))
     : undefined;

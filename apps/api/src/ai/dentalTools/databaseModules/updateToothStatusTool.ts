@@ -62,30 +62,50 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 		};
 	}
 
-	const existing = await activeDb
-		.select()
-		.from(toothStates)
-		.where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, patientId), eq(toothStates.toothNumber, tooth)))
-		.limit(1);
-
-	const [existingTooth] = existing;
-	const previousState = existingTooth?.state ?? null;
 	const now = new Date();
+	let previousState: string | null = null;
 
-	if (existingTooth) {
-		await activeDb
-			.update(toothStates)
-			.set({ state: args.state, surfaces: args.surfaces ?? null, notes: args.notes ?? null, updatedAt: now })
-			.where(eq(toothStates.id, existingTooth.id));
-	} else {
-		await activeDb.insert(toothStates).values({
-			organizationId: orgId, patientId, toothNumber: tooth, state: args.state, surfaces: args.surfaces ?? null, notes: args.notes ?? null, createdAt: now, updatedAt: now,
+	await activeDb.transaction(async (tx) => {
+		const existing = await tx
+			.select()
+			.from(toothStates)
+			.where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, patientId), eq(toothStates.toothNumber, tooth)))
+			.limit(1);
+
+		const [existingTooth] = existing;
+		previousState = existingTooth?.state ?? null;
+
+		if (existingTooth) {
+			await tx
+				.update(toothStates)
+				.set({ state: args.state, surfaces: args.surfaces ?? null, notes: args.notes ?? null, updatedAt: now })
+				.where(eq(toothStates.id, existingTooth.id));
+		} else {
+			await tx.insert(toothStates).values({
+				organizationId: orgId,
+				patientId,
+				toothNumber: tooth,
+				state: args.state,
+				surfaces: args.surfaces ?? null,
+				notes: args.notes ?? null,
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
+
+		// Аудит в историю зуба (ACID транзакция с toothStates)
+		await tx.insert(toothStateHistory).values({
+			organizationId: orgId,
+			patientId,
+			toothNumber: tooth,
+			previousState,
+			newState: args.state,
+			previousSurfaces: existingTooth?.surfaces ?? null,
+			newSurfaces: args.surfaces ?? null,
+			changedByUserId: context.userId ?? null,
+			reason: args.notes ?? "Обновление через клинический ИИ-ассистент",
+			changedAt: now,
 		});
-	}
-
-	// Аудит в историю зуба
-	await activeDb.insert(toothStateHistory).values({
-		organizationId: orgId, patientId, toothNumber: tooth, previousState, newState: args.state, previousSurfaces: existingTooth?.surfaces ?? null, newSurfaces: args.surfaces ?? null, changedByUserId: context.userId ?? null, reason: args.notes ?? "Обновление через клинический ИИ-ассистент", changedAt: now,
 	});
 
 	return {

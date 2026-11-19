@@ -72,8 +72,9 @@ export async function handlePrintDocument(args: PrintDocumentInput, context: Den
 			if (created?.id) {
 				docId = created.id;
 			}
-		} catch {
+		} catch (docErr) {
 			// Graceful fallback to UUID if DB write fails in standalone/isolated execution
+			console.warn("[printDocumentTool] DB write failed, falling back to ephemeral UUID:", docErr);
 		}
 	}
 

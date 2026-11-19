@@ -102,41 +102,45 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 		};
 	}
 
-	const [inserted] = await activeDb
-		.insert(patientInvoices)
-		.values({
-			organizationId: orgId,
-			patientId,
-			visitId: args.visitId ?? null,
-			totalRub: String(totalAmountRub),
-			totalAmountRub,
-			status: "pending",
-		})
-		.returning({ id: patientInvoices.id });
+	const insertedId = await activeDb.transaction(async (tx) => {
+		const [inserted] = await tx
+			.insert(patientInvoices)
+			.values({
+				organizationId: orgId,
+				patientId,
+				visitId: args.visitId ?? null,
+				totalRub: String(totalAmountRub),
+				totalAmountRub,
+				status: "pending",
+			})
+			.returning({ id: patientInvoices.id });
 
-	if (!inserted) {
-		throw new Error("Не удалось создать счет");
-	}
+		if (!inserted) {
+			throw new Error("Не удалось создать счет");
+		}
 
-	for (const item of processedItems) {
-		await activeDb.insert(treatmentItems).values({
-			organizationId: orgId,
-			patientId,
-			visitId: args.visitId ?? null,
-			invoiceId: inserted.id,
-			title: item.title,
-			toothCode: item.toothCode ?? null,
-			quantity: String(item.qtyNumber),
-			priceRub: kopecksToRub(item.lineKopecks),
-			unitPriceRub: kopecksToRub(item.unitKopecks),
-			discountRub: 0,
-			status: "completed",
-		});
-	}
+		for (const item of processedItems) {
+			await tx.insert(treatmentItems).values({
+				organizationId: orgId,
+				patientId,
+				visitId: args.visitId ?? null,
+				invoiceId: inserted.id,
+				title: item.title,
+				toothCode: item.toothCode ?? null,
+				quantity: String(item.qtyNumber),
+				priceRub: kopecksToRub(item.lineKopecks),
+				unitPriceRub: kopecksToRub(item.unitKopecks),
+				discountRub: 0,
+				status: "completed",
+			});
+		}
+
+		return inserted.id;
+	});
 
 	return {
 		success: true,
-		invoiceId: inserted.id,
+		invoiceId: insertedId,
 		patientId,
 		itemsCount: args.items.length,
 		subtotalRub,

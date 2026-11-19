@@ -7,6 +7,10 @@
  * Zero fake tool simulations: honest EBM clinical engine with local database persistence.
  */
 
+import { and, eq, ilike, or } from "drizzle-orm";
+import { rublesToKopecks, formatKopecksToRub } from "@dental/shared";
+import { db as defaultDb } from "../../db/client.js";
+import { serviceCatalogItems } from "../../db/schema.js";
 import { defaultCopilotActionManager } from "../copilotActionManager.js";
 import { executeDentalTool } from "../dentalTools.js";
 import { estimateTextTokens } from "../tokenCounter.js";
@@ -106,46 +110,113 @@ export async function runDeterministicClinicalFallback(
 
 	const isInvoiceRequest = /счет|счёт|смет|оплат|чек/i.test(promptText);
 	if (isInvoiceRequest && context.patientId) {
-		const isConfirmAll = trustLevel === "confirm_all";
-		const invoiceTitle = toothMatch?.[1] ? `Терапевтическое лечение зуба ${toothMatch[1]}` : "Первичный клинический приём и диагностика";
-		const priceKopecks = toothMatch?.[1] ? 450000 : 250000;
-		const invoiceArgs: Record<string, unknown> = {
-			patientId: context.patientId,
-			items: [{
-				title: invoiceTitle,
-				priceKopecks,
-				quantity: 1,
-				toothCode: toothMatch?.[1] || undefined,
-			}],
-			confirmed: !isConfirmAll,
-		};
-		const callId = `fallback_tool_create_invoice_${Date.now()}`;
-		onEvent?.({ type: "tool_start", tool: "create_invoice_draft", args: invoiceArgs, callId });
-		if (isConfirmAll) {
-			defaultCopilotActionManager.registerPending(
-				params.sessionId || `session_fallback_${Date.now()}`,
-				callId,
-				"create_invoice_draft",
-				invoiceArgs,
-				{ organizationId: context.organizationId, userId: context.userId },
-			);
+		const activeDb = context.db ?? defaultDb;
+		const orgId = context.organizationId;
+		let matchedService: { title: string; priceRub: number | string; code?: string } | null = null;
+
+		if (orgId) {
+			try {
+				let searchKeyword = "терапевт";
+				const lowerPrompt = promptText.toLowerCase();
+				if (lowerPrompt.includes("кариес")) searchKeyword = "кариес";
+				else if (lowerPrompt.includes("пульпит")) searchKeyword = "пульпит";
+				else if (lowerPrompt.includes("пломб") || lowerPrompt.includes("реставрац")) searchKeyword = "пломб";
+				else if (lowerPrompt.includes("чистк") || lowerPrompt.includes("гигиен")) searchKeyword = "гигиен";
+				else if (lowerPrompt.includes("консультац") || lowerPrompt.includes("осмотр") || lowerPrompt.includes("приём") || lowerPrompt.includes("прием")) searchKeyword = "прием";
+
+				const searchPattern = `%${searchKeyword}%`;
+				const items = await activeDb
+					.select({
+						title: serviceCatalogItems.title,
+						priceRub: serviceCatalogItems.priceRub,
+						code: serviceCatalogItems.code,
+					})
+					.from(serviceCatalogItems)
+					.where(
+						and(
+							eq(serviceCatalogItems.organizationId, orgId),
+							eq(serviceCatalogItems.isActive, true),
+							or(
+								ilike(serviceCatalogItems.title, searchPattern),
+								ilike(serviceCatalogItems.code, searchPattern),
+							),
+						),
+					)
+					.limit(1);
+
+				if (items.length > 0 && items[0]) {
+					matchedService = items[0];
+				} else {
+					const firstActive = await activeDb
+						.select({
+							title: serviceCatalogItems.title,
+							priceRub: serviceCatalogItems.priceRub,
+							code: serviceCatalogItems.code,
+						})
+						.from(serviceCatalogItems)
+						.where(
+							and(
+								eq(serviceCatalogItems.organizationId, orgId),
+								eq(serviceCatalogItems.isActive, true),
+							),
+						)
+						.limit(1);
+					if (firstActive.length > 0 && firstActive[0]) {
+						matchedService = firstActive[0];
+					}
+				}
+			} catch (dbErr) {
+				console.warn("[reactFallbackRunner] Price list query error:", dbErr);
+			}
 		}
-		let toolResult: unknown;
-		try {
-			toolResult = await executeDentalTool("create_invoice_draft", invoiceArgs, context);
-		} catch (toolErr) {
-			toolResult = { success: false, code: "FALLBACK_TOOL_EXECUTION_FAILED", error: toolErr instanceof Error ? toolErr.message : String(toolErr) };
-		}
-		recordedToolCalls.push({ tool: "create_invoice_draft", args: invoiceArgs, result: toolResult });
-		onEvent?.({ type: "tool_end", tool: "create_invoice_draft", callId, result: toolResult });
-		if (isConfirmAll) {
-			onEvent?.({
-				type: "confirmation_required",
-				tool: "create_invoice_draft",
-				args: invoiceArgs,
-				callId,
-				descriptionRu: `Создание счета в кассу: ${invoiceTitle} (${(priceKopecks / 100).toLocaleString("ru-RU")} ₽)`,
-			});
+
+		if (!matchedService) {
+			const noServiceMsg = "[ПРЕЙСКУРАНТ НЕ НАЙДЕН] Не удалось автоматически подобрать услугу из прейскуранта клиники для формирования счёта в автономном режиме. Пожалуйста, выберите услугу из прейскуранта вручную.";
+			onEvent?.({ type: "reasoning", text: noServiceMsg });
+		} else {
+			const isConfirmAll = trustLevel === "confirm_all";
+			const priceKopecks = rublesToKopecks(Number(matchedService.priceRub));
+			const invoiceTitle = toothMatch?.[1]
+				? `${matchedService.title} (зуб ${toothMatch[1]})`
+				: matchedService.title;
+			const invoiceArgs: Record<string, unknown> = {
+				patientId: context.patientId,
+				items: [{
+					title: invoiceTitle,
+					priceKopecks,
+					quantity: 1,
+					toothCode: toothMatch?.[1] || undefined,
+				}],
+				confirmed: !isConfirmAll,
+			};
+			const callId = `fallback_tool_create_invoice_${Date.now()}`;
+			onEvent?.({ type: "tool_start", tool: "create_invoice_draft", args: invoiceArgs, callId });
+			if (isConfirmAll) {
+				defaultCopilotActionManager.registerPending(
+					params.sessionId || `session_fallback_${Date.now()}`,
+					callId,
+					"create_invoice_draft",
+					invoiceArgs,
+					{ organizationId: context.organizationId, userId: context.userId },
+				);
+			}
+			let toolResult: unknown;
+			try {
+				toolResult = await executeDentalTool("create_invoice_draft", invoiceArgs, context);
+			} catch (toolErr) {
+				toolResult = { success: false, code: "FALLBACK_TOOL_EXECUTION_FAILED", error: toolErr instanceof Error ? toolErr.message : String(toolErr) };
+			}
+			recordedToolCalls.push({ tool: "create_invoice_draft", args: invoiceArgs, result: toolResult });
+			onEvent?.({ type: "tool_end", tool: "create_invoice_draft", callId, result: toolResult });
+			if (isConfirmAll) {
+				onEvent?.({
+					type: "confirmation_required",
+					tool: "create_invoice_draft",
+					args: invoiceArgs,
+					callId,
+					descriptionRu: `Создание счета в кассу: ${invoiceTitle} (${formatKopecksToRub(priceKopecks)})`,
+				});
+			}
 		}
 	}
 

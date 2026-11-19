@@ -98,7 +98,7 @@ export async function requestAgentSseStream(
     let safetyAlert: ChairsideSafetyAlert | null = null;
     let stepCounter = 0;
 
-    const processEvent = (event: string, data: Record<string, any>) => {
+    const processEvent = (event: string, data: Record<string, unknown>) => {
       if (event === "thought" || event === "reasoning" || event === "thinking") {
         const delta = String(data.text || data.thought || "");
         accumulatedThought += delta;
@@ -128,7 +128,7 @@ export async function requestAgentSseStream(
         });
       } else if (event === "tool_end" || event === "tool_call_finished") {
         const toolName = String(data.name || data.tool || "");
-        const result = data.result;
+        const result = (data.result && typeof data.result === "object" ? data.result : undefined) as Record<string, unknown> | undefined;
         const lastThought = thoughts[thoughts.length - 1];
         if (lastThought && lastThought.status === "running") {
           lastThought.status = "done";
@@ -146,29 +146,29 @@ export async function requestAgentSseStream(
               toothNumber: resolvedTooth,
               state: rawState,
               stateLabel: label,
-              surfaces: Array.isArray(result.surfaces) && result.surfaces.length > 0 ? result.surfaces : ["O"],
+              surfaces: Array.isArray(result.surfaces) && result.surfaces.length > 0 ? (result.surfaces as string[]) : ["O"],
               applied: false,
             };
           }
         } else if ((toolName === "generate_clinical_protocol_entry" || toolName === "generate_clinical_protocol") && result) {
           soapProposal = {
-            complaint: result.complaints || result.complaint || "",
-            anamnesis: result.anamnesis || "",
-            objectiveStatus: result.statusLocalis || result.objectiveStatus || "",
-            diagnosis: result.diagnosisMkb || result.diagnosis || "",
-            treatmentPlan: result.treatmentProtocol || result.treatmentPlan || "",
-            recommendations: result.recommendations || "",
+            complaint: String(result.complaints || result.complaint || ""),
+            anamnesis: String(result.anamnesis || ""),
+            objectiveStatus: String(result.statusLocalis || result.objectiveStatus || ""),
+            diagnosis: String(result.diagnosisMkb || result.diagnosis || ""),
+            treatmentPlan: String(result.treatmentProtocol || result.treatmentPlan || ""),
+            recommendations: String(result.recommendations || ""),
             applied: false,
           };
         } else if (toolName === "calculate_anesthesia" && result) {
           anestheticProposal = {
-            drugName: result.drugName || "Артикаин 4%",
-            carpulesCount: result.carpulesCount || 1,
-            patientWeightKg: result.patientWeightKg || 70,
-            maxCarpules: result.maxCarpules || 7,
-            epinephrineMcg: result.epinephrineMcg || 8.5,
+            drugName: String(result.drugName || "Артикаин 4%"),
+            carpulesCount: Number(result.carpulesCount || 1),
+            patientWeightKg: Number(result.patientWeightKg || 70),
+            maxCarpules: Number(result.maxCarpules || 7),
+            epinephrineMcg: Number(result.epinephrineMcg || 8.5),
             isCardiovascularRisk: Boolean(result.isCardiovascularRisk),
-            notes: result.warning,
+            notes: typeof result.warning === "string" ? result.warning : undefined,
             applied: false,
           };
         }
@@ -193,7 +193,9 @@ export async function requestAgentSseStream(
       }
     }
 
-    const isLocalFallback = finalVerdict.includes("[ШЛЮЗ ИИ ВРЕМЕННО НЕДОСТУПЕН]");
+    const isLocalFallback =
+      finalVerdict.includes("[ШЛЮЗ ИИ ВРЕМЕННО НЕДОСТУПЕН]") ||
+      finalVerdict.includes("[СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК DENTE");
 
     if (thoughts.length > 0 || finalVerdict || toothProposal || soapProposal) {
       return {
@@ -206,7 +208,7 @@ export async function requestAgentSseStream(
         safetyAlert,
         ...(isLocalFallback ? {
           isLocalFallback: true,
-          fallbackMessage: "Локальный автономный режим (API-ключ не настроен)",
+          fallbackMessage: "⚠️ Автономный режим: используется локальный клинический словарь (без ИИ)",
         } : {}),
       };
     }

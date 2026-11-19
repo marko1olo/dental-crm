@@ -3,7 +3,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
 import { CopilotLabOrderCard } from '../CopilotLabOrderCard';
-import { CopilotDrugInteractionCard } from '../CopilotDrugInteractionCard';
+import { CopilotDdiSafetyCard } from '../cards/CopilotDdiSafetyCard';
+import type { DdiSafetyAlertData } from '../copilotTypes';
 import { CopilotTimelineCard } from '../CopilotTimelineCard';
 import { CopilotResultCard } from '../CopilotResultCard';
 
@@ -23,23 +24,29 @@ describe('Copilot Specialized Result Cards', () => {
     assert.ok(html.includes('VITA') && html.includes('A2'));
   });
 
-  it('renders CopilotDrugInteractionCard with contraindication warnings', () => {
-    const interactions = [{
+  it('renders CopilotDdiSafetyCard with contraindication warnings', () => {
+    const ddiData: DdiSafetyAlertData = {
       severity: 'contraindicated',
-      medicationA: 'Амоксициллин',
-      medicationB: 'Метотрексат',
+      title: 'Возможна чувствительность к препарату',
+      contraindicatedDrug: 'Амоксициллин',
       description: 'Увеличение токсичности метотрексата за счет снижения почечного клиренса.',
-      medical_advice: 'Заменить антибиотик на спирамицин/кларитромицин под контролем формулы крови.',
-    }];
+      clinicalRecommendation: 'Заменить антибиотик на спирамицин/кларитромицин под контролем формулы крови.',
+      patientAllergies: ['Пенициллины'],
+      safeAlternatives: ['Кларитромицин', 'Азитромицин'],
+    };
     const html = renderToString(
-      <CopilotDrugInteractionCard
-        interactions={interactions}
-        patientAllergies={['Пенициллины']}
-        safeAlternatives={['Кларитромицин', 'Азитромицин']}
-      />
+      <CopilotDdiSafetyCard data={ddiData} />
     );
-    assert.ok((html.includes('Противопоказано') || html.includes('ПРОТИВОПОКАЗАНО')) && html.includes('Амоксициллин'));
-    assert.ok(html.includes('Клиническая рекомендация') && html.includes('Пенициллины'));
+    assert.ok(html.includes('Возможна чувствительность') || html.includes('Аллергологический статус') || html.includes('Аллергены в анамнезе'));
+    assert.ok(html.includes('Пенициллины'));
+    assert.ok(html.includes('Кларитромицин'));
+    assert.ok(html.includes('Утвердить'));
+  });
+
+  it('guarantees 0px noise for 99% normal state when there are no drug interactions or allergies', () => {
+    const normalResult = { interactions: [], allergies: [] };
+    const htmlNormal = renderToString(<CopilotResultCard name="check_drug_interactions" result={normalResult} />);
+    assert.equal(htmlNormal, '');
   });
 
   it('renders CopilotTimelineCard with chronological visits and ICD-10 codes', () => {

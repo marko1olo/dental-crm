@@ -60,7 +60,6 @@ export async function executeCopilotAgentRequest(
     activeTooth,
     patientId,
     visitId,
-    chairId,
     patientAllergies = [],
     patientSomaticHistory,
   } = params;
@@ -105,28 +104,6 @@ export async function executeCopilotAgentRequest(
       : currentTrust === "autonomous"
       ? "autonomous"
       : "balanced";
-
-  const requestBody = {
-    patientId: patientId?.trim() || undefined,
-    prompt: text || undefined,
-    toothNumber: effectiveTooth,
-    complaints: text || undefined,
-    allergies: patientAllergies && patientAllergies.length > 0 ? [...patientAllergies] : undefined,
-    somaticHistory: Array.isArray(patientSomaticHistory)
-      ? [...patientSomaticHistory]
-      : typeof patientSomaticHistory === "string"
-      ? [patientSomaticHistory]
-      : undefined,
-    appointmentRequest: visitId
-      ? {
-          startsAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
-          chairId: chairId || undefined,
-          reason: text || "Повторный клинический приём",
-        }
-      : undefined,
-    mode: activeMode,
-    maskPhiData,
-  };
 
   // 1. Canonical ReAct SSE streaming via /api/agent/chat
   const sseResult = await requestAgentSseStream({
@@ -230,7 +207,11 @@ export async function executeCopilotAgentRequest(
         }
       }
       const parsed = parseAgentApiResponse(normalizedData, effectiveTooth || null, matchedProtocol);
-      if (normalizedData.verdict && normalizedData.verdict.includes("[ШЛЮЗ ИИ ВРЕМЕННО НЕДОСТУПЕН]")) {
+      if (
+        normalizedData.verdict &&
+        (normalizedData.verdict.includes("[ШЛЮЗ ИИ ВРЕМЕННО НЕДОСТУПЕН]") ||
+          normalizedData.verdict.includes("[СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК DENTE"))
+      ) {
         parsed.isLocalFallback = true;
         parsed.fallbackMessage = "⚠️ Автономный режим: используется локальный клинический словарь (без ИИ)";
       }

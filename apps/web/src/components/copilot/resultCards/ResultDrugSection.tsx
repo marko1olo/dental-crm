@@ -1,6 +1,6 @@
 import React from 'react';
-import type { DrugInteractionItem } from '../copilotTypes';
-import { CopilotDrugInteractionCard } from '../CopilotDrugInteractionCard';
+import type { DdiSafetyAlertData, DrugInteractionItem } from '../copilotTypes';
+import { CopilotDdiSafetyCard } from '../cards/CopilotDdiSafetyCard';
 
 type Obj = Record<string, unknown>;
 
@@ -48,11 +48,46 @@ export function renderDrugSection(tool: string, obj: Obj, result: unknown): Reac
     ? (obj.alternatives as string[])
     : undefined;
 
-  return (
-    <CopilotDrugInteractionCard
-      interactions={interactions}
-      patientAllergies={patientAllergies}
-      safeAlternatives={safeAlternatives}
-    />
-  );
+  const hasInteractions = interactions.length > 0;
+  const hasAllergies = Array.isArray(patientAllergies) && patientAllergies.length > 0;
+  const hasDdiAlert = Boolean(obj.ddiAlert);
+
+  // 0px visual noise invariant (Mandate 8ba / 8y):
+  // When there are no allergies, no drug interactions, and no critical contraindications,
+  // return null — absolutely 0px noise for 99% normal state!
+  if (!hasInteractions && !hasAllergies && !hasDdiAlert) {
+    return null;
+  }
+
+  if (obj.ddiAlert && typeof obj.ddiAlert === 'object') {
+    return <CopilotDdiSafetyCard data={obj.ddiAlert as DdiSafetyAlertData} />;
+  }
+
+  const first = interactions[0];
+  const severity = first?.severity || (hasAllergies ? 'warning' : 'info');
+  const title =
+    first?.title ||
+    (hasAllergies
+      ? 'Аллергологический статус / Анамнез'
+      : 'Сведения о лекарственной совместимости');
+  const description =
+    interactions.map((i) => i.description).filter(Boolean).join('. ') ||
+    (hasAllergies
+      ? `В анамнезе пациента зафиксированы аллергии: ${patientAllergies!.join(', ')}`
+      : 'Клинические рекомендации по лекарственной безопасности');
+  const clinicalRecommendation = first?.clinical_recommendation || first?.medical_advice;
+  const contraindicatedDrug = first?.medicationA || first?.drugs?.[0];
+
+  const ddiData: DdiSafetyAlertData = {
+    severity,
+    title,
+    description,
+    ...(patientAllergies && patientAllergies.length > 0 ? { patientAllergies } : {}),
+    safeAlternatives: safeAlternatives ?? [],
+    ...(safeAlternatives && safeAlternatives.length > 0 ? { recommendedAlternative: safeAlternatives[0] } : {}),
+    ...(clinicalRecommendation ? { clinicalRecommendation } : {}),
+    ...(contraindicatedDrug ? { contraindicatedDrug } : {}),
+  };
+
+  return <CopilotDdiSafetyCard data={ddiData} />;
 }
