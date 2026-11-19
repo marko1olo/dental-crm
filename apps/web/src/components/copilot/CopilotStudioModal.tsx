@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt, Sparkles, BookOpen, Sliders, MessageSquare, Brain } from "lucide-react";
+import { X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt, Sparkles, BookOpen, Sliders, MessageSquare, Brain, Minimize2 } from "lucide-react";
 import "./styles/copilotStudio.css";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { showToast } from "../GlobalToast";
@@ -16,6 +16,7 @@ import { useCopilotStore, type CopilotMessage } from "../../store/copilotStore";
 import type { CopilotUiMessage, DesktopHostWindow } from "./copilotTypes";
 import { parseActionProposal, parseJsonResponse } from "./copilotTypes";
 import { executeCopilotConfirmation } from "./useCopilotModules/useCopilotActions";
+import { readEventStream } from "./useCopilotModules/copilotStreamReader";
 import { CopilotSettingsModal } from "./CopilotSettingsModal"; import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer"; import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator"; import { CopilotMemoryTab } from "./CopilotMemoryTab"; import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar"; import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest"; import { handleClinicalSpeechOrText } from "./copilotDictationHandler"; import { ActiveDiffCard } from "./cards/ActiveDiffCard"; import { CopilotToolLogsView } from "./cards/CopilotToolLogsView"; import { CopilotResultCard } from "./CopilotResultCard"; import { CopilotStudioActionsTab } from "./CopilotStudioActionsTab";
 
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
@@ -140,19 +141,6 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     safeLocalStorageSetItem("dente_copilot_draft_text", val);
   };
 
-  const parseSseEvents = (raw: string): Array<{ type: string; [k: string]: unknown }> => {
-    const list: Array<{ type: string; [k: string]: unknown }> = [];
-    for (const b of raw.split(/\r?\n\r?\n/)) {
-      const trimmed = b.trim(); if (!trimmed) continue;
-      let eventType = "";
-      for (const l of trimmed.split(/\r?\n/)) {
-        if (l.startsWith("event: ")) eventType = l.slice(7).trim();
-        else if (l.startsWith("data: ")) { try { const p = JSON.parse(l.slice(6).trim()); if (!p.type && eventType) p.type = eventType; list.push(p); } catch { /* skip */ } }
-      }
-    }
-    return list;
-  };
-
   const handleSendMessage = async (textToSend?: string) => {
     const query = (textToSend ?? inputText).trim();
     if (!query) return;
@@ -166,7 +154,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     setIsStreaming(true);
 
     // [CLN-DICTATION]: Локальный клинический парсер речи и текста для одонтограммы, SOAP и сметы
-    const { fallbackText, fallbackProposalTooth, pendingAction: localPendingAction } = handleClinicalSpeechOrText(query, patientId, activeTooth, { trustLevel: settings.trustLevel });
+    const { fallbackText, fallbackProposalTooth, pendingAction: localPendingAction } = handleClinicalSpeechOrText(query, patientId, activeTooth, { trustLevel: settings.trustLevel, autoApply: false });
     const token = readDenteClinicToken() || readDenteStaffToken() || "";
     const apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
 
@@ -180,62 +168,51 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         body: JSON.stringify({ messages: outboundMessages, patientId: toValidUuid(patientId), activeVisitId: toValidUuid(activeVisitId), stream: true, runtimeMode: apiRuntimeMode, sessionId: activeThreadId || undefined, temperature: settings.temperature ?? 0.2, contextLimitTokens: settings.contextLimitTokens, showTypingAnimation: settings.showTypingAnimation, trustLevel: settings.trustLevel, granularPermissions: settings.granularPermissions, customInstructions: settings.customDoctorInstructions, memoryFacts: memoryFacts.map((m) => m.fact), doctorSpecialization: settings.clinicalSpecialization, speedMode: settings.speedMode, activeTooth: typeof activeTooth === "number" ? activeTooth : undefined, modelRoutingMode: settings.modelRoutingMode, byokProvider: settings.byokProvider, byokApiKey: settings.byokApiKey, byokModel: settings.byokModel, maskPhiData: settings.maskPhiData ?? true }),
       });
       if (res.ok && res.body) {
-        const reader = res.body.getReader(), decoder = new TextDecoder("utf-8");
-        let accumulatedText = "", accumulatedThought = "", pendingAction: CopilotChatMessage["actionProposal"] | undefined, sseBuffer = "";
+        let accumulatedText = "", accumulatedThought = "", pendingAction: CopilotChatMessage["actionProposal"] | undefined;
         let pendingToolResult: unknown | undefined, pendingToolName: string | undefined;
-        const applySseEvents = (events: Array<{ type: string; [k: string]: unknown }>) => {
-          for (const ev of events) {
-            if (ev.type === "token" && typeof ev.text === "string") accumulatedText += ev.text;
-            else if ((ev.type === "thought" || ev.type === "thinking" || ev.type === "reasoning") && typeof ev.text === "string") { accumulatedThought += ev.text; setCurrentThought(accumulatedThought); }
-            else if (ev.type === "confirmation_required") {
-              const callId = String(ev.callId || `act-${Date.now()}`), toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
-              setActiveToolName(toolName);
-              const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
-              const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Подтверждение действия: ${toolName}`;
-              pendingAction = { id: callId, toolName, description: desc, payload: args };
-              addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
-            } else if (ev.type === "tool_call_started" || ev.type === "tool_start") {
-              const toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
-              setActiveToolName(toolName);
-              const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
-              const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Выполнение инструмента: ${toolName}`;
-              addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
-            } else if (ev.type === "tool_end" || ev.type === "tool_call_finished" || ev.type === "tool_result") {
-              setActiveToolName(null);
-              pendingToolName = String(ev.name || ev.tool || pendingAction?.toolName || "");
-              pendingToolResult = ev.result ?? ev.data ?? ev.payload;
-              const evArgs = ((ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object") ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
-              if (evArgs.beforeText || evArgs.afterText || pendingToolName.includes("file") || pendingToolName.includes("workstation")) {
-                const targetFile = String(evArgs.targetEntity || evArgs.path || evArgs.file || "workstation_document.txt");
-                useCopilotStore.getState().setActiveDiff({ id: `diff-${Date.now()}`, title: `Изменения файла: ${targetFile.split(/[/\\]/).pop() || targetFile}`, targetEntity: targetFile, beforeText: String(evArgs.beforeText || "(Исходное состояние файла)"), afterText: String(evArgs.afterText || evArgs.content || (typeof pendingToolResult === "string" ? pendingToolResult : JSON.stringify(pendingToolResult, null, 2)) || "(Обновлённое содержимое)"), applied: false });
-              }
-              addToolLog({ toolName: pendingToolName, category: "clinical", status: "success", args: (typeof ev.args === "object" && ev.args !== null ? (ev.args as Record<string, unknown>) : {}), resultSummary: `Выполнен: ${pendingToolName}` });
-            } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) {
-              setActiveToolName(null); accumulatedText = ev.text;
+
+        type SseEventPayload = { type?: string; text?: string; thought?: string; tool?: string; name?: string; callId?: string; call_id?: string; descriptionRu?: string; args?: Record<string, unknown>; arguments?: Record<string, unknown>; result?: unknown; data?: unknown; payload?: unknown; };
+        const handleSseEvent = (event: string, data: Record<string, unknown>) => {
+          const ev = { type: (data.type as string) || event, ...data } as SseEventPayload;
+          if (ev.type === "token" && typeof ev.text === "string") accumulatedText += ev.text;
+          else if ((ev.type === "thought" || ev.type === "thinking" || ev.type === "reasoning") && typeof ev.text === "string") { accumulatedThought += ev.text; setCurrentThought(accumulatedThought); }
+          else if (ev.type === "confirmation_required") {
+            const callId = String(ev.callId || `act-${Date.now()}`), toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
+            setActiveToolName(toolName);
+            const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
+            const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Подтверждение действия: ${toolName}`;
+            pendingAction = { id: callId, toolName, description: desc, payload: args };
+            addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
+          } else if (ev.type === "tool_call_started" || ev.type === "tool_start") {
+            const toolName = String(ev.tool || ev.name || CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus);
+            setActiveToolName(toolName);
+            const args = (ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object" ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
+            const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Выполнение инструмента: ${toolName}`;
+            addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
+          } else if (ev.type === "tool_end" || ev.type === "tool_call_finished" || ev.type === "tool_result") {
+            setActiveToolName(null);
+            pendingToolName = String(ev.name || ev.tool || pendingAction?.toolName || "");
+            pendingToolResult = ev.result ?? ev.data ?? ev.payload;
+            const evArgs = ((ev.args || ev.arguments) && typeof (ev.args || ev.arguments) === "object") ? ((ev.args || ev.arguments) as Record<string, unknown>) : {};
+            if (evArgs.beforeText || evArgs.afterText || pendingToolName.includes("file") || pendingToolName.includes("workstation")) {
+              const targetFile = String(evArgs.targetEntity || evArgs.path || evArgs.file || "workstation_document.txt");
+              useCopilotStore.getState().setActiveDiff({ id: `diff-${Date.now()}`, title: `Изменения файла: ${targetFile.split(/[/\\]/).pop() || targetFile}`, targetEntity: targetFile, beforeText: String(evArgs.beforeText || "(Исходное состояние файла)"), afterText: String(evArgs.afterText || evArgs.content || (typeof pendingToolResult === "string" ? pendingToolResult : JSON.stringify(pendingToolResult, null, 2)) || "(Обновлённое содержимое)"), applied: false });
             }
+            addToolLog({ toolName: pendingToolName, category: "clinical", status: "success", args: (typeof ev.args === "object" && ev.args !== null ? (ev.args as Record<string, unknown>) : {}), resultSummary: `Выполнен: ${pendingToolName}` });
+          } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) {
+            setActiveToolName(null); accumulatedText = ev.text;
           }
+
           if (accumulatedText || pendingToolResult) {
             const { cleanText, suggestions } = extractSuggestions(accumulatedText);
-            const effectiveAction = pendingAction ?? (localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}), execute: localPendingAction.execute } } : undefined);
+            const effectiveAction = pendingAction ?? (localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}) } } : undefined);
             setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: effectiveAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions, toolResult: pendingToolResult ?? m.toolResult, toolName: pendingToolName ?? m.toolName } : m)));
           }
         };
 
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) { sseBuffer += decoder.decode(); if (sseBuffer.trim()) applySseEvents(parseSseEvents(sseBuffer)); break; }
-          sseBuffer += decoder.decode(value, { stream: true });
-          const matches = [...sseBuffer.matchAll(/\r?\n\r?\n/g)];
-          if (matches.length > 0) {
-            const lastMatch = matches[matches.length - 1];
-            if (lastMatch) {
-              const splitPos = lastMatch.index ?? 0;
-              const chunkToParse = sseBuffer.slice(0, splitPos);
-              sseBuffer = sseBuffer.slice(splitPos + lastMatch[0].length);
-              applySseEvents(parseSseEvents(chunkToParse));
-            }
-          }
-        }
+        // Canonical unified stream reader (Mandate 8bf: SSOT SSE Parser)
+        await readEventStream(res.body, handleSseEvent);
+
         if (accumulatedText.trim()) { setIsStreaming(false); return; }
       }
     } catch (err) {
@@ -243,11 +220,12 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
       showToast("Сбой соединения со шлюзом ИИ. Нажмите «Повторить» для повторной отправки.", "error", 6000, { label: "Повторить", onAction: () => { void handleSendMessage(query); } });
     }
     setIsStreaming(false);
-    const localProposal = localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}), execute: localPendingAction.execute } } : undefined;
+    const localProposal = localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}) } } : undefined;
     if (isDemoShowcaseMode()) {
       setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() ? m.text : (fallbackText || "Готов к работе у кресла. Чем могу помочь?"), citation: m.citation || (localProposal ? "Клинический протокол СтАР" : undefined), actionProposal: m.actionProposal ?? localProposal } : m)));
     } else {
-      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || fallbackText || "Шлюз ИИ временно недоступен. Проверьте интернет-соединение или API-ключи.", citation: m.citation, actionProposal: m.actionProposal ?? localProposal } : m)));
+      const fallbackNotice = fallbackText ? `[АВТОНОМНЫЙ РЕЖИМ]: используется локальный клинический словарь (без ИИ)\n\n${fallbackText}` : "[АВТОНОМНЫЙ РЕЖИМ]: используется локальный клинический словарь (без ИИ)";
+      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || fallbackNotice, citation: m.citation, actionProposal: m.actionProposal ?? localProposal } : m)));
     }
   };
 
@@ -270,13 +248,14 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         }
       }
 
-      const payloadExec = (act.payload as { execute?: () => void | Promise<void> } | undefined)?.execute;
-      if (typeof payloadExec === "function") await Promise.resolve(payloadExec());
-      else if (typeof window !== "undefined") {
+      if (typeof window !== "undefined") {
         const targetTooth = Number(act.payload?.tooth ?? act.payload?.toothNumber ?? activeTooth) || undefined;
         const targetDiag = (act.payload?.diagnosis as string) || act.description || (targetTooth ? `Клинический статус (Зуб ${targetTooth})` : "Клинический статус");
         const targetPlan = (act.payload?.treatmentPlan as string) || (act.payload?.plan as string) || (act.description ? `План: ${act.description}` : "План лечения согласно протоколу СтАР");
         window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { tooth: targetTooth, toothNumber: targetTooth, state: (act.payload?.state as string) || (act.payload?.status as string) || undefined, diagnosis: targetDiag, diagnosisIcd10: (act.payload?.diagnosisIcd10 as string) || (act.payload?.icd10 as string) || undefined, treatmentPlan: targetPlan, finding: targetTooth ? { toothNumber: targetTooth, state: (act.payload?.state as string) || "caries", icd10Override: (act.payload?.diagnosisIcd10 as string) || undefined } : undefined } }));
+        if (targetTooth) {
+          window.dispatchEvent(new CustomEvent("dente-odontogram-update", { detail: { patientId, toothNumber: targetTooth, status: (act.payload?.state as string) || "caries" } }));
+        }
       }
       setAppliedActionIds((prev) => new Set([...prev, act.id]));
       setMessages((prev) => prev.map((m) => (m.actionProposal?.id === act.id ? { ...m, applied: true } : m)));
@@ -316,17 +295,30 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         </div>
 
         {/* Компактная шапка кабинета с кнопками Настроек и Истории */}
-        <header className="copilot-studio-header px-4 sm:px-6 py-2.5 border-b border-[var(--line,rgba(15,118,110,0.15))] flex items-center justify-between gap-2.5 shrink-0">
-          <div className="copilot-studio-brand flex items-center gap-2.5 min-w-0 flex-1">
+        <header className="copilot-studio-header px-3 sm:px-6 py-2.5 border-b border-[var(--line,rgba(15,118,110,0.15))] flex items-center justify-between gap-2 shrink-0">
+          <div className="copilot-studio-brand flex items-center gap-2 min-w-0 flex-1">
             <div className="copilot-studio-icon-badge w-8 h-8 rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal,rgba(13,148,136,0.3))] flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0"><Sparkles size={16} /></div>
-            <div className="copilot-studio-title-box min-w-0 flex-1 truncate">
-              <div className="copilot-studio-title-row flex items-center gap-2"><h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)] truncate">ДЕНТА Копайлот</h2><span className="copilot-pulse-dot w-2 h-2 rounded-full bg-[var(--success)] animate-pulse shrink-0" title="Движок активен" /></div>
-              <div className="copilot-studio-submeta flex items-center gap-1.5 text-xs text-[var(--muted)] truncate"><span className="text-[11px] text-[var(--muted)] font-medium truncate"><span className="hidden sm:inline">Клинический ассистент врача</span><span className="sm:hidden">Ассистент</span></span></div>
+            <div className="copilot-studio-title-box min-w-0 flex-1">
+              <div className="copilot-studio-title-row flex items-center gap-1.5"><h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)] whitespace-nowrap">ДЕНТА Копайлот</h2><span className="copilot-pulse-dot w-2 h-2 rounded-full bg-[var(--success)] animate-pulse shrink-0" title="Движок активен" /></div>
+              <div className="copilot-studio-submeta flex items-center gap-1 text-xs text-[var(--muted)]"><span className="text-[11px] text-[var(--muted)] font-medium whitespace-nowrap"><span className="hidden sm:inline">Клинический ассистент врача</span><span className="sm:hidden">Ассистент</span></span></div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
             <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
+            <button
+              type="button"
+              onClick={() => {
+                useCopilotStore.getState().collapseToHud();
+                handleClose();
+              }}
+              data-testid="copilot-collapse-to-hud-trigger"
+              className="icon-button copilot-studio-collapse-btn w-9 h-9 min-w-[36px] min-h-[36px] items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0"
+              title="Свернуть в панель у кресла (HUD)"
+              aria-label="Свернуть в панель у кресла"
+            >
+              <Minimize2 size={15} />
+            </button>
             <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
           </div>
         </header>
@@ -392,8 +384,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
                             </div>
                             {actionError && <div className="p-2 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger)]/30 flex items-center justify-between text-[11px] text-[var(--danger)]"><span>{actionError}</span><button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="px-2 py-1 rounded bg-[var(--danger)] text-white font-semibold hover:opacity-90 cursor-pointer text-[10px]">Повторить попытку</button></div>}
                             <div className="flex items-center justify-end gap-2 pt-1">
-                              <button type="button" onClick={() => { setActionError(null); setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg)); }} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--danger)] font-semibold cursor-pointer text-xs flex items-center justify-center transition-colors">Отклонить</button>
-                              <button type="button" data-testid="copilot-primary-apply-cta" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="copilot-primary-cta h-11 min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm hover:opacity-95 transition-all"><Check size={14} /><span>Применить в карту</span></button>
+                              <button type="button" onClick={() => { setActionError(null); setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg)); }} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] font-medium cursor-pointer text-xs flex items-center justify-center transition-colors">Отклонить</button>
+                              <button type="button" data-testid="copilot-primary-apply-cta" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="copilot-primary-cta h-11 min-h-[44px] px-4 rounded-xl bg-[var(--primary)] text-white font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm hover:bg-[var(--primary-hover)] transition-all"><Check size={14} /><span>Применить в карту</span></button>
                             </div>
                           </div>
                         );

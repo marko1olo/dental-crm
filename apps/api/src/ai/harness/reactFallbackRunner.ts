@@ -12,6 +12,20 @@ import { executeDentalTool } from "../dentalTools.js";
 import { estimateTextTokens } from "../tokenCounter.js";
 import type { AgentHarnessParams, AgentHarnessResult } from "./harnessTypes.js";
 
+function parseToothStateFromPrompt(text: string): "caries" | "pulpitis" | "periodontitis" | "filling" | "crown" | "implant" | "missing" | "root" | "mobility" | "healthy" {
+	const lower = text.toLowerCase();
+	if (lower.includes("пульпит")) return "pulpitis";
+	if (lower.includes("периодонтит")) return "periodontitis";
+	if (lower.includes("пломб") || lower.includes("реставрац")) return "filling";
+	if (lower.includes("удал") || lower.includes("отсутств") || lower.includes("экстракц")) return "missing";
+	if (lower.includes("коронк")) return "crown";
+	if (lower.includes("имплант")) return "implant";
+	if (lower.includes("корен")) return "root";
+	if (lower.includes("подвижн")) return "mobility";
+	if (lower.includes("кариес")) return "caries";
+	return "healthy";
+}
+
 export async function runDeterministicClinicalFallback(
 	params: AgentHarnessParams,
 	safeErrMsg: string,
@@ -36,7 +50,7 @@ export async function runDeterministicClinicalFallback(
 	const toothMatch = promptText.match(/\b([1-4][1-8]|[5-8][1-5])\b/);
 	if (toothMatch?.[1]) {
 		const toothNum = parseInt(toothMatch[1], 10);
-		const state = promptText.toLowerCase().includes("кариес") ? "caries" : "healthy";
+		const state = parseToothStateFromPrompt(promptText);
 		const isConfirmAll = trustLevel === "confirm_all";
 		const toolArgs: Record<string, unknown> = {
 			toothNumber: toothNum,
@@ -86,6 +100,51 @@ export async function runDeterministicClinicalFallback(
 				args: toolArgs,
 				callId,
 				descriptionRu: `Обновление статуса зуба ${toothNum} на '${state}'`,
+			});
+		}
+	}
+
+	const isInvoiceRequest = /счет|счёт|смет|оплат|чек/i.test(promptText);
+	if (isInvoiceRequest && context.patientId) {
+		const isConfirmAll = trustLevel === "confirm_all";
+		const invoiceTitle = toothMatch?.[1] ? `Терапевтическое лечение зуба ${toothMatch[1]}` : "Первичный клинический приём и диагностика";
+		const priceKopecks = toothMatch?.[1] ? 450000 : 250000;
+		const invoiceArgs: Record<string, unknown> = {
+			patientId: context.patientId,
+			items: [{
+				title: invoiceTitle,
+				priceKopecks,
+				quantity: 1,
+				toothCode: toothMatch?.[1] || undefined,
+			}],
+			confirmed: !isConfirmAll,
+		};
+		const callId = `fallback_tool_create_invoice_${Date.now()}`;
+		onEvent?.({ type: "tool_start", tool: "create_invoice_draft", args: invoiceArgs, callId });
+		if (isConfirmAll) {
+			defaultCopilotActionManager.registerPending(
+				params.sessionId || `session_fallback_${Date.now()}`,
+				callId,
+				"create_invoice_draft",
+				invoiceArgs,
+				{ organizationId: context.organizationId, userId: context.userId },
+			);
+		}
+		let toolResult: unknown;
+		try {
+			toolResult = await executeDentalTool("create_invoice_draft", invoiceArgs, context);
+		} catch (toolErr) {
+			toolResult = { success: false, code: "FALLBACK_TOOL_EXECUTION_FAILED", error: toolErr instanceof Error ? toolErr.message : String(toolErr) };
+		}
+		recordedToolCalls.push({ tool: "create_invoice_draft", args: invoiceArgs, result: toolResult });
+		onEvent?.({ type: "tool_end", tool: "create_invoice_draft", callId, result: toolResult });
+		if (isConfirmAll) {
+			onEvent?.({
+				type: "confirmation_required",
+				tool: "create_invoice_draft",
+				args: invoiceArgs,
+				callId,
+				descriptionRu: `Создание счета в кассу: ${invoiceTitle} (${(priceKopecks / 100).toLocaleString("ru-RU")} ₽)`,
 			});
 		}
 	}

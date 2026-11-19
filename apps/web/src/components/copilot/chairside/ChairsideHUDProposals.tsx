@@ -100,7 +100,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
           <button
             type="button"
             onClick={onApplyAll}
-            className="dente-btn-secondary h-8 px-3 rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-transparent hover:bg-[var(--teal,#0d9488)]/10 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all btn-proposals-macro-apply shrink-0"
+            className="h-8 max-sm:min-h-[44px] max-sm:h-11 px-3 rounded-lg max-sm:rounded-xl border border-[var(--line)] text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all btn-proposals-macro-apply shrink-0 shadow-xs"
             data-testid="chairside-btn-macro-apply-all"
             aria-label="Применить все предложения к схеме"
           >

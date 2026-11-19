@@ -38,7 +38,7 @@ describe('Copilot Specialized Result Cards', () => {
         safeAlternatives={['Кларитромицин', 'Азитромицин']}
       />
     );
-    assert.ok(html.includes('ПРОТИВОПОКАЗАНО') && html.includes('Амоксициллин'));
+    assert.ok((html.includes('Противопоказано') || html.includes('ПРОТИВОПОКАЗАНО')) && html.includes('Амоксициллин'));
     assert.ok(html.includes('Клиническая рекомендация') && html.includes('Пенициллины'));
   });
 

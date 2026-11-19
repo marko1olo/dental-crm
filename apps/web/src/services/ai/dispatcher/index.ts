@@ -16,12 +16,5 @@ export type {
 
 export { normalizeToothNumber } from "./types.js";
 
-export {
-	isDestructiveAction,
-	getActionTitleRu,
-	dispatchCrmAction,
-} from "./actionDispatcherCore.js";
-
-export { handleClinicalAction } from "./clinicalActionHandlers.js";
 export { handlePharmacologyAction } from "./pharmacologyActionHandlers.js";
 export { handleSchedulingAction } from "./schedulingActionHandlers.js";

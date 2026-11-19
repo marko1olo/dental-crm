@@ -14,6 +14,7 @@ import type {
 import type { CopilotExecutionResult } from "../chairsideAgentExecutor";
 import { showToast } from "../../../GlobalToast";
 import { useCopilotStore } from "../../../../store/copilotStore";
+import { readEventStream } from "../../useCopilotModules/copilotStreamReader";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function toCleanUuid(val?: string | null): string | undefined {
@@ -21,6 +22,20 @@ function toCleanUuid(val?: string | null): string | undefined {
   const trimmed = val.trim();
   return UUID_REGEX.test(trimmed) ? trimmed : undefined;
 }
+
+const TOOTH_STATE_LABELS: Record<string, string> = {
+  caries: "Кариес",
+  pulpitis: "Пульпит",
+  periodontitis: "Периодонтит",
+  filling: "Пломба",
+  crown: "Коронка",
+  implant: "Имплантат",
+  extracted: "Удалён",
+  missing: "Отсутствует",
+  root: "Корень",
+  mobility: "Подвижность",
+  healthy: "Норма",
+};
 
 export interface StreamAgentChatParams {
   promptText: string;
@@ -73,9 +88,6 @@ export async function requestAgentSseStream(
       return null;
     }
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
     let accumulatedThought = "";
     let finalVerdict = "";
     const thoughts: ChairsideThoughtStep[] = [];
@@ -122,13 +134,19 @@ export async function requestAgentSseStream(
           lastThought.status = "done";
         }
         if (toolName === "update_tooth_status" && result) {
-          const resolvedTooth = Number(result.tooth || activeTooth || 0);
+          const resolvedTooth = Number(result.toothNumber ?? result.tooth ?? activeTooth ?? 0);
           if (resolvedTooth > 0) {
+            const rawState = String(result.newState ?? result.state ?? result.clinicalState ?? "caries");
+            const label = typeof result.stateLabel === "string"
+              ? result.stateLabel
+              : typeof result.statusLabel === "string"
+              ? result.statusLabel
+              : (TOOTH_STATE_LABELS[rawState] || `Статус: ${rawState}`);
             toothProposal = {
               toothNumber: resolvedTooth,
-              state: result.status || "C2",
-              stateLabel: result.statusLabel || `Статус: ${result.status || "C2"}`,
-              surfaces: Array.isArray(result.surfaces) ? result.surfaces : ["O"],
+              state: rawState,
+              stateLabel: label,
+              surfaces: Array.isArray(result.surfaces) && result.surfaces.length > 0 ? result.surfaces : ["O"],
               applied: false,
             };
           }
@@ -166,30 +184,8 @@ export async function requestAgentSseStream(
       }
     };
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      let boundary = buffer.indexOf("\n\n");
-      while (boundary >= 0) {
-        const chunk = buffer.slice(0, boundary);
-        buffer = buffer.slice(boundary + 2);
-        let event = "message";
-        let dataString = "";
-        for (const line of chunk.split("\n")) {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          else if (line.startsWith("data:")) dataString += line.slice(5).trim();
-        }
-        if (dataString) {
-          try {
-            processEvent(event, JSON.parse(dataString));
-          } catch {
-            processEvent(event, { text: dataString });
-          }
-        }
-        boundary = buffer.indexOf("\n\n");
-      }
-    }
+    // Canonical unified stream reader (Mandate 8bf: SSOT SSE Parser)
+    await readEventStream(res.body, (event, data) => processEvent(event, data));
 
     for (const t of thoughts) {
       if (t.status === "running") {

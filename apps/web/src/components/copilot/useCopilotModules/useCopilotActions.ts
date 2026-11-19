@@ -4,10 +4,7 @@ import {
 	readDenteClinicToken,
 	readDenteStaffToken,
 } from "../../../lib/safeLocalStorage";
-import {
-	dispatchCrmAction,
-	copilotActionRunner,
-} from "../../../services/ai";
+import { denteQueryClient } from "../../../lib/queryClient";
 import { useVisitStore } from "../../../store/visitStore";
 import { useCopilotStore } from "../../../store/copilotStore";
 import type {
@@ -99,31 +96,36 @@ export async function executeCopilotConfirmation({
 			}),
 		});
 		apiOk = res.ok;
+		if (res.ok) {
+			const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+			// Reactive cache invalidation via canonical denteQueryClient (Мандат 8d/8zq)
+			void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
+			void denteQueryClient.invalidateQueries({ queryKey: ["appointments"] });
+			void denteQueryClient.invalidateQueries({ queryKey: ["patients"] });
+			if (patientId) {
+				void denteQueryClient.invalidateQueries({ queryKey: ["patient", patientId] });
+				void denteQueryClient.invalidateQueries({ queryKey: ["odontogram", patientId] });
+				void denteQueryClient.invalidateQueries({ queryKey: ["treatment-plans", patientId] });
+				void denteQueryClient.invalidateQueries({ queryKey: ["clinicalNotes", patientId] });
+			}
+			void denteQueryClient.invalidateQueries({ queryKey: ["invoices"] });
+			void denteQueryClient.invalidateQueries({ queryKey: ["warehouse"] });
+
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente:agent-action-confirmed", {
+						detail: {
+							callId,
+							actionName,
+							decision,
+							result: json.result ?? json.data ?? json,
+						},
+					}),
+				);
+			}
+		}
 	} catch (apiErr) {
 		console.warn("[executeCopilotConfirmation] Fastify confirm fallback:", apiErr);
-	}
-
-	try {
-		if (decision === "confirm") {
-			await copilotActionRunner.confirmAction(callId, finalArgs, baseUrl, sessionId).catch(async (runnerErr) => {
-				console.warn("[executeCopilotConfirmation] copilotActionRunner fallback:", runnerErr);
-				await dispatchCrmAction(
-					{
-						callId,
-						name: actionName,
-						arguments: finalArgs,
-						confirmed: true,
-					},
-					baseUrl,
-				).catch(() => {});
-			});
-		} else {
-			await copilotActionRunner.rejectAction(callId, reason, baseUrl, sessionId).catch((err) => {
-				console.warn("[executeCopilotConfirmation] rejectAction fallback:", err);
-			});
-		}
-	} catch (runnerErr) {
-		console.warn("[executeCopilotConfirmation] Local runner execution error:", runnerErr);
 	}
 
 	return apiOk;
@@ -243,14 +245,7 @@ export function useCopilotActions({
 					reason,
 					apiBaseUrl,
 					sessionId: sessId,
-				});
-
-				await streamRequest("/api/agent/confirm", {
-					sessionId: sessId,
-					callId,
-					decision,
-					reason,
-					modifiedArgs,
+					patientId: (targetMsg?.args?.patientId as string) || undefined,
 				});
 			} catch (e) {
 				console.error("Error confirming copilot action:", e);

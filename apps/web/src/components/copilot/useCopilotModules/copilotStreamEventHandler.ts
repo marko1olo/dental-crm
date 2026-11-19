@@ -6,7 +6,6 @@
  * - Dispatches thinking, tokens, tool results, and HITL confirmations.
  */
 
-import { dispatchCrmAction } from "../../../services/ai";
 import { useCopilotStore } from "../../../store/copilotStore";
 import type {
   ConfirmUiMessage,
@@ -180,15 +179,6 @@ export function createStreamEventHandler(params: StreamEventHandlerParams) {
 
       if (isOk && data.name) {
         cacheNames(String(data.name), res);
-        dispatchCrmAction(
-          {
-            callId,
-            name: String(data.name),
-            arguments: toolArgs,
-            confirmed: true,
-          },
-          apiBaseUrl,
-        ).catch(() => {});
       }
     } else if (
       event === "confirmation_required" ||
@@ -265,10 +255,22 @@ export function createStreamEventHandler(params: StreamEventHandlerParams) {
         ];
       });
     } else if (event === "proactive_alert") {
-      const alertData =
-        (data.data as ProactiveAlertCardData) ||
-        (data as unknown as ProactiveAlertCardData);
-      if (alertData?.id) {
+      const raw = (data.data as Record<string, unknown> | undefined) || data;
+      if (typeof raw.id === "string") {
+        const alertData: ProactiveAlertCardData = {
+          id: raw.id,
+          urgency: (raw.urgency as ProactiveAlertCardData["urgency"]) || "routine",
+          title: String(raw.title || "Оповещение"),
+          subtitle: typeof raw.subtitle === "string" ? raw.subtitle : undefined,
+          description: String(raw.description || ""),
+          timestamp: String(raw.timestamp || new Date().toISOString()),
+          patientId: typeof raw.patientId === "string" ? raw.patientId : null,
+          patientName: typeof raw.patientName === "string" ? raw.patientName : null,
+          patientPhone: typeof raw.patientPhone === "string" ? raw.patientPhone : null,
+          category: (raw.category as ProactiveAlertCardData["category"]) || "clinical_alert",
+          actions: Array.isArray(raw.actions) ? (raw.actions as ProactiveAlertCardData["actions"]) : [],
+          data: typeof raw.data === "object" && raw.data !== null ? (raw.data as Record<string, unknown>) : undefined,
+        };
         setProactiveAlerts((prev) => {
           if (prev.some((a) => a.id === alertData.id)) return prev;
           return [alertData, ...prev];

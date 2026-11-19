@@ -1,7 +1,7 @@
 import React from "react";
 import {
   Mic, MicOff, Check, X, ChevronDown, ChevronUp,
-  Columns, Minimize2,
+  Columns, Minimize2, Sparkles,
 } from "lucide-react";
 import { formatKopecksToRub } from "@dental/shared";
 import type {
@@ -31,6 +31,7 @@ export interface ChairsideHUDCapsuleProps {
   onToggleDock: () => void;
   onMinimize: () => void;
   onClose: () => void;
+  onExpandToStudio?: (() => void) | undefined;
 }
 
 export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
@@ -54,6 +55,7 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
   onToggleDock,
   onMinimize,
   onClose,
+  onExpandToStudio,
 }) => {
   return (
     <div className="chairside-hud-capsule" data-testid="chairside-hud-capsule">
@@ -147,6 +149,19 @@ export const ChairsideHUDCapsule: React.FC<ChairsideHUDCapsuleProps> = ({
         >
           <Columns size={14} />
         </button>
+
+        {onExpandToStudio && (
+          <button
+            type="button"
+            onClick={onExpandToStudio}
+            className="chairside-hud-btn-icon btn-chairside-hud-expand-studio border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--primary)]"
+            title="Развернуть Студию Копилота"
+            aria-label="Развернуть Студию Копилота"
+            data-testid="btn-chairside-hud-expand-studio"
+          >
+            <Sparkles size={14} />
+          </button>
+        )}
 
         <button
           type="button"

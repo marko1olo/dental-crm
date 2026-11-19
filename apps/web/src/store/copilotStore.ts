@@ -88,6 +88,7 @@ export interface CopilotStoreState {
 	activeThreadId: string; threadSearchQuery: string; toolExecutionLogs: ToolExecutionLog[];
 	activeDiff: ActiveDiff | null; threadMessages: Record<string, CopilotMessage[]>;
 	isSettingsOpen: boolean; isHistoryOpen: boolean; isStudioOpen: boolean;
+	isHudOpen: boolean;
 	telemetry: ContextTelemetryData;
 
 	// Actions
@@ -118,6 +119,10 @@ export interface CopilotStoreState {
 	setHistoryOpen: (open: boolean) => void;
 	setIsStudioOpen: (open: boolean) => void;
 	setStudioOpen: (open: boolean) => void;
+	setIsHudOpen: (open: boolean) => void;
+	setHudOpen: (open: boolean) => void;
+	expandToStudio: () => void;
+	collapseToHud: () => void;
 }
 
 const initialState = getInitialCopilotState();
@@ -138,6 +143,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	isSettingsOpen: false,
 	isHistoryOpen: false,
 	isStudioOpen: false,
+	isHudOpen: false,
 	telemetry: initialState.telemetry,
 
 	updateSettings: (patch) => {
@@ -411,8 +417,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 				body: JSON.stringify({ toolName, args, sessionId: get().activeThreadId || undefined, runtimeMode: runtime }),
 			});
 			const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-			const ok = res.ok && data?.ok !== false;
-			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: ok } : null }));
+			const ok = res.ok && data?.ok !== false; set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: ok } : null }));
 			get().addToolLog({ toolName, category: "workstation", status: ok ? "success" : "rejected", args, resultSummary: ok ? `Применен дифф: ${diff.targetEntity.split(/[/\\]/).pop() || diff.targetEntity}` : `Сбой диффа: ${data?.error || res.statusText}` });
 		} catch (err) {
 			set((state) => ({ activeDiff: state.activeDiff ? { ...state.activeDiff, applied: false } : null }));
@@ -420,26 +425,20 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		}
 	},
 	rejectActiveDiff: () => set({ activeDiff: null }),
-	setSettingsOpen: (open) => set({ isSettingsOpen: open }),
-	setHistoryOpen: (open) => set({ isHistoryOpen: open }),
-	setIsStudioOpen: (open) => set({ isStudioOpen: open }),
-	setStudioOpen: (open) => set({ isStudioOpen: open }),
+	setSettingsOpen: (open) => set({ isSettingsOpen: open }), setHistoryOpen: (open) => set({ isHistoryOpen: open }),
+	setIsStudioOpen: (open) => set({ isStudioOpen: open }), setStudioOpen: (open) => set({ isStudioOpen: open }),
+	setIsHudOpen: (open) => set({ isHudOpen: open }), setHudOpen: (open) => set({ isHudOpen: open }),
+	expandToStudio: () => set({ isStudioOpen: true, isHudOpen: false }), collapseToHud: () => set({ isStudioOpen: false, isHudOpen: true }),
 }));
 
 if (typeof window !== "undefined") {
-	setTimeout(() => {
-		void useCopilotStore.getState().hydrateSessionsFromBackend();
-	}, 50);
-
+	setTimeout(() => { void useCopilotStore.getState().hydrateSessionsFromBackend(); }, 50);
 	let resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	window.addEventListener("resize", () => {
 		if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
 		resizeDebounceTimer = setTimeout(() => {
-			const current = useCopilotStore.getState().settings.runtimeMode;
-			const detected = detectRuntimeEnvironment();
-			if (current !== detected) {
-				useCopilotStore.getState().setRuntimeMode(detected);
-			}
+			const current = useCopilotStore.getState().settings.runtimeMode, detected = detectRuntimeEnvironment();
+			if (current !== detected) useCopilotStore.getState().setRuntimeMode(detected);
 		}, 150);
 	});
 }

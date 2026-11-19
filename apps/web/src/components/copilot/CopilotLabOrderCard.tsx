@@ -19,7 +19,7 @@ export const CopilotLabOrderCard: React.FC<CopilotLabOrderCardProps> = ({ orders
 
   return (
     <div className="space-y-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] px-1 flex items-center gap-1.5">
+      <div className="text-[11px] font-semibold tracking-normal text-[var(--muted)] px-1 flex items-center gap-1.5">
         <Package className="w-3.5 h-3.5 text-[var(--teal)]" />
         <span>Зуботехнические наряды ({orders.length})</span>
       </div>

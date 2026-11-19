@@ -125,6 +125,16 @@
   }
 }
 
+.copilot-studio-header .icon-button.hidden,
+.copilot-studio-collapse-btn {
+  display: none !important;
+}
+@media (min-width: 769px) {
+  .copilot-studio-collapse-btn {
+    display: flex !important;
+  }
+}
+
 /* Apple HIG Сегментные вкладки навигации */
 .copilot-tabs-segmented-wrapper {
   padding: 8px 16px;
@@ -343,53 +353,23 @@
 .copilot-smart-reply-chip {
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.copilot-smart-reply-chip:hover {
-  transform: translateY(-1px);
-}
-.copilot-smart-reply-chip:active {
-  transform: translateY(0);
-}
+.copilot-smart-reply-chip:hover { transform: translateY(-1px); }
+.copilot-smart-reply-chip:active { transform: translateY(0); }
 
 /* Нативная touch-эргономика для планшетов и сенсорных экранов у кресла (Apple HIG) */
 @media (pointer: coarse), (max-width: 1024px) {
-  .copilot-smart-reply-chip {
-    min-height: 40px;
-    padding: 8px 14px;
-    font-size: 12px;
-  }
-  .copilot-primary-cta {
-    height: 48px;
-    min-height: 48px;
-    font-size: 13px;
-  }
-  .copilot-icon-btn {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-  }
-  .copilot-text-input {
-    height: 48px;
-    min-height: 48px;
-    font-size: 13px;
-  }
-  .copilot-tab-btn {
-    min-height: 48px;
-    padding: 10px 4px;
-    font-size: 13px;
-  }
-  .copilot-action-item-btn {
-    height: 48px;
-    min-height: 48px;
-    font-size: 13px;
-  }
+  .copilot-smart-reply-chip { min-height: 40px; padding: 8px 14px; font-size: 12px; }
+  .copilot-primary-cta { height: 48px; min-height: 48px; font-size: 13px; }
+  .copilot-icon-btn { width: 48px; height: 48px; min-width: 48px; min-height: 48px; }
+  .copilot-text-input { height: 48px; min-height: 48px; font-size: 13px; }
+  .copilot-tab-btn { min-height: 48px; padding: 10px 4px; font-size: 13px; }
+  .copilot-action-item-btn { height: 48px; min-height: 48px; font-size: 13px; }
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }

@@ -44,6 +44,8 @@ export function matchPresetFallback(
         text: "Команда не распознана. Уточните клинический запрос.",
         type: "warning",
       },
+      isLocalFallback: true,
+      fallbackMessage: "⚠️ Автономный режим: используется локальный клинический словарь (без ИИ)",
     };
   }
 
@@ -64,6 +66,8 @@ export function matchPresetFallback(
 
   return {
     activePresetIndex: presetIdx,
+    isLocalFallback: true,
+    fallbackMessage: "⚠️ Автономный режим: используется локальный клинический словарь (без ИИ)",
     thoughts: parsedThoughts,
     verdict: "verdict" in preset && typeof preset.verdict === "string" ? preset.verdict : "",
     toothProposal: targetTooth ? {

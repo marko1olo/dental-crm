@@ -232,7 +232,7 @@ export async function executeCopilotAgentRequest(
       const parsed = parseAgentApiResponse(normalizedData, effectiveTooth || null, matchedProtocol);
       if (normalizedData.verdict && normalizedData.verdict.includes("[ШЛЮЗ ИИ ВРЕМЕННО НЕДОСТУПЕН]")) {
         parsed.isLocalFallback = true;
-        parsed.fallbackMessage = "Локальный автономный режим (API-ключ не настроен)";
+        parsed.fallbackMessage = "⚠️ Автономный режим: используется локальный клинический словарь (без ИИ)";
       }
       return parsed;
     }
@@ -240,12 +240,17 @@ export async function executeCopilotAgentRequest(
     console.warn("[ChairsideCopilotHUD] API call failed, analyzing with local clinical speech parser and 1,142 catalog:", err);
   }
 
-  // Local fallback parsing
+  // Local fallback parsing (Mandate 8a / T.A.R.S. 100% honesty: explicit offline badge)
   const voiceResult = tryParseVoiceFallback(text, effectiveTooth || null, catalogMatch, matchedProtocol);
   if (voiceResult) {
+    voiceResult.isLocalFallback = true;
+    voiceResult.fallbackMessage = "⚠️ Автономный режим: используется локальный клинический словарь (без ИИ)";
     return voiceResult;
   }
 
-  // Fallback to presets
-  return matchPresetFallback(text, effectiveTooth || null, matchedProtocol);
+  // Fallback to presets (Mandate 8a / T.A.R.S. 100% honesty: explicit offline badge)
+  const presetResult = matchPresetFallback(text, effectiveTooth || null, matchedProtocol);
+  presetResult.isLocalFallback = true;
+  presetResult.fallbackMessage = "⚠️ Автономный режим: используется локальный клинический словарь (без ИИ)";
+  return presetResult;
 }

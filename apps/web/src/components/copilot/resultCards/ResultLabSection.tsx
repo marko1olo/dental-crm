@@ -27,7 +27,7 @@ export function renderLabSection(
     : Array.isArray(result) && result.length > 0 && ('prosthesis_kind' in (result[0] as Obj) || 'order_id' in (result[0] as Obj))
     ? (result as LabOrderItem[])
     : typeof obj.prosthesis_kind === 'string' || typeof obj.order_id === 'string'
-    ? [obj as unknown as LabOrderItem]
+    ? [obj as LabOrderItem]
     : [];
 
   if (orders.length > 0) {

@@ -65,8 +65,8 @@ export const CopilotDrugInteractionCard: React.FC<CopilotDrugInteractionCardProp
                   <Pill className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
                   <span>{drugTitle}</span>
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">
-                  {isCrit ? 'ПРОТИВОПОКАЗАНО' : 'Осторожно'}
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded tracking-normal bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">
+                  {isCrit ? 'Противопоказано' : 'Осторожно'}
                 </span>
               </div>
               {item.description && <p className="text-[var(--ink-secondary)] leading-relaxed text-[11px]">{item.description}</p>}

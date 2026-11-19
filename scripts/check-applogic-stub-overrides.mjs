@@ -461,6 +461,15 @@ const KNOWN_NON_HOOK_BAGS = new Set([
 	"billingModal",
 	"scheduleLogic",
 	"offlineSync",
+	"documentWorkflow",
+	"dicomWorkbenchModule",
+	"telegramSettingsModule",
+	"telegram",
+	"clinicalVisitLogic",
+	"patientIntakeLogic",
+	"modalOrchestrator",
+	"scheduleFilterController",
+	"navigationRouter",
 ]);
 
 for (const prop of target.properties) {

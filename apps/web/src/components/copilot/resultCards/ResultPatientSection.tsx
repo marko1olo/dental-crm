@@ -44,8 +44,15 @@ export function renderPatientSection(
       ? (obj.patients as PatientResult[])
       : Array.isArray(result)
       ? (result as PatientResult[])
-      : (obj.id && obj.full_name)
-      ? [obj as unknown as PatientResult]
+      : (typeof obj.id === 'string' && typeof obj.full_name === 'string')
+      ? [{
+          id: obj.id,
+          full_name: obj.full_name,
+          phone: typeof obj.phone === 'string' ? obj.phone : undefined,
+          email: typeof obj.email === 'string' ? obj.email : undefined,
+          status: typeof obj.status === 'string' ? obj.status : undefined,
+          birth_date: typeof obj.birth_date === 'string' ? obj.birth_date : typeof obj.date_of_birth === 'string' ? obj.date_of_birth : undefined,
+        }]
       : [];
 
     if (patients.length > 0) {

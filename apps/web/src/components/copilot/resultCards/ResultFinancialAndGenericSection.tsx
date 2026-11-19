@@ -23,11 +23,11 @@ export function renderFinancialAndGenericSection(tool: string, obj: Obj, result:
         (typeof obj.total_rub === 'number' ? obj.total_rub * 100 : 0)
     );
     const rawItems = Array.isArray(obj.items)
-      ? obj.items.map((it: any) => ({
+      ? (obj.items as Array<Record<string, unknown>>).map((it) => ({
           name: String(it.name || it.procedureName || 'Стоматологическая процедура'),
-          tooth: it.tooth,
+          tooth: typeof it.tooth === 'number' ? it.tooth : undefined,
           priceRub: Number(
-            it.priceRub || (it.priceKopecks ? Math.round(it.priceKopecks / 100) : 0)
+            it.priceRub || (typeof it.priceKopecks === 'number' ? Math.round(it.priceKopecks / 100) : 0)
           ),
         }))
       : [];

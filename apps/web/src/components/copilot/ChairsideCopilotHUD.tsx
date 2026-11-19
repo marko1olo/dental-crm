@@ -97,11 +97,16 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       const p = CLINICAL_PRESETS[initialPresetIndex];
       if (p?.services) {
         const effectiveTooth = (hasActiveTooth && typeof activeTooth === "number") ? activeTooth : p.toothNumber;
-        return p.services.map((s) => ({
-          ...s,
-          toothNumber: effectiveTooth ?? s.toothNumber,
-          applied: false,
-        }));
+        return p.services.map((s) => {
+          const sTooth = ("toothNumber" in s && typeof (s as { toothNumber?: unknown }).toothNumber === "number")
+            ? (s as { toothNumber: number }).toothNumber
+            : undefined;
+          return {
+            ...s,
+            toothNumber: effectiveTooth ?? sTooth,
+            applied: false,
+          };
+        });
       }
     }
     return [];
@@ -371,11 +376,16 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       surfaces: [...(p.surfaces || [])],
       applied: false,
     } : null);
-    setServicesProposal(p.services.map((s) => ({
-      ...s,
-      toothNumber: effectiveTooth ?? s.toothNumber,
-      applied: false,
-    })));
+    setServicesProposal(p.services.map((s) => {
+      const sTooth = ("toothNumber" in s && typeof (s as { toothNumber?: unknown }).toothNumber === "number")
+        ? (s as { toothNumber: number }).toothNumber
+        : undefined;
+      return {
+        ...s,
+        toothNumber: effectiveTooth ?? sTooth,
+        applied: false,
+      };
+    }));
     const diagnosis = (effectiveTooth && p.soap.diagnosis)
       ? (p.toothNumber ? p.soap.diagnosis.replace(new RegExp(`зуб\\s*${p.toothNumber}`, "i"), `зуб ${effectiveTooth}`) : p.soap.diagnosis)
       : p.soap.diagnosis;
@@ -392,6 +402,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
 
   const handleCloseHUD = () => {
     setIsOpen(false);
+    useCopilotStore.getState().setIsHudOpen(false);
     if (onClose) onClose();
   };
 
@@ -435,13 +446,13 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       <div className={`chairside-hud-panel ${!isDrawerOpen ? "chairside-hud-panel--compact" : ""}`}>
         {/* Mobile Apple Bottom Sheet Drag Handle */}
         <div
-          className="chairside-hud-drag-handle-wrap sm:hidden flex justify-center pt-2 pb-1 cursor-grab"
+          className="chairside-hud-drag-handle-wrap md:hidden flex justify-center pt-2 pb-1 cursor-grab"
           onClick={() => setIsDrawerOpen((d) => !d)}
           role="button"
           tabIndex={0}
           aria-label="Свернуть или развернуть панель копайлота"
         >
-          <div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line-strong,rgba(15,118,110,0.25))]" />
+          <div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line)]" />
         </div>
 
         {/* Capsule 1-Line Bar */}
@@ -466,6 +477,9 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
           onToggleDock={() => setIsDocked((d) => !d)}
           onMinimize={() => setIsMinimized(true)}
           onClose={handleCloseHUD}
+          onExpandToStudio={() => {
+            useCopilotStore.getState().expandToStudio();
+          }}
         />
 
         {/* Expanded Body Panel */}
@@ -548,7 +562,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               onApplyServices={handleApplyServices}
               onApplySoap={handleApplySoap}
               onEditSoap={() => {
-                useCopilotStore.getState().setIsStudioOpen(true);
+                useCopilotStore.getState().expandToStudio();
               }}
               onApplyAll={handleApplyAllActions}
               onDisposeCarpule={onDisposeCarpule}

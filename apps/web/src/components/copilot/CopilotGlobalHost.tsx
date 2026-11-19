@@ -6,6 +6,7 @@ import { useCopilotContextSync } from './CopilotContextSync';
 import type { CopilotUiMessage, PendingConfirmation } from './copilotTypes';
 import type { VisitNoteFieldsPatch, SpecialtyCategoryKey } from '../visit/clinicalCatalog/clinicalProtocolsCatalog';
 import { useVisitStore } from '../../store/visitStore';
+import { useCopilotStore } from '../../store/copilotStore';
 import { useCopilotGlobalEvents } from './host/useCopilotGlobalEvents';
 import { CopilotGlobalModals } from './host/CopilotGlobalModals';
 import './styles/copilotTrigger.css';
@@ -14,27 +15,30 @@ export const CopilotGlobalHost: React.FC = () => {
   const copilot = useCopilot();
   const { context: uiContext } = useCopilotContextSync();
 
+  const isStudioOpenStore = useCopilotStore((s) => s.isStudioOpen), isHudOpenStore = useCopilotStore((s) => s.isHudOpen);
+  const setIsStudioOpen = useCopilotStore((s) => s.setIsStudioOpen), setIsHudOpen = useCopilotStore((s) => s.setIsHudOpen);
+  const expandToStudio = useCopilotStore((s) => s.expandToStudio), collapseToHud = useCopilotStore((s) => s.collapseToHud);
+
   const [customMessages, setCustomMessages] = useState<CopilotUiMessage[] | null>(null);
   const [customPending, setCustomPending] = useState<PendingConfirmation | null>(null);
-  const [customBusy, setCustomBusy] = useState<boolean>(false);
-  const [customPhase, setCustomPhase] = useState<string | null>(null);
+  const [customBusy, setCustomBusy] = useState<boolean>(false), [customPhase, setCustomPhase] = useState<string | null>(null);
   const [customContext, setCustomContext] = useState<{ patientName?: string | null; patientId?: string | null; activeTooth?: number | null } | null>(null);
-  const [isHudOpen, setIsHudOpen] = useState(false);
-  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
-  const [catalogTooth, setCatalogTooth] = useState<number | null>(null);
-  const [catalogSpecialty, setCatalogSpecialty] = useState<SpecialtyCategoryKey>('all');
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false), [catalogTooth, setCatalogTooth] = useState<number | null>(null);
+  const [catalogSpecialty, setCatalogSpecialty] = useState<SpecialtyCategoryKey>('all'), [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
-  const openHud = useCallback(() => setIsHudOpen(true), []);
-  const closeHud = useCallback(() => setIsHudOpen(false), []);
-  const toggleHud = useCallback(() => setIsHudOpen((prev) => !prev), []);
+  const isStudioActive = copilot.isOpen || isStudioOpenStore;
+  const isHudActive = isHudOpenStore && !isStudioActive;
+
+  const handleOpenStudio = useCallback(() => { copilot.openDrawer(); expandToStudio(); }, [copilot, expandToStudio]);
+  const handleCloseStudio = useCallback(() => { copilot.closeDrawer(); setIsStudioOpen(false); }, [copilot, setIsStudioOpen]);
+  const handleToggleStudio = useCallback(() => { if (isStudioActive) handleCloseStudio(); else handleOpenStudio(); }, [isStudioActive, handleCloseStudio, handleOpenStudio]);
+  const handleOpenHud = useCallback(() => { handleCloseStudio(); setIsHudOpen(true); }, [handleCloseStudio, setIsHudOpen]);
+  const handleCloseHud = useCallback(() => { setIsHudOpen(false); }, [setIsHudOpen]);
+  const handleToggleHud = useCallback(() => { if (isHudActive) handleCloseHud(); else { collapseToHud(); copilot.closeDrawer(); } }, [isHudActive, handleCloseHud, collapseToHud, copilot]);
+
   const openVoiceModal = useCallback(() => setIsVoiceModalOpen(true), []);
   const closeVoiceModal = useCallback(() => setIsVoiceModalOpen(false), []);
-  const openTreatmentPlanCopilot = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('dente:open-treatment-plans'));
-    }
-  }, []);
+  const openTreatmentPlanCopilot = useCallback(() => { if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('dente:open-treatment-plans')); }, []);
   const closeTreatmentPlanCopilot = useCallback(() => {}, []);
 
   const handleOpenCatalog = useCallback((tooth?: number, category?: SpecialtyCategoryKey) => {
@@ -53,20 +57,18 @@ export const CopilotGlobalHost: React.FC = () => {
       recommendations: patch.recommendations || prev.recommendations || '',
       diagnosis: patch.diagnosis || prev.diagnosis || '',
     }));
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('dente-apply-soap-protocol', { detail: patch }));
-    }
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('dente-apply-soap-protocol', { detail: patch }));
     setIsCatalogModalOpen(false);
   }, []);
 
   useCopilotGlobalEvents({
-    openDrawer: copilot.openDrawer,
-    closeDrawer: copilot.closeDrawer,
-    toggle: copilot.toggle,
+    openDrawer: handleOpenStudio,
+    closeDrawer: handleCloseStudio,
+    toggle: handleToggleStudio,
     setActiveTab: copilot.setActiveTab,
-    openHud,
-    closeHud,
-    toggleHud,
+    openHud: handleOpenHud,
+    closeHud: handleCloseHud,
+    toggleHud: handleToggleHud,
     openVoiceModal,
     closeVoiceModal,
     openTreatmentPlanCopilot,
@@ -106,8 +108,8 @@ export const CopilotGlobalHost: React.FC = () => {
   return (
     <>
       <CopilotStudioModal
-        isOpen={copilot.isOpen}
-        onClose={copilot.closeDrawer}
+        isOpen={isStudioActive}
+        onClose={handleCloseStudio}
         activeTooth={effectiveActiveTooth}
         patientId={effectivePatientId}
         patientName={effectivePatientName}
@@ -117,8 +119,8 @@ export const CopilotGlobalHost: React.FC = () => {
         thoughtProcess={customPhase || copilot.phase || undefined}
       />
       <CopilotGlobalModals
-        isHudOpen={isHudOpen}
-        closeHud={closeHud}
+        isHudOpen={isHudActive}
+        closeHud={handleCloseHud}
         isCatalogModalOpen={isCatalogModalOpen}
         closeCatalogModal={() => setIsCatalogModalOpen(false)}
         catalogTooth={catalogTooth}
@@ -131,10 +133,10 @@ export const CopilotGlobalHost: React.FC = () => {
         patientAllergies={uiContext.allergies}
         activeTooth={numericActiveTooth}
       />
-      {!copilot.isOpen && !isHudOpen && !isLeadsView && (
+      {!isStudioActive && !isHudActive && !isLeadsView && (
         <button
           type="button"
-          onClick={copilot.openDrawer}
+          onClick={handleOpenStudio}
           className="copilot-trigger-btn"
           aria-label="Открыть ИИ-Ассистент ДЕНТА"
           title="ИИ-Ассистент ДЕНТА (Голос / Команды)"

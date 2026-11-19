@@ -25,11 +25,11 @@ export function renderScheduleSection(
     (typeof obj.doctorName === 'string' || typeof obj.doctor_name === 'string' || Array.isArray(obj.slots) || Array.isArray(obj.appointments))
   ) {
     const rawSlotsList = Array.isArray(obj.slots)
-      ? (obj.slots as unknown as ScheduleSlotOption[])
+      ? (obj.slots as ScheduleSlotOption[])
       : Array.isArray(obj.free_windows)
-      ? (obj.free_windows as unknown as ScheduleSlotOption[])
+      ? (obj.free_windows as ScheduleSlotOption[])
       : Array.isArray(obj.freeWindows)
-      ? (obj.freeWindows as unknown as ScheduleSlotOption[])
+      ? (obj.freeWindows as ScheduleSlotOption[])
       : [];
 
     const pickerData: ScheduleSlotPickerData = {
@@ -77,8 +77,16 @@ export function renderScheduleSection(
       ? (obj.appointments as AppointmentResult[])
       : Array.isArray(result)
       ? (result as AppointmentResult[])
-      : (obj.id && obj.patient_name)
-      ? [obj as unknown as AppointmentResult]
+      : (typeof obj.id === 'string' && typeof obj.patient_name === 'string')
+      ? [{
+          id: obj.id,
+          patient_name: obj.patient_name,
+          start_time: typeof obj.start_time === 'string' ? obj.start_time : undefined,
+          end_time: typeof obj.end_time === 'string' ? obj.end_time : undefined,
+          status: typeof obj.status === 'string' ? obj.status : undefined,
+          cabinet: typeof obj.cabinet === 'string' ? obj.cabinet : undefined,
+          service: typeof obj.service === 'string' ? obj.service : undefined,
+        }]
       : [];
 
     if (appts.length > 0) {

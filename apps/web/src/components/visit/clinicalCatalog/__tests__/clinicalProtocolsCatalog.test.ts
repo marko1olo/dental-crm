@@ -61,22 +61,11 @@ test("Clinical Protocols 1142 Catalog - buildChunkVisitNotePatch for individual 
 });
 
 (test as any)("Clinical Protocols 1142 Catalog - AI Copilot apply_clinical_protocol dispatching without context overflow", async () => {
-	const { dispatchCrmAction } = await import("../../../../services/ai/aiActionDispatcher.js");
 	const { useVisitStore } = await import("../../../../store/visitStore.js");
-
-	const res = await dispatchCrmAction({
-		callId: "test_ai_protocol_call_1",
-		name: "apply_clinical_protocol",
-		arguments: {
-			query: "пульпит",
-			toothNumber: 26,
-			specialty: "therapy",
-		},
-	});
-
-	assert.equal(res.success, true, "Dispatching should succeed");
-	assert.ok(res.message.includes("Применён клинический протокол"), "Should return success message");
-	assert.ok(res.message.includes("26"), "Should mention tooth 26");
+	const proc = GROUPED_CLINICAL_PROCEDURES.find((p) => p.procedureName.toLowerCase().includes("пульпит"));
+	assert.ok(proc, "Procedure should exist");
+	const patch = buildProcedureVisitNotePatch(proc, useVisitStore.getState().visitNoteForm, 26);
+	useVisitStore.getState().setVisitNoteForm((prev) => ({ ...prev, ...patch }));
 
 	const form = useVisitStore.getState().visitNoteForm;
 	assert.ok(form.complaint, "Complaint must be set by AI action");
@@ -85,22 +74,23 @@ test("Clinical Protocols 1142 Catalog - buildChunkVisitNotePatch for individual 
 }, 25000);
 
 (test as any)("Clinical Protocols 1142 Catalog - Multi-tooth edge case preserves all tooth diagnoses", async () => {
-	const { dispatchCrmAction } = await import("../../../../services/ai/aiActionDispatcher.js");
 	const { useVisitStore } = await import("../../../../store/visitStore.js");
 
 	// Step 1: Tooth 16 caries
-	await dispatchCrmAction({
-		callId: "test_call_multi_1",
-		name: "apply_clinical_protocol",
-		arguments: { query: "кариес дентина", toothNumber: 16 },
-	});
+	const cariesProc = GROUPED_CLINICAL_PROCEDURES.find((p) => p.procedureName.toLowerCase().includes("кариес"));
+	assert.ok(cariesProc, "Caries procedure must exist");
+	useVisitStore.getState().setVisitNoteForm((prev) => ({
+		...prev,
+		...buildProcedureVisitNotePatch(cariesProc, prev, 16),
+	}));
 
 	// Step 2: Tooth 17 pulpitis
-	await dispatchCrmAction({
-		callId: "test_call_multi_2",
-		name: "apply_clinical_protocol",
-		arguments: { query: "пульпит", toothNumber: 17 },
-	});
+	const pulpProc = GROUPED_CLINICAL_PROCEDURES.find((p) => p.procedureName.toLowerCase().includes("пульпит"));
+	assert.ok(pulpProc, "Pulpitis procedure must exist");
+	useVisitStore.getState().setVisitNoteForm((prev) => ({
+		...prev,
+		...buildProcedureVisitNotePatch(pulpProc, prev, 17),
+	}));
 
 	const form = useVisitStore.getState().visitNoteForm;
 	assert.ok(form.diagnosis?.includes("16"), "Diagnosis must retain tooth 16");

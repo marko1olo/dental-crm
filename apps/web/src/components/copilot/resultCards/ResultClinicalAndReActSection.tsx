@@ -50,9 +50,9 @@ export function renderClinicalAndReActSection(tool: string, obj: Obj): React.Rea
     Array.isArray(obj.react_steps)
   ) {
     const rawSteps = Array.isArray(obj.steps)
-      ? (obj.steps as unknown as ReactStepItem[])
+      ? (obj.steps as ReactStepItem[])
       : Array.isArray(obj.react_steps)
-      ? (obj.react_steps as unknown as ReactStepItem[])
+      ? (obj.react_steps as ReactStepItem[])
       : undefined;
 
     return (
