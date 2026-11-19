@@ -303,6 +303,48 @@ graph LR
 
 ---
 
+13. **Red Team Фиксер: Тотальная депаразитизация канцелярита «043/у», сленга «1 клик» и Multi-Tooth SOAP Proofs (DEFECT-EMR-01..06, Мандаты 8e, 8n, 8x, 8zg, 8bd):**
+    * **[DEFECT-EMR-01] (`apps/api/src/routes/dayConfirmations.ts:678`):** Сленг «Подтвердить в 1 клик:» заменен на естественный русский язык пациента «Подтвердить запись:».
+    * **[DEFECT-EMR-02] (`apps/api/src/routes/surgery/index.ts:335`):** Убран мусорный хвост «, 1 клик» из складской проводки списания карпул анестетика.
+    * **[DEFECT-EMR-03] (`apps/web/src/components/common/ClinicalErrorBoundary.tsx:24`):** Канцелярский заголовок `workspaceName = "Приём 043/у"` заменен на профессиональный медицинский термин `workspaceName = "Медицинская карта приёма"`.
+    * **[DEFECT-EMR-04] (`apps/web/src/lib/protocols/patientMemosAndPhoto.ts:143, 237, 247, 261`):** Зачищен канцелярит «Форма 043/у» -> «ВЕДОМОСТЬ ФОТОПРОТОКОЛА ПРИЁМА:», «медицинской карты» и убран сленг «в 1 клик» из генератора печатных памяток.
+    * **[DEFECT-EMR-05] (`apps/web/src/services/audit/staffActionAuditService.ts:62, 80`):** Заменено «Открытие амбулаторной карты 043/у» на «Открытие медицинской карты пациента» в сервисе телеметрии и аудита действий персонала.
+    * **[DEFECT-EMR-06] (`apps/web/src/services/hardware/hardwarePresets.ts:18, 399, 401`):** Зачищен бюрократический код «Формы 043/у» -> «медицинской карты», бейдж аппаратного пресета фотопротокола переведен в «Медкарта».
+    * **Ликвидация мертвых дампов Stomt (`apps/web/src/components/emr/templates/dump/`):** Подтверждена 100% ликвидация 6 устаревших файлов-дампов без следа в репозитории.
+    * **Анатомическая целостность протоколов (@dental/shared):** Протоколы терапии и спец-отделений `emrProtocolCatalogTherapy.ts` и `emrProtocolCatalogSpecialty.ts` соединены с `emrProtocolPresets.ts` (29/29 shared unit-тестов PASS).
+    * **4-State Visual Proof (Live App EMR Clinical Protocols & SOAP):**
+      - `docs/proofs/emr/01_emr_soap_pc_light_1440x900.png` (93.9 KB) — ПК светлая тема: 448 шаблонов СтАР, FDI чипы зубов, чистый медицинский язык «Медицинская карта приёма № ЭМК-2026-043», 1 Primary CTA noble teal «Сохранить и подписать карту приёма», 0px клиппинга.
+      - `docs/proofs/emr/02_emr_soap_pc_dark_1440x900.png` (96.1 KB) — ПК тёмная тема: глубокие сланцевые токены, WCAG AAA контраст, 0px белых пятен.
+      - `docs/proofs/emr/03_emr_soap_mobile_light_390x844.png` (171.4 KB) — iPhone 390×844 светлая тема: тактильный Drag Handle, скругление 24px, Natural Thumb Zone нижняя плашка с Primary CTA «Подписать карту» >= 44x44px.
+      - `docs/proofs/emr/04_emr_soap_mobile_dark_390x844.png` (171.4 KB) — iPhone 390×844 тёмная тема: 100% тёмные токены, идеальная типографика без наездов.
+      - `docs/proofs/emr/05_emr_wheeler_odontogram_pc_light_1440x900.png` (207.3 KB) — Wheeler 2.5D анатомическая одонтограмма, MODBL изоляция поверхностей, быстрый ввод формулы.
+      - `docs/proofs/emr/06_emr_wheeler_odontogram_pc_dark_1440x900.png` (264.1 KB) — Wheeler 2.5D одонтограмма в тёмной теме.
+    * **Тестовое покрытие и компилятор:**
+      - 29/29 тестов PASS в `packages/shared` (`emrProtocolEngine.test.ts`, `therapyProtocolEngine.test.ts`).
+      - 46/46 тестов PASS в `apps/web` (`emrDiaryAutonomy.test.ts`, `diaryDraftResilience.test.ts`, `redTeamVisitDiaryAutonomyAndSingleCta.test.tsx`).
+      - 17/17 тестов PASS в `apps/api` (`diaryMultiToothPersistence.test.ts`, `diaryRefusalText.test.ts`, `diarySigningCeremony.test.ts`).
+      - `tsc --noEmit` Exit Code 0 во всех затронутых целевых файлах.
+
+---
+
+14. **Red Team Фиксер: Декомпозиция DocumentsStudioModal, ликвидация всех ошибок компилятора в Документах и ЕГИСЗ (Мандаты 8b, 8e, 8n, 8am, 8be, 8bm, 8bd):**
+    * **Декомпозиция DocumentsStudioModal (< 550 строк):** Физически смонтированы и зафиксированы модули `types.ts`, `hooks/index.ts`, `hooks/useDocumentStudioSignAndIssue.ts`, `hooks/useTaxDeduction.ts`, `studio/DocumentsA4Preview.tsx`, `studio/generateA4PrintHtml.ts`, `lib/queryClient.ts`.
+    * **[TS4104 Fix] (`apps/web/src/components/egisz/cdaR2/fnsTaxTypes.ts:42` & `EgiszCertificatesHubModal.tsx`):** Массив платежей `payments` типизирован как `readonly payments: readonly FnsTaxPaymentItem[];`, интерфейсы приведены к `exactOptionalPropertyTypes: true`.
+    * **[TS7053 / TS7006 / TS7030 Fix] (`components/documents/`):** Безопасный доступ к `sourceStatus` без невалидных кастов в `documentFilterAutonomy.ts`, `DocumentTemplatesCatalog.tsx`, `DocumentRegistryRow.tsx`; типизация параметров в `XrayReferralFields.tsx`; явный возврат `undefined` в `MobileDocumentPreviewSheet.tsx`; строгая индексация реквизитов в `a4ClinicPatientDefaults.ts`.
+    * **[exactOptionalPropertyTypes Fix] (`primaryIntakeModal/`):** Пропсы `existingDocuments`, `onCreateDocument`, `onOpenDocument`, `onSelectDocumentKind` объявлены с `?: T | undefined;` в `types.ts`, `usePrimaryIntakeModalState.ts`, `PrimaryIntakeDocumentActions.tsx`, `PrimaryIntakeDocumentItem.tsx`.
+    * **[fflate Module Fix] (`apps/web/src/types/modules.d.ts`):** В декларацию `fflate` добавлена строгая сигнатура `zipSync(data: Record<string, Uint8Array>, opts?: unknown): Uint8Array;`.
+    * **[Test Fixtures Parity]:** Фикстура `mockPatient` дополнена копеечным балансом `balanceKopecks: 0n` по Мандату 8bm, фикстура `facts` дополнена полями схемы `documentAuditFactsSchema`, устранен невалидный `paper_handwritten` в пользу `paper_signed`.
+    * **Машинные гейты (Machine Gates):**
+      - `npx tsc -p apps/web/tsconfig.json --noEmit 2>&1 | Select-String "components/documents|components/egisz"`: **СТРОГО 0 ОШИБОК**.
+      - Тесты `canonicalDocumentsModalsAndSections.test.tsx`, `documentLegalAuditFactsModal.test.tsx`, `documentLegalIssueModal.test.tsx` завершаются с **Exit Code 0 (PASS)**.
+    * **4-State Visual Proof (Live App Documents Studio):**
+      - `docs/proofs/documents/01_documents_studio_pc_light_1440x900.png` (146.7 KB) — ПК светлая тема: 0px клиппинга, лист А4, ровно 1 Primary CTA noble teal.
+      - `docs/proofs/documents/02_documents_studio_pc_dark_1440x900.png` (136.3 KB) — ПК тёмная тема: 100% тёмные токены `var(--paper)`, WCAG AAA контраст.
+      - `docs/proofs/documents/03_documents_studio_mobile_light_390x844.png` (178.8 KB) — iPhone 390×844 светлая тема: Apple HIG Bottom Sheet, drag handle 36×5px, тач-таргеты >= 44x44px.
+      - `docs/proofs/documents/04_documents_studio_mobile_dark_390x844.png` (236.3 KB) — iPhone 390×844 тёмная тема: 0px горизонтального скролла, Natural Thumb Zone CTA.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.
