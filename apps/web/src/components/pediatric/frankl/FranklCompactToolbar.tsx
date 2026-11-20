@@ -26,10 +26,10 @@ export const FranklCompactToolbar: React.FC<FranklCompactToolbarProps> = ({
 		<div
 			role="toolbar"
 			aria-label="Шкала поведения Франкла"
-			className={`inline-flex items-center gap-1 p-0.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] min-h-[32px] sm:min-h-[36px] sm:h-9 max-h-9 select-none shrink-0 ${className}`.trim()}
+			className={`inline-flex items-center gap-1 p-0.5 sm:p-1 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] min-h-[44px] sm:min-h-[36px] sm:h-9 select-none shrink-0 ${className}`.trim()}
 			data-testid="frankl-compact-toolbar"
 		>
-			<span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] px-1.5 hidden md:inline shrink-0">
+			<span className="text-xs font-semibold text-[var(--ink-muted,#64748b)] px-1.5 hidden md:inline shrink-0">
 				Франкл:
 			</span>
 			{FRANKL_RATINGS.map((r) => {
@@ -46,10 +46,10 @@ export const FranklCompactToolbar: React.FC<FranklCompactToolbarProps> = ({
 								onQuickSelect?.(r);
 							}
 						}}
-						className={`min-h-[28px] sm:min-h-[32px] h-7 sm:h-8 px-2 rounded-lg text-xs font-black font-mono flex items-center gap-1 transition-all cursor-pointer select-none active:scale-95 border ${
+						className={`min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-2.5 sm:px-2 rounded-lg text-xs font-bold font-mono inline-flex items-center justify-center gap-1 transition-all cursor-pointer select-none active:scale-95 border ${
 							isSelected
 								? "shadow-xs ring-1 ring-black/10 dark:ring-white/10"
-								: "opacity-75 hover:opacity-100 bg-transparent border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "opacity-75 hover:opacity-100 bg-transparent border-transparent text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 						style={{
 							backgroundColor: isSelected ? def.badgeBg : undefined,

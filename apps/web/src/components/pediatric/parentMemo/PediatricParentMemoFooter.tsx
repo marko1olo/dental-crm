@@ -48,7 +48,7 @@ export const PediatricParentMemoFooter: React.FC<PediatricParentMemoFooterProps>
 				<button
 					type="button"
 					onClick={onPrint}
-					className="min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition shadow-xs active:scale-95"
+					className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 py-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium text-xs flex items-center justify-center gap-1.5 cursor-pointer transition shadow-xs active:scale-95"
 					data-testid="pediatric-memo-print-btn"
 				>
 					<Printer className="h-4 w-4 shrink-0" />

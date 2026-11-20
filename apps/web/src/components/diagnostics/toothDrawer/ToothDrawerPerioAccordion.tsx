@@ -93,28 +93,36 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 				const teethList = Array.isArray(existing.teeth) ? [...existing.teeth] : [];
 				const idx = teethList.findIndex((t: { toothNumber?: number }) => t.toothNumber === toothNumber);
 
-				const siteObj = {
-					probingDepthMm: newDepth,
-					gingivalMarginMm: 0,
-					bleedingOnProbing: newBop,
-					calculus: newCalc,
-					plaque: newBop,
-					suppuration: false,
-					calMm: newDepth,
+				const existingTooth = idx >= 0 ? teethList[idx] : null;
+				const preservedFurcation = typeof existingTooth?.furcation === "number" ? existingTooth.furcation : 0;
+				const isImplant = Boolean(existingTooth?.isImplant);
+				const isMissing = Boolean(existingTooth?.isMissing);
+
+				const updateSite = (existingSite: { gingivalMarginMm?: number; plaque?: boolean; suppuration?: boolean } | undefined) => {
+					const prevGm = typeof existingSite?.gingivalMarginMm === "number" ? existingSite.gingivalMarginMm : 0;
+					return {
+						probingDepthMm: newDepth,
+						gingivalMarginMm: prevGm,
+						bleedingOnProbing: newBop,
+						calculus: newCalc,
+						plaque: existingSite?.plaque ?? newBop,
+						suppuration: existingSite?.suppuration ?? false,
+						calMm: newDepth + prevGm,
+					};
 				};
 
 				const updatedTooth = {
 					toothNumber,
-					isMissing: false,
-					isImplant: false,
+					isMissing,
+					isImplant,
 					mobility: newMobility,
-					furcation: 0,
-					distoBuccal: siteObj,
-					midBuccal: siteObj,
-					mesioBuccal: siteObj,
-					distoLingual: siteObj,
-					midLingual: siteObj,
-					mesioLingual: siteObj,
+					furcation: preservedFurcation,
+					distoBuccal: updateSite(existingTooth?.distoBuccal),
+					midBuccal: updateSite(existingTooth?.midBuccal),
+					mesioBuccal: updateSite(existingTooth?.mesioBuccal),
+					distoLingual: updateSite(existingTooth?.distoLingual),
+					midLingual: updateSite(existingTooth?.midLingual),
+					mesioLingual: updateSite(existingTooth?.mesioLingual),
 				};
 
 				if (idx >= 0) {
@@ -129,11 +137,24 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 			}
 
 			// Тихое сохранение в бэкенд (Мандат 8aa)
+			const existingToothMeta = (() => {
+				try {
+					const raw = localStorage.getItem(`dente_perio_cache_${patientId.trim()}`);
+					if (!raw) return null;
+					const parsed = JSON.parse(raw);
+					return Array.isArray(parsed.teeth) ? parsed.teeth.find((t: { toothNumber?: number }) => t.toothNumber === toothNumber) : null;
+				} catch { return null; }
+			})();
+			const furcGrade = typeof existingToothMeta?.furcation === "number" ? existingToothMeta.furcation : 0;
+			const furcStr = furcGrade > 0 ? (furcGrade === 1 ? "I" : furcGrade === 2 ? "II" : "III") : "0";
+			const furcationB = (existingToothMeta as { furcationBuccal?: string } | null)?.furcationBuccal ?? furcStr;
+			const furcationL = (existingToothMeta as { furcationLingual?: string } | null)?.furcationLingual ?? furcStr;
+
 			void fetch(`/api/periodontogram/${encodeURIComponent(patientId.trim())}`, {
 				method: "POST",
 				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
-					teeth: [{ toothNumber, isPresent: true, isImplant: false, mobility: newMobility, furcationBuccal: 0, furcationLingual: 0 }],
+					teeth: [{ toothNumber, isPresent: true, isImplant: Boolean(existingToothMeta?.isImplant), mobility: newMobility, furcationBuccal: furcationB, furcationLingual: furcationL }],
 					sites: [
 						{ toothNumber, siteCode: "DV", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
 						{ toothNumber, siteCode: "V", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
@@ -143,7 +164,16 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 						{ toothNumber, siteCode: "ML", probingDepthMm: newDepth, bleedingOnProbing: newBop, calculus: newCalc },
 					],
 				}),
-			}).catch(() => {});
+			})
+				.then(async (res) => {
+					if (!res.ok) {
+						const errData = await res.json().catch(() => null);
+						showToast(errData?.message || "Ошибка сохранения статуса пародонта", "error");
+					}
+				})
+				.catch((err) => {
+					showToast(err instanceof Error ? err.message : "Ошибка сети при сохранении пародонта", "error");
+				});
 		},
 		[toothNumber, patientId],
 	);
@@ -233,7 +263,7 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 			>
 				<div className="trigger-left min-w-0 flex-1">
 					<div className="flex items-center gap-2 min-w-0">
-						<Activity size={16} className="shrink-0 text-[var(--primary,#0d9488)]" />
+						<Activity size={16} className="shrink-0 text-[var(--primary)]" />
 						<span className="trigger-title truncate font-semibold text-xs text-[var(--ink)]">4. Пародонтология</span>
 					</div>
 					<span className="trigger-summary text-[11px] font-semibold pl-6 block sm:inline sm:pl-2">
@@ -264,7 +294,7 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 									key={d}
 									type="button"
 									onClick={() => handleDepthSelect(d)}
-									className={`min-h-[44px] sm:min-h-[36px] rounded-lg text-xs font-bold font-mono transition-all border cursor-pointer ${probingDepth === d ? "bg-[var(--primary,#0d9488)] text-white border-[var(--primary,#0d9488)] shadow-xs" : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary,#0d9488)]"}`}
+									className={`min-h-[44px] sm:min-h-[36px] rounded-lg text-xs font-bold font-mono transition-all border cursor-pointer ${probingDepth === d ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs" : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"}`}
 									data-testid={`perio-depth-btn-${d}`}
 								>
 									{d}
@@ -285,7 +315,7 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 									key={m.level}
 									type="button"
 									onClick={() => handleMobilitySelect(m.level)}
-									className={`min-h-[44px] sm:min-h-[36px] px-2 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${mobility === m.level ? "bg-[var(--primary,#0d9488)] text-white border-[var(--primary,#0d9488)] shadow-xs" : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary,#0d9488)]"}`}
+									className={`min-h-[44px] sm:min-h-[36px] px-2 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${mobility === m.level ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs" : "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"}`}
 									data-testid={`perio-mobility-btn-${m.level}`}
 									title={m.desc}
 								>
@@ -347,7 +377,7 @@ export const ToothDrawerPerioAccordion: React.FC<ToothDrawerPerioAccordionProps>
 						<button
 							type="button"
 							onClick={handleInsertToDiary}
-							className="min-h-[44px] sm:min-h-[36px] h-9 px-3.5 rounded-lg text-xs font-bold bg-[var(--primary,#0d9488)] text-white hover:opacity-95 active:scale-98 inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
+							className="min-h-[44px] sm:min-h-[36px] h-9 px-3.5 rounded-lg text-xs font-bold bg-[var(--primary)] text-white hover:opacity-95 active:scale-98 inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
 							data-testid="perio-insert-diary-btn"
 						>
 							<FileText size={14} />

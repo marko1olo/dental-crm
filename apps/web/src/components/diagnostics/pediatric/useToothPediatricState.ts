@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
-import type { FranklRating, FranklRatingDefinition } from "../../odontogram/pediatricDentitionEngine";
-import { getFranklDefinition } from "../../odontogram/pediatricDentitionEngine";
+import {
+	type FranklRating,
+	type FranklRatingDefinition,
+	getFranklDefinition,
+} from "@dental/shared";
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { RootResorptionStage } from "../../odontogram/anatomicalGeometriesTypes";
 import { showToast } from "../../GlobalToast";

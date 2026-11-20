@@ -38,8 +38,8 @@ export const FRANKL_EXPRESS_ITEMS: readonly FranklExpressItem[] = [
 		descriptionRu: "Плач, отказ от контакта, физическое сопротивление или страх",
 		clinicalTacticRu: "Tell-Show-Do, ознакомительный визит без бормашины, седация N2O при острой боли",
 		icon: Frown,
-		activeClass: "border-rose-500 bg-rose-50/90 text-rose-950 shadow-sm ring-2 ring-rose-500/30 dark:border-rose-400 dark:bg-rose-950/60 dark:text-rose-100",
-		badgeClass: "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-900/60 dark:text-rose-200 dark:border-rose-700",
+		activeClass: "border-[var(--danger-line,var(--danger))] bg-[var(--danger-soft)] text-[var(--danger-ink,var(--danger))] shadow-xs ring-2 ring-[var(--danger)]/30",
+		badgeClass: "bg-[var(--danger-soft)] text-[var(--danger-ink,var(--danger))] border border-[var(--danger-line,var(--danger))]",
 	},
 	{
 		rating: 2,
@@ -49,8 +49,8 @@ export const FRANKL_EXPRESS_ITEMS: readonly FranklExpressItem[] = [
 		descriptionRu: "Неохотно, плаксив, скован, но садится в кресло и дает осмотреть",
 		clinicalTacticRu: "Tell-Show-Do, мультфильмы, позитивное подкрепление, договоренность о знаке «стоп»",
 		icon: Meh,
-		activeClass: "border-amber-500 bg-amber-50/90 text-amber-950 shadow-sm ring-2 ring-amber-500/30 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100",
-		badgeClass: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/60 dark:text-amber-200 dark:border-amber-700",
+		activeClass: "border-[var(--warning-line,var(--warning))] bg-[var(--warning-soft)] text-[var(--warning-ink,var(--warning))] shadow-xs ring-2 ring-[var(--warning)]/30",
+		badgeClass: "bg-[var(--warning-soft)] text-[var(--warning-ink,var(--warning))] border border-[var(--warning-line,var(--warning))]",
 	},
 	{
 		rating: 3,
@@ -60,8 +60,8 @@ export const FRANKL_EXPRESS_ITEMS: readonly FranklExpressItem[] = [
 		descriptionRu: "Контактен, сотрудничает, спокойно выполняет указания врача",
 		clinicalTacticRu: "Похвала, демонстрация чистого зубика в зеркало, игровая форма, подарок за смелость",
 		icon: Smile,
-		activeClass: "border-sky-500 bg-sky-50/90 text-sky-950 shadow-sm ring-2 ring-sky-500/30 dark:border-sky-400 dark:bg-sky-950/60 dark:text-sky-100",
-		badgeClass: "bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-900/60 dark:text-sky-200 dark:border-sky-700",
+		activeClass: "border-[var(--primary)] bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs ring-2 ring-[var(--primary)]/30",
+		badgeClass: "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]",
 	},
 	{
 		rating: 4,
@@ -71,7 +71,7 @@ export const FRANKL_EXPRESS_ITEMS: readonly FranklExpressItem[] = [
 		descriptionRu: "Радостен, смеется, открыт к общению, с удовольствием чистит зубки",
 		clinicalTacticRu: "Обучение гигиене, выбор цвета пломбы ребенком (Twinky Star), диплом смелости",
 		icon: Sparkles,
-		activeClass: "border-emerald-500 bg-emerald-50/90 text-emerald-950 shadow-sm ring-2 ring-emerald-500/30 dark:border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-100",
-		badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/60 dark:text-emerald-200 dark:border-emerald-700",
+		activeClass: "border-[var(--success-line,var(--success))] bg-[var(--success-soft)] text-[var(--success-ink,var(--success))] shadow-xs ring-2 ring-[var(--success)]/30",
+		badgeClass: "bg-[var(--success-soft)] text-[var(--success-ink,var(--success))] border border-[var(--success-line,var(--success))]",
 	},
 ];

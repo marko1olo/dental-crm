@@ -1,5 +1,5 @@
 import React from "react";
-import type { ResorptionStagePercent } from "../../odontogram/pediatricDentitionEngine";
+import type { ResorptionStagePercent } from "@dental/shared";
 import {
 	PediatricTeethChart,
 	type PediatricDentitionMode,

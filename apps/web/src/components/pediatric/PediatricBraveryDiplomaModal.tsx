@@ -81,7 +81,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 	}, [effectiveDoctorName]);
 
 	const diplomaSummaryText = useMemo(() => {
-		return `ДИПЛОМ ЗА ХРАБРОСТЬ № ${resolved.diplomaNumber}\n${heroDisplay}\n${praiseText}\n${doctorDisplay} • ${effectiveClinicName} • ${effectiveDate}`;
+		return `Диплом за храбрость № ${resolved.diplomaNumber}\n${heroDisplay}\n${praiseText}\n${doctorDisplay} • ${effectiveClinicName} • ${effectiveDate}`;
 	}, [resolved.diplomaNumber, heroDisplay, praiseText, doctorDisplay, effectiveClinicName, effectiveDate]);
 
 	const handleCopyDiplomaText = useCallback(() => {
@@ -222,7 +222,7 @@ export const PediatricBraveryDiplomaModal: React.FC<PediatricBraveryDiplomaModal
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="w-full sm:w-auto min-h-[44px] sm:min-h-[36px] px-5 rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer select-none active:scale-95"
+							className="w-full sm:w-auto min-h-[44px] sm:min-h-[36px] sm:h-9 px-5 rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer select-none active:scale-95"
 							data-testid="btn-modal-print-diploma"
 						>
 							<Printer className="h-4 w-4 shrink-0" />

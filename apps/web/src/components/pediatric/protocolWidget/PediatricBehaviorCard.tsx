@@ -1,6 +1,6 @@
 import React from "react";
 import { Check } from "lucide-react";
-import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
+import type { FranklRating } from "@dental/shared";
 import { FRANKL_EXPRESS_ITEMS } from "./constants";
 import type { FranklExpressItem } from "./types";
 
@@ -18,10 +18,10 @@ export const PediatricBehaviorCard: React.FC<PediatricBehaviorCardProps> = ({
 	return (
 		<div className="mb-4">
 			<div className="mb-2 flex items-center justify-between gap-2 min-w-0">
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] shrink-0">
+				<span className="text-xs font-semibold text-[var(--ink-muted,#64748b)] shrink-0">
 					Шкала поведения Франкла (экспресс-выбор):
 				</span>
-				<span className="text-xs font-medium text-[var(--muted,#64748b)] truncate min-w-0">
+				<span className="text-xs font-medium text-[var(--ink-muted,#64748b)] truncate min-w-0">
 					{activeFrankl.clinicalTacticRu}
 				</span>
 			</div>
@@ -53,7 +53,7 @@ export const PediatricBehaviorCard: React.FC<PediatricBehaviorCardProps> = ({
 									<div className="text-xs font-extrabold font-mono whitespace-nowrap">
 										Рейтинг {item.symbol}
 									</div>
-									<div className="text-[10px] text-[var(--muted,#64748b)] truncate hidden sm:block">
+									<div className="text-[10px] text-[var(--ink-muted,#64748b)] truncate hidden sm:block">
 										{item.rating === 1
 											? "Негативное (--)"
 											: item.rating === 2
@@ -65,7 +65,7 @@ export const PediatricBehaviorCard: React.FC<PediatricBehaviorCardProps> = ({
 								</div>
 							</div>
 							{isCurrent && (
-								<Check className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400 ml-1" />
+								<Check className="h-4 w-4 shrink-0 text-[var(--success)] ml-1" />
 							)}
 						</button>
 					);

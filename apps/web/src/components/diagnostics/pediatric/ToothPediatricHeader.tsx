@@ -1,6 +1,6 @@
 import React from "react";
 import { ToothDeciduous } from "../../icons/DentalIcons";
-import type { FranklRatingDefinition } from "../../odontogram/pediatricDentitionEngine";
+import type { FranklRatingDefinition } from "@dental/shared";
 
 export interface ToothPediatricHeaderProps {
 	toothNumber: number;
@@ -14,7 +14,7 @@ export const ToothPediatricHeader: React.FC<ToothPediatricHeaderProps> = ({
 	return (
 		<div className="dente-warm-tool-header">
 			<div className="dente-warm-tool-title-group">
-				<ToothDeciduous size={18} style={{ color: "#ec4899" }} />
+				<ToothDeciduous size={18} className="text-[var(--primary)]" />
 				<h3 className="dente-warm-tool-title">
 					Детский прием: Шкала Франкла & Резорбция (FDI #{toothNumber})
 				</h3>

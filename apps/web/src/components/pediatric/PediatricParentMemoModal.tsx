@@ -7,7 +7,7 @@ import type {
 	PediatricSilveringOptions,
 	PediatricFissureSealingOptions,
 	PediatricPulpotomyOptions,
-} from "../odontogram/pediatricDentitionEngine";
+} from "@dental/shared";
 import { buildParentMemoText } from "./parentMemo/parentMemoTextGenerator";
 import { printParentMemo } from "./parentMemo/parentMemoPrint";
 import { PediatricParentMemoForm } from "./parentMemo/PediatricParentMemoForm";

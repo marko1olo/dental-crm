@@ -33,20 +33,20 @@ export const PediatricAnesthesiaQuickSelector: React.FC<PediatricAnesthesiaQuick
 						<button
 							key={id} type="button" onClick={() => onSelectDrugId(id)}
 							className={`min-h-[44px] flex items-center justify-between p-2.5 rounded-xl border text-left transition cursor-pointer active:scale-[0.98] ${
-								isSelected ? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--ink,#0f172a)] ring-1 ring-[var(--teal,#0d9488)]/40"
-									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)]"
+								isSelected ? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--ink)] ring-1 ring-[var(--primary)]/40"
+									: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 							}`}
 							data-testid={`pediatric-drug-${id === "articaine_4" ? "articaine" : "mepivacaine"}`}
 						>
 							<div className="min-w-0 pr-2">
-								<div className="text-xs font-black truncate">{item.shortLabelRu}</div>
-								<div className="text-[10px] text-[var(--muted,#64748b)] truncate">{item.tradeNamesRu}</div>
+								<div className="text-xs font-semibold truncate">{item.shortLabelRu}</div>
+								<div className="text-[10px] text-[var(--ink-muted)] truncate">{item.tradeNamesRu}</div>
 							</div>
 							{isContra ? (
-								<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--danger-soft,rgba(239,68,68,0.15))] text-[var(--danger,#ef4444)] shrink-0 flex items-center gap-1">
+								<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--danger-soft)] text-[var(--danger-ink)] border border-[var(--danger-line)] shrink-0 flex items-center gap-1">
 									<AlertTriangle className="h-3 w-3" /><span>Аллергия</span>
 								</span>
-							) : isSelected ? <Check className="h-4 w-4 text-[var(--teal,#0d9488)] shrink-0" /> : null}
+							) : isSelected ? <Check className="h-4 w-4 text-[var(--primary)] shrink-0" /> : null}
 						</button>
 					);
 				})}
@@ -54,13 +54,13 @@ export const PediatricAnesthesiaQuickSelector: React.FC<PediatricAnesthesiaQuick
 
 			<div className="flex flex-wrap items-center justify-between gap-2 pt-1">
 				<div className="flex items-center gap-1.5">
-					<span className="text-xs font-bold text-[var(--muted,#64748b)] mr-1">Доза:</span>
+					<span className="text-xs font-medium text-[var(--ink-muted)] mr-1">Доза:</span>
 					{CARPULE_PRESETS.map((d) => (
 						<button
 							key={d} type="button" onClick={() => onSelectCarpules(d)}
-							className={`min-h-[44px] sm:min-h-[30px] px-2.5 rounded-lg border text-xs font-bold transition cursor-pointer active:scale-95 ${
-								carpules === d ? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] ring-1 ring-[var(--teal,#0d9488)]/30 font-black shadow-2xs"
-									: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)]"
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border text-xs font-medium transition cursor-pointer active:scale-95 ${
+								carpules === d ? "border-[var(--primary)] bg-[var(--primary)]/15 text-[var(--primary)] ring-1 ring-[var(--primary)]/30 font-semibold shadow-2xs"
+									: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
 							}`}
 							data-testid={`btn-pediatric-carpules-${d}`}
 						>
@@ -68,42 +68,42 @@ export const PediatricAnesthesiaQuickSelector: React.FC<PediatricAnesthesiaQuick
 						</button>
 					))}
 				</div>
-				<div className="text-xs font-semibold text-[var(--muted,#64748b)]">
-					МРД: <span className="font-bold text-[var(--ink,#0f172a)]">{calculation.maxAllowedTotalDoseMg} мг</span> (макс. {calculation.maxSafeCarpulesCount} карп.)
+				<div className="text-xs font-normal text-[var(--ink-muted)]">
+					МРД: <span className="font-semibold text-[var(--ink)] font-mono">{calculation.maxAllowedTotalDoseMg} мг</span> (макс. {calculation.maxSafeCarpulesCount} карп.)
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line,#e2e8f0)]">
+			<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
 				<div className="flex items-center gap-2 min-w-0">
 					{calculation.isOverdose ? (
-						<div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800/60">
-							<AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+						<div className="flex items-center gap-1.5 text-xs font-medium bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)] px-2.5 py-1 rounded-lg">
+							<AlertTriangle className="h-4 w-4 shrink-0 text-[var(--warning-ink)]" />
 							<span>Превышение МРД ({calculation.totalDoseAdministeredMg} мг &gt; {calculation.maxAllowedTotalDoseMg} мг)</span>
 						</div>
 					) : calculation.isContraindicated ? (
-						<div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-300 dark:border-rose-800/60">
-							<ShieldAlert className="h-4 w-4 shrink-0 text-rose-600" /><span>Противопоказание по анамнезу</span>
+						<div className="flex items-center gap-1.5 text-xs font-medium bg-[var(--danger-soft)] text-[var(--danger-ink)] border border-[var(--danger-line)] px-2.5 py-1 rounded-lg">
+							<ShieldAlert className="h-4 w-4 shrink-0 text-[var(--danger-ink)]" /><span>Противопоказание по анамнезу</span>
 						</div>
 					) : (
-						<div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800/60">
-							<ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
+						<div className="flex items-center gap-1.5 text-xs font-medium bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)] px-2.5 py-1 rounded-lg">
+							<ShieldCheck className="h-4 w-4 shrink-0 text-[var(--success-ink)]" />
 							<span>Доза безопасна: {calculation.totalDoseAdministeredMg} мг ({calculation.doseUtilizationPercent}% МРД)</span>
 						</div>
 					)}
 					{calculation.isOverdose && (
 						<button
 							type="button" onClick={onSetMaxSafeDose}
-							className="min-h-[44px] sm:min-h-[30px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition flex items-center gap-1 cursor-pointer active:scale-95"
+							className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium transition flex items-center gap-1 cursor-pointer active:scale-95"
 							data-testid="btn-reduce-to-safe-dose"
 						>
-							<Sparkles className="h-3.5 w-3.5 text-[var(--teal,#0d9488)]" /><span>Снизить до нормы</span>
+							<Sparkles className="h-3.5 w-3.5 text-[var(--primary)]" /><span>Снизить до нормы</span>
 						</button>
 					)}
 				</div>
 
 				<button
 					type="button" onClick={onApplyAnesthesia}
-					className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+					className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
 					data-testid="btn-apply-anesthesia-protocol"
 				>
 					<Check className="h-3.5 w-3.5" /><span>Внести анестезию в протокол</span>

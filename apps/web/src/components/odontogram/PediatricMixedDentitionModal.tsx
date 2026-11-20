@@ -14,7 +14,6 @@ import {
 } from "./pediatricModal";
 import { PediatricCariogramTab } from "./PediatricCariogramTab";
 import "./odontogram.css";
-import "./pediatricMixedDentition.css";
 
 export type { PediatricAgePreset, PediatricMixedDentitionModalProps };
 export { PEDIATRIC_AGE_PRESETS };
@@ -44,6 +43,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="pediatric-modal-title"
+			data-testid="pediatric-studio-modal"
 		>
 			<div
 				className="relative flex flex-col w-full max-w-5xl max-h-[calc(100dvh-32px)] bg-[var(--odontogram-paper,var(--paper-strong,var(--paper,#ffffff)))] text-[var(--odontogram-ink,var(--ink,#0f172a))] rounded-2xl sm:rounded-3xl border border-[var(--odontogram-border,var(--line,#cbd5e1))] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 my-auto"
@@ -116,7 +116,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={onClose}
-						className="dente-btn dente-btn-primary bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] min-h-[44px] sm:min-h-[36px] px-8 py-2 text-sm font-bold shadow-md shadow-[var(--teal,#0d9488)]/20 transition-all cursor-pointer select-none active:scale-95"
+						className="dente-btn dente-btn-primary bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] min-h-[44px] sm:min-h-[36px] px-8 py-2 text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all cursor-pointer select-none active:scale-95"
 					>
 						Готово
 					</button>

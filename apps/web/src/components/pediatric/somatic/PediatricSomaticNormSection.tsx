@@ -17,40 +17,40 @@ export const PediatricSomaticNormSection: React.FC<PediatricSomaticNormSectionPr
 	};
 
 	return (
-		<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-3">
+		<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
 			<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
 				<div className="flex items-center gap-1.5">
-					<Heart className="h-4 w-4 text-[var(--danger,#ef4444)] shrink-0" />
-					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
+					<Heart className="h-4 w-4 text-[var(--danger)] shrink-0" />
+					<span className="text-xs font-semibold text-[var(--ink)]">
 						Соматический статус ребенка:
 					</span>
 				</div>
 				<button
 					type="button"
 					onClick={handleSetNorm}
-					className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-3 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer touch-manipulation ${
+					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer touch-manipulation ${
 						somaticStatus.isNormal
-							? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/40 shadow-xs"
-							: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
+							? "bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)] shadow-xs"
+							: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-strong)]"
 					}`}
 					data-testid="btn-pediatric-somatic-norm-1click"
 				>
-					<ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+					<ShieldCheck className="h-3.5 w-3.5 text-[var(--success-ink)]" />
 					<span>Соматически здоров (Норма)</span>
 				</button>
 			</div>
 
-			<div className="p-2.5 rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-xs text-[var(--ink,#0f172a)] font-medium mb-2">
-				<div className="font-bold text-teal-700 dark:text-teal-300 mb-0.5">
+			<div className="p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] font-normal mb-2">
+				<div className="font-semibold text-[var(--primary)] mb-0.5">
 					{somaticStatus.isNormal ? "Физиологическая норма:" : "Особый статус:"}
 				</div>
-				<div className="text-[11px] text-[var(--muted,#64748b)]">{somaticStatus.summaryRu}</div>
+				<div className="text-[11px] text-[var(--ink-muted)]">{somaticStatus.summaryRu}</div>
 			</div>
 
 			{!somaticStatus.isNormal && (
 				<div className="space-y-2 pt-1 animate-in fade-in duration-150">
 					<div>
-						<label htmlFor="somatic-allergies-input" className="block text-[10px] font-bold text-[var(--muted,#64748b)] mb-0.5">
+						<label htmlFor="somatic-allergies-input" className="block text-[10px] font-medium text-[var(--ink-muted)] mb-0.5">
 							Аллергологический анамнез:
 						</label>
 						<input
@@ -58,11 +58,11 @@ export const PediatricSomaticNormSection: React.FC<PediatricSomaticNormSectionPr
 							type="text"
 							value={somaticStatus.allergiesRu}
 							onChange={(e) => setSomaticStatus((prev) => ({ ...prev, allergiesRu: e.target.value, isNormal: false }))}
-							className="w-full min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)]"
+							className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none"
 						/>
 					</div>
 					<div>
-						<label htmlFor="somatic-chronic-input" className="block text-[10px] font-bold text-[var(--muted,#64748b)] mb-0.5">
+						<label htmlFor="somatic-chronic-input" className="block text-[10px] font-medium text-[var(--ink-muted)] mb-0.5">
 							Хронические соматические заболевания:
 						</label>
 						<input
@@ -70,7 +70,7 @@ export const PediatricSomaticNormSection: React.FC<PediatricSomaticNormSectionPr
 							type="text"
 							value={somaticStatus.chronicDiseasesRu}
 							onChange={(e) => setSomaticStatus((prev) => ({ ...prev, chronicDiseasesRu: e.target.value, isNormal: false }))}
-							className="w-full min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)]"
+							className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none"
 						/>
 					</div>
 				</div>

@@ -33,7 +33,7 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 	return (
 		<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5 min-h-[36px]">
 			<div className="flex items-center gap-2 min-w-0">
-				<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+				<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] shrink-0">
 					<ToothDeciduous className="h-4 w-4" />
 				</div>
 				<div className="flex items-center gap-1.5 min-w-0">
@@ -54,11 +54,11 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 				<button
 					type="button"
 					onClick={onApplyPhysiologicalNorm}
-					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 snap-start touch-manipulation"
+					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-[var(--success-line)] bg-[var(--success-soft)] text-[var(--success-ink)] hover:opacity-90 text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 snap-start touch-manipulation"
 					title="Временный прикус интактен / физиологическая стираемость / тремы и диастемы"
 					data-testid="pediatric-one-click-norm-btn"
 				>
-					<Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<Zap className="h-3.5 w-3.5 text-[var(--success-ink)] shrink-0" />
 					<span className="hidden sm:inline">Норма прикуса</span>
 					<span className="sm:hidden">Норма</span>
 				</button>
@@ -66,11 +66,11 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 				<button
 					type="button"
 					onClick={onApplyAdaptationVisit}
-					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-sky-500/40 bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
+					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
 					title="Адаптационный визит без сверления (Tell-Show-Do, игра, подарок)"
 					data-testid="pediatric-one-click-adaptation-btn"
 				>
-					<Sparkles className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+					<Sparkles className="h-3.5 w-3.5 text-[var(--primary)] shrink-0" />
 					<span className="hidden sm:inline">Адаптация</span>
 					<span className="sm:hidden">Адаптация</span>
 				</button>
@@ -78,11 +78,11 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 				<button
 					type="button"
 					onClick={onOpenDiplomaModal}
-					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
+					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-ink)] hover:opacity-90 text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
 					title="Диплом за храбрость маленькому пациенту (печать грамоты)"
 					data-testid="pediatric-toolbar-diploma-btn"
 				>
-					<Award className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+					<Award className="h-3.5 w-3.5 text-[var(--warning-ink)] shrink-0" />
 					<span className="hidden sm:inline">Диплом за храбрость</span>
 					<span className="sm:hidden">Диплом</span>
 				</button>

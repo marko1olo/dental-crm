@@ -5,7 +5,7 @@ import {
 	type FranklRatingDefinition,
 	FRANKL_SCALE_DEFINITIONS,
 	getFranklDefinition,
-} from "../../odontogram/pediatricDentitionEngine";
+} from "@dental/shared";
 
 export {
 	type FranklRating,

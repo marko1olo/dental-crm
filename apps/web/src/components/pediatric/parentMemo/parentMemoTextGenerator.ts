@@ -1,7 +1,7 @@
 import {
 	type FranklRating,
 	generatePediatricParentRecommendations,
-} from "../../odontogram/pediatricDentitionEngine";
+} from "@dental/shared";
 
 export interface GenerateParentMemoTextParams {
 	readonly patientName: string;

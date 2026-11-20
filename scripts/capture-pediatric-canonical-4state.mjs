@@ -73,13 +73,14 @@ async function setTheme(page, theme) {
 
 async function openPediatricModal(page) {
 	for (let i = 0; i < 20; i++) {
-		const count = await page.locator('[role="dialog"]').count();
+		const count = await page.locator('[role="dialog"], [data-testid="pediatric-studio-modal"]').count();
 		if (count > 0) return true;
 		await page.evaluate(() => {
 			window.location.hash = "#pediatric";
 			window.dispatchEvent(new CustomEvent("dente:open-pediatric"));
+			window.dispatchEvent(new CustomEvent("dente-open-pediatric"));
 		});
-		await page.waitForTimeout(800);
+		await page.waitForTimeout(600);
 	}
 	return false;
 }

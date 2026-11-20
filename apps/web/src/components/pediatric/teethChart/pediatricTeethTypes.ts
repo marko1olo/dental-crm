@@ -1,4 +1,4 @@
-import type { ResorptionStagePercent } from "../../odontogram/pediatricDentitionEngine";
+import type { ResorptionStagePercent } from "@dental/shared";
 
 export type { ResorptionStagePercent };
 export type PediatricDentitionMode = "primary" | "mixed" | "permanent";

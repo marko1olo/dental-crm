@@ -70,6 +70,10 @@ export function renderStandaloneLaunchers(
 			window.location.search.includes("dms") ||
 			window.location.hash.includes("insurance") ||
 			window.location.search.includes("insurance") ||
+			window.location.hash.includes("pediatric") ||
+			window.location.search.includes("pediatric") ||
+			window.location.hash.includes("children") ||
+			window.location.search.includes("children") ||
 			window.location.hash.includes("hardware") ||
 			window.location.search.includes("hardware"));
 

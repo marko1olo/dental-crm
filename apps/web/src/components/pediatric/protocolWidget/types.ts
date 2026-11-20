@@ -1,5 +1,5 @@
 import type React from "react";
-import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
+import type { FranklRating } from "@dental/shared";
 import type { SomaticRiskProfile } from "../../visit/anesthesiaCalculatorEngine";
 
 /**

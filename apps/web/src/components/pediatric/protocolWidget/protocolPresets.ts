@@ -20,7 +20,7 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 		defaultMaterial: "СИЦ Fuji IX (GC)",
 		defaultToothFindingState: "Filled",
 		icon: Sparkles,
-		colorTheme: "border-teal-500 bg-teal-50/90 text-teal-950 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100",
+		colorTheme: "border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)]",
 	},
 	{
 		id: "pulpotomy_primary",
@@ -39,7 +39,7 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 		defaultMaterial: "Pulpotec (Septodont)",
 		defaultToothFindingState: "EndoTreated",
 		icon: Activity,
-		colorTheme: "border-rose-500 bg-rose-50/90 text-rose-950 dark:border-rose-400 dark:bg-rose-950/60 dark:text-rose-100",
+		colorTheme: "border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)]",
 	},
 	{
 		id: "silvering_deep_fluoridation",
@@ -58,7 +58,7 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 		defaultMaterial: "Сафорайд 38% (Saforide)",
 		defaultToothFindingState: "Watch",
 		icon: Droplets,
-		colorTheme: "border-purple-500 bg-purple-50/90 text-purple-950 dark:border-purple-400 dark:bg-purple-950/60 dark:text-purple-100",
+		colorTheme: "border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)]",
 	},
 	{
 		id: "fissure_sealing",
@@ -77,7 +77,7 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 		defaultMaterial: "Fissurit FX (VOCO)",
 		defaultToothFindingState: "Healthy",
 		icon: ShieldCheck,
-		colorTheme: "border-sky-500 bg-sky-50/90 text-sky-950 dark:border-sky-400 dark:bg-sky-950/60 dark:text-sky-100",
+		colorTheme: "border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)]",
 	},
 	{
 		id: "extraction_primary_exfoliation",
@@ -96,7 +96,7 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 		defaultMaterial: "Аппликационный гель Дисилан / Лидоксор (вишня)",
 		defaultToothFindingState: "Extracted",
 		icon: Scissors,
-		colorTheme: "border-indigo-500 bg-indigo-50/90 text-indigo-950 dark:border-indigo-400 dark:bg-indigo-950/60 dark:text-indigo-100",
+		colorTheme: "border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)]",
 	},
 	{
 		id: "standard_crown",
@@ -115,6 +115,6 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 		defaultMaterial: "Стандартная стальная коронка SSC (3M ESPE)",
 		defaultToothFindingState: "Crown",
 		icon: DentalCrown,
-		colorTheme: "border-amber-500 bg-amber-50/90 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100",
+		colorTheme: "border-[var(--primary)]/30 bg-[var(--primary)]/10 text-[var(--ink)]",
 	},
 ];

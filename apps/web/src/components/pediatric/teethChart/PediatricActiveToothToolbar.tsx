@@ -3,8 +3,7 @@ import type {
 	ToothClinicalFinding,
 	ToothSurfaceCode,
 } from "./pediatricTeethTypes";
-import type { ResorptionStagePercent } from "../../odontogram/pediatricDentitionEngine";
-import { isPrimaryTooth } from "../../odontogram/pediatricDentitionEngine";
+import { isPrimaryTooth, type ResorptionStagePercent } from "@dental/shared";
 
 interface PediatricActiveToothToolbarProps {
 	readonly activeTooth: number;
@@ -40,7 +39,7 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 	return (
 		<div className="mt-3 pt-2.5 border-t border-[var(--line,#e2e8f0)] flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between" data-testid="pediatric-active-tooth-toolbar">
 			<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center min-w-0">
-				<span className="text-[11px] font-bold text-[var(--muted,#64748b)] shrink-0">Зуб {activeTooth}:</span>
+				<span className="text-[11px] font-bold text-[var(--ink-muted,#64748b)] shrink-0">Зуб {activeTooth}:</span>
 				{onToothFindingChange && (
 					<div className="flex flex-wrap items-center gap-1.5" data-testid="active-tooth-findings-group">
 						{FINDINGS.map((st) => (
@@ -48,9 +47,9 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 								key={st.id}
 								type="button"
 								onClick={() => onToothFindingChange(activeTooth, st.id)}
-								className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer select-none touch-manipulation active:scale-95 flex items-center justify-center shrink-0 ${
+								className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer select-none touch-manipulation active:scale-95 flex items-center justify-center shrink-0 ${
 									currentFinding === st.id
-										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+										? "bg-[var(--primary)] text-white shadow-xs"
 										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
 								}`}
 								data-testid={`active-tooth-finding-${st.id}`}
@@ -65,9 +64,9 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 			<div className="flex flex-wrap items-center gap-2">
 				{onSurfaceToggle && (
 					<details className="group/surfaces relative rounded-xl sm:rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] px-2.5 py-1 text-xs shrink-0" data-testid="pediatric-surfaces-disclosure">
-						<summary className="flex items-center gap-1.5 cursor-pointer select-none text-[11px] font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] list-none">
+						<summary className="flex items-center gap-1.5 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] list-none">
 							<span>Поверхности</span>
-							<span className="text-[8px] text-[var(--muted,#64748b)] transition-transform group-open/surfaces:rotate-180">▼</span>
+							<span className="text-[8px] text-[var(--ink-muted,#64748b)] transition-transform group-open/surfaces:rotate-180">▼</span>
 						</summary>
 						<div className="flex flex-wrap items-center gap-1 pt-1.5 pb-0.5" data-testid="active-tooth-surfaces-group">
 							{(["O", "V", "L", "M", "D"] as const).map((sf) => {
@@ -77,8 +76,8 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 										key={sf}
 										type="button"
 										onClick={() => onSurfaceToggle(activeTooth, sf)}
-										className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-5 px-2 rounded text-xs font-mono border cursor-pointer ${
-											isSelected ? "bg-zinc-700 text-white" : "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"
+										className={`min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 px-2 rounded-lg text-xs font-mono font-semibold border cursor-pointer inline-flex items-center justify-center active:scale-95 transition-colors ${
+											isSelected ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink-muted,#64748b)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong)]"
 										}`}
 										data-testid={`active-tooth-surface-${sf}`}
 									>
@@ -92,7 +91,7 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 
 				{isPrimaryTooth(activeTooth) && onResorptionChange && (
 					<div className="flex items-center gap-1 shrink-0" data-testid="active-tooth-resorption-group">
-						<span className="text-[11px] font-black uppercase text-[var(--muted,#64748b)] mr-0.5">Резорбция:</span>
+						<span className="text-[11px] font-semibold text-[var(--ink-muted,#64748b)] mr-0.5">Резорбция:</span>
 						{([0, 25, 50, 75, 100] as const).map((r) => {
 							const isCurrent = (resorptionStages?.[activeTooth] ?? 0) === r;
 							return (
@@ -100,8 +99,8 @@ export const PediatricActiveToothToolbar: React.FC<PediatricActiveToothToolbarPr
 									key={r}
 									type="button"
 									onClick={() => onResorptionChange(activeTooth, r)}
-									className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-6 px-2 rounded-xl sm:rounded text-xs font-mono font-bold border cursor-pointer ${
-										isCurrent ? "bg-[var(--danger,#ef4444)] text-white border-[var(--danger,#ef4444)] shadow-xs" : "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)]"
+									className={`min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] sm:h-8 px-2 rounded-lg text-xs font-mono font-bold border cursor-pointer inline-flex items-center justify-center active:scale-95 transition-colors ${
+										isCurrent ? "bg-[var(--danger,#ef4444)] text-white border-[var(--danger,#ef4444)] shadow-xs" : "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft)]"
 									}`}
 									data-testid={`active-tooth-resorption-${r}`}
 								>

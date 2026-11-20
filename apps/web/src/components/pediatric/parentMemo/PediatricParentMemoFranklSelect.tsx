@@ -1,6 +1,5 @@
 import React from "react";
-import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
-import { FRANKL_SCALE_DEFINITIONS } from "../../odontogram/pediatricDentitionEngine";
+import { type FranklRating, FRANKL_SCALE_DEFINITIONS } from "@dental/shared";
 
 interface PediatricParentMemoFranklSelectProps {
 	readonly frankl: FranklRating;
@@ -25,9 +24,9 @@ export const PediatricParentMemoFranklSelect: React.FC<PediatricParentMemoFrankl
 							key={r}
 							type="button"
 							onClick={() => setFrankl(r)}
-							className={`min-h-[44px] sm:min-h-[36px] px-2 py-1.5 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1 cursor-pointer touch-manipulation select-none active:scale-95 ${
+							className={`min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 py-1.5 rounded-lg text-xs font-medium border transition flex items-center justify-center gap-1 cursor-pointer touch-manipulation select-none active:scale-95 ${
 								isSelected
-									? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs ring-2 ring-[var(--teal,#0d9488)]/20"
+									? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs ring-2 ring-[var(--primary)]/20"
 									: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
 							}`}
 							data-testid={`memo-frankl-btn-${r}`}

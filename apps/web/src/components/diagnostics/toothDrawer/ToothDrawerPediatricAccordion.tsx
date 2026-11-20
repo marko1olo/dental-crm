@@ -40,8 +40,8 @@ export const ToothDrawerPediatricAccordion: React.FC<ToothDrawerPediatricAccordi
 				className={`dente-accordion-trigger ${isExpanded ? "expanded" : ""}`}
 			>
 				<div className="trigger-left">
-					<ToothDeciduous size={16} style={{ color: "#ec4899" }} />
-					<span className="trigger-title">5. Детский прием (Шкала Франкла & Резорбция)</span>
+					<ToothDeciduous size={16} className="text-[var(--primary)]" />
+					<span className="trigger-title">5. Детский прием (Шкала Франкла и резорбция)</span>
 				</div>
 				<div className="trigger-right">
 					<span className="trigger-summary">Психологическая адаптация</span>

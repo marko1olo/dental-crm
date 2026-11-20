@@ -1,4 +1,4 @@
-import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
+import type { FranklRating } from "@dental/shared";
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { RootResorptionStage } from "../../odontogram/anatomicalGeometriesTypes";
 import {

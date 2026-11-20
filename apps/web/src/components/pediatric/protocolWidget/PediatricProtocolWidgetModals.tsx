@@ -1,5 +1,5 @@
 import React from "react";
-import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
+import type { FranklRating } from "@dental/shared";
 import { PediatricParentMemoModal } from "../PediatricParentMemoModal";
 import { PediatricBraveryDiplomaModal } from "../PediatricBraveryDiplomaModal";
 import type { PediatricProtocolId } from "./types";

@@ -70,25 +70,25 @@ export const FranklStrategiesCard: React.FC<FranklStrategiesCardProps> = ({
 					}}
 					className={`w-full min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl border flex items-center justify-between gap-2 font-bold text-xs sm:text-sm cursor-pointer transition-all active:scale-[0.99] select-none ${
 						rating === 4
-							? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-xs ring-2 ring-emerald-500/20"
-							: "bg-[var(--paper,#ffffff)] hover:bg-emerald-500/10 border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] hover:border-emerald-500/40"
+							? "bg-[var(--success-soft)] border-[var(--success-line,var(--success))] text-[var(--success-ink,var(--success))] shadow-xs ring-2 ring-[var(--success)]/20"
+							: "bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft)] border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] hover:border-[var(--primary)]"
 					}`}
 					title="Пресет: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания"
 					data-testid="frankl-one-click-btn"
 				>
 					<span className="flex items-center gap-2 text-left min-w-0">
-						<Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<Zap className="w-4 h-4 text-[var(--success)] shrink-0" />
 						<span className="truncate sm:whitespace-normal">
 							Поведение позитивное (Frankl 4/4): адаптация успешна, лечение без удержания
 						</span>
 					</span>
 					{rating === 4 ? (
-						<span className="inline-flex items-center gap-1 text-xs font-black text-emerald-700 dark:text-emerald-300 shrink-0 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md">
-							<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+						<span className="inline-flex items-center gap-1 text-xs font-black text-[var(--success-ink,var(--success))] shrink-0 bg-[var(--success-soft)] px-2 py-0.5 rounded-md border border-[var(--success-line,var(--success))]">
+							<Check className="w-3.5 h-3.5 text-[var(--success)]" />
 							Применено
 						</span>
 					) : (
-						<span className="text-xs text-[var(--muted,#64748b)] font-medium shrink-0">Выбрать</span>
+						<span className="text-xs text-[var(--ink-muted,#64748b)] font-medium shrink-0">Выбрать</span>
 					)}
 				</button>
 			)}
@@ -97,7 +97,7 @@ export const FranklStrategiesCard: React.FC<FranklStrategiesCardProps> = ({
 
 			<div className="p-3.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1.5 shadow-xs">
 				<div className="flex items-start gap-2 text-xs sm:text-sm text-[var(--ink,#0f172a)] font-medium min-w-0">
-					<Info className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
+					<Info className="w-4 h-4 text-[var(--primary,#0d9488)] shrink-0 mt-0.5" />
 					<div className="min-w-0">
 						<strong className="font-bold text-[var(--ink,#0f172a)]">Клиническая картина: </strong>
 						<span>{activeDef.clinicalSignsRu}</span>

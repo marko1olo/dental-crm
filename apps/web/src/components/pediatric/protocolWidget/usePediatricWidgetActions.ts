@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { showToast } from "../../GlobalToast";
-import type { FranklRating } from "../../odontogram/pediatricDentitionEngine";
+import type { FranklRating } from "@dental/shared";
 import { FRANKL_EXPRESS_ITEMS, PEDIATRIC_PHYSIOLOGICAL_NORM_DEFINITION } from "./constants";
 import type { ClinicalCalculationResult } from "./protocolCalculation";
 import { buildPhysiologicalNormClinicalNoteText } from "./protocolCalculation";
@@ -48,7 +48,7 @@ export function usePediatricWidgetActions(
 		showToast(`Протокол: «${preset.titleRu}»`, "info", 2000);
 	}, [onSelectSurfaces, state]);
 
-	const handleSignConsent323Fz = useCallback(() => {
+	const handleSignInformedConsent = useCallback(() => {
 		state.setRepresentative({ ...state.representative, consentSigned: true, statutoryDocument: "Законный представитель (родитель / опекун)" });
 		showToast("Согласие законного представителя подтверждено", "success", 2500);
 	}, [state]);
@@ -113,8 +113,8 @@ export function usePediatricWidgetActions(
 
 	return {
 		handleSelectFrankl, handleCycleFrankl, toggleSurface, handleApplySurfacePreset,
-		handleSelectPreset, handleSignConsent323Fz, handleInsertToClinicalNote,
-		handleAddServicesToInvoice, handleApplyPhysiologicalNorm, handleApplyPhysiologicalResorptionNorm,
-		handleApplyAdaptationVisit, handleApplyMixedDentitionPreset,
+		handleSelectPreset, handleSignInformedConsent, handleSignConsent323Fz: handleSignInformedConsent,
+		handleInsertToClinicalNote, handleAddServicesToInvoice, handleApplyPhysiologicalNorm,
+		handleApplyPhysiologicalResorptionNorm, handleApplyAdaptationVisit, handleApplyMixedDentitionPreset,
 	};
 }

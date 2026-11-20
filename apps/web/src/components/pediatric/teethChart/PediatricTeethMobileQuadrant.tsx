@@ -4,8 +4,7 @@ import type {
 	ToothClinicalFinding,
 	ToothSurfaceCode,
 } from "./pediatricTeethTypes";
-import type { ResorptionStagePercent } from "../../odontogram/pediatricDentitionEngine";
-import { RESORPTION_STAGE_DEFINITIONS } from "../../odontogram/pediatricDentitionEngine";
+import { RESORPTION_STAGE_DEFINITIONS, type ResorptionStagePercent } from "@dental/shared";
 
 interface PediatricTeethMobileQuadrantProps {
 	readonly activeTooth?: number | null | undefined;
@@ -65,9 +64,9 @@ export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrant
 
 	return (
 		<div className="sm:hidden mb-2 overflow-x-clip" data-testid="pediatric-mobile-quadrant-view">
-			<div className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-[var(--muted,#64748b)]">
+			<div className="mb-1.5 flex items-center justify-between text-[11px] font-medium text-[var(--ink-muted)]">
 				<span>Квадрант детского прикуса:</span>
-				<span className="font-extrabold text-[var(--ink,#0f172a)]">{currentQuad.label}</span>
+				<span className="font-semibold text-[var(--ink)]">{currentQuad.label}</span>
 			</div>
 			<div className="grid grid-cols-2 gap-1.5 mb-2.5" data-testid="pediatric-quadrants-selector">
 				{meta.map((q) => {
@@ -81,18 +80,18 @@ export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrant
 								const first = q.teeth[0]?.toothNumber;
 								if (first && onSelectTooth) onSelectTooth(first);
 							}}
-							className={`min-h-[44px] h-[44px] px-2 rounded-xl border text-[11px] font-bold transition flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98] ${
-								isQActive ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft,#f8fafc)]"
+							className={`min-h-[44px] h-[44px] px-2 rounded-xl border text-[11px] font-medium transition flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98] ${
+								isQActive ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs" : "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)]"
 							}`}
 							data-testid={`pediatric-quadrant-btn-${q.key}`}
 						>
-							<span className="font-extrabold truncate">{q.short}</span>
+							<span className="font-semibold truncate">{q.short}</span>
 							<span className="text-[10px] font-mono shrink-0 ml-1 opacity-90">{q.teeth.length} з.</span>
 						</button>
 					);
 				})}
 			</div>
-			<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-2">
+			<div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2">
 				<div
 					className={`grid gap-1.5 justify-center ${currentQuad.teeth.length >= 6 ? "grid-cols-6" : "grid-cols-5"}`}
 					data-testid="pediatric-mobile-teeth-grid"
@@ -108,24 +107,24 @@ export const PediatricTeethMobileQuadrant: React.FC<PediatricTeethMobileQuadrant
 								onClick={() => onSelectTooth?.(t.toothNumber)}
 								className={`relative flex flex-col items-center justify-center rounded-xl border transition-all select-none cursor-pointer touch-manipulation active:scale-95 min-w-[50px] min-h-[56px] py-1.5 px-1 ${
 									isSelected
-										? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--ink,#0f172a)] ring-2 ring-[var(--teal,#0d9488)]/30 font-extrabold"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)]"
+										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--ink)] ring-2 ring-[var(--primary)]/30 font-semibold"
+										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 								}`}
 								data-testid={`pediatric-tooth-btn-${t.toothNumber}`}
 							>
 								{!t.isPrimary && (
-									<span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded bg-[var(--line-strong,#475569)] px-1 text-[8px] font-black uppercase text-white tracking-tighter">
-										Пост
+									<span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded bg-[var(--ink-muted)] px-1 text-[8px] font-medium text-white tracking-normal">
+										Пост.
 									</span>
 								)}
-								<span className="font-mono font-black text-sm">{t.label}</span>
+								<span className="font-mono font-semibold text-sm">{t.label}</span>
 								{finding !== "Healthy" && (
-									<span className="text-[8px] font-bold truncate">
+									<span className="text-[8px] font-medium truncate">
 										{FINDING_LABELS_RU[finding] ?? finding}
 									</span>
 								)}
 								{t.isPrimary && typeof res === "number" && res > 0 && (
-									<span className="text-[8px] font-mono text-[var(--danger,#ef4444)] font-bold" data-testid={`tooth-resorption-badge-${t.toothNumber}`}>{`R${res}%`}</span>
+									<span className="text-[8px] font-mono text-[var(--danger)] font-medium" data-testid={`tooth-resorption-badge-${t.toothNumber}`}>{`R${res}%`}</span>
 								)}
 							</button>
 						);

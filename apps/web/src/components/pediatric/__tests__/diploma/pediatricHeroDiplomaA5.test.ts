@@ -16,7 +16,7 @@ describe("1-Click Hero Diploma Generation (A5 Landscape)", () => {
 			diplomaNumber: "042",
 		});
 
-		assert.ok(html.includes("ДИПЛОМ ЗА ХРАБРОСТЬ"));
+		assert.ok(html.includes("Диплом за храбрость"));
 		assert.ok(html.includes("Герой: Артём Смирнов"));
 		assert.ok(html.includes("Клиника DENTE"));
 		assert.ok(html.includes("Д-р Иванов А.С."));

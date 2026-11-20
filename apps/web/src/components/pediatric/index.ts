@@ -10,3 +10,4 @@ export * from "./PediatricAnesthesiaQuickSelector";
 export * from "./PediatricWeightQuickChips";
 export * from "./diploma/diplomaPrint";
 export * from "./pediatricAnesthesiaEngine";
+export * from "./pediatricSoapBridge";

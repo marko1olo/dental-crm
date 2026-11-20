@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { estimatePediatricWeightKg } from "@dental/shared";
-import type { FranklRating, ResorptionStagePercent } from "../../odontogram/pediatricDentitionEngine";
+import { estimatePediatricWeightKg, type FranklRating, type ResorptionStagePercent } from "@dental/shared";
 import type { PediatricDentitionMode, ToothClinicalFinding } from "../PediatricTeethChart";
 import { DEFAULT_LEGAL_REPRESENTATIVE, DEFAULT_PEDIATRIC_SOMATIC_NORM, type LegalRepresentativeData, type PediatricSomaticStatus } from "../PediatricSomaticAndLegalRep";
 import type { PediatricAnesthesiaCalculationResult } from "../PediatricAnesthesiaCalculator";

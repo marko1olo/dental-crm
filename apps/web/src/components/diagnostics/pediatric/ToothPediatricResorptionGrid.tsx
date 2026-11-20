@@ -19,14 +19,13 @@ export const ToothPediatricResorptionGrid: React.FC<ToothPediatricResorptionGrid
 	return (
 		<div className="dente-resorption-box">
 			<div className="dente-surface-label-row">
-				<label className="dente-field-label" style={{ marginBottom: 0 }}>
+				<label className="dente-field-label mb-0">
 					Физиологическая резорбция корней молочного зуба:
 				</label>
 				<button
 					type="button"
 					onClick={onInsertResorptionProtocol}
-					className="dente-secondary-btn"
-					style={{ minHeight: "32px", height: "32px", padding: "4px 10px", fontSize: "12px", gap: "6px" }}
+					className="dente-secondary-btn h-8 px-2.5 rounded-md text-xs font-medium gap-1.5 inline-flex items-center justify-center"
 					title={`Внести запись о резорбции корней зуба #${toothNumber} в карту`}
 				>
 					<FileText size={14} />
