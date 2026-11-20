@@ -34,7 +34,7 @@ export function OnlineBookingChannelsTable({
 							aria-label="Фильтр по каналу записи"
 							value={selectedChannelKey}
 							onChange={(e) => onSelectChannelKey(e.target.value)}
-							className="h-7 text-xs rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+							className="h-8 text-xs rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] px-2 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
 						>
 							<option value="all">Все каналы ({channels.length})</option>
 							{channels.map((ch) => (
@@ -43,17 +43,17 @@ export function OnlineBookingChannelsTable({
 						</select>
 					)}
 				</div>
-				<div className="text-xs text-[var(--muted)]">
+				<div className="text-xs text-[var(--ink-muted)]">
 					Сэкономлено времени администраторов:{" "}
-					<span className="font-bold text-[var(--teal)]">{savedHours} ч.</span>
+					<span className="font-bold text-[var(--primary)]">{savedHours} ч.</span>
 				</div>
 			</div>
 
 			{channels.length === 0 ? (
 				<div className="text-center py-8 px-4 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
-					<Globe size={32} className="mx-auto text-[var(--muted)] mb-2 opacity-50" aria-hidden="true" />
+					<Globe size={32} className="mx-auto text-[var(--ink-muted)] mb-2 opacity-50" aria-hidden="true" />
 					<div className="text-sm font-semibold text-[var(--ink)]">Нет подключенных каналов онлайн-самозаписи</div>
-					<p className="text-xs text-[var(--muted)] mt-1 max-w-md mx-auto">
+					<p className="text-xs text-[var(--ink-muted)] mt-1 max-w-md mx-auto">
 						Подключите виджет самозаписи на сайт клиники, настройте кнопки в Яндекс Картах, 2ГИС или ботах.
 					</p>
 				</div>
@@ -61,7 +61,7 @@ export function OnlineBookingChannelsTable({
 				<div className="overflow-x-auto">
 					<table className="w-full text-left text-xs border-collapse">
 						<thead>
-							<tr className="border-b border-[var(--line)] text-[var(--muted)] font-semibold">
+							<tr className="border-b border-[var(--line)] text-[var(--ink-muted)] font-semibold">
 								<th className="py-2.5 px-3">Канал самозаписи</th>
 								<th className="py-2.5 px-3">Категория</th>
 								<th className="py-2.5 px-3 text-right">Просмотры</th>
@@ -80,14 +80,14 @@ export function OnlineBookingChannelsTable({
 						</tbody>
 						<tfoot>
 							<tr className="border-t-2 border-[var(--line)] bg-[var(--paper-soft)]/40 font-bold text-[var(--ink)]">
-								<td className="py-2.5 px-3" colSpan={2}>ИТОГО ПО САМОЗАПИСИ:</td>
+								<td className="py-2.5 px-3" colSpan={2}>Итого по онлайн-записи:</td>
 								<td className="py-2.5 px-3 text-right">{onlineSummary.totalViews.toLocaleString("ru-RU")}</td>
-								<td className="py-2.5 px-3 text-right text-[var(--teal)]">{onlineSummary.totalBookings}</td>
-								<td className="py-2.5 px-3 text-right text-[var(--teal)]">{onlineSummary.conversionRatePercent.toFixed(1)}%</td>
+								<td className="py-2.5 px-3 text-right text-[var(--primary)]">{onlineSummary.totalBookings}</td>
+								<td className="py-2.5 px-3 text-right text-[var(--primary)]">{onlineSummary.conversionRatePercent.toFixed(1)}%</td>
 								<td className="py-2.5 px-3 text-right text-[var(--ink)]">{onlineSummary.totalAttended} ({onlineSummary.attendanceRatePercent.toFixed(0)}%)</td>
-								<td className="py-2.5 px-3 text-right text-[var(--danger,#e11d48)]">{onlineSummary.totalNoShow}</td>
-								<td className="py-2.5 px-3 text-right text-[var(--teal)]">{formatKopecksRu(onlineSummary.totalRevenueKopecks)}</td>
-								<td className="py-2.5 px-3 text-right text-[var(--teal)]">
+								<td className="py-2.5 px-3 text-right text-[var(--danger)]">{onlineSummary.totalNoShow}</td>
+								<td className="py-2.5 px-3 text-right text-[var(--primary)]">{formatKopecksRu(onlineSummary.totalRevenueKopecks)}</td>
+								<td className="py-2.5 px-3 text-right text-[var(--primary)]">
 									{onlineSummary.romiPercent !== null ? (onlineSummary.romiPercent > 0 ? `+${onlineSummary.romiPercent}%` : `${onlineSummary.romiPercent}%`) : "—"}
 								</td>
 							</tr>

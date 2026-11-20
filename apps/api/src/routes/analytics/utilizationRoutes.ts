@@ -46,7 +46,8 @@ export interface DoctorProfitabilityItem {
 	margin: number | null;
 	completionRate: number | null;
 	servicesCount: number;
-	services804nCount: number;
+	catalogServicesCount?: number;
+	services804nCount?: number;
 	labOrdersCount: number;
 	labOrdersCostRub: number;
 	materialsCostRub?: number;
@@ -386,6 +387,7 @@ export async function calculateDoctorProfitability(
 				margin,
 				completionRate,
 				servicesCount,
+				catalogServicesCount: servicesCount,
 				services804nCount: servicesCount,
 				labOrdersCount,
 				labOrdersCostRub,
@@ -399,6 +401,7 @@ export async function calculateDoctorProfitability(
 				x.revenue > 0 ||
 				(x.appointmentsCount ?? 0) > 0 ||
 				(x.servicesCount ?? 0) > 0 ||
+				(x.catalogServicesCount ?? 0) > 0 ||
 				(x.services804nCount ?? 0) > 0 ||
 				(x.labOrdersCount ?? 0) > 0 ||
 				(x.doctorPayrollRub ?? 0) > 0,

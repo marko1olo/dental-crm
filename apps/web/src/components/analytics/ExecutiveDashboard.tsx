@@ -99,7 +99,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 			{/* Верхний лаконичный селектор режима (32-36px) — ровно 1 строка */}
 			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
 				<div
-					className="flex items-center gap-1 overflow-x-auto py-0.5 no-scrollbar flex-nowrap"
+					className="p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] inline-flex gap-1 overflow-x-auto py-0.5 no-scrollbar flex-nowrap"
 					role="tablist"
 					aria-label="Вкладки финансового пульта"
 				>
@@ -109,10 +109,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-financial"
 						aria-selected={activeTab === "financial"}
 						onClick={() => setActiveTab("financial")}
-						className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+						className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
 							activeTab === "financial"
-								? "bg-[var(--teal)] text-white font-semibold shadow-sm"
-								: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<CreditCard size={14} aria-hidden="true" />
@@ -126,10 +126,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-payroll"
 						aria-selected={activeTab === "payroll"}
 						onClick={() => setActiveTab("payroll")}
-						className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+						className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
 							activeTab === "payroll"
-								? "bg-[var(--teal)] text-white font-semibold shadow-sm"
-								: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Users size={14} aria-hidden="true" />
@@ -143,10 +143,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-chairs"
 						aria-selected={activeTab === "chairs"}
 						onClick={() => setActiveTab("chairs")}
-						className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+						className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
 							activeTab === "chairs"
-								? "bg-[var(--teal)] text-white font-semibold shadow-sm"
-								: "bg-transparent text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Armchair size={14} aria-hidden="true" />
@@ -159,7 +159,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 					<button
 						type="button"
 						onClick={handlePrint}
-						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary,#0d9488)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button h-8 px-2.5 sm:px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 						title="Распечатать отчёт"
 					>
 						<Printer size={13} aria-hidden="true" />
@@ -173,7 +173,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 							else if (onNavigateToSection) onNavigateToSection("financial_analytics");
 							else setIsPnlModalOpen(true);
 						}}
-						className="primary-button h-8 px-3 rounded-lg bg-[var(--primary,#0d9488)] text-white text-xs font-semibold hover:bg-[var(--primary-dark,#0f766e)] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
+						className="primary-button h-8 px-3 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
 					>
 						<Calculator size={13} aria-hidden="true" />
 						<span>Управленческий P&amp;L</span>

@@ -1,3 +1,9 @@
+import {
+	formatCurrency,
+	formatKopecksRu,
+	kopecksToNumericString,
+} from "@dental/shared";
+
 export interface ChairHourMetrics {
 	readonly chairId: string | null;
 	readonly chairName: string;
@@ -64,19 +70,11 @@ export function formatKopecksToRub(
 	if (!Number.isFinite(kopecks) || kopecks === 0) {
 		return includeKopecks ? "0,00 ₽" : "0 ₽";
 	}
-	const isNegative = kopecks < 0;
-	const absKopecks = Math.abs(Math.round(kopecks));
-	const rubles = Math.floor(absKopecks / 100);
-	const remainderKopecks = absKopecks % 100;
-	const formattedRubles = rubles
-		.toLocaleString("ru-RU")
-		.replace(/\u00A0/g, " ");
-
+	const safeKop = Math.round(kopecks);
 	if (includeKopecks) {
-		const kopStr = remainderKopecks.toString().padStart(2, "0");
-		return `${isNegative ? "-" : ""}${formattedRubles},${kopStr} ₽`;
+		return formatKopecksRu(safeKop).replace(/\u00A0/g, " ");
 	}
-	return `${isNegative ? "-" : ""}${formattedRubles} ₽`;
+	return formatCurrency(kopecksToNumericString(safeKop)).replace(/\u00A0/g, " ");
 }
 
 export function formatKopecksPerHour(kopecksPerHour: number): string {

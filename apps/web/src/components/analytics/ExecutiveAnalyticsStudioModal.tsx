@@ -147,14 +147,14 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 				<main className="p-3 sm:p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-120px)] pb-8 sm:pb-6">
 					{hasError && (
 						<div
-							className="p-3.5 rounded-xl border border-[var(--danger,#e11d48)]/30 bg-[var(--danger-soft,rgba(225,29,72,0.1))] text-[var(--danger,#e11d48)] flex items-center justify-between text-xs"
+							className="p-3.5 rounded-xl border border-[var(--danger-line,var(--danger-soft))] bg-[var(--danger-soft)] text-[var(--danger)] flex items-center justify-between text-xs"
 							role="alert"
 						>
 							<span>Не удалось загрузить данные аналитики с сервера. Проверьте соединение.</span>
 							<button
 								type="button"
 								onClick={refreshData}
-								className="secondary-button h-7 px-2.5 rounded-md border border-[var(--danger,#e11d48)]/40 bg-[var(--paper)] text-xs font-medium cursor-pointer"
+								className="secondary-button h-8 px-2.5 rounded-md border border-[var(--danger-line,var(--danger-soft))] bg-[var(--paper)] text-xs font-medium cursor-pointer"
 							>
 								Повторить
 							</button>
@@ -167,13 +167,13 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 							className="p-6 sm:p-8 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-center space-y-2.5"
 							data-testid="analytics-empty-state"
 						>
-							<div className="w-10 h-10 rounded-full bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center mx-auto text-[var(--muted)]">
+							<div className="w-10 h-10 rounded-full bg-[var(--paper)] border border-[var(--line)] flex items-center justify-center mx-auto text-[var(--ink-muted)]">
 								<Calendar className="w-5 h-5" />
 							</div>
 							<h2 className="text-sm sm:text-base font-bold text-[var(--ink)]">
 								За выбранный период операций не зафиксировано
 							</h2>
-							<p className="text-xs text-[var(--muted)] max-w-md mx-auto leading-relaxed">
+							<p className="text-xs text-[var(--ink-muted)] max-w-md mx-auto leading-relaxed">
 								В базе данных клиники отсутствуют проведённые приёмы и фискальные чеки за выбранный период ({data.periodLabel}). Выберите другой период или создайте запись в расписании.
 							</p>
 						</div>

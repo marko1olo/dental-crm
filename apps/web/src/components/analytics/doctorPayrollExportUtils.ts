@@ -156,7 +156,7 @@ export function exportDoctorPayrollToCsv(
 	if (totals) {
 		csvLines.push(
 			[
-				`"ИТОГО ПО КЛИНИКЕ"`,
+				`"Итого по клинике"`,
 				`"-"`,
 				totals.totalAppointmentsCompleted,
 				Math.round(totals.totalServicesRenderedRub),
@@ -299,7 +299,7 @@ export function generateDoctorPayslipHtml(
 				<td class="text-right">${row.commissionPercent.toFixed(1)}%</td>
 			</tr>
 			<tr class="total-row">
-				<td>ИТОГО К ВЫПЛАТЕ:</td>
+				<td>Итого к выплате:</td>
 				<td class="text-right font-bold">${formatRub(row.payoutRub)}</td>
 			</tr>
 		</tbody>

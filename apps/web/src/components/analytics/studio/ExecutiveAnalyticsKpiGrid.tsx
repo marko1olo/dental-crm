@@ -44,10 +44,10 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 			<article className="studio-kpi-card" data-testid="kpi-card-revenue">
 				<div>
 					<div className="flex items-center justify-between gap-2 mb-1.5">
-						<span className="text-xs font-semibold text-[var(--muted)]">
+						<span className="text-xs font-semibold text-[var(--ink-muted)]">
 							Выручка кассы
 						</span>
-						<span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--teal)]/10 text-[var(--teal)]">
+						<span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--primary)]/10 text-[var(--primary)]">
 							{data.periodLabel}
 						</span>
 					</div>
@@ -55,7 +55,7 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 						{data.revenueFormatted}
 					</div>
 				</div>
-				<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between text-xs text-[var(--muted)]">
+				<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between text-xs text-[var(--ink-muted)]">
 					<span>Карт: {data.paymentBreakdown.methods.find((m) => m.id === "card")?.formatted ?? "0 ₽"}</span>
 					<span>Нал: {data.paymentBreakdown.methods.find((m) => m.id === "cash")?.formatted ?? "0 ₽"}</span>
 				</div>
@@ -65,7 +65,7 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 			<article className="studio-kpi-card" data-testid="kpi-card-chairs">
 				<div>
 					<div className="flex items-center justify-between gap-2 mb-1.5">
-						<span className="text-xs font-semibold text-[var(--muted)]">
+						<span className="text-xs font-semibold text-[var(--ink-muted)]">
 							Загрузка кресел ({data.totalChairsCount} шт)
 						</span>
 						<span className={chairBadgeClass}>
@@ -79,11 +79,11 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 				<div>
 					<div className="w-full h-2 rounded-full bg-[var(--line)] overflow-hidden">
 						<div
-							className="h-full rounded-full bg-[var(--teal)] transition-all duration-300"
+							className="h-full rounded-full bg-[var(--primary)] transition-all duration-300"
 							style={{ width: `${Math.min(100, data.chairOccupancyPercent)}%` }}
 						/>
 					</div>
-					<div className="flex justify-between items-center text-[11px] text-[var(--muted)] mt-1.5">
+					<div className="flex justify-between items-center text-[11px] text-[var(--ink-muted)] mt-1.5">
 						<span>Занято: {Math.round(data.occupiedMinutes / 60)} ч</span>
 						<span>Смена: {Math.round(data.availableMinutes / 60)} ч</span>
 					</div>
@@ -94,7 +94,7 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 			<article className="studio-kpi-card" data-testid="kpi-card-average-check">
 				<div>
 					<div className="flex items-center justify-between gap-2 mb-1.5">
-						<span className="text-xs font-semibold text-[var(--muted)]">
+						<span className="text-xs font-semibold text-[var(--ink-muted)]">
 							Средний чек и Recall
 						</span>
 						<span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${rebookingBadgeClass}`}>
@@ -107,7 +107,7 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 						{data.averageCheckFormatted}
 					</div>
 				</div>
-				<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between text-xs text-[var(--muted)]">
+				<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between text-xs text-[var(--ink-muted)]">
 					<span>Приёмов: {data.completedVisitsCount}</span>
 					<span>Неявки: {data.noShowVisitsCount}</span>
 				</div>

@@ -43,7 +43,7 @@ export const CuratorKpiCardsGrid: React.FC<CuratorKpiCardsGridProps> = ({ metric
 						<TrendingUp className="w-3 h-3" /> Касса и чеки
 					</span>
 				</div>
-				<div className="curator-kpi-value" style={{ color: "var(--teal, #0d9488)" }}>
+				<div className="curator-kpi-value text-[var(--primary)]">
 					{metrics.totalCollectedRevenueRub.toLocaleString("ru-RU")} ₽
 				</div>
 				<div className="curator-kpi-subtext">
@@ -58,7 +58,7 @@ export const CuratorKpiCardsGrid: React.FC<CuratorKpiCardsGridProps> = ({ metric
 						<Coins className="w-3 h-3" /> Сдельно {metrics.effectiveCommissionRatePercent}%
 					</span>
 				</div>
-				<div className="curator-kpi-value" style={{ color: "var(--accent, #6366f1)" }}>
+				<div className="curator-kpi-value text-[var(--accent)]">
 					{metrics.commissionEarnedRub.toLocaleString("ru-RU")} ₽
 				</div>
 				<div className="curator-kpi-subtext">Начислено по закрытым этапам</div>

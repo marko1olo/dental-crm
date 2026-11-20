@@ -7,7 +7,7 @@
  * - Стоматологическая норма загрузки 65–85% (Мандат 8n).
  * - Ниже 65% — недогруз / резерв для дозаписи.
  * - Выше 85% — перегрузка персонала и риск нарушения СанПиН.
- * - 100% дизайн-токены var(--paper), var(--ink), var(--line), var(--teal).
+ * - 100% дизайн-токены var(--paper), var(--ink), var(--line), var(--primary).
  * - Кнопки никогда не disabled (Мандат 8e).
  *
  * Sweet Spot: 280–350 строк.
@@ -210,8 +210,8 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 							onClick={() => handlePeriodSelect(p)}
 							className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 ${
 								activePeriod === p
-									? "bg-[var(--teal)] text-white font-semibold shadow-sm"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]"
+									? "bg-[var(--primary)] text-white font-semibold shadow-sm"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 						>
 							{PERIOD_LABELS[p]}
@@ -224,7 +224,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 					<button
 						type="button"
 						onClick={() => fetchChairs(activePeriod)}
-						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] transition-colors cursor-pointer"
+						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--primary)] transition-colors cursor-pointer"
 						title="Обновить загрузку"
 					>
 						<RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -233,7 +233,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 					<button
 						type="button"
 						onClick={onPrint || (() => window.print())}
-						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
 						<Printer size={14} aria-hidden="true" />
 						<span>Печать отчёта</span>
@@ -244,7 +244,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 			{/* Сводные показатели загрузки кресел */}
 			<div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
 				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-					<div className="flex items-center justify-between text-xs text-[var(--muted)] mb-1">
+					<div className="flex items-center justify-between text-xs text-[var(--ink-muted)] mb-1">
 						<span>Средняя загрузка клиники</span>
 						<span
 							className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
@@ -262,40 +262,40 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 									: "Резерв"}
 						</span>
 					</div>
-					<div className="text-xl font-bold text-[var(--teal)]">
+					<div className="text-xl font-bold text-[var(--primary)]">
 						{loading ? "..." : `${clinicAvgUtilization}%`}
 					</div>
-					<div className="text-[11px] text-[var(--muted)] mt-0.5">
+					<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 						Кресел в работе: {chairs.length}
 					</div>
 				</div>
 
 				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-					<div className="text-xs text-[var(--muted)] mb-1">Часов в плане (база)</div>
+					<div className="text-xs text-[var(--ink-muted)] mb-1">Часов в плане (база)</div>
 					<div className="text-xl font-bold text-[var(--ink)]">
 						{loading ? "..." : `${totalPlanned} ч.`}
 					</div>
-					<div className="text-[11px] text-[var(--muted)] mt-0.5">
+					<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 						{basis?.workingDays || 0} смен по {Math.round((basis?.minutesPerDay || 720) / 60)} ч.
 					</div>
 				</div>
 
 				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-					<div className="text-xs text-[var(--muted)] mb-1">Отработано часов</div>
+					<div className="text-xs text-[var(--ink-muted)] mb-1">Отработано часов</div>
 					<div className="text-xl font-bold text-[var(--ink)]">
 						{loading ? "..." : `${totalWorked} ч.`}
 					</div>
-					<div className="text-[11px] text-[var(--muted)] mt-0.5">
+					<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 						Фактическое время приёмов
 					</div>
 				</div>
 
 				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-					<div className="text-xs text-[var(--muted)] mb-1">Свободные окна (часы)</div>
-					<div className="text-xl font-bold text-[var(--warn-fg,#d97706)]">
+					<div className="text-xs text-[var(--ink-muted)] mb-1">Свободные окна (часы)</div>
+					<div className="text-xl font-bold text-[var(--warning)]">
 						{loading ? "..." : `${totalFree} ч.`}
 					</div>
-					<div className="text-[11px] text-[var(--muted)] mt-0.5">
+					<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 						Резерв для дозаписи пациентов
 					</div>
 				</div>
@@ -306,7 +306,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 				<div className="overflow-x-auto">
 					<table className="w-full text-left text-xs border-collapse">
 						<thead>
-							<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] font-medium">
+							<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] font-medium">
 								<th className="py-2.5 px-3">Кресло клиники</th>
 								<th className="py-2.5 px-3 text-right">Часов в плане</th>
 								<th className="py-2.5 px-3 text-right">Отработано часов</th>
@@ -319,7 +319,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 						<tbody className="divide-y divide-[var(--line-subtle)] text-[var(--ink)]">
 							{chairs.length === 0 ? (
 								<tr>
-									<td colSpan={7} className="py-8 text-center text-[var(--muted)]">
+									<td colSpan={7} className="py-8 text-center text-[var(--ink-muted)]">
 										{loading ? "Загрузка данных о креслах..." : "Нет данных о загрузке за выбранный период"}
 									</td>
 								</tr>
@@ -327,19 +327,19 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 								chairs.map((chair, idx) => (
 									<tr key={chair.chairId || `chair-${idx}`} className="hover:bg-[var(--paper-soft)] transition-colors">
 										<td className="py-2.5 px-3 font-semibold flex items-center gap-2">
-											<Armchair size={15} className="text-[var(--teal)] shrink-0" />
+											<Armchair size={15} className="text-[var(--primary)] shrink-0" />
 											<span>{chair.chairName}</span>
 										</td>
-										<td className="py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
+										<td className="py-2.5 px-3 text-right tabular-nums text-[var(--ink-muted)]">
 											{chair.plannedHours} ч.
 										</td>
 										<td className="py-2.5 px-3 text-right tabular-nums font-medium">
 											{chair.workedHours} ч.
 										</td>
-										<td className="py-2.5 px-3 text-right tabular-nums text-[var(--warn-fg,#d97706)]">
+										<td className="py-2.5 px-3 text-right tabular-nums text-[var(--warning)]">
 											{chair.freeHours} ч.
 										</td>
-										<td className="py-2.5 px-3 text-right tabular-nums font-bold text-[var(--teal)]">
+										<td className="py-2.5 px-3 text-right tabular-nums font-bold text-[var(--primary)]">
 											{chair.utilizationPercent}%
 										</td>
 										<td className="py-2.5 px-3">
@@ -362,7 +362,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 										<td className="py-2.5 px-3">
 											<div className="w-full bg-[var(--line)] h-2 rounded-full overflow-hidden">
 												<div
-													className="bg-[var(--teal)] h-full transition-all duration-300"
+													className="bg-[var(--primary)] h-full transition-all duration-300"
 													style={{ width: `${Math.min(100, chair.utilizationPercent)}%` }}
 												/>
 											</div>
@@ -378,7 +378,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 			{/* Мобильные Grouped Cards для 390px */}
 			<div className="sm:hidden space-y-3">
 				{chairs.length === 0 ? (
-					<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper)] rounded-xl border border-[var(--line)]">
+					<div className="p-6 text-center text-xs text-[var(--ink-muted)] bg-[var(--paper)] rounded-xl border border-[var(--line)]">
 						{loading ? "Загрузка..." : "Нет данных за период"}
 					</div>
 				) : (
@@ -389,7 +389,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 						>
 							<div className="flex items-center justify-between">
 								<div className="font-bold text-xs text-[var(--ink)] flex items-center gap-1.5">
-									<Armchair size={14} className="text-[var(--teal)]" />
+									<Armchair size={14} className="text-[var(--primary)]" />
 									<span>{chair.chairName}</span>
 								</div>
 								<div className="flex items-center gap-2">
@@ -408,7 +408,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 												? "Перегруз"
 												: "Резерв"}
 									</span>
-									<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] font-bold text-[var(--teal)]">
+									<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] font-bold text-[var(--primary)]">
 										{chair.utilizationPercent}%
 									</span>
 								</div>
@@ -416,23 +416,23 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 
 							<div className="w-full bg-[var(--line)] h-2 rounded-full overflow-hidden">
 								<div
-									className="bg-[var(--teal)] h-full transition-all duration-300"
+									className="bg-[var(--primary)] h-full transition-all duration-300"
 									style={{ width: `${Math.min(100, chair.utilizationPercent)}%` }}
 								/>
 							</div>
 
 							<div className="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
 								<div className="p-1.5 rounded-lg bg-[var(--paper-soft)]">
-									<div className="text-[10px] text-[var(--muted)]">План</div>
+									<div className="text-[10px] text-[var(--ink-muted)]">План</div>
 									<div className="font-semibold text-[var(--ink)]">{chair.plannedHours} ч.</div>
 								</div>
 								<div className="p-1.5 rounded-lg bg-[var(--paper-soft)]">
-									<div className="text-[10px] text-[var(--muted)]">Факт</div>
+									<div className="text-[10px] text-[var(--ink-muted)]">Факт</div>
 									<div className="font-semibold text-[var(--ink)]">{chair.workedHours} ч.</div>
 								</div>
 								<div className="p-1.5 rounded-lg bg-[var(--paper-soft)]">
-									<div className="text-[10px] text-[var(--muted)]">Окна</div>
-									<div className="font-semibold text-[var(--warn-fg,#d97706)]">{chair.freeHours} ч.</div>
+									<div className="text-[10px] text-[var(--ink-muted)]">Окна</div>
+									<div className="font-semibold text-[var(--warning)]">{chair.freeHours} ч.</div>
 								</div>
 							</div>
 						</div>

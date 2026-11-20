@@ -138,9 +138,9 @@ test("1.6. exportAnalyticsToCsv формирует валидный CSV с UTF-8
 		exportAnalyticsToCsv(emptyState);
 
 		assert.ok(blobContent.startsWith("\uFEFF"), "CSV must start with UTF-8 BOM");
-		assert.ok(blobContent.includes("DENTE CRM — УПРАВЛЕНЧЕСКАЯ АНАЛИТИКА"), "Must contain header");
-		assert.ok(blobContent.includes("СТРУКТУРА ОПЛАТ (КАССА)"), "Must contain payment section");
-		assert.ok(blobContent.includes("РЕЙТИНГ ВРАЧЕЙ КЛИНИКИ"), "Must contain doctors rating");
+		assert.ok(blobContent.includes("Управленческая аналитика"), "Must contain header");
+		assert.ok(blobContent.includes("Структура оплат (касса)"), "Must contain payment section");
+		assert.ok(blobContent.includes("Рейтинг врачей клиники"), "Must contain doctors rating");
 		assert.ok(downloadAttr.includes("Dente_Analytics_month_"), "File name must include period");
 	} finally {
 		(globalThis as any).window = originalWindow;
@@ -148,7 +148,7 @@ test("1.6. exportAnalyticsToCsv формирует валидный CSV с UTF-8
 	}
 });
 
-test("2.1. ExecutiveAnalyticsStudioModal: Ровно 1 Primary CTA кнопка #0d9488 на видимый экран (Мандат 8am)", () => {
+test("2.1. ExecutiveAnalyticsStudioModal: Ровно 1 Primary CTA кнопка на видимый экран (Мандат 8am)", () => {
 	const modalPath = path.join(analyticsDir, "ExecutiveAnalyticsStudioModal.tsx");
 	const footerPath = path.join(analyticsDir, "studio", "ExecutiveAnalyticsStudioFooter.tsx");
 	const code = readFileSync(modalPath, "utf8") + (existsSync(footerPath) ? "\n" + readFileSync(footerPath, "utf8") : "");
@@ -156,7 +156,10 @@ test("2.1. ExecutiveAnalyticsStudioModal: Ровно 1 Primary CTA кнопка 
 	// Ищем класс primary-button
 	const primaryMatches = code.match(/className=["'][^"']*primary-button[^"']*["']/g) || [];
 	assert.equal(primaryMatches.length, 1, "Must contain exactly ONE primary-button CTA");
-	assert.ok(primaryMatches[0].includes("bg-[var(--teal,#0d9488)]"), "Primary button must use brand teal #0d9488");
+	assert.ok(
+		primaryMatches[0].includes("bg-[var(--primary)]") || primaryMatches[0].includes("bg-[var(--teal,#0d9488)]"),
+		"Primary button must use brand primary token"
+	);
 	assert.ok(code.includes('data-testid="studio-primary-export-btn"'), "Primary button must have testid");
 });
 

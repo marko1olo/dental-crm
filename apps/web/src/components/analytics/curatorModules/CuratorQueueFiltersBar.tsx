@@ -88,8 +88,7 @@ export const CuratorQueueFiltersBar: React.FC<CuratorQueueFiltersBarProps> = ({
 						onSortChange(val);
 					}
 				}}
-				className="curator-select-input"
-				style={{ minHeight: "34px", padding: "4px 10px", fontSize: "12px" }}
+				className="curator-select-input min-h-[34px] px-2.5 py-1 text-xs"
 			>
 				<option value="priority">По срочности</option>
 				<option value="sum_desc">По сумме сметы</option>

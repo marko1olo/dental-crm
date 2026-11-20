@@ -1,7 +1,8 @@
-import type {
-	CuratorAttentionFlag,
-	CuratorFunnelStage,
-	CuratorPatientQueueItem,
+import {
+	type CuratorAttentionFlag,
+	type CuratorFunnelStage,
+	type CuratorPatientQueueItem,
+	rublesToKopecks,
 } from "@dental/shared";
 
 export interface ContextTreatmentPlan {
@@ -102,11 +103,11 @@ export function mapDashboardContextToQueue(
 			treatmentPlanTitle: plan.name || plan.title || "Комплексный план лечения",
 			planTier: tier,
 			planTotalPriceRub: priceRub,
-			planTotalPriceKopecks: Math.round(priceRub * 100),
+			planTotalPriceKopecks: rublesToKopecks(priceRub),
 			paidAmountRub: paidRub,
-			paidAmountKopecks: Math.round(paidRub * 100),
+			paidAmountKopecks: rublesToKopecks(paidRub),
 			remainingAmountRub: remainingRub,
-			remainingAmountKopecks: Math.round(remainingRub * 100),
+			remainingAmountKopecks: rublesToKopecks(remainingRub),
 			funnelStage: stage,
 			curatorId,
 			curatorFullName: curatorName,

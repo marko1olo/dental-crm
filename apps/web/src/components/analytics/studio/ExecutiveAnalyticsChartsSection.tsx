@@ -36,11 +36,11 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 				{/* Секция 1: Структура оплат кассы */}
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 					<div className="flex items-center justify-between">
-						<h2 className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
+						<h2 className="text-xs font-bold text-[var(--ink-muted)] flex items-center gap-1.5">
 							<Wallet className="w-3.5 h-3.5 text-current" />
 							Структура оплат (касса)
 						</h2>
-						<span className="text-xs font-medium text-[var(--muted)]">
+						<span className="text-xs font-medium text-[var(--ink-muted)]">
 							Итого: {data.revenueFormatted}
 						</span>
 					</div>
@@ -60,7 +60,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 								</div>
 								<div className="flex items-center gap-2.5 shrink-0">
 									<span className="font-semibold text-[var(--ink)]">{m.formatted}</span>
-									<span className="w-10 text-right text-[11px] font-bold text-[var(--muted)]">
+									<span className="w-10 text-right text-[11px] font-bold text-[var(--ink-muted)]">
 										{m.percent}%
 									</span>
 								</div>
@@ -70,7 +70,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 
 					{/* Направления услуг */}
 					<div className="pt-2 border-t border-[var(--line)] space-y-1.5">
-						<span className="text-[11px] font-semibold text-[var(--muted)] block">
+						<span className="text-[11px] font-semibold text-[var(--ink-muted)] block">
 							Услуги по направлениям
 						</span>
 						<div className="grid grid-cols-2 gap-1.5 text-xs">
@@ -79,7 +79,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 									key={s.category}
 									className="p-1.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)]/40 flex flex-col justify-between"
 								>
-									<span className="text-[11px] text-[var(--muted)] truncate">{normalizeServiceCategoryRu(s.category)}</span>
+									<span className="text-[11px] text-[var(--ink-muted)] truncate">{normalizeServiceCategoryRu(s.category)}</span>
 									<span className="font-semibold text-[var(--ink)] mt-0.5">{s.formattedRevenue}</span>
 								</div>
 							))}
@@ -90,11 +90,11 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 				{/* Секция 2: Рейтинг врачей и продуктивность кресел */}
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 					<div className="flex items-center justify-between">
-						<h2 className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
+						<h2 className="text-xs font-bold text-[var(--ink-muted)] flex items-center gap-1.5">
 							<Users className="w-3.5 h-3.5 text-current" />
 							Рейтинг врачей ({data.doctors.length})
 						</h2>
-						<span className="text-xs font-medium text-[var(--muted)]">
+						<span className="text-xs font-medium text-[var(--ink-muted)]">
 							Часы и повторная запись
 						</span>
 					</div>
@@ -107,20 +107,20 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 							>
 								<div className="flex items-center justify-between gap-2">
 									<div className="flex items-center gap-2 min-w-0">
-										<span className="w-5 h-5 rounded-full bg-[var(--teal)]/15 text-[var(--teal)] font-bold text-[11px] flex items-center justify-center shrink-0">
+										<span className="w-5 h-5 rounded-full bg-[var(--primary)]/15 text-[var(--primary)] font-bold text-[11px] flex items-center justify-center shrink-0">
 											{idx + 1}
 										</span>
 										<span className="font-semibold text-[var(--ink)] truncate">{doc.name}</span>
 									</div>
-									<span className="font-bold text-[var(--teal)] shrink-0">
+									<span className="font-bold text-[var(--primary)] shrink-0">
 										{doc.revenueFormatted}
 									</span>
 								</div>
-								<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pl-7">
+								<div className="flex items-center justify-between text-[11px] text-[var(--ink-muted)] pl-7">
 									<span>{doc.specialty}</span>
 									<div className="flex items-center gap-3">
 										<span>{doc.visitsCount} визитов ({doc.chairHours}ч)</span>
-										<span className="font-medium text-[var(--teal)]">
+										<span className="font-medium text-[var(--primary)]">
 											Recall {doc.rebookingPercent}%
 										</span>
 									</div>
@@ -134,11 +134,11 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 			{/* 3 Секция: Когорты удержания пациентов Recall (3/6/12 мес) и WhatsApp */}
 			<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 				<div className="flex items-center justify-between">
-					<h2 className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
+					<h2 className="text-xs font-bold text-[var(--ink-muted)] flex items-center gap-1.5">
 						<Activity className="w-3.5 h-3.5 text-current" />
 						Удержание пациентов по когортам визитов (Recall ≥ 70%)
 					</h2>
-					<span className="text-xs text-[var(--muted)] hidden sm:inline">
+					<span className="text-xs text-[var(--ink-muted)] hidden sm:inline">
 						Генерация сообщения WhatsApp
 					</span>
 				</div>
@@ -167,7 +167,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 												{cohort.recallRatePercent}% явка
 											</span>
 										</div>
-										<div className="text-[11px] text-[var(--muted)]">
+										<div className="text-[11px] text-[var(--ink-muted)]">
 											Пациентов к возврату:{" "}
 											<span className="font-bold text-[var(--ink)]">
 												{cohort.patientsCount} чел.
@@ -183,12 +183,12 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 										onClick={() =>
 											onCopyWhatsapp(cohort.messageTemplate, cohort.cohortKey)
 										}
-										className="secondary-button h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] text-[11px] font-medium transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
+										className="secondary-button h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--primary)] text-[11px] font-medium transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
 										title="Скопировать шаблон приглашения в WhatsApp"
 									>
 										{isCopied ? (
 											<>
-												<CheckCircle2 className="w-3.5 h-3.5 text-[var(--teal)]" />
+												<CheckCircle2 className="w-3.5 h-3.5 text-[var(--primary)]" />
 												<span>Скопировано в буфер!</span>
 											</>
 										) : (
@@ -204,7 +204,7 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 					</div>
 				) : (
 					<div className="p-3.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]/50 text-center">
-						<p className="text-xs text-[var(--muted)]">
+						<p className="text-xs text-[var(--ink-muted)]">
 							Все пациенты текущего периода охвачены контрольными визитами либо когорты сформируются при накоплении данных.
 						</p>
 					</div>

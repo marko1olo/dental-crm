@@ -47,27 +47,28 @@ export const ExecutiveAnalyticsStudioFooter: React.FC<ExecutiveAnalyticsStudioFo
 					<span className="hidden sm:inline">Печать</span>
 				</button>
 
-				<span className="text-[11px] text-[var(--muted)] truncate hidden md:inline">
+				<span className="text-[11px] text-[var(--ink-muted)] truncate hidden md:inline">
 					Данные синхронизированы с кассой
 				</span>
 			</div>
 
-			{/* РОВНО ОДНА Primary CTA КНОПКА #0d9488 (Мандат 8am & 8e: ВСЕГДА КЛИКАБЕЛЬНА) */}
+			{/* РОВНО ОДНА Primary CTA КНОПКА (Мандат 8am & 8e: ВСЕГДА КЛИКАБЕЛЬНА) */}
 			<button
 				type="button"
 				onClick={onExport}
-				className="primary-button studio-primary-cta bg-[var(--teal,#0d9488)]"
+				className="primary-button studio-primary-cta h-9 bg-[var(--primary)] text-white"
 				data-testid="studio-primary-export-btn"
 			>
 				{exportSuccess ? (
 					<>
-						<CheckCircle2 className="w-4 h-4" />
+						<CheckCircle2 className="w-4 h-4 shrink-0" />
 						<span>Отчет сохранен!</span>
 					</>
 				) : (
 					<>
-						<Download className="w-4 h-4" />
-						<span>✓ Экспорт управленческого отчёта</span>
+						<Download className="w-4 h-4 shrink-0" />
+						<span className="hidden sm:inline">✓ Экспорт управленческого отчёта</span>
+						<span className="sm:hidden">Экспорт отчёта</span>
 					</>
 				)}
 			</button>

@@ -107,13 +107,13 @@ export interface ManagerReportsDataBundle {
 
 export function buildManagerReportsRows(bundle: ManagerReportsDataBundle): unknown[][] {
 	const rows: unknown[][] = [];
-	rows.push(["ОТЧЁТ РУКОВОДИТЕЛЯ КЛИНИКИ (DENTE CRM)"]);
+	rows.push(["Отчёт руководителя клиники (DENTE CRM)"]);
 	rows.push(["Период", `${bundle.period.from} — ${bundle.period.to}`]);
 	rows.push(["Дата выгрузки", new Date().toLocaleString("ru-RU")]);
 	rows.push([]);
 
 	if (bundle.summary) {
-		rows.push(["--- ВЫРУЧКА И ПАЦИЕНТОПОТОК ---"]);
+		rows.push(["--- Выручка и пациентопоток ---"]);
 		rows.push(["Итого выручка (руб)", bundle.summary.revenue?.totalRub ?? 0]);
 		rows.push([
 			"Всего приёмов",
@@ -138,7 +138,7 @@ export function buildManagerReportsRows(bundle: ManagerReportsDataBundle): unkno
 		}
 
 		if (bundle.summary.doctors?.rows?.length) {
-			rows.push(["--- ВРАЧИ И ВЫРАБОТКА ---"]);
+			rows.push(["--- Врачи и выработка ---"]);
 			rows.push(["Врач", "Выручка (руб)", "Всего приёмов", "Завершено", "Отменено", "Неявки", "Доходимость", "Средний чек"]);
 			for (const d of bundle.summary.doctors.rows) {
 				rows.push([
@@ -160,7 +160,7 @@ export function buildManagerReportsRows(bundle: ManagerReportsDataBundle): unkno
 		}
 
 		if (bundle.summary.chairs?.rows?.length) {
-			rows.push(["--- ЗАГРУЗКА КРЕСЕЛ ---"]);
+			rows.push(["--- Загрузка кресел ---"]);
 			rows.push(["Кресло", "Приёмов", "Занято (минут)", "Загрузка %"]);
 			for (const c of bundle.summary.chairs.rows) {
 				rows.push([
@@ -175,32 +175,32 @@ export function buildManagerReportsRows(bundle: ManagerReportsDataBundle): unkno
 	}
 
 	if (bundle.services?.rows?.length) {
-		rows.push(["--- ТОП ПРОДАВАЕМЫХ УСЛУГ ---"]);
+		rows.push(["--- Топ продаваемых услуг ---"]);
 		rows.push(["Услуга", "Количество", "Назначено (руб)", "Средняя цена (руб)", "Скидки (руб)"]);
 		for (const s of bundle.services.rows) {
 			rows.push([s.title, s.quantity, s.plannedRub, s.averagePriceRub, s.discountRub]);
 		}
-		rows.push(["ИТОГО УСЛУГ", "", bundle.services.plannedTotalRub, "", bundle.services.discountTotalRub]);
+		rows.push(["Итого услуг", "", bundle.services.plannedTotalRub, "", bundle.services.discountTotalRub]);
 		rows.push([]);
 	}
 
 	if (bundle.receivables?.rows?.length) {
-		rows.push(["--- ДЕБИТОРСКАЯ ЗАДОЛЖЕННОСТЬ (ПАЦИЕНТЫ-ДОЛЖНИКИ) ---"]);
+		rows.push(["--- Дебиторская задолженность (пациенты-должники) ---"]);
 		rows.push(["Пациент", "Сумма долга (руб)", "Срок долга", "Дата первой задолженности"]);
 		for (const r of bundle.receivables.rows) {
 			rows.push([r.patientName, r.debtRub, r.bucket, r.oldestChargeAt ?? "—"]);
 		}
-		rows.push(["ИТОГО ДОЛГ", bundle.receivables.totalDebtRub]);
+		rows.push(["Итого долг", bundle.receivables.totalDebtRub]);
 		rows.push([]);
 	}
 
 	if (bundle.receivables?.prepayments?.length) {
-		rows.push(["--- АВАНСЫ И ПЕРЕПЛАТЫ ПАЦИЕНТОВ ---"]);
+		rows.push(["--- Авансы и переплаты пациентов ---"]);
 		rows.push(["Пациент", "Аванс на счёте (руб)"]);
 		for (const p of bundle.receivables.prepayments) {
 			rows.push([p.patientName, p.prepaidRub]);
 		}
-		rows.push(["ИТОГО АВАНСОВ", bundle.receivables.totalPrepaidRub]);
+		rows.push(["Итого авансов", bundle.receivables.totalPrepaidRub]);
 		rows.push([]);
 	}
 

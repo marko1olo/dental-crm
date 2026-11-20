@@ -38,7 +38,7 @@ export const CuratorFunnelStageCard: React.FC<CuratorFunnelStageCardProps> = ({
 
 			<div className="curator-stage-count">
 				{stageItem.count}{" "}
-				<span style={{ fontSize: "13px", fontWeight: 500, color: "var(--ink-muted, #64748b)" }}>пл.</span>
+				<span className="text-[13px] font-medium text-[var(--ink-muted)]">пл.</span>
 			</div>
 
 			<div className="curator-stage-volume">{stageItem.totalRub.toLocaleString("ru-RU")} ₽</div>
@@ -55,7 +55,7 @@ export const CuratorFunnelStageCard: React.FC<CuratorFunnelStageCardProps> = ({
 			</div>
 
 			{stageItem.avgDaysInStage > 0 && (
-				<div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--ink-muted, #94a3b8)", marginTop: "4px" }}>
+				<div className="flex items-center gap-1 text-[11px] text-[var(--ink-muted)] mt-1">
 					<Clock className="w-3 h-3" />
 					<span>~{stageItem.avgDaysInStage} дн. в этапе</span>
 				</div>

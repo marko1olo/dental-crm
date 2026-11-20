@@ -86,11 +86,11 @@ export function PatientFieldRequirementsSettings() {
 			<div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[var(--line)]">
 				<div className="space-y-1">
 					<h3 className="text-base font-bold text-[var(--ink)] m-0 flex items-center gap-2">
-						<Settings size={18} className="text-[var(--teal)]" />
+						<Settings size={18} className="text-[var(--primary)]" />
 						Настройка обязательности полей при создании карточки пациента
 					</h3>
-					<p className="text-xs text-[var(--muted)] m-0">
-						Укажите, какие поля регистратор или администратор ОБЯЗАН заполнить при регистрации
+					<p className="text-xs text-[var(--ink-muted)] m-0">
+						Укажите, какие поля регистратор или администратор обязан заполнить при регистрации
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
@@ -109,25 +109,25 @@ export function PatientFieldRequirementsSettings() {
 						{
 							key: "requirePhone",
 							label: "Номер телефона",
-							badge: "ОБЯЗАТЕЛЬНО",
+							badge: "Обязательно",
 							desc: "Блокирует сохранение без ввода номера телефона для СМС и визитов.",
 						},
 						{
 							key: "requireAdvertisingSource",
 							label: "Рекламный источник",
-							badge: "ОБЯЗАТЕЛЬНО",
+							badge: "Обязательно",
 							desc: "Обязывает выбрать источник (Сайт, Карты, Сарафан) для 100% точности ROMI.",
 						},
 						{
 							key: "requireSnils",
 							label: "СНИЛС (11 цифр)",
-							badge: "ДЛЯ ЕГИСЗ",
+							badge: "Для ЕГИСЗ",
 							desc: "Обязателен для клиник, подписывающих ЭМК с УКЭП в ЕГИСЗ РЭМД.",
 						},
 						{
 							key: "requireBirthDate",
 							label: "Дата рождения",
-							badge: "ОБЯЗАТЕЛЬНО",
+							badge: "Обязательно",
 							desc: "Требуется для разделения взрослой/детской одонтограммы и анестезии.",
 						},
 					] as const
@@ -137,10 +137,10 @@ export function PatientFieldRequirementsSettings() {
 							<div className="flex items-center gap-2">
 								<span className="font-bold text-sm text-[var(--ink)]">{f.label}</span>
 								{requirements[f.key] && (
-									<span className="text-xs px-2 py-0.5 rounded bg-[var(--danger-soft,rgba(225,29,72,0.1))] text-[var(--danger,#e11d48)] border border-[var(--danger,#e11d48)]/20 font-bold">{f.badge}</span>
+									<span className="text-xs px-2 py-0.5 rounded bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-line,var(--danger-soft))] font-medium">{f.badge}</span>
 								)}
 							</div>
-							<p className="text-xs text-[var(--muted)] m-0">{f.desc}</p>
+							<p className="text-xs text-[var(--ink-muted)] m-0">{f.desc}</p>
 						</div>
 						<label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
 							<input
@@ -150,7 +150,7 @@ export function PatientFieldRequirementsSettings() {
 								className="sr-only peer"
 								data-testid={`toggle-${f.key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`}
 							/>
-							<div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--teal)]" />
+							<div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]" />
 						</label>
 					</div>
 				))}

@@ -12,7 +12,7 @@
  */
 
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
-import { formatKopecksToRub, kopecksToRubles } from "@dental/shared";
+import { formatKopecksToRub, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 
 export type AnalyticsPeriod = "day" | "yesterday" | "week" | "month" | "quarter" | "year" | "custom";
 
@@ -274,10 +274,10 @@ export async function fetchClinicAnalyticsSSOT(
 		const avgCheckKop = completedVisits > 0 ? Math.round(totalRevenueKop / completedVisits) : Number(kpis.averageCheckKopecks ?? 0);
 
 		const pb = kpis.paymentBreakdown;
-		const cashKop = pb ? (pb.cashKopecks ?? Math.round(Number(pb.cashRub || 0) * 100)) : 0;
-		const cardKop = pb ? (pb.cardDmsKopecks ?? Math.round(Number(pb.cardDmsRub || 0) * 100)) : 0;
-		const sbpKop = pb ? (pb.sbpKopecks ?? Math.round(Number(pb.sbpRub || 0) * 100)) : 0;
-		const depositKop = pb ? (pb.depositKopecks ?? Math.round(Number(pb.depositRub || 0) * 100)) : 0;
+		const cashKop = pb ? (pb.cashKopecks ?? rublesToKopecks(Number(pb.cashRub || 0))) : 0;
+		const cardKop = pb ? (pb.cardDmsKopecks ?? rublesToKopecks(Number(pb.cardDmsRub || 0))) : 0;
+		const sbpKop = pb ? (pb.sbpKopecks ?? rublesToKopecks(Number(pb.sbpRub || 0))) : 0;
+		const depositKop = pb ? (pb.depositKopecks ?? rublesToKopecks(Number(pb.depositRub || 0))) : 0;
 		const sumKop = pb?.totalKopecks ?? (cashKop + cardKop + sbpKop + depositKop);
 
 		const methods: PaymentMethodItem[] = [
@@ -321,7 +321,7 @@ export async function fetchClinicAnalyticsSSOT(
 					? Math.round(d.revenueKopecks)
 					: typeof d.billedKopecks === "number"
 						? Math.round(d.billedKopecks)
-						: Math.round(Number(d.billedRub || d.revenueRub || 0) * 100);
+						: rublesToKopecks(Number(d.billedRub || d.revenueRub || 0));
 			const visits = Number(d.visits || d.visitsCount || 0);
 			const avgKop =
 				visits > 0
@@ -359,7 +359,7 @@ export async function fetchClinicAnalyticsSSOT(
 			const revKop =
 				typeof p.revenueKopecks === "number"
 					? Math.round(p.revenueKopecks)
-					: Math.round(Number(p.revenueRub || 0) * 100);
+					: rublesToKopecks(Number(p.revenueRub || 0));
 			const count = Number(p.count || 0);
 			const sharePct = totalProcCount > 0 ? Math.round((count / totalProcCount) * 100) : 0;
 			return {
@@ -432,7 +432,7 @@ export function exportAnalyticsToCsv(data: ClinicAnalyticsSSOT, clinicName?: str
 
 	const resolvedClinicName = (clinicName || "").trim() || "DENTE CRM";
 	const lines: string[] = [
-		`"${resolvedClinicName} — УПРАВЛЕНЧЕСКАЯ АНАЛИТИКА И ФИНАНСОВЫЙ ОТЧЕТ"`,
+		`"${resolvedClinicName} — Управленческая аналитика и финансовый отчет"`,
 		`"Период:","${data.periodLabel}"`,
 		`"Дата выгрузки:","${new Date().toLocaleDateString("ru-RU")} ${new Date().toLocaleTimeString("ru-RU")}"`,
 		`"Выручка кассы (₽):",${kopecksToRubles(data.revenueKopecks)}`,
@@ -443,13 +443,13 @@ export function exportAnalyticsToCsv(data: ClinicAnalyticsSSOT, clinicName?: str
 		`"Завершенных приёмов:",${data.completedVisitsCount}`,
 		`"Неявок (No-Show):",${data.noShowVisitsCount}`,
 		"",
-		`"СТРУКТУРА ОПЛАТ (КАССА)"`,
+		`"Структура оплат (касса)"`,
 		`"Способ оплаты","Сумма (₽)","Доля (%)"`,
 		...data.paymentBreakdown.methods.map(
 			(m) => `"${m.label}",${kopecksToRubles(m.amountKopecks)},${m.percent}`,
 		),
 		"",
-		`"РЕЙТИНГ ВРАЧЕЙ КЛИНИКИ"`,
+		`"Рейтинг врачей клиники"`,
 		`"Врач","Специальность","Выручка (₽)","Приёмов","Часов в кресле","Средний чек (₽)","Повторная запись (%)"`,
 		...data.doctors.map(
 			(d) =>

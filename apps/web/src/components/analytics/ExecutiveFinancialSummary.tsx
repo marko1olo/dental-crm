@@ -7,7 +7,7 @@
  * - Выручка кассы за выбранный период (день / неделя / месяц / квартал / год)
  * - Разбивка по 4 реальным типам оплат: Наличные, Банковские карты, QR СБП, Авансы/депозиты
  * - Средний чек и количество оформленных нарядов
- * - 100% токенизация темы: var(--paper), var(--ink), var(--line), var(--teal)
+ * - 100% токенизация темы: var(--paper), var(--ink), var(--line), var(--primary)
  * - Адаптивность: десктопная плотность и нативные Grouped Cards на смартфонах (390px)
  */
 
@@ -23,7 +23,7 @@ import {
 	Wallet,
 } from "lucide-react";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
-import { formatKopecksToRub } from "@dental/shared";
+import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 
 export interface PaymentBreakdownItem {
 	readonly method: "cash" | "card" | "sbp" | "deposit";
@@ -66,7 +66,7 @@ function formatMoneyKopecks(kopecks?: number, rubFallback?: number): string {
 		return formatKopecksToRub(kopecks);
 	}
 	if (typeof rubFallback === "number" && !isNaN(rubFallback)) {
-		return formatKopecksToRub(Math.round(rubFallback * 100));
+		return formatKopecksToRub(rublesToKopecks(rubFallback));
 	}
 	return formatKopecksToRub(kopecks ?? 0);
 }
@@ -152,8 +152,8 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 							onClick={() => handlePeriodSelect(p)}
 							className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 ${
 								activePeriod === p
-									? "bg-[var(--teal)] text-white font-semibold shadow-sm"
-									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]"
+									? "bg-[var(--primary)] text-white font-semibold shadow-sm"
+									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 							}`}
 						>
 							{PERIOD_LABELS[p]}
@@ -165,7 +165,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 					<button
 						type="button"
 						onClick={() => fetchSummary(activePeriod)}
-						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] transition-colors cursor-pointer"
+						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--primary)] transition-colors cursor-pointer"
 						title="Обновить данные"
 					>
 						<RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -174,7 +174,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 					<button
 						type="button"
 						onClick={onPrint || (() => window.print())}
-						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--teal)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium hover:border-[var(--primary)] transition-colors cursor-pointer inline-flex items-center gap-1.5"
 					>
 						<Receipt size={14} aria-hidden="true" />
 						<span>Распечатать сводку</span>
@@ -185,40 +185,40 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 			{/* Главные показатели клиники (3 карточки без матрешки) */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 				<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-					<div className="flex items-center justify-between text-xs font-medium text-[var(--muted)] mb-1">
+					<div className="flex items-center justify-between text-xs font-medium text-[var(--ink-muted)] mb-1">
 						<span>Выручка кассы</span>
-						<DollarSign size={16} className="text-[var(--teal)]" />
+						<DollarSign size={16} className="text-[var(--primary)]" />
 					</div>
 					<div className="text-2xl sm:text-3xl font-bold text-[var(--ink)] tracking-tight">
 						{loading ? "..." : formatMoneyKopecks(data?.totalRevenueKopecks, data?.totalRevenueRub)}
 					</div>
-					<div className="text-[11px] text-[var(--muted)] mt-1">
+					<div className="text-[11px] text-[var(--ink-muted)] mt-1">
 						Фактически поступило за {PERIOD_LABELS[activePeriod]?.toLowerCase() || "период"}
 					</div>
 				</div>
 
 				<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-					<div className="flex items-center justify-between text-xs font-medium text-[var(--muted)] mb-1">
+					<div className="flex items-center justify-between text-xs font-medium text-[var(--ink-muted)] mb-1">
 						<span>Оформлено нарядов</span>
-						<FileText size={16} className="text-[var(--teal)]" />
+						<FileText size={16} className="text-[var(--primary)]" />
 					</div>
 					<div className="text-2xl sm:text-3xl font-bold text-[var(--ink)] tracking-tight">
 						{loading ? "..." : (data?.invoicesCount || 0).toLocaleString("ru-RU")}
 					</div>
-					<div className="text-[11px] text-[var(--muted)] mt-1">
+					<div className="text-[11px] text-[var(--ink-muted)] mt-1">
 						Всего выставлено на сумму {formatMoneyKopecks(data?.totalInvoicedKopecks, data?.totalInvoicedRub)}
 					</div>
 				</div>
 
 				<div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-					<div className="flex items-center justify-between text-xs font-medium text-[var(--muted)] mb-1">
+					<div className="flex items-center justify-between text-xs font-medium text-[var(--ink-muted)] mb-1">
 						<span>Средний чек</span>
-						<TrendingUp size={16} className="text-[var(--teal)]" />
+						<TrendingUp size={16} className="text-[var(--primary)]" />
 					</div>
 					<div className="text-2xl sm:text-3xl font-bold text-[var(--ink)] tracking-tight">
 						{loading ? "..." : formatMoneyKopecks(data?.averageCheckKopecks, data?.averageCheckRub)}
 					</div>
-					<div className="text-[11px] text-[var(--muted)] mt-1">
+					<div className="text-[11px] text-[var(--ink-muted)] mt-1">
 						Выручка на один завершённый наряд
 					</div>
 				</div>
@@ -228,10 +228,10 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 			<div className="p-5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
 				<div className="flex items-center justify-between mb-4">
 					<h3 className="text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
-						<Wallet size={16} className="text-[var(--teal)]" />
+						<Wallet size={16} className="text-[var(--primary)]" />
 						<span>Разбивка оплат по способам расчёта</span>
 					</h3>
-					<span className="text-xs font-medium text-[var(--muted)]">
+					<span className="text-xs font-medium text-[var(--ink-muted)]">
 						Итого: {formatMoneyKopecks(data?.totalRevenueKopecks, data?.totalRevenueRub)}
 					</span>
 				</div>
@@ -241,7 +241,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 					<div className="p-3.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle)] space-y-2">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-medium text-[var(--ink)] flex items-center gap-1.5">
-								<Receipt size={14} className="text-[var(--teal)]" />
+								<Receipt size={14} className="text-[var(--primary)]" />
 								<span>Наличные (Касса)</span>
 							</span>
 							<span className="text-xs font-bold text-[var(--ink)]">
@@ -253,11 +253,11 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 						</div>
 						<div className="w-full bg-[var(--line)] h-1.5 rounded-full overflow-hidden">
 							<div
-								className="bg-[var(--teal)] h-full transition-all duration-300"
+								className="bg-[var(--primary)] h-full transition-all duration-300"
 								style={{ width: `${Math.min(100, data?.paymentBreakdown.cash.percent || 0)}%` }}
 							/>
 						</div>
-						<div className="text-[11px] text-[var(--muted)]">
+						<div className="text-[11px] text-[var(--ink-muted)]">
 							Чеков: {data?.paymentBreakdown.cash.count || 0}
 						</div>
 					</div>
@@ -266,7 +266,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 					<div className="p-3.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle)] space-y-2">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-medium text-[var(--ink)] flex items-center gap-1.5">
-								<CreditCard size={14} className="text-[var(--teal)]" />
+								<CreditCard size={14} className="text-[var(--primary)]" />
 								<span>Банковские карты</span>
 							</span>
 							<span className="text-xs font-bold text-[var(--ink)]">
@@ -278,11 +278,11 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 						</div>
 						<div className="w-full bg-[var(--line)] h-1.5 rounded-full overflow-hidden">
 							<div
-								className="bg-[var(--teal)] h-full transition-all duration-300"
+								className="bg-[var(--primary)] h-full transition-all duration-300"
 								style={{ width: `${Math.min(100, data?.paymentBreakdown.card.percent || 0)}%` }}
 							/>
 						</div>
-						<div className="text-[11px] text-[var(--muted)]">
+						<div className="text-[11px] text-[var(--ink-muted)]">
 							Операций: {data?.paymentBreakdown.card.count || 0}
 						</div>
 					</div>
@@ -291,7 +291,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 					<div className="p-3.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle)] space-y-2">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-medium text-[var(--ink)] flex items-center gap-1.5">
-								<QrCode size={14} className="text-[var(--teal)]" />
+								<QrCode size={14} className="text-[var(--primary)]" />
 								<span>Оплата по QR (СБП)</span>
 							</span>
 							<span className="text-xs font-bold text-[var(--ink)]">
@@ -303,11 +303,11 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 						</div>
 						<div className="w-full bg-[var(--line)] h-1.5 rounded-full overflow-hidden">
 							<div
-								className="bg-[var(--teal)] h-full transition-all duration-300"
+								className="bg-[var(--primary)] h-full transition-all duration-300"
 								style={{ width: `${Math.min(100, data?.paymentBreakdown.sbp.percent || 0)}%` }}
 							/>
 						</div>
-						<div className="text-[11px] text-[var(--muted)]">
+						<div className="text-[11px] text-[var(--ink-muted)]">
 							Транзакций: {data?.paymentBreakdown.sbp.count || 0}
 						</div>
 					</div>
@@ -316,7 +316,7 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 					<div className="p-3.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line-subtle)] space-y-2">
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-medium text-[var(--ink)] flex items-center gap-1.5">
-								<Wallet size={14} className="text-[var(--teal)]" />
+								<Wallet size={14} className="text-[var(--primary)]" />
 								<span>Авансы и депозиты</span>
 							</span>
 							<span className="text-xs font-bold text-[var(--ink)]">
@@ -328,11 +328,11 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 						</div>
 						<div className="w-full bg-[var(--line)] h-1.5 rounded-full overflow-hidden">
 							<div
-								className="bg-[var(--teal)] h-full transition-all duration-300"
+								className="bg-[var(--primary)] h-full transition-all duration-300"
 								style={{ width: `${Math.min(100, data?.paymentBreakdown.deposit.percent || 0)}%` }}
 							/>
 						</div>
-						<div className="text-[11px] text-[var(--muted)]">
+						<div className="text-[11px] text-[var(--ink-muted)]">
 							Списаний: {data?.paymentBreakdown.deposit.count || 0}
 						</div>
 					</div>

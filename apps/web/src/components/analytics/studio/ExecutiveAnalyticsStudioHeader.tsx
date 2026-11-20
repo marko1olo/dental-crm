@@ -36,7 +36,7 @@ export const ExecutiveAnalyticsStudioHeader: React.FC<ExecutiveAnalyticsStudioHe
 			{/* 1. Единая шапка экрана (Мандат 8am: ровно 1 строка, 48-56px) */}
 			<header className="studio-header">
 				<div className="flex items-center gap-2 sm:gap-3 min-w-0">
-					<div className="w-8 h-8 rounded-lg bg-[var(--teal)]/10 text-[var(--teal)] flex items-center justify-center shrink-0">
+					<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0">
 						<TrendingUp className="w-4 h-4" aria-hidden="true" />
 					</div>
 					<div className="flex items-center gap-2 min-w-0">
@@ -44,8 +44,8 @@ export const ExecutiveAnalyticsStudioHeader: React.FC<ExecutiveAnalyticsStudioHe
 							<span className="sm:hidden">Аналитика клиники</span>
 							<span className="hidden sm:inline">Управленческая аналитика клиники</span>
 						</h1>
-						<span className="hidden md:inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
-							<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal)]" />
+						<span className="hidden md:inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink-muted)] shrink-0">
+							<span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
 							Касса клиники
 						</span>
 					</div>
@@ -79,7 +79,7 @@ export const ExecutiveAnalyticsStudioHeader: React.FC<ExecutiveAnalyticsStudioHe
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+						className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						aria-label="Закрыть аналитику"
 						data-testid="studio-modal-close-btn"
 					>
@@ -104,10 +104,10 @@ export const ExecutiveAnalyticsStudioHeader: React.FC<ExecutiveAnalyticsStudioHe
 								role="tab"
 								aria-selected={isActive}
 								onClick={() => onPeriodChange(opt.key)}
-								className={`h-8 rounded-lg text-[11px] font-medium transition-colors cursor-pointer flex items-center justify-center px-1 ${
+								className={`min-h-[44px] h-11 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center justify-center px-1 ${
 									isActive
 										? "bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 								}`}
 							>
 								{opt.shortLabel}

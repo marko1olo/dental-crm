@@ -1,8 +1,14 @@
 import React from "react";
 import { UserCheck } from "lucide-react";
 
+export interface CuratorOption {
+	readonly id: string;
+	readonly fullName?: string | null | undefined;
+	readonly name?: string | null | undefined;
+}
+
 export interface CuratorHeaderProps {
-	readonly staffCurators: readonly any[];
+	readonly staffCurators: readonly CuratorOption[];
 	readonly selectedCuratorId: string;
 	readonly onSelectCuratorId: (id: string) => void;
 }
@@ -29,7 +35,7 @@ export const CuratorHeader: React.FC<CuratorHeaderProps> = ({
 			<div className="curator-header-controls">
 				<label
 					htmlFor="curator-select"
-					style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink-muted, #64748b)" }}
+					className="text-[13px] font-semibold text-[var(--ink-muted)]"
 				>
 					Куратор:
 				</label>

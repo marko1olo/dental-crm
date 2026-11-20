@@ -9,7 +9,7 @@ export const CuratorCardAttentionBadges: React.FC<CuratorCardAttentionBadgesProp
 	if (!flags || flags.length === 0) return null;
 
 	return (
-		<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+		<div className="flex items-center gap-1.5 flex-wrap">
 			{flags.includes("stagnant_plan") && (
 				<span className="curator-kpi-badge curator-badge-amber">
 					<Clock className="w-3 h-3" /> Застрял на этапе &gt; нормы

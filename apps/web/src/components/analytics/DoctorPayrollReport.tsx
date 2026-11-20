@@ -22,6 +22,7 @@ import {
 	Printer,
 	RefreshCw,
 } from "lucide-react";
+import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import { denteClinicalReadHeaders } from "../../lib/denteRequestHeaders";
 import type { DoctorPayrollStudioModalProps } from "../payroll/DoctorPayrollStudioModal";
 import { AssistantPayrollTable } from "./AssistantPayrollTable";
@@ -163,7 +164,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 							className={`flex-1 sm:flex-initial h-8 sm:h-7 px-3 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
 								roleTab === "doctors"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
-									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+									: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 							}`}
 						>
 							Врачи ({rows.length})
@@ -175,7 +176,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 							className={`flex-1 sm:flex-initial h-8 sm:h-7 px-3 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
 								roleTab === "assistants"
 									? "bg-[var(--paper)] text-[var(--ink)] shadow-xs font-semibold"
-									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+									: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 							}`}
 						>
 							Ассистенты ({assistantRows.length})
@@ -194,8 +195,8 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 								onClick={() => handlePeriodSelect(p)}
 								className={`flex-1 sm:flex-initial h-8 sm:h-7 px-2.5 sm:px-3 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer shrink-0 text-center ${
 									activePeriod === p
-										? "bg-[var(--teal)] text-white font-semibold shadow-xs"
-										: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]"
+										? "bg-[var(--primary)] text-white font-semibold shadow-xs"
+										: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)]"
 								}`}
 							>
 								{PERIOD_LABELS[p]}
@@ -208,7 +209,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					<button
 						type="button"
 						onClick={() => fetchPayroll(activePeriod)}
-						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] transition-colors cursor-pointer"
+						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:border-[var(--primary)] transition-colors cursor-pointer"
 						title="Обновить ведомость"
 					>
 						<RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -250,51 +251,76 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 			{roleTab === "doctors" ? (
 				<div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">Оказано услуг</div>
+						<div className="text-xs text-[var(--ink-muted)] mb-1">Оказано услуг</div>
 						<div className="text-xl font-bold text-[var(--ink)]">
-							{loading ? "..." : formatRub(totals?.totalServicesRenderedRub || 0)}
+							{loading
+								? "..."
+								: formatKopecksToRub(
+										totals?.totalServicesRenderedKopecks ??
+											rublesToKopecks(totals?.totalServicesRenderedRub || 0),
+									)}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							Приёмов: {totals?.totalAppointmentsCompleted || 0}
 						</div>
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">Списано техкарт</div>
+						<div className="text-xs text-[var(--ink-muted)] mb-1">Списано техкарт</div>
 						<div className="text-xl font-bold text-[var(--ink)]">
-							{loading ? "..." : formatRub(totals?.totalMaterialsCostRub || 0)}
+							{loading
+								? "..."
+								: formatKopecksToRub(
+										totals?.totalMaterialsCostKopecks ??
+											rublesToKopecks(totals?.totalMaterialsCostRub || 0),
+									)}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							Расходные материалы
 						</div>
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">Лаборатория (ЗТЛ)</div>
+						<div className="text-xs text-[var(--ink-muted)] mb-1">Лаборатория (ЗТЛ)</div>
 						<div className="text-xl font-bold text-[var(--ink)]">
-							{loading ? "..." : formatRub(totals?.totalLabCostRub || 0)}
+							{loading
+								? "..."
+								: formatKopecksToRub(
+										totals?.totalLabCostKopecks ??
+											rublesToKopecks(totals?.totalLabCostRub || 0),
+									)}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							Ортопедические наряды
 						</div>
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">Чистая выручка (Net)</div>
+						<div className="text-xs text-[var(--ink-muted)] mb-1">Чистая выручка (Net)</div>
 						<div className="text-xl font-bold text-[var(--ink)]">
-							{loading ? "..." : formatRub(totals?.totalNetRevenueRub || 0)}
+							{loading
+								? "..."
+								: formatKopecksToRub(
+										totals?.totalNetRevenueKopecks ??
+											rublesToKopecks(totals?.totalNetRevenueRub || 0),
+									)}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							База для комиссии врача
 						</div>
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">Итого к выплате (ФОТ)</div>
-						<div className="text-xl font-bold text-[var(--teal)]">
-							{loading ? "..." : formatRub(totals?.totalPayoutRub || 0)}
+						<div className="text-xs text-[var(--ink-muted)] mb-1">Итого к выплате (ФОТ)</div>
+						<div className="text-xl font-bold text-[var(--primary)]">
+							{loading
+								? "..."
+								: formatKopecksToRub(
+										totals?.totalPayoutKopecks ??
+											rublesToKopecks(totals?.totalPayoutRub || 0),
+									)}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							Начислено врачам
 						</div>
 					</div>
@@ -302,57 +328,57 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 			) : (
 				<div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">Смен ассистентов</div>
+						<div className="text-xs text-[var(--ink-muted)] mb-1">Смен ассистентов</div>
 						<div className="text-xl font-bold text-[var(--ink)]">
 							{loading ? "..." : totalAssistantShifts}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							Отработано часов: {totalAssistantHours} ч
 						</div>
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">Приёмов с врачами</div>
+						<div className="text-xs text-[var(--ink-muted)] mb-1">Приёмов с врачами</div>
 						<div className="text-xl font-bold text-[var(--ink)]">
 							{loading
 								? "..."
 								: assistantRows.reduce((acc, r) => acc + r.appointmentsAssisted, 0)}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							Ассистирование у кресла
 						</div>
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">Снимки и хирургия</div>
+						<div className="text-xs text-[var(--ink-muted)] mb-1">Снимки и хирургия</div>
 						<div className="text-xl font-bold text-[var(--ink)]">
 							{loading ? "..." : `${totalAssistantRadiographs} / ${totalAssistantSurgeries}`}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							RVG снимки / Операции
 						</div>
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">НДФЛ 13%</div>
-						<div className="text-xl font-bold text-[var(--muted)]">
+						<div className="text-xs text-[var(--ink-muted)] mb-1">НДФЛ 13%</div>
+						<div className="text-xl font-bold text-[var(--ink-muted)]">
 							{loading
 								? "..."
 								: formatRub(
 										assistantRows.reduce((acc, r) => acc + r.ndflTaxRub, 0),
 									)}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							Удержание налога
 						</div>
 					</div>
 
 					<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-						<div className="text-xs text-[var(--muted)] mb-1">К выплате на руки</div>
-						<div className="text-xl font-bold text-[var(--teal)]">
+						<div className="text-xs text-[var(--ink-muted)] mb-1">К выплате на руки</div>
+						<div className="text-xl font-bold text-[var(--primary)]">
 							{loading ? "..." : formatRub(totalAssistantPayout)}
 						</div>
-						<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						<div className="text-[11px] text-[var(--ink-muted)] mt-0.5">
 							Чистая зарплата ассистентов
 						</div>
 					</div>
