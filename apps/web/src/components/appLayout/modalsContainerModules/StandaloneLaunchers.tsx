@@ -75,7 +75,11 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("children") ||
 			window.location.search.includes("children") ||
 			window.location.hash.includes("hardware") ||
-			window.location.search.includes("hardware"));
+			window.location.search.includes("hardware") ||
+			window.location.hash.includes("reminders") ||
+			window.location.search.includes("reminders") ||
+			window.location.hash.includes("waitlist") ||
+			window.location.search.includes("waitlist"));
 
 	if (!isStandOrDemo && !isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;

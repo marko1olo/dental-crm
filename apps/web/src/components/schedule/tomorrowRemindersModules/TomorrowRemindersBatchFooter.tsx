@@ -34,11 +34,11 @@ export function TomorrowRemindersBatchFooter({
 				)}
 			</div>
 
-			<div className="flex items-center gap-3 w-full sm:w-auto">
+			<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-sm font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-all cursor-pointer w-full sm:w-auto"
+					className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-sm font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-all cursor-pointer w-full sm:w-auto whitespace-nowrap inline-flex items-center justify-center"
 				>
 					Закрыть
 				</button>
@@ -46,13 +46,13 @@ export function TomorrowRemindersBatchFooter({
 					type="button"
 					onClick={(summary.dispatchableCount ?? 0) === 0 ? () => {} : onBatchDispatch}
 					aria-busy={isDispatching}
-					className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,#0d9488)] text-white text-sm font-bold shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 w-full sm:w-auto"
+					className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,#0d9488)] text-white text-sm font-bold shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer inline-flex items-center justify-center gap-2 w-full sm:w-auto whitespace-nowrap"
 				>
-					<Zap className="w-4 h-4" />
-					<span>
+					<Zap className="w-4 h-4 shrink-0" />
+					<span className="whitespace-nowrap">
 						{isDispatching
 							? `Отправка (${dispatchProgress?.current || 0}/${dispatchProgress?.total || 0})...`
-							: `Разослать все (Каскад)${(summary.dispatchableCount ?? 0) > 0 ? ` (${summary.dispatchableCount})` : ""}`}
+							: `Отправить напоминания${(summary.dispatchableCount ?? 0) > 0 ? ` (${summary.dispatchableCount})` : ""}`}
 					</span>
 				</button>
 			</div>

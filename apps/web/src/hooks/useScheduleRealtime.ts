@@ -2,12 +2,14 @@ import { useEffect, useRef } from "react";
 import { useWebsocket } from "./useWebsocket";
 import { playIntercomChime } from "../lib/intercomSound";
 import { showToast } from "../components/GlobalToast";
+import type { TargetSlotInfo } from "../components/schedule/waitlist/waitlistTypes";
 
 /**
  * Подписка расписания на живые обновления.
  * DentalPRO expo26 Realtime Schedule Bar:
  * - APPOINTMENT_CREATED, APPOINTMENT_UPDATED
  * - INTERCOM_PING (пациент в холле, вызов у кресла)
+ * - HOT_SLOT_FREED (освобождение окна при отмене с подбором листа ожидания)
  */
 const SCHEDULE_EVENTS = new Set([
 	"APPOINTMENT_CREATED",
@@ -15,7 +17,25 @@ const SCHEDULE_EVENTS = new Set([
 	"INTERCOM_PING",
 	"WAITLIST_UPDATED",
 	"WAITLIST_DELETED",
+	"HOT_SLOT_FREED",
 ]);
+
+interface IntercomPingPayload {
+	readonly preset?: { readonly key?: string | undefined } | undefined;
+	readonly ping?: { readonly content?: string | undefined } | undefined;
+}
+
+interface HotSlotFreedPayload {
+	readonly cancelledAppointmentId?: string | undefined;
+	readonly id?: string | undefined;
+	readonly slotStartsAt?: string | undefined;
+	readonly slotEndsAt?: string | undefined;
+	readonly durationMinutes?: number | undefined;
+	readonly doctorId?: string | null | undefined;
+	readonly doctorName?: string | null | undefined;
+	readonly chairId?: string | null | undefined;
+	readonly chairName?: string | null | undefined;
+}
 
 /** Схлопывание пачки событий в одно обновление. */
 const REFRESH_DEBOUNCE_MS = 600;
@@ -48,10 +68,38 @@ export function useScheduleRealtime(
 
 		// DentalPRO expo26 Realtime LAN-интерком: при сигнале о прибытии пациента
 		if (lastMessage.type === "INTERCOM_PING") {
-			const payload = lastMessage.payload as any;
+			const payload = lastMessage.payload as IntercomPingPayload | undefined;
 			if (payload?.preset?.key === "patient_arrived") {
 				playIntercomChime("urgent");
 				showToast(payload?.ping?.content || "Пациент прибыл в холл клиники", "warning");
+			}
+		}
+
+		// Реактивный подбор из листа ожидания при отмене записи (Мандат 8d/8zq)
+		if (lastMessage.type === "HOT_SLOT_FREED") {
+			const payload = lastMessage.payload as HotSlotFreedPayload | undefined;
+			playIntercomChime("urgent");
+			showToast("Освободился слот для записи! Открыт подбор из листа ожидания", "info");
+
+			if (typeof window !== "undefined") {
+				const slotInfo: TargetSlotInfo = {
+					appointmentId: payload?.cancelledAppointmentId || payload?.id || "freed-slot",
+					startsAt: payload?.slotStartsAt || new Date().toISOString(),
+					endsAt:
+						payload?.slotEndsAt ||
+						new Date(Date.now() + (payload?.durationMinutes || 60) * 60000).toISOString(),
+					doctorUserId: payload?.doctorId ?? null,
+					doctorName: payload?.doctorName ?? null,
+					chairId: payload?.chairId ?? null,
+					chairName: payload?.chairName ?? null,
+					freedBecause: `Освободился слот (${payload?.durationMinutes || 60} мин)`,
+				};
+				window.dispatchEvent(
+					new CustomEvent("dente:open-waitlist-for-slot", { detail: slotInfo })
+				);
+				window.dispatchEvent(
+					new CustomEvent("dente-open-waitlist-for-slot", { detail: slotInfo })
+				);
 			}
 		}
 

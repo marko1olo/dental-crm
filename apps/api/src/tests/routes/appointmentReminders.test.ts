@@ -15,11 +15,13 @@ import {
 	users,
 } from "../../db/schema.js";
 import { registerCommunicationOutboxRoutes } from "../../routes/communicationsOutbox.js";
+import { authTokenSecret } from "../../security/authSecret.js";
 import {
 	addressableName,
 	scheduleAppointmentReminders,
 	shortDoctorName,
 } from "../../services/communications/appointmentReminders.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import { withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 
@@ -39,7 +41,29 @@ const CLINIC_ID = "dce70000-0000-4000-8000-000000000102";
 const PATIENT_ID = "dce70000-0000-4000-8000-000000000103";
 const DOCTOR_ID = "dce70000-0000-4000-8000-000000000104";
 const APPOINTMENT_ID = "dce70000-0000-4000-8000-000000000105";
-const ORG_HEADERS = { "x-organization-id": ORG_ID };
+const ADMIN_ID = "dce70000-0000-4000-8000-000000000106";
+
+function buildOrgHeaders(): Record<string, string> {
+	const secret = authTokenSecret();
+	const clinicToken = signToken({ organizationId: ORG_ID }, secret);
+	const staffToken = signToken(
+		{
+			organizationId: ORG_ID,
+			userId: ADMIN_ID,
+			role: "administrator",
+			fullName: "Петрова Анна Сергеевна",
+		},
+		secret,
+	);
+	return {
+		"x-organization-id": ORG_ID,
+		"x-dente-clinic-token": clinicToken,
+		"x-dente-staff-token": staffToken,
+		authorization: `Bearer ${staffToken}`,
+	};
+}
+
+let ORG_HEADERS: Record<string, string> = { "x-organization-id": ORG_ID };
 
 function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
@@ -105,6 +129,8 @@ describe("автоматические напоминания о приёме", 
 		process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 		process.env.NODE_ENV = "development";
 
+		ORG_HEADERS = buildOrgHeaders();
+
 		app = createTenantTestApp();
 		await registerCommunicationOutboxRoutes(app);
 
@@ -128,12 +154,20 @@ describe("автоматические напоминания о приёме", 
 					phone: "+7 495 000-00-00",
 					timezone: "Europe/Moscow",
 				});
-				await db.insert(users).values({
-					id: DOCTOR_ID,
-					organizationId: ORG_ID,
-					fullName: "Иванов Иван Иванович",
-					role: "doctor",
-				});
+				await db.insert(users).values([
+					{
+						id: DOCTOR_ID,
+						organizationId: ORG_ID,
+						fullName: "Иванов Иван Иванович",
+						role: "doctor",
+					},
+					{
+						id: ADMIN_ID,
+						organizationId: ORG_ID,
+						fullName: "Петрова Анна Сергеевна",
+						role: "administrator",
+					},
+				]);
 				await db.insert(patients).values({
 					id: PATIENT_ID,
 					organizationId: ORG_ID,

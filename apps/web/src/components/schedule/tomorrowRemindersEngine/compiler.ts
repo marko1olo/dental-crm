@@ -77,6 +77,8 @@ export function compileTomorrowReminders(
 	return {
 		targetDateIso: dateIso,
 		targetDateFormatted,
+		targetDateLabel: targetDateFormatted,
+		dispatchableCount: validPhoneCount,
 		totalAppointmentsCount: reminders.length,
 		validPhoneCount,
 		missingPhoneCount,

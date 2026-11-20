@@ -177,7 +177,7 @@ describe("Red Team: Admin Shift Flow & Batch Reminders Autonomy Suite", () => {
 			// Check modal presence
 			assert.ok(html.includes("data-testid=\"tomorrow-reminders-modal\""), "Renders modal testid");
 			assert.ok(html.includes("Напоминания на завтра"), "Renders title");
-			assert.ok(html.includes("Разослать все (Каскад)"), "Renders cascade dispatch button");
+			assert.ok(html.includes("Отправить напоминания"), "Renders cascade dispatch button");
 			assert.ok(html.includes("Копировать все"), "Renders copy all button");
 
 			// Check Mandate 8e: ZERO disabled buttons

@@ -26,7 +26,7 @@ export function WaitlistSlotBanner({ targetSlot, matchedCount }: WaitlistSlotBan
 						Освободившееся окно для записи
 					</span>
 					<span className="text-xs font-medium text-[var(--text,#0f172a)] block leading-snug break-words">
-						{new Date(targetSlot.startsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+						{new Date(targetSlot.startsAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
 						{targetSlot.doctorName ? ` • ${targetSlot.doctorName}` : ""}
 						{targetSlot.chairName ? ` • ${targetSlot.chairName}` : ""}
 					</span>

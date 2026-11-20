@@ -29,7 +29,7 @@ import {
 	patients,
 } from "../../db/schema.js";
 import { parseTimeToMinutes } from "@dental/shared";
-import { utcToLocalWallTime } from "../../routes/publicBooking.js";
+import { utcToLocalWallTime } from "../../routes/publicBooking/index.js";
 
 /** Насколько кандидат подходит под окно и почему. */
 export type WaitlistMatch = {

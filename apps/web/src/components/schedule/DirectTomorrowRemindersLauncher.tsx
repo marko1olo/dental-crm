@@ -47,12 +47,18 @@ export const DirectTomorrowRemindersLauncher: React.FC = () => {
 	if (!isOpen) return null;
 
 	const dashboard = getCachedClinicDashboard() || createOfflineFallbackDashboard({ scale: "solo", hasDemoData: true });
+	const targetDateIso = (() => {
+		if (typeof window === "undefined") return undefined;
+		const s = new URLSearchParams(window.location.search);
+		return s.get("targetDateIso") || s.get("date") || undefined;
+	})();
 
 	return (
 		<div className="fixed inset-0 z-[99999] w-full h-screen min-h-screen p-2 sm:p-4 bg-[var(--paper)] text-[var(--ink)] box-border flex items-center justify-center overflow-hidden">
 			<TomorrowRemindersModal
 				dashboard={dashboard}
 				isOpen={true}
+				targetDateIso={targetDateIso}
 				onClose={() => {
 					setIsOpen(false);
 					if (typeof window !== "undefined") {

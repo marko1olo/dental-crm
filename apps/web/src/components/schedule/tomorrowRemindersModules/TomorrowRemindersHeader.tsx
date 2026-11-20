@@ -22,7 +22,10 @@ export function TomorrowRemindersHeader({
 				<div>
 					<div className="flex items-center gap-2">
 						<h2 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] leading-tight">
-							Напоминания на завтра ({summary.targetDateLabel})
+							Напоминания на завтра
+							{summary.targetDateLabel || summary.targetDateFormatted
+								? ` (${summary.targetDateLabel || summary.targetDateFormatted})`
+								: ""}
 						</h2>
 						<span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
 							{summary.totalAppointmentsCount} записей

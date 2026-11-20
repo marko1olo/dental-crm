@@ -30,8 +30,13 @@ import { DirectPricelistLauncher } from "../../../catalog/DirectPricelistLaunche
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
+import { DirectDoctorWalletLauncher } from "./administrative/DoctorWalletLaunchers";
 import { DirectWaitlistMatchesLauncher } from "../../../schedule/DirectWaitlistMatchesLauncher";
+import { DirectTomorrowRemindersLauncher } from "../../../schedule/DirectTomorrowRemindersLauncher";
 import { HardwareSettingsTab } from "../../../settings/HardwareSettingsTab";
+import { SettingsAccessTab } from "../../../settings/SettingsAccessTab";
+import { SettingsStaffTab } from "../../../settings/SettingsStaffTab";
+import { type StaffProfileExtended, staffProfileExtendedSchema } from "@dental/shared";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
 
@@ -106,28 +111,17 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			exactHashes: ["#wallet", "#doctor-wallet", "#doctor-payout-wallet"],
 			hashPrefixes: ["#wallet?", "#doctor-wallet?", "#doctor-payout-wallet?"],
 		},
-		render: () => {
-			const StandaloneDoctorWallet = React.lazy(() =>
-				import("./administrative/DoctorWalletLaunchers").then((m) => ({
-					default: () => m.renderDoctorWalletLaunchers() || <></>,
-				})),
-			);
-			return (
-				<React.Suspense fallback={<div className="p-4 text-center">Загрузка кошелька врача...</div>}>
-					<StandaloneDoctorWallet />
-				</React.Suspense>
-			);
-		},
+		render: () => <DirectDoctorWalletLauncher />,
 	},
 	// 0. Студия кассовой смены и Z-отчёт (SSOT)
 	{
 		id: "shift-studio",
 		title: "Студия кассовой смены и Z-отчёт",
 		criteria: {
-			tokens: ["shift", "cash-shift", "z-report", "shift-closing", "shift-studio", "shift_studio"],
-			searchIncludes: ["shift=1", "z_report=1", "shift_closing=1", "standalone=shift", "shift_studio=1"],
-			exactHashes: ["#shift", "#cash-shift", "#z-report", "#shift-closing", "#shift-studio", "#shift_studio"],
-			hashPrefixes: ["#shift?", "#cash-shift?", "#z-report?", "#shift-closing?", "#shift-studio?"],
+			tokens: ["shift", "cash-shift", "z-report", "shift-closing", "shift-studio", "shift_studio", "shift-journal", "shift_journal"],
+			searchIncludes: ["shift=1", "z_report=1", "shift_closing=1", "standalone=shift", "shift_studio=1", "shift_journal=1"],
+			exactHashes: ["#shift", "#cash-shift", "#z-report", "#shift-closing", "#shift-studio", "#shift_studio", "#shift-journal", "#shift_journal"],
+			hashPrefixes: ["#shift?", "#cash-shift?", "#z-report?", "#shift-closing?", "#shift-studio?", "#shift-journal?"],
 		},
 		render: () => <DirectShiftLauncher />,
 	},
@@ -427,6 +421,18 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		},
 		render: () => <DirectWaitlistMatchesLauncher />,
 	},
+	// 21b. Напоминания о завтрашних приёмах (SSOT)
+	{
+		id: "tomorrow-reminders",
+		title: "Напоминания о завтрашних приёмах",
+		criteria: {
+			tokens: ["tomorrow-reminders", "tomorrow_reminders", "reminders", "appointment-reminders"],
+			searchIncludes: ["reminders=1", "tomorrow-reminders=1", "tomorrow_reminders=1"],
+			exactHashes: ["#tomorrow-reminders", "#tomorrow_reminders", "#reminders", "#appointment-reminders"],
+			hashPrefixes: ["#tomorrow-reminders?", "#tomorrow_reminders?", "#reminders?", "#appointment-reminders?"],
+		},
+		render: () => <DirectTomorrowRemindersLauncher />,
+	},
 	// 22. Студия оборудования и аппаратных шлюзов клиники
 	{
 		id: "hardware-studio",
@@ -443,6 +449,68 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			</div>
 		),
 	},
+	// 23. Студия прав доступа и ролевой матрицы персонала (RBAC)
+	{
+		id: "settings-access-studio",
+		title: "Права доступа и ролевая матрица персонала (RBAC)",
+		criteria: {
+			tokens: ["access", "settings-access", "rbac", "role-matrix"],
+			searchIncludes: ["access=1", "standalone=access", "rbac=1"],
+			exactHashes: ["#access", "#settings/access", "#access-studio", "#rbac"],
+			hashPrefixes: ["#access?", "#settings/access?", "#rbac?"],
+		},
+		render: () => (
+			<div className="min-h-screen w-full bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6" data-testid="settings-access-standalone-view">
+				<SettingsAccessTab />
+			</div>
+		),
+	},
+	// 24. Студия управления сотрудниками клиники (Staff Management)
+	{
+		id: "settings-staff-studio",
+		title: "Управление сотрудниками клиники (Staff Management)",
+		criteria: {
+			tokens: ["staff", "settings-staff", "staff-management"],
+			searchIncludes: ["staff=1", "standalone=staff", "staff-management=1"],
+			exactHashes: ["#staff", "#settings/staff", "#staff-studio"],
+			hashPrefixes: ["#staff?", "#settings/staff?"],
+		},
+		render: () => (
+			<div className="min-h-screen w-full bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6" data-testid="settings-staff-standalone-view">
+				<SettingsStaffTab props={{ dashboard: { clinicSettings: { staff: DEMO_STAFF_MEMBERS, name: "Клиника ДЕНТЕ" } } }} />
+			</div>
+		),
+	},
+];
+
+const DEMO_STAFF_MEMBERS: StaffProfileExtended[] = [
+	staffProfileExtendedSchema.parse({
+		id: "11111111-1111-4111-8111-111111111111",
+		organizationId: "00000000-0000-4000-8000-000000000001",
+		fullName: "Д-р Захаров Андрей Васильевич",
+		role: "owner",
+		phone: "+7 (999) 111-22-33",
+		specialties: ["surgeon", "general"],
+		active: true,
+	}),
+	staffProfileExtendedSchema.parse({
+		id: "22222222-2222-4222-8222-222222222222",
+		organizationId: "00000000-0000-4000-8000-000000000001",
+		fullName: "Д-р Смирнова Елена Павловна",
+		role: "curator",
+		phone: "+7 (999) 222-33-44",
+		specialties: ["therapist", "general"],
+		active: true,
+	}),
+	staffProfileExtendedSchema.parse({
+		id: "33333333-3333-4333-8333-333333333333",
+		organizationId: "00000000-0000-4000-8000-000000000001",
+		fullName: "Кузнецова Анна Сергеевна",
+		role: "administrator",
+		phone: "+7 (999) 333-44-55",
+		specialties: ["universal"],
+		active: true,
+	}),
 ];
 
 export function renderAdministrativeLaunchers(

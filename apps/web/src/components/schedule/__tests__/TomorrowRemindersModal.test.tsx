@@ -78,7 +78,7 @@ describe("TomorrowRemindersModal Component Suite", () => {
 		assert.ok(html.includes("+7 (916) 123-45-67"), "Renders patient phone");
 		assert.ok(html.includes("Иванов Иван Иванович"), "Renders doctor name");
 		assert.ok(html.includes("Копировать все"), "Renders copy all button");
-		assert.ok(html.includes("Разослать все (Каскад)"), "Renders cascade dispatch button");
+		assert.ok(html.includes("Отправить напоминания"), "Renders cascade dispatch button");
 		assert.ok(html.includes("WhatsApp"), "Renders WhatsApp channel");
 		assert.ok(html.includes("SMS"), "Renders SMS channel");
 	});
