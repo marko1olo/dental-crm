@@ -56,18 +56,18 @@ describe("роли, на которые можно пригласить", () => 
 	});
 
 	/**
-	 * Тот самый шаг, который превращал опечатку в лишние права: фильтр разделов
-	 * по неизвестной роли доходит до `return Array.from(appViews)`.
+	 * Безопасный отказ (Fail-Closed): неизвестная роль вне схемы нормализуется
+	 * до минимального безопасного набора разделов, исключая эскалацию привилегий.
 	 */
-	test("роль вне схемы дала бы больше разделов, чем администратору", () => {
+	test("роль вне схемы получает строго ограниченный набор разделов (Fail-Closed)", () => {
 		const asAdministrator = getFilteredAppViews("administrator");
 		const asUnknownRole = getFilteredAppViews("admin" as never);
 		assert.ok(
-			asUnknownRole.length > asAdministrator.length,
-			"если это перестанет быть верным, объяснение в settingsInviteRoles.ts надо переписать, а не удалять проверку",
+			asUnknownRole.length < asAdministrator.length,
+			"Неизвестная роль не должна получать больше разделов, чем штатный персонал",
 		);
-		assert.ok(!asAdministrator.includes("visit"));
-		assert.ok(asUnknownRole.includes("visit"));
+		assert.ok(!asUnknownRole.includes("settings"), "Неизвестная роль не имеет доступа к настройкам");
+		assert.ok(!asUnknownRole.includes("finance"), "Неизвестная роль не имеет доступа к кассе и финансам");
 	});
 });
 

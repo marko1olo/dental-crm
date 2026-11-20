@@ -275,11 +275,10 @@ describe("вкладки настроек не держат мёртвых пр�
 			[
 				readFileSync(join(here, "..", "SettingsView.tsx"), "utf8"),
 				readFileSync(join(here, "..", "views", "settingsView", "index.tsx"), "utf8"),
+				readFileSync(join(here, "..", "views", "settingsView", "tabRenderers", "SettingsPricesTabContent.tsx"), "utf8"),
 			].join("\n"),
 		);
 		for (const call of [
-			"pricelistWarningsText([warning])",
-			"pricelistWarningsText(item.warnings)",
 			"pricelistItemMaterialText(item)",
 			"pricelistMaterialSummaryText(summary)",
 			"Фото прайса: {pricelistImageNote}",

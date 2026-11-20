@@ -6,8 +6,9 @@
 import type React from "react";
 import type { DentalPricelistAnalysisResponse } from "@dental/shared";
 import type { SettingsTabGroup, SettingsTab as SettingsTabId } from "../../AppConstants";
-
+import type { WorkspaceFeatureFlags } from "../../hooks/useWorkspaceProfile";
 import type { SettingsRoleMode } from "./settingsRoleTabs.js";
+
 export type { SettingsRoleMode };
 export {
 	DOCTOR_TABS,
@@ -53,8 +54,6 @@ export interface SettingsStaffUser {
 	specialties?: string[] | undefined;
 	active?: boolean | undefined;
 }
-
-import type { WorkspaceFeatureFlags } from "../../hooks/useWorkspaceProfile";
 
 export type SettingsViewFeatureFlags = Partial<WorkspaceFeatureFlags>;
 

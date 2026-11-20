@@ -92,6 +92,7 @@ export const ClinicChairsAndCabinetsSection: React.FC<ClinicChairsAndCabinetsSec
 						type="button"
 						className="secondary-button compact-button inline-flex items-center gap-1.5 px-3.5 h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] cursor-pointer whitespace-nowrap"
 						onClick={onNavigateToStaffTab}
+						aria-label="Добавить сотрудника"
 					>
 						<span>Вкладка «Сотрудники»</span>
 						<ChevronRight size={14} aria-hidden="true" />

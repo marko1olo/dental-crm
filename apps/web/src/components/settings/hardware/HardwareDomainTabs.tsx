@@ -10,7 +10,7 @@ interface Props {
 
 export const HardwareDomainTabs: React.FC<Props> = ({ activeDomain, onSelectDomain }) => {
 	const tabs: Array<{ id: HardwareDomainTab; label: string; icon: React.ReactNode; testId: string }> = [
-		{ id: "imaging", label: "Рентген и Визиографы", icon: <Scan size={14} />, testId: "domain-tab-imaging" },
+		{ id: "imaging", label: "Рентген и визиографы", icon: <Scan size={14} />, testId: "domain-tab-imaging" },
 		{ id: "kkt", label: "Касса и чеки", icon: <Printer size={14} />, testId: "domain-tab-kkt" },
 		{ id: "scanners", label: "Сканеры маркировки", icon: <Barcode size={14} />, testId: "domain-tab-scanners" },
 		{ id: "labels", label: "Принтеры этикеток", icon: <Tag size={14} />, testId: "domain-tab-labels" },

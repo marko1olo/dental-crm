@@ -60,6 +60,15 @@ export function findElement(tree: any, predicate: (node: any) => boolean): any {
 			if (found) return found;
 		}
 	}
+	if (typeof tree.type === "function") {
+		try {
+			const rendered = tree.type(tree.props);
+			const found = findElement(rendered, predicate);
+			if (found) return found;
+		} catch {
+			// ignore non-fiber render errors
+		}
+	}
 	if (tree.props && tree.props.children) {
 		return findElement(tree.props.children, predicate);
 	}

@@ -14,7 +14,7 @@ export function HardwareKktSection() {
 	const [host, setHost] = useState(currentCfg.host);
 	const [port, setPort] = useState(currentCfg.port);
 	const [cashier, setCashier] = useState(currentCfg.cashierFullName);
-	const [isEmulatorMode, setIsEmulatorMode] = useState(true);
+	const [isEmulatorMode, setIsEmulatorMode] = useState(false);
 	const [connectionType, setConnectionType] = useState<"lan" | "com">("lan");
 	const [comPortName, setComPortName] = useState("COM3");
 	const [baudRate, setBaudRate] = useState("115200");

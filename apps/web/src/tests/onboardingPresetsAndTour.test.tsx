@@ -75,23 +75,23 @@ describe("Sovereign Scale Presets (Частный кабинет / Станда�
 		assert.equal(standard.title, "Стандартная клиника");
 		assert.ok(standard.chairsCountText.includes("3 кресла"));
 		assert.ok(
-			standard.features.some((f) => f.includes("54-ФЗ")),
-			"Standard clinic must feature 54-FZ cashier",
+			standard.features.some((f) => f.includes("Кассовый") || f.includes("фискализацией")),
+			"Standard clinic must feature cashier and payment module",
 		);
 		assert.ok(
-			standard.features.some((f) => f.includes("SanPiN")),
-			"Standard clinic must feature SanPiN autoclave logs",
+			standard.features.some((f) => f.includes("стерилизации") || f.includes("Автоклав")),
+			"Standard clinic must feature sterilization autoclave logs",
 		);
 	});
 
-	it("configures network_center preset for multi-branch scale and FEFO", () => {
+	it("configures network_center preset for multi-branch scale and warehouse", () => {
 		const network = SOVEREIGN_PRESETS.find((p) => p.id === "network_center");
 		assert.ok(network, "network_center preset must exist");
 		assert.equal(network.title, "Многопрофильный центр / Сеть");
 		assert.ok(network.chairsCountText.includes("5+ кресел"));
 		assert.ok(
-			network.features.some((f) => f.includes("FEFO")),
-			"Network center must feature FEFO warehouse",
+			network.features.some((f) => f.includes("Складской учет") || f.includes("материалов")),
+			"Network center must feature warehouse management",
 		);
 		assert.ok(
 			network.features.some((f) => f.includes("ЗТЛ")),

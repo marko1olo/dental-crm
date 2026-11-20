@@ -28,7 +28,7 @@ export function useCockpitActions({ onTestHotFolder, hotFolderStatus }: Options)
 			setKktStatus(info);
 			showToast(info, res.online ? "success" : "error");
 		} catch (err) {
-			setTelephonyStatus(`Ошибка ККТ: ${err instanceof Error ? err.message : String(err)}`);
+			setKktStatus(`Ошибка ККТ: ${err instanceof Error ? err.message : String(err)}`);
 			showToast("Ошибка связи с ККТ", "error");
 		} finally {
 			setKktLoading(false);
@@ -65,7 +65,8 @@ export function useCockpitActions({ onTestHotFolder, hotFolderStatus }: Options)
 		try {
 			const controller = new AbortController();
 			const timer = setTimeout(() => controller.abort(), 2000);
-			let info = "АТС шлюз: подключен (SIP WebRTC готов к звонкам)";
+			let isOnline = false;
+			let info = "";
 			try {
 				const res = await fetch("/api/telephony/sip/status", {
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
@@ -73,18 +74,24 @@ export function useCockpitActions({ onTestHotFolder, hotFolderStatus }: Options)
 				});
 				clearTimeout(timer);
 				if (res.ok) {
-					const data = (await res.json()) as { mode?: string };
+					const data = (await res.json()) as { mode?: string; registered?: boolean };
 					const modeText = data.mode === "cloud_fallback" ? "резервный облачный режим" : "локальный Asterisk/SIP";
 					info = `АТС шлюз: в сети (${modeText}, SIP транк зарегистрирован)`;
+					isOnline = true;
+				} else {
+					info = `АТС шлюз недоступен (код ${res.status})`;
 				}
-			} catch {
+			} catch (fetchErr) {
 				clearTimeout(timer);
+				const isAbort = fetchErr instanceof Error && fetchErr.name === "AbortError";
+				info = isAbort ? "Таймаут подключения к АТС шлюзу" : "АТС шлюз недоступен по сети";
 			}
 			setTelephonyStatus(info);
-			showToast(info, "success");
+			showToast(info, isOnline ? "success" : "warning");
 		} catch (err) {
-			setTelephonyStatus(`Ошибка АТС: ${err instanceof Error ? err.message : String(err)}`);
-			showToast("Ошибка проверки АТС", "error");
+			const msg = `Ошибка АТС: ${err instanceof Error ? err.message : String(err)}`;
+			setTelephonyStatus(msg);
+			showToast(msg, "error");
 		} finally {
 			setTelephonyLoading(false);
 		}

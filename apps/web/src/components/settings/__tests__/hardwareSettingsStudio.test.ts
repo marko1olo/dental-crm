@@ -229,11 +229,11 @@ describe("Hardware Studio — Экспресс-диагностика Cockpit (�
 		assert.ok(html.includes('data-testid="cockpit-btn-hotfolder"'));
 		assert.ok(html.includes('data-testid="cockpit-btn-telephony"'));
 		assert.ok(html.includes('data-testid="cockpit-badge-vram-shield"'));
-		assert.ok(html.includes('data-testid="cockpit-btn-purge-vram"'));
+		assert.ok(html.includes('data-testid="cockpit-btn-lan-qr"'));
 		assert.ok(html.includes("Тест связи с ККТ"));
 		assert.ok(html.includes("Тестовый опрос папки снимков"));
 		assert.ok(html.includes("Проверка пинга АТС"));
-		assert.ok(html.includes("Освободить память"));
+		assert.ok(html.includes("LAN планшет"));
 	});
 
 

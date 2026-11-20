@@ -233,7 +233,9 @@ export interface OnboardingWizardModalProps {
 	clinicProfileSaveState: string;
 	previousOnboardingStep: OnboardingStepItem | null;
 	nextOnboardingStep: OnboardingStepItem | null;
-	initialShowRapidWizard?: boolean;
+	initialShowRapidWizard?: boolean | undefined;
+	showRapidWizard?: boolean | undefined;
+	onToggleRapidWizard?: ((val?: boolean) => void) | undefined;
 }
 
 export type WizardIntroStepProps = Record<string, never>;

@@ -6,6 +6,8 @@
 	flex-direction: column;
 	gap: 16px;
 	width: 100%;
+	max-width: 100vw;
+	overflow-x: clip;
 	color: var(--ink);
 }
 
@@ -16,6 +18,7 @@
 	border-bottom: 1px solid var(--line);
 	padding-bottom: 8px;
 	overflow-x: auto;
+	scroll-snap-type: x mandatory;
 	scrollbar-width: none;
 	-webkit-overflow-scrolling: touch;
 }
@@ -30,6 +33,7 @@
 	font-size: 12px;
 	font-weight: 600;
 	flex-shrink: 0;
+	scroll-snap-align: start;
 }
 
 /* 1-Row Dense Clinical Toolbar (32-36px) per Mandates 8d & 8p */

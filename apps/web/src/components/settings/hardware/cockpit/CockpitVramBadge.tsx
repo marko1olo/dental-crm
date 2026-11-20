@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Zap } from "lucide-react";
+import { ShieldCheck, Cpu } from "lucide-react";
 import type { MemoryShieldMetrics } from "../../../../services/storage/chairsideMemoryShield.js";
 
 interface Props {
@@ -19,23 +19,23 @@ export const CockpitVramBadge: React.FC<Props> = ({ metrics }) => {
 				style={{
 					display: "inline-flex",
 					alignItems: "center",
-					gap: "4px",
-					padding: "2px 8px",
+					gap: "6px",
+					padding: "3px 10px",
 					borderRadius: "12px",
-					background: metrics.isLowSpec ? "rgba(16, 185, 129, 0.12)" : "var(--paper)",
+					background: metrics.isLowSpec ? "var(--paper-soft)" : "var(--paper)",
 					border: "1px solid var(--line)",
 					color: "var(--ink)",
-					fontSize: "11px",
+					fontSize: "12px",
 					fontWeight: 500,
 				}}
-				title="Защита от переполнения видеопамяти на длительной смене (4GB RAM)"
+				title="Автоматическая оптимизация памяти рабочих мест клиники"
 				data-testid="cockpit-badge-vram-shield"
 			>
-				<Zap size={12} className="text-amber-500 shrink-0" />
-				<span>{metrics.isLowSpec ? "Low-Spec VRAM Shield: 60 FPS" : "VRAM Shield: 60 FPS"}</span>
+				<Cpu size={13} className="text-[var(--primary)] shrink-0" />
+				<span>{metrics.isLowSpec ? "Аппаратный шлюз: энергосберегающий режим" : "Аппаратный шлюз DENTE: активен"}</span>
 				{metrics.rvgCacheItemCount > 0 && (
-					<span style={{ color: "var(--muted)", marginLeft: "4px" }}>
-						(RVG: {rvgMb} МБ)
+					<span style={{ color: "var(--ink-muted)", marginLeft: "4px" }}>
+						(Кэш RVG: {rvgMb} МБ)
 					</span>
 				)}
 			</div>

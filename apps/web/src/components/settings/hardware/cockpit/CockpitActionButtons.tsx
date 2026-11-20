@@ -1,5 +1,5 @@
 import React from "react";
-import { HardDrive, PhoneCall, Printer, QrCode, RefreshCw, Zap } from "lucide-react";
+import { HardDrive, PhoneCall, Printer, QrCode, RefreshCw } from "lucide-react";
 
 interface Props {
 	kktLoading: boolean;
@@ -11,7 +11,7 @@ interface Props {
 	onTestTelephony: () => void;
 	onTestPrint: () => void;
 	onOpenLanQr: () => void;
-	onPurgeMemory: () => void;
+	onPurgeMemory?: (() => void) | undefined;
 }
 
 export const CockpitActionButtons: React.FC<Props> = ({
@@ -24,7 +24,6 @@ export const CockpitActionButtons: React.FC<Props> = ({
 	onTestTelephony,
 	onTestPrint,
 	onOpenLanQr,
-	onPurgeMemory,
 }) => {
 	return (
 		<div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
@@ -82,21 +81,9 @@ export const CockpitActionButtons: React.FC<Props> = ({
 				onClick={onOpenLanQr}
 				title="Подключить планшет врача или медсестры по локальной сети через PIN-код или QR"
 				data-testid="cockpit-btn-lan-qr"
-				style={{ background: "var(--teal)", color: "#fff", border: "1px solid var(--teal)" }}
 			>
 				<QrCode size={13} />
 				<span>LAN планшет (PIN/QR)</span>
-			</button>
-
-			<button
-				type="button"
-				className="hw-btn-compact"
-				onClick={onPurgeMemory}
-				title="Мгновенно освободить видеопамять холстов и кэш снимков RVG для моноблока"
-				data-testid="cockpit-btn-purge-vram"
-			>
-				<Zap size={13} className="text-amber-500" />
-				<span>Освободить память</span>
 			</button>
 		</div>
 	);

@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
 	seedBaseline804nServicesInDb,
 } from "../../db/pricelistQuery.js";
@@ -9,6 +9,7 @@ import {
 } from "../pricelist/handlersCatalogCrud.js";
 import {
 	requireCatalogMutationAccess,
+	requireSettingsMutationAccess,
 	serviceCatalogMutationRejection,
 } from "./helpers.js";
 import {
@@ -22,10 +23,30 @@ import {
  * Ролевой барьер: requireCatalogMutationAccess (свободный доступ для врача у кресла без 403 Forbidden).
  */
 export function registerServiceCatalogRoutes(app: FastifyInstance): void {
-	// Делегация в канонические обработчики CRUD
-	app.post("/api/settings/catalog", handleCreateCatalogItem);
-	app.put("/api/settings/catalog/:serviceId", handleUpdateCatalogItem);
-	app.delete("/api/settings/catalog/:serviceId", handleDeactivateCatalogItem);
+	const settingsMutationPreHandler = async (
+		request: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		const orgId = await requireSettingsMutationAccess(request, reply);
+		if (!orgId) return reply;
+	};
+
+	// Делегация в канонические обработчики CRUD с ролевым контролем настроек (settings.write)
+	app.post(
+		"/api/settings/catalog",
+		{ preHandler: settingsMutationPreHandler },
+		handleCreateCatalogItem,
+	);
+	app.put(
+		"/api/settings/catalog/:serviceId",
+		{ preHandler: settingsMutationPreHandler },
+		handleUpdateCatalogItem,
+	);
+	app.delete(
+		"/api/settings/catalog/:serviceId",
+		{ preHandler: settingsMutationPreHandler },
+		handleDeactivateCatalogItem,
+	);
 
 	/**
 	 * 1-клик быстрое наполнение каталога базовыми услугами 804н (30 услуг).

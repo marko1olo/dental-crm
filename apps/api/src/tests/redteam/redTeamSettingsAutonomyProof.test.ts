@@ -110,6 +110,10 @@ describe("Red Team Settings Autonomy & SSOT Proof (#settings)", () => {
 				payload: {
 					title: "Попытка врача изменить прайс",
 					code: "A16.07.008.001",
+					order804nCode: "A16.07.008",
+					category: "therapy",
+					specialty: "therapist",
+					durationMinutes: 60,
 					basePriceRub: 4500,
 					active: true,
 				},
