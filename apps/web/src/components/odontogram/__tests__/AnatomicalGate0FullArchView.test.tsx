@@ -45,11 +45,11 @@ describe("WheelerToothArch — Live UI 32-Tooth Mounting & Interaction", () => {
 		// Cell 21 and 36 must have the selection classes
 		const cell21Match = html.match(/data-testid="anatomical-tooth-cell-21"[^>]*class="([^"]*)"/);
 		assert.ok(cell21Match, "Cell 21 must be rendered");
-		assert.ok(cell21Match?.[1]?.includes("ring-2 ring-teal-500"), "Cell 21 must have ring-teal-500");
+		assert.ok(cell21Match?.[1]?.includes("ring-2 ring-[var(--primary)]"), "Cell 21 must have ring-[var(--primary)]");
 
 		const cell11Match = html.match(/data-testid="anatomical-tooth-cell-11"[^>]*class="([^"]*)"/);
 		assert.ok(cell11Match, "Cell 11 must be rendered");
-		assert.ok(!cell11Match?.[1]?.includes("ring-2 ring-teal-500"), "Cell 11 must not have ring-teal-500");
+		assert.ok(!cell11Match?.[1]?.includes("ring-[var(--primary)]"), "Cell 11 must not have ring-[var(--primary)]");
 	});
 
 	it("integrates live CRM ToothData: Caries, Crown, Implant, Missing", () => {

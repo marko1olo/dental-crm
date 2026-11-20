@@ -1,3 +1,4 @@
+import { rublesToKopecks } from "@dental/shared";
 import type { ToothState, ToothData } from "./ToothChart";
 import {
 	ALL_ADULT_TEETH_NUMBERS,
@@ -190,9 +191,9 @@ export function dispatchOdontogramSoapAndBundle(params: {
 									title: s.title,
 									price: s.priceRub,
 									priceRub: s.priceRub,
-									priceKopecks: s.priceKopecks ?? Math.round(s.priceRub * 100),
+									priceKopecks: s.priceKopecks ?? rublesToKopecks(s.priceRub),
 									unitPriceRub: s.priceRub,
-									unitPriceKopecks: s.priceKopecks ?? Math.round(s.priceRub * 100),
+									unitPriceKopecks: s.priceKopecks ?? rublesToKopecks(s.priceRub),
 									quantity: 1,
 									toothCode: String(tNum),
 									toothNumber: tNum,

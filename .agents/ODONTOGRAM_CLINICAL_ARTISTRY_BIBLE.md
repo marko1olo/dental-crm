@@ -490,7 +490,7 @@ apps/web/src/components/odontogram/gate0/teeth/tooth{ID}/
   * **Мобильный ассистент врача (`ToothChart.tsx`, `MobileQuadrantGrid.tsx`)**: Сегментный переключатель 4 квадрантов по Apple HIG с тач-таргетами $\ge 44\times 44$px вместо сжатия в горизонтальную кашу.
   * **4-State Visual Proof**: Снято и отсмотрено 7 скриншотов (PC Light/Dark 1440x900, Mobile Light/Dark 390x844, A4 Print Sheet Preview, Patient Card Formula Light/Dark).
 - [x] **Gate 4 (Завершен — Chairside Bridge & Copilot Batch Digest):**
-  * **Экран приёма врача (`VisitOdontogramUnifiedAdapter.tsx`, `CopilotStudioModal.tsx`, `CopilotVisitClinicalDigest.tsx`)**:
+  * **Экран приёма врача (`VisitOdontogramTab.tsx`, `VisitEmkOdontogramBar.tsx`, `CopilotStudioModal.tsx`, `CopilotVisitClinicalDigest.tsx`)**:
     - Единый реактивный мост между состоянием осмотра визита (`visitToothRecordsByCode`) и Копайлотом клиники.
     - **Сценарий А (Пакетный осмотр)**: Врач размечает несколько зубов (например, 16, 26, 36) на одонтограмме, открывает ассистента — отображается сводный карточный дайджест всех патологий с единой кнопкой `⚡ Оформить приём по всем зубам (SOAP + Смета)` и мгновенным расчетом стоимости (`~25 500 ₽`).
     - **Сценарий Б (Стенограф без мышки)**: Свободная диктовка/текст обновляет одонтограмму, генерирует SOAP и начисляет номенклатуру без барьеров модальных окон.

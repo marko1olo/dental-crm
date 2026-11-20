@@ -31,7 +31,7 @@ export const OdontogramPrintTable: React.FC<OdontogramPrintTableProps> = ({ teet
 	return (
 		<div className="mt-4 pt-3 border-t border-slate-200 text-xs" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
 			<div className="mb-3">
-				<h3 className="font-bold text-slate-900 mb-1.5 uppercase text-[11px] tracking-wide">
+				<h3 className="font-bold text-slate-900 mb-1.5 text-[11px] tracking-wide">
 					Условные обозначения патологий и состояний зубов:
 				</h3>
 				<div className="flex flex-wrap items-center gap-3 text-[11px]">
@@ -45,7 +45,7 @@ export const OdontogramPrintTable: React.FC<OdontogramPrintTableProps> = ({ teet
 			</div>
 
 			<div>
-				<h3 className="font-bold text-slate-900 mb-1.5 uppercase text-[11px] tracking-wide">
+				<h3 className="font-bold text-slate-900 mb-1.5 text-[11px] tracking-wide">
 					Таблица выявленных патологий и анатомический статус:
 				</h3>
 				{pathologyTeeth.length === 0 ? (

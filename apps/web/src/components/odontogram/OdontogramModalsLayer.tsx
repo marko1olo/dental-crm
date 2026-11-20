@@ -1,5 +1,5 @@
 import React from "react";
-import { calculateAge } from "@dental/shared";
+import { calculateAge, rublesToKopecks } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
@@ -546,7 +546,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 						initialTab="checkout"
 						totalDueRub={liveGrossTotalRub}
 						amountRub={liveGrossTotalRub}
-						amountKopecks={Math.round(liveGrossTotalRub * 100)}
+						amountKopecks={rublesToKopecks(liveGrossTotalRub)}
 						defaultMethod={toCashboxTenderType(fastCheckoutMethod)}
 						patientId={patientId}
 						patientName={activePatient?.fullName || undefined}

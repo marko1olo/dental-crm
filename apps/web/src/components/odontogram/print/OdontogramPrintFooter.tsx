@@ -34,7 +34,7 @@ export const OdontogramPrintFooter: React.FC<OdontogramPrintFooterProps> = ({
 				<div className="text-[10px] text-slate-500">(подпись и личная печать врача)</div>
 			</div>
 
-			<div className="w-20 h-20 rounded-full border-2 border-dashed border-slate-400 flex flex-col items-center justify-center text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">
+			<div className="w-20 h-20 rounded-full border-2 border-dashed border-slate-400 flex flex-col items-center justify-center text-[10px] font-bold text-slate-500 text-center">
 				<span>М.П.</span>
 				<span className="text-[8px] font-normal">Клиники</span>
 			</div>

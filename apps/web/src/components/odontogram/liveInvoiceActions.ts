@@ -1,4 +1,5 @@
 import { showToast } from "../GlobalToast";
+import { rublesToKopecks } from "@dental/shared";
 import type {
 	LiveInvoiceCashierExport,
 	LiveInvoiceItem,
@@ -74,9 +75,9 @@ export function exportLiveInvoiceToCashier({
 		grossTotalRub: grossTotalPrice,
 		discountRub: totalDiscountRub,
 		netTotalRub: netTotalPrice,
-		grossTotalKopecks: Math.round(grossTotalPrice * 100),
-		discountKopecks: Math.round(totalDiscountRub * 100),
-		netTotalKopecks: Math.round(netTotalPrice * 100),
+		grossTotalKopecks: rublesToKopecks(grossTotalPrice),
+		discountKopecks: rublesToKopecks(totalDiscountRub),
+		netTotalKopecks: rublesToKopecks(netTotalPrice),
 		discountPercent,
 		createdAtIso: new Date().toISOString(),
 	};

@@ -19,7 +19,7 @@ export const OdontogramPrintHeader: React.FC<OdontogramPrintHeaderProps> = ({
 	return (
 		<div className="border-b-2 border-slate-900 pb-3 mb-4 flex items-start justify-between gap-4">
 			<div>
-				<div className="text-base font-black text-slate-900 uppercase tracking-tight">
+				<div className="text-base font-black text-slate-900 tracking-tight">
 					Стоматологическая клиника «DENTE»
 				</div>
 				<div className="text-xs font-semibold text-slate-700">
@@ -28,7 +28,7 @@ export const OdontogramPrintHeader: React.FC<OdontogramPrintHeaderProps> = ({
 				<div className="text-[11px] text-slate-500">
 					119048, г. Москва, ул. Стоматологическая, д. 24, корп. 1 • Тел: +7 (495) 777-88-99 • dente-clinic.ru
 				</div>
-				<h1 className="text-lg font-black tracking-tight text-slate-950 uppercase mt-2">
+				<h1 className="text-lg font-black tracking-tight text-slate-950 mt-2">
 					Клиническая зубная формула (Медицинская карта приёма)
 				</h1>
 				<p className="text-xs font-semibold text-slate-600">

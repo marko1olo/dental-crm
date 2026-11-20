@@ -1,3 +1,4 @@
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { LiveInvoiceItem } from "./odontogramLiveInvoiceCalculations";
 
 export function computeLiveInvoiceCategoryBreakdown(
@@ -24,8 +25,7 @@ export function computeLiveInvoiceDiscount(
 	discountPercent: number,
 ): number {
 	if (discountPercent <= 0) return 0;
-	return (
-		Math.round((Math.round(grossTotalPrice * 100) * discountPercent) / 100) /
-		100
-	);
+	const grossKopecks = rublesToKopecks(grossTotalPrice);
+	const discountKopecks = Math.round((grossKopecks * discountPercent) / 100);
+	return kopecksToRubles(discountKopecks);
 }

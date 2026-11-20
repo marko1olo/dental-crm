@@ -1,4 +1,5 @@
 import { isDeciduousTooth } from "../treatment-plans/treatmentPlanStagesEngine";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import type { ToothData } from "./ToothChart";
 
 export interface LiveInvoiceItem {
@@ -365,7 +366,7 @@ export function getEndoPreparationProcedure(canalsCount: number): {
 		code: `A16.07.030.00${clamped}`,
 		title: `Инструментальная и медикаментозная обработка корневых каналов (${clamped}-канальный зуб)`,
 		price,
-		amountKopecks: price * 100,
+		amountKopecks: rublesToKopecks(price),
 		category: "Эндодонтия",
 	};
 }
@@ -390,7 +391,7 @@ export function getEndoObturationProcedure(canalsCount: number): {
 		code: `A16.07.008.00${clamped}`,
 		title: `Пломбирование корневых каналов зуба (${clamped}-канальный зуб)`,
 		price,
-		amountKopecks: price * 100,
+		amountKopecks: rublesToKopecks(price),
 		category: "Эндодонтия",
 	};
 }
@@ -433,7 +434,7 @@ export function calculateLiveInvoiceItems(
 						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
-				const disc = Math.round(discKopecks / 100);
+				const disc = kopecksToRubles(discKopecks);
 				items.push({
 					toothNumber: num,
 					code: prSrp.code,
@@ -457,7 +458,7 @@ export function calculateLiveInvoiceItems(
 							? Math.round((grossKopecks * discountPercent) / 100)
 							: 0;
 					const netKopecks = grossKopecks - discKopecks;
-					const disc = Math.round(discKopecks / 100);
+					const disc = kopecksToRubles(discKopecks);
 					items.push({
 						toothNumber: num,
 						code: prCur.code,
@@ -482,7 +483,7 @@ export function calculateLiveInvoiceItems(
 							? Math.round((grossKopecks * discountPercent) / 100)
 							: 0;
 					const netKopecks = grossKopecks - discKopecks;
-					const disc = Math.round(discKopecks / 100);
+					const disc = kopecksToRubles(discKopecks);
 					items.push({
 						toothNumber: num,
 						code: prSplint.code,
@@ -522,7 +523,7 @@ export function calculateLiveInvoiceItems(
 						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
-				const disc = Math.round(discKopecks / 100);
+				const disc = kopecksToRubles(discKopecks);
 				items.push({
 					toothNumber: num,
 					code: pedPr.code,
@@ -561,7 +562,7 @@ export function calculateLiveInvoiceItems(
 						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
-				const disc = Math.round(discKopecks / 100);
+				const disc = kopecksToRubles(discKopecks);
 				items.push({
 					toothNumber: num,
 					code: prepProc.code,
@@ -584,7 +585,7 @@ export function calculateLiveInvoiceItems(
 						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
-				const disc = Math.round(discKopecks / 100);
+				const disc = kopecksToRubles(discKopecks);
 				items.push({
 					toothNumber: num,
 					code: obtProc.code,
@@ -614,7 +615,7 @@ export function calculateLiveInvoiceItems(
 						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
-				const itemDiscount = Math.round(discKopecks / 100);
+				const itemDiscount = kopecksToRubles(discKopecks);
 
 				items.push({
 					toothNumber: num,
@@ -642,7 +643,7 @@ export function calculateLiveInvoiceItems(
 							? Math.round((grossKopecks * discountPercent) / 100)
 							: 0;
 					const netKopecks = grossKopecks - discKopecks;
-					const disc = Math.round(discKopecks / 100);
+					const disc = kopecksToRubles(discKopecks);
 					items.push({
 						toothNumber: num,
 						code: prGraft.code,
@@ -666,7 +667,7 @@ export function calculateLiveInvoiceItems(
 						? Math.round((grossKopecks * discountPercent) / 100)
 						: 0;
 				const netKopecks = grossKopecks - discKopecks;
-				const disc = Math.round(discKopecks / 100);
+				const disc = kopecksToRubles(discKopecks);
 				items.push({
 					toothNumber: num,
 					code: prProsth.code,
