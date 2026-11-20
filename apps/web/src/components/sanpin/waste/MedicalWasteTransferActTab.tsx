@@ -67,7 +67,7 @@ export function MedicalWasteTransferActTab({
 			{/* Сводка партии */}
 			<div className="p-4 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,#f0fdfa)] flex items-center justify-between">
 				<div>
-					<div className="text-xs font-semibold text-muted uppercase">Партия к передаче</div>
+					<div className="text-xs font-semibold text-muted">Партия к передаче</div>
 					<div className="text-lg font-black text-ink">
 						{records.filter((r) => r.status === "accumulating").length} мест • Масса нетто:{" "}
 						{records.filter((r) => r.status === "accumulating").reduce((acc, r) => acc + r.netWeightKg, 0).toFixed(2)} кг

@@ -86,7 +86,7 @@ export function CabinetSanpinChecklist(props: CabinetSanpinChecklistProps) {
 					<span>Журнал исключений и ручная корректировка узлов</span>
 					<div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.5rem" }}>
 						<span style={{ fontSize: "0.78rem", color: "var(--muted, #64748b)", fontWeight: 500 }}>
-							Все 20 параметров по умолчанию в норме
+							Клинические узлы по умолчанию в норме
 						</span>
 						<ChevronDown size={15} color="var(--muted, #64748b)" />
 					</div>

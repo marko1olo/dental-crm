@@ -79,6 +79,11 @@ export async function handleGetRegulatoryExport(req: FastifyRequest, reply: Fast
 				recordsCount: autoclaveLogs.length,
 				records: autoclaveLogs,
 			},
+			cleaningAndDisinfectionJournal: {
+				titleRu: "Журнал учета качества предстерилизационной очистки",
+				recordsCount: cleaningControlLogs.length,
+				records: cleaningControlLogs,
+			},
 			cleaningControlJournal: {
 				titleRu: "Журнал учета качества предстерилизационной очистки",
 				recordsCount: cleaningControlLogs.length,

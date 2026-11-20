@@ -69,7 +69,7 @@
 [data-theme="dark"] .sanpin-kpi-card,
 .dark .sanpin-kpi-card {
 	background: var(--paper-strong, #1e293b);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 
 .sanpin-kpi-card.active-kpi {
@@ -90,10 +90,9 @@
 }
 
 .sanpin-kpi-label {
-	font-size: 0.72rem;
-	text-transform: uppercase;
-	font-weight: 700;
-	letter-spacing: 0.03em;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
 	color: var(--muted, #64748b);
 }
 

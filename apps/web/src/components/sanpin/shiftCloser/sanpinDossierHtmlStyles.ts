@@ -3,7 +3,7 @@ export const SANPIN_DOSSIER_PRINT_CSS = `
 	* { box-sizing: border-box; }
 	body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 8.5pt; color: #0f172a; margin: 0; }
 	.hdr { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 8px; }
-	.title { font-size: 13pt; font-weight: 800; text-transform: uppercase; }
+	.title { font-size: 13pt; font-weight: 800; }
 	.sub { font-size: 8.5pt; color: #475569; }
 	table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 8pt; }
 	th, td { border: 1px solid #334155; padding: 4px 6px; text-align: left; vertical-align: middle; }

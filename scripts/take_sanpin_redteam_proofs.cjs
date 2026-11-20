@@ -20,12 +20,14 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const BRAIN_ID = process.env.CONVERSATION_ID || "c5db1ba9-d110-4a0b-b18b-29db63aea1f8";
+const BRAIN_ID = process.env.CONVERSATION_ID || "0a0b078a-7858-48c8-99f1-ba57eb252a12";
 const DOCS_DIR = path.resolve(__dirname, "../docs/proofs/sanpin");
 const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${BRAIN_ID}`);
+const BRAIN_SCREENSHOTS_DIR = path.join(BRAIN_DIR, "screenshots/sanpin");
 
 if (!fs.existsSync(DOCS_DIR)) fs.mkdirSync(DOCS_DIR, { recursive: true });
 if (!fs.existsSync(BRAIN_DIR)) fs.mkdirSync(BRAIN_DIR, { recursive: true });
+if (!fs.existsSync(BRAIN_SCREENSHOTS_DIR)) fs.mkdirSync(BRAIN_SCREENSHOTS_DIR, { recursive: true });
 
 const net = require("node:net");
 
@@ -142,9 +144,11 @@ async function setTheme(page, theme) {
 async function saveProof(page, filename) {
 	const docsPath = path.join(DOCS_DIR, filename);
 	const brainPath = path.join(BRAIN_DIR, filename);
+	const brainScreenshotsPath = path.join(BRAIN_SCREENSHOTS_DIR, filename);
 
 	await page.screenshot({ path: docsPath, fullPage: false, animations: "disabled" });
 	try { fs.copyFileSync(docsPath, brainPath); } catch {}
+	try { fs.copyFileSync(docsPath, brainScreenshotsPath); } catch {}
 
 	const stats = fs.statSync(docsPath);
 	console.log(`[PROOF CAPTURED] ${filename} -> size: ${(stats.size / 1024).toFixed(1)} KB`);
@@ -330,6 +334,7 @@ async function main() {
 		await setTheme(pcPage, "light");
 		await dismissTourElements(pcPage);
 		await saveProof(pcPage, "01_sanpin_autoclave_pc_light.png");
+		await saveProof(pcPage, "01_sanpin_autoclave_pc_light_1440x900.png");
 		await saveProof(pcPage, "01_sanpin_journal_pc_light_1440x900.png");
 		await saveProof(pcPage, "01_sanpin_studio_pc_light_1440x900.png");
 		await saveProof(pcPage, "pc_light_sanpin_autoclave_1440x900.png");
@@ -337,6 +342,7 @@ async function main() {
 		await setTheme(pcPage, "dark");
 		await dismissTourElements(pcPage);
 		await saveProof(pcPage, "02_sanpin_autoclave_pc_dark.png");
+		await saveProof(pcPage, "02_sanpin_autoclave_pc_dark_1440x900.png");
 		await saveProof(pcPage, "02_sanpin_journal_pc_dark_1440x900.png");
 		await saveProof(pcPage, "02_sanpin_studio_pc_dark_1440x900.png");
 		await saveProof(pcPage, "pc_dark_sanpin_autoclave_1440x900.png");
@@ -393,6 +399,7 @@ async function main() {
 		await dismissTourElements(mobPage);
 		await saveProof(mobPage, "03_sanpin_mobile_light.png");
 		await saveProof(mobPage, "03_sanpin_autoclave_mobile_light.png");
+		await saveProof(mobPage, "03_sanpin_autoclave_mobile_light_390x844.png");
 		await saveProof(mobPage, "03_sanpin_studio_mobile_light_390x844.png");
 		await saveProof(mobPage, "mobile_light_sanpin_autoclave_390x844.png");
 
@@ -423,6 +430,7 @@ async function main() {
 
 		await saveProof(mobPage, "04_sanpin_mobile_dark.png");
 		await saveProof(mobPage, "04_sanpin_autoclave_mobile_dark.png");
+		await saveProof(mobPage, "04_sanpin_autoclave_mobile_dark_390x844.png");
 		await saveProof(mobPage, "04_sanpin_studio_mobile_dark_390x844.png");
 		await saveProof(mobPage, "mobile_dark_sanpin_autoclave_390x844.png");
 

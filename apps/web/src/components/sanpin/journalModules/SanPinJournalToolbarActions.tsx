@@ -18,7 +18,7 @@ export interface SanPinJournalToolbarActionsProps {
 	readonly onQuickPsoNorm?: (() => void) | undefined;
 }
 
-const BTN_SEC = "secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] px-3 text-[13px] font-medium inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all";
+const BTN_SEC = "secondary-button shrink-0 h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] px-3 text-[13px] font-medium inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all";
 
 export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsProps> = ({
 	isAutofilling,
@@ -38,7 +38,7 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 				onQuickPsoNorm={onQuickPsoNorm}
 			/>
 
-			<div className="flex items-center gap-2 flex-wrap">
+			<div className="flex items-center gap-2 flex-wrap shrink-0">
 				<button
 					type="button"
 					onClick={() => {
@@ -46,12 +46,12 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 						onAutofillNorms();
 					}}
 					aria-busy={isAutofilling}
-					className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
+					className="secondary-button shrink-0 h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)] bg-teal-500/10 hover:bg-teal-500/20 text-[var(--teal,#0d9488)] px-3 text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all whitespace-nowrap"
 					data-testid="autofill-norms-btn"
 					title="Автоматическое заполнение журнала автоклавирования"
 				>
-					<Sparkles size={14} />
-					<span>{isAutofilling ? "Заполнение..." : "Заполнить по нормам"}</span>
+					<Sparkles size={14} className="shrink-0" />
+					<span className="shrink-0">{isAutofilling ? "Заполнение..." : "Заполнить по нормам"}</span>
 				</button>
 
 				{onOpenNewCycleModal && (

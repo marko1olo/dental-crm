@@ -16,7 +16,7 @@
 [data-theme="dark"] .kraft-studio-tabs-nav,
 .dark .kraft-studio-tabs-nav {
 	background: #1e293b;
-	border-bottom-color: #334155;
+	border-bottom-color: var(--line);
 }
 
 .kraft-tab-btn {

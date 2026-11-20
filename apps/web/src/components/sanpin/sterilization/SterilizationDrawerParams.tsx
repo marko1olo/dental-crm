@@ -39,7 +39,7 @@ export function SterilizationDrawerParams({
 						id="sterilizer-device-select"
 						value={deviceId}
 						onChange={(e) => onSelectDevice(e.target.value)}
-						className="w-full text-xs font-semibold rounded-xl p-2.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#cbd5e1)] dark:border-[#334155] min-h-[44px]"
+						className="w-full text-xs font-semibold rounded-xl p-2.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] min-h-[44px]"
 					>
 						{clinicDevices.length > 0 ? (
 							clinicDevices.map((d) => (
@@ -74,7 +74,7 @@ export function SterilizationDrawerParams({
 						onChange={(e) =>
 							onChangePacksCount(parseInt(e.target.value, 10) || 1)
 						}
-						className="w-full text-xs font-bold rounded-xl p-2.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#cbd5e1)] dark:border-[#334155] min-h-[44px]"
+						className="w-full text-xs font-bold rounded-xl p-2.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] min-h-[44px]"
 					/>
 				</div>
 			</div>

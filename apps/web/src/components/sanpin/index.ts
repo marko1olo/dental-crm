@@ -10,7 +10,9 @@ export {
 	validateSterilizationCycleParameters,
 } from "./sanpinCatalogData";
 export * from "./sanpinCatalogData";
-export * from "./SanpinStudioModal";
+export { SterilizationBatchCycleModal as SanpinStudioModal } from "./SterilizationBatchCycleModal";
+export type { SterilizationBatchCycleModalProps as SanpinStudioModalProps } from "./SterilizationBatchCycleModal";
+export type SanpinStudioTab = "autoclave" | "kraft" | "cleaning";
 export * from "./DirectSanpinLauncher";
 export * from "./SanpinRegisters";
 export * from "./SanpinCleaningAndDisinfectionView";

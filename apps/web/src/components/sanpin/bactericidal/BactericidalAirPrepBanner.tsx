@@ -37,9 +37,7 @@ export function BactericidalAirPrepBanner({
 							background: "var(--teal, #0d9488)",
 							color: "#ffffff",
 							fontSize: "0.75rem",
-							fontWeight: 800,
-							textTransform: "uppercase",
-							letterSpacing: "0.05em",
+							fontWeight: 700,
 						}}
 					>
 						Чистый воздух

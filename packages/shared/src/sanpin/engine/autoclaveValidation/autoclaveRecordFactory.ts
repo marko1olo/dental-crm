@@ -6,7 +6,7 @@
 
 import { sha256Hex } from "../../../sync/hashing.js";
 import { STATUTORY_STERILIZATION_REGIMES } from "../sanpinNorms.js";
-import type { ChamberPointEvaluation, Form257Record, PhysicalSensorsData, SterilizationRegimeId } from "../types.js";
+import type { AutoclaveCycleRecord, ChamberPointEvaluation, Form257Record, PhysicalSensorsData, SterilizationRegimeId } from "../types.js";
 import { evaluate5ChamberPoints } from "./chamberPointsEvaluation.js";
 import { evaluateCycleParameters } from "./cycleSensorsEvaluation.js";
 
@@ -35,7 +35,7 @@ export function calculateDigitalStampHash(data: {
 	return `DENTE-CSO-257-${hex}`;
 }
 
-export function createForm257Record(params: {
+export function createAutoclaveRecord(params: {
 	date: string;
 	cycleNumber: number;
 	sterilizerId: string;
@@ -57,7 +57,7 @@ export function createForm257Record(params: {
 	bioTestId?: string | undefined;
 	bioTestResult?: "sterile_passed" | "growth_failed" | "pending" | undefined;
 	notes?: string | undefined;
-}): Form257Record {
+}): AutoclaveCycleRecord {
 	const regime = STATUTORY_STERILIZATION_REGIMES.find((r) => r.id === params.regimeId) || STATUTORY_STERILIZATION_REGIMES[0]!;
 	const cycleCompliance = evaluateCycleParameters(regime.id, params.sensors);
 	const pointsEvaluation = evaluate5ChamberPoints(params.chamberPoints);
@@ -138,4 +138,4 @@ export function createForm257Record(params: {
 	};
 }
 
-export const createAutoclaveRecord = createForm257Record;
+export const createForm257Record = createAutoclaveRecord;

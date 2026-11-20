@@ -29,7 +29,7 @@
 [data-theme="dark"] .kraft-pill-btn,
 .dark .kraft-pill-btn {
 	background: #1e293b;
-	border-color: #334155;
+	border-color: var(--line);
 	color: #f8fafc;
 }
 
@@ -60,7 +60,7 @@
 [data-theme="dark"] .kraft-number-input,
 .dark .kraft-number-input {
 	background: #0f172a;
-	border-color: #334155;
+	border-color: var(--line);
 	color: #f8fafc;
 }
 
@@ -79,7 +79,7 @@
 [data-theme="dark"] .kraft-preview-card,
 .dark .kraft-preview-card {
 	background: #1e293b;
-	border-color: #334155;
+	border-color: var(--line);
 }
 
 .kraft-label-preview-wrapper {
@@ -104,7 +104,7 @@
 [data-theme="dark"] .kraft-indicator-box,
 .dark .kraft-indicator-box {
 	background: #0f172a;
-	border-color: #334155;
+	border-color: var(--line);
 }
 
 .kraft-swatch-circle {

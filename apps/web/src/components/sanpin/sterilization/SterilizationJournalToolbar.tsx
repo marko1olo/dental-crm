@@ -32,7 +32,7 @@ export function SterilizationJournalToolbar({
 	isAutofilling = false,
 }: SterilizationJournalToolbarProps) {
 	return (
-		<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-3.5 rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-xs">
+		<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-3.5 rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] shadow-xs">
 			<div className="flex items-center gap-2.5 flex-1 min-w-0">
 				<div className="relative flex-1 min-w-[180px] max-w-sm">
 					<Search
@@ -44,14 +44,14 @@ export function SterilizationJournalToolbar({
 						placeholder="Поиск по циклу, аппарату, наборам..."
 						value={searchQuery}
 						onChange={(e) => onSearchQueryChange(e.target.value)}
-						className="w-full text-xs font-medium rounded-xl pl-8 pr-3 py-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#cbd5e1)] dark:border-[#334155] min-h-[44px]"
+						className="w-full text-xs font-medium rounded-xl pl-8 pr-3 py-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] min-h-[44px]"
 						data-testid="sterilization-journal-search-input"
 					/>
 				</div>
 				<select
 					value={selectedDevice}
 					onChange={(e) => onSelectedDeviceChange(e.target.value)}
-					className="text-xs font-semibold rounded-xl px-3 py-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#cbd5e1)] dark:border-[#334155] min-h-[44px]"
+					className="text-xs font-semibold rounded-xl px-3 py-2 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] min-h-[44px]"
 					data-testid="sterilization-journal-device-filter"
 				>
 					<option value="all">Все аппараты ЦСО</option>
@@ -76,7 +76,7 @@ export function SterilizationJournalToolbar({
 					<button
 						type="button"
 						onClick={onOpenNewCycle}
-						className="h-10 px-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[44px]"
+						className="h-10 px-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[44px]"
 						data-testid="sterilization-journal-new-cycle-btn"
 					>
 						<Plus size={14} />

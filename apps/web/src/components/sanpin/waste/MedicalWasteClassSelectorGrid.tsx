@@ -13,7 +13,7 @@ export const MedicalWasteClassSelectorGrid: React.FC<MedicalWasteClassSelectorGr
 }) => {
 	return (
 		<div className="flex flex-col gap-2">
-			<div className="text-xs font-bold uppercase text-muted mb-1">
+			<div className="text-xs font-bold text-muted mb-1">
 				1. Класс отходов
 			</div>
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -37,7 +37,7 @@ export const MedicalWasteClassSelectorGrid: React.FC<MedicalWasteClassSelectorGr
 						>
 							<div className="flex items-center justify-between">
 								<span
-									className="text-xs font-black px-2.5 py-1 rounded-full uppercase"
+									className="text-xs font-bold px-2.5 py-1 rounded-full"
 									style={{
 										backgroundColor: cls.colorTheme.hexBadgeBg,
 										color: cls.colorTheme.hexBadgeFg,

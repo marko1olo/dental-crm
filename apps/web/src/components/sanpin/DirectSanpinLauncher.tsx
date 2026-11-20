@@ -4,7 +4,9 @@
  * Диапазон размера строго 70–80 строк (Мандат 8b/8zi).
  */
 import React, { useState, useEffect, useCallback } from "react";
-import { SanpinStudioModal, type SanpinStudioTab } from "./SanpinStudioModal";
+import { SterilizationBatchCycleModal } from "./SterilizationBatchCycleModal";
+
+export type SanpinStudioTab = "autoclave" | "kraft" | "cleaning";
 
 export interface DirectSanpinLauncherProps {
 	readonly forceOpen?: boolean;
@@ -48,16 +50,11 @@ export const DirectSanpinLauncher: React.FC<DirectSanpinLauncherProps> = ({ forc
 		setIsOpen(active);
 		if (active) setActiveTab(resolveInitialTab());
 	}, [forceOpen]);
-
-	const handleClose = useCallback(() => {
-		setIsOpen(false);
-		clearSanpinLocation();
-	}, []);
+	const handleClose = useCallback(() => { setIsOpen(false); clearSanpinLocation(); }, []);
 
 	useEffect(() => {
 		const events: [string, () => void][] = [
-			["hashchange", () => handleLocationChange()],
-			["popstate", () => handleLocationChange()],
+			["hashchange", handleLocationChange], ["popstate", handleLocationChange],
 			["dente:open-sanpin", () => setIsOpen(true)],
 			["dente:open-autoclave", () => { setIsOpen(true); setActiveTab("autoclave"); }],
 			["dente:open-sterilization", () => { setIsOpen(true); setActiveTab("autoclave"); }],
@@ -72,7 +69,7 @@ export const DirectSanpinLauncher: React.FC<DirectSanpinLauncherProps> = ({ forc
 	if (!isOpen) return null;
 	return (
 		<div data-testid="direct-sanpin-launcher" className="fixed inset-0 z-[9998] pointer-events-auto">
-			<SanpinStudioModal isOpen={isOpen} onClose={handleClose} initialTab={activeTab} />
+			<SterilizationBatchCycleModal isOpen={isOpen} onClose={handleClose} initialTab={activeTab} />
 		</div>
 	);
 };

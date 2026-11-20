@@ -64,8 +64,6 @@
 	font-size: 0.72rem;
 	color: var(--muted, #64748b);
 	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
 }
 
 .sanpin-dropdown-period-group {

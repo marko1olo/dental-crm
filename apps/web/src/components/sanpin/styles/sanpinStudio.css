@@ -111,7 +111,7 @@
 
 .dark .sanpin-tab-btn.active {
 	background-color: var(--paper, #1e293b);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: #ffffff;
 }
 
@@ -174,7 +174,7 @@
 
 .dark .sanpin-secondary-btn {
 	background-color: var(--paper, #1e293b);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: var(--ink, #f8fafc);
 }
 
@@ -207,7 +207,7 @@
 
 .dark .sanpin-chip-btn {
 	background: var(--paper, #1e293b);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: var(--ink, #f8fafc);
 }
 .dark .sanpin-chip-btn.active {
@@ -253,12 +253,12 @@
 
 .dark .sanpin-table-wrapper {
 	background: var(--paper-strong, #0f172a);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 .dark .sanpin-data-table th {
 	background: rgba(30, 41, 59, 0.7);
 	color: var(--ink-muted, #94a3b8);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 .dark .sanpin-data-table td {
 	border-color: var(--line, #1e293b);
@@ -307,7 +307,7 @@
 }
 .dark .sanpin-card {
 	background: var(--paper, #1e293b);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 }
 
 .sanpin-kraft-label {
@@ -341,6 +341,6 @@
 	}
 	.dark .sanpin-mobile-bottom-bar {
 		background: rgba(15, 23, 42, 0.95);
-		border-color: var(--line, #334155);
+		border-color: var(--line);
 	}
 }

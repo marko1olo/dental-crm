@@ -68,7 +68,7 @@ export function PsoMobileCardItem({ log, isStamped, nurseName, onStampVerificati
 					</span>
 				</div>
 
-				<div className="text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line-subtle,#f1f5f9)] dark:border-[#334155]/50 flex flex-wrap justify-between gap-1">
+				<div className="text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line-subtle,#f1f5f9)] dark:border-[var(--line)] flex flex-wrap justify-between gap-1">
 					<span>Моющее: <span className="font-semibold text-[var(--ink)]">{log.detergentBrand || "Биолот 0.5% + Аламинол 1%"}</span></span>
 					<span>Реактив: <span className="font-mono font-medium">{reagentLot}</span></span>
 				</div>

@@ -62,7 +62,7 @@ export function GeneralCleaningSolutionFields({
 			</div>
 
 			<div className="p-4 rounded-xl border-2 border-teal-500 bg-teal-50/50 flex flex-col gap-2">
-				<div className="flex items-center gap-2 text-xs font-black uppercase text-teal-800 tracking-wider">
+				<div className="flex items-center gap-2 text-xs font-bold text-teal-800">
 					<Calculator size={16} />
 					<span>Честный математический расчет расхода препарата</span>
 				</div>

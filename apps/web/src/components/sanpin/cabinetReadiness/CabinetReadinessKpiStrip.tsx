@@ -32,7 +32,7 @@ export function CabinetReadinessKpiStrip({
 		>
 			<div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", minWidth: 0 }}>
 				<span
-					style={{ padding: "0.2rem 0.6rem", borderRadius: "0.375rem", background: badgeBg, color: "#ffffff", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.03em", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: "0.3rem", flexShrink: 0 }}
+					style={{ padding: "0.2rem 0.6rem", borderRadius: "0.375rem", background: badgeBg, color: "#ffffff", fontSize: "0.72rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.3rem", flexShrink: 0 }}
 				>
 					{isFullyReady ? <CheckCircle2 size={13} /> : <Info size={13} />}
 					{isFullyReady ? "Готов к приёму" : "Требуется обработка"}

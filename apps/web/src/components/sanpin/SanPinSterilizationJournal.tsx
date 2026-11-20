@@ -50,14 +50,14 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 		const cached = getCachedActiveStaffUser() as { fullName?: string; name?: string; role?: string } | null;
 		if (cached?.fullName?.trim()) return cached.fullName.trim();
 		if (cached?.name?.trim()) return cached.name.trim();
-		return "Дежурный администратор / медицинская сестра";
+		return "Дежурная медсестра ЦСО";
 	}, [appLogic]);
 
 	const [operatorName, setOperatorName] = useState<string>(resolvedOperator);
 
 	useEffect(() => {
 		if (resolvedOperator) {
-			setOperatorName((prev: string) => (!prev || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
+			setOperatorName((prev: string) => (!prev || prev === "Дежурный администратор / медицинская сестра" || prev === "Дежурная медсестра ЦСО" ? resolvedOperator : prev));
 		}
 	}, [resolvedOperator]);
 
@@ -139,13 +139,13 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				</div>
 
 				<div className="flex items-center gap-1.5 p-1 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] overflow-x-auto scrollbar-none">
-					<button type="button" onClick={() => setActiveTab("journal")} data-testid="tab-journal-view" className={`flex-1 min-h-[40px] px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer touch-manipulation transition-colors whitespace-nowrap ${activeTab === "journal" ? "bg-[var(--teal,#0d9488)] text-white shadow-2xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)]"}`}>
+					<button type="button" onClick={() => setActiveTab("journal")} data-testid="tab-journal-view" className={`flex-1 min-h-[36px] px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer touch-manipulation transition-all whitespace-nowrap ${activeTab === "journal" ? "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#1e293b)] shadow-xs border border-[var(--line,#e2e8f0)] dark:border-[var(--line)]" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)]"}`}>
 						<Layers size={14} className="shrink-0" /><span>Журнал ({filteredCycles.length})</span>
 					</button>
-					<button type="button" onClick={() => setActiveTab("cycle")} data-testid="tab-run-cycle" className={`flex-1 min-h-[40px] px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer touch-manipulation transition-colors whitespace-nowrap ${activeTab === "cycle" ? "bg-[var(--teal,#0d9488)] text-white shadow-2xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)]"}`}>
+					<button type="button" onClick={() => setActiveTab("cycle")} data-testid="tab-run-cycle" className={`flex-1 min-h-[36px] px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer touch-manipulation transition-all whitespace-nowrap ${activeTab === "cycle" ? "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#1e293b)] shadow-xs border border-[var(--line,#e2e8f0)] dark:border-[var(--line)]" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)]"}`}>
 						<Sparkles size={14} className="shrink-0" /><span>Провести цикл</span>
 					</button>
-					<button type="button" onClick={() => setActiveTab("equipment")} data-testid="tab-equipment" className={`flex-1 min-h-[40px] px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer touch-manipulation transition-colors whitespace-nowrap ${activeTab === "equipment" ? "bg-[var(--teal,#0d9488)] text-white shadow-2xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)]"}`}>
+					<button type="button" onClick={() => setActiveTab("equipment")} data-testid="tab-equipment" className={`flex-1 min-h-[36px] px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer touch-manipulation transition-all whitespace-nowrap ${activeTab === "equipment" ? "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#1e293b)] shadow-xs border border-[var(--line,#e2e8f0)] dark:border-[var(--line)]" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)]"}`}>
 						<Wrench size={14} className="shrink-0" /><span>Оборудование</span>
 					</button>
 				</div>
@@ -155,36 +155,36 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 			{activeTab === "journal" && (
 				<>
 					<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] shadow-2xs">
-						<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+						<div className="flex items-center gap-2 flex-wrap">
 							<div className="inline-flex bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] rounded-lg p-0.5 gap-0.5 shrink-0">
 								{(["day", "week", "month"] as const).map((p: SanPinJournalPeriod) => (
-									<button key={p} type="button" onClick={() => setPeriod(p)} className="px-2.5 py-1 text-xs rounded-md font-semibold cursor-pointer touch-manipulation transition-colors" style={{ background: period === p ? "var(--teal, #0d9488)" : "transparent", color: period === p ? "#fff" : "var(--muted, #64748b)", border: "none" }}>
+									<button key={p} type="button" onClick={() => setPeriod(p)} className="px-2.5 py-1 text-xs rounded-md font-semibold cursor-pointer touch-manipulation transition-colors shrink-0" style={{ background: period === p ? "var(--teal, #0d9488)" : "transparent", color: period === p ? "#fff" : "var(--muted, #64748b)", border: "none" }}>
 										{p === "day" ? "Сегодня" : p === "week" ? "Неделя" : "Месяц"}
 									</button>
 								))}
 							</div>
-							<select value={selectedAutoclave} onChange={(e) => setSelectedAutoclave(e.target.value)} className="h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] text-xs text-[var(--ink,#1e293b)] cursor-pointer flex-1 sm:flex-initial" aria-label="Выбор автоклава">
+							<select value={selectedAutoclave} onChange={(e) => setSelectedAutoclave(e.target.value)} className="h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] text-xs text-[var(--ink,#1e293b)] cursor-pointer shrink-0" aria-label="Выбор автоклава">
 								<option value="all">Все автоклавы</option>
 								<option value="АК-01">АК-01 (Melag Vacuklav 23B+)</option>
 								<option value="АК-02">АК-02 (W&H Lina 17)</option>
 							</select>
 						</div>
 
-						<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
-							<div className="relative inline-flex items-center w-full sm:w-52">
+						<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto shrink-0">
+							<div className="relative inline-flex items-center w-full sm:w-56 shrink-0">
 								<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)] pointer-events-none" />
 								<input type="text" placeholder="Поиск по набору/номеру..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-8 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] text-xs text-[var(--ink,#1e293b)] w-full focus:outline-none" style={{ paddingLeft: 34, paddingRight: 8 }} />
 							</div>
-							<div className="hidden sm:inline-flex items-center gap-2">
-								<button type="button" onClick={handlePrint} className="dente-btn-secondary h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink,#1e293b)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation" title="Печать журнала">
-									<Printer size={13} /><span>Печать журнала</span>
+							<div className="hidden sm:inline-flex items-center gap-2 shrink-0">
+								<button type="button" onClick={handlePrint} className="dente-btn-secondary h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink,#1e293b)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation shrink-0" title="Печать журнала">
+									<Printer size={13} className="shrink-0" /><span>Печать</span>
 								</button>
-								<button type="button" onClick={handleExportCsv} className="dente-btn-secondary h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink,#1e293b)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation" title="Экспорт CSV">
-									<Download size={13} /><span>CSV</span>
+								<button type="button" onClick={handleExportCsv} className="dente-btn-secondary h-8 min-h-[32px] px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[var(--line)] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink,#1e293b)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation shrink-0" title="Экспорт CSV">
+									<Download size={13} className="shrink-0" /><span>CSV</span>
 								</button>
 							</div>
-							<button type="button" onClick={handleOpenNewCycle} aria-busy={isBatchSubmitting} className="sanpin-desktop-cta hidden sm:inline-flex h-8 min-h-[32px] px-3.5 rounded-lg font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-xs items-center gap-1.5 cursor-pointer touch-manipulation transition-all shrink-0" data-testid="start-cycle-primary-btn" title="Пакетная стерилизация смены">
-								<Plus size={14} className="text-white" /><span>Запустить цикл стерилизации</span>
+							<button type="button" onClick={handleOpenNewCycle} aria-busy={isBatchSubmitting} className="sanpin-desktop-cta hidden sm:inline-flex h-9 min-h-[36px] px-3.5 rounded-lg font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-xs items-center gap-1.5 cursor-pointer touch-manipulation transition-all shrink-0 whitespace-nowrap" data-testid="start-cycle-primary-btn" title="Пакетная стерилизация смены">
+								<Plus size={14} className="text-white shrink-0" /><span>Запустить цикл стерилизации</span>
 							</button>
 						</div>
 					</div>

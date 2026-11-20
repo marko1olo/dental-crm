@@ -21,7 +21,7 @@ export function RetroactivePeriodButtons({
 }: RetroactivePeriodButtonsProps) {
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-			<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--muted, #475569)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+			<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--muted, #475569)" }}>
 				1. Выберите период отчета:
 			</span>
 			<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>

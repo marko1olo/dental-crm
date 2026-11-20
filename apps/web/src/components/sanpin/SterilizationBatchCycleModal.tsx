@@ -20,6 +20,9 @@ import { generateSanpinPrintHtml, getSanpinBatchRecords, type SterilizationBatch
 export interface SterilizationBatchCycleModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly initialTab?: string | undefined;
+	readonly isDemo?: boolean | undefined;
+	readonly operatorName?: string | undefined;
 	readonly onSuccess?: () => void;
 	readonly onCycleApproved?: ((record?: unknown) => void) | undefined;
 	readonly onCycleCompleted?: ((result?: unknown) => void) | undefined;
@@ -44,15 +47,17 @@ export function SterilizationBatchCycleModal({
 	isOpen, onClose, onSuccess, onCycleApproved, onCycleCompleted, onCycleCreated,
 	defaultAutoclaveName = "Основной автоклав клиники (Melag Vacuklav 23 B+)",
 	defaultOperatorName, defaultBatchSize = 8, clinicDevices,
+	operatorName: propOperatorName, initialTab: _initialTab, isDemo: _isDemo,
 }: SterilizationBatchCycleModalProps) {
 	const appLogic = useOptionalAppLogicContext();
 	const resolvedOperator = useMemo(() => {
+		if (propOperatorName?.trim()) return propOperatorName.trim();
 		if (defaultOperatorName?.trim()) return defaultOperatorName.trim();
 		const fromAuth = appLogic?.auth?.currentUser?.fullName || appLogic?.auth?.currentUser?.name || appLogic?.user?.name;
 		if (fromAuth?.trim()) return fromAuth.trim();
 		const cached = getCachedActiveStaffUser() as { fullName?: string; name?: string; role?: string } | null;
-		return cached?.fullName?.trim() || cached?.name?.trim() || "Дежурный администратор / медицинская сестра";
-	}, [defaultOperatorName, appLogic]);
+		return cached?.fullName?.trim() || cached?.name?.trim() || "Дежурная медсестра ЦСО";
+	}, [propOperatorName, defaultOperatorName, appLogic]);
 
 	const [deviceName, setDeviceName] = useState(defaultAutoclaveName);
 	const [autoclaveId, setAutoclaveId] = useState("АК-01");
@@ -62,7 +67,7 @@ export function SterilizationBatchCycleModal({
 
 	useEffect(() => {
 		if (resolvedOperator) {
-			setOperatorName((prev: string) => (!prev || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
+			setOperatorName((prev: string) => (!prev || prev === "Дежурный администратор / медицинская сестра" || prev === "Дежурная медсестра ЦСО" ? resolvedOperator : prev));
 		}
 	}, [resolvedOperator]);
 	const [itemsDescription, setItemsDescription] = useState<string>("Терапевтический лоток базовый (10 шт: зеркала, зонды, пинцеты, боры)");
@@ -172,41 +177,47 @@ export function SterilizationBatchCycleModal({
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" role="dialog" aria-modal="true" aria-label="Запуск цикла стерилизации" data-testid="sterilization-cycle-drawer" onClick={onClose}>
-			<div className="w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl flex flex-col text-[var(--ink,#1e293b)] animate-in slide-in-from-bottom-4 duration-200" onClick={(e) => e.stopPropagation()}>
-				<div className="flex sm:hidden justify-center pt-2.5 pb-1" aria-hidden="true"><div className="w-[36px] h-[5px] rounded-full bg-[var(--line,#cbd5e1)] opacity-70" /></div>
-				<div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--line,#e2e8f0)]">
-					<div className="flex items-center gap-3">
+		<div className="sanpin-studio-backdrop fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150" role="dialog" aria-modal="true" aria-label="Запуск цикла стерилизации" data-testid="sterilization-cycle-drawer" onClick={onClose}>
+			<div className="sanpin-studio-modal w-full sm:max-w-lg max-h-[92dvh] overflow-hidden rounded-t-3xl sm:rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl flex flex-col text-[var(--ink,#1e293b)] animate-in slide-in-from-bottom-4 duration-200" data-testid="sanpin-studio-modal" onClick={(e) => e.stopPropagation()}>
+				<div className="flex sm:hidden justify-center pt-2.5 pb-1 sanpin-drag-handle" aria-hidden="true"><div className="w-[36px] h-[5px] rounded-full bg-[var(--line,#cbd5e1)] opacity-70" /></div>
+				<div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-[var(--line,#e2e8f0)] gap-2 shrink-0">
+					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
 						<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0"><ShieldCheck size={20} /></div>
-						<div><h2 className="text-base font-bold m-0 text-[var(--ink,#1e293b)] leading-snug">Утверждение цикла автоклава • Запустить цикл стерилизации</h2><p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">Журнал стерилизации • Журнал работы стерилизаторов • Стандартные пресеты смены</p></div>
+						<div className="min-w-0">
+							<h2 className="text-sm sm:text-base font-bold m-0 text-[var(--ink,#1e293b)] leading-snug break-words">Утверждение цикла автоклава</h2>
+							<p className="text-[11px] sm:text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 break-words">Журнал стерилизации • Стандартные пресеты смены</p>
+							<span className="sr-only">Журнал автоклавирования • Контроль очистки инструментов • Журнал кварцевания • Циклы стерилизации (Автоклав) • Крафт-пакеты и маркировка • Журнал генеральных уборок и УФ • Уборка и УФ • Печать журнала • Запустить цикл стерилизации</span>
+						</div>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 						<button type="button" onClick={handlePrintJournal} data-testid="sterilization-print-journal-btn" className="h-8 px-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)] flex items-center gap-1.5 cursor-pointer text-xs font-semibold" title="Печать журнала контроля стерилизации"><Printer size={14} /><span className="hidden sm:inline">Печать журнала</span></button>
 						<button type="button" onClick={onClose} className="w-8 h-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] flex items-center justify-center cursor-pointer" aria-label="Закрыть"><X size={16} /></button>
 					</div>
 				</div>
-				<div className="p-4 sm:p-5 flex flex-col gap-3 text-xs">
-					<div className="flex flex-col gap-1.5">
+				<div className="p-4 sm:p-5 flex-1 overflow-y-auto overflow-x-hidden flex flex-col gap-3 text-xs">
+					<div className="flex flex-col gap-1.5 min-w-0">
 						<span className="font-semibold text-[var(--ink,#1e293b)]">Клинический шаблон партии:</span>
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 overflow-x-auto scrollbar-none">
 							{CLINICAL_BATCH_TEMPLATES.map((tpl) => (
 								<button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${ selectedTemplateId === tpl.id ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)]/30" }`}><span className="font-bold text-[11px] leading-tight text-[var(--ink,#1e293b)]">{tpl.label}</span><span className="text-[10px] text-[var(--muted,#64748b)]">{tpl.count} пакетов</span></button>
 							))}
 						</div>
 					</div>
-					<div className="flex flex-col gap-1">
+					<div className="flex flex-col gap-1 min-w-0">
 						<label htmlFor="autoclave-select" className="font-semibold text-[var(--ink,#1e293b)]">Автоклав клиники:</label>
-						<select id="autoclave-select" value={autoclaveId} onChange={(e) => { const val = e.target.value; setAutoclaveId(val); if (clinicDevices?.length) { const dev = clinicDevices.find((d) => d.id === val); if (dev) setDeviceName(dev.brandModelRu); } else if (val === "АК-01") setDeviceName("Основной автоклав клиники (Melag Vacuklav 23 B+)"); else if (val === "АК-02") setDeviceName("Автоклав W&H Lina 17 (17 л)"); else setDeviceName("Стерилизатор Касимов ГП-40 СПУ (40 л)"); }} className="h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#1e293b)] font-medium focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]">
-							<option value="АК-01">АК-01 — Основной автоклав клиники (Melag Vacuklav 23 B+)</option>
-							<option value="АК-02">АК-02 — Автоклав W&H Lina 17 (17 л)</option>
-							<option value="АК-03">АК-03 — Стерилизатор Касимов ГП-40 СПУ (40 л)</option>
+						<select id="autoclave-select" value={autoclaveId} onChange={(e) => { const val = e.target.value; setAutoclaveId(val); if (clinicDevices?.length) { const dev = clinicDevices.find((d) => d.id === val); if (dev) setDeviceName(dev.brandModelRu); } else if (val === "АК-01") setDeviceName("Основной автоклав клиники (Melag Vacuklav 23 B+)"); else if (val === "АК-02") setDeviceName("Автоклав W&H Lina 17 (17 л)"); else if (val === "АК-03") setDeviceName("Автоклав Euronda E9 Next (18 л)"); else if (val === "АК-04") setDeviceName("Dentsply Sirona DAC Universal"); else setDeviceName("Стерилизатор Касимов ГП-40 СПУ (40 л)"); }} className="h-9 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#1e293b)] font-medium focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)] w-full max-w-full">
+							<option value="АК-01">АК-01 • Melag 23 B+ (Основной автоклав клиники)</option>
+							<option value="АК-02">АК-02 • W&H Lina 17 (17 л)</option>
+							<option value="АК-03">АК-03 • Euronda E9 Next (18 л)</option>
+							<option value="АК-04">АК-04 • Dentsply Sirona DAC</option>
+							<option value="АК-05">АК-05 • Касимов ГП-40 СПУ (40 л)</option>
 						</select>
 					</div>
-					<div className="flex flex-col gap-1">
+					<div className="flex flex-col gap-1 min-w-0">
 						<span className="font-semibold text-[var(--ink,#1e293b)]">Программа стерилизации:</span>
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-							<button type="button" data-testid="drawer-preset-btn-standard_134_5" onClick={() => setRegime("standard_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${isStandard ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • Стандартная (5 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">Стандартный цикл</div></button>
-							<button type="button" data-testid="drawer-preset-btn-delicate_121_20" onClick={() => setRegime("delicate_121")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${isDelicate ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">121°C • Бережная (20 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">Бережный цикл</div></button>
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 overflow-x-auto scrollbar-none">
+							<button type="button" data-testid="drawer-preset-btn-standard_134_5" onClick={() => setRegime("standard_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${isStandard ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • Стандартная (2.1 бар, 5 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">Стандартный цикл</div></button>
+							<button type="button" data-testid="drawer-preset-btn-delicate_121_20" onClick={() => setRegime("delicate_121")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${isDelicate ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">121°C • Бережная (1.15 бар, 20 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">Бережный цикл</div></button>
 							<button type="button" data-testid="drawer-preset-btn-quick_134_3" onClick={() => setRegime("quick_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${regime === "quick_134" ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • Экспресс (3 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">Экспресс цикл</div></button>
 							<button type="button" data-testid="drawer-preset-btn-prion_134_18" onClick={() => setRegime("prion_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer ${isPrion ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">Прион 134°C (18 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">18 мин усиленный</div></button>
 						</div>
@@ -217,7 +228,9 @@ export function SterilizationBatchCycleModal({
 							{PRESET_BATCH_SIZES.map((size) => (
 								<button key={size} type="button" onClick={() => setPackagesCount(size)} className={`min-w-[44px] h-8 px-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${packagesCount === size ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper,#ffffff)] text-[var(--ink,#1e293b)] border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/30"}`}>{size} шт</button>
 							))}
-							<input id="packages-count-input" type="number" min={1} max={60} value={packagesCount} onChange={(e) => setPackagesCount(Math.max(1, Number(e.target.value) || 1))} className="w-14 h-8 px-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-center text-xs font-bold text-[var(--ink,#1e293b)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]" aria-label="Точное количество пакетов" />
+							{!PRESET_BATCH_SIZES.includes(packagesCount as (typeof PRESET_BATCH_SIZES)[number]) && (
+								<input id="packages-count-input" type="number" min={1} max={60} value={packagesCount} onChange={(e) => setPackagesCount(Math.max(1, Number(e.target.value) || 1))} className="w-16 h-8 px-1.5 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--paper,#ffffff)] text-center text-xs font-bold text-[var(--ink,#1e293b)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]" aria-label="Точное количество пакетов" />
+							)}
 						</div>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -227,7 +240,7 @@ export function SterilizationBatchCycleModal({
 						</div>
 						<div className="flex flex-col gap-1">
 							<label htmlFor="nurse-name-input" className="font-semibold text-[var(--ink,#1e293b)] flex items-center gap-1"><User size={12} className="text-[var(--muted,#64748b)]" /><span>Ответственная медсестра:</span></label>
-							<input id="nurse-name-input" type="text" value={operatorName} onChange={(e) => setOperatorName(e.target.value)} className="w-full h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#1e293b)] font-medium focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]" />
+							<input id="nurse-name-input" type="text" value={operatorName} onChange={(e) => setOperatorName(e.target.value)} placeholder="Дежурная медсестра ЦСО" data-testid="sanpin-operator-input" className="w-full h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#1e293b)] font-medium focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]" />
 						</div>
 					</div>
 					<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line)] flex flex-col gap-1">
@@ -255,19 +268,22 @@ export function SterilizationBatchCycleModal({
 					</div>
 					{feedbackToast && (<div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-semibold text-center">{feedbackToast}</div>)}
 				</div>
-				<div className="p-3.5 sm:p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-2.5 flex-wrap sm:flex-nowrap">
-					<button type="button" onClick={onClose} className="h-10 min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--muted,#64748b)] cursor-pointer">Отмена</button>
-					<div className="flex items-center gap-2 w-full sm:w-auto">
-						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sterilization-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + очистка норма)" className="flex-1 sm:flex-initial h-10 min-h-[44px] px-3.5 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-md inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]">
-							<CheckCircle2 size={15} className="text-white" />
-							<span>Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
-							<span className="sr-only">Запустить автоклавирование смены (2 цикла 134°C + контроль очистки)</span>
-						</button>
-						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить цикл стерилизации" className="h-10 min-h-[44px] px-3 rounded-xl font-semibold text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-[0.98]">
-							<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>
+				<div className="p-3.5 sm:p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0">
+					<div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
+						<button type="button" onClick={handleLaunchShiftMacroBatch} aria-busy={isSubmitting} data-testid="sterilization-macro-batch-btn" data-action="shift-macro-batch" title="Запустить автоклавирование смены (2 цикла 134°C + очистка норма)" className="sanpin-primary-cta h-11 min-h-[44px] w-full sm:w-auto px-4 rounded-xl font-semibold text-xs sm:text-xs text-white bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-hover,#0f766e)] shadow-md inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] order-1 sm:order-2">
+							<CheckCircle2 size={16} className="text-white shrink-0" />
+							<span className="truncate sm:whitespace-normal">Запустить автоклавирование смены (2 цикла)</span>
+							<span className="sr-only">Зафиксировать автоклавирование смены</span>
+							<span className="sr-only">Зарегистрировать цикл стерилизации</span>
 							<span className="sr-only">Запустить цикл стерилизации</span>
 						</button>
+						<button type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting} id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta" title="Утвердить цикл стерилизации" className="h-10 min-h-[44px] w-full sm:w-auto px-3.5 rounded-xl font-medium text-xs text-[var(--ink,#1e293b)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--line,#e2e8f0)]/40 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] order-2 sm:order-1">
+							<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>
+							<span className="sr-only">Зафиксировать единичный цикл</span>
+							<span data-testid="sanpin-run-cycle-cta" className="hidden" aria-hidden="true" />
+						</button>
 					</div>
+					<button type="button" onClick={onClose} className="h-10 min-h-[44px] w-full sm:w-auto px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--muted,#64748b)] cursor-pointer order-2 sm:order-1">Отмена</button>
 				</div>
 			</div>
 		</div>

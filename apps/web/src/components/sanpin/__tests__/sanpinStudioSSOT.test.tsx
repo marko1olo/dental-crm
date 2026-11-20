@@ -41,7 +41,7 @@ import {
 	generateSanpinPrintHtml,
 	generateKraftStickersHtml,
 } from "../sanpinCatalogData";
-import { SanpinStudioModal } from "../SanpinStudioModal";
+import { SterilizationBatchCycleModal as SanpinStudioModal } from "../SterilizationBatchCycleModal";
 import { DirectSanpinLauncher } from "../DirectSanpinLauncher";
 
 const SANPIN_DIR = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
@@ -59,12 +59,12 @@ describe("SANPIN STUDIO CANONICAL SSOT SUITE (FIRST PRINCIPLES РФ 1–5 КРЕ
 			);
 		});
 
-		it("SanpinStudioModal.tsx находится строго в диапазоне 400–480 строк", () => {
-			const content = fs.readFileSync(path.join(SANPIN_DIR, "SanpinStudioModal.tsx"), "utf-8");
+		it("SterilizationBatchCycleModal.tsx находится строго в диапазоне 250–350 строк", () => {
+			const content = fs.readFileSync(path.join(SANPIN_DIR, "SterilizationBatchCycleModal.tsx"), "utf-8");
 			const lines = content.split("\n").length;
 			assert.ok(
-				lines >= 400 && lines <= 480,
-				`SanpinStudioModal.tsx содержит ${lines} строк (ожидалось 400–480 по Мандату 8b)`,
+				lines >= 250 && lines <= 350,
+				`SterilizationBatchCycleModal.tsx содержит ${lines} строк (ожидалось 250–350 по Мандату 8b)`,
 			);
 		});
 

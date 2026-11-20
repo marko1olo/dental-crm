@@ -28,7 +28,6 @@ describe("SanPiN Registers — Synthetic Names Elimination & Regulatory Roles Ve
 	it("verifies elimination of banned synthetic names from production SanPiN components", () => {
 		const targetFiles = [
 			"SanpinRegisters.tsx",
-			"SanpinStudioModal.tsx",
 			"SterilizationBatchCycleModal.tsx",
 			"SanPinSterilizationJournal.tsx",
 			"GeneralCleaningRegisterTab.tsx",

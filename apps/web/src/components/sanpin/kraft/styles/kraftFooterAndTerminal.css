@@ -17,7 +17,7 @@
 [data-theme="dark"] .kraft-studio-footer,
 .dark .kraft-studio-footer {
 	background: #1e293b;
-	border-top-color: #334155;
+	border-top-color: var(--line);
 }
 
 .kraft-btn {
@@ -45,7 +45,7 @@
 .dark .kraft-btn-secondary {
 	background: #0f172a;
 	color: #f8fafc;
-	border-color: #334155;
+	border-color: var(--line);
 }
 
 .kraft-btn-secondary:hover {
@@ -94,7 +94,7 @@
 
 [data-theme="dark"] .kraft-terminal-container,
 .dark .kraft-terminal-container {
-	border-color: #334155;
+	border-color: var(--line);
 	background: #020617;
 	color: #38bdf8;
 }

@@ -15,7 +15,7 @@
 [data-theme="dark"] .kraft-panel-card,
 .dark .kraft-panel-card {
 	background: #1e293b;
-	border-color: #334155;
+	border-color: var(--line);
 }
 
 .kraft-panel-title {
@@ -32,7 +32,7 @@
 [data-theme="dark"] .kraft-panel-title,
 .dark .kraft-panel-title {
 	color: #f8fafc;
-	border-bottom-color: #334155;
+	border-bottom-color: var(--line);
 }
 
 .kraft-presets-grid {
@@ -57,7 +57,7 @@
 [data-theme="dark"] .kraft-preset-item,
 .dark .kraft-preset-item {
 	background: #0f172a;
-	border-color: #334155;
+	border-color: var(--line);
 }
 
 .kraft-preset-item:hover {

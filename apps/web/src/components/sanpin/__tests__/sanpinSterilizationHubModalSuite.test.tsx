@@ -14,17 +14,17 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { SanpinStudioModal } from "../SanpinStudioModal";
+import { SterilizationBatchCycleModal as SanpinStudioModal } from "../SterilizationBatchCycleModal";
 import { AUTOCLAVE_PROGRAMS, CLINIC_STERILIZERS, calculateBatchStockDeduction, createOneClickShiftBatch } from "../sanpinCatalogData";
 
 describe("SANPIN STERILIZATION & PSO HUB SSOT (RED TEAM INQUISITION)", () => {
 	describe("1. Архитектурные Sweet Spot инварианты (Мандат 8b/8zi)", () => {
-		it("SanpinStudioModal.tsx является каноническим студийным компонентом (Мандат 8b/8zi)", () => {
-			const filePath = path.join(process.cwd(), "apps/web/src/components/sanpin/SanpinStudioModal.tsx");
+		it("SterilizationBatchCycleModal.tsx является каноническим студийным компонентом (Мандат 8b/8zi)", () => {
+			const filePath = path.join(process.cwd(), "apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx");
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
-				lines >= 350 && lines <= 450,
-				`SanpinStudioModal.tsx должен быть 350–450 строк по Мандату 8b (факт: ${lines})`,
+				lines >= 250 && lines <= 350,
+				`SterilizationBatchCycleModal.tsx должен быть 250–350 строк по Мандату 8b (факт: ${lines})`,
 			);
 		});
 

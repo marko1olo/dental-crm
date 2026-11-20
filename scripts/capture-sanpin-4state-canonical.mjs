@@ -18,9 +18,13 @@ const __dirname = path.dirname(__filename);
 const CONV_ID = process.env.CONV_ID || "c43536bd-66c7-4408-9ccd-c8b0e44c8e31";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}/screenshots/sanpin`;
 const OUT_DOCS = path.resolve(__dirname, "../docs/screenshots/sanpin");
+const OUT_PROOFS = path.resolve(__dirname, "../docs/proofs/sanpin");
 
 if (!existsSync(OUT_DOCS)) {
 	mkdirSync(OUT_DOCS, { recursive: true });
+}
+if (!existsSync(OUT_PROOFS)) {
+	mkdirSync(OUT_PROOFS, { recursive: true });
 }
 if (!existsSync(OUT_CONV)) {
 	mkdirSync(OUT_CONV, { recursive: true });
@@ -41,7 +45,9 @@ async function suppressOverlays(page) {
 				[data-testid="demo-mode-banner"],
 				.global-toast-container,
 				[role="alert"],
-				.shepherd-element {
+				.shepherd-element,
+				[data-testid="offline-banner"],
+				.offline-indicator {
 					display: none !important;
 					pointer-events: none !important;
 					opacity: 0 !important;
@@ -233,7 +239,16 @@ async function openSanpinModal(page) {
 		});
 		await sleep(1000);
 	}
-	await modal.waitFor({ state: "visible", timeout: 12000 });
+	isVisible = await modal.isVisible({ timeout: 2000 }).catch(() => false);
+	if (!isVisible) {
+		console.log("  [SANPIN] Trying direct launcher click...");
+		const btn = page.locator('[data-testid="direct-sanpin-launcher"], [data-testid="scanner-tab-sanpin"]');
+		if (await btn.count() > 0 && await btn.first().isVisible().catch(() => false)) {
+			await btn.first().click().catch(() => {});
+			await sleep(1000);
+		}
+	}
+	await modal.waitFor({ state: "visible", timeout: 25000 });
 	console.log("  [SANPIN] Modal is visible!");
 }
 
@@ -267,6 +282,8 @@ async function run() {
 			await page.screenshot({ path: targetFile, fullPage: false });
 			const convTarget = path.join(OUT_CONV, "01_sanpin_studio_pc_light_1440x900.png");
 			copyFileSync(targetFile, convTarget);
+			copyFileSync(targetFile, path.join(OUT_PROOFS, "01_sanpin_autoclave_pc_light_1440x900.png"));
+			copyFileSync(targetFile, path.join(OUT_PROOFS, "01_sanpin_studio_pc_light_1440x900.png"));
 
 			const sz = statSync(targetFile).size;
 			console.log(`  [SAVED] ${targetFile} (${Math.round(sz / 1024)} KB)`);
@@ -294,6 +311,8 @@ async function run() {
 			await page.screenshot({ path: targetFile, fullPage: false });
 			const convTarget = path.join(OUT_CONV, "02_sanpin_studio_pc_dark_1440x900.png");
 			copyFileSync(targetFile, convTarget);
+			copyFileSync(targetFile, path.join(OUT_PROOFS, "02_sanpin_autoclave_pc_dark_1440x900.png"));
+			copyFileSync(targetFile, path.join(OUT_PROOFS, "02_sanpin_studio_pc_dark_1440x900.png"));
 
 			const sz = statSync(targetFile).size;
 			console.log(`  [SAVED] ${targetFile} (${Math.round(sz / 1024)} KB)`);
@@ -323,6 +342,8 @@ async function run() {
 			await page.screenshot({ path: targetFile, fullPage: false });
 			const convTarget = path.join(OUT_CONV, "03_sanpin_studio_mobile_light_390x844.png");
 			copyFileSync(targetFile, convTarget);
+			copyFileSync(targetFile, path.join(OUT_PROOFS, "03_sanpin_autoclave_mobile_light_390x844.png"));
+			copyFileSync(targetFile, path.join(OUT_PROOFS, "03_sanpin_studio_mobile_light_390x844.png"));
 
 			const sz = statSync(targetFile).size;
 			console.log(`  [SAVED] ${targetFile} (${Math.round(sz / 1024)} KB)`);
@@ -352,6 +373,8 @@ async function run() {
 			await page.screenshot({ path: targetFile, fullPage: false });
 			const convTarget = path.join(OUT_CONV, "04_sanpin_studio_mobile_dark_390x844.png");
 			copyFileSync(targetFile, convTarget);
+			copyFileSync(targetFile, path.join(OUT_PROOFS, "04_sanpin_autoclave_mobile_dark_390x844.png"));
+			copyFileSync(targetFile, path.join(OUT_PROOFS, "04_sanpin_studio_mobile_dark_390x844.png"));
 
 			const sz = statSync(targetFile).size;
 			console.log(`  [SAVED] ${targetFile} (${Math.round(sz / 1024)} KB)`);

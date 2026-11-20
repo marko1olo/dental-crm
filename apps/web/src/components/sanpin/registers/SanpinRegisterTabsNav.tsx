@@ -12,7 +12,7 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 }) => {
 	return (
 		<div
-			className="sanpin-unified-nav"
+			className="sanpin-unified-nav overflow-x-auto scrollbar-none"
 			style={{
 				padding: "4px 0",
 				width: "100%",
@@ -20,6 +20,7 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 				overflowX: "auto",
 				WebkitOverflowScrolling: "touch",
 				scrollbarWidth: "none",
+				msOverflowStyle: "none",
 			}}
 		>
 			<div
@@ -35,6 +36,7 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 					borderRadius: "12px",
 					border: "1px solid var(--line, #e2e8f0)",
 					minWidth: "max-content",
+					flexShrink: 0,
 				}}
 			>
 				{SANPIN_CANONICAL_TABS.map((tab) => {
@@ -46,14 +48,13 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 							type="button"
 							role="tab"
 							aria-selected={isActive}
-							className={`sanpin-tab-btn touch-manipulation ${isActive ? "active" : ""}`}
+							className={`sanpin-tab-btn touch-manipulation px-2.5 sm:px-3.5 ${isActive ? "active" : ""}`}
 							onClick={() => onSelectTab(tab.id)}
 							data-testid={`tab-${tab.id}-btn`}
 							style={{
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "6px",
-								padding: "8px 14px",
 								minHeight: "44px",
 								minWidth: "max-content",
 								flexShrink: 0,

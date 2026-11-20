@@ -1,4 +1,4 @@
-import { Filter } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
 import React from "react";
 
 interface CabinetUnitBreakdownChecksProps {
@@ -29,75 +29,112 @@ interface CabinetUnitBreakdownChecksProps {
 	setClampsReady: (v: boolean) => void;
 	forcepsReady: boolean;
 	setForcepsReady: (v: boolean) => void;
+	onQuickFillAllReady?: (() => void) | undefined;
 }
 
 export function CabinetUnitBreakdownChecks(p: CabinetUnitBreakdownChecksProps) {
+	const areTraysReady =
+		p.mirrorReady && p.probeReady && p.tweezersReady && p.excavatorReady && p.spatulaReady;
+	const areHandpiecesAndAspirationReady =
+		p.turbineSterile && p.contraAngleSterile && p.class5Verified && p.salivaConnected && p.hveConnected;
+
+	const handleToggleTrays = () => {
+		const next = !areTraysReady;
+		p.setMirrorReady(next);
+		p.setProbeReady(next);
+		p.setTweezersReady(next);
+		p.setExcavatorReady(next);
+		p.setSpatulaReady(next);
+	};
+
+	const handleToggleAspiration = () => {
+		const next = !areHandpiecesAndAspirationReady;
+		p.setTurbineSterile(next);
+		p.setContraAngleSterile(next);
+		p.setClass5Verified(next);
+		p.setSalivaConnected(next);
+		p.setHveConnected(next);
+	};
+
+	const handleConfirmAllReady = () => {
+		if (p.onQuickFillAllReady) {
+			p.onQuickFillAllReady();
+		} else {
+			p.setMirrorReady(true);
+			p.setProbeReady(true);
+			p.setTweezersReady(true);
+			p.setExcavatorReady(true);
+			p.setSpatulaReady(true);
+			p.setTurbineSterile(true);
+			p.setContraAngleSterile(true);
+			p.setClass5Verified(true);
+			p.setSalivaConnected(true);
+			p.setHveConnected(true);
+			if (p.requiresCofferdam) {
+				p.setRubberDamReady(true);
+				p.setClampsReady(true);
+				p.setForcepsReady(true);
+			}
+		}
+	};
+
 	return (
-		<div style={{ background: "var(--paper-subtle, #f8fafc)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1rem" }}>
-			<h4 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.6rem", color: "var(--brand-primary, #2563eb)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-				<Filter size={16} /> Ручная отметка неисправностей узлов:
-			</h4>
+		<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col gap-3 text-xs" data-testid="cabinet-clinical-readiness-block">
+			<div className="flex items-center gap-2 text-[var(--ink,#1e293b)] font-bold text-xs sm:text-sm">
+				<ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
+				<span>Клиническая готовность кабинета к приёму</span>
+			</div>
 
-			<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", fontSize: "0.82rem" }}>
-				<div style={{ background: "var(--paper, #ffffff)", padding: "0.55rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-					<strong style={{ display: "block", marginBottom: "0.3rem", color: "var(--ink, #1e293b)", fontSize: "0.8rem" }}>Наконечники и стерильность:</strong>
-					<label style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.25rem", cursor: "pointer" }}>
-						<input type="checkbox" checked={p.turbineSterile} onChange={(e) => p.setTurbineSterile(e.target.checked)} style={{ width: "16px", height: "16px" }} />
-						<span>Турбинный наконечник стерилен</span>
-					</label>
-					<label style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.25rem", cursor: "pointer" }}>
-						<input type="checkbox" checked={p.contraAngleSterile} onChange={(e) => p.setContraAngleSterile(e.target.checked)} style={{ width: "16px", height: "16px" }} />
-						<span>Угловой / микромоторный наконечник стерилен</span>
-					</label>
-					<label style={{ display: "flex", alignItems: "center", gap: "0.45rem", cursor: "pointer" }}>
-						<input type="checkbox" checked={p.class5Verified} onChange={(e) => p.setClass5Verified(e.target.checked)} style={{ width: "16px", height: "16px" }} />
-						<span style={{ fontWeight: 600, color: "var(--ok-fg, #059669)" }}>Индикатор 5 класса проверен</span>
-					</label>
-				</div>
-
-				<div style={{ background: "var(--paper, #ffffff)", padding: "0.55rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-					<strong style={{ display: "block", marginBottom: "0.3rem", color: "var(--ink, #1e293b)", fontSize: "0.8rem" }}>Смотровой лоток:</strong>
-					<div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.2rem" }}>
-						<label style={{ display: "flex", alignItems: "center", gap: "0.35rem", cursor: "pointer" }}>
-							<input type="checkbox" checked={p.mirrorReady} onChange={(e) => p.setMirrorReady(e.target.checked)} style={{ width: "15px", height: "15px" }} />
-							<span>Зеркало</span>
-						</label>
-						<label style={{ display: "flex", alignItems: "center", gap: "0.35rem", cursor: "pointer" }}>
-							<input type="checkbox" checked={p.probeReady} onChange={(e) => p.setProbeReady(e.target.checked)} style={{ width: "15px", height: "15px" }} />
-							<span>Зонд</span>
-						</label>
-						<label style={{ display: "flex", alignItems: "center", gap: "0.35rem", cursor: "pointer" }}>
-							<input type="checkbox" checked={p.tweezersReady} onChange={(e) => p.setTweezersReady(e.target.checked)} style={{ width: "15px", height: "15px" }} />
-							<span>Пинцет</span>
-						</label>
-						<label style={{ display: "flex", alignItems: "center", gap: "0.35rem", cursor: "pointer" }}>
-							<input type="checkbox" checked={p.excavatorReady} onChange={(e) => p.setExcavatorReady(e.target.checked)} style={{ width: "15px", height: "15px" }} />
-							<span>Экскаватор</span>
-						</label>
-						<label style={{ display: "flex", alignItems: "center", gap: "0.35rem", cursor: "pointer", gridColumn: "span 2" }}>
-							<input type="checkbox" checked={p.spatulaReady} onChange={(e) => p.setSpatulaReady(e.target.checked)} style={{ width: "15px", height: "15px" }} />
-							<span>Гладилка-штопфер</span>
-						</label>
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+				<button
+					type="button"
+					onClick={handleToggleTrays}
+					className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer min-h-[52px] ${
+						areTraysReady
+							? "border-emerald-500/30 bg-emerald-500/5 text-emerald-800 dark:text-emerald-300"
+							: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)]/30"
+					}`}
+					title="Стерильные инструментальные лотки"
+				>
+					<div className="flex items-center justify-between">
+						<span className="font-bold text-xs text-[var(--ink,#1e293b)]">Стерильные инструментальные лотки</span>
+						<CheckCircle2 className={`w-4 h-4 shrink-0 ${areTraysReady ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--muted,#64748b)]"}`} />
 					</div>
-				</div>
+					<span className="text-[11px] text-[var(--muted,#64748b)]">
+						{areTraysReady ? "В наличии и укомплектованы (Готово)" : "Требуется пополнение лотков"}
+					</span>
+				</button>
 
-				<div style={{ background: "var(--paper, #ffffff)", padding: "0.55rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-					<strong style={{ display: "block", marginBottom: "0.3rem", color: "var(--ink, #1e293b)", fontSize: "0.8rem" }}>Аспирация и изоляция:</strong>
-					<label style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.2rem", cursor: "pointer" }}>
-						<input type="checkbox" checked={p.salivaConnected} onChange={(e) => p.setSalivaConnected(e.target.checked)} style={{ width: "16px", height: "16px" }} />
-						<span>Слюноотсос исправен</span>
-					</label>
-					<label style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.2rem", cursor: "pointer" }}>
-						<input type="checkbox" checked={p.hveConnected} onChange={(e) => p.setHveConnected(e.target.checked)} style={{ width: "16px", height: "16px" }} />
-						<span>Пылесос (HVE) исправен</span>
-					</label>
-					{p.requiresCofferdam && (
-						<label style={{ display: "flex", alignItems: "center", gap: "0.45rem", cursor: "pointer" }}>
-							<input type="checkbox" checked={p.rubberDamReady && p.clampsReady && p.forcepsReady} onChange={(e) => { const v = e.target.checked; p.setRubberDamReady(v); p.setClampsReady(v); p.setForcepsReady(v); }} style={{ width: "16px", height: "16px" }} />
-							<span style={{ fontWeight: 600, color: "var(--teal, #0d9488)" }}>Коффердам (платок, клампы)</span>
-						</label>
-					)}
-				</div>
+				<button
+					type="button"
+					onClick={handleToggleAspiration}
+					className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer min-h-[52px] ${
+						areHandpiecesAndAspirationReady
+							? "border-emerald-500/30 bg-emerald-500/5 text-emerald-800 dark:text-emerald-300"
+							: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)]/30"
+					}`}
+					title="Аспирационная система и наконечники"
+				>
+					<div className="flex items-center justify-between">
+						<span className="font-bold text-xs text-[var(--ink,#1e293b)]">Аспирационная система и наконечники</span>
+						<CheckCircle2 className={`w-4 h-4 shrink-0 ${areHandpiecesAndAspirationReady ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--muted,#64748b)]"}`} />
+					</div>
+					<span className="text-[11px] text-[var(--muted,#64748b)]">
+						{areHandpiecesAndAspirationReady ? "Продезинфицированы и готовы (Готово)" : "Требуется проверка аспирации"}
+					</span>
+				</button>
+			</div>
+
+			<div className="pt-1 flex items-center justify-end">
+				<button
+					type="button"
+					onClick={handleConfirmAllReady}
+					className="w-full sm:w-auto h-9 min-h-[36px] px-4 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
+					title="Подтвердить готовность кабинета к смене (1 клик)"
+				>
+					<Sparkles size={14} className="text-white shrink-0" />
+					<span>Подтвердить готовность кабинета к смене</span>
+				</button>
 			</div>
 		</div>
 	);

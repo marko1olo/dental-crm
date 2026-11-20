@@ -211,7 +211,7 @@ export function createOneClickShiftBatch(options?: {
 	const dateStr = now.toLocaleDateString("ru-RU");
 	const timeStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 	const count = options?.packagesCount ?? 14;
-	const operator = options?.operatorName || "Дежурный администратор / медицинская сестра";
+	const operator = options?.operatorName || "Дежурная медсестра ЦСО";
 	const program: AutoclaveProgram = AUTOCLAVE_PROGRAMS.find((p) => p.id === options?.programId) ?? AUTOCLAVE_PROGRAMS[0]!;
 	const device = options?.autoclaveName || CLINIC_STERILIZERS[0]!.model;
 
@@ -244,8 +244,8 @@ export function getSanpinBatchRecords(isDemo = false): SterilizationBatchCycleRe
 	if (!isDemo) return [];
 	const today = new Date().toLocaleDateString("ru-RU");
 	return [
-		{ id: "demo-cycle-1", cycleNumber: 1, date: today, time: "09:30", autoclaveId: "autoclave-01", autoclaveName: "Автоклав №1 (Melag Vacuklav 23 B+)", programId: "standard_134", temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 5, packagesCount: 14, chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Дежурный администратор / медицинская сестра", itemsDescription: "Наборы терапевтические (4 шт.), наборы смотровые (6 шт.), наконечники (4 шт.)", status: "completed" },
-		{ id: "demo-cycle-2", cycleNumber: 2, date: today, time: "14:15", autoclaveId: "autoclave-02", autoclaveName: "Автоклав №2 (W&H Lisa 500)", programId: "delicate_121", temperatureCelsius: 121, pressureBar: 1.15, exposureMinutes: 20, packagesCount: 8, chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Дежурный администратор / медицинская сестра", itemsDescription: "Силиконовые оттискные ложки, пластиковые держатели снимков, оптика", status: "completed" },
+		{ id: "demo-cycle-1", cycleNumber: 1, date: today, time: "09:30", autoclaveId: "autoclave-01", autoclaveName: "Автоклав №1 (Melag Vacuklav 23 B+)", programId: "standard_134", temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 5, packagesCount: 14, chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Дежурная медсестра ЦСО", itemsDescription: "Наборы терапевтические (4 шт.), наборы смотровые (6 шт.), наконечники (4 шт.)", status: "completed" },
+		{ id: "demo-cycle-2", cycleNumber: 2, date: today, time: "14:15", autoclaveId: "autoclave-02", autoclaveName: "Автоклав №2 (W&H Lisa 500)", programId: "delicate_121", temperatureCelsius: 121, pressureBar: 1.15, exposureMinutes: 20, packagesCount: 8, chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Дежурная медсестра ЦСО", itemsDescription: "Силиконовые оттискные ложки, пластиковые держатели снимков, оптика", status: "completed" },
 	];
 }
 

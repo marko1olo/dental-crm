@@ -35,7 +35,7 @@ export function generateShiftSanpinDossierPrintHtml(
 		</div>
 	</div>
 
-	<div class="sec-title">1. ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И СТЕРИЛИЗАЦИИ ИНСТРУМЕНТОВ</div>
+	<div class="sec-title">1. Журнал автоклавирования и стерилизации инструментов</div>
 	<table>
 		<thead>
 			<tr>
@@ -46,7 +46,7 @@ export function generateShiftSanpinDossierPrintHtml(
 		<tbody>${f257Rows}</tbody>
 	</table>
 
-	<div class="sec-title">2. ПРЕДСТЕРИЛИЗАЦИОННАЯ ОЧИСТКА (АЗОПИРАМ, ФЕНОЛФТАЛЕИН)</div>
+	<div class="sec-title">2. Предстерилизационная очистка (азопирам, фенолфталеин)</div>
 	<table>
 		<thead>
 			<tr>
@@ -57,7 +57,7 @@ export function generateShiftSanpinDossierPrintHtml(
 		<tbody>${psoRows}</tbody>
 	</table>
 
-	<div class="sec-title">3. МИКРОКЛИМАТ, БАКТЕРИЦИДНЫЕ УСТАНОВКИ И МЕДОТХОДЫ</div>
+	<div class="sec-title">3. Микроклимат, бактерицидные установки и медотходы</div>
 	<table>
 		<thead>
 			<tr>

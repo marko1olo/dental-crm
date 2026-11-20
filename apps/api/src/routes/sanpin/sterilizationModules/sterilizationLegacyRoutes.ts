@@ -33,7 +33,7 @@ import {
 } from "./sterilizerEquipmentHandlers.js";
 
 export function registerSterilizationLegacyRoutes(app: FastifyInstance): void {
-	// Старые роуты Формы 257/у
+	// Устаревшие эндпоинты журнала автоклавирования
 	app.get("/api/registers/sterilization", handleGetSterilizationLogs);
 	app.post("/api/registers/sterilization", handleCreateSterilizationLog);
 	app.get("/api/sterilization/logs", handleGetSterilizationLogs);
@@ -45,13 +45,13 @@ export function registerSterilizationLegacyRoutes(app: FastifyInstance): void {
 	app.post("/api/sterilization/quick-norm", handleQuickNormCycle);
 	app.post("/api/registers/sterilization/quick-norm", handleQuickNormCycle);
 
-	// Сканирование и привязка к 043/у
+	// Сканирование и привязка к медицинской карте приёма
 	app.post("/api/sterilization/scan", handleScanSterilization);
 	app.post("/api/sterilization/link", handleSterilizationLink);
 	app.post("/api/sterilization/generate-barcode", handleGenerateBarcode);
 	app.post("/api/sterilization/unseal", handleUnsealKraftPackage);
 
-	// ПСО контроль
+	// Контроль очистки инструментов
 	app.get("/api/sterilization/pso-tests", handleGetPsoTests);
 	app.post("/api/sterilization/pso-tests", handleCreatePsoTest);
 	app.post("/api/sterilization/pso/quick-norm", handlePsoQuickNorm);

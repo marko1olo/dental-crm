@@ -9,6 +9,7 @@
  */
 
 import {
+	type AutoclaveCycleRecord,
 	type Form257Record,
 	generateForm257RecordId,
 	calculateDigitalStampHash,
@@ -495,12 +496,12 @@ export function createChairsidePouchRecord(
 }
 
 /**
- * Создает полноценную запись цикла автоклавирования Формы 257/у для электронного журнала,
+ * Создает полноценную запись цикла автоклавирования для электронного журнала,
  * когда крафт-пакет вскрывается у кресла.
  */
-export function exportChairsidePouchToForm257Record(
+export function exportChairsidePouchToAutoclaveRecord(
 	record: ChairsidePouchRecord,
-): Form257Record {
+): AutoclaveCycleRecord {
 	const regimeId = record.autoclave.temperatureC >= 134 ? "steam_134_5min" : "steam_121_20min";
 	return createForm257Record({
 		date: record.autoclave.dateIso,
@@ -522,3 +523,5 @@ export function exportChairsidePouchToForm257Record(
 		notes: `Сменный пакетный цикл автоклавирования ЦСО (Мандат 8aa). Привязка к приёму: ${record.statutoryDiarySnippet}`,
 	});
 }
+
+export const exportChairsidePouchToForm257Record = exportChairsidePouchToAutoclaveRecord;

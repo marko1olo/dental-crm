@@ -17,7 +17,7 @@ export function GeneralCleaningHeader({ onClose, onApplyNormPreset }: GeneralCle
 					<div>
 						<h2 className="text-lg font-extrabold text-[var(--ink,#0f172a)] flex items-center gap-2">
 							<span>Генеральная уборка и расчет дезраствора</span>
-							<span className="text-xs px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-bold uppercase tracking-wide">
+							<span className="text-xs px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-bold">
 								Стандарт дезинфекции
 							</span>
 						</h2>

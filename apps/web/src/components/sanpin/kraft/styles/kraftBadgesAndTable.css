@@ -70,7 +70,7 @@
 [data-theme="dark"] .kraft-table-container,
 .dark .kraft-table-container {
 	background: #0f172a;
-	border-color: #334155;
+	border-color: var(--line);
 }
 
 .kraft-table {
@@ -93,7 +93,7 @@
 .dark .kraft-table th {
 	background: #1e293b;
 	color: #94a3b8;
-	border-bottom-color: #334155;
+	border-bottom-color: var(--line);
 }
 
 .kraft-table td {
@@ -104,7 +104,7 @@
 
 [data-theme="dark"] .kraft-table td,
 .dark .kraft-table td {
-	border-bottom-color: #334155;
+	border-bottom-color: var(--line);
 	color: #f8fafc;
 }
 

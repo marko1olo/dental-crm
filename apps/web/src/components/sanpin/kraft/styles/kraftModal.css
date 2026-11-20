@@ -33,7 +33,7 @@
 [data-theme="dark"] .kraft-studio-modal,
 .dark .kraft-studio-modal {
 	background: var(--paper-strong, #0f172a);
-	border-color: var(--line, #334155);
+	border-color: var(--line);
 	color: #f8fafc;
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 }
@@ -51,7 +51,7 @@
 [data-theme="dark"] .kraft-studio-header,
 .dark .kraft-studio-header {
 	background: #1e293b;
-	border-bottom-color: #334155;
+	border-bottom-color: var(--line);
 }
 
 .kraft-studio-title-block {
@@ -112,6 +112,6 @@
 
 [data-theme="dark"] .kraft-studio-close-btn:hover,
 .dark .kraft-studio-close-btn:hover {
-	background: #334155;
+	background: var(--paper-soft, rgba(255, 255, 255, 0.08));
 	color: #ffffff;
 }

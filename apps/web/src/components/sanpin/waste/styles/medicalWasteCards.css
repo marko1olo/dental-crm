@@ -36,7 +36,7 @@
 }
 
 .waste-class-card.selected-class-g {
-	border-color: #334155;
+	border-color: var(--line, #64748b);
 	background: rgba(15, 23, 42, 0.08);
 }
 
@@ -73,9 +73,7 @@
 .waste-weight-lbl {
 	font-size: 0.75rem;
 	font-weight: 600;
-	text-transform: uppercase;
 	color: var(--muted, #64748b);
-	letter-spacing: 0.03em;
 }
 
 .waste-badge {
@@ -86,8 +84,6 @@
 	border-radius: 20px;
 	font-size: 0.75rem;
 	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
 }
 
 .waste-badge-class-a {
