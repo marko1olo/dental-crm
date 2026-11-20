@@ -209,8 +209,8 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 						<button type="button" onClick={handleCopy} className="icon-button min-h-[44px] min-w-[44px] text-[var(--ink)]" title="Скопировать данные паспорта" data-testid="btn-copy-passport-card">
 							<Copy size={16} />
 						</button>
-						<button type="button" onClick={handlePrint} className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 py-1.5 text-xs flex items-center gap-1.5 font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" title="Распечатать паспорт / гарантийный сертификат А5" data-testid="btn-print-passport-card">
-							<Printer size={16} className="shrink-0 text-[var(--primary)]" />
+						<button type="button" onClick={handlePrint} className="dente-btn dente-btn-primary min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3.5 py-1.5 text-xs sm:text-sm inline-flex items-center gap-2 font-medium rounded-xl bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm cursor-pointer active:scale-95 transition-all" title="Распечатать паспорт / гарантийный сертификат А5" data-testid="btn-print-passport-card">
+							<Printer size={16} className="shrink-0 text-white" />
 							<span className="hidden sm:inline">Распечатать паспорт (А5)</span>
 							<span className="sm:hidden">Печать А5</span>
 						</button>

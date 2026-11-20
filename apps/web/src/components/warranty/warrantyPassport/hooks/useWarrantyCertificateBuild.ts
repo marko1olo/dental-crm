@@ -84,7 +84,7 @@ export function useWarrantyCertificateBuild({
 			doctor: { fullName: doctorName, specialty: doctorSpecialty },
 			clinic: { name: clinicName, legalName: clinicLegalName, licenseNumber: clinicLicenseNumber, address: clinicAddress, phone: clinicPhone, ...(clinicWebsite ? { website: clinicWebsite } : {}) },
 			items, calculation, verificationUrl: vUrl, qrCodeSvg: qr, integrityHash: hash,
-			signedByDoctor: true, signedByChief: true, attachedToForm043u: attachedStatus,
+			signedByDoctor: true, signedByChief: true, attachedToMedicalRecord: attachedStatus, attachedToForm043u: attachedStatus,
 			...(remediations.length > 0 ? { remediations } : {}),
 		};
 	}, [certificateId, issueDate, patient, doctorName, doctorSpecialty, clinicName, clinicLegalName, clinicLicenseNumber, clinicAddress, clinicPhone, clinicWebsite, items, calculation, attachedStatus, remediations]);

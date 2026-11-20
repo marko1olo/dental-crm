@@ -70,6 +70,7 @@ export interface WarrantyCertificateData {
 	integrityHash: string;
 	signedByDoctor: boolean;
 	signedByChief: boolean;
-	attachedToForm043u: boolean;
+	attachedToMedicalRecord: boolean;
+	attachedToForm043u?: boolean | undefined;
 	remediations?: WarrantyRemediationOrder[] | undefined;
 }

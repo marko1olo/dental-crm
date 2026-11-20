@@ -45,7 +45,7 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 	const handlePrint = () => { if (typeof window !== "undefined") window.print(); };
 
 	const handleCopyText = async () => {
-		const text = `ПАСПОРТ ОРТОПЕДИЧЕСКОЙ КОНСТРУКЦИИ И ГАРАНТИЙНЫЙ ТАЛОН № ${passportNumber}\nКлиника: ${clinicName}\nЗТЛ: ${labName}\nПациент: ${patientName}${data.patientChartNumber ? ` (карта № ${data.patientChartNumber})` : ""}\nВрач: ${doctorName}\nТехник: ${technicianName}\nДата: ${issueDate}\nЗуб FDI: ${data.toothFdi}\nКонструкция: ${data.constructionName}\nМатериал: ${data.material}\nЦвет VITA: ${data.colorVita}\nГарантия: ${warrantyLabelRu}\nLOT: ${batchLot}\nСтандарты: ${standards}`;
+		const text = `Паспорт ортопедической конструкции и гарантийный талон № ${passportNumber}\nКлиника: ${clinicName}\nЗТЛ: ${labName}\nПациент: ${patientName}${data.patientChartNumber ? ` (карта № ${data.patientChartNumber})` : ""}\nВрач: ${doctorName}\nТехник: ${technicianName}\nДата: ${issueDate}\nЗуб FDI: ${data.toothFdi}\nКонструкция: ${data.constructionName}\nМатериал: ${data.material}\nЦвет VITA: ${data.colorVita}\nГарантия: ${warrantyLabelRu}\nLOT: ${batchLot}\nСтандарты: ${standards}`;
 		try {
 			await navigator.clipboard.writeText(text);
 			showToast("Текст паспорта скопирован в буфер обмена", "success", 2500);
@@ -68,9 +68,9 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 						</div>
 					</div>
 					<div className="flex items-center gap-1.5 shrink-0">
-						<button type="button" onClick={handleCopyText} className="hidden sm:inline-flex min-h-[34px] px-3 text-xs font-semibold rounded-lg border border-[var(--line)] hover:bg-[var(--paper)] text-[var(--ink)] items-center gap-1.5 cursor-pointer" data-testid="passport-copy-btn"><Copy size={14} className="text-[var(--primary)]" /><span>Скопировать</span></button>
-						<button type="button" onClick={handlePrint} className="hidden sm:inline-flex min-h-[34px] px-3.5 text-xs font-bold rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white items-center gap-1.5 shadow-xs cursor-pointer" data-testid="passport-print-btn"><Printer size={14} /><span>Печать (А4)</span></button>
-						<button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] sm:min-h-[34px] sm:min-w-[34px] rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)]" aria-label="Закрыть" data-testid="passport-close-btn"><X size={18} /></button>
+						<button type="button" onClick={handleCopyText} className="hidden sm:inline-flex min-h-[36px] h-9 px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] items-center gap-1.5 cursor-pointer active:scale-95" data-testid="passport-copy-btn"><Copy size={14} className="text-[var(--primary)]" /><span>Скопировать</span></button>
+						<button type="button" onClick={handlePrint} className="hidden sm:inline-flex min-h-[36px] h-9 px-3.5 text-xs font-bold rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white items-center gap-1.5 shadow-xs cursor-pointer active:scale-95" data-testid="passport-print-btn"><Printer size={14} /><span>Печать (А4)</span></button>
+						<button type="button" onClick={onClose} className="h-11 w-11 min-h-[44px] min-w-[44px] sm:h-9 sm:w-9 sm:min-h-[36px] sm:min-w-[36px] rounded-xl sm:rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-colors" aria-label="Закрыть" data-testid="passport-close-btn"><X size={18} /></button>
 					</div>
 				</div>
 				<div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[var(--paper-subtle)]">

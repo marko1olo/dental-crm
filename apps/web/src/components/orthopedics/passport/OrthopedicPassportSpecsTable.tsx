@@ -72,7 +72,7 @@ export function OrthopedicPassportSpecsTable({
 
 				<div className="p-2 bg-[var(--paper-soft)] border-t border-[var(--line)] text-[11px] text-[var(--muted)] flex items-center justify-between">
 					<span>Стандарты безопасности: <strong>{standards}</strong></span>
-					<span className="font-mono text-[var(--primary)] font-bold">100% БИОСОВМЕСТИМО</span>
+					<span className="font-mono text-[var(--primary)] font-bold">100% биосовместимо</span>
 				</div>
 			</div>
 		</div>

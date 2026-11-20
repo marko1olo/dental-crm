@@ -17,25 +17,25 @@ export function OrthopedicPassportMobileBar({
 			<button
 				type="button"
 				onClick={onCopyText}
-				className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)] flex items-center justify-center gap-1.5 active:scale-95"
+				className="min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-sm font-medium text-[var(--ink)] inline-flex items-center justify-center gap-1.5 active:scale-95"
 			>
-				<Copy size={15} className="text-[var(--primary)]" />
+				<Copy size={16} className="shrink-0 text-[var(--primary)]" />
 				<span>Копия</span>
 			</button>
 
 			<button
 				type="button"
 				onClick={onPrint}
-				className="min-h-[44px] flex-1 rounded-xl bg-[var(--primary)] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+				className="min-h-[44px] h-11 flex-1 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-sm font-medium inline-flex items-center justify-center gap-2 shadow-sm active:scale-95"
 			>
-				<Printer size={15} />
+				<Printer size={16} className="shrink-0" />
 				<span>Распечатать паспорт (А4)</span>
 			</button>
 
 			<button
 				type="button"
 				onClick={onClose}
-				className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] active:scale-95"
+				className="min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-sm font-medium text-[var(--muted)] hover:text-[var(--ink)] inline-flex items-center justify-center active:scale-95"
 			>
 				Закрыть
 			</button>

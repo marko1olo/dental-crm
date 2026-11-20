@@ -29,7 +29,7 @@ describe("4b. Warranty Remediation & Patient Memo", () => {
 			verificationUrl: "https://dente.ru/portal/warranty?cert=WAR-2026-7777",
 			qrCodeSvg: "<svg></svg>",
 			integrityHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-			signedByDoctor: true, signedByChief: true, attachedToForm043u: false,
+			signedByDoctor: true, signedByChief: true, attachedToMedicalRecord: false, attachedToForm043u: false,
 		};
 
 		const memo = generateWarrantyPatientMemo(certData);

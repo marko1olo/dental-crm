@@ -41,7 +41,7 @@ describe("OrthopedicPassportA4Modal — Printable A4 Passport & Warranty (Mandat
 
 		assert.ok(html.includes('data-testid="orthopedic-passport-modal"'), "Must render root modal dialog");
 		assert.ok(html.includes('id="orthopedic-passport-print-area"'), "Must render printable A4 print area");
-		assert.ok(html.includes("ПАСПОРТ ОРТОПЕДИЧЕСКОЙ КОНСТРУКЦИИ"), "Must render document title");
+		assert.ok(html.includes("Паспорт ортопедической конструкции"), "Must render document title");
 		assert.ok(html.includes("ГП-ЗТЛ-884102"), "Must render passport number");
 		assert.ok(html.includes("Иванов Иван Иванович"), "Must render patient name");
 		assert.ok(html.includes("043-882"), "Must render medical chart number");

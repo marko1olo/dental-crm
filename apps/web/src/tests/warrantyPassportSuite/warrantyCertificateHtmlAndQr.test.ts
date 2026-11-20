@@ -124,6 +124,7 @@ test("Warranty Certificate HTML Generator (A4 / A5): Full document rendering & s
 		integrityHash: generateSha256(`${certId}|Смирнов Алексей Владимирович`),
 		signedByDoctor: true,
 		signedByChief: true,
+		attachedToMedicalRecord: true,
 		attachedToForm043u: true,
 	};
 
@@ -344,6 +345,7 @@ test("Mandate 8e: Warranty Certificate includes remediation history table when p
 		integrityHash: generateSha256(`${certId}|Григорьев Роман Дмитриевич`),
 		signedByDoctor: true,
 		signedByChief: true,
+		attachedToMedicalRecord: true,
 		attachedToForm043u: true,
 		remediations: [order],
 	};
@@ -423,6 +425,7 @@ test("Mandate 8k & 8d: generateWarrantyPatientMemo produces official text for me
 		integrityHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 		signedByDoctor: true,
 		signedByChief: true,
+		attachedToMedicalRecord: false,
 		attachedToForm043u: false,
 	};
 

@@ -772,7 +772,38 @@ body:has([data-testid="warranty-standalone-workspace"]) .workspace-continuity-st
 	margin-top: 10px; flex-wrap: wrap;
 }
 
-.zero-cost-val { font-size: 20px; font-weight: 900; color: var(--ok-fg, #059669); }
+.warranty-zero-cost-block {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.zero-cost-lbl {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink-2, var(--ink));
+}
+
+.zero-cost-val {
+	font-size: 20px;
+	font-weight: 900;
+	color: var(--ok-fg, #059669);
+	font-family: monospace;
+	letter-spacing: -0.02em;
+}
+
+.zero-cost-note {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--ok-fg, #059669);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	border: 1px solid var(--ok-fg, #059669);
+	padding: 2px 8px;
+	border-radius: 9999px;
+	display: inline-flex;
+	align-items: center;
+}
 
 .warranty-btn-remediation-submit {
 	height: 36px; min-height: 36px; padding: 0 18px; border-radius: 6px;
