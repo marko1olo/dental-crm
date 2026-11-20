@@ -10,11 +10,15 @@ import {
 	rublesToKopecks,
 	kopecksToRubles,
 	sumKopecks,
-	type TreatmentPlanItem,
 } from "@dental/shared";
 import { buildCanonical3TierPlans } from "../../../treatment-plans/treatmentPlanCatalogData";
 import { generateCompletedWorksActAndWriteOff } from "../../../treatment-plans/treatmentPlanMaterialEngine";
-import type { TreatmentPlanStage, TreatmentPlanTier } from "../../../treatment-plans/types";
+import type {
+	TreatmentPlanStage,
+	TreatmentPlanTier,
+	TreatmentPlanTierId,
+	TreatmentPlanItem,
+} from "../../../treatment-plans/types";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import {
@@ -25,27 +29,30 @@ import {
 	EMPTY_PLANS,
 	EMPTY_ITEMS,
 } from "./treatmentPlansTabConstants";
+import type { AnyTreatmentPlanItem } from "../../plansList/treatmentPlansListTypes";
 import type { PatientGeneralInfo } from "../PatientGeneralInfoTab";
 
 export interface UseTreatmentPlansHydrationParams {
 	patient?: PatientGeneralInfo | null | undefined;
 	patientId?: string | undefined;
-	items?: TreatmentPlanItem[] | undefined;
-	plans?: PatientTreatmentPlanDto[] | undefined;
-	tiers?: TreatmentTierOption[] | undefined;
+	items?: readonly AnyTreatmentPlanItem[] | undefined;
+	plans?: readonly PatientTreatmentPlanDto[] | PatientTreatmentPlanDto[] | undefined;
+	tiers?: readonly TreatmentTierOption[] | TreatmentTierOption[] | undefined;
 }
 
 export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationParams) {
 	const {
 		patient,
 		patientId: propPatientId,
-		items: propItems = EMPTY_ITEMS as TreatmentPlanItem[],
-		plans: propPlans = EMPTY_PLANS as PatientTreatmentPlanDto[],
+		items: propItems = EMPTY_ITEMS,
+		plans: propPlans = EMPTY_PLANS,
 		tiers: propTiers,
 	} = params;
 
 	const effectivePatientId = propPatientId || patient?.id;
-	const [loadedPlans, setLoadedPlans] = useState<PatientTreatmentPlanDto[]>(propPlans);
+	const [loadedPlans, setLoadedPlans] = useState<PatientTreatmentPlanDto[]>(
+		Array.isArray(propPlans) ? [...propPlans] : []
+	);
 	const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [fetchError, setFetchError] = useState<string | null>(null);
@@ -59,7 +66,7 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 	// Асинхронная гидратация планов лечения пациента из PostgreSQL 18
 	useEffect(() => {
 		if (propPlans && propPlans.length > 0) {
-			setLoadedPlans(propPlans);
+			setLoadedPlans([...propPlans]);
 			setSelectedPlanId((prev) => prev ?? propPlans[0]?.id ?? null);
 			return;
 		}
@@ -134,7 +141,42 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 	// Динамические позиции плана лечения
 	const effectiveItems: TreatmentPlanItem[] = useMemo(() => {
 		if (propItems && propItems.length > 0) {
-			return propItems;
+			return propItems.map((it, idx) => {
+				if ("stageKind" in it && typeof it.stageKind === "string" && "name" in it && typeof it.priceRub === "number") {
+					return it as TreatmentPlanItem;
+				}
+				const toothNum = "toothCode" in it && it.toothCode
+					? parseInt(String(it.toothCode), 10)
+					: ("toothNumber" in it && typeof it.toothNumber === "number" ? it.toothNumber : undefined);
+				const unitPrice = "unitPriceRub" in it && typeof it.unitPriceRub === "number"
+					? it.unitPriceRub
+					: ("price" in it && typeof it.price === "number" ? it.price : 0);
+				const discount = "discountRub" in it && typeof it.discountRub === "number"
+					? it.discountRub
+					: ("discount" in it && typeof it.discount === "number" ? it.discount : 0);
+				const quantity = ("quantity" in it && typeof it.quantity === "number" ? it.quantity : 1) || 1;
+				const name = ("snapshotServiceName" in it && it.snapshotServiceName) || ("name" in it && it.name) || "Услуга плана лечения";
+
+				const itemRecord: TreatmentPlanItem = {
+					id: it.id || `item-${idx}`,
+					toothNumber: toothNum && !Number.isNaN(toothNum) ? toothNum : undefined,
+					code804n: ("serviceCode" in it && it.serviceCode) || ("code804n" in it && it.code804n) || ("serviceId" in it && it.serviceId) || undefined,
+					serviceCode: ("serviceCode" in it && it.serviceCode) || it.id || "SRV-ITEM",
+					name,
+					category: ("category" in it && it.category) || ("snapshotServiceCategory" in it && it.snapshotServiceCategory) || "Терапия",
+					stageKind: "stage_1_therapy",
+					stageNumber: 1,
+					priceRub: unitPrice,
+					unitPriceRub: unitPrice,
+					discountRub: discount,
+					quantity,
+					isCompleted: it.status === "completed",
+					status: it.status || "proposed",
+					doctorName: "doctorName" in it ? it.doctorName ?? null : null,
+					doctorSpecialty: "doctorSpecialty" in it ? it.doctorSpecialty ?? null : null,
+				};
+				return itemRecord;
+			});
 		}
 		const planItems = activePlan?.items && activePlan.items.length > 0
 			? activePlan.items
@@ -145,40 +187,28 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 			const unitPrice = it.price !== undefined ? Number(it.price) : 0;
 			const discount = it.discount !== undefined ? Number(it.discount) : 0;
 			const quantity = it.quantity || 1;
-			const grossCostKopecks = rublesToKopecks(unitPrice * quantity);
-			const discountKopecks = rublesToKopecks(discount * quantity);
-			const netCostKopecks = Math.max(0, grossCostKopecks - discountKopecks);
-			const { laborKopecks, materialsKopecks } = splitLaborAndMaterials(netCostKopecks, "optimum");
+			const toothNum = it.toothNumber ? parseInt(String(it.toothNumber), 10) : undefined;
 
-			const itemRecord: unknown = {
+			const itemRecord: TreatmentPlanItem = {
 				id: it.id,
-				planId: activePlan?.id || "plan-default",
-				toothNumber: it.toothNumber ?? null,
-				surfaces: [],
+				toothNumber: toothNum && !Number.isNaN(toothNum) ? toothNum : undefined,
 				code804n: it.priceId || undefined,
 				serviceCode: it.priceId || it.id || "SRV-ITEM",
-				nameRu: it.name || "Услуга плана лечения",
-				snapshotServiceName: it.name || "Услуга плана лечения",
-				toothCode: it.toothNumber,
-				categoryRu: "Терапевтический протокол",
-				stageKind: "stage_1_therapy" as const,
+				name: it.name || "Услуга плана лечения",
+				category: "Терапия",
+				stageKind: "stage_1_therapy",
 				stageNumber: (it.phase as 1 | 2 | 3) || 1,
-				tierKey: "optimum" as const,
-				unitPriceKopecks: rublesToKopecks(unitPrice),
+				priceRub: unitPrice,
 				unitPriceRub: unitPrice,
-				quantity,
-				grossCostKopecks,
-				discountKopecks,
 				discountRub: discount,
-				netCostKopecks,
-				laborKopecks,
-				materialsKopecks,
-				totalCostKopecks: netCostKopecks,
+				quantity,
+				isCompleted: Boolean(it.isCompleted),
 				status: it.status || (it.isCompleted ? "completed" : "proposed"),
 				doctorName: it.doctorName || null,
 				doctorSpecialty: it.doctorSpecialty || null,
+				tierPrices: (it as unknown as { tierPrices?: Record<string, number> }).tierPrices,
 			};
-			return itemRecord as TreatmentPlanItem;
+			return itemRecord;
 		});
 	}, [propItems, activePlan]);
 
@@ -187,7 +217,7 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 		if (!effectiveItems || effectiveItems.length === 0) return [];
 		const totalKopecks = sumKopecks(
 			effectiveItems.map((it) =>
-				rublesToKopecks(Math.max(0, (it.unitPriceRub || 0) * (it.quantity || 1) - (it.discountRub || 0)))
+				rublesToKopecks(Math.max(0, (it.unitPriceRub || it.priceRub || 0) * (it.quantity || 1) - (it.discountRub || 0)))
 			)
 		);
 		const totalRub = kopecksToRubles(totalKopecks);
@@ -206,18 +236,24 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 				estimatedWeeks: 1,
 				status: "draft" as const,
 				items: effectiveItems.map((it, idx) => {
-					const toothNum = it.toothCode ? parseInt(it.toothCode, 10) : undefined;
+					const toothNum = typeof it.toothNumber === "number" && !Number.isNaN(it.toothNumber)
+						? it.toothNumber
+						: undefined;
+					const price = typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
+						? it.unitPriceRub
+						: (it.priceRub || 0);
 					return {
 						id: it.id || `item-${idx}`,
-						toothNumber: toothNum && !Number.isNaN(toothNum) ? toothNum : undefined,
-						code804n: it.serviceId || undefined,
-						name: it.snapshotServiceName || "Стоматологическая процедура",
-						priceRub: it.unitPriceRub || 0,
-						unitPriceRub: it.unitPriceRub || 0,
+						toothNumber: toothNum,
+						code804n: it.code804n || it.serviceCode || undefined,
+						name: it.name || "Стоматологическая процедура",
+						priceRub: price,
+						unitPriceRub: price,
 						discountRub: it.discountRub || 0,
 						quantity: it.quantity || 1,
 						stageKind: "stage_1_therapy" as const,
-						isCompleted: it.status === "completed",
+						isCompleted: it.isCompleted === true || it.status === "completed",
+						tierPrices: it.tierPrices,
 					};
 				}),
 			},
@@ -226,9 +262,26 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 
 	// Канонический расчет 3 альтернативных тарифов без синтетических множителей (Мандат 8e)
 	const canonicalTiers: readonly TreatmentPlanTier[] = useMemo(() => {
-		if (planStages.length === 0) return [];
-		return buildCanonical3TierPlans(planStages);
-	}, [planStages]);
+		if (planStages.length > 0) {
+			return buildCanonical3TierPlans(planStages);
+		}
+		if (propTiers && propTiers.length > 0) {
+			return propTiers.map((t) => ({
+				tierId: (t.id === "economy" || t.id === "premium" ? t.id : "optimum") as TreatmentPlanTierId,
+				title: t.title,
+				subtitle: t.tagline,
+				badge: t.badgeText || "",
+				isRecommended: Boolean(t.isRecommended),
+				totalRub: t.totalRub,
+				totalKopecks: rublesToKopecks(t.totalRub),
+				amountKopecks: BigInt(rublesToKopecks(t.totalRub)),
+				warrantyYears: typeof t.warrantyYears === "number" ? t.warrantyYears : 1,
+				keyAdvantages: [],
+				stages: [],
+			}));
+		}
+		return [];
+	}, [planStages, propTiers]);
 
 	// Динамический расчет тарифов на основе реальных позиций или переданных тарифов
 	const effectiveTiers: TreatmentTierOption[] = useMemo(() => {

@@ -42,6 +42,11 @@ export interface TreatmentPlanItem {
 	readonly unitPriceRub?: number | undefined;
 	readonly totalPriceRub?: number | undefined;
 	readonly priceKopecks?: number | undefined;
+	readonly tierPrices?: {
+		readonly economy?: number | undefined;
+		readonly optimum?: number | undefined;
+		readonly premium?: number | undefined;
+	} | undefined;
 	readonly discountRub: number;
 	readonly quantity: number;
 	readonly phase?: number | undefined;

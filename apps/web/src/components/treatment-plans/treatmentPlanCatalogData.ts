@@ -185,26 +185,22 @@ export const CLINIC_SERVICE_TIER_CATALOG_DEMO: readonly ClinicTierServicePrice[]
 
 /**
  * CLINIC_SERVICE_TIER_CATALOG — Каталог услуг клиники с дифференциацией по тарифам (материалам).
- * В демонстрационном и боевом режимах используется канонический прейскурант клиники,
- * дополняемый ценами из номенклатуры PostgreSQL 18 (service_catalog_items.tier_prices).
+ * В демонстрационном режиме (isDemoShowcaseMode) используется витринный каталог CLINIC_SERVICE_TIER_CATALOG_DEMO,
+ * в боевом режиме цены берутся строго из номенклатуры PostgreSQL 18 (service_catalog_items.tier_prices).
  */
 export const CLINIC_SERVICE_TIER_CATALOG: readonly ClinicTierServicePrice[] =
-	CLINIC_SERVICE_TIER_CATALOG_DEMO;
+	isDemoShowcaseMode() ? CLINIC_SERVICE_TIER_CATALOG_DEMO : [];
 
 /**
- * resolveTierService — Сопоставление услуги с клиническим прейскурантом тарифов клиники.
- * Исключает потемкинские деревни: рассчитывает честные альтернативные протоколы материалов.
- * Оптимум = базовая цена (100%), Эконом = доступный протокол (80%), Премиум = расширенный эстетический протокол (130%).
+ * resolveTierService — Сопоставление услуги с клиническим прейскурантом тарифов (Мандат 8z).
+ * Название и цена услуги врача из прейскуранта клиники неприкосновенны!
+ * Исключены фейковые множители *0.80 / *1.30 и подменяющие регулярки.
  */
 export function resolveTierService(
 	item: TreatmentPlanItem,
 	tierId: TreatmentPlanTierId,
 ): { name: string; priceRub: number } {
-	const toothPrefix = item.toothNumber ? `зуба ${item.toothNumber} ` : "";
-	const nameLower = (item.name || "").toLowerCase();
-	const code = (item.code804n || item.serviceCode || "").trim().toUpperCase();
 	const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;
-	const baseKopecks = rublesToKopecks(basePrice);
 
 	// 1. Проверяем наличие индивидуальных цен по тарифам в tierPrices (из номенклатуры PostgreSQL 18)
 	const itemTierPrices = (item as unknown as { tierPrices?: Record<string, number> | null }).tierPrices;
@@ -219,107 +215,25 @@ export function resolveTierService(
 		return { name: item.name, priceRub: basePrice };
 	}
 
-	// 2. Ищем прямое сопоставление в клиническом прейскуранте по коду услуги
-	const catalogEntry = CLINIC_SERVICE_TIER_CATALOG.find(
-		(entry) => entry.code804n === code || (code && code.startsWith(entry.code804n)),
-	);
+	// 2. В демо-режиме (isDemoShowcaseMode) проверяем витринный каталог по коду услуги
+	if (isDemoShowcaseMode()) {
+		const code = (item.code804n || item.serviceCode || "").trim().toUpperCase();
+		const toothPrefix = item.toothNumber ? `зуба ${item.toothNumber} ` : "";
+		const catalogEntry = CLINIC_SERVICE_TIER_CATALOG.find(
+			(entry) => entry.code804n === code || (code && code.startsWith(entry.code804n)),
+		);
 
-	if (catalogEntry) {
-		const tierData = catalogEntry[tierId];
-		const nameWithTooth = item.toothNumber ? `${tierData.name} (${toothPrefix.trim()})` : tierData.name;
-		return {
-			name: nameWithTooth,
-			priceRub: tierData.priceRub,
-		};
-	}
-
-	// 3. Семантическое сопоставление по нозологиям и профильным манипуляциям
-	if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.006");
-		if (entry) {
+		if (catalogEntry) {
+			const tierData = catalogEntry[tierId];
+			const nameWithTooth = item.toothNumber ? `${tierData.name} (${toothPrefix.trim()})` : tierData.name;
 			return {
-				name: tierId === "economy"
-					? `Протезирование на имплантате ${toothPrefix}металлокерамической коронкой`
-					: `Протезирование на имплантате ${toothPrefix}(индивидуальный абатмент Ti-Base + керамическая коронка)`,
-				priceRub: entry[tierId].priceRub,
-			};
-		}
-	}
-	if (/имплант/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.054.001");
-		if (entry) {
-			return {
-				name: tierId === "economy"
-					? `Дентальная имплантация ${toothPrefix}(базовая система)`
-					: `Премиальная имплантация ${toothPrefix}с гидрофильной поверхностью + 3D-шаблон`,
-				priceRub: entry[tierId].priceRub,
-			};
-		}
-	}
-	if (/коронк/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.004");
-		if (entry) {
-			return {
-				name: tierId === "economy"
-					? `Восстановление ${toothPrefix}металлокерамической коронкой Co-Cr`
-					: `Восстановление ${toothPrefix}керамической коронкой с индивидуальной эстетической раскраской`,
-				priceRub: entry[tierId].priceRub,
-			};
-		}
-	}
-	if (/вкладк/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.003.001");
-		if (entry) {
-			return {
-				name: tierId === "economy"
-					? `Восстановление ${toothPrefix}литой культевой вкладкой`
-					: `Восстановление ${toothPrefix}прессованной керамической накладкой Inlay`,
-				priceRub: entry[tierId].priceRub,
-			};
-		}
-	}
-	if (/эндодонт|канал/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.008.002");
-		if (entry) {
-			return {
-				name: tierId === "economy"
-					? `Эндодонтическое лечение ${toothPrefix}(стандартная обработка и пломбирование)`
-					: `Прецизионная микроскопная эндодонтия ${toothPrefix}с биокерамикой`,
-				priceRub: entry[tierId].priceRub,
-			};
-		}
-	}
-	if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
-		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.002");
-		if (entry) {
-			return {
-				name: tierId === "economy"
-					? `Восстановление ${toothPrefix}пломбой световой полимеризации (базовый композит)`
-					: `Восстановление ${toothPrefix}прессованной керамической накладкой / вкладкой`,
-				priceRub: entry[tierId].priceRub,
+				name: nameWithTooth,
+				priceRub: tierData.priceRub,
 			};
 		}
 	}
 
-	// 4. Клинически обоснованные коэффициенты протоколов (Мандат 8bm & First Principles):
-	// Эконом = 80% (доступный базовый протокол)
-	// Оптимум = 100% (рекомендуемый клинический стандарт)
-	// Премиум = 130% (расширенный эстетический протокол)
-	if (tierId === "economy") {
-		const economyKopecks = Math.round(baseKopecks * 0.80);
-		return {
-			name: `${item.name} (базовый протокол)`,
-			priceRub: kopecksToRubles(economyKopecks),
-		};
-	}
-	if (tierId === "premium") {
-		const premiumKopecks = Math.round(baseKopecks * 1.30);
-		return {
-			name: `${item.name} (расширенный эстетический протокол)`,
-			priceRub: kopecksToRubles(premiumKopecks),
-		};
-	}
-
+	// 3. Боевой режим (Мандат 8z): реальное название и базовая цена услуги врача неприкосновенны!
 	return {
 		name: item.name,
 		priceRub: basePrice,

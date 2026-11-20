@@ -14,7 +14,7 @@ export const TierCardHeader: React.FC<TierCardHeaderProps> = ({ tier }) => {
 			{tier.isRecommended && (
 				<div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 text-[11px] font-semibold shadow-xs whitespace-nowrap z-30 self-center mb-1 -mt-0.5">
 					<Crown size={12} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>{tier.badge}</span>
+					<span>{tier.badge && tier.badge.includes("клиники") ? "Выбор клиники" : (tier.badge || "Выбор клиники")}</span>
 				</div>
 			)}
 

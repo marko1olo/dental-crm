@@ -25,10 +25,12 @@ import {
 	RefreshCw,
 	AlertCircle,
 } from "lucide-react";
-import type { TreatmentPlanItem } from "@dental/shared";
+import type { TreatmentPlanItem } from "../../treatment-plans/types";
+import type { AnyTreatmentPlanItem } from "../plansList/treatmentPlansListTypes";
 import { TreatmentPlansList } from "../TreatmentPlansList";
+import type { TreatmentPlansListProps } from "../plansList/treatmentPlansListTypes";
 import type { PatientGeneralInfo } from "./PatientGeneralInfoTab";
-import { TreatmentPlan3TierMobileSegmented } from "../../treatment-plans/TreatmentPlan3TierMobileSegmented";
+import { TreatmentPlan3TierComparison } from "../../treatment-plans/TreatmentPlan3TierComparison";
 import { TreatmentPlanContractPrint } from "../../treatment-plans/TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "../../treatment-plans/TreatmentPlanCompletedActPrint";
 import {
@@ -51,12 +53,13 @@ export {
 	type PatientTreatmentPlanStageDto,
 	type PatientTreatmentPlanItemDto,
 	type PatientTreatmentPlanDto,
+	type TreatmentPlanItem,
 };
 
 export interface TreatmentPlansTabProps {
 	patient?: PatientGeneralInfo | null | undefined;
 	patientId?: string | undefined;
-	items?: TreatmentPlanItem[] | undefined;
+	items?: readonly AnyTreatmentPlanItem[] | undefined;
 	plans?: PatientTreatmentPlanDto[] | undefined;
 	tiers?: TreatmentTierOption[] | undefined;
 	onOpenPlanPresenter?: ((planId?: string | undefined, tierId?: TierCategory | undefined) => void) | undefined;
@@ -297,72 +300,22 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 							</div>
 						</div>
 
-						{/* Apple HIG Сегментный переключатель тарифов на мобильных экранах (<md:) */}
+						{/* Канонический 3-тарифный презентер планов лечения (Мандат 8bf: Единый SSOT) */}
 						{canonicalTiers.length > 0 && (
-							<div className="block md:hidden w-full">
-								<TreatmentPlan3TierMobileSegmented
+							<div data-testid="tier-cards-selector" className="w-full">
+								<TreatmentPlan3TierComparison
 									tiers={canonicalTiers}
-									activeTierId={selectedTier}
-									onSelectTier={(t) => setSelectedTier(t.tierId as TierCategory)}
-									getTierShortLabel={(t) =>
-										t.tierId === "economy" ? "Базовый" : t.tierId === "premium" ? "Премиум" : "Оптимум"
-									}
+									selectedTierId={selectedTier}
+									planId={activePlan?.id}
+									patientPhone={patient?.phone}
+									planCreatedAtIso={activePlan?.createdAt}
+									onSelectTier={(tier) => setSelectedTier(tier.tierId as TierCategory)}
+									onApproveAndSign={() => handleOpenPresenter(activePlan?.id, selectedTier)}
+									onPrintContract={() => handlePrint(false)}
+									hideMobileThumbBar={true}
 								/>
 							</div>
 						)}
-
-						{/* Карточки 3-Tier: на мобильных показываем ТОЛЬКО выбранный тариф (0px 2500px простыни), на десктопе — 3 колонки */}
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-3" data-testid="tier-cards-selector">
-							{effectiveTiers.map((tier) => {
-								const isSelected = selectedTier === tier.id;
-								return (
-									<div
-										key={tier.id}
-										onClick={() => setSelectedTier(tier.id)}
-										className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${tier.accentClass} ${
-											isSelected
-												? "ring-2 ring-[var(--teal,var(--brand-primary))] shadow-md flex"
-												: "opacity-80 hover:opacity-100 hidden md:flex"
-										}`}
-										data-testid={`tier-option-${tier.id}`}
-									>
-										<div className="flex items-start justify-between gap-2">
-											<div>
-												<div className="flex items-center gap-1.5">
-													<span className="text-xs font-semibold text-[var(--muted)]">
-														{tier.badgeText}
-													</span>
-													{tier.isRecommended && (
-														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal)]/15 text-[var(--teal,var(--brand-primary))]">
-															Выбор клиники
-														</span>
-													)}
-												</div>
-												<h4 className="text-base font-black text-[var(--ink)] m-0 mt-0.5">
-													{tier.title}
-												</h4>
-											</div>
-											{isSelected && (
-												<CheckCircle2 className="w-5 h-5 text-[var(--teal,var(--brand-primary))] shrink-0" />
-											)}
-										</div>
-
-										<p className="text-[11px] text-[var(--muted)] m-0 leading-relaxed">
-											{tier.tagline}
-										</p>
-
-										<div className="pt-2 border-t border-[var(--line)]/50 flex items-baseline justify-between">
-											<div className="text-lg font-black text-[var(--ink)]">
-												{tier.totalRub.toLocaleString("ru-RU")} ₽
-											</div>
-											<div className="text-[11px] text-[var(--muted)] font-medium">
-												Гарантия {tier.warrantyYears} г.
-											</div>
-										</div>
-									</div>
-								);
-							})}
-						</div>
 
 						{/* ПАНЕЛЬ ВЫБРАННОГО ПЛАНА С 1 PRIMARY CTA КНОПКОЙ */}
 						<div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-[var(--line)]">
@@ -461,7 +414,7 @@ export const TreatmentPlansTab: React.FC<TreatmentPlansTabProps> = React.memo(
 					</div>
 
 					<TreatmentPlansList
-						items={effectiveItems}
+						items={effectiveItems as unknown as TreatmentPlansListProps["items"]}
 						onOpenPlan={(planId) => handleOpenPresenter(planId, selectedTier)}
 						onNewPlanItem={() => handleOpenPresenter(activePlan?.id, selectedTier)}
 					/>
