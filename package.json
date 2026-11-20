@@ -21,6 +21,7 @@
     "dente:doctor": "node --max-old-space-size=2048 scripts/dente-cli.mjs doctor",
     "dente:preflight": "node --max-old-space-size=2048 scripts/dente-cli.mjs preflight",
     "dente:info": "node --max-old-space-size=2048 scripts/dente-cli.mjs info",
+    "audit:dice": "node --max-old-space-size=2048 scripts/dice-audit.mjs",
     "typecheck": "npm run build -w @dental/shared && npm run typecheck -w @dental/shared && npm run typecheck:tests -w @dental/shared && npm run typecheck -w @dental/api && npm run typecheck:tests -w @dental/api && npm run typecheck -w @dental/web",
     "typecheck:tests": "npm run typecheck:tests -w @dental/api",
     "chains": "npm run smoke:chains",
