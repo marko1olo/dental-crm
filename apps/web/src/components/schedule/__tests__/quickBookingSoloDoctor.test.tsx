@@ -239,7 +239,7 @@ describe("Schedule Fast Booking & Solo Doctor Invariants (Mandates 8e, 8n, 8am)"
 			assert.ok(html.includes("data-testid=\"quick-drawer-save-btn\""), "Save CTA button must render");
 			assert.equal(html.includes("disabled"), false, "Save button must NEVER have disabled attribute (Mandate 8e)");
 			assert.ok(html.includes("min-h-[44px]"), "CTA must have minimum 44px touch height (Apple HIG)");
-			assert.ok(html.includes("bg-[var(--teal)]"), "CTA must use canonical primary accent color");
+			assert.ok(html.includes("bg-[var(--primary)]") || html.includes("bg-[var(--teal)]"), "CTA must use canonical primary accent color");
 		});
 	});
 });

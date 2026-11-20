@@ -61,7 +61,7 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 		<div className="flex flex-col gap-2 min-w-0" data-testid="schedule-shift-analytics-wrapper">
 			<div className="flex items-center justify-between flex-wrap gap-2 px-1">
 				<div className="flex items-center gap-2">
-					<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+					<span className="text-xs font-semibold text-[var(--ink-muted)]">
 						Смена: Показатели дня
 					</span>
 				</div>
@@ -70,11 +70,11 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 						<button
 							type="button"
 							onClick={onOpenDoctorShiftDrawer}
-							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
 							data-testid="shift-analytics-doctor-drawer-btn"
 							title="Назначить смену врача"
 						>
-							<Users size={13} className="text-[var(--teal)]" />
+							<Users size={13} className="text-[var(--primary)]" />
 							<span>График смен</span>
 						</button>
 					)}
@@ -82,11 +82,11 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 						<button
 							type="button"
 							onClick={onOpenChairDateRangeModal}
-							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+							className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--primary)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
 							data-testid="shift-analytics-chair-range-btn"
 							title="Назначить график кресел на период"
 						>
-							<CalendarRange size={13} className="text-[var(--teal)]" />
+							<CalendarRange size={13} className="text-[var(--primary)]" />
 							<span>Период кресел</span>
 						</button>
 					)}
@@ -102,7 +102,7 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 			<article className="min-w-0 flex flex-col justify-between" data-testid="analytics-card-doctors">
 				<div className="flex items-center justify-between gap-1">
 					<span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
-						<Users size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
+						<Users size={14} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
 						Врачи
 					</span>
 					<strong className="text-base font-bold text-[var(--ink)]">
@@ -120,7 +120,7 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 			<article className="min-w-0 flex flex-col justify-between" data-testid="analytics-card-assistants">
 				<div className="flex items-center justify-between gap-1">
 					<span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
-						<UserCheck size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
+						<UserCheck size={14} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
 						Ассистенты
 					</span>
 					<strong className="text-base font-bold text-[var(--ink)]">
@@ -138,7 +138,7 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 			<article className="min-w-0 flex flex-col justify-between" data-testid="analytics-card-chairs">
 				<div className="flex items-center justify-between gap-1">
 					<span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
-						<DentalChairUnit size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
+						<DentalChairUnit size={14} className="text-[var(--primary)] shrink-0" aria-hidden="true" />
 						Кресла
 					</span>
 					<strong className="text-base font-bold text-[var(--ink)]">
@@ -155,8 +155,8 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 
 			<article
 				className={`min-w-0 flex flex-col justify-between ${
-					warningsList.length > 0 ? "border-amber-500/30 bg-amber-500/5" : ""
-				} ${onOpenWarning && firstWarning ? "cursor-pointer hover:border-amber-500/60" : ""}`}
+					warningsList.length > 0 ? "border-[var(--warning-line)] bg-[var(--warning-soft)]" : ""
+				} ${onOpenWarning && firstWarning ? "cursor-pointer hover:border-[var(--warning)]" : ""}`}
 				data-testid="analytics-card-control"
 				onClick={() => {
 					if (onOpenWarning && firstWarning) {
@@ -168,14 +168,14 @@ export const ScheduleShiftAnalytics: React.FC<ScheduleShiftAnalyticsProps> = ({
 					<span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]">
 						<AlertCircle
 							size={14}
-							className={warningsList.length > 0 ? "text-amber-500 shrink-0" : "text-[var(--teal)] shrink-0"}
+							className={warningsList.length > 0 ? "text-[var(--warning)] shrink-0" : "text-[var(--primary)] shrink-0"}
 							aria-hidden="true"
 						/>
 						Контроль
 					</span>
 					<strong
 						className={`text-base font-bold ${
-							warningsList.length > 0 ? "text-amber-600 dark:text-amber-400" : "text-[var(--ink)]"
+							warningsList.length > 0 ? "text-[var(--warning-ink)]" : "text-[var(--ink)]"
 						}`}
 					>
 						{warningsList.length}

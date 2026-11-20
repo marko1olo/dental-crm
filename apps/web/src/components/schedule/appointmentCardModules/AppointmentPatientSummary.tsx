@@ -67,7 +67,7 @@ export const AppointmentPatientSummary: React.FC<AppointmentPatientSummaryProps>
 					data-testid="appointment-cito-overbooking-badge"
 				>
 					<Zap size={9} className="fill-white" />
-					<span>СРОЧНО</span>
+					<span>Срочно</span>
 				</span>
 			)}
 

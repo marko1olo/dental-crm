@@ -60,14 +60,14 @@ export function WaitlistAddPatientForm({
 	return (
 		<form onSubmit={handleFormSubmit} className="space-y-4 pt-1">
 			<div>
-				<label className="block text-xs font-semibold text-[var(--text,#0f172a)] mb-1">
+				<label className="block text-xs font-semibold text-[var(--ink)] mb-1">
 					Пациент клиники *
 				</label>
 				<div className="space-y-1.5">
 					<select
 						value={newPatientId}
 						onChange={(e) => onSelectPatientId(e.target.value)}
-						className="w-full h-10 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+						className="w-full h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
 					>
 						<option value="">-- Выберите существующего пациента --</option>
 						{clinicPatients.map((p) => (
@@ -84,7 +84,7 @@ export function WaitlistAddPatientForm({
 								placeholder="Или введите ФИО нового пациента..."
 								value={newPatientName}
 								onChange={(e) => onPatientNameChange(e.target.value)}
-								className="w-full h-9 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+								className="w-full h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:ring-1 focus:ring-[var(--primary)]"
 							/>
 							{onPatientPhoneChange && (
 								<input
@@ -92,7 +92,7 @@ export function WaitlistAddPatientForm({
 									placeholder="Телефон: +7 (___) ___-__-__"
 									value={newPatientPhone}
 									onChange={(e) => onPatientPhoneChange(e.target.value)}
-									className="w-full h-9 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+									className="w-full h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:ring-1 focus:ring-[var(--primary)]"
 								/>
 							)}
 						</div>
@@ -101,13 +101,13 @@ export function WaitlistAddPatientForm({
 			</div>
 
 			<div>
-				<label className="block text-xs font-semibold text-[var(--text,#0f172a)] mb-1">
+				<label className="block text-xs font-semibold text-[var(--ink)] mb-1">
 					Желаемый врач
 				</label>
 				<select
 					value={newDoctorId}
 					onChange={(e) => onDoctorIdChange(e.target.value)}
-					className="w-full h-10 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+					className="w-full h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:ring-1 focus:ring-[var(--primary)]"
 				>
 					<option value="">Любой врач клиники</option>
 					{staffDoctors.map((doc) => (
@@ -120,13 +120,13 @@ export function WaitlistAddPatientForm({
 
 			<div className="grid grid-cols-2 gap-3">
 				<div>
-					<label className="block text-xs font-semibold text-[var(--text,#0f172a)] mb-1">
+					<label className="block text-xs font-semibold text-[var(--ink)] mb-1">
 						Срочность приёма
 					</label>
 					<select
 						value={newUrgency}
 						onChange={(e) => onUrgencyChange(e.target.value as WaitlistUrgency)}
-						className="w-full h-10 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+						className="w-full h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:ring-1 focus:ring-[var(--primary)]"
 					>
 						<option value="routine">Плановый осмотр</option>
 						<option value="urgent">Острая боль / Cito</option>
@@ -136,13 +136,13 @@ export function WaitlistAddPatientForm({
 				</div>
 
 				<div>
-					<label className="block text-xs font-semibold text-[var(--text,#0f172a)] mb-1">
+					<label className="block text-xs font-semibold text-[var(--ink)] mb-1">
 						Направление
 					</label>
 					<select
 						value={newCategory}
 						onChange={(e) => onCategoryChange(e.target.value)}
-						className="w-full h-10 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+						className="w-full h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:ring-1 focus:ring-[var(--primary)]"
 					>
 						{TREATMENT_CATEGORIES.map((cat) => (
 							<option key={cat} value={cat}>
@@ -154,13 +154,13 @@ export function WaitlistAddPatientForm({
 			</div>
 
 			<div>
-				<label className="block text-xs font-semibold text-[var(--text,#0f172a)] mb-1">
+				<label className="block text-xs font-semibold text-[var(--ink)] mb-1">
 					Предпочтительное время
 				</label>
 				<select
 					value={newTimeOfDay}
 					onChange={(e) => onTimeOfDayChange(e.target.value)}
-					className="w-full h-10 text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] px-3 focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+					className="w-full h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:ring-1 focus:ring-[var(--primary)]"
 				>
 					<option value="any">Любое время</option>
 					<option value="morning">Утро (08:00 - 12:00)</option>
@@ -170,7 +170,7 @@ export function WaitlistAddPatientForm({
 			</div>
 
 			<div>
-				<label className="block text-xs font-semibold text-[var(--text,#0f172a)] mb-1">
+				<label className="block text-xs font-semibold text-[var(--ink)] mb-1">
 					Клинический комментарий
 				</label>
 				<textarea
@@ -178,7 +178,7 @@ export function WaitlistAddPatientForm({
 					value={newNotes}
 					onChange={(e) => onNotesChange(e.target.value)}
 					placeholder="Например: жалуется на реакцию от холодного в зубе 3.6..."
-					className="w-full text-xs rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] p-2.5 focus:ring-1 focus:ring-[var(--teal,#0d9488)] resize-none"
+					className="w-full text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] p-2.5 focus:ring-1 focus:ring-[var(--primary)] resize-none"
 				/>
 			</div>
 
@@ -186,7 +186,7 @@ export function WaitlistAddPatientForm({
 				<button
 					type="button"
 					onClick={onCancel}
-					className="px-4 py-2 text-xs font-semibold text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)] cursor-pointer"
+					className="h-9 px-3.5 text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer"
 				>
 					Отмена
 				</button>
@@ -194,7 +194,7 @@ export function WaitlistAddPatientForm({
 					type="submit"
 					disabled={false}
 					aria-busy={isSubmitting || undefined}
-					className="px-5 py-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer aria-busy:opacity-60"
+					className="h-9 px-4 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer aria-busy:opacity-60 inline-flex items-center justify-center"
 				>
 					{isSubmitting ? "Сохранение..." : "Добавить в лист ожидания"}
 				</button>

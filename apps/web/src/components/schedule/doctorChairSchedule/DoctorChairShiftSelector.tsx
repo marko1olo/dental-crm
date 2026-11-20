@@ -53,7 +53,7 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 		<div className="space-y-4">
 			{/* Shift Presets Grid */}
 			<div>
-				<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1.5">
+				<label className="block text-xs font-semibold text-[var(--ink-muted)] mb-1.5">
 					Режим смены (1 тап):
 				</label>
 				<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -66,8 +66,8 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 								onClick={() => onSelectShiftPreset(preset.id)}
 								className={`min-h-[44px] p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
 									isSelected
-										? "border-[var(--teal,#0d9488)] bg-[var(--teal-dark,#0f766e)] text-white shadow-xs font-bold"
-										: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]"
+										? "border-[var(--primary)] bg-[var(--primary)] text-white shadow-xs font-bold"
+										: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)]"
 								}`}
 								data-testid={`shift-preset-${preset.id}`}
 								style={{ minHeight: "44px" }}
@@ -75,7 +75,7 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 								<span className="text-xs font-bold">{preset.label}</span>
 								<span
 									className={`text-[10px] ${
-										isSelected ? "text-white/85" : "text-[var(--muted,#64748b)]"
+										isSelected ? "text-white/85" : "text-[var(--ink-muted)]"
 									}`}
 								>
 									{preset.hours}
@@ -90,14 +90,14 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 			{selectedShiftPreset === "two_shifts" ? (
 				<div className="space-y-3">
 					{/* Morning Doctor */}
-					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
-						<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+					<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
+						<label className="block text-xs font-semibold text-[var(--ink-muted)]">
 							Врач на утренней смене (08:00–14:00)
 						</label>
 						<select
 							value={selectedDoctorId}
 							onChange={(e) => onSelectDoctorId(e.target.value)}
-							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold outline-hidden focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
+							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-bold outline-hidden focus:ring-2 focus:ring-[var(--primary)]"
 							data-testid="select-chair-doctor"
 							style={{ minHeight: "44px" }}
 						>
@@ -121,14 +121,14 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 											onClick={() => onSelectDoctorId(d.id)}
 											className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
 												isSel
-													? "bg-[var(--teal-dark,#0f766e)] text-white border-[var(--teal,#0d9488)] shadow-xs"
-													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)]"
+													? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
 											}`}
 											data-testid={`btn-quick-select-doctor-${d.id}`}
 											title={d.fullName}
 											style={{ minHeight: "44px" }}
 										>
-											<User size={13} className={isSel ? "text-white" : "text-[var(--teal,#0d9488)]"} />
+											<User size={13} className={isSel ? "text-white" : "text-[var(--primary)]"} />
 											<span>{sName}</span>
 										</button>
 									);
@@ -138,14 +138,14 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 					</div>
 
 					{/* Evening Doctor */}
-					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
-						<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+					<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
+						<label className="block text-xs font-semibold text-[var(--ink-muted)]">
 							Врач на вечерней смене (14:00–20:00)
 						</label>
 						<select
 							value={selectedEveningDoctorId}
 							onChange={(e) => onSelectEveningDoctorId(e.target.value)}
-							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-bold outline-hidden focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
+							className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-bold outline-hidden focus:ring-2 focus:ring-[var(--primary)]"
 							data-testid="select-chair-evening-doctor"
 							style={{ minHeight: "44px" }}
 						>
@@ -169,14 +169,14 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 											onClick={() => onSelectEveningDoctorId(d.id)}
 											className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
 												isSel
-													? "bg-[var(--teal-dark,#0f766e)] text-white border-[var(--teal,#0d9488)] shadow-xs"
-													: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)]"
+													? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
 											}`}
 											data-testid={`btn-quick-select-evening-doctor-${d.id}`}
 											title={d.fullName}
 											style={{ minHeight: "44px" }}
 										>
-											<User size={13} className={isSel ? "text-white" : "text-[var(--teal,#0d9488)]"} />
+											<User size={13} className={isSel ? "text-white" : "text-[var(--primary)]"} />
 											<span>{sName}</span>
 										</button>
 									);
@@ -188,13 +188,13 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 			) : (
 				<div>
 					<div className="flex items-center justify-between mb-1.5">
-						<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
+						<label className="text-xs font-semibold text-[var(--ink-muted)]">
 							Врач на смене:
 						</label>
 						<button
 							type="button"
 							onClick={onToggleInlineDoctorForm}
-							className="min-h-[44px] text-xs font-bold text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 cursor-pointer"
+							className="min-h-[44px] text-xs font-bold text-[var(--primary)] hover:underline flex items-center gap-1 cursor-pointer"
 							style={{ minHeight: "44px" }}
 						>
 							<UserPlus size={14} />
@@ -205,10 +205,10 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 					{/* Inline Doctor Add Panel (Anti-Matryoshka Sin 6) */}
 					{isInlineDoctorFormOpen && (
 						<div
-							className="p-3 mb-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--teal,#0d9488)]/40 space-y-2.5 animate-in fade-in"
+							className="p-3 mb-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--primary)]/40 space-y-2.5 animate-in fade-in"
 							data-testid="inline-quick-add-doctor-form"
 						>
-							<span className="text-xs font-bold text-[var(--ink,#0f172a)] block">
+							<span className="text-xs font-bold text-[var(--ink)] block">
 								Быстрое добавление врача без модалок:
 							</span>
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -217,14 +217,14 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 									placeholder="ФИО врача (например: Смирнов В.А.)"
 									value={newDocName}
 									onChange={(e) => onChangeNewDocName(e.target.value)}
-									className="min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] font-medium outline-hidden focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
+									className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] font-medium outline-hidden focus:ring-2 focus:ring-[var(--primary)]"
 									data-testid="inline-doctor-fullname-input"
 									style={{ minHeight: "44px" }}
 								/>
 								<select
 									value={newDocSpecialty}
 									onChange={(e) => onChangeNewDocSpecialty(e.target.value as DentalSpecialty)}
-									className="min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#0f172a)] font-medium outline-hidden focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
+									className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] font-medium outline-hidden focus:ring-2 focus:ring-[var(--primary)]"
 									style={{ minHeight: "44px" }}
 								>
 									{QUICK_DOCTOR_SPECIALTIES.map((sp) => (
@@ -237,7 +237,7 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 							<button
 								type="button"
 								onClick={onSubmitInlineDoctor}
-								className="min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+								className="min-h-[44px] px-4 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
 								data-testid="inline-doctor-submit-btn"
 								style={{ minHeight: "44px" }}
 							>
@@ -250,7 +250,7 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 					<select
 						value={selectedDoctorId}
 						onChange={(e) => onSelectDoctorId(e.target.value)}
-						className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold outline-hidden focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
+						className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold outline-hidden focus:ring-2 focus:ring-[var(--primary)]"
 						data-testid="select-chair-doctor"
 						style={{ minHeight: "44px" }}
 					>
@@ -265,7 +265,7 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 					{/* Quick switch pills */}
 					{doctors.length > 1 && (
 						<div className="mt-2 space-y-1">
-							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] block">
+							<span className="text-[11px] font-semibold text-[var(--ink-muted)] block">
 								Быстрый выбор врача (1 тап):
 							</span>
 							<div className="flex flex-wrap gap-1.5" data-testid="doctor-quick-switch-pills">
@@ -279,14 +279,14 @@ export const DoctorChairShiftSelector: React.FC<DoctorChairShiftSelectorProps> =
 											onClick={() => onSelectDoctorId(d.id)}
 											className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
 												isSel
-													? "bg-[var(--teal-dark,#0f766e)] text-white border-[var(--teal,#0d9488)] shadow-xs"
-													: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] hover:bg-[var(--paper,#ffffff)]"
+													? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper)]"
 											}`}
 											data-testid={`btn-quick-select-doctor-${d.id}`}
 											title={d.fullName}
 											style={{ minHeight: "44px" }}
 										>
-											<User size={13} className={isSel ? "text-white" : "text-[var(--teal,#0d9488)]"} />
+											<User size={13} className={isSel ? "text-white" : "text-[var(--primary)]"} />
 											<span>{sName}</span>
 										</button>
 									);

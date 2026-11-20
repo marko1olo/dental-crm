@@ -55,7 +55,7 @@ describe("AppointmentCard Badges", () => {
 		const html = renderToStaticMarkup(
 			React.createElement(AppointmentCard, createCardProps(citoAppointment)),
 		);
-		assert.ok(html.includes("СРОЧНО"));
+		assert.ok(html.includes("СРОЧНО") || html.includes("Срочно"));
 		assert.ok(!html.includes("⚡"));
 		assert.ok(html.includes('data-testid="appointment-cito-badge"'));
 	});

@@ -28,16 +28,16 @@ export function QuickDoctorFormFields({
 	return (
 		<>
 			<div className="space-y-1.5">
-				<label htmlFor="quick-doctor-name" className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]">
+				<label htmlFor="quick-doctor-name" className="block text-xs font-semibold text-[var(--ink-muted)]">
 					ФИО врача *
 				</label>
 				<input
 					id="quick-doctor-name" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)}
 					placeholder="Например: Иванов Иван Иванович"
-					className="w-full min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-sm font-medium focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-hidden transition-all"
-					data-testid="quick-doctor-name" style={{ minHeight: "44px" }} autoFocus
+					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none transition-all"
+					data-testid="quick-doctor-name" autoFocus
 				/>
-				<p className="text-[11px] text-[var(--muted,#64748b)]">
+				<p className="text-[11px] text-[var(--ink-muted)]">
 					Короткое имя для карточки:{" "}
 					<span className="font-semibold text-[var(--ink)]">
 						{formatDoctorShortName(fullName.trim() || defaultDoctorName)}
@@ -46,14 +46,14 @@ export function QuickDoctorFormFields({
 			</div>
 
 			<div className="space-y-1.5">
-				<label htmlFor="quick-doctor-specialty" className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-					<Stethoscope className="w-3.5 h-3.5 text-[var(--teal)]" />
+				<label htmlFor="quick-doctor-specialty" className="block text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+					<Stethoscope className="w-3.5 h-3.5 text-[var(--primary)]" />
 					<span>Специальность *</span>
 				</label>
 				<select
 					id="quick-doctor-specialty" value={specialty} onChange={(e) => setSpecialty(e.target.value as DentalSpecialty)}
-					className="w-full min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-sm font-medium focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-hidden transition-all cursor-pointer"
-					data-testid="quick-doctor-specialty" style={{ minHeight: "44px" }}
+					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none transition-all cursor-pointer"
+					data-testid="quick-doctor-specialty"
 				>
 					{QUICK_DOCTOR_SPECIALTIES.map((spec) => (
 						<option key={spec.id} value={spec.id}>{spec.label}</option>
@@ -62,35 +62,35 @@ export function QuickDoctorFormFields({
 			</div>
 
 			<div className="space-y-1.5">
-				<label htmlFor="quick-doctor-phone" className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-					<Phone className="w-3.5 h-3.5 text-[var(--teal)]" />
+				<label htmlFor="quick-doctor-phone" className="block text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+					<Phone className="w-3.5 h-3.5 text-[var(--primary)]" />
 					<span>Телефон (опционально)</span>
 				</label>
 				<input
 					id="quick-doctor-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
 					placeholder="+7 (___) ___-__-__"
-					className="w-full min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-sm font-medium focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-hidden transition-all"
-					data-testid="quick-doctor-phone" style={{ minHeight: "44px" }}
+					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none transition-all"
+					data-testid="quick-doctor-phone"
 				/>
 			</div>
 
 			<div className="space-y-1.5">
-				<label htmlFor="quick-doctor-preferred-chair" className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-					<DentalChairUnit className="w-3.5 h-3.5 text-[var(--teal)]" />
+				<label htmlFor="quick-doctor-preferred-chair" className="block text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+					<DentalChairUnit className="w-3.5 h-3.5 text-[var(--primary)]" />
 					<span>Закрепленное кресло</span>
 				</label>
 				<select
 					id="quick-doctor-preferred-chair" value={preferredChairId} onChange={(e) => setPreferredChairId(e.target.value)}
-					className="w-full min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-sm font-medium focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-hidden transition-all cursor-pointer"
-					data-testid="quick-doctor-preferred-chair" style={{ minHeight: "44px" }}
+					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none transition-all cursor-pointer"
+					data-testid="quick-doctor-preferred-chair"
 				>
 					<option value="">-- Без закрепления (по выбору) --</option>
 					{activeChairs.map((ch) => (
 						<option key={ch.id} value={ch.id}>{ch.name} {ch.room ? `(${ch.room})` : ""}</option>
 					))}
 				</select>
-				<p className="text-[11px] text-[var(--muted,#64748b)] flex items-center gap-1">
-					<Pin className="w-3 h-3 text-[var(--teal)] shrink-0" />
+				<p className="text-[11px] text-[var(--ink-muted)] flex items-center gap-1">
+					<Pin className="w-3 h-3 text-[var(--primary)] shrink-0" />
 					<span>При выборе этого врача в записи кресло подставится автоматически</span>
 				</p>
 			</div>

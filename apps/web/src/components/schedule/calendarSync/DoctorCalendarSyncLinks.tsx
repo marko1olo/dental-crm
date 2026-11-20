@@ -52,12 +52,12 @@ export function DoctorCalendarSyncLinks({
 				<div className="flex items-center justify-between mb-1.5">
 					<label
 						htmlFor="calendar-feed-url-input"
-						className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5"
+						className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5"
 					>
-						<Lock className="w-3.5 h-3.5 text-amber-500" />
+						<Lock className="w-3.5 h-3.5 text-[var(--warning)]" />
 						<span>Персональная ссылка подписки (iCalendar / webcal)</span>
 					</label>
-					<span className="text-[10px] font-mono text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] px-2 py-0.5 rounded-md border border-[var(--line,#e2e8f0)]">
+					<span className="text-[10px] font-mono text-[var(--ink-muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line)]">
 						Версия ключа: v{feedData.tokenVersion}
 					</span>
 				</div>
@@ -67,13 +67,13 @@ export function DoctorCalendarSyncLinks({
 						type="text"
 						readOnly
 						value={webcalUrl || fullFeedUrl}
-						className="flex-1 min-h-[44px] px-3 font-mono text-xs rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] select-all focus:outline-hidden"
+						className="flex-1 min-h-[44px] px-3 font-mono text-xs rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] select-all focus:outline-hidden"
 						data-testid="calendar-feed-url-input"
 					/>
 					<button
 						type="button"
 						onClick={() => onCopy(webcalUrl || fullFeedUrl, "feed")}
-						className="min-h-[44px] px-4 rounded-xl font-medium text-xs bg-[var(--teal-dark,var(--brand-primary))] text-white hover:opacity-90 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95"
+						className="min-h-[44px] px-4 rounded-xl font-medium text-xs bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95"
 						data-testid="copy-calendar-link-btn"
 					>
 						{copiedKey === "feed" ? (
@@ -92,7 +92,7 @@ export function DoctorCalendarSyncLinks({
 			</div>
 
 			<div>
-				<div className="text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] mb-2">
+				<div className="text-xs font-semibold text-[var(--ink-muted)] mb-2">
 					Быстрое подключение календаря
 				</div>
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">

@@ -13,8 +13,8 @@ export const SlotConflictSuggestedSlots: React.FC<SlotConflictSuggestedSlotsProp
 	onClose,
 }) => (
 	<div className="space-y-1.5" data-testid="slot-conflict-suggested-slots-section">
-		<label className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-			<Calendar className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary,#0d9488))]" />
+		<label className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+			<Calendar className="w-3.5 h-3.5 text-[var(--primary)]" />
 			<span>Выбрать другое свободное окно:</span>
 		</label>
 		{suggestedSlots && suggestedSlots.length > 0 ? (
@@ -31,7 +31,7 @@ export const SlotConflictSuggestedSlots: React.FC<SlotConflictSuggestedSlotsProp
 							data-testid="suggested-slot-btn"
 							data-autofocus={idx === 0 ? "true" : undefined}
 							onClick={() => { onSelectSlot(slotValue); onClose(); }}
-							className="secondary-button min-h-[44px] sm:min-h-[38px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group touch-manipulation select-none active:scale-[0.98]"
+							className="secondary-button min-h-[44px] sm:min-h-[38px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group touch-manipulation select-none active:scale-[0.98]"
 							title={`Записать на ${slotLabel}`}
 							aria-label={`Выбрать альтернативное время ${slotLabel}`}
 						>
@@ -42,7 +42,7 @@ export const SlotConflictSuggestedSlots: React.FC<SlotConflictSuggestedSlotsProp
 				})}
 			</div>
 		) : (
-			<p className="text-xs text-[var(--muted,#64748b)] italic">
+			<p className="text-xs text-[var(--ink-muted)] italic">
 				Ближайшие окна не найдены. Выберите время вручную в сетке расписания.
 			</p>
 		)}

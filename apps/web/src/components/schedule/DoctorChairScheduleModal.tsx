@@ -41,7 +41,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 			data-testid="chair-doctor-assignment-modal"
 		>
 			<div
-				className="bg-[var(--paper,#ffffff)] border-2 border-[var(--teal,#0d9488)] rounded-3xl p-4 sm:p-6 shadow-2xl max-w-lg w-full space-y-4 animate-in zoom-in-95 duration-150 text-[var(--ink,#0f172a)]"
+				className="bg-[var(--paper)] border border-[var(--line)] rounded-3xl p-4 sm:p-6 shadow-2xl max-w-lg w-full space-y-4 animate-in zoom-in-95 duration-150 text-[var(--ink)]"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<DoctorChairScheduleHeader

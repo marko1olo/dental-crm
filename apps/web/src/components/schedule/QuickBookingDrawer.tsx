@@ -164,7 +164,7 @@ export function QuickBookingDrawerFooter({
         onClick={onSubmit}
         aria-busy={isSubmitting}
         data-testid="quick-drawer-save-btn"
-        className="primary-button dente-btn dente-btn-primary w-full h-[52px] min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--primary)] bg-[var(--teal)] hover:bg-[var(--primary-hover)] text-white shadow-xs"
+        className="primary-button dente-btn dente-btn-primary w-full h-[52px] min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs"
       >
         <Plus size={16} className="shrink-0 stroke-[2.5]" />
         <span className="whitespace-nowrap font-bold">
@@ -211,7 +211,7 @@ export function QuickBookingDrawerFooter({
             className="secondary-button min-h-[44px] px-2.5 sm:px-3 inline-flex items-center gap-1.5 text-xs shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
             title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
           >
-            <Copy size={14} className="text-[var(--teal)] shrink-0" />
+            <Copy size={14} className="text-[var(--primary)] shrink-0" />
             <span>Скопировать<span className="hidden sm:inline"> для пациента</span></span>
           </button>
         </div>
@@ -346,19 +346,19 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
       {/* Мягкий бейдж/алерт коллизии расписания со сроком готовности ЗТЛ (Мандат 8e) */}
       {state.collision?.labCollision?.hasCollision && (
         <div
-          className="rounded-xl border border-amber-500/40 bg-amber-500/15 p-3.5 text-xs text-amber-900 dark:text-amber-200 flex flex-col items-start gap-2.5 shadow-2xs"
+          className="rounded-xl border border-[var(--warning-line)] bg-[var(--warning-soft)] p-3.5 text-xs text-[var(--warning-ink)] flex flex-col items-start gap-2.5 shadow-2xs"
           data-testid="quick-booking-lab-collision-alert"
         >
           <div className="flex items-start gap-2.5 min-w-0 w-full">
-            <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <AlertTriangle size={16} className="text-[var(--warning)] shrink-0 mt-0.5" />
             <div className="space-y-1 min-w-0 flex-1">
               <div className="font-semibold flex items-center gap-1.5 flex-wrap">
                 <span>Внимание: заказ ЗТЛ еще не будет готов к этому визиту!</span>
-                <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30">
+                <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--warning-soft)] border border-[var(--warning-line)] text-[var(--warning-ink)]">
                   {state.collision.labCollision.orderNumber}
                 </span>
               </div>
-              <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+              <p className="text-[11px] leading-relaxed text-[var(--warning-ink)]">
                 {state.collision.labCollision.message}
               </p>
             </div>
@@ -370,7 +370,7 @@ export function QuickBookingDrawerBody({ state, props }: QuickBookingDrawerBodyP
                 setStartsAtLocal(state.collision.labCollision.dueDateLocal);
               }
             }}
-            className="h-8 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs inline-flex items-center gap-1.5 cursor-pointer self-start transition-colors shadow-2xs"
+            className="h-8 px-3 rounded-lg bg-[var(--warning)] hover:opacity-90 text-white font-medium text-xs inline-flex items-center gap-1.5 cursor-pointer self-start transition-opacity shadow-2xs"
             data-testid="btn-shift-appointment-to-lab-ready"
           >
             <Clock size={13} />

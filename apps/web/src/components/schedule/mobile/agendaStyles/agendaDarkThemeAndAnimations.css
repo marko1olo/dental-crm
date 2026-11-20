@@ -1,13 +1,13 @@
 /* Dark Theme Fine-Tuning & QuickBookingDrawer Animations */
 [data-theme="dark"] .schedule-mobile-agenda,
 .dark .schedule-mobile-agenda {
-  background: var(--paper-soft, #0b1120);
+  background: var(--paper-soft);
 }
 
 [data-theme="dark"] .schedule-mobile-card,
 .dark .schedule-mobile-card {
-  background: var(--paper, #0f172a);
-  border-color: var(--line, #1e293b);
+  background: var(--paper);
+  border-color: var(--line);
 }
 
 [data-theme="dark"] .schedule-mobile-month-nav,
@@ -18,8 +18,8 @@
 .dark .schedule-mobile-chips-wrapper,
 [data-theme="dark"] .schedule-mobile-empty-day,
 .dark .schedule-mobile-empty-day {
-  background: var(--paper, #0f172a);
-  border-color: var(--line, #1e293b);
+  background: var(--paper);
+  border-color: var(--line);
 }
 
 [data-theme="dark"] .schedule-mobile-nav-btn,
@@ -30,27 +30,27 @@
 .dark .schedule-mobile-filter-chip:not(.active),
 [data-theme="dark"] .schedule-mobile-empty-icon,
 .dark .schedule-mobile-empty-icon {
-  background: var(--paper-soft, #1e293b);
-  border-color: var(--line, #334155);
-  color: var(--ink, #f8fafc);
+  background: var(--paper-soft);
+  border-color: var(--line);
+  color: var(--ink);
 }
 
 [data-theme="dark"] .schedule-mobile-filter-chip.active,
 .dark .schedule-mobile-filter-chip.active {
-  background: var(--teal-soft, rgba(13, 148, 136, 0.2)) !important;
-  border-color: var(--teal, #0d9488) !important;
-  color: var(--teal-light, #2dd4bf) !important;
+  background: var(--primary-soft) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
 }
 
 [data-theme="dark"] .schedule-mobile-bottom-bar,
 .dark .schedule-mobile-bottom-bar {
-  background: var(--paper-strong, #0f172a) !important;
-  border-top-color: var(--line, #1e293b);
+  background: var(--paper-strong) !important;
+  border-top-color: var(--line);
 }
 
 [data-theme="dark"] .schedule-mobile-bottom-bar::after,
 .dark .schedule-mobile-bottom-bar::after {
-  background: var(--paper-strong, #0f172a) !important;
+  background: var(--paper-strong) !important;
 }
 
 @keyframes quick-drawer-slide-in {

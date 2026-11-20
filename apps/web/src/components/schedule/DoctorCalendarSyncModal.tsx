@@ -67,14 +67,14 @@ export const DoctorCalendarSyncModal: React.FC<
 			aria-modal="true"
 			aria-labelledby="calendar-sync-modal-title"
 		>
-			<div className="w-full max-w-2xl max-h-[92vh] rounded-3xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl flex flex-col overflow-hidden text-[var(--ink,#0f172a)] animate-in fade-in zoom-in-95 duration-150">
+			<div className="w-full max-w-2xl max-h-[92vh] rounded-3xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl flex flex-col overflow-hidden text-[var(--ink)] animate-in fade-in zoom-in-95 duration-150">
 				<DoctorCalendarSyncHeader onClose={onClose} />
 				<div className="p-4 sm:p-6 overflow-y-auto space-y-5">
 					{staffDoctors.length > 1 && (
 						<div>
 							<label
 								htmlFor="calendar-doctor-select"
-								className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)] mb-2"
+								className="block text-xs font-medium text-[var(--ink-muted)] mb-2"
 							>
 								Выберите врача
 							</label>
@@ -82,7 +82,7 @@ export const DoctorCalendarSyncModal: React.FC<
 								id="calendar-doctor-select"
 								value={selectedDoctorId}
 								onChange={(e) => setSelectedDoctorId(e.target.value)}
-								className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-sm font-medium focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))]"
+								className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium focus:ring-2 focus:ring-[var(--primary)]"
 							>
 								{staffDoctors.map((doc) => (
 									<option key={doc.id} value={doc.id}>
@@ -93,9 +93,9 @@ export const DoctorCalendarSyncModal: React.FC<
 							</select>
 						</div>
 					)}
-					<div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-900 dark:text-emerald-200 flex items-start gap-3">
+					<div className="p-3.5 rounded-2xl bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] flex items-start gap-3">
 						<ShieldCheck
-							className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
+							className="w-5 h-5 text-[var(--success)] shrink-0 mt-0.5"
 							aria-hidden="true"
 						/>
 						<div className="text-xs leading-relaxed">
@@ -108,8 +108,8 @@ export const DoctorCalendarSyncModal: React.FC<
 						</div>
 					</div>
 					{isLoading && (
-						<div className="py-8 flex flex-col items-center justify-center gap-3 text-[var(--muted,#64748b)]">
-							<RefreshCw className="w-6 h-6 animate-spin text-[var(--teal,var(--brand-primary))]" />
+						<div className="py-8 flex flex-col items-center justify-center gap-3 text-[var(--ink-muted)]">
+							<RefreshCw className="w-6 h-6 animate-spin text-[var(--primary)]" />
 							<span className="text-xs font-medium">
 								Генерация защищенной персональной ссылки...
 							</span>
@@ -135,11 +135,11 @@ export const DoctorCalendarSyncModal: React.FC<
 						</>
 					)}
 				</div>
-				<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex justify-end">
+				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex justify-end">
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
+						className="min-h-[44px] px-5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] transition-colors cursor-pointer"
 					>
 						Закрыть
 					</button>

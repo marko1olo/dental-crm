@@ -54,6 +54,7 @@ async function checkLabOrderScheduleCollision(
 	patientId: string | null | undefined,
 	startsAtStr: string,
 	allowOverride: boolean | undefined,
+	log?: FastifyRequest["log"],
 ): Promise<{
 	hasCollision: boolean;
 	conflictingOrder?: { id: string; dueDate: Date | null } | undefined;
@@ -99,6 +100,10 @@ async function checkLabOrderScheduleCollision(
 		}
 	} catch (_err) {
 		// Non-blocking in case of schema discrepancy or memory mock
+		log?.warn(
+			{ err: _err },
+			"[appointments] Lab order schedule collision check warning",
+		);
 	}
 	return { hasCollision: false };
 }
@@ -142,6 +147,7 @@ export const createAppointmentHandler = async (
 		input.patientId,
 		input.startsAt,
 		allowOverride,
+		request.log,
 	);
 	if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
 		const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();
@@ -260,6 +266,7 @@ export const updateAppointmentHandler = async (
 			effectivePatientId,
 			input.startsAt,
 			allowOverride,
+			request.log,
 		);
 		if (labCollisionCheck.hasCollision && labCollisionCheck.conflictingOrder) {
 			const dueIso = labCollisionCheck.conflictingOrder.dueDate?.toISOString();

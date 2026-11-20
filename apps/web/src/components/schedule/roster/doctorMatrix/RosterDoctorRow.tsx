@@ -50,7 +50,7 @@ export const RosterDoctorRow: React.FC<RosterDoctorRowProps> = ({
 					/>
 					<div style={{ fontWeight: 700 }}>{staff.fullName}</div>
 				</div>
-				<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
+				<div style={{ fontSize: "0.75rem", color: "var(--ink-muted)", marginTop: "2px" }}>
 					Таб. № {staff.tabNumber} • {MEDICAL_STAFF_ROLES[staff.role]?.nameRu}
 				</div>
 			</td>
@@ -68,16 +68,16 @@ export const RosterDoctorRow: React.FC<RosterDoctorRowProps> = ({
 			<td style={{ verticalAlign: "middle", padding: "0.75rem" }}>
 				<div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", fontWeight: 700 }}>
 					<span>{totalWeekHours.toFixed(1)} ч</span>
-					<span style={{ color: isOverLimit ? "#ef4444" : "var(--muted, #64748b)" }}>
+					<span style={{ color: isOverLimit ? "var(--danger)" : "var(--ink-muted)" }}>
 						макс {staff.weeklyHourLimit} ч
 					</span>
 				</div>
-				<div style={{ height: "6px", background: "var(--line, #334155)", borderRadius: "9999px", overflow: "hidden", marginTop: "4px" }}>
+				<div style={{ height: "6px", background: "var(--line)", borderRadius: "9999px", overflow: "hidden", marginTop: "4px" }}>
 					<div
 						style={{
 							width: `${Math.min(100, (totalWeekHours / staff.weeklyHourLimit) * 100)}%`,
 							height: "100%",
-							backgroundColor: isOverLimit ? "#ef4444" : "var(--teal, #0d9488)",
+							backgroundColor: isOverLimit ? "var(--danger)" : "var(--primary)",
 						}}
 					/>
 				</div>

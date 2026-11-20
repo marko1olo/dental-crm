@@ -19,35 +19,35 @@ export function TodayQueueItemCard({
   return (
     <article
       data-testid={`queue-item-${item.id}`}
-      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,var(--paper))] p-3 transition-colors hover:border-[var(--teal,var(--brand-primary))]/40"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--paper-strong,var(--paper))] p-3 transition-colors hover:border-[var(--primary)]"
     >
       <div className="flex min-w-[200px] flex-1 items-start gap-2.5">
         <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] px-2.5 py-1 text-center shrink-0">
           <span className="text-[11px] font-bold text-[var(--ink)]">{item.timeRange || "Время не указано"}</span>
-          <span className="text-[9px] uppercase tracking-wide text-[var(--muted)]">{item.chairName}</span>
+          <span className="text-[10px] text-[var(--ink-muted)]">{item.chairName}</span>
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span
               onClick={() => onOpenAppointment?.(item.id)}
-              className="cursor-pointer font-semibold text-xs text-[var(--ink)] hover:text-[var(--teal,var(--brand-primary))] hover:underline truncate"
+              className="cursor-pointer font-semibold text-xs text-[var(--ink)] hover:text-[var(--primary)] hover:underline truncate"
               title={item.patientName}
             >
               {item.patientName}
             </span>
 
             <span
-              className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] font-bold ${
+              className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] font-medium ${
                 statusMeta?.badgeVariant === "warning"
-                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
+                  ? "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]"
                   : statusMeta?.badgeVariant === "info"
-                    ? "bg-[var(--teal)]/15 text-[var(--teal-dark,var(--teal))] dark:text-teal-200"
+                    ? "bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--line)]"
                     : statusMeta?.badgeVariant === "success"
-                      ? "bg-green-500/15 text-green-800 dark:text-green-200"
+                      ? "bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)]"
                       : statusMeta?.badgeVariant === "danger"
-                        ? "bg-red-500/15 text-red-800 dark:text-red-200"
-                        : "bg-[var(--line)] text-[var(--muted)]"
+                        ? "bg-[var(--danger-soft)] text-[var(--danger-ink)] border border-[var(--danger-line)]"
+                        : "bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)]"
               }`}
             >
               {statusMeta?.labelRu || item.operationalStatus}
@@ -55,12 +55,12 @@ export function TodayQueueItemCard({
 
             {item.waitFormatted && (
               <span
-                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-bold ${
+                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-medium ${
                   item.waitSeverity === "critical"
-                    ? "border border-red-500/40 bg-red-500/20 text-red-800 dark:text-red-200 animate-pulse"
+                    ? "border border-[var(--danger-line)] bg-[var(--danger-soft)] text-[var(--danger-ink)] animate-pulse"
                     : item.waitSeverity === "warning"
-                      ? "border border-amber-500/40 bg-amber-500/20 text-amber-800 dark:text-amber-200"
-                      : "bg-[var(--paper-soft)] text-[var(--muted)]"
+                      ? "border border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-ink)]"
+                      : "bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)]"
                 }`}
               >
                 <Clock size={11} />
@@ -70,12 +70,12 @@ export function TodayQueueItemCard({
 
             {item.chairDurationFormatted && (
               <span
-                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-bold ${
+                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-medium ${
                   item.chairDurationSeverity === "overtime"
-                    ? "border border-red-500/40 bg-red-500/20 text-red-800 dark:text-red-200"
+                    ? "border border-[var(--danger-line)] bg-[var(--danger-soft)] text-[var(--danger-ink)]"
                     : item.chairDurationSeverity === "warning"
-                      ? "border border-amber-500/40 bg-amber-500/20 text-amber-800 dark:text-amber-200"
-                      : "bg-[var(--teal)]/15 text-[var(--teal-dark,var(--teal))] dark:text-teal-200"
+                      ? "border border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-ink)]"
+                      : "bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--line)]"
                 }`}
               >
                 <Activity size={11} />
@@ -84,11 +84,11 @@ export function TodayQueueItemCard({
             )}
           </div>
 
-          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-[var(--muted)]">
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-[var(--ink-muted)]">
             <span className="flex items-center gap-1">
               <User size={11} />
               <span>{item.doctorName}</span>
-              {item.doctorSpecialty && <span className="text-[10px] text-[var(--muted)]">({item.doctorSpecialty})</span>}
+              {item.doctorSpecialty && <span className="text-[10px] text-[var(--ink-muted)]">({item.doctorSpecialty})</span>}
             </span>
             <span>·</span>
             <span className="truncate max-w-[200px]" title={item.reason}>{item.reason}</span>

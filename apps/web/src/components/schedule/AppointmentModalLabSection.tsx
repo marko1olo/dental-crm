@@ -204,7 +204,7 @@ export function AppointmentModalLabSection({
         <button
           type="button"
           onClick={() => handleNavigateToLab()}
-          className="h-7 min-h-[28px] px-2.5 rounded-lg border border-[var(--teal)]/30 bg-[var(--teal-soft)] text-xs font-bold text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white inline-flex items-center gap-1 transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95"
+          className="h-7 min-h-[28px] px-2.5 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary-soft)] text-xs font-bold text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white inline-flex items-center gap-1 transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95"
           data-testid="appointment-modal-create-lab-order-btn"
           title="Перейти в реестр лаборатории для оформления наряда"
         >
@@ -218,7 +218,7 @@ export function AppointmentModalLabSection({
   return (
     <div className="sm:col-span-2 space-y-2" data-testid="appointment-modal-lab-section">
       <div className="flex items-center justify-between text-xs font-medium text-[var(--ink-muted)]">
-        <span className="flex items-center gap-1.5 text-[var(--teal)]">
+        <span className="flex items-center gap-1.5 text-[var(--primary)]">
           <FlaskConical size={13} />
           <span>Заказ в лабораторию (ЗТЛ)</span>
         </span>
@@ -260,21 +260,21 @@ export function AppointmentModalLabSection({
             key={item.id}
             className={`p-3 rounded-xl border text-xs shadow-2xs space-y-2 transition-all ${
               item.statusInfo.isOverdue
-                ? "bg-rose-500/10 border-rose-500/40"
+                ? "bg-[var(--danger-soft)] border-[var(--danger-line)]"
                 : item.statusInfo.state === "ready_in_clinic"
-                  ? "bg-emerald-500/10 border-emerald-500/40"
-                  : "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)]/30"
+                  ? "bg-[var(--success-soft)] border-[var(--success-line)]"
+                  : "bg-[var(--paper-soft)] border-[var(--line)]"
             }`}
             data-testid={`appointment-modal-lab-card-${item.id}`}
           >
             <div className="flex items-center justify-between gap-2 flex-wrap font-bold">
               <div className="flex items-center gap-1.5 min-w-0">
                 {item.statusInfo.isOverdue ? (
-                  <AlertTriangle size={13} className="text-rose-500 shrink-0" />
+                  <AlertTriangle size={13} className="text-[var(--danger)] shrink-0" />
                 ) : item.statusInfo.state === "ready_in_clinic" ? (
-                  <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+                  <CheckCircle2 size={13} className="text-[var(--success)] shrink-0" />
                 ) : (
-                  <Clock size={13} className="text-amber-500 shrink-0" />
+                  <Clock size={13} className="text-[var(--warning)] shrink-0" />
                 )}
                 <span className="text-[var(--ink)] font-bold">Наряд ЗТЛ:</span>
                 <span className="font-mono text-[var(--muted)]">
@@ -295,13 +295,13 @@ export function AppointmentModalLabSection({
 
             {item.statusInfo.state === "ready_in_clinic" && (
               <div
-                className="w-full p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-900 dark:text-emerald-100 font-bold flex items-center justify-between gap-2 flex-wrap"
+                className="w-full p-2 rounded-lg bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] font-bold flex items-center justify-between gap-2 flex-wrap"
                 data-testid="appointment-modal-lab-readiness-indicator"
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   <CheckCircle2
                     size={13}
-                    className="text-emerald-600 dark:text-emerald-400 shrink-0"
+                    className="text-[var(--success)] shrink-0"
                   />
                   <span className="truncate">
                     {item.statusInfo.readinessText ||
@@ -311,7 +311,7 @@ export function AppointmentModalLabSection({
                 <button
                   type="button"
                   onClick={() => handleConfirmFitting(item)}
-                  className="h-6 px-2.5 rounded bg-[var(--teal)] hover:opacity-90 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
+                  className="h-6 px-2.5 rounded bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
                   data-testid="appointment-confirm-fitting-btn"
                   title="Подтвердить успешную примерку конструкции"
                 >
@@ -328,7 +328,7 @@ export function AppointmentModalLabSection({
               >
                 <span>{item.construction}</span>
                 {item.toothFdi && (
-                  <span className="px-1.5 py-0.2 rounded bg-[var(--teal)]/15 text-[var(--teal-dark,var(--teal))] font-bold font-mono text-[11px] border border-[var(--teal)]/30">
+                  <span className="px-1.5 py-0.2 rounded bg-[var(--primary-soft)] text-[var(--primary)] font-bold font-mono text-[11px] border border-[var(--line)]">
                     Зуб {item.toothFdi}
                   </span>
                 )}
@@ -350,13 +350,13 @@ export function AppointmentModalLabSection({
 
             {isBeforeLab && (
               <div
-                className="w-full p-2.5 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2 text-xs flex-wrap"
+                className="w-full p-2.5 rounded-lg border border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-ink)] flex items-center justify-between gap-2 text-xs flex-wrap"
                 data-testid="appointment-modal-lab-collision-alert"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <AlertTriangle
                     size={14}
-                    className="text-amber-600 dark:text-amber-400 shrink-0"
+                    className="text-[var(--warning)] shrink-0"
                   />
                   <span
                     className="font-semibold"
@@ -373,7 +373,7 @@ export function AppointmentModalLabSection({
                     data-testid="appointment-modal-sync-lab-date-banner-btn"
                     title="Синхронизировать дату приёма с готовностью ЗТЛ"
                   >
-                    <Calendar size={11} className="text-[var(--teal)] shrink-0" />
+                    <Calendar size={11} className="text-[var(--primary)] shrink-0" />
                     <span>Синхронизировать дату</span>
                   </button>
                 )}
@@ -392,7 +392,7 @@ export function AppointmentModalLabSection({
                       </strong>
                     </span>
                     {isBeforeLab && (
-                      <span className="text-amber-600 dark:text-amber-400 font-bold ml-1 inline-flex items-center gap-1">
+                      <span className="text-[var(--warning-ink)] font-bold ml-1 inline-flex items-center gap-1">
                         <AlertTriangle size={11} className="shrink-0" />
                         <span>(прием раньше готовности ЗТЛ)</span>
                       </span>
@@ -413,14 +413,14 @@ export function AppointmentModalLabSection({
                     title="Перенести приём на дату готовности наряда ЗТЛ"
                     data-testid="appointment-modal-sync-lab-date-btn"
                   >
-                    <Calendar size={12} className="text-[var(--teal)]" />
+                    <Calendar size={12} className="text-[var(--primary)]" />
                     <span>На дату ЗТЛ</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => handleNavigateToLab(item.orderNumber)}
-                  className="h-7 px-2.5 rounded-md bg-[var(--teal)] hover:opacity-90 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all"
+                  className="h-7 px-2.5 rounded-md bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shadow-2xs transition-all"
                   title="Открыть реестр лаборатории и наряд ЗТЛ (#lab)"
                   data-testid="appointment-modal-open-lab-order-btn"
                 >

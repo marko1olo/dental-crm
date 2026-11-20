@@ -177,8 +177,8 @@ export function WaitlistMatchesBlock({
 
   if (loading) {
     return (
-      <div className={`p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] text-xs text-[var(--text-muted,#64748b)] flex items-center gap-2.5 ${className}`}>
-        <Loader2 size={16} className="animate-spin text-[var(--teal,#0d9488)] shrink-0" />
+      <div className={`p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink-muted)] flex items-center gap-2.5 ${className}`}>
+        <Loader2 size={16} className="animate-spin text-[var(--primary)] shrink-0" />
         <span>Поиск подходящих пациентов в листе ожидания...</span>
       </div>
     );
@@ -189,14 +189,14 @@ export function WaitlistMatchesBlock({
     return (
       <div
         data-testid="waitlist-matches-empty"
-        className={`py-5 px-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] text-center flex flex-col items-center justify-center gap-2 ${className}`}
+        className={`py-5 px-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-center flex flex-col items-center justify-center gap-2 ${className}`}
       >
-        <ClipboardList size={22} className="text-[var(--text-muted,#64748b)] shrink-0" />
+        <ClipboardList size={22} className="text-[var(--ink-muted)] shrink-0" />
         <div>
-          <p className="text-xs font-medium text-[var(--text,#0f172a)]">
+          <p className="text-xs font-medium text-[var(--ink)]">
             В листе ожидания нет подходящих пациентов
           </p>
-          <p className="text-[11px] text-[var(--text-muted,#64748b)] mt-0.5">
+          <p className="text-[11px] text-[var(--ink-muted)] mt-0.5">
             {report?.examinedEntries
               ? `Проверено заявок в очереди: ${report.examinedEntries}`
               : "Окно можно занять новой записью или оставить под экстренный приём"}
@@ -205,7 +205,7 @@ export function WaitlistMatchesBlock({
         <button
           type="button"
           onClick={handleOpenList}
-          className="h-9 px-3.5 text-xs font-medium rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
+          className="h-9 px-3.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--primary)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
         >
           Открыть лист ожидания
         </button>
@@ -218,24 +218,25 @@ export function WaitlistMatchesBlock({
   return (
     <div
       data-testid="waitlist-matches-block"
-      className={`space-y-2.5 p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] shadow-sm ${className}`}
+      className={`space-y-2.5 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-sm ${className}`}
     >
-      <div className="flex items-center justify-between text-xs pb-1 border-b border-[var(--line-subtle,#f1f5f9)]">
-        <span className="font-semibold text-[var(--teal,#0d9488)] flex items-center gap-1.5">
-          <Zap size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
+      <div className="flex items-center justify-between text-xs pb-1 border-b border-[var(--line-subtle)]">
+        <span className="font-semibold text-[var(--primary)] flex items-center gap-1.5">
+          <Zap size={15} className="text-[var(--primary)] shrink-0" />
           <span>Подходящие пациенты из очереди ({candidateRows.length})</span>
         </span>
         <button
           type="button"
           onClick={handleOpenList}
-          className="text-xs text-[var(--teal,#0d9488)] hover:underline font-medium cursor-pointer"
+          className="text-xs text-[var(--primary)] hover:underline font-medium cursor-pointer"
         >
           Все ({candidateRows.length}) →
         </button>
       </div>
 
       <div className="space-y-2" data-testid="waitlist-matches-list">
-        {topCandidates.map(({ candidate, reasonText, alreadyBooked }) => {
+        {topCandidates.map(({ candidate, reasonText, alreadyBooked }, index) => {
+          const isTopCandidate = index === 0;
           const offerText = generateWaitlistOfferMessage({
             patientName: candidate.patientName,
             doctorName: targetSlot?.doctorName || candidate.preferredDoctorName,
@@ -246,24 +247,24 @@ export function WaitlistMatchesBlock({
           return (
             <div
               key={candidate.id}
-              className="p-3 rounded-xl bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper-soft,#1e293b)] border border-[var(--line-subtle,#f1f5f9)] dark:border-[var(--line)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+              className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
             >
               <div className="min-w-0 flex-1 space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[var(--text,#0f172a)] truncate">
+                  <span className="font-semibold text-[var(--ink)] truncate">
                     {candidate.patientName}
                   </span>
                   {alreadyBooked && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-[var(--warning-soft,rgba(245,158,11,0.1))] text-[var(--warning-ink,#b45309)] border border-[var(--warning-line,rgba(245,158,11,0.2))] shrink-0">
+                    <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)] shrink-0">
                       Уже записан на будущее
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-[var(--text-muted,#64748b)] truncate">
+                <div className="text-[11px] text-[var(--ink-muted)] truncate">
                   {candidate.patientPhone || "Без телефона"}
                 </div>
                 {reasonText && (
-                  <div className="text-[11px] text-[var(--teal,#0d9488)] leading-tight pt-0.5">
+                  <div className="text-[11px] text-[var(--primary)] leading-tight pt-0.5">
                     {reasonText}
                   </div>
                 )}
@@ -276,7 +277,7 @@ export function WaitlistMatchesBlock({
                     type="button"
                     title="Написать в WhatsApp"
                     onClick={() => openWhatsAppChat(candidate.patientPhone ?? "", offerText)}
-                    className="h-9 px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] transition-colors cursor-pointer flex items-center justify-center"
+                    className="h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] transition-colors cursor-pointer flex items-center justify-center"
                   >
                     WA
                   </button>
@@ -292,16 +293,16 @@ export function WaitlistMatchesBlock({
                       setTimeout(() => setCopiedId(null), 2000);
                     }
                   }}
-                  className="h-9 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs text-[var(--text-muted,#64748b)] hover:text-[var(--ink,#0f172a)] inline-flex items-center justify-center transition-colors cursor-pointer"
+                  className="h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs text-[var(--ink-muted)] hover:text-[var(--ink)] inline-flex items-center justify-center transition-colors cursor-pointer"
                 >
                   {copiedId === candidate.id ? (
-                    <Check size={14} className="text-[var(--teal,#0d9488)]" />
+                    <Check size={14} className="text-[var(--primary)]" />
                   ) : (
                     <ClipboardList size={14} />
                   )}
                 </button>
 
-                {/* Primary CTA (Мандат 8am: Ровно 1 акцентная кнопка h-9 desktop / h-11 mobile) */}
+                {/* Primary CTA на топ-1 кандидате, Secondary на остальных (Мандат 8am / Грех №3) */}
                 <button
                   type="button"
                   disabled={bookingEntryId === candidate.id}
@@ -335,7 +336,11 @@ export function WaitlistMatchesBlock({
                       }
                     }
                   }}
-                  className="h-9 px-3.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-semibold text-xs shadow-sm transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
+                  className={
+                    isTopCandidate
+                      ? "h-9 px-3.5 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs shadow-sm transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
+                      : "h-9 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5"
+                  }
                 >
                   {bookingEntryId === candidate.id ? (
                     <>

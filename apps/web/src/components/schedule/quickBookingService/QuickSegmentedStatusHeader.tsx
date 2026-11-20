@@ -22,16 +22,16 @@ export function QuickSegmentedStatusHeader({
     <div className="space-y-1.5" data-testid="expo26-segmented-status-container">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
-          <CheckCircle2 size={13} className="text-[var(--teal)]" />
+          <CheckCircle2 size={13} className="text-[var(--primary)]" />
           <span>Статус записи</span>
         </span>
         {appointmentType === "emergency" && (
           <span
-            className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider animate-pulse inline-flex items-center gap-1"
+            className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold animate-pulse inline-flex items-center gap-1"
             data-testid="cito-slot-priority-badge"
           >
             <Zap size={11} className="shrink-0" aria-hidden="true" />
-            <span>СРОЧНО</span>
+            <span>Срочно</span>
           </span>
         )}
       </div>

@@ -78,7 +78,7 @@ export function CardMicroDensityRow(props: CardMicroDensityRowProps) {
 				{isCito && (
 					<span className="text-[10px] px-1 py-0.2 rounded bg-rose-600 text-white font-extrabold shrink-0 animate-pulse inline-flex items-center gap-0.5" title="Срочный приём (острая боль)" data-testid="appointment-cito-badge">
 						<Zap size={10} className="shrink-0" aria-hidden="true" />
-						<span>СРОЧНО</span>
+						<span>Срочно</span>
 					</span>
 				)}
 				{patientBalance !== null && patientBalance < 0 && (
@@ -87,7 +87,7 @@ export function CardMicroDensityRow(props: CardMicroDensityRowProps) {
 					</span>
 				)}
 				{patientBalance !== null && patientBalance > 0 && (
-					<span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shrink-0 whitespace-nowrap font-bold" title={`Аванс: ${patientBalance.toLocaleString("ru-RU")} ₽`}>
+					<span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)] shrink-0 whitespace-nowrap font-bold" title={`Аванс: ${patientBalance.toLocaleString("ru-RU")} ₽`}>
 						Аванс
 					</span>
 				)}
@@ -95,12 +95,12 @@ export function CardMicroDensityRow(props: CardMicroDensityRowProps) {
 
 			<div className="flex items-center gap-1 shrink-0">
 				{displayStatus === "in_treatment" ? (
-					<button type="button" onClick={(e) => { e.stopPropagation(); navigateToVisit(); showToast(`Открыта карта приёма: ${appointmentPatientName}`, "info"); }} className="h-6 px-1.5 rounded-md bg-[var(--teal)]/15 text-[var(--teal)] border border-[var(--teal)]/40 hover:bg-[var(--teal)] hover:text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-all shrink-0" title="Открыть карту приёма пациента (#visit)" data-testid="appointment-micro-open-visit-btn">
+					<button type="button" onClick={(e) => { e.stopPropagation(); navigateToVisit(); showToast(`Открыта карта приёма: ${appointmentPatientName}`, "info"); }} className="h-6 px-1.5 rounded-md bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/40 hover:bg-[var(--primary)] hover:text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-all shrink-0" title="Открыть карту приёма пациента (#visit)" data-testid="appointment-micro-open-visit-btn">
 						<Stethoscope size={11} className="shrink-0" />
 						<span className="hidden sm:inline">Приём</span>
 					</button>
 				) : (displayStatus === "arrived" || displayStatus === "planned" || displayStatus === "confirmed") ? (
-					<button type="button" disabled={false} aria-busy={isQuickStatusUpdating || undefined} onClick={(e) => { e.stopPropagation(); if (isQuickStatusUpdating) return; void handleQuickStatusChange("in_treatment"); navigateToVisit(); showToast("Пациент в кресле: открыта медицинская карта", "success"); }} className="h-6 px-1.5 rounded-md bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-all shrink-0" title="Начать приём в кресле (#visit)" data-testid="appointment-micro-start-visit-btn">
+					<button type="button" disabled={false} aria-busy={isQuickStatusUpdating || undefined} onClick={(e) => { e.stopPropagation(); if (isQuickStatusUpdating) return; void handleQuickStatusChange("in_treatment"); navigateToVisit(); showToast("Пациент в кресле: открыта медицинская карта", "success"); }} className="h-6 px-1.5 rounded-md bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition-all shrink-0" title="Начать приём в кресле (#visit)" data-testid="appointment-micro-start-visit-btn">
 						<Stethoscope size={11} className="shrink-0" />
 						<span className="hidden sm:inline">В кресло</span>
 					</button>

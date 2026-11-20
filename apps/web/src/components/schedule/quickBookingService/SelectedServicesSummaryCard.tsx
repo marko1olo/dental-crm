@@ -1,5 +1,6 @@
 import { Clock, Layers } from "lucide-react";
 import React from "react";
+import { formatKopecksToRub, rublesToKopecks } from "@dental/shared";
 import {
   extractStageBookingServices,
   hasTreatmentPlanStageContext,
@@ -22,16 +23,16 @@ export function SelectedServicesSummaryCard({
 
   return (
     <div
-      className="p-3.5 rounded-2xl bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/30 text-[var(--ink)] space-y-2.5 transition-all shadow-sm"
+      className="p-3.5 rounded-2xl bg-[var(--primary-soft)] border border-[var(--line)] text-[var(--ink)] space-y-2.5 transition-all shadow-sm"
       data-testid="stage-booking-banner"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-[var(--teal)] text-white shrink-0 shadow-sm">
+          <span className="p-1.5 rounded-lg bg-[var(--primary)] text-white shrink-0 shadow-sm">
             <Layers size={15} />
           </span>
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--teal)] block">
+            <span className="text-[10px] font-bold text-[var(--primary)] block">
               Привязка к плану лечения
             </span>
             <h4
@@ -47,7 +48,7 @@ export function SelectedServicesSummaryCard({
         </div>
         {initialSlot?.estimatedDurationMinutes ? (
           <span
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--teal)]/15 text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/25 shrink-0"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--line)] shrink-0"
             data-testid="stage-booking-duration-badge"
           >
             <Clock size={12} />
@@ -74,7 +75,19 @@ export function SelectedServicesSummaryCard({
                 svc.patientFriendlyTitleRu ||
                 "Стоматологическая процедура";
               const tooth = svc.toothNumber ?? svc.toothCode ?? svc.toothFdi;
-              const price = svc.priceRub ?? svc.unitPriceRub ?? svc.price;
+              const rawKopecks =
+                (svc as { priceKopecks?: number | bigint; unitPriceKopecks?: number | bigint }).priceKopecks ??
+                (svc as { unitPriceKopecks?: number | bigint }).unitPriceKopecks;
+              const priceKopecks =
+                rawKopecks !== undefined
+                  ? rawKopecks
+                  : svc.priceRub !== undefined
+                    ? rublesToKopecks(svc.priceRub)
+                    : svc.unitPriceRub !== undefined
+                      ? rublesToKopecks(svc.unitPriceRub)
+                      : svc.price !== undefined && typeof svc.price === "number"
+                        ? rublesToKopecks(svc.price)
+                        : undefined;
               const duration =
                 (svc as { durationMinutes?: number; duration?: number; estimatedDurationMinutes?: number })
                   .durationMinutes ??
@@ -88,7 +101,7 @@ export function SelectedServicesSummaryCard({
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="truncate font-medium">{svcName}</span>
                     {tooth && (
-                      <span className="shrink-0 text-[11px] text-[var(--teal)] font-semibold">
+                      <span className="shrink-0 text-[11px] text-[var(--primary)] font-semibold">
                         (зуб {tooth})
                       </span>
                     )}
@@ -98,9 +111,9 @@ export function SelectedServicesSummaryCard({
                       </span>
                     ) : null}
                   </div>
-                  {price !== undefined && price !== null && (
+                  {priceKopecks !== undefined && priceKopecks !== null && (
                     <span className="shrink-0 font-semibold text-[var(--ink)] whitespace-nowrap">
-                      {Number(price).toLocaleString("ru-RU")} ₽
+                      {formatKopecksToRub(priceKopecks)}
                     </span>
                   )}
                 </div>

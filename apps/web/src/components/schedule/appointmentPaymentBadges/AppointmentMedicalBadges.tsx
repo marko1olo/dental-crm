@@ -24,7 +24,7 @@ export function AppointmentAlertBadges({
 						size={13}
 						className="text-rose-600 dark:text-rose-300 fill-rose-500"
 					/>
-					<span>СРОЧНО</span>
+					<span>Срочно</span>
 				</span>
 			)}
 			{collisionMessage ? (
@@ -63,7 +63,7 @@ export function AppointmentMedicalBadges({
 		<>
 			{cardTeeth.length > 0 && (
 				<span
-					className="px-1.5 py-0.5 rounded-lg bg-[var(--teal-soft)] text-[var(--teal-dark)] border border-[var(--teal)]/30 text-[11px] font-bold font-mono shrink-0"
+					className="px-1.5 py-0.5 rounded-lg bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--line)] text-[11px] font-bold font-mono shrink-0"
 					title={`Зубы: ${cardTeeth.join(", ")}`}
 					data-testid="appointment-teeth-badge"
 				>
@@ -72,24 +72,24 @@ export function AppointmentMedicalBadges({
 			)}
 			{labReadinessAlert && (
 				<span
-					className="px-1.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 shrink-0"
+					className="px-1.5 py-0.5 rounded-lg bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)] text-[10px] font-bold flex items-center gap-1 shrink-0"
 					title={labReadinessAlert}
 					data-testid="appointment-lab-readiness-badge"
 				>
 					<CheckCircle2
 						size={11}
-						className="text-emerald-600 dark:text-emerald-400 shrink-0 stroke-[2.5]"
+						className="text-[var(--success)] shrink-0 stroke-[2.5]"
 					/>
 					<span>{labReadinessAlert}</span>
 				</span>
 			)}
 			{allergyAlert && (
 				<span
-					className="px-1.5 py-0.5 rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 text-[11px] font-black flex items-center gap-1 shrink-0"
+					className="px-1.5 py-0.5 rounded-lg bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)] text-[11px] font-black flex items-center gap-1 shrink-0"
 					title={allergyAlert}
 					data-testid="appointment-card-allergy-badge"
 				>
-					<AlertTriangle size={11} className="text-amber-600 shrink-0" />
+					<AlertTriangle size={11} className="text-[var(--warning)] shrink-0" />
 					<span className="truncate max-w-[160px]">{allergyAlert}</span>
 				</span>
 			)}

@@ -225,12 +225,12 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 						onViewModeChange={props.setScheduleViewMode}
 					/>
 
-					{/* Primary CTA: на экране расписания ровно одна акцентная кнопка («+ Запись», тиловый bg-[var(--teal,#0d9488)] text-white) */}
+					{/* Primary CTA: на экране расписания ровно одна акцентная кнопка («+ Запись», bg-[var(--primary)] text-white) */}
 					{props.onQuickBooking && (
 						<button
 							type="button"
 							onClick={props.onQuickBooking}
-							className="schedule-toolbar-primary-quick-booking-btn dente-btn dente-btn-primary h-9 min-h-[36px] px-3.5 rounded-xl text-[13px] font-bold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-xs whitespace-nowrap bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white active:scale-98 transition-all"
+							className="schedule-toolbar-primary-quick-booking-btn dente-btn dente-btn-primary h-9 min-h-[36px] px-3.5 rounded-xl text-[13px] font-bold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-xs whitespace-nowrap bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white active:scale-98 transition-all"
 							data-testid="schedule-toolbar-primary-quick-booking-btn"
 							data-tour="schedule-booking"
 							title="Новая запись на прием (+ Запись)"

@@ -17,10 +17,10 @@ export function DoctorFreeSlotsFilters({ ctrl }: DoctorFreeSlotsFiltersProps) {
   } = ctrl;
 
   return (
-    <div className="p-4 sm:p-5 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-3.5">
+    <div className="p-4 sm:p-5 border-b border-[var(--line)] bg-[var(--paper)] space-y-3.5">
       <div className="space-y-1.5">
-        <span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-          <Calendar size={13} className="text-[var(--teal,var(--brand-primary))]" />
+        <span className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+          <Calendar size={13} className="text-[var(--primary)]" />
           Диапазон поиска:
         </span>
         <div className="dente-filter-chips overflow-x-auto pb-1 scrollbar-none">
@@ -50,8 +50,8 @@ export function DoctorFreeSlotsFilters({ ctrl }: DoctorFreeSlotsFiltersProps) {
       </div>
 
       <div className="space-y-1.5">
-        <span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-          <User size={13} className="text-[var(--teal,var(--brand-primary))]" />
+        <span className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+          <User size={13} className="text-[var(--primary)]" />
           Врач:
         </span>
         <div className="dente-filter-chips overflow-x-auto pb-1 scrollbar-none">
@@ -84,8 +84,8 @@ export function DoctorFreeSlotsFilters({ ctrl }: DoctorFreeSlotsFiltersProps) {
 
       {clinicChairs.length > 1 && (
         <div className="space-y-1.5">
-          <span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
-            <Armchair size={13} className="text-[var(--teal,var(--brand-primary))]" />
+          <span className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+            <Armchair size={13} className="text-[var(--primary)]" />
             Установка / Кресло:
           </span>
           <div className="dente-filter-chips overflow-x-auto pb-1 scrollbar-none">
@@ -114,8 +114,8 @@ export function DoctorFreeSlotsFilters({ ctrl }: DoctorFreeSlotsFiltersProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
         <div className="space-y-1">
-          <span className="text-[11px] font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
-            <Clock size={13} className="text-[var(--teal,var(--brand-primary))]" /> Длительность приёма:
+          <span className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1">
+            <Clock size={13} className="text-[var(--primary)]" /> Длительность приёма:
           </span>
           <div className="dente-segmented-bar w-full flex">
             {[15, 30, 45, 60, 90, 120].map((dur) => (
@@ -133,8 +133,8 @@ export function DoctorFreeSlotsFilters({ ctrl }: DoctorFreeSlotsFiltersProps) {
         </div>
 
         <div className="space-y-1">
-          <span className="text-[11px] font-bold text-[var(--muted,#64748b)] flex items-center gap-1">
-            <Sun size={13} className="text-[var(--teal,var(--brand-primary))]" /> Время суток:
+          <span className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1">
+            <Sun size={13} className="text-[var(--primary)]" /> Время суток:
           </span>
           <div className="dente-segmented-bar w-full flex">
             {(

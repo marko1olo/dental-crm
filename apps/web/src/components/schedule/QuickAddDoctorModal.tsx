@@ -57,7 +57,7 @@ export function QuickAddDoctorModal({
 			data-testid="quick-doctor-modal"
 		>
 			<div
-				className="relative w-full max-w-lg rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150 text-[var(--ink,#0f172a)]"
+				className="relative w-full max-w-lg rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150 text-[var(--ink)]"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<QuickDoctorModalHeader selectedColor={selectedColor} onClose={onClose} />
@@ -68,17 +68,17 @@ export function QuickAddDoctorModal({
 						activeChairs={activeChairs} defaultDoctorName={defaultDoctorName}
 					/>
 					<QuickDoctorColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
-					<div className="pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-end gap-2.5">
+					<div className="pt-2 border-t border-[var(--line)] flex items-center justify-end gap-2.5">
 						<button
 							type="button" onClick={onClose}
-							className="min-h-[44px] px-4 rounded-xl text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] transition-all cursor-pointer"
+							className="min-h-[44px] px-4 rounded-xl text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] transition-all cursor-pointer"
 							data-testid="quick-doctor-cancel-btn" style={{ minHeight: "44px" }}
 						>
 							Отмена
 						</button>
 						<button
 							type="submit"
-							className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+							className="min-h-[44px] px-5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
 							data-testid="quick-doctor-submit-btn" style={{ minHeight: "44px" }} title="Сохранить врача в расписание"
 						>
 							<Check className="w-4 h-4" aria-hidden="true" />

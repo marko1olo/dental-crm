@@ -25,7 +25,7 @@ export function TodayQueueItemActionButtons({
         <button
           type="button"
           onClick={() => onOpenVisit(item.id)}
-          className="inline-flex h-9 min-h-[36px] sm:h-9 min-h-[44px] sm:min-h-[36px] items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer select-none transition-colors"
+          className="inline-flex h-9 min-h-[44px] sm:min-h-[36px] items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer select-none transition-colors"
           title="Открыть медицинскую карту / дневник визита"
         >
           Прием
@@ -36,7 +36,7 @@ export function TodayQueueItemActionButtons({
         <button
           type="button"
           onClick={() => onOpenPayment(item.id)}
-          className="inline-flex h-9 min-h-[36px] sm:h-9 min-h-[44px] sm:min-h-[36px] items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-bold text-amber-800 hover:bg-amber-500/20 dark:text-amber-200 cursor-pointer select-none transition-colors"
+          className="inline-flex h-9 min-h-[44px] sm:min-h-[36px] items-center justify-center gap-1.5 rounded-xl border border-[var(--warning-line)] bg-[var(--warning-soft)] px-3 text-xs font-bold text-[var(--warning-ink)] hover:opacity-90 cursor-pointer select-none transition-colors"
           title="Оформить оплату"
         >
           <CreditCard size={13} />
@@ -52,14 +52,14 @@ export function TodayQueueItemActionButtons({
             if (isPrimaryBusy || !item.primaryAction) return;
             handleActionClick(item, item.primaryAction);
           }}
-          className={`inline-flex h-9 min-h-[36px] sm:h-9 min-h-[44px] sm:min-h-[36px] cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3.5 text-xs font-bold transition-all shadow-2xs select-none ${
+          className={`inline-flex h-9 min-h-[44px] sm:min-h-[36px] cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3.5 text-xs font-bold transition-all shadow-2xs select-none ${
             item.primaryAction.buttonVariant === "primary"
-              ? "bg-[var(--teal,var(--brand-primary))] text-white hover:opacity-90"
+              ? "bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
               : item.primaryAction.buttonVariant === "success"
-                ? "bg-green-600 text-white hover:bg-green-700"
+                ? "bg-[var(--success)] text-white hover:opacity-90"
                 : item.primaryAction.buttonVariant === "warning"
-                  ? "bg-amber-600 text-white hover:bg-amber-700"
-                  : "bg-slate-700 text-white hover:bg-slate-800"
+                  ? "bg-[var(--warning)] text-white hover:opacity-90"
+                  : "bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
           } ${isPrimaryBusy ? "opacity-60 cursor-not-allowed" : ""}`}
           title={item.primaryAction.descriptionRu}
         >
@@ -79,7 +79,7 @@ export function TodayQueueItemActionButtons({
             type="button"
             data-testid={`queue-secondary-action-${item.id}-${secAction.actionId}`}
             onClick={() => handleActionClick(item, secAction)}
-            className="inline-flex h-9 min-h-[36px] sm:h-9 min-h-[44px] sm:min-h-[36px] items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-2.5 text-xs font-medium text-[var(--muted)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink)] cursor-pointer select-none transition-colors"
+            className="inline-flex h-9 min-h-[44px] sm:min-h-[36px] items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] px-2.5 text-xs font-medium text-[var(--ink-muted)] hover:bg-[var(--paper-soft)] hover:text-[var(--ink)] cursor-pointer select-none transition-colors"
             title={secAction.labelRu}
           >
             {secAction.iconName === "RotateCcw" && <RotateCcw size={12} />}

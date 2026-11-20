@@ -281,7 +281,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 							<button
 								type="button"
 								onClick={handleOpenVisitRecord}
-								className="p-1 min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
+								className="p-1 min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--primary)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 								title="Перейти в медицинскую карту приёма (/visit)"
 								data-testid={`appointment-open-visit-btn-${a.id}`}
 							>
@@ -364,11 +364,11 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 			{/* Collision Alert Pill if overlapping */}
 			{collision && (
 				<div
-					className="px-2 py-1 rounded-lg bg-amber-500/20 border border-amber-500/50 text-amber-900 dark:text-amber-200 text-xs font-extrabold flex items-center gap-1 shadow-xs animate-pulse"
+					className="px-2 py-1 rounded-lg bg-[var(--warning-soft)] border border-[var(--warning-line)] text-[var(--warning-ink)] text-xs font-bold flex items-center gap-1 shadow-xs animate-pulse"
 					data-testid="schedule-grid-collision-badge"
 					title={collision.sameDoctor && !collision.sameChair ? "Коллизия: врач записан в два кабинета одновременно" : collision.sameDoctor && collision.sameChair ? "Коллизия: двойная запись у врача в одном кабинете" : collision.sameChair ? "Коллизия: два пациента в одном кресле одновременно" : collision.sameAssistant ? "Коллизия: ассистент занят в другом приеме" : "Коллизия: пациент записан на два приема одновременно"}
 				>
-					<AlertTriangle size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
+					<AlertTriangle size={12} className="shrink-0 text-[var(--warning)]" />
 					<span className="truncate">
 						{collision.sameDoctor && !collision.sameChair ? "Коллизия: врач записан в два кабинета одновременно" : collision.sameDoctor && collision.sameChair ? "Коллизия: врач и кабинет" : collision.sameChair ? "Коллизия: кабинет занят" : collision.sameAssistant ? "Коллизия: ассистент" : "Коллизия: пациент"}
 					</span>

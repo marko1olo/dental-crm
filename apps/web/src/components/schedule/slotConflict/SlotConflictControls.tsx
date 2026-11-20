@@ -33,9 +33,9 @@ export const SlotConflictControls: React.FC<SlotConflictControlsProps> = ({
 	onClose,
 }) => (
 	<div className="space-y-3.5">
-		<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-medium space-y-1">
+		<div className="p-3 rounded-xl bg-[var(--warning-soft)] border border-[var(--warning-line)] text-[var(--warning-ink)] text-xs font-medium space-y-1">
 			<p className="m-0 font-bold flex items-center gap-1.5">
-				<AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+				<AlertTriangle className="w-3.5 h-3.5 text-[var(--warning)] shrink-0" />
 				<span>{conflictMessage || "Выбранное время уже занято другой записью."}</span>
 			</p>
 			<p className="m-0 text-[11px] opacity-90">
@@ -48,11 +48,11 @@ export const SlotConflictControls: React.FC<SlotConflictControlsProps> = ({
 
 		{isDoctorConflict && (
 			<div
-				className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-start gap-2 animate-fade-in"
+				className="p-2.5 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger-line)] text-[var(--danger-ink)] text-xs font-semibold flex items-start gap-2 animate-fade-in"
 				data-testid="doctor-double-booking-warning"
 				role="alert"
 			>
-				<ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+				<ShieldAlert className="w-4 h-4 text-[var(--danger)] shrink-0 mt-0.5" />
 				<div>
 					<p className="m-0 font-bold">Врачебная коллизия (двойная занятость):</p>
 					<p className="m-0 text-[11px] font-normal opacity-90">
@@ -64,8 +64,8 @@ export const SlotConflictControls: React.FC<SlotConflictControlsProps> = ({
 
 		{onShiftMinutes && (
 			<div className="space-y-1.5" data-testid="slot-conflict-shift-section">
-				<label className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-					<Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+				<label className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+					<Clock className="w-3.5 h-3.5 text-[var(--primary)]" />
 					<span>Сдвинуть время приёма:</span>
 				</label>
 				<div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -75,7 +75,7 @@ export const SlotConflictControls: React.FC<SlotConflictControlsProps> = ({
 							type="button"
 							data-testid={`shift-minutes-${mins}`}
 							onClick={() => { onShiftMinutes(mins); onClose(); }}
-							className="secondary-button min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-600 hover:text-white text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-2xs touch-manipulation select-none active:scale-[0.98]"
+							className="secondary-button min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs flex items-center justify-center gap-1 transition-all cursor-pointer shadow-xs touch-manipulation select-none active:scale-[0.98]"
 							title={`Сдвинуть запись на +${mins} минут`}
 							aria-label={`Сдвинуть время на ${mins} минут`}
 						>
@@ -88,8 +88,8 @@ export const SlotConflictControls: React.FC<SlotConflictControlsProps> = ({
 
 		{alternativeChairs && alternativeChairs.length > 0 && onMoveToChair && (
 			<div className="space-y-1.5" data-testid="slot-conflict-alternative-chairs-section">
-				<label className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-					<ArrowRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+				<label className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5">
+					<ArrowRight className="w-3.5 h-3.5 text-[var(--primary)]" />
 					<span>Свободные кресла на это время:</span>
 				</label>
 				<div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -100,7 +100,7 @@ export const SlotConflictControls: React.FC<SlotConflictControlsProps> = ({
 							data-testid="move-to-chair-btn"
 							data-chair-id={chair.id}
 							onClick={() => { onMoveToChair(chair.id); onClose(); }}
-							className="secondary-button min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-[var(--teal)] hover:text-white text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs touch-manipulation select-none active:scale-[0.98]"
+							className="secondary-button min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs touch-manipulation select-none active:scale-[0.98]"
 							title={`Перенести приём на ${chair.name}`}
 							aria-label={`Перенести приём на кресло ${chair.name}`}
 						>

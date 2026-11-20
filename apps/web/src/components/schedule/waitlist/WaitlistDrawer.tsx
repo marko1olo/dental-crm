@@ -130,24 +130,20 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
       style={{ overflowX: "hidden" }}
     >
       <div
-        className="w-full max-w-full sm:max-w-[540px] max-h-[92dvh] sm:max-h-full h-auto sm:h-full flex flex-col bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] shadow-2xl border-t sm:border-t-0 sm:border-l border-[var(--line,#e2e8f0)] transition-transform duration-300 ease-out rounded-t-[24px] sm:rounded-t-none sm:rounded-l-2xl pb-[max(12px,env(safe-area-inset-bottom))] sm:pb-0"
-        style={{
-          backgroundColor: "var(--paper, #ffffff)",
-          color: "var(--text, #0f172a)",
-        }}
+        className="w-full max-w-full sm:max-w-[540px] max-h-[92dvh] sm:max-h-full h-auto sm:h-full flex flex-col bg-[var(--paper)] text-[var(--ink)] shadow-2xl border-t sm:border-t-0 sm:border-l border-[var(--line)] transition-transform duration-300 ease-out rounded-t-[24px] sm:rounded-t-none sm:rounded-l-2xl pb-[max(12px,env(safe-area-inset-bottom))] sm:pb-0"
       >
         {/* Мобильный Drag Handle по Apple HIG */}
         <div className="sm:hidden flex justify-center pt-3 pb-1 cursor-grab">
-          <div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,var(--line,#cbd5e1))] opacity-70" />
+          <div className="w-9 h-1.5 rounded-full bg-[var(--line)] opacity-70" />
         </div>
 
         {/* ШАПКА */}
-        <header className="px-5 py-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between shrink-0">
+        <header className="px-5 py-4 border-b border-[var(--line)] flex items-center justify-between shrink-0">
           <div>
-            <h2 id={titleId} className="text-lg font-bold tracking-tight text-[var(--text,#0f172a)]">
+            <h2 id={titleId} className="text-lg font-bold tracking-tight text-[var(--ink)]">
               Лист ожидания и быстрая запись
             </h2>
-            <p className="text-xs text-[var(--text-muted,#64748b)] mt-0.5">
+            <p className="text-xs text-[var(--ink-muted)] mt-0.5">
               {targetSlot
                 ? `Подбор пациентов под освободившееся окно (${state.rankedCandidates.length})`
                 : `Пациенты в очереди клиники (${state.items.length})`}
@@ -156,7 +152,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
           <button
             type="button"
             onClick={onClose}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--paper-subtle,#f1f5f9)] active:scale-95 text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)] transition-all cursor-pointer"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--paper-soft)] active:scale-95 text-[var(--ink-muted)] hover:text-[var(--ink)] transition-all cursor-pointer"
             style={{ border: "none", background: "transparent" }}
             aria-label="Закрыть лист ожидания"
           >
@@ -173,8 +169,8 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
         )}
 
         {/* НАВИГАЦИОННЫЕ ВКЛАДКИ (Apple Segmented Control по Дизайн-Библии) */}
-        <div className="px-3 sm:px-5 pt-3 pb-2 flex items-center justify-between gap-1.5 sm:gap-2 border-b border-[var(--line,#e2e8f0)] shrink-0">
-          <div className="inline-flex p-1 bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-strong,#1e293b)] rounded-xl gap-1 shrink-0">
+        <div className="px-3 sm:px-5 pt-3 pb-2 flex items-center justify-between gap-1.5 sm:gap-2 border-b border-[var(--line)] shrink-0">
+          <div className="inline-flex p-1 bg-[var(--paper-soft)] rounded-xl gap-1 shrink-0 border border-[var(--line)]">
             {targetSlot && (
               <button
                 type="button"
@@ -222,9 +218,9 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
         {/* ТЕЛО: СПИСКИ ИЛИ ФОРМА */}
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
           {state.error && (
-            <div className="p-3 rounded-xl bg-[var(--danger-soft,rgba(239,68,68,0.1))] text-[var(--danger,#ef4444)] text-xs flex justify-between items-center border border-[var(--danger-border,rgba(239,68,68,0.2))]">
+            <div className="p-3 rounded-xl bg-[var(--danger-soft)] text-[var(--danger)] text-xs flex justify-between items-center border border-[var(--danger-line)]">
               <span>{state.error}</span>
-              <button type="button" onClick={() => state.setError(null)} className="text-[var(--danger,#ef4444)] ml-2 cursor-pointer hover:opacity-80 p-1 rounded">
+              <button type="button" onClick={() => state.setError(null)} className="text-[var(--danger)] ml-2 cursor-pointer hover:opacity-80 p-1 rounded">
                 <X size={16} className="shrink-0" />
               </button>
             </div>
@@ -247,9 +243,9 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
 
               {/* СПИСОК КАНДИДАТОВ ПО APPLE HIG GROUPED CARDS */}
               {state.rankedCandidates.length === 0 ? (
-                <div className="text-center py-12 text-[var(--text-muted,#64748b)]">
+                <div className="text-center py-12 text-[var(--ink-muted)]">
                   <div className="flex justify-center mb-2">
-                    <Inbox className="w-9 h-9 text-[var(--text-muted,#64748b)] stroke-[1.5]" />
+                    <Inbox className="w-9 h-9 text-[var(--ink-muted)] stroke-[1.5]" />
                   </div>
                   <p className="text-sm font-medium">Кандидаты не найдены</p>
                   <p className="text-xs mt-1">Добавьте пациента в лист ожидания через кнопку «+ Добавить»</p>

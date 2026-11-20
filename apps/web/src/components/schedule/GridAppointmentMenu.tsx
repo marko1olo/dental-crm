@@ -31,14 +31,14 @@ export function GridAppointmentMenu(props: GridAppointmentMenuProps) {
 
 	return (
 		<div
-			className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 top-full mt-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border-2 border-[var(--teal,var(--brand-primary))] shadow-2xl min-w-[220px] max-w-[270px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
+			className={`${isMenuOpen ? "block" : "hidden"} absolute right-0 top-full mt-1 z-50 p-1.5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl min-w-[220px] max-w-[270px] space-y-1 text-xs text-[var(--ink)] animate-in fade-in zoom-in-95 duration-100`}
 			style={{
 				top: "100%",
 				right: 0,
 				marginTop: "6px",
 				zIndex: 100,
 				background: "var(--paper)",
-				border: "1.5px solid var(--teal, #0d9488)",
+				border: "1px solid var(--line)",
 				borderRadius: "14px",
 				boxShadow: "0 12px 32px rgba(0, 0, 0, 0.18)",
 				padding: "8px",

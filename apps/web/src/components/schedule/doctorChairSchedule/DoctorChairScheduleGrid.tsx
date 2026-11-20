@@ -56,14 +56,14 @@ export const DoctorChairScheduleGrid: React.FC<DoctorChairScheduleGridProps> = (
 	return (
 		<div className="space-y-3.5">
 			{/* Mode Tabs: Day vs Date Range */}
-			<div className="flex p-1 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+			<div className="flex p-1 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
 				<button
 					type="button"
 					onClick={() => onSelectTab("day")}
 					className={`flex-1 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 						activeTab === "day"
-							? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line,#e2e8f0)]"
-							: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							? "bg-[var(--paper)] text-[var(--primary)] shadow-xs border border-[var(--line)]"
+							: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					}`}
 					data-testid="tab-schedule-day"
 					style={{ minHeight: "44px" }}
@@ -76,8 +76,8 @@ export const DoctorChairScheduleGrid: React.FC<DoctorChairScheduleGridProps> = (
 					onClick={() => onSelectTab("range")}
 					className={`flex-1 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 						activeTab === "range"
-							? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line,#e2e8f0)]"
-							: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+							? "bg-[var(--paper)] text-[var(--primary)] shadow-xs border border-[var(--line)]"
+							: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					}`}
 					data-testid="tab-schedule-range"
 					style={{ minHeight: "44px" }}
@@ -90,27 +90,27 @@ export const DoctorChairScheduleGrid: React.FC<DoctorChairScheduleGridProps> = (
 			{/* Visual Shift Timeline Coverage Strip (08:00 - 20:00) */}
 			{activeTab === "day" && (
 				<div
-					className="px-3 py-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-1.5"
+					className="px-3 py-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-1.5"
 					data-testid="chair-shift-visual-timeline"
 				>
-					<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--muted,#64748b)]">
+					<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--ink-muted)]">
 						<span>Таймлайн смены установки:</span>
-						<span className="font-bold text-[var(--teal-dark,#0f766e)]">
+						<span className="font-bold text-[var(--primary)]">
 							{currentPreset?.label || "Смена"} ({currentPreset?.hours || "08:00–14:00"})
 						</span>
 					</div>
 					{/* 12-hour bar track */}
-					<div className="relative h-4 rounded-md bg-[var(--line,#e2e8f0)] overflow-hidden">
+					<div className="relative h-4 rounded-md bg-[var(--line)] overflow-hidden">
 						{/* Hour dividing markers */}
 						<div className="absolute inset-0 flex justify-between px-1 pointer-events-none opacity-40">
-							<span className="w-px h-full bg-[var(--ink,#0f172a)]/20" />
-							<span className="w-px h-full bg-[var(--ink,#0f172a)]/20" />
-							<span className="w-px h-full bg-[var(--ink,#0f172a)]/20" />
-							<span className="w-px h-full bg-[var(--ink,#0f172a)]/20" />
+							<span className="w-px h-full bg-[var(--ink)]/20" />
+							<span className="w-px h-full bg-[var(--ink)]/20" />
+							<span className="w-px h-full bg-[var(--ink)]/20" />
+							<span className="w-px h-full bg-[var(--ink)]/20" />
 						</div>
 						{/* Active shift coverage fill */}
 						<div
-							className="absolute top-0 bottom-0 bg-[var(--teal,#0d9488)] rounded-xs transition-all duration-200 flex items-center justify-center text-[9px] font-bold text-white shadow-2xs"
+							className="absolute top-0 bottom-0 bg-[var(--primary)] rounded-xs transition-all duration-200 flex items-center justify-center text-[9px] font-bold text-white shadow-2xs"
 							style={{
 								left: `${leftPercent}%`,
 								width: `${widthPercent}%`,
@@ -120,7 +120,7 @@ export const DoctorChairScheduleGrid: React.FC<DoctorChairScheduleGridProps> = (
 							{currentPreset?.hours}
 						</div>
 					</div>
-					<div className="flex justify-between text-[10px] text-[var(--muted,#64748b)] font-mono">
+					<div className="flex justify-between text-[10px] text-[var(--ink-muted)] font-mono">
 						<span>08:00</span>
 						<span>11:00</span>
 						<span>14:00</span>
@@ -135,33 +135,33 @@ export const DoctorChairScheduleGrid: React.FC<DoctorChairScheduleGridProps> = (
 				<div className="space-y-3.5">
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 						<div>
-							<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1">
+							<label className="block text-xs font-semibold text-[var(--ink-muted)] mb-1">
 								С даты:
 							</label>
 							<input
 								type="date"
 								value={rangeStartDate}
 								onChange={(e) => onChangeRangeStartDate(e.target.value)}
-								className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
+								className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)]"
 								style={{ minHeight: "44px" }}
 							/>
 						</div>
 						<div>
-							<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1">
+							<label className="block text-xs font-semibold text-[var(--ink-muted)] mb-1">
 								По дату:
 							</label>
 							<input
 								type="date"
 								value={rangeEndDate}
 								onChange={(e) => onChangeRangeEndDate(e.target.value)}
-								className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
+								className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)]"
 								style={{ minHeight: "44px" }}
 							/>
 						</div>
 					</div>
 
 					<div>
-						<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] mb-1.5">
+						<label className="block text-xs font-semibold text-[var(--ink-muted)] mb-1.5">
 							Шаблон графика:
 						</label>
 						<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -174,15 +174,15 @@ export const DoctorChairScheduleGrid: React.FC<DoctorChairScheduleGridProps> = (
 										onClick={() => onSelectRangeRotationPreset(tpl.id as RangeRotationPreset)}
 										className={`min-h-[44px] p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
 											isSelected
-												? "border-[var(--teal,#0d9488)] bg-[var(--teal-dark,#0f766e)] text-white shadow-xs font-bold"
-												: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]"
+												? "border-[var(--primary)] bg-[var(--primary)] text-white shadow-xs font-bold"
+												: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)]"
 										}`}
 										style={{ minHeight: "44px" }}
 									>
 										<span className="text-xs font-bold">{tpl.label}</span>
 										<span
 											className={`text-[10px] ${
-												isSelected ? "text-white/85" : "text-[var(--muted,#64748b)]"
+												isSelected ? "text-white/85" : "text-[var(--ink-muted)]"
 											}`}
 										>
 											{tpl.sub}
