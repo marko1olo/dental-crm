@@ -7,7 +7,7 @@ import { VisitPediatricProtocolWidget } from "../../VisitPediatricProtocolWidget
 import { PediatricTeethChart } from "../../PediatricTeethChart";
 import { PediatricSomaticAndLegalRep } from "../../PediatricSomaticAndLegalRep";
 import { PediatricParentMemoModal } from "../../PediatricParentMemoModal";
-import { FRANKL_SCALE_DEFINITIONS, type FranklRating } from "../../../odontogram/pediatricDentitionEngine";
+import { FRANKL_SCALE_DEFINITIONS, type FranklRating } from "@dental/shared";
 
 const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 

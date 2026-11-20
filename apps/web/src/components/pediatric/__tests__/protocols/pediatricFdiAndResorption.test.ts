@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { isValidFdiTooth } from "../../VisitPediatricProtocolWidget";
 import { PediatricTeethChart, PERMANENT_SIX_TEETH } from "../../PediatricTeethChart";
-import { ALL_PRIMARY_TEETH, isPrimaryTooth, RESORPTION_STAGE_DEFINITIONS, type ResorptionStagePercent } from "../../../odontogram/pediatricDentitionEngine";
+import { ALL_PRIMARY_TEETH, isPrimaryTooth, RESORPTION_STAGE_DEFINITIONS, type ResorptionStagePercent } from "@dental/shared";
 
 describe("Pediatric FDI Numbering & Quadrants (Teeth 51..85)", () => {
 	it("validates all 20 primary teeth in canonical FDI quadrants 5, 6, 7, 8", () => {
