@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 import {
 	formatToothStateLabel,
 	formatToothStateTransition,
-} from "../../routes/toothHistory.js";
+} from "../../routes/odontogram/historyRoutes.js";
 import { parseClinicalDataFromNotes } from "../../routes/odontogram/types.js";
 
 describe("Tooth Defect History Preservation & Multi-Status [CLN-03]", () => {

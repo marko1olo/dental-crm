@@ -5,7 +5,7 @@ import {
 	periodontogramSnapshots,
 	periodontogramTeeth,
 } from "../../db/schema.js";
-import type { ToothHistoryTimelineEvent } from "../toothHistory.js";
+import type { ToothHistoryTimelineEvent } from "../odontogram/historyRoutes.js";
 
 /**
  * Fetches periodontal examination events for tooth history timeline (Медицинская карта приёма).

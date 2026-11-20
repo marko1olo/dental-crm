@@ -38,7 +38,7 @@ import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
-import registerToothHistoryRoutes from "../../routes/toothHistory.js";
+import { registerToothHistoryRoutes } from "../../routes/odontogram/historyRoutes.js";
 import { registerWaitlistRoutes } from "../../routes/waitlist.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { getRequestIdentity } from "../../security/identity.js";

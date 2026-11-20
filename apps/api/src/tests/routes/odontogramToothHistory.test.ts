@@ -6,7 +6,7 @@ import {
 	isValidFdiToothNumber,
 } from "@dental/shared";
 import { CLINICAL_TOOTH_STATE_VALUES } from "../../routes/odontogram.js";
-import { isToothReferenced } from "../../routes/toothHistory.js";
+import { isToothReferenced } from "../../routes/odontogram/historyRoutes.js";
 
 describe("FDI / ISO 3950 Dental Notation & State Taxonomy", () => {
 	test("validates permanent tooth quadrants (11-18, 21-28, 31-38, 41-48)", () => {
