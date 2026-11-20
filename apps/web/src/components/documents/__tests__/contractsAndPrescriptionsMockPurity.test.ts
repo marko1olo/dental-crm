@@ -290,19 +290,19 @@ describe("Contracts, Prescriptions and Forms Mock Purity (Wave 107 - THE HAMMER,
 		);
 	});
 
-	test("Mandate 8y & 8z: Absence of Soviet ciphers (Форма 257/у) in PrimaryIntakePackageModal UI", () => {
+	test("Mandate 8y & 8z: Absence of Soviet ciphers in DocumentsStudioModal UI", () => {
 		const modalPath = path.join(
 			webSrcDir,
-			"components/documents/PrimaryIntakePackageModal.tsx",
+			"components/documents/DocumentsStudioModal.tsx",
 		);
 		const content = fs.readFileSync(modalPath, "utf-8");
 		assert.ok(
 			!content.includes("Форма 257/у"),
-			"PrimaryIntakePackageModal must not leak Soviet cipher 'Форма 257/у' in user-facing UI",
+			"DocumentsStudioModal must not leak Soviet cipher 'Форма 257/у' in user-facing UI",
 		);
 		assert.ok(
-			content.includes("Журнал стерилизации и автоклавирования"),
-			"PrimaryIntakePackageModal must use clear clinical title 'Журнал стерилизации и автоклавирования'",
+			!content.includes("Форма 043/у"),
+			"DocumentsStudioModal must not leak Soviet cipher 'Форма 043/у' in user-facing UI",
 		);
 	});
 

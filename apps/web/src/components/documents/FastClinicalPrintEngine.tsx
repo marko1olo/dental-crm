@@ -9,8 +9,8 @@
 
 import React from "react";
 import type { Patient } from "@dental/shared";
-import { DocumentA4PrintPreviewModal } from "./DocumentA4PrintPreviewModal";
-import type { ProfessionalA4DocumentTab } from "./professionalA4/types";
+import { DocumentsStudioModal } from "./DocumentsStudioModal";
+import type { ProfessionalA4DocumentTab } from "./types";
 
 export type FastPrintDocType =
 	| "medical_card"
@@ -111,7 +111,6 @@ function mapDocTypeToA4Tab(docType?: string): ProfessionalA4DocumentTab {
 			return "treatment_plan";
 		case "medical_card":
 		case "clinical_protocol_entry":
-		case "partisan_insert_043u":
 		case "form043u":
 		default:
 			return "medical_card";
@@ -130,9 +129,6 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 	if (!isOpen) return null;
 
 	const mappedTab = mapDocTypeToA4Tab(initialDocType);
-	const pCardNumber = (patient && "cardNumber" in patient && typeof patient.cardNumber === "string")
-		? patient.cardNumber
-		: (patient?.id ? `МК-${patient.id.slice(0, 8)}` : "");
 	const diagCode = typeof visitData?.diagnosis === "object" && visitData?.diagnosis !== null
 		? visitData.diagnosis.code
 		: visitData?.diagnosis || "";
@@ -141,47 +137,28 @@ export const FastClinicalPrintEngine: React.FC<FastClinicalPrintEngineProps> = (
 		: "";
 
 	return (
-		<DocumentA4PrintPreviewModal
+		<DocumentsStudioModal
 			isOpen={isOpen}
 			onClose={onClose}
-			initialTab={mappedTab}
+			initialTemplate={mappedTab === "act" ? "card_extract" : mappedTab === "treatment_plan" ? "intake" : "card_extract"}
 			doctorFullName={doctor?.fullName}
-			clinicProfileDraft={clinic ?? undefined}
-			patient={
-				patient
-					? ({
-							id: patient.id || "",
-							organizationId:
-								"organizationId" in patient && typeof patient.organizationId === "string"
-									? patient.organizationId
-									: "",
-							fullName: patient.fullName || "Пациент",
-							birthDate: patient.birthDate || "",
-							phone: patient.phone || "",
-							email: "email" in patient && typeof patient.email === "string" ? patient.email : "",
-							gender: "gender" in patient && (patient.gender === "male" || patient.gender === "female") ? patient.gender : "other",
-							status: "active",
-							notes: null,
-							balanceRub: 0,
-							balanceKopecks: 0,
-							administrativeProfile: null,
-							createdAt: new Date().toISOString(),
-							updatedAt: new Date().toISOString(),
-						} as Patient)
-					: null
+			clinicProfileDraft={
+				clinic
+					? {
+							clinicName: clinic.name || undefined,
+							legalName: clinic.legalName || undefined,
+							inn: clinic.inn || undefined,
+							ogrn: clinic.ogrn || undefined,
+							address: clinic.address || undefined,
+							phone: clinic.phone || undefined,
+							medicalLicenseNumber: clinic.licenseNumber || undefined,
+						}
+					: undefined
 			}
-			medicalCardData={{
-				cardNumber: pCardNumber,
-				visitDate: visitData?.date || new Date().toLocaleDateString("ru-RU"),
-				doctorFullName: doctor?.fullName || "Врач-стоматолог",
-				doctorSpecialty: doctor?.specialty || "Стоматолог-терапевт",
-				diagnosisIcd10: diagCode,
-				diagnosisDescription: diagDesc,
-				complaints: visitData?.complaints || "",
-				statusLocalis: visitData?.objective || "",
-				treatmentProtocol: visitData?.treatment || "",
-				recommendations: visitData?.recommendations || "",
-			}}
+			patient={patient ? (patient as Patient) : undefined}
+			diagnosisRu={diagCode ? `${diagCode} ${diagDesc}`.trim() : undefined}
+			anamnesisRu={visitData?.complaints || undefined}
+			epicrisisRu={visitData?.treatment || undefined}
 		/>
 	);
 };

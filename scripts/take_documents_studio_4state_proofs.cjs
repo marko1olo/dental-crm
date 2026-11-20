@@ -6,13 +6,15 @@
  * 2. 🌙 PC Dark (1440x900)
  * 3. 📱 Mobile Light (390x844)
  * 4. 📱 Mobile Dark (390x844)
+ * 5. ☀️ PC Light Tax Certificate KND 1151156 (1440x900)
+ * 6. ☀️ PC Light Tablet Signature Touch Pad (1440x900)
  */
 
 const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CURRENT_CONV_ID = "8384645c-08de-4974-9006-0c750c85ba94";
+const CURRENT_CONV_ID = "3d75e9a8-12fd-46ff-b81a-84979c2c7974";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/documents");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`);
 
@@ -64,14 +66,14 @@ async function saveProof(page, filename) {
 const CONFIGS = [
 	{
 		filename: "01_documents_studio_pc_light_1440x900.png",
-		desc: "PC Light 1440x900 (Documents Studio & FNS Tax Certificate)",
+		desc: "PC Light 1440x900 (Documents Studio Canonical Intake)",
 		viewport: { width: 1440, height: 900 },
 		theme: "light",
 		isMobile: false,
 	},
 	{
 		filename: "02_documents_studio_pc_dark_1440x900.png",
-		desc: "PC Dark 1440x900 (Documents Studio & FNS Tax Certificate)",
+		desc: "PC Dark 1440x900 (Documents Studio Canonical Dark Mode)",
 		viewport: { width: 1440, height: 900 },
 		theme: "dark",
 		isMobile: false,
@@ -155,32 +157,34 @@ async function main() {
 			});
 
 			try {
-				await page.goto(`${baseUrl}/?demo=true#consent`, { waitUntil: "networkidle", timeout: 30000 });
+				await page.goto(`${baseUrl}/?demo=true#consent`, { waitUntil: "domcontentloaded", timeout: 15000 });
 			} catch {
-				await page.goto(`${baseUrl}/?demo=true#consent`, { waitUntil: "domcontentloaded", timeout: 20000 });
+				await page.goto(`${baseUrl}/?demo=true#consent`, { waitUntil: "commit", timeout: 10000 });
 			}
 
 			await page.waitForTimeout(2000);
 			await suppressOverlays(page);
 
-			// Trigger opening Documents Studio
+			await page.waitForTimeout(1000);
 			let modalVisible = false;
-			for (let i = 0; i < 15; i++) {
+			for (let i = 0; i < 20; i++) {
 				modalVisible = await page.evaluate(() => {
 					const el = document.querySelector('.dente-docs-studio-container, [data-testid="documents-studio-modal-backdrop"]');
 					if (el) return true;
+					window.location.hash = "consent";
 					window.dispatchEvent(new CustomEvent("dente-open-consent"));
+					window.dispatchEvent(new CustomEvent("dente:open-consent"));
+					window.dispatchEvent(new CustomEvent("dente-open-consents"));
 					window.dispatchEvent(new CustomEvent("dente:open-documents", { detail: { template: "tax_certificate" } }));
 					return false;
 				});
 				if (modalVisible) break;
-				await page.waitForTimeout(800);
+				await page.waitForTimeout(500);
 			}
 
-			await page.waitForSelector('.dente-docs-studio-container', { state: "visible", timeout: 15000 }).catch(() => {});
+			await page.waitForSelector('.dente-docs-studio-container', { state: "visible", timeout: 20000 });
 			await suppressOverlays(page);
 
-			// Apply dark mode styles to body as well for dark preset
 			if (cfg.theme === "dark") {
 				await page.evaluate(() => {
 					document.documentElement.setAttribute("data-theme", "dark");
@@ -198,7 +202,59 @@ async function main() {
 			await context.close();
 		}
 
-		console.log("\n🎉 ALL 4-STATE PROOFS FOR DOCUMENTS STUDIO CAPTURED AND VERIFIED SUCCESSFULLY!");
+		// Specialized capture 5: Tax Certificate KND 1151156 (PC Light)
+		console.log("\n📸 Capturing 05_tax_certificate_knd1151156_pc_light_1440x900.png...");
+		const taxContext = await browser.newContext({
+			viewport: { width: 1440, height: 900 },
+			isMobile: false,
+			colorScheme: "light",
+		});
+		await taxContext.addInitScript(() => {
+			localStorage.setItem("dente_theme", "light");
+			localStorage.setItem("dente_demo_showcase_mode_v1", "true");
+		});
+		const taxPage = await taxContext.newPage();
+		await taxPage.goto(`${baseUrl}/?demo=true#consent`, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {});
+		await taxPage.waitForTimeout(2000);
+		await suppressOverlays(taxPage);
+		await taxPage.waitForSelector('.dente-docs-studio-container', { state: "visible", timeout: 20000 });
+		// Click on Tax Certificate card
+		await taxPage.evaluate(() => {
+			const cards = Array.from(document.querySelectorAll('.dente-docs-package-card'));
+			const taxCard = cards.find(c => c.textContent && c.textContent.includes("Справка для налогового вычета"));
+			if (taxCard) taxCard.click();
+		});
+		await taxPage.waitForTimeout(1000);
+		await saveProof(taxPage, "05_tax_certificate_knd1151156_pc_light_1440x900.png");
+		await taxContext.close();
+
+		// Specialized capture 6: Tablet Signature Touch Pad (PC Light)
+		console.log("\n📸 Capturing 06_consent_tablet_signature_pc_light_1440x900.png...");
+		const signContext = await browser.newContext({
+			viewport: { width: 1440, height: 900 },
+			isMobile: false,
+			colorScheme: "light",
+		});
+		await signContext.addInitScript(() => {
+			localStorage.setItem("dente_theme", "light");
+			localStorage.setItem("dente_demo_showcase_mode_v1", "true");
+		});
+		const signPage = await signContext.newPage();
+		await signPage.goto(`${baseUrl}/?demo=true#consent`, { waitUntil: "domcontentloaded", timeout: 15000 }).catch(() => {});
+		await signPage.waitForTimeout(2000);
+		await suppressOverlays(signPage);
+		await signPage.waitForSelector('.dente-docs-studio-container', { state: "visible", timeout: 20000 });
+		// Toggle sign pad
+		await signPage.evaluate(() => {
+			const btns = Array.from(document.querySelectorAll('.dente-signature-pad-box button'));
+			const toggleBtn = btns.find(b => b.textContent && b.textContent.includes("Открыть холст"));
+			if (toggleBtn) toggleBtn.click();
+		});
+		await signPage.waitForTimeout(1000);
+		await saveProof(signPage, "06_consent_tablet_signature_pc_light_1440x900.png");
+		await signContext.close();
+
+		console.log("\n🎉 ALL 6 PROOFS FOR DOCUMENTS STUDIO CAPTURED AND VERIFIED SUCCESSFULLY!");
 	} finally {
 		await browser.close();
 	}

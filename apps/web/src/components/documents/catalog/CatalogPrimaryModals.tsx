@@ -1,10 +1,9 @@
 import React from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
-import { DocumentA4PrintPreviewModal } from "../DocumentA4PrintPreviewModal";
+import { DocumentsStudioModal } from "../DocumentsStudioModal";
 import { MedicalRecordStudioModal } from "../../emr/MedicalRecordStudioModal";
-import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
-import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
+import type { ProfessionalA4DocumentTab } from "../types";
 
 export interface CatalogPrimaryModalsProps {
 	patient?: Patient | null | undefined;
@@ -44,24 +43,13 @@ export function CatalogPrimaryModals({
 	return (
 		<>
 			{isLocalIntakeModalOpen && (
-				<PrimaryIntakePackageModal
+				<DocumentsStudioModal
 					isOpen={isLocalIntakeModalOpen}
 					onClose={() => setIsLocalIntakeModalOpen(false)}
-					patient={patient ?? null}
-					existingDocuments={existingDocuments ? [...existingDocuments] : []}
-					onCreateDocument={(kind) =>
-						onCreateDocument
-							? void onCreateDocument(kind)
-							: handleOpenKind(kind)
-					}
-					onOpenDocument={(id) =>
-						onOpenIssuedDocumentHtml
-							? void onOpenIssuedDocumentHtml(id)
-							: undefined
-					}
-					onSelectDocumentKind={(kind) => handleOpenKind(kind)}
-					doctorFullName={doctorName}
-					clinicProfileDraft={clinicProfileDraft}
+					patient={patient ?? undefined}
+					doctorFullName={doctorName ?? undefined}
+					clinicProfileDraft={(clinicProfileDraft as Record<string, unknown> | null | undefined) ?? undefined}
+					initialTemplate="intake"
 				/>
 			)}
 			{isOutpatientCardModalOpen && (
@@ -79,17 +67,16 @@ export function CatalogPrimaryModals({
 				/>
 			)}
 			{(selectedA4Tab || isContractModalOpen) && (
-				<DocumentA4PrintPreviewModal
+				<DocumentsStudioModal
 					isOpen={Boolean(selectedA4Tab || isContractModalOpen)}
 					onClose={() => {
 						setSelectedA4Tab(null);
 						setIsContractModalOpen(false);
 					}}
-					initialTab={selectedA4Tab || "contract"}
-					patient={patient ?? null}
-					doctorFullName={doctorName ?? null}
-					clinicProfileDraft={clinicProfileDraft as Record<string, unknown> | null | undefined}
-					existingDocuments={existingDocuments}
+					initialTemplate={selectedA4Tab === "act" ? "card_extract" : selectedA4Tab === "consent" ? "informed_consent" : "intake"}
+					patient={patient ?? undefined}
+					doctorFullName={doctorName ?? undefined}
+					clinicProfileDraft={(clinicProfileDraft as Record<string, unknown> | null | undefined) ?? undefined}
 				/>
 			)}
 		</>

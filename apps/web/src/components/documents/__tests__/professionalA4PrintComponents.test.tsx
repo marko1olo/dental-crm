@@ -6,7 +6,7 @@ import {
 	ProfessionalDocumentA4Sheet,
 	type ProfessionalA4DocumentTab,
 } from "../ProfessionalDocumentA4Sheet.js";
-import { DocumentA4PrintPreviewModal } from "../DocumentA4PrintPreviewModal.js";
+import { DocumentsStudioModal } from "../DocumentsStudioModal.js";
 import type {
 	A4DocumentContractData,
 	A4DocumentActData,
@@ -374,23 +374,16 @@ describe("Professional A4 Document Sheet & Preview Modal (SSR Safe Tests)", () =
 		assert.ok(html.includes("Формат A4 · 210 × 297 мм · ГОСТ"));
 	});
 
-	it("renders DocumentA4PrintPreviewModal without crashing when open and supports all tabs", () => {
+	it("renders DocumentsStudioModal without crashing when open and supports canonical A4 studio preview", () => {
 		const html = renderToString(
-			<DocumentA4PrintPreviewModal
+			<DocumentsStudioModal
 				isOpen={true}
 				onClose={() => {}}
-				initialTab="contract"
-				contractData={mockContractData}
-				actData={mockActData}
-				treatmentPlanData={mockTreatmentPlanData}
-				consentData={mockConsentData}
-				personalDataConsent={mockPersonalDataConsent}
-				medicalCardData={mockMedicalCardData}
+				initialTemplate="intake"
 			/>,
 		);
 
-		assert.ok(html.includes("modal-a4-document-preview"));
-		assert.ok(html.includes("Официальный документооборот клиники · Стандарт A4"));
-		assert.ok(html.includes("ДОГОВОР № Д-2026/418"));
+		assert.ok(html.includes("documents-studio-modal"));
+		assert.ok(html.includes("Распечатать") || html.includes("Печать бланка А4"));
 	});
 });

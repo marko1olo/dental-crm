@@ -6,6 +6,7 @@ import {
 import {
 	DEFAULT_CLINIC_LICENSE_DATE,
 	DEFAULT_CLINIC_LICENSE_NUMBER,
+	resolveClinicLicense,
 } from "./constants.js";
 import type {
 	InformedConsent1051nPayload,
@@ -35,6 +36,8 @@ export function generateStatutoryConsent1051nPayload(params: {
 		ogrn?: string;
 		inn?: string;
 		medicalLicenseNumber?: string;
+		medicalLicenseDate?: string;
+		medicalLicenseIssuer?: string;
 	};
 	representative?: {
 		fullName?: string | null;
@@ -78,8 +81,8 @@ export function generateStatutoryConsent1051nPayload(params: {
 		clinicAddress: c?.address || "",
 		clinicOgrn: c?.ogrn || "",
 		clinicInn: c?.inn || "",
-		medicalLicenseNumber: c?.medicalLicenseNumber || DEFAULT_CLINIC_LICENSE_NUMBER,
-		medicalLicenseDate: DEFAULT_CLINIC_LICENSE_DATE,
+		medicalLicenseNumber: resolveClinicLicense(c).medicalLicenseNumber,
+		medicalLicenseDate: resolveClinicLicense(c).medicalLicenseDate,
 		patientFullName: p.fullName,
 		patientBirthDate: p.birthDate,
 		patientPassport: p.passport || "",

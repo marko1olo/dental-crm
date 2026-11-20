@@ -5,12 +5,9 @@
  */
 
 export * from "./DocumentsStudioModal";
-export * from "./DocumentA4PrintPreviewModal";
-export * from "./ProfessionalDocumentA4Sheet";
-export * from "./PrimaryIntakePackageModal";
-export * from "./SurgicalPackageModal";
 export * from "./DocumentsCatalogView";
-export * from "./DigitalSignatureTabletModal";
+export * from "./surgicalPackagePrintEngine";
+export * from "./primaryIntakePackagePrintEngine";
 export * from "./informedConsentGuiding";
 export * from "./taxApplicationGuiding";
 export * from "./photoVideoConsentGuiding";

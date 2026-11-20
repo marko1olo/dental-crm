@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import type { Dashboard, Invoice } from "@dental/shared";
 import type { DayGroupingDay } from "../scheduleDayGrouping";
 import { calculateShiftQueueCounts } from "../view/useScheduleDayQueue";
-import { usePrimaryIntakePrint, type PrintablePatient, type ClinicPrintProfileDraft } from "../../documents/primaryIntakeModal/usePrimaryIntakePrint";
+import { usePrimaryIntakePrint, type PrintablePatient, type ClinicPrintProfileDraft } from "../../documents/primaryIntakePackagePrintEngine";
 import type { VisitPostCompletionContext, CompletedPlanItemReference } from "../../visit/completionModules/visitCompletionPipeline";
 import type { ScheduleLogicContext } from "../view/scheduleModalsModules/scheduleModalsTypes";
 

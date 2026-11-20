@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import { type DocumentKind, type GeneratedDocument } from "@dental/shared";
-import { SURGICAL_STATUTORY_ITEMS } from "../SurgicalPackageModal";
+import { SURGICAL_STATUTORY_ITEMS } from "../surgicalPackagePrintEngine";
 import { generatePrimaryIntakePackageHtml } from "../primaryIntakePackagePrintEngine";
 import { generateSurgicalPackageHtml } from "../surgicalPackagePrintEngine";
 import { generateClinicalPackageHtml } from "../clinicalPackagePrintEngine";

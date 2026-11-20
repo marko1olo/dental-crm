@@ -1,7 +1,5 @@
 import React from "react";
-import { PrimaryIntakePackageModal } from "../../PrimaryIntakePackageModal";
-import { SurgicalPackageModal } from "../../SurgicalPackageModal";
-import { ConsentStudioModal } from "../../DocumentsStudioModal";
+import { DocumentsStudioModal, ConsentStudioModal } from "../../DocumentsStudioModal";
 import type { DocumentModalsContainerProps } from "./types";
 
 export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = React.memo(
@@ -14,39 +12,30 @@ export const DocumentClinicalModals: React.FC<DocumentModalsContainerProps> = Re
 			activePatient,
 			activeDoctor,
 			clinicProfileDraft,
-			typedActiveDocuments,
-			createDocument,
-			openIssuedDocumentHtml,
-			setSelectedDocumentKind,
 		} = props;
 
 		return (
 			<>
 				{isPrimaryIntakeOpen && (
-					<PrimaryIntakePackageModal
+					<DocumentsStudioModal
 						isOpen={isPrimaryIntakeOpen}
 						onClose={() => setIsPrimaryIntakeOpen(false)}
-						patient={activePatient ?? null}
-						doctorFullName={activeDoctor?.fullName}
-						clinicProfileDraft={clinicProfileDraft}
-						existingDocuments={typedActiveDocuments ?? []}
-						onCreateDocument={(kind) => void createDocument(kind)}
-						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
-						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+						patient={activePatient ?? undefined}
+						doctorFullName={activeDoctor?.fullName ?? undefined}
+						clinicProfileDraft={clinicProfileDraft ?? undefined}
+						initialTemplate="intake"
 					/>
 				)}
 
 				{isSurgicalPackageOpen && (
-					<SurgicalPackageModal
+					<DocumentsStudioModal
 						isOpen={isSurgicalPackageOpen}
 						onClose={() => setIsSurgicalPackageOpen(false)}
-						patient={activePatient ?? null}
-						doctorFullName={activeDoctor?.fullName ?? null}
-						existingDocuments={typedActiveDocuments ?? []}
-						onCreateDocument={(kind) => void createDocument(kind)}
-						onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
-						onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
-						clinicProfileDraft={clinicProfileDraft}
+						patient={activePatient ?? undefined}
+						doctorFullName={activeDoctor?.fullName ?? undefined}
+						clinicProfileDraft={clinicProfileDraft ?? undefined}
+						initialTemplate="informed_consent"
+						initialDocId="surgery"
 					/>
 				)}
 

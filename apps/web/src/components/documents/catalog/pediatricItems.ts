@@ -1,6 +1,6 @@
 import { Award, Heart } from "lucide-react";
 import { ToothDeciduous } from "../../icons/DentalIcons";
-import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
+import type { ProfessionalA4DocumentTab } from "../types";
 import type { DocumentCatalogItem } from "./types";
 
 export interface PediatricActionHandlers {

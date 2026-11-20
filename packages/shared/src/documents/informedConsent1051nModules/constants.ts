@@ -5,9 +5,38 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export const DEFAULT_CLINIC_LICENSE_NUMBER = "ЛО41-01137-77/00368421";
-export const DEFAULT_CLINIC_LICENSE_DATE = "12.10.2021";
-export const DEFAULT_CLINIC_LICENSE_ISSUER = "Департамент здравоохранения города Москвы";
+export interface ClinicLicenseContext {
+	readonly medicalLicenseNumber?: string | null | undefined;
+	readonly medicalLicenseDate?: string | null | undefined;
+	readonly medicalLicenseIssuer?: string | null | undefined;
+}
+
+/**
+ * Безопасный фоллбэк лицензии при отсутствии данных в профиле клиники.
+ */
+export const FALLBACK_CLINIC_LICENSE_NUMBER = "ЛО41-01137-77/00368421";
+export const FALLBACK_CLINIC_LICENSE_DATE = "12.10.2021";
+export const FALLBACK_CLINIC_LICENSE_ISSUER = "Департамент здравоохранения города Москвы";
+
+/**
+ * Динамическое чтение реквизитов медицинской лицензии из профиля клиники с безопасным фоллбэком.
+ */
+export function resolveClinicLicense(clinic?: ClinicLicenseContext | null | undefined): {
+	readonly medicalLicenseNumber: string;
+	readonly medicalLicenseDate: string;
+	readonly medicalLicenseIssuer: string;
+} {
+	return {
+		medicalLicenseNumber: clinic?.medicalLicenseNumber?.trim() || FALLBACK_CLINIC_LICENSE_NUMBER,
+		medicalLicenseDate: clinic?.medicalLicenseDate?.trim() || FALLBACK_CLINIC_LICENSE_DATE,
+		medicalLicenseIssuer: clinic?.medicalLicenseIssuer?.trim() || FALLBACK_CLINIC_LICENSE_ISSUER,
+	};
+}
+
+const defaultResolved = resolveClinicLicense();
+export const DEFAULT_CLINIC_LICENSE_NUMBER = defaultResolved.medicalLicenseNumber;
+export const DEFAULT_CLINIC_LICENSE_DATE = defaultResolved.medicalLicenseDate;
+export const DEFAULT_CLINIC_LICENSE_ISSUER = defaultResolved.medicalLicenseIssuer;
 
 export function escapeHtml(str: unknown): string {
 	if (str === null || str === undefined) return "";

@@ -2,7 +2,7 @@ import React from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import type { DocumentClinicProfileRequisites } from "../tabs/formSwitch/documentFormSwitchTypes";
 import type { TaxDeductionTab } from "../taxCertificateEngine";
-import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
+import type { ProfessionalA4DocumentTab } from "../types";
 import type { TaxPaymentRecord } from "../taxCertificateEngine";
 import { CatalogPrimaryModals } from "./CatalogPrimaryModals";
 import { CatalogUtilityModals } from "./CatalogUtilityModals";

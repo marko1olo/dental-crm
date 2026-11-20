@@ -4,7 +4,7 @@
  * DENTE Dental CRM — Red Team Inquisition Test Suite for Orthodontics SSOT.
  * Verifies appliances, Angle classification, archwires, elastics, TRG norms,
  * 1-click chairside presets, patient memo, doctor autonomy (Mandate 8e),
- * exactly ONE Primary CTA #0d9488 (Mandate 8am), Apple HIG mobile ergonomics,
+ * exactly ONE Primary CTA (Mandate 8am), Apple HIG mobile ergonomics,
  * and direct mounting in AppShell & StandaloneLaunchers (Mandate 8aq).
  */
 
@@ -193,7 +193,7 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		assert.ok(content.includes("formatOrthodonticPatientMemo"), "Must export formatOrthodonticPatientMemo");
 	});
 
-	it("12. Verifies OrthodonticsStudioModal has exactly ONE Primary CTA #0d9488 (Mandates 8am & 8e)", () => {
+	it("12. Verifies OrthodonticsStudioModal has exactly ONE Primary CTA (Mandates 8am & 8e)", () => {
 		const filePath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
 
@@ -208,8 +208,8 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		);
 
 		assert.ok(
-			content.includes("var(--teal, #0d9488)"),
-			"Primary CTA button must use canonical brand teal #0d9488",
+			content.includes("ortho-primary-cta"),
+			"Primary CTA button must use canonical semantic button class ortho-primary-cta",
 		);
 
 		assert.ok(

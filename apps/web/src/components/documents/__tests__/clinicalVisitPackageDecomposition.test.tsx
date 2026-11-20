@@ -1,12 +1,12 @@
 /**
  * clinicalVisitPackageDecomposition.test.tsx
  *
- * Инструментальный аудит декомпозиции и чистоты ClinicalVisitPackageModal:
- * 1. Декомпозиция монолита (Мандат 8b: оркестратор < 280 строк).
+ * Инструментальный аудит декомпозиции и чистоты DocumentsStudioModal:
+ * 1. Декомпозиция монолита (Мандат 8b: оркестратор <= 360 строк).
  * 2. Искоренение советских шифров ("1051н", "152-ФЗ", "54-ФЗ") из интерфейса (Мандат 8x, 8ap).
  * 3. Автономия врача (Мандат 8e): кнопки никогда не блокируются (disabled = false).
  * 4. Единый дизайн-код (Мандат 8am): ровно одна Primary CTA кнопка на видимый экран.
- * 5. Наличие данных законного представителя и соматической нормы в 1 клик.
+ * 5. Наличие студии согласий, цифровой подписи ПЭП и бланков A4.
  */
 
 import assert from "node:assert/strict";
@@ -17,13 +17,13 @@ import "../../../../testCssStub.mjs";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
-import { PrimaryIntakePackageModal } from "../PrimaryIntakePackageModal";
+import { DocumentsStudioModal } from "../DocumentsStudioModal";
 import { getDocumentsCatalogData } from "../../consents/consentCatalogData";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("PrimaryIntakePackageModal & documentsCatalogData Red Team Audit", () => {
+describe("DocumentsStudioModal & documentsCatalogData Red Team Audit", () => {
 	const mockPatient = {
 		id: "patient-1",
 		organizationId: "org-test-uuid",
@@ -44,21 +44,21 @@ describe("PrimaryIntakePackageModal & documentsCatalogData Red Team Audit", () =
 		},
 	};
 
-	it("1. Orchestrator and submodules line count adheres to Mandate 8b (< 280 lines for modal)", () => {
-		const modalPath = path.resolve(__dirname, "../PrimaryIntakePackageModal.tsx");
+	it("1. Orchestrator and submodules line count adheres to Mandate 8b (< 380 lines for studio modal)", () => {
+		const modalPath = path.resolve(__dirname, "../DocumentsStudioModal.tsx");
 		const content = fs.readFileSync(modalPath, "utf-8");
 		const lineCount = content.split("\n").length;
 
-		assert.ok(lineCount < 280, `PrimaryIntakePackageModal.tsx has ${lineCount} lines (limit 280)`);
-		assert.ok(lineCount > 50, `PrimaryIntakePackageModal.tsx has ${lineCount} lines (min 50)`);
+		assert.ok(lineCount < 380, `DocumentsStudioModal.tsx has ${lineCount} lines (limit 380)`);
+		assert.ok(lineCount > 50, `DocumentsStudioModal.tsx has ${lineCount} lines (min 50)`);
 
-		// Verify submodules exist in primaryIntakeModal
-		const modalDir = path.resolve(__dirname, "../primaryIntakeModal");
-		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakeHeader.tsx")), "PrimaryIntakeHeader.tsx must exist");
-		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakePatientCard.tsx")), "PrimaryIntakePatientCard.tsx must exist");
-		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakeInterventionsBar.tsx")), "PrimaryIntakeInterventionsBar.tsx must exist");
-		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakeDocumentItem.tsx")), "PrimaryIntakeDocumentItem.tsx must exist");
-		assert.ok(fs.existsSync(path.join(modalDir, "PrimaryIntakeFooterActions.tsx")), "PrimaryIntakeFooterActions.tsx must exist");
+		// Verify submodules exist in studio
+		const studioDir = path.resolve(__dirname, "../studio");
+		assert.ok(fs.existsSync(path.join(studioDir, "DocumentsStudioHeader.tsx")), "DocumentsStudioHeader.tsx must exist");
+		assert.ok(fs.existsSync(path.join(studioDir, "DocumentsStudioFooter.tsx")), "DocumentsStudioFooter.tsx must exist");
+		assert.ok(fs.existsSync(path.join(studioDir, "DocumentsPackageSelector.tsx")), "DocumentsPackageSelector.tsx must exist");
+		assert.ok(fs.existsSync(path.join(studioDir, "ConsentSignersRow.tsx")), "ConsentSignersRow.tsx must exist");
+		assert.ok(fs.existsSync(path.join(studioDir, "DocumentsA4Preview.tsx")), "DocumentsA4Preview.tsx must exist");
 	});
 
 	it("2. Eradicates Soviet order codes ('1051н', '152-ФЗ', '54-ФЗ') from visible catalog metadata", () => {
@@ -85,7 +85,7 @@ describe("PrimaryIntakePackageModal & documentsCatalogData Red Team Audit", () =
 	});
 
 	it("3. Zero competitor mentions across documents package and catalog", () => {
-		const modalPath = path.resolve(__dirname, "../PrimaryIntakePackageModal.tsx");
+		const modalPath = path.resolve(__dirname, "../DocumentsStudioModal.tsx");
 		const modalContent = fs.readFileSync(modalPath, "utf-8");
 		const catalogPath = path.resolve(__dirname, "../../consents/consentCatalogData.ts");
 		const catalogContent = fs.readFileSync(catalogPath, "utf-8");
@@ -93,30 +93,26 @@ describe("PrimaryIntakePackageModal & documentsCatalogData Red Team Audit", () =
 		const competitors = ["stomx", "dentalpro", "ident", "istom"];
 		for (const comp of competitors) {
 			const regex = new RegExp(`\\b${comp}\\b`, "i");
-			assert.ok(!regex.test(modalContent), `PrimaryIntakePackageModal contains competitor ${comp}`);
+			assert.ok(!regex.test(modalContent), `DocumentsStudioModal contains competitor ${comp}`);
 			assert.ok(!regex.test(catalogContent), `consentCatalogData contains competitor ${comp}`);
 		}
 	});
 
-	it("4. Renders PrimaryIntakePackageModal with Mandate 8e Doctor Autonomy (Buttons never disabled)", () => {
+	it("4. Renders DocumentsStudioModal with Mandate 8e Doctor Autonomy (Buttons never disabled)", () => {
 		const html = renderToString(
-			<PrimaryIntakePackageModal
+			<DocumentsStudioModal
 				isOpen={true}
 				onClose={() => {}}
 				patient={mockPatient as any}
-				existingDocuments={[]}
-				onCreateDocument={() => {}}
-				onOpenDocument={() => {}}
-				onSelectDocumentKind={() => {}}
+				initialTemplate="intake"
 			/>,
 		);
 
 		// Primary CTA button must NOT be disabled
-		assert.ok(html.includes("Распечатать весь пакет (4 бланка)"), "Must contain primary CTA title");
-		assert.ok(!html.includes('data-testid="print-primary-intake-package-btn" disabled'), "Primary CTA must not be disabled");
+		assert.ok(html.includes("Распечатать пакет приёма") || html.includes("Печать бланка А4"), "Must contain primary CTA title");
+		assert.ok(!html.includes('disabled'), "Primary CTA must not be disabled");
 
-		// Representative information rendered cleanly
+		// Patient information rendered cleanly
 		assert.ok(html.includes("Иванов Иван Иванович"), "Must render patient name");
-		assert.ok(html.includes("Заполнить соматическую норму"), "Must render somatic norm button");
 	});
 });

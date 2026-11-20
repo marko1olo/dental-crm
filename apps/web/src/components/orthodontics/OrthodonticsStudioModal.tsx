@@ -2,7 +2,7 @@
  * @dental/web/components/orthodontics/OrthodonticsStudioModal.tsx
  *
  * DENTE Dental CRM — Каноническая студия ортодонтии и этапов лечения (Мандаты 8b, 8e, 8x, 8am).
- * Ровно ОДНА Primary CTA кнопка #0d9488 (var(--teal)): «✓ Зафиксировать активацию этапа».
+ * Ровно ОДНА Primary CTA кнопка (var(--primary)): «✓ Зафиксировать активацию этапа».
  * Автономия врача (0 заблокированных кнопок), готовые клинические пресеты активации,
  * контроль этапов элайнеров (шаг X из Y), замена дуг и эластиков, фотопротокол и ТРГ,
  * нативный мобильный Bottom Sheet Apple HIG (390×844) с тач-таргетами >= 44x44px.
@@ -60,7 +60,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	visitId,
 }) => {
 	const isDemo = isDemoShowcaseMode();
-	const patientName = (propPatientName && propPatientName.trim()) || (isDemo ? "Смирнова Екатерина Андреевна" : "Пациент");
+	const patientName = (propPatientName && propPatientName.trim()) || (isDemo ? "Смирнова Екатерина Андреевна" : "Пациент не выбран");
 	const doctorName = (propDoctorName && propDoctorName.trim()) || (isDemo ? "Д-р Соколов А. В." : "Лечащий врач");
 
 	const [protocol, setProtocol] = useState<OrthoProtocolState>(() => {
@@ -582,7 +582,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								{APPLIANCES_CATALOG.map((app) => (<option key={app.id} value={app.id}>{app.name}</option>))}
 							</select>
 							<span className="px-2 py-1 rounded-lg bg-[var(--line-subtle,#f1f5f9)] text-[var(--ink-muted)] font-medium">Месяц {protocol.currentMonth} из {protocol.totalMonths}</span>
-							<span className="px-2 py-1 rounded-lg bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] font-semibold">{skeletalClassInfo.skeletalClass} класс</span>
+							<span className="px-2 py-1 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] font-semibold">{skeletalClassInfo.skeletalClass} класс</span>
 						</div>
 						<div className="flex items-center gap-1.5 text-[var(--ink-muted)]">
 							<Clock className="w-3.5 h-3.5" />
@@ -591,10 +591,10 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					</div>
 					<div className="ortho-presets-scroll">
 						<span className="text-[11px] font-semibold text-[var(--ink-muted)] shrink-0 flex items-center gap-1">
-							<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" /> Шаблоны:
+							<Sparkles className="w-3.5 h-3.5 text-[var(--primary)]" /> Шаблоны:
 						</span>
 						{ORTHO_ACTIVATION_PRESETS.map((preset) => (
-							<button key={preset.id} type="button" onClick={() => handleApplyPreset(preset)} className="shrink-0 whitespace-nowrap px-2.5 py-1 min-h-[30px] text-[11px] sm:text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all cursor-pointer">
+							<button key={preset.id} type="button" onClick={() => handleApplyPreset(preset)} className="shrink-0 whitespace-nowrap px-2.5 py-1 min-h-[30px] text-[11px] sm:text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all cursor-pointer">
 								{preset.title}
 							</button>
 						))}
@@ -633,7 +633,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 						</button>
 					</div>
 					{feedbackToast && (
-						<div className="text-[11px] font-semibold text-[var(--teal,#0d9488)] px-2 py-0.5 rounded bg-[var(--teal-subtle,rgba(13,148,136,0.1))] shrink-0">
+						<div className="text-[11px] font-semibold text-[var(--primary)] px-2 py-0.5 rounded bg-[var(--primary)]/10 shrink-0">
 							{feedbackToast}
 						</div>
 					)}
@@ -658,7 +658,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 
 				<footer className="ortho-footer">
 					<div className="text-xs text-[var(--ink-muted)] truncate hidden sm:flex items-center gap-2">
-						<Activity className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+						<Activity className="w-4 h-4 text-[var(--primary)]" />
 						<span>Ортодонтический приём: дуги, элайнеры, тяги и окклюзия</span>
 					</div>
 					<div className="flex flex-col-reverse sm:flex-row items-center gap-2.5 w-full sm:w-auto justify-end">
@@ -669,7 +669,6 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							type="button"
 							data-testid="save-ortho-protocol-button"
 							onClick={handleSaveProtocol}
-							style={{ backgroundColor: "var(--teal-fill, var(--teal, #0d9488))", color: "var(--on-teal, #ffffff)" }}
 							className="ortho-primary-cta w-full sm:w-auto"
 						>
 							<Check className="w-4 h-4 shrink-0" />
@@ -684,7 +683,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					<ClinicalPhotoProtocolModal
 						isOpen={true}
 						onClose={() => setIsPhotoModalOpen(false)}
-						patientId={patientId || "pat-ortho-01"}
+						patientId={patientId || ""}
 						patientName={patientName}
 						doctorName={doctorName}
 						initialPresetId="orthodontic_8"
@@ -722,7 +721,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 					<CephalometricAnalysisModal
 						isOpen={true}
 						onClose={() => setIsCephModalOpen(false)}
-						patientId={patientId || "pat-ortho-01"}
+						patientId={patientId || ""}
 						patientName={patientName}
 						initialImageUrl={isDemo ? SAMPLE_TRG_CEPHALOGRAM_URL : undefined}
 						onApplyAnalysis={({ trgValues }) => {

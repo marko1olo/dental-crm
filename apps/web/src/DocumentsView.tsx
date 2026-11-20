@@ -8,7 +8,6 @@ import { DocumentIssueConfirmationModal } from "./components/documents/tabs/Docu
 import { DocumentModalsContainer } from "./components/documents/tabs/DocumentModalsContainer";
 import { DocumentVoidConfirmationModal } from "./components/documents/tabs/DocumentVoidConfirmationModal";
 import { DocumentsA4PrintPreview, DocumentsRecentList, DocumentsTemplateGrid, DocumentsToolbar, useDocumentsViewController } from "./documentsView/index";
-import { DocumentAccessibleAnchorForm } from "./documentsView/templateGridModules/DocumentAccessibleAnchorForm";
 import "./styles/modules/documents.css";
 import "./components/documents/documentNavigation.css";
 
@@ -43,7 +42,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			(selectedDocumentKind as string) === "outpatient_medical_card_025u" ||
 			(selectedDocumentKind as string) === "outpatient_visit_record";
 		if (!isOutpatientRedirectNeeded && (selectedDocumentKind as string) !== "outpatient_medical_card_025u") return;
-		// Канонический dental_medical_card (совместимость с тестами: setSelectedDocumentKind("dental_medical_card_043u"))
 		setSelectedDocumentKind("dental_medical_card_043u");
 	}, [selectedDocumentKind, setSelectedDocumentKind]);
 
@@ -60,13 +58,6 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<DocumentsA4PrintPreview {...vm.focusPreviewProps} />
 				) : (
 					<>
-						<DocumentAccessibleAnchorForm
-							selectedDocumentKind={vm.selectedDocumentKind}
-							onSelectDocumentKind={(kind) => vm.setSelectedDocumentKind(kind as DocumentKind)}
-							onCreateDocument={(k) => void vm.createDocument(k as DocumentKind)}
-							sanitizedDocumentFactoryGroups={vm.sanitizedDocumentFactoryGroups}
-							documentLabels={vm.documentLabels}
-						/>
 						<DocumentsCatalogView {...vm.catalogViewProps} />
 						<DocumentsRecentList {...vm.recentListProps} />
 					</>

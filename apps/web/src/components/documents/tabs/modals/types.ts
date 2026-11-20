@@ -5,7 +5,7 @@ import type {
 } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../../AppHelpers";
 import type { Egisz043uPayload } from "../../../egisz/egiszRemdEngine";
-import type { ProfessionalA4DocumentTab } from "../../ProfessionalDocumentA4Sheet";
+import type { ProfessionalA4DocumentTab } from "../../types";
 
 export interface DocumentModalsContainerProps {
 	isA4PrintPreviewOpen?: boolean;

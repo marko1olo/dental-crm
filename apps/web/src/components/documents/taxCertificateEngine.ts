@@ -15,21 +15,53 @@
 
 import {
 	amountToWordsRu,
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
+	calculateTaxDeductionSummary,
 	classifyTaxDeduction804n,
 	EXPENSIVE_TREATMENT_804N_CODES,
 	extractTaxYearFromDate,
+	generateCode128Svg,
+	generateFamilyTaxDeductionBatch,
+	generateFnsBatchNoMedoplXml,
 	generateFnsFormKnd1151156BarcodeSvg,
+	generateFnsNoMedoplXml,
+	generateFnsTaxDeductionBatchXml,
+	generateFnsTaxDeductionXml,
+	generateQrCodeDataUri,
 	generateQrCodeSvg,
+	generateTaxCertificateQrDataUri,
+	generateTaxCertificateQrPayload,
 	generateTaxCertificateQrSvg,
+	getTaxDeductionAbsKopecks,
+	isTaxDeductionRefund,
+	KND_CERTIFICATE_FORM,
+	KND_REGISTRY_ELECTRONIC_FORMAT,
+	normalizePaymentsForTaxCertificate,
+	renderOfficialTaxCertificateBatchKnd1151156Html,
+	renderOfficialTaxCertificateKnd1151156Html,
 	resolveTaxDeductionCategoryShared,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
+	type FamilyMemberBatchCertificateSummary,
+	type FamilyMemberPayerConfig,
+	type FamilyTaxDeductionBatchResult,
+	type GenerateFamilyTaxDeductionBatchOptions,
+	type TaxDeductionBatchParams,
+	type TaxDeductionCalculationResult,
+	type TaxDeductionCertificateParams,
+	type TaxDeductionClinicParams,
+	type TaxDeductionPaymentItem,
+	type TaxDeductionPersonParams,
 	type TaxDeductionRelationship,
+	type TaxDeductionYearSummary,
 	validateInnIndividual as sharedValidateInnIndividual,
 	validateInnLegalEntity as sharedValidateInnLegalEntity,
 	validateRussianInn as sharedValidateRussianInn,
+	validateRussianKpp,
+	validateRussianOgrn,
 	validateRussianPassport as sharedValidateRussianPassport,
+	validateRussianSnils,
 } from "@dental/shared";
 import { escapeHtml, formatDateRu, formatRublesExactRu } from "./documentPrintFormatters";
 import { printHtmlViaIframe } from "./printHtmlViaIframe";
@@ -42,18 +74,138 @@ export {
 	sharedValidateInnIndividual as validateInnIndividual,
 	sharedValidateInnLegalEntity as validateInnLegalEntity,
 	sharedValidateRussianPassport as validateRussianPassport,
+	validateRussianKpp,
+	validateRussianOgrn,
+	validateRussianSnils,
 	resolveTaxDeductionCategoryShared as resolveTaxDeductionCategory,
+	resolveTaxDeductionCategoryShared,
 	classifyTaxDeduction804n,
 	EXPENSIVE_TREATMENT_804N_CODES,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
+	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
 	generateTaxCertificateQrSvg,
+	generateTaxCertificateQrDataUri,
+	generateTaxCertificateQrPayload,
 	generateFnsFormKnd1151156BarcodeSvg,
+	generateCode128Svg,
+	generateQrCodeDataUri,
+	generateQrCodeSvg,
 	amountToWordsRu,
 	extractTaxYearFromDate,
+	calculateTaxDeductionSummary,
+	normalizePaymentsForTaxCertificate,
+	generateFnsTaxDeductionXml,
+	generateFnsNoMedoplXml,
+	generateFnsTaxDeductionBatchXml,
+	generateFnsBatchNoMedoplXml,
+	generateFamilyTaxDeductionBatch,
+	renderOfficialTaxCertificateKnd1151156Html,
+	renderOfficialTaxCertificateBatchKnd1151156Html,
+	getTaxDeductionAbsKopecks,
+	isTaxDeductionRefund,
+	KND_CERTIFICATE_FORM,
+	KND_REGISTRY_ELECTRONIC_FORMAT,
 	type TaxDeductionRelationship,
+	type TaxDeductionCertificateParams,
+	type TaxDeductionBatchParams,
+	type TaxDeductionPaymentItem,
+	type TaxDeductionCalculationResult,
+	type TaxDeductionClinicParams,
+	type TaxDeductionPersonParams,
+	type TaxDeductionYearSummary,
+	type FamilyMemberBatchCertificateSummary,
+	type FamilyMemberPayerConfig,
+	type FamilyTaxDeductionBatchResult,
+	type GenerateFamilyTaxDeductionBatchOptions,
 };
+
+/**
+ * Triggers a browser download of the generated FNS 824@ XML document.
+ */
+export function downloadFnsTaxXmlFile(params: TaxDeductionCertificateParams): void {
+	const { fileName, xmlContent } = generateFnsTaxDeductionXml(params);
+	const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = fileName;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * Triggers a browser download of the NO_MEDOPL XML file (Format 5.01).
+ */
+export function downloadFnsNoMedoplXmlFile(params: TaxDeductionCertificateParams): void {
+	const { fileName, xmlContent } = generateFnsNoMedoplXml(params);
+	const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = fileName;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * Triggers a browser download of batch XML registry for direct TCS submission.
+ */
+export function downloadFnsBatchTaxXmlFile(batch: TaxDeductionBatchParams): void {
+	const { fileName, xmlContent } = generateFnsTaxDeductionBatchXml(batch);
+	const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = fileName;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * Triggers a browser download of NO_MEDOPL batch XML registry (Format 5.01) for direct TCS submission.
+ */
+export function downloadFnsBatchNoMedoplXmlFile(batch: TaxDeductionBatchParams): void {
+	const { fileName, xmlContent } = generateFnsBatchNoMedoplXml(batch);
+	const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = fileName;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * Generates official printable HTML for the KND 1151156 Certificate according to Order EA-7-11/824@.
+ */
+export function renderTaxDeductionCertificateHtml(params: TaxDeductionCertificateParams): string {
+	return renderOfficialTaxCertificateKnd1151156Html(params);
+}
+
+/**
+ * Generates combined multi-page printable HTML for all family certificates in batch.
+ */
+export function renderTaxDeductionBatchCertificateHtml(batch: TaxDeductionBatchParams): string {
+	return renderOfficialTaxCertificateBatchKnd1151156Html(batch);
+}
+
+/**
+ * Opens a print dialog with the official A4 form of the KND 1151156 Certificate via hidden iframe.
+ */
+export function printTaxCertificateKnd1151156(params: TaxDeductionCertificateParams): void {
+	const html = renderOfficialTaxCertificateKnd1151156Html(params);
+	printHtmlViaIframe(html, "fns-tax-cert-knd1151156-print-iframe");
+}
 
 export const FNS_ORDER_824_FULL_NAME =
 	"Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@ (КНД 1151156)";
@@ -451,16 +603,24 @@ export function buildTaxCertificateDocumentData(
 		params.totalAmountKopecks > 0
 			? params.totalAmountKopecks
 			: code01Kopecks + code02Kopecks;
-	const code01Rub = Math.floor(code01Kopecks / 100);
-	const code02Rub = Math.floor(code02Kopecks / 100);
-	const totalNetRub = Math.floor(totalKopecks / 100);
-	const statutoryLimitKopecks = (params.taxYear >= 2024 ? 150000 : 120000) * 100;
-	const eligibleCode01Kopecks = Math.min(statutoryLimitKopecks, code01Kopecks);
-	const eligibleCode01Rub = Math.floor(eligibleCode01Kopecks / 100);
-	const estimatedRefund13Kopecks =
-		Math.round(eligibleCode01Kopecks * 0.13) + Math.round(code02Kopecks * 0.13);
-	const estimatedRefund13Rub =
-		Math.round(eligibleCode01Rub * 0.13) + Math.round(code02Rub * 0.13);
+	// Мандат 8bm: Целочисленная арифметика BigInt копеек без неточных float, / 100 и Math.round
+	const code01KopecksBi = BigInt(Math.max(0, Math.trunc(code01Kopecks)));
+	const code02KopecksBi = BigInt(Math.max(0, Math.trunc(code02Kopecks)));
+	const totalKopecksBi = BigInt(Math.max(0, Math.trunc(totalKopecks)));
+
+	const code01Rub = Number(code01KopecksBi / 100n);
+	const code02Rub = Number(code02KopecksBi / 100n);
+	const totalNetRub = Number(totalKopecksBi / 100n);
+
+	const statutoryLimitKopecksBi = BigInt(params.taxYear >= 2024 ? 150000 : 120000) * 100n;
+	const eligibleCode01KopecksBi = code01KopecksBi < statutoryLimitKopecksBi ? code01KopecksBi : statutoryLimitKopecksBi;
+	const eligibleCode01Rub = Number(eligibleCode01KopecksBi / 100n);
+	const eligibleCode01Kopecks = Number(eligibleCode01KopecksBi);
+
+	// 13% НДФЛ рассчитывается строго целочисленно: (копейки * 13n) / 100n
+	const estimatedRefund13KopecksBi = (eligibleCode01KopecksBi * 13n) / 100n + (code02KopecksBi * 13n) / 100n;
+	const estimatedRefund13Kopecks = Number(estimatedRefund13KopecksBi);
+	const estimatedRefund13Rub = Number(estimatedRefund13KopecksBi / 100n);
 
 	const isDemo = isDemoShowcaseMode();
 	const parsePassport = (raw: string | undefined): { series: string; number: string } => {

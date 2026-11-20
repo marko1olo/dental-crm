@@ -47,8 +47,11 @@ export async function saveCephalometricAnalysisToApi(study: Partial<Cephalometri
 		});
 
 		if (res.ok) {
-			const data = (await res.json()) as { success?: boolean; study?: CephalometricSavedStudy };
-			return data.study ?? null;
+			const json = (await res.json()) as unknown;
+			const payload = (json && typeof json === "object" && "data" in json && (json as { data: unknown }).data
+				? (json as { data: unknown }).data
+				: json) as { success?: boolean; study?: CephalometricSavedStudy } | null;
+			return payload?.study ?? null;
 		}
 	} catch (err) {
 		console.warn("[CephPersistence] API save offline fallback:", err);
@@ -65,8 +68,11 @@ export async function fetchPatientCephalometricStudyFromApi(patientId: string): 
 			}),
 		});
 		if (res.ok) {
-			const data = (await res.json()) as { success?: boolean; study?: CephalometricSavedStudy };
-			return data.study ?? null;
+			const json = (await res.json()) as unknown;
+			const payload = (json && typeof json === "object" && "data" in json && (json as { data: unknown }).data
+				? (json as { data: unknown }).data
+				: json) as { success?: boolean; study?: CephalometricSavedStudy } | null;
+			return payload?.study ?? null;
 		}
 	} catch (err) {
 		console.warn("[CephPersistence] API fetch offline fallback:", err);

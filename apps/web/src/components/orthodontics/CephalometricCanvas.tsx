@@ -230,8 +230,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 		<div
 			ref={containerRef}
 			data-testid="cephalometric-canvas"
-			className={`w-full h-full relative select-none overflow-hidden bg-slate-950 flex items-center justify-center ${className || ""}`}
-			style={{ backgroundColor: "#020617" }}
+			className={`w-full h-full relative select-none overflow-hidden bg-[var(--paper-strong)] flex items-center justify-center ${className || ""}`}
 			onDrop={handleDrop}
 			onDragOver={(e) => e.preventDefault()}
 			onPointerMove={handlePointerMove}
@@ -241,13 +240,13 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 				<div
 					data-testid="ceph-dropzone"
 					onClick={() => fileInputRef.current?.click()}
-					className="flex flex-col items-center justify-center p-8 text-center text-slate-300 border-2 border-dashed border-teal-500/40 rounded-2xl hover:border-teal-400 hover:bg-teal-950/20 transition-all cursor-pointer m-4 max-w-md"
+					className="flex flex-col items-center justify-center p-8 text-center text-[var(--ink-muted)] border-2 border-dashed border-[var(--line)] rounded-2xl hover:border-[var(--primary)] hover:bg-[var(--paper-soft)] transition-all cursor-pointer m-4 max-w-md"
 				>
-					<UploadCloud className="w-12 h-12 text-teal-400 mb-3 animate-pulse" />
-					<p className="text-sm font-bold text-white mb-1">
+					<UploadCloud className="w-12 h-12 text-[var(--primary)] mb-3 animate-pulse" />
+					<p className="text-sm font-bold text-[var(--ink)] mb-1">
 						Для проведения цефалометрического анализа требуется реальный рентгеновский снимок
 					</p>
-					<p className="text-xs text-slate-400">
+					<p className="text-xs text-[var(--ink-muted)]">
 						Загрузите или перетащите файл боковой ТРГ (DICOM, TIFF, JPG, PNG)
 					</p>
 					<input
@@ -291,7 +290,7 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 							<polygon
 								points={`${pS.x},${pS.y} ${pN.x},${pN.y} ${pA.x},${pA.y} ${pB.x},${pB.y} ${pPog ? `${pPog.x},${pPog.y} ` : ""}${pGn ? `${pGn.x},${pGn.y} ` : ""}${pMe.x},${pMe.y} ${pGo.x},${pGo.y}`}
 								fill="rgba(13, 148, 136, 0.08)"
-								stroke="#0d9488"
+								stroke="var(--primary)"
 								strokeWidth="1.5"
 								strokeDasharray="4 3"
 							/>
@@ -453,24 +452,26 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 				</div>
 			)}
 
-			{/* Тулбар управления масштабом ТРГ */}
+			{/* Тулбар управления масштабом ТРГ (Apple HIG тач-таргеты >= 44x44px) */}
 			{imageUrl && (
-				<div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-lg">
+				<div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 p-1.5 rounded-xl bg-[var(--paper-strong)]/90 border border-[var(--line)] backdrop-blur-md shadow-lg">
 					<button
 						type="button"
 						onClick={() => setZoom((z) => Math.min(3, z + 0.2))}
-						className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						title="Увеличить снимок"
+						aria-label="Увеличить снимок"
 					>
-						<ZoomIn size={16} />
+						<ZoomIn size={18} />
 					</button>
 					<button
 						type="button"
 						onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}
-						className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						title="Уменьшить снимок"
+						aria-label="Уменьшить снимок"
 					>
-						<ZoomOut size={16} />
+						<ZoomOut size={18} />
 					</button>
 					<button
 						type="button"
@@ -478,12 +479,13 @@ export const CephalometricCanvas: React.FC<CephalometricCanvasProps> = ({
 							setZoom(1);
 							setPan({ x: 0, y: 0 });
 						}}
-						className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+						className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						title="Сбросить зум и панорамирование"
+						aria-label="Сбросить зум и панорамирование"
 					>
-						<RotateCcw size={16} />
+						<RotateCcw size={18} />
 					</button>
-					<span className="text-[11px] font-mono text-teal-300 px-1.5 font-bold">
+					<span className="text-xs font-mono text-[var(--primary)] px-2 font-bold tabular-nums">
 						{Math.round(zoom * 100)}%
 					</span>
 				</div>

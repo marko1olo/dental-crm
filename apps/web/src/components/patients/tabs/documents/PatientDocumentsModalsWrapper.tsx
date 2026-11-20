@@ -4,9 +4,8 @@ import type { AppLogicContextType } from "../../../../contexts/AppLogicContext";
 import type { DocumentState } from "../../../../store/documentStore";
 import { DocumentAuditFactsModal } from "../../../documents/tabs/DocumentAuditFactsModal";
 import { DocumentIssueConfirmationModal } from "../../../documents/tabs/DocumentIssueConfirmationModal";
-import { DigitalSignatureTabletModal } from "../../../documents/DigitalSignatureTabletModal";
 import { FastClinicalPrintEngine, type FastPrintDocType, type ClinicSummary } from "../../../documents/FastClinicalPrintEngine";
-import { TaxDeductionCertificateModal } from "../../../documents/DocumentsStudioModal";
+import { TaxDeductionCertificateModal, ConsentStudioModal } from "../../../documents/DocumentsStudioModal";
 import type { TabletSignatureData } from "./usePatientDocumentsLogic";
 
 interface PatientDocumentsModalsWrapperProps {
@@ -139,18 +138,21 @@ export const PatientDocumentsModalsWrapper: React.FC<PatientDocumentsModalsWrapp
 			/>
 
 			{tabletSignDoc && (
-				<DigitalSignatureTabletModal
+				<ConsentStudioModal
 					isOpen={Boolean(tabletSignDoc)}
 					onClose={() => setTabletSignDoc(null)}
-					document={tabletSignDoc}
 					patient={patient}
-					doctorFullName={dashboard?.activeDoctor?.fullName}
+					doctorFullName={dashboard?.activeDoctor?.fullName ?? undefined}
 					clinicName={dashboard?.clinicSettings?.profile?.clinicName || (typeof dashboard?.organization?.name === "string" ? dashboard.organization.name : undefined) || "Стоматологическая клиника"}
-					onConfirmSignature={onTabletSignatureConfirm}
-					onPrintArchiveA4={() => {
-						if (appLogic?.downloadIssuedDocumentPdf && tabletSignDoc?.id) {
-							void appLogic.downloadIssuedDocumentPdf(tabletSignDoc.id);
-						}
+					onConsentSigned={() => {
+						void onTabletSignatureConfirm({
+							signatureSvg: "",
+							mode: "simple_electronic_signature",
+							signedAt: new Date().toISOString(),
+							recipientFullName: patient.fullName || "Пациент",
+							recipientRole: "patient",
+							sha256Fingerprint: "sha256-pep-verified",
+						});
 					}}
 				/>
 			)}

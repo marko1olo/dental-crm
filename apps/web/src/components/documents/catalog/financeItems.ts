@@ -6,7 +6,7 @@ import {
 	Zap,
 } from "lucide-react";
 import type { TaxDeductionTab } from "../taxCertificateEngine";
-import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
+import type { ProfessionalA4DocumentTab } from "../types";
 import type { DocumentCatalogItem } from "./types";
 import type { DocumentKind } from "@dental/shared";
 

@@ -98,7 +98,7 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 			{/* Верхняя плашка шага и выдачи */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
 				<div className="flex items-center gap-2.5 min-w-0">
-					<div className="w-8 h-8 rounded-lg bg-[var(--teal-subtle,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
+					<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0">
 						<Smile className="w-4 h-4" />
 					</div>
 					<div>
@@ -143,7 +143,7 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 			<div className="flex flex-col gap-1 pt-1">
 				<div className="flex items-center justify-between text-xs">
 					<span className="text-[11px] font-medium text-[var(--ink-muted)]">Общий прогресс курса капп:</span>
-					<span className="text-[11px] font-bold text-[var(--teal,#0d9488)]">{progressPercent}%</span>
+					<span className="text-[11px] font-bold text-[var(--primary)]">{progressPercent}%</span>
 				</div>
 				<div className="ortho-aligner-progress-bar">
 					<div className="ortho-aligner-progress-fill" style={{ width: `${progressPercent}%` }} />
@@ -193,7 +193,7 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 					onClick={() => onChange((prev) => ({ ...prev, iprCompleted: !prev.iprCompleted }))}
 					className={`p-2.5 rounded-lg border text-left flex flex-col justify-between min-h-[56px] transition-all cursor-pointer ${
 						tracking.iprCompleted
-							? "bg-[var(--teal-subtle,rgba(13,148,136,0.15))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
+							? "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)]"
 							: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper)]"
 					}`}
 				>
@@ -210,7 +210,7 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 					onClick={() => onChange((prev) => ({ ...prev, attachmentsVerified: !prev.attachmentsVerified }))}
 					className={`p-2.5 rounded-lg border text-left flex flex-col justify-between min-h-[56px] transition-all cursor-pointer ${
 						tracking.attachmentsVerified
-							? "bg-[var(--teal-subtle,rgba(13,148,136,0.15))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)]"
+							? "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)]"
 							: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper)]"
 					}`}
 				>
@@ -226,19 +226,19 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 			<div className="pt-2 border-t border-[var(--line)] flex flex-col gap-2">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
-						<CreditCard className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+						<CreditCard className="w-3.5 h-3.5 text-[var(--primary)]" />
 						<span>График рассрочки оплаты элайнеров</span>
 					</div>
 					{tranches.length > 0 && (
 						<div className="text-[11px] text-[var(--ink-muted)]">
-							Оплачено: <strong className="text-[var(--teal,#0d9488)]">{formatKopecksToRub(Number(paidKopecks))}</strong> из {formatKopecksToRub(Number(totalKopecks))}
+							Оплачено: <strong className="text-[var(--primary)]">{formatKopecksToRub(Number(paidKopecks))}</strong> из {formatKopecksToRub(Number(totalKopecks))}
 						</div>
 					)}
 				</div>
 
 				{tranches.length === 0 ? (
 					<div className="p-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink-muted)] flex items-center gap-2.5">
-						<Clock className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
+						<Clock className="w-4 h-4 text-[var(--primary)] shrink-0" />
 						<span>График платежей формируется на основе плана лечения и выставленных счетов</span>
 					</div>
 				) : (
@@ -252,20 +252,20 @@ export const AlignerTrackingCard: React.FC<AlignerTrackingCardProps> = ({
 									key={t.id}
 									className={`p-2.5 rounded-lg border flex flex-col justify-between gap-1.5 min-h-[72px] text-xs transition-colors ${
 										isPaid
-											? "bg-[var(--teal-subtle,rgba(13,148,136,0.08))] border-[var(--teal-line,rgba(13,148,136,0.25))]"
+											? "bg-[var(--success-soft)] border-[var(--success-line)]"
 											: isDue
-											? "bg-[var(--warning-surface,rgba(245,158,11,0.08))] border-[var(--warning-line,rgba(245,158,11,0.3))]"
+											? "bg-[var(--warning-soft)] border-[var(--warning-line)]"
 											: "bg-[var(--paper-strong)] border-[var(--line)] text-[var(--ink-muted)]"
 									}`}
 								>
 									<div className="flex items-center justify-between gap-1">
 										<span className="font-semibold text-[var(--ink)] truncate">{t.stepRange}</span>
 										{isPaid ? (
-											<span className="text-[10px] font-bold text-[var(--teal,#0d9488)] flex items-center gap-0.5">
+											<span className="text-[10px] font-bold text-[var(--success-ink)] flex items-center gap-0.5">
 												<CheckCircle2 className="w-3 h-3" /> Оплачено
 											</span>
 										) : isDue ? (
-											<span className="text-[10px] font-bold text-[var(--warning-ink,#f59e0b)] flex items-center gap-0.5">
+											<span className="text-[10px] font-bold text-[var(--warning-ink)] flex items-center gap-0.5">
 												<AlertCircle className="w-3 h-3" /> К оплате
 											</span>
 										) : (

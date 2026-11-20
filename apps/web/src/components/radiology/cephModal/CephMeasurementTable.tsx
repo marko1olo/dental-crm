@@ -33,30 +33,30 @@ export function CephMeasurementTable({
 		const isValValid = meas?.value !== null && meas?.value !== undefined && Number.isFinite(meas.value);
 		const isDistValid = distMeas?.value !== null && distMeas?.value !== undefined && Number.isFinite(distMeas.value);
 		const missing = getRequiredLandmarksForMeasurement(measId).filter((k) => !landmarks[k]);
-		const cardClassName = "p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 flex flex-col justify-between min-h-[76px]";
+		const cardClassName = "p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col justify-between min-h-[76px]";
 		const cardBody = (
 			<>
 				<div className="flex items-center justify-between gap-1">
-					<span className="text-[11px] font-bold text-slate-300 truncate">{label}</span>
-					<span className="text-[9px] text-slate-400 font-mono">{norm}</span>
+					<span className="text-[11px] font-bold text-[var(--ink)] truncate">{label}</span>
+					<span className="text-[9px] text-[var(--ink-muted)] font-mono">{norm}</span>
 				</div>
 				<div className="my-1 flex items-baseline gap-1">
 					{isValValid ? (
-						<span className={`text-base font-black font-mono leading-none ${meas.status === "normal" ? "text-emerald-400" : meas.status === "deviation_high" ? "text-rose-400" : "text-cyan-400"}`}>
+						<span className={`text-base font-black font-mono leading-none ${meas.status === "normal" ? "text-emerald-500" : meas.status === "deviation_high" ? "text-rose-500" : "text-[var(--primary)]"}`}>
 							{meas.value}{meas.unit || "°"}
 						</span>
 					) : (
-						<span className="text-sm font-semibold text-slate-500 leading-none">—</span>
+						<span className="text-sm font-semibold text-[var(--ink-muted)] leading-none">—</span>
 					)}
-					{isDistValid && <span className="text-[11px] font-bold text-slate-300 font-mono leading-none">({distMeas.value}мм)</span>}
+					{isDistValid && <span className="text-[11px] font-bold text-[var(--ink)] font-mono leading-none">({distMeas.value}мм)</span>}
 				</div>
 				<div>
 					{isValValid ? (
-						<span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${meas.status === "normal" ? "bg-emerald-950 text-emerald-300 border border-emerald-500/40" : meas.status === "deviation_high" ? "bg-rose-950 text-rose-300 border border-rose-500/40" : "bg-cyan-950 text-cyan-300 border border-cyan-500/40"}`}>
+						<span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${meas.status === "normal" ? "bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)]" : meas.status === "deviation_high" ? "bg-[var(--danger-soft)] text-[var(--danger-ink)] border border-[var(--danger-line)]" : "bg-[var(--paper-soft)] text-[var(--primary)] border border-[var(--line)]"}`}>
 							{id === "ANB" ? (meas.status === "normal" ? "Класс I" : meas.status === "deviation_high" ? "Класс II" : "Класс III") : id === "1-NA" || id === "1-NB" ? (meas.status === "normal" ? "Норма" : meas.status === "deviation_high" ? "Протрузия" : "Ретрузия") : (meas.status === "normal" ? "Норма" : meas.status === "deviation_high" ? "Увеличен" : "Уменьшен")}
 						</span>
 					) : (
-						<span className="text-[9px] font-medium text-amber-400/90 truncate block">{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}</span>
+						<span className="text-[9px] font-medium text-amber-500 truncate block">{missing.length > 0 ? `Ждёт: ${missing.join(",")}` : "Нет данных"}</span>
 					)}
 				</div>
 			</>
@@ -70,20 +70,20 @@ export function CephMeasurementTable({
 	};
 
 	return (
-		<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-slate-950">
+		<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-[var(--paper)]">
 			<CephalometricPresetsBar variant="tab2" onApplyPreset={onApplyPreset} onResetLandmarks={onResetLandmarks} />
 
-			<div className="mb-4 p-4 rounded-xl bg-teal-950/80 border border-teal-500/50 shadow-sm" style={{ backgroundColor: "#042f2e", borderColor: "rgba(20, 184, 166, 0.5)" }}>
-				<div className="text-xs font-black uppercase tracking-wider" style={{ color: "#2dd4bf" }}>Клиническое резюме анализа</div>
-				<div className="text-base font-black mt-1 min-w-0 break-words" style={{ color: "#ffffff" }}>{analysis.diagnosis.skeletalClassRu}</div>
-				<div className="text-sm mt-1.5 leading-relaxed min-w-0 break-words" style={{ color: "#cbd5e1" }}>{analysis.diagnosis.summaryRu}</div>
+			<div className="mb-4 p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-xs">
+				<div className="text-xs font-bold text-[var(--primary)]">Клиническое резюме анализа</div>
+				<div className="text-base font-bold text-[var(--ink)] mt-1 min-w-0 break-words">{analysis.diagnosis.skeletalClassRu}</div>
+				<div className="text-sm mt-1.5 leading-relaxed min-w-0 break-words text-[var(--ink-muted)]">{analysis.diagnosis.summaryRu}</div>
 			</div>
 
 			{/* Core Cephalometric Angles Hero Showcase */}
 			<div className="mb-4 space-y-2">
-				<div className="text-xs font-black uppercase tracking-wider flex items-center justify-between" style={{ color: "#cbd5e1" }}>
+				<div className="text-xs font-bold text-[var(--ink)] flex items-center justify-between">
 					<span>Ключевые углы Штайнера (Steiner Core)</span>
-					<span className="text-[10px] font-normal" style={{ color: "#2dd4bf" }}>Ортодонтия</span>
+					<span className="text-[10px] font-medium text-[var(--primary)]">Ортодонтия</span>
 				</div>
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
 					{renderHeroCard("SNA", "SNA", "82° ± 2°")}
@@ -96,11 +96,11 @@ export function CephMeasurementTable({
 
 			<CephalometricMeasurementsCategories analysis={analysis} landmarks={landmarks} />
 
-			<div className="mt-3 pt-3 border-t border-slate-800">
+			<div className="mt-3 pt-3 border-t border-[var(--line)]">
 				<button
 					type="button"
 					onClick={onNavigateToReport}
-					className="w-full h-10 py-2 rounded-lg bg-[var(--teal)] hover:brightness-105 text-white font-bold text-[13px] flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+					className="w-full h-10 py-2 rounded-lg bg-[var(--primary)] hover:brightness-105 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
 				>
 					<span>Сформировать протокол для карты</span>
 					<ArrowRight size={16} />

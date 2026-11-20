@@ -242,24 +242,13 @@ export function paidContractMismatchReason(
 }
 
 export function completedWorksActMismatchReason(
-	payload: CompletedWorksActPayload,
-	facts: DocumentCreationFacts,
+	_payload: CompletedWorksActPayload,
+	_facts: DocumentCreationFacts,
 ): string | null {
-	if (!moneyRubEquals(parseKopecks(payload.totalByActRub), payload.paidRub)) {
-		return `Акт выполненных работ: сумма акта ${moneyRubText(payload.totalByActRub)} руб. не совпадает с оплаченной суммой ${moneyRubText(payload.paidRub)} руб.`;
-	}
-	return (
-		paidFactsTotalMismatchReason(
-			payload.totalByActRub,
-			facts,
-			"Акт выполненных работ",
-		) ??
-		paidFactsTotalMismatchReason(
-			payload.paidRub,
-			facts,
-			"Акт выполненных работ",
-		)
-	);
+	// Мандат 8e (Автономия врача): Акт фиксирует факт оказания медицинских услуг, а не чек ККТ!
+	// Оплата может быть частичной (рассрочка, постоплата, дебиторская задолженность).
+	// Запрещено возвращать ошибку и блокировать сохранение/печать акта при несовпадении суммы акта и оплаты.
+	return null;
 }
 
 export function documentPayloadConsistencyReason(

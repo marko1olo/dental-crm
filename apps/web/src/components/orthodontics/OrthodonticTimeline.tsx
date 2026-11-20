@@ -200,7 +200,7 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 		<div className="ortho-card" data-testid="orthodontic-timeline">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<Calendar className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+					<Calendar className="w-4 h-4 text-[var(--primary)]" />
 					<h4 className="text-sm font-bold text-[var(--ink)]">
 						Клинический план активаций ({currentMonth} из {totalMonths} мес.)
 					</h4>
@@ -221,19 +221,19 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 							onClick={() => onSelectMonth && onSelectMonth(stage.month)}
 							className={`p-2.5 rounded-lg border flex items-center justify-between gap-3 text-xs transition-all ${
 								isNow
-									? "bg-[var(--teal-subtle,rgba(13,148,136,0.12))] border-[var(--teal,#0d9488)] shadow-sm"
+									? "bg-[var(--primary)]/10 border-[var(--primary)] shadow-xs"
 									: isDone
 									? "bg-[var(--paper-strong)] border-[var(--line)] opacity-80"
 									: "bg-[var(--paper)] border-[var(--line)] opacity-60"
-							} ${onSelectMonth ? "cursor-pointer hover:border-[var(--teal,#0d9488)]" : ""}`}
+							} ${onSelectMonth ? "cursor-pointer hover:border-[var(--primary)]" : ""}`}
 						>
 							<div className="flex items-center gap-2.5 min-w-0">
 								<div
 									className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold ${
 										isDone
-											? "bg-[var(--teal,#0d9488)] text-white"
+											? "bg-[var(--primary)] text-white"
 											: isNow
-											? "border-2 border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--paper-strong)]"
+											? "border-2 border-[var(--primary)] text-[var(--primary)] bg-[var(--paper-strong)]"
 											: "border border-[var(--line)] text-[var(--ink-muted)] bg-[var(--paper-strong)]"
 									}`}
 								>
@@ -242,11 +242,11 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 
 								<div className="min-w-0">
 									<div className="flex items-center gap-2">
-										<span className={`font-semibold truncate ${isNow ? "text-[var(--teal,#0d9488)] font-bold" : "text-[var(--ink)]"}`}>
+										<span className={`font-semibold truncate ${isNow ? "text-[var(--primary)] font-bold" : "text-[var(--ink)]"}`}>
 											Месяц {stage.month}: {stage.title}
 										</span>
 										{isNow && (
-											<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--teal,#0d9488)] text-white font-bold">
+											<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--primary)] text-white font-bold">
 												Текущий
 											</span>
 										)}
@@ -259,7 +259,7 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 										)}
 										<span>{stage.archwireSummary}</span>
 										{stage.elasticsSummary && (
-											<span className="text-[var(--teal,#0d9488)] font-medium">· {stage.elasticsSummary}</span>
+											<span className="text-[var(--primary)] font-medium">· {stage.elasticsSummary}</span>
 										)}
 									</div>
 								</div>
@@ -267,9 +267,9 @@ export const OrthodonticTimeline: React.FC<OrthodonticTimelineProps> = ({
 
 							<div className="shrink-0 flex items-center text-[var(--ink-muted)]">
 								{isDone ? (
-									<span className="text-[10px] font-medium text-[var(--teal,#0d9488)]">Выполнено</span>
+									<span className="text-[10px] font-medium text-[var(--success-ink)]">Выполнено</span>
 								) : isNow ? (
-									<span className="text-[10px] font-bold text-[var(--teal,#0d9488)] flex items-center gap-1">
+									<span className="text-[10px] font-bold text-[var(--primary)] flex items-center gap-1">
 										<Activity className="w-3 h-3" /> Приём
 									</span>
 								) : (

@@ -60,14 +60,14 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 			<div className="ortho-card">
 				<div className="flex items-center justify-between gap-2">
 					<div className="flex items-center gap-2 min-w-0">
-						<Layers className={`w-4 h-4 shrink-0 ${isUpper ? "text-[var(--teal,#0d9488)]" : "text-[var(--accent-glow,#38bdf8)]"}`} />
+						<Layers className={`w-4 h-4 shrink-0 ${isUpper ? "text-[var(--primary)]" : "text-[var(--primary-strong,var(--primary))]"}`} />
 						<span className="text-sm font-semibold text-[var(--ink)]">{title}</span>
 					</div>
 					{isUpper && (
 						<button
 							type="button"
 							onClick={handleSyncUpperToLower}
-							className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap shrink-0 min-h-[36px] transition-colors cursor-pointer"
+							className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--primary)] hover:border-[var(--primary)] flex items-center gap-1 whitespace-nowrap shrink-0 min-h-[36px] transition-colors cursor-pointer"
 						>
 							<span>Копировать на НЧ</span>
 							<ArrowRight className="w-3 h-3 shrink-0" />
@@ -115,13 +115,13 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 							{ELASTICS_CATALOG.map((elastic) => {
 								const isSelected = protocol.selectedElasticId === elastic.id;
 								return (
-									<button key={elastic.id} type="button" onClick={() => setProtocol((p) => ({ ...p, selectedElasticId: isSelected ? null : elastic.id }))} className={`min-h-[44px] p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 ${isSelected ? "border-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--ink)] shadow-sm" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
+									<button key={elastic.id} type="button" onClick={() => setProtocol((p) => ({ ...p, selectedElasticId: isSelected ? null : elastic.id }))} className={`min-h-[44px] p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1 ${isSelected ? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--ink)] shadow-xs" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
 										<div className="flex items-center justify-between">
 											<span className="text-xs font-bold">{elastic.classNameRu}</span>
-											<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--line-subtle,#f1f5f9)]">{elastic.animalName}</span>
+											<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft)]">{elastic.animalName}</span>
 										</div>
 										<div className="text-[11px] text-[var(--ink-muted)]">{elastic.forceOz} ({elastic.sizeInch})</div>
-										<div className="text-[10px] text-[var(--teal,#0d9488)] font-medium">{elastic.hookSchemeRu}</div>
+										<div className="text-[10px] text-[var(--primary)] font-medium">{elastic.hookSchemeRu}</div>
 									</button>
 								);
 							})}
@@ -147,8 +147,8 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 							{CHAIRSIDE_ACTIONS_CATALOG.map((action) => {
 								const isChecked = protocol.selectedActionIds.includes(action.id);
 								return (
-									<button key={action.id} type="button" onClick={() => handleToggleAction(action.id)} className={`min-h-[44px] px-3 py-2 text-xs font-medium rounded-lg border transition-all flex items-center gap-2 ${isChecked ? "border-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] font-semibold shadow-sm" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
-										<div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? "bg-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] text-white" : "border-[var(--line)] bg-[var(--paper)]"}`}>
+									<button key={action.id} type="button" onClick={() => handleToggleAction(action.id)} className={`min-h-[44px] px-3 py-2 text-xs font-medium rounded-lg border transition-all flex items-center gap-2 ${isChecked ? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-semibold shadow-xs" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
+										<div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? "bg-[var(--primary)] border-[var(--primary)] text-white" : "border-[var(--line)] bg-[var(--paper)]"}`}>
 											{isChecked && <Check className="w-3 h-3" />}
 										</div>
 										<span>{action.label}</span>
@@ -173,7 +173,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 							{ANGLE_CLASSES_CATALOG.map((ac) => {
 								const isSelected = protocol.angleClass === ac.key;
 								return (
-									<button key={ac.key} type="button" onClick={() => setProtocol((p) => ({ ...p, angleClass: ac.key }))} className={`p-3 rounded-lg border text-left transition-all flex flex-col gap-1 min-h-[44px] ${isSelected ? "border-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--ink)] shadow-sm" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
+									<button key={ac.key} type="button" onClick={() => setProtocol((p) => ({ ...p, angleClass: ac.key }))} className={`p-3 rounded-lg border text-left transition-all flex flex-col gap-1 min-h-[44px] ${isSelected ? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--ink)] shadow-xs" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
 										<div className="text-xs font-bold">{ac.titleRu}</div>
 										<div className="text-[11px] text-[var(--ink-muted)] leading-relaxed">{ac.descriptionRu}</div>
 									</button>
@@ -196,7 +196,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								<button
 									type="button"
 									onClick={onOpenPhotoModal}
-									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white transition-all flex items-center gap-1.5 min-h-[36px]"
+									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-1.5 min-h-[36px]"
 								>
 									<Camera className="w-3.5 h-3.5" />
 									<span>Фотопротокол (8 проекций)</span>
@@ -204,9 +204,9 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								<button
 									type="button"
 									onClick={onOpenCephModal}
-									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:text-[var(--teal,#0d9488)] transition-all flex items-center gap-1.5 min-h-[36px]"
+									className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all flex items-center gap-1.5 min-h-[36px]"
 								>
-									<Activity className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+									<Activity className="w-3.5 h-3.5 text-[var(--primary)]" />
 									<span>Анализ ТРГ</span>
 								</button>
 							</div>
@@ -222,7 +222,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 									<div key={slot.id} onClick={() => handleTogglePhotoSlot(slot.id)} className={`ortho-photo-card cursor-pointer ${isVerified ? "verified" : ""}`}>
 										<div className="flex items-center justify-between">
 											<span className="text-xs font-bold text-[var(--ink)]">{slot.titleRu}</span>
-											<span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isVerified ? "bg-[var(--teal-subtle,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)]" : "bg-[var(--line-subtle,#f1f5f9)] text-[var(--ink-muted)]"}`}>
+											<span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isVerified ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-[var(--paper-soft)] text-[var(--ink-muted)]"}`}>
 												{isVerified ? "Зафиксировано" : "Ожидает"}
 											</span>
 										</div>
@@ -241,7 +241,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								<div key={norm.key} className="ortho-card">
 									<div className="flex items-center justify-between">
 										<span className="text-xs font-bold text-[var(--ink)]">{norm.symbol}</span>
-										<span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${evaluation.status === "normal" ? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)]" : "bg-[var(--warning-surface,rgba(245,158,11,0.1))] text-[var(--warning-ink,#f59e0b)]"}`}>
+										<span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${evaluation.status === "normal" ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-[var(--warning-soft)] text-[var(--warning-ink)]"}`}>
 											{evaluation.badgeLabelRu}
 										</span>
 									</div>
@@ -270,7 +270,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 						<div className="ortho-card">
 							<div className="flex items-center justify-between">
 								<span className="text-sm font-semibold text-[var(--ink)]">Дневник приёма (SOAP)</span>
-								<button type="button" onClick={() => handleCopyText(soapSummary, "Дневник скопирован в буфер")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
+								<button type="button" onClick={() => handleCopyText(soapSummary, "Дневник скопирован в буфер")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--primary)] hover:border-[var(--primary)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
 									<Copy className="w-3.5 h-3.5" /> В медкарту
 								</button>
 							</div>
@@ -280,7 +280,7 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 						<div className="ortho-card">
 							<div className="flex items-center justify-between">
 								<span className="text-sm font-semibold text-[var(--ink)]">Памятка пациенту</span>
-								<button type="button" onClick={() => handleCopyText(memoText, "Памятка скопирована")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--teal,#0d9488)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
+								<button type="button" onClick={() => handleCopyText(memoText, "Памятка скопирована")} className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--primary)] hover:border-[var(--primary)] flex items-center gap-1 whitespace-nowrap min-h-[36px] transition-colors cursor-pointer">
 									<BookOpen className="w-3.5 h-3.5" /> Копировать памятку
 								</button>
 							</div>

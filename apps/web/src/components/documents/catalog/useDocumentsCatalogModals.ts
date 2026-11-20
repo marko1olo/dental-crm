@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { TaxDeductionTab } from "../taxCertificateEngine";
-import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";
+import type { ProfessionalA4DocumentTab } from "../types";
 
 export function useDocumentsCatalogModals() {
 	const [isDiplomaModalOpen, setIsDiplomaModalOpen] = useState<boolean>(false);

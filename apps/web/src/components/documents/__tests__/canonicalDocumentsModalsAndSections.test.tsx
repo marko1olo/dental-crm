@@ -142,7 +142,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 	it("guarantees zero raw emojis in all 3 canonical components", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const files = [
-			"DocumentA4PrintPreviewModal.tsx",
+			"DocumentsStudioModal.tsx",
 			"DirectDocumentsLauncher.tsx",
 			"ProfessionalDocumentA4Sheet.tsx",
 		];
@@ -160,7 +160,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 	it("guarantees zero dev jargon ('в 1 клик', 'авто-генерация') in all 3 canonical components", () => {
 		const jargonRegex = /(в 1 клик|1-клик|авто-генерация|автогенерация)/i;
 		const files = [
-			"DocumentA4PrintPreviewModal.tsx",
+			"DocumentsStudioModal.tsx",
 			"DirectDocumentsLauncher.tsx",
 			"ProfessionalDocumentA4Sheet.tsx",
 		];

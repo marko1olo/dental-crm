@@ -45,9 +45,9 @@ export function dentalMedicalCard043u(
 		return renderForm043uHtml(stripNullProperties(document.payload.fullForm043u));
 	}
 	const payload = document.payload?.dentalMedicalCard043u;
-	const title = "Медицинская карта стоматологического больного (Форма 043/у)";
+	const title = "Медицинская карта стоматологического пациента";
 	if (!payload) {
-		return `<section><h2>${escapeHtml(title)}</h2><p>Данные формы 043/у не заполнены.</p></section>`;
+		return `<section><h2>${escapeHtml(title)}</h2><p>Данные медицинской карты не заполнены.</p></section>`;
 	}
 	const rows: Array<[string, string | null | undefined]> = [
 		["Организация", payload.organization?.fullName],
@@ -94,7 +94,7 @@ export function dentalMedicalCard043u(
 		Array.isArray(payload.clinicalToothRows) && payload.clinicalToothRows.length
 			? `<h2>Клиническая детализация по зубам</h2>${toothFormula}${clinicalToothRowsTable(payload.clinicalToothRows)}`
 			: toothFormula;
-	return `<section><h2>${escapeHtml(title)}</h2><p class="small">Учетная форма N 043/у</p>${doctor}${body}${toothSection}</section>`;
+	return `<section><h2>${escapeHtml(title)}</h2><p class="small">Стоматологическая медицинская карта</p>${doctor}${body}${toothSection}</section>`;
 }
 
 export function orthodonticMedicalCard043_1u(
@@ -106,14 +106,6 @@ export function orthodonticMedicalCard043_1u(
 		return renderForm043_1uHtml(stripNullProperties(payload));
 	}
 	return `<section><h2>Медицинская карта ортодонтического пациента (форма 043-1/у)</h2><p>Пациент: ${escapeHtml(patient.fullName)}</p><p>Данные ортодонтической карты не заполнены.</p></section>`;
-}
-
-export function dailyDentistDiary037u(document: GeneratedDocument): string {
-	return `<section><h2>Листок ежедневного учета (форма 037/у-88)</h2><p class="notice">Советская форма 037/у-88 (УЕТ 1988 г.) выведена из эксплуатации в частной стоматологии. Вся медицинская деятельность ведется в цифровой ЭМК (форма 043/у).</p></section>`;
-}
-
-export function summaryDentistStatement039u(document: GeneratedDocument): string {
-	return `<section><h2>Сводная ведомость (форма 039/у-88)</h2><p class="notice">Советская форма 039/у-88 (УЕТ 1988 г.) выведена из эксплуатации в частной стоматологии. Аналитика смен и выработки доступна в клинических отчетах CRM.</p></section>`;
 }
 
 export function radiationDoseSheet(

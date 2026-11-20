@@ -24,13 +24,13 @@ describe("Red Team Inquisition: Human Clinical Language (Part 2: Labs, Sick Leav
 	});
 
 	it("7. Primary and Surgical package modals: checklist items do not contain statutory order codes", () => {
-		const primaryPath = path.join(webSrcRoot, "components/documents/PrimaryIntakePackageModal.tsx");
+		const primaryPath = path.join(webSrcRoot, "components/documents/DocumentsStudioModal.tsx");
 		const primaryContent = fs.readFileSync(primaryPath, "utf-8");
 
 		assert.ok(!primaryContent.includes("Приказ Минздрава России от 15.12.2014 № 834н"));
 		assert.ok(!primaryContent.includes("Приказ Минздрава России от 24.11.2021 № 1094н"));
 
-		const surgicalPath = path.join(webSrcRoot, "components/documents/SurgicalPackageModal.tsx");
+		const surgicalPath = path.join(webSrcRoot, "components/documents/surgicalPackagePrintEngine.ts");
 		const surgicalContent = fs.readFileSync(surgicalPath, "utf-8");
 
 		assert.ok(!surgicalContent.includes("Приказ Минздрава России от 15.12.2014 № 834н"));
