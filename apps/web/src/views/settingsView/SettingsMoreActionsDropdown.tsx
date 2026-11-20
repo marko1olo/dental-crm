@@ -6,10 +6,11 @@
 import React, { useState } from "react";
 import { ClipboardCheck, GraduationCap, MoreHorizontal } from "lucide-react";
 import { startInteractiveTour } from "../../components/tutorial/InteractiveGuideTour";
+import type { SettingsStaffUser } from "./types.js";
 
 export interface SettingsMoreActionsDropdownProps {
 	reopenOnboarding?: (() => void) | undefined;
-	activeStaffUser?: any;
+	activeStaffUser?: SettingsStaffUser | null | undefined;
 }
 
 export function SettingsMoreActionsDropdown({

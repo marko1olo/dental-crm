@@ -4,13 +4,13 @@ import { mapStageToLabOrderStatus } from "../types.js";
 import { calculateLabOrderCostAndMarkup } from "./labOrderCostCalculator.js";
 
 describe("Red Team Inquisition: LAB-01..05 Subsystem Consolidation & Defense", () => {
-	it("[LAB-05]: mapStageToLabOrderStatus maps routine clinic fitting to canonical PG 'received', NOT 'refitting'", () => {
-		// Рутинная примерка во рту в клинике обязана мапиться в received (канонический статус PostgreSQL 18 CHECK constraint 0042)
-		assert.equal(mapStageToLabOrderStatus("fitting"), "received");
-		assert.equal(mapStageToLabOrderStatus("fitting_scheduled"), "received");
-		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "received");
-		assert.equal(mapStageToLabOrderStatus("Примерка"), "received");
-		assert.equal(mapStageToLabOrderStatus("Примерка во рту"), "received");
+	it("[LAB-05]: mapStageToLabOrderStatus maps routine clinic fitting to canonical PG 'fitting', NOT 'refitting'", () => {
+		// Рутинная примерка во рту в клинике обязана мапиться в fitting (канонический статус миграции 0231)
+		assert.equal(mapStageToLabOrderStatus("fitting"), "fitting");
+		assert.equal(mapStageToLabOrderStatus("fitting_scheduled"), "fitting");
+		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "fitting");
+		assert.equal(mapStageToLabOrderStatus("Примерка"), "fitting");
+		assert.equal(mapStageToLabOrderStatus("Примерка во рту"), "fitting");
 
 		// Только реальный брак и рекламации мапятся в refitting
 		assert.equal(mapStageToLabOrderStatus("correction_remake"), "refitting");

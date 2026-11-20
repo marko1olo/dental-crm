@@ -68,6 +68,7 @@ export interface SettingsPricesBag extends UseSettingsPricesLogicProps {
 	pricelistImageBase64?: string | null;
 	pricelistAnalysis?: unknown;
 	pricelistParserModeLabels?: Record<string, string>;
+	setError?: ((msg: string) => void) | undefined;
 	[key: string]: unknown;
 }
 
@@ -140,13 +141,14 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 		let items = [...typedServiceCatalog];
 		if (selectedCategoryFilter !== "all") {
 			items = items.filter((s) => {
-				const cat = s.category || "other";
-				if (cat === selectedCategoryFilter) return true;
-				if (selectedCategoryFilter === "orthopedics" && (cat === "prosthetics" || cat === "orthopedics")) return true;
-				if (selectedCategoryFilter === "radiology" && (cat === "imaging" || cat === "diagnostics" || cat === "radiology")) return true;
-				if (selectedCategoryFilter === "surgery" && (cat === "implantology" || cat === "surgery")) return true;
-				if (selectedCategoryFilter === "therapy" && (cat === "pediatric" || cat === "therapy")) return true;
-				if (selectedCategoryFilter === "hygiene" && (cat === "periodontology" || cat === "hygiene")) return true;
+				const cat = String(s.category || "other");
+				const filter = String(selectedCategoryFilter);
+				if (cat === filter) return true;
+				if (filter === "orthopedics" && (cat === "prosthetics" || cat === "orthopedics")) return true;
+				if (filter === "radiology" && (cat === "imaging" || cat === "diagnostics" || cat === "radiology")) return true;
+				if (filter === "surgery" && (cat === "implantology" || cat === "surgery")) return true;
+				if (filter === "therapy" && (cat === "pediatric" || cat === "therapy")) return true;
+				if (filter === "hygiene" && (cat === "periodontology" || cat === "hygiene")) return true;
 				return false;
 			});
 		}
@@ -180,6 +182,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 			return;
 		}
 		setPriceProblem(null);
+		if (!editServiceId) return;
 		setIsSaving(true);
 		try {
 			const effectiveHeaders = {
@@ -203,6 +206,11 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 				catalogCode: statutoryCode,
 				standardCode: statutoryCode,
 			};
+
+			if (!editServiceId) {
+				setIsSaving(false);
+				return;
+			}
 
 			if (editServiceId === "new") {
 				if (typeof createServiceCatalogItem === "function") {
@@ -228,7 +236,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 			if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
 			else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
-			else if (typeof appLogic?.loadDashboard === "function") await appLogic.loadDashboard();
+			else if (typeof (appLogic as { loadDashboard?: unknown })?.loadDashboard === "function") await ((appLogic as { loadDashboard: () => Promise<unknown> }).loadDashboard)();
 
 			showToast(editServiceId === "new" ? "Услуга добавлена в прейскурант" : "Услуга обновлена", "success");
 			setEditServiceId(null);
@@ -261,7 +269,7 @@ export function useSettingsPricesLogic(propsOverrides?: UseSettingsPricesLogicPr
 
 			if (typeof mergedProps.refreshDashboard === "function") await mergedProps.refreshDashboard();
 			else if (typeof appLogic?.refreshDashboard === "function") await appLogic.refreshDashboard();
-			else if (typeof appLogic?.loadDashboard === "function") await appLogic.loadDashboard();
+			else if (typeof (appLogic as { loadDashboard?: unknown })?.loadDashboard === "function") await ((appLogic as { loadDashboard: () => Promise<unknown> }).loadDashboard)();
 
 			showToast("Услуга отключена в прейскуранте", "success");
 		} catch (error: unknown) {

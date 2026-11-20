@@ -19,7 +19,7 @@ import type {
 	TreatmentPlanStage,
 } from "../patientCabinetEngine";
 import type { PatientCareMemo } from "../patientCareInstructionsEngine";
-import type { TaxDeductionPaymentItem } from "../../../finance/taxDeductionEngine";
+import type { TaxDeductionPaymentItem } from "@dental/shared";
 
 export type PatientCabinetTab =
 	| "overview"

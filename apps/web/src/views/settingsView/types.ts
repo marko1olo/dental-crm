@@ -4,6 +4,7 @@
  */
 
 import type React from "react";
+import type { DentalPricelistAnalysisResponse } from "@dental/shared";
 import type { SettingsTabGroup, SettingsTab as SettingsTabId } from "../../AppConstants";
 
 import type { SettingsRoleMode } from "./settingsRoleTabs.js";
@@ -53,14 +54,9 @@ export interface SettingsStaffUser {
 	active?: boolean | undefined;
 }
 
-export interface SettingsViewFeatureFlags {
-	hasMarketingModule?: boolean;
-	hasAnalyticsModule?: boolean;
-	hasBpmWorkflows?: boolean;
-	hasClinicalRules?: boolean;
-	hasInsuranceCoPay?: boolean;
-	[key: string]: unknown;
-}
+import type { WorkspaceFeatureFlags } from "../../hooks/useWorkspaceProfile";
+
+export type SettingsViewFeatureFlags = Partial<WorkspaceFeatureFlags>;
 
 export interface SettingsTabItem {
 	id: SettingsTabId;
@@ -69,7 +65,7 @@ export interface SettingsTabItem {
 }
 
 export interface SettingsViewProps {
-	activeStaffUser?: SettingsStaffUser | null;
+	activeStaffUser?: SettingsStaffUser | null | undefined;
 	activePatient?: unknown;
 	[key: string]: unknown;
 }
@@ -90,16 +86,35 @@ export interface SettingsClinicGeneralTabProps {
 }
 
 export interface SettingsSecuritySettingsProps {
-	readonly adminSecretScopeWarning?: React.ReactNode;
-	readonly telegramAdminSecretDraft?: string;
-	readonly adminSecretReady?: boolean;
+	readonly adminSecretScopeWarning?: React.ReactNode | undefined;
+	readonly telegramAdminSecretDraft?: string | undefined;
+	readonly adminSecretReady?: boolean | undefined;
 	readonly [key: string]: unknown;
 }
 
 export interface SettingsSecurityAndBackupTabProps {
-	settingsProps: SettingsSecuritySettingsProps;
+	settingsProps: SettingsSecuritySettingsProps | Record<string, unknown>;
 	telegramAdminSecretSession?: boolean | undefined;
 	setTelegramAdminSecretDraft?: ((value: string) => void) | undefined;
 	unlockTelegramAdminSession?: (() => void) | undefined;
 	lockTelegramAdminSession?: (() => void) | undefined;
 }
+
+export interface SettingsViewLogicBag {
+	telegramAdminSecretSession?: boolean | undefined;
+	setTelegramAdminSecretDraft?: ((draft: string) => void) | undefined;
+	unlockTelegramAdminSession?: (() => void) | undefined;
+	lockTelegramAdminSession?: (() => void) | undefined;
+	pricelistAnalysis?: DentalPricelistAnalysisResponse | null | undefined;
+	pricelistImageNote?: string | undefined;
+	pricelistWarningsText?: ((warnings: unknown[]) => string) | undefined;
+	pricelistItemMaterialText?: ((item: unknown) => string) | undefined;
+	pricelistMaterialSummaryText?: ((summary: unknown) => string) | undefined;
+	[key: string]: unknown;
+}
+
+export type SettingsAppLogicBag = {
+	clinicMode?: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic" | undefined;
+	changeClinicMode?: ((mode: "solo_doctor" | "one_chair" | "small_clinic" | "network_clinic") => void) | undefined;
+	[key: string]: unknown;
+} | null | undefined;

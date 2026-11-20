@@ -18,7 +18,7 @@ import {
 import {
 	resolveTaxDeductionCategoryShared,
 	type TaxDeductionPaymentItem,
-} from "../../../../finance/taxDeductionEngine.js";
+} from "@dental/shared";
 
 export function useCabinetCalculatedViews(data: PatientPersonalCabinetData, selectedTaxYear: number) {
 	const summary: PatientCabinetSummary = useMemo(() => calculateCabinetSummary(data), [data]);

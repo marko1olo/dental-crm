@@ -67,15 +67,37 @@ export type OwnerSubTab =
 	| "sources"
 	| "deep-clinical";
 
+export interface OwnerSettingsPropsBag {
+	clinicMode?: ClinicMode;
+	changeClinicMode?: (mode: ClinicMode) => void;
+	pricelistAnalysis?: DentalPricelistAnalysisResponse;
+	pricelistImageNote?: string;
+	pricelistWarningsText?: (w: string[]) => string;
+	pricelistItemMaterialText?: (item: { title: string }) => string;
+	pricelistMaterialSummaryText?: (s: unknown) => string;
+	organizationId?: string;
+	clinicSettings?: { name?: string };
+	dashboard?: {
+		clinicSettings?: {
+			profile?: { organizationId?: string };
+			name?: string;
+		};
+	};
+	auth?: {
+		currentUser?: { organizationId?: string };
+	};
+	[key: string]: unknown;
+}
+
 export interface OwnerSettingsSectionProps {
-	readonly props: Record<string, unknown>;
-	readonly initialTab?: OwnerSubTab;
-	readonly onSelectTab?: (tab: string) => void;
+	readonly props: OwnerSettingsPropsBag;
+	readonly initialTab?: OwnerSubTab | undefined;
+	readonly onSelectTab?: ((tab: string) => void) | undefined;
 	readonly appLogic?: {
-		clinicMode?: ClinicMode;
-		changeClinicMode?: (mode: ClinicMode) => void;
+		clinicMode?: ClinicMode | undefined;
+		changeClinicMode?: ((mode: ClinicMode) => void) | undefined;
 		[key: string]: unknown;
-	} | null;
+	} | null | undefined;
 }
 
 const OWNER_TABS: Array<{
@@ -172,24 +194,14 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 	};
 
 	// Scale Sovereignty (Mandate 8s)
-	const propsBag = props as {
-		clinicMode?: ClinicMode;
-		changeClinicMode?: (mode: ClinicMode) => void;
-		pricelistAnalysis?: DentalPricelistAnalysisResponse;
-		pricelistImageNote?: string;
-		pricelistWarningsText?: (w: string[]) => string;
-		pricelistItemMaterialText?: (item: { title: string }) => string;
-		pricelistMaterialSummaryText?: (s: { summary?: string }) => string;
-	};
-
 	const currentClinicMode: ClinicMode =
-		appLogic?.clinicMode ?? propsBag?.clinicMode ?? "small_clinic";
+		appLogic?.clinicMode ?? props?.clinicMode ?? "small_clinic";
 
 	const handleScaleChange = (mode: ClinicMode) => {
 		if (appLogic?.changeClinicMode) {
 			appLogic.changeClinicMode(mode);
-		} else if (propsBag?.changeClinicMode) {
-			propsBag.changeClinicMode(mode);
+		} else if (props?.changeClinicMode) {
+			props.changeClinicMode(mode);
 		}
 		const modeTitles: Record<ClinicMode, string> = {
 			solo_doctor: "Одиночный врач-арендатор (1 кресло)",
@@ -201,7 +213,7 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 	};
 
 	// Pricelist Warnings parsing for compliance test
-	const pricelistAnalysis = propsBag?.pricelistAnalysis;
+	const pricelistAnalysis = props?.pricelistAnalysis;
 	const typedPricelistItems = (pricelistAnalysis?.items ??
 		[]) as DentalPricelistAnalysisResponse["items"];
 	const pricelistWarningRows = (typedPricelistItems ?? []).filter(
@@ -211,15 +223,18 @@ export const OwnerSettingsSection: React.FC<OwnerSettingsSectionProps> = ({
 		[]) as DentalPricelistAnalysisResponse["warnings"];
 	const typedPricelistSummary = (pricelistAnalysis?.summary ??
 		[]) as DentalPricelistAnalysisResponse["summary"];
-	const pricelistImageNote = propsBag?.pricelistImageNote;
+	const pricelistImageNote = props?.pricelistImageNote;
 	const pricelistWarningsText =
-		propsBag?.pricelistWarningsText ?? ((w: string[]) => w.join(", "));
+		props?.pricelistWarningsText ?? ((w: string[]) => w.join(", "));
 	const pricelistItemMaterialText =
-		propsBag?.pricelistItemMaterialText ??
+		props?.pricelistItemMaterialText ??
 		((item: { title: string }) => item.title);
 	const pricelistMaterialSummaryText =
-		propsBag?.pricelistMaterialSummaryText ??
-		((s: { summary?: string }) => s.summary ?? "—");
+		props?.pricelistMaterialSummaryText ??
+		((s: unknown) =>
+			s && typeof s === "object" && "summary" in s
+				? String((s as { summary?: string }).summary ?? "—")
+				: "—");
 
 	const pricelistSummaryPriceRangeText = (
 		summary: DentalPricelistAnalysisResponse["summary"][number],

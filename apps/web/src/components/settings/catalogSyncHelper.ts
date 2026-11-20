@@ -134,8 +134,12 @@ export async function syncPricelistItemsToCatalog({
 }: {
 	readonly items: readonly SyncableCatalogItemInput[];
 	readonly existingServices: readonly ServiceCatalogItem[];
-	readonly createServiceCatalogItem?: (payload: CatalogMutationPayload) => Promise<ServiceCatalogItem | null | undefined>;
-	readonly updateServiceCatalogItem?: (id: string, payload: CatalogMutationPayload) => Promise<ServiceCatalogItem | null | undefined>;
+	readonly createServiceCatalogItem?:
+		| ((payload: CatalogMutationPayload) => Promise<unknown>)
+		| undefined;
+	readonly updateServiceCatalogItem?:
+		| ((id: string, payload: CatalogMutationPayload) => Promise<unknown>)
+		| undefined;
 }): Promise<void> {
 	const existingByCode = new Map<string, ServiceCatalogItem>();
 	const existingByTitle = new Map<string, ServiceCatalogItem>();
@@ -182,14 +186,20 @@ export async function syncPricelistItemsToCatalog({
 		};
 
 		try {
-			let savedRecord: ServiceCatalogItem | null | undefined = null;
+			let savedRecord: ServiceCatalogItem | null = null;
 			if (existing?.id) {
 				if (updateServiceCatalogItem) {
-					savedRecord = await updateServiceCatalogItem(existing.id, payload);
+					const res = await updateServiceCatalogItem(existing.id, payload);
+					if (res && typeof res === "object" && "title" in res) {
+						savedRecord = res as ServiceCatalogItem;
+					}
 				}
 			} else {
 				if (createServiceCatalogItem) {
-					savedRecord = await createServiceCatalogItem(payload);
+					const res = await createServiceCatalogItem(payload);
+					if (res && typeof res === "object" && "title" in res) {
+						savedRecord = res as ServiceCatalogItem;
+					}
 				}
 			}
 

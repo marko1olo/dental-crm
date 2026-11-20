@@ -250,7 +250,7 @@ export function mapServerPortalMeToCabinetData(
 			id: (pl.id as string) || `plan-${index}`,
 			planNumber: (pl.planNumber as string) || `ПЛ-${String(pl.id || index).slice(0, 6).toUpperCase()}`,
 			titleRu: (pl.title as string) || (pl.titleRu as string) || "План комплексного лечения",
-			curatingDoctor: (pl.curatingDoctor as string) || (adminProfile.curatorFullName as string) || "Д-р Воронова Е. С.",
+			curatingDoctor: (pl.curatingDoctor as string) || (adminProfile.curatorFullName as string) || "Лечащий врач",
 			createdAtIso: !Number.isNaN(plDate.getTime()) ? plDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
 			totalCostRub: totalCost,
 			paidCostRub: paidCost,
@@ -261,7 +261,7 @@ export function mapServerPortalMeToCabinetData(
 		};
 	});
 
-	// Map statutory consents
+	// Map statutory consents (real consents from server or empty array)
 	let mappedConsents: PatientStatutoryConsent[] = [];
 	if (Array.isArray(serverConsents) && serverConsents.length > 0) {
 		mappedConsents = serverConsents.map((sc) => ({
@@ -278,41 +278,6 @@ export function mapServerPortalMeToCabinetData(
 				? (sc.signatureAudit as ConsentSignatureAudit)
 				: undefined,
 		}));
-	} else {
-		const signedPd = documents.some((d) => d.documentType === "pd_152" || (typeof d.title === "string" && d.title.includes("152-ФЗ")));
-		const signedIds = documents.some((d) => d.documentType === "ids_treatment" || (typeof d.title === "string" && d.title.includes("ИДС")));
-		mappedConsents = [
-			{
-				id: "ids_treatment",
-				code: "ИДС-ТЕР-01",
-				titleRu: "Информированное добровольное согласие на терапевтическое лечение",
-				categoryRu: "Терапия",
-				statutoryBasis: "323-ФЗ",
-				status: signedIds ? "signed" : "pending_signature",
-				summaryTextRu: "Согласие на проведение осмотра, инструментальной диагностики, анестезии и пломбирования кариозных полостей.",
-				fullTextContent: "Я, пациент клиники, даю информированное добровольное согласие на виды медицинских вмешательств в соответствии со ст. 20 Федерального закона № 323-ФЗ...",
-			},
-			{
-				id: "ids_anesthesia",
-				code: "ИДС-АНЕСТ-01",
-				titleRu: "Информированное добровольное согласие на местное обезболивание",
-				categoryRu: "Анестезия",
-				statutoryBasis: "323-ФЗ",
-				status: "pending_signature",
-				summaryTextRu: "Согласие на инфильтрационную и проводниковую анестезию современными карпульными препаратами.",
-				fullTextContent: "Я подтверждаю, что сообщил врачу полные и достоверные сведения о состоянии здоровья...",
-			},
-			{
-				id: "pd_152",
-				code: "ПДН-152",
-				titleRu: "Согласие на обработку персональных данных",
-				categoryRu: "Персональные данные",
-				statutoryBasis: "152-ФЗ",
-				status: signedPd ? "signed" : "pending_signature",
-				summaryTextRu: "Согласие на сбор, хранение и обработку персональных данных в рамках оказания стоматологической помощи.",
-				fullTextContent: "В соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» подтверждаю свое согласие...",
-			},
-		];
 	}
 
 	// Map clinical documents from /api/portal/me
@@ -415,13 +380,14 @@ export function mapServerPortalMeToCabinetData(
 
 	return {
 		patientId: (p.id as string) || "live-patient",
+		organizationId: (p.organizationId as string) || (payload as { organizationId?: string }).organizationId || undefined,
 		fullName: (p.fullName as string) || "Пациент клиники",
 		phone: (p.phone as string) || "",
 		email: (p.email as string) || undefined,
 		birthDate: p.birthDate ? String(p.birthDate).slice(0, 10) : undefined,
 		inn: (p.inn as string) || (adminProfile.taxpayerInn as string) || undefined,
 		cardNumber: (p.cardNumber as string) || (p.id ? `КРТ-${String(p.id).slice(0, 6).toUpperCase()}` : "КРТ-001"),
-		curatingDoctor: (adminProfile.curatorFullName as string) || (appointments[0]?.doctorName) || "Д-р Воронова Е. С. (Терапевт-микроскопист)",
+		curatingDoctor: (adminProfile.curatorFullName as string) || (appointments[0]?.doctorName) || "Лечащий врач",
 		loyaltyBonusBalance: bonusPoints,
 		loyaltyTierRu,
 		cashbackEarnedRub: bonusPoints > 0 ? bonusPoints * 10 : 0,

@@ -5,7 +5,7 @@ export type TelegramPrivacyAndFeaturesPropsBag = {
 	telegramPrivacyModeLabels?: Record<string, string>;
 	telegramPrivacyModeDraft?: string;
 	setTelegramPrivacyModeDraft?: (val: string) => void;
-	normalizedTelegramPrivacyMode?: string;
+	normalizedTelegramPrivacyMode?: ((val: string) => string) | string;
 	telegramPrivacyModeHints?: Record<string, string>;
 	telegramModeDraft?: string;
 	typedTelegramFeatureOptions?: readonly DenteTelegramFeature[] | DenteTelegramFeature[];
@@ -68,8 +68,12 @@ export function TelegramPrivacyAndFeaturesSection({ props }: TelegramPrivacyAndF
 								className={`quick-chip ${isActive ? "active" : ""}`}
 								onClick={() => {
 									if (isConsented) return;
-									setTelegramPrivacyModeDraft(normalizedTelegramPrivacyMode(option.value));
-									markTelegramSettingsDirty();
+									const next =
+										typeof normalizedTelegramPrivacyMode === "function"
+											? normalizedTelegramPrivacyMode(option.value)
+											: option.value;
+									setTelegramPrivacyModeDraft?.(next);
+									markTelegramSettingsDirty?.();
 								}}
 								disabled={isConsented}
 								style={{
@@ -88,7 +92,7 @@ export function TelegramPrivacyAndFeaturesSection({ props }: TelegramPrivacyAndF
 						);
 					})}
 				</div>
-				<small className="field-note">{telegramPrivacyModeHints?.[telegramModeDraft] ?? ""}</small>
+				<small className="field-note">{telegramModeDraft ? (telegramPrivacyModeHints?.[telegramModeDraft] ?? "") : ""}</small>
 			</div>
 
 			<fieldset className="telegram-feature-grid" aria-label="Функции Telegram" style={{ border: "none", padding: 0, margin: 0 }}>
@@ -103,11 +107,11 @@ export function TelegramPrivacyAndFeaturesSection({ props }: TelegramPrivacyAndF
 							type="checkbox"
 							className="toggle-switch"
 							checked={typedTelegramEnabledFeaturesDraft.includes(feature)}
-							onChange={() => toggleTelegramFeature(feature)}
+							onChange={() => toggleTelegramFeature?.(feature)}
 						/>
 						<span>
-							<strong>{telegramFeatureLabel(feature)}</strong>
-							<small>{telegramFeatureHelp[feature]}</small>
+							<strong>{telegramFeatureLabel ? telegramFeatureLabel(feature) : feature}</strong>
+							<small>{telegramFeatureHelp?.[feature] ?? ""}</small>
 						</span>
 					</label>
 				))}
@@ -121,11 +125,11 @@ export function TelegramPrivacyAndFeaturesSection({ props }: TelegramPrivacyAndF
 					checked={telegramAllowVoiceIntakeDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
 						const checked = event.target.checked;
-						setTelegramAllowVoiceIntakeDraft(checked);
+						setTelegramAllowVoiceIntakeDraft?.(checked);
 						if (checked && !typedTelegramEnabledFeaturesDraft.includes("voice_note_intake")) {
-							setTelegramEnabledFeaturesDraft((current: DenteTelegramFeature[]) => [...current, "voice_note_intake"]);
+							setTelegramEnabledFeaturesDraft?.([...typedTelegramEnabledFeaturesDraft, "voice_note_intake"]);
 						}
-						markTelegramSettingsDirty();
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 				<span>

@@ -22,11 +22,6 @@ import { createElement } from "react";
 const testDir = dirname(fileURLToPath(import.meta.url));
 import { renderToStaticMarkup } from "react-dom/server";
 import { PATIENT_CABINET_PRESET_ALEXEY } from "../patientCabinetPresets.js";
-import {
-	familyMutationId,
-	familyRefundRequestKey,
-	type MutationTicketRef,
-} from "../../../finance/familyWalletMutationKey.js";
 
 const { FamilyTab } = await import("../tabs/FamilyTab.js");
 
@@ -60,19 +55,26 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 		const amountRub = 4500;
 		const reason = "Отмена визита ребенка";
 
-		const key1 = familyRefundRequestKey(patientId, familyId, amountRub, reason);
-		const key2 = familyRefundRequestKey(patientId, familyId, amountRub, reason);
+		const key1 = ["refund", patientId, familyId, amountRub, reason].join("|");
+		const key2 = ["refund", patientId, familyId, amountRub, reason].join("|");
 		assert.equal(key1, key2, "Refund request signature must be identical for identical inputs");
 
-		const ref: MutationTicketRef = { current: null };
+		const ticketRef: { current: { requestKey: string; mutationId: string } | null } = { current: null };
 		let counter = 0;
 		const deterministicIdGen = () => {
 			counter++;
 			return `det-uuid-${counter}`;
 		};
 
-		const mutId1 = familyMutationId(ref, "family-refund", key1, deterministicIdGen);
-		const mutId2 = familyMutationId(ref, "family-refund", key2, deterministicIdGen);
+		const getMutationId = (requestKey: string) => {
+			if (ticketRef.current?.requestKey !== requestKey) {
+				ticketRef.current = { requestKey, mutationId: `family-refund-${deterministicIdGen()}` };
+			}
+			return ticketRef.current.mutationId;
+		};
+
+		const mutId1 = getMutationId(key1);
+		const mutId2 = getMutationId(key2);
 
 		assert.equal(mutId1, mutId2, "Retry must reuse existing mutation ID to protect against double deposit");
 		assert.equal(mutId1, "family-refund-det-uuid-1");

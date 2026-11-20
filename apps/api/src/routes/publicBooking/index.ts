@@ -46,6 +46,7 @@ export {
 	isRateLimited,
 	resetRateLimitsForTesting,
 	requestPhoneVerification,
+	resolveDefaultOrganizationId,
 	verifyPhoneOtp,
 } from "./smsVerificationAndSpamGate.js";
 

@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import { registerExpressOrderRoutes } from "./expressOrderRoutes.js";
 import { registerOrdersCrudRoutes } from "./ordersCrudRoutes.js";
 import { registerOrderStatusPatchRoutes } from "./orderStatusPatchRoutes.js";
 import { registerOrderItemsRoutes } from "./orderItemsRoutes.js";
@@ -9,7 +8,6 @@ import { registerLabScansUploadRoutes } from "./scansUploadRoutes.js";
 import { registerCashLabPaymentRoutes } from "./paymentModules/labOrderPaymentRoutes.js";
 
 export async function registerLabRoutes(app: FastifyInstance) {
-	await registerExpressOrderRoutes(app);
 	await registerOrdersCrudRoutes(app);
 	await registerOrderStatusPatchRoutes(app);
 	await registerOrderItemsRoutes(app);
@@ -38,7 +36,6 @@ export { executeLabOrderPayment } from "./paymentModules/labOrderPayDb.js";
 export { executeLabOrderMarkInstalled } from "./paymentModules/labOrderMarkInstalledDb.js";
 
 export * from "./types.js";
-export * from "./expressOrderRoutes.js";
 export * from "./ordersCrudRoutes.js";
 export * from "./orderStatusPatchRoutes.js";
 export * from "./orderItemsRoutes.js";

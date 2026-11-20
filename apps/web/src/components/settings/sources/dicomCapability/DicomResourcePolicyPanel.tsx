@@ -1,4 +1,4 @@
-import type { DicomSeriesPreviewGroup } from "./types";
+import type { DicomSeriesPreviewGroup } from "@dental/shared";
 
 export interface DicomResourcePolicyPanelProps {
 	cbctWorkbenchSeries?: DicomSeriesPreviewGroup | null | undefined;

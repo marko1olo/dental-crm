@@ -24,6 +24,7 @@ import {
 	formatRubles,
 	generatePepIntegrityHash,
 	generateSmsOtp,
+	signConsentViaServerApi,
 	signConsentWithPep,
 	verifySmsOtp,
 	type PatientPersonalCabinetData,
@@ -92,6 +93,45 @@ describe("Patient Personal Portal - 63-FZ SMS/OTP & PEP Digital Signatures", () 
 			signedConsent.signatureAudit.timestamp,
 		);
 		assert.equal(signedConsent.signatureAudit.integrityHash, expectedHash);
+	});
+
+	it("validates PEP signature via server Fastify API /api/portal/consents/:id/sign", async () => {
+		const originalFetch = global.fetch;
+		try {
+			// 1. Success validation
+			let calledUrl = "";
+			let calledBody: any = null;
+			global.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+				calledUrl = String(input);
+				calledBody = init?.body ? JSON.parse(String(init.body)) : null;
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({ success: true }),
+				} as Response;
+			};
+
+			const okRes = await signConsentViaServerApi("consent-123", "654321", "token-xyz");
+			assert.equal(okRes.success, true);
+			assert.ok(calledUrl.includes("/api/portal/consents/consent-123/sign"));
+			assert.equal(calledBody.pepCode, "654321");
+			assert.equal(calledBody.signatureMethod, "sms_otp");
+
+			// 2. Failure validation from server
+			global.fetch = async () => {
+				return {
+					ok: false,
+					status: 400,
+					json: async () => ({ message: "Неверный проверочный код из SMS." }),
+				} as Response;
+			};
+
+			const failRes = await signConsentViaServerApi("consent-123", "000000", "token-xyz");
+			assert.equal(failRes.success, false);
+			assert.equal(failRes.error, "Неверный проверочный код из SMS.");
+		} finally {
+			global.fetch = originalFetch;
+		}
 	});
 });
 

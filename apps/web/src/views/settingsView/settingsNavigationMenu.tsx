@@ -4,7 +4,7 @@
  */
 import React from "react";
 import { Building2, SlidersHorizontal, Stethoscope, UserCheck } from "lucide-react";
-import type { SettingsRoleMode } from "./types.js";
+import type { SettingsRoleMode, SettingsStaffUser } from "./types.js";
 import { SettingsMoreActionsDropdown } from "./SettingsMoreActionsDropdown.js";
 
 export interface SettingsNavigationMenuProps {
@@ -12,7 +12,7 @@ export interface SettingsNavigationMenuProps {
 	setRoleMode: (mode: SettingsRoleMode) => void;
 	selectSettingsTab: (tabId: string) => void;
 	reopenOnboarding?: (() => void) | undefined;
-	activeStaffUser?: any;
+	activeStaffUser?: SettingsStaffUser | null | undefined;
 }
 
 export const SettingsNavigationMenu: React.FC<SettingsNavigationMenuProps> = ({

@@ -1,7 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { isValidUuid } from "@dental/shared";
+import { computePayloadHash, isValidUuid } from "@dental/shared";
+import { and, eq } from "drizzle-orm";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
+import { idempotencyKeys } from "../../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { evaluateClinicalAccess } from "../../../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
@@ -37,6 +39,31 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 			});
 		}
 		reply.header("Idempotency-Key", idempotencyKey);
+
+		// Дедупликация по таблице idempotency_keys (Мандаты 8d, 8bo)
+		const existingRecord = await withTenantCtx(orgId, async (tx) => {
+			const [rec] = await tx
+				.select()
+				.from(idempotencyKeys)
+				.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
+				.limit(1);
+			return rec ?? null;
+		});
+
+		if (existingRecord) {
+			if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("Idempotency-Key", idempotencyKey);
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+			}
+			if (existingRecord.status === "in_flight") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					message: "Операция создания наряда ЗТЛ с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
 	}
 
 	const identity = getRequestIdentity(request);
@@ -61,9 +88,31 @@ export async function createLabOrderHandler(request: FastifyRequest, reply: Fast
 	}
 
 	const data = parsed.data;
+	const currentUserId = identity.userId ?? request.user?.id ?? null;
 
 	const result = await withTenantCtx(orgId, async (tx) => {
-		return insertLabOrderInDb(tx, orgId, data);
+		const insertRes = await insertLabOrderInDb(tx, orgId, data, currentUserId);
+		if (insertRes.kind === "ok" && insertRes.order && idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: insertRes.order as unknown as Record<string, unknown>,
+					responseCode: 201,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: insertRes.order as unknown as Record<string, unknown>,
+						responseCode: 201,
+					},
+				});
+		}
+		return insertRes;
 	});
 
 	if (result.kind === "patient_not_found") {

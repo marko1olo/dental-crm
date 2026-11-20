@@ -29,7 +29,14 @@ import { downloadBotSourceZip } from "./botZipGenerator";
 import { TelegramBotSettingsStudio } from "./TelegramBotSettingsStudio";
 
 export interface TelegramBotStudioProps {
-	parentProps?: Record<string, unknown> | undefined;
+	parentProps?:
+		| {
+				telegramPatientPortalBaseUrlDraft?: string;
+				telegramMapsUrlDraft?: string;
+				telegramAllowVoiceIntakeDraft?: boolean;
+				[key: string]: unknown;
+		  }
+		| undefined;
 	initialWizardStep?: 1 | 2 | 3 | 4;
 	initialChannel?: BotChannelType;
 }
@@ -82,20 +89,26 @@ export function TelegramBotStudioSection({
 	const [customPrimaryActionLabel, setCustomPrimaryActionLabel] =
 		useState<string>(activePreset.primaryActionLabel);
 	const [webAppUrl, setWebAppUrl] = useState<string>(
-		parentProps?.telegramPatientPortalBaseUrlDraft || "https://portal.dente-clinic.ru",
+		typeof parentProps?.telegramPatientPortalBaseUrlDraft === "string"
+			? parentProps.telegramPatientPortalBaseUrlDraft
+			: "https://portal.dente-clinic.ru",
 	);
 	const [clinicPhone, setClinicPhone] = useState<string>("+7 (999) 000-00-00");
 	const [clinicAddress] = useState<string>(
 		"Кутузовский проспект, 24",
 	);
 	const [mapsUrl, setMapsUrl] = useState<string>(
-		parentProps?.telegramMapsUrlDraft || "https://maps.yandex.ru",
+		typeof parentProps?.telegramMapsUrlDraft === "string"
+			? parentProps.telegramMapsUrlDraft
+			: "https://maps.yandex.ru",
 	);
 
 	// Toggles for smart features
 	const [enableCitoPain, setEnableCitoPain] = useState<boolean>(true);
 	const [enableVoiceIntake, setEnableVoiceIntake] = useState<boolean>(
-		parentProps?.telegramAllowVoiceIntakeDraft ?? true,
+		typeof parentProps?.telegramAllowVoiceIntakeDraft === "boolean"
+			? parentProps.telegramAllowVoiceIntakeDraft
+			: true,
 	);
 	const [enablePostCareGuide, setEnablePostCareGuide] = useState<boolean>(true);
 	const [enableMiniAppBooking, setEnableMiniAppBooking] = useState<boolean>(true);

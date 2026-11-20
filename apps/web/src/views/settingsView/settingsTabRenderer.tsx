@@ -5,6 +5,8 @@
  */
 
 import React from "react";
+import type { DentalPricelistAnalysisResponse } from "@dental/shared";
+import type { SettingsViewFeatureFlags } from "./types.js";
 import { SettingsProfileTab } from "../../components/settings/SettingsProfileTab";
 import { SettingsPricesTabContent } from "./tabRenderers/SettingsPricesTabContent.js";
 import { SettingsClinicalTabContent } from "./tabRenderers/SettingsClinicalTabContent.js";
@@ -13,19 +15,19 @@ import { SettingsOperationsTabContent } from "./tabRenderers/SettingsOperationsT
 
 export interface SettingsTabRendererProps {
 	settingsTab: string;
-	settingsProps: any;
-	activeStaffUser?: any;
-	logic: any;
-	flags: any;
-	telegramAdminSecretSession: any;
-	setTelegramAdminSecretDraft: (draft: string) => void;
-	unlockTelegramAdminSession: () => void;
-	lockTelegramAdminSession: () => void;
-	pricelistAnalysis?: any;
+	settingsProps: Record<string, unknown>;
+	activeStaffUser?: unknown;
+	logic: Record<string, unknown>;
+	flags: SettingsViewFeatureFlags;
+	telegramAdminSecretSession?: boolean | undefined;
+	setTelegramAdminSecretDraft?: ((draft: string) => void) | undefined;
+	unlockTelegramAdminSession?: (() => void) | undefined;
+	lockTelegramAdminSession?: (() => void) | undefined;
+	pricelistAnalysis?: DentalPricelistAnalysisResponse | null | undefined;
 	pricelistImageNote?: string | undefined;
-	pricelistWarningsText?: ((warnings: any[]) => string) | undefined;
-	pricelistItemMaterialText?: ((item: any) => string) | undefined;
-	pricelistMaterialSummaryText?: ((summary: any) => string) | undefined;
+	pricelistWarningsText?: ((warnings: unknown[]) => string) | undefined;
+	pricelistItemMaterialText?: ((item: unknown) => string) | undefined;
+	pricelistMaterialSummaryText?: ((summary: unknown) => string) | undefined;
 }
 
 export const SettingsTabRenderer: React.FC<SettingsTabRendererProps> = ({

@@ -10,15 +10,15 @@ import { MobileSettingsPricesView } from "../../components/settings/mobile/Mobil
 import { MobileSettingsStaffView } from "../../components/settings/mobile/MobileSettingsStaffView";
 import { SettingsTabRenderer } from "./settingsTabRenderer.js";
 import { getMobileSectionTitle } from "./mobileSectionTitles.js";
-import type { SettingsStaffUser, SettingsViewFeatureFlags } from "./types.js";
+import type { SettingsStaffUser, SettingsViewFeatureFlags, SettingsViewLogicBag } from "./types.js";
 
 export interface MobileSettingsViewWrapperProps {
 	mobileSection: string;
 	setMobileSection: (secId: string) => void;
 	selectSettingsTab: (tabId: string) => void;
-	logic: Record<string, unknown>;
+	logic: SettingsViewLogicBag;
 	settingsProps: Record<string, unknown>;
-	activeStaffUser?: SettingsStaffUser | null;
+	activeStaffUser?: SettingsStaffUser | null | undefined;
 	flags: SettingsViewFeatureFlags;
 }
 

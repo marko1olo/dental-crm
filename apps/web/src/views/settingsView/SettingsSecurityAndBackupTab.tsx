@@ -32,7 +32,7 @@ export function SettingsSecurityAndBackupTab({
 					изменений профиля, команды, кресел, источников, импорта и
 					аудита. В браузере он не сохраняется.
 				</p>
-				{settingsProps.adminSecretScopeWarning ? (
+				{typeof settingsProps.adminSecretScopeWarning === "string" ? (
 					<p>{settingsProps.adminSecretScopeWarning}</p>
 				) : null}
 				<div className="telegram-link-controls">

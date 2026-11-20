@@ -21,6 +21,7 @@ import {
 import {
 	isRateLimited,
 	requestPhoneVerification,
+	resolveDefaultOrganizationId,
 	verifyPhoneOtp,
 } from "./smsVerificationAndSpamGate.js";
 
@@ -49,7 +50,10 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		}
 
 		const clientIp = request.ip || "unknown";
-		const effectiveOrgId = parsed.data.organizationId || request.params?.organizationId;
+		const effectiveOrgId =
+			parsed.data.organizationId ||
+			request.params?.organizationId ||
+			(await resolveDefaultOrganizationId());
 		const result = requestPhoneVerification(
 			parsed.data.phone,
 			parsed.data.method,
@@ -128,30 +132,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 	// Helper: resolve default clinic organization ID
 	const resolveDefaultClinicOrgId = async (): Promise<string> => {
-		const [demoOrg] = await withSuperuserBypass(async (tx) => {
-			return tx
-				.select({
-					organizationId: organizations.id,
-				})
-				.from(organizations)
-				.where(eq(organizations.id, "01a00000-0000-0000-0000-000000000000"))
-				.limit(1);
-		});
-		if (demoOrg?.organizationId) return demoOrg.organizationId;
-
-		const [orgWithDoctor] = await withSuperuserBypass(async (tx) => {
-			return tx
-				.select({
-					organizationId: organizations.id,
-				})
-				.from(organizations)
-				.innerJoin(users, eq(users.organizationId, organizations.id))
-				.where(and(eq(users.role, "doctor"), eq(users.isActive, true)))
-				.limit(1);
-		});
-		if (orgWithDoctor?.organizationId) return orgWithDoctor.organizationId;
-
-		return "01a00000-0000-0000-0000-000000000000";
+		return resolveDefaultOrganizationId();
 	};
 
 	// 0a. Get default active clinic for direct booking link (/book or #/book)

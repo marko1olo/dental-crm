@@ -17,11 +17,11 @@ import { SettingsSecurityAndBackupTab } from "../SettingsSecurityAndBackupTab.js
 
 export interface SettingsAdminTabContentProps {
 	settingsTab: string;
-	settingsProps: any;
-	telegramAdminSecretSession: any;
-	setTelegramAdminSecretDraft: (draft: string) => void;
-	unlockTelegramAdminSession: () => void;
-	lockTelegramAdminSession: () => void;
+	settingsProps: Record<string, unknown>;
+	telegramAdminSecretSession?: boolean | undefined;
+	setTelegramAdminSecretDraft?: ((draft: string) => void) | undefined;
+	unlockTelegramAdminSession?: (() => void) | undefined;
+	lockTelegramAdminSession?: (() => void) | undefined;
 }
 
 export const SettingsAdminTabContent: React.FC<SettingsAdminTabContentProps> = ({

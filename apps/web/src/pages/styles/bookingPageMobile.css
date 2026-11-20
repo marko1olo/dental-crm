@@ -27,8 +27,10 @@
 	}
 
 	.PublicBookingWidget-root .PublicBookingWidget-glass-nav button {
-		padding: 6px 10px;
-		font-size: 11px;
+		min-height: 44px;
+		padding: 10px 14px;
+		font-size: 13px;
+		font-weight: 600;
 		border-radius: 9999px;
 	}
 }

@@ -1,4 +1,5 @@
 import type {
+	DentalModelWorkbenchManifest,
 	DicomRenderCachePlanResponse,
 	DicomViewerToolStateBundleResponse,
 	DicomViewerWorkbenchManifestResponse,
@@ -205,22 +206,22 @@ export function DicomMprWorkbenchPanel({
 		(mergedProps.dicomRenderCachePlan ?? null) as DicomRenderCachePlanResponse | null;
 
 	const handleResetEndpointState = () => {
-		setDicomWebCheck(null);
-		setDicomViewerLaunchManifest(null);
-		setDicomViewerToolStateBundle(null);
-		setDicomViewerWorkbenchManifest(null);
-		setDicomWorkbenchLocalSavedAt(null);
-		setDicomWorkstationReadiness(null);
-		setDicomRenderCachePlan(null);
+		setDicomWebCheck?.(null);
+		setDicomViewerLaunchManifest?.(null);
+		setDicomViewerToolStateBundle?.(null);
+		setDicomViewerWorkbenchManifest?.(null);
+		setDicomWorkbenchLocalSavedAt?.(null);
+		setDicomWorkstationReadiness?.(null);
+		setDicomRenderCachePlan?.(null);
 	};
 
 	const handleResetOhifState = () => {
-		setDicomViewerLaunchManifest(null);
-		setDicomViewerToolStateBundle(null);
-		setDicomViewerWorkbenchManifest(null);
-		setDicomWorkbenchLocalSavedAt(null);
-		setDicomWorkstationReadiness(null);
-		setDicomRenderCachePlan(null);
+		setDicomViewerLaunchManifest?.(null);
+		setDicomViewerToolStateBundle?.(null);
+		setDicomViewerWorkbenchManifest?.(null);
+		setDicomWorkbenchLocalSavedAt?.(null);
+		setDicomWorkstationReadiness?.(null);
+		setDicomRenderCachePlan?.(null);
 	};
 
 	return (
@@ -237,19 +238,19 @@ export function DicomMprWorkbenchPanel({
 			/>
 
 			<CtPlanningToolsPanel
-				canPlan={mprControlsReady}
+				canPlan={Boolean(mprControlsReady)}
 				compact
 				activeTool={typedImagingViewerActiveTool}
 				activeQuickActionId={typedCtPlanningActiveQuickActionId}
-				onActivateTool={applyCtPlanningQuickAction}
+				onActivateTool={applyCtPlanningQuickAction ? (action) => applyCtPlanningQuickAction(action.id) : undefined}
 				selectedImplantId={typedCtPlanningImplantPlan?.itemId ?? null}
 				selectedImplantPlan={typedCtPlanningImplantPlan}
-				onSelectImplant={selectCtPlanningImplantFromSettings}
+				onSelectImplant={selectCtPlanningImplantFromSettings ? (implant) => selectCtPlanningImplantFromSettings(implant.id) : undefined}
 				toolStateBundle={
 					typedDicomViewerWorkbenchManifest?.toolStateBundle ??
 					typedDicomViewerToolStateBundle
 				}
-				dentalModelWorkbenchManifest={activeDentalModelWorkbenchManifest}
+				dentalModelWorkbenchManifest={activeDentalModelWorkbenchManifest as DentalModelWorkbenchManifest | null | undefined}
 				localBridgeReadiness={typedLocalBridgeReadiness}
 			/>
 
@@ -270,7 +271,7 @@ export function DicomMprWorkbenchPanel({
 								className={`mpr-plane ${mprProjection === plane.key ? "active" : ""}`}
 								key={plane.key}
 								type="button"
-								onClick={() => setMprProjection(plane.key)}
+								onClick={() => setMprProjection?.(plane.key)}
 								disabled={!planeAvailable}
 								aria-pressed={mprProjection === plane.key}
 								aria-label={`${plane.title}: ${plane.detail}${planeUnavailableReason ? `; ${planeUnavailableReason}` : ""}`}
@@ -379,7 +380,7 @@ export function DicomMprWorkbenchPanel({
 				cbctWorkbenchSeries={cbctWorkbenchSeries}
 				mprLoadStrategyLabels={mprLoadStrategyLabels}
 				mprResourceTierLabels={mprResourceTierLabels}
-				mprCacheModeLabels={mprCacheModeLabels}
+				mprCacheModeLabels={mprCacheModeLabels ?? {}}
 				cbctResourceSafetyCaps={typedCbctResourceSafetyCaps}
 			/>
 
@@ -424,7 +425,7 @@ export function DicomMprWorkbenchPanel({
 				dicomTextureStrategyLabels={dicomTextureStrategyLabels}
 				dicomRenderMemoryBudgetClassLabels={dicomRenderMemoryBudgetClassLabels}
 				dicomDiagnosticPixelPolicyLabels={dicomDiagnosticPixelPolicyLabels}
-				dicomWorkbenchLocalSavedAt={dicomWorkbenchLocalSavedAt}
+				dicomWorkbenchLocalSavedAt={dicomWorkbenchLocalSavedAt ?? null}
 				formatTime={formatTime}
 				dicomWorkbenchServerBundle={dicomWorkbenchServerBundle}
 				dicomWorkbenchSourceIsRedacted={dicomWorkbenchSourceIsRedacted}

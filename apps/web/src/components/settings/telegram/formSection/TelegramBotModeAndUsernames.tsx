@@ -4,7 +4,7 @@ export type TelegramBotModeAndUsernamesPropsBag = {
 	telegramModeLabels?: Record<string, string>;
 	telegramModeDraft?: string;
 	setTelegramModeDraft?: (val: string) => void;
-	normalizedTelegramBotMode?: string;
+	normalizedTelegramBotMode?: ((val: string) => string) | string;
 	telegramModeHints?: Record<string, string>;
 	telegramBotUsernameDraft?: string;
 	setTelegramBotUsernameDraft?: (val: string) => void;
@@ -56,8 +56,12 @@ export function TelegramBotModeAndUsernames({ props }: TelegramBotModeAndUsernam
 							key={option.value}
 							type="button"
 							onClick={() => {
-								setTelegramModeDraft(normalizedTelegramBotMode(option.value));
-								markTelegramSettingsDirty();
+								const nextMode =
+									typeof normalizedTelegramBotMode === "function"
+										? normalizedTelegramBotMode(option.value)
+										: option.value;
+								setTelegramModeDraft?.(nextMode);
+								markTelegramSettingsDirty?.();
 							}}
 							className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer min-h-[36px] ${
 								telegramModeDraft === option.value
@@ -69,7 +73,9 @@ export function TelegramBotModeAndUsernames({ props }: TelegramBotModeAndUsernam
 						</button>
 					))}
 				</div>
-				<small className="field-note">{telegramModeHints?.[telegramModeDraft] ?? ""}</small>
+				<small className="field-note">
+					{telegramModeDraft ? (telegramModeHints?.[telegramModeDraft] ?? "") : ""}
+				</small>
 			</div>
 
 			<label htmlFor="telegram-bot-username-draft">
@@ -80,8 +86,8 @@ export function TelegramBotModeAndUsernames({ props }: TelegramBotModeAndUsernam
 					placeholder="dentecrm_bot"
 					value={telegramBotUsernameDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						setTelegramBotUsernameDraft(event.target.value);
-						markTelegramSettingsDirty();
+						setTelegramBotUsernameDraft?.(event.target.value);
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 			</label>
@@ -94,8 +100,8 @@ export function TelegramBotModeAndUsernames({ props }: TelegramBotModeAndUsernam
 					placeholder="clinic_bot"
 					value={telegramOwnBotUsernameDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						setTelegramOwnBotUsernameDraft(event.target.value);
-						markTelegramSettingsDirty();
+						setTelegramOwnBotUsernameDraft?.(event.target.value);
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 			</label>
@@ -107,7 +113,7 @@ export function TelegramBotModeAndUsernames({ props }: TelegramBotModeAndUsernam
 					inputMode="text"
 					placeholder="clinic-main"
 					value={telegramBotConfigId}
-					onChange={(event: ChangeEvent<HTMLInputElement>) => setTelegramBotConfigId(event.target.value)}
+					onChange={(event: ChangeEvent<HTMLInputElement>) => setTelegramBotConfigId?.(event.target.value)}
 				/>
 				<small>Если у клиники один бот, оставьте основной профиль.</small>
 			</label>

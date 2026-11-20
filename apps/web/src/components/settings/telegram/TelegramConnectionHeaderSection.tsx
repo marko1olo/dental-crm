@@ -142,12 +142,12 @@ export function TelegramConnectionHeaderSection({
 								autoComplete="current-password"
 								value={telegramAdminSecretDraft}
 								onChange={(event: TextInputChangeEvent) =>
-									setTelegramAdminSecretDraft(event.target.value)
+									setTelegramAdminSecretDraft?.(event.target.value)
 								}
 								onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
 									if (event.key === "Enter" && adminSecretReady) {
 										event.preventDefault();
-										unlockTelegramAdminSession();
+										unlockTelegramAdminSession?.(telegramAdminSecretDraft ?? "");
 									}
 								}}
 								placeholder="введите секрет администратора"
@@ -172,7 +172,7 @@ export function TelegramConnectionHeaderSection({
 						<button
 							className="secondary-button"
 							type="button"
-							onClick={unlockTelegramAdminSession}
+							onClick={() => unlockTelegramAdminSession?.(telegramAdminSecretDraft ?? "")}
 							aria-describedby={
 								!adminSecretReady ? "settings-admin-unlock-guidance" : undefined
 							}
@@ -183,7 +183,7 @@ export function TelegramConnectionHeaderSection({
 						<button
 							className="secondary-button"
 							type="button"
-							onClick={lockTelegramAdminSession}
+							onClick={() => lockTelegramAdminSession?.()}
 							disabled={!telegramAdminSecretSession}
 						>
 							Забыть секрет

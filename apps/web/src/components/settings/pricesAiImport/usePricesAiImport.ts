@@ -212,7 +212,12 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 						costRub: r.costRub,
 						durationMinutes: r.durationMinutes,
 						warrantyMonths: r.warrantyMonths,
-						suggestedAction: r.suggestedAction === "update_existing" || r.suggestedAction === "link_existing" ? r.suggestedAction : "create_new",
+						suggestedAction:
+							r.suggestedAction === "update_existing"
+								? "update_existing"
+								: r.suggestedAction === "identical"
+									? "link_existing"
+									: "create_new",
 						matchedExistingServiceId: r.matchedExistingServiceId,
 					}));
 
@@ -275,9 +280,14 @@ export function usePricesAiImport(props: SettingsPricesAiImportSectionProps) {
 				confidence: r.order804nCode ? 0.95 : 0.75,
 				confidenceKind: r.order804nCode ? "exact_code" : "medium_category",
 				matchedExistingServiceId: r.matchedExistingServiceId,
-				matchedExistingTitle: r.matchedExistingTitle,
-				matchedExistingPriceRub: r.matchedExistingPriceRub,
-				suggestedAction: r.suggestedAction === "update_existing" || r.suggestedAction === "link_existing" ? r.suggestedAction : "create_new",
+				matchedExistingTitle: r.matchedExistingTitle ?? undefined,
+				matchedExistingPriceRub: r.matchedExistingPriceRub ?? undefined,
+				suggestedAction:
+					r.suggestedAction === "update_existing"
+						? "update_existing"
+						: r.suggestedAction === "identical"
+							? "link_existing"
+							: "create_new",
 				isApproved: r.validationStatus === "valid",
 			}))
 		: [];

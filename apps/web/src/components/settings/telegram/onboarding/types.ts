@@ -29,7 +29,15 @@ export interface BotOnboardingWizardProps {
 	onWelcomeTextChange?: (text: string) => void;
 	customPrimaryActionLabel?: string;
 	onPrimaryActionLabelChange?: (label: string) => void;
-	parentProps?: Record<string, unknown> | undefined;
+	parentProps?:
+		| {
+				telegramStatus?: {
+					tokenConfigured?: boolean;
+					botUsername?: string;
+				};
+				[key: string]: unknown;
+		  }
+		| undefined;
 	className?: string;
 }
 

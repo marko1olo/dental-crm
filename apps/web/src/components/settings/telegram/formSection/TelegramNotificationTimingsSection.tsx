@@ -50,8 +50,8 @@ export function TelegramNotificationTimingsSection({ props }: TelegramNotificati
 					placeholder="24, 2"
 					value={telegramReminderLeadTimesDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						setTelegramReminderLeadTimesDraft(event.target.value);
-						markTelegramSettingsDirty();
+						setTelegramReminderLeadTimesDraft?.(event.target.value);
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 				<small>Напоминания до приема в часах: от 1 до 168, максимум 6 значений.</small>
@@ -67,8 +67,8 @@ export function TelegramNotificationTimingsSection({ props }: TelegramNotificati
 					step={1}
 					value={telegramReviewRequestDelayDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						setTelegramReviewRequestDelayDraft(event.target.value);
-						markTelegramSettingsDirty();
+						setTelegramReviewRequestDelayDraft?.(event.target.value);
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 				<small>От 1 до 720 часов после закрытого визита или оплаты.</small>
@@ -88,7 +88,7 @@ export function TelegramNotificationTimingsSection({ props }: TelegramNotificati
 							step={1}
 							value={typedTelegramPostVisitCheckupDelayDrafts[field.key] ?? ""}
 							onChange={(event: ChangeEvent<HTMLInputElement>) =>
-								updateTelegramPostVisitCheckupDelayDraft(field.key, event.target.value)
+								updateTelegramPostVisitCheckupDelayDraft?.(field.key, event.target.value)
 							}
 						/>
 						<small>{field.help}</small>
@@ -104,8 +104,8 @@ export function TelegramNotificationTimingsSection({ props }: TelegramNotificati
 					placeholder="@clinic_admins"
 					value={telegramStaffEscalationChannelDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						setTelegramStaffEscalationChannelDraft(event.target.value);
-						markTelegramSettingsDirty();
+						setTelegramStaffEscalationChannelDraft?.(event.target.value);
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 			</label>

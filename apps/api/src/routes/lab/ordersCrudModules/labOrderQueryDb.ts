@@ -1,9 +1,11 @@
 import { and, desc, eq, sql } from "drizzle-orm";
+import { rublesToKopecks, kopecksToNumericString } from "@dental/shared";
 import type { TenantDb } from "../../../db/rls.js";
 import { labOrders, patients, users } from "../../../db/schema.js";
 
 /**
  * DB query helper: Select lab orders with joined patient and doctor details.
+ * Мандат 8bm: чтение целочисленных копеек напрямую из БД и единое форматирование через @dental/shared.
  */
 export async function selectLabOrdersQuery(
 	tx: TenantDb,
@@ -31,7 +33,9 @@ export async function selectLabOrdersQuery(
 			labComments: labOrders.labComments,
 			attachedImageUrl: labOrders.attachedImageUrl,
 			priceRub: labOrders.priceRub,
+			priceKopecks: labOrders.priceKopecks,
 			labCostRub: labOrders.labCostRub,
+			labCostKopecks: labOrders.labCostKopecks,
 			isWarranty: labOrders.isWarranty,
 			paidFromCashOperationId: labOrders.paidFromCashOperationId,
 			isLockedInstalled: labOrders.isLockedInstalled,
@@ -53,14 +57,26 @@ export async function selectLabOrdersQuery(
 		)
 		.orderBy(desc(labOrders.createdAt));
 
-	return rows.map((r) => ({
-		...r,
-		laboratoryName: r.laboratoryName || null,
-		priceKopecks: Math.round(Number(r.priceRub ?? 0) * 100),
-		amountKopecks: Math.round(Number(r.priceRub ?? 0) * 100),
-		labCostKopecks: Math.round(Number(r.labCostRub ?? 0) * 100),
-		costKopecks: Math.round(Number(r.labCostRub ?? 0) * 100),
-	}));
+	return rows.map((r) => {
+		const finalPriceKopecks = r.priceKopecks != null
+			? Number(r.priceKopecks)
+			: (r.priceRub != null ? rublesToKopecks(r.priceRub) : 0);
+		const finalLabCostKopecks = r.labCostKopecks != null
+			? Number(r.labCostKopecks)
+			: (r.labCostRub != null ? rublesToKopecks(r.labCostRub) : 0);
+
+		return {
+			...r,
+			laboratoryName: r.laboratoryName || null,
+			priceKopecks: finalPriceKopecks,
+			amountKopecks: finalPriceKopecks,
+			patientPriceKopecks: finalPriceKopecks,
+			labCostKopecks: finalLabCostKopecks,
+			costKopecks: finalLabCostKopecks,
+			priceRub: kopecksToNumericString(finalPriceKopecks),
+			labCostRub: kopecksToNumericString(finalLabCostKopecks),
+		};
+	});
 }
 
 export { seedDemoLabOrdersIfEmpty } from "./labOrderSeedDb.js";

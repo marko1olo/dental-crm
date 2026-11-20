@@ -1,9 +1,18 @@
 import React, { type ChangeEvent } from "react";
 import { Bot, Copy, Download, ExternalLink, RefreshCw } from "lucide-react";
-import type { DenteTelegramChatLinkPublic, DenteTelegramLinkCodePublic } from "@dental/shared";
+import type {
+	DenteTelegramChatLinkPublic,
+	DenteTelegramLinkCodePublic,
+	DenteTelegramLinkCodeCreated,
+} from "@dental/shared";
 import { EmptyState } from "../../EmptyState";
 
 type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
+
+export type TelegramChatLinkItem = DenteTelegramChatLinkPublic & {
+	telegramUsername?: string | null | undefined;
+	telegramChatId?: string | number | null | undefined;
+};
 
 export type TelegramLinkPropsBag = {
 	createTelegramLinkCode?: (options?: unknown) => void;
@@ -20,11 +29,11 @@ export type TelegramLinkPropsBag = {
 	telegramLinkStaffId?: string;
 	setTelegramLinkStaffId?: (id: string) => void;
 	isTelegramLinkCreating?: boolean;
-	telegramLinkCode?: { code?: string; qrSvg?: string; botDeepLink?: string } | null;
+	telegramLinkCode?: DenteTelegramLinkCodeCreated | null;
 	telegramLinkActionState?: string;
 	telegramQrSvgToDataUrl?: (svg: string) => string;
 	telegramChatLinkLedger?: { nextCursor?: string; filteredCount?: number };
-	typedTelegramChatLinks?: DenteTelegramChatLinkPublic[];
+	typedTelegramChatLinks?: TelegramChatLinkItem[];
 	telegramSubjectName?: (type: string, id: string) => string;
 	revokeTelegramChatLink?: (id: string) => Promise<void> | void;
 	telegramRevokingLinkId?: string | null;
@@ -81,6 +90,21 @@ export function TelegramLinkPanelSection({
 		typedTelegramLinkStaffOptions = [],
 	} = props;
 
+	const safeCreateTelegramLinkCode = createTelegramLinkCode ?? (() => {});
+	const safeCopyTelegramTextToClipboard = copyTelegramTextToClipboard ?? (() => {});
+	const safeDownloadTelegramQrSvg = downloadTelegramQrSvg ?? (() => {});
+	const safeFormatDateTime = formatDateTime ?? ((d?: string | Date) => String(d ?? ""));
+	const safeLoadTelegramControlPlane = loadTelegramControlPlane ?? (() => {});
+	const safeSetTelegramLinkSubjectType = setTelegramLinkSubjectType ?? (() => {});
+	const safeSetTelegramLinkCode = setTelegramLinkCode ?? (() => {});
+	const safeSetTelegramLinkActionState = setTelegramLinkActionState ?? (() => {});
+	const safeSetTelegramLinkStaffId = setTelegramLinkStaffId ?? (() => {});
+	const safeTelegramQrSvgToDataUrl = telegramQrSvgToDataUrl ?? ((svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
+	const safeTelegramSubjectName = telegramSubjectName ?? ((type: string, id: string) => `${type}:${id}`);
+	const safeRevokeTelegramChatLink = revokeTelegramChatLink ?? (() => {});
+	const safeLoadMoreTelegramChatLinks = loadMoreTelegramChatLinks ?? (() => {});
+	const safeLoadMoreTelegramLinkCodes = loadMoreTelegramLinkCodes ?? (() => {});
+
 	return (
 		<article className="telegram-link-panel">
 			<div className="panel-heading">
@@ -94,7 +118,7 @@ export function TelegramLinkPanelSection({
 				<button
 					className="secondary-button"
 					type="button"
-					onClick={() => void loadTelegramControlPlane()}
+					onClick={() => void safeLoadTelegramControlPlane()}
 					disabled={isTelegramLoading}
 				>
 					<RefreshCw aria-hidden="true" /> Обновить
@@ -114,11 +138,9 @@ export function TelegramLinkPanelSection({
 								key={option.value}
 								type="button"
 								onClick={() => {
-									setTelegramLinkSubjectType(
-										normalizedTelegramLinkSubjectType(option.value),
-									);
-									setTelegramLinkCode(null);
-									setTelegramLinkActionState(null);
+									safeSetTelegramLinkSubjectType(option.value);
+									safeSetTelegramLinkCode(null);
+									safeSetTelegramLinkActionState("");
 								}}
 								className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
 									telegramLinkSubjectType === option.value
@@ -138,9 +160,9 @@ export function TelegramLinkPanelSection({
 							id="telegram-link-staff-select"
 							value={telegramLinkStaffId}
 							onChange={(event: SelectChangeEvent) => {
-								setTelegramLinkStaffId(event.target.value);
-								setTelegramLinkCode(null);
-								setTelegramLinkActionState(null);
+								safeSetTelegramLinkStaffId(event.target.value);
+								safeSetTelegramLinkCode(null);
+								safeSetTelegramLinkActionState("");
 							}}
 						>
 							{typedTelegramLinkStaffOptions.length === 0 ? (
@@ -168,7 +190,7 @@ export function TelegramLinkPanelSection({
 				<button
 					className="primary-button"
 					type="button"
-					onClick={() => void createTelegramLinkCode()}
+					onClick={() => void (createTelegramLinkCode?.())}
 					disabled={
 						isTelegramLinkCreating ||
 						(telegramLinkSubjectType === "staff" &&
@@ -186,7 +208,7 @@ export function TelegramLinkPanelSection({
 						<span>Код</span>
 						<strong>{telegramLinkCode.code}</strong>
 						<p>
-							До {formatDateTime(telegramLinkCode.expiresAt)}. В списках
+							До {(formatDateTime ?? String)(telegramLinkCode.expiresAt)}. В списках
 							показывается только хвост {telegramLinkCode.codeLast4}.
 						</p>
 						{telegramLinkCode.deepLink ? (
@@ -206,7 +228,7 @@ export function TelegramLinkPanelSection({
 								className="secondary-button compact-button"
 								type="button"
 								onClick={() =>
-									void copyTelegramTextToClipboard(
+									void copyTelegramTextToClipboard?.(
 										telegramLinkCode.code,
 										"Код",
 									)
@@ -219,8 +241,8 @@ export function TelegramLinkPanelSection({
 									className="secondary-button compact-button"
 									type="button"
 									onClick={() =>
-										void copyTelegramTextToClipboard(
-											telegramLinkCode.deepLink,
+										void copyTelegramTextToClipboard?.(
+											telegramLinkCode.deepLink ?? "",
 											"Ссылка",
 										)
 									}
@@ -232,7 +254,7 @@ export function TelegramLinkPanelSection({
 								className="secondary-button compact-button"
 								type="button"
 								onClick={() =>
-									void copyTelegramTextToClipboard(
+									void copyTelegramTextToClipboard?.(
 										telegramLinkCode.shareText,
 										"Текст",
 									)
@@ -248,7 +270,7 @@ export function TelegramLinkPanelSection({
 					{telegramLinkCode.qrSvg ? (
 						<div className="telegram-qr-card">
 							<img
-								src={telegramQrSvgToDataUrl(telegramLinkCode.qrSvg)}
+								src={(telegramQrSvgToDataUrl ?? String)(telegramLinkCode.qrSvg)}
 								alt="QR-код для подключения Telegram"
 								loading="lazy"
 								decoding="async"
@@ -256,7 +278,7 @@ export function TelegramLinkPanelSection({
 							<button
 								className="secondary-button compact-button"
 								type="button"
-								onClick={downloadTelegramQrSvg}
+								onClick={() => downloadTelegramQrSvg?.(telegramLinkCode?.qrSvg ?? "", "telegram-qr.svg")}
 							>
 								<Download aria-hidden="true" /> Скачать SVG
 							</button>
@@ -278,23 +300,27 @@ export function TelegramLinkPanelSection({
 					</div>
 					{typedTelegramChatLinks.length > 0 ? (
 						<div className="telegram-link-ledger-rows">
-							{typedTelegramChatLinks.map((link: DenteTelegramChatLinkPublic) => (
+							{typedTelegramChatLinks.map((link: TelegramChatLinkItem) => (
 								<article className="telegram-link-ledger-row" key={link.id}>
 									<div>
 										<strong>
-											{telegramSubjectName(link.subjectType, link.subjectId)}
+											{(telegramSubjectName ?? ((t, i) => `${t}:${i}`))(link.subjectType, link.subjectId)}
 										</strong>
 										<span>
 											{link.telegramUsername
 												? `@${link.telegramUsername}`
-												: `ID ${link.telegramChatId}`}
+												: link.telegramChatId
+													? `ID ${link.telegramChatId}`
+													: link.chatIdLast4
+														? `Чат ••••${link.chatIdLast4}`
+														: `ID ${link.chatFingerprint.slice(0, 8)}`}
 										</span>
-										<small>Связан {formatDateTime(link.linkedAt)}</small>
+										<small>Связан {(formatDateTime ?? String)(link.linkedAt)}</small>
 									</div>
 									<button
 										className="secondary-button compact-button"
 										type="button"
-										onClick={() => void revokeTelegramChatLink(link.id)}
+										onClick={() => void revokeTelegramChatLink?.(link.id)}
 										disabled={
 											telegramRevokingLinkId === link.id || isTelegramLoading
 										}
@@ -307,7 +333,7 @@ export function TelegramLinkPanelSection({
 								<button
 									className="secondary-button compact-button"
 									type="button"
-									onClick={() => void loadMoreTelegramChatLinks()}
+									onClick={() => void loadMoreTelegramChatLinks?.()}
 									disabled={isTelegramChatLinksLoadingMore}
 								>
 									{isTelegramChatLinksLoadingMore
@@ -336,7 +362,7 @@ export function TelegramLinkPanelSection({
 						</span>
 						{typedTelegramLinkCodes.map((code: DenteTelegramLinkCodePublic) => (
 							<small key={code.id}>
-								{telegramSubjectName(code.subjectType, code.subjectId)} · *
+								{(telegramSubjectName ?? ((t, i) => `${t}:${i}`))(code.subjectType, code.subjectId)} · *
 								{code.codeLast4} ·{" "}
 								{(telegramLinkCodeStatusLabels || {
 									pending: "ожидает",
@@ -344,14 +370,14 @@ export function TelegramLinkPanelSection({
 									expired: "истек",
 									revoked: "отозван",
 								})[code.status]}{" "}
-								· до {formatDateTime(code.expiresAt)}
+								· до {(formatDateTime ?? String)(code.expiresAt)}
 							</small>
 						))}
 						{telegramLinkCodeLedger?.nextCursor ? (
 							<button
 								className="secondary-button compact-button"
 								type="button"
-								onClick={() => void loadMoreTelegramLinkCodes()}
+								onClick={() => void loadMoreTelegramLinkCodes?.()}
 								disabled={isTelegramLinkCodesLoadingMore}
 							>
 								{isTelegramLinkCodesLoadingMore

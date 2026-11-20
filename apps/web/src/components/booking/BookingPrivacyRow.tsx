@@ -31,7 +31,7 @@ export const BookingPrivacyRow: React.FC<BookingPrivacyRowProps> = ({
 					className="underline underline-offset-2 hover:text-[var(--primary)] text-[var(--ink)] transition-colors"
 					onClick={(e) => e.stopPropagation()}
 				>
-					политикой конфиденциальности (152-ФЗ)
+					политикой конфиденциальности
 				</a>{" "}
 				и даю согласие на обработку персональных данных
 			</label>

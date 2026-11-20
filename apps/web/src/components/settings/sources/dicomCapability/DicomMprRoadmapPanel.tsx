@@ -14,9 +14,9 @@ export interface MprOperatorSummaryCardItem {
 }
 
 export interface DicomMprRoadmapPanelProps {
-	mprClinicalNextStep: string;
-	mprClinicalChecklist: readonly MprClinicalChecklistItem[] | MprClinicalChecklistItem[];
-	mprOperatorSummaryCards: readonly MprOperatorSummaryCardItem[] | MprOperatorSummaryCardItem[];
+	mprClinicalNextStep?: string | undefined;
+	mprClinicalChecklist?: readonly MprClinicalChecklistItem[] | MprClinicalChecklistItem[] | undefined;
+	mprOperatorSummaryCards?: readonly MprOperatorSummaryCardItem[] | MprOperatorSummaryCardItem[] | undefined;
 }
 
 export function DicomMprRoadmapPanel({

@@ -12639,3 +12639,42 @@
   - `apps/web/src/tests/copilotAnatomyRemediation.test.ts` (8/8 PASS).
   - `apps/web/src/tests/voiceClinicalCommands.test.ts` (26/26 PASS).
   - Итого: 15/15 целевых тестов PASS, Exit Code 0.
+
+---
+
+### 535. Волна 535: Зуботехническая Лаборатория (ЗТЛ), Заказ-Наряды и Пресеты Ортопедии — Red Team Инквизиция [DEF-LAB-01..05], Ликвидация Ошибки 404 DoctorNotFound, Целочисленные Копейки в Запросах, Искоренение Express-Дубликатов и 4-State Visual Proof Gate (Мандаты 8e, 8n, 8bm, 8bf, 8be, 8am, 8bi, 8ze, 8b)
+
+- **1. [DEFECT-1 / DEF-LAB-01] Ликвидация ошибки 404 DoctorNotFound при создании наряда ЗТЛ (Мандаты 8e, 8n)**:
+  - В `DentalLabStudioModal.tsx` ликвидирован захардкоженный стаб `"doc_active"`. Добавлено извлечение `effectiveDoctorId` из пропсов, `dashboard.activeDoctor.id`, списка врачей или передача `undefined` для безопасной авторизации сервером.
+  - В `labOrderInsertDb.ts` реализован отказоустойчивый каскадный поиск врача: валидный UUID `data.doctorId` -> `currentUserId` -> поиск по имени в `users` -> первый активный сотрудник клиники в `users` -> фоллбек без блокировки врача. Кнопка «Создать заказ-наряд» всегда срабатывает успешно.
+- **2. [DEFECT-2 / DEF-LAB-02] Целочисленное чтение копеек из БД без ручного деления (Мандат 8bm)**:
+  - В `labOrderQueryDb.ts` (`selectLabOrdersQuery`) реализована явная выборка `labOrders.priceKopecks` и `labOrders.labCostKopecks`. Копейки возвращаются клиенту без ручного деления на 100, рубли форматируются строго через `@dental/shared/src/money.ts` (`kopecksToNumericString`, `formatKopecksToRub`).
+- **3. [DEFECT-3 / DEF-LAB-03] Синхронизация шины событий ЗТЛ**:
+  - В `DentalLabStudioModal.tsx` и `useLabOrdersData.ts` обеспечена поддержка канонических событий `dente:lab:order-created` и `dente:lab:order-status-changed` с сохранением обратной совместимости (`dente-lab-order-created`).
+- **4. [DEFECT-4 / DEF-LAB-04] Искоренение 5 дублирующих express-модулей (Мандат 8bf)**:
+  - Физически удалены через `git rm`:
+    - `apps/api/src/routes/lab/expressModules/expressOrderConstructionDefaults.ts`
+    - `apps/api/src/routes/lab/expressModules/expressOrderDbOperations.ts`
+    - `apps/api/src/routes/lab/expressModules/expressOrderHandlers.ts`
+    - `apps/api/src/routes/lab/expressModules/expressPresetsAndPlanHandlers.ts`
+    - `apps/api/src/routes/lab/expressOrderRoutes.ts`
+  - Создан канонический SSOT-модуль `apps/api/src/routes/lab/ordersCrudModules/labPresetsHandlers.ts`, зарегистрированы пресеты `/api/clinical/dental-lab/presets` и алиас `/api/clinical/dental-lab/express-order` в `ordersCrudRoutes.ts`.
+- **5. [DEFECT-5 / DEF-LAB-05] Соблюдение Sweet Spot размера DentalLabStudioModal.tsx (Мандат 8b)**:
+  - Размер файла приведен строго к каноническому окну 400–500 строк: **495 строк** (тест `dentalLabSSOT.test.tsx` пройден).
+- **6. 4-State Visual Proofs (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark)**:
+  - Все 4 скриншота в `docs/proofs/lab/` и `docs/proofs/dental_lab/` проверены через `read_file` по 8 осям качества:
+    - `01_dental_lab_studio_pc_light_1440x900.png` (137.4 KB, PC Light 1440x900 — реальная студия ЗТЛ с зубами FDI, нарядами ЗТЛ-100..102, расчетом маржи +16 500 ₽, ровно 1 Primary CTA noble teal `#0d9488`, 0px клиппинга);
+    - `02_dental_lab_studio_pc_dark_1440x900.png` (136.3 KB, PC Dark 1440x900 — 100% тёмные токены `var(--paper)`, WCAG AAA);
+    - `03_dental_lab_studio_mobile_light_390x844.png` (83.9 KB, Mobile Light 390x844 — нативный Apple HIG Bottom Sheet, тактильный drag handle, тач-зоны >= 44x44px);
+    - `04_dental_lab_studio_mobile_dark_390x844.png` (97.7 KB, Mobile Dark 390x844 — темная мобильная тема без белых вспышек).
+- **7. Машинная верификация**:
+  - `apps/api/src/routes/lab/ordersCrudModules/labRedTeamConsolidation.test.ts` (3/3 PASS).
+  - `apps/api/src/tests/routes/labOrdersDecomposition.test.ts` (14/14 PASS).
+  - `apps/api/src/tests/routes/dentalLabCostCashboxAndPatientPersistence.test.ts` (7/7 PASS).
+  - `apps/api/src/tests/routes/radiologyAndLabOrdersLifecycle.test.ts` (11/11 PASS).
+  - `apps/web/src/components/lab/__tests__/dentalLabSSOT.test.tsx` (6/6 PASS).
+  - `apps/web/src/components/lab/__tests__/dentalLabOrderValidator.test.ts` (12/12 PASS).
+  - `apps/web/src/components/lab/__tests__/DentalLabReadyInClinicModal.test.ts` (7/7 PASS).
+  - `apps/web/src/components/lab/__tests__/dentalLabShadePalette.test.ts` (4/4 PASS).
+  - `npx tsc -p apps/api/tsconfig.json --noEmit` — 0 ошибок.
+  - `npx tsc -p apps/web/tsconfig.json --noEmit 2>&1 | Select-String "components/lab"` — 0 ошибок.

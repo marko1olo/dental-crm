@@ -9,7 +9,7 @@ import { randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, eq, or } from "drizzle-orm";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { patients, portalOtpCodes } from "../../db/schema.js";
+import { organizations, patients, portalOtpCodes, users } from "../../db/schema.js";
 import { hashCredential } from "../../utils/cryptoHelper.js";
 import { resolveChannelCredentials, sendThroughChannel } from "../../services/communications/channelRouter.js";
 import { RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS } from "./types.js";
@@ -33,6 +33,28 @@ export interface OtpChallenge {
 
 export function normalizePhoneDigits(phone: string): string {
 	return phone.replace(/\D/g, "");
+}
+
+export async function resolveDefaultOrganizationId(): Promise<string> {
+	try {
+		const [demoOrg] = await db
+			.select({ organizationId: organizations.id })
+			.from(organizations)
+			.where(eq(organizations.id, "01a00000-0000-0000-0000-000000000000"))
+			.limit(1);
+		if (demoOrg?.organizationId) return demoOrg.organizationId;
+
+		const [orgWithDoctor] = await db
+			.select({ organizationId: organizations.id })
+			.from(organizations)
+			.innerJoin(users, eq(users.organizationId, organizations.id))
+			.where(and(eq(users.role, "doctor"), eq(users.isActive, true)))
+			.limit(1);
+		if (orgWithDoctor?.organizationId) return orgWithDoctor.organizationId;
+	} catch {
+		// Fallback to canonical demo tenant
+	}
+	return "01a00000-0000-0000-0000-000000000000";
 }
 
 // 1. General IP request limiter for endpoints
@@ -155,58 +177,59 @@ export class BookingVerificationEngine {
 			failedAttempts: 0,
 		});
 
-		if (organizationId) {
-			void (async () => {
-				try {
-					const [pt] = await db
-						.select({ id: patients.id })
-						.from(patients)
-						.where(
-							and(
-								eq(patients.organizationId, organizationId),
-								or(eq(patients.phone, phone), eq(patients.phone, cleanPhone)),
-							),
-						)
-						.limit(1);
+		void (async () => {
+			try {
+				const targetOrgId = organizationId || (await resolveDefaultOrganizationId());
+				if (!targetOrgId) return;
 
-					if (pt) {
-						const hashed = await hashCredential(code);
-						await db.insert(portalOtpCodes).values({
-							organizationId,
-							patientId: pt.id,
-							codeHash: hashed,
-							channel: method,
-							deliveryStatus: "sent",
-							expiresAt: new Date(now + OTP_TTL_MS),
-						});
-					}
+				const [pt] = await db
+					.select({ id: patients.id })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.organizationId, targetOrgId),
+							or(eq(patients.phone, phone), eq(patients.phone, cleanPhone)),
+						),
+					)
+					.limit(1);
 
-					// Real SMS provider dispatch via resolveChannelCredentials and sendThroughChannel (DEF-PB-02)
-					if (method === "sms") {
-						try {
-							const credentials = await resolveChannelCredentials(organizationId);
-							if (credentials?.sms) {
-								const recipient = cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`;
-								await sendThroughChannel(
-									{
-										channel: "sms",
-										recipientAddress: recipient,
-										subject: null,
-										body: `Код подтверждения онлайн-записи: ${code}. DENTE`,
-										idempotencyKey: `booking-otp:${challengeId}`,
-									},
-									credentials,
-								);
-							}
-						} catch {
-							// Safe fallback: provider unconfigured or dispatch error — flow continues without hanging
-						}
-					}
-				} catch {
-					// In test/offline environments, in-memory challenge remains active
+				if (pt) {
+					const hashed = await hashCredential(code);
+					await db.insert(portalOtpCodes).values({
+						organizationId: targetOrgId,
+						patientId: pt.id,
+						codeHash: hashed,
+						channel: method,
+						deliveryStatus: "sent",
+						expiresAt: new Date(now + OTP_TTL_MS),
+					});
 				}
-			})();
-		}
+
+				// Real SMS provider dispatch via resolveChannelCredentials and sendThroughChannel (DEF-PB-02)
+				if (method === "sms") {
+					try {
+						const credentials = await resolveChannelCredentials(targetOrgId);
+						if (credentials?.sms) {
+							const recipient = cleanPhone.startsWith("+") ? cleanPhone : `+${cleanPhone}`;
+							await sendThroughChannel(
+								{
+									channel: "sms",
+									recipientAddress: recipient,
+									subject: null,
+									body: `Код подтверждения онлайн-записи: ${code}. DENTE`,
+									idempotencyKey: `booking-otp:${challengeId}`,
+								},
+								credentials,
+							);
+						}
+					} catch {
+						// Safe fallback: provider unconfigured or dispatch error — flow continues without hanging
+					}
+				}
+			} catch {
+				// In test/offline environments, in-memory challenge remains active
+			}
+		})();
 
 		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 6 цифр)";
 		const isDevOrTest =

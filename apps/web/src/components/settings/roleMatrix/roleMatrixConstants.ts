@@ -18,6 +18,7 @@ export const ROLE_DISPLAY_NAMES: Record<GranularStaffRole, string> = {
 	senior_admin: "Старший администратор",
 	registrar: "Администратор / Ресепшен",
 	accountant: "Бухгалтер",
+	curator: "Куратор лечения",
 };
 
 export const CLINICAL_ROLES: GranularStaffRole[] = ["doctor", "assistant", "head_doctor", "senior_nurse"];

@@ -9,11 +9,11 @@ import { money } from "../../../utils/formatters";
 import { SettingsPricesTab } from "../../../components/settings/SettingsPricesTab";
 
 export interface SettingsPricesTabContentProps {
-	pricelistAnalysis?: any;
+	pricelistAnalysis?: DentalPricelistAnalysisResponse | null | undefined;
 	pricelistImageNote?: string | undefined;
-	pricelistWarningsText?: ((warnings: any[]) => string) | undefined;
-	pricelistItemMaterialText?: ((item: any) => string) | undefined;
-	pricelistMaterialSummaryText?: ((summary: any) => string) | undefined;
+	pricelistWarningsText?: ((warnings: unknown[]) => string) | undefined;
+	pricelistItemMaterialText?: ((item: unknown) => string) | undefined;
+	pricelistMaterialSummaryText?: ((summary: unknown) => string) | undefined;
 }
 
 export const SettingsPricesTabContent: React.FC<SettingsPricesTabContentProps> = ({

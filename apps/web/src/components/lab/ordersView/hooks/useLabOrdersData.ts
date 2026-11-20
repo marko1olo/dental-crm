@@ -108,8 +108,13 @@ export function useLabOrdersData({ initialOrders, onOrdersChanged, onOpenOrderFr
 			}
 			void fetchOrders();
 		};
+		// Каноническое событие ЗТЛ + обратная совместимость
+		window.addEventListener("dente:lab:order-created", handleOrderCreated);
 		window.addEventListener("dente-lab-order-created", handleOrderCreated);
-		return () => window.removeEventListener("dente-lab-order-created", handleOrderCreated);
+		return () => {
+			window.removeEventListener("dente:lab:order-created", handleOrderCreated);
+			window.removeEventListener("dente-lab-order-created", handleOrderCreated);
+		};
 	}, [fetchOrders]);
 
 	return { orders, setOrders, isLoading, error, fetchOrders };

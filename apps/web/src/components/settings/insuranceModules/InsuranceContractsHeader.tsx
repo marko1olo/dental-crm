@@ -35,18 +35,7 @@ export const InsuranceContractsHeader: React.FC<InsuranceContractsHeaderProps> =
 				<button
 					type="button"
 					onClick={() => onExportRegistry("xml")}
-					style={{
-						height: 36,
-						minHeight: 36,
-						padding: "0 12px",
-						borderRadius: 8,
-						border: "1px solid var(--line)",
-						background: "var(--surface)",
-						color: "var(--ink)",
-						fontSize: 12,
-						fontWeight: 600,
-						cursor: "pointer",
-					}}
+					className="dente-btn-secondary h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 cursor-pointer"
 					title="Выгрузить реестр оказанных услуг ДМС в XML для страховых компаний"
 				>
 					Реестр ДМС (XML)
@@ -54,39 +43,18 @@ export const InsuranceContractsHeader: React.FC<InsuranceContractsHeaderProps> =
 				<button
 					type="button"
 					onClick={() => onExportRegistry("csv")}
-					style={{
-						height: 36,
-						minHeight: 36,
-						padding: "0 12px",
-						borderRadius: 8,
-						border: "1px solid var(--line)",
-						background: "var(--surface)",
-						color: "var(--ink)",
-						fontSize: 12,
-						fontWeight: 600,
-						cursor: "pointer",
-					}}
+					className="dente-btn-secondary h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 cursor-pointer"
 					title="Выгрузить реестр оказанных услуг ДМС в CSV для бухгалтерии"
 				>
 					Реестр ДМС (CSV)
 				</button>
 				<button
 					type="button"
-					className="primary-button cursor-pointer"
+					className="dente-btn-primary h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
 					onClick={onOpenAddModal}
-					style={{
-						height: 36,
-						minHeight: 36,
-						padding: "0 14px",
-						borderRadius: 8,
-						fontSize: 12,
-						fontWeight: 600,
-						display: "inline-flex",
-						alignItems: "center",
-						gap: 6,
-					}}
 				>
-					<Plus size={15} /> Добавить договор
+					<Plus className="w-4 h-4 shrink-0" />
+					<span>Добавить договор</span>
 				</button>
 			</div>
 		</div>

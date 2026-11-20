@@ -1,5 +1,5 @@
 import type React from "react";
-import { viewLabels as workspaceViewLabels } from "../../workspaceShell";
+import { viewLabels as workspaceViewLabels } from "../../utils/routeUtils";
 import { GranularRoleMatrixView } from "./GranularRoleMatrixView";
 import { AccessSecurityGuaranteesGrid } from "./access/AccessSecurityGuaranteesGrid";
 import { AccessSecurityHero } from "./access/AccessSecurityHero";

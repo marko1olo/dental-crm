@@ -14,6 +14,8 @@ import {
 	type SettingsRoleMode,
 	type SettingsStaffUser,
 	type SettingsViewFeatureFlags,
+	type SettingsViewLogicBag,
+	type SettingsAppLogicBag,
 	DOCTOR_TABS,
 	ADMIN_TABS,
 	OWNER_TABS,
@@ -30,11 +32,11 @@ export interface SettingsDesktopLayoutProps {
 	setRoleMode: (mode: SettingsRoleMode) => void;
 	selectSettingsTab: (tabId: SettingsTabId | string) => void;
 	reopenOnboarding?: (() => void) | undefined;
-	activeStaffUser?: SettingsStaffUser | null;
+	activeStaffUser?: SettingsStaffUser | null | undefined;
 	settingsProps: Record<string, unknown>;
 	settingsTab: string;
-	appLogic: unknown;
-	logic: Record<string, unknown>;
+	appLogic: SettingsAppLogicBag;
+	logic: SettingsViewLogicBag;
 	flags: SettingsViewFeatureFlags;
 	typedSettingsTabs: Array<{ id: SettingsTabId; title: string; group: SettingsTabGroup }>;
 	handleSettingsTabKeyDown: (event: KeyboardEvent<HTMLButtonElement>, tabId: SettingsTabId) => void;

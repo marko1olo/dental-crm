@@ -17,47 +17,52 @@ import type {
 } from "@dental/shared";
 
 export function buildSettingsProps(
-	appLogic: Record<string, unknown> = {},
-	settingsStore: Record<string, unknown> = {},
-	derivations: Record<string, unknown> = {},
+	appLogic: unknown = {},
+	settingsStore: unknown = {},
+	derivations: unknown = {},
 	activeStaffUser?: unknown,
-	extra: Record<string, unknown> = {},
+	extra: unknown = {},
 ): Record<string, unknown> {
+	const store = (settingsStore ?? {}) as Record<string, unknown>;
+	const logic = (appLogic ?? {}) as Record<string, unknown>;
+	const d = (derivations ?? {}) as Record<string, unknown>;
+	const extraBag = (extra ?? {}) as Record<string, unknown>;
 	const typedTelegramChatLinks =
-		(settingsStore?.telegramChatLinks as DenteTelegramChatLinkPublic[]) ??
-		(appLogic?.telegramChatLinks as DenteTelegramChatLinkPublic[]) ??
+		(store?.telegramChatLinks as DenteTelegramChatLinkPublic[]) ??
+		(logic?.telegramChatLinks as DenteTelegramChatLinkPublic[]) ??
 		[];
 	const typedTelegramLinkCodes =
-		(settingsStore?.telegramLinkCodes as DenteTelegramLinkCodePublic[]) ??
-		(appLogic?.telegramLinkCodes as DenteTelegramLinkCodePublic[]) ??
+		(store?.telegramLinkCodes as DenteTelegramLinkCodePublic[]) ??
+		(logic?.telegramLinkCodes as DenteTelegramLinkCodePublic[]) ??
 		[];
 	const typedTelegramOutbox =
-		(settingsStore?.telegramOutbox as DenteTelegramOutboxResponse | null) ??
-		(appLogic?.telegramOutbox as DenteTelegramOutboxResponse | null) ??
+		(store?.telegramOutbox as DenteTelegramOutboxResponse | null) ??
+		(logic?.telegramOutbox as DenteTelegramOutboxResponse | null) ??
 		null;
 	const typedVisibleTelegramOutboxItems =
-		(appLogic?.visibleTelegramOutboxItems as DenteTelegramOutboxItem[]) ?? [];
+		(logic?.visibleTelegramOutboxItems as DenteTelegramOutboxItem[]) ?? [];
 	const typedTelegramInlineButtonKindLabels =
-		(appLogic?.telegramInlineButtonKindLabels as Record<string, string>) ?? {};
+		(logic?.telegramInlineButtonKindLabels as Record<string, string>) ?? {};
 	const typedTelegramEnabledFeaturesDraft =
-		(settingsStore?.telegramEnabledFeaturesDraft as DenteTelegramFeature[]) ??
+		(store?.telegramEnabledFeaturesDraft as DenteTelegramFeature[]) ??
 		[];
 	const typedTelegramFeatureOptions =
-		(appLogic?.telegramFeatureOptions as DenteTelegramFeature[]) ?? [];
+		(logic?.telegramFeatureOptions as DenteTelegramFeature[]) ?? [];
 	const typedTelegramPostVisitCheckupDelayDrafts =
-		(settingsStore?.telegramPostVisitCheckupDelayDrafts as Record<
+		(store?.telegramPostVisitCheckupDelayDrafts as Record<
 			string,
 			string
 		>) ?? {};
 
 	const adminSecretDraft =
-		settingsStore?.telegramAdminSecretDraft ??
-		appLogic?.telegramAdminSecretDraft ??
-		extra?.telegramAdminSecretDraft ??
+		store?.telegramAdminSecretDraft ??
+		logic?.telegramAdminSecretDraft ??
+		extraBag?.telegramAdminSecretDraft ??
 		"";
-	const adminSecretReady = (adminSecretDraft || "").trim().length > 0;
+	const adminSecretReady =
+		typeof adminSecretDraft === "string" && adminSecretDraft.trim().length > 0;
 
-	const rawStaff = (appLogic?.staff as Array<{ id: string; fullName: string; role?: string; isActive?: boolean }>) ?? [];
+	const rawStaff = (logic?.staff as Array<{ id: string; fullName: string; role?: string; isActive?: boolean }>) ?? [];
 	const staffOptions = rawStaff
 		.filter((s) => s && s.isActive !== false)
 		.map((s) => ({
@@ -67,18 +72,18 @@ export function buildSettingsProps(
 		}));
 
 	return {
-		...appLogic,
-		...settingsStore,
-		...derivations,
+		...logic,
+		...store,
+		...d,
 		activeStaffUser,
 		adminSecretReady,
 		adminSecretScopeWarning:
-			appLogic?.adminSecretScopeWarning ??
+			logic?.adminSecretScopeWarning ??
 			"Административный секрет защищает системные настройки клиники.",
-		legalMissingFields: appLogic?.legalMissingFields ?? [],
-		legalReadinessPercent: appLogic?.legalReadinessPercent ?? 100,
-		newChairReadyToCreate: appLogic?.newChairReadyToCreate ?? false,
-		newStaffReadyToCreate: appLogic?.newStaffReadyToCreate ?? false,
+		legalMissingFields: logic?.legalMissingFields ?? [],
+		legalReadinessPercent: logic?.legalReadinessPercent ?? 100,
+		newChairReadyToCreate: logic?.newChairReadyToCreate ?? false,
+		newStaffReadyToCreate: logic?.newStaffReadyToCreate ?? false,
 		staffOptions,
 		telegramPreviewLoadingGuidanceId: "telegram-preview-loading-guidance",
 		telegramPreviewPatientGuidanceId: "telegram-preview-patient-guidance",
@@ -89,10 +94,10 @@ export function buildSettingsProps(
 		typedTelegramInlineButtonKindLabels,
 		typedTelegramLinkCodes,
 		typedTelegramLinkStaffOptions:
-			appLogic?.typedTelegramLinkStaffOptions ?? [],
+			logic?.typedTelegramLinkStaffOptions ?? [],
 		typedTelegramOutbox,
 		typedVisibleTelegramOutboxItems,
 		typedTelegramPostVisitCheckupDelayDrafts,
-		...extra,
+		...extraBag,
 	};
 }

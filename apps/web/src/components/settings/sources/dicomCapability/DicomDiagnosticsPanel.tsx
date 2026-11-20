@@ -4,13 +4,13 @@ import type { DicomDiagnosticsPanelProps } from "./types";
 
 export function DicomDiagnosticsPanel({
 	typedDicomViewerWorkbenchManifest,
-	dicomQualityModeLabels,
-	dicomViewerLaunchModeLabels,
-	dicomTextureStrategyLabels,
-	dicomRenderMemoryBudgetClassLabels,
-	dicomDiagnosticPixelPolicyLabels,
+	dicomQualityModeLabels = {},
+	dicomViewerLaunchModeLabels = {},
+	dicomTextureStrategyLabels = {},
+	dicomRenderMemoryBudgetClassLabels = {},
+	dicomDiagnosticPixelPolicyLabels = {},
 	dicomWorkbenchLocalSavedAt,
-	formatTime,
+	formatTime = (t) => String(t ?? ""),
 	dicomWorkbenchServerBundle,
 	dicomWorkbenchSourceIsRedacted,
 	saveDicomWorkbenchBundleToServer,
@@ -22,13 +22,13 @@ export function DicomDiagnosticsPanel({
 	downloadDicomWorkbenchManifest,
 	clearDicomWorkbenchRecovery,
 	typedDicomWorkstationReadiness,
-	dicomRuntimeTierLabels,
-	mprLoadStrategyLabels,
-	dicomGpuClassLabels,
-	dicomExecutionLaneLabels,
-	dicomReadinessCheckLabels,
+	dicomRuntimeTierLabels = {},
+	mprLoadStrategyLabels = {},
+	dicomGpuClassLabels = {},
+	dicomExecutionLaneLabels = {},
+	dicomReadinessCheckLabels = {},
 	typedDicomRenderCachePlan,
-	dicomLabel,
+	dicomLabel = (dict, val, fb = "") => (val == null ? fb : dict?.[String(val)] ?? fb ?? String(val)),
 }: DicomDiagnosticsPanelProps) {
 	return (
 		<>
@@ -131,7 +131,7 @@ export function DicomDiagnosticsPanel({
 							className="secondary-button"
 							type="button"
 							data-testid="save-dicom-workbench-server"
-							onClick={() => void saveDicomWorkbenchBundleToServer()}
+							onClick={() => void saveDicomWorkbenchBundleToServer?.()}
 							disabled={isDicomWorkbenchServerSaving}
 						>
 							<Database aria-hidden="true" />
@@ -143,7 +143,7 @@ export function DicomDiagnosticsPanel({
 							className="secondary-button"
 							type="button"
 							data-testid="reconnect-dicom-workbench-folder"
-							onClick={() => void reconnectDicomWorkbenchFromCurrentFolder()}
+							onClick={() => void reconnectDicomWorkbenchFromCurrentFolder?.()}
 							disabled={
 								!(imagingFolderPath || "").trim() ||
 								isDicomWorkbenchReconnecting
@@ -159,7 +159,7 @@ export function DicomDiagnosticsPanel({
 								className="text-button"
 								type="button"
 								onClick={() =>
-									restoreDicomWorkbenchServerBundle(
+									restoreDicomWorkbenchServerBundle?.(
 										dicomWorkbenchServerBundle,
 									)
 								}
@@ -170,7 +170,7 @@ export function DicomDiagnosticsPanel({
 						<button
 							className="secondary-button"
 							type="button"
-							onClick={downloadDicomWorkbenchManifest}
+							onClick={() => downloadDicomWorkbenchManifest?.()}
 							disabled={!typedDicomViewerWorkbenchManifest}
 						>
 							<FileText aria-hidden="true" />
@@ -179,7 +179,7 @@ export function DicomDiagnosticsPanel({
 						<button
 							className="text-button"
 							type="button"
-							onClick={clearDicomWorkbenchRecovery}
+							onClick={() => clearDicomWorkbenchRecovery?.()}
 							disabled={!dicomWorkbenchLocalSavedAt}
 						>
 							Очистить локальную копию

@@ -1,9 +1,9 @@
-import { DEFAULT_CLINIC_LEGAL_REQUISITES } from "@dental/shared";
 import {
+	DEFAULT_CLINIC_LEGAL_REQUISITES,
 	generateFnsNdflPrintHtml,
-	type FnsNdflFiscalReceiptItem,
-	type FnsNdflXmlPayload,
-} from "../../../documents/ndflXml/fnsNdflXmlEngine.js";
+	type FnsFiscalReceiptItem,
+	type FnsTaxPayload,
+} from "@dental/shared";
 import type { PatientPersonalCabinetData } from "../patientCabinetEngine.js";
 import { downloadHtmlFile } from "./documentsDownloadUtils.js";
 
@@ -25,7 +25,7 @@ export function generatePatientTaxCertificate1151156(
 		return true;
 	});
 
-	const receipts: FnsNdflFiscalReceiptItem[] = [];
+	const receipts: FnsFiscalReceiptItem[] = [];
 	for (const inv of paidInvoices) {
 		for (let i = 0; i < inv.items.length; i++) {
 			const item = inv.items[i]!;
@@ -64,7 +64,7 @@ export function generatePatientTaxCertificate1151156(
 			? String(data.passport)
 			: undefined;
 
-	const payload: FnsNdflXmlPayload = {
+	const payload: FnsTaxPayload = {
 		documentNumber: data.cardNumber || data.cardNumberRu || data.patientId?.slice(0, 8).toUpperCase() || "1",
 		documentDate: new Date(),
 		taxYear,
@@ -85,7 +85,8 @@ export function generatePatientTaxCertificate1151156(
 				? { docTypeCode: "21", seriesAndNumber: passportSeriesNum, issueDate: data.passportIssuedDate || undefined }
 				: undefined,
 		},
-		patient: { kinshipCode: "1" },
+		patient: { patientKinshipCode: "1" },
+		expenses: {},
 		receipts,
 	};
 

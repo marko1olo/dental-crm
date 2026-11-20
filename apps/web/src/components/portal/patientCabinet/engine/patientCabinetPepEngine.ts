@@ -46,6 +46,59 @@ function generateSecure6DigitOtp(): string {
 	return "748291";
 }
 
+/**
+ * Серверная валидация и подписание согласия ПЭП через Fastify API /api/portal/consents/:id/sign
+ * Устраняет клиентский рассинхрон и псевдогенерацию OTP.
+ */
+export async function signConsentViaServerApi(
+	consentId: string,
+	pepCode: string,
+	token?: string,
+): Promise<{ success: boolean; error?: string }> {
+	const effectiveToken =
+		token ||
+		(typeof window !== "undefined"
+			? localStorage.getItem("dente_portal_token")
+			: null);
+	try {
+		const res = await fetch(
+			`/api/portal/consents/${encodeURIComponent(consentId)}/sign`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {}),
+				},
+				body: JSON.stringify({
+					signatureMethod: "sms_otp",
+					pepCode,
+					deviceMeta:
+						typeof navigator !== "undefined"
+							? navigator.userAgent
+							: "PWA Patient Cabinet",
+				}),
+			},
+		);
+		if (!res.ok) {
+			const json = await res.json().catch(() => null);
+			return {
+				success: false,
+				error: json?.message || "Неверный код подтверждения из SMS.",
+			};
+		}
+		return { success: true };
+	} catch {
+		return {
+			success: false,
+			error: "Сетевая ошибка при проверке кода. Попробуйте снова.",
+		};
+	}
+}
+
+/**
+ * @deprecated В боевом Личном кабинете проверка OTP выполняется на сервере Fastify API.
+ * Оставлено для совместимости с офлайн-тестами.
+ */
 export function generateSmsOtp(
 	_phone: string,
 	mockCode?: string,
@@ -56,6 +109,10 @@ export function generateSmsOtp(
 	return { code, sentTimestamp: now, expiresAt };
 }
 
+/**
+ * @deprecated В боевом Личном кабинете проверка OTP выполняется на сервере Fastify API.
+ * Оставлено для совместимости с офлайн-тестами.
+ */
 export function verifySmsOtp(
 	inputCode: string,
 	expectedCode: string,

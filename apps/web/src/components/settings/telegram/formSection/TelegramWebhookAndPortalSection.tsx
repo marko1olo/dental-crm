@@ -45,8 +45,8 @@ export function TelegramWebhookAndPortalSection({ props }: TelegramWebhookAndPor
 					placeholder="https://crm.clinic.ru"
 					value={telegramWebhookBaseUrlDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						setTelegramWebhookBaseUrlDraft(event.target.value);
-						markTelegramSettingsDirty();
+						setTelegramWebhookBaseUrlDraft?.(event.target.value);
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 				<small>Публичный HTTPS-адрес CRM для вебхуков Telegram.</small>
@@ -61,8 +61,8 @@ export function TelegramWebhookAndPortalSection({ props }: TelegramWebhookAndPor
 						placeholder="https://portal.example"
 						value={telegramPatientPortalBaseUrlDraft}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramPatientPortalBaseUrlDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramPatientPortalBaseUrlDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 					<button
@@ -92,8 +92,8 @@ export function TelegramWebhookAndPortalSection({ props }: TelegramWebhookAndPor
 					placeholder="https://.../welcome.jpg"
 					value={telegramWelcomeImageUrlDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						setTelegramWelcomeImageUrlDraft(event.target.value);
-						markTelegramSettingsDirty();
+						setTelegramWelcomeImageUrlDraft?.(event.target.value);
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 			</label>
@@ -108,8 +108,8 @@ export function TelegramWebhookAndPortalSection({ props }: TelegramWebhookAndPor
 					step={5}
 					value={telegramTokenTtlDraft}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
-						setTelegramTokenTtlDraft(event.target.value);
-						markTelegramSettingsDirty();
+						setTelegramTokenTtlDraft?.(event.target.value);
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 			</label>

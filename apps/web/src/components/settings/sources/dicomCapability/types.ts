@@ -3,12 +3,18 @@ import type {
 	DicomSeriesPreviewGroup,
 	DicomSeriesPreviewResponse,
 	DicomViewerLaunchManifestResponse,
+	DicomViewerToolStateBundleResponse,
 	DicomViewerWorkbenchManifestResponse,
 	DicomWebConnectorCheckResponse,
 	DicomWorkstationReadinessResponse,
+	ImagingViewerImplantPlan,
+	ImagingViewerTool,
+	LocalBridgeReadinessResponse,
 	MprWindowPreset,
 } from "@dental/shared";
+export type { DicomSeriesPreviewGroup };
 import type { ChangeEvent, CSSProperties, KeyboardEvent, ReactNode } from "react";
+import type { MprClinicalChecklistItem, MprOperatorSummaryCardItem } from "./DicomMprRoadmapPanel";
 
 export type CbctWorkbenchPlane = { key: string; title: string; detail: string };
 export type TextInputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -36,172 +42,172 @@ export interface DicomSeriesLabPanelProps {
 }
 
 export interface DicomMprVisualizerPanelProps {
-	mprControlsReady: boolean;
-	mprAxisVisualizerStyle: CSSProperties;
-	mprAxisVisualizerLabel: string;
-	handleMprKeyboardNavigation: (event: KeyboardEvent<HTMLDivElement>) => void;
-	mprProjectionCompass: {
+	mprControlsReady?: boolean | undefined;
+	mprAxisVisualizerStyle?: CSSProperties | undefined;
+	mprAxisVisualizerLabel?: string | undefined;
+	handleMprKeyboardNavigation?: ((event: KeyboardEvent<HTMLDivElement>) => void) | undefined;
+	mprProjectionCompass?: {
 		top: string;
 		right: string;
 		bottom: string;
 		left: string;
 		summary: string;
-	};
-	mprCrosshairEnabled: boolean;
-	mprAxisAngleBadge: string | number;
-	mprSlabBadge: string | number;
-	mprSliceBadge: string | number;
-	mprActiveProjectionLabel: string;
-	mprActiveProjectionOrientation: string;
-	mprAxisDirectionLabel: string;
-	mprSlabMm: number;
-	mprSliceLabel: string;
-	mprAxisGuidance: {
+	} | undefined;
+	mprCrosshairEnabled?: boolean | undefined;
+	mprAxisAngleBadge?: string | number | undefined;
+	mprSlabBadge?: string | number | undefined;
+	mprSliceBadge?: string | number | undefined;
+	mprActiveProjectionLabel?: string | undefined;
+	mprActiveProjectionOrientation?: string | undefined;
+	mprAxisDirectionLabel?: string | undefined;
+	mprSlabMm?: number | undefined;
+	mprSliceLabel?: string | undefined;
+	mprAxisGuidance?: {
 		tiltLabel: string;
 		slabLabel: string;
 		sliceLabel: string;
-	};
-	mprWorkbenchSummaryText: string;
-	mprLinkedPlanesEnabled: boolean;
-	mprNearestClinicalPreset: {
-		exact?: boolean;
+	} | undefined;
+	mprWorkbenchSummaryText?: string | undefined;
+	mprLinkedPlanesEnabled?: boolean | undefined;
+	mprNearestClinicalPreset?: {
+		exact?: boolean | undefined;
 		label: string;
 		deltas: unknown[];
-		title?: string;
-	};
-	applyNearestMprClinicalPreset: () => void;
+		title?: string | undefined;
+	} | undefined;
+	applyNearestMprClinicalPreset?: (() => void) | undefined;
 }
 
 export interface DicomMprControlPanelProps {
-	mprControlsReady: boolean;
-	cbctWorkbenchProjections: string[];
-	mprProjection: string;
-	setMprProjection: (projection: string) => void;
-	mprProjectionLabels: Record<string, string>;
-	mprAxisDeg: number;
-	mprAxisRangeValue: string;
-	mprAxisBounds: { min: number; max: number };
-	setMprAxisDeg: (deg: number) => void;
-	clampMprAxisDeg: (deg: number) => number;
-	mprAxisNudgeDeg: number[];
-	formatSignedMprStep: (delta: number, suffix: string) => string;
-	mprAxisPresetDeg: number[];
-	mprSlabMm: number;
-	mprSlabRangeValue: string;
-	mprSlabBounds: { min: number; max: number };
-	setMprSlabMm: (slab: number) => void;
-	clampMprSlabMm: (slab: number) => number;
-	mprSlabNudgeMm: number[];
-	mprSlabPresetMm: number[];
-	mprSliceLabel: string;
-	mprSliceMaxIndex: number;
-	mprSafeSliceIndex: number;
-	mprSliceRangeValue: string;
-	setMprSliceIndex: (index: number) => void;
-	clampMprSliceIndex: (index: number, max: number) => number;
-	mprSliceNudgeSteps: number[];
-	mprSlicePresetFractions: Array<{
+	mprControlsReady?: boolean | undefined;
+	cbctWorkbenchProjections?: string[] | undefined;
+	mprProjection?: string | undefined;
+	setMprProjection?: ((projection: string) => void) | undefined;
+	mprProjectionLabels?: Record<string, string> | undefined;
+	mprAxisDeg?: number | undefined;
+	mprAxisRangeValue?: string | undefined;
+	mprAxisBounds?: { min: number; max: number } | undefined;
+	setMprAxisDeg?: ((deg: number) => void) | undefined;
+	clampMprAxisDeg?: ((deg: number) => number) | undefined;
+	mprAxisNudgeDeg?: number[] | undefined;
+	formatSignedMprStep?: ((delta: number, suffix: string) => string) | undefined;
+	mprAxisPresetDeg?: number[] | undefined;
+	mprSlabMm?: number | undefined;
+	mprSlabRangeValue?: string | undefined;
+	mprSlabBounds?: { min: number; max: number } | undefined;
+	setMprSlabMm?: ((slab: number) => void) | undefined;
+	clampMprSlabMm?: ((slab: number) => number) | undefined;
+	mprSlabNudgeMm?: number[] | undefined;
+	mprSlabPresetMm?: number[] | undefined;
+	mprSliceLabel?: string | undefined;
+	mprSliceMaxIndex?: number | undefined;
+	mprSafeSliceIndex?: number | undefined;
+	mprSliceRangeValue?: string | undefined;
+	setMprSliceIndex?: ((index: number) => void) | undefined;
+	clampMprSliceIndex?: ((index: number, max: number) => number) | undefined;
+	mprSliceNudgeSteps?: number[] | undefined;
+	mprSlicePresetFractions?: Array<{
 		id: string;
 		fraction: number;
 		label: string;
-	}>;
-	mprSliceIndexFromFraction: (fraction: number, max: number) => number;
-	resetMprControls: () => void;
-	mprWorkbenchLocalSavedAt: string | null;
-	formatTime: (time: string | null) => string;
-	mprWorkbenchDraftRestored: boolean;
-	restoreMprWorkbenchLocalDraft: () => void;
-	mprClinicalPresets: Array<{
+	}> | undefined;
+	mprSliceIndexFromFraction?: ((fraction: number, max: number) => number) | undefined;
+	resetMprControls?: (() => void) | undefined;
+	mprWorkbenchLocalSavedAt?: string | null | undefined;
+	formatTime?: ((time: string | null) => string) | undefined;
+	mprWorkbenchDraftRestored?: boolean | undefined;
+	restoreMprWorkbenchLocalDraft?: (() => void) | undefined;
+	mprClinicalPresets?: Array<{
 		id: string;
 		title: string;
 		detail?: string | undefined;
 		projection: string;
 		[key: string]: unknown;
-	}>;
-	describeMprClinicalPresetProjectionFallback: (
-		projection: string,
+	}> | undefined;
+	describeMprClinicalPresetProjectionFallback?: (
+		(projection: string,
 		projections: string[],
 		labels: Record<string, string>,
-	) => string | null;
-	mprClinicalPresetButtonClass: (preset: { id?: string; [key: string]: unknown }) => string;
-	applyMprClinicalPreset: (preset: { id?: string; [key: string]: unknown }) => void;
-	mprNearestClinicalPreset: {
-		exact?: boolean;
-		title?: string;
-	};
-	mprWindowPresetLabels: Record<string, string>;
-	mprWindowPreset: MprWindowPreset;
-	setMprWindowPreset: (preset: MprWindowPreset) => void;
-	mprCrosshairEnabled: boolean;
-	setMprCrosshairEnabled: (enabled: boolean) => void;
-	mprLinkedPlanesEnabled: boolean;
-	setMprLinkedPlanesEnabled: (enabled: boolean) => void;
+	) => string | null) | undefined;
+	mprClinicalPresetButtonClass?: ((preset: { id?: string; [key: string]: unknown }) => string) | undefined;
+	applyMprClinicalPreset?: ((preset: { id?: string; [key: string]: unknown }) => void) | undefined;
+	mprNearestClinicalPreset?: {
+		exact?: boolean | undefined;
+		title?: string | undefined;
+	} | undefined;
+	mprWindowPresetLabels?: Record<string, string> | undefined;
+	mprWindowPreset?: MprWindowPreset | undefined;
+	setMprWindowPreset?: ((preset: MprWindowPreset) => void) | undefined;
+	mprCrosshairEnabled?: boolean | undefined;
+	setMprCrosshairEnabled?: ((enabled: boolean) => void) | undefined;
+	mprLinkedPlanesEnabled?: boolean | undefined;
+	setMprLinkedPlanesEnabled?: ((enabled: boolean) => void) | undefined;
 }
 
 export interface DicomOhifBridgePanelProps {
-	dicomViewerLaunchManifest: DicomViewerLaunchManifestResponse | null | undefined;
-	dicomViewerLaunchModeLabels: Record<string, string>;
-	dicomWebEndpointUrl: string;
-	setDicomWebEndpointUrl: (url: string) => void;
-	ohifBaseUrl: string;
-	setOhifBaseUrl: (url: string) => void;
-	onResetEndpointState: () => void;
-	onResetOhifState: () => void;
-	cbctWorkbenchSeries: DicomSeriesPreviewGroup | null | undefined;
-	isDicomWorkbenchBuilding: boolean;
-	buildDicomViewerWorkbenchManifest: () => void | Promise<void>;
-	dicomWorkbenchSeriesGuidanceId: string;
-	isDicomWorkstationChecking: boolean;
-	checkDicomWorkstationReadiness: () => void | Promise<void>;
-	isDicomManifestBuilding: boolean;
-	buildDicomViewerLaunchManifest: () => void | Promise<void>;
-	dicomArchiveAddressReady: boolean;
-	isDicomWebChecking: boolean;
-	checkDicomWebConnector: () => void | Promise<void>;
-	dicomArchiveAddressGuidanceId: string;
-	buildDicomViewerToolStateBundle: () => void | Promise<void>;
-	isDicomToolStateBuilding: boolean;
-	dicomExecutionLaneLabels: Record<string, string>;
-	typedDicomWorkstationReadiness: DicomWorkstationReadinessResponse | null;
-	buildDicomRenderCachePlan: () => void | Promise<void>;
-	isDicomRenderCachePlanning: boolean;
-	dicomWorkstationGuidanceId: string;
-	dicomWorkstationReadiness: DicomWorkstationReadinessResponse | unknown;
-	dicomWebCheck: DicomWebConnectorCheckResponse | null | undefined;
-	dicomWebStatusLabels: Record<string, string>;
-	dicomLabel: (dict?: Record<string, string> | null | undefined, value?: unknown, fallback?: string) => string;
+	dicomViewerLaunchManifest?: DicomViewerLaunchManifestResponse | null | undefined;
+	dicomViewerLaunchModeLabels?: Record<string, string> | undefined;
+	dicomWebEndpointUrl?: string | undefined;
+	setDicomWebEndpointUrl?: ((url: string) => void) | undefined;
+	ohifBaseUrl?: string | undefined;
+	setOhifBaseUrl?: ((url: string) => void) | undefined;
+	onResetEndpointState?: (() => void) | undefined;
+	onResetOhifState?: (() => void) | undefined;
+	cbctWorkbenchSeries?: DicomSeriesPreviewGroup | null | undefined;
+	isDicomWorkbenchBuilding?: boolean | undefined;
+	buildDicomViewerWorkbenchManifest?: (() => void | Promise<void>) | undefined;
+	dicomWorkbenchSeriesGuidanceId?: string | undefined;
+	isDicomWorkstationChecking?: boolean | undefined;
+	checkDicomWorkstationReadiness?: (() => void | Promise<void>) | undefined;
+	isDicomManifestBuilding?: boolean | undefined;
+	buildDicomViewerLaunchManifest?: (() => void | Promise<void>) | undefined;
+	dicomArchiveAddressReady?: boolean | undefined;
+	isDicomWebChecking?: boolean | undefined;
+	checkDicomWebConnector?: (() => void | Promise<void>) | undefined;
+	dicomArchiveAddressGuidanceId?: string | undefined;
+	buildDicomViewerToolStateBundle?: (() => void | Promise<void>) | undefined;
+	isDicomToolStateBuilding?: boolean | undefined;
+	dicomExecutionLaneLabels?: Record<string, string> | undefined;
+	typedDicomWorkstationReadiness?: DicomWorkstationReadinessResponse | null | undefined;
+	buildDicomRenderCachePlan?: (() => void | Promise<void>) | undefined;
+	isDicomRenderCachePlanning?: boolean | undefined;
+	dicomWorkstationGuidanceId?: string | undefined;
+	dicomWorkstationReadiness?: DicomWorkstationReadinessResponse | unknown;
+	dicomWebCheck?: DicomWebConnectorCheckResponse | null | undefined;
+	dicomWebStatusLabels?: Record<string, string> | undefined;
+	dicomLabel?: ((dict?: Record<string, string> | null | undefined, value?: unknown, fallback?: string) => string) | undefined;
 }
 
 export interface DicomDiagnosticsPanelProps {
-	typedDicomViewerWorkbenchManifest: DicomViewerWorkbenchManifestResponse | null;
-	dicomQualityModeLabels: Record<string, string>;
-	dicomViewerLaunchModeLabels: Record<string, string>;
-	dicomTextureStrategyLabels: Record<string, string>;
-	dicomRenderMemoryBudgetClassLabels: Record<string, string>;
-	dicomDiagnosticPixelPolicyLabels: Record<string, string>;
-	dicomWorkbenchLocalSavedAt: string | null;
-	formatTime: (time: string | null) => string;
-	dicomWorkbenchServerBundle: {
+	typedDicomViewerWorkbenchManifest?: DicomViewerWorkbenchManifestResponse | null | undefined;
+	dicomQualityModeLabels?: Record<string, string> | undefined;
+	dicomViewerLaunchModeLabels?: Record<string, string> | undefined;
+	dicomTextureStrategyLabels?: Record<string, string> | undefined;
+	dicomRenderMemoryBudgetClassLabels?: Record<string, string> | undefined;
+	dicomDiagnosticPixelPolicyLabels?: Record<string, string> | undefined;
+	dicomWorkbenchLocalSavedAt?: string | null | undefined;
+	formatTime?: ((time: string | null) => string) | undefined;
+	dicomWorkbenchServerBundle?: {
 		serverSavedAt?: string | null | undefined;
 		[key: string]: unknown;
 	} | null | undefined;
-	dicomWorkbenchSourceIsRedacted: boolean;
-	saveDicomWorkbenchBundleToServer: () => void | Promise<void>;
-	isDicomWorkbenchServerSaving: boolean;
-	reconnectDicomWorkbenchFromCurrentFolder: () => void | Promise<void>;
-	imagingFolderPath: string;
-	isDicomWorkbenchReconnecting: boolean;
-	restoreDicomWorkbenchServerBundle: (bundle: unknown) => void;
-	downloadDicomWorkbenchManifest: () => void;
-	clearDicomWorkbenchRecovery: () => void;
-	typedDicomWorkstationReadiness: DicomWorkstationReadinessResponse | null;
-	dicomRuntimeTierLabels: Record<string, string>;
-	mprLoadStrategyLabels: Record<string, string>;
-	dicomGpuClassLabels: Record<string, string>;
-	dicomExecutionLaneLabels: Record<string, string>;
-	dicomReadinessCheckLabels: Record<string, string>;
-	typedDicomRenderCachePlan: DicomRenderCachePlanResponse | null;
-	dicomLabel: (dict?: Record<string, string> | null | undefined, value?: unknown, fallback?: string) => string;
+	dicomWorkbenchSourceIsRedacted?: boolean | undefined;
+	saveDicomWorkbenchBundleToServer?: (() => void | Promise<void>) | undefined;
+	isDicomWorkbenchServerSaving?: boolean | undefined;
+	reconnectDicomWorkbenchFromCurrentFolder?: (() => void | Promise<void>) | undefined;
+	imagingFolderPath?: string | undefined;
+	isDicomWorkbenchReconnecting?: boolean | undefined;
+	restoreDicomWorkbenchServerBundle?: ((bundle: unknown) => void) | undefined;
+	downloadDicomWorkbenchManifest?: (() => void) | undefined;
+	clearDicomWorkbenchRecovery?: (() => void) | undefined;
+	typedDicomWorkstationReadiness?: DicomWorkstationReadinessResponse | null | undefined;
+	dicomRuntimeTierLabels?: Record<string, string> | undefined;
+	mprLoadStrategyLabels?: Record<string, string> | undefined;
+	dicomGpuClassLabels?: Record<string, string> | undefined;
+	dicomExecutionLaneLabels?: Record<string, string> | undefined;
+	dicomReadinessCheckLabels?: Record<string, string> | undefined;
+	typedDicomRenderCachePlan?: DicomRenderCachePlanResponse | null | undefined;
+	dicomLabel?: ((dict?: Record<string, string> | null | undefined, value?: unknown, fallback?: string) => string) | undefined;
 }
 
 export interface DicomServerConfigPreset {
@@ -227,8 +233,8 @@ export interface DicomMprWorkbenchPropsBag {
 	mprLoadStrategyLabels?: Record<string, string> | undefined;
 	mprResourceTierLabels?: Record<string, string> | undefined;
 	mprClinicalNextStep?: string | undefined;
-	mprClinicalChecklist?: Array<{ id: string; title: string; checked: boolean }> | undefined;
-	mprOperatorSummaryCards?: Array<{ id: string; label: string; value: string; detail: string; status: string }> | undefined;
+	mprClinicalChecklist?: Array<MprClinicalChecklistItem> | undefined;
+	mprOperatorSummaryCards?: Array<MprOperatorSummaryCardItem> | undefined;
 	mprControlsReady?: boolean | undefined;
 	imagingViewerActiveTool?: ImagingViewerTool | null | undefined;
 	ctPlanningActiveQuickActionId?: string | null | undefined;
@@ -353,6 +359,7 @@ export interface DicomMprWorkbenchPropsBag {
 	saveDicomWorkbenchBundleToServer?: (() => void | Promise<void>) | undefined;
 	dicomWorkbenchSourceIsRedacted?: boolean | undefined;
 	dicomWorkbenchServerBundle?: { serverSavedAt?: string | null | undefined; [key: string]: unknown } | null | undefined;
+	dicomWorkbenchLocalSavedAt?: string | null | undefined;
 	dicomViewerLaunchModeLabels?: Record<string, string> | undefined;
 	dicomWebStatusLabels?: Record<string, string> | undefined;
 	dicomWebCheck?: DicomWebConnectorCheckResponse | null | undefined;

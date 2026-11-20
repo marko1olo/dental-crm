@@ -35,11 +35,29 @@ export function useCabinetDataHydration(initialData?: PatientPersonalCabinetData
 		setIsFetchingMe(true);
 		const fetchMe = async () => {
 			try {
-				const res = await fetch("/api/portal/me", { headers: { Authorization: `Bearer ${token}` } });
+				const [res, consentsRes] = await Promise.all([
+					fetch("/api/portal/me", { headers: { Authorization: `Bearer ${token}` } }),
+					fetch("/api/portal/consents", { headers: { Authorization: `Bearer ${token}` } }).catch(() => null),
+				]);
 				if (res.ok) {
 					const json = await res.json();
+					let serverConsents: Array<Record<string, unknown>> | undefined;
+					if (consentsRes && consentsRes.ok) {
+						try {
+							const consentsJson = (await consentsRes.json()) as { consents?: Array<Record<string, unknown>> } | Array<Record<string, unknown>> | null;
+							if (consentsJson && typeof consentsJson === "object") {
+								if ("consents" in consentsJson && Array.isArray(consentsJson.consents)) {
+									serverConsents = consentsJson.consents;
+								} else if (Array.isArray(consentsJson)) {
+									serverConsents = consentsJson;
+								}
+							}
+						} catch {
+							// Silent fallback to empty consents
+						}
+					}
 					if (isMounted && json && json.patient) {
-						const mapped = mapServerPortalMeToCabinetData(json);
+						const mapped = mapServerPortalMeToCabinetData(json, serverConsents);
 						setData(mapped);
 						if (Array.isArray(json.doctors)) {
 							setAvailableDoctors(json.doctors);

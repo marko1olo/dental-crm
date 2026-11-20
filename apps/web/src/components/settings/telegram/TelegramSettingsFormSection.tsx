@@ -33,7 +33,7 @@ export type TelegramSettingsFormPropsBag = {
 	telegramModeLabels?: Record<string, string>;
 	telegramModeDraft?: string;
 	setTelegramModeDraft?: (val: string) => void;
-	normalizedTelegramBotMode?: string;
+	normalizedTelegramBotMode?: ((val: string) => string) | string;
 	telegramModeHints?: Record<string, string>;
 	telegramBotUsernameDraft?: string;
 	setTelegramBotUsernameDraft?: (val: string) => void;
@@ -59,7 +59,7 @@ export type TelegramSettingsFormPropsBag = {
 	telegramPrivacyModeLabels?: Record<string, string>;
 	telegramPrivacyModeDraft?: string;
 	setTelegramPrivacyModeDraft?: (val: string) => void;
-	normalizedTelegramPrivacyMode?: string;
+	normalizedTelegramPrivacyMode?: ((val: string) => string) | string;
 	telegramPrivacyModeHints?: Record<string, string>;
 	typedTelegramFeatureOptions?: DenteTelegramFeature[];
 	typedTelegramEnabledFeaturesDraft?: DenteTelegramFeature[];
@@ -67,7 +67,7 @@ export type TelegramSettingsFormPropsBag = {
 	telegramFeatureLabel?: (feature: string) => string;
 	telegramAllowVoiceIntakeDraft?: boolean;
 	setTelegramAllowVoiceIntakeDraft?: (val: boolean) => void;
-	setTelegramEnabledFeaturesDraft?: (features: DenteTelegramFeature[]) => void;
+	setTelegramEnabledFeaturesDraft?: ((features: DenteTelegramFeature[] | ((prev: DenteTelegramFeature[]) => DenteTelegramFeature[])) => void) | undefined;
 	telegramVisualCardUrlDrafts?: Record<string, string>;
 	updateTelegramVisualCardUrlDraft?: (key: string, value: string) => void;
 	telegramReviewUrlDraft?: string;
@@ -190,8 +190,12 @@ export function TelegramSettingsFormSection({
 								key={option.value}
 								type="button"
 								onClick={() => {
-									setTelegramModeDraft(normalizedTelegramBotMode(option.value));
-									markTelegramSettingsDirty();
+									const resolvedMode =
+										typeof normalizedTelegramBotMode === "function"
+											? normalizedTelegramBotMode(option.value)
+											: option.value;
+									setTelegramModeDraft?.(resolvedMode);
+									markTelegramSettingsDirty?.();
 								}}
 								className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
 									telegramModeDraft === option.value
@@ -204,7 +208,7 @@ export function TelegramSettingsFormSection({
 						))}
 					</div>
 					<small className="field-note">
-						{telegramModeHints?.[telegramModeDraft] ?? ""}
+						{telegramModeDraft && telegramModeHints ? (telegramModeHints[telegramModeDraft] ?? "") : ""}
 					</small>
 				</div>
 				<label htmlFor="telegram-bot-username-draft">
@@ -213,10 +217,10 @@ export function TelegramSettingsFormSection({
 						id="telegram-bot-username-draft"
 						inputMode="text"
 						placeholder="dentecrm_bot"
-						value={telegramBotUsernameDraft}
+						value={telegramBotUsernameDraft ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramBotUsernameDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramBotUsernameDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
@@ -226,10 +230,10 @@ export function TelegramSettingsFormSection({
 						id="telegram-own-bot-username-draft"
 						inputMode="text"
 						placeholder="clinic_bot"
-						value={telegramOwnBotUsernameDraft}
+						value={telegramOwnBotUsernameDraft ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramOwnBotUsernameDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramOwnBotUsernameDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
@@ -239,9 +243,9 @@ export function TelegramSettingsFormSection({
 						id="telegram-bot-config-id"
 						inputMode="text"
 						placeholder="clinic-main"
-						value={telegramBotConfigId}
+						value={telegramBotConfigId ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) =>
-							setTelegramBotConfigId(event.target.value)
+							setTelegramBotConfigId?.(event.target.value)
 						}
 					/>
 					<small>
@@ -256,10 +260,10 @@ export function TelegramSettingsFormSection({
 						type="url"
 						inputMode="url"
 						placeholder="https://crm.clinic.ru"
-						value={telegramWebhookBaseUrlDraft}
+						value={telegramWebhookBaseUrlDraft ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramWebhookBaseUrlDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramWebhookBaseUrlDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 					<small>
@@ -274,10 +278,10 @@ export function TelegramSettingsFormSection({
 							type="url"
 							inputMode="url"
 							placeholder="https://portal.example"
-							value={telegramPatientPortalBaseUrlDraft}
+							value={telegramPatientPortalBaseUrlDraft ?? ""}
 							onChange={(event: ChangeEvent<HTMLInputElement>) => {
-								setTelegramPatientPortalBaseUrlDraft(event.target.value);
-								markTelegramSettingsDirty();
+								setTelegramPatientPortalBaseUrlDraft?.(event.target.value);
+								markTelegramSettingsDirty?.();
 							}}
 						/>
 						<button
@@ -305,10 +309,10 @@ export function TelegramSettingsFormSection({
 						type="url"
 						inputMode="url"
 						placeholder="https://.../welcome.jpg"
-						value={telegramWelcomeImageUrlDraft}
+						value={telegramWelcomeImageUrlDraft ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramWelcomeImageUrlDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramWelcomeImageUrlDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
@@ -320,10 +324,10 @@ export function TelegramSettingsFormSection({
 						min={5}
 						max={1440}
 						step={5}
-						value={telegramTokenTtlDraft}
+						value={telegramTokenTtlDraft ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramTokenTtlDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramTokenTtlDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
@@ -333,10 +337,10 @@ export function TelegramSettingsFormSection({
 						id="telegram-reminder-lead-times-draft"
 						inputMode="text"
 						placeholder="24, 2"
-						value={telegramReminderLeadTimesDraft}
+						value={telegramReminderLeadTimesDraft ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramReminderLeadTimesDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramReminderLeadTimesDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 					<small>
@@ -351,10 +355,10 @@ export function TelegramSettingsFormSection({
 						min={1}
 						max={720}
 						step={1}
-						value={telegramReviewRequestDelayDraft}
+						value={telegramReviewRequestDelayDraft ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramReviewRequestDelayDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramReviewRequestDelayDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 					<small>
@@ -380,9 +384,9 @@ export function TelegramSettingsFormSection({
 								min={1}
 								max={720}
 								step={1}
-								value={typedTelegramPostVisitCheckupDelayDrafts[field.key]}
+								value={typedTelegramPostVisitCheckupDelayDrafts[field.key] ?? ""}
 								onChange={(event: ChangeEvent<HTMLInputElement>) =>
-									updateTelegramPostVisitCheckupDelayDraft(
+									updateTelegramPostVisitCheckupDelayDraft?.(
 										field.key,
 										event.target.value,
 									)
@@ -398,10 +402,10 @@ export function TelegramSettingsFormSection({
 						id="telegram-staff-escalation-channel-draft"
 						inputMode="text"
 						placeholder="@clinic_admins"
-						value={telegramStaffEscalationChannelDraft}
+						value={telegramStaffEscalationChannelDraft ?? ""}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramStaffEscalationChannelDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramStaffEscalationChannelDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
@@ -455,10 +459,12 @@ export function TelegramSettingsFormSection({
 									className={`quick-chip ${isActive ? "active" : ""}`}
 									onClick={() => {
 										if (isConsented) return;
-										setTelegramPrivacyModeDraft(
-											normalizedTelegramPrivacyMode(option.value),
-										);
-										markTelegramSettingsDirty();
+										const resolvedPrivacy =
+											typeof normalizedTelegramPrivacyMode === "function"
+												? normalizedTelegramPrivacyMode(option.value)
+												: option.value;
+										setTelegramPrivacyModeDraft?.(resolvedPrivacy);
+										markTelegramSettingsDirty?.();
 									}}
 									disabled={isConsented}
 									style={{
@@ -482,7 +488,7 @@ export function TelegramSettingsFormSection({
 						})}
 					</div>
 					<small className="field-note">
-						{telegramPrivacyModeHints?.[telegramModeDraft] ?? ""}
+						{telegramModeDraft && telegramPrivacyModeHints ? (telegramPrivacyModeHints[telegramModeDraft] ?? "") : ""}
 					</small>
 				</div>
 			</div>
@@ -507,10 +513,10 @@ export function TelegramSettingsFormSection({
 							type="checkbox"
 							className="toggle-switch"
 							checked={typedTelegramEnabledFeaturesDraft.includes(feature)}
-							onChange={() => toggleTelegramFeature(feature)}
+							onChange={() => toggleTelegramFeature?.(feature)}
 						/>
 						<span>
-							<strong>{telegramFeatureLabel(feature)}</strong>
+							<strong>{telegramFeatureLabel ? (telegramFeatureLabel ?? ((f) => f))(feature) : feature}</strong>
 							<small>{typedTelegramFeatureHelp[feature]}</small>
 						</span>
 					</label>
@@ -525,22 +531,20 @@ export function TelegramSettingsFormSection({
 					id="telegram-allow-voice-intake-draft"
 					type="checkbox"
 					className="toggle-switch"
-					checked={telegramAllowVoiceIntakeDraft}
+					checked={Boolean(telegramAllowVoiceIntakeDraft)}
 					onChange={(event: ChangeEvent<HTMLInputElement>) => {
 						const checked = event.target.checked;
-						setTelegramAllowVoiceIntakeDraft(checked);
+						setTelegramAllowVoiceIntakeDraft?.(checked);
 						if (
 							checked &&
 							!typedTelegramEnabledFeaturesDraft.includes("voice_note_intake")
 						) {
-							setTelegramEnabledFeaturesDraft(
-								(current: DenteTelegramFeature[]) => [
-									...current,
-									"voice_note_intake",
-								],
-							);
+							setTelegramEnabledFeaturesDraft?.([
+								...typedTelegramEnabledFeaturesDraft,
+								"voice_note_intake",
+							]);
 						}
-						markTelegramSettingsDirty();
+						markTelegramSettingsDirty?.();
 					}}
 				/>
 				<span>
@@ -562,7 +566,7 @@ export function TelegramSettingsFormSection({
 							placeholder={field.placeholder}
 							value={telegramVisualCardUrlDrafts[field.key] ?? ""}
 							onChange={(event: ChangeEvent<HTMLInputElement>) =>
-								updateTelegramVisualCardUrlDraft(field.key, event.target.value)
+								updateTelegramVisualCardUrlDraft?.(field.key, event.target.value)
 							}
 						/>
 						<small>
@@ -580,10 +584,10 @@ export function TelegramSettingsFormSection({
 						type="url"
 						inputMode="url"
 						placeholder="https://..."
-						value={telegramReviewUrlDraft}
+						value={telegramReviewUrlDraft ?? ""}
 						onChange={(event: TextInputChangeEvent) => {
-							setTelegramReviewUrlDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramReviewUrlDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
@@ -594,17 +598,17 @@ export function TelegramSettingsFormSection({
 						type="url"
 						inputMode="url"
 						placeholder="https://..."
-						value={telegramMapsUrlDraft}
+						value={telegramMapsUrlDraft ?? ""}
 						onChange={(event: TextInputChangeEvent) => {
-							setTelegramMapsUrlDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramMapsUrlDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
 				<button
 					className="secondary-button"
 					type="button"
-					onClick={() => void saveTelegramSettings()}
+					onClick={() => void saveTelegramSettings?.()}
 					disabled={isTelegramSettingsSaving}
 				>
 					<ExternalLink aria-hidden="true" />{" "}

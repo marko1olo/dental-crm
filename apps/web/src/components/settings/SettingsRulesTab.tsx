@@ -1,6 +1,7 @@
 import type {
 	ClinicalRuleAction,
 	ClinicalRuleSeverity,
+	DentalSpecialty,
 	ServiceCategory,
 	StaffRole,
 } from "@dental/shared";
@@ -38,7 +39,17 @@ const _clinicalRuleOwnerRoles: StaffRole[] = [
 ];
 
 type SettingsRulesTabContract = {
-	dashboard?: unknown;
+	dashboard?: {
+		clinicalRuleSummary?: {
+			activeRules?: number;
+			blockers?: number;
+			unresolved?: number;
+			requiredServices?: number;
+			warnings?: number;
+			triggeredTotal?: number;
+		};
+		clinicalRules?: unknown[];
+	};
 	newRuleAction?: ClinicalRuleAction;
 	newRuleBlockedServiceId?: string;
 	newRuleCategory?: ServiceCategory;
@@ -82,8 +93,9 @@ export function SettingsRulesTab() {
 	const appLogic = useAppLogicContext();
 	const derivations = useSettingsDerivations();
 	const mergedProps: SettingsRulesTabContract = Object.assign({}, appLogic, derivations);
+	const typedDashboard = (mergedProps.dashboard ?? appLogic?.dashboard) as SettingsRulesTabContract["dashboard"];
 	const {
-		dashboard,
+		dashboard: _rawDashboard,
 		newRuleAction,
 		newRuleBlockedServiceId,
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
@@ -218,22 +230,22 @@ export function SettingsRulesTab() {
 								margin: "4px 0",
 							}}
 						>
-							{dashboard.clinicalRuleSummary.activeRules}
+							{typedDashboard?.clinicalRuleSummary?.activeRules ?? 0}
 						</div>
 						<p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
-							из {dashboard.clinicalRules.length} в библиотеке
+							из {typedDashboard?.clinicalRules?.length ?? 0} в библиотеке
 						</p>
 					</div>
 					<div
 						style={{
 							padding: "16px",
 							background:
-								dashboard.clinicalRuleSummary.blockers > 0
+								(typedDashboard?.clinicalRuleSummary?.blockers ?? 0) > 0
 									? "rgba(239, 68, 68, 0.05)"
 									: "var(--paper-soft)",
 							borderRadius: "12px",
 							border:
-								dashboard.clinicalRuleSummary.blockers > 0
+								(typedDashboard?.clinicalRuleSummary?.blockers ?? 0) > 0
 									? "1px solid rgba(239, 68, 68, 0.2)"
 									: "1px solid var(--line)",
 						}}
@@ -242,7 +254,7 @@ export function SettingsRulesTab() {
 							style={{
 								fontSize: "13px",
 								color:
-									dashboard.clinicalRuleSummary.blockers > 0
+									(typedDashboard?.clinicalRuleSummary?.blockers ?? 0) > 0
 										? "rgb(220, 38, 38)"
 										: "var(--muted)",
 								fontWeight: 600,
@@ -255,16 +267,16 @@ export function SettingsRulesTab() {
 								fontSize: "24px",
 								fontWeight: 700,
 								color:
-									dashboard.clinicalRuleSummary.blockers > 0
+									(typedDashboard?.clinicalRuleSummary?.blockers ?? 0) > 0
 										? "rgb(220, 38, 38)"
 										: "var(--ink)",
 								margin: "4px 0",
 							}}
 						>
-							{dashboard.clinicalRuleSummary.blockers}
+							{typedDashboard?.clinicalRuleSummary?.blockers ?? 0}
 						</div>
 						<p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
-							{dashboard.clinicalRuleSummary.unresolved} нерешенных оценок
+							{typedDashboard?.clinicalRuleSummary?.unresolved ?? 0} нерешенных оценок
 						</p>
 					</div>
 					<div
@@ -292,7 +304,7 @@ export function SettingsRulesTab() {
 								margin: "4px 0",
 							}}
 						>
-							{dashboard.clinicalRuleSummary.requiredServices}
+							{typedDashboard?.clinicalRuleSummary?.requiredServices ?? 0}
 						</div>
 						<p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
 							добавлено в планы лечения
@@ -322,7 +334,7 @@ export function SettingsRulesTab() {
 								className="rules-builder-input"
 								placeholder="Например: Обязательный снимок КТ перед имплантацией"
 								value={newRuleTitle}
-								onChange={(e) => setNewRuleTitle(e.target.value)}
+								onChange={(e) => setNewRuleTitle?.(e.target.value)}
 							/>
 						</label>
 					</div>
@@ -336,7 +348,7 @@ export function SettingsRulesTab() {
 										key={action}
 										type="button"
 										className={`rules-chip ${newRuleAction === action ? "active" : ""}`}
-										onClick={() => setNewRuleAction(action)}
+										onClick={() => setNewRuleAction?.(action)}
 									>
 										{typedClinicalRuleActionLabels[action]}
 									</button>
@@ -354,7 +366,7 @@ export function SettingsRulesTab() {
 										key={severity}
 										type="button"
 										className={`rules-chip ${newRuleSeverity === severity ? "active" : ""}`}
-										onClick={() => setNewRuleSeverity(severity)}
+										onClick={() => setNewRuleSeverity?.(severity)}
 									>
 										{typedClinicalRuleSeverityLabels[severity]}
 									</button>
@@ -379,7 +391,7 @@ export function SettingsRulesTab() {
 									const s = typedServiceCatalog.find(
 										(srv) => srv.title === e.target.value,
 									);
-									setNewRuleTriggerServiceId(s ? s.id : "");
+									setNewRuleTriggerServiceId?.(s ? s.id : "");
 								}}
 								placeholder="При планировании этой услуги..."
 							/>
@@ -399,7 +411,7 @@ export function SettingsRulesTab() {
 									const s = typedServiceCatalog.find(
 										(srv) => srv.title === e.target.value,
 									);
-									setNewRuleRequiredServiceId(s ? s.id : "");
+									setNewRuleRequiredServiceId?.(s ? s.id : "");
 								}}
 								placeholder="Автоматически добавим..."
 							/>
@@ -419,7 +431,7 @@ export function SettingsRulesTab() {
 									const s = typedServiceCatalog.find(
 										(srv) => srv.title === e.target.value,
 									);
-									setNewRuleCompletedServiceId(s ? s.id : "");
+									setNewRuleCompletedServiceId?.(s ? s.id : "");
 								}}
 								placeholder="Без этой услуги не дадим продолжить"
 							/>
@@ -439,7 +451,7 @@ export function SettingsRulesTab() {
 									const s = typedServiceCatalog.find(
 										(srv) => srv.title === e.target.value,
 									);
-									setNewRuleBlockedServiceId(s ? s.id : "");
+									setNewRuleBlockedServiceId?.(s ? s.id : "");
 								}}
 								placeholder="Запретить эту услугу"
 							/>
@@ -473,7 +485,7 @@ export function SettingsRulesTab() {
 								id="new-rule-warning-text"
 								className="rules-builder-textarea"
 								value={newRuleWarningText}
-								onChange={(e) => setNewRuleWarningText(e.target.value)}
+								onChange={(e) => setNewRuleWarningText?.(e.target.value)}
 								placeholder="Что увидит врач при срабатывании правила?"
 							/>
 						</label>
@@ -487,7 +499,7 @@ export function SettingsRulesTab() {
 									key={chip}
 									type="button"
 									className="rules-chip"
-									onClick={() => setNewRuleWarningText(chip)}
+									onClick={() => setNewRuleWarningText?.(chip)}
 								>
 									{chip}
 								</button>
@@ -502,7 +514,7 @@ export function SettingsRulesTab() {
 								id="new-rule-patient-text"
 								className="rules-builder-textarea"
 								value={newRulePatientText}
-								onChange={(e) => setNewRulePatientText(e.target.value)}
+								onChange={(e) => setNewRulePatientText?.(e.target.value)}
 								placeholder="Как аргументировать это пациенту?"
 							/>
 						</label>
@@ -516,7 +528,7 @@ export function SettingsRulesTab() {
 									key={chip}
 									type="button"
 									className="rules-chip"
-									onClick={() => setNewRulePatientText(chip)}
+									onClick={() => setNewRulePatientText?.(chip)}
 								>
 									{chip}
 								</button>
@@ -588,22 +600,22 @@ export function SettingsRulesTab() {
 								<div className="premium-rule-conditions">
 									{(rule.triggerServiceIds ?? []).map((serviceId) => (
 										<span key={`${rule.id}-t-${serviceId}`}>
-											<Flame size={12} className="inline mr-1 text-amber-500 shrink-0" /> Если: {serviceTitle(serviceId)}
+											<Flame size={12} className="inline mr-1 text-amber-500 shrink-0" /> Если: {serviceTitle ? serviceTitle(serviceId) : serviceId}
 										</span>
 									))}
 									{(rule.requiredServiceIds ?? []).map((serviceId) => (
 										<span key={`${rule.id}-r-${serviceId}`}>
-											<Plus size={12} className="inline mr-1 text-teal-500 shrink-0" /> Добавить: {serviceTitle(serviceId)}
+											<Plus size={12} className="inline mr-1 text-teal-500 shrink-0" /> Добавить: {serviceTitle ? serviceTitle(serviceId) : serviceId}
 										</span>
 									))}
 									{(rule.requiresCompletedServiceIds ?? []).map((serviceId) => (
 										<span key={`${rule.id}-c-${serviceId}`}>
-											<CheckCircle2 size={12} className="inline mr-1 text-emerald-500 shrink-0" /> Нужно: {serviceTitle(serviceId)}
+											<CheckCircle2 size={12} className="inline mr-1 text-emerald-500 shrink-0" /> Нужно: {serviceTitle ? serviceTitle(serviceId) : serviceId}
 										</span>
 									))}
 									{(rule.blockedServiceIds ?? []).map((serviceId) => (
 										<span className="blocked" key={`${rule.id}-b-${serviceId}`}>
-											<Ban size={12} className="inline mr-1 text-rose-500 shrink-0" /> Блок: {serviceTitle(serviceId)}
+											<Ban size={12} className="inline mr-1 text-rose-500 shrink-0" /> Блок: {serviceTitle ? serviceTitle(serviceId) : serviceId}
 										</span>
 									))}
 								</div>
@@ -618,7 +630,7 @@ export function SettingsRulesTab() {
 								<button
 									className="secondary-button btn--sm"
 									type="button"
-									onClick={() => toggleClinicalRule(rule)}
+									onClick={() => toggleClinicalRule?.(rule.id, !rule.active)}
 									disabled={isClinicalRuleSaving}
 								>
 									{rule.active ? (
@@ -636,7 +648,7 @@ export function SettingsRulesTab() {
 								<button
 									className="icon-button text-rose-500 hover:text-rose-600 dark:text-rose-400"
 									type="button"
-									onClick={() => removeClinicalRule(rule.id)}
+									onClick={() => removeClinicalRule?.(rule.id)}
 									disabled={isClinicalRuleSaving}
 									title="Удалить правило"
 								>

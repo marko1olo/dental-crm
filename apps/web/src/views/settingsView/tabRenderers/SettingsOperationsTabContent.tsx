@@ -19,10 +19,12 @@ import { SettingsModulesTab } from "../../../components/settings/SettingsModules
 import { SettingsReportingTab } from "../../../components/settings/SettingsReportingTab";
 import { SettingsSourcesTab } from "../../../components/settings/SettingsSourcesTab";
 
+import type { SettingsViewFeatureFlags } from "../types.js";
+
 export interface SettingsOperationsTabContentProps {
 	settingsTab: string;
-	settingsProps: any;
-	flags: any;
+	settingsProps: Record<string, unknown>;
+	flags: SettingsViewFeatureFlags;
 }
 
 export const SettingsOperationsTabContent: React.FC<SettingsOperationsTabContentProps> = ({
@@ -47,12 +49,16 @@ export const SettingsOperationsTabContent: React.FC<SettingsOperationsTabContent
 	if (settingsTab === "reporting" && flags.hasAnalyticsModule) return <SettingsReportingTab />;
 
 	if (settingsTab === "imports") {
+		const orgId = typeof settingsProps.organizationId === "string" ? settingsProps.organizationId : undefined;
+		const clinicProfile = settingsProps.clinicSettings as { name?: string } | undefined;
+		const clinicName = typeof clinicProfile?.name === "string" ? clinicProfile.name : undefined;
+
 		return (
 			<div className="space-y-6">
 				<MigrationWizard />
 				<OfflineBackupVaultPanel
-					organizationId={settingsProps.organizationId}
-					clinicName={settingsProps.clinicSettings?.name}
+					organizationId={orgId}
+					clinicName={clinicName}
 				/>
 				<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] overflow-hidden">
 					<summary className="px-4 py-3 cursor-pointer text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-between select-none transition-colors">

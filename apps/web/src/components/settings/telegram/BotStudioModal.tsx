@@ -27,7 +27,20 @@ export interface BotStudioModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	initialChannel?: BotChannelType;
-	parentProps?: Record<string, unknown> | undefined;
+	parentProps?:
+		| {
+				clinicId?: string;
+				telegramStatus?: {
+					bot?: {
+						username?: string;
+					};
+					tokenConfigured?: boolean;
+					botUsername?: string;
+					[key: string]: unknown;
+				};
+				[key: string]: unknown;
+		  }
+		| undefined;
 }
 
 export function BotStudioModal({

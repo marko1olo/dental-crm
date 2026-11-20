@@ -176,8 +176,8 @@ describe("Dental Lab Orders Decomposition — Layer 0/2 Stage & Status Mapping",
 		assert.equal(mapStageToLabOrderStatus("Слепок/Скан"), "sent");
 		assert.equal(mapStageToLabOrderStatus("model_cad_design"), "in_progress");
 		assert.equal(mapStageToLabOrderStatus("shipped_to_clinic"), "shipped");
-		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "received");
-		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "received");
+		assert.equal(mapStageToLabOrderStatus("Готовая работа"), "ready_in_clinic");
+		assert.equal(mapStageToLabOrderStatus("fitting_in_mouth"), "fitting");
 		assert.equal(mapStageToLabOrderStatus("Фиксация"), "completed");
 		assert.equal(mapStageToLabOrderStatus("cancelled"), "cancelled");
 		assert.equal(mapStageToLabOrderStatus("unknown_stage"), null);

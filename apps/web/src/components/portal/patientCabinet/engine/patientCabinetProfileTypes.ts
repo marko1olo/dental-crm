@@ -7,6 +7,7 @@ export * from "./patientCabinetConsentAndDocTypes.js";
 
 export interface PatientPersonalCabinetData {
 	readonly patientId: string;
+	readonly organizationId?: string | undefined;
 	readonly fullName: string;
 	readonly phone: string;
 	readonly email?: string | undefined;

@@ -84,8 +84,8 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 		if (!form.patientName.trim()) { setSubmitError("Пожалуйста, введите ваше имя"); showToast?.("Пожалуйста, введите ваше имя", "warning"); return; }
 		if (!isValidRussianPhone(form.patientPhone)) { setSubmitError("Введите корректный номер телефона (11 цифр)"); showToast?.("Введите корректный номер телефона (11 цифр)", "warning"); return; }
 		if (!form.hasAgreedToPrivacy) {
-			setSubmitError("Необходимо дать согласие на обработку персональных данных (152-ФЗ)");
-			showToast?.("Необходимо подтвердить согласие на обработку персональных данных", "warning");
+			setSubmitError("Пожалуйста, подтвердите согласие на обработку персональных данных");
+			showToast?.("Пожалуйста, подтвердите согласие на обработку персональных данных", "warning");
 			return;
 		}
 		if (sms.showSmsVerification && !sms.isSmsVerified && !sms.isSmsFallbackActive) { sms.setIsSmsFallbackActive(true); showToast?.("Заявка оформлена как предварительная бронь. Администратор свяжется с вами для подтверждения.", "info"); }

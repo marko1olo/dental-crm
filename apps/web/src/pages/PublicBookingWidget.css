@@ -15,11 +15,27 @@
 	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
 }
 
+.PublicBookingWidget-glass-nav button {
+	background: transparent;
+	color: var(--ink-muted);
+}
+
+.PublicBookingWidget-glass-nav button[data-active="true"] {
+	background: var(--primary) !important;
+	color: #ffffff !important;
+}
+
 [data-theme="dark"] .PublicBookingWidget-glass-nav,
 .dark .PublicBookingWidget-glass-nav {
 	background: var(--paper-strong, #0f172a);
 	border: 1px solid var(--line, #1e293b);
 	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .PublicBookingWidget-glass-nav button:not([data-active="true"]),
+.dark .PublicBookingWidget-glass-nav button:not([data-active="true"]) {
+	background: transparent !important;
+	color: var(--ink-muted) !important;
 }
 
 .PublicBookingWidget-glass-card {

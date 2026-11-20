@@ -13,8 +13,8 @@ import { DeepClinicalSettingsSection } from "../../../components/settings/DeepCl
 
 export interface SettingsClinicalTabContentProps {
 	settingsTab: string;
-	settingsProps: any;
-	logic: any;
+	settingsProps: Record<string, unknown>;
+	logic: Record<string, unknown>;
 }
 
 export const SettingsClinicalTabContent: React.FC<SettingsClinicalTabContentProps> = ({
@@ -23,25 +23,36 @@ export const SettingsClinicalTabContent: React.FC<SettingsClinicalTabContentProp
 	logic,
 }) => {
 	if (settingsTab === "preferences") {
+		const soundMuted = Boolean(
+			settingsProps?.soundNotificationsMuted ??
+			logic?.soundNotificationsMuted,
+		);
+		const onToggleMuted =
+			typeof settingsProps?.setSoundNotificationsMuted === "function"
+				? (settingsProps.setSoundNotificationsMuted as (muted: boolean) => void)
+				: typeof logic?.setSoundNotificationsMuted === "function"
+					? (logic.setSoundNotificationsMuted as (muted: boolean) => void)
+					: undefined;
+		const onTestBookingSound =
+			typeof settingsProps?.testOnlineBookingSound === "function"
+				? (settingsProps.testOnlineBookingSound as () => void)
+				: typeof logic?.testOnlineBookingSound === "function"
+					? (logic.testOnlineBookingSound as () => void)
+					: undefined;
+		const onTestEndSound =
+			typeof settingsProps?.testSlotEndSound === "function"
+				? (settingsProps.testSlotEndSound as () => void)
+				: typeof logic?.testSlotEndSound === "function"
+					? (logic.testSlotEndSound as () => void)
+					: undefined;
+
 		return (
 			<ErrorBoundary moduleName="Клинические пресеты врача">
 				<DoctorClinicalPreferencesSection
-					soundNotificationsMuted={
-						settingsProps?.soundNotificationsMuted ??
-						logic?.soundNotificationsMuted
-					}
-					onToggleSoundMuted={
-						settingsProps?.setSoundNotificationsMuted ??
-						logic?.setSoundNotificationsMuted
-					}
-					onTestOnlineBookingSound={
-						settingsProps?.testOnlineBookingSound ??
-						logic?.testOnlineBookingSound
-					}
-					onTestSlotEndSound={
-						settingsProps?.testSlotEndSound ??
-						logic?.testSlotEndSound
-					}
+					soundNotificationsMuted={soundMuted}
+					onToggleSoundMuted={onToggleMuted}
+					onTestOnlineBookingSound={onTestBookingSound}
+					onTestSlotEndSound={onTestEndSound}
 				/>
 			</ErrorBoundary>
 		);
@@ -62,12 +73,7 @@ export const SettingsClinicalTabContent: React.FC<SettingsClinicalTabContentProp
 	if (settingsTab === "procedure-boms") {
 		return (
 			<ErrorBoundary moduleName="Техкарты расхода материалов">
-				<MaterialBomsSettingsPanel
-					organizationId={
-						logic?.dashboard?.clinicSettings?.profile?.organizationId ||
-						logic?.auth?.currentUser?.organizationId
-					}
-				/>
+				<MaterialBomsSettingsPanel />
 			</ErrorBoundary>
 		);
 	}

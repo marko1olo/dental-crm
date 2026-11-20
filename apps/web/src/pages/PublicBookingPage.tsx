@@ -246,10 +246,11 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveMode("booking")}
+						data-active={activeMode === "booking"}
 						className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
 							activeMode === "booking"
 								? "bg-[var(--primary)] text-white shadow-sm"
-								: "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						<Calendar className="w-4 h-4" />
@@ -263,10 +264,11 @@ export const PublicBookingPage: React.FC<PublicBookingPageProps> = ({
 								setIsCabinetModalOpen(true);
 							}
 						}}
+						data-active={activeMode === "cabinet"}
 						className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
 							activeMode === "cabinet"
 								? "bg-[var(--primary)] text-white shadow-sm"
-								: "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 						}`}
 					>
 						<User className="w-4 h-4" />

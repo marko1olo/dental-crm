@@ -61,7 +61,7 @@ export function TelegramVisualCardsAndLinksSection({ props }: TelegramVisualCard
 							placeholder={field.placeholder}
 							value={telegramVisualCardUrlDrafts[field.key] ?? ""}
 							onChange={(event: ChangeEvent<HTMLInputElement>) =>
-								updateTelegramVisualCardUrlDraft(field.key, event.target.value)
+								updateTelegramVisualCardUrlDraft?.(field.key, event.target.value)
 							}
 						/>
 						<small>{field.help} Если поле пустое, используется картинка приветствия.</small>
@@ -79,8 +79,8 @@ export function TelegramVisualCardsAndLinksSection({ props }: TelegramVisualCard
 						placeholder="https://..."
 						value={telegramReviewUrlDraft}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramReviewUrlDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramReviewUrlDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
@@ -93,15 +93,15 @@ export function TelegramVisualCardsAndLinksSection({ props }: TelegramVisualCard
 						placeholder="https://..."
 						value={telegramMapsUrlDraft}
 						onChange={(event: ChangeEvent<HTMLInputElement>) => {
-							setTelegramMapsUrlDraft(event.target.value);
-							markTelegramSettingsDirty();
+							setTelegramMapsUrlDraft?.(event.target.value);
+							markTelegramSettingsDirty?.();
 						}}
 					/>
 				</label>
 				<button
 					className="secondary-button min-h-[44px] cursor-pointer"
 					type="button"
-					onClick={() => void saveTelegramSettings()}
+					onClick={() => void saveTelegramSettings?.()}
 					disabled={isTelegramSettingsSaving}
 				>
 					<ExternalLink aria-hidden="true" />{" "}

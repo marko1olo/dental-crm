@@ -38,7 +38,7 @@ export interface TelegramAccountInfo {
 
 export interface TelegramAccountStatus {
 	connected: boolean;
-	account?: TelegramAccountInfo;
+	account?: TelegramAccountInfo | undefined;
 }
 
 export interface TelegramQrData {
@@ -65,15 +65,15 @@ export interface TelegramNotificationTemplate {
 export interface TelegramDeliveryQueueItem {
 	id: string;
 	recipientName: string;
-	recipientPhone?: string;
-	recipientChatId?: string | number;
-	templateCode?: string;
+	recipientPhone?: string | undefined;
+	recipientChatId?: string | number | undefined;
+	templateCode?: string | undefined;
 	messageText: string;
 	status: "queued" | "sending" | "sent" | "failed" | "cancelled";
 	attempts: number;
 	maxAttempts: number;
-	lastAttemptAt?: string;
-	errorReason?: string;
+	lastAttemptAt?: string | undefined;
+	errorReason?: string | undefined;
 	createdAt: string;
 }
 
@@ -81,11 +81,11 @@ export interface StaffTelegramBinding {
 	staffId: string;
 	staffName: string;
 	role: string;
-	telegramUsername?: string;
-	telegramChatId?: string | number;
+	telegramUsername?: string | undefined;
+	telegramChatId?: string | number | undefined;
 	status: "linked" | "pending" | "unlinked";
-	deepLinkUrl?: string;
-	linkedAt?: string;
+	deepLinkUrl?: string | undefined;
+	linkedAt?: string | undefined;
 }
 
 export interface BotConfigurationCardProps {

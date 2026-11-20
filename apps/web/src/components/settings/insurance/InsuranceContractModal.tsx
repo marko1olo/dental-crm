@@ -14,6 +14,7 @@
 
 import { Building2, FileCheck2, Percent, ShieldCheck, X } from "lucide-react";
 import type React from "react";
+import { DMS_INSURANCE_COMPANIES_CATALOG } from "@dental/shared";
 import type { InsuranceContract } from "../insuranceContractsPanelData";
 
 export interface ContractFormData {
@@ -38,74 +39,31 @@ export interface InsuranceContractModalProps {
 	onSave: (e: React.FormEvent) => void;
 }
 
-const TOP_INSURERS_PRESETS = [
-	{
-		name: "АО «СОГАЗ»",
-		mask: "СГЗ-####-######",
+export const TOP_INSURERS_PRESETS = DMS_INSURANCE_COMPANIES_CATALOG.slice(0, 6).map((comp) => {
+	const maskPrefix = comp.shortNameRu.includes("СОГАЗ")
+		? "СГЗ"
+		: comp.shortNameRu.includes("Ингосстрах")
+			? "ИНГ"
+			: comp.shortNameRu.includes("РЕСО")
+				? "РЕС"
+				: comp.shortNameRu.includes("Альфа")
+					? "АЛЬФА"
+					: comp.shortNameRu.includes("Росгосстрах")
+						? "РГС"
+						: "ВСК";
+	const defaultFranchise = String(comp.defaultFranchiseRates[0] ?? 0);
+	return {
+		name: comp.shortNameRu,
+		mask: `${maskPrefix}-####-######`,
 		limit: "100000",
 		therapy: "100",
 		surgery: "100",
 		ortho: "50",
 		hygiene: "100",
-		franchise: "0",
+		franchise: defaultFranchise,
 		requiresLetter: true,
-	},
-	{
-		name: "СПАО «Ингосстрах»",
-		mask: "ИНГ-####-######",
-		limit: "80000",
-		therapy: "100",
-		surgery: "80",
-		ortho: "40",
-		hygiene: "100",
-		franchise: "10",
-		requiresLetter: true,
-	},
-	{
-		name: "СПАО «РЕСО-Гарантия»",
-		mask: "РЕС-####-######",
-		limit: "90000",
-		therapy: "100",
-		surgery: "90",
-		ortho: "50",
-		hygiene: "100",
-		franchise: "0",
-		requiresLetter: true,
-	},
-	{
-		name: "АО «АльфаСтрахование»",
-		mask: "АЛЬФА-####-######",
-		limit: "120000",
-		therapy: "100",
-		surgery: "100",
-		ortho: "60",
-		hygiene: "100",
-		franchise: "20",
-		requiresLetter: false,
-	},
-	{
-		name: "ПАО СК «Росгосстрах»",
-		mask: "РГС-####-######",
-		limit: "70000",
-		therapy: "100",
-		surgery: "70",
-		ortho: "30",
-		hygiene: "100",
-		franchise: "30",
-		requiresLetter: true,
-	},
-	{
-		name: "САО «ВСК»",
-		mask: "ВСК-####-######",
-		limit: "85000",
-		therapy: "100",
-		surgery: "85",
-		ortho: "40",
-		hygiene: "100",
-		franchise: "0",
-		requiresLetter: false,
-	},
-];
+	};
+});
 
 const STANDARD_FRANCHISE_OPTIONS = [
 	{ value: "0", label: "0% (100% ДМС)", desc: "Полное покрытие страховой компанией" },
@@ -260,16 +218,7 @@ export const InsuranceContractModal: React.FC<InsuranceContractModalProps> = ({
 											requiresGuaranteeLetter: tmpl.requiresLetter,
 										}));
 									}}
-									style={{
-										padding: "4px 8px",
-										borderRadius: 6,
-										border: "1px solid var(--line, #e2e8f0)",
-										background: "var(--paper-soft, #f8fafc)",
-										fontSize: 12,
-										fontWeight: 600,
-										color: "var(--ink)",
-										cursor: "pointer",
-									}}
+									className="dente-btn-secondary text-xs h-7 px-2.5 rounded-md font-medium inline-flex items-center justify-center shrink-0 cursor-pointer"
 								>
 									+ {tmpl.name}
 								</button>
@@ -547,19 +496,27 @@ export const InsuranceContractModal: React.FC<InsuranceContractModalProps> = ({
 						</div>
 					</div>
 
-					{/* Submit button */}
-					<button
-						type="submit"
-						className="primary-button"
-						disabled={isSaving}
-						style={{ justifyContent: "center", marginTop: 4, height: 40 }}
-					>
-						{isSaving
-							? "Сохраняем…"
-							: editingContract
-								? "Сохранить изменения"
-								: "Добавить договор"}
-					</button>
+					{/* Footer: Cancel left, Primary CTA right (Mandate 8am & 8d) */}
+					<div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-[var(--line)]">
+						<button
+							type="button"
+							onClick={onClose}
+							className="dente-btn-secondary h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center shrink-0 cursor-pointer"
+						>
+							Отмена
+						</button>
+						<button
+							type="submit"
+							className="dente-btn-primary h-9 px-3.5 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+							disabled={isSaving}
+						>
+							{isSaving
+								? "Сохраняем…"
+								: editingContract
+									? "Сохранить изменения"
+									: "Добавить договор"}
+						</button>
+					</div>
 				</form>
 			</div>
 		</div>
