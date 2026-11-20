@@ -4,37 +4,40 @@
 
 export type ChannelCode = "sms" | "email" | "whatsapp" | "telegram" | "vk" | "max";
 
+export type GatewayChannelInfo = {
+	configured: boolean;
+	provider?: string | null | undefined;
+	sender?: string | null | undefined;
+	balance?: { amount: number; currency: string } | null | undefined;
+	balanceError?: string | null | undefined;
+	host?: string | null | undefined;
+	from?: string | null | undefined;
+	requireTls?: boolean | undefined;
+	detail?: string | undefined;
+};
+
 export type GatewayStatus = {
-	channels: {
-		sms: {
-			configured: boolean;
-			provider: string | null;
-			sender: string | null;
-			balance: { amount: number; currency: string } | null;
-			balanceError: string | null;
-		};
-		email: {
-			configured: boolean;
-			host: string | null;
-			from: string | null;
-			requireTls: boolean;
-		};
-		whatsapp: { configured: boolean };
-		telegram: { configured: boolean };
-		vk: { configured: boolean; detail: string };
-		max: { configured: boolean; detail: string };
-	};
+	channels?: {
+		sms?: GatewayChannelInfo | undefined;
+		email?: GatewayChannelInfo | undefined;
+		whatsapp?: GatewayChannelInfo | undefined;
+		telegram?: GatewayChannelInfo | undefined;
+		vk?: GatewayChannelInfo | undefined;
+		max?: GatewayChannelInfo | undefined;
+		[channel: string]: GatewayChannelInfo | undefined;
+	} | undefined;
 	/** Разбирает ли кто-нибудь очередь и сколько в ней просроченных сообщений. */
-	automaticSending: {
+	automaticSending?: {
 		enabled: boolean;
-		intervalSeconds: number | null;
-		batchSize: number | null;
-		detail: string;
-		enableWith: string;
+		intervalSeconds?: number | null | undefined;
+		batchSize?: number | null | undefined;
+		detail?: string | undefined;
+		enableWith?: string | undefined;
 		waiting: number;
-		oldestWaitingAt: string | null;
-	};
-	deliverableChannels: string[];
+		oldestWaitingAt?: string | null | undefined;
+	} | undefined;
+	deliverableChannels?: string[] | undefined;
+	overallReady?: boolean | undefined;
 };
 
 export type TemplateItem = {
@@ -99,10 +102,27 @@ export type PreviewResult = {
 };
 
 export interface MessageDeliveryConsoleProps {
-	initialGateways?: GatewayStatus | null;
+	initialGateways?: GatewayStatus | null | undefined;
 	initialUisQuota?: {
 		remaining: number;
 		smsQuotaLimit: number;
-	} | null;
-	initialEnqueueChannel?: "sms" | "email" | "whatsapp" | "telegram";
+	} | null | undefined;
+	initialEnqueueChannel?: "sms" | "email" | "whatsapp" | "telegram" | undefined;
+}
+
+export interface DeliveryCommQueries {
+	getGatewayStatus?: (() => Promise<Response>) | undefined;
+	getTemplates?: (() => Promise<Response>) | undefined;
+	getOutbox?: ((query?: string) => Promise<Response>) | undefined;
+	getSettings?: (() => Promise<Response>) | undefined;
+	getVariables?: (() => Promise<Response>) | undefined;
+	getChatQuota?: (() => Promise<Response>) | undefined;
+	addOutboxMessage?: ((payload: Record<string, unknown>) => Promise<Response>) | undefined;
+	outboxAction?: ((outboxId: string, action: string) => Promise<Response>) | undefined;
+	dispatchOutbox?: (() => Promise<Response>) | undefined;
+	runReminders?: (() => Promise<Response>) | undefined;
+	saveSettings?: ((payload: Partial<CommunicationSettings>) => Promise<Response>) | undefined;
+	previewTemplate?: ((templateId: string | null, payload: { body: string; channel: string; allowPhi?: boolean }) => Promise<Response>) | undefined;
+	updateTemplate?: ((editingId: string, payload: { title: string; channel: string; intent: string; body: string; allowPhi?: boolean }) => Promise<Response>) | undefined;
+	createTemplate?: ((payload: { title: string; channel: string; intent: string; body: string; allowPhi?: boolean }) => Promise<Response>) | undefined;
 }

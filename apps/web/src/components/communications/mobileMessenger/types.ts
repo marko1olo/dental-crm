@@ -1,4 +1,12 @@
-import type { CommunicationTaskOutcome, Dashboard } from "@dental/shared";
+import type {
+	CommunicationTaskOutcome,
+	Dashboard,
+	GeneratedDocument,
+	StaffRole,
+} from "@dental/shared";
+
+export type CommunicationTask = Dashboard["communicationTasks"][number];
+export type CommunicationEvent = Dashboard["communicationEvents"][number];
 
 export interface MobilePatientDialogSummary {
 	patientId: string;
@@ -22,25 +30,30 @@ export interface MobileChatMessageItem {
 }
 
 export interface MobileCommunicationsMessengerProps {
-	dashboard?: Dashboard | null;
-	onGoToSchedule?: () => void;
-	completeCommunicationTask?: (
+	dashboard?: Dashboard | null | undefined;
+	onGoToSchedule?: (() => void) | undefined;
+	completeCommunicationTask?: ((
 		taskId: string,
 		outcome: CommunicationTaskOutcome,
-	) => void | Promise<void>;
-	communicationNote?: string;
-	onCommunicationNoteChange?: (val: string) => void;
-	communicationSavingTaskId?: string | null;
-	openCommunicationTaskDocumentWorkflow?: (task: any, kind: any) => void;
-	communicationChannelLabels?: Record<string, string>;
-	communicationPriorityLabels?: Record<string, string>;
-	communicationIntentLabels?: Record<string, string>;
-	communicationStatusLabels?: Record<string, string>;
-	documentKindsForCommunicationTask?: (task: any) => readonly any[];
-	documentLabels?: Record<string, string>;
-	staffRoleLabels?: Record<string, string>;
-	formatDateTime?: (val: string) => string;
-	initialPatientId?: string | null;
+	) => void | Promise<void>) | undefined;
+	communicationNote?: string | undefined;
+	onCommunicationNoteChange?: ((val: string) => void) | undefined;
+	communicationSavingTaskId?: string | null | undefined;
+	openCommunicationTaskDocumentWorkflow?: ((
+		task: CommunicationTask,
+		kind: GeneratedDocument["kind"],
+	) => void) | undefined;
+	communicationChannelLabels?: Record<CommunicationTask["channel"], string> | undefined;
+	communicationPriorityLabels?: Record<CommunicationTask["priority"], string> | undefined;
+	communicationIntentLabels?: Record<CommunicationTask["intent"], string> | undefined;
+	communicationStatusLabels?: Record<CommunicationTask["status"], string> | undefined;
+	documentKindsForCommunicationTask?: ((
+		task: CommunicationTask,
+	) => readonly GeneratedDocument["kind"][]) | undefined;
+	documentLabels?: Record<GeneratedDocument["kind"], string> | undefined;
+	staffRoleLabels?: Record<StaffRole, string> | undefined;
+	formatDateTime?: ((val: string) => string) | undefined;
+	initialPatientId?: string | null | undefined;
 }
 
 export type ActiveSection = "dialogs" | "tasks" | "journal" | "bots";
@@ -52,3 +65,4 @@ export interface ActivePatient {
 	fullName: string;
 	phone: string;
 }
+

@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
+import { extractHttpStatus } from "../deliveryConsole/constants.js";
 import { failNotice, type Notice } from "../deliveryReportNotice.js";
-import { type CampaignItem, type CampaignPreview, type CampaignProgress, readJson } from "./types.js";
+import {
+	type CampaignCommQueries,
+	type CampaignItem,
+	type CampaignPreview,
+	type CampaignProgress,
+	readJson,
+} from "./types.js";
 
 export function useCampaignExecution(
-	commQueries: any,
+	commQueries: CampaignCommQueries | null | undefined,
 	campaigns: CampaignItem[],
 	loadAll: () => Promise<void>,
 	setNotice: (n: Notice | null) => void,
@@ -25,11 +32,14 @@ export function useCampaignExecution(
 		setProgressLoading(true);
 		setProgressError(null);
 		try {
+			if (!commQueries?.getCampaignProgress) {
+				throw new Error("Загрузка хода рассылки недоступна");
+			}
 			const response = await commQueries.getCampaignProgress(campaignId);
 			const data = await readJson<{ byStatus?: Record<string, number>; total?: number }>(response);
 			setProgress({ byStatus: data.byStatus ?? {}, total: typeof data.total === "number" ? data.total : 0 });
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(actionFailureToast("Ошибка выполнения операции", extractHttpStatus(error)), "error");
 			setProgress(null);
 			setProgressError(error instanceof Error ? error.message : String(error));
 		} finally {
@@ -42,10 +52,13 @@ export function useCampaignExecution(
 		setPreview(null);
 		setPreviewError(null);
 		try {
+			if (!commQueries?.previewCampaign) {
+				throw new Error("Предпросмотр рассылки недоступен");
+			}
 			const response = await commQueries.previewCampaign(campaignId);
 			setPreview(await readJson<CampaignPreview>(response));
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(actionFailureToast("Ошибка выполнения операции", extractHttpStatus(error)), "error");
 			setPreviewError(error instanceof Error ? error.message : String(error));
 		}
 		void loadProgress(campaignId);
@@ -63,6 +76,9 @@ export function useCampaignExecution(
 		setBusy(true);
 		setNotice(null);
 		try {
+			if (!commQueries?.campaignAction) {
+				throw new Error("Управление рассылкой недоступно");
+			}
 			const res = await commQueries.campaignAction(campaignId, action);
 			const data = await readJson<{ queued?: number; alreadyQueued?: number; cancelledMessages?: number }>(res);
 			setNotice({
@@ -75,7 +91,7 @@ export function useCampaignExecution(
 			if (previewFor === campaignId) await openPreview(campaignId);
 			else void loadProgress(campaignId);
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(actionFailureToast("Ошибка выполнения операции", extractHttpStatus(error)), "error");
 			setNotice(failNotice(error, action === "launch"
 				? "Рассылка не запущена: в очередь ничего не поставлено, пациентам ничего не ушло. Проверьте предпросмотр и попробуйте ещё раз."
 				: "Рассылка не остановлена — она продолжает отправляться. Попробуйте ещё раз."));

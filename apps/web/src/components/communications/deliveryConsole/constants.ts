@@ -57,12 +57,20 @@ import { minutesToClockTime, parseTimeToMinutes } from "@dental/shared";
 export const minutesToTime = minutesToClockTime;
 export const timeToMinutes = parseTimeToMinutes;
 
+export function extractHttpStatus(error: unknown): number | null {
+	if (typeof error === "object" && error !== null && "status" in error) {
+		const s = (error as { status: unknown }).status;
+		if (typeof s === "number") return s;
+	}
+	return null;
+}
+
 export async function readJson<T>(response: Response): Promise<T> {
-	const payload = (await response.json().catch((err) => {
+	const payload = (await response.json().catch((err: unknown) => {
 		showToast(
 			actionFailureToast(
 				"Ошибка ответа сервера",
-				(err as { status?: number })?.status ?? null,
+				extractHttpStatus(err),
 			),
 			"error",
 		);

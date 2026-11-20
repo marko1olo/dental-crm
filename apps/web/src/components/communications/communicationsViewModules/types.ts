@@ -1,4 +1,5 @@
 import type {
+	ClinicMode,
 	CommunicationTaskOutcome,
 	Dashboard,
 	GeneratedDocument,
@@ -69,7 +70,7 @@ export type CommunicationsChatFooterInputProps = {
 
 export type CommunicationsConversationsListProps = {
 	dashboard: Dashboard;
-	clinicMode: string | null;
+	clinicMode: ClinicMode | string | null | undefined;
 	effectiveTasks: CommunicationTask[];
 	tasksSlice: {
 		visibleItems: CommunicationTask[];
@@ -109,4 +110,21 @@ export type CommunicationsConversationsListProps = {
 	) => void;
 	staffRoleLabels: Record<StaffRole, string>;
 	communicationNoteDescriptionId: string;
+};
+
+export type CommunicationsJournalAsideProps = {
+	journal: JournalDigest<CommunicationEvent>;
+	journalSlice: {
+		visibleItems?: CommunicationEvent[] | undefined;
+		hasMore?: boolean | undefined;
+		totalCount?: number | undefined;
+	};
+	onShowMoreJournal: () => void;
+	communicationChannelLabels: Record<string, string>;
+	communicationStatusLabels: Record<string, string>;
+	formatDateTime: (val: string) => string;
+};
+
+export type CommunicationsSummaryGridProps = {
+	summary?: Dashboard["communicationSummary"] | null | undefined;
 };

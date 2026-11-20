@@ -1,4 +1,4 @@
-import { hasCapability } from "../../../lib/clinicCapabilities";
+import { type ClinicMode, clinicModes, hasCapability } from "../../../lib/clinicCapabilities";
 import { EmptyState } from "../../EmptyState";
 import { CampaignPanel } from "../CampaignPanel";
 import { CommunicationTaskCard } from "../CommunicationTaskCard";
@@ -74,7 +74,12 @@ export function CommunicationsConversationsList({
 			</div>
 
 			<MessageDeliveryConsole />
-			{hasCapability(clinicMode as any, "massCampaigns") ? <CampaignPanel /> : null}
+			{hasCapability(
+				typeof clinicMode === "string" && (clinicModes as readonly string[]).includes(clinicMode)
+					? (clinicMode as ClinicMode)
+					: null,
+				"massCampaigns",
+			) ? <CampaignPanel /> : null}
 		</>
 	);
 }

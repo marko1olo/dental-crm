@@ -1,6 +1,7 @@
 import { countLabel } from "../../../lib/russianPlural";
+import type { CommunicationsSummaryGridProps } from "./types";
 
-export function CommunicationsSummaryGrid({ summary }: { summary: any }) {
+export function CommunicationsSummaryGrid({ summary }: CommunicationsSummaryGridProps) {
 	if (!summary) return null;
 
 	return (

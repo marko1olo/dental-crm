@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
 import { failNotice, type Notice } from "../deliveryReportNotice.js";
-import { readJson } from "./constants";
-import type { MessageDeliveryConsoleProps, TemplateItem } from "./types";
+import { extractHttpStatus, readJson } from "./constants";
+import type { DeliveryCommQueries, MessageDeliveryConsoleProps, TemplateItem } from "./types";
 
 export function useDeliveryEnqueueMessage(
-	commQueries: any,
+	commQueries: DeliveryCommQueries | null | undefined,
 	loadAll: () => Promise<void>,
 	setNotice: (n: Notice | null) => void,
 	busy: boolean,
@@ -67,6 +67,9 @@ export function useDeliveryEnqueueMessage(
 			if (enqueueChannel === "email" && enqueueSubject.trim()) {
 				payload.subject = enqueueSubject.trim();
 			}
+			if (!commQueries?.addOutboxMessage) {
+				throw new Error("Модуль отправки сообщений недоступен");
+			}
 			const response = await commQueries.addOutboxMessage(payload);
 			const data = await readJson<{ outboxId: string; duplicate: boolean; message: string }>(response);
 			setNotice({
@@ -78,7 +81,7 @@ export function useDeliveryEnqueueMessage(
 			setEnqueueSubject("");
 			await loadAll();
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(actionFailureToast("Ошибка выполнения операции", extractHttpStatus(error)), "error");
 			setNotice(failNotice(error, "Сообщение не поставлено в очередь. Текст и адрес не пропали — исправьте и нажмите ещё раз."));
 		} finally {
 			setEnqueueBusy(false);

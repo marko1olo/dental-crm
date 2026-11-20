@@ -2,12 +2,12 @@ import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
 
 export type CampaignCriteria = {
-	status?: "active" | "archived";
-	lastVisitBefore?: string;
-	neverVisited?: boolean;
-	hasFutureAppointment?: boolean;
-	debtAtLeastRub?: number;
-	birthdayWithinDays?: number;
+	status?: "active" | "archived" | undefined;
+	lastVisitBefore?: string | undefined;
+	neverVisited?: boolean | undefined;
+	hasFutureAppointment?: boolean | undefined;
+	debtAtLeastRub?: number | undefined;
+	birthdayWithinDays?: number | undefined;
 };
 
 export type CampaignItem = {
@@ -70,9 +70,19 @@ export type CampaignProgress = {
 };
 
 export type CampaignPanelProps = {
-	initialTemplates?: TemplateOption[];
-	initialCampaigns?: CampaignItem[];
+	initialTemplates?: TemplateOption[] | undefined;
+	initialCampaigns?: CampaignItem[] | undefined;
 };
+
+export interface CampaignCommQueries {
+	getCampaigns?: ((auth?: unknown) => Promise<Response>) | undefined;
+	getCampaignsTemplates?: ((auth?: unknown) => Promise<Response>) | undefined;
+	getCampaignsVariables?: ((auth?: unknown) => Promise<Response>) | undefined;
+	createCampaign?: ((payload: unknown, auth?: unknown) => Promise<Response>) | undefined;
+	previewCampaign?: ((campaignId: string, auth?: unknown) => Promise<Response>) | undefined;
+	getCampaignProgress?: ((campaignId: string, auth?: unknown) => Promise<Response>) | undefined;
+	campaignAction?: ((campaignId: string, action: string, auth?: unknown) => Promise<Response>) | undefined;
+}
 
 /** Подписи статусов очереди — те же, что в MessageDeliveryConsole. */
 export const outboxStatusLabels: Record<string, string> = {
@@ -100,9 +110,17 @@ export const channelLabels: Record<string, string> = {
 	telegram: "Телеграм",
 };
 
+function extractHttpStatus(error: unknown): number | null {
+	if (typeof error === "object" && error !== null && "status" in error) {
+		const s = (error as { status: unknown }).status;
+		if (typeof s === "number") return s;
+	}
+	return null;
+}
+
 export async function readJson<T>(response: Response): Promise<T> {
-	const payload = (await response.json().catch((err) => {
-		showToast(actionFailureToast("Ошибка ответа сервера", (err as { status?: number })?.status ?? null), "error");
+	const payload = (await response.json().catch((err: unknown) => {
+		showToast(actionFailureToast("Ошибка ответа сервера", extractHttpStatus(err)), "error");
 		return null;
 	})) as unknown;
 	if (!response.ok) {

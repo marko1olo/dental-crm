@@ -2,9 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
-import { type CampaignItem, type CampaignPanelProps, type TemplateOption, type TemplateVariable, readJson } from "./types.js";
+import { extractHttpStatus } from "../deliveryConsole/constants.js";
+import {
+	type CampaignCommQueries,
+	type CampaignItem,
+	type CampaignPanelProps,
+	type TemplateOption,
+	type TemplateVariable,
+	readJson,
+} from "./types.js";
 
-export function useCampaignDataLoader(commQueries: any, initialProps: CampaignPanelProps = {}) {
+export function useCampaignDataLoader(commQueries: CampaignCommQueries | null | undefined, initialProps: CampaignPanelProps = {}) {
 	const [campaigns, setCampaigns] = useState<CampaignItem[]>(() => initialProps.initialCampaigns ?? []);
 	const [templates, setTemplates] = useState<TemplateOption[]>(() => initialProps.initialTemplates ?? []);
 	const [variables, setVariables] = useState<TemplateVariable[]>([]);
@@ -13,10 +21,13 @@ export function useCampaignDataLoader(commQueries: any, initialProps: CampaignPa
 	const load = useCallback(async () => {
 		setLoadError(null);
 		try {
+			if (!commQueries?.getCampaigns) {
+				return;
+			}
 			const [campRes, tplRes, varRes] = await Promise.all([
 				commQueries.getCampaigns(),
-				commQueries.getCampaignsTemplates(),
-				commQueries.getCampaignsVariables(),
+				commQueries.getCampaignsTemplates?.() ?? Promise.resolve(new Response(JSON.stringify({ templates: [] }))),
+				commQueries.getCampaignsVariables?.() ?? Promise.resolve(new Response(JSON.stringify({ variables: [] }))),
 			]);
 			const campData = await readJson<{ campaigns: CampaignItem[] }>(campRes);
 			const tplData = await readJson<{ templates: TemplateOption[] }>(tplRes);
@@ -34,7 +45,7 @@ export function useCampaignDataLoader(commQueries: any, initialProps: CampaignPa
 				setLoadError(null);
 				return;
 			}
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(actionFailureToast("Ошибка выполнения операции", extractHttpStatus(error)), "error");
 			setLoadError(error instanceof Error ? error.message : String(error));
 		}
 	}, [commQueries]);

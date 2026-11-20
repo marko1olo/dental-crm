@@ -1,5 +1,6 @@
 import { EmptyState } from "../../EmptyState";
 import { CommunicationEventRow } from "../CommunicationEventRow";
+import type { CommunicationEvent, CommunicationsJournalAsideProps } from "./types";
 
 export function CommunicationsJournalAside({
 	journal,
@@ -8,14 +9,7 @@ export function CommunicationsJournalAside({
 	communicationChannelLabels,
 	communicationStatusLabels,
 	formatDateTime,
-}: {
-	journal: any;
-	journalSlice: any;
-	onShowMoreJournal: () => void;
-	communicationChannelLabels: any;
-	communicationStatusLabels: any;
-	formatDateTime: (val: string) => string;
-}) {
+}: CommunicationsJournalAsideProps) {
 	return (
 		<aside className="communication-side">
 			<section aria-label="Журнал связи">
@@ -40,7 +34,7 @@ export function CommunicationsJournalAside({
 					<EmptyState title={journal.title} description={journal.hint} className="my-2 py-6" />
 				) : (
 					<div className="template-list">
-						{journalSlice.visibleItems?.map((event: any) => (
+						{journalSlice.visibleItems?.map((event: CommunicationEvent) => (
 							<CommunicationEventRow
 								key={event.id} event={event} formatDateTime={formatDateTime}
 								communicationChannelLabels={communicationChannelLabels}
