@@ -66,7 +66,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = (props) => {
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div ref={ctrl.modalContainerRef} data-testid="dicom-viewer-modal" className="fixed inset-0 z-[9999] bg-slate-950/95 flex flex-col text-slate-100 font-sans">
+		<div ref={ctrl.modalContainerRef} data-testid="dicom-viewer-modal" className="fixed inset-0 z-[9999] bg-[var(--paper-deep)]/95 flex flex-col text-[var(--ink)] font-sans">
 			{/* Canonical route contract: /tooth-states/batch */}
 			<input type="file" ref={ctrl.fileInputRef} accept="image/*,.dcm,.rvg,.png,.jpg,.jpeg,.tiff,.bmp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) ctrl.processFile(f); }} />
 

@@ -10,6 +10,7 @@ import type { RadiologyFilmstripItem } from "../../radiology/RadiologyFilmstripD
 import type { DicomViewerModalProps } from "./types.js";
 import { useDicomViewerModalAi } from "./useDicomViewerModalAi.js";
 import { teardownViewportCanvases } from "../../../utils/viewportTeardownHelper.js";
+import { logger } from "../../../utils/logger.js";
 
 export function useDicomViewerModalController(props: DicomViewerModalProps) {
 	const { isOpen, onClose, imageSrc, title, toothFdiCode, patientName, patientId, studyId, studyDate, initialViewMode = "2d", onInsertToProtocol } = props;
@@ -119,7 +120,8 @@ export function useDicomViewerModalController(props: DicomViewerModalProps) {
 				} else {
 					showToast(`Снимок «${file.name}» открыт в просмотрщике`, "info");
 				}
-			} catch {
+			} catch (err) {
+				logger.error("Failed to auto-upload scan to PACS archive", err);
 				showToast(`Снимок «${file.name}» открыт в просмотрщике`, "info");
 			}
 		};

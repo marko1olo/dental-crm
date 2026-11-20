@@ -43,7 +43,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 
 			{/* Projection Modes */}
 			<div className="space-y-1.5 mb-3">
-				<span className="text-[10px] text-zinc-400 uppercase font-mono tracking-wider font-semibold">
+				<span className="text-[10px] text-zinc-400 font-medium">
 					Режим проекции
 				</span>
 				<div className="grid grid-cols-2 gap-1">
@@ -101,7 +101,7 @@ export const CbctSlabFlyout: React.FC<CbctSlabFlyoutProps> = ({
 			{/* Slab Thickness Presets & Continuous Range Slider */}
 			<div className="space-y-2">
 				<div className="flex items-center justify-between text-xs">
-					<span className="text-[10px] text-zinc-400 uppercase font-mono tracking-wider font-semibold">
+					<span className="text-[10px] text-zinc-400 font-medium">
 						Толщина сляба
 					</span>
 					<span className="font-mono text-cyan-300 font-bold text-xs bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">

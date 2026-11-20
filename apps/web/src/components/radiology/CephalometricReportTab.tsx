@@ -135,7 +135,7 @@ export function CephalometricMeasurementsCategories({
 		});
 		return (
 			<div>
-				<div className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5">
+				<div className="text-xs font-semibold text-slate-400 mb-2.5">
 					{title}
 				</div>
 				<div className="space-y-2">
@@ -173,7 +173,7 @@ export function CephalometricMeasurementsCategories({
 										{isValValid ? `${m.value}${m.unit}` : "—"}
 									</div>
 									<span
-										className={`text-xs uppercase font-black px-2.5 py-1 rounded-lg border ${
+										className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
 											isValValid
 												? m.status === "normal"
 													? "bg-emerald-950 text-emerald-300 border-emerald-500/40"
@@ -246,7 +246,7 @@ export function CephalometricMobileAccordion({
 				</div>
 
 				<div className="space-y-1.5">
-					<div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+					<div className="text-[11px] font-bold text-slate-400">
 						Основные углы и параметры
 					</div>
 					<div className="grid grid-cols-1 gap-1.5">
@@ -302,7 +302,7 @@ export function CephalometricMobileAccordion({
 				</div>
 
 				<div className="space-y-1.5 pt-1 border-t border-slate-800">
-					<div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+					<div className="text-[11px] font-bold text-slate-400 flex items-center justify-between">
 						<span>16 анатомических ориентиров</span>
 						<span className="text-teal-400 font-mono font-black">
 							{analysis.placedCount}/16
@@ -416,7 +416,7 @@ export function CephalometricPresetsBar({
 				<div className="flex items-center justify-between gap-2">
 					<div className="flex items-center gap-1.5 min-w-0">
 						<Sparkles size={14} className="text-teal-400 shrink-0" />
-						<span className="text-xs font-black uppercase tracking-wider text-teal-300 truncate">
+						<span className="text-xs font-semibold text-teal-300 truncate">
 							Клинические пресеты:
 						</span>
 					</div>
@@ -554,8 +554,8 @@ export function CephalometricLandmarksList({
 									: "bg-slate-900/90 border-slate-700 opacity-90 hover:opacity-100"
 						}`}
 						style={{
-							backgroundColor: isTarget ? "rgba(4, 47, 46, 0.9)" : "#0f172a",
-							borderColor: isTarget ? "#2dd4bf" : "#334155",
+							backgroundColor: isTarget ? "rgba(4, 47, 46, 0.9)" : "var(--paper,#0f172a)",
+							borderColor: isTarget ? "var(--primary,#2dd4bf)" : "var(--line,#334155)",
 						}}
 					>
 						<div className="flex items-center gap-3 min-w-0">

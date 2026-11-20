@@ -244,14 +244,14 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 				{/* Header */}
 				<div className="flex items-center justify-between px-4 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-8 h-8 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30 flex items-center justify-center shrink-0">
+						<div className="w-8 h-8 rounded-xl bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30 flex items-center justify-center shrink-0">
 							<Link2 className="w-4 h-4" />
 						</div>
 						<div className="min-w-0">
 							<h3 id="bind-control-title" className="text-sm font-bold text-[var(--ink)] truncate">
 								Контроль сопоставления КТ / рентгена
 							</h3>
-							<p className="text-xs text-[var(--muted)] truncate">
+							<p className="text-xs text-[var(--ink-muted)] truncate">
 								Проверка автопривязки по ФИО и DICOM метаданным
 							</p>
 						</div>
@@ -260,7 +260,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
+						className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer"
 						aria-label="Закрыть"
 						data-testid="btn-close-bind-modal"
 					>
@@ -302,7 +302,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 								type="button"
 								onClick={handleUnbind}
 								disabled={isSubmitting}
-								className="h-8 px-3 text-[13px] font-medium rounded-lg border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+								className="h-8 px-3 text-[13px] font-medium rounded-lg border border-[var(--danger-soft)] text-[var(--danger)] hover:bg-[var(--danger-soft)] transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
 								data-testid="btn-unbind-patient"
 								title="Отвязать исследование от текущего пациента"
 							>
@@ -316,7 +316,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 						<button
 							type="button"
 							onClick={onClose}
-							className="h-8 px-3.5 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)] transition-colors cursor-pointer shadow-2xs"
+							className="h-8 px-3.5 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shadow-2xs"
 						>
 							Отмена
 						</button>
@@ -324,7 +324,7 @@ export const StudyPatientBindControlModal: React.FC<StudyPatientBindControlModal
 						<button
 							type="button"
 							onClick={handleConfirmBinding}
-							className="h-8 px-4 text-[13px] font-semibold rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-95 text-[var(--on-teal,#ffffff)] shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+							className="h-8 px-4 text-[13px] font-semibold rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
 							data-testid="btn-confirm-binding"
 						>
 							<Check className="w-3.5 h-3.5" />

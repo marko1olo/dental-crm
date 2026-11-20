@@ -78,13 +78,14 @@ export function convertImagingStudyToRadiologyStudy(
 		teethFdi: study.toothCode ? [String(study.toothCode)] : [],
 		effectiveDoseMicrosv: typicalDoseMicrosv,
 		effectiveDoseMsv: typicalDoseMicrosv / 1000.0,
-		imageUrl: typeof study.previewUrl === "string" ? study.previewUrl : undefined,
-		thumbnailUrl: typeof study.previewUrl === "string" ? study.previewUrl : undefined,
+		...(typeof study.previewUrl === "string" && study.previewUrl
+			? { imageUrl: study.previewUrl, thumbnailUrl: study.previewUrl }
+			: {}),
 		doctorName: fallbackDoctorName,
 		status: "completed",
 		...(typeof study.aiSummary === "string" && study.aiSummary ? { diagnosticNotes: study.aiSummary } : {}),
 		metadata: {
-			apparatusModel: typeof study.sourceName === "string" ? study.sourceName : undefined,
+			...(typeof study.sourceName === "string" && study.sourceName ? { apparatusModel: study.sourceName } : {}),
 			...(typeof study.dicomStudyUid === "string" && study.dicomStudyUid ? { dicomStudyUid: study.dicomStudyUid } : {}),
 			...(typeof study.seriesInstanceUid === "string" && study.seriesInstanceUid ? { dicomSeriesUid: study.seriesInstanceUid } : {}),
 		},

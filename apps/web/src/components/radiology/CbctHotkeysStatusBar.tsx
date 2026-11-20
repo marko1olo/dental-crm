@@ -64,7 +64,7 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							className="w-1.5 h-1.5 rounded-full shrink-0"
 							style={{ backgroundColor: activeMeta.planeColor }}
 						/>
-						<span className="font-bold uppercase tracking-wider">{activeMeta.planeNameEn}</span>
+						<span className="font-bold">{activeMeta.planeNameEn}</span>
 						<span className="text-zinc-500 text-[9px]">(Tab ↹)</span>
 					</div>
 				</div>
@@ -218,23 +218,23 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 					onClick={onToggleHelp}
 				>
 					<div
-						className="bg-[#09090b] border border-zinc-800 rounded-lg shadow-2xl max-w-2xl w-full p-4 flex flex-col gap-4 text-zinc-100 animate-in fade-in zoom-in-95 duration-150"
+						className="bg-[var(--paper-deep,#09090b)] border border-[var(--line,#27272a)] rounded-lg shadow-2xl max-w-2xl w-full p-4 flex flex-col gap-4 text-zinc-100 animate-in fade-in zoom-in-95 duration-150"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+						<div className="flex items-center justify-between pb-2 border-b border-[var(--line,#27272a)]">
 							<div className="flex items-center gap-2">
 								<Keyboard className="w-5 h-5 text-cyan-400" />
 								<h3 className="text-sm font-bold text-zinc-100">
 									Горячие клавиши и управление КЛКТ
 								</h3>
-								<span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 font-mono border border-zinc-800">
+								<span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 font-mono border border-[var(--line,#27272a)]">
 									16-bit DICOM
 								</span>
 							</div>
 							<button
 								type="button"
 								onClick={onToggleHelp}
-								className="w-8 h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 flex items-center justify-center border border-zinc-800 transition-colors"
+								className="w-8 h-8 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 flex items-center justify-center border border-[var(--line,#27272a)] transition-colors"
 								aria-label="Закрыть справку"
 							>
 								<X className="w-4 h-4" />
@@ -243,15 +243,15 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[65vh] overflow-y-auto pr-1">
 							{/* Section 1: Slices */}
-							<div className="p-2.5 rounded bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+							<div className="p-2.5 rounded bg-[var(--paper,#000000)] border border-[var(--line,#27272a)] flex flex-col gap-2">
 								<h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
 									<Sliders className="w-3.5 h-3.5" />
 									<span>Навигация по срезам</span>
 								</h4>
 								<div className="flex flex-col gap-1 text-[11px]">
 									{CBCT_HOTKEY_DEFINITIONS.filter((h) => h.category === "slices").map((h) => (
-										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-zinc-800/60">
-											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-[var(--line,#27272a)]/60">
+											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 												{h.keyLabel}
 											</span>
 											<span className="text-zinc-400 text-right">{h.actionLabel}</span>
@@ -261,15 +261,15 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							</div>
 
 							{/* Section 2: Zoom & Pan */}
-							<div className="p-2.5 rounded bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+							<div className="p-2.5 rounded bg-[var(--paper,#000000)] border border-[var(--line,#27272a)] flex flex-col gap-2">
 								<h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
 									<MousePointer className="w-3.5 h-3.5" />
 									<span>Масштаб и панорама</span>
 								</h4>
 								<div className="flex flex-col gap-1 text-[11px]">
 									{CBCT_HOTKEY_DEFINITIONS.filter((h) => h.category === "zoom_pan").map((h) => (
-										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-zinc-800/60">
-											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-[var(--line,#27272a)]/60">
+											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 												{h.keyLabel}
 											</span>
 											<span className="text-zinc-400 text-right">{h.actionLabel}</span>
@@ -279,15 +279,15 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							</div>
 
 							{/* Section 3: Viewports & Tools */}
-							<div className="p-2.5 rounded bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+							<div className="p-2.5 rounded bg-[var(--paper,#000000)] border border-[var(--line,#27272a)] flex flex-col gap-2">
 								<h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
 									<Maximize2 className="w-3.5 h-3.5" />
 									<span>Окна и инструменты</span>
 								</h4>
 								<div className="flex flex-col gap-1 text-[11px]">
 									{CBCT_HOTKEY_DEFINITIONS.filter((h) => h.category === "viewports").map((h) => (
-										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-zinc-800/60">
-											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-[var(--line,#27272a)]/60">
+											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 												{h.keyLabel}
 											</span>
 											<span className="text-zinc-400 text-right">{h.actionLabel}</span>
@@ -297,15 +297,15 @@ export const CbctHotkeysStatusBar: React.FC<CbctHotkeysStatusBarProps> = ({
 							</div>
 
 							{/* Section 4: Presets & Modes */}
-							<div className="p-2.5 rounded bg-[#000000] border border-zinc-800 flex flex-col gap-2">
+							<div className="p-2.5 rounded bg-[var(--paper,#000000)] border border-[var(--line,#27272a)] flex flex-col gap-2">
 								<h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
 									<RotateCw className="w-3.5 h-3.5" />
 									<span>Пресеты HU и режимы</span>
 								</h4>
 								<div className="flex flex-col gap-1 text-[11px]">
 									{CBCT_HOTKEY_DEFINITIONS.filter((h) => h.category === "presets_modes").map((h) => (
-										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-zinc-800/60">
-											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+										<div key={h.keyLabel} className="flex items-center justify-between py-1 border-b border-[var(--line,#27272a)]/60">
+											<span className="font-mono font-bold text-cyan-300 bg-zinc-900 px-1.5 py-0.5 rounded border border-[var(--line,#27272a)]">
 												{h.keyLabel}
 											</span>
 											<span className="text-zinc-400 text-right">{h.actionLabel}</span>

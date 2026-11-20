@@ -25,13 +25,13 @@ export const ExportOptionsSelectors: React.FC<ExportOptionsSelectorsProps> = ({
 							type="button"
 							onClick={() => onOptionsChange((prev) => ({ ...prev, format: fmt }))}
 							data-testid={`export-format-${fmt}`}
-							className={`min-h-[44px] py-2 px-3 rounded-lg border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center ${
+							className={`min-h-[44px] py-2 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
 								options.format === fmt
-									? "border-[var(--teal,#0d9488)] bg-teal-500/15 text-teal-700 dark:text-teal-300 shadow-xs"
-									: "border-[var(--line,#334155)] bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:border-[var(--line-strong,#475569)]"
+									? "border-[var(--primary)] bg-[var(--primary)]/15 text-[var(--primary)] shadow-xs"
+									: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink-muted)] hover:border-[var(--line-strong)]"
 							}`}
 						>
-							{fmt === "dicom" ? "DICOM (.dcm)" : fmt}
+							{fmt === "dicom" ? "DICOM (.dcm)" : fmt.toUpperCase()}
 						</button>
 					))}
 				</div>
@@ -44,7 +44,7 @@ export const ExportOptionsSelectors: React.FC<ExportOptionsSelectorsProps> = ({
 						checked={options.withMeasurements}
 						onChange={(e) => onOptionsChange((prev) => ({ ...prev, withMeasurements: e.target.checked }))}
 						data-testid="checkbox-export-measurements"
-						className="w-4 h-4 rounded accent-[var(--teal,#0d9488)] cursor-pointer"
+						className="w-4 h-4 rounded accent-[var(--primary)] cursor-pointer"
 					/>
 					<span>Включить калиброванные замеры расстояний и углов</span>
 				</label>
@@ -54,7 +54,7 @@ export const ExportOptionsSelectors: React.FC<ExportOptionsSelectorsProps> = ({
 						checked={options.withAnnotations}
 						onChange={(e) => onOptionsChange((prev) => ({ ...prev, withAnnotations: e.target.checked }))}
 						data-testid="checkbox-export-annotations"
-						className="w-4 h-4 rounded accent-[var(--teal,#0d9488)] cursor-pointer"
+						className="w-4 h-4 rounded accent-[var(--primary)] cursor-pointer"
 					/>
 					<span>Включить юридический штамп и патологии</span>
 				</label>
