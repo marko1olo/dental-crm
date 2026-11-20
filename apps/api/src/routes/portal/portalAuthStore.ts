@@ -15,9 +15,22 @@ import {
 export const revokedPortalTokens = new Set<string>();
 export const portalRevokedBeforeByPatient = new Map<string, number>();
 
+// In-memory store for pending registration OTP codes (new patients)
+export interface PendingRegistrationOtpEntry {
+	phoneSuffix: string;
+	rawPhone: string;
+	codeHash: string;
+	organizationId: string;
+	expiresAt: Date;
+	attemptCount: number;
+}
+
+export const pendingRegistrationOtpStore = new Map<string, PendingRegistrationOtpEntry>();
+
 export function resetPortalRevokedTokensForTesting(): void {
 	revokedPortalTokens.clear();
 	portalRevokedBeforeByPatient.clear();
+	pendingRegistrationOtpStore.clear();
 }
 
 // Rate limiting & flood protection stores for OTP requests (10-minute window)

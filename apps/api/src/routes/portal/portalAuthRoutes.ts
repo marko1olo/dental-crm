@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { patients, portalOtpCodes } from "../../db/schema.js";
+import { organizations, patients, portalOtpCodes } from "../../db/schema.js";
 import {
 	resolveChannelCredentials,
 	sendThroughChannel,
@@ -18,11 +18,13 @@ import {
 	verifyCredential,
 	verifyToken,
 } from "../../utils/cryptoHelper.js";
+import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import {
 	findUniquePatientByPhone,
 	isIssuanceThrottled,
 	otpIpRequestCounts,
 	otpPhoneRequestCounts,
+	pendingRegistrationOtpStore,
 	portalRevokedBeforeByPatient,
 	revokedPortalTokens,
 } from "./portalAuthStore.js";
@@ -184,6 +186,108 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 
 			const patient = await findUniquePatientByPhone(rawPhone, targetOrgId);
 			if (!patient) {
+				// Авторизация нового пациента: генерируем OTP и отправляем SMS/лог с кодом для первичной регистрации
+				let effectiveOrgId: string | null = null;
+				if (
+					targetOrgId &&
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetOrgId)
+				) {
+					const [matchedOrg] = await db
+						.select({ id: organizations.id })
+						.from(organizations)
+						.where(eq(organizations.id, targetOrgId))
+						.limit(1);
+					if (matchedOrg) {
+						effectiveOrgId = matchedOrg.id;
+					}
+				}
+				if (!effectiveOrgId) {
+					const [firstOrg] = await db
+						.select({ id: organizations.id })
+						.from(organizations)
+						.limit(1);
+					if (firstOrg) {
+						effectiveOrgId = firstOrg.id;
+					}
+				}
+
+				if (!effectiveOrgId) {
+					reply.status(202);
+					return neutralAccepted;
+				}
+
+				const phoneDigits = rawPhone.replace(/\D/g, "");
+				const phoneSuffix = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
+				const existingPending = pendingRegistrationOtpStore.get(phoneSuffix);
+				const now = new Date();
+
+				if (
+					existingPending &&
+					existingPending.expiresAt.getTime() > now.getTime() &&
+					now.getTime() - (existingPending.expiresAt.getTime() - policy.ttlSeconds * 1000) <
+						policy.resendCooldownSeconds * 1000
+				) {
+					reply.status(202);
+					return neutralAccepted;
+				}
+
+				const regCode = generateNumericCode(policy.codeLength);
+				const regCodeHash = await hashCredential(regCode);
+				pendingRegistrationOtpStore.set(phoneSuffix, {
+					phoneSuffix,
+					rawPhone,
+					codeHash: regCodeHash,
+					organizationId: effectiveOrgId,
+					expiresAt: new Date(now.getTime() + policy.ttlSeconds * 1000),
+					attemptCount: 0,
+				});
+
+				if (developerLogFallback) {
+					request.log.warn(
+						{ portalOtpDeveloperCode: regCode, rawPhone, isNewPatientRegistration: true },
+						"РЕЖИМ РАЗРАБОТКИ: SMS-шлюз не настроен, одноразовый код для регистрации нового пациента в личном кабинете выведен в журнал сервера и никому не отправлен.",
+					);
+					reply.status(202);
+					return neutralAccepted;
+				}
+
+				const msisdn = normalizeRussianMsisdn(rawPhone);
+				const credentials = await withTenantCtx(
+					effectiveOrgId,
+					async () => resolveChannelCredentials(effectiveOrgId!),
+				);
+
+				const delivery =
+					msisdn === null
+						? {
+								ok: false as const,
+								errorClass: "recipient_unavailable" as const,
+								errorMessage: "Номер в запросе не приводится к формату оператора.",
+							}
+						: await sendThroughChannel(
+								{
+									channel: "sms",
+									recipientAddress: msisdn,
+									subject: null,
+									body: renderOtpMessage(policy, regCode),
+									idempotencyKey: `portal-reg-otp:${phoneSuffix}:${Date.now()}`,
+								},
+								credentials,
+							);
+
+				if (!delivery.ok) {
+					request.log.error(
+						{ rawPhone, errorClass: delivery.errorClass },
+						"Код регистрации нового пациента в личный кабинет не отправлен: шлюз отказал",
+					);
+					reply.status(delivery.errorClass === "not_configured" ? 503 : 502);
+					return {
+						error: "OtpDeliveryFailed",
+						errorClass: delivery.errorClass,
+						message: `Не удалось отправить код: ${delivery.errorMessage}`,
+					};
+				}
+
 				reply.status(202);
 				return neutralAccepted;
 			}
@@ -389,8 +493,65 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 			const policy = readPortalOtpPolicy();
 			const patient = await findUniquePatientByPhone(rawPhone, targetOrgId);
 			if (!patient) {
-				reply.status(401);
-				return invalidOtp;
+				const phoneDigits = rawPhone.replace(/\D/g, "");
+				const phoneSuffix = phoneDigits.length >= 10 ? phoneDigits.slice(-10) : phoneDigits;
+				const pendingReg = pendingRegistrationOtpStore.get(phoneSuffix);
+				const now = new Date();
+
+				if (!pendingReg || pendingReg.expiresAt.getTime() < now.getTime()) {
+					pendingRegistrationOtpStore.delete(phoneSuffix);
+					reply.status(401);
+					return invalidOtp;
+				}
+
+				pendingReg.attemptCount += 1;
+				if (pendingReg.attemptCount > policy.maxAttempts) {
+					pendingRegistrationOtpStore.delete(phoneSuffix);
+					reply.status(401);
+					return invalidOtp;
+				}
+
+				const isCodeValid = await verifyCredential(code, pendingReg.codeHash);
+				if (!isCodeValid) {
+					reply.status(401);
+					return invalidOtp;
+				}
+
+				pendingRegistrationOtpStore.delete(phoneSuffix);
+
+				const newPatient = await withTenantCtx(pendingReg.organizationId, async () => {
+					const [created] = await db
+						.insert(patients)
+						.values({
+							organizationId: pendingReg.organizationId,
+							fullName: "Пациент",
+							phone: rawPhone,
+							status: "active",
+							administrativeProfile: normalizePatientAdministrativeProfile(null),
+						})
+						.returning({ id: patients.id, organizationId: patients.organizationId });
+					return created;
+				});
+
+				if (!newPatient) {
+					reply.status(500);
+					return {
+						error: "PatientCreationFailed",
+						message: "Не удалось создать карточку пациента. Пожалуйста, повторите попытку.",
+					};
+				}
+
+				const token = signToken(
+					{
+						sub: newPatient.id,
+						organizationId: newPatient.organizationId,
+						kind: PORTAL_TOKEN_KIND,
+					},
+					requireAuthTokenSecret(),
+					PORTAL_TOKEN_TTL_SECONDS,
+				);
+
+				return { success: true, token, patientId: newPatient.id, isNewPatient: true };
 			}
 
 			const now = new Date();
@@ -485,7 +646,7 @@ export async function registerPortalAuthRoutes(server: FastifyInstance): Promise
 				PORTAL_TOKEN_TTL_SECONDS,
 			);
 
-			return { success: true, token, patientId: patient.id };
+			return { success: true, token, patientId: patient.id, isNewPatient: false };
 		},
 	);
 

@@ -4337,3 +4337,63 @@ ead_file по 8 осям качества Хаммера:
   - 🌙 PC Dark: `docs/proofs/imaging/02_imaging_pc_dark_1440x900.png` (567.1 KB)
   - 📱 Mobile Light: `docs/proofs/imaging/03_imaging_mobile_light_390x844.png` (1020.4 KB)
   - 📱 Mobile Dark: `docs/proofs/imaging/04_imaging_mobile_dark_390x844.png` (1023.7 KB)
+
+---
+
+## 🏆 ВОЛНА 13: АНАТОМИЧЕСКАЯ ОДОНТОГРАММА WHEELER 2.5D, ПРЯМОЙ ВИЗИОГРАФ WEBGL И ПАЦИЕНТСКИЙ ПОРТАЛ (ДОМЕНЫ 41, 42, 43)
+
+### 1. ДОМЕН 41: АНАТОМИЧЕСКАЯ ОДОНТОГРАММА WHEELER 2.5D, ЭНДОДОНТИЯ И ХРОНИКА ЗУБА
+- **Хирург:** Red Team Fixer Surgeon (`800d22dd-06f0-4666-8bb7-e72a8beab330`).
+- **Ликвидированные дефекты:**
+  1. **SEV-1 Изоляция сетевых вызовов**: Устранен rogue internal fetch в `EndodonticStudioModal.tsx`, вызовы строго маршрутизированы через канонический `props.onSaveCanals`.
+  2. **SEV-1 Атомарность сохранения одонтограммы**: Паттерн `delete-insert` в `statusRoutes.ts` заменен на атомарный Drizzle `.onConflictDoUpdate()`.
+  3. **SEV-2 Коллизия модалок**: В `PatientDentalFormulaTab.tsx:85` отключено принудительное открытие истории зуба (`showHistoryChronicleOnSelect={false}`).
+  4. **SEV-2 Оптимизация запросов хроники**: В `ToothHistoryChronicle.tsx` устранены избыточные N+1 запросы, подключен единый таймлайн-эндпоинт.
+  5. **Истребление сирот (`git rm`)**: Удалены устаревшие прокси-файлы `Tooth46*.tsx` в `gate0/`.
+- **Машинные гейты (Exit Code 0, 21/21 PASS):**
+  - Тесты одонтограммы и эндодонтии: 21/21 passed.
+  - `tsc --noEmit`: 0 ошибок.
+- **4-State Visual Proofs (Личный осмотр Оркестратором через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png` (168.4 KB)
+  - 🌙 PC Dark: `docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png` (177.5 KB)
+  - 📱 Mobile Light: `docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png` (222.2 KB)
+  - 📱 Mobile Dark: `docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png` (226.2 KB)
+
+### 2. ДОМЕН 42: ЦИФРОВОЙ ВИЗИОГРАФ (DIRECT RVG), АППАРАТНЫЙ ШЕЙДЕР WEBGL И РАДИОЛОГИЯ
+- **Хирург:** Red Team Fixer Surgeon (`3f442a79-19bd-4aa6-bff8-b5a640dc311a`).
+- **Ликвидированные дефекты:**
+  1. **SEV-1 Активация WebGL Шейдера**: В `DirectRvgViewport.tsx` размаскирован аппаратный canvas на WebGL2 для рендеринга <15мс с сохранением `<img>` как надежного фоллбека.
+  2. **SEV-1 Связывание реального снимка**: В `ClinicalImagingModals.tsx` моковый снимок заменен на выборку из активного хранилища визиографа.
+  3. **SEV-2 Дебрендинг таблиц Postgres 18**: Выполнена миграция `0257_debrand_radiology_ai_tables.sql` с переименованием в `radiology_ai_findings` и `radiology_ai_reports` (0 drift).
+  4. **Истребление дубликатов (`git rm`)**: Удален `VisiographComparisonModal.tsx`, консолидирован в `RadiologyConsultationSplit.tsx`.
+- **Машинные гейты (Exit Code 0, 1257/1257 PASS):**
+  - 89 тестовых файлов в модулях радиологии: 1226 passed.
+  - 7 файлов в `imaging`: 31 passed.
+- **4-State Visual Proofs (Личный осмотр Оркестратором через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/radiology/01_radiology_rvg_pc_light_1440x900.png` (626.5 KB)
+  - 🌙 PC Dark: `docs/proofs/radiology/02_radiology_rvg_pc_dark_1440x900.png` (628.1 KB)
+  - 📱 Mobile Light: `docs/proofs/radiology/03_radiology_rvg_mobile_light_390x844.png` (102.3 KB)
+  - 📱 Mobile Dark: `docs/proofs/radiology/04_radiology_rvg_mobile_dark_390x844.png` (101.9 KB)
+
+### 3. ДОМЕН 43: ПАЦИЕНТСКИЙ ПОРТАЛ, ЛИЧНЫЙ КАБИНЕТ ПАЦИЕНТА И ПУБЛИЧНАЯ ОНЛАЙН-ЗАПИСЬ
+- **Хирург:** Red Team Fixer Surgeon (`14bfd42b-2660-4026-9a43-1842a6dc0d7f`).
+- **Ликвидированные дефекты:**
+  1. **SEV-1 Бесшовная регистрация**: В `portalAuthRoutes.ts` и `portalAuthStore.ts` внедрена поддержка моментальной выдачи и верификации OTP для новых пациентов с созданием профиля без тупиков.
+  2. **SEV-1 Монтирование канонического виджета онлайн-записи**: Устаревший `BookingSheet` заменен на `PublicBookingWidget.tsx`.
+  3. **SEV-2 Канонический клинический роут выписки**: В `portalTaxCertRoutes.ts` зарегистрирован роут `/medical-card/html` (Мандат 8x: «Медкарта» вместо «043/у»).
+  4. **Истребление сирот (`git rm`)**: Отвязан и удален брошенный `patientSmsAuthEngine.ts`.
+- **Машинные гейты (Exit Code 0, 44/44 PASS):**
+  - `patientPortal.test.ts`: 5/5 passed.
+  - `portalOtp.test.ts`: 8/8 passed.
+  - `portalRoutes.test.ts`: 6/6 passed.
+  - `portalConsentsAutonomy.test.ts`: 3/3 passed.
+  - `portalDecomposition.test.ts`: 5/5 passed.
+  - `portalSecurityAnd152FzAudit.test.ts`: 11/11 passed.
+  - `portalSelfCheckin.test.ts`: 5/5 passed.
+  - `tsc --noEmit` apps/api: 0 ошибок (Exit Code 0).
+  - `check:encoding`: 0 замечаний на 20 000 файлах.
+- **4-State Visual Proofs (Личный осмотр Оркестратором через `read_file`):**
+  - ☀️ PC Light: `docs/proofs/portal/01_patient_cabinet_pc_light_1440x900.png` (607.7 KB)
+  - 🌙 PC Dark: `docs/proofs/portal/02_patient_cabinet_pc_dark_1440x900.png` (1145.9 KB)
+  - 📱 Mobile Light: `docs/proofs/portal/03_patient_cabinet_mobile_light_390x844.png` (647.8 KB)
+  - 📱 Mobile Dark: `docs/proofs/portal/04_patient_cabinet_mobile_dark_390x844.png` (447.8 KB)

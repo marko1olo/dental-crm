@@ -193,6 +193,7 @@ export async function registerPortalTaxCertRoutes(server: FastifyInstance): Prom
 	// Канонический медицинский роут
 	server.get("/clinical-extract/html", handleClinicalExtractHtml);
 	server.get("/clinical-extract/download", handleClinicalExtractHtml);
+	server.get("/medical-card/html", handleClinicalExtractHtml);
 	// Алиасы для обратной совместимости
 	server.get("/form-043/html", handleClinicalExtractHtml);
 	server.get("/extract-043/html", handleClinicalExtractHtml);
