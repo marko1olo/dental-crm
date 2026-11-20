@@ -36,6 +36,9 @@ export interface DentalLabCreateOrderSectionProps {
 	readonly setCustomDueDate: (date: string) => void;
 	readonly isUrgent: boolean;
 	readonly setIsUrgent: (urgent: boolean) => void;
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly setIsWarrantyRework?: ((warranty: boolean) => void) | undefined;
+	readonly onOpen3DScan?: (() => void) | undefined;
 	readonly notes: string;
 	readonly setNotes: (notes: string) => void;
 	readonly teethCount: number;
@@ -68,6 +71,9 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 	setCustomDueDate,
 	isUrgent,
 	setIsUrgent,
+	isWarrantyRework = false,
+	setIsWarrantyRework,
+	onOpen3DScan,
 	notes,
 	setNotes,
 	teethCount,
@@ -258,9 +264,41 @@ export const DentalLabCreateOrderSection: React.FC<DentalLabCreateOrderSectionPr
 				)}
 			</div>
 			<div className="grid grid-cols-2 gap-2">
-				<div><label htmlFor="lab-due-date-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Срок сдачи</label><input id="lab-due-date-input" type="date" value={effectiveDueDate} onChange={(e) => setCustomDueDate(e.target.value)} className="w-full text-xs p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]" /></div>
-				<div className="flex items-center pt-4"><label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer"><input type="checkbox" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} className="rounded text-[var(--primary)]" /><span>Срочный наряд</span></label></div>
+				<div>
+					<label htmlFor="lab-due-date-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Срок сдачи</label>
+					<input id="lab-due-date-input" type="date" value={effectiveDueDate} onChange={(e) => setCustomDueDate(e.target.value)} className="w-full text-xs p-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)]" />
+				</div>
+				<div className="flex flex-col justify-center space-y-1 pt-3">
+					<label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer">
+						<input type="checkbox" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} className="rounded text-[var(--primary)]" />
+						<span>Срочный наряд</span>
+					</label>
+					{setIsWarrantyRework && (
+						<label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)] cursor-pointer">
+							<input
+								type="checkbox"
+								data-testid="lab-warranty-rework-checkbox"
+								checked={isWarrantyRework}
+								onChange={(e) => setIsWarrantyRework(e.target.checked)}
+								className="rounded text-[var(--primary)]"
+							/>
+							<span className="text-[var(--warning-ink,#b45309)]">Гарантия (0 ₽)</span>
+						</label>
+					)}
+				</div>
 			</div>
+			{onOpen3DScan && (
+				<div>
+					<button
+						type="button"
+						data-testid="btn-open-order-3d-scan"
+						onClick={onOpen3DScan}
+						className="w-full min-h-[36px] max-sm:min-h-[44px] py-1.5 px-3 rounded-xl text-xs font-semibold border border-[var(--primary)]/40 bg-[var(--teal-surface,rgba(13,148,136,0.08))] text-[var(--primary)] hover:bg-[var(--teal-surface,rgba(13,148,136,0.16))] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+					>
+						<span>📐 3D интраоральный скан (STL/PLY)</span>
+					</button>
+				</div>
+			)}
 			<div className="space-y-1">
 				<label htmlFor="lab-notes-input" className="text-[11px] font-semibold text-[var(--ink-muted)] block">Указания технику</label>
 				<textarea id="lab-notes-input" rows={1} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Уступ круговой 0.8мм, под десну 0.3мм, плотные контакты..." className="w-full text-xs p-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] resize-none" />

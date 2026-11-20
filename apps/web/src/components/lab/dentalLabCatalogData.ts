@@ -221,6 +221,11 @@ export interface DentalLabOrderEntry {
 	readonly isLockedInstalled?: boolean | undefined;
 	readonly portalToken?: string | null | undefined;
 	readonly workType?: string | null | undefined;
+	readonly isWarranty?: boolean | undefined;
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly attachedImageUrl?: string | null | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly doctorId?: string | undefined;
 }
 
 /** Экспресс-расчет контрольных дат с учетом рабочих дней ЗТЛ в РФ (без сб и вс) */

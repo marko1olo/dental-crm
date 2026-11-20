@@ -20,6 +20,7 @@ export interface DentalLabRegistryOrderCardProps {
 	readonly onCallPatient: (order: DentalLabOrderEntry) => void;
 	readonly onPrintOrder: (order: DentalLabOrderEntry) => void;
 	readonly onAdvanceStage: (id: string) => void;
+	readonly onView3DScan?: ((order: DentalLabOrderEntry) => void) | undefined;
 }
 
 export const DentalLabRegistryOrderCard: React.FC<DentalLabRegistryOrderCardProps> = ({
@@ -28,6 +29,7 @@ export const DentalLabRegistryOrderCard: React.FC<DentalLabRegistryOrderCardProp
 	onCallPatient,
 	onPrintOrder,
 	onAdvanceStage,
+	onView3DScan,
 }) => {
 	const stageMeta = getStageMeta(ord.stage);
 	const matMeta = getMaterialMeta(ord.materialId);
@@ -39,6 +41,11 @@ export const DentalLabRegistryOrderCard: React.FC<DentalLabRegistryOrderCardProp
 				<div className="flex items-center gap-1.5">
 					<span className="text-xs font-bold font-mono px-2 py-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]">{ord.orderNumber}</span>
 					{ord.isUrgent && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--rose-surface,#fee2e2)] text-[var(--rose-ink,#991b1b)] border border-[var(--rose,#ef4444)]/40">Срочно</span>}
+					{(ord.isWarranty || ord.isWarrantyRework) && (
+						<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--warning-soft,rgba(245,158,11,0.12))] text-[var(--warning-ink,#b45309)] border border-[var(--warning-line,#fde68a)]">
+							Гарантия (0 ₽)
+						</span>
+					)}
 					<span className="text-[11px] text-[var(--ink-muted)] break-words">{ord.laboratoryName}</span>
 				</div>
 				<span data-testid={`order-stage-badge-${ord.id}`} className="text-[11px] font-bold px-2.5 py-0.5 rounded-xl border flex items-center gap-1.5 shrink-0" style={{ backgroundColor: stageMeta.bgToken, borderColor: stageMeta.borderToken, color: stageMeta.textToken }}>
@@ -67,7 +74,8 @@ export const DentalLabRegistryOrderCard: React.FC<DentalLabRegistryOrderCardProp
 				</div>
 				<div className="dental-lab-quick-actions">
 					{ord.stage !== "in_clinic" && ord.stage !== "seated" && (<button type="button" data-testid={`mark-ready-btn-${ord.id}`} onClick={() => onMarkInClinic(ord.id)} className="dental-lab-action-btn" title="Отметить прибытие из лаборатории"><span>В клинике</span></button>)}
-					<button type="button" data-testid={`call-patient-btn-${ord.id}`} onClick={() => onCallPatient(ord)} className="dental-lab-action-btn" title="Позвонить пациенту на примерку"><span>Примерка</span></button>
+					<button type="button" data-testid={`call-patient-btn-${ord.id}`} onClick={() => onCallPatient(ord)} className="dental-lab-action-btn" title="Связаться с пациентом / примерка"><span>Примерка</span></button>
+					<button type="button" data-testid={`view-3d-scan-btn-${ord.id}`} onClick={() => onView3DScan?.(ord)} className="dental-lab-action-btn" title="Просмотр 3D оптического скана (STL/PLY)"><span>3D скан</span></button>
 					<button type="button" data-testid={`print-order-btn-${ord.id}`} onClick={() => onPrintOrder(ord)} className="dental-lab-action-btn" title="Распечатать бланк заказ-наряда"><span>Бланк</span></button>
 					{ord.stage !== "seated" && (<button type="button" data-testid={`advance-stage-btn-${ord.id}`} onClick={() => onAdvanceStage(ord.id)} className="dental-lab-action-btn font-bold text-[var(--teal)] border-[var(--teal)]/40"><span>Этап →</span></button>)}
 				</div>

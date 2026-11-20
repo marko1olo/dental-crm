@@ -8,7 +8,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { DentalLabStudioModal } from "./DentalLabStudioModal";
-import { DentalLabOrdersView } from "./DentalLabOrdersView";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 
@@ -59,22 +58,25 @@ export const DirectDentalLabLauncher: React.FC = () => {
 	}, []);
 
 	if (!isActive || (!hasDentalLab && !isDemoShowcaseMode())) return null;
-	const isOrderModal = typeof window !== "undefined" && (window.location.search.includes("standalone=lab_order") || (window.location.hash || "").includes("lab-order"));
-	const isKanban = typeof window !== "undefined" && !window.location.search.includes("standalone=dental_lab") && ((window.location.hash || "").toLowerCase() === "#lab" || (window.location.hash || "").toLowerCase() === "#ztl");
+
+	// Канонический SSOT роутинг (Мандаты 8bf, 8aq): ВСЕ хеши открывают единую DentalLabStudioModal
+	const h = typeof window !== "undefined" ? (window.location.hash || "").toLowerCase() : "";
+	const s = typeof window !== "undefined" ? window.location.search || "" : "";
+	const isRegistryTab = h === "#lab" || h === "#ztl" || h === "#lab-orders" || s.includes("tab=lab") || s.includes("standalone=dental_lab");
+	const isOrderModal = s.includes("standalone=lab_order") || h.includes("lab-order");
+
 	return (
 		<main data-testid="direct-dental-lab-launcher-root" className="dental-lab-studio-root min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 relative">
-			{isOrderModal ? (
-				<DentalLabStudioModal
-					isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi}
-					patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
-					doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}
-					stageNumber={2} stageTitle="Ортопедический этап"
-				/>
-			) : isKanban ? (
-				<div className="w-full max-w-full"><DentalLabOrdersView /></div>
-			) : (
-				<DentalLabStudioModal isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi} />
-			)}
+			<DentalLabStudioModal
+				isOpen={isOpen}
+				onClose={handleClose}
+				initialToothFdi={initialToothFdi}
+				initialTab={isRegistryTab ? "registry" : "new_order"}
+				patientName={isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : undefined}
+				doctorName={isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : undefined}
+				stageNumber={isOrderModal ? 2 : undefined}
+				stageTitle={isOrderModal ? "Ортопедический этап" : undefined}
+			/>
 		</main>
 	);
 };

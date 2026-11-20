@@ -28,6 +28,9 @@ export interface LabOrderValidationInput {
 	scheduledVisitDate?: string | null | undefined;
 	frameworkTrialDate?: string | null | undefined;
 	ceramicTrialDate?: string | null | undefined;
+	priceKopecks?: number | undefined;
+	labCostKopecks?: number | undefined;
+	totalLabPriceKopecks?: number | undefined;
 	totalLabPriceRub?: number | undefined;
 }
 
@@ -106,7 +109,13 @@ export function validateLabOrderInput(input: LabOrderValidationInput): LabOrderV
 		}
 	}
 
-	// 6. Стоимость
+	// 6. Стоимость (копейки как канонический SSOT по Мандату 8bm)
+	if (input.priceKopecks !== undefined && input.priceKopecks < 0) {
+		errors.push("Стоимость наряда не может быть отрицательной");
+	}
+	if (input.totalLabPriceKopecks !== undefined && input.totalLabPriceKopecks < 0) {
+		errors.push("Стоимость наряда не может быть отрицательной");
+	}
 	if (input.totalLabPriceRub !== undefined && input.totalLabPriceRub < 0) {
 		errors.push("Стоимость наряда не может быть отрицательной");
 	}
@@ -234,7 +243,8 @@ export function buildLabOrderApiPayload(params: BuildLabOrderPayloadParams) {
 	const {
 		effectivePatientId, formDoctorId, formPatientName, selectedTeeth,
 		jawScope, material, finalShade, dueDate, currentStage,
-		totalLabPriceRub, attachedImageUrl, gostOrderNumber,
+		totalLabPriceRub, priceKopecks, labCostKopecks, totalLabPriceKopecks,
+		attachedImageUrl, gostOrderNumber,
 	} = params;
 
 	let toothFdiStr: string;
@@ -254,6 +264,10 @@ export function buildLabOrderApiPayload(params: BuildLabOrderPayloadParams) {
 		: "Пациент";
 	const qrPayload = `DNT-LAB:${gostOrderNumber || "ORDER"}|${tokenizedInitials}|${toothFdiStr}|${finalShade}`;
 
+	const effectivePriceKopecks = priceKopecks ?? totalLabPriceKopecks ?? (totalLabPriceRub != null ? Math.round(totalLabPriceRub * 100) : 0);
+	const effectiveLabCostKopecks = labCostKopecks ?? (params.labCostRub != null ? Math.round(params.labCostRub * 100) : (params.costRub != null ? Math.round(params.costRub * 100) : 0));
+	const effectivePriceRub = totalLabPriceRub ?? (effectivePriceKopecks / 100);
+
 	return {
 		patientId: effectivePatientId,
 		doctorId: formDoctorId || null,
@@ -264,7 +278,10 @@ export function buildLabOrderApiPayload(params: BuildLabOrderPayloadParams) {
 		status: currentStage || "draft",
 		dueDate,
 		clinicalNotes: comprehensiveNotes,
-		priceRub: totalLabPriceRub,
+		priceKopecks: effectivePriceKopecks,
+		labCostKopecks: effectiveLabCostKopecks,
+		amountKopecks: effectivePriceKopecks,
+		priceRub: effectivePriceRub,
 		attachedImageUrl: attachedImageUrl || null,
 		gostOrderNumber,
 		tokenizedInitials,
@@ -295,7 +312,11 @@ export interface BuildLabOrderPayloadParams {
 	readonly frameworkTrialDate?: string | undefined;
 	readonly ceramicTrialDate?: string | undefined;
 	readonly clinicalNotes: string;
-	readonly totalLabPriceRub: number;
+	readonly priceKopecks?: number | undefined;
+	readonly labCostKopecks?: number | undefined;
+	readonly totalLabPriceKopecks?: number | undefined;
+	readonly totalLabPriceRub?: number | undefined;
+	readonly priceRub?: number | undefined;
 	readonly labCostRub?: number | undefined;
 	readonly costRub?: number | undefined;
 	readonly selectedLabName?: string | undefined;
