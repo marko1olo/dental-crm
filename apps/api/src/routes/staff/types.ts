@@ -13,6 +13,7 @@ export interface ExtendedHrProfileStorage {
 	assignedChairIds?: string[] | undefined;
 	priceCategory?: string | undefined;
 	baseSalaryRub?: number | undefined;
+	baseSalaryKopecks?: number | undefined;
 	passwordEntropyBits?: number | undefined;
 }
 
@@ -29,11 +30,11 @@ export interface StaffAuthContext {
 
 export interface StaffSessionTelemetry {
 	sessionId: string;
-	ipAddress: string;
-	userAgent: string;
+	ipAddress: string | null;
+	userAgent: string | null;
 	status: string;
-	connectedAt: string;
-	lastActivityAt: string;
+	connectedAt: string | null;
+	lastActivityAt: string | null;
 }
 
 export interface StaffSessionsReport {

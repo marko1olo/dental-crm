@@ -16,6 +16,11 @@ import {
 	cashBoxes,
 	cashBoxShifts,
 } from "../../db/schema.js";
+import { sendTelegramTextMessage } from "../../telegramTransport.js";
+import {
+	configuredBotToken,
+	runtimeSettingsForRequestedOrganization,
+} from "../telegram/telegramRuntimeResolver.js";
 import {
 	DEFAULT_MAX_SHIFT_HOURS,
 	DEFAULT_SHIFT_BUFFER_MINUTES,
@@ -154,6 +159,89 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 			const completedCount = Number(body.completedCount) || 0;
 			const channel = String(body.channel || "telegram");
 
+			if (channel === "telegram") {
+				const runtime = runtimeSettingsForRequestedOrganization(orgId);
+				const botToken = runtime?.settings ? (configuredBotToken(runtime.settings) || process.env.TELEGRAM_BOT_TOKEN) : process.env.TELEGRAM_BOT_TOKEN;
+				const targetChatId = body.chatId ? String(body.chatId) : (process.env.TELEGRAM_MANAGEMENT_CHAT_ID || process.env.TELEGRAM_CLINIC_CHAT_ID);
+
+				if (botToken && targetChatId) {
+					const summaryText = [
+						"Сводка смены врача",
+						`Врач: ${doctorFullName}`,
+						`Дата: ${shiftDateLabel}`,
+						`Принято пациентов: ${completedCount}`,
+						`Выручка за смену: ${totalRevenueRub.toLocaleString("ru-RU")} руб.`,
+						`Расчетная выплата: ${calculatedPayoutRub.toLocaleString("ru-RU")} руб.`,
+					].join("\n");
+
+					try {
+						const sendResult = await sendTelegramTextMessage({
+							botToken,
+							chatId: targetChatId,
+							text: summaryText,
+						});
+
+						if (sendResult.ok) {
+							return reply.send({
+								success: true,
+								delivered: true,
+								configured: true,
+								channel: "telegram",
+								telegramMessageId: sendResult.telegramMessageId,
+								doctorFullName,
+								shiftDateLabel,
+								completedCount,
+								totalRevenueRub,
+								calculatedPayoutRub,
+								message: "Сводка смены успешно передана руководству в Telegram-канал клиники.",
+							});
+						}
+
+						return reply.send({
+							success: true,
+							delivered: false,
+							configured: true,
+							channel: "telegram",
+							error: sendResult.errorClass,
+							details: sendResult.details,
+							doctorFullName,
+							shiftDateLabel,
+							completedCount,
+							totalRevenueRub,
+							calculatedPayoutRub,
+							message: `Не удалось доставить сводку в Telegram: ${sendResult.details || "ошибка шлюза"}. Сводка сохранена локально.`,
+						});
+					} catch (err: unknown) {
+						const errMsg = err instanceof Error ? err.message : String(err);
+						return reply.send({
+							success: true,
+							delivered: false,
+							configured: true,
+							channel: "telegram",
+							doctorFullName,
+							shiftDateLabel,
+							completedCount,
+							totalRevenueRub,
+							calculatedPayoutRub,
+							message: `Ошибка отправки в Telegram: ${errMsg}. Сводка сохранена локально.`,
+						});
+					}
+				}
+
+				return reply.send({
+					success: true,
+					delivered: false,
+					configured: false,
+					channel: "telegram",
+					doctorFullName,
+					shiftDateLabel,
+					completedCount,
+					totalRevenueRub,
+					calculatedPayoutRub,
+					message: "Telegram-канал клиники не настроен (отсутствует токен бота или chat_id руководства). Сводка смены сохранена локально.",
+				});
+			}
+
 			return reply.send({
 				success: true,
 				delivered: true,
@@ -163,7 +251,7 @@ export async function registerShiftRoutes(app: FastifyInstance): Promise<void> {
 				completedCount,
 				totalRevenueRub,
 				calculatedPayoutRub,
-				message: `Сводка смены успешно передана руководству через ${channel === "telegram" ? "Telegram-канал клиники" : "электронную почту"}.`,
+				message: "Сводка смены успешно сохранена в журнал смен клиники.",
 			});
 		},
 	);

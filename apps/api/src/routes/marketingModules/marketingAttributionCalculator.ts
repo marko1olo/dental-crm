@@ -20,6 +20,7 @@ import {
 
 export interface RawLeadData {
 	id: string;
+	patientId?: string | null;
 	phone?: string | null;
 	source?: string | null;
 	status?: string | null;

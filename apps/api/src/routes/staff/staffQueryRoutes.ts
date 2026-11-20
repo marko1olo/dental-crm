@@ -9,7 +9,7 @@ import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
 import { evaluatePasswordBodySchema, staffCandidateSchema } from "./staffSchemas.js";
-import type { ExtendedHrProfileStorage } from "./types.js";
+import type { ExtendedHrProfileStorage, StaffSessionTelemetry } from "./types.js";
 
 export async function registerStaffQueryRoutes(app: FastifyInstance) {
 	/**
@@ -199,26 +199,47 @@ export async function registerStaffQueryRoutes(app: FastifyInstance) {
 			};
 		}
 
-		const rawUa = request.headers["user-agent"];
-		const userAgent = (Array.isArray(rawUa) ? rawUa[0] : rawUa) || "DENTE Clinic Workstation";
-		const ipAddress = request.ip || "127.0.0.1";
+		const liveEnforcements = await db
+			.select({
+				id: schema.singleSessionEnforcements.id,
+				activeSessionToken: schema.singleSessionEnforcements.activeSessionToken,
+				clientIp: schema.singleSessionEnforcements.clientIp,
+				userAgent: schema.singleSessionEnforcements.userAgent,
+				lastActiveAt: schema.singleSessionEnforcements.lastActiveAt,
+			})
+			.from(schema.singleSessionEnforcements)
+			.where(
+				and(
+					eq(schema.singleSessionEnforcements.userId, params.staffId),
+					eq(schema.singleSessionEnforcements.organizationId, auth.orgId),
+				),
+			);
+
+		const activeSessions: StaffSessionTelemetry[] = liveEnforcements.map((s) => ({
+			sessionId: s.activeSessionToken || s.id,
+			ipAddress: s.clientIp,
+			userAgent: s.userAgent,
+			status: "online",
+			connectedAt: s.lastActiveAt ? s.lastActiveAt.toISOString() : null,
+			lastActivityAt: s.lastActiveAt ? s.lastActiveAt.toISOString() : null,
+		}));
+
+		if (activeSessions.length === 0 && user.currentSessionId) {
+			activeSessions.push({
+				sessionId: user.currentSessionId,
+				ipAddress: null,
+				userAgent: null,
+				status: "online",
+				connectedAt: user.createdAt ? user.createdAt.toISOString() : null,
+				lastActivityAt: null,
+			});
+		}
 
 		return {
 			staffId: user.id,
 			fullName: user.fullName,
-			hasActiveSession: Boolean(user.currentSessionId),
-			sessions: user.currentSessionId
-				? [
-						{
-							sessionId: user.currentSessionId,
-							ipAddress,
-							userAgent,
-							status: "online",
-							connectedAt: new Date().toISOString(),
-							lastActivityAt: new Date().toISOString(),
-						},
-					]
-				: [],
+			hasActiveSession: activeSessions.length > 0,
+			sessions: activeSessions,
 		};
 	});
 }

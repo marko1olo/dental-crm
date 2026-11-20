@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { DocumentKind } from "@dental/shared";
 import { useDocumentStore } from "../../../store/documentStore";
 import type { TaxDeductionTab } from "../taxCertificateEngine";
+import type { ProfessionalA4DocumentTab } from "../types";
 import { showToast } from "../../GlobalToast";
 import { getAllCatalogItems } from "./catalogItems";
 import { executeFastPrintPrimaryIntake } from "./intakePackagePrintHelper";
@@ -71,7 +72,8 @@ export function useDocumentsCatalogState(props: DocumentsCatalogViewProps) {
 	const catalogItems = useMemo(
 		() =>
 			getAllCatalogItems({
-				setSelectedA4Tab: modals.setSelectedA4Tab,
+				setSelectedA4Tab: (tab: ProfessionalA4DocumentTab) =>
+					modals.setSelectedA4Tab(tab),
 				handleOpenKind,
 				handleOpenTax,
 				setIsDiplomaModalOpen: modals.setIsDiplomaModalOpen,

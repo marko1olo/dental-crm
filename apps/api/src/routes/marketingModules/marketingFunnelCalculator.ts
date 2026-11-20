@@ -9,32 +9,79 @@ import type {
 import type {
 	RawAppointmentData,
 	RawLeadData,
+	RawPatientData,
 	RawPaymentData,
 } from "./marketingAttributionCalculator.js";
 import {
+	cleanPhoneDigits,
 	detectChannelFromSource,
 	safePercent,
 } from "./marketingAnalyticsUtils.js";
 
 /**
  * Расчет пошаговой воронки онлайн-самозаписи.
+ * Исключает подмешивание пациентов всей клиники: метрики явки (attended) и оплаты (paid)
+ * рассчитываются строго по когорте пациентов из онлайн-лидов (onlineLeads cohort).
  */
 export function calculateOnlineBookingFunnel(params: {
 	allLeads: RawLeadData[];
 	allAppts: RawAppointmentData[];
 	allPayments: RawPaymentData[];
+	allPatients?: RawPatientData[];
 }): OnlineBookingFunnelResponse {
-	const { allLeads, allAppts, allPayments } = params;
+	const { allLeads, allAppts, allPayments, allPatients = [] } = params;
 
 	const onlineLeads = allLeads.filter((l) => detectChannelFromSource(l.source) !== "telephony");
 	const views = onlineLeads.length;
 	const slotSelected = onlineLeads.length;
 	const booked = onlineLeads.filter((l) => l.status === "consult_booked").length;
-	const attended = allAppts.filter(
-		(a) => a.status === "completed" || a.status === "arrived" || a.status === "in_treatment",
-	).length;
-	const paid = allPayments.length;
-	const totalRevenueKopecks = allPayments.reduce(
+
+	// Извлекаем идентификаторы пациентов когорты онлайн-записи
+	const onlinePatientIds = new Set<string>();
+
+	// Создаем быстрый индекс телефонов пациентов для сопоставления лидов без явного patientId
+	const patientIdByPhone = new Map<string, string>();
+	for (const pt of allPatients) {
+		const digits = cleanPhoneDigits(pt.phone);
+		if (digits.length >= 7) {
+			patientIdByPhone.set(digits, pt.id);
+		}
+	}
+
+	for (const lead of onlineLeads) {
+		if (lead.patientId) {
+			onlinePatientIds.add(lead.patientId);
+		} else if (lead.phone) {
+			const digits = cleanPhoneDigits(lead.phone);
+			if (digits.length >= 7) {
+				const matchedId = patientIdByPhone.get(digits);
+				if (matchedId) {
+					onlinePatientIds.add(matchedId);
+				}
+			}
+		}
+	}
+
+	// Отбираем приёмы СТРОГО когорты онлайн-пациентов
+	const onlineAppts = allAppts.filter(
+		(a) =>
+			a.patientId &&
+			onlinePatientIds.has(a.patientId) &&
+			(a.status === "completed" || a.status === "arrived" || a.status === "in_treatment"),
+	);
+	const uniqueAttendedPatients = new Set(onlineAppts.map((a) => a.patientId)).size;
+	const rawAttended = Math.max(0, uniqueAttendedPatients);
+	const attended = Math.min(booked, rawAttended);
+
+	// Отбираем оплаты СТРОГО когорты онлайн-пациентов
+	const onlinePayments = allPayments.filter(
+		(p) => p.patientId && onlinePatientIds.has(p.patientId) && (p.status === "paid" || !p.status),
+	);
+	const uniquePaidPatients = new Set(onlinePayments.map((p) => p.patientId)).size;
+	const rawPaid = Math.max(0, uniquePaidPatients);
+	const paid = Math.min(attended, rawPaid);
+
+	const totalRevenueKopecks = onlinePayments.reduce(
 		(acc, p) => acc + Math.round(Number(p.amountRub || 0) * 100),
 		0,
 	);

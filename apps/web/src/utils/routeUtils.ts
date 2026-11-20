@@ -124,10 +124,21 @@ export function getFilteredAppViews(role: StaffRole): AppView[] {
 			"settings",
 		];
 	}
+	if (role === "curator") {
+		return [
+			"shift",
+			"schedule",
+			"patients",
+			"pipeline",
+			"imaging",
+			"documents",
+			"communications",
+		];
+	}
 	if (role === "owner") {
 		return Array.from(appViews);
 	}
-	return Array.from(appViews);
+	return ["shift"];
 }
 
 export function getFallbackAppView(role: StaffRole): AppView {

@@ -123,17 +123,3 @@ export const telephonyWebhookSchema = z.object({
 	clinicId: z.string().uuid().optional(),
 });
 export type TelephonyWebhookPayload = z.infer<typeof telephonyWebhookSchema>;
-
-export const broadcastCampaignSchema = z.object({
-	title: z.string().min(1, "Название рассылки обязательно"),
-	templateId: z.string().uuid().optional(),
-	templateText: z.string().optional(),
-	channel: z.enum(["telegram", "whatsapp", "sms", "vk", "email", "max"]),
-	patientIds: z.array(z.string().uuid()).min(1, "Укажите хотя бы одного получателя"),
-	serviceType: z
-		.enum(["appointment_reminder", "recall", "service_notification"])
-		.default("service_notification"),
-	respectConsent: z.boolean().default(true),
-	scheduledAt: z.string().datetime().optional(),
-});
-export type BroadcastCampaignPayload = z.infer<typeof broadcastCampaignSchema>;

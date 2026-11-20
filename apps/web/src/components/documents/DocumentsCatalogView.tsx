@@ -81,7 +81,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = (
 				<div className="flex items-center gap-2">
 					<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)] shrink-0" />
 					<span className="font-medium text-[var(--ink,#0f172a)]">
-						Каталог медицинских документов и бланков (16 утверждённых форм)
+						Каталог клинических документов и согласий
 					</span>
 				</div>
 				<span className="text-[11px] text-[var(--muted,#64748b)]">
@@ -112,7 +112,7 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = (
 				isContractModalOpen={s.isContractModalOpen}
 				setIsContractModalOpen={s.setIsContractModalOpen}
 				selectedA4Tab={s.selectedA4Tab}
-				setSelectedA4Tab={s.setSelectedA4Tab}
+				setSelectedA4Tab={(tab) => s.setSelectedA4Tab(tab)}
 				onCreateDocument={onCreateDocument}
 				onOpenIssuedDocumentHtml={onOpenIssuedDocumentHtml}
 				handleOpenKind={s.handleOpenKind}

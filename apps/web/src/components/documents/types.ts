@@ -6,6 +6,14 @@ import type { DocumentPackageKey, DocumentServiceItem, PatientRequisites } from 
 
 export type DocumentTemplateKey = DocumentPackageKey | "contract" | "act" | "consent" | "tax_deduction";
 export type TaxDeductionTab = "form" | "checks" | "family" | "xml" | "registry";
+export type ProfessionalA4DocumentTab =
+	| "contract"
+	| "act"
+	| "treatment_plan"
+	| "informed_consent"
+	| "consent"
+	| "personal_data"
+	| "medical_card";
 
 export const NO_PATIENT_SELECTED_PLACEHOLDER =
 	"[Бланк для ручного заполнения — Пациент: ____________________________________]";

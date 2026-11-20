@@ -8,6 +8,7 @@ import type { MarketingPromo, MessageChannel, PatientSegmentOption } from "./mar
 import { showToast } from "../GlobalToast";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { useCampaignSegments } from "./useCampaignSegments";
+import { launchMarketingCampaign } from "./launchCampaignService";
 import { MarketingCampaignHeader } from "./MarketingCampaignHeader";
 import { MarketingCampaignConditions } from "./MarketingCampaignConditions";
 import { MarketingCampaignAnalytics } from "./MarketingCampaignAnalytics";
@@ -78,14 +79,21 @@ export const MarketingCampaignDetail: React.FC<MarketingCampaignDetailProps> = (
 	const handleLaunchCampaign = async () => {
 		setIsSending(true);
 		try {
-			const headers = { "Content-Type": "application/json", ...(appLogic?.auth?.denteClinicalMutationHeaders ?? {}) };
-			const res = await fetch("/api/communications/outbox", {
-				method: "POST",
-				headers,
-				body: JSON.stringify({ channel, intent: "general", scope: "marketing", body: compiledPreview, dedupeKey: `mkt_${promo.id}_${segmentId}_${Math.floor(Date.now() / 60000)}` }),
+			const mutationHeaders = (appLogic?.auth?.denteClinicalMutationHeaders ?? {}) as Record<string, string>;
+			const result = await launchMarketingCampaign({
+				promo,
+				channel,
+				segmentId,
+				consentOnly,
+				mutationHeaders,
 			});
-			if (!res.ok) throw new Error("Не удалось поставить рассылку в очередь");
-			showToast(`Рассылка «${promo.title}» запущена! Получателей: ${activeSegment.count} (${channel.toUpperCase()}).`, "info");
+			if (result.queued > 0) {
+				showToast(`Рассылка «${promo.title}» запущена! В очереди: ${result.queued} (${channel.toUpperCase()}).`, "info");
+			} else if (result.alreadyQueued > 0) {
+				showToast(`Рассылка «${promo.title}»: ${result.alreadyQueued} сообщений уже стоят в очереди.`, "info");
+			} else {
+				showToast(`Рассылка «${promo.title}»: ${result.matched} совпало, 0 поставлено (нет согласия 152-ФЗ / 38-ФЗ).`, "warning");
+			}
 		} catch (err) {
 			showToast(err instanceof Error ? err.message : "Ошибка запуска рассылки", "error");
 		} finally {

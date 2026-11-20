@@ -137,6 +137,7 @@ export function assembleStaffProfile(
 		assignedChairIds: Array.isArray(hr.assignedChairIds) ? hr.assignedChairIds : [],
 		priceCategory: hr.priceCategory || "standard",
 		baseSalaryRub,
+		baseSalaryKopecks: allowPayrolls ? (hr.baseSalaryKopecks !== undefined ? hr.baseSalaryKopecks : Math.round(baseSalaryRub * 100)) : 0,
 		commissionPct,
 		materialCostDeductionPct,
 		labCostDeductionPct,
@@ -154,8 +155,8 @@ export function assembleStaffProfile(
 					? 64
 					: 0,
 		lastLoginAt: user.createdAt?.toISOString ? user.createdAt.toISOString() : null,
-		currentSessionIp: user.currentSessionId ? "Активная сессия" : null,
-		currentSessionUserAgent: user.currentSessionId ? "DENTE Clinic Workstation" : null,
+		currentSessionIp: null,
+		currentSessionUserAgent: null,
 		isSessionActive: Boolean(user.currentSessionId),
 
 		createdAt: user.createdAt?.toISOString

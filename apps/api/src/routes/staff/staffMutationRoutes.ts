@@ -9,7 +9,7 @@ import {
 	validateStaffSnils,
 } from "@dental/shared";
 import { and, eq, ne } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import * as schema from "../../db/schema.js";
@@ -41,9 +41,9 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 	}
 
 	/**
-	 * PUT /api/staff/:staffId/profile — Сохранение полной расширенной карточки сотрудника
+	 * PUT /api/staff/:staffId/profile & PUT /api/staff/:staffId — Сохранение полной расширенной карточки сотрудника
 	 */
-	app.put("/api/staff/:staffId/profile", async (request, reply) => {
+	const updateStaffProfileHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const auth = await resolveOrganizationId(request, reply);
 		if (!auth) return;
 		if (!requirePersonalStaff(auth, reply)) return;
@@ -298,7 +298,15 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			baseSalaryRub:
 				data.baseSalaryRub !== undefined
 					? data.baseSalaryRub
-					: (existingHr.baseSalaryRub || 0),
+					: data.baseSalaryKopecks !== undefined
+						? Math.round(data.baseSalaryKopecks / 100)
+						: (existingHr.baseSalaryRub || 0),
+			baseSalaryKopecks:
+				data.baseSalaryKopecks !== undefined
+					? data.baseSalaryKopecks
+					: data.baseSalaryRub !== undefined
+						? Math.round(data.baseSalaryRub * 100)
+						: (existingHr.baseSalaryKopecks || Math.round((existingHr.baseSalaryRub || 0) * 100)),
 			passwordEntropyBits:
 				data.passwordEntropyBits !== undefined
 					? data.passwordEntropyBits
@@ -511,6 +519,80 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 			auth.callerRole,
 			auth.callerUserId,
 		);
+	};
+
+	app.put("/api/staff/:staffId", updateStaffProfileHandler);
+	app.put("/api/staff/:staffId/profile", updateStaffProfileHandler);
+
+	/**
+	 * DELETE /api/staff/:staffId — Мягкая деактивация сотрудника
+	 */
+	app.delete("/api/staff/:staffId", async (request, reply) => {
+		const auth = await resolveOrganizationId(request, reply);
+		if (!auth) return;
+		if (!requirePersonalStaff(auth, reply)) return;
+
+		const params = request.params as { staffId: string };
+		if (!params.staffId || !UUID_PATTERN.test(params.staffId.trim())) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректный идентификатор сотрудника (ожидается UUID).",
+			};
+		}
+
+		if (!canManageStaffAuthority(auth.callerRole) && auth.callerRole !== "owner") {
+			reply.code(403);
+			return {
+				error: "Forbidden",
+				message: "Деактивация сотрудников доступна только Руководству клиники.",
+			};
+		}
+
+		const [user] = await db
+			.select()
+			.from(schema.users)
+			.where(
+				and(
+					eq(schema.users.id, params.staffId),
+					eq(schema.users.organizationId, auth.orgId),
+				),
+			)
+			.limit(1);
+
+		if (!user) {
+			reply.code(404);
+			return {
+				error: "StaffNotFound",
+				message: "Сотрудник не найден в этой клинике.",
+			};
+		}
+
+		await db
+			.update(schema.users)
+			.set({ isActive: false })
+			.where(
+				and(
+					eq(schema.users.id, params.staffId),
+					eq(schema.users.organizationId, auth.orgId),
+				),
+			);
+
+		await recordAuditEventInDb(auth.orgId, {
+			entityType: "user",
+			entityId: params.staffId,
+			action: "STAFF_DEACTIVATE",
+			actorUserId: auth.callerUserId,
+			reason: `Деактивация сотрудника ${user.fullName} (${user.role})`,
+		});
+
+		return {
+			ok: true,
+			id: user.id,
+			fullName: user.fullName,
+			active: false,
+			message: `Сотрудник ${user.fullName} успешно деактивирован.`,
+		};
 	});
 
 	/**

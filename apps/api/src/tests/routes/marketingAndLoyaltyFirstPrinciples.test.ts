@@ -18,7 +18,7 @@ import {
 } from "../../db/schema.js";
 import { registerLoyaltyRoutes } from "../../routes/loyalty.js";
 import { registerMarketingRoutes } from "../../routes/marketing.js";
-import { registerPublicBookingRoutes } from "../../routes/publicBooking.js";
+import { registerPublicBookingRoutes } from "../../routes/publicBooking/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -365,5 +365,67 @@ describe("Marketing, Public Booking & Loyalty First-Principles Integration", () 
 			assert.ok(Number.isFinite(ch.romiPercent));
 			assert.ok(Number.isFinite(ch.cacKopecks));
 		}
+	});
+
+	test("4. Воронка онлайн-самозаписи строится строго по когорте онлайн-лидов без 5000% аномалий", async () => {
+		if (!databaseAvailable) return;
+
+		// Засеваем несвязанного оффлайн-пациента с завершенным визитом и крупной оплатой
+		const [offlinePatient] = await db.insert(patients).values({
+			organizationId: ORG_ID,
+			fullName: "Оффлайн Пациент Безлидный",
+			phone: "+79090001122",
+			status: "active",
+		}).returning();
+
+		assert.ok(offlinePatient);
+		const apptStart = new Date();
+		const apptEnd = new Date(apptStart.getTime() + 30 * 60 * 1000);
+		await db.insert(appointments).values({
+			organizationId: ORG_ID,
+			patientId: offlinePatient.id,
+			status: "completed",
+			startsAt: apptStart,
+			endsAt: apptEnd,
+		});
+		await db.insert(payments).values({
+			organizationId: ORG_ID,
+			patientId: offlinePatient.id,
+			amountRub: 120000,
+			status: "paid",
+		});
+
+		// Запрашиваем воронку онлайн-самозаписи
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/marketing/online-booking/funnel",
+			headers: ORG_HEADERS,
+		});
+
+		assert.equal(res.statusCode, 200);
+		const funnel = res.json();
+
+		assert.ok(Array.isArray(funnel.steps));
+		assert.equal(funnel.steps.length, 5);
+
+		const viewsStep = funnel.steps.find((s: any) => s.stage === "views");
+		const bookedStep = funnel.steps.find((s: any) => s.stage === "booked");
+		const attendedStep = funnel.steps.find((s: any) => s.stage === "attended");
+		const paidStep = funnel.steps.find((s: any) => s.stage === "paid");
+
+		// В тесте 1 был создан 1 онлайн-лид ("Смирнова Ольга Ивановна", yandex_maps, consult_booked)
+		assert.equal(viewsStep.count, 1, "Онлайн-лидов ровно 1");
+		assert.equal(bookedStep.count, 1, "Забронированных записей онлайн ровно 1");
+
+		// Оффлайн-пациент НЕ должен попадать в онлайн-воронку!
+		assert.ok(attendedStep.count <= bookedStep.count, "Явка не может превышать созданные записи");
+		assert.ok(paidStep.count <= attendedStep.count, "Оплата не может превышать явку");
+
+		// Конверсии обязаны быть строго в диапазоне [0, 100]
+		assert.ok(funnel.overallConversionPercent >= 0 && funnel.overallConversionPercent <= 100);
+		assert.ok(funnel.attendanceRatePercent >= 0 && funnel.attendanceRatePercent <= 100);
+
+		// Выручка воронки онлайн-записи НЕ должна содержать 120 000 руб оффлайн-пациента
+		assert.ok(funnel.totalRevenueKopecks < 12000000, "Оплаты оффлайн-пациента не должны просачиваться в онлайн-воронку");
 	});
 });

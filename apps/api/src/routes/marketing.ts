@@ -262,16 +262,25 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		try {
-			const [allLeads, allAppts, allPayments] = await Promise.all([
+			const [allLeads, allAppts, allPayments, allPatients] = await Promise.all([
 				db.select().from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
 				db.select().from(appointments).where(eq(appointments.organizationId, orgId)),
 				db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
+				db.select({
+					id: patients.id,
+					fullName: patients.fullName,
+					phone: patients.phone,
+					notes: patients.notes,
+					administrativeProfile: patients.administrativeProfile,
+					createdAt: patients.createdAt,
+				}).from(patients).where(eq(patients.organizationId, orgId)),
 			]);
 
 			const funnel = calculateOnlineBookingFunnel({
 				allLeads,
 				allAppts,
 				allPayments,
+				allPatients,
 			});
 
 			return reply.code(200).send(funnel);

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { GeneratedDocument, Patient } from "@dental/shared";
+import type { DocumentIssueSignatureMode, GeneratedDocument, Patient } from "@dental/shared";
 import { useOptionalAppLogicContext } from "../../../../contexts/AppLogicContext";
 import { useDocumentStore } from "../../../../store/documentStore";
 import type { FastPrintDocType } from "../../../documents/FastClinicalPrintEngine";
@@ -11,6 +11,7 @@ export interface TabletSignatureData {
 	readonly sha256Fingerprint?: string | undefined;
 	readonly signatureSvg?: string | undefined;
 	readonly pepCode?: string | undefined;
+	readonly mode?: DocumentIssueSignatureMode | string | undefined;
 }
 
 interface StoreWithOptionalDocuments {
