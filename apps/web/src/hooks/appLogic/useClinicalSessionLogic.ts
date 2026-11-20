@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import type { Appointment, Dashboard, Patient, StaffMember } from "@dental/shared";
 import { useClinicalVisitLogic } from "../domains/useClinicalVisitLogic";
 import { useVisitLogic } from "../domains/useVisitLogic";
-import type { UseVisitLogicParams, UseVisitLogicReturn } from "../domains/visit/types";
+import type { ClinicalAuthClient, UseVisitLogicParams, UseVisitLogicReturn } from "../domains/visit/types";
 import {
 	toothRows,
 	visitDraftMissingFieldLabel,
@@ -17,12 +17,12 @@ export interface UseClinicalSessionLogicProps {
 	dashboard?: Dashboard | null;
 	query?: string;
 	setError: (err: string | null) => void;
-	auth: unknown;
+	auth: ClinicalAuthClient;
 	setDashboard?: ((dashboard: Dashboard | null) => void) | React.Dispatch<React.SetStateAction<Dashboard | null>>;
 	setQuery?: (query: string) => void;
 	selectedPatientId?: string;
 	documentPatient?: Patient | null;
-	activePatient?: unknown;
+	activePatient?: Patient | null | undefined;
 	activeAppointment?: Appointment | null;
 	activeDoctor?: StaffMember | null;
 	activeChair?: unknown;

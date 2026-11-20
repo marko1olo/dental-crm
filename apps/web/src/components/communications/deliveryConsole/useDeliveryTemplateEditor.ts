@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
 import { failNotice, type Notice } from "../deliveryReportNotice.js";
-import { channelLabels, intentLabels, readJson } from "./constants";
-import type { ChannelCode, PreviewResult } from "./types";
+import { channelLabels, extractHttpStatus, intentLabels, readJson } from "./constants";
+import type { ChannelCode, DeliveryCommQueries, PreviewResult } from "./types";
 
 export function useDeliveryTemplateEditor(
-	commQueries: any,
+	commQueries: DeliveryCommQueries | null | undefined,
 	loadAll: () => Promise<void>,
 	setNotice: (n: Notice | null) => void,
 	busy: boolean,
@@ -29,6 +29,7 @@ export function useDeliveryTemplateEditor(
 		const timer = setTimeout(() => {
 			void (async () => {
 				try {
+					if (!commQueries?.previewTemplate) return;
 					const response = await commQueries.previewTemplate(null, {
 						body: draftBody,
 						channel: draftChannel,
@@ -37,7 +38,7 @@ export function useDeliveryTemplateEditor(
 					setPreview(await readJson<PreviewResult>(response));
 					setPreviewError(null);
 				} catch (error) {
-					showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+					showToast(actionFailureToast("Ошибка выполнения операции", extractHttpStatus(error)), "error");
 					setPreview(null);
 					setPreviewError(error instanceof Error ? error.message : String(error));
 				}
@@ -89,15 +90,30 @@ export function useDeliveryTemplateEditor(
 		setNotice(null);
 		try {
 			const payload = { title, channel: draftChannel, intent: draftIntent, body, allowPhi: true };
-			const response = editingId
-				? await commQueries.updateTemplate(editingId, payload)
-				: await commQueries.createTemplate(payload);
+			const queries = commQueries;
+			if (!queries) {
+				throw new Error("Сервис шаблонов недоступен");
+			}
+			let response: Response;
+			if (editingId) {
+				const updateTpl = queries.updateTemplate;
+				if (!updateTpl) {
+					throw new Error("Обновление шаблонов недоступно");
+				}
+				response = await updateTpl(editingId, payload);
+			} else {
+				const createTpl = queries.createTemplate;
+				if (!createTpl) {
+					throw new Error("Создание шаблонов недоступно");
+				}
+				response = await createTpl(payload);
+			}
 			await readJson(response);
 			setNotice({ kind: "done", text: editingId ? "Шаблон обновлён." : "Шаблон создан." });
 			resetDraft();
 			await loadAll();
 		} catch (error) {
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(actionFailureToast("Ошибка выполнения операции", extractHttpStatus(error)), "error");
 			setNotice(failNotice(error, editingId ? "Шаблон не сохранён, остались прежние правки. Текст ниже не пропал." : "Шаблон не создан. Текст ниже не пропал."));
 		} finally {
 			setBusy(false);

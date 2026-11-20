@@ -1,7 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import type { ChannelFilter, MobileCommunicationsMessengerProps, MobilePatientDialogSummary } from "./types";
+import type { ChannelFilter, CommunicationEvent, MobileCommunicationsMessengerProps, MobilePatientDialogSummary } from "./types";
+
+interface InboxDialogResponseItem {
+	patientId?: string | undefined;
+	patientName?: string | undefined;
+	patientPhone?: string | undefined;
+	message?: string | undefined;
+	createdAt?: string | undefined;
+	channel?: string | undefined;
+	direction?: string | undefined;
+	unreadCount?: number | undefined;
+}
+
+interface ExtendedCommunicationEvent extends CommunicationEvent {
+	patientName?: string | undefined;
+	patientPhone?: string | undefined;
+	preview?: string | undefined;
+}
+
+function isChatChannel(ch: unknown): ch is MobilePatientDialogSummary["channel"] {
+	return ch === "whatsapp" || ch === "telegram" || ch === "sms" || ch === "max";
+}
 
 export function useMobileDialogsFeed(dashboard: MobileCommunicationsMessengerProps["dashboard"]) {
 	const [serverDialogs, setServerDialogs] = useState<MobilePatientDialogSummary[]>([]);
@@ -13,41 +34,51 @@ export function useMobileDialogsFeed(dashboard: MobileCommunicationsMessengerPro
 		try {
 			const res = await fetch("/api/communications/inbox", { headers: denteAdminSecretRequestHeaders() });
 			if (res.ok) {
-				const data = await res.json();
+				const data = (await res.json()) as unknown;
 				if (Array.isArray(data) && data.length > 0) {
-					setServerDialogs(data.map((item: any) => ({
-						patientId: item.patientId, patientName: item.patientName || "Пациент клиники",
-						patientPhone: item.patientPhone || "", lastMessage: item.message || "",
-						lastMessageAt: item.createdAt || new Date().toISOString(), channel: (item.channel as any) || "whatsapp",
-						direction: item.direction === "inbound" ? "inbound" : "outbound", unreadCount: item.unreadCount || 0,
-					})));
+					setServerDialogs(
+						(data as InboxDialogResponseItem[]).map((item) => ({
+							patientId: item.patientId || "unknown",
+							patientName: item.patientName || "Пациент клиники",
+							patientPhone: item.patientPhone || "",
+							lastMessage: item.message || "",
+							lastMessageAt: item.createdAt || new Date().toISOString(),
+							channel: isChatChannel(item.channel) ? item.channel : "whatsapp",
+							direction: item.direction === "inbound" ? "inbound" : "outbound",
+							unreadCount: typeof item.unreadCount === "number" ? item.unreadCount : 0,
+						})),
+					);
 					return;
 				}
 			}
-		} catch { /* fallback below */ }
+		} catch (error) {
+			console.error("[useMobileDialogsFeed] Failed to fetch server dialogs, falling back to local events:", error);
+		}
 
 		const events = dashboard?.communicationEvents ?? [];
 		const patientsMap = new Map<string, { name: string; phone: string }>();
 		(dashboard?.patients ?? []).forEach((p) => patientsMap.set(p.id, { name: p.fullName, phone: p.phone || "" }));
 		const dialogsMap = new Map<string, MobilePatientDialogSummary>();
 
-		events.forEach((ev: any) => {
+		events.forEach((ev: CommunicationEvent | ExtendedCommunicationEvent) => {
 			let pId = ev.patientId || "unknown";
-			if (!patientsMap.has(pId) && ev.patientName) {
+			const extEv = ev as ExtendedCommunicationEvent;
+			if (!patientsMap.has(pId) && extEv.patientName) {
 				for (const [k, v] of patientsMap.entries()) {
-					if (v.name === ev.patientName) { pId = k; break; }
+					if (v.name === extEv.patientName) { pId = k; break; }
 				}
 			}
-			const patientInfo = patientsMap.get(pId) || { name: ev.patientName || "Пациент клиники", phone: ev.patientPhone || "" };
+			const patientInfo = patientsMap.get(pId) || { name: extEv.patientName || "Пациент клиники", phone: extEv.patientPhone || "" };
 			const existing = dialogsMap.get(pId);
 			const evTime = new Date(ev.createdAt).getTime();
 
 			if (!existing || evTime > new Date(existing.lastMessageAt).getTime()) {
 				dialogsMap.set(pId, {
 					patientId: pId, patientName: patientInfo.name, patientPhone: patientInfo.phone,
-					lastMessage: ev.message || ev.preview || "Сообщение в чате", lastMessageAt: ev.createdAt,
-					channel: (ev.channel as any) || "whatsapp", direction: ev.direction === "inbound" ? "inbound" : "outbound",
-					unreadCount: ev.status === "unread" || ev.direction === "inbound" ? 1 : 0,
+					lastMessage: ev.message || extEv.preview || "Сообщение в чате", lastMessageAt: ev.createdAt,
+					channel: isChatChannel(ev.channel) ? ev.channel : "whatsapp",
+					direction: ev.direction === "inbound" ? "inbound" : "outbound",
+					unreadCount: ev.status === "queued" || ev.direction === "inbound" ? 1 : 0,
 				});
 			}
 		});

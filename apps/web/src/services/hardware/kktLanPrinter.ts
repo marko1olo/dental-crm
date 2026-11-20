@@ -34,21 +34,6 @@ export class KktLanPrinterService {
 	private static consecutiveFailures = 0;
 	private static lastFailureTime: number | null = null;
 	private static circuitState: CircuitBreakerState = "CLOSED";
-	private static currentFiscalDocCounter = 50001;
-
-	/**
-	 * Generates next sequential fiscal document number without random jitter.
-	 */
-	public static nextFiscalDocNum(): string {
-		return String(this.currentFiscalDocCounter++);
-	}
-
-	/**
-	 * Resets fiscal document counter (useful for test isolation).
-	 */
-	public static resetFiscalDocCounter(initialNumber = 50001): void {
-		this.currentFiscalDocCounter = initialNumber;
-	}
 
 	private static defaultConfig: KktLanPrinterConfig = {
 		host: "192.168.1.150",
@@ -311,38 +296,24 @@ export class KktLanPrinterService {
 			return {
 				success: true,
 				status: "printed",
-				fiscalSign: "0000000000",
-				fiscalDocNum: "0",
-				fnSerial,
+				fiscalSign: undefined,
+				fiscalDocNum: undefined,
+				fnSerial: undefined,
 				printedAt: now.toISOString(),
 				qrString: "",
 				ofdVerificationUrl: "",
 			};
 		}
 
-		const fiscalDocNum = this.nextFiscalDocNum();
-		const fiscalSign = this.computeFiscalSign(fnSerial, fiscalDocNum, now, payload.totalRub, payload.operationType);
-
-		const qrString = this.generate54FzQrString({
-			issuedAt: now,
-			totalRub: payload.totalRub,
-			fnSerial,
-			fiscalDocNum,
-			fiscalSign,
-			operationType: payload.operationType,
-		});
-
-		const ofdUrl = `https://ofd.ru/check?fn=${fnSerial}&fd=${fiscalDocNum}&fpd=${fiscalSign}&s=${payload.totalRub.toFixed(2)}&n=${payload.operationType === "income_return" ? "2" : "1"}`;
-
 		if (!this.checkCircuitPermitted()) {
 			return {
 				success: false,
 				status: "hardware_offline",
-				fiscalSign,
-				fiscalDocNum,
-				fnSerial,
-				qrString,
-				ofdVerificationUrl: ofdUrl,
+				fiscalSign: undefined,
+				fiscalDocNum: undefined,
+				fnSerial: undefined,
+				qrString: undefined,
+				ofdVerificationUrl: undefined,
 				error: "Кассовый аппарат временно недоступен (Circuit Breaker OPEN — защита от сбоев). Чек помещен в буфер отложенной печати.",
 			};
 		}
@@ -371,30 +342,43 @@ export class KktLanPrinterService {
 
 			if (desktopResult.success) {
 				this.recordSuccess();
+				const resultFn = desktopResult.fnSerial || "9999078900012345";
+				const resultFiscalSign = desktopResult.fiscalSign;
+				const resultFiscalDocNum = desktopResult.fiscalDocNum ? String(desktopResult.fiscalDocNum) : undefined;
+				const qrString = resultFiscalSign && resultFiscalDocNum ? this.generate54FzQrString({
+					issuedAt: desktopResult.printedAt || now,
+					totalRub: payload.totalRub,
+					fnSerial: resultFn,
+					fiscalDocNum: resultFiscalDocNum,
+					fiscalSign: resultFiscalSign,
+					operationType: payload.operationType,
+				}) : undefined;
+				const ofdUrl = resultFiscalSign && resultFiscalDocNum ? `https://ofd.ru/check?fn=${resultFn}&fd=${resultFiscalDocNum}&fpd=${resultFiscalSign}&s=${payload.totalRub.toFixed(2)}&n=${payload.operationType === "income_return" ? "2" : "1"}` : undefined;
+
 				return {
 					success: true,
 					status: "printed",
-					fiscalSign: desktopResult.fiscalSign || fiscalSign,
-					fiscalDocNum: desktopResult.fiscalDocNum || fiscalDocNum,
+					fiscalSign: resultFiscalSign,
+					fiscalDocNum: resultFiscalDocNum,
 					shiftNum: desktopResult.shiftNum || 1,
 					kktSerialNumber: desktopResult.kktSerialNumber || "0010670000001234",
-					fnSerial,
+					fnSerial: resultFn,
 					printedAt: desktopResult.printedAt || now.toISOString(),
 					qrString,
 					ofdVerificationUrl: ofdUrl,
 				};
 			}
 
-			// Hardware offline or out of paper
+			// Hardware offline or out of paper: 54-FZ strictly forbids fabricating fiscal signs offline
 			this.recordFailure();
 			return {
 				success: false,
 				status: "hardware_offline",
-				fiscalSign,
-				fiscalDocNum,
-				fnSerial,
-				qrString,
-				ofdVerificationUrl: ofdUrl,
+				fiscalSign: undefined,
+				fiscalDocNum: undefined,
+				fnSerial: undefined,
+				qrString: undefined,
+				ofdVerificationUrl: undefined,
 				error: desktopResult.error || "Кассовый аппарат недоступен в локальной сети",
 			};
 		}
@@ -448,12 +432,12 @@ export class KktLanPrinterService {
 					success: !isOffline,
 					status: data.status || "printed",
 					queueId: data.queueId,
-					fiscalSign: data.fiscalSign || fiscalSign,
-					fiscalDocNum: data.fiscalDocumentNumber || fiscalDocNum,
-					fnSerial: data.fnSerial || fnSerial,
+					fiscalSign: isOffline ? undefined : data.fiscalSign,
+					fiscalDocNum: isOffline ? undefined : (data.fiscalDocumentNumber ? String(data.fiscalDocumentNumber) : undefined),
+					fnSerial: isOffline ? undefined : (data.fnSerial || fnSerial),
 					printedAt: data.receiptIssuedAt || now.toISOString(),
-					qrString: data.qrString || qrString,
-					ofdVerificationUrl: data.ofdVerificationUrl || ofdUrl,
+					qrString: isOffline ? undefined : data.qrString,
+					ofdVerificationUrl: isOffline ? undefined : data.ofdVerificationUrl,
 					error: isOffline ? data.hardwareWarning || "Кассовый аппарат временно недоступен (чек помещен в очередь отложенной печати)" : undefined,
 				};
 			}
@@ -463,11 +447,11 @@ export class KktLanPrinterService {
 			return {
 				success: false,
 				status: "hardware_offline",
-				fiscalSign,
-				fiscalDocNum,
-				fnSerial,
-				qrString,
-				ofdVerificationUrl: ofdUrl,
+				fiscalSign: undefined,
+				fiscalDocNum: undefined,
+				fnSerial: undefined,
+				qrString: undefined,
+				ofdVerificationUrl: undefined,
 				error: errorMsg,
 			};
 		}
@@ -476,11 +460,11 @@ export class KktLanPrinterService {
 		return {
 			success: false,
 			status: "hardware_offline",
-			fiscalSign,
-			fiscalDocNum,
-			fnSerial,
-			qrString,
-			ofdVerificationUrl: ofdUrl,
+			fiscalSign: undefined,
+			fiscalDocNum: undefined,
+			fnSerial: undefined,
+			qrString: undefined,
+			ofdVerificationUrl: undefined,
 			error: "Кассовый аппарат недоступен. Чек сохранен для отложенной печати.",
 		};
 	}

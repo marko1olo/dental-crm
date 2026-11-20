@@ -18,6 +18,7 @@ export function useMobileMessengerLogic({
 	communicationChannelLabels = {
 		whatsapp: "WhatsApp", telegram: "Telegram", sms: "SMS",
 		max: "MAX", phone: "Телефон", email: "Email",
+		vk: "ВКонтакте", in_person: "Лично",
 	},
 }: MobileCommunicationsMessengerProps) {
 	const [activeSection, setActiveSection] = useState<ActiveSection>("dialogs");

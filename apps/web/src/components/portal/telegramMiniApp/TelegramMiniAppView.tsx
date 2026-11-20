@@ -15,20 +15,6 @@ import type { FamilyMember } from "./TelegramMiniAppTopHeader";
 import type { ToothComplaint } from "./TelegramInteractiveToothPicker";
 import { useTelegramMiniAppState } from "./useTelegramMiniAppState";
 
-declare global {
-	interface Window {
-		Telegram?: {
-			readonly WebApp?: {
-				readonly initData?: string | undefined;
-				readonly HapticFeedback?: {
-					readonly impactOccurred?: (style: "light" | "medium" | "heavy") => void;
-				} | undefined;
-				readonly openTelegramLink?: (url: string) => void;
-			} | undefined;
-		} | undefined;
-	}
-}
-
 export type TelegramTab = "teeth" | "odontogram" | "booking" | "emr" | "cabinet" | "appointments" | "imaging" | "tax" | "finance";
 
 export interface TelegramMiniAppViewProps {

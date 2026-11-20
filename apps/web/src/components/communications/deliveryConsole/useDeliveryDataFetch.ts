@@ -2,14 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
-import { readJson } from "./constants";
+import { extractHttpStatus, readJson } from "./constants";
 import type {
-	CommunicationSettings, GatewayStatus, MessageDeliveryConsoleProps,
+	CommunicationSettings, DeliveryCommQueries, GatewayStatus, MessageDeliveryConsoleProps,
 	OutboxItem, TemplateItem, TemplateVariable,
 } from "./types";
 
 export function useDeliveryDataFetch(
-	commQueries: any,
+	commQueries: DeliveryCommQueries | null | undefined,
 	statusFilter: string,
 	props?: MessageDeliveryConsoleProps,
 ) {
@@ -35,18 +35,26 @@ export function useDeliveryDataFetch(
 						telegram: { configured: true, provider: "Telegram Bot", sender: "@dente_bot" },
 					},
 					overallReady: true,
-				} as any);
+				});
 				return;
 			}
 
 			const query = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
+			const fetchGw = commQueries.getGatewayStatus;
+			const fetchTpl = commQueries.getTemplates;
+			const fetchOut = commQueries.getOutbox;
+			const fetchSet = commQueries.getSettings;
+			const fetchVar = commQueries.getVariables;
+			const fetchQuota = commQueries.getChatQuota;
+			const dummyRes = (data: unknown) => Promise.resolve(new Response(JSON.stringify(data)));
+
 			const [gwRes, tplRes, outRes, setRes, varRes, qRes] = await Promise.all([
-				commQueries.getGatewayStatus(),
-				commQueries.getTemplates(),
-				commQueries.getOutbox(query),
-				commQueries.getSettings(),
-				commQueries.getVariables(),
-				commQueries.getChatQuota(),
+				fetchGw ? fetchGw() : dummyRes({}),
+				fetchTpl ? fetchTpl() : dummyRes({ templates: [] }),
+				fetchOut ? fetchOut(query) : dummyRes({ items: [], summary: {} }),
+				fetchSet ? fetchSet() : dummyRes({ settings: {} }),
+				fetchVar ? fetchVar() : dummyRes({ variables: [] }),
+				fetchQuota ? fetchQuota() : dummyRes({ remaining: 0, smsQuotaLimit: 0 }),
 			]);
 
 			const rawGateway = await readJson<GatewayStatus>(gwRes);
@@ -102,7 +110,7 @@ export function useDeliveryDataFetch(
 				setLoadError(null);
 				return;
 			}
-			showToast(actionFailureToast("Ошибка выполнения операции", (error as { status?: number })?.status ?? null), "error");
+			showToast(actionFailureToast("Ошибка выполнения операции", extractHttpStatus(error)), "error");
 			setLoadError(error instanceof Error ? error.message : String(error));
 		}
 	}, [statusFilter, commQueries]);

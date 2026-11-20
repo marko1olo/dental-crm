@@ -1,10 +1,11 @@
 import React from "react";
 import { CheckCheck } from "lucide-react";
 import { CommunicationTaskCard } from "../CommunicationTaskCard";
-import type { MobileCommunicationsMessengerProps } from "./types";
+import { documentLabels as defaultDocumentLabels, staffRoleLabels as defaultStaffRoleLabels } from "../../../workspaceUiLabels";
+import type { CommunicationTask, MobileCommunicationsMessengerProps } from "./types";
 
 export interface MobileTasksSectionProps {
-	tasks: any[];
+	tasks: readonly CommunicationTask[] | CommunicationTask[];
 	props: MobileCommunicationsMessengerProps;
 }
 
@@ -19,14 +20,47 @@ const defaultChannelLabels = {
 	max: "MAX",
 };
 
+const defaultPriorityLabels: Record<CommunicationTask["priority"], string> = {
+	urgent: "Срочно",
+	high: "Высокий",
+	normal: "Обычный",
+	low: "Низкий",
+};
+
+const defaultStatusLabels: Record<CommunicationTask["status"], string> = {
+	queued: "В очереди",
+	sent: "Отправлено",
+	delivered: "Доставлено",
+	failed: "Ошибка",
+	completed: "Завершено",
+	scheduled: "Запланировано",
+	needs_call: "Требует звонка",
+	skipped: "Пропущено",
+};
+
+const defaultIntentLabels: Record<CommunicationTask["intent"], string> = {
+	general: "Связь",
+	appointment_confirmation: "Подтверждение записи",
+	callback_requested: "Перезвонить",
+	payment_reminder: "Напоминание об оплате",
+	post_visit_instruction: "После приёма",
+	recall: "Профосмотр",
+	document_ready: "Документы готовы",
+	imaging_review: "Контроль снимка",
+	lead_capture: "Обращение",
+	transactional_reply: "Ответ",
+};
+
 export const MobileTasksSection: React.FC<MobileTasksSectionProps> = ({ tasks, props }) => {
 	const {
 		dashboard, completeCommunicationTask, communicationSavingTaskId = null,
 		openCommunicationTaskDocumentWorkflow, communicationChannelLabels = defaultChannelLabels,
-		communicationPriorityLabels = { urgent: "Срочно", normal: "Обычный", low: "Низкий" },
+		communicationPriorityLabels = defaultPriorityLabels,
 		communicationIntentLabels,
-		communicationStatusLabels = { pending: "Ожидает", in_progress: "В работе", completed: "Завершено", cancelled: "Отменено" },
-		documentKindsForCommunicationTask = () => [], documentLabels = {}, staffRoleLabels = {},
+		communicationStatusLabels = defaultStatusLabels,
+		documentKindsForCommunicationTask = () => [],
+		documentLabels = defaultDocumentLabels,
+		staffRoleLabels = defaultStaffRoleLabels,
 		formatDateTime = (val: string) => new Date(val).toLocaleString("ru-RU"),
 	} = props;
 
@@ -34,19 +68,11 @@ export const MobileTasksSection: React.FC<MobileTasksSectionProps> = ({ tasks, p
 		<main className="mobile-dialogs-container pt-3">
 			{tasks.length > 0 ? (
 				<div className="flex flex-col gap-3">
-					{tasks.map((task: any) => (
+					{tasks.map((task: CommunicationTask) => (
 						<CommunicationTaskCard
 							key={task.id} task={task} communicationChannelLabels={communicationChannelLabels}
 							communicationDocumentTaskActionLabels={{}}
-							communicationIntentLabels={
-								(communicationIntentLabels as any) || {
-									general: "Связь", appointment_confirmation: "Подтверждение записи",
-									callback_requested: "Перезвонить", payment_reminder: "Напоминание об оплате",
-									post_visit_instruction: "После приёма", recall: "Профосмотр",
-									document_ready: "Документы готовы", imaging_review: "Контроль снимка",
-									lead_capture: "Обращение", transactional_reply: "Ответ",
-								}
-							}
+							communicationIntentLabels={communicationIntentLabels || defaultIntentLabels}
 							communicationPriorityLabels={communicationPriorityLabels}
 							communicationSavingTaskId={communicationSavingTaskId}
 							communicationStatusLabels={communicationStatusLabels}

@@ -1,5 +1,12 @@
 import { useCallback } from "react";
-import type { Dashboard, VisitFlowResult } from "@dental/shared";
+import type {
+	Dashboard,
+	Patient,
+	StaffMember,
+	VisitCloseChecklist,
+	VisitCloseChecklistItem,
+	VisitFlowResult,
+} from "@dental/shared";
 import {
 	buildOfflineVisitDraftFromTranscript,
 	operatorWorkflowFailureMessage,
@@ -11,16 +18,14 @@ import { actionFailureToast } from "../../../../lib/panelStateText";
 import { useVisitStore } from "../../../../store/visitStore";
 import { fetchWithHandling } from "../../../../utils/networkUtils";
 import { useWorkspaceProfileStore } from "../../../useWorkspaceProfile";
+import type { ClinicalAuthClient } from "../types";
 
 export interface UseVisitSoapDraftParams {
-	// biome-ignore lint/suspicious/noExplicitAny: auth client carries headers
-	auth: any;
+	auth: ClinicalAuthClient;
 	setError: (err: string | null) => void;
 	dashboard: Dashboard | null;
-	// biome-ignore lint/suspicious/noExplicitAny: active patient entity
-	activePatient?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: active doctor entity
-	activeDoctor?: any;
+	activePatient?: Patient | null | undefined;
+	activeDoctor?: StaffMember | null | undefined;
 	scrollToVisitArea: (selector: string) => void;
 	hasVisitTranscriptText: boolean;
 	hasVisitNoteFormText: boolean;
@@ -28,12 +33,9 @@ export interface UseVisitSoapDraftParams {
 }
 
 export interface UseVisitSoapDraftReturn {
-	// biome-ignore lint/suspicious/noExplicitAny: checklist
-	visitCloseChecklist: any;
-	// biome-ignore lint/suspicious/noExplicitAny: warnings
-	visitWarnings: any[];
-	// biome-ignore lint/suspicious/noExplicitAny: warning
-	primaryVisitWarning: any;
+	visitCloseChecklist: VisitCloseChecklist | null;
+	visitWarnings: VisitCloseChecklistItem[];
+	primaryVisitWarning: VisitCloseChecklistItem | null;
 	visitDraftBuildMissingSteps: string[];
 	visitDraftReadyToBuild: boolean;
 	visitNoteAcceptMissingSteps: string[];
@@ -77,11 +79,9 @@ export function useVisitSoapDraft({
 
 	const visitCloseChecklist = dashboard?.visitCloseChecklist ?? null;
 	const visitWarnings =
-		// biome-ignore lint/suspicious/noExplicitAny: checklist items
-		visitCloseChecklist?.items?.filter((item: any) => !item.ready) ?? [];
+		visitCloseChecklist?.items?.filter((item: VisitCloseChecklistItem) => !item.ready) ?? [];
 	const primaryVisitWarning =
-		// biome-ignore lint/suspicious/noExplicitAny: checklist items
-		visitWarnings?.find((item: any) => item.blocking) ??
+		visitWarnings.find((item: VisitCloseChecklistItem) => item.blocking) ??
 		visitWarnings[0] ??
 		null;
 
@@ -168,8 +168,11 @@ export function useVisitSoapDraft({
 							toothNumber: s.toothNumber ? Number(s.toothNumber) : null,
 							code804n: s.code804n,
 						}))
-					: // biome-ignore lint/suspicious/noExplicitAny: raw visit services
-						((dashboard?.activeVisit as any)?.completedServices ?? []);
+					: (dashboard?.activeVisit &&
+							"completedServices" in dashboard.activeVisit &&
+							Array.isArray(dashboard.activeVisit.completedServices)
+								? dashboard.activeVisit.completedServices
+								: []);
 
 			const response = await fetchWithHandling("/api/ai/visit-flow", {
 				method: "POST",

@@ -1,10 +1,10 @@
 import React from "react";
 import { FileText } from "lucide-react";
 import { CommunicationEventRow } from "../CommunicationEventRow";
-import type { MobileCommunicationsMessengerProps } from "./types";
+import type { CommunicationEvent, MobileCommunicationsMessengerProps } from "./types";
 
 export interface MobileJournalSectionProps {
-	events: any[];
+	events: readonly CommunicationEvent[] | CommunicationEvent[];
 	props: MobileCommunicationsMessengerProps;
 }
 
@@ -19,10 +19,21 @@ const defaultChannelLabels = {
 	max: "MAX",
 };
 
+const defaultStatusLabels: Record<"queued" | "sent" | "delivered" | "failed" | "completed" | "scheduled" | "needs_call" | "skipped", string> = {
+	queued: "В очереди",
+	sent: "Отправлено",
+	delivered: "Доставлено",
+	failed: "Ошибка",
+	completed: "Завершено",
+	scheduled: "Запланировано",
+	needs_call: "Требует звонка",
+	skipped: "Пропущено",
+};
+
 export const MobileJournalSection: React.FC<MobileJournalSectionProps> = ({ events, props }) => {
 	const {
 		communicationChannelLabels = defaultChannelLabels,
-		communicationStatusLabels = { pending: "Ожидает", in_progress: "В работе", completed: "Завершено", cancelled: "Отменено" },
+		communicationStatusLabels = defaultStatusLabels,
 		formatDateTime = (val: string) => new Date(val).toLocaleString("ru-RU"),
 	} = props;
 
@@ -30,7 +41,7 @@ export const MobileJournalSection: React.FC<MobileJournalSectionProps> = ({ even
 		<main className="mobile-dialogs-container pt-3">
 			{events.length > 0 ? (
 				<div className="mobile-dialogs-card">
-					{events.map((ev: any) => (
+					{events.map((ev: CommunicationEvent) => (
 						<CommunicationEventRow
 							key={ev.id} event={ev} communicationChannelLabels={communicationChannelLabels}
 							communicationStatusLabels={communicationStatusLabels} formatDateTime={formatDateTime}

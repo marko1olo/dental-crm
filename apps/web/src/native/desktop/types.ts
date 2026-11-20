@@ -43,6 +43,7 @@ export interface DesktopFiscalPrintResult {
 	fiscalDocNum?: string | undefined;
 	shiftNum?: number | undefined;
 	kktSerialNumber?: string | undefined;
+	fnSerial?: string | undefined;
 	printedAt?: string | undefined;
 	error?: string | undefined;
 	bufferedOffline?: boolean | undefined;

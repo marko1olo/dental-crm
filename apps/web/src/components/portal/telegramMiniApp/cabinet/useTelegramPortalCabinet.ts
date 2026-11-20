@@ -14,20 +14,6 @@ import {
 	type TelegramCabinetTab,
 } from "./types";
 
-declare global {
-	interface Window {
-		Telegram?: {
-			readonly WebApp?: {
-				readonly initData?: string | undefined;
-				readonly HapticFeedback?: {
-					readonly impactOccurred?: (style: "light" | "medium" | "heavy") => void;
-				} | undefined;
-				readonly openTelegramLink?: (url: string) => void;
-			} | undefined;
-		} | undefined;
-	}
-}
-
 interface RawApiFamilyMember {
 	readonly patientId?: string | undefined;
 	readonly id?: string | undefined;
