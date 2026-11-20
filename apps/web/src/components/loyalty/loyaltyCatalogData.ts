@@ -100,6 +100,7 @@ export interface LoyaltyRedemptionInput {
 export interface LoyaltyRedemptionResult {
 	readonly grossInvoiceKop: number; readonly discountKop: number; readonly excludedFromRedemptionKop: number; readonly redeemableBaseKop: number; readonly maxCoveragePercent: number; readonly maxAllowedRedemptionKop: number; readonly maxAllowedRedemptionRub: number; readonly requestedPointsRub: number; readonly requestedPointsKop: number; readonly actualRedeemedPointsRub: number; readonly actualRedeemedPointsKop: number; readonly remainingPointsBalanceRub: number; readonly remainingPayableKop: number; readonly remainingPayableRub: number; readonly isMaxLimitReached: boolean; readonly isDoctorOverride?: boolean | undefined; readonly isExcludedItemsPresent: boolean; readonly fiscal54FzSplit: CashboxFiscalSplitResult;
 }
+export type LoyaltyRedemptionCalculation = LoyaltyRedemptionResult;
 
 export function calculateLoyaltyRedemption(input: LoyaltyRedemptionInput): LoyaltyRedemptionResult {
 	const discountKop = Math.max(0, input.discountKop ?? 0), excludedKop = Math.max(0, input.excludedFromRedemptionKop ?? 0);

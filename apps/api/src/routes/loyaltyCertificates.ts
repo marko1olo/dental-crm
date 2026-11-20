@@ -1,49 +1,30 @@
+/**
+ * apps/api/src/routes/loyaltyCertificates.ts
+ *
+ * Statutory 54-FZ & Luhn Modulo-10 Gift Certificates Router.
+ * Mandate 8b Sweet Spot Architecture (<= 150 lines).
+ * Domain transaction logic decoupled into loyaltyModules/certificateService.ts.
+ */
+
 import {
-	generateLuhn16Certificate,
 	validateLuhn16Certificate,
-	parseKopecks,
-	kopecksToNumericString,
+	issueCertificateSchema,
+	redeemCertificateSchema,
 } from "@dental/shared";
-import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { z } from "zod";
 import { requireOrganizationId } from "../security/identity.js";
-import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
-	cashBoxes,
-	cashOperations,
-	fiscalReceiptQueue,
-	giftCertificates,
-	patientInvoices,
-	patients,
-	payments,
-} from "../db/schema.js";
-
-const issueCertificateSchema = z.object({
-	purchaserPatientId: z.string().uuid().optional().nullable(),
-	purchaserName: z.string().optional().nullable(),
-	recipientPatientId: z.string().uuid().optional().nullable(),
-	recipientName: z.string().optional().nullable(),
-	recipientPhone: z.string().optional().nullable(),
-	nominalRub: z.number().positive(),
-	expiresInDays: z.number().int().positive().optional().default(365),
-	notes: z.string().optional().nullable(),
-});
-
-const redeemCertificateSchema = z.object({
-	serialNumber: z.string().min(16),
-	invoiceId: z.string().uuid().optional().nullable(),
-	invoiceAmountRub: z.number().positive(),
-	amountToRedeemRub: z.number().positive().optional(),
-	patientId: z.string().uuid().optional().nullable(),
-	description: z.string().optional(),
-});
+	executeIssueGiftCertificate,
+	lookupGiftCertificateBySerial,
+	executeRedeemGiftCertificate,
+	listGiftCertificates,
+} from "./loyaltyModules/certificateService.js";
 
 export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 	/**
 	 * Выпуск нового подарочного сертификата клиники (16-значный Luhn-серийный номер)
-	 * Фискализация аванса по 54-ФЗ (тег 1214) при указании покупателя
+	 * Фискализация аванса по 54-ФЗ (тег 1214) и предмет расчета 1212 = 10
 	 */
 	app.post("/api/loyalty/certificates/issue", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
@@ -57,100 +38,15 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const {
-			purchaserPatientId,
-			purchaserName,
-			recipientPatientId,
-			recipientName,
-			recipientPhone,
-			nominalRub,
-			expiresInDays,
-			notes,
-		} = parsed.data;
-
 		return withTenantCtx(orgId, async () => {
-			const expiresAt = new Date();
-			expiresAt.setDate(expiresAt.getDate() + expiresInDays);
-
-			const serialNumber = generateLuhn16Certificate();
-
-			const result = await db.transaction(async (tx) => {
-				let resolvedPurchaserName = purchaserName;
-				if (purchaserPatientId && !resolvedPurchaserName) {
-					const [p] = await tx
-						.select({ fullName: patients.fullName })
-						.from(patients)
-						.where(and(eq(patients.organizationId, orgId), eq(patients.id, purchaserPatientId)))
-						.limit(1);
-					if (p) resolvedPurchaserName = p.fullName;
-				}
-
-				let paymentId: string | null = null;
-				if (purchaserPatientId) {
-					const [payment] = await tx
-						.insert(payments)
-						.values({
-							organizationId: orgId,
-							patientId: purchaserPatientId,
-							amountRub: nominalRub,
-							method: "card",
-							status: "paid",
-							paidAt: new Date(),
-							note: `Продажа подарочного сертификата ${serialNumber} (тег 1214: Аванс)`,
-						})
-						.returning({ id: payments.id });
-					paymentId = payment?.id ?? null;
-				}
-
-				const [created] = await tx
-					.insert(giftCertificates)
-					.values({
-						organizationId: orgId,
-						serialNumber,
-						nominalRub: String(nominalRub),
-						initialBalanceRub: String(nominalRub),
-						currentBalanceRub: String(nominalRub),
-						purchaserPatientId: purchaserPatientId || null,
-						purchaserName: resolvedPurchaserName || null,
-						recipientPatientId: recipientPatientId || null,
-						recipientName: recipientName || null,
-						recipientPhone: recipientPhone || null,
-						status: "active",
-						expiresAt,
-						notes: notes || `Подарочный сертификат на сумму ${nominalRub.toLocaleString("ru-RU")} ₽`,
-						relatedPaymentId: paymentId || null,
-					})
-					.returning();
-
-				return created;
-			});
-
-			if (!result) {
+			const certDto = await executeIssueGiftCertificate(orgId, parsed.data);
+			if (!certDto) {
 				return reply.status(500).send({ message: "Не удалось выпустить сертификат" });
 			}
 
 			return reply.status(201).send({
 				success: true,
-				certificate: {
-					id: result.id,
-					serialNumber: result.serialNumber,
-					nominalRub: Number(result.nominalRub),
-					initialBalanceRub: Number(result.initialBalanceRub),
-					currentBalanceRub: Number(result.currentBalanceRub),
-					nominalKop: parseKopecks(result.nominalRub),
-					initialBalanceKop: parseKopecks(result.initialBalanceRub),
-					currentBalanceKop: parseKopecks(result.currentBalanceRub),
-					purchaserPatientId: result.purchaserPatientId,
-					purchaserName: result.purchaserName,
-					recipientPatientId: result.recipientPatientId,
-					recipientName: result.recipientName,
-					recipientPhone: result.recipientPhone,
-					status: result.status,
-					issuedAtIso: result.issuedAt.toISOString(),
-					expiresAtIso: result.expiresAt.toISOString(),
-					notes: result.notes,
-					relatedPaymentId: result.relatedPaymentId,
-				},
+				certificate: certDto,
 			});
 		});
 	});
@@ -173,54 +69,17 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 		}
 
 		return withTenantCtx(orgId, async () => {
-			const cleaned = formattedSerial.replace(/[\s-]/g, "");
-			const canonicalFormatted = `${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}-${cleaned.slice(8, 12)}-${cleaned.slice(12, 16)}`;
-
-			const [cert] = await db
-				.select()
-				.from(giftCertificates)
-				.where(
-					and(
-						eq(giftCertificates.organizationId, orgId),
-						sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
-					),
-				)
-				.limit(1);
-
-			if (!cert) {
+			const res = await lookupGiftCertificateBySerial(orgId, formattedSerial);
+			if (!res.found || !res.certificate) {
 				return reply.status(404).send({
 					valid: false,
 					message: "Сертификат с указанным номером не найден в базе данных клиники",
 				});
 			}
 
-			let effectiveStatus = cert.status;
-			const isExpired = new Date() > cert.expiresAt;
-			if (isExpired && cert.status === "active") {
-				effectiveStatus = "expired";
-				await db
-					.update(giftCertificates)
-					.set({ status: "expired", updatedAt: new Date() })
-					.where(eq(giftCertificates.id, cert.id));
-			}
-
 			return reply.send({
 				valid: true,
-				certificate: {
-					id: cert.id,
-					serialNumber: canonicalFormatted,
-					nominalRub: Number(cert.nominalRub),
-					currentBalanceRub: Number(cert.currentBalanceRub),
-					nominalKop: parseKopecks(cert.nominalRub),
-					currentBalanceKop: parseKopecks(cert.currentBalanceRub),
-					status: effectiveStatus,
-					issuedAtIso: cert.issuedAt.toISOString(),
-					expiresAtIso: cert.expiresAt.toISOString(),
-					purchaserName: cert.purchaserName,
-					recipientName: cert.recipientName,
-					recipientPhone: cert.recipientPhone,
-					notes: cert.notes,
-				},
+				certificate: res.certificate,
 			});
 		});
 	});
@@ -244,21 +103,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 		}
 
 		return withTenantCtx(orgId, async () => {
-			const cleaned = rawSerial.replace(/[\s-]/g, "");
-			const canonicalFormatted = `${cleaned.slice(0, 4)}-${cleaned.slice(4, 8)}-${cleaned.slice(8, 12)}-${cleaned.slice(12, 16)}`;
-
-			const [cert] = await db
-				.select()
-				.from(giftCertificates)
-				.where(
-					and(
-						eq(giftCertificates.organizationId, orgId),
-						sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
-					),
-				)
-				.limit(1);
-
-			if (!cert) {
+			const res = await lookupGiftCertificateBySerial(orgId, rawSerial);
+			if (!res.found || !res.certificate) {
 				return reply.status(404).send({
 					valid: true,
 					exists: false,
@@ -266,41 +112,17 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 				});
 			}
 
-			let effectiveStatus = cert.status;
-			const isExpired = new Date() > cert.expiresAt;
-			if (isExpired && cert.status === "active") {
-				effectiveStatus = "expired";
-				await db
-					.update(giftCertificates)
-					.set({ status: "expired", updatedAt: new Date() })
-					.where(eq(giftCertificates.id, cert.id));
-			}
-
 			return reply.send({
 				valid: true,
 				exists: true,
-				certificate: {
-					id: cert.id,
-					serialNumber: canonicalFormatted,
-					nominalRub: Number(cert.nominalRub),
-					currentBalanceRub: Number(cert.currentBalanceRub),
-					nominalKop: parseKopecks(cert.nominalRub),
-					currentBalanceKop: parseKopecks(cert.currentBalanceRub),
-					status: effectiveStatus,
-					issuedAtIso: cert.issuedAt.toISOString(),
-					expiresAtIso: cert.expiresAt.toISOString(),
-					purchaserName: cert.purchaserName,
-					recipientName: cert.recipientName,
-					recipientPhone: cert.recipientPhone,
-					notes: cert.notes,
-				},
+				certificate: res.certificate,
 			});
 		});
 	});
 
 	/**
 	 * Списание средств с подарочного сертификата в счет оплаты лечения
-	 * Фискальный зачёт аванса по 54-ФЗ (тег 1215)
+	 * Фискальный зачёт аванса по 54-ФЗ (тег 1215), метод оплаты "certificate" (SEV-1)
 	 */
 	app.post("/api/loyalty/certificates/redeem", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
@@ -314,202 +136,14 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const {
-			serialNumber,
-			invoiceId,
-			invoiceAmountRub,
-			amountToRedeemRub,
-			patientId,
-			description,
-		} = parsed.data;
-
-		if (!validateLuhn16Certificate(serialNumber)) {
+		if (!validateLuhn16Certificate(parsed.data.serialNumber)) {
 			return reply.status(400).send({
 				message: "Недействительный номер сертификата (ошибка контрольной суммы Luhn)",
 			});
 		}
 
 		return withTenantCtx(orgId, async () => {
-			const cleaned = serialNumber.replace(/[\s-]/g, "");
-
-			const result = await db.transaction(async (tx) => {
-				const [cert] = await tx
-					.select()
-					.from(giftCertificates)
-					.where(
-						and(
-							eq(giftCertificates.organizationId, orgId),
-							sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
-						),
-					)
-					.limit(1)
-					.for("update");
-
-				if (!cert) {
-					return { notFound: true as const, message: "Сертификат не найден" };
-				}
-
-				if (cert.status === "depleted") {
-					return { error: true as const, message: "Баланс сертификата полностью исчерпан", code: 400 };
-				}
-				if (cert.status === "cancelled") {
-					return { error: true as const, message: "Сертификат аннулирован администрацией клиники", code: 400 };
-				}
-				if (new Date() > cert.expiresAt) {
-					return {
-						error: true as const,
-						message: `Срок действия сертификата истек ${cert.expiresAt.toISOString().slice(0, 10)}`,
-						code: 400,
-					};
-				}
-
-				const currentBalanceKop = parseKopecks(cert.currentBalanceRub);
-				if (currentBalanceKop <= 0) {
-					return { error: true as const, message: "Баланс сертификата равен 0 ₽", code: 400 };
-				}
-
-				const invoiceAmountKop = parseKopecks(invoiceAmountRub);
-				const requestedDeductionKop = amountToRedeemRub !== undefined ? parseKopecks(amountToRedeemRub) : invoiceAmountKop;
-				const redeemedKop = Math.min(currentBalanceKop, requestedDeductionKop, invoiceAmountKop);
-				const redeemedRub = Number(kopecksToNumericString(redeemedKop));
-				const newBalanceKop = Math.max(0, currentBalanceKop - redeemedKop);
-				const newBalanceStr = kopecksToNumericString(newBalanceKop);
-				const newBalanceRub = Number(newBalanceStr);
-				const newStatus = newBalanceKop <= 0 ? "depleted" : "active";
-
-				await tx
-					.update(giftCertificates)
-					.set({
-						currentBalanceRub: newBalanceStr,
-						status: newStatus,
-						updatedAt: new Date(),
-					})
-					.where(eq(giftCertificates.id, cert.id));
-
-				let paymentId: string | null = null;
-				let invoicePaid = false;
-
-				if (invoiceId) {
-					let targetPatientId = patientId || cert.recipientPatientId || cert.purchaserPatientId || null;
-					if (!targetPatientId) {
-						const [invoice] = await tx
-							.select({ patientId: patientInvoices.patientId })
-							.from(patientInvoices)
-							.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)))
-							.limit(1);
-						if (invoice?.patientId) {
-							targetPatientId = invoice.patientId;
-						}
-					}
-
-					if (!targetPatientId) {
-						return {
-							error: true as const,
-							message: "Не удалось определить пациента для проведения платежа по счёту",
-							code: 400,
-						};
-					}
-
-					const [payRecord] = await tx
-						.insert(payments)
-						.values({
-							organizationId: orgId,
-							patientId: targetPatientId,
-							documentId: invoiceId,
-							amountRub: redeemedRub,
-							method: "family_wallet",
-							status: "paid",
-							paidAt: new Date(),
-							note: description || `Зачёт аванса: подарочный сертификат ${cert.serialNumber} (тег 1215: ${redeemedRub} ₽)`,
-						})
-						.returning({ id: payments.id });
-
-					paymentId = payRecord?.id ?? null;
-
-					// Проводка зачета аванса по сертификату в кассовый журнал
-					const [cashDeskBox] = await tx
-						.select()
-						.from(cashBoxes)
-						.where(eq(cashBoxes.organizationId, orgId))
-						.limit(1);
-
-					if (cashDeskBox) {
-						await tx.insert(cashOperations).values({
-							organizationId: orgId,
-							cashBoxId: cashDeskBox.id,
-							operationType: "income",
-							amountRub: redeemedRub,
-							balanceBeforeRub: cashDeskBox.balanceRub || 0,
-							balanceAfterRub: cashDeskBox.balanceRub || 0,
-							patientId: targetPatientId,
-							kkmDocNumber: `CERT-${Date.now().toString().slice(-6)}`,
-							reasonText: `Зачёт аванса (сертификат №${cert.serialNumber}): оплата стоматологических услуг`,
-							operatorName: "Администратор",
-						});
-					}
-
-					// Фискализация чека 54-ФЗ (тег 1215: зачет аванса)
-					await tx.insert(fiscalReceiptQueue).values({
-						organizationId: orgId,
-						paymentId: payRecord?.id,
-						receiptType: "income",
-						status: "pending_print",
-						payloadJson: {
-							amountRub: redeemedRub,
-							amountKopecks: Number(redeemedKop),
-							method: "family_wallet",
-							advanceOffsetRub: redeemedRub,
-							certificateOffsetRub: redeemedRub,
-							certificateNumber: cert.serialNumber,
-							fiscalReceiptNumber: `CERT-${Date.now().toString().slice(-6)}`,
-							patientId: targetPatientId,
-							invoiceId: invoiceId || null,
-							note: `Зачёт аванса: подарочный сертификат ${cert.serialNumber} (тег 1215)`,
-						},
-						retryCount: 0,
-					});
-
-					const existingPayments = await tx
-						.select({ amountRub: payments.amountRub })
-						.from(payments)
-						.where(
-							and(
-								eq(payments.organizationId, orgId),
-								eq(payments.documentId, invoiceId),
-								eq(payments.status, "paid"),
-							),
-						);
-
-					const totalPaidKop = existingPayments.reduce((acc, p) => acc + parseKopecks(p.amountRub), 0);
-					if (totalPaidKop >= invoiceAmountKop) {
-						await tx
-							.update(patientInvoices)
-							.set({ status: "paid", paidAt: new Date() })
-							.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.id, invoiceId)));
-						invoicePaid = true;
-					}
-				}
-
-				const remainingInvoiceKop = Math.max(0, invoiceAmountKop - redeemedKop);
-				const remainingInvoiceAmountRub = Number(kopecksToNumericString(remainingInvoiceKop));
-
-				return {
-					success: true as const,
-					certificateId: cert.id,
-					serialNumber: cert.serialNumber,
-					previousBalanceRub: Number(kopecksToNumericString(currentBalanceKop)),
-					redeemedAmountRub: redeemedRub,
-					newBalanceRub,
-					remainingInvoiceAmountRub,
-					status: newStatus,
-					paymentId,
-					invoicePaid,
-					fiscal54FzSplit: {
-						tag1215AdvanceOffsetKop: redeemedKop,
-						tag1081ElectronicKop: remainingInvoiceKop,
-					},
-				};
-			});
+			const result = await executeRedeemGiftCertificate(orgId, parsed.data);
 
 			if ("notFound" in result) {
 				return reply.status(404).send({ message: result.message });
@@ -530,30 +164,8 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 		if (!orgId) return;
 
 		return withTenantCtx(orgId, async () => {
-			const rows = await db
-				.select()
-				.from(giftCertificates)
-				.where(eq(giftCertificates.organizationId, orgId))
-				.orderBy(desc(giftCertificates.createdAt))
-				.limit(100);
-
-			return reply.send({
-				certificates: rows.map((r) => ({
-					id: r.id,
-					serialNumber: r.serialNumber,
-					nominalRub: Number(r.nominalRub),
-					currentBalanceRub: Number(r.currentBalanceRub),
-					nominalKop: parseKopecks(r.nominalRub),
-					currentBalanceKop: parseKopecks(r.currentBalanceRub),
-					purchaserName: r.purchaserName,
-					recipientName: r.recipientName,
-					recipientPhone: r.recipientPhone,
-					status: r.status,
-					issuedAtIso: r.issuedAt.toISOString(),
-					expiresAtIso: r.expiresAt.toISOString(),
-					notes: r.notes,
-				})),
-			});
+			const certificates = await listGiftCertificates(orgId);
+			return reply.send({ certificates });
 		});
 	});
 }

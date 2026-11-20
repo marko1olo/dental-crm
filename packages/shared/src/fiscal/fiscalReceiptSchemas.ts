@@ -20,6 +20,7 @@ export const paymentMethodSchema = z.enum([
 	"insurance",
 	"family_wallet",
 	"split",
+	"certificate",
 	"other",
 ]);
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
@@ -50,6 +51,7 @@ export const STATUTORY_PAYMENT_METHOD_LABELS_RU: Record<PaymentMethod, string> =
 	online: "СБП / Электронные средства (Тег 1081)",
 	bank_transfer: "Банковский перевод на р/с (Тег 1081)",
 	family_wallet: "Аванс / Семейный депозит (Тег 1215)",
+	certificate: "Подарочный сертификат (Тег 1215/1217)",
 	insurance: "Страховая компания ДМС (Тег 1216/1217)",
 	split: "Сплит / Комбинированная оплата",
 	other: "Иной способ расчета",
@@ -86,15 +88,16 @@ export function normalizePaymentMethod(alias: string | null | undefined): Paymen
 		case "расчетный_счет":
 		case "безнал":
 			return "bank_transfer";
+		case "certificate":
+		case "gift_certificate":
+		case "сертификат":
+			return "certificate";
 		case "family_wallet":
 		case "family_balance":
 		case "family_deposit":
 		case "patient_deposit":
 		case "advance_deposit":
 		case "deposit":
-		case "certificate":
-		case "gift_certificate":
-		case "сертификат":
 		case "аванс":
 		case "депозит":
 			return "family_wallet";

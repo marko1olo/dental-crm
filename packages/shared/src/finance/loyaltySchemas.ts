@@ -98,3 +98,32 @@ export const processExpiredBodySchema = z.object({
 });
 
 export type ProcessExpiredBody = z.infer<typeof processExpiredBodySchema>;
+
+export const issueCertificateSchema = z.object({
+	purchaserPatientId: z.string().uuid().optional().nullable(),
+	purchaserName: z.string().optional().nullable(),
+	recipientPatientId: z.string().uuid().optional().nullable(),
+	recipientName: z.string().optional().nullable(),
+	recipientPhone: z.string().optional().nullable(),
+	nominalRub: z.number().positive(),
+	nominalKopecks: z.number().int().positive().optional(),
+	expiresInDays: z.number().int().positive().optional().default(365),
+	notes: z.string().optional().nullable(),
+});
+
+export const issueCertificateBodySchema = issueCertificateSchema;
+export type IssueCertificateBody = z.infer<typeof issueCertificateSchema>;
+
+export const redeemCertificateSchema = z.object({
+	serialNumber: z.string().min(16),
+	invoiceId: z.string().uuid().optional().nullable(),
+	invoiceAmountRub: z.number().positive(),
+	amountToRedeemRub: z.number().positive().optional(),
+	amountKopecks: z.number().int().positive().optional(),
+	patientId: z.string().uuid().optional().nullable(),
+	description: z.string().optional(),
+});
+
+export const redeemCertificateBodySchema = redeemCertificateSchema;
+export type RedeemCertificateBody = z.infer<typeof redeemCertificateSchema>;
+

@@ -7,6 +7,7 @@ export * from "./taxDeduction.js";
 export * from "./doctorPayrollEngine.js";
 export * from "./familyDeposit.js";
 export * from "./loyaltyProgram.js";
+export * from "./loyaltySchemas.js";
 export * from "./multiCurrency.js";
 export * from "./publicEstimates.js";
 export * from "./clinicExpenses.js";

@@ -144,6 +144,7 @@ export const paymentMethod = pgEnum("payment_method", [
 	"insurance",
 	"family_wallet",
 	"split",
+	"certificate",
 	"other",
 ]);
 
