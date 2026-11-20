@@ -1,5 +1,5 @@
 import { and, eq, ilike, or } from "drizzle-orm";
-import { formatKopecksToRubles } from "@dental/shared";
+import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
 import type { OrthoMaterialDeductionResult } from "./types.js";
@@ -43,7 +43,7 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 		unitCostKopecks !== undefined
 			? BigInt(unitCostKopecks)
 			: unitCostRub !== undefined
-				? BigInt(Math.round(unitCostRub * 100))
+				? BigInt(rublesToKopecks(unitCostRub))
 				: 120_000n; // 1200 руб = 120000 коп
 	const costRubFormatted = formatKopecksToRubles(Number(effectiveKopecks));
 

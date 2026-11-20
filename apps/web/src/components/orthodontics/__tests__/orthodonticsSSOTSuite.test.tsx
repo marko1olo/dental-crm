@@ -148,9 +148,9 @@ describe("Orthodontics Canonical SSOT Invariants (Appliances, Bite, Archwires & 
 
 		const memo = getOrthoPatientMemoText();
 		assert.ok(memo.length > 200, "Patient memo must be detailed and clinical");
-		assert.ok(memo.includes("ГИГИЕНА"), "Memo must contain hygiene section");
-		assert.ok(memo.includes("ВОСКА"), "Memo must contain wax section");
-		assert.ok(memo.includes("ПИТАНИИ"), "Memo must contain diet section");
+		assert.ok(memo.includes("Гигиена"), "Memo must contain hygiene section");
+		assert.ok(memo.includes("воска"), "Memo must contain wax section");
+		assert.ok(memo.includes("питании"), "Memo must contain diet section");
 		assert.ok(!memo.includes("🍏") && !memo.includes("🦷") && !memo.includes("✨"), "No emojis in clinical memo");
 	});
 

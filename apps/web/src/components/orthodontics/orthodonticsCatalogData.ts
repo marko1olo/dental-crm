@@ -379,5 +379,5 @@ export function formatOrthoProtocolSoapEntry(state: OrthoProtocolState): string 
 }
 
 export function getOrthoPatientMemoText(): string {
-	return ORTHO_PATIENT_MEMO_SECTIONS.map((sec) => `${sec.titleRu.toUpperCase()}\n${sec.textRu}`).join("\n\n");
+	return ORTHO_PATIENT_MEMO_SECTIONS.map((sec) => `${sec.titleRu}\n${sec.textRu}`).join("\n\n");
 }

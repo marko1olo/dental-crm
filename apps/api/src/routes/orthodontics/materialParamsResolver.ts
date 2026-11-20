@@ -1,3 +1,4 @@
+import { rublesToKopecks } from "@dental/shared";
 import type { deductOrthoMaterialsSchema } from "./types.js";
 
 export function resolveMaterialParams(body: import("zod").infer<typeof deductOrthoMaterialsSchema>) {
@@ -48,7 +49,7 @@ export function resolveMaterialParams(body: import("zod").infer<typeof deductOrt
 		unitCostRub = 450;
 	}
 
-	const unitCostKopecks = BigInt(Math.round(unitCostRub * 100));
+	const unitCostKopecks = BigInt(rublesToKopecks(unitCostRub));
 
 	return { defaultName, pattern, category, unit, unitCostRub, unitCostKopecks };
 }

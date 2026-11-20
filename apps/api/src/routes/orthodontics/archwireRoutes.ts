@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { rublesToKopecks } from "@dental/shared";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
@@ -97,7 +98,7 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 					: `Активация брекет-системы и замена ортодонтической дуги (${archLabel})`;
 			const serviceCode = isPlate ? "A16.07.047" : "A16.07.048.002";
 			const priceRub = isPlate ? 2500 : body.arch === "both" ? 4000 : 3500;
-			const priceKopecks = BigInt(priceRub * 100);
+			const priceKopecks = BigInt(rublesToKopecks(priceRub));
 
 			const billing = await linkOrthoServiceToBillingSafely({
 				organizationId: orgId,
