@@ -31,6 +31,15 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 				</span>
 
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+					<button
+						type="button"
+						onClick={onClose}
+						className="min-h-[44px] sm:min-h-[36px] h-9 px-3.5 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto whitespace-nowrap"
+					>
+						<X className="w-3.5 h-3.5 shrink-0" />
+						<span>Закрыть</span>
+					</button>
+
 					{(activeTab === "info" || activeTab === "overview") && (
 						<div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
 							<button
@@ -50,7 +59,7 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 							<button
 								type="button"
 								onClick={() => onNavigateTab("topup")}
-								className="min-h-[44px] sm:min-h-[36px] h-9 px-3.5 bg-[var(--teal)] text-white text-xs font-semibold rounded-xl cursor-pointer hover:opacity-95 transition-opacity inline-flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
+								className="min-h-[44px] sm:min-h-[36px] h-9 px-3.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap"
 							>
 								<Plus className="w-3.5 h-3.5 shrink-0" />
 								<span className="hidden sm:inline">
@@ -60,15 +69,6 @@ export const FamilyWalletModalFooterActions: React.FC<FamilyWalletModalFooterAct
 							</button>
 						</div>
 					)}
-
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] sm:min-h-[36px] h-9 px-3.5 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold rounded-xl cursor-pointer transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs w-full sm:w-auto whitespace-nowrap"
-					>
-						<X className="w-3.5 h-3.5 shrink-0" />
-						<span>Закрыть</span>
-					</button>
 				</div>
 			</div>
 		);

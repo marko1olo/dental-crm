@@ -151,7 +151,7 @@
 
 .patient-studio-tab-btn.active {
 	background-color: var(--paper, #ffffff);
-	color: var(--teal, #0d9488);
+	color: var(--primary);
 	font-weight: 600;
 	border-color: var(--line, #e2e8f0);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -201,8 +201,8 @@
 
 .patient-studio-input:focus {
 	outline: none;
-	border-color: var(--teal, #0d9488);
-	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px var(--primary-ring, rgba(13, 148, 136, 0.25));
 }
 
 /* 9. Плавающий нижний бар (Floating Bottom Bar в Зоне большого пальца) */
@@ -227,7 +227,7 @@
 	.patient-studio-footer { padding: 0.875rem 1.5rem; }
 }
 
-/* 10. Ровно ОДНА Primary CTA кнопка #0d9488 (Мандат 8am, 8e) */
+/* 10. Ровно ОДНА Primary CTA кнопка (Мандат 8am, 8e) */
 .patient-studio-primary-cta {
 	display: inline-flex;
 	align-items: center;
@@ -236,7 +236,7 @@
 	min-height: 48px;
 	padding: 0 1.25rem;
 	border-radius: 0.75rem;
-	background-color: var(--teal, #0d9488);
+	background-color: var(--primary);
 	color: #ffffff;
 	font-size: 0.875rem;
 	font-weight: 600;
@@ -255,7 +255,7 @@
 	}
 }
 
-.patient-studio-primary-cta:hover { background-color: var(--teal-hover, #0f766e); }
+.patient-studio-primary-cta:hover { background-color: var(--primary-hover); }
 .patient-studio-primary-cta:active { transform: scale(0.98); }
 
 /* 11. Вторичная кнопка */
@@ -280,7 +280,7 @@
 	.patient-studio-secondary-btn { min-height: 38px; }
 }
 
-.patient-studio-secondary-btn:hover { background-color: var(--paper-subtle, #f1f5f9); }
+.patient-studio-secondary-btn:hover { background-color: var(--paper-soft); }
 
 /* 12. Категориальные и клинические бейджи */
 .patient-studio-badge {
@@ -295,25 +295,25 @@
 }
 
 .patient-studio-badge-vip {
-	background-color: rgba(245, 158, 11, 0.15);
-	color: #d97706;
-	border: 1px solid rgba(245, 158, 11, 0.25);
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
+	border: 1px solid var(--line);
 }
 
 .patient-studio-badge-regular {
-	background-color: rgba(13, 148, 136, 0.15);
-	color: var(--teal, #0d9488);
-	border: 1px solid rgba(13, 148, 136, 0.25);
+	background-color: var(--primary-subtle);
+	color: var(--primary);
+	border: 1px solid var(--line);
 }
 
 .patient-studio-badge-norm {
-	background-color: rgba(16, 185, 129, 0.15);
-	color: #059669;
-	border: 1px solid rgba(16, 185, 129, 0.25);
+	background-color: var(--ok-bg);
+	color: var(--ok-fg);
+	border: 1px solid var(--line);
 }
 
 .patient-studio-badge-debtor {
-	background-color: rgba(239, 68, 68, 0.15);
-	color: #dc2626;
-	border: 1px solid rgba(239, 68, 68, 0.25);
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
+	border: 1px solid var(--line);
 }

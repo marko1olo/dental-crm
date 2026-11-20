@@ -4,21 +4,18 @@
  * АРХИТЕКТУРА & ИНВАРИАНТЫ (THE HAMMER SUPREMACY):
  * 1. SSOT Консолидация: объединяет создание, просмотр и редактирование пациента без дублирующих модалок.
  * 2. Автономия врача (Мандат 8e): кнопки сохранения НИКОГДА не блокируются (disabled={false}).
- * 3. Единый дизайн-код (Мандат 8am): ровно ОДНА Primary CTA кнопка var(--teal, #0d9488). Все остальные — secondary.
+ * 3. Единый дизайн-код (Мандат 8am): ровно ОДНА Primary CTA кнопка var(--primary). Все остальные — secondary.
  * 4. Apple HIG Mobile: на смартфонах (390×844) Bottom Sheet с тач-таргетами >= 44×44px, Floating Bar в Зоне большого пальца, 0px horizontal scroll.
- * 5. Sweet Spot по Мандату 8b: компактный, выразительный монолит <= 650 строк.
+ * 5. Sweet Spot по Мандату 8b: модульная декомпозиция <= 380 строк.
  * 6. Zero-Leak Draft Invariant (Мандат 8d/8zq, 8bn): сброс черновика resetDraft() и очистка localStorage при закрытии.
  */
 
 import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity, AlertTriangle, Award, Calendar, CalendarCheck, Camera, ClipboardList, ExternalLink,
-	FileCheck, FileText, FlaskConical, HeartPulse, History, Plus, Printer, Scan, ShieldAlert, ShieldCheck,
-	Stethoscope, User, Users, Wallet, X,
+	Activity, Camera, ClipboardList, FileCheck, FileText, FlaskConical,
+	HeartPulse, History, Scan, ShieldAlert, ShieldCheck, Users, Wallet,
 } from "lucide-react";
-import { showToast } from "../GlobalToast";
-import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { ToothMolar } from "../icons/DentalIcons";
 import { SomaticAnamnesisCard } from "../clinical/SomaticAnamnesisCard";
@@ -36,6 +33,9 @@ import { PatientFamilyAndInsuranceWidget } from "./PatientFamilyAndInsuranceWidg
 import { PatientReclamationsHistoryTab } from "./tabs/PatientReclamationsHistoryTab";
 import { LabOrdersPanel } from "./LabOrdersPanel";
 import { PatientCardModalSubModals } from "./patientCardModalModules/PatientCardModalSubModals";
+import { PatientCardModalHeader } from "./patientCardModalModules/PatientCardModalHeader";
+import { PatientCardModalFooter } from "./patientCardModalModules/PatientCardModalFooter";
+import { PatientCardSomaticAlert } from "./patientCardModalModules/PatientCardSomaticAlert";
 import { usePatientCardModalState } from "./patientCardModalModules/usePatientCardModalState";
 import { usePatientCreationForm } from "./patientCreation/usePatientCreationForm";
 import { PatientCreationModalBody } from "./patientCreation/PatientCreationModalBody";
@@ -160,476 +160,209 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 			>
 				{/* Алиас контейнера для канонической студии картотеки пациентов (SSOT) */}
 				<div data-testid="patient-studio-modal" style={{ display: "contents" }}>
-				{/* Мобильный хэндл шторки (Apple HIG Bottom Sheet: 36x4px / w-9 h-1) */}
-				<div className={`sm:hidden w-9 h-1 bg-[var(--line-strong)] rounded-full mx-auto my-2 shrink-0 ${isAnySubModalOpen ? "hidden" : ""}`} aria-hidden="true" />
+					{/* Мобильный хэндл шторки (Apple HIG Bottom Sheet: 36x4px / w-9 h-1) */}
+					<div className={`sm:hidden w-9 h-1 bg-[var(--line-strong)] rounded-full mx-auto my-2 shrink-0 ${isAnySubModalOpen ? "hidden" : ""}`} aria-hidden="true" />
 
-				{/* ── ШАПКА КАРТОЧКИ ПАЦИЕНТА ── */}
-				<div className={`flex items-center justify-between px-3.5 py-2.5 sm:p-4 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] gap-3 min-w-0 print:hidden ${
-					isAnySubModalOpen ? "max-sm:hidden" : ""
-				}`}>
-					<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--primary,var(--brand-primary))] text-white flex items-center justify-center shrink-0 shadow-2xs">
-							<User className="w-4 h-4 sm:w-5 sm:h-5" />
-						</div>
-						<div className="min-w-0 flex-1">
-							<div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-								<h2
-									id="patient-card-modal-title"
-									data-testid="patient-card-modal-title"
-									className="text-sm sm:text-base font-black text-[var(--ink)] m-0 leading-tight whitespace-nowrap"
-									title={isCreateMode ? "Первичная регистрация пациента" : patientData.fullName || "Медицинская карта пациента"}
-								>
-									<span data-testid="patient-studio-title">
-										{isCreateMode
-											? "Первичная регистрация пациента"
-											: patientData.fullName || "Медицинская карта пациента"}
-									</span>
-								</h2>
-								{!isCreateMode && mode !== "create" && Boolean(patientData.id) && (
-									<span
-										data-testid="patient-studio-balance"
-										className={`font-mono font-bold text-xs px-2 py-0.5 rounded-lg border shrink-0 ${
-											Number(patientData.patientBalanceRub ?? 0) < 0
-												? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-												: Number(patientData.patientBalanceRub ?? 0) > 0
-													? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-													: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"
-										}`}
-									>
-										{Number(patientData.patientBalanceRub ?? 0) < 0
-											? `-${Math.abs(Number(patientData.patientBalanceRub ?? 0)).toLocaleString("ru-RU")} ₽`
-											: `${Number(patientData.patientBalanceRub ?? 0).toLocaleString("ru-RU")} ₽`}
-									</span>
-								)}
-							</div>
-							<div className="text-xs text-[var(--muted)] m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 leading-normal">
-								{isCreateMode ? (
-									<span>Быстрое оформление за 10 секунд без бюрократии</span>
-								) : (
-									<>
-										{patientData.phone ? (
-											<span className="font-mono font-medium text-[var(--ink)]">
-												Тел: {patientData.phone}
-											</span>
-										) : (
-											<span>Паспортная карточка и клинический статус</span>
-										)}
-										{patientData.birthDate && <span>• {patientData.birthDate}</span>}
-										{(patientData.medicalCardNumber || patientData.cardNumber) && (
-											<span>
-												• Карта: №{patientData.medicalCardNumber || patientData.cardNumber}
-											</span>
-										)}
-									</>
-								)}
-							</div>
-						</div>
-					</div>
+					{/* ── ШАПКА КАРТОЧКИ ПАЦИЕНТА (Мандат 8b: декомпозированный компонент) ── */}
+					<PatientCardModalHeader
+						isCreateMode={isCreateMode} mode={mode} patientData={patientData}
+						isChildPatient={isChildPatient} isAnySubModalOpen={isAnySubModalOpen}
+						onSetActiveMode={setActiveMode} onOpenDiplomaModal={() => setIsDiplomaModalOpen(true)}
+						onOpenPhotoModal={() => setIsPhotoModalOpen(true)} onOpenTaxDeductionModal={() => setIsTaxDeductionModalOpen(true)}
+						onOpenMedicalRecordStudio={() => setIsMedicalRecordStudioOpen(true)}
+						onPrintBlankContract={creationForm.handlePrintBlankContract}
+						onPrintPatientCard={handlePrint} onClose={handleClose}
+					/>
 
-					{/* Тулбар быстрых действий в шапке (Мандат 8am: компактные secondary-кнопки без карнавала) */}
-					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-						{!isCreateMode ? (
-							<button type="button" data-testid="patient-studio-new-btn" onClick={() => setActiveMode("create")}
-								className="h-8 px-2.5 sm:px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center gap-1.5 transition-colors min-h-[44px] sm:min-h-0 cursor-pointer shadow-2xs"
-								title="Экспресс-регистрация нового пациента">
-								<Plus size={14} className="shrink-0" />
-								<span className="hidden sm:inline">Новый пациент</span>
-							</button>
-						) : (
-							<button type="button" onClick={() => setActiveMode("view")}
-								className="h-8 px-2.5 text-xs font-medium rounded-lg border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] sm:min-h-0">
-								Отмена
-							</button>
-						)}
+					{/* ── СОМАТИЧЕСКИЙ АЛЕРТ (Мандат 8y — Пассивная безопасность, sentence case) ── */}
+					{!isCreateMode && (
+						<PatientCardSomaticAlert safetyEvaluation={safetyEvaluation} isAnySubModalOpen={isAnySubModalOpen} onOpenAnamnesis={setActiveTab} />
+					)}
 
-						{!isCreateMode && isChildPatient && (
-							<button type="button" data-testid="btn-patient-card-diploma" onClick={() => setIsDiplomaModalOpen(true)}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Распечатать «Диплом за храбрость» маленькому пациенту">
-								<Award className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-							</button>
-						)}
-
-						{!isCreateMode && (
-							<button type="button" data-testid="btn-patient-photo-protocol" onClick={() => setIsPhotoModalOpen(true)}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Клинический фотопротокол (12 ракурсов, QR-мост)">
-								<Camera className="w-4 h-4 text-[var(--primary)] shrink-0" />
-							</button>
-						)}
-
-						{!isCreateMode && (
-							<button type="button" data-testid="btn-patient-tax-deduction"
-								onClick={() => {
-									if (patientData.fullName?.startsWith("UUID_ANON") || patientData.fullName?.toLowerCase().includes("аноним")) {
-										showToast("Формирование справки для налогового вычета на анонимных пациентов запрещено: укажите паспортные данные пациента.", "error", 5000);
-										return;
-									}
-									setIsTaxDeductionModalOpen(true);
-								}}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 w-8 p-0 text-xs font-semibold rounded-lg items-center justify-center cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Справка об оплате медицинских услуг для налогового вычета (13%)">
-								<FileCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
-								<span className="sr-only">Справка для вычета (13%)</span>
-							</button>
-						)}
-						{!isCreateMode && (
-							<button type="button" data-testid="btn-patient-open-emr-studio" onClick={() => setIsMedicalRecordStudioOpen(true)}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Открыть электронную карту (ЭМК)">
-								<ClipboardList className="w-4 h-4 text-[var(--primary)] shrink-0" />
-								<span>ЭМК</span>
-							</button>
-						)}
-						{!isCreateMode && (
-							<button type="button" data-testid="btn-patient-recalls-hub"
-								onClick={() => {
-									window.dispatchEvent(
-										new CustomEvent("dente:open-recalls-hub", { detail: { patientId: patientData.id } }),
-									);
-								}}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[32px] h-8 px-2.5 text-xs font-semibold rounded-lg items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none transition-all shadow-2xs"
-								title="Плановые профосмотры и профгигиена">
-								<CalendarCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
-								<span>Профосмотры</span>
-							</button>
-						)}
-						{isCreateMode ? (
-							<button type="button" data-testid="patient-creation-print-blank-contract-btn" onClick={creationForm.handlePrintBlankContract}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
-								title="Распечатать чистый бланк договора">
-								<Printer className="w-4 h-4 shrink-0" />
-								<span>Печать бланка договора</span>
-							</button>
-						) : (
-							<button type="button" data-testid="btn-print-patient-card" onClick={handlePrint}
-								className="mobile-hide hidden sm:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg h-8 px-2.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[44px] sm:min-h-[32px] text-xs items-center justify-center gap-1.5 cursor-pointer shrink-0 select-none"
-								title="Печать карты пациента">
-								<Printer className="w-4 h-4 shrink-0" />
-								<span>Печать</span>
-							</button>
-						)}
-
-						{!isCreateMode && patientData.id && (
-							<button type="button" data-testid="btn-open-patient-workspace"
-								onClick={() => {
-									usePatientStore.getState().setSelectedPatientId(patientData.id ?? null);
-									useAppStore.getState().setCurrentView("patients");
-									if (typeof window !== "undefined") window.location.hash = "patients";
-									handleClose();
-								}}
-								className="mobile-hide hidden md:inline-flex border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold rounded-lg h-8 w-8 p-0 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[32px] text-xs items-center justify-center cursor-pointer shrink-0 select-none"
-								title="Перейти в полную рабочую область пациента (PatientWorkspace)">
-								<ExternalLink className="w-4 h-4 shrink-0" />
-							</button>
-						)}
-
-						<button type="button" data-testid="btn-close-patient-card-modal" onClick={handleClose}
-							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong)] min-h-[44px] sm:min-h-[32px] h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
-							aria-label="Закрыть окно">
-							<span data-testid="patient-studio-close-btn" className="sr-only">Закрыть</span>
-							<X className="w-4 h-4" />
-						</button>
-					</div>
-				</div>
-
-				{/* ── СОМАТИЧЕСКИЙ АЛЕРТ (Мандат 8y — Пассивная безопасность, sentence case) ── */}
-				{!isCreateMode && safetyEvaluation.activeFlags.length > 0 && (
-					<div
-						className={`px-3.5 sm:px-4 py-2 flex items-center justify-between gap-2.5 border-b shrink-0 flex-wrap sm:flex-nowrap print:hidden ${
-							safetyEvaluation.hasCriticalStopFlags
-								? "bg-rose-500/10 border-rose-500/20 text-rose-950 dark:text-rose-100"
-								: "bg-amber-500/10 border-amber-500/20 text-amber-950 dark:text-amber-100"
-						} ${isAnySubModalOpen ? "max-sm:hidden" : ""}`}
-						role="alert"
-						data-testid="patient-card-modal-somatic-banner"
-					>
-						<div className="flex items-center gap-2 min-w-0 flex-1">
-							<AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
-							<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-								<span className="text-[11px] font-bold shrink-0 tracking-wide">
-									<span className="sr-only">
-										{safetyEvaluation.hasCriticalStopFlags ? "Критический стоп-фактор: " : "Клиническое предупреждение: "}
-									</span>
-									Аллергический статус / особенности:
-								</span>
-								<div className="flex items-center gap-1.5 flex-wrap">
-									{safetyEvaluation.activeFlags.map((flag) => (
-										<span
-											key={flag.id}
-											className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold border ${
-												flag.severity === "critical"
-													? "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/30"
-													: "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30"
+					{/* ── ТАБЫ НАВИГАЦИИ КАРТОЧКИ (С ФИКСИРОВАННОЙ НОРМОЙ В 1 КЛИК) ── */}
+					{!isCreateMode && (
+						<div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden ${
+							isAnySubModalOpen ? "max-sm:hidden" : ""
+						}`}>
+							<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:flex-wrap">
+								{TABS.map((tab) => {
+									const isActive = activeTab === tab.id;
+									const Icon = tab.Icon;
+									return (
+										<button
+											key={tab.id}
+											type="button"
+											data-testid={tab.testId}
+											className={`min-h-[44px] sm:min-h-[32px] h-8 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap select-none ${
+												isActive
+													? "border border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] shadow-xs font-bold"
+													: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)] shadow-2xs font-semibold"
 											}`}
-											title={flag.description}
+											onClick={() => setActiveTab(tab.id as PatientCardTab)}
 										>
-											{flag.shortBadge || flag.titleRu}
-										</span>
-									))}
-								</div>
+											<Icon className="w-3.5 h-3.5 shrink-0" />
+											<span>{tab.label}</span>
+										</button>
+									);
+								})}
 							</div>
-						</div>
-						<button
-							type="button"
-							onClick={() => setActiveTab("anamnesis")}
-							className="text-xs font-semibold text-[var(--primary)] hover:underline cursor-pointer shrink-0 transition-opacity"
-						>
-							Открыть статус
-						</button>
-					</div>
-				)}
 
-				{/* ── ТАБЫ НАВИГАЦИИ КАРТОЧКИ (С ФИКСИРОВАННОЙ НОРМОЙ В 1 КЛИК) ── */}
-				{!isCreateMode && (
-					<div className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden ${
-						isAnySubModalOpen ? "max-sm:hidden" : ""
-					}`}>
-						<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:flex-wrap">
-							{TABS.map((tab) => {
-								const isActive = activeTab === tab.id;
-								const Icon = tab.Icon;
-								return (
-									<button
-										key={tab.id}
-										type="button"
-										data-testid={tab.testId}
-										className={`min-h-[44px] sm:min-h-[32px] h-8 px-2 sm:px-2.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap select-none ${
-											isActive
-												? "border border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] shadow-xs font-bold"
-												: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--line-strong)] shadow-2xs font-semibold"
-										}`}
-										onClick={() => setActiveTab(tab.id as PatientCardTab)}
-									>
-										<Icon className="w-3.5 h-3.5 shrink-0" />
-										<span>{tab.label}</span>
-									</button>
-								);
-							})}
+							{/* 1-клик физиологическая норма (Мандат 8e, Мандат 8p §206) */}
+							<button
+								type="button"
+								data-testid="btn-somatic-healthy-norm"
+								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs inline-flex items-center gap-1 sm:gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap select-none ml-auto"
+								onClick={handleApplyNorm}
+								title="Зафиксировать физиологическую норму: соматически здоров / интактные зубы"
+							>
+								<ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+								<span className="shrink-0 whitespace-nowrap">Норма</span>
+							</button>
 						</div>
+					)}
 
-						{/* 1-клик физиологическая норма (Мандат 8e, Мандат 8p §206) */}
-						<button
-							type="button"
-							data-testid="btn-somatic-healthy-norm"
-							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs inline-flex items-center gap-1 sm:gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap select-none ml-auto"
-							onClick={handleApplyNorm}
-							title="Зафиксировать физиологическую норму: соматически здоров / интактные зубы"
-						>
-							<ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-							<span className="shrink-0 whitespace-nowrap">Норма</span>
-						</button>
-					</div>
-				)}
-
-				{/* ── ТЕЛО МОДАЛКИ (ОСНОВНОЙ КОНТЕНТ) ── */}
-				<div
-					data-testid={isCreateMode ? "patient-express-registration-form" : "patient-studio-detail-view"}
-					className={`p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1 ${
-						isAnySubModalOpen ? "hidden pointer-events-none opacity-0" : ""
-					}`}
-				>
-					{isCreateMode ? (
-						<PatientCreationModalBody
-							form={creationForm}
-							updatePatientCoreDraft={updatePatientCoreDraft}
-							onClose={handleClose}
-						/>
-					) : activeTab === "treatmentPlans" ? (
-						<TreatmentPlansTab
-							patient={patientData}
-							patientId={patientData.id ?? undefined}
-							onOpenPlanPresenter={(planId, tierId) => {
-								if (typeof window !== "undefined") {
-									const query = new URLSearchParams();
-									if (planId) query.set("id", planId);
-									if (tierId) query.set("tier", tierId);
-									const queryString = query.toString();
-									window.location.hash = queryString ? `#treatment-plan?${queryString}` : "#treatment-plan";
-								}
-							}}
-							onSendToCheckout={(tierId, amountRub) => {
-								if (typeof window !== "undefined") {
-									window.location.hash = `#checkout?amount=${amountRub}&tier=${tierId}&patientId=${patientData.id || ""}`;
-								}
-							}}
-							onPrintPlan={handlePrint}
-						/>
-					) : activeTab === "labOrders" ? (
-						<div className="p-2 sm:p-3">
-							<LabOrdersPanel patientId={patientData.id ?? undefined} />
-						</div>
-					) : activeTab === "finance" ? (
-						<PatientFinanceTab
-							patient={patientData}
-							onUpdateBalance={(newBal) => handleUpdatePatientField("patientBalanceRub", newBal)}
-							onNavigateToVisit={onNavigateToVisit}
-							onNewAppointment={onNewAppointment}
-							onOpenTaxCertificate={() => handleOpenTaxCertificate("form")}
-							onOpenFamilyTaxCertificate={() => handleOpenTaxCertificate("family")}
-							disabled={disabled}
-						/>
-					) : activeTab === "documents" ? (
-						<PatientDocumentsTab patient={canonicalPatient} onPrintOutpatientCard={handlePrint} />
-					) : activeTab === "photos" ? (
-						<PatientPhotosTab
-							patientId={patientData.id}
-							patientName={patientData.fullName}
-							cardNumber={patientData.cardNumber || patientData.medicalCardNumber}
-							onOpenPhotoStudio={() => setIsPhotoModalOpen(true)}
-						/>
-					) : activeTab === "perio" ? (
-						<PerioStudioModal isModal={false} patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} />
-					) : activeTab === "formula" ? (
-						<PatientDentalFormulaTab patientId={patientData.id || ""} patientBirthDate={patientData.birthDate ?? undefined} patientName={patientData.fullName ?? undefined} />
-					) : activeTab === "radiology" ? (
-						<PatientRadiologyTab patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} patientBirthDate={patientData.birthDate ?? undefined} />
-					) : activeTab === "anamnesis" ? (
-						<div className="p-1 sm:p-2 space-y-4">
-							<SomaticAnamnesisCard
-								initialProfile={safetyProfile}
+					{/* ── ТЕЛО МОДАЛКИ (ОСНОВНОЙ КОНТЕНТ) ── */}
+					<div
+						data-testid={isCreateMode ? "patient-express-registration-form" : "patient-studio-detail-view"}
+						className={`p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1 ${
+							isAnySubModalOpen ? "hidden pointer-events-none opacity-0" : ""
+						}`}
+					>
+						{isCreateMode ? (
+							<PatientCreationModalBody
+								form={creationForm}
+								updatePatientCoreDraft={updatePatientCoreDraft}
+								onClose={handleClose}
+							/>
+						) : activeTab === "treatmentPlans" ? (
+							<TreatmentPlansTab
+								patient={patientData}
+								patientId={patientData.id ?? undefined}
+								onOpenPlanPresenter={(planId, tierId) => {
+									if (typeof window !== "undefined") {
+										const query = new URLSearchParams();
+										if (planId) query.set("id", planId);
+										if (tierId) query.set("tier", tierId);
+										const queryString = query.toString();
+										window.location.hash = queryString ? `#treatment-plan?${queryString}` : "#treatment-plan";
+									}
+								}}
+								onSendToCheckout={(tierId, amountRub) => {
+									if (typeof window !== "undefined") {
+										window.location.hash = `#checkout?amount=${amountRub}&tier=${tierId}&patientId=${patientData.id || ""}`;
+									}
+								}}
+								onPrintPlan={handlePrint}
+							/>
+						) : activeTab === "labOrders" ? (
+							<div className="p-2 sm:p-3">
+								<LabOrdersPanel patientId={patientData.id ?? undefined} />
+							</div>
+						) : activeTab === "finance" ? (
+							<PatientFinanceTab
+								patient={patientData}
+								onUpdateBalance={(newBal) => handleUpdatePatientField("patientBalanceRub", newBal)}
+								onNavigateToVisit={onNavigateToVisit}
+								onNewAppointment={onNewAppointment}
+								onOpenTaxCertificate={() => handleOpenTaxCertificate("form")}
+								onOpenFamilyTaxCertificate={() => handleOpenTaxCertificate("family")}
+								disabled={disabled}
+							/>
+						) : activeTab === "documents" ? (
+							<PatientDocumentsTab patient={canonicalPatient} onPrintOutpatientCard={handlePrint} />
+						) : activeTab === "photos" ? (
+							<PatientPhotosTab
 								patientId={patientData.id}
 								patientName={patientData.fullName}
-								onSave={(newProfile) => { setSafetyProfile(newProfile); setIsDirty(true); }}
-								onApplyNorm={(normProfile) => { setSafetyProfile(normProfile); handleApplyNorm(); }}
+								cardNumber={patientData.cardNumber || patientData.medicalCardNumber}
+								onOpenPhotoStudio={() => setIsPhotoModalOpen(true)}
 							/>
-						</div>
-					) : activeTab === "visits" ? (
-						<PatientHistoryTab
-							patientId={patientData.id}
-							patientName={patientData.fullName}
-							visits={props.visits}
-							dashboard={props.dashboard}
-							onNavigateToVisit={onNavigateToVisit}
-							onNewAppointment={onNewAppointment}
-						/>
-					) : activeTab === "reclamations" ? (
-						<PatientReclamationsHistoryTab
-							patientId={patientData.id}
-							patientName={patientData.fullName}
-							doctorName={props.doctorName}
-							doctorId={props.doctorId}
-							onOpenWarrantyPassport={props.onOpenWarrantyPassport}
-						/>
-					) : activeTab === "family" ? (
-						<div className="p-2 sm:p-3 space-y-4">
-							<PatientFamilyAndInsuranceWidget
-								patient={canonicalPatient}
-								patientBalance={Number(patientData.patientBalanceRub ?? 0) || 0}
-								insurancePolicyNumber={patientData.omsPolicyNumber || undefined}
-								onUpdateInsurancePolicy={(p) => handleUpdatePatientField("omsPolicyNumber", p)}
+						) : activeTab === "perio" ? (
+							<PerioStudioModal isModal={false} patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} />
+						) : activeTab === "formula" ? (
+							<PatientDentalFormulaTab patientId={patientData.id || ""} patientBirthDate={patientData.birthDate ?? undefined} patientName={patientData.fullName ?? undefined} />
+						) : activeTab === "radiology" ? (
+							<PatientRadiologyTab patientId={patientData.id ?? undefined} patientName={patientData.fullName ?? undefined} patientBirthDate={patientData.birthDate ?? undefined} />
+						) : activeTab === "anamnesis" ? (
+							<div className="p-1 sm:p-2 space-y-4">
+								<SomaticAnamnesisCard
+									initialProfile={safetyProfile}
+									patientId={patientData.id}
+									patientName={patientData.fullName}
+									onSave={(newProfile) => { setSafetyProfile(newProfile); setIsDirty(true); }}
+									onApplyNorm={(normProfile) => { setSafetyProfile(normProfile); handleApplyNorm(); }}
+								/>
+							</div>
+						) : activeTab === "visits" ? (
+							<PatientHistoryTab
+								patientId={patientData.id}
+								patientName={patientData.fullName}
+								visits={props.visits}
+								dashboard={props.dashboard}
+								onNavigateToVisit={onNavigateToVisit}
+								onNewAppointment={onNewAppointment}
 							/>
-						</div>
-					) : (
-						<PatientGeneralInfoTab
-							patient={patientData}
-							safetyProfile={safetyProfile}
-							onUpdatePatient={handleUpdatePatientField}
-							onUpdateSafetyProfile={(s) => { setSafetyProfile(s); setIsDirty(true); }}
-							onApplySomaticNorm={handleApplyNorm}
-							disabled={disabled}
-							activeSection="general"
-							onNavigateToVisit={onNavigateToVisit}
-							onNewAppointment={onNewAppointment}
-							onOpenDmsLetters={() => setIsDmsLetterModalOpen(true)}
-							onOpenTaxCertificate={() => handleOpenTaxCertificate("form")}
-						/>
+						) : activeTab === "reclamations" ? (
+							<PatientReclamationsHistoryTab
+								patientId={patientData.id}
+								patientName={patientData.fullName}
+								doctorName={props.doctorName}
+								doctorId={props.doctorId}
+								onOpenWarrantyPassport={props.onOpenWarrantyPassport}
+							/>
+						) : activeTab === "family" ? (
+							<div className="p-2 sm:p-3 space-y-4">
+								<PatientFamilyAndInsuranceWidget
+									patient={canonicalPatient}
+									patientBalance={Number(patientData.patientBalanceRub ?? 0) || 0}
+									insurancePolicyNumber={patientData.omsPolicyNumber || undefined}
+									onUpdateInsurancePolicy={(p) => handleUpdatePatientField("omsPolicyNumber", p)}
+								/>
+							</div>
+						) : (
+							<PatientGeneralInfoTab
+								patient={patientData}
+								safetyProfile={safetyProfile}
+								onUpdatePatient={handleUpdatePatientField}
+								onUpdateSafetyProfile={(s) => { setSafetyProfile(s); setIsDirty(true); }}
+								onApplySomaticNorm={handleApplyNorm}
+								disabled={disabled}
+								activeSection="general"
+								onNavigateToVisit={onNavigateToVisit}
+								onNewAppointment={onNewAppointment}
+								onOpenDmsLetters={() => setIsDmsLetterModalOpen(true)}
+								onOpenTaxCertificate={() => handleOpenTaxCertificate("form")}
+							/>
+						)}
+					</div>
+
+					{/* Плавающий бар сохранения в Зоне большого пальца */}
+					{!isCreateMode && !isAnySubModalOpen && (
+						<PatientCardFloatingSaveBar isDirty={isDirty} saveState={saveState} onSave={handleSave} />
 					)}
-				</div>
 
-				{/* Плавающий бар сохранения в Зоне большого пальца */}
-				{!isCreateMode && !isAnySubModalOpen && (
-					<PatientCardFloatingSaveBar isDirty={isDirty} saveState={saveState} onSave={handleSave} />
-				)}
-
-				{/* ── ФУТЕР МОДАЛКИ (ЕДИНЫЙ ДИЗАЙН-КОД: РОВНО 1 PRIMARY CTA КНОПКА) ── */}
-				<div className={`flex items-center justify-between p-3 sm:p-4 border-t border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2.5 print:hidden ${
-					isAnySubModalOpen ? "hidden pointer-events-none" : ""
-				}`}>
-					<span className="hidden sm:inline text-xs text-[var(--muted)] whitespace-normal">
-						{isCreateMode
-							? "DENTE CRM • Создание карты пациента без обязательных бюрократических полей"
-							: "Медицинская карта пациента • Защита персональных данных"}
-					</span>
-
-					{isCreateMode ? (
-						<div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap justify-end">
-							<button
-								type="button"
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-4 min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)]"
-								onClick={handleClose}
-							>Отмена</button>
-							<button
-								type="button"
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-4 min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] inline-flex items-center gap-1.5"
-								onClick={() => void creationForm.handleCreateAndBook()}
-								disabled={false}
-								data-testid="patient-creation-submit-and-book-btn"
-								title="Создать карту и сразу открыть расписание"
-							>
-								<Calendar size={15} aria-hidden="true" />
-								<span>Создать и записать</span>
-							</button>
-							<button
-								type="button"
-								className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-4 min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] inline-flex items-center gap-1.5"
-								onClick={() => void creationForm.handleCreateAndOpenVisit()}
-								disabled={false}
-								data-testid="patient-creation-submit-and-visit-btn"
-								title="Создать карту и сразу открыть приём"
-							>
-								<Stethoscope size={15} aria-hidden="true" />
-								<span>Создать и начать приём</span>
-							</button>
-							{/* Ровно ОДНА Primary CTA кнопка var(--primary) */}
-							<button
-								type="button"
-								className="border-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-5 text-sm font-medium rounded-xl sm:rounded-lg shadow-sm cursor-pointer select-none transition-all active:scale-95 inline-flex items-center gap-1.5 whitespace-nowrap"
-								onClick={() => void creationForm.handleCreate()}
-								disabled={false}
-								data-testid="patient-creation-submit-btn"
-								title="Создать медицинскую карту пациента"
-							>
-								<Plus size={16} aria-hidden="true" />
-								<span data-testid="patient-studio-primary-cta">
-									{creationForm.isPatientCreating ? "Создание..." : "Создать пациента"}
-								</span>
-							</button>
-						</div>
-					) : (
-						<div className="flex items-center gap-2.5 w-full sm:w-auto">
-							<button
-								type="button"
-								onClick={handleClose}
-								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium rounded-xl sm:rounded-lg px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 text-xs sm:text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
-							>Закрыть</button>
-							{/* Ровно ОДНА Primary CTA кнопка var(--primary) (Мандат 8e, Мандат 8am) */}
-							<button
-								type="button"
-								data-testid="btn-save-patient-card"
-								onClick={handleSave}
-								disabled={false}
-								className="flex-1 sm:flex-none border-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-6 text-xs sm:text-sm font-medium rounded-xl sm:rounded-lg shadow-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[130px]"
-							>
-								<span data-testid="patient-studio-primary-cta">Сохранить</span>
-							</button>
-						</div>
-					)}
-				</div>
-
-				{/* ── САБМОДАЛКИ ── */}
-				{!isCreateMode && (
-					<PatientCardModalSubModals
-						isDiplomaModalOpen={isDiplomaModalOpen} setIsDiplomaModalOpen={setIsDiplomaModalOpen}
-						isDmsLetterModalOpen={isDmsLetterModalOpen} setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
-						isTaxDeductionModalOpen={isTaxDeductionModalOpen} setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
-						initialTaxTab={initialTaxTab}
-						isPhotoModalOpen={isPhotoModalOpen} setIsPhotoModalOpen={setIsPhotoModalOpen}
-						isMedicalRecordStudioOpen={isMedicalRecordStudioOpen} setIsMedicalRecordStudioOpen={setIsMedicalRecordStudioOpen}
-						patientData={patientData} onUpdatePatientField={handleUpdatePatientField}
+					{/* ── ФУТЕР МОДАЛКИ (ЕДИНЫЙ ДИЗАЙН-КОД: РОВНО 1 PRIMARY CTA КНОПКА) ── */}
+					<PatientCardModalFooter
+						isCreateMode={isCreateMode}
+						isAnySubModalOpen={isAnySubModalOpen}
+						creationForm={creationForm}
+						onClose={handleClose}
 						onSave={handleSave}
 					/>
-				)}
+
+					{/* ── САБМОДАЛКИ ── */}
+					{!isCreateMode && (
+						<PatientCardModalSubModals
+							isDiplomaModalOpen={isDiplomaModalOpen} setIsDiplomaModalOpen={setIsDiplomaModalOpen}
+							isDmsLetterModalOpen={isDmsLetterModalOpen} setIsDmsLetterModalOpen={setIsDmsLetterModalOpen}
+							isTaxDeductionModalOpen={isTaxDeductionModalOpen} setIsTaxDeductionModalOpen={setIsTaxDeductionModalOpen}
+							initialTaxTab={initialTaxTab}
+							isPhotoModalOpen={isPhotoModalOpen} setIsPhotoModalOpen={setIsPhotoModalOpen}
+							isMedicalRecordStudioOpen={isMedicalRecordStudioOpen} setIsMedicalRecordStudioOpen={setIsMedicalRecordStudioOpen}
+							patientData={patientData} onUpdatePatientField={handleUpdatePatientField}
+							onSave={handleSave}
+						/>
+					)}
 				</div>
 			</div>
 		</div>

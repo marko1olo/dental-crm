@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import { type PatientClinicalSafetyProfile, createHealthySomaticNormProfile, evaluatePatientSafetyFlags } from "../safetyMath";
@@ -26,7 +27,7 @@ export function usePatientCardModalState(props: PatientCardModalProps) {
 		fullName: demoMatch.fullName,
 		phone: demoMatch.phone,
 		birthDate: demoMatch.birthDate,
-		patientBalanceRub: demoMatch.balanceKopecks / 100,
+		patientBalanceRub: kopecksToRubles(demoMatch.balanceKopecks),
 		doctorClinicalNotes: demoMatch.notes,
 	} : (isDemo ? DEMO_SHOWCASE_MODAL_PATIENT : {});
 

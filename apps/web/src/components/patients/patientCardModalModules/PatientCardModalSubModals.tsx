@@ -121,6 +121,7 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 		)}
 		{isMedicalRecordStudioOpen && setIsMedicalRecordStudioOpen && (
 			<MedicalRecordStudioModal
+				key={patientData.id || "emr-modal"}
 				isOpen={isMedicalRecordStudioOpen}
 				onClose={() => setIsMedicalRecordStudioOpen(false)}
 				patientId={patientData.id ?? undefined}
