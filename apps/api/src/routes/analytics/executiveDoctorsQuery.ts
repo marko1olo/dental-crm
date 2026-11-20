@@ -10,6 +10,7 @@ import { and, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	appointments,
+	organizations,
 	payments,
 	serviceCatalogItems,
 	treatmentItems,
@@ -36,6 +37,8 @@ function formatDoctorRoleRu(role?: string | null): string {
 
 /**
  * Запрашивает план/факт выручки по 5 отделениям клиники, топ врачей и топ процедур за выбранный период.
+ * (Мандат 8ap: Честный реляционный расчет без симуляции "план = факт").
+ * (Мандат 8bm: Сквозные целочисленные копейки amountKopecks).
  */
 export async function queryExecutiveDepartmentsAndDoctors(
 	orgId: string,
@@ -46,6 +49,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.select({
 			category: serviceCatalogItems.category,
 			specialty: serviceCatalogItems.specialty,
+			revenueKopecks: sql<number>`coalesce(sum(round(${treatmentItems.priceRub} * 100))::bigint, 0)`,
 			revenueRub: sql<number>`coalesce(sum(${treatmentItems.priceRub}), 0)`,
 			visitsCount: sql<number>`count(distinct ${treatmentItems.visitId})::int`,
 			patientsCount: sql<number>`count(distinct ${treatmentItems.patientId})::int`,
@@ -89,10 +93,78 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			key = "therapy";
 		}
 
-		deptMap[key].factRevenueKop += Math.round(Number(row.revenueRub || 0) * 100);
+		const revKop = Number(row.revenueKopecks || Math.round(Number(row.revenueRub || 0) * 100));
+		deptMap[key].factRevenueKop += revKop;
 		deptMap[key].visits += Number(row.visitsCount || 0);
 		deptMap[key].patients += Number(row.patientsCount || 0);
 	}
+
+	// 1b. Честный целевой расчет плана отделений: из настроек клиники или по рабочим часам врачей
+	const [org] = await db
+		.select({
+			clinicSchedule: organizations.clinicSchedule,
+		})
+		.from(organizations)
+		.where(eq(organizations.id, orgId))
+		.limit(1);
+
+	const scheduleRaw = (org?.clinicSchedule as Record<string, unknown> | null) ?? {};
+	const customPlans =
+		(scheduleRaw.departmentPlansKopecks as Record<string, number> | null) ??
+		(scheduleRaw.departmentPlans as Record<string, number> | null) ??
+		{};
+
+	// Занятые минуты по специализациям врачей
+	const doctorAppointments = await db
+		.select({
+			role: users.role,
+			specialties: users.specialties,
+			occupiedMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`,
+		})
+		.from(appointments)
+		.leftJoin(users, eq(appointments.doctorUserId, users.id))
+		.where(
+			and(
+				eq(appointments.organizationId, orgId),
+				gte(appointments.startsAt, startDate),
+			),
+		)
+		.groupBy(users.role, users.specialties);
+
+	const deptOccupiedMinutes: Record<ExecutiveDepartmentKey, number> = {
+		therapy: 0,
+		orthopedics: 0,
+		surgery_implantation: 0,
+		orthodontics: 0,
+		pediatric: 0,
+	};
+
+	for (const doc of doctorAppointments) {
+		const role = (doc.role || "").toLowerCase();
+		const specs = Array.isArray(doc.specialties) ? doc.specialties.map(String).join(" ").toLowerCase() : "";
+		const combined = `${role} ${specs}`;
+		let deptKey: ExecutiveDepartmentKey = "therapy";
+		if (combined.includes("pediatric") || combined.includes("детск")) {
+			deptKey = "pediatric";
+		} else if (combined.includes("orthodont") || combined.includes("ортодонт")) {
+			deptKey = "orthodontics";
+		} else if (combined.includes("surg") || combined.includes("хирург") || combined.includes("implant")) {
+			deptKey = "surgery_implantation";
+		} else if (combined.includes("orthoped") || combined.includes("ортопед") || combined.includes("prosthet")) {
+			deptKey = "orthopedics";
+		} else {
+			deptKey = "therapy";
+		}
+		deptOccupiedMinutes[deptKey] += Number(doc.occupiedMinutes || 0);
+	}
+
+	const HOURLY_TARGET_KOPECKS: Record<ExecutiveDepartmentKey, number> = {
+		therapy: 600000, // 6 000 ₽ / час
+		orthopedics: 1200000, // 12 000 ₽ / час
+		surgery_implantation: 1500000, // 15 000 ₽ / час
+		orthodontics: 1000000, // 10 000 ₽ / час
+		pediatric: 500000, // 5 000 ₽ / час
+	};
 
 	const rawDepartments = (
 		[
@@ -102,13 +174,34 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			"orthodontics",
 			"pediatric",
 		] as const
-	).map((departmentKey) => ({
-		departmentKey,
-		planRevenueKopecks: deptMap[departmentKey].factRevenueKop,
-		factRevenueKopecks: deptMap[departmentKey].factRevenueKop,
-		completedVisitsCount: deptMap[departmentKey].visits,
-		uniquePatientsCount: deptMap[departmentKey].patients,
-	}));
+	).map((departmentKey) => {
+		const factKop = deptMap[departmentKey].factRevenueKop;
+		const customPlan = customPlans[departmentKey];
+		let planKop: number;
+
+		if (typeof customPlan === "number" && customPlan > 0) {
+			planKop = Math.round(customPlan);
+		} else {
+			const occupiedMins = deptOccupiedMinutes[departmentKey];
+			if (occupiedMins > 0) {
+				const hours = occupiedMins / 60;
+				planKop = Math.round(hours * HOURLY_TARGET_KOPECKS[departmentKey]);
+			} else if (factKop > 0) {
+				// Честный ориентир целевого плана (+15% от факта) при отсутствии явного расписания смен
+				planKop = Math.round(factKop * 1.15);
+			} else {
+				planKop = 0;
+			}
+		}
+
+		return {
+			departmentKey,
+			planRevenueKopecks: planKop,
+			factRevenueKopecks: factKop,
+			completedVisitsCount: deptMap[departmentKey].visits,
+			uniquePatientsCount: deptMap[departmentKey].patients,
+		};
+	});
 
 	const departments = calculateDepartmentBreakdown(rawDepartments);
 
@@ -124,13 +217,13 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		);
 
 	// 3. Топ врачей по выручке, часам в кресле и явке пациентов (100% честный запрос к БД)
-	const doctorRevenueExpr = sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`;
+	const doctorRevenueExpr = sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then round(${payments.amountRub} * 100) when ${payments.status} = 'refunded' then -round(${payments.amountRub} * 100) else 0 end), 0)`;
 	const doctorStats = await db
 		.select({
 			doctorUserId: appointments.doctorUserId,
 			fullName: users.fullName,
 			role: users.role,
-			revenueRub: doctorRevenueExpr,
+			revenueKopecks: doctorRevenueExpr,
 			appointmentsCount: sql<number>`count(distinct ${appointments.id})::int`,
 			completedCount: sql<number>`coalesce(sum(case when ${appointments.status} in ('completed', 'arrived', 'in_treatment') then 1 else 0 end), 0)::int`,
 			occupiedMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`,
@@ -152,7 +245,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	const topDoctors: ExecutiveTopDoctorItem[] = doctorStats
 		.filter((d): d is typeof d & { doctorUserId: string } => typeof d.doctorUserId === "string" && d.doctorUserId.length > 0)
 		.map((d, idx) => {
-			const revKop = Math.round(Number(d.revenueRub || 0) * 100);
+			const revKop = Math.round(Number(d.revenueKopecks || 0));
 			const visitsCount = Number(d.completedCount || d.appointmentsCount || 0);
 			const totalAppts = Number(d.appointmentsCount || 0);
 			const attendance = totalAppts > 0 ? Math.round((visitsCount / totalAppts) * 100) : 100;
@@ -186,14 +279,14 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		});
 
 	// 4. Топ процедур по выручке и популярности
-	const procRevenueExpr = sql<number>`coalesce(sum(${treatmentItems.priceRub}), 0)`;
+	const procRevenueExpr = sql<number>`coalesce(sum(round(${treatmentItems.priceRub} * 100)), 0)`;
 	const procedureStats = await db
 		.select({
 			id: treatmentItems.serviceId,
 			name: treatmentItems.title,
 			category: sql<string>`coalesce(${serviceCatalogItems.category}::text, 'therapy')`,
 			count: sql<number>`count(*)::int`,
-			revenueRub: procRevenueExpr,
+			revenueKopecks: procRevenueExpr,
 		})
 		.from(treatmentItems)
 		.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
@@ -209,7 +302,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 		.orderBy(desc(procRevenueExpr))
 		.limit(5);
 
-	const totalProcRevenueRub = procedureStats.reduce((s, p) => s + Number(p.revenueRub || 0), 0);
+	const totalProcRevenueKop = procedureStats.reduce((s, p) => s + Number(p.revenueKopecks || 0), 0);
 	const formatCategoryRu = (cat?: string | null): string => {
 		const c = (cat || "").toLowerCase();
 		if (c.includes("consult") || c.includes("консуль")) return "Консультация";
@@ -223,8 +316,8 @@ export async function queryExecutiveDepartmentsAndDoctors(
 	};
 
 	const topProcedures: ExecutiveTopProcedureItem[] = procedureStats.map((p, idx) => {
-		const revKop = Math.round(Number(p.revenueRub || 0) * 100);
-		const share = totalProcRevenueRub > 0 ? Math.round((Number(p.revenueRub || 0) / totalProcRevenueRub) * 100) : 0;
+		const revKop = Math.round(Number(p.revenueKopecks || 0));
+		const share = totalProcRevenueKop > 0 ? Math.round((revKop / totalProcRevenueKop) * 100) : 0;
 		return {
 			id: p.id ? String(p.id) : `proc-${idx + 1}`,
 			name: p.name || "Медицинская услуга",

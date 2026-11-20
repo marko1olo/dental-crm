@@ -32,9 +32,9 @@ import {
 	parseRublesToKopecks,
 } from "../security/index.js";
 
-describe("Enterprise RBAC & 8-Role Access Matrix", () => {
-	it("contains all 8 canonical clinical and administrative roles", () => {
-		assert.strictEqual(GRANULAR_STAFF_ROLES.length, 8);
+describe("Enterprise RBAC & Granular Access Matrix", () => {
+	it("contains all canonical clinical and administrative roles", () => {
+		assert.strictEqual(GRANULAR_STAFF_ROLES.length, 9);
 		const expectedRoles: GranularStaffRole[] = [
 			"owner",
 			"head_doctor",
@@ -44,6 +44,7 @@ describe("Enterprise RBAC & 8-Role Access Matrix", () => {
 			"senior_admin",
 			"registrar",
 			"accountant",
+			"curator",
 		];
 		for (const r of expectedRoles) {
 			assert.ok(GRANULAR_STAFF_ROLES.includes(r), `Role ${r} must be in GRANULAR_STAFF_ROLES`);
@@ -69,6 +70,8 @@ describe("Enterprise RBAC & 8-Role Access Matrix", () => {
 		assert.strictEqual(normalizeStaffRole("administrator"), "registrar");
 		assert.strictEqual(normalizeStaffRole("accountant"), "accountant");
 		assert.strictEqual(normalizeStaffRole("financier"), "accountant");
+		assert.strictEqual(normalizeStaffRole("curator"), "curator");
+		assert.strictEqual(normalizeStaffRole("treatment_coordinator"), "curator");
 		assert.strictEqual(normalizeStaffRole("unknown_role"), "registrar"); // Fail-closed default
 	});
 
@@ -78,12 +81,13 @@ describe("Enterprise RBAC & 8-Role Access Matrix", () => {
 		assert.strictEqual(canViewFinancialReports("head_doctor"), true);
 		assert.strictEqual(canViewFinancialReports("accountant"), true);
 
-		// Doctor, Assistant, Nurse, Registrar, Senior Admin CANNOT view P&L/margins
+		// Doctor, Assistant, Nurse, Registrar, Senior Admin, Curator CANNOT view P&L/margins
 		assert.strictEqual(canViewFinancialReports("doctor"), false);
 		assert.strictEqual(canViewFinancialReports("assistant"), false);
 		assert.strictEqual(canViewFinancialReports("senior_nurse"), false);
 		assert.strictEqual(canViewFinancialReports("senior_admin"), false);
 		assert.strictEqual(canViewFinancialReports("registrar"), false);
+		assert.strictEqual(canViewFinancialReports("curator"), false);
 	});
 
 	it("strictly isolates global salary ledgers to Owner and Accountant", () => {
@@ -96,6 +100,7 @@ describe("Enterprise RBAC & 8-Role Access Matrix", () => {
 		assert.strictEqual(canViewAllDoctorPayrolls("senior_nurse"), false);
 		assert.strictEqual(canViewAllDoctorPayrolls("senior_admin"), false);
 		assert.strictEqual(canViewAllDoctorPayrolls("registrar"), false);
+		assert.strictEqual(canViewAllDoctorPayrolls("curator"), false);
 	});
 
 	it("permits clinicians to view their own piece-rate earnings only", () => {
@@ -103,6 +108,7 @@ describe("Enterprise RBAC & 8-Role Access Matrix", () => {
 		assert.strictEqual(canViewOwnPayroll("head_doctor"), true);
 		assert.strictEqual(canViewOwnPayroll("owner"), true);
 		assert.strictEqual(canViewOwnPayroll("assistant"), true);
+		assert.strictEqual(canViewOwnPayroll("curator"), true);
 	});
 
 	it("verifies medical documentation signing authority", () => {
@@ -115,6 +121,7 @@ describe("Enterprise RBAC & 8-Role Access Matrix", () => {
 		assert.strictEqual(canSignMedicalRecords("senior_admin"), false);
 		assert.strictEqual(canSignMedicalRecords("registrar"), false);
 		assert.strictEqual(canSignMedicalRecords("accountant"), false);
+		assert.strictEqual(canSignMedicalRecords("curator"), false);
 	});
 
 	it("returns visual access level badges correctly", () => {

@@ -428,7 +428,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 				message: staffAuthorityUnverifiedMessage,
 			};
 		}
-		const granter = await requirePermission(request, reply, "settings.write");
+		const granter = await requirePermission(db, request, reply, "settings.write");
 		if (!granter) return;
 		const params = request.params as { staffId?: string };
 		if (!params.staffId) {
@@ -523,10 +523,7 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			return { error: "OrganizationNotFound", message: "Организация не найдена" };
 		}
 		const existingFlags = (org.workspaceFeatureFlags as Record<string, unknown> | null) ?? {};
-		const updatedOverrides = {
-			...((existingFlags.roleMatrixOverrides as Record<string, unknown> | null) ?? {}),
-			...incomingMatrix,
-		};
+		const updatedOverrides = incomingMatrix;
 		await db
 			.update(schema.organizations)
 			.set({

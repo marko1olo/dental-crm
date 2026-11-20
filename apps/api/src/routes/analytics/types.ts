@@ -37,6 +37,8 @@ export type TierKey = "basic" | "optimum" | "premium";
 
 export interface RebookingEvent {
 	id: string;
+	visitId?: string | null | undefined;
+	candidateAppointmentId?: string | null | undefined;
 	patientName: string;
 	rebookedBy: string;
 	timeDeltaMinutes: number;

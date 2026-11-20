@@ -101,6 +101,8 @@ export interface ClinicAnalyticsSSOT {
 	readonly serviceStructure: readonly ServiceCategoryDistribution[];
 	readonly doctors: readonly DoctorPerformanceSSOT[];
 	readonly recallCohorts: readonly PatientRecallCohort[];
+	readonly cohortLtv?: readonly Record<string, unknown>[] | undefined;
+	readonly noShowHeatmap?: Record<string, unknown> | undefined;
 	readonly isLiveApi: boolean;
 	readonly updatedAtIso: string;
 	readonly isEmpty?: boolean;
@@ -314,10 +316,19 @@ export async function fetchClinicAnalyticsSSOT(
 
 		const rawDocs = Array.isArray(payload.topDoctors) ? (payload.topDoctors as Record<string, unknown>[]) : [];
 		const doctors: DoctorPerformanceSSOT[] = rawDocs.map((d, idx: number) => {
-			const docBilled = Number(d.billedRub || d.revenueRub || 0);
-			const docKop = Math.round(docBilled * 100);
+			const docKop =
+				typeof d.revenueKopecks === "number"
+					? Math.round(d.revenueKopecks)
+					: typeof d.billedKopecks === "number"
+						? Math.round(d.billedKopecks)
+						: Math.round(Number(d.billedRub || d.revenueRub || 0) * 100);
 			const visits = Number(d.visits || d.visitsCount || 0);
-			const avgKop = visits > 0 ? Math.round(docKop / visits) : 0;
+			const avgKop =
+				visits > 0
+					? typeof d.averageCheckKopecks === "number"
+						? Math.round(d.averageCheckKopecks)
+						: Math.round(docKop / visits)
+					: 0;
 			// [ANL-01] Ликвидация симуляции visits * 0.9: расчет строго по реальным часам в кресле из PostgreSQL 18
 			const chairHours =
 				typeof d.chairHours === "number" && !isNaN(d.chairHours)
@@ -345,7 +356,10 @@ export async function fetchClinicAnalyticsSSOT(
 		const rawProcs = Array.isArray(payload.topProcedures) ? (payload.topProcedures as Record<string, unknown>[]) : [];
 		const totalProcCount = rawProcs.reduce((acc: number, p) => acc + Number(p.count || 0), 0);
 		const serviceStructure: ServiceCategoryDistribution[] = rawProcs.map((p) => {
-			const revKop = Math.round(Number(p.revenueRub || 0) * 100);
+			const revKop =
+				typeof p.revenueKopecks === "number"
+					? Math.round(p.revenueKopecks)
+					: Math.round(Number(p.revenueRub || 0) * 100);
 			const count = Number(p.count || 0);
 			const sharePct = totalProcCount > 0 ? Math.round((count / totalProcCount) * 100) : 0;
 			return {
@@ -396,6 +410,8 @@ export async function fetchClinicAnalyticsSSOT(
 					: Array.isArray(kpiRecallCohorts)
 						? kpiRecallCohorts
 						: [],
+			cohortLtv: Array.isArray(payload.cohortLtv) ? payload.cohortLtv : Array.isArray(payload.cohortLtvJson) ? payload.cohortLtvJson : [],
+			noShowHeatmap: payload.noShowHeatmap && typeof payload.noShowHeatmap === "object" ? payload.noShowHeatmap : undefined,
 			isLiveApi: true,
 			updatedAtIso: payload.updatedAtIso || new Date().toISOString(),
 			isEmpty,

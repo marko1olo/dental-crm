@@ -1291,6 +1291,47 @@
 - **Верификация и доказательства:**
   - `npm run check:dynamic-imports` -> 0 битых импортов.
 
+### [ANL-13] [ИСПРАВЛЕНО] [SEV-1] Архитектурная шизофрения трех контуров: изоляция Студии руководителя от 15-минутного окна и когортного LTV
+- **Файлы:**
+  - [`apps/api/src/routes/managerReportsRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/managerReportsRoutes.ts)
+  - [`apps/web/src/components/analytics/analyticsCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/analyticsCatalogData.ts)
+  - [`apps/web/src/components/analytics/ExecutiveAnalyticsStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ExecutiveAnalyticsStudioModal.tsx)
+- **Суть бага:** Главный дашборд руководителя вызывал только `/api/v1/manager/reports/kpi`, в то время как 15-минутное окно кресельной конверсии, No-Show карта и 12-месячные когорты LTV были изолированы в параллельных контурах аналитики.
+- **Инженерное решение (Ликвидация брака):**
+  1. В `managerReportsRoutes.ts` эндпоинт `GET /api/v1/manager/reports/kpi` расширен вызовами `calculateCohortLtv(orgId, range.endDate)` и `calculateNoShowHeatmap(orgId, range.startDate, timeZone)`.
+  2. В `analyticsCatalogData.ts` контракт `ClinicAnalyticsSSOT` и маппер `fetchClinicAnalyticsSSOT` дополнены поддержкой `cohortLtv` и `noShowHeatmap`.
+  3. Устранена фрагментация аналитики: Студия руководителя получает целостную витрину данных клиники из единого SSOT-фасада.
+
+### [ANL-14] [ИСПРАВЛЕНО] [SEV-2] Слепой хардкод индексов способов оплаты в ExecutiveAnalyticsKpiGrid.tsx
+- **Файлы:**
+  - [`apps/web/src/components/analytics/studio/ExecutiveAnalyticsKpiGrid.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/studio/ExecutiveAnalyticsKpiGrid.tsx)
+- **Суть бага:** В подстроке «Выручка кассы» использовался слепой хардкод индексов `methods[0]` (карты) и `methods[2]` (наличные), что приводило к показу «0 ₽» или подмене данных при изменении порядка методов.
+- **Инженерное решение (Ликвидация брака):**
+  1. Слепой доступ по индексам заменен на семантический поиск: `methods.find(m => m.id === "card")` и `methods.find(m => m.id === "cash")`.
+  2. Доказано 4-State Proofs скриншотами: на карточке кассы корректно выводятся «Карт: 18 500 ₽» и «Нал: 0 ₽».
+
+### [ANL-15] [ИСПРАВЛЕНО] [SEV-1] Потемкинская деревня «план = факт» и float-пересчеты в executiveDoctorsQuery.ts
+- **Файлы:**
+  - [`apps/api/src/routes/analytics/executiveDoctorsQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveDoctorsQuery.ts)
+  - [`apps/api/src/routes/analytics/executiveKpiQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts)
+  - [`apps/web/src/components/analytics/analyticsCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/analyticsCatalogData.ts)
+- **Суть бага:** План выручки отделений фиктивно приравнивался к факту (`planRevenueKopecks = factRevenueKopecks`), создавая ложную 100% отчетность. В расчетах выручки использовались float-пересчеты рублей с копейками.
+- **Инженерное решение (Ликвидация брака):**
+  1. Потемкинская деревня ликвидирована: внедрен честный расчет целевого плана отделений по рабочим часам врачей (`deptOccupiedMinutes / 60 * HOURLY_TARGET_KOPECKS`), целевым настройкам организации (`organizations.clinicSchedule.departmentPlansKopecks`) и нормативу +15% при отсутствии размеченных смен.
+  2. Все финансовые агрегаты переведены на сквозные целочисленные копейки `amountKopecks: bigint` и `priceKopecks: integer` (Мандат 8bm).
+  3. В `executiveKpiQuery.ts` магические числа кодов РКО заменены на типизированный словарь `CASH_EXPENSE_REASON_CODES`.
+
+### [ANL-16] [ИСПРАВЛЕНО] [SEV-2] Коллизия составного ключа в rebookingRoutes.ts и ликвидация тестов-саботажников
+- **Файлы:**
+  - [`apps/api/src/routes/analytics/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/types.ts)
+  - [`apps/api/src/routes/analytics/rebookingRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/rebookingRoutes.ts)
+  - [`apps/web/src/components/analytics/__tests__/analyticsLiveApiWiring.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/__tests__/analyticsLiveApiWiring.test.ts)
+  - [`apps/web/src/components/analytics/__tests__/executiveDashboardDeterminism.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/__tests__/executiveDashboardDeterminism.test.tsx)
+- **Суть бага:** Дедупликация событий повторной записи выполнялась по строке ФИО, что приводило к затиранию данных пациентов-однофамильцев. В тестах `analyticsLiveApiWiring.test.ts` и `executiveDashboardDeterminism.test.tsx` применялся `fs.readFileSync` для чтения исходников вместо реального рантайм-тестирования.
+- **Инженерное решение (Ликвидация брака):**
+  1. В `RebookingEvent` добавлены `visitId` и `candidateAppointmentId`. Дедупликация переведена на реляционные ID (`${ev.visitId}__${ev.candidateAppointmentId}` и `rule_${rule.id}`).
+  2. Тесты очищены от `fs.readFileSync` и переписаны на 100% реальное рантайм-тестирование заголовков безопасности, маппинга каналов, кэшбэка лояльности, CDA R2 XML и RFC 4180 CSV-экспорта.
+
 
 ## 11. ⚖️ ДОКУМЕНТООБОРОТ, ИДС (1051н), ДОГОВОРЫ И НАЛОГОВЫЙ ВЫЧЕТ (КНД 1151156)
 

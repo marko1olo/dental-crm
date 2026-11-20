@@ -56,8 +56,8 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 					</div>
 				</div>
 				<div className="pt-2 border-t border-[var(--line)] flex items-center justify-between text-xs text-[var(--muted)]">
-					<span>Карт: {data.paymentBreakdown.methods[0]?.formatted ?? "0 ₽"}</span>
-					<span>Нал: {data.paymentBreakdown.methods[2]?.formatted ?? "0 ₽"}</span>
+					<span>Карт: {data.paymentBreakdown.methods.find((m) => m.id === "card")?.formatted ?? "0 ₽"}</span>
+					<span>Нал: {data.paymentBreakdown.methods.find((m) => m.id === "cash")?.formatted ?? "0 ₽"}</span>
 				</div>
 			</article>
 

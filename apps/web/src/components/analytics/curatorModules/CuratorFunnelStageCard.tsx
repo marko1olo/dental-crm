@@ -1,12 +1,16 @@
 import React from "react";
-import { type CuratorStageStats, CURATOR_STAGE_DEFINITIONS } from "@dental/shared";
+import {
+	type CuratorStageStats,
+	type CuratorFunnelStage,
+	CURATOR_STAGE_DEFINITIONS,
+} from "@dental/shared";
 import { Clock, TrendingUp } from "lucide-react";
 
 export interface CuratorFunnelStageCardProps {
 	readonly stageItem: CuratorStageStats;
 	readonly index: number;
 	readonly isSelected: boolean;
-	readonly onSelectStage?: ((stage: any) => void) | undefined;
+	readonly onSelectStage?: ((stage: CuratorFunnelStage) => void) | undefined;
 }
 
 export const CuratorFunnelStageCard: React.FC<CuratorFunnelStageCardProps> = ({

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { showToast } from "../../GlobalToast";
 import type { SnilsValidationResult } from "./doctorSnilsTypes";
@@ -12,7 +12,7 @@ export function useDoctorSnilsValidation(
 	const [isValidating, setIsValidating] = useState(false);
 	const [validationResult, setValidationResult] = useState<SnilsValidationResult | null>(null);
 
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
 
 	async function handleValidate() {

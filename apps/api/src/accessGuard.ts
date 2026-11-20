@@ -237,7 +237,7 @@ export async function requireResolvedStaffOrAdminOrganizationId(
 			.limit(1);
 
 		if (
-			user?.currentSessionId &&
+			!user?.currentSessionId ||
 			user.currentSessionId !== identity.sessionId
 		) {
 			reply.code(401).send({
@@ -287,7 +287,7 @@ async function _requireResolvedStaffUserId(
 			.limit(1);
 
 		if (
-			user?.currentSessionId &&
+			!user?.currentSessionId ||
 			user.currentSessionId !== identity.sessionId
 		) {
 			reply.code(401).send({

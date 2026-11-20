@@ -248,7 +248,7 @@ export async function requireStaffIdentity(
 			.limit(1);
 
 		if (
-			user?.currentSessionId &&
+			!user?.currentSessionId ||
 			user.currentSessionId !== identity.sessionId
 		) {
 			reply.code(401).send({

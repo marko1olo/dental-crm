@@ -13,12 +13,14 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { calculateCohortLtv } from "./analytics/cohortLtvCalculator.js";
 import { requireExecutiveAccess } from "./analytics/executiveAccessGuard.js";
 import { queryExecutiveDepartmentsAndDoctors } from "./analytics/executiveDoctorsQuery.js";
 import {
 	queryExecutiveKpiAndFunnel,
 	resolveExecutiveDateRange,
 } from "./analytics/executiveKpiQuery.js";
+import { calculateNoShowHeatmap } from "./analytics/noShowHeatmapCalculator.js";
 import {
 	chairLoad,
 	clinicTimeZone,
@@ -153,6 +155,7 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 		try {
 			const query = request.query as ManagerReportQuery;
 			const range = resolveExecutiveDateRange(query.period, query.from, query.to);
+			const timeZone = await clinicTimeZone(orgId);
 
 			const { departments, activeDoctorsCount, topDoctors, topProcedures } =
 				await queryExecutiveDepartmentsAndDoctors(orgId, range.startDate);
@@ -164,6 +167,12 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 				totalAppointments,
 				plansPresentedCount,
 			} = await queryExecutiveKpiAndFunnel(orgId, range, activeDoctorsCount);
+
+			// [DEF-2.1] Подключение полного аналитического среза клиники к единому SSOT-фасаду руководителя
+			const [cohortLtvRes, noShowHeatmap] = await Promise.all([
+				calculateCohortLtv(orgId, range.endDate),
+				calculateNoShowHeatmap(orgId, range.startDate, timeZone),
+			]);
 
 			const isEmpty =
 				totalRevenueKopecks === 0 &&
@@ -178,6 +187,9 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 					departments,
 					topDoctors,
 					topProcedures,
+					cohortLtv: cohortLtvRes.cohortLtvJson,
+					cohortLtvJson: cohortLtvRes.cohortLtvJson,
+					noShowHeatmap,
 					period: range.execPeriod,
 					dateRangeStartIso: range.startDate.toISOString(),
 					dateRangeEndIso: range.endDate.toISOString(),

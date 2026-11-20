@@ -3,7 +3,7 @@ import {
 	canSignMedicalRecords,
 } from "@dental/shared";
 import { useCallback, useMemo, useState } from "react";
-import { useAppLogicContext } from "../../../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import { showToast } from "../../../GlobalToast";
 import { staffRoleTitle } from "../../settingsInviteRoles";
@@ -17,7 +17,7 @@ import {
 } from "./authorityTypes";
 
 export function useStaffAuthority() {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const dashboardUnknown = (appLogic as { dashboard?: unknown } | null)?.dashboard;
 	const loadDashboard = (appLogic as { loadDashboard?: () => Promise<void> | void } | null)?.loadDashboard;
 

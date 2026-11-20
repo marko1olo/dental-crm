@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -253,6 +254,25 @@ export async function handleUniversalLogin(
 		);
 		const ownerUser = ownerLookup.row ?? null;
 
+		const sessionId = crypto.randomUUID();
+		if (ownerUser) {
+			try {
+				await withTenantCtx(matchedOrg.id, async (tx) => {
+					await tx
+						.update(users)
+						.set({ currentSessionId: sessionId })
+						.where(
+							and(
+								eq(users.id, ownerUser.id),
+								eq(users.organizationId, matchedOrg.id),
+							),
+						);
+				});
+			} catch (sessErr) {
+				request.log.warn({ sessErr }, "[STAFF_SESSION_UPDATE_WARN]");
+			}
+		}
+
 		const clinicToken = signToken(
 			{
 				organizationId: matchedOrg.id,
@@ -267,6 +287,7 @@ export async function handleUniversalLogin(
 				fullName: ownerUser?.fullName ?? matchedOrg.name,
 				role: ownerUser?.role ?? "owner",
 				organizationId: matchedOrg.id,
+				sessionId,
 			},
 			TOKEN_SECRET(),
 			60 * 60 * 24 * 7,
@@ -361,6 +382,23 @@ export async function handleUniversalLogin(
 				.limit(1),
 	).catch(() => [] as Array<{ name: string }>);
 
+	const sessionId = crypto.randomUUID();
+	try {
+		await withTenantCtx(user.organizationId as string, async (tx) => {
+			await tx
+				.update(users)
+				.set({ currentSessionId: sessionId })
+				.where(
+					and(
+						eq(users.id, user.id),
+						eq(users.organizationId, user.organizationId as string),
+					),
+				);
+		});
+	} catch (sessErr) {
+		request.log.warn({ sessErr }, "[STAFF_SESSION_UPDATE_WARN]");
+	}
+
 	const clinicToken = signToken(
 		{
 			organizationId: user.organizationId,
@@ -375,6 +413,7 @@ export async function handleUniversalLogin(
 			fullName: user.fullName,
 			role: user.role,
 			organizationId: user.organizationId,
+			sessionId,
 		},
 		TOKEN_SECRET(),
 		60 * 60 * 24 * 7,

@@ -28,9 +28,9 @@ import {
 	parseRublesToKopecks,
 } from "@dental/shared";
 
-describe("Settings RBAC: 8 Clinical & Administrative Roles", () => {
-	it("verifies all 8 roles have full metadata and configured permissions", () => {
-		assert.strictEqual(GRANULAR_STAFF_ROLES.length, 8);
+describe("Settings RBAC: Clinical & Administrative Roles", () => {
+	it("verifies all roles have full metadata and configured permissions", () => {
+		assert.strictEqual(GRANULAR_STAFF_ROLES.length, 9);
 		for (const role of GRANULAR_STAFF_ROLES) {
 			const meta = ROLE_METADATA_REGISTRY[role];
 			assert.ok(meta, `Role ${role} must have metadata`);
@@ -55,6 +55,7 @@ describe("Settings RBAC: 8 Clinical & Administrative Roles", () => {
 		assert.strictEqual(canViewFinancialReports("senior_nurse"), false);
 		assert.strictEqual(canViewFinancialReports("senior_admin"), false);
 		assert.strictEqual(canViewFinancialReports("registrar"), false);
+		assert.strictEqual(canViewFinancialReports("curator"), false);
 	});
 
 	it("strictly isolates all-staff payrolls while allowing own piece-rate earnings", () => {
@@ -65,10 +66,12 @@ describe("Settings RBAC: 8 Clinical & Administrative Roles", () => {
 
 		assert.strictEqual(canViewAllDoctorPayrolls("doctor"), false);
 		assert.strictEqual(canViewAllDoctorPayrolls("assistant"), false);
+		assert.strictEqual(canViewAllDoctorPayrolls("curator"), false);
 
 		// Own Payroll / Piece-Rate
 		assert.strictEqual(canViewOwnPayroll("doctor"), true);
 		assert.strictEqual(canViewOwnPayroll("assistant"), true);
+		assert.strictEqual(canViewOwnPayroll("curator"), true);
 	});
 
 	it("verifies 152-FZ PII access and masking policies", () => {
@@ -78,6 +81,7 @@ describe("Settings RBAC: 8 Clinical & Administrative Roles", () => {
 		assert.strictEqual(canAccessFullPatientPii("doctor"), true);
 		assert.strictEqual(canAccessFullPatientPii("senior_admin"), true);
 		assert.strictEqual(canAccessFullPatientPii("registrar"), true);
+		assert.strictEqual(canAccessFullPatientPii("curator"), true);
 
 		// Masked for junior nursing and assistants
 		assert.strictEqual(canAccessFullPatientPii("assistant"), false);
@@ -189,13 +193,14 @@ describe("Staff Security & 152-FZ Password Entropy Guard", () => {
 });
 
 describe("Canonical Staff Roles & Fail-Closed Prevention (Mandate 8n / DEF-SEC-02)", () => {
-	it("verifies canonical staff roles are exactly 5 roles for clinic scale 1-5 chairs", () => {
+	it("verifies canonical staff roles are exactly 6 roles for clinic scale 1-5 chairs", () => {
 		assert.deepStrictEqual(CANONICAL_STAFF_ROLES, [
 			"owner",
 			"doctor",
 			"administrator",
 			"assistant",
 			"manager",
+			"curator",
 		]);
 	});
 

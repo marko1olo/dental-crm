@@ -263,6 +263,8 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 
 					computedEvents.push({
 						id: candidateAppt.id,
+						visitId: visit.visitId,
+						candidateAppointmentId: candidateAppt.id,
 						patientName: visit.patientName || "Пациент",
 						rebookedBy,
 						timeDeltaMinutes: deltaMinutes,
@@ -282,10 +284,11 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 			// Фиксация правил осуществляется строго через явный POST /api/analytics/rebooking-conversion.
 
 			// 6. Объединяем сохранённые и вычисленные записи
+			// [DEF-2.6] Дедупликация строго по реляционным ID (`${visit.id}__${candidateAppt.id}`), исключающая коллизии однофамильцев
 			const allRecordsMap = new Map<string, RebookingEvent>();
 
 			for (const rule of storedRules) {
-				const key = `${rule.patientName}__${rule.appointmentDate}__${rule.creditedRole}`;
+				const key = `rule_${rule.id}`;
 				allRecordsMap.set(key, {
 					id: rule.id,
 					patientName: rule.patientName,
@@ -303,7 +306,10 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 			}
 
 			for (const ev of computedEvents) {
-				const key = `${ev.patientName}__${ev.appointmentDate}__${ev.creditedRole}`;
+				const key =
+					ev.visitId && ev.candidateAppointmentId
+						? `${ev.visitId}__${ev.candidateAppointmentId}`
+						: `ev_${ev.id}`;
 				if (!allRecordsMap.has(key)) {
 					allRecordsMap.set(key, ev);
 				}

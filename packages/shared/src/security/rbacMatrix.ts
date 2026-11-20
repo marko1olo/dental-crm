@@ -20,6 +20,7 @@ export const CANONICAL_STAFF_ROLES = [
 	"administrator",
 	"assistant",
 	"manager",
+	"curator",
 ] as const;
 
 export type CanonicalStaffRole = (typeof CANONICAL_STAFF_ROLES)[number];
@@ -34,6 +35,7 @@ export const GRANULAR_STAFF_ROLES = [
 	"senior_admin",
 	"registrar",
 	"accountant",
+	"curator",
 ] as const;
 
 export type GranularStaffRole = (typeof GRANULAR_STAFF_ROLES)[number];
@@ -113,6 +115,14 @@ export const ROLE_METADATA_REGISTRY: Record<GranularStaffRole, RoleMetadata> = {
 		description: "Кассовые книги, фискализация 54-ФЗ, расчёт сдельной оплаты и зарплатных ведомостей, акты сверки с ЗТЛ и поставщиками.",
 		category: "finance",
 		colorTheme: "rose",
+	},
+	curator: {
+		role: "curator",
+		title: "Куратор лечения",
+		shortTitle: "Куратор",
+		description: "Сопровождение пациентов, координация комплексных планов лечения, контроль записей и коммуникация. Без доступа к кассе.",
+		category: "front_desk",
+		colorTheme: "teal",
 	},
 };
 
@@ -488,6 +498,30 @@ export const GRANULAR_ROLE_MATRIX: Record<
 		"egisz.send_records": "none",
 		"communications.send_messages": "none",
 	},
+	curator: {
+		"clinical.records.view": "read",
+		"clinical.records.write": "none",
+		"clinical.treatment_plans.manage": "full",
+		"schedule.view": "full",
+		"schedule.manage": "full",
+		"patients.view_basic": "full",
+		"patients.pii_full": "full",
+		"patients.manage": "read",
+		"finance.cashier_operations": "none",
+		"finance.refunds": "none",
+		"finance.reports_pnl": "none",
+		"finance.tariffs_manage": "read",
+		"payroll.view_own": "own",
+		"payroll.view_all_staff": "none",
+		"payroll.manage_rates": "none",
+		"inventory.materials_writeoff": "none",
+		"inventory.warehouse_manage": "none",
+		"inventory.sanpin_journals": "none",
+		"settings.clinic_manage": "none",
+		"settings.staff_authority": "none",
+		"egisz.send_records": "none",
+		"communications.send_messages": "full",
+	},
 };
 
 /**
@@ -534,6 +568,10 @@ export function normalizeStaffRole(rawRole: string | null | undefined): Granular
 		case "financier":
 		case "finance":
 			return "accountant";
+		case "curator":
+		case "treatment_coordinator":
+		case "coordinator":
+			return "curator";
 		default:
 			return "registrar";
 	}
@@ -670,7 +708,7 @@ export function getAccessLevelBadge(level: AccessLevel): {
  */
 export function normalizeStaffRoleToCanonical(
 	rawRole: string | null | undefined,
-): CanonicalStaffRole | "curator" | "unknown" {
+): CanonicalStaffRole | "unknown" {
 	if (!rawRole || typeof rawRole !== "string") return "unknown";
 	const normalized = rawRole.trim().toLowerCase();
 

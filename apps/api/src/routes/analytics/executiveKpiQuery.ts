@@ -24,6 +24,25 @@ import {
 	treatmentPlans,
 } from "../../db/schema.js";
 
+/**
+ * Канонические типизированные коды регламентированных статей расходов РКО (Мандат 8ap & 8bm).
+ */
+export const CASH_EXPENSE_REASON_CODES = {
+	SALARIES_PAYROLL: 1,
+	TAXES_AND_FEES: 2,
+	SUPPLIES_MATERIALS: 4,
+	EQUIPMENT_LEASE: 5,
+	MARKETING_ADVERTISING: 6,
+	COMMUNICATIONS: 7,
+	PETTY_CASH_OTHER: 8,
+	UTILITIES: 10,
+	DENTAL_LAB_COSTS: 11,
+	CLINIC_RENT: 100,
+} as const;
+
+export type CashExpenseReasonCode =
+	(typeof CASH_EXPENSE_REASON_CODES)[keyof typeof CASH_EXPENSE_REASON_CODES];
+
 export interface ExecutivePeriodRange {
 	readonly execPeriod: ExecutivePeriod;
 	readonly startDate: Date;
@@ -451,17 +470,20 @@ export async function queryExecutiveKpiAndFunnel(
 	let cashOtherOpexExpensesRub = 0;
 
 	for (const exp of cashExpenseRows) {
-		const code = exp.reasonCode || 10;
+		const code = exp.reasonCode ?? CASH_EXPENSE_REASON_CODES.UTILITIES;
 		const amt = Number(exp.totalRub || 0);
-		if (code === 11) {
+		if (code === CASH_EXPENSE_REASON_CODES.DENTAL_LAB_COSTS) {
 			cashLabExpensesRub += amt;
-		} else if (code === 4 || code === 5) {
+		} else if (
+			code === CASH_EXPENSE_REASON_CODES.SUPPLIES_MATERIALS ||
+			code === CASH_EXPENSE_REASON_CODES.EQUIPMENT_LEASE
+		) {
 			cashMaterialsExpensesRub += amt;
-		} else if (code === 1) {
+		} else if (code === CASH_EXPENSE_REASON_CODES.SALARIES_PAYROLL) {
 			cashPayrollExpensesRub += amt;
-		} else if (code === 6) {
+		} else if (code === CASH_EXPENSE_REASON_CODES.MARKETING_ADVERTISING) {
 			cashMarketingExpensesRub += amt;
-		} else if (code === 100) {
+		} else if (code === CASH_EXPENSE_REASON_CODES.CLINIC_RENT) {
 			cashRentExpensesRub += amt;
 		} else {
 			cashOtherOpexExpensesRub += amt;
