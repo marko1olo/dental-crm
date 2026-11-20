@@ -69,6 +69,7 @@ export interface OdontogramViewModalsProps {
 	contextDrawerTooth: number | null;
 	onCloseContextDrawer: () => void;
 	onUpdateToothContext?: ((num: number, state: ToothState, surfaces?: string[]) => void) | undefined;
+	onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	// Endo drawer
 	endoDrawerTooth: number | null;
 	onCloseEndoDrawer: () => void;
@@ -100,6 +101,7 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 	contextDrawerTooth,
 	onCloseContextDrawer,
 	onUpdateToothContext,
+	onOpenFullRadiology,
 	endoDrawerTooth,
 	onCloseEndoDrawer,
 	isOrthoCephOpen,
@@ -167,6 +169,18 @@ export const OdontogramViewModals: React.FC<OdontogramViewModalsProps> = React.m
 									"success",
 								);
 							}
+						}}
+						onOpenFullRadiology={(num) => {
+							if (onOpenFullRadiology) {
+								onOpenFullRadiology(num);
+							} else {
+								window.dispatchEvent(
+									new CustomEvent("dente:open-radiology", {
+										detail: { toothNumber: num, patientId },
+									}),
+								);
+							}
+							onCloseContextDrawer();
 						}}
 					/>
 				</React.Suspense>

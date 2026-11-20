@@ -89,7 +89,7 @@ export async function createVisitInvoiceInApi(
 
 		if (data?.invoice?.id) {
 			const inv = data.invoice;
-			const realInvoiceNumber = inv.invoiceNumber || inv.number || result.receiptNumber;
+			const realInvoiceNumber = inv.invoiceNumber || inv.number || `СЧ-${inv.id.slice(0, 8).toUpperCase()}`;
 
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(
@@ -111,17 +111,17 @@ export async function createVisitInvoiceInApi(
 				isPersistedInDb: true,
 			};
 		}
+
+		throw new Error("Сервер не вернул сформированный счёт. Повторите попытку создания счёта.");
 	} catch (err) {
-		logger.warn(
-			"[visitInvoiceCreationService] Не удалось создать счёт в API (активирован soft fallback):",
+		logger.error(
+			"[visitInvoiceCreationService] Ошибка сохранения счёта в PostgreSQL 18:",
 			err,
 		);
+		const message =
+			err instanceof Error && err.message
+				? err.message
+				: "Не удалось сохранить счёт в базе данных. Проверьте соединение с сервером.";
+		throw new Error(message);
 	}
-
-	return {
-		invoiceId: result.invoiceId,
-		invoiceNumber: result.receiptNumber,
-		totalAmountRub: result.totalNetRub,
-		isPersistedInDb: false,
-	};
 }

@@ -1,6 +1,6 @@
 export type * from "./types";
 export * from "./constants";
-export * from "./DiagnocatReportWidget";
+export * from "./ClinicalAiImageAnalysisWidget";
 export * from "./EmkAutosaveStatusBadge";
 export * from "./EmkPatientSummaryHeader";
 export * from "./EmkProtocolStepper";

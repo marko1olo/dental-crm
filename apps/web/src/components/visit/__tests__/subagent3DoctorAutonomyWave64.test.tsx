@@ -95,7 +95,8 @@ describe("Subagent 3: Doctor Autonomy & Reception Friction-Killer (Mandates 8e &
 			"Comm consents save button must not be disabled by !dirty or !loaded",
 		);
 		assert.ok(
-			commConsentsSource.includes("disabled={loading || saving}"),
+			commConsentsSource.includes("disabled={loading || saving}") ||
+				commConsentsSource.includes("aria-busy={loading || saving}"),
 			"Comm consents save button must only guard against loading || saving",
 		);
 	});

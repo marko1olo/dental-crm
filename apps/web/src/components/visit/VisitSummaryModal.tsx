@@ -72,21 +72,6 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = (props) => {
 				doctorSpecialty={props.doctorSpecialty || "Врач-стоматолог"}
 				toothNumber={state.abnormalTeeth[0]?.toothNumber}
 			/>
-			{/* Smoke compat test anchors (Mandates 8e, 8n) */}
-			<div className="sr-only" aria-hidden="true" style={{ display: "none" }}>
-				<button
-					type="button"
-					data-testid="summary-complete-visit-btn"
-					disabled={isCompleting}
-				>
-					Завершить приём
-				</button>
-				<div data-testid="chairside-pos-block">
-					<button type="button" data-testid="chairside-pay-sbp-qr-btn">
-						СБП QR
-					</button>
-				</div>
-			</div>
 		</>
 	);
 

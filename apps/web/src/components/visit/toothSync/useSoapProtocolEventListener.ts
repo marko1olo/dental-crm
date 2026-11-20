@@ -15,11 +15,15 @@ import { useVisitStore } from "../../../store/visitStore";
 import { toVisitToothUiState } from "./toothStateConverters.js";
 
 interface UseSoapProtocolEventListenerParams {
+	patientId?: string | null | undefined;
+	visitId?: string | null | undefined;
 	visitNoteFormRef: MutableRefObject<Record<string, unknown> | null | undefined>;
 	updateVisitNoteFieldRef: MutableRefObject<(field: string, value: string) => void>;
 }
 
 export function useSoapProtocolEventListener({
+	patientId,
+	visitId,
 	visitNoteFormRef,
 	updateVisitNoteFieldRef,
 }: UseSoapProtocolEventListenerParams): void {
@@ -28,6 +32,8 @@ export function useSoapProtocolEventListener({
 
 		const handleExternalSoapProtocol = (e: Event) => {
 			const customEvt = e as CustomEvent<{
+				patientId?: string | undefined;
+				visitId?: string | undefined;
 				finding?: OdontogramFindingInput;
 				soap?: Partial<DiaryState> & { complaint?: string; complaints?: string; diagnosis?: string; objectiveStatus?: string; treatmentPlan?: string; recommendations?: string };
 				mode?: string; immediate?: boolean; complaint?: string; complaints?: string; anamnesis?: string; objectiveStatus?: string;
@@ -35,6 +41,14 @@ export function useSoapProtocolEventListener({
 			}>;
 			if (!customEvt.detail) return;
 			const detail = customEvt.detail;
+
+			// Мандат 8d/8zq: Строгая изоляция шины событий от утечки протоколов чужого пациента
+			if (detail.patientId && patientId && String(detail.patientId).trim() !== String(patientId).trim()) {
+				return;
+			}
+			if (detail.visitId && visitId && String(detail.visitId).trim() !== String(visitId).trim()) {
+				return;
+			}
 
 			let soapFromFinding: ClinicalProtocolSoap | null = null;
 			if (detail.finding) soapFromFinding = generateSoapFromOdontogramFinding(detail.finding);
@@ -83,5 +97,5 @@ export function useSoapProtocolEventListener({
 
 		window.addEventListener("dente-apply-soap-protocol", handleExternalSoapProtocol);
 		return () => { window.removeEventListener("dente-apply-soap-protocol", handleExternalSoapProtocol); };
-	}, [visitNoteFormRef, updateVisitNoteFieldRef]);
+	}, [visitNoteFormRef, updateVisitNoteFieldRef, patientId, visitId]);
 }

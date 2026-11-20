@@ -52,6 +52,11 @@ export function VisitViewDesktopLayout({ s }: VisitViewDesktopLayoutProps) {
 				onInsertToProtocol={(text) => {
 					s.appendToEMKField("objective", text);
 				}}
+				onOpenFullRadiology={(num) => {
+					s.setSelectedSurfaces([]);
+					s.setSelectedToothForMenu(null);
+					s.setIsVisiographComparisonModalOpen(true);
+				}}
 			/>
 
 			<VisitViewModals

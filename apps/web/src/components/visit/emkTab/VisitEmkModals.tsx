@@ -1,4 +1,4 @@
-import { generateQrCodeSvg, generateUuidV7 } from "@dental/shared";
+import { generateQrCodeSvg } from "@dental/shared";
 import { Check, X, Zap } from "lucide-react";
 import React from "react";
 import { InformedConsentModal } from "../../documents/DocumentsStudioModal";
@@ -36,12 +36,9 @@ export function VisitEmkModals({
 	const doctorSpecialty =
 		activeDoctor?.specialty || dashboard?.activeDoctor?.specialty || "Стоматолог-терапевт";
 
-	const inFlightSbpRef = React.useRef(false);
-
-	const sbpPayloadUrl =
-		completionResult?.sbpQrPayload ||
-		`https://qr.nspk.ru/AD1000${receiptNumber}?type=02&bank=100000000004&sum=${Math.round(totalNetRub * 100)}&cur=RUB&crc=8128`;
+	const sbpPayloadUrl = completionResult?.sbpQrPayload || "";
 	const sbpQrSvg = React.useMemo(() => {
+		if (!sbpPayloadUrl) return "";
 		return generateQrCodeSvg(sbpPayloadUrl, { size: 200 });
 	}, [sbpPayloadUrl]);
 
@@ -87,9 +84,21 @@ export function VisitEmkModals({
 							<div
 								className="flex items-center justify-center p-3 bg-white rounded-2xl border-2 border-slate-200 shadow-inner w-56 h-56 mx-auto"
 								data-testid="sbp-qr-svg-container"
-								// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized SVG generated from validated NSPK payload
-								dangerouslySetInnerHTML={{ __html: sbpQrSvg }}
-							/>
+							>
+								{sbpQrSvg ? (
+									<div
+										className="w-full h-full flex items-center justify-center"
+										// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized SVG generated from validated NSPK payload
+										dangerouslySetInnerHTML={{ __html: sbpQrSvg }}
+									/>
+								) : (
+									<div className="text-xs text-slate-500 font-medium p-4 flex flex-col items-center justify-center gap-1">
+										<Zap className="w-6 h-6 text-teal-600 mb-1" />
+										<span>QR-код формируется платёжным шлюзом</span>
+										<span className="text-[10px] text-slate-400">Перейдите в кассу для чекаута</span>
+									</div>
+								)}
+							</div>
 						</div>
 
 						<div className="space-y-1">
@@ -105,40 +114,28 @@ export function VisitEmkModals({
 						<div className="pt-3 border-t border-[var(--line)] flex gap-2">
 							<button
 								type="button"
-								onClick={async () => {
-									if (inFlightSbpRef.current) return;
-									inFlightSbpRef.current = true;
-									const mutationId = generateUuidV7();
-									try {
-										await fetch("/api/billing/fiscalize-receipt", {
-											method: "POST",
-											headers: {
-												"Content-Type": "application/json",
-												"Idempotency-Key": mutationId,
-											},
-											credentials: "same-origin",
-											body: JSON.stringify({
-												visitId: dashboard?.activeVisit?.id,
-												patientId: activePatient?.id,
-												receiptNumber,
-												totalRub: totalNetRub,
-												paymentMethod: "SBP_QR",
-												clientMutationId: mutationId,
-											}),
-										});
-									} catch {
-										// Fail-soft under Mandate 8e
-									} finally {
-										inFlightSbpRef.current = false;
-									}
-									showToast("Оплата по СБП успешно подтверждена!", "success", 4000);
+								onClick={() => {
 									setIsSbpQrModalOpen(false);
+									if (typeof window !== "undefined") {
+										window.dispatchEvent(
+											new CustomEvent("dente:open-cashbox", {
+												detail: {
+													mode: "checkout",
+													amountRub: totalNetRub,
+													patientId: activePatient?.id,
+													patientName: patientName,
+													patientPhone: activePatient?.phone ?? undefined,
+												},
+											}),
+										);
+									}
+									showToast("Переход в кассовую студию для чекаута", "info", 3000);
 								}}
 								className="flex-1 min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-extrabold bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5"
 								data-testid="btn-confirm-sbp-paid"
 							>
 								<Check size={16} className="shrink-0" />
-								<span>Подтвердить оплату</span>
+								<span>Подтвердить оплату в кассе</span>
 							</button>
 							<button
 								type="button"

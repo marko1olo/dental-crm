@@ -45,19 +45,31 @@ export function useVisitBillingDms({
 	const [activeDmsLetter, setActiveDmsLetter] = useState<ActiveDmsLetterInfo | null>(null);
 
 	useEffect(() => {
+		// Mandate 8zq: reset active letter on patient change to prevent cross-patient data leaks
+		setActiveDmsLetter(null);
+
+		if (!patientId || patientId === "pat-walkin") {
+			return;
+		}
+
 		const handleLetterAttached = (e: Event) => {
 			const customEvent = e as CustomEvent<{ letter?: DmsLetterPayloadLike; patientId?: string }>;
 			const attached = customEvent.detail?.letter;
-			if (
-				attached &&
-				(!patientId ||
-					attached.patientId === patientId ||
-					attached.patientId === "pat-1" ||
-					attached.patientId === "pat-walkin")
-			) {
-				const maxCov = Number(attached.maxCoverageRub || 0);
-				const used = Number(attached.usedAmountRub || 0);
-				const available = Math.max(0, maxCov - used);
+			// Strict patient matching: never accept pat-1 or pat-walkin or other patients' letters
+			if (attached && attached.patientId === patientId) {
+				let available = 0;
+				if (typeof attached.remainingLimitKopecks === "number") {
+					available = Math.max(0, attached.remainingLimitKopecks / 100);
+				} else if (typeof attached.limitKopecks === "number") {
+					const limit = attached.limitKopecks;
+					const used = typeof attached.usedKopecks === "number" ? attached.usedKopecks : 0;
+					available = Math.max(0, (limit - used) / 100);
+				} else {
+					const maxCov = Number(attached.maxCoverageRub || 0);
+					const used = Number(attached.usedAmountRub || 0);
+					available = Math.max(0, maxCov - used);
+				}
+
 				setActiveDmsLetter({
 					id: attached.id || "dms-letter-live",
 					letterNumber: attached.letterNumber || "ГП",
@@ -66,6 +78,7 @@ export function useVisitBillingDms({
 				});
 			}
 		};
+
 		window.addEventListener("dente:dms-letter-attached", handleLetterAttached);
 		return () => {
 			window.removeEventListener("dente:dms-letter-attached", handleLetterAttached);
@@ -84,7 +97,18 @@ export function useVisitBillingDms({
 				const typedLetters = letters as DmsLetterPayloadLike[];
 				const active = typedLetters.find((l) => l.status === "active") || typedLetters[0];
 				if (active && active.id && active.letterNumber && active.insurerName) {
-					const available = Math.max(0, Number(active.maxCoverageRub || 0) - Number(active.usedAmountRub || 0));
+					let available = 0;
+					if (typeof active.remainingLimitKopecks === "number") {
+						available = Math.max(0, active.remainingLimitKopecks / 100);
+					} else if (typeof active.limitKopecks === "number") {
+						const limit = active.limitKopecks;
+						const used = typeof active.usedKopecks === "number" ? active.usedKopecks : 0;
+						available = Math.max(0, (limit - used) / 100);
+					} else {
+						const maxCov = Number(active.maxCoverageRub || 0);
+						const used = Number(active.usedAmountRub || 0);
+						available = Math.max(0, maxCov - used);
+					}
 					setActiveDmsLetter({
 						id: active.id,
 						letterNumber: active.letterNumber,

@@ -5,6 +5,7 @@
  */
 
 import { useVisitStore } from "../../store/visitStore.js";
+import { rublesToKopecks } from "@dental/shared";
 export * from "./visitBillingPresets.js";
 
 export interface VisitBillingServiceItem {
@@ -74,12 +75,12 @@ export function syncBillingItemsToVisitStore(items: VisitBillingServiceItem[]) {
 				code804n: it.code804n || "A16.07.002",
 				name: it.title,
 				priceRub: netUnitRub,
-				priceKopecks: Math.round(netUnitRub * 100),
+				priceKopecks: rublesToKopecks(netUnitRub),
 				quantity: it.quantity || 1,
 				category: "therapy",
 				...(Number.isFinite(toothNum) ? { toothNumber: toothNum } : {}),
 				...(it.toothCode ? { toothCode: String(it.toothCode) } : {}),
-				...(it.labCostRub ? { labCostRub: it.labCostRub, labCostKopecks: Math.round(it.labCostRub * 100) } : {}),
+				...(it.labCostRub ? { labCostRub: it.labCostRub, labCostKopecks: rublesToKopecks(it.labCostRub) } : {}),
 			};
 		}),
 	);

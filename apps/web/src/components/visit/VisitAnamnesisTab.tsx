@@ -77,12 +77,6 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = (props) => {
 				onApplyPhysiologicalNorm={s.handleApplyPhysiologicalNorm}
 				onApplyToDiary={s.applyToDiary}
 			/>
-
-			<div className="sr-only pointer-events-none" aria-hidden="true">
-				<span data-testid="btn-somatic-norm-one-click" />
-				<span data-testid="btn-apply-anamnesis-to-diary" />
-				<span data-testid="btn-save-anamnesis-to-patient" />
-			</div>
 		</div>
 	);
 };

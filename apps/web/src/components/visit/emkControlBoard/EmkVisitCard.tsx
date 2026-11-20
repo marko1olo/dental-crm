@@ -7,7 +7,7 @@ import {
 	MessageSquare,
 } from "lucide-react";
 import type { CmoAuditEvaluatedVisit } from "@dental/shared";
-import { DiagnocatReportWidget } from "./DiagnocatReportWidget";
+import { ClinicalAiImageAnalysisWidget } from "./ClinicalAiImageAnalysisWidget";
 import { EmkPatientSummaryHeader } from "./EmkPatientSummaryHeader";
 
 export interface EmkVisitCardProps {
@@ -171,8 +171,8 @@ export function EmkVisitCard({
 				)}
 			</div>
 
-			{/* Diagnocat AI Widget Link */}
-			{visit.patientId && <DiagnocatReportWidget patientId={visit.patientId} />}
+			{/* Clinical AI Image Analysis Widget Link */}
+			{visit.patientId && <ClinicalAiImageAnalysisWidget patientId={visit.patientId} />}
 
 			{/* Remarks Banner if present */}
 			{visit.cmoRemarks && (

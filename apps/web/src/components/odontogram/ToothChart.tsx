@@ -128,11 +128,11 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 							type="button"
 							data-testid="tooth-chart-apply-fast-caries-btn"
 							onClick={handleFastCaries}
-							title="Зафиксировать кариес дентина K02.1"
+							title="Лечение кариеса"
 							className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium bg-[var(--paper)] dark:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shrink-0"
 						>
 							<HeartPulse className="w-3.5 h-3.5 text-amber-600" />
-							<span>Быстрая пломба K02.1</span>
+							<span>Лечение кариеса</span>
 						</button>
 					</div>
 				</div>

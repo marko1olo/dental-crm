@@ -49,10 +49,10 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 							if (onApplyNorm) onApplyNorm();
 							else if (onApplyPhysiologicalNorm) onApplyPhysiologicalNorm();
 						}}
-						className="secondary-button border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold text-xs h-[28px] px-2.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+						className="secondary-button border border-[var(--success-line)] bg-[var(--success-soft)] hover:bg-[var(--success-soft)]/80 text-[var(--success-ink)] font-bold text-xs h-[28px] px-2.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 						title="Заполнить дневник физиологической нормой («Соматически здоров»)"
 					>
-						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<ShieldCheck className="w-3.5 h-3.5 text-[var(--success-ink)] shrink-0" />
 						<span className="hidden sm:inline">Соматически здоров / Норма</span>
 						<span className="sm:hidden">Норма</span>
 					</button>
@@ -69,7 +69,7 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 					className="secondary-button border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-xs h-[28px] px-2.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
 					title="Выписать рецепты и назначения на лекарства"
 				>
-					<Pill className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+					<Pill className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 					<span className="hidden md:inline">Рецепты и назначения</span>
 					<span className="md:hidden">Рецепты</span>
 				</button>
@@ -80,13 +80,13 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 							type="button"
 							data-testid="btn-open-protocols-catalog-1142"
 							onClick={onOpenProtocolsCatalog}
-							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-l-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-l-lg px-2.5 py-1 text-xs shadow-2xs hover:border-[var(--primary)] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
 							title="Открыть полный каталог клинических протоколов"
 						>
-							<BookOpen className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+							<BookOpen className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
 							<span className="hidden sm:inline">Каталог протоколов</span>
 							<span className="sm:hidden">Протоколы</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] font-bold">
+							<span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-[var(--primary)] text-white font-bold">
 								1 142
 							</span>
 						</button>
@@ -96,7 +96,7 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 							ref={buttonRef}
 							data-testid="btn-toggle-extra-soap-menu"
 							onClick={() => setIsExtraMenuOpen((prev) => !prev)}
-							className={`border border-l-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] rounded-r-lg px-1.5 py-1 text-xs shadow-2xs hover:border-[var(--teal)] transition-colors cursor-pointer ${
+							className={`border border-l-0 border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] rounded-r-lg px-1.5 py-1 text-xs shadow-2xs hover:border-[var(--primary)] transition-colors cursor-pointer ${
 								isExtraMenuOpen ? "bg-[var(--paper-soft)]" : ""
 							}`}
 							title="Быстрые клинические нормы и бланки"

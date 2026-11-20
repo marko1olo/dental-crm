@@ -433,30 +433,11 @@ export function executeFastPrintClinicalDiary({
 	</div>
 
 	<table class="meta-table">
-		<tr>
-			<td class="meta-label">Номер карты:</td>
-			<td><strong>${cardNumber}</strong></td>
-			<td class="meta-label">Дата визита:</td>
-			<td>${visitDate}</td>
-		</tr>
-		<tr>
-			<td class="meta-label">Пациент (Ф.И.О.):</td>
-			<td colspan="3"><strong>${patientName}</strong></td>
-		</tr>
-		<tr>
-			<td class="meta-label">Дата рождения:</td>
-			<td>${birthDate}</td>
-			<td class="meta-label">Телефон:</td>
-			<td>${phone}</td>
-		</tr>
-		<tr>
-			<td class="meta-label">Адрес:</td>
-			<td colspan="3">${address}</td>
-		</tr>
-		<tr>
-			<td class="meta-label">Лечащий врач:</td>
-			<td colspan="3">${doctorName} (${specialty})</td>
-		</tr>
+		<tr><td class="meta-label">Номер карты:</td><td><strong>${cardNumber}</strong></td><td class="meta-label">Дата визита:</td><td>${visitDate}</td></tr>
+		<tr><td class="meta-label">Пациент (Ф.И.О.):</td><td colspan="3"><strong>${patientName}</strong></td></tr>
+		<tr><td class="meta-label">Дата рождения:</td><td>${birthDate}</td><td class="meta-label">Телефон:</td><td>${phone}</td></tr>
+		<tr><td class="meta-label">Адрес:</td><td colspan="3">${address}</td></tr>
+		<tr><td class="meta-label">Лечащий врач:</td><td colspan="3">${doctorName} (${specialty})</td></tr>
 	</table>
 
 	<div class="dmft-box">

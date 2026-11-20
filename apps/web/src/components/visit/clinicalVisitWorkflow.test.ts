@@ -743,7 +743,7 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 
 			assert.equal(result.visitId, "VIS-9988");
 			assert.equal(result.patientName, "Алексеев Дмитрий Игоревич");
-			assert.equal(result.form043uSaved, true);
+			assert.equal(result.form043uSaved, false); // Estimate calculated prior to post-completion network persistence
 			assert.equal(result.status, "ready_for_payment");
 
 			// Gross: 800 (Anes) + 600 (Coff) + 4500 (Caries) = 5900 ₽
@@ -758,10 +758,9 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 			assert.ok(result.statusBannerText.replace(/[\s  ]/g, "").includes("5310₽"));
 			assert.ok(result.statusBannerText.includes("Чек передан на кассу / готов к оплате"));
 
-			// SBP QR Payload
-			assert.ok(result.sbpQrUrl.startsWith("https://qr.nspk.ru/"));
-			assert.ok(result.sbpQrUrl.includes("sum=531000"));
-			assert.ok(result.sbpQrUrl.includes("cur=RUB"));
+			// Мандаты 8z, 8k, 8wy: Ноль синтетических мок-QR в сметном расчёте (QR создаёт шлюз)
+			assert.equal(result.sbpQrUrl, "");
+			assert.equal(result.invoiceId, "");
 		});
 	});
 

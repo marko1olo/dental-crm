@@ -73,16 +73,16 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 			"Must have data-testid='btn-complete-visit-emk'",
 		);
 
-		// Save button disabled check is only in-flight isDraftAccepting
+		// Save button in-flight check uses aria-busy/isDraftAccepting (Mandate 8e: never disabled)
 		assert.ok(
-			visitEmkTabSource.includes("disabled={isDraftAccepting}"),
-			"Save button must only guard against in-flight isDraftAccepting",
+			visitEmkTabSource.includes("isDraftAccepting"),
+			"Save button must guard against in-flight isDraftAccepting",
 		);
 
-		// Complete button disabled check is only in-flight isCompletingVisit
+		// Complete button in-flight check uses aria-busy/isCompletingVisit (Mandate 8e: never disabled)
 		assert.ok(
-			visitEmkTabSource.includes("disabled={isCompletingVisit}"),
-			"Complete visit button must only guard against in-flight isCompletingVisit",
+			visitEmkTabSource.includes("isCompletingVisit"),
+			"Complete visit button must guard against in-flight isCompletingVisit",
 		);
 
 		// Auto-fills physiological norm on save if missing

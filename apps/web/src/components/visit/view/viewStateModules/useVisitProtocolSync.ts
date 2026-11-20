@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { showToast } from "../../../GlobalToast";
 import { useVisitStore } from "../../../../store/visitStore";
@@ -112,7 +113,7 @@ export function useVisitProtocolSync({
 							code804n: billingItem.code804n,
 							name: billingItem.title,
 							priceRub: billingItem.unitPriceRub,
-							priceKopecks: Math.round(billingItem.unitPriceRub * 100),
+							priceKopecks: rublesToKopecks(billingItem.unitPriceRub),
 							discountRub: billingItem.discountRub,
 							discountPercent: billingItem.discountPercent,
 							quantity: billingItem.quantity || 1,

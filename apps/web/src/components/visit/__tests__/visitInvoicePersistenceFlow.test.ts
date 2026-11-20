@@ -81,40 +81,42 @@ describe("RED TEAM AUDIT: Visit Invoice Creation Pipeline & PostgreSQL 18 Contin
 		}
 	});
 
-	it("2. createVisitInvoiceInApi handles network errors gracefully via soft fallback", async () => {
+	it("2. createVisitInvoiceInApi throws structured error on network failures without leaking fake IDs", async () => {
 		const originalFetch = globalThis.fetch;
 		globalThis.fetch = (async () => {
 			throw new Error("Network offline");
 		}) as any;
 
 		try {
-			const result = await createVisitInvoiceInApi({
-				effectiveVisitId: "dce70000-0000-4000-8000-000000000001",
-				effectivePatientId: "dce70000-0000-4000-8000-000000000002",
-				result: {
-					visitId: "dce70000-0000-4000-8000-000000000001",
-					invoiceId: "INV-2026-99999",
-					receiptNumber: "ЧЕК-2026-99999",
-					patientId: "dce70000-0000-4000-8000-000000000002",
-					patientName: "Смирнов Алексей",
-					doctorName: "Доктор Иванов",
-					totalGrossRub: 3000,
-					totalDiscountRub: 0,
-					totalNetRub: 3000,
-					totalNetKop: 300000,
-					items: [],
-					status: "ready_for_payment",
-					statusBannerText: "Приём завершён",
-					sbpQrUrl: "",
-					sbpQrPayload: "",
-					form043uSaved: true,
-					completedAtIso: new Date().toISOString(),
+			await assert.rejects(
+				async () => {
+					await createVisitInvoiceInApi({
+						effectiveVisitId: "dce70000-0000-4000-8000-000000000001",
+						effectivePatientId: "dce70000-0000-4000-8000-000000000002",
+						result: {
+							visitId: "dce70000-0000-4000-8000-000000000001",
+							invoiceId: "",
+							receiptNumber: "",
+							patientId: "dce70000-0000-4000-8000-000000000002",
+							patientName: "Смирнов Алексей",
+							doctorName: "Доктор Иванов",
+							totalGrossRub: 3000,
+							totalDiscountRub: 0,
+							totalNetRub: 3000,
+							totalNetKop: 300000,
+							items: [],
+							status: "ready_for_payment",
+							statusBannerText: "Приём завершён",
+							sbpQrUrl: "",
+							sbpQrPayload: "",
+							form043uSaved: true,
+							completedAtIso: new Date().toISOString(),
+						},
+					});
 				},
-			});
-
-			assert.strictEqual(result.isPersistedInDb, false);
-			assert.strictEqual(result.invoiceId, "INV-2026-99999");
-			assert.strictEqual(result.invoiceNumber, "ЧЕК-2026-99999");
+				/Network offline|Не удалось сохранить счёт в базе данных/,
+				"Must reject when network fails instead of synthesizing fake invoice",
+			);
 		} finally {
 			globalThis.fetch = originalFetch;
 		}

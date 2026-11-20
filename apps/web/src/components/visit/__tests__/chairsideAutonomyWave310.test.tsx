@@ -28,13 +28,16 @@ describe("Mandates 8e, 8n, 8s: Chairside 043/U & Somatic Norm Autonomy Inquisito
 	const visitEmkTabPath = path.resolve(__dirname, "../VisitEmkTab.tsx");
 	const debouncedEmkPath = path.resolve(__dirname, "../emk/DebouncedEmkTextarea.tsx");
 	const emkTabDir = path.resolve(__dirname, "../emkTab");
+	const emkTabModulesDir = path.resolve(__dirname, "../emkTabModules");
 	let loadedEmkTab =
 		fs.readFileSync(visitEmkTabPath, "utf8") +
 		(fs.existsSync(debouncedEmkPath) ? fs.readFileSync(debouncedEmkPath, "utf8") : "");
-	if (fs.existsSync(emkTabDir)) {
-		for (const f of fs.readdirSync(emkTabDir)) {
-			if (/\.(tsx|ts)$/.test(f)) {
-				loadedEmkTab += "\n" + fs.readFileSync(path.join(emkTabDir, f), "utf8");
+	for (const dir of [emkTabDir, emkTabModulesDir]) {
+		if (fs.existsSync(dir)) {
+			for (const f of fs.readdirSync(dir)) {
+				if (/\.(tsx|ts)$/.test(f)) {
+					loadedEmkTab += "\n" + fs.readFileSync(path.join(dir, f), "utf8");
+				}
 			}
 		}
 	}

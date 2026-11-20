@@ -17,7 +17,7 @@ import { CephalometricAnalysisModal } from "../../radiology/CephalometricAnalysi
 import { RadiologyReportStudioModal } from "../../radiology/RadiologyReportStudioModal";
 import { CtSelectorModal } from "../../radiology/CtSelectorModal";
 import { IntraoralScan3DViewerModal } from "../../radiology/IntraoralScan3DViewerModal";
-import { VisiographComparisonModal } from "../../radiology/VisiographComparisonModal";
+import { RadiologyConsultationSplit } from "../../radiology/RadiologyConsultationSplit";
 import type { RadiologyFilmstripItem } from "../../radiology/filmstrip/filmstripTypes";
 
 export interface DiagnosticsPatientContext {
@@ -363,8 +363,9 @@ export function DiagnosticsModalsHost({
 
 			{/* Visiograph Dual-View Comparison Modal (EzDent-i Pre/Post Op) */}
 			{isComparisonModalOpen && (
-				<VisiographComparisonModal
+				<RadiologyConsultationSplit
 					isOpen={Boolean(isComparisonModalOpen)}
+					asModal={true}
 					onClose={() => setIsComparisonModalOpen?.(false)}
 					patientName={visitPatientName ?? activePatient?.fullName ?? activePatient?.name}
 					patientCardNumber={activePatient?.cardNumber ?? activePatient?.medCardNumber}

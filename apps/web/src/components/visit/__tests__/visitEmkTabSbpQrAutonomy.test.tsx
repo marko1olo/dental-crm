@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateQrCodeSvg, generateQrMatrix } from "@dental/shared";
+import { completeClinicalVisitAndAssembleEstimate } from "../clinicalVisitWorkflow";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,39 +66,39 @@ describe("Wave 24 Worker 3: VisitEmkTab Authentic SBP QR Generator & Zero Dioram
 		);
 	});
 
-	it("2. guarantees import and use of canonical ISO/IEC 18004 generateQrCodeSvg from @dental/shared", () => {
+	it("2. guarantees authentic estimate calculation and zero synthetic URL hardcoding", () => {
 		// Import check
 		assert.ok(
 			sourceCode.includes("generateQrCodeSvg"),
-			"VisitEmkTab.tsx must import generateQrCodeSvg",
-		);
-		assert.ok(
-			sourceCode.match(/import\s*\{[^}]*generateQrCodeSvg[^}]*\}\s*from\s*"@dental\/shared"/),
-			"generateQrCodeSvg must be imported from '@dental/shared'",
+			"VisitEmkModals.tsx must import generateQrCodeSvg",
 		);
 
-		// sbpPayload construction
-		assert.ok(
-			sourceCode.includes("https://qr.nspk.ru/AD1000"),
-			"VisitEmkTab.tsx must assemble canonical NSPK SBP URL 'https://qr.nspk.ru/AD1000...'",
-		);
-		assert.ok(
-			sourceCode.includes("type=02&bank=100000000004"),
-			"VisitEmkTab.tsx must set SBP type=02 and 12-digit bank code",
-		);
-		assert.ok(
-			sourceCode.includes("totalNetRub * 100"),
-			"VisitEmkTab.tsx must convert rubles to exact integer kopecks for SBP payload",
-		);
+		// Behavioral test of completeClinicalVisitAndAssembleEstimate
+		const estimate = completeClinicalVisitAndAssembleEstimate({
+			visitId: "VIS-AUTONOMY-101",
+			patientId: "PAT-AUTONOMY-101",
+			patientName: "Кузнецов П.А.",
+			doctorName: "Д-р Смирнова А.С.",
+			diary: {
+				diagnosisIcd10: "K02.1",
+				diagnosisTooth: "16",
+				treatmentDescription: "Препарирование и пломбирование кариозной полости композитом 16.",
+			},
+			discountPercent: 15,
+		});
 
-		// QR SVG memoization & container
+		assert.strictEqual(estimate.status, "ready_for_payment");
+		assert.ok(estimate.totalGrossRub > 0, "Gross sum must be positive and non-zero");
+		assert.ok(estimate.totalNetRub > 0, "Net sum must be positive and non-zero");
+		assert.strictEqual(estimate.totalNetKop, estimate.totalNetRub * 100);
+		// Мандаты 8z, 8k: Ноль синтетического хардкода ссылки в сметном движке
+		assert.strictEqual(estimate.sbpQrUrl, "");
+		assert.strictEqual(estimate.invoiceId, "");
+
+		// QR SVG container check in DOM contract
 		assert.ok(
 			sourceCode.includes("data-testid=\"sbp-qr-svg-container\""),
-			"VisitEmkTab.tsx must render data-testid='sbp-qr-svg-container'",
-		);
-		assert.ok(
-			sourceCode.includes("dangerouslySetInnerHTML={{ __html: sbpQrSvg }}"),
-			"VisitEmkTab.tsx must inject generated SVG via dangerouslySetInnerHTML",
+			"VisitEmkTab/Modals must render data-testid='sbp-qr-svg-container'",
 		);
 	});
 

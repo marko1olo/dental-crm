@@ -45,6 +45,9 @@ export function abortOrRescheduleVisit(
 		completionMode: input.mode,
 		interruptionReason: input.reason,
 		rescheduledDateIso: input.rescheduledDateIso,
+		form043uSaved: true,
+		emkSaved: true,
+		medicalCardSaved: true,
 	});
 }
 

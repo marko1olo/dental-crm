@@ -120,7 +120,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 			{/* Левая группа: 4 чипа статуса SOAP секций строго в 1 строку без многоточий */}
 			<div className="flex items-center gap-1.5 flex-nowrap shrink-0">
 				<span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1 mr-0.5 shrink-0">
-					<FileCheck2 size={13} className="text-[var(--teal)] shrink-0" />
+					<FileCheck2 size={13} className="text-[var(--primary)] shrink-0" />
 					<span className="hidden lg:inline">Дневник визита:</span>
 				</span>
 
@@ -130,14 +130,14 @@ export const EmkSoapVisibilityTracker: React.FC<
 					onClick={() => scrollToSection("emk-complaints-section")}
 					className={`soap-status-chip inline-flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
 						hasComplaint
-							? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
+							? "bg-[var(--success-soft)] border-[var(--success-line)] text-[var(--success-ink)] hover:bg-[var(--success-soft)]/80"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 					}`}
 					title={visitNoteForm?.complaint || "Жалобы не заполнены"}
 					data-testid="chip-soap-status-complaint"
 				>
 					{hasComplaint ? (
-						<CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<CheckCircle2 size={11} className="text-[var(--success-ink)] shrink-0" />
 					) : (
 						<Circle size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 					)}
@@ -155,14 +155,14 @@ export const EmkSoapVisibilityTracker: React.FC<
 					onClick={() => scrollToSection("emk-objective-status-section")}
 					className={`soap-status-chip inline-flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
 						hasObjective
-							? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
+							? "bg-[var(--success-soft)] border-[var(--success-line)] text-[var(--success-ink)] hover:bg-[var(--success-soft)]/80"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 					}`}
 					title={visitNoteForm?.objectiveStatus || "Объективный статус не заполнен"}
 					data-testid="chip-soap-status-objective"
 				>
 					{hasObjective ? (
-						<CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<CheckCircle2 size={11} className="text-[var(--success-ink)] shrink-0" />
 					) : (
 						<Circle size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 					)}
@@ -180,14 +180,14 @@ export const EmkSoapVisibilityTracker: React.FC<
 					onClick={() => scrollToSection("emk-diagnosis-protocol-section")}
 					className={`soap-status-chip inline-flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
 						hasDiagnosis
-							? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
+							? "bg-[var(--success-soft)] border-[var(--success-line)] text-[var(--success-ink)] hover:bg-[var(--success-soft)]/80"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 					}`}
 					title={visitNoteForm?.diagnosis || "Диагноз не указан"}
 					data-testid="chip-soap-status-diagnosis"
 				>
 					{hasDiagnosis ? (
-						<CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<CheckCircle2 size={11} className="text-[var(--success-ink)] shrink-0" />
 					) : (
 						<Circle size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 					)}
@@ -203,7 +203,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 					onClick={() => scrollToSection("emk-treatment-section")}
 					className={`soap-status-chip inline-flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
 						hasTreatment
-							? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
+							? "bg-[var(--success-soft)] border-[var(--success-line)] text-[var(--success-ink)] hover:bg-[var(--success-soft)]/80"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
 					}`}
 					title={
@@ -214,7 +214,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 					data-testid="chip-soap-status-treatment"
 				>
 					{hasTreatment ? (
-						<CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<CheckCircle2 size={11} className="text-[var(--success-ink)] shrink-0" />
 					) : (
 						<Circle size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 					)}
@@ -232,7 +232,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 						type="button"
 						onClick={handleContinueClick}
 						data-testid="continue-endo-btn"
-						className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md text-[10.5px] sm:text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap active:scale-95"
+						className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md text-[10.5px] sm:text-[11px] font-bold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap active:scale-95"
 						title={`Продолжить 2-й этап эндодонтического лечения зуба ${effectiveSnapshot.toothNumber} с визита от ${effectiveSnapshot.date}`}
 					>
 						<RotateCw size={12} className="shrink-0" />
@@ -248,8 +248,8 @@ export const EmkSoapVisibilityTracker: React.FC<
 				<span
 					className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 ${
 						isComplete
-							? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30"
-							: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30"
+							? "bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)]"
+							: "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]"
 					}`}
 					data-testid="badge-soap-completion-status"
 				>

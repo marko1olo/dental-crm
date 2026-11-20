@@ -85,8 +85,17 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 			}
 
 			try {
+				const idempotencyKey =
+					typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+						? crypto.randomUUID()
+						: `draft-save-${effectiveVisitId}-${Date.now()}`;
 				const response = await fetchWithHandling(`/api/visits/${effectiveVisitId}/draft/autosave`, {
-					method: "PUT", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						"Idempotency-Key": idempotencyKey,
+						...denteAdminSecretRequestHeaders(),
+					},
 					body: JSON.stringify({
 						patientId: effectivePatientId,
 						selectedSpecialty: (selectedSpecialty as DentalSpecialty) || "universal",

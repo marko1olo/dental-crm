@@ -21,11 +21,10 @@ export function VisitToolbarMoreMenuItems({
 				<FlaskConical className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" />
 				<div className="flex flex-col"><span className="font-semibold">Наряд в зуботехническую лабораторию (ЗТЛ)</span><span className="text-[10px] text-[var(--muted)]">Заказ коронок, мостов, вкладок, All-on-4</span></div>
 			</button>
-			<button type="button" onClick={() => { onClose(); handlePrintClinicalDiaryFast(); }} data-testid="visit-more-action-print-medical-card" className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]" role="menuitem">
+			<button type="button" onClick={() => { onClose(); handlePrintClinicalDiaryFast(); }} data-testid="visit-more-action-print-043u" className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]" role="menuitem">
 				<Printer className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" />
 				<div className="flex flex-col"><span className="font-semibold">Медицинская карта приёма</span><span className="text-[10px] text-[var(--muted)]">С текущим штампом (черновик / подписано врачом)</span></div>
 			</button>
-			<span data-testid="visit-more-action-print-043u" className="hidden" aria-hidden="true" onClick={handlePrintClinicalDiaryFast} />
 			<button type="button" onClick={() => { onClose(); if (typeof handlePrintCompletedActFast === "function") handlePrintCompletedActFast(); else showToast("Печать Акта выполненных работ", "info"); }} data-testid="visit-more-action-print-act" className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]" role="menuitem">
 				<FileText className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--ink)] shrink-0" />
 				<div className="flex flex-col"><span className="font-semibold">Печать Акта выполненных работ</span><span className="text-[10px] text-[var(--muted)]">Реестр оказанных медицинских услуг</span></div>

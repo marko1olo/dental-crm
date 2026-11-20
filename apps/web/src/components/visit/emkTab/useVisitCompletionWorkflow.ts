@@ -172,13 +172,15 @@ export function useVisitCompletionWorkflow({
 				result,
 			});
 
-			const finalCompletionResult: ClinicalVisitCompletionResult = createdInvoice.isPersistedInDb
-				? {
-						...result,
-						invoiceId: createdInvoice.invoiceId,
-						receiptNumber: createdInvoice.invoiceNumber,
-				  }
-				: result;
+			if (!createdInvoice?.isPersistedInDb || !createdInvoice.invoiceId) {
+				throw new Error("Счёт не был сохранён в базе данных. Повторите попытку.");
+			}
+
+			const finalCompletionResult: ClinicalVisitCompletionResult = {
+				...result,
+				invoiceId: createdInvoice.invoiceId,
+				receiptNumber: createdInvoice.invoiceNumber,
+			};
 
 			staffTelemetryService.recordAction({
 				actionType: "custom_action",
@@ -246,9 +248,9 @@ export function useVisitCompletionWorkflow({
 					: "Не удалось рассчитать смету приёма. Проверьте данные и повторите расчёт.";
 			setCompletionError(errMsg);
 			showToast(
-				"Ошибка расчёта сметы. Нажмите «Повторить расчёт сметы»",
+				`Ошибка формирования счёта: ${errMsg}. Нажмите «Повторить расчёт сметы»`,
 				"error",
-				5000,
+				6000,
 			);
 			return false;
 		} finally {

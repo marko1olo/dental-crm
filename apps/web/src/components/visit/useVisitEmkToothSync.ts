@@ -18,5 +18,5 @@ export function useVisitEmkToothSync({
 
 	useOdontogramHydration({ patientId, visitNoteFormRef, updateVisitNoteFieldRef });
 	useOdontogramEventsListener(patientId);
-	useSoapProtocolEventListener({ visitNoteFormRef, updateVisitNoteFieldRef });
+	useSoapProtocolEventListener({ patientId, visitNoteFormRef, updateVisitNoteFieldRef });
 }

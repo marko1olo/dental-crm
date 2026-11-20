@@ -7,13 +7,18 @@ import type {
 } from "@dental/shared";
 
 /**
- * Diagnocat AI report widget data item.
+ * Clinical AI report widget data item (Mandate 8ap).
  */
-export type DiagnocatReport = {
+export type ClinicalAiReport = {
 	readonly id: string;
 	readonly reportUrl: string;
 	readonly createdAt: string | null;
 };
+
+/**
+ * Backward-compatible alias for Diagnocat AI report widget.
+ */
+export type DiagnocatReport = ClinicalAiReport;
 
 /**
  * Rejection / Handoff modal props.

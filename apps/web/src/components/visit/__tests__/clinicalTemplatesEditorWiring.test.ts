@@ -277,8 +277,8 @@ describe("Clinical Templates Editor Wiring, Defects & Doctor Autonomy Audit", ()
 			);
 		});
 
-		it("ФАКТ: Каталог пресетов clinicalSoapPresets (44 шт.) и DOCTOR_1CLICK_AUTOPILOT_PRESETS (9 шт.) дополняют StomX", () => {
-			assert.strictEqual(CLINICAL_SOAP_PRESETS.length, 44, "44 пресета в clinicalSoapPresets");
+		it("ФАКТ: Каталог пресетов clinicalSoapPresets (45 шт.) и DOCTOR_1CLICK_AUTOPILOT_PRESETS (9 шт.) дополняют StomX", () => {
+			assert.strictEqual(CLINICAL_SOAP_PRESETS.length, 45, "45 пресетов в clinicalSoapPresets");
 			assert.strictEqual(DOCTOR_1CLICK_AUTOPILOT_PRESETS.length, 9, "9 экспресс-автопилотов в clinicalSoapPresets (включая острую боль)");
 			assert.strictEqual(Object.keys(CANONICAL_SOAP_TEMPLATES).length, 18, "18 канонических шаблонов СтАР");
 		});

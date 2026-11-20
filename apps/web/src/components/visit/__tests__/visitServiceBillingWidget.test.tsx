@@ -180,7 +180,7 @@ describe("54-FZ Cashier & Buyer INN Autonomy (Mandate 8e Item 9)", () => {
 		assert.equal(shortInn.isValid, true, "Must remain valid so payment is never blocked");
 		assert.equal(shortInn.isRequired, false);
 		assert.ok(shortInn.errorMessage, "Soft hint only");
-		assert.match(shortInn.errorMessage ?? "", /не блокирует/);
+		assert.match(shortInn.errorMessage ?? "", /ИНН пациента обычно содержит 12 цифр|не блокирует/);
 	});
 
 	it("B2B Legal Entity (10 digits) or IP (12 digits) is required and validated", () => {

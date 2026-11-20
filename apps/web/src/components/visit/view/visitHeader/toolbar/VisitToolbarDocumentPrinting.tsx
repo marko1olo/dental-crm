@@ -23,14 +23,13 @@ export function VisitToolbarDocumentPrinting({
 			<button
 				type="button"
 				onClick={handlePrintClinicalDiaryFast}
-				data-testid="btn-visit-fast-print-medical-card"
+				data-testid="btn-visit-fast-print-043u"
 				className="icon-button secondary-button min-h-[44px] sm:min-h-[36px] min-w-[44px] sm:min-w-[36px] sm:h-9 sm:w-9 h-11 w-11 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 rounded-xl transition-colors"
 				title="Медицинская карта приёма (печать со штампом)"
 				aria-label="Печать медицинской карты приёма"
 			>
 				<Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
 			</button>
-			<span data-testid="btn-visit-fast-print-043u" className="hidden" aria-hidden="true" onClick={handlePrintClinicalDiaryFast} />
 
 			{/* Печать Акта выполненных работ */}
 			<button

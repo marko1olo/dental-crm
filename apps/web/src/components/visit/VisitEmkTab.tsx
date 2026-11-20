@@ -27,12 +27,6 @@ export {
 };
 
 export function VisitEmkTab(props: VisitEmkTabProps) {
-	// noteTextOfAnotherVisit: "В полях остался текст предыдущего приёма. Скопируйте нужные данные"
-	// Norm: complaint: "Жалоб на момент осмотра активно не предъявляет (профилактический осмотр)."
-	// visitNoteForm?.anamnesis || "Соматически здоров. Аллергоанамнез не отягощен."
-	// objectiveStatus: "Слизистая оболочка полости рта физиологической окраски" / "Слизистая оболочка полости рта бледно-розовая, влажная."
-	// diagnosis: "Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)" / "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)"
-	// dente-apply-soap-protocol debounceMs: 600; visibilitychange, pagehide, beforeunload, dente-telephony-incoming-call
 	const { dashboard, openVisitId, isDraftAccepting } = props;
 	const activePatient: VisitPatientEntity | null | undefined = props.activePatient;
 	const activeDoctor: VisitDoctorEntity | null | undefined = props.activeDoctor;

@@ -102,8 +102,12 @@ describe("АРМ Врача: Автономия смет, согласий и Ф
 			.map((p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""))
 			.join("\n");
 
-		// Проверка кнопок быстрого доступа к согласиям и 043/у
-		assert.ok(visitViewSource.includes("btn-visit-fast-print-043u"), "Кнопка быстрой печати 043/у присутствует в шапке");
+		// Проверка кнопок быстрого доступа к согласиям и медицинской карте
+		assert.ok(
+			visitViewSource.includes("btn-visit-fast-print-card") ||
+				visitViewSource.includes("btn-visit-fast-print-043u"),
+			"Кнопка быстрой печати медицинской карты присутствует в шапке",
+		);
 		assert.ok(visitViewSource.includes("btn-visit-fast-print-consent-1051n"), "Кнопка печати ИДС присутствует в панели согласий");
 		assert.ok(visitViewSource.includes("visit-more-action-print-consent"), "Пункт печати ИДС присутствует в меню дополнительных действий");
 		assert.ok(visitViewSource.includes("visit-plan-expired-soft-notice"), "Мягкое предупреждение о плане > 30 дней присутствует");

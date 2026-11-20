@@ -1,5 +1,6 @@
 import { DEFAULT_CHAIRSIDE_SERVICES } from "../visitBillingTypes.js";
 import { isDemoShowcaseMode, isDemoPatientId } from "../../../lib/demoMode.js";
+import { kopecksToRubles } from "@dental/shared";
 import type { ChairsideSummaryServiceItem, VisitSummaryPatient, VisitSummaryToothItem } from "./types";
 
 export function formatPatientFullName(p: VisitSummaryPatient | null): string {
@@ -64,7 +65,7 @@ export function resolveEffectiveDepositRub(
 	const balance = Number(
 		patient?.depositRub ??
 		patient?.balanceRub ??
-		(typeof patient?.balanceKopecks === "number" ? patient.balanceKopecks / 100 : undefined) ??
+		(typeof patient?.balanceKopecks === "number" ? kopecksToRubles(patient.balanceKopecks) : undefined) ??
 		(activePatientBalanceRub ?? 0),
 	);
 	return Math.max(0, balance);

@@ -51,19 +51,19 @@ export function EmkAnesthesiaAlert({
 
 	return (
 		<div
-			className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2.5 text-xs text-amber-900 dark:text-amber-200 min-w-0"
+			className="px-3 py-2 rounded-xl bg-[var(--warning-soft)] border border-[var(--warning-line)] flex items-center justify-between gap-2.5 text-xs text-[var(--warning-ink)] min-w-0"
 			role="status"
 			data-testid="emk-passive-anesthesia-alert"
 		>
 			<div className="flex items-center gap-1.5 min-w-0">
-				<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+				<AlertTriangle className="w-4 h-4 text-[var(--warning-ink)] shrink-0" />
 				<span className="font-medium break-words">{warningText}</span>
 			</div>
 			{onSelectSafeDrug && (hasSulfiteOrAsthma || hasCardio || hasNovocaine) && (
 				<button
 					type="button"
 					onClick={() => onSelectSafeDrug("scandonest_3")}
-					className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-200 dark:bg-amber-800 text-amber-950 dark:text-amber-100 hover:bg-amber-300 shrink-0 cursor-pointer"
+					className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--warning-soft)] border border-[var(--warning-line)] text-[var(--warning-ink)] hover:bg-[var(--paper-soft)] shrink-0 cursor-pointer transition-colors"
 				>
 					Скандонест 3%
 				</button>
