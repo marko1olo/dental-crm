@@ -33,6 +33,7 @@ export interface NormalizedImplantSystem {
 	readonly healingCapDiametersMm: readonly number[];
 	readonly healingCapHeightsMm: readonly number[];
 	readonly defaultKitPriceRub: number;
+	readonly defaultKitPriceKopecks: number;
 	readonly defaultArticlePrefix: string;
 }
 
@@ -61,6 +62,7 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<NormalizedBrandId, NormalizedImp
 		healingCapDiametersMm: [4.0, 4.5, 5.0, 6.0],
 		healingCapHeightsMm: [2.0, 3.0, 4.0, 5.0, 7.0],
 		defaultKitPriceRub: 12500,
+		defaultKitPriceKopecks: 1250000,
 		defaultArticlePrefix: "TS3S4010S",
 	},
 	straumann: {
@@ -87,6 +89,7 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<NormalizedBrandId, NormalizedImp
 		healingCapDiametersMm: [3.5, 4.5, 5.5],
 		healingCapHeightsMm: [2.0, 3.5, 5.0],
 		defaultKitPriceRub: 32000,
+		defaultKitPriceKopecks: 3200000,
 		defaultArticlePrefix: "021.2310",
 	},
 	nobel_biocare: {
@@ -113,6 +116,7 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<NormalizedBrandId, NormalizedImp
 		healingCapDiametersMm: [3.6, 5.0],
 		healingCapHeightsMm: [3.0, 5.0],
 		defaultKitPriceRub: 35000,
+		defaultKitPriceKopecks: 3500000,
 		defaultArticlePrefix: "NP-35115",
 	},
 	dentium: {
@@ -139,6 +143,7 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<NormalizedBrandId, NormalizedImp
 		healingCapDiametersMm: [4.0, 4.5, 5.5],
 		healingCapHeightsMm: [2.0, 3.5, 5.0],
 		defaultKitPriceRub: 14500,
+		defaultKitPriceKopecks: 1450000,
 		defaultArticlePrefix: "FX4510",
 	},
 	astra_tech: {
@@ -165,6 +170,7 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<NormalizedBrandId, NormalizedImp
 		healingCapDiametersMm: [4.0, 4.8],
 		healingCapHeightsMm: [2.5, 4.0, 6.0],
 		defaultKitPriceRub: 31000,
+		defaultKitPriceKopecks: 3100000,
 		defaultArticlePrefix: "EV-42110",
 	},
 	anyridge: {
@@ -191,6 +197,7 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<NormalizedBrandId, NormalizedImp
 		healingCapDiametersMm: [4.0, 4.5, 5.5],
 		healingCapHeightsMm: [3.0, 4.0, 5.5],
 		defaultKitPriceRub: 16500,
+		defaultKitPriceKopecks: 1650000,
 		defaultArticlePrefix: "AR4010",
 	},
 	ankylos: {
@@ -217,6 +224,7 @@ export const NORMALIZED_IMPLANT_SYSTEMS: Record<NormalizedBrandId, NormalizedImp
 		healingCapDiametersMm: [3.5, 4.5],
 		healingCapHeightsMm: [1.5, 3.0, 4.5],
 		defaultKitPriceRub: 33000,
+		defaultKitPriceKopecks: 3300000,
 		defaultArticlePrefix: "A-B110-CX",
 	},
 };

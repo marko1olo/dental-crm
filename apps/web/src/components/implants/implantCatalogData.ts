@@ -189,6 +189,50 @@ export const CANONICAL_IMPLANT_SYSTEMS: Record<CanonicalImplantSystemId, Canonic
 		patientPriceKopecks: 4200000n,
 		defaultArticlePrefix: "AR4010",
 	},
+	ankylos: {
+		id: "ankylos",
+		brandName: "Ankylos",
+		lineName: "C/X TissueCare",
+		countryRu: "Германия",
+		manufacturer: "Dentsply Sirona Implants",
+		connectionType: "conical",
+		connectionDescription: "Герметичный конус TissueCare Connection без микроподвижности",
+		screwdriverType: "Hex 1.0 mm",
+		screwdriverAliasRu: "Шестигранник 1.0 мм (Ankylos)",
+		diametersMm: [3.5, 4.5, 5.5],
+		lengthsMm: [8.0, 9.5, 11.0, 14.0],
+		defaultDiameterMm: 4.5,
+		defaultLengthMm: 11.0,
+		minInsertionTorqueNcm: 15,
+		defaultTorqueNcm: 35,
+		maxSafeTorqueNcm: 25,
+		recommendedIsqRange: [65, 80],
+		implantCostKopecks: 3300000n,
+		patientPriceKopecks: 6900000n,
+		defaultArticlePrefix: "A-B110-CX",
+	},
+	mis: {
+		id: "mis",
+		brandName: "MIS Implants",
+		lineName: "SEVEN / V3",
+		countryRu: "Израиль",
+		manufacturer: "MIS Implants Technologies Ltd.",
+		connectionType: "conical",
+		connectionDescription: "Внутренний шестигранник / конус C1",
+		screwdriverType: "Hex 1.25 mm",
+		screwdriverAliasRu: "Шестигранник 1.25 мм (MIS)",
+		diametersMm: [3.3, 3.75, 4.2, 5.0],
+		lengthsMm: [8.0, 10.0, 11.5, 13.0],
+		defaultDiameterMm: 3.75,
+		defaultLengthMm: 10.0,
+		minInsertionTorqueNcm: 20,
+		defaultTorqueNcm: 35,
+		maxSafeTorqueNcm: 45,
+		recommendedIsqRange: [68, 82],
+		implantCostKopecks: 1950000n,
+		patientPriceKopecks: 4500000n,
+		defaultArticlePrefix: "MF7-3710",
+	},
 };
 
 export const FDI_SURGICAL_PRESETS: readonly number[] = [16, 15, 14, 11, 21, 24, 25, 26, 36, 46];
@@ -200,6 +244,8 @@ export function resolveImplantSystem(key: string): CanonicalImplantSystem {
 	if (normalized.includes("dentium")) return CANONICAL_IMPLANT_SYSTEMS.dentium;
 	if (normalized.includes("astra")) return CANONICAL_IMPLANT_SYSTEMS.astra_tech;
 	if (normalized.includes("anyridge") || normalized.includes("megagen")) return CANONICAL_IMPLANT_SYSTEMS.anyridge;
+	if (normalized.includes("ankylos")) return CANONICAL_IMPLANT_SYSTEMS.ankylos;
+	if (normalized.includes("mis")) return CANONICAL_IMPLANT_SYSTEMS.mis;
 	return CANONICAL_IMPLANT_SYSTEMS.osstem;
 }
 
@@ -222,12 +268,12 @@ export function getRecommendedTorqueZone(torqueNcm: number): {
 	readonly colorClass: string;
 } {
 	if (torqueNcm < 35) {
-		return { status: "under_torque", labelRu: "Низкий торк (<35 Н·см) — риск микродвижений", colorClass: "text-[var(--warning,#f59e0b)]" };
+		return { status: "under_torque", labelRu: "Низкий торк (<35 Н·см) — риск микродвижений", colorClass: "text-[var(--warning)]" };
 	}
 	if (torqueNcm <= 45) {
 		return { status: "optimal_green", labelRu: "Оптимальная первичная стабильность (35–45 Н·см)", colorClass: "text-[var(--primary)]" };
 	}
-	return { status: "over_torque", labelRu: "Повышенный торк (>45 Н·см) — риск ишемии кортикала", colorClass: "text-[var(--danger,#f43f5e)]" };
+	return { status: "over_torque", labelRu: "Повышенный торк (>45 Н·см) — риск ишемии кортикала", colorClass: "text-[var(--danger)]" };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

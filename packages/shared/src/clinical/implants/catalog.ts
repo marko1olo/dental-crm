@@ -45,10 +45,12 @@ export type ImplantBrand =
 export type CanonicalImplantSystemId =
 	| "osstem"
 	| "straumann"
-	| "dentium"
 	| "nobel_biocare"
+	| "dentium"
 	| "astra_tech"
-	| "anyridge";
+	| "anyridge"
+	| "ankylos"
+	| "mis";
 
 export interface ImplantSystemSpec {
 	id: ImplantBrand;
@@ -300,7 +302,7 @@ export function generateWarrantyPassportRecord(
 		isqDay0: data.isqDay0 ?? data.isqScore ?? spec.recommendedIsq,
 		boneDensity: data.boneDensity || "D2",
 		capType: normalizeCapTypeToKind(data.capType),
-		lotNumber: data.lotNumber?.trim() || "LOT-2026-X1",
+		lotNumber: data.lotNumber?.trim() || "",
 		serialNumber: data.serialNumber?.trim() || undefined,
 		catalogArticle: data.catalogArticle || `${spec.id.toUpperCase()}-${data.diameterMm ?? spec.defaultDiameterMm}-${data.lengthMm ?? spec.defaultLengthMm}`,
 		dateIso: data.dateIso || data.installationDateIso || new Date().toISOString().split("T")[0] || "2026-01-01",

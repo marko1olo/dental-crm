@@ -291,7 +291,7 @@ export function evaluateImplantObstacleClearance(
 		return {
 			clearanceMm,
 			status: "danger",
-			statusLabelRu: `ОПАСНО: вторжение в зону канала (${clearanceMm.toFixed(1)} мм < 0.5 мм)`,
+			statusLabelRu: `Опасно: вторжение в зону канала (${clearanceMm.toFixed(1)} мм < 0.5 мм)`,
 			badgeColorClass: "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger)]/30",
 		};
 	}

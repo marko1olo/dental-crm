@@ -187,7 +187,7 @@ describe("🏛️ Canonical Implantology & Surgical SSOT Suite (DENTE CRM)", () 
 			isGbrPerformed: false,
 		});
 
-		assert.ok(diary.includes("ДНЕВНИК ХИРУРГИЧЕСКОГО ПРИЁМА"), "Header must be present");
+		assert.ok(diary.includes("Дневник хирургического приёма"), "Header must be present");
 		assert.ok(diary.includes("зуб 46"), "Tooth FDI must be specified");
 		assert.ok(diary.includes("Misch: D2"), "Bone density must be in diary");
 		assert.ok(diary.includes("Osstem TS III SA"), "Implant system line must be recorded");

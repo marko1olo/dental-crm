@@ -3,6 +3,7 @@
  * Декомпозирован из implantCatalogData.ts по Мандатам 8b и 8zi.
  */
 
+import { formatKopecksToRub } from "@dental/shared";
 import { CANONICAL_IMPLANT_SYSTEMS as DICOM_CANONICAL_IMPLANT_SYSTEMS } from "../dicom/implantCatalog";
 import type { ImplantBrand, PlatformType } from "./implantBrandTypes";
 import { BRAND_KEY_MAP } from "./implantBrandTypes";
@@ -240,12 +241,6 @@ export function calculateKitPriceKopecks(
 	const totalKitKopecks =
 		fixtureKopecks + healingCapKopecks + transferKopecks + abutmentKopecks + guidedSleeveKopecks;
 
-	const rubles = totalKitKopecks / 100;
-	const formatted = `${rubles.toLocaleString("ru-RU", {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	})} ₽`;
-
 	return {
 		fixtureKopecks,
 		healingCapKopecks,
@@ -253,6 +248,6 @@ export function calculateKitPriceKopecks(
 		abutmentKopecks,
 		guidedSleeveKopecks,
 		totalKitKopecks,
-		totalRublesFormatted: formatted,
+		totalRublesFormatted: formatKopecksToRub(totalKitKopecks),
 	};
 }

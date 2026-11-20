@@ -47,7 +47,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		country: "Швейцария",
 		countryCode: "CH",
 		popularLines: ["Bone Level Tapered BLT", "BLX"],
-		defaultHexColor: "#0284c7",
+		defaultHexColor: "var(--primary)",
 	},
 	nobel_biocare: {
 		id: "nobel_biocare",
@@ -55,7 +55,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		country: "Швейцария / Швеция",
 		countryCode: "CH/SE",
 		popularLines: ["NobelActive", "NobelReplace CC"],
-		defaultHexColor: "#e11d48",
+		defaultHexColor: "var(--danger)",
 	},
 	osstem: {
 		id: "osstem",
@@ -63,7 +63,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		country: "Южная Корея",
 		countryCode: "KR",
 		popularLines: ["TS III SA", "TS III CA"],
-		defaultHexColor: "#16a34a",
+		defaultHexColor: "var(--primary)",
 	},
 	dentium: {
 		id: "dentium",
@@ -71,7 +71,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		country: "Южная Корея",
 		countryCode: "KR",
 		popularLines: ["SuperLine", "SimpleLine II"],
-		defaultHexColor: "#f59e0b",
+		defaultHexColor: "var(--warning)",
 	},
 	ankylos: {
 		id: "ankylos",
@@ -79,7 +79,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		country: "Германия (Dentsply Sirona)",
 		countryCode: "DE",
 		popularLines: ["C/X", "TissueCare"],
-		defaultHexColor: "#059669",
+		defaultHexColor: "var(--primary)",
 	},
 	astra_tech: {
 		id: "astra_tech",
@@ -87,7 +87,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		country: "Швеция",
 		countryCode: "SE",
 		popularLines: ["OsseoSpeed EV"],
-		defaultHexColor: "#8b5cf6",
+		defaultHexColor: "var(--primary)",
 	},
 	mis: {
 		id: "mis",
@@ -95,7 +95,7 @@ export const IMPLANT_BRANDS_METADATA: Record<ImplantBrand, BrandMetadata> = {
 		country: "Израиль",
 		countryCode: "IL",
 		popularLines: ["SEVEN", "V3", "C1"],
-		defaultHexColor: "#a855f7",
+		defaultHexColor: "var(--primary)",
 	},
 };
 

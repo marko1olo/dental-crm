@@ -53,7 +53,7 @@ export const AnatomicalJawArchSchema: React.FC<{
 				{isTarget ? (
 					<>
 						<rect x={x - 12} y={y - 11} width="24" height="22" rx="5" fill="var(--primary)" stroke="var(--primary)" strokeWidth="1.5" />
-						<circle cx={x} cy={isUpper ? y - 13 : y + 13} r="2.5" fill="#f59e0b" />
+						<circle cx={x} cy={isUpper ? y - 13 : y + 13} r="2.5" fill="var(--warning)" />
 						<text x={x} y={y + 3.5} textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="900" fontFamily="monospace">
 							{tooth}
 						</text>
@@ -73,7 +73,7 @@ export const AnatomicalJawArchSchema: React.FC<{
 	return (
 		<div className="anatomical-jaw-arch-container p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1.5" data-testid="anatomical-jaw-arch">
 			<div className="flex items-center justify-between text-xs flex-wrap gap-1">
-				<span className="font-black uppercase tracking-wider text-[var(--muted)] text-[10px]">
+				<span className="font-bold tracking-wider text-[var(--muted)] text-[10px]">
 					Анатомическая зубная дуга FDI (Локализация имплантата):
 				</span>
 				<div className="flex items-center gap-2 text-[11px] font-mono">
@@ -87,11 +87,11 @@ export const AnatomicalJawArchSchema: React.FC<{
 				<svg viewBox="0 0 490 114" className="w-full h-auto max-h-[140px] text-[var(--ink)] select-none" role="img" aria-label={`Схема зубного ряда #${selectedFdi}`}>
 					<path d="M 24 22 Q 242 46 460 22" fill="none" stroke="var(--line)" strokeDasharray="3 3" opacity="0.5" />
 					<path d="M 24 88 Q 242 64 460 88" fill="none" stroke="var(--line)" strokeDasharray="3 3" opacity="0.5" />
-					<line x1="242" y1="14" x2="242" y2="98" stroke="var(--line-strong, #94a3b8)" strokeDasharray="2 2" opacity="0.4" />
-					<text x="242" y="11" textAnchor="middle" fill="var(--muted)" fontSize="8" fontWeight="800" letterSpacing="0.06em">ВЕРХНЯЯ ЧЕЛЮСТЬ (MAXILLA)</text>
-					<text x="242" y="108" textAnchor="middle" fill="var(--muted)" fontSize="8" fontWeight="800" letterSpacing="0.06em">НИЖНЯЯ ЧЕЛЮСТЬ (MANDIBULA)</text>
-					<text x="18" y="11" fill="var(--muted)" fontSize="7.5" fontWeight="700">ПРАВО (R)</text>
-					<text x="466" y="11" textAnchor="end" fill="var(--muted)" fontSize="7.5" fontWeight="700">ЛЕВО (L)</text>
+					<line x1="242" y1="14" x2="242" y2="98" stroke="var(--line-strong)" strokeDasharray="2 2" opacity="0.4" />
+					<text x="242" y="11" textAnchor="middle" fill="var(--muted)" fontSize="8" fontWeight="800" letterSpacing="0.06em">Верхняя челюсть (Maxilla)</text>
+					<text x="242" y="108" textAnchor="middle" fill="var(--muted)" fontSize="8" fontWeight="800" letterSpacing="0.06em">Нижняя челюсть (Mandibula)</text>
+					<text x="18" y="11" fill="var(--muted)" fontSize="7.5" fontWeight="700">Право (R)</text>
+					<text x="466" y="11" textAnchor="end" fill="var(--muted)" fontSize="7.5" fontWeight="700">Лево (L)</text>
 					{UPPER_JAW_TEETH.map((tooth, idx) => renderTooth(tooth, idx, true))}
 					{LOWER_JAW_TEETH.map((tooth, idx) => renderTooth(tooth, idx, false))}
 				</svg>
@@ -245,7 +245,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			{/* Штрих-код и Место для наклейки */}
 			<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
 				<div className="flex flex-col justify-between space-y-1">
-					<span className="text-[11px] font-black uppercase tracking-wider text-[var(--muted)]">Идентификация изделия (REF / LOT / SN):</span>
+					<span className="text-[11px] font-bold tracking-wider text-[var(--muted)]">Идентификация изделия (REF / LOT / SN):</span>
 					<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-mono text-center">
 						<svg className="passport-barcode-svg w-full h-8 text-[var(--ink)]" data-testid="passport-barcode-svg" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
 							{[true, false, true, true, false, true, false, true, true, false, true, true, true, false, true, false, false, true, true, false, true, false, true, true, false, true, false, true, true, false, true, true, false, false, true, true, true, false, true, false, true, false, true, true, true, false, true, false].map((isBar, idx) => (
@@ -255,8 +255,8 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 						<span className="text-[10px] tracking-widest text-[var(--muted)] block mt-0.5 truncate">{barcodeSummary}</span>
 					</div>
 				</div>
-				<div className="border-2 border-dashed border-[var(--line-strong,#94a3b8)] rounded-xl p-3 flex flex-col items-center justify-center text-center bg-[var(--paper)]">
-					<span className="text-[10px] font-black uppercase text-[var(--muted)] tracking-wider">Место для наклейки со стерильной упаковки</span>
+				<div className="border-2 border-dashed border-[var(--line-strong)] rounded-xl p-3 flex flex-col items-center justify-center text-center bg-[var(--paper)]">
+					<span className="text-[10px] font-bold text-[var(--muted)] tracking-wider">Место для наклейки со стерильной упаковки</span>
 					<span className="text-[9px] text-[var(--muted)] mt-1">Оригинальный стерильный стикер производителя (REF, LOT, SN)</span>
 				</div>
 			</div>
@@ -304,15 +304,15 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 						<QrCode size={26} className="text-[var(--primary)] shrink-0" />
 					)}
 					<div className="text-[10px] leading-tight font-mono">
-						<span className="font-bold text-[var(--ink)] block">QR VERIFIED</span>
+						<span className="font-bold text-[var(--ink)] block">Верифицирован QR</span>
 						<span className="text-[var(--muted)] truncate block max-w-[120px]">{data.passportId || "PASSPORT"}</span>
 					</div>
 				</div>
 			</div>
 
 			{data.isWarehouseOverdraft && (
-				<div className="p-2.5 rounded-lg bg-[var(--amber-surface,rgba(245,158,11,0.1))] text-xs text-[var(--ink)] flex items-center gap-2">
-					<TriangleAlert size={15} className="shrink-0 text-[var(--amber,#f59e0b)]" />
+				<div className="p-2.5 rounded-lg bg-[var(--warning-soft)] text-xs text-[var(--ink)] flex items-center gap-2">
+					<TriangleAlert size={15} className="shrink-0 text-[var(--warning)]" />
 					<span>Списание зафиксировано в мягкий овердрафт склада до проведения накладной.</span>
 				</div>
 			)}

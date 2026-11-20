@@ -11,10 +11,10 @@ describe("Implant Anatomy & Warranty Passport Card (SSOT)", () => {
 	it("23. AnatomicalJawArchSchema renders full 32 teeth dental formula", () => {
 		const html = renderToString(<AnatomicalJawArchSchema selectedFdi={46} brand="Osstem" diameterMm={4.0} lengthMm={10.0} />);
 		assert.ok(html.includes("anatomical-jaw-arch"));
-		assert.ok(html.includes("ВЕРХНЯЯ ЧЕЛЮСТЬ (MAXILLA)"));
-		assert.ok(html.includes("НИЖНЯЯ ЧЕЛЮСТЬ (MANDIBULA)"));
-		assert.ok(html.includes("ПРАВО (R)"));
-		assert.ok(html.includes("ЛЕВО (L)"));
+		assert.ok(html.includes("Верхняя челюсть (Maxilla)"));
+		assert.ok(html.includes("Нижняя челюсть (Mandibula)"));
+		assert.ok(html.includes("Право (R)"));
+		assert.ok(html.includes("Лево (L)"));
 		assert.ok(html.includes("Имплантат #46"));
 		assert.ok(html.includes("Ø4.0×10мм") || html.includes("4.0"));
 	});

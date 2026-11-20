@@ -207,6 +207,9 @@ export function createDefaultPassportRecord(params: {
 	operationPriceRub?: number;
 	implantCostRub?: number;
 	consumablesCostRub?: number;
+	operationPriceKopecks?: number | bigint;
+	implantCostKopecks?: number | bigint;
+	consumablesCostKopecks?: number | bigint;
 }): FastImplantPassportData {
 	const tooth = params.toothFdi || 46;
 	const defaultPreset: FastImplantSystemPreset = FAST_IMPLANT_SYSTEM_PRESETS[0] ?? {
@@ -250,11 +253,16 @@ export function createDefaultPassportRecord(params: {
 		dateIso,
 		osteointegrationExpectedDate,
 		isWarehouseOverdraft: false,
-		operationPriceRub: params.operationPriceRub ?? 45000,
-		implantCostRub: params.implantCostRub ?? 12500,
-		consumablesCostRub: params.consumablesCostRub ?? 0,
+		operationPriceRub: params.operationPriceRub ?? (params.operationPriceKopecks ? Math.round(Number(params.operationPriceKopecks) / 100) : 45000),
+		implantCostRub: params.implantCostRub ?? (params.implantCostKopecks ? Math.round(Number(params.implantCostKopecks) / 100) : 12500),
+		consumablesCostRub: params.consumablesCostRub ?? (params.consumablesCostKopecks ? Math.round(Number(params.consumablesCostKopecks) / 100) : 0),
 		doctorGrossMarginRub: (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0)),
 		netDoctorIncomeRub: Math.max(0, (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))),
+		operationPriceKopecks: params.operationPriceKopecks ? BigInt(params.operationPriceKopecks) : BigInt((params.operationPriceRub ?? 45000) * 100),
+		implantCostKopecks: params.implantCostKopecks ? BigInt(params.implantCostKopecks) : BigInt((params.implantCostRub ?? 12500) * 100),
+		consumablesCostKopecks: params.consumablesCostKopecks ? BigInt(params.consumablesCostKopecks) : BigInt((params.consumablesCostRub ?? 0) * 100),
+		doctorGrossMarginKopecks: BigInt(((params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))) * 100),
+		netDoctorIncomeKopecks: BigInt(Math.max(0, (params.operationPriceRub ?? 45000) - ((params.implantCostRub ?? 12500) + (params.consumablesCostRub ?? 0))) * 100),
 		isImmediateLoadingFeasible,
 	};
 }

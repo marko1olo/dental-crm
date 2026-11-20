@@ -50,7 +50,7 @@ describe("Implant Passport Card Component (Mandates 8e, 8x)", () => {
 		});
 		const html = renderToString(<ImplantPassportCard data={record} />);
 		assert.ok(html.includes("passport-qr-verification"));
-		assert.ok(html.includes("QR VERIFIED"));
+		assert.ok(html.includes("Верифицирован QR"));
 		assert.ok(html.includes("truncate"));
 		assert.ok(html.includes("min-w-0"));
 	});
