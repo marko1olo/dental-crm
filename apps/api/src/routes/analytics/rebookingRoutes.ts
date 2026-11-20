@@ -111,11 +111,13 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 			let startDate: Date | undefined;
 			let endDate: Date | undefined;
 
-			if (qStartDate || qPeriodStart) {
-				startDate = new Date((qStartDate || qPeriodStart)!);
+			const rawStart = qStartDate || qPeriodStart;
+			if (rawStart) {
+				startDate = new Date(rawStart);
 			}
-			if (qEndDate || qPeriodEnd) {
-				endDate = new Date((qEndDate || qPeriodEnd)!);
+			const rawEnd = qEndDate || qPeriodEnd;
+			if (rawEnd) {
+				endDate = new Date(rawEnd);
 			}
 
 			if (!startDate) {
@@ -353,8 +355,10 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 						adminRebookingsCount: 0,
 					});
 				}
-				const docStat = doctorsMap.get(docId)!;
-				docStat.completedVisitsCount++;
+				const docStat = doctorsMap.get(docId);
+				if (docStat) {
+					docStat.completedVisitsCount++;
+				}
 			}
 
 			// Распределяем повторные записи
@@ -362,8 +366,9 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				if (rec.creditedRole === "doctor") {
 					doctorRebookingsCount++;
 					const docId = rec.doctorId || "unassigned";
-					if (doctorsMap.has(docId)) {
-						doctorsMap.get(docId)!.doctorRebookingsCount++;
+					const docStat = doctorsMap.get(docId);
+					if (docStat) {
+						docStat.doctorRebookingsCount++;
 					} else {
 						doctorsMap.set(docId, {
 							staffId: rec.doctorId ?? null,
@@ -378,8 +383,9 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				} else {
 					adminRebookingsCount++;
 					const docId = rec.doctorId || "unassigned";
-					if (doctorsMap.has(docId)) {
-						doctorsMap.get(docId)!.adminRebookingsCount++;
+					const docStat = doctorsMap.get(docId);
+					if (docStat) {
+						docStat.adminRebookingsCount++;
 					}
 				}
 			}

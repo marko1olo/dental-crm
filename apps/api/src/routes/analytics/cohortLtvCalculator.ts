@@ -54,7 +54,10 @@ export async function calculateCohortLtv(
 		if (!cohortMap.has(cm)) {
 			cohortMap.set(cm, []);
 		}
-		cohortMap.get(cm)!.push(Number(row.totalRevenue));
+		const list = cohortMap.get(cm);
+		if (list) {
+			list.push(Number(row.totalRevenue));
+		}
 	}
 
 	const cohortLtvJson: CohortLtvItem[] = Array.from(cohortMap.entries())
