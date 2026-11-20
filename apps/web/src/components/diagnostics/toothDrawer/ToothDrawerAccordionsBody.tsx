@@ -1,4 +1,5 @@
 import React from "react";
+import { calculateAge, isPrimaryTooth } from "@dental/shared";
 import { ToothDrawerSurfacesAccordion } from "./ToothDrawerSurfacesAccordion";
 import { ToothDrawerAnesthesiaAccordion } from "./ToothDrawerAnesthesiaAccordion";
 import { ToothDrawerRvgAccordion } from "./ToothDrawerRvgAccordion";
@@ -42,8 +43,26 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 	onOpenPerio,
 	onApplyAnesthesia,
 }) => {
+	const calculatedAge = patient?.birthDate ? calculateAge(patient.birthDate) : undefined;
+	const resolvedAgeYears = patient?.ageYears ?? calculatedAge ?? (isPrimaryTooth(toothNumber) ? 5 : 7);
+
 	return (
 		<div className="dente-tooth-drawer-body">
+			{isPediatricTooth && (
+				<ToothDrawerPediatricAccordion
+					toothNumber={toothNumber}
+					toothData={toothData}
+					patientName={patient?.fullName}
+					patientAgeYears={resolvedAgeYears}
+					doctorName={doctorName}
+					activeSection={activeSection}
+					toggleSection={toggleSection}
+					onUpdateTooth={onUpdateTooth}
+					onInsertToProtocol={onInsertToProtocol}
+					onOpenParentMemo={onOpenParentMemo}
+				/>
+			)}
+
 			<ToothDrawerSurfacesAccordion
 				toothNumber={toothNumber}
 				toothData={toothData}
@@ -84,21 +103,6 @@ export const ToothDrawerAccordionsBody: React.FC<ToothDrawerAccordionsBodyProps>
 				onInsertToProtocol={onInsertToProtocol}
 				onOpenPerio={onOpenPerio}
 			/>
-
-			{isPediatricTooth && (
-				<ToothDrawerPediatricAccordion
-					toothNumber={toothNumber}
-					toothData={toothData}
-					patientName={patient?.fullName}
-					patientAgeYears={patient?.ageYears ?? 6}
-					doctorName={doctorName}
-					activeSection={activeSection}
-					toggleSection={toggleSection}
-					onUpdateTooth={onUpdateTooth}
-					onInsertToProtocol={onInsertToProtocol}
-					onOpenParentMemo={onOpenParentMemo}
-				/>
-			)}
 		</div>
 	);
 };

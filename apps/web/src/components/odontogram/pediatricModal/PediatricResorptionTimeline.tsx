@@ -8,7 +8,7 @@ import {
 	RESORPTION_STAGE_DEFINITIONS,
 	calculateEruptionTimelineByAge,
 	type EruptionTimelineAnalysis,
-} from "../pediatricDentitionEngine";
+} from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { PEDIATRIC_AGE_PRESETS } from "./types";
 import { PediatricArchVisualizer } from "./PediatricArchVisualizer";

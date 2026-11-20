@@ -4,7 +4,7 @@ import {
 	type CariogramInput,
 	type CariogramResult,
 	type CariogramRiskLevel,
-} from "./pediatricDentitionEngine";
+} from "@dental/shared";
 
 export type { CariogramRiskLevel };
 

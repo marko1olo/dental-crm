@@ -16,13 +16,25 @@ export const ToothDrawerQuickTabs: React.FC<ToothDrawerQuickTabsProps> = ({
 }) => {
 	return (
 		<nav className="dente-drawer-quick-tabs" aria-label="Разделы клинического контекста">
+			{isPediatricTooth && (
+				<button
+					type="button"
+					onClick={() => setActiveSection("pediatric")}
+					className={`dente-quick-tab-btn pediatric ${activeSection === "pediatric" ? "active" : ""}`}
+					data-testid="tooth-quick-tab-pediatric"
+				>
+					<ToothDeciduous size={14} />
+					<span>1. Детский прием</span>
+				</button>
+			)}
+
 			<button
 				type="button"
 				onClick={() => setActiveSection("surfaces_endo")}
 				className={`dente-quick-tab-btn ${activeSection === "surfaces_endo" ? "active" : ""}`}
 			>
 				<ToothMolar size={14} />
-				<span>1. MOD & Каналы</span>
+				<span>{isPediatricTooth ? "2. MOD & Поверхности" : "1. MOD & Каналы"}</span>
 			</button>
 
 			<button
@@ -31,7 +43,7 @@ export const ToothDrawerQuickTabs: React.FC<ToothDrawerQuickTabsProps> = ({
 				className={`dente-quick-tab-btn ${activeSection === "anesthesia" ? "active" : ""}`}
 			>
 				<DentalSyringe size={14} />
-				<span>2. Анестезия</span>
+				<span>{isPediatricTooth ? "3. Анестезия" : "2. Анестезия"}</span>
 			</button>
 
 			<button
@@ -40,7 +52,7 @@ export const ToothDrawerQuickTabs: React.FC<ToothDrawerQuickTabsProps> = ({
 				className={`dente-quick-tab-btn ${activeSection === "rvg_xray" ? "active" : ""}`}
 			>
 				<Scan size={14} />
-				<span>3. Снимок RVG</span>
+				<span>{isPediatricTooth ? "4. Снимок RVG" : "3. Снимок RVG"}</span>
 			</button>
 
 			<button
@@ -50,19 +62,8 @@ export const ToothDrawerQuickTabs: React.FC<ToothDrawerQuickTabsProps> = ({
 				data-testid="tooth-quick-tab-perio"
 			>
 				<Activity size={14} />
-				<span>4. Пародонт</span>
+				<span>{isPediatricTooth ? "5. Пародонт" : "4. Пародонт"}</span>
 			</button>
-
-			{isPediatricTooth && (
-				<button
-					type="button"
-					onClick={() => setActiveSection("pediatric")}
-					className={`dente-quick-tab-btn pediatric ${activeSection === "pediatric" ? "active" : ""}`}
-				>
-					<ToothDeciduous size={14} />
-					<span>5. Детский (Франкл)</span>
-				</button>
-			)}
 		</nav>
 	);
 };

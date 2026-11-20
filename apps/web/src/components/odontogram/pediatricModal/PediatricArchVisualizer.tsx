@@ -3,7 +3,7 @@ import { Sparkles } from "lucide-react";
 import {
 	isPrimaryTooth,
 	type EruptionTimelineAnalysis,
-} from "../pediatricDentitionEngine";
+} from "@dental/shared";
 
 export interface PediatricArchVisualizerProps {
 	selectedAge: number;

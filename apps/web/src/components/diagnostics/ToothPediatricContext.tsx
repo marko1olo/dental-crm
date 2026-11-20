@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { isPrimaryTooth } from "@dental/shared";
 import { FranklBehaviorBadge } from "../pediatric/FranklBehaviorBadge";
 import { PediatricParentMemoModal } from "../pediatric/PediatricParentMemoModal";
 import {
@@ -15,7 +16,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 	toothNumber,
 	toothData,
 	patientName = "Юный пациент",
-	patientAgeYears = 6,
+	patientAgeYears,
 	doctorName = "Детский врач-стоматолог",
 	initialFrankl = 3,
 	onUpdateTooth,
@@ -23,6 +24,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 	onOpenParentMemo,
 }) => {
 	const [isLocalMemoOpen, setIsLocalMemoOpen] = useState(false);
+	const resolvedAgeYears = patientAgeYears ?? (isPrimaryTooth(toothNumber) ? 5 : 7);
 
 	const {
 		franklRating,
@@ -61,7 +63,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 					isOpen={isLocalMemoOpen}
 					onClose={() => setIsLocalMemoOpen(false)}
 					patientName={patientName}
-					patientAgeYears={patientAgeYears}
+					patientAgeYears={resolvedAgeYears}
 					doctorName={doctorName}
 					initialFrankl={franklRating}
 				/>

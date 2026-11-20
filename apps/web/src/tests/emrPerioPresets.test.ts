@@ -51,7 +51,7 @@ import {
 import {
 	calculatePediatricPhysiologicalNorm,
 	CANONICAL_PEDIATRIC_AGE_PRESETS,
-} from "../components/odontogram/pediatricDentitionEngine.js";
+} from "@dental/shared";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -440,11 +440,9 @@ describe("EMR & Periodontogram Presets Suite (Mandates 8e, 8k, 8zi)", () => {
 			assert.deepEqual(ages, [3, 6, 9, 12]);
 		});
 
-		it("3.6. pediatricDentitionEngine.ts экспортирует весь API детской стоматологии", async () => {
-			const enginePath = path.resolve(webSrcDir, "components/odontogram/pediatricDentitionEngine.ts");
-			assert.ok(fs.existsSync(enginePath), "Файл pediatricDentitionEngine.ts обязан существовать");
-			const content = fs.readFileSync(enginePath, "utf-8");
-			assert.ok(content.includes("calculatePediatricPhysiologicalNorm"));
+		it("3.6. @dental/shared экспортирует весь API детской стоматологии", async () => {
+			assert.equal(typeof calculatePediatricPhysiologicalNorm, "function");
+			assert.ok(CANONICAL_PEDIATRIC_AGE_PRESETS.length >= 4);
 		});
 
 		it("3.7. PediatricMixedDentitionModal.tsx содержит кнопки 1-клик норм по возрасту и карточки", () => {

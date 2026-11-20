@@ -47,6 +47,7 @@ export interface ToothContextDrawerProps {
 		readonly id?: string | undefined;
 		readonly fullName?: string | undefined;
 		readonly ageYears?: number | undefined;
+		readonly birthDate?: string | undefined;
 		readonly weightKg?: number | undefined;
 		readonly hasCardioRisk?: boolean | undefined;
 		readonly hasSulfiteAllergy?: boolean | undefined;

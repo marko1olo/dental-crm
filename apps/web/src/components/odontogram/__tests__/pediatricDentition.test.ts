@@ -8,9 +8,9 @@ import {
 	calculateEruptionTimelineByAge,
 	calculateCariogramRisk,
 	getPrimaryToothResorptionVisual,
-	getToothDentitionType,
+	getPediatricToothCategory,
 	DEFAULT_CARIOGRAM_INPUT,
-} from "../pediatricDentitionEngine";
+} from "@dental/shared";
 
 describe("Pediatric Dentition & Cariogram Engine", () => {
 	it("correctly identifies all 20 primary teeth", () => {
@@ -99,9 +99,9 @@ describe("Pediatric Dentition & Cariogram Engine", () => {
 	});
 
 	it("classifies tooth dentition category properly", () => {
-		assert.equal(getToothDentitionType(54), "primary");
-		assert.equal(getToothDentitionType(16), "mixed_first_molar");
-		assert.equal(getToothDentitionType(11), "permanent");
+		assert.equal(getPediatricToothCategory(54), "primary");
+		assert.equal(getPediatricToothCategory(16), "mixed_first_molar");
+		assert.equal(getPediatricToothCategory(11), "permanent");
 	});
 
 	it("correctly models physiological root resorption stages (I, II, III) and mobility", () => {

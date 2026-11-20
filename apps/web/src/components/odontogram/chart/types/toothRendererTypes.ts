@@ -1,9 +1,6 @@
 import type React from "react";
 import type { ToothState } from "../toothChartTypes";
-import type { EndoToothClinicalData } from "@dental/shared";
-import type {
-	DentitionMode,
-} from "../../pediatricDentitionEngine";
+import type { EndoToothClinicalData, DentitionMode } from "@dental/shared";
 import {
 	type CanalObturationMaterial,
 	type FurcationGrade,

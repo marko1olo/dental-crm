@@ -6,7 +6,7 @@ import {
 	PRIMARY_TO_PERMANENT_SUCCESSOR_MAP,
 	RESORPTION_STAGE_DEFINITIONS,
 	type ResorptionStagePercent,
-} from "../components/odontogram/pediatricDentitionEngine";
+} from "@dental/shared";
 import {
 	calculateSplitPaymentAllocation,
 	type SplitPaymentInput,

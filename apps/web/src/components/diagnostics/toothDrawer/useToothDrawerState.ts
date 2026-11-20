@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { isPrimaryTooth, calculateAge } from "@dental/shared";
 import type { ToothData, ToothState } from "../../odontogram/ToothChart";
 import { getToothAnatomicalNameRu, getToothFolkAndAnatomicalNameRu } from "../../../lib/clinicalProtocols";
 import { showToast } from "../../GlobalToast";
@@ -31,7 +32,8 @@ export function useToothDrawerState({
 	onSetRecall,
 	initialSection,
 }: ToothContextDrawerProps) {
-	const isPediatricTooth = (toothNumber >= 51 && toothNumber <= 85) || (patient?.ageYears !== undefined && patient.ageYears < 14);
+	const calculatedAge = patient?.birthDate ? calculateAge(patient.birthDate) : undefined;
+	const isPediatricTooth = isPrimaryTooth(toothNumber) || (patient?.ageYears !== undefined && patient.ageYears < 14) || (calculatedAge !== undefined && calculatedAge < 14);
 	const [currentState, setCurrentState] = useState<ToothState>(toothData?.state ?? "Healthy");
 
 	useEffect(() => {
@@ -77,11 +79,11 @@ export function useToothDrawerState({
 		onUpdateToothStatus?.(toothNumber, newState);
 	};
 
-	const [activeSection, setActiveSection] = useState<WarmAccordionSection>(initialSection ?? "surfaces_endo");
+	const [activeSection, setActiveSection] = useState<WarmAccordionSection>(initialSection ?? (isPediatricTooth ? "pediatric" : "surfaces_endo"));
 
 	useEffect(() => {
-		if (isPediatricTooth) setActiveSection("surfaces_endo");
-	}, [isPediatricTooth, toothNumber]);
+		if (isPediatricTooth && !initialSection) setActiveSection("pediatric");
+	}, [isPediatricTooth, toothNumber, initialSection]);
 
 	useEffect(() => {
 		if (!isOpen) return;

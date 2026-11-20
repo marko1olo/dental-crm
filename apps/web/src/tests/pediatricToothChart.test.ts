@@ -11,9 +11,9 @@ import {
 	type ResorptionStagePercent,
 	calculatePediatricPhysiologicalNorm,
 	getPediatricProcedurePreset,
-	dispatchPediatricSoapProtocol,
 	ALL_PRIMARY_TEETH,
-} from "../components/odontogram/pediatricDentitionEngine";
+} from "@dental/shared";
+import { dispatchPediatricSoapProtocol } from "../components/pediatric/pediatricSoapBridge";
 import {
 	TOP_TEETH,
 	BOTTOM_TEETH,

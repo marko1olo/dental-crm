@@ -1,7 +1,7 @@
 import React from "react";
 import { Printer } from "lucide-react";
 import { FranklBehaviorBadge } from "../../pediatric";
-import type { FranklRating } from "../pediatricDentitionEngine";
+import type { FranklRating } from "@dental/shared";
 
 export interface PediatricFranklSectionProps {
 	rating: FranklRating;

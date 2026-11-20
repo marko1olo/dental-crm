@@ -1,6 +1,5 @@
-import { UPPER_PRIMARY_TEETH, LOWER_PRIMARY_TEETH } from "@dental/shared";
+import { UPPER_PRIMARY_TEETH, LOWER_PRIMARY_TEETH, type ResorptionStagePercent } from "@dental/shared";
 import type { ToothData } from "../ToothChart";
-import type { ResorptionStagePercent } from "../pediatricDentitionEngine";
 
 export { UPPER_PRIMARY_TEETH, LOWER_PRIMARY_TEETH };
 

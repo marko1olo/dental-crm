@@ -6,13 +6,14 @@ import {
 	generatePediatricCariogramDiaryText,
 	RESORPTION_STAGE_DEFINITIONS,
 	type ResorptionStagePercent,
-	calculateCariogramRisk,
+	calculateCariogramRisk as calculateCanonicalCariogramRisk,
 	calculateEruptionTimelineByAge,
 	type FranklRating,
 	calculatePediatricPhysiologicalNorm,
 	getPediatricProcedurePreset,
-	dispatchPediatricSoapProtocol,
-} from "../pediatricDentitionEngine";
+	isPrimaryTooth,
+} from "@dental/shared";
+import { dispatchPediatricSoapProtocol } from "../../pediatric/pediatricSoapBridge";
 import type { ToothData } from "../ToothChart";
 import { showToast } from "../../GlobalToast";
 import {
@@ -95,12 +96,80 @@ export function usePediatricModalLogic({
 		return hasFirstPermanentMolars ? [46, ...mid, 36] : mid;
 	}, [hasFirstPermanentMolars, timelineAnalysis.toothStatuses]);
 
-	// 2. Cariogram State
-	const [cariogramInput, setCariogramInput] = useState<CariogramInput>(DEFAULT_CARIOGRAM_INPUT);
-	const cariogramResult = useMemo(
-		() => calculateCariogramRisk(cariogramInput),
-		[cariogramInput],
-	);
+	// 2. Cariogram State: Dynamic Cariogram calculation based on actual teeth caries in odontogram
+	const pediatricCariesStats = useMemo(() => {
+		const primaryTeeth = (teethData ?? []).filter((t) => isPrimaryTooth(t.toothNumber));
+		const activeCariesTeeth = primaryTeeth.filter(
+			(t) =>
+				t.state === "Caries" ||
+				t.state === "Pulpitis" ||
+				t.state === "Periodontitis" ||
+				(Array.isArray(t.surfaces) && t.surfaces.length > 0 && t.state !== "Healthy"),
+		);
+		const filledTeeth = primaryTeeth.filter((t) => t.state === "Filled");
+		const missingTeeth = primaryTeeth.filter((t) => t.state === "Missing" || t.state === "Extracted");
+
+		return {
+			totalPrimaryChecked: primaryTeeth.length,
+			activeCariesCount: activeCariesTeeth.length,
+			filledCount: filledTeeth.length,
+			missingCount: missingTeeth.length,
+			activeCariesToothNumbers: activeCariesTeeth.map((t) => t.toothNumber),
+			filledToothNumbers: filledTeeth.map((t) => t.toothNumber),
+		};
+	}, [teethData]);
+
+	// Auto-calibrate Cariogram initial risk level from live odontogram inspection
+	const defaultInitialRiskLevel = useMemo(() => {
+		if (pediatricCariesStats.activeCariesCount >= 4) return "high";
+		if (pediatricCariesStats.activeCariesCount >= 1 || pediatricCariesStats.filledCount >= 3) return "moderate";
+		return "low";
+	}, [pediatricCariesStats.activeCariesCount, pediatricCariesStats.filledCount]);
+
+	const [cariogramInput, setCariogramInput] = useState<CariogramInput>({
+		cariesRiskLevel: defaultInitialRiskLevel,
+	});
+
+	// Sync when teeth data mutations happen
+	useEffect(() => {
+		setCariogramInput((prev) => {
+			if (prev.cariesRiskLevel === defaultInitialRiskLevel) return prev;
+			return { ...prev, cariesRiskLevel: defaultInitialRiskLevel };
+		});
+	}, [defaultInitialRiskLevel]);
+
+	const cariogramResult = useMemo(() => {
+		const canonical = calculateCanonicalCariogramRisk(cariogramInput);
+		const activeCount = pediatricCariesStats.activeCariesCount;
+		const filledCount = pediatricCariesStats.filledCount;
+
+		// Dynamic chance calculation grounded on actual odontogram pathology count
+		let dynamicChance = canonical.chanceOfAvoidingCariesPercent;
+		if (cariogramInput.cariesRiskLevel === "low") {
+			dynamicChance = Math.max(75, 90 - filledCount * 5);
+		} else if (cariogramInput.cariesRiskLevel === "moderate") {
+			dynamicChance = Math.max(40, 65 - activeCount * 7);
+		} else {
+			dynamicChance = Math.max(10, 35 - activeCount * 5);
+		}
+
+		const dominantFactor =
+			activeCount > 0
+				? `Обнаружено ${activeCount} кариозных поражений временных зубов (зубы: ${pediatricCariesStats.activeCariesToothNumbers.join(", ")})`
+				: filledCount > 0
+					? `Кариес компенсирован (${filledCount} пломб: зубы ${pediatricCariesStats.filledToothNumbers.join(", ")})`
+					: "Временные зубы интактны, кариозных полостей не обнаружено";
+
+		return {
+			...canonical,
+			chanceOfAvoidingCariesPercent: dynamicChance,
+			dominantRiskFactorRu: dominantFactor,
+			sectors: {
+				...canonical.sectors,
+				actualChanceOfAvoidingCaries: dynamicChance,
+			},
+		};
+	}, [cariogramInput, pediatricCariesStats]);
 
 	// 3. Resorption Selected Primary Tooth
 	const [selectedPrimaryTooth, setSelectedPrimaryTooth] = useState<number>(51);
