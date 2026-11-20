@@ -22,7 +22,7 @@ export const PatientRadiologyToolbar: React.FC<PatientRadiologyToolbarProps> = (
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
 			<div className="flex items-center gap-2.5 min-w-0">
-				<div className="w-8 h-8 rounded-lg bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30 flex items-center justify-center shrink-0">
+				<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 flex items-center justify-center shrink-0">
 					<Scan className="w-4 h-4" />
 				</div>
 				<div>
@@ -41,7 +41,7 @@ export const PatientRadiologyToolbar: React.FC<PatientRadiologyToolbarProps> = (
 				<button
 					type="button"
 					onClick={onOpenTactileSearch}
-					className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-[#2E8B57] hover:bg-[#237A4B] text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+					className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-2xs transition-all active:scale-95 cursor-pointer"
 					data-testid="btn-patient-tactile-search"
 					title="Тактильная матрица поиска исследований по датам и аппаратам"
 				>
@@ -52,7 +52,7 @@ export const PatientRadiologyToolbar: React.FC<PatientRadiologyToolbarProps> = (
 				<button
 					type="button"
 					onClick={onOpenCtSelector}
-					className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+					className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-2xs transition-all active:scale-95 cursor-pointer"
 					data-testid="btn-patient-open-ct-selector"
 					title="Клинический КТ-селектор"
 				>
@@ -63,12 +63,12 @@ export const PatientRadiologyToolbar: React.FC<PatientRadiologyToolbarProps> = (
 				<button
 					type="button"
 					onClick={onOpenHotFolder}
-					className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+					className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-medium rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white shadow-xs transition-all active:scale-95 cursor-pointer"
 					data-testid="btn-patient-upload-ct"
 					title="Импорт снимка из горячей папки томографа или загрузка файла"
 				>
 					<Plus className="w-3.5 h-3.5" />
-					<span>+ Загрузить КТ для этого пациента</span>
+					<span>Загрузить КТ</span>
 				</button>
 
 				<button

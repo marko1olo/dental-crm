@@ -9,6 +9,10 @@ export {
 	type FamilyDepositTopupSectionProps,
 } from "./FamilyDepositTopupSection";
 export {
+	FamilyMemberAddSection,
+	type FamilyMemberAddSectionProps,
+} from "./FamilyMemberAddSection";
+export {
 	FamilyMembersBalanceList,
 	type FamilyMembersBalanceListProps,
 } from "./FamilyMembersBalanceList";

@@ -28,9 +28,13 @@ export const FamilyWalletTabBody: React.FC<FamilyWalletTabBodyProps> =
 						familyData={logic.familyData}
 						familyBalanceNumeric={logic.familyBalanceNumeric}
 						patientId={patientId}
+						patientName={logic.patientName}
 						spendingPermissions={logic.spendingPermissions}
 						onTogglePermission={logic.handleTogglePermission}
 						onNavigateTab={logic.setActiveTab}
+						onCreateFamilyGroup={logic.handleCreateFamilyGroup}
+						onAddMember={logic.handleAddMember}
+						onRemoveMember={logic.handleRemoveMember}
 					/>
 				)}
 

@@ -58,6 +58,10 @@ export function useFamilyWalletLogic(props: FamilyWalletModalProps) {
 		spendAmountInputId,
 		handleExecuteTopup: mutations.handleExecuteTopup,
 		handleExecuteSpend: mutations.handleExecuteSpend,
+		handleCreateFamilyGroup: data.handleCreateFamilyGroup,
+		handleAddMember: data.handleAddMember,
+		handleRemoveMember: data.handleRemoveMember,
+		patientName: props.patientName,
 		onClose,
 	};
 }

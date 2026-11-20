@@ -3,6 +3,8 @@ import { ChevronDown, ChevronUp, Scan } from "lucide-react";
 import { ToothRvgThumbnail } from "../ToothRvgThumbnail";
 import type { ToothData } from "../../odontogram/ToothChart";
 import type { WarmAccordionSection } from "./toothDrawerTypes";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { showToast } from "../../GlobalToast";
 
 interface ToothDrawerRvgAccordionProps {
 	toothNumber: number;
@@ -64,9 +66,10 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 						scanImageUrl={scanImageUrl}
 						onOpenFullRadiology={onOpenFullRadiology}
 						onInsertToProtocol={onInsertToProtocol}
-						onAttachScan={(file) => {
+						onAttachScan={async (file) => {
 							const objectUrl = URL.createObjectURL(file);
 							const currentClinical = toothData?.clinicalData ?? {};
+							// 1. Быстрый локальный предпросмотр (<50мс)
 							onUpdateTooth?.(toothNumber, {
 								clinicalData: {
 									...currentClinical,
@@ -74,6 +77,67 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 									updatedAt: new Date().toISOString(),
 								},
 							});
+
+							// 2. Персистентная загрузка в клинический архив PACS (/api/xray/scans -> imaging_studies)
+							if (patientId) {
+								try {
+									const reader = new FileReader();
+									reader.onload = async () => {
+										const base64Data = reader.result as string;
+										try {
+											const res = await fetch("/api/xray/scans", {
+												method: "POST",
+												headers: {
+													"Content-Type": "application/json",
+													...denteAdminSecretRequestHeaders(),
+												},
+												body: JSON.stringify({
+													patientId,
+													imageBase64: base64Data,
+													toothCode: String(toothNumber),
+													kind: "periapical",
+													originalFilename: file.name,
+													notes: `Прицельный снимок RVG зуба #${toothNumber}`,
+												}),
+											});
+
+											if (res.ok) {
+												const json = (await res.json()) as { id?: string; fileUrl?: string };
+												const persistentUrl = json?.fileUrl || (json?.id ? `/api/xray/scans/${json.id}/file` : null);
+												if (persistentUrl) {
+													onUpdateTooth?.(toothNumber, {
+														clinicalData: {
+															...currentClinical,
+															rvgScanUrl: persistentUrl,
+															scanId: json?.id,
+															updatedAt: new Date().toISOString(),
+														},
+													});
+													showToast(`Снимок зуба #${toothNumber} сохранён в архив PACS`, "success", 2500);
+													if (typeof window !== "undefined") {
+														window.dispatchEvent(
+															new CustomEvent("dente-xray-updated", {
+																detail: {
+																	patientId,
+																	toothCode: String(toothNumber),
+																	scanId: json?.id,
+																},
+															}),
+														);
+													}
+												}
+											} else {
+												showToast(`Не удалось сохранить снимок в PACS (${res.status})`, "error");
+											}
+										} catch (err) {
+											console.warn("[ToothDrawerRvgAccordion] PACS network upload failed", err);
+										}
+									};
+									reader.readAsDataURL(file);
+								} catch (uploadErr) {
+									console.warn("[ToothDrawerRvgAccordion] Background PACS upload failed, keeping preview", uploadErr);
+								}
+							}
 						}}
 					/>
 				</div>

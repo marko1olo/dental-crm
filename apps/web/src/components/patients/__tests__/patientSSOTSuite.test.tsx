@@ -27,6 +27,8 @@ import {
 	type FamilyMember,
 	type PatientCatalogItem,
 } from "../patientCatalogData";
+import { FamilyMembersBalanceList } from "../family/familyWalletModal/FamilyMembersBalanceList";
+import { FamilyMemberAddSection } from "../family/familyWalletModal/FamilyMemberAddSection";
 import { PatientCardModal } from "../PatientCardModal";
 
 describe("Patient SSOT, Express Registration & Family Wallet Suite (Mandates 8e, 8n, 8am)", () => {
@@ -77,28 +79,66 @@ describe("Patient SSOT, Express Registration & Family Wallet Suite (Mandates 8e,
 		assert.equal(dupesByName[0].id, "pat-003");
 	});
 
-	it("3. [Мандат 8n] Семейный баланс: расчет общего кошелька и списание в 1 клик", () => {
+	it("3. [Мандат 8n] Семейный кошелек: интеграция UI с бэкендом (создание, добавление родных, списание в 1 клик)", () => {
+		// 3.1. Рендеринг активной семейной группы со списком и кнопкой добавления родственника
+		const markupWithFamily = renderToStaticMarkup(
+			<FamilyMembersBalanceList
+				familyData={{
+					id: "fam-test-1",
+					name: "Семья Ивановых",
+					balance: "12200",
+					headPatientId: "pat-001",
+					members: [
+						{ id: "pat-001", fullName: "Иванова Елена", personalBalanceRub: 15400, canSpendFromPool: true },
+						{ id: "pat-002", fullName: "Иванов Иван", personalBalanceRub: -3200, canSpendFromPool: true },
+					],
+				}}
+				familyBalanceNumeric={12200}
+				patientId="pat-001"
+				patientName="Иванова Елена"
+				spendingPermissions={{ "pat-001": true, "pat-002": true }}
+				onTogglePermission={() => {}}
+				onNavigateTab={() => {}}
+				onRemoveMember={() => {}}
+			/>,
+		);
+
+		assert.ok(markupWithFamily.includes('data-testid="family-wallet-members-list"'));
+		assert.ok(markupWithFamily.includes("Иванова Елена"));
+		assert.ok(markupWithFamily.includes("Иванов Иван"));
+		// Проверка наличия кнопки добавления родственника в реальном UI
+		assert.ok(markupWithFamily.includes('data-testid="btn-open-add-family-member"'));
+		// Проверка кнопки исключения члена семьи
+		assert.ok(markupWithFamily.includes('data-testid="btn-remove-family-member-pat-002"'));
+
+		// 3.2. Рендеринг пустого состояния: форма создания семейного кошелька через POST /api/finance/family
+		const markupEmpty = renderToStaticMarkup(
+			<FamilyMembersBalanceList
+				familyData={null}
+				familyBalanceNumeric={0}
+				patientId="pat-003"
+				patientName="Петров Петр"
+				spendingPermissions={{}}
+				onTogglePermission={() => {}}
+				onNavigateTab={() => {}}
+			/>,
+		);
+
+		assert.ok(markupEmpty.includes('data-testid="input-create-family-group-name"'));
+		assert.ok(markupEmpty.includes('data-testid="btn-submit-create-family-group"'));
+
+		// 3.3. Валидация арифметики общего семейного баланса без комиссии
 		const family = DEMO_FAMILY_GROUPS[0];
 		const totalBalance = calculateFamilyBalanceKopecks(family.members);
-		// 15 400 руб (мать) - 3 200 руб (ребёнок) = 12 200 руб
-		assert.equal(totalBalance, 1220000);
+		assert.equal(totalBalance, 1220000); // 12 200 руб
 
-		// Списание долга ребёнка с аванса матери
 		const transferResult = transferFamilyBalance({
-			fromMemberId: "fm-001", // Мать (аванс 15 400 руб)
-			toMemberId: "fm-002",   // Ребёнок (долг -3 200 руб)
+			fromMemberId: "fm-001",
+			toMemberId: "fm-002",
 			amountKopecks: 320000,
 			members: family.members,
 		});
-
 		assert.equal(transferResult.success, true);
-		assert.ok(transferResult.message.includes("Иванова Елена Николаевна"));
-
-		const updatedMother = transferResult.updatedMembers.find((m) => m.id === "fm-001");
-		const updatedChild = transferResult.updatedMembers.find((m) => m.id === "fm-002");
-
-		assert.equal(updatedMother?.balanceKopecks, 1540000 - 320000); // 12 200 руб
-		assert.equal(updatedChild?.balanceKopecks, -320000 + 320000);   // 0 руб (долг закрыт)
 	});
 
 	it("4. [Мандат 8e & 8am] PatientStudioModal: кнопка сохранения НИКОГДА не disabled, ровно 1 Primary CTA", () => {

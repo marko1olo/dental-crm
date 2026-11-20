@@ -49,7 +49,12 @@ export const ToothRvgThumbnail: React.FC<ToothRvgThumbnailProps> = ({
 	};
 
 	const handleCopyXrayReport = async () => {
-		const text = `Визиографический контроль зуба #${toothNumber}: периодонтальная щель прослеживается, деструкции костной ткани в периапикальной области не выявлено. Корневые каналы обтурированы до физиологического апекса.`;
+		if (!hasImage) {
+			showToast(`Снимок зуба #${toothNumber} отсутствует. Сначала прикрепите снимок для формирования протокола`, "warning");
+			return;
+		}
+		const dateStr = capturedAtIso ? new Date(capturedAtIso).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU");
+		const text = `Прицельный визиографический снимок зуба #${toothNumber} от ${dateStr}: периапикальные ткани без патологических изменений, периодонтальная щель равномерная.`;
 		if (onInsertToProtocol) {
 			onInsertToProtocol(text);
 			showToast(`Заключение визиографа зуба #${toothNumber} внесено в медицинскую карту!`, "success");

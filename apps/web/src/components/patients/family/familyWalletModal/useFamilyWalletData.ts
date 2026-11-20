@@ -222,6 +222,169 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 		props,
 	]);
 
+	const handleCreateFamilyGroup = useCallback(
+		async (name: string) => {
+			if (!patientId) return;
+			const trimmed = name.trim();
+			if (!trimmed) {
+				showToast("Введите название семейной группы", "warning");
+				return;
+			}
+			setLoading(true);
+			try {
+				const res = await fetch("/api/finance/family", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({
+						name: trimmed,
+						headPatientId: patientId,
+					}),
+				});
+
+				if (!res.ok) {
+					const errorData = (await res.json().catch(() => ({}))) as {
+						message?: string;
+					};
+					throw new Error(
+						errorData.message || `Ошибка создания семьи (${res.status})`,
+					);
+				}
+
+				showToast(`Семейная группа «${trimmed}» создана`, "success");
+				await loadFamilyDetails();
+				props.onFamilyDataChanged?.();
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-family-data-changed", {
+							detail: { patientId },
+						}),
+					);
+				}
+			} catch (err: unknown) {
+				logger.error("Failed to create family group", err);
+				showToast(
+					err instanceof Error
+						? err.message
+						: "Не удалось создать семейную группу",
+					"error",
+				);
+			} finally {
+				setLoading(false);
+			}
+		},
+		[patientId, loadFamilyDetails, props],
+	);
+
+	const handleAddMember = useCallback(
+		async (memberPatientId: string, canSpend = true) => {
+			if (!familyData?.id) {
+				showToast("Сначала создайте семейную группу", "warning");
+				return;
+			}
+			if (!memberPatientId) {
+				showToast("Выберите пациента для добавления", "warning");
+				return;
+			}
+			setLoading(true);
+			try {
+				const res = await fetch(`/api/finance/family/${familyData.id}/members`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...denteAdminSecretRequestHeaders(),
+					},
+					body: JSON.stringify({
+						patientId: memberPatientId,
+						canSpendFamilyWallet: canSpend,
+					}),
+				});
+
+				if (!res.ok) {
+					const errorData = (await res.json().catch(() => ({}))) as {
+						message?: string;
+					};
+					throw new Error(
+						errorData.message ||
+							`Ошибка добавления члена семьи (${res.status})`,
+					);
+				}
+
+				showToast("Член семьи успешно добавлен", "success");
+				await loadFamilyDetails();
+				props.onFamilyDataChanged?.();
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-family-data-changed", {
+							detail: { patientId, familyGroupId: familyData.id },
+						}),
+					);
+				}
+			} catch (err: unknown) {
+				logger.error("Failed to add family member", err);
+				showToast(
+					err instanceof Error
+						? err.message
+						: "Не удалось добавить родственника",
+					"error",
+				);
+			} finally {
+				setLoading(false);
+			}
+		},
+		[familyData?.id, patientId, loadFamilyDetails, props],
+	);
+
+	const handleRemoveMember = useCallback(
+		async (memberPatientId: string) => {
+			if (!familyData?.id || !memberPatientId) return;
+			setLoading(true);
+			try {
+				const res = await fetch(
+					`/api/finance/family/${familyData.id}/members/${memberPatientId}`,
+					{
+						method: "DELETE",
+						headers: denteAdminSecretRequestHeaders(),
+					},
+				);
+
+				if (!res.ok) {
+					const errorData = (await res.json().catch(() => ({}))) as {
+						message?: string;
+					};
+					throw new Error(
+						errorData.message ||
+							`Ошибка исключения из семьи (${res.status})`,
+					);
+				}
+
+				showToast("Пациент исключен из семейной группы", "success");
+				await loadFamilyDetails();
+				props.onFamilyDataChanged?.();
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-family-data-changed", {
+							detail: { patientId, familyGroupId: familyData.id },
+						}),
+					);
+				}
+			} catch (err: unknown) {
+				logger.error("Failed to remove family member", err);
+				showToast(
+					err instanceof Error
+						? err.message
+						: "Не удалось исключить родственника",
+					"error",
+				);
+			} finally {
+				setLoading(false);
+			}
+		},
+		[familyData?.id, patientId, loadFamilyDetails, props],
+	);
+
 	return {
 		loading,
 		savingPermissions,
@@ -237,5 +400,8 @@ export function useFamilyWalletData(props: FamilyWalletModalProps) {
 		loadFamilyHistory,
 		handleTogglePermission,
 		handleSavePermissions,
+		handleCreateFamilyGroup,
+		handleAddMember,
+		handleRemoveMember,
 	};
 }

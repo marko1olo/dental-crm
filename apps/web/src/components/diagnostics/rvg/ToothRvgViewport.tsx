@@ -10,6 +10,7 @@ interface ToothRvgViewportProps {
 	contrast: number;
 	brightness: number;
 	isZoomedApex: boolean;
+	pixelSpacingMm?: number | undefined;
 	fileInputRef: React.RefObject<HTMLInputElement | null>;
 	onAttachScan?: ((file: File) => void) | undefined;
 }
@@ -22,6 +23,7 @@ export const ToothRvgViewport: React.FC<ToothRvgViewportProps> = ({
 	contrast,
 	brightness,
 	isZoomedApex,
+	pixelSpacingMm,
 	fileInputRef,
 	onAttachScan,
 }) => {
@@ -82,9 +84,11 @@ export const ToothRvgViewport: React.FC<ToothRvgViewportProps> = ({
 						}}
 					/>
 					<div className="dente-rvg-grid-overlay pointer-events-none" />
-					<div className="dente-rvg-scale-bar">
-						<span>| 5мм |</span>
-					</div>
+					{pixelSpacingMm !== undefined && pixelSpacingMm > 0 ? (
+						<div className="dente-rvg-scale-bar">
+							<span>| {(pixelSpacingMm * 50).toFixed(1)}мм |</span>
+						</div>
+					) : null}
 				</>
 			) : (
 				<div

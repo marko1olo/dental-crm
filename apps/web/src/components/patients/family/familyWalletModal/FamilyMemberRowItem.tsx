@@ -4,7 +4,7 @@
  * Mandate 8b: strictly <= 120 lines.
  */
 
-import { UserCheck, UserX } from "lucide-react";
+import { Trash2, UserCheck, UserX } from "lucide-react";
 import React from "react";
 import { money } from "../../../../AppHelpers";
 import type { FamilyMemberItem } from "./types";
@@ -15,6 +15,7 @@ export interface FamilyMemberRowItemProps {
 	readonly isHead: boolean;
 	readonly canSpend: boolean;
 	readonly onTogglePermission: (memberId: string) => void;
+	readonly onRemoveMember?: ((memberId: string) => void) | undefined;
 }
 
 export const FamilyMemberRowItem: React.FC<FamilyMemberRowItemProps> =
@@ -24,6 +25,7 @@ export const FamilyMemberRowItem: React.FC<FamilyMemberRowItemProps> =
 		isHead,
 		canSpend,
 		onTogglePermission,
+		onRemoveMember,
 	}) {
 		const initialLetter =
 			member.fullName?.trim().charAt(0).toUpperCase() || "П";
@@ -103,6 +105,19 @@ export const FamilyMemberRowItem: React.FC<FamilyMemberRowItemProps> =
 							</>
 						)}
 					</button>
+
+					{onRemoveMember && !isHead && (
+						<button
+							type="button"
+							onClick={() => onRemoveMember(member.id)}
+							title={`Исключить ${member.fullName} из семьи`}
+							aria-label={`Исключить ${member.fullName} из семьи`}
+							className="h-8 w-8 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-rose-600 hover:border-rose-500/30 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+							data-testid={`btn-remove-family-member-${member.id}`}
+						>
+							<Trash2 className="w-3.5 h-3.5" />
+						</button>
+					)}
 				</div>
 			</div>
 		);

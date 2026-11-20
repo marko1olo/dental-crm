@@ -6,6 +6,7 @@
 
 import { ShieldCheck } from "lucide-react";
 import React from "react";
+import { FamilyMemberAddSection } from "./FamilyMemberAddSection";
 import { FamilyMemberRowItem } from "./FamilyMemberRowItem";
 import { FamilyPooledBalanceCard } from "./FamilyPooledBalanceCard";
 import type { FamilyGroupDetails, FamilyWalletTab } from "./types";
@@ -14,9 +15,13 @@ export interface FamilyMembersBalanceListProps {
 	readonly familyData: FamilyGroupDetails | null;
 	readonly familyBalanceNumeric: number;
 	readonly patientId: string;
+	readonly patientName?: string | null | undefined;
 	readonly spendingPermissions: Record<string, boolean>;
 	readonly onTogglePermission: (memberId: string) => void;
 	readonly onNavigateTab: (tab: FamilyWalletTab) => void;
+	readonly onCreateFamilyGroup?: ((name: string) => Promise<void>) | undefined;
+	readonly onAddMember?: ((targetPatientId: string, canSpend: boolean) => Promise<void>) | undefined;
+	readonly onRemoveMember?: ((memberId: string) => void) | undefined;
 }
 
 export const FamilyMembersBalanceList: React.FC<FamilyMembersBalanceListProps> =
@@ -24,11 +29,16 @@ export const FamilyMembersBalanceList: React.FC<FamilyMembersBalanceListProps> =
 		familyData,
 		familyBalanceNumeric,
 		patientId,
+		patientName,
 		spendingPermissions,
 		onTogglePermission,
 		onNavigateTab,
+		onCreateFamilyGroup,
+		onAddMember,
+		onRemoveMember,
 	}) {
 		const membersList = familyData?.members ?? [];
+		const existingMemberIds = membersList.map((m) => m.id);
 
 		return (
 			<div className="flex flex-col gap-4">
@@ -65,10 +75,20 @@ export const FamilyMembersBalanceList: React.FC<FamilyMembersBalanceListProps> =
 									isHead={member.id === familyData?.headPatientId}
 									canSpend={spendingPermissions[member.id] !== false}
 									onTogglePermission={onTogglePermission}
+									onRemoveMember={onRemoveMember}
 								/>
 							))
 						)}
 					</div>
+
+					<FamilyMemberAddSection
+						familyGroupId={familyData?.id}
+						currentPatientId={patientId}
+						currentPatientName={patientName}
+						existingMemberIds={existingMemberIds}
+						onCreateFamilyGroup={onCreateFamilyGroup}
+						onAddMember={onAddMember}
+					/>
 				</div>
 			</div>
 		);
