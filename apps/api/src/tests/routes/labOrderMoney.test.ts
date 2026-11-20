@@ -234,8 +234,8 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		assert.equal(putResponse.statusCode, 200, `PUT вернул ${putResponse.statusCode}: ${putResponse.body}`);
 
 		const updatedRow = await withFixtureTenant(ORGANIZATION_ID, async (tx) =>
-			tx.execute<{ price_rub: string }>(sql`
-				select price_rub::text as price_rub from lab_orders
+			tx.execute<{ price_rub: string; price_kopecks: number }>(sql`
+				select price_rub::text as price_rub, price_kopecks from lab_orders
 				 where id = ${orderId}::uuid
 			`),
 		);
@@ -243,6 +243,11 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 			updatedRow.rows[0]?.price_rub,
 			"29000.00",
 			`в базе обновленная цена ${updatedRow.rows[0]?.price_rub} вместо 29000.00`,
+		);
+		assert.equal(
+			Number(updatedRow.rows[0]?.price_kopecks),
+			2900000,
+			"в базе price_kopecks синхронизирован с копейками",
 		);
 	});
 
@@ -426,5 +431,47 @@ describe("цена заказа ЗТЛ — деньги с точностью д
 		assert.equal(passportJson.success, true);
 		assert.equal(passportJson.passport.technicianLabName, "Лаборатория Престиж-Дент CAD/CAM");
 		assert.notEqual(passportJson.passport.technicianLabName, "Цифровая зуботехническая лаборатория CAD/CAM");
+	});
+
+	test("Мандат 8e: гарантийный паспорт наряда доступен в режиме черновика (isDraft=true) для незавершенных нарядов без 409 ошибки", async (t) => {
+		if (!databaseReady) return t.skip("база недоступна");
+
+		// 1. Создаем наряд со статусом in_progress (в производстве)
+		const created = await createOrder({
+			patientId: PATIENT_ID,
+			doctorId: DOCTOR_ID,
+			toothFdi: "24",
+			material: "E.max Press",
+			priceRub: 21000,
+			status: "in_progress",
+		});
+		assert.equal(created.statusCode, 201);
+		const orderId = String(created.json.id);
+
+		// 2. Врач запрашивает паспорт до завершения (например, для согласования с пациентом)
+		const passportRes = await app.inject({
+			method: "GET",
+			url: `/api/clinical/lab-orders/${orderId}/warranty-passport`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+		});
+
+		assert.equal(
+			passportRes.statusCode,
+			200,
+			`Паспорт для незавершенного наряда должен вернуть 200 OK (Мандат 8e), а не 409: ${passportRes.body}`,
+		);
+		const passportJson = JSON.parse(passportRes.body) as {
+			success: boolean;
+			passport: { isDraft?: boolean; draftNotice?: string };
+		};
+		assert.equal(passportJson.success, true);
+		assert.equal(passportJson.passport.isDraft, true, "Паспорт незавершенного наряда должен быть с флагом isDraft=true");
+		assert.ok(
+			passportJson.passport.draftNotice?.includes("ЧЕРНОВИК"),
+			"Паспорт должен содержать пометку о черновике",
+		);
 	});
 });

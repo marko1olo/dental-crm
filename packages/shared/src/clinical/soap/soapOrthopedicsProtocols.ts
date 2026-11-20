@@ -138,7 +138,7 @@ export const ORTHOPEDICS_SOAP_PROTOCOLS: readonly ClinicalSoapMasterProtocol[] =
 			"7. Оценка цвета, прозрачности и макрорельефа при естественном освещении. Пациент формой и эстетикой полностью удовлетворен.\n" +
 			"8. Повторная фиксация временной коронки на Temp-Bond / отправка на окончательное глазурование.",
 		service804n: {
-			code804n: "A16.07.004.002",
+			code804n: "A16.07.025",
 			title: "Примерка и коррекция зубного протеза (коронки)",
 			basePriceRub: 2500,
 			category: "orthopedics",

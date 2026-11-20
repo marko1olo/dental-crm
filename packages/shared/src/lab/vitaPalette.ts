@@ -42,6 +42,9 @@ export const VITA_CLASSICAL_PLUS_BLEACH_PALETTE: readonly VitaShadePaletteItem[]
 	{ code: "BL4", group: "BL", displayName: "BL4", type: "bleach", order: 20, hex: "#FBE1C6" },
 ] as const;
 
+/** Алиас для канонических шкал VITA Classic (20 оттенков: A1-D4 + BL1-BL4) */
+export const VITA_CLASSIC_SHADES = VITA_CLASSICAL_PLUS_BLEACH_PALETTE;
+
 export interface ChromascopShadeItem {
 	readonly code: string;
 	readonly group: "100" | "200" | "300" | "400" | "500";

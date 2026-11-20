@@ -1,4 +1,10 @@
-import { CANONICAL_PG_LAB_STATUSES, mapStageToCanonicalPgStatus, normalizeVitaShade } from "@dental/shared";
+import {
+	CANONICAL_PG_LAB_STATUSES,
+	kopecksToNumericString,
+	mapStageToCanonicalPgStatus,
+	normalizeVitaShade,
+	rublesToKopecks,
+} from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { LabOrderStatus } from "../../../db/labQuery.js";
 import type { TenantDb } from "../../../db/rls.js";
@@ -93,14 +99,32 @@ export async function updateLabOrderInDb(
 		: updateData.amountKopecks !== undefined
 			? updateData.amountKopecks
 			: updateData.priceKopecks;
-	if (updateData.patientPriceRub !== undefined) updatePayload.priceRub = updateData.patientPriceRub;
-	else if (updateData.priceRub !== undefined) updatePayload.priceRub = updateData.priceRub;
-	else if (rawUpdatePatientKopecks !== undefined) updatePayload.priceRub = rawUpdatePatientKopecks === null ? null : Math.round(Number(rawUpdatePatientKopecks)) / 100;
 
-	if (updateData.labCostRub !== undefined) updatePayload.labCostRub = updateData.labCostRub;
-	else if (updateData.costRub !== undefined) updatePayload.labCostRub = updateData.costRub;
-	else if (updateData.labCostKopecks !== undefined) updatePayload.labCostRub = updateData.labCostKopecks === null ? null : Math.round(Number(updateData.labCostKopecks)) / 100;
-	else if (updateData.costKopecks !== undefined) updatePayload.labCostRub = updateData.costKopecks === null ? null : Math.round(Number(updateData.costKopecks)) / 100;
+	if (rawUpdatePatientKopecks !== undefined || updateData.patientPriceRub !== undefined || updateData.priceRub !== undefined) {
+		const effectivePriceKopecks: number | null = rawUpdatePatientKopecks !== undefined
+			? (rawUpdatePatientKopecks === null ? null : Math.round(Number(rawUpdatePatientKopecks)))
+			: updateData.patientPriceRub !== undefined
+				? (updateData.patientPriceRub === null ? null : rublesToKopecks(Number(updateData.patientPriceRub)))
+				: (updateData.priceRub === null ? null : rublesToKopecks(Number(updateData.priceRub!)));
+
+		updatePayload.priceKopecks = effectivePriceKopecks;
+		updatePayload.priceRub = effectivePriceKopecks === null ? null : kopecksToNumericString(effectivePriceKopecks);
+	}
+
+	const rawUpdateLabCostKopecks = updateData.labCostKopecks !== undefined
+		? updateData.labCostKopecks
+		: updateData.costKopecks;
+
+	if (rawUpdateLabCostKopecks !== undefined || updateData.labCostRub !== undefined || updateData.costRub !== undefined) {
+		const effectiveCostKopecks: number | null = rawUpdateLabCostKopecks !== undefined
+			? (rawUpdateLabCostKopecks === null ? null : Math.round(Number(rawUpdateLabCostKopecks)))
+			: updateData.labCostRub !== undefined
+				? (updateData.labCostRub === null ? null : rublesToKopecks(Number(updateData.labCostRub)))
+				: (updateData.costRub === null ? null : rublesToKopecks(Number(updateData.costRub!)));
+
+		updatePayload.labCostKopecks = effectiveCostKopecks;
+		updatePayload.labCostRub = effectiveCostKopecks === null ? null : kopecksToNumericString(effectiveCostKopecks);
+	}
 
 	if (targetStatus !== undefined) updatePayload.status = toLabOrderStatus(targetStatus);
 	if (updateData.stage !== undefined) updatePayload.stage = updateData.stage;
@@ -118,13 +142,24 @@ export async function updateLabOrderInDb(
 		return { kind: "not_found" as const };
 	}
 
+	const enrichedPriceKopecks = updated.priceKopecks != null
+		? Number(updated.priceKopecks)
+		: updated.priceRub != null
+			? Math.round(Number(updated.priceRub) * 100)
+			: 0;
+	const enrichedLabCostKopecks = updated.labCostKopecks != null
+		? Number(updated.labCostKopecks)
+		: updated.labCostRub != null
+			? Math.round(Number(updated.labCostRub) * 100)
+			: 0;
+
 	const enriched = {
 		...updated,
-		priceKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),
-		amountKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),
-		patientPriceKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),
-		labCostKopecks: Math.round(Number(updated.labCostRub ?? 0) * 100),
-		costKopecks: Math.round(Number(updated.labCostRub ?? 0) * 100),
+		priceKopecks: enrichedPriceKopecks,
+		amountKopecks: enrichedPriceKopecks,
+		patientPriceKopecks: enrichedPriceKopecks,
+		labCostKopecks: enrichedLabCostKopecks,
+		costKopecks: enrichedLabCostKopecks,
 	};
 
 	return { kind: "ok" as const, updated: enriched };

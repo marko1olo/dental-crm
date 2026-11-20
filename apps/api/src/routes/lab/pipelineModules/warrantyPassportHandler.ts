@@ -80,21 +80,16 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 
 			if (!order) return { kind: "not_found" as const };
 
-			// Клинический гейт статусов: паспорт разрешено генерировать ТОЛЬКО для фактически сданных/завершенных нарядов
+			// Мандат 8e (Автономия врача): если наряд еще в производстве или примерке, формируем паспорт в режиме черновика (isDraft)
 			const ELIGIBLE_STATUSES = new Set(["completed", "fitted", "ready_in_clinic", "received"]);
-			if (!ELIGIBLE_STATUSES.has(order.status) && !order.isLockedInstalled && !order.completedAt) {
-				return {
-					kind: "not_eligible" as const,
-					status: order.status,
-				};
-			}
+			const isDraft = !ELIGIBLE_STATUSES.has(order.status) && !order.isLockedInstalled && !order.completedAt;
 
 			const items = await tx
 				.select()
 				.from(labItems)
 				.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, orgId)));
 
-			return { kind: "ok" as const, order, items };
+			return { kind: "ok" as const, order, items, isDraft };
 		});
 
 		if (result.kind === "not_found") {
@@ -104,16 +99,10 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 			});
 		}
 
-		if (result.kind === "not_eligible") {
-			return reply.code(409).send({
-				error: "WarrantyPassportNotEligible",
-				message: `Невозможно выдать гарантийный паспорт: наряд находится в статусе «${result.status}». Конструкция должна быть изготовлена и сдана пациенту.`,
-			});
-		}
-
 		const orderWithDetails = result.order;
 		const items = result.items;
 		const primaryItem = items[0];
+		const isDraft = result.isDraft;
 
 		const baseDate = orderWithDetails.completedAt ?? orderWithDetails.createdAt;
 		const baseYear = baseDate ? new Date(baseDate).getFullYear() : new Date().getFullYear();
@@ -141,6 +130,8 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 			shadeStump,
 			warrantyYears: 2,
 			fixationDate: formatLocalDateToYmd(orderWithDetails.completedAt ?? orderWithDetails.createdAt),
+			isDraft,
+			...(isDraft ? { draftNotice: "[ЧЕРНОВИК: изделие находится на этапе производства/примерки]" } : {}),
 		});
 
 		await auditMedicalAccessFromRequest(request, {

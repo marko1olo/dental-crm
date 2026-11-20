@@ -7,7 +7,7 @@ import type { DefaultBomProcedureSeed } from "./types.js";
 
 export const PROSTHETICS_BOM_SEEDS: readonly DefaultBomProcedureSeed[] = [
 	{
-		serviceCode: "A16.07.004",
+		serviceCode: "A02.07.010",
 		serviceTitle: "Снятие оттиска с одной челюсти (А-силикон / альгинатная масса)",
 		serviceCategory: "prosthetics",
 		specialty: "orthopedist",
@@ -53,7 +53,7 @@ export const PROSTHETICS_BOM_SEEDS: readonly DefaultBomProcedureSeed[] = [
 		],
 	},
 	{
-		serviceCode: "A16.07.006",
+		serviceCode: "A16.07.004.002",
 		serviceTitle: "Фиксация несъемной ортопедической конструкции (коронки) на постоянный цемент",
 		serviceCategory: "prosthetics",
 		specialty: "orthopedist",

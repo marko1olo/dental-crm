@@ -5,7 +5,16 @@
  * Исключены любые крякозябры (mojibake) — 100% чистый UTF-8.
  */
 
-import { DENTAL_LAB_CONSTRUCTIONS } from "@dental/shared";
+import {
+	DENTAL_LAB_CONSTRUCTIONS,
+	formatKopecksToRub,
+	kopecksToRubles,
+	rublesToKopecks,
+	VITA_CLASSICAL_PLUS_BLEACH_PALETTE,
+} from "@dental/shared";
+import { VITA_3D_MASTER_GROUPS } from "../lab/shades/vita3dMasterGroups";
+
+export { VITA_3D_MASTER_GROUPS };
 
 export type FixationTypeId = "cement" | "screw" | "clasp";
 
@@ -73,6 +82,7 @@ export interface StandardZtlPreset {
 	readonly warrantyMonths: number;
 	readonly warrantyLabelRu: string;
 	readonly pricePatientRub: number;
+	readonly pricePatientKopecks: number | bigint;
 	readonly costZtlRub: number;
 	readonly amountKopecks: number | bigint;
 	readonly costMaterialsRub: number;
@@ -164,36 +174,19 @@ export const STUMP_SHADE_PRESETS: readonly StumpShadeOption[] = [
 	{ code: "ND9", labelRu: "ND9 (Металлическая культя/вкладка)", colorHex: "#7d7f83" },
 ] as const;
 
-export const VITA_CLASSIC_SHADES: readonly VitaShadeItem[] = [
-	{ code: "BL1", colorHex: "#ffffff", family: "Bleach" },
-	{ code: "BL2", colorHex: "#fbf9f4", family: "Bleach" },
-	{ code: "BL3", colorHex: "#f6f3eb", family: "Bleach" },
-	{ code: "BL4", colorHex: "#f1ede2", family: "Bleach" },
-	{ code: "A1", colorHex: "#f4ede1", family: "A" },
-	{ code: "A2", colorHex: "#ece2d0", family: "A" },
-	{ code: "A3", colorHex: "#e4d6bf", family: "A" },
-	{ code: "A3.5", colorHex: "#d8c7ad", family: "A" },
-	{ code: "A4", colorHex: "#c8b497", family: "A" },
-	{ code: "B1", colorHex: "#f7f1e5", family: "B" },
-	{ code: "B2", colorHex: "#efe6d4", family: "B" },
-	{ code: "B3", colorHex: "#dfd3bc", family: "B" },
-	{ code: "B4", colorHex: "#cec1a5", family: "B" },
-	{ code: "C1", colorHex: "#ece7de", family: "C" },
-	{ code: "C2", colorHex: "#dfd8cd", family: "C" },
-	{ code: "C3", colorHex: "#d0c7ba", family: "C" },
-	{ code: "C4", colorHex: "#b8ada0", family: "C" },
-	{ code: "D2", colorHex: "#e8ded2", family: "D" },
-	{ code: "D3", colorHex: "#d9cec1", family: "D" },
-	{ code: "D4", colorHex: "#c7bbb0", family: "D" },
-] as const;
+export const VITA_CLASSIC_SHADES: readonly VitaShadeItem[] = VITA_CLASSICAL_PLUS_BLEACH_PALETTE.map((item) => ({
+	code: item.code as VitaClassicShade,
+	colorHex: item.hex,
+	family: (item.group === "BL" ? "Bleach" : item.group) as "A" | "B" | "C" | "D" | "Bleach",
+}));
 
 export const VITA_3D_MASTER_SHADE_GROUPS: readonly Vita3dShadeGroup[] = [
 	{ group: "0M (Bleach)", labelRu: "0M Bleach", shades: ["0M1", "0M2", "0M3"] },
-	{ group: "1M", labelRu: "Группа 1M", shades: ["1M1", "1M2"] },
-	{ group: "2M / 2L / 2R", labelRu: "Группа 2", shades: ["2L1.5", "2M1", "2M2", "2M3", "2R1.5"] },
-	{ group: "3M / 3L / 3R", labelRu: "Группа 3", shades: ["3L1.5", "3M1", "3M2", "3M3", "3R1.5"] },
-	{ group: "4M / 4L", labelRu: "Группа 4", shades: ["4L1.5", "4M1", "4M2", "4M3"] },
-	{ group: "5M", labelRu: "Группа 5", shades: ["5M1", "5M2"] },
+	...VITA_3D_MASTER_GROUPS.map((g) => ({
+		group: g.name,
+		labelRu: `${g.name} (${g.descRu})`,
+		shades: g.shades,
+	})),
 ] as const;
 
 export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
@@ -202,8 +195,9 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "single_crown", badge: "ZrO2 Multi",
 		description: "Монолитный диоксид циркония многослойной градиентной прозрачности",
 		warrantyMonths: 60, warrantyLabelRu: "5 лет",
-		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks / 100),
-		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks / 100),
+		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks,
+		pricePatientRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks),
+		costZtlRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks),
 		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks,
 		costMaterialsRub: 1200,
 		turnaroundBusinessDays: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.standardTurnaroundDays,
@@ -214,8 +208,9 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "single_crown", badge: "e.max Press",
 		description: "Прессованная дисиликатная стеклокерамика высокой эстетики для фронта",
 		warrantyMonths: 36, warrantyLabelRu: "3 года",
-		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks / 100),
-		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks / 100),
+		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks,
+		pricePatientRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks),
+		costZtlRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks),
 		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks,
 		costMaterialsRub: 1300,
 		turnaroundBusinessDays: DENTAL_LAB_CONSTRUCTIONS.crown_emax.standardTurnaroundDays,
@@ -226,8 +221,9 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "veneer", badge: "Винир e.max",
 		description: "Микропротезирование зоны улыбки с минимальным препарированием эмали",
 		warrantyMonths: 36, warrantyLabelRu: "3 года",
-		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks / 100) + 2000,
-		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks / 100) + 500,
+		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks + 200000,
+		pricePatientRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks + 200000),
+		costZtlRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks + 50000),
 		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks + 50000,
 		costMaterialsRub: 1500,
 		turnaroundBusinessDays: 6, fixationType: "cement", hasAntagonists: true,
@@ -237,8 +233,9 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "bridge", badge: "Мост ZrO2",
 		description: "Мостовидный протез из диоксида циркония с промывным седловидным пространством",
 		warrantyMonths: 60, warrantyLabelRu: "5 лет",
-		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks / 100) * 2,
-		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks / 100) * 2,
+		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks * 2,
+		pricePatientRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks * 2),
+		costZtlRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks * 2),
 		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks * 2,
 		costMaterialsRub: 2200,
 		turnaroundBusinessDays: 7, fixationType: "cement", hasAntagonists: true,
@@ -248,8 +245,9 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "single_crown", badge: "МК Co-Cr",
 		description: "Классическая металлокерамика на биосовместимом CoCr каркасе",
 		warrantyMonths: 24, warrantyLabelRu: "2 года",
-		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultPatientPriceKopecks / 100),
-		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultZtlCostKopecks / 100),
+		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultPatientPriceKopecks,
+		pricePatientRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultPatientPriceKopecks),
+		costZtlRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultZtlCostKopecks),
 		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultZtlCostKopecks,
 		costMaterialsRub: 1100,
 		turnaroundBusinessDays: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.standardTurnaroundDays,
@@ -260,7 +258,7 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "temporary_crown", badge: "PMMA фрез.",
 		description: "Фрезерованная провизорная коронка на период интеграции и моделирования десны",
 		warrantyMonths: 6, warrantyLabelRu: "6 месяцев (провизорная)",
-		pricePatientRub: 5000, costZtlRub: 1500, amountKopecks: 150000, costMaterialsRub: 600,
+		pricePatientKopecks: 500000, pricePatientRub: 5000, costZtlRub: 1500, amountKopecks: 150000, costMaterialsRub: 600,
 		turnaroundBusinessDays: 2, fixationType: "cement", hasAntagonists: true,
 	},
 	{
@@ -268,8 +266,9 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "clasp_denture", badge: "Бюгель CoCr",
 		description: "Дуговой съемный протез с опорно-удерживающими кламмерами или замками",
 		warrantyMonths: 24, warrantyLabelRu: "2 года",
-		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultPatientPriceKopecks / 100),
-		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultZtlCostKopecks / 100),
+		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultPatientPriceKopecks,
+		pricePatientRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultPatientPriceKopecks),
+		costZtlRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultZtlCostKopecks),
 		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultZtlCostKopecks,
 		costMaterialsRub: 2500,
 		turnaroundBusinessDays: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.standardTurnaroundDays,
@@ -280,7 +279,7 @@ export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
 		constructionType: "all_on_4", badge: "All-on-4",
 		description: "Несъемная конструкция на 4 имплантатах с винтовой фиксацией на мультиюнитах",
 		warrantyMonths: 120, warrantyLabelRu: "10 лет",
-		pricePatientRub: 180000, costZtlRub: 55000, amountKopecks: 5500000, costMaterialsRub: 8500,
+		pricePatientKopecks: 18000000, pricePatientRub: 180000, costZtlRub: 55000, amountKopecks: 5500000, costMaterialsRub: 8500,
 		turnaroundBusinessDays: 14, fixationType: "screw", hasAntagonists: true,
 	},
 ] as const;
@@ -298,26 +297,41 @@ export function calculateOrthopedicEconomics(presetId: string, count: number = 1
 	const fallbackPreset = STANDARD_ZTL_ORDER_PRESETS[0] ?? {
 		id: "zirconia",
 		name: "Коронка диоксид циркония",
-		pricePatientRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks / 100),
-		costZtlRub: Math.round(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks / 100),
+		pricePatientKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks,
+		pricePatientRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks),
+		costZtlRub: kopecksToRubles(DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks),
+		amountKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks,
 		costMaterialsRub: 1200,
 	};
 	const preset = getZtlPresetById(presetId) ?? fallbackPreset;
-	const grossPriceRub = preset.pricePatientRub * safeCount;
-	const ztlCostRub = preset.costZtlRub * safeCount;
-	const materialsCostRub = preset.costMaterialsRub * safeCount;
-	const netMarginRub = Math.max(0, grossPriceRub - ztlCostRub - materialsCostRub);
-	const marginPercent = grossPriceRub > 0 ? Math.round((netMarginRub / grossPriceRub) * 100) : 0;
+	const unitPriceKopecks = BigInt(preset.pricePatientKopecks ?? rublesToKopecks(preset.pricePatientRub));
+	const unitZtlCostKopecks = BigInt(preset.amountKopecks ?? rublesToKopecks(preset.costZtlRub));
+	const unitMaterialsKopecks = BigInt(rublesToKopecks(preset.costMaterialsRub));
+
+	const grossPriceKopecks = unitPriceKopecks * BigInt(safeCount);
+	const ztlCostKopecks = unitZtlCostKopecks * BigInt(safeCount);
+	const materialsCostKopecks = unitMaterialsKopecks * BigInt(safeCount);
+	const netMarginKopecks = grossPriceKopecks > (ztlCostKopecks + materialsCostKopecks)
+		? grossPriceKopecks - (ztlCostKopecks + materialsCostKopecks)
+		: 0n;
+
+	const grossPriceRub = kopecksToRubles(grossPriceKopecks);
+	const ztlCostRub = kopecksToRubles(ztlCostKopecks);
+	const materialsCostRub = kopecksToRubles(materialsCostKopecks);
+	const netMarginRub = kopecksToRubles(netMarginKopecks);
+	const marginPercent = grossPriceKopecks > 0n
+		? Math.round(Number((netMarginKopecks * 100n) / grossPriceKopecks))
+		: 0;
 
 	return {
 		unitsCount: safeCount,
 		grossPriceRub,
-		grossPriceKopecks: BigInt(grossPriceRub) * 100n,
+		grossPriceKopecks,
 		ztlCostRub,
-		ztlCostKopecks: BigInt(ztlCostRub) * 100n,
+		ztlCostKopecks,
 		materialsCostRub,
 		netMarginRub,
-		netMarginKopecks: BigInt(netMarginRub) * 100n,
+		netMarginKopecks,
 		marginPercent,
 	};
 }

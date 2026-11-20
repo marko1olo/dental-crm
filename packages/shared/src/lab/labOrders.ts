@@ -809,24 +809,28 @@ export const prostheticWarrantyPassportSchema = z.object({
 	expirationDate: z.string(), // YYYY-MM-DD
 	gostStandard: z.string().default("ГОСТ Р 51087-97 / Стандарты СтАР"),
 	sanpinDisinfectionMark: z.string().default("СанПиН 3.3686-21: Дезинфекция оттисков и протезов выполнена"),
+	isDraft: z.boolean().optional(),
+	draftNotice: z.string().optional(),
 });
 export type ProstheticWarrantyPassport = z.infer<typeof prostheticWarrantyPassportSchema>;
 
 export function generateProstheticWarrantyPassport(params: {
 	orderNumber: string;
-	batchCode?: string;
+	batchCode?: string | undefined;
 	patientFullName: string;
-	clinicName?: string;
+	clinicName?: string | undefined;
 	doctorFullName: string;
-	technicianLabName?: string;
+	technicianLabName?: string | undefined;
 	toothFdi: string;
 	restorationType: string;
 	frameworkMaterial: string;
 	shade: string;
-	shadeStump?: string | null;
-	cementationProtocol?: string;
-	warrantyYears?: number;
-	fixationDate?: string;
+	shadeStump?: string | null | undefined;
+	cementationProtocol?: string | undefined;
+	warrantyYears?: number | undefined;
+	fixationDate?: string | undefined;
+	isDraft?: boolean | undefined;
+	draftNotice?: string | undefined;
 }): ProstheticWarrantyPassport {
 	const fixation = params.fixationDate ? new Date(params.fixationDate) : new Date();
 	const years = params.warrantyYears ?? 2;
@@ -855,6 +859,8 @@ export function generateProstheticWarrantyPassport(params: {
 		expirationDate: expiration.toISOString().slice(0, 10),
 		gostStandard: "ГОСТ Р 51087-97 / ГОСТ 31576-2012 / Клинические рекомендации СтАР",
 		sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
+		...(params.isDraft !== undefined ? { isDraft: params.isDraft } : {}),
+		...(params.draftNotice ? { draftNotice: params.draftNotice } : {}),
 	};
 }
 
