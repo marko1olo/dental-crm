@@ -7,12 +7,11 @@
  */
 
 import React from "react";
-import { rublesToKopecks } from "@dental/shared";
-import { showToast } from "../GlobalToast.js";
 import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 import type { BillingInvoice } from "./invoiceTypes.js";
 import { InvoicesPrimaryModals } from "./invoices/InvoicesPrimaryModals.js";
 import { InvoicesSecondaryModals } from "./invoices/InvoicesSecondaryModals.js";
+import { useInvoicesCashboxConfig } from "./invoices/useInvoicesCashboxConfig.js";
 
 export interface InvoicesModalsLayerProps {
 	readonly isCreateModalOpen: boolean;
@@ -58,6 +57,12 @@ export const InvoicesModalsLayer: React.FC<InvoicesModalsLayerProps> = (props) =
 		refundInvoice, setRefundInvoice, bankInstallmentInvoice, onUpdateInvoice,
 	} = props;
 
+	const activeCashboxConfig = useInvoicesCashboxConfig({
+		isShiftModalOpen, setIsShiftModalOpen, activePaymentInvoice, setActivePaymentInvoice,
+		activeSplitInvoice, setActiveSplitInvoice, isRegisterDrawerOpen, setIsRegisterDrawerOpen,
+		invoices, patientId, patientName, currentDoctorName, clinicLegalName, onUpdateInvoice,
+	});
+
 	return (
 		<>
 			<InvoicesPrimaryModals
@@ -80,54 +85,7 @@ export const InvoicesModalsLayer: React.FC<InvoicesModalsLayerProps> = (props) =
 				onUpdateInvoice={onUpdateInvoice}
 			/>
 
-			{activePaymentInvoice && (
-				<CashRegisterStudioModal
-					isOpen={Boolean(activePaymentInvoice)}
-					onClose={() => setActivePaymentInvoice(null)}
-					mode="checkout"
-					initialTab="checkout"
-					totalDueRub={activePaymentInvoice.totalAmountRub}
-					amountRub={activePaymentInvoice.totalAmountRub}
-					amountKopecks={rublesToKopecks(activePaymentInvoice.totalAmountRub)}
-					patientId={activePaymentInvoice.patientId}
-					patientName={activePaymentInvoice.patientName}
-					patientPhone={activePaymentInvoice.patientPhone}
-					doctorFullName={activePaymentInvoice.doctorName}
-					cashierFullName={currentDoctorName}
-					clinicLegalName={clinicLegalName}
-					invoiceId={activePaymentInvoice.id}
-					onSuccess={(payload: unknown) => {
-						const result = typeof payload === "object" && payload !== null ? (payload as Record<string, unknown>) : null;
-						const isOffline = Boolean(result?.offlineBuffered);
-						const method = typeof result?.method === "string" ? result.method : undefined;
-						const paidRub = typeof result?.totalRub === "number" ? result.totalRub : activePaymentInvoice.totalAmountRub;
-						const invoiceStatus: BillingInvoice["status"] = method === "warranty_100" || paidRub === 0 ? "warranty_100" : "paid";
-
-						onUpdateInvoice?.({
-							...activePaymentInvoice,
-							status: invoiceStatus,
-							paidAmountRub: paidRub,
-							paidAt: new Date().toISOString(),
-							paymentMethod: method,
-							fiscalStatus: isOffline ? "pending_fiscal_sync" : "fiscalized",
-							isOfflineQueued: isOffline,
-						});
-						setActivePaymentInvoice(null);
-						showToast(`Счет ${activePaymentInvoice.number} успешно закрыт`, "success");
-					}}
-					onPaymentComplete={() => {
-						onUpdateInvoice?.({
-							...activePaymentInvoice,
-							status: "paid",
-							paidAmountRub: activePaymentInvoice.totalAmountRub,
-							paidAt: new Date().toISOString(),
-							fiscalStatus: "fiscalized",
-						});
-						setActivePaymentInvoice(null);
-						showToast(`Счет ${activePaymentInvoice.number} успешно закрыт`, "success");
-					}}
-				/>
-			)}
+			{activeCashboxConfig && <CashRegisterStudioModal {...activeCashboxConfig} />}
 		</>
 	);
 };

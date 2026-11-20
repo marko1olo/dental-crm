@@ -1,3 +1,4 @@
+import { and, eq } from "drizzle-orm";
 import {
 	type CreatePaymentInput,
 	createPaymentSchema,
@@ -9,10 +10,11 @@ import {
 	requireResolvedOrganizationId,
 } from "../../../accessGuard.js";
 import { recordAuditEventInDb } from "../../../db/auditQuery.js";
-import {
-	createPaymentInDb,
-	findPaymentByClientMutationIdInDb,
-} from "../../../db/billingQuery.js";
+import { findPaymentByClientMutationIdInDb } from "../../../db/billingQuery.js";
+import { narrowTaxDeductionCode } from "../../../db/billing/types.js";
+import { db } from "../../../db/client.js";
+import { payments } from "../../../db/schema.js";
+import { processCashboxPayment } from "../../../routes/cashbox/cashboxPaymentProcessor.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { enforcePermissionWhenStaffKnown } from "../../../security/permissions.js";
 import { paymentValidationDetail } from "../fiscalReceiptService.js";
@@ -79,25 +81,78 @@ export async function handleCreatePayment(
 	const paymentInput = preflight.paymentInput;
 
 	try {
-		const payment = await createPaymentInDb(orgId, paymentInput);
-		if (payment.isReplay) {
+		const inputWithInvoice = paymentInput as typeof paymentInput & { invoiceId?: string };
+		const cashboxResult = await processCashboxPayment(
+			orgId,
+			{
+				...paymentInput,
+				invoiceId: paymentInput.documentId ?? inputWithInvoice.invoiceId,
+			},
+			effectiveMutationId,
+		);
+
+		if (cashboxResult.statusCode !== 200) {
+			return reply.code(cashboxResult.statusCode).send(cashboxResult.body);
+		}
+
+		const resultData = cashboxResult.body.data as Record<string, unknown>;
+		const paymentId = typeof resultData.id === "string" ? resultData.id : "";
+		const [paymentRow] = await db
+			.select()
+			.from(payments)
+			.where(and(eq(payments.organizationId, orgId), eq(payments.id, paymentId)))
+			.limit(1);
+
+		if (!paymentRow) {
+			return reply.code(500).send({
+				error: "PaymentNotFoundAfterCreation",
+				message: `Платеж ${paymentId} не найден после проведения`,
+			});
+		}
+
+		const formattedPayment = {
+			id: paymentRow.id,
+			organizationId: paymentRow.organizationId,
+			patientId: paymentRow.patientId,
+			visitId: paymentRow.visitId,
+			documentId: paymentRow.documentId,
+			amountRub: Number(paymentRow.amountRub),
+			method: paymentRow.method === "split" ? "card" : paymentRow.method,
+			status: paymentRow.status,
+			paidAt: paymentRow.paidAt ? paymentRow.paidAt.toISOString() : null,
+			createdAt: paymentRow.createdAt ? paymentRow.createdAt.toISOString() : new Date().toISOString(),
+			fiscalReceiptNumber: paymentRow.fiscalReceiptNumber,
+			fiscalReceiptIssuedAt: paymentRow.fiscalReceiptIssuedAt,
+			fiscalReceiptUrl: paymentRow.fiscalReceiptUrl,
+			fiscalReceipt: paymentRow.fiscalReceipt,
+			clientMutationId: paymentRow.clientMutationId,
+			payerFullName: paymentRow.payerFullName,
+			payerInn: paymentRow.payerInn,
+			payerBirthDate: paymentRow.payerBirthDate,
+			payerIdentityDocument: paymentRow.payerIdentityDocument,
+			payerRelationship: paymentRow.payerRelationship,
+			taxDeductionCode: narrowTaxDeductionCode(paymentRow.taxDeductionCode),
+			note: paymentRow.note,
+		};
+
+		if (resultData.isReplay) {
 			reply.header("idempotency-replayed", "true");
 			reply.header("x-idempotency-replayed", "true");
-			return reply.code(200).send(paymentSchema.parse(payment));
+			return reply.code(200).send(paymentSchema.parse(formattedPayment));
 		}
 		try {
 			const identity = getRequestIdentity(request);
 			await recordAuditEventInDb(orgId, {
 				entityType: "payment",
-				entityId: payment.id,
+				entityId: formattedPayment.id,
 				action: "payment_receive",
 				reason: paymentInput.note ?? null,
 				actorUserId: identity.userId ?? null,
 			});
 		} catch (auditErr) {
-			request.log.warn({ err: auditErr, paymentId: payment.id, orgId }, "[billing] Ошибка аудита оплаты");
+			request.log.warn({ err: auditErr, paymentId: formattedPayment.id, orgId }, "[billing] Ошибка аудита оплаты");
 		}
-		return reply.code(201).send(paymentSchema.parse(payment));
+		return reply.code(201).send(paymentSchema.parse(formattedPayment));
 	} catch (error) {
 		return handlePaymentCreationError(error, orgId, paymentInput, reply);
 	}

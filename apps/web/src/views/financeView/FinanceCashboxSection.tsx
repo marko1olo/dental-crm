@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { CashRegisterStudioModal } from "../../components/cashbox/CashRegisterStudioModal";
 import { LoyaltyStudioModal } from "../../components/loyalty/LoyaltyStudioModal";
 import { showToast } from "../../components/GlobalToast";
@@ -13,7 +14,6 @@ export interface FinanceCashboxSectionProps {
 export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.JSX.Element {
 	const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
-	const [showManualForm, setShowManualForm] = useState(false);
 
 	const patient = s.effectivePatient ?? s.documentPatient ?? s.activePatient ?? s.dashboard?.patients?.[0] ?? null;
 	const summaryAmount = Number(s.paymentAmount) > 0 ? Number(s.paymentAmount) : (s.effectiveBillingSummary?.totalDueRub ?? 0);
@@ -29,7 +29,6 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 				summaryAmount={summaryAmount}
 				patientName={patientName}
 				hasPatient={Boolean(patient?.id)}
-				showManualForm={showManualForm}
 				onOpenLoyaltyModal={() => {
 					if (!patient?.id) {
 						showToast("Бонусы и сертификаты доступны для выбранного пациента.", "info");
@@ -38,7 +37,6 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					setIsLoyaltyModalOpen(true);
 				}}
 				onOpenPaymentModal={openPaymentModal}
-				onToggleManualForm={() => setShowManualForm((prev) => !prev)}
 			/>
 
 			{isLoyaltyModalOpen && patient?.id && (
@@ -49,7 +47,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					patientId={patient.id}
 					patientName={patientName ?? ""}
 					initialPointsBalance={patient.loyaltyPointsBalance}
-					currentInvoiceAmountKop={Math.round(summaryAmount * 100)}
+					currentInvoiceAmountKop={rublesToKopecks(summaryAmount)}
 					onRedeemSuccess={(redeemedPointsRub: number) => {
 						if (typeof s.setPaymentAmount === "function" && summaryAmount > 0) {
 							const nextAmt = Math.max(0, summaryAmount - redeemedPointsRub);
@@ -69,7 +67,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					title="Касса · Оплата приёма"
 					totalDueRub={summaryAmount}
 					amountRub={summaryAmount}
-					amountKopecks={Math.round(summaryAmount * 100)}
+					amountKopecks={rublesToKopecks(summaryAmount)}
 					defaultMethod="card"
 					patientId={patient?.id || undefined}
 					patientName={patientName || undefined}

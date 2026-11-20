@@ -118,6 +118,24 @@ const idempotencyKey = `${orgId}:${orderId}:${totalKopecks}:${timestamp}`;
 * **Строго 1 Primary CTA кнопка**: В модалках быстрой оплаты и предпросмотра чека (`FastCheckoutReceiptPreview.tsx`) присутствует ровно одна Primary CTA кнопка (`execute-fast-checkout-btn`). Вспомогательные шлюзы (автономный терминал) стилизуются как `secondary-button`.
 * **Защита автономии персонала и врача (Мандат 8e)**: Валидация ИНН (`cashboxInnValidation.ts`) гарантирует `isValid: true, isRequired: false` для физлиц, исключая блокировку проведения чека. Скидки врача до 100% применяются без административных преград.
 
+### 2.6. Единый кассовый транзакционный процессор SSOT (Мандаты 8bf, 8bm, 8bo):
+* **Канонический движок проведения платежей**: Все платежи клиники (касса, инвойсы, визиты, сплиты, гарантии, сертификаты, ДМС, депозиты) проводятся строго через единый сервис `processCashboxPayment` (`apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts`).
+* **Устранение легаси-клонов и дублирующих пайплайнов**:
+  * Ликвидированы 4 устаревших файла-клона: `paymentCreationPipeline.ts`, `paymentSplitValidation.ts`, `paymentRecordExecutor.ts`, `paymentVisitSettlement.ts`.
+  * Создан канонический фасад-адаптер `cashboxPaymentAdapter.ts`, делегирующий вызовы `createPaymentInDb` и `validateAndResolvePaymentSplit` в единый кассовый процессор с сохранением обратной совместимости для сервисных тестов.
+  * `paymentCreateHandler.ts` переведен с `createPaymentInDb` на прямой вызов `processCashboxPayment`.
+* **Тотальная ликвидация Float-бомб (Мандат 8bm)**:
+  * Все операции с деньгами ведутся через `@dental/shared/src/money.ts` (`rublesToKopecks`, `kopecksToRubles`, `kopecksToNumericString`, `sumKopecks`).
+  * Полностью искоренены опасные конструкции `Math.round(x * 100)` и `x / 100` в `cashboxPaymentProcessor.ts`, `cashboxRefundRoutes.ts`, `createTreatmentPlanHandler.ts` и `useFinanceLogic.ts`.
+* **Автоматическое зачисление наличной сдачи на авансовый депозит (Мандат 8e)**:
+  * При внесении наличных свыше остатка по визиту (до 5 000 ₽ сдачи) излишек автоматически фиксируется в `advanceDepositTaggings` со статусом `unallocated` и меткой `patient_deposit`.
+* **Устранение 4-кратного дублирования модалки кассы во фронтенде (Мандат 8aq, 8bi)**:
+  * В `InvoicesView.tsx` / `InvoicesModalsLayer.tsx` устранены 4 параллельных монтирования `CashRegisterStudioModal`.
+  * Создан хук `useInvoicesCashboxConfig.ts`, централизующий конфигурацию модалки. В DOM монтируется строго ОДИН экземпляр `{activeCashboxConfig && <CashRegisterStudioModal {...activeCashboxConfig} />}`.
+* **Ликвидация фантомных ручных полей в чекауте**:
+  * Из `CashboxQuickCard.tsx` и `FinanceCashboxSection.tsx` удален мертвый шеврон ручной формы.
+  * В `useFinanceLogic.ts` удалена отправка фейковых регуляторных полей `fiscalReceipt: { fn, fd, fpd }`, платежи направляются напрямую в `POST /api/cashbox/payments`.
+
 ---
 
 ## 👨‍👩‍👧‍👦 3. Семейный баланс и кошельки (Family Finance)
@@ -271,6 +289,13 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
    - **Sev 2**: Устранены градиенты на кнопках в `OfflineFiscalBatchModal.tsx` с заменой на благородный тиловый токен `bg-[var(--teal,#0d9488)]`.
    - **Снос сирот (`git rm`)**: Физически удалены 8 мертвых файлов (`PaymentFamilyDepositView.tsx`, `DepositTopupModal.tsx`, `depositModal/` 6 файлов).
    - **4-State Visual Proof**: Сняты 4 канонических скриншота на живом сервере Vite (81 KB, 78 KB, 125 KB, 124 KB) и лично осмотрены через `read_file` (Zero-Clipping, 1 Primary CTA #0d9488, 0px горизонтального скролла, Apple HIG).
+18. **DEF-FIN-18 [ЗАКРЫТО] (Red Team Lead Cashbox Fixer — Унификация платежных контуров, DTO счетов, канонические смены и снос призрачных роутов)**:
+   - **Ликвидация параллельного платежного контура**: Устаревший `POST /api/billing/payments` в `apps/api/src/routes/billingRoutes/handlers/paymentCreateHandler.ts` полностью перенаправлен на канонический транзакционный процессор `processCashboxPayment` (`cashboxPaymentProcessor.ts`), гарантируя единую ACID-транзакцию с `pg_advisory_xact_lock`, очередь фискализации `fiscalReceiptQueue`, сплит-тендеры, депозиты и 100% скидки врача.
+   - **Синхронизация DTO счетов**: `apps/api/src/routes/billingRoutes/handlers/billingInvoicesHandler.ts` переведен на прямой вызов `handleListInvoices`, устраняя рассинхрон DTO и обеспечивая возврат полных позиций услуг и ФИО пациента.
+   - **Единый источник копеечной арифметики**: `packages/shared/src/fiscal/kopecksArithmetic.ts` переведен на прозрачный ре-экспорт из `packages/shared/src/money.ts` (`rublesToKopecks`, `kopecksToRubles`), устраняя дублирование алгоритмов.
+   - **Канонический эндпоинт кассовой смены**: В `apps/web/src/components/shift/cashShiftService.ts` ликвидирован массив перебора fallback-роутов. Закреплен ровно 1 канонический путь: `POST /api/cashbox/shift/open` и `POST /api/cashbox/shift/close`.
+   - **Снос призрачного роута в ЭМК**: В `apps/web/src/components/visit/emkTab/VisitEmkModals.tsx` призрачный вызов несуществующего `/api/billing/fiscalize-receipt` заменен на штатный запуск кассовой студии через `dente:open-cashbox` (`mode: "checkout"`).
+   - **Машинные гейты и 4-State Visual Proof**: `tsc --noEmit` по затронутым модулям — 0 ошибок. Тесты `financialConcurrentPayments.test.ts` (6/6 PASS), `apiContractsAndErrorHardening.test.ts` (37/37 PASS), `cashboxSsotScreens.test.tsx` (11/11 PASS), `fiscal` тесты (76/76 PASS). В `docs/proofs/cashbox/` зафиксированы и лично осмотрены через `read_file` 4 скриншота: `01_cashbox_studio_pc_light_1440x900.png` (77.9 KB), `02_cashbox_studio_pc_dark_1440x900.png` (74.8 KB), `03_cashbox_studio_mobile_light_390x844.png` (123.9 KB), `04_cashbox_studio_mobile_dark_390x844.png` (123.6 KB).
 
 ---
 

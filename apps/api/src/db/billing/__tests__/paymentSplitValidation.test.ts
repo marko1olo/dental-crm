@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { validateAndResolvePaymentSplit } from "../paymentSplitValidation.js";
+import { validateAndResolvePaymentSplit } from "../cashboxPaymentAdapter.js";
 
 const TEST_PATIENT_ID = "00000000-0000-0000-0000-000000000001";
 

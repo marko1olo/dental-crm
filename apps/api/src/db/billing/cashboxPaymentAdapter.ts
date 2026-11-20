@@ -1,19 +1,87 @@
 /**
- * paymentSplitValidation.ts — Layer 1: Split & Tender Validation for Payment Creation Pipeline.
- *
- * Implements:
- * - Integer kopecks parsing and non-negativity checks
- * - Multi-tender split calculation (Cash, Card/Electronic, Insurance/DMS, Family Deposit, Bonus)
- * - Remainder auto-balancing across cash and electronic tenders
- * - 100% warranty discount and free doctor care detection (Mandates 8e п. 7, 8n)
- * - Atomic bonus redemption support ([LOY-02 & LOY-03])
+ * cashboxPaymentAdapter.ts — Canonical Facade delegating to processCashboxPayment SSOT engine.
+ * Eliminates duplicate legacy payment pipelines (Mandate 8bf, Mandate 8e).
  */
 
+import { and, eq } from "drizzle-orm";
 import {
-	formatKopecksRu,
 	type CreatePaymentInput,
+	type Payment,
+	rublesToKopecks,
+	formatKopecksRu,
 } from "@dental/shared";
+import { db } from "../client.js";
+import { payments } from "../schema.js";
 import { toKopecks } from "../../money/patientDebt.js";
+import { processCashboxPayment } from "../../routes/cashbox/cashboxPaymentProcessor.js";
+import { narrowTaxDeductionCode } from "./types.js";
+
+export type PaymentWithReplay = Payment & { isReplay?: boolean | undefined };
+
+export async function createPaymentInDb(
+	organizationId: string,
+	input: CreatePaymentInput,
+): Promise<PaymentWithReplay> {
+	const effectiveMutationId = input.clientMutationId?.trim();
+	const inputWithInvoice = input as CreatePaymentInput & { invoiceId?: string };
+	const outcome = await processCashboxPayment(
+		organizationId,
+		{
+			...input,
+			invoiceId: input.documentId ?? inputWithInvoice.invoiceId,
+		},
+		effectiveMutationId,
+	);
+
+	if (outcome.statusCode !== 200) {
+		const errBody = outcome.body as { message?: string; error?: string };
+		throw new Error(errBody.message || errBody.error || "Ошибка проведения платежа в кассе");
+	}
+
+	const responseData = outcome.body.data as Record<string, unknown>;
+	const paymentId = typeof responseData.id === "string" ? responseData.id : "";
+	const isReplay = typeof responseData.isReplay === "boolean" ? responseData.isReplay : undefined;
+	const [row] = await db
+		.select()
+		.from(payments)
+		.where(
+			and(
+				eq(payments.organizationId, organizationId),
+				eq(payments.id, paymentId),
+			),
+		)
+		.limit(1);
+
+	if (!row) {
+		throw new Error(`Платеж ${paymentId} не найден после проведения`);
+	}
+
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		patientId: row.patientId,
+		visitId: row.visitId,
+		documentId: row.documentId,
+		amountRub: Number(row.amountRub),
+		method: row.method === "split" ? "card" : (row.method as Payment["method"]),
+		clientMutationId: row.clientMutationId,
+		fiscalReceiptNumber: row.fiscalReceiptNumber,
+		fiscalReceiptIssuedAt: row.fiscalReceiptIssuedAt,
+		fiscalReceiptUrl: row.fiscalReceiptUrl,
+		fiscalReceipt: row.fiscalReceipt as Payment["fiscalReceipt"],
+		payerFullName: row.payerFullName,
+		payerInn: row.payerInn,
+		payerBirthDate: row.payerBirthDate,
+		payerIdentityDocument: row.payerIdentityDocument,
+		payerRelationship: row.payerRelationship,
+		taxDeductionCode: narrowTaxDeductionCode(row.taxDeductionCode),
+		note: row.note,
+		createdAt: row.createdAt.toISOString(),
+		paidAt: row.paidAt.toISOString(),
+		status: row.status as Payment["status"],
+		isReplay,
+	};
+}
 
 export interface ResolvedPaymentSplit {
 	readonly incomingPaymentKopecks: number;
@@ -41,35 +109,35 @@ export function validateAndResolvePaymentSplit(
 
 	const rawCashKop =
 		input.cashAmountKopecks ??
-		(input.cashAmountRub != null ? Math.round(input.cashAmountRub * 100) : 0);
+		(input.cashAmountRub != null ? rublesToKopecks(input.cashAmountRub) : 0);
 	const rawElectronicKop =
 		(input.electronicAmountKopecks ??
-			(input.electronicAmountRub != null ? Math.round(input.electronicAmountRub * 100) : 0)) +
+			(input.electronicAmountRub != null ? rublesToKopecks(input.electronicAmountRub) : 0)) +
 		(input.sbpAmountKopecks ??
-			(input.sbpAmountRub != null ? Math.round(input.sbpAmountRub * 100) : 0));
+			(input.sbpAmountRub != null ? rublesToKopecks(input.sbpAmountRub) : 0));
 	const rawDmsKop =
 		input.dmsAmountKopecks ??
-		(input.dmsAmountRub != null ? Math.round(input.dmsAmountRub * 100) : 0);
+		(input.dmsAmountRub != null ? rublesToKopecks(input.dmsAmountRub) : 0);
 	const rawDepositKop =
 		input.depositAmountKopecks ??
 		input.familyDepositAmountKopecks ??
 		(input.depositAmountRub != null
-			? Math.round(input.depositAmountRub * 100)
+			? rublesToKopecks(input.depositAmountRub)
 			: input.familyDepositAmountRub != null
-				? Math.round(input.familyDepositAmountRub * 100)
+				? rublesToKopecks(input.familyDepositAmountRub)
 				: 0);
 	const rawBonusKop =
 		input.bonusAmountKopecks ??
 		(input.bonusAmountRub != null
-			? Math.round(input.bonusAmountRub * 100)
+			? rublesToKopecks(input.bonusAmountRub)
 			: input.pointsToRedeem != null
-				? Math.round(input.pointsToRedeem * 100)
+				? rublesToKopecks(input.pointsToRedeem)
 				: 0);
 	const rawCertificateKop =
 		(input.certificateAmountKopecks ??
-			(input.certificateAmountRub != null ? Math.round(input.certificateAmountRub * 100) : 0)) +
+			(input.certificateAmountRub != null ? rublesToKopecks(input.certificateAmountRub) : 0)) +
 		(input.installmentAmountKopecks ??
-			(input.installmentAmountRub != null ? Math.round(input.installmentAmountRub * 100) : 0));
+			(input.installmentAmountRub != null ? rublesToKopecks(input.installmentAmountRub) : 0));
 
 	const isSplit =
 		(rawCashKop > 0 && rawElectronicKop > 0) ||
@@ -107,9 +175,6 @@ export function validateAndResolvePaymentSplit(
 		}
 	}
 
-	// Мандаты 8e п. 7 и 8n: Свобода скидок и переделок соло-врача (до 100%).
-	// Если скидка 100% (гарантийная переделка, персонал, бесплатный прием), incomingPaymentKopecks === 0
-	// НЕ выбрасывает ошибку, а фиксирует гарантийный платеж / акт со статусом 100% скидки.
 	const isWarrantyOrFullDiscount =
 		incomingPaymentKopecks === 0 &&
 		(input.discountPercent === 100 ||

@@ -36,7 +36,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 		"/api/sberbank/pay",
 		sberbankPayFastifySchema,
 		async (request, reply) => {
-			const perm = await requirePermission(request, reply, "finance.write");
+			const perm = await requirePermission(db, request, reply, "finance.write");
 			if (!perm) return;
 
 			const organizationId = await requireOrganizationContext(request, reply);
@@ -54,11 +54,13 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 			const { patientId, amount, visitId, documentId, invoiceId } = parsed.data;
 
 			// Проверяем принадлежность пациента к организации клиники
-			const [patient] = await db
-				.select({ id: patients.id })
-				.from(patients)
-				.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
-				.limit(1);
+			const [patient] = await withTenantCtx(organizationId, async (tx) => {
+				return await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+					.limit(1);
+			});
 
 			if (!patient) {
 				return reply.status(404).send({
@@ -122,7 +124,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 		"/api/sberbank/status/:orderId",
 		sberbankStatusFastifySchema,
 		async (request, reply) => {
-			const perm = await requirePermission(request, reply, "finance.write");
+			const perm = await requirePermission(db, request, reply, "finance.write");
 			if (!perm) return;
 			const paramsParsed = sberbankStatusParamsSchema.safeParse(request.params);
 			if (!paramsParsed.success) {
@@ -285,7 +287,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 		"/api/sberbank/cancel-or-reconcile",
 		sberbankCancelReconcileFastifySchema,
 		async (request, reply) => {
-			const perm = await requirePermission(request, reply, "finance.write");
+			const perm = await requirePermission(db, request, reply, "finance.write");
 			if (!perm) return;
 
 			const orgId = await requireOrganizationContext(request, reply);

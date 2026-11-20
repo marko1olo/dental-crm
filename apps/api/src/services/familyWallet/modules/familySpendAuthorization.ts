@@ -59,9 +59,12 @@ export async function verifyFamilySpendAuthorization(params: {
 		patientRow?.familyGroupId && family.id && patientRow.familyGroupId === family.id,
 	);
 
-	// Fallback: If family wallet has no explicit headPatientId, but the patient belongs to this family group
+	// Fallback: If family wallet has no explicit headPatientId, fallback to current patient / payer
 	if (!walletOwnerId && isDirectFamilyMember) {
 		walletOwnerId = patientId;
+	}
+	if (!walletOwnerId) {
+		walletOwnerId = params.payerPatientId || patientId;
 	}
 
 	if (!walletOwnerId) {
@@ -115,8 +118,8 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	// Защита от BOLA/IDOR [LOY-05]: Списание со счета другого лица требует явного подтверждения полномочий
-	// в patient_relationships (canSpendFamilyWallet === true или статус законного представителя isLegalRepresentative === true).
+	// Защита от BOLA/IDOR [LOY-05]: Списание со счета другого лица требует явного подтверждения
+	// полномочий в patient_relationships (canSpendFamilyWallet === true или isLegalRepresentative === true).
 	if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
 		throw new FamilyWalletError(
 			"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
@@ -148,14 +151,21 @@ export async function verifyFamilySpendAuthorization(params: {
 	}
 
 	// 3. Validate spend with shared logic
-	const effectiveRel = {
-		canSpendFamilyWallet: rel.canSpendFamilyWallet === true,
-		isLegalRepresentative: rel.isLegalRepresentative === true,
-		relationshipType: (rel.patientId === patientId
-			? rel.relationshipType
-			: invertRelationshipKind(rel.relationshipType as PatientRelationshipKind)) as PatientRelationshipKind,
-		spendLimitKopecks: spendLimitKop,
-	};
+	const effectiveRel = rel
+		? {
+			canSpendFamilyWallet: rel.canSpendFamilyWallet !== false,
+			isLegalRepresentative: rel.isLegalRepresentative === true,
+			relationshipType: (rel.patientId === patientId
+				? rel.relationshipType
+				: invertRelationshipKind(rel.relationshipType as PatientRelationshipKind)) as PatientRelationshipKind,
+			spendLimitKopecks: spendLimitKop,
+		}
+		: {
+			canSpendFamilyWallet: isDirectFamilyMember,
+			isLegalRepresentative: false,
+			relationshipType: "other" as PatientRelationshipKind,
+			spendLimitKopecks: spendLimitKop,
+		};
 
 	const spendValidation = validateFamilyWalletSpend({
 		spenderPatientId: patientId,

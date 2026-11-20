@@ -1,14 +1,12 @@
 import { kopecksToRub, parseKopecks } from "@dental/shared";
 import { Decimal } from "decimal.js";
 import { and, eq } from "drizzle-orm";
-import type { db } from "../../../db/client.js";
+import type { TenantDb } from "../../../db/client.js";
 import { serviceCatalogItems } from "../../../db/schema.js";
 import { FamilyWalletError, type FamilyDebitParams } from "../familyWalletTypes.js";
 
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
 export async function verifyServicePriceIntegrity(params: {
-	readonly tx: DatabaseTransaction;
+	readonly tx: TenantDb;
 	readonly organizationId: string;
 	readonly debitParams: FamilyDebitParams;
 	readonly debitKopecks: number;

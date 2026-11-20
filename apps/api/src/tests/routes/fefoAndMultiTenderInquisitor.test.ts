@@ -35,7 +35,7 @@ import { registerCashboxRoutes } from "../../routes/cashbox.js";
 import { inventoryRoutes as warehouseRoutes } from "../../routes/inventory.js";
 import { fefoStockService } from "../../services/inventory/fefoStockService.js";
 import { sortBatchesByFefo } from "../../services/inventory/fefo/batchSelector.js";
-import { validateAndResolvePaymentSplit } from "../../db/billing/paymentSplitValidation.js";
+import { validateAndResolvePaymentSplit } from "../../db/billingQuery.js";
 import {
 	calculateDoctorNetSalary,
 	calculateDoctorSalary,

@@ -1,14 +1,14 @@
 /**
  * apps/web/src/components/billing/invoices/InvoicesSecondaryModals.tsx
  *
- * Secondary modals for InvoicesView: Split payment, Print receipt, Refund, Installment QR.
+ * Secondary modals for InvoicesView: Print receipt, Refund, Installment QR.
+ * CashRegisterStudioModal is unified exclusively in InvoicesModalsLayer (Mandate 8b, 8bf).
  * Strictly <= 120 lines per Mandate 8b.
  */
 
 import React from "react";
 import { rubToKopecks, kopecksToRubles } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
-import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 import { CashReceiptPrintModal } from "../../finance/CashReceiptPrintModal.js";
 import { RefundServiceModal } from "../../finance/refunds/RefundServiceModal.js";
 import { BankInstallmentQrModal } from "../../payments/BankInstallmentQrModal.js";
@@ -17,8 +17,8 @@ import type { BillingInvoice } from "../invoiceTypes.js";
 interface InvoicesSecondaryModalsProps {
 	readonly clinicLegalName: string;
 	readonly currentDoctorName: string;
-	readonly activeSplitInvoice: BillingInvoice | null;
-	readonly setActiveSplitInvoice: (inv: BillingInvoice | null) => void;
+	readonly activeSplitInvoice?: BillingInvoice | null | undefined;
+	readonly setActiveSplitInvoice?: ((inv: BillingInvoice | null) => void) | undefined;
 	readonly receiptToPrint: BillingInvoice | null;
 	readonly setReceiptToPrint: (inv: BillingInvoice | null) => void;
 	readonly refundInvoice: BillingInvoice | null;
@@ -30,60 +30,13 @@ interface InvoicesSecondaryModalsProps {
 
 export const InvoicesSecondaryModals: React.FC<InvoicesSecondaryModalsProps> = (props) => {
 	const {
-		clinicLegalName, currentDoctorName, activeSplitInvoice, setActiveSplitInvoice,
+		clinicLegalName, currentDoctorName,
 		receiptToPrint, setReceiptToPrint, refundInvoice, setRefundInvoice,
-		bankInstallmentInvoice, setBankInstallmentInvoice, onUpdateInvoice,
+		bankInstallmentInvoice, setBankInstallmentInvoice,
 	} = props;
 
 	return (
 		<>
-			{activeSplitInvoice && (
-				<CashRegisterStudioModal
-					isOpen={Boolean(activeSplitInvoice)}
-					onClose={() => setActiveSplitInvoice(null)}
-					mode="checkout"
-					initialTab="checkout"
-					defaultMethod="split"
-					totalDueRub={activeSplitInvoice.totalAmountRub}
-					amountRub={activeSplitInvoice.totalAmountRub}
-					amountKopecks={rubToKopecks(activeSplitInvoice.totalAmountRub)}
-					patientId={activeSplitInvoice.patientId}
-					patientName={activeSplitInvoice.patientName}
-					patientPhone={activeSplitInvoice.patientPhone}
-					doctorFullName={activeSplitInvoice.doctorName}
-					cashierFullName={currentDoctorName}
-					clinicLegalName={clinicLegalName}
-					invoiceId={activeSplitInvoice.id}
-					onSuccess={(payload: unknown) => {
-						const result = typeof payload === "object" && payload !== null ? (payload as Record<string, unknown>) : null;
-						const isOffline = Boolean(result?.offlineBuffered);
-						onUpdateInvoice?.({
-							...activeSplitInvoice,
-							status: "paid",
-							paidAmountRub: activeSplitInvoice.totalAmountRub,
-							paidAt: new Date().toISOString(),
-							paymentMethod: "split",
-							fiscalStatus: isOffline ? "pending_fiscal_sync" : "fiscalized",
-							isOfflineQueued: isOffline,
-						});
-						setActiveSplitInvoice(null);
-						showToast(`Сплит-оплата по счету ${activeSplitInvoice.number} успешно проведена`, "success");
-					}}
-					onPaymentComplete={() => {
-						onUpdateInvoice?.({
-							...activeSplitInvoice,
-							status: "paid",
-							paidAmountRub: activeSplitInvoice.totalAmountRub,
-							paidAt: new Date().toISOString(),
-							paymentMethod: "split",
-							fiscalStatus: "fiscalized",
-						});
-						setActiveSplitInvoice(null);
-						showToast(`Сплит-оплата по счету ${activeSplitInvoice.number} успешно проведена`, "success");
-					}}
-				/>
-			)}
-
 			{receiptToPrint && (
 				<CashReceiptPrintModal
 					isOpen={Boolean(receiptToPrint)} onClose={() => setReceiptToPrint(null)}

@@ -1,23 +1,19 @@
 import type React from "react";
-import { Award, ChevronDown, ChevronUp } from "lucide-react";
+import { Award } from "lucide-react";
 
 export interface CashboxQuickCardProps {
 	readonly summaryAmount: number;
 	readonly patientName: string | null;
 	readonly hasPatient: boolean;
-	readonly showManualForm: boolean;
 	readonly onOpenLoyaltyModal: () => void;
 	readonly onOpenPaymentModal: () => void;
-	readonly onToggleManualForm: () => void;
 }
 
 export const CashboxQuickCard: React.FC<CashboxQuickCardProps> = ({
 	summaryAmount,
 	patientName,
-	showManualForm,
 	onOpenLoyaltyModal,
 	onOpenPaymentModal,
-	onToggleManualForm,
 }) => {
 	return (
 		<div className="payment-quick-card mb-4 p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] shadow-sm">
@@ -59,14 +55,6 @@ export const CashboxQuickCard: React.FC<CashboxQuickCardProps> = ({
 						<span className="sr-only">Принять оплату</span>
 						<span className="hidden sm:inline">Принять оплату и выбить чек</span>
 						<span className="sm:hidden">Оплатить и чек</span>
-					</button>
-					<button
-						type="button"
-						onClick={onToggleManualForm}
-						className="min-h-[44px] sm:min-h-[36px] sm:h-9 w-11 sm:w-9 px-0 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold flex items-center justify-center cursor-pointer transition-colors shrink-0"
-						title="Показать / скрыть ручные параметры"
-					>
-						{showManualForm ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
 					</button>
 				</div>
 			</div>

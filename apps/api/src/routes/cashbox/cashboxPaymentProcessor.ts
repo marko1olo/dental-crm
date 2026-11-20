@@ -10,11 +10,12 @@
  * - Idempotency & Financial Resilience: clientMutationId & idempotencyKey.
  */
 
-import { and, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
-import { kopecksToRub, normalizePaymentMethod, rubToKopecks, validateLuhn16Certificate } from "@dental/shared";
+import { and, desc, eq, gte, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { kopecksToNumericString, kopecksToRub, kopecksToRubles, normalizePaymentMethod, rubToKopecks, rublesToKopecks, sumKopecks, validateLuhn16Certificate } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	advanceDepositTaggings,
+	appointments,
 	bonusTransactions,
 	cashBoxes,
 	cashOperations,
@@ -30,9 +31,10 @@ import {
 	treatmentItems,
 	visits,
 } from "../../db/schema.js";
-import { buildPatientLedger, clinicOwesPatientKopecks } from "../../money/patientDebt.js";
+import { buildPatientLedger, chargeLineKopecks, clinicOwesPatientKopecks } from "../../money/patientDebt.js";
 import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
+import { deductMaterialsForVisit } from "../../services/inventory/materialDeduction.js";
 import { deductUnspentPointsFifo, processPatientExpiredBonuses } from "../loyaltyModules/bonusBalanceService.js";
 import { cashboxPaymentRequestSchema } from "./cashboxSchemas.js";
 
@@ -115,7 +117,7 @@ export async function processCashboxPayment(
 	if (body.amountKopecks !== undefined) {
 		totalKopecks = BigInt(body.amountKopecks);
 	} else if (body.amountRub !== undefined) {
-		totalKopecks = BigInt(Math.round(body.amountRub * 100));
+		totalKopecks = BigInt(rublesToKopecks(body.amountRub));
 	}
 	if (totalKopecks <= 0n && !isWarrantyPayment) {
 		return {
@@ -138,7 +140,7 @@ export async function processCashboxPayment(
 	} else if (body.depositAmountKopecks !== undefined && body.depositAmountKopecks > 0) {
 		requiredDepositKopecks = BigInt(body.depositAmountKopecks);
 	} else if (body.depositAmountRub !== undefined && body.depositAmountRub > 0) {
-		requiredDepositKopecks = BigInt(Math.round(body.depositAmountRub * 100));
+		requiredDepositKopecks = BigInt(rublesToKopecks(body.depositAmountRub));
 	} else if (body.splitTenders && body.splitTenders.length > 0) {
 		for (const tender of body.splitTenders) {
 			const norm = normalizePaymentMethod(tender.method);
@@ -147,7 +149,7 @@ export async function processCashboxPayment(
 				const tk =
 					tender.amountKopecks !== undefined
 						? BigInt(tender.amountKopecks)
-						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
+						: BigInt(rublesToKopecks(tender.amountRub ?? 0));
 				requiredDepositKopecks += tk;
 			}
 		}
@@ -164,7 +166,7 @@ export async function processCashboxPayment(
 	} else if (body.bonusAmountKopecks !== undefined && body.bonusAmountKopecks > 0) {
 		requiredBonusKopecks = BigInt(body.bonusAmountKopecks);
 	} else if (body.bonusAmountRub !== undefined && body.bonusAmountRub > 0) {
-		requiredBonusKopecks = BigInt(Math.round(body.bonusAmountRub * 100));
+		requiredBonusKopecks = BigInt(rublesToKopecks(body.bonusAmountRub));
 	} else if (body.splitTenders && body.splitTenders.length > 0) {
 		for (const tender of body.splitTenders) {
 			const rawMethod = tender.method?.trim().toLowerCase();
@@ -172,7 +174,7 @@ export async function processCashboxPayment(
 				const tk =
 					tender.amountKopecks !== undefined
 						? BigInt(tender.amountKopecks)
-						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
+						: BigInt(rublesToKopecks(tender.amountRub ?? 0));
 				requiredBonusKopecks += tk;
 			}
 		}
@@ -187,7 +189,7 @@ export async function processCashboxPayment(
 	} else if (body.certificateAmountKopecks !== undefined && body.certificateAmountKopecks > 0) {
 		requiredCertificateKopecks = BigInt(body.certificateAmountKopecks);
 	} else if (body.certificateAmountRub !== undefined && body.certificateAmountRub > 0) {
-		requiredCertificateKopecks = BigInt(Math.round(body.certificateAmountRub * 100));
+		requiredCertificateKopecks = BigInt(rublesToKopecks(body.certificateAmountRub));
 	} else if (body.splitTenders && body.splitTenders.length > 0) {
 		for (const tender of body.splitTenders) {
 			const rawMethod = tender.method?.trim().toLowerCase();
@@ -195,7 +197,7 @@ export async function processCashboxPayment(
 				const tk =
 					tender.amountKopecks !== undefined
 						? BigInt(tender.amountKopecks)
-						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
+						: BigInt(rublesToKopecks(tender.amountRub ?? 0));
 				requiredCertificateKopecks += tk;
 				if (!certificateNumber && tender.certificateNumber) {
 					certificateNumber = tender.certificateNumber.trim();
@@ -213,7 +215,7 @@ export async function processCashboxPayment(
 	} else if (body.dmsAmountKopecks !== undefined && body.dmsAmountKopecks > 0) {
 		requiredDmsKopecks = BigInt(body.dmsAmountKopecks);
 	} else if (body.dmsAmountRub !== undefined && body.dmsAmountRub > 0) {
-		requiredDmsKopecks = BigInt(Math.round(body.dmsAmountRub * 100));
+		requiredDmsKopecks = BigInt(rublesToKopecks(body.dmsAmountRub));
 	} else if (body.splitTenders && body.splitTenders.length > 0) {
 		for (const tender of body.splitTenders) {
 			const rawMethod = tender.method?.trim().toLowerCase();
@@ -221,7 +223,7 @@ export async function processCashboxPayment(
 				const tk =
 					tender.amountKopecks !== undefined
 						? BigInt(tender.amountKopecks)
-						: BigInt(Math.round((tender.amountRub ?? 0) * 100));
+						: BigInt(rublesToKopecks(tender.amountRub ?? 0));
 				requiredDmsKopecks += tk;
 				if (!guaranteeLetterId && tender.guaranteeLetterId) {
 					guaranteeLetterId = tender.guaranteeLetterId.trim();
@@ -250,7 +252,7 @@ export async function processCashboxPayment(
 					tender.amountKopecks !== undefined
 						? BigInt(tender.amountKopecks)
 						: tender.amountRub !== undefined
-							? BigInt(Math.round(tender.amountRub * 100))
+							? BigInt(rublesToKopecks(tender.amountRub))
 							: 0n;
 				sumSplitKopecks += tenderKop;
 			}
@@ -258,32 +260,32 @@ export async function processCashboxPayment(
 			if (body.cashAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.cashAmountKopecks);
 			} else if (body.cashAmountRub !== undefined) {
-				sumSplitKopecks += BigInt(Math.round(body.cashAmountRub * 100));
+				sumSplitKopecks += BigInt(rublesToKopecks(body.cashAmountRub));
 			}
 			if (body.electronicAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.electronicAmountKopecks);
 			} else if (body.electronicAmountRub !== undefined) {
-				sumSplitKopecks += BigInt(Math.round(body.electronicAmountRub * 100));
+				sumSplitKopecks += BigInt(rublesToKopecks(body.electronicAmountRub));
 			}
 			if (body.depositAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.depositAmountKopecks);
 			} else if (body.depositAmountRub !== undefined) {
-				sumSplitKopecks += BigInt(Math.round(body.depositAmountRub * 100));
+				sumSplitKopecks += BigInt(rublesToKopecks(body.depositAmountRub));
 			}
 			if (body.bonusAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.bonusAmountKopecks);
 			} else if (body.bonusAmountRub !== undefined) {
-				sumSplitKopecks += BigInt(Math.round(body.bonusAmountRub * 100));
+				sumSplitKopecks += BigInt(rublesToKopecks(body.bonusAmountRub));
 			}
 			if (body.certificateAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.certificateAmountKopecks);
 			} else if (body.certificateAmountRub !== undefined) {
-				sumSplitKopecks += BigInt(Math.round(body.certificateAmountRub * 100));
+				sumSplitKopecks += BigInt(rublesToKopecks(body.certificateAmountRub));
 			}
 			if (body.dmsAmountKopecks !== undefined) {
 				sumSplitKopecks += BigInt(body.dmsAmountKopecks);
 			} else if (body.dmsAmountRub !== undefined) {
-				sumSplitKopecks += BigInt(Math.round(body.dmsAmountRub * 100));
+				sumSplitKopecks += BigInt(rublesToKopecks(body.dmsAmountRub));
 			}
 		}
 
@@ -347,7 +349,7 @@ export async function processCashboxPayment(
 		};
 	}
 	const requestedPatientId: string | undefined = body.patientId ?? undefined;
-	const amountRubNumber = Number(totalKopecks) / 100;
+	const amountRubNumber = kopecksToRubles(Number(totalKopecks));
 
 	const result = await withTenantCtx(orgId, async (tx) => {
 		// ACID pg_advisory_xact_lock на clientMutationId для защиты от состояния гонки
@@ -372,7 +374,7 @@ export async function processCashboxPayment(
 		if (existingPayment) {
 			return {
 				id: existingPayment.id,
-				amountKopecks: Math.round(Number(existingPayment.amountRub) * 100),
+				amountKopecks: rublesToKopecks(Number(existingPayment.amountRub)),
 				amountRub: Number(existingPayment.amountRub),
 				method: existingPayment.method,
 				status: existingPayment.status,
@@ -561,8 +563,8 @@ export async function processCashboxPayment(
 			const totalAvailableDepositKop = personalAvailableKop + familyBalanceKop;
 
 			if (totalAvailableDepositKop < requiredDepositKopecks) {
-				const availableRub = (Number(totalAvailableDepositKop) / 100).toFixed(2);
-				const requiredRub = (Number(requiredDepositKopecks) / 100).toFixed(2);
+				const availableRub = kopecksToNumericString(Number(totalAvailableDepositKop));
+				const requiredRub = kopecksToNumericString(Number(requiredDepositKopecks));
 				return {
 					kind: "insufficient_deposit" as const,
 					availableRub,
@@ -586,7 +588,7 @@ export async function processCashboxPayment(
 					remainingToDeductKop = 0n;
 					await tx
 						.update(advanceDepositTaggings)
-						.set({ depositAmountRub: (Number(nextAdvKop) / 100).toFixed(2) })
+						.set({ depositAmountRub: kopecksToNumericString(Number(nextAdvKop)) })
 						.where(eq(advanceDepositTaggings.id, adv.id));
 				}
 			}
@@ -598,7 +600,7 @@ export async function processCashboxPayment(
 					organizationId: orgId,
 					patientId: resolvedPatientId,
 					patientName: patientRow?.fullName || "Пациент клиники",
-					depositAmountRub: (Number(remainingToDeductKop) / 100).toFixed(2),
+					depositAmountRub: kopecksToNumericString(Number(remainingToDeductKop)),
 					taggedTargetType: "treatment_plan",
 					taggedTargetName: `Зачёт аванса по леджеру (счёт ${body.invoiceId || "б/н"})`,
 					allocationStatus: "spent",
@@ -631,20 +633,12 @@ export async function processCashboxPayment(
 						)
 						.limit(1);
 
-					// 1. Явный запрет на списание семейного депозита
-					if (rel && rel.canSpendFamilyWallet === false) {
+					// DEF-FAM-01: Проверка полномочий списания семейного депозита (BOLA guard [LOY-05])
+					// Списание со счета владельца требует подтвержденного флага canSpendFamilyWallet === true или статуса законного представителя
+					if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
 						return {
 							kind: "unauthorized_family_spend" as const,
 							reason: "Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).",
-						};
-					}
-
-					// 2. Если нет родственной связи в patientRelationships, проверяем подтвержденное членство в группе
-					const isFamilyMember = patientRow.familyGroupId === lockedFamilyGroup.id;
-					if (!rel && !isFamilyMember) {
-						return {
-							kind: "unauthorized_family_spend" as const,
-							reason: "Пациент не связан подтвержденным родством или семейной группой с владельцем семейного депозита.",
 						};
 					}
 
@@ -665,7 +659,7 @@ export async function processCashboxPayment(
 					if (spendLimitKop !== undefined && spendLimitKop >= 0 && Number(remainingToDeductKop) > spendLimitKop) {
 						return {
 							kind: "unauthorized_family_spend" as const,
-							reason: `Превышен установленный лимит списания с семейного депозита (лимит: ${(spendLimitKop / 100).toFixed(2)} ₽, запрошено: ${(Number(remainingToDeductKop) / 100).toFixed(2)} ₽).`,
+							reason: `Превышен установленный лимит списания с семейного депозита (лимит: ${kopecksToNumericString(spendLimitKop)} ₽, запрошено: ${kopecksToNumericString(Number(remainingToDeductKop))} ₽).`,
 						};
 					}
 				}
@@ -679,7 +673,7 @@ export async function processCashboxPayment(
 				await tx
 					.update(familyGroups)
 					.set({
-						balance: (Number(newFamilyBalKop) / 100).toFixed(2),
+						balance: kopecksToNumericString(Number(newFamilyBalKop)),
 						updatedAt: new Date(),
 					})
 					.where(eq(familyGroups.id, lockedFamilyGroup.id));
@@ -710,8 +704,8 @@ export async function processCashboxPayment(
 			const currentActiveKop = BigInt(rubToKopecks(currentActivePoints));
 
 			if (currentActiveKop < requiredBonusKopecks) {
-				const availableRub = (Number(currentActiveKop) / 100).toFixed(2);
-				const requiredRub = (Number(requiredBonusKopecks) / 100).toFixed(2);
+				const availableRub = kopecksToNumericString(Number(currentActiveKop));
+				const requiredRub = kopecksToNumericString(Number(requiredBonusKopecks));
 				return {
 					kind: "insufficient_bonus" as const,
 					availableRub,
@@ -720,7 +714,7 @@ export async function processCashboxPayment(
 			}
 
 			lockedBonusBalance = bonusBalance ?? null;
-			pointsToDeduct = Number((Number(requiredBonusKopecks) / 100).toFixed(2));
+			pointsToDeduct = kopecksToRubles(Number(requiredBonusKopecks));
 			newActiveBonusPoints = Math.max(0, Number((currentActivePoints - pointsToDeduct).toFixed(2)));
 		}
 
@@ -783,15 +777,15 @@ export async function processCashboxPayment(
 				return {
 					kind: "insufficient_certificate" as const,
 					certificateNumber,
-					availableRub: (Number(currentBalKop) / 100).toFixed(2),
-					requiredRub: (Number(requiredCertificateKopecks) / 100).toFixed(2),
+					availableRub: kopecksToNumericString(Number(currentBalKop)),
+					requiredRub: kopecksToNumericString(Number(requiredCertificateKopecks)),
 				};
 			}
 
 			lockedCertificate = cert;
 			certAmountToDeductKop = requiredCertificateKopecks;
 			const newBalKop = currentBalKop - certAmountToDeductKop;
-			newCertBalanceRub = (Number(newBalKop) / 100).toFixed(2);
+			newCertBalanceRub = kopecksToNumericString(Number(newBalKop));
 		}
 
 		// [FIN-DMS] Проверка и блокировка списания по гарантийному письму ДМС (Мандаты 8e, 8bm, 8bo)
@@ -861,28 +855,28 @@ export async function processCashboxPayment(
 						};
 					}
 				} else {
-					const curUsedKop = BigInt(Math.round(Number(lockedDmsLetter.usedAmountRub || 0) * 100));
-					const maxCovKop = BigInt(Math.round(Number(lockedDmsLetter.maxCoverageRub || 0) * 100));
+					const curUsedKop = BigInt(rublesToKopecks(Number(lockedDmsLetter.usedAmountRub || 0)));
+					const maxCovKop = BigInt(rublesToKopecks(Number(lockedDmsLetter.maxCoverageRub || 0)));
 
 					if (maxCovKop > 0n && curUsedKop + requiredDmsKopecks > maxCovKop) {
 						if (isUrgentCarePayment) {
 							// Soft Overdraft: Mandate 8e & 8v - do not abort transaction, record exhausted status
 							dmsAmountToDeductKop = requiredDmsKopecks;
 							const nextUsedKop = curUsedKop + dmsAmountToDeductKop;
-							newDmsUsedRub = Number(nextUsedKop) / 100;
+							newDmsUsedRub = kopecksToRubles(Number(nextUsedKop));
 							isDmsExhausted = true;
 						} else {
 							return {
 								kind: "insufficient_dms_coverage" as const,
 								letterNumber: lockedDmsLetter.letterNumber,
-								availableRub: (Number(maxCovKop - curUsedKop) / 100).toFixed(2),
-								requiredRub: (Number(requiredDmsKopecks) / 100).toFixed(2),
+								availableRub: kopecksToNumericString(Number(maxCovKop - curUsedKop)),
+								requiredRub: kopecksToNumericString(Number(requiredDmsKopecks)),
 							};
 						}
 					} else {
 						dmsAmountToDeductKop = requiredDmsKopecks;
 						const nextUsedKop = curUsedKop + dmsAmountToDeductKop;
-						newDmsUsedRub = Number(nextUsedKop) / 100;
+						newDmsUsedRub = kopecksToRubles(Number(nextUsedKop));
 						isDmsExhausted = maxCovKop > 0n && nextUsedKop >= maxCovKop;
 					}
 				}
@@ -1088,10 +1082,158 @@ export async function processCashboxPayment(
 					.where(eq(patientInvoices.id, inv.id));
 			}
 
-			await tx
-				.update(visits)
-				.set({ updatedAt: new Date() })
-				.where(and(eq(visits.id, effectiveVisitId), eq(visits.organizationId, orgId)));
+			// Проверка переплаты по визиту и автоматическое зачисление сдачи на авансовый депозит (Мандат 8e)
+			const activeTreatmentItems = await tx
+				.select({
+					unitPriceRub: treatmentItems.unitPriceRub,
+					quantity: treatmentItems.quantity,
+					discountRub: treatmentItems.discountRub,
+				})
+				.from(treatmentItems)
+				.where(
+					and(
+						eq(treatmentItems.organizationId, orgId),
+						eq(treatmentItems.visitId, effectiveVisitId),
+						ne(treatmentItems.status, "cancelled"),
+					),
+				);
+
+			let isVisitFullySettled: boolean = Boolean(isWarrantyPayment);
+
+			if (activeTreatmentItems.length > 0) {
+				const chargedVisitKopecks = sumKopecks(
+					activeTreatmentItems.map((item) =>
+						chargeLineKopecks({
+							unitPriceRub: item.unitPriceRub,
+							quantity: item.quantity,
+							discountRub: item.discountRub,
+						}),
+					),
+				);
+
+				const existingVisitPayments = await tx
+					.select({
+						amountRub: payments.amountRub,
+					})
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.visitId, effectiveVisitId),
+							eq(payments.status, "paid"),
+							ne(payments.id, newPayment.id),
+						),
+					);
+
+				const priorPaidKopecks = sumKopecks(
+					existingVisitPayments.map((p) =>
+						rublesToKopecks(Number(p.amountRub || 0)),
+					),
+				);
+
+				const remainingVisitKopecks = Math.max(
+					0,
+					chargedVisitKopecks - priorPaidKopecks,
+				);
+
+				const incomingPaymentKopecks = Number(totalKopecks);
+				if (incomingPaymentKopecks > remainingVisitKopecks) {
+					const overpaymentKopecks = incomingPaymentKopecks - remainingVisitKopecks;
+					const normMethod = normalizePaymentMethod(body.method);
+					if (normMethod === "cash" && overpaymentKopecks <= 500000) {
+						const overpaymentRub = kopecksToNumericString(overpaymentKopecks);
+
+						await tx.insert(advanceDepositTaggings).values({
+							organizationId: orgId,
+							patientId: resolvedPatientId,
+							patientName: patientName || "Пациент",
+							depositAmountRub: overpaymentRub,
+							taggedTargetType: "patient_deposit",
+							taggedTargetName: `Авансовый депозит по приему ${effectiveVisitId}`,
+							allocationStatus: "unallocated",
+						});
+					}
+				}
+
+				if (incomingPaymentKopecks >= remainingVisitKopecks) {
+					isVisitFullySettled = true;
+				}
+			} else {
+				isVisitFullySettled = true;
+			}
+
+			// Полноценный сеттлмент визита: draft -> signed, appointments -> completed, warehouse BOM deduction
+			const [visitRow] = await tx
+				.select({
+					id: visits.id,
+					status: visits.status,
+					appointmentId: visits.appointmentId,
+				})
+				.from(visits)
+				.where(and(eq(visits.id, effectiveVisitId), eq(visits.organizationId, orgId)))
+				.limit(1);
+
+			if (isVisitFullySettled && visitRow) {
+				if (visitRow.status === "draft") {
+					await tx
+						.update(visits)
+						.set({
+							status: "signed",
+							signedAt: new Date(),
+							updatedAt: new Date(),
+						})
+						.where(eq(visits.id, visitRow.id));
+				} else {
+					await tx
+						.update(visits)
+						.set({ updatedAt: new Date() })
+						.where(eq(visits.id, visitRow.id));
+				}
+
+				if (visitRow.appointmentId) {
+					await tx
+						.update(appointments)
+						.set({ status: "completed" })
+						.where(
+							and(
+								eq(appointments.id, visitRow.appointmentId),
+								eq(appointments.organizationId, orgId),
+							),
+						);
+				}
+
+				await tx
+					.update(treatmentItems)
+					.set({ status: "completed" })
+					.where(
+						and(
+							eq(treatmentItems.organizationId, orgId),
+							eq(treatmentItems.visitId, effectiveVisitId),
+							ne(treatmentItems.status, "completed"),
+							ne(treatmentItems.status, "cancelled"),
+						),
+					);
+
+				// Автоматическое списание расходных материалов со склада по техкартам процедур (BOM - Мандат 8v)
+				try {
+					await deductMaterialsForVisit(tx, {
+						organizationId: orgId,
+						visitId: effectiveVisitId,
+						userId: body.cashierFullName || null,
+						transactionType: "auto_deduct",
+					});
+				} catch (deductErr) {
+					console.warn(
+						`[cashboxPaymentProcessor] Автоматическое списание материалов по визиту ${effectiveVisitId} завершилось с предупреждением:`,
+						deductErr,
+					);
+				}
+			} else {
+				await tx
+					.update(visits)
+					.set({ updatedAt: new Date() })
+					.where(and(eq(visits.id, effectiveVisitId), eq(visits.organizationId, orgId)));
+			}
 		}
 
 		// 2.1. Списание бонусов лояльности (FIFO)
@@ -1190,7 +1332,7 @@ export async function processCashboxPayment(
 
 		if (body.splitTenders && body.splitTenders.length > 0) {
 			for (const tender of body.splitTenders) {
-				const tk = tender.amountKopecks ?? Math.round((tender.amountRub ?? 0) * 100);
+				const tk = tender.amountKopecks ?? rublesToKopecks(tender.amountRub ?? 0);
 				const norm = normalizePaymentMethod(tender.method);
 				if (norm === "cash") {
 					resolvedCashKop += tk;
@@ -1201,11 +1343,11 @@ export async function processCashboxPayment(
 		} else {
 			resolvedCashKop =
 				body.cashAmountKopecks ??
-				(body.cashAmountRub !== undefined ? Math.round(body.cashAmountRub * 100) : undefined) ??
+				(body.cashAmountRub !== undefined ? rublesToKopecks(body.cashAmountRub) : undefined) ??
 				(body.method === "cash" ? Number(totalKopecks) : 0);
 			resolvedElecKop =
 				body.electronicAmountKopecks ??
-				(body.electronicAmountRub !== undefined ? Math.round(body.electronicAmountRub * 100) : undefined) ??
+				(body.electronicAmountRub !== undefined ? rublesToKopecks(body.electronicAmountRub) : undefined) ??
 				(["card", "sbp", "online"].includes(body.method || "")
 					? Number(totalKopecks)
 					: 0);
@@ -1282,7 +1424,7 @@ export async function processCashboxPayment(
 		}
 
 		if (requiredDepositKopecks > 0n && cashDeskBox) {
-			const depositRub = Number(requiredDepositKopecks) / 100;
+			const depositRub = kopecksToRubles(Number(requiredDepositKopecks));
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashDeskBox.id,
@@ -1298,7 +1440,7 @@ export async function processCashboxPayment(
 		}
 
 		if (requiredBonusKopecks > 0n && cashDeskBox) {
-			const bonusRub = Number(requiredBonusKopecks) / 100;
+			const bonusRub = kopecksToRubles(Number(requiredBonusKopecks));
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashDeskBox.id,
@@ -1314,7 +1456,7 @@ export async function processCashboxPayment(
 		}
 
 		if (requiredCertificateKopecks > 0n && cashDeskBox) {
-			const certRub = Number(requiredCertificateKopecks) / 100;
+			const certRub = kopecksToRubles(Number(requiredCertificateKopecks));
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashDeskBox.id,
@@ -1330,7 +1472,7 @@ export async function processCashboxPayment(
 		}
 
 		if (requiredDmsKopecks > 0n && dmsBox) {
-			const dmsRub = Number(requiredDmsKopecks) / 100;
+			const dmsRub = kopecksToRubles(Number(requiredDmsKopecks));
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: dmsBox.id,

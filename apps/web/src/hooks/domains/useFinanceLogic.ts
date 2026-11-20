@@ -1,4 +1,4 @@
-import { documentKindMetadata } from "@dental/shared";
+import { documentKindMetadata, rublesToKopecks } from "@dental/shared";
 import { useRef } from "react";
 import {
 	browserGeneratedId,
@@ -152,81 +152,33 @@ export function useFinanceLogic({
 						(document.totalAmountRub ?? 0) > 0,
 				) ?? null;
 			let response: Response;
-			if ((paymentMethod as string) === "family_wallet") {
-				const famRes = await fetchWithHandling(
-					`/api/finance/family/patient/${documentPatient.id}`,
-					{ headers: auth.denteClinicalReadHeaders() },
-				);
-				if (!famRes.ok) {
-					setError("У пациента не настроен семейный аккаунт для оплаты.");
-					setIsPaymentSaving(false);
-					return;
-				}
-				const famData = await famRes.json();
-				if (!paymentMutationIdRef.current) {
-					paymentMutationIdRef.current = browserGeneratedId("family-payment");
-				}
-				const familyClientMutationId = paymentMutationIdRef.current;
-				response = await fetchWithHandling("/api/finance/family/pay", {
-					method: "POST",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-						"Idempotency-Key": familyClientMutationId,
-					}),
-					body: JSON.stringify({
-						organizationId:
-							dashboard?.clinicSettings?.profile?.organizationId ||
-							dashboard?.activeVisit?.organizationId ||
-							"00000000-0000-0000-0000-000000000000",
-						patientId: documentPatient.id,
-						familyGroupId: famData.id,
-						amountRub,
-						visitId: realActiveVisitId ?? undefined,
-						documentId: documentForPayment?.id || undefined,
-						clientMutationId: familyClientMutationId,
-					}),
-				});
-			} else {
-				if (!paymentMutationIdRef.current) {
-					paymentMutationIdRef.current = browserGeneratedId("payment");
-				}
-				const paymentClientMutationId = paymentMutationIdRef.current;
-				response = await fetchWithHandling("/api/billing/payments", {
-					method: "POST",
-					headers: auth.denteClinicalMutationHeaders({
-						"Content-Type": "application/json",
-						"Idempotency-Key": paymentClientMutationId,
-					}),
-					body: JSON.stringify({
-						patientId: documentPatient.id,
-						visitId: realActiveVisitId,
-						documentId: documentForPayment?.id ?? null,
-						clientMutationId: paymentClientMutationId,
-						amountRub,
-						method: paymentMethod,
-						fiscalReceiptNumber: paymentFiscalReceiptNumber.trim() || null,
-						fiscalReceiptIssuedAt: paymentFiscalReceiptIssuedAt.trim() || null,
-						fiscalReceiptUrl: explicitFiscalReceiptUrl || null,
-						fiscalReceipt: {
-							fn: explicitFiscalFn || null,
-							fd: explicitFiscalFd || null,
-							fpd: explicitFiscalFpd || null,
-							cashierName: paymentFiscalCashierName.trim() || null,
-							receiptUrl: explicitFiscalReceiptUrl || null,
-							operationType: "income",
-						},
-						payerFullName: paymentPayerName || documentPatient.fullName,
-						payerInn: normalizedPayerInn || null,
-						payerBirthDate: explicitPayerBirthDate || documentPatient.birthDate || null,
-						payerIdentityDocument: explicitPayerIdentityDocument ||
-							administrativePayerDocument ||
-							null,
-						payerRelationship: paymentPayerRelation || "пациент",
-						taxDeductionCode: paymentTaxDeductionCode || null,
-						note: "Оплата из рабочего экрана CRM",
-					}),
-				});
+			if (!paymentMutationIdRef.current) {
+				paymentMutationIdRef.current = browserGeneratedId("payment");
 			}
+			const paymentClientMutationId = paymentMutationIdRef.current;
+			const cashboxMethod = (paymentMethod as string) === "family_wallet" || (paymentMethod as string) === "family_balance"
+				? "family_wallet"
+				: paymentMethod;
+
+			response = await fetchWithHandling("/api/cashbox/payments", {
+				method: "POST",
+				headers: auth.denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": paymentClientMutationId,
+				}),
+				body: JSON.stringify({
+					patientId: documentPatient.id,
+					visitId: realActiveVisitId ?? undefined,
+					invoiceId: documentForPayment?.id ?? undefined,
+					clientMutationId: paymentClientMutationId,
+					amountRub,
+					amountKopecks: rublesToKopecks(amountRub),
+					method: cashboxMethod,
+					payerFullName: paymentPayerName || documentPatient.fullName,
+					buyerInn: normalizedPayerInn || undefined,
+					note: "Оплата из рабочего экрана CRM",
+				}),
+			});
 			if (!response.ok) {
 				setError(await responseErrorMessage(response, "Оплата не записана"));
 				return;
@@ -235,7 +187,7 @@ export function useFinanceLogic({
 			StaffActionAuditService.logPaymentReceive({
 				patientId: documentPatient.id,
 				billId: documentForPayment?.id || browserGeneratedId("pay"),
-				amountKopecks: Math.round(amountRub * 100),
+				amountKopecks: rublesToKopecks(amountRub),
 				paymentMethod: String(paymentMethod),
 				...(paymentFiscalReceiptNumber.trim() ? { fiscalReceiptNumber: paymentFiscalReceiptNumber.trim() } : {}),
 			});
@@ -309,7 +261,7 @@ export function useFinanceLogic({
 					patientId: documentPatient.id,
 					patientName: documentPatient.fullName,
 					visitId: realActiveVisitId ?? undefined,
-					totalKopecks: Math.round(amountRub * 100),
+					totalKopecks: rublesToKopecks(amountRub),
 					paymentType: (paymentMethod === "cash" || paymentMethod === "card") ? paymentMethod : "mixed",
 					items: [],
 				});

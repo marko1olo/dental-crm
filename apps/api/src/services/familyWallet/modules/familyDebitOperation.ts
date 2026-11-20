@@ -1,7 +1,7 @@
 import { kopecksToNumericString, kopecksToRub, parseKopecks } from "@dental/shared";
 import { Decimal } from "decimal.js";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { familyGroups, patients, payments } from "../../../db/schema.js";
 import { wsBroker } from "../../websocketBroker.js";
 import { FamilyWalletError, type FamilyDebitParams, type FamilyDebitResult } from "../familyWalletTypes.js";
@@ -24,7 +24,7 @@ export async function processFamilyDebit(params: FamilyDebitParams): Promise<Fam
 	const debitKopecks = parseKopecks(amountRub);
 	if (debitKopecks <= 0) throw new FamilyWalletError("Сумма списания должна быть больше 0 ₽", 400, "INVALID_AMOUNT");
 
-	return await db.transaction(async (tx) => {
+	return await withTenantCtx(organizationId, async (tx) => {
 		const [patient] = await tx.select().from(patients).where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId))).limit(1);
 		if (!patient || patient.familyGroupId !== familyGroupId) {
 			throw new FamilyWalletError("Пациент не найден в семейной группе клиники", 404, "PATIENT_NOT_IN_FAMILY");

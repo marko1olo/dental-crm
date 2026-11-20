@@ -7,7 +7,7 @@
  * - billingTargetBalance.ts: visit & document remaining balance validation
  * - fiscalAccounting.ts: 54-FZ fiscal receipt queue & cashbox operations
  * - refundSettlements.ts: payment refund status settlement synchronization
- * - paymentCreationPipeline.ts: transactional payment creation & fiscalization
+ * - cashboxPaymentAdapter.ts: transactional payment creation & fiscalization facade
  */
 
 export * from "./billing/index.js";

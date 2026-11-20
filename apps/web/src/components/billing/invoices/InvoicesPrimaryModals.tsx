@@ -1,16 +1,14 @@
 /**
  * apps/web/src/components/billing/invoices/InvoicesPrimaryModals.tsx
  *
- * Primary modals for InvoicesView: QuickCreate, Installments, Shift, CashRegister.
+ * Primary modals for InvoicesView: QuickCreate, Installments.
+ * CashRegisterStudioModal is unified exclusively in InvoicesModalsLayer (Mandate 8b, 8bf).
  * Strictly <= 120 lines per Mandate 8b.
  */
 
 import React from "react";
-import { rublesToKopecks } from "@dental/shared";
-import { showToast } from "../../GlobalToast.js";
 import { QuickCreateInvoiceModal } from "../QuickCreateInvoiceModal.js";
 import { PatientInstallmentsModal } from "../PatientInstallmentsModal.js";
-import { CashRegisterStudioModal } from "../../cashbox/CashRegisterStudioModal.js";
 import type { BillingInvoice } from "../invoiceTypes.js";
 
 interface InvoicesPrimaryModalsProps {
@@ -29,11 +27,11 @@ interface InvoicesPrimaryModalsProps {
 	readonly isInstallmentsModalOpen: boolean;
 	readonly setIsInstallmentsModalOpen: (open: boolean) => void;
 	readonly setBankInstallmentInvoice: (inv: BillingInvoice | null) => void;
-	readonly isShiftModalOpen: boolean;
-	readonly setIsShiftModalOpen: (open: boolean) => void;
-	readonly isRegisterDrawerOpen: boolean;
-	readonly setIsRegisterDrawerOpen: (open: boolean) => void;
-	readonly setActivePaymentInvoice: (inv: BillingInvoice | null) => void;
+	readonly isShiftModalOpen?: boolean | undefined;
+	readonly setIsShiftModalOpen?: ((open: boolean) => void) | undefined;
+	readonly isRegisterDrawerOpen?: boolean | undefined;
+	readonly setIsRegisterDrawerOpen?: ((open: boolean) => void) | undefined;
+	readonly setActivePaymentInvoice?: ((inv: BillingInvoice | null) => void) | undefined;
 	readonly onUpdateInvoice?: ((inv: BillingInvoice) => void) | undefined;
 }
 
@@ -41,13 +39,11 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 	const {
 		isCreateModalOpen, setIsCreateModalOpen, patientId, patientName,
 		currentDoctorName, clinicLegalName, invoices, activePaymentInvoice,
-		onCloseShiftAction, handleCreateInvoice, isInstallmentsModalOpen,
-		setIsInstallmentsModalOpen, setBankInstallmentInvoice, isShiftModalOpen,
-		setIsShiftModalOpen, isRegisterDrawerOpen, setIsRegisterDrawerOpen,
-		setActivePaymentInvoice, onUpdateInvoice,
+		handleCreateInvoice, isInstallmentsModalOpen,
+		setIsInstallmentsModalOpen, setBankInstallmentInvoice,
 	} = props;
 
-	const selectedInvoice = activePaymentInvoice ?? (invoices.length > 0 ? invoices[0] : null);
+	const selectedInvoice = activePaymentInvoice ?? invoices[0] ?? null;
 
 	return (
 		<>
@@ -62,51 +58,7 @@ export const InvoicesPrimaryModals: React.FC<InvoicesPrimaryModalsProps> = (prop
 					patientId={patientId} patientName={patientName} clinicName={clinicLegalName}
 					onOpenBankInstallment={() => {
 						setIsInstallmentsModalOpen(false);
-						setBankInstallmentInvoice(selectedInvoice || null);
-					}}
-				/>
-			)}
-
-			{isShiftModalOpen && (
-				<CashRegisterStudioModal
-					isOpen={isShiftModalOpen}
-					onClose={() => setIsShiftModalOpen(false)}
-					mode="shift"
-					initialTab="reconciliation"
-					clinicLegalName={clinicLegalName}
-					cashierFullName={currentDoctorName}
-					onCloseShiftAction={onCloseShiftAction}
-					containerTestId="cash-register-modal"
-					submitButtonTestId="btn-confirm-close-shift-z-report"
-					title="Касса и чеки · Управление сменой и Z-отчёт"
-				/>
-			)}
-
-			{isRegisterDrawerOpen && (
-				<CashRegisterStudioModal
-					isOpen={isRegisterDrawerOpen}
-					onClose={() => setIsRegisterDrawerOpen(false)}
-					mode="studio"
-					initialTab="checkout"
-					cashierFullName={currentDoctorName}
-					clinicLegalName={clinicLegalName}
-					patientName={selectedInvoice?.patientName || patientName || undefined}
-					patientId={selectedInvoice?.patientId || patientId || undefined}
-					totalDueRub={selectedInvoice?.totalAmountRub ?? 0}
-					amountRub={selectedInvoice?.totalAmountRub ?? 0}
-					amountKopecks={selectedInvoice ? rublesToKopecks(selectedInvoice.totalAmountRub) : 0}
-					invoiceId={selectedInvoice?.id || undefined}
-					onSuccess={() => {
-						if (selectedInvoice && onUpdateInvoice) {
-							onUpdateInvoice({
-								...selectedInvoice,
-								status: "paid",
-								paidAmountRub: selectedInvoice.totalAmountRub,
-								paidAt: new Date().toISOString(),
-							});
-						}
-						const invNumText = selectedInvoice?.number ? ` ${selectedInvoice.number}` : "";
-						showToast(`Оплата по счёту${invNumText} успешно зафиксирована в кассе`, "success");
+						setBankInstallmentInvoice(selectedInvoice ?? null);
 					}}
 				/>
 			)}

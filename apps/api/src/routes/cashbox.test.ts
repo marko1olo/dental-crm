@@ -4,6 +4,7 @@
 
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
+import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
 	cashBoxes,
@@ -262,6 +263,7 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 				url: `/api/lab/orders/${labOrderId}`,
 				headers,
 				payload: {
+					stage: "wax_modeling",
 					notes: "Попытка взломать наряд после установки",
 				},
 			});
@@ -333,6 +335,18 @@ describe("Cashbox payment honesty rails (honest attribution & zero-amount ban)",
 			assert.equal(noPatientRes.statusCode, 200);
 			assert.equal(noPatientRes.json().success, true);
 			assert.equal(noPatientRes.json().data.amountRub, 1500);
+
+			// Физическая проверка обновления баланса кассового ящика в cashBoxes после наличной оплаты (SEV-1 FIX)
+			await withFixtureTenant(orgId, async (tx) => {
+				const boxes = await tx
+					.select()
+					.from(cashBoxes)
+					.where(eq(cashBoxes.organizationId, orgId));
+				const deskBox = boxes.find((b) => b.type === "main" || b.type === "cash_desk");
+				assert.ok(deskBox, "Кассовый ящик (main/cash_desk) должен быть инициализирован");
+				assert.equal(Number(deskBox.balanceRub), 1500, "Баланс наличного ящика в БД должен обновиться до 1500 ₽");
+				assert.equal(Number(deskBox.balanceKopecks), 150000, "Баланс в копейках должен быть 150000");
+			});
 
 			// 2. Нулевой платёж — 400: акт гарантии оформляется без кассового чека
 			const zeroAmountRes = await app.inject({
@@ -503,6 +517,24 @@ describe("Cashbox payment honesty rails (honest attribution & zero-amount ban)",
 			assert.equal(splitValidRes.json().success, true);
 			const validPaymentId = splitValidRes.json().data.id;
 
+			// Физическая проверка обновления балансов наличного и безналичного ящиков в cashBoxes после сплит-оплаты (SEV-1 FIX)
+			await withFixtureTenant(orgId, async (tx) => {
+				const boxes = await tx
+					.select()
+					.from(cashBoxes)
+					.where(eq(cashBoxes.organizationId, orgId));
+				const deskBox = boxes.find((b) => b.type === "main" || b.type === "cash_desk");
+				const cashlessBox = boxes.find((b) => b.type === "cashless" || b.type === "bank_account");
+				assert.ok(deskBox, "Кассовый ящик должен существовать");
+				assert.ok(cashlessBox, "Безналичный счет должен существовать");
+				// 1500 (шаг 1) + 500 (шаг 8 emptyInn) + 2000 (шаг 10 сплит нал) = 4000 ₽ (400000 копеек)
+				assert.equal(Number(deskBox.balanceRub), 4000, "Баланс наличного ящика должен увеличиться до 4000 ₽");
+				assert.equal(Number(deskBox.balanceKopecks), 400000, "Баланс наличного ящика в копейках должен быть 400000");
+				// 1500.5 (шаг 4 sbp) + 500 (шаг 8 nullInn card) + 3000 (шаг 10 сплит безнал) = 5000.5 ₽ (500050 копеек)
+				assert.equal(Number(cashlessBox.balanceRub), 5000.5, "Баланс безналичного счета должен увеличиться до 5000.5 ₽");
+				assert.equal(Number(cashlessBox.balanceKopecks), 500050, "Баланс безналичного счета в копейках должен быть 500050");
+			});
+
 			// 11. DEF-CASH-03: Возврат из кассы связывается с фискальной очередью (receiptType: "income_return")
 			const refundRes = await app.inject({
 				method: "POST",
@@ -519,7 +551,8 @@ describe("Cashbox payment honesty rails (honest attribution & zero-amount ban)",
 			assert.equal(refundJson.success, true);
 			assert.ok(refundJson.refundPaymentId, "Должна быть создана отрицательная запись в payments");
 			assert.ok(refundJson.fiscalReceiptQueueId, "Чек должен быть поставлен в fiscalReceiptQueue");
-			assert.ok(refundJson.fiscalReceiptNumber, "Должен быть сгенерирован номер чека возврата");
+			// [DEF-FIN-13] До подтверждения от ККТ номер чека возврата строго null
+			assert.equal(refundJson.fiscalReceiptNumber, null, "До подтверждения от ККТ номер чека возврата строго null");
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}

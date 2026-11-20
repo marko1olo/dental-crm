@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db } from "../../../../db/client.js";
 import {
 	auditEvents,
@@ -50,8 +51,8 @@ export async function handleCreateTreatmentPlan(
 			for (const it of st.items) {
 				const unitKopecks = typeof it.unitPriceKopecks === "number" && it.unitPriceKopecks > 0
 					? Math.round(it.unitPriceKopecks)
-					: Math.round(it.price * 100);
-				const discountKopecks = Math.round(it.discount * 100);
+					: rublesToKopecks(it.price);
+				const discountKopecks = rublesToKopecks(it.discount);
 				const lineTotal = Math.max(0, unitKopecks * it.quantity - discountKopecks);
 				itemsTotalKopecks += lineTotal;
 			}
@@ -60,11 +61,11 @@ export async function handleCreateTreatmentPlan(
 
 	let totalKopecks: number;
 	if (typeof data.totalPriceRub === "number" && data.totalPriceRub > 0) {
-		totalKopecks = Math.round(data.totalPriceRub * 100);
+		totalKopecks = rublesToKopecks(data.totalPriceRub);
 	} else {
 		let discountedKopecks = itemsTotalKopecks;
 		if (typeof data.planDiscountRub === "number" && data.planDiscountRub > 0) {
-			const planDiscountKopecks = Math.round(data.planDiscountRub * 100);
+			const planDiscountKopecks = rublesToKopecks(data.planDiscountRub);
 			discountedKopecks = Math.max(0, discountedKopecks - planDiscountKopecks);
 		} else if (typeof data.planDiscountPercent === "number" && data.planDiscountPercent > 0) {
 			const percentDiscountKopecks = Math.round((discountedKopecks * data.planDiscountPercent) / 100);
@@ -72,7 +73,7 @@ export async function handleCreateTreatmentPlan(
 		}
 		totalKopecks = discountedKopecks;
 	}
-	const calculatedTotalRub = totalKopecks / 100;
+	const calculatedTotalRub = kopecksToRubles(totalKopecks);
 
 	const result = await db.transaction(async (tx) => {
 		const [newPlan] = await tx
@@ -117,6 +118,11 @@ export async function handleCreateTreatmentPlan(
 			if (createdStage) createdStages.push(createdStage);
 
 			for (const item of st.items) {
+				const itemPriceKopecks = typeof item.unitPriceKopecks === "number" && item.unitPriceKopecks > 0
+					? Math.round(item.unitPriceKopecks)
+					: rublesToKopecks(item.price);
+				const itemDiscountKopecks = rublesToKopecks(item.discount);
+
 				const [createdItem] = await tx
 					.insert(treatmentPlanItemsNew)
 					.values({
@@ -129,6 +135,8 @@ export async function handleCreateTreatmentPlan(
 						quantity: item.quantity,
 						price: item.price.toFixed(2),
 						discount: item.discount.toFixed(2),
+						priceKopecks: itemPriceKopecks,
+						discountKopecks: itemDiscountKopecks,
 						phase: st.stageOrder,
 						isBundle: item.isBundle,
 						doctorId: item.doctorId || data.doctorId || null,
@@ -138,6 +146,7 @@ export async function handleCreateTreatmentPlan(
 				if (createdItem) createdItems.push(createdItem);
 				allItemsFlat.push({
 					...item,
+					treatmentPlanItemId: createdItem?.id ?? null,
 					phase: st.stageOrder,
 					isAuto: item.isBundle,
 				});

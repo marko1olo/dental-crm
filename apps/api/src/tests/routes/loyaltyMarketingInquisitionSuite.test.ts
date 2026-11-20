@@ -29,7 +29,7 @@ import {
 	payments,
 	users,
 } from "../../db/schema.js";
-import { createPaymentInDb } from "../../db/billing/paymentCreationPipeline.js";
+import { createPaymentInDb } from "../../db/billingQuery.js";
 import { registerLoyaltyRoutes } from "../../routes/loyalty.js";
 import { registerMarketingRoutes } from "../../routes/marketing.js";
 import { registerReferralRoutes } from "../../routes/referrals.js";
