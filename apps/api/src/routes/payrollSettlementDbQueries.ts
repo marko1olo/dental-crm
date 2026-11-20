@@ -5,7 +5,7 @@
  */
 
 import { and, eq, gte, lte, or, sql } from "drizzle-orm";
-import { kopecksToRubles } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { withTenantCtx } from "../db/rls.js";
 import { appointments, doctorPayrollStatements, users } from "../db/schema.js";
 
@@ -113,17 +113,17 @@ export async function closeSettlementPeriodInDb(params: SettlementPeriodClosePar
 		let statementId: string;
 		let statementRow: typeof doctorPayrollStatements.$inferSelect | undefined;
 
-		const grossKop = params.grossRevenueKopecks ?? Math.round((params.grossRevenueRub ?? 0) * 100);
-		const labKop = params.labCostKopecks ?? Math.round((params.labCostRub ?? 0) * 100);
-		const matKop = params.materialsCostKopecks ?? Math.round((params.materialsCostRub ?? 0) * 100);
+		const grossKop = params.grossRevenueKopecks ?? rublesToKopecks(params.grossRevenueRub ?? 0);
+		const labKop = params.labCostKopecks ?? rublesToKopecks(params.labCostRub ?? 0);
+		const matKop = params.materialsCostKopecks ?? rublesToKopecks(params.materialsCostRub ?? 0);
 		const netBaseKop = params.netBaseRevenueKopecks ?? Math.max(0, grossKop - labKop - matKop);
-		const pieceworkKop = params.calculatedPieceworkKopecks ?? Math.round((params.calculatedPieceworkRub ?? 0) * 100);
-		const fixedSalaryKop = params.fixedSalaryKopecks ?? Math.round((params.fixedSalaryRub ?? 0) * 100);
+		const pieceworkKop = params.calculatedPieceworkKopecks ?? rublesToKopecks(params.calculatedPieceworkRub ?? 0);
+		const fixedSalaryKop = params.fixedSalaryKopecks ?? rublesToKopecks(params.fixedSalaryRub ?? 0);
 		const serviceSalaryKop = params.serviceSalaryPriceKopecks ?? 0;
-		const bonusesKop = params.bonusesTotalKopecks ?? Math.round((params.bonusesTotalRub ?? 0) * 100);
-		const penaltiesKop = params.penaltiesTotalKopecks ?? Math.round((params.penaltiesTotalRub ?? 0) * 100);
+		const bonusesKop = params.bonusesTotalKopecks ?? rublesToKopecks(params.bonusesTotalRub ?? 0);
+		const penaltiesKop = params.penaltiesTotalKopecks ?? rublesToKopecks(params.penaltiesTotalRub ?? 0);
 		const totalAccruedKop = params.totalAccruedKopecks ?? (pieceworkKop + fixedSalaryKop + serviceSalaryKop + bonusesKop - penaltiesKop);
-		const ndflKop = params.ndfl13Kopecks ?? Math.round((params.ndfl13Rub ?? 0) * 100);
+		const ndflKop = params.ndfl13Kopecks ?? rublesToKopecks(params.ndfl13Rub ?? 0);
 		const payoutKop = params.netPayoutKopecks ?? Math.max(0, totalAccruedKop - ndflKop);
 
 		const grossRub = params.grossRevenueRub ?? kopecksToRubles(grossKop);

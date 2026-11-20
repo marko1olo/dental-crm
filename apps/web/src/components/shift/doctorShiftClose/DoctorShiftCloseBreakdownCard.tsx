@@ -19,8 +19,8 @@ export const DoctorShiftCloseBreakdownCard: React.FC<DoctorShiftCloseBreakdownCa
 }) => (
 	<div className="border border-[var(--line,#e2e8f0)] rounded-xl p-3 sm:p-3.5 bg-[var(--paper-soft,#f8fafc)]">
 		<div className="flex items-center justify-between mb-2.5">
-			<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
-				<Banknote className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" /> Сданная касса и выручка
+			<span className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+				<Banknote className="w-3.5 h-3.5 text-[var(--primary)]" /> Сданная касса и выручка
 			</span>
 			<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 				{money(effectiveTotalCashRub)}

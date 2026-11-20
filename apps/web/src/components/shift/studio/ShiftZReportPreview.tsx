@@ -34,7 +34,7 @@ export const ShiftZReportPreview: React.FC<ShiftZReportPreviewProps> = ({
 		<div className="shift-card space-y-3" data-testid="shift-z-report-preview">
 			<div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-[var(--ink)]">
 				<span className="flex items-center gap-1.5">
-					<FileText className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+					<FileText className="w-4 h-4 text-[var(--primary)]" />
 					Предпросмотр фискального Z-отчёта (Кассовый чек закрытия)
 				</span>
 				<div className="flex items-center gap-2">
@@ -49,7 +49,7 @@ export const ShiftZReportPreview: React.FC<ShiftZReportPreviewProps> = ({
 							className="px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1 transition-colors"
 							title="Печать бумажного Z-отчёта"
 						>
-							<Printer className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+							<Printer className="w-3.5 h-3.5 text-[var(--primary)]" />
 							Печать
 						</button>
 					)}
@@ -72,8 +72,8 @@ export const ShiftZReportPreview: React.FC<ShiftZReportPreviewProps> = ({
 
 				{/* Shift & Time Details */}
 				<div className="flex justify-between text-[11px] pt-1">
-					<span>СМЕНА №{zData.shiftNumber}</span>
-					<span>ДОКУМЕНТ: {zData.zReportNumber}</span>
+					<span>Смена №{zData.shiftNumber}</span>
+					<span>Документ: {zData.zReportNumber}</span>
 				</div>
 				<div className="flex justify-between text-[10px] text-[var(--muted)]">
 					<span>Открыта: {new Date(zData.openedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>
@@ -99,8 +99,8 @@ export const ShiftZReportPreview: React.FC<ShiftZReportPreviewProps> = ({
 						<span className="font-semibold">{zData.incomeDepositRub.toLocaleString("ru-RU")} ₽</span>
 					</div>
 					<div className="flex justify-between text-xs font-bold pt-1 border-t border-dashed border-[var(--line)]">
-						<span>ИТОГ ВЫРУЧКИ:</span>
-						<span className="text-[var(--teal,#0d9488)]">{zData.grossRevenueRub.toLocaleString("ru-RU")} ₽</span>
+						<span>Итог выручки:</span>
+						<span className="text-[var(--primary)]">{zData.grossRevenueRub.toLocaleString("ru-RU")} ₽</span>
 					</div>
 				</div>
 

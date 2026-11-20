@@ -28,11 +28,11 @@ import {
 	ArrowDownToLine,
 } from "lucide-react";
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
-import { reconcileAcquiringWithKkt } from "../finance/fiscal/engine54fz/acquiringReconciliation.js";
-import type {
-	AcquiringTerminalTransaction,
-	KktFiscalElectronicRecord,
-} from "../finance/fiscal/engine54fz/types.js";
+import {
+	reconcileAcquiringWithKkt,
+	type AcquiringTerminalTransaction,
+	type KktFiscalElectronicRecord,
+} from "./acquiringReconciliation.js";
 
 export interface ZReportData {
 	readonly shiftNumber: number;
@@ -77,16 +77,16 @@ export interface CashShiftClosingModalProps {
 export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	isOpen,
 	onClose,
-	shiftNumber = 1,
+	shiftNumber: shiftNumberProp,
 	cashierFullName: cashierFullNameProp,
 	cashierName,
 	clinicLegalName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	initialChangeFundRub = 5000,
-	cashInDrawerRub,
-	incomeCashRub = 0,
-	incomeElectronicRub = 0,
-	incomeSbpRub = 0,
-	advanceOffsetRub = 0,
+	initialChangeFundRub: initialChangeFundRubProp,
+	cashInDrawerRub: cashInDrawerRubProp,
+	incomeCashRub: incomeCashRubProp,
+	incomeElectronicRub: incomeElectronicRubProp,
+	incomeSbpRub: incomeSbpRubProp,
+	advanceOffsetRub: advanceOffsetRubProp,
 	acquiringTransactions,
 	kktElectronicRecords,
 	onShiftClosed,
@@ -94,11 +94,55 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 	const cashierFullName = cashierFullNameProp || cashierName || "Администратор / Кассир";
 	const titleId = useId();
 
+	// Auto-hydration from real database API if values are not explicitly supplied
+	const [autoFetchedData, setAutoFetchedData] = useState<{
+		incomeCashRub?: number;
+		incomeElectronicRub?: number;
+		incomeSbpRub?: number;
+		advanceOffsetRub?: number;
+		initialChangeFundRub?: number;
+		cashInDrawerRub?: number;
+		shiftNumber?: number;
+	} | null>(null);
+
+	const needsAutoFetch =
+		incomeCashRubProp === undefined &&
+		incomeElectronicRubProp === undefined &&
+		incomeSbpRubProp === undefined;
+
+	useEffect(() => {
+		if (!isOpen || !needsAutoFetch) return;
+		let isMounted = true;
+		fetch("/api/cashbox/shift")
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data) => {
+				if (isMounted && data && typeof data === "object") {
+					setAutoFetchedData({
+						incomeCashRub: typeof data.incomeCashRub === "number" ? data.incomeCashRub : 0,
+						incomeElectronicRub: typeof data.incomeElectronicRub === "number" ? data.incomeElectronicRub : 0,
+						incomeSbpRub: typeof data.incomeSbpRub === "number" ? data.incomeSbpRub : 0,
+						advanceOffsetRub: typeof data.advanceOffsetRub === "number" ? data.advanceOffsetRub : 0,
+						initialChangeFundRub: typeof data.startingBalanceRub === "number" ? data.startingBalanceRub : 5000,
+						cashInDrawerRub: typeof data.expectedCashInDrawerRub === "number" ? data.expectedCashInDrawerRub : undefined,
+						shiftNumber: typeof data.shiftNumber === "number" ? data.shiftNumber : undefined,
+					});
+				}
+			})
+			.catch(() => {});
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, needsAutoFetch]);
+
+	const shiftNumber = autoFetchedData?.shiftNumber ?? shiftNumberProp ?? 1;
+	const initialChangeFundRub = initialChangeFundRubProp ?? autoFetchedData?.initialChangeFundRub ?? 5000;
+	const cashInDrawerRub = cashInDrawerRubProp ?? autoFetchedData?.cashInDrawerRub;
+
 	// Revenue numbers in integer kopecks
-	const totalCashRevenue = Math.max(0, incomeCashRub);
-	const totalCardRevenue = Math.max(0, incomeElectronicRub);
-	const totalSbpRevenue = Math.max(0, incomeSbpRub);
-	const totalAdvanceOffset = Math.max(0, advanceOffsetRub);
+	const totalCashRevenue = Math.max(0, incomeCashRubProp ?? autoFetchedData?.incomeCashRub ?? 0);
+	const totalCardRevenue = Math.max(0, incomeElectronicRubProp ?? autoFetchedData?.incomeElectronicRub ?? 0);
+	const totalSbpRevenue = Math.max(0, incomeSbpRubProp ?? autoFetchedData?.incomeSbpRub ?? 0);
+	const totalAdvanceOffset = Math.max(0, advanceOffsetRubProp ?? autoFetchedData?.advanceOffsetRub ?? 0);
 
 	const netRevenueRub = totalCashRevenue + totalCardRevenue + totalSbpRevenue + totalAdvanceOffset;
 	const expectedCashInDrawer =
@@ -213,7 +257,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 		};
 
 		try {
-			const res = await fetch("/api/cash/cash-box-all-closing", {
+			const res = await fetch("/api/cashbox/shift/close", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(payload),
@@ -285,7 +329,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 				<div className="p-5 overflow-y-auto space-y-4 max-w-full">
 					{/* Total Shift Revenue Hero Display */}
 					<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col items-center justify-center text-center gap-1">
-						<span className="text-xs font-medium text-[var(--muted,#64748b)] uppercase tracking-wider">
+						<span className="text-xs font-medium text-[var(--muted,#64748b)]">
 							Итоговая выручка смены
 						</span>
 						<span className="text-[32px] font-bold text-[var(--ink,#0f172a)] tracking-tight leading-none" data-testid="shift-closing-net-revenue">
@@ -300,7 +344,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 						<div className="p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-1">
 							<div className="flex items-center gap-1.5 text-xs text-[var(--muted,#64748b)]">
-								<Banknote className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+								<Banknote className="w-3.5 h-3.5 text-[var(--primary)]" />
 								<span>Наличные</span>
 							</div>
 							<span className="text-sm font-bold text-[var(--ink)]">
@@ -343,7 +387,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] space-y-3 bg-[var(--paper,#ffffff)]">
 						<div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-[var(--ink)]">
 							<span className="flex items-center gap-1.5">
-								<Banknote className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+								<Banknote className="w-4 h-4 text-[var(--primary)]" />
 								Сверка фактической наличности
 							</span>
 							<span className="text-xs text-[var(--muted,#64748b)]">
@@ -367,8 +411,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 							<div className="pt-5 shrink-0">
 								{isCashMatched ? (
-									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
-										<CheckCircle2 className="w-4 h-4 text-emerald-600" />
+									<span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] text-xs font-semibold">
+										<CheckCircle2 className="w-4 h-4 text-[var(--success-ink)]" />
 										Сходится ✓
 									</span>
 								) : (
@@ -392,7 +436,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 									onClick={() => setIsTerminalReconciled(!isTerminalReconciled)}
 									className={`min-h-[36px] px-3 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
 										isTerminalReconciled
-											? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)]"
+											? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]"
 											: "border-[var(--line,#cbd5e1)] text-[var(--muted,#64748b)]"
 									}`}
 								>
@@ -407,7 +451,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								<span
 									className={`font-semibold ${
 										acquiringReport.isExactMatch
-											? "text-emerald-700 dark:text-emerald-400"
+											? "text-[var(--success-ink)]"
 											: "text-amber-700 dark:text-amber-400"
 									}`}
 								>
@@ -422,7 +466,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					{/* Revenue Encashment / Withdrawal Options */}
 					<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] space-y-2.5 bg-[var(--paper,#ffffff)]">
 						<span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-							<ArrowDownToLine className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<ArrowDownToLine className="w-4 h-4 text-[var(--primary)]" />
 							Инкассация наличной выручки
 						</span>
 
@@ -432,7 +476,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								onClick={() => setEncashmentOption("retain_change")}
 								className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors ${
 									encashmentOption === "retain_change"
-										? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] font-semibold"
+										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-semibold"
 										: "border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]"
 								}`}
 							>
@@ -445,7 +489,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								onClick={() => setEncashmentOption("full")}
 								className={`min-h-[44px] p-2.5 rounded-xl border text-left flex flex-col justify-center transition-colors ${
 									encashmentOption === "full"
-										? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] font-semibold"
+										? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-semibold"
 										: "border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]"
 								}`}
 							>
@@ -472,7 +516,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 					{/* Print Z-Report Toggle */}
 					<div className="flex items-center justify-between p-3 rounded-xl border border-[var(--line,#e2e8f0)]">
 						<span className="text-xs sm:text-sm font-medium text-[var(--ink)] flex items-center gap-2">
-							<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<Printer className="w-4 h-4 text-[var(--primary)]" />
 							Печать бумажного Z-отчёта на кассовом аппарате
 						</span>
 						<label className="relative inline-flex items-center cursor-pointer min-h-[36px]">
@@ -482,7 +526,7 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 								onChange={(e) => setPrintZReport(e.target.checked)}
 								className="sr-only peer"
 							/>
-							<div className="w-10 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[8px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--teal,#0d9488)]" />
+							<div className="w-10 h-5 bg-slate-300 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[8px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--primary)]" />
 						</label>
 					</div>
 
@@ -514,8 +558,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 
 					{/* Success Toast */}
 					{closedSuccessData && (
-						<div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-emerald-800 dark:text-emerald-300 flex items-center gap-2 text-xs">
-							<ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+						<div className="p-3 rounded-xl bg-[var(--success-soft)] border border-[var(--success-line)] text-[var(--success-ink)] flex items-center gap-2 text-xs">
+							<ShieldCheck className="w-4 h-4 text-[var(--success-ink)] shrink-0" />
 							<span>Смена №{shiftNumber} успешно закрыта! Z-отчёт сформирован.</span>
 						</div>
 					)}
@@ -540,8 +584,8 @@ export const CashShiftClosingModal: React.FC<CashShiftClosingModalProps> = ({
 						onClick={handleExecuteCloseShift}
 						disabled={isSubmitting}
 						data-testid="btn-confirm-close-shift-z-report"
-						className="min-h-[44px] flex-1 max-w-md py-2.5 px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
-						style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
+						className="min-h-[44px] flex-1 max-w-md py-2.5 px-5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+						style={{ backgroundColor: "var(--primary)", color: "#ffffff" }}
 					>
 						{isSubmitting ? (
 							<>

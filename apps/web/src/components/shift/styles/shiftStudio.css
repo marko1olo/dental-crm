@@ -327,13 +327,13 @@
 /* Dark Mode Tokens & Overrides */
 [data-theme="dark"] .shift-studio-modal,
 .dark .shift-studio-modal {
-	--shift-paper: var(--paper, #0f172a);
-	--shift-paper-soft: var(--paper-soft, #1e293b);
-	--shift-paper-strong: var(--paper-strong, #0f172a);
-	--shift-ink: var(--ink, #f8fafc);
-	--shift-muted: var(--muted, #94a3b8);
-	--shift-line: var(--line, #334155);
-	--shift-line-subtle: var(--line-subtle, rgba(51, 65, 85, 0.6));
+	--shift-paper: var(--paper);
+	--shift-paper-soft: var(--paper-soft);
+	--shift-paper-strong: var(--paper-strong);
+	--shift-ink: var(--ink);
+	--shift-muted: var(--muted);
+	--shift-line: var(--line);
+	--shift-line-subtle: var(--line-subtle);
 }
 
 /* Z-Report Paper Print Stylesheet (Clean A4 & Thermal 80mm) */

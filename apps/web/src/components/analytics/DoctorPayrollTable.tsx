@@ -59,7 +59,7 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 												<button
 													type="button"
 													onClick={onOpenStudio}
-													className="primary-button mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-dark)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
+													className="primary-button mt-2 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5"
 												>
 													<Calculator size={14} />
 													<span>Открыть ведомость / закрыть период</span>
@@ -119,7 +119,7 @@ export const DoctorPayrollTable: React.FC<DoctorPayrollTableProps> = ({
 							<button
 								type="button"
 								onClick={onOpenStudio}
-								className="primary-button mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-dark)] active:scale-95 transition-all cursor-pointer"
+								className="primary-button mt-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--primary)] text-white text-xs font-semibold hover:bg-[var(--primary-hover)] active:scale-95 transition-all cursor-pointer"
 							>
 								Открыть ведомость
 							</button>

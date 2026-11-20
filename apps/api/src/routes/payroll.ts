@@ -8,6 +8,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { db } from "../db/client.js";
 import { doctorCommissions, users } from "../db/schema.js";
 import { calculateDoctorPeriodPayroll } from "@dental/shared";
@@ -39,6 +40,8 @@ const payrollCalculationsQuerySchema = z.object({
 	percent: z.union([z.string(), z.number()]).optional(),
 	payoutModel: z.enum(["percentage", "chair_rental"]).optional(),
 	shiftRateKop: z.union([z.string(), z.number()]).optional(),
+	chairRentalRub: z.union([z.string(), z.number()]).optional(),
+	chairRentalKop: z.union([z.string(), z.number()]).optional(),
 	advanceRub: z.union([z.string(), z.number()]).optional(),
 	taxRegime: z.enum(["employee", "self_employed"]).optional(),
 });
@@ -133,7 +136,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	 * GET /api/v1/payroll/calculations — Расчет начислений в целочисленных копейках.
 	 * DEF-PAYROLL-01: Контроль прав через requirePayoutAccess, врачу с payroll.read.own запрещен доступ к коллегам и ?doctorId=all.
 	 */
-	app.get("/api/v1/payroll/calculations", async (request: FastifyRequest, reply: FastifyReply) => {
+	const getPayrollCalculationsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const payoutAccess = await requirePayoutAccess(request, reply);
 		if (!payoutAccess) return;
 
@@ -330,8 +333,15 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			services: completedServices,
 			customBasePercentage: basePercent,
 			payoutModel: q.payoutModel === "chair_rental" ? "chair_rental" : "percentage",
-			chairRentalKop: q.payoutModel === "chair_rental" ? Math.round(shiftsCount * (Number(q.shiftRateKop) || 400000)) : 0,
-			advancePayoutKop: Math.round((Number(q.advanceRub) || 0) * 100),
+			chairRentalKop:
+				q.chairRentalRub !== undefined
+					? rublesToKopecks(Number(q.chairRentalRub) || 0)
+					: q.chairRentalKop !== undefined
+						? Number(q.chairRentalKop) || 0
+						: q.payoutModel === "chair_rental"
+							? Math.round(shiftsCount * (Number(q.shiftRateKop) || 400000))
+							: 0,
+			advancePayoutKop: rublesToKopecks(Number(q.advanceRub) || 0),
 			taxRegime: q.taxRegime === "self_employed" ? "self_employed" : "employee",
 		});
 
@@ -361,7 +371,10 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			orders,
 			closedPeriods,
 		});
-	});
+	};
+
+	app.get("/api/v1/payroll/calculations", getPayrollCalculationsHandler);
+	app.get("/api/payroll/calculations", getPayrollCalculationsHandler);
 
 	/**
 	 * POST /api/v1/payroll/close-settlement & /api/payroll/close-settlement — Фиксация закрытия расчетного периода в ACID транзакции
@@ -477,37 +490,37 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 		const grossKop = (body.grossRevenueKopecks ?? body.grossRevenueKop) !== undefined
 			? Math.max(0, body.grossRevenueKopecks ?? body.grossRevenueKop ?? 0)
-			: Math.round(Math.max(0, body.grossRevenueRub ?? 0) * 100);
+			: rublesToKopecks(Math.max(0, body.grossRevenueRub ?? 0));
 
 		const labKop = (body.labCostKopecks ?? body.labCostKop) !== undefined
 			? Math.max(0, body.labCostKopecks ?? body.labCostKop ?? 0)
-			: Math.round(Math.max(0, body.labCostRub ?? 0) * 100);
+			: rublesToKopecks(Math.max(0, body.labCostRub ?? 0));
 
 		const matKop = (body.materialsCostKopecks ?? body.materialsCostKop ?? body.materialCostKop) !== undefined
 			? Math.max(0, body.materialsCostKopecks ?? body.materialsCostKop ?? body.materialCostKop ?? 0)
-			: Math.round(Math.max(0, body.materialsCostRub ?? 0) * 100);
+			: rublesToKopecks(Math.max(0, body.materialsCostRub ?? 0));
 
 		const netBaseKop = (body.netBaseKopecks ?? body.netBaseKop) !== undefined
 			? Math.max(0, body.netBaseKopecks ?? body.netBaseKop ?? 0)
 			: body.netBaseRevenueRub !== undefined
-				? Math.round(Math.max(0, body.netBaseRevenueRub) * 100)
+				? rublesToKopecks(Math.max(0, body.netBaseRevenueRub))
 				: Math.max(0, grossKop - labKop - matKop);
 
 		const payoutKop = (body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop) !== undefined
 			? Math.max(0, body.amountKopecks ?? body.netPayoutKopecks ?? body.netPayoutKop ?? 0)
-			: Math.round(Math.max(0, body.netPayoutRub ?? 0) * 100);
+			: rublesToKopecks(Math.max(0, body.netPayoutRub ?? 0));
 
 		const totalAccruedKop = (body.totalAccruedKopecks ?? body.totalAccruedKop) !== undefined
 			? Math.max(0, body.totalAccruedKopecks ?? body.totalAccruedKop ?? 0)
 			: body.totalAccruedRub !== undefined
-				? Math.round(Math.max(0, body.totalAccruedRub) * 100)
+				? rublesToKopecks(Math.max(0, body.totalAccruedRub))
 				: payoutKop;
 
 		const ndflKop = (body.ndflKopecks ?? body.ndflKop) !== undefined
 			? Math.max(0, body.ndflKopecks ?? body.ndflKop ?? 0)
-			: Math.round(Math.max(0, body.ndfl13Rub ?? 0) * 100);
+			: rublesToKopecks(Math.max(0, body.ndfl13Rub ?? 0));
 
-		const chairRentalKop = body.chairRentalKopecks !== undefined ? Math.max(0, body.chairRentalKopecks) : body.chairRentalRub !== undefined ? Math.round(Math.max(0, body.chairRentalRub) * 100) : 0;
+		const chairRentalKop = body.chairRentalKopecks !== undefined ? Math.max(0, body.chairRentalKopecks) : body.chairRentalRub !== undefined ? rublesToKopecks(Math.max(0, body.chairRentalRub)) : 0;
 
 		const result = await closeSettlementPeriodInDb({
 			organizationId: orgId,

@@ -34,11 +34,7 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload): Promise<boolean> {
-	const endpoints = [
-		"/api/fiscal/shift/close",
-		"/api/cash/cash-box-all-closing",
-		"/api/finance/shift/close",
-	];
+	const canonicalEndpoint = "/api/cashbox/shift/close";
 
 	const body = JSON.stringify({
 		shiftNumber: payload.shiftNumber,
@@ -52,16 +48,33 @@ export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload)
 	});
 
 	let succeeded = false;
-	for (const url of endpoints) {
-		try {
-			const res = await fetch(url, { method: "POST", headers: getAuthHeaders(), body });
-			if (res.ok) {
-				succeeded = true;
-				break;
-			}
-		} catch (endpointErr: unknown) {
-			console.warn(`[executeCloseShiftDbTransaction] Сбой при вызове ${url}:`, endpointErr);
+	let errorReason = "";
+	try {
+		const res = await fetch(canonicalEndpoint, { method: "POST", headers: getAuthHeaders(), body });
+		if (res.ok) {
+			succeeded = true;
+		} else {
+			const errJson = await res.json().catch(() => null);
+			errorReason = errJson?.message || `Ошибка сервера (${res.status})`;
 		}
+	} catch (endpointErr: unknown) {
+		console.warn(`[executeCloseShiftDbTransaction] Сбой при вызове ${canonicalEndpoint}:`, endpointErr);
+		errorReason = endpointErr instanceof Error ? endpointErr.message : "Сетевой сбой при закрытии смены";
+	}
+
+	if (!succeeded) {
+		StaffActionAuditService.logAction({
+			actionType: "shift_close",
+			entityType: "cash_register_shift",
+			entityId: `shift:kkt_main:${payload.shiftNumber}`,
+			reason: `Ошибка закрытия смены: ${errorReason}`,
+			details: {
+				status: "failure",
+				error: errorReason,
+				shiftNumber: payload.shiftNumber,
+			},
+		});
+		throw new Error(errorReason || "Не удалось закрыть кассовую смену");
 	}
 
 	StaffActionAuditService.logShiftClose({
@@ -75,20 +88,18 @@ export async function executeCloseShiftDbTransaction(payload: CloseShiftPayload)
 }
 
 export async function executeOpenShiftDbTransaction(payload: OpenShiftPayload): Promise<boolean> {
-	const endpoints = ["/api/fiscal/shift/open", "/api/cash/cash-box-all-open", "/api/finance/shift/open"];
+	const canonicalEndpoint = "/api/cashbox/shift/open";
 	const body = JSON.stringify({
 		cashierFullName: payload.cashierName || "Дежурный администратор",
 		startingBalanceRub: payload.startingBalanceRub || 0,
 		openedAt: new Date().toISOString(),
 	});
 
-	for (const url of endpoints) {
-		try {
-			const res = await fetch(url, { method: "POST", headers: getAuthHeaders(), body });
-			if (res.ok) return true;
-		} catch (endpointErr: unknown) {
-			console.warn(`[executeCloseShiftDbTransaction] Сбой при вызове ${url}:`, endpointErr);
-		}
+	try {
+		const res = await fetch(canonicalEndpoint, { method: "POST", headers: getAuthHeaders(), body });
+		if (res.ok) return true;
+	} catch (endpointErr: unknown) {
+		console.warn(`[executeOpenShiftDbTransaction] Сбой при вызове ${canonicalEndpoint}:`, endpointErr);
 	}
 	return false;
 }

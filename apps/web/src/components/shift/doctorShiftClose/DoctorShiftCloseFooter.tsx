@@ -24,12 +24,11 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 					<button
 						type="button"
 						onClick={onPrintShiftStatement}
-						className="secondary-button h-9 px-3.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-						style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "8px" }}
+						className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 						data-testid="btn-print-shift-statement"
 						title="Распечатать сводку смены врача и фискальные итоги"
 					>
-						<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+						<Printer className="w-4 h-4 text-[var(--primary)] shrink-0" />
 						<span>Печать сводки смены</span>
 					</button>
 
@@ -38,12 +37,11 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 							type="button"
 							onClick={onSendTelegramSummary}
 							disabled={isSendingTelegram}
-							className="secondary-button h-9 px-3.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-							style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "8px" }}
+							className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 							data-testid="btn-send-telegram-shift-summary"
 							title="Отправить сводный отчёт смены руководству в Telegram"
 						>
-							<Send className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<Send className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							<span>{isSendingTelegram ? "Отправка..." : "Отправить в Telegram"}</span>
 						</button>
 					)}
@@ -53,8 +51,7 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="secondary-button h-9 px-3.5 text-xs font-bold cursor-pointer"
-						style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "8px" }}
+						className="h-9 px-3.5 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 						data-testid="btn-cancel-close-shift"
 					>
 						<span>Отмена</span>
@@ -64,11 +61,10 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 						type="button"
 						data-testid="btn-confirm-close-shift-1click"
 						onClick={onConfirmClose}
-						className="primary-button h-9 px-4 text-xs font-bold gap-2 cursor-pointer"
-						style={{ borderRadius: "8px" }}
+						className="h-9 px-4 rounded-lg text-sm font-medium gap-2 inline-flex items-center justify-center shrink-0 bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-sm cursor-pointer transition-colors"
 						title="Завершить смену врача, рассчитать заработок и сформировать Z-отчет"
 					>
-						<CheckCircle2 className="w-4 h-4" />
+						<CheckCircle2 className="w-4 h-4 shrink-0" />
 						<span>Завершить смену и рассчитать</span>
 					</button>
 				</div>
@@ -80,10 +76,9 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 					type="button"
 					data-testid="btn-confirm-close-shift-1click-mobile"
 					onClick={onConfirmClose}
-					className="primary-button w-full min-h-[48px] text-sm font-bold flex items-center justify-center gap-2 cursor-pointer"
-					style={{ borderRadius: "12px" }}
+					className="w-full min-h-[48px] h-12 px-4 rounded-xl text-base font-semibold shadow-md bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] flex items-center justify-center gap-2 cursor-pointer transition-colors"
 				>
-					<CheckCircle2 className="w-5 h-5" />
+					<CheckCircle2 className="w-5 h-5 shrink-0" />
 					<span>Завершить смену и сформировать отчёт</span>
 				</button>
 
@@ -91,10 +86,9 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 					<button
 						type="button"
 						onClick={onPrintShiftStatement}
-						className="secondary-button flex-1 min-h-[44px] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-						style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "10px" }}
+						className="flex-1 min-h-[44px] h-11 px-3 rounded-xl text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 					>
-						<Printer className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+						<Printer className="w-4 h-4 text-[var(--primary)] shrink-0" />
 						<span>Печать</span>
 					</button>
 					{onSendTelegramSummary && (
@@ -102,19 +96,17 @@ export const DoctorShiftCloseFooter: React.FC<DoctorShiftCloseFooterProps> = ({
 							type="button"
 							onClick={onSendTelegramSummary}
 							disabled={isSendingTelegram}
-							className="secondary-button flex-1 min-h-[44px] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-							style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "10px" }}
+							className="flex-1 min-h-[44px] h-11 px-3 rounded-xl text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 							data-testid="btn-send-telegram-shift-summary-mobile"
 						>
-							<Send className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+							<Send className="w-4 h-4 text-[var(--primary)] shrink-0" />
 							<span>В Telegram</span>
 						</button>
 					)}
 					<button
 						type="button"
 						onClick={onClose}
-						className="secondary-button flex-1 min-h-[44px] text-xs font-bold flex items-center justify-center cursor-pointer"
-						style={{ border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", borderRadius: "10px" }}
+						className="flex-1 min-h-[44px] h-11 px-3 rounded-xl text-sm font-medium border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer transition-colors"
 					>
 						<span>Отмена</span>
 					</button>

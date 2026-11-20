@@ -28,6 +28,7 @@ import {
 	CreditCard,
 	QrCode,
 	Wallet,
+	X,
 } from "lucide-react";
 
 export interface CashShiftItem {
@@ -69,7 +70,10 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 	const [shifts, setShifts] = useState<CashShiftItem[]>(initialShifts);
 	const [filterStatus, setFilterStatus] = useState<"all" | "open" | "closed">("all");
 	const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-	const [activeShiftForPrint, setActiveShiftForPrint] = useState<CashShiftItem | null>(null);
+	const [activeShiftForPrint, setActiveShiftForPrint] = useState<{
+		shift: CashShiftItem;
+		type: "Z" | "X";
+	} | null>(null);
 
 	const activeOpenShift = shifts.find((s) => s.status === "open");
 
@@ -102,10 +106,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 	}, []);
 
 	const handlePrintReport = (shift: CashShiftItem, type: "Z" | "X") => {
-		setActiveShiftForPrint(shift);
-		setTimeout(() => {
-			window.print();
-		}, 100);
+		setActiveShiftForPrint({ shift, type });
 	};
 
 	return (
@@ -412,6 +413,127 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 					))
 				)}
 			</div>
+
+			{/* Thermal Z/X Report Print Slip Modal */}
+			{activeShiftForPrint && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+					data-testid="shift-print-preview-modal"
+					role="dialog"
+					aria-modal="true"
+				>
+					<div className="w-full max-w-md bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+						{/* Header */}
+						<div className="flex items-center justify-between p-4 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+							<div className="flex items-center gap-2">
+								<FileText className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+								<span className="text-sm font-bold text-[var(--ink,#0f172a)]">
+									{activeShiftForPrint.type === "Z" ? "Фискальный Z-отчёт" : "Промежуточный X-отчёт"}
+								</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => setActiveShiftForPrint(null)}
+								className="p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)]"
+								aria-label="Закрыть"
+							>
+								<X className="w-4 h-4" />
+							</button>
+						</div>
+
+						{/* Thermal Slip Body */}
+						<div className="p-4 overflow-y-auto space-y-3">
+							<div
+								id="printable-shift-z-report"
+								className="p-4 rounded-xl bg-white text-slate-900 border border-dashed border-slate-300 font-mono text-xs space-y-2 select-text shadow-xs"
+							>
+								<div className="text-center border-b border-dashed border-slate-300 pb-2 space-y-0.5">
+									<div className="font-bold text-sm tracking-tight">{clinicName}</div>
+									<div className="text-[10px] text-slate-500">ИНН: 7701234567 • г. Москва</div>
+									<div className="text-[10px] text-slate-500">
+										Кассир: {activeShiftForPrint.shift.cashierName}
+									</div>
+									<div className="font-bold text-[11px] pt-1">
+										{activeShiftForPrint.type === "Z"
+											? "Сменный Z-отчет (с гашением)"
+											: "Сменный X-отчет (без гашения)"}
+									</div>
+								</div>
+
+								<div className="flex justify-between text-[11px] pt-1">
+									<span>Смена №{activeShiftForPrint.shift.shiftNumber}</span>
+									<span>Док: {activeShiftForPrint.shift.zReportNumber || `${activeShiftForPrint.type}-${activeShiftForPrint.shift.shiftNumber}`}</span>
+								</div>
+
+								<div className="flex justify-between text-[10px] text-slate-500">
+									<span>Открыта: {new Date(activeShiftForPrint.shift.openedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>
+									{activeShiftForPrint.shift.closedAt && (
+										<span>Закрыта: {new Date(activeShiftForPrint.shift.closedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>
+									)}
+								</div>
+
+								<div className="border-t border-b border-dashed border-slate-300 py-1.5 space-y-1 text-[11px]">
+									<div className="flex justify-between">
+										<span className="text-slate-600">Наличные:</span>
+										<span className="font-bold">{activeShiftForPrint.shift.incomeCashRub.toLocaleString("ru-RU")} ₽</span>
+									</div>
+									<div className="flex justify-between">
+										<span className="text-slate-600">Безналичные (карта):</span>
+										<span className="font-bold">{activeShiftForPrint.shift.incomeElectronicRub.toLocaleString("ru-RU")} ₽</span>
+									</div>
+									<div className="flex justify-between">
+										<span className="text-slate-600">СБП QR-код:</span>
+										<span className="font-bold">{activeShiftForPrint.shift.incomeSbpRub.toLocaleString("ru-RU")} ₽</span>
+									</div>
+									<div className="flex justify-between">
+										<span className="text-slate-600">Зачёт авансов:</span>
+										<span className="font-bold">{activeShiftForPrint.shift.advanceOffsetRub.toLocaleString("ru-RU")} ₽</span>
+									</div>
+									<div className="flex justify-between text-xs font-extrabold pt-1 border-t border-dashed border-slate-300 text-[var(--primary)]">
+										<span>Итог выручки:</span>
+										<span>{activeShiftForPrint.shift.incomeTotalRub.toLocaleString("ru-RU")} ₽</span>
+									</div>
+								</div>
+
+								<div className="flex justify-between text-[11px] text-slate-600">
+									<span>Входящий остаток:</span>
+									<span>{activeShiftForPrint.shift.startBalanceRub.toLocaleString("ru-RU")} ₽</span>
+								</div>
+
+								<div className="pt-2 text-center text-[10px] text-emerald-700 flex items-center justify-center gap-1">
+									<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+									<span>
+										{activeShiftForPrint.type === "Z"
+											? "Смена закрыта • Z-отчёт передан в ОФД"
+											: "Промежуточный срез • Смена открыта"}
+									</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Actions */}
+						<div className="flex items-center justify-end gap-2 p-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+							<button
+								type="button"
+								onClick={() => setActiveShiftForPrint(null)}
+								className="min-h-[38px] px-3.5 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)]"
+							>
+								Закрыть
+							</button>
+							<button
+								type="button"
+								onClick={() => window.print()}
+								data-testid="btn-execute-shift-print"
+								className="min-h-[38px] px-4 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-bold shadow-sm flex items-center gap-1.5"
+								style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
+							>
+								<Printer className="w-3.5 h-3.5" />
+								<span>Печать</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

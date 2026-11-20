@@ -28,7 +28,7 @@ import {
 	users,
 	visits,
 } from "../db/schema.js";
-import type { DoctorCompletedServiceItem } from "@dental/shared";
+import { type DoctorCompletedServiceItem, rublesToKopecks } from "@dental/shared";
 
 export interface PayrollOrderDto {
 	id: string;
@@ -326,7 +326,7 @@ export async function fetchDoctorPayrollDataset(params: {
 	const fiscalReceiptByVisit = new Map<string, string>();
 	for (const p of paidVisitRows) {
 		if (!p.visitId) continue;
-		const amtKop = Math.round(Number(p.amountRub || 0) * 100);
+		const amtKop = rublesToKopecks(Number(p.amountRub || 0));
 		paidKopByVisit.set(p.visitId, (paidKopByVisit.get(p.visitId) || 0) + amtKop);
 		if (p.fiscalReceiptNumber && !fiscalReceiptByVisit.has(p.visitId)) {
 			fiscalReceiptByVisit.set(p.visitId, p.fiscalReceiptNumber);
@@ -357,7 +357,7 @@ export async function fetchDoctorPayrollDataset(params: {
 	for (const t of treats) {
 		if (t.visitId) {
 			const qty = Math.max(1, Number(t.quantity || 1));
-			const gKop = Math.round(Number(t.priceRub || 0) * 100 * qty);
+			const gKop = rublesToKopecks(Number(t.priceRub || 0) * qty);
 			totalGrossByVisit.set(t.visitId, (totalGrossByVisit.get(t.visitId) || 0) + gKop);
 		}
 	}
@@ -384,7 +384,7 @@ export async function fetchDoctorPayrollDataset(params: {
 
 	const labCostPoolByPatient = new Map<string, number>();
 	for (const lo of docLabOrders) {
-		const costKop = Math.round(Number(lo.labCostRub || 0) * 100);
+		const costKop = rublesToKopecks(Number(lo.labCostRub || 0));
 		if (costKop > 0) {
 			labCostPoolByPatient.set(
 				lo.patientId,
@@ -431,13 +431,13 @@ export async function fetchDoctorPayrollDataset(params: {
 	const matCostByVisit = new Map<string, number>();
 	for (const inv of invDeductions) {
 		if (!inv.visitId || inv.isOverhead) continue;
-		const cKop = Math.round(Number(inv.unitCostRub || 0) * Math.abs(Number(inv.quantityChanged || 0)) * 100);
+		const cKop = rublesToKopecks(Number(inv.unitCostRub || 0) * Math.abs(Number(inv.quantityChanged || 0)));
 		matCostByVisit.set(inv.visitId, (matCostByVisit.get(inv.visitId) || 0) + cKop);
 	}
 
 	for (const t of treats) {
 		const qty = Math.max(1, Number(t.quantity || 1));
-		const grossKop = Math.round(Number(t.priceRub || 0) * 100 * qty);
+		const grossKop = rublesToKopecks(Number(t.priceRub || 0) * qty);
 		const visitId = t.visitId;
 		const visitTotalGross = visitId ? (totalGrossByVisit.get(visitId) || 0) : 0;
 		const visitPaidTotal = visitId ? (paidKopByVisit.get(visitId) || 0) : 0;
@@ -557,11 +557,11 @@ export async function fetchClosedPayrollStatements(
 		dateClosedIso: s.createdAt.toISOString().slice(0, 10),
 		doctorName,
 		rkoReceiptNumber: s.rkoNumber || `РКО-${s.id.slice(0, 8).toUpperCase()}`,
-		grossKopecks: Math.round(Number(s.grossRevenueKopecks || Math.round(Number(s.grossRevenueRub) * 100))),
-		labCostKopecks: Math.round(Number(s.labCostKopecks || Math.round(Number(s.labCostRub) * 100))),
-		materialCostKopecks: Math.round(Number(s.materialsCostKopecks || Math.round(Number(s.materialsCostRub) * 100))),
-		netBaseKopecks: Math.round(Number(s.netBaseRevenueRub) * 100),
-		payoutKopecks: Math.round(Number(s.netPayoutKopecks || Math.round(Number(s.netPayoutRub) * 100))),
+		grossKopecks: Number(s.grossRevenueKopecks || rublesToKopecks(Number(s.grossRevenueRub || 0))),
+		labCostKopecks: Number(s.labCostKopecks || rublesToKopecks(Number(s.labCostRub || 0))),
+		materialCostKopecks: Number(s.materialsCostKopecks || rublesToKopecks(Number(s.materialsCostRub || 0))),
+		netBaseKopecks: rublesToKopecks(Number(s.netBaseRevenueRub || 0)),
+		payoutKopecks: Number(s.netPayoutKopecks || rublesToKopecks(Number(s.netPayoutRub || 0))),
 		isPaidRko: Boolean(s.paidAt),
 	}));
 

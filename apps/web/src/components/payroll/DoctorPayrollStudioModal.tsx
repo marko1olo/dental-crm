@@ -1,19 +1,11 @@
 /**
- * DENTE Dental CRM — Canonical Doctor Payroll Studio Modal
- * Compliance: Mandate 8b (Sweet Spot 380–480 lines), Mandate 8e (Doctor Autonomy & 0 Disabled Buttons),
- * Mandate 8n (Solo Practice & Net Revenue = Gross − Lab − Materials), Mandate 8am (Single Primary CTA #0d9488),
- * Mandate 8ze (Apple Mobile HIG: 390x844 Touch Targets >= 44x44px, Natural Thumb Zone, 0px Horizontal Drift),
- * Mandate 8wy (Strict Production vs Demo Mode Isolation: zero mockups in live production).
+ * DENTE Dental CRM — Canonical Doctor Payroll Studio Modal (Mandates 8b 380–480 lines, 8e, 8n, 8am #0d9488, 8wy).
  */
-
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Check, Printer, Send, X, FileCheck, Coins, Users, ListFilter, History, FileSpreadsheet } from "lucide-react";
-import {
-	type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus, type DoctorPayrollSummary,
-	type PayrollServiceOrder, type ClosedPayrollPeriodItem, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS,
-	CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary, formatKopecksToRubles,
-} from "./payrollCatalogData";
+import { type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus, type DoctorPayrollSummary, type PayrollServiceOrder, type ClosedPayrollPeriodItem, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS, CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary, formatKopecksToRubles } from "./payrollCatalogData";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { printDoctorPayslip, copyPayslipToClipboard, exportDoctorPayrollToCsv, buildDoctorPayrollCalculation, calculateOrderNetAndFee, EMPTY_DOCTOR_PAYROLL_SUMMARY } from "./doctorPayrollModalUtils";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
 import { PendingCashierOrdersSection } from "./PendingCashierOrdersSection";
@@ -37,31 +29,43 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [apiClosedPeriods, setApiClosedPeriods] = useState<ClosedPayrollPeriodItem[] | null>(null);
 	const [apiSummary, setApiSummary] = useState<DoctorPayrollSummary | null>(null);
 	const [apiDoctorSummaries, setApiDoctorSummaries] = useState<Record<string, Partial<DoctorPayrollSummary>>>({});
+	const [activeTab, setActiveTab] = useState<"summary" | "details" | "closed_periods">("summary");
 
 	const doctors: readonly PayrollDoctorProfile[] = useMemo(() => {
 		if (doctorsList && doctorsList.length > 0) {
-			return doctorsList.map((d) => CANONICAL_PAYROLL_DOCTORS.find((c) => c.id === d.id) ?? {
-				id: d.id, name: d.name, initials: d.name.slice(0, 2).toUpperCase(),
-				specialtyId: (d.specialtyId as PayrollDoctorProfile["specialtyId"]) || "therapy", specialtyTitleRu: "Врач-стоматолог",
-				commissionPercent: 25, payoutModel: "percentage", motivationScheme: "net_percentage",
-				defaultShiftRateKop: 400000, minGuaranteeMonthlyKop: 6000000, taxRegime: "employee",
+			return doctorsList.map((d) => {
+				const specId: PayrollDoctorProfile["specialtyId"] = ["orthopedics", "therapy", "surgery", "hygiene", "solo_rental"].includes(d.specialtyId) ? (d.specialtyId as PayrollDoctorProfile["specialtyId"]) : "therapy";
+				return {
+					id: d.id, name: d.name, initials: d.name.slice(0, 2), specialtyId: specId, specialtyTitleRu: d.name,
+					commissionPercent: 25, payoutModel: "percentage" as const, motivationScheme: "net_percentage" as const,
+					defaultShiftRateKop: 0, minGuaranteeMonthlyKop: 0, taxRegime: "employee" as const,
+				};
 			});
 		}
 		if (apiDoctors.length > 0) return apiDoctors;
-		return (doctorsList && doctorsList.length === 0) ? [] : (isDemo ? CANONICAL_PAYROLL_DOCTORS : []);
+		return isDemo ? CANONICAL_PAYROLL_DOCTORS : [];
 	}, [doctorsList, apiDoctors, isDemo]);
 
-	const effectiveOrders = useMemo(() => propsOrders ?? apiOrders ?? (isDemo ? CANONICAL_DEMO_ORDERS : []), [propsOrders, apiOrders, isDemo]);
-	const effectiveClosedPeriods = useMemo(() => propsClosedPeriods ?? apiClosedPeriods ?? (isDemo ? CANONICAL_CLOSED_PERIODS : []), [propsClosedPeriods, apiClosedPeriods, isDemo]);
+	const effectiveOrders: readonly PayrollServiceOrder[] = useMemo(() => {
+		if (propsOrders && propsOrders.length > 0) return propsOrders;
+		if (apiOrders) return apiOrders;
+		return isDemo ? CANONICAL_DEMO_ORDERS : [];
+	}, [propsOrders, apiOrders, isDemo]);
 
-	const [activeTab, setActiveTab] = useState<"summary" | "details" | "closed_periods">("summary");
+	const effectiveClosedPeriods: readonly ClosedPayrollPeriodItem[] = useMemo(() => {
+		if (propsClosedPeriods && propsClosedPeriods.length > 0) return propsClosedPeriods;
+		if (apiClosedPeriods) return apiClosedPeriods;
+		return isDemo ? CANONICAL_CLOSED_PERIODS : [];
+	}, [propsClosedPeriods, apiClosedPeriods, isDemo]);
+
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => initialDoctorId || (doctors[0]?.id ?? ""));
 	const [periodPreset, setPeriodPreset] = useState<PayrollPeriodPreset>(initialPeriodPreset);
 	const [shiftsCount, setShiftsCount] = useState<number>(0);
 	const [advanceRub, setAdvanceRub] = useState<number>(0);
 	const [customPercent, setCustomPercent] = useState<number | null>(null);
 	const [payoutStatus, setPayoutStatus] = useState<PayrollPayoutStatus>("accrued");
-	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null); const [isSaving, setIsSaving] = useState<boolean>(false);
+	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+	const [isSaving, setIsSaving] = useState<boolean>(false);
 
 	const activeDoctorId = useMemo(() => (selectedDoctorId && doctors.some((d) => d.id === selectedDoctorId)) ? selectedDoctorId : (doctors[0]?.id ?? ""), [doctors, selectedDoctorId]);
 	const selectedDoctor: PayrollDoctorProfile | null = useMemo(() => doctors.length === 0 ? null : (doctors.find((d) => d.id === activeDoctorId) || doctors[0] || null), [doctors, activeDoctorId]);
@@ -104,7 +108,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		}
 		return calculateDoctorPayrollSummary({
 			orders: effectiveOrders, doctor: selectedDoctor, percent: customPercent ?? undefined,
-			shiftsCount, advanceKop: advanceRub * 100, isRkoPaid: payoutStatus === "paid_rko",
+			shiftsCount, advanceKop: rublesToKopecks(advanceRub), isRkoPaid: payoutStatus === "paid_rko",
 		});
 	}, [selectedDoctor, effectiveOrders, customPercent, shiftsCount, advanceRub, payoutStatus, apiSummary, isDemo]);
 
@@ -114,40 +118,17 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const allDoctorsSummaries: readonly { readonly doctor: PayrollDoctorProfile; readonly summary: DoctorPayrollSummary }[] = useMemo(() => doctors.map((doc) => {
 		const cached = (!isDemo && apiDoctorSummaries[doc.id]) ? apiDoctorSummaries[doc.id] : undefined;
 		const docSummary: DoctorPayrollSummary = cached
-			? {
-				doctorId: cached.doctorId ?? doc.id,
-				doctorName: cached.doctorName ?? doc.name,
-				schemeType: cached.schemeType ?? "net_percentage",
-				totalGrossKopecks: cached.totalGrossKopecks ?? 0,
-				totalLabCostKopecks: cached.totalLabCostKopecks ?? 0,
-				totalMaterialCostKopecks: cached.totalMaterialCostKopecks ?? 0,
-				totalNetBaseKopecks: cached.totalNetBaseKopecks ?? 0,
-				doctorAccruedKopecks: cached.doctorAccruedKopecks ?? 0,
-				chairRentalKopecks: cached.chairRentalKopecks ?? 0,
-				advanceKopecks: cached.advanceKopecks ?? 0,
-				ndfl13TaxKopecks: cached.ndfl13TaxKopecks ?? 0,
-				payoutKopecks: cached.payoutKopecks ?? 0,
-				payoutStatus: payoutStatus,
-				servicesCount: cached.servicesCount ?? 0,
-				minimumGuaranteeApplied: Boolean(cached.minimumGuaranteeApplied),
-			}
+			? { doctorId: cached.doctorId ?? doc.id, doctorName: cached.doctorName ?? doc.name, schemeType: cached.schemeType ?? "net_percentage", totalGrossKopecks: cached.totalGrossKopecks ?? 0, totalLabCostKopecks: cached.totalLabCostKopecks ?? 0, totalMaterialCostKopecks: cached.totalMaterialCostKopecks ?? 0, totalNetBaseKopecks: cached.totalNetBaseKopecks ?? 0, doctorAccruedKopecks: cached.doctorAccruedKopecks ?? 0, chairRentalKopecks: cached.chairRentalKopecks ?? 0, advanceKopecks: cached.advanceKopecks ?? 0, ndfl13TaxKopecks: cached.ndfl13TaxKopecks ?? 0, payoutKopecks: cached.payoutKopecks ?? 0, payoutStatus, servicesCount: cached.servicesCount ?? 0, minimumGuaranteeApplied: Boolean(cached.minimumGuaranteeApplied) }
 			: calculateDoctorPayrollSummary({ orders: effectiveOrders, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" });
 		return { doctor: doc, summary: docSummary };
 	}), [doctors, effectiveOrders, payoutStatus, apiDoctorSummaries, isDemo]);
 
 	const clinicTotals = useMemo(() => allDoctorsSummaries.reduce((acc, item) => ({
-		gross: acc.gross + item.summary.totalGrossKopecks,
-		lab: acc.lab + item.summary.totalLabCostKopecks,
-		netBase: acc.netBase + item.summary.totalNetBaseKopecks,
-		payout: acc.payout + item.summary.payoutKopecks,
+		gross: acc.gross + item.summary.totalGrossKopecks, lab: acc.lab + item.summary.totalLabCostKopecks,
+		netBase: acc.netBase + item.summary.totalNetBaseKopecks, payout: acc.payout + item.summary.payoutKopecks,
 	}), { gross: 0, lab: 0, netBase: 0, payout: 0 }), [allDoctorsSummaries]);
-
 	const rub = formatKopecksToRubles;
-
-	const calcCompat = useMemo(
-		() => buildDoctorPayrollCalculation(summary, selectedDoctor, periodDates, customPercent),
-		[summary, selectedDoctor, periodDates, customPercent]
-	);
+	const calcCompat = useMemo(() => buildDoctorPayrollCalculation(summary, selectedDoctor, periodDates, customPercent), [summary, selectedDoctor, periodDates, customPercent]);
 
 	const handlePrintPayslip = (customCalc?: typeof calcCompat, customDoc?: PayrollDoctorProfile) => {
 		const targetDoc = customDoc || selectedDoctor;
@@ -162,7 +143,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 			try {
 				const res = await fetch("/api/expenses", {
 					method: "POST", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ category: "salaries", amountKopecks: advanceIncrement * 100, expenseDate: new Date().toISOString().slice(0, 10), description: `Аванс врачу: ${selectedDoctor.name}`, paymentMethod: "cash" }),
+					body: JSON.stringify({ category: "salaries", amountKopecks: rublesToKopecks(advanceIncrement), expenseDate: new Date().toISOString().slice(0, 10), description: `Аванс врачу: ${selectedDoctor.name}`, paymentMethod: "cash" }),
 				});
 				if (!res.ok) throw new Error("Касса отклонила операцию");
 				setAdvanceRub((v) => v + advanceIncrement);
@@ -207,7 +188,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				}
 				await closeSettlementPeriodApi({
 					doctorId: selectedDoctor.id, periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
-					payoutModel: selectedDoctor.payoutModel, chairRentalKopecks: summary.chairRentalKopecks, chairRentalRub: summary.chairRentalKopecks > 0 ? Math.round(summary.chairRentalKopecks / 100) : 0,
+					payoutModel: selectedDoctor.payoutModel, chairRentalKopecks: summary.chairRentalKopecks, chairRentalRub: summary.chairRentalKopecks > 0 ? kopecksToRubles(summary.chairRentalKopecks) : 0,
 					advanceRub, grossRevenueKop: summary.totalGrossKopecks, labCostKop: summary.totalLabCostKopecks,
 					materialCostKop: summary.totalMaterialCostKopecks, netBaseKop: summary.totalNetBaseKopecks,
 					categoryPercent: customPercent ?? selectedDoctor.commissionPercent,
@@ -480,7 +461,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					</div>
 					<div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
 						<button type="button" onClick={onClose} className="hidden sm:inline-flex payroll-studio-secondary-btn">Закрыть</button>
-						<button type="button" onClick={handleCommitPayout} className="payroll-studio-primary-cta w-full sm:w-auto bg-[var(--teal,#0d9488)]" data-testid="payroll-studio-primary-cta">
+						<button type="button" onClick={handleCommitPayout} className="payroll-studio-primary-cta w-full sm:w-auto bg-[var(--primary)] bg-[var(--teal,#0d9488)] text-white hover:bg-[var(--primary-hover)]" data-testid="payroll-studio-primary-cta">
 							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : activeTab === "summary" ? "Утвердить ведомости клиники" : "Закрыть расчетный период"}</span>
 						</button>
 					</div>

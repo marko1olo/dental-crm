@@ -38,10 +38,10 @@ export const DoctorShiftCloseCompensationModel: React.FC<DoctorShiftCloseCompens
 	const netBaseAfterLab = Math.max(0, revenueRub - labDeductionsRub);
 
 	return (
-		<div className="border border-[var(--teal,#0d9488)]/30 rounded-xl p-3.5 sm:p-4 bg-[var(--teal-soft,#f0fdfa)]/50 space-y-3">
+		<div className="border border-[var(--line)] rounded-xl p-3.5 sm:p-4 bg-[var(--paper-soft)] space-y-3">
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-				<span className="text-xs font-bold text-[var(--teal,#0d9488)] uppercase tracking-wider flex items-center gap-1.5">
-					<Calculator className="w-3.5 h-3.5" /> Модель расчёта заработка
+				<span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+					<Calculator className="w-3.5 h-3.5 text-[var(--primary)]" /> Модель расчёта заработка
 				</span>
 				<div className="dente-segmented-bar" role="group" aria-label="Модель начисления смены">
 					<button
@@ -83,12 +83,12 @@ export const DoctorShiftCloseCompensationModel: React.FC<DoctorShiftCloseCompens
 				onSetBaseSalaryRub={onSetBaseSalaryRub}
 			/>
 
-			<div className="pt-2 border-t border-[var(--teal,#0d9488)]/20">
+			<div className="pt-2 border-t border-[var(--line)]">
 				<div className="flex items-center justify-between mb-1">
-					<span className="text-xs font-bold text-[var(--teal,#0d9488)] uppercase tracking-wider">
+					<span className="text-xs font-semibold text-[var(--ink)]">
 						Начисленный заработок врача за смену
 					</span>
-					<span className="text-xs font-bold px-2 py-0.5 rounded-md bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
+					<span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--paper)] text-[var(--primary)] border border-[var(--line)]">
 						{compensationModel === "chair_rental"
 							? "Аренда кресла (Соло)"
 							: compensationModel === "salary_plus_bonus"

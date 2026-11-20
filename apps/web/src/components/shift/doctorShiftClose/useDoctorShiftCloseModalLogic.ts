@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { rublesToKopecks } from "@dental/shared";
 import { StaffActionAuditService } from "../../../services/audit/staffActionAuditService";
 import { showToast } from "../../GlobalToast";
 import type { DoctorShiftStats } from "../controlBarModules/shiftControlBarTypes";
@@ -69,7 +70,7 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 
 	const cashDifferenceRub = countedCashRub - cashRub;
 	const isCashBalanced = Math.abs(cashDifferenceRub) < 0.01;
-	const fiscalDocNumber = `Z-${new Date().getFullYear().toString().slice(-2)}${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}-042`;
+	const fiscalDocNumber = "Без фискализации (ККТ не подключена)";
 
 	const calculatedPayoutRub = useMemo(() => {
 		const revenue = shiftStats.totalRevenueRub;
@@ -109,8 +110,8 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 		StaffActionAuditService.logShiftClose({
 			cashRegisterId: "main_cashier",
 			shiftNumber: shiftDateLabel || "today",
-			totalRevenueKopecks: Math.round(effectiveTotalCashRub * 100),
-			closingCashKopecks: Math.round(amt * 100),
+			totalRevenueKopecks: rublesToKopecks(effectiveTotalCashRub),
+			closingCashKopecks: rublesToKopecks(amt),
 		});
 		setIsEncashmentDone(true);
 		showToast(`Акт инкассации на ${amt.toLocaleString("ru-RU")} ₽ сформирован`, "info");
@@ -140,7 +141,7 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 				showToast("Сводка смены зафиксирована", "info");
 			}
 		} catch {
-			showToast("Сводка смены отправлена руководству в Telegram", "success");
+			showToast("Не удалось отправить сводку в Telegram", "error");
 		} finally {
 			setIsSendingTelegram(false);
 		}
@@ -151,8 +152,8 @@ export function useDoctorShiftCloseModalLogic(params: UseDoctorShiftCloseModalLo
 		StaffActionAuditService.logShiftClose({
 			cashRegisterId: "main_cashier",
 			shiftNumber: shiftDateLabel || "today",
-			totalRevenueKopecks: Math.round(effectiveTotalCashRub * 100),
-			closingCashKopecks: Math.round(countedCashRub * 100),
+			totalRevenueKopecks: rublesToKopecks(effectiveTotalCashRub),
+			closingCashKopecks: rublesToKopecks(countedCashRub),
 		});
 		onConfirmClose({ countedCashRub, printZReport, fiscalDocNumber, compensationModel, calculatedPayoutRub });
 	};

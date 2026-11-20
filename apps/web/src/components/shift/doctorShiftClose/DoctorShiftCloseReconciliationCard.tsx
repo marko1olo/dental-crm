@@ -34,7 +34,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 	return (
 		<div className="border border-[var(--line,#e2e8f0)] rounded-xl p-3 sm:p-3.5 bg-[var(--paper,#ffffff)] shadow-xs space-y-2.5">
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+				<span className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
 					<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
 					Сверка кассы и фискальный Z-отчёт
 				</span>
@@ -42,6 +42,9 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 					{cashboxName}
 				</span>
 			</div>
+			<p className="text-[11px] text-[var(--muted,#64748b)] leading-tight">
+				Физический пересчет денежного ящика выполняет кассир/администратор. Для врача касса автоматически сверена по чекам приёма.
+			</p>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
 				<div className="p-2.5 rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
@@ -55,7 +58,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 							<button
 								type="button"
 								onClick={() => onSetCountedCashRub(cashRub)}
-								className="text-[10px] text-[var(--teal,#0d9488)] hover:underline font-semibold cursor-pointer"
+								className="text-[10px] text-[var(--primary)] hover:underline font-semibold cursor-pointer"
 							>
 								Сверено (0 ₽)
 							</button>
@@ -69,7 +72,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 							step="100"
 							value={countedCashRub}
 							onChange={(e) => onSetCountedCashRub(Number(e.target.value) || 0)}
-							className="w-full px-2 py-1 text-sm font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-md text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+							className="w-full px-2 py-1 text-sm font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-md text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
 							aria-label="Фактическая наличность в кассе"
 						/>
 						<span className="text-xs font-bold text-[var(--muted,#64748b)]">₽</span>
@@ -80,14 +83,14 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 			<div
 				className={`p-2.5 rounded-lg text-xs flex flex-col gap-1 font-semibold border ${
 					isCashBalanced
-						? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-200 border-emerald-500/30"
+						? "bg-[var(--success-soft)] text-[var(--success-ink)] border-[var(--success-line)]"
 						: "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200 border-amber-500/30"
 				}`}
 				data-testid="shift-cash-discrepancy-status"
 			>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-1.5">
-						<CheckCircle2 className={`w-4 h-4 ${isCashBalanced ? "text-emerald-600" : "text-amber-600"}`} />
+						<CheckCircle2 className={`w-4 h-4 ${isCashBalanced ? "text-[var(--success-ink)]" : "text-amber-600"}`} />
 						<span>{isCashBalanced ? "Сверено без расхождений (0 ₽):" : "Расхождение кассы:"}</span>
 					</div>
 					<span className="font-mono">
@@ -110,14 +113,14 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 						className="secondary-button text-xs font-bold py-1.5 px-3 flex items-center gap-1.5 cursor-pointer"
 						style={{
 							border: "1px solid var(--line)",
-							background: isEncashmentDone ? "var(--teal-surface)" : "var(--paper-soft)",
-							color: isEncashmentDone ? "var(--teal-dark)" : "var(--ink)",
+							background: isEncashmentDone ? "var(--primary-soft, var(--paper-soft))" : "var(--paper-soft)",
+							color: isEncashmentDone ? "var(--primary)" : "var(--ink)",
 							borderRadius: "8px",
 						}}
 						title="Сформировать чистый акт передачи денег владельцу клиники или банку"
 						data-testid="btn-modal-encashment"
 					>
-						<Wallet className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+						<Wallet className="w-3.5 h-3.5 text-[var(--primary)]" />
 						<span>
 							{isEncashmentDone
 								? "✓ Выручка инкассирована (акт сформирован)"
@@ -136,7 +139,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 						type="checkbox"
 						checked={printZReport}
 						onChange={(e) => onSetPrintZReport(e.target.checked)}
-						className="rounded border-[var(--line,#cbd5e1)] text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] w-4 h-4"
+						className="rounded border-[var(--line,#cbd5e1)] text-[var(--primary)] focus:ring-[var(--primary)] w-4 h-4"
 					/>
 					<span>Снять Z-отчёт с закрытием смены</span>
 				</label>
@@ -145,7 +148,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 						type="checkbox"
 						checked={printShiftSummary}
 						onChange={(e) => onSetPrintShiftSummary(e.target.checked)}
-						className="rounded border-[var(--line,#cbd5e1)] text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] w-4 h-4"
+						className="rounded border-[var(--line,#cbd5e1)] text-[var(--primary)] focus:ring-[var(--primary)] w-4 h-4"
 					/>
 					<span>Сформировать сводку смены врача</span>
 				</label>
