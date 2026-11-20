@@ -3,6 +3,7 @@ import type { createImplantInstallationSchema } from "@dental/shared";
 import type { z } from "zod";
 import { db } from "../../db/client.js";
 import {
+	invoiceItems,
 	patientInvoices,
 	serviceCatalogItems,
 	toothStateHistory,
@@ -89,12 +90,14 @@ export async function linkBillingAndOdontogram(
 
 		if (existingInvoice) {
 			linkedInvoiceId = existingInvoice.id;
-			const updatedTotal = Number(existingInvoice.totalAmountRub || 0) + operationPriceRub;
+			const currentTotalKopecks = BigInt(Math.round(Number(existingInvoice.totalAmountRub || 0) * 100));
+			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
+			const updatedTotalRub = Number(newTotalKopecks) / 100;
 			await tx
 				.update(patientInvoices)
 				.set({
-					totalAmountRub: updatedTotal,
-					totalRub: String(updatedTotal),
+					totalAmountRub: updatedTotalRub,
+					totalRub: String(updatedTotalRub),
 				})
 				.where(
 					and(
@@ -120,12 +123,14 @@ export async function linkBillingAndOdontogram(
 
 		if (existing) {
 			linkedInvoiceId = existing.id;
-			const updatedTotal = Number(existing.totalAmountRub || 0) + operationPriceRub;
+			const currentTotalKopecks = BigInt(Math.round(Number(existing.totalAmountRub || 0) * 100));
+			const newTotalKopecks = currentTotalKopecks + operationPriceKopecks;
+			const updatedTotalRub = Number(newTotalKopecks) / 100;
 			await tx
 				.update(patientInvoices)
 				.set({
-					totalAmountRub: updatedTotal,
-					totalRub: String(updatedTotal),
+					totalAmountRub: updatedTotalRub,
+					totalRub: String(updatedTotalRub),
 				})
 				.where(
 					and(
@@ -137,14 +142,15 @@ export async function linkBillingAndOdontogram(
 	}
 
 	if (!linkedInvoiceId) {
+		const invoiceTotalRub = Number(operationPriceKopecks) / 100;
 		const [newInvoice] = await tx
 			.insert(patientInvoices)
 			.values({
 				organizationId: orgId,
 				patientId: input.patientId,
 				visitId: input.visitId ?? null,
-				totalAmountRub: operationPriceRub,
-				totalRub: String(operationPriceRub),
+				totalAmountRub: invoiceTotalRub,
+				totalRub: String(invoiceTotalRub),
 				status: "issued",
 				issuedAt: new Date(),
 			})
@@ -152,7 +158,23 @@ export async function linkBillingAndOdontogram(
 		linkedInvoiceId = newInvoice?.id ?? null;
 	}
 
-	// ВСЕГДА создаем позицию в treatmentItems (даже если visitId равен null)
+	// Строгая запись позиции в invoiceItems с точными копейками (Мандат 8bm)
+	if (linkedInvoiceId) {
+		await tx.insert(invoiceItems).values({
+			organizationId: orgId,
+			invoiceId: linkedInvoiceId,
+			priceListItemId: input.catalogItemId ?? null,
+			name: `Внутрикостная дентальная имплантация системы ${input.implantBrand} (Зуб FDI #${input.toothNumberFdi})`,
+			quantity: "1",
+			unitPriceKopecks: Number(operationPriceKopecks),
+			discountPercent: "0",
+			totalPriceKopecks: Number(operationPriceKopecks),
+			serviceCode: "A16.07.054",
+			toothCode: String(input.toothNumberFdi),
+		});
+	}
+
+	// ВСЕГДА создаем позицию в treatmentItems (даже если visitId равен null) со строгим копеечным расчетом
 	await tx.insert(treatmentItems).values({
 		organizationId: orgId,
 		patientId: input.patientId,
@@ -160,8 +182,8 @@ export async function linkBillingAndOdontogram(
 		invoiceId: linkedInvoiceId,
 		toothCode: String(input.toothNumberFdi),
 		title: `Внутрикостная дентальная имплантация системы ${input.implantBrand} (Зуб FDI #${input.toothNumberFdi})`,
-		priceRub: operationPriceRub,
-		unitPriceRub: operationPriceRub,
+		priceRub: Number(operationPriceKopecks) / 100,
+		unitPriceRub: Number(operationPriceKopecks) / 100,
 		quantity: "1",
 		status: "completed",
 		notes: `Установлен имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм. Торк: ${input.finalInsertionTorqueNcm} Н·см.${isqMean !== null ? ` ISQ: ${Math.round(isqMean)}.` : ""}`,

@@ -4,7 +4,7 @@
  */
 
 import type { ImplantTorqueBrand } from "./implantBrandTypes";
-import { findImplantSystem } from "./implantNormalizedSystems";
+import { findImplantSystem } from "./implantCatalogData";
 
 export type ProstheticComponentType =
 	| "fixture_insertion"

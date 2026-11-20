@@ -149,7 +149,7 @@ export function generateWarrantyPassportRecord(params: {
 		date: surgeryDateIso,
 		osteoDate: expectedDateIso,
 		warranty: "Lifetime Manufacturer Osseointegration Guarantee",
-		verificationUrl: `https://dente-clinic.ru/portal/warranty?cert=${encodeURIComponent(passportId)}`,
+		verificationUrl: `https://dente.clinic/passport/${passportId}`,
 	});
 
 	return {

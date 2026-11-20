@@ -94,8 +94,9 @@ export function registerPassportRoute(app: FastifyInstance) {
 			// fallback
 		}
 
+		const canonicalPassportId = `IMP-PASSPORT-${installation.toothNumberFdi}-${installation.id.slice(0, 8).toUpperCase()}`;
 		const passportData = {
-			passportId: `IMP-PASSPORT-${installation.toothNumberFdi}-${installation.id.slice(0, 8).toUpperCase()}`,
+			passportId: canonicalPassportId,
 			installationId: installation.id,
 			toothFdi: installation.toothNumberFdi,
 			installedAt: installation.installedAt,
@@ -114,7 +115,7 @@ export function registerPassportRoute(app: FastifyInstance) {
 			patientName: patient?.fullName ?? "Пациент",
 			patientCardNumber: patient?.id?.slice(0, 8) ?? "CARD-01",
 			doctorName,
-			qrVerificationUrl: `https://dente.clinic/passport/${installation.id}`,
+			qrVerificationUrl: `https://dente.clinic/passport/${canonicalPassportId}`,
 			isqHistory,
 			financials: parsedNotes.financials ?? null,
 			deductedMaterials: parsedNotes.deductedMaterials ?? [],

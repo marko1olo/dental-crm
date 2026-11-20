@@ -7,7 +7,7 @@ import { formatKopecksToRub } from "@dental/shared";
 import { CANONICAL_IMPLANT_SYSTEMS as DICOM_CANONICAL_IMPLANT_SYSTEMS } from "../dicom/implantCatalog";
 import type { ImplantBrand, PlatformType } from "./implantBrandTypes";
 import { BRAND_KEY_MAP } from "./implantBrandTypes";
-import { findImplantSystem, resolveNormalizedBrand } from "./implantNormalizedSystems";
+import { findImplantSystem, resolveNormalizedBrand } from "./implantCatalogData";
 
 export interface DrillStep {
 	readonly stepNumber: number;

@@ -5,7 +5,7 @@
 
 import React, { useMemo } from "react";
 import { Award, Copy, Printer, QrCode, Send, Share2, ShieldCheck, TriangleAlert } from "lucide-react";
-import { generateQrCodeSvg } from "@dental/shared";
+import { generateCode128Svg, generateQrCodeSvg } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { DentalImplant } from "../icons/DentalIcons";
 import type { FastImplantPassportData } from "./implantQuickPresets";
@@ -163,6 +163,19 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 		}
 	}, [qrVerificationUrl, data.passportId]);
 
+	const barcodeRawValue = `${data.catalogArticle || "REF"}-${data.lotNumber || "LOT"}`;
+	const barcodeSvg = useMemo(() => {
+		try {
+			return generateCode128Svg(barcodeRawValue, {
+				height: 28,
+				showText: false,
+				barColor: "currentColor",
+			});
+		} catch {
+			return "";
+		}
+	}, [barcodeRawValue]);
+
 	return (
 		<div className={`implant-passport-display-card space-y-3.5 ${className}`.trim()} data-testid="implant-passport-card">
 			{/* Шапка карточки паспорта формата А5 */}
@@ -247,11 +260,17 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				<div className="flex flex-col justify-between space-y-1">
 					<span className="text-[11px] font-bold tracking-wider text-[var(--muted)]">Идентификация изделия (REF / LOT / SN):</span>
 					<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-mono text-center">
-						<svg className="passport-barcode-svg w-full h-8 text-[var(--ink)]" data-testid="passport-barcode-svg" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
-							{[true, false, true, true, false, true, false, true, true, false, true, true, true, false, true, false, false, true, true, false, true, false, true, true, false, true, false, true, true, false, true, true, false, false, true, true, true, false, true, false, true, false, true, true, true, false, true, false].map((isBar, idx) => (
-								isBar ? <rect key={idx} x={idx * 2 + 2} y="0" width={idx % 5 === 0 ? "1.6" : "1.0"} height="24" fill="currentColor" /> : null
-							))}
-						</svg>
+						{barcodeSvg ? (
+							<div
+								className="passport-barcode-svg w-full h-8 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:max-h-7"
+								data-testid="passport-barcode-svg"
+								dangerouslySetInnerHTML={{ __html: barcodeSvg }}
+							/>
+						) : (
+							<div className="passport-barcode-svg w-full h-8 flex items-center justify-center text-xs text-[var(--muted)]" data-testid="passport-barcode-svg">
+								{barcodeRawValue}
+							</div>
+						)}
 						<span className="text-[10px] tracking-widest text-[var(--muted)] block mt-0.5 truncate">{barcodeSummary}</span>
 					</div>
 				</div>
