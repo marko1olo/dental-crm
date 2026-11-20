@@ -45,6 +45,7 @@
 *   `npm run check:dynamic-imports` — Проверка валидности всех путей динамических импортов.
 *   `npm run check:sandboxes` — Проверка отсутствия изолированных `*_preview.html` файлов.
 *   `npm run check:limits` — Контроль размера модулей по Мандату 8b (200–300 строк, макс 500).
+*   `npm run check:ratchet` — Санитарный Храповик Качества (Мандат 8ai, 8bk, 8am). Монотонный контроль technical debt (`any`, `biome-ignore`, `/ 100`, `uppercase` на кнопках) против `scripts/config/sanitary-baseline.json`. Опция `--update` для фиксации снижения.
 
 ---
 

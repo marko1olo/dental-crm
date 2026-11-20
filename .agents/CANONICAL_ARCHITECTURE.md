@@ -1043,6 +1043,14 @@ Use these exclusively. Blind terminal navigation is banned.
    - Запрещено коммитить новые директивы подавления типов. Все существующие супрессии подлежат планомерной зачистке по мере типизации файлов.
 3. **Закон Храповика статической безопасности (The Type Ratchet Principle):**
    - Число `as any`, `: any` и `biome-ignore` в проекте может **ТОЛЬКО МОНОТОННО УБЫВАТЬ**.
+   - Реализован автоматический санитарный храповик качества: `scripts/quality-ratchet.mjs` (запуск `npm run check:ratchet`, лимиты в `scripts/config/sanitary-baseline.json`).
+   - Храповик контролирует 4 ключевых индикатора в боевом коде (`packages/shared/src`, `apps/api/src`, `apps/web/src`):
+     1) `maxExplicitAny`: явные TypeScript `any` (`:\s*any\b`, `as\s+any\b`, `<any>`);
+     2) `maxLinterSuppressions`: супрессии `biome-ignore` и `eslint-disable`;
+     3) `maxRawFloatDivisions`: голые деления `/ 100` в UI вместо `money.ts`;
+     4) `maxUppercaseButtons`: `uppercase` на кнопках, чипах, табах (UPPERCASE BAN Мандата 8am).
+   - Превышение лимита хотя бы на 1 возвращает Exit Code 1 и блокирует приёмку с выводом точных строк регрессии.
+   - Снижение показателей с флагом `--update` перезаписывает базовые лимиты вниз, навечно фиксируя достигнутую чистоту.
    - Любой PR или коммит, увеличивающий число `any` хотя бы на 1, АВТОМАТИЧЕСКИ БРАКУЕТСЯ.
    - **Правило бойскаута для типов:** Модифицируя файл кодовой базы, агент ОБЯЗАН уменьшить число `any` в нём: заменить `any` на реальные Zod/DTO контракты, типизировать пропсы и удалить связанные `biome-ignore`.
 4. **Каноническая иерархия типов (Single Source of Truth):**
