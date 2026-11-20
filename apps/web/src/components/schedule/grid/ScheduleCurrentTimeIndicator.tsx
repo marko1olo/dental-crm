@@ -58,7 +58,7 @@ function getCurrentTimeInfo(dateKey: string, timezone?: string) {
 }
 
 /**
- * ScheduleCurrentTimeIndicator — StomX Parity Red Current Time Line Indicator.
+ * ScheduleCurrentTimeIndicator — DENTE Realtime Schedule Timeline Indicator.
  * Renders a crisp red horizontal line across all chairs at the exact current time (e.g. 09:50)
  * with a red time pill on the time axis and a pulsing marker.
  */

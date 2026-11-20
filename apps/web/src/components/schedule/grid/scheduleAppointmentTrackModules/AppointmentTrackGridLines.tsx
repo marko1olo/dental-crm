@@ -228,7 +228,7 @@ export function AppointmentTrackGridLines({
           });
         })}
 
-        {/* 3. StomX-Parity Red Current Time Indicator Line */}
+        {/* 3. DENTE Realtime Schedule Timeline Indicator */}
         <ScheduleCurrentTimeIndicator
           timeSlots={props.timeSlots}
           gridStep={props.gridStep}

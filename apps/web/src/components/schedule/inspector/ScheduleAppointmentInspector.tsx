@@ -25,7 +25,7 @@ export interface ScheduleAppointmentInspectorProps {
 }
 
 /**
- * ScheduleAppointmentInspector — StomX Parity Right Inspector Panel.
+ * ScheduleAppointmentInspector — DENTE Clinical Appointment Inspector Panel.
  * Provides instant 0-click right sidebar inspection of appointments:
  * - Mini month calendar with date jumps and busy-day dots.
  * - When appointment selected: Patient FIO, age, phone with call/WhatsApp, balance, doctor, time, 1-click status change, open visit.

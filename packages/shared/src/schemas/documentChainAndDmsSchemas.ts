@@ -13,6 +13,8 @@ import { appointmentSchema } from "../schedule/index.js";
 import { paymentSchema } from "../fiscal/index.js";
 import { invoiceSchema } from "../billing/invoiceContract.js";
 import { nonNegativeMoneyRubSchema } from "../money.js";
+import { calculateItemDmsSplit } from "../insurance/dmsFranchiseEngine.js";
+import type { MinimalLabOrderForSchedule } from "../lab/labScheduleIntegration.js";
 
 export const documentChainSummarySchema = z
 	.object({
@@ -280,9 +282,12 @@ export const dashboardSchema = z.object({
 	complianceWarnings: z.array(z.string()),
 	insuranceContracts: z.array(insuranceContractSchema).optional(),
 	invoices: z.array(invoiceSchema).optional(),
+	labOrders: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
-export type Dashboard = z.infer<typeof dashboardSchema>;
+export type Dashboard = z.infer<typeof dashboardSchema> & {
+	readonly labOrders?: readonly MinimalLabOrderForSchedule[] | undefined;
+};
 
 export const insuranceCalculationItemSchema = z.object({
 	serviceId: z.string().uuid().or(z.string().min(1)),
@@ -408,8 +413,9 @@ export function calculateDmsCoverage(
 				break;
 		}
 		pct = Math.min(100, Math.max(0, pct));
-
-		let candidateCoveredKopecks = Math.round(lineTotalKopecks * (pct / 100));
+		const franchisePct = 100 - pct;
+		const { insurerKopecks } = calculateItemDmsSplit(lineTotalKopecks, franchisePct, true);
+		let candidateCoveredKopecks = insurerKopecks;
 
 		if (availableLimitKopecks != null) {
 			const allowedByCap = Math.min(
