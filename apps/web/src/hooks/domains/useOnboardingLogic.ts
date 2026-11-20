@@ -1,41 +1,64 @@
+import type { Dashboard, OnboardingStep, UiPreferences } from "@dental/shared";
 import { useEffect, useRef } from "react";
+import {
+	type OnboardingDismissalState,
+	loadOnboardingDismissalState,
+	onboardingSteps,
+} from "../../AppHelpers";
+import type { ClinicProfileDraft } from "../../components/onboarding/wizard/types";
 import { useSettingsStore } from "../../store/settingsStore";
-import { type OnboardingStep, type UiPreferences } from "@dental/shared";
-import { type AppView } from "../../utils/routeUtils";
-import { loadOnboardingDismissalState, onboardingSteps } from "../../AppHelpers";
 import { logger } from "../../utils/logger";
+import type { AppView } from "../../utils/routeUtils";
+
 export interface OnboardingLogicProps {
-    clinicProfileDraft: any;
-    dashboard: any;
-    clinicSettings: any;
-    saveOnboardingSchedulesIfDirty: () => Promise<boolean>;
-    telegramModeDraft: any;
-    telegramBotUsernameDraft: string;
-    telegramOwnBotUsernameDraft: string;
-    telegramPatientPortalBaseUrlDraft: string;
-    telegramReviewUrlDraft: string;
-    telegramMapsUrlDraft: string;
-    telegramSettingsDirty: boolean;
-    saveTelegramSettings: () => Promise<boolean>;
-    setError: (error: any) => void;
-    currentUiPreferencesInput: any;
-    uiPreferencesServerReadyRef: any;
-    saveServerUiPreferences: (prefs: any, session: any) => Promise<any>;
-    settingsAdminSecretSession: any;
-    pendingUiPreferencesSyncRef: any;
-    setUiPreferencesSyncError: (error: any) => void;
-    showToast: (msg: any, type?: any) => void;
-    actionFailureToast: (msg: any, status: number | null) => string;
-    uiPreferencesSyncErrorMessage: (error: unknown) => string;
-    persistUiPreferences: (prefs: any) => any;
-    saveOnboardingDismissed: (dismissed: boolean, savedAt?: string | undefined, draftMode?: boolean, organizationId?: string | null) => any;
-    setCurrentView: (view: AppView) => void;
-    setSettingsTab: (tab: string) => void;
-    currentView: AppView;
-    settingsTab: string;
-    queueUiPreferencesServerSync: (prefs: UiPreferences, options?: { delayMs?: number }) => void;
-    uiPreferencesHydrated: boolean;
-    loadUiPreferences: () => any;
+	clinicProfileDraft?: ClinicProfileDraft | null | undefined;
+	dashboard?: Dashboard | null | undefined;
+	clinicSettings: {
+		saveClinicProfileIfDirty: () => Promise<boolean>;
+		[key: string]: unknown;
+	};
+	saveOnboardingSchedulesIfDirty: () => Promise<boolean>;
+	telegramModeDraft?: string | null | undefined;
+	telegramBotUsernameDraft: string;
+	telegramOwnBotUsernameDraft: string;
+	telegramPatientPortalBaseUrlDraft: string;
+	telegramReviewUrlDraft: string;
+	telegramMapsUrlDraft: string;
+	telegramSettingsDirty: boolean;
+	saveTelegramSettings: () => Promise<boolean>;
+	setError: (error: string | null) => void;
+	currentUiPreferencesInput: () => UiPreferences;
+	uiPreferencesServerReadyRef: React.MutableRefObject<boolean>;
+	saveServerUiPreferences: (
+		prefs: UiPreferences,
+		session?: string | null | undefined,
+	) => Promise<unknown>;
+	settingsAdminSecretSession?: string | null | undefined;
+	pendingUiPreferencesSyncRef: React.MutableRefObject<unknown>;
+	setUiPreferencesSyncError: (error: string | null) => void;
+	showToast: (
+		msg: string,
+		type?: "success" | "error" | "warning" | "info" | string | undefined,
+	) => void;
+	actionFailureToast: (msg: string, status: number | null) => string;
+	uiPreferencesSyncErrorMessage: (error: unknown) => string;
+	persistUiPreferences: (prefs: UiPreferences) => boolean;
+	saveOnboardingDismissed: (
+		dismissed: boolean,
+		savedAt?: string | undefined,
+		draftMode?: boolean | undefined,
+		organizationId?: string | null | undefined,
+	) => OnboardingDismissalState;
+	setCurrentView: (view: AppView) => void;
+	setSettingsTab: (tab: string) => void;
+	currentView: AppView;
+	settingsTab: string;
+	queueUiPreferencesServerSync: (
+		prefs: UiPreferences,
+		options?: { delayMs?: number } | undefined,
+	) => void;
+	uiPreferencesHydrated: boolean;
+	loadUiPreferences: () => UiPreferences;
 }
 
 export function useOnboardingLogic(props: OnboardingLogicProps) {
@@ -64,13 +87,13 @@ export function useOnboardingLogic(props: OnboardingLogicProps) {
 function buildOnboardingFirstAppointmentIssues(): string[] {
 		if (!clinicProfileDraft) return [];
 		const issues: string[] = [];
-		const requiredClinicDraftFields: Array<[string, string]> = [
+		const requiredClinicDraftFields: Array<[string, string | undefined]> = [
 			["название клиники", clinicProfileDraft.clinicName],
 			["телефон клиники", clinicProfileDraft.phone],
 			["часовой пояс", clinicProfileDraft.timezone],
 		];
 		for (const [label, value] of requiredClinicDraftFields) {
-			if (!value.trim()) issues.push(label);
+			if (!value || !value.trim()) issues.push(label);
 		}
 		const activeStaff =
 			(dashboard?.clinicSettings?.staff || []).filter(
@@ -115,7 +138,7 @@ function buildOnboardingFirstAppointmentIssues(): string[] {
 function buildOnboardingDocumentReadinessIssues(): string[] {
 		if (!clinicProfileDraft) return [];
 		const issues: string[] = [];
-		const requiredDocumentDraftFields: Array<[string, string]> = [
+		const requiredDocumentDraftFields: Array<[string, string | undefined]> = [
 			["юридическое наименование", clinicProfileDraft.legalName],
 			["ИНН", clinicProfileDraft.inn],
 			["адрес", clinicProfileDraft.address],
@@ -124,7 +147,7 @@ function buildOnboardingDocumentReadinessIssues(): string[] {
 			["орган, выдавший лицензию", clinicProfileDraft.medicalLicenseIssuer],
 		];
 		for (const [label, value] of requiredDocumentDraftFields) {
-			if (!value.trim()) issues.push(label);
+			if (!value || !value.trim()) issues.push(label);
 		}
 		return issues;
 	}
@@ -221,8 +244,8 @@ async function dismissOnboarding() {
 		const previousPreferencesInput = currentUiPreferencesInput();
 		const dismissalSavedAt = new Date().toISOString();
 		const savedPreferences: UiPreferences = {
-			version: 1,
 			...previousPreferencesInput,
+			version: 1,
 			onboardingDismissed: true,
 			onboardingDismissedAt: dismissalSavedAt,
 			onboardingDraftMode: false,
@@ -276,8 +299,8 @@ async function continueOnboardingInDraftMode(targetView?: AppView) {
 			return;
 		const dismissalSavedAt = new Date().toISOString();
 		const savedPreferences: UiPreferences = {
-			version: 1,
 			...currentUiPreferencesInput(),
+			version: 1,
 			onboardingDismissed: true,
 			onboardingDismissedAt: dismissalSavedAt,
 			onboardingDraftMode: true,

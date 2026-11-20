@@ -1,68 +1,97 @@
 import { fetchWithHandling } from "../../utils/networkUtils";
 
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-export function useCommunicationsQueries(options?: { auth?: any }) {
+export interface CommunicationsAuthOptions {
+	denteClinicalReadHeaders?: (extra?: Record<string, string>) => HeadersInit;
+	denteClinicalMutationHeaders?: (extra?: Record<string, string>) => HeadersInit;
+	[key: string]: unknown;
+}
+
+export interface UseCommunicationsQueriesOptions {
+	auth?: CommunicationsAuthOptions | null | undefined;
+}
+
+export function useCommunicationsQueries(
+	options?: UseCommunicationsQueriesOptions,
+) {
 	const auth = options?.auth;
+
+	const getReadHeaders = (
+		authObj?: CommunicationsAuthOptions | null | undefined,
+		extra?: Record<string, string>,
+	): HeadersInit => {
+		const targetAuth = authObj || auth;
+		if (targetAuth && typeof targetAuth.denteClinicalReadHeaders === "function") {
+			return targetAuth.denteClinicalReadHeaders(extra);
+		}
+		return extra ?? {};
+	};
+
+	const getMutationHeaders = (
+		authObj?: CommunicationsAuthOptions | null | undefined,
+		extra?: Record<string, string>,
+	): HeadersInit => {
+		const targetAuth = authObj || auth;
+		if (targetAuth && typeof targetAuth.denteClinicalMutationHeaders === "function") {
+			return targetAuth.denteClinicalMutationHeaders(extra);
+		}
+		return extra ?? {};
+	};
 
 	const getGatewayStatus = async () =>
 		fetchWithHandling("/api/communications/gateway-status", {
-			headers: auth?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(),
 		});
 	const getTemplates = async () =>
 		fetchWithHandling("/api/communications/templates", {
-			headers: auth?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(),
 		});
 	const getOutbox = async (query = "") =>
 		fetchWithHandling(`/api/communications/outbox${query}`, {
-			headers: auth?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(),
 		});
 	const getSettings = async () =>
 		fetchWithHandling("/api/communications/settings", {
-			headers: auth?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(),
 		});
 	const getVariables = async () =>
 		fetchWithHandling("/api/communications/variables", {
-			headers: auth?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(),
 		});
 	const getChatQuota = async () =>
 		fetchWithHandling("/api/chat/quota", {
-			headers: auth?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(),
 		});
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const sendChatSms = async (payload: any) =>
+	const sendChatSms = async (payload: unknown) =>
 		fetchWithHandling("/api/chat/sms/send", {
 			method: "POST",
-			headers: auth?.denteClinicalMutationHeaders({
+			headers: getMutationHeaders(undefined, {
 				"content-type": "application/json",
 			}),
 			body: JSON.stringify(payload),
 		});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const previewTemplate = async (_templateId: string | null, payload: any) =>
+	const previewTemplate = async (_templateId: string | null, payload: unknown) =>
 		fetchWithHandling("/api/communications/templates/preview", {
 			method: "POST",
-			headers: auth?.denteClinicalMutationHeaders({
+			headers: getMutationHeaders(undefined, {
 				"content-type": "application/json",
 			}),
 			body: JSON.stringify(payload),
 		});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const updateTemplate = async (editingId: string, payload: any) =>
+	const updateTemplate = async (editingId: string, payload: unknown) =>
 		fetchWithHandling(`/api/communications/templates/${editingId}`, {
-			method: "PATCH", // Fixed: server expects PATCH (communicationsOutbox.ts:276), not PUT
-			headers: auth?.denteClinicalMutationHeaders({
+			method: "PATCH",
+			headers: getMutationHeaders(undefined, {
 				"content-type": "application/json",
 			}),
 			body: JSON.stringify(payload),
 		});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const createTemplate = async (payload: any) =>
+	const createTemplate = async (payload: unknown) =>
 		fetchWithHandling("/api/communications/templates", {
 			method: "POST",
-			headers: auth?.denteClinicalMutationHeaders({
+			headers: getMutationHeaders(undefined, {
 				"content-type": "application/json",
 			}),
 			body: JSON.stringify(payload),
@@ -71,13 +100,13 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 	const outboxAction = async (outboxId: string, action: string) =>
 		fetchWithHandling(`/api/communications/outbox/${outboxId}/${action}`, {
 			method: "POST",
-			headers: auth?.denteClinicalMutationHeaders(),
+			headers: getMutationHeaders(),
 		});
 
 	const dispatchOutbox = async () =>
 		fetchWithHandling("/api/communications/outbox/dispatch", {
 			method: "POST",
-			headers: auth?.denteClinicalMutationHeaders({
+			headers: getMutationHeaders(undefined, {
 				"content-type": "application/json",
 			}),
 			body: JSON.stringify({ batchSize: 25 }),
@@ -86,75 +115,81 @@ export function useCommunicationsQueries(options?: { auth?: any }) {
 	const runReminders = async () =>
 		fetchWithHandling("/api/communications/reminders/run", {
 			method: "POST",
-			headers: auth?.denteClinicalMutationHeaders(),
+			headers: getMutationHeaders(),
 		});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const saveSettings = async (payload: any) =>
+	const saveSettings = async (payload: unknown) =>
 		fetchWithHandling("/api/communications/settings", {
 			method: "PUT",
-			headers: auth?.denteClinicalMutationHeaders({
+			headers: getMutationHeaders(undefined, {
 				"content-type": "application/json",
 			}),
 			body: JSON.stringify(payload),
 		});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const addOutboxMessage = async (payload: any) =>
+	const addOutboxMessage = async (payload: unknown) =>
 		fetchWithHandling("/api/communications/outbox", {
 			method: "POST",
-			headers: auth?.denteClinicalMutationHeaders({
+			headers: getMutationHeaders(undefined, {
 				"content-type": "application/json",
 			}),
 			body: JSON.stringify(payload),
 		});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const getCampaigns = async (authObj?: any) =>
+	const getCampaigns = async (
+		authObj?: CommunicationsAuthOptions | null | undefined,
+	) =>
 		fetchWithHandling("/api/communications/campaigns", {
-			headers: (authObj || auth)?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(authObj),
 		});
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const getCampaignsTemplates = async (authObj?: any) =>
+	const getCampaignsTemplates = async (
+		authObj?: CommunicationsAuthOptions | null | undefined,
+	) =>
 		fetchWithHandling("/api/communications/templates", {
-			headers: (authObj || auth)?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(authObj),
 		});
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const getCampaignsVariables = async (authObj?: any) =>
+	const getCampaignsVariables = async (
+		authObj?: CommunicationsAuthOptions | null | undefined,
+	) =>
 		fetchWithHandling("/api/communications/variables", {
-			headers: (authObj || auth)?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(authObj),
 		});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const createCampaign = async (payload: any, authObj?: any) =>
+	const createCampaign = async (
+		payload: unknown,
+		authObj?: CommunicationsAuthOptions | null | undefined,
+	) =>
 		fetchWithHandling("/api/communications/campaigns", {
 			method: "POST",
-			headers: (authObj || auth)?.denteClinicalMutationHeaders({
+			headers: getMutationHeaders(authObj, {
 				"content-type": "application/json",
 			}),
 			body: JSON.stringify(payload),
 		});
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const previewCampaign = async (campaignId: string, authObj?: any) =>
+	const previewCampaign = async (
+		campaignId: string,
+		authObj?: CommunicationsAuthOptions | null | undefined,
+	) =>
 		fetchWithHandling(`/api/communications/campaigns/${campaignId}/preview`, {
-			headers: (authObj || auth)?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(authObj),
 		});
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const getCampaignProgress = async (campaignId: string, authObj?: any) =>
+	const getCampaignProgress = async (
+		campaignId: string,
+		authObj?: CommunicationsAuthOptions | null | undefined,
+	) =>
 		fetchWithHandling(`/api/communications/campaigns/${campaignId}/progress`, {
-			headers: (authObj || auth)?.denteClinicalReadHeaders(),
+			headers: getReadHeaders(authObj),
 		});
 
 	const campaignAction = async (
 		campaignId: string,
 		action: string,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		authObj?: any,
+		authObj?: CommunicationsAuthOptions | null | undefined,
 	) =>
 		fetchWithHandling(`/api/communications/campaigns/${campaignId}/${action}`, {
 			method: "POST",
-			headers: (authObj || auth)?.denteClinicalMutationHeaders(),
+			headers: getMutationHeaders(authObj),
 		});
 
 	async function fetchRecordingDetails(recordingId: string) {

@@ -55,9 +55,19 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 				onSearchChange={setSearchQuery} onClearSearch={() => setSearchQuery("")}
 				hideTitleText={true}
 				selectedCategory={
-					selectedCategory === "therapy" || selectedCategory === "composite" ? "filling" : (selectedCategory as MobileInventoryCategoryType)
+					selectedCategory === "therapy" || selectedCategory === "composite"
+						? "filling"
+						: (selectedCategory as MobileInventoryCategoryType)
 				}
-				onSelectCategory={(cat) => setSelectedCategory(cat === "filling" ? "composite" : cat)}
+				onSelectCategory={(cat: MobileInventoryCategoryType) => {
+					if (cat === "filling") {
+						setSelectedCategory("composite");
+					} else if (cat === "ppe" || cat === "impression") {
+						setSelectedCategory("disposables");
+					} else {
+						setSelectedCategory(cat);
+					}
+				}}
 				onQuickDeduct={(item, qty) => mobileQuickDeduct(organizationId, item.id, qty, getHeaders, fetchItems)}
 				onReceiveItem={(item, qty, lotNumber, expDate) => mobileReceiveItem(organizationId, item.id, qty, lotNumber, expDate, getHeaders, fetchItems)}
 				onSelectItem={(item) => openEditModal(item)} onEditItem={(item) => openEditModal(item)}
@@ -101,7 +111,7 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 			{externalModalsProps?.isInventoryAuditOpen && (
 				<WarehouseInventoryAuditModal
 					isOpen={externalModalsProps.isInventoryAuditOpen}
-					onClose={externalModalsProps.onCloseInventoryAudit}
+					onClose={externalModalsProps.onCloseInventoryAudit ?? (() => {})}
 					initialDocument={auditInitialDoc} onDocumentSaved={fetchItems}
 				/>
 			)}
@@ -110,7 +120,7 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 				<Suspense fallback={null}>
 					<MdlpScanningModal
 						isOpen={externalModalsProps.isMdlpScanningOpen}
-						onClose={externalModalsProps.onCloseMdlpScanning}
+						onClose={externalModalsProps.onCloseMdlpScanning ?? (() => {})}
 					/>
 				</Suspense>
 			)}

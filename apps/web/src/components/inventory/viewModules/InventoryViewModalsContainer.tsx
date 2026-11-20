@@ -74,7 +74,7 @@ export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainer
 			{externalModalsProps?.isInventoryAuditOpen && (
 				<WarehouseInventoryAuditModal
 					isOpen={externalModalsProps.isInventoryAuditOpen}
-					onClose={externalModalsProps.onCloseInventoryAudit}
+					onClose={externalModalsProps.onCloseInventoryAudit ?? (() => {})}
 					initialDocument={auditInitialDoc}
 					onApplyAudit={async (doc) => {
 						if (externalModalsProps.onApplyInventoryAudit) {
@@ -86,11 +86,50 @@ export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainer
 			)}
 
 			<InventoryExternalModals
-				organizationId={organizationId} items={items} auditInitialDoc={auditInitialDoc}
 				{...externalModalsProps}
-				isInboundInvoiceModalOpen={false} isAcceptanceWaybillsOpen={false}
-				isClinicalWriteoffOpen={false} isWarehouseManagerOpen={false}
-				isInventoryAuditOpen={false} fetchItems={fetchItems} getHeaders={getHeaders}
+				organizationId={organizationId}
+				items={items}
+				auditInitialDoc={auditInitialDoc}
+				isClinicalWriteoffOpen={false}
+				onCloseClinicalWriteoff={() => {
+					externalModalsProps?.onCloseClinicalWriteoff?.();
+				}}
+				isInventoryAuditOpen={false}
+				onCloseInventoryAudit={() => {
+					externalModalsProps?.onCloseInventoryAudit?.();
+				}}
+				isMdlpDisposalOpen={Boolean(
+					externalModalsProps?.isMdlpDisposalOpen,
+				)}
+				onCloseMdlpDisposal={() => {
+					externalModalsProps?.onCloseMdlpDisposal?.();
+				}}
+				isWarehouseManagerOpen={false}
+				onCloseWarehouseManager={() => {
+					externalModalsProps?.onCloseWarehouseManager?.();
+				}}
+				isMdlpScanningOpen={Boolean(
+					externalModalsProps?.isMdlpScanningOpen,
+				)}
+				onCloseMdlpScanning={() => {
+					externalModalsProps?.onCloseMdlpScanning?.();
+				}}
+				isAcceptanceWaybillsOpen={false}
+				onCloseAcceptanceWaybills={() => {
+					externalModalsProps?.onCloseAcceptanceWaybills?.();
+				}}
+				isInboundInvoiceModalOpen={false}
+				onCloseInboundInvoiceModal={() => {
+					externalModalsProps?.onCloseInboundInvoiceModal?.();
+				}}
+				isDeductingMaterials={Boolean(
+					externalModalsProps?.isDeductingMaterials,
+				)}
+				setIsDeductingMaterials={(isDeducting: boolean) => {
+					externalModalsProps?.setIsDeductingMaterials?.(isDeducting);
+				}}
+				fetchItems={fetchItems}
+				getHeaders={getHeaders}
 				onQuickWriteoffCarpules={handleQuickWriteoffCarpules}
 			/>
 		</>

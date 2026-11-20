@@ -1,23 +1,31 @@
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
 
-export function useMigrationQueries(options?: {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	auth?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicalMutationHeaders?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	clinicalReadHeaders?: any;
-}) {
+export interface MigrationAuthOptions {
+	denteClinicalMutationHeaders?: (extra?: Record<string, string>) => Record<string, string>;
+	denteClinicalReadHeaders?: (extra?: Record<string, string>) => Record<string, string>;
+	[key: string]: unknown;
+}
+
+export interface UseMigrationQueriesOptions {
+	auth?: MigrationAuthOptions | null | undefined;
+	clinicalMutationHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
+	clinicalReadHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
+}
+
+export function useMigrationQueries(options?: UseMigrationQueriesOptions) {
 	const auth = options?.auth;
 	const clinicalMutationHeaders = options?.clinicalMutationHeaders;
 	const clinicalReadHeaders = options?.clinicalReadHeaders;
 
-	const getHeaders = (isMutation: boolean, extra?: Record<string, string>) => {
+	const getHeaders = (isMutation: boolean, extra?: Record<string, string>): Record<string, string> => {
 		if (auth) {
-			return isMutation
-				? auth.denteClinicalMutationHeaders(extra)
-				: auth.denteClinicalReadHeaders(extra);
+			if (isMutation && typeof auth.denteClinicalMutationHeaders === "function") {
+				return auth.denteClinicalMutationHeaders(extra);
+			}
+			if (!isMutation && typeof auth.denteClinicalReadHeaders === "function") {
+				return auth.denteClinicalReadHeaders(extra);
+			}
 		}
 		if (isMutation && clinicalMutationHeaders) {
 			return clinicalMutationHeaders(extra);
@@ -89,53 +97,46 @@ export function useMigrationQueries(options?: {
 		);
 		if (el) el.click();
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const planMigrationDiscoveryCandidate = async (candidate: any) => {
+	const planMigrationDiscoveryCandidate = async (candidate: unknown) => {
 		return fetchWithHandling("/api/imports/smart/local-source-workup", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ candidate }),
 		});
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const previewMigrationDiscoveryCandidate = async (_candidate: any) => {};
+	const previewMigrationDiscoveryCandidate = async (_candidate: unknown) => {};
 	const previewMigrationAutopilotSources = async (
 		_sourceFingerprint?: string | null,
 	) => {};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const probeMigrationDiscoveryCandidate = async (candidate: any) => {
+	const probeMigrationDiscoveryCandidate = async (candidate: unknown) => {
 		return fetchWithHandling("/api/imports/smart/local-source-probe", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify({ candidate }),
 		});
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const previewImport = async (payload?: any) => {
+	const previewImport = async (payload?: unknown) => {
 		return fetchWithHandling("/api/imports/patients/intake", {
 			method: "POST",
 			headers: getHeaders(false, { "content-type": "application/json" }),
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const previewSmartImport = async (payload?: any) => {
+	const previewSmartImport = async (payload?: unknown) => {
 		return fetchWithHandling("/api/imports/smart/preview", {
 			method: "POST",
 			headers: getHeaders(false, { "content-type": "application/json" }),
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const commitImport = async (payload?: any) => {
+	const commitImport = async (payload?: unknown) => {
 		return fetchWithHandling("/api/imports/patients/commit", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
 			body: JSON.stringify(payload ?? {}),
 		});
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const commitSmartImport = async (payload?: any) => {
+	const commitSmartImport = async (payload?: unknown) => {
 		return fetchWithHandling("/api/imports/smart/commit", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),
@@ -148,8 +149,7 @@ export function useMigrationQueries(options?: {
 			headers: getHeaders(true, { "content-type": "application/json" }),
 		});
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const downloadMigrationHandoffReport = async (payload?: any) => {
+	const downloadMigrationHandoffReport = async (payload?: unknown) => {
 		try {
 			const res = await fetchWithHandling(
 				"/api/imports/smart/migration-autopilot/report.csv",
@@ -173,8 +173,7 @@ export function useMigrationQueries(options?: {
 			logger.error("downloadMigrationHandoffReport error", e);
 		}
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const downloadSmartImportSafeHandoffReport = async (payload?: any) => {
+	const downloadSmartImportSafeHandoffReport = async (payload?: unknown) => {
 		try {
 			const res = await fetchWithHandling(
 				"/api/imports/smart/report.safe.csv",
@@ -198,8 +197,7 @@ export function useMigrationQueries(options?: {
 			logger.error("downloadSmartImportSafeHandoffReport error", e);
 		}
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const downloadSmartImportReport = async (payload?: any) => {
+	const downloadSmartImportReport = async (payload?: unknown) => {
 		try {
 			const res = await fetchWithHandling("/api/imports/smart/report.csv", {
 				method: "POST",
@@ -220,14 +218,15 @@ export function useMigrationQueries(options?: {
 			logger.error("downloadSmartImportReport error", e);
 		}
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const handleBrowserMigrationInputChange = async (_files: any) => {};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const ingestImportFile = async (_file: any) => {};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const addMigrationDiscoveryCandidateToSmartImport = (_candidate: any) => {};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const runMigrationAutopilot = async (knownDiscovery?: any, options?: any) => {
+	const handleBrowserMigrationInputChange = async (
+		_files: FileList | File[] | null | undefined,
+	) => {};
+	const ingestImportFile = async (_file: File | Blob | null | undefined) => {};
+	const addMigrationDiscoveryCandidateToSmartImport = (_candidate: unknown) => {};
+	const runMigrationAutopilot = async (
+		knownDiscovery?: unknown,
+		options?: unknown,
+	) => {
 		return fetchWithHandling("/api/imports/smart/migration-autopilot", {
 			method: "POST",
 			headers: getHeaders(true, { "content-type": "application/json" }),

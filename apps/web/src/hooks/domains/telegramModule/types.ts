@@ -1,4 +1,6 @@
 import type {
+	Appointment,
+	Dashboard,
 	DenteTelegramChatLinkListResponse,
 	DenteTelegramLinkCodeCreated,
 	DenteTelegramLinkCodeListResponse,
@@ -6,32 +8,28 @@ import type {
 	DenteTelegramOutboxResponse,
 	DenteTelegramOutboxSendDueResponse,
 	DenteTelegramOutboxSendResponse,
+	Patient,
 } from "@dental/shared";
 import type React from "react";
 import type { DenteTelegramHandoffTarget } from "../../../AppConstants";
 import type { useTelegramSettings } from "../../useTelegramSettings";
+import type { AppView } from "../../../utils/routeUtils";
 
 export type UseTelegramModuleOptions = {
-	settingsAdminSecretSession?: string | null;
+	settingsAdminSecretSession?: string | null | undefined;
 	loadDashboard: () => Promise<void>;
 	setError: (error: string | null) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dashboard: any;
+	dashboard?: Dashboard | null | undefined;
 	currentView: string;
 	settingsTab: string;
 	onboardingDismissed: boolean;
 	onboardingStep: string;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatient: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeDoctor: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeAppointment: any;
+	activePatient?: Patient | { id: string; [key: string]: unknown } | null | undefined;
+	activeDoctor?: { id: string; [key: string]: unknown } | null | undefined;
+	activeAppointment?: Appointment | { id: string; [key: string]: unknown } | null | undefined;
 	uiPreferencesHydrated: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setCurrentView: (view: any) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	setSelectedDocumentKind: (kind: any) => void;
+	setCurrentView: (view: AppView) => void;
+	setSelectedDocumentKind: (kind: string | null) => void;
 };
 
 export type UseTelegramBotSettingsOptions = UseTelegramModuleOptions & {
@@ -46,14 +44,10 @@ export type UseTelegramBotSettingsResult = {
 };
 
 export type UseTelegramPatientNotificationsOptions = {
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dashboard: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activePatient: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeDoctor: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeAppointment: any;
+	dashboard?: Dashboard | null | undefined;
+	activePatient?: Patient | { id: string; [key: string]: unknown } | null | undefined;
+	activeDoctor?: { id: string; [key: string]: unknown } | null | undefined;
+	activeAppointment?: Appointment | { id: string; [key: string]: unknown } | null | undefined;
 	setError: (error: string | null) => void;
 	telegramControlPlaneHeaders: (
 		headers?: Record<string, string>,

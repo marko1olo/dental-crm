@@ -1,14 +1,23 @@
-import type { Appointment, ScheduleWarning } from "@dental/shared";
-import type { AppointmentScheduleDraft } from "../../../AppConstants";
+import type {
+	Appointment,
+	Dashboard,
+	DentalSpecialty,
+	ScheduleWarning,
+} from "@dental/shared";
+import type {
+	AppointmentScheduleDraft,
+	AppointmentScheduleSaveState,
+} from "../../../AppConstants";
 import {
 	appointmentScheduleDraftFromAppointment,
 	appointmentScheduleMissingFields,
 	newAppointmentDraftFromDashboard,
 } from "../../../AppHelpers";
+import type { ScheduleStore } from "../../../store/scheduleStore";
 import { useWorkspaceProfileStore } from "../../useWorkspaceProfile";
 
 export interface UseAppointmentDraftsProps {
-	dashboard: any;
+	dashboard: Dashboard | null | undefined;
 	selectedPatientId: string | null;
 	selectedSpecialty: string | null;
 	setEditingAppointmentId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -17,10 +26,10 @@ export interface UseAppointmentDraftsProps {
 	setSettingsTab: (tab: string) => void;
 	appointmentScheduleDraftsRef?: React.MutableRefObject<
 		Record<string, AppointmentScheduleDraft>
-	>;
-	newAppointmentDraftRef?: { current: AppointmentScheduleDraft };
+	> | undefined;
+	newAppointmentDraftRef?: { current: AppointmentScheduleDraft } | undefined;
 	newAppointmentDraftUserEditedRef: React.MutableRefObject<boolean>;
-	scheduleStore: any;
+	scheduleStore: ScheduleStore;
 }
 
 export function useAppointmentDrafts({
@@ -63,18 +72,24 @@ export function useAppointmentDrafts({
 					appointmentScheduleDraftsRef.current[appointment.id] ?? fallbackDraft,
 			};
 		}
-		setAppointmentScheduleDrafts((current: any) => ({
-			...current,
-			[appointment.id]: current[appointment.id] ?? fallbackDraft,
-		}));
-		setAppointmentScheduleSaveStates((current: any) => ({
-			...current,
-			[appointment.id]: "idle",
-		}));
-		setAppointmentScheduleErrors((current: any) => ({
-			...current,
-			[appointment.id]: null,
-		}));
+		setAppointmentScheduleDrafts(
+			(current: Record<string, AppointmentScheduleDraft>) => ({
+				...current,
+				[appointment.id]: current[appointment.id] ?? fallbackDraft,
+			}),
+		);
+		setAppointmentScheduleSaveStates(
+			(current: Record<string, AppointmentScheduleSaveState>) => ({
+				...current,
+				[appointment.id]: "idle",
+			}),
+		);
+		setAppointmentScheduleErrors(
+			(current: Record<string, string | null>) => ({
+				...current,
+				[appointment.id]: null,
+			}),
+		);
 	}
 
 	function markAppointmentScheduleDirty(appointmentId: string) {
@@ -83,28 +98,32 @@ export function useAppointmentDrafts({
 			next.add(appointmentId);
 			return next;
 		});
-		setAppointmentScheduleSaveStates((current: any) => ({
-			...current,
-			[appointmentId]: "idle",
-		}));
-		setAppointmentScheduleErrors((current: any) => ({
-			...current,
-			[appointmentId]: null,
-		}));
+		setAppointmentScheduleSaveStates(
+			(current: Record<string, AppointmentScheduleSaveState>) => ({
+				...current,
+				[appointmentId]: "idle",
+			}),
+		);
+		setAppointmentScheduleErrors(
+			(current: Record<string, string | null>) => ({
+				...current,
+				[appointmentId]: null,
+			}),
+		);
 	}
 
 	function updateAppointmentScheduleDraft<
 		K extends keyof AppointmentScheduleDraft,
 	>(appointmentId: string, key: K, value: AppointmentScheduleDraft[K]) {
 		const sourceAppointment = dashboard?.appointments?.find(
-			(appointment: any) => appointment.id === appointmentId,
+			(appointment: Appointment) => appointment.id === appointmentId,
 		);
 		const baseFromRef =
 			appointmentScheduleDraftsRef?.current?.[appointmentId] ??
 			scheduleStore?.appointmentScheduleDrafts?.[appointmentId] ??
 			(sourceAppointment
 				? appointmentScheduleDraftFromAppointment(sourceAppointment)
-				: {});
+				: ({} as Partial<AppointmentScheduleDraft>));
 		const nextDraft = {
 			...baseFromRef,
 			[key]: value,
@@ -115,36 +134,67 @@ export function useAppointmentDrafts({
 				[appointmentId]: nextDraft,
 			};
 		}
-		setAppointmentScheduleDrafts((current: any) => ({
-			...current,
-			[appointmentId]: {
-				...(current[appointmentId] ?? baseFromRef),
-				[key]: value,
-			} as AppointmentScheduleDraft,
-		}));
+		setAppointmentScheduleDrafts(
+			(current: Record<string, AppointmentScheduleDraft>) => ({
+				...current,
+				[appointmentId]: {
+					...(current[appointmentId] ?? baseFromRef),
+					[key]: value,
+				} as AppointmentScheduleDraft,
+			}),
+		);
 		markAppointmentScheduleDirty(appointmentId);
 	}
 
-	function newAppointmentPreferenceDefaults() {
+	function newAppointmentPreferenceDefaults(): NonNullable<
+		Parameters<typeof newAppointmentDraftFromDashboard>[1]
+	> {
 		let defaultChairId = scheduleDefaultChairId;
 		if (
 			!workspaceProfile.hasMultipleChairs &&
 			dashboard?.clinicSettings?.chairs
 		) {
 			const activeChairs = dashboard.clinicSettings.chairs.filter(
-				(c: any) => c.active,
+				(c) => c.active,
 			);
 			if (activeChairs.length > 0) {
-				defaultChairId = activeChairs[0].id;
+				defaultChairId = activeChairs[0]?.id ?? defaultChairId;
 			}
 		}
-		return {
+		const validSpecialties: readonly DentalSpecialty[] = [
+			"universal",
+			"therapist",
+			"surgeon",
+			"orthopedist",
+			"orthodontist",
+			"pediatric",
+			"hygienist",
+			"periodontist",
+			"implantologist",
+			"radiologist",
+		];
+		const parsedSpecialty =
+			selectedSpecialty &&
+			validSpecialties.includes(selectedSpecialty as DentalSpecialty)
+				? (selectedSpecialty as DentalSpecialty)
+				: null;
+
+		const defaults: {
+			selectedPatientId?: string | null;
+			selectedSpecialty?: DentalSpecialty;
+			scheduleDefaultDoctorUserId?: string | null;
+			scheduleDefaultAssistantUserId?: string | null;
+			scheduleDefaultChairId?: string | null;
+		} = {
 			selectedPatientId,
-			selectedSpecialty: (selectedSpecialty as any) || undefined,
 			scheduleDefaultDoctorUserId,
 			scheduleDefaultAssistantUserId,
 			scheduleDefaultChairId: defaultChairId,
 		};
+		if (parsedSpecialty) {
+			defaults.selectedSpecialty = parsedSpecialty;
+		}
+		return defaults;
 	}
 
 	function updateNewAppointmentDraft<K extends keyof AppointmentScheduleDraft>(
@@ -158,7 +208,10 @@ export function useAppointmentDrafts({
 				[key]: value,
 			};
 		}
-		setNewAppointmentDraft((current: any) => ({ ...current, [key]: value }));
+		setNewAppointmentDraft((current: AppointmentScheduleDraft) => ({
+			...current,
+			[key]: value,
+		}));
 		if (key === "patientId" && typeof value === "string")
 			setSelectedPatientId(value || null);
 		if (key === "doctorUserId" && typeof value === "string")
@@ -176,7 +229,7 @@ export function useAppointmentDrafts({
 		newAppointmentDraftUserEditedRef.current = false;
 		const freshDraft = newAppointmentDraftFromDashboard(
 			dashboard,
-			newAppointmentPreferenceDefaults() as any,
+			newAppointmentPreferenceDefaults(),
 		);
 		if (newAppointmentDraftRef) {
 			newAppointmentDraftRef.current = freshDraft;
@@ -190,27 +243,38 @@ export function useAppointmentDrafts({
 		setEditingAppointmentId((current) =>
 			current === appointmentId ? null : current,
 		);
-		setAppointmentScheduleSaveStates((current: any) => ({
-			...current,
-			[appointmentId]: "idle",
-		}));
-		setAppointmentScheduleErrors((current: any) => ({
-			...current,
-			[appointmentId]: null,
-		}));
+		setAppointmentScheduleSaveStates(
+			(current: Record<string, AppointmentScheduleSaveState>) => ({
+				...current,
+				[appointmentId]: "idle",
+			}),
+		);
+		setAppointmentScheduleErrors(
+			(current: Record<string, string | null>) => ({
+				...current,
+				[appointmentId]: null,
+			}),
+		);
 	}
 
 	function newAppointmentMissingFields(
 		draft: AppointmentScheduleDraft,
 	): string[] {
+		const resources: {
+			chairs?: Dashboard["clinicSettings"]["chairs"] | null;
+			patients?: Dashboard["patients"] | null;
+		} = {};
+		if (dashboard?.clinicSettings?.chairs !== undefined) {
+			resources.chairs = dashboard.clinicSettings.chairs;
+		}
+		if (dashboard?.patients !== undefined) {
+			resources.patients = dashboard.patients;
+		}
 		return appointmentScheduleMissingFields(
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
 			dashboard?.clinicSettings?.staff,
-			{
-				chairs: dashboard?.clinicSettings?.chairs,
-				patients: dashboard?.patients,
-			},
+			resources,
 		);
 	}
 
