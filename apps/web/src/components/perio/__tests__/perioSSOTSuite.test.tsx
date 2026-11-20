@@ -271,4 +271,34 @@ describe("Канонический SSOT пародонтологии и эксп
 		assert.strictEqual(normRes.success, true);
 		assert.strictEqual(normRes.deductedCount, 0);
 	});
+
+	it("14. Soft Negative Stock: обработка серверной ошибки (500) и сетевого сбоя без unhandled rejection", async () => {
+		const originalFetch = globalThis.fetch;
+		(globalThis as Record<string, unknown>).__DENTE_TEST_MOCK_FETCH__ = true;
+		try {
+			// Симулируем ответ 500 от сервера склада
+			globalThis.fetch = (async () => ({
+				ok: false,
+				status: 500,
+			})) as unknown as typeof fetch;
+
+			const failRes = await deductPeriodontalConsumablesSoftOverdraft("hygiene", "test-visit-500");
+			assert.strictEqual(failRes.success, false);
+			assert.strictEqual(failRes.deductedCount, 0);
+			assert.ok(failRes.messageRu.includes("500"));
+
+			// Симулируем полный сетевой сбой (offline/fetch thrown)
+			globalThis.fetch = (async () => {
+				throw new Error("Network unreachable");
+			}) as unknown as typeof fetch;
+
+			const networkRes = await deductPeriodontalConsumablesSoftOverdraft("vector", "test-visit-net");
+			assert.strictEqual(networkRes.success, false);
+			assert.strictEqual(networkRes.deductedCount, 0);
+			assert.ok(networkRes.messageRu.includes("Сетевой сбой"));
+		} finally {
+			delete (globalThis as Record<string, unknown>).__DENTE_TEST_MOCK_FETCH__;
+			globalThis.fetch = originalFetch;
+		}
+	});
 });

@@ -2,7 +2,7 @@
  * PerioStudioModal.tsx — Канонический SSOT кабинет пародонтологии и экспресс-скрининга PSR DENTE CRM.
  * Объединяет экспресс-скрининг ВОЗ (PSR) по 6 секстантам, протоколы профгигиены AirFlow/Кюретаж/Шинирование,
  * списание расходников пакетом (Soft Negative Stock, Мандат 8n), автономию врача (Мандат 8e),
- * и ровно ОДНУ Primary CTA кнопку #0d9488 на видимый контекст (Мандат 8am).
+ * и ровно ОДНУ Primary CTA кнопку (var(--primary)) на видимый контекст (Мандат 8am).
  * Разблокированный клавиатурный ввод 1..9, 10..15 мм, Пробел (BOP), стрелки и Tab.
  * Норматив размера: < 500 строк (Sweet Spot 200–460 строк, Мандат 8b).
  */
@@ -12,18 +12,17 @@ import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
 import {
 	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices,
 	convertPerioDentitionToSepa, convertSepaDentitionToPerio, formatKopecksToRub,
+	generateComprehensivePerioProtocolText, generateFullMouthProbingSequence,
 } from "@dental/shared";
 import { Activity, Check, FileText, Info, Printer, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
-	applyExpressPerioPreset, applyHealthyPeriodontiumPreset, applyUpperJawNormPreset,
-	applyLowerJawNormPreset, applyZeroBopPreset, applyZeroCalculusAndPlaquePreset,
-	computePsrSummary, deductPeriodontalConsumablesSoftOverdraft, dispatchPresetSideEffects,
-	generatePerioProtocolText, normalizePerioDentition,
-	PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG, PERIO_TREATMENT_PROTOCOLS,
-	type PerioTreatmentProtocol, type PsrCode, type PsrScreeningMap, type PsrSextantId, SITES, type SiteKey,
+	applyExpressPerioPreset, applyHealthyPeriodontiumPreset, applyUpperJawNormPreset, applyLowerJawNormPreset,
+	applyZeroBopPreset, applyZeroCalculusAndPlaquePreset, computePsrSummary, deductPeriodontalConsumablesSoftOverdraft,
+	dispatchPresetSideEffects, generatePerioProtocolText, normalizePerioDentition, PSR_CODES_CATALOG, PSR_SEXTANTS_CATALOG,
+	PERIO_TREATMENT_PROTOCOLS, type PerioTreatmentProtocol, type PsrCode, type PsrScreeningMap, type PsrSextantId, SITES, type SiteKey,
 } from "./perioCatalogData";
 import { PerioPresetActions } from "./PerioPresetActions";
 import { PerioDetailedProbeSection } from "./PerioDetailedProbeSection";
@@ -38,7 +37,7 @@ export interface PerioStudioModalProps {
 }
 
 export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
-	isOpen = true, onClose, isModal = false, patientId, patientName = "Пациент приёма", visitId,
+	isOpen = true, onClose, isModal = false, patientId, patientName = "Пациент приёма", doctorName = "Лечащий врач", visitId,
 	initialTeeth, initialSelectedTooth = 16, initialTier3Expanded = false, onChange, onSave, onInsertToProtocol,
 }) => {
 	const modalId = useId();
@@ -55,6 +54,13 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const [screeningMap, setScreeningMap] = useState<PsrScreeningMap>(() => ({ S1: { code: 0, asterisk: false }, S2: { code: 0, asterisk: false }, S3: { code: 0, asterisk: false }, S4: { code: 0, asterisk: false }, S5: { code: 0, asterisk: false }, S6: { code: 0, asterisk: false } }));
 	const summary = useMemo(() => calculatePerioIndices(teeth), [teeth]);
 	const psrSummary = useMemo(() => computePsrSummary(screeningMap), [screeningMap]);
+	const probingSequence = useMemo(() => generateFullMouthProbingSequence(teeth), [teeth]);
+
+	const handleClose = useCallback(() => {
+		if (twoDigitTimerRef.current) clearTimeout(twoDigitTimerRef.current);
+		pendingOneRef.current = false;
+		if (onClose) onClose();
+	}, [onClose]);
 
 	useEffect(() => {
 		const cleanPatientId = patientId?.trim();
@@ -126,7 +132,10 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	}, [teeth, onInsertToProtocol]);
 
 	const dispatchPerioSoapSync = useCallback((currentTeeth: readonly PerioToothRecord[]) => {
-		const text = generatePerioProtocolText(currentTeeth);
+		const text = generateComprehensivePerioProtocolText(currentTeeth, summary, {
+			doctorName,
+			customNotes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})`,
+		});
 		if (onInsertToProtocol) onInsertToProtocol(text);
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => {
@@ -137,11 +146,18 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { statusLocalis: text, objectiveStatus: text, mode: "smart_append" } }));
 		}
-	}, [onInsertToProtocol]);
+	}, [onInsertToProtocol, summary, doctorName, psrSummary]);
 
 	const handleSave = useCallback(async () => {
 		if (syncStatus === "saving") return;
 		setSyncStatus("saving");
+		const emitSnapshot = () => {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente:perio-snapshot-saved", {
+					detail: { patientId, visitId, summary, psrSummary, teeth, screeningMap },
+				}));
+			}
+		};
 		try {
 			if (patientId?.trim()) {
 				const sepaTeeth = convertPerioDentitionToSepa(teeth);
@@ -155,7 +171,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					body: JSON.stringify({
 						teeth: sepaTeeth.map((t) => ({ toothNumber: t.toothNumber, isPresent: t.isPresent, isImplant: t.isImplant, mobility: t.mobility, furcationBuccal: t.furcationBuccal, furcationLingual: t.furcationLingual })),
 						sites: allSites, notes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})`,
-						status: "closed", autoClose: true, indices: { psrData: screeningMap, psrSummary },
+						visitId: visitId || undefined, status: "closed", autoClose: true, indices: { psrData: screeningMap, psrSummary },
 					}),
 				});
 				if (!res.ok) throw new Error(`Ошибка сервера ${res.status}`);
@@ -164,9 +180,10 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			await deductPeriodontalConsumablesSoftOverdraft(summary.deepPocketsCount > 0 ? "vector" : "hygiene", visitId);
 			setSyncStatus("saved");
 			dispatchPerioSoapSync(teeth);
+			emitSnapshot();
 			if (onSave) onSave(teeth, summary);
 			showToast("✓ Пародонтограмма сохранена в ЭМК", "success");
-			if (isModal && onClose) onClose();
+			if (isModal) handleClose();
 		} catch (err) {
 			console.error("[PerioStudio] Save failed:", err);
 			if (patientId?.trim()) {
@@ -174,13 +191,12 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			}
 			setSyncStatus("saved");
 			dispatchPerioSoapSync(teeth);
-			showToast("Сетевой сбой при сохранении на сервере. Данные сохранены в локальный кэш (офлайн)", "warning", 5000, {
-				label: "Повторить", onAction: () => { void handleSave(); },
-			});
+			emitSnapshot();
+			showToast("Сетевой сбой при сохранении на сервере. Данные сохранены в локальный кэш (офлайн)", "warning", 5000, { label: "Повторить", onAction: () => { void handleSave(); } });
 			if (onSave) onSave(teeth, summary);
-			if (isModal && onClose) onClose();
+			if (isModal) handleClose();
 		}
-	}, [syncStatus, patientId, teeth, psrSummary, screeningMap, summary, dispatchPerioSoapSync, onSave, isModal, onClose, visitId]);
+	}, [syncStatus, patientId, teeth, psrSummary, screeningMap, summary, dispatchPerioSoapSync, onSave, isModal, handleClose, visitId]);
 
 	const handlePrintProtocol = useCallback(() => {
 		if (typeof window !== "undefined") {
@@ -195,24 +211,20 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			const site = t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false };
 			return { ...t, [selectedSiteKey]: { ...site, probingDepthMm: depth, calMm: calculateClinicalAttachmentLevel(depth, site.gingivalMarginMm || 0) } };
 		}));
-		const idx = SITES.findIndex((s) => s.key === selectedSiteKey);
-		const nextSite = idx >= 0 && idx < SITES.length - 1 ? SITES[idx + 1] : undefined;
-		if (nextSite) {
-			setSelectedSiteKey(nextSite.key);
-		} else {
-			setTeeth((currentTeeth) => {
-				const allNums = currentTeeth.map((t) => t.toothNumber);
-				const tIdx = allNums.indexOf(selectedToothNum);
-				const nextToothNum = tIdx >= 0 && tIdx < allNums.length - 1 ? allNums[tIdx + 1] : undefined;
-				const firstSite = SITES[0];
-				if (nextToothNum !== undefined && firstSite) {
-					setSelectedToothNum(nextToothNum);
-					setSelectedSiteKey(firstSite.key);
-				}
-				return currentTeeth;
-			});
+
+		// Анатомический обход дуги Florida Probe: непрерывный проход по всей челюсти
+		if (probingSequence.length > 0) {
+			const currIdx = probingSequence.findIndex((s) => s.toothNumber === selectedToothNum && s.siteKey === selectedSiteKey);
+			if (currIdx >= 0 && currIdx < probingSequence.length - 1) {
+				const nextStep = probingSequence[currIdx + 1];
+				if (nextStep) { setSelectedToothNum(nextStep.toothNumber); setSelectedSiteKey(nextStep.siteKey as SiteKey); }
+			} else if (currIdx === probingSequence.length - 1) {
+				const firstStep = probingSequence[0];
+				if (firstStep) { setSelectedToothNum(firstStep.toothNumber); setSelectedSiteKey(firstStep.siteKey as SiteKey); }
+				showToast("✓ Полный анатомический цикл зондирования завершён", "success");
+			}
 		}
-	}, [selectedToothNum, selectedSiteKey]);
+	}, [selectedToothNum, selectedSiteKey, probingSequence]);
 
 	const handleToggleBop = useCallback(() => {
 		setTeeth((prev) => prev.map((t) => t.toothNumber !== selectedToothNum ? t : { ...t, [selectedSiteKey]: { ...(t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false }), bleedingOnProbing: !t[selectedSiteKey]?.bleedingOnProbing } }));
@@ -227,44 +239,22 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	}, [selectedToothNum]);
 
 	const handleNavigateSite = useCallback((direction: "next" | "prev") => {
-		const idx = SITES.findIndex((s) => s.key === selectedSiteKey);
-		if (direction === "next") {
-			const nextSite = idx >= 0 && idx < SITES.length - 1 ? SITES[idx + 1] : undefined;
-			if (nextSite) setSelectedSiteKey(nextSite.key);
-			else {
-				const perioTeeth = ALL_PERIO_TEETH as readonly number[];
-				const tIdx = perioTeeth.indexOf(selectedToothNum);
-				const nextNum = tIdx >= 0 && tIdx < perioTeeth.length - 1 ? perioTeeth[tIdx + 1] : perioTeeth[0];
-				const firstSite = SITES[0];
-				if (nextNum !== undefined && firstSite) { setSelectedToothNum(nextNum); setSelectedSiteKey(firstSite.key); }
-			}
-		} else {
-			const prevSite = idx > 0 ? SITES[idx - 1] : undefined;
-			if (prevSite) setSelectedSiteKey(prevSite.key);
-			else {
-				const perioTeeth = ALL_PERIO_TEETH as readonly number[];
-				const tIdx = perioTeeth.indexOf(selectedToothNum);
-				const prevNum = tIdx > 0 ? perioTeeth[tIdx - 1] : perioTeeth[perioTeeth.length - 1];
-				const lastSite = SITES[SITES.length - 1];
-				if (prevNum !== undefined && lastSite) { setSelectedToothNum(prevNum); setSelectedSiteKey(lastSite.key); }
-			}
-		}
-	}, [selectedToothNum, selectedSiteKey]);
+		if (probingSequence.length === 0) return;
+		const currIdx = probingSequence.findIndex((s) => s.toothNumber === selectedToothNum && s.siteKey === selectedSiteKey);
+		const targetIdx = direction === "next" ? (currIdx >= 0 && currIdx < probingSequence.length - 1 ? currIdx + 1 : 0) : (currIdx > 0 ? currIdx - 1 : probingSequence.length - 1);
+		const step = probingSequence[targetIdx];
+		if (step) { setSelectedToothNum(step.toothNumber); setSelectedSiteKey(step.siteKey as SiteKey); }
+	}, [selectedToothNum, selectedSiteKey, probingSequence]);
 
 	const handleNavigateTooth = useCallback((direction: "next" | "prev") => {
 		const perioTeeth = ALL_PERIO_TEETH as readonly number[];
 		const tIdx = perioTeeth.indexOf(selectedToothNum);
-		const target = direction === "next"
-			? (tIdx >= 0 && tIdx < perioTeeth.length - 1 ? perioTeeth[tIdx + 1] : perioTeeth[0])
-			: (tIdx > 0 ? perioTeeth[tIdx - 1] : perioTeeth[perioTeeth.length - 1]);
+		const target = direction === "next" ? (tIdx >= 0 && tIdx < perioTeeth.length - 1 ? perioTeeth[tIdx + 1] : perioTeeth[0]) : (tIdx > 0 ? perioTeeth[tIdx - 1] : perioTeeth[perioTeeth.length - 1]);
 		if (target !== undefined) setSelectedToothNum(target);
 	}, [selectedToothNum]);
 
 	const handleToggleJawAspect = useCallback(() => {
-		const aspectMap: Record<SiteKey, SiteKey> = {
-			distoBuccal: "distoLingual", midBuccal: "midLingual", mesioBuccal: "mesioLingual",
-			distoLingual: "distoBuccal", midLingual: "midBuccal", mesioLingual: "mesioBuccal",
-		};
+		const aspectMap: Record<SiteKey, SiteKey> = { distoBuccal: "distoLingual", midBuccal: "midLingual", mesioBuccal: "mesioLingual", distoLingual: "distoBuccal", midLingual: "midBuccal", mesioLingual: "mesioBuccal" };
 		setSelectedSiteKey((cur) => aspectMap[cur] || cur);
 	}, []);
 
@@ -312,13 +302,13 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			{/* Шапка студии */}
 			<div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-2 border-b border-[var(--line)] perio-header-row">
 				<div className="flex items-center gap-2.5 min-w-0">
-					<div className="w-8 h-8 rounded-lg bg-[var(--primary,#0d9488)]/10 text-[var(--primary,#0d9488)] flex items-center justify-center shrink-0">
+					<div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center shrink-0">
 						<Activity className="w-4 h-4" />
 					</div>
 					<div className="min-w-0">
 						<h2 className="text-sm font-bold text-[var(--ink)] leading-tight flex flex-wrap items-center gap-1.5">
 							Студия пародонтологии и гигиены
-							<span className="text-[11px] px-2 py-0.5 rounded font-bold bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] border border-[var(--primary,#0d9488)]/30 whitespace-nowrap shrink-0">{psrSummary.psrFormula}</span>
+							<span className="text-[11px] px-2 py-0.5 rounded font-bold bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30 whitespace-nowrap shrink-0">{psrSummary.psrFormula}</span>
 						</h2>
 						<p className="text-xs text-[var(--muted)] truncate max-w-xs sm:max-w-sm">{patientName}</p>
 					</div>
@@ -333,23 +323,23 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 						<span className="text-[var(--muted)] font-medium">Карманы:</span>
 						<span className={`font-bold ${summary.deepPocketsCount > 0 ? "text-[var(--danger,#e11d48)]" : "text-[var(--success,#10b981)]"}`}>{summary.deepPocketsCount}</span>
 					</div>
-					<button type="button" onClick={handlePrintProtocol} data-testid="perio-print-protocol-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 sm:h-9 px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary,#0d9488)] text-xs font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors" title="Печать карты">
+					<button type="button" onClick={handlePrintProtocol} data-testid="perio-print-protocol-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 sm:h-9 px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)] text-xs font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors" title="Печать карты">
 						<Printer className="w-4 h-4 shrink-0" />
 						<span className="hidden sm:inline">Печать</span>
 					</button>
-					<button type="button" onClick={() => setShowIndicesPanel((prev) => !prev)} data-testid="perio-calc-indices-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 sm:h-9 px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary,#0d9488)] text-xs font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors" title="Индексы">
+					<button type="button" onClick={() => setShowIndicesPanel((prev) => !prev)} data-testid="perio-calc-indices-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-0 sm:h-9 px-2.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--primary)] text-xs font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors" title="Индексы">
 						<Info className="w-4 h-4 shrink-0" />
 						<span className="hidden sm:inline">Индексы</span>
 					</button>
 					<div className="hidden sm:inline-flex shrink-0 perio-desktop-primary-cta">
-						<button type="button" onClick={handleSave} aria-busy={syncStatus === "saving"} data-testid="perio-save-draft-btn" title="Сохранить пародонтограмму" className="min-h-[36px] h-9 px-3 rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-strong,#0f766e)] text-white text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs cursor-pointer transition-all perio-primary-cta-btn">
+						<button type="button" onClick={handleSave} aria-busy={syncStatus === "saving"} data-testid="perio-save-draft-btn" title="Сохранить пародонтограмму" className="min-h-[36px] h-9 px-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs cursor-pointer transition-all perio-primary-cta-btn">
 							<Check className="w-4 h-4 shrink-0" />
 							{syncStatus === "saving" ? "Сохранение..." : "Сохранить пародонтограмму"}
 							<span className="sr-only">Сохранить периодонтограмму</span>
 						</button>
 					</div>
 					{isModal && onClose && (
-						<button type="button" onClick={onClose} data-testid="perio-modal-close-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] sm:h-9 sm:w-9 rounded-xl bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] flex items-center justify-center shrink-0 cursor-pointer transition-colors ml-auto sm:ml-0 perio-close-btn" aria-label="Закрыть">
+						<button type="button" onClick={handleClose} data-testid="perio-modal-close-btn" className="min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] sm:h-9 sm:w-9 rounded-xl bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] flex items-center justify-center shrink-0 cursor-pointer transition-colors ml-auto sm:ml-0 perio-close-btn" aria-label="Закрыть">
 							<X className="w-4 h-4" />
 						</button>
 					)}
@@ -361,7 +351,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					<div className="flex flex-wrap items-center gap-4">
 						<div><span className="text-[var(--muted)]">BOP:</span> <span className="font-bold text-[var(--ink)]">{summary.fmbsPercent}%</span></div>
 						<div><span className="text-[var(--muted)]">Глубокие карманы (&ge; 4 мм):</span> <span className="font-bold text-[var(--ink)]">{summary.deepPocketsCount}</span></div>
-						<div><span className="text-[var(--muted)]">PSR:</span> <span className="font-bold text-[var(--primary,#0d9488)]">{psrSummary.psrFormula}</span></div>
+						<div><span className="text-[var(--muted)]">PSR:</span> <span className="font-bold text-[var(--primary)]">{psrSummary.psrFormula}</span></div>
 					</div>
 					<button type="button" onClick={() => setShowIndicesPanel(false)} className="min-h-[44px] sm:min-h-[36px] px-2 text-xs text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer">Скрыть</button>
 				</div>
@@ -382,7 +372,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					const cur = screeningMap[s.id] ?? { code: 0, asterisk: false };
 					const meta = PSR_CODES_CATALOG[cur.code];
 					return (
-						<div key={s.id} data-testid={`psr-sextant-card-${s.id}`} className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2 hover:border-[var(--primary,#0d9488)]/40 transition-colors">
+						<div key={s.id} data-testid={`psr-sextant-card-${s.id}`} className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2 hover:border-[var(--primary)]/40 transition-colors">
 							<div className="flex items-center justify-between gap-2">
 								<div>
 									<span className="font-bold text-xs text-[var(--ink)]">{s.name} ({s.teethRange})</span>
@@ -394,7 +384,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 							</div>
 							<div className="grid grid-cols-5 gap-2 sm:gap-1.5">
 								{([0, 1, 2, 3, 4] as PsrCode[]).map((code) => (
-									<button key={code} type="button" onClick={() => updateSextant(s.id, code)} aria-pressed={cur.code === code} className={`min-h-[44px] min-w-[44px] sm:min-h-[38px] rounded-xl text-xs font-bold flex flex-col items-center justify-center cursor-pointer transition-all border ${cur.code === code ? "bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] border-[var(--primary,#0d9488)] ring-1 ring-[var(--primary,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary,#0d9488)]"}`}>
+									<button key={code} type="button" onClick={() => updateSextant(s.id, code)} aria-pressed={cur.code === code} className={`min-h-[44px] min-w-[44px] sm:min-h-[38px] rounded-xl text-xs font-bold flex flex-col items-center justify-center cursor-pointer transition-all border ${cur.code === code ? "bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)] ring-1 ring-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"}`}>
 										<span className="text-sm font-extrabold">{code}</span>
 									</button>
 								))}
@@ -415,13 +405,13 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					{PERIO_TREATMENT_PROTOCOLS.map((proto) => {
 						const isSelected = selectedProtocolId === proto.id;
 						return (
-							<button key={proto.id} type="button" onClick={() => handleSelectProtocol(proto)} className={`min-h-[44px] p-2.5 rounded-xl text-left text-xs border cursor-pointer transition-all flex flex-col justify-between gap-1.5 items-stretch w-full ${isSelected ? "bg-[var(--primary,#0d9488)]/10 text-[var(--ink)] border-[var(--primary,#0d9488)] ring-1 ring-[var(--primary,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"}`}>
+							<button key={proto.id} type="button" onClick={() => handleSelectProtocol(proto)} className={`min-h-[44px] p-2.5 rounded-xl text-left text-xs border cursor-pointer transition-all flex flex-col justify-between gap-1.5 items-stretch w-full ${isSelected ? "bg-[var(--primary)]/10 text-[var(--ink)] border-[var(--primary)] ring-1 ring-[var(--primary)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"}`}>
 								<div className="w-full">
 									<div className="font-bold text-xs leading-tight min-h-[30px] break-words">{proto.titleRu}</div>
 									<div className="text-[11px] text-[var(--muted)] pt-0.5 break-words">{proto.descriptionRu}</div>
 								</div>
 								<div className="w-full flex items-center justify-between gap-2 pt-1.5 border-t border-[var(--line)]">
-									<span className="text-[11px] font-semibold text-[var(--primary,#0d9488)] shrink-0">{formatKopecksToRub(proto.priceKopecks)}</span>
+									<span className="text-[11px] font-semibold text-[var(--primary)] shrink-0">{formatKopecksToRub(proto.priceKopecks)}</span>
 									<span className="text-[10px] text-[var(--muted)] font-medium text-right truncate">Клинический протокол</span>
 								</div>
 							</button>
@@ -435,17 +425,26 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 				<div>
 					<div className="flex flex-wrap items-center gap-2">
 						<span className="text-xs font-bold text-[var(--ink)]">Клиническое заключение:</span>
-						<span className="text-xs px-2 py-0.5 rounded font-bold bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] border border-[var(--primary,#0d9488)]/30">
+						<span className="text-xs px-2 py-0.5 rounded font-bold bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/30">
 							{psrSummary.suggestedDiagnosisRu} ({psrSummary.icd10Code})
 						</span>
 					</div>
 					<p className="text-xs text-[var(--muted)] pt-1">{psrSummary.hygienePlanRu}</p>
 				</div>
 				<button type="button" onClick={() => {
-					const text = `Пародонтологический осмотр (PSR ВОЗ): ${psrSummary.psrFormula}\nДиагноз: ${psrSummary.suggestedDiagnosisRu} (${psrSummary.icd10Code})\nРекомендации: ${psrSummary.hygienePlanRu}`;
-					if (onInsertToProtocol) onInsertToProtocol(text);
-					showToast("✓ Протокол осмотра скопирован в дневник приёма", "success");
-				}} data-testid="perio-insert-protocol-btn" className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs border border-[var(--line)] hover:border-[var(--primary,#0d9488)] flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors perio-insert-btn">
+					const text = generateComprehensivePerioProtocolText(teeth, summary, {
+						doctorName,
+						customNotes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})\nРекомендации: ${psrSummary.hygienePlanRu}`,
+					});
+					if (onInsertToProtocol) {
+						onInsertToProtocol(text);
+						showToast("✓ Протокол осмотра скопирован в дневник приёма", "success");
+					} else if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+						void navigator.clipboard.writeText(text).then(() => showToast("✓ Протокол осмотра скопирован в буфер обмена", "success")).catch(() => showToast("Не удалось скопировать в буфер обмена", "error"));
+					} else {
+						showToast("✓ Протокол осмотра сформирован", "info");
+					}
+				}} data-testid="perio-insert-protocol-btn" className="min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs border border-[var(--line)] hover:border-[var(--primary)] flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors perio-insert-btn">
 					<FileText className="w-4 h-4" />
 					Вставить в дневник
 				</button>
@@ -466,20 +465,17 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			{/* Печатный футер A4 с подписью врача */}
 			<div className="hidden print:flex flex-col gap-4 pt-6 mt-4 border-t-2 border-black text-xs text-black perio-print-footer">
 				<div className="flex justify-between items-center">
-					<span>Дата обследования: {new Date().toLocaleDateString("ru-RU")}</span>
-					<span>Пациент: {patientName}</span>
+					<span>Дата обследования: {new Date().toLocaleDateString("ru-RU")}</span><span>Пациент: {patientName}</span>
 				</div>
 				<div className="flex justify-between items-center pt-4">
-					<span>Врач-стоматолог: ____________________ / ____________________</span>
-					<span>Подпись: ____________________ (М.П.)</span>
+					<span>Врач-стоматолог: ____________________ / ____________________</span><span>Подпись: ____________________ (М.П.)</span>
 				</div>
 			</div>
 
 			{/* Мобильная плавающая нижняя плашка Primary CTA (Natural Thumb Zone) */}
 			<div className="perio-mobile-floating-bar fixed bottom-0 left-0 right-0 p-3 pb-safe bg-[var(--paper-strong)] border-t border-[var(--line)] z-[110] flex sm:hidden">
-				<button type="button" onClick={handleSave} aria-busy={syncStatus === "saving"} data-testid="perio-save-mobile-btn" className="w-full min-h-[48px] h-12 rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-strong,#0f766e)] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-[0.99] transition-all perio-primary-cta-btn">
-					<Check className="w-4 h-4" />
-					{syncStatus === "saving" ? "Сохранение..." : "Сохранить пародонтограмму"}
+				<button type="button" onClick={handleSave} aria-busy={syncStatus === "saving"} data-testid="perio-save-mobile-btn" className="w-full min-h-[48px] h-12 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-[0.99] transition-all perio-primary-cta-btn">
+					<Check className="w-4 h-4" />{syncStatus === "saving" ? "Сохранение..." : "Сохранить пародонтограмму"}
 				</button>
 			</div>
 		</div>
@@ -488,13 +484,10 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	if (isModal) {
 		return (
 			<div className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay" style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }} data-testid="perio-chart-modal" role="dialog" aria-modal="true">
-				<div className="w-full max-w-7xl my-0 sm:my-auto max-h-[94vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl perio-modal-content">
-					{content}
-				</div>
+				<div className="w-full max-w-7xl my-0 sm:my-auto max-h-[94vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl perio-modal-content">{content}</div>
 			</div>
 		);
 	}
-
 	return content;
 });
 

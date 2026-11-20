@@ -88,42 +88,55 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 				? (body.psrData as Record<string, unknown>)
 				: undefined);
 
-		const result = await upsertPatientFullPeriodontogram({
-			orgId,
-			patientId,
-			recordedByUserId,
-			teeth: Array.isArray(body.teeth)
-				? (body.teeth as PatchToothInput[])
-				: undefined,
-			sites: Array.isArray(body.sites)
-				? (body.sites as SiteItemInput[])
-				: undefined,
-			notes: typeof body.notes === "string" ? body.notes : undefined,
-			status: body.status === "closed" ? "closed" : "draft",
-			autoClose: Boolean(body.autoClose),
-			psrData: rawPsrData,
-		});
-
-		// Расчет рекомендаций гигиены
-		const resIndices =
-			result && typeof result === "object" && "indices" in result
-				? (result.indices as Record<string, unknown> | null)
-				: null;
-		const psrCode = Number(resIndices?.psr ?? body.psrCode ?? 0);
-		const hasAsterisk = Boolean(resIndices?.hasAsterisk ?? body.hasAsterisk);
-		const hygieneRecommendations = getHygieneRecommendations(psrCode, hasAsterisk);
-		const hygienePlan = getHygienePlanText(psrCode, hasAsterisk);
-
-		return reply.send({
-			success: true,
-			data: {
-				...result,
+		try {
+			const result = await upsertPatientFullPeriodontogram({
+				orgId,
 				patientId,
-				psrCode,
-				hygieneRecommendations,
-				hygienePlan,
-			},
-		});
+				rawPatientId,
+				recordedByUserId,
+				visitId: typeof body.visitId === "string" && body.visitId.trim() ? body.visitId.trim() : undefined,
+				teeth: Array.isArray(body.teeth)
+					? (body.teeth as PatchToothInput[])
+					: undefined,
+				sites: Array.isArray(body.sites)
+					? (body.sites as SiteItemInput[])
+					: undefined,
+				notes: typeof body.notes === "string" ? body.notes : undefined,
+				status: body.status === "closed" ? "closed" : "draft",
+				autoClose: Boolean(body.autoClose),
+				psrData: rawPsrData,
+			});
+
+			// Расчет рекомендаций гигиены
+			const resIndices =
+				result && typeof result === "object" && "indices" in result
+					? (result.indices as Record<string, unknown> | null)
+					: null;
+			const psrCode = Number(resIndices?.psr ?? body.psrCode ?? 0);
+			const hasAsterisk = Boolean(resIndices?.hasAsterisk ?? body.hasAsterisk);
+			const hygieneRecommendations = getHygieneRecommendations(psrCode, hasAsterisk);
+			const hygienePlan = getHygienePlanText(psrCode, hasAsterisk);
+
+			return reply.send({
+				success: true,
+				data: {
+					...result,
+					patientId,
+					psrCode,
+					hygieneRecommendations,
+					hygienePlan,
+				},
+			});
+		} catch (err: unknown) {
+			const e = err as { statusCode?: number; code?: string; message?: string };
+			if (e.statusCode === 404 || e.code === "PatientNotFound") {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: e.message || "Пациент не найден",
+				});
+			}
+			throw err;
+		}
 	};
 
 	// Единые SSOT роуты: /api/periodontogram/:patientId и /api/perio/:patientId

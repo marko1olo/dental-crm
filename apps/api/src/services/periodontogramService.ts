@@ -2,6 +2,8 @@ import {
 	SEPA_PERMANENT_TEETH,
 	SEPA_SITE_CODES,
 	type SepaSiteCode,
+	isDemoOrganizationId,
+	isDemoEntityId,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -150,6 +152,7 @@ export async function createDraftWithInitialTeeth(
 	patientId: string,
 	recordedByUserId: string | null,
 	visitId?: string | null,
+	rawPatientId?: string | null,
 ) {
 	const validUserId = await resolveExistingPerioUserId(orgId, recordedByUserId);
 	const existingStates = await db
@@ -171,6 +174,7 @@ export async function createDraftWithInitialTeeth(
 	}
 
 	return await db.transaction(async (tx) => {
+		await ensurePerioPatientExists(tx, orgId, patientId, rawPatientId);
 		const [newDraft] = await tx
 			.insert(periodontogramSnapshots)
 			.values({
@@ -293,72 +297,70 @@ function deterministicUuid(seed: string): string {
 	].join("-");
 }
 
+export function isPerioDemoContext(
+	orgId?: string | null,
+	patientId?: string | null,
+	rawPatientId?: string | null,
+): boolean {
+	if (process.env.DENTE_DEMO_MODE === "true" || process.env.IS_DEMO_SHOWCASE === "true") return true;
+	if (orgId && (isDemoOrganizationId(orgId) || orgId.toLowerCase().includes("demo"))) return true;
+	if (patientId && (isDemoEntityId(patientId) || patientId.toLowerCase().startsWith("demo") || patientId.toLowerCase().startsWith("sample_"))) return true;
+	if (rawPatientId && (rawPatientId.toLowerCase().startsWith("demo") || rawPatientId.toLowerCase().startsWith("sample_"))) return true;
+	return false;
+}
+
+async function ensurePerioPatientExists(
+	executor: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	orgId: string,
+	patientId: string,
+	rawPatientId?: string | null,
+) {
+	const [existing] = await executor
+		.select({ id: patients.id })
+		.from(patients)
+		.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+		.limit(1);
+	if (existing) return;
+
+	// В боевом режиме несуществующий пациент не должен создаваться втихую поддельным именем (Мандат 8z / 8wy)
+	if (!isPerioDemoContext(orgId, patientId, rawPatientId)) {
+		const err = new Error("Пациент не найден") as Error & { statusCode?: number; code?: string };
+		err.statusCode = 404;
+		err.code = "PatientNotFound";
+		throw err;
+	}
+
+	// Исключительно в изолированном демонстрационном режиме создаем витринного демо-пациента
+	await executor
+		.insert(patients)
+		.values({
+			id: patientId,
+			organizationId: orgId,
+			fullName: "Демо Пациент Пародонтологии",
+			notes: "Демонстрационный профиль для витрины пародонтологической карты",
+		})
+		.onConflictDoNothing();
+}
+
 /**
- * Разрешает идентификатор пациента (поддерживает client demo, tenant id и не-UUID строки).
- * Исключает подлог чужого пациента из базы (Mandates 8e, 8n).
+ * Разрешает идентификатор пациента (поддерживает UUID, client demo и tenant id).
+ * Чистая функция чтения без мутации базы данных на GET-запросах (Mandates 8e, 8n).
  */
 export async function resolvePerioPatientId(
 	orgId: string,
 	rawPatientId?: string | null,
 ): Promise<string> {
 	const trimmed = typeof rawPatientId === "string" ? rawPatientId.trim() : "";
+	if (!trimmed) {
+		return deterministicUuid(`${orgId}:default-perio-patient`);
+	}
 
-	// 1. Если передан валидный UUID, проверяем наличие в организации; если не найден, возвращаем исходный ID
 	if (UUID_REGEX.test(trimmed)) {
-		try {
-			const [found] = await db
-				.select({ id: patients.id })
-				.from(patients)
-				.where(
-					and(
-						eq(patients.id, trimmed),
-						eq(patients.organizationId, orgId),
-					),
-				)
-				.limit(1);
-			if (found) return found.id;
-		} catch {
-			// Игнорируем сбои чтения в изолированных средах
-		}
 		return trimmed;
 	}
 
-	// 2. Если передан не-UUID идентификатор, детерминированно связываем с данным пациентом без подлога
-	if (trimmed) {
-		const deterministicId = deterministicUuid(`${orgId}:${trimmed}`);
-		try {
-			const [existing] = await db
-				.select({ id: patients.id })
-				.from(patients)
-				.where(
-					and(
-						eq(patients.id, deterministicId),
-						eq(patients.organizationId, orgId),
-					),
-				)
-				.limit(1);
-			if (existing) return existing.id;
-
-			const [created] = await db
-				.insert(patients)
-				.values({
-					id: deterministicId,
-					organizationId: orgId,
-					fullName: `Пациент (${trimmed})`,
-					birthDate: "1988-06-15",
-					phone: "+7 (999) 000-00-00",
-					notes: `Идентификатор: ${trimmed}`,
-				})
-				.returning({ id: patients.id });
-			if (created?.id) return created.id;
-		} catch {
-			// fallback
-		}
-		return deterministicId;
-	}
-
-	// 3. Если rawPatientId не передан, возвращаем детерминированный UUID по умолчанию для организации
-	return deterministicUuid(`${orgId}:default-perio-patient`);
+	// Детерминированный UUID для строковых идентификаторов (включая демонстрационный режим)
+	return deterministicUuid(`${orgId}:${trimmed}`);
 }
 
 /**
@@ -440,6 +442,7 @@ export async function fetchPatientLatestPeriodontogram(
 export interface UpsertPatientFullPeriodontogramParams {
 	orgId: string;
 	patientId: string;
+	rawPatientId?: string | null | undefined;
 	visitId?: string | null | undefined;
 	recordedByUserId: string | null;
 	teeth?: Array<z.infer<typeof patchToothBodySchema>> | undefined;
@@ -461,6 +464,7 @@ export type PeriodontogramSnapshotWithTeeth = typeof periodontogramSnapshots.$in
 export async function upsertPatientFullPeriodontogram({
 	orgId,
 	patientId,
+	rawPatientId,
 	visitId,
 	recordedByUserId,
 	teeth = [],
@@ -475,6 +479,20 @@ export async function upsertPatientFullPeriodontogram({
 			orgId,
 			recordedByUserId,
 		);
+
+		// Проверяем существование пациента в базе данных (Мандаты 8z / 8wy)
+		const [existingPatient] = await db
+			.select({ id: patients.id })
+			.from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.limit(1);
+
+		if (!existingPatient && !isPerioDemoContext(orgId, patientId, rawPatientId)) {
+			const err = new Error("Пациент не найден") as Error & { statusCode?: number; code?: string };
+			err.statusCode = 404;
+			err.code = "PatientNotFound";
+			throw err;
+		}
 
 		// Find existing draft snapshot or create a new one
 		let [activeDraft] = await db
@@ -495,6 +513,7 @@ export async function upsertPatientFullPeriodontogram({
 				patientId,
 				validRecordedByUserId,
 				visitId,
+				rawPatientId,
 			);
 		}
 

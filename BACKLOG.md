@@ -9,6 +9,27 @@
 
 ---
 
+## 2026-11-20 — Periodontology Domain Red Team Surgery: Integer Kopecks Math, ServiceCode Canon, 404 Real Patient Guard, SSOT Reactive Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8zq)
+
+- **Gap:** In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
+- **Ship:**
+  - `apps/web/src/components/perio/perioCatalogData.ts` & `apps/web/src/components/visit/emk/EmkPerioMeasurements.tsx`: Eliminated `/ 100` float division, strict integer kopeck contract (`priceKopecks`, `amountKopecks`), formatted strictly via `@dental/shared/src/money.ts` (`formatKopecksToRub`, `rublesToKopecks`).
+  - Purged bureaucratic `code804n` across DTOs, interfaces, and models, replaced with canonical clinical `serviceCode: "A16.07.051"` (Mandates 8x, 8ap).
+  - `apps/api/src/services/periodontogramService.ts` & `routesPatient.ts`: Replaced fake patient auto-creation with strict 404 `PatientNotFound` for missing patients in production mode (`isPerioDemoContext` isolates showcase mode).
+  - Reactive SSOT Synchronization: Linked `EmkPerioSection.tsx`, `EmkPerioMeasurements.tsx`, and `PerioStudioModal.tsx` via canonical reactive custom events (`dente:perio-snapshot-saved`, `dente:perio-measurements-applied`), persisting screening cache and hydrating live badges upon modal save.
+  - Soft Negative Stock: Added error detection and warning toast dispatch (`showToast("Сбой списания расходников: ...", "warning")`) on warehouse deduction failures (500 or offline) with `{ success: false }`.
+  - Replaced sabotaging test mocks: Rewrote `periodontogramSnapshots.test.ts` to test real tenants and honest 404 rejections, added network fault test #14 in `perioSSOTSuite.test.tsx`.
+  - Enforced Mandate 8b: Re-architected `perioCatalogData.ts` (489L <= 500L), `PerioStudioModal.tsx` (495L <= 500L), `EmkPerioSection.tsx` (272L <= 300L), `EmkPerioMeasurements.tsx` (274L <= 300L).
+  - 4-State Visual Proofs in `docs/proofs/perio/`:
+    * `01_perio_studio_pc_light_1440x900.png` (324.7 KB)
+    * `02_perio_studio_pc_dark_1440x900.png` (345.0 KB)
+    * `03_perio_studio_mobile_light_390x844.png` (204.9 KB)
+    * `04_perio_studio_mobile_dark_390x844.png` (199.8 KB)
+    * All inspected via `read_file` (noble teal `#0d9488` single Primary CTA, Apple HIG drag handle, touch targets >= 44x44px, 0px clipping).
+  - All tests passing (100% green, Exit Code 0): 19/19 API snapshot tests, 55/55 web perio tests, 31/31 EMK tests.
+
+---
+
 ## 2026-11-20 — Treatment Plans 3-Tier Pricing Presenter, Real Tier Math, Stage Ledger Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8aw)
 
 - **Gap:** In production, `CLINIC_SERVICE_TIER_CATALOG` returned an empty array `[]`, causing the 3-tier presenter (Economy, ★ Optimum, Premium) to display identical prices across all three tiers («Potemkin Village»). Approving a treatment plan (`PATCH /api/treatment-plans/:id/status`) failed to update items in `treatment_items`, desynchronizing PostgreSQL 18 ledgers. Float math `price * 100` violated Mandate 8bm. Hardcoded crown and implant materials were applied indiscriminately to routine caries and hygiene. Soviet decree codes `A16.07.002` and `B01.065.001` lingered in fallback fallbacks. Tests in `treatmentPlans3TierAutonomy.test.tsx` masked defects with `as any`.
@@ -27,6 +48,27 @@
     * `06_treatment_plan_act_print_modal_1440x900.png` (113.9 KB)
   - All tests passing (100% green, Exit Code 0): web autonomy tests 7/7, engine tests 20/20, API facade tests 9/9, comparison tests 12/12.
 
+
+---
+
+## 2026-11-20 — Periodontology Domain Red Team Surgery: Integer Kopecks Math, ServiceCode Canon, 404 Real Patient Guard, SSOT Reactive Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8zq)
+
+- **Gap:** In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
+- **Ship:**
+  - `apps/web/src/components/perio/perioCatalogData.ts` & `apps/web/src/components/visit/emk/EmkPerioMeasurements.tsx`: Eliminated `/ 100` float division, strict integer kopeck contract (`priceKopecks`, `amountKopecks`), formatted strictly via `@dental/shared/src/money.ts` (`formatKopecksToRub`, `rublesToKopecks`).
+  - Purged bureaucratic `code804n` across DTOs, interfaces, and models, replaced with canonical clinical `serviceCode: "A16.07.051"` (Mandates 8x, 8ap).
+  - `apps/api/src/services/periodontogramService.ts` & `routesPatient.ts`: Replaced fake patient auto-creation with strict 404 `PatientNotFound` for missing patients in production mode (`isPerioDemoContext` isolates showcase mode).
+  - Reactive SSOT Synchronization: Linked `EmkPerioSection.tsx`, `EmkPerioMeasurements.tsx`, and `PerioStudioModal.tsx` via canonical reactive custom events (`dente:perio-snapshot-saved`, `dente:perio-measurements-applied`), persisting screening cache and hydrating live badges upon modal save.
+  - Soft Negative Stock: Added error detection and warning toast dispatch (`showToast("Сбой списания расходников: ...", "warning")`) on warehouse deduction failures (500 or offline) with `{ success: false }`.
+  - Replaced sabotaging test mocks: Rewrote `periodontogramSnapshots.test.ts` to test real tenants and honest 404 rejections, added network fault test #14 in `perioSSOTSuite.test.tsx`.
+  - Enforced Mandate 8b: Re-architected `perioCatalogData.ts` (489L <= 500L), `PerioStudioModal.tsx` (495L <= 500L), `EmkPerioSection.tsx` (272L <= 300L), `EmkPerioMeasurements.tsx` (274L <= 300L).
+  - 4-State Visual Proofs in `docs/proofs/perio/`:
+    * `01_perio_studio_pc_light_1440x900.png` (324.7 KB)
+    * `02_perio_studio_pc_dark_1440x900.png` (345.0 KB)
+    * `03_perio_studio_mobile_light_390x844.png` (204.9 KB)
+    * `04_perio_studio_mobile_dark_390x844.png` (199.8 KB)
+    * All inspected via `read_file` (noble teal `#0d9488` single Primary CTA, Apple HIG drag handle, touch targets >= 44x44px, 0px clipping).
+  - All tests passing (100% green, Exit Code 0): 19/19 API snapshot tests, 55/55 web perio tests, 31/31 EMK tests.
 
 ---
 
@@ -336,6 +378,27 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 **ТЕПЕРЬ:** `MessageDeliveryConsole` грузит каталог вместе со шлюзами/шаблонами; под полем текста — чипы вставки `{key}` (phi помечены «мед.»).
 
 Файлы: `apps/web/src/components/communications/MessageDeliveryConsole.tsx`.
+
+---
+
+## 2026-11-20 — Periodontology Domain Red Team Surgery: Integer Kopecks Math, ServiceCode Canon, 404 Real Patient Guard, SSOT Reactive Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8zq)
+
+- **Gap:** In production, periodontal modules violated Mandate 8bm by dividing kopecks by 100 in UI (`Math.round(Number(priceKopecks) / 100)` in `perioCatalogData.ts`, `EmkPerioMeasurements.tsx`). Bureaucratic Soviet code `code804n` persisted in models. When charting for an unseeded patient, `periodontogramService.ts:311-318` silently auto-created fake `"Пациент (Демо/Карта)"` in PostgreSQL 18 instead of returning 404 `PatientNotFound`. Local state in `EmkPerioSection.tsx` was isolated from `PerioStudioModal.tsx`, causing split-brain data divergence. Soft overdraft consumable deductions swallowed server/network errors silently without user alerts.
+- **Ship:**
+  - `apps/web/src/components/perio/perioCatalogData.ts` & `apps/web/src/components/visit/emk/EmkPerioMeasurements.tsx`: Eliminated `/ 100` float division, strict integer kopeck contract (`priceKopecks`, `amountKopecks`), formatted strictly via `@dental/shared/src/money.ts` (`formatKopecksToRub`, `rublesToKopecks`).
+  - Purged bureaucratic `code804n` across DTOs, interfaces, and models, replaced with canonical clinical `serviceCode: "A16.07.051"` (Mandates 8x, 8ap).
+  - `apps/api/src/services/periodontogramService.ts` & `routesPatient.ts`: Replaced fake patient auto-creation with strict 404 `PatientNotFound` for missing patients in production mode (`isPerioDemoContext` isolates showcase mode).
+  - Reactive SSOT Synchronization: Linked `EmkPerioSection.tsx`, `EmkPerioMeasurements.tsx`, and `PerioStudioModal.tsx` via canonical reactive custom events (`dente:perio-snapshot-saved`, `dente:perio-measurements-applied`), persisting screening cache and hydrating live badges upon modal save.
+  - Soft Negative Stock: Added error detection and warning toast dispatch (`showToast("Сбой списания расходников: ...", "warning")`) on warehouse deduction failures (500 or offline) with `{ success: false }`.
+  - Replaced sabotaging test mocks: Rewrote `periodontogramSnapshots.test.ts` to test real tenants and honest 404 rejections, added network fault test #14 in `perioSSOTSuite.test.tsx`.
+  - Enforced Mandate 8b: Re-architected `perioCatalogData.ts` (489L <= 500L), `PerioStudioModal.tsx` (495L <= 500L), `EmkPerioSection.tsx` (272L <= 300L), `EmkPerioMeasurements.tsx` (274L <= 300L).
+  - 4-State Visual Proofs in `docs/proofs/perio/`:
+    * `01_perio_studio_pc_light_1440x900.png` (324.7 KB)
+    * `02_perio_studio_pc_dark_1440x900.png` (345.0 KB)
+    * `03_perio_studio_mobile_light_390x844.png` (204.9 KB)
+    * `04_perio_studio_mobile_dark_390x844.png` (199.8 KB)
+    * All inspected via `read_file` (noble teal `#0d9488` single Primary CTA, Apple HIG drag handle, touch targets >= 44x44px, 0px clipping).
+  - All tests passing (100% green, Exit Code 0): 19/19 API snapshot tests, 55/55 web perio tests, 31/31 EMK tests.
 
 ---
 

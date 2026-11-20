@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { Stethoscope } from "lucide-react";
-import { rublesToKopecks, kopecksToRubles, type PerioToothRecord } from "@dental/shared";
+import type { PerioToothRecord } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
@@ -119,44 +119,30 @@ export function EmkPerioMeasurements({
 			updateVisitNoteField?.("diagnosis", `${diagCode} Хронический пародонтит (${teethListStr})`);
 		}
 
-		// 3. Добавляем услуги кюретажа и гигиены в смету визита
-		const prophyPrice = kopecksToRubles(prophyService.priceKopecks);
-		useVisitStore.getState().addCompletedService({
-			serviceId: prophyService.code804n, code804n: prophyService.code804n, name: prophyService.name,
-			title: prophyService.name, priceRub: prophyPrice, price: prophyPrice, quantity: 1,
-		});
+		// 3. Добавляем услуги кюретажа и гигиены в смету визита строго в копейках (Мандат 8bm)
+		const prophyKop = prophyService.priceKopecks;
+		const store = useVisitStore.getState();
+		store.addCompletedService({ serviceId: prophyService.serviceCode, serviceCode: prophyService.serviceCode, code: prophyService.serviceCode, name: prophyService.name, title: prophyService.name, priceKopecks: prophyKop, amountKopecks: prophyKop, quantity: 1 });
 		for (const cur of curettageServices) {
-			const curPrice = kopecksToRubles(cur.priceKopecks);
-			useVisitStore.getState().addCompletedService({
-				serviceId: cur.code804n, code804n: cur.code804n, name: cur.name, title: cur.name,
-				priceRub: curPrice, price: curPrice, quantity: 1, toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,
-			});
+			const curKop = cur.priceKopecks;
+			store.addCompletedService({ serviceId: cur.serviceCode, serviceCode: cur.serviceCode, code: cur.serviceCode, name: cur.name, title: cur.name, priceKopecks: curKop, amountKopecks: curKop, quantity: 1, toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber });
 		}
 
 		// 4. Диспатчим событие сметы для кассы и мягкого списания расходников
 		if (typeof window !== "undefined") {
-			const prophyKop = prophyService.priceKopecks;
 			const allServices = [
-				{
-					serviceId: prophyService.code804n, name: prophyService.name, title: prophyService.name,
-					code: prophyService.code804n, code804n: prophyService.code804n, unitPriceRub: prophyPrice,
-					unitPriceKopecks: prophyKop, priceKopecks: prophyKop, amountKopecks: prophyKop,
-					quantity: 1, category: "hygiene", stageKind: "hygiene",
-				},
-				...curettageServices.map((cur) => {
-					const curPrice = kopecksToRubles(cur.priceKopecks);
-					const curKop = cur.priceKopecks;
-					return {
-						serviceId: cur.code804n, name: cur.name, title: cur.name,
-						code: cur.code804n, code804n: cur.code804n, unitPriceRub: curPrice,
-						unitPriceKopecks: curKop, priceKopecks: curKop, amountKopecks: curKop,
-						quantity: 1, category: "hygiene", stageKind: "hygiene",
-						toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,
-					};
-				}),
+				{ serviceId: prophyService.serviceCode, serviceCode: prophyService.serviceCode, code: prophyService.serviceCode, name: prophyService.name, title: prophyService.name, unitPriceKopecks: prophyKop, priceKopecks: prophyKop, amountKopecks: prophyKop, quantity: 1, category: "hygiene", stageKind: "hygiene" },
+				...curettageServices.map((cur) => ({
+					serviceId: cur.serviceCode, serviceCode: cur.serviceCode, code: cur.serviceCode, name: cur.name, title: cur.name,
+					unitPriceKopecks: cur.priceKopecks, priceKopecks: cur.priceKopecks, amountKopecks: cur.priceKopecks, quantity: 1,
+					category: "hygiene", stageKind: "hygiene", toothCode: String(cur.toothNumber), toothNumber: cur.toothNumber,
+				})),
 			];
 
 			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", { detail: { services: allServices } }));
+			window.dispatchEvent(new CustomEvent("dente:perio-measurements-applied", {
+				detail: { affectedRecords, pocketDepthMm, hasBop, mobilityLevel },
+			}));
 			void deductPeriodontalConsumablesSoftOverdraft("curettage");
 		}
 

@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import { ShieldCheck, Sparkles } from "lucide-react";
-import { rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
@@ -68,13 +67,15 @@ export function EmkPerioSummary({
 
 	// 2. 1-клик профессиональная гигиена (A16.07.051)
 	const handleAddProphyService = useCallback(() => {
+		const prophyPriceKopecks = 550000;
 		const prophyService = {
 			serviceId: "hygiene_prophy_catalog",
-			code804n: "A16.07.051",
+			serviceCode: "A16.07.051",
 			code: "A16.07.051",
 			name: "Профессиональная гигиена полости рта и зубов (ультразвуковое снятие отложений, Air-Flow, полировка, фторирование)",
-			priceRub: 5500,
-			price: 5500,
+			title: "Профессиональная гигиена полости рта и зубов (ультразвуковое снятие отложений, Air-Flow, полировка, фторирование)",
+			priceKopecks: prophyPriceKopecks,
+			amountKopecks: prophyPriceKopecks,
 			quantity: 1,
 			category: "hygiene",
 		};
@@ -82,21 +83,19 @@ export function EmkPerioSummary({
 		useVisitStore.getState().addCompletedService(prophyService);
 
 		if (typeof window !== "undefined") {
-			const kopecks = rublesToKopecks(prophyService.price);
 			window.dispatchEvent(
 				new CustomEvent("dente-add-services-to-invoice", {
 					detail: {
 						services: [
 							{
 								serviceId: prophyService.serviceId,
+								serviceCode: prophyService.serviceCode,
 								name: prophyService.name,
 								title: prophyService.name,
-								code: prophyService.code804n,
-								code804n: prophyService.code804n,
-								unitPriceRub: prophyService.priceRub,
-								unitPriceKopecks: kopecks,
-								priceKopecks: kopecks,
-								amountKopecks: kopecks,
+								code: prophyService.serviceCode,
+								unitPriceKopecks: prophyPriceKopecks,
+								priceKopecks: prophyPriceKopecks,
+								amountKopecks: prophyPriceKopecks,
 								quantity: 1,
 								category: "hygiene",
 								stageKind: "hygiene",
@@ -154,8 +153,8 @@ export function EmkPerioSummary({
 						onClick={handleApplyHealthyNorm}
 						className={`min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
 							perioStatus === "healthy"
-								? "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-strong)]"
-								: "bg-[var(--paper)] border border-teal-500/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/15"
+								? "bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
+								: "bg-[var(--paper)] border border-[var(--primary)]/40 text-[var(--primary)] hover:bg-[var(--paper-soft)]"
 						}`}
 						data-testid="emk-perio-norm-btn"
 						title="Отметить пародонт интактным и зафиксировать норму в дневнике"
@@ -198,14 +197,14 @@ export function EmkPerioSummary({
 						onClick={() => handleApplyHygieneLevel("good")}
 						className={`min-h-[44px] px-3 py-2 rounded-xl border text-left flex flex-col justify-center transition-all cursor-pointer ${
 							hygieneLevel === "good"
-								? "border-emerald-500 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 font-bold ring-1 ring-emerald-500"
+								? "border-[var(--success-line)] bg-[var(--success-soft)] text-[var(--success-ink)] font-bold ring-1 ring-[var(--success-line)]"
 								: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)]"
 						}`}
 						data-testid="emk-hygiene-good-btn"
 					>
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold">1. Хорошая гигиена</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)]">
 								0.0 – 0.6
 							</span>
 						</div>
@@ -219,14 +218,14 @@ export function EmkPerioSummary({
 						onClick={() => handleApplyHygieneLevel("fair")}
 						className={`min-h-[44px] px-3 py-2 rounded-xl border text-left flex flex-col justify-center transition-all cursor-pointer ${
 							hygieneLevel === "fair"
-								? "border-amber-500 bg-amber-500/15 text-amber-900 dark:text-amber-200 font-bold ring-1 ring-amber-500"
+								? "border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-ink)] font-bold ring-1 ring-[var(--warning-line)]"
 								: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)]"
 						}`}
 						data-testid="emk-hygiene-fair-btn"
 					>
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold">2. Удовлетворительная</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]">
 								0.7 – 1.6
 							</span>
 						</div>
@@ -240,14 +239,14 @@ export function EmkPerioSummary({
 						onClick={() => handleApplyHygieneLevel("poor")}
 						className={`min-h-[44px] px-3 py-2 rounded-xl border text-left flex flex-col justify-center transition-all cursor-pointer ${
 							hygieneLevel === "poor"
-								? "border-rose-500 bg-rose-500/15 text-rose-900 dark:text-rose-200 font-bold ring-1 ring-rose-500"
+								? "border-[var(--danger-line)] bg-[var(--danger-soft)] text-[var(--danger-ink)] font-bold ring-1 ring-[var(--danger-line)]"
 								: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)]"
 						}`}
 						data-testid="emk-hygiene-poor-btn"
 					>
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold">3. Неудовлетворительная</span>
-							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300">
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--danger-soft)] text-[var(--danger-ink)] border border-[var(--danger-line)]">
 								≥ 1.7
 							</span>
 						</div>

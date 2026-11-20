@@ -16,6 +16,7 @@ const crypto = require("node:crypto");
 
 const outDirs = [
   path.resolve(__dirname, "../docs/proofs/perio"),
+  path.resolve("C:/Users/Admin/.gemini/antigravity/brain/c3c4a1f1-ee8e-4890-b247-2c6ea77a56c5/perio"),
   path.resolve("C:/Users/Admin/.gemini/antigravity/brain/8597108c-6e88-4271-83fd-ef53bda10ca8/perio"),
   path.resolve("C:/Users/Admin/.gemini/antigravity/brain/bf65e0e2-dc41-4fd6-9d45-7f2467de8793/perio"),
   path.resolve("C:/Users/Admin/.gemini/antigravity/brain/db9b08bb-f60c-443e-9476-9a6478657cb1/perio"),
@@ -69,12 +70,32 @@ async function applyTheme(page, theme) {
     } catch (e) {}
   }, theme);
   await page.waitForTimeout(600);
+
+  const isPerioOpen = await page.locator('[data-testid="interactive-periodontogram"]').count();
+  if (!isPerioOpen) {
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("dente:open-perio", {
+        detail: { patientId: "demo_perio_patient", patientName: "Смирнова Анна Сергеевна (Пародонтология)" }
+      }));
+    });
+    await page.locator('[data-testid="interactive-periodontogram"]').first().waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
+  }
 }
 
 async function takeProof(page, baseFileNames, description) {
   const primaryName = baseFileNames[0];
   const primaryPath = path.join(outDirs[0], primaryName);
-  await page.locator('[data-testid="interactive-periodontogram"]').first().waitFor({ state: "visible", timeout: 20000 });
+
+  const isPerioOpen = await page.locator('[data-testid="interactive-periodontogram"]').count();
+  if (!isPerioOpen) {
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("dente:open-perio", {
+        detail: { patientId: "demo_perio_patient", patientName: "Смирнова Анна Сергеевна (Пародонтология)" }
+      }));
+    });
+  }
+
+  await page.locator('[data-testid="interactive-periodontogram"]').first().waitFor({ state: "visible", timeout: 25000 });
   await page.waitForTimeout(1000);
   await page.screenshot({ path: primaryPath, fullPage: false, animations: "disabled" });
 
@@ -106,7 +127,7 @@ async function openPerioChart(page, serverPort, isMobile = false) {
   const url = `http://127.0.0.1:${serverPort}/?demo=true&perio=1#perio`;
   console.log(`Navigating to ${url} (isMobile: ${isMobile}) ...`);
   try {
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
   } catch (err) {
     console.warn("goto warning:", err.message);
   }

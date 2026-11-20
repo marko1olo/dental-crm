@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Activity, BarChart2, ChevronDown, ChevronUp } from "lucide-react";
 import type { EmkSectionProps } from "./EmkTypes";
 import { EmkPerioSummary } from "./EmkPerioSummary";
@@ -23,7 +23,26 @@ export interface EmkPerioSectionProps extends EmkSectionProps {
  * - Чистый язык: никакой сырой «Формы 043/у» в UI, только «Пародонтологический скрининг»
  * - Эргономика: кнопки в стиле UI_STANDARDS, тач-таргеты >= 44px
  * - Мандат 8b: строго <= 300 строк
+ * - Мандат 8d/8zq (Реактивная гидратация и SSOT): двухсторонняя синхронизация со студией пародонтограммы
  */
+function extractPerioTeethStats(teeth?: unknown[]): { maxDepth: number; anyBop: boolean } {
+	let maxDepth = 2;
+	let anyBop = false;
+	if (Array.isArray(teeth)) {
+		for (const t of teeth) {
+			if (!t || typeof t !== "object") continue;
+			for (const siteKey of ["distobuccal", "midbuccal", "mesiobuccal", "distolingual", "midlingual", "mesiolingual"]) {
+				const s = (t as Record<string, { probingDepthMm?: number; bleedingOnProbing?: boolean }>)[siteKey];
+				if (s) {
+					if (s.probingDepthMm && s.probingDepthMm > maxDepth) maxDepth = s.probingDepthMm;
+					if (s.bleedingOnProbing) anyBop = true;
+				}
+			}
+		}
+	}
+	return { maxDepth, anyBop };
+}
+
 export function EmkPerioSection({
 	visitNoteForm,
 	updateVisitNoteField,
@@ -50,13 +69,118 @@ export function EmkPerioSection({
 	const [hasBop, setHasBop] = useState<boolean>(true);
 	const [mobilityLevel, setMobilityLevel] = useState<0 | 1 | 2 | 3>(0);
 
+	const effectivePatientId = patientId?.trim() || (typeof visitNoteForm?.patientId === "string" ? visitNoteForm.patientId.trim() : "");
+	const effectivePatientName = patientName?.trim() || (typeof (visitNoteForm as Record<string, unknown> | null)?.patientName === "string" ? String((visitNoteForm as Record<string, unknown>).patientName).trim() : "");
+	const effectiveVisitId = typeof visitNoteForm?.visitId === "string" && visitNoteForm.visitId.trim() ? visitNoteForm.visitId.trim() : undefined;
+
+	// Загрузка последнего среза пародонта для пациента (SSOT)
+	useEffect(() => {
+		if (!effectivePatientId) return;
+		let isMounted = true;
+		async function loadLatestSnapshot() {
+			try {
+				const token = typeof localStorage !== "undefined" ? localStorage.getItem("dente_token") : null;
+				const res = await fetch(`/api/periodontogram/${encodeURIComponent(effectivePatientId)}`, {
+					headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+				});
+				if (res.ok) {
+					const body = await res.json();
+					const data = body?.data ?? body;
+					if (isMounted && data) {
+						if (data.summary?.deepPocketsCount > 0) setPerioStatus("periodontitis_moderate");
+						else if (data.summary?.bleedingSitesCount > 0) setPerioStatus("gingivitis");
+						const { maxDepth, anyBop } = extractPerioTeethStats(data.teeth);
+						setPocketDepthMm(maxDepth);
+						setHasBop(anyBop);
+					}
+				}
+			} catch {
+				try {
+					const cached = localStorage.getItem(`dente_perio_cache_${effectivePatientId}`);
+					if (cached && isMounted) {
+						const parsed = JSON.parse(cached);
+						const { maxDepth, anyBop } = extractPerioTeethStats(parsed.teeth);
+						setPocketDepthMm(maxDepth);
+						setHasBop(anyBop);
+						if (maxDepth >= 4) setPerioStatus("periodontitis_moderate");
+						else if (anyBop) setPerioStatus("gingivitis");
+					}
+				} catch {}
+			}
+		}
+		void loadLatestSnapshot();
+		return () => { isMounted = false; };
+	}, [effectivePatientId]);
+
+	// Слушатель сохранения в подробной модалке (PerioStudioModal)
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handleSnapshotSaved = (e: Event) => {
+			const ce = e as CustomEvent<{
+				patientId?: string;
+				summary?: { bleedingSitesCount?: number; deepPocketsCount?: number };
+				teeth?: unknown[];
+			}>;
+			if (!ce.detail) return;
+			const { patientId: savedPatientId, summary, teeth } = ce.detail;
+			if (savedPatientId && effectivePatientId && savedPatientId !== effectivePatientId) return;
+			if (summary) {
+				if (summary.deepPocketsCount && summary.deepPocketsCount > 0) setPerioStatus("periodontitis_moderate");
+				else if (summary.bleedingSitesCount && summary.bleedingSitesCount > 0) setPerioStatus("gingivitis");
+				else setPerioStatus("healthy");
+			}
+			const { maxDepth, anyBop } = extractPerioTeethStats(teeth);
+			if (teeth && teeth.length > 0) {
+				setPocketDepthMm(maxDepth);
+				setHasBop(anyBop);
+			}
+		};
+		window.addEventListener("dente:perio-snapshot-saved", handleSnapshotSaved);
+		return () => { window.removeEventListener("dente:perio-snapshot-saved", handleSnapshotSaved); };
+	}, [effectivePatientId]);
+
+	// Слушатель применения скрининга из EmkPerioMeasurements
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handleMeasurementsApplied = (e: Event) => {
+			const ce = e as CustomEvent<{
+				affectedRecords?: Array<{ toothNumber: number; depthMm: number; bop: boolean }>;
+				pocketDepthMm?: number;
+				hasBop?: boolean;
+			}>;
+			if (!ce.detail) return;
+			const { affectedRecords, pocketDepthMm: depth, hasBop: bop } = ce.detail;
+			if (depth !== undefined) setPocketDepthMm(depth);
+			if (bop !== undefined) setHasBop(bop);
+			if (effectivePatientId) {
+				try {
+					localStorage.setItem(`dente_perio_screening_${effectivePatientId}`, JSON.stringify({
+						patientId: effectivePatientId, visitId: effectiveVisitId, updatedAt: new Date().toISOString(),
+						affectedRecords, pocketDepthMm: depth, hasBop: bop,
+					}));
+				} catch {}
+			}
+		};
+		window.addEventListener("dente:perio-measurements-applied", handleMeasurementsApplied);
+		return () => { window.removeEventListener("dente:perio-measurements-applied", handleMeasurementsApplied); };
+	}, [effectivePatientId, effectiveVisitId]);
+
 	const handleOpenModal = useCallback(() => {
 		if (onOpenPerioModal) {
 			onOpenPerioModal();
 		} else if (typeof window !== "undefined") {
-			window.dispatchEvent(new CustomEvent("dente:open-perio-modal"));
+			window.dispatchEvent(
+				new CustomEvent("dente:open-perio-modal", {
+					detail: {
+						patientId: effectivePatientId,
+						patientName: effectivePatientName,
+						visitId: effectiveVisitId,
+						activeTooth: defaultActiveTooth,
+					},
+				}),
+			);
 		}
-	}, [onOpenPerioModal]);
+	}, [onOpenPerioModal, effectivePatientId, effectivePatientName, effectiveVisitId, defaultActiveTooth]);
 
 	return (
 		<div
@@ -144,3 +268,4 @@ export function EmkPerioSection({
 export { EmkPerioSummary } from "./EmkPerioSummary";
 export { EmkPerioMeasurements } from "./EmkPerioMeasurements";
 export default EmkPerioSection;
+

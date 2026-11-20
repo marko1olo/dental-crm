@@ -16,7 +16,7 @@ import {
 } from "../../services/periodontogramIndices.js";
 import { siteItemSchema } from "../../services/periodontogramService.js";
 import { signToken } from "../../utils/cryptoHelper.js";
-import { organizations, users } from "../../db/schema.js";
+import { organizations, patients, users } from "../../db/schema.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -180,6 +180,14 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 					organizationId: ORG_ID,
 					fullName: "Доктор Пародонтолог",
 					role: "doctor",
+				})
+				.onConflictDoNothing();
+			await tx
+				.insert(patients)
+				.values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Пациент Тестовый",
 				})
 				.onConflictDoNothing();
 		});
@@ -473,5 +481,43 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(res.statusCode, 200);
 		const json = JSON.parse(res.body);
 		assert.equal(json.success, true);
+	});
+
+	it("POST /api/perio/:patientId rejects non-existent patient with 404 PatientNotFound in production mode", async () => {
+		const nonExistentId = fixtureUuid(NAMESPACE, 999);
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/perio/${nonExistentId}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: {
+				notes: "Клинический осмотр пародонта",
+			},
+		});
+
+		assert.equal(res.statusCode, 404);
+		const json = JSON.parse(res.body);
+		assert.equal(json.error, "PatientNotFound");
+	});
+
+	it("POST /api/perio/:patientId successfully saves periodontogram for existing patient in database", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/perio/${PATIENT_ID}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: {
+				notes: "Клинический осмотр пародонта",
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const json = JSON.parse(res.body);
+		assert.equal(json.success, true);
+		assert.ok(json.data);
 	});
 });
