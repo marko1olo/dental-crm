@@ -46,15 +46,15 @@ export const TreatmentPipelineMobileFloatingBar: React.FC<TreatmentPipelineMobil
 			data-testid="pipeline-mobile-floating-thumb-bar"
 		>
 			<div className="flex flex-col min-w-0 flex-1">
-				<div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] font-medium truncate">
+				<div className="flex items-center gap-1.5 text-[11px] text-[var(--ink-muted)] font-medium truncate">
 					<span
 						className="w-2 h-2 rounded-full shrink-0"
 						style={{ backgroundColor: stageConfig?.accentColor || "var(--teal, #0d9488)" }}
 					/>
-					<span className="truncate font-bold text-[var(--text)]">
+					<span className="truncate font-bold text-[var(--ink)]">
 						{stageConfig?.title || "Воронка"}
 					</span>
-					<span className="text-[10px] text-[var(--muted)] font-mono shrink-0">
+					<span className="text-[10px] text-[var(--ink-muted)] font-mono shrink-0">
 						({stageCards.length} пл.)
 					</span>
 				</div>
@@ -70,8 +70,9 @@ export const TreatmentPipelineMobileFloatingBar: React.FC<TreatmentPipelineMobil
 				{dropoutRiskCount > 0 && (
 					<button
 						type="button"
-						onClick={onRunDropoutPrevention}
-						disabled={isRunningDropout}
+						onClick={() => {
+							if (!isRunningDropout) onRunDropoutPrevention();
+						}}
 						className="min-h-[44px] h-11 px-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-1 touch-manipulation cursor-pointer"
 						title="Контроль отвала"
 					>
@@ -82,8 +83,9 @@ export const TreatmentPipelineMobileFloatingBar: React.FC<TreatmentPipelineMobil
 
 				<button
 					type="button"
-					onClick={onRefresh}
-					disabled={isLoading}
+					onClick={() => {
+						if (!isLoading) onRefresh();
+					}}
 					className="primary-button min-h-[44px] h-11 px-4 font-bold text-xs shadow-sm active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 transition-all touch-manipulation"
 					data-testid="pipeline-mobile-refresh-btn"
 				>

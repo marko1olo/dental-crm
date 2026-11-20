@@ -1,4 +1,4 @@
-import { parseKopecks } from "@dental/shared";
+import { parseKopecks, kopecksToRubles } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "../types/index.js";
 import { computeStageItemsTotalKopecks } from "./common.js";
 
@@ -28,16 +28,16 @@ export function updateItemQuantityInStages(
 				return {
 					...it,
 					quantity: safeQty,
-					unitPriceRub: Math.round(unitKop / 100),
-					discountRub: Math.round((unitDiscountKop * safeQty) / 100),
-					priceRub: Math.round((finalUnitKop * safeQty) / 100),
+					unitPriceRub: Math.round(kopecksToRubles(unitKop)),
+					discountRub: Math.round(kopecksToRubles(unitDiscountKop * safeQty)),
+					priceRub: Math.round(kopecksToRubles(finalUnitKop * safeQty)),
 				};
 			}
 			return it;
 		});
 		if (!modified) return st;
 		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
-		return { ...st, items: updatedItems, totalRub: Math.round(stTotalKopecks / 100), totalKopecks: stTotalKopecks };
+		return { ...st, items: updatedItems, totalRub: Math.round(kopecksToRubles(stTotalKopecks)), totalKopecks: stTotalKopecks };
 	});
 }
 
@@ -60,9 +60,9 @@ export function updateItemPriceInStages(
 				return {
 					...it,
 					quantity: safeQty,
-					unitPriceRub: Math.round(unitKop / 100),
-					discountRub: Math.round((unitDiscountKop * safeQty) / 100),
-					priceRub: Math.round((finalUnitKop * safeQty) / 100),
+					unitPriceRub: Math.round(kopecksToRubles(unitKop)),
+					discountRub: Math.round(kopecksToRubles(unitDiscountKop * safeQty)),
+					priceRub: Math.round(kopecksToRubles(finalUnitKop * safeQty)),
 					requiresManualPricing: false,
 				};
 			}
@@ -70,7 +70,7 @@ export function updateItemPriceInStages(
 		});
 		if (!modified) return st;
 		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
-		return { ...st, items: updatedItems, totalRub: Math.round(stTotalKopecks / 100), totalKopecks: stTotalKopecks };
+		return { ...st, items: updatedItems, totalRub: Math.round(kopecksToRubles(stTotalKopecks)), totalKopecks: stTotalKopecks };
 	});
 }
 
@@ -97,9 +97,9 @@ export function updateItemInStages(
 				return {
 					...updatedItem,
 					quantity: safeQty,
-					unitPriceRub: Math.round(unitKop / 100),
-					discountRub: Math.round((unitDiscountKop * safeQty) / 100),
-					priceRub: Math.round((finalUnitKop * safeQty) / 100),
+					unitPriceRub: Math.round(kopecksToRubles(unitKop)),
+					discountRub: Math.round(kopecksToRubles(unitDiscountKop * safeQty)),
+					priceRub: Math.round(kopecksToRubles(finalUnitKop * safeQty)),
 					requiresManualPricing: false,
 				};
 			}
@@ -107,6 +107,6 @@ export function updateItemInStages(
 		});
 		if (!modified) return st;
 		const stTotalKopecks = computeStageItemsTotalKopecks(updatedItems);
-		return { ...st, items: updatedItems, totalRub: Math.round(stTotalKopecks / 100), totalKopecks: stTotalKopecks };
+		return { ...st, items: updatedItems, totalRub: Math.round(kopecksToRubles(stTotalKopecks)), totalKopecks: stTotalKopecks };
 	});
 }

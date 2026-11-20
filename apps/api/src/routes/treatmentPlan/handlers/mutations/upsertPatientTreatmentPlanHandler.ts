@@ -1,5 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
 import { withTenantCtx } from "../../../../db/rls.js";
@@ -22,7 +23,10 @@ import {
 	UUID_SHAPE,
 	treatmentPlanUpsertSchema,
 } from "../../../odontogram/types.js";
-import { calculateTreatmentPlanTotals } from "../treatmentPlanTotalsCalculator.js";
+import {
+	calculateEffectivePlanDiscount,
+	calculateTreatmentPlanTotals,
+} from "../treatmentPlanTotalsCalculator.js";
 import { syncUpsertPlanLedgerItems } from "./planLedgerSync.js";
 
 interface CustomErrorWithStatus extends Error {
@@ -86,7 +90,6 @@ export async function handleUpsertPatientTreatmentPlan(
 	try {
 		const calculatedTotals = calculateTreatmentPlanTotals(patientId, input.items);
 		totalPriceKopecks = calculatedTotals.totalPriceKopecks;
-		const totalPriceText = calculatedTotals.totalPriceText;
 
 		planId = await withTenantCtx(organizationId, async (tx) => {
 			let savedPlanId = input.id ?? null;
@@ -99,6 +102,9 @@ export async function handleUpsertPatientTreatmentPlan(
 						patientSignature: treatmentPlans.patientSignature,
 						status: treatmentPlans.status,
 						version: treatmentPlans.version,
+						discountMode: treatmentPlans.discountMode,
+						planDiscountPercent: treatmentPlans.planDiscountPercent,
+						planDiscountRub: treatmentPlans.planDiscountRub,
 					})
 					.from(treatmentPlans)
 					.where(
@@ -120,11 +126,24 @@ export async function handleUpsertPatientTreatmentPlan(
 					isRevision = true;
 				}
 
+				const effectiveDiscount = calculateEffectivePlanDiscount({
+					baseTotalKopecks: calculatedTotals.totalPriceKopecks,
+					discountMode: input.discountMode ?? existing.discountMode ?? "plan_fixed",
+					planDiscountPercent: input.planDiscountPercent !== undefined
+						? input.planDiscountPercent
+						: Number(existing.planDiscountPercent ?? 0),
+					planDiscountRub: input.planDiscountRub !== undefined
+						? input.planDiscountRub
+						: Number(existing.planDiscountRub ?? 0),
+				});
+				totalPriceKopecks = effectiveDiscount.finalTotalKopecks;
+				const effectiveTotalPriceText = debtNumericText(totalPriceKopecks);
+
 				const [planUpdated] = await tx
 					.update(treatmentPlans)
 					.set({
 						name: input.name,
-						totalPrice: totalPriceText,
+						totalPrice: effectiveTotalPriceText,
 						totalPriceRub: debtNumericText(totalPriceKopecks),
 						...(input.status !== undefined
 							? { status: input.status }
@@ -202,6 +221,15 @@ export async function handleUpsertPatientTreatmentPlan(
 					}
 				}
 			} else {
+				const effectiveDiscount = calculateEffectivePlanDiscount({
+					baseTotalKopecks: calculatedTotals.totalPriceKopecks,
+					discountMode: input.discountMode ?? "plan_fixed",
+					planDiscountPercent: input.planDiscountPercent ?? 0,
+					planDiscountRub: input.planDiscountRub ?? 0,
+				});
+				totalPriceKopecks = effectiveDiscount.finalTotalKopecks;
+				const effectiveTotalPriceText = debtNumericText(totalPriceKopecks);
+
 				const [created] = await tx
 					.insert(treatmentPlans)
 					.values({
@@ -209,7 +237,7 @@ export async function handleUpsertPatientTreatmentPlan(
 						patientId,
 						name: input.name,
 						status: input.status ?? "Draft",
-						totalPrice: totalPriceText,
+						totalPrice: effectiveTotalPriceText,
 						totalPriceRub: debtNumericText(totalPriceKopecks),
 						patientSignature: input.patientSignature ?? null,
 						planGroupId: input.planGroupId ?? null,
@@ -313,10 +341,15 @@ export async function handleUpsertPatientTreatmentPlan(
 				}
 			}
 
+			let createdItemsList: Array<{ id: string }> = [];
 			if (input.items.length > 0) {
-				await tx.insert(treatmentPlanItemsNew).values(
+				createdItemsList = await tx.insert(treatmentPlanItemsNew).values(
 					input.items.map((item) => {
 						const phaseNum = item.phase || 1;
+						const itemPriceKopecks = typeof item.unitPriceKopecks === "number" && item.unitPriceKopecks > 0
+							? Math.round(item.unitPriceKopecks)
+							: rublesToKopecks(item.price);
+						const itemDiscountKopecks = rublesToKopecks(item.discount);
 						return {
 							organizationId,
 							planId: savedPlanId,
@@ -327,20 +360,27 @@ export async function handleUpsertPatientTreatmentPlan(
 							quantity: item.quantity,
 							price: item.price.toString(),
 							discount: item.discount.toString(),
+							priceKopecks: itemPriceKopecks,
+							discountKopecks: itemDiscountKopecks,
 							phase: phaseNum,
 							isBundle: Boolean(item.isAuto),
 							doctorId: item.doctorId ?? null,
 						};
 					}),
-				);
+				).returning({ id: treatmentPlanItemsNew.id });
 			}
 
-			// Синхронизация книги лечения (treatment_items)
+			// DEF-03: Синхронизация книги лечения (treatment_items) с сохранением FK treatmentPlanItemId
+			const itemsWithPlanItemId = input.items.map((item, idx) => ({
+				...item,
+				treatmentPlanItemId: createdItemsList[idx]?.id ?? null,
+			}));
+
 			await syncUpsertPlanLedgerItems(tx, {
 				organizationId,
 				patientId,
 				savedPlanId,
-				items: input.items,
+				items: itemsWithPlanItemId,
 				patientSignature: input.patientSignature,
 				allowClinicalBlockerOverride: input.allowClinicalBlockerOverride,
 				clinicalBlockerOverrideReason: input.clinicalBlockerOverrideReason,

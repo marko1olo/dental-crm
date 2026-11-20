@@ -1,5 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { rublesToKopecks } from "@dental/shared";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import {
@@ -199,6 +200,13 @@ export async function handleGetTreatmentPlanById(
 				planUnitPriceRub: summary.unitPriceRub,
 				planDiscountRub: summary.planDiscountRub,
 				planDiscountPercent: summary.planDiscountPercent,
+				unitPriceKopecks: Number(item.priceKopecks ?? rublesToKopecks(summary.unitPriceRub)),
+				discountKopecks: Number(item.discountKopecks ?? rublesToKopecks(summary.planDiscountRub)),
+				lineTotalKopecks: Math.max(
+					0,
+					Number(item.priceKopecks ?? rublesToKopecks(summary.unitPriceRub)) * summary.quantity -
+						Number(item.discountKopecks ?? rublesToKopecks(summary.planDiscountRub)),
+				),
 				quantity: summary.quantity,
 				planLineTotalRub: summary.planLineTotalRub,
 				serviceId: summary.serviceCode,

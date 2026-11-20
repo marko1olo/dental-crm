@@ -42,12 +42,13 @@ export const TreatmentPipelineHeader: React.FC<TreatmentPipelineHeaderProps> = (
 				{/* Drop-out prevention button */}
 				<button
 					type="button"
-					onClick={onRunDropoutPrevention}
-					disabled={isRunningDropout}
+					onClick={() => {
+						if (!isRunningDropout) onRunDropoutPrevention();
+					}}
 					className={`h-9 min-h-[36px] px-2.5 sm:px-3 rounded-xl border text-xs font-semibold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
 						dropoutRiskCount > 0
 							? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40"
-							: "bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--text)] border-[var(--line)]"
+							: "bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] border-[var(--line)]"
 					}`}
 					title="Проверить зависшие планы (>14 дней без записи) и создать задачи на звонок куратора"
 					data-testid="pipeline-dropout-prevention-btn"
@@ -82,7 +83,7 @@ export const TreatmentPipelineHeader: React.FC<TreatmentPipelineHeaderProps> = (
 						className="h-8 px-3.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
 						style={{
 							backgroundColor: viewMode === "horizontal" ? "var(--teal, #0d9488)" : "transparent",
-							color: viewMode === "horizontal" ? "#ffffff" : "var(--muted)",
+							color: viewMode === "horizontal" ? "#ffffff" : "var(--ink-muted)",
 							padding: "0 14px",
 							height: "32px",
 							borderRadius: "8px",
@@ -99,7 +100,7 @@ export const TreatmentPipelineHeader: React.FC<TreatmentPipelineHeaderProps> = (
 						className="h-8 px-3.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
 						style={{
 							backgroundColor: viewMode === "kanban" ? "var(--teal, #0d9488)" : "transparent",
-							color: viewMode === "kanban" ? "#ffffff" : "var(--muted)",
+							color: viewMode === "kanban" ? "#ffffff" : "var(--ink-muted)",
 							padding: "0 14px",
 							height: "32px",
 							borderRadius: "8px",
@@ -115,8 +116,9 @@ export const TreatmentPipelineHeader: React.FC<TreatmentPipelineHeaderProps> = (
 				{/* Refresh Button (Desktop only, mobile uses floating bottom bar) */}
 				<button
 					type="button"
-					onClick={onRefresh}
-					disabled={isLoading}
+					onClick={() => {
+						if (!isLoading) onRefresh();
+					}}
 					aria-label="Обновить воронку"
 					title="Обновить воронку"
 					className="hidden md:flex h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-xs font-medium transition items-center gap-1.5 shadow-sm cursor-pointer"

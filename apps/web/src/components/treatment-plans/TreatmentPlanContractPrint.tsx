@@ -6,7 +6,7 @@
 
 import React, { useMemo, useState } from "react";
 import { formatWarrantyYearsText, type DigitalSignatureAgreementData, type TreatmentPlanStage, type TreatmentPlanTier } from "./types";
-import { type Kopecks, parseKopecks } from "@dental/shared";
+import { type Kopecks, parseKopecks, kopecksToRubles } from "@dental/shared";
 import { generatePlanVerificationQrPayload } from "./qr/treatmentPlanQrEngine";
 import { TreatmentPlanContractPrintHeader } from "./TreatmentPlanContractPrintHeader";
 import { TreatmentPlanContractClinicPatientInfo } from "./TreatmentPlanContractClinicPatientInfo";
@@ -54,13 +54,13 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 	const allItems = useMemo(() => activeStages.flatMap((s) => s.items), [activeStages]);
 
 	const grossTotalKopecks = allItems.reduce((acc, it) => (acc + parseKopecks(it.unitPriceRub || 0) * (it.quantity || 1)) as Kopecks, 0 as Kopecks);
-	const grossTotalRub = Math.round(grossTotalKopecks / 100);
+	const grossTotalRub = Math.round(kopecksToRubles(grossTotalKopecks));
 	const discountTotalKopecks = allItems.reduce((acc, it) => (acc + parseKopecks(it.discountRub || 0)) as Kopecks, 0 as Kopecks);
-	const discountTotalRub = Math.round(discountTotalKopecks / 100);
+	const discountTotalRub = Math.round(kopecksToRubles(discountTotalKopecks));
 	const bonusPointsKopecks = parseKopecks(bonusPointsDeductedRub || 0);
 	const tierTotalKopecks = tier.totalKopecks || parseKopecks(tier.totalRub);
 	const finalTotalKopecks = Math.max(0, tierTotalKopecks - bonusPointsKopecks) as Kopecks;
-	const finalTotalRub = Math.round(finalTotalKopecks / 100);
+	const finalTotalRub = Math.round(kopecksToRubles(finalTotalKopecks));
 	const todayRu = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 	const displayContractNumber = contractNumber || `D-${new Date().getFullYear()}-${patientId.slice(0, 6).toUpperCase()}`;
 

@@ -154,7 +154,9 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 			}
 			await fetchPipeline();
 		} catch (err) {
-			alert((err as Error).message || "Ошибка перемещения плана");
+			const msg = (err as Error).message || "Ошибка перемещения плана";
+			setDropoutMessage(msg);
+			setTimeout(() => setDropoutMessage(null), 6000);
 		}
 	};
 
@@ -179,7 +181,9 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 			setTimeout(() => setDropoutMessage(null), 7000);
 			await fetchPipeline();
 		} catch (err) {
-			alert((err as Error).message || "Ошибка контроля отвала");
+			const msg = (err as Error).message || "Ошибка контроля отвала";
+			setDropoutMessage(msg);
+			setTimeout(() => setDropoutMessage(null), 6000);
 		} finally {
 			setIsRunningDropout(false);
 		}
@@ -196,9 +200,13 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 			if (!res.ok) {
 				throw new Error("Не удалось создать задачу на звонок");
 			}
+			setDropoutMessage(`Задача на звонок по пациенту ${card.patientName} успешно создана`);
+			setTimeout(() => setDropoutMessage(null), 5000);
 			await fetchPipeline();
 		} catch (err) {
-			alert((err as Error).message || "Ошибка создания задачи на звонок");
+			const msg = (err as Error).message || "Ошибка создания задачи на звонок";
+			setDropoutMessage(msg);
+			setTimeout(() => setDropoutMessage(null), 6000);
 		}
 	};
 
@@ -229,7 +237,9 @@ export function useTreatmentPipelineState(): UseTreatmentPipelineStateReturn {
 				setTimeout(() => setCopiedToken(null), 3000);
 			}
 		} catch (err) {
-			alert((err as Error).message || "Ошибка создания ссылки");
+			const msg = (err as Error).message || "Ошибка создания ссылки на смету";
+			setDropoutMessage(msg);
+			setTimeout(() => setDropoutMessage(null), 6000);
 		} finally {
 			setIsGeneratingLink(null);
 		}

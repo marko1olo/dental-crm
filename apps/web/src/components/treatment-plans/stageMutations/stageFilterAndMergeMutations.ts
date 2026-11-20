@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanStageKind } from "../types/index.js";
 import { computeStageItemsTotalKopecks } from "./common.js";
 
@@ -69,7 +70,7 @@ export function appendItemToExistingStage(
 			return {
 				...st,
 				items: updatedItems,
-				totalRub: totalKopecks / 100,
+				totalRub: kopecksToRubles(totalKopecks),
 				totalKopecks,
 				serviceCatalogCodes: nextCodes,
 				order804nCodes: nextCodes,
@@ -101,7 +102,7 @@ export function mergePersistedPlanItems(
 		return {
 			...st,
 			items: updatedItems,
-			totalRub: totalKopecks / 100,
+			totalRub: kopecksToRubles(totalKopecks),
 			totalKopecks,
 			serviceCatalogCodes: nextCodes,
 			order804nCodes: nextCodes,

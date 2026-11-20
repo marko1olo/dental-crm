@@ -247,8 +247,8 @@ export function useStudioPlanLifecycle({
 								if (typeof parsed.doctorDiscountPercent === "number") setDoctorDiscountPercent(parsed.doctorDiscountPercent);
 								return;
 							}
-						} catch {
-							// ignore
+						} catch (draftParseErr) {
+							console.warn("[TreatmentPlanStudioModal] Ошибка парсинга локального черновика плана лечения:", draftParseErr);
 						}
 					}
 				}
@@ -672,10 +672,7 @@ export function useStudioPlanLifecycle({
 			window.dispatchEvent(new CustomEvent("dente:plan-approved", { detail: detailPayload }));
 		}
 
-		setTimeout(() => {
-			setApprovedSuccessMessage(null);
-			onClose();
-		}, 1400);
+		onClose();
 	}, [activeTier, currentPlanId, savePlanToApi, onApprovePlan, onConfirmSelection, onApproveAndSign, onClose, patientId, patientName, doctorFullName]);
 
 	// 6. Сохранение черновика (Мандат 8e: реальный сетевой вызов POST /api/patients/:id/treatment-plans)
@@ -692,8 +689,8 @@ export function useStudioPlanLifecycle({
 					draftStorageKey,
 					JSON.stringify({ stages, selectedTierId, doctorDiscountPercent, planId: savedId, updatedAt: new Date().toISOString() })
 				);
-			} catch {
-				// ignore
+			} catch (storageErr) {
+				console.warn("[TreatmentPlanStudioModal] Ошибка записи локального черновика плана лечения:", storageErr);
 			}
 			window.dispatchEvent(
 				new CustomEvent("dente:plan-status-changed", {

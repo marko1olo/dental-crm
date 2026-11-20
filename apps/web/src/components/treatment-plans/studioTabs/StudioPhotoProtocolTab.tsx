@@ -68,7 +68,8 @@ export const StudioPhotoProtocolTab: React.FC<StudioPhotoProtocolTabProps> = ({
 
 				setFetchedPhotos(items);
 			})
-			.catch(() => {
+			.catch((fetchErr) => {
+				console.warn("[StudioPhotoProtocolTab] Ошибка загрузки фотопротокола пациента:", fetchErr);
 				if (!isCancelled) setFetchedPhotos([]);
 			});
 

@@ -387,6 +387,16 @@ export async function handleApproveTreatmentPlan(
 				planDiscountPercent: updated.planDiscountPercent ? Number(updated.planDiscountPercent) : 0,
 				planDiscountRub: updated.planDiscountRub ? Number(updated.planDiscountRub) : 0,
 			});
+
+			// Мандат 8bo: Аудит пишется строго внутри единой ACID-транзакции tx
+			await tx.insert(auditEvents).values({
+				organizationId,
+				actorUserId: null,
+				entityType: "treatment_plan",
+				entityId: id,
+				action: "TREATMENT_PLAN_APPROVED",
+				reason: `План лечения «${updated.name}» утвержден (сумма: ${updated.totalPriceRub || updated.totalPrice} ₽)`,
+			});
 		}
 
 		return { approvedPlan: updated, createdInvoice: invoice };
@@ -397,19 +407,6 @@ export async function handleApproveTreatmentPlan(
 			error: "ApproveFailed",
 			message: "Не удалось утвердить план лечения",
 		});
-	}
-
-	try {
-		await db.insert(auditEvents).values({
-			organizationId,
-			actorUserId: null,
-			entityType: "treatment_plan",
-			entityId: id,
-			action: "TREATMENT_PLAN_APPROVED",
-			reason: `План лечения «${approvedPlan.name}» утвержден (сумма: ${approvedPlan.totalPriceRub || approvedPlan.totalPrice} ₽)`,
-		});
-	} catch (auditErr) {
-		request.log.warn({ err: auditErr }, "Не удалось записать аудит утверждения плана лечения");
 	}
 
 	if (createdInvoice) {
@@ -523,6 +520,18 @@ export async function handleUpdateTreatmentPlanStatus(
 			});
 		}
 
+		if (updated) {
+			// Мандат 8bo: Аудит пишется строго внутри единой ACID-транзакции tx
+			await tx.insert(auditEvents).values({
+				organizationId,
+				actorUserId: null,
+				entityType: "treatment_plan",
+				entityId: id,
+				action: isApproved ? "TREATMENT_PLAN_APPROVED" : "TREATMENT_PLAN_STATUS_CHANGED",
+				reason: `Статус плана лечения «${updated.name || updated.title}» изменен на «${status}»`,
+			});
+		}
+
 		return { updatedPlan: updated, createdInvoice: invoice };
 	});
 
@@ -531,19 +540,6 @@ export async function handleUpdateTreatmentPlanStatus(
 			error: "UpdateStatusFailed",
 			message: "Не удалось обновить статус плана лечения.",
 		});
-	}
-
-	try {
-		await db.insert(auditEvents).values({
-			organizationId,
-			actorUserId: null,
-			entityType: "treatment_plan",
-			entityId: id,
-			action: isApproved ? "TREATMENT_PLAN_APPROVED" : "TREATMENT_PLAN_STATUS_CHANGED",
-			reason: `Статус плана лечения «${updatedPlan.name || updatedPlan.title}» изменен на «${status}»`,
-		});
-	} catch (auditErr) {
-		request.log.warn({ err: auditErr }, "Не удалось записать аудит смены статуса плана лечения");
 	}
 
 	if (createdInvoice) {

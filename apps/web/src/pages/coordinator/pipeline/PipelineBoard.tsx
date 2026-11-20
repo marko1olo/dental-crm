@@ -74,10 +74,10 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 					<Layers className="w-6 h-6" />
 				</div>
 				<div className="space-y-1 max-w-md">
-					<h3 className="text-sm sm:text-base font-bold text-[var(--text)]">
+					<h3 className="text-sm sm:text-base font-bold text-[var(--ink)]">
 						В воронке пока нет планов лечения
 					</h3>
-					<p className="text-xs text-[var(--muted)]">
+					<p className="text-xs text-[var(--ink-muted)]">
 						Составьте первый комплексный план лечения для любого пациента клиники или откройте студию презентации сметы.
 					</p>
 				</div>
@@ -113,10 +113,10 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 						style={{ borderTop: `3px solid ${mobileCfg.accentColor}` }}
 					>
 						<div>
-							<h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
+							<h3 className="text-xs font-bold text-[var(--ink)]">
 								{mobileCfg.title}
 							</h3>
-							<p className="text-[11px] text-[var(--muted)]">{mobileCfg.hint}</p>
+							<p className="text-[11px] text-[var(--ink-muted)]">{mobileCfg.hint}</p>
 						</div>
 						<div className="text-right">
 							<span
@@ -129,7 +129,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 							>
 								{mobileStageCount}
 							</span>
-							<span className="block text-[11px] font-semibold text-[var(--text)] mt-0.5">
+							<span className="block text-[11px] font-semibold text-[var(--ink)] mt-0.5">
 								{formatRub(mobileStageTotalRub)}
 							</span>
 						</div>
@@ -138,7 +138,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 					{/* Mobile Cards Container */}
 					<div className="p-2.5 space-y-2.5">
 						{mobileCards.length === 0 ? (
-							<div className="p-8 text-center text-xs text-[var(--muted)] border border-dashed border-[var(--line)] rounded-xl">
+							<div className="p-8 text-center text-xs text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-xl">
 								Нет планов в этом статусе
 							</div>
 						) : (
@@ -191,7 +191,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 											<button
 												type="button"
 												onClick={() => onSelectStage("all")}
-												className="h-8 px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-xs text-[var(--muted)] hover:text-[var(--text)] transition flex items-center gap-1.5 shadow-sm"
+												className="h-8 px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-xs text-[var(--ink-muted)] hover:text-[var(--ink)] transition flex items-center gap-1.5 shadow-sm"
 												title="Вернуться ко всем этапам"
 											>
 												<ArrowLeft className="w-3.5 h-3.5" />
@@ -199,7 +199,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 											</button>
 											<div>
 												<div className="flex items-center gap-2">
-													<h2 className="text-sm sm:text-base font-bold text-[var(--text)]">
+													<h2 className="text-sm sm:text-base font-bold text-[var(--ink)]">
 														{cfg.title}
 													</h2>
 													<span
@@ -213,12 +213,12 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 														{stageCount} {stageCount === 1 ? "план" : "планов"}
 													</span>
 												</div>
-												<p className="text-xs text-[var(--muted)]">{cfg.hint}</p>
+												<p className="text-xs text-[var(--ink-muted)]">{cfg.hint}</p>
 											</div>
 										</div>
 
 										<div className="text-right">
-											<span className="text-xs text-[var(--muted)] block">Сумма этапа</span>
+											<span className="text-xs text-[var(--ink-muted)] block">Сумма этапа</span>
 											<span className="text-base sm:text-lg font-bold font-mono text-[var(--teal,#0d9488)]">
 												{formatRub(stageTotalRub)}
 											</span>
@@ -228,7 +228,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 									{/* Cards List */}
 									<div className="p-4 space-y-3">
 										{cards.length === 0 ? (
-											<div className="p-12 text-center text-xs text-[var(--muted)] border border-dashed border-[var(--line)] rounded-xl bg-[var(--paper-soft)]/50">
+											<div className="p-12 text-center text-xs text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-xl bg-[var(--paper-soft)]/50">
 												В статусе «{cfg.title}» сейчас нет активных планов лечения (перетащите карточку сюда для смены этапа)
 											</div>
 										) : (
@@ -278,7 +278,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 											style={{ borderLeft: `4px solid ${cfg.accentColor}` }}
 										>
 											<div className="flex items-center gap-2.5 min-w-0">
-												<h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--text)]">
+												<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)]">
 													{cfg.title}
 												</h3>
 												<span
@@ -291,24 +291,24 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 												>
 													{stageCount}
 												</span>
-												<span className="text-xs text-[var(--muted)] hidden sm:inline">
+												<span className="text-xs text-[var(--ink-muted)] hidden sm:inline">
 													• {cfg.hint}
 												</span>
 												{cards.length === 0 && (
-													<span className="text-xs text-[var(--muted)] italic hidden md:inline ml-2">
+													<span className="text-xs text-[var(--ink-muted)] italic hidden md:inline ml-2">
 														— перетащите карточку сюда для перевода в статус
 													</span>
 												)}
 											</div>
 
 											<div className="flex items-center gap-3 shrink-0">
-												<span className="text-xs sm:text-sm font-semibold font-mono text-[var(--text)]">
+												<span className="text-xs sm:text-sm font-semibold font-mono text-[var(--ink)]">
 													{formatRub(stageTotalRub)}
 												</span>
 												<button
 													type="button"
 													onClick={() => onSelectStage(stageKey)}
-													className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-xs font-medium text-[var(--muted)] hover:text-[var(--text)] transition flex items-center gap-1 shadow-xs"
+													className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-xs font-medium text-[var(--ink-muted)] hover:text-[var(--ink)] transition flex items-center gap-1 shadow-xs"
 													style={{
 														padding: "0 12px",
 														height: "30px",
@@ -372,7 +372,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 											style={{ borderTop: `3px solid ${cfg.accentColor}` }}
 										>
 											<div className="flex items-center justify-between gap-1">
-												<h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text)] truncate">
+												<h3 className="text-xs font-bold text-[var(--ink)] truncate">
 													{cfg.title}
 												</h3>
 												<span
@@ -386,9 +386,9 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 													{stageCount}
 												</span>
 											</div>
-											<div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
+											<div className="flex items-center justify-between text-[11px] text-[var(--ink-muted)]">
 												<span className="truncate">{cfg.hint}</span>
-												<span className="font-semibold text-[var(--text)] shrink-0 ml-1">
+												<span className="font-semibold text-[var(--ink)] shrink-0 ml-1">
 													{formatRub(stageTotalRub)}
 												</span>
 											</div>
@@ -397,7 +397,7 @@ export const PipelineBoard: React.FC<PipelineBoardProps> = ({
 										{/* Cards Container */}
 										<div className="p-2.5 space-y-2.5 overflow-y-auto max-h-[calc(100vh-320px)] flex-1 min-h-[140px]">
 											{cards.length === 0 ? (
-												<div className="p-6 text-center text-xs text-[var(--muted)] border border-dashed border-[var(--line)] rounded-xl">
+												<div className="p-6 text-center text-xs text-[var(--ink-muted)] border border-dashed border-[var(--line)] rounded-xl">
 													Перетащите сюда карточку
 												</div>
 											) : (

@@ -4,7 +4,7 @@
  * Мандаты: 8b (<=800 строк), 8s (SSOT / Закон единого авторитета).
  */
 
-import { type Kopecks, formatKopecksRu, kopecksToWordsRu, parseKopecks } from "@dental/shared";
+import { type Kopecks, formatKopecksRu, kopecksToWordsRu, parseKopecks, rublesToKopecks } from "@dental/shared";
 
 /**
  * Преобразует числовую сумму в рубли и копейки с гарантией точности (без плавающей точки).
@@ -13,7 +13,7 @@ export function formatMoneyExact(rub: number, kopecks?: Kopecks): string {
 	if (kopecks !== undefined && Number.isInteger(kopecks)) {
 		return formatKopecksRu(kopecks);
 	}
-	const safeKopecks = Math.round(rub * 100);
+	const safeKopecks = rublesToKopecks(rub);
 	return formatKopecksRu(safeKopecks as Kopecks);
 }
 
@@ -28,7 +28,7 @@ export function numberToWordsRu(amountRub: number, amountKopecks: number = 0): s
 	if (!Number.isFinite(amountRub)) return "Ноль рублей 00 копеек";
 	const rublesOnly = Math.floor(Math.abs(amountRub));
 	const kop = Math.abs(amountKopecks) % 100;
-	const totalKopecks = (amountRub < 0 ? -1 : 1) * (rublesOnly * 100 + kop);
+	const totalKopecks = (amountRub < 0 ? -1 : 1) * (rublesToKopecks(rublesOnly) + kop);
 	return kopecksToWordsRu(totalKopecks);
 }
 

@@ -511,7 +511,6 @@ export const StudioWarrantyPassportTab: React.FC<StudioWarrantyPassportTabProps>
 							<button
 								type="button"
 								onClick={() => void registerCertificateInDatabase()}
-								disabled={isRegistering}
 								className="min-h-[40px] px-3.5 py-1.5 rounded-xl border border-[var(--primary)] bg-[var(--primary-soft)] hover:bg-[var(--primary)] hover:text-white text-xs font-bold text-[var(--primary)] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 								data-testid="register-warranty-cert-btn"
 							>

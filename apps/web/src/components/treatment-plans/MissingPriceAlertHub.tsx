@@ -174,7 +174,7 @@ export const MissingPriceBannerActionButtons: React.FC<MissingPriceBannerActionB
 			<button
 				type="button"
 				onClick={handleSetWarrantyZeroPrice}
-				className="secondary-button dente-btn dente-btn-secondary h-8 px-2.5 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors inline-flex items-center gap-1 shadow-2xs"
+				className="secondary-button dente-btn dente-btn-secondary h-8 px-2.5 rounded-xl text-xs font-semibold text-[var(--success-ink,#166534)] bg-[var(--success-soft)] hover:bg-[var(--success-soft)]/80 border border-[var(--success-line,#bbf7d0)] cursor-pointer transition-colors inline-flex items-center gap-1 shadow-2xs"
 				data-testid={`full-warranty-btn-${item.id}`}
 				title="Гарантийная процедура (0 ₽)"
 			>
@@ -336,7 +336,7 @@ export const MissingPriceInlineAlert: React.FC<MissingPriceInlineAlertProps> = (
 					<button
 						type="button"
 						onClick={handleSetWarrantyZeroPrice}
-						className="secondary-button dente-btn dente-btn-secondary h-7 px-2 rounded-lg text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 cursor-pointer transition-colors inline-flex items-center gap-1 shadow-2xs"
+						className="secondary-button dente-btn dente-btn-secondary h-7 px-2 rounded-lg text-[11px] font-semibold text-[var(--success-ink,#166534)] bg-[var(--success-soft)] hover:bg-[var(--success-soft)]/80 border border-[var(--success-line,#bbf7d0)] cursor-pointer transition-colors inline-flex items-center gap-1 shadow-2xs"
 						data-testid={`inline-warranty-btn-${item.id}`}
 						title="Гарантийный случай: бесплатная процедура (0 ₽)"
 					>

@@ -224,7 +224,6 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 						<button
 							type="button"
 							onClick={handleRecallClick}
-							disabled={isCreatingRecall || recallCreated}
 							className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 sm:px-3 rounded-xl border text-[11px] sm:text-[13px] font-semibold transition flex items-center justify-center gap-1.5 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer ${
 								recallCreated
 									? "bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
@@ -293,13 +292,13 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
+							if (isGeneratingLink === card.id) return;
 							onCopyOrGenerateLink(card);
 						}}
-						disabled={isGeneratingLink === card.id}
-						className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 sm:px-3 rounded-xl border text-[11px] sm:text-[13px] font-medium transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm touch-manipulation whitespace-nowrap ${
+						className={`min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2 sm:px-3 rounded-xl border text-[11px] sm:text-[13px] font-medium transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm touch-manipulation whitespace-nowrap cursor-pointer ${
 							copiedToken === card.id
 								? "bg-emerald-500/20 border-emerald-500/40 text-emerald-500"
-								: "bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] border-[var(--line)] text-[var(--text)]"
+								: "bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] border-[var(--line)] text-[var(--ink)]"
 						}`}
 						style={{ borderRadius: "10px" }}
 						title="Скопировать ссылку для согласования сметы"
