@@ -29,8 +29,9 @@ async function main() {
 
   try {
     const page = await browser.newPage();
-    console.log("=== Loading Live App with ?hygiene=1&demo=true on port 5178 ===");
-    await page.goto("http://127.0.0.1:5178/?hygiene=1&demo=true#hygiene", { waitUntil: "commit", timeout: 45000 });
+    const port = 5173;
+    console.log(`=== Loading Live App with ?hygiene=1&demo=true on port ${port} ===`);
+    await page.goto(`http://127.0.0.1:${port}/?hygiene=1&demo=true#hygiene`, { waitUntil: "domcontentloaded", timeout: 45000 });
     await sleep(2500);
 
     await page.evaluate(() => {

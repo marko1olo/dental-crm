@@ -2,15 +2,13 @@
  * @dental/web/components/hygiene/HygieneStudioModal.tsx
  *
  * DENTE Dental CRM — Каноническая студия профессиональной гигиены, индекса OHI-S и домашнего ухода.
- * Соответствует Мандатам: 8b (380–480 строк), 8e (Автономия врача), 8am (Ровно 1 Primary CTA), 8ze (Apple HIG).
+ * Соответствует Мандатам: 8b (<=300 строк), 8e (Автономия врача), 8am (Ровно 1 Primary CTA), 8ze (Apple HIG).
  */
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
-	OHI_S_PRESETS,
 	CLEANING_PROTOCOLS,
 	HOME_CARE_PLANS,
-	CANONICAL_OHI_S_TEETH,
 	createIdealOhiSTeethScores,
 	computeCanonicalOhiS,
 	type OhiSPreset,
@@ -20,6 +18,10 @@ import {
 	printHygieneHomeCareMemo,
 } from "./hygieneCatalogData";
 import { showToast } from "../GlobalToast";
+import { HygieneStudioOhisSection } from "./HygieneStudioOhisSection";
+import { HygieneStudioProtocolSection } from "./HygieneStudioProtocolSection";
+import { HygieneStudioHomeCareSection } from "./HygieneStudioHomeCareSection";
+import { HygieneStudioFooter } from "./HygieneStudioFooter";
 
 export interface HygieneStudioModalProps {
 	readonly isOpen: boolean;
@@ -63,7 +65,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 	const effectivePreviousOhiS = previousOhiS !== undefined ? previousOhiS : dynamicPreviousOhiS;
 
-	// Начальный расчет OHI-S: честная физиологическая норма (0.0) без потёмкинских симуляций
+	// Начальный расчет OHI-S: честная физиологическая норма (0.0) без симуляций
 	const [ohisTeeth, setOhisTeeth] = useState<Record<number, { debris: number; calculus: number }>>(() => {
 		return createIdealOhiSTeethScores();
 	});
@@ -159,7 +161,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 	const handleCopyMemo = useCallback(() => {
 		const text = [
-			`РЕКОМЕНДАЦИИ ПО ДОМАШНЕМУ УХОДУ — ${patientName}`,
+			`Рекомендации по домашнему уходу — ${patientName}`,
 			`Индекс гигиены OHI-S: ${selectedOhiS.score} (${selectedOhiS.label})`,
 			`1. Основная щетка: ${selectedCarePlan.toothbrush}`,
 			`2. Монопучковая: ${selectedCarePlan.monotuft}`,
@@ -194,23 +196,25 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 				</div>
 
 				{/* Header */}
-				<div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--line)] bg-[var(--paper)]">
-					<div className="min-w-0 pr-3">
+				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper)] gap-2">
+					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2">
-							<span className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
-							<h2 className="text-base sm:text-lg font-bold text-[var(--ink)]">
+							<span className="w-2 h-2 rounded-full bg-teal-500 shrink-0 animate-pulse" />
+							<h2 className="text-sm sm:text-base font-semibold text-[var(--ink)] leading-tight">
 								Профессиональная гигиена и профилактика
 							</h2>
 						</div>
-						<p className="text-xs text-[var(--ink-muted)]">
-							Индекс OHI-S • Экспресс-протоколы чистки • Памятка домашнего ухода • {patientName}
+						<p className="text-xs text-[var(--ink-muted)] mt-0.5 leading-snug">
+							<span className="font-medium text-[var(--ink)]">{patientName}</span>
+							<span className="hidden sm:inline"> • Индекс OHI-S • Экспресс-протоколы чистки • Памятка ухода</span>
+							<span className="sm:hidden"> • OHI-S и профилактика</span>
 						</p>
 					</div>
 
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 flex items-center justify-center rounded-lg bg-transparent border-none text-[var(--ink-muted)] dark:text-slate-400 hover:text-[var(--ink)] dark:hover:text-slate-200 hover:bg-[var(--paper-soft)] dark:hover:bg-slate-800 transition-colors"
+						className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 flex items-center justify-center rounded-lg bg-transparent border-none text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 						aria-label="Закрыть студию гигиены"
 					>
 						✕
@@ -260,296 +264,33 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 				{/* Scrollable Content */}
 				<div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
-					{/* 1. OHI-S Canonical 6-Teeth Calculator (No fake stubs) */}
-					<div className="space-y-2.5 p-3.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl">
-						<div className="flex items-center justify-between flex-wrap gap-2">
-							<div className="flex items-center gap-2">
-								<span className="text-xs font-bold text-[var(--ink-muted)]">
-									Индекс гигиены Грина-Вермиллиона (OHI-S)
-								</span>
-								<span className={`text-xs px-2.5 py-0.5 rounded-full border font-bold ${selectedOhiS.badgeClass}`}>
-									{selectedOhiS.ratingText}
-								</span>
-								<span className="text-xs text-[var(--ink-muted)]">
-									(DI: {selectedOhiS.debris.toFixed(1)}, CI: {selectedOhiS.calculus.toFixed(1)})
-								</span>
-							</div>
-
-							<button
-								type="button"
-								data-testid="hygiene-btn-ideal-ohis-studio"
-								onClick={() => setOhisTeeth(createIdealOhiSTeethScores())}
-								className="px-2.5 py-1 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer"
-							>
-								✓ Идеальная гигиена (все 0.0)
-							</button>
-						</div>
-
-						{/* Сетка 6 индексных зубов */}
-						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-							{CANONICAL_OHI_S_TEETH.map((t) => {
-								const current = ohisTeeth[t.toothNumber] ?? { debris: 0, calculus: 0 };
-								return (
-									<div key={t.toothNumber} className="p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-center flex flex-col gap-1">
-										<div className="text-xs font-bold text-[var(--ink)]">{t.surfaceLabelRu}</div>
-										<div className="text-[10px] text-[var(--ink-muted)]">Налет DI (0..3):</div>
-										<div className="grid grid-cols-4 gap-0.5">
-											{[0, 1, 2, 3].map((val) => (
-												<button
-													key={`d-${val}`}
-													type="button"
-													onClick={() => setOhisTeeth((p) => {
-														const prevEntry = p[t.toothNumber] ?? { debris: 0, calculus: 0 };
-														return { ...p, [t.toothNumber]: { ...prevEntry, debris: val } };
-													})}
-													className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
-														current.debris === val ? "bg-teal-700 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
-													}`}
-												>
-													{val}
-												</button>
-											))}
-										</div>
-										<div className="text-[10px] text-[var(--ink-muted)]">Камень CI (0..3):</div>
-										<div className="grid grid-cols-4 gap-0.5">
-											{[0, 1, 2, 3].map((val) => (
-												<button
-													key={`c-${val}`}
-													type="button"
-													onClick={() => setOhisTeeth((p) => {
-														const prevEntry = p[t.toothNumber] ?? { debris: 0, calculus: 0 };
-														return { ...p, [t.toothNumber]: { ...prevEntry, calculus: val } };
-													})}
-													className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
-														current.calculus === val ? "bg-amber-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
-													}`}
-												>
-													{val}
-												</button>
-											))}
-										</div>
-									</div>
-								);
-							})}
-						</div>
-
-						{/* Быстрые пресеты для совместимости с автотестами */}
-						<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--line-subtle)] overflow-x-auto text-xs">
-							{OHI_S_PRESETS.map((preset) => (
-								<button
-									key={preset.id}
-									type="button"
-									data-testid={`hygiene-preset-${preset.id}`}
-									onClick={() => {
-										if (preset.id === "ideal") {
-											setOhisTeeth(createIdealOhiSTeethScores());
-										} else if (preset.id === "fair") {
-											setOhisTeeth({ 16: { debris: 1, calculus: 0 }, 11: { debris: 1, calculus: 0 }, 26: { debris: 1, calculus: 0 }, 31: { debris: 1, calculus: 0 }, 36: { debris: 1, calculus: 0 }, 46: { debris: 0, calculus: 0 } });
-										} else if (preset.id === "poor") {
-											setOhisTeeth({ 16: { debris: 1, calculus: 1 }, 11: { debris: 1, calculus: 1 }, 26: { debris: 1, calculus: 1 }, 31: { debris: 1, calculus: 1 }, 36: { debris: 1, calculus: 0 }, 46: { debris: 1, calculus: 1 } });
-										} else {
-											setOhisTeeth({ 16: { debris: 2, calculus: 1 }, 11: { debris: 2, calculus: 1 }, 26: { debris: 2, calculus: 2 }, 31: { debris: 2, calculus: 1 }, 36: { debris: 1, calculus: 1 }, 46: { debris: 2, calculus: 2 } });
-										}
-									}}
-									className="px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] font-semibold text-[11px] shrink-0 cursor-pointer"
-								>
-									{preset.label}
-								</button>
-							))}
-						</div>
-					</div>
+					<HygieneStudioOhisSection
+						ohisTeeth={ohisTeeth}
+						setOhisTeeth={setOhisTeeth}
+						selectedOhiS={selectedOhiS}
+					/>
 
 					{activeSection === "protocol" ? (
-						<>
-							{/* 2. Express Cleaning Protocols */}
-							<div>
-								<div className="flex items-center justify-between mb-2">
-									<span className="text-xs font-bold text-[var(--ink-muted)]">
-										Экспресс-протокол чистки у кресла
-									</span>
-									<span className="text-xs text-[var(--ink-muted)]">
-										Автоматическое добавление услуги и списание расходников
-									</span>
-								</div>
-
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-									{CLEANING_PROTOCOLS.map((proto) => {
-										const isSelected = selectedProtocol.id === proto.id;
-										return (
-											<button
-												key={proto.id}
-												type="button"
-												data-testid={`hygiene-protocol-${proto.id}`}
-												onClick={() => setSelectedProtocol(proto)}
-												className={`p-3.5 text-left rounded-xl border transition-all flex flex-col justify-between min-h-[110px] ${
-													isSelected
-														? "border-teal-600 ring-2 ring-teal-500/20 bg-teal-50/40 dark:bg-teal-950/20"
-														: "border-[var(--line)] bg-[var(--paper)] hover:border-slate-300 dark:hover:border-slate-600"
-												}`}
-											>
-												<div>
-													<div className="flex items-center justify-between">
-														<span className="text-sm font-bold text-[var(--ink)]">
-															{proto.title}
-														</span>
-														<span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[var(--ink)]">
-															{proto.primaryService.priceRub.toLocaleString("ru-RU")} ₽
-														</span>
-													</div>
-													<p className="text-xs text-[var(--ink-muted)] mt-1.5 leading-relaxed">
-														{proto.description}
-													</p>
-												</div>
-
-												<div className="flex items-center justify-between text-[11px] text-[var(--ink-muted)] pt-2 border-t border-[var(--line-subtle)] mt-2">
-													<span>Код: {proto.primaryService.code}</span>
-													<span>{proto.durationMinutes} мин</span>
-												</div>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-
-							{/* Consumables Summary */}
-							<div className="p-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl text-xs space-y-1">
-								<div className="font-semibold text-[var(--ink)] flex items-center justify-between">
-									<span>Пакетное списание расходников:</span>
-									<span className="text-emerald-700 dark:text-emerald-400 font-medium">100% автономия</span>
-								</div>
-								<div className="flex flex-wrap gap-1.5 pt-1">
-									{selectedProtocol.consumables.map((item, idx) => (
-										<span
-											key={idx}
-											className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-[var(--ink-muted)] text-[11px]"
-										>
-											{item}
-										</span>
-									))}
-								</div>
-							</div>
-						</>
+						<HygieneStudioProtocolSection
+							selectedProtocol={selectedProtocol}
+							setSelectedProtocol={setSelectedProtocol}
+						/>
 					) : (
-						<>
-							{/* Home Care Section */}
-							<div>
-								<div className="flex items-center justify-between mb-2">
-									<span className="text-xs font-bold text-[var(--ink-muted)]">
-										Профиль пациента
-									</span>
-								</div>
-
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-									{HOME_CARE_PLANS.map((plan) => {
-										const isSelected = selectedCarePlan.id === plan.id;
-										return (
-											<button
-												key={plan.id}
-												type="button"
-												data-testid={`hygiene-homecare-tab-${plan.id}`}
-												onClick={() => setSelectedCarePlan(plan)}
-												className={`p-3 text-left rounded-xl border transition-all ${
-													isSelected
-														? "border-teal-600 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-teal-950/20"
-														: "border-[var(--line)] bg-[var(--paper)]"
-												}`}
-											>
-												<div className="font-bold text-xs sm:text-sm text-[var(--ink)]">
-													{plan.label}
-												</div>
-												<p className="text-[11px] text-[var(--ink-muted)] mt-1">
-													{plan.description}
-												</p>
-											</button>
-										);
-									})}
-								</div>
-							</div>
-
-							{/* Prescribed Items Details */}
-							<div className="space-y-2.5 bg-[var(--paper)] p-4 rounded-xl border border-[var(--line)] text-xs">
-								<div className="flex justify-between items-start pb-2 border-b border-[var(--line-subtle)]">
-									<span className="font-bold text-[var(--ink)] text-sm">Индивидуальный набор средств:</span>
-									<span className="text-teal-700 dark:text-teal-400 font-semibold">
-										Контрольный осмотр: через {selectedCarePlan.recallMonths} мес.
-									</span>
-								</div>
-
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-									<div>
-										<span className="font-semibold text-teal-800 dark:text-teal-300">1. Зубная щетка:</span>
-										<p className="text-[var(--ink-muted)] mt-0.5">{selectedCarePlan.toothbrush}</p>
-									</div>
-									<div>
-										<span className="font-semibold text-teal-800 dark:text-teal-300">2. Монопучковая щетка:</span>
-										<p className="text-[var(--ink-muted)] mt-0.5">{selectedCarePlan.monotuft}</p>
-									</div>
-									<div>
-										<span className="font-semibold text-teal-800 dark:text-teal-300">3. Ершики и флосс:</span>
-										<p className="text-[var(--ink-muted)] mt-0.5">{selectedCarePlan.interdental}</p>
-									</div>
-									<div>
-										<span className="font-semibold text-teal-800 dark:text-teal-300">4. Зубная паста:</span>
-										<p className="text-[var(--ink-muted)] mt-0.5">{selectedCarePlan.toothpaste}</p>
-									</div>
-									<div className="sm:col-span-2">
-										<span className="font-semibold text-teal-800 dark:text-teal-300">5. Ирригатор:</span>
-										<p className="text-[var(--ink-muted)] mt-0.5">{selectedCarePlan.irrigator}</p>
-									</div>
-								</div>
-							</div>
-						</>
+						<HygieneStudioHomeCareSection
+							selectedCarePlan={selectedCarePlan}
+							setSelectedCarePlan={setSelectedCarePlan}
+						/>
 					)}
 				</div>
 
-				{/* Floating Bottom Bar / Actions (Mandate 8am: Exactly ONE Primary CTA) */}
-				<div className="p-3 sm:p-4 border-t border-[var(--line)] dark:border-slate-800 bg-[var(--paper)] dark:bg-slate-900 flex flex-wrap items-center justify-between gap-2.5">
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							data-testid="hygiene-print-memo-btn"
-							onClick={handlePrint}
-							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] dark:border-slate-700 text-[var(--ink)] dark:text-slate-200 bg-[var(--paper-soft)] dark:bg-slate-800 hover:bg-[var(--paper)] dark:hover:bg-slate-700 transition-colors min-h-[44px]"
-						>
-							Печать памятки А4
-						</button>
-						<button
-							type="button"
-							data-testid="hygiene-copy-memo-btn"
-							onClick={handleCopyMemo}
-							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] dark:border-slate-700 text-[var(--ink)] dark:text-slate-200 bg-[var(--paper-soft)] dark:bg-slate-800 hover:bg-[var(--paper)] dark:hover:bg-slate-700 transition-colors min-h-[44px] hidden sm:inline-flex"
-						>
-							Копировать текст
-						</button>
-					</div>
-
-					<div className="flex items-center gap-2 w-full sm:w-auto">
-						<button
-							type="button"
-							onClick={onClose}
-							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] dark:border-slate-700 bg-transparent dark:bg-slate-800 text-[var(--ink-muted)] dark:text-slate-300 hover:text-[var(--ink)] dark:hover:text-slate-100 hover:bg-[var(--paper-soft)] dark:hover:bg-slate-700 transition-colors min-h-[44px]"
-						>
-							Отмена
-						</button>
-
-						{/* Primary CTA (Exactly ONE, color #0d9488, NEVER disabled) */}
-						<button
-							type="button"
-							data-testid="hygiene-commit-protocol-btn"
-							onClick={handleCommit}
-							className="flex-1 sm:flex-none px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:bg-[var(--primary-strong)] rounded-lg shadow-sm transition-all min-h-[44px] flex items-center justify-center gap-1.5 whitespace-nowrap"
-						>
-							{isSubmitting ? (
-								"Фиксация..."
-							) : (
-								<>
-									<span className="hidden sm:inline">✓ Зафиксировать протокол гигиены</span>
-									<span className="sm:hidden">✓ Зафиксировать протокол</span>
-								</>
-							)}
-						</button>
-					</div>
-				</div>
+				{/* Floating Bottom Bar (Mandate 8am: Exactly ONE Primary CTA) */}
+				<HygieneStudioFooter
+					onClose={onClose}
+					handlePrint={handlePrint}
+					handleCopyMemo={handleCopyMemo}
+					handleCommit={handleCommit}
+					isSubmitting={isSubmitting}
+				/>
 			</div>
 		</div>
 	);

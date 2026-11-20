@@ -48,9 +48,8 @@ async function applyTheme(page, theme) {
     document.body.classList.toggle("dark", dark);
     document.body.classList.toggle("light", !dark);
     document.documentElement.style.colorScheme = th;
-    localStorage.setItem("dente_theme", th);
-    localStorage.setItem("dente_theme_mode", th);
-    localStorage.setItem("theme", th);
+    window.location.hash = "#hygiene";
+    window.dispatchEvent(new CustomEvent("dente:open-hygiene", { detail: { patientName: "Смирнов Алексей (34 года)" } }));
   }, { dark: isDark, th: theme });
   await wait(800);
 }

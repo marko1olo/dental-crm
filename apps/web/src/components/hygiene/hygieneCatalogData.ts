@@ -300,9 +300,18 @@ export async function deductWarehouseHygieneConsumables(options: {
 }): Promise<boolean> {
 	const orgId = resolveHygieneOrganizationId(options.organizationId);
 	try {
-		const response = await fetch(`/api/inventory/${encodeURIComponent(orgId)}/quick-writeoff-visit-bundle`, {
+		const baseUrl = typeof window !== "undefined" && window.location?.origin ? window.location.origin : "http://127.0.0.1:4100";
+		const url = `${baseUrl}/api/inventory/${encodeURIComponent(orgId)}/quick-writeoff-visit-bundle`;
+		const token = typeof window !== "undefined" && typeof localStorage !== "undefined"
+			? (localStorage.getItem("dente_active_session_token") || localStorage.getItem("dente_staff_token") || localStorage.getItem("dente_clinic_token"))
+			: null;
+		const headers: Record<string, string> = { "Content-Type": "application/json" };
+		if (token) {
+			headers["Authorization"] = `Bearer ${token}`;
+		}
+		const response = await fetch(url, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers,
 			body: JSON.stringify({
 				visitType: "hygiene",
 				visitId: options.visitId,
@@ -312,13 +321,17 @@ export async function deductWarehouseHygieneConsumables(options: {
 		if (response.ok) {
 			const data = await response.json();
 			const count = data.deductedItems?.length ?? 5;
-			window.dispatchEvent(new CustomEvent("dente-inventory-updated", {
-				detail: { type: "quick-writeoff-visit-bundle", visitType: "hygiene", deductedItems: data.deductedItems },
-			}));
+			if (typeof window !== "undefined" && typeof CustomEvent !== "undefined") {
+				window.dispatchEvent(new CustomEvent("dente-inventory-updated", {
+					detail: { type: "quick-writeoff-visit-bundle", visitType: "hygiene", deductedItems: data.deductedItems },
+				}));
+			}
 			showToast(`Склад: списан комплект профгигиены (${count} поз., мягкий овердрафт активен)`, "success", 3000);
 			return true;
 		}
-		console.warn("[HygieneCatalog] Warehouse deduction responded with status:", response.status);
+		if (response.status !== 401) {
+			console.warn("[HygieneCatalog] Warehouse deduction responded with status:", response.status);
+		}
 	} catch (err) {
 		console.warn("[HygieneCatalog] Warehouse deduction network failure:", err);
 		// Офлайн-автономия врача: при сбое сети приём не блокируется
@@ -486,17 +499,17 @@ export function printHygieneHomeCareMemo(params: {
 				h1 { font-size: 13pt; margin: 0 0 12px 0; color: #0f172a; }
 				.score-box { background: #f0fdfa; border: 1px solid #ccfbf1; padding: 10px; border-radius: 8px; margin-bottom: 16px; }
 				.item { margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0; }
-				.item-title { font-size: 9pt; font-weight: 700; color: #0d9488; text-transform: uppercase; }
+				.item-title { font-size: 9pt; font-weight: 700; color: #0d9488; }
 				.item-desc { font-size: 10pt; }
 				.footer { margin-top: 24px; font-size: 9pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 8px; }
 			</style>
 		</head>
 		<body>
 			<div class="header">
-				<div><div class="logo">DENTE CLINIC</div><div class="sub">Персональная карта домашнего ухода</div></div>
+				<div><div class="logo">DENTE Clinic</div><div class="sub">Персональная карта домашнего ухода</div></div>
 				<div style="text-align: right; font-size: 9pt;"><div><strong>Пациент:</strong> ${params.patientName}</div><div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div></div>
 			</div>
-			<h1>РЕКОМЕНДАЦИИ ПО ИНДИВИДУАЛЬНОЙ ГИГИЕНЕ</h1>
+			<h1>Рекомендации по индивидуальной гигиене</h1>
 			<div class="score-box"><strong>Текущий индекс гигиены OHI-S:</strong> ${params.ohiS.score} — ${params.ohiS.label}<br/><span style="font-size: 9pt; color: #475569;">${params.ohiS.statusDescription}</span></div>
 			<div class="item"><div class="item-title">1. Основная зубная щетка</div><div class="item-desc">${params.carePlan.toothbrush}</div></div>
 			<div class="item"><div class="item-title">2. Монопучковая щетка</div><div class="item-desc">${params.carePlan.monotuft}</div></div>
