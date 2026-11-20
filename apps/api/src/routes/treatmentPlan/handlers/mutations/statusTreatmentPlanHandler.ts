@@ -11,10 +11,11 @@ import {
 	treatmentPlanItemsNew,
 	treatmentPlans,
 } from "../../../../db/schema.js";
-import { rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, sumKopecks } from "@dental/shared";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { formatInvoiceNumber } from "../../../invoiceRoutes/invoiceCalculationHelpers.js";
 import { LEDGER_ID_PREFIX_LENGTH } from "../../../odontogram/types.js";
+import { calculateEffectivePlanDiscount } from "../treatmentPlanTotalsCalculator.js";
 import { cancelRejectedPlanTierLedgerItems } from "./planLedgerSync.js";
 import { updateTreatmentPlanStatusSchema } from "./schemas.js";
 
@@ -55,10 +56,69 @@ async function createInvoiceForApprovedPlan(
 		planId: string;
 		planName: string;
 		planTotalPriceRub?: string | number | null;
+		discountMode?: string | null | undefined;
+		planDiscountPercent?: number | null | undefined;
+		planDiscountRub?: number | null | undefined;
 	},
 ): Promise<CreatedInvoiceSummary> {
 	const { organizationId, patientId, planId, planName, planTotalPriceRub } = params;
 	const now = new Date();
+
+	// DEF-02: Идемпотентность создания счета при повторном утверждении плана
+	const [existingInvoice] = await tx
+		.select()
+		.from(patientInvoices)
+		.where(
+			and(
+				eq(patientInvoices.organizationId, organizationId),
+				eq(patientInvoices.treatmentPlanId, planId),
+			),
+		)
+		.limit(1);
+
+	if (existingInvoice) {
+		const existingItems = await tx
+			.select()
+			.from(invoiceItems)
+			.where(
+				and(
+					eq(invoiceItems.organizationId, organizationId),
+					eq(invoiceItems.invoiceId, existingInvoice.id),
+				),
+			);
+
+		const [patient] = await tx
+			.select({ id: patients.id, fullName: patients.fullName })
+			.from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)))
+			.limit(1);
+
+		const existingInvoiceNumber = formatInvoiceNumber("invoice", patientId) || existingInvoice.id;
+
+		return {
+			id: existingInvoice.id,
+			number: existingInvoiceNumber,
+			invoiceNumber: existingInvoiceNumber,
+			patientId,
+			patientName: patient?.fullName || "Пациент",
+			treatmentPlanId: planId,
+			visitId: existingInvoice.visitId,
+			totalAmountRub: existingInvoice.totalAmountRub ?? Number(existingInvoice.totalRub || 0),
+			status: existingInvoice.status || "draft",
+			issuedAt: existingInvoice.issuedAt ? new Date(existingInvoice.issuedAt).toISOString() : now.toISOString(),
+			createdAt: existingInvoice.createdAt ? new Date(existingInvoice.createdAt).toISOString() : now.toISOString(),
+			items: existingItems.map((it) => ({
+				id: it.id,
+				name: it.name,
+				quantity: Number(it.quantity || 1),
+				unitPriceRub: kopecksToRubles(it.unitPriceKopecks || 0),
+				priceRub: kopecksToRubles(it.totalPriceKopecks || 0),
+				serviceCode: it.serviceCode || undefined,
+				toothCode: it.toothCode || undefined,
+			})),
+		};
+	}
+
 	const invoiceId = randomUUID();
 
 	const planItems = await tx
@@ -87,15 +147,62 @@ async function createInvoiceForApprovedPlan(
 	const itemsToInsert: Array<typeof invoiceItems.$inferInsert> = [];
 
 	if (planItems.length > 0) {
-		for (const it of planItems) {
+		const rawLineData = planItems.map((it) => {
 			const qty = Math.max(1, it.quantity || 1);
 			const unitPrice = Number(it.price || 0);
-			const discount = Number(it.discount || 0);
-			const lineTotal = Math.max(0, unitPrice * qty - discount);
-			totalAmountRub += lineTotal;
-
+			const lineDiscountRub = Number(it.discount || 0);
 			const unitPriceKopecks = rublesToKopecks(unitPrice);
-			const lineTotalKopecks = rublesToKopecks(lineTotal);
+			const lineDiscountKopecks = rublesToKopecks(lineDiscountRub);
+			const lineBaseKopecks = Math.max(0, unitPriceKopecks * qty - lineDiscountKopecks);
+			return {
+				it,
+				qty,
+				unitPrice,
+				lineDiscountRub,
+				unitPriceKopecks,
+				lineBaseKopecks,
+			};
+		});
+
+		const sumOfLinesKopecks = sumKopecks(rawLineData.map((l) => l.lineBaseKopecks));
+
+		// Мандат 8e: Полный учет скидки плана (вплоть до 100% гарантии врача = 0 ₽)
+		const effectiveDiscount = calculateEffectivePlanDiscount({
+			baseTotalKopecks: sumOfLinesKopecks,
+			discountMode: params.discountMode ?? "plan_fixed",
+			planDiscountPercent: Number(params.planDiscountPercent ?? 0),
+			planDiscountRub: Number(params.planDiscountRub ?? 0),
+		});
+
+		const targetFinalTotalKopecks = effectiveDiscount.finalTotalKopecks;
+		const totalDiscountToApplyKopecks = effectiveDiscount.discountKopecks;
+		let remainingDiscountKopecks = totalDiscountToApplyKopecks;
+
+		for (let i = 0; i < rawLineData.length; i++) {
+			const line = rawLineData[i]!;
+			let lineAdditionalDiscountKopecks = 0;
+
+			if (totalDiscountToApplyKopecks > 0 && sumOfLinesKopecks > 0) {
+				if (i === rawLineData.length - 1) {
+					lineAdditionalDiscountKopecks = Math.min(line.lineBaseKopecks, remainingDiscountKopecks);
+				} else {
+					lineAdditionalDiscountKopecks = Math.min(
+						line.lineBaseKopecks,
+						Math.round((line.lineBaseKopecks * totalDiscountToApplyKopecks) / sumOfLinesKopecks),
+					);
+					lineAdditionalDiscountKopecks = Math.min(lineAdditionalDiscountKopecks, remainingDiscountKopecks);
+				}
+				remainingDiscountKopecks -= lineAdditionalDiscountKopecks;
+			}
+
+			const lineFinalKopecks = Math.max(0, line.lineBaseKopecks - lineAdditionalDiscountKopecks);
+			const lineFinalRub = kopecksToRubles(lineFinalKopecks);
+			const fullLinePriceKopecks = line.unitPriceKopecks * line.qty;
+			const totalLineDiscountKopecks = Math.max(0, fullLinePriceKopecks - lineFinalKopecks);
+			const effectiveDiscountPercent = fullLinePriceKopecks > 0
+				? Math.min(100, Math.round((totalLineDiscountKopecks / fullLinePriceKopecks) * 100))
+				: 0;
+
 			const itemId = randomUUID();
 
 			itemsToInsert.push({
@@ -103,33 +210,47 @@ async function createInvoiceForApprovedPlan(
 				organizationId,
 				invoiceId,
 				priceListItemId:
-					it.priceId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.priceId)
-						? it.priceId
+					line.it.priceId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(line.it.priceId)
+						? line.it.priceId
 						: null,
-				name: it.name || "Стоматологическая услуга плана лечения",
-				quantity: String(qty),
-				unitPriceKopecks,
-				discountPercent: "0",
-				totalPriceKopecks: lineTotalKopecks,
-				serviceCode: it.priceId || null,
-				toothCode: it.toothNumber ? String(it.toothNumber) : null,
+				name: line.it.name || "Стоматологическая услуга плана лечения",
+				quantity: String(line.qty),
+				unitPriceKopecks: line.unitPriceKopecks,
+				discountPercent: String(effectiveDiscountPercent),
+				totalPriceKopecks: lineFinalKopecks,
+				serviceCode: line.it.priceId || null,
+				toothCode: line.it.toothNumber ? String(line.it.toothNumber) : null,
 				createdAt: now,
 			});
 
 			returnedItems.push({
 				id: itemId,
-				name: it.name || "Стоматологическая услуга плана лечения",
-				quantity: qty,
-				unitPriceRub: unitPrice,
-				priceRub: lineTotal,
-				serviceCode: it.priceId || undefined,
-				toothCode: it.toothNumber ? String(it.toothNumber) : undefined,
+				name: line.it.name || "Стоматологическая услуга плана лечения",
+				quantity: line.qty,
+				unitPriceRub: line.unitPrice,
+				priceRub: lineFinalRub,
+				serviceCode: line.it.priceId || undefined,
+				toothCode: line.it.toothNumber ? String(line.it.toothNumber) : undefined,
 			});
 		}
+
+		totalAmountRub = kopecksToRubles(targetFinalTotalKopecks);
 	} else {
-		totalAmountRub = Number(planTotalPriceRub || 0);
-		const totalKopecks = rublesToKopecks(totalAmountRub);
+		const rawTotalRub = Number(planTotalPriceRub || 0);
+		const baseTotalKopecks = rublesToKopecks(rawTotalRub);
+		const effectiveDiscount = calculateEffectivePlanDiscount({
+			baseTotalKopecks,
+			discountMode: params.discountMode ?? "plan_fixed",
+			planDiscountPercent: Number(params.planDiscountPercent ?? 0),
+			planDiscountRub: Number(params.planDiscountRub ?? 0),
+		});
+
+		const finalTotalKopecks = effectiveDiscount.finalTotalKopecks;
+		totalAmountRub = kopecksToRubles(finalTotalKopecks);
 		const itemId = randomUUID();
+		const discountPercent = baseTotalKopecks > 0
+			? Math.min(100, Math.round((effectiveDiscount.discountKopecks / baseTotalKopecks) * 100))
+			: 0;
 
 		itemsToInsert.push({
 			id: itemId,
@@ -137,9 +258,9 @@ async function createInvoiceForApprovedPlan(
 			invoiceId,
 			name: `План лечения: «${planName}»`,
 			quantity: "1",
-			unitPriceKopecks: totalKopecks,
-			discountPercent: "0",
-			totalPriceKopecks: totalKopecks,
+			unitPriceKopecks: baseTotalKopecks,
+			discountPercent: String(discountPercent),
+			totalPriceKopecks: finalTotalKopecks,
 			createdAt: now,
 		});
 
@@ -147,7 +268,7 @@ async function createInvoiceForApprovedPlan(
 			id: itemId,
 			name: `План лечения: «${planName}»`,
 			quantity: 1,
-			unitPriceRub: totalAmountRub,
+			unitPriceRub: rawTotalRub,
 			priceRub: totalAmountRub,
 		});
 	}
@@ -242,6 +363,7 @@ export async function handleApproveTreatmentPlan(
 						or(
 							eq(treatmentItems.treatmentPlanId, id),
 							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+							sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${id} AND organization_id = ${organizationId})`,
 						),
 					),
 				);
@@ -259,8 +381,11 @@ export async function handleApproveTreatmentPlan(
 				organizationId,
 				patientId: existing.patientId,
 				planId: id,
-				planName: updated.name || updated.title || "Комплексный план лечения",
+				planName: updated.name || "Комплексный план лечения",
 				planTotalPriceRub: updated.totalPriceRub || updated.totalPrice,
+				discountMode: updated.discountMode,
+				planDiscountPercent: updated.planDiscountPercent ? Number(updated.planDiscountPercent) : 0,
+				planDiscountRub: updated.planDiscountRub ? Number(updated.planDiscountRub) : 0,
 			});
 		}
 
@@ -359,6 +484,26 @@ export async function handleUpdateTreatmentPlanStatus(
 			.returning();
 
 		if (updated && isApproved) {
+			const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
+			await tx
+				.update(treatmentItems)
+				.set({
+					status: "approved",
+					treatmentPlanId: id,
+				})
+				.where(
+					and(
+						eq(treatmentItems.organizationId, organizationId),
+						eq(treatmentItems.patientId, existing.patientId),
+						eq(treatmentItems.status, "proposed"),
+						or(
+							eq(treatmentItems.treatmentPlanId, id),
+							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+							sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${id} AND organization_id = ${organizationId})`,
+						),
+					),
+				);
+
 			await cancelRejectedPlanTierLedgerItems(tx, {
 				organizationId,
 				patientId: existing.patientId,
@@ -370,8 +515,11 @@ export async function handleUpdateTreatmentPlanStatus(
 				organizationId,
 				patientId: existing.patientId,
 				planId: id,
-				planName: updated.name || updated.title || "Комплексный план лечения",
+				planName: updated.name || "Комплексный план лечения",
 				planTotalPriceRub: updated.totalPriceRub || updated.totalPrice,
+				discountMode: updated.discountMode,
+				planDiscountPercent: updated.planDiscountPercent ? Number(updated.planDiscountPercent) : 0,
+				planDiscountRub: updated.planDiscountRub ? Number(updated.planDiscountRub) : 0,
 			});
 		}
 

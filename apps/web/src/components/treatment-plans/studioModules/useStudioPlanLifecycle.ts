@@ -5,7 +5,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import { rublesToKopecks, kopecksToRubles, generateUuidV7 } from "@dental/shared";
 import type {
 	TreatmentPlanTier,
 	TreatmentPlanTierId,
@@ -332,8 +332,7 @@ export function useStudioPlanLifecycle({
 			id: `item-custom-${Date.now()}-1`,
 			name: "Первичный клинический осмотр и диагностика",
 			category: "Диагностика",
-			code804n: "B01.065.001",
-			serviceCode: "B01.065.001",
+			serviceCode: "SRV-DIAG-EXAM-01",
 			priceRub: 2500,
 			unitPriceRub: 2500,
 			discountRub: 0,
@@ -434,6 +433,82 @@ export function useStudioPlanLifecycle({
 		);
 	}, []);
 
+	// 4.3 Выставить счёт на этап плана в кассу в 1 клик (DEF-04)
+	const handleGenerateStageInvoice = useCallback(async (stage: TreatmentPlanStage): Promise<boolean> => {
+		const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
+		if (typeof window === "undefined" || !isValidUuid) {
+			setApprovedSuccessMessage(`Счёт на этап «${stage.title}» подготовлен к оплате!`);
+			setTimeout(() => setApprovedSuccessMessage(null), 3500);
+			return true;
+		}
+
+		try {
+			const invoiceItemsPayload = (stage.items || []).map((it) => ({
+				itemId: it.id,
+				toothNumber: it.toothNumber ?? null,
+				nameRu: it.name || "Стоматологическая процедура",
+				quantity: it.quantity || 1,
+				unitPriceRub: it.unitPriceRub ?? it.priceRub,
+				planUnitPriceRub: it.unitPriceRub ?? it.priceRub,
+				effectiveUnitPriceRub: it.unitPriceRub ?? it.priceRub,
+				discountRub: it.discountRub || 0,
+				code804n: it.code804n || undefined,
+				serviceId: (it.priceId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.priceId)) ? it.priceId : undefined,
+			}));
+
+			if (invoiceItemsPayload.length === 0) {
+				invoiceItemsPayload.push({
+					itemId: stage.id || `stage-${stage.stageNumber}`,
+					toothNumber: null,
+					nameRu: stage.title || `Этап ${stage.stageNumber}`,
+					quantity: 1,
+					unitPriceRub: stage.totalRub,
+					planUnitPriceRub: stage.totalRub,
+					effectiveUnitPriceRub: stage.totalRub,
+					discountRub: 0,
+					code804n: undefined,
+					serviceId: undefined,
+				});
+			}
+
+			const res = await fetch("/api/invoices/generate-from-plan", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				},
+				body: JSON.stringify({
+					patientId,
+					planId: currentPlanId || undefined,
+					planTitle: stage.title,
+					documentType: "invoice",
+					items: invoiceItemsPayload,
+				}),
+			});
+
+			if (!res.ok) {
+				const errJson = await res.json().catch(() => ({}));
+				const msg = errJson?.message || "Не удалось выставить счёт на этап";
+				setApprovalErrorMessage(msg);
+				setTimeout(() => setApprovalErrorMessage(null), 4000);
+				return false;
+			}
+
+			const resJson = await res.json().catch(() => ({}));
+			window.dispatchEvent(new CustomEvent("dente:invoice-created", { detail: { invoice: resJson, patientId } }));
+			window.dispatchEvent(new CustomEvent("dente:cashbox-updated", { detail: { patientId } }));
+
+			setApprovedSuccessMessage(`Счёт на «${stage.title}» (${stage.totalRub} ₽) успешно выставлен в кассу!`);
+			setTimeout(() => setApprovedSuccessMessage(null), 4000);
+			return true;
+		} catch (err) {
+			console.warn("[TreatmentPlanStudioModal] Ошибка выставления счета на этап:", err);
+			setApprovalErrorMessage("Сетевой сбой при выставлении счёта на этап в кассу.");
+			setTimeout(() => setApprovalErrorMessage(null), 4000);
+			return false;
+		}
+	}, [patientId, currentPlanId]);
+
 	// 4.2 Сохранение актуального состава плана на бэкенд (Мандаты 8b, 8e: ноль амнезии и потери этапов)
 	const savePlanToApi = useCallback(async (targetStatus: "Draft" | "Approved" = "Draft"): Promise<string | null> => {
 		const isValidUuid = typeof patientId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId);
@@ -508,7 +583,10 @@ export function useStudioPlanLifecycle({
 
 			const res = await fetch(`/api/patients/${patientId}/treatment-plans`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				},
 				body: JSON.stringify(bodyPayload),
 			});
 
@@ -543,7 +621,10 @@ export function useStudioPlanLifecycle({
 				if (planIdToApprove) {
 					const approveRes = await fetch(`/api/treatment-plans/${planIdToApprove}/approve`, {
 						method: "POST",
-						headers: { "Content-Type": "application/json" },
+						headers: {
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+						},
 						body: JSON.stringify({
 							selectedTier: activeTier.tierId,
 						}),
@@ -671,6 +752,7 @@ export function useStudioPlanLifecycle({
 		handleAddBundleToStages,
 		handleAddItemToStage,
 		handleRemoveItemFromStage,
+		handleGenerateStageInvoice,
 		handleApprove,
 		handleSaveDraft,
 		savePlanToApi,

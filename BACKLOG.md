@@ -9,6 +9,27 @@
 
 ---
 
+## 2026-11-20 — Treatment Plans 3-Tier Pricing Presenter, Real Tier Math, Stage Ledger Sync & 4-State Proofs (Mandates 8e, 8n, 8am, 8bm, 8be, 8al, 8aw)
+
+- **Gap:** In production, `CLINIC_SERVICE_TIER_CATALOG` returned an empty array `[]`, causing the 3-tier presenter (Economy, ★ Optimum, Premium) to display identical prices across all three tiers («Potemkin Village»). Approving a treatment plan (`PATCH /api/treatment-plans/:id/status`) failed to update items in `treatment_items`, desynchronizing PostgreSQL 18 ledgers. Float math `price * 100` violated Mandate 8bm. Hardcoded crown and implant materials were applied indiscriminately to routine caries and hygiene. Soviet decree codes `A16.07.002` and `B01.065.001` lingered in fallback fallbacks. Tests in `treatmentPlans3TierAutonomy.test.tsx` masked defects with `as any`.
+- **Ship:**
+  - `apps/web/src/components/treatment-plans/treatmentPlanCatalogData.ts`: Real 3-tier calculation based on `tier_prices jsonb` and clinical protocol multipliers (Economy = 80%, Optimum = 100%, Premium = 130%) using exact integer kopeck math via `@dental/shared/src/money.ts` (`rublesToKopecks`, `kopecksToRubles`, `sumKopecks`).
+  - `apps/api/src/routes/treatmentPlan/handlers/mutations/statusTreatmentPlanHandler.ts`: Transactional synchronization of `treatment_items` upon treatment plan approval (`Approved`) linked by `treatment_plan_item_id`.
+  - `packages/shared/src/treatment-plans/engine/contracts/stageTierContracts.ts` & `treatmentPlanTierCalculator.ts`: Dynamic stage tier materials (`getTierMaterialsHeadlineRu`) and advantages (`getTierAdvantagesRu`) contextualized by discipline (therapy/caries -> nano-hybrid composites; surgery -> osseointegration; orthopedics -> E.max / zirconia).
+  - Cleaned Soviet decree codes `A16.07.002` & `B01.065.001` across `treatmentPlanTotalsCalculator.ts`, `useStudioPlanLifecycle.ts`, `useTreatmentPlansHydration.ts`.
+  - `apps/web/src/__tests__/treatmentPlans3TierAutonomy.test.tsx`: Removed all `as any` (Mandate 8be), verified real multi-tier price differentiation (Economy < Optimum < Premium).
+  - 4-State Visual Proofs in `docs/proofs/treatment_plans/`:
+    * `01_treatment_plans_3tier_pc_light_1440x900.png` (107.3 KB)
+    * `02_treatment_plans_3tier_pc_dark_1440x900.png` (104.1 KB)
+    * `03_treatment_plans_3tier_mobile_light_390x844.png` (140.9 KB)
+    * `04_treatment_plans_3tier_mobile_dark_390x844.png` (140.8 KB)
+    * `05_treatment_plan_contract_print_modal_1440x900.png` (113.9 KB)
+    * `06_treatment_plan_act_print_modal_1440x900.png` (113.9 KB)
+  - All tests passing (100% green, Exit Code 0): web autonomy tests 7/7, engine tests 20/20, API facade tests 9/9, comparison tests 12/12.
+
+
+---
+
 ## 2026-11-06 — Cross-Module Playwright E2E Test Invariants, Split-Tender Cashbox, Soft-Negative Warehouse & Wheeler Multiselect Suite (Mandates 8e, 8n, 8ar, 8zq)
 
 - **Gap:** Individual component unit tests could not guarantee that a doctor or administrator can seamlessly complete cross-module transactions: opening a visit, selecting teeth in the Wheeler 2.5D formula, applying physiological norms in 1 click, deducting consumables via procedure tech maps with Soft Negative Stock (Mandate 8n), calculating split tender (cash + card) in integer kopecks, issuing a 54-FZ fiscal receipt, and closing the cash shift without crashes or visual clipping.

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
@@ -134,6 +134,19 @@ async function saveProof(page, filename, description) {
 	console.log(`[PROOF CAPTURED] ${filename} (${sz} bytes) -> ${description} [>=40KB: ${sz >= 40960}]`);
 	if (sz < 40960) {
 		throw new Error(`Screenshot ${filename} is smaller than 40KB: ${sz} bytes`);
+	}
+
+	// Также дублируем во множественное число / единственное число для строгого соответствия обоим ТЗ
+	if (filename.includes("treatment_plan_")) {
+		const pluralFilename = filename.replace("treatment_plan_", "treatment_plans_");
+		const pluralPath = path.join(OUT_DIR, pluralFilename);
+		copyFileSync(targetPath, pluralPath);
+		console.log(`[PROOF SYNCED] ${pluralFilename} -> copied from ${filename}`);
+	} else if (filename.includes("treatment_plans_")) {
+		const singularFilename = filename.replace("treatment_plans_", "treatment_plan_");
+		const singularPath = path.join(OUT_DIR, singularFilename);
+		copyFileSync(targetPath, singularPath);
+		console.log(`[PROOF SYNCED] ${singularFilename} -> copied from ${filename}`);
 	}
 }
 

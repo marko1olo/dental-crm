@@ -75,7 +75,7 @@ export function calculateTreatmentPlanItemSummary(
 		...(item.toothNumber !== null && item.toothNumber !== undefined
 			? { toothNumber: item.toothNumber }
 			: {}),
-		serviceCode: priceId || "A16.07.002",
+		serviceCode: priceId || item.id || "SRV-ITEM",
 		serviceTitle: name || "Медицинская услуга",
 		unitPriceRub: unitPrice,
 		planDiscountRub: discountRub,

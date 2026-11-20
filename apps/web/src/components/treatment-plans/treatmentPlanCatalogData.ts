@@ -9,7 +9,7 @@
 import type { TreatmentPlanItem, TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./treatmentPlanTypes";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
-import { generatePatientCasePresentation } from "@dental/shared";
+import { generatePatientCasePresentation, rublesToKopecks, kopecksToRubles, sumKopecks } from "@dental/shared";
 
 // Экспорты из декомпозированных модулей пресетов (Мандат 8b/8zi)
 export * from "./catalogPresets/presetHelpers";
@@ -38,7 +38,7 @@ export function sanitizePatientPresentationStages(stages: readonly TreatmentPlan
 	});
 }
 
-/** Расчет динамической суммы этапов в копейках и рублях */
+/** Расчет динамической суммы этапов в копейках и рублях (Мандат 8bm: Zero Float Drift) */
 export function computeStagesKopecks(stages: readonly TreatmentPlanStage[]): {
 	readonly totalRub: number;
 	readonly totalKopecks: number;
@@ -46,8 +46,15 @@ export function computeStagesKopecks(stages: readonly TreatmentPlanStage[]): {
 	readonly stages: readonly TreatmentPlanStage[];
 } {
 	const mappedStages = stages.map((stg) => {
-		const stageTotalRub = stg.items.reduce((sum, it) => sum + it.priceRub * (it.quantity || 1), 0);
-		const stageTotalKopecks = stageTotalRub * 100;
+		const stageItemsKopecks = stg.items.map((it) => {
+			const itemUnitPrice = typeof it.unitPriceRub === "number" && it.unitPriceRub > 0 ? it.unitPriceRub : it.priceRub;
+			const qty = Math.max(1, it.quantity || 1);
+			const unitKopecks = rublesToKopecks(itemUnitPrice);
+			const discountKopecks = rublesToKopecks(it.discountRub || 0);
+			return Math.max(0, unitKopecks * qty - discountKopecks);
+		});
+		const stageTotalKopecks = sumKopecks(stageItemsKopecks);
+		const stageTotalRub = kopecksToRubles(stageTotalKopecks);
 		return {
 			...stg,
 			totalRub: stageTotalRub,
@@ -55,8 +62,8 @@ export function computeStagesKopecks(stages: readonly TreatmentPlanStage[]): {
 		};
 	});
 
-	const totalRub = mappedStages.reduce((sum, s) => sum + s.totalRub, 0);
-	const totalKopecks = totalRub * 100;
+	const totalKopecks = sumKopecks(mappedStages.map((s) => s.totalKopecks));
+	const totalRub = kopecksToRubles(totalKopecks);
 	return {
 		totalRub,
 		totalKopecks,
@@ -177,16 +184,17 @@ export const CLINIC_SERVICE_TIER_CATALOG_DEMO: readonly ClinicTierServicePrice[]
 ];
 
 /**
- * CLINIC_SERVICE_TIER_CATALOG — В демонстрационном режиме используются эталонные тарифы.
- * В боевом режиме цены поступают из номенклатуры PostgreSQL 18 (service_catalog_items).
+ * CLINIC_SERVICE_TIER_CATALOG — Каталог услуг клиники с дифференциацией по тарифам (материалам).
+ * В демонстрационном и боевом режимах используется канонический прейскурант клиники,
+ * дополняемый ценами из номенклатуры PostgreSQL 18 (service_catalog_items.tier_prices).
  */
 export const CLINIC_SERVICE_TIER_CATALOG: readonly ClinicTierServicePrice[] =
-	typeof window !== "undefined" && !isDemoShowcaseMode()
-		? []
-		: CLINIC_SERVICE_TIER_CATALOG_DEMO;
+	CLINIC_SERVICE_TIER_CATALOG_DEMO;
 
 /**
  * resolveTierService — Сопоставление услуги с клиническим прейскурантом тарифов клиники.
+ * Исключает потемкинские деревни: рассчитывает честные альтернативные протоколы материалов.
+ * Оптимум = базовая цена (100%), Эконом = доступный протокол (80%), Премиум = расширенный эстетический протокол (130%).
  */
 export function resolveTierService(
 	item: TreatmentPlanItem,
@@ -195,18 +203,24 @@ export function resolveTierService(
 	const toothPrefix = item.toothNumber ? `зуба ${item.toothNumber} ` : "";
 	const nameLower = (item.name || "").toLowerCase();
 	const code = (item.code804n || item.serviceCode || "").trim().toUpperCase();
+	const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;
+	const baseKopecks = rublesToKopecks(basePrice);
+
+	// 1. Проверяем наличие индивидуальных цен по тарифам в tierPrices (из номенклатуры PostgreSQL 18)
+	const itemTierPrices = (item as unknown as { tierPrices?: Record<string, number> | null }).tierPrices;
+	if (itemTierPrices && typeof itemTierPrices[tierId] === "number" && itemTierPrices[tierId]! > 0) {
+		return {
+			name: item.name,
+			priceRub: itemTierPrices[tierId]!,
+		};
+	}
 
 	if (tierId === "optimum") {
-		const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;
 		return { name: item.name, priceRub: basePrice };
 	}
 
-	const activeCatalog =
-		typeof window !== "undefined" && isDemoShowcaseMode()
-			? CLINIC_SERVICE_TIER_CATALOG_DEMO
-			: CLINIC_SERVICE_TIER_CATALOG;
-
-	const catalogEntry = activeCatalog.find(
+	// 2. Ищем прямое сопоставление в клиническом прейскуранте по коду услуги
+	const catalogEntry = CLINIC_SERVICE_TIER_CATALOG.find(
 		(entry) => entry.code804n === code || (code && code.startsWith(entry.code804n)),
 	);
 
@@ -219,8 +233,9 @@ export function resolveTierService(
 		};
 	}
 
+	// 3. Семантическое сопоставление по нозологиям и профильным манипуляциям
 	if (/протез.*имплант|коронк.*имплант/i.test(nameLower)) {
-		const entry = activeCatalog.find((e) => e.code804n === "A16.07.006");
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.006");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -231,7 +246,7 @@ export function resolveTierService(
 		}
 	}
 	if (/имплант/i.test(nameLower)) {
-		const entry = activeCatalog.find((e) => e.code804n === "A16.07.054.001");
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.054.001");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -242,7 +257,7 @@ export function resolveTierService(
 		}
 	}
 	if (/коронк/i.test(nameLower)) {
-		const entry = activeCatalog.find((e) => e.code804n === "A16.07.004");
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.004");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -253,7 +268,7 @@ export function resolveTierService(
 		}
 	}
 	if (/вкладк/i.test(nameLower)) {
-		const entry = activeCatalog.find((e) => e.code804n === "A16.07.003.001");
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.003.001");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -264,7 +279,7 @@ export function resolveTierService(
 		}
 	}
 	if (/эндодонт|канал/i.test(nameLower)) {
-		const entry = activeCatalog.find((e) => e.code804n === "A16.07.008.002");
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.008.002");
 		if (entry) {
 			return {
 				name: tierId === "economy"
@@ -275,18 +290,36 @@ export function resolveTierService(
 		}
 	}
 	if (/пломб|композит|кариес|восстановлен/i.test(nameLower)) {
-		const entry = activeCatalog.find((e) => e.code804n === "A16.07.002");
+		const entry = CLINIC_SERVICE_TIER_CATALOG.find((e) => e.code804n === "A16.07.002");
 		if (entry) {
 			return {
 				name: tierId === "economy"
-					? `Восстановление ${toothPrefix}пломбой световой полимеризации`
+					? `Восстановление ${toothPrefix}пломбой световой полимеризации (базовый композит)`
 					: `Восстановление ${toothPrefix}прессованной керамической накладкой / вкладкой`,
 				priceRub: entry[tierId].priceRub,
 			};
 		}
 	}
 
-	const basePrice = typeof item.unitPriceRub === "number" && item.unitPriceRub > 0 ? item.unitPriceRub : item.priceRub;
+	// 4. Клинически обоснованные коэффициенты протоколов (Мандат 8bm & First Principles):
+	// Эконом = 80% (доступный базовый протокол)
+	// Оптимум = 100% (рекомендуемый клинический стандарт)
+	// Премиум = 130% (расширенный эстетический протокол)
+	if (tierId === "economy") {
+		const economyKopecks = Math.round(baseKopecks * 0.80);
+		return {
+			name: `${item.name} (базовый протокол)`,
+			priceRub: kopecksToRubles(economyKopecks),
+		};
+	}
+	if (tierId === "premium") {
+		const premiumKopecks = Math.round(baseKopecks * 1.30);
+		return {
+			name: `${item.name} (расширенный эстетический протокол)`,
+			priceRub: kopecksToRubles(premiumKopecks),
+		};
+	}
+
 	return {
 		name: item.name,
 		priceRub: basePrice,
@@ -315,11 +348,19 @@ export function differentiateStagesForTier(
 			};
 		});
 
-		const stageTotalRub = mappedItems.reduce((acc, it) => acc + it.priceRub * (it.quantity || 1), 0);
+		const stageItemsKopecks = mappedItems.map((it) => {
+			const qty = Math.max(1, it.quantity || 1);
+			const unitKopecks = rublesToKopecks(it.priceRub);
+			const discountKopecks = rublesToKopecks(it.discountRub || 0);
+			return Math.max(0, unitKopecks * qty - discountKopecks);
+		});
+		const stageTotalKopecks = sumKopecks(stageItemsKopecks);
+		const stageTotalRub = kopecksToRubles(stageTotalKopecks);
+
 		return {
 			...stg,
 			totalRub: stageTotalRub,
-			totalKopecks: stageTotalRub * 100,
+			totalKopecks: stageTotalKopecks,
 			items: mappedItems,
 		};
 	});
@@ -353,8 +394,8 @@ export function buildCanonical3TierPlans(baseStages?: readonly TreatmentPlanStag
 
 	return CANONICAL_TIER_DEFINITIONS.map((def) => {
 		const tierStages = differentiateStagesForTier(sanitized, def.id);
-		const totalRub = tierStages.reduce((sum, s) => sum + s.totalRub, 0);
-		const totalKopecks = totalRub * 100;
+		const totalKopecks = sumKopecks(tierStages.map((s) => s.totalKopecks));
+		const totalRub = kopecksToRubles(totalKopecks);
 		return {
 			tierId: def.id,
 			title: def.title,
@@ -379,25 +420,36 @@ export function applyDoctorDiscountToTiers(tiers: readonly TreatmentPlanTier[], 
 	const multiplier = (100 - clampedDiscount) / 100;
 	return tiers.map((tier) => {
 		const discountedStages = tier.stages.map((stage) => {
-			const sRub = Math.round(stage.totalRub * multiplier);
+			const discountedItems = stage.items.map((it) => {
+				const itemKopecks = rublesToKopecks(it.priceRub);
+				const discountedItemKopecks = Math.round(itemKopecks * multiplier);
+				const itemRub = kopecksToRubles(discountedItemKopecks);
+				const unitPriceRub = typeof it.unitPriceRub === "number"
+					? kopecksToRubles(Math.round(rublesToKopecks(it.unitPriceRub) * multiplier))
+					: undefined;
+				return {
+					...it,
+					priceRub: itemRub,
+					unitPriceRub,
+					discountRub: it.priceRub - itemRub,
+				};
+			});
+
+			const stageKopecks = sumKopecks(
+				discountedItems.map((it) => rublesToKopecks(it.priceRub) * (it.quantity || 1))
+			);
+			const stageRub = kopecksToRubles(stageKopecks);
+
 			return {
 				...stage,
-				totalRub: sRub,
-				totalKopecks: sRub * 100,
-				items: stage.items.map((it) => {
-					const itemRub = Math.round(it.priceRub * multiplier);
-					return {
-						...it,
-						priceRub: itemRub,
-						unitPriceRub: typeof it.unitPriceRub === "number" ? Math.round(it.unitPriceRub * multiplier) : undefined,
-						discountRub: it.priceRub - itemRub,
-					};
-				}),
+				totalRub: stageRub,
+				totalKopecks: stageKopecks,
+				items: discountedItems,
 			};
 		});
 
-		const totalRub = discountedStages.reduce((sum, s) => sum + s.totalRub, 0);
-		const totalKopecks = totalRub * 100;
+		const totalKopecks = sumKopecks(discountedStages.map((s) => s.totalKopecks));
+		const totalRub = kopecksToRubles(totalKopecks);
 		return {
 			...tier,
 			totalRub,

@@ -6,6 +6,8 @@ import { sumKopecks, formatKopecksRu } from "../../utils/money.js";
 import {
 	PLAN_STAGE_METADATA,
 	PLAN_TIER_CONFIGS,
+	getTierMaterialsHeadlineRu,
+	getTierAdvantagesRu,
 	type PlanTierKey,
 	type PlanStageKind,
 	type TreatmentPlanItemInput,
@@ -76,10 +78,15 @@ export function calculateSingleTierEstimate(
 		(laborKopecks + materialsKopecks === totalCostKopecks) &&
 		(grossCostKopecks - discountKopecks === totalCostKopecks);
 
+	const activeStagesWithItems = stages.filter((s) => s.itemCount > 0);
+	const dominantCategory = activeStagesWithItems.length === 1 ? activeStagesWithItems[0]?.stageKind : undefined;
+	const materialsHeadlineRu = getTierMaterialsHeadlineRu(tierKey, dominantCategory);
+	const keyAdvantagesRu = getTierAdvantagesRu(tierKey, dominantCategory);
+
 	return {
 		tierKey, tierNameRu: config.tierNameRu, badgeRu: config.badgeRu, descriptionRu: config.descriptionRu,
 		warrantyYears: config.warrantyYears, isRecommended: config.isRecommended,
-		materialsHeadlineRu: config.defaultMaterialsHeadlineRu, keyAdvantagesRu: config.keyAdvantagesRu,
+		materialsHeadlineRu, keyAdvantagesRu,
 		stages, totalItemsCount, grossCostKopecks, discountKopecks, laborKopecks, materialsKopecks,
 		totalCostKopecks, totalCostRu: formatKopecksRu(totalCostKopecks), totalVisits, totalDurationDays,
 		ndflDeduction, installments, isPennyExact,

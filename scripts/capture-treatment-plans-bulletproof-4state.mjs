@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, "../apps/web");
 const configFile = path.resolve(webRoot, "vite.config.ts");
 
-const CONV_ID = "ad92eec1-4d6f-497c-b2ea-ceaf1609e331";
+const CONV_ID = "e516f1d7-1e9d-4185-accd-c3e8bd14c49c";
 const DIRS = [
 	path.resolve(__dirname, "../docs/proofs/treatment_plans"),
 	path.resolve(__dirname, "../docs/proofs/treatment-plans"),
@@ -105,8 +105,8 @@ async function saveProof(page, filename, description) {
 	replicateFile(target, filename);
 	const stat = fs.statSync(target);
 	console.log(`[PROOF CAPTURED] ${filename} (${(stat.size / 1024).toFixed(1)} KB) -> ${description}`);
-	if (stat.size < 20480) {
-		throw new Error(`Screenshot ${filename} is smaller than 20KB (${stat.size} bytes)!`);
+	if (stat.size < 40960) {
+		throw new Error(`Screenshot ${filename} is smaller than 40KB (${stat.size} bytes)!`);
 	}
 }
 
@@ -317,9 +317,9 @@ async function main() {
 		await mobCtx.close();
 
 		// ═══════════════════════════════════════════════════════════
-		// PART 3: TREATMENT PLAN STUDIO MODAL (INTERACTIVE PRESENTER)
+		// PART 3: TREATMENT PLAN STUDIO MODAL (INTERACTIVE 3-TIER PRESENTER)
 		// ═══════════════════════════════════════════════════════════
-		console.log("\n=== 5. CAPTURING TREATMENT PLAN STUDIO MODAL (1440x900) ===");
+		console.log("\n=== 5. CAPTURING TREATMENT PLAN STUDIO 3-TIER PRESENTER (PC 1440x900) ===");
 		const studioCtx = await browser.newContext({
 			viewport: { width: 1440, height: 900 },
 			deviceScaleFactor: 1,
@@ -337,10 +337,69 @@ async function main() {
 		await studioPage.waitForSelector('[data-testid="treatment-plan-studio-modal"]', { state: "attached", timeout: 25000 }).catch(() => {});
 		await studioPage.waitForTimeout(1500);
 
+		// Кликаем клинический пресет "Полный комплекс" для реального наполнения 3 тарифов
+		const fullPresetBtn = studioPage.locator('button:has-text("Полный комплекс"), button:has-text("Кариес (К02)")').first();
+		if (await fullPresetBtn.isVisible().catch(() => false)) {
+			console.log("[PC Studio] Applying clinical preset 'Полный комплекс'...");
+			await fullPresetBtn.click();
+			await studioPage.waitForTimeout(1200);
+		}
+
+		// PC Light 3-Tier
 		await setTheme(studioPage, "light");
+		await saveProof(studioPage, "01_treatment_plans_3tier_pc_light_1440x900.png", "Treatment Plans 3-Tier Presenter (☀️ PC Light 1440x900)");
+		await saveProof(studioPage, "01_treatment_plan_3tier_pc_light_1440x900.png", "Treatment Plan 3-Tier Presenter (PC Light 1440x900)");
 		await saveProof(studioPage, "07_treatment_plan_studio_modal_1440x900.png", "Treatment Plan Studio Modal (Interactive Presenter 1440x900)");
 
+		// PC Dark 3-Tier
+		await setTheme(studioPage, "dark");
+		await saveProof(studioPage, "02_treatment_plans_3tier_pc_dark_1440x900.png", "Treatment Plans 3-Tier Presenter (🌙 PC Dark 1440x900)");
+		await saveProof(studioPage, "02_treatment_plan_3tier_pc_dark_1440x900.png", "Treatment Plan 3-Tier Presenter (PC Dark 1440x900)");
+
 		await studioCtx.close();
+
+		// ═══════════════════════════════════════════════════════════
+		// PART 4: MOBILE TREATMENT PLAN STUDIO (390x844 APPLE HIG)
+		// ═══════════════════════════════════════════════════════════
+		console.log("\n=== 6. CAPTURING MOBILE TREATMENT PLAN STUDIO 3-TIER (390x844) ===");
+		const mobStudioCtx = await browser.newContext({
+			viewport: { width: 390, height: 844 },
+			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+			isMobile: true,
+			hasTouch: true,
+			deviceScaleFactor: 2,
+			serviceWorkers: "block",
+			locale: "ru-RU",
+		});
+		await injectAuthStorage(mobStudioCtx, authData);
+		const mobStudioPage = await mobStudioCtx.newPage();
+		mobStudioPage.on("pageerror", (e) => console.log("[PAGE ERROR]", e.message));
+
+		console.log(`Navigating mobile to ${studioUrl}...`);
+		await mobStudioPage.goto(studioUrl, { waitUntil: "commit", timeout: 60000 });
+		await mobStudioPage.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
+		await mobStudioPage.waitForSelector('[data-testid="treatment-plan-studio-modal"]', { state: "attached", timeout: 25000 }).catch(() => {});
+		await mobStudioPage.waitForTimeout(1500);
+
+		// Кликаем клинический пресет "Полный комплекс" для реального наполнения 3 тарифов на мобильном
+		const mobPresetBtn = mobStudioPage.locator('button:has-text("Полный комплекс"), button:has-text("Кариес (К02)")').first();
+		if (await mobPresetBtn.isVisible().catch(() => false)) {
+			console.log("[Mob Studio] Applying clinical preset 'Полный комплекс'...");
+			await mobPresetBtn.click();
+			await mobStudioPage.waitForTimeout(1200);
+		}
+
+		// Mobile Light 3-Tier
+		await setTheme(mobStudioPage, "light");
+		await saveProof(mobStudioPage, "03_treatment_plans_3tier_mobile_light_390x844.png", "Treatment Plans 3-Tier Presenter (📱 Mobile Light 390x844)");
+		await saveProof(mobStudioPage, "03_treatment_plan_3tier_mobile_light_390x844.png", "Treatment Plan 3-Tier Presenter (Mobile Light 390x844)");
+
+		// Mobile Dark 3-Tier
+		await setTheme(mobStudioPage, "dark");
+		await saveProof(mobStudioPage, "04_treatment_plans_3tier_mobile_dark_390x844.png", "Treatment Plans 3-Tier Presenter (🌙 Mobile Dark 390x844)");
+		await saveProof(mobStudioPage, "04_treatment_plan_3tier_mobile_dark_390x844.png", "Treatment Plan 3-Tier Presenter (Mobile Dark 390x844)");
+
+		await mobStudioCtx.close();
 
 		console.log("\n🎉 ALL TREATMENT PLANS 4-STATE CANONICAL PROOFS CAPTURED SUCCESSFULLY!");
 	} finally {

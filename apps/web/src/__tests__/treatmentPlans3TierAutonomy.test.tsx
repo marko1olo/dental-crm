@@ -12,6 +12,26 @@ import {
 	TreatmentPlansTab,
 	type TreatmentTierOption,
 } from "../components/patients/tabs/TreatmentPlansTab";
+import type { PatientGeneralInfo } from "../components/patients/tabs/PatientGeneralInfoTab";
+import type { TreatmentPlanItem } from "../components/treatment-plans/treatmentPlanTypes";
+
+const testPatient: PatientGeneralInfo = {
+	id: "pat-1",
+	fullName: "Смирнов Алексей Игоревич",
+	birthDate: "1985-06-15",
+	gender: "male",
+	phone: "+7 999 111-22-33",
+	cardNumber: "K-1024",
+	balanceRub: 5000,
+	patientBalanceRub: 5000,
+	status: "active",
+	branchId: "branch-1",
+	createdDate: "2024-01-10",
+	address: "г. Москва, ул. Ленина, д. 10",
+	firstVisitDate: "2024-01-10",
+	lastVisitDate: "2024-02-20",
+	totalVisits: 3,
+};
 
 const sampleTiers: TreatmentTierOption[] = [
 	{
@@ -48,14 +68,7 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 	it("1. Renders 3 distinct alternatives (Эконом, Оптимум, Премиум) with clinic recommendation badge", () => {
 		const html = renderToString(
 			<TreatmentPlansTab
-				patient={{
-					id: "pat-1",
-					fullName: "Смирнов Алексей Игоревич",
-					birthDate: "1985-06-15",
-					phone: "+7 999 111-22-33",
-					cardNumber: "K-1024",
-					patientBalanceRub: 5000,
-				} as any}
+				patient={testPatient}
 				tiers={sampleTiers}
 			/>,
 		);
@@ -72,17 +85,49 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 		assert.ok(html.includes("145\u00A0000") || html.includes("145 000") || html.includes("145&nbsp;000"), "Премиум: 145 000 ₽");
 	});
 
-	it("2. Upholds Mandate 8e: Doctor discount up to 100% and print buttons are NEVER disabled", () => {
+	it("2. Real Dynamic 3-Tier Differentiation: Calculates distinct sums without static mocks (Anti-Potemkin Proof)", () => {
+		const realItems: TreatmentPlanItem[] = [
+			{
+				id: "item-real-1",
+				name: "Восстановление зуба пломбой световой полимеризации",
+				priceRub: 10000,
+				unitPriceRub: 10000,
+				discountRub: 0,
+				quantity: 1,
+				toothNumber: 16,
+				category: "Терапия",
+				stageKind: "stage_1_therapy",
+				isCompleted: false,
+			},
+		];
+
 		const html = renderToString(
 			<TreatmentPlansTab
-				patient={{
-					id: "pat-1",
-					fullName: "Смирнов Алексей Игоревич",
-					birthDate: "1985-06-15",
-					phone: "+7 999 111-22-33",
-					cardNumber: "K-1024",
-					patientBalanceRub: 0,
-				} as any}
+				patient={testPatient}
+				items={realItems}
+			/>,
+		);
+
+		// Проверяем, что присутствуют все 3 тарифа
+		assert.ok(html.includes("Эконом") || html.includes("Базовый"), "Должен присутствовать базовый тариф");
+		assert.ok(html.includes("Оптимум") || html.includes("Рекомендация клиники"), "Должен присутствовать рекомендуемый тариф");
+		assert.ok(html.includes("Премиум"), "Должен присутствовать VIP тариф");
+
+		// Доказываем, что цены трех тарифов РАЗЛИЧАЮТСЯ и нет одинаковых сумм:
+		// Эконом = 8 000 ₽, Оптимум = 10 000 ₽, Премиум = 13 000 ₽
+		const hasEconomyPrice = html.includes("8\u00A0000") || html.includes("8 000") || html.includes("8&nbsp;000");
+		const hasOptimumPrice = html.includes("10\u00A0000") || html.includes("10 000") || html.includes("10&nbsp;000");
+		const hasPremiumPrice = html.includes("13\u00A0000") || html.includes("13 000") || html.includes("13&nbsp;000");
+
+		assert.ok(hasEconomyPrice, "Эконом тариф должен рассчитать доступную стоимость (8 000 ₽)");
+		assert.ok(hasOptimumPrice, "Оптимум тариф должен рассчитать стандартную стоимость (10 000 ₽)");
+		assert.ok(hasPremiumPrice, "Премиум тариф должен рассчитать расширенную стоимость (13 000 ₽)");
+	});
+
+	it("3. Upholds Mandate 8e: Doctor discount up to 100% and print buttons are NEVER disabled", () => {
+		const html = renderToString(
+			<TreatmentPlansTab
+				patient={testPatient}
 				tiers={sampleTiers}
 			/>,
 		);
@@ -100,16 +145,10 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 		assert.ok(html.includes("Черновик"));
 	});
 
-	it("3. Upholds Mandate 8am: Exactly ONE Primary CTA button per visible plan selector context", () => {
+	it("4. Upholds Mandate 8am: Exactly ONE Primary CTA button per visible plan selector context", () => {
 		const html = renderToString(
 			<TreatmentPlansTab
-				patient={{
-					id: "pat-1",
-					fullName: "Смирнов Алексей Игоревич",
-					birthDate: "1985-06-15",
-					phone: "+7 999 111-22-33",
-					cardNumber: "K-1024",
-				} as any}
+				patient={testPatient}
 				tiers={sampleTiers}
 			/>,
 		);
@@ -120,16 +159,10 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 		assert.ok(html.includes("Открыть презентацию"));
 	});
 
-	it("4. Upholds Mandate 8x & 8ap: Zero Soviet decrees or bureaucratic jargon in production UI", () => {
+	it("5. Upholds Mandate 8x & 8ap: Zero Soviet decrees or bureaucratic jargon in production UI", () => {
 		const html = renderToString(
 			<TreatmentPlansTab
-				patient={{
-					id: "pat-1",
-					fullName: "Смирнов Алексей Игоревич",
-					birthDate: "1985-06-15",
-					phone: "+7 999 111-22-33",
-					cardNumber: "K-1024",
-				} as any}
+				patient={testPatient}
 				tiers={sampleTiers}
 			/>,
 		);
@@ -140,16 +173,10 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 		assert.ok(!html.includes("043/у"), "Запрещен номер формы 043/у в интерфейсе");
 	});
 
-	it("5. Apple HIG ergonomics: Interactive touch targets have min-h >= 44px", () => {
+	it("6. Apple HIG ergonomics: Interactive touch targets have min-h >= 44px", () => {
 		const html = renderToString(
 			<TreatmentPlansTab
-				patient={{
-					id: "pat-1",
-					fullName: "Смирнов Алексей Игоревич",
-					birthDate: "1985-06-15",
-					phone: "+7 999 111-22-33",
-					cardNumber: "K-1024",
-				} as any}
+				patient={testPatient}
 				tiers={sampleTiers}
 			/>,
 		);
@@ -157,13 +184,16 @@ describe("TreatmentPlansTab: 3-Tier Alternatives & Doctor Autonomy (Mandates 8e,
 		assert.ok(html.includes("min-h-[44px]"), "Интерактивные кнопки соответствуют стандарту Apple HIG >= 44px");
 	});
 
-	it("6. Honest Empty State: Shows 'У пациента нет сохраненных планов лечения' and '+ Составить план лечения' CTA when patient has no plans", () => {
+	it("7. Honest Empty State: Shows 'У пациента нет сохраненных планов лечения' and '+ Составить план лечения' CTA when patient has no plans", () => {
+		const emptyPatient: PatientGeneralInfo = {
+			...testPatient,
+			patientBalanceRub: 0,
+			balanceRub: 0,
+		};
+
 		const html = renderToString(
 			<TreatmentPlansTab
-				patient={{
-					id: "pat-1",
-					fullName: "Смирнов Алексей Игоревич",
-				} as any}
+				patient={emptyPatient}
 				items={[]}
 			/>,
 		);
