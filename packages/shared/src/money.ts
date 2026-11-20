@@ -126,9 +126,10 @@ export function rublesToKopecks(rubles: number): Kopecks {
 /**
  * Преобразование целочисленных копеек в число рублей с плавающей точкой (округление до 2 знаков).
  */
-export function kopecksToRubles(kopecks: number): number {
-	if (typeof kopecks !== "number" || !Number.isFinite(kopecks) || Number.isNaN(kopecks)) return 0;
-	return Math.round(kopecks) / KOPECKS_IN_RUBLE;
+export function kopecksToRubles(kopecks: number | bigint): number {
+	const num = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
+	if (typeof num !== "number" || !Number.isFinite(num) || Number.isNaN(num)) return 0;
+	return Math.round(num) / KOPECKS_IN_RUBLE;
 }
 
 /**

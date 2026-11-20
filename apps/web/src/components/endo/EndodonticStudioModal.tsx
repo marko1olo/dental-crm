@@ -11,7 +11,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Activity, Check, ChevronDown, Copy, FileText, MoreHorizontal, Printer, X } from "lucide-react";
-import type { EndoCanalData, EndoToothClinicalData } from "@dental/shared";
+import { kopecksToRubles, formatKopecksToRub, type EndoCanalData, type EndoToothClinicalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
@@ -79,7 +79,8 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		if (!props.isOpen || !props.patientId || props.initialCanals?.length) return;
 		let cancelled = false;
 		setIsLoadingFromDb(true);
-		fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, { headers: getDenteAuthHeaders() })
+		const baseUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("null")) ? window.location.origin : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
+		fetch(`${baseUrl}/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, { headers: getDenteAuthHeaders() })
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => {
 				if (!cancelled && data?.clinicalData?.canals?.length) {
@@ -295,7 +296,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					store.addCompletedService({
 						code: s.code,
 						title: s.title,
-						price: Number(s.priceKopecks / 100n),
+						price: kopecksToRubles(s.priceKopecks),
 						toothNumber: activeTooth,
 						toothCode: String(activeTooth),
 					});
@@ -305,7 +306,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					services: costEstimate.services.map((s) => ({
 						code: s.code,
 						name: s.title,
-						price: Number(s.priceKopecks / 100n),
+						price: kopecksToRubles(s.priceKopecks),
 						toothNumber: activeTooth,
 					})),
 				});
@@ -316,7 +317,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 							toothNumber: activeTooth, teethNumbers: [activeTooth],
 							services: costEstimate.services.map((s) => ({
 								code: s.code, code804n: s.code, name: s.title, nameRu: s.title,
-								price: Number(s.priceKopecks / 100n), priceRub: Number(s.priceKopecks / 100n),
+								price: kopecksToRubles(s.priceKopecks), priceRub: kopecksToRubles(s.priceKopecks),
 								amountKopecks: Number(s.priceKopecks), quantity: s.quantity || 1, toothNumber: activeTooth, category: "Эндодонтия",
 							})),
 						},
@@ -358,7 +359,8 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		} catch { /* soft */ }
 
 		if (materialsEstimate.materials.length > 0) {
-			fetch("/api/inventory/deduct", {
+			const baseUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("null")) ? window.location.origin : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
+			fetch(`${baseUrl}/api/inventory/deduct`, {
 				method: "POST",
 				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify({
@@ -369,7 +371,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 						name: m.itemName,
 						itemName: m.itemName,
 						quantity: m.quantity,
-						unitCostRub: m.costPriceKopecks ? (m.costPriceKopecks / 100) : 0,
+						unitCostRub: m.costPriceKopecks ? kopecksToRubles(m.costPriceKopecks) : 0,
 					})),
 					allowOverdraft: true,
 					reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
@@ -395,24 +397,6 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 				showToast("Предупреждение: локальный обработчик сохранения завершился с ошибкой", "warning", 3000);
 			}
 		}
-		if (props.patientId) {
-			fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({
-					toothNumber: activeTooth,
-					canals: sanitized,
-					irrigation,
-					rotarySystem,
-					radiologyControl,
-					apexLocator: dynamicApexLocator,
-					stageStamp,
-					...(props.visitId ? { visitId: props.visitId } : {}),
-				}),
-			}).catch((err) => {
-				console.error("[EndoStudioModal] Failed to persist endo state to backend:", err);
-				showToast("Сбой фоновой синхронизации каналов с сервером", "warning", 3000);
-			});
-		}
 		if (props.onInsertToProtocol) props.onInsertToProtocol(generatedProtocolText, sanitized);
 		if (props.onSave) props.onSave(sanitized, generatedProtocolText);
 
@@ -424,20 +408,20 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	if (!props.isOpen) return null;
 
 	const modalContent = (
-		<div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-x-clip" role="dialog" aria-modal="true" aria-label={`Эндодонтическая студия зуба ${activeTooth}`} data-testid="endodontic-studio-modal">
+		<div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[var(--backdrop,rgba(15,23,42,0.8))] backdrop-blur-sm overflow-x-clip" role="dialog" aria-modal="true" aria-label={`Эндодонтическая студия зуба ${activeTooth}`} data-testid="endodontic-studio-modal">
 			<div className="relative w-full max-w-5xl bg-[var(--paper)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-w-full" data-testid="endo-canal-log-modal">
 				<div className="w-9 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 sm:hidden shrink-0" />
 				<header className="flex items-center justify-between p-3.5 sm:p-4 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-10 h-10 rounded-xl bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] flex items-center justify-center font-bold text-sm shrink-0">#{activeTooth}</div>
+						<div className="w-10 h-10 rounded-xl bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center font-bold text-sm shrink-0">#{activeTooth}</div>
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] truncate">
 									<span className="sm:hidden">Зуб #{activeTooth}: Эндодонтия</span>
 									<span className="hidden sm:inline">Эндодонтическая студия: {toothAnatomicalName}</span>
 								</h2>
-								{props.toothState && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 truncate">{props.toothState}</span>}
-								{isLoadingFromDb && <span className="text-[11px] text-teal-600 dark:text-teal-400 flex items-center gap-1 font-medium"><Activity size={12} className="animate-spin" /> Загрузка...</span>}
+								{props.toothState && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger)]/20 truncate">{props.toothState}</span>}
+								{isLoadingFromDb && <span className="text-[11px] text-[var(--primary)] flex items-center gap-1 font-medium"><Activity size={12} className="animate-spin" /> Загрузка...</span>}
 							</div>
 							<p className="text-xs text-[var(--muted)] hidden sm:block truncate">Эндодонтический журнал каналов • Канонический протокол инструментальной обработки, ирригации и 3D-обтурации каналов</p>
 						</div>
@@ -490,7 +474,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 						<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]">
 							<span className="text-[11px] font-bold text-[var(--ink)] block mb-1.5">Предварительный расчёт:</span>
 							<div className="flex items-center justify-between text-xs pt-0.5">
-								<span className="font-bold text-[var(--teal,#0d9488)]">{costEstimate.totalRubles.toLocaleString("ru-RU")} ₽</span>
+								<span className="font-bold text-[var(--primary)]">{costEstimate.totalRubles.toLocaleString("ru-RU")} ₽</span>
 								<span className="text-[10px] text-[var(--muted)]">({costEstimate.services.length} усл.)</span>
 							</div>
 						</div>
@@ -499,7 +483,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					{/* Разворачиваемый протокол приёма */}
 					<details className="group border border-[var(--line)] rounded-2xl bg-[var(--paper-soft)] overflow-hidden">
 						<summary className="flex items-center justify-between p-3 cursor-pointer select-none text-xs font-bold text-[var(--ink)] list-none">
-							<div className="flex items-center gap-2"><FileText size={14} className="text-[var(--teal,#0d9488)]" /><span>Сформированный клинический протокол эндодонтии</span></div>
+							<div className="flex items-center gap-2"><FileText size={14} className="text-[var(--primary)]" /><span>Сформированный клинический протокол эндодонтии</span></div>
 							<ChevronDown size={14} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
 						</summary>
 						<div className="p-3 border-t border-[var(--line)] space-y-2">
@@ -546,9 +530,9 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 								aria-label="Клинический штамп этапа лечения"
 								className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-2.5 rounded-xl text-xs font-bold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
 							>
-								<option value="COMPLETED">ОБТУРИРОВАНО</option>
-								<option value="TEMP_CAOH2">ВРЕМЕННАЯ ОБТУРАЦИЯ</option>
-								<option value="DRAFT">ЧЕРНОВИК</option>
+								<option value="COMPLETED">Обтурировано</option>
+								<option value="TEMP_CAOH2">Временная обтурация</option>
+								<option value="DRAFT">Черновик</option>
 							</select>
 							<button
 								type="button"
@@ -565,7 +549,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 							type="button"
 							data-testid="insert-endo-protocol-btn"
 							onClick={handleCommitProtocol}
-							className="primary-button w-full sm:w-auto min-h-[50px] sm:min-h-[36px] h-12 sm:h-9 px-5 sm:px-6 rounded-xl text-xs sm:text-sm font-bold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-98 text-white flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+							className="primary-button w-full sm:w-auto min-h-[50px] sm:min-h-[36px] h-12 sm:h-9 px-5 sm:px-6 rounded-xl text-xs sm:text-sm font-bold bg-[var(--primary)] hover:bg-[var(--primary-hover,var(--primary))] active:scale-98 text-white flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer whitespace-nowrap"
 							title="Зафиксировать протокол каналов"
 						>
 							<Check size={18} className="shrink-0" />

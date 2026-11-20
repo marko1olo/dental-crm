@@ -10,6 +10,8 @@ import {
 	calculateEndoBillingAndMaterialsEstimate,
 	getDefaultCanalsForTooth,
 	getAnatomicalWorkingLength,
+	kopecksToRubles,
+	formatKopecksToRub,
 	type EndoCanalData,
 	type EndoPatientMemoParams,
 	type EndoToothClinicalData,
@@ -33,6 +35,7 @@ export {
 	PULPITIS_COMPLETE_PRESET, PULPITIS_OBTURATION_PRESET, PULPITIS_VISIT1_PRESET, QUICK_LENGTH_PRESETS,
 	REFERENCE_POINT_OPTIONS, RETREATMENT_ENDO_PRESET, STANDARD_ENDO_PRESET, TAPER_OPTIONS,
 	calculateEndoBillingAndMaterialsEstimate, safeCanalWorkingLengthRatio, isRvgBlockingEndoStage,
+	kopecksToRubles, formatKopecksToRub,
 } from "@dental/shared";
 
 export type EndoStageStamp = "COMPLETED" | "TEMP_CAOH2" | "DRAFT";
@@ -128,7 +131,7 @@ export function getToothCanalAnatomySpec(toothNumber: number): ToothCanalAnatomy
 	if (t === 34 || t === 44) return { minWlMm: 19.0, maxWlMm: 24.5, avgWlMm: 21.5, typicalCanalsCount: 1, vertucciType: "Type I" };
 	if (t === 35 || t === 45) return { minWlMm: 19.5, maxWlMm: 25.0, avgWlMm: 22.0, typicalCanalsCount: 1, vertucciType: "Type I" };
 	// Моляры нижней челюсти
-	if (t === 36 || t === 46) return { minWlMm: 19.0, maxWlMm: 24.0, avgWlMm: 21.0, typicalCanalsCount: 4, vertucciType: "Type II/IV (Mesial + Distal)" };
+	if (t === 36 || t === 46) return { minWlMm: 19.0, maxWlMm: 24.0, avgWlMm: 21.0, typicalCanalsCount: 3, vertucciType: "Type II/IV (Mesial + Distal)" };
 	if (t === 37 || t === 47) return { minWlMm: 18.5, maxWlMm: 23.0, avgWlMm: 20.5, typicalCanalsCount: 3, vertucciType: "Type I/IV" };
 	if (t === 38 || t === 48) return { minWlMm: 16.5, maxWlMm: 21.5, avgWlMm: 19.0, typicalCanalsCount: 2, vertucciType: "Type I (C-Shape)" };
 	// Дефолтная норма
@@ -143,61 +146,6 @@ export function formatWorkingLengthDisplay(wl: unknown): string {
 }
 
 export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[] {
-	const t = Number(toothNumber);
-	// Мандаты 8e, 8n: нижние первые моляры 36 и 46 имеют 4 анатомических канала (MB, ML, DB, DL)
-	if (t === 36 || t === 46) {
-		return [
-			{
-				id: `c-mb-${Date.now()}-1`,
-				name: "MB",
-				workingLengthMm: 21.5,
-				masterApicalFile: "#25",
-				taper: ".06",
-				obturationType: "gutta_sealer",
-				sealer: "AH Plus",
-				isObliterated: false,
-				apexLocatorReading: "0.0 (Apex)",
-				referencePoint: "Щечный бугор (MB cusp)",
-			},
-			{
-				id: `c-ml-${Date.now()}-2`,
-				name: "ML",
-				workingLengthMm: 21.0,
-				masterApicalFile: "#25",
-				taper: ".06",
-				obturationType: "gutta_sealer",
-				sealer: "AH Plus",
-				isObliterated: false,
-				apexLocatorReading: "0.0 (Apex)",
-				referencePoint: "Медиально-язычный бугор (ML cusp)",
-			},
-			{
-				id: `c-db-${Date.now()}-3`,
-				name: "DB",
-				workingLengthMm: 21.5,
-				masterApicalFile: "#25",
-				taper: ".06",
-				obturationType: "gutta_sealer",
-				sealer: "AH Plus",
-				isObliterated: false,
-				apexLocatorReading: "0.0 (Apex)",
-				referencePoint: "Дистально-щечный бугор (DB cusp)",
-			},
-			{
-				id: `c-dl-${Date.now()}-4`,
-				name: "DL",
-				workingLengthMm: 21.0,
-				masterApicalFile: "#25",
-				taper: ".06",
-				obturationType: "gutta_sealer",
-				sealer: "AH Plus",
-				isObliterated: false,
-				apexLocatorReading: "0.0 (Apex)",
-				referencePoint: "Дистально-язычный бугор (DL cusp)",
-			},
-		];
-	}
-
 	const defaultCanals = getDefaultCanalsForTooth(toothNumber);
 	return defaultCanals.map((c, idx) => {
 		const rawLen = typeof c.workingLengthMm === "number" ? c.workingLengthMm : Number.parseFloat(String(c.workingLengthMm || ""));
@@ -243,7 +191,7 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 		irrigation: "NaOCl 3% + EDTA 17% (УЗ-активация)",
 		rotarySystem: "WaveOne Gold / ProTaper Next",
 		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
-			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: ОБЛИТЕРИРОВАН (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + AH Plus`).join("\n");
+			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + AH Plus`).join("\n");
 			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПУЛЬПИТ В 1 ВИЗИТ]\n` +
 				`S: Жалобы на острые температурные и самопроизвольные приступообразные боли в зубе #${activeTooth}.\n` +
 				`O: Проведена проводниковая/инфильтрационная анестезия. Изоляция коффердамом. Раскрытие полости зуба #${activeTooth}, витальная экстирпация пульпы.\n` +
@@ -263,7 +211,7 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 		irrigation: "NaOCl 3% + EDTA 17% (УЗ-активация)",
 		rotarySystem: "WaveOne Gold / ProTaper Next",
 		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
-			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: ОБЛИТЕРИРОВАН (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, временная паста Ca(OH)2`).join("\n");
+			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, временная паста Ca(OH)2`).join("\n");
 			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 1-Й ВИЗИТ]\n` +
 				`S: Жалобы на ноющие боли при накусывании и чувство распирания в зубе #${activeTooth}.\n` +
 				`O: Проведена анестезия, изоляция коффердамом. Раскрытие полости зуба #${activeTooth}, эвакуация гангренозного распада.\n` +
@@ -283,7 +231,7 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 		irrigation: "NaOCl 3% + EDTA 17% (УЗ-активация)",
 		rotarySystem: "WaveOne Gold / ProTaper Next",
 		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
-			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: ОБЛИТЕРИРОВАН (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + AH Plus`).join("\n");
+			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + AH Plus`).join("\n");
 			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 2-Й ВИЗИТ (ПОСТОЯННАЯ ОБТУРАЦИЯ)]\n` +
 				`S: Повторное посещение по поводу периодонтита зуба #${activeTooth}. Жалоб на боли при накусывании нет, временная повязка сохранена.\n` +
 				`O: Проведена изоляция коффердамом. Снятие временной пломбы, эвакуация гидроксида кальция Ca(OH)2 из каналов.\n` +
@@ -303,7 +251,7 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 		irrigation: "Хлоргексидин 2% + EDTA 17% (УЗ-активация)",
 		rotarySystem: "D-RaCe / ProTaper Retreatment",
 		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
-			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: ОБЛИТЕРИРОВАН (0 мм)` : `• Канал ${c.name}: распломбирован на всю глубину, WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}`).join("\n");
+			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: Облитерирован (0 мм)` : `• Канал ${c.name}: распломбирован на всю глубину, WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}`).join("\n");
 			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — РАСПЛОМБИРОВКА И РЕТРИТМЕНТ]\n` +
 				`S: Направление на повторное эндодонтическое лечение зуба #${activeTooth} в связи с деструктивным процессом у верхушки корня.\n` +
 				`O: Анестезия, коффердам. Снятие старой реставрации, распломбировка каналов эндосольвентом и ретритмент-файлами D-RaCe.\n` +
@@ -354,7 +302,7 @@ export function calculateEndoTreatmentCostKopecks(params: {
 	}
 
 	const totalKopecks = services.reduce((acc, s) => acc + s.priceKopecks, 0n);
-	return { totalKopecks, totalRubles: Number(totalKopecks / 100n), services };
+	return { totalKopecks, totalRubles: kopecksToRubles(totalKopecks), services };
 }
 
 export function sanitizeCanalsForSubmission(

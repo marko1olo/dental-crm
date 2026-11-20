@@ -47,7 +47,7 @@ export function generateEndoCardPrintHtml(params: {
 		@page { size: A4; margin: 15mm 15mm 15mm 15mm; }
 		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11pt; color: #0f172a; margin: 0; padding: 0; line-height: 1.4; }
 		h1 { font-size: 15pt; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-		.header { border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 12px; }
+		.header { border-bottom: 2px solid var(--primary, #0d9488); padding-bottom: 8px; margin-bottom: 12px; }
 		.clinic { font-size: 10pt; color: #475569; margin-bottom: 4px; }
 		.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-bottom: 12px; font-size: 10pt; }
 		.meta-item { display: flex; }
@@ -65,7 +65,7 @@ export function generateEndoCardPrintHtml(params: {
 	<div class="header">
 		<div class="clinic">${params.clinicName} • Тел: ${params.clinicPhone}</div>
 		<h1>ЭНДОДОНТИЧЕСКАЯ КАРТА ЛЕЧЕНИЯ КОРНЕВЫХ КАНАЛОВ</h1>
-		<div style="font-weight: 600; color: #0d9488;">Зуб FDI: #${params.toothNumber} (${params.toothAnatomicalName})</div>
+		<div style="font-weight: 600; color: var(--primary, #0d9488);">Зуб FDI: #${params.toothNumber} (${params.toothAnatomicalName})</div>
 	</div>
 
 	<div class="meta-grid">

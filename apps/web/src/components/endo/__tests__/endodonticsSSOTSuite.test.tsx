@@ -199,7 +199,7 @@ describe("🏛️ DENTE Endodontics Canonical SSOT & Root Canal Protocols Suite"
 				/>,
 			);
 			assert.ok(html.includes("Зафиксировать протокол каналов"), "Clear action CTA title");
-			assert.ok(html.includes("bg-[var(--teal,#0d9488)]"), "Uses canonical teal token");
+			assert.ok(html.includes("bg-[var(--primary)]"), "Uses canonical primary token");
 		});
 
 		it("Has mobile bottom sheet drag handle (36x5px) and safe area inset", () => {

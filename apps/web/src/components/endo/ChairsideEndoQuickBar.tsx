@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ChevronDown, ExternalLink, Plus, SlidersHorizontal, Trash2, Check } from "lucide-react";
-import type { EndoCanalData } from "@dental/shared";
+import { kopecksToRubles, type EndoCanalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
@@ -41,7 +41,7 @@ export function generateSoapEndoProtocol({
 	const isPeriodontitis = !isPulpitis && Boolean(isBio || (toothState && /периодонтит|periodontitis|k04\.5|k04\.4|k04\.6|гранулем|кист/i.test(toothState)));
 
 	const canalsReport = canals.map((c) => {
-		if (c.isObliterated) return `• Канал ${c.name}: ОБЛИТЕРИРОВАН / склерозирован (устье склерозировано, 0 мм)`;
+		if (c.isObliterated) return `• Канал ${c.name}: Облитерирован / склерозирован (устье склерозировано, 0 мм)`;
 		const obt = c.obturationType === "temp_caoh2" ? `временная паста гидроксида кальция ${c.sealer || "Ca(OH)2 (Каласепт/Метапекс)"}` : c.obturationType === "bioceramic" ? `постоянная обтурация гуттаперчей + биокерамика (${c.sealer || "BioRoot"})` : `обтурация гуттаперчей с ${c.sealer || "AH Plus"} методом латеральной компакции`;
 		const len = c.workingLengthMm > 0 ? c.workingLengthMm.toFixed(1) : getAnatomicalWorkingLength(toothNum, c.name).toFixed(1);
 		return `• Канал ${c.name}: пройден, WL = ${len} мм (Apex: ${c.apexLocatorReading || "0.0 Apex"}), MAF = ${c.masterApicalFile}/${c.taper}, ${obt}`;
@@ -126,10 +126,11 @@ export function executeChairsideTransferToDiary({
 						detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})` },
 					}));
 
-					fetch("/api/inventory/deduct", {
+					const baseUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("null")) ? window.location.origin : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
+					fetch(`${baseUrl}/api/inventory/deduct`, {
 						method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 						body: JSON.stringify({
-							materials: billing.materials.map((m) => ({ inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName, quantity: m.quantity, unitCostRub: m.costPriceKopecks ? (m.costPriceKopecks / 100) : 0 })),
+							materials: billing.materials.map((m) => ({ inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName, quantity: m.quantity, unitCostRub: m.costPriceKopecks ? kopecksToRubles(m.costPriceKopecks) : 0 })),
 							allowOverdraft: true, reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
 							notes: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
 						}),
@@ -140,7 +141,8 @@ export function executeChairsideTransferToDiary({
 		}
 	} catch { /* soft */ }
 	if (patientId) {
-		fetch(`/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
+		const baseUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("null")) ? window.location.origin : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
+		fetch(`${baseUrl}/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
 			method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 			body: JSON.stringify({
 				toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi",
@@ -267,7 +269,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 							<div className="flex items-center justify-between gap-2 flex-wrap">
 								<div className="flex items-center gap-1.5 flex-wrap">
 									<span className="font-bold text-xs text-[var(--ink)]">Канал {c.name}</span>
-									<span className="text-[11px] font-semibold text-[var(--primary)]">{c.isObliterated ? "ОБЛИТЕРИРОВАН" : `${c.workingLengthMm.toFixed(1)} мм`}</span>
+									<span className="text-[11px] font-semibold text-[var(--primary)]">{c.isObliterated ? "Облитерирован" : `${c.workingLengthMm.toFixed(1)} мм`}</span>
 									<div className="flex items-center gap-1">
 										<span className="text-[10px] font-mono text-[var(--success)] font-semibold" title="Apex 0.0">Apex 0.0</span>
 										{(["-0.5", "0.0", "+0.5"] as const).map((ap) => (

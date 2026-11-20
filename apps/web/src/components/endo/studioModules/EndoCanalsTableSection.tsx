@@ -210,7 +210,7 @@ export function EndoCanalsTableSection(props: EndoCanalsTableSectionProps) {
 									className="w-16 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold"
 								/>
 								<span className="text-xs font-bold text-[var(--primary)]">
-									{c.isObliterated ? "ОБЛИТЕРИРОВАН" : `${c.workingLengthMm} мм`}
+									{c.isObliterated ? "Облитерирован" : `${c.workingLengthMm} мм`}
 								</span>
 							</div>
 							<div className="flex items-center gap-2">

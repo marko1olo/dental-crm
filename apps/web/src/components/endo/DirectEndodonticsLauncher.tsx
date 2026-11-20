@@ -102,7 +102,7 @@ export const DirectEndodonticsLauncher: React.FC = () => {
 
 	if (isQuickbar && !isFullModalOpen) {
 		return (
-			<div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
+			<div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-[var(--backdrop,rgba(15,23,42,0.7))] backdrop-blur-xs overflow-y-auto">
 				<div className="w-full max-w-4xl bg-[var(--paper)] rounded-2xl shadow-2xl border border-[var(--line)] overflow-hidden">
 					<div className="p-3 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center justify-between">
 						<span className="text-xs font-bold text-[var(--ink)]">Экспресс-панель эндодонтии у кресла</span>

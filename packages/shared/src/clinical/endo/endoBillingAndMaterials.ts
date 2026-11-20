@@ -18,6 +18,7 @@ import {
 	ORDER_804N_OBTURATIONS,
 	ORDER_804N_UNSEALING,
 } from "../toothCanalsBilling/billing804nMatcher.js";
+import { kopecksToRubles } from "../../money.js";
 import { getAnatomicalRootCanalCount } from "../toothCanalsBilling/toothCanalAnatomyMap.js";
 import type {
 	Endo804nServiceEstimate,
@@ -266,13 +267,13 @@ export function calculateEndoBillingAndMaterialsEstimate(
 		(sum, s) => sum + s.totalPriceKopecks,
 		0,
 	);
-	const totalServicesPriceRub = totalServicesPriceKopecks / 100;
+	const totalServicesPriceRub = kopecksToRubles(totalServicesPriceKopecks);
 
 	const totalMaterialsCostKopecks = materials.reduce(
 		(sum, m) => sum + m.costPriceKopecks,
 		0,
 	);
-	const totalMaterialsCostRub = totalMaterialsCostKopecks / 100;
+	const totalMaterialsCostRub = kopecksToRubles(totalMaterialsCostKopecks);
 
 	return {
 		toothNumber,
