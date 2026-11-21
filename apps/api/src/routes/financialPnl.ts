@@ -9,6 +9,8 @@
 import {
 	type CalculateManagerialPnlInput,
 	calculateManagerialPnl,
+	kopecksToRubles,
+	rublesToKopecks,
 } from "@dental/shared";
 import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -171,20 +173,32 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 						sumPrices += it.priceRub;
 					}
 
+					const totalPaymentKop = rublesToKopecks(p.amountRub);
 					if (sumPrices > 0) {
-						for (const [cat, catPrice] of catTotals.entries()) {
-							const share = catPrice / sumPrices;
+						let allocatedKop = 0;
+						const entries = Array.from(catTotals.entries());
+						for (let i = 0; i < entries.length; i++) {
+							const [cat, catPrice] = entries[i]!;
+							const isLast = i === entries.length - 1;
+							const catKop = isLast ? (totalPaymentKop - allocatedKop) : Math.round((totalPaymentKop * catPrice) / sumPrices);
+							allocatedKop += catKop;
 							paymentRows.push({
-								amountRub: Number((p.amountRub * share).toFixed(2)),
+								amountRub: kopecksToRubles(catKop),
 								department: cat,
 								cashBoxType: boxType,
 							});
 						}
 					} else {
-						const equalShare = p.amountRub / catTotals.size;
-						for (const cat of catTotals.keys()) {
+						let allocatedKop = 0;
+						const categories = Array.from(catTotals.keys());
+						const count = categories.length;
+						for (let i = 0; i < count; i++) {
+							const cat = categories[i]!;
+							const isLast = i === count - 1;
+							const catKop = isLast ? (totalPaymentKop - allocatedKop) : Math.round(totalPaymentKop / count);
+							allocatedKop += catKop;
 							paymentRows.push({
-								amountRub: Number(equalShare.toFixed(2)),
+								amountRub: kopecksToRubles(catKop),
 								department: cat,
 								cashBoxType: boxType,
 							});
@@ -267,7 +281,7 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 			if (actualMaterialsCostRub > cashMaterialsRub) {
 				expenseRows.push({
 					reasonId: 4, // Стоматологические материалы
-					amountRub: Number((actualMaterialsCostRub - cashMaterialsRub).toFixed(2)),
+					amountRub: kopecksToRubles(Math.max(0, rublesToKopecks(actualMaterialsCostRub) - rublesToKopecks(cashMaterialsRub))),
 				});
 			}
 

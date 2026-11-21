@@ -266,6 +266,12 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		Body: BookAppointmentBody;
 	}>("/appointments", createAppointmentHandler);
 
+	// door-validation: none — Delegated to handleBookAppointment with bookAppointmentSchema
+	server.post<{
+		Params: { organizationId: string };
+		Body: BookAppointmentBody;
+	}>("/book", createAppointmentHandler);
+
 	// DEF-PB-03: Public waitlist intake handler
 	const publicWaitlistHandler = async (
 		request: FastifyRequest<{

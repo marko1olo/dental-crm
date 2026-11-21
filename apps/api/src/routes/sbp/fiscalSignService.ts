@@ -14,7 +14,10 @@ export class FiscalInvoiceError extends Error {
 	}
 }
 
-/** Computes deterministic fiscal sign hash */
+/**
+ * Computes deterministic fiscal sign hash for demo/testing simulation ONLY.
+ * In 54-FZ production, the fiscal sign (ФПД) is computed exclusively by the hardware crypto-processor of the Fiscal Drive (ФН).
+ */
 export function computeFiscalSign(
 	fn: string,
 	fd: string,

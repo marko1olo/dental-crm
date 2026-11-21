@@ -1,4 +1,4 @@
-import type { CreatePaymentInput, Payment } from "@dental/shared";
+import { type CreatePaymentInput, type Payment, rublesToKopecks } from "@dental/shared";
 import type { FastifyReply } from "fastify";
 import { cleanPaymentText } from "./fiscalReceiptService.js";
 import {
@@ -51,7 +51,7 @@ export function paymentRetryMatchesExisting(
 	if (existingPayment.patientId !== input.patientId) return false;
 	if ((existingPayment.visitId ?? null) !== (input.visitId ?? null)) return false;
 	if ((existingPayment.documentId ?? null) !== (input.documentId ?? null)) return false;
-	if (Number(existingPayment.amountRub) !== Number(input.amountRub)) return false;
+	if (rublesToKopecks(Number(existingPayment.amountRub)) !== rublesToKopecks(Number(input.amountRub))) return false;
 
 	const methodsMatch =
 		existingPayment.method === input.method ||
@@ -59,9 +59,13 @@ export function paymentRetryMatchesExisting(
 		input.method === "mixed";
 	if (!methodsMatch) return false;
 
-	if ((existingPayment.payerInn ?? null) !== (cleanPaymentText(input.payerInn) ?? null)) return false;
-	if ((existingPayment.payerFullName ?? null) !== (cleanPaymentText(input.payerFullName) ?? null)) return false;
-	if ((existingPayment.taxDeductionCode ?? null) !== (input.taxDeductionCode ?? null)) return false;
+	const inputInn = cleanPaymentText(input.payerInn);
+	if (inputInn && (existingPayment.payerInn ?? null) !== inputInn) return false;
+
+	const inputPayerName = cleanPaymentText(input.payerFullName);
+	if (inputPayerName && (existingPayment.payerFullName ?? null) !== inputPayerName) return false;
+
+	if (input.taxDeductionCode && (existingPayment.taxDeductionCode ?? null) !== input.taxDeductionCode) return false;
 
 	const inputReceiptNum = cleanPaymentText(input.fiscalReceiptNumber);
 	if (inputReceiptNum && existingPayment.fiscalReceiptNumber !== inputReceiptNum) return false;

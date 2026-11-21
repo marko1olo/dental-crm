@@ -1,6 +1,8 @@
-import type {
-	PriceLockResolutionPolicy,
-	validatePlanToInvoice,
+import {
+	type PriceLockResolutionPolicy,
+	type validatePlanToInvoice,
+	kopecksToNumericString,
+	kopecksToRubles,
 } from "@dental/shared";
 import type {
 	CatalogRow,
@@ -86,14 +88,14 @@ export function buildTreatmentItemsToInsert(params: {
 			toothCode: it.toothNumber ? String(it.toothNumber) : null,
 			title: it.nameRu,
 			quantity: String(it.quantity),
-			unitPriceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
-			priceRub: Number((it.effectiveLineNetKopecks / 100).toFixed(2)),
-			discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
+			unitPriceRub: kopecksToRubles(it.effectiveUnitPriceKopecks),
+			priceRub: kopecksToRubles(it.effectiveLineNetKopecks),
+			discountRub: kopecksToRubles(it.effectiveDiscountKopecks),
 			status: "proposed" as const,
 			plannedDoctorUserId: plannedDoctor,
 			notes: `Наряд ${invoiceNumber}. Политика: ${it.selectedResolution}${
 				it.clinicAbsorptionKopecks > 0
-					? ` (Абсорбция клиники: ${(it.clinicAbsorptionKopecks / 100).toFixed(2)} ₽)`
+					? ` (Абсорбция клиники: ${kopecksToNumericString(it.clinicAbsorptionKopecks)} ₽)`
 					: ""
 			}`,
 		};

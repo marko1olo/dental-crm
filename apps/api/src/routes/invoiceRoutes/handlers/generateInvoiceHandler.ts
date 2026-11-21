@@ -1,4 +1,4 @@
-import { validatePlanToInvoice } from "@dental/shared";
+import { kopecksToRubles, validatePlanToInvoice } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
@@ -58,6 +58,16 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 	const identity = getRequestIdentity(request);
 	const staffRole = identity.role ?? "";
 	const isDoctor = staffRole === "doctor" || staffRole === "dentist";
+	const isCashierOrAdmin =
+		staffRole === "admin" ||
+		staffRole === "administrator" ||
+		staffRole === "receptionist" ||
+		staffRole === "cashier" ||
+		staffRole === "chief_doctor";
+	const isApprovedPlan = Boolean(isPriceLockedFinal || targetPlan?.status === "Approved" || data.approvedAtIso);
+
+	// Мандат 8e / Касса: Администратор и кассир имеют право выставлять счета по утвержденным планам
+	const canBypassArchivedCheck = isDoctor || isCashierOrAdmin || isApprovedPlan;
 
 	const validationReport = validatePlanToInvoice({
 		planId: data.planId || targetPlan?.id || "PLAN-CUSTOM",
@@ -73,13 +83,13 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 		items: planItemsForVal,
 		catalog: catalogLookup,
 		itemResolutionOverrides: effectiveItemResolutionOverrides,
-		adminOverrideAuthorized: isAdminOverrideVerified || isDoctor,
-		adminOverrideStaffName: adminStaffName,
-		adminOverrideReason: data.adminOverrideReason,
-		isDoctorAutonomy: isDoctor,
+		adminOverrideAuthorized: isAdminOverrideVerified || canBypassArchivedCheck,
+		adminOverrideStaffName: adminStaffName || identity.fullName || (isCashierOrAdmin ? "Администратор" : undefined),
+		adminOverrideReason: data.adminOverrideReason || (isApprovedPlan ? "Автоматическое разрешение для утвержденного плана лечения" : undefined),
+		isDoctorAutonomy: isDoctor || canBypassArchivedCheck,
 	});
 
-	if (!validationReport.canGenerateWorkOrder && !isDoctor) {
+	if (!validationReport.canGenerateWorkOrder && !canBypassArchivedCheck) {
 		return reply.code(400).send({
 			error: "BlockedArchivedServiceError",
 			message: "Оформление наряда заблокировано: смета содержит архивные, исключенные из прайса услуги или недействительные цены.",
@@ -89,7 +99,7 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 	}
 
 	const invoiceNumber = formatInvoiceNumber(data.documentType, patient.id);
-	const totalNetRub = Number((validationReport.effectiveInvoiceNetKopecks / 100).toFixed(2));
+	const totalNetRub = kopecksToRubles(validationReport.effectiveInvoiceNetKopecks);
 
 	const { invoiceId, createdItemIds } = await executeGenerateInvoiceTransaction({
 		orgId,
@@ -107,10 +117,10 @@ export async function handleGenerateInvoiceFromPlan(request: FastifyRequest, rep
 		invoiceNumber,
 		documentType: data.documentType,
 		patientId: data.patientId,
-		totalGrossRub: Number((validationReport.effectiveInvoiceGrossKopecks / 100).toFixed(2)),
-		totalDiscountRub: Number((validationReport.effectiveInvoiceDiscountKopecks / 100).toFixed(2)),
+		totalGrossRub: kopecksToRubles(validationReport.effectiveInvoiceGrossKopecks),
+		totalDiscountRub: kopecksToRubles(validationReport.effectiveInvoiceDiscountKopecks),
 		totalNetRub,
-		clinicAbsorptionRub: Number((validationReport.totalClinicAbsorptionKopecks / 100).toFixed(2)),
+		clinicAbsorptionRub: kopecksToRubles(validationReport.totalClinicAbsorptionKopecks),
 		createdTreatmentItemIds: createdItemIds,
 		isPriceLocked: validationReport.isPriceLocked,
 		validationReport,

@@ -1,4 +1,4 @@
-import { kopecksToNumericString } from "@dental/shared";
+import { isDemoOrganizationId, kopecksToNumericString } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { db } from "../../db/client.js";
 import { payments } from "../../db/schema.js";
@@ -18,9 +18,32 @@ export async function insertOrFetchFiscalPayment(params: {
 }): Promise<{ payment: typeof payments.$inferSelect; isConflict: boolean }> {
 	const { tx, orgId, input, effectiveMutationId, fiscalReceiptNumber, now } = params;
 	const isReturn = input.operationType === "income_return";
-	const fn = process.env.KKM_FN_SERIAL || "9960440302145896";
-	const fd = fiscalReceiptNumber.replace(/\D/g, "") || "1";
-	const fpd = computeFiscalSign(fn, fiscalReceiptNumber, now, input.totalKopecks);
+	const isDemo = isDemoOrganizationId(orgId);
+	const isMockHardware = process.env.KKM_MOCK_HARDWARE === "1" || process.env.NODE_ENV === "test";
+
+	let fn: string | null = null;
+	let fd: string | null = null;
+	let fpd: string | null = null;
+	let receiptUrl: string | null = null;
+	let effectiveReceiptNumber: string | null = null;
+	let effectiveReceiptIssuedAt: string | null = null;
+
+	if (isDemo || isMockHardware) {
+		fn = process.env.KKM_FN_SERIAL || "9999078900012345";
+		fd = fiscalReceiptNumber.replace(/\D/g, "") || "1";
+		fpd = computeFiscalSign(fn, fiscalReceiptNumber, now, input.totalKopecks);
+		receiptUrl = buildOfdVerificationUrl({
+			fn,
+			fd,
+			fpd,
+			amountKopecks: input.totalKopecks,
+			operationType: input.operationType,
+		});
+		effectiveReceiptNumber = fiscalReceiptNumber;
+		effectiveReceiptIssuedAt = now.toISOString();
+	} else if (process.env.KKM_FN_SERIAL) {
+		fn = process.env.KKM_FN_SERIAL;
+	}
 
 	const [payment] = await tx
 		.insert(payments)
@@ -39,24 +62,20 @@ export async function insertOrFetchFiscalPayment(params: {
 						: "cash",
 			status: isReturn ? "refunded" : "paid",
 			paidAt: now,
-			fiscalReceiptNumber,
-			fiscalReceiptIssuedAt: now.toISOString(),
+			fiscalReceiptNumber: effectiveReceiptNumber,
+			fiscalReceiptIssuedAt: effectiveReceiptIssuedAt,
 			taxDeductionCode:
 				input.taxDeductionSummaryCode === "code_2_expensive_treatment" ? "2" : "1",
-			fiscalReceipt: {
-				fn,
-				fd,
-				fpd,
-				cashierName: input.cashierFullName,
-				receiptUrl: buildOfdVerificationUrl({
-					fn,
-					fd,
-					fpd,
-					amountKopecks: input.totalKopecks,
-					operationType: input.operationType,
-				}),
-				operationType: isReturn ? "income_return" : "income",
-			},
+			fiscalReceipt: fn
+				? {
+						fn,
+						fd,
+						fpd,
+						cashierName: input.cashierFullName,
+						receiptUrl,
+						operationType: isReturn ? "income_return" : "income",
+					}
+				: null,
 			note: isReturn
 				? `Возврат прихода 54-ФЗ. Чек ${fiscalReceiptNumber}`
 				: `Фискализация 54-ФЗ. Чек ${fiscalReceiptNumber}`,

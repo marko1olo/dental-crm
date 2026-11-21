@@ -618,14 +618,24 @@ export async function processCashboxPayment(
 					await tx
 						.update(advanceDepositTaggings)
 						.set({ allocationStatus: "spent" })
-						.where(eq(advanceDepositTaggings.id, adv.id));
+						.where(
+							and(
+								eq(advanceDepositTaggings.id, adv.id),
+								eq(advanceDepositTaggings.organizationId, orgId),
+							),
+						);
 				} else {
 					const nextAdvKop = advKop - remainingToDeductKop;
 					remainingToDeductKop = 0n;
 					await tx
 						.update(advanceDepositTaggings)
 						.set({ depositAmountRub: kopecksToNumericString(Number(nextAdvKop)) })
-						.where(eq(advanceDepositTaggings.id, adv.id));
+						.where(
+							and(
+								eq(advanceDepositTaggings.id, adv.id),
+								eq(advanceDepositTaggings.organizationId, orgId),
+							),
+						);
 				}
 			}
 
@@ -724,7 +734,12 @@ export async function processCashboxPayment(
 						balance: kopecksToNumericString(Number(newFamilyBalKop)),
 						updatedAt: new Date(),
 					})
-					.where(eq(familyGroups.id, lockedFamilyGroup.id));
+					.where(
+						and(
+							eq(familyGroups.id, lockedFamilyGroup.id),
+							eq(familyGroups.organizationId, orgId),
+						),
+					);
 			}
 		}
 
@@ -1316,7 +1331,12 @@ export async function processCashboxPayment(
 						status: invStatus,
 						paidAt: invStatus === "paid" ? new Date() : null,
 					})
-					.where(eq(patientInvoices.id, inv.id));
+					.where(
+						and(
+							eq(patientInvoices.id, inv.id),
+							eq(patientInvoices.organizationId, orgId),
+						),
+					);
 			}
 
 			// Проверка переплаты по визиту и автоматическое зачисление сдачи на авансовый депозит (Мандат 8e)
@@ -1420,12 +1440,12 @@ export async function processCashboxPayment(
 							signedAt: new Date(),
 							updatedAt: new Date(),
 						})
-						.where(eq(visits.id, visitRow.id));
+						.where(and(eq(visits.id, visitRow.id), eq(visits.organizationId, orgId)));
 				} else {
 					await tx
 						.update(visits)
 						.set({ updatedAt: new Date() })
-						.where(eq(visits.id, visitRow.id));
+						.where(and(eq(visits.id, visitRow.id), eq(visits.organizationId, orgId)));
 				}
 
 				if (visitRow.appointmentId) {
@@ -1530,7 +1550,12 @@ export async function processCashboxPayment(
 						: lockedCertificate.notes,
 					updatedAt: new Date(),
 				})
-				.where(eq(giftCertificates.id, lockedCertificate.id));
+				.where(
+					and(
+						eq(giftCertificates.id, lockedCertificate.id),
+						eq(giftCertificates.organizationId, orgId),
+					),
+				);
 		}
 
 		// 2.3. Списание лимита гарантийного письма ДМС (Мандаты 8e, 8bm, 8bo)
@@ -1541,7 +1566,12 @@ export async function processCashboxPayment(
 					usedAmountRub: newDmsUsedRub,
 					...(isDmsExhausted ? { status: "exhausted" } : {}),
 				})
-				.where(eq(dmsGuaranteeLetters.id, lockedDmsLetter.id));
+				.where(
+					and(
+						eq(dmsGuaranteeLetters.id, lockedDmsLetter.id),
+						eq(dmsGuaranteeLetters.organizationId, orgId),
+					),
+				);
 		}
 
 		// 3. Инициализируем и находим кассовые счета клиники с упорядоченной блокировкой строк
@@ -1619,7 +1649,12 @@ export async function processCashboxPayment(
 					balanceKopecks: newBalKop,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxes.id, cashDeskBox.id));
+				.where(
+					and(
+						eq(cashBoxes.id, cashDeskBox.id),
+						eq(cashBoxes.organizationId, orgId),
+					),
+				);
 		}
 
 		if (resolvedElecKop > 0 && cashlessBox) {
@@ -1658,7 +1693,12 @@ export async function processCashboxPayment(
 					balanceKopecks: newBalKop,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxes.id, cashlessBox.id));
+				.where(
+					and(
+						eq(cashBoxes.id, cashlessBox.id),
+						eq(cashBoxes.organizationId, orgId),
+					),
+				);
 		}
 
 		if (requiredDepositKopecks > 0n && cashDeskBox) {
