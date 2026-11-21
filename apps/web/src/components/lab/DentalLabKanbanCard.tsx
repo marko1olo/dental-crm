@@ -163,7 +163,7 @@ export function KanbanCardBody({ order, fittingUrgency, onRescheduleAppointment 
 						: `${(order.financials?.patientPriceTotalRub ?? order.priceRub ?? 0).toLocaleString("ru-RU")} ₽`}
 				</span>
 				<span style={{ color: "var(--muted, #64748b)", fontSize: "10.5px" }} className="shrink-0">
-					• Себест: {(order.financials?.labCostTotalRub ?? Math.round((order.priceRub ?? 0) * 0.4)).toLocaleString("ru-RU")} ₽
+					• Себест: {(order.isWarrantyRework ? (order.financials?.labCostTotalRub ?? order.totalLabCostRub ?? 0) : (order.financials?.labCostTotalRub ?? order.totalLabCostRub ?? 0)).toLocaleString("ru-RU")} ₽
 				</span>
 			</div>
 		</>

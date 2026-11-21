@@ -88,6 +88,7 @@ export async function updateLabOrderInDb(
 
 	const updatePayload: Record<string, unknown> = { ...auditFields, updatedAt: now };
 	if (isWarranty) updatePayload.isLockedInstalled = false;
+	if (updateData.orderNumber !== undefined) updatePayload.orderNumber = updateData.orderNumber;
 	if (updateData.doctorId !== undefined) updatePayload.doctorId = updateData.doctorId;
 	if (effectiveTooth !== undefined) updatePayload.toothFdi = effectiveTooth;
 	if (effectiveMaterial !== undefined) updatePayload.material = effectiveMaterial;
@@ -145,12 +146,12 @@ export async function updateLabOrderInDb(
 	const enrichedPriceKopecks = updated.priceKopecks != null
 		? Number(updated.priceKopecks)
 		: updated.priceRub != null
-			? Math.round(Number(updated.priceRub) * 100)
+			? rublesToKopecks(updated.priceRub)
 			: 0;
 	const enrichedLabCostKopecks = updated.labCostKopecks != null
 		? Number(updated.labCostKopecks)
 		: updated.labCostRub != null
-			? Math.round(Number(updated.labCostRub) * 100)
+			? rublesToKopecks(updated.labCostRub)
 			: 0;
 
 	const enriched = {

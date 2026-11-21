@@ -56,6 +56,7 @@ export const updateLabOrderSchema = z.object({
 	techStage: z.string().trim().optional().nullable(),
 	overrideActive: z.boolean().optional().nullable(),
 	overrideReason: z.string().trim().optional().nullable(),
+	orderNumber: z.string().trim().optional().nullable(),
 	labComments: z.string().trim().optional().nullable(),
 	attachedImageUrl: z.string().trim().optional().nullable(),
 	isWarranty: z.boolean().optional().nullable(),

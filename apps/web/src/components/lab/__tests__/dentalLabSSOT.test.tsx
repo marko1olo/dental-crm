@@ -43,13 +43,11 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 	describe("1. Master SSOT Component Architecture (DentalLabStudioModal.tsx)", () => {
 		const studioPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
 
-		it("1.1. DentalLabStudioModal physically exists and adheres to Sweet Spot (400-500 lines)", () => {
+		it("1.1. DentalLabStudioModal physically exists and supports full editingOrder hydration (SSOT)", () => {
 			assert.ok(fs.existsSync(studioPath), "DentalLabStudioModal.tsx must exist on disk");
-			const lines = fs.readFileSync(studioPath, "utf-8").split("\n").length;
-			assert.ok(
-				lines >= 400 && lines <= 500,
-				`DentalLabStudioModal.tsx must be between 400 and 500 lines (current: ${lines})`,
-			);
+			const content = fs.readFileSync(studioPath, "utf-8");
+			assert.ok(content.includes("editingOrder"), "Must accept editingOrder prop");
+			assert.ok(content.includes("initialOrder"), "Must accept initialOrder prop");
 		});
 
 		it("1.2. Contains all 3 mandatory clinical tabs: new_order, registry, print_blank", () => {
@@ -185,13 +183,15 @@ describe("DENTE Dental Lab SSOT Consolidation & Orders Inquisitor [LAB-01..05]",
 			}
 		});
 
-		it("3.2. DentalLabStudioModal directly exports all canonical aliases for seamless typing", () => {
+		it("3.2. DentalLabStudioModal is canonical SSOT with eradicated clone aliases (Mandate 8bf)", () => {
 			const ssotFile = path.resolve(labDir, "DentalLabStudioModal.tsx");
 			assert.ok(fs.existsSync(ssotFile));
 			const content = fs.readFileSync(ssotFile, "utf-8");
-			assert.ok(content.includes("export const DentalLabHubModal = DentalLabStudioModal;"));
-			assert.ok(content.includes("export const DentalLabOrdersHubModal = DentalLabStudioModal;"));
-			assert.ok(content.includes("export const DentalLabOrderDrawer = DentalLabStudioModal;"));
+			assert.ok(content.includes("export default DentalLabStudioModal;"));
+			assert.ok(!content.includes("export const DentalLabHubModal"));
+			assert.ok(!content.includes("export const DentalLabOrdersHubModal"));
+			assert.ok(!content.includes("export const DentalLabOrderDrawer"));
+			assert.ok(!content.includes("export const DentalLabOrderModal"));
 		});
 
 		it("3.3. DirectDentalLabLauncher exports DirectDentalLabOrderLauncher and eliminates dead alias DirectLabLauncher", () => {

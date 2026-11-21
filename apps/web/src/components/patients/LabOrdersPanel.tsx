@@ -206,7 +206,8 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps): React.JSX.El
 						logic.setSelectedOrderForEdit(null);
 					}}
 					patientId={patientId ?? undefined}
-					initialTab="new_order"
+					initialTab={logic.modalInitialTab}
+					editingOrder={logic.selectedOrderForEdit ?? undefined}
 					onOrderSaved={() => {
 						logic.setIsOrderModalOpen(false);
 						logic.setSelectedOrderForEdit(null);

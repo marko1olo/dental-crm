@@ -6,15 +6,26 @@ import type { LabOrderPayInput } from "./labOrderPayDb.js";
 
 export function resolveAmountToPayKopecks(
 	input: LabOrderPayInput,
-	order: { labCostRub?: number | null; priceRub?: number | null },
+	order: {
+		labCostRub?: number | null;
+		priceRub?: number | null;
+		labCostKopecks?: number | string | bigint | null;
+		priceKopecks?: number | string | bigint | null;
+	},
 ): number {
 	if (input.amountKopecks !== undefined) return Number(input.amountKopecks);
 	if (input.amountRub !== undefined) return rubToKopecks(input.amountRub);
-	// Себестоимость работы техника ЗТЛ (Мандаты 8e, 8n) — розница пациента priceRub неприкосновенна!
+	// Себестоимость работы техника ЗТЛ в копейках (Мандаты 8bm, 8e, 8n) — розница пациента priceRub неприкосновенна!
+	if (order.labCostKopecks != null && Number(order.labCostKopecks) > 0) {
+		return Number(order.labCostKopecks);
+	}
 	if (order.labCostRub !== null && order.labCostRub !== undefined && Number(order.labCostRub) > 0) {
 		return rubToKopecks(order.labCostRub);
 	}
 	// Fallback для нарядов, где себестоимость не была указана явно
+	if (order.priceKopecks != null && Number(order.priceKopecks) > 0) {
+		return Number(order.priceKopecks);
+	}
 	if (order.priceRub !== null && order.priceRub !== undefined && Number(order.priceRub) > 0) {
 		return rubToKopecks(order.priceRub);
 	}

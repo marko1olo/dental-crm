@@ -4,6 +4,9 @@ export interface LabOrderCostBreakdown {
 	grossMarginRub: number;
 	grossMarginPercent: number;
 	unitsCount: number;
+	suggestedPriceKopecks?: number;
+	estimatedCostKopecks?: number;
+	grossMarginKopecks?: number;
 }
 
 export interface LabOrderTurnaroundResult {

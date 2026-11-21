@@ -8,6 +8,7 @@
  */
 
 import React from "react";
+import { rublesToKopecks, kopecksToRubles, splitKopecks } from "@dental/shared";
 import { DentalLabStudioModal } from "../../../lab/DentalLabStudioModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 import { useVisitStore } from "../../../../store/visitStore";
@@ -218,29 +219,34 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 					);
 				}
 
-				const patientPriceRub =
+				const totalPatientPriceKopecks =
 					order.patientPriceKopecks != null
-						? Math.round(order.patientPriceKopecks / 100)
-						: (order.priceRub || 0);
-
-				const unitPrice =
-					patientPriceRub > 0 && targetTeeth.length > 0
-						? Math.round(patientPriceRub / targetTeeth.length)
-						: patientPriceRub;
+						? Math.round(Number(order.patientPriceKopecks))
+						: order.priceRub != null
+							? rublesToKopecks(order.priceRub)
+							: 0;
 
 				const rawLabCost =
 					order.labCostKopecks != null
-						? Math.round(order.labCostKopecks / 100)
-						: (order.doctorDeductionRub ?? 0);
+						? Math.round(Number(order.labCostKopecks))
+						: order.doctorDeductionRub != null
+							? rublesToKopecks(order.doctorDeductionRub)
+							: 0;
+				const totalLabCostKopecks = rawLabCost;
 
-				const unitLabCost =
-					rawLabCost > 0 && targetTeeth.length > 0
-						? Math.round(rawLabCost / targetTeeth.length)
-						: rawLabCost > 0 ? rawLabCost : undefined;
+				const targetTeethCount = targetTeeth.length > 0 ? targetTeeth.length : 1;
+				const priceSplitsKopecks = splitKopecks(totalPatientPriceKopecks, targetTeethCount);
+				const labCostSplitsKopecks = splitKopecks(totalLabCostKopecks, targetTeethCount);
 
-				for (const tooth of targetTeeth) {
-					if (!tooth) continue;
+				for (let i = 0; i < targetTeeth.length; i++) {
+					const tooth = targetTeeth[i]!;
 					const toothStr = String(tooth);
+					const toothPriceKopecks = priceSplitsKopecks[i] ?? 0;
+					const toothLabCostKopecks = labCostSplitsKopecks[i] ?? 0;
+					const unitPriceRub = kopecksToRubles(toothPriceKopecks);
+					const unitLabCost = toothLabCostKopecks > 0 ? kopecksToRubles(toothLabCostKopecks) : undefined;
+					const unitLabCostRub = unitLabCost;
+
 					setToothState(toothStr, "Planned_Crown");
 					useVisitStore.getState().setToothState(toothStr, "Planned_Crown");
 
@@ -263,10 +269,12 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 						toothNumber: tooth,
 						toothCode: toothStr,
 						name: serviceTitle,
-						priceRub: unitPrice,
+						priceRub: unitPriceRub,
+						priceKopecks: toothPriceKopecks,
 						quantity: 1,
 						category: "Ортопедия",
-						...(unitLabCost ? { labCostRub: unitLabCost, labCostKopecks: unitLabCost * 100 } : {}),
+						labOrderId: order.id,
+						...(unitLabCost ? { labCostRub: unitLabCost, labCostKopecks: toothLabCostKopecks } : {}),
 					});
 
 					if (typeof window !== "undefined") {
@@ -278,9 +286,11 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 										title: serviceTitle,
 										toothCode: toothStr,
 										quantity: 1,
-										unitPriceRub: unitPrice,
+										unitPriceRub,
+										priceKopecks: toothPriceKopecks,
 										discountRub: 0,
 										labCostRub: unitLabCost,
+										labCostKopecks: toothLabCostKopecks,
 										labOrderId: order.id,
 									},
 								},
@@ -300,27 +310,27 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 								? "полиэфирный оттиск"
 								: "прецизионный силиконовый оттиск";
 					const impressionTitle = `Снятие оттиска с челюсти (${impressionKind})`;
-					const catalogImpressionPrice = (() => {
-						if (typeof order.impressionPriceRub === "number" && order.impressionPriceRub > 0) {
-							return order.impressionPriceRub;
-						}
+					const catalogImpressionPriceKopecks = (() => {
 						if (typeof order.impressionPriceKopecks === "number" && order.impressionPriceKopecks > 0) {
-							return Math.round(order.impressionPriceKopecks / 100);
+							return order.impressionPriceKopecks;
+						}
+						if (typeof order.impressionPriceRub === "number" && order.impressionPriceRub > 0) {
+							return rublesToKopecks(order.impressionPriceRub);
 						}
 						const rawDashboard = dashboard as Record<string, unknown> | null | undefined;
 						const servicesList = rawDashboard?.services || rawDashboard?.pricelist || rawDashboard?.catalogServices;
 						if (Array.isArray(servicesList)) {
 							const found = servicesList.find((s: LabSectionCatalogService) => s.code804n === "A02.07.010" || s.order804nCode === "A02.07.010" || s.code === "A02.07.010");
 							if (found && typeof found.priceRub === "number" && found.priceRub > 0) {
-								return found.priceRub;
+								return rublesToKopecks(found.priceRub);
 							}
 							if (found && typeof found.price === "number" && found.price > 0) {
-								return found.price;
+								return rublesToKopecks(found.price);
 							}
 						}
-						return 2500;
+						return 250000;
 					})();
-					impressionPriceRub = catalogImpressionPrice;
+					impressionPriceRub = kopecksToRubles(catalogImpressionPriceKopecks);
 
 					useVisitStore.getState().addCompletedService({
 						serviceId: `lab-order-impression-${order.id || Date.now()}`,
@@ -329,6 +339,7 @@ export const DentalLabOrderModalSection: React.FC<DentalLabOrderModalSectionProp
 						toothCode: primaryToothStr,
 						name: impressionTitle,
 						priceRub: impressionPriceRub,
+						priceKopecks: catalogImpressionPriceKopecks,
 						quantity: 1,
 						category: "Ортопедия",
 					});

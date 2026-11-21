@@ -9,15 +9,13 @@ import {
 	createMockFn,
 } from "./helpers/dentalLabTestDomHelper";
 import {
-	DentalLabOrdersModal,
-	DentalLabOrderModal,
+	DentalLabStudioModal,
 } from "../DentalLabStudioModal";
 import { MODAL_EXPRESS_LAB_PRESETS } from "../dentalLabCatalogData";
 
-describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", () => {
-	it("1. DentalLabOrdersModal is canonical SSOT with identical interface and alias DentalLabOrderModal", () => {
-		assert.strictEqual(typeof DentalLabOrdersModal, "function");
-		assert.strictEqual(DentalLabOrdersModal, DentalLabOrderModal);
+describe("DentalLabStudioModal — SSOT Architecture & Chairside 1-Click Sync", () => {
+	it("1. DentalLabStudioModal is canonical SSOT with comprehensive presets", () => {
+		assert.strictEqual(typeof DentalLabStudioModal, "function");
 		assert.strictEqual(MODAL_EXPRESS_LAB_PRESETS.length, 18);
 	});
 
@@ -28,7 +26,7 @@ describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", 
 		try {
 			await act(async () => {
 				root.render(
-					<DentalLabOrdersModal
+					<DentalLabStudioModal
 						isOpen={true}
 						onClose={() => {}}
 						patientId="pat-ssot-1"
@@ -59,7 +57,7 @@ describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", 
 		try {
 			await act(async () => {
 				root.render(
-					<DentalLabOrdersModal
+					<DentalLabStudioModal
 						isOpen={true}
 						onClose={() => {}}
 						patientId="pat-ssot-2"
@@ -88,7 +86,7 @@ describe("DentalLabOrdersModal — SSOT Architecture & Chairside 1-Click Sync", 
 		try {
 			await act(async () => {
 				root.render(
-					<DentalLabOrdersModal
+					<DentalLabStudioModal
 						isOpen={true}
 						onClose={() => {}}
 						patientId="pat-ssot-3"

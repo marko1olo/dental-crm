@@ -267,10 +267,19 @@ export async function insertLabOrderInDb(
 
 	const effectiveAttachedImage = data.attachedImageUrl || data.attachedXrayUrl || null;
 
+	const now = new Date();
+	const yy = String(now.getFullYear()).slice(-2);
+	const mm = String(now.getMonth() + 1).padStart(2, "0");
+	const shortId = secureToken.replace(/-/g, "").slice(0, 4).toUpperCase();
+	const effectiveOrderNumber = data.orderNumber && data.orderNumber.trim()
+		? data.orderNumber.trim()
+		: `ЗТЛ-${yy}${mm}-${shortId}`;
+
 	const [createdOrder] = await tx
 		.insert(labOrders)
 		.values({
 			organizationId: orgId,
+			orderNumber: effectiveOrderNumber,
 			patientId: effectivePatientId,
 			treatmentPlanId: effectiveTreatmentPlanId,
 			appointmentId: effectiveAppointmentId,
@@ -337,6 +346,8 @@ export async function insertLabOrderInDb(
 
 		if (validTeeth.length > 0) {
 			const splits = splitKopecks(finalPriceKopecks, validTeeth.length);
+			const effectiveRestorationType = data.restorationType || data.workTypeId || data.constructionType || data.construction || "crown_monolithic";
+			const effectiveShadeSystem = data.shadeSystem || "VITA_CLASSICAL";
 
 			for (let i = 0; i < validTeeth.length; i++) {
 				const toothNum = validTeeth[i]!;
@@ -347,9 +358,9 @@ export async function insertLabOrderInDb(
 					organizationId: orgId,
 					labOrderId: createdOrder.id,
 					toothFdi: toothNum,
-					restorationType: "crown_monolithic",
+					restorationType: effectiveRestorationType,
 					material: effectiveMaterial || "zirconia_multilayer_gradient",
-					shadeSystem: "VITA_CLASSICAL",
+					shadeSystem: effectiveShadeSystem,
 					shadeFinal: normalizedColor,
 					shadeStump: data.stumpShade || null,
 					priceRub: itemPriceRub,
@@ -361,7 +372,7 @@ export async function insertLabOrderInDb(
 
 	const enrichedOrder = {
 		...createdOrder,
-		orderNumber: data.orderNumber || `ЗТЛ-${createdOrder.id.slice(0, 6).toUpperCase()}`,
+		orderNumber: createdOrder.orderNumber || effectiveOrderNumber,
 		stage: createdOrder.stage ?? effectiveStage,
 		treatmentPlanId: createdOrder.treatmentPlanId ?? null,
 		appointmentId: createdOrder.appointmentId ?? null,

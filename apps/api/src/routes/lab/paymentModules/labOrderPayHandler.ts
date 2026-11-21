@@ -2,6 +2,7 @@ import { kopecksToRub, positiveMoneyRubSchema } from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
+import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import { executeLabOrderPayment } from "./labOrderPayDb.js";
 
 const payParamsSchema = z.object({
@@ -35,10 +36,22 @@ export async function labOrderPayHandler(
 		});
 	}
 
+	const rawKey = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"];
+	const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : Array.isArray(rawKey) ? rawKey[0]?.trim() : undefined;
+	if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+		});
+	}
+
 	const parsed = payBodySchema.safeParse(request.body || {});
 	const payData = parsed.success ? parsed.data : {};
 
-	const result = await executeLabOrderPayment(orgId, paramsParsed.data.id, payData);
+	const result = await executeLabOrderPayment(orgId, paramsParsed.data.id, {
+		...payData,
+		...(idempotencyKey ? { idempotencyKey } : {}),
+	});
 
 	if (result.kind === "order_not_found") {
 		return reply.code(404).send({
@@ -71,6 +84,13 @@ export async function labOrderPayHandler(
 			error: "NoCashBox",
 			message: "Кассовые счета организации не найдены.",
 		});
+	}
+
+	if (idempotencyKey) {
+		reply.header("X-Idempotency-Key", idempotencyKey);
+	}
+	if (result.isReplay) {
+		reply.header("idempotency-replayed", "true");
 	}
 
 	return reply.send({

@@ -6,10 +6,9 @@ import {
 	CONSTRUCTION_TYPES,
 	LAB_MATERIALS,
 	DentalLabStudioModal,
-	DentalLabOrderModal,
 } from "../index";
 
-describe("DentalLabOrderModal & DentalLabStudioModal — Production Render & Sanity Check", () => {
+describe("DentalLabStudioModal — Production Render & Sanity Check", () => {
 	it("Core construction types and materials are initialized", () => {
 		assert.ok(CONSTRUCTION_TYPES.length >= 8);
 		assert.ok(LAB_MATERIALS.length >= 6);
@@ -38,9 +37,9 @@ describe("DentalLabOrderModal & DentalLabStudioModal — Production Render & San
 		assert.ok(html.includes("Бланк") || html.includes("Печатный бланк"));
 	});
 
-	it("DentalLabOrderModal является каноническим экспортом-алиасом студии", () => {
+	it("DentalLabStudioModal рендерит вкладку бланка печати", () => {
 		const html = renderToString(
-			<DentalLabOrderModal
+			<DentalLabStudioModal
 				isOpen={true}
 				onClose={() => {}}
 				initialTab="print"

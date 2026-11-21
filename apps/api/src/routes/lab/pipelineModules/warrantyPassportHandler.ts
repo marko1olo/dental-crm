@@ -57,7 +57,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 			const [order] = await tx
 				.select({
 					id: labOrders.id,
-					orderNumber: labOrders.secureToken,
+					orderNumber: sql<string | null>`coalesce(${labOrders.orderNumber}, ${labOrders.secureToken})`,
 					toothFdi: labOrders.toothFdi,
 					material: labOrders.material,
 					colorVita: labOrders.colorVita,
@@ -72,7 +72,7 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 					createdAt: labOrders.createdAt,
 				})
 				.from(labOrders)
-				.innerJoin(patients, eq(patients.id, labOrders.patientId))
+				.leftJoin(patients, eq(patients.id, labOrders.patientId))
 				.leftJoin(users, and(eq(users.id, labOrders.doctorId), eq(users.organizationId, orgId)))
 				.leftJoin(organizations, eq(organizations.id, labOrders.organizationId))
 				.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
@@ -106,7 +106,9 @@ export async function handleGetWarrantyPassport(request: FastifyRequest<{ Params
 
 		const baseDate = orderWithDetails.completedAt ?? orderWithDetails.createdAt;
 		const baseYear = baseDate ? new Date(baseDate).getFullYear() : new Date().getFullYear();
-		const formattedOrderNum = `ЛО-${baseYear}-${orderWithDetails.id.slice(0, 8).toUpperCase()}`;
+		const formattedOrderNum = orderWithDetails.orderNumber && (orderWithDetails.orderNumber.startsWith("ЗТЛ-") || orderWithDetails.orderNumber.startsWith("ЛО-"))
+			? orderWithDetails.orderNumber
+			: (orderWithDetails.orderNumber ? `ЛО-${baseYear}-${orderWithDetails.orderNumber}` : `ЛО-${baseYear}-${orderWithDetails.id.slice(0, 8).toUpperCase()}`);
 		const batchCode = `LOT-${baseYear}-${orderWithDetails.id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
 
 		const restorationTypeRaw = primaryItem?.restorationType ?? "crown_monolithic";

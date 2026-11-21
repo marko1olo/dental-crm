@@ -1,5 +1,5 @@
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
 import { cashBoxes, cashExpenseReasons, cashOperations, labOrders } from "../../../db/schema.js";
 import { ensureOrganizationExpenseReasons } from "../../../db/seeds/seed_cash_and_reasons.js";
@@ -10,6 +10,7 @@ export interface LabOrderPayInput {
 	readonly amountRub?: number | undefined;
 	readonly amountKopecks?: number | bigint | undefined;
 	readonly notes?: string | undefined;
+	readonly idempotencyKey?: string | undefined;
 }
 
 export type LabOrderPayResult =
@@ -23,6 +24,7 @@ export type LabOrderPayResult =
 			readonly operation: typeof cashOperations.$inferSelect;
 			readonly labOrder: typeof labOrders.$inferSelect;
 			readonly amountKopecks: number;
+			readonly isReplay?: boolean;
 	  };
 
 export async function executeLabOrderPayment(
@@ -41,12 +43,40 @@ export async function executeLabOrderPayment(
 		if (!order) return { kind: "order_not_found" as const };
 		if (order.paidFromCashOperationId) return { kind: "already_paid" as const };
 
+		if (input.idempotencyKey) {
+			const [existingOp] = await tx
+				.select()
+				.from(cashOperations)
+				.where(
+					and(
+						eq(cashOperations.organizationId, orgId),
+						sql`${cashOperations.metadata}->>'idempotencyKey' = ${input.idempotencyKey}`,
+					),
+				)
+				.limit(1);
+
+			if (existingOp) {
+				return {
+					kind: "ok" as const,
+					operation: existingOp,
+					labOrder: order,
+					amountKopecks: rubToKopecks(existingOp.amountRub),
+					isReplay: true,
+				};
+			}
+		}
+
 		const amountToPayKopecks = resolveAmountToPayKopecks(input, order);
 		if (amountToPayKopecks <= 0) return { kind: "invalid_amount" as const };
 
 		// Защита розницы клиники (Мандат 8e / Кассовая безопасность):
 		// Списание технику из кассы не может превышать себестоимость наряда ЗТЛ!
-		if (order.labCostRub != null && Number(order.labCostRub) > 0) {
+		if (order.labCostKopecks != null && Number(order.labCostKopecks) > 0) {
+			const maxAllowedKopecks = Number(order.labCostKopecks);
+			if (amountToPayKopecks > maxAllowedKopecks) {
+				return { kind: "amount_exceeds_cost" as const, maxAllowedKopecks };
+			}
+		} else if (order.labCostRub != null && Number(order.labCostRub) > 0) {
 			const maxAllowedKopecks = rubToKopecks(order.labCostRub);
 			if (amountToPayKopecks > maxAllowedKopecks) {
 				return { kind: "amount_exceeds_cost" as const, maxAllowedKopecks };
@@ -87,6 +117,7 @@ export async function executeLabOrderPayment(
 				reasonText: `Оплата услуг зуботехнической лаборатории по заказу ЛО-${order.secureToken.slice(0, 8).toUpperCase()}${input.notes ? ` (${input.notes})` : ""}`,
 				labOrderId: order.id,
 				patientId: order.patientId,
+				metadata: input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : null,
 			})
 			.returning();
 

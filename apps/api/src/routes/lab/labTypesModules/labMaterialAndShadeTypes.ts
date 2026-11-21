@@ -89,6 +89,8 @@ export const createLabOrderSchema = z.object({
 	materialName: z.string().trim().optional().nullable(),
 	construction: z.string().trim().optional().nullable(),
 	constructionType: z.string().trim().optional().nullable(),
+	restorationType: z.string().trim().optional().nullable(),
+	shadeSystem: z.string().trim().optional().nullable(),
 	jawScope: z.string().trim().optional().nullable(),
 	workTypeId: z.string().trim().optional().nullable(),
 	colorVita: colorVitaSchema.optional().nullable(),
@@ -131,8 +133,10 @@ export const createLabOrderSchema = z.object({
 	clientMutationId: z.string().trim().optional().nullable(),
 });
 
-export {
-	expressLabOrderSchema,
-	checkPlanContinuitySchema,
-} from "./labExpressOrderSchemas.js";
+export const checkPlanContinuitySchema = z.object({
+	patientId: z.string().uuid(),
+	treatmentPlanId: z.string().uuid().optional().nullable(),
+	planAgeDays: z.number().int().nonnegative().optional().default(0),
+});
+
 

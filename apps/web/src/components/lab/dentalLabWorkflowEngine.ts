@@ -1,199 +1,19 @@
 /**
  * dentalLabWorkflowEngine.ts — Движок зуботехнической лаборатории (ЗТЛ).
- * Канонический доменный слой ЗТЛ по Мандатам 8b, 8e, 8am.
+ * Канонический доменный слой ЗТЛ по Мандатам 8b, 8e, 8am, 8bm.
+ * Декомпозирован и консолидирован с ./orderEngine/ (Мандат 8b).
  */
 
-import { DENTAL_LAB_CONSTRUCTIONS, type DentalLabConstructionType, type DentalLabConstructionDef } from "@dental/shared";
-import { addWorkingDaysRu } from "./dentalLabCatalogData";
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import {
+	parseDateOnly,
+	toIsoDate,
+	formatRuDate,
+	addWorkingDaysRu,
+} from "./orderEngine/labDateUtils";
 
-// ─── 1. ORTHOPEDIC WORK TYPES ──────────────────────────────────────────────────
-export type OrthopedicWorkTypeId =
-	| "crown_zirconia"
-	| "crown_emax"
-	| "metal_ceramic"
-	| "temporary_pmma"
-	| "clasp_prosthesis"
-	| "custom_abutment"
-	| "removable_acrylic"
-	| "aligners";
-
-export interface OrthopedicWorkTypeDefinition {
-	readonly id: OrthopedicWorkTypeId;
-	readonly nameRu: string;
-	readonly shortNameRu: string;
-	readonly categoryRu: string;
-	readonly descriptionRu: string;
-	readonly icon: string;
-	readonly defaultMaterialRu: string;
-	readonly standardTurnaroundWorkingDays: number;
-	readonly requiresFittingStage: boolean;
-	readonly requiresStumpShade: boolean;
-	readonly requiresImplantSystem: boolean;
-	readonly defaultPriceKopecks: number;
-	readonly defaultCostKopecks: number;
-	readonly canonicalConstructionId?: DentalLabConstructionType | undefined;
-	readonly canonicalDef?: DentalLabConstructionDef | undefined;
-}
-
-export const FIXED_ORTHOPEDIC_WORK_TYPES: Record<"crown_emax" | "crown_zirconia" | "metal_ceramic" | "temporary_pmma", OrthopedicWorkTypeDefinition> = {
-	crown_emax: {
-		id: "crown_emax",
-		nameRu: "Коронка IPS e.max Press / CAD (дисиликат лития)",
-		shortNameRu: "Коронка e.max Press",
-		categoryRu: "Несъемное протезирование",
-		descriptionRu: "Высокоэстетичная цельнокерамическая реставрация из дисиликата лития с естественной опалесценцией и флюоресценцией.",
-		icon: "diamond",
-		defaultMaterialRu: "IPS e.max Press (Ivoclar Vivadent)",
-		standardTurnaroundWorkingDays: DENTAL_LAB_CONSTRUCTIONS.crown_emax.standardTurnaroundDays,
-		requiresFittingStage: true,
-		requiresStumpShade: DENTAL_LAB_CONSTRUCTIONS.crown_emax.requiresStumpShade,
-		requiresImplantSystem: false,
-		defaultPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultPatientPriceKopecks,
-		defaultCostKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_emax.defaultZtlCostKopecks,
-		canonicalConstructionId: "crown_emax",
-		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.crown_emax,
-	},
-	crown_zirconia: {
-		id: "crown_zirconia",
-		nameRu: "Коронка из диоксида циркония (Katana ML / Prettau)",
-		shortNameRu: "Коронка ZrO₂ (Katana ML)",
-		categoryRu: "Несъемное протезирование",
-		descriptionRu: "Анатомическая монолитная коронка из многослойного диоксида циркония с плавным градиентом прозрачности и прочностью > 1100 МПа.",
-		icon: "crown",
-		defaultMaterialRu: "Katana Zirconia HTML (Kuraray Noritake)",
-		standardTurnaroundWorkingDays: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.standardTurnaroundDays,
-		requiresFittingStage: false,
-		requiresStumpShade: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.requiresStumpShade,
-		requiresImplantSystem: false,
-		defaultPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultPatientPriceKopecks,
-		defaultCostKopecks: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia.defaultZtlCostKopecks,
-		canonicalConstructionId: "crown_zirconia",
-		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.crown_zirconia,
-	},
-	metal_ceramic: {
-		id: "metal_ceramic",
-		nameRu: "Металлокерамическая коронка (Co-Cr фрезерованный / литой)",
-		shortNameRu: "Металлокерамика Co-Cr",
-		categoryRu: "Несъемное протезирование",
-		descriptionRu: "Классическая металлокерамическая коронка на фрезерованном или литом кобальт-хромовом каркасе с послойной керамической облицовкой.",
-		icon: "shield",
-		defaultMaterialRu: "Co-Cr сплав Bego Wiron light + Noritake EX-3",
-		standardTurnaroundWorkingDays: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.standardTurnaroundDays,
-		requiresFittingStage: true,
-		requiresStumpShade: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.requiresStumpShade,
-		requiresImplantSystem: false,
-		defaultPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultPatientPriceKopecks,
-		defaultCostKopecks: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic.defaultZtlCostKopecks,
-		canonicalConstructionId: "metal_ceramic",
-		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.metal_ceramic,
-	},
-	temporary_pmma: {
-		id: "temporary_pmma",
-		nameRu: "Временная пластмассовая коронка PMMA (фрезерованная / 3D печать)",
-		shortNameRu: "Временная PMMA",
-		categoryRu: "Временное протезирование",
-		descriptionRu: "Высокоточная провизорная коронка из фрезерованного PMMA CAD/CAM или биосовместимого 3D-фотополимера для защиты препарированного зуба.",
-		icon: "clock",
-		defaultMaterialRu: "PMMA CAD/CAM фрезерованная / NextDent C&B",
-		standardTurnaroundWorkingDays: 2,
-		requiresFittingStage: false,
-		requiresStumpShade: false,
-		requiresImplantSystem: false,
-		defaultPriceKopecks: 250000,
-		defaultCostKopecks: 80000,
-	},
-};
-
-export const REMOVABLE_ORTHOPEDIC_WORK_TYPES: Record<"clasp_prosthesis" | "removable_acrylic" | "custom_abutment" | "aligners", OrthopedicWorkTypeDefinition> = {
-	clasp_prosthesis: {
-		id: "clasp_prosthesis",
-		nameRu: "Бюгельный протез с замковой фиксацией Bredent / кламмерами",
-		shortNameRu: "Бюгельный протез Bredent",
-		categoryRu: "Съемное протезирование",
-		descriptionRu: "Дуговой цельнолитой протез на Co-Cr каркасе с микрозамками Bredent VKS-SG или опорно-удерживающими кламмерами и гарнитурными зубами.",
-		icon: "tooth",
-		defaultMaterialRu: "Co-Cr дуга BEGO + замки Bredent VKS + Ivoclar Vivodent",
-		standardTurnaroundWorkingDays: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.standardTurnaroundDays,
-		requiresFittingStage: true,
-		requiresStumpShade: false,
-		requiresImplantSystem: false,
-		defaultPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultPatientPriceKopecks,
-		defaultCostKopecks: DENTAL_LAB_CONSTRUCTIONS.clasp_denture.defaultZtlCostKopecks,
-		canonicalConstructionId: "clasp_denture",
-		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.clasp_denture,
-	},
-	removable_acrylic: {
-		id: "removable_acrylic",
-		nameRu: "Съемный пластиночный протез (Acry-Free / Ивокрил)",
-		shortNameRu: "Съемный акриловый протез",
-		categoryRu: "Съемное протезирование",
-		descriptionRu: "Полный или частичный съемный протез из безаллергенного термопласта Acry-Free или горячеполимеризуемой акриловой пластмассы.",
-		icon: "clamp",
-		defaultMaterialRu: "Термопласт Acry-Free / Акрил Vertex Rapid Simplified",
-		standardTurnaroundWorkingDays: 8,
-		requiresFittingStage: true,
-		requiresStumpShade: false,
-		requiresImplantSystem: false,
-		defaultPriceKopecks: 3200000,
-		defaultCostKopecks: 1100000,
-	},
-	custom_abutment: {
-		id: "custom_abutment",
-		nameRu: "Индивидуальный абатмент (Ti-Base / ZrO₂) + коронка",
-		shortNameRu: "Индивидуальный абатмент + коронка",
-		categoryRu: "Протезирование на имплантатах",
-		descriptionRu: "Фрезерованный индивидуальный титановый или циркониевый абатмент с винтовой фиксацией на дентальный имплантат и циркониевой коронкой.",
-		icon: "bolt",
-		defaultMaterialRu: "Титан Grade 5 ELI + ZrO₂ Katana ML (Medentika / Straumann)",
-		standardTurnaroundWorkingDays: 7,
-		requiresFittingStage: true,
-		requiresStumpShade: false,
-		requiresImplantSystem: true,
-		defaultPriceKopecks: 3800000,
-		defaultCostKopecks: 1300000,
-	},
-	aligners: {
-		id: "aligners",
-		nameRu: "Элайнеры / Ортодонтические каппы / Сплинты",
-		shortNameRu: "Элайнеры / Сплинт-каппа",
-		categoryRu: "Ортодонтия и сплинты",
-		descriptionRu: "Серия прозрачных биосовместимых капп толщиной 0.75 мм из многослойного полиэтилентерефталата (PET-G) для перемещения зубов или окклюзионной терапии.",
-		icon: "Target",
-		defaultMaterialRu: "Биосовместимый полимер Duran / Zendura FLX (3D-печать моделей)",
-		standardTurnaroundWorkingDays: DENTAL_LAB_CONSTRUCTIONS.aligner_splint.standardTurnaroundDays,
-		requiresFittingStage: false,
-		requiresStumpShade: false,
-		requiresImplantSystem: false,
-		defaultPriceKopecks: DENTAL_LAB_CONSTRUCTIONS.aligner_splint.defaultPatientPriceKopecks,
-		defaultCostKopecks: DENTAL_LAB_CONSTRUCTIONS.aligner_splint.defaultZtlCostKopecks,
-		canonicalConstructionId: "aligner_splint",
-		canonicalDef: DENTAL_LAB_CONSTRUCTIONS.aligner_splint,
-	},
-};
-
-export const ORTHOPEDIC_WORK_TYPES: Record<OrthopedicWorkTypeId, OrthopedicWorkTypeDefinition> = {
-	...FIXED_ORTHOPEDIC_WORK_TYPES,
-	...REMOVABLE_ORTHOPEDIC_WORK_TYPES,
-};
-
-export const ORDERED_MARKET_ORTHOPEDIC_TYPES: readonly OrthopedicWorkTypeId[] = [
-	"crown_zirconia",
-	"crown_emax",
-	"metal_ceramic",
-	"temporary_pmma",
-	"clasp_prosthesis",
-	"custom_abutment",
-	"removable_acrylic",
-	"aligners",
-] as const;
-
-export function getCanonicalLabConstruction(typeId: OrthopedicWorkTypeId) {
-	const item = ORTHOPEDIC_WORK_TYPES[typeId];
-	if (!item?.canonicalConstructionId) return null;
-	return DENTAL_LAB_CONSTRUCTIONS[item.canonicalConstructionId] ?? null;
-}
-
-export { DENTAL_LAB_CONSTRUCTIONS };
+// ─── 1. ORTHOPEDIC WORK TYPES (DELEGATED TO ORDER ENGINE) ──────────────────────
+export * from "./orderEngine/labOrthopedicWorkTypes";
 
 // ─── 2. WORKFLOW STATUSES & STAGES ─────────────────────────────────────────────
 export type LabWorkflowStatus =
@@ -410,170 +230,16 @@ export const LAB_TECHNOLOGICAL_STAGE_ORDER: readonly LabTechnologicalStageId[] =
 	"fitting_fixation",
 ];
 
-// ─── 4. IMPLANTS & ABUTMENTS ───────────────────────────────────────────────────
-export interface LabImplantComponentsManifest {
-	hasImplantComponents?: boolean | undefined;
-	implantSystemName?: string | undefined;
-	transfersCount?: number | undefined;
-	transfersType?: "open_tray" | "closed_tray" | "scan_body" | string | undefined;
-	analogsCount?: number | undefined;
-	healingAbutmentsCount?: number | undefined;
-	screwsCount?: number | undefined;
-	extraComponentsNotes?: string | undefined;
-}
+// ─── 4. IMPLANTS & ABUTMENTS (DELEGATED TO ORDER ENGINE) ────────────────────────
+export * from "./orderEngine/labImplantCatalogOptions";
 
-export function formatImplantComponentsSummary(manifest?: LabImplantComponentsManifest): string {
-	if (!manifest || (!manifest.hasImplantComponents && !manifest.transfersCount && !manifest.analogsCount && !manifest.healingAbutmentsCount && !manifest.screwsCount)) {
-		return "Компоненты имплантационной системы не передавались";
-	}
-	const parts: string[] = [];
-	if (manifest.implantSystemName) parts.push(`Система: ${manifest.implantSystemName}`);
-	if (manifest.transfersCount) {
-		const typeLabel = manifest.transfersType === "open_tray" ? "открытая ложка" : manifest.transfersType === "closed_tray" ? "закрытая ложка" : manifest.transfersType === "scan_body" ? "скан-боди" : "";
-		parts.push(`Трансферы: ${manifest.transfersCount} шт.${typeLabel ? ` (${typeLabel})` : ""}`);
-	}
-	if (manifest.analogsCount) parts.push(`Аналоги: ${manifest.analogsCount} шт.`);
-	if (manifest.healingAbutmentsCount) parts.push(`ФДМ: ${manifest.healingAbutmentsCount} шт.`);
-	if (manifest.screwsCount) parts.push(`Винты: ${manifest.screwsCount} шт.`);
-	if (manifest.extraComponentsNotes) parts.push(`Доп: ${manifest.extraComponentsNotes}`);
-	return parts.join("; ");
-}
-
-export type ImplantPlatformType = "conical" | "hex";
-
-export interface ImplantPlatformOption {
-	id: ImplantPlatformType;
-	nameRu: string;
-	descriptionRu: string;
-}
-
-export const IMPLANT_PLATFORMS: ImplantPlatformOption[] = [
-	{
-		id: "conical",
-		nameRu: "Conical (Коническое соединение / Morse Taper)",
-		descriptionRu: "Конус Морзе с антиротационным элементом (Straumann BLX, Nobel Conical, Astra EV, Osstem TS, Dentium)",
-	},
-	{
-		id: "hex",
-		nameRu: "Hex (Шестигранное соединение / Internal/External Hex)",
-		descriptionRu: "Внутренний или внешний шестигранник (Zimmer, BioHorizons, MIS, Alpha-Bio)",
-	},
-];
-
-export type AbutmentCategoryType =
-	| "tibase_bonded"
-	| "multiunit_straight"
-	| "multiunit_17"
-	| "multiunit_30"
-	| "custom_titanium"
-	| "custom_zirconia"
-	| "standard_titanium";
-
-export interface AbutmentTypeOption {
-	id: AbutmentCategoryType;
-	nameRu: string;
-	angle: number;
-	descriptionRu: string;
-	isMultiUnit?: boolean;
-	isTiBase?: boolean;
-}
-
-export const ABUTMENT_TYPE_OPTIONS: AbutmentTypeOption[] = [
-	{
-		id: "tibase_bonded",
-		nameRu: "Ti-Base вклеиваемое основание",
-		angle: 0,
-		isTiBase: true,
-		descriptionRu: "Титановое основание (Ti-Base) под вклейку циркониевой коронки (3M RelyX Ultimate / Multilink Hybrid Abutment).",
-	},
-	{
-		id: "multiunit_straight",
-		nameRu: "Multi-Unit прямой (0°)",
-		angle: 0,
-		isMultiUnit: true,
-		descriptionRu: "Винтовой абатмент Multi-Unit для мостовидных и балочных конструкций при параллельных осях.",
-	},
-	{
-		id: "multiunit_17",
-		nameRu: "Multi-Unit угловой 17°",
-		angle: 17,
-		isMultiUnit: true,
-		descriptionRu: "Угловой абатмент Multi-Unit 17° для компенсации наклона имплантатов в протоколах All-on-4 / All-on-6.",
-	},
-	{
-		id: "multiunit_30",
-		nameRu: "Multi-Unit угловой 30°",
-		angle: 30,
-		isMultiUnit: true,
-		descriptionRu: "Угловой абатмент Multi-Unit 30° для дистальных наклонных имплантатов в протоколах All-on-4 / All-on-6.",
-	},
-	{
-		id: "custom_titanium",
-		nameRu: "Индивидуальный титановый абатмент Grade 5",
-		angle: 0,
-		descriptionRu: "Фрезерованный индивидуальный абатмент из титана Grade 5 с анатомическим десневым уступом.",
-	},
-	{
-		id: "custom_zirconia",
-		nameRu: "Индивидуальный циркониевый абатмент ZrO₂",
-		angle: 0,
-		descriptionRu: "Безметалловый абатмент из оксида циркония на титановом интерфейсе для фронтальной эстетики.",
-	},
-	{
-		id: "standard_titanium",
-		nameRu: "Стандартный прямой титановый абатмент",
-		angle: 0,
-		descriptionRu: "Фабричный стандартный абатмент для цементной фиксации одиночных коронок.",
-	},
-];
-
-export type FixationType = "screw_retained" | "cement_retained";
-
-export interface FixationTypeOption {
-	id: FixationType;
-	nameRu: string;
-	descriptionRu: string;
-}
-
-export const FIXATION_TYPES: FixationTypeOption[] = [
-	{
-		id: "screw_retained",
-		nameRu: "Винтовая фиксация",
-		descriptionRu: "Трансокклюзионная шахта винта, прямое прикручивание к имплантату или Multi-Unit. Безопасность для маргинальной кости.",
-	},
-	{
-		id: "cement_retained",
-		nameRu: "Цементная фиксация",
-		descriptionRu: "Фиксация коронки на постоянный/временный цемент на индивидуальный абатмент с зазором 30–50 мкм.",
-	},
-];
-
-// ─── 5. DATE UTILITIES ─────────────────────────────────────────────────────────
-export function parseDateToMidnight(input: string | Date): Date {
-	const d = typeof input === "string" ? new Date(input) : new Date(input.getTime());
-	d.setHours(0, 0, 0, 0);
-	return d;
-}
-
-export function formatDateToIsoDay(d: Date): string {
-	const year = d.getFullYear();
-	const month = String(d.getMonth() + 1).padStart(2, "0");
-	const day = String(d.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-}
-
-export function formatRussianDate(isoString: string): string {
-	if (!isoString) return "—";
-	const parts = isoString.slice(0, 10).split("-");
-	if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
-		return `${parts[2]}.${parts[1]}.${parts[0]}`;
-	}
-	return isoString;
-}
-
+// ─── 5. DATE UTILITIES (DELEGATED TO ORDER ENGINE) ─────────────────────────────
+export const parseDateToMidnight = parseDateOnly;
+export const formatDateToIsoDay = toIsoDate;
+export const formatRussianDate = formatRuDate;
 export { addWorkingDaysRu };
 
-// ─── 6. FINANCIALS ─────────────────────────────────────────────────────────────
+// ─── 6. FINANCIALS (EXACT KOPECKS ENGINE — MANDATE 8bm) ────────────────────────
 export type WarrantyLiabilityType = "clinic_warranty" | "lab_defect" | "patient_fault";
 
 export interface DentalLabWorkflowFinancials {
@@ -619,11 +285,17 @@ export function calculateLabWorkflowFinancials(
 	const count = Math.max(1, Math.round(params.unitsCount || 1));
 	const pricePerUnit = Math.max(
 		0,
-		Math.round(params.pricePerUnitKopecks ?? (params.pricePerUnitRub ? params.pricePerUnitRub * 100 : 0)),
+		Math.round(
+			params.pricePerUnitKopecks ??
+				(params.pricePerUnitRub ? rublesToKopecks(params.pricePerUnitRub) : 0),
+		),
 	);
 	const costPerUnit = Math.max(
 		0,
-		Math.round(params.costPerUnitKopecks ?? (params.costPerUnitRub ? params.costPerUnitRub * 100 : 0)),
+		Math.round(
+			params.costPerUnitKopecks ??
+				(params.costPerUnitRub ? rublesToKopecks(params.costPerUnitRub) : 0),
+		),
 	);
 	const doctorPct = Math.max(0, Math.min(100, params.doctorPercent ?? 20));
 
@@ -631,19 +303,33 @@ export function calculateLabWorkflowFinancials(
 		const liabilityType: WarrantyLiabilityType = params.warrantyLiabilityType || "clinic_warranty";
 		const isLabDefect = liabilityType === "lab_defect";
 		const effectiveLabCostKopecks = isLabDefect ? 0 : costPerUnit * count;
-		const labelRu = isLabDefect ? "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)" : "Гарантийные обязательства клиники";
+		const labelRu = isLabDefect
+			? "Брак ЗТЛ (переделка за счет лаборатории 0 ₽)"
+			: "Гарантийные обязательства клиники";
 
 		return {
-			unitsCount: count, pricePerUnitKopecks: 0, costPerUnitKopecks: costPerUnit, patientPriceTotalKopecks: 0,
-			labCostKopecks: effectiveLabCostKopecks, labCostTotalKopecks: effectiveLabCostKopecks,
-			clinicGrossMarginKopecks: 0, grossMarginPercent: 0, doctorPercent: doctorPct,
-			doctorWageBaseKopecks: 0, doctorWageKopecks: 0,
+			unitsCount: count,
+			pricePerUnitKopecks: 0,
+			costPerUnitKopecks: costPerUnit,
+			patientPriceTotalKopecks: 0,
+			labCostKopecks: effectiveLabCostKopecks,
+			labCostTotalKopecks: effectiveLabCostKopecks,
+			clinicGrossMarginKopecks: 0,
+			grossMarginPercent: 0,
+			doctorPercent: doctorPct,
+			doctorWageBaseKopecks: 0,
+			doctorWageKopecks: 0,
 			clinicNetProfitKopecks: effectiveLabCostKopecks === 0 ? 0 : -effectiveLabCostKopecks,
-			patientPriceTotalRub: 0, labCostTotalRub: effectiveLabCostKopecks / 100,
-			clinicGrossMarginRub: 0, doctorWageRub: 0,
-			clinicNetProfitRub: effectiveLabCostKopecks === 0 ? 0 : -effectiveLabCostKopecks / 100,
-			isBalanced: true, isWarrantyRework: true, warrantyLiabilityType: liabilityType,
-			warrantyLiabilityKopecks: effectiveLabCostKopecks, warrantyLiabilityRub: effectiveLabCostKopecks / 100,
+			patientPriceTotalRub: 0,
+			labCostTotalRub: kopecksToRubles(effectiveLabCostKopecks),
+			clinicGrossMarginRub: 0,
+			doctorWageRub: 0,
+			clinicNetProfitRub: effectiveLabCostKopecks === 0 ? 0 : -kopecksToRubles(effectiveLabCostKopecks),
+			isBalanced: true,
+			isWarrantyRework: true,
+			warrantyLiabilityType: liabilityType,
+			warrantyLiabilityKopecks: effectiveLabCostKopecks,
+			warrantyLiabilityRub: kopecksToRubles(effectiveLabCostKopecks),
 			warrantyLiabilityLabelRu: labelRu,
 		};
 	}
@@ -651,22 +337,33 @@ export function calculateLabWorkflowFinancials(
 	const patientPriceTotalKopecks = pricePerUnit * count;
 	const labCostKopecks = costPerUnit * count;
 	const clinicGrossMarginKopecks = Math.max(0, patientPriceTotalKopecks - labCostKopecks);
-	const grossMarginPercent = patientPriceTotalKopecks > 0
-		? Number(((clinicGrossMarginKopecks / patientPriceTotalKopecks) * 100).toFixed(1))
-		: 0;
+	const grossMarginPercent =
+		patientPriceTotalKopecks > 0
+			? Number(((clinicGrossMarginKopecks / patientPriceTotalKopecks) * 100).toFixed(1))
+			: 0;
 
 	const doctorWageBaseKopecks = clinicGrossMarginKopecks;
 	const doctorWageKopecks = Math.round((doctorWageBaseKopecks * doctorPct) / 100);
 	const clinicNetProfitKopecks = doctorWageBaseKopecks - doctorWageKopecks;
 
 	return {
-		unitsCount: count, pricePerUnitKopecks: pricePerUnit, costPerUnitKopecks: costPerUnit,
-		patientPriceTotalKopecks, labCostKopecks, labCostTotalKopecks: labCostKopecks,
-		clinicGrossMarginKopecks, grossMarginPercent, doctorPercent: doctorPct,
-		doctorWageBaseKopecks, doctorWageKopecks, clinicNetProfitKopecks,
-		patientPriceTotalRub: patientPriceTotalKopecks / 100, labCostTotalRub: labCostKopecks / 100,
-		clinicGrossMarginRub: clinicGrossMarginKopecks / 100, doctorWageRub: doctorWageKopecks / 100,
-		clinicNetProfitRub: clinicNetProfitKopecks / 100,
+		unitsCount: count,
+		pricePerUnitKopecks: pricePerUnit,
+		costPerUnitKopecks: costPerUnit,
+		patientPriceTotalKopecks,
+		labCostKopecks,
+		labCostTotalKopecks: labCostKopecks,
+		clinicGrossMarginKopecks,
+		grossMarginPercent,
+		doctorPercent: doctorPct,
+		doctorWageBaseKopecks,
+		doctorWageKopecks,
+		clinicNetProfitKopecks,
+		patientPriceTotalRub: kopecksToRubles(patientPriceTotalKopecks),
+		labCostTotalRub: kopecksToRubles(labCostKopecks),
+		clinicGrossMarginRub: kopecksToRubles(clinicGrossMarginKopecks),
+		doctorWageRub: kopecksToRubles(doctorWageKopecks),
+		clinicNetProfitRub: kopecksToRubles(clinicNetProfitKopecks),
 		isBalanced: doctorWageKopecks + clinicNetProfitKopecks === doctorWageBaseKopecks,
 		isWarrantyRework: false,
 	};
@@ -710,23 +407,32 @@ export interface CheckLabDeadlineParams {
 }
 
 export function checkLabDeadlineAndAlert(params: CheckLabDeadlineParams): LabDelayAlert {
-	const expectedDate = parseDateToMidnight(params.expectedLabDate);
-	const expectedIso = formatDateToIsoDay(expectedDate);
-	const expectedRu = formatRussianDate(expectedIso);
-	const today = params.currentDate ? parseDateToMidnight(params.currentDate) : parseDateToMidnight(new Date());
+	const expectedDate = parseDateOnly(params.expectedLabDate);
+	const expectedIso = toIsoDate(expectedDate);
+	const expectedRu = formatRuDate(expectedIso);
+	const today = params.currentDate ? parseDateOnly(params.currentDate) : parseDateOnly(new Date());
 
 	const visitDateRaw = params.fittingDate || params.scheduledVisitDate;
-	const visitDate = visitDateRaw ? parseDateToMidnight(visitDateRaw) : null;
-	const visitIso = visitDate ? formatDateToIsoDay(visitDate) : undefined;
-	const visitRu = visitIso ? formatRussianDate(visitIso) : "не назначен";
-	const fittingIso = params.fittingDate ? formatDateToIsoDay(parseDateToMidnight(params.fittingDate)) : visitIso;
+	const visitDate = visitDateRaw ? parseDateOnly(visitDateRaw) : null;
+	const visitIso = visitDate ? toIsoDate(visitDate) : undefined;
+	const visitRu = visitIso ? formatRuDate(visitIso) : "не назначен";
+	const fittingIso = params.fittingDate ? toIsoDate(parseDateOnly(params.fittingDate)) : visitIso;
 	const appointmentId = params.appointmentId || undefined;
 
 	if (params.isInstalledOrCompleted) {
 		return {
-			hasAlert: false, isDelayedAlert: false, lab_delay_alert: false, status: "ON_TRACK", severity: "OK",
-			daysDifference: 0, expectedLabDateIso: expectedIso, scheduledVisitDateIso: visitIso, fittingDateIso: fittingIso,
-			appointmentId, alertMessageRu: "Работа успешно зафиксирована в полости рта.", detailedReasonRu: "Заказ завершен.",
+			hasAlert: false,
+			isDelayedAlert: false,
+			lab_delay_alert: false,
+			status: "ON_TRACK",
+			severity: "OK",
+			daysDifference: 0,
+			expectedLabDateIso: expectedIso,
+			scheduledVisitDateIso: visitIso,
+			fittingDateIso: fittingIso,
+			appointmentId,
+			alertMessageRu: "Работа успешно зафиксирована в полости рта.",
+			detailedReasonRu: "Заказ завершен.",
 			recommendedActionRu: "Действий не требуется.",
 		};
 	}
@@ -736,9 +442,17 @@ export function checkLabDeadlineAndAlert(params: CheckLabDeadlineParams): LabDel
 	if (visitDate && expectedDate.getTime() > visitDate.getTime()) {
 		const conflictDays = Math.round((expectedDate.getTime() - visitDate.getTime()) / (1000 * 60 * 60 * 24));
 		return {
-			hasAlert: true, isDelayedAlert: true, lab_delay_alert: true, status: "VISIT_CONFLICT", severity: "CRITICAL",
-			daysDifference: daysToLab, expectedLabDateIso: expectedIso, scheduledVisitDateIso: visitIso, fittingDateIso: fittingIso,
-			appointmentId, alertMessageRu: `КРИТИЧЕСКИЙ КОНФЛИКТ: Готовность ЗТЛ (${expectedRu}) позже приема пациента (${visitRu}) на ${conflictDays} дн.!`,
+			hasAlert: true,
+			isDelayedAlert: true,
+			lab_delay_alert: true,
+			status: "VISIT_CONFLICT",
+			severity: "CRITICAL",
+			daysDifference: daysToLab,
+			expectedLabDateIso: expectedIso,
+			scheduledVisitDateIso: visitIso,
+			fittingDateIso: fittingIso,
+			appointmentId,
+			alertMessageRu: `КРИТИЧЕСКИЙ КОНФЛИКТ: Готовность ЗТЛ (${expectedRu}) позже приема пациента (${visitRu}) на ${conflictDays} дн.!`,
 			detailedReasonRu: `Пациент записан на прием ${visitRu}, а готовность только ${expectedRu}.`,
 			recommendedActionRu: `Срочно свяжитесь с администратором для переноса визита на дату не ранее ${expectedRu}.`,
 		};
@@ -747,9 +461,17 @@ export function checkLabDeadlineAndAlert(params: CheckLabDeadlineParams): LabDel
 	if (daysToLab < 0) {
 		const overdueDays = Math.abs(daysToLab);
 		return {
-			hasAlert: true, isDelayedAlert: true, lab_delay_alert: true, status: "OVERDUE", severity: "CRITICAL",
-			daysDifference: daysToLab, expectedLabDateIso: expectedIso, scheduledVisitDateIso: visitIso, fittingDateIso: fittingIso,
-			appointmentId, alertMessageRu: `ПРОСРОЧЕНО ЗТЛ: Заказ задерживается на ${overdueDays} дн. (план был: ${expectedRu})!`,
+			hasAlert: true,
+			isDelayedAlert: true,
+			lab_delay_alert: true,
+			status: "OVERDUE",
+			severity: "CRITICAL",
+			daysDifference: daysToLab,
+			expectedLabDateIso: expectedIso,
+			scheduledVisitDateIso: visitIso,
+			fittingDateIso: fittingIso,
+			appointmentId,
+			alertMessageRu: `ПРОСРОЧЕНО ЗТЛ: Заказ задерживается на ${overdueDays} дн. (план был: ${expectedRu})!`,
 			detailedReasonRu: `Лаборатория не доставила конструкцию к нормативному сроку ${expectedRu}.`,
 			recommendedActionRu: "Свяжитесь с курьерской службой или лабораторией для выяснения времени доставки.",
 		};
@@ -757,9 +479,17 @@ export function checkLabDeadlineAndAlert(params: CheckLabDeadlineParams): LabDel
 
 	if (daysToLab === 0) {
 		return {
-			hasAlert: true, isDelayedAlert: false, lab_delay_alert: false, status: "URGENT_TODAY", severity: "WARNING",
-			daysDifference: 0, expectedLabDateIso: expectedIso, scheduledVisitDateIso: visitIso, fittingDateIso: fittingIso,
-			appointmentId, alertMessageRu: `Сдача работы из ЗТЛ сегодня (${expectedRu})! Ожидается доставка курьером.`,
+			hasAlert: true,
+			isDelayedAlert: false,
+			lab_delay_alert: false,
+			status: "URGENT_TODAY",
+			severity: "WARNING",
+			daysDifference: 0,
+			expectedLabDateIso: expectedIso,
+			scheduledVisitDateIso: visitIso,
+			fittingDateIso: fittingIso,
+			appointmentId,
+			alertMessageRu: `Сдача работы из ЗТЛ сегодня (${expectedRu})! Ожидается доставка курьером.`,
 			detailedReasonRu: "Заказ должен поступить в клинику сегодня. Проверьте приемку.",
 			recommendedActionRu: "Проконтролируйте приемку коробки с нарядом у администратора.",
 		};
@@ -767,11 +497,21 @@ export function checkLabDeadlineAndAlert(params: CheckLabDeadlineParams): LabDel
 
 	const isApproaching = daysToLab <= 2;
 	return {
-		hasAlert: false, isDelayedAlert: false, lab_delay_alert: false,
-		status: isApproaching ? "APPROACHING" : "ON_TRACK", severity: isApproaching ? "INFO" : "OK",
-		daysDifference: daysToLab, expectedLabDateIso: expectedIso, scheduledVisitDateIso: visitIso, fittingDateIso: fittingIso,
-		appointmentId, alertMessageRu: isApproaching ? `Срок сдачи ЗТЛ через ${daysToLab} дн. (${expectedRu}).` : `В графике. Срок готовности через ${daysToLab} дн. (${expectedRu}).`,
-		detailedReasonRu: "Производственный цикл ЗТЛ протекает штатно.", recommendedActionRu: "Действий не требуется.",
+		hasAlert: false,
+		isDelayedAlert: false,
+		lab_delay_alert: false,
+		status: isApproaching ? "APPROACHING" : "ON_TRACK",
+		severity: isApproaching ? "INFO" : "OK",
+		daysDifference: daysToLab,
+		expectedLabDateIso: expectedIso,
+		scheduledVisitDateIso: visitIso,
+		fittingDateIso: fittingIso,
+		appointmentId,
+		alertMessageRu: isApproaching
+			? `Срок сдачи ЗТЛ через ${daysToLab} дн. (${expectedRu}).`
+			: `В графике. Срок готовности через ${daysToLab} дн. (${expectedRu}).`,
+		detailedReasonRu: "Производственный цикл ЗТЛ протекает штатно.",
+		recommendedActionRu: "Действий не требуется.",
 	};
 }
 

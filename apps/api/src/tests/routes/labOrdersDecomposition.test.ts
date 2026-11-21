@@ -8,7 +8,6 @@ import {
 import {
 	CANONICAL_DENTAL_LAB_PRESETS,
 	colorVitaSchema,
-	expressLabOrderSchema,
 	normalizeRestorationMaterial,
 	normalizeRestorationType,
 	normalizeShadeSystem,

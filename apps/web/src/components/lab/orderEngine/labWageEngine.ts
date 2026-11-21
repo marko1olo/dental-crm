@@ -1,3 +1,5 @@
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+
 export interface ZtlWageFinancials {
 	readonly unitsCount: number;
 	readonly patientPriceKopecks: number;
@@ -34,11 +36,11 @@ export function calculateZtlWageFinancials(params: CalculateZtlFinancialsParams)
 	const count = Math.max(1, Math.round(params.unitsCount || 1));
 	const unitPriceKop = Math.max(
 		0,
-		Math.round(params.patientPriceKopecks ?? (params.patientPriceRub != null ? params.patientPriceRub * 100 : 2400000)),
+		Math.round(params.patientPriceKopecks ?? (params.patientPriceRub != null ? rublesToKopecks(params.patientPriceRub) : 2400000)),
 	);
 	const unitCostKop = Math.max(
 		0,
-		Math.round(params.ztlCostKopecks ?? (params.ztlCostRub != null ? params.ztlCostRub * 100 : 750000)),
+		Math.round(params.ztlCostKopecks ?? (params.ztlCostRub != null ? rublesToKopecks(params.ztlCostRub) : 750000)),
 	);
 	const docPct = Math.max(0, Math.min(100, params.doctorSharePercent ?? 20));
 	const isWarranty = Boolean(params.isWarrantyRework);
@@ -60,11 +62,11 @@ export function calculateZtlWageFinancials(params: CalculateZtlFinancialsParams)
 		return {
 			unitsCount: count, patientPriceKopecks: 0, ztlCostKopecks: effectiveZtlCostKop,
 			doctorWageBaseKopecks: 0, doctorSharePercent: docPct, doctorWageKopecks: 0,
-			clinicMarginKopecks, patientPriceRub: 0, ztlCostRub: effectiveZtlCostKop / 100,
+			clinicMarginKopecks, patientPriceRub: 0, ztlCostRub: kopecksToRubles(effectiveZtlCostKop),
 			doctorWageBaseRub: 0, doctorWageRub: 0,
-			clinicMarginRub: clinicMarginKopecks === 0 ? 0 : clinicMarginKopecks / 100,
+			clinicMarginRub: clinicMarginKopecks === 0 ? 0 : kopecksToRubles(clinicMarginKopecks),
 			isBalanced: true, isWarrantyRework: true, warrantyLiabilityType: liabilityType,
-			warrantyLiabilityKopecks, warrantyLiabilityRub: warrantyLiabilityKopecks / 100,
+			warrantyLiabilityKopecks, warrantyLiabilityRub: kopecksToRubles(warrantyLiabilityKopecks),
 			warrantyLiabilityLabelRu: liabilityLabelRu,
 		};
 	}
@@ -78,9 +80,9 @@ export function calculateZtlWageFinancials(params: CalculateZtlFinancialsParams)
 	return {
 		unitsCount: count, patientPriceKopecks, ztlCostKopecks, doctorWageBaseKopecks,
 		doctorSharePercent: docPct, doctorWageKopecks, clinicMarginKopecks,
-		patientPriceRub: patientPriceKopecks / 100, ztlCostRub: ztlCostKopecks / 100,
-		doctorWageBaseRub: doctorWageBaseKopecks / 100, doctorWageRub: doctorWageKopecks / 100,
-		clinicMarginRub: clinicMarginKopecks / 100,
+		patientPriceRub: kopecksToRubles(patientPriceKopecks), ztlCostRub: kopecksToRubles(ztlCostKopecks),
+		doctorWageBaseRub: kopecksToRubles(doctorWageBaseKopecks), doctorWageRub: kopecksToRubles(doctorWageKopecks),
+		clinicMarginRub: kopecksToRubles(clinicMarginKopecks),
 		isBalanced: doctorWageKopecks + clinicMarginKopecks === doctorWageBaseKopecks,
 		isWarrantyRework: false,
 	};

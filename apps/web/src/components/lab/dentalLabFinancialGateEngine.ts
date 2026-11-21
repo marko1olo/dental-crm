@@ -4,7 +4,7 @@
  * Mandate 8b: строго <= 120 строк.
  */
 
-import { formatKopecksRu, percentageOfKopecks } from "@dental/shared";
+import { formatKopecksRu, percentageOfKopecks, kopecksToRubles } from "@dental/shared";
 import type {
 	DentalLabFinancialGateParams,
 	DentalLabFinancialGateResult,
@@ -30,7 +30,7 @@ export function checkDentalLabFinancialGate(
 		minAdvancePercent * 100,
 	);
 	const missingAdvance = Math.max(0, requiredAdvance - totalCovered);
-	const missingRub = Math.ceil(missingAdvance / 100);
+	const missingRub = Math.ceil(kopecksToRubles(missingAdvance));
 	const paidPercent =
 		baseAmount > 0
 			? Math.min(100, Math.round((totalCovered / baseAmount) * 100))

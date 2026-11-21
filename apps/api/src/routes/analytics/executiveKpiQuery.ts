@@ -6,6 +6,7 @@ import {
 	type ExecutivePeriod,
 	calculateExecutiveFunnel,
 	calculateExecutiveKpisSummary,
+	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
@@ -359,7 +360,7 @@ export async function queryExecutiveKpiAndFunnel(
 
 	for (const row of planStats) {
 		const count = Number(row.count || 0);
-		const volKop = Math.round(Number(row.totalRub || 0) * 100);
+		const volKop = rublesToKopecks(Number(row.totalRub || 0));
 		plansPresentedCount += count;
 		plansPresentedVolumeKopecks += volKop;
 
@@ -390,8 +391,8 @@ export async function queryExecutiveKpiAndFunnel(
 			),
 		);
 
-	const paidKopecks = Math.round(Number(paymentsSummary?.paidRevenueRub || 0) * 100);
-	const refundedKopecks = Math.round(Number(paymentsSummary?.refundedRevenueRub || 0) * 100);
+	const paidKopecks = rublesToKopecks(Number(paymentsSummary?.paidRevenueRub || 0));
+	const refundedKopecks = rublesToKopecks(Number(paymentsSummary?.refundedRevenueRub || 0));
 	const totalRevenueKopecks = Math.max(0, paidKopecks - refundedKopecks);
 	const payingPatients = Number(paymentsSummary?.payingPatientsCount || 0);
 
@@ -527,15 +528,15 @@ export async function queryExecutiveKpiAndFunnel(
 	);
 
 	const totalCogsKopecks =
-		Math.round(directLabCostRub * 100) +
-		Math.round(directMaterialsCostRub * 100) +
-		Math.round(cashPayrollExpensesRub * 100);
+		rublesToKopecks(directLabCostRub) +
+		rublesToKopecks(directMaterialsCostRub) +
+		rublesToKopecks(cashPayrollExpensesRub);
 
-	const totalMarketingSpendKopecks = Math.round(cashMarketingExpensesRub * 100);
+	const totalMarketingSpendKopecks = rublesToKopecks(cashMarketingExpensesRub);
 	const totalOpexKopecks =
 		totalMarketingSpendKopecks +
-		Math.round(cashRentExpensesRub * 100) +
-		Math.round(cashOtherOpexExpensesRub * 100);
+		rublesToKopecks(cashRentExpensesRub) +
+		rublesToKopecks(cashOtherOpexExpensesRub);
 
 	const netProfitKopecks = Math.round(totalRevenueKopecks - totalCogsKopecks - totalOpexKopecks);
 	const netMarginPercent =
@@ -584,7 +585,7 @@ export async function queryExecutiveKpiAndFunnel(
 		);
 
 	const histPayingPatients = Number(historicalLtvRow?.payingPatientsCount || 0);
-	const histTotalRevenueKop = Math.round(Number(historicalLtvRow?.totalRevenueRub || 0) * 100);
+	const histTotalRevenueKop = rublesToKopecks(Number(historicalLtvRow?.totalRevenueRub || 0));
 	const historicalCohortLtvKopecks =
 		histPayingPatients > 0 ? Math.round(histTotalRevenueKop / histPayingPatients) : 0;
 
@@ -629,8 +630,8 @@ export async function queryExecutiveKpiAndFunnel(
 		period: execPeriod,
 		totalRevenueKopecks,
 		totalRevenuePlanKopecks: totalRevenueKopecks,
-		primaryRevenueKopecks: Math.round(Number(primaryRevenueRow?.totalRevenueRub || 0) * 100),
-		repeatRevenueKopecks: Math.round(Number(repeatRevenueRow?.totalRevenueRub || 0) * 100),
+		primaryRevenueKopecks: rublesToKopecks(Number(primaryRevenueRow?.totalRevenueRub || 0)),
+		repeatRevenueKopecks: rublesToKopecks(Number(repeatRevenueRow?.totalRevenueRub || 0)),
 		primaryPatientsCount: Number(primaryRevenueRow?.patientsCount || 0),
 		repeatPatientsCount: Number(repeatRevenueRow?.patientsCount || 0),
 		totalMarketingSpendKopecks,
@@ -650,9 +651,9 @@ export async function queryExecutiveKpiAndFunnel(
 		opexKopecks: totalOpexKopecks,
 		netMarginPercent,
 		paymentBreakdown,
-		doctorPayrollKopecks: Math.round(cashPayrollExpensesRub * 100),
-		materialsCostKopecks: Math.round(directMaterialsCostRub * 100),
-		labCostKopecks: Math.round(directLabCostRub * 100),
+		doctorPayrollKopecks: rublesToKopecks(cashPayrollExpensesRub),
+		materialsCostKopecks: rublesToKopecks(directMaterialsCostRub),
+		labCostKopecks: rublesToKopecks(directLabCostRub),
 	});
 
 	return {

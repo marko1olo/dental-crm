@@ -1,11 +1,12 @@
 /**
- * expressLabOrderHelper.ts — Единый SSOT хелпер быстрого оформления наряда ЗТЛ (Мандаты 8e, 8n, 8bf).
+ * expressLabOrderHelper.ts — Единый SSOT хелпер быстрого оформления наряда ЗТЛ (Мандаты 8e, 8n, 8bf, 8zp).
  *
  * Консолидирует дублирующуюся логику экспресс-заказа из:
  * - apps/web/src/components/treatment-plans/networkSync/planLabOrderCreator.ts
  * - apps/web/src/components/odontogram/useOdontogramQuickActions.ts
  */
 
+import { generateUuidV7, kopecksToRubles } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
@@ -48,9 +49,10 @@ export async function submitExpressLabOrder({
 	const dueDateIso = due.toISOString();
 	const dueDateFormatted = due.toLocaleDateString("ru-RU");
 	const isBridge = targetTeeth.length > 1;
-	const priceRub =
-		(calculateMaterialTotalCostKopecks(ONE_CLICK_LAB_DEFAULTS.materialId, targetTeeth.length) ||
-			650000 * targetTeeth.length) / 100;
+	const priceKopecks =
+		calculateMaterialTotalCostKopecks(ONE_CLICK_LAB_DEFAULTS.materialId, targetTeeth.length) ||
+		650000 * targetTeeth.length;
+	const priceRub = kopecksToRubles(priceKopecks);
 	const toothFdiStr = targetTeeth.join(", ");
 
 	const contextHeader = currentTierTitle
@@ -71,6 +73,7 @@ export async function submitExpressLabOrder({
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				"Idempotency-Key": generateUuidV7(),
 				...denteAdminSecretRequestHeaders(),
 			},
 			body: JSON.stringify({
@@ -82,6 +85,7 @@ export async function submitExpressLabOrder({
 				dueDate: dueDateIso,
 				clinicalNotes,
 				priceRub,
+				priceKopecks,
 			}),
 		});
 

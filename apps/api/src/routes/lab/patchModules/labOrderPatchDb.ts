@@ -42,13 +42,15 @@ export async function executeLabOrderPatch(
 			body.stage === "correction_required" ||
 			body.stage === "refitting";
 
+		// Мандат 8e (Автономия врача): после сдачи конструкции (isLockedInstalled)
+		// разрешено дополнять строго клинические наблюдения врача (clinicalNotes)
 		const isClinicalNotesOnly =
 			!targetStatus &&
 			!body.stage &&
 			!body.dueDate &&
-			body.clinicalNotes !== undefined &&
 			body.notes === undefined &&
-			body.labComments === undefined;
+			body.labComments === undefined &&
+			body.clinicalNotes !== undefined;
 
 		if (currentOrder.isLockedInstalled && !isWarrantyRequest && !isClinicalNotesOnly) {
 			return { kind: "locked_installed" };

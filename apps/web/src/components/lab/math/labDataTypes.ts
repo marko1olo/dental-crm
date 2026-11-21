@@ -67,6 +67,8 @@ export interface DentalLabOrderData {
 	doctorSharePct?: number;
 	doctorDeductionRub?: number | null;
 	paidFromCashOperationId?: string | null;
+	isUrgent?: boolean | undefined;
+	urgent?: boolean | undefined;
 	isLockedInstalled?: boolean;
 	isWarranty?: boolean;
 	isWarrantyRemake?: boolean;

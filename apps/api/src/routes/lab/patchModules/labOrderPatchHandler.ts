@@ -75,7 +75,7 @@ export async function patchLabOrderHandler(request: FastifyRequest<{ Params: { i
 		if (result.kind === "locked_installed") {
 			return reply.code(409).send({
 				error: "LabOrderLockedInstalled",
-				message: "Заказ-наряд ЗТЛ находится в статусе installed (припасован и сдан) и намертво заблокирован от редактирования.",
+				message: "Заказ-наряд ЗТЛ находится в статусе installed (припасован и сдан) и заблокирован от смены статуса. Клинические заметки и фото разрешены к обновлению.",
 			});
 		}
 

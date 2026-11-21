@@ -15,6 +15,7 @@ export async function selectLabOrdersQuery(
 	const rows = await tx
 		.select({
 			id: labOrders.id,
+			orderNumber: labOrders.orderNumber,
 			patientId: labOrders.patientId,
 			patientName: patients.fullName,
 			treatmentPlanId: labOrders.treatmentPlanId,
@@ -47,7 +48,7 @@ export async function selectLabOrdersQuery(
 			updatedAt: labOrders.updatedAt,
 		})
 		.from(labOrders)
-		.innerJoin(patients, eq(patients.id, labOrders.patientId))
+		.leftJoin(patients, eq(patients.id, labOrders.patientId))
 		.leftJoin(users, eq(users.id, labOrders.doctorId))
 		.where(
 			and(
@@ -67,6 +68,8 @@ export async function selectLabOrdersQuery(
 
 		return {
 			...r,
+			patientName: r.patientName || "Пациент",
+			orderNumber: r.orderNumber || `ЗТЛ-${r.id.slice(0, 6).toUpperCase()}`,
 			laboratoryName: r.laboratoryName || null,
 			priceKopecks: finalPriceKopecks,
 			amountKopecks: finalPriceKopecks,

@@ -1,4 +1,6 @@
+import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { and, eq, ilike, or } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import type { TenantDb } from "../../../db/rls.js";
 import { labItems, serviceCatalogItems } from "../../../db/schema.js";
 import { calculateBusinessDaysDueDate, CANONICAL_DENTAL_LAB_PRESETS } from "../types.js";
@@ -36,6 +38,7 @@ export async function fetchLabPriceFromDb(
 	orgId: string,
 	materialOrConstruction: string,
 	laboratoryId?: string | null,
+	logger?: FastifyBaseLogger,
 ): Promise<{ costRub: number; priceRub: number }> {
 	const normalizedKey = materialOrConstruction.toLowerCase().replace(/[-\s]/g, "_");
 
@@ -80,7 +83,10 @@ export async function fetchLabPriceFromDb(
 			}
 		}
 	} catch (err: unknown) {
-		console.warn("[labOrderCostCalculator] Failed to query serviceCatalogItems, falling back to lab_items:", err);
+		logger?.warn(
+			{ err, orgId, materialOrConstruction },
+			"[labOrderCostCalculator] Failed to query serviceCatalogItems, falling back to lab_items",
+		);
 	}
 
 	// 2. Поиск в исторических позициях lab_items по типу материала
@@ -110,7 +116,10 @@ export async function fetchLabPriceFromDb(
 			}
 		}
 	} catch (err: unknown) {
-		console.warn("[labOrderCostCalculator] Failed to query lab_items, falling back to presets:", err);
+		logger?.warn(
+			{ err, orgId, materialOrConstruction },
+			"[labOrderCostCalculator] Failed to query lab_items, falling back to presets",
+		);
 	}
 
 	// 3. Безопасный канонический фолбек по пресетам
@@ -158,13 +167,15 @@ export function calculateLabOrderTurnaround(
 }
 
 /**
- * Calculates laboratory cost, clinic markup, and gross margin for an order.
+ * Calculates laboratory cost, clinic markup, and gross margin for an order in exact integer kopecks (Mandate 8bm).
  */
 export function calculateLabOrderCostAndMarkup(params: {
 	materialOrConstruction: string;
 	priceRub?: number | null;
+	priceKopecks?: number | null;
 	unitsCount?: number;
 	customCostPerUnit?: number | null;
+	customCostPerUnitKopecks?: number | null;
 }): LabOrderCostBreakdown {
 	const units = Math.max(1, params.unitsCount ?? 1);
 	const normalizedKey = params.materialOrConstruction.toLowerCase().replace(/[-\s]/g, "_");
@@ -177,32 +188,39 @@ export function calculateLabOrderCostAndMarkup(params: {
 			params.materialOrConstruction.toLowerCase().includes(p.shortTitle.toLowerCase()),
 	);
 
-	const defaultCostPerUnit = params.customCostPerUnit != null && params.customCostPerUnit >= 0
-		? params.customCostPerUnit
-		: matchedPreset
-			? matchedPreset.suggestedCostRub
-			: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 0);
+	const defaultCostPerUnitKopecks = params.customCostPerUnitKopecks != null && params.customCostPerUnitKopecks >= 0
+		? Math.round(Number(params.customCostPerUnitKopecks))
+		: params.customCostPerUnit != null && params.customCostPerUnit >= 0
+			? rublesToKopecks(params.customCostPerUnit)
+			: matchedPreset
+				? rublesToKopecks(matchedPreset.suggestedCostRub)
+				: rublesToKopecks(MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 0);
 
-	const defaultPricePerUnit = matchedPreset
-		? matchedPreset.suggestedPriceRub
-		: defaultCostPerUnit;
+	const defaultPricePerUnitKopecks = matchedPreset
+		? rublesToKopecks(matchedPreset.suggestedPriceRub)
+		: defaultCostPerUnitKopecks;
 
-	const estimatedCostRub = defaultCostPerUnit * units;
-	const suggestedPriceRub = params.priceRub != null && params.priceRub >= 0
-		? params.priceRub
-		: defaultPricePerUnit * units;
+	const estimatedCostKopecks = defaultCostPerUnitKopecks * units;
+	const suggestedPriceKopecks = params.priceKopecks != null && params.priceKopecks >= 0
+		? Math.round(Number(params.priceKopecks))
+		: params.priceRub != null && params.priceRub >= 0
+			? rublesToKopecks(params.priceRub)
+			: defaultPricePerUnitKopecks * units;
 
-	const grossMarginRub = Math.max(0, suggestedPriceRub - estimatedCostRub);
-	const grossMarginPercent = suggestedPriceRub > 0
-		? Math.round((grossMarginRub / suggestedPriceRub) * 100)
+	const grossMarginKopecks = Math.max(0, suggestedPriceKopecks - estimatedCostKopecks);
+	const grossMarginPercent = suggestedPriceKopecks > 0
+		? Math.round((grossMarginKopecks / suggestedPriceKopecks) * 100)
 		: 0;
 
 	return {
-		suggestedPriceRub,
-		estimatedCostRub,
-		grossMarginRub,
+		suggestedPriceRub: kopecksToRubles(suggestedPriceKopecks),
+		estimatedCostRub: kopecksToRubles(estimatedCostKopecks),
+		grossMarginRub: kopecksToRubles(grossMarginKopecks),
 		grossMarginPercent,
 		unitsCount: units,
+		suggestedPriceKopecks,
+		estimatedCostKopecks,
+		grossMarginKopecks,
 	};
 }
 

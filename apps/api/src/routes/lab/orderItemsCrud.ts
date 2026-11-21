@@ -1,5 +1,6 @@
 import { withTenantCtx } from "../../db/rls.js";
 import { labItems } from "../../db/schema.js";
+import { rublesToKopecks } from "@dental/shared";
 import type { z } from "zod";
 import type { createLabItemSchema } from "./types.js";
 
@@ -11,6 +12,13 @@ export async function insertLabItem(
 	body: CreateLabItemInput,
 ) {
 	return withTenantCtx(orgId, async (tx) => {
+		const computedPriceKopecks =
+			body.priceKopecks != null
+				? Number(body.priceKopecks)
+				: body.priceRub != null
+					? rublesToKopecks(body.priceRub)
+					: null;
+
 		const [createdItem] = await tx
 			.insert(labItems)
 			.values({
@@ -31,6 +39,7 @@ export async function insertLabItem(
 				implantPlatformDiameterMm: body.implantPlatformDiameterMm ?? null,
 				tiBaseHeightMm: body.tiBaseHeightMm ?? null,
 				priceRub: body.priceRub ? String(body.priceRub) : null,
+				priceKopecks: computedPriceKopecks,
 			})
 			.returning();
 

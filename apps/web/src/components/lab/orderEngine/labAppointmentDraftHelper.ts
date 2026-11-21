@@ -1,4 +1,6 @@
-import type { DentalLabOrderData } from "../labMath";
+/**
+ * labAppointmentDraftHelper.ts — Сквозная привязка нарядов ЗТЛ к визитам и расписанию (Мандаты 8e, 8n).
+ */
 
 export interface LabScheduleSlotInfo {
 	patientId: string;
@@ -11,20 +13,33 @@ export interface LabScheduleSlotInfo {
 	material?: string | null | undefined;
 }
 
+export const ONE_CLICK_LAB_DEFAULTS = {
+	materialId: "zirconia_multilayer",
+	materialName: "Диоксид циркония (Katana STML)",
+	colorVita: "A2",
+	workingDays: 5,
+	translucency: "HT",
+	surfaceTexture: "natural_anatomy",
+	cementGapMicrons: 30,
+	shadeSystem: "classical" as const,
+	restorationTypeSingle: "single_crown",
+	restorationTypeBridge: "bridge",
+};
+
 /**
- * Extracts slot planning info from a lab order to seamlessly bind dueDate with ScheduleView.
+ * Извлекает информацию о бронировании примерки из наряда ЗТЛ для привязки к ScheduleView.
  */
-export function buildLabAppointmentDraft(order: DentalLabOrderData | {
+export function buildLabAppointmentDraft(order: {
 	patientId: string;
 	patientName?: string | null | undefined;
-	doctorId?: string | null;
-	doctorName?: string | null;
-	toothFdi?: string | null;
-	material?: string | null;
-	dueDate?: string | null;
-	deliveryDate?: string | null;
-	ceramicTrialDate?: string | null;
-	frameworkTrialDate?: string | null;
+	doctorId?: string | null | undefined;
+	doctorName?: string | null | undefined;
+	toothFdi?: string | null | undefined;
+	material?: string | null | undefined;
+	dueDate?: string | null | undefined;
+	deliveryDate?: string | null | undefined;
+	ceramicTrialDate?: string | null | undefined;
+	frameworkTrialDate?: string | null | undefined;
 	status?: string | undefined;
 }): LabScheduleSlotInfo | null {
 	const targetDate =

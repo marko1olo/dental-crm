@@ -1,8 +1,9 @@
 /**
  * dentalLabWorkflowModel.ts — Dental Lab Workflow Order Data Model and Lifecycle.
- * Каноническая модель жизненного цикла наряда ЗТЛ по Мандатам 8b, 8e.
+ * Каноническая модель жизненного цикла наряда ЗТЛ по Мандатам 8b, 8e, 8bm.
  */
 
+import { rublesToKopecks } from "@dental/shared";
 import type {
 	OrthopedicWorkTypeId,
 	LabWorkflowStatus,
@@ -199,9 +200,9 @@ export function createDentalLabOrder(params: CreateDentalLabOrderParams): Dental
 	const fittingDateIso = fittingDate ? formatDateToIsoDay(fittingDate) : undefined;
 
 	const unitPriceKopecks = params.pricePerUnitKopecks ??
-		(params.pricePerUnitRub ? Math.round(params.pricePerUnitRub * 100) : preset.defaultPriceKopecks);
+		(params.pricePerUnitRub ? rublesToKopecks(params.pricePerUnitRub) : preset.defaultPriceKopecks);
 	const unitCostKopecks = params.costPerUnitKopecks ??
-		(params.costPerUnitRub ? Math.round(params.costPerUnitRub * 100) : preset.defaultCostKopecks);
+		(params.costPerUnitRub ? rublesToKopecks(params.costPerUnitRub) : preset.defaultCostKopecks);
 
 	const financials = calculateLabWorkflowFinancials({
 		unitsCount,

@@ -9,7 +9,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 if (typeof document !== "undefined") { void import("./styles/dentalLabStudio.css"); }
-import { generateUuidV7 } from "@dental/shared";
+import { generateUuidV7, rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import {
 	CANONICAL_LAB_STAGES, CANONICAL_LAB_MATERIALS, VITA_SHADES_SSOT, CLINIC_LABORATORIES, PARTNER_LABS,
 	UPPER_JAW_TEETH, LOWER_JAW_TEETH, SEED_LAB_ORDERS, type DentalLabOrderEntry, type DentalLabStage,
@@ -49,16 +49,83 @@ export interface DentalLabStudioModalProps {
 	readonly patientChartNumber?: string | undefined; readonly currentToothNumber?: string | number | undefined;
 }
 
-export type LabStudioModalProps = DentalLabStudioModalProps; export type DentalLabOrdersHubModalProps = DentalLabStudioModalProps; export type DentalLabHubModalProps = DentalLabStudioModalProps;
-export type DentalLabOrderModalProps = DentalLabStudioModalProps; export type DentalLabOrderDrawerProps = DentalLabStudioModalProps; export type ExtendedDentalLabOrderModalProps = DentalLabStudioModalProps;
 export type { DentalLabOrderData } from "./labMath";
 
 const getLabApiBaseUrl = () => typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null" && window.location.origin.startsWith("http") ? window.location.origin : "http://127.0.0.1:5173";
 
+function parseOrderTeeth(order: DentalLabOrderData | DentalLabOrderEntry | null | undefined): number[] {
+	if (!order) return [];
+	if (Array.isArray(order.teeth) && order.teeth.length > 0) {
+		return order.teeth.map(Number).filter((t) => !Number.isNaN(t) && t > 0);
+	}
+	const dataOrder = order as DentalLabOrderData;
+	if (Array.isArray(dataOrder.selectedTeeth) && dataOrder.selectedTeeth.length > 0) {
+		return dataOrder.selectedTeeth.map(Number).filter((t) => !Number.isNaN(t) && t > 0);
+	}
+	if (typeof dataOrder.toothFdi === "string" && dataOrder.toothFdi.trim()) {
+		return dataOrder.toothFdi.split(/[,;\s]+/).map(Number).filter((t) => !Number.isNaN(t) && t > 0);
+	}
+	if (typeof dataOrder.toothFdi === "number" && dataOrder.toothFdi > 0) {
+		return [dataOrder.toothFdi];
+	}
+	return [];
+}
+
+function resolveOrderMaterialId(order: DentalLabOrderData | DentalLabOrderEntry | null | undefined): string | null {
+	if (!order) return null;
+	const candidate = order.materialId || (order as DentalLabOrderData).workTypeId || (order as DentalLabOrderData).constructionType || (order as DentalLabOrderData).material;
+	if (!candidate) return null;
+	const candStr = String(candidate).trim();
+	if (CANONICAL_LAB_MATERIALS.some((m) => m.id === candStr)) {
+		return candStr;
+	}
+	const lower = candStr.toLowerCase();
+	if (lower.includes("zircon") || lower.includes("циркон")) return "zirconia_multilayer";
+	if (lower.includes("emax") || lower.includes("пресс") || lower.includes("дисиликат")) return "emax_press";
+	if (lower.includes("metal") || lower.includes("металлокерамика") || lower.includes("cocr") || lower.includes("кобальт")) return "metal_ceramic_cocr";
+	if (lower.includes("clasp") || lower.includes("бюгел")) return "clasp_prosthesis";
+	if (lower.includes("abutment") || lower.includes("абатмент")) return "zirconia_abutment";
+	if (lower.includes("pmma") || lower.includes("врем") || lower.includes("пластмасс")) return "pmma_temp";
+	if (lower.includes("aligner") || lower.includes("элайнер") || lower.includes("каппа")) return "aligner_splint";
+	return null;
+}
+
+function resolveOrderShade(order: DentalLabOrderData | DentalLabOrderEntry | null | undefined): string | null {
+	if (!order) return null;
+	const s = (order as DentalLabOrderEntry).shadeCode || (order as DentalLabOrderData).colorVita || (order as DentalLabOrderData).shadeBody;
+	if (typeof s === "string" && s.trim()) return s.trim();
+	return null;
+}
+
+function resolveOrderLab(order: DentalLabOrderData | DentalLabOrderEntry | null | undefined): string | null {
+	if (!order) return null;
+	const l = (order as DentalLabOrderEntry).laboratoryName || (order as DentalLabOrderData).labName || (order as DentalLabOrderData).technicianName || (order as DentalLabOrderData).lab_name;
+	if (typeof l === "string" && l.trim()) return l.trim();
+	return null;
+}
+
+function resolveOrderDueDate(order: DentalLabOrderData | DentalLabOrderEntry | null | undefined): string | null {
+	if (!order) return null;
+	const d = (order as DentalLabOrderEntry).dueDate || (order as DentalLabOrderData).expectedLabDateIso || (order as DentalLabOrderData).fittingDate || (order as DentalLabOrderData).deliveryDate;
+	if (typeof d === "string" && d.trim()) {
+		return d.includes("T") ? d.split("T")[0]! : d.slice(0, 10);
+	}
+	return null;
+}
+
+function resolveOrderNotes(order: DentalLabOrderData | DentalLabOrderEntry | null | undefined): string | null {
+	if (!order) return null;
+	const n = (order as DentalLabOrderEntry).notes || (order as DentalLabOrderData).clinicalNotes || (order as DentalLabOrderData).labComments;
+	if (typeof n === "string") return n;
+	return null;
+}
+
 export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	isOpen, onClose, initialToothFdi = "16", patientName, doctorName, patientId, doctorId, initialTab = "new_order",
 	onOrderCreated, onOrderSaved, onSaveOrder, initialTeeth, currentToothNumber,
+	initialOrder, editingOrder,
 }) => {
+	const targetOrder = editingOrder || initialOrder || null;
 	const { hasDentalLab } = useWorkspaceProfile();
 	const storeActivePatientId = useAppStore((s) => s.activePatientId);
 	const storeSelectedPatientId = usePatientStore((s) => s.selectedPatientId);
@@ -76,12 +143,21 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const effectivePatientId = patientId || storeActivePatientId || storeSelectedPatientId || undefined;
 	const activePatient = useMemo(() => (!effectivePatientId || !dashboard?.patients) ? null :
 		(dashboard.patients as Array<{ id: string; fullName?: string; name?: string }>).find((p) => p.id === effectivePatientId) || null, [effectivePatientId, dashboard]);
-	const effectivePatientName = patientName || activePatient?.fullName || activePatient?.name || (isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : "");
-	const effectiveDoctorName = doctorName || currentAuthDoctor?.fullName || currentAuthDoctor?.name || storeActiveDoctorName || (isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : "Врач-ортопед");
-	const effectiveDoctorId = doctorId || currentAuthDoctor?.id || undefined;
+	const effectivePatientName = targetOrder?.patientName || patientName || activePatient?.fullName || activePatient?.name || (isDemoShowcaseMode() ? "Ковалев Дмитрий Сергеевич" : "");
+	const effectiveDoctorName = (targetOrder as DentalLabOrderData)?.doctorName || doctorName || currentAuthDoctor?.fullName || currentAuthDoctor?.name || storeActiveDoctorName || (isDemoShowcaseMode() ? "Д-р Смирнова Е. В. (Ортопед)" : "Врач-ортопед");
+	const effectiveDoctorId = (targetOrder as DentalLabOrderData)?.doctorId || doctorId || currentAuthDoctor?.id || undefined;
 
-	const [patientInput, setPatientInput] = useState<string>(effectivePatientName);
-	useEffect(() => { if (effectivePatientName && !patientInput) setPatientInput(effectivePatientName); }, [effectivePatientName]);
+	const [patientInput, setPatientInput] = useState<string>(() => targetOrder?.patientName || effectivePatientName);
+	useEffect(() => {
+		if (targetOrder) {
+			const ordPatName = targetOrder.patientName || (targetOrder as DentalLabOrderData).patient_name;
+			if (typeof ordPatName === "string" && ordPatName.trim()) {
+				setPatientInput(ordPatName.trim());
+				return;
+			}
+		}
+		if (effectivePatientName && !patientInput) setPatientInput(effectivePatientName);
+	}, [targetOrder, effectivePatientName]);
 
 	const availablePatients = useMemo(() => (!dashboard?.patients || !Array.isArray(dashboard.patients)) ? [] :
 		(dashboard.patients as Array<{ id: string; fullName?: string; name?: string; lastName?: string; firstName?: string }>)
@@ -98,23 +174,57 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const [orders, setOrders] = useState<DentalLabOrderEntry[]>(() => isDemoShowcaseMode() ? [...SEED_LAB_ORDERS] : []);
 	const normalizedInitialTab: LabStudioMainTab = initialTab === "print" || initialTab === "print_blank" ? "print_blank" : initialTab === "registry" ? "registry" : "new_order";
 	const [activeMainTab, setActiveMainTab] = useState<LabStudioMainTab>(normalizedInitialTab);
+	useEffect(() => {
+		if (initialTab) {
+			const norm: LabStudioMainTab = initialTab === "print" || initialTab === "print_blank" ? "print_blank" : initialTab === "registry" ? "registry" : "new_order";
+			setActiveMainTab(norm);
+		}
+	}, [initialTab]);
+
 	const [activeFilter, setActiveFilter] = useState<LabFilterTab>("all");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<DentalLabOrderEntry | null>(null);
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
+	const targetOrderTeeth = useMemo(() => parseOrderTeeth(targetOrder), [targetOrder]);
 	const initialToothNum = Number(initialToothFdi || currentToothNumber) || (isDemoShowcaseMode() ? 16 : 0);
-	const [selectedTeeth, setSelectedTeeth] = useState<number[]>(() => (initialTeeth && Array.isArray(initialTeeth) && initialTeeth.length > 0) ? initialTeeth : (initialToothNum ? [initialToothNum] : []));
-	const [selectedMaterialId, setSelectedMaterialId] = useState<string>("zirconia_multilayer");
-	const [selectedShade, setSelectedShade] = useState<string>("A2");
-	const [selectedLab, setSelectedLab] = useState<string>(CLINIC_LABORATORIES[0] ?? "Арт-Дент Лаб");
-	const [isUrgent, setIsUrgent] = useState(false);
-	const [isWarrantyRework, setIsWarrantyRework] = useState(false);
+	const [selectedTeeth, setSelectedTeeth] = useState<number[]>(() => {
+		if (targetOrderTeeth.length > 0) return targetOrderTeeth;
+		if (initialTeeth && Array.isArray(initialTeeth) && initialTeeth.length > 0) return initialTeeth;
+		return initialToothNum ? [initialToothNum] : [];
+	});
+	const [selectedMaterialId, setSelectedMaterialId] = useState<string>(() => resolveOrderMaterialId(targetOrder) || "zirconia_multilayer");
+	const [selectedShade, setSelectedShade] = useState<string>(() => resolveOrderShade(targetOrder) || "A2");
+	const [selectedLab, setSelectedLab] = useState<string>(() => resolveOrderLab(targetOrder) || (CLINIC_LABORATORIES[0] ?? "Арт-Дент Лаб"));
+	const [isUrgent, setIsUrgent] = useState(() => Boolean(targetOrder?.isUrgent));
+	const [isWarrantyRework, setIsWarrantyRework] = useState(() => Boolean(targetOrder?.isWarrantyRework || targetOrder?.isWarranty || (targetOrder as DentalLabOrderData)?.isWarrantyRemake));
 	const [readyInClinicOrder, setReadyInClinicOrder] = useState<ReadyInClinicLabOrder | null>(null);
 	const [isReadyInClinicOpen, setIsReadyInClinicOpen] = useState(false);
 	const [is3DViewerOpen, setIs3DViewerOpen] = useState(false);
 	const [scanViewerOrder, setScanViewerOrder] = useState<DentalLabOrderEntry | null>(null);
-	const [notes, setNotes] = useState("");
+	const [notes, setNotes] = useState(() => resolveOrderNotes(targetOrder) || "");
+
+	useEffect(() => {
+		if (targetOrder) {
+			const teeth = parseOrderTeeth(targetOrder);
+			if (teeth.length > 0) setSelectedTeeth(teeth);
+			const matId = resolveOrderMaterialId(targetOrder);
+			if (matId) setSelectedMaterialId(matId);
+			const s = resolveOrderShade(targetOrder);
+			if (s) setSelectedShade(s);
+			const lab = resolveOrderLab(targetOrder);
+			if (lab) {
+				setSelectedLab(lab);
+				setCustomLabs((prev) => (prev.includes(lab) || CLINIC_LABORATORIES.includes(lab) ? prev : [...prev, lab]));
+			}
+			const date = resolveOrderDueDate(targetOrder);
+			if (date) setCustomDueDate(date);
+			const n = resolveOrderNotes(targetOrder);
+			if (n != null) setNotes(n);
+			if (typeof targetOrder.isUrgent === "boolean") setIsUrgent(targetOrder.isUrgent);
+			setIsWarrantyRework(Boolean(targetOrder.isWarrantyRework || targetOrder.isWarranty || (targetOrder as DentalLabOrderData)?.isWarrantyRemake));
+		}
+	}, [targetOrder]);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -138,13 +248,38 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	const selectedMaterial = useMemo(() => getMaterialMeta(selectedMaterialId), [selectedMaterialId]);
 	const calculatedDueDate = useMemo(() => addWorkingDaysRu(new Date(), selectedMaterial.defaultDurationDays).toISOString().split("T")[0] ?? "", [selectedMaterial]);
 
-	const [customDueDate, setCustomDueDate] = useState<string>("");
+	const [customDueDate, setCustomDueDate] = useState<string>(() => resolveOrderDueDate(targetOrder) || "");
 	const effectiveDueDate = customDueDate || calculatedDueDate;
 	const teethCount = selectedTeeth.length > 0 ? selectedTeeth.length : 1;
 	const totalLabCostKopecks = selectedMaterial.baseLabCostKopecks * teethCount;
 	const rawPatientPriceKopecks = selectedMaterial.defaultPatientPriceKopecks * teethCount;
 	const totalPatientPriceKopecks = isWarrantyRework ? 0 : rawPatientPriceKopecks;
 	const netClinicRevenueKopecks = calcNetRevenueKopecks(totalPatientPriceKopecks, totalLabCostKopecks);
+
+	useEffect(() => {
+		if (targetOrder) {
+			const mappedEntry: DentalLabOrderEntry = {
+				id: String(targetOrder.id || "edit-order"),
+				orderNumber: String(targetOrder.orderNumber ?? "ЗТЛ-НОВЫЙ"),
+				patientName: String(targetOrder.patientName || effectivePatientName || "Пациент"),
+				doctorName: String(targetOrder.doctorName || effectiveDoctorName || "Врач-ортопед"),
+				teeth: parseOrderTeeth(targetOrder),
+				materialId: resolveOrderMaterialId(targetOrder) || selectedMaterialId,
+				shadeCode: resolveOrderShade(targetOrder) || selectedShade,
+				stage: (targetOrder as DentalLabOrderEntry).stage || mapDbStatusToStage((targetOrder as DentalLabOrderData).status),
+				labCostKopecks: Number((targetOrder as DentalLabOrderEntry).labCostKopecks || (targetOrder as DentalLabOrderData).costKopecks || totalLabCostKopecks),
+				patientPriceKopecks: Number((targetOrder as DentalLabOrderEntry).patientPriceKopecks || (targetOrder as DentalLabOrderData).patientPriceKopecks || totalPatientPriceKopecks),
+				laboratoryName: resolveOrderLab(targetOrder) || selectedLab,
+				createdAt: String((targetOrder as DentalLabOrderEntry).createdAt || new Date().toISOString()),
+				dueDate: resolveOrderDueDate(targetOrder) || calculatedDueDate,
+				notes: resolveOrderNotes(targetOrder) || undefined,
+				isUrgent: Boolean(targetOrder.isUrgent),
+				isWarranty: Boolean(targetOrder.isWarranty || targetOrder.isWarrantyRework),
+				isWarrantyRework: Boolean(targetOrder.isWarrantyRework || targetOrder.isWarranty),
+			};
+			setSelectedOrderForPrint(mappedEntry);
+		}
+	}, [targetOrder, effectivePatientName, effectiveDoctorName, calculatedDueDate, selectedMaterialId, selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab]);
 
 	useEffect(() => {
 		if (!isOpen || typeof window === "undefined") return;
@@ -161,7 +296,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 						const rawTeeth = Array.isArray(item.teethFdi) ? item.teethFdi : item.toothFdi ? [item.toothFdi] : [];
 						const itemTeeth: readonly number[] = (rawTeeth as unknown[]).map((t) => typeof t === "number" ? t : Number(t)).filter((t): t is number => !Number.isNaN(t) && t > 0);
 						const fallbackCost = getMaterialMeta(itemMaterialId).baseLabCostKopecks * (itemTeeth.length > 0 ? itemTeeth.length : 1);
-						const rawLabCost = Number(item.labCostKopecks || (item.labCostRub ? Math.round(Number(item.labCostRub) * 100) : 0));
+						const rawLabCost = Number(item.labCostKopecks || (item.labCostRub ? rublesToKopecks(Number(item.labCostRub)) : 0));
 						const rawStatus = typeof item.status === "string" ? item.status : typeof item.stage === "string" ? item.stage : null;
 						return {
 							id: String(item.id || `live-ord-${idx}`), orderNumber: String(item.orderNumber || item.gostOrderNumber || `ЗТЛ-${100 + idx}`),
@@ -169,7 +304,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							teeth: itemTeeth, materialId: itemMaterialId,
 							shadeCode: String(item.shadeVita || item.shadeCode || item.colorVita || "A2"), stage: mapDbStatusToStage(rawStatus),
 							labCostKopecks: rawLabCost > 0 ? rawLabCost : fallbackCost,
-							patientPriceKopecks: Number(item.patientPriceKopecks || (item.priceRub ? Math.round(Number(item.priceRub) * 100) : 0)),
+							patientPriceKopecks: Number(item.patientPriceKopecks || (item.priceRub ? rublesToKopecks(Number(item.priceRub)) : 0)),
 							laboratoryName: String(item.laboratoryName || item.labName || "Лаборатория"), createdAt: String(item.createdAt || new Date().toISOString()),
 							dueDate: String(item.dueDate || calculatedDueDate), notes: String(item.notes || item.clinicalNotes || item.comment || "") || undefined, isUrgent: Boolean(item.isUrgent || item.urgent),
 							isWarranty: Boolean(item.isWarranty || item.isWarrantyRework),
@@ -199,21 +334,45 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		useUiSurfaceStore.getState().closePrimaryModal("lab");
 	}, [onClose]);
 
-	// Создание наряда — кнопка НИКОГДА не заблокирована (Мандат 8e: Автономия врача)
+	// Создание/сохранение наряда — кнопка НИКОГДА не заблокирована (Мандат 8e: Автономия врача)
 	const handleCreateOrder = useCallback(async () => {
 		const teethToSave = selectedTeeth.length > 0 ? selectedTeeth : [];
-		const nextOrderNumber = `ЗТЛ-${100 + orders.length + 1}`;
+		const isEditMode = Boolean(targetOrder?.id);
+		const effectiveOrderNumber = isEditMode && targetOrder?.orderNumber
+			? String(targetOrder.orderNumber)
+			: `ЗТЛ-${100 + orders.length + 1}`;
 		const effectiveName = currentPatientName;
 		const effectiveId = currentPatientId;
+		const effectiveEntryId = isEditMode && targetOrder?.id ? String(targetOrder.id) : generateUuidV7();
+		const effectiveCreatedAt = isEditMode && (targetOrder as DentalLabOrderEntry)?.createdAt
+			? String((targetOrder as DentalLabOrderEntry).createdAt)
+			: new Date().toISOString();
+		const effectiveStage: DentalLabStage = isEditMode && (targetOrder as DentalLabOrderEntry)?.stage
+			? (targetOrder as DentalLabOrderEntry).stage
+			: "scan_sent";
+
 		const newEntry: DentalLabOrderEntry = {
-			id: generateUuidV7(), orderNumber: nextOrderNumber, patientName: effectiveName, doctorName: effectiveDoctorName,
-			doctorId: effectiveDoctorId, patientPhone: activePatient ? (activePatient as { phone?: string })?.phone : undefined,
-			teeth: teethToSave, materialId: selectedMaterialId, shadeCode: selectedShade, stage: "scan_sent",
-			labCostKopecks: totalLabCostKopecks, patientPriceKopecks: totalPatientPriceKopecks,
-			laboratoryName: selectedLab, createdAt: new Date().toISOString(), dueDate: effectiveDueDate,
-			notes: notes.trim() || undefined, isUrgent, isWarranty: isWarrantyRework, isWarrantyRework,
+			id: effectiveEntryId,
+			orderNumber: effectiveOrderNumber,
+			patientName: effectiveName,
+			doctorName: effectiveDoctorName,
+			doctorId: effectiveDoctorId,
+			patientPhone: activePatient ? (activePatient as { phone?: string })?.phone : undefined,
+			teeth: teethToSave,
+			materialId: selectedMaterialId,
+			shadeCode: selectedShade,
+			stage: effectiveStage,
+			labCostKopecks: totalLabCostKopecks,
+			patientPriceKopecks: totalPatientPriceKopecks,
+			laboratoryName: selectedLab,
+			createdAt: effectiveCreatedAt,
+			dueDate: effectiveDueDate,
+			notes: notes.trim() || undefined,
+			isUrgent,
+			isWarranty: isWarrantyRework,
+			isWarrantyRework,
 		};
-		setOrders((prev) => [newEntry, ...prev]);
+		setOrders((prev) => isEditMode ? prev.map((ord) => ord.id === effectiveEntryId ? newEntry : ord) : [newEntry, ...prev]);
 		setSelectedOrderForPrint(newEntry);
 		onOrderCreated?.(newEntry);
 		onOrderSaved?.(newEntry);
@@ -221,15 +380,30 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 
 		try {
 			const payload = {
-				orderNumber: newEntry.orderNumber, patientId: effectiveId || undefined, patientName: effectiveName || undefined,
-				doctorId: effectiveDoctorId || undefined, doctorName: effectiveDoctorName || undefined, teethFdi: teethToSave.join(","),
-				materialId: selectedMaterialId, shadeCode: selectedShade, laboratoryName: selectedLab,
-				dueDate: effectiveDueDate, labCostKopecks: totalLabCostKopecks, patientPriceKopecks: totalPatientPriceKopecks, isUrgent,
-				isWarranty: isWarrantyRework, isWarrantyRework,
-				notes: notes.trim() || undefined, status: "sent",
+				orderNumber: newEntry.orderNumber,
+				patientId: effectiveId || undefined,
+				patientName: effectiveName || undefined,
+				doctorId: effectiveDoctorId || undefined,
+				doctorName: effectiveDoctorName || undefined,
+				teethFdi: teethToSave.join(","),
+				materialId: selectedMaterialId,
+				shadeCode: selectedShade,
+				laboratoryName: selectedLab,
+				dueDate: effectiveDueDate,
+				labCostKopecks: totalLabCostKopecks,
+				patientPriceKopecks: totalPatientPriceKopecks,
+				isUrgent,
+				isWarranty: isWarrantyRework,
+				isWarrantyRework,
+				notes: notes.trim() || undefined,
+				status: isEditMode ? ((targetOrder as DentalLabOrderData)?.status || "sent") : "sent",
 			};
+			const endpoint = isEditMode
+				? `${getLabApiBaseUrl()}/api/lab/orders/${effectiveEntryId}`
+				: `${getLabApiBaseUrl()}/api/lab/orders`;
+			const method = isEditMode ? "PUT" : "POST";
 			const reqOpts = {
-				method: "POST",
+				method,
 				headers: {
 					...denteAdminSecretRequestHeaders(),
 					"Content-Type": "application/json",
@@ -237,7 +411,14 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				},
 				body: JSON.stringify(payload),
 			};
-			const res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, reqOpts);
+			let res = await fetch(endpoint, reqOpts);
+			if (!res.ok && isEditMode) {
+				res = await fetch(`${getLabApiBaseUrl()}/api/lab/orders`, {
+					method: "POST",
+					headers: reqOpts.headers,
+					body: JSON.stringify(payload),
+				});
+			}
 			if (res.ok) {
 				const responseData = await res.json().catch(() => null);
 				const realId = responseData?.order?.id || responseData?.id;
@@ -246,10 +427,11 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				if (typeof window !== "undefined") {
 					const eventDetail = { ...payload, id: effectiveSavedId };
 					// Единая каноническая шина событий ЗТЛ (Мандат 8zq / SSOT) + обратная совместимость
-					window.dispatchEvent(new CustomEvent("dente:lab:order-created", { detail: eventDetail }));
-					window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: eventDetail }));
+					window.dispatchEvent(new CustomEvent(isEditMode ? "dente:lab:order-saved" : "dente:lab:order-created", { detail: eventDetail }));
+					window.dispatchEvent(new CustomEvent("dente:lab:order-saved", { detail: eventDetail }));
+					window.dispatchEvent(new CustomEvent(isEditMode ? "dente-lab-order-saved" : "dente-lab-order-created", { detail: eventDetail }));
 				}
-				setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно создан и сохранен в базе данных`);
+				setFeedbackToast(`Заказ-наряд ${newEntry.orderNumber} успешно ${isEditMode ? "обновлен" : "создан"} и сохранен в базе данных`);
 			} else {
 				setFeedbackToast(`Ошибка сохранения наряда ${newEntry.orderNumber} на сервере`);
 			}
@@ -259,8 +441,8 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		} finally {
 			setTimeout(() => setFeedbackToast(null), 3500);
 		}
-	}, [selectedTeeth, orders.length, currentPatientName, effectiveDoctorName, currentPatientId, effectiveDoctorId, selectedMaterialId, selectedMaterial,
-		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, onOrderCreated, onOrderSaved, onSaveOrder]);
+	}, [selectedTeeth, targetOrder, orders.length, currentPatientName, effectiveDoctorName, currentPatientId, effectiveDoctorId, selectedMaterialId,
+		selectedShade, totalLabCostKopecks, totalPatientPriceKopecks, selectedLab, effectiveDueDate, notes, isUrgent, isWarrantyRework, activePatient, onOrderCreated, onOrderSaved, onSaveOrder]);
 
 	const handleAdvanceStage = useCallback(async (orderId: string) => {
 		const targetOrder = orders.find((ord) => ord.id === orderId);
@@ -299,7 +481,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 				id: targetOrder.id, orderNumber: String(targetOrder.orderNumber ?? ""), patientName: targetOrder.patientName,
 				patientPhone: targetOrder.patientPhone, doctorName: targetOrder.doctorName, doctorId: targetOrder.doctorId,
 				toothFdi: Array.isArray(targetOrder.teeth) ? targetOrder.teeth.join(", ") : "", material: getMaterialMeta(targetOrder.materialId).titleRu,
-				colorVita: targetOrder.shadeCode, priceRub: Math.round(targetOrder.patientPriceKopecks / 100),
+				colorVita: targetOrder.shadeCode, priceRub: kopecksToRubles(targetOrder.patientPriceKopecks),
 				isWarrantyRework: Boolean(targetOrder.isWarrantyRework || targetOrder.isWarranty),
 			});
 			setIsReadyInClinicOpen(true);
@@ -318,7 +500,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 		setReadyInClinicOrder({
 			id: order.id, orderNumber: String(order.orderNumber ?? ""), patientName: order.patientName, patientPhone: order.patientPhone,
 			doctorName: order.doctorName, doctorId: order.doctorId, toothFdi: Array.isArray(order.teeth) ? order.teeth.join(", ") : "",
-			material: getMaterialMeta(order.materialId).titleRu, colorVita: order.shadeCode, priceRub: Math.round(order.patientPriceKopecks / 100),
+			material: getMaterialMeta(order.materialId).titleRu, colorVita: order.shadeCode, priceRub: kopecksToRubles(order.patientPriceKopecks),
 			isWarrantyRework: Boolean(order.isWarrantyRework || order.isWarranty),
 		});
 		setIsReadyInClinicOpen(true);
@@ -489,7 +671,4 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 	);
 };
 
-export const DentalLabOrderModal = DentalLabStudioModal; export const DentalLabOrdersModal = DentalLabStudioModal;
-export const DentalLabHubModal = DentalLabStudioModal; export const DentalLabOrdersHubModal = DentalLabStudioModal;
-export const DentalLabOrderDrawer = DentalLabStudioModal; export const DentalLabOrderCreationModal = DentalLabStudioModal; export const DentalLabOrdersCreationModal = DentalLabStudioModal;
 export default DentalLabStudioModal;

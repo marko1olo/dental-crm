@@ -406,15 +406,4 @@ export const VITA_EXPRESS_SHADES = ["A1", "A2", "A3", "A3.5", "B1", "Bleach"] as
 
 export { getBridgeSpanTeeth } from "./fdiPickerModules/fdiBridgeSpanHelper";
 
-export {
-	type ExpressLabPreset,
-	EXPRESS_LAB_PRESETS,
-	EXPRESS_PRESET_ZIRCONIA_CROWN,
-	EXPRESS_PRESET_PFM_DUCERAM,
-	EXPRESS_PRESET_PMMA_TEMPORARY,
-	EXPRESS_PRESET_EMAX_CROWN,
-	EXPRESS_PRESET_BRIDGE_ZIRCONIA,
-	EXPRESS_PRESET_EMAX_INLAY,
-	MODAL_EXPRESS_LAB_PRESETS,
-} from "./labExpressPresets";
-
+export * from "./orderEngine/labExpressPresetsData";
