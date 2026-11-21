@@ -13,7 +13,8 @@ import {
 	classifyNdflServiceCode,
 	classifyTaxDeduction804n,
 	extractTaxYearFromDate,
-	kopecksToRub,
+	kopecksToRubles,
+	rublesToKopecks,
 	normalizePaymentsForTaxCertificate,
 	type TaxDeductionPaymentItem,
 } from "@dental/shared";
@@ -157,7 +158,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 
 		const mappedItems: TaxDeductionPaymentItem[] = memberRawPayments.map((p) => {
 			const amtRub = Number(p.amountRub) || 0;
-			const amtKop = Math.round(amtRub * 100);
+			const amtKop = rublesToKopecks(amtRub);
 			const isExpensive = Boolean(
 				p.taxDeductionCode === "2" ||
 				classifyTaxDeduction804n(p.note ?? undefined, p.note ?? undefined).categoryCode === "2" ||
@@ -181,7 +182,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 				fiscalDocumentNumber: docNum || "0",
 				fiscalSign,
 				serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическое стоматологическое лечение (Код 01)"),
-				amountRub: amtKop / 100,
+				amountRub: kopecksToRubles(amtKop),
 				taxCode: isExpensive ? ("2" as const) : ("1" as const),
 				isRefund: p.status === "refunded" || amtKop < 0,
 			};
@@ -193,7 +194,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 		let code1Kopecks = 0;
 		let code2Kopecks = 0;
 		for (const item of normalizedItems) {
-			const kopecks = Math.round(item.amountRub * 100);
+			const kopecks = rublesToKopecks(item.amountRub);
 			if (item.taxCode === "2") {
 				code2Kopecks += kopecks;
 			} else {
@@ -326,9 +327,9 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 		};
 
 		const { xmlContent, fileName } = buildFnsKnd1151156Xml(fnsPayload);
-		const code01AmountRub = kopecksToRub(code1Kopecks);
-		const code02AmountRub = kopecksToRub(code2Kopecks);
-		const grandTotalRub = kopecksToRub(totalKopecks);
+		const code01AmountRub = kopecksToRubles(code1Kopecks);
+		const code02AmountRub = kopecksToRubles(code2Kopecks);
+		const grandTotalRub = kopecksToRubles(totalKopecks);
 
 		// Статутный расчет вычета по ст. 219 НК РФ:
 		// 150 000 ₽ с 2024 года, 120 000 ₽ до 2024 года. Код 02 без ограничений!

@@ -1,4 +1,5 @@
 import { and, eq, ilike, or } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import { formatKopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { inventoryItems, inventoryTransactions } from "../../db/schema.js";
@@ -19,6 +20,7 @@ export interface DeductOrthoMaterialParams {
 	unitCostRub?: number | undefined;
 	visitId?: string | null | undefined;
 	userId?: string | null | undefined;
+	logger?: FastifyBaseLogger | undefined;
 }
 
 export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParams): Promise<OrthoMaterialDeductionResult> {
@@ -39,13 +41,12 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 
 	// DEF-ORTHO-06: Канонический расчет стоимости в копейках (BIGINT)
 	// DEF-ORTHO-API-02: Канонический перевод копеек в рубли через formatKopecksToRubles
-	const effectiveKopecks: bigint =
+	const explicitKopecks: bigint | null =
 		unitCostKopecks !== undefined
 			? BigInt(unitCostKopecks)
 			: unitCostRub !== undefined
 				? BigInt(rublesToKopecks(unitCostRub))
-				: 120_000n; // 1200 руб = 120000 коп
-	const costRubFormatted = formatKopecksToRubles(Number(effectiveKopecks));
+				: null;
 
 	try {
 		return await db.transaction(async (tx) => {
@@ -54,6 +55,15 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 				or(ilike(inventoryItems.name, `%${itemNamePattern}%`), ilike(inventoryItems.name, `%${defaultItemName}%`)),
 			)).orderBy(inventoryItems.id).limit(1).for("update");
 			let targetItem = found[0];
+
+			const effectiveKopecks: bigint =
+				explicitKopecks !== null
+					? explicitKopecks
+					: targetItem?.unitCostRub != null
+						? BigInt(rublesToKopecks(Number(targetItem.unitCostRub)))
+						: 0n;
+			const costRubFormatted = formatKopecksToRubles(Number(effectiveKopecks));
+
 			if (!targetItem) {
 				const [created] = await tx.insert(inventoryItems).values({
 					organizationId,
@@ -107,7 +117,10 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 			};
 		});
 	} catch (err) {
-		console.warn("[Orthodontics] Soft overdraft deduction failed gracefully:", err);
+		params.logger?.warn(
+			{ err, organizationId, patientId, itemNamePattern },
+			"[Orthodontics] Soft overdraft deduction failed gracefully",
+		);
 		return { success: false, isOverdraft: false, deductedQty: 0, error: String(err) };
 	}
 }

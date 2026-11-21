@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { invoiceItems, patientInvoices } from "../../../db/schema/billing.js";
+import { treatmentItems } from "../../../db/schema/clinical.js";
 import { patients } from "../../../db/schema/patients.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { formatInvoiceNumber } from "../invoiceCalculationHelpers.js";
@@ -111,10 +113,10 @@ export async function handleCreateInvoice(
 				title: it.name,
 				name: it.name,
 				quantity: Number(it.quantity) || 1,
-				unitPriceRub: Number((it.unitPriceKopecks / 100).toFixed(2)),
-				priceRub: Number((it.totalPriceKopecks / 100).toFixed(2)),
+				unitPriceRub: kopecksToRubles(it.unitPriceKopecks),
+				priceRub: kopecksToRubles(it.totalPriceKopecks),
 				discountRub: 0,
-				totalAmountRub: Number((it.totalPriceKopecks / 100).toFixed(2)),
+				totalAmountRub: kopecksToRubles(it.totalPriceKopecks),
 			}));
 
 			return reply.code(200).send({
@@ -148,9 +150,9 @@ export async function handleCreateInvoice(
 		if (item.priceKopecks !== null && item.priceKopecks !== undefined) {
 			unitKopecks = BigInt(Math.max(0, item.priceKopecks));
 		} else if (item.unitPriceRub !== null && item.unitPriceRub !== undefined) {
-			unitKopecks = BigInt(Math.max(0, Math.round(item.unitPriceRub * 100)));
+			unitKopecks = BigInt(Math.max(0, rublesToKopecks(item.unitPriceRub)));
 		} else if (item.priceRub !== null && item.priceRub !== undefined) {
-			unitKopecks = BigInt(Math.max(0, Math.round(item.priceRub * 100)));
+			unitKopecks = BigInt(Math.max(0, rublesToKopecks(item.priceRub)));
 		}
 
 		const grossLineKopecks = unitKopecks * BigInt(qty);
@@ -160,7 +162,7 @@ export async function handleCreateInvoice(
 			const pctClamped = Math.min(100, Math.max(0, item.discountPercent));
 			itemDiscountKopecks = (grossLineKopecks * BigInt(Math.round(pctClamped * 100))) / BigInt(10000);
 		} else if (item.discountRub && item.discountRub > 0) {
-			itemDiscountKopecks = BigInt(Math.max(0, Math.round(item.discountRub * 100)));
+			itemDiscountKopecks = BigInt(Math.max(0, rublesToKopecks(item.discountRub)));
 		}
 
 		if (itemDiscountKopecks > grossLineKopecks) {
@@ -195,9 +197,9 @@ export async function handleCreateInvoice(
 			unitKopecks: Number(unitKopecks),
 			netLineKopecks: Number(netLineKopecks),
 			discountPercent: item.discountPercent ?? 0,
-			unitPriceRub: Number((Number(unitKopecks) / 100).toFixed(2)),
-			discountRub: Number((Number(itemDiscountKopecks) / 100).toFixed(2)),
-			priceRub: Number((Number(netLineKopecks) / 100).toFixed(2)),
+			unitPriceRub: kopecksToRubles(unitKopecks),
+			discountRub: kopecksToRubles(itemDiscountKopecks),
+			priceRub: kopecksToRubles(netLineKopecks),
 		};
 	});
 
@@ -205,12 +207,12 @@ export async function handleCreateInvoice(
 	if (data.totalAmountKopecks !== undefined && data.totalAmountKopecks !== null) {
 		finalNetKopecks = BigInt(Math.max(0, data.totalAmountKopecks));
 	} else if (data.totalAmountRub !== undefined && data.totalAmountRub !== null) {
-		finalNetKopecks = BigInt(Math.max(0, Math.round(data.totalAmountRub * 100)));
+		finalNetKopecks = BigInt(Math.max(0, rublesToKopecks(data.totalAmountRub)));
 	} else if (preparedItems.length > 0) {
 		finalNetKopecks = totalItemsNetKopecks;
 	}
 
-	const totalAmountRub = Number((Number(finalNetKopecks) / 100).toFixed(2));
+	const totalAmountRub = kopecksToRubles(finalNetKopecks);
 	const invoiceId = randomUUID();
 	const invoiceStatus = data.status ?? "issued";
 	const now = new Date();
@@ -242,6 +244,27 @@ export async function handleCreateInvoice(
 					serviceCode: it.serviceId || null,
 					toothCode: it.toothCode || null,
 				});
+
+				if (effectiveVisitId) {
+					const itemNotes = data.notes
+						? `${data.notes} | Счёт ${invoiceId}`
+						: `Счёт ${invoiceId}`;
+					await tx.insert(treatmentItems).values({
+						organizationId: orgId,
+						patientId: data.patientId,
+						visitId: effectiveVisitId,
+						serviceId: it.serviceId,
+						toothCode: it.toothCode,
+						title: it.title,
+						quantity: String(it.quantity),
+						unitPriceRub: it.unitPriceRub,
+						priceRub: it.priceRub,
+						discountRub: it.discountRub,
+						status: "completed",
+						plannedDoctorUserId: data.doctorId ?? null,
+						notes: itemNotes,
+					});
+				}
 			}
 		}
 	});

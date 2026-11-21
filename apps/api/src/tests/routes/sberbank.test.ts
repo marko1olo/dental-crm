@@ -5,6 +5,7 @@ import {
 	organizations,
 	patients,
 	sberbankTransactions,
+	users,
 } from "../../db/schema.js";
 import { registerSberbankRoutes } from "../../routes/sberbank.js";
 import { authTokenSecret } from "../../security/authSecret.js";
@@ -100,19 +101,35 @@ describe("Sberbank Acquiring Routes", () => {
 			await withFixtureTenant(ORG_ID, async () => {
 				await db
 					.insert(organizations)
-					.values({ id: ORG_ID, name: "Sberbank Route Test Clinic" });
-				await db.insert(patients).values({
-					id: PATIENT_ID,
-					organizationId: ORG_ID,
-					fullName: "Sberbank Route Test Patient",
-				});
-				await db.insert(sberbankTransactions).values({
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					orderId: ORDER_ID,
-					amount: 1500,
-					status: "pending",
-				});
+					.values({ id: ORG_ID, name: "Sberbank Route Test Clinic" })
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values({
+						id: USER_ID,
+						organizationId: ORG_ID,
+						fullName: "Sberbank Route Test Owner",
+						role: "owner",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values({
+						id: PATIENT_ID,
+						organizationId: ORG_ID,
+						fullName: "Sberbank Route Test Patient",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(sberbankTransactions)
+					.values({
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						orderId: ORDER_ID,
+						amountKopecks: 1500n,
+						status: "pending",
+					})
+					.onConflictDoNothing();
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;

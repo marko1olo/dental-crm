@@ -1,3 +1,4 @@
+import { rublesToKopecks } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
@@ -53,7 +54,7 @@ export async function handleGetBillingPayments(
 	const data = rows.map((row) => ({
 		id: row.id,
 		amountRub: Number(row.amountRub),
-		amountKopecks: Math.round(Number(row.amountRub) * 100),
+		amountKopecks: rublesToKopecks(Number(row.amountRub)),
 		status: row.status,
 		method: row.method,
 		paymentMethod: row.method,

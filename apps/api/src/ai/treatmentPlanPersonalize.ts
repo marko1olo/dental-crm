@@ -72,7 +72,7 @@ export function buildDeterministicClinicalScenarios(
 	readonly optimum: ClinicalScenarioPlan;
 	readonly premium: ClinicalScenarioPlan;
 } {
-	const validBase = Math.max(0, Math.round(baseTotalRub || 100000));
+	const validBase = Math.max(0, Math.round(baseTotalRub ?? 0));
 	const economyTotal = Math.round(validBase * 0.7);
 	const optimumTotal = validBase;
 	const premiumTotal = Math.round(validBase * 1.5);

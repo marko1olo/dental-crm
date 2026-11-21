@@ -380,7 +380,7 @@ describe("Patient Personal Portal API Routes", () => {
 				patientId: PATIENT_ID,
 				invoiceId: INVOICE_ID,
 				orderId: "SBP-TX-984210",
-				amount: 3500000,
+				amountKopecks: 3500000n,
 				status: "success",
 			});
 		});

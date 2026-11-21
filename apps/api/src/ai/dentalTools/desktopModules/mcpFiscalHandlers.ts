@@ -3,7 +3,7 @@
  * @description Обработчики вызовов фискальных регистраторов Атол и Штрих-М 54-ФЗ.
  */
 
-import { canonicalTenderTypeSchema } from "@dental/shared";
+import { canonicalTenderTypeSchema, multiplyKopecks, rublesToKopecks } from "@dental/shared";
 import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
 import { FiscalReceiptFactory } from "../../../services/kkt/FiscalReceiptFactory.js";
 
@@ -115,11 +115,11 @@ export async function handleAtolCall(
 					? rawItems.map((item: FiscalReceiptRawItem) => {
 							const priceKop = Number.isInteger(item.priceKopecks)
 								? Number(item.priceKopecks)
-								: Math.round(Number(item.priceRub || 0) * 100);
+								: rublesToKopecks(Number(item.priceRub || 0));
 							const qty = Number(item.quantity || 1);
 							const amountKop = Number.isInteger(item.amountKopecks)
 								? Number(item.amountKopecks)
-								: Math.round(Number(item.priceRub || 0) * 100 * qty);
+								: multiplyKopecks(priceKop, Math.max(1, Math.round(qty)));
 							return {
 								name: String(item.name || "Стоматологические услуги"),
 								priceKopecks: priceKop,
@@ -231,7 +231,7 @@ export async function handleShtrihCall(
 				error: "Ошибка валидации Штрих-М: totalRub должен быть неотрицательным числом.",
 			};
 		}
-		const totalKopecks = Math.round(totalRub * 100);
+		const totalKopecks = rublesToKopecks(totalRub);
 		const fallbackPatientId =
 			typeof args.patientId === "string" && args.patientId.trim()
 				? args.patientId.trim()

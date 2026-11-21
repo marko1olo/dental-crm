@@ -44,7 +44,11 @@ import {
 	debtNumericText,
 	rublesFromKopecks,
 } from "../money/patientDebt.js";
-import { sumKopecks } from "@dental/shared";
+import {
+	kopecksToRubles,
+	rublesToKopecks,
+	sumKopecks,
+} from "@dental/shared";
 import {
 	PRICE_LOCK_POLICY_CONFIGS,
 	type PriceLockPolicyKind,
@@ -185,7 +189,7 @@ export async function issuePriceFreezeToken(
 			toothNumber: item.toothNumber ?? null,
 			quantity: item.quantity,
 			lockedUnitPriceRub: priceNum,
-			lockedUnitPriceKopecks: Math.round(priceNum * 100),
+			lockedUnitPriceKopecks: rublesToKopecks(priceNum),
 			lockedDiscountRub: discountNum,
 			phase: item.phase,
 		};
@@ -243,7 +247,12 @@ export async function issuePriceFreezeToken(
 			priceFrozenUntil: validUntil,
 			updatedAt: now,
 		})
-		.where(eq(treatmentPlans.id, input.planId));
+		.where(
+			and(
+				eq(treatmentPlans.id, input.planId),
+				eq(treatmentPlans.organizationId, input.organizationId),
+			),
+		);
 
 	return {
 		tokenId: createdToken.id,
@@ -299,7 +308,12 @@ export async function getActivePriceFreezeToken(
 				status: "expired",
 				updatedAt: now,
 			})
-			.where(eq(treatmentPlanPriceFreezeTokens.id, tokenRow.id));
+			.where(
+				and(
+					eq(treatmentPlanPriceFreezeTokens.id, tokenRow.id),
+					eq(treatmentPlanPriceFreezeTokens.organizationId, organizationId),
+				),
+			);
 	}
 
 	return {
@@ -369,9 +383,9 @@ export async function setPlanDiscountMode(
 		} else if (discountMode === "plan_fixed") {
 			// Режим 2: Задать на план — рассчитываем процент от цены услуги
 			if (discountPercent > 0) {
-				const unitPriceKop = Math.round(unitPriceRub * 100);
+				const unitPriceKop = rublesToKopecks(unitPriceRub);
 				const itemDiscountKop = Math.round((unitPriceKop * discountPercent) / 100);
-				itemDiscountRub = itemDiscountKop / 100;
+				itemDiscountRub = kopecksToRubles(itemDiscountKop);
 			} else {
 				itemDiscountRub = Number(item.discount || 0);
 			}
@@ -385,7 +399,12 @@ export async function setPlanDiscountMode(
 			.set({
 				discount: String(itemDiscountRub),
 			})
-			.where(eq(treatmentPlanItemsNew.id, item.id));
+			.where(
+				and(
+					eq(treatmentPlanItemsNew.id, item.id),
+					eq(treatmentPlanItemsNew.organizationId, input.organizationId),
+				),
+			);
 
 		const lineKop = chargeLineKopecks({
 			patientId: input.patientId,
@@ -395,7 +414,7 @@ export async function setPlanDiscountMode(
 			discountRub: itemDiscountRub,
 		});
 		updatedLineKopecks.push(lineKop);
-		totalPlanDiscountKopecks += Math.round(itemDiscountRub * item.quantity * 100);
+		totalPlanDiscountKopecks += rublesToKopecks(itemDiscountRub) * item.quantity;
 	}
 
 	const newTotalPriceKopecks = sumKopecks(updatedLineKopecks);
@@ -414,7 +433,12 @@ export async function setPlanDiscountMode(
 			updatedAt: now,
 			version: sql`${treatmentPlans.version} + 1`,
 		})
-		.where(eq(treatmentPlans.id, input.planId));
+		.where(
+			and(
+				eq(treatmentPlans.id, input.planId),
+				eq(treatmentPlans.organizationId, input.organizationId),
+			),
+		);
 
 	return {
 		success: true,

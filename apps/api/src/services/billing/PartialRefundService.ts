@@ -10,6 +10,8 @@
 
 import {
 	calculatePartialRefund,
+	kopecksToRubles,
+	rublesToKopecks,
 	type PartialRefundCalculationInput,
 	type PartialRefundCalculationResult,
 	type PartialRefundRequestItem,
@@ -155,7 +157,7 @@ export class PartialRefundService {
 
 			// Synthesize refundable items from invoice total and request
 			const invoiceTotalRub = Number(invoice.totalAmountRub || invoice.totalRub || 0);
-			const invoiceTotalKop = Math.round(invoiceTotalRub * 100);
+			const invoiceTotalKop = rublesToKopecks(invoiceTotalRub);
 
 			// 1. Проверяем уже произведенные возвраты по данному счёту (защита от переплаты / Over-Refund Defense)
 			let alreadyRefundedKop = 0;
@@ -175,7 +177,7 @@ export class PartialRefundService {
 				);
 
 			for (const ref of existingRefunds) {
-				alreadyRefundedKop += Math.round(Math.abs(Number(ref.amountRub || 0)) * 100);
+				alreadyRefundedKop += rublesToKopecks(Math.abs(Number(ref.amountRub || 0)));
 			}
 
 			const remainingRefundableKop = Math.max(0, invoiceTotalKop - alreadyRefundedKop);
@@ -193,8 +195,8 @@ export class PartialRefundService {
 			}
 
 			if (requestedTotalKop > remainingRefundableKop) {
-				const remainingRub = (remainingRefundableKop / 100).toLocaleString("ru-RU");
-				const requestedRub = (requestedTotalKop / 100).toLocaleString("ru-RU");
+				const remainingRub = kopecksToRubles(remainingRefundableKop).toLocaleString("ru-RU");
+				const requestedRub = kopecksToRubles(requestedTotalKop).toLocaleString("ru-RU");
 				throw new PartialRefundValidationError(
 					"OverRefundExceeded",
 					`Запрошенная сумма возврата (${requestedRub} ₽) превышает доступный лимит по счёту (${remainingRub} ₽). Возврат сверх суммы счёта запрещен 54-ФЗ.`,

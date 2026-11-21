@@ -1,3 +1,4 @@
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { db as dbType } from "../../../db/client.js";
 import { payments, sberbankTransactions } from "../../../db/schema/billing.js";
@@ -24,7 +25,7 @@ export async function lookupSberTransactionInvoice(params: {
 	if (!txRow) return null;
 
 	const isPaid = txRow.status === "SETTLED";
-	const amountRub = txRow.amount / 100;
+	const amountRub = kopecksToRubles(txRow.amountKopecks);
 
 	let actualFiscalReceiptNumber: string | null = null;
 	if (isPaid) {

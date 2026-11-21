@@ -90,7 +90,7 @@ export async function handleSbpStatus(
 			const sbTx = txRows[0];
 			if (sbTx) {
 				resolvedOrderId = sbTx.orderId;
-				amountKopecks = sbTx.amount;
+				amountKopecks = Number(sbTx.amountKopecks);
 				if (sbTx.status === "paid" || sbTx.status === "completed" || sbTx.status === "PAID") {
 					isPaid = true;
 					paidAtIso = (sbTx.updatedAt || sbTx.createdAt).toISOString();

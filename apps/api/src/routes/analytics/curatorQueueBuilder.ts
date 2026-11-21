@@ -3,6 +3,7 @@ import {
 	type CuratorPatientQueueItem,
 	type PatientAdministrativeProfile,
 	evaluatePatientUrgency,
+	rublesToKopecks,
 } from "@dental/shared";
 import type { CuratorStaffUser } from "./curatorTypes.js";
 
@@ -91,11 +92,11 @@ export function buildCuratorQueueItem(
 		treatmentPlanTitle: plan.name || "План лечения",
 		planTier: tier,
 		planTotalPriceRub: planPrice,
-		planTotalPriceKopecks: Math.round(planPrice * 100),
+		planTotalPriceKopecks: rublesToKopecks(planPrice),
 		paidAmountRub: planPaid,
-		paidAmountKopecks: Math.round(planPaid * 100),
+		paidAmountKopecks: rublesToKopecks(planPaid),
 		remainingAmountRub: remaining,
-		remainingAmountKopecks: Math.round(remaining * 100),
+		remainingAmountKopecks: rublesToKopecks(remaining),
 		funnelStage: stage,
 		curatorId,
 		curatorFullName: curatorName,

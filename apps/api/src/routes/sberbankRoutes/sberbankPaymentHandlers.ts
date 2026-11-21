@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { kopecksToNumericString } from "@dental/shared";
+import { kopecksToNumericString, kopecksToRubles } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
@@ -105,7 +105,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 						documentId: documentId || null,
 						invoiceId: invoiceId || null,
 						orderId: sberbankOrderId,
-						amount,
+						amountKopecks: BigInt(amount),
 						status: "pending",
 					});
 				});
@@ -213,9 +213,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 							mappedStatus === "success" &&
 							!lockedPayment
 						) {
-							const amountRub = Number(
-								kopecksToNumericString(lockedTx.amount),
-							);
+							const amountRub = kopecksToRubles(lockedTx.amountKopecks);
 							await tx
 								.insert(payments)
 								.values({
@@ -264,7 +262,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 					return {
 						success: true,
 						status: mappedStatus,
-						amount: lockedTx.amount,
+						amount: Number(lockedTx.amountKopecks),
 					};
 				});
 			} catch (error) {
@@ -350,7 +348,7 @@ export async function registerSberbankPaymentRoutes(app: FastifyInstance): Promi
 								),
 							);
 
-						const amountRub = Number(kopecksToNumericString(lockedTx.amount));
+						const amountRub = kopecksToRubles(lockedTx.amountKopecks);
 						const [lockedPayment] = await tx
 							.select()
 							.from(payments)

@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { and, eq, sql } from "drizzle-orm";
 import { Fiscal54FzService } from "../../../services/billing/fiscal54fzService.js";
-import { sumKopecks } from "@dental/shared";
+import { kopecksToRubles, sumKopecks } from "@dental/shared";
 import { db } from "../../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../../db/rls.js";
 import {
@@ -203,9 +203,9 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 		// Validate incoming amount in kopecks if provided
 		if (payload.amount !== undefined && payload.amount !== null) {
 			const incomingKopecks = Number(payload.amount);
-			if (!Number.isNaN(incomingKopecks) && incomingKopecks !== lockedTx.amount) {
+			if (!Number.isNaN(incomingKopecks) && BigInt(incomingKopecks) !== lockedTx.amountKopecks) {
 				request.log.warn(
-					{ orderId, expected: lockedTx.amount, received: incomingKopecks },
+					{ orderId, expected: Number(lockedTx.amountKopecks), received: incomingKopecks },
 					"[SberPosWebhook] Amount mismatch detected",
 				);
 				return {
@@ -339,7 +339,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 					),
 				);
 
-			const amountRub = Fiscal54FzService.kopecksToRub(lockedTx.amount);
+			const amountRub = kopecksToRubles(lockedTx.amountKopecks);
 
 			// Insert ledger payment
 			const [newPayment] = await tx
@@ -445,7 +445,7 @@ export const webhookHandler = async (request: FastifyRequest, reply: FastifyRepl
 					processed: true,
 					status: "SETTLED",
 					paymentId: newPayment?.id || lockedPayment?.id,
-					amountKopecks: lockedTx.amount,
+					amountKopecks: Number(lockedTx.amountKopecks),
 					amountRub,
 					orderId: lockedTx.orderId,
 				},

@@ -35,26 +35,27 @@
 - **Что сделано:** Расширен `TelegramWebAppBridge` (`HapticFeedback`, `initData`, `openTelegramLink`), восстановлен и смонтирован `DirectSettingsLauncher.tsx`, добавлены null-guards в Communications и строгая типизация в визитах. `npm run typecheck -w @dental/web` даёт строго 0 ошибок (Exit Code 0).
 
 ### ROT-003: Денежное поле `amount` без суффикса `Kopecks` в `sberbank_transactions`
-- **Статус:** ❌ OPEN
+- **Статус:** ✅ FIXED (2026-11-21)
 - **Файл:** `apps/api/src/db/schema/billingModules/billingPaymentsAndFiscalSchema.ts:267`
-- **Суть:** `amount: integer("amount").notNull()` — нет суффикса, тип `integer` вместо `bigint`.
-- **Импакт:** Переполнение при суммах > 21 474 836,47 ₽. Нарушен Мандат 8bm.
+- **Что сделано:** Заменено на канонический `amountKopecks: bigint("amount_kopecks", { mode: "bigint" }).notNull()`. Созданы и применены DDL-миграции `0261_sberbank_transactions_amount_kopecks.sql` и `0262_sberbank_transactions_drop_amount_not_null.sql`. Синхронизированы все эндпоинты эквайринга Сбера (`sberbankPaymentHandlers.ts`, `sberbankWebhookHandlers.ts`, `idempotencyHandler.ts`, `paymentStateTransition.ts`, `portalPaymentsRoutes.ts`, `sbpWebhookContext.ts`), а также юнит- и E2E-тесты (`sberbank.test.ts`, `sberbankWebhookIdempotency.test.ts`, `sberbankAndScheduleCases.test.ts`). Соответствие Мандату 8bm 100%.
 
-### ROT-004: Float-арифметика на деньгах в 20+ файлах
-- **Статус:** 🔄 IN PROGRESS (AI Tools & CRM Database Modules FIXED 2026-11-21)
+### ROT-004: Float-арифметика на деньгах в биллинге и фискальных сервисах
+- **Статус:** ✅ FIXED (2026-11-21)
 - **Горячие точки:**
-  - `cashboxPaymentProcessor.ts` — 6 мест с `BigInt(Math.round(tender.amountRub * 100))`
-  - `fiscalAccounting.ts` — 7 мест с `Number((kop / 100).toFixed(2))`
-  - `createInvoiceDraftTool.ts` — ✅ FIXED (2026-11-21, переведено на канонический `rubToKopecks` / `rublesToKopecks`)
-  - `treatmentRecordTool.ts` — ✅ FIXED (2026-11-21, целочисленный расчет `rubToKopecks` * qty и `kopecksToRub`)
-  - `dbTypes.ts` — ✅ FIXED (2026-11-21, делегирует в `@dental/shared/src/money.ts`)
-  - `mcpFiscalHandlers.ts` — 3 места
-  - `materialDeduction.ts` — ✅ FIXED (2026-11-21, снос симулятора отходов класса Б 150г, безопасное списание)
-  - `quickWriteoffPresets.ts` & `statutoryBomResolver.ts` — ✅ FIXED (2026-11-21, устранение дробных рублей и деления на 100, перевод на kopecksToRubles)
-  - `procedureBomDefaultFallback.ts` & `bomDeductionCalculator.ts` — ✅ FIXED (2026-11-21, ликвидация float деления на 100, внедрение formatKopecksToRub)
-  - `paymentRecordExecutor.ts` — 1 место
-  - `financialArgumentation.ts` — 4 места
-- **Эталон:** `@dental/shared/src/money.ts` → `formatKopecksToRub`, `rublesToKopecks`
+  - `cashboxPaymentProcessor.ts` — ✅ FIXED (2026-11-21, целочисленные BigInt копейки и канонический money.ts)
+  - `fiscalAccounting.ts` / `PartialRefundService.ts` — ✅ FIXED (2026-11-21, снос float деления, переход на rublesToKopecks / kopecksToRubles)
+  - `createInvoiceDraftTool.ts` & `treatmentRecordTool.ts` — ✅ FIXED (2026-11-21, переведено на канонический rubToKopecks / rublesToKopecks)
+  - `dbTypes.ts` — ✅ FIXED (2026-11-21, канонические реэкспорты из @dental/shared/src/money.ts)
+  - `mcpFiscalHandlers.ts` — ✅ FIXED (2026-11-21, rublesToKopecks / multiplyKopecks)
+  - `familyFnsTaxService.ts` — ✅ FIXED (2026-11-21, КНД 1151156 расчет вычетов и НДФЛ через rublesToKopecks / kopecksToRubles)
+  - `priceFreezeTokensQuery.ts` & `pricelistQuery.ts` — ✅ FIXED (2026-11-21, переоценка и фиксация цен без float drift)
+  - `curatorQueueBuilder.ts` — ✅ FIXED (2026-11-21, суммы и остатки планов строго через rublesToKopecks)
+  - `staffMutationRoutes.ts` & `staffHelpers.ts` — ✅ FIXED (2026-11-21, оклады и ставки без делений / 100)
+  - `surgery/index.ts` — ✅ FIXED (2026-11-21, BigInt(rublesToKopecks) для смет операций)
+  - `marketing.ts` — ✅ FIXED (2026-11-21, суммы оплат в ROMI метриках через rublesToKopecks)
+  - `orthodontics/materialDeduction.ts` — ✅ FIXED (2026-11-21, снос захардкоженного мока 120_000n, учет фактической цены ТМЦ)
+  - `treatmentPlanPersonalize.ts` — ✅ FIXED (2026-11-21, снос мока baseTotalRub || 100000)
+- **Эталон:** `@dental/shared/src/money.ts` → `formatKopecksToRub`, `rublesToKopecks`, `kopecksToRubles`
 
 ---
 
@@ -157,3 +158,5 @@
 | 2026-11-21 | **ROT-005 (part)** | Обязательная fail-closed валидация `Idempotency-Key` (UUIDv7) в траншах рассрочки (`cashInstallmentsRoutes.ts`), защита от Double-Spend и дедупликация, настройка `enforceForPaths` в `idempotencyPlugin.ts`. | `verified` |
 | 2026-11-21 | **ROT-007** | Устранены IDOR/BOLA дыры: добавлены фильтры `eq(organizationId)` в `priceFreezeTokensQuery.ts` (планы, токен, позиции) и `doctorPreferencesQuery.ts`. | `verified` |
 | 2026-11-21 | **WAREHOUSE-BOM** | Устранено троевластие техкарт: утвержден канонический SSOT `procedure_tech_cards` и `procedure_tech_card_items`, все списания переведены на `inventory_transactions` строго внутри `withTenantCtx`, ликвидирован float math (`kopecksToRubles`, `formatKopecksToRub`), через `git rm` снесены мертвые симуляторы (`quickCarpuleDisposal.ts`, `kraftDiaryLink.ts`, `kraftPackageProtocolLink.ts`, `procedureBomDbResolver.ts`), удален микро-эндпоинт списания на отдельный зуб и фейковые отходы класса Б 150г в `materialDeduction.ts`. | `verified` |
+| 2026-11-21 | **ROT-003** | Миграция DDL `sberbank_transactions`: колонка `amount_kopecks bigint` (миграции 0261 и 0262), синхронизация DTO и роутов Сбера/СБП/Портала, тесты 100% зеленые. | `verified` |
+| 2026-11-21 | **ROT-004** | Искоренение float-арифметики в биллинге, налогах (ФНС 1151156), кадрах, прайсе и маркетинге через `@dental/shared/src/money.ts`. Ликвидация хардкодных моков. | `verified` |

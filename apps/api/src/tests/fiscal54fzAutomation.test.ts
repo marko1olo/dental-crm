@@ -408,7 +408,7 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 				documentId: DOC_ID,
 				invoiceId: INVOICE_ID,
 				orderId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "WAITING_FOR_CARD",
 			});
 		});
@@ -624,7 +624,7 @@ describe("2. Sberbank POS Terminal & SberPay QR Webhook Integration Tests", () =
 				documentId: DOC_ID,
 				invoiceId: INVOICE_ID,
 				orderId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "WAITING_FOR_CARD",
 			});
 		});

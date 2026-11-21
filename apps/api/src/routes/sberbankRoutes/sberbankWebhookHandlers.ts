@@ -1,4 +1,4 @@
-import { kopecksToNumericString } from "@dental/shared";
+import { kopecksToNumericString, kopecksToRubles } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
@@ -138,9 +138,9 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 			// Validate incoming amount in kopecks if provided by gateway
 			if (payload.amount !== undefined && payload.amount !== null) {
 				const incomingKopecks = Number(payload.amount);
-				if (!Number.isNaN(incomingKopecks) && incomingKopecks !== lockedTx.amount) {
+				if (!Number.isNaN(incomingKopecks) && BigInt(incomingKopecks) !== lockedTx.amountKopecks) {
 					request.log.warn(
-						{ orderId, expected: lockedTx.amount, received: incomingKopecks },
+						{ orderId, expected: Number(lockedTx.amountKopecks), received: incomingKopecks },
 						"[SberbankWebhook] Amount mismatch detected",
 					);
 					return reply.status(400).send({
@@ -283,9 +283,7 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 						),
 					);
 
-				const amountRub = Number(
-					kopecksToNumericString(lockedTx.amount),
-				);
+				const amountRub = kopecksToRubles(lockedTx.amountKopecks);
 				const [insertedPayment] = await tx
 					.insert(payments)
 					.values({
@@ -335,7 +333,7 @@ export async function registerSberbankWebhookRoutes(app: FastifyInstance): Promi
 					processed: true,
 					status: "success",
 					paymentId: insertedPayment?.id || lockedPayment?.id,
-					amount: lockedTx.amount,
+					amount: Number(lockedTx.amountKopecks),
 				});
 			}
 

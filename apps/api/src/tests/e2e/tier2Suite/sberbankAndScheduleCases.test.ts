@@ -75,7 +75,7 @@ export function registerSberbankAndScheduleCases(ctx: Tier2FixtureContext): void
 					organizationId: ORG_ID,
 					patientId: PATIENT_1_ID,
 					orderId,
-					amount: 200000,
+					amountKopecks: 200000n,
 					status: "pending",
 				});
 			});
@@ -124,7 +124,7 @@ export function registerSberbankAndScheduleCases(ctx: Tier2FixtureContext): void
 					organizationId: ORG_ID,
 					patientId: PATIENT_1_ID,
 					orderId,
-					amount: 150000,
+					amountKopecks: 150000n,
 					status: "pending",
 				});
 			});

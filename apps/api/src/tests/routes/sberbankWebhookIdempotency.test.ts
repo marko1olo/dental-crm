@@ -11,6 +11,7 @@ import {
 	patients,
 	payments,
 	sberbankTransactions,
+	users,
 	visits,
 } from "../../db/schema.js";
 import {
@@ -213,39 +214,63 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 			);
 			await purgeFixtureOrganizations([ORG_ID]);
 			await withFixtureTenant(ORG_ID, async () => {
-				await db.insert(organizations).values({
-					id: ORG_ID,
-					name: "Sberbank Webhook Idempotency Test Clinic",
-				});
-				await db.insert(patients).values({
-					id: PATIENT_ID,
-					organizationId: ORG_ID,
-					fullName: "Иванов Иван Иванович (Idempotency Test)",
-				});
-				await db.insert(visits).values({
-					id: VISIT_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					status: "signed",
-				});
-				await db.insert(generatedDocuments).values({
-					id: DOC_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					visitId: VISIT_ID,
-					kind: "completed_works_act",
-					status: "draft",
-					title: "Акт выполненных работ (Идемпотентность)",
-				});
-				await db.insert(patientInvoices).values({
-					id: INVOICE_ID,
-					organizationId: ORG_ID,
-					patientId: PATIENT_ID,
-					visitId: VISIT_ID,
-					totalRub: "1500.00",
-					totalAmountRub: 1500,
-					status: "draft",
-				});
+				await db
+					.insert(organizations)
+					.values({
+						id: ORG_ID,
+						name: "Sberbank Webhook Idempotency Test Clinic",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(users)
+					.values({
+						id: fixtureUuid(TEST_NS, 99),
+						organizationId: ORG_ID,
+						fullName: "Sberbank Admin",
+						role: "administrator",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(patients)
+					.values({
+						id: PATIENT_ID,
+						organizationId: ORG_ID,
+						fullName: "Иванов Иван Иванович (Idempotency Test)",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(visits)
+					.values({
+						id: VISIT_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						status: "signed",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(generatedDocuments)
+					.values({
+						id: DOC_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						visitId: VISIT_ID,
+						kind: "completed_works_act",
+						status: "draft",
+						title: "Акт выполненных работ (Идемпотентность)",
+					})
+					.onConflictDoNothing();
+				await db
+					.insert(patientInvoices)
+					.values({
+						id: INVOICE_ID,
+						organizationId: ORG_ID,
+						patientId: PATIENT_ID,
+						visitId: VISIT_ID,
+						totalRub: "1500.00",
+						totalAmountRub: 1500,
+						status: "draft",
+					})
+					.onConflictDoNothing();
 			});
 		} catch (err) {
 			if (!isDbErr(err)) throw err;
@@ -288,7 +313,7 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 				visitId: VISIT_ID,
 				documentId: DOC_ID,
 				orderId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "pending",
 			});
 		});
@@ -365,7 +390,7 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,
 				orderId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "pending",
 			});
 		});
@@ -452,7 +477,7 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 				documentId: DOC_ID,
 				invoiceId: INVOICE_ID,
 				orderId: operationId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "pending",
 			});
 		});
@@ -518,7 +543,7 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,
 				orderId: operationId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "pending",
 			});
 		});
@@ -664,6 +689,6 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 				),
 		);
 		assert.equal(txRows.length, 1);
-		assert.equal(txRows[0]?.amount, 150000);
+		assert.equal(Number(txRows[0]?.amountKopecks), 150000);
 	});
 });

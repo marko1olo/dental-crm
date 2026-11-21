@@ -1,3 +1,4 @@
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
@@ -60,12 +61,12 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				? request.body.amountRub
 				: undefined;
 
-		return withTenantCtx(auth.organizationId, async () => {
+		return withTenantCtx(auth.organizationId, async (tx) => {
 			let amountRub = explicitAmount || 0;
 			let invoiceNumber = `СЧ-${Date.now().toString().slice(-6)}`;
 
 			if (invoiceId) {
-				const [inv] = await db
+				const [inv] = await tx
 					.select()
 					.from(patientInvoices)
 					.where(
@@ -98,7 +99,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				};
 			}
 
-			const [org] = await db
+			const [org] = await tx
 				.select({
 					name: organizations.name,
 					inn: organizations.inn,
@@ -126,19 +127,19 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			const recipientLegalName = org?.name || "Стоматологическая клиника";
 			const recipientInn = org?.inn || "";
 
-			const amountKopecks = Math.round(amountRub * 100);
+			const amountKopecks = rublesToKopecks(amountRub);
 			const qrId = `SBPA${Date.now().toString(36).toUpperCase()}${invoiceNumber.replace(/\D/g, "")}`;
 			const sbpNspkPayloadString = `https://qr.nspk.ru/${qrId}?type=02&bank=100000000111&sum=${amountKopecks}&cur=RUB&crc=84A2`;
 			const qrSvg = generateDeterministicQrSvg(sbpNspkPayloadString, 180);
 			const expiresAt = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
 
-			// Register pending transaction in sberbankTransactions for SBP audit trail
-			await db.insert(sberbankTransactions).values({
+			// Register pending transaction in sberbankTransactions for SBP audit trail within tenant transaction
+			await tx.insert(sberbankTransactions).values({
 				organizationId: auth.organizationId,
 				patientId: auth.patientId,
 				invoiceId: invoiceId || null,
 				orderId: qrId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "WAITING_FOR_CARD",
 			});
 
@@ -243,9 +244,9 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 
 		const now = new Date();
 
-		return withTenantCtx(auth.organizationId, async () => {
+		return withTenantCtx(auth.organizationId, async (tx) => {
 			// 1. Verify invoice in DB
-			const [inv] = await db
+			const [inv] = await tx
 				.select()
 				.from(patientInvoices)
 				.where(
@@ -264,7 +265,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				});
 			}
 
-			const invoiceTotalKop = Math.round((Number(inv.totalRub) || Number(inv.totalAmountRub) || 0) * 100);
+			const invoiceTotalKop = rublesToKopecks(Number(inv.totalRub) || Number(inv.totalAmountRub) || 0);
 
 			if (invoiceTotalKop <= 0) {
 				return reply.code(400).send({
@@ -273,14 +274,14 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				});
 			}
 
-			if (explicitAmount !== undefined && Math.round(explicitAmount * 100) !== invoiceTotalKop) {
+			if (explicitAmount !== undefined && rublesToKopecks(explicitAmount) !== invoiceTotalKop) {
 				return reply.code(400).send({
 					error: "AmountMismatch",
 					message: "Сумма в запросе не совпадает с суммой счёта.",
 				});
 			}
 
-			const totalAmount = invoiceTotalKop / 100;
+			const totalAmount = kopecksToRubles(invoiceTotalKop);
 
 			// If already paid, return idempotent success
 			if (inv.status === "paid") {
@@ -296,7 +297,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			}
 
 			// 2. Validate transaction status via real banking service / gateway / sberbankTransactions
-			const [sberTx] = await db
+			const [sberTx] = await tx
 				.select()
 				.from(sberbankTransactions)
 				.where(
@@ -329,7 +330,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 						if (bankStatus.orderStatus === 2) {
 							isBankConfirmed = true;
 							if (sberTx) {
-								await db
+								await tx
 									.update(sberbankTransactions)
 									.set({ status: "success", updatedAt: new Date() })
 									.where(
@@ -358,7 +359,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			}
 
 			// 3. Close invoice
-			await db
+			await tx
 				.update(patientInvoices)
 				.set({
 					status: "paid",
@@ -372,7 +373,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				);
 
 			// 4. Insert payment record into payments table
-			const [insertedPayment] = await db
+			const [insertedPayment] = await tx
 				.insert(payments)
 				.values({
 					organizationId: auth.organizationId,
@@ -418,7 +419,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 		const invoiceId = request.query?.invoiceId?.trim();
 		const invoiceNumber = request.query?.invoiceNumber?.trim();
 
-		return withTenantCtx(auth.organizationId, async () => {
+		return withTenantCtx(auth.organizationId, async (tx) => {
 			let inv: typeof patientInvoices.$inferSelect | undefined;
 
 			if (invoiceId) {
@@ -427,7 +428,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 						invoiceId,
 					);
 				if (isUuid) {
-					const [found] = await db
+					const [found] = await tx
 						.select()
 						.from(patientInvoices)
 						.where(
@@ -444,7 +445,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 
 			if (!inv && invoiceNumber) {
 				const cleanId = invoiceNumber.replace(/^СЧ-/i, "").toLowerCase();
-				const allPatientInvoices = await db
+				const allPatientInvoices = await tx
 					.select()
 					.from(patientInvoices)
 					.where(
@@ -465,7 +466,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				// Also check sberbankTransactions if invoice was registered via SBP QR
 				const orderIdLookup = invoiceId || invoiceNumber;
 				if (orderIdLookup) {
-					const [txRow] = await db
+					const [txRow] = await tx
 						.select()
 						.from(sberbankTransactions)
 						.where(
@@ -486,11 +487,9 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 							success: true,
 							status: isSettled ? "paid" : txRow.status.toLowerCase(),
 							isPaid: isSettled,
-							paidAmountRub: isSettled ? txRow.amount / 100 : 0,
+							paidAmountRub: isSettled ? kopecksToRubles(txRow.amountKopecks) : 0,
 							paidAtIso: txRow.updatedAt?.toISOString() || null,
-							fiscalReceiptNumber: isSettled
-								? `FD-${txRow.orderId.slice(-6)}`
-								: undefined,
+							fiscalReceiptNumber: undefined,
 						};
 					}
 				}
@@ -511,9 +510,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				isPaid,
 				paidAmountRub: isPaid ? totalAmountRub : 0,
 				paidAtIso: inv.paidAt?.toISOString() || null,
-				fiscalReceiptNumber: isPaid
-					? `FD-${inv.id.slice(0, 8).toUpperCase()}`
-					: undefined,
+				fiscalReceiptNumber: undefined,
 			};
 		});
 	});

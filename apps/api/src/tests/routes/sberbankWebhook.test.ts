@@ -207,7 +207,7 @@ describe("POST /api/sberbank/webhook — Async Payment Receiver Integration Test
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,
 				orderId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "pending",
 			});
 		});
@@ -320,7 +320,7 @@ describe("POST /api/sberbank/webhook — Async Payment Receiver Integration Test
 				visitId: VISIT_ID,
 				documentId: DOC_ID,
 				orderId,
-				amount: amountKopecks,
+				amountKopecks: BigInt(amountKopecks),
 				status: "pending",
 			});
 		});

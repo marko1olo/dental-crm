@@ -15,6 +15,7 @@ import {
 	createSurgicalProtocolSchema,
 	surgicalQuickDeductSchema,
 	evaluateWarehouseOverdraft,
+	rublesToKopecks,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -223,7 +224,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 			// Фиксация в счете/смете пациента (Мандат 8wy, SSOT)
 			const normPrice = norm?.catalogServices?.[0]?.priceRub ?? 0;
 			const operationPriceRub = input.services?.[0]?.priceRub ?? normPrice;
-			const operationPriceKopecks = BigInt(Math.round(operationPriceRub * 100));
+			const operationPriceKopecks = BigInt(rublesToKopecks(operationPriceRub));
 			const serviceTitle = input.services?.[0]?.nameRu ?? norm?.title ?? "Амбулаторная хирургическая операция";
 
 			let linkedInvoiceId: string | null = null;

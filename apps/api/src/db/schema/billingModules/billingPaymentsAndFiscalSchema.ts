@@ -1,6 +1,7 @@
 import type { FiscalReceiptDetails } from "@dental/shared";
 import { sql, relations } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	index,
 	integer,
@@ -264,7 +265,7 @@ export const sberbankTransactions = pgTable(
 			.notNull()
 			.references(() => organizations.id),
 		orderId: text("order_id").notNull(),
-		amount: integer("amount").notNull(),
+		amountKopecks: bigint("amount_kopecks", { mode: "bigint" }).notNull(),
 		status: text("status").notNull(),
 		patientId: uuid("patient_id").notNull(),
 		visitId: text("visit_id"),

@@ -23,7 +23,10 @@ import {
 	requireClinicalReadAccess,
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
-import { aggregateCrmMarketingMetrics } from "@dental/shared";
+import {
+	aggregateCrmMarketingMetrics,
+	rublesToKopecks,
+} from "@dental/shared";
 import {
 	registerMarketingPromosRoutes,
 	readOrSeedOrganizationRomiChannels,
@@ -141,6 +144,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				payments: allPayments.map((pay) => ({
 					id: pay.id,
 					patientId: pay.patientId,
+					amountKopecks: rublesToKopecks(Number(pay.amountRub || 0)),
 					amount: Number(pay.amountRub || 0),
 					status: pay.status ?? "paid",
 				})),
@@ -226,6 +230,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				payments: allPayments.map((pay) => ({
 					id: pay.id,
 					patientId: pay.patientId,
+					amountKopecks: rublesToKopecks(Number(pay.amountRub || 0)),
 					amount: Number(pay.amountRub || 0),
 					status: pay.status ?? "paid",
 				})),

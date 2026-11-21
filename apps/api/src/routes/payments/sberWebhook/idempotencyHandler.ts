@@ -14,7 +14,7 @@ import {
 	sberbankTransactions,
 } from "../../../db/schema.js";
 import { Fiscal54FzService } from "../../../services/billing/fiscal54fzService.js";
-import { formatSberBankSlip } from "@dental/shared";
+import { formatSberBankSlip, kopecksToRubles } from "@dental/shared";
 import type { SberPosOperationType, SberPosTransactionResponse } from "@dental/shared";
 import { initiateSberPosPaymentSchema, executeSberPosTransactionSchema } from "./types.js";
 
@@ -83,8 +83,8 @@ export const initiateSberPosPaymentHandler = async (request: FastifyRequest, rep
 				isDuplicate: true,
 				orderId: existingTx.orderId,
 				status: existingTx.status,
-				amountKopecks: existingTx.amount,
-				amountRub: Fiscal54FzService.kopecksToRub(existingTx.amount),
+				amountKopecks: Number(existingTx.amountKopecks),
+				amountRub: kopecksToRubles(existingTx.amountKopecks),
 				idempotencyKey: orderId,
 				message: "Повторный запрос: терминальная транзакция уже зарегистрирована.",
 			});
@@ -97,7 +97,7 @@ export const initiateSberPosPaymentHandler = async (request: FastifyRequest, rep
 			documentId: input.documentId || null,
 			invoiceId: input.invoiceId || null,
 			orderId,
-			amount: input.amountKopecks,
+			amountKopecks: BigInt(input.amountKopecks),
 			status: "WAITING_FOR_CARD",
 		});
 
@@ -108,7 +108,7 @@ export const initiateSberPosPaymentHandler = async (request: FastifyRequest, rep
 			terminalId: input.terminalId,
 			paymentMethodType: input.paymentMethodType,
 			amountKopecks: input.amountKopecks,
-			amountRub: Fiscal54FzService.kopecksToRub(input.amountKopecks),
+			amountRub: kopecksToRubles(input.amountKopecks),
 			status: "WAITING_FOR_CARD",
 			idempotencyKey,
 			message: "Терминал готов к приему карты или сканированию SberPay QR.",
@@ -157,8 +157,8 @@ export const getSberPosStatusHandler = async (request: FastifyRequest, reply: Fa
 		success: true,
 		orderId: txRow.orderId,
 		status: txRow.status,
-		amountKopecks: txRow.amount,
-		amountRub: Fiscal54FzService.kopecksToRub(txRow.amount),
+		amountKopecks: Number(txRow.amountKopecks),
+		amountRub: kopecksToRubles(txRow.amountKopecks),
 		patientId: txRow.patientId,
 		visitId: txRow.visitId,
 		documentId: txRow.documentId,
@@ -200,7 +200,7 @@ export const reconcileRrnHandler = async (request: FastifyRequest, reply: Fastif
 			return reply.code(200).send({
 				success: true,
 				status: txRow.status,
-				amountKop: txRow.amount,
+				amountKop: Number(txRow.amountKopecks),
 				orderId: txRow.orderId,
 				rrn,
 				message: `Транзакция найдена: статус ${txRow.status}.`,
@@ -338,7 +338,7 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 				.update(sberbankTransactions)
 				.set({
 					status,
-					amount: input.amountKopecks || existingTx.amount,
+					amountKopecks: BigInt(input.amountKopecks || Number(existingTx.amountKopecks)),
 					updatedAt: new Date(),
 				})
 				.where(
@@ -365,7 +365,7 @@ export const sberPosTransactionHandler = async (request: FastifyRequest, reply: 
 					visitId: input.visitId || null,
 					invoiceId: input.invoiceId || null,
 					orderId,
-					amount: input.amountKopecks,
+					amountKopecks: BigInt(input.amountKopecks),
 					status,
 				});
 			}

@@ -1,4 +1,4 @@
-import { kopecksToNumericString } from "@dental/shared";
+import { kopecksToRubles } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { TenantDb } from "../../db/rls.js";
 import {
@@ -52,7 +52,7 @@ export async function handleSbpWebhookSuccess(params: {
 	const effectiveAmountKopecks = targetContext.amountKopecks ?? incomingAmountKopecks ?? 0;
 	const amountRub =
 		effectiveAmountKopecks > 0
-			? Number(kopecksToNumericString(effectiveAmountKopecks))
+			? kopecksToRubles(effectiveAmountKopecks)
 			: payload.amountRub
 				? Number(payload.amountRub)
 				: 0;

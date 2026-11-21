@@ -1,4 +1,7 @@
-import { createFiscalReceiptPayloadSchema } from "@dental/shared";
+import {
+	createFiscalReceiptPayloadSchema,
+	rublesToKopecks,
+} from "@dental/shared";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { FiscalInvoiceError } from "../fiscalReceiptService.js";
@@ -46,9 +49,9 @@ function normalizeFiscalReceiptBody(body: unknown): unknown {
 		b.totalKopecks ??
 		inner.totalKopecks ??
 		(b.totalRub
-			? Math.round(Number(b.totalRub) * 100)
+			? rublesToKopecks(Number(b.totalRub))
 			: inner.totalRub
-				? Math.round(Number(inner.totalRub) * 100)
+				? rublesToKopecks(Number(inner.totalRub))
 				: undefined);
 
 	let normalizedItems = rawItems;
@@ -58,7 +61,7 @@ function normalizeFiscalReceiptBody(body: unknown): unknown {
 				it.priceKopecks !== undefined
 					? Number(it.priceKopecks)
 					: it.priceRub !== undefined
-						? Math.round(Number(it.priceRub) * 100)
+						? rublesToKopecks(Number(it.priceRub))
 						: 0;
 			const qty = Number(it.quantity || 1);
 			const amountKop =

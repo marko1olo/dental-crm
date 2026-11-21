@@ -443,7 +443,7 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 				organizationId: ORG_ID,
 				patientId: PATIENT_1_ID,
 				orderId,
-				amount: 8500000,
+				amountKopecks: 8500000n,
 				status: "pending",
 			});
 		});
@@ -949,7 +949,7 @@ describe("Tier 4: Real-World Clinical Workload Scenarios & Edge Environments", (
 				organizationId: ORG_ID,
 				patientId: PATIENT_3_ID,
 				orderId,
-				amount: 1500000, // 15,000.00 RUB
+				amountKopecks: 1500000n, // 15,000.00 RUB
 				status: "pending",
 			});
 		});

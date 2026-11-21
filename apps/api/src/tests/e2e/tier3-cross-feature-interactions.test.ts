@@ -326,7 +326,7 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 				organizationId: ORG_ID,
 				patientId: PATIENT_1_ID,
 				orderId: ORDER_ID,
-				amount: 600000, // 6,000.00 RUB
+				amountKopecks: 600000n, // 6,000.00 RUB
 				status: "pending",
 			});
 		});
@@ -711,7 +711,7 @@ describe("Tier 3: Cross-Feature Interactions & Multi-Module Pipelines", () => {
 				organizationId: ORG_ID,
 				patientId: PATIENT_1_ID,
 				orderId,
-				amount: 1200000,
+				amountKopecks: 1200000n,
 				status: "pending",
 			});
 		});

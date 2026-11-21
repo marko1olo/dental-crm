@@ -1,3 +1,4 @@
+import { rublesToKopecks } from "@dental/shared";
 import { eq, or } from "drizzle-orm";
 import { withSuperuserBypass } from "../../db/rls.js";
 import { payments, sberbankTransactions } from "../../db/schema.js";
@@ -24,7 +25,7 @@ export async function locateSbpWebhookContext(
 				visitId: sberTx.visitId,
 				documentId: sberTx.documentId,
 				invoiceId: sberTx.invoiceId,
-				amountKopecks: sberTx.amount,
+				amountKopecks: Number(sberTx.amountKopecks),
 				sberTx,
 			};
 		}
@@ -50,7 +51,7 @@ export async function locateSbpWebhookContext(
 				visitId: existingPayment.visitId,
 				documentId: existingPayment.documentId,
 				invoiceId: null,
-				amountKopecks: Math.round(Number(existingPayment.amountRub) * 100),
+				amountKopecks: rublesToKopecks(Number(existingPayment.amountRub)),
 				existingPayment,
 			};
 		}

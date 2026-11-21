@@ -36,6 +36,7 @@ import {
 	type DentalSpecialty,
 	type ServiceCatalogItem,
 	type ServiceCategory,
+	kopecksToRubles,
 	rublesToKopecks,
 	serviceCatalogItemSchema,
 } from "@dental/shared";
@@ -605,7 +606,7 @@ export function computeRepricedAmount(
 			return Math.round(price / 100) * 100;
 		case "none":
 		default:
-			return Math.round(price * 100) / 100;
+			return kopecksToRubles(rublesToKopecks(price));
 	}
 }
 
@@ -761,7 +762,7 @@ export async function getServiceBomFromDb(
 				unit: ci.unit,
 				isMdlpRequired: ci.isMdlpRequired,
 				notes: ci.notes,
-				costRub: Math.round(qty * unitCost * 100) / 100,
+				costRub: kopecksToRubles(rublesToKopecks(qty * unitCost)),
 			};
 		});
 
@@ -772,7 +773,7 @@ export async function getServiceBomFromDb(
 			status: techCard.status,
 			description: techCard.description,
 			items,
-			totalMaterialsCostRub: Math.round(totalCost * 100) / 100,
+			totalMaterialsCostRub: kopecksToRubles(rublesToKopecks(totalCost)),
 		};
 	}
 
@@ -938,7 +939,7 @@ export async function upsertServiceBomInDb(
 						unit,
 						isMdlpRequired,
 						notes,
-						costRub: Math.round(qty * itemPrice * 100) / 100,
+						costRub: kopecksToRubles(rublesToKopecks(qty * itemPrice)),
 					});
 				} else {
 					insertedItems.push({
@@ -966,7 +967,7 @@ export async function upsertServiceBomInDb(
 			totalCost += qty * itemPrice;
 		}
 
-		const calculatedMaterialsCost = Math.round(totalCost * 100) / 100;
+		const calculatedMaterialsCost = kopecksToRubles(rublesToKopecks(totalCost));
 		await tx
 			.update(schema.serviceCatalogItems)
 			.set({ materialsCostRub: calculatedMaterialsCost })
