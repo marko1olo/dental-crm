@@ -68,11 +68,17 @@ export const treatmentPlans = pgTable(
 		doctorId: uuid("doctor_id"),
 		title: text("title").notNull().default(""),
 		name: text("name").notNull(),
+		// Клинический диагноз по МКБ-10 (Мандат 8e, 8x / DEF-PLAN-04)
+		diagnosisIcd10: text("diagnosis_icd10"),
+		diagnosisTitle: text("diagnosis_title"),
 		status: treatmentPlanStatus("status").notNull().default("Draft"),
 		totalPriceRub: numeric("total_price_rub", { precision: 12, scale: 2 }),
 		totalPrice: numeric("total_price", { precision: 12, scale: 2 })
 			.notNull()
 			.default("0"),
+		totalPriceKopecks: bigint("total_price_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		patientSignature: text("patient_signature"),
 		isSynced: boolean("is_synced").notNull().default(false),
 		version: integer("version").notNull().default(1),
@@ -100,6 +106,9 @@ export const treatmentPlans = pgTable(
 			scale: 2,
 			mode: "number",
 		}).default(0),
+		planDiscountKopecks: bigint("plan_discount_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		// Опциональные параметры рассрочки
 		isInstallment: boolean("is_installment").default(false),
 		installmentMonths: integer("installment_months"),
@@ -124,6 +133,9 @@ export const treatmentPlans = pgTable(
 		),
 		patientIdIdx: index("treatment_plans_patientId_idx").on(t.patientId),
 		doctorIdIdx: index("treatment_plans_doctor_id_idx").on(t.doctorId),
+		diagnosisIcd10Idx: index("treatment_plans_diagnosis_icd10_idx").on(
+			t.diagnosisIcd10,
+		),
 		curatorIdIdx: index("treatment_plans_curator_id_idx").on(t.curatorId),
 		planGroupIdIdx: index("treatment_plans_plan_group_id_idx").on(
 			t.planGroupId,
@@ -211,6 +223,9 @@ export const treatmentScenarios = pgTable(
 			scale: 2,
 			mode: "number",
 		}).notNull(),
+		totalKopecks: bigint("total_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		durationMonths: integer("duration_months").notNull().default(0),
 		visitCount: integer("visit_count").notNull().default(1),
 		includedServiceIdsJson: text("included_service_ids_json")
