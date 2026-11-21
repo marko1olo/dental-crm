@@ -156,7 +156,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 								const logDate = rawStamp.split("T")[0] || new Date().toISOString().split("T")[0];
 								const logTime = rawStamp.split("T")[1]?.slice(0, 5) || "Смена";
 								return (
-									<tr key={log.id} className="hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-[#1e293b]/50 transition-colors">
+									<tr key={log.id} className="hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-[var(--paper-soft)]/50 transition-colors">
 										<td className="py-2.5 px-3 font-medium text-[var(--ink,#1e293b)]">
 											<div>{logDate}</div>
 											<div className="text-[11px] text-[var(--muted,#64748b)]">{logTime}</div>

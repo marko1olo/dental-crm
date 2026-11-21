@@ -26,37 +26,37 @@ export async function handleOpenMorningShift(
 	if (!organizationId) return;
 
 	const parsed = morningShiftBodySchema.safeParse(req.body || {});
-	const body = parsed.success
-		? parsed.data
-		: ((req.body as Record<string, unknown>) || {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: parsed.error.issues[0]?.message ?? "Некорректные параметры утренней смены.",
+		});
+	}
+	const body = parsed.data;
 	const dateStr = (body.date as string) || new Date().toISOString().slice(0, 10);
 	const durationMinutes = 30;
 	const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
 	const operatorId = getRequestIdentity(req).userId ?? null;
 
-	const activeEquipments = await db
-		.select()
-		.from(bactericidalEquipments)
-		.where(
-			and(
-				eq(bactericidalEquipments.organizationId, organizationId),
-				eq(bactericidalEquipments.isCommissioned, true),
-				targetEquipmentId ? eq(bactericidalEquipments.id, targetEquipmentId) : undefined,
-			),
-		);
+	const results = await db.transaction(async (tx) => {
+		const activeEquipments = await tx
+			.select()
+			.from(bactericidalEquipments)
+			.where(
+				and(
+					eq(bactericidalEquipments.organizationId, organizationId),
+					eq(bactericidalEquipments.isCommissioned, true),
+					targetEquipmentId ? eq(bactericidalEquipments.id, targetEquipmentId) : undefined,
+				),
+			)
+			.for("update");
 
-	if (activeEquipments.length === 0) {
-		return reply.code(400).send({
-			error: "NoActiveEquipments",
-			message: targetEquipmentId
-				? "Указанный бактерицидный облучатель не найден или не введен в эксплуатацию."
-				: "В клинике не зарегистрировано активных бактерицидных облучателей.",
-		});
-	}
+		if (activeEquipments.length === 0) {
+			return null;
+		}
 
-	const results: Array<{ equipmentId: string; deviceBrand: string; newTotalHours: number; status: string }> = [];
+		const txResults: Array<{ equipmentId: string; deviceBrand: string; newTotalHours: number; status: string }> = [];
 
-	await db.transaction(async (tx) => {
 		for (const eqItem of activeEquipments) {
 			const prevHours = Number(eqItem.totalOperatingHours);
 			const newTotalHours = calculateCumulativeOperatingHours(prevHours, durationMinutes);
@@ -76,8 +76,8 @@ export async function handleOpenMorningShift(
 					),
 				);
 
-			const startTime = new Date(`${dateStr}T07:30:00`);
-			const endTime = new Date(`${dateStr}T08:00:00`);
+			const startTime = new Date(`${dateStr}T07:30:00Z`);
+			const endTime = new Date(`${dateStr}T08:00:00Z`);
 
 			const notesText =
 				(body.notes as string) ||
@@ -96,14 +96,25 @@ export async function handleOpenMorningShift(
 				notes: notesText,
 			});
 
-			results.push({
+			txResults.push({
 				equipmentId: eqItem.id,
 				deviceBrand: eqItem.deviceBrand,
 				newTotalHours,
 				status: lampLife.status,
 			});
 		}
+
+		return txResults;
 	});
+
+	if (!results || results.length === 0) {
+		return reply.code(400).send({
+			error: "NoActiveEquipments",
+			message: targetEquipmentId
+				? "Указанный бактерицидный облучатель не найден или не введен в эксплуатацию."
+				: "В клинике не зарегистрировано активных бактерицидных облучателей.",
+		});
+	}
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "SANPIN_BACTERICIDAL_BATCH_UPDATED",

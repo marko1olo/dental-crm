@@ -74,11 +74,26 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 	);
 	const retryAfter = options.retryAfterSeconds ?? 1;
 	const enforceForPaths = options.enforceForPaths ?? [
+		/^\/api\/documents(?:\/[^/]+\/(?:issue|void|signature|sign-ukep))?$/,
+		/^\/api\/(?:billing|finance|v1\/billing|v1\/finance)\/payments/,
+		/^\/api\/invoices\/(?:generate-from-plan|validate-plan)/,
+		/^\/api\/billing\/refunds\/partial/,
+		/^\/api\/insurance\/split-invoice/,
+		/^\/api\/clinical\/lab-orders/,
+		/^\/api\/visits\/[^/]+\/complete/,
+		/^\/api\/finance\/family\/[^/]+\/deposit/,
 		/^\/api\/cash\/(?:cash-introduction|cash-withdrawal|transfer)/,
 		/^\/api\/cashbox\/transfers/,
 		/^\/api\/installments\/tranches\/[^/]+\/pay/,
 		/^\/api\/installment-payments\/[^/]+\/pay/,
 		/^\/api\/lab\/orders\/[^/]+\/pay/,
+		/^\/api\/portal\/appointments/,
+		/^\/api\/portal\/payments/,
+		/^\/api\/public\/booking\/(?:[^/]+\/)?book/,
+		/^\/api\/public\/booking\/create/,
+		/^\/api\/sanpin\/sterilization\/(?:quick-norm|shift-batch|cycles)/,
+		/^\/api\/registers\/(?:autofill-shift|autofill-month|sanpin\/shift-close)/,
+		/^\/api\/registers\/(?:bactericidal\/(?:shift-autopilot|open-morning-shift|close-evening-shift)|medical-waste\/quick-shift-bundle|cleaning\/autopilot-month)/,
 	];
 
 	// 1. PRE-HANDLER HOOK

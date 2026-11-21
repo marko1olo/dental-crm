@@ -2,6 +2,7 @@ import {
 	formatKopecksRu,
 	type Kopecks,
 	kopecksToNumericString,
+	kopecksToRubles,
 	multiplyKopecks,
 	parseKopecks,
 	sumKopecks,
@@ -178,7 +179,7 @@ export function toKopecks(value: MoneyInput, field = "сумма"): Kopecks {
  */
 export function rublesFromKopecks(kopecks: Kopecks): number {
 	assertKopecks(kopecks, "копейки");
-	return kopecks / 100;
+	return kopecksToRubles(kopecks);
 }
 
 export function assertKopecks(value: Kopecks, field: string): void {

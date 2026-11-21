@@ -1,3 +1,4 @@
+import { kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
 import type {
 	CatalogRow,
 	FrozenPriceItem,
@@ -45,7 +46,8 @@ export function resolvePlanPrice(params: {
 			return { planPriceRub: 0, effectivePriceRub: 0 };
 		}
 		if (it.quantity > planQty && !isAdminOverrideVerified) {
-			const price = Number(((planItemPrice * planQty) / it.quantity).toFixed(2));
+			const totalKop = rublesToKopecks(planItemPrice) * planQty;
+			const price = kopecksToRubles(Math.round(totalKop / it.quantity));
 			return { planPriceRub: price, effectivePriceRub: price };
 		}
 		return { planPriceRub: planItemPrice, effectivePriceRub: planItemPrice };
@@ -86,14 +88,18 @@ export function resolvePlanDiscount(params: {
 			return it.discountRub;
 		}
 		if (frozenItem && frozenItem.lockedDiscountRub > 0) {
-			return Number((frozenItem.lockedDiscountRub * it.quantity).toFixed(2));
+			return kopecksToRubles(rublesToKopecks(frozenItem.lockedDiscountRub) * it.quantity);
 		}
 		if (matchingDbPlanItem && Number(matchingDbPlanItem.discount || 0) > 0) {
-			return Number((Number(matchingDbPlanItem.discount) * it.quantity).toFixed(2));
+			return kopecksToRubles(rublesToKopecks(Number(matchingDbPlanItem.discount)) * it.quantity);
 		}
 		if (Number(targetPlan?.planDiscountPercent ?? 0) > 0) {
-			const lineGross = effectivePriceRub * it.quantity;
-			return Number(((lineGross * Number(targetPlan?.planDiscountPercent)) / 100).toFixed(2));
+			const lineGrossKop = rublesToKopecks(effectivePriceRub) * it.quantity;
+			const discountKop = percentageOfKopecks(
+				lineGrossKop,
+				Math.round(Number(targetPlan?.planDiscountPercent) * 100),
+			);
+			return kopecksToRubles(discountKop);
 		}
 		return discountRub;
 	}
@@ -101,8 +107,12 @@ export function resolvePlanDiscount(params: {
 	if (discountMode === "on_selection") {
 		const patientDiscountPercent = Number(targetPlan?.planDiscountPercent ?? 0);
 		if (patientDiscountPercent > 0) {
-			const lineGross = effectivePriceRub * it.quantity;
-			return Number(((lineGross * patientDiscountPercent) / 100).toFixed(2));
+			const lineGrossKop = rublesToKopecks(effectivePriceRub) * it.quantity;
+			const discountKop = percentageOfKopecks(
+				lineGrossKop,
+				Math.round(patientDiscountPercent * 100),
+			);
+			return kopecksToRubles(discountKop);
 		}
 	}
 

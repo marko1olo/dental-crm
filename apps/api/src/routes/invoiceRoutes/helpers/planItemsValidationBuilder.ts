@@ -1,4 +1,4 @@
-import type { PlanItemForValidation } from "@dental/shared";
+import { type PlanItemForValidation, rublesToKopecks } from "@dental/shared";
 import type {
 	CatalogRow,
 	GenerateInvoiceItemInput,
@@ -112,8 +112,8 @@ export function buildPlanItemsForValidation(params: {
 			nameRu: it.nameRu,
 			categoryRu: it.categoryRu || matchingCatalog?.category || "Терапия",
 			quantity: it.quantity,
-			planUnitPriceKopecks: Math.round(planPriceRub * 100),
-			planDiscountKopecks: Math.round(discountRub * 100),
+			planUnitPriceKopecks: rublesToKopecks(planPriceRub),
+			planDiscountKopecks: rublesToKopecks(discountRub),
 			...(it.analogueServiceId || it.serviceId
 				? { serviceId: it.analogueServiceId || it.serviceId }
 				: {}),

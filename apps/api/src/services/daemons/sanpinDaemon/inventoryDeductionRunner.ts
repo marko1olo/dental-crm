@@ -25,6 +25,7 @@ import {
 	type SurgicalActInput,
 	type WarehouseTransactionInput,
 } from "./types.js";
+import { sanpinLogger } from "./logger.js";
 
 /**
  * Normalizes item/brand string for case-insensitive matching.
@@ -566,7 +567,7 @@ export async function runExpensiveMaterialsInventoryAudit(options?: ExpensiveMat
 
 		return { alerts, totalSurgicalActsAudited: surgicalActsCount };
 	} catch (error) {
-		console.error("[SanpinAndInventoryDaemon:ERROR] Failed to run expensive materials inventory audit:", error);
+		sanpinLogger.error("[SanpinAndInventoryDaemon:ERROR] Failed to run expensive materials inventory audit:", error);
 		throw error;
 	}
 }

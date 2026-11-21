@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs } from "../../../../db/schema.js";
 import { executeSterilizationConsumablesDeduction } from "../handlers/sterilizationConsumablesDeduction.js";
 import { buildUnsealKraftPackageResponse } from "../sterilizationHelpers.js";
@@ -30,51 +30,55 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 		(data.barcode || "").trim() ||
 		(data.visitId ? `TRAY-VISIT-${data.visitId}` : `BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}`);
 
-	if (data.barcode && data.barcode.trim()) {
-		const existingLog = await db
-			.select()
-			.from(sterilizationLogs)
-			.where(
-				and(
-					eq(sterilizationLogs.organizationId, organizationId),
-					eq(sterilizationLogs.barcode, effectiveBarcode),
-				),
-			)
-			.limit(1);
-
-		if (existingLog.length > 0 && existingLog[0]) {
-			await db
-				.update(sterilizationLogs)
-				.set({
-					status: "unsealed",
-				})
+	await withTenantCtx(organizationId, async (tx) => {
+		if (data.barcode && data.barcode.trim()) {
+			const [existingLog] = await tx
+				.select()
+				.from(sterilizationLogs)
 				.where(
 					and(
-						eq(sterilizationLogs.id, existingLog[0].id),
 						eq(sterilizationLogs.organizationId, organizationId),
+						eq(sterilizationLogs.barcode, effectiveBarcode),
 					),
-				);
+				)
+				.limit(1)
+				.for("update");
+
+			if (existingLog) {
+				await tx
+					.update(sterilizationLogs)
+					.set({
+						status: "unsealed",
+					})
+					.where(
+						and(
+							eq(sterilizationLogs.id, existingLog.id),
+							eq(sterilizationLogs.organizationId, organizationId),
+						),
+					);
+			}
 		}
-	}
 
-	// Если передан visitId — привязываем стерильный лоток к визиту у кресла в 1 клик
-	if (data.visitId) {
-		await executeLinkDiaryTransaction({
+		// Если передан visitId — привязываем стерильный лоток к визиту у кресла в 1 клик
+		if (data.visitId) {
+			await executeLinkDiaryTransaction({
+				organizationId,
+				visitId: data.visitId,
+				trimmedBarcode: effectiveBarcode,
+				doctorUserId: data.operatorId || null,
+				isEmergencyAdmission: false,
+				emergencyAdmissionNote: "",
+			}).catch(() => null);
+		}
+
+		await executeSterilizationConsumablesDeduction({
 			organizationId,
-			visitId: data.visitId,
-			trimmedBarcode: effectiveBarcode,
-			doctorUserId: data.operatorId || null,
-			isEmergencyAdmission: false,
-			emergencyAdmissionNote: "",
-		}).catch(() => null);
-	}
-
-	void executeSterilizationConsumablesDeduction({
-		organizationId,
-		userId: data.operatorId || null,
-		count: 1,
-		cycleNumber: 1,
-		barcode: effectiveBarcode,
+			userId: data.operatorId || null,
+			count: 1,
+			cycleNumber: 1,
+			barcode: effectiveBarcode,
+			logger: req.log,
+		}, tx);
 	});
 
 	return reply.send(

@@ -15,9 +15,13 @@ export async function handleAutofillMonth(req: FastifyRequest, reply: FastifyRep
 	if (!organizationId) return;
 
 	const parsed = autofillMonthSchema.safeParse(req.body || {});
-	const body = parsed.success
-		? parsed.data
-		: ((req.body as Record<string, unknown>) || {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: parsed.error.issues[0]?.message ?? "Некорректные параметры автозаполнения месяца.",
+		});
+	}
+	const body = parsed.data;
 
 	const operatorId = getRequestIdentity(req).userId ?? null;
 

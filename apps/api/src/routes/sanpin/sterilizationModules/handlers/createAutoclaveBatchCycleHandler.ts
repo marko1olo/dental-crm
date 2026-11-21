@@ -10,7 +10,7 @@ import { computePackagingExpirationDate, type SterilizationPackagingType } from 
 import { and, desc, eq, gte } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { preSterilizationCleaningLogs, sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -32,76 +32,78 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 	const durationMin = isDelicate ? 20 : isPrion ? 18 : (Number(body.durationMin) || 5);
 	const packagingType = String(body.packagingType || (isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive"));
 	const now = new Date();
-
 	const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-	const [lastCycle] = await db
-		.select({ cycleNumber: sterilizationLogs.cycleNumber })
-		.from(sterilizationLogs)
-		.where(and(eq(sterilizationLogs.organizationId, organizationId), gte(sterilizationLogs.timestamp, todayStart)))
-		.orderBy(desc(sterilizationLogs.cycleNumber))
-		.limit(1);
 
-	const cycleNumber = (lastCycle?.cycleNumber ?? 0) + 1;
-	const barcode = String(body.barcode || "").trim() || `BATCH-C${String(cycleNumber).padStart(2, "0")}-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
-	const expiresAt = computePackagingExpirationDate(packagingType as SterilizationPackagingType, now);
-	const cycleTimeLabel = String(body.cycleName || body.shiftCycleName || (now.getHours() < 12 ? "Утренний цикл" : now.getHours() < 17 ? "Дневной цикл" : "Вечерний цикл"));
-	const itemsDescription = String(body.itemsDescription || `${cycleTimeLabel} автоклавирования (${batchSize} упаковок: смотровые лотки, боры, наконечники, хирургия)`);
-	const indicatorType = String(body.indicatorType || (body.indicatorClass === "4" ? "class4_multivariable" : "class5_integrating"));
+	const { log, stockDeduction, cycleNumber, cycleTimeLabel } = await withTenantCtx(organizationId, async (tx) => {
+		const [lastCycle] = await tx
+			.select({ cycleNumber: sterilizationLogs.cycleNumber })
+			.from(sterilizationLogs)
+			.where(and(eq(sterilizationLogs.organizationId, organizationId), gte(sterilizationLogs.timestamp, todayStart)))
+			.orderBy(desc(sterilizationLogs.cycleNumber))
+			.limit(1);
 
-	const [log] = await db
-		.insert(sterilizationLogs)
-		.values({
+		const cycleNum = (lastCycle?.cycleNumber ?? 0) + 1;
+		const barcode = String(body.barcode || "").trim() || `BATCH-C${String(cycleNum).padStart(2, "0")}-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
+		const expiresAt = computePackagingExpirationDate(packagingType as SterilizationPackagingType, now);
+		const label = String(body.cycleName || body.shiftCycleName || (now.getHours() < 12 ? "Утренний цикл" : now.getHours() < 17 ? "Дневной цикл" : "Вечерний цикл"));
+		const itemsDescription = String(body.itemsDescription || `${label} автоклавирования (${batchSize} упаковок: смотровые лотки, боры, наконечники, хирургия)`);
+		const indicatorType = String(body.indicatorType || (body.indicatorClass === "4" ? "class4_multivariable" : "class5_integrating"));
+
+		const [createdLog] = await tx
+			.insert(sterilizationLogs)
+			.values({
+				organizationId,
+				deviceName,
+				autoclaveId,
+				cycleNumber: cycleNum,
+				itemsDescription: `${itemsDescription} | Партия ${batchSize} шт.`,
+				packagingType,
+				temperatureCelsius: temp,
+				pressureBar: pressure,
+				durationMin,
+				indicatorType,
+				cycleMode: "B",
+				temperatureSet: temp,
+				pressureSet: pressure,
+				passedIndicator: true,
+				status: "passed",
+				barcode,
+				expiresAt,
+				operatorId,
+				timestamp: now,
+			})
+			.returning();
+
+		const sampleCount = Math.max(3, Math.ceil(batchSize * 0.01));
+		await tx
+			.insert(preSterilizationCleaningLogs)
+			.values({
+				organizationId,
+				testType: "both",
+				batchItemCount: batchSize,
+				testedSampleCount: sampleCount,
+				isAzopyramNegative: true,
+				isPhenolphthaleinNegative: true,
+				isBatchApproved: true,
+				detergentBrand: "Биолот 0.5% + Аламинол 1%",
+				rejectionReason: null,
+				operatorId,
+				notes: `[Предстерилизационная очистка] Очистка партии автоклава №${cycleNum} (${batchSize} шт): азопирамовая и фенолфталеиновая пробы отрицательные, 100% норма. Партия допущена.`,
+				timestamp: now,
+			});
+
+		const deduction = await executeSterilizationConsumablesDeduction({
 			organizationId,
-			deviceName,
-			autoclaveId,
-			cycleNumber,
-			itemsDescription: `${itemsDescription} | Партия ${batchSize} шт.`,
+			userId: operatorId,
+			count: batchSize,
 			packagingType,
-			temperatureCelsius: temp,
-			pressureBar: pressure,
-			durationMin,
 			indicatorType,
-			cycleMode: "B",
-			temperatureSet: temp,
-			pressureSet: pressure,
-			passedIndicator: true,
-			status: "passed",
+			cycleNumber: cycleNum,
 			barcode,
-			expiresAt,
-			operatorId,
-			timestamp: now,
-		})
-		.returning();
+			logger: req.log,
+		}, tx);
 
-	const sampleCount = Math.max(3, Math.ceil(batchSize * 0.01));
-	await db
-		.insert(preSterilizationCleaningLogs)
-		.values({
-			organizationId,
-			testType: "both",
-			batchItemCount: batchSize,
-			testedSampleCount: sampleCount,
-			isAzopyramNegative: true,
-			isPhenolphthaleinNegative: true,
-			isBatchApproved: true,
-			detergentBrand: "Биолот 0.5% + Аламинол 1%",
-			rejectionReason: null,
-			operatorId,
-			notes: `[Предстерилизационная очистка] Очистка партии автоклава №${cycleNumber} (${batchSize} шт): азопирамовая и фенолфталеиновая пробы отрицательные, 100% норма. Партия допущена.`,
-			timestamp: now,
-		})
-		.catch((err) => {
-			req.log.warn({ err }, "Non-blocking: could not record quick norm PSO test");
-		});
-
-	const stockDeduction = await executeSterilizationConsumablesDeduction({
-		organizationId,
-		userId: operatorId,
-		count: batchSize,
-		packagingType,
-		indicatorType,
-		cycleNumber,
-		barcode,
+		return { log: createdLog, stockDeduction: deduction, cycleNumber: cycleNum, cycleTimeLabel: label };
 	});
 
 	wsBroker.broadcastToOrganization(organizationId, { type: "SANPIN_STERILIZATION_ADDED", payload: log });

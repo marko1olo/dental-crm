@@ -43,3 +43,9 @@ export {
 	defaultSanpinDaemonScheduler,
 	runSanpinAndInventoryAudit,
 } from "./daemonScheduler.js";
+
+export {
+	sanpinLogger,
+	setSanpinDaemonLogger,
+	type SanpinDaemonLogger,
+} from "./logger.js";

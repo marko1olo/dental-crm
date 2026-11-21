@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
 import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -49,37 +50,42 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 
 	const passedIndicator = data.status === "passed";
 
-	const [log] = await db
-		.insert(sterilizationLogs)
-		.values({
-			organizationId,
-			barcode: effectiveBarcode,
-			autoclaveId: effectiveAutoclaveId,
-			deviceName: data.deviceName || "Автоклав 1 (Класс B)",
-			cycleNumber: data.cycleNumber || 1,
-			temperatureCelsius: data.temperatureCelsius ? String(data.temperatureCelsius) : null,
-			pressureBar: data.pressureBar ? String(data.pressureBar) : null,
-			itemsDescription: data.itemsDescription || null,
-			operatorId: verifiedOperatorId,
-			status: data.status,
-			passedIndicator,
-			packagingType: data.packagingType || null,
-			expiresAt,
-			indicatorType: data.indicatorType || null,
-			cycleMode: data.cycleMode || null,
-			durationMin: data.durationMin || null,
-			timestamp: now,
-		})
-		.returning();
+	const log = await withTenantCtx(organizationId, async (tx) => {
+		const [createdLog] = await tx
+			.insert(sterilizationLogs)
+			.values({
+				organizationId,
+				barcode: effectiveBarcode,
+				autoclaveId: effectiveAutoclaveId,
+				deviceName: data.deviceName || "Автоклав 1 (Класс B)",
+				cycleNumber: data.cycleNumber || 1,
+				temperatureCelsius: data.temperatureCelsius ? String(data.temperatureCelsius) : null,
+				pressureBar: data.pressureBar ? String(data.pressureBar) : null,
+				itemsDescription: data.itemsDescription || null,
+				operatorId: verifiedOperatorId,
+				status: data.status,
+				passedIndicator,
+				packagingType: data.packagingType || null,
+				expiresAt,
+				indicatorType: data.indicatorType || null,
+				cycleMode: data.cycleMode || null,
+				durationMin: data.durationMin || null,
+				timestamp: now,
+			})
+			.returning();
 
-	void executeSterilizationConsumablesDeduction({
-		organizationId,
-		userId: data.operatorId || getRequestIdentity(req).userId || null,
-		count: 20,
-		packagingType: data.packagingType || "kraft_heat_sealed",
-		indicatorType: data.indicatorType || "class5_integrating",
-		cycleNumber: data.cycleNumber || 1,
-		barcode: effectiveBarcode,
+		await executeSterilizationConsumablesDeduction({
+			organizationId,
+			userId: data.operatorId || getRequestIdentity(req).userId || null,
+			count: 20,
+			packagingType: data.packagingType || "kraft_heat_sealed",
+			indicatorType: data.indicatorType || "class5_integrating",
+			cycleNumber: data.cycleNumber || 1,
+			barcode: effectiveBarcode,
+			logger: req.log,
+		}, tx);
+
+		return createdLog;
 	});
 
 	wsBroker.broadcastToOrganization(organizationId, { type: "STERILIZATION_LOG_ADDED", payload: log });

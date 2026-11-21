@@ -7,7 +7,7 @@
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
-import { db } from "../../../../db/client.js";
+import { withTenantCtx } from "../../../../db/rls.js";
 import { sterilizationLogs } from "../../../../db/schema.js";
 import { getRequestIdentity } from "../../../../security/identity.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
@@ -64,45 +64,49 @@ export async function handleCreateSterilizationLog(
 	const combinedItemsDesc = rawNotes ? `${data.itemsDescription} | ${rawNotes}` : data.itemsDescription;
 
 	const operatorId = data.operatorId ?? getRequestIdentity(req).userId ?? null;
-
-	const [log] = await db
-		.insert(sterilizationLogs)
-		.values({
-			organizationId,
-			deviceName: data.deviceName,
-			autoclaveId:
-				data.autoclaveId ??
-				(typeof rawBody.serialNumber === "string" ? rawBody.serialNumber : data.deviceName),
-			cycleNumber: data.cycleNumber,
-			itemsDescription: combinedItemsDesc,
-			packagingType: data.packagingType,
-			temperatureCelsius: String(data.temperatureCelsius),
-			pressureBar:
-				data.pressureBar !== null && data.pressureBar !== undefined ? String(data.pressureBar) : null,
-			durationMin: data.durationMin,
-			indicatorType: data.indicatorType,
-			passedIndicator: data.passedIndicator,
-			status,
-			barcode: generatedBarcode,
-			expiresAt,
-			operatorId,
-			timestamp: now,
-		})
-		.returning();
-
 	const batchCount = Math.max(
 		1,
 		Number(rawBody.packagesCount ?? rawBody.batchSize ?? 1),
 	);
 
-	void executeSterilizationConsumablesDeduction({
-		organizationId,
-		userId: operatorId,
-		count: batchCount,
-		packagingType: data.packagingType,
-		indicatorType: data.indicatorType,
-		cycleNumber: data.cycleNumber,
-		barcode: generatedBarcode,
+	const log = await withTenantCtx(organizationId, async (tx) => {
+		const [createdLog] = await tx
+			.insert(sterilizationLogs)
+			.values({
+				organizationId,
+				deviceName: data.deviceName,
+				autoclaveId:
+					data.autoclaveId ??
+					(typeof rawBody.serialNumber === "string" ? rawBody.serialNumber : data.deviceName),
+				cycleNumber: data.cycleNumber,
+				itemsDescription: combinedItemsDesc,
+				packagingType: data.packagingType,
+				temperatureCelsius: String(data.temperatureCelsius),
+				pressureBar:
+					data.pressureBar !== null && data.pressureBar !== undefined ? String(data.pressureBar) : null,
+				durationMin: data.durationMin,
+				indicatorType: data.indicatorType,
+				passedIndicator: data.passedIndicator,
+				status,
+				barcode: generatedBarcode,
+				expiresAt,
+				operatorId,
+				timestamp: now,
+			})
+			.returning();
+
+		await executeSterilizationConsumablesDeduction({
+			organizationId,
+			userId: operatorId,
+			count: batchCount,
+			packagingType: data.packagingType,
+			indicatorType: data.indicatorType,
+			cycleNumber: data.cycleNumber,
+			barcode: generatedBarcode,
+			logger: req.log,
+		}, tx);
+
+		return createdLog;
 	});
 
 	wsBroker.broadcastToOrganization(organizationId, {

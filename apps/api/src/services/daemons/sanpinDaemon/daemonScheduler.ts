@@ -8,6 +8,7 @@
 
 import { runExpensiveMaterialsInventoryAudit } from "./inventoryDeductionRunner.js";
 import { runSanpinSterilizationAudit } from "./sanpinCycleRunner.js";
+import { sanpinLogger, setSanpinDaemonLogger, type SanpinDaemonLogger } from "./logger.js";
 import type {
 	InventoryReconciliationAlertItem,
 	SanpinAndInventoryAuditDigest,
@@ -149,7 +150,7 @@ export async function runSanpinAndInventoryAudit(
 
 		return digests;
 	} catch (error) {
-		console.error(
+		sanpinLogger.error(
 			"[SanpinAndInventoryDaemon:ERROR] Failed to run SanPiN and inventory combined audit:",
 			error,
 		);
@@ -172,6 +173,9 @@ export class SanpinDaemonScheduler {
 
 	constructor(config: SanpinDaemonSchedulerConfig = {}) {
 		this.config = config;
+		if (config.logger) {
+			setSanpinDaemonLogger(config.logger as SanpinDaemonLogger);
+		}
 	}
 
 	public start(): void {
@@ -281,7 +285,7 @@ export class SanpinDaemonScheduler {
 		if (this.config.logger?.error) {
 			this.config.logger.error(`[SanpinDaemonScheduler] ${message} ${String(error)}`);
 		} else {
-			console.error(`[SanpinDaemonScheduler] ${message}`, error);
+			sanpinLogger.error(`[SanpinDaemonScheduler] ${message}`, error);
 		}
 	}
 }

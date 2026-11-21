@@ -1,4 +1,4 @@
-import { resolveInvoiceTotalAmountRub } from "@dental/shared";
+import { kopecksToRubles, resolveInvoiceTotalAmountRub } from "@dental/shared";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadContext } from "../../../accessGuard.js";
@@ -90,10 +90,10 @@ export async function handleGetInvoiceById(
 			title: it.name,
 			name: it.name,
 			quantity: Number(it.quantity) || 1,
-			unitPriceRub: Number((it.unitPriceKopecks / 100).toFixed(2)),
-			priceRub: Number((it.totalPriceKopecks / 100).toFixed(2)),
+			unitPriceRub: kopecksToRubles(it.unitPriceKopecks),
+			priceRub: kopecksToRubles(it.totalPriceKopecks),
 			discountRub: 0,
-			totalAmountRub: Number((it.totalPriceKopecks / 100).toFixed(2)),
+			totalAmountRub: kopecksToRubles(it.totalPriceKopecks),
 		}));
 
 		return reply.code(200).send({

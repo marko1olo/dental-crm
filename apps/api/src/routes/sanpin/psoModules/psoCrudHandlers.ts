@@ -10,6 +10,7 @@ import {
 } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { db } from "../../../db/client.js";
 import { preSterilizationCleaningLogs, users } from "../../../db/schema.js";
@@ -116,7 +117,14 @@ export async function handleDeletePso(req: FastifyRequest, reply: FastifyReply) 
 	);
 	if (!organizationId) return;
 
-	const { id } = req.params as { id: string };
+	const idParsed = z.string().uuid().safeParse((req.params as { id?: unknown })?.id);
+	if (!idParsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор записи ПСО (ожидается UUID).",
+		});
+	}
+	const id = idParsed.data;
 	const [deleted] = await db
 		.delete(preSterilizationCleaningLogs)
 		.where(

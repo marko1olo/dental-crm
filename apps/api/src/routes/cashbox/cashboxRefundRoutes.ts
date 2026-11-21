@@ -410,14 +410,24 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 						status: nextStatus,
 						version: sql`${patientInvoices.version} + 1`,
 					})
-					.where(eq(patientInvoices.id, linkedInvoice.id));
+					.where(
+						and(
+							eq(patientInvoices.id, linkedInvoice.id),
+							eq(patientInvoices.organizationId, orgId),
+						),
+					);
 			}
 
 			if (linkedPayment && Number(linkedPayment.amountRub) <= amountRub) {
 				await tx
 					.update(payments)
 					.set({ status: "refunded" })
-					.where(eq(payments.id, linkedPayment.id));
+					.where(
+						and(
+							eq(payments.id, linkedPayment.id),
+							eq(payments.organizationId, orgId),
+						),
+					);
 			}
 
 			if (!operation || !updatedBox) {

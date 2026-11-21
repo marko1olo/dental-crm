@@ -73,6 +73,33 @@ export async function executeMonthAutofillTransaction(
 
 	if (batchRows.allBactLogs.length > 0) {
 		await tx.insert(bactericidalIrradiatorLogs).values(batchRows.allBactLogs);
+
+		// Обновление суммарной наработки ламп за сгенерированный месяц (ДЕФЕКТ №7)
+		const equipmentAddedMinutesMap = new Map<string, number>();
+		for (const log of batchRows.allBactLogs) {
+			const current = equipmentAddedMinutesMap.get(log.equipmentId) ?? 0;
+			equipmentAddedMinutesMap.set(log.equipmentId, current + (log.durationMinutes ?? 0));
+		}
+
+		for (const [eqId, addedMins] of equipmentAddedMinutesMap.entries()) {
+			const eqItem = activeEquips.find((e) => e.id === eqId);
+			if (eqItem) {
+				const prevHours = Number(eqItem.totalOperatingHours || 0);
+				const addedHours = Number((addedMins / 60).toFixed(2));
+				const newTotalHours = Number((prevHours + addedHours).toFixed(2));
+				const maxHours = Number(eqItem.maxLampHours || 8000);
+				const status = newTotalHours >= maxHours ? "replace_required" : newTotalHours >= maxHours * 0.9 ? "warning" : "normal";
+
+				await tx
+					.update(bactericidalEquipments)
+					.set({
+						totalOperatingHours: String(newTotalHours),
+						lampStatus: status,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(bactericidalEquipments.id, eqId), eq(bactericidalEquipments.organizationId, organizationId)));
+			}
+		}
 	}
 	if (batchRows.allTempLogs.length > 0) {
 		await tx.insert(temperatureHumidityLogs).values(batchRows.allTempLogs);

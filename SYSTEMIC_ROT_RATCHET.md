@@ -58,6 +58,9 @@
   - `sberPosTypes.ts` & `sbpQrEngine.ts` — ✅ FIXED (2026-11-21, снос ручных делений / 100, переход на formatKopecksToRubles и formatKopecksRu)
   - `useDocumentPatientBillingSummary.ts` & `useFiscalOperations.ts` — ✅ FIXED (2026-11-21, снос / 100 в расчете сумм и налоговых вычетов, kopecksToRubles)
   - `CheckoutPaymentMethods.tsx` & `InstallmentsPresetCreatorSubView.tsx` — ✅ FIXED (2026-11-21, снос Math.round делений в графике рассрочки, переход на splitKopecks, percentageOfKopecks и formatKopecksRu)
+  - `invoicePlanPayloadMapper.ts`, `planItemsValidationBuilder.ts`, `planPriceDiscountResolver.ts`, `createInvoiceHandler.ts`, `getInvoiceByIdHandler.ts`, `listInvoicesHandler.ts` — ✅ FIXED (2026-11-21, снос ручных / 100 и Math.round, переход на канонические rublesToKopecks, kopecksToRubles, percentageOfKopecks)
+  - `patientDebtCore.ts` — ✅ FIXED (2026-11-21, замена ручного / 100 на kopecksToRubles)
+  - `financialPnl.ts` — ✅ FIXED (2026-11-21, распределение копеек без потерь через splitKopecks)
 - **Эталон:** `@dental/shared/src/money.ts` → `formatKopecksToRub`, `rublesToKopecks`, `kopecksToRubles`
 
 ---
@@ -66,7 +69,7 @@
 
 ### ROT-005: 93% маршрутов мутаций без Idempotency-Key
 - **Статус:** ✅ FIXED (Core Financial & Inventory Mutators, 2026-11-21)
-- **Что сделано:** Внедрена строгая валидация и обработка `Idempotency-Key` / `X-Idempotency-Key` (RFC 9562 UUIDv7) на критических транзакционных маршрутах: кассовые внесения и выемки (`cashTransferRoutes.ts`), оплата заказов лаборатории ЗТЛ (`labOrderPayHandler.ts`), пакетные списания материалов со склада (`writeOffBatchDeduction.ts`, `visitConsumablesRoutes.ts`), а также транши рассрочки (`cashInstallmentsRoutes.ts` с fail-closed 400 и дедупликацией). В `idempotencyPlugin.ts` внедрен `enforceForPaths` для защиты финансовых и кассовых эндпоинтов от Double-Spend. Реализована дедупликация и повторный возврат существующей операции с заголовком `idempotency-replayed: true` без повторных списаний средств или остатков.
+- **Что сделано:** Внедрена строгая валидация и обработка `Idempotency-Key` / `X-Idempotency-Key` (RFC 9562 UUIDv7) на критических транзакционных маршрутах: кассовые внесения и выемки (`cashTransferRoutes.ts`), оплата заказов лаборатории ЗТЛ (`labOrderPayHandler.ts`), пакетные списания материалов со склада (`writeOffBatchDeduction.ts`, `visitConsumablesRoutes.ts`), а также транши рассрочки (`cashInstallmentsRoutes.ts` с fail-closed 400 и дедупликацией). В `idempotencyPlugin.ts` расширен `enforceForPaths` критическими путями оплат, нарядов, частичных возвратов, сплит-инвойсов, заказов ЗТЛ, завершения визитов и депозитов семьи для полной защиты от Double-Spend. Реализована дедупликация и повторный возврат существующей операции с заголовком `idempotency-replayed: true` без повторных списаний средств или остатков.
 
 ### ROT-006: 88% маршрутов мутаций без `db.transaction()`
 - **Статус:** ✅ FIXED (2026-11-21)
@@ -76,6 +79,7 @@
   - `xray/xraySeriesRoute.ts` (удаление снимка и серии в единой транзакции).
   - `publicAppointmentActions.ts` (отмена/перенос приёма + создание `communicationTasks` в единой транзакции).
   - `treatmentPlan/pep/pepOtpService.ts` (`portalOtpCodes` + `communicationOutbox` в единой транзакции).
+  - `treatmentPlan/pep/pepSigner.ts` (запись `auditEvents` перенесена строго внутрь транзакции `tx` подписания ПЭП).
   - `telephony/telephonyWebhookEndedService.ts` (`communicationEvents` + `crmLeads` в единой транзакции).
   - `sterilizationShiftBatchHandler.ts` + `sterilizationConsumablesDeduction.ts` (`sterilizationLogs` + списание расходников склада + `preSterilizationCleaningLogs` в единой транзакции `withTenantCtx`).
   - `staffMutationRoutes.ts` (`users` + `doctorCommissions` + `recordAuditEventInDb` в единой транзакции `withTenantCtx`).
@@ -88,6 +92,8 @@
 - **Что сделано:** Устранены выявленные дыры мультитенантности:
   - `priceFreezeTokensQuery.ts`: добавлена проверка `eq(table.organizationId, input.organizationId)` во все запросы обновления `treatmentPlans`, `treatmentPlanPriceFreezeTokens` и `treatmentPlanItemsNew`.
   - `doctorPreferencesQuery.ts`: добавлена проверка `eq(doctorPreferences.organizationId, organizationId)`.
+  - `cashboxRefundRoutes.ts`: конъюнкты `and(eq(..., id), eq(..., organizationId))` при обновлении счетов (`patientInvoices`) и платежей (`payments`).
+  - `photoRoutes.ts`: конъюнкт `and(eq(patientPhotoProtocols.id, existing.id), eq(patientPhotoProtocols.organizationId, orgId))` при обновлении фотопротоколов.
   - Подтверждена мультитенантная изоляция в роутах склада, визитов, биллинга и лаборатории (HTTP 403 при несовпадении тенанта токена).
 
 ### ROT-008: 828 вызовов `console.log/warn/error` в API
@@ -163,3 +169,4 @@
 | 2026-11-21 | **WAREHOUSE-BOM** | Устранено троевластие техкарт: утвержден канонический SSOT `procedure_tech_cards` и `procedure_tech_card_items`, все списания переведены на `inventory_transactions` строго внутри `withTenantCtx`, ликвидирован float math (`kopecksToRubles`, `formatKopecksToRub`), через `git rm` снесены мертвые симуляторы (`quickCarpuleDisposal.ts`, `kraftDiaryLink.ts`, `kraftPackageProtocolLink.ts`, `procedureBomDbResolver.ts`), удален микро-эндпоинт списания на отдельный зуб и фейковые отходы класса Б 150г в `materialDeduction.ts`. | `verified` |
 | 2026-11-21 | **ROT-003** | Миграция DDL `sberbank_transactions`: колонка `amount_kopecks bigint` (миграции 0261 и 0262), синхронизация DTO и роутов Сбера/СБП/Портала, тесты 100% зеленые. | `verified` |
 | 2026-11-21 | **ROT-004** | Искоренение float-арифметики в биллинге, налогах (ФНС 1151156), кадрах, прайсе и маркетинге через `@dental/shared/src/money.ts`. Ликвидация хардкодных моков. | `verified` |
+| 2026-11-21 | **BACKEND-SURGERY** | Хирургия бэкенда: ликвидирован float math в invoiceRoutes (`createInvoiceHandler`, `planPriceDiscountResolver`, `listInvoicesHandler`, `getInvoiceByIdHandler`, `invoicePlanPayloadMapper`, `planItemsValidationBuilder`), `financialPnl` (`splitKopecks`), `patientDebtCore`; BOLA-изоляция тенанта (`cashboxRefundRoutes`, `photoRoutes`); ACID-аудит ПЭП (`pepSigner`); расширение путей идемпотентности (`idempotencyPlugin`). | `verified` |

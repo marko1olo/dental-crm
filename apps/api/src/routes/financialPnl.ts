@@ -11,6 +11,7 @@ import {
 	calculateManagerialPnl,
 	kopecksToRubles,
 	rublesToKopecks,
+	splitKopecks,
 } from "@dental/shared";
 import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -189,14 +190,12 @@ export async function registerFinancialPnlRoutes(app: FastifyInstance) {
 							});
 						}
 					} else {
-						let allocatedKop = 0;
 						const categories = Array.from(catTotals.keys());
 						const count = categories.length;
+						const splitParts = splitKopecks(totalPaymentKop, count);
 						for (let i = 0; i < count; i++) {
 							const cat = categories[i]!;
-							const isLast = i === count - 1;
-							const catKop = isLast ? (totalPaymentKop - allocatedKop) : Math.round(totalPaymentKop / count);
-							allocatedKop += catKop;
+							const catKop = splitParts[i]!;
 							paymentRows.push({
 								amountRub: kopecksToRubles(catKop),
 								department: cat,

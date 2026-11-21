@@ -122,15 +122,18 @@ export function SterilizationBatchCycleModal({
 			barcode: barcodeInput.trim() || undefined,
 		};
 		try {
+			const idempotencyKey = crypto.randomUUID();
 			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
-				method: "POST", headers: { ...getDenteAuthHeaders(), "Content-Type": "application/json" },
+				method: "POST",
+				headers: {
+					...getDenteAuthHeaders(),
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+				},
 				body: JSON.stringify(payload),
-			}).catch(() => null);
-			if (!res || !res.ok) {
-				await fetch("/api/sanpin/sterilization", {
-					method: "POST", headers: { ...getDenteAuthHeaders(), "Content-Type": "application/json" },
-					body: JSON.stringify({ ...payload, cycleNumber: 1, passedIndicator: true }),
-				}).catch(() => null);
+			});
+			if (!res.ok) {
+				throw new Error(`HTTP error ${res.status}`);
 			}
 			setFeedbackToast(`Цикл стерилизации запущен: ${packagesCount} пакетов списано со склада`);
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payload); onCycleCompleted?.(payload); onCycleCreated?.(payload); onClose(); }, 250);
@@ -153,17 +156,19 @@ export function SterilizationBatchCycleModal({
 			indicatorClass: "5" as const, indicatorType: "class5_integrating" as const,
 		};
 		try {
-			await fetch("/api/sanpin/sterilization/shift-batch", {
-				method: "POST", headers: { ...getDenteAuthHeaders(), "Content-Type": "application/json" },
+			const idempotencyKey = crypto.randomUUID();
+			const res = await fetch("/api/sanpin/sterilization/shift-batch", {
+				method: "POST",
+				headers: {
+					...getDenteAuthHeaders(),
+					"Content-Type": "application/json",
+					"Idempotency-Key": idempotencyKey,
+				},
 				body: JSON.stringify(payloadMacro),
-			}).catch(() => null);
-			await fetch("/api/sanpin/pso", {
-				method: "POST", headers: { ...getDenteAuthHeaders(), "Content-Type": "application/json" },
-				body: JSON.stringify({
-					isAzopyramNegative: true, isPhenolphthaleinNegative: true, batchItemCount: 108, testedSampleCount: 5,
-					instrumentName: "Стоматологический инструментарий смены (108 шт.)", detergentBrand: "Биолот 0.5% + Аламинол 1%", operatorName,
-				}),
-			}).catch(() => null);
+			});
+			if (!res.ok) {
+				throw new Error(`HTTP error ${res.status}`);
+			}
 			setFeedbackToast("Автоклавирование смены запущено: 2 цикла 134°C (27 пакетов) + контроль очистки. Списано со склада.");
 			setTimeout(() => { onSuccess?.(); onCycleApproved?.(payloadMacro); onCycleCompleted?.(payloadMacro); onCycleCreated?.(payloadMacro); onClose(); }, 250);
 		} catch (err) {

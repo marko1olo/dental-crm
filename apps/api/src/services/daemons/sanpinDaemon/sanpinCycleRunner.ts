@@ -21,6 +21,7 @@ import {
 	type SanpinSterilizationAlertItem,
 	type SanpinSterilizationAuditOptions,
 } from "./types.js";
+import { sanpinLogger } from "./logger.js";
 
 /**
  * Evaluates a single kraft pack / sterilization record against SanPiN 3.3686-21.
@@ -187,7 +188,7 @@ export async function runSanpinSterilizationAudit(options?: SanpinSterilizationA
 
 		return alerts;
 	} catch (error) {
-		console.error("[SanpinAndInventoryDaemon:ERROR] Failed to run SanPiN sterilization audit:", error);
+		sanpinLogger.error("[SanpinAndInventoryDaemon:ERROR] Failed to run SanPiN sterilization audit:", error);
 		throw error;
 	}
 }

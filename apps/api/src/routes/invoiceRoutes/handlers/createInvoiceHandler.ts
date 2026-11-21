@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, percentageOfKopecks, rublesToKopecks } from "@dental/shared";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalMutationContext } from "../../../accessGuard.js";
@@ -159,8 +159,8 @@ export async function handleCreateInvoice(
 		let itemDiscountKopecks = BigInt(0);
 
 		if (item.discountPercent && item.discountPercent > 0) {
-			const pctClamped = Math.min(100, Math.max(0, item.discountPercent));
-			itemDiscountKopecks = (grossLineKopecks * BigInt(Math.round(pctClamped * 100))) / BigInt(10000);
+			const basisPoints = Math.round(Math.min(100, Math.max(0, item.discountPercent)) * 100);
+			itemDiscountKopecks = BigInt(percentageOfKopecks(Number(grossLineKopecks), basisPoints));
 		} else if (item.discountRub && item.discountRub > 0) {
 			itemDiscountKopecks = BigInt(Math.max(0, rublesToKopecks(item.discountRub)));
 		}

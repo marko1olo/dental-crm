@@ -287,7 +287,12 @@ export function registerPatientPhotoRoutes(app: FastifyInstance) {
 						visitId: visitId || null,
 						updatedAt: new Date(),
 					})
-					.where(eq(patientPhotoProtocols.id, existing.id))
+					.where(
+						and(
+							eq(patientPhotoProtocols.id, existing.id),
+							eq(patientPhotoProtocols.organizationId, orgId),
+						),
+					)
 					.returning();
 				savedProtocol = updated;
 			} else {

@@ -16,34 +16,41 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 	if (!organizationId) return;
 
 	const parsed = autofillShiftSchema.safeParse(req.body || {});
-	const body = parsed.success
-		? parsed.data
-		: ((req.body as Record<string, unknown>) || {});
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: parsed.error.issues[0]?.message ?? "Некорректные параметры автозаполнения смены.",
+		});
+	}
+	const body = parsed.data;
 	const now = new Date();
 	const todayStr = (body.shiftDate as string) || (body.date as string) || now.toISOString().slice(0, 10);
 	const resolvedUserId = getRequestIdentity(req).userId ?? null;
 
 	const { insertedPso, insertedSteril } = await withTenantCtx(organizationId, async (tx) => {
-		return executeShiftAutofillTransaction(tx, {
+		const result = await executeShiftAutofillTransaction(tx, {
 			organizationId,
 			body,
 			operatorId: (body.operatorId as string) || resolvedUserId,
 			todayStr,
 		});
-	});
 
-	// Пакетное списание расходников стерилизации со склада клиники (Мандаты 8e, 8n)
-	for (const steril of insertedSteril) {
-		void executeSterilizationConsumablesDeduction({
-			organizationId,
-			userId: resolvedUserId,
-			count: 14,
-			packagingType: steril.packagingType,
-			indicatorType: steril.indicatorType,
-			cycleNumber: steril.cycleNumber,
-			barcode: steril.barcode,
-		}).catch(() => null);
-	}
+		// Пакетное списание расходников стерилизации со склада клиники в единой транзакции (Мандаты 8e, 8n, 8bo)
+		for (const steril of result.insertedSteril) {
+			await executeSterilizationConsumablesDeduction({
+				organizationId,
+				userId: resolvedUserId,
+				count: 14,
+				packagingType: steril.packagingType,
+				indicatorType: steril.indicatorType,
+				cycleNumber: steril.cycleNumber,
+				barcode: steril.barcode,
+				logger: req.log,
+			}, tx);
+		}
+
+		return result;
+	});
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "SANPIN_SHIFT_AUTOPILOT_COMPLETED",

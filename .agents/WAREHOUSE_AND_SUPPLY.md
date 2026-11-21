@@ -400,6 +400,45 @@
   * `apps/api` typecheck: 0 ошибок в складских и BOM модулях.
   * `npm run check:encoding`: 0 ошибок (19 996 файлов).
 
+---
+
+## 🛡️ 18. Red Team Fixer Surgeon: Ликвидация 12 дефектов СанПиН, стерилизации и автоклавирования (DEF-1 — DEF-12) (Мандаты 8v, 8aa, 8bo, 8zp, 8bg, 8am, 8zr)
+
+* **ДЕФЕКТ №1: Разорванные транзакции и глобальный db снаружи tx (`createAutoclaveBatchCycleHandler.ts`)**:
+  * Вся цепочка создания цикла стерилизации, теста предстерилизационной очистки (ПСО) и списания крафт-пакетов/индикаторов со склада объединена в единый атомарный блок `withTenantCtx(organizationId, async (tx) => { ... })`.
+  * Ликвидировано антипаттерновое проглатывание ошибок ПСО через `.catch()`. Вся мутация строго неделима по ACID.
+* **ДЕФЕКТ №2: Ликвидация плавающих void промисов списания склада**:
+  * В `createSterilizationLogHandler.ts`, `sterilizationBarcodeHandler.ts`, `handleUnsealKraftPackage.ts`, `handleAutofillShift.ts`: вызовы `executeSterilizationConsumablesDeduction` переведены с `void ... .catch(() => null)` на `await executeSterilizationConsumablesDeduction(..., tx)` внутри единой транзакции с RLS.
+* **ДЕФЕКТ №3: Сквозная принудительная защита Idempotency-Key для мутаций СанПиН**:
+  * В `apps/api/src/plugins/idempotencyPlugin.ts` (`enforceForPaths`) добавлены регулярные выражения маршрутов стерилизации, журналов и бакламп:
+    * `/^\/api\/sanpin\/sterilization\/(?:quick-norm|shift-batch|cycles)/`
+    * `/^\/api\/registers\/(?:autofill-shift|autofill-month|sanpin\/shift-close)/`
+    * `/^\/api\/registers\/(?:bactericidal\/(?:shift-autopilot|open-morning-shift|close-evening-shift)|medical-waste\/quick-shift-bundle|cleaning\/autopilot-month)/`
+  * В `SterilizationBatchCycleModal.tsx` внедрена сквозная передача клиентского заголовка `Idempotency-Key: crypto.randomUUID()`.
+* **ДЕФЕКТ №4: Ликвидация вызова несуществующего роута /api/sanpin/pso**:
+  * В `SterilizationBatchCycleModal.tsx` удален вызов несуществующего роута `/api/sanpin/pso` (отдававшего 404). В `handleLaunchCycle` и `handleLaunchShiftMacroBatch` закреплены канонические SSOT роуты `quick-norm` и `shift-batch`.
+* **ДЕФЕКТ №5: Устранение обхода safeParse с падением в сырой req.body**:
+  * В `bactericidalShiftAutopilotHandler.ts`, `openMorningShiftHandler.ts`, `closeEveningShiftHandler.ts`, `handleAutofillShift.ts`, `handleAutofillMonth.ts`: при `!parsed.success` возвращается `reply.code(400).send({ error: 'ValidationError', message: parsed.error.issues[0]?.message })`. Код работает строго с верифицированным `parsed.data`.
+* **ДЕФЕКТ №6: Ликвидация гонки данных (lost update) при инкременте часов бакламп**:
+  * В `bactericidalShiftAutopilotHandler.ts`, `openMorningShiftHandler.ts`, `closeEveningShiftHandler.ts`: выборка оборудования `bactericidalEquipments` перенесена внутрь транзакции `tx` со строгой пессимистичной блокировкой `.for("update")`.
+* **ДЕФЕКТ №7: Синхронизация наработки ламп в месячном автопилоте**:
+  * В `executeMonthAutofillTransaction.ts`: внедрен подсчет фактически сгенерированных минут дезинфекции и атомарное обновление `bactericidalEquipments.totalOperatingHours` и `lampStatus` за весь сгенерированный месяц.
+* **ДЕФЕКТ №8: Строгая Zod-валидация UUID параметров :id**:
+  * В `updateSterilizerEquipmentHandler.ts`, `deleteSterilizerEquipmentHandler.ts`, `cleaningCrudHandlers.ts`, `psoCrudHandlers.ts`: внедрена валидация `z.string().uuid().safeParse(...)` для предотвращения падений PostgreSQL с 500 ошибкой при невалидных UUID.
+* **ДЕФЕКТ №9: Устранение байпаса авторизации готовности кресла и кабинетов**:
+  * В `chairReadinessRoutes.ts`: добавлен обязательный гейт `requireResolvedStaffOrAdminOrganizationId` в GET-эндпоинт `/api/registers/cabinet-readiness` и устранено проглатывание 401/403 через `try/catch` в POST-эндпоинтах.
+* **ДЕФЕКТ №10: Детерминированная сериализация ISO-дат со строгой таймзоной Z**:
+  * В `bactericidalShiftAutopilotHandler.ts`, `openMorningShiftHandler.ts`, `closeEveningShiftHandler.ts`: конкатенация дат переведена на честный ISO формат (`${dateStr}T08:00:00Z`).
+* **ДЕФЕКТ №11: Токенизация темной темы по Мандату 8am**:
+  * В `CleaningControlTab.tsx`: хардкод `dark:hover:bg-[#1e293b]/50` заменен на семантический токен `dark:hover:bg-[var(--paper-soft)]/50`.
+* **ДЕФЕКТ №12: Замена сырых console.error/warn на структурированный логгер**:
+  * В сервисе `sanpinDaemon` создан модуль `logger.ts` (`sanpinLogger`, `setSanpinDaemonLogger`). В `daemonScheduler.ts`, `sanpinCycleRunner.ts`, `inventoryDeductionRunner.ts` все вызовы `console.error` переведены на `sanpinLogger.error`.
+* **Машинные гейты и верификация**:
+  * Все 43 теста API СанПиН (`sanpinAndInventory.test.ts`, `sanpinSterilizationEngine.test.ts`, `sanpinSterilizationSsotAliases.test.ts`, `sanpinDecomposedModules.test.ts`, `sterilizationKitWriteOffInquisitor.test.ts`, `sterilizationLinkAutonomy.test.ts`) — 100% PASS (Exit Code 0).
+  * Все 43 теста веб-компонентов СанПиН (`batchAutoclaveShiftAndStock.test.ts`, `sanpinUnsealMandate8e.test.ts`, `sanpinAutoclaveJournalCycle.test.ts`, `autoSanpinShiftBatchAutonomy.test.ts`) — 100% PASS (Exit Code 0).
+  * Тесты `@dental/shared` — 100% PASS (Exit Code 0).
+  * Компилятор `tsc` в затронутых модулях API и Web — 0 ошибок (Exit Code 0).
+
 
 
 

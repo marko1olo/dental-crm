@@ -1,7 +1,8 @@
-import type {
-	CatalogServiceLookup,
-	PlanToInvoiceValidationPayload,
-	PriceLockResolutionPolicy,
+import {
+	type CatalogServiceLookup,
+	type PlanToInvoiceValidationPayload,
+	type PriceLockResolutionPolicy,
+	rublesToKopecks,
 } from "@dental/shared";
 import type {
 	CatalogRow,
@@ -17,7 +18,7 @@ export function mapCatalogRowsToLookup(
 		code804n: c.code,
 		title: c.title,
 		category: c.category,
-		basePriceKopecks: Math.round(Number(c.basePriceRub || 0) * 100),
+		basePriceKopecks: rublesToKopecks(Number(c.basePriceRub || 0)),
 		active: c.active !== false,
 		isArchived: c.active === false,
 		decree458Expensive: false,
