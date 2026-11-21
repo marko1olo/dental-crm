@@ -7,6 +7,8 @@ import { getPatientByIdFromDb } from "../../../db/patientsQuery.js";
 import { getVisitByIdInDb } from "../../../db/visitsQuery.js";
 import { LocalPacsStorageService } from "../../../services/imaging/localPacsStorageService.js";
 import { getImagingOrganizationId, parseImagingPayload, sendImagingStudyNotFound, sendImagingStudyScopeError } from "../imagingHelpers.js";
+import { db } from "../../../db/client.js";
+import { xrayScans } from "../../../db/schema.js";
 
 const updateImagingStudyBodySchema = z.object({
 	title: z.string().trim().min(1).max(180).optional(),
@@ -63,6 +65,29 @@ export async function createStudyHandler(request: FastifyRequest, reply: Fastify
 		region: input.region, sourceKind: input.sourceKind, sourceName: input.sourceName, storagePath: storagePath ?? null,
 		dicomStudyUid: input.dicomStudyUid, capturedAt: input.capturedAt, aiSummary: input.aiSummary,
 	});
+
+	if (["periapical", "bitewing", "opg", "other"].includes(input.kind)) {
+		try {
+			await db.insert(xrayScans).values({
+				id: study.id,
+				organizationId: orgId,
+				patientId: input.patientId,
+				visitId: input.visitId ?? null,
+				storagePath: storagePath ?? null,
+				fileUrl: `/api/xray/scans/${study.id}/file`,
+				originalFilename: input.title,
+				mimeType: "image/jpeg",
+				kind: input.kind,
+				toothCode: input.toothCode ?? null,
+				notes: input.title,
+				status: "done",
+				capturedAt: input.capturedAt ? new Date(input.capturedAt) : new Date(),
+			}).onConflictDoNothing();
+		} catch (mirrorErr) {
+			request.log.warn({ mirrorErr, studyId: study.id }, "Не удалось зеркалировать study в xrayScans");
+		}
+	}
+
 	return reply.code(201).send(imagingStudySchema.parse(study));
 }
 

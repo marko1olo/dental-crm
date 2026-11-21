@@ -19,16 +19,18 @@ export interface VisitDiagnosticsTabProps {
 
 export interface DiagnosticStudy {
 	id: string;
-	patientId?: string;
-	title?: string;
-	kind?: string;
-	modality?: string;
-	toothCode?: string | null;
-	previewUrl?: string;
-	viewerUrl?: string;
-	capturedAt?: string;
-	effectiveDoseMicrosv?: number;
-	status?: string;
+	patientId?: string | undefined;
+	visitId?: string | null | undefined;
+	title?: string | undefined;
+	kind?: string | undefined;
+	modality?: string | undefined;
+	toothCode?: string | null | undefined;
+	previewUrl?: string | undefined;
+	viewerUrl?: string | undefined;
+	fileUrl?: string | undefined;
+	capturedAt?: string | undefined;
+	effectiveDoseMicrosv?: number | undefined;
+	status?: string | undefined;
 }
 
 export type PhotoStageType =

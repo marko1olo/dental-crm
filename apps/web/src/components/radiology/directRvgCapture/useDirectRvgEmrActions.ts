@@ -106,75 +106,85 @@ export function useDirectRvgEmrActions({
 	);
 
 	// 1-Click Action 1: Save to EMR
-	const handleSaveToEmr = useCallback(() => {
+	const handleSaveToEmr = useCallback(async () => {
 		if (!capturedImage) {
 			showToast("Сначала выполните захват с датчика или загрузите снимок", "warning");
 			return;
 		}
 		setIsSaving(true);
-		const { study: studyRecord } = createStudyRecord("emr");
-
-		if (onSaveToEmr) {
-			onSaveToEmr(studyRecord);
-		}
-
-		persistRvgScanToServer({ patientId, capturedImage, selectedTeeth, clinicalNotes });
-
-		// Automatically bind RVG scan finding to active visit diary & reactive FDI tooth formula
 		try {
-			const primaryToothCode = selectedTeeth[0] || initialToothFdi || "16";
-			const rvgDiaryStatement = `[Прицельный снимок] Зуб #${selectedTeeth.join(", ")}: доза ${calculatedDoseMicrosv} мкЗв. ${clinicalNotes}`;
-
-			useVisitStore.getState().setVisitNoteForm((prev) => {
-				const current = prev.objectiveStatus || "";
-				const updated = current.trim() ? `${current.trim()}\n${rvgDiaryStatement}` : rvgDiaryStatement;
-				return { ...prev, objectiveStatus: updated };
-			});
-
-			if (primaryToothCode) {
-				const store = useVisitStore.getState();
-				const currentState = store.visitToothStateByCode[primaryToothCode];
-				if (!currentState || currentState === "idle") {
-					store.setToothState(primaryToothCode, "treatment");
-				}
+			const saveResult = await persistRvgScanToServer({ patientId, capturedImage, selectedTeeth, clinicalNotes });
+			if (!saveResult.success) {
+				showToast(`Ошибка сохранения снимка на сервере: ${saveResult.error || "Неизвестная ошибка"}`, "error");
+				return;
 			}
-		} catch (err) {
-			console.warn("[DirectRvgCaptureModal] Failed to update visit store:", err);
-		}
 
-		try {
-			window.dispatchEvent(
-				new CustomEvent("dente-apply-soap-protocol", {
-					detail: {
-						soap: {
-							objectiveStatus: `[Прицельный снимок] Зуб #${selectedTeeth.join(", ")}: доза ${calculatedDoseMicrosv} мкЗв. ${clinicalNotes}`,
+			const { study: studyRecord } = createStudyRecord("emr");
+
+			if (onSaveToEmr) {
+				onSaveToEmr(studyRecord);
+			}
+
+			// Automatically bind RVG scan finding to active visit diary & reactive FDI tooth formula
+			try {
+				const primaryToothCode = selectedTeeth[0] || initialToothFdi || "16";
+				const rvgDiaryStatement = `[Прицельный снимок] Зуб #${selectedTeeth.join(", ")}: доза ${calculatedDoseMicrosv} мкЗв. ${clinicalNotes}`;
+
+				useVisitStore.getState().setVisitNoteForm((prev) => {
+					const current = prev.objectiveStatus || "";
+					const updated = current.trim() ? `${current.trim()}\n${rvgDiaryStatement}` : rvgDiaryStatement;
+					return { ...prev, objectiveStatus: updated };
+				});
+
+				if (primaryToothCode) {
+					const store = useVisitStore.getState();
+					const currentState = store.visitToothStateByCode[primaryToothCode];
+					if (!currentState || currentState === "idle") {
+						store.setToothState(primaryToothCode, "treatment");
+					}
+				}
+			} catch (err) {
+				console.warn("[DirectRvgCaptureModal] Failed to update visit store:", err);
+			}
+
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							soap: {
+								objectiveStatus: `[Прицельный снимок] Зуб #${selectedTeeth.join(", ")}: доза ${calculatedDoseMicrosv} мкЗв. ${clinicalNotes}`,
+							},
+							immediate: true,
+							mode: "smart_append",
 						},
-						immediate: true,
-						mode: "smart_append",
-					},
-				}),
-			);
-		} catch {
-			// ignore
-		}
+					}),
+				);
+			} catch {
+				// ignore
+			}
 
-		try {
-			window.dispatchEvent(
-				new CustomEvent("dente-rvg-scan-saved", {
-					detail: {
-						study: studyRecord,
-						toothFdi: selectedTeeth[0] || initialToothFdi || "16",
-						teethFdi: selectedTeeth,
-					},
-				}),
-			);
-		} catch {
-			// ignore
-		}
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-rvg-scan-saved", {
+						detail: {
+							study: studyRecord,
+							toothFdi: selectedTeeth[0] || initialToothFdi || "16",
+							teethFdi: selectedTeeth,
+						},
+					}),
+				);
+			} catch {
+				// ignore
+			}
 
-		showToast(`Снимок зуба ${selectedTeeth.join(", ")} сохранён в медицинскую карту ${patientCardNumber}`, "success");
-		setIsSaving(false);
-		onClose();
+			showToast(`Снимок зуба ${selectedTeeth.join(", ")} сохранён в медицинскую карту ${patientCardNumber}`, "success");
+			onClose();
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			showToast(`Не удалось сохранить снимок: ${errMsg}`, "error");
+		} finally {
+			setIsSaving(false);
+		}
 	}, [
 		capturedImage,
 		createStudyRecord,

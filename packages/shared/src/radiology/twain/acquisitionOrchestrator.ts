@@ -178,7 +178,7 @@ export class RvgTwainCaptureEngine {
 	private activeSensorKey: string | null = null;
 	private activeProtocol: RvgCaptureProtocol = "TWAIN_2_4";
 	private calibrationProfile: RvgHardwareCalibrationProfile | null = null;
-	private allowSyntheticAcquisition: boolean = true;
+	private allowSyntheticAcquisition: boolean = false;
 	private stateChangeListeners: ((newState: RvgCaptureState, previousState: RvgCaptureState) => void)[] = [];
 	private frameReadyListeners: ((frame: RvgRawFrame) => void)[] = [];
 	private errorListeners: ((error: Error) => void)[] = [];
@@ -188,7 +188,7 @@ export class RvgTwainCaptureEngine {
 		options?: { allowSyntheticAcquisition?: boolean },
 	) {
 		this.activeProtocol = protocol;
-		this.allowSyntheticAcquisition = options?.allowSyntheticAcquisition ?? true;
+		this.allowSyntheticAcquisition = options?.allowSyntheticAcquisition ?? false;
 	}
 
 	public setAllowSyntheticAcquisition(allow: boolean): void {
@@ -261,9 +261,6 @@ export class RvgTwainCaptureEngine {
 		this.activeSensorKey = sensorKey;
 		this.calibrationProfile = calibration ?? null;
 
-		// Имитация этапа рукопожатия USB / TWAIN DSM
-		await new Promise((resolve) => setTimeout(resolve, 10));
-
 		this.setState("IDLE_READY");
 		return spec;
 	}
@@ -296,16 +293,13 @@ export class RvgTwainCaptureEngine {
 		}
 
 		this.setState("EXPOSURE_DETECTED");
-		await new Promise((resolve) => setTimeout(resolve, 5));
-
 		this.setState("ACQUIRING_RAW_FRAME");
-		await new Promise((resolve) => setTimeout(resolve, 5));
 
 		const raw =
 			mockFrame ??
 			createSyntheticRvgRawFrame({
 				sensorKey: this.activeSensorKey || "vatech_ezsensor_hd_size1",
-				addRootCanalPattern: true,
+				addRootCanalPattern: false,
 			});
 
 		this.setState("APPLYING_CALIBRATION");

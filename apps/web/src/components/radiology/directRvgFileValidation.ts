@@ -353,51 +353,92 @@ export interface PersistRvgScanParams {
 	readonly clinicalNotes: string;
 }
 
+export interface PersistRvgScanResult {
+	readonly success: boolean;
+	readonly data?: unknown;
+	readonly error?: string;
+}
+
 /**
  * Asynchronously persists captured RVG scan to backend server database.
+ * Strict await, Idempotency-Key and honest HTTP status handling.
  */
-export function persistRvgScanToServer({
+export async function persistRvgScanToServer({
 	patientId,
 	capturedImage,
 	selectedTeeth,
 	clinicalNotes,
-}: PersistRvgScanParams): void {
-	if (!patientId || !capturedImage) return;
-	if (!capturedImage.startsWith("data:image/") && !capturedImage.startsWith("blob:")) return;
+}: PersistRvgScanParams): Promise<PersistRvgScanResult> {
+	if (!patientId || !capturedImage) {
+		return { success: false, error: "Отсутствует ID пациента или снимок" };
+	}
+	if (!capturedImage.startsWith("data:image/") && !capturedImage.startsWith("blob:")) {
+		return { success: false, error: "Неверный формат изображения" };
+	}
 
-	void (async () => {
-		try {
-			let imageBase64 = capturedImage;
-			if (capturedImage.startsWith("blob:")) {
-				const blob = await fetch(capturedImage).then((r) => r.blob());
-				imageBase64 = await new Promise<string>((resolve) => {
-					const reader = new FileReader();
-					reader.onloadend = () => resolve(reader.result as string);
-					reader.readAsDataURL(blob);
-				});
-			}
-			await fetch("/api/xray/scans", {
-				method: "POST",
-				headers: denteAdminSecretRequestHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					patientId,
-					imageBase64,
-					originalFilename: `rvg_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
-					mimeType: "image/jpeg",
-					kind: "periapical",
-					toothCode: selectedTeeth[0] || null,
-					notes: clinicalNotes,
-					status: "done",
-				}),
-			}).catch((err) => {
-				console.warn("[DirectRvgCaptureModal] Failed to persist scan to server:", err);
+	try {
+		let imageBase64 = capturedImage;
+		if (capturedImage.startsWith("blob:")) {
+			const blob = await fetch(capturedImage).then((r) => r.blob());
+			imageBase64 = await new Promise<string>((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onloadend = () => {
+					if (typeof reader.result === "string") {
+						resolve(reader.result);
+					} else {
+						reject(new Error("Не удалось преобразовать снимок в base64"));
+					}
+				};
+				reader.onerror = () => reject(reader.error || new Error("Ошибка чтения blob"));
+				reader.readAsDataURL(blob);
 			});
-		} catch (err) {
-			console.warn("[DirectRvgCaptureModal] Server save error:", err);
 		}
-	})();
+
+		const idempotencyKey = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID()
+			: `rvg-${patientId}-${Date.now()}`;
+
+		const response = await fetch("/api/xray/scans", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": idempotencyKey,
+			}),
+			body: JSON.stringify({
+				patientId,
+				imageBase64,
+				originalFilename: `rvg_tooth_${selectedTeeth.join("_")}_${Date.now()}.jpg`,
+				mimeType: "image/jpeg",
+				kind: "periapical",
+				toothCode: selectedTeeth[0] || null,
+				notes: clinicalNotes,
+				status: "done",
+			}),
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text().catch(() => "");
+			let errorMessage = `HTTP ${response.status} ${response.statusText}`;
+			try {
+				const parsed = JSON.parse(errorText);
+				if (parsed && typeof parsed.message === "string") {
+					errorMessage = parsed.message;
+				} else if (parsed && typeof parsed.error === "string") {
+					errorMessage = parsed.error;
+				}
+			} catch {
+				if (errorText) errorMessage = errorText.slice(0, 150);
+			}
+			return { success: false, error: errorMessage };
+		}
+
+		const data: unknown = await response.json().catch(() => ({}));
+		return { success: true, data };
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		console.warn("[DirectRvgCaptureModal] Server save error:", err);
+		return { success: false, error: message };
+	}
 }
 
 export interface ProcessRadiologyFileResult {

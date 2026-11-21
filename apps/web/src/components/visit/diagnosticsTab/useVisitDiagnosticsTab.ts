@@ -229,61 +229,43 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 		let cancelled = false;
 
 		const loadAllPatientScans = () => {
-			Promise.all([
-				fetch(`/api/imaging/studies?patientId=${encodeURIComponent(targetId)}`)
-					.then((res) => (res.ok ? res.json() : []))
-					.catch(() => []),
-				fetch(`/api/xray/scans?patientId=${encodeURIComponent(targetId)}`)
-					.then((res) => (res.ok ? res.json() : []))
-					.then((scans) =>
-						Array.isArray(scans)
-							? scans.map((s: {
-									id: string;
-									patientId?: string;
-									visitId?: string;
-									originalFilename?: string;
-									toothCode?: string | null;
-									kind?: string;
-									capturedAt?: string;
-									createdAt?: string;
-									imageDataUri?: string;
-									fileUrl?: string;
-									status?: string;
-								}) => ({
-									id: s.id,
-									patientId: s.patientId,
-									visitId: s.visitId,
-									title:
-										s.originalFilename ||
-										(s.toothCode
-											? `RVG · Зуб #${s.toothCode}`
-											: "Прицельный снимок RVG"),
-									kind: s.kind || "periapical",
-									modality: "RVG",
-									toothCode: s.toothCode,
-									capturedAt: s.capturedAt || s.createdAt,
-									previewUrl:
-										s.imageDataUri ||
-										s.fileUrl ||
-										`/api/xray/scans/${s.id}/file`,
-									fileUrl: s.fileUrl || `/api/xray/scans/${s.id}/file`,
-									status: s.status,
-								}))
-							: [],
-					)
-					.catch(() => []),
-			]).then(([imagingList, xrayList]) => {
-				if (cancelled) return;
-				const seen = new Set<string>();
-				const merged: DiagnosticStudy[] = [];
-				for (const item of [...(imagingList as DiagnosticStudy[]), ...(xrayList as DiagnosticStudy[])]) {
-					if (item?.id && !seen.has(item.id)) {
-						seen.add(item.id);
-						merged.push(item);
-					}
-				}
-				setLiveStudies(merged);
-			});
+			fetch(`/api/imaging/studies?patientId=${encodeURIComponent(targetId)}`)
+				.then((res) => (res.ok ? res.json() : []))
+				.then((studies) => {
+					if (cancelled) return;
+					const formatted: DiagnosticStudy[] = Array.isArray(studies)
+						? studies.map((st: {
+								id: string;
+								patientId?: string;
+								visitId?: string;
+								title?: string;
+								toothCode?: string | null;
+								kind?: string;
+								capturedAt?: string;
+								createdAt?: string;
+								previewUrl?: string;
+								viewerUrl?: string;
+								fileUrl?: string;
+								status?: string;
+							}) => ({
+								id: st.id,
+								patientId: st.patientId,
+								visitId: st.visitId,
+								title: st.title || (st.toothCode ? `RVG · Зуб #${st.toothCode}` : "Прицельный снимок RVG"),
+								kind: st.kind || "periapical",
+								modality: "RVG",
+								toothCode: st.toothCode,
+								capturedAt: st.capturedAt || st.createdAt,
+								previewUrl: st.previewUrl || st.fileUrl || `/api/imaging/studies/${st.id}/file`,
+								fileUrl: st.fileUrl || `/api/imaging/studies/${st.id}/file`,
+								status: st.status,
+							}))
+						: [];
+					setLiveStudies(formatted);
+				})
+				.catch(() => {
+					if (!cancelled) setLiveStudies([]);
+				});
 		};
 
 		loadAllPatientScans();
@@ -292,10 +274,14 @@ export function useVisitDiagnosticsTab(props?: VisitDiagnosticsTabProps) {
 			loadAllPatientScans();
 		};
 		window.addEventListener("dente-tooth-scan-bound", handleScanBound);
+		window.addEventListener("dente-rvg-scan-saved", handleScanBound);
+		window.addEventListener("dente-xray-updated", handleScanBound);
 
 		return () => {
 			cancelled = true;
 			window.removeEventListener("dente-tooth-scan-bound", handleScanBound);
+			window.removeEventListener("dente-rvg-scan-saved", handleScanBound);
+			window.removeEventListener("dente-xray-updated", handleScanBound);
 		};
 	}, [effectiveTargetPatientId, visitPatientId]);
 

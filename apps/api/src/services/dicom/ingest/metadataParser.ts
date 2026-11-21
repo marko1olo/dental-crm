@@ -20,6 +20,8 @@ import {
 	type IngestModalityKind,
 	parseDicomIngestBuffer,
 } from "../dicomIngestMetadataParser.js";
+import { dicomIngestLogger } from "./dicomIngestLogger.js";
+import type { DbExecutor } from "./patientAutoBinder.js";
 import type {
 	ImagingStudyKindValue,
 	ParsedSliceBufferItem,
@@ -133,7 +135,7 @@ export function parseUniqueDicomSlices(buffers: Buffer[]): Map<string, ParsedSli
 				uniqueInstancesMap.set(meta.sopInstanceUid, { buffer: buf, metadata: meta });
 			}
 		} catch (err) {
-			console.warn("Пропуск поврежденного DICOM-буфера в пакете:", err);
+			dicomIngestLogger.warn("Пропуск поврежденного DICOM-буфера в пакете", err);
 		}
 	}
 
@@ -148,12 +150,13 @@ export async function recordSanpinRadiationDose(
 	patientId: string,
 	metadata: DicomIngestMetadata,
 	_doctorId?: string | null,
+	executor: DbExecutor = db,
 ): Promise<void> {
 	if (!patientId || !organizationId) return;
 
 	try {
 		// 1. Извлекаем данные пациента
-		const [patient] = await db
+		const [patient] = await executor
 			.select({
 				id: schema.patients.id,
 				fullName: schema.patients.fullName,
@@ -186,7 +189,7 @@ export async function recordSanpinRadiationDose(
 		const gender = adminProfile.gender === "female" ? "female" : "male";
 
 		// 2. Ищем существующий лист дозовых нагрузок за текущий отчетный год
-		const existingDocs = await db
+		const existingDocs = await executor
 			.select()
 			.from(schema.generatedDocuments)
 			.where(
@@ -264,7 +267,7 @@ export async function recordSanpinRadiationDose(
 					responsibleOfficerFullName: typeof currentPayload.responsibleOfficerFullName === "string" ? currentPayload.responsibleOfficerFullName : "Врач-рентгенолог",
 				};
 
-				await db
+				await executor
 					.update(schema.generatedDocuments)
 					.set({
 						payloadJson: JSON.stringify(updatedPayload),
@@ -291,7 +294,7 @@ export async function recordSanpinRadiationDose(
 				responsibleOfficerFullName: "Врач-рентгенолог",
 			};
 
-			await db.insert(schema.generatedDocuments).values({
+			await executor.insert(schema.generatedDocuments).values({
 				organizationId,
 				patientId,
 				visitId: null,
@@ -305,6 +308,6 @@ export async function recordSanpinRadiationDose(
 		}
 	} catch (err) {
 		// Ошибка логирования дозы не блокирует сохранение снимка
-		console.error("Ошибка сохранения записи в журнал лучевой нагрузки:", err);
+		dicomIngestLogger.error("Ошибка сохранения записи в журнал лучевой нагрузки", err);
 	}
 }

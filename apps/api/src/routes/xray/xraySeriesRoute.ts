@@ -41,10 +41,40 @@ export async function registerXraySeriesRoute(app: FastifyInstance): Promise<voi
 			.where(and(eq(xrayScans.patientId, parsed.data.patientId), eq(xrayScans.organizationId, organizationId)))
 			.orderBy(xrayScans.capturedAt);
 
-		if (scans.length > 0) {
+		const existingIds = new Set(scans.map((s) => s.id));
+
+		const studies = await db.select().from(imagingStudies)
+			.where(and(eq(imagingStudies.patientId, parsed.data.patientId), eq(imagingStudies.organizationId, organizationId)))
+			.orderBy(imagingStudies.capturedAt);
+
+		const additionalStudies = studies
+			.filter((st) => !existingIds.has(st.id) && st.patientId)
+			.map((st) => ({
+				id: st.id,
+				patientId: st.patientId!,
+				visitId: st.visitId ?? null,
+				status: st.status === "available" ? "done" : st.status,
+				kind: st.kind || "periapical",
+				toothCode: st.toothCode ?? null,
+				originalFilename: st.title ?? null,
+				aiReport: null,
+				aiSummary: st.aiSummary ?? null,
+				aiToothStates: null,
+				aiModelName: null,
+				aiAnalyzedAt: null,
+				aiError: null,
+				notes: st.title ?? null,
+				capturedAt: st.capturedAt.toISOString(),
+				createdAt: st.createdAt.toISOString(),
+				hasImage: !!st.storagePath,
+				fileUrl: `/api/xray/scans/${st.id}/file`,
+				storagePath: st.storagePath ?? null,
+			}));
+
+		if (scans.length > 0 || additionalStudies.length > 0) {
 			await auditMedicalAccessFromRequest(request, { organizationId, patientId: parsed.data.patientId, action: "VIEW_XRAY_SCANS", diagnosis: "Рентгенологические снимки" });
 		}
-		return scans.map((s) => scanToResponse(s, false));
+		return [...scans.map((s) => scanToResponse(s, false)), ...additionalStudies];
 	});
 
 	app.get("/api/xray/scans/:id", async (request, reply) => {
@@ -63,7 +93,38 @@ export async function registerXraySeriesRoute(app: FastifyInstance): Promise<voi
 		if (!UUID_REGEX.test(id)) {
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 		}
-		const [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
+		let [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
+		if (!scan) {
+			const [study] = await db.select().from(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId))).limit(1);
+			if (study && study.patientId) {
+				scan = {
+					id: study.id,
+					organizationId: study.organizationId,
+					patientId: study.patientId,
+					visitId: study.visitId,
+					imageDataUri: null,
+					storagePath: study.storagePath,
+					fileUrl: `/api/xray/scans/${study.id}/file`,
+					fileSizeBytes: study.fileSizeBytes,
+					sha256: null,
+					originalFilename: study.title,
+					mimeType: "image/jpeg",
+					aiReport: null,
+					aiSummary: study.aiSummary,
+					aiToothStates: null,
+					aiModelName: null,
+					aiAnalyzedAt: null,
+					aiError: null,
+					status: study.status === "available" ? "done" : "pending",
+					kind: study.kind || "periapical",
+					toothCode: study.toothCode,
+					notes: study.title,
+					capturedAt: study.capturedAt,
+					createdAt: study.createdAt,
+					updatedAt: study.createdAt,
+				};
+			}
+		}
 		if (!scan) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
@@ -99,17 +160,20 @@ export async function registerXraySeriesRoute(app: FastifyInstance): Promise<voi
 		if (!UUID_REGEX.test(id)) {
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 		}
-		const [deleted] = await db.delete(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
-			.returning({ id: xrayScans.id, storagePath: xrayScans.storagePath });
+		const deleted = await db.transaction(async (tx) => {
+			const [res] = await tx.delete(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
+				.returning({ id: xrayScans.id, storagePath: xrayScans.storagePath });
+			if (!res) {
+				return null;
+			}
+
+			await tx.delete(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId)));
+			return res;
+		});
+
 		if (!deleted) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
-		}
-
-		try {
-			await db.delete(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId)));
-		} catch (syncErr) {
-			request.log.warn({ syncErr, scanId: id }, "Не удалось удалить исследование из imaging_studies");
 		}
 
 		if (deleted.storagePath && existsSync(deleted.storagePath)) {

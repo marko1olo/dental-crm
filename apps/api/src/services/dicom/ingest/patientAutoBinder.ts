@@ -7,6 +7,8 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import * as schema from "../../../db/schema.js";
+
+export type DbExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 import {
 	type PatientBindingResult,
 	type PatientResolutionInput,
@@ -75,9 +77,10 @@ export async function syncExistingStudyPatientBinding(
 	studyId: string,
 	existingPatientId: string | null,
 	patientBinding: PatientBindingResult,
+	executor: DbExecutor = db,
 ): Promise<void> {
 	if (existingPatientId === null && patientBinding.patientId) {
-		await db
+		await executor
 			.update(schema.imagingStudies)
 			.set({
 				patientId: patientBinding.patientId,
@@ -94,6 +97,7 @@ export async function syncExistingStudyPatientBinding(
  */
 export async function ensureStudyRecord(
 	params: EnsureStudyRecordParams,
+	executor: DbExecutor = db,
 ): Promise<{ studyId: string; isNewStudy: boolean }> {
 	const {
 		organizationId,
@@ -111,7 +115,7 @@ export async function ensureStudyRecord(
 		patientBinding,
 	} = params;
 
-	const [existingStudy] = await db
+	const [existingStudy] = await executor
 		.select()
 		.from(schema.imagingStudies)
 		.where(
@@ -127,6 +131,7 @@ export async function ensureStudyRecord(
 			existingStudy.id,
 			existingStudy.patientId,
 			patientBinding,
+			executor,
 		);
 		return { studyId: existingStudy.id, isNewStudy: false };
 	}
@@ -138,7 +143,7 @@ export async function ensureStudyRecord(
 	const voxelSpacingStr = formatStudyVoxelSpacing(metadata);
 	const technicalDoseNote = formatTechnicalDoseNote(metadata);
 
-	const [insertedStudy] = await db
+	const [insertedStudy] = await executor
 		.insert(schema.imagingStudies)
 		.values({
 			organizationId,
@@ -186,8 +191,9 @@ export async function ensureSeriesRecord(
 	organizationId: string,
 	studyId: string,
 	metadata: DicomIngestMetadata,
+	executor: DbExecutor = db,
 ): Promise<string> {
-	const [existingSeries] = await db
+	const [existingSeries] = await executor
 		.select()
 		.from(schema.imagingSeries)
 		.where(
@@ -203,7 +209,7 @@ export async function ensureSeriesRecord(
 		return existingSeries.id;
 	}
 
-	const [insertedSeries] = await db
+	const [insertedSeries] = await executor
 		.insert(schema.imagingSeries)
 		.values({
 			organizationId,
@@ -227,16 +233,19 @@ export async function ensureSeriesRecord(
  * Зеркалирование прицельных снимков визиографа (modality = intraoral) в таблицу xray_scans
  * для мгновенного отображения в клиническом дневнике 043/у пациента.
  */
-export async function mirrorIntraoralXrayScan(params: {
-	organizationId: string;
-	patientId: string | null;
-	visitId: string | null;
-	studyId: string;
-	relativeStoragePath: string;
-	fileSizeBytes: number;
-	toothCode: string | null;
-	metadata: DicomIngestMetadata;
-}): Promise<string | null> {
+export async function mirrorIntraoralXrayScan(
+	params: {
+		organizationId: string;
+		patientId: string | null;
+		visitId: string | null;
+		studyId: string;
+		relativeStoragePath: string;
+		fileSizeBytes: number;
+		toothCode: string | null;
+		metadata: DicomIngestMetadata;
+	},
+	executor: DbExecutor = db,
+): Promise<string | null> {
 	const {
 		organizationId,
 		patientId,
@@ -252,7 +261,7 @@ export async function mirrorIntraoralXrayScan(params: {
 		return null;
 	}
 
-	const [existingXray] = await db
+	const [existingXray] = await executor
 		.select({ id: schema.xrayScans.id })
 		.from(schema.xrayScans)
 		.where(
@@ -274,7 +283,7 @@ export async function mirrorIntraoralXrayScan(params: {
 	const dapNote = metadata.doseAreaProductDap ? ` (DAP: ${metadata.doseAreaProductDap})` : "";
 	const technicalNote = `Визиограф EzSensor:${kvpNote}${maNote}${expNote}${dapNote}`.trim();
 
-	const [insertedXray] = await db
+	const [insertedXray] = await executor
 		.insert(schema.xrayScans)
 		.values({
 			organizationId,

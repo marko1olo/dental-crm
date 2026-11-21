@@ -5,6 +5,7 @@
  */
 
 import net from "node:net";
+import { eq, or } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import * as schema from "../../../db/schema.js";
 import {
@@ -76,19 +77,9 @@ export class DicomCStoreScpServer {
 			this.port = overridePort;
 		}
 
-		// Резолвинг организации по умолчанию, если не задана
-		if (!this.defaultOrganizationId) {
-			try {
-				const [firstOrg] = await db
-					.select({ id: schema.organizations.id })
-					.from(schema.organizations)
-					.limit(1);
-				if (firstOrg) {
-					this.defaultOrganizationId = firstOrg.id;
-				}
-			} catch {
-				// Оставляем null, будет определяться при приеме
-			}
+		// Резолвинг организации по умолчанию: строго из конфигурации или опций (ноль слепого LIMIT 1 per 152-FZ)
+		if (!this.defaultOrganizationId && process.env.DICOM_DEFAULT_ORG_ID?.trim()) {
+			this.defaultOrganizationId = process.env.DICOM_DEFAULT_ORG_ID.trim();
 		}
 
 		return new Promise<void>((resolve, reject) => {
@@ -282,8 +273,8 @@ export class DicomCStoreScpServer {
 													transferSyntaxUid,
 												);
 
-												// Определяем организацию клиники
-												const orgId = await this.resolveTargetOrganizationId();
+												// Определяем организацию клиники строго по тенант-контексту (152-ФЗ)
+												const orgId = await this.resolveTargetOrganizationId(this.calledAeTitle, callingAe);
 
 												// Сохраняем исследование через Ingest-сервис
 												await dicomStudyIngestService.ingestBuffer(completeDicomBuffer, {
@@ -362,24 +353,38 @@ export class DicomCStoreScpServer {
 
 	/**
 	 * Резолвинг целевой организации для сохранения снимка.
+	 * Запрещен слепой LIMIT 1: мультитенантность и 152-ФЗ требуют строгой изоляции!
 	 */
-	private async resolveTargetOrganizationId(): Promise<string> {
+	private async resolveTargetOrganizationId(calledAe?: string, callingAe?: string): Promise<string> {
 		if (this.defaultOrganizationId) {
 			return this.defaultOrganizationId;
 		}
 
-		const [firstOrg] = await db
-			.select({ id: schema.organizations.id })
-			.from(schema.organizations)
-			.limit(1);
+		const targetAe = calledAe?.trim() || this.calledAeTitle;
+		if (targetAe) {
+			const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+			const isUuid = uuidRegex.test(targetAe);
 
-		if (firstOrg) {
-			this.defaultOrganizationId = firstOrg.id;
-			return firstOrg.id;
+			const [matchedOrg] = await db
+				.select({ id: schema.organizations.id })
+				.from(schema.organizations)
+				.where(
+					isUuid
+						? eq(schema.organizations.id, targetAe)
+						: or(
+								eq(schema.organizations.loginId, targetAe.toLowerCase()),
+								eq(schema.organizations.name, targetAe),
+							),
+				)
+				.limit(1);
+
+			if (matchedOrg) {
+				return matchedOrg.id;
+			}
 		}
 
 		throw new Error(
-			"Не найдено ни одной организации в базе данных. Невозможно привязать PACS-исследование.",
+			`BOLA Tenant Isolation Breach: Невозможно определить организацию для C-STORE SCP (CalledAE: '${targetAe}', CallingAE: '${callingAe ?? "UNKNOWN"}'). Доступ отклонен согласно 152-ФЗ.`,
 		);
 	}
 }

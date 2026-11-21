@@ -189,19 +189,9 @@ export class VatechDirectBridgeService {
 		// Создаем каталог, если не существует
 		await fs.mkdir(candidateDir, { recursive: true });
 
-		// Резолвинг организации по умолчанию
-		if (!this.defaultOrganizationId) {
-			try {
-				const [firstOrg] = await db
-					.select({ id: schema.organizations.id })
-					.from(schema.organizations)
-					.limit(1);
-				if (firstOrg) {
-					this.defaultOrganizationId = firstOrg.id;
-				}
-			} catch {
-				// Обработка отсутствия организаций
-			}
+		// Резолвинг организации по умолчанию: строго из конфигурации или опций (ноль слепого LIMIT 1 per 152-FZ)
+		if (!this.defaultOrganizationId && process.env.DICOM_DEFAULT_ORG_ID?.trim()) {
+			this.defaultOrganizationId = process.env.DICOM_DEFAULT_ORG_ID.trim();
 		}
 
 		this.isWatching = true;
@@ -429,40 +419,80 @@ export class VatechDirectBridgeService {
 
 		const relativePath = toNormalizedRelativePacsStoragePath(orgId, targetFile, "pacs");
 
-		// Создаем запись в xray_scans
+		// Создаем запись в канонической imaging_studies и зеркало в xray_scans
 		if (patientBinding.patientId) {
 			const kvpStr = tagMeta.kvp ? ` ${tagMeta.kvp} кВ` : "";
 			const maStr = tagMeta.ma ? ` ${tagMeta.ma} мА` : "";
 			const expStr = tagMeta.exposureTimeMs ? ` ${tagMeta.exposureTimeMs} мс` : "";
 			const notes = `Vatech Visigraph Frame:${kvpStr}${maStr}${expStr}`.trim();
-
 			const mimeType = ext === ".png" ? "image/png" : ext === ".bmp" ? "image/bmp" : "image/jpeg";
+			const scanId = crypto.randomUUID();
+			const studyUid = `1.2.840.10008.study.vatech.${scanId}`;
+			const seriesUid = `${studyUid}.1`;
+			const studyTitle = tagMeta.toothCode ? `Прицельный снимок Vatech (зуб ${tagMeta.toothCode})` : "Прицельный снимок Vatech";
 
-			const [inserted] = await db
-				.insert(schema.xrayScans)
-				.values({
+			const inserted = await db.transaction(async (tx) => {
+				await tx.insert(schema.imagingStudies).values({
+					id: scanId,
 					organizationId: orgId,
 					patientId: patientBinding.patientId,
-					storagePath: relativePath,
-					fileSizeBytes,
-					originalFilename: path.basename(filePath),
-					mimeType,
-					status: "done",
 					kind: "periapical",
-					toothCode: tagMeta.toothCode,
-					notes,
-				})
-				.returning({ id: schema.xrayScans.id });
+					title: studyTitle,
+					toothCode: tagMeta.toothCode ?? null,
+					region: tagMeta.toothCode ? `Зуб ${tagMeta.toothCode}` : null,
+					capturedAt: new Date(),
+					sourceKind: "sensor_bridge",
+					sourceName: "Vatech Folder Watcher",
+					status: "available",
+					storagePath: relativePath,
+					dicomStudyUid: studyUid,
+					studyInstanceUid: studyUid,
+					seriesInstanceUid: seriesUid,
+					modality: "IO",
+					seriesDescription: notes,
+					fileSizeBytes,
+					bindingStatus: "auto_bound",
+					bindingConfidence: 100,
+				}).onConflictDoUpdate({
+					target: [schema.imagingStudies.id],
+					set: {
+						storagePath: relativePath,
+						fileSizeBytes,
+					},
+				});
+
+				if (patientBinding.patientId) {
+					await tx
+						.insert(schema.xrayScans)
+						.values({
+							id: scanId,
+							organizationId: orgId,
+							patientId: patientBinding.patientId,
+							storagePath: relativePath,
+							fileSizeBytes,
+							originalFilename: path.basename(filePath),
+							mimeType,
+							status: "done",
+							kind: "periapical",
+							toothCode: tagMeta.toothCode,
+							notes,
+						})
+						.onConflictDoNothing();
+				}
+
+				return { id: scanId };
+			});
 
 			if (inserted) {
 				wsBroker.broadcastToOrganization(orgId, {
 					type: "IMAGING_STUDY_INGESTED",
 					payload: {
+						studyId: scanId,
 						xrayScanId: inserted.id,
 						patientId: patientBinding.patientId,
 						patientFullName: patientBinding.patientFullName,
 						modality: "intraoral",
-						title: "Прицельный снимок Vatech",
+						title: studyTitle,
 						sourceName: "Vatech Folder Watcher",
 					},
 				});
@@ -478,17 +508,9 @@ export class VatechDirectBridgeService {
 			return this.defaultOrganizationId;
 		}
 
-		const [firstOrg] = await db
-			.select({ id: schema.organizations.id })
-			.from(schema.organizations)
-			.limit(1);
-
-		if (firstOrg) {
-			this.defaultOrganizationId = firstOrg.id;
-			return firstOrg.id;
-		}
-
-		throw new Error("Не найдено ни одной организации в базе данных.");
+		throw new Error(
+			"BOLA Tenant Isolation Breach: defaultOrganizationId для Vatech Folder Watcher не задан. Автоматический доступ к случайной организации заблокирован согласно 152-ФЗ.",
+		);
 	}
 }
 

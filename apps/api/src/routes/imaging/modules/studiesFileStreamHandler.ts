@@ -17,6 +17,23 @@ export async function previewSvgHandler(request: FastifyRequest, reply: FastifyR
 	if (!orgId) return reply;
 	const study = await getImagingStudyById(orgId, id);
 	if (!study) return sendImagingStudyNotFound(reply);
+
+	// Честный рендеринг реального кадра: если у исследования есть файл снимка на диске (png/jpg/webp), отдаем его
+	const storagePath = typeof study.storagePath === "string" ? study.storagePath.trim() : "";
+	if (storagePath) {
+		try {
+			const resolved = LocalPacsStorageService.validateAndResolveLocalFilePath(orgId, storagePath);
+			await access(resolved);
+			const browserMime = browserRenderableImageMimeType(resolved);
+			if (browserMime) {
+				reply.type(browserMime);
+				return reply.send(createReadStream(resolved));
+			}
+		} catch {
+			// fallback к честной информационной карточке статуса снимка
+		}
+	}
+
 	return reply.type("image/svg+xml; charset=utf-8").send(previewSvg(study));
 }
 

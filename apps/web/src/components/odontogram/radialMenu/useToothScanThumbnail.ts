@@ -23,27 +23,41 @@ export function useToothScanThumbnail(toothNumber: number, selectedPatientId?: s
 			return;
 		}
 
-		fetch(`/api/xray/scans?patientId=${encodeURIComponent(selectedPatientId)}`)
-			.then(async (res) => (res.ok ? res.json() : []))
-			.then((scans) => {
-				if (!active) return;
-				const matched = Array.isArray(scans) ? scans.find((s: { toothCode?: string }) => String(s.toothCode ?? "").trim() === toothStr) : null;
-				if (matched) {
-					setToothScanThumbnail({
-						id: matched.id,
-						url: matched.imageDataUri || matched.fileUrl || `/api/xray/scans/${matched.id}/file`,
-						title: matched.originalFilename || `RVG Зуб #${toothNumber}`,
-					});
-				} else {
-					setToothScanThumbnail(null);
-				}
-			})
-			.catch(() => {
-				if (active) setToothScanThumbnail(null);
-			});
+		const fetchThumbnail = () => {
+			fetch(`/api/xray/scans?patientId=${encodeURIComponent(selectedPatientId)}`)
+				.then(async (res) => (res.ok ? res.json() : []))
+				.then((scans) => {
+					if (!active) return;
+					const matched = Array.isArray(scans) ? scans.find((s: { toothCode?: string }) => String(s.toothCode ?? "").trim() === toothStr) : null;
+					if (matched) {
+						setToothScanThumbnail({
+							id: matched.id,
+							url: matched.imageDataUri || matched.fileUrl || `/api/xray/scans/${matched.id}/file`,
+							title: matched.originalFilename || `RVG Зуб #${toothNumber}`,
+						});
+					} else {
+						setToothScanThumbnail(null);
+					}
+				})
+				.catch(() => {
+					if (active) setToothScanThumbnail(null);
+				});
+		};
+
+		fetchThumbnail();
+
+		const handleUpdate = () => {
+			fetchThumbnail();
+		};
+		window.addEventListener("dente-xray-updated", handleUpdate);
+		window.addEventListener("dente-rvg-scan-saved", handleUpdate);
+		window.addEventListener("dente-tooth-scan-bound", handleUpdate);
 
 		return () => {
 			active = false;
+			window.removeEventListener("dente-xray-updated", handleUpdate);
+			window.removeEventListener("dente-rvg-scan-saved", handleUpdate);
+			window.removeEventListener("dente-tooth-scan-bound", handleUpdate);
 		};
 	}, [toothNumber, selectedPatientId]);
 

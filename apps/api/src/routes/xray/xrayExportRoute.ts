@@ -6,7 +6,7 @@
 import { existsSync, promises as fs } from "node:fs";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { xrayScans } from "../../db/schema.js";
+import { imagingStudies, xrayScans } from "../../db/schema.js";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
@@ -31,7 +31,38 @@ export async function registerXrayExportRoute(app: FastifyInstance): Promise<voi
 		if (!UUID_REGEX.test(id)) {
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 		}
-		const [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
+		let [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
+		if (!scan) {
+			const [study] = await db.select().from(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId))).limit(1);
+			if (study && study.patientId) {
+				scan = {
+					id: study.id,
+					organizationId: study.organizationId,
+					patientId: study.patientId,
+					visitId: study.visitId,
+					imageDataUri: null,
+					storagePath: study.storagePath,
+					fileUrl: `/api/xray/scans/${study.id}/file`,
+					fileSizeBytes: study.fileSizeBytes,
+					sha256: null,
+					originalFilename: study.title,
+					mimeType: "image/jpeg",
+					aiReport: null,
+					aiSummary: study.aiSummary,
+					aiToothStates: null,
+					aiModelName: null,
+					aiAnalyzedAt: null,
+					aiError: null,
+					status: study.status === "available" ? "done" : "pending",
+					kind: study.kind || "periapical",
+					toothCode: study.toothCode,
+					notes: study.title,
+					capturedAt: study.capturedAt,
+					createdAt: study.createdAt,
+					updatedAt: study.createdAt,
+				};
+			}
+		}
 		if (!scan) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
@@ -74,7 +105,38 @@ export async function registerXrayExportRoute(app: FastifyInstance): Promise<voi
 		if (!UUID_REGEX.test(id)) {
 			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
 		}
-		const [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
+		let [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
+		if (!scan) {
+			const [study] = await db.select().from(imagingStudies).where(and(eq(imagingStudies.id, id), eq(imagingStudies.organizationId, organizationId))).limit(1);
+			if (study && study.patientId) {
+				scan = {
+					id: study.id,
+					organizationId: study.organizationId,
+					patientId: study.patientId,
+					visitId: study.visitId,
+					imageDataUri: null,
+					storagePath: study.storagePath,
+					fileUrl: `/api/xray/scans/${study.id}/file`,
+					fileSizeBytes: study.fileSizeBytes,
+					sha256: null,
+					originalFilename: study.title,
+					mimeType: "image/jpeg",
+					aiReport: null,
+					aiSummary: study.aiSummary,
+					aiToothStates: null,
+					aiModelName: null,
+					aiAnalyzedAt: null,
+					aiError: null,
+					status: study.status === "available" ? "done" : "pending",
+					kind: study.kind || "periapical",
+					toothCode: study.toothCode,
+					notes: study.title,
+					capturedAt: study.capturedAt,
+					createdAt: study.createdAt,
+					updatedAt: study.createdAt,
+				};
+			}
+		}
 		if (!scan) {
 			reply.code(404);
 			return { error: "XrayScanNotFound", message: "Снимок не найден." };
@@ -104,7 +166,10 @@ export async function registerXrayExportRoute(app: FastifyInstance): Promise<voi
 		await db.update(xrayScans).set({ status: "analyzing", aiError: null, updatedAt: new Date() })
 			.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
 
-		startDetachedXrayAnalysis({ scanId: id, organizationId, imageDataUri: analysisImageDataUri });
+		startDetachedXrayAnalysis(
+			{ scanId: id, organizationId, imageDataUri: analysisImageDataUri },
+			request.log,
+		);
 		reply.code(202);
 		return { status: "analyzing", id };
 	});
