@@ -301,11 +301,11 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 						<span>Параметры</span>
 					</button>
 
-					{/* РОВНО ОДНА PRIMARY CTA КНОПКА #0d9488 — МАНДАТ 8am & 8e (НИКОГДА НЕ DISABLED) */}
+					{/* РОВНО ОДНА PRIMARY CTA КНОПКА — МАНДАТ 8am & 8e (НИКОГДА НЕ DISABLED) */}
 					<button
 						type="button"
 						onClick={() => applyAnesthesiaAction(selectedDrugId, carpulesCount)}
-						className="primary-button inline-flex items-center gap-1.5 px-4 min-h-[44px] h-11 rounded-xl border border-[#0f766e] bg-[#0d9488] hover:bg-[#0f766e] text-white text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ml-auto"
+						className="primary-button inline-flex items-center gap-1.5 px-4 min-h-[44px] h-11 rounded-xl border border-[var(--primary)] bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ml-auto"
 						data-testid="btn-apply-anesthesia-to-card"
 					>
 						<CheckCircle2 size={14} className="shrink-0" />

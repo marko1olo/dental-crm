@@ -162,11 +162,13 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 			"Form043PrintModal must render dual-state stamp badge",
 		);
 		assert.ok(
-			form043PrintModalSource.includes("ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)"),
+			form043PrintModalSource.includes("ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)") ||
+			form043PrintModalSource.includes("Черновик (приём не закрыт)"),
 			"Form043PrintModal must display draft stamp when visit is open",
 		);
 		assert.ok(
-			form043PrintModalSource.includes("ПОДПИСАНО ВРАЧОМ"),
+			form043PrintModalSource.includes("ПОДПИСАНО ВРАЧОМ") ||
+			form043PrintModalSource.includes("Подписано врачом"),
 			"Form043PrintModal must display signed stamp when visit is closed",
 		);
 	});

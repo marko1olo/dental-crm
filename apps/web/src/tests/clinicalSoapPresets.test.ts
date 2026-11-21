@@ -170,7 +170,8 @@ describe("clinicalSoapPresets — Практичный клинический с
 		assert.ok(formatted.anamnesis.length > 0, "Анамнез должен быть заполнен");
 		assert.ok(formatted.objectiveStatus.startsWith("Зуб 26:"), "Status Localis должен содержать префикс зуба 26");
 		assert.ok(formatted.diagnosis.includes("Зуб 26"), "Диагноз должен содержать номер зуба 26");
-		assert.ok(formatted.treatmentPlan.includes("A16.07.002.001"), "План лечения должен содержать код услуги 804н");
+		assert.equal(formatted.service804n?.code804n, "A16.07.002.001", "Код услуги 804н должен быть сохранен в service804n");
+		assert.ok(formatted.treatmentPlan.includes(preset.service804n.title), "План лечения должен содержать чистое название услуги");
 		assert.ok(formatted.treatmentPlan.includes("Списание со склада (Норма расхода):") || formatted.treatmentPlan.includes("Списание со склада (Норма 804н):"), "План лечения должен содержать ведомость списания");
 		assert.ok(formatted.materialsToDeduct.length > 0, "Материалы к списанию должны быть возвращены");
 	});

@@ -91,10 +91,13 @@ describe("Outpatient Dental Domain Sovereignty (Mandate 8i & Mandate 8e - Wave 1
 			"sanitizedDocumentFactoryGroups обязан отфильтровывать outpatient_medical_card_025u",
 		);
 
-		// При выборе 025/у должен быть авто-редирект на dental_medical_card_043u
+		// При выборе 025/у должен быть авто-редирект на стоматологическую карту
 		assert.ok(
 			docViewContent.includes(
 				'setSelectedDocumentKind("dental_medical_card_043u")',
+			) ||
+			docViewContent.includes(
+				'setSelectedDocumentKind("dental_medical_card")',
 			),
 			"При выборе 025/у должен осуществляться редирект на стоматологическую форму 043/у",
 		);

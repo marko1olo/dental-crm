@@ -61,13 +61,6 @@ export const VisitSurgeryFooterActions: React.FC<VisitSurgeryFooterActionsProps>
 	return (
 		<footer className="flex items-center justify-between gap-3 pt-3 border-t border-[var(--line)] flex-wrap">
 			<div className="text-xs text-[var(--muted)]">
-				{s.currentNorm.code804n && (
-					<>
-						<span>Услуга: </span>
-						<strong className="text-[var(--ink)]">{s.currentNorm.code804n}</strong>
-						<span> · </span>
-					</>
-				)}
 				<span>Диагноз: </span>
 				<strong className="text-[var(--ink)]">{s.currentNorm.icd10}</strong>
 				{s.currentNorm.category === "implant" ? " · Торк 35 Н/см" : ""}

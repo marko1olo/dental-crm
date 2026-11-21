@@ -152,7 +152,7 @@ export interface DocumentsA4PrintPreviewProps {
 	readonly onClose?: (() => void) | undefined;
 	readonly isEditingInFocus?: boolean | undefined;
 	readonly onCloseFocus?: (() => void) | undefined;
-	readonly selectedDocumentKind?: DocumentKind | undefined;
+	readonly selectedDocumentKind?: DocumentKind | "dental_medical_card" | undefined;
 	readonly setSelectedDocumentKind?: ((kind: DocumentKind) => void) | undefined;
 	readonly isCreating?: boolean | undefined;
 	readonly onCreateDocument?: ((kind: DocumentKind) => void | Promise<void>) | undefined;

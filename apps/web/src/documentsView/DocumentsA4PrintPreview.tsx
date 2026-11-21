@@ -22,7 +22,7 @@ import type { DocumentsA4PrintPreviewProps } from "./types";
 export function DocumentsA4PrintPreview({
 	isEditingInFocus = false,
 	onCloseFocus,
-	selectedDocumentKind = "dental_medical_card_043u",
+	selectedDocumentKind = "dental_medical_card",
 	setSelectedDocumentKind,
 	isCreating = false,
 	onCreateDocument,
@@ -119,7 +119,8 @@ export function DocumentsA4PrintPreview({
 						aria-describedby={selectedDocumentCreateGuidanceId}
 						onClick={() => {
 							if (documentCreateSavingKind) return;
-							void onCreateDocument?.(selectedDocumentKind);
+							const targetKind = normalizedDocumentKind(selectedDocumentKind);
+							void onCreateDocument?.(targetKind);
 						}}
 						data-testid="btn-create-selected-document"
 					>

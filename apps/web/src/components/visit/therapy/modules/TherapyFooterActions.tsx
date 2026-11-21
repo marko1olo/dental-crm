@@ -23,7 +23,7 @@ export const TherapyFooterActions: React.FC<TherapyFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={onInsertToClinicalDiary}
-					className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-teal-700 active:scale-95 cursor-pointer touch-manipulation"
+					className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] px-4 py-2.5 text-sm font-medium text-white shadow-xs transition active:scale-98 cursor-pointer touch-manipulation"
 					data-testid="therapy-btn-apply-043"
 				>
 					<FileText className="h-4 w-4 shrink-0" />
@@ -33,10 +33,10 @@ export const TherapyFooterActions: React.FC<TherapyFooterActionsProps> = ({
 				<button
 					type="button"
 					onClick={onAddServicesToInvoice}
-					className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-teal-200 bg-teal-50/80 px-3.5 py-2.5 text-sm font-bold text-teal-800 transition hover:bg-teal-100 active:scale-95 dark:border-teal-800/60 dark:bg-teal-950/40 dark:text-teal-300 dark:hover:bg-teal-900/60 cursor-pointer touch-manipulation"
+					className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3.5 py-2.5 text-sm font-medium transition active:scale-98 cursor-pointer touch-manipulation"
 					data-testid="therapy-btn-add-invoice"
 				>
-					<Coins className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+					<Coins className="h-4 w-4 text-[var(--primary)] shrink-0" />
 					<span>В смету ({servicesCount})</span>
 				</button>
 			</div>

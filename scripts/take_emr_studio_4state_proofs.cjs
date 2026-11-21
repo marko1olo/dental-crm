@@ -12,7 +12,7 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CURRENT_CONV_ID = "a11acdee-8a25-44e7-b018-b764be1fcc4b";
+const CURRENT_CONV_ID = "1523bc6c-23a7-4d62-a426-2ed3c97316db";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/emr");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`);
 
@@ -46,8 +46,8 @@ async function saveProof(page, filename) {
 	fs.copyFileSync(pDocs, pBrain);
 
 	const size = fs.statSync(pDocs).size;
-	if (size < 30720) {
-		throw new Error(`[BLANK DETECTED] ${filename} is ${size} bytes (< 30KB)!`);
+	if (size < 40960) {
+		throw new Error(`[BLANK DETECTED] ${filename} is ${size} bytes (< 40KB)!`);
 	}
 	console.log(`✅ [VERIFIED PROOF] ${filename} (${(size / 1024).toFixed(1)} KB) -> Saved.`);
 	return pDocs;

@@ -25,7 +25,7 @@ export function formatSoapFromPreset(
 
 	let billLine = "";
 	if (preset.service804n) {
-		billLine = `Выполнено: [${preset.service804n.code804n}] ${preset.service804n.title}${toothSuffix} — ${preset.service804n.basePriceRub.toLocaleString("ru-RU")} ₽`;
+		billLine = `Выполнено: ${preset.service804n.title}${toothSuffix} — ${preset.service804n.basePriceRub.toLocaleString("ru-RU")} ₽`;
 	}
 
 	const materialsList = preset.materialsToDeduct ?? [];

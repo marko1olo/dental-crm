@@ -24,9 +24,6 @@ export const ChairsideServiceHeader: React.FC<ChairsideServiceHeaderProps> = ({ 
 					Общая
 				</span>
 			)}
-			{item.code804n && (
-				<span className="text-xs font-mono font-semibold text-[var(--muted,#64748b)]">[{item.code804n}]</span>
-			)}
 			<span className="text-xs font-bold text-[var(--ink,#0f172a)] break-words">{item.title}</span>
 			{item.labOrderNumber ? (
 				<span

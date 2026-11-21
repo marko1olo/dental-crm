@@ -87,7 +87,7 @@ export const ChairsideExpressGrid: React.FC<ChairsideExpressGridProps> = ({
 						type="button"
 						onClick={() => onAddExpressService(s)}
 						className="flex flex-col justify-between p-2 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/30 transition-all text-left group min-h-[48px]"
-						title={`[${s.code804n}] ${s.title} (${money(s.priceRub)})${selectedTooth ? ` (зуб ${selectedTooth})` : ""}`}
+						title={`${s.title} (${money(s.priceRub)})${selectedTooth ? ` (зуб ${selectedTooth})` : ""}`}
 					>
 						<div className="w-full flex items-start justify-between gap-1.5">
 							<div className="flex items-center gap-1.5 flex-1 min-w-0">
@@ -100,14 +100,13 @@ export const ChairsideExpressGrid: React.FC<ChairsideExpressGridProps> = ({
 								{money(s.priceRub)}
 							</span>
 						</div>
-						<div className="w-full flex items-center justify-between mt-1 text-[10px] text-slate-500 dark:text-slate-400">
-							<span className="font-mono">{s.code804n}</span>
-							{selectedTooth && (
+						{selectedTooth ? (
+							<div className="w-full flex items-center justify-end mt-1 text-[10px] text-slate-500 dark:text-slate-400">
 								<span className="text-indigo-600 dark:text-indigo-400 font-medium">
 									+ зуб {selectedTooth}
 								</span>
-							)}
-						</div>
+							</div>
+						) : null}
 					</button>
 				))}
 			</div>

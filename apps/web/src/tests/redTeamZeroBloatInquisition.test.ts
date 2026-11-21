@@ -110,7 +110,8 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 				"DocumentsView обязан исключать outpatient_medical_card_025u из каталога шаблонов",
 			);
 			assert.ok(
-				docViewContent.includes('setSelectedDocumentKind("dental_medical_card_043u")'),
+				docViewContent.includes('setSelectedDocumentKind("dental_medical_card_043u")') ||
+				docViewContent.includes('setSelectedDocumentKind("dental_medical_card")'),
 				"DocumentsView обязан перенаправлять выбор 025/у на стоматологическую Карту 043/у",
 			);
 		});

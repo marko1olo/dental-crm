@@ -50,7 +50,6 @@ export const ExtractionComplexitySelector: React.FC<ExtractionComplexitySelector
 								<span className="font-extrabold whitespace-normal break-words leading-tight text-xs">
 									{opt.labelRu.split("(")[0]?.trim()}
 								</span>
-								<span className="text-[10px] opacity-75 font-mono">{opt.code804n}</span>
 							</div>
 							{isSel && <CheckCircle2 size={16} className="text-[var(--on-teal,#ffffff)] shrink-0 ml-1" />}
 						</button>

@@ -15,22 +15,13 @@ import {
 } from "lucide-react";
 import { useAppStore } from "../../store/appStore";
 import type {
-	MedicalRecordData,
-	ClinicalVisitDiaryEntry,
-	ClinicalPassportData,
-	ClinicalAnamnesisData,
+	MedicalRecordData, ClinicalVisitDiaryEntry, ClinicalPassportData, ClinicalAnamnesisData,
 } from "./types/recordDataTypes";
 import {
-	DEFAULT_MEDICAL_CARD_DATA,
-	resolveClinicRequisites,
-	applyMedicalCardPhysiologicalNorm,
+	DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites, applyMedicalCardPhysiologicalNorm,
 } from "./medicalCardCatalogData";
 import {
-	validateMedicalRecordCompleteness,
-	formatPatientAge,
-	calculateDmftIndex,
-	calculateCpitnIndex,
-	generateMedicalRecordPrintHtml,
+	validateMedicalRecordCompleteness, formatPatientAge, calculateDmftIndex, calculateCpitnIndex, generateMedicalRecordPrintHtml,
 } from "./clinicalDiaryMath";
 import { generateUuidV7 } from "@dental/shared";
 import { useRecordExports } from "./record/useRecordExports";
@@ -98,15 +89,26 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			[initialData?.clinic, profile, staff],
 		);
 
-		const buildInitialFormData = useCallback((): MedicalRecordData => ({
-			...DEFAULT_MEDICAL_CARD_DATA,
-			...initialData,
-			clinic: { ...DEFAULT_MEDICAL_CARD_DATA.clinic, ...resolvedClinic, ...(initialData?.clinic || {}) },
-			passport: { ...DEFAULT_MEDICAL_CARD_DATA.passport, ...(initialData?.passport || {}) },
-			anamnesis: { ...DEFAULT_MEDICAL_CARD_DATA.anamnesis, ...(initialData?.anamnesis || {}) },
-			dentalStatus: { ...DEFAULT_MEDICAL_CARD_DATA.dentalStatus, ...(initialData?.dentalStatus || {}) },
-			epicrisis: { ...DEFAULT_MEDICAL_CARD_DATA.epicrisis, ...(initialData?.epicrisis || {}) },
-		}), [initialData, resolvedClinic]);
+		const buildInitialFormData = useCallback((): MedicalRecordData => {
+			let draft: Partial<MedicalRecordData> | null = null;
+			if (patientId && typeof sessionStorage !== "undefined") {
+				try {
+					const raw = sessionStorage.getItem(`dente:medical_card_autosave:${patientId}`);
+					if (raw) draft = JSON.parse(raw);
+				} catch { /* ignore draft parse error */ }
+			}
+			return {
+				...DEFAULT_MEDICAL_CARD_DATA,
+				...draft,
+				...initialData,
+				clinic: { ...DEFAULT_MEDICAL_CARD_DATA.clinic, ...resolvedClinic, ...(draft?.clinic || {}), ...(initialData?.clinic || {}) },
+				passport: { ...DEFAULT_MEDICAL_CARD_DATA.passport, ...(draft?.passport || {}), ...(initialData?.passport || {}) },
+				anamnesis: { ...DEFAULT_MEDICAL_CARD_DATA.anamnesis, ...(draft?.anamnesis || {}), ...(initialData?.anamnesis || {}) },
+				dentalStatus: { ...DEFAULT_MEDICAL_CARD_DATA.dentalStatus, ...(draft?.dentalStatus || {}), ...(initialData?.dentalStatus || {}) },
+				visitDiaries: (initialData?.visitDiaries?.length ? initialData.visitDiaries : draft?.visitDiaries) || DEFAULT_MEDICAL_CARD_DATA.visitDiaries,
+				epicrisis: { ...DEFAULT_MEDICAL_CARD_DATA.epicrisis, ...(draft?.epicrisis || {}), ...(initialData?.epicrisis || {}) },
+			};
+		}, [initialData, resolvedClinic, patientId]);
 
 		const [formData, setFormData] = useState<MedicalRecordData>(buildInitialFormData);
 
@@ -235,14 +237,14 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							<span
 								data-testid="badge-emr-draft-status"
 								data-legacy-testid="badge-emr-draft-status"
-								className={`px-2 py-0.5 rounded border text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 shrink-0 ${
+								className={`px-2 py-0.5 rounded border text-[11px] font-medium flex items-center gap-1 shrink-0 ${
 									effectiveIsDraft
 										? "border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
 										: "border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								}`}
 							>
 								{effectiveIsDraft ? <FileText className="w-3 h-3 text-amber-600" /> : <Check className="w-3 h-3 text-emerald-600" />}
-								{effectiveIsDraft ? "ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)" : "ПОДПИСАНО ВРАЧОМ"}
+								{effectiveIsDraft ? "Черновик (приём не закрыт)" : "Подписано врачом"}
 							</span>
 							<div className="min-w-0 w-full">
 								<h2 className="emr-studio-title truncate">

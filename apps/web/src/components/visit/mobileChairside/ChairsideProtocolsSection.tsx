@@ -296,10 +296,11 @@ export const ChairsideProtocolsSection: React.FC<ChairsideProtocolsSectionProps>
                   <div className="text-[13px] font-semibold text-[var(--ink)] leading-snug">
                     {item.title}
                   </div>
-                  <div className="text-[12px] text-[var(--muted)] flex items-center gap-2 mt-0.5">
-                    <span className="font-mono">{item.code804n}</span>
-                    {item.toothCode && <span>· Зуб {item.toothCode}</span>}
-                  </div>
+                  {item.toothCode ? (
+                    <div className="text-[12px] text-[var(--muted)] flex items-center gap-2 mt-0.5">
+                      <span>Зуб {item.toothCode}</span>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-[14px] font-bold font-mono text-[var(--ink)]">

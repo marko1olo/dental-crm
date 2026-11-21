@@ -32,17 +32,21 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		patientDraftDocsCount,
 		setIsAutoclaveLogOpen,
 		selectedDocumentKind,
-		setSelectedDocumentKind,
+		setSelectedDocumentKind: rawSetSelectedDocumentKind,
 	} = vm;
+	const setSelectedDocumentKind = React.useCallback(
+		(kind: DocumentKind | DentalMedicalCard) => rawSetSelectedDocumentKind(kind as DocumentKind),
+		[rawSetSelectedDocumentKind],
+	);
 
 	React.useEffect(() => {
-		// Клинический суверенитет стоматологической карты (Мандаты 8e, 8s, 8ap, DEF-DOC-06: чистый канонический dental_medical_card_043u)
+		// Клинический суверенитет стоматологической карты (Мандаты 8e, 8s, 8ap, DEF-DOC-06: чистый канонический dental_medical_card)
 		const isOutpatientRedirectNeeded =
 			(selectedDocumentKind as string) === OUTPATIENT_MEDICAL_CARD_KIND ||
 			(selectedDocumentKind as string) === "outpatient_medical_card_025u" ||
 			(selectedDocumentKind as string) === "outpatient_visit_record";
 		if (!isOutpatientRedirectNeeded && (selectedDocumentKind as string) !== "outpatient_medical_card_025u") return;
-		setSelectedDocumentKind("dental_medical_card_043u");
+		setSelectedDocumentKind("dental_medical_card");
 	}, [selectedDocumentKind, setSelectedDocumentKind]);
 
 	return (
