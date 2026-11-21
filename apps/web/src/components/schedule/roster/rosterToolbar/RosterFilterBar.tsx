@@ -28,8 +28,8 @@ export const RosterFilterBar: React.FC<RosterFilterBarProps> = React.memo(
 				style={{
 					display: "inline-flex",
 					alignItems: "center",
-					gap: "0.375rem",
-					borderLeft: "1px solid var(--line, #cbd5e1)",
+					gap: "0.5rem",
+					borderLeft: "1px solid var(--line)",
 					paddingLeft: "0.75rem",
 					marginLeft: "0.25rem",
 				}}
@@ -39,8 +39,8 @@ export const RosterFilterBar: React.FC<RosterFilterBarProps> = React.memo(
 						<span
 							style={{
 								fontSize: "0.75rem",
-								fontWeight: 700,
-								color: "var(--muted, #64748b)",
+								fontWeight: 600,
+								color: "var(--ink-muted)",
 							}}
 						>
 							Специальность:
@@ -48,17 +48,7 @@ export const RosterFilterBar: React.FC<RosterFilterBarProps> = React.memo(
 						<select
 							value={specialtyFilter}
 							onChange={(e) => onSelectSpecialty(e.target.value)}
-							className="roster-select"
-							style={{
-								height: "34px",
-								minHeight: "34px",
-								fontSize: "0.8125rem",
-								borderRadius: "0.375rem",
-								border: "1px solid var(--line, #cbd5e1)",
-								background: "var(--paper, #fff)",
-								padding: "0 0.5rem",
-								color: "var(--ink, #0f172a)",
-							}}
+							className="roster-select h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--primary)]"
 							title="Фильтр врачей по специальности"
 						>
 							<option value="all">Все специальности</option>
@@ -74,8 +64,8 @@ export const RosterFilterBar: React.FC<RosterFilterBarProps> = React.memo(
 				<span
 					style={{
 						fontSize: "0.75rem",
-						fontWeight: 700,
-						color: "var(--muted, #64748b)",
+						fontWeight: 600,
+						color: "var(--ink-muted)",
 					}}
 				>
 					Врач:
@@ -84,17 +74,7 @@ export const RosterFilterBar: React.FC<RosterFilterBarProps> = React.memo(
 					data-testid="toolbar-doctor-select"
 					value={selectedDoctorId}
 					onChange={(e) => onSelectDoctorId(e.target.value)}
-					className="roster-select"
-					style={{
-						height: "34px",
-						minHeight: "34px",
-						fontSize: "0.8125rem",
-						borderRadius: "0.375rem",
-						border: "1px solid var(--line, #cbd5e1)",
-						background: "var(--paper, #fff)",
-						padding: "0 0.5rem",
-						color: "var(--ink, #0f172a)",
-					}}
+					className="roster-select h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--primary)]"
 					title="Выбрать врача для шаблона закрепления"
 				>
 					{doctors.map((d) => (
@@ -106,8 +86,8 @@ export const RosterFilterBar: React.FC<RosterFilterBarProps> = React.memo(
 				<span
 					style={{
 						fontSize: "0.75rem",
-						fontWeight: 700,
-						color: "var(--muted, #64748b)",
+						fontWeight: 600,
+						color: "var(--ink-muted)",
 						marginLeft: "0.25rem",
 					}}
 				>
@@ -117,17 +97,7 @@ export const RosterFilterBar: React.FC<RosterFilterBarProps> = React.memo(
 					data-testid="toolbar-chair-select"
 					value={selectedChairKey}
 					onChange={(e) => onSelectChairKey(e.target.value)}
-					className="roster-select"
-					style={{
-						height: "34px",
-						minHeight: "34px",
-						fontSize: "0.8125rem",
-						borderRadius: "0.375rem",
-						border: "1px solid var(--line, #cbd5e1)",
-						background: "var(--paper, #fff)",
-						padding: "0 0.5rem",
-						color: "var(--ink, #0f172a)",
-					}}
+					className="roster-select h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium outline-none focus:border-[var(--primary)]"
 					title="Выбрать кресло и кабинет"
 				>
 					{allChairs.map((ch) => (

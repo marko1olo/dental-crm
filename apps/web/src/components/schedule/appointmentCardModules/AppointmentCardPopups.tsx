@@ -1,9 +1,6 @@
 import React from "react";
 import type { Appointment, Dashboard } from "@dental/shared";
-import {
-	AppointmentHoverHud,
-	AppointmentMobileBottomSheet,
-} from "../AppointmentStatusPopup";
+import { AppointmentHoverHud } from "../AppointmentStatusPopup";
 import { WaitlistDrawer } from "../waitlist/WaitlistDrawer";
 import type { AppointmentCardPopupsProps } from "./types";
 
@@ -83,70 +80,23 @@ export function AppointmentCardHoverOverlay({
 export function AppointmentCardBottomPopups({
 	appointment,
 	dashboard,
-	isMobileSheetOpen,
-	setIsMobileSheetOpen,
-	displayStatus,
-	appointmentPatient,
 	appointmentPatientName,
-	patientBalance,
 	appointmentDoctor,
-	appointmentAssistant,
 	appointmentChair,
-	cardTeeth,
-	allergyAlert,
-	appointmentLabels,
-	formatTime,
-	handleQuickStatusChange,
-	openAppointmentEditor,
 	isSmartRecoveryOpen,
 	setIsSmartRecoveryOpen,
 }: Pick<
 	AppointmentCardPopupsProps,
 	| "appointment"
 	| "dashboard"
-	| "isMobileSheetOpen"
-	| "setIsMobileSheetOpen"
-	| "displayStatus"
-	| "appointmentPatient"
 	| "appointmentPatientName"
-	| "patientBalance"
 	| "appointmentDoctor"
-	| "appointmentAssistant"
 	| "appointmentChair"
-	| "cardTeeth"
-	| "allergyAlert"
-	| "appointmentLabels"
-	| "formatTime"
-	| "handleQuickStatusChange"
-	| "openAppointmentEditor"
 	| "isSmartRecoveryOpen"
 	| "setIsSmartRecoveryOpen"
 >) {
 	return (
 		<>
-			{/* Mobile Native Bottom Sheet for Progressive Disclosure on tap */}
-			<AppointmentMobileBottomSheet
-				appointment={appointment}
-				dashboard={dashboard}
-				isOpen={isMobileSheetOpen}
-				onClose={() => setIsMobileSheetOpen(false)}
-				displayStatus={displayStatus}
-				appointmentPatient={appointmentPatient}
-				appointmentPatientName={appointmentPatientName}
-				patientBalance={patientBalance ?? null}
-				appointmentDoctor={appointmentDoctor}
-				appointmentAssistant={appointmentAssistant}
-				appointmentChair={appointmentChair}
-				cardTeeth={cardTeeth}
-				allergyAlert={allergyAlert ?? null}
-				appointmentLabels={appointmentLabels}
-				formatTime={formatTime}
-				handleQuickStatusChange={handleQuickStatusChange}
-				onCloseHover={() => {}}
-				onKeepHover={() => {}}
-				openAppointmentEditor={openAppointmentEditor}
-			/>
-
 			{isSmartRecoveryOpen && (
 				<WaitlistDrawer
 					isOpen={isSmartRecoveryOpen}

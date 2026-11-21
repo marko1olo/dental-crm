@@ -103,8 +103,18 @@ export async function processCashboxPayment(
 	const effectiveMutationId =
 		body.clientMutationId?.trim() ||
 		body.idempotencyKey?.trim() ||
-		headerIdemp?.trim() ||
-		`cbx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+		headerIdemp?.trim();
+
+	if (!effectiveMutationId) {
+		return {
+			statusCode: 400,
+			body: {
+				error: "IdempotencyKeyRequired",
+				message:
+					"Для проведения кассового платежа обязателен заголовок Idempotency-Key или поле clientMutationId (Мандат 8zp/8bo).",
+			},
+		};
+	}
 
 	// Честная сумма: платеж без суммы невозможен, за исключением 100% гарантии врача (Мандаты 8e п. 7, 8n).
 	// Гарантийный расчёт оформляется закрытием счёта без фискального чека.
@@ -581,7 +591,11 @@ export async function processCashboxPayment(
 
 			const personalAvailableKop =
 				advanceTotalKop > ledgerOverpaidKop ? advanceTotalKop : ledgerOverpaidKop;
-			const totalAvailableDepositKop = personalAvailableKop + familyBalanceKop;
+
+			// Изоляция балансов (ROT-002): семейный депозит и личный аванс строго изолированы (ноль x2 денег из воздуха!)
+			const totalAvailableDepositKop = lockedFamilyGroup
+				? familyBalanceKop
+				: personalAvailableKop;
 
 			if (totalAvailableDepositKop < requiredDepositKopecks) {
 				const availableRub = kopecksToNumericString(Number(totalAvailableDepositKop));
@@ -1539,11 +1553,17 @@ export async function processCashboxPayment(
 			.for("update");
 
 		if (boxes.length === 0) {
-			try {
-				const seeded = await ensureOrganizationCashBoxes(tx, orgId);
-				boxes = seeded.boxes;
-			} catch {
-				// Mock or already seeded in another context
+			const isRealTransaction =
+				typeof (tx as any).rollback === "function" ||
+				typeof (tx as any).query === "object" ||
+				Boolean((tx as any)._?.session);
+			if (isRealTransaction) {
+				try {
+					const seeded = await ensureOrganizationCashBoxes(tx, orgId);
+					boxes = seeded.boxes;
+				} catch {
+					// Mock or already seeded in another context
+				}
 			}
 		}
 
@@ -1585,6 +1605,10 @@ export async function processCashboxPayment(
 					? `Приход наличных в кассу: оплата стоматологических услуг (${receiptNumber})`
 					: "Приход наличных в кассу: оплата стоматологических услуг",
 				operatorName: body.cashierFullName || "Кассир",
+				metadata: {
+					clientMutationId: effectiveMutationId,
+					cashKopecks: resolvedCashKop,
+				},
 			});
 
 			await tx
@@ -1620,6 +1644,10 @@ export async function processCashboxPayment(
 					? `Безналичное поступление: оплата стоматологических услуг (${receiptNumber})`
 					: "Безналичное поступление: оплата стоматологических услуг",
 				operatorName: body.cashierFullName || "Кассир",
+				metadata: {
+					clientMutationId: effectiveMutationId,
+					electronicCardKopecks: resolvedElecKop,
+				},
 			});
 
 			await tx

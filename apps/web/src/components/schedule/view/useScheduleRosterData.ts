@@ -3,6 +3,7 @@ import type { Appointment, Dashboard } from "@dental/shared";
 import {
   safeLocalStorageGetItem,
   safeLocalStorageSetItem,
+  safeLocalStorageRemoveItem,
 } from "../../../lib/safeLocalStorage";
 import type {
   DoctorShift,
@@ -66,21 +67,32 @@ export function useScheduleRosterData({
           if (
             isMounted &&
             data &&
-            Array.isArray(data.shifts) &&
-            data.shifts.length > 0
+            Array.isArray(data.shifts)
           ) {
-            try {
-              safeLocalStorageSetItem(
-                "dente_doctor_shifts",
-                JSON.stringify(data.shifts),
-              );
-            } catch (storageErr: unknown) {
-              console.warn(
-                "[ScheduleView] Error saving dente_doctor_shifts to storage:",
-                storageErr,
-              );
+            if (data.shifts.length > 0) {
+              try {
+                safeLocalStorageSetItem(
+                  "dente_doctor_shifts",
+                  JSON.stringify(data.shifts),
+                );
+              } catch (storageErr: unknown) {
+                console.warn(
+                  "[ScheduleView] Error saving dente_doctor_shifts to storage:",
+                  storageErr,
+                );
+              }
+              setSavedDoctorShifts(data.shifts);
+            } else {
+              try {
+                safeLocalStorageRemoveItem("dente_doctor_shifts");
+              } catch (storageErr: unknown) {
+                console.warn(
+                  "[ScheduleView] Error removing dente_doctor_shifts from storage:",
+                  storageErr,
+                );
+              }
+              setSavedDoctorShifts([]);
             }
-            setSavedDoctorShifts(data.shifts);
           }
         }
       } catch (fetchErr: unknown) {
@@ -99,7 +111,11 @@ export function useScheduleRosterData({
   const handleSaveDoctorShifts = useCallback(async (shifts: DoctorShift[]) => {
     setSavedDoctorShifts(shifts);
     try {
-      safeLocalStorageSetItem("dente_doctor_shifts", JSON.stringify(shifts));
+      if (shifts.length > 0) {
+        safeLocalStorageSetItem("dente_doctor_shifts", JSON.stringify(shifts));
+      } else {
+        safeLocalStorageRemoveItem("dente_doctor_shifts");
+      }
 
       const shiftsByDate = buildChairDoctorAssignmentsByDate(shifts);
       for (const [dateIso, dateAssignments] of Object.entries(shiftsByDate)) {

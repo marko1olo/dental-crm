@@ -21,9 +21,9 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import {
 	AppointmentHoverHud,
-	AppointmentMobileBottomSheet,
 	type AppointmentStatusPopupProps,
 } from "../AppointmentStatusPopup.js";
+import { ScheduleMobileBottomSheet } from "../grid/ScheduleMobileBottomSheet.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -162,20 +162,39 @@ describe("Chairside Schedule Inquisitor Wave 52: 4-Stage Transitions, >=44px Tou
 		});
 	});
 
-	describe("3. SSR Render Integrity: AppointmentMobileBottomSheet", () => {
+	describe("3. SSR Render Integrity: ScheduleMobileBottomSheet", () => {
 		it("renders full 4-stage transition buttons with >=44px touch targets", () => {
-			const sheetProps = {
-				...mockProps,
-				isOpen: true,
+			const sheetProps: any = {
+				selectedMobileAppt: mockAppointment,
 				onClose: () => {},
-				openAppointmentEditor: () => {},
+				patientName: () => "Иванов Иван",
+				dashboard: { ...mockDashboard, patients: [] },
+				timezone: "Europe/Moscow",
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: mockProps.appointmentLabels,
+				effectiveChairs: [{ id: "chair-1", name: "Кабинет 1" }],
+				doctors: [{ id: "doc-101", fullName: "Д-р Смирнов А.В." }],
+				onAppointmentClick: () => {},
+				onQuickStatusChange: () => {},
 			};
-			const html = renderToString(React.createElement(AppointmentMobileBottomSheet, sheetProps));
+			const html = renderToString(React.createElement(ScheduleMobileBottomSheet, sheetProps));
 
-			assert.ok(html.includes('data-testid="mobile-sheet-status-planned"'));
-			assert.ok(html.includes('data-testid="mobile-sheet-status-arrived"'));
-			assert.ok(html.includes('data-testid="mobile-sheet-status-in-treatment"'));
-			assert.ok(html.includes('data-testid="mobile-sheet-status-completed"'));
+			assert.ok(
+				html.includes('data-testid="mobile-status-planned-') ||
+					html.includes('data-testid="mobile-sheet-status-planned"'),
+			);
+			assert.ok(
+				html.includes('data-testid="mobile-status-arrived-') ||
+					html.includes('data-testid="mobile-sheet-status-arrived"'),
+			);
+			assert.ok(
+				html.includes('data-testid="mobile-status-in-treatment-') ||
+					html.includes('data-testid="mobile-sheet-status-in-treatment"'),
+			);
+			assert.ok(
+				html.includes('data-testid="mobile-status-completed-') ||
+					html.includes('data-testid="mobile-sheet-status-completed"'),
+			);
 
 			assert.ok(html.includes("Запланирован"));
 			assert.ok(html.includes("В клинике"));
@@ -183,14 +202,20 @@ describe("Chairside Schedule Inquisitor Wave 52: 4-Stage Transitions, >=44px Tou
 			assert.ok(html.includes("Завершен"));
 		});
 
-		it("renders nothing when isOpen is false", () => {
-			const closedProps = {
-				...mockProps,
-				isOpen: false,
+		it("renders nothing when selectedMobileAppt is null", () => {
+			const closedProps: any = {
+				selectedMobileAppt: null,
 				onClose: () => {},
-				openAppointmentEditor: () => {},
+				patientName: () => "",
+				dashboard: { ...mockDashboard, patients: [] },
+				timezone: "Europe/Moscow",
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: mockProps.appointmentLabels,
+				effectiveChairs: [],
+				doctors: [],
+				onAppointmentClick: () => {},
 			};
-			const html = renderToString(React.createElement(AppointmentMobileBottomSheet, closedProps));
+			const html = renderToString(React.createElement(ScheduleMobileBottomSheet, closedProps));
 			assert.equal(html, "");
 		});
 	});

@@ -36,7 +36,7 @@ export const ScheduleMobileSheetHeader: React.FC<
 
 	return (
 		<>
-			<div className="w-[36px] h-[5px] bg-[var(--line-strong,var(--line))] rounded-full mx-auto mb-2 shrink-0" aria-hidden="true" />
+			<div className="w-9 h-1.5 rounded-full bg-[var(--line)] mx-auto my-3 pointer-events-none shrink-0" aria-hidden="true" />
 			<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
 				<div className="min-w-0 flex-1">
 					<div className="text-lg font-black text-[var(--ink)] truncate">
@@ -47,16 +47,16 @@ export const ScheduleMobileSheetHeader: React.FC<
 							{mStart} – {mEnd} · {selectedMobileAppt.reason || "Прием"}
 						</span>
 						<span
-							className={`text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0 inline-flex items-center gap-1 ${
+							className={`text-xs font-semibold px-2 py-0.5 rounded-lg shrink-0 inline-flex items-center gap-1 ${
 								inChair
-									? "bg-[var(--teal,var(--brand-primary))] text-white"
+									? "bg-[var(--primary)] text-white shadow-xs"
 									: selectedMobileAppt.status === "arrived"
-										? "bg-amber-500 text-white"
+										? "bg-[var(--warning-soft)] text-[var(--warning-ink)] border border-[var(--warning-line)]"
 										: selectedMobileAppt.status === "confirmed"
-											? "bg-emerald-600 text-white"
+											? "bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)]"
 											: selectedMobileAppt.status === "completed"
-												? "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-												: "bg-[var(--paper-soft)] text-[var(--ink)]"
+												? "bg-[var(--paper-soft)] text-[var(--ink-muted)] border border-[var(--line)]"
+												: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
 							}`}
 						>
 							{inChair && (

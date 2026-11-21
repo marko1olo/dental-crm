@@ -179,7 +179,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								type="button"
 								className="roster-btn roster-btn-secondary"
 								onClick={onPrintSchedule}
-								style={{ minHeight: "34px", height: "34px" }}
+								style={{ minHeight: "36px", height: "36px" }}
 								title="Печать графика в формате А4 Альбомный"
 							>
 								<Printer size={16} />
@@ -189,18 +189,18 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								type="button"
 								className="roster-btn roster-btn-secondary"
 								onClick={onExportT13}
-								style={{ minHeight: "34px", height: "34px" }}
-								title="Табель учёта рабочего времени: Выгрузить в CSV для 1C или Excel"
+								style={{ minHeight: "36px", height: "36px" }}
+								title="График сменности: Выгрузить в CSV для Excel"
 							>
 								<FileSpreadsheet size={16} />
-								<span>Табель учёта времени (CSV)</span>
+								<span>График сменности (CSV)</span>
 							</button>
 							<button
 								type="button"
 								data-testid="roster-save-btn"
 								className="roster-btn roster-btn-primary"
 								onClick={() => onSaveAll(false)}
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "44px", height: "44px" }}
 								title="Сохранить изменения графика"
 							>
 								<Save size={16} />
@@ -210,8 +210,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								type="button"
 								className="roster-btn roster-btn-secondary"
 								onClick={onClose}
-								style={{ minHeight: "34px", height: "34px" }}
-								title="Закрыть табель (Esc)"
+								style={{ minHeight: "36px", height: "36px" }}
+								title="Закрыть график (Esc)"
 							>
 								<X size={16} />
 								<span>Закрыть</span>

@@ -35,7 +35,7 @@ export const GridAppointmentRescheduleDuration: React.FC<Props> = ({
 	return (
 		<>
 			<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
-				<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+				<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
 					Длительность
 				</div>
 				<div className="grid grid-cols-3 gap-1 px-1">
@@ -59,7 +59,7 @@ export const GridAppointmentRescheduleDuration: React.FC<Props> = ({
 				</div>
 			</div>
 			<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
-				<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+				<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
 					Опоздание
 				</div>
 				<button

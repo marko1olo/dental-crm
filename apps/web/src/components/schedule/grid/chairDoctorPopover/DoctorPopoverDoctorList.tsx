@@ -23,8 +23,8 @@ export function DoctorPopoverDoctorList({
 }: DoctorPopoverDoctorListProps) {
 	return (
 		<div className="flex flex-col gap-1 max-h-[160px] overflow-y-auto">
-			<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
-				Выберите врача:
+			<span className="text-xs font-semibold text-[var(--ink-muted)]">
+				Выберите врача
 			</span>
 			{doctors.map((doc) => {
 				const isCurrent = assignment?.doctorId === doc.id;

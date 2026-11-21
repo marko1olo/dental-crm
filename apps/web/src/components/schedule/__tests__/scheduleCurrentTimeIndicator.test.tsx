@@ -43,10 +43,10 @@ describe("ScheduleCurrentTimeIndicator (StomX Parity Red Time Line)", () => {
 
   test("AppointmentTrackGridLines contains ScheduleCurrentTimeIndicator mount", async () => {
     const fs = await import("node:fs");
-    const content = fs.readFileSync(
-      "apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTrackGridLines.tsx",
-      "utf-8"
-    );
+    const filePath = fs.existsSync("apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTrackGridLines.tsx")
+      ? "apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTrackGridLines.tsx"
+      : "src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTrackGridLines.tsx";
+    const content = fs.readFileSync(filePath, "utf-8");
     assert.ok(content.includes("ScheduleCurrentTimeIndicator"));
     assert.ok(content.includes("timeSlots={morningSlots}"));
     assert.ok(content.includes("timeSlots={eveningSlots}"));

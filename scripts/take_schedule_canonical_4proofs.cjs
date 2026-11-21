@@ -136,6 +136,17 @@ async function main() {
       hasTouch: false,
     });
     await pcContext.addInitScript(() => {
+      localStorage.setItem("dente_clinic_token", "demo-showcase-token-owner");
+      localStorage.setItem("dente_staff_token", "demo-showcase-staff-token-owner");
+      localStorage.setItem("dente_active_session_token", "demo-showcase-staff-token-owner");
+      localStorage.setItem("dente_active_role", "owner");
+      localStorage.setItem("dente_user_role", "owner");
+      localStorage.setItem("dente_role", "owner");
+      localStorage.setItem("dente_perspective", "management");
+      sessionStorage.setItem("dente_unlocked", "true");
+      sessionStorage.setItem("dente:sw-controller-reload", "1");
+      localStorage.setItem("dente_demo_showcase", "true");
+      localStorage.setItem("dente_demo_mode", "true");
       localStorage.setItem("dente_theme_mode", "light");
       localStorage.setItem("dente_onboarding_completed", "true");
       localStorage.setItem("dente_tour_completed", "true");
@@ -147,18 +158,16 @@ async function main() {
 
     const pcPage = await pcContext.newPage();
     console.log("  -> Navigating PC to " + WEB_URL + " ...");
-    await pcPage.goto(WEB_URL, { waitUntil: "domcontentloaded", timeout: 35000 });
+    await pcPage.goto(WEB_URL, { waitUntil: "commit", timeout: 45000 });
     
-    // Wait for boot state to clear
-    for (let i = 0; i < 30; i++) {
-      await pcPage.waitForTimeout(500);
-      try {
-        const text = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
-        if (!text.includes("Загрузка системы") && text.length > 200) break;
-      } catch (_) {}
-    }
-    await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-grid-view"]', { timeout: 25000, state: "visible" }).catch(() => {});
-    await pcPage.waitForTimeout(1000);
+    // Wait for schedule view to mount
+    console.log("  -> Waiting for schedule-view to mount...");
+    await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-grid-view"], .schedule-panel', {
+      timeout: 60000,
+      state: "visible",
+    });
+    await suppressTransientOverlays(pcPage);
+    await pcPage.waitForTimeout(1500);
 
     // PC Light
     console.log("  -> Capturing PC Light (1440x900)...");
@@ -175,7 +184,8 @@ async function main() {
     // ----------------------------------------------------
     console.log("\n--- Phase 2: Mobile Apple HIG Agenda View (390x844) ---");
     await pcPage.setViewportSize({ width: 390, height: 844 });
-    await pcPage.waitForTimeout(1000);
+    await pcPage.evaluate(() => window.dispatchEvent(new Event("resize")));
+    await pcPage.waitForTimeout(1500);
     await suppressTransientOverlays(pcPage);
 
     // Mobile Light

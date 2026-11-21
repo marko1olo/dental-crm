@@ -87,7 +87,10 @@ export function useRosterBulkOperations({
 
 	return {
 		handlePrevWeek, handleNextWeek, handlePrintSchedule,
-		handleExportT13: () => { setNotification({ type: "info", message: "Экспорт графика формируется через печать (А4)" }); setTimeout(() => setNotification(null), 3000); },
+		handleExportT13: () => {
+			handlePrintSchedule();
+			setNotification({ type: "success", message: "График сменности отправлен на печать" });
+		},
 		handleApplyPreset, handleAutoFillDefault: () => handleApplyPreset("five_day", "Пятидневка (базовый)"),
 		handleApplyCellPreset, handleApplyDoctorChairWeeklyTemplate,
 		handleCopyWeekToNextWeek: () => {

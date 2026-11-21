@@ -19,7 +19,7 @@ export function CancellationMenuSection({
 
 	return (
 		<>
-			<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
+			<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)] border-t border-[var(--line)] mt-1 pt-1">
 				Статус и отмена
 			</div>
 			<button
@@ -40,7 +40,7 @@ export function CancellationMenuSection({
 			</button>
 			{isRefusalReasonsOpen && (
 				<div className="p-1 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-0.5 my-1 max-h-[190px] overflow-y-auto [scrollbar-width:thin]" data-testid="appointment-card-refusal-reasons-dropdown">
-					<div className="text-[10px] font-bold text-rose-800 dark:text-rose-200 uppercase tracking-wider px-1">Причины отмены:</div>
+					<div className="text-[11px] font-semibold text-rose-800 dark:text-rose-200 px-1">Причины отмены:</div>
 					{APPOINTMENT_REFUSAL_REASONS_CATALOG.map((refuse) => (
 						<button
 							key={refuse.id}

@@ -8,7 +8,6 @@ import type { useQuickBookingCollision } from "./useQuickBookingCollision";
 export interface QuickBookingStageService {
   id?: string | undefined;
   serviceCode?: string | undefined;
-  code804n?: string | undefined;
   name?: string | undefined;
   title?: string | undefined;
   medicalTitleRu?: string | undefined;

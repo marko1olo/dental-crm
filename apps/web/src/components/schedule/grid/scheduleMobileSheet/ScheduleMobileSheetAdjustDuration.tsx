@@ -19,8 +19,8 @@ export const ScheduleMobileSheetAdjustDuration: React.FC<
 }) => {
 	return (
 		<div className="space-y-2 pt-2 border-t border-[var(--line)]">
-			<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
-				Длительность приема:
+			<div className="font-semibold text-[var(--ink-muted)] text-xs">
+				Длительность приёма
 			</div>
 			<div className="grid grid-cols-3 gap-2">
 				<button
@@ -65,12 +65,12 @@ export const ScheduleMobileSheetAdjustDuration: React.FC<
 					type="button"
 					data-testid={`mobile-shift-late-15-${selectedMobileAppt.id}`}
 					onClick={() => handleShiftAppointmentLateness(selectedMobileAppt, 15)}
-					className="min-h-[44px] px-2 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-1 cursor-pointer hover:bg-amber-500/25 transition-colors"
+					className="min-h-[44px] px-2 rounded-xl text-xs font-semibold bg-[var(--warning-soft)] border border-[var(--warning-line)] text-[var(--warning-ink)] flex items-center justify-center gap-1 cursor-pointer hover:opacity-90 transition-opacity"
 					title="Сдвинуть на +15 мин при опоздании"
 				>
 					<FastForward
 						size={14}
-						className="text-amber-600 dark:text-amber-400 shrink-0"
+						className="text-[var(--warning-ink)] shrink-0"
 					/>
 					<span>Сдвиг +15 мин</span>
 				</button>
@@ -78,12 +78,12 @@ export const ScheduleMobileSheetAdjustDuration: React.FC<
 					type="button"
 					data-testid={`mobile-free-slot-waitlist-${selectedMobileAppt.id}`}
 					onClick={() => handleFreeSlotToWaitlist(selectedMobileAppt)}
-					className="min-h-[44px] px-2 rounded-xl text-xs font-bold bg-rose-500/15 border border-rose-500/40 text-rose-800 dark:text-rose-200 flex items-center justify-center gap-1 cursor-pointer hover:bg-rose-500/25 transition-colors"
+					className="min-h-[44px] px-2 rounded-xl text-xs font-semibold bg-[var(--danger-soft)] border border-[var(--danger-line)] text-[var(--danger-ink)] flex items-center justify-center gap-1 cursor-pointer hover:opacity-90 transition-opacity"
 					title="Освободить слот -> в лист ожидания"
 				>
 					<UserMinus
 						size={14}
-						className="text-rose-600 dark:text-rose-400 shrink-0"
+						className="text-[var(--danger-ink)] shrink-0"
 					/>
 					<span>В лист ожидания</span>
 				</button>

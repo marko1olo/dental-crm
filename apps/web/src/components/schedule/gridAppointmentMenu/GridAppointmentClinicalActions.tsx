@@ -61,7 +61,7 @@ export const GridAppointmentClinicalActions: React.FC<Props> = ({
 
 	return (
 		<div className="space-y-0.5 pb-1 border-b border-[var(--line)]" data-testid={`menu-clinical-hud-${a.id}`}>
-			<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+			<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
 				Клинические действия
 			</div>
 			<button

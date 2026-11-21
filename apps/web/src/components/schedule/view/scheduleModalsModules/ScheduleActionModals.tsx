@@ -64,7 +64,8 @@ export function ScheduleActionModals(props: ScheduleViewModalsProps) {
             if (waitlistOpen) setWaitlistOpen(false);
             if (waitlistQuickFillSlot) setWaitlistQuickFillSlot(null);
             const clinicTz = (dashboard as { clinicSettings?: { profile?: { timezone?: string } } } | null | undefined)?.clinicSettings?.profile?.timezone;
-            const parseDateTime = props.fromDateTimeLocalValue ?? canonicalFromDateTimeLocalValue;
+            const parseDateTime: (val: string, timeZone?: string | null) => string =
+              props.fromDateTimeLocalValue ?? canonicalFromDateTimeLocalValue;
             setQuickBookingSlot({
               dateKey: slot.date,
               startTime: slot.startTime,

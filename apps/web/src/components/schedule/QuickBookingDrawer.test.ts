@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Dashboard, Patient } from "@dental/shared";
@@ -38,8 +38,7 @@ const mockPatients: Patient[] = [
 	},
 ];
 
-// biome-ignore lint/suspicious/noExplicitAny: mock dashboard
-const mockDashboard: any = {
+const mockDashboard = {
 	patients: mockPatients,
 	appointments: [],
 	clinicSettings: {
@@ -54,7 +53,7 @@ const mockDashboard: any = {
 			timezone: "Europe/Samara",
 		},
 	},
-};
+} as unknown as Dashboard;
 
 describe("QuickBookingDrawer", () => {
 	it("returns null when isOpen is false", () => {
@@ -181,7 +180,7 @@ describe("QuickBookingDrawer", () => {
 			balanceRub: -4500,
 		};
 
-		const dashboardWithHistory: any = {
+		const dashboardWithHistory = {
 			...mockDashboard,
 			patients: [patientWithDebt],
 			appointments: [
@@ -202,13 +201,13 @@ describe("QuickBookingDrawer", () => {
 					notes: "Прием завершен вовремя",
 				},
 			],
-		};
+		} as unknown as Dashboard;
 
 		const html = renderToStaticMarkup(
 			React.createElement(QuickBookingDrawer, {
 				isOpen: true,
 				onClose: () => {},
-				dashboard: dashboardWithHistory as Dashboard,
+				dashboard: dashboardWithHistory,
 				initialSlot: {
 					patientId: "pat-debt",
 					dateKey: "2026-08-20",
@@ -233,7 +232,7 @@ describe("QuickBookingDrawer", () => {
 			balanceRub: 0,
 		};
 
-		const dashboardWithNoShows: any = {
+		const dashboardWithNoShows = {
 			...mockDashboard,
 			patients: [riskyPatient],
 			appointments: [
@@ -254,13 +253,13 @@ describe("QuickBookingDrawer", () => {
 					notes: "Пациент не пришел, на звонки не ответил",
 				},
 			],
-		};
+		} as unknown as Dashboard;
 
 		const html = renderToStaticMarkup(
 			React.createElement(QuickBookingDrawer, {
 				isOpen: true,
 				onClose: () => {},
-				dashboard: dashboardWithNoShows as Dashboard,
+				dashboard: dashboardWithNoShows,
 				initialSlot: {
 					patientId: "pat-risk",
 					dateKey: "2026-08-20",
@@ -335,7 +334,7 @@ describe("QuickBookingDrawer", () => {
 	});
 
 	it("guarantees 5-second booking flow: optional assistant, 1-click status chips and enabled save button per Mandates 8e, 8n", () => {
-		const multiStaffDashboard: any = {
+		const multiStaffDashboard = {
 			...mockDashboard,
 			clinicSettings: {
 				...mockDashboard.clinicSettings,
@@ -350,13 +349,13 @@ describe("QuickBookingDrawer", () => {
 					{ id: "chair-2", name: "Кабинет 2", active: true },
 				],
 			},
-		};
+		} as unknown as Dashboard;
 
 		const html = renderToStaticMarkup(
 			React.createElement(QuickBookingDrawer, {
 				isOpen: true,
 				onClose: () => {},
-				dashboard: multiStaffDashboard as Dashboard,
+				dashboard: multiStaffDashboard,
 				initialSlot: {
 					patientId: "pat-1",
 					dateKey: "2026-08-20",

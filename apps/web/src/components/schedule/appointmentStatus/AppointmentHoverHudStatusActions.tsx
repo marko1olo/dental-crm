@@ -17,8 +17,8 @@ export function AppointmentHoverHudStatusActions({
 }: AppointmentStatusPopupProps) {
   return (
     <div className="space-y-2 pt-2 border-t border-[var(--line)]">
-      <div className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider">
-        Быстрая смена статуса:
+      <div className="text-xs font-semibold text-[var(--ink-muted)]">
+        Быстрая смена статуса
       </div>
       <AppointmentHoverHudStatusButtons
         appointmentId={appointment.id}

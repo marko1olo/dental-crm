@@ -11,7 +11,7 @@ export function ShiftTimeMenuSection({
 }) {
 	return (
 		<>
-			<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
+			<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)] border-t border-[var(--line)] mt-1 pt-1">
 				Опоздание (сдвиг времени)
 			</div>
 			<div className="grid grid-cols-3 gap-1 px-1 py-0.5">

@@ -71,7 +71,7 @@ export const GridAppointmentCommunicationSubmenu: React.FC<Props> = ({
 		<>
 			{patObj?.phone && (
 				<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
-					<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+					<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">
 						Связь
 					</div>
 					<button

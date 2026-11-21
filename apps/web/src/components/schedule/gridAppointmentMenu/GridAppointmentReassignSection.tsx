@@ -38,7 +38,7 @@ export const GridAppointmentReassignSection: React.FC<Props> = ({
 		<>
 			{effectiveChairs.length > 1 && (
 				<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
-					<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">Сменить кресло</div>
+					<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">Сменить кресло</div>
 					<div className="flex items-center gap-1 px-1 flex-wrap">
 						{effectiveChairs.map((ch, chIdx) => {
 							const chPalette = getWorkplaceChairPalette(ch.colorId ?? ch.id ?? chIdx);
@@ -65,7 +65,7 @@ export const GridAppointmentReassignSection: React.FC<Props> = ({
 			)}
 			{doctors.length > 1 && (
 				<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
-					<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">Сменить врача</div>
+					<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)]">Сменить врача</div>
 					<div className="flex items-center gap-1 px-1 flex-wrap">
 						{doctors.slice(0, 4).map((doc) => {
 							const isCurrent = a.doctorUserId === doc.id;

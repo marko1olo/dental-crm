@@ -43,7 +43,7 @@ export const GridAppointmentStatusSubmenu: React.FC<Props> = ({
 
 	return (
 		<div className="space-y-0.5">
-			<div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1">
+			<div className="px-2 py-1 text-[11px] font-semibold text-[var(--ink-muted)] border-b border-[var(--line)] pb-1">
 				Статус визита
 			</div>
 			{items.map((item) => {

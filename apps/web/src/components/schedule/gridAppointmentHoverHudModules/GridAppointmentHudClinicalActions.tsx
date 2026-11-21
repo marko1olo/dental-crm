@@ -32,7 +32,7 @@ export function GridAppointmentHudClinicalActions({
 			className="pt-2 border-t border-[var(--line)] space-y-1.5"
 			data-testid={`clinical-micro-hud-${a.id}`}
 		>
-			<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
+			<div className="text-[11px] font-semibold text-[var(--ink-muted)] flex items-center justify-between">
 				<span>Клинические действия</span>
 			</div>
 			<div className="grid grid-cols-3 gap-1">

@@ -105,7 +105,7 @@ export function useQuickBookingCollision({
                 status: o.stage === "in_production" ? "in_progress" : o.stage === "in_clinic" ? "ready_in_clinic" : o.stage === "seated" ? "completed" : "sent",
                 stage: o.stage,
                 material: o.materialId,
-                workTypeRu: o.notes,
+                workTypeRu: o.notes ?? null,
               }))
             : undefined);
     if (patientId && startsAtLocal) {

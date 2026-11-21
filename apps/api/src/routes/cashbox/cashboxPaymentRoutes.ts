@@ -262,6 +262,7 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			orgId,
 			request.body,
 			headerIdemp,
+			request.log,
 		);
 		if (
 			result.statusCode === 200 &&

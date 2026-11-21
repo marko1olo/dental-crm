@@ -40,8 +40,8 @@ export const ScheduleMobileSheetReassignControls: React.FC<
 		<>
 			{effectiveChairs.length > 1 && (
 				<div className="space-y-1.5 pt-2 border-t border-[var(--line)]">
-					<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
-						Сменить кресло:
+					<div className="font-semibold text-[var(--ink-muted)] text-xs">
+						Сменить кресло
 					</div>
 					<div className="flex items-center gap-1.5 flex-wrap">
 						{effectiveChairs.map((ch) => (
@@ -52,7 +52,7 @@ export const ScheduleMobileSheetReassignControls: React.FC<
 								onClick={() =>
 									handleReassignAppointmentChair(selectedMobileAppt, ch.id)
 								}
-								className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${selectedMobileAppt.chairId === ch.id ? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-2xs" : "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
+								className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${selectedMobileAppt.chairId === ch.id ? "bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-2xs" : "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
 							>
 								<span
 									className="w-2 h-2 rounded-full shrink-0"
@@ -69,8 +69,8 @@ export const ScheduleMobileSheetReassignControls: React.FC<
 
 			{doctors.length > 1 && (
 				<div className="space-y-1.5 pt-2 border-t border-[var(--line)]">
-					<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
-						Сменить врача:
+					<div className="font-semibold text-[var(--ink-muted)] text-xs">
+						Сменить врача
 					</div>
 					<div className="flex items-center gap-1.5 flex-wrap">
 						{doctors.map((doc) => (
@@ -81,7 +81,7 @@ export const ScheduleMobileSheetReassignControls: React.FC<
 								onClick={() =>
 									handleReassignAppointmentDoctor(selectedMobileAppt, doc.id)
 								}
-								className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${selectedMobileAppt.doctorUserId === doc.id ? "bg-[var(--teal)] text-white border-[var(--teal)] font-bold shadow-2xs" : "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
+								className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${selectedMobileAppt.doctorUserId === doc.id ? "bg-[var(--primary)] text-white border-[var(--primary)] font-bold shadow-2xs" : "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"}`}
 							>
 								<span>{formatDoctorShortName(doc.fullName)}</span>
 							</button>

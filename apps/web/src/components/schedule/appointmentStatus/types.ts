@@ -21,9 +21,3 @@ export interface AppointmentStatusPopupProps {
   isNearRightEdge?: boolean | undefined;
   isNearBottom?: boolean | undefined;
 }
-
-export interface AppointmentMobileBottomSheetProps extends AppointmentStatusPopupProps {
-  isOpen: boolean;
-  onClose: () => void;
-  openAppointmentEditor: (appointment: Appointment) => void;
-}

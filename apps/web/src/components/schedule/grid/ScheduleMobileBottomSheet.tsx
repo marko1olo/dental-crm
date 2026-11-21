@@ -53,7 +53,7 @@ export function ScheduleMobileBottomSheet(
 			data-testid="schedule-grid-mobile-bottom-sheet"
 		>
 			<section
-				className="bg-[var(--paper-strong)] rounded-t-3xl border-t border-[var(--line)] p-5 pb-28 shadow-2xl max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom duration-200 text-xs text-[var(--ink)]"
+				className="bg-[var(--paper-strong)] rounded-t-3xl border-t border-[var(--line)] p-5 pb-28 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain space-y-4 animate-in slide-in-from-bottom duration-200 text-xs text-[var(--ink)]"
 				onClick={(e) => e.stopPropagation()}
 				onKeyDown={(e) => e.stopPropagation()}
 				aria-label="Карточка визита"

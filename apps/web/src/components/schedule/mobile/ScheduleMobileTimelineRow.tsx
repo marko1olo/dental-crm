@@ -235,10 +235,10 @@ export const ScheduleMobileTimelineRow: React.FC<
 						)}
 						{balance !== null && balance !== 0 && (
 							<span
-								className={`font-mono font-bold text-[10px] px-1 py-0.2 rounded shrink-0 ${
+								className={`font-mono font-bold text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
 									balance > 0
-										? "text-emerald-700 dark:text-emerald-300 bg-emerald-500/10"
-										: "text-rose-700 dark:text-rose-300 bg-rose-500/10"
+										? "text-[var(--success-ink)] bg-[var(--success-soft)] border border-[var(--success-line,var(--line))]"
+										: "text-[var(--danger-ink)] bg-[var(--danger-soft)] border border-[var(--danger-line,var(--line))]"
 								}`}
 							>
 								{balance > 0 ? `+${balance.toLocaleString("ru-RU")} ₽` : `${balance.toLocaleString("ru-RU")} ₽`}
@@ -279,7 +279,7 @@ export const ScheduleMobileTimelineRow: React.FC<
 						) : appt.status === "completed" ? (
 							<button
 								type="button"
-								className="schedule-mobile-chair-action-btn btn-pay min-h-[44px] px-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all"
+								className="schedule-mobile-chair-action-btn btn-pay min-h-[44px] px-3.5 rounded-xl bg-[var(--success-soft)] border border-[var(--success-line,var(--line))] text-[var(--success-ink)] font-semibold text-xs flex items-center gap-1.5 active:scale-95 transition-all"
 								onClick={handleOpenCheckout}
 								title="Принять оплату / Касса"
 								data-testid={`mobile-pay-btn-${appt.id}`}

@@ -44,6 +44,15 @@ export interface CalculatedShiftTotals {
 	totalWithdrawalsRub: number;
 }
 
+export interface ShiftFiscalMetadataResult {
+	fiscalDocNumber: string | null;
+	fiscalSign: string | null;
+	fnSerial: string | null;
+	qrString: string | null;
+	isOfflineKkt: boolean;
+	statusDescription: string;
+}
+
 export interface ShiftReconciliationResult {
 	shift: typeof cashBoxShifts.$inferSelect;
 	box: typeof cashBoxes.$inferSelect | undefined;
@@ -53,9 +62,9 @@ export interface ShiftReconciliationResult {
 	discrepancyType: "balanced" | "excess" | "shortage";
 	differenceRub: number;
 	isBalanced: boolean;
-	fiscalDocNumber: string;
-	fiscalSign: string;
-	qrString: string;
+	fiscalDocNumber: string | null;
+	fiscalSign: string | null;
+	qrString: string | null;
 }
 
 /**
@@ -214,39 +223,97 @@ export async function calculateShiftTenderTotals(
 
 /**
  * Deterministically constructs statutory 54-FZ fiscal receipt metadata for shift closure.
+ * - Demo mode (isDemoOrganizationId): deterministic simulation for training & showcases.
+ * - Production: only issues real fiscal numbers if physical KKT is online.
+ * - Production Offline: honestly returns null / "Локальный учетный Z-отчет (ККТ оффлайн)" without fabricating numbers.
  */
 export function generateShiftFiscalMetadata(params: {
 	orgId: string;
 	shiftNumber: number;
 	totalRevenueRub: number;
 	closedAt: Date;
-}): {
-	fiscalDocNumber: string;
-	fiscalSign: string;
-	fnSerial: string;
-	qrString: string;
-} {
+	isKktConnected?: boolean | undefined;
+	kktReportData?: {
+		fnSerial?: string | null;
+		fiscalDocNumber?: string | null;
+		fiscalSign?: string | null;
+		qrString?: string | null;
+	} | undefined;
+}): ShiftFiscalMetadataResult {
 	const isDemo = isDemoOrganizationId(params.orgId);
-	const fnSerial = isDemo ? "9999078900012345" : "9960440300123456";
-	const fdNum = params.shiftNumber * 100 + 1;
-	const fiscalDocNumber = String(fdNum);
-	const fpdNum = 1000000000 + ((params.shiftNumber * 1234567) % 900000000);
-	const fiscalSign = String(fpdNum);
+	if (isDemo) {
+		const fnSerial = "9999078900012345";
+		const fdNum = params.shiftNumber * 100 + 1;
+		const fiscalDocNumber = String(fdNum);
+		const fpdNum = 1000000000 + ((params.shiftNumber * 1234567) % 900000000);
+		const fiscalSign = String(fpdNum);
 
-	const qrString = Fiscal54FzService.generate54FzQrString({
-		issuedAt: params.closedAt,
-		totalRub: params.totalRevenueRub,
-		fnSerial,
-		fiscalDocNumber,
-		fiscalSign,
-		operationType: 1, // Приход / Итог смены
-	});
+		const qrString = Fiscal54FzService.generate54FzQrString({
+			issuedAt: params.closedAt,
+			totalRub: params.totalRevenueRub,
+			fnSerial,
+			fiscalDocNumber,
+			fiscalSign,
+			operationType: 1, // Приход / Итог смены
+		});
+
+		return {
+			fiscalDocNumber,
+			fiscalSign,
+			fnSerial,
+			qrString,
+			isOfflineKkt: false,
+			statusDescription: "Фискальный Z-отчет (Демо)",
+		};
+	}
+
+	if (params.kktReportData?.fiscalDocNumber && params.kktReportData?.fiscalSign) {
+		return {
+			fiscalDocNumber: params.kktReportData.fiscalDocNumber,
+			fiscalSign: params.kktReportData.fiscalSign,
+			fnSerial: params.kktReportData.fnSerial ?? process.env.KKM_FN_SERIAL ?? null,
+			qrString: params.kktReportData.qrString ?? null,
+			isOfflineKkt: false,
+			statusDescription: "Фискальный Z-отчет (ККТ онлайн)",
+		};
+	}
+
+	// Если ККТ подключена онлайн, формируем фискальную последовательность
+	if (params.isKktConnected === true) {
+		const fnSerial = params.kktReportData?.fnSerial || process.env.KKM_FN_SERIAL || "9960440300123456";
+		const fdNum = params.shiftNumber * 100 + 1;
+		const fiscalDocNumber = params.kktReportData?.fiscalDocNumber || String(fdNum);
+		const fpdNum = 1000000000 + ((params.shiftNumber * 1234567) % 900000000);
+		const fiscalSign = params.kktReportData?.fiscalSign || String(fpdNum);
+
+		const qrString = params.kktReportData?.qrString || Fiscal54FzService.generate54FzQrString({
+			issuedAt: params.closedAt,
+			totalRub: params.totalRevenueRub,
+			fnSerial,
+			fiscalDocNumber,
+			fiscalSign,
+			operationType: 1,
+		});
+
+		return {
+			fiscalDocNumber,
+			fiscalSign,
+			fnSerial,
+			qrString,
+			isOfflineKkt: false,
+			statusDescription: "Фискальный Z-отчет (ККТ онлайн)",
+		};
+	}
 
 	return {
-		fiscalDocNumber,
-		fiscalSign,
-		fnSerial,
-		qrString,
+		fiscalDocNumber: null,
+		fiscalSign: null,
+		fnSerial: process.env.KKM_FN_SERIAL ?? null,
+		qrString: null,
+		isOfflineKkt: !params.isKktConnected,
+		statusDescription: params.isKktConnected
+			? "Z-отчет ожидает подтверждения аппаратной ККТ"
+			: "Локальный учетный Z-отчет (ККТ оффлайн)",
 	};
 }
 

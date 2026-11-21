@@ -37,7 +37,7 @@ export function AppointmentRefusalBanner({
 			data-testid="appointment-card-refusal-banner"
 		>
 			<div className="flex items-center justify-between gap-1 flex-wrap">
-				<span className="font-semibold text-[11px] uppercase tracking-wider text-rose-700 dark:text-rose-300">
+				<span className="font-semibold text-xs text-[var(--danger-ink)]">
 					{appointment.status === "cancelled"
 						? "Запись отменена"
 						: "Пациент не явился"}

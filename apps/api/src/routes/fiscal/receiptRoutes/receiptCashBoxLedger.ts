@@ -14,6 +14,7 @@ import {
 	cashBoxShifts,
 	cashOperations,
 	patients,
+	payments,
 } from "../../../db/schema.js";
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
 import type { ApplyCashBoxReceiptParams, DbClientOrTransaction, PrintResultMetadata } from "./types.js";
@@ -24,6 +25,31 @@ export async function applyCashBoxFiscalReceipt(
 	data: ApplyCashBoxReceiptParams,
 	printResult: PrintResultMetadata,
 ): Promise<void> {
+	// ─────────────────────────────────────────────────────────────────────────
+	// ANTI-DOUBLE-INFLOW GUARD (ROT-001):
+	// Prevent 2x double counting of cash/bank revenue in cashBoxes & cashBoxShifts.
+	// If a payment with this clientMutationId was already recorded in payments,
+	// the checkout processor already credited the drawer and shift.
+	// ─────────────────────────────────────────────────────────────────────────
+	if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
+		const mutationId = data.clientMutationId.trim();
+		const [existingPayment] = await tx
+			.select({ id: payments.id })
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, orgId),
+					eq(payments.clientMutationId, mutationId),
+				),
+			)
+			.limit(1);
+
+		if (existingPayment) {
+			// Funds already credited by processCashboxPayment.
+			return;
+		}
+	}
+
 	await ensureOrganizationCashBoxes(tx, orgId);
 	const allBoxes = await tx
 		.select()
@@ -68,6 +94,7 @@ export async function applyCashBoxFiscalReceipt(
 			.update(cashBoxes)
 			.set({
 				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
+				balanceKopecks: sql`${cashBoxes.balanceKopecks} + ${totalInflowKop}::bigint`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, chosenBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -138,6 +165,7 @@ export async function applyCashBoxFiscalReceipt(
 			.update(cashBoxes)
 			.set({
 				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
+				balanceKopecks: sql`${cashBoxes.balanceKopecks} + ${cashKop}::bigint`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, mainBox.id), eq(cashBoxes.organizationId, orgId)));
@@ -196,6 +224,7 @@ export async function applyCashBoxFiscalReceipt(
 			.update(cashBoxes)
 			.set({
 				balanceRub: sql`round((${cashBoxes.balanceRub} + ${amountRub})::numeric, 2)`,
+				balanceKopecks: sql`${cashBoxes.balanceKopecks} + ${electronicKop}::bigint`,
 				updatedAt: new Date(),
 			})
 			.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));

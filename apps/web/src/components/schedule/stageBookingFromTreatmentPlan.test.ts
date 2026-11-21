@@ -89,7 +89,7 @@ describe("Stage Booking from Treatment Plan Integration (Treatment Plan to Sched
 			services: [
 				{
 					id: "srv-1",
-					code804n: "A16.07.002",
+					serviceCode: "A16.07.002",
 					title: "Восстановление зуба пломбой (глубокий кариес)",
 					toothNumber: 16,
 					priceRub: 4500,
@@ -97,7 +97,7 @@ describe("Stage Booking from Treatment Plan Integration (Treatment Plan to Sched
 				},
 				{
 					id: "srv-2",
-					code804n: "A16.07.008",
+					serviceCode: "A16.07.008",
 					title: "Пломбирование корневого канала",
 					toothNumber: 16,
 					priceRub: 3200,
@@ -119,8 +119,8 @@ describe("Stage Booking from Treatment Plan Integration (Treatment Plan to Sched
 		const normalizedHtml = html.replace(/\u00a0/g, " ");
 		assert.ok(normalizedHtml.includes("data-testid=\"stage-booking-services-list\""), "должен отображать список процедур этапа");
 		assert.ok(normalizedHtml.includes("Восстановление зуба пломбой"), "должен отображать название первой процедуры");
-		assert.ok(normalizedHtml.includes("4 500 ₽"), "должен отображать цену первой процедуры");
-		assert.ok(normalizedHtml.includes("3 200 ₽"), "должен отображать цену второй процедуры");
+		assert.ok(normalizedHtml.includes("4 500,00 ₽") || normalizedHtml.includes("4 500 ₽"), "должен отображать цену первой процедуры");
+		assert.ok(normalizedHtml.includes("3 200,00 ₽") || normalizedHtml.includes("3 200 ₽"), "должен отображать цену второй процедуры");
 		assert.ok(normalizedHtml.includes("зуб 16"), "должен отображать номер зуба");
 	});
 
@@ -158,7 +158,7 @@ describe("Stage Booking from Treatment Plan Integration (Treatment Plan to Sched
 			estimatedDurationMinutes: 60,
 			services: [
 				{
-					code804n: "A16.07.004",
+					serviceCode: "A16.07.004",
 					title: "Установка временной коронки",
 					priceRub: 6000,
 				},

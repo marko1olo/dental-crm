@@ -15,7 +15,7 @@ export function GridAppointmentHudTimeAdjusters({
 }: GridAppointmentHudTimeAdjustersProps) {
 	return (
 		<div className="space-y-1.5 pt-1 border-t border-[var(--line)]">
-			<span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+			<span className="block text-[11px] font-semibold text-[var(--ink-muted)]">
 				Корректировка времени
 			</span>
 			<div className="flex items-center gap-1.5 flex-wrap">

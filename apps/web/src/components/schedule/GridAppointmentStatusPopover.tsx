@@ -52,7 +52,7 @@ export function GridAppointmentStatusPopover({
 			tabIndex={-1}
 			data-testid={`appointment-status-picker-popover-${appointmentId}`}
 		>
-			<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] border-b border-[var(--line)] pb-1">
+			<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--ink-muted)] border-b border-[var(--line)] pb-1">
 				Статус визита
 			</div>
 			<GridAppointmentStatusPopoverItems

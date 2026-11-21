@@ -64,8 +64,8 @@ export function ScheduleChairDoctorPopover({
 			/>
 
 			<div className="flex flex-col gap-1.5 pt-1.5 border-t border-[var(--line)]">
-				<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
-					Шаблоны смен:
+				<span className="text-xs font-semibold text-[var(--ink-muted)]">
+					Шаблоны смен
 				</span>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
 					<DoctorPopoverDailyShifts

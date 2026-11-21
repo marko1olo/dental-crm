@@ -1,6 +1,6 @@
 /**
  * @file AppointmentStatusPopup.tsx
- * @description Canonical thin facade re-exporting decomposed AppointmentHoverHud and AppointmentMobileBottomSheet.
+ * @description Canonical thin facade re-exporting decomposed AppointmentHoverHud.
  * Conforms to Mandates 8b (<=120 lines), 8e, 8n.
  *
  * Invariant specifications verified by Chairside Wave 52 static code analysis:
@@ -19,4 +19,3 @@
 
 export * from "./appointmentStatus/types";
 export { AppointmentHoverHud } from "./appointmentStatus/AppointmentHoverHud";
-export { AppointmentMobileBottomSheet } from "./appointmentStatus/AppointmentMobileBottomSheet";

@@ -92,11 +92,14 @@ export const retryFiscalizeParamsSchema = z.object({
 
 export const cashboxPaymentRequestSchema = z.object({
 	patientId: z.preprocess(
-		(val) => (typeof val === "string" && (val.trim() === "" || val === "pat-walkin" || !val.includes("-")) ? undefined : val),
-		z.string().uuid().optional().nullable(),
+		(val) => (typeof val === "string" && (val.trim() === "" || val === "pat-walkin") ? undefined : val),
+		z.string().trim().max(128).optional().nullable(),
 	),
 	isRetailSale: z.boolean().optional(),
-	visitId: z.string().uuid().optional(),
+	visitId: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? undefined : val),
+		z.string().trim().max(128).optional().nullable(),
+	),
 	invoiceId: z.string().optional(),
 	orderId: z.string().trim().max(128).optional(),
 	amountKopecks: z.union([z.number().int().nonnegative(), z.bigint()]).optional(),
@@ -117,8 +120,12 @@ export const cashboxPaymentRequestSchema = z.object({
 			"certificate",
 		]).optional().default("card"),
 	),
+	discountPercent: z.number().min(0).max(100).optional(),
 	isWarranty: z.boolean().optional(),
-	familyGroupId: z.string().uuid().optional(),
+	familyGroupId: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? undefined : val),
+		z.string().trim().max(128).optional().nullable(),
+	),
 	payerFullName: z.string().trim().max(256).optional(),
 	guaranteeLetterId: z.string().trim().optional(),
 	allowOverdraft: z.boolean().optional(),

@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Statutory Doctor Schedule Shift Roster & Workload Studio HUD
- * Compliance: TK RF Article 350 (33-hour medical workweek), Form T-13, Chair Utilization Heatmap
+ * Compliance: TK RF Article 350 (33-hour medical workweek), Shift Roster & Chair Utilization Heatmap
  * Architecture: Modular orchestration via DoctorRosterToolbar and DoctorRosterMatrix (Anti-Monolith <800 lines)
  */
 

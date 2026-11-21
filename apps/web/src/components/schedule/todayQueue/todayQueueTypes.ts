@@ -1,7 +1,7 @@
 import type { Appointment, PatientOperationalStatus, PatientQueueAction, PatientQueueItem } from "@dental/shared";
 
 export interface TodayQueueBoardProps {
-  appointments: readonly (Partial<Appointment> & Record<string, unknown>)[];
+  appointments: readonly unknown[];
   targetDateKey?: string | undefined;
   onStatusChange?: ((appointmentId: string, targetStatus: PatientOperationalStatus, actionId?: string) => Promise<void> | void) | undefined;
   onOpenAppointment?: ((appointmentId: string) => void) | undefined;

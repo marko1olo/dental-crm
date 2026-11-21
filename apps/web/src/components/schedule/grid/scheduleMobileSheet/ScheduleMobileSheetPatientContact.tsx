@@ -54,14 +54,29 @@ export const ScheduleMobileSheetPatientContact: React.FC<
 
 			{phone && (
 				<div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-					<div className="flex items-center gap-2 font-mono text-sm font-semibold text-[var(--ink)]">
-						<Phone className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+					<a
+						href={`tel:${phone.replace(/[^\d+]/g, "")}`}
+						className="flex items-center gap-2 font-mono text-sm font-semibold text-[var(--ink)] hover:text-[var(--primary)] min-h-[44px] transition-colors"
+						data-testid="mobile-sheet-phone-link"
+						title={`Позвонить ${phone}`}
+					>
+						<Phone className="w-4 h-4 text-[var(--primary)] shrink-0" />
 						<span>{phone}</span>
-					</div>
-					<div className="flex items-center gap-1.5">
+					</a>
+					<div className="flex items-center gap-1.5 shrink-0">
+						<a
+							href={`tel:${phone.replace(/[^\d+]/g, "")}`}
+							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+							title={`Позвонить ${phone}`}
+							aria-label="Позвонить пациенту"
+							data-testid="mobile-sheet-direct-call-btn"
+						>
+							<Phone size={16} className="text-[var(--primary)]" />
+						</a>
 						<button
 							type="button"
 							onClick={handleWhatsApp}
+							data-testid="mobile-sheet-whatsapp-btn"
 							className="secondary-button min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
 						>
 							<MessageSquare
@@ -73,8 +88,10 @@ export const ScheduleMobileSheetPatientContact: React.FC<
 						<button
 							type="button"
 							onClick={handleCopySms}
-							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center cursor-pointer"
+							data-testid="mobile-sheet-copy-sms-btn"
+							className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] flex items-center justify-center cursor-pointer active:scale-95 transition-all"
 							title="Скопировать SMS"
+							aria-label="Скопировать текст напоминания"
 						>
 							<Copy size={16} />
 						</button>

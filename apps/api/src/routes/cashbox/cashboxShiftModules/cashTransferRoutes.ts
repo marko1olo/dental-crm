@@ -11,7 +11,7 @@
  * - Safe pessimistic locking for cash drawer concurrency
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -21,6 +21,7 @@ import {
 	cashOperations,
 } from "../../../db/schema.js";
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
+import { isValidUuid } from "../../../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import {
 	calculateBalanceAdd,
 	calculateBalanceSubtract,
@@ -48,6 +49,15 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
+		const rawKey = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"];
+		const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : Array.isArray(rawKey) ? rawKey[0]?.trim() : undefined;
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+
 		const parsed = cashIntroductionBodySchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -61,6 +71,29 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 
 		const result = await withTenantCtx(orgId, async (tx) => {
 			await ensureOrganizationCashBoxes(tx, orgId);
+
+			if (idempotencyKey) {
+				const [existingOp] = await tx
+					.select()
+					.from(cashOperations)
+					.where(
+						and(
+							eq(cashOperations.organizationId, orgId),
+							sql`${cashOperations.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
+						),
+					)
+					.limit(1);
+
+				if (existingOp) {
+					const [currentBox] = await tx
+						.select()
+						.from(cashBoxes)
+						.where(and(eq(cashBoxes.id, existingOp.cashBoxId), eq(cashBoxes.organizationId, orgId)))
+						.limit(1);
+
+					return { kind: "ok" as const, operation: existingOp, cashBox: currentBox, isReplay: true };
+				}
+			}
 
 			let targetBox: typeof cashBoxes.$inferSelect | undefined;
 			if (cashBoxId) {
@@ -137,6 +170,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 					balanceAfterRub: balanceAfter,
 					reasonText,
 					operatorId: operatorId ?? null,
+					metadata: idempotencyKey ? { idempotencyKey } : null,
 				})
 				.returning();
 
@@ -144,14 +178,21 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				throw new Error("Не удалось зафиксировать операцию служебного внесения в кассу");
 			}
 
-			return { kind: "ok" as const, operation, cashBox: updatedBox };
+			return { kind: "ok" as const, operation, cashBox: updatedBox, isReplay: false };
 		});
 
-		if (result.kind === "box_not_found") {
+		if (result.kind === "box_not_found" || !result.cashBox) {
 			return reply.code(404).send({
 				error: "CashBoxNotFound",
 				message: "Кассовый счет для внесения не найден.",
 			});
+		}
+
+		if (idempotencyKey) {
+			reply.header("X-Idempotency-Key", idempotencyKey);
+		}
+		if (result.isReplay) {
+			reply.header("idempotency-replayed", "true");
 		}
 
 		const response: CashIntroductionResponseBody = {
@@ -183,6 +224,15 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 		if (reply.sent) return reply;
 		if (!orgId) return reply;
 
+		const rawKey = request.headers["idempotency-key"] ?? request.headers["x-idempotency-key"];
+		const idempotencyKey = typeof rawKey === "string" ? rawKey.trim() : Array.isArray(rawKey) ? rawKey[0]?.trim() : undefined;
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			});
+		}
+
 		const parsed = cashWithdrawalBodySchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -196,6 +246,29 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 
 		const result = await withTenantCtx(orgId, async (tx) => {
 			await ensureOrganizationCashBoxes(tx, orgId);
+
+			if (idempotencyKey) {
+				const [existingOp] = await tx
+					.select()
+					.from(cashOperations)
+					.where(
+						and(
+							eq(cashOperations.organizationId, orgId),
+							sql`${cashOperations.metadata}->>'idempotencyKey' = ${idempotencyKey}`,
+						),
+					)
+					.limit(1);
+
+				if (existingOp) {
+					const [currentBox] = await tx
+						.select()
+						.from(cashBoxes)
+						.where(and(eq(cashBoxes.id, existingOp.cashBoxId), eq(cashBoxes.organizationId, orgId)))
+						.limit(1);
+
+					return { kind: "ok" as const, operation: existingOp, cashBox: currentBox, isReplay: true };
+				}
+			}
 
 			let targetBox: typeof cashBoxes.$inferSelect | undefined;
 			if (cashBoxId) {
@@ -276,6 +349,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 					balanceAfterRub: balanceAfter,
 					reasonText,
 					operatorId: operatorId ?? null,
+					metadata: idempotencyKey ? { idempotencyKey } : null,
 				})
 				.returning();
 
@@ -283,7 +357,7 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				throw new Error("Не удалось зафиксировать операцию служебного изъятия из кассы");
 			}
 
-			return { kind: "ok" as const, operation, cashBox: updatedBox };
+			return { kind: "ok" as const, operation, cashBox: updatedBox, isReplay: false };
 		});
 
 		if (result.kind === "box_not_found") {
@@ -298,6 +372,20 @@ export function registerCashTransferRoutes(app: FastifyInstance): void {
 				error: "InsufficientFunds",
 				message: `Недостаточно средств в кассе для изъятия. Доступно: ${result.balanceBefore.toFixed(2)} ₽, запрошено: ${result.requestedAmount.toFixed(2)} ₽.`,
 			});
+		}
+
+		if (!result.cashBox) {
+			return reply.code(404).send({
+				error: "CashBoxNotFound",
+				message: "Кассовый счет не найден.",
+			});
+		}
+
+		if (idempotencyKey) {
+			reply.header("X-Idempotency-Key", idempotencyKey);
+		}
+		if (result.isReplay) {
+			reply.header("idempotency-replayed", "true");
 		}
 
 		const response: CashWithdrawalResponseBody = {

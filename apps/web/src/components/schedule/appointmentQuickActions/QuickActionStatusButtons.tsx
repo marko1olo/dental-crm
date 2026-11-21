@@ -28,7 +28,7 @@ export function QuickActionStatusButtons({
 }: QuickActionStatusButtonsProps) {
 	return (
 		<div className="flex items-center gap-1 flex-wrap min-w-0">
-			<span className="text-[11px] font-semibold text-[var(--muted)] px-1 uppercase tracking-wider select-none hidden lg:inline shrink-0">
+			<span className="text-xs font-semibold text-[var(--ink-muted)] px-1 select-none hidden lg:inline shrink-0">
 				Статус:
 			</span>
 			{actions.map((action) => {

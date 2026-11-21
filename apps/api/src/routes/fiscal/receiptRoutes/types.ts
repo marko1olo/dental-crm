@@ -53,6 +53,7 @@ export const fiscalQueueIdParamSchema = z.object({
 export type FiscalQueueIdParam = z.infer<typeof fiscalQueueIdParamSchema>;
 
 export interface ApplyCashBoxReceiptParams {
+	clientMutationId?: string | null | undefined;
 	patientId?: string | null | undefined;
 	cashBoxId?: string | null | undefined;
 	operationType: string;

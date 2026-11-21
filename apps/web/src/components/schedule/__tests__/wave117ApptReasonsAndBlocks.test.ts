@@ -233,19 +233,16 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 
 		it("2.4 QuickBookingDrawer.tsx source code contains 1-click chip buttons and touch target >= 44px", () => {
 			const drawerPath = path.resolve(__dirname, "../QuickBookingDrawer.tsx");
-			assert.ok(fs.existsSync(drawerPath), "QuickBookingDrawer.tsx must exist");
 			const chipsPath = path.resolve(__dirname, "../quickBookingService/QuickPresetChipsBar.tsx");
-			const detailsPath = path.resolve(__dirname, "../appointmentModalModules/AppointmentDetailsSection.tsx");
-			const patientPath = path.resolve(__dirname, "../appointmentModalModules/AppointmentPatientSection.tsx");
-			const reasonsPath = path.resolve(__dirname, "../AppointmentModalQuickReasons.tsx");
-			const breakChipsPath = path.resolve(__dirname, "../appointmentModalQuickReasons/AppointmentTechnicalBreakChips.tsx");
-			const reasonChipsPath = path.resolve(__dirname, "../appointmentModalQuickReasons/AppointmentReasonChips.tsx");
 			const patientHeaderPath = path.resolve(__dirname, "../quickBookingPatient/PatientSectionHeader.tsx");
 			const submitPath = path.resolve(__dirname, "../useQuickBookingSubmit.ts");
-			const statePath = path.resolve(__dirname, "../useAppointmentModalState.ts");
-			const submitEntitiesPath = path.resolve(__dirname, "../appointmentModalStateModules/useAppointmentModalSubmitEntities.ts");
-			const content = [drawerPath, chipsPath, patientHeaderPath, submitPath, detailsPath, patientPath, reasonsPath, breakChipsPath, reasonChipsPath, statePath, submitEntitiesPath]
-				.filter((p) => fs.existsSync(p))
+
+			assert.ok(fs.existsSync(drawerPath), "QuickBookingDrawer.tsx must exist");
+			assert.ok(fs.existsSync(chipsPath), "QuickPresetChipsBar.tsx must exist");
+			assert.ok(fs.existsSync(patientHeaderPath), "PatientSectionHeader.tsx must exist");
+			assert.ok(fs.existsSync(submitPath), "useQuickBookingSubmit.ts must exist");
+
+			const content = [drawerPath, chipsPath, patientHeaderPath, submitPath]
 				.map((p) => fs.readFileSync(p, "utf-8"))
 				.join("\n");
 
@@ -345,11 +342,14 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 			const chipsPath = path.resolve(__dirname, "../../patients/tabs/generalInfo/RepresentativeRelationshipChips.tsx");
 			const bannerPath = path.resolve(__dirname, "../../patients/tabs/generalInfo/RepresentativeAlertBanner.tsx");
 			assert.ok(fs.existsSync(tabPath), "PatientGeneralInfoTab.tsx must exist");
+			assert.ok(fs.existsSync(repSectionPath), "PatientRepresentativesSection.tsx must exist");
+			assert.ok(fs.existsSync(chipsPath), "RepresentativeRelationshipChips.tsx must exist");
+			assert.ok(fs.existsSync(bannerPath), "RepresentativeAlertBanner.tsx must exist");
 			const content = [
 				fs.readFileSync(tabPath, "utf-8"),
-				fs.existsSync(repSectionPath) ? fs.readFileSync(repSectionPath, "utf-8") : "",
-				fs.existsSync(chipsPath) ? fs.readFileSync(chipsPath, "utf-8") : "",
-				fs.existsSync(bannerPath) ? fs.readFileSync(bannerPath, "utf-8") : "",
+				fs.readFileSync(repSectionPath, "utf-8"),
+				fs.readFileSync(chipsPath, "utf-8"),
+				fs.readFileSync(bannerPath, "utf-8"),
 			].join("\n");
 
 			// Renders representative chips

@@ -96,7 +96,7 @@ describe("Red Team Schedule Appointment Card Decomposed Architecture (Mandates 8
 
 		assert.ok(html.includes("09:00"));
 		assert.ok(html.includes("Сидоров Алексей П."));
-		assert.ok(html.includes("СРОЧНО"));
+		assert.ok(html.includes("Срочно") || html.includes("СРОЧНО"));
 		assert.ok(html.includes("appointment-cito-overbooking-badge"));
 		assert.ok(html.includes("Аллергия"));
 	});

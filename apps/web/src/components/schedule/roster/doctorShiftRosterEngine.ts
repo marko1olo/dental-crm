@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Doctor Shift Roster & Labor Compliance Engine
- * Compliance: TK RF Article 350 (33-hour medical workweek), Form T-13, Chair Utilization Math
+ * Compliance: TK RF Article 350 (33-hour medical workweek), Shift Roster & Chair Utilization Math
  */
 
 export * from "./printableRosterSchedule";

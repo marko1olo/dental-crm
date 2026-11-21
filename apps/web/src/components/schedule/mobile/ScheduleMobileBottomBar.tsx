@@ -17,7 +17,7 @@ export const ScheduleMobileBottomBar: React.FC<ScheduleMobileBottomBarProps> = (
   return (
     <div
       className="schedule-mobile-bottom-bar fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 w-full max-w-[100vw] overflow-x-clip z-50 px-3 py-2 bg-[var(--paper-strong)] border-t border-[var(--line)] box-border shadow-md"
-      style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
+      style={{ paddingBottom: "8px" }}
     >
       <button
         type="button"

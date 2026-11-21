@@ -6,14 +6,14 @@ export function SuggestionsMenuSection({
 	suggestions,
 	onSelect,
 }: {
-	suggestions?: readonly ScheduleSuggestion[] | any[] | undefined;
+	suggestions?: readonly ScheduleSuggestion[] | undefined;
 	onSelect: (section: string) => void;
 }) {
 	if (!suggestions || suggestions.length === 0) return null;
 
 	return (
 		<>
-			<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--warn-fg,var(--amber))]">
+			<div className="px-2 py-0.5 text-[11px] font-semibold text-[var(--warning-ink)]">
 				Рекомендации
 			</div>
 			{suggestions.map((suggestion) => (

@@ -15,7 +15,7 @@ export function GridAppointmentHudStatusActions({
 
 	return (
 		<div className="space-y-1.5 pt-1 border-t border-[var(--line)]">
-			<span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+			<span className="block text-[11px] font-semibold text-[var(--ink-muted)]">
 				Сменить статус
 			</span>
 			<div className="grid grid-cols-2 gap-1.5">

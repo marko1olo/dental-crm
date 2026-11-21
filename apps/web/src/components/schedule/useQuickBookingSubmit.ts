@@ -34,6 +34,9 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
       // Mandate 8e / 8n (1-Click Booking & Auto-Defaults):
       // Если пациент не выбран, не блокируем создание записи, а сохраняем слот как анонимную бронь / резерв времени приёма
       const effectivePatientId = activePatientId;
+      if (!effectivePatientId && !isTechBreak) {
+        // Разрешена анонимная бронь и технический перерыв без пациента
+      }
 
       const startsAtIso = startsAtLocal ? fromLocal(startsAtLocal) : new Date(Math.ceil(Date.now() / 900000) * 900000).toISOString();
       const endsAtIso = new Date(Date.parse(startsAtIso) + durationMinutes * 60_000).toISOString();
