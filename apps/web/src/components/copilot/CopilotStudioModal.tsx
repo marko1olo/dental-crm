@@ -59,7 +59,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
   const { runtimeMode, speedMode, showThinkingProcess } = settings;
   const threadKey = activeThreadId || "default-thread";
 
-  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (initialMessages?.length ? parseChatMsgs(initialMessages) : (threadMessages[threadKey]?.length ? parseChatMsgs(threadMessages[threadKey]) : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? (SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[]) : []))));
+  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (initialMessages?.length ? parseChatMsgs(initialMessages) : (threadMessages[threadKey]?.length ? parseChatMsgs(threadMessages[threadKey]) : (isDemoShowcaseMode() ? (SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[]) : []))));
   useEffect(() => { if (initialMessages?.length) setMessages(parseChatMsgs(initialMessages)); }, [initialMessages]);
   const hydrateSession = useCallback(async (sId: string) => {
     try {
@@ -81,10 +81,18 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     setMessages([]);
     const saved = threadMessages[threadKey];
     if (saved && saved.length > 0) setMessages(parseChatMsgs(saved));
-    else if (threadKey && threadKey !== "default-thread") void hydrateSession(threadKey).then((ok) => { if (!ok && !isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]); });
-    else if (isDemoShowcaseMode() || isDemoPatientId(patientId)) setMessages(SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[]);
+    else if (threadKey && threadKey !== "default-thread") void hydrateSession(threadKey).then((ok) => { if (!ok && !isDemoShowcaseMode()) setMessages([]); });
+    else if (isDemoShowcaseMode()) setMessages(SHOWCASE_INITIAL_MESSAGES as CopilotChatMessage[]);
     else setMessages([]);
   }, [threadKey, patientId, hydrateSession]);
+  useEffect(() => {
+    const handleFill = (e: Event) => {
+      const prompt = (e as CustomEvent<{ prompt?: string }> | undefined)?.detail?.prompt;
+      if (typeof prompt === "string" && prompt.trim()) { setInputText(prompt.trim()); baseDraftRef.current = prompt.trim(); safeLocalStorageSetItem("dente_copilot_draft_text", prompt.trim()); }
+    };
+    window.addEventListener("dente:fill-copilot-input", handleFill);
+    return () => window.removeEventListener("dente:fill-copilot-input", handleFill);
+  }, []);
   useEffect(() => { if (initialTab) setActiveTab(initialTab as CopilotStudioTab); }, [initialTab]);
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const baseDraftRef = useRef<string>(inputText), messagesEndRef = useRef<HTMLDivElement>(null), isFirstRenderRef = useRef<boolean>(true);
@@ -238,10 +246,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
     try {
       if (act.id || act.toolName) {
         try {
-          const ok = await executeCopilotConfirmation({
-            callId: act.id, decision: "confirm", actionName: act.toolName, actionArgs: act.payload || {},
-            patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode,
-          });
+          const ok = await executeCopilotConfirmation({ callId: act.id, decision: "confirm", actionName: act.toolName, actionArgs: act.payload || {}, patientId: patientId || undefined, sessionId: activeThreadId || undefined, runtimeMode: apiRuntimeMode });
           if (ok) addToolLog({ toolName: act.toolName, category: "clinical", status: "success", args: act.payload || {}, resultSummary: `Подтверждено действие: ${act.toolName}` });
         } catch (apiErr) {
           console.warn("[CopilotStudioModal] Confirm API non-blocking fallback:", apiErr);
@@ -252,19 +257,27 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
         const targetTooth = Number(act.payload?.tooth ?? act.payload?.toothNumber ?? activeTooth) || undefined;
         const targetDiag = (act.payload?.diagnosis as string) || act.description || (targetTooth ? `Клинический статус (Зуб ${targetTooth})` : "Клинический статус");
         const targetPlan = (act.payload?.treatmentPlan as string) || (act.payload?.plan as string) || (act.description ? `План: ${act.description}` : "План лечения согласно протоколу СтАР");
-        window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { tooth: targetTooth, toothNumber: targetTooth, state: (act.payload?.state as string) || (act.payload?.status as string) || undefined, diagnosis: targetDiag, diagnosisIcd10: (act.payload?.diagnosisIcd10 as string) || (act.payload?.icd10 as string) || undefined, treatmentPlan: targetPlan, finding: targetTooth ? { toothNumber: targetTooth, state: (act.payload?.state as string) || "caries", icd10Override: (act.payload?.diagnosisIcd10 as string) || undefined } : undefined } }));
+        const isVisitOpen = Boolean(activeVisitId || window.__useVisitStore?.getState()?.visitNoteForm);
+
+        if (isVisitOpen) {
+          window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { tooth: targetTooth, toothNumber: targetTooth, state: (act.payload?.state as string) || (act.payload?.status as string) || undefined, diagnosis: targetDiag, diagnosisIcd10: (act.payload?.diagnosisIcd10 as string) || (act.payload?.icd10 as string) || undefined, treatmentPlan: targetPlan, finding: targetTooth ? { toothNumber: targetTooth, state: (act.payload?.state as string) || "caries", icd10Override: (act.payload?.diagnosisIcd10 as string) || undefined } : undefined } }));
+          showToast("Клиническое действие успешно применено в карту приёма", "success");
+        } else {
+          useCopilotStore.getState().addMemoryFact("protocols", `Протокол приёма [${targetDiag}]: ${targetPlan}${targetTooth ? ` (Зуб ${targetTooth})` : ""}`);
+          showToast("Визит не открыт: протокол сохранён в памяти ассистента. Откройте приём пациента для вставки в дневник.", "info");
+        }
+
         if (targetTooth) {
           window.dispatchEvent(new CustomEvent("dente-odontogram-update", { detail: { patientId, toothNumber: targetTooth, status: (act.payload?.state as string) || "caries" } }));
         }
       }
       setAppliedActionIds((prev) => new Set([...prev, act.id]));
       setMessages((prev) => prev.map((m) => (m.actionProposal?.id === act.id ? { ...m, applied: true } : m)));
-      showToast("Клиническое действие успешно применено в карту приёма", "success");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Не удалось применить действие в карту";
       setActionError(msg); showToast(msg, "error");
     }
-  }, [activeTooth, messages, appliedActionIds, patientId, activeThreadId, runtimeMode, addToolLog]);
+  }, [activeTooth, messages, appliedActionIds, patientId, activeThreadId, runtimeMode, addToolLog, activeVisitId]);
 
   const executeApiTool = async (toolKey: string, payload: Record<string, unknown>) => {
     setIsExecuting(toolKey);
@@ -306,19 +319,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({ isOpen, 
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
             <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
-            <button
-              type="button"
-              onClick={() => {
-                useCopilotStore.getState().collapseToHud();
-                handleClose();
-              }}
-              data-testid="copilot-collapse-to-hud-trigger"
-              className="icon-button copilot-studio-collapse-btn w-9 h-9 min-w-[36px] min-h-[36px] items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0"
-              title="Свернуть в панель у кресла (HUD)"
-              aria-label="Свернуть в панель у кресла"
-            >
-              <Minimize2 size={15} />
-            </button>
+            <button type="button" onClick={() => { useCopilotStore.getState().collapseToHud(); handleClose(); }} data-testid="copilot-collapse-to-hud-trigger" className="icon-button copilot-studio-collapse-btn w-9 h-9 min-w-[36px] min-h-[36px] items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="Свернуть в панель у кресла (HUD)" aria-label="Свернуть в панель у кресла"><Minimize2 size={15} /></button>
             <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
           </div>
         </header>

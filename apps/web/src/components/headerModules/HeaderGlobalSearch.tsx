@@ -56,9 +56,15 @@ export function HeaderGlobalSearch({
 			}
 		};
 
-		const handleOpenCommandPalette = () => {
-			inputRef.current?.focus();
+		const handleOpenCommandPalette = (e?: Event) => {
+			const incomingQuery = (e as CustomEvent<{ query?: string }> | undefined)?.detail?.query;
+			if (typeof incomingQuery === "string") {
+				setQuery(incomingQuery);
+			}
 			setIsOpen(true);
+			setTimeout(() => {
+				inputRef.current?.focus();
+			}, 50);
 		};
 
 		const handleCloseCommandPalette = () => {
@@ -68,11 +74,15 @@ export function HeaderGlobalSearch({
 
 		window.addEventListener("keydown", handleGlobalKeyDown);
 		window.addEventListener("dente:open-command-palette", handleOpenCommandPalette);
+		window.addEventListener("dente:open-command-hub", handleOpenCommandPalette);
 		window.addEventListener("dente:close-command-palette", handleCloseCommandPalette);
+		window.addEventListener("dente:close-command-hub", handleCloseCommandPalette);
 		return () => {
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 			window.removeEventListener("dente:open-command-palette", handleOpenCommandPalette);
+			window.removeEventListener("dente:open-command-hub", handleOpenCommandPalette);
 			window.removeEventListener("dente:close-command-palette", handleCloseCommandPalette);
+			window.removeEventListener("dente:close-command-hub", handleCloseCommandPalette);
 		};
 	}, []);
 

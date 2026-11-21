@@ -45,13 +45,8 @@
       * Порядок кнопок: «Отмена» (Secondary) ВСЕГДА слева от Primary CTA («Сохранить»). Ноль перепутанных или летающих кнопок.
     - **Инпуты и контролы форм (Form Control Parity):**
       * Инпуты зеркалят высоту кнопок: Desktop строго `h-9 px-3 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none`. Mobile строго `min-h-[44px] h-11 px-3.5 text-base rounded-xl`. Ноль разбоя высот (инпут 32px рядом с кнопкой 36px запрещен)!
-    - **Бейджи статусов и Segmented Controls:**
-      * Бейджи: строго `h-6 px-2 text-xs font-medium rounded-full inline-flex items-center gap-1 shrink-0`. Семантические токены мягких заливок: Успех `bg-[var(--success-soft)] text-[var(--success-ink)] border border-[var(--success-line)]`, Внимание `bg-[var(--warning-soft)] text-[var(--warning-ink)]`, Ошибка `bg-[var(--danger-soft)] text-[var(--danger-ink)]`. Ноль ядовитого неона!
-      * Apple Segmented Control: контейнер `p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] inline-flex gap-1`, активный таб `bg-[var(--paper)] text-[var(--ink)] shadow-xs rounded-lg font-medium`. Ноль наездов!
-    - **Скролл-дрифт, Zero-CLS и честный Empty State:**
-      * 0px скролла: корневые контейнеры модалок и вьюпортов строго `overflow-x: clip; max-width: 100vw;`. Горизонтальный скролл допустим только внутри таблиц (`overflow-x-auto overscroll-contain`).
-      * CLS = 0: каркасы загрузки зеркалят геометрию данных (`animate-pulse bg-[var(--paper-soft)] rounded-lg`). Ноль прыжков верстки!
-      * Empty State: при отсутствии данных — аккуратный блок `py-12 flex flex-col items-center text-center gap-2.5` с иконкой `w-10 h-10 text-[var(--ink-muted)]`, заголовком `text-sm font-medium` и действием. Запрещены пустые белые дыры!
+    - **Бейджи и Segmented Control:** Бейджи строго `h-6 px-2 text-xs font-medium rounded-full inline-flex gap-1 shrink-0` (семантические токены `var(--success-soft)`, `var(--warning-soft)`, `var(--danger-soft)`). Apple Segmented: контейнер `p-1 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]`, активный таб `bg-[var(--paper)] text-[var(--ink)] shadow-xs rounded-lg font-medium`. Ноль наездов!
+    - **Скролл-дрифт, Zero-CLS и честный Empty State:** Корневые контейнеры модалок строго `overflow-x: clip; max-width: 100vw;`. CLS = 0 (скелетоны `animate-pulse bg-[var(--paper-soft)]`). Empty State: блок `py-12 flex flex-col items-center text-center gap-2.5` с иконкой `w-10 h-10` и действием (ноль белых дыр).
 11. **8zg (Без дев-жаргона):** Ноль утечек терминов («modeFit»). Запрет «1 клик» на кнопках (пишем: «Физиологическая норма», «Интактные зубы», «Готовые комплексы»).
 12. **8b/8zi (Размер файлов):** 200–300 строк, сложные до 400–500 строк. Запрет микро-шредера. Декомпозиция монолитов по 6 гейтам `/decomposer`.
 13. **8e/8n (ИИ DENTE):** Gemini, OpenAI, Anthropic, Whisper. Диктовка SOAP в медкарту (ЭМК), голос Ctrl+K. Легкий Web Copilot vs Desktop EXE.
@@ -108,14 +103,13 @@
 44. **8bn (Keyed Remount и Stale Draft Purge в Шторках):**
     - Изоляция по ключу: модалки и шторки монтируются строго с ключом сущности: `<PatientStudioModal key={patientId} patientId={patientId} ... />`. Смена ID чисто перемонтирует дерево React.
     - Очистка черновика на `onClose`: `useDraftStore.getState().resetDraft()`. Ноль утечек данных прошлого пациента следующему!
-45. **8bo (Сквозной Idempotency-Key и Неделимость ACID):**
-    - Клиентский `Idempotency-Key`: все мутации (`POST/PUT/PATCH/DELETE`) несут заголовок `Idempotency-Key: <UUIDv7>`.
-    - Единая транзакция: мутации 2+ таблиц выполняются строго внутри единого `await db.transaction(async (tx) => { ... })`. Запрещен вызов глобального `db` внутри контекста транзакции!
+45. **8bo (Сквозной Idempotency-Key и Неделимость ACID):** Все мутации несут заголовок `Idempotency-Key` (UUIDv7). Мутации 2+ таблиц строго в `await db.transaction(async tx => ...)`. Запрещен глобальный `db` внутри транзакции!
+46. **8bq (Санитарный Храповик, Закон Замка и Кубик):** `npm run check:ratchet` (лимит any/float/супрессий), `npm run check:doors` (0 клонов модалок и 100% Zod-защита дверей API), `npm run audit:dice` (Монте-Карло сэмплирование). Рост техдолга = Exit Code 1.
 
 ## 🛠️ МАШИННЫЕ ГЕЙТЫ ПРИЁМКИ (DEFINITION OF DONE)
-Перед сдачей любой задачи подтверди прохождение 12 гейтов (Exit Code 0):
-1. **UTF-8:** `check:encoding` | 2. **Стабы:** `check:stub-overrides` | 3. **Fetch:** `check:fetch-response` | 4. **Импорты:** `check:dynamic-imports`
-5. **React 19:** `check:react-hooks` | 6. **Кнопки/CSS:** `check:buttons` и `check:css-tokens` | 7. **Миграции:** `check:migration-drift`
-8. **TypeScript:** `typecheck` (единолично L1) во ВСЕХ пакетах (`shared`, `api`, `web`) | 9. **Тесты:** затронутые тесты (<=10с)
-10. **4-State Proof:** скриншоты >=20KB в `docs/proofs/`, личный осмотр через `read_file` (PC/Mobile x Light/Dark)
-11. **Docs:** синхронизация `.agents/` и `docs/` | 12. **Git:** пофайловый `git add <file>`, Conventional Commit, push в `origin` и `gitlab`.
+Перед сдачей любой задачи подтверди прохождение 14 гейтов (Exit Code 0):
+1. **UTF-8:** `check:encoding` | 2. **Храповик & SSOT:** `check:ratchet` и `check:doors` | 3. **Кубик:** `audit:dice` | 4. **Стабы:** `check:stub-overrides`
+5. **Fetch:** `check:fetch-response` | 6. **Импорты:** `check:dynamic-imports` | 7. **React 19:** `check:react-hooks` | 8. **Кнопки/CSS:** `check:buttons` и `check:css-tokens`
+9. **Миграции:** `check:migration-drift` | 10. **TypeScript:** `typecheck` во ВСЕХ пакетах | 11. **Тесты:** затронутые тесты (<=10с)
+12. **4-State Proof:** скриншоты >=20KB в `docs/proofs/`, личный осмотр через `read_file` (PC/Mobile x Light/Dark)
+13. **Docs:** синхронизация `.agents/` и `docs/` | 14. **Git:** пофайловый `git add <file>`, Conventional Commit, push в `origin` и `gitlab`.

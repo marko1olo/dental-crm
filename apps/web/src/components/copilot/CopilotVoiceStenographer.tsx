@@ -160,6 +160,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
   const handleSendToSearch = () => {
     const text = (isEditingManually ? manualDraft : (fullText || manualDraft)).trim();
     if (!text || typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("dente:open-command-palette", { detail: { query: text } }));
     window.dispatchEvent(new CustomEvent("dente:open-command-hub", { detail: { query: text } }));
   };
 
