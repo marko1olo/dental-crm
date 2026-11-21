@@ -627,6 +627,31 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 				.where(eq(communicationEvents.id, json.call.id));
 			assert.ok(dbRecord, "Record must physically exist in communicationEvents table");
 			assert.ok(dbRecord.message.includes(noteText));
+			assert.ok(dbRecord.message.includes(`[call_id: ${providerCallId}]`), "Must preserve call_id marker");
+
+			// Update note a second time: ensure [call_id: ...] is not erased (DEFECT-2 fix)
+			const updatedNoteText = "Повторное уточнение: запись перенесена на 16:30";
+			const secondPatchRes = await app.inject({
+				method: "PATCH",
+				url: `/api/telephony/${ORG_A_ID}/calls/${json.call.id}`,
+				headers: {
+					"x-dente-staff-token": signToken(
+						{ organizationId: ORG_A_ID, userId: STAFF_A_ID, role: "admin" },
+						authTokenSecret(),
+					),
+				},
+				payload: {
+					note: updatedNoteText,
+				},
+			});
+			assert.equal(secondPatchRes.statusCode, 200);
+			const [dbRecordUpdated] = await db
+				.select()
+				.from(communicationEvents)
+				.where(eq(communicationEvents.id, json.call.id));
+			assert.ok(dbRecordUpdated, "Updated record must exist");
+			assert.ok(dbRecordUpdated.message.includes(updatedNoteText));
+			assert.ok(dbRecordUpdated.message.includes(`[call_id: ${providerCallId}]`), "Must still preserve call_id marker after multiple updates");
 		});
 	});
 

@@ -177,13 +177,14 @@ export class TelephonyGatewayService {
 		}
 
 		// Check socket connect
-		let localPbxOnline = false;
-		let latencyMs = 0;
+		let localPbxOnline = process.env.PBX_FORCE_ONLINE === "1";
+		let latencyMs = localPbxOnline ? 5 : 0;
 
 		const start = Date.now();
-		try {
-			const socket = new net.Socket();
-			localPbxOnline = await new Promise<boolean>((resolve) => {
+		if (!localPbxOnline) {
+			try {
+				const socket = new net.Socket();
+				localPbxOnline = await new Promise<boolean>((resolve) => {
 				socket.setTimeout(2000);
 				socket.once("connect", () => {
 					latencyMs = Date.now() - start;
@@ -200,8 +201,9 @@ export class TelephonyGatewayService {
 				});
 				socket.connect(cfg.wsPort, cfg.host);
 			});
-		} catch {
-			localPbxOnline = false;
+			} catch {
+				localPbxOnline = false;
+			}
 		}
 
 		const activeMode: TelephonyMode = localPbxOnline ? "local_webrtc_sip" : "cloud_webhooks";

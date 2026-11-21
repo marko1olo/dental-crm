@@ -10,7 +10,7 @@ import {
 } from "../services/telephony/telephonySecurity.js";
 import { telephonyOutboxService } from "../services/telephonyOutboxService.js";
 import { telephonyCallerLookupRoutes } from "./telephonyCallerLookupRoutes.js";
-import { telephonyRecordingRoutes } from "./telephonyRecordingRoutes.js";
+import { telephonyRecordingStreamRoutes } from "./telephony/telephonyRecordingStreamHandler.js";
 import { telephonySipRoutes } from "./telephonySipRoutes.js";
 import {
 	telephonyCallLifecycleRoutes,
@@ -58,8 +58,8 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	server.get<{ Params: { organizationId: string }; Querystring: { page?: number; limit?: number; onlyOpen?: boolean } }>("/:organizationId/missed-calls", telephonyMissedCallsHandler);
 
 	// Telephony Calls List (GET /api/telephony/calls)
-	server.get<{ Params: { organizationId?: string } }>("/calls", telephonyCallsListHandler);
-	server.get<{ Params: { organizationId: string } }>("/:organizationId/calls", telephonyCallsListHandler);
+	server.get("/calls", telephonyCallsListHandler);
+	server.get("/:organizationId/calls", telephonyCallsListHandler);
 
 	// Update Call Note (PATCH /api/telephony/calls/:id)
 	server.patch<{ Params: { id: string; organizationId?: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/calls/:id", telephonyCallUpdateHandler);
@@ -69,7 +69,7 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/:organizationId/outbound-call", telephonyOutboundHandler);
 	server.post<{ Params: { organizationId?: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/outbound-call", telephonyOutboundHandler);
 
-	await server.register(telephonyRecordingRoutes);
+	await server.register(telephonyRecordingStreamRoutes);
 	await server.register(telephonySipRoutes);
 	await server.register(telephonyCallerLookupRoutes);
 	await server.register(telephonyCallLifecycleRoutes);

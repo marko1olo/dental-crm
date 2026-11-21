@@ -12,7 +12,8 @@ const patientSearchQuerySchema = z.object({
 
 interface RawInboxEventRow extends Record<string, unknown> {
 	id: string;
-	patientId: string;
+	patientId: string | null;
+	callerPhone: string | null;
 	message: string;
 	channel: string;
 	direction: string;
@@ -72,36 +73,44 @@ export function registerInboxOverviewHandlers(app: FastifyInstance): void {
 		}
 
 		const latestEvents = await db.execute<RawInboxEventRow>(sql`
-			SELECT DISTINCT ON (e.patient_id)
+			SELECT DISTINCT ON (COALESCE(e.patient_id::text, e.caller_phone, e.id::text))
 				e.id,
 				e.patient_id AS "patientId",
+				e.caller_phone AS "callerPhone",
 				e.message,
 				e.channel,
 				e.direction,
 				e.status,
 				e.created_at AS "createdAt",
-				p.full_name AS "patientName",
-				p.phone AS "patientPhone"
+				COALESCE(p.full_name, l.patient_name, l.name, e.caller_phone, 'Новый контакт') AS "patientName",
+				COALESCE(p.phone, l.phone, e.caller_phone) AS "patientPhone"
 			FROM communication_events e
-			JOIN patients p ON e.patient_id = p.id
-			WHERE p.organization_id = ${orgId}
-			ORDER BY e.patient_id, e.created_at DESC
+			LEFT JOIN patients p ON e.patient_id = p.id AND p.organization_id = ${orgId}
+			LEFT JOIN crm_leads l ON (e.caller_phone = l.phone OR (e.caller_phone IS NOT NULL AND l.phone IS NOT NULL AND RIGHT(regexp_replace(l.phone, '[^0-9]', '', 'g'), 10) = RIGHT(regexp_replace(e.caller_phone, '[^0-9]', '', 'g'), 10))) AND l.organization_id = ${orgId}
+			WHERE e.organization_id = ${orgId}
+			ORDER BY COALESCE(e.patient_id::text, e.caller_phone, e.id::text), e.created_at DESC
 		`);
 
 		const rawRows = latestEvents.rows;
-		const summaries = rawRows.map((row) => ({
-			id: row.id,
-			patientId: row.patientId,
-			message: row.message,
-			channel: row.channel,
-			direction: row.direction,
-			status: row.status ?? "delivered",
-			createdAt: row.createdAt,
-			readAt: row.createdAt,
-			patientName: row.patientName,
-			patientPhone: row.patientPhone,
-			unreadCount: 0,
-		}));
+		const summaries = rawRows.map((row) => {
+			const isUnread =
+				row.direction === "inbound" &&
+				(row.status === "needs_call" || row.status === "failed" || row.status === "queued");
+			return {
+				id: row.id,
+				patientId: row.patientId ?? null,
+				callerPhone: row.callerPhone ?? null,
+				message: row.message,
+				channel: row.channel,
+				direction: row.direction,
+				status: row.status ?? "delivered",
+				createdAt: row.createdAt,
+				readAt: isUnread ? null : row.createdAt,
+				patientName: row.patientName,
+				patientPhone: row.patientPhone,
+				unreadCount: isUnread ? 1 : 0,
+			};
+		});
 		summaries.sort(
 			(a, b) =>
 				new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

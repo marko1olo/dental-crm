@@ -9,7 +9,15 @@ import {
 import { wsBroker } from "../../services/websocketBroker.js";
 
 export interface HandleEndedParams {
-	request: FastifyRequest;
+	request:
+		| FastifyRequest
+		| {
+				log: {
+					info: (obj: unknown, msg?: string) => void;
+					warn: (obj: unknown, msg?: string) => void;
+					error: (obj: unknown, msg?: string) => void;
+				};
+		  };
 	resolvedOrgId: string;
 	callerPhone: NormalizedPhone;
 	callId: string;
@@ -20,23 +28,6 @@ export interface HandleEndedParams {
 }
 
 export async function handleEndedEvent(p: HandleEndedParams) {
-	if (p.callId || p.recordingUrl) {
-		const dedupe: SQL[] = [];
-		if (p.callId) dedupe.push(ilike(communicationEvents.message, `%${p.callId}%`));
-		if (p.recordingUrl) dedupe.push(eq(communicationEvents.recordingUrl, p.recordingUrl));
-
-		const existing = await db
-			.select({ id: communicationEvents.id })
-			.from(communicationEvents)
-			.where(and(eq(communicationEvents.organizationId, p.resolvedOrgId), or(...dedupe)))
-			.limit(1);
-
-		if (existing.length > 0) {
-			p.request.log.info({ callId: p.callId, orgId: p.resolvedOrgId }, "[Telephony] CDR idempotent skip");
-			return { success: true, duplicate: true };
-		}
-	}
-
 	let verifiedRecUrl: string | null = null;
 	if (p.recordingUrl) {
 		const ssrf = await validateSsrfSafeRecordingUrl(p.recordingUrl);
@@ -44,6 +35,87 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 			verifiedRecUrl = p.recordingUrl;
 		} else {
 			p.request.log.warn({ url: p.recordingUrl, err: ssrf.error }, "[Telephony] SSRF rejected recording URL");
+		}
+	}
+
+	if (p.callId || p.recordingUrl) {
+		let existing = p.callId
+			? await db
+					.select({
+						id: communicationEvents.id,
+						recordingUrl: communicationEvents.recordingUrl,
+						durationSeconds: communicationEvents.durationSeconds,
+					})
+					.from(communicationEvents)
+					.where(
+						and(
+							eq(communicationEvents.organizationId, p.resolvedOrgId),
+							ilike(communicationEvents.message, `%${p.callId}%`),
+						),
+					)
+					.limit(1)
+			: [];
+
+		if (existing.length === 0 && p.recordingUrl) {
+			existing = await db
+				.select({
+					id: communicationEvents.id,
+					recordingUrl: communicationEvents.recordingUrl,
+					durationSeconds: communicationEvents.durationSeconds,
+				})
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.organizationId, p.resolvedOrgId),
+						eq(communicationEvents.recordingUrl, p.recordingUrl),
+					),
+				)
+				.limit(1);
+		}
+
+		if (existing.length > 0 && existing[0]) {
+			const existingRow = existing[0];
+			const nextDuration =
+				Number.isFinite(p.durationSeconds) && p.durationSeconds > 0
+					? Math.min(Math.floor(p.durationSeconds), 86400 * 7)
+					: existingRow.durationSeconds ?? null;
+			const nextRecUrl = verifiedRecUrl || existingRow.recordingUrl || null;
+
+			await db.transaction(async (tx) => {
+				await tx
+					.update(communicationEvents)
+					.set({
+						...(nextRecUrl ? { recordingUrl: nextRecUrl } : {}),
+						...(nextDuration !== null ? { durationSeconds: nextDuration } : {}),
+						status: "completed",
+					})
+					.where(eq(communicationEvents.id, existingRow.id));
+
+				if (nextRecUrl || p.transcriptionSnippet) {
+					await tx
+						.update(crmLeads)
+						.set({
+							...(nextRecUrl ? { audioRecordUrl: nextRecUrl } : {}),
+							...(p.transcriptionSnippet ? { transcriptionSnippet: p.transcriptionSnippet } : {}),
+							lastContactedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(crmLeads.organizationId, p.resolvedOrgId),
+								or(
+									eq(crmLeads.phone, p.callerPhone.e164),
+									ilike(crmLeads.phone, `%${p.callerPhone.national10}%`),
+								),
+							),
+						);
+				}
+			});
+
+			p.request.log.info(
+				{ callId: p.callId, orgId: p.resolvedOrgId, id: existingRow.id },
+				"[Telephony] CDR updated existing call with recording/duration",
+			);
+			return { success: true, duplicate: true, updated: true };
 		}
 	}
 

@@ -45,7 +45,7 @@ export function resolveCanonicalCallStatus(
 	if (durationSeconds !== undefined && durationSeconds === 0) {
 		return "missed";
 	}
-	if (apiStatus === "needs_call" || apiStatus === "missed") {
+	if (apiStatus === "needs_call" || apiStatus === "missed" || apiStatus === "failed") {
 		return "missed";
 	}
 	if (apiStatus === "completed" || apiStatus === "answered") {

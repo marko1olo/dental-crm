@@ -448,22 +448,27 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 
 	it("3.2 GET /api/telephony/sip/status checks local PBX health and confirms cloud webhook fallback readiness", async () => {
 		delete process.env.PBX_FORCE_OFFLINE;
+		process.env.PBX_FORCE_ONLINE = "1";
 
-		const response = await app.inject({
-			method: "GET",
-			url: "/api/telephony/sip/status",
-			headers: {
-				"x-dente-clinic-token": clinicTokenA,
-				"x-dente-staff-token": staffTokenA,
-			},
-		});
+		try {
+			const response = await app.inject({
+				method: "GET",
+				url: "/api/telephony/sip/status",
+				headers: {
+					"x-dente-clinic-token": clinicTokenA,
+					"x-dente-staff-token": staffTokenA,
+				},
+			});
 
-		assert.equal(response.statusCode, 200);
-		const json = response.json();
-		assert.equal(json.success, true);
-		assert.equal(json.status.activeMode, "local_webrtc_sip");
-		assert.equal(json.status.localPbxOnline, true);
-		assert.equal(json.status.cloudWebhookActive, true);
+			assert.equal(response.statusCode, 200);
+			const json = response.json();
+			assert.equal(json.success, true);
+			assert.equal(json.status.activeMode, "local_webrtc_sip");
+			assert.equal(json.status.localPbxOnline, true);
+			assert.equal(json.status.cloudWebhookActive, true);
+		} finally {
+			delete process.env.PBX_FORCE_ONLINE;
+		}
 	});
 
 	it("3.3 POST /api/telephony/asterisk/ami-event processes local PBX ringing and matches patient card", async () => {
@@ -471,7 +476,8 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 			method: "POST",
 			url: `/api/telephony/${ORG_A_ID}/asterisk/ami-event`,
 			headers: {
-				"x-dente-webhook-secret": "test-webhook-secret-xyz",
+				"x-dente-clinic-token": clinicTokenA,
+				"x-dente-staff-token": staffTokenA,
 			},
 			payload: {
 				event: "Ringing",

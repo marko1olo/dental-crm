@@ -70,10 +70,15 @@ export function createCallTransferAndDtmfActions(set: SetState, get: GetState) {
 			try {
 				const staffToken = readDenteStaffToken();
 				const clinicToken = readDenteClinicToken();
+				const idempotencyKey =
+					typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+						? crypto.randomUUID()
+						: undefined;
 				void fetch("/api/telephony/calls/end", {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
+						...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
 						...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
 						...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
 					},

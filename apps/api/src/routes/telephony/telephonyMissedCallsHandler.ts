@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -26,7 +26,9 @@ export async function handleListMissedCalls(
 			eq(communicationEvents.organizationId, orgId),
 			eq(communicationEvents.channel, "phone"),
 		];
-		if (onlyOpen) conditions.push(eq(communicationEvents.status, "needs_call"));
+		if (onlyOpen) {
+			conditions.push(or(eq(communicationEvents.status, "needs_call"), eq(communicationEvents.status, "failed"))!);
+		}
 		return db
 			.select()
 			.from(communicationEvents)

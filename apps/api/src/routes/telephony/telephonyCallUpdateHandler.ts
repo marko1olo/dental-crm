@@ -23,6 +23,20 @@ export interface UpdateCallNoteBody {
 	phone?: string;
 }
 
+export function preserveCallIdMarker(
+	existingMessage: string | null | undefined,
+	newNote: string,
+	fallbackCallId?: string,
+): string {
+	const match = existingMessage?.match(/\[call_id:\s*([^\]]+)\]/i);
+	const preservedCallId = match ? match[1]?.trim() : fallbackCallId;
+	return newNote.includes("[call_id:")
+		? newNote
+		: preservedCallId
+			? `${newNote} [call_id: ${preservedCallId}]`
+			: newNote;
+}
+
 export async function telephonyCallUpdateHandler(
 	request: FastifyRequest<{
 		Params: { id: string; organizationId?: string };
@@ -81,11 +95,7 @@ export async function telephonyCallUpdateHandler(
 				)
 				.limit(1);
 
-			const match = existing[0]?.message?.match(/\[call_id:\s*([^\]]+)\]/i);
-			const preservedCallId = match ? match[1]?.trim() : callId;
-			const updatedMessage = noteText.includes("[call_id:")
-				? noteText
-				: `${noteText} [call_id: ${preservedCallId}]`;
+			const updatedMessage = preserveCallIdMarker(existing[0]?.message, noteText, callId);
 
 			const res = await db
 				.update(communicationEvents)
@@ -159,11 +169,7 @@ export async function telephonyCallUpdateHandler(
 					)
 					.limit(1);
 
-				const match = existing[0]?.message?.match(/\[call_id:\s*([^\]]+)\]/i);
-				const preservedCallId = match ? match[1]?.trim() : callId;
-				const updatedMessage = noteText.includes("[call_id:")
-					? noteText
-					: `${noteText} [call_id: ${preservedCallId}]`;
+				const updatedMessage = preserveCallIdMarker(existing[0]?.message, noteText, callId);
 
 				const res = await db
 					.update(communicationEvents)

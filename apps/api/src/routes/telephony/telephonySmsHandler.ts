@@ -2,7 +2,7 @@ import { and, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
-import { clinics, communicationEvents, patients } from "../../db/schema.js";
+import { clinics, communicationEvents, crmLeads, patients } from "../../db/schema.js";
 import {
 	authenticatePbxWebhook,
 	normalizePhoneNumber,
@@ -96,52 +96,77 @@ export async function telephonySmsWebhookHandler(
 			.limit(1);
 		const existingPatient = searchPatient[0] || null;
 
-		let patientId: string;
+		let patientId: string | null = null;
 		try {
-			patientId = await db.transaction(async (tx) => {
-				let currentPatient = existingPatient;
-				if (!currentPatient) {
-					const inserted = await tx
-						.insert(patients)
-						.values({
+			await db.transaction(async (tx) => {
+				if (existingPatient) {
+					patientId = existingPatient.id;
+				} else if (callerPhone.isValid) {
+					const existingLead = await tx
+						.select({ id: crmLeads.id })
+						.from(crmLeads)
+						.where(
+							and(
+								eq(crmLeads.organizationId, orgId),
+								or(
+									eq(crmLeads.phone, callerPhone.e164),
+									ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+								),
+							),
+						)
+						.limit(1);
+
+					if (existingLead.length > 0 && existingLead[0]?.id) {
+						await tx
+							.update(crmLeads)
+							.set({
+								lastContactedAt: new Date(),
+								notes: `Входящее SMS: ${messageText}`,
+							})
+							.where(eq(crmLeads.id, existingLead[0].id));
+					} else {
+						await tx.insert(crmLeads).values({
 							organizationId: orgId,
-							fullName: `SMS User ${callerPhone.e164}`,
 							phone: callerPhone.e164,
-							notes: "Лид из входящего SMS",
-							status: "active",
-						})
-						.returning();
-					currentPatient = inserted[0] || null;
-				}
-				if (!currentPatient) {
-					throw new Error("Failed to persist patient");
+							patientName: `SMS Лид ${callerPhone.e164}`,
+							name: `SMS Лид ${callerPhone.e164}`,
+							source: "sms",
+							status: "new",
+							lastContactedAt: new Date(),
+							notes: `Входящее SMS: ${messageText}`,
+						});
+					}
 				}
 
 				await tx.insert(communicationEvents).values({
 					organizationId: orgId,
-					patientId: currentPatient.id,
+					patientId: patientId || null,
+					callerPhone: callerPhone.e164,
 					channel: "sms",
 					direction: "inbound",
 					status: "delivered",
 					message: smsId ? `${messageText} [sms_id: ${smsId}]` : messageText,
 				});
-
-				return currentPatient.id;
 			});
 		} catch (err) {
 			request.log.error(
 				{ err, orgId },
-				"[TelephonySms] Failed to persist SMS patient and event in transaction",
+				"[TelephonySms] Failed to persist SMS event in transaction",
 			);
 			return reply.status(500).send({
-				error: "PatientPersistenceError",
-				message: "Failed to persist patient and communication event",
+				error: "SmsPersistenceError",
+				message: "Failed to persist communication event",
 			});
 		}
 
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "INBOX_NEW_MESSAGE",
-			payload: { channel: "sms", patientId, text: messageText },
+			payload: {
+				channel: "sms",
+				patientId,
+				phone: callerPhone.e164,
+				text: messageText,
+			},
 		});
 		return { success: true };
 	});

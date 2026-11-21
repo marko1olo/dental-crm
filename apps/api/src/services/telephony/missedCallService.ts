@@ -17,6 +17,7 @@ import {
 	crmLeads,
 	patients,
 } from "../../db/schema.js";
+import { maskPhoneDisplay } from "@dental/shared";
 import { normalizePhoneNumber } from "../../routes/telephony.js";
 import { defaultCopilotStreamManager } from "../agent/copilotService.js";
 import { wsBroker } from "../websocketBroker.js";
@@ -82,7 +83,10 @@ export class MissedCallService {
 						and(
 							eq(communicationEvents.organizationId, organizationId),
 							eq(communicationEvents.channel, "phone"),
-							eq(communicationEvents.status, "failed"),
+							or(
+								eq(communicationEvents.status, "needs_call"),
+								eq(communicationEvents.status, "failed"),
+							),
 							ilike(communicationEvents.message, `%${callId}%`),
 						),
 					)
@@ -329,7 +333,7 @@ export class MissedCallService {
 					}
 				} catch (err) {
 					console.warn("[MissedCallService] Unknown caller lead handling notice:", err);
-					patientDisplayName = `Лид (${callerPhoneE164})`;
+					patientDisplayName = `Лид (${maskPhoneDisplay(callerPhoneE164)})`;
 				}
 			}
 
@@ -340,7 +344,7 @@ export class MissedCallService {
 				callerPhone: callerPhoneE164,
 				channel: "phone",
 				direction: "inbound",
-				status: "failed",
+				status: "needs_call",
 				message: callId
 					? `🚨 Пропущенный звонок от ${callerPhoneE164} (call_id: ${callId})`
 					: `🚨 Пропущенный звонок от ${callerPhoneE164}`,

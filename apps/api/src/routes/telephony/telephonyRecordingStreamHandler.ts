@@ -126,6 +126,8 @@ export const telephonyRecordingStreamHandler = handleStreamRecording;
 export const telephonyRecordingStreamRoutes: FastifyPluginAsync = async (server) => {
 	server.get<StreamRecordingRouteGeneric>("/recordings/:eventId/stream", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
 	server.get<StreamRecordingRouteGeneric>("/recordings/:eventId", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
+	server.get<StreamRecordingRouteGeneric>("/recordings/stream", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
 	server.get<StreamRecordingRouteGeneric>("/:organizationId/recordings/:eventId/stream", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
 	server.get<StreamRecordingRouteGeneric>("/:organizationId/recordings/:eventId", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
+	server.get<StreamRecordingRouteGeneric>("/:organizationId/recordings/stream", { config: { tenantTxSelfManaged: true } }, handleStreamRecording);
 };
