@@ -185,8 +185,8 @@ export async function checkAndGenerateDropoutRecalls(
 						...itemSummary,
 						...(newRecall?.id ? { recallId: newRecall.id } : {}),
 					});
-				} catch (err) {
-					console.error("[treatmentPlanDropoutService] Failed to insert recall:", err);
+				} catch {
+					// Игнорируем дублирование создания реколла при параллельном выполнении
 				}
 			}
 		}

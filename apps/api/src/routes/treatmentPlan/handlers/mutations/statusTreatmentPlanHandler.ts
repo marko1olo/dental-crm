@@ -20,6 +20,17 @@ import { cancelRejectedPlanTierLedgerItems } from "./planLedgerSync.js";
 import { updateTreatmentPlanStatusSchema } from "./schemas.js";
 
 /**
+ * Детерминированное строковое форматирование копеек без float-артефактов (Мандат 8bm).
+ */
+function kopecksToDebtNumericText(kopecks: number): string {
+	const sign = kopecks < 0 ? "-" : "";
+	const absKop = Math.round(Math.abs(kopecks));
+	const rub = Math.floor(absKop / 100);
+	const kop = absKop % 100;
+	return `${sign}${rub}.${kop < 10 ? "0" : ""}${kop}`;
+}
+
+/**
  * statusTreatmentPlanHandler.ts — Утверждение, смена статуса и жизненный цикл плана лечения.
  * Мандат 8b/8zi: строгое транзакционное управление статусами с обновлением книги лечения.
  * DEF-PLAN-01: При утверждении плана создается реальный счет/наряд в кассе и возвращается объект инвойса.
@@ -74,6 +85,7 @@ export async function createInvoiceForApprovedPlan(
 				eq(patientInvoices.treatmentPlanId, planId),
 			),
 		)
+		.for("update")
 		.limit(1);
 
 	if (existingInvoice) {
@@ -277,7 +289,9 @@ export async function createInvoiceForApprovedPlan(
 		});
 	}
 
-	const totalAmountRubRounded = Number(totalAmountRub.toFixed(2));
+	const totalAmountKopecks = rublesToKopecks(totalAmountRub);
+	const finalTotalAmountRub = kopecksToRubles(totalAmountKopecks);
+	const totalRubText = kopecksToDebtNumericText(totalAmountKopecks);
 
 	// SEV-1 FK Invariant: Сначала создаём родительский счёт в patientInvoices, затем дочерние строки в invoiceItems!
 	await tx.insert(patientInvoices).values({
@@ -286,8 +300,8 @@ export async function createInvoiceForApprovedPlan(
 		patientId,
 		treatmentPlanId: planId,
 		visitId: null,
-		totalRub: String(totalAmountRubRounded),
-		totalAmountRub: totalAmountRubRounded,
+		totalRub: totalRubText,
+		totalAmountRub: finalTotalAmountRub,
 		status: "draft",
 		issuedAt: now,
 		createdAt: now,
@@ -305,7 +319,7 @@ export async function createInvoiceForApprovedPlan(
 		patientName,
 		treatmentPlanId: planId,
 		visitId: null,
-		totalAmountRub: totalAmountRubRounded,
+		totalAmountRub: finalTotalAmountRub,
 		status: "draft",
 		issuedAt: now.toISOString(),
 		createdAt: now.toISOString(),
@@ -341,11 +355,22 @@ export async function handleApproveTreatmentPlan(
 
 	const { approvedPlan, createdInvoice } = await db.transaction(async (tx) => {
 		let invoice: CreatedInvoiceSummary | null = null;
+		const [planToLock] = await tx
+			.select()
+			.from(treatmentPlans)
+			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+			.for("update")
+			.limit(1);
+
+		if (!planToLock) {
+			return { approvedPlan: null, createdInvoice: null };
+		}
+
 		const [updated] = await tx
 			.update(treatmentPlans)
 			.set({
 				status: "Approved",
-				approvedAt: new Date(),
+				approvedAt: planToLock.approvedAt ?? new Date(),
 				alternativeTier: selectedTier,
 				updatedAt: new Date(),
 			})
@@ -473,11 +498,22 @@ export async function handleUpdateTreatmentPlanStatus(
 
 	const { updatedPlan, createdInvoice } = await db.transaction(async (tx) => {
 		let invoice: CreatedInvoiceSummary | null = null;
+		const [planToLock] = await tx
+			.select()
+			.from(treatmentPlans)
+			.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+			.for("update")
+			.limit(1);
+
+		if (!planToLock) {
+			return { updatedPlan: null, createdInvoice: null };
+		}
+
 		const [updated] = await tx
 			.update(treatmentPlans)
 			.set({
 				status,
-				...(isApproved ? { approvedAt: new Date() } : {}),
+				...(isApproved ? { approvedAt: planToLock.approvedAt ?? new Date() } : {}),
 				...(selectedTier ? { alternativeTier: selectedTier } : {}),
 				updatedAt: new Date(),
 			})

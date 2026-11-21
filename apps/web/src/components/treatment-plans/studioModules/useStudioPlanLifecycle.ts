@@ -102,7 +102,7 @@ export function useStudioPlanLifecycle({
 	const [draftSavedNotice, setDraftSavedNotice] = useState<string | null>(null);
 	const [exportSuccessNotice, setExportSuccessNotice] = useState<string | null>(null);
 
-	// Мандат 8bn / 8zq: Zero-Leak Draft Reset при размонтировании/закрытии модалки
+	// Мандат 8bn / 8zq: Zero-Leak Draft Reset при размонтировании/закрытии модалки и сбросе
 	const resetDraft = useCallback(() => {
 		setStages([]);
 		setCurrentPlanId(null);
@@ -112,7 +112,12 @@ export function useStudioPlanLifecycle({
 		setApprovalErrorMessage(null);
 		setDraftSavedNotice(null);
 		setExportSuccessNotice(null);
-	}, []);
+		if (typeof window !== "undefined" && patientId) {
+			try {
+				localStorage.removeItem(`dente_plan_draft_${patientId}`);
+			} catch {}
+		}
+	}, [patientId]);
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -680,6 +685,12 @@ export function useStudioPlanLifecycle({
 
 			window.dispatchEvent(new CustomEvent("dente:plan-status-changed", { detail: detailPayload }));
 			window.dispatchEvent(new CustomEvent("dente:plan-approved", { detail: detailPayload }));
+
+			if (patientId) {
+				try {
+					localStorage.removeItem(`dente_plan_draft_${patientId}`);
+				} catch {}
+			}
 		}
 
 		onClose();

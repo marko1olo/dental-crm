@@ -1,4 +1,5 @@
 import { and, eq, inArray, ne, or, sql, type SQL } from "drizzle-orm";
+import { rublesToKopecks } from "@dental/shared";
 import { evaluateClinicalRulesInDb } from "../../../../db/clinicalQuery.js";
 import type { TenantDb } from "../../../../db/rls.js";
 import { serviceCatalogItems, treatmentItems, treatmentPlans } from "../../../../db/schema.js";
@@ -298,6 +299,9 @@ export async function syncUpsertPlanLedgerItems(
 							discountRub: 0,
 						}),
 					),
+					priceKopecks: BigInt(rublesToKopecks(item.price)),
+					unitPriceKopecks: BigInt(rublesToKopecks(item.price)),
+					discountKopecks: BigInt(rublesToKopecks(item.discount || 0)),
 					status: ledgerStatus as "proposed" | "approved",
 					plannedDoctorUserId: item.doctorId ?? null,
 					treatmentPlanItemId: item.treatmentPlanItemId ?? null,
@@ -334,6 +338,9 @@ export async function syncUpsertPlanLedgerItems(
 						discountRub: 0,
 					}),
 				),
+				priceKopecks: BigInt(rublesToKopecks(item.price)),
+				unitPriceKopecks: BigInt(rublesToKopecks(item.price)),
+				discountKopecks: BigInt(rublesToKopecks(item.discount || 0)),
 				status: ledgerStatus as "proposed" | "approved",
 				plannedDoctorUserId: item.doctorId ?? null,
 				notes: null,

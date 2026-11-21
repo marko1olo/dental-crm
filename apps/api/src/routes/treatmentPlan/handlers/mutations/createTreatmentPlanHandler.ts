@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks, computePayloadHash } from "@dental/shared";
 import { db } from "../../../../db/client.js";
 import {
 	auditEvents,
@@ -9,6 +9,7 @@ import {
 	treatmentPlanStages,
 	treatmentPlans,
 } from "../../../../db/schema.js";
+import { idempotencyKeys } from "../../../../db/schema/idempotency.js";
 import { debtNumericText } from "../../../../money/patientDebt.js";
 import { syncUpsertPlanLedgerItems, type SyncPlanLedgerItemInput } from "./planLedgerSync.js";
 import { createTreatmentPlanSchema } from "./schemas.js";
@@ -22,6 +23,40 @@ export async function handleCreateTreatmentPlan(
 	reply: FastifyReply,
 	organizationId: string,
 ) {
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.body && typeof request.body === "object"
+			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+			  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+			: undefined);
+
+	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+
+		// Дедупликация по таблице idempotency_keys (Мандаты 8d, 8bo, 8zp)
+		const [existingRecord] = await db
+			.select()
+			.from(idempotencyKeys)
+			.where(and(eq(idempotencyKeys.clinicId, organizationId), eq(idempotencyKeys.key, idempotencyKey)))
+			.limit(1);
+
+		if (existingRecord) {
+			if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply.code(existingRecord.responseCode || 201).send(existingRecord.responseBody);
+			}
+			if (existingRecord.status === "in_flight") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					message: "Операция создания плана лечения с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
+	}
+
 	const parsed = createTreatmentPlanSchema.safeParse(request.body);
 	if (!parsed.success) {
 		return reply.code(400).send({
@@ -45,9 +80,28 @@ export async function handleCreateTreatmentPlan(
 		});
 	}
 
+	// Нормализация этапов и элементов: поддержка как вложенных stages, так и плоских items
+	let effectiveStages = data.stages;
+	if (effectiveStages.length === 0 && data.items.length > 0) {
+		const phaseMap = new Map<number, typeof data.items>();
+		for (const it of data.items) {
+			const ph = it.phase || 1;
+			if (!phaseMap.has(ph)) phaseMap.set(ph, []);
+			phaseMap.get(ph)!.push(it);
+		}
+		effectiveStages = Array.from(phaseMap.entries())
+			.sort(([a], [b]) => a - b)
+			.map(([phase, items]) => ({
+				stageOrder: phase,
+				stageName: `Этап ${phase}`,
+				completionPercentage: 0,
+				items,
+			}));
+	}
+
 	let itemsTotalKopecks = 0;
-	if (data.stages.length > 0) {
-		for (const st of data.stages) {
+	if (effectiveStages.length > 0) {
+		for (const st of effectiveStages) {
 			for (const it of st.items) {
 				const unitKopecks = typeof it.unitPriceKopecks === "number" && it.unitPriceKopecks > 0
 					? Math.round(it.unitPriceKopecks)
@@ -59,11 +113,11 @@ export async function handleCreateTreatmentPlan(
 		}
 	}
 
+	// Мандат 8bm: Итоговая стоимость рассчитывается детерминированно из позиций в копейках.
+	// Запрещено перетирать итог клиентским float totalPriceRub, если в плане есть позиции!
 	let totalKopecks: number;
 	let computedPlanDiscountKopecks = 0;
-	if (typeof data.totalPriceRub === "number" && data.totalPriceRub > 0) {
-		totalKopecks = rublesToKopecks(data.totalPriceRub);
-	} else {
+	if (itemsTotalKopecks > 0) {
 		let discountedKopecks = itemsTotalKopecks;
 		if (typeof data.planDiscountRub === "number" && data.planDiscountRub > 0) {
 			computedPlanDiscountKopecks = rublesToKopecks(data.planDiscountRub);
@@ -74,6 +128,10 @@ export async function handleCreateTreatmentPlan(
 			discountedKopecks = Math.max(0, discountedKopecks - computedPlanDiscountKopecks);
 		}
 		totalKopecks = discountedKopecks;
+	} else if (typeof data.totalPriceRub === "number" && data.totalPriceRub > 0) {
+		totalKopecks = rublesToKopecks(data.totalPriceRub);
+	} else {
+		totalKopecks = 0;
 	}
 	const calculatedTotalRub = kopecksToRubles(totalKopecks);
 
@@ -81,6 +139,7 @@ export async function handleCreateTreatmentPlan(
 		const [newPlan] = await tx
 			.insert(treatmentPlans)
 			.values({
+				...(data.id ? { id: data.id } : {}),
 				organizationId,
 				patientId: data.patientId,
 				doctorId: data.doctorId || null,
@@ -96,6 +155,18 @@ export async function handleCreateTreatmentPlan(
 				discountMode: data.discountMode,
 				planDiscountPercent: data.planDiscountPercent,
 				planDiscountRub: data.planDiscountRub,
+				isInstallment: data.isInstallment ?? false,
+				installmentMonths: data.installmentMonths ?? null,
+				downPaymentKopecks: data.downPaymentKopecks ?? null,
+				monthlyPaymentKopecks: data.monthlyPaymentKopecks ?? null,
+				planGroupId: data.planGroupId ?? null,
+				groupName: data.groupName ?? null,
+				isAlternative: data.isAlternative ?? false,
+				alternativeTier: data.alternativeTier ?? null,
+				alternativeStatus: data.alternativeStatus ?? "proposed",
+				declinedReason: data.declinedReason ?? null,
+				priceFreezePolicy: data.priceFreezePolicy ?? "standard_30_days",
+				patientSignature: data.patientSignature ?? null,
 				version: 1,
 				isSynced: false,
 			})
@@ -109,54 +180,80 @@ export async function handleCreateTreatmentPlan(
 		const createdItems: Array<typeof treatmentPlanItemsNew.$inferSelect> = [];
 		const allItemsFlat: SyncPlanLedgerItemInput[] = [];
 
-		for (const st of data.stages) {
-			const [createdStage] = await tx
+		if (effectiveStages.length > 0) {
+			const stagesToInsert = effectiveStages.map((st) => ({
+				organizationId,
+				planId: newPlan.id,
+				stageOrder: st.stageOrder,
+				stageName: st.stageName,
+				completionPercentage: st.completionPercentage,
+			}));
+
+			const createdStagesRows = await tx
 				.insert(treatmentPlanStages)
-				.values({
-					organizationId,
-					planId: newPlan.id,
-					stageOrder: st.stageOrder,
-					stageName: st.stageName,
-					completionPercentage: st.completionPercentage,
-				})
+				.values(stagesToInsert)
 				.returning();
 
-			if (createdStage) createdStages.push(createdStage);
+			createdStages.push(...createdStagesRows);
 
-			for (const item of st.items) {
-				const itemPriceKopecks = typeof item.unitPriceKopecks === "number" && item.unitPriceKopecks > 0
-					? Math.round(item.unitPriceKopecks)
-					: rublesToKopecks(item.price);
-				const itemDiscountKopecks = rublesToKopecks(item.discount);
+			const stageIdByOrder = new Map<number, string>();
+			for (const cs of createdStagesRows) {
+				stageIdByOrder.set(cs.stageOrder, cs.id);
+			}
 
-				const [createdItem] = await tx
-					.insert(treatmentPlanItemsNew)
-					.values({
+			const itemsToInsert: Array<typeof treatmentPlanItemsNew.$inferInsert> = [];
+			const itemMetaList: Array<{ item: (typeof effectiveStages)[0]["items"][0]; stageOrder: number }> = [];
+
+			for (const st of effectiveStages) {
+				const resolvedStageId = stageIdByOrder.get(st.stageOrder) ?? null;
+
+				for (const item of st.items) {
+					const itemPriceKopecks = typeof item.unitPriceKopecks === "number" && item.unitPriceKopecks > 0
+						? Math.round(item.unitPriceKopecks)
+						: rublesToKopecks(item.price);
+					const itemDiscountKopecks = rublesToKopecks(item.discount);
+
+					itemsToInsert.push({
 						organizationId,
 						planId: newPlan.id,
-						stageId: createdStage?.id ?? null,
+						stageId: resolvedStageId,
 						toothNumber: item.toothNumber ?? null,
 						priceId: item.priceId || (item.isCustom ? "custom" : "service-item"),
 						name: item.name ?? null,
 						quantity: item.quantity,
-						price: item.price.toFixed(2),
-						discount: item.discount.toFixed(2),
+						price: debtNumericText(itemPriceKopecks),
+						discount: debtNumericText(itemDiscountKopecks),
 						priceKopecks: BigInt(itemPriceKopecks),
 						discountKopecks: BigInt(itemDiscountKopecks),
 						commissionKopecks: 0n,
 						phase: st.stageOrder,
 						isBundle: item.isBundle,
 						doctorId: item.doctorId || data.doctorId || null,
-					})
+					});
+					itemMetaList.push({ item, stageOrder: st.stageOrder });
+				}
+			}
+
+			if (itemsToInsert.length > 0) {
+				const createdItemsRows = await tx
+					.insert(treatmentPlanItemsNew)
+					.values(itemsToInsert)
 					.returning();
 
-				if (createdItem) createdItems.push(createdItem);
-				allItemsFlat.push({
-					...item,
-					treatmentPlanItemId: createdItem?.id ?? null,
-					phase: st.stageOrder,
-					isAuto: item.isBundle,
-				});
+				createdItems.push(...createdItemsRows);
+
+				for (let i = 0; i < createdItemsRows.length; i++) {
+					const createdItem = createdItemsRows[i];
+					const meta = itemMetaList[i];
+					if (meta) {
+						allItemsFlat.push({
+							...meta.item,
+							treatmentPlanItemId: createdItem?.id ?? null,
+							phase: meta.stageOrder,
+							isAuto: meta.item.isBundle,
+						});
+					}
+				}
 			}
 		}
 
@@ -184,13 +281,36 @@ export async function handleCreateTreatmentPlan(
 			request.log.warn({ err: auditErr }, "Не удалось записать аудит создания плана лечения");
 		}
 
-		return { plan: newPlan, stages: createdStages, itemsCount: createdItems.length };
+		const responsePayload = {
+			success: true,
+			treatmentPlan: newPlan,
+			stages: createdStages,
+			itemsCount: createdItems.length,
+		};
+
+		if (idempotencyKey) {
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: organizationId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: responsePayload as unknown as Record<string, unknown>,
+					responseCode: 201,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: responsePayload as unknown as Record<string, unknown>,
+						responseCode: 201,
+					},
+				});
+		}
+
+		return responsePayload;
 	});
 
-	return reply.code(201).send({
-		success: true,
-		treatmentPlan: result.plan,
-		stages: result.stages,
-		itemsCount: result.itemsCount,
-	});
+	return reply.code(201).send(result);
 }

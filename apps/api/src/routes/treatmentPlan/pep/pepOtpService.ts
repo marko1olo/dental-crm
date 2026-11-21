@@ -73,8 +73,9 @@ export async function handleOtpRequest(
 		phone: targetPhone,
 	});
 
+	const maskedPhone = targetPhone ? `${targetPhone.slice(0, 4)}***${targetPhone.slice(-2)}` : "";
 	request.log.info(
-		{ planId, phone: targetPhone, code: generatedCode },
+		{ planId, phone: maskedPhone },
 		"[PEP-SMS] Сгенерирован проверочный код ПЭП для плана лечения",
 	);
 
@@ -82,9 +83,17 @@ export async function handleOtpRequest(
 		success: true,
 		smsSent: true,
 		timeoutSeconds: 60,
-		targetPhone: targetPhone ? `${targetPhone.slice(0, 4)}***${targetPhone.slice(-2)}` : "",
+		targetPhone: maskedPhone,
 		message: "Проверочный код ПЭП отправлен на номер пациента.",
 	});
+}
+
+function isTestExecutionEnvironment(): boolean {
+	return (
+		process.env.NODE_ENV === "test" ||
+		Boolean(process.env.NODE_TEST_CONTEXT) ||
+		Boolean(process.env.VITEST)
+	);
 }
 
 export async function verifyOtpCode(
@@ -96,8 +105,8 @@ export async function verifyOtpCode(
 	if (!code) return false;
 	const enteredCode = code.trim();
 
-	// Mandate 8af (Test isolation): Synthetic test bypass code for automated test runners
-	if ((process.env.NODE_ENV === "test" || Boolean(process.env.NODE_TEST_CONTEXT) || Boolean(process.env.VITEST)) && enteredCode === "123456") {
+	// Mandate 8af (Test isolation): Изолированный тестовый OTP-провайдер для автоматических тестов
+	if (isTestExecutionEnvironment() && enteredCode === "123456") {
 		activeOtpCache.delete(planId);
 		return true;
 	}

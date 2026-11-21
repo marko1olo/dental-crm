@@ -5,7 +5,25 @@ import { z } from "zod";
  * Декомпозирован из treatmentPlanMutations.ts по Мандату 8b/8zi.
  */
 
+export const createTreatmentPlanItemSchema = z.object({
+	id: z.string().uuid().optional().nullable(),
+	priceId: z.string().trim().min(1).optional().nullable(),
+	isCustom: z.boolean().optional().default(false),
+	name: z.string().trim().optional(),
+	toothNumber: z.number().int().optional().nullable(),
+	quantity: z.number().int().positive().default(1),
+	price: z.number().nonnegative().default(0),
+	discount: z.number().nonnegative().default(0),
+	unitPriceKopecks: z.number().int().nonnegative().optional(),
+	totalPriceKopecks: z.number().int().nonnegative().optional(),
+	phase: z.number().int().min(1).max(12).default(1),
+	isBundle: z.boolean().default(false),
+	isAuto: z.boolean().optional(),
+	doctorId: z.string().uuid().optional().nullable(),
+});
+
 export const createTreatmentPlanSchema = z.object({
+	id: z.string().uuid().optional().nullable(),
 	patientId: z.string().uuid("Идентификатор пациента должен быть корректным UUID"),
 	doctorId: z.string().uuid().optional().nullable(),
 	name: z.string().trim().min(1).default("План комплексного лечения"),
@@ -16,30 +34,28 @@ export const createTreatmentPlanSchema = z.object({
 	planDiscountPercent: z.number().min(0).max(100).optional().default(0),
 	planDiscountRub: z.number().nonnegative().optional().default(0),
 	discountMode: z.string().optional().default("plan_fixed"),
+	isInstallment: z.boolean().optional(),
+	installmentMonths: z.number().int().min(1).max(36).optional(),
+	downPaymentKopecks: z.number().int().nonnegative().optional(),
+	monthlyPaymentKopecks: z.number().int().nonnegative().optional(),
+	planGroupId: z.string().uuid().optional().nullable(),
+	groupName: z.string().trim().max(300).optional().nullable(),
+	isAlternative: z.boolean().optional().default(false),
+	alternativeTier: z.string().trim().max(100).optional().nullable(),
+	alternativeStatus: z.enum(["proposed", "approved", "declined"]).optional().default("proposed"),
+	declinedReason: z.string().trim().max(1000).optional().nullable(),
+	priceFreezePolicy: z.string().optional().default("standard_30_days"),
+	allowRevision: z.boolean().optional().default(false),
+	patientSignature: z.string().max(2_000_000).optional().nullable(),
+	items: z.array(createTreatmentPlanItemSchema).optional().default([]),
 	stages: z
 		.array(
 			z.object({
+				id: z.string().uuid().optional(),
 				stageOrder: z.number().int().positive().default(1),
 				stageName: z.string().trim().min(1),
 				completionPercentage: z.number().int().min(0).max(100).default(0),
-				items: z
-					.array(
-						z.object({
-							priceId: z.string().trim().min(1).optional().nullable(),
-							isCustom: z.boolean().optional().default(false),
-							name: z.string().trim().optional(),
-							toothNumber: z.number().int().optional().nullable(),
-							quantity: z.number().int().positive().default(1),
-							price: z.number().nonnegative().default(0),
-							discount: z.number().nonnegative().default(0),
-							unitPriceKopecks: z.number().int().nonnegative().optional(),
-							totalPriceKopecks: z.number().int().nonnegative().optional(),
-							isBundle: z.boolean().default(false),
-							doctorId: z.string().uuid().optional().nullable(),
-						}),
-					)
-					.optional()
-					.default([]),
+				items: z.array(createTreatmentPlanItemSchema).optional().default([]),
 			}),
 		)
 		.optional()
@@ -69,6 +85,10 @@ export const updateTreatmentPlanSchema = z.object({
 	discountMode: z.string().optional(),
 	planDiscountPercent: z.number().min(0).max(100).optional(),
 	planDiscountRub: z.number().nonnegative().optional(),
+	isInstallment: z.boolean().optional(),
+	installmentMonths: z.number().int().min(1).max(36).optional(),
+	downPaymentKopecks: z.number().int().nonnegative().optional(),
+	monthlyPaymentKopecks: z.number().int().nonnegative().optional(),
 	curatorId: z.string().uuid().nullable().optional(),
 	curatorName: z.string().trim().nullable().optional(),
 	curatorFunnelStage: z.string().trim().nullable().optional(),

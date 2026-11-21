@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import { eq } from "drizzle-orm";
-import { authTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import {
 	invoiceItems,

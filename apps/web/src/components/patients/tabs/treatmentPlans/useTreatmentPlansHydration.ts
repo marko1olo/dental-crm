@@ -29,13 +29,12 @@ import {
 	EMPTY_PLANS,
 	EMPTY_ITEMS,
 } from "./treatmentPlansTabConstants";
-import type { AnyTreatmentPlanItem } from "../../plansList/treatmentPlansListTypes";
 import type { PatientGeneralInfo } from "../PatientGeneralInfoTab";
 
 export interface UseTreatmentPlansHydrationParams {
 	patient?: PatientGeneralInfo | null | undefined;
 	patientId?: string | undefined;
-	items?: readonly AnyTreatmentPlanItem[] | undefined;
+	items?: readonly TreatmentPlanItem[] | undefined;
 	plans?: readonly PatientTreatmentPlanDto[] | PatientTreatmentPlanDto[] | undefined;
 	tiers?: readonly TreatmentTierOption[] | TreatmentTierOption[] | undefined;
 }
@@ -142,38 +141,34 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 	const effectiveItems: TreatmentPlanItem[] = useMemo(() => {
 		if (propItems && propItems.length > 0) {
 			return propItems.map((it, idx) => {
-				if ("stageKind" in it && typeof it.stageKind === "string" && "name" in it && typeof it.priceRub === "number") {
-					return it as TreatmentPlanItem;
-				}
-				const toothNum = "toothCode" in it && it.toothCode
-					? parseInt(String(it.toothCode), 10)
-					: ("toothNumber" in it && typeof it.toothNumber === "number" ? it.toothNumber : undefined);
-				const unitPrice = "unitPriceRub" in it && typeof it.unitPriceRub === "number"
+				const unitPrice = typeof it.unitPriceRub === "number"
 					? it.unitPriceRub
-					: ("price" in it && typeof it.price === "number" ? it.price : 0);
-				const discount = "discountRub" in it && typeof it.discountRub === "number"
-					? it.discountRub
-					: ("discount" in it && typeof it.discount === "number" ? it.discount : 0);
-				const quantity = ("quantity" in it && typeof it.quantity === "number" ? it.quantity : 1) || 1;
-				const name = ("snapshotServiceName" in it && it.snapshotServiceName) || ("name" in it && it.name) || "Услуга плана лечения";
+					: (typeof it.priceRub === "number" ? it.priceRub : 0);
+				const discount = typeof it.discountRub === "number" ? it.discountRub : 0;
+				const quantity = typeof it.quantity === "number" && it.quantity > 0 ? it.quantity : 1;
+				const name = it.name || "Услуга плана лечения";
+				const category = it.category || "Терапия";
+				const code804n = it.code804n || undefined;
+				const serviceCode = it.serviceCode || it.id || "SRV-ITEM";
 
 				const itemRecord: TreatmentPlanItem = {
+					...it,
 					id: it.id || `item-${idx}`,
-					toothNumber: toothNum && !Number.isNaN(toothNum) ? toothNum : undefined,
-					code804n: ("serviceCode" in it && it.serviceCode) || ("code804n" in it && it.code804n) || ("serviceId" in it && it.serviceId) || undefined,
-					serviceCode: ("serviceCode" in it && it.serviceCode) || it.id || "SRV-ITEM",
+					toothNumber: typeof it.toothNumber === "number" && !Number.isNaN(it.toothNumber) ? it.toothNumber : undefined,
+					code804n,
+					serviceCode,
 					name,
-					category: ("category" in it && it.category) || ("snapshotServiceCategory" in it && it.snapshotServiceCategory) || "Терапия",
-					stageKind: "stage_1_therapy",
-					stageNumber: 1,
+					category,
+					stageKind: it.stageKind || "stage_1_therapy",
+					stageNumber: it.stageNumber || 1,
 					priceRub: unitPrice,
 					unitPriceRub: unitPrice,
 					discountRub: discount,
 					quantity,
-					isCompleted: it.status === "completed",
+					isCompleted: it.isCompleted === true || it.status === "completed",
 					status: it.status || "proposed",
-					doctorName: "doctorName" in it ? it.doctorName ?? null : null,
-					doctorSpecialty: "doctorSpecialty" in it ? it.doctorSpecialty ?? null : null,
+					doctorName: it.doctorName || null,
+					doctorSpecialty: it.doctorSpecialty || null,
 				};
 				return itemRecord;
 			});
@@ -195,8 +190,8 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 				code804n: it.priceId || undefined,
 				serviceCode: it.priceId || it.id || "SRV-ITEM",
 				name: it.name || "Услуга плана лечения",
-				category: "Терапия",
-				stageKind: "stage_1_therapy",
+				category: it.phase === 2 ? "Хирургия" : it.phase === 3 ? "Ортопедия" : "Терапия",
+				stageKind: it.phase === 2 ? "stage_2_surgery" : it.phase === 3 ? "stage_3_orthopedics" : "stage_1_therapy",
 				stageNumber: (it.phase as 1 | 2 | 3) || 1,
 				priceRub: unitPrice,
 				unitPriceRub: unitPrice,
@@ -215,49 +210,135 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 	// Базовые клинические этапы плана лечения для канонического 3-уровневого калькулятора и печати
 	const planStages: TreatmentPlanStage[] = useMemo(() => {
 		if (!effectiveItems || effectiveItems.length === 0) return [];
-		const totalKopecks = sumKopecks(
-			effectiveItems.map((it) =>
-				rublesToKopecks(Math.max(0, (it.unitPriceRub || it.priceRub || 0) * (it.quantity || 1) - (it.discountRub || 0)))
-			)
-		);
-		const totalRub = kopecksToRubles(totalKopecks);
 
-		return [
-			{
-				id: activePlan?.id || "stage-current",
-				stageNumber: 1,
-				stageKind: "stage_1_therapy" as const,
-				title: activePlan?.name || "Комплексный план лечения",
-				subtitle: "Терапевтический и клинический протокол",
-				clinicalGoal: "Комплексная стоматологическая санация и реабилитация",
-				totalRub,
-				totalKopecks,
-				estimatedVisits: 1,
-				estimatedWeeks: 1,
-				status: "draft" as const,
-				items: effectiveItems.map((it, idx) => {
-					const toothNum = typeof it.toothNumber === "number" && !Number.isNaN(it.toothNumber)
-						? it.toothNumber
-						: undefined;
-					const price = typeof it.unitPriceRub === "number" && it.unitPriceRub > 0
-						? it.unitPriceRub
-						: (it.priceRub || 0);
-					return {
-						id: it.id || `item-${idx}`,
-						toothNumber: toothNum,
+		const STAGE_DEFAULTS: Record<number, {
+			stageKind: "stage_1_therapy" | "stage_2_surgery" | "stage_3_orthopedics" | "stage_custom";
+			title: string;
+			subtitle: string;
+			clinicalGoal: string;
+		}> = {
+			1: {
+				stageKind: "stage_1_therapy",
+				title: "Этап 1: Неотложная помощь и терапевтическая санация",
+				subtitle: "Терапевтический протокол",
+				clinicalGoal: "Ликвидация болевого синдрома, купирование воспаления, лечение кариеса и корневых каналов",
+			},
+			2: {
+				stageKind: "stage_2_surgery",
+				title: "Этап 2: Хирургия и дентальная имплантация",
+				subtitle: "Хирургический протокол",
+				clinicalGoal: "Атравматичное удаление, костная пластика и установка имплантатов",
+			},
+			3: {
+				stageKind: "stage_3_orthopedics",
+				title: "Этап 3: Ортопедия и функциональная реабилитация",
+				subtitle: "Ортопедический протокол",
+				clinicalGoal: "Восстановление окклюзии, анатомической эстетики и артикуляции",
+			},
+		};
+
+		// 1. Если в плане лечения из БД явно заданы этапы (stages) — отображаем их
+		if (activePlan?.stages && activePlan.stages.length > 0) {
+			const sortedStages = [...activePlan.stages].sort((a, b) => a.stageOrder - b.stageOrder);
+			const stageOrderSet = new Set(sortedStages.map((s) => s.stageOrder));
+
+			return sortedStages.map((stageDto) => {
+				const order = stageDto.stageOrder;
+				// Элементы, принадлежащие данному этапу (или неразмеченные элементы попадают в 1-й этап)
+				const stageItems = effectiveItems.filter((it) => {
+					if (it.stageNumber === order) return true;
+					if (order === 1 && (!it.stageNumber || !stageOrderSet.has(it.stageNumber))) return true;
+					return false;
+				});
+
+				const stageKopecks = sumKopecks(
+					stageItems.map((it) =>
+						rublesToKopecks(Math.max(0, (it.unitPriceRub || it.priceRub || 0) * (it.quantity || 1) - (it.discountRub || 0)))
+					)
+				);
+				const stageRub = kopecksToRubles(stageKopecks);
+				const def = STAGE_DEFAULTS[order] ?? {
+					stageKind: "stage_custom" as const,
+					title: stageDto.stageName || `Этап ${order}`,
+					subtitle: "Клинический протокол",
+					clinicalGoal: "Стоматологическая санация и реабилитация",
+				};
+
+				return {
+					id: stageDto.id || `stage-${order}`,
+					stageNumber: order,
+					stageKind: def.stageKind,
+					title: stageDto.stageName || def.title,
+					subtitle: def.subtitle,
+					clinicalGoal: def.clinicalGoal,
+					totalRub: stageRub,
+					totalKopecks: stageKopecks,
+					estimatedVisits: Math.max(1, stageItems.length),
+					estimatedWeeks: order,
+					status: stageDto.completionPercentage === 100 ? ("completed" as const) : ("draft" as const),
+					items: stageItems.map((it, idx) => ({
+						id: it.id || `item-${order}-${idx}`,
+						toothNumber: typeof it.toothNumber === "number" && !Number.isNaN(it.toothNumber) ? it.toothNumber : undefined,
 						code804n: it.code804n || it.serviceCode || undefined,
 						name: it.name || "Стоматологическая процедура",
-						priceRub: price,
-						unitPriceRub: price,
+						priceRub: typeof it.unitPriceRub === "number" && it.unitPriceRub > 0 ? it.unitPriceRub : (it.priceRub || 0),
+						unitPriceRub: typeof it.unitPriceRub === "number" && it.unitPriceRub > 0 ? it.unitPriceRub : (it.priceRub || 0),
 						discountRub: it.discountRub || 0,
 						quantity: it.quantity || 1,
-						stageKind: "stage_1_therapy" as const,
+						stageKind: def.stageKind,
 						isCompleted: it.isCompleted === true || it.status === "completed",
 						tierPrices: it.tierPrices,
-					};
-				}),
-			},
-		];
+					})),
+				};
+			});
+		}
+
+		// 2. Если этапов в плане нет — группируем элементы по клиническим фазам (phase 1: терапия, 2: хирургия, 3: ортопедия)
+		const uniquePhases = Array.from(new Set(effectiveItems.map((it) => it.stageNumber || 1))).sort((a, b) => a - b);
+		const targetPhases = uniquePhases.length > 0 ? uniquePhases : [1];
+
+		return targetPhases.map((phaseNum) => {
+			const stageItems = effectiveItems.filter((it) => (it.stageNumber || 1) === phaseNum);
+			const stageKopecks = sumKopecks(
+				stageItems.map((it) =>
+					rublesToKopecks(Math.max(0, (it.unitPriceRub || it.priceRub || 0) * (it.quantity || 1) - (it.discountRub || 0)))
+				)
+			);
+			const stageRub = kopecksToRubles(stageKopecks);
+			const def = STAGE_DEFAULTS[phaseNum] ?? {
+				stageKind: "stage_custom" as const,
+				title: `Этап ${phaseNum}: Клинический этап`,
+				subtitle: "Клинический протокол",
+				clinicalGoal: "Стоматологическая санация и реабилитация",
+			};
+
+			return {
+				id: activePlan?.id ? `${activePlan.id}-phase-${phaseNum}` : `phase-${phaseNum}`,
+				stageNumber: phaseNum,
+				stageKind: def.stageKind,
+				title: def.title,
+				subtitle: def.subtitle,
+				clinicalGoal: def.clinicalGoal,
+				totalRub: stageRub,
+				totalKopecks: stageKopecks,
+				estimatedVisits: Math.max(1, stageItems.length),
+				estimatedWeeks: phaseNum,
+				status: "draft" as const,
+				items: stageItems.map((it, idx) => ({
+					id: it.id || `item-${phaseNum}-${idx}`,
+					toothNumber: typeof it.toothNumber === "number" && !Number.isNaN(it.toothNumber) ? it.toothNumber : undefined,
+					code804n: it.code804n || it.serviceCode || undefined,
+					name: it.name || "Стоматологическая процедура",
+					priceRub: typeof it.unitPriceRub === "number" && it.unitPriceRub > 0 ? it.unitPriceRub : (it.priceRub || 0),
+					unitPriceRub: typeof it.unitPriceRub === "number" && it.unitPriceRub > 0 ? it.unitPriceRub : (it.priceRub || 0),
+					discountRub: it.discountRub || 0,
+					quantity: it.quantity || 1,
+					stageKind: def.stageKind,
+					isCompleted: it.isCompleted === true || it.status === "completed",
+					tierPrices: it.tierPrices,
+				})),
+			};
+		});
 	}, [effectiveItems, activePlan]);
 
 	// Канонический расчет 3 альтернативных тарифов без синтетических множителей (Мандат 8e)
@@ -388,14 +469,19 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 		});
 	}, [planStages, activePlan, activeTierData, effectivePatientId, patient]);
 
-	const discountedTotalRub = useMemo(() => {
+	const discountedTotalKopecks = useMemo(() => {
 		if (!activeTierData) return 0;
-		const base = activeTierData.totalRub;
-		const baseKopecks = rublesToKopecks(base);
-		const discountFactor = Math.max(0, 1 - doctorDiscountPercent / 100);
-		const withDiscountRub = kopecksToRubles(Math.round(baseKopecks * discountFactor));
-		return Math.max(0, withDiscountRub - bonusPointsToUseRub);
+		const baseKopecks = rublesToKopecks(activeTierData.totalRub);
+		const doctorDiscountKopecks = Math.round(
+			(baseKopecks * Math.min(100, Math.max(0, doctorDiscountPercent))) / 100,
+		);
+		const bonusPointsKopecks = rublesToKopecks(bonusPointsToUseRub);
+		return Math.max(0, baseKopecks - doctorDiscountKopecks - bonusPointsKopecks);
 	}, [activeTierData, doctorDiscountPercent, bonusPointsToUseRub]);
+
+	const discountedTotalRub = useMemo(() => {
+		return kopecksToRubles(discountedTotalKopecks);
+	}, [discountedTotalKopecks]);
 
 	return {
 		effectivePatientId,
@@ -418,6 +504,7 @@ export function useTreatmentPlansHydration(params: UseTreatmentPlansHydrationPar
 		setSelectedTier,
 		doctorDiscountPercent,
 		setDoctorDiscountPercent,
+		discountedTotalKopecks,
 		discountedTotalRub,
 	};
 }

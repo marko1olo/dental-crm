@@ -145,6 +145,8 @@ export async function handleUpsertPatientTreatmentPlan(
 						name: input.name,
 						totalPrice: effectiveTotalPriceText,
 						totalPriceRub: debtNumericText(totalPriceKopecks),
+						totalPriceKopecks: BigInt(totalPriceKopecks),
+						planDiscountKopecks: BigInt(effectiveDiscount.discountKopecks),
 						...(input.status !== undefined
 							? { status: input.status }
 							: {}),
@@ -188,6 +190,18 @@ export async function handleUpsertPatientTreatmentPlan(
 							: {}),
 						...(input.planDiscountRub !== undefined
 							? { planDiscountRub: input.planDiscountRub }
+							: {}),
+						...(input.isInstallment !== undefined
+							? { isInstallment: input.isInstallment }
+							: {}),
+						...(input.installmentMonths !== undefined
+							? { installmentMonths: input.installmentMonths }
+							: {}),
+						...(input.downPaymentKopecks !== undefined
+							? { downPaymentKopecks: input.downPaymentKopecks }
+							: {}),
+						...(input.monthlyPaymentKopecks !== undefined
+							? { monthlyPaymentKopecks: input.monthlyPaymentKopecks }
 							: {}),
 						updatedAt: now,
 						isSynced: false,
@@ -238,6 +252,8 @@ export async function handleUpsertPatientTreatmentPlan(
 						status: input.status ?? "Draft",
 						totalPrice: effectiveTotalPriceText,
 						totalPriceRub: debtNumericText(totalPriceKopecks),
+						totalPriceKopecks: BigInt(totalPriceKopecks),
+						planDiscountKopecks: BigInt(effectiveDiscount.discountKopecks),
 						patientSignature: input.patientSignature ?? null,
 						planGroupId: input.planGroupId ?? null,
 						groupName: input.groupName ?? null,
@@ -249,6 +265,10 @@ export async function handleUpsertPatientTreatmentPlan(
 						discountMode: input.discountMode ?? "plan_fixed",
 						planDiscountPercent: input.planDiscountPercent ?? 0,
 						planDiscountRub: input.planDiscountRub ?? 0,
+						isInstallment: input.isInstallment ?? false,
+						installmentMonths: input.installmentMonths ?? null,
+						downPaymentKopecks: input.downPaymentKopecks ?? null,
+						monthlyPaymentKopecks: input.monthlyPaymentKopecks ?? null,
 						isSynced: false,
 						version: 1,
 						updatedAt: now,

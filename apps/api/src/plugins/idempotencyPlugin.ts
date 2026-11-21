@@ -106,7 +106,9 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		/^\/api\/(?:periodontogram|perio)(?:\/.*)?$/,
 		/^\/api\/inventory(?:\/[^/]+)?\/(?:acceptance-waybill|waybills|invoices|shift-batch-deduct|shift-deduct|quick-carpule-disposal)$/,
 		/^\/api\/treatment-plans(?:\/.*)?$/,
+		/^\/api\/patients\/[^/]+\/treatment-plans(?:\/.*)?$/,
 		/^\/api\/orthodontics(?:\/.*)?$/,
+		/^\/api\/agent\/(?:action|confirm)/,
 	];
 
 	// 1. PRE-HANDLER HOOK

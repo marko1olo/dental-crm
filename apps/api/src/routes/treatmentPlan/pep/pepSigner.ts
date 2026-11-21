@@ -2,7 +2,14 @@ import { createHash } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
-import { auditEvents, patients, treatmentItems, treatmentPlans } from "../../../db/schema.js";
+import {
+	auditEvents,
+	patients,
+	treatmentItems,
+	treatmentPlanItemsNew,
+	treatmentPlanStages,
+	treatmentPlans,
+} from "../../../db/schema.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { LEDGER_ID_PREFIX_LENGTH } from "../../odontogram/types.js";
 import { cancelRejectedPlanTierLedgerItems } from "../handlers/mutations/planLedgerSync.js";
@@ -66,16 +73,63 @@ export async function handleSignTreatmentPlanPep(
 		});
 	}
 
-	const planPayloadToHash = JSON.stringify({
+	const [items, stages] = await Promise.all([
+		db
+			.select()
+			.from(treatmentPlanItemsNew)
+			.where(
+				and(
+					eq(treatmentPlanItemsNew.planId, planId),
+					eq(treatmentPlanItemsNew.organizationId, organizationId),
+				),
+			),
+		db
+			.select()
+			.from(treatmentPlanStages)
+			.where(
+				and(
+					eq(treatmentPlanStages.planId, planId),
+					eq(treatmentPlanStages.organizationId, organizationId),
+				),
+			),
+	]);
+
+	// Юридическая чистота ПЭП 63-ФЗ: полный канонический снимок сметы, позиций и этапов
+	const canonicalPlanSnapshot = {
 		planId: plan.id,
 		patientId: plan.patientId,
-		totalPriceRub: plan.totalPriceRub || plan.totalPrice,
-		name: plan.name,
-		signedAt: new Date().toISOString(),
-		signerName: patientFullName,
 		organizationId,
-	});
-	const documentHash = createHash("sha256").update(planPayloadToHash).digest("hex");
+		name: plan.name,
+		diagnosisIcd10: plan.diagnosisIcd10 ?? null,
+		priceFreezePolicy: plan.priceFreezePolicy ?? "standard_30_days",
+		discountMode: plan.discountMode ?? "plan_fixed",
+		totalPriceKopecks: plan.totalPriceKopecks ? String(plan.totalPriceKopecks) : null,
+		planDiscountKopecks: plan.planDiscountKopecks ? String(plan.planDiscountKopecks) : null,
+		totalPriceRub: plan.totalPriceRub || plan.totalPrice,
+		signerName: patientFullName,
+		signerPhone: targetPhone,
+		stages: stages
+			.map((s) => ({
+				stageOrder: s.stageOrder,
+				stageName: s.stageName,
+				completionPercentage: s.completionPercentage,
+			}))
+			.sort((a, b) => a.stageOrder - b.stageOrder),
+		items: items
+			.map((it) => ({
+				id: it.id,
+				toothNumber: it.toothNumber,
+				phase: it.phase,
+				priceId: it.priceId,
+				name: it.name,
+				quantity: it.quantity,
+				priceKopecks: it.priceKopecks ? String(it.priceKopecks) : null,
+				discountKopecks: it.discountKopecks ? String(it.discountKopecks) : null,
+			}))
+			.sort((a, b) => (a.phase - b.phase) || (a.toothNumber || 0) - (b.toothNumber || 0) || a.id.localeCompare(b.id)),
+	};
+
+	const documentHash = createHash("sha256").update(JSON.stringify(canonicalPlanSnapshot)).digest("hex");
 	const pepMethodKey = data.method === "sms" ? "pep_sms" : data.method === "qr_touch" ? "pep_qr_touch" : "paper_physical";
 
 	const pepRecord = {
@@ -93,12 +147,23 @@ export async function handleSignTreatmentPlanPep(
 	const ledgerPrefix = planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
 	const { signedPlan, createdInvoice } = await db.transaction(
 		async (tx): Promise<{ signedPlan: typeof treatmentPlans.$inferSelect | undefined; createdInvoice: CreatedInvoiceSummary | null }> => {
+		const [planToLock] = await tx
+			.select()
+			.from(treatmentPlans)
+			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
+			.for("update")
+			.limit(1);
+
+		if (!planToLock) {
+			return { signedPlan: undefined, createdInvoice: null };
+		}
+
 		const [updated] = await tx
 			.update(treatmentPlans)
 			.set({
 				patientSignature: JSON.stringify(pepRecord),
 				status: "Approved",
-				approvedAt: new Date(),
+				approvedAt: planToLock.approvedAt ?? new Date(),
 				updatedAt: new Date(),
 			})
 			.where(and(eq(treatmentPlans.id, planId), eq(treatmentPlans.organizationId, organizationId)))
