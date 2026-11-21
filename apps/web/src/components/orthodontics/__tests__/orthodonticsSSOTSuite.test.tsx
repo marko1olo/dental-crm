@@ -185,7 +185,13 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		const filePath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
 		assert.ok(fs.existsSync(filePath), "OrthodonticsStudioModal.tsx must exist");
 
-		const content = fs.readFileSync(filePath, "utf-8");
+		const hydrationPath = path.join(orthoDir, "useOrthodonticsStudioHydration.ts");
+		const persistencePath = path.join(orthoDir, "orthodonticsStudioPersistence.ts");
+		const content =
+			fs.readFileSync(filePath, "utf-8") +
+			(fs.existsSync(hydrationPath) ? fs.readFileSync(hydrationPath, "utf-8") : "") +
+			(fs.existsSync(persistencePath) ? fs.readFileSync(persistencePath, "utf-8") : "");
+
 		assert.ok(content.includes("/api/orthodontics/"), "Must connect to canonical ortho API");
 		assert.ok(content.includes("/progress"), "Must hydrate from /progress endpoint");
 		assert.ok(content.includes("/ceph-analysis"), "Must hydrate from /ceph-analysis endpoint (DEF-ORTHO-03)");
@@ -292,7 +298,10 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 
 	it("18. Verifies removable plates branching, dual arch parameters and photo protocol sync", () => {
 		const modalPath = path.join(orthoDir, "OrthodonticsStudioModal.tsx");
-		const content = fs.readFileSync(modalPath, "utf-8");
+		const persistencePath = path.join(orthoDir, "orthodonticsStudioPersistence.ts");
+		const content =
+			fs.readFileSync(modalPath, "utf-8") +
+			(fs.existsSync(persistencePath) ? fs.readFileSync(persistencePath, "utf-8") : "");
 
 		assert.ok(
 			content.includes('protocol.applianceCategory === "plate"'),
@@ -375,5 +384,38 @@ describe("Orthodontic Studio Sweet Spot & Mandatory Mandates Inquisition", () =>
 		assert.ok(content.includes("cephAnalysis"), "Must check patient cephAnalysis");
 		assert.ok(content.includes("Синхронизировано с ТРГ"), "Must display synchronization status with TRG");
 		assert.ok(content.includes("loadLatestCephalometricStudy"), "Must fallback to latest local ceph study");
+	});
+
+	it("24. Verifies AlignerCaseTracker integrates case stages, steps and exact kopecks installment schedule", () => {
+		const trackerPath = path.join(orthoDir, "AlignerCaseTracker.tsx");
+		assert.ok(fs.existsSync(trackerPath), "AlignerCaseTracker.tsx must exist");
+		const content = fs.readFileSync(trackerPath, "utf-8");
+
+		assert.ok(content.includes("amountKopecks: bigint"), "Installment amounts must be typed as bigint kopecks");
+		assert.ok(content.includes("formatKopecksToRub"), "Must use canonical formatKopecksToRub without float division");
+		assert.ok(content.includes("setup_pending") && content.includes("setup_approved") && content.includes("retention"), "Must support full aligner lifecycle stages");
+		assert.ok(content.includes('data-testid="aligner-case-tracker"'), "Must have data-testid for integration verification");
+	});
+
+	it("25. Verifies BiteClassificationCard implements Angle & ANB skeletal classes with Apple HIG >=44px touch targets", () => {
+		const bitePath = path.join(orthoDir, "BiteClassificationCard.tsx");
+		assert.ok(fs.existsSync(bitePath), "BiteClassificationCard.tsx must exist");
+		const content = fs.readFileSync(bitePath, "utf-8");
+
+		assert.ok(content.includes("calculateSkeletalClassFromAnb"), "Must dynamically compute skeletal class from ANB angle");
+		assert.ok(content.includes("min-h-[44px]"), "All touch targets must satisfy Apple HIG >=44px");
+		assert.ok(content.includes("VERTICAL_BITE_OPTIONS"), "Must contain canonical vertical bite options");
+		assert.ok(content.includes('data-testid="bite-classification-card"'), "Must have data-testid for integration verification");
+	});
+
+	it("26. Verifies CephTracingCanvas provides 16 anatomical landmarks and cranial planes", () => {
+		const cephPath = path.join(orthoDir, "CephTracingCanvas.tsx");
+		assert.ok(fs.existsSync(cephPath), "CephTracingCanvas.tsx must exist");
+		const content = fs.readFileSync(cephPath, "utf-8");
+
+		assert.ok(content.includes("LANDMARK_COLORS"), "Must define landmark colors");
+		assert.ok(content.includes("bone_enhance") && content.includes("invert") && content.includes("contrast"), "Must support hardware x-ray filter modes");
+		assert.ok(content.includes("setPointerCapture"), "Must use pointer capture for drag-and-drop tracing precision");
+		assert.ok(content.includes("svgRef"), "Must render reactive SVG cranial planes overlay");
 	});
 });

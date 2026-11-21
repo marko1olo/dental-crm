@@ -18,11 +18,11 @@ import {
 import { formatOrthodonticPatientMemo } from "./orthodonticPatientMemo";
 import { SAMPLE_TRG_CEPHALOGRAM_URL } from "./CephalometricCanvas";
 import { OrthodonticsTabsContent } from "./OrthodonticsTabsContent";
-import { subscribeCephSyncChannel, getActiveCephStudy } from "./cephStudioSyncChannel";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { showToast } from "../GlobalToast";
+import { useOrthodonticsStudioHydration } from "./useOrthodonticsStudioHydration";
+import { saveOrthodonticProtocolToApi } from "./orthodonticsStudioPersistence";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
+import { showToast } from "../GlobalToast";
 
 export { formatOrthodonticPatientMemo, type OrthodonticPatientMemoParams } from "./orthodonticPatientMemo";
 
@@ -73,180 +73,13 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	const [isPhotoModalOpen, setIsPhotoModalOpen] = useState<boolean>(false);
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
 
-	// Честная гидратация данных пациента из базы PostgreSQL 18
-	useEffect(() => {
-		if (!patientId) return;
-		let isCancelled = false;
-		const fetchProgress = async () => {
-			try {
-				const res = await fetch(`/api/orthodontics/${patientId}/progress`, {
-					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
-				});
-				if (res.ok) {
-					const data = (await res.json()) as {
-						currentAligner?: number;
-						totalAligners?: number;
-						currentStage?: number;
-						archwire?: string;
-						lastActionSummary?: string;
-						applianceId?: string;
-						applianceName?: string;
-						applianceCategory?: "brackets" | "aligners" | "plate";
-						selectedElasticId?: string | null;
-						selectedActionIds?: string[];
-					};
-					if (!isCancelled && data) {
-						setProtocol((prev) => ({
-							...prev,
-							...(data.applianceId ? { applianceId: data.applianceId } : {}),
-							...(data.applianceName ? { applianceName: data.applianceName } : {}),
-							...(data.applianceCategory ? { applianceCategory: data.applianceCategory } : {}),
-							...(data.selectedElasticId !== undefined ? { selectedElasticId: data.selectedElasticId } : {}),
-							...(Array.isArray(data.selectedActionIds) ? { selectedActionIds: data.selectedActionIds } : {}),
-							...(data.currentAligner
-								? {
-										alignerTracking: {
-											...prev.alignerTracking,
-											currentStep: data.currentAligner,
-											totalSteps: data.totalAligners ?? prev.alignerTracking.totalSteps,
-										},
-								  }
-								: {}),
-							...(data.currentStage ? { currentMonth: data.currentStage } : {}),
-						}));
-					}
-				}
-			} catch (err) {
-				if (!isCancelled) {
-					console.warn("[OrthodonticsStudioModal] Failed to fetch ortho progress:", err);
-				}
-			}
-		};
-		fetchProgress();
-		return () => {
-			isCancelled = true;
-		};
-	}, [patientId]);
+	// Честная гидратация данных пациента из базы PostgreSQL 18 и ТРГ-синхронизация
+	useOrthodonticsStudioHydration(patientId, setProtocol);
 
 	const skeletalClassInfo = useMemo(() => {
 		const anbVal = protocol.trgValues?.anb ?? 2.1;
 		return calculateSkeletalClassFromAnb(anbVal);
 	}, [protocol.trgValues?.anb]);
-
-	// Честная гидратация ТРГ-анализа пациента из базы PostgreSQL 18 (DEF-ORTHO-03)
-	useEffect(() => {
-		if (!patientId) return;
-		let isCancelled = false;
-		const fetchCephAnalysis = async () => {
-			try {
-				const res = await fetch(`/api/orthodontics/${patientId}/ceph-analysis`, {
-					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
-				});
-				if (res.ok) {
-					const data = (await res.json()) as {
-						study?: {
-							analysis?: {
-								sna?: number;
-								snb?: number;
-								anb?: number;
-								u1NaDeg?: number;
-								l1NbDeg?: number;
-								fmaDeg?: number;
-							};
-						};
-					};
-					if (!isCancelled && data?.study?.analysis) {
-						const ca = data.study.analysis;
-						setProtocol((prev) => ({
-							...prev,
-							trgValues: {
-								...(prev.trgValues || {}),
-								...(typeof ca.sna === "number" ? { sna: ca.sna } : {}),
-								...(typeof ca.snb === "number" ? { snb: ca.snb } : {}),
-								...(typeof ca.anb === "number" ? { anb: ca.anb } : {}),
-								...(typeof ca.u1NaDeg === "number" ? { u1_na: ca.u1NaDeg } : {}),
-								...(typeof ca.l1NbDeg === "number" ? { l1_nb: ca.l1NbDeg } : {}),
-								...(typeof ca.fmaDeg === "number" ? { fma: ca.fmaDeg } : {}),
-							},
-						}));
-					}
-				}
-			} catch (err) {
-				if (!isCancelled) {
-					console.warn("[OrthodonticsStudioModal] Failed to fetch ceph analysis:", err);
-				}
-			}
-		};
-		fetchCephAnalysis();
-		return () => {
-			isCancelled = true;
-		};
-	}, [patientId]);
-
-	// Реактивная синхронизация ТРГ через BroadcastChannel (DEF-1)
-	useEffect(() => {
-		const cachedStudy = getActiveCephStudy<{
-			analysis?: { sna?: number; snb?: number; anb?: number; u1NaDeg?: number; l1NbDeg?: number; fmaDeg?: number };
-			measurements?: Array<{ parameterKey?: string; parameter?: string; value: number | null }>;
-		}>();
-		if (cachedStudy) {
-			const mList = cachedStudy.measurements;
-			if (Array.isArray(mList) && mList.length > 0) {
-				const vals: Record<string, number> = {};
-				for (const m of mList) {
-					const k = (m.parameterKey || m.parameter || "").toLowerCase().replace(/[^a-z0-9]/g, "_");
-					if (typeof m.value === "number") vals[k] = m.value;
-				}
-				if (Object.keys(vals).length > 0) {
-					setProtocol((prev) => ({
-						...prev,
-						trgValues: { ...(prev.trgValues || {}), ...vals },
-					}));
-				}
-			}
-		}
-
-		const unsubscribe = subscribeCephSyncChannel((msg) => {
-			if (msg.type === "CEPH_STUDY_CACHED" || msg.type === "CEPH_ANALYSIS_UPDATED") {
-				const study = msg.payload as {
-					measurements?: Array<{ parameterKey?: string; parameter?: string; value: number | null }>;
-					analysis?: { sna?: number; snb?: number; anb?: number; u1NaDeg?: number; l1NbDeg?: number; fmaDeg?: number };
-				};
-				const mList = study?.measurements;
-				if (Array.isArray(mList) && mList.length > 0) {
-					const vals: Record<string, number> = {};
-					for (const m of mList) {
-						const k = (m.parameterKey || m.parameter || "").toLowerCase().replace(/[^a-z0-9]/g, "_");
-						if (typeof m.value === "number") vals[k] = m.value;
-					}
-					if (Object.keys(vals).length > 0) {
-						setProtocol((prev) => ({
-							...prev,
-							trgValues: { ...(prev.trgValues || {}), ...vals },
-						}));
-					}
-				} else if (study?.analysis) {
-					const ca = study.analysis;
-					setProtocol((prev) => ({
-						...prev,
-						trgValues: {
-							...(prev.trgValues || {}),
-							...(typeof ca.sna === "number" ? { sna: ca.sna } : {}),
-							...(typeof ca.snb === "number" ? { snb: ca.snb } : {}),
-							...(typeof ca.anb === "number" ? { anb: ca.anb } : {}),
-							...(typeof ca.u1NaDeg === "number" ? { u1_na: ca.u1NaDeg } : {}),
-							...(typeof ca.l1NbDeg === "number" ? { l1_nb: ca.l1NbDeg } : {}),
-							...(typeof ca.fmaDeg === "number" ? { fma: ca.fmaDeg } : {}),
-						},
-					}));
-				}
-			}
-		});
-
-		return () => {
-			unsubscribe();
-		};
-	}, []);
 
 	const soapSummary = useMemo(() => formatOrthoProtocolSoapEntry(protocol), [protocol]);
 	const memoText = useMemo(() => {
@@ -330,205 +163,21 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	}, []);
 
 	const handleSaveProtocol = useCallback(async () => {
-		const updatedProtocol: OrthoProtocolState = { ...protocol, savedAt: new Date().toISOString() };
-
-		if (onSaveProtocol) {
-			try {
-				await onSaveProtocol(updatedProtocol, soapSummary);
-			} catch (err) {
-				console.warn("[OrthodonticsStudioModal] onSaveProtocol error:", err);
-			}
-		}
-
-		if (patientId) {
-			try {
-				if (protocol.applianceCategory === "aligners") {
-					// DEF-ORTHO-08 / Red Team Досье: Исправление бага скачка элайнеров.
-					// Количество выдаваемых кап берется строго из issuedSetsCount (пар на руки), а не из currentStep!
-					const alignerCount = protocol.alignerTracking.issuedSetsCount > 0
-						? protocol.alignerTracking.issuedSetsCount
-						: 1;
-					await fetch(`/api/orthodontics/${patientId}/aligners/issue-set`, {
-						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-						body: JSON.stringify({
-							alignerCount,
-							wearDaysPerAligner: protocol.alignerTracking.wearDaysPerStep || 14,
-							totalAligners: protocol.alignerTracking.totalSteps || 24,
-							note: `Выдача комплекта элайнеров (актуальный шаг ${protocol.alignerTracking.currentStep} из ${protocol.alignerTracking.totalSteps})`,
-							visitId,
-							soapSummary,
-							applianceId: protocol.applianceId,
-							applianceName: protocol.applianceName,
-							selectedElasticId: protocol.selectedElasticId,
-							selectedActionIds: protocol.selectedActionIds,
-						}),
-					});
-				} else if (protocol.applianceCategory === "plate") {
-					await fetch(`/api/orthodontics/${patientId}/stages/advance`, {
-						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-						body: JSON.stringify({
-							nextStage: Math.max(1, protocol.currentMonth || 1),
-							stageTitle: `Активация аппарата / винта: ${protocol.applianceName}`,
-							note: protocol.clinicalNotes || protocol.notes || "Контрольный осмотр и активация расширяющего винта пластинки",
-							visitId,
-							soapSummary,
-							applianceId: protocol.applianceId,
-							applianceName: protocol.applianceName,
-							selectedElasticId: protocol.selectedElasticId,
-							selectedActionIds: protocol.selectedActionIds,
-						}),
-					});
-				} else {
-					const materialMap: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
-						niti: "NiTi",
-						cuniti: "CuNiTi",
-						ss: "SS",
-						tma: "TMA",
-						NiTi: "NiTi",
-						CuNiTi: "CuNiTi",
-						SS: "SS",
-						TMA: "TMA",
-					};
-					const upperMat = materialMap[protocol.upperAlloy] || "CuNiTi";
-					const lowerMat = materialMap[protocol.lowerAlloy] || "CuNiTi";
-
-					if (upperMat === lowerMat && protocol.upperSection === protocol.lowerSection) {
-						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
-							method: "POST",
-							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-							body: JSON.stringify({
-								material: upperMat,
-								section: protocol.upperSection,
-								arch: "both",
-								applianceCategory: "brackets",
-								isWireChange: true,
-								note: "Плановая смена ортодонтических дуг ВЧ + НЧ",
-								visitId,
-								soapSummary,
-								applianceId: protocol.applianceId,
-								applianceName: protocol.applianceName,
-								selectedElasticId: protocol.selectedElasticId,
-								selectedActionIds: protocol.selectedActionIds,
-							}),
-						});
-					} else {
-						// Сохраняем параметры обеих дуг: ВЧ и НЧ раздельно без взаимного затирания
-						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
-							method: "POST",
-							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-							body: JSON.stringify({
-								material: upperMat,
-								section: protocol.upperSection,
-								arch: "upper",
-								applianceCategory: "brackets",
-								isWireChange: true,
-								note: `Смена дуги ВЧ: ${upperMat} ${protocol.upperSection}`,
-								visitId,
-								soapSummary,
-								applianceId: protocol.applianceId,
-								applianceName: protocol.applianceName,
-								selectedElasticId: protocol.selectedElasticId,
-								selectedActionIds: protocol.selectedActionIds,
-							}),
-						});
-						await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
-							method: "POST",
-							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-							body: JSON.stringify({
-								material: lowerMat,
-								section: protocol.lowerSection,
-								arch: "lower",
-								applianceCategory: "brackets",
-								isWireChange: true,
-								note: `Смена дуги НЧ: ${lowerMat} ${protocol.lowerSection}`,
-								visitId,
-								soapSummary,
-								applianceId: protocol.applianceId,
-								applianceName: protocol.applianceName,
-								selectedElasticId: protocol.selectedElasticId,
-								selectedActionIds: protocol.selectedActionIds,
-							}),
-						});
-					}
-
-					await fetch(`/api/orthodontics/${patientId}/ligatures-activate`, {
-						method: "POST",
-						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-						body: JSON.stringify({
-							powerChain: protocol.selectedActionIds.includes("power_chain"),
-							applianceCategory: "brackets",
-							note: "Активация лигатур",
-							visitId,
-							soapSummary,
-						}),
-					});
-				}
-
-				// DEF-ORTHO-04: Реальное сохранение протокола в ЭМК через API приёма
-				if (visitId) {
-					try {
-						await fetch(`/api/visits/${visitId}/draft/autosave`, {
-							method: "PUT",
-							headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-							body: JSON.stringify({
-								visitId,
-								patientId,
-								selectedSpecialty: "orthodontics",
-								transcript: "",
-								draft: {
-									complaint: "Плановый визит по ортодонтическому лечению",
-									anamnesis: `Ортодонтическое лечение: ${protocol.applianceName}. Месяц ${protocol.currentMonth} из ${protocol.totalMonths}.`,
-									objectiveStatus: `Аппарат: ${protocol.applianceName}. Скелетный класс ${skeletalClassInfo.skeletalClass}.`,
-									diagnosis: "K07.4 Аномалии положения зубов",
-									treatmentPlan: soapSummary,
-								},
-							}),
-						});
-					} catch (vErr) {
-						console.warn("[OrthodonticsStudioModal] Autosave visit draft error:", vErr);
-					}
-				}
-
-				if (typeof window !== "undefined") {
-					window.dispatchEvent(
-						new CustomEvent("dente:emr-entry-added", {
-							detail: {
-								patientId,
-								visitId,
-								type: "orthodontic_protocol",
-								text: soapSummary,
-								savedAt: new Date().toISOString(),
-							},
-						}),
-					);
-					window.dispatchEvent(
-						new CustomEvent("dente:patient-updated", {
-							detail: { patientId },
-						}),
-					);
-					if (visitId) {
-						window.dispatchEvent(
-							new CustomEvent("dente:visit-updated", {
-								detail: { visitId, patientId },
-							}),
-						);
-					}
-				}
-				showToast("✓ Активация этапа успешно зафиксирована в ЭМК", "success");
-			} catch (err) {
-				console.warn("[OrthodonticsStudioModal] Save error:", err);
-				showToast("Сетевой сбой при фиксации этапа. Данные сохранены локально.", "warning");
-			}
-		}
+		await saveOrthodonticProtocolToApi({
+			protocol,
+			soapSummary,
+			skeletalClass: skeletalClassInfo.skeletalClass,
+			patientId,
+			visitId,
+			onSaveProtocol,
+		});
 
 		setFeedbackToast("✓ Активация этапа зафиксирована");
 		setTimeout(() => {
 			setFeedbackToast(null);
 			onClose();
 		}, 400);
-	}, [protocol, soapSummary, onSaveProtocol, patientId, onClose]);
+	}, [protocol, soapSummary, skeletalClassInfo.skeletalClass, patientId, visitId, onSaveProtocol, onClose]);
 
 	const handleCopyText = useCallback((textToCopy: string, successMsg: string) => {
 		if (typeof navigator !== "undefined" && navigator.clipboard) {

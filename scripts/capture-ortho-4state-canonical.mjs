@@ -89,8 +89,8 @@ await context.addInitScript(({ cTok, sTok, uid, fn }) => {
 
 const page = await context.newPage();
 
-console.log("[NAV] Navigating to http://127.0.0.1:5173/?demo=true#ortho-protocol...");
-await page.goto("http://127.0.0.1:5173/?demo=true#ortho-protocol", {
+console.log("[NAV] Navigating to http://127.0.0.1:5173/?demo=true&patientId=pat-1#orthodontics...");
+await page.goto("http://127.0.0.1:5173/?demo=true&patientId=pat-1#orthodontics", {
 	waitUntil: "domcontentloaded",
 	timeout: 45000,
 }).catch((err) => console.log("[WARN] Navigation wait:", err.message));
@@ -98,15 +98,17 @@ await page.goto("http://127.0.0.1:5173/?demo=true#ortho-protocol", {
 console.log("[WAIT] Waiting for .boot-state detachment...");
 await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
 
-console.log("[WAIT] Checking for orthodontic widget...");
-let widget = await page.waitForSelector('[data-testid="ortho-visit-protocol-widget"], [data-testid="orthodontic-visit-protocol-widget"]', { state: "visible", timeout: 15000 }).catch(() => null);
-
-if (!widget) {
+console.log("[WAIT] Waiting for orthodontic studio modal...");
+try {
+	await page.waitForSelector('[data-testid="orthodontic-studio-modal"], .ortho-studio-modal', { state: "visible", timeout: 45000 });
+	console.log("[WAIT] Orthodontic studio modal is now visible!");
+} catch (e) {
+	console.log("[WARN] Modal not visible immediately, attempting fallback launcher click:", e.message);
 	const openBtn = await page.$('[data-testid="btn-open-ortho-protocol-widget"], [data-testid="ortho-toolbar-norm-btn"]');
 	if (openBtn) {
 		console.log("[CLICK] Clicking open button...");
 		await openBtn.click().catch(() => {});
-		await page.waitForTimeout(1500);
+		await page.waitForSelector('[data-testid="orthodontic-studio-modal"], .ortho-studio-modal', { state: "visible", timeout: 20000 }).catch(() => {});
 	}
 }
 
@@ -123,37 +125,41 @@ await page.addStyleTag({
 	`,
 }).catch(() => {});
 
-// Click preset if present
+// Switch to aligners tab to showcase AlignerCaseTracker & BiteClassificationCard
 try {
-	const presetBtn = await page.$('[data-testid="ortho-preset-bonding-both-mbt-btn"], [data-testid="ortho-preset-niti-014-activation-btn"]');
-	if (presetBtn) {
-		await presetBtn.click();
-		await page.waitForTimeout(500);
+	const alignerTabBtn = page.locator('.ortho-tab-btn:has-text("Каппы"), .ortho-tab-btn:has-text("Элайнеры")').first();
+	await alignerTabBtn.waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+	if (await alignerTabBtn.isVisible()) {
+		console.log("[CLICK] Switching to Aligners & Bite tab...");
+		await alignerTabBtn.click();
+		await page.waitForTimeout(1000);
 	}
-} catch {}
+} catch (e) {
+	console.log("[WARN] Tab switch:", e.message);
+}
 
 const states = [
 	{
-		filename: "pc_light_1440x900.png",
-		aliases: ["ortho_pc_light_1440x900.png", "01_ortho_pc_light_1440.png"],
+		filename: "01_orthodontics_studio_pc_light_1440x900.png",
+		aliases: ["pc_light_1440x900.png", "ortho_pc_light_1440x900.png", "01_ortho_pc_light_1440.png"],
 		viewport: { width: 1440, height: 900 },
 		theme: "light",
 	},
 	{
-		filename: "pc_dark_1440x900.png",
-		aliases: ["ortho_pc_dark_1440x900.png", "02_ortho_pc_dark_1440.png"],
+		filename: "02_orthodontics_studio_pc_dark_1440x900.png",
+		aliases: ["pc_dark_1440x900.png", "ortho_pc_dark_1440x900.png", "02_ortho_pc_dark_1440.png"],
 		viewport: { width: 1440, height: 900 },
 		theme: "dark",
 	},
 	{
-		filename: "mobile_light_390x844.png",
-		aliases: ["ortho_mobile_light_390x844.png", "03_ortho_mobile_light_390.png"],
+		filename: "03_orthodontics_studio_mobile_light_390x844.png",
+		aliases: ["mobile_light_390x844.png", "ortho_mobile_light_390x844.png", "03_ortho_mobile_light_390.png"],
 		viewport: { width: 390, height: 844 },
 		theme: "light",
 	},
 	{
-		filename: "mobile_dark_390x844.png",
-		aliases: ["ortho_mobile_dark_390x844.png", "04_ortho_mobile_dark_390.png"],
+		filename: "04_orthodontics_studio_mobile_dark_390x844.png",
+		aliases: ["mobile_dark_390x844.png", "ortho_mobile_dark_390x844.png", "04_ortho_mobile_dark_390.png"],
 		viewport: { width: 390, height: 844 },
 		theme: "dark",
 	},

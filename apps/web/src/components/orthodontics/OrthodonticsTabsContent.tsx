@@ -5,7 +5,7 @@
  * Брекеты, элайнеры, фотопротокол, ТРГ и клинический дневник SOAP.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { Check, Layers, ArrowRight, Copy, BookOpen, Camera, Activity } from "lucide-react";
 import { isSlotMatching } from "@dental/shared";
 import {
@@ -15,6 +15,10 @@ import {
 	type ArchwireAlloy, type ArchwireSection, type OrthoProtocolState,
 } from "./orthodonticsCatalogData";
 import { AlignerTrackingCard } from "./AlignerTrackingCard";
+import { AlignerCaseTracker } from "./AlignerCaseTracker";
+import { BiteClassificationCard } from "./BiteClassificationCard";
+import { CephTracingCanvas } from "./CephTracingCanvas";
+import { SAMPLE_TRG_CEPHALOGRAM_URL, type PointCoord } from "./CephalometricCanvas";
 import { OrthodonticTimeline } from "./OrthodonticTimeline";
 
 export interface OrthodonticsTabsContentProps {
@@ -50,6 +54,26 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 	onOpenPhotoModal,
 	onOpenCephModal,
 }) => {
+	const [showTracingPreview, setShowTracingPreview] = useState<boolean>(false);
+	const [sampleCephLandmarks, setSampleCephLandmarks] = useState<Record<string, PointCoord>>({
+		S: { x: 480, y: 310 },
+		N: { x: 740, y: 290 },
+		A: { x: 730, y: 520 },
+		B: { x: 710, y: 640 },
+		Pog: { x: 720, y: 720 },
+		Gn: { x: 710, y: 750 },
+		Me: { x: 690, y: 770 },
+		Go: { x: 440, y: 650 },
+		Ba: { x: 380, y: 460 },
+		Pt: { x: 550, y: 420 },
+		Or: { x: 670, y: 370 },
+		Po: { x: 430, y: 390 },
+		U1t: { x: 735, y: 590 },
+		U1a: { x: 710, y: 510 },
+		L1t: { x: 725, y: 605 },
+		L1a: { x: 705, y: 690 },
+	});
+
 	const renderJawCard = (title: string, isUpper: boolean) => {
 		const currentAlloy = isUpper ? protocol.upperAlloy : protocol.lowerAlloy;
 		const currentSection = isUpper ? protocol.upperSection : protocol.lowerSection;
@@ -162,25 +186,32 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 
 			{activeTab === "aligners" && (
 				<div className="flex flex-col gap-4">
-					<AlignerTrackingCard
+					<AlignerCaseTracker
 						tracking={protocol.alignerTracking}
 						onChange={(updater) => setProtocol((p) => ({ ...p, alignerTracking: updater(p.alignerTracking) }))}
 						onAdvanceStep={handleAdvanceAlignerStep}
+						onAddAligner={() => {
+							setProtocol((p) => ({
+								...p,
+								alignerTracking: {
+									...p.alignerTracking,
+									totalSteps: (p.alignerTracking.totalSteps || 24) + 2,
+								},
+							}));
+						}}
+						totalSetupCostKopecks={18000000n}
 					/>
-					<div className="ortho-card">
-						<span className="text-sm font-semibold text-[var(--ink)]">Классификация прикуса по Энглю</span>
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-							{ANGLE_CLASSES_CATALOG.map((ac) => {
-								const isSelected = protocol.angleClass === ac.key;
-								return (
-									<button key={ac.key} type="button" onClick={() => setProtocol((p) => ({ ...p, angleClass: ac.key }))} className={`p-3 rounded-lg border text-left transition-all flex flex-col gap-1 min-h-[44px] ${isSelected ? "border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--ink)] shadow-xs" : "border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink)] hover:bg-[var(--paper)]"}`}>
-										<div className="text-xs font-bold">{ac.titleRu}</div>
-										<div className="text-[11px] text-[var(--ink-muted)] leading-relaxed">{ac.descriptionRu}</div>
-									</button>
-								);
-							})}
-						</div>
-					</div>
+					<BiteClassificationCard
+						angleClass={protocol.angleClass}
+						onAngleClassChange={(ac) => setProtocol((p) => ({ ...p, angleClass: ac }))}
+						verticalBite={protocol.verticalBite}
+						onVerticalBiteChange={(vb) => setProtocol((p) => ({ ...p, verticalBite: vb }))}
+						anbDeg={protocol.trgValues?.anb ?? 2.0}
+						onAnbDegChange={(val) => setProtocol((p) => ({
+							...p,
+							trgValues: { ...(p.trgValues ?? {}), anb: val },
+						}))}
+					/>
 				</div>
 			)}
 
@@ -253,6 +284,33 @@ export const OrthodonticsTabsContent: React.FC<OrthodonticsTabsContentProps> = (
 								</div>
 							);
 						})}
+					</div>
+
+					<div className="ortho-card flex flex-col gap-3">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div>
+								<h4 className="text-sm font-semibold text-[var(--ink)]">Интерактивная трассировка ТРГ</h4>
+								<p className="text-[11px] text-[var(--ink-muted)]">16 краниофациальных ориентиров, анатомические плоскости и фильтры кости</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => setShowTracingPreview((v) => !v)}
+								className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--primary)] hover:border-[var(--primary)] flex items-center gap-1.5 transition-colors cursor-pointer min-h-[36px]"
+							>
+								<Activity className="w-3.5 h-3.5" />
+								<span>{showTracingPreview ? "Скрыть холст" : "Развернуть трассировку"}</span>
+							</button>
+						</div>
+						{showTracingPreview && (
+							<CephTracingCanvas
+								imageUrl={SAMPLE_TRG_CEPHALOGRAM_URL}
+								landmarks={sampleCephLandmarks}
+								onLandmarkChange={(id, pt) => {
+									setSampleCephLandmarks((prev) => ({ ...prev, [id]: pt }));
+								}}
+								className="min-h-[420px] rounded-xl border border-[var(--line)]"
+							/>
+						)}
 					</div>
 				</div>
 			)}
