@@ -196,6 +196,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				canViewMedicalRecord: r.canViewMedicalRecord || r.canViewRecords,
 				canSignConsents: r.canSignConsents,
 				canSpendFamilyWallet: r.canSpendFamilyWallet || r.isPrimaryPayer,
+				spendLimitKopecks: r.spendLimitKopecks != null ? Number(r.spendLimitKopecks) : undefined,
 				documentProofNumber: r.documentProofNumber ?? null,
 				isPrimaryPayer: r.isPrimaryPayer || r.canSpendFamilyWallet,
 				canViewRecords: r.canViewRecords || r.canViewMedicalRecord,
@@ -253,6 +254,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			canViewMedicalRecord,
 			canSignConsents,
 			canSpendFamilyWallet,
+			spendLimitKopecks,
 			documentProofNumber,
 			notes,
 		} = bodyParsed.data;
@@ -310,63 +312,72 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		// Insert into database
+		// Insert into database in a single atomic ACID transaction (Mandates 8bo, 8bf)
 		const isCloseRelative = ["parent", "child", "spouse", "guardian", "ward"].includes(relationshipType);
 		const defaultCanSpend = isCloseRelative;
 		const effectiveCanSpend = canSpendFamilyWallet ?? defaultCanSpend;
 
-		const [created] = await db
-			.insert(patientRelationships)
-			.values({
-				organizationId,
-				patientId,
-				relatedPatientId,
-				relationshipType,
-				isLegalRepresentative: isLegalRepresentative ?? false,
-				canViewMedicalRecord: canViewMedicalRecord ?? false,
-				canSignConsents: canSignConsents ?? false,
-				canSpendFamilyWallet: effectiveCanSpend,
-				documentProofNumber: documentProofNumber ?? null,
-				isPrimaryPayer: effectiveCanSpend,
-				canViewRecords: canViewMedicalRecord ?? false,
-				notes: notes ?? null,
-			})
-			.returning();
+		const created = await db.transaction(async (tx) => {
+			const [inserted] = await tx
+				.insert(patientRelationships)
+				.values({
+					organizationId,
+					patientId,
+					relatedPatientId,
+					relationshipType,
+					isLegalRepresentative: isLegalRepresentative ?? false,
+					canViewMedicalRecord: canViewMedicalRecord ?? false,
+					canSignConsents: canSignConsents ?? false,
+					canSpendFamilyWallet: effectiveCanSpend,
+					spendLimitKopecks: spendLimitKopecks ?? null,
+					documentProofNumber: documentProofNumber ?? null,
+					isPrimaryPayer: effectiveCanSpend,
+					canViewRecords: canViewMedicalRecord ?? false,
+					notes: notes ?? null,
+				})
+				.returning();
+
+			if (!inserted) {
+				throw new Error("Failed to insert relationship");
+			}
+
+			// Mandate 8bf: Synchronize familyGroupId between related patients
+			const p1 = existingPatients.find((p) => p.id === patientId);
+			const p2 = existingPatients.find((p) => p.id === relatedPatientId);
+			const sharedFamilyGroupId = p1?.familyGroupId || p2?.familyGroupId;
+			if (sharedFamilyGroupId) {
+				if (!p1?.familyGroupId) {
+					await tx
+						.update(patients)
+						.set({ familyGroupId: sharedFamilyGroupId })
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								eq(patients.id, patientId),
+							),
+						);
+				}
+				if (!p2?.familyGroupId) {
+					await tx
+						.update(patients)
+						.set({ familyGroupId: sharedFamilyGroupId })
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								eq(patients.id, relatedPatientId),
+							),
+						);
+				}
+			}
+
+			return inserted;
+		});
 
 		if (!created) {
 			return reply.code(500).send({
 				error: "Internal Server Error",
 				message: "Не удалось сохранить связь родственников",
 			});
-		}
-
-		// Mandate 8bf: Synchronize familyGroupId between related patients
-		const p1 = existingPatients.find((p) => p.id === patientId);
-		const p2 = existingPatients.find((p) => p.id === relatedPatientId);
-		const sharedFamilyGroupId = p1?.familyGroupId || p2?.familyGroupId;
-		if (sharedFamilyGroupId) {
-			if (!p1?.familyGroupId) {
-				await db
-					.update(patients)
-					.set({ familyGroupId: sharedFamilyGroupId })
-					.where(
-						and(
-							eq(patients.organizationId, organizationId),
-							eq(patients.id, patientId),
-						),
-					);
-			}
-			if (!p2?.familyGroupId) {
-				await db
-					.update(patients)
-					.set({ familyGroupId: sharedFamilyGroupId })
-					.where(
-						and(
-							eq(patients.organizationId, organizationId),
-							eq(patients.id, relatedPatientId),
-						),
-					);
-			}
 		}
 
 		const relatedPatient = existingPatients.find(
@@ -391,6 +402,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				canViewMedicalRecord: created.canViewMedicalRecord,
 				canSignConsents: created.canSignConsents,
 				canSpendFamilyWallet: created.canSpendFamilyWallet,
+				spendLimitKopecks: created.spendLimitKopecks != null ? Number(created.spendLimitKopecks) : undefined,
 				documentProofNumber: created.documentProofNumber,
 				isPrimaryPayer: created.isPrimaryPayer,
 				canViewRecords: created.canViewRecords,
@@ -487,6 +499,9 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 		if (updates.documentProofNumber !== undefined) {
 			updatePayload.documentProofNumber = updates.documentProofNumber;
 		}
+		if (updates.spendLimitKopecks !== undefined) {
+			updatePayload.spendLimitKopecks = updates.spendLimitKopecks;
+		}
 		if (updates.notes !== undefined) {
 			updatePayload.notes = updates.notes;
 		}
@@ -520,6 +535,7 @@ export async function registerPatientRelationshipsRoutes(app: FastifyInstance) {
 				canViewMedicalRecord: updated.canViewMedicalRecord,
 				canSignConsents: updated.canSignConsents,
 				canSpendFamilyWallet: updated.canSpendFamilyWallet,
+				spendLimitKopecks: updated.spendLimitKopecks != null ? Number(updated.spendLimitKopecks) : undefined,
 				documentProofNumber: updated.documentProofNumber,
 				isPrimaryPayer: updated.isPrimaryPayer,
 				canViewRecords: updated.canViewRecords,

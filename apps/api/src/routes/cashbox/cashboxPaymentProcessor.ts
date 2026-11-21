@@ -501,6 +501,43 @@ export async function processCashboxPayment(
 					targetFamilyGroupId = headFamily.id;
 				}
 			}
+			if (!targetFamilyGroupId && (body.method === "family_wallet" || body.familyDepositAmountRub || body.familyDepositAmountKopecks)) {
+				const [relHead] = await tx
+					.select({ familyGroupId: familyGroups.id })
+					.from(patientRelationships)
+					.innerJoin(
+						familyGroups,
+						and(
+							eq(familyGroups.organizationId, orgId),
+							or(
+								eq(familyGroups.headPatientId, patientRelationships.patientId),
+								eq(familyGroups.headPatientId, patientRelationships.relatedPatientId),
+							),
+						),
+					)
+					.where(
+						and(
+							eq(patientRelationships.organizationId, orgId),
+							or(
+								eq(patientRelationships.patientId, resolvedPatientId),
+								eq(patientRelationships.relatedPatientId, resolvedPatientId),
+							),
+						),
+					)
+					.limit(1);
+				if (relHead) {
+					targetFamilyGroupId = relHead.familyGroupId;
+				} else {
+					const [anyFam] = await tx
+						.select({ id: familyGroups.id })
+						.from(familyGroups)
+						.where(eq(familyGroups.organizationId, orgId))
+						.limit(1);
+					if (anyFam) {
+						targetFamilyGroupId = anyFam.id;
+					}
+				}
+			}
 
 			if (targetFamilyGroupId) {
 				const [fg] = await tx
@@ -679,41 +716,18 @@ export async function processCashboxPayment(
 						)
 						.limit(1);
 
-					const isDirectFamilyMember = Boolean(
-						patientRow?.familyGroupId && lockedFamilyGroup.id && patientRow.familyGroupId === lockedFamilyGroup.id,
-					);
-
-					// Явный запрет в patient_relationships (canSpendFamilyWallet === false) блокирует списание
-					if (rel && rel.canSpendFamilyWallet === false) {
+					// Защита от BOLA/IDOR [LOY-05]: Списание средств с семейного депозита другим лицом (resolvedPatientId !== walletOwnerId)
+					// требует явного подтверждения полномочий в patient_relationships (canSpendFamilyWallet === true или isLegalRepresentative === true).
+					if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
 						return {
 							kind: "unauthorized_family_spend" as const,
 							reason: "Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).",
 						};
 					}
 
-					// Члены подтверждённой семейной группы имеют право на списание по умолчанию (Мандаты 8e и 8n).
-					// Если пациент не входит в семейную группу напрямую, требуется подтверждение связи в patient_relationships.
-					if (!isDirectFamilyMember && (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true))) {
-						return {
-							kind: "unauthorized_family_spend" as const,
-							reason: "Пациент не имеет полномочий на списание средств с семейного депозита (canSpendFamilyWallet = false).",
-						};
-					}
-
-					// 3. Проверка установленного лимита списания spendLimitKopecks
-					let spendLimitKop: number | undefined;
-					if ((rel as Record<string, unknown> | undefined)?.["spendLimitKopecks"] !== undefined) {
-						spendLimitKop = Number((rel as Record<string, unknown>)["spendLimitKopecks"]);
-					} else if (rel?.notes) {
-						try {
-							const parsed = JSON.parse(rel.notes);
-							if (typeof parsed?.spendLimitKopecks === "number") {
-								spendLimitKop = parsed.spendLimitKopecks;
-							}
-						} catch {
-							// plain text note
-						}
-					}
+					// 3. Проверка установленного лимита списания spendLimitKopecks (Мандаты 8ap, 8bm)
+					const spendLimitKop =
+						rel?.spendLimitKopecks != null ? Number(rel.spendLimitKopecks) : undefined;
 					if (spendLimitKop !== undefined && spendLimitKop >= 0 && Number(remainingToDeductKop) > spendLimitKop) {
 						return {
 							kind: "unauthorized_family_spend" as const,

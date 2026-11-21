@@ -7,10 +7,6 @@ import { familyGroups, patientRelationships, patients } from "../../db/schema.js
 import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import {
-	familyGroupForOrganization,
-	familyMembersForOrganization,
-} from "./familyBalanceService.js";
-import {
 	addFamilyMemberSchema,
 	createFamilyGroupSchema,
 	updateFamilyGroupSchema,
@@ -344,10 +340,20 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 
 		const { id } = req.params as { id: string };
 		const deleteResult = await db.transaction(async (tx) => {
-			const members = await familyMembersForOrganization(id, organizationId);
-			if (members.length > 0) return { status: 400, body: { error: "Cannot delete family group with members" } };
-			const family = await familyGroupForOrganization(id, organizationId);
+			const [family] = await tx
+				.select()
+				.from(familyGroups)
+				.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId)))
+				.for("update");
 			if (!family) return { status: 404, body: { error: "Family group not found" } };
+
+			const members = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.familyGroupId, id), eq(patients.organizationId, organizationId)))
+				.limit(1);
+			if (members.length > 0) return { status: 400, body: { error: "Cannot delete family group with members" } };
+
 			const balanceKopecks = parseKopecks(family.balance);
 			if (balanceKopecks !== 0) {
 				return { status: 409, body: { error: "FamilyWalletNotEmpty", message: `На кошельке ${kopecksToNumericString(balanceKopecks)} ₽. Удалить нельзя.` } };

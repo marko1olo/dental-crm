@@ -65,7 +65,6 @@ import { registerOdontogramRoutes } from "../routes/odontogram.js";
 import { registerPeriodontogramRoutes } from "../routes/periodontogram/index.js";
 import { registerPediatricRoutes as registerPediatricDomainRoutes } from "../routes/pediatric/index.js";
 import { registerOrthodonticsRoutes } from "../routes/orthodontics/index.js";
-import { registerToothHistoryRoutes } from "../routes/odontogram/historyRoutes.js";
 import { registerOutpatientRoutes } from "../routes/outpatient.js";
 import { registerPatientDuplicateRoutes } from "../routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "../routes/patientRecall.js";
@@ -161,7 +160,6 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerOdontogramRoutes(app);
 	await registerPediatricDomainRoutes(app);
 	await registerPeriodontogramRoutes(app);
-	await registerToothHistoryRoutes(app);
 	await registerOutpatientRoutes(app);
 	await registerLoyaltyRoutes(app);
 	await registerReferralRoutes(app);

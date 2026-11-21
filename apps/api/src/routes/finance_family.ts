@@ -8,7 +8,6 @@
  * - family/familyGroupWriteRoutes.ts: транзакционное создание и редактирование
  * - family/familyWalletRoutes.ts: списание и история операций
  * - family/familyWalletOperationsRoutes.ts: пополнение и возврат
- * - family/fiscalReceiptRoutes.ts: фискализация и проверка чеков
  */
 
 import type { FastifyInstance } from "fastify";
@@ -16,7 +15,6 @@ import { registerFamilyGroupReadRoutes } from "./family/familyGroupReadRoutes.js
 import { registerFamilyGroupWriteRoutes } from "./family/familyGroupWriteRoutes.js";
 import { registerFamilyWalletRoutes } from "./family/familyWalletRoutes.js";
 import { registerFamilyWalletOperationsRoutes } from "./family/familyWalletOperationsRoutes.js";
-import { registerFamilyFiscalReceiptRoutes } from "./family/fiscalReceiptRoutes.js";
 
 export {
 	familyPaymentSchema,
@@ -38,7 +36,6 @@ export async function registerFamilyFinanceRoutes(app: FastifyInstance) {
 	registerFamilyGroupWriteRoutes(app);
 	registerFamilyWalletRoutes(app);
 	registerFamilyWalletOperationsRoutes(app);
-	registerFamilyFiscalReceiptRoutes(app);
 }
 
 export default registerFamilyFinanceRoutes;

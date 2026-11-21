@@ -433,7 +433,7 @@ describe("FIN-05: Cashbox Deposit Integrity & Unauthorized Spend Blocking", () =
 					relatedPatientId: headPatientId,
 					relationshipType: "child",
 					canSpendFamilyWallet: true,
-					notes: JSON.stringify({ spendLimitKopecks: 1000000 }),
+					spendLimitKopecks: 1000000,
 				});
 			});
 

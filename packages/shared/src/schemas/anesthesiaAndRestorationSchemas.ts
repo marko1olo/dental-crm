@@ -1,5 +1,8 @@
 import { z } from "zod";
+import { estimatePediatricWeightKg } from "../clinical/pediatric/anesthesiology.js";
 import { type AnestheticDrug, type AnestheticSafetyCalculation, type AsaClassification, type VasoconstrictorRatio } from "./imagingSessionAndAnesthesiaSchemas.js";
+
+export { estimatePediatricWeightKg };
 
 export function calculateAnestheticSafety(params: {
 	drug: AnestheticDrug;
@@ -7,10 +10,10 @@ export function calculateAnestheticSafety(params: {
 	vasoconstrictor: VasoconstrictorRatio;
 	carpuleVolumeMl: number;
 	carpulesAdministered: number;
-	patientWeightKg: number;
-	patientAgeYears?: number;
-	asaClass?: AsaClassification;
-	hasCardiovascularDisease?: boolean;
+	patientWeightKg?: number | undefined;
+	patientAgeYears?: number | undefined;
+	asaClass?: AsaClassification | undefined;
+	hasCardiovascularDisease?: boolean | undefined;
 }): AnestheticSafetyCalculation {
 	const {
 		drug,
@@ -32,28 +35,22 @@ export function calculateAnestheticSafety(params: {
 		Number.isFinite(patientWeightKg) &&
 		patientWeightKg > 0;
 
-	if (!hasValidWeight || (isPediatric && (!patientWeightKg || patientWeightKg <= 0))) {
-		warnings.push(
-			isPediatric
-				? "Укажите фактический вес ребенка для расчета анестезии! Расчет заблокирован."
-				: "Укажите фактический вес пациента для расчета анестезии! Расчет заблокирован.",
-		);
-		return {
-			totalAnestheticMg: 0,
-			maxRecommendedAnestheticMg: 0,
-			anestheticUtilizationPct: 100,
-			totalEpinephrineMg: 0,
-			maxRecommendedEpinephrineMg: 0,
-			epinephrineUtilizationPct: 100,
-			isAnestheticOverdose: false,
-			isEpinephrineOverdose: false,
-			maxSafeCarpules: 0,
-			remainingSafeCarpules: 0,
-			clinicalWarnings: warnings,
-		};
+	let weight: number;
+	if (!hasValidWeight) {
+		if (isPediatric) {
+			weight = estimatePediatricWeightKg(patientAgeYears);
+			warnings.push(
+				`Фактический вес ребенка не указан. Применена физиологическая норма ВОЗ для возраста ${patientAgeYears} лет: ${weight} кг.`,
+			);
+		} else {
+			weight = 70;
+			warnings.push(
+				"Фактический вес пациента не указан. Применена стандартная норма массы тела взрослого: 70 кг.",
+			);
+		}
+	} else {
+		weight = Math.max(5, Math.min(250, patientWeightKg!));
 	}
-
-	const weight = Math.max(5, Math.min(250, patientWeightKg));
 
 	// 1. Определение предельной дозы на 1 кг массы тела (MRD) и абсолютного максимума
 	let mrdPerKg = 7.0; // мг/кг

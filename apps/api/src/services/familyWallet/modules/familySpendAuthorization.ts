@@ -118,8 +118,8 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	// Защита от BOLA/IDOR [LOY-05]: Списание со счета другого лица требует явного подтверждения
-	// полномочий в patient_relationships (canSpendFamilyWallet === true или isLegalRepresentative === true).
+	// Защита от BOLA/IDOR [LOY-05]: Списание со счета другого лица (patientId !== walletOwnerId)
+	// требует подтверждения полномочий в patient_relationships (canSpendFamilyWallet === true или isLegalRepresentative === true).
 	if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
 		throw new FamilyWalletError(
 			"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
@@ -128,20 +128,9 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	// 2. Check individual spend limit if configured on the relationship
-	let spendLimitKop: number | undefined;
-	if ((rel as Record<string, unknown> | undefined)?.["spendLimitKopecks"] !== undefined) {
-		spendLimitKop = Number((rel as Record<string, unknown>)["spendLimitKopecks"]);
-	} else if (rel?.notes) {
-		try {
-			const parsed = JSON.parse(rel.notes);
-			if (typeof parsed?.spendLimitKopecks === "number") {
-				spendLimitKop = parsed.spendLimitKopecks;
-			}
-		} catch {
-			// plain text notes
-		}
-	}
+	// 2. Check individual spend limit if configured on the relationship (Mandates 8ap, 8bm)
+	const spendLimitKop =
+		rel?.spendLimitKopecks != null ? Number(rel.spendLimitKopecks) : undefined;
 	if (spendLimitKop !== undefined && spendLimitKop >= 0 && debitKopecks > spendLimitKop) {
 		throw new FamilyWalletError(
 			`Превышен установленный лимит списания с семейного кошелька (лимит: ${formatKopecksToRubles(spendLimitKop)} ₽, запрошено: ${formatKopecksToRubles(debitKopecks)} ₽)`,

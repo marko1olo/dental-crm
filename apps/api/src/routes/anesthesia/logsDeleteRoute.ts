@@ -1,13 +1,13 @@
 /**
  * @dental/api/routes/anesthesia/logsDeleteRoute.ts
- * Anesthesia Protocol Deletion & Annulment Route (Mandate 8b, <= 120 lines)
+ * Anesthesia Protocol Deletion & Annulment with Warehouse Storno and Estimate Rollback (Mandate 8b, <= 120 lines)
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { anesthesiaLogs } from "../../db/schema.js";
+import { anesthesiaLogs, inventoryItems, inventoryTransactions, treatmentItems } from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
@@ -42,24 +42,82 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 			});
 		}
 
-		return withTenantCtx(orgId, async () => {
-			const deleted = await db
-				.delete(anesthesiaLogs)
+		return withTenantCtx(orgId, async (tx) => {
+			const [log] = await tx
+				.select()
+				.from(anesthesiaLogs)
 				.where(and(eq(anesthesiaLogs.organizationId, orgId), eq(anesthesiaLogs.id, logId)))
-				.returning({ id: anesthesiaLogs.id });
+				.for("update");
 
-			if (deleted.length === 0) {
+			if (!log) {
 				return reply.status(404).send({ message: "Запись анестезии не найдена" });
 			}
 
+			const carpulesCount = Number(log.carpulesAdministered || 0);
+			if (carpulesCount > 0) {
+				const drugName = log.drugBrandName || log.drug || "Ультракаин Д-С";
+				const invItems = await tx
+					.select()
+					.from(inventoryItems)
+					.where(and(eq(inventoryItems.organizationId, orgId), ilike(inventoryItems.name, `%${drugName}%`)))
+					.limit(1);
+				const inv = invItems[0];
+				if (inv) {
+					const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+					const newStock = Number((currentStock + carpulesCount).toFixed(4));
+					await tx
+						.update(inventoryItems)
+						.set({ stockQuantity: String(newStock), currentQty: String(newStock), updatedAt: new Date() })
+						.where(and(eq(inventoryItems.id, inv.id), eq(inventoryItems.organizationId, orgId)));
+
+					await tx.insert(inventoryTransactions).values({
+						organizationId: orgId,
+						visitId: log.visitId ?? null,
+						itemId: inv.id,
+						inventoryItemId: inv.id,
+						quantityChanged: String(carpulesCount),
+						qty: String(carpulesCount),
+						unitCostRub: inv.unitCostRub ?? "0",
+						transactionType: "storno",
+						isOverdraft: false,
+						userId: identity.userId ?? log.doctorId ?? null,
+						notes: `Сторно списания анестезии (${drugName}) при аннулировании протокола #${log.id.slice(0, 8)}`,
+					});
+				}
+			}
+
+			if (log.visitId) {
+				await tx
+					.delete(treatmentItems)
+					.where(
+						and(
+							eq(treatmentItems.organizationId, orgId),
+							eq(treatmentItems.patientId, log.patientId),
+							eq(treatmentItems.visitId, log.visitId),
+							ilike(treatmentItems.title, "%Анестезия%"),
+						),
+					);
+			}
+
+			await tx
+				.delete(anesthesiaLogs)
+				.where(and(eq(anesthesiaLogs.organizationId, orgId), eq(anesthesiaLogs.id, logId)));
+
 			await auditMedicalAccessFromRequest(request, {
 				organizationId: orgId,
+				patientId: log.patientId,
 				action: "DELETE_ANESTHESIA_LOG",
 				diagnosis: "Аннулирование записи анестезиологического протокола",
 				metadata: { logId },
 			});
 
-			return reply.send({ success: true, deletedId: logId });
+			const responsePayload = JSON.parse(
+				JSON.stringify(
+					{ success: true, deletedId: logId, storno: { carpulesReturned: carpulesCount } },
+					(_, v) => (typeof v === "bigint" ? v.toString() : v),
+				),
+			);
+			return reply.send(responsePayload);
 		});
 	});
 }

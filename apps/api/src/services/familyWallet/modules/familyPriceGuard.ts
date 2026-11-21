@@ -50,9 +50,11 @@ export async function verifyServicePriceIntegrity(params: {
 		0,
 		new Decimal(catalogPriceKopecks).minus(discountKopecks).toNumber(),
 	);
-	if (debitKopecks !== verifiedAmountKopecks) {
+	// Мандаты 8e, 8bm: Разрешены частичные списания со сплитом (debitKopecks <= verifiedAmountKopecks).
+	// Блокируется только попытка превысить стоимость услуги в каталоге клиники.
+	if (debitKopecks > verifiedAmountKopecks) {
 		throw new FamilyWalletError(
-			`Попытка подмены стоимости услуги «${serviceItem.title}»: в каталоге клиники ${kopecksToRub(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${kopecksToRub(verifiedAmountKopecks)} ₽), получено ${kopecksToRub(debitKopecks)} ₽`,
+			`Попытка превышения стоимости услуги «${serviceItem.title}»: в каталоге клиники с учетом скидки ${kopecksToRub(verifiedAmountKopecks)} ₽, запрошено к списанию ${kopecksToRub(debitKopecks)} ₽`,
 			400,
 			"PRICE_SPOOFING_DETECTED",
 		);

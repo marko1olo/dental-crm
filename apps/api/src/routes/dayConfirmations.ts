@@ -30,7 +30,7 @@ import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { replyBadRequest } from "./routeErrors.js";
 import { decryptTelegramChatId } from "../utils/telegramChatRef.js";
 import { issueAppointmentActionLinks } from "../services/communications/appointmentActionLinks.js";
-import { renderTemplate } from "../services/communications/templateRenderer.js";
+import { renderTemplate } from "../services/communications/templateEngine/templateRenderer.js";
 
 const querySchema = z.object({
 	/** Дата в виде ГГГГ-ММ-ДД. По умолчанию — завтра: обзвон делают накануне. */

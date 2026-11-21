@@ -33,9 +33,14 @@ export function registerPediatricIndicesRoutes(app: FastifyInstance): void {
 		const { patientId } = request.params;
 		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
 
-		let teeth: { toothNumber: number; state: string; surfaces: unknown }[] = [];
+		let teeth: { toothNumber: number; state: string; surfaces: unknown; notes: string | null }[] = [];
 		try {
-			teeth = await db.select({ toothNumber: toothStates.toothNumber, state: toothStates.state, surfaces: toothStates.surfaces })
+			teeth = await db.select({
+				toothNumber: toothStates.toothNumber,
+				state: toothStates.state,
+				surfaces: toothStates.surfaces,
+				notes: toothStates.notes,
+			})
 				.from(toothStates).where(and(eq(toothStates.organizationId, organizationId), eq(toothStates.patientId, patientId)));
 		} catch (error: unknown) {
 			request.log.error({ error, patientId }, "Failed to fetch tooth states for pediatric indices from PostgreSQL 18");
@@ -53,10 +58,24 @@ export function registerPediatricIndicesRoutes(app: FastifyInstance): void {
 			const state = t.state;
 			const surfacesCount = Array.isArray(t.surfaces) ? t.surfaces.length : 1;
 
+			const stateLower = (state || "").toLowerCase();
+			const notesLower = (t.notes || "").toLowerCase();
+			const isPhysiologicalResorption =
+				stateLower.includes("resorption") ||
+				stateLower.includes("exfoliat") ||
+				notesLower.includes("физиологич") ||
+				notesLower.includes("резорбц") ||
+				notesLower.includes("смена зуба") ||
+				notesLower.includes("exfoliat") ||
+				notesLower.includes('"resorptionstage":100') ||
+				notesLower.includes('"resorptionstage": 100') ||
+				notesLower.includes('"isphysiologicalresorption":true') ||
+				notesLower.includes('"isphysiologicalresorption": true');
+
 			if (isPrimary) {
 				if (state === "Caries" || state === "Pulpitis" || state === "Periodontitis") primaryC++;
 				else if (state === "Filled" || state === "Crown") primaryP++;
-				else if (state === "Extracted" || state === "Missing" || state === "Root") primaryExtracted++;
+				else if ((state === "Extracted" || state === "Missing" || state === "Root") && !isPhysiologicalResorption) primaryExtracted++;
 			} else {
 				if (state === "Caries" || state === "Pulpitis" || state === "Periodontitis") { permanentC++; permanentSurfacesC += surfacesCount; }
 				else if (state === "Filled" || state === "Crown" || state === "Bridge") { permanentP++; permanentSurfacesP += surfacesCount; }

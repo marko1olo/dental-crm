@@ -5,7 +5,12 @@
  * Mandates 8e, 8i, 8ao: strict idempotency key & synchronous double-click protection.
  */
 
-import { createCompositeIdempotencyKey, generateUuidV7, parseKopecks } from "@dental/shared";
+import {
+	createCompositeIdempotencyKey,
+	generateUuidV7,
+	kopecksToRubles,
+	parseKopecks,
+} from "@dental/shared";
 import { useCallback, useRef, useState } from "react";
 import { money } from "../../../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
@@ -32,19 +37,25 @@ export function useFamilyTopupMutation({
 
 	const handleExecuteTopup = useCallback(async () => {
 		if (inFlightRef.current || submitting) return;
-		const num = parseFloat(topupAmount.replace(",", "."));
+		const cleanAmount = topupAmount.replace(",", ".").trim();
+		let amountKopecks = 0;
+		try {
+			amountKopecks = parseKopecks(cleanAmount);
+		} catch {
+			amountKopecks = 0;
+		}
 		if (!familyData?.id) return showToast("Семья не зарегистрирована", "error");
-		if (!topupAmount || Number.isNaN(num) || num <= 0)
+		if (!cleanAmount || amountKopecks <= 0)
 			return showToast("Укажите сумму > 0 ₽", "error");
 
+		const num = kopecksToRubles(amountKopecks);
 		inFlightRef.current = true;
 		setSubmitting(true);
 		try {
 			const payerId = topupPayerId || patientId;
-			const amountKopecks = parseKopecks(topupAmount.replace(",", "."));
 			const clientMutationId = createCompositeIdempotencyKey(
 				`fam-topup:${familyData.id}:${payerId}:${generateUuidV7()}`,
-				{ familyGroupId: familyData.id, amountRub: num, method: topupMethod },
+				{ familyGroupId: familyData.id, amountKopecks, method: topupMethod },
 			);
 
 			const res = await fetch("/api/finance/family/topup", {
@@ -82,7 +93,9 @@ export function useFamilyTopupMutation({
 			showToast(`Семейный счет пополнен на ${money(num)}`, "success");
 			setTopupAmount("");
 			setTopupComment("");
-			const parsedBalance = resJson?.newBalance ? parseFloat(resJson.newBalance) : undefined;
+			const parsedBalance = resJson?.newBalance
+				? kopecksToRubles(parseKopecks(resJson.newBalance))
+				: undefined;
 			await notifyChanged(parsedBalance);
 		} catch (err: unknown) {
 			const msg =

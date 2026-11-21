@@ -140,10 +140,12 @@ export const cashboxPaymentRequestSchema = z.object({
 	cashAmountKopecks: z.number().int().nonnegative().optional(),
 	electronicAmountKopecks: z.number().int().nonnegative().optional(),
 	depositAmountKopecks: z.number().int().nonnegative().optional(),
+	familyDepositAmountKopecks: z.number().int().nonnegative().optional(),
 	bonusAmountKopecks: z.number().int().nonnegative().optional(),
 	cashAmountRub: nonNegativeMoneyRubSchema.optional(),
 	electronicAmountRub: nonNegativeMoneyRubSchema.optional(),
 	depositAmountRub: nonNegativeMoneyRubSchema.optional(),
+	familyDepositAmountRub: nonNegativeMoneyRubSchema.optional(),
 	bonusAmountRub: nonNegativeMoneyRubSchema.optional(),
 	splitTenders: z.array(
 		z.object({

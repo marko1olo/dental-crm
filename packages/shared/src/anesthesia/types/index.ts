@@ -5,5 +5,5 @@
 
 export * from "./drugTypes.js";
 export * from "./safetyTypes.js";
-export * from "./pkuDisposalTypes.js";
 export * from "./calculationTypes.js";
+

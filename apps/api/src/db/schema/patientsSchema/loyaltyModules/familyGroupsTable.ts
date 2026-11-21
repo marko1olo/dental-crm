@@ -1,5 +1,6 @@
 import { type InferInsertModel, type InferSelectModel, sql } from "drizzle-orm";
 import {
+	bigint,
 	boolean,
 	check,
 	index,
@@ -106,6 +107,7 @@ export const patientRelationships = pgTable(
 		canViewMedicalRecord: boolean("can_view_medical_record").notNull().default(false),
 		canSignConsents: boolean("can_sign_consents").notNull().default(false),
 		canSpendFamilyWallet: boolean("can_spend_family_wallet").notNull().default(false),
+		spendLimitKopecks: bigint("spend_limit_kopecks", { mode: "number" }),
 		documentProofNumber: text("document_proof_number"),
 		isPrimaryPayer: boolean("is_primary_payer").notNull().default(false),
 		canViewRecords: boolean("can_view_records").notNull().default(false),

@@ -2,7 +2,13 @@
  * apps/web/src/components/patients/family/familyWalletModal/useFamilySpendMutation.ts
  * Spend mutation operation for family wallet. Mandate 8b: <= 120 lines.
  */
-import { createCompositeIdempotencyKey, generateUuidV7 } from "@dental/shared";
+import {
+	createCompositeIdempotencyKey,
+	generateUuidV7,
+	kopecksToRubles,
+	parseKopecks,
+	rublesToKopecks,
+} from "@dental/shared";
 import { useCallback, useRef, useState } from "react";
 import { money } from "../../../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
@@ -27,11 +33,19 @@ export function useFamilySpendMutation(args: UseFamilySpendMutationArgs) {
 
 	const handleExecuteSpend = useCallback(async () => {
 		if (inFlightRef.current || submitting) return;
-		const num = parseFloat(spendAmount.replace(",", "."));
+		const cleanAmount = spendAmount.replace(",", ".").trim();
+		let amountKopecks = 0;
+		try {
+			amountKopecks = parseKopecks(cleanAmount);
+		} catch {
+			amountKopecks = 0;
+		}
 		if (!familyData?.id) return showToast("Семья не зарегистрирована", "error");
-		if (!spendAmount || Number.isNaN(num) || num <= 0)
+		if (!cleanAmount || amountKopecks <= 0)
 			return showToast("Укажите сумму > 0 ₽", "error");
-		if (num > familyBalanceNumeric)
+
+		const familyBalanceKopecks = rublesToKopecks(familyBalanceNumeric);
+		if (amountKopecks > familyBalanceKopecks)
 			return showToast(
 				`Недостаточно средств. Баланс: ${money(familyBalanceNumeric)}`,
 				"error",
@@ -39,6 +53,7 @@ export function useFamilySpendMutation(args: UseFamilySpendMutationArgs) {
 		if (spendPatientId && spendingPermissions[spendPatientId] === false)
 			return showToast("Списание запрещено", "error");
 
+		const num = kopecksToRubles(amountKopecks);
 		inFlightRef.current = true;
 		setSubmitting(true);
 		try {
@@ -46,7 +61,7 @@ export function useFamilySpendMutation(args: UseFamilySpendMutationArgs) {
 			const payerId = familyData.headPatientId || patientId;
 			const keyPayload = {
 				familyGroupId: familyData.id,
-				amountRub: num,
+				amountKopecks,
 				payerPatientId: payerId,
 			};
 			const clientMutationId = createCompositeIdempotencyKey(
@@ -66,7 +81,7 @@ export function useFamilySpendMutation(args: UseFamilySpendMutationArgs) {
 					patientId: targetPatientId,
 					payerPatientId: payerId,
 					amountRub: num,
-					amountKopecks: Math.round(num * 100),
+					amountKopecks,
 					clientMutationId,
 				}),
 			});

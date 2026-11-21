@@ -172,10 +172,5 @@ export function registerPatientImplantsRoute(app: FastifyInstance) {
 		});
 	};
 
-	app.get<{ Querystring: SurgeryImplantsQuery }>("/api/v1/surgery/implants", (req, rep) => handleSurgeryImplantsQuery(req, rep));
-	app.get<{ Querystring: SurgeryImplantsQuery }>("/api/surgery/implants", (req, rep) => handleSurgeryImplantsQuery(req, rep));
-	app.get<{ Params: { patientId: string }; Querystring: SurgeryImplantsQuery }>(
-		"/api/v1/surgery/implants/patient/:patientId",
-		(request, reply) => handleSurgeryImplantsQuery(request, reply, request.params.patientId),
-	);
+	app.get<{ Querystring: SurgeryImplantsQuery }>("/api/clinical/implants", (req, rep) => handleSurgeryImplantsQuery(req, rep));
 }
