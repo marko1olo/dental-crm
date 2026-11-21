@@ -33,6 +33,17 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 				message: "Некорректный идентификатор осмотра",
 			});
 		}
+		const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+		if (idempotencyKey) {
+			if (!UUID_REGEX.test(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const [snapshot] = await db
 			.select()
 			.from(periodontogramSnapshots)
@@ -67,23 +78,26 @@ export async function registerLifecyclePeriodontogramRoutes(app: FastifyInstance
 		const rawUserId = identity.userId ?? snapshot.recordedByUserId ?? null;
 		const closedByUserId = await resolveExistingPerioUserId(orgId, rawUserId);
 
-		const [closed] = await db
-			.update(periodontogramSnapshots)
-			.set({
-				status: "closed",
-				closedAt: new Date(),
-				closedByUserId,
-				indices: computedIndices,
-				notes,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(periodontogramSnapshots.id, id),
-					eq(periodontogramSnapshots.organizationId, orgId),
-				),
-			)
-			.returning();
+		const closed = await db.transaction(async (tx) => {
+			const [result] = await tx
+				.update(periodontogramSnapshots)
+				.set({
+					status: "closed",
+					closedAt: new Date(),
+					closedByUserId,
+					indices: computedIndices,
+					notes,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(periodontogramSnapshots.id, id),
+						eq(periodontogramSnapshots.organizationId, orgId),
+					),
+				)
+				.returning();
+			return result;
+		});
 
 		return reply.send({ success: true, data: { ...closed, teeth: formattedTeeth } });
 	});

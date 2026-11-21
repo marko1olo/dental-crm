@@ -107,11 +107,11 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 							title={`Зуб #${num}: макс. карман ${maxDepth || 2} мм${hasBop ? ", кровоточивость BOP+" : ""}${mobility ? `, подвижность ${mobility}` : ""}`}
 							className={`touch-manipulation min-h-[44px] min-w-[36px] sm:min-h-[40px] px-1 py-1 rounded-xl text-center flex flex-col items-center justify-between cursor-pointer transition-all border ${
 								isSelected
-									? "bg-[var(--primary,#0d9488)]/15 border-[var(--primary,#0d9488)] ring-1 ring-[var(--primary,#0d9488)] shadow-xs"
-									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary,#0d9488)] hover:bg-[var(--paper-soft)]"
+									? "bg-[var(--primary)]/15 border-[var(--primary)] ring-1 ring-[var(--primary)] shadow-xs"
+									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper-soft)]"
 							}`}
 						>
-							<span className={`text-[11px] font-bold ${isSelected ? "text-[var(--primary,#0d9488)]" : "text-[var(--ink)]"}`}>
+							<span className={`text-[11px] font-bold ${isSelected ? "text-[var(--primary)]" : "text-[var(--ink)]"}`}>
 								{num}
 							</span>
 							<div className="flex items-center gap-0.5 mt-0.5">
@@ -139,7 +139,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 				type="button"
 				onClick={onToggleDetailedExpanded}
 				data-testid="psr-toggle-detailed-btn"
-				className="w-full min-h-[44px] sm:min-h-[36px] flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--paper-soft)] text-left text-xs font-bold text-[var(--ink)] hover:text-[var(--primary,#0d9488)] cursor-pointer transition-colors"
+				className="w-full min-h-[44px] sm:min-h-[36px] flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--paper-soft)] text-left text-xs font-bold text-[var(--ink)] hover:text-[var(--primary)] cursor-pointer transition-colors"
 			>
 				<span>Анатомическая карта зондирования (Full Mouth Charting: ВЧ 18–28 / НЧ 48–38)</span>
 				{isDetailedExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -174,7 +174,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 											onClick={() => onUpdateMobility(m)}
 											className={`touch-manipulation min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] px-2 rounded-lg text-xs font-bold cursor-pointer transition-colors border flex items-center justify-center ${
 												activeMob
-													? "bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] border-[var(--primary,#0d9488)] ring-1 ring-[var(--primary,#0d9488)]"
+													? "bg-[var(--primary)]/15 text-[var(--primary)] border-[var(--primary)] ring-1 ring-[var(--primary)]"
 													: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"
 											}`}
 										>
@@ -204,7 +204,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 										title={site.label}
 										className={`touch-manipulation min-h-[44px] sm:min-h-[38px] px-2 py-1.5 rounded-xl text-xs cursor-pointer border flex items-center justify-between gap-1 transition-all ${
 											isSelectedSite
-												? "bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] font-bold border-[var(--primary,#0d9488)] ring-1 ring-[var(--primary,#0d9488)]"
+												? "bg-[var(--primary)]/15 text-[var(--primary)] font-bold border-[var(--primary)] ring-1 ring-[var(--primary)]"
 												: "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--line-strong)]"
 										}`}
 									>
@@ -230,8 +230,8 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 										onClick={() => onUpdateDepth(d)}
 										className={`touch-manipulation min-h-[44px] min-w-[36px] sm:min-h-[36px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold border cursor-pointer flex items-center justify-center transition-all ${
 											(activeSite?.probingDepthMm ?? 2) === d
-												? "bg-[var(--primary,#0d9488)] text-white border-[var(--primary,#0d9488)]"
-												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary,#0d9488)] hover:bg-[var(--paper-soft)]"
+												? "bg-[var(--primary)] text-white border-[var(--primary)]"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)] hover:bg-[var(--paper-soft)]"
 										}`}
 									>
 										{d}
@@ -246,7 +246,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-3 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
 										activeSiteBop
 											? "bg-[var(--danger-soft,rgba(225,29,72,0.15))] text-[var(--danger,#e11d48)] border-[var(--danger,#e11d48)] ring-1 ring-[var(--danger,#e11d48)]"
-											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary,#0d9488)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
 									}`}
 								>
 									{activeSiteBop ? "✓ Кровоточивость (BOP+)" : "BOP+"}
@@ -258,7 +258,7 @@ export const PerioDetailedProbeSection: React.FC<PerioDetailedProbeSectionProps>
 									className={`touch-manipulation min-h-[44px] sm:min-h-[36px] px-3 rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center border transition-colors ${
 										activeSitePlaque
 											? "bg-[var(--warning-soft,rgba(245,158,11,0.15))] text-[var(--warning,#f59e0b)] border-[var(--warning,#f59e0b)] ring-1 ring-[var(--warning,#f59e0b)]"
-											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary,#0d9488)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--primary)]"
 									}`}
 								>
 									{activeSitePlaque ? "✓ Налёт+" : "Налёт+"}

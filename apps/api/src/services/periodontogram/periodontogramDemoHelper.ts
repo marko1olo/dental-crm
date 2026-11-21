@@ -78,6 +78,7 @@ export async function ensurePerioPatientExists(
 
 /**
  * Разрешает идентификатор пациента (поддерживает UUID, client demo и tenant id).
+ * Проверяет принадлежность пациента организации (BOLA/IDOR Guard).
  * Чистая функция чтения без мутации базы данных на GET-запросах (Mandates 8e, 8n).
  */
 export async function resolvePerioPatientId(
@@ -86,15 +87,56 @@ export async function resolvePerioPatientId(
 ): Promise<string> {
 	const trimmed = typeof rawPatientId === "string" ? rawPatientId.trim() : "";
 	if (!trimmed) {
-		return deterministicUuid(`${orgId}:default-perio-patient`);
+		if (isPerioDemoContext(orgId, null, rawPatientId)) {
+			return deterministicUuid(`${orgId}:default-perio-patient`);
+		}
+		const err = new Error("Некорректный идентификатор пациента") as Error & {
+			statusCode?: number;
+			code?: string;
+		};
+		err.statusCode = 400;
+		err.code = "InvalidPatientId";
+		throw err;
 	}
 
 	if (UUID_REGEX.test(trimmed)) {
+		// BOLA/IDOR Guard: проверяем физическое существование пациента в текущей организации
+		const [existing] = await db
+			.select({ id: patients.id })
+			.from(patients)
+			.where(and(eq(patients.id, trimmed), eq(patients.organizationId, orgId)))
+			.limit(1);
+
+		if (existing) {
+			return existing.id;
+		}
+
+		// Если пациент не найден в организации, проверяем демо-контекст
+		if (!isPerioDemoContext(orgId, trimmed, rawPatientId)) {
+			const err = new Error("Пациент не найден в данной организации") as Error & {
+				statusCode?: number;
+				code?: string;
+			};
+			err.statusCode = 404;
+			err.code = "PatientNotFound";
+			throw err;
+		}
+
 		return trimmed;
 	}
 
-	// Детерминированный UUID для строковых идентификаторов (включая демонстрационный режим)
-	return deterministicUuid(`${orgId}:${trimmed}`);
+	// Для не-UUID строковых идентификаторов (демо-режим / тесты)
+	if (isPerioDemoContext(orgId, null, rawPatientId)) {
+		return deterministicUuid(`${orgId}:${trimmed}`);
+	}
+
+	const err = new Error("Пациент не найден в данной организации") as Error & {
+		statusCode?: number;
+		code?: string;
+	};
+	err.statusCode = 404;
+	err.code = "PatientNotFound";
+	throw err;
 }
 
 /**

@@ -38,6 +38,17 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 					message: "Некорректные параметры запроса",
 				});
 			}
+			const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+			if (idempotencyKey) {
+				if (!UUID_REGEX.test(idempotencyKey)) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+					});
+				}
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
+
 			const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply);
 			if (!snapshot) return;
 
@@ -71,16 +82,19 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 			if (keratinizedGingivaMm !== undefined)
 				updateValues.keratinizedGingivaMm = keratinizedGingivaMm;
 
-			const [updatedTooth] = await db
-				.update(periodontogramTeeth)
-				.set(updateValues)
-				.where(
-					and(
-						eq(periodontogramTeeth.snapshotId, id),
-						eq(periodontogramTeeth.toothNumber, toothNumber),
-					),
-				)
-				.returning();
+			const updatedTooth = await db.transaction(async (tx) => {
+				const [result] = await tx
+					.update(periodontogramTeeth)
+					.set(updateValues)
+					.where(
+						and(
+							eq(periodontogramTeeth.snapshotId, id),
+							eq(periodontogramTeeth.toothNumber, toothNumber),
+						),
+					)
+					.returning();
+				return result;
+			});
 
 			if (!updatedTooth) {
 				return reply.code(404).send({
@@ -105,6 +119,18 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 		const { id } = req.params as { id: string };
+
+		const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+		if (idempotencyKey) {
+			if (!UUID_REGEX.test(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply);
 		if (!snapshot) return;
 

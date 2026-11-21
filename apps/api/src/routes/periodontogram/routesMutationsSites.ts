@@ -77,6 +77,18 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 		const { id } = req.params as { id: string };
+
+		const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+		if (idempotencyKey) {
+			if (!UUID_REGEX.test(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const snapshot = await findDraftSnapshotOrSendError(id, orgId, reply);
 		if (!snapshot) return;
 
@@ -96,19 +108,19 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 				: [parsed.data];
 		if (rawList.length === 0) return reply.send({ success: true, data: [] });
 
-		const teethRows = await db
-			.select({
-				id: periodontogramTeeth.id,
-				toothNumber: periodontogramTeeth.toothNumber,
-			})
-			.from(periodontogramTeeth)
-			.where(eq(periodontogramTeeth.snapshotId, id));
-
-		const toothIdMap = new Map<number, string>(
-			teethRows.map((t) => [t.toothNumber, t.id]),
-		);
-
 		const savedSites = await db.transaction(async (tx) => {
+			const teethRows = await tx
+				.select({
+					id: periodontogramTeeth.id,
+					toothNumber: periodontogramTeeth.toothNumber,
+				})
+				.from(periodontogramTeeth)
+				.where(eq(periodontogramTeeth.snapshotId, id));
+
+			const toothIdMap = new Map<number, string>(
+				teethRows.map((t) => [t.toothNumber, t.id]),
+			);
+
 			return await batchUpsertSites(tx, id, rawList, toothIdMap);
 		});
 		return reply.send({ success: true, data: savedSites });
@@ -136,6 +148,17 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 				toothNumber: string;
 				siteCode: string;
 			};
+
+			const idempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+			if (idempotencyKey) {
+				if (!UUID_REGEX.test(idempotencyKey)) {
+					return reply.code(400).send({
+						error: "ValidationError",
+						message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+					});
+				}
+				reply.header("Idempotency-Key", idempotencyKey);
+			}
 			const toothNumber = Number.parseInt(rawTn, 10);
 			const rawSiteCode = (siteCode || "").toUpperCase();
 			const normalizedSiteCode =

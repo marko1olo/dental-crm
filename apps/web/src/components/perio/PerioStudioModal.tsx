@@ -506,7 +506,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 	if (isModal) {
 		return (
-			<div className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay" style={{ backgroundColor: "rgba(15, 23, 42, 0.65)" }} data-testid="perio-chart-modal" role="dialog" aria-modal="true">
+			<div className="fixed inset-0 z-[10060] pointer-events-auto flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto perio-modal-overlay bg-[var(--overlay)]" style={{ backgroundColor: "var(--overlay)" }} data-testid="perio-chart-modal" role="dialog" aria-modal="true">
 				<div className="w-full max-w-7xl my-0 sm:my-auto max-h-[94vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl perio-modal-content">{content}</div>
 			</div>
 		);

@@ -17,6 +17,9 @@ import {
 	getHygienePlanText,
 } from "../../services/periodontogramIndices.js";
 
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) {
 	const handleGet = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
@@ -30,7 +33,26 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 			});
 		}
 
-		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		let patientId: string;
+		try {
+			patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		} catch (err: unknown) {
+			const e = err as { statusCode?: number; code?: string; message?: string };
+			if (e.statusCode === 404 || e.code === "PatientNotFound") {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: e.message || "Пациент не найден",
+				});
+			}
+			if (e.statusCode === 400 || e.code === "InvalidPatientId") {
+				return reply.code(400).send({
+					error: "InvalidPatientId",
+					message: e.message || "Некорректный идентификатор пациента",
+				});
+			}
+			throw err;
+		}
+
 		const data = await fetchPatientLatestPeriodontogram(orgId, patientId);
 		if (!data) {
 			return reply.send({ success: true, data: null });
@@ -74,7 +96,17 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 			});
 		}
 
-		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		const idempotencyKey = (request.headers["idempotency-key"] || request.headers["x-idempotency-key"]) as string | undefined;
+		if (idempotencyKey) {
+			if (!UUID_REGEX.test(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+		}
+
 		const parsedBody = upsertPatientFullPeriodontogramBodySchema.safeParse(request.body);
 		if (!parsedBody.success) {
 			return reply.code(400).send({
@@ -98,6 +130,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 				: undefined);
 
 		try {
+			const patientId = await resolvePerioPatientId(orgId, rawPatientId);
 			const result = await upsertPatientFullPeriodontogram({
 				orgId,
 				patientId,

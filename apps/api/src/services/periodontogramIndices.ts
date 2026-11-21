@@ -42,6 +42,8 @@ export interface ComputedPeriodontogramIndices {
 	bop_pct: number;
 	pi_pct: number;
 	cal_mean_mm: number;
+	probed_cal_mean_mm: number;
+	actual_probed_sites_count: number;
 	deep_pockets_count: number;
 	ohi_s: number;
 	pma: number;
@@ -78,6 +80,8 @@ export function computeSnapshotIndices(
 			bop_pct: 0,
 			pi_pct: 0,
 			cal_mean_mm: 0,
+			probed_cal_mean_mm: 0,
+			actual_probed_sites_count: 0,
 			deep_pockets_count: 0,
 			ohi_s: 0,
 			pma: 0,
@@ -111,7 +115,14 @@ export function computeSnapshotIndices(
 	// BOP % and PI % (rounded to 1 decimal)
 	const bop_pct = denominator > 0 ? calculateIndexPercentTenths(bopCount, denominator) : 0;
 	const pi_pct = denominator > 0 ? calculateIndexPercentTenths(plaqueCount, denominator) : 0;
-	const cal_mean_mm = denominator > 0 ? Math.round((calSum * 100) / denominator) / 100 : 0;
+
+	// Клинический расчет CAL: нормализация по фактически зондированным сайтам (actualProbedSitesCount),
+	// исключая занижение тяжести локализованного пародонтита делением на неисследованные зубы
+	const actualProbedSitesCount = totalProbed;
+	const probed_cal_mean_mm = actualProbedSitesCount > 0
+		? Math.round((calSum * 100) / actualProbedSitesCount) / 100
+		: 0;
+	const cal_mean_mm = probed_cal_mean_mm;
 
 	// Deep pockets count: distinct teeth with at least one pocket >= 5 mm
 	let deepPocketsCount = 0;
@@ -180,12 +191,14 @@ export function computeSnapshotIndices(
 		bop_pct,
 		pi_pct,
 		cal_mean_mm,
+		probed_cal_mean_mm,
+		actual_probed_sites_count: actualProbedSitesCount,
 		deep_pockets_count: deepPocketsCount,
 		ohi_s,
 		pma,
 		psr: maxPsr,
 		total_teeth_examined: presentTeeth.length,
-		total_sites_probed: totalProbed,
+		total_sites_probed: actualProbedSitesCount,
 	};
 }
 

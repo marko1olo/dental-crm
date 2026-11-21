@@ -31,7 +31,25 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 				message: "Некорректный идентификатор пациента",
 			});
 		}
-		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		let patientId: string;
+		try {
+			patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		} catch (err: unknown) {
+			const e = err as { statusCode?: number; code?: string; message?: string };
+			if (e.statusCode === 404 || e.code === "PatientNotFound") {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: e.message || "Пациент не найден в данной организации",
+				});
+			}
+			if (e.statusCode === 400 || e.code === "InvalidPatientId") {
+				return reply.code(400).send({
+					error: "InvalidPatientId",
+					message: e.message || "Некорректный идентификатор пациента",
+				});
+			}
+			throw err;
+		}
 
 		const snapshots = await db
 			.select()
@@ -61,7 +79,25 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 				message: "Некорректный идентификатор пациента",
 			});
 		}
-		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		let patientId: string;
+		try {
+			patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		} catch (err: unknown) {
+			const e = err as { statusCode?: number; code?: string; message?: string };
+			if (e.statusCode === 404 || e.code === "PatientNotFound") {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: e.message || "Пациент не найден в данной организации",
+				});
+			}
+			if (e.statusCode === 400 || e.code === "InvalidPatientId") {
+				return reply.code(400).send({
+					error: "InvalidPatientId",
+					message: e.message || "Некорректный идентификатор пациента",
+				});
+			}
+			throw err;
+		}
 		const [draft] = await db
 			.select()
 			.from(periodontogramSnapshots)
@@ -96,7 +132,25 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 				message: "Некорректный идентификатор пациента",
 			});
 		}
-		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		let patientId: string;
+		try {
+			patientId = await resolvePerioPatientId(orgId, rawPatientId);
+		} catch (err: unknown) {
+			const e = err as { statusCode?: number; code?: string; message?: string };
+			if (e.statusCode === 404 || e.code === "PatientNotFound") {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: e.message || "Пациент не найден в данной организации",
+				});
+			}
+			if (e.statusCode === 400 || e.code === "InvalidPatientId") {
+				return reply.code(400).send({
+					error: "InvalidPatientId",
+					message: e.message || "Некорректный идентификатор пациента",
+				});
+			}
+			throw err;
+		}
 
 		const [existing] = await db
 			.select()

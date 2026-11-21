@@ -12,12 +12,12 @@
 }
 
 .perio-primary-cta-btn {
-	background-color: var(--teal, var(--primary, #0d9488)) !important;
+	background-color: var(--primary) !important;
 	color: #ffffff !important;
 }
 
 .perio-primary-cta-btn:hover {
-	background-color: var(--teal-dark, var(--primary-strong, #0f766e)) !important;
+	background-color: var(--primary-strong, var(--primary-hover)) !important;
 }
 
 .perio-primary-cta-btn svg,
