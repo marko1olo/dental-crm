@@ -12,7 +12,9 @@
  */
 
 import { kopecksToNumericString, kopecksToRub, rubToKopecks } from "../fiscal/kopecksArithmetic.js";
+import { type Kopecks, assertIntegerKopecks, toExactKopecks, kopecksAdd } from "../money.js";
 import { kopecksToRubStrict, rubToKopecksStrict } from "./billingMath.js";
+import { calculateItemDmsSplit } from "../insurance/dmsFranchiseEngine.js";
 
 export type SplitTenderKind =
 	| "cash"
@@ -73,29 +75,29 @@ export interface NormalizedSplitTender {
 	readonly kind: SplitTenderKind;
 	readonly nameRu: string;
 	readonly ffd12Tag: 1031 | 1081 | 1215 | 1216 | 1217;
-	readonly amountKopecks: number;
+	readonly amountKopecks: Kopecks;
 	readonly amountRub: number;
 	readonly amountRubString: string;
 	readonly metadata?: Record<string, string | undefined> | undefined;
 }
 
 export interface Ffd12PaymentTagsSummary {
-	readonly tag1031_cashKopecks: number;
+	readonly tag1031_cashKopecks: Kopecks;
 	readonly tag1031_cashRub: number;
 	readonly tag1031_cashRubString: string;
-	readonly tag1081_electronicKopecks: number;
+	readonly tag1081_electronicKopecks: Kopecks;
 	readonly tag1081_electronicRub: number;
 	readonly tag1081_electronicRubString: string;
-	readonly tag1215_advanceOffsetKopecks: number;
+	readonly tag1215_advanceOffsetKopecks: Kopecks;
 	readonly tag1215_advanceOffsetRub: number;
 	readonly tag1215_advanceOffsetRubString: string;
-	readonly tag1216_creditKopecks: number;
+	readonly tag1216_creditKopecks: Kopecks;
 	readonly tag1216_creditRub: number;
 	readonly tag1216_creditRubString: string;
-	readonly tag1217_counterProvisionKopecks: number;
+	readonly tag1217_counterProvisionKopecks: Kopecks;
 	readonly tag1217_counterProvisionRub: number;
 	readonly tag1217_counterProvisionRubString: string;
-	readonly totalKopecks: number;
+	readonly totalKopecks: Kopecks;
 	readonly totalRub: number;
 	readonly totalRubString: string;
 }
@@ -103,15 +105,15 @@ export interface Ffd12PaymentTagsSummary {
 export interface SplitPaymentValidationResult {
 	readonly isBalanced: boolean;
 	readonly status: "exact" | "underpaid" | "overpaid";
-	readonly actTotalKopecks: number;
+	readonly actTotalKopecks: Kopecks;
 	readonly actTotalRub: number;
 	readonly actTotalRubString: string;
-	readonly totalTendersKopecks: number;
+	readonly totalTendersKopecks: Kopecks;
 	readonly totalTendersRub: number;
 	readonly totalTendersRubString: string;
 	readonly totalRub?: number | undefined;
 	readonly totalRubString?: string | undefined;
-	readonly discrepancyKopecks: number; // positive = overpaid, negative = underpaid, 0 = exact
+	readonly discrepancyKopecks: Kopecks; // positive = overpaid, negative = underpaid, 0 = exact
 	readonly discrepancyRub: number;
 	readonly tenders: readonly NormalizedSplitTender[];
 	readonly ffd12Tags: Ffd12PaymentTagsSummary;
@@ -131,16 +133,16 @@ export interface SplitPaymentPositionItem {
 export interface AllocatedItemSplitPayment {
 	readonly itemId: string;
 	readonly itemName: string;
-	readonly itemTotalKopecks: number;
+	readonly itemTotalKopecks: Kopecks;
 	readonly itemTotalRub: number;
-	readonly cashKopecks: number;
-	readonly cardKopecks: number;
-	readonly sbpKopecks: number;
-	readonly advanceDepositKopecks: number;
-	readonly familyDepositKopecks: number;
-	readonly creditKopecks: number;
-	readonly certificateKopecks: number;
-	readonly dmsKopecks: number;
+	readonly cashKopecks: Kopecks;
+	readonly cardKopecks: Kopecks;
+	readonly sbpKopecks: Kopecks;
+	readonly advanceDepositKopecks: Kopecks;
+	readonly familyDepositKopecks: Kopecks;
+	readonly creditKopecks: Kopecks;
+	readonly certificateKopecks: Kopecks;
+	readonly dmsKopecks: Kopecks;
 }
 
 export class SplitPaymentValidationError extends Error {
@@ -157,12 +159,12 @@ export class SplitPaymentValidationError extends Error {
 /**
  * Resolves a tender amount safely into integer kopecks.
  */
-function resolveKopecks(kop?: number, rub?: number): number {
+function resolveKopecks(kop?: number, rub?: number): Kopecks {
 	if (kop !== undefined) {
 		if (typeof kop !== "number" || !Number.isFinite(kop) || Number.isNaN(kop)) {
 			throw new SplitPaymentValidationError("InvalidTenderAmount", `Некорректная сумма в копейках: ${kop}`);
 		}
-		return Math.round(kop);
+		return toExactKopecks(Math.round(kop));
 	}
 	if (rub !== undefined) {
 		if (typeof rub !== "number" || !Number.isFinite(rub) || Number.isNaN(rub)) {
@@ -170,7 +172,7 @@ function resolveKopecks(kop?: number, rub?: number): number {
 		}
 		return rubToKopecks(rub);
 	}
-	return 0;
+	return toExactKopecks(0);
 }
 
 /**
@@ -314,13 +316,13 @@ export function validateAndBalanceSplitPayment(params: {
 
 	// 54-FZ Tag Aggregations
 	const tag1031Kop = cashKop;
-	const tag1081Kop = cardKop + sbpKop;
-	const tag1215Kop = advanceKop + familyKop;
+	const tag1081Kop = toExactKopecks(cardKop + sbpKop);
+	const tag1215Kop = toExactKopecks(advanceKop + familyKop);
 	const tag1216Kop = creditKop;
-	const tag1217Kop = certKop + dmsKop;
+	const tag1217Kop = toExactKopecks(certKop + dmsKop);
 
-	const totalTendersKopecks = tag1031Kop + tag1081Kop + tag1215Kop + tag1216Kop + tag1217Kop;
-	const discrepancyKopecks = totalTendersKopecks - actKopecks;
+	const totalTendersKopecks = toExactKopecks(tag1031Kop + tag1081Kop + tag1215Kop + tag1216Kop + tag1217Kop);
+	const discrepancyKopecks = toExactKopecks(totalTendersKopecks - actKopecks);
 
 	const isBalanced = discrepancyKopecks === 0;
 	const status: "exact" | "underpaid" | "overpaid" =
@@ -476,16 +478,16 @@ export function allocateSplitPaymentAcrossItems(
 		return {
 			itemId: entry.item.id,
 			itemName: entry.item.name,
-			itemTotalKopecks: entry.totalKopecks,
+			itemTotalKopecks: toExactKopecks(entry.totalKopecks),
 			itemTotalRub: kopecksToRub(entry.totalKopecks),
-			cashKopecks: cashK,
-			cardKopecks: elK,
-			sbpKopecks: 0,
-			advanceDepositKopecks: advK,
-			familyDepositKopecks: 0,
-			creditKopecks: credK,
-			certificateKopecks: certK,
-			dmsKopecks: dmsK,
+			cashKopecks: toExactKopecks(cashK),
+			cardKopecks: toExactKopecks(elK),
+			sbpKopecks: toExactKopecks(0),
+			advanceDepositKopecks: toExactKopecks(advK),
+			familyDepositKopecks: toExactKopecks(0),
+			creditKopecks: toExactKopecks(credK),
+			certificateKopecks: toExactKopecks(certK),
+			dmsKopecks: toExactKopecks(dmsK),
 		};
 	});
 }
@@ -729,8 +731,11 @@ export function calculateDmsSplitBill(input: DmsSplitBillInput): DmsSplitBillRes
 	const totalKop = Math.max(0, resolveKopecks(input.totalBillKopecks, input.totalBillRub));
 	const franchise = Math.max(0, Math.min(100, Math.round(input.franchisePercent ?? 0)));
 
-	const franchiseKop = Math.round((totalKop * franchise) / 100);
-	const initialInsurerKop = totalKop - franchiseKop;
+	const { patientKopecks: franchiseKop, insurerKopecks: initialInsurerKop } = calculateItemDmsSplit(
+		totalKop,
+		franchise,
+		true,
+	);
 
 	const hasLimit = input.availableCoverageKopecks !== undefined || input.availableCoverageRub !== undefined;
 	const limitKop = hasLimit ? Math.max(0, resolveKopecks(input.availableCoverageKopecks, input.availableCoverageRub)) : Infinity;

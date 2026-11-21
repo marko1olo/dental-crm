@@ -60,8 +60,80 @@ export function formatKopecksToRubles(kopecks: number | bigint): string {
 
 export const formatKopecksToRubExact = formatKopecksToRubles;
 
-/** Копейки. Ровно целое число; отрицательное значение — долг. */
-export type Kopecks = number;
+/** Копейки. Ровно целое число (брендированный тип компилятора DENTE); отрицательное значение — долг. */
+declare const KopecksBrand: unique symbol;
+export type Kopecks = number & { readonly [KopecksBrand]?: "Kopecks" };
+
+/**
+ * Строго проверяет, что число является конечным целым числом копеек (защита от IEEE-754 float drift).
+ * При наличии дробной части, NaN или бесконечности выбрасывает исключение с детальным описанием ошибки.
+ */
+export function assertIntegerKopecks(val: number): asserts val is Kopecks {
+	if (typeof val !== "number" || !Number.isFinite(val) || Number.isNaN(val) || !Number.isInteger(val)) {
+		throw new Error(
+			`Копейки должны быть конечным целым числом, получено: ${val}. Недопустимо использовать дробные числа (float) для денег.`,
+		);
+	}
+	if (!Number.isSafeInteger(val)) {
+		throw new Error(`Сумма ${val} копеек выходит за пределы безопасного диапазона целых чисел (Number.isSafeInteger).`);
+	}
+}
+
+/**
+ * Валидирует и возвращает значение как строго брендированный тип Kopecks.
+ */
+export function toExactKopecks(val: number): Kopecks {
+	assertIntegerKopecks(val);
+	return val as Kopecks;
+}
+
+/**
+ * Сложение двух значений копеек со строгой целочисленной защитой.
+ */
+export function kopecksAdd(a: Kopecks, b: Kopecks): Kopecks {
+	assertIntegerKopecks(a);
+	assertIntegerKopecks(b);
+	const res = a + b;
+	assertIntegerKopecks(res);
+	return res as Kopecks;
+}
+
+/**
+ * Вычитание двух значений копеек со строгой целочисленной защитой.
+ */
+export function kopecksSub(a: Kopecks, b: Kopecks): Kopecks {
+	assertIntegerKopecks(a);
+	assertIntegerKopecks(b);
+	const res = a - b;
+	assertIntegerKopecks(res);
+	return res as Kopecks;
+}
+
+/**
+ * Умножение копеек на коэффициент с математически строгим округлением Math.round() без накопления погрешностей.
+ */
+export function kopecksMul(a: Kopecks, factor: number): Kopecks {
+	assertIntegerKopecks(a);
+	if (typeof factor !== "number" || !Number.isFinite(factor) || Number.isNaN(factor)) {
+		throw new Error(`Множитель должен быть конечным числом, получено: ${factor}`);
+	}
+	const res = Math.round(a * factor);
+	assertIntegerKopecks(res);
+	return res as Kopecks;
+}
+
+/**
+ * Деление копеек на делитель со строгим математическим округлением Math.round().
+ */
+export function kopecksDiv(a: Kopecks, divisor: number): Kopecks {
+	assertIntegerKopecks(a);
+	if (typeof divisor !== "number" || !Number.isFinite(divisor) || Number.isNaN(divisor) || divisor === 0) {
+		throw new Error(`Делитель должен быть ненулевым конечным числом, получено: ${divisor}`);
+	}
+	const res = Math.round(a / divisor);
+	assertIntegerKopecks(res);
+	return res as Kopecks;
+}
 
 const KOPECKS_IN_RUBLE = 100;
 
@@ -91,14 +163,14 @@ export const RU_MONEY_MINUS = "−";
 export function parseKopecks(
 	value: string | number | null | undefined,
 ): Kopecks {
-	if (value === null || value === undefined || value === "") return 0;
+	if (value === null || value === undefined || value === "") return toExactKopecks(0);
 
 	if (typeof value === "number") {
 		if (!Number.isFinite(value) || Number.isNaN(value)) {
 			throw new Error(`Денежное значение не является числом: ${value}`);
 		}
 		// Колонки integer хранят целые рубли — тут перевод точный.
-		if (Number.isInteger(value)) return value * KOPECKS_IN_RUBLE;
+		if (Number.isInteger(value)) return toExactKopecks(value * KOPECKS_IN_RUBLE);
 		// Нецелое число уже прошло через плавающую точку. Приводим через строку
 		// с двумя знаками: это ровно то, что записалось бы в numeric(12, 2).
 		return parseKopecks(value.toFixed(2));
@@ -112,7 +184,8 @@ export function parseKopecks(
 	const [, sign, whole, fraction = ""] = match;
 	const kopecks =
 		Number(whole) * KOPECKS_IN_RUBLE + Number(fraction.padEnd(2, "0"));
-	return sign ? -kopecks : kopecks;
+	const result = sign ? -kopecks : kopecks;
+	return toExactKopecks(result);
 }
 
 /** Рубли → копейки с защитой от нецелых чисел и плавающей точки (округление до копейки). */
@@ -120,8 +193,11 @@ export function rublesToKopecks(rubles: number): Kopecks {
 	if (typeof rubles !== "number" || !Number.isFinite(rubles) || Number.isNaN(rubles)) {
 		throw new Error(`Ожидалось число рублей, получено ${rubles}`);
 	}
-	return Math.round(rubles * KOPECKS_IN_RUBLE);
+	return toExactKopecks(Math.round(rubles * KOPECKS_IN_RUBLE));
 }
+
+/** Алиас rublesToKopecks для обратной совместимости и быстрого импорта */
+export const rubToKopecks = rublesToKopecks;
 
 /**
  * Преобразование целочисленных копеек в число рублей с плавающей точкой (округление до 2 знаков).
@@ -132,30 +208,35 @@ export function kopecksToRubles(kopecks: number | bigint): number {
 	return Math.round(num) / KOPECKS_IN_RUBLE;
 }
 
+/** Алиас kopecksToRubles для обратной совместимости и быстрого импорта */
+export const kopecksToRub = kopecksToRubles;
+
 /**
  * Копейки → строка для записи в колонку numeric(12, 2).
  *
  * Именно строка: передать сюда number значило бы снова пустить деньги через
- * double по пути в драйвер.
+ * double по пути в драйвер. Поддерживает как Kopecks (number), так и bigint из БД Postgres.
  */
-export function kopecksToNumericString(kopecks: Kopecks): string {
+export function kopecksToNumericString(kopecks: Kopecks | bigint): string {
 	assertWholeKopecks(kopecks);
-	const negative = kopecks < 0;
-	const absolute = Math.abs(kopecks);
+	const num = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
+	const negative = num < 0;
+	const absolute = Math.abs(num);
 	const whole = Math.trunc(absolute / KOPECKS_IN_RUBLE);
 	const fraction = absolute % KOPECKS_IN_RUBLE;
 	return `${negative ? "-" : ""}${whole}.${String(fraction).padStart(2, "0")}`;
 }
 
 /** Целые рубли из копеек. Бросает, если копейки не делятся на 100 без остатка. */
-export function kopecksToWholeRubles(kopecks: Kopecks): number {
+export function kopecksToWholeRubles(kopecks: Kopecks | bigint): number {
 	assertWholeKopecks(kopecks);
-	if (kopecks % KOPECKS_IN_RUBLE !== 0) {
+	const num = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
+	if (num % KOPECKS_IN_RUBLE !== 0) {
 		throw new Error(
-			`Сумма ${kopecksToNumericString(kopecks)} руб. содержит копейки и не может быть выражена целыми рублями`,
+			`Сумма ${kopecksToNumericString(num as Kopecks)} руб. содержит копейки и не может быть выражена целыми рублями`,
 		);
 	}
-	return kopecks / KOPECKS_IN_RUBLE;
+	return num / KOPECKS_IN_RUBLE;
 }
 
 /** Сумма нескольких значений. Точная: складываются целые. */
@@ -165,14 +246,12 @@ export function sumKopecks(values: readonly Kopecks[]): Kopecks {
 		assertWholeKopecks(value);
 		total += value;
 	}
-	return total;
+	return toExactKopecks(total);
 }
 
 /** Сумма двух значений копеек. Точная: складываются целые. */
 export function addKopecks(a: Kopecks, b: Kopecks): Kopecks {
-	assertWholeKopecks(a);
-	assertWholeKopecks(b);
-	return (a + b) as Kopecks;
+	return kopecksAdd(a, b);
 }
 
 /** Цена за единицу × количество. Количество обязано быть целым. */
@@ -183,7 +262,7 @@ export function multiplyKopecks(unit: Kopecks, quantity: number): Kopecks {
 			`Количество должно быть целым неотрицательным, получено ${quantity}`,
 		);
 	}
-	return unit * quantity;
+	return toExactKopecks(unit * quantity);
 }
 
 /** Цена за единицу × дробное количество (граммы, миллилитры). Округляет до целых копеек. */
@@ -197,7 +276,7 @@ export function multiplyKopecksFractional(
 			`Количество должно быть конечным неотрицательным числом, получено ${quantity}`,
 		);
 	}
-	return Math.round(unit * quantity) as Kopecks;
+	return toExactKopecks(Math.round(unit * quantity));
 }
 
 /**
@@ -217,7 +296,7 @@ export function percentageOfKopecks(
 			`Процент должен быть целым в базисных пунктах, получено ${basisPoints}`,
 		);
 	}
-	return Math.trunc((amount * basisPoints) / 10_000);
+	return toExactKopecks(Math.trunc((amount * basisPoints) / 10_000));
 }
 
 /**
@@ -252,16 +331,17 @@ export function splitKopecks(
 	const remainder = absolute - base * parts;
 	const split = Array.from(
 		{ length: parts },
-		(_, index) => sign * (base + (index < remainder ? 1 : 0)),
+		(_, index) => toExactKopecks(sign * (base + (index < remainder ? 1 : 0))),
 	);
 	return split as [Kopecks, ...Kopecks[]];
 }
 
-/** Отображение для интерфейса и печатных форм: "1 500,50 ₽". */
-export function formatKopecksRu(kopecks: Kopecks): string {
+/** Отображение для интерфейса и печатных форм: "1 500,50 ₽". Поддерживает как Kopecks (number), так и bigint из БД Postgres. */
+export function formatKopecksRu(kopecks: Kopecks | bigint): string {
 	assertWholeKopecks(kopecks);
-	const negative = kopecks < 0;
-	const absolute = Math.abs(kopecks);
+	const num = typeof kopecks === "bigint" ? Number(kopecks) : kopecks;
+	const negative = num < 0;
+	const absolute = Math.abs(num);
 	const whole = Math.trunc(absolute / KOPECKS_IN_RUBLE);
 	const fraction = absolute % KOPECKS_IN_RUBLE;
 	const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, RU_MONEY_NBSP);
@@ -321,7 +401,8 @@ export function formatCurrency(
 export const formatRubles = formatCurrency;
 
 
-function assertWholeKopecks(value: Kopecks): void {
+export function assertWholeKopecks(value: unknown): asserts value is Kopecks | bigint {
+	if (typeof value === "bigint") return;
 	if (typeof value !== "number" || !Number.isFinite(value) || Number.isNaN(value) || !Number.isInteger(value)) {
 		throw new Error(
 			`Копейки должны быть целым числом, получено ${value}. Похоже, сумма прошла через плавающую точку.`,

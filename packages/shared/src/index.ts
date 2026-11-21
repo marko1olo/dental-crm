@@ -56,7 +56,20 @@ export {
 export * from "./datetime/index.js";
 export * from "./demo/index.js";
 export type { Kopecks } from "./money.js";
-export { kopecksToRubles, formatRubles, formatKopecksToRubles, formatKopecksToRub, kopecksToNumericString, parseKopecks } from "./money.js";
+export {
+	kopecksToRubles,
+	formatRubles,
+	formatKopecksToRubles,
+	formatKopecksToRub,
+	kopecksToNumericString,
+	parseKopecks,
+	assertIntegerKopecks,
+	toExactKopecks,
+	kopecksAdd,
+	kopecksSub,
+	kopecksMul,
+	kopecksDiv,
+} from "./money.js";
 export { kopecksToRub, rubToKopecks } from "./fiscal/kopecksArithmetic.js";
 export * from "./money.js";
 export * from "./moneyWordsRu.js";
@@ -229,7 +242,6 @@ export * from "./analytics/index.js";
 export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
-export * from "./portal/index.js";
 export * from "./finance/index.js";
 export * from "./doctor-portal/index.js";
 export { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "./doctor-portal/index.js";

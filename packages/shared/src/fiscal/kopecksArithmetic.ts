@@ -5,31 +5,40 @@
 
 import { z } from "zod";
 import type { Ffd12VatRate } from "./ffd12Types.js";
-import { kopecksToNumericString, parseKopecks } from "../money.js";
-export { kopecksToNumericString, parseKopecks };
+import {
+	type Kopecks,
+	assertIntegerKopecks,
+	toExactKopecks,
+	kopecksAdd,
+	kopecksSub,
+	kopecksMul,
+	kopecksDiv,
+	kopecksToNumericString,
+	kopecksToRubles,
+	parseKopecks,
+	rublesToKopecks,
+} from "../money.js";
 
+export {
+	type Kopecks,
+	assertIntegerKopecks,
+	toExactKopecks,
+	kopecksAdd,
+	kopecksSub,
+	kopecksMul,
+	kopecksDiv,
+	kopecksToNumericString,
+	kopecksToRubles,
+	parseKopecks,
+	rublesToKopecks,
+};
 
 /**
- * Converts rubles to integer kopecks safely without floating-point drift.
+ * Canonical re-exports mapping legacy names directly to @dental/shared/src/money.ts SSOT.
+ * Eliminates duplicate math logic per Mandate 8s and 8bm.
  */
-export function rubToKopecks(rub: number): number {
-	if (!Number.isFinite(rub)) {
-		throw new Error("Сумма в рублях должна быть конечным числом.");
-	}
-	return Math.round(rub * 100);
-}
-
-/**
- * Converts integer kopecks to rubles formatted as a 2-decimal number.
- */
-export function kopecksToRub(kopecks: number): number {
-	if (!Number.isFinite(kopecks)) {
-		throw new Error("Сумма в копейках должна быть конечным целым числом.");
-	}
-	return Math.round(kopecks) / 100;
-}
-
-export const kopecksToRubles = kopecksToRub;
+export const rubToKopecks = rublesToKopecks;
+export const kopecksToRub = kopecksToRubles;
 
 /**
  * Banker's Rounding (Round Half to Even) to eliminate cumulative rounding bias.
@@ -61,24 +70,24 @@ export interface MultiTenderSplitInput {
 }
 
 export interface MultiTenderSplitAllocation {
-	readonly cashKopecks: number;
+	readonly cashKopecks: Kopecks;
 	readonly cashRub: number;
-	readonly cardKopecks: number;
+	readonly cardKopecks: Kopecks;
 	readonly cardRub: number;
-	readonly sbpKopecks: number;
+	readonly sbpKopecks: Kopecks;
 	readonly sbpRub: number;
-	readonly advanceOffsetKopecks: number;
+	readonly advanceOffsetKopecks: Kopecks;
 	readonly advanceOffsetRub: number;
-	readonly creditPostpaymentKopecks: number;
+	readonly creditPostpaymentKopecks: Kopecks;
 	readonly creditPostpaymentRub: number;
-	readonly certificateKopecks: number;
+	readonly certificateKopecks: Kopecks;
 	readonly certificateRub: number;
-	readonly totalElectronicKopecks: number;
+	readonly totalElectronicKopecks: Kopecks;
 	readonly totalElectronicRub: number;
-	readonly totalPaymentsKopecks: number;
+	readonly totalPaymentsKopecks: Kopecks;
 	readonly totalPaymentsRub: number;
-	readonly allocatedKopecks: number;
-	readonly remainingKopecks: number;
+	readonly allocatedKopecks: Kopecks;
+	readonly remainingKopecks: Kopecks;
 	readonly isFullyAllocated: boolean;
 	readonly isOverallocated: boolean;
 }
@@ -90,29 +99,30 @@ export function calculateMultiTenderAllocation(
 	totalReceiptKopecks: number,
 	splits: MultiTenderSplitInput,
 ): MultiTenderSplitAllocation {
-	const cashKopecks = splits.cashRub !== undefined ? Math.max(0, rubToKopecks(splits.cashRub)) : 0;
-	const cardKopecks = splits.cardRub !== undefined ? Math.max(0, rubToKopecks(splits.cardRub)) : 0;
-	const sbpKopecks = splits.sbpRub !== undefined ? Math.max(0, rubToKopecks(splits.sbpRub)) : 0;
+	const cashKopecks = splits.cashRub !== undefined ? Math.max(0, rubToKopecks(splits.cashRub)) : toExactKopecks(0);
+	const cardKopecks = splits.cardRub !== undefined ? Math.max(0, rubToKopecks(splits.cardRub)) : toExactKopecks(0);
+	const sbpKopecks = splits.sbpRub !== undefined ? Math.max(0, rubToKopecks(splits.sbpRub)) : toExactKopecks(0);
 	const advanceOffsetKopecks =
-		splits.advanceOffsetRub !== undefined ? Math.max(0, rubToKopecks(splits.advanceOffsetRub)) : 0;
+		splits.advanceOffsetRub !== undefined ? Math.max(0, rubToKopecks(splits.advanceOffsetRub)) : toExactKopecks(0);
 	const creditPostpaymentKopecks =
-		splits.creditPostpaymentRub !== undefined ? Math.max(0, rubToKopecks(splits.creditPostpaymentRub)) : 0;
+		splits.creditPostpaymentRub !== undefined ? Math.max(0, rubToKopecks(splits.creditPostpaymentRub)) : toExactKopecks(0);
 	const certificateKopecks =
-		splits.certificateRub !== undefined ? Math.max(0, rubToKopecks(splits.certificateRub)) : 0;
+		splits.certificateRub !== undefined ? Math.max(0, rubToKopecks(splits.certificateRub)) : toExactKopecks(0);
 
 	// In 54-FZ FFD 1.2: Tag 1081 combines Card + SBP/QR electronic tenders
-	const totalElectronicKopecks = cardKopecks + sbpKopecks;
+	const totalElectronicKopecks = kopecksAdd(cardKopecks, sbpKopecks);
 
 	// Certificate is treated as advance offset / counter-provision under 54-FZ
-	const totalAdvanceOffsetKopecks = advanceOffsetKopecks + certificateKopecks;
+	const totalAdvanceOffsetKopecks = kopecksAdd(advanceOffsetKopecks, certificateKopecks);
 
-	const allocatedKopecks =
+	const allocatedKopecks = toExactKopecks(
 		cashKopecks +
 		totalElectronicKopecks +
 		totalAdvanceOffsetKopecks +
-		creditPostpaymentKopecks;
+		creditPostpaymentKopecks,
+	);
 
-	const remainingKopecks = totalReceiptKopecks - allocatedKopecks;
+	const remainingKopecks = toExactKopecks(Math.round(totalReceiptKopecks) - allocatedKopecks);
 
 	return {
 		cashKopecks,
@@ -145,17 +155,17 @@ export function calculateAdvanceDepositOffset(params: {
 	invoiceTotalKopecks: number;
 	availableDepositKopecks: number;
 }): {
-	advanceOffsetKopecks: number;
-	remainingDueKopecks: number;
+	advanceOffsetKopecks: Kopecks;
+	remainingDueKopecks: Kopecks;
 	advanceOffsetRub: number;
 	remainingDueRub: number;
 	isFullyCoveredByDeposit: boolean;
 } {
-	const advanceOffsetKopecks = Math.min(
-		Math.max(0, params.invoiceTotalKopecks),
-		Math.max(0, params.availableDepositKopecks),
-	);
-	const remainingDueKopecks = Math.max(0, params.invoiceTotalKopecks - advanceOffsetKopecks);
+	const advanceOffsetKopecks = toExactKopecks(Math.min(
+		Math.max(0, Math.round(params.invoiceTotalKopecks)),
+		Math.max(0, Math.round(params.availableDepositKopecks)),
+	));
+	const remainingDueKopecks = toExactKopecks(Math.max(0, Math.round(params.invoiceTotalKopecks) - advanceOffsetKopecks));
 
 	return {
 		advanceOffsetKopecks,
@@ -173,9 +183,9 @@ export function calculateAdvanceDepositOffset(params: {
 export function distributeDiscountProportionally(
 	items: readonly { readonly priceKopecks: number; readonly quantity: number }[],
 	totalDiscountKopecks: number,
-): number[] {
+): Kopecks[] {
 	if (!items.length || totalDiscountKopecks <= 0) {
-		return items.map(() => 0);
+		return items.map(() => toExactKopecks(0));
 	}
 
 	const itemGrossAmounts = items.map((i) =>
@@ -187,7 +197,7 @@ export function distributeDiscountProportionally(
 
 	if (totalGross <= 0 || safeDiscountKopecks >= totalGross) {
 		// 100% discount or zero gross
-		return [...itemGrossAmounts];
+		return itemGrossAmounts.map((amt) => toExactKopecks(amt));
 	}
 
 	// Step 1: calculate exact fractional discount shares
@@ -223,7 +233,7 @@ export function distributeDiscountProportionally(
 		}
 	}
 
-	return finalDiscounts;
+	return finalDiscounts.map((d) => toExactKopecks(d));
 }
 
 export const calculateHamiltonProportionalSplit = distributeDiscountProportionally;
@@ -231,18 +241,18 @@ export const calculateHamiltonProportionalSplit = distributeDiscountProportional
 /**
  * Calculates statutory VAT amount in kopecks for included VAT.
  */
-export function calculateVatKopecks(amountKopecks: number, vatRate: Ffd12VatRate): number {
+export function calculateVatKopecks(amountKopecks: number, vatRate: Ffd12VatRate): Kopecks {
 	switch (vatRate) {
 		case "vat_20":
 		case "vat_20_120":
-			return Math.round((amountKopecks * 20) / 120);
+			return toExactKopecks(Math.round((amountKopecks * 20) / 120));
 		case "vat_10":
 		case "vat_10_110":
-			return Math.round((amountKopecks * 10) / 110);
+			return toExactKopecks(Math.round((amountKopecks * 10) / 110));
 		case "vat_0":
 		case "vat_none":
 		default:
-			return 0;
+			return toExactKopecks(0);
 	}
 }
 
@@ -255,12 +265,12 @@ export interface OriginalPaymentTenders {
 }
 
 export interface ProportionalRefundAllocation {
-	readonly refundCashKopecks: number;
-	readonly refundCardKopecks: number;
-	readonly refundSbpKopecks: number;
-	readonly refundAdvanceOffsetKopecks: number;
-	readonly refundElectronicKopecks: number;
-	readonly totalRefundKopecks: number;
+	readonly refundCashKopecks: Kopecks;
+	readonly refundCardKopecks: Kopecks;
+	readonly refundSbpKopecks: Kopecks;
+	readonly refundAdvanceOffsetKopecks: Kopecks;
+	readonly refundElectronicKopecks: Kopecks;
+	readonly totalRefundKopecks: Kopecks;
 	readonly refundCashRub: number;
 	readonly refundCardRub: number;
 	readonly refundSbpRub: number;
@@ -293,13 +303,14 @@ export function calculateProportionalMultiTenderRefund(
 	const targetRefund = Math.min(Math.max(0, Math.round(requestedRefundKopecks)), totalOriginalPaid);
 
 	if (targetRefund <= 0 || totalOriginalPaid <= 0) {
+		const zero = toExactKopecks(0);
 		return {
-			refundCashKopecks: 0,
-			refundCardKopecks: 0,
-			refundSbpKopecks: 0,
-			refundAdvanceOffsetKopecks: 0,
-			refundElectronicKopecks: 0,
-			totalRefundKopecks: 0,
+			refundCashKopecks: zero,
+			refundCardKopecks: zero,
+			refundSbpKopecks: zero,
+			refundAdvanceOffsetKopecks: zero,
+			refundElectronicKopecks: zero,
+			totalRefundKopecks: zero,
 			refundCashRub: 0,
 			refundCardRub: 0,
 			refundSbpRub: 0,
@@ -312,20 +323,25 @@ export function calculateProportionalMultiTenderRefund(
 	}
 
 	if (targetRefund === totalOriginalPaid) {
-		const totalElectronicKop = origCard + origSbp;
+		const totalElectronicKop = toExactKopecks(origCard + origSbp);
+		const cashKop = toExactKopecks(origCash);
+		const cardKop = toExactKopecks(origCard);
+		const sbpKop = toExactKopecks(origSbp);
+		const advKop = toExactKopecks(origAdvance);
+		const totalKop = toExactKopecks(totalOriginalPaid);
 		return {
-			refundCashKopecks: origCash,
-			refundCardKopecks: origCard,
-			refundSbpKopecks: origSbp,
-			refundAdvanceOffsetKopecks: origAdvance,
+			refundCashKopecks: cashKop,
+			refundCardKopecks: cardKop,
+			refundSbpKopecks: sbpKop,
+			refundAdvanceOffsetKopecks: advKop,
 			refundElectronicKopecks: totalElectronicKop,
-			totalRefundKopecks: totalOriginalPaid,
-			refundCashRub: kopecksToRub(origCash),
-			refundCardRub: kopecksToRub(origCard),
-			refundSbpRub: kopecksToRub(origSbp),
-			refundAdvanceOffsetRub: kopecksToRub(origAdvance),
+			totalRefundKopecks: totalKop,
+			refundCashRub: kopecksToRub(cashKop),
+			refundCardRub: kopecksToRub(cardKop),
+			refundSbpRub: kopecksToRub(sbpKop),
+			refundAdvanceOffsetRub: kopecksToRub(advKop),
 			refundElectronicRub: kopecksToRub(totalElectronicKop),
-			totalRefundRub: kopecksToRub(totalOriginalPaid),
+			totalRefundRub: kopecksToRub(totalKop),
 			isFullRefund: true,
 			isPartialRefund: false,
 		};
@@ -356,13 +372,14 @@ export function calculateProportionalMultiTenderRefund(
 		}
 	}
 
-	const refundCashKopecks = finalAllocations[0] ?? 0;
-	const refundCardKopecks = finalAllocations[1] ?? 0;
-	const refundSbpKopecks = finalAllocations[2] ?? 0;
-	const refundAdvanceOffsetKopecks = finalAllocations[3] ?? 0;
-	const refundElectronicKopecks = refundCardKopecks + refundSbpKopecks;
-	const totalRefundKopecks =
-		refundCashKopecks + refundElectronicKopecks + refundAdvanceOffsetKopecks;
+	const refundCashKopecks = toExactKopecks(finalAllocations[0] ?? 0);
+	const refundCardKopecks = toExactKopecks(finalAllocations[1] ?? 0);
+	const refundSbpKopecks = toExactKopecks(finalAllocations[2] ?? 0);
+	const refundAdvanceOffsetKopecks = toExactKopecks(finalAllocations[3] ?? 0);
+	const refundElectronicKopecks = kopecksAdd(refundCardKopecks, refundSbpKopecks);
+	const totalRefundKopecks = toExactKopecks(
+		refundCashKopecks + refundElectronicKopecks + refundAdvanceOffsetKopecks,
+	);
 
 	return {
 		refundCashKopecks,
