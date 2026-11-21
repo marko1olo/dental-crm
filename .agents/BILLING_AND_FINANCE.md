@@ -453,6 +453,12 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
    - Сам `cashRegisterSplitsData.ts` сокращен с 1132 до **376 строк** (Sweet Spot Мандата 8b <= 400 строк).
 7. **4-State Visual Proofs**: Все 4 натурных снимка в `docs/proofs/cashbox/` (01 PC Light 77.1 KB, 02 PC Dark 74.4 KB, 03 Mobile Light 121.1 KB, 04 Mobile Dark 116.9 KB) повторно сняты на живом приложении и лично проверены через `read_file` по 8 осям визуальной инспекции (0px клиппинга, ровно 1 Primary CTA noble teal, нативный Apple HIG Bottom Sheet на смартфонах).
 8. **100% Тестовое покрытие**: Все целевые тесты кассы и биллинга проходят со 100% успехом: `fastCheckout.test.ts` (15/15 PASS), `financeAuditInquisition.test.ts` (21/21 PASS), `zReportAndWarranty.test.ts` (3/3 PASS), `dualModeZeroMockBatch4.test.ts` (8/8 PASS), `cashboxShiftModules.test.ts` (5/5 PASS), `cashboxWalkInRetailPayment.test.ts` (5/5 PASS), `cashboxDepositPaymentIntegrity.test.ts` (10/10 PASS).
+9. **DEFECT-BILL-06 [ЗАКРЫТО] (Ликвидация обхода кассовой смены и `payments` в траншах рассрочки, Мандаты 8bo, 8zp, 8bm)**:
+   - В `apps/api/src/routes/cashbox/cashInstallmentsRoutes.ts` ликвидирована Ловушка №2: первоначальный взнос при создании договора рассрочки и оплата очередных траншей (`POST /api/installments/tranches/:id/pay`) теперь ОБЯЗАТЕЛЬНО создают проводку в таблице `payments` со статусом `paid`, увеличивают `incomeTotalRub` активной смены `cash_box_shifts` и ставят чек в `fiscalReceiptQueue` (54-ФЗ).
+   - Ликвидирован Float-Drift: все расчеты и DTO траншей переведены на `@dental/shared/src/money.ts` (`rublesToKopecks`, `kopecksToRubles`, `parseKopecks`, `kopecksToNumericString`, `splitKopecks`).
+   - Защита от Double-Spend: строгая fail-closed валидация `Idempotency-Key` (RFC 9562 UUIDv7, HTTP 400 `IdempotencyKeyRequired` при отсутствии или невалидном ключе) и дедупликация с возвратом заголовка `idempotency-replayed: true` без двойного списания задолженности и без повторного зачисления выручки в смену.
+   - Реализован канонический сервис `PatientBalanceService` (`apps/api/src/routes/cashbox/patientBalanceService.ts`), гарантирующий строгую изоляцию личных авансов пациента (`advanceDepositTaggings`), семейных кошельков (`familyGroups`) и бонусов лояльности.
+   - Написан и подтвержден 100% прохождением интеграционный тест `cashboxInstallmentsAndBalanceIntegrity.test.ts`. Все тесты кассы (12/12 PASS), `tsc -p apps/api/tsconfig.json` Exit Code 0.
 
 ---
 
@@ -464,4 +470,30 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 * **[FRONTEND_VIEWS_MAP.md](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)** — Карта представлений фронтенда, модалок и кассовых шторок.
 * **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Исчерпывающий каталог Fastify API эндпоинтов финансового контура.
 * **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил и валидации приёма.
+
+---
+
+## 💎 12. Реестр хирургических исправлений Red Team: Рассрочки, Сертификаты, Реферальная Лояльность и Баланс Семьи (DEF-1...DEF-7)
+
+1. **DEF-1 [SEV-1 КРИТИЧЕСКИЙ] (Ликвидация фантомных оплат рассрочки на фронтенде)**:
+   - В `apps/web/src/components/billing/usePatientInstallmentsApi.ts` метод `payTranche` генерирует и передаёт обязательный заголовок `Idempotency-Key` (UUIDv7) и выбрасывает исключение с понятным текстом при `!res.ok`.
+   - В `apps/web/src/components/billing/installments/usePatientInstallmentsState.ts` обновление локального стейта, печать квитанции и успешный тост вызываются исключительно после подтверждённого сервером ответа `res.ok === true`.
+2. **DEF-2 [SEV-1] (Защита от Double-Spend и идемпотентность подарочных сертификатов 54-ФЗ)**:
+   - В `apps/api/src/routes/loyaltyCertificates.ts`, `certificateIssuance.ts` и `certificateRedemption.ts` внедрено извлечение `Idempotency-Key` (RFC 9562 UUIDv7) и проверка существующих платежей по `clientMutationId`.
+   - При повторных сетевых вызовах возврат состояния происходит дедуплицированно без двойного списания баланса сертификата и без повторного начисления оплат.
+3. **DEF-3 [SEV-1] (Ликвидация уязвимости бесконечного начисления бонусов за один чек — Replay Bonus Exploit)**:
+   - В `apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts` (`POST /api/loyalty/referrals/credit`) добавлена проверка дубликата начисления по `relatedPaymentId = paymentId` и `type = "accrual_referral"`.
+   - В `apps/api/src/routes/loyaltyModules/bonusBalanceService.ts` метод `executeBonusAccrual` под строгим row lock (`for("update")`) отсекает повторные начисления по одному и тому же платежу с возвратом HTTP 409 Conflict.
+4. **DEF-4 [SEV-2] (Ликвидация повторной каскадной транзакции и разрыва RLS в `awardBonusPoints`)**:
+   - В `apps/api/src/services/telegram/referralLoyalty/referralRewardsEngine.ts` устранено дублирующее открытие `withTenantCtx` при наличии переданного внешнего дескриптора `tx`. Вся операция выполняется в единой ACID-транзакции.
+5. **DEF-5 [SEV-2] (Безопасность Telegram WebApp при наличии `DENTE_TELEGRAM_BOT_TOKEN`)**:
+   - В `apps/api/src/routes/telegramBotLoyalty/telegramWebAppSessionHandlers.ts` и `telegramReferralActionHandlers.ts` исправлена логика флага `allowDevBypass`: обход HMAC-подписи запрещен, если задан хотя бы один из токенов (`TELEGRAM_BOT_TOKEN` или `DENTE_TELEGRAM_BOT_TOKEN`).
+6. **DEF-6 [SEV-2] (Атомарное связывание семейной группы в единой ACID-транзакции)**:
+   - В `apps/api/src/routes/loyaltyModules/loyaltyFamilyRoutes.ts` (`POST /api/loyalty/family/link`) создание группы, привязка главы семьи, привязка родственника и вызов `ensureFamilyMemberSpendAuthorization(tx, ...)` объединены в единый `db.transaction(async (tx) => ...)`.
+7. **DEF-7 [SEV-3] (Строгая реляционная привязка баланса семьи вместо эвристики `ilike`)**:
+   - В `apps/api/src/routes/family/familyBalanceService.ts` ликвидирован текстовый поиск подстрок `ilike '%семейн%депозит%'`. Выборка пополнений и возвратов переведена на строгий реляционный ключ `payments.documentId = familyGroupId`, а списаний — на `payments.method = "family_wallet"`.
+8. **Ликвидация мок-заглушек и починка тестов (Saboteur Purge)**:
+   - В `referralRewardsEngine.ts` и `familyAndChurnManager.ts` ликвидированы фиктивные fallback-заглушки («Иван», «Семья Ивановых») в блоках `catch`.
+   - Починены тесты `cashInstallmentsPartialPay.test.ts` и `cashboxInstallmentsAndBalanceIntegrity.test.ts` (100% PASS).
+
 

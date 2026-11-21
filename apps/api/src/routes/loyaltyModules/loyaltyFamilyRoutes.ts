@@ -214,46 +214,63 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 			if (!relative) return reply.status(404).send({ message: "Родственник с указанным идентификатором, именем или телефоном не найден в картотеке клиники" });
 			if (primary.id === relative.id) return reply.status(400).send({ message: "Нельзя привязать пациента к самому себе в качестве родственника" });
 
-			let targetGroupId = primary.familyGroupId;
-			if (!targetGroupId) {
-				const [newGroup] = await db
-					.insert(familyGroups)
-					.values({
-						organizationId: orgId,
-						name: `Семья ${primary.fullName.split(" ")[0]}`,
-						headPatientId: primary.id,
-						balance: kopecksToNumericString(0),
-					})
-					.returning();
-				targetGroupId = newGroup?.id ?? null;
-				if (targetGroupId) {
-					await db
-						.update(patients)
-						.set({ familyGroupId: targetGroupId, updatedAt: new Date() })
-						.where(and(eq(patients.organizationId, orgId), eq(patients.id, primary.id)));
+			class FamilyConflictError extends Error {
+				constructor() {
+					super("Пациент уже состоит в другой семейной группе с активным балансом депозита");
+					this.name = "FamilyConflictError";
 				}
 			}
 
-			if (relative.familyGroupId && relative.familyGroupId !== targetGroupId) {
-				const [existingFam] = await db
-					.select({ balance: familyGroups.balance })
-					.from(familyGroups)
-					.where(and(eq(familyGroups.organizationId, orgId), eq(familyGroups.id, relative.familyGroupId)))
-					.limit(1);
-				if (existingFam && parseKopecks(existingFam.balance) > 0) {
-					return reply.status(409).send({
-						message: "Пациент уже состоит в другой семейной группе с активным балансом депозита",
-					});
+			let targetGroupId: string | null = null;
+			try {
+				targetGroupId = await db.transaction(async (tx) => {
+					let groupId = primary.familyGroupId;
+					if (!groupId) {
+						const [newGroup] = await tx
+							.insert(familyGroups)
+							.values({
+								organizationId: orgId,
+								name: `Семья ${primary.fullName.split(" ")[0]}`,
+								headPatientId: primary.id,
+								balance: kopecksToNumericString(0),
+							})
+							.returning();
+						groupId = newGroup?.id ?? null;
+						if (groupId) {
+							await tx
+								.update(patients)
+								.set({ familyGroupId: groupId, updatedAt: new Date() })
+								.where(and(eq(patients.organizationId, orgId), eq(patients.id, primary.id)));
+						}
+					}
+
+					if (relative.familyGroupId && relative.familyGroupId !== groupId) {
+						const [existingFam] = await tx
+							.select({ balance: familyGroups.balance })
+							.from(familyGroups)
+							.where(and(eq(familyGroups.organizationId, orgId), eq(familyGroups.id, relative.familyGroupId)))
+							.limit(1);
+						if (existingFam && parseKopecks(existingFam.balance) > 0) {
+							throw new FamilyConflictError();
+						}
+					}
+
+					if (groupId) {
+						await tx
+							.update(patients)
+							.set({ familyGroupId: groupId, updatedAt: new Date() })
+							.where(and(eq(patients.organizationId, orgId), eq(patients.id, relative.id)));
+
+						await ensureFamilyMemberSpendAuthorization(tx, orgId, primary.id, relative.id, true);
+					}
+
+					return groupId;
+				});
+			} catch (err) {
+				if (err instanceof FamilyConflictError) {
+					return reply.status(409).send({ message: err.message });
 				}
-			}
-
-			if (targetGroupId) {
-				await db
-					.update(patients)
-					.set({ familyGroupId: targetGroupId, updatedAt: new Date() })
-					.where(and(eq(patients.organizationId, orgId), eq(patients.id, relative.id)));
-
-				await ensureFamilyMemberSpendAuthorization(db, orgId, primary.id, relative.id, true);
+				throw err;
 			}
 
 			const [balance] = await db

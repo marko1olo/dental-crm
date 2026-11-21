@@ -78,7 +78,10 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 		try {
 			// PLN-03 [SEV-1]: Передаем фактическую сумму частичной оплаты amountPaidKopecks на бэкенд
 			if (isUuid(selectedPaymentItemId)) {
-				await installmentsApi.payTranche(selectedPaymentItemId, { amountPaidKopecks: enteredKop });
+				const ok = await installmentsApi.payTranche(selectedPaymentItemId, { amountPaidKopecks: enteredKop });
+				if (!ok) {
+					throw new Error("Не удалось зафиксировать оплату транша на сервере.");
+				}
 			}
 			const { updatedPlan, receipt } = recordInstallmentPayment({
 				plan, paymentItemId: selectedPaymentItemId, paidAmountKopecks: enteredKop,

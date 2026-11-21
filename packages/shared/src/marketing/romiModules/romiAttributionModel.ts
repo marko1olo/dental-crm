@@ -60,7 +60,7 @@ export function aggregateCrmMarketingMetrics(params: {
 		notes?: string | null | undefined;
 	}>;
 	appointments: ReadonlyArray<{ id: string; patientId: string; status: string; costRub?: number | undefined }>;
-	payments: ReadonlyArray<{ id: string; patientId: string; amount?: number | undefined; amountRub?: number | undefined; amountKopecks?: number | undefined; status?: string | undefined }>;
+	payments: ReadonlyArray<{ id: string; patientId: string; amount?: number | undefined; amountRub?: number | undefined; amountKopecks?: number | bigint | undefined; status?: string | undefined }>;
 	communicationEvents?: ReadonlyArray<{ id: string; patientId?: string | undefined; type?: string | undefined; channel?: string | undefined; source?: string | undefined }> | undefined;
 	customBudgetsKopecks?: Record<string, number> | undefined;
 }): AdvertisingChannelInput[] {
@@ -75,7 +75,11 @@ export function aggregateCrmMarketingMetrics(params: {
 	for (const p of params.payments) {
 		const st = (p.status || "").toLowerCase();
 		if (!["refunded", "failed", "cancelled"].includes(st)) {
-			const kopecks = p.amountKopecks != null ? Number(p.amountKopecks) : rublesToKopecks(Number(p.amount ?? p.amountRub ?? 0));
+			const kopecks = p.amountKopecks != null
+				? Math.round(Number(p.amountKopecks))
+				: (p.amountRub != null
+					? rublesToKopecks(Number(p.amountRub))
+					: (p.amount != null ? rublesToKopecks(Number(p.amount)) : 0));
 			paymentsByPatient.set(p.patientId, (paymentsByPatient.get(p.patientId) ?? 0) + kopecks);
 		}
 	}

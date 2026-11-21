@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { patientReferrals, patientReferralCodes, patients, payments } from "../../db/schema.js";
+import { bonusTransactions, patientReferrals, patientReferralCodes, patients, payments } from "../../db/schema.js";
 import { referralRegisterBodySchema } from "@dental/shared";
 import { executeBonusAccrual } from "./bonusBalanceService.js";
 
@@ -170,6 +170,25 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 				});
 			}
 
+			// [LOY-08] Replay bonus exploit defense: reject if already credited for this payment
+			const [alreadyCredited] = await db
+				.select({ id: bonusTransactions.id })
+				.from(bonusTransactions)
+				.where(
+					and(
+						eq(bonusTransactions.organizationId, orgId),
+						eq(bonusTransactions.relatedPaymentId, paymentId),
+						eq(bonusTransactions.type, "accrual_referral"),
+					),
+				)
+				.limit(1);
+
+			if (alreadyCredited) {
+				return reply.status(409).send({
+					message: "Бонусы по данному чеку уже были начислены ранее",
+				});
+			}
+
 			const res = await executeBonusAccrual({
 				orgId,
 				patientId: referrerPatientId,
@@ -177,9 +196,15 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 				description: `Бонус за рекомендацию по чеку №${verifiedPayment.fiscalReceiptNumber || verifiedPayment.id.slice(0, 8)}`,
 				txType: "accrual_referral",
 				expiresInDays: 365,
+				relatedPaymentId: paymentId,
 			});
 
 			if ("notFound" in res) return reply.status(404).send({ message: "Реферер не найден" });
+			if ("duplicate" in res) {
+				return reply.status(409).send({
+					message: "Бонусы по данному чеку уже были начислены ранее",
+				});
+			}
 			return reply.status(200).send({
 				success: true,
 				creditedRub: rewardRub,

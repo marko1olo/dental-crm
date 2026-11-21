@@ -29,6 +29,7 @@ import type { FormattedCertificateDto, RedeemCertificateResult } from "./certifi
 export async function executeRedeemGiftCertificate(
 	orgId: string,
 	data: RedeemCertificateBody,
+	clientMutationId?: string | null,
 ): Promise<RedeemCertificateResult> {
 	const {
 		serialNumber,
@@ -43,6 +44,55 @@ export async function executeRedeemGiftCertificate(
 	const cleaned = serialNumber.replace(/[\s-]/g, "");
 
 	return db.transaction(async (tx) => {
+		if (clientMutationId) {
+			const [existingPayment] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.clientMutationId, clientMutationId),
+					),
+				)
+				.limit(1);
+
+			if (existingPayment) {
+				const [existingCert] = await tx
+					.select()
+					.from(giftCertificates)
+					.where(
+						and(
+							eq(giftCertificates.organizationId, orgId),
+							sql`REPLACE(REPLACE(${giftCertificates.serialNumber}, '-', ''), ' ', '') = ${cleaned}`,
+						),
+					)
+					.limit(1);
+
+				if (existingCert) {
+					const existingRedeemedKop = parseKopecks(existingPayment.amountRub);
+					const existingRedeemedRub = Number(kopecksToNumericString(existingRedeemedKop));
+					const currentBalKop = parseKopecks(existingCert.currentBalanceRub);
+					const currentBalRub = Number(kopecksToNumericString(currentBalKop));
+					return {
+						success: true,
+						certificateId: existingCert.id,
+						serialNumber: existingCert.serialNumber,
+						previousBalanceRub: Number(kopecksToNumericString(currentBalKop + existingRedeemedKop)),
+						redeemedAmountRub: existingRedeemedRub,
+						newBalanceRub: currentBalRub,
+						remainingInvoiceAmountRub: 0,
+						status: existingCert.status,
+						paymentId: existingPayment.id,
+						invoicePaid: true,
+						fiscal54FzSplit: {
+							tag1215AdvanceOffsetKop: existingRedeemedKop,
+							tag1081ElectronicKop: 0,
+						},
+					};
+				}
+			}
+		}
+
 		const [cert] = await tx
 			.select()
 			.from(giftCertificates)
@@ -138,6 +188,7 @@ export async function executeRedeemGiftCertificate(
 					status: "paid",
 					paidAt: new Date(),
 					note: description || `Зачёт аванса: подарочный сертификат ${cert.serialNumber} (тег 1215: ${redeemedRub} ₽)`,
+					clientMutationId: clientMutationId ?? null,
 				})
 				.returning({ id: payments.id });
 

@@ -53,7 +53,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN || "test_bot_token";
 
 		const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(initData, botToken, {
-			allowDevBypass: process.env.NODE_ENV === "test" || !process.env.TELEGRAM_BOT_TOKEN,
+			allowDevBypass: process.env.NODE_ENV === "test" || (!process.env.TELEGRAM_BOT_TOKEN && !process.env.DENTE_TELEGRAM_BOT_TOKEN),
 		});
 		if (!validation.isValid || !validation.user) {
 			return reply.status(401).send({

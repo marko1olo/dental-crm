@@ -14,6 +14,7 @@ import {
 import type { FastifyInstance } from "fastify";
 import { requireOrganizationId } from "../security/identity.js";
 import { withTenantCtx } from "../db/rls.js";
+import { extractIdempotencyKey } from "../plugins/idempotencyModules/idempotencyHeaderParser.js";
 import {
 	executeIssueGiftCertificate,
 	lookupGiftCertificateBySerial,
@@ -38,8 +39,10 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
+		const idempotencyKey = extractIdempotencyKey(request);
+
 		return withTenantCtx(orgId, async () => {
-			const certDto = await executeIssueGiftCertificate(orgId, parsed.data);
+			const certDto = await executeIssueGiftCertificate(orgId, parsed.data, idempotencyKey);
 			if (!certDto) {
 				return reply.status(500).send({ message: "Не удалось выпустить сертификат" });
 			}
@@ -142,8 +145,10 @@ export async function registerLoyaltyCertificateRoutes(app: FastifyInstance) {
 			});
 		}
 
+		const idempotencyKey = extractIdempotencyKey(request);
+
 		return withTenantCtx(orgId, async () => {
-			const result = await executeRedeemGiftCertificate(orgId, parsed.data);
+			const result = await executeRedeemGiftCertificate(orgId, parsed.data, idempotencyKey);
 
 			if ("notFound" in result) {
 				return reply.status(404).send({ message: result.message });

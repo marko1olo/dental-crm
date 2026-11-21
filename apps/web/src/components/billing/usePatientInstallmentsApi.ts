@@ -17,7 +17,7 @@ import {
 	type InternalInstallmentScheduleItem,
 	evaluateInstallmentStatus,
 } from "./installmentsEngine.js";
-import { type Kopecks, rublesToKopecks } from "@dental/shared";
+import { rublesToKopecks } from "@dental/shared";
 
 export function isUuid(val?: string | null): boolean {
 	return Boolean(
@@ -36,15 +36,15 @@ export interface ServerTrancheRecord {
 	readonly dueDate: string | Date;
 	readonly isPaid: boolean;
 	readonly status: string;
-	readonly paidAt?: string | Date | null;
-	readonly cashOperationId?: string | null;
+	readonly paidAt?: string | Date | null | undefined;
+	readonly cashOperationId?: string | null | undefined;
 }
 
 export interface ServerContractRecord {
 	readonly id: string;
 	readonly contractNumber: string;
 	readonly patientId: string;
-	readonly treatmentPlanId?: string | null;
+	readonly treatmentPlanId?: string | null | undefined;
 	readonly totalAmountRub: number;
 	readonly downPaymentRub: number;
 	readonly monthsCount: number;
@@ -52,14 +52,14 @@ export interface ServerContractRecord {
 	readonly remainingAmountRub: number;
 	readonly status: string;
 	readonly signedAt: string | Date;
-	readonly notes?: string | null;
+	readonly notes?: string | null | undefined;
 	readonly createdAt: string | Date;
 }
 
 export function mapServerContractToInstallmentPlan(serverData: {
 	readonly contract: ServerContractRecord;
-	readonly patientName?: string;
-	readonly patientPhone?: string;
+	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
 	readonly tranches: readonly ServerTrancheRecord[];
 }): InstallmentPlan {
 	const c = serverData.contract;
@@ -83,7 +83,7 @@ export function mapServerContractToInstallmentPlan(serverData: {
 					: `Платёж №${t.trancheNumber}`,
 			dueDateIso: new Date(t.dueDate).toISOString(),
 			amountKopecks: amountKop,
-			paidKopecks: isPaid ? amountKop : (0 as Kopecks),
+			paidKopecks: isPaid ? amountKop : rublesToKopecks(0),
 			status,
 			...(t.paidAt ? { paidAtIso: new Date(t.paidAt).toISOString() } : {}),
 		};
@@ -105,8 +105,7 @@ export function mapServerContractToInstallmentPlan(serverData: {
 		totalAmountKopecks: rublesToKopecks(Number(c.totalAmountRub)),
 		downPaymentKopecks: rublesToKopecks(Number(c.downPaymentRub)),
 		monthsCount: c.monthsCount,
-		monthlyPaymentKopecks:
-			schedule.length > 0 ? schedule[0]!.amountKopecks : 0,
+		monthlyPaymentKopecks: schedule[0]?.amountKopecks ?? 0,
 		startDateIso: new Date(c.signedAt).toISOString(),
 		schedule: evalResult.updatedSchedule,
 		paidAmountKopecks: rublesToKopecks(Number(c.paidAmountRub)),
@@ -118,7 +117,6 @@ export function mapServerContractToInstallmentPlan(serverData: {
 		createdAtIso: new Date(c.createdAt).toISOString(),
 		...(c.notes ? { notes: c.notes } : {}),
 	};
-
 }
 
 export function usePatientInstallmentsApi(options: {
@@ -139,12 +137,13 @@ export function usePatientInstallmentsApi(options: {
 			});
 			if (!res.ok) return null;
 			const json = (await res.json()) as {
-				data: Array<{ contract: ServerContractRecord; patientName?: string; patientPhone?: string }>;
+				data?: Array<{ contract: ServerContractRecord; patientName?: string | undefined; patientPhone?: string | undefined }> | undefined;
 			};
 			if (!json.data || json.data.length === 0) return null;
 
 			// Grab the latest contract and fetch detailed tranches
-			const latest = json.data[0]!;
+			const latest = json.data[0];
+			if (!latest?.contract?.id) return null;
 			const detailRes = await fetch(`/api/installments/${latest.contract.id}`, {
 				headers,
 			});
@@ -222,19 +221,28 @@ export function usePatientInstallmentsApi(options: {
 			const amountPaidKopecks = typeof options === "object" ? options?.amountPaidKopecks : undefined;
 			setIsLoading(true);
 			try {
+				const existingMutationHeaders = getMutationHeaders ? getMutationHeaders() : {};
 				const headers: Record<string, string> = {
 					"Content-Type": "application/json",
-					...(getMutationHeaders ? getMutationHeaders() : {}),
+					"Idempotency-Key": crypto.randomUUID(),
+					...existingMutationHeaders,
 				};
+				if (!headers["Idempotency-Key"] && !headers["idempotency-key"]) {
+					headers["Idempotency-Key"] = crypto.randomUUID();
+				}
 				const res = await fetch(`/api/installments/tranches/${trancheId}/pay`, {
 					method: "POST",
 					headers,
 					body: JSON.stringify({ cashBoxId, amountPaidKopecks }),
 				});
-				return res.ok;
+				if (!res.ok) {
+					const errorJson = (await res.json().catch(() => null)) as { message?: string } | null;
+					throw new Error(errorJson?.message || `Ошибка оплаты транша рассрочки (HTTP ${res.status})`);
+				}
+				return true;
 			} catch (err: unknown) {
 				console.warn("[usePatientInstallmentsApi] Не удалось оплатить транш рассрочки:", err);
-				return false;
+				throw err;
 			} finally {
 				setIsLoading(false);
 			}

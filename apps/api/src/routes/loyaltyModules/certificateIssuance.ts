@@ -31,6 +31,7 @@ import type { FormattedCertificateDto } from "./certificateTypes.js";
 export async function executeIssueGiftCertificate(
 	orgId: string,
 	data: IssueCertificateBody,
+	clientMutationId?: string | null,
 ): Promise<FormattedCertificateDto | null> {
 	const nominalRub = data.nominalRub ?? (data.nominalKopecks ? kopecksToRubles(data.nominalKopecks) : 0);
 	const expiresInDays = data.expiresInDays ?? 365;
@@ -49,6 +50,55 @@ export async function executeIssueGiftCertificate(
 	const serialNumber = generateLuhn16Certificate();
 
 	return db.transaction(async (tx) => {
+		if (clientMutationId) {
+			const [existingPayment] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.clientMutationId, clientMutationId),
+					),
+				)
+				.limit(1);
+
+			if (existingPayment) {
+				const [existingCert] = await tx
+					.select()
+					.from(giftCertificates)
+					.where(
+						and(
+							eq(giftCertificates.organizationId, orgId),
+							eq(giftCertificates.relatedPaymentId, existingPayment.id),
+						),
+					)
+					.limit(1);
+
+				if (existingCert) {
+					return {
+						id: existingCert.id,
+						serialNumber: existingCert.serialNumber,
+						nominalRub: Number(existingCert.nominalRub),
+						initialBalanceRub: Number(existingCert.initialBalanceRub),
+						currentBalanceRub: Number(existingCert.currentBalanceRub),
+						nominalKop: parseKopecks(existingCert.nominalRub),
+						initialBalanceKop: parseKopecks(existingCert.initialBalanceRub),
+						currentBalanceKop: parseKopecks(existingCert.currentBalanceRub),
+						purchaserPatientId: existingCert.purchaserPatientId,
+						purchaserName: existingCert.purchaserName,
+						recipientPatientId: existingCert.recipientPatientId,
+						recipientName: existingCert.recipientName,
+						recipientPhone: existingCert.recipientPhone,
+						status: existingCert.status,
+						issuedAtIso: existingCert.issuedAt.toISOString(),
+						expiresAtIso: existingCert.expiresAt.toISOString(),
+						notes: existingCert.notes,
+						relatedPaymentId: existingCert.relatedPaymentId,
+					};
+				}
+			}
+		}
+
 		let resolvedPurchaserName = purchaserName ?? null;
 		if (purchaserPatientId && !resolvedPurchaserName) {
 			const [p] = await tx
@@ -104,6 +154,7 @@ export async function executeIssueGiftCertificate(
 					status: "paid",
 					paidAt: new Date(),
 					note: `Продажа подарочного сертификата ${serialNumber} (тег 1214: Аванс, предмет расчета 1212 = 10)`,
+					clientMutationId: clientMutationId ?? null,
 				})
 				.returning({ id: payments.id });
 			paymentId = payment?.id ?? null;

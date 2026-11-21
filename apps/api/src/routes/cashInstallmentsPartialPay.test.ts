@@ -3,6 +3,7 @@
  */
 
 import { strict as assert } from "node:assert";
+import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import {
 	cashBoxes,
@@ -97,7 +98,10 @@ describe("PLN-03: Partial installment tranche payment and debt reduction", () =>
 			const partialPayRes = await app.inject({
 				method: "POST",
 				url: `/api/installments/tranches/${firstTranche.id}/pay`,
-				headers,
+				headers: {
+					...headers,
+					"idempotency-key": randomUUID(),
+				},
 				payload: {
 					amountPaidKopecks: 350000, // 3 500 ₽
 				},
@@ -125,7 +129,10 @@ describe("PLN-03: Partial installment tranche payment and debt reduction", () =>
 			const finalPayRes = await app.inject({
 				method: "POST",
 				url: `/api/installments/tranches/${firstTranche.id}/pay`,
-				headers,
+				headers: {
+					...headers,
+					"idempotency-key": randomUUID(),
+				},
 				payload: {
 					amountPaidKopecks: 650000, // 6 500 ₽
 				},

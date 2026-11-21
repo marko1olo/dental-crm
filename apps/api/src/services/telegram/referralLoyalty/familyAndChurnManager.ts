@@ -126,34 +126,6 @@ export async function getFamilyProfile(
 			};
 		});
 	} catch (err) {
-		if (isDbConnectionError(err) && (process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)) {
-			return {
-				familyGroupId: "fam-test-1",
-				familyGroupName: "Семья Ивановых",
-				headPatientId: patientId,
-				familyBalanceRub: 1500,
-				members: [
-					{
-						patientId,
-						fullName: "Иванов Иван Иванович",
-						birthDate: "1985-04-10",
-						phone: "+79001234567",
-						relation: "self",
-						activeBonusPoints: 1000,
-						upcomingAppointmentsCount: 1,
-					},
-					{
-						patientId: "child-test-1",
-						fullName: "Иванов Миша Иванович",
-						birthDate: "2018-05-12",
-						phone: "+79001234567",
-						relation: "child",
-						activeBonusPoints: 500,
-						upcomingAppointmentsCount: 1,
-					},
-				],
-			};
-		}
 		throw err;
 	}
 }

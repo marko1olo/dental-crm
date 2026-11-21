@@ -42,6 +42,25 @@ export async function executeBonusAccrual(params: AccruePointsParams) {
 	}
 
 	return db.transaction(async (tx) => {
+		if (relatedPaymentId) {
+			const [existingAccrual] = await tx
+				.select({ id: bonusTransactions.id })
+				.from(bonusTransactions)
+				.where(
+					and(
+						eq(bonusTransactions.organizationId, orgId),
+						eq(bonusTransactions.relatedPaymentId, relatedPaymentId),
+						eq(bonusTransactions.type, txType),
+					),
+				)
+				.limit(1)
+				.for("update");
+
+			if (existingAccrual) {
+				return { duplicate: true as const, existingTransactionId: existingAccrual.id };
+			}
+		}
+
 		const [patient] = await tx
 			.select({ id: patients.id, fullName: patients.fullName })
 			.from(patients)

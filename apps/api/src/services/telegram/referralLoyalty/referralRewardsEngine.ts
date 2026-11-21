@@ -18,14 +18,11 @@ import {
 	patients,
 } from "../../../db/schema.js";
 import { wsBroker } from "../../websocketBroker.js";
-import { isDbConnectionError } from "./webAppValidator.js";
 import {
 	DEFAULT_REFERRAL_CONFIG,
 	type ReferralRewardConfig,
 	type ReferralStartResult,
 } from "./types.js";
-
-const inMemoryTestProcessedReferrals = new Set<string>();
 
 /**
  * Начисление бонусных баллов пациенту с фиксацией транзакции в журнале.
@@ -38,59 +35,59 @@ export async function awardBonusPoints(
 	transactionType = "accrual",
 	dbClient: TenantDb | typeof db = db,
 ): Promise<number> {
-	return withTenantCtx(organizationId, async () => {
-		const execute = async (tx: TenantDb) => {
-			const [balance] = await tx
-				.select()
-				.from(patientBonusBalances)
-				.where(
-					and(
-						eq(patientBonusBalances.organizationId, organizationId),
-						eq(patientBonusBalances.patientId, patientId),
-					),
-				)
-				.for("update")
-				.limit(1);
+	const execute = async (tx: TenantDb) => {
+		const [balance] = await tx
+			.select()
+			.from(patientBonusBalances)
+			.where(
+				and(
+					eq(patientBonusBalances.organizationId, organizationId),
+					eq(patientBonusBalances.patientId, patientId),
+				),
+			)
+			.for("update")
+			.limit(1);
 
-			const currentActive = balance ? Number(balance.activePoints || 0) : 0;
-			const currentLifetime = balance ? Number(balance.lifetimeEarnedPoints || 0) : 0;
-			const newActive = currentActive + amountPoints;
-			const newLifetime = currentLifetime + amountPoints;
+		const currentActive = balance ? Number(balance.activePoints || 0) : 0;
+		const currentLifetime = balance ? Number(balance.lifetimeEarnedPoints || 0) : 0;
+		const newActive = currentActive + amountPoints;
+		const newLifetime = currentLifetime + amountPoints;
 
-			if (balance) {
-				await tx
-					.update(patientBonusBalances)
-					.set({
-						activePoints: String(newActive),
-						lifetimeEarnedPoints: String(newLifetime),
-						updatedAt: new Date(),
-					})
-					.where(eq(patientBonusBalances.id, balance.id));
-			} else {
-				await tx.insert(patientBonusBalances).values({
-					organizationId,
-					patientId,
+		if (balance) {
+			await tx
+				.update(patientBonusBalances)
+				.set({
 					activePoints: String(newActive),
 					lifetimeEarnedPoints: String(newLifetime),
-				});
-			}
-
-			await tx.insert(bonusTransactions).values({
+					updatedAt: new Date(),
+				})
+				.where(eq(patientBonusBalances.id, balance.id));
+		} else {
+			await tx.insert(patientBonusBalances).values({
 				organizationId,
 				patientId,
-				type: "accrual",
-				amountPoints: String(amountPoints),
-				balanceAfterPoints: String(newActive),
-				description,
+				activePoints: String(newActive),
+				lifetimeEarnedPoints: String(newLifetime),
 			});
-
-			return newActive;
-		};
-
-		if (dbClient === db) {
-			return await db.transaction(execute);
 		}
+
+		await tx.insert(bonusTransactions).values({
+			organizationId,
+			patientId,
+			type: "accrual",
+			amountPoints: String(amountPoints),
+			balanceAfterPoints: String(newActive),
+			description,
+		});
+
+		return newActive;
+	};
+
+	if (dbClient !== db) {
 		return await execute(dbClient as TenantDb);
+	}
+	return withTenantCtx(organizationId, async () => {
+		return await db.transaction(execute);
 	});
 }
 
@@ -385,42 +382,6 @@ export async function processReferralStart(
 			};
 		});
 	} catch (err) {
-		if (isDbConnectionError(err) && (process.env.NODE_ENV === "test" || !process.env.DATABASE_URL)) {
-			const cacheKey = `${organizationId}:${refereeTelegramChatId}:${startPayload}`;
-			const isNew = !inMemoryTestProcessedReferrals.has(cacheKey);
-			inMemoryTestProcessedReferrals.add(cacheKey);
-
-			const refMatch = startPayload.trim().match(/^ref_?(.+)$/i);
-			const referrerId = refMatch?.[1] || "test-referrer-id";
-			const refereeId = "test-referee-patient-id";
-			const referrerName = "Иван";
-
-			const webAppUrl = `https://clinic.dente.pro/#/portal/tgapp?org=${encodeURIComponent(organizationId)}&patientId=${encodeURIComponent(refereeId)}`;
-			const welcomeMessage = [
-				`🎁 <b>Добро пожаловать в стоматологию DENTE!</b>`,
-				``,
-				`Ваш друг <b>${referrerName}</b> подарил вам персональный бонус <b>${config.refereeWelcomeBonusRub.toLocaleString("ru-RU")} ₽</b> на первый визит!`,
-				``,
-				`✨ Бонус уже начислен на ваш баланс и может быть использован на:`,
-				`• Комплексную чистку зубов (ультразвук + Air-Flow)`,
-				`• Профилактический осмотр и диагностику с визиографом`,
-				`• Лечение кариеса и эстетическую реставрацию`,
-				``,
-				`Нажмите кнопку ниже, чтобы открыть интерактивное мини-приложение: отметить беспокоящий зуб на 3D/2D формуле или выбрать свободное окно в онлайн-календаре.`,
-			].join("\n");
-
-			return {
-				success: true,
-				isNewReferral: isNew,
-				referrerPatientId: referrerId,
-				referrerName,
-				refereePatientId: refereeId,
-				refereeBonusRub: config.refereeWelcomeBonusRub,
-				referrerBonusRub: config.referrerBonusRub,
-				welcomeMessage,
-				webAppUrl,
-			};
-		}
 		throw err;
 	}
 }

@@ -1,5 +1,5 @@
 import { kopecksToRub, parseKopecks } from "@dental/shared";
-import { and, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { familyGroups, patients, payments } from "../../db/schema.js";
 
@@ -76,29 +76,10 @@ export async function getFamilyHistoryRecords(
 				or(
 					// Реляционная привязка пополнений и возвратов к семейной группе через documentId
 					eq(payments.documentId, familyGroupId),
-					// Операции членов семейной группы
+					// Операции списания со счета семьи членами семейной группы
 					and(
 						inArray(payments.patientId, memberIds),
-						or(
-							eq(payments.method, "family_wallet"),
-							eq(payments.status, "refunded"),
-							sql`${payments.amountRub} < 0`,
-							and(
-								ne(payments.method, "family_wallet"),
-								eq(payments.status, "paid"),
-								or(
-									ilike(payments.note, "%семейн%депозит%"),
-									ilike(payments.note, "%семейн%счет%"),
-									ilike(payments.note, "%семейн%счёт%"),
-									ilike(payments.note, "%пополнен%семейн%"),
-									ilike(payments.note, "%family%topup%"),
-									ilike(payments.clientMutationId, "%fam-topup%"),
-									ilike(payments.clientMutationId, "%family-topup%"),
-									ilike(payments.clientMutationId, "%family_topup%"),
-									ilike(payments.clientMutationId, "%topup%"),
-								),
-							),
-						),
+						eq(payments.method, "family_wallet"),
 					),
 				),
 			),

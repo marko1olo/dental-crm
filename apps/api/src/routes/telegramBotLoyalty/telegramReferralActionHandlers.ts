@@ -42,7 +42,7 @@ async function resolveAuthorizedOrg(
 			rawInitData,
 			botToken,
 			{
-				allowDevBypass: process.env.NODE_ENV === "test" || !process.env.TELEGRAM_BOT_TOKEN,
+				allowDevBypass: process.env.NODE_ENV === "test" || (!process.env.TELEGRAM_BOT_TOKEN && !process.env.DENTE_TELEGRAM_BOT_TOKEN),
 			},
 		);
 		if (validation.isValid && validation.user) {
