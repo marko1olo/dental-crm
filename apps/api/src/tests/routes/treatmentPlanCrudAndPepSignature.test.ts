@@ -347,10 +347,12 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 		assert.ok(approveBody.invoice);
 		assert.equal(approveBody.invoice.treatmentPlanId, planId);
 
-		const [dbInvoice] = await db
-			.select({ treatmentPlanId: patientInvoices.treatmentPlanId })
-			.from(patientInvoices)
-			.where(eq(patientInvoices.id, approveBody.invoice.id));
+		const [dbInvoice] = await withFixtureTenant(ORG_ID, async () => {
+			return await db
+				.select({ treatmentPlanId: patientInvoices.treatmentPlanId })
+				.from(patientInvoices)
+				.where(eq(patientInvoices.id, approveBody.invoice.id));
+		});
 		assert.equal(dbInvoice?.treatmentPlanId, planId);
 	});
 
