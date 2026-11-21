@@ -50,6 +50,7 @@ export function isTestFile(relPath) {
 	if (/\/__mocks__\//.test(norm)) return true;
 	if (/\/testUtils\.[cm]?[jt]sx?$/.test(norm)) return true;
 	if (/\/setupTests\.[cm]?[jt]sx?$/.test(norm)) return true;
+	if (/vitest\.d\.ts$/.test(norm)) return true;
 	return false;
 }
 

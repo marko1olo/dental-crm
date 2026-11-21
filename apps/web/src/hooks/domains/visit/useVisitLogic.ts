@@ -10,41 +10,27 @@ import { useVisitSpeech } from "./useVisitSpeech";
 
 export function useVisitLogic({
 	dashboard = null,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	query,
+	query: _query,
 	setError,
 	auth,
 	setDashboard,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	setQuery,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	selectedPatientId,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	documentPatient,
+	setQuery: _setQuery,
+	selectedPatientId: _selectedPatientId,
+	documentPatient: _documentPatient,
 	activePatient,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	activeAppointment,
+	activeAppointment: _activeAppointment,
 	activeDoctor,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	activeChair,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	paymentPatientContextReady,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	paymentPatientContextMessage,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	loadDashboard,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	clinicProfileDraft,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	patientCoreDraft,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	documentPatientMatchesActiveVisit,
+	activeChair: _activeChair,
+	paymentPatientContextReady: _paymentPatientContextReady,
+	paymentPatientContextMessage: _paymentPatientContextMessage,
+	loadDashboard: _loadDashboard,
+	clinicProfileDraft: _clinicProfileDraft,
+	patientCoreDraft: _patientCoreDraft,
+	documentPatientMatchesActiveVisit: _documentPatientMatchesActiveVisit,
 	activeOrganizationId = null,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	importSourceKind,
+	importSourceKind: _importSourceKind,
 	setImportSourceKind,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: preserved call-site signature
-	importText,
+	importText: _importText,
 	setImportText,
 	setImportPreview,
 	setImportCommit,

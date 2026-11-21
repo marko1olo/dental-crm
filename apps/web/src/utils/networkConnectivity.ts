@@ -362,8 +362,8 @@ export function createNetworkMonitor(
 			}
 			void runCheck();
 		}, intervalMs);
-		if (typeof (timerId as any)?.unref === "function") {
-			(timerId as any).unref();
+		if (typeof (timerId as { unref?: () => void })?.unref === "function") {
+			(timerId as { unref?: () => void }).unref?.();
 		}
 	}
 

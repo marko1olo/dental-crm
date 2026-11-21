@@ -5,13 +5,13 @@
 
 import React from "react";
 import { AppModalsContainer as BaseAppModalsContainer } from "../components/appLayout";
-import { AppDirectModals } from "./AppDirectModals";
+import { AppDirectModals, type AppDirectModalsAppLogic } from "./AppDirectModals";
 import type { AppHashRoutingState, AppSessionAuthState } from "./appStateTypes";
 
 interface AppModalsContainerProps {
 	routing: AppHashRoutingState;
 	sessionAuth: AppSessionAuthState;
-	appLogic: any;
+	appLogic: AppDirectModalsAppLogic;
 }
 
 export function AppModalsContainer({ routing, sessionAuth, appLogic }: AppModalsContainerProps) {

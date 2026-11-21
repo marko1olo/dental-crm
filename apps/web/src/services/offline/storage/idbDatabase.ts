@@ -48,8 +48,7 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				OFFLINE_DB_VERSION,
 			);
 
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			request.onupgradeneeded = (event?: IDBVersionChangeEvent | any) => {
+			request.onupgradeneeded = (event?: IDBVersionChangeEvent) => {
 				const db = request.result;
 				const tx = request.transaction;
 				const oldVersion = event?.oldVersion ?? 0;
@@ -58,8 +57,7 @@ export function openOfflineOutboxDb(): Promise<IDBDatabase> {
 				);
 
 				// Helper to check index existence safely across browsers and node test mock IDB
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				const safeCreateIndex = (store: any, name: string, keyPath?: string) => {
+				const safeCreateIndex = (store: IDBObjectStore, name: string, keyPath?: string) => {
 					if (!store) return;
 					try {
 						const hasIndex =

@@ -58,8 +58,7 @@ export function useVisitSpeechDictation({
 			visitDraftUserEditedRef.current = true;
 			setClearedTranscriptSnapshot(null);
 
-			// biome-ignore lint/suspicious/noExplicitAny: functional state update
-			setTranscript((current: any) =>
+			setTranscript((current: string) =>
 				appendSpeechTextWithoutDuplicateTail(current, cleanValue, dedupeWindow),
 			);
 			setDraft(null);
@@ -80,8 +79,7 @@ export function useVisitSpeechDictation({
 			visitDraftUserEditedRef.current = true;
 			setClearedTranscriptSnapshot(null);
 
-			// biome-ignore lint/suspicious/noExplicitAny: functional state update
-			setTranscript((current: any) =>
+			setTranscript((current: string) =>
 				appendSpeechTextWithoutDuplicateTail(current, text, dedupeWindow),
 			);
 		},

@@ -90,7 +90,6 @@ export const PipelineCardItem: React.FC<PipelineCardItemProps> = ({
 	};
 
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: pipeline card container has click-to-open with keyboard navigation
 		<div
 			role="button"
 			tabIndex={0}

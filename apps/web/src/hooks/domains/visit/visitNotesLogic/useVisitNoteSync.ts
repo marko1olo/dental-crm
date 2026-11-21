@@ -22,8 +22,7 @@ import { useVisitStore } from "../../../../store/visitStore";
 import { fetchWithHandling } from "../../../../utils/networkUtils";
 
 export interface UseVisitNoteSyncParams {
-	// biome-ignore lint/suspicious/noExplicitAny: auth client carries headers
-	auth: any;
+	auth: { getHeaders?: () => HeadersInit; [key: string]: unknown };
 	setError: (err: string | null) => void;
 	dashboard: Dashboard | null;
 	hasVisitTranscriptText: boolean;

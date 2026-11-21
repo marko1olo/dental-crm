@@ -64,7 +64,7 @@ export function createPrng(seedVal) {
 
 export function parseCliArgs(argv = process.argv.slice(2)) {
 	const options = {
-		samples: 20,
+		samples: 100,
 		seed: null,
 		list: "all",
 		strict: false,
@@ -348,6 +348,39 @@ export function inspectLine(sample) {
 				message: "Утечка ТЗ/дев-жаргона в видимый лейбл интерфейса. Используйте клинический русский язык.",
 			});
 		}
+
+		// Проверка 7: Расширенная контекстная инспекция блока (±15 строк)
+		if (/\bas\s+any\b/i.test(joinedContext) && !/\bas\s+any\b/i.test(current)) {
+			defects.push({
+				rule: "MANDATE_8be_CONTEXT_AS_ANY",
+				severity: "HIGH",
+				message: "В блоке обнаружен слепой каст 'as any'. Требуется строгая типизация.",
+			});
+		}
+		if (
+			/\b(price|amount|cost|rubles|kopecks|total|balance)\w*\s*\/\s*100\b/i.test(joinedContext) &&
+			!/\b(price|amount|cost|rubles|kopecks|total|balance)\w*\s*\/\s*100\b/i.test(current)
+		) {
+			defects.push({
+				rule: "MANDATE_8bm_CONTEXT_RAW_MONEY_DIVISION",
+				severity: "HIGH",
+				message: "В блоке обнаружено деление денежной суммы на 100 в обход money.ts.",
+			});
+		}
+		if (relPath.includes("apps/api/") && /console\.(log|warn|error)\(/.test(joinedContext) && !relPath.includes("scripts/")) {
+			defects.push({
+				rule: "ROT_008_CONTEXT_CONSOLE_IN_API",
+				severity: "MEDIUM",
+				message: "В блоке API обнаружен неструктурированный console.log вместо Fastify logger.",
+			});
+		}
+		if (/catch\s*\([_a-zA-Z0-9]*\)\s*\{\s*\}/.test(joinedContext)) {
+			defects.push({
+				rule: "MANDATE_8zr_EMPTY_CATCH",
+				severity: "HIGH",
+				message: "В блоке обнаружен пустой catch {} — тихое проглатывание ошибок.",
+			});
+		}
 	}
 
 	return {
@@ -442,8 +475,8 @@ export function sampleLines(files, count, prng, rootDir) {
 		const current = lines[lineIndex];
 		if (!current || current.trim().length === 0) continue;
 
-		const start = Math.max(0, lineIndex - 3);
-		const end = Math.min(lines.length - 1, lineIndex + 3);
+		const start = Math.max(0, lineIndex - 15);
+		const end = Math.min(lines.length - 1, lineIndex + 15);
 
 		const before = lines.slice(start, lineIndex);
 		const after = lines.slice(lineIndex + 1, end + 1);
@@ -508,7 +541,21 @@ export function auditDoors(rootDir, prng, sampleCount = 5) {
 
 				const issues = [];
 				if (hasRawMoneyDivision) {
-					issues.push("Деление сумм на 100 в обход @dental/shared/src/money.ts");
+					issues.push("Деление сумм на 100 в обход @dental/shared/src/money.ts (Мандат 8bm)");
+				}
+				if (!hasIdempotency) {
+					issues.push("Мутационный эндпоинт без обязательного заголовка Idempotency-Key (Мандат 8bo / RFC 9562)");
+				}
+				const mutationMatches = routeBody.match(/\b(insert|update|delete)\s*\(|\.insert\(|\.update\(|\.delete\(/gi) || [];
+				if (!hasTransaction && mutationMatches.length > 1) {
+					issues.push("Множественные мутации данных без единой атомарной db.transaction() (Мандат 8bo)");
+				}
+				const hasOrgContext =
+					/organizationId|organization_id|orgId|withTenantCtx|requireClinicalMutationContext|requireClinicalReadContext/i.test(
+						routeBody,
+					);
+				if (!hasOrgContext) {
+					issues.push("Мутационный роут без проверки контекста организации/арендатора (BOLA/IDOR риск)");
 				}
 
 				doors.push({
@@ -593,6 +640,10 @@ export function auditFields(rootDir, prng, sampleCount = 5) {
 					const hasMoneyFieldWithoutKopecks = /"(price|amount|cost)"\s*:\s*(?!bigint|integer)/.test(block);
 					if (hasMoneyFieldWithoutKopecks) {
 						issues.push("Колонка цены/суммы без явного суффикса _kopecks или типа integer/bigint");
+					}
+					// Проверка ROT-015: numeric поля для денег в рублях
+					if (/numeric\s*\(\s*["']\w*(rub|amount|price|cost|balance|total|fee)\w*["']/i.test(block)) {
+						issues.push("Денежная колонка объявлена как numeric(Rub) вместо bigint(kopecks) (Мандат 8bm / ROT-015)");
 					}
 				}
 
@@ -739,23 +790,23 @@ export function runDiceAudit(options = {}, rootDir = process.cwd()) {
 
 	// 1. Сэмплирование случайных строк (Кубик по строкам)
 	if (options.list === "all") {
-		const lineSamples = sampleLines(allCombatFiles, options.samples || 20, prng, rootDir);
+		const lineSamples = sampleLines(allCombatFiles, options.samples || 100, prng, rootDir);
 		report.lines = lineSamples;
 	}
 
 	// 2. Структурный Список 1: Двери и Мутации
 	if (options.list === "all" || options.list === "doors") {
-		report.doors = auditDoors(rootDir, prng, Math.max(3, Math.floor((options.samples || 20) / 4)));
+		report.doors = auditDoors(rootDir, prng, Math.max(25, Math.floor((options.samples || 100) / 4)));
 	}
 
 	// 3. Структурный Список 2: Поля памяти и Контракты
 	if (options.list === "all" || options.list === "fields") {
-		report.fields = auditFields(rootDir, prng, Math.max(3, Math.floor((options.samples || 20) / 4)));
+		report.fields = auditFields(rootDir, prng, Math.max(25, Math.floor((options.samples || 100) / 4)));
 	}
 
 	// 4. Структурный Список 3: Точки входа UI
 	if (options.list === "all" || options.list === "ui") {
-		report.ui = auditUi(rootDir, prng, Math.max(3, Math.floor((options.samples || 20) / 4)));
+		report.ui = auditUi(rootDir, prng, Math.max(25, Math.floor((options.samples || 100) / 4)));
 	}
 
 	// Подсчет агрегированной статистики

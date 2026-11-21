@@ -11,27 +11,27 @@ export function levenshteinDistance(a: string, b: string): number {
 		.map(() => Array(a.length + 1).fill(0));
 
 	for (let i = 0; i <= b.length; i++) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		matrix[i]![0] = i;
+		const row = matrix[i];
+		if (row) row[0] = i;
 	}
 
 	for (let j = 0; j <= a.length; j++) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		matrix[0]![j] = j;
+		const row = matrix[0];
+		if (row) row[j] = j;
 	}
 
 	for (let i = 1; i <= b.length; i++) {
+		const row = matrix[i];
+		if (!row) continue;
 		for (let j = 1; j <= a.length; j++) {
 			if (b.charAt(i - 1) === a.charAt(j - 1)) {
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				matrix[i]![j] = matrix[i - 1]?.[j - 1] as number;
+				row[j] = matrix[i - 1]?.[j - 1] ?? 0;
 			} else {
-				// biome-ignore lint/style/noNonNullAssertion: automated suppression
-				matrix[i]![j] = Math.min(
-					(matrix[i - 1]?.[j - 1] as number) + 1,
+				row[j] = Math.min(
+					(matrix[i - 1]?.[j - 1] ?? 0) + 1,
 					Math.min(
-						(matrix[i]?.[j - 1] as number) + 1,
-						(matrix[i - 1]?.[j] as number) + 1,
+						(row[j - 1] ?? 0) + 1,
+						(matrix[i - 1]?.[j] ?? 0) + 1,
 					),
 				);
 			}
@@ -301,8 +301,8 @@ export function textToNumbers(text: string): string {
 	let inNumber = false;
 
 	for (let i = 0; i < tokens.length; i++) {
-		// biome-ignore lint/style/noNonNullAssertion: automated suppression
-		const token = tokens[i]!;
+		const token = tokens[i];
+		if (!token) continue;
 		if (token.trim() === "") {
 			result.push(token);
 			continue;

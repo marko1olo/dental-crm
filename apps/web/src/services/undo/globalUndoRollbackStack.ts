@@ -57,7 +57,7 @@ export interface PushDestructiveActionOptions<T = unknown> {
 const MAX_STACK_SIZE = 50;
 
 class GlobalUndoRollbackStackManager {
-	private stack: UndoRollbackEntry<any>[] = [];
+	private stack: UndoRollbackEntry<unknown>[] = [];
 
 	/**
 	 * Pushes a destructive action to the undo stack, starts 5-sec commit timer,
@@ -116,7 +116,7 @@ class GlobalUndoRollbackStackManager {
 			}
 		}
 
-		this.stack.push(entry);
+		this.stack.push(entry as UndoRollbackEntry<unknown>);
 
 		// Surface rollback toast if enabled
 		if (options.showToast !== false) {
@@ -146,7 +146,7 @@ class GlobalUndoRollbackStackManager {
 	 * If id is omitted, rolls back the most recent pending entry.
 	 */
 	public executeRollback(id?: string): boolean {
-		let targetEntry: UndoRollbackEntry<any> | undefined;
+		let targetEntry: UndoRollbackEntry<unknown> | undefined;
 
 		if (id) {
 			targetEntry = this.stack.find((e) => e.id === id);
@@ -209,14 +209,14 @@ class GlobalUndoRollbackStackManager {
 	/**
 	 * Returns all active, uncommitted, and unrolled-back entries.
 	 */
-	public getActiveEntries(): UndoRollbackEntry<any>[] {
+	public getActiveEntries(): UndoRollbackEntry<unknown>[] {
 		return this.stack.filter((e) => !e.committed && !e.rolledBack);
 	}
 
 	/**
 	 * Returns full immutable snapshot of stack.
 	 */
-	public getStack(): readonly UndoRollbackEntry<any>[] {
+	public getStack(): readonly UndoRollbackEntry<unknown>[] {
 		return [...this.stack];
 	}
 

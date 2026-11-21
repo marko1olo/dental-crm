@@ -33,8 +33,7 @@ interface PendingRollbackEntry<T> {
  * Zero-Leak cleanup при размонтировании компонента.
  */
 export function useToastRollback<T = unknown>() {
-	// biome-ignore lint/suspicious/noExplicitAny: generic storage for pending rollbacks
-	const pendingRef = useRef<Map<string, PendingRollbackEntry<any>>>(new Map());
+	const pendingRef = useRef<Map<string, PendingRollbackEntry<T>>>(new Map());
 
 	// Очистка при размонтировании: окончательно коммитим все зависшие действия
 	useEffect(() => {

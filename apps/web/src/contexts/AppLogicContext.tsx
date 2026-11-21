@@ -58,7 +58,7 @@ export function AppLogicProvider({
 	}, []);
 
 	return (
-		<AppLogicContext.Provider value={value}>
+		<AppLogicContext.Provider value={value as AppLogicContextType}>
 			{children}
 		</AppLogicContext.Provider>
 	);

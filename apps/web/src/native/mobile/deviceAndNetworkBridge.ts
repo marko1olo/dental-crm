@@ -52,8 +52,19 @@ export {
 // SCREEN WAKE LOCK API (DOCTOR IPAD / SURGICAL OPERATORY SUPPORT)
 // ============================================================================
 
-// biome-ignore lint/suspicious/noExplicitAny: Screen Wake Lock Sentinel instance
-let activeWakeLockSentinel: any = null;
+interface WakeLockSentinelLike {
+	released?: boolean;
+	release: () => Promise<void>;
+	addEventListener?: (type: string, listener: () => void) => void;
+}
+
+interface NavigatorWithWakeLock {
+	wakeLock?: {
+		request: (type: "screen") => Promise<WakeLockSentinelLike>;
+	};
+}
+
+let activeWakeLockSentinel: WakeLockSentinelLike | null = null;
 
 /**
  * Acquires Screen Wake Lock to prevent iPad / tablet screen dimming during clinical appointments.
@@ -73,10 +84,11 @@ export async function acquireScreenWakeLock(): Promise<boolean> {
 	}
 
 	// 2. HTML5 Screen Wake Lock API (iPadOS Safari 16.4+ / Chrome Android)
-	if (typeof navigator !== "undefined" && "wakeLock" in navigator && typeof (navigator as any).wakeLock?.request === "function") {
+	const nav = typeof navigator !== "undefined" ? (navigator as unknown as NavigatorWithWakeLock) : undefined;
+	if (nav?.wakeLock && typeof nav.wakeLock.request === "function") {
 		try {
 			if (!activeWakeLockSentinel) {
-				activeWakeLockSentinel = await (navigator as any).wakeLock.request("screen");
+				activeWakeLockSentinel = await nav.wakeLock.request("screen");
 				activeWakeLockSentinel.addEventListener?.("release", () => {
 					activeWakeLockSentinel = null;
 				});

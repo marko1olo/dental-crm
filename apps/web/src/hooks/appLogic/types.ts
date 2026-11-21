@@ -43,6 +43,10 @@ import type { useScheduleFilterController } from "../domains/useScheduleFilterCo
 import type { useScheduleLogic as useDomainScheduleLogic } from "../domains/useScheduleLogic";
 import type { useScheduleSettingsLogic } from "../domains/useScheduleSettingsLogic";
 import type { useTelegramModule } from "../domains/useTelegramModule";
+import type { useCommunicationsQueries } from "../domains/useCommunicationsQueries";
+import type { useImagingQueries } from "../domains/useImagingQueries";
+import type { useMigrationQueries } from "../domains/useMigrationQueries";
+import type { useStaffSettingsLogic } from "../domains/useStaffSettingsLogic";
 
 type PatientLogicReturn = ReturnType<typeof usePatientLogic>;
 type PatientIntakeLogicReturn = ReturnType<typeof usePatientIntakeLogic>;
@@ -334,4 +338,12 @@ export type UseAppLogicReturn = NavigationStateSlice &
 	ModalControllerSlice &
 	OfflineSyncLogicSlice &
 	SettingsAndIntegrationsLogicSlice &
-	Record<string, unknown>;
+	AppStore &
+	TelegramModuleReturn &
+	ReturnType<typeof useCommunicationsQueries> &
+	ReturnType<typeof useImagingQueries> &
+	ReturnType<typeof useMigrationQueries> &
+	ReturnType<typeof useStaffSettingsLogic> & {
+		loadDashboard: (options?: { adminSecret?: string }) => Promise<void>;
+		[key: string]: unknown;
+	};

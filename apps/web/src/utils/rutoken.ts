@@ -5,10 +5,24 @@ import { logger } from "./logger";
  * for signing documents with GOST Hardware Tokens.
  */
 
+export interface RutokenPluginInstance {
+	login: (deviceId: number, pin: string) => Promise<unknown>;
+	digest: (deviceId: number, hashType: number, data: string) => Promise<string>;
+	sign: (
+		deviceId: number,
+		certId: string,
+		hashHex: string,
+		detached: boolean,
+		options: { detached: boolean; addSignCertV2: boolean },
+	) => Promise<string>;
+	logout: (deviceId: number) => Promise<unknown>;
+	HASH_TYPE_GOST3411_12_256: number;
+	[key: string]: unknown;
+}
+
 declare global {
 	interface Window {
-		// biome-ignore lint/suspicious/noExplicitAny: external plugin type
-		rutoken?: any;
+		rutoken?: RutokenPluginInstance;
 		rutokenPluginLoaded?: boolean;
 	}
 }
@@ -113,10 +127,10 @@ export async function getRutokenCertificates(): Promise<RutokenCertificate[]> {
 		}
 
 		return certs;
-		// biome-ignore lint/suspicious/noExplicitAny: error types can vary
-	} catch (error: any) {
+	} catch (error: unknown) {
 		logger.error("Failed to read Rutoken certificates:", error);
-		throw new Error(`Ошибка при чтении Рутокена: ${error.message || error}`);
+		const message = error instanceof Error ? error.message : String(error);
+		throw new Error(`Ошибка при чтении Рутокена: ${message}`);
 	}
 }
 
@@ -160,21 +174,21 @@ export async function signDataWithRutoken(
 		// Convert hex signature to Base64 (Assuming backend expects Base64 for PKCS7/CMS)
 		// Usually plugin.sign with addSignCertV2 produces CMS.
 		return hexToBase64(signatureHex);
-		// biome-ignore lint/suspicious/noExplicitAny: error types can vary
-	} catch (error: any) {
+	} catch (error: unknown) {
 		logger.error("Rutoken signing error:", error);
 		try {
-			await plugin.logout(deviceId);
+			await plugin?.logout(deviceId);
 		} catch {
 			// ignore logout errors on failure
 		}
 
+		const message = error instanceof Error ? error.message : String(error);
 		// Common error codes mapped to user-friendly messages
-		if (error.message?.includes("PIN")) {
+		if (message.includes("PIN")) {
 			throw new Error("Неверный PIN-код устройства.");
 		}
 
-		throw new Error(`Ошибка подписания Рутокеном: ${error.message || error}`);
+		throw new Error(`Ошибка подписания Рутокеном: ${message}`);
 	}
 }
 

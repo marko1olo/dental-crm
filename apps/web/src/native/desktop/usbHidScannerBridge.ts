@@ -157,25 +157,28 @@ export function createUsbHidScannerDetector(options: UsbHidScannerOptions = {}) 
 
 			// Clean up focused input if scanner typed into it
 			if (typeof document !== "undefined" && document.activeElement) {
-				const activeEl = document.activeElement as any;
+				const activeEl = document.activeElement;
 				const isInput =
 					(typeof HTMLInputElement !== "undefined" && activeEl instanceof HTMLInputElement) ||
 					(typeof HTMLTextAreaElement !== "undefined" && activeEl instanceof HTMLTextAreaElement) ||
 					Boolean(
-						activeEl &&
-							typeof activeEl.value === "string" &&
-							typeof activeEl.tagName === "string" &&
+						activeEl instanceof HTMLElement &&
+							"value" in activeEl &&
+							typeof (activeEl as HTMLInputElement).value === "string" &&
 							["INPUT", "TEXTAREA"].includes(activeEl.tagName),
 					);
 				if (isInput) {
+					const inputEl = activeEl as HTMLInputElement | HTMLTextAreaElement;
 					try {
-						if (activeEl.value && activeEl.value.includes(result.rawCode)) {
-							activeEl.value = activeEl.value.replace(result.rawCode, "").trim();
-							if (typeof activeEl.dispatchEvent === "function" && typeof Event !== "undefined") {
-								activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+						if (inputEl.value && inputEl.value.includes(result.rawCode)) {
+							inputEl.value = inputEl.value.replace(result.rawCode, "").trim();
+							if (typeof inputEl.dispatchEvent === "function" && typeof Event !== "undefined") {
+								inputEl.dispatchEvent(new Event("input", { bubbles: true }));
 							}
 						}
-					} catch {}
+					} catch {
+						// Ignored: DOM detachment during rapid hardware keystroke burst
+					}
 				}
 			}
 		}

@@ -172,12 +172,30 @@ export function resolveBraveryDiplomaRequisites(
 				}
 			}
 
+			const profileRecord = cachedDashboard?.clinicSettings?.profile as
+				| Record<string, unknown>
+				| undefined;
+			const orgRecord = (cachedDashboard as Record<string, unknown> | undefined)
+				?.organization as Record<string, unknown> | undefined;
+			const cachedProfileRecord = cachedProfile as
+				| Record<string, unknown>
+				| null
+				| undefined;
+
 			const liveClinicName =
-				(cachedDashboard?.clinicSettings?.profile as any)?.clinicName ||
-				(cachedDashboard?.clinicSettings?.profile as any)?.name ||
-				(cachedDashboard as any)?.organization?.name ||
-				(cachedProfile as any)?.clinicName ||
-				(cachedProfile as any)?.name;
+				(typeof profileRecord?.clinicName === "string"
+					? profileRecord.clinicName
+					: undefined) ||
+				(typeof profileRecord?.name === "string"
+					? profileRecord.name
+					: undefined) ||
+				(typeof orgRecord?.name === "string" ? orgRecord.name : undefined) ||
+				(typeof cachedProfileRecord?.clinicName === "string"
+					? cachedProfileRecord.clinicName
+					: undefined) ||
+				(typeof cachedProfileRecord?.name === "string"
+					? cachedProfileRecord.name
+					: undefined);
 
 			if (liveClinicName && typeof liveClinicName === "string" && liveClinicName.trim()) {
 				resolvedClinicName = liveClinicName.trim();

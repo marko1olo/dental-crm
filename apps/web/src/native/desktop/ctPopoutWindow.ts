@@ -6,6 +6,16 @@
 import { logger } from "../../utils/logger";
 import { getDesktopNativeApi } from "./platformDetection";
 
+export interface CbctPopoutResult {
+	success: boolean;
+	windowId?: number | undefined;
+	isNewWindow?: boolean | undefined;
+	url?: string | undefined;
+	popoutWindow?: Window | null | undefined;
+	fallbackUrl?: string | undefined;
+	error?: string | undefined;
+}
+
 export async function openCbctPopoutWindow(params: {
 	url?: string | undefined;
 	studyId?: string | undefined;
@@ -15,25 +25,17 @@ export async function openCbctPopoutWindow(params: {
 	targetDisplayId?: number | undefined;
 	width?: number | undefined;
 	height?: number | undefined;
-}): Promise<{
-	success: boolean;
-	windowId?: number | undefined;
-	isNewWindow?: boolean | undefined;
-	url?: string | undefined;
-	popoutWindow?: Window | null | undefined;
-	fallbackUrl?: string | undefined;
-	error?: string | undefined;
-}> {
+}): Promise<CbctPopoutResult> {
 	const api = getDesktopNativeApi();
 	if (api?.openCbctPopoutWindow) {
 		try {
 			const res = await api.openCbctPopoutWindow(params);
-			const out: Record<string, any> = { success: res.success };
+			const out: CbctPopoutResult = { success: res.success };
 			if (res.windowId !== undefined) out.windowId = res.windowId;
 			if (res.isNewWindow !== undefined) out.isNewWindow = res.isNewWindow;
 			if (res.url !== undefined) { out.url = res.url; out.fallbackUrl = res.url; }
 			if (res.error !== undefined) out.error = res.error;
-			return out as any;
+			return out;
 		} catch (err: unknown) {
 			logger.warn("[desktopBridge] native openCbctPopoutWindow failed:", err);
 		}

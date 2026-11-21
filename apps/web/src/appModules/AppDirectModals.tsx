@@ -26,10 +26,29 @@ const CashShiftClosingModal = lazyWithRetry(() =>
 	import("../components/shift/CashShiftClosingModal").then((m) => ({ default: m.CashShiftClosingModal })),
 );
 
+import type { SpecialtyModalsAppLogic } from "./AppDirectSpecialtyModals";
+
+export interface AppDirectModalsAppLogic extends SpecialtyModalsAppLogic {
+	readonly activeWorkspaceProfile?: { title?: string } | null | undefined;
+	readonly effectiveBillingSummary?: { totalDueRub?: number } | null | undefined;
+	readonly activePatient?: (NonNullable<SpecialtyModalsAppLogic["activePatient"]> & {
+		phone?: string | null;
+		snils?: string | null;
+		depositRub?: number;
+		familyBalanceRub?: number;
+	}) | null | undefined;
+	readonly activeVisitPatient?: (NonNullable<SpecialtyModalsAppLogic["activeVisitPatient"]> & {
+		phone?: string | null;
+		snils?: string | null;
+		depositRub?: number;
+		familyBalanceRub?: number;
+	}) | null | undefined;
+}
+
 interface AppDirectModalsProps {
 	routing: AppHashRoutingState;
 	sessionAuth: AppSessionAuthState;
-	appLogic: any;
+	appLogic: AppDirectModalsAppLogic;
 }
 
 export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectModalsProps) {
@@ -48,7 +67,13 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 						routing.setIsPrescriptionBlankOpen?.(false);
 						routing.setIsPrescriptionForm107Open?.(false);
 					}}
-					patient={patient}
+					patient={patient ? {
+						id: patient.id,
+						fullName: patient.fullName || patient.name,
+						birthDate: patient.birthDate || undefined,
+						cardNumber: patient.cardNumber,
+						snils: patient.snils || undefined,
+					} : undefined}
 					doctorName={doctorName}
 					initialSelectedDrugIds={routing.prescriptionInitialMedIds ?? (routing.prescriptionInitialMedId ? [routing.prescriptionInitialMedId] : undefined)}
 				/>

@@ -9,8 +9,7 @@ import { logger } from "./logger";
 
 declare global {
 	interface Window {
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		cadesplugin?: any;
+		cadesplugin?: unknown;
 	}
 }
 
@@ -30,8 +29,7 @@ export interface CryptoProCertificate {
 	isGost?: boolean | undefined;
 	isNative?: boolean | undefined;
 	deviceId?: number | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	certObject: any;
+	certObject: unknown;
 }
 
 export interface CryptoProParsedError {

@@ -232,6 +232,11 @@ export async function initMobilePushNotifications(
 	};
 }
 
+interface NavigatorBadging {
+	setAppBadge?: (contents?: number) => Promise<void>;
+	clearAppBadge?: () => Promise<void>;
+}
+
 /**
  * Updates app icon badge count on iOS / Android or Web App Badging API.
  */
@@ -250,15 +255,18 @@ export async function setAppBadgeCount(count: number): Promise<void> {
 	}
 
 	// 2. Modern Web App Badging API (navigator.setAppBadge)
-	if (typeof navigator !== "undefined" && "setAppBadge" in navigator && typeof (navigator as any).setAppBadge === "function") {
-		try {
-			if (count > 0) {
-				await (navigator as any).setAppBadge(count);
-			} else {
-				await (navigator as any).clearAppBadge();
+	if (typeof navigator !== "undefined") {
+		const nav = navigator as Navigator & NavigatorBadging;
+		if (typeof nav.setAppBadge === "function") {
+			try {
+				if (count > 0) {
+					await nav.setAppBadge(count);
+				} else if (typeof nav.clearAppBadge === "function") {
+					await nav.clearAppBadge();
+				}
+			} catch (err: unknown) {
+				console.warn("[mobileBridge] navigator setAppBadge/clearAppBadge failed:", err);
 			}
-		} catch (err: unknown) {
-			console.warn("[mobileBridge] navigator setAppBadge/clearAppBadge failed:", err);
 		}
 	}
 }

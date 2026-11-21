@@ -422,7 +422,6 @@ export function useRafThrottledCallback<T = void>(
 		if (throttlerRef.current) {
 			throttlerRef.current.cancel();
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, deps);
 
 	return throttlerRef.current;

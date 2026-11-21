@@ -9,8 +9,10 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { useChairsideErgonomics } from "../hooks/useChairsideErgonomics";
 import { useTelephonyRealtime } from "../hooks/useTelephonyRealtime";
 
+import type { useAppLogic } from "../useAppLogic";
+
 interface AppSessionProvidersProps {
-	appLogic: any;
+	appLogic: ReturnType<typeof useAppLogic>;
 	children: React.ReactNode;
 }
 

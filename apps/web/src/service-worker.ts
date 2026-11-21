@@ -293,6 +293,11 @@ if (swScope) {
 // Web Push Notifications & Background Sync Engine
 // ─────────────────────────────────────────────────────────────────────────────
 
+interface SyncEvent extends ExtendableEvent {
+	readonly tag: string;
+	readonly lastChance?: boolean;
+}
+
 	swScope.addEventListener("push", (event: PushEvent) => {
 		let payload = {
 			title: "DENTE CRM",
@@ -347,20 +352,21 @@ if (swScope) {
 		);
 	});
 
-	swScope.addEventListener("sync", (event: any) => {
+	swScope.addEventListener("sync", (event: Event) => {
+		const syncEvent = event as SyncEvent;
 		if (
-			event.tag === "dente-offline-sync" ||
-			event.tag === "dente-outbox-sync" ||
-			event.tag === "dente-patient-booking-sync"
+			syncEvent.tag === "dente-offline-sync" ||
+			syncEvent.tag === "dente-outbox-sync" ||
+			syncEvent.tag === "dente-patient-booking-sync"
 		) {
-			event.waitUntil(
+			syncEvent.waitUntil(
 				swScope.clients
 					.matchAll({ type: "window", includeUncontrolled: true })
 					.then((clients) => {
 						for (const client of clients) {
 							client.postMessage({
 								type: "DENTE_BACKGROUND_SYNC_TRIGGER",
-								tag: event.tag,
+								tag: syncEvent.tag,
 							});
 						}
 					}),

@@ -223,7 +223,6 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 		};
 	}, [connect]);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const sendMessage = useCallback((type: string, payload: unknown) => {
 		if (ws.current?.readyState === WebSocket.OPEN) {
 			ws.current.send(JSON.stringify({ type, payload }));

@@ -264,10 +264,9 @@ declare global {
 						lights?: boolean;
 						lightColor?: string;
 					}) => Promise<void>;
-					addListener?: (
+					addListener?: <T = unknown>(
 						event: "registration" | "registrationError" | "pushNotificationReceived" | "pushNotificationActionPerformed",
-						// biome-ignore lint/suspicious/noExplicitAny: Capacitor plugin listener signature
-						callback: (data: any) => void,
+						callback: (data: T) => void,
 					) => { remove: () => void };
 					removeAllListeners?: () => Promise<void>;
 				};

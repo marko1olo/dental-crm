@@ -107,30 +107,26 @@ export class CallKitBridge {
 				});
 
 				// Wire answerCall event
-				// biome-ignore lint/suspicious/noExplicitAny: native event signature
-				window.RNCallKeep.addEventListener("answerCall", (data: any) => {
+				window.RNCallKeep.addEventListener("answerCall", (data: { callUUID?: string }) => {
 					const callUuid = data?.callUUID || this.activeCallId || "incoming-call";
 					this.handleNativeCallAnswered(callUuid);
 				});
 
 				// Wire endCall event
-				// biome-ignore lint/suspicious/noExplicitAny: native event signature
-				window.RNCallKeep.addEventListener("endCall", (data: any) => {
+				window.RNCallKeep.addEventListener("endCall", (data: { callUUID?: string }) => {
 					const callUuid = data?.callUUID || this.activeCallId || "incoming-call";
 					this.handleNativeCallEnded(callUuid);
 				});
 
 				// Wire mute event
-				// biome-ignore lint/suspicious/noExplicitAny: native event signature
-				window.RNCallKeep.addEventListener("didPerformSetMutedCallAction", (data: any) => {
+				window.RNCallKeep.addEventListener("didPerformSetMutedCallAction", (data: { callUUID?: string; muted?: boolean }) => {
 					const isMuted = Boolean(data?.muted);
 					const callUuid = data?.callUUID || this.activeCallId || "incoming-call";
 					this.handleNativeMuteToggled(callUuid, isMuted);
 				});
 
 				// Wire hold event
-				// biome-ignore lint/suspicious/noExplicitAny: native event signature
-				window.RNCallKeep.addEventListener("didToggleHoldCallAction", (data: any) => {
+				window.RNCallKeep.addEventListener("didToggleHoldCallAction", (data: { callUUID?: string; hold?: boolean }) => {
 					const isHeld = Boolean(data?.hold);
 					const callUuid = data?.callUUID || this.activeCallId || "incoming-call";
 					this.handleNativeHoldToggled(callUuid, isHeld);

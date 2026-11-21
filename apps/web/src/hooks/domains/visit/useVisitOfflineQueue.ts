@@ -102,8 +102,7 @@ export function useVisitOfflineQueue({
 					const localVal = currentForm[field]?.trim();
 					const srvVal = serverForm[field]?.trim();
 					if (localVal && localVal !== srvVal) {
-						// biome-ignore lint/suspicious/noExplicitAny: field dynamic indexing
-						(merged as any)[field] = currentForm[field] ?? "";
+						merged[field as keyof typeof merged] = currentForm[field] ?? "";
 					}
 				}
 				return merged;
