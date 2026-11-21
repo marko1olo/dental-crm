@@ -80,7 +80,10 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		/^\/api\/billing\/refunds\/partial/,
 		/^\/api\/insurance\/split-invoice/,
 		/^\/api\/clinical\/lab-orders/,
-		/^\/api\/visits\/[^/]+\/complete/,
+		/^\/api\/(?:v1\/)?visits\/[^/]+\/complete/,
+		/^\/api\/(?:v1\/)?visits\/[^/]+\/(?:complete-work-order|work-order\/complete)/,
+		/^\/api\/(?:v1\/)?visits\/[^/]+\/consumables/,
+		/^\/api\/(?:v1\/)?visits\/[^/]+\/apply-plan-items/,
 		/^\/api\/finance\/family\/[^/]+\/deposit/,
 		/^\/api\/cash\/(?:cash-introduction|cash-withdrawal|transfer)/,
 		/^\/api\/cashbox\/transfers/,
@@ -95,6 +98,10 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		/^\/api\/registers\/(?:autofill-shift|autofill-month|sanpin\/shift-close)/,
 		/^\/api\/registers\/(?:bactericidal\/(?:shift-autopilot|open-morning-shift|close-evening-shift)|medical-waste\/quick-shift-bundle|cleaning\/autopilot-month)/,
 		/^\/api\/(?:v1\/payroll|payroll|doctor)\/(?:close-settlement|close-settlement-period)/,
+		/^\/api\/telephony(?:\/[^/]+)?\/calls\/end$/,
+		/^\/api\/telephony(?:\/[^/]+)?\/outbound-call$/,
+		/^\/api\/telephony\/sip\/transfer$/,
+		/^\/api\/(?:periodontogram|perio)(?:\/.*)?$/,
 	];
 
 	// 1. PRE-HANDLER HOOK

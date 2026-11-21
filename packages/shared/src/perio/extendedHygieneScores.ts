@@ -31,7 +31,7 @@ export function calculateSilnessLoeScore(
 		}
 	}
 
-	const avg = count > 0 ? Math.round((total / count) * 10) / 10 : 0;
+	const avg = count > 0 ? Math.round((total * 10) / count) / 10 : 0;
 	let evaluation: "excellent" | "good" | "moderate" | "poor" = "excellent";
 	let ratingText = "Silness-Löe = 0.0 (Налет отсутствует / норма)";
 
@@ -62,7 +62,7 @@ export function calculateFedorovVolodkinaScore(
 		}
 	}
 
-	const avg = count > 0 ? Math.round((total / count) * 10) / 10 : 1.0;
+	const avg = count > 0 ? Math.round((total * 10) / count) / 10 : 1.0;
 	let evaluation: "good" | "moderate" | "poor" | "bad" | "severe" = "good";
 	let ratingText = "Федорова-Володкиной = 1.0 (Хорошая гигиена / норма)";
 
@@ -88,13 +88,13 @@ export function calculatePhpScore(
 		const item = map.get(cfg.toothNumber);
 		if (item) {
 			const rawDebris = item.debrisScore ?? 0;
-			const score = item.phpScore ?? Math.min(5, Math.round(rawDebris * 1.67));
+			const score = item.phpScore ?? Math.min(5, Math.round((rawDebris * 5) / 3));
 			total += Math.max(0, Math.min(5, score));
 			count++;
 		}
 	}
 
-	const avg = count > 0 ? Math.round((total / count) * 10) / 10 : 0.0;
+	const avg = count > 0 ? Math.round((total * 10) / count) / 10 : 0.0;
 	let evaluation: "excellent" | "good" | "moderate" | "poor" = "excellent";
 	let ratingText = "PHP = 0.0 (Отличная гигиена / норма)";
 

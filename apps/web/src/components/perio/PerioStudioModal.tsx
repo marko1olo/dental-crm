@@ -13,6 +13,7 @@ import {
 	ALL_PERIO_TEETH, calculateClinicalAttachmentLevel, calculatePerioIndices,
 	convertPerioDentitionToSepa, convertSepaDentitionToPerio, formatKopecksToRub,
 	generateComprehensivePerioProtocolText, generateFullMouthProbingSequence,
+	generateUuidV7,
 } from "@dental/shared";
 import { Activity, Check, FileText, Info, Printer, X } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -88,7 +89,25 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					const converted = convertSepaDentitionToPerio(json.data.teeth);
 					if (converted && converted.length > 0) setTeeth(normalizePerioDentition(converted));
 				}
-				if (json.data.indices?.psrData && typeof json.data.indices.psrData === "object") setScreeningMap(json.data.indices.psrData as PsrScreeningMap);
+				if (json.data.indices?.psrData && typeof json.data.indices.psrData === "object") {
+					const rawPsr = json.data.indices.psrData as Record<string, unknown>;
+					const validMap: Partial<PsrScreeningMap> = {};
+					const validSextants: PsrSextantId[] = ["S1", "S2", "S3", "S4", "S5", "S6"];
+					for (const sId of validSextants) {
+						const item = rawPsr[sId];
+						if (item && typeof item === "object") {
+							const rec = item as Record<string, unknown>;
+							const code = Number(rec.code ?? 0) as PsrCode;
+							const asterisk = Boolean(rec.asterisk);
+							if ([0, 1, 2, 3, 4].includes(code)) {
+								validMap[sId] = { code, asterisk };
+							}
+						}
+					}
+					if (Object.keys(validMap).length === 6) {
+						setScreeningMap(validMap as PsrScreeningMap);
+					}
+				}
 			} catch (err) {
 				console.warn("[PerioStudio] Failed to load periodontogram:", err);
 				showToast("Сетевой сбой при загрузке пародонтограммы. Используются локальные данные.", "warning", 4000, {
@@ -167,7 +186,11 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					plaque: Boolean(s.plaque), calculus: Boolean(s.calculus), suppuration: Boolean(s.suppuration),
 				})));
 				const res = await fetch(`/api/periodontogram/${encodeURIComponent(patientId)}`, {
-					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					method: "POST",
+					headers: getDenteAuthHeaders({
+						"Content-Type": "application/json",
+						"Idempotency-Key": generateUuidV7(),
+					}),
 					body: JSON.stringify({
 						teeth: sepaTeeth.map((t) => ({ toothNumber: t.toothNumber, isPresent: t.isPresent, isImplant: t.isImplant, mobility: t.mobility, furcationBuccal: t.furcationBuccal, furcationLingual: t.furcationLingual })),
 						sites: allSites, notes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})`,

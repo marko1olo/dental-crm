@@ -6,6 +6,7 @@
  */
 
 import type { PerioToothRecord } from "./types.js";
+import { calculateIndexPercentTenths } from "./mathIndices.js";
 import type {
 	OlearyPcrSummary,
 	OlearyPlaqueControlRating,
@@ -38,8 +39,8 @@ export function calculateOlearyPcr(teeth: readonly OlearyToothData[]): OlearyPcr
 		totalBleeding += bleedingSurfaces.length;
 	}
 
-	const pcrPercent = Number.parseFloat(((totalPlaque / totalSurfaces) * 100).toFixed(1));
-	const bleedingPercent = Number.parseFloat(((totalBleeding / totalSurfaces) * 100).toFixed(1));
+	const pcrPercent = calculateIndexPercentTenths(totalPlaque, totalSurfaces);
+	const bleedingPercent = calculateIndexPercentTenths(totalBleeding, totalSurfaces);
 
 	let rating: OlearyPlaqueControlRating = "excellent";
 	let ratingDescriptionRu = "Отличный уровень гигиены (< 10%): биопленка под контролем, допуск к хирургии";
@@ -72,8 +73,8 @@ export function calculateOlearyPcr(teeth: readonly OlearyToothData[]): OlearyPcr
 		bleedingSurfacesCount: totalBleeding, pcrPercent, bleedingPercent,
 		rating, ratingDescriptionRu,
 		isSurgicalClearanceMet: pcrPercent <= 15.0 && bleedingPercent <= 15.0,
-		interproximalPlaquePercent: Number.parseFloat(((interproximalPlaque / interproximalTotal) * 100).toFixed(1)),
-		smoothSurfacePlaquePercent: Number.parseFloat(((smoothPlaque / smoothTotal) * 100).toFixed(1)),
+		interproximalPlaquePercent: calculateIndexPercentTenths(interproximalPlaque, interproximalTotal),
+		smoothSurfacePlaquePercent: calculateIndexPercentTenths(smoothPlaque, smoothTotal),
 		highestPlaqueQuadrant,
 	};
 }

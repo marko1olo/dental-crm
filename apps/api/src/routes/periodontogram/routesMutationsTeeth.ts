@@ -4,6 +4,7 @@ import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js"
 import { db } from "../../db/client.js";
 import { periodontogramTeeth } from "../../db/schema.js";
 import {
+	batchUpsertTeeth,
 	patchTeethPayloadSchema,
 	patchToothBodySchema,
 } from "../../services/periodontogramService.js";
@@ -120,47 +121,8 @@ export function registerToothMutationRoutes(app: FastifyInstance) {
 			: parsed.data.teeth;
 		if (rawList.length === 0) return reply.send({ success: true, data: [] });
 
-		const updatedList: Array<typeof periodontogramTeeth.$inferSelect> = [];
-		await db.transaction(async (tx) => {
-			for (const item of rawList) {
-				const tNum = item.toothNumber ?? item.tooth_number;
-				if (!tNum) continue;
-
-				const isPresent = item.isPresent ?? item.is_present;
-				const isImplant = item.isImplant ?? item.is_implant;
-				const furcationBuccal = item.furcationBuccal ?? item.furcation_buccal;
-				const furcationLingual =
-					item.furcationLingual ?? item.furcation_lingual;
-				const keratinizedGingivaMm =
-					item.keratinizedGingivaMm ?? item.keratinized_gingiva_mm;
-
-				const updateValues: Partial<typeof periodontogramTeeth.$inferInsert> = {
-					updatedAt: new Date(),
-				};
-				if (isPresent !== undefined) updateValues.isPresent = isPresent;
-				if (isImplant !== undefined) updateValues.isImplant = isImplant;
-				if (item.mobility !== undefined) updateValues.mobility = item.mobility;
-				if (item.prognosis !== undefined)
-					updateValues.prognosis = item.prognosis;
-				if (furcationBuccal !== undefined)
-					updateValues.furcationBuccal = furcationBuccal;
-				if (furcationLingual !== undefined)
-					updateValues.furcationLingual = furcationLingual;
-				if (keratinizedGingivaMm !== undefined)
-					updateValues.keratinizedGingivaMm = keratinizedGingivaMm;
-
-				const [saved] = await tx
-					.update(periodontogramTeeth)
-					.set(updateValues)
-					.where(
-						and(
-							eq(periodontogramTeeth.snapshotId, id),
-							eq(periodontogramTeeth.toothNumber, tNum),
-						),
-					)
-					.returning();
-				if (saved) updatedList.push(saved);
-			}
+		const updatedList = await db.transaction(async (tx) => {
+			return await batchUpsertTeeth(tx, id, rawList);
 		});
 		return reply.send({ success: true, data: updatedList });
 	});

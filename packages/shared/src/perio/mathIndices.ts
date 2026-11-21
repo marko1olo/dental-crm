@@ -14,6 +14,11 @@ import {
 } from "./types.js";
 import { calculateClinicalAttachmentLevel } from "./mathCal.js";
 
+export function calculateIndexPercentTenths(count: number, total: number): number {
+	if (total <= 0) return 0;
+	return Math.round((count * 1000) / total) / 10;
+}
+
 export function calculatePerioIndices(teeth: readonly PerioToothRecord[]): PerioChartSummary {
 	let examinedTeeth = 0, totalSites = 0, bopSites = 0, plaqueSites = 0;
 	let suppurationSites = 0, calculusSites = 0, deepPockets = 0, moderatePockets = 0;
@@ -50,10 +55,10 @@ export function calculatePerioIndices(teeth: readonly PerioToothRecord[]): Perio
 		}
 	}
 
-	const fmbsPercent = totalSites > 0 ? Math.round((bopSites / totalSites) * 1000) / 10 : 0;
-	const fmpsPercent = totalSites > 0 ? Math.round((plaqueSites / totalSites) * 1000) / 10 : 0;
-	const meanPocketDepthMm = totalSites > 0 ? Math.round((sumPd / totalSites) * 10) / 10 : 0;
-	const meanCalMm = totalSites > 0 ? Math.round((sumCal / totalSites) * 10) / 10 : 0;
+	const fmbsPercent = calculateIndexPercentTenths(bopSites, totalSites);
+	const fmpsPercent = calculateIndexPercentTenths(plaqueSites, totalSites);
+	const meanPocketDepthMm = totalSites > 0 ? Math.round((sumPd * 10) / totalSites) / 10 : 0;
+	const meanCalMm = totalSites > 0 ? Math.round((sumCal * 10) / totalSites) / 10 : 0;
 
 	let riskCategory: "low" | "moderate" | "high" = "low";
 	if (fmbsPercent >= 30 || deepPockets >= 9 || mobileTeeth >= 3 || furcationTeeth >= 2 || suppurationSites >= 3) {

@@ -8,6 +8,7 @@ import {
 	fetchPatientLatestPeriodontogram,
 	resolvePerioPatientId,
 	upsertPatientFullPeriodontogram,
+	upsertPatientFullPeriodontogramBodySchema,
 	type PatchToothInput,
 	type SiteItemInput,
 } from "../../services/periodontogramService.js";
@@ -74,7 +75,15 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		}
 
 		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
-		const body = (request.body as Record<string, unknown>) || {};
+		const parsedBody = upsertPatientFullPeriodontogramBodySchema.safeParse(request.body);
+		if (!parsedBody.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректное тело запроса сохранения пародонтограммы",
+				details: parsedBody.error.format(),
+			});
+		}
+		const body = parsedBody.data;
 		const identity = getRequestIdentity(request);
 		const recordedByUserId = identity.userId ?? null;
 
@@ -95,12 +104,8 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 				rawPatientId,
 				recordedByUserId,
 				visitId: typeof body.visitId === "string" && body.visitId.trim() ? body.visitId.trim() : undefined,
-				teeth: Array.isArray(body.teeth)
-					? (body.teeth as PatchToothInput[])
-					: undefined,
-				sites: Array.isArray(body.sites)
-					? (body.sites as SiteItemInput[])
-					: undefined,
+				teeth: body.teeth,
+				sites: body.sites,
 				notes: typeof body.notes === "string" ? body.notes : undefined,
 				status: body.status === "closed" ? "closed" : "draft",
 				autoClose: Boolean(body.autoClose),

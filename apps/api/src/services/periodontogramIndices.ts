@@ -5,6 +5,7 @@
  */
 
 import {
+	calculateIndexPercentTenths,
 	calculateOhiSScore,
 	calculatePmaScore,
 	type HygieneToothAssessment,
@@ -108,9 +109,9 @@ export function computeSnapshotIndices(
 	}
 
 	// BOP % and PI % (rounded to 1 decimal)
-	const bop_pct = Math.round((100.0 * bopCount * 10) / denominator) / 10;
-	const pi_pct = Math.round((100.0 * plaqueCount * 10) / denominator) / 10;
-	const cal_mean_mm = Math.round((calSum / denominator) * 100) / 100;
+	const bop_pct = denominator > 0 ? calculateIndexPercentTenths(bopCount, denominator) : 0;
+	const pi_pct = denominator > 0 ? calculateIndexPercentTenths(plaqueCount, denominator) : 0;
+	const cal_mean_mm = denominator > 0 ? Math.round((calSum * 100) / denominator) / 100 : 0;
 
 	// Deep pockets count: distinct teeth with at least one pocket >= 5 mm
 	let deepPocketsCount = 0;

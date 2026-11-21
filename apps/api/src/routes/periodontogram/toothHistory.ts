@@ -1,4 +1,5 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import { db } from "../../db/client.js";
 import {
 	periodontogramSites,
@@ -14,6 +15,7 @@ export async function fetchToothPeriodontalEvents(
 	orgId: string,
 	patientId: string,
 	toothNum: number,
+	logger?: FastifyBaseLogger,
 ): Promise<ToothHistoryTimelineEvent[]> {
 	try {
 		const perioRecords = await db
@@ -41,23 +43,42 @@ export async function fetchToothPeriodontalEvents(
 			.orderBy(desc(periodontogramSnapshots.recordedAt));
 
 		if (perioRecords.length === 0) return [];
+		const snapshotIds = perioRecords.map((r) => r.snapshotId);
+		const allSites = await db
+			.select({
+				snapshotId: periodontogramSites.snapshotId,
+				siteCode: periodontogramSites.siteCode,
+				probingDepthMm: periodontogramSites.probingDepthMm,
+				gingivalMarginMm: periodontogramSites.gingivalMarginMm,
+				bleedingOnProbing: periodontogramSites.bleedingOnProbing,
+				suppuration: periodontogramSites.suppuration,
+				plaque: periodontogramSites.plaque,
+			})
+			.from(periodontogramSites)
+			.where(and(
+				inArray(periodontogramSites.snapshotId, snapshotIds),
+				eq(periodontogramSites.toothNumber, toothNum),
+			));
+
+		const sitesBySnapshot = new Map<string, Array<{
+			siteCode: string;
+			probingDepthMm: number | null;
+			gingivalMarginMm: number | null;
+			bleedingOnProbing: boolean;
+			suppuration: boolean;
+			plaque: boolean;
+		}>>();
+
+		for (const s of allSites) {
+			const list = sitesBySnapshot.get(s.snapshotId) ?? [];
+			list.push(s);
+			sitesBySnapshot.set(s.snapshotId, list);
+		}
+
 		const events: ToothHistoryTimelineEvent[] = [];
 
 		for (const record of perioRecords) {
-			const sites = await db
-				.select({
-					siteCode: periodontogramSites.siteCode,
-					probingDepthMm: periodontogramSites.probingDepthMm,
-					gingivalMarginMm: periodontogramSites.gingivalMarginMm,
-					bleedingOnProbing: periodontogramSites.bleedingOnProbing,
-					suppuration: periodontogramSites.suppuration,
-					plaque: periodontogramSites.plaque,
-				})
-				.from(periodontogramSites)
-				.where(and(
-					eq(periodontogramSites.snapshotId, record.snapshotId),
-					eq(periodontogramSites.toothNumber, toothNum),
-				));
+			const sites = sitesBySnapshot.get(record.snapshotId) ?? [];
 
 			let maxPd = 0;
 			let hasBop = false;
@@ -101,7 +122,10 @@ export async function fetchToothPeriodontalEvents(
 
 		return events;
 	} catch (err) {
-		console.warn("[toothHistoryPerio] Ошибка извлечения пародонтограммы зуба:", err);
+		logger?.warn(
+			{ err, orgId, patientId, toothNum },
+			"[toothHistoryPerio] Ошибка извлечения пародонтограммы зуба",
+		);
 		return [];
 	}
 }

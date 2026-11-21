@@ -12,6 +12,7 @@ import {
 	periodontogramTeeth,
 } from "../../db/schema.js";
 import {
+	batchUpsertSites,
 	patchSitesPayloadSchema,
 	siteItemSchema,
 	upsertSingleSiteRecord,
@@ -107,22 +108,8 @@ export function registerSiteMutationRoutes(app: FastifyInstance) {
 			teethRows.map((t) => [t.toothNumber, t.id]),
 		);
 
-		const savedSites: Array<typeof periodontogramSites.$inferSelect> = [];
-		await db.transaction(async (tx) => {
-			for (const item of rawList) {
-				const tNum = item.toothNumber ?? item.tooth_number;
-				const sc = item.siteCode ?? item.site_code;
-				if (!tNum || !sc) continue;
-				const saved = await upsertSingleSiteRecord(
-					tx,
-					id,
-					toothIdMap.get(tNum) ?? null,
-					tNum,
-					sc,
-					item,
-				);
-				if (saved) savedSites.push(saved);
-			}
+		const savedSites = await db.transaction(async (tx) => {
+			return await batchUpsertSites(tx, id, rawList, toothIdMap);
 		});
 		return reply.send({ success: true, data: savedSites });
 	});
