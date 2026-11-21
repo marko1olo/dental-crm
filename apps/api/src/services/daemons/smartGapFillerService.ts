@@ -22,7 +22,7 @@ import {
 	parsePreferredWeekday,
 	slotFitsRanges,
 } from "../schedule/waitlistMatching.js";
-import { utcToLocalWallTime } from "../../routes/publicBooking.js";
+import { utcToLocalWallTime } from "../../routes/publicBooking/index.js";
 
 export interface GapFillerCandidate {
 	readonly patientId: string;

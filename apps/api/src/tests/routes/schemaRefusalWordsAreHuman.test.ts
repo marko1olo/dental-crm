@@ -232,7 +232,7 @@ describe("отказ разбора объяснён человеку, а не �
 			"../../routes/migrationRuns.js"
 		);
 		const { registerPublicBookingRoutes } = await import(
-			"../../routes/publicBooking.js"
+			"../../routes/publicBooking/index.js"
 		);
 		const { authTokenSecret } = await import("../../security/authSecret.js");
 		const { signToken } = await import("../../utils/cryptoHelper.js");
