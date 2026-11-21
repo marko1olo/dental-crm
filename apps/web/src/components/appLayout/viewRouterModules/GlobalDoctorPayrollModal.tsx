@@ -3,7 +3,7 @@
  */
 
 import React, { Suspense, useEffect, useState } from "react";
-import type { ClinicSettings } from "@dental/shared";
+import { rublesToKopecks, type ClinicSettings } from "@dental/shared";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
 import type { PayrollServiceOrder } from "../../payroll/payrollCatalogData";
 
@@ -78,11 +78,11 @@ export function GlobalDoctorPayrollModal({ clinicSettings }: GlobalDoctorPayroll
 				serviceNameRu: v.serviceName || "Стоматологическая услуга",
 				category: v.serviceCategory || "therapy",
 				categoryLabelRu: v.categoryLabelRu || "Терапия",
-				grossKopecks: v.patientPaidKopecks ?? v.grossRevenueKop ?? Math.round((v.patientPaidRub || 0) * 100),
-				labCostKopecks: v.labCostKopecks ?? v.labCostKop ?? Math.round((v.withheldLabRub || 0) * 100),
-				materialCostKopecks: v.materialCostKopecks ?? v.materialCostKop ?? Math.round((v.withheldMaterialRub || 0) * 100),
+				grossKopecks: v.patientPaidKopecks ?? v.grossRevenueKop ?? rublesToKopecks(v.patientPaidRub || 0),
+				labCostKopecks: v.labCostKopecks ?? v.labCostKop ?? rublesToKopecks(v.withheldLabRub || 0),
+				materialCostKopecks: v.materialCostKopecks ?? v.materialCostKop ?? rublesToKopecks(v.withheldMaterialRub || 0),
 				isPaid54Fz: Boolean(v.isPaid54Fz ?? true),
-				paidKopecks: v.patientPaidKopecks ?? v.grossRevenueKop ?? Math.round((v.patientPaidRub || 0) * 100),
+				paidKopecks: v.patientPaidKopecks ?? v.grossRevenueKop ?? rublesToKopecks(v.patientPaidRub || 0),
 				doctorId: doc?.doctorUserId || globalDoctorPayroll.doctorId || "",
 			}))
 		: (globalDoctorPayroll.orders ?? globalDoctorPayroll.services);

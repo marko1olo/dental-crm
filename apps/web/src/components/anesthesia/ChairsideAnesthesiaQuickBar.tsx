@@ -72,9 +72,21 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 		props.hasLatexAllergy,
 	);
 
+	// Определение педиатрического профиля до выбора препарата (Мандат 8e, 8y, детская безопасность)
+	const isPediatric =
+		(typeof props.patientAgeYears === "number" && props.patientAgeYears < 18) ||
+		(typeof props.patientWeightKg === "number" && props.patientWeightKg > 0 && props.patientWeightKg < 40);
+	const weight = resolveClinicalDefaultWeightKg(props.patientWeightKg, props.patientAgeYears, isPediatric);
+
 	// 1-клик селектор соматического профиля (Мандат 8e, 8y)
+	// Для детей категорически избегаем агрессивного 1:100 000 адреналина; безопасный стандарт — 1:200 000 или Мепивакаин без вазоконстриктора
 	const [isCardioRisk, setIsCardioRisk] = useState<boolean>(initialCardio);
-	const defaultDrug: AnestheticDrugId = hasAllergy || initialCardio ? "mepivacaine_plain" : "articaine_1_100k";
+	const defaultDrug: AnestheticDrugId =
+		hasAllergy || initialCardio
+			? "mepivacaine_plain"
+			: isPediatric
+				? "articaine_1_200k"
+				: "articaine_1_100k";
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId | "none">(defaultDrug);
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
 	const [carpulesCount, setCarpulesCount] = useState<number>(1.0);
@@ -88,11 +100,12 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 	});
 	const memoBtnId = useId();
 
-	const isPediatric =
-		(typeof props.patientAgeYears === "number" && props.patientAgeYears < 18) ||
-		(typeof props.patientWeightKg === "number" && props.patientWeightKg > 0 && props.patientWeightKg < 40);
-	const weight = resolveClinicalDefaultWeightKg(props.patientWeightKg, props.patientAgeYears, isPediatric);
-	const effDrug: AnestheticDrugId = selectedDrugId === "none" ? "articaine_1_100k" : selectedDrugId;
+	const effDrug: AnestheticDrugId =
+		selectedDrugId === "none"
+			? isPediatric
+				? "articaine_1_200k"
+				: "articaine_1_100k"
+			: selectedDrugId;
 
 	const safety = calculateAnesthesiaSafety({
 		drugId: effDrug,
@@ -119,7 +132,7 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 
 	const toggleSomaticStatus = (cardio: boolean) => {
 		setIsCardioRisk(cardio);
-		if (cardio && selectedDrugId === "articaine_1_100k") {
+		if (cardio && (selectedDrugId === "articaine_1_100k" || selectedDrugId === "articaine_1_200k")) {
 			setSelectedDrugId("mepivacaine_plain");
 		}
 	};
@@ -133,7 +146,12 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 		setCarpulesCount(count);
 		setTechniqueId(tech);
 
-		const activeEff: AnestheticDrugId = drugId === "none" ? "articaine_1_100k" : drugId;
+		const activeEff: AnestheticDrugId =
+			drugId === "none"
+				? isPediatric
+					? "articaine_1_200k"
+					: "articaine_1_100k"
+				: drugId;
 		const res = calculateAnesthesiaSafety({
 			drugId: activeEff,
 			carpulesCount: count,

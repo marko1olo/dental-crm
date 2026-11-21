@@ -45,7 +45,7 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 	const handlePrint = () => { if (typeof window !== "undefined") window.print(); };
 
 	const handleCopyText = async () => {
-		const text = `Паспорт ортопедической конструкции и гарантийный талон № ${passportNumber}\nКлиника: ${clinicName}\nЗТЛ: ${labName}\nПациент: ${patientName}${data.patientChartNumber ? ` (карта № ${data.patientChartNumber})` : ""}\nВрач: ${doctorName}\nТехник: ${technicianName}\nДата: ${issueDate}\nЗуб FDI: ${data.toothFdi}\nКонструкция: ${data.constructionName}\nМатериал: ${data.material}\nЦвет VITA: ${data.colorVita}\nГарантия: ${warrantyLabelRu}\nLOT: ${batchLot}\nСтандарты: ${standards}`;
+		const text = `Паспорт ортопедической конструкции и гарантийный талон № ${passportNumber}\nКлиника: ${clinicName}\nЗТЛ: ${labName}\nПациент: ${patientName}${data.patientChartNumber ? ` (карта № ${data.patientChartNumber})` : ""}\nВрач: ${doctorName}\nТехник: ${technicianName}\nДата: ${issueDate}\nЗуб FDI: ${data.toothFdi}\nКонструкция: ${data.constructionName}\nМатериал: ${data.material}\nЦвет VITA: ${data.colorVita}\nГарантия: ${warrantyLabelRu}\nLOT: ${batchLot}\nСтандарты: ${standards}${data.integritySha256 ? `\nКонтрольный хеш подлинности (SHA-256): ${data.integritySha256}` : ""}`;
 		try {
 			await navigator.clipboard.writeText(text);
 			showToast("Текст паспорта скопирован в буфер обмена", "success", 2500);
@@ -83,6 +83,12 @@ export function OrthopedicPassportA4Modal({ isOpen, onClose, passport }: Orthope
 						</div>
 						<OrthopedicPassportSpecsTable passport={data} batchLot={batchLot} standards={standards} />
 						<OrthopedicPassportCareNotice warrantyLabelRu={warrantyLabelRu} careNotes={careNotes} />
+						{data.integritySha256 && (
+							<div className="mb-3 px-3 py-1.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[10px] text-[var(--muted)] font-mono flex items-center justify-between">
+								<span>Контрольный хеш подлинности бланка (SHA-256):</span>
+								<span className="font-bold select-all">{data.integritySha256}</span>
+							</div>
+						)}
 						<OrthopedicPassportSignatures doctorName={doctorName} technicianName={technicianName} patientName={patientName} />
 					</div>
 				</div>

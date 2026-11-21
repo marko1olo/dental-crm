@@ -1,11 +1,13 @@
 import crypto from "node:crypto";
 
 /**
- * Вычисление детерминированного SHA-256 хеша протокола приёма и инструментального лотка.
+ * Вычисление детерминированного SHA-256 хеша протокола приёма (SOAP: Жалобы, Анамнез, Status Localis, Лечение, МКБ-10).
+ * Санитарно-технические лотки стерилизации исключены из хеша медицинского протокола приёма (Мандаты 8e, 8v).
  */
 export function computeDiaryHash(
 	visitId: string,
 	patientId: string,
+	complaint: string | null | undefined,
 	anamnesis: string | null | undefined,
 	statusLocalis: string | null | undefined,
 	treatmentDescription: string | null | undefined,
@@ -13,11 +15,11 @@ export function computeDiaryHash(
 	diagnosisTooth?: string | null | undefined,
 	complications?: string | null | undefined,
 	comorbidities?: string | null | undefined,
-	instrumentTrayBarcode?: string | null | undefined,
 ): string {
 	const raw = [
 		visitId,
 		patientId,
+		complaint ?? "",
 		anamnesis ?? "",
 		statusLocalis ?? "",
 		treatmentDescription ?? "",
@@ -25,7 +27,6 @@ export function computeDiaryHash(
 		diagnosisTooth ?? "",
 		complications ?? "",
 		comorbidities ?? "",
-		instrumentTrayBarcode ?? "",
 	].join("|");
 	return crypto.createHash("sha256").update(raw).digest("hex");
 }

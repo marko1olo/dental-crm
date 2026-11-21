@@ -5,6 +5,7 @@ import { db } from "../../db/client.js";
 import { toothStates } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { parseClinicalDataFromNotes } from "../odontogram/types.js";
 import { PRIMARY_TEETH } from "./pediatricPresets.js";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -59,18 +60,14 @@ export function registerPediatricIndicesRoutes(app: FastifyInstance): void {
 			const surfacesCount = Array.isArray(t.surfaces) ? t.surfaces.length : 1;
 
 			const stateLower = (state || "").toLowerCase();
-			const notesLower = (t.notes || "").toLowerCase();
+			const clin = parseClinicalDataFromNotes(t.notes);
+			const resorptionStage = clin?.resorptionStage;
 			const isPhysiologicalResorption =
-				stateLower.includes("resorption") ||
-				stateLower.includes("exfoliat") ||
-				notesLower.includes("физиологич") ||
-				notesLower.includes("резорбц") ||
-				notesLower.includes("смена зуба") ||
-				notesLower.includes("exfoliat") ||
-				notesLower.includes('"resorptionstage":100') ||
-				notesLower.includes('"resorptionstage": 100') ||
-				notesLower.includes('"isphysiologicalresorption":true') ||
-				notesLower.includes('"isphysiologicalresorption": true');
+				stateLower === "resorption" ||
+				stateLower === "exfoliated" ||
+				stateLower === "exfoliat" ||
+				(typeof resorptionStage === "number" && resorptionStage > 0) ||
+				Boolean(clin?.isPhysiologicalResorption);
 
 			if (isPrimary) {
 				if (state === "Caries" || state === "Pulpitis" || state === "Periodontitis") primaryC++;

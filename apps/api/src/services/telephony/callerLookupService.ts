@@ -34,6 +34,7 @@ import {
 	UUID_REGEX,
 } from "./telephonySecurity.js";
 import {
+	formatKopecksToRub,
 	kopecksToRubles,
 	type Kopecks,
 	resolvePatientCategory,
@@ -43,6 +44,7 @@ import {
 	rublesToKopecks,
 	sumKopecks,
 	toExactKopecks,
+	type CallerLookupFamilyMember,
 	type PatientActiveTreatmentPlanSummary,
 	type PatientFinancialSummary,
 	type PatientLastVisitSummary,
@@ -51,6 +53,8 @@ import {
 	type TelephonyAppointmentLike,
 	type TelephonyPatientCategory,
 } from "@dental/shared";
+
+export type { CallerLookupFamilyMember } from "@dental/shared";
 
 export interface CallerLookupResult {
 	found: boolean;
@@ -63,6 +67,7 @@ export interface CallerLookupResult {
 		status: string;
 		administrativeProfile?: Record<string, unknown> | null;
 	} | null;
+	familyMembers?: CallerLookupFamilyMember[] | undefined;
 	lead: {
 		id: string;
 		name: string;
@@ -92,6 +97,7 @@ export class CallerLookupService {
 		const defaultEmptyResult: CallerLookupResult = {
 			found: false,
 			patient: null,
+			familyMembers: [],
 			lead: null,
 			financialSummary: {
 				balanceRub: 0,
@@ -161,7 +167,7 @@ export class CallerLookupService {
 			return defaultEmptyResult;
 		}
 
-		// 1. Query patient with tenant isolation
+		// 1. Query patient with tenant isolation (support family cards when relatives share phone)
 		const matchedPatients = await db
 			.select()
 			.from(patients)
@@ -171,9 +177,23 @@ export class CallerLookupService {
 					or(...searchConditions),
 				),
 			)
-			.limit(1);
+			.limit(10);
 
-		const matchedPatient = matchedPatients[0] || null;
+		const matchedPatient = (patientId ? matchedPatients.find((p) => p.id === patientId) : null)
+			|| matchedPatients[0]
+			|| null;
+
+		const familyMembers: CallerLookupFamilyMember[] = matchedPatients.map((p) => {
+			const adminProfile = p.administrativeProfile as Record<string, unknown> | null;
+			return {
+				id: p.id,
+				fullName: p.fullName,
+				phone: p.phone,
+				birthDate: p.birthDate,
+				status: p.status,
+				relation: typeof adminProfile?.familyRelation === "string" ? adminProfile.familyRelation : null,
+			};
+		});
 
 		// 2. If no patient found, check CRM Leads
 		if (!matchedPatient) {
@@ -371,17 +391,21 @@ export class CallerLookupService {
 					)
 					.orderBy(treatmentPlanStages.stageOrder);
 
-				let totalCostKopecks: Kopecks = plan.totalPriceRub
-					? rublesToKopecks(Number(plan.totalPriceRub))
-					: plan.totalPrice
-						? rublesToKopecks(Number(plan.totalPrice))
-						: toExactKopecks(0);
+				let totalCostKopecks: Kopecks = plan.totalPriceKopecks != null && Number(plan.totalPriceKopecks) > 0
+					? toExactKopecks(Number(plan.totalPriceKopecks))
+					: plan.totalPriceRub
+						? rublesToKopecks(Number(plan.totalPriceRub))
+						: plan.totalPrice
+							? rublesToKopecks(Number(plan.totalPrice))
+							: toExactKopecks(0);
 
 				if (totalCostKopecks === 0) {
 					const items = await db
 						.select({
+							priceKopecks: treatmentPlanItemsNew.priceKopecks,
 							price: treatmentPlanItemsNew.price,
 							quantity: treatmentPlanItemsNew.quantity,
+							discountKopecks: treatmentPlanItemsNew.discountKopecks,
 							discount: treatmentPlanItemsNew.discount,
 						})
 						.from(treatmentPlanItemsNew)
@@ -394,9 +418,13 @@ export class CallerLookupService {
 
 					if (items.length > 0) {
 						const itemCostsKopecks = items.map((it) => {
-							const priceKop = rublesToKopecks(Number(it.price || 0));
+							const priceKop = it.priceKopecks != null && Number(it.priceKopecks) > 0
+								? Number(it.priceKopecks)
+								: rublesToKopecks(Number(it.price || 0));
 							const qty = Math.max(1, Number(it.quantity || 1));
-							const discKop = rublesToKopecks(Number(it.discount || 0));
+							const discKop = it.discountKopecks != null && Number(it.discountKopecks) > 0
+								? Number(it.discountKopecks)
+								: rublesToKopecks(Number(it.discount || 0));
 							const costKop = Math.max(0, priceKop * qty - discKop);
 							return toExactKopecks(costKop);
 						});
@@ -426,7 +454,7 @@ export class CallerLookupService {
 					hasActivePlan: true,
 					planTitle: plan.title || plan.name || "План лечения",
 					totalCostRub: Math.round(totalCostRub),
-					formattedTotalCost: `${Math.round(totalCostRub).toLocaleString("ru-RU")} ₽`,
+					formattedTotalCost: formatKopecksToRub(totalCostKopecks),
 					itemsCount,
 					completedCount,
 					pendingCount,
@@ -459,6 +487,7 @@ export class CallerLookupService {
 				status: matchedPatient.status,
 				administrativeProfile: matchedPatient.administrativeProfile as Record<string, unknown> | null,
 			},
+			familyMembers: familyMembers.length > 0 ? familyMembers : undefined,
 			lead: null,
 			financialSummary,
 			upcomingAppointment,

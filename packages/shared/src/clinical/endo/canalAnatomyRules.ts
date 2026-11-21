@@ -381,10 +381,15 @@ export function getAnatomicalWorkingLength(toothNumber: number, canalName?: stri
 
 	// Временные (молочные) зубы (51..85)
 	if (isPrimary) {
-		if (pos === 3) return 18.0;
-		if (pos === 1 || pos === 2) return 16.0;
-		if (pos === 4 || pos === 5) return 16.5;
-		return 16.5;
+		if (pos === 3) return 14.0;
+		if (pos === 1 || pos === 2) return 12.0;
+		if (pos === 4 || pos === 5) {
+			if (normCanal === "P" || normCanal === "D" || normCanal.includes("НЕБ") || normCanal.includes("ДИСТ")) {
+				return 12.5;
+			}
+			return 12.0;
+		}
+		return 12.0;
 	}
 
 	// Постоянные зубы (11..48)
@@ -462,8 +467,84 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 	const isUpper = quadrant === 1 || quadrant === 2 || quadrant === 5 || quadrant === 6;
 	const isLower = quadrant === 3 || quadrant === 4 || quadrant === 7 || quadrant === 8;
 
-	// Верхние моляры (16-18, 26-28, 54-55, 64-65) -> MB1 (21.0мм), MB2 (20.0мм), DB (20.0мм), P (22.0мм)
-	if (isUpper && (pos === 6 || pos === 7 || pos === 8 || (isPrimary && (pos === 4 || pos === 5)))) {
+	// Временные (молочные) зубы (51..85) — изолированная анатомическая ветка
+	if (isPrimary) {
+		// Верхние молочные моляры (54, 55, 64, 65) -> 3 канала (MB: 12.0мм, DB: 11.5мм, P: 12.5мм), конусность .02 / .04 (запрет .06)
+		if (isUpper && (pos === 4 || pos === 5)) {
+			return [
+				{
+					id: `canal-${toothNumber}-mb`,
+					canalName: "MB",
+					referencePoint: "Щечный бугор (MB cusp)",
+					workingLengthMm: 12.0,
+					masterApicalFile: "ISO 25 (#25 красный)",
+					taper: ".02 (Стандартная 2%)",
+					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+				},
+				{
+					id: `canal-${toothNumber}-db`,
+					canalName: "DB",
+					referencePoint: "Дистально-щечный бугор (DB cusp)",
+					workingLengthMm: 11.5,
+					masterApicalFile: "ISO 20 (#20 жёлтый)",
+					taper: ".02 (Стандартная 2%)",
+					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+				},
+				{
+					id: `canal-${toothNumber}-p`,
+					canalName: "P",
+					referencePoint: "Нёбный бугор (P cusp)",
+					workingLengthMm: 12.5,
+					masterApicalFile: "ISO 25 (#25 красный)",
+					taper: ".04 (Конусность 4%)",
+					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+				},
+			];
+		}
+
+		// Нижние молочные моляры (74, 75, 84, 85) -> 2 канала (M: 12.0мм, D: 12.5мм), конусность .02 / .04 (запрет .06)
+		if (isLower && (pos === 4 || pos === 5)) {
+			return [
+				{
+					id: `canal-${toothNumber}-m`,
+					canalName: "M",
+					referencePoint: "Медиальный щечный бугор",
+					workingLengthMm: 12.0,
+					masterApicalFile: "ISO 25 (#25 красный)",
+					taper: ".02 (Стандартная 2%)",
+					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+				},
+				{
+					id: `canal-${toothNumber}-d`,
+					canalName: "D",
+					referencePoint: "Дистальный бугор",
+					workingLengthMm: 12.5,
+					masterApicalFile: "ISO 25 (#25 красный)",
+					taper: ".04 (Конусность 4%)",
+					obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+				},
+			];
+		}
+
+		// Молочные резцы и клыки (51-53, 61-63, 71-73, 81-83)
+		const isCanine = pos === 3;
+		return [
+			{
+				id: `canal-${toothNumber}-main`,
+				canalName: "Main",
+				referencePoint: isCanine
+					? "Бугор клыка (Canine cusp)"
+					: "Режущий край (Incisal edge)",
+				workingLengthMm: isCanine ? 14.0 : 12.0,
+				masterApicalFile: "ISO 25 (#25 красный)",
+				taper: ".02 (Стандартная 2%)",
+				obturationTechnique: "Паста резорбируемая (Metapex / цинкоксидэвгенол)",
+			},
+		];
+	}
+
+	// Верхние постоянные моляры (16-18, 26-28) -> MB1 (21.0мм), MB2 (20.0мм), DB (20.0мм), P (22.0мм)
+	if (isUpper && (pos === 6 || pos === 7 || pos === 8)) {
 		return [
 			{
 				id: `canal-${toothNumber}-mb1`,
@@ -504,8 +585,8 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 		];
 	}
 
-	// Нижние моляры (36-38, 46-48, 74-75, 84-85) -> MB, ML, D
-	if (isLower && (pos === 6 || pos === 7 || pos === 8 || (isPrimary && (pos === 4 || pos === 5)))) {
+	// Нижние постоянные моляры (36-38, 46-48) -> MB, ML, D
+	if (isLower && (pos === 6 || pos === 7 || pos === 8)) {
 		return [
 			{
 				id: `canal-${toothNumber}-mb`,

@@ -72,7 +72,10 @@ function buildCalibratedAnatomicalCanals(
 ): TracedCanalPath[] {
 	const isUpperMolar = [16, 17, 18, 26, 27, 28].includes(toothFdi);
 	const isLowerMolar = [36, 37, 38, 46, 47, 48].includes(toothFdi);
+	const isPrimaryUpperMolar = [54, 55, 64, 65].includes(toothFdi);
+	const isPrimaryLowerMolar = [74, 75, 84, 85].includes(toothFdi);
 	const isPremolar = [14, 15, 24, 25, 34, 35, 44, 45].includes(toothFdi);
+	const isPrimaryAnterior = [51, 52, 53, 61, 62, 63, 71, 72, 73, 81, 82, 83].includes(toothFdi);
 
 	const [cx, cy, cz] = centroidWorld;
 
@@ -85,6 +88,110 @@ function buildCalibratedAnatomicalCanals(
 		}
 		return sum;
 	};
+
+	if (isPrimaryUpperMolar) {
+		// 3 Canals for Primary Upper Molars (54, 55, 64, 65): MB (12.0 mm), DB (11.5 mm), P (12.5 mm)
+		const mbPoly: Vec3[] = [
+			[cx - 2.0, cy + 1.5, cz - 2.0],
+			[cx - 2.1, cy + 1.5, cz],
+			[cx - 2.3, cy + 1.3, cz + 3.0],
+			[cx - 2.7, cy + 1.1, cz + 6.0],
+			[cx - 3.2, cy + 0.8, cz + 9.5],
+		];
+		const dbPoly: Vec3[] = [
+			[cx + 1.8, cy + 1.4, cz - 2.0],
+			[cx + 1.9, cy + 1.3, cz],
+			[cx + 2.1, cy + 1.1, cz + 3.0],
+			[cx + 2.3, cy + 0.9, cz + 6.0],
+			[cx + 2.5, cy + 0.6, cz + 9.0],
+		];
+		const pPoly: Vec3[] = [
+			[cx, cy - 2.0, cz - 2.0],
+			[cx, cy - 2.0, cz],
+			[cx, cy - 1.8, cz + 3.0],
+			[cx, cy - 1.6, cz + 6.5],
+			[cx, cy - 1.3, cz + 10.0],
+		];
+
+		return [
+			{
+				canalId: "c-mb",
+				canalName: "MB (Медиально-щечный временный)",
+				orifice: { id: "o-mb", canalName: "MB", worldPositionMm: mbPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.82, hu: 150, estimatedDiameterMm: 0.5 },
+				apicalForamen: { id: "a-mb", canalName: "MB", worldPositionMm: mbPoly[mbPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.70, hu: 1050 },
+				polylineMm: mbPoly,
+				geodesicLengthMm: calcGeodesic(mbPoly),
+				meanHU: 200,
+				meanTubeness: 0.78,
+				reachedOrifice: true,
+			},
+			{
+				canalId: "c-db",
+				canalName: "DB (Дистально-щечный временный)",
+				orifice: { id: "o-db", canalName: "DB", worldPositionMm: dbPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.80, hu: 160, estimatedDiameterMm: 0.45 },
+				apicalForamen: { id: "a-db", canalName: "DB", worldPositionMm: dbPoly[dbPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.68, hu: 1080 },
+				polylineMm: dbPoly,
+				geodesicLengthMm: calcGeodesic(dbPoly),
+				meanHU: 210,
+				meanTubeness: 0.75,
+				reachedOrifice: true,
+			},
+			{
+				canalId: "c-p",
+				canalName: "P (Нёбный временный)",
+				orifice: { id: "o-p", canalName: "P", worldPositionMm: pPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.88, hu: 120, estimatedDiameterMm: 0.75 },
+				apicalForamen: { id: "a-p", canalName: "P", worldPositionMm: pPoly[pPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.75, hu: 1020 },
+				polylineMm: pPoly,
+				geodesicLengthMm: calcGeodesic(pPoly),
+				meanHU: 180,
+				meanTubeness: 0.83,
+				reachedOrifice: true,
+			},
+		];
+	}
+
+	if (isPrimaryLowerMolar) {
+		// 2 Canals for Primary Lower Molars (74, 75, 84, 85): M (12.0 mm), D (12.5 mm)
+		const mPoly: Vec3[] = [
+			[cx - 2.2, cy, cz + 2.0],
+			[cx - 2.3, cy, cz],
+			[cx - 2.5, cy + 0.5, cz - 3.0],
+			[cx - 2.8, cy + 0.8, cz - 6.5],
+			[cx - 3.2, cy + 0.9, cz - 9.8],
+		];
+		const dPoly: Vec3[] = [
+			[cx + 2.2, cy, cz + 2.0],
+			[cx + 2.2, cy, cz],
+			[cx + 2.0, cy, cz - 3.0],
+			[cx + 1.8, cy, cz - 6.5],
+			[cx + 1.6, cy, cz - 10.3],
+		];
+
+		return [
+			{
+				canalId: "c-m",
+				canalName: "M (Медиальный временный)",
+				orifice: { id: "o-m", canalName: "M", worldPositionMm: mPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.84, hu: 140, estimatedDiameterMm: 0.6 },
+				apicalForamen: { id: "a-m", canalName: "M", worldPositionMm: mPoly[mPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.71, hu: 1060 },
+				polylineMm: mPoly,
+				geodesicLengthMm: calcGeodesic(mPoly),
+				meanHU: 190,
+				meanTubeness: 0.79,
+				reachedOrifice: true,
+			},
+			{
+				canalId: "c-d",
+				canalName: "D (Дистальный временный)",
+				orifice: { id: "o-d", canalName: "D", worldPositionMm: dPoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.86, hu: 130, estimatedDiameterMm: 0.7 },
+				apicalForamen: { id: "a-d", canalName: "D", worldPositionMm: dPoly[dPoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.74, hu: 1040 },
+				polylineMm: dPoly,
+				geodesicLengthMm: calcGeodesic(dPoly),
+				meanHU: 180,
+				meanTubeness: 0.81,
+				reachedOrifice: true,
+			},
+		];
+	}
 
 	if (isLowerMolar) {
 		// 3 Canals: MB1 (severe curve), ML (moderate), D (straight)
@@ -289,21 +396,26 @@ function buildCalibratedAnatomicalCanals(
 		];
 	}
 
-	// Single Canal / Premolar / Incisor / Canine
+	// Single Canal / Premolar / Incisor / Canine / Primary Anterior
+	const targetLengthZ = isPrimaryAnterior ? 11.5 : isPremolar ? 18.0 : 19.5;
 	const singlePoly: Vec3[] = [
-		[cx, cy, cz + (isPremolar ? 2.5 : 3.0)],
+		[cx, cy, cz + (isPrimaryAnterior ? 1.5 : isPremolar ? 2.5 : 3.0)],
 		[cx, cy, cz],
-		[cx + 0.2, cy, cz - 4.0],
-		[cx + 0.4, cy, cz - 8.0],
-		[cx + 0.6, cy, cz - 12.0],
-		[cx + 0.8, cy, cz - 16.0],
-		[cx + 1.1, cy, cz - (isPremolar ? 18.0 : 19.5)],
+		[cx + 0.2, cy, cz - 3.0],
+		[cx + 0.4, cy, cz - 6.0],
+		[cx + 0.6, cy, cz - 8.5],
+		[cx + 0.8, cy, cz - (isPrimaryAnterior ? 10.0 : 13.0)],
+		[cx + 1.1, cy, cz - targetLengthZ],
 	];
 
 	return [
 		{
 			canalId: "c-main",
-			canalName: isPremolar ? "Главный щечный" : "Центральный канал",
+			canalName: isPrimaryAnterior
+				? "Центральный временный канал"
+				: isPremolar
+					? "Главный щечный"
+					: "Центральный канал",
 			orifice: { id: "o-main", canalName: "Главный", worldPositionMm: singlePoly[0]!, voxelCoordinates: [0, 0, 0], tubeness: 0.91, hu: 130, estimatedDiameterMm: 0.80 },
 			apicalForamen: { id: "a-main", canalName: "Главный", worldPositionMm: singlePoly[singlePoly.length - 1]!, voxelCoordinates: [0, 0, 0], tubeness: 0.78, hu: 1110 },
 			polylineMm: singlePoly,

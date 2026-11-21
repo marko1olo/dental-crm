@@ -13,6 +13,7 @@ import {
 import { computeDiaryHash } from "../../services/clinical/signingModules/diaryHashCalculator.js";
 import { acceptVisitDraftInDb } from "../../db/visitsQueryModules/protocol/visitProtocolRevisions.js";
 import { upsertVisitDraftAutosaveInDb } from "../../db/visitsQueryModules/protocol/visitSoapQueries.js";
+import { executeDiaryReviseTx } from "../../routes/diary/revisions/diaryReviseTransaction.js";
 import { Icd10ClinicalValidator } from "../../services/clinical/Icd10ClinicalValidator.js";
 import {
 	fixtureUuid,
@@ -206,6 +207,7 @@ describe("EMR / SOAP Multi-Tooth Autosave, complaint Column & diaryHash Audit (M
 		const expectedHash = computeDiaryHash(
 			visitId,
 			patientId,
+			amendedDiary.complaint,
 			"Анамнез 16",
 			"Кариес 16",
 			amendedTreatment,
@@ -213,7 +215,6 @@ describe("EMR / SOAP Multi-Tooth Autosave, complaint Column & diaryHash Audit (M
 			"16",
 			amendedDiary.complications,
 			amendedDiary.comorbidities,
-			amendedDiary.instrumentTrayBarcode,
 		);
 
 		// ДЕФЕКТ 2: diaryHash обязан совпадать с реальным новым текстом!
@@ -252,5 +253,101 @@ describe("EMR / SOAP Multi-Tooth Autosave, complaint Column & diaryHash Audit (M
 		if (nullRes.isValid) {
 			assert.equal(nullRes.normalizedCode, "Z01.2");
 		}
+	});
+
+	test("ДЕФЕКТ 5: upsertVisitDraftAutosaveInDb разрешает сохранение черновика при закрытом/подписанном визите (Мандат 8e)", async () => {
+		// Визит уже имеет статус 'signed' из теста acceptVisitDraftInDb
+		const [currentVisit] = await db
+			.select()
+			.from(visits)
+			.where(and(eq(visits.id, visitId), eq(visits.organizationId, organizationId)))
+			.limit(1);
+
+		assert.equal(currentVisit?.status, "signed", "Визит должен быть подписан");
+
+		// Врач начинает вносить ревизию («Исправленному верить») в подписанный визит:
+		// Раньше код выбрасывал Error('Прием уже закрыт или аннулирован') и отдавал 409
+		const draftResult = await upsertVisitDraftAutosaveInDb(organizationId, {
+			visitId,
+			patientId,
+			selectedSpecialty: "therapist",
+			transcript: "Уточнение протокола лечения зуба 16",
+			draft: {
+				complaint: "Жалоб нет, контрольный осмотр",
+				anamnesis: "Ранее проведено пломбирование 16",
+				objectiveStatus: "Пломба в прикусе, краевое прилегание идеальное",
+				diagnosis: "K02.1",
+				diagnosisTooth: "16",
+				treatmentPlan: "Полировка и покрытие фторлаком",
+				warnings: [],
+			},
+		});
+
+		assert.ok(draftResult, "Черновик должен успешно сохраниться");
+		assert.equal(draftResult.draft.complaint, "Жалоб нет, контрольный осмотр");
+		assert.equal(draftResult.draft.treatmentPlan, "Полировка и покрытие фторлаком");
+
+		// Проверяем, что draftAutosave в таблице visits обновился без порчи статуса signed
+		const [updatedVisit] = await db
+			.select()
+			.from(visits)
+			.where(and(eq(visits.id, visitId), eq(visits.organizationId, organizationId)))
+			.limit(1);
+
+		assert.equal(updatedVisit?.status, "signed", "Статус визита остается signed");
+		assert.ok(updatedVisit?.draftAutosave, "draftAutosave в БД заполнен");
+		const savedAutosave = updatedVisit.draftAutosave as { draft?: { treatmentPlan?: string } };
+		assert.equal(savedAutosave?.draft?.treatmentPlan, "Полировка и покрытие фторлаком");
+	});
+
+	test("ДЕФЕКТ 6: executeDiaryReviseTx успешно выполняет каноническую ревизию закрытого дневника", async () => {
+		// Берем дневник зуба 16
+		const [diary16] = await db
+			.select()
+			.from(visitDiaries)
+			.where(
+				and(
+					eq(visitDiaries.visitId, visitId),
+					eq(visitDiaries.organizationId, organizationId),
+					eq(visitDiaries.diagnosisTooth, "16"),
+				),
+			)
+			.limit(1);
+
+		assert.ok(diary16, "Дневник зуба 16 должен существовать");
+
+		// Убедимся, что он заблокирован для ревизии (isLocked = true)
+		if (!diary16.isLocked) {
+			await db
+				.update(visitDiaries)
+				.set({ isLocked: true })
+				.where(eq(visitDiaries.id, diary16.id));
+		}
+
+		const reviseResult = await executeDiaryReviseTx({
+			id: diary16.id,
+			orgId: organizationId,
+			userId: doctorUserId,
+			role: "doctor",
+			body: {
+				complaint: "Жалобы отсутствуют после полировки",
+				treatmentDescription: "Окончательная полировка насадками Enhance и покрытие Bifluorid 12",
+				revisionReason: "Исправленному верить",
+			},
+		});
+
+		assert.equal(reviseResult.kind, "ok", "executeDiaryReviseTx должен вернуть kind: ok");
+		assert.ok(reviseResult.hash, "Новый diaryHash должен быть сформирован");
+
+		// Проверяем в БД
+		const [revisedDiary] = await db
+			.select()
+			.from(visitDiaries)
+			.where(eq(visitDiaries.id, diary16.id))
+			.limit(1);
+
+		assert.equal(revisedDiary?.treatmentDescription, "Окончательная полировка насадками Enhance и покрытие Bifluorid 12");
+		assert.equal(revisedDiary?.complaint, "Жалобы отсутствуют после полировки");
+		assert.equal(revisedDiary?.diaryHash, reviseResult.hash);
 	});
 });

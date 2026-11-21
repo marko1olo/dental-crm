@@ -48,6 +48,7 @@ export async function captureLeadFromIncomingCall(
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				"Idempotency-Key": crypto.randomUUID(),
 				"x-dente-staff-token": readDenteStaffToken(),
 				"x-dente-clinic-token": readDenteClinicToken(),
 			},

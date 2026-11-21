@@ -71,6 +71,7 @@ async function applyToothStateMutation(
 		version?: number | null | undefined;
 		reason?: string | null | undefined;
 	},
+	skipBroadcast = false,
 ) {
 	const toothNumbers = [...new Set<number>(data.toothNumbers)];
 	if (toothNumbers.length === 0) return [];
@@ -498,10 +499,12 @@ async function applyToothStateMutation(
 		});
 	});
 
-	wsBroker.broadcastToOrganization(organizationId, {
-		type: "UPDATE_ODONTOGRAM",
-		payload: { patientId, states: inserted },
-	});
+	if (!skipBroadcast) {
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "UPDATE_ODONTOGRAM",
+			payload: { patientId, states: inserted },
+		});
+	}
 
 	return inserted;
 }
@@ -753,29 +756,33 @@ export function registerStatusRoutes(app: FastifyInstance) {
 
 			const actorUserId = getRequestIdentity(request).userId;
 
-			if (parsed.data.updates && parsed.data.updates.length > 0) {
+			const updates = parsed.data.updates;
+			if (updates && updates.length > 0) {
 				const allInserted: unknown[] = [];
-				for (const u of parsed.data.updates) {
-					const res = await applyToothStateMutation(
-						organizationId,
-						patientId,
-						actorUserId,
-						{
-							toothNumbers: [u.toothNumber],
-							state: u.state ?? "Healthy",
-							surfaces: u.surfaces,
-							resorptionStage: u.resorptionStage,
-							mobility: u.mobility ?? u.mobilityDegree,
-							mobilityDegree: u.mobilityDegree ?? u.mobility,
-							isPrimaryPediatric: u.isPrimaryPediatric ?? (u.toothNumber >= 51 && u.toothNumber <= 85),
-							notes: u.notes,
-							visitId: parsed.data.visitId,
-							updatedAt: parsed.data.updatedAt,
-							reason: parsed.data.reason || "Резорбция корней / подвижность молочного зуба",
-						},
-					);
-					allInserted.push(...res);
-				}
+				await withTenantCtx(organizationId, async () => {
+					for (const u of updates) {
+						const res = await applyToothStateMutation(
+							organizationId,
+							patientId,
+							actorUserId,
+							{
+								toothNumbers: [u.toothNumber],
+								state: u.state ?? "Healthy",
+								surfaces: u.surfaces,
+								resorptionStage: u.resorptionStage,
+								mobility: u.mobility ?? u.mobilityDegree,
+								mobilityDegree: u.mobilityDegree ?? u.mobility,
+								isPrimaryPediatric: u.isPrimaryPediatric ?? (u.toothNumber >= 51 && u.toothNumber <= 85),
+								notes: u.notes,
+								visitId: parsed.data.visitId,
+								updatedAt: parsed.data.updatedAt,
+								reason: parsed.data.reason || "Резорбция корней / подвижность молочного зуба",
+							},
+							true,
+						);
+						allInserted.push(...res);
+					}
+				});
 				wsBroker.broadcastToOrganization(organizationId, {
 					type: "UPDATE_ODONTOGRAM",
 					payload: { patientId, states: allInserted },

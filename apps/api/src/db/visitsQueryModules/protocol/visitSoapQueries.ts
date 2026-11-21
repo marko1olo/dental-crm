@@ -114,7 +114,7 @@ export async function upsertVisitDraftAutosaveInDb(
 			.limit(1);
 
 		if (!visit) throw new Error("Визит не найден");
-		if (visit.status === "voided" || visit.status === "signed") {
+		if (visit.status === "voided") {
 			throw new Error("Прием уже закрыт или аннулирован");
 		}
 
@@ -170,6 +170,27 @@ export async function upsertVisitDraftAutosaveInDb(
 				: input.draft.toothNumber != null && String(input.draft.toothNumber).trim() !== ""
 					? String(input.draft.toothNumber).trim()
 					: null;
+
+		if (visit.status === "signed") {
+			// Для подписанного визита сохраняем черновик ревизии в draftAutosave (Мандат 8e),
+			// не затирая подписанные клинические поля визита и дневника до явного подтверждения («Исправленному верить»).
+			const [saved] = await tx
+				.update(schema.visits)
+				.set({
+					draftAutosave: serverDraft,
+					updatedAt: now,
+				})
+				.where(
+					and(
+						eq(schema.visits.organizationId, organizationId),
+						eq(schema.visits.id, input.visitId),
+					),
+				)
+				.returning({ id: schema.visits.id });
+
+			if (!saved) throw new Error("Визит не найден");
+			return serverDraft;
+		}
 
 		const [saved] = await tx
 			.update(schema.visits)

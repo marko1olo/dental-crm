@@ -30,6 +30,7 @@ export interface MissedCallEventParams {
 	reason?: string | undefined;
 	timestamp?: Date | string | undefined;
 	waitDurationSeconds?: number | undefined;
+	logger?: { warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void; info?: (obj: unknown, msg?: string) => void } | undefined;
 }
 
 export interface MissedCallResult {
@@ -209,7 +210,11 @@ export class MissedCallService {
 						createdLeadRecord = createdLead || null;
 					}
 				} catch (err) {
-					console.warn("[MissedCallService] Existing patient lead handling notice:", err);
+					if (params.logger) {
+						params.logger.warn({ err, organizationId, patientId }, "[MissedCallService] Existing patient lead handling notice");
+					} else {
+						process.stderr.write(`[MissedCallService] Existing patient lead handling notice: ${String(err)}\n`);
+					}
 				}
 
 				// 3. Suppress duplicate task cascade if an active callback task already exists within 60 seconds
@@ -334,7 +339,11 @@ export class MissedCallService {
 						taskId = createdLead?.id;
 					}
 				} catch (err) {
-					console.warn("[MissedCallService] Unknown caller lead handling notice:", err);
+					if (params.logger) {
+						params.logger.warn({ err, organizationId, callerPhone: callerPhoneE164 }, "[MissedCallService] Unknown caller lead handling notice");
+					} else {
+						process.stderr.write(`[MissedCallService] Unknown caller lead handling notice: ${String(err)}\n`);
+					}
 					patientDisplayName = `Лид (${maskPhoneDisplay(callerPhoneE164)})`;
 				}
 			}

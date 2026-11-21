@@ -71,6 +71,7 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
 			Accept: "application/json",
+			"Idempotency-Key": crypto.randomUUID(),
 		};
 		const clinicToken = readDenteClinicToken();
 		const staffToken = readDenteStaffToken();

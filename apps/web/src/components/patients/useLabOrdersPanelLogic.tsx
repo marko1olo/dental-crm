@@ -70,7 +70,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		setError(null);
 		try {
 			const query = patientId ? `?patientId=${encodeURIComponent(patientId)}` : "";
-			const res = await fetch(`/api/clinical/lab-orders${query}`, { headers: denteAdminSecretRequestHeaders() });
+			const res = await fetch(`/api/lab/orders${query}`, { headers: denteAdminSecretRequestHeaders() });
 			if (!res.ok) throw new Error("Не удалось загрузить заказы ЗТЛ");
 			const data = await res.json();
 			const list = Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : [];
@@ -214,7 +214,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 					...(parts.length > 0 ? { notes: `Даты примерок: ${parts.join("; ")}` } : {}),
 				};
 
-				const res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, {
+				const res = await fetch(`/api/lab/orders/${orderId}/status`, {
 					method: "PATCH",
 					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 					body: JSON.stringify(body),
@@ -249,7 +249,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 			}
 			if (photoUrl?.trim()) {
 				try {
-					const res = await fetch(`/api/clinical/lab-orders/${targetId}/status`, {
+					const res = await fetch(`/api/lab/orders/${targetId}/status`, {
 						method: "PATCH",
 						headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 						body: JSON.stringify({ notes: `Фото прикуса: ${photoUrl.trim()}` }),
@@ -273,7 +273,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 			}
 			const noteText = comment?.trim() || "Комментарий клиники передан технику ЗТЛ";
 			try {
-				const res = await fetch(`/api/clinical/lab-orders/${targetId}/status`, {
+				const res = await fetch(`/api/lab/orders/${targetId}/status`, {
 					method: "PATCH",
 					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 					body: JSON.stringify({ notes: noteText, labComments: noteText }),
@@ -297,7 +297,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 				return;
 			}
 			try {
-				const res = await fetch(`/api/clinical/lab-orders/${targetId}/status`, {
+				const res = await fetch(`/api/lab/orders/${targetId}/status`, {
 					method: "PATCH",
 					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 					body: JSON.stringify({
@@ -325,7 +325,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 				return;
 			}
 			try {
-				const res = await fetch(`/api/clinical/lab-orders/${targetId}/status`, {
+				const res = await fetch(`/api/lab/orders/${targetId}/status`, {
 					method: "PATCH",
 					headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 					body: JSON.stringify({

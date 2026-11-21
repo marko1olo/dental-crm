@@ -166,16 +166,12 @@ export function calculateAssistantPiecework(params: {
 
 /** SSOT Canonical Doctor Payroll Summary (Mandate 8n, 8e) */
 export function calculateDoctorPayrollSummary(params: {
-	orders: readonly PayrollServiceOrder[];
-	doctor: PayrollDoctorProfile;
-	schemeType?: MotivationSchemeType | undefined;
-	percent?: number | undefined;
-	shiftsCount?: number | undefined;
-	shiftRateKop?: number | undefined;
-	hourlyRateKop?: number | undefined;
-	hoursWorked?: number | undefined;
-	advanceKop?: number | undefined;
-	isRkoPaid?: boolean | undefined;
+	orders: readonly PayrollServiceOrder[]; doctor: PayrollDoctorProfile;
+	schemeType?: MotivationSchemeType | undefined; percent?: number | undefined;
+	shiftsCount?: number | undefined; shiftRateKop?: number | undefined;
+	hourlyRateKop?: number | undefined; hoursWorked?: number | undefined;
+	advanceKop?: number | undefined; isRkoPaid?: boolean | undefined;
+	applyMinimumGuarantee?: boolean | undefined;
 }): DoctorPayrollSummary {
 	const docOrders = params.orders.filter((o) => o.doctorId === params.doctor.id && o.isPaid54Fz);
 	const totalGrossKopecks = docOrders.reduce((sum, o) => sum + (o.paidKopecks ?? o.grossKopecks ?? 0), 0);
@@ -208,11 +204,13 @@ export function calculateDoctorPayrollSummary(params: {
 	}
 
 	const minGuaranteeKop = params.doctor.minGuaranteeMonthlyKop;
+	const shouldApply = params.applyMinimumGuarantee ?? (minGuaranteeKop > 0);
 	const { grossPayout, guaranteeApplied: minimumGuaranteeApplied } = applyMinimumGuarantee(
 		doctorAccruedKopecks,
 		minGuaranteeKop,
 		scheme === "chair_rental",
 		docOrders.length,
+		shouldApply,
 	);
 	const ndfl13TaxKopecks = params.doctor.taxRegime === "employee" ? Math.round((grossPayout * 13) / 100) : 0;
 	const payoutKopecks = Math.max(0, grossPayout - ndfl13TaxKopecks - advanceKopecks);

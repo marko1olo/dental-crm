@@ -243,15 +243,18 @@ export async function recordPatientConsentEntry(
 	};
 }
 
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbOrTx = typeof db | DbTransaction;
+
 export async function syncDocumentToPatientConsent(
 	orgId: string,
 	patientId: string,
 	kind: string,
 	docId: string,
 	grantedAtDate?: Date,
-	tx?: any,
+	tx?: DbOrTx,
 ) {
-	const client = (tx ?? db) as typeof db;
+	const client = tx ?? db;
 	const now = grantedAtDate ?? new Date();
 	const existing = await client
 		.select({ id: patientConsents.id })

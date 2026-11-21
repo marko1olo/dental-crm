@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import Fastify from "fastify";
+import { generateUuidV7 } from "@dental/shared";
 import { registerPayrollRoutes } from "../../routes/payroll.js";
 import { CLINIC_TOKEN_HEADER, STAFF_TOKEN_HEADER } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
@@ -202,5 +203,79 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 		const data = JSON.parse(res.body);
 		assert.equal(data.ok, true);
 		assert.ok(Array.isArray(data.doctors));
+	});
+
+	test("9. DEF-PAYROLL-07: GET /api/v1/doctors возвращает 401 AuthRequired при отсутствии organizationId", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/v1/doctors",
+			headers: {
+				[STAFF_TOKEN_HEADER]: signToken(
+					{
+						userId: DOCTOR_ID,
+						role: "doctor",
+					},
+					TEST_SECRET,
+					3600,
+				),
+			},
+		});
+
+		assert.equal(res.statusCode, 401);
+		const data = JSON.parse(res.body);
+		assert.equal(data.error, "AuthRequired");
+	});
+
+	test("10. DEF-PAYROLL-08: POST /api/v1/payroll/close-settlement сохраняет Idempotency-Key и возвращает replay", async () => {
+		const idemKey = generateUuidV7();
+		const payload = {
+			doctorId: DOCTOR_ID,
+			periodStart: "2026-11-01",
+			periodEnd: "2026-11-30",
+			payoutModel: "percentage",
+			grossRevenueKop: 3000000,
+			labCostKop: 500000,
+			materialCostKop: 100000,
+			netBaseKop: 2400000,
+			categoryPercent: 25,
+			totalAccruedKop: 600000,
+			ndflKop: 78000,
+			netPayoutKop: 522000,
+			markPaid: true,
+		};
+
+		const res1 = await app.inject({
+			method: "POST",
+			url: "/api/v1/payroll/close-settlement",
+			headers: {
+				...authHeaders(DOCTOR_ID, "owner"),
+				"Content-Type": "application/json",
+				"Idempotency-Key": idemKey,
+			},
+			payload,
+		});
+
+		assert.equal(res1.statusCode, 200);
+		assert.equal(res1.headers["idempotency-key"], idemKey);
+		const data1 = JSON.parse(res1.body);
+		assert.equal(data1.ok, true);
+		assert.ok(data1.statementId);
+
+		const res2 = await app.inject({
+			method: "POST",
+			url: "/api/v1/payroll/close-settlement",
+			headers: {
+				...authHeaders(DOCTOR_ID, "owner"),
+				"Content-Type": "application/json",
+				"Idempotency-Key": idemKey,
+			},
+			payload,
+		});
+
+		assert.equal(res2.statusCode, 200);
+		assert.equal(res2.headers["idempotency-replayed"], "true");
+		const data2 = JSON.parse(res2.body);
+		assert.equal(data2.statementId, data1.statementId);
+		assert.equal(data2.ok, true);
 	});
 });

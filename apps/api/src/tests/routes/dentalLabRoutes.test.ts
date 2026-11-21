@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import type { FastifyReply, FastifyRequest } from "fastify";
+import { authTokenSecret } from "../../security/authSecret.js";
+import { signToken } from "../../utils/cryptoHelper.js";
 import {
 	calculateBusinessDaysDueDate,
 	CANONICAL_DENTAL_LAB_PRESETS,
+	checkPlanContinuitySchema,
 } from "../../routes/lab/index.js";
+import { handleCheckPlanContinuity } from "../../routes/lab/ordersCrudModules/labPresetsHandlers.js";
 import {
 	getLabScanDownloadPresignedUrl,
 	getLabScanUploadPresignedUrl,
@@ -44,21 +49,114 @@ describe("Dental Lab Express Presets & Mandate 8e Invariants", () => {
 		assert.equal(due.getDate(), 9, "Due date should be the 9th");
 	});
 
-	it("verifies Mandate 8e logic: treatment plan age >30 days does not block lab orders", () => {
-		const planAgeDays = 45;
-		const isPlanExpired = planAgeDays > 30;
-		assert.equal(isPlanExpired, true);
+	it("verifies Mandate 8e logic: handleCheckPlanContinuity validates schema and executes without blocking doctor", async () => {
+		const validPayload = {
+			patientId: "0192e2b0-8451-789a-bcde-000000000001",
+			planAgeDays: 45,
+		};
+		const parsed = checkPlanContinuitySchema.safeParse(validPayload);
+		assert.equal(parsed.success, true);
 
-		// Under Mandate 8e, canProceed MUST be true and blocked MUST be false
-		const canProceed = true;
-		const blocked = false;
-		const requiresChiefPhysicianApproval = false;
-		const requiresSeniorTechnicianApproval = false;
+		let statusCode = 200;
+		let responseBody: Record<string, unknown> | null = null;
 
-		assert.equal(canProceed, true);
-		assert.equal(blocked, false);
-		assert.equal(requiresChiefPhysicianApproval, false);
-		assert.equal(requiresSeniorTechnicianApproval, false);
+		const testOrgId = "0192e2b0-8451-789a-bcde-000000000001";
+		const token = signToken(
+			{
+				organizationId: testOrgId,
+				userId: "0192e2b0-8451-789a-bcde-000000000002",
+				role: "doctor",
+			},
+			authTokenSecret(),
+		);
+
+		const mockReq = {
+			headers: {
+				"x-organization-id": testOrgId,
+				"x-dente-staff-token": token,
+			},
+			user: { organizationId: testOrgId, role: "doctor" },
+			body: validPayload,
+			log: { error: () => {}, info: () => {} },
+		} as unknown as FastifyRequest;
+
+		const mockReply = {
+			status(code: number) {
+				statusCode = code;
+				return this;
+			},
+			code(code: number) {
+				statusCode = code;
+				return this;
+			},
+			send(payload: Record<string, unknown>) {
+				responseBody = payload;
+				return this;
+			},
+		} as unknown as FastifyReply;
+
+		await handleCheckPlanContinuity(mockReq, mockReply);
+
+		assert.equal(statusCode, 200);
+		assert.ok(responseBody, "Expected response body");
+		assert.equal(responseBody?.canProceed, true, "Mandate 8e: Doctor autonomy must not be blocked");
+		assert.equal(responseBody?.blocked, false, "Mandate 8e: blocked must be false");
+		assert.equal(responseBody?.isPlanExpired, true, "Plan > 30 days is marked as expired");
+		assert.equal(responseBody?.planAgeDays, 45);
+		assert.equal(responseBody?.requiresChiefPhysicianApproval, false, "No chief physician bureaucracy");
+		assert.equal(responseBody?.requiresSeniorTechnicianApproval, false);
+		assert.equal(responseBody?.autonomyCompliant, true);
+		assert.ok(
+			typeof responseBody?.noticeRu === "string" && responseBody.noticeRu.includes("без блокировок"),
+			"Notice informs doctor about autonomous continuation",
+		);
+	});
+
+	it("handleCheckPlanContinuity returns 404 if treatmentPlanId does not exist for tenant", async () => {
+		const testOrgId = "0192e2b0-8451-789a-bcde-000000000001";
+		const token = signToken(
+			{
+				organizationId: testOrgId,
+				userId: "0192e2b0-8451-789a-bcde-000000000002",
+				role: "doctor",
+			},
+			authTokenSecret(),
+		);
+
+		let statusCode = 200;
+		let responseBody: Record<string, unknown> | null = null;
+
+		const mockReq = {
+			headers: {
+				"x-organization-id": testOrgId,
+				"x-dente-staff-token": token,
+			},
+			user: { organizationId: testOrgId, role: "doctor" },
+			body: {
+				patientId: "0192e2b0-8451-789a-bcde-000000000001",
+				treatmentPlanId: "0192e2b0-8451-789a-bcde-999999999999",
+			},
+			log: { error: () => {}, info: () => {} },
+		} as unknown as FastifyRequest;
+
+		const mockReply = {
+			status(code: number) {
+				statusCode = code;
+				return this;
+			},
+			code(code: number) {
+				statusCode = code;
+				return this;
+			},
+			send(payload: Record<string, unknown>) {
+				responseBody = payload;
+				return this;
+			},
+		} as unknown as FastifyReply;
+
+		await handleCheckPlanContinuity(mockReq, mockReply);
+		assert.equal(statusCode, 404);
+		assert.equal(responseBody?.error, "TreatmentPlanNotFound");
 	});
 });
 
@@ -115,6 +213,53 @@ describe("Lab 3D Scans Direct Upload & Tenant Protection (Mandate 8c & 8s)", () 
 	it("batch-status route definition and handler exist in orderStatusPatchRoutes", async () => {
 		const { batchPatchLabOrdersHandler } = await import("../../routes/lab/patchModules/labOrderBatchPatchHandler.js");
 		assert.equal(typeof batchPatchLabOrdersHandler, "function");
+	});
+});
+
+describe("Dental Lab Warranty Passport & Circuit Integration (Mandates 8e, 8k)", () => {
+	it("handleGetWarrantyPassport validates UUID and guards access for non-existent orders", async () => {
+		const { handleGetWarrantyPassport } = await import("../../routes/lab/pipelineModules/warrantyPassportHandler.js");
+		const testOrgId = "0192e2b0-8451-789a-bcde-000000000001";
+		const token = signToken(
+			{
+				organizationId: testOrgId,
+				userId: "0192e2b0-8451-789a-bcde-000000000002",
+				role: "doctor",
+			},
+			authTokenSecret(),
+		);
+
+		let statusCode = 200;
+		let responseBody: Record<string, unknown> | null = null;
+
+		const mockReq = {
+			headers: {
+				"x-organization-id": testOrgId,
+				"x-dente-staff-token": token,
+			},
+			user: { organizationId: testOrgId, role: "doctor" },
+			params: { id: "0192e2b0-8451-789a-bcde-000000000999" },
+			log: { error: () => {}, info: () => {} },
+		} as unknown as FastifyRequest<{ Params: { id: string } }>;
+
+		const mockReply = {
+			status(code: number) {
+				statusCode = code;
+				return this;
+			},
+			code(code: number) {
+				statusCode = code;
+				return this;
+			},
+			send(payload: Record<string, unknown>) {
+				responseBody = payload;
+				return this;
+			},
+		} as unknown as FastifyReply;
+
+		await handleGetWarrantyPassport(mockReq, mockReply);
+		assert.equal(statusCode, 404);
+		assert.equal(responseBody?.error, "LabOrderNotFound");
 	});
 });
 

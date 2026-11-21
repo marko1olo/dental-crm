@@ -335,6 +335,99 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 						? crypto.randomUUID()
 						: generateUuidV7();
 
+				if (isSignedVisit && isRevisingVisitNote) {
+					// Канонический вызов ревизии подписанного дневника («Исправленному верить», Мандат 8e)
+					let targetDiaryId: string | null =
+						typeof visitNoteForm?.diaryId === "string" && isUuid(visitNoteForm.diaryId)
+							? visitNoteForm.diaryId
+							: null;
+
+					if (!targetDiaryId) {
+						try {
+							const diaryLookupRes = await fetch(`/api/diaries/visit/${effectiveVisitId}`, {
+								headers: { ...denteAdminSecretRequestHeaders() },
+								credentials: "same-origin",
+							});
+							if (diaryLookupRes.ok) {
+								const diaryLookupJson = (await diaryLookupRes.json().catch(() => null)) as {
+									diary?: { id?: string | null } | null;
+								} | null;
+								if (typeof diaryLookupJson?.diary?.id === "string" && isUuid(diaryLookupJson.diary.id)) {
+									targetDiaryId = diaryLookupJson.diary.id;
+								}
+							}
+						} catch (fetchErr) {
+							console.warn("useVisitEmkTabController: ошибка поиска diaryId для ревизии", fetchErr);
+						}
+					}
+
+					if (!targetDiaryId) {
+						showToast("Не найден идентификатор дневника для оформления ревизии («Исправленному верить»)", "error", 5000);
+						return;
+					}
+
+					const reviseRes = await fetch(`/api/diaries/${targetDiaryId}/revise`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"Idempotency-Key": idempotencyKey,
+							...denteAdminSecretRequestHeaders(),
+						},
+						credentials: "same-origin",
+						body: JSON.stringify({
+							complaint: complaintText || "Жалоб на момент осмотра не предъявляет.",
+							anamnesis: anamnesisText || "Соматически здоров. Аллергоанамнез не отягощен.",
+							statusLocalis: statusLocalisText || "Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.",
+							diagnosisIcd10: diagnosisIcd10Code || undefined,
+							diagnosisTooth: toothRaw,
+							treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
+							revisionReason: "Исправленному верить",
+						}),
+					});
+
+					if (!reviseRes.ok) {
+						const errJson = (await reviseRes.json().catch(() => null)) as { error?: string; message?: string } | null;
+						const errorMsg = errJson?.message || "Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
+						console.warn("useVisitEmkTabController: отказ ревизии дневника в /api/diaries/:id/revise", errJson);
+						showToast(errorMsg, "error", 5000);
+						return;
+					}
+
+					void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["patient", effectivePatientId] });
+
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(
+							new CustomEvent("dente:diary-saved", {
+								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
+							}),
+						);
+						window.dispatchEvent(
+							new CustomEvent("dente:emk-updated", {
+								detail: { visitId: effectiveVisitId, patientId: effectivePatientId },
+							}),
+						);
+						window.dispatchEvent(
+							new CustomEvent("dente:visit-updated", {
+								detail: { visitId: effectiveVisitId },
+							}),
+						);
+					}
+
+					if (typeof onSaveVisitNote === "function") {
+						await (onSaveVisitNote as () => Promise<void> | void)();
+					}
+					setIsRevisingVisitNote(false);
+					showToast(
+						"Исправление в дневнике приёма сохранено («Исправленному верить»)",
+						"success",
+						3000,
+					);
+					return;
+				}
+
 				const diaryRes = await fetch("/api/diaries", {
 					method: "POST",
 					headers: {
@@ -352,13 +445,15 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 						diagnosisIcd10: diagnosisIcd10Code || undefined,
 						diagnosisTooth: toothRaw,
 						treatmentDescription: treatmentText || "Проведен осмотр, санация / консультация.",
-						status: isSignedVisit ? "signed" : "draft",
+						status: "draft",
 					}),
 				});
 
 				if (!diaryRes.ok) {
 					const errJson = (await diaryRes.json().catch(() => null)) as { error?: string; message?: string } | null;
 					console.warn("useVisitEmkTabController: ошибка сохранения дневника в /api/diaries", errJson);
+					showToast(errJson?.message || "Ошибка сохранения дневника приёма", "error", 5000);
+					return;
 				} else {
 					void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
 					void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
@@ -385,17 +480,20 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 				}
 			} catch (diaryErr) {
 				console.warn("useVisitEmkTabController: сетевая ошибка сохранения дневника в /api/diaries", diaryErr);
+				showToast("Сетевая ошибка при сохранении дневника приёма", "error", 5000);
+				return;
 			}
 		}
 
 		if (typeof onSaveVisitNote === "function") {
 			await (onSaveVisitNote as () => Promise<void> | void)();
 		}
+		const wasRevising = isRevisingVisitNote;
 		if (isRevisingVisitNote) {
 			setIsRevisingVisitNote(false);
 		}
 		showToast(
-			isRevisingVisitNote
+			wasRevising
 				? "Исправление в дневнике приёма сохранено («Исправленному верить»)"
 				: "Запись приёма успешно сохранена в ЭМК",
 			"success",

@@ -17,6 +17,10 @@ import {
 	Edit3,
 } from "lucide-react";
 import type { MedicalRecordData, ClinicalVisitDiaryEntry } from "../../types/recordDataTypes";
+import { generateUuidV7 } from "@dental/shared";
+import { showToast } from "../../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
+import { denteQueryClient } from "../../../../lib/queryClient";
 import { RecordNewDiaryInlineForm } from "./RecordNewDiaryInlineForm";
 
 export interface RecordDiariesTabProps {
@@ -192,6 +196,66 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 					anesthesiaDetails: anesthesia || existing?.anesthesiaDetails,
 					appliedMaterials: materials || existing?.appliedMaterials,
 				};
+
+				// Если дневник имеет серверный ID (UUID), вызываем канонический роут ревизии POST /api/diaries/:id/revise
+				const isServerUuid = Boolean(existing.id && !existing.id.startsWith("diary_") && existing.id.length >= 32);
+				if (isServerUuid) {
+					void (async () => {
+						try {
+							const reviseRes = await fetch(`/api/diaries/${existing.id}/revise`, {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									"Idempotency-Key": generateUuidV7(),
+									...denteAdminSecretRequestHeaders(),
+								},
+								credentials: "same-origin",
+								body: JSON.stringify({
+									complaint: subjective || existing.subjectiveComplaints || "Жалоб нет",
+									anamnesis: existing.assessmentDiagnosisText || "Соматически здоров. Аллергоанамнез не отягощен.",
+									statusLocalis: objective || existing.objectiveStatusLocalis || "Статус без патологии",
+									diagnosisIcd10: icd10Code || existing.assessmentIcd10Code || undefined,
+									diagnosisTooth: selectedTooth ? String(selectedTooth) : existing.toothNumber,
+									treatmentDescription: protocol || existing.procedureProtocol || "Проведен осмотр",
+									revisionReason: "Исправленному верить",
+								}),
+							});
+
+							if (!reviseRes.ok) {
+								const errJson = (await reviseRes.json().catch(() => null)) as { error?: string; message?: string } | null;
+								const errorMsg = errJson?.message || "Ошибка сохранения ревизии дневника приёма («Исправленному верить»)";
+								console.warn("[RecordDiariesTab] отказ ревизии дневника в /api/diaries/:id/revise", errJson);
+								showToast(errorMsg, "error", 5000);
+								return;
+							}
+
+							const json = (await reviseRes.json().catch(() => null)) as {
+								data?: { hash?: string; digitalSignatureHash?: string };
+								hash?: string;
+								digitalSignatureHash?: string;
+							} | null;
+							const payload = json?.data ?? json;
+							if (payload?.hash || payload?.digitalSignatureHash) {
+								revisedEntry.digitalSignatureHash = payload.hash || payload.digitalSignatureHash;
+							}
+
+							void denteQueryClient.invalidateQueries({ queryKey: ["diaries"] });
+							void denteQueryClient.invalidateQueries({ queryKey: ["visit_diaries"] });
+							void denteQueryClient.invalidateQueries({ queryKey: ["visits"] });
+
+							formData.visitDiaries[editingDiaryIndex] = revisedEntry;
+							setEditingDiaryIndex(null);
+							handleClearDraft();
+							setIsFormOpen(false);
+							showToast("Исправление в дневнике приёма сохранено («Исправленному верить»)", "success", 3000);
+						} catch (reviseErr) {
+							console.warn("[RecordDiariesTab] Ошибка вызова /api/diaries/:id/revise:", reviseErr);
+							showToast("Сетевая ошибка сохранения ревизии дневника приёма", "error", 5000);
+						}
+					})();
+					return;
+				}
+
 				formData.visitDiaries[editingDiaryIndex] = revisedEntry;
 				setEditingDiaryIndex(null);
 			} else {

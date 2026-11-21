@@ -69,7 +69,7 @@ export async function submitExpressLabOrder({
 
 	try {
 		showToast(`Оформляем наряд ЗТЛ для зубов ${toothFdiStr}...`, "info", 2000);
-		const res = await fetch("/api/clinical/lab-orders", {
+		const res = await fetch("/api/lab/orders", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",

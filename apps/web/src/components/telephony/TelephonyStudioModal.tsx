@@ -419,6 +419,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 				method: "PATCH",
 				headers: {
 					"Content-Type": "application/json",
+					"Idempotency-Key": crypto.randomUUID(),
 					...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
 					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
 				},

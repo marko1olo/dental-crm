@@ -133,7 +133,7 @@ export function LabOrderDetailsDrawer({
 					order={selectedOrderForTracking}
 					onStageUpdate={onStageUpdate}
 					onFittingDateUpdate={onFittingDateUpdate ?? (async (orderId, dates: { frameworkTrialDate?: string | undefined; ceramicTrialDate?: string | undefined; deliveryDate?: string | undefined }) => {
-						const res = await fetch(`/api/clinical/lab-orders/${encodeURIComponent(orderId)}/status`, {
+						const res = await fetch(`/api/lab/orders/${encodeURIComponent(orderId)}/status`, {
 							method: "PATCH",
 							headers: { "Content-Type": "application/json" },
 							body: JSON.stringify({

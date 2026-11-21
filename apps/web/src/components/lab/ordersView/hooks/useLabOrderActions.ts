@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { generateUuidV7 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { showToast } from "../../../GlobalToast";
 import type { DentalLabOrderData } from "../../labMath";
@@ -23,7 +24,11 @@ export function useLabOrderActions(
 			}
 			const res = await fetch(`/api/lab/orders/${orderId}`, {
 				method: "PUT",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+					...denteAdminSecretRequestHeaders(),
+				},
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) throw new Error("Ошибка обновления статуса");
@@ -65,9 +70,13 @@ export function useLabOrderActions(
 		if (inFlightSetRef.current.has(lockKey)) return;
 		inFlightSetRef.current.add(lockKey);
 		try {
-			const res = await fetch(`/api/lab-orders/${order.id}/mark-installed`, {
+			const res = await fetch(`/api/lab/orders/${order.id}/mark-installed`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+					...denteAdminSecretRequestHeaders(),
+				},
 				body: JSON.stringify({}),
 			});
 			if (!res.ok) throw new Error("Ошибка фиксации установки конструкции");
@@ -114,9 +123,13 @@ export function useLabOrderActions(
 	const handleBatchStatusChange = useCallback(async (orderIds: string[], newStatus: string, notes?: string) => {
 		if (orderIds.length === 0) return;
 		try {
-			const res = await fetch("/api/clinical/lab-orders/batch-status", {
+			const res = await fetch("/api/lab/orders/batch-status", {
 				method: "PATCH",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+				headers: {
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+					...denteAdminSecretRequestHeaders(),
+				},
 				body: JSON.stringify({
 					orderIds,
 					status: newStatus,

@@ -323,6 +323,15 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
    - **DEF-PAYROLL-06 [ЗАКРЫТО] (Маскирование ставок комиссии в общем списке)**: в `GET /api/v1/doctors` процентные ставки (`commissionPercent`, `defaultShiftRateKop`, `minGuaranteeMonthlyKop`) маскируются (0%), если у вызывающего нет прав `payroll.read` (и он не смотрит себя).
    - **Тестовое покрытие и 4-State Visual Proofs**: 8/8 API тестов в `payrollStudioInquisition.test.ts` (100% green), 74/74 Web payroll vitest (100% green). Сняты 4 скриншота в `docs/proofs/payroll/` (`01_payroll_pc_light.png`, `02_payroll_pc_dark.png`, `03_payroll_mobile_light.png`, `04_payroll_mobile_dark.png`) и лично осмотрены через `read_file` по 8 осям визуальной инспекции.
 
+9. **DEF-PAYROLL-07...12 [ЗАКРЫТО] (Doctor Payroll Fixer Surgeon — Устранение 6 дефектов в модуле начисления зарплаты)**:
+   - **DEF-PAYROLL-07 [ЗАКРЫТО] (Изоляция арендаторов в GET /api/v1/doctors)**: устранен тихий fallback `"00000000-0000-0000-0000-000000000001"`. При отсутствии `identity.organizationId` сервер возвращает 401 `AuthRequired` (Мандат 8n).
+   - **DEF-PAYROLL-08 [ЗАКРЫТО] (Сквозной Idempotency-Key в PostgreSQL)**: в `POST /api/v1/payroll/close-settlement` внедрена проверка и транзакционное сохранение заголовка `Idempotency-Key` (UUIDv7) в таблице `idempotencyKeys` (ACID-транзакция со списанием РКО). Повторные запросы возвращают сохраненный статус с `idempotency-replayed: true` (Мандат 8bo, 8zp).
+   - **DEF-PAYROLL-09 [ЗАКРЫТО] (Ликвидация Math.round float во фронтенде)**: в `GlobalDoctorPayrollModal.tsx` ручные `Math.round(rub * 100)` заменены на канонический `rublesToKopecks` из `@dental/shared/src/money.ts` (Мандат 8bm).
+   - **DEF-PAYROLL-10 [ЗАКРЫТО] (Прогрессивный расчет НДФЛ в кошельке врача)**: в `useDoctorWalletLogic.ts` примитивный `Math.round(earnedKop * 0.13)` заменен на канонический `calculateProgressiveNdflTax` из `@dental/shared` со шкалой 13%/15% и округлением до рубля по ст. 224/225 НК РФ.
+   - **DEF-PAYROLL-11 [ЗАКРЫТО] (Единая формула комиссии врача в API)**: в `doctorMyEarningsHandler.ts` инлайн-расчет комиссий заменен на `calculateDoctorCommissionKopecks` из `@dental/shared` (Мандат 8bf).
+   - **DEF-PAYROLL-12 [ЗАКРЫТО] (Снос сироты DirectDoctorWalletLauncher)**: мертвый неиспользуемый файл `DirectDoctorWalletLauncher.tsx` физически удален через `git rm` (Мандат 8aq, 8bj).
+   - **Тестовое покрытие**: 10/10 тестов в `payrollStudioInquisition.test.ts` (100% green), 7/7 тестов в `doctorPayroll.test.ts` (100% green), 4/4 в `payrollCalculationsRealDb.test.ts`, 11/11 в `doctorPayrollSSOTSuite.test.tsx`. Компиляторы `tsc` API и Web — Exit Code 0.
+
 ---
 
 ## 🏥 8.1. Реестр устранённых дефектов страховой медицины и ДМС (DEF-DMS-01...06, Red Team Fixer Домен 25)

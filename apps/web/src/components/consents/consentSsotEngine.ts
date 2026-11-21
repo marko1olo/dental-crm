@@ -51,7 +51,10 @@ export function detectRequiredVisitConsents(params: {
 	const lower = textContext.toLowerCase();
 	const isBlankAndOpen = !lower.trim() && !isVisitClosed;
 	const flags: Record<string, boolean> = {};
-	if (!hasInspectionSigned) flags.CONSENT_INSPECTION_1051N = true;
+	if (!hasInspectionSigned) {
+		flags.CONSENT_PRIMARY_INSPECTION = true;
+		flags.CONSENT_INSPECTION_1051N = true;
+	}
 	if (detectDomainKeywords(lower, "anesthesia").length > 0 || isBlankAndOpen) flags.CONSENT_ANESTHESIA = true;
 	if (detectDomainKeywords(lower, "therapy").length > 0 || isBlankAndOpen) flags.CONSENT_THERAPY = true;
 	if (detectDomainKeywords(lower, "surgery").length > 0) flags.CONSENT_SURGERY_IMPLANT = true;

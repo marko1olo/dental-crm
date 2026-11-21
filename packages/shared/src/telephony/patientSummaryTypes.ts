@@ -74,6 +74,15 @@ export interface PatientActiveTreatmentPlanSummary {
 
 export type PatientTreatmentPlanSummary = PatientActiveTreatmentPlanSummary;
 
+export interface CallerLookupFamilyMember {
+	id: string;
+	fullName: string;
+	phone: string | null;
+	birthDate: string | null;
+	status: string;
+	relation?: string | null;
+}
+
 export interface CallerLookupResult {
 	found: boolean;
 	patient: {
@@ -85,6 +94,7 @@ export interface CallerLookupResult {
 		status: string;
 		administrativeProfile?: Record<string, unknown> | null;
 	} | null;
+	familyMembers?: CallerLookupFamilyMember[];
 	lead: {
 		id: string;
 		name: string;

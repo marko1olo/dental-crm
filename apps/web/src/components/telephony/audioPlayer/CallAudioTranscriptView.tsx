@@ -22,7 +22,7 @@ export function CallAudioTranscriptView({
 					className="min-h-[44px] sm:min-h-[32px] px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-bold text-[var(--ink,#0f172a)] hover:text-[var(--teal,#0d9488)] inline-flex items-center gap-1.5 transition-colors cursor-pointer touch-manipulation"
 					aria-expanded={showTranscript}
 				>
-					<Sparkles size={14} className="text-amber-500" />
+					<Sparkles size={14} className="text-[var(--warning,#f59e0b)]" />
 					<span>
 						{showTranscript
 							? "Скрыть расшифровку речи"
@@ -38,7 +38,7 @@ export function CallAudioTranscriptView({
 						title="Скопировать текст диалога"
 					>
 						{copiedTranscript ? (
-							<Check size={14} className="text-emerald-500" />
+							<Check size={14} className="text-[var(--teal,#0d9488)]" />
 						) : (
 							<Copy size={14} />
 						)}
@@ -86,7 +86,7 @@ export function CallAudioTranscriptView({
 												className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
 													u.speaker === "operator"
 														? "bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]"
-														: "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
+														: "bg-[var(--accent-subtle,var(--paper-soft,#f1f5f9))] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)]"
 												}`}
 											>
 												{u.speaker === "operator" ? "Оператор" : "Пациент"}

@@ -61,21 +61,22 @@ export const endoCanalMeasurementSchema = z.object({
 
 export const endoToothClinicalDataSchema = z
 	.object({
-		toothNumber: z.number().optional(),
+		toothNumber: z.number().optional().nullable(),
 		canals: z.array(endoCanalMeasurementSchema).default([]),
-		irrigation: z.string().trim().max(1000).optional(),
-		rotarySystem: z.string().trim().max(1000).optional(),
-		radiologyControl: z.string().trim().max(1000).optional(),
-		apexLocator: z.string().trim().max(1000).optional(),
-		stageStamp: z.string().trim().max(50).optional(),
-		notes: z.string().trim().max(2000).optional(),
-		updatedAt: z.string().optional(),
-		mobility: z.number().int().min(0).max(4).optional(),
-		mobilityDegree: z.number().int().min(0).max(4).optional(),
-		resorptionStage: z.number().optional(),
-		pediatricCrownPresent: z.boolean().optional(),
-		secondaryCariesUnderFilling: z.boolean().optional(),
-		isPrimaryPediatric: z.boolean().optional(),
+		irrigation: z.string().trim().max(1000).optional().nullable(),
+		rotarySystem: z.string().trim().max(1000).optional().nullable(),
+		radiologyControl: z.string().trim().max(1000).optional().nullable(),
+		apexLocator: z.string().trim().max(1000).optional().nullable(),
+		stageStamp: z.string().trim().max(50).optional().nullable(),
+		notes: z.string().trim().max(2000).optional().nullable(),
+		updatedAt: z.string().optional().nullable(),
+		mobility: z.number().int().min(0).max(4).optional().nullable(),
+		mobilityDegree: z.number().int().min(0).max(4).optional().nullable(),
+		resorptionStage: z.number().optional().nullable(),
+		pediatricCrownPresent: z.boolean().optional().nullable(),
+		secondaryCariesUnderFilling: z.boolean().optional().nullable(),
+		isPrimaryPediatric: z.boolean().optional().nullable(),
+		isPhysiologicalResorption: z.boolean().optional().nullable(),
 	})
 	.passthrough();
 

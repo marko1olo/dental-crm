@@ -77,12 +77,12 @@ export const validApexReadings: ReadonlySet<string> = new Set([
  */
 export const endoUpsertPayloadSchema = z.object({
 	canals: z.array(endoCanalMeasurementSchema).default([]),
-	irrigation: z.string().trim().max(1000).optional(),
-	rotarySystem: z.string().trim().max(1000).optional(),
-	radiologyControl: z.string().trim().max(1000).optional(),
-	apexLocator: z.string().trim().max(1000).optional(),
-	notes: z.string().trim().max(2000).optional(),
-	stageStamp: z.enum(["COMPLETED", "TEMP_CAOH2", "DRAFT"]).optional().default("COMPLETED"),
+	irrigation: z.string().trim().max(1000).optional().nullable(),
+	rotarySystem: z.string().trim().max(1000).optional().nullable(),
+	radiologyControl: z.string().trim().max(1000).optional().nullable(),
+	apexLocator: z.string().trim().max(1000).optional().nullable(),
+	notes: z.string().trim().max(2000).optional().nullable(),
+	stageStamp: z.enum(["COMPLETED", "TEMP_CAOH2", "DRAFT"]).optional().nullable().default("COMPLETED"),
 	state: clinicalToothStateSchema.optional(),
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 	visitId: z
@@ -241,16 +241,20 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 
 		let resolvedClinicalData = parseClinicalDataFromNotes(tooth.notes);
 		if (tooth.canalMeasurements && Array.isArray(tooth.canalMeasurements) && tooth.canalMeasurements.length > 0) {
+			const firstCanalMeta = (tooth.canalMeasurements[0] && typeof tooth.canalMeasurements[0] === "object")
+				? (tooth.canalMeasurements[0] as Record<string, unknown>)
+				: undefined;
+
 			resolvedClinicalData = {
 				toothNumber: tooth.toothNumber,
 				canals: tooth.canalMeasurements,
-				irrigation: resolvedClinicalData?.irrigation || "NaOCl 3% + EDTA 17%",
-				rotarySystem: resolvedClinicalData?.rotarySystem || "WaveOne Gold / ProTaper Gold",
-				radiologyControl: resolvedClinicalData?.radiologyControl || "Рентген-контроль: гуттаперча до апекса",
-				apexLocator: resolvedClinicalData?.apexLocator || tooth.canalMeasurements?.[0]?.apexLocatorReading || "0.0 (Apex)",
+				irrigation: (firstCanalMeta?.irrigation as string | undefined) ?? resolvedClinicalData?.irrigation ?? null,
+				rotarySystem: (firstCanalMeta?.rotarySystem as string | undefined) ?? resolvedClinicalData?.rotarySystem ?? null,
+				radiologyControl: (firstCanalMeta?.radiologyControl as string | undefined) ?? resolvedClinicalData?.radiologyControl ?? null,
+				apexLocator: (firstCanalMeta?.apexLocator as string | undefined) ?? resolvedClinicalData?.apexLocator ?? (tooth.canalMeasurements[0]?.apexLocatorReading || null),
 				notes: tooth.notes && !tooth.notes.startsWith("{") ? tooth.notes : (resolvedClinicalData?.notes || ""),
-				stageStamp: tooth.state === "Pulpitis" ? "TEMP_CAOH2" : "COMPLETED",
-				updatedAt: new Date().toISOString(),
+				stageStamp: (firstCanalMeta?.stageStamp as "COMPLETED" | "TEMP_CAOH2" | "DRAFT" | undefined) ?? resolvedClinicalData?.stageStamp ?? (tooth.state === "Pulpitis" ? "TEMP_CAOH2" : "COMPLETED"),
+				updatedAt: resolvedClinicalData?.updatedAt || new Date().toISOString(),
 			};
 		}
 
@@ -388,16 +392,34 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 		});
 
 		const clinicalNotesText = parsed.data.notes || "";
+		const finalIrrigation = parsed.data.irrigation ?? null;
+		const finalRotary = parsed.data.rotarySystem ?? null;
+		const finalRadiology = parsed.data.radiologyControl ?? null;
+		const finalApex = parsed.data.apexLocator ?? sanitizedCanals[0]?.apexLocatorReading ?? null;
+		const finalStageStamp = parsed.data.stageStamp ?? "COMPLETED";
+
+		const enrichedCanals = sanitizedCanals.map((c, idx) => ({
+			...c,
+			...(idx === 0
+				? {
+						irrigation: finalIrrigation,
+						rotarySystem: finalRotary,
+						radiologyControl: finalRadiology,
+						apexLocator: finalApex,
+						stageStamp: finalStageStamp,
+					}
+				: {}),
+		}));
 
 		const clinicalData: EndoToothClinicalData = {
 			toothNumber,
 			canals: sanitizedCanals,
-			irrigation: parsed.data.irrigation || "NaOCl 3% + EDTA 17%",
-			rotarySystem: parsed.data.rotarySystem || "WaveOne Gold / ProTaper Gold",
-			radiologyControl: parsed.data.radiologyControl || "Рентген-контроль: гуттаперча до апекса",
-			apexLocator: parsed.data.apexLocator || sanitizedCanals[0]?.apexLocatorReading || "0.0 (Apex)",
+			irrigation: finalIrrigation,
+			rotarySystem: finalRotary,
+			radiologyControl: finalRadiology,
+			apexLocator: finalApex,
 			notes: clinicalNotesText,
-			stageStamp: parsed.data.stageStamp,
+			stageStamp: finalStageStamp,
 			updatedAt: now.toISOString(),
 		};
 
@@ -469,7 +491,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 					newState: targetState,
 					previousSurfaces: existing?.surfaces ?? null,
 					newSurfaces: targetSurfaces,
-					canalMeasurements: sanitizedCanals,
+					canalMeasurements: enrichedCanals,
 					changedByUserId: actorUserId && UUID_SHAPE.test(actorUserId) ? actorUserId : null,
 					reason: endoReason,
 					changedAt: now,
@@ -485,7 +507,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 						state: targetState,
 						surfaces: targetSurfaces,
 						notes: finalNotesText,
-						canalMeasurements: sanitizedCanals,
+						canalMeasurements: enrichedCanals,
 						updatedAt: now,
 						isSynced: false,
 						version: 1,
@@ -496,7 +518,7 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 							state: targetState,
 							surfaces: targetSurfaces,
 							notes: finalNotesText,
-							canalMeasurements: sanitizedCanals,
+							canalMeasurements: enrichedCanals,
 							updatedAt: now,
 							isSynced: false,
 							version: sql`${toothStates.version} + 1`,

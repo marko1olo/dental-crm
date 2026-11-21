@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { generateDoctorEarningsPayslipHtml, kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { calculateProgressiveNdflTax, generateDoctorEarningsPayslipHtml, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
 import { closeSettlementPeriodApi } from "../../payroll/closeSettlementPeriodApi.js";
@@ -77,7 +77,7 @@ export function useDoctorWalletLogic(
 
 		try {
 			const earnedKop = data.summary.totalDoctorEarnedKop ?? rublesToKopecks(data.summary.totalDoctorEarnedRub);
-			const ndflKop = Math.round(earnedKop * 0.13);
+			const ndflKop = calculateProgressiveNdflTax(earnedKop).ndflTaxKop;
 			const netPayoutKop = Math.max(0, earnedKop - ndflKop);
 
 			const clinicName = useDocumentBrandingStore.getState().clinicName || "Стоматологическая клиника";
@@ -116,7 +116,7 @@ export function useDoctorWalletLogic(
 		if (!data) return;
 		try {
 			const earnedKop = data.summary.totalDoctorEarnedKop ?? rublesToKopecks(data.summary.totalDoctorEarnedRub);
-			const ndflKop = Math.round(earnedKop * 0.13);
+			const ndflKop = calculateProgressiveNdflTax(earnedKop).ndflTaxKop;
 			const netPayoutKop = Math.max(0, earnedKop - ndflKop);
 
 			await closeSettlementPeriodApi({

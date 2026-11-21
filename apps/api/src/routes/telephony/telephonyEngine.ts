@@ -1,7 +1,7 @@
 import { eq, ilike, or, sql } from "drizzle-orm";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { withSuperuserBypass } from "../../db/rls.js";
-import { clinics } from "../../db/schema.js";
+import { clinics, organizations } from "../../db/schema.js";
 import {
 	type NormalizedPhone,
 	UUID_REGEX,
@@ -57,14 +57,21 @@ export async function resolveWebhookOrgId(
 	targetPhone: NormalizedPhone,
 ): Promise<string | null> {
 	if (routeOrgId && UUID_REGEX.test(routeOrgId)) {
-		return routeOrgId;
+		const orgExists = await withSuperuserBypass(async (tx) => {
+			return tx
+				.select({ id: organizations.id })
+				.from(organizations)
+				.where(eq(organizations.id, routeOrgId))
+				.limit(1);
+		});
+		return orgExists[0]?.id ?? null;
 	}
 	if (!targetPhone.isValid) {
 		return null;
 	}
-	const matchedClinic = await withSuperuserBypass(async (tx) => {
+	const matchedClinics = await withSuperuserBypass(async (tx) => {
 		return tx
-			.select({ organizationId: clinics.organizationId })
+			.selectDistinct({ organizationId: clinics.organizationId })
 			.from(clinics)
 			.where(
 				or(
@@ -73,9 +80,14 @@ export async function resolveWebhookOrgId(
 					sql`regexp_replace(coalesce(${clinics.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${targetPhone.national10}%`}`,
 				),
 			)
-			.limit(1);
+			.limit(2);
 	});
-	return matchedClinic[0]?.organizationId || null;
+	// Collision safety: If multiple distinct organizations share the same target phone,
+	// do NOT blindly pick one via limit(1) (tenant collision / spoofing risk).
+	if (matchedClinics.length === 1 && matchedClinics[0]?.organizationId) {
+		return matchedClinics[0].organizationId;
+	}
+	return null;
 }
 
 export function checkReplayTimestamp(

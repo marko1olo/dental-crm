@@ -6,7 +6,7 @@ import type { LabOrder } from "../LabOrdersPanel";
 
 export async function transitionLabOrderStatus(orderId: string, targetStatus: Canonical5LabStatus | string, onDone: () => void) {
 	try {
-		const res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, {
+		const res = await fetch(`/api/lab/orders/${orderId}/status`, {
 			method: "PATCH",
 			headers: {
 				"Content-Type": "application/json",
@@ -89,7 +89,7 @@ export function copyLabOrderPortalLink(token: string) {
 
 export async function deleteLabOrder(id: string, onDone: () => void) {
 	try {
-		const res = await fetch(`/api/clinical/lab-orders/${id}`, {
+		const res = await fetch(`/api/lab/orders/${id}`, {
 			method: "DELETE",
 			headers: {
 				"Idempotency-Key": generateUuidV7(),

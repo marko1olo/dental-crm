@@ -8,11 +8,11 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import { calculateDoctorPeriodPayroll, computePayloadHash, isValidUuid, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { doctorCommissions, users } from "../db/schema.js";
-import { calculateDoctorPeriodPayroll } from "@dental/shared";
+import { idempotencyKeys } from "../db/schema/idempotency.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { roleHasPermission } from "../security/permissions.js";
 import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
@@ -107,7 +107,13 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	 */
 	app.get("/api/v1/doctors", async (request: FastifyRequest, reply: FastifyReply) => {
 		const identity = getRequestIdentity(request);
-		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
+		if (!identity.organizationId) {
+			return reply.code(401).send({
+				error: "AuthRequired",
+				message: "Не указан идентификатор организации",
+			});
+		}
+		const orgId = identity.organizationId;
 
 		try {
 			const doctors = await fetchActiveDoctorProfiles(orgId);
@@ -406,7 +412,41 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const body = parsed.data;
 
 		const rawIdemKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"] || body.idempotencyKey;
-		const idempotencyKey = typeof rawIdemKey === "string" ? rawIdemKey : undefined;
+		const idempotencyKey = typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0 ? rawIdemKey.trim() : undefined;
+
+		if (idempotencyKey) {
+			if (!isValidUuid(idempotencyKey)) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Заголовок Idempotency-Key должен содержать корректный UUID (рекомендуется UUIDv7).",
+				});
+			}
+			reply.header("Idempotency-Key", idempotencyKey);
+			reply.header("X-Idempotency-Key", idempotencyKey);
+
+			const existingRecord = await withTenantCtx(orgId, async (tx) => {
+				const [rec] = await tx
+					.select()
+					.from(idempotencyKeys)
+					.where(and(eq(idempotencyKeys.clinicId, orgId), eq(idempotencyKeys.key, idempotencyKey)))
+					.limit(1);
+				return rec ?? null;
+			});
+
+			if (existingRecord) {
+				if (existingRecord.status === "completed" && existingRecord.responseBody) {
+					reply.header("idempotency-replayed", "true");
+					reply.header("x-idempotency-replayed", "true");
+					return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+				}
+				if (existingRecord.status === "in_flight") {
+					return reply.code(409).header("Retry-After", "1").send({
+						error: "Conflict",
+						message: "Операция фиксации расчетного периода с данным Idempotency-Key уже выполняется.",
+					});
+				}
+			}
+		}
 
 		const fromDate = new Date(`${body.periodStart.slice(0, 10)}T00:00:00.000Z`);
 		const toDate = new Date(`${body.periodEnd.slice(0, 10)}T23:59:59.999Z`);
@@ -477,11 +517,38 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 					if (res.statement) batchStatements.push(res.statement);
 					totalClosedAppts += res.closedAppointmentsCount;
 				}
-			});
 
-			if (idempotencyKey) {
-				reply.header("X-Idempotency-Key", idempotencyKey);
-			}
+				if (idempotencyKey) {
+					const batchResponsePayload: Record<string, unknown> = {
+						ok: true,
+						statementId: batchStatements[0]?.id || "batch",
+						statement: batchStatements[0] || null,
+						statements: batchStatements,
+						count: batchStatements.length,
+						closedAppointmentsCount: totalClosedAppts,
+						message: `Пакетное утверждение ведомостей клиники: зафиксированы расчетные периоды для ${batchStatements.length} врачей`,
+					};
+
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: batchResponsePayload,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: batchResponsePayload,
+								responseCode: 200,
+							},
+						});
+				}
+			});
 
 			return reply.send({
 				ok: true,
@@ -533,40 +600,63 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 
 		const chairRentalKop = body.chairRentalKopecks !== undefined ? Math.max(0, body.chairRentalKopecks) : body.chairRentalRub !== undefined ? rublesToKopecks(Math.max(0, body.chairRentalRub)) : 0;
 
-		const result = await closeSettlementPeriodInDb({
-			organizationId: orgId,
-			doctorId: resolvedDocId,
-			periodKey,
-			fromDate,
-			toDate,
-			payoutModel: body.payoutModel || "percentage",
-			grossRevenueKopecks: grossKop,
-			labCostKopecks: labKop,
-			materialsCostKopecks: matKop,
-			netBaseRevenueKopecks: netBaseKop,
-			categoryPercent: body.categoryPercent ?? 25,
-			calculatedPieceworkKopecks: totalAccruedKop,
-			fixedSalaryKopecks: chairRentalKop,
-			bonusesTotalKopecks: 0,
-			penaltiesTotalKopecks: 0,
-			totalAccruedKopecks: totalAccruedKop,
-			ndfl13Kopecks: ndflKop,
-			netPayoutKopecks: payoutKop,
-			rkoNumber: body.rkoNumber,
-			markPaid: body.markPaid ?? true,
+		const responsePayload = await withTenantCtx(orgId, async (tx) => {
+			const result = await closeSettlementPeriodInDb({
+				organizationId: orgId,
+				doctorId: resolvedDocId,
+				periodKey,
+				fromDate,
+				toDate,
+				payoutModel: body.payoutModel || "percentage",
+				grossRevenueKopecks: grossKop,
+				labCostKopecks: labKop,
+				materialsCostKopecks: matKop,
+				netBaseRevenueKopecks: netBaseKop,
+				categoryPercent: body.categoryPercent ?? 25,
+				calculatedPieceworkKopecks: totalAccruedKop,
+				fixedSalaryKopecks: chairRentalKop,
+				bonusesTotalKopecks: 0,
+				penaltiesTotalKopecks: 0,
+				totalAccruedKopecks: totalAccruedKop,
+				ndfl13Kopecks: ndflKop,
+				netPayoutKopecks: payoutKop,
+				rkoNumber: body.rkoNumber,
+				markPaid: body.markPaid ?? true,
+			}, tx);
+
+			const payload: Record<string, unknown> = {
+				ok: true,
+				statementId: result.statementId,
+				statement: result.statement,
+				closedAppointmentsCount: result.closedAppointmentsCount,
+				message: "Расчетный период успешно зафиксирован в PostgreSQL и РКО",
+			};
+
+			if (idempotencyKey) {
+				await tx
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: payload,
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: payload,
+							responseCode: 200,
+						},
+					});
+			}
+
+			return payload;
 		});
 
-		if (idempotencyKey) {
-			reply.header("X-Idempotency-Key", idempotencyKey);
-		}
-
-		return reply.send({
-			ok: true,
-			statementId: result.statementId,
-			statement: result.statement,
-			closedAppointmentsCount: result.closedAppointmentsCount,
-			message: "Расчетный период успешно зафиксирован в PostgreSQL и РКО",
-		});
+		return reply.send(responsePayload);
 	};
 
 	const reopenSettlementHandler = async (request: FastifyRequest, reply: FastifyReply) => {

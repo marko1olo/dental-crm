@@ -24,6 +24,7 @@ export type ConsentTemplateKey =
 	| "CONSENT_HYGIENE_BLEACHING"
 	| "CONSENT_ANESTHESIA"
 	| "CONSENT_PERSONAL_DATA"
+	| "CONSENT_PRIMARY_INSPECTION"
 	| "CONSENT_INSPECTION_1051N"
 	| "CONSENT_PEDIATRIC"
 	| "CONSENT_PERIODONTICS"
@@ -398,6 +399,8 @@ export const CONSENT_INSPECTION_1051N: ConsentTemplate = {
 	alternativeTreatments: [],
 };
 
+export const CONSENT_PRIMARY_INSPECTION: ConsentTemplate = CONSENT_INSPECTION_1051N;
+
 export const CONSENT_PEDIATRIC: ConsentTemplate = {
 	key: "CONSENT_PEDIATRIC",
 	title: "Информированное добровольное согласие законного представителя на детское стоматологическое лечение",
@@ -664,6 +667,7 @@ export const CONSENT_TEMPLATES: Record<ConsentTemplateKey, ConsentTemplate> = {
 	CONSENT_HYGIENE_BLEACHING,
 	CONSENT_ANESTHESIA,
 	CONSENT_PERSONAL_DATA,
+	CONSENT_PRIMARY_INSPECTION,
 	CONSENT_INSPECTION_1051N,
 	CONSENT_PEDIATRIC,
 	CONSENT_PERIODONTICS,

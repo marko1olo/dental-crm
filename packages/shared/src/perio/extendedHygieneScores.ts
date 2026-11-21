@@ -5,7 +5,11 @@
  * Mandate 8b: File <= 120 lines.
  */
 
-import { FEDOROV_VOLODKINA_TEETH_NUMBERS, HYGIENE_INDEX_TEETH_CONFIG } from "./hygieneConfig.js";
+import {
+	FEDOROV_VOLODKINA_PERMANENT_FALLBACK_TEETH_NUMBERS,
+	FEDOROV_VOLODKINA_TEETH_NUMBERS,
+	HYGIENE_INDEX_TEETH_CONFIG,
+} from "./hygieneConfig.js";
 import type {
 	ExtendedToothAssessment,
 	FedorovVolodkinaResult,
@@ -50,9 +54,15 @@ export function calculateFedorovVolodkinaScore(
 		? new Map(assessments.map((a) => [a.toothNumber, a]))
 		: new Map(Object.entries(assessments).map(([k, v]) => [Number(k), v]));
 
+	// Канонически для детей (молочные фронтальные зубы 83-73 по Федорову-Володкиной 1971)
+	const hasPrimaryFrontal = FEDOROV_VOLODKINA_TEETH_NUMBERS.some((t) => map.has(t));
+	const targetTeeth = hasPrimaryFrontal
+		? FEDOROV_VOLODKINA_TEETH_NUMBERS
+		: FEDOROV_VOLODKINA_PERMANENT_FALLBACK_TEETH_NUMBERS;
+
 	let total = 0;
 	let count = 0;
-	for (const toothNum of FEDOROV_VOLODKINA_TEETH_NUMBERS) {
+	for (const toothNum of targetTeeth) {
 		const item = map.get(toothNum);
 		if (item) {
 			const rawDebris = item.debrisScore ?? 0;

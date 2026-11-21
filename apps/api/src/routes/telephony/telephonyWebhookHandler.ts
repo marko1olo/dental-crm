@@ -151,7 +151,7 @@ export async function telephonyWebhookHandler(
 			const missed = await MissedCallService.handleMissedCall({
 				organizationId: resolvedOrgId, phone: callerPhone.e164, rawPhone: callerPhone.raw,
 				callId: callId || null, provider: detectedProvider, reason: event === "missed" ? "missed" : "zero_duration_hangup",
-				waitDurationSeconds: waitSec,
+				waitDurationSeconds: waitSec, logger: request.log,
 			});
 			return { success: true, event: "missed", taskId: missed.taskId, patientId: missed.patientId, isNewLead: missed.isNewLead };
 		}

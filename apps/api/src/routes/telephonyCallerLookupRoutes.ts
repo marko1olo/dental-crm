@@ -54,4 +54,15 @@ export const telephonyCallerLookupRoutes: FastifyPluginAsync = async (server) =>
 		Params: { organizationId?: string };
 		Querystring: { phone?: string; patientId?: string; organizationId?: string };
 	}>("/lookup", handleLookupCaller);
+
+	// Backward-compatibility aliases for CTI screen pop specifications
+	server.get<{
+		Params: { organizationId: string };
+		Querystring: { phone?: string; patientId?: string };
+	}>("/:organizationId/lookup-caller", handleLookupCaller);
+
+	server.get<{
+		Params: { organizationId?: string };
+		Querystring: { phone?: string; patientId?: string; organizationId?: string };
+	}>("/lookup-caller", handleLookupCaller);
 };

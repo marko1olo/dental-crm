@@ -45,6 +45,19 @@ declare global {
 	}
 }
 
+interface CallKeepEventPayload {
+	callUUID?: string | undefined;
+	muted?: boolean | undefined;
+	hold?: boolean | undefined;
+}
+
+function asCallKeepPayload(data: unknown): CallKeepEventPayload {
+	if (typeof data === "object" && data !== null) {
+		return data as CallKeepEventPayload;
+	}
+	return {};
+}
+
 export interface CallKitBridgeConfig {
 	appName: string;
 	imageName?: string | undefined;
@@ -107,28 +120,32 @@ export class CallKitBridge {
 				});
 
 				// Wire answerCall event
-				window.RNCallKeep.addEventListener("answerCall", (data: { callUUID?: string }) => {
-					const callUuid = data?.callUUID || this.activeCallId || "incoming-call";
+				window.RNCallKeep.addEventListener("answerCall", (data: unknown) => {
+					const payload = asCallKeepPayload(data);
+					const callUuid = payload.callUUID || this.activeCallId || "incoming-call";
 					this.handleNativeCallAnswered(callUuid);
 				});
 
 				// Wire endCall event
-				window.RNCallKeep.addEventListener("endCall", (data: { callUUID?: string }) => {
-					const callUuid = data?.callUUID || this.activeCallId || "incoming-call";
+				window.RNCallKeep.addEventListener("endCall", (data: unknown) => {
+					const payload = asCallKeepPayload(data);
+					const callUuid = payload.callUUID || this.activeCallId || "incoming-call";
 					this.handleNativeCallEnded(callUuid);
 				});
 
 				// Wire mute event
-				window.RNCallKeep.addEventListener("didPerformSetMutedCallAction", (data: { callUUID?: string; muted?: boolean }) => {
-					const isMuted = Boolean(data?.muted);
-					const callUuid = data?.callUUID || this.activeCallId || "incoming-call";
+				window.RNCallKeep.addEventListener("didPerformSetMutedCallAction", (data: unknown) => {
+					const payload = asCallKeepPayload(data);
+					const isMuted = Boolean(payload.muted);
+					const callUuid = payload.callUUID || this.activeCallId || "incoming-call";
 					this.handleNativeMuteToggled(callUuid, isMuted);
 				});
 
 				// Wire hold event
-				window.RNCallKeep.addEventListener("didToggleHoldCallAction", (data: { callUUID?: string; hold?: boolean }) => {
-					const isHeld = Boolean(data?.hold);
-					const callUuid = data?.callUUID || this.activeCallId || "incoming-call";
+				window.RNCallKeep.addEventListener("didToggleHoldCallAction", (data: unknown) => {
+					const payload = asCallKeepPayload(data);
+					const isHeld = Boolean(payload.hold);
+					const callUuid = payload.callUUID || this.activeCallId || "incoming-call";
 					this.handleNativeHoldToggled(callUuid, isHeld);
 				});
 

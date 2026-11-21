@@ -14,7 +14,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { doctorCommissions, users } from "../db/schema.js";
-import { calculateDoctorPeriodPayroll, kopecksToRubles } from "@dental/shared";
+import { calculateDoctorCommissionKopecks, calculateDoctorPeriodPayroll, kopecksToRubles } from "@dental/shared";
 import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
 import { resolveDoctorUserUuid } from "./payrollSettlementDbQueries.js";
 import {
@@ -205,7 +205,7 @@ export async function handleGetDoctorMyEarnings(
 		}
 
 		const netBaseItemKop = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-		const earnedItemKop = Math.round((netBaseItemKop * basePercent) / 100);
+		const earnedItemKop = calculateDoctorCommissionKopecks(netBaseItemKop, basePercent);
 
 		appt.grossRevenueKop += ord.grossKopecks;
 		appt.labCostKop += ord.labCostKopecks;
@@ -282,7 +282,7 @@ export async function handleGetDoctorMyEarnings(
 			catMap.set(ord.category, cat);
 		}
 		const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-		const earned = Math.round((netBase * basePercent) / 100);
+		const earned = calculateDoctorCommissionKopecks(netBase, basePercent);
 
 		cat.grossRevenueKop += ord.grossKopecks;
 		cat.labDeductionsKop += ord.labCostKopecks;

@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { mapStageToLabOrderStatus } from "../types.js";
-import { calculateLabOrderCostAndMarkup } from "./labOrderCostCalculator.js";
+import { mapStageToLabOrderStatus } from "../../routes/lab/types.js";
+import { calculateLabOrderCostAndMarkup } from "../../routes/lab/ordersCrudModules/labOrderCostCalculator.js";
 
 describe("Red Team Inquisition: LAB-01..05 Subsystem Consolidation & Defense", () => {
 	it("[LAB-05]: mapStageToLabOrderStatus maps routine clinic fitting to canonical PG 'fitting', NOT 'refitting'", () => {

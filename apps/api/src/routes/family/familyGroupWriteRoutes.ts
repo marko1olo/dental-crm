@@ -310,12 +310,56 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 
 			const isHead = family.headPatientId === patientId || family.primaryPatientId === patientId;
 			if (isHead) {
-				// Если удаляемый пациент являлся главой кошелька, обнуляем headPatientId / primaryPatientId для сохранения ссылочной целостности
-				await tx.update(familyGroups).set({
-					headPatientId: family.headPatientId === patientId ? null : family.headPatientId,
-					primaryPatientId: family.primaryPatientId === patientId ? null : family.primaryPatientId,
-					updatedAt: new Date(),
-				}).where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId)));
+				// При удалении главы семьи автоматически переносим роль главы на следующего
+				// совершеннолетнего члена группы, предотвращая потерю главы и ошибки при последующих операциях.
+				const remainingMembers = await tx
+					.select({
+						id: patients.id,
+						birthDate: patients.birthDate,
+						createdAt: patients.createdAt,
+					})
+					.from(patients)
+					.where(
+						and(
+							eq(patients.familyGroupId, id),
+							eq(patients.organizationId, organizationId),
+						),
+					);
+
+				let nextHeadId: string | null = null;
+				if (remainingMembers.length > 0) {
+					const now = new Date();
+					const adults = remainingMembers.filter((m) => {
+						if (!m.birthDate) return true;
+						const b = new Date(m.birthDate);
+						if (Number.isNaN(b.getTime())) return true;
+						let age = now.getFullYear() - b.getFullYear();
+						const mDiff = now.getMonth() - b.getMonth();
+						if (mDiff < 0 || (mDiff === 0 && now.getDate() < b.getDate())) {
+							age--;
+						}
+						return age >= 18;
+					});
+
+					nextHeadId = adults[0]?.id || remainingMembers[0]!.id;
+				}
+
+				await tx
+					.update(familyGroups)
+					.set({
+						headPatientId: nextHeadId,
+						primaryPatientId: nextHeadId,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(familyGroups.id, id), eq(familyGroups.organizationId, organizationId)));
+
+				if (nextHeadId) {
+					for (const rem of remainingMembers) {
+						if (rem.id !== nextHeadId) {
+							await ensureFamilyMemberSpendAuthorization(tx, organizationId, nextHeadId, rem.id, true);
+						}
+					}
+				}
 			}
 
 			return { status: 200, body: { success: true, removedPatientId: patientId, familyGroupId: id } };

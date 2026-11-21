@@ -73,7 +73,7 @@ export const CANONICAL_PEDIATRIC_PRESETS: readonly PediatricPresetDto[] = [
 		subtitleRu: "Ампутация коронковой пульпы, гемостаз, Pulpotec / Biodentine / MTA, герметичная реставрация",
 		diagnosisIcd10: "K04.0",
 		diagnosisNameRu: "Пульпит временного зуба обратимый (K04.0)",
-		serviceCode: "A16.07.030.001",
+		serviceCode: "A16.07.009",
 		serviceName: "Пульпотомия (ампутация коронковой пульпы временного зуба)",
 		materials: ["Pulpotec (Septodont)", "Biodentine (Septodont)", "MTA ProRoot (Dentsply)"],
 		defaultMaterial: "Pulpotec (Septodont)",

@@ -19,6 +19,7 @@ import {
 	organizations,
 	patients,
 	payments,
+	users,
 	visitDiaries,
 } from "../../db/schema.js";
 import { extractPortalPatient } from "./portalAuthStore.js";
@@ -216,30 +217,17 @@ async function buildTaxCertificatePayload(
 
 	if (!patient) return null;
 
-	let targetPatientIds = [patientId];
-	if (patient.familyGroupId) {
-		const familyMembers = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(
-				and(
-					eq(patients.familyGroupId, patient.familyGroupId),
-					eq(patients.organizationId, organizationId),
-				),
-			);
-		if (familyMembers.length > 0) {
-			targetPatientIds = familyMembers.map((m) => m.id);
-		}
-	}
+	// По приказу ФНС России № ЕА-7-11/824@ (форма КНД 1151156) расчет расходов справки
+	// строго привязан к конкретному пациенту, получившему медицинские услуги.
+	// Запрещено смешивать расходы других членов семьи под именем одного пациента.
+	const targetPatientIds = [patientId];
 
 	const dbPayments = await db
 		.select()
 		.from(payments)
 		.where(
 			and(
-				targetPatientIds.length === 1
-					? eq(payments.patientId, targetPatientIds[0]!)
-					: inArray(payments.patientId, targetPatientIds),
+				eq(payments.patientId, patientId),
 				eq(payments.organizationId, organizationId),
 			),
 		);
@@ -332,7 +320,20 @@ async function buildTaxCertificatePayload(
 	const effectivePayerInn = payerInn?.trim() || "";
 	const effectiveRelationship = (relationship as TaxDeductionRelationship) || "patient_self";
 
-	const signatory = "Главный бухгалтер клиники";
+	let signatory = org?.signatoryName?.trim() || "";
+	if (!signatory) {
+		const [adminOrDoctor] = await db
+			.select({ fullName: users.fullName })
+			.from(users)
+			.where(
+				and(
+					eq(users.organizationId, organizationId),
+					inArray(users.role, ["admin", "chief_doctor", "doctor"]),
+				),
+			)
+			.limit(1);
+		signatory = adminOrDoctor?.fullName?.trim() || org?.signatoryTitle?.trim() || "Руководитель клиники";
+	}
 
 	const certParams: TaxDeductionCertificateParams = {
 		certificateNumber,

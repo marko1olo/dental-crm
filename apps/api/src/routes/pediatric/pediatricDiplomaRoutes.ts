@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { generatedDocuments } from "../../db/schema.js";
+import { ensurePatientInOrganization } from "../odontogram/planHelpers.js";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -30,6 +31,10 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 
 		const { patientId } = request.params;
 		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
+
+		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+		}
 
 		try {
 			const dbDocs = await db.select().from(generatedDocuments)
@@ -72,6 +77,10 @@ export function registerPediatricDiplomaRoutes(app: FastifyInstance): void {
 
 		const { patientId } = request.params;
 		if (!UUID_SHAPE.test(patientId)) return reply.code(400).send({ error: "InvalidPatientId" });
+
+		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике" });
+		}
 
 		const parsed = issueDiplomaSchema.safeParse(request.body ?? {});
 		if (!parsed.success) return reply.code(400).send({ error: "ValidationFailed", issues: parsed.error.issues });

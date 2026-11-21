@@ -1,3 +1,4 @@
+import { formatKopecksToRub, generateUuidV7, rublesToKopecks } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../../AppHelpers";
 import { showToast } from "../../../GlobalToast";
 import type { DentalLabOrderData } from "../../labMath";
@@ -15,28 +16,40 @@ export async function executeLabPayFromCashbox(
 	fetchOrders: () => Promise<void>,
 ): Promise<void> {
 	if (!order.id) return;
-	// Финансовая честность (Мандаты 8e, 8n): касса списывает себестоимость работы техника, а не розничный чек пациента!
+	// Финансовая честность (Мандаты 8e, 8n, 8bm): расчеты строго в копейках, без клиентского float-деления
 	const materialKey = order.materialId || order.material || order.constructionType;
-	const baseCostFromMeta = materialKey ? getMaterialMeta(materialKey)?.baseLabCostKopecks / 100 : undefined;
-	const costRub =
-		order.labCostRub ??
-		order.costRub ??
-		(order.costKopecks ? order.costKopecks / 100 : undefined) ??
-		(order.labCostKopecks ? order.labCostKopecks / 100 : undefined) ??
-		baseCostFromMeta;
-	const paymentAmountRub = costRub !== undefined && costRub > 0 ? costRub : 0;
+	const metaKopecks = materialKey ? getMaterialMeta(materialKey)?.baseLabCostKopecks : undefined;
 
-	if (paymentAmountRub <= 0) {
+	let costKopecks: number | undefined = undefined;
+	if (typeof order.labCostKopecks === "number" && order.labCostKopecks > 0) {
+		costKopecks = order.labCostKopecks;
+	} else if (typeof order.costKopecks === "number" && order.costKopecks > 0) {
+		costKopecks = order.costKopecks;
+	} else if (typeof order.labCostRub === "number" && order.labCostRub > 0) {
+		costKopecks = Number(rublesToKopecks(order.labCostRub));
+	} else if (typeof order.costRub === "number" && order.costRub > 0) {
+		costKopecks = Number(rublesToKopecks(order.costRub));
+	} else if (typeof metaKopecks === "number" && metaKopecks > 0) {
+		costKopecks = metaKopecks;
+	}
+
+	const paymentAmountKopecks = costKopecks !== undefined && costKopecks > 0 ? costKopecks : 0;
+
+	if (paymentAmountKopecks <= 0) {
 		const errMsg = "Себестоимость наряда ЗТЛ не определена или равна 0 ₽. Проверьте конструкцию перед оплатой технику.";
 		showToast(errMsg, "error");
 		throw new Error(errMsg);
 	}
 
-	const res = await fetch(`/api/lab-orders/${order.id}/pay`, {
+	const res = await fetch(`/api/lab/orders/${order.id}/pay`, {
 		method: "POST",
-		headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+		headers: {
+			"Content-Type": "application/json",
+			"Idempotency-Key": generateUuidV7(),
+			...denteAdminSecretRequestHeaders(),
+		},
 		body: JSON.stringify({
-			amountRub: paymentAmountRub,
+			amountKopecks: paymentAmountKopecks,
 			notes: `Оплата себестоимости ЗТЛ (зуб ${order.toothFdi || "—"})`,
 		}),
 	});
@@ -46,6 +59,7 @@ export async function executeLabPayFromCashbox(
 		showToast(errMsg, "error");
 		throw new Error(errMsg);
 	}
-	showToast(`Наряд ЗТЛ успешно оплачен из кассы (${paymentAmountRub} ₽)`, "success");
+	const formattedCost = formatKopecksToRub(BigInt(paymentAmountKopecks));
+	showToast(`Наряд ЗТЛ успешно оплачен из кассы (${formattedCost})`, "success");
 	void fetchOrders();
 }

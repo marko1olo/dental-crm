@@ -123,7 +123,7 @@
 | Назначение | Frontend компонент | Backend маршрут |
 | :--- | :--- | :--- |
 | **АТС Webhook & Events** | [`telephony.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony.ts) | `POST /api/telephony/:orgId/webhook` |
-| **Поиск пациента по номеру E.164 (CTI)** | [`useServerCallerLookup.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/incomingCallDataModules/useServerCallerLookup.ts) | `GET /api/v1/telephony/lookup` / `GET /api/telephony/lookup-caller` |
+| **Поиск пациента по номеру E.164 (CTI)** | [`useServerCallerLookup.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/incomingCallDataModules/useServerCallerLookup.ts) | `GET /api/v1/telephony/lookup` / `GET /api/telephony/lookup` |
 | **Top Ambient Header Capsule** | [`TelephonyHeaderCapsule.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/headerCapsule/TelephonyHeaderCapsule.tsx) | `useTelephonyStore.ts` |
 | **Студия телефонии и журнал звонков** | [`TelephonyStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyStudioModal.tsx) | `DirectTelephonyLauncher.tsx` (`#telephony`) |
 | **Ambient Call Popup (Регистратура)** | [`IncomingCallPopup.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/IncomingCallPopup.tsx) | `ws://localhost:4100/api/ws/telephony` |
@@ -152,7 +152,7 @@
 * **DEF-TEL-02 [ЗАКРЫТО]**: Ликвидирован параллельный/дублирующий WebSocket в `WorkspaceTopBar.tsx:105-131`. Единственным SSOT является `useTelephonyRealtime`, сохраняющий номер клиники (`virtualNumber`) и маркетинговые UTM-метки.
 * **DEF-TEL-03 [ЗАКРЫТО]**: В `telephonyCallLifecycleHandler.ts:168` устранен пустой `catch {}`. Добавлено логирование с уровнем предупреждения: `request.log.warn({ err }, "[Telephony] Lead creation error")`.
 * **DEF-TEL-04 [ЗАКРЫТО]**: В `StatusBlockTelephony.tsx` устранена тупиковая кнопка «Вызовы» (Zero Dead-Ends, Мандат 8n), клик открывает студию телефонии и софтфон через `#telephony`.
-* **DEF-TEL-05 [ЗАКРЫТО]**: В `useServerCallerLookup.ts` ликвидирован избыточный сетевой CTI фолбек, запросы направляются напрямую в канонический эндпоинт `/api/telephony/lookup-caller`.
+* **DEF-TEL-05 [ЗАКРЫТО]**: В `useServerCallerLookup.ts` ликвидирован избыточный сетевой CTI фолбек, запросы направляются напрямую в канонический эндпоинт `/api/telephony/lookup` (с сохранением алиаса `/lookup-caller`).
 * **DEF-TEL-06 [ЗАКРЫТО]**: 4-State Visual Proofs сняты на живом сервере и лично осмотрены:
   * ☀️ **PC Light (1440x900)**: [`01_telephony_incoming_call_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/01_telephony_incoming_call_pc_light_1440x900.png) (168 КБ)
   * 🌙 **PC Dark (1440x900)**: [`02_telephony_incoming_call_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/02_telephony_incoming_call_pc_dark_1440x900.png) (140 КБ)
@@ -171,6 +171,10 @@
 * **DEF-TEL-16 [ЗАКРЫТО]**: В `phoneNormalization.ts` функция `isValidRussianPhone` доработана для полной поддержки географических городских кодов РФ (ABC зоны 3xx, 4xx, 8xx: Москва 495/499, СПб 812, Екатеринбург 343, Казань 843 и др.) наряду с мобильными кодами DEF (9xx). Покрыто тестами в `strings.test.ts`.
 * **DEF-TEL-17 [ЗАКРЫТО]**: В `initiateOutboundCall.ts` и `telephonyOutboundHandler.ts` снята блокировка набора коротких внутренних номеров персонала: разрешен исходящий вызов на 3-значные SIP Extensions (100–999).
 * **DEF-TEL-18 [ЗАКРЫТО]**: В `telephonyMissedCallsHandler.ts:30` ликвидирован non-null assertion `!` при составлении фильтра статусов звонков (Мандат 8be).
+* **DEF-TEL-19 [ЗАКРЫТО]**: В `telephonyEngine.ts` ликвидирована мульти-тенантная дыра: `resolveWebhookOrgId` проверяет существование `routeOrgId` в таблице `organizations`; при поиске клиники по номеру телефона устранен слепой `.limit(1)`, внедрена проверка коллизии нескольких организаций (при совпадении телефонов филиалов возвращается `null` для предотвращения подмены тенанта).
+* **DEF-TEL-20 [ЗАКРЫТО]**: В `callerLookupService.ts` расчет остатка активного плана лечения переведен строго на копеечные поля `treatmentPlanItemsNew.priceKopecks` и `discountKopecks` с форматированием через `formatKopecksToRub` из `@dental/shared/src/money.ts` (Мандат 8bm); устранен слепой `.limit(1)` в поиске пациентов по номеру телефона, возвращается список семейных карточек `familyMembers`.
+* **DEF-TEL-21 [ЗАКРЫТО]**: В `TelephonyStudioModal.tsx`, `initiateOutboundCall.ts` и `captureLeadFromIncomingCall.ts` добавлен заголовок `Idempotency-Key` (UUID) для защиты от повторных списаний/мутаций при сетевых сбоях (Мандат 8bo).
+* **DEF-TEL-22 [ЗАКРЫТО]**: Ликвидированы «двойные двери» в маршрутизации: `apps/api/src/routes/telephony.ts` преобразован в чистый barrel re-export канонического `apps/api/src/routes/telephony/index.ts`, зарегистрированы симметричные роуты `/outbound` и `/outbound-call`. В `missedCallService.ts` вызовы `console.warn` заменены на структурированный логгер fastify/pino.
 
 
 

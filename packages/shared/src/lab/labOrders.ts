@@ -811,6 +811,8 @@ export const prostheticWarrantyPassportSchema = z.object({
 	sanpinDisinfectionMark: z.string().default("СанПиН 3.3686-21: Дезинфекция оттисков и протезов выполнена"),
 	isDraft: z.boolean().optional(),
 	draftNotice: z.string().optional(),
+	certificateNumber: z.string().optional(),
+	integritySha256: z.string().optional(),
 });
 export type ProstheticWarrantyPassport = z.infer<typeof prostheticWarrantyPassportSchema>;
 
@@ -831,6 +833,8 @@ export function generateProstheticWarrantyPassport(params: {
 	fixationDate?: string | undefined;
 	isDraft?: boolean | undefined;
 	draftNotice?: string | undefined;
+	certificateNumber?: string | undefined;
+	integritySha256?: string | undefined;
 }): ProstheticWarrantyPassport {
 	const fixation = params.fixationDate ? new Date(params.fixationDate) : new Date();
 	const years = params.warrantyYears ?? 2;
@@ -861,6 +865,8 @@ export function generateProstheticWarrantyPassport(params: {
 		sanpinDisinfectionMark: "СанПиН 3.3686-21: Оттиски, прикусные блоки и конструкции дезинфицированы",
 		...(params.isDraft !== undefined ? { isDraft: params.isDraft } : {}),
 		...(params.draftNotice ? { draftNotice: params.draftNotice } : {}),
+		...(params.certificateNumber !== undefined ? { certificateNumber: params.certificateNumber } : {}),
+		...(params.integritySha256 !== undefined ? { integritySha256: params.integritySha256 } : {}),
 	};
 }
 

@@ -41,6 +41,7 @@ import {
 	sanitizeConsentFieldValue,
 	STATUTORY_CONSENT_KEY_LABELS,
 } from "../components/consents/consentSummaryHelper.js";
+import { detectRequiredVisitConsents } from "../components/consents/consentSsotEngine.js";
 
 test("Informed Consents Library: all 9 statutory Russian dental consent templates integrity (323-FZ & 152-FZ & 1051n)", () => {
 	const templates = getAllConsentTemplates();
@@ -538,5 +539,22 @@ test("Informed Consents Clean Print & Sanitation: eliminates systemic garbage, n
 	assert.ok(STATUTORY_CONSENT_KEY_LABELS.orthopedics);
 	assert.ok(STATUTORY_CONSENT_KEY_LABELS.orthodontics);
 	assert.ok(STATUTORY_CONSENT_KEY_LABELS.hygiene);
+});
+
+test("Informed Consents SSOT Engine: detectRequiredVisitConsents emits semantic CONSENT_PRIMARY_INSPECTION flag (Mandate 8x/8ap)", () => {
+	const flags = detectRequiredVisitConsents({
+		textContext: "Лечение кариеса 1.6",
+		hasInspectionSigned: false,
+	});
+	assert.equal(flags.CONSENT_PRIMARY_INSPECTION, true, "Must include semantic CONSENT_PRIMARY_INSPECTION flag");
+	assert.equal(flags.CONSENT_INSPECTION_1051N, true, "Must preserve backward compatibility alias");
+	assert.equal(flags.CONSENT_THERAPY, true);
+
+	const flagsSigned = detectRequiredVisitConsents({
+		textContext: "Лечение кариеса 1.6",
+		hasInspectionSigned: true,
+	});
+	assert.equal(flagsSigned.CONSENT_PRIMARY_INSPECTION, undefined);
+	assert.equal(flagsSigned.CONSENT_INSPECTION_1051N, undefined);
 });
 

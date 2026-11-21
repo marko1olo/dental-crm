@@ -340,7 +340,7 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 		const statutoryLimitKopecks = rublesToKopecks(statutoryLimitRub);
 		const code01EligibleKopecks = Math.min(code1Kopecks, statutoryLimitKopecks);
 		const totalEligibleKopecks = code01EligibleKopecks + code2Kopecks;
-		const estimatedRefundKopecks = Math.round((totalEligibleKopecks * 13) / 100);
+		const estimatedRefundKopecks = Number((BigInt(totalEligibleKopecks) * 13n) / 100n);
 		const estimated13PercentRefundRub = kopecksToRubles(estimatedRefundKopecks);
 
 		const signatoryFullName = signatory?.fullName

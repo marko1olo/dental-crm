@@ -4,7 +4,6 @@ import { visitDiaries } from "../../../db/schema.js";
 import { Icd10ClinicalValidator } from "../Icd10ClinicalValidator.js";
 import { buildEmkDiagnosisText, computeDiaryHash } from "./diaryHashCalculator.js";
 import { dispatchDiarySigningSideEffects, type DiaryStockDeduction } from "./diarySideEffectsAsyncDispatcher.js";
-import { runDiaryRevisionCeremony } from "./diaryRevisionManager.js";
 import {
 	DiarySigningError, formatDoctorSpecialtyLabel, redactLegacyPinSignature,
 	resolveSignatureForStorage, SIMPLE_PIN_EP_MARK, type DiaryDbTransaction,
@@ -36,9 +35,16 @@ export async function runDiarySigningCeremony(
 	const effectiveIcd10 = diary.diagnosisIcd10?.trim() || validation.normalizedCode;
 
 	const hash = computeDiaryHash(
-		diary.visitId, diary.patientId ?? "", diary.anamnesis, diary.statusLocalis,
-		diary.treatmentDescription, effectiveIcd10, diary.diagnosisTooth,
-		diary.complications, diary.comorbidities, diary.instrumentTrayBarcode,
+		diary.visitId,
+		diary.patientId ?? "",
+		diary.complaint,
+		diary.anamnesis,
+		diary.statusLocalis,
+		diary.treatmentDescription,
+		effectiveIcd10,
+		diary.diagnosisTooth,
+		diary.complications,
+		diary.comorbidities,
 	);
 	const lockedAt = new Date();
 	const sig = params.pkcs7Signature;
@@ -60,7 +66,7 @@ export async function runDiarySigningCeremony(
 
 	if (diary.visitId) {
 		await syncVisitEmkFromDiarySoap(tx, {
-			visitId: diary.visitId, organizationId, anamnesis: diary.anamnesis, statusLocalis: diary.statusLocalis,
+			visitId: diary.visitId, organizationId, complaint: diary.complaint, anamnesis: diary.anamnesis, statusLocalis: diary.statusLocalis,
 			diagnosisIcd10: effectiveIcd10, diagnosisTooth: diary.diagnosisTooth, treatmentDescription: diary.treatmentDescription,
 		});
 		await markVisitSigned(tx, { visitId: diary.visitId, organizationId, lockedAt });
@@ -80,7 +86,6 @@ export class DiarySigningCeremonyService {
 	static buildEmkDiagnosis = buildEmkDiagnosisText;
 	static syncVisitEmk = syncVisitEmkFromDiarySoap;
 	static runCeremony = runDiarySigningCeremony;
-	static runRevision = runDiaryRevisionCeremony;
 	static validateClinicalProtocol = Icd10ClinicalValidator.validate;
 	static isDentalIcd10 = Icd10ClinicalValidator.isDentalIcd10;
 	static isToothSpecificDiagnosis = Icd10ClinicalValidator.isToothSpecificDiagnosis;
@@ -89,8 +94,5 @@ export class DiarySigningCeremonyService {
 
 	static async signDiary(params: Parameters<typeof runDiarySigningCeremony>[1]): Promise<DiarySigningResult> {
 		return await db.transaction((tx) => runDiarySigningCeremony(tx, params));
-	}
-	static async reviseDiary(params: Parameters<typeof runDiaryRevisionCeremony>[1]) {
-		return await db.transaction((tx) => runDiaryRevisionCeremony(tx, params));
 	}
 }

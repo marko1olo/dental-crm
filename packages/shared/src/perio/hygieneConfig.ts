@@ -8,8 +8,10 @@
 export const HYGIENE_INDEX_TEETH_NUMBERS = [16, 11, 26, 36, 31, 46] as const;
 export type HygieneIndexToothNumber = (typeof HYGIENE_INDEX_TEETH_NUMBERS)[number];
 
-export const FEDOROV_VOLODKINA_TEETH_NUMBERS = [43, 42, 41, 31, 32, 33] as const;
+export const FEDOROV_VOLODKINA_TEETH_NUMBERS = [83, 82, 81, 71, 72, 73] as const;
 export type FedorovVolodkinaToothNumber = (typeof FEDOROV_VOLODKINA_TEETH_NUMBERS)[number];
+
+export const FEDOROV_VOLODKINA_PERMANENT_FALLBACK_TEETH_NUMBERS = [43, 42, 41, 31, 32, 33] as const;
 
 export interface HygieneIndexToothDefinition {
 	readonly toothNumber: HygieneIndexToothNumber;

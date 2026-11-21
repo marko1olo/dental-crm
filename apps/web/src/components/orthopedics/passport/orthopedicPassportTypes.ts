@@ -29,6 +29,7 @@ export interface OrthopedicPassportData {
 	readonly batchLotNumber?: string | undefined;
 	readonly standardsCompliance?: string | undefined;
 	readonly careNotes?: readonly string[] | undefined;
+	readonly integritySha256?: string | undefined;
 	readonly canonicalPassport?: ProstheticWarrantyPassport | undefined;
 }
 
@@ -39,7 +40,7 @@ export function normalizeToOrthopedicPassportData(
 		const p = input as ProstheticWarrantyPassport;
 		return {
 			orderNumber: p.orderNumber,
-			passportNumber: `ГП-${p.orderNumber}`,
+			passportNumber: p.certificateNumber ? `ГП-${p.certificateNumber}` : `ГП-${p.orderNumber}`,
 			patientName: p.patientFullName,
 			doctorName: p.doctorFullName,
 			clinicName: p.clinicName || "Стоматологическая клиника «DENTE»",
@@ -56,6 +57,7 @@ export function normalizeToOrthopedicPassportData(
 			batchLotNumber: p.batchCode,
 			standardsCompliance: `${p.gostStandard} · ${p.sanpinDisinfectionMark}`,
 			issueDate: p.fixationDate,
+			integritySha256: p.integritySha256,
 			canonicalPassport: p,
 		};
 	}

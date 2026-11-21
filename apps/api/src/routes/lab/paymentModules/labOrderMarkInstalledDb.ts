@@ -1,6 +1,7 @@
+import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../../db/rls.js";
-import { labOrderEvents, labOrders } from "../../../db/schema.js";
+import { labItems, labOrderEvents, labOrders, warrantyCertificates } from "../../../db/schema.js";
 
 export interface LabOrderMarkInstalledInput {
 	readonly clinicalNotes?: string | undefined;
@@ -55,6 +56,98 @@ export async function executeLabOrderMarkInstalled(
 			actorName: "Врач-ортопед",
 			notes: "Ортопедическая конструкция успешно установлена и сдана пациенту. Наряд намертво заблокирован от редактирования.",
 		});
+
+		// Сшивание контура гарантийных паспортов (СтАР / Закон РФ № 2300-1)
+		if (order.patientId) {
+			const items = await tx
+				.select()
+				.from(labItems)
+				.where(and(eq(labItems.labOrderId, order.id), eq(labItems.organizationId, orgId)));
+
+			const baseDate = order.completedAt ?? now;
+			const baseYear = baseDate ? new Date(baseDate).getFullYear() : new Date().getFullYear();
+			const formattedOrderNum = order.orderNumber && (order.orderNumber.startsWith("ЗТЛ-") || order.orderNumber.startsWith("ЛО-"))
+				? order.orderNumber
+				: (order.orderNumber ? `ЛО-${baseYear}-${order.orderNumber}` : `ЗТЛ-${baseYear}-${order.id.slice(0, 6).toUpperCase()}`);
+			const batchCode = `LOT-${baseYear}-${order.id.slice(0, 8).toUpperCase()}`;
+
+			const restorationType = items[0]?.restorationType || "Анатомическая коронка / мостовидный протез";
+			const frameworkMaterial = order.material || "Конструкционный стоматологический материал";
+			const shade = order.colorVita || "По прейскуранту";
+
+			const itemsPayload = items.length > 0
+				? items.map((it) => ({
+						tooth: it.toothFdi ? String(it.toothFdi) : (order.toothFdi || "—"),
+						material: it.material || frameworkMaterial,
+						color: it.shadeFinal || shade,
+						shadeStump: it.shadeStump || null,
+						lot: batchCode,
+						restorationType: it.restorationType || restorationType,
+						laboratoryName: order.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
+						cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
+					}))
+				: [
+						{
+							tooth: order.toothFdi || "—",
+							material: frameworkMaterial,
+							color: shade,
+							shadeStump: null,
+							lot: batchCode,
+							restorationType,
+							laboratoryName: order.laboratoryName || "Цифровая зуботехническая лаборатория CAD/CAM",
+							cementationProtocol: "Адгезивный протокол двойного отверждения (композитный цемент)",
+						},
+					];
+
+			const expirationDate = new Date(now.getTime());
+			expirationDate.setFullYear(expirationDate.getFullYear() + 2);
+			const nextRecallDate = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+
+			const hashPayload = JSON.stringify({
+				organizationId: orgId,
+				patientId: order.patientId,
+				certificateNumber: formattedOrderNum,
+				items: itemsPayload,
+				issuedAt: now.toISOString().slice(0, 10),
+				expiresAt: expirationDate.toISOString().slice(0, 10),
+				batchCode,
+			});
+			const integritySha256 = createHash("sha256").update(hashPayload).digest("hex");
+
+			await tx
+				.insert(warrantyCertificates)
+				.values({
+					organizationId: orgId,
+					patientId: order.patientId,
+					visitId: order.appointmentId || null,
+					certificateNumber: formattedOrderNum,
+					status: "active",
+					itemsJson: itemsPayload,
+					warrantyMonths: 24,
+					serviceLifeMonths: 60,
+					issuedAt: now,
+					expiresAt: expirationDate,
+					nextRecallDate,
+					integritySha256,
+					notes: `Гарантийный паспорт ортопедической конструкции ${formattedOrderNum}. Наряд ЗТЛ: ${order.id}. Зафиксирован в полости рта.`,
+					createdAt: now,
+					updatedAt: now,
+				})
+				.onConflictDoUpdate({
+					target: warrantyCertificates.certificateNumber,
+					set: {
+						status: "active",
+						itemsJson: itemsPayload,
+						warrantyMonths: 24,
+						serviceLifeMonths: 60,
+						expiresAt: expirationDate,
+						nextRecallDate,
+						integritySha256,
+						notes: `Гарантийный паспорт ортопедической конструкции ${formattedOrderNum}. Наряд ЗТЛ: ${order.id}. Зафиксирован в полости рта.`,
+						updatedAt: now,
+					},
+				});
+		}
 
 		if (!updated) {
 			throw new Error("Не удалось зафиксировать установку ортопедической конструкции");
