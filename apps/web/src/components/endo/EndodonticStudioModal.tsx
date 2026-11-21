@@ -79,8 +79,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		if (!props.isOpen || !props.patientId || props.initialCanals?.length) return;
 		let cancelled = false;
 		setIsLoadingFromDb(true);
-		const baseUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("null")) ? window.location.origin : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
-		fetch(`${baseUrl}/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, { headers: getDenteAuthHeaders() })
+		fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, { headers: getDenteAuthHeaders() })
 			.then((res) => (res.ok ? res.json() : null))
 			.then((data) => {
 				if (!cancelled && data?.clinicalData?.canals?.length) {
@@ -359,10 +358,13 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		} catch { /* soft */ }
 
 		if (materialsEstimate.materials.length > 0) {
-			const baseUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("null")) ? window.location.origin : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
-			fetch(`${baseUrl}/api/inventory/deduct`, {
+			const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+			fetch("/api/inventory/deduct", {
 				method: "POST",
-				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+				headers: getDenteAuthHeaders({
+					"Content-Type": "application/json",
+					...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+				}),
 				body: JSON.stringify({
 					materials: materialsEstimate.materials.map((m) => ({
 						inventoryItemId: m.itemId,
@@ -395,6 +397,33 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			} catch (err) {
 				console.error("[EndoStudioModal] onSaveCanals handler failed:", err);
 				showToast("Предупреждение: локальный обработчик сохранения завершился с ошибкой", "warning", 3000);
+			}
+		} else if (props.patientId) {
+			try {
+				const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+				const res = await fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
+					method: "POST",
+					headers: getDenteAuthHeaders({
+						"Content-Type": "application/json",
+						...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+					}),
+					body: JSON.stringify({
+						toothNumber: activeTooth,
+						canals: sanitized,
+						irrigation: clinicalData.irrigation,
+						rotarySystem: clinicalData.rotarySystem,
+						radiologyControl: clinicalData.radiologyControl,
+						apexLocator: clinicalData.apexLocator,
+						stageStamp: clinicalData.stageStamp,
+						notes: clinicalData.notes,
+						visitId: props.visitId,
+					}),
+				});
+				if (!res.ok) {
+					console.warn("[EndoStudioModal] Fallback сохранение каналов завершилось со статусом:", res.status);
+				}
+			} catch (err) {
+				console.error("[EndoStudioModal] Ошибка fallback сохранения каналов в API:", err);
 			}
 		}
 		if (props.onInsertToProtocol) props.onInsertToProtocol(generatedProtocolText, sanitized);

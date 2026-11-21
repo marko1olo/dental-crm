@@ -325,6 +325,18 @@ export function registerEndoRoutes(app: FastifyInstance): void {
 			return reply.code(400).send({ error: "InvalidParameters", message: "Некорректный ID пациента или номер зуба" });
 		}
 
+		// Валидация и логирование Idempotency-Key (Мандаты 8bo, 8zp)
+		const rawIdempotencyKey = (request.headers["idempotency-key"] || request.headers["x-idempotency-key"]) as string | undefined;
+		const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : null;
+		if (idempotencyKey) {
+			if (UUID_SHAPE.test(idempotencyKey)) {
+				reply.header("Idempotency-Key", idempotencyKey);
+				request.log?.info?.({ idempotencyKey, patientId, toothNumber }, "Received endo upsert with valid Idempotency-Key");
+			} else {
+				request.log?.warn?.({ idempotencyKey, patientId, toothNumber }, "Received endo upsert with non-standard Idempotency-Key format");
+			}
+		}
+
 		let patientExists: { id: string } | null = null;
 		let dbOffline = false;
 		try {

@@ -165,7 +165,7 @@ export interface EndoCaseEvaluationResult {
 	readonly clinicalRecommendationsRu: readonly string[];
 }
 
-// ─── СМЕТА 804н И СПИСАНИЕ МАТЕРИАЛОВ (МАНДАТЫ 8b, 8e, 8n) ───────────────────
+// ─── ПРЕЙСКУРАНТ УСЛУГ И СПИСАНИЕ МАТЕРИАЛОВ (МАНДАТЫ 8b, 8e, 8n, 8x) ───────────────────
 
 export interface EndoMaterialConsumableEstimate {
 	readonly itemId: string;
@@ -186,7 +186,8 @@ export interface EndoMaterialConsumableEstimate {
 	readonly notes?: string | undefined;
 }
 
-export interface Endo804nServiceEstimate {
+/** Позиция услуги прейскуранта для эндодонтического протокола */
+export interface EndoPriceServiceEstimate {
 	readonly code804n: string;
 	readonly title: string;
 	readonly category: string;
@@ -200,6 +201,9 @@ export interface Endo804nServiceEstimate {
 	readonly isMandatory: boolean;
 }
 
+/** @deprecated Use EndoPriceServiceEstimate instead (Мандат 8x / 8ap: искоренение бюрократических шифров '804н') */
+export type Endo804nServiceEstimate = EndoPriceServiceEstimate;
+
 export interface EndoTreatmentBillingEstimateResult {
 	readonly toothNumber: number;
 	readonly canalCount: number;
@@ -207,7 +211,8 @@ export interface EndoTreatmentBillingEstimateResult {
 	readonly obturationTechnique: string;
 	readonly sealer: string;
 	readonly isRetreatment: boolean;
-	readonly services804n: readonly Endo804nServiceEstimate[];
+	readonly services804n: readonly EndoPriceServiceEstimate[];
+	readonly services?: readonly EndoPriceServiceEstimate[] | undefined;
 	readonly materials: readonly EndoMaterialConsumableEstimate[];
 	readonly totalServicesPriceRub: number;
 	readonly totalServicesPriceKopecks: number;

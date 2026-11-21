@@ -68,7 +68,7 @@
 
 ## 🔬 3. Эндодонтический контур: Журнал каналов и апекслокатор
 
-Эндодонтический модуль (`EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`) реализует регламент эндодонтического протокола СтАР и ESE (European Society of Endodontology).
+Эндодонтический модуль (`EndodonticStudioModal.tsx`, `ChairsideEndoQuickBar.tsx`) реализует регламент эндодонтического протокола СтАР и ESE (European Society of Endodontology).
 
 ### 📋 Параметры корневых каналов:
 1. **Идентификация каналов:** MB1, MB2, DB, P (верхние моляры), MB, ML, D, DL (нижние моляры), B, L (премоляры), Main (резцы/клыки).

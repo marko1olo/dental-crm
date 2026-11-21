@@ -68,7 +68,7 @@ describe("Chairside Endodontics Outpatient Audit — Part 1 (Mandates 8e, 8k)", 
 		});
 
 		assert.ok(protocolText.includes("Зуб FDI: #46"), "Must identify tooth");
-		assert.ok(protocolText.includes("ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ"));
+		assert.ok(/Таблица уч[её]та рабочей длины/i.test(protocolText));
 		assert.ok(protocolText.includes("MB") && protocolText.includes("ML") && protocolText.includes("D"));
 		assert.ok(protocolText.includes("Рентгенологический контроль"));
 		assert.ok(protocolText.includes("Медикаментозная обработка"));

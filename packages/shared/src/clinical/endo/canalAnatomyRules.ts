@@ -543,8 +543,8 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 		];
 	}
 
-	// Верхние постоянные моляры (16-18, 26-28) -> MB1 (21.0мм), MB2 (20.0мм), DB (20.0мм), P (22.0мм)
-	if (isUpper && (pos === 6 || pos === 7 || pos === 8)) {
+	// Верхние первые постоянные моляры (16, 26) -> MB1 (21.0мм), MB2 (20.0мм), DB (20.0мм), P (22.0мм)
+	if (isUpper && pos === 6) {
 		return [
 			{
 				id: `canal-${toothNumber}-mb1`,
@@ -562,6 +562,39 @@ export function getDefaultCanalsForTooth(toothNumber: number): EndoCanalData[] {
 				workingLengthMm: 20.0,
 				masterApicalFile: "ISO 20 (#20 жёлтый)",
 				taper: ".04 (Конусность 4%)",
+				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+			},
+			{
+				id: `canal-${toothNumber}-db`,
+				canalName: "DB",
+				referencePoint: "Дистально-щечный бугор (DB cusp)",
+				workingLengthMm: 20.0,
+				masterApicalFile: "ISO 25 (#25 красный)",
+				taper: ".06 (Конусность 6%)",
+				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+			},
+			{
+				id: `canal-${toothNumber}-p`,
+				canalName: "P",
+				referencePoint: "Нёбный бугор (P cusp)",
+				workingLengthMm: 22.0,
+				masterApicalFile: "ISO 30 (#30 синий)",
+				taper: ".06 (Конусность 6%)",
+				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+			},
+		];
+	}
+
+	// Верхние вторые и третьи постоянные моляры (17, 18, 27, 28) -> 3 канала по умолчанию: MB (21.0мм), DB (20.0мм), P (22.0мм)
+	if (isUpper && (pos === 7 || pos === 8)) {
+		return [
+			{
+				id: `canal-${toothNumber}-mb`,
+				canalName: "MB",
+				referencePoint: "Щечный бугор (MB cusp)",
+				workingLengthMm: 21.0,
+				masterApicalFile: "ISO 25 (#25 красный)",
+				taper: ".06 (Конусность 6%)",
 				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
 			},
 			{

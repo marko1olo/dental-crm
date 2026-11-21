@@ -7,15 +7,15 @@
  * 1-й этап (предыдущий визит):
  *   - Экстирпация пульпы / девитализация, мехобработка ProTaper, промывка NaOCl 3%,
  *     временное пломбирование гидроксидом кальция (Calcept / Metapex), временная повязка (Септопак / Дентин-паста).
- *   - Услуга Минздрава 804н: A16.07.030.001 (Инструментальная и медикаментозная обработка корневого канала).
+ *   - Услуга прейскуранта: A16.07.030.001 (Инструментальная и медикаментозная обработка корневого канала).
  *
  * 2-й этап (текущий визит, 7-14 дней спустя):
- *   - 1-клик трансформация дневника Формы 043/у:
+ *   - 1-клик трансформация протокола дневника приёма:
  *     1. Анамнез заболевания и диагноз (K04.0 / K04.5) переносятся автоматически.
  *     2. Жалобы: «Жалоб на момент осмотра не предъявляет. Временная повязка сохранена, герметична.»
  *     3. Осмотр: «Временная повязка сохранена, герметична. Перкуссия безболезненна. Пальпация безболезненна. Зондирование безболезненно.»
  *     4. Протокол лечения: «Удаление временной повязки, ревизия корневых каналов, ирригация EDTA 17% + NaOCl 3%, ультразвуковая активация, высушивание бумажными штифтами. Постоянная обтурация каналов методом латеральной компакции гуттаперчей с силером AH Plus. Рентген-контроль обтурации. Постоянная реставрация коронки зуба композитом светового отверждения.»
- *   - Автоматическая замена услуг в кассовом счёте / смете 804н:
+ *   - Автоматическая замена услуг в кассовом счёте / смете прейскуранта:
  *     Удаление A16.07.030.001 -> Добавление A16.07.008.002 (Обтурация гуттаперчей) + A16.07.002.001 (Световая пломба).
  *     Цены подтягиваются из прейскуранта клиники (serviceCatalog) с мягкими базовыми фолбеками (Мандат 8ah).
  *
@@ -61,13 +61,16 @@ export interface StoredToothSnapshot {
 	readonly [key: string]: unknown;
 }
 
-/** Коды Номенклатуры медицинских услуг Минздрава РФ (Приказ 804н) */
-export const ORDER_804N_ENDO_CODES = {
+/** Коды услуг прейскуранта для эндодонтических этапов */
+export const ENDO_SERVICE_CODES = {
 	STAGE1_INSTRUMENTATION_1CANAL: "A16.07.030.001",
 	STAGE1_INSTRUMENTATION_BASE: "A16.07.030",
 	STAGE2_OBTURATION_GUTTAPERCHA: "A16.07.008.002",
 	STAGE2_RESTORATION_COMPOSITE: "A16.07.002.001",
 } as const;
+
+/** @deprecated Use ENDO_SERVICE_CODES instead (Мандат 8x / 8ap: искоренение бюрократических шифров '804н') */
+export const ORDER_804N_ENDO_CODES = ENDO_SERVICE_CODES;
 
 export const DEFAULT_STAGE1_SERVICE_TITLE =
 	"Инструментальная и медикаментозная обработка корневого канала";
@@ -135,13 +138,13 @@ export interface MultiStageEndoTransformResult {
 
 /** Резолвер цены услуги из прейскуранта клиники с мягким фолбеком */
 export function resolveServicePriceFromCatalog(
-	serviceCatalog: readonly ClinicServiceItem[] | undefined,
+	serviceCatalog: readonly ClinicServiceItem[] | readonly unknown[] | undefined,
 	code804n: string,
 	fallbackPriceRub: number,
 	defaultTitle: string,
 ): { priceRub: number; title: string; serviceId?: string } {
 	if (Array.isArray(serviceCatalog) && serviceCatalog.length > 0) {
-		const matched = serviceCatalog.find((item) => {
+		const matched = (serviceCatalog as readonly ClinicServiceItem[]).find((item) => {
 			if (!item) return false;
 			const c = String(item.code || item.code804n || "").trim();
 			if (c === code804n || c.startsWith(code804n)) return true;
@@ -298,8 +301,10 @@ export function buildPatientPreviousVisitsEndoIndex(params: {
 
 	// 2. Сканируем сохраненные зубы из одонтограммы (storedTeeth / toothStates)
 	const teethList = params.storedTeeth ?? [];
-	for (const t of teethList) {
-		const toothNum = Number(t?.toothNumber);
+	for (const raw of teethList) {
+		if (!raw || typeof raw !== "object") continue;
+		const t = raw as StoredToothSnapshot;
+		const toothNum = Number(t.toothNumber);
 		if (!toothNum || Number.isNaN(toothNum)) continue;
 
 		const s = String(t.state || "").toLowerCase();

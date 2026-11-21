@@ -11,6 +11,7 @@ import React from "react";
 import { EndodonticStudioModal } from "../../../endo/EndodonticStudioModal";
 import { RadiologyConsultationSplit } from "../../../radiology/RadiologyConsultationSplit";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
+import { getDenteAuthHeaders } from "../../../../lib/denteRequestHeaders";
 import type { VisitModalPatientEntity, VisitModalDashboardEntity } from "./visitViewModalsTypes";
 import type { VisitDashboardEntity } from "../VisitViewProps";
 import type { Dashboard } from "@dental/shared";
@@ -67,6 +68,41 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 					}
 					onInsertToProtocol={(protocolText) => {
 						appendToEMKField("treatmentPlan", protocolText);
+					}}
+					onSaveCanals={async (canals, clinicalData) => {
+						const patId =
+							activePatient?.id ||
+							((dashboard as Record<string, unknown> | null | undefined)?.activeVisit as { patientId?: string } | undefined)?.patientId;
+						if (!patId || !endoModalToothNumber) return;
+						const toothNum = Number(endoModalToothNumber);
+						try {
+							const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+							const res = await fetch(`/api/patients/${patId}/tooth-states/${toothNum}/endo`, {
+								method: "POST",
+								headers: getDenteAuthHeaders({
+									"Content-Type": "application/json",
+									...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+								}),
+								body: JSON.stringify({
+									toothNumber: toothNum,
+									canals,
+									irrigation: clinicalData.irrigation,
+									rotarySystem: clinicalData.rotarySystem,
+									radiologyControl: clinicalData.radiologyControl,
+									apexLocator: clinicalData.apexLocator,
+									stageStamp: clinicalData.stageStamp,
+									notes: clinicalData.notes,
+									visitId:
+										((dashboard as Record<string, unknown> | null | undefined)?.activeVisit as { id?: string } | undefined)?.id ||
+										((dashboard as Record<string, unknown> | null | undefined)?.activeVisitId as string | undefined),
+								}),
+							});
+							if (!res.ok) {
+								console.warn("[EndoAndImagingModals] onSaveCanals POST failed with status:", res.status);
+							}
+						} catch (saveErr) {
+							console.error("[EndoAndImagingModals] onSaveCanals error:", saveErr);
+						}
 					}}
 				/>
 			)}

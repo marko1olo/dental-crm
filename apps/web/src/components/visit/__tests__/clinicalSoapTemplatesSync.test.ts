@@ -222,7 +222,7 @@ describe("Clinical Templates & SOAP Protocol Synchronization (clinicalSoapTempla
 			];
 
 			const table = generateEndoWorkingLengthTable(canals);
-			assert.ok(table.includes("ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ"));
+			assert.ok(/Таблица уч[её]та рабочей длины/i.test(table));
 			assert.ok(table.includes("MB1"));
 			assert.ok(table.includes("21.5 мм"));
 			assert.ok(table.includes("AH Plus"));
@@ -251,7 +251,7 @@ describe("Clinical Templates & SOAP Protocol Synchronization (clinicalSoapTempla
 				radiology: "Визиография: каналы обтурированы плотно",
 			});
 
-			assert.ok(snippet.includes("ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ (Зуб 46)"));
+			assert.ok(/Протокол эндодонтического лечения.*Зуб 46|ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ.*Зуб 46/i.test(snippet));
 			assert.ok(snippet.includes("MB"));
 			assert.ok(snippet.includes("21.5 мм"));
 
@@ -266,7 +266,7 @@ describe("Clinical Templates & SOAP Protocol Synchronization (clinicalSoapTempla
 			};
 
 			const updated = appendEndoProtocolToSoap(initialDiary, snippet);
-			assert.ok(updated.treatmentDescription.includes("ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ (Зуб 46)"));
+			assert.ok(/Протокол эндодонтического лечения.*Зуб 46|ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ.*Зуб 46/i.test(updated.treatmentDescription));
 		});
 	});
 });

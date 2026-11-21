@@ -65,7 +65,7 @@ describe("endoProtocolEngine — 1-Click Mandate 8e, 8k, 8n Protocols", () => {
 			radiologyControl: result.radiologyControl,
 		});
 
-		assert.match(protocolText, /ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ/);
+		assert.match(protocolText, /Протокол эндодонтического лечения|ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ/i);
 		assert.match(protocolText, /ProTaper Gold/);
 		assert.match(protocolText, /3% NaOCl/);
 		assert.match(protocolText, /17% EDTA/);
@@ -129,13 +129,23 @@ describe("endoProtocolEngine — 1-Click Mandate 8e, 8k, 8n Protocols", () => {
 });
 
 describe("endoProtocolEngine — Anatomical Canal & Working Length Rules", () => {
-	test("Верхние моляры (16-18, 26-28): 4 канала (MB1, MB2, DB, P)", () => {
-		for (const tooth of [16, 17, 18, 26, 27, 28]) {
+	test("Верхние первые моляры (16, 26): 4 канала (MB1, MB2, DB, P)", () => {
+		for (const tooth of [16, 26]) {
 			const canals = getDefaultCanalsForTooth(tooth);
 			assert.equal(canals.length, 4);
 			assert.deepEqual(canals.map((c) => c.canalName), ["MB1", "MB2", "DB", "P"]);
 			assert.equal(getAnatomicalWorkingLength(tooth, "P"), 22.0);
 			assert.equal(getAnatomicalWorkingLength(tooth, "MB1"), 21.0);
+		}
+	});
+
+	test("Верхние вторые и третьи моляры (17, 18, 27, 28): 3 канала (MB, DB, P)", () => {
+		for (const tooth of [17, 18, 27, 28]) {
+			const canals = getDefaultCanalsForTooth(tooth);
+			assert.equal(canals.length, 3);
+			assert.deepEqual(canals.map((c) => c.canalName), ["MB", "DB", "P"]);
+			assert.equal(getAnatomicalWorkingLength(tooth, "P"), 22.0);
+			assert.equal(getAnatomicalWorkingLength(tooth, "MB"), 21.0);
 		}
 	});
 
@@ -162,9 +172,10 @@ describe("endoProtocolEngine — Anatomical Canal & Working Length Rules", () =>
 	});
 
 	test("Временные (молочные) зубы (51..85) имеют корректную анатомию", () => {
-		assert.equal(getAnatomicalWorkingLength(53), 18.0);
-		assert.equal(getAnatomicalWorkingLength(51), 16.0);
-		assert.equal(getAnatomicalWorkingLength(54), 16.5);
+		assert.equal(getAnatomicalWorkingLength(53), 14.0);
+		assert.equal(getAnatomicalWorkingLength(51), 12.0);
+		assert.equal(getAnatomicalWorkingLength(54), 12.0);
+		assert.equal(getAnatomicalWorkingLength(54, "P"), 12.5);
 	});
 
 	test("applyAnatomicalWorkingLengths автозаполняет рабочие длины всех каналов в 1 клик", () => {
@@ -179,7 +190,7 @@ describe("endoProtocolEngine — Form 043/y Table & Output Standards", () => {
 	test("generateEndoCanalsTable043 генерирует таблицу псевдографики без эмодзи", () => {
 		const canals = getDefaultCanalsForTooth(16);
 		const table = generateEndoCanalsTable043(canals);
-		assert.ok(table.includes("ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ"));
+		assert.ok(/Таблица уч[её]та рабочей длины/i.test(table));
 		assert.ok(table.includes("MB1"));
 		assert.ok(table.includes("MB2"));
 		assert.ok(table.includes("DB"));

@@ -441,12 +441,14 @@ export function generateEndoCanalsTable043(canals: readonly EndoCanalData[]): st
 	const footer = "└──────────────┴─────────────────────────────┴─────────────┴─────────────┴──────────────────────────────┘";
 
 	return [
-		"ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ (ДНЕВНИК ПРИЁМА):",
+		"Таблица учёта рабочей длины корневых каналов (протокол лечения):",
 		...header,
 		...rows,
 		footer,
 	].join("\n");
 }
+
+export const generateEndoCanalsTable = generateEndoCanalsTable043;
 
 export function formatEndoCanalsTable043(
 	canals: readonly EndoCanalData[],
@@ -465,6 +467,8 @@ export function formatEndoCanalsTable043(
 		`Рентгенологический контроль: ${rad}`,
 	].join("\n");
 }
+
+export const formatEndoCanalsTable = formatEndoCanalsTable043;
 
 /**
  * Каноническая генерация структурированного протокола эндодонтии для медицинской карты приёма / дневника визита.
@@ -531,7 +535,7 @@ export function formatEndoClinicalDiaryProtocol(params: {
 		"Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до MAF";
 
 	return [
-		`ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ (${toothDisplay}):`,
+		`Протокол эндодонтического лечения (${toothDisplay}):`,
 		diaryNarrative,
 		"",
 		"Изоляция операционного поля: коффердам. Препарирование эндодонтического доступа, раскрытие устьев каналов.",

@@ -126,9 +126,13 @@ export function executeChairsideTransferToDiary({
 						detail: { toothNumber: activeTooth, stageStamp, materials: billing.materials, allowSoftOverdraft: true, reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})` },
 					}));
 
-					const baseUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("null")) ? window.location.origin : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
-					fetch(`${baseUrl}/api/inventory/deduct`, {
-						method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+					fetch("/api/inventory/deduct", {
+						method: "POST",
+						headers: getDenteAuthHeaders({
+							"Content-Type": "application/json",
+							...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+						}),
 						body: JSON.stringify({
 							materials: billing.materials.map((m) => ({ inventoryItemId: m.itemId, id: m.itemId, itemId: m.itemId, name: m.itemName, itemName: m.itemName, quantity: m.quantity, unitCostRub: m.costPriceKopecks ? kopecksToRubles(m.costPriceKopecks) : 0 })),
 							allowOverdraft: true, reason: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
@@ -141,9 +145,13 @@ export function executeChairsideTransferToDiary({
 		}
 	} catch { /* soft */ }
 	if (patientId) {
-		const baseUrl = (typeof window !== "undefined" && window.location?.origin && !window.location.origin.includes("null")) ? window.location.origin : (process.env.API_BASE_URL || "http://127.0.0.1:4100");
-		fetch(`${baseUrl}/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
-			method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+		const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+		fetch(`/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
+			method: "POST",
+			headers: getDenteAuthHeaders({
+				"Content-Type": "application/json",
+				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+			}),
 			body: JSON.stringify({
 				toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi",
 				radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, ...(visitId ? { visitId } : {}),

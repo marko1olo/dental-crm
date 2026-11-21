@@ -35,9 +35,9 @@ import {
 } from "../../endo/endodonticsCatalogData";
 
 describe("EndoCanalLogModal — Anatomical Defaults & FDI Presets", () => {
-	test("Верхние моляры (16, 26, 17, 27) имеют 4 канала: MB1, MB2, DB, P", () => {
-		const upperMolarTeeth = [16, 17, 18, 26, 27, 28];
-		for (const tooth of upperMolarTeeth) {
+	test("Верхние первые моляры (16, 26) имеют 4 канала: MB1, MB2, DB, P", () => {
+		const upperFirstMolarTeeth = [16, 26];
+		for (const tooth of upperFirstMolarTeeth) {
 			const canals = getDefaultCanalsForTooth(tooth);
 			assert.equal(
 				canals.length,
@@ -65,6 +65,28 @@ describe("EndoCanalLogModal — Anatomical Defaults & FDI Presets", () => {
 			assert.ok(Number(p?.workingLengthMm) > 0);
 			assert.ok(mb1?.masterApicalFile.includes("ISO"));
 			assert.ok(p?.masterApicalFile.includes("ISO 30"));
+		}
+	});
+
+	test("Верхние вторые и третьи моляры (17, 18, 27, 28) имеют 3 канала по умолчанию: MB, DB, P", () => {
+		const upperOtherMolarTeeth = [17, 18, 27, 28];
+		for (const tooth of upperOtherMolarTeeth) {
+			const canals = getDefaultCanalsForTooth(tooth);
+			assert.equal(
+				canals.length,
+				3,
+				`Зуб ${tooth} должен содержать 3 корневых канала (MB, DB, P)`,
+			);
+			const names = canals.map((c) => c.canalName);
+			assert.deepEqual(names, ["MB", "DB", "P"]);
+
+			const mb = canals.find((c) => c.canalName === "MB");
+			const db = canals.find((c) => c.canalName === "DB");
+			const p = canals.find((c) => c.canalName === "P");
+
+			assert.ok(mb?.referencePoint.includes("Щечный"));
+			assert.ok(db?.referencePoint.includes("Дистально-щечный"));
+			assert.ok(p?.referencePoint.includes("Нёбный"));
 		}
 	});
 
@@ -190,7 +212,7 @@ describe("EndoCanalLogModal — Structured Form 043/y Text Generation", () => {
 				"Контрольная визиография: каналы обтурированы плотно, гомогенно до апекса.",
 		});
 
-		assert.ok(protocol.includes("ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ"));
+		assert.ok(/Протокол эндодонтического лечения|ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ/i.test(protocol));
 		assert.ok(protocol.includes("Зуб 16"));
 		assert.ok(protocol.includes("коффердам"));
 		assert.ok(protocol.includes("Канал MB1"));
@@ -440,7 +462,7 @@ describe("EndoCanalLogModal — Structured Working Length Table (WL / MAF / Apex
 		];
 
 		const table = generateEndoCanalsTable043(canals);
-		assert.ok(table.includes("ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ"));
+		assert.ok(/Таблица уч[её]та рабочей длины корневых каналов/i.test(table));
 		assert.ok(table.includes("MB1"));
 		assert.ok(table.includes("21.5 мм"));
 		assert.ok(table.includes("ISO 25/.06"));
@@ -545,7 +567,7 @@ describe("EndoCanalLogModal — 1-Click Clinical Presets & Quick Ergonomics", ()
 		});
 		assert.ok(protocol.includes("MB1"));
 		assert.ok(protocol.includes("DB"));
-		assert.ok(protocol.includes("ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ"));
+		assert.ok(/Протокол эндодонтического лечения|ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ/i.test(protocol));
 	});
 });
 
@@ -582,21 +604,22 @@ describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Aut
 		assert.equal(getAnatomicalWorkingLength(46, "ML"), 20.0);
 
 		// Временные (молочные) зубы (51..85)
-		// Резцы: 16.0 мм
-		assert.equal(getAnatomicalWorkingLength(51), 16.0);
-		assert.equal(getAnatomicalWorkingLength(62), 16.0);
-		assert.equal(getAnatomicalWorkingLength(71), 16.0);
-		assert.equal(getAnatomicalWorkingLength(82), 16.0);
-		// Клыки: 18.0 мм
-		assert.equal(getAnatomicalWorkingLength(53), 18.0);
-		assert.equal(getAnatomicalWorkingLength(63), 18.0);
-		assert.equal(getAnatomicalWorkingLength(73), 18.0);
-		assert.equal(getAnatomicalWorkingLength(83), 18.0);
-		// Моляры: 16.5 мм
-		assert.equal(getAnatomicalWorkingLength(54), 16.5);
-		assert.equal(getAnatomicalWorkingLength(65), 16.5);
-		assert.equal(getAnatomicalWorkingLength(74), 16.5);
-		assert.equal(getAnatomicalWorkingLength(85), 16.5);
+		// Резцы: 12.0 мм
+		assert.equal(getAnatomicalWorkingLength(51), 12.0);
+		assert.equal(getAnatomicalWorkingLength(62), 12.0);
+		assert.equal(getAnatomicalWorkingLength(71), 12.0);
+		assert.equal(getAnatomicalWorkingLength(82), 12.0);
+		// Клыки: 14.0 мм
+		assert.equal(getAnatomicalWorkingLength(53), 14.0);
+		assert.equal(getAnatomicalWorkingLength(63), 14.0);
+		assert.equal(getAnatomicalWorkingLength(73), 14.0);
+		assert.equal(getAnatomicalWorkingLength(83), 14.0);
+		// Моляры: 12.0 мм (P/D: 12.5 мм)
+		assert.equal(getAnatomicalWorkingLength(54), 12.0);
+		assert.equal(getAnatomicalWorkingLength(65), 12.0);
+		assert.equal(getAnatomicalWorkingLength(74), 12.0);
+		assert.equal(getAnatomicalWorkingLength(85), 12.0);
+		assert.equal(getAnatomicalWorkingLength(54, "P"), 12.5);
 	});
 
 	test("applyAnatomicalWorkingLengths автозаполняет длины для всех каналов зуба", () => {
