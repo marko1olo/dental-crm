@@ -14,6 +14,7 @@ import { clearUrlTokens } from "../deepLinkUrl";
 import { HygieneIndicesPanel } from "../../../../hygiene/HygieneIndicesPanel";
 import { PerioStudioModal } from "../../../../perio/PerioStudioModal";
 import { EmkPerioSection } from "../../../../visit/emk/EmkPerioSection";
+import type { EmkVisitNoteForm } from "../../../../visit/emk/EmkTypes";
 import { SomaticAnamnesisCard } from "../../../../clinical/SomaticAnamnesisCard";
 import { PatientRecallsHubModal } from "../../../../recalls/PatientRecallsHubModal";
 
@@ -46,7 +47,7 @@ export const StandaloneHygieneHost: React.FC<{ onClose: () => void }> = ({ onClo
 };
 
 function PerioWorkspace({ patientId, patientName }: { patientId: string; patientName: string }) {
-	const [diaryForm, setDiaryForm] = React.useState<Record<string, string>>({
+	const [diaryForm, setDiaryForm] = React.useState<EmkVisitNoteForm>({
 		objectiveStatus: "",
 		diagnosis: "",
 		treatmentPlan: "",
@@ -56,7 +57,7 @@ function PerioWorkspace({ patientId, patientName }: { patientId: string; patient
 			<PerioStudioModal isModal={false} patientId={patientId} patientName={patientName} />
 			<div className="hidden md:block">
 				<EmkPerioSection
-					visitNoteForm={diaryForm as any}
+					visitNoteForm={diaryForm}
 					updateVisitNoteField={(f, v) => setDiaryForm((p) => ({ ...p, [f]: String(v ?? "") }))}
 					patientId={patientId}
 					patientName={patientName}

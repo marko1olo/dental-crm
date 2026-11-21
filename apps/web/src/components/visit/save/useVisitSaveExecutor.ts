@@ -117,7 +117,16 @@ export function useVisitSaveExecutor(params: UseVisitSaveExecutorParams) {
 				}
 				setServerDraftSyncState("saved"); setLastServerDraftSavedAt(savedAtIso);
 				onSaveSuccess?.(result.serverDraft);
-				try { broadcastClinicalEntityChange({ entityType: "visit_draft", entityId: effectiveVisitId, patientId: effectivePatientId || undefined, updatedAt: savedAtIso }); } catch {}
+				try {
+					broadcastClinicalEntityChange({
+						entityType: "visit_draft",
+						entityId: effectiveVisitId,
+						patientId: effectivePatientId || undefined,
+						updatedAt: savedAtIso,
+					});
+				} catch (broadcastErr) {
+					logger.warn("[useVisitSaveExecutor] Failed to broadcast clinical entity change:", broadcastErr);
+				}
 				return { success: true };
 			} catch (syncError) {
 				try { await queueSave(); return { success: true }; }

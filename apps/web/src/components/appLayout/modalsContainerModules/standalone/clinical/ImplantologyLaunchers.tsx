@@ -16,6 +16,18 @@ import {
 	StandaloneCtSelectorHost,
 	StandaloneRvgHost,
 } from "./StandaloneImplantologyHosts";
+import type { StudioMode } from "../../../../radiology/CbctStandaloneStudioView";
+
+const VALID_STUDIO_MODES = new Set<StudioMode>([
+	"diagnostic", "panoramic", "volume3d", "implant", "tmj", "endo",
+]);
+
+function parseStudioMode(rawMode?: string): StudioMode | undefined {
+	if (rawMode && VALID_STUDIO_MODES.has(rawMode as StudioMode)) {
+		return rawMode as StudioMode;
+	}
+	return undefined;
+}
 
 const CbctTunerPlayground = lazyWithRetry(() =>
 	import("../../../../radiology/tuner/CbctTunerPlayground").then((m) => ({ default: m.CbctTunerPlayground })),
@@ -73,7 +85,7 @@ export function renderImplantologyLaunchers(props: StandaloneLaunchersProps): Re
 	if (studioRoute.isCbctStudio) {
 		return (
 			<Suspense fallback={<AppLoadingState message="Загрузка 3D КЛКТ Студии..." />}>
-				<CbctStandaloneStudioView studyId={studioRoute.studyId} patientId={studioRoute.patientId} patientName={studioRoute.patientName} initialStudioMode={studioRoute.mode as any} autoLoadDemo={studioRoute.isDemo} />
+				<CbctStandaloneStudioView studyId={studioRoute.studyId} patientId={studioRoute.patientId} patientName={studioRoute.patientName} initialStudioMode={parseStudioMode(studioRoute.mode)} autoLoadDemo={studioRoute.isDemo} />
 			</Suspense>
 		);
 	}

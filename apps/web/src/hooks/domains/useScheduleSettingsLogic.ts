@@ -6,10 +6,10 @@ export interface ScheduleSettingsLogicProps {
 	setClinicProfileDraft: React.Dispatch<React.SetStateAction<ClinicProfileDraft>>;
 	setClinicProfileDirty: (dirty: boolean) => void;
 	setClinicProfileSaveState: (state: "idle" | "saving" | "error" | "saved") => void;
-	staffScheduleDrafts: Record<string, any>;
-	updateStaffScheduleDraft: (id: string, patch: any) => void;
-	chairScheduleDrafts: Record<string, any>;
-	updateChairScheduleDraft: (id: string, patch: any) => void;
+	staffScheduleDrafts: Record<string, unknown>;
+	updateStaffScheduleDraft: (id: string, patch: Record<string, unknown>) => void;
+	chairScheduleDrafts: Record<string, unknown>;
+	updateChairScheduleDraft: (id: string, patch: Record<string, unknown>) => void;
 }
 
 export function useScheduleSettingsLogic({

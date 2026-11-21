@@ -15,7 +15,7 @@ export interface EmkPerioSummaryProps extends EmkSectionProps {
 }
 
 /**
- * EmkPerioSummary — Экспресс-норма пародонта в 1 клик (Мандат 8e),
+ * EmkPerioSummary — Физиологическая норма пародонта (Мандат 8e),
  * быстрая профессиональная гигиена и экспресс-индекс OHI-S в 3 клика.
  * Строго <= 300 строк.
  */
@@ -29,7 +29,7 @@ export function EmkPerioSummary({
 	setHasBop,
 	setMobilityLevel,
 }: EmkPerioSummaryProps) {
-	// 1. Физиологическая норма пародонта в 1 клик
+	// 1. Физиологическая норма пародонта
 	const handleApplyHealthyNorm = useCallback(() => {
 		setPerioStatus("healthy");
 		setHygieneLevel("good");
@@ -65,7 +65,7 @@ export function EmkPerioSummary({
 		showToast("✓ Пародонт в норме: физиологический статус внесён в дневник приёма", "success", 2500);
 	}, [visitNoteForm?.objectiveStatus, visitNoteForm?.diagnosis, updateVisitNoteField, setPerioStatus, setHygieneLevel, setHasBop, setMobilityLevel]);
 
-	// 2. 1-клик профессиональная гигиена (A16.07.051)
+	// 2. Профессиональная гигиена полости рта (A16.07.051)
 	const handleAddProphyService = useCallback(() => {
 		const prophyPriceKopecks = 550000;
 		const prophyService = {
@@ -118,7 +118,7 @@ export function EmkPerioSummary({
 		showToast("Пародонтологический протокол и гигиена добавлены в смету и дневник", "success", 3000);
 	}, [visitNoteForm?.treatmentPlan, updateVisitNoteField]);
 
-	// 3. Экспресс-индекс гигиены OHI-S в 3 клика
+	// 3. Экспресс-индекс гигиены OHI-S
 	const handleApplyHygieneLevel = useCallback(
 		(level: "good" | "fair" | "poor") => {
 			setHygieneLevel(level);
@@ -145,7 +145,7 @@ export function EmkPerioSummary({
 
 	return (
 		<div className="space-y-3.5">
-			{/* РЯД 1: Физиологическая норма в 1 клик и профгигиена */}
+			{/* РЯД 1: Физиологическая норма и профгигиена */}
 			<div className="flex flex-wrap items-center justify-between gap-2 bg-[var(--paper-soft)] p-2.5 rounded-xl border border-[var(--line)]/60">
 				<div className="flex items-center gap-2">
 					<button

@@ -35,7 +35,7 @@ export function EmkAnesthesiaPresetChips({
 }: EmkAnesthesiaPresetChipsProps) {
 	return (
 		<div className="flex flex-col gap-2 pt-2 border-t border-[var(--line)] bg-transparent min-w-0">
-			{/* Способы анестезии и дозировка в 1 клик */}
+			{/* Способы анестезии и дозировка */}
 			<div className="flex items-center gap-3 flex-wrap">
 				<div className="flex items-center gap-1.5 shrink-0">
 					<span className="text-[11px] font-bold text-[var(--muted)] flex items-center gap-1 shrink-0">

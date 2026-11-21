@@ -38,8 +38,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	if (!s.activePatient || s.isQueueCockpitForced) {
 		const handleSelect = (id: string) => {
 			s.setIsQueueCockpitForced(false);
-			const fn = s.setSelectedPatientId || (s.appLogic as any)?.setSelectedPatientId;
-			if (typeof fn === "function") fn(id);
+			s.setSelectedPatientId?.(id);
 		};
 		return (
 			<VisitIntakeCockpit

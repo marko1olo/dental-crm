@@ -115,9 +115,8 @@ export function usePatientLogic({
 
 	useEffect(() => {
 		if (!dashboard || !dashboard.patients || dashboard.patients.length === 0) return;
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		setSelectedPatientId((current: any) => {
-			if (current && (dashboard.patients ?? []).some((patient: any) => patient.id === current)) {
+		setSelectedPatientId((current: string | null) => {
+			if (current && (dashboard.patients ?? []).some((patient) => patient.id === current)) {
 				return current;
 			}
 			const target = activePatient?.id ?? null;
@@ -133,15 +132,11 @@ export function usePatientLogic({
 	);
 
 	useEffect(() => {
-		const didChangePatient = resetPaymentComposerOnPatientChange(
+		resetPaymentComposerOnPatientChange(
 			paymentComposerPatientIdRef,
 			documentPatient?.id,
 			useDocumentStore.getState(),
 		);
-		if (didChangePatient) {
-			useVisitStore.getState().resetVisitToothState();
-			useVisitStore.getState().setCompletedServices([]);
-		}
 	}, [documentPatient?.id]);
 
 	useEffect(() => {

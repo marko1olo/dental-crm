@@ -13,6 +13,7 @@ import {
 } from "../../../documentLogic";
 import { validateDocumentPayloadForKind } from "../../../documentValidators";
 import type { useAuthLogic } from "../../../hooks/domains/useAuthLogic";
+import type { DocumentState } from "../../../store/documentStore";
 import { actionFailureToast } from "../../../lib/panelStateText";
 import { type DocumentPackageId } from "../../../utils/documentPackages";
 import { fetchWithHandling } from "../../../utils/networkUtils";
@@ -24,7 +25,7 @@ export interface UseDocumentCreationProps {
 	activeDoctor: StaffMember | null;
 	documentPatient: Patient | null;
 	documentPatientMatchesActiveVisit: boolean;
-	documentState: any;
+	documentState: DocumentState;
 	documentCreateSavingKind: DocumentKind | null;
 	setDocumentCreateSavingKind: (kind: DocumentKind | null) => void;
 	setError: (err: string | null) => void;
@@ -58,7 +59,7 @@ export function useDocumentCreation({
 	async function createDocument(
 		kindOrInput:
 			| DocumentKind
-			| { kind: DocumentKind; payload?: any; visitId?: string | null },
+			| { kind: DocumentKind; payload?: Record<string, unknown> | null | undefined; visitId?: string | null | undefined },
 	): Promise<GeneratedDocument | null> {
 		if (!documentPatient) {
 			const msg = "Выберите пациента для создания документа.";

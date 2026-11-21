@@ -39,7 +39,7 @@ export interface UseDocumentTaxPaymentsProps {
 	setRefundRecipientIdentityDocument: (val: string) => void;
 	setRefundOriginalFiscalReceiptNumber: (val: string) => void;
 	taxApplicationForm: string;
-	setTaxApplicationForm: (val: any) => void;
+	setTaxApplicationForm: (val: string) => void;
 }
 
 export function useDocumentTaxPayments({

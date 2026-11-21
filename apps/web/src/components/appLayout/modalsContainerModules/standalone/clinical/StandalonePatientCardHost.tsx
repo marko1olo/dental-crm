@@ -10,9 +10,22 @@ import {
 	PatientCardModal,
 	DEMO_SHOWCASE_MODAL_PATIENT,
 	DEMO_SHOWCASE_MODAL_SAFETY,
+	type PatientCardTab,
 } from "../../../../patients/PatientCardModal";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 import { isDemoShowcaseMode } from "../../../../../lib/demoMode.js";
+
+const VALID_PATIENT_CARD_TABS = new Set<PatientCardTab>([
+	"general", "formula", "perio", "anamnesis", "visits", "documents",
+	"radiology", "family", "finance", "treatmentPlans", "photos", "reclamations", "labOrders",
+]);
+
+function parsePatientCardTab(rawTab: string | null): PatientCardTab {
+	if (rawTab && VALID_PATIENT_CARD_TABS.has(rawTab as PatientCardTab)) {
+		return rawTab as PatientCardTab;
+	}
+	return "general";
+}
 
 export const StandalonePatientCardHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
@@ -73,7 +86,8 @@ export const StandalonePatientCardHost: React.FC<{ onClose: () => void }> = ({ o
 
 	const initialSafety = isDemo && !patientId ? DEMO_SHOWCASE_MODAL_SAFETY : undefined;
 
-	const initialTab = (typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("tab") as any) : undefined) || "general";
+	const rawTab = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null;
+	const initialTab = parsePatientCardTab(rawTab);
 
 	return (
 		<div

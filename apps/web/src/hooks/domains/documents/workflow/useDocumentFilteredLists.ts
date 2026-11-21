@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { Dashboard, Patient } from "@dental/shared";
 import { completedActContractReferenceForUi } from "../../../../workspaceUiLabels";
+import type { DocumentState } from "../../../../store/documentStore";
 
 export interface UseDocumentFilteredListsProps {
 	dashboard: Dashboard | null;
 	documentPatient: Patient | null;
-	documentState: any;
+	documentState: DocumentState;
 	documentPatientMatchesActiveVisit: boolean;
 }
 

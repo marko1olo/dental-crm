@@ -37,8 +37,7 @@ import {
 
 export function useTelegramSettings(options: {
 	serverBaseUrl?: string | undefined;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	apiFetch: any;
+	apiFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 	setError: (err: string | null) => void;
 	settingsAdminSecretSession?: string | null | undefined;
 	loadDashboard?: (() => Promise<void>) | undefined;

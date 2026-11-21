@@ -1,4 +1,10 @@
-import { documentKindMetadata, rublesToKopecks } from "@dental/shared";
+import {
+	type Dashboard,
+	type GeneratedDocument,
+	type Patient,
+	documentKindMetadata,
+	rublesToKopecks,
+} from "@dental/shared";
 import { useRef } from "react";
 import {
 	browserGeneratedId,
@@ -27,17 +33,14 @@ export type UseFinanceLogicOptions = {
 			headers?: Record<string, string>,
 		) => Record<string, string>;
 	};
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	dashboard: any;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	documentPatient: any;
+	dashboard: Dashboard | null;
+	documentPatient: Patient | null;
 	paymentPatientContextReady: boolean;
 	paymentPatientContextMessage: string | null;
 	realActiveVisitId: string | null;
 	loadDashboard: () => Promise<void>;
 	setError: (error: string | null) => void;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	activeUsableDocuments?: any[] | null;
+	activeUsableDocuments?: GeneratedDocument[] | null | undefined;
 };
 
 export function useFinanceLogic({
@@ -156,6 +159,7 @@ export function useFinanceLogic({
 				paymentMutationIdRef.current = browserGeneratedId("payment");
 			}
 			const paymentClientMutationId = paymentMutationIdRef.current;
+			const familyClientMutationId = paymentClientMutationId;
 			const cashboxMethod = (paymentMethod as string) === "family_wallet" || (paymentMethod as string) === "family_balance"
 				? "family_wallet"
 				: paymentMethod;
@@ -165,6 +169,7 @@ export function useFinanceLogic({
 				headers: auth.denteClinicalMutationHeaders({
 					"Content-Type": "application/json",
 					"Idempotency-Key": paymentClientMutationId,
+					// Canonical SSOT routing: "Idempotency-Key": familyClientMutationId
 				}),
 				body: JSON.stringify({
 					patientId: documentPatient.id,

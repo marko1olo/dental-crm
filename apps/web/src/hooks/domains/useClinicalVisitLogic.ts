@@ -190,8 +190,7 @@ export function useClinicalVisitLogic() {
 		setTreatmentPlanNewApprovalAcknowledged(false);
 	};
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const toggleClinicalRule = async (_rule: any) => {};
+	const toggleClinicalRule = async (_rule: { id?: string; active?: boolean } | string | unknown) => {};
 
 	return {
 		// Odontogram Surface Option

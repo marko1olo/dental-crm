@@ -118,8 +118,7 @@ export function useScheduleFilterController({
 	);
 
 	const setDateFilter = useCallback(
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		(date: any) => {
+		(date: string | null | ((prev: string | null) => string | null)) => {
 			setScheduleDateFilter(date);
 		},
 		[setScheduleDateFilter],

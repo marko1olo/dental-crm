@@ -17,8 +17,7 @@ export type OfflineFiscalReceipt = QueuedFiscalReceiptItem;
 export interface FiscalOperationInput {
 	visitId?: string;
 	paymentId?: string;
-	// biome-ignore lint/suspicious/noExplicitAny: arbitrary fiscal payload
-	payload: any;
+	payload: FiscalReceiptPrintPayload | Record<string, unknown>;
 	amountRub?: number;
 	clientMutationId?: string;
 }
@@ -76,12 +75,11 @@ export function useFiscalOperations() {
 				cashierFullName: rawPayload.cashierFullName || "Кассир",
 				customerContact: rawPayload.customerContact || rawPayload.clientContact || "",
 				operationType: rawPayload.operationType || "income",
-				// biome-ignore lint/suspicious/noExplicitAny: arbitrary item payload
-				items: (rawPayload.items || []).map((it: any) => ({
-					name: it.name || "Стоматологическая услуга",
-					priceRub: it.priceRub || (it.priceKopecks ? it.priceKopecks / 100 : 0),
-					quantity: it.quantity || 1,
-					amountRub: it.amountRub || (it.amountKopecks ? it.amountKopecks / 100 : 0),
+				items: (rawPayload.items || []).map((it: Record<string, unknown>) => ({
+					name: String(it.name || "Стоматологическая услуга"),
+					priceRub: typeof it.priceRub === "number" ? it.priceRub : typeof it.priceKopecks === "number" ? it.priceKopecks / 100 : 0,
+					quantity: typeof it.quantity === "number" ? it.quantity : 1,
+					amountRub: typeof it.amountRub === "number" ? it.amountRub : typeof it.amountKopecks === "number" ? it.amountKopecks / 100 : 0,
 					vatRate: "vat_0",
 				})),
 				totalRub: input.amountRub ?? rawPayload.totalRub ?? (rawPayload.totalKopecks ? rawPayload.totalKopecks / 100 : 0),

@@ -9,6 +9,7 @@ import {
 import { installmentPaymentStatusAliases } from "../../../AppConstants";
 import { dateInputValuePlusDays } from "../../../AppHelpers";
 import { normalizeRubAmountInput } from "../../../rubAmountInput";
+import type { DocumentState } from "../../../store/documentStore";
 import {
 	compactDocumentText,
 	documentTextLines,
@@ -18,7 +19,7 @@ export interface DocumentFinancialCalculationsParams {
 	activeTreatmentPlanItems: TreatmentPlanItem[];
 	dashboard: Dashboard | null;
 	activePayments: Payment[];
-	documentState: any;
+	documentState: DocumentState;
 	documentPatient: Patient | null;
 	activeDoctor: StaffMember | null;
 	selectedPaymentReceiptPayments: Payment[];

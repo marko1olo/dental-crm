@@ -1,11 +1,12 @@
 import { useEffect, useMemo } from "react";
 import type { Dashboard, GeneratedDocument } from "@dental/shared";
 import { saveDocumentIssueSignatureDraft } from "../../../../AppHelpers";
+import type { DocumentState } from "../../../../store/documentStore";
 
 export interface UseDocumentAttestationStateProps {
 	dashboard: Dashboard | null;
 	activeDocuments: GeneratedDocument[];
-	documentState: any;
+	documentState: DocumentState;
 }
 
 export function useDocumentAttestationState({
@@ -35,7 +36,7 @@ export function useDocumentAttestationState({
 		);
 	}, [activeDocuments, documentState.documentVoidConfirmationId]);
 
-	// Мандат 8e (Автономия врача): готовность к выдаче/подписанию всегда доступна в 1 клик,
+	// Мандат 8e (Автономия врача): готовность к выдаче/подписанию доступна сразу,
 	// если выбран черновик. Система подставит безопасные дефолты врача при подтверждении.
 	const documentIssueAttestationReady = useMemo(() => {
 		return Boolean(documentIssueConfirmation);

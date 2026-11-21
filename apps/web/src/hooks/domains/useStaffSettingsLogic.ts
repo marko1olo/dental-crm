@@ -55,8 +55,7 @@ export function useStaffSettingsLogic({
 
 	const { selectedSpecialty } = useVisitStore();
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	async function createStaffMember(data: any) {
+	async function createStaffMember(data: Record<string, unknown>) {
 		try {
 			const response = await fetchWithHandling("/api/settings/staff", {
 				method: "POST",
@@ -87,8 +86,7 @@ export function useStaffSettingsLogic({
 		}
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	async function updateStaffMember(staffId: string, updates: any) {
+	async function updateStaffMember(staffId: string, updates: Record<string, unknown>) {
 		try {
 			const response = await fetchWithHandling(
 				`/api/settings/staff/${staffId}`,

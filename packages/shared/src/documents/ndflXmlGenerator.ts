@@ -9,26 +9,76 @@
 export * from "./ndfl/index.js";
 export type * from "./ndfl/index.js";
 
-export {
-	type FnsTaxPayload,
-	type SupportedTaxYear,
-	type FnsNdflXmlResult,
-	escapeXmlAttr,
-	cleanDigits,
-	type FnsNdflPrintSigningOptions,
-	type FnsReceiptsChecksumValidationResult,
-	rublesFromKopecks,
-	formatFnsRuDate,
-	formatFnsDate,
-	classifyNdflServiceCode,
-	isNonMedicalGood,
-	isDmsInsurancePayment,
+import {
+	buildFnsKnd1151156Xml as baseBuildFnsKnd1151156Xml,
+	generateFnsNdflPrintHtml as baseGenerateFnsNdflPrintHtml,
 	generateFnsFileNameAndId,
-	parseFio,
-	validateFnsFiscalReceiptsChecksums,
-	preflightValidatePayload,
-	buildFnsKnd1151156Xml,
-	generateFnsNdflXml,
-	validateFnsNdflXmlStructure,
-	generateFnsNdflPrintHtml,
+	preflightValidatePayload as basePreflightValidatePayload,
+	type FnsKinshipCode,
+	type FnsNdflXmlResult,
+	type FnsPreflightIssue,
+	type FnsNdflPrintSigningOptions,
+	type FnsTaxPayload,
 } from "./ndfl/index.js";
+
+export type FnsNdflXmlPayload = Omit<FnsTaxPayload, "patient" | "expenses"> & {
+	patient: Partial<FnsTaxPayload["patient"]> & { kinshipCode?: string | undefined };
+	expenses?: Partial<FnsTaxPayload["expenses"]> | undefined;
+	filePrefix?: string | undefined;
+};
+
+export function normalizeFnsPayload(raw: FnsTaxPayload | FnsNdflXmlPayload): FnsTaxPayload {
+	const p = raw as FnsNdflXmlPayload;
+	const kinship: FnsKinshipCode =
+		((raw as FnsTaxPayload).patient?.patientKinshipCode ??
+		p.patient?.kinshipCode ??
+		"1") as FnsKinshipCode;
+
+	return {
+		...raw,
+		filePrefix: ("filePrefix" in raw && typeof raw.filePrefix === "string" && raw.filePrefix) ? raw.filePrefix : "UT_SVOPLMEDUSL",
+		patient: {
+			...(raw.patient || {}),
+			patientKinshipCode: kinship,
+		},
+		expenses: raw.expenses || {},
+		receipts: raw.receipts || [],
+	};
+}
+
+export function generateFnsNdflXml(
+	payload: FnsTaxPayload | FnsNdflXmlPayload,
+	customUuid?: string,
+): FnsNdflXmlResult {
+	return baseBuildFnsKnd1151156Xml(normalizeFnsPayload(payload), customUuid);
+}
+
+export function generateFnsNdflPrintHtml(
+	payload: FnsTaxPayload | FnsNdflXmlPayload,
+	signingOptions?: FnsNdflPrintSigningOptions | boolean | undefined,
+): string {
+	return baseGenerateFnsNdflPrintHtml(normalizeFnsPayload(payload), signingOptions);
+}
+
+export function preflightValidatePayload(
+	payload: FnsTaxPayload | FnsNdflXmlPayload,
+): FnsPreflightIssue[] {
+	return basePreflightValidatePayload(normalizeFnsPayload(payload));
+}
+
+export function generateFnsFileName(
+	taxOfficeCode: string,
+	senderInn: string,
+	senderKpp: string | undefined,
+	documentDate: string,
+	customUuid?: string,
+): { fileName: string; fileId: string; uuid: string } {
+	return generateFnsFileNameAndId(
+		taxOfficeCode,
+		senderInn,
+		senderKpp,
+		documentDate,
+		customUuid,
+		"UT_SVOPLMEDUSL",
+	);
+}

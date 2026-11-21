@@ -7,8 +7,7 @@ import {
 
 type WebSocketMessage = {
 	type: string;
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	payload: any;
+	payload: unknown;
 };
 
 /** Первая задержка переподключения и потолок. */
@@ -225,7 +224,7 @@ export function useWebsocket(url: string, fallbackUrl?: string) {
 	}, [connect]);
 
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const sendMessage = useCallback((type: string, payload: any) => {
+	const sendMessage = useCallback((type: string, payload: unknown) => {
 		if (ws.current?.readyState === WebSocket.OPEN) {
 			ws.current.send(JSON.stringify({ type, payload }));
 		}

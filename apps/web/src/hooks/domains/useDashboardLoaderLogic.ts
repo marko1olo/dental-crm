@@ -12,14 +12,26 @@ import {
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 export interface DashboardLoaderLogicProps {
-	authRef: { current: any };
+	authRef: {
+		current: {
+			denteClinicalReadHeaders: (
+				headers?: Record<string, string>,
+				adminSecret?: string,
+			) => Record<string, string>;
+			[key: string]: unknown;
+		};
+	};
 	setDashboard: (dashboard: Dashboard | null) => void;
 	setAccessUnlockRequired: (required: boolean) => void;
 	setAccessUnlockMessage: (message: string) => void;
 	showToast: (message: string, type?: "success" | "error" | "info" | "warning") => void;
 	setError: (error: string) => void;
-	loadPersistenceHealthRef: { current: any };
-	refreshSpeechRuntimeRef: { current: any };
+	loadPersistenceHealthRef: {
+		current?: ((options?: { silent?: boolean; adminSecret?: string }) => Promise<void> | void) | null | undefined;
+	};
+	refreshSpeechRuntimeRef: {
+		current?: ((options?: { silent?: boolean }) => Promise<void> | void) | null | undefined;
+	};
 }
 
 export function useDashboardLoaderLogic({

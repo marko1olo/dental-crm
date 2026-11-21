@@ -105,7 +105,9 @@ export function EmkPerioSection({
 						if (maxDepth >= 4) setPerioStatus("periodontitis_moderate");
 						else if (anyBop) setPerioStatus("gingivitis");
 					}
-				} catch {}
+				} catch (cacheErr) {
+					console.warn("[EmkPerioSection] Failed to read periodontal snapshot cache fallback:", cacheErr);
+				}
 			}
 		}
 		void loadLatestSnapshot();
@@ -158,7 +160,9 @@ export function EmkPerioSection({
 						patientId: effectivePatientId, visitId: effectiveVisitId, updatedAt: new Date().toISOString(),
 						affectedRecords, pocketDepthMm: depth, hasBop: bop,
 					}));
-				} catch {}
+				} catch (storageErr) {
+					console.warn("[EmkPerioSection] Failed to persist periodontal screening to localStorage:", storageErr);
+				}
 			}
 		};
 		window.addEventListener("dente:perio-measurements-applied", handleMeasurementsApplied);
