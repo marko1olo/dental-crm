@@ -19,6 +19,8 @@ import type {
 import {
 	RUSSIAN_DMS_INSURERS,
 	STANDARD_DMS_LIMITS_RUB,
+	kopecksToRubles,
+	rublesToKopecks,
 } from "@dental/shared";
 import { DmsStudioModal } from "./DmsStudioModal";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
@@ -90,7 +92,10 @@ export function getActiveBillItemsToSplit(): readonly DmsBillableItem[] {
 
 export function mapBackendLetterToPatientGuaranteeLetter(raw: unknown): DmsGuaranteeLetter {
 	const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-	const validUntilStr = String(r.validUntil || r.validTo || "2026-12-31");
+	const currentYear = new Date().getFullYear();
+	const endOfYear = new Date(currentYear, 11, 31).toISOString().slice(0, 10);
+	const startOfYear = `${currentYear}-01-01`;
+	const validUntilStr = String(r.validUntil || r.validTo || endOfYear);
 	const rawStatus = String(r.status || "active");
 	const status: DmsGuaranteeLetter["status"] =
 		rawStatus === "expired" || rawStatus === "exhausted" || rawStatus === "approved" || rawStatus === "pending_approval" || rawStatus === "draft"
@@ -99,11 +104,11 @@ export function mapBackendLetterToPatientGuaranteeLetter(raw: unknown): DmsGuara
 
 	return {
 		id: String(r.id || `letter-${Date.now()}`),
-		patientId: String(r.patientId || "pat-1"),
+		patientId: String(r.patientId || ""),
 		letterNumber: String(r.letterNumber || "ГП-001"),
 		patientFullName: String(r.patientFullName || "Пациент"),
-		issueDate: String(r.issueDate || "2026-01-01"),
-		validFrom: String(r.validFrom || "2026-01-01"),
+		issueDate: String(r.issueDate || startOfYear),
+		validFrom: String(r.validFrom || startOfYear),
 		validUntil: validUntilStr,
 		validTo: validUntilStr,
 		companyId: String(r.companyId || r.insurerKey || "sogaz"),
@@ -111,11 +116,11 @@ export function mapBackendLetterToPatientGuaranteeLetter(raw: unknown): DmsGuara
 		insurerName: String(r.insurerName || r.companyName || "АО «СОГАЗ»"),
 		policyNumber: String(r.policyNumber || ""),
 		patientBirthDate: String(r.patientBirthDate || ""),
-		maxCoverageRub: Number(r.maxCoverageRub) || (Number(r.limitKopecks || 3000000) / 100),
-		limitKopecks: Number(r.limitKopecks) || (Number(r.maxCoverageRub || 30000) * 100),
-		usedAmountRub: Number(r.usedAmountRub) || (Number(r.usedKopecks || 0) / 100),
-		usedKopecks: Number(r.usedKopecks) || (Number(r.usedAmountRub || 0) * 100),
-		remainingLimitKopecks: Number(r.remainingLimitKopecks) || (Number(r.maxCoverageRub || 30000) * 100),
+		maxCoverageRub: Number(r.maxCoverageRub) || kopecksToRubles(Number(r.limitKopecks || 3000000)),
+		limitKopecks: Number(r.limitKopecks) || rublesToKopecks(Number(r.maxCoverageRub || 30000)),
+		usedAmountRub: Number(r.usedAmountRub) || kopecksToRubles(Number(r.usedKopecks || 0)),
+		usedKopecks: Number(r.usedKopecks) || rublesToKopecks(Number(r.usedAmountRub || 0)),
+		remainingLimitKopecks: Number(r.remainingLimitKopecks) || rublesToKopecks(Number(r.maxCoverageRub || 30000)),
 		defaultFranchisePercent: Number(r.defaultFranchisePercent ?? r.franchisePct ?? 0),
 		franchisePct: Number(r.defaultFranchisePercent ?? r.franchisePct ?? 0),
 		franchiseType: "none",

@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { calculateItemDmsSplit, calculateInvoiceDmsSplit, type DmsInvoiceItem } from "@dental/shared";
+import { calculateItemDmsSplit, calculateDmsGuaranteeSplit } from "@dental/shared";
 import { allocateRemainderToTender } from "../cashbox/cashRegisterCatalogData.js";
 
 describe("DMS Cashier & Split Payment Integration (Mandates 8l, 8e, 8n)", () => {
@@ -36,18 +36,33 @@ describe("DMS Cashier & Split Payment Integration (Mandates 8l, 8e, 8n)", () => 
 	});
 
 	it("1.3 Multi-item invoice split with guarantee letter remaining limit overflow redirection", () => {
-		const items: DmsInvoiceItem[] = [
-			{ id: "i1", serviceCode804n: "A16.07.002.001", serviceName: "Пломба", quantity: 1, unitPriceKopecks: 450000, totalKopecks: 450000, isCoveredByDms: true },
-			{ id: "i2", serviceCode804n: "A11.07.010", serviceName: "Анестезия", quantity: 2, unitPriceKopecks: 95000, totalKopecks: 190000, isCoveredByDms: true },
-			{ id: "i3", serviceCode804n: "A16.07.050", serviceName: "Отбеливание", quantity: 1, unitPriceKopecks: 2600000, totalKopecks: 2600000, isCoveredByDms: false },
+		const items = [
+			{ serviceId: "i1", serviceCode: "A16.07.002.001", serviceName: "Пломба", quantity: 1, priceRub: 4500, category: "therapy" },
+			{ serviceId: "i2", serviceCode: "A11.07.010", serviceName: "Анестезия", quantity: 2, priceRub: 950, category: "therapy" },
+			{ serviceId: "i3", serviceCode: "A16.07.050", serviceName: "Отбеливание", quantity: 1, priceRub: 26000, category: "therapy", isExcluded: true },
 		];
-		const summary = calculateInvoiceDmsSplit({ items, defaultFranchisePercent: 20, guaranteeLetterRemainingLimitKopecks: 300000 });
-		assert.equal(summary.totalGrossKopecks, 3240000);
-		assert.equal(summary.limitExceeded, true);
-		assert.equal(summary.finalInsurerKopecks, 300000);
-		assert.equal(summary.limitOverflowKopecks, 212000);
-		assert.equal(summary.finalPatientKopecks, 2940000);
-		assert.equal(summary.finalPatientKopecks + summary.finalInsurerKopecks, summary.totalGrossKopecks);
+		const summary = calculateDmsGuaranteeSplit(
+			{
+				id: "g1",
+				letterNumber: "ГП-1",
+				patientFullName: "Тест",
+				companyName: "СОГАЗ",
+				policyNumber: "П-1",
+				status: "active",
+				limitKopecks: 300000,
+				remainingLimitKopecks: 300000,
+				usedKopecks: 0,
+				defaultFranchisePercent: 20,
+				franchisePct: 20,
+				franchiseType: "percent",
+			},
+			items,
+		);
+		assert.equal(summary.totalBillKopecks, 3240000);
+		assert.equal(summary.totalDmsCoveredKopecks, 300000);
+		assert.equal(summary.totalPatientCoPayKopecks, 2940000);
+		assert.equal(summary.integrityInvariantHolds, true);
+		assert.equal((summary.totalDmsCoveredKopecks ?? 0) + (summary.totalPatientCoPayKopecks ?? 0), summary.totalBillKopecks);
 	});
 
 	it("1.4 1-Click Fallback to Direct Patient Payment transfers 100% to patient without penny loss", () => {

@@ -24,6 +24,7 @@ import {
 	DEFAULT_CLINIC_PROFILE,
 	exportRegistryToCsv,
 	generateBilateralAcceptanceActHtml,
+	kopecksToRubles,
 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
@@ -117,14 +118,14 @@ export function useDmsStudioState({
 			{
 				id: "g-let-1",
 				letterNumber: "ГП-ДМС-88412",
-				patientId: patient.id || "pat-1",
+				patientId: patient.id || (isDemo ? "pat-demo" : ""),
 				patientFullName: patient.fullName,
 				policyNumber: patient.policyNumber || "ДМС-2026-998811",
 				insurerKey: ins.id,
 				insurerName: ins.shortNameRu,
-				issueDate: "2026-08-12",
-				validFrom: "2026-08-12",
-				validUntil: "2026-12-31",
+				issueDate: new Date().toISOString().slice(0, 10),
+				validFrom: new Date().toISOString().slice(0, 10),
+				validUntil: new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10),
 				patientBirthDate: patient.birthDate || "1990-04-15",
 				maxCoverageRub: 50000,
 				usedAmountRub: 8400,
@@ -245,7 +246,7 @@ export function useDmsStudioState({
 			serviceName: item.serviceName || "Медицинская услуга",
 			...(item.toothNumber !== undefined ? { toothNumber: item.toothNumber } : {}),
 			quantity: Math.max(1, item.quantity ?? 1),
-			priceRub: item.unitPriceKopecks ? Math.round(item.unitPriceKopecks / 100) : 0,
+			priceRub: item.unitPriceKopecks ? kopecksToRubles(item.unitPriceKopecks) : 0,
 			discountRub: 0,
 			category: "therapy",
 		}));
@@ -316,7 +317,7 @@ export function useDmsStudioState({
 			insurerName: company.shortNameRu,
 			issueDate: new Date().toISOString().slice(0, 10),
 			validFrom: new Date().toISOString().slice(0, 10),
-			validUntil: "2026-12-31",
+			validUntil: new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10),
 			patientBirthDate: patient.birthDate || new Date().toISOString().slice(0, 10),
 			maxCoverageRub: limitRub,
 			usedAmountRub: 0,
@@ -351,7 +352,7 @@ export function useDmsStudioState({
 					letterNumber: letNum,
 					issueDate: new Date().toISOString().slice(0, 10),
 					validFrom: new Date().toISOString().slice(0, 10),
-					validUntil: "2026-12-31",
+					validUntil: new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10),
 					maxCoverageRub: limitRub,
 					usedAmountRub: 0,
 					franchisePct: franchisePercent,

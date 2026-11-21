@@ -4,6 +4,7 @@ import type {
 	StatutoryInsuranceContract,
 } from "../dmsPresetsAndCatalogs.js";
 import { kopecksToRub } from "../../fiscal/index.js";
+import { rublesToKopecks } from "../../money.js";
 
 /**
  * Legacy XML Claim Registry builder for backwards-compatible interchange formats.
@@ -22,7 +23,7 @@ export function generateDmsLegacyRegistryXml(
 				<Patient>${r.patientFullName}</Patient>
 				<PolicyNumber>${r.policyNumber}</PolicyNumber>
 				<ServiceCode804n>${r.serviceCode804n || r.serviceCode || ""}</ServiceCode804n>
-				<DmsCoveredKopecks>${r.dmsCoveredKopecks || (r.dmsCoveredRub ? r.dmsCoveredRub * 100 : 0)}</DmsCoveredKopecks>
+				<DmsCoveredKopecks>${r.dmsCoveredKopecks || (r.dmsCoveredRub ? rublesToKopecks(r.dmsCoveredRub) : 0)}</DmsCoveredKopecks>
 			</Record>`,
 		)
 		.join("\n");

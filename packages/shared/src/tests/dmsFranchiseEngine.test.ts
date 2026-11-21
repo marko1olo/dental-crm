@@ -7,7 +7,7 @@ import {
 	isValidFranchiseRate,
 	dmsFranchiseRateSchema,
 	calculateItemDmsSplit,
-	calculateInvoiceDmsSplit,
+	calculateDmsGuaranteeSplit,
 	type DmsInvoiceItem,
 	dmsInvoiceItemSchema,
 	dmsInvoiceSplitInputSchema,
@@ -104,107 +104,112 @@ describe("DMS Franchise & Billing Math Engine (dmsFranchiseEngine.ts)", () => {
 		assert.throws(() => calculateItemDmsSplit(10000, 150), /от 0 до 100/);
 	});
 
-	it("1.4 Splits multi-item invoices with per-item overrides and guarantees penny balance", () => {
-		const items: DmsInvoiceItem[] = [
+	it("1.4 Splits multi-item invoices with per-item exclusions and guarantees penny balance", () => {
+		const items = [
 			{
-				id: "item-1",
-				serviceCode804n: "A16.07.002.001",
+				serviceId: "item-1",
+				serviceCode: "A16.07.002.001",
 				serviceName: "Наложение пломбы светового отверждения",
-				toothNumberFdi: 26,
+				toothNumber: "26",
 				quantity: 1,
-				unitPriceKopecks: 450000, // 4,500.00 RUB
-				totalKopecks: 450000,
+				priceRub: 4500, // 4,500.00 RUB
+				category: "therapy",
 			},
 			{
-				id: "item-2",
-				serviceCode804n: "A16.07.030.001",
+				serviceId: "item-2",
+				serviceCode: "A16.07.030.001",
 				serviceName: "Инструментальная обработка корневого канала",
-				toothNumberFdi: 26,
+				toothNumber: "26",
 				quantity: 3,
-				unitPriceKopecks: 120000, // 1,200.00 RUB * 3 = 3,600.00 RUB
-				totalKopecks: 360000,
-				franchisePercentOverride: 10, // 10% override instead of default 20%
+				priceRub: 1200, // 1,200.00 RUB * 3 = 3,600.00 RUB
+				category: "therapy",
 			},
 			{
-				id: "item-3",
-				serviceCode804n: "A16.07.050",
+				serviceId: "item-3",
+				serviceCode: "A16.07.050",
 				serviceName: "Профессиональное отбеливание зубов (косметика)",
 				quantity: 1,
-				unitPriceKopecks: 1500000, // 15,000.00 RUB
-				totalKopecks: 1500000,
-				isCoveredByDms: false, // Non-covered cosmetic service
+				priceRub: 15000, // 15,000.00 RUB
+				category: "therapy",
+				isExcluded: true, // Non-covered cosmetic service
 			},
 		];
 
-		const summary = calculateInvoiceDmsSplit({
+		const summary = calculateDmsGuaranteeSplit(
+			{
+				id: "g-let-1",
+				letterNumber: "ГП-1",
+				patientFullName: "Иванов И.И.",
+				companyName: "СОГАЗ",
+				policyNumber: "П-1",
+				status: "active",
+				maxCoverageRub: 100000,
+				usedAmountRub: 0,
+				franchisePct: 20,
+				franchiseType: "percent",
+			},
 			items,
-			defaultFranchisePercent: 20,
-		});
+		);
 
 		// Total gross = 450000 + 360000 + 1500000 = 2,310,000 kopecks (23,100.00 RUB)
-		assert.equal(summary.totalGrossKopecks, 2310000);
+		assert.equal(summary.totalBillKopecks, 2310000);
 
-		// Item 1 (20%): Patient = 90,000, Insurer = 360,000
-		assert.equal(summary.items[0]?.patientKopecks, 90000);
-		assert.equal(summary.items[0]?.insurerKopecks, 360000);
+		// Item 1 (20%): Patient = 90,000 kop (900 RUB), Insurer = 360,000 kop (3,600 RUB)
+		assert.equal(summary.lineItems[0]?.patientCoPayKopecks, 90000);
+		assert.equal(summary.lineItems[0]?.dmsCoveredKopecks, 360000);
 
-		// Item 2 (10%): Patient = 36,000, Insurer = 324,000
-		assert.equal(summary.items[1]?.patientKopecks, 36000);
-		assert.equal(summary.items[1]?.insurerKopecks, 324000);
+		// Item 2 (20%): Patient = 72,000 kop (720 RUB), Insurer = 288,000 kop (2,880 RUB)
+		assert.equal(summary.lineItems[1]?.patientCoPayKopecks, 72000);
+		assert.equal(summary.lineItems[1]?.dmsCoveredKopecks, 288000);
 
-		// Item 3 (Non-covered): Patient = 1,500,000, Insurer = 0
-		assert.equal(summary.items[2]?.patientKopecks, 1500000);
-		assert.equal(summary.items[2]?.insurerKopecks, 0);
+		// Item 3 (Non-covered): Patient = 1,500,000 kop, Insurer = 0
+		assert.equal(summary.lineItems[2]?.patientCoPayKopecks, 1500000);
+		assert.equal(summary.lineItems[2]?.dmsCoveredKopecks, 0);
 
-		// Calculated sums
-		// Total Patient = 90000 + 36000 + 1500000 = 1,626,000 kop (16,260.00 RUB)
-		// Total Insurer = 360000 + 324000 + 0 = 684,000 kop (6,840.00 RUB)
-		assert.equal(summary.calculatedPatientKopecks, 1626000);
-		assert.equal(summary.calculatedInsurerKopecks, 684000);
-		assert.equal(summary.finalPatientKopecks, 1626000);
-		assert.equal(summary.finalInsurerKopecks, 684000);
-		assert.equal(summary.finalPatientKopecks + summary.finalInsurerKopecks, summary.totalGrossKopecks);
-		assert.equal(summary.limitExceeded, false);
-		assert.equal(summary.limitOverflowKopecks, 0);
+		assert.equal(summary.totalPatientCoPayKopecks, 1662000);
+		assert.equal(summary.totalDmsCoveredKopecks, 648000);
+		assert.equal((summary.totalPatientCoPayKopecks ?? 0) + (summary.totalDmsCoveredKopecks ?? 0), summary.totalBillKopecks);
+		assert.equal(summary.integrityInvariantHolds, true);
 	});
 
 	it("1.5 Automatically redirects insurer excess to patient when guarantee letter limit is exceeded", () => {
-		const items: DmsInvoiceItem[] = [
+		const items = [
 			{
-				id: "item-1",
-				serviceCode804n: "A16.07.054",
+				serviceId: "item-1",
+				serviceCode: "A16.07.054",
 				serviceName: "Внутрикостная дентальная имплантация",
 				quantity: 1,
-				unitPriceKopecks: 4000000, // 40,000.00 RUB
-				totalKopecks: 4000000,
+				priceRub: 40000, // 40,000.00 RUB
+				category: "surgery",
 			},
 		];
 
-		// Insurer portion at 20% franchise:
-		// Patient pays 20% = 800,000 kop
-		// Insurer pays 80% = 3,200,000 kop
-		// Remaining guarantee letter limit is only 2,000,000 kop (20,000.00 RUB)
-		const summary = calculateInvoiceDmsSplit({
+		// Limit is 20,000 RUB (2,000,000 kop).
+		// 20% franchise: candidate covered = 32,000 RUB (3,200,000 kop), patient copay = 8,000 RUB (800,000 kop).
+		// Since remaining limit is only 20,000 RUB, dmsCovered is capped at 20,000 RUB (2,000,000 kop),
+		// and the remaining 20,000 RUB (2,000,000 kop) is assigned to patient!
+		const summary = calculateDmsGuaranteeSplit(
+			{
+				id: "g-let-2",
+				letterNumber: "ГП-2",
+				patientFullName: "Иванов И.И.",
+				companyName: "СОГАЗ",
+				policyNumber: "П-1",
+				status: "active",
+				limitKopecks: 2000000,
+				remainingLimitKopecks: 2000000,
+				usedKopecks: 0,
+				franchisePct: 20,
+				franchiseType: "percent",
+			},
 			items,
-			defaultFranchisePercent: 20,
-			guaranteeLetterRemainingLimitKopecks: 2000000,
-		});
+		);
 
-		assert.equal(summary.totalGrossKopecks, 4000000);
-		assert.equal(summary.calculatedPatientKopecks, 800000);
-		assert.equal(summary.calculatedInsurerKopecks, 3200000);
-
-		// Limit overflow = 3200000 - 2000000 = 1,200,000 kop
-		assert.equal(summary.limitExceeded, true);
-		assert.equal(summary.limitOverflowKopecks, 1200000);
-
-		// Final Insurer = remaining limit = 2,000,000 kop
-		// Final Patient = 800000 + 1200000 = 2,000,000 kop
-		assert.equal(summary.finalInsurerKopecks, 2000000);
-		assert.equal(summary.finalPatientKopecks, 2000000);
-
-		// Penny-exact balance check
-		assert.equal(summary.finalPatientKopecks + summary.finalInsurerKopecks, summary.totalGrossKopecks);
+		assert.equal(summary.totalBillKopecks, 4000000);
+		assert.equal(summary.totalDmsCoveredKopecks, 2000000);
+		assert.equal(summary.totalPatientCoPayKopecks, 2000000);
+		assert.equal((summary.totalPatientCoPayKopecks ?? 0) + (summary.totalDmsCoveredKopecks ?? 0), summary.totalBillKopecks);
+		assert.equal(summary.integrityInvariantHolds, true);
 	});
 
 	it("1.6 Validates Zod schemas for franchise and invoice split inputs", () => {

@@ -9,8 +9,7 @@
 import * as assert from "node:assert";
 import { describe, it } from "node:test";
 import {
-	calculateDmsSplitInvoice,
-	type DmsBillItemInput,
+	calculateDmsGuaranteeSplit,
 	exportRegistryToCsv,
 	formatKopecks,
 	generateBilateralAcceptanceActHtml,
@@ -242,68 +241,101 @@ describe("DMS Split-Invoicing Engine (Iron Balance & Copay)", () => {
 	];
 
 	it("Разделение счетов со 100% покрытием терапии и оплатой пациентом исключений", () => {
-		const result = calculateDmsSplitInvoice(items, "standard_therapy");
+		const calcItems = [
+			{ serviceId: "1", serviceCode: "A16.07.002.001", serviceName: "Восстановление зуба пломбой (Терапия)", quantity: 1, priceRub: 3800, category: "therapy" },
+			{ serviceId: "2", serviceCode: "A11.07.010", serviceName: "Анестезия инфильтрационная", quantity: 1, priceRub: 950, category: "therapy" },
+			{ serviceId: "3", serviceCode: "A16.07.050", serviceName: "Клиническое фотоотбеливание Zoom 4 (Исключение)", quantity: 1, priceRub: 26000, isExcluded: true, category: "therapy" },
+		];
+		const result = calculateDmsGuaranteeSplit(
+			{
+				id: "let-1",
+				letterNumber: "ГП-1",
+				patientFullName: "Пациент",
+				companyName: "СОГАЗ",
+				policyNumber: "П-1",
+				maxCoverageRub: 100000,
+				usedAmountRub: 0,
+				status: "active",
+			},
+			calcItems,
+		);
 
 		assert.equal(result.totalBillKopecks, 380000 + 95000 + 2600000);
 		assert.equal(result.totalDmsCoveredKopecks, 380000 + 95000);
 		assert.equal(result.totalPatientCoPayKopecks, 2600000);
-		assert.equal(result.balanceInvariantHolds, true);
+		assert.equal(result.integrityInvariantHolds, true);
 		assert.equal(
 			result.totalBillKopecks,
-			result.totalDmsCoveredKopecks + result.totalPatientCoPayKopecks,
+			(result.totalDmsCoveredKopecks ?? 0) + (result.totalPatientCoPayKopecks ?? 0),
 		);
 	});
 
 	it("Расчет с процентной франшизой 20%", () => {
-		const therapyItems: DmsBillItemInput[] = [
+		const calcItems = [
 			{
-				id: "1",
-				serviceCode804n: "A16.07.002.001",
+				serviceId: "1",
+				serviceCode: "A16.07.002.001",
 				serviceName: "Пломба",
 				quantity: 1,
-				unitPriceKopecks: 1000000, // 10 000 руб
+				priceRub: 10000,
+				category: "therapy",
 			},
 		];
 
-		const result = calculateDmsSplitInvoice(
-			therapyItems,
-			"standard_therapy",
-			null,
+		const result = calculateDmsGuaranteeSplit(
 			{
-				franchisePercent: 20,
+				id: "let-1",
+				letterNumber: "ГП-1",
+				patientFullName: "Пациент",
+				companyName: "СОГАЗ",
+				policyNumber: "П-1",
+				maxCoverageRub: 100000,
+				usedAmountRub: 0,
+				status: "active",
+				franchisePct: 20,
+				franchiseType: "percent",
 			},
+			calcItems,
 		);
 
 		assert.equal(result.totalBillKopecks, 1000000);
 		assert.equal(result.totalDmsCoveredKopecks, 800000); // 8 000 руб
 		assert.equal(result.totalPatientCoPayKopecks, 200000); // 2 000 руб
-		assert.equal(result.balanceInvariantHolds, true);
+		assert.equal(result.integrityInvariantHolds, true);
 	});
 
 	it("Расчет с фиксированной франшизой 1500 руб", () => {
-		const therapyItems: DmsBillItemInput[] = [
+		const calcItems = [
 			{
-				id: "1",
-				serviceCode804n: "A16.07.002.001",
+				serviceId: "1",
+				serviceCode: "A16.07.002.001",
 				serviceName: "Пломба",
 				quantity: 1,
-				unitPriceKopecks: 500000, // 5 000 руб
+				priceRub: 5000,
+				category: "therapy",
 			},
 		];
 
-		const result = calculateDmsSplitInvoice(
-			therapyItems,
-			"standard_therapy",
-			null,
+		const result = calculateDmsGuaranteeSplit(
 			{
-				franchiseFixedKopecks: 150000, // 1 500 руб
+				id: "let-1",
+				letterNumber: "ГП-1",
+				patientFullName: "Пациент",
+				companyName: "СОГАЗ",
+				policyNumber: "П-1",
+				maxCoverageRub: 100000,
+				usedAmountRub: 0,
+				status: "active",
+				franchiseFixedRub: 1500,
+				franchiseType: "fixed_rub",
 			},
+			calcItems,
 		);
 
 		assert.equal(result.totalBillKopecks, 500000);
 		assert.equal(result.totalDmsCoveredKopecks, 350000);
 		assert.equal(result.totalPatientCoPayKopecks, 150000);
-		assert.equal(result.balanceInvariantHolds, true);
+		assert.equal(result.integrityInvariantHolds, true);
 	});
 });
 

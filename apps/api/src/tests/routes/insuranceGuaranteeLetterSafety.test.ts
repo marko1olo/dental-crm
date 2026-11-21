@@ -103,6 +103,7 @@ describe("DMS Guarantee Letters — Postgres 22P02 & Date Safety", () => {
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"idempotency-key": "018f0000-0000-7000-8000-000000000001",
 			},
 			payload: {
 				amountRub: 1500,
@@ -115,13 +116,33 @@ describe("DMS Guarantee Letters — Postgres 22P02 & Date Safety", () => {
 		assert.ok(json.message.includes("UUID"));
 	});
 
-	test("5. POST /api/insurance/guarantee-letters/emergency/record-usage preserves Mandate 8e acute pain fallback", async () => {
+	test("5. POST /api/insurance/guarantee-letters/:letterId/record-usage strictly requires Idempotency-Key (Mandate 8zp/8bo)", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/insurance/guarantee-letters/${fixtureUuid(NAMESPACE, 9)}/record-usage`,
+			headers: {
+				"x-dente-clinic-token": staffToken,
+				"x-dente-staff-token": staffToken,
+			},
+			payload: {
+				amountRub: 1500,
+			},
+		});
+
+		assert.equal(res.statusCode, 400, `Expected 400 Bad Request without Idempotency-Key, got ${res.statusCode}: ${res.body}`);
+		const json = JSON.parse(res.body);
+		assert.equal(json.error, "IdempotencyKeyRequired");
+		assert.ok(json.message.includes("Idempotency-Key"));
+	});
+
+	test("6. POST /api/insurance/guarantee-letters/emergency/record-usage preserves Mandate 8e acute pain fallback", async () => {
 		const res = await app.inject({
 			method: "POST",
 			url: "/api/insurance/guarantee-letters/emergency/record-usage",
 			headers: {
 				"x-dente-clinic-token": staffToken,
 				"x-dente-staff-token": staffToken,
+				"idempotency-key": "018f0000-0000-7000-8000-000000000002",
 			},
 			payload: {
 				amountRub: 3500,
