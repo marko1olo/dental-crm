@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { db } from "../../../../db/client.js";
+import { db, type TenantDb } from "../../../../db/client.js";
 import {
 	auditEvents,
 	invoiceItems,
@@ -25,7 +25,7 @@ import { updateTreatmentPlanStatusSchema } from "./schemas.js";
  * DEF-PLAN-01: При утверждении плана создается реальный счет/наряд в кассе и возвращается объект инвойса.
  */
 
-interface CreatedInvoiceSummary {
+export interface CreatedInvoiceSummary {
 	id: string;
 	number: string;
 	invoiceNumber: string;
@@ -48,8 +48,8 @@ interface CreatedInvoiceSummary {
 	}>;
 }
 
-async function createInvoiceForApprovedPlan(
-	tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+export async function createInvoiceForApprovedPlan(
+	tx: TenantDb,
 	params: {
 		organizationId: string;
 		patientId: string;

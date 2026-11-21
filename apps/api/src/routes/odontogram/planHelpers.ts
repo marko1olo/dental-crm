@@ -58,6 +58,7 @@ export function serializeTreatmentPlan(
 	doctorsById?: Map<string, { fullName: string; specialty: string | null }>,
 	ledgerMap?: Map<string, { status: string; visitId: string | null }>,
 	stages?: Array<typeof treatmentPlanStages.$inferSelect>,
+	ledgerByPlanItemId?: Map<string, { status: string; visitId: string | null }>,
 ) {
 	return {
 		id: plan.id,
@@ -97,7 +98,9 @@ export function serializeTreatmentPlan(
 					? doctorsById.get(item.doctorId)
 					: undefined;
 			const ledgerId = ledgerRowId(plan.id, index).toLowerCase();
-			const ledgerRow = ledgerMap?.get(ledgerId);
+			const ledgerRow =
+				(item.id ? ledgerByPlanItemId?.get(item.id.toLowerCase()) : undefined) ??
+				ledgerMap?.get(ledgerId);
 			const isCompleted = plan.status === "Completed" || ledgerRow?.status === "completed";
 			return {
 				id: item.id,
@@ -107,6 +110,9 @@ export function serializeTreatmentPlan(
 				quantity: item.quantity,
 				price: numeric(item.price),
 				discount: numeric(item.discount),
+				priceKopecks: Number(item.priceKopecks ?? Math.round(numeric(item.price) * 100)),
+				unitPriceKopecks: Number(item.priceKopecks ?? Math.round(numeric(item.price) * 100)),
+				discountKopecks: Number(item.discountKopecks ?? Math.round(numeric(item.discount) * 100)),
 				phase: item.phase,
 				isAuto: item.isBundle,
 				doctorId: item.doctorId ?? null,
@@ -219,6 +225,7 @@ export async function loadTreatmentPlansForPatient(
 			id: treatmentItems.id,
 			status: treatmentItems.status,
 			visitId: treatmentItems.visitId,
+			treatmentPlanItemId: treatmentItems.treatmentPlanItemId,
 		})
 		.from(treatmentItems)
 		.where(
@@ -229,8 +236,13 @@ export async function loadTreatmentPlansForPatient(
 		);
 
 	const ledgerMap = new Map<string, { status: string; visitId: string | null }>();
+	const ledgerByPlanItemId = new Map<string, { status: string; visitId: string | null }>();
 	for (const lr of ledgerRows) {
-		ledgerMap.set(lr.id.toLowerCase(), { status: lr.status, visitId: lr.visitId });
+		const entry = { status: lr.status, visitId: lr.visitId };
+		ledgerMap.set(lr.id.toLowerCase(), entry);
+		if (lr.treatmentPlanItemId) {
+			ledgerByPlanItemId.set(lr.treatmentPlanItemId.toLowerCase(), entry);
+		}
 	}
 
 	return plans.map((plan) =>
@@ -240,6 +252,7 @@ export async function loadTreatmentPlansForPatient(
 			doctorsById,
 			ledgerMap,
 			stagesByPlanId.get(plan.id) ?? [],
+			ledgerByPlanItemId,
 		),
 	);
 }

@@ -1,10 +1,16 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { auditEvents, treatmentPlans } from "../../db/schema.js";
+import { auditEvents, treatmentItems, treatmentPlans } from "../../db/schema.js";
 import { wsBroker } from "../../services/websocketBroker.js";
+import { LEDGER_ID_PREFIX_LENGTH } from "../odontogram/types.js";
+import { cancelRejectedPlanTierLedgerItems } from "./handlers/mutations/planLedgerSync.js";
+import {
+	createInvoiceForApprovedPlan,
+	type CreatedInvoiceSummary,
+} from "./handlers/mutations/statusTreatmentPlanHandler.js";
 import type { PipelineStage } from "./pipelineTypes.js";
 
 export const stageTransitionSchema = z.object({
@@ -93,7 +99,7 @@ export async function handleStageTransition(
 		updatePayload.approvedAt = now;
 	}
 
-	const updatedPlan = await withTenantCtx(organizationId, async (tx) => {
+	const result = await withTenantCtx(organizationId, async (tx) => {
 		const [plan] = await tx
 			.update(treatmentPlans)
 			.set(updatePayload)
@@ -102,6 +108,48 @@ export async function handleStageTransition(
 
 		if (!plan) {
 			return null;
+		}
+
+		let invoice: CreatedInvoiceSummary | null = null;
+
+		if (targetStatus === "Approved") {
+			const ledgerPrefix = id.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase();
+			await tx
+				.update(treatmentItems)
+				.set({
+					status: "approved",
+					treatmentPlanId: id,
+				})
+				.where(
+					and(
+						eq(treatmentItems.organizationId, organizationId),
+						eq(treatmentItems.patientId, existing.patientId),
+						eq(treatmentItems.status, "proposed"),
+						or(
+							eq(treatmentItems.treatmentPlanId, id),
+							sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${ledgerPrefix}`,
+							sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${id} AND organization_id = ${organizationId})`,
+						),
+					),
+				);
+
+			await cancelRejectedPlanTierLedgerItems(tx, {
+				organizationId,
+				patientId: existing.patientId,
+				approvedPlanId: id,
+				planGroupId: existing.planGroupId,
+			});
+
+			invoice = await createInvoiceForApprovedPlan(tx, {
+				organizationId,
+				patientId: existing.patientId,
+				planId: id,
+				planName: plan.name || "Комплексный план лечения",
+				planTotalPriceRub: plan.totalPriceRub || plan.totalPrice,
+				discountMode: plan.discountMode,
+				planDiscountPercent: plan.planDiscountPercent ? Number(plan.planDiscountPercent) : 0,
+				planDiscountRub: plan.planDiscountRub ? Number(plan.planDiscountRub) : 0,
+			});
 		}
 
 		await tx.insert(auditEvents).values({
@@ -113,15 +161,18 @@ export async function handleStageTransition(
 			reason: `План лечения «${plan.name}» перемещен в статус ${targetStatus} (этап: ${targetStage || "custom"})${reason ? `: ${reason}` : ""}`,
 		});
 
-		return plan;
+		return { plan, invoice };
 	});
 
-	if (!updatedPlan) {
+	if (!result || !result.plan) {
 		return reply.code(500).send({
 			error: "UpdateFailed",
 			message: "Не удалось переместить план лечения",
 		});
 	}
+
+	const updatedPlan = result.plan;
+	const createdInvoice = result.invoice;
 
 	wsBroker.broadcastToOrganization(organizationId, {
 		type: "TREATMENT_PLAN_UPDATED",
@@ -133,11 +184,31 @@ export async function handleStageTransition(
 		},
 	});
 
+	if (createdInvoice) {
+		try {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "INVOICE_CREATED",
+				payload: {
+					invoiceId: createdInvoice.id,
+					invoiceNumber: createdInvoice.invoiceNumber,
+					patientId: existing.patientId,
+					patientName: createdInvoice.patientName,
+					totalAmountRub: createdInvoice.totalAmountRub,
+					status: "draft",
+				},
+			});
+		} catch (wsErr) {
+			request.log.warn({ err: wsErr }, "WebSocket broadcast failed for INVOICE_CREATED from plan stage transition");
+		}
+	}
+
 	return reply.code(200).send({
 		success: true,
 		status: targetStatus,
 		newStage: targetStage,
 		newStatus: targetStatus,
 		plan: updatedPlan,
+		invoice: createdInvoice,
+		createdInvoice,
 	});
 }

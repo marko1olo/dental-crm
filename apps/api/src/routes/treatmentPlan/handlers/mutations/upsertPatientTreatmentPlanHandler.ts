@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../../../accessGuard.js";
@@ -197,15 +197,6 @@ export async function handleUpsertPatientTreatmentPlan(
 					.returning({ id: treatmentPlans.id, version: treatmentPlans.version });
 				if (!planUpdated) return null;
 
-				await tx
-					.delete(treatmentPlanItemsNew)
-					.where(
-						and(
-							eq(treatmentPlanItemsNew.planId, savedPlanId),
-							eq(treatmentPlanItemsNew.organizationId, organizationId),
-						),
-					);
-
 				if (isRevision) {
 					try {
 						await tx.insert(auditEvents).values({
@@ -341,33 +332,88 @@ export async function handleUpsertPatientTreatmentPlan(
 				}
 			}
 
-			let createdItemsList: Array<{ id: string }> = [];
-			if (input.items.length > 0) {
-				createdItemsList = await tx.insert(treatmentPlanItemsNew).values(
-					input.items.map((item) => {
-						const phaseNum = item.phase || 1;
-						const itemPriceKopecks = typeof item.unitPriceKopecks === "number" && item.unitPriceKopecks > 0
-							? Math.round(item.unitPriceKopecks)
-							: rublesToKopecks(item.price);
-						const itemDiscountKopecks = rublesToKopecks(item.discount);
-						return {
-							organizationId,
-							planId: savedPlanId,
-							stageId: stageMap.get(phaseNum) ?? null,
-							toothNumber: item.toothNumber ?? null,
-							priceId: item.priceId || (item.isCustom ? "custom" : "service-item"),
-							name: item.name ?? null,
-							quantity: item.quantity,
-							price: item.price.toString(),
-							discount: item.discount.toString(),
-							priceKopecks: itemPriceKopecks,
-							discountKopecks: itemDiscountKopecks,
-							phase: phaseNum,
-							isBundle: Boolean(item.isAuto),
-							doctorId: item.doctorId ?? null,
-						};
-					}),
-				).returning({ id: treatmentPlanItemsNew.id });
+			// Diff-based Upsert (ROT-004): Загружаем существующие элементы плана лечения
+			const existingPlanItems = savedPlanId
+				? await tx
+						.select()
+						.from(treatmentPlanItemsNew)
+						.where(
+							and(
+								eq(treatmentPlanItemsNew.planId, savedPlanId),
+								eq(treatmentPlanItemsNew.organizationId, organizationId),
+							),
+						)
+				: [];
+			const existingItemMap = new Map(existingPlanItems.map((it) => [it.id, it]));
+
+			// Находим элементы, которые были удалены пользователем
+			const incomingItemIds = new Set(
+				input.items
+					.map((item) => item.id)
+					.filter((id): id is string => Boolean(id && existingItemMap.has(id))),
+			);
+
+			const idsToDelete = existingPlanItems
+				.filter((it) => !incomingItemIds.has(it.id))
+				.map((it) => it.id);
+
+			if (idsToDelete.length > 0) {
+				await tx
+					.delete(treatmentPlanItemsNew)
+					.where(
+						and(
+							inArray(treatmentPlanItemsNew.id, idsToDelete),
+							eq(treatmentPlanItemsNew.organizationId, organizationId),
+						),
+					);
+			}
+
+			// Выполняем update для существующих строк или insert для новых
+			const createdItemsList: Array<{ id: string }> = [];
+			for (const item of input.items) {
+				const phaseNum = item.phase || 1;
+				const itemPriceKopecks =
+					typeof item.unitPriceKopecks === "number" && item.unitPriceKopecks > 0
+						? Math.round(item.unitPriceKopecks)
+						: rublesToKopecks(item.price);
+				const itemDiscountKopecks = rublesToKopecks(item.discount);
+				const itemPayload = {
+					organizationId,
+					planId: savedPlanId,
+					stageId: stageMap.get(phaseNum) ?? null,
+					toothNumber: item.toothNumber ?? null,
+					priceId: item.priceId || (item.isCustom ? "custom" : "service-item"),
+					name: item.name ?? null,
+					quantity: item.quantity,
+					price: item.price.toString(),
+					discount: item.discount.toString(),
+					priceKopecks: itemPriceKopecks,
+					discountKopecks: itemDiscountKopecks,
+					phase: phaseNum,
+					isBundle: Boolean(item.isAuto),
+					doctorId: item.doctorId ?? null,
+				};
+
+				if (item.id && existingItemMap.has(item.id)) {
+					await tx
+						.update(treatmentPlanItemsNew)
+						.set(itemPayload)
+						.where(
+							and(
+								eq(treatmentPlanItemsNew.id, item.id),
+								eq(treatmentPlanItemsNew.organizationId, organizationId),
+							),
+						);
+					createdItemsList.push({ id: item.id });
+				} else {
+					const [created] = await tx
+						.insert(treatmentPlanItemsNew)
+						.values(itemPayload)
+						.returning({ id: treatmentPlanItemsNew.id });
+					if (created) {
+						createdItemsList.push({ id: created.id });
+					}
+				}
 			}
 
 			// DEF-03: Синхронизация книги лечения (treatment_items) с сохранением FK treatmentPlanItemId

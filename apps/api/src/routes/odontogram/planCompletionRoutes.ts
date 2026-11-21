@@ -202,26 +202,45 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					.map((idx) => (planItems[idx] ? ledgerRowId(planId, idx) : null))
 					.filter((id): id is string => Boolean(id));
 
+				const targetItemIds = Array.from(targetIndices)
+					.map((idx) => planItems[idx]?.id)
+					.filter((id): id is string => Boolean(id));
+
 				const existingRows =
-					targetLedgerIds.length > 0
+					targetLedgerIds.length > 0 || targetItemIds.length > 0
 						? await tx
-								.select({ id: treatmentItems.id })
+								.select({
+									id: treatmentItems.id,
+									treatmentPlanItemId: treatmentItems.treatmentPlanItemId,
+								})
 								.from(treatmentItems)
 								.where(
 									and(
-										inArray(treatmentItems.id, targetLedgerIds),
 										eq(treatmentItems.organizationId, organizationId),
+										or(
+											targetLedgerIds.length > 0
+												? inArray(treatmentItems.id, targetLedgerIds)
+												: sql`false`,
+											targetItemIds.length > 0
+												? inArray(treatmentItems.treatmentPlanItemId, targetItemIds)
+												: sql`false`,
+										),
 									),
 								)
 						: [];
 
 				const existingIdSet = new Set(existingRows.map((r) => r.id));
+				const existingPlanItemIdSet = new Set(
+					existingRows
+						.map((r) => r.treatmentPlanItemId)
+						.filter((id): id is string => Boolean(id)),
+				);
 
 				for (const idx of targetIndices) {
 					const item = planItems[idx];
 					if (!item) continue;
 					const ledgerId = ledgerRowId(planId, idx);
-					if (existingIdSet.has(ledgerId)) {
+					if (existingIdSet.has(ledgerId) || existingPlanItemIdSet.has(item.id)) {
 						await tx
 							.update(treatmentItems)
 							.set({
@@ -234,8 +253,11 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							})
 							.where(
 								and(
-									eq(treatmentItems.id, ledgerId),
 									eq(treatmentItems.organizationId, organizationId),
+									or(
+										eq(treatmentItems.treatmentPlanItemId, item.id),
+										eq(treatmentItems.id, ledgerId),
+									),
 								),
 							);
 					}
@@ -246,7 +268,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					const item = planItems[idx];
 					if (!item) continue;
 					const ledgerId = ledgerRowId(planId, idx);
-					if (!existingIdSet.has(ledgerId)) {
+					if (!existingIdSet.has(ledgerId) && !existingPlanItemIdSet.has(item.id)) {
 						const { name } = splitStoredPriceId(item.priceId);
 						itemsToInsert.push({
 							id: ledgerId,
@@ -280,7 +302,11 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 
 				// Проверяем, все ли позиции плана теперь завершены
 				const ledgerRows = await tx
-					.select({ id: treatmentItems.id, status: treatmentItems.status })
+					.select({
+						id: treatmentItems.id,
+						status: treatmentItems.status,
+						treatmentPlanItemId: treatmentItems.treatmentPlanItemId,
+					})
 					.from(treatmentItems)
 					.where(
 						and(
@@ -289,6 +315,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 							or(
 								eq(treatmentItems.treatmentPlanId, planId),
 								sql`lower(left(${treatmentItems.id}::text, ${sql.raw(String(LEDGER_ID_PREFIX_LENGTH))})) = ${planId.slice(0, LEDGER_ID_PREFIX_LENGTH).toLowerCase()}`,
+								sql`${treatmentItems.treatmentPlanItemId} IN (SELECT id FROM treatment_plan_items_new WHERE plan_id = ${planId} AND organization_id = ${organizationId})`,
 							),
 						),
 					);
@@ -298,8 +325,14 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 						.filter((r) => r.status === "completed")
 						.map((r) => r.id.toLowerCase()),
 				);
+				const completedPlanItemIdsSet = new Set(
+					ledgerRows
+						.filter((r) => r.status === "completed" && r.treatmentPlanItemId)
+						.map((r) => r.treatmentPlanItemId!.toLowerCase()),
+				);
 
-				const allCompleted = planItems.every((_, idx) =>
+				const allCompleted = planItems.every((item, idx) =>
+					completedPlanItemIdsSet.has(item.id.toLowerCase()) ||
 					completedLedgerIds.has(ledgerRowId(planId, idx).toLowerCase()),
 				);
 
