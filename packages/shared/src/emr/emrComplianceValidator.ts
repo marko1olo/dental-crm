@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * EMR FORM 043/U COMPLIANCE VALIDATOR (ORDERS № 834N & № 203N)
- * Statutory rules, semantic audit, and quality assessment
+ * МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПРИЁМА — АУДИТ КАЧЕСТВА ЭМК
+ * Клинические рекомендации СтАР и стандарты качества ведения медкарты
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -42,6 +42,35 @@ export type Form043uComplianceInput =
 	| Partial<VisitDiaryEntry043>
 	| Record<string, unknown>;
 
+interface LooseRecordCard {
+	readonly formNumber?: string | undefined;
+	readonly passport?: {
+		readonly patientFullName?: string | undefined;
+		readonly medicalCardNumber?: string | undefined;
+		readonly patientBirthDate?: string | undefined;
+		readonly patientIdentityDocument?: string | undefined;
+	} | undefined;
+	readonly patientFullName?: string | undefined;
+	readonly medicalCardNumber?: string | undefined;
+	readonly patientBirthDate?: string | undefined;
+	readonly patientIdentityDocument?: string | undefined;
+	readonly allergologicalHistory?: string | undefined;
+	readonly chiefComplaint?: string | undefined;
+	readonly anamnesis?: {
+		readonly allergologicalHistory?: string | undefined;
+		readonly chiefComplaint?: string | undefined;
+	} | undefined;
+	readonly dentalStatus?: {
+		readonly odontogramTeeth?: readonly unknown[] | undefined;
+	} | undefined;
+	readonly odontogramTeeth?: readonly unknown[] | undefined;
+	readonly visitDiaries?: readonly VisitDiaryEntry043[] | undefined;
+	readonly soapDiaries?: readonly VisitDiaryEntry043[] | undefined;
+	readonly procedureProtocol?: string | undefined;
+	readonly assessmentIcd10Code?: string | undefined;
+	readonly assessmentDiagnosisText?: string | undefined;
+}
+
 /**
  * Семантический и законодательный валидатор формы № 043/у по Приказу Минздрава № 834н
  */
@@ -51,12 +80,13 @@ export function validateForm043uCompliance(
 	const issues: Statutory043Issue[] = [];
 	const missingBlocks: string[] = [];
 
-	const raw = (input && typeof input === "object" ? input : {}) as Record<string, any>;
+	const raw = (input && typeof input === "object" ? input : {}) as LooseRecordCard;
 
-	// Проверяем, передан ли дневник или полная карта 043/у
+	// Проверяем, передан ли дневник или полная медицинская карта
 	const isExplicitCard = Boolean(
 		input &&
 		(raw.formNumber === "043/у" ||
+			raw.formNumber === "Медицинская карта приёма" ||
 			raw.passport !== undefined ||
 			(raw.dentalStatus !== undefined && Array.isArray(raw.dentalStatus?.odontogramTeeth))),
 	);
@@ -67,8 +97,8 @@ export function validateForm043uCompliance(
 			typeof raw.assessmentIcd10Code === "string" ||
 			typeof raw.assessmentDiagnosisText === "string"),
 	);
-	const fullCard = isExplicitCard ? raw : null;
-	const singleDiary = isSingleDiary ? raw : (!isExplicitCard && !Array.isArray(raw.visitDiaries) ? raw : null);
+	const fullCard: LooseRecordCard | null = isExplicitCard ? raw : null;
+	const singleDiary: LooseRecordCard | null = isSingleDiary ? raw : (!isExplicitCard && !Array.isArray(raw.visitDiaries) ? raw : null);
 
 	let icd10Valid = true;
 	let fdiToothValid = true;
@@ -102,7 +132,7 @@ export function validateForm043uCompliance(
 			issues.push({
 				blockKey: "anamnesis",
 				fieldLabel: "Номер карты",
-				message: "Отсутствует уникальный регистрационный номер амбулаторной карты 043/у.",
+				message: "Отсутствует уникальный регистрационный номер медицинской карты пациента.",
 				severity: "critical",
 				statutoryRule: "Приказ Минздрава России № 834н",
 			});
@@ -158,15 +188,15 @@ export function validateForm043uCompliance(
 		}
 
 		// 3. Зубная формула (Одонтограмма)
-		const odontTeeth = fullCard.dentalStatus?.odontogramTeeth || fullCard.odontogramTeeth;
-		if (!odontTeeth || odontTeeth.length === 0) {
+		const odontTeeth = (fullCard.dentalStatus as Record<string, unknown> | undefined)?.odontogramTeeth || fullCard.odontogramTeeth;
+		if (!odontTeeth || (Array.isArray(odontTeeth) && odontTeeth.length === 0)) {
 			missingBlocks.push("Стоматологический статус: Зубная формула");
 			issues.push({
 				blockKey: "odontogram",
 				fieldLabel: "Зубная формула (FDI)",
 				message: "Зубная формула не заполнена (отсутствуют записи по 32 зубам).",
 				severity: "critical",
-				statutoryRule: "Приказ Минздрава № 834н / Форма 043/у раздел «Зубная формула»",
+				statutoryRule: "Клинический стандарт ведения медицинской карты / Зубная формула",
 			});
 		}
 	}
@@ -184,10 +214,10 @@ export function validateForm043uCompliance(
 					: singleDiary
 						? [singleDiary]
 						: []);
-	const diariesToCheck: VisitDiaryEntry043[] = Array.isArray(rawDiaries) ? rawDiaries : [];
+	const diariesToCheck: VisitDiaryEntry043[] = Array.isArray(rawDiaries) ? (rawDiaries as VisitDiaryEntry043[]) : [];
 
 	if (diariesToCheck.length === 0) {
-		missingBlocks.push("Дневник приёма (Форма 043/у)");
+		missingBlocks.push("Дневник приёма (Карта пациента)");
 		issues.push({
 			blockKey: "treatment_protocol",
 			fieldLabel: "Дневниковые записи посещений",
@@ -209,7 +239,7 @@ export function validateForm043uCompliance(
 				fieldLabel: `${diaryPrefix}I. Жалобы и анамнез`,
 				message: "Блок жалоб не заполнен или содержит краткую запись (рекомендуется дополнить).",
 				severity: "warning",
-				statutoryRule: "Приказ Минздрава № 834н (Форма 043/у)",
+				statutoryRule: "Стандарт ведения медицинской карты приёма",
 			});
 		}
 
@@ -220,7 +250,7 @@ export function validateForm043uCompliance(
 				fieldLabel: `${diaryPrefix}II. Объективный статус (Status localis)`,
 				message: "Объективный статус (Status localis) не описан или содержит краткую запись осмотра.",
 				severity: "warning",
-				statutoryRule: "Приказ Минздрава № 834н (Форма 043/у)",
+				statutoryRule: "Стандарт ведения медицинской карты приёма",
 			});
 		}
 
@@ -376,7 +406,7 @@ export function validateForm043uCompliance(
 	const isCompliant = criticalDefects.length === 0 && score >= 80;
 
 	const summaryText = isCompliant
-		? `Медицинская документация соответствует требованиям Приказа Минздрава России № 834н (Индекс комплаентности: ${score}%). Критических дефектов не обнаружено.`
+		? `Медицинская карта приёма оформлена в соответствии со стандартами клинических протоколов (Индекс комплаентности: ${score}%). Критических дефектов не обнаружено.`
 		: `Клинические рекомендации по оформлению протокола приёма (Индекс: ${score}%). Замечаний: ${warnings.length}${criticalDefects.length > 0 ? `, критических замечаний: ${criticalDefects.length}` : ""}. Карта доступна для сохранения и подписания врачом.`;
 
 	return {

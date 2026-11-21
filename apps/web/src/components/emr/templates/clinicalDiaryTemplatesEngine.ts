@@ -7,17 +7,24 @@
  * instant insertion of strictly formulated statutory clinical diary text.
  */
 
-import { isValidFdiToothNumber } from "@dental/shared";
-
-export * from "./clinicalDiaryTemplatesCatalogData";
 import {
+	isValidFdiToothNumber,
 	type Clinical1ClickTemplate,
 	type ClinicalProtocolCategory,
 	CLINICAL_1CLICK_TEMPLATES_CATALOG,
 	CLINICAL_CATEGORY_LABELS,
 	type Order804nServiceItem,
 	PHYSIOLOGICAL_NORM_PRESET,
-} from "./clinicalDiaryTemplatesCatalogData";
+} from "@dental/shared";
+
+export {
+	type Clinical1ClickTemplate,
+	type ClinicalProtocolCategory,
+	CLINICAL_1CLICK_TEMPLATES_CATALOG,
+	CLINICAL_CATEGORY_LABELS,
+	type Order804nServiceItem,
+	PHYSIOLOGICAL_NORM_PRESET,
+};
 
 /** Параметры синтеза готового дневника при 1 клике */
 export interface TemplateSynthesisOptions {

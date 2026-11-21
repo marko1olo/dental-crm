@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * EMR FORM 043/U ORDER 804N STATUTORY SERVICES & CLINICAL PROTOCOLS
- * Implementation according to Order of the Ministry of Health № 804n / № 834n
+ * КЛИНИЧЕСКИЕ ПРОТОКОЛЫ УСЛУГ И ДНЕВНИКИ ЭМК (ПРЕЙСКУРАНТ УСЛУГ И СТАР)
+ * Реализация клинических протоколов лечения по стандартам Стоматологической Ассоциации России
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -171,11 +171,11 @@ export function synthesizeProtocolFromOrder804nService(
 }
 
 /**
- * 100% неразрушающее обогащение дневника 043/у при выборе услуг 804н.
+ * 100% неразрушающее обогащение дневника приёма при выборе услуг.
  * Защищает от потери любой введенный врачом текст (жалобы, анамнез, сопутствующие патологии).
  */
 export function enrichDiaryFrom804nServices(
-	existingDiary: Partial<SoapVisitDiary> | any,
+	existingDiary: Partial<SoapVisitDiary> | null | undefined,
 	services804n: readonly (string | { code: string })[],
 	options?: EnrichDiaryFrom804nOptions,
 ): SoapVisitDiary {

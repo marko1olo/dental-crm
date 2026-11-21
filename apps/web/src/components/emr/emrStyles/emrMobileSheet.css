@@ -3,7 +3,7 @@
  * Mandate 8b: Micro-module strictly <= 120 lines.
  */
 
-.emr-studio-drag-handle, .emr043-drag-handle {
+.emr-studio-drag-handle {
   width: 36px; height: 5px;
   background: var(--line-strong, #94a3b8); border-radius: 9999px;
   margin: 10px auto 4px auto; flex-shrink: 0; opacity: 0.7;
@@ -14,7 +14,7 @@
 }
 
 @media (pointer: coarse), (max-width: 768px) {
-  .emr-studio-backdrop, .emr043-modal-backdrop {
+  .emr-studio-backdrop {
     padding: 0 !important;
     align-items: stretch !important;
     justify-content: stretch !important;
@@ -32,11 +32,11 @@
     z-index: 10060 !important;
     overflow: hidden !important;
   }
-  :is([data-theme="dark"], .dark) :is(.emr-studio-backdrop, .emr043-modal-backdrop) {
+  :is([data-theme="dark"], .dark) .emr-studio-backdrop {
     background: var(--paper-strong, #090d16) !important;
   }
 
-  .emr-studio-modal, .emr-studio-window, .emr043-modal-window {
+  .emr-studio-modal, .emr-studio-window {
     height: 100% !important;
     min-height: 100% !important;
     max-height: 100% !important;
@@ -50,18 +50,18 @@
     flex-direction: column !important;
     background: var(--paper-strong, #ffffff) !important;
   }
-  :is([data-theme="dark"], .dark) :is(.emr-studio-modal, .emr-studio-window, .emr043-modal-window) {
+  :is([data-theme="dark"], .dark) :is(.emr-studio-modal, .emr-studio-window) {
     background: var(--paper-strong, #0f172a) !important;
   }
 
-  .emr-studio-header, .emr043-header-toolbar {
+  .emr-studio-header {
     flex-shrink: 0 !important;
     padding: 6px 12px; gap: 6px; min-height: auto;
     display: flex; flex-direction: row; align-items: center; justify-content: space-between;
     position: relative; overflow: visible;
   }
 
-  .emr-studio-nav, .emr043-nav-tabs {
+  .emr-studio-nav {
     flex-shrink: 0 !important;
   }
 
@@ -69,22 +69,22 @@
     flex-shrink: 0 !important;
   }
 
-  .emr-studio-body, .emr043-body {
+  .emr-studio-body {
     flex: 1 1 0% !important;
     min-height: 0 !important;
     overflow-y: auto !important;
   }
 
-  .emr-studio-title-group, .emr043-header-title-group {
+  .emr-studio-title-group {
     display: flex; align-items: flex-start; flex-direction: column;
     gap: 2px; padding-right: 8px; width: calc(100% - 48px);
   }
 
-  .emr-studio-title, .emr043-header-title {
+  .emr-studio-title {
     font-size: 15px; line-height: 1.2; font-weight: 700;
   }
 
-  .emr-studio-btn-close, .emr043-btn-close {
+  .emr-studio-btn-close {
     width: 44px; height: 44px; min-width: 44px; min-height: 44px;
     padding: 0; display: inline-flex; align-items: center; justify-content: center;
     border-radius: 12px; flex-shrink: 0;
@@ -92,13 +92,11 @@
 
   /* На мобильных кнопка действий скрыта из шапки, так как они в нижней плашке */
   .emr-studio-actions .emr-studio-btn:not(.emr-studio-btn-close),
-  .emr043-header-actions .emr043-btn:not(.emr043-btn-close),
-  .emr-studio-actions > div,
-  .emr043-header-actions > div {
+  .emr-studio-actions > div {
     display: none !important;
   }
 
-  .emr-studio-btn, .emr043-btn {
+  .emr-studio-btn {
     min-height: 44px; min-width: 44px; padding: 8px 14px;
     font-size: 14px; touch-action: manipulation; white-space: nowrap;
   }
@@ -115,7 +113,7 @@
   }
   :is([data-theme="dark"], .dark) .emr-studio-bottom-bar {
     background: var(--paper-strong, #0f172a) !important;
-    border-top-color: var(--line, #334155) !important;
+    border-top-color: var(--line) !important;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35) !important;
   }
 }

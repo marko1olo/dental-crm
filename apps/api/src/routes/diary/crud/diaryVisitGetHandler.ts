@@ -86,7 +86,7 @@ export async function handleDiaryVisitGet(req: FastifyRequest, reply: FastifyRep
 	await auditMedicalAccessFromRequest(req, {
 		organizationId: orgId,
 		patientId: visitRow.patientId ?? diary.patientId,
-		action: "VIEW_DIARY_043U",
+		action: "VIEW_CLINICAL_DIARY",
 		diagnosis: diary.diagnosisIcd10 ? `${diary.diagnosisIcd10} (${diary.diagnosisTooth ? `зуб ${diary.diagnosisTooth}` : "без зуба"})` : "Дневник приёма",
 	});
 

@@ -3,8 +3,7 @@
  * Mandates 8e, 8y & 8b: Micro-module strictly <= 120 lines. Passive Allergy Warning ⚠️.
  */
 
-.emr-studio-completeness,
-.emr043-completeness-bar {
+.emr-studio-completeness {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -23,12 +22,11 @@
   [data-theme="cyber_xray"],
   html.dark,
   .dark
-) :is(.emr-studio-completeness, .emr043-completeness-bar) {
+) .emr-studio-completeness {
   background: var(--paper-strong, #1e293b);
 }
 
-.emr-studio-progress-track,
-.emr043-progress-track {
+.emr-studio-progress-track {
   flex: 1;
   height: 8px;
   background: var(--paper-soft, #e2e8f0);
@@ -45,29 +43,24 @@
   [data-theme="cyber_xray"],
   html.dark,
   .dark
-) :is(.emr-studio-progress-track, .emr043-progress-track) {
+) .emr-studio-progress-track {
   background: var(--paper-soft, #334155);
 }
 
-.emr-studio-progress-fill,
-.emr043-progress-fill {
+.emr-studio-progress-fill {
   height: 100%;
   border-radius: 4px;
   transition: width 0.3s ease;
 }
 
-.emr-studio-progress-fill.green,
-.emr043-progress-fill.green { background: #10b981; }
+.emr-studio-progress-fill.green { background: #10b981; }
 
-.emr-studio-progress-fill.yellow,
-.emr043-progress-fill.yellow { background: #f59e0b; }
+.emr-studio-progress-fill.yellow { background: #f59e0b; }
 
-.emr-studio-progress-fill.red,
-.emr043-progress-fill.red { background: #ef4444; }
+.emr-studio-progress-fill.red { background: #ef4444; }
 
 /* Passive Non-Blocking Allergy & Stop-Factor Indicators (Mandate 8e, 8y) */
-.emr-studio-allergy-warning-inline,
-.emr043-allergy-warning-inline {
+.emr-studio-allergy-warning-inline {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -80,14 +73,13 @@
   border-radius: 6px;
 }
 
-:is([data-theme="dark"], .dark) :is(.emr-studio-allergy-warning-inline, .emr043-allergy-warning-inline) {
+:is([data-theme="dark"], .dark) .emr-studio-allergy-warning-inline {
   color: #fbbf24;
   background: rgba(245, 158, 11, 0.18);
   border-color: rgba(245, 158, 11, 0.45);
 }
 
-.emr-studio-norm-active-pill,
-.emr043-norm-active-pill {
+.emr-studio-norm-active-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -100,7 +92,7 @@
   border: 1px solid #10b981;
 }
 
-:is([data-theme="dark"], .dark) :is(.emr-studio-norm-active-pill, .emr043-norm-active-pill) {
+:is([data-theme="dark"], .dark) .emr-studio-norm-active-pill {
   background: rgba(16, 185, 129, 0.2);
   color: #34d399;
 }

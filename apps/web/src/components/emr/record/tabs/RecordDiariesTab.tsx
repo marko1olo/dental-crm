@@ -5,7 +5,7 @@
  * Автономия врача, Соло-врач, Чистый живой доменный язык.
  */
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
 	Calendar,
 	Sparkles,
@@ -21,19 +21,21 @@ import { RecordNewDiaryInlineForm } from "./RecordNewDiaryInlineForm";
 
 export interface RecordDiariesTabProps {
 	readonly formData: MedicalRecordData;
+	readonly activeTooth?: number | string | null | undefined;
 	readonly onOpenProtocolGenerator?: (() => void) | undefined;
-	readonly onOpenInternalProtocolGenerator: () => void;
+	readonly onOpenInternalProtocolGenerator: (tooth?: string | number) => void;
 	readonly onAddDiary?: ((entry: ClinicalVisitDiaryEntry) => void) | undefined;
 	readonly onDeleteDiary?: ((index: number) => void) | undefined;
 }
 
 export type MedicalRecordDiariesTabProps = RecordDiariesTabProps;
 
-const COMMON_TEETH = [16, 26, 36, 46, 11, 21, 14, 24] as const;
+const COMMON_TEETH = [11, 21, 16, 26, 36, 46, 14, 24] as const;
 
 export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 	function RecordDiariesTab({
 		formData,
+		activeTooth,
 		onOpenProtocolGenerator,
 		onOpenInternalProtocolGenerator,
 		onAddDiary,
@@ -41,7 +43,19 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 		const cardKey = formData.passport.medicalCardNumber || formData.passport.patientFullName || "common";
 		const draftStorageKey = `dente:record_diary_draft:${cardKey}`;
 
-		const [selectedTooth, setSelectedTooth] = useState<string>("16");
+		const defaultTooth = useMemo(() => {
+			if (activeTooth) return String(activeTooth);
+			if (formData.visitDiaries[0]?.toothNumber) return formData.visitDiaries[0].toothNumber;
+			return "11";
+		}, [activeTooth, formData.visitDiaries]);
+
+		const [selectedTooth, setSelectedTooth] = useState<string>(() => defaultTooth);
+
+		useEffect(() => {
+			if (activeTooth) {
+				setSelectedTooth(String(activeTooth));
+			}
+		}, [activeTooth]);
 		const [subjective, setSubjective] = useState<string>("");
 		const [objective, setObjective] = useState<string>("");
 		const [diagnosisText, setDiagnosisText] = useState<string>("");
@@ -169,7 +183,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 					: existing?.procedureProtocol || "";
 				const revisedEntry: ClinicalVisitDiaryEntry = {
 					...existing,
-					toothNumber: selectedTooth ? String(selectedTooth) : existing?.toothNumber || "16",
+					toothNumber: selectedTooth ? String(selectedTooth) : existing?.toothNumber || defaultTooth,
 					subjectiveComplaints: subjective || existing?.subjectiveComplaints || "Жалоб нет",
 					objectiveStatusLocalis: objective || existing?.objectiveStatusLocalis || "Статус без патологии",
 					assessmentDiagnosisText: diagnosisText || existing?.assessmentDiagnosisText || "Клинический осмотр",
@@ -185,7 +199,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 					id: `diary_${Date.now()}`,
 					entryDate,
 					entryTime,
-					toothNumber: selectedTooth ? String(selectedTooth) : "16",
+					toothNumber: selectedTooth ? String(selectedTooth) : defaultTooth,
 					doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач",
 					doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Врач-стоматолог-терапевт",
 					subjectiveComplaints: subjective || "Жалоб нет",
@@ -219,6 +233,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 			editingDiaryIndex,
 			onAddDiary,
 			handleClearDraft,
+			defaultTooth,
 		]);
 
 		const handleCopyDiaryText = useCallback((diary: ClinicalVisitDiaryEntry, idx: number) => {
@@ -241,7 +256,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 		}, []);
 
 		const handleStartEditDiary = useCallback((diary: ClinicalVisitDiaryEntry, idx: number) => {
-			setSelectedTooth(diary.toothNumber || "16");
+			setSelectedTooth(diary.toothNumber || defaultTooth);
 			setSubjective(diary.subjectiveComplaints || "");
 			setObjective(diary.objectiveStatusLocalis || "");
 			setDiagnosisText(diary.assessmentDiagnosisText || "");
@@ -251,7 +266,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 			setMaterials(diary.appliedMaterials || "");
 			setEditingDiaryIndex(idx);
 			setIsFormOpen(true);
-		}, []);
+		}, [defaultTooth]);
 
 		return (
 			<div className="max-w-full overflow-x-clip">
@@ -276,7 +291,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 							<button
 								type="button"
 								className="dente-btn dente-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
-								onClick={() => (onOpenProtocolGenerator ? onOpenProtocolGenerator() : onOpenInternalProtocolGenerator())}
+								onClick={() => (onOpenProtocolGenerator ? onOpenProtocolGenerator() : onOpenInternalProtocolGenerator(selectedTooth))}
 								data-testid="btn-emr-synthesize-diary"
 								title="Сформировать дневник по МКБ-10 и шаблонам СтАР"
 							>
@@ -299,7 +314,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 									) : (
 										<>
 											<Sparkles className="w-3.5 h-3.5" />
-											<span>Клинический протокол приёма (SOAP) • 448 шаблонов СтАР</span>
+											<span>Клинический протокол приёма (SOAP) • 1 142 протокола СтАР</span>
 										</>
 									)}
 								</span>

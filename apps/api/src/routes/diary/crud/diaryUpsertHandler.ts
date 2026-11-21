@@ -15,6 +15,12 @@ import {
 import { executeSaveOrSignDiaryTx } from "./saveOrSignDiaryTx.js";
 
 export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+	const rawIdempotencyKey = (req.headers["idempotency-key"] || req.headers["x-idempotency-key"]) as string | undefined;
+	const idempotencyKey = typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+	}
+
 	if (!(await requireClinicalMutationAccess(req, reply, "write diary"))) return;
 
 	const orgId = await resolveOrganizationId(req);

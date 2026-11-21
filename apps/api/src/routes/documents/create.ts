@@ -114,7 +114,12 @@ export async function register(app: FastifyInstance) {
 						isAnonymous: patient.isAnonymous ?? null,
 					}
 				: null,
-			visit: visit ?? null,
+			visit: visit
+				? {
+						id: visit.id,
+						patientId: visit.patientId,
+					}
+				: null,
 			paidAmountRub: paidAmountRubForDocument(
 				input.kind,
 				input,

@@ -195,11 +195,67 @@ export function useMedicalRecordSave({
 					const errorMessage = errorPayload?.error || errorPayload?.message || "Не удалось сохранить медицинскую карту";
 					showToast(errorMessage, "error", 4000);
 				}
+			} else if (effectivePatientId) {
+				const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+				if (isUuid(effectivePatientId)) {
+					const patchPayload: Record<string, unknown> = {
+						...(formData.passport.patientFullName ? { fullName: formData.passport.patientFullName } : {}),
+						...(formData.passport.patientBirthDate ? { birthDate: formData.passport.patientBirthDate } : {}),
+						...(formData.passport.patientPhone ? { phone: formData.passport.patientPhone } : {}),
+						...(formData.anamnesis.chiefComplaint ? { notes: formData.anamnesis.chiefComplaint } : {}),
+						administrativeProfile: {
+							...(formData.passport.patientIdentityDocument ? { identityDocument: formData.passport.patientIdentityDocument } : {}),
+							...(formData.passport.patientSnils ? { snils: formData.passport.patientSnils } : {}),
+							...(formData.passport.patientInsurancePolicy ? { insurancePolicyNumber: formData.passport.patientInsurancePolicy } : {}),
+							...(formData.passport.patientAddressRegistration ? { registrationAddress: formData.passport.patientAddressRegistration } : {}),
+							...(formData.passport.patientAddressResidence ? { residentialAddress: formData.passport.patientAddressResidence } : {}),
+							clinicalSafetyProfile: {
+								allergies: formData.anamnesis.allergologicalHistory || "",
+								somaticDiseases: formData.anamnesis.concomitantSomaticDiseases || "",
+								somaticNotes: formData.anamnesis.medicalHistoryVitae || "",
+								pastDiseases: formData.anamnesis.pastDentalInterventions || "",
+								heredity: formData.anamnesis.occupationalHazardsAndHabits || "",
+							},
+							somaticAlerts: formData.anamnesis.allergologicalHistory ? [formData.anamnesis.allergologicalHistory] : [],
+						},
+					};
+
+					const res = await fetch(`/api/patients/${effectivePatientId}`, {
+						method: "PATCH",
+						headers: {
+							"Content-Type": "application/json",
+							"Idempotency-Key": generateUuidV7(),
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify(patchPayload),
+					});
+
+					if (!res.ok) {
+						const errorPayload = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+						const errorMessage = errorPayload?.error || errorPayload?.message || "Не удалось сохранить медицинскую карту";
+						showToast(errorMessage, "error", 4000);
+						return;
+					}
+
+					void denteQueryClient.invalidateQueries({ queryKey: ["patient", effectivePatientId] });
+					void denteQueryClient.invalidateQueries({ queryKey: ["patients"] });
+				}
+
+				if (typeof sessionStorage !== "undefined" && effectivePatientId) {
+					try {
+						sessionStorage.removeItem(`dente:medical_card_autosave:${effectivePatientId}`);
+					} catch { /* ignore storage error */ }
+				}
+
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(new CustomEvent("dente:emk-updated", { detail: formData }));
+				}
+				showToast("Медицинская карта приёма сохранена в базу данных", "success", 3000);
 			} else {
 				if (typeof window !== "undefined") {
 					window.dispatchEvent(new CustomEvent("dente:emk-updated", { detail: formData }));
 				}
-				showToast("Медицинская карта приёма успешно сохранена", "success", 3000);
+				showToast("Медицинская карта приёма сохранена (локально)", "info", 3000);
 			}
 		} catch (err) {
 			console.error("useMedicalRecordSave: ошибка сохранения", err);

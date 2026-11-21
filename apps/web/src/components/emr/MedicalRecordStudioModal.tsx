@@ -55,21 +55,19 @@ export interface MedicalRecordStudioModalProps {
 	readonly initialTab?: RecordTabType | undefined;
 	readonly visitId?: string | undefined;
 	readonly patientId?: string | undefined;
+	readonly activeTooth?: number | string | null | undefined;
 }
 
 const RECORD_TABS: Array<{ id: RecordTabType; label: string; icon: React.FC<{ className?: string }> }> = [
-	{ id: "overview", label: "Обзор и печать A4", icon: FileText },
-	{ id: "passport", label: "1. Паспортная часть", icon: User },
-	{ id: "anamnesis", label: "2. Жалобы и Анамнез", icon: HeartPulse },
-	{ id: "odontogram", label: "3. Зубная формула", icon: Activity },
-	{ id: "diaries", label: "4. Дневники визитов", icon: Calendar },
-	{ id: "epicrisis", label: "5. Эпикриз и наблюдение", icon: Award },
+	{ id: "overview", label: "Обзор и печать A4", icon: FileText }, { id: "passport", label: "1. Паспортная часть", icon: User },
+	{ id: "anamnesis", label: "2. Жалобы и Анамнез", icon: HeartPulse }, { id: "odontogram", label: "3. Зубная формула", icon: Activity },
+	{ id: "diaries", label: "4. Дневники визитов", icon: Calendar }, { id: "epicrisis", label: "5. Эпикриз и наблюдение", icon: Award },
 ];
 
 export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> = React.memo(
 	function MedicalRecordStudioModal({
 		isOpen, onClose, initialData, onSave, onOpenProtocolGenerator, isLocked, isDraft, status, initialTab,
-		visitId, patientId,
+		visitId, patientId, activeTooth,
 	}) {
 		const dashboard = useAppStore((s) => s.dashboard);
 		const profile = dashboard?.clinicSettings?.profile;
@@ -127,15 +125,21 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		const [copiedToast, setCopiedToast] = useState<boolean>(false);
 		const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 		const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState<boolean>(false);
+		const [protocolGeneratorTooth, setProtocolGeneratorTooth] = useState<string | number>(() => {
+			if (activeTooth) return activeTooth;
+			return 11;
+		});
+
+		const handleOpenProtocolGenerator = useCallback((tooth?: string | number) => {
+			setProtocolGeneratorTooth(tooth || activeTooth || formData.visitDiaries[0]?.toothNumber || 11);
+			setIsProtocolGeneratorOpen(true);
+		}, [activeTooth, formData.visitDiaries]);
 		const moreMenuRef = useRef<HTMLDivElement>(null);
 
 		const validation = useMemo(() => validateMedicalRecordCompleteness(formData), [formData]);
 		const dmft = useMemo(() => calculateDmftIndex(formData.dentalStatus.odontogramTeeth), [formData.dentalStatus.odontogramTeeth]);
 		const cpitn = useMemo(() => calculateCpitnIndex(formData.dentalStatus.cpitnIndex), [formData.dentalStatus.cpitnIndex]);
-		const ageText = useMemo(
-			() => formatPatientAge(formData.passport.patientBirthDate, formData.passport.cardOpenedDate),
-			[formData.passport.patientBirthDate, formData.passport.cardOpenedDate],
-		);
+		const ageText = useMemo(() => formatPatientAge(formData.passport.patientBirthDate, formData.passport.cardOpenedDate), [formData.passport.patientBirthDate, formData.passport.cardOpenedDate]);
 
 		// Debounced автосейв всей карты на лету (Zero Keystroke Loss & Zero-Leak Draft строго под изолированным patientId)
 		const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,13 +169,21 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			return () => document.removeEventListener("mousedown", handleClickOutside);
 		}, [isMoreMenuOpen]);
 
-		const { handlePrint, handleExportXml, handleExportJson, handleCopyText } = useRecordExports({
-			formData, effectiveIsDraft, setCopiedToast,
-		});
+		const handleClose = useCallback(() => {
+			// Zero-Leak Draft (Мандат 8zq): при закрытии сбрасываем локальное состояние черновика
+			setFormData(buildInitialFormData());
+			onClose();
+		}, [buildInitialFormData, onClose]);
 
-		const { isSaving, handleSaveForm } = useMedicalRecordSave({
-			formData, onSave, visitId, patientId, initialData: initialData as Record<string, unknown> | undefined, effectiveIsDraft,
-		});
+		useEffect(() => {
+			if (!isOpen) return;
+			const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
+			window.addEventListener("keydown", handleKeyDown);
+			return () => window.removeEventListener("keydown", handleKeyDown);
+		}, [isOpen, handleClose]);
+
+		const { handlePrint, handleExportXml, handleExportJson, handleCopyText } = useRecordExports({ formData, effectiveIsDraft, setCopiedToast });
+		const { isSaving, handleSaveForm } = useMedicalRecordSave({ formData, onSave, visitId, patientId, initialData: initialData as Record<string, unknown> | undefined, effectiveIsDraft });
 
 		const handleApplyNorm = useCallback(() => {
 			setFormData((prev) => { const updated = applyMedicalCardPhysiologicalNorm(prev); onSave?.(updated); return updated; });
@@ -196,25 +208,17 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		if (!isOpen) return null;
 
 		if (isProtocolGeneratorOpen) {
+			const numTooth = typeof protocolGeneratorTooth === "number" ? protocolGeneratorTooth : parseInt(String(protocolGeneratorTooth), 10) || 11;
 			return (
 				<ClinicalProtocolsCatalogModal
-					isOpen={true}
-					onClose={() => setIsProtocolGeneratorOpen(false)}
-					activeTooth={16}
+					isOpen={true} onClose={() => setIsProtocolGeneratorOpen(false)} activeTooth={numTooth}
 					onApplyPatch={(patch) => {
 						handleAddDiary({
-							id: generateUuidV7(),
-							entryDate: new Date().toISOString().split("T")[0] || "",
-							entryTime: new Date().toTimeString().slice(0, 5),
-							doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач",
-							doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Стоматолог-терапевт",
-							toothNumber: "16",
-							subjectiveComplaints: patch.complaint || "",
-							objectiveStatusLocalis: patch.objectiveStatus || "",
-							assessmentDiagnosisText: patch.diagnosis || "",
-							assessmentIcd10Code: (patch.diagnosis || "").split(" ")[0] || "K02.1",
-							procedureProtocol: patch.treatmentPlan || "",
-							homeCareRecommendations: patch.recommendations || "",
+							id: generateUuidV7(), entryDate: new Date().toISOString().split("T")[0] || "", entryTime: new Date().toTimeString().slice(0, 5),
+							doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач", doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Стоматолог-терапевт",
+							toothNumber: String(protocolGeneratorTooth || 11), subjectiveComplaints: patch.complaint || "", objectiveStatusLocalis: patch.objectiveStatus || "",
+							assessmentDiagnosisText: patch.diagnosis || "", assessmentIcd10Code: (patch.diagnosis || "").split(" ")[0] || "K02.1",
+							procedureProtocol: patch.treatmentPlan || "", homeCareRecommendations: patch.recommendations || "",
 						});
 						setIsProtocolGeneratorOpen(false);
 					}}
@@ -223,7 +227,16 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		}
 
 		const modalElement = (
-			<div className="emr-studio-backdrop" role="dialog" aria-modal="true">
+			<div
+				className="emr-studio-backdrop"
+				role="dialog"
+				aria-modal="true"
+				onClick={(e) => {
+					if (e.target === e.currentTarget) {
+						handleClose();
+					}
+				}}
+			>
 				<div
 					className="emr-studio-modal emr-studio-window"
 					style={{ maxWidth: isFullscreen ? "100%" : "1380px", ...(isFullscreen ? { height: "98vh" } : {}) }}
@@ -301,8 +314,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 											<Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" /><span>Экспорт в JSON</span>
 										</button>
 										<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-100 dark:border-slate-800" onClick={() => { handleCopyText(); setIsMoreMenuOpen(false); }}>
-											{copiedToast ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Copy className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />}
-											<span>{copiedToast ? "Скопировано!" : "Копировать текст карты"}</span>
+											{copiedToast ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Copy className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 shrink-0" />}<span>{copiedToast ? "Скопировано!" : "Копировать текст карты"}</span>
 										</button>
 									</div>
 								)}
@@ -325,7 +337,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr-studio-btn-fullscreen" onClick={() => setIsFullscreen((v) => !v)} title={isFullscreen ? "Свернуть" : "На весь экран"}>
 								{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
 							</button>
-							<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr-studio-btn-close" onClick={onClose} title="Закрыть окно">
+							<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr-studio-btn-close" onClick={handleClose} title="Закрыть окно">
 								<X className="w-5 h-5" />
 							</button>
 						</div>
@@ -391,30 +403,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								/>
 							</div>
 						)}
-						{activeTab === "passport" && (
-							<RecordPassportTab
-								formData={formData}
-								ageText={ageText}
-								onUpdatePassport={handleUpdatePassport}
-							/>
-						)}
-						{activeTab === "anamnesis" && (
-							<RecordAnamnesisTab
-								formData={formData}
-								onApplyNorm={handleApplyNorm}
-								onUpdateAnamnesis={handleUpdateAnamnesis}
-							/>
-						)}
+						{activeTab === "passport" && <RecordPassportTab formData={formData} ageText={ageText} onUpdatePassport={handleUpdatePassport} />}
+						{activeTab === "anamnesis" && <RecordAnamnesisTab formData={formData} onApplyNorm={handleApplyNorm} onUpdateAnamnesis={handleUpdateAnamnesis} />}
 						{activeTab === "odontogram" && <RecordOdontogramTab formData={formData} dmft={dmft} cpitn={cpitn} onApplyNorm={handleApplyNorm} />}
-						{activeTab === "diaries" && (
-							<RecordDiariesTab
-								formData={formData}
-								onOpenProtocolGenerator={onOpenProtocolGenerator}
-								onOpenInternalProtocolGenerator={() => setIsProtocolGeneratorOpen(true)}
-								onAddDiary={handleAddDiary}
-								onDeleteDiary={handleDeleteDiary}
-							/>
-						)}
+						{activeTab === "diaries" && <RecordDiariesTab formData={formData} activeTooth={activeTooth} onOpenProtocolGenerator={onOpenProtocolGenerator} onOpenInternalProtocolGenerator={handleOpenProtocolGenerator} onAddDiary={handleAddDiary} onDeleteDiary={handleDeleteDiary} />}
 						{activeTab === "epicrisis" && <RecordEpicrisisTab formData={formData} />}
 					</main>
 
