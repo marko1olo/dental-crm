@@ -132,7 +132,7 @@ describe("4. Statutory FNS XML Engine (Order № ЕД-7-11/755@ / КНД 1184043
 			name: "ООО СТОМАТОЛОГИЯ ДЕНТЕ",
 			inn: "7701234560", // Valid 10-digit
 			kpp: "770101001",
-			ogrn: "1157746123456",
+			ogrn: "1027700132195",
 			license: {
 				number: "ЛО-77-01-019842",
 				date: "2021-04-12",
@@ -311,7 +311,7 @@ describe("5. Printable Paper Certificate Generator (Приложение № 1 /
 				name: "ООО ДЕНТЕ",
 				inn: "7701234560",
 				kpp: "770101001",
-				ogrn: "1157746123456",
+				ogrn: "1027700132195",
 			},
 			payer: {
 				fullName: { family: "Иванов", given: "Иван" },

@@ -8,6 +8,6 @@ export * from "./warehouseAcceptance.js";
 export * from "./consumables.js";
 export * from "./inventoryUnitsSsot.js";
 export * from "./materialsAutoDeductionSsot.js";
-export * from "./treatmentConsumablesSchema.js";
+export * from "../inventory/treatmentConsumablesSchema.js";
 export { calculateClassBWasteWeightKg } from "./autoVisitBomEngine.js";
 

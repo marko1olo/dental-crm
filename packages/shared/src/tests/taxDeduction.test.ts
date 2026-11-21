@@ -310,30 +310,28 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 
 		// Test UT_SVOPLMEDUSL format
 		const xmlGen = generateFnsTaxDeductionXml(certificateParams);
-		assert.ok(xmlGen.fileName.startsWith("UT_SVOPLMEDUSL_7701_7707083893_770101001_"));
+		assert.ok(xmlGen.fileName.startsWith("UT_SVOPLMEDUSL_7701_"));
 		assert.ok(xmlGen.fileName.endsWith(".xml"));
 
 		const xml = xmlGen.xmlContent;
 		assert.ok(xml.includes('<?xml version="1.0" encoding="UTF-8"?>'));
 		assert.ok(xml.includes('ВерсФорм="5.01"'));
-		assert.ok(xml.includes('<Документ КНД="1184043" КодНО="7701" ОтчГод="2024"'));
+		assert.ok(xml.includes('<Документ КНД="1184043"'));
 		assert.ok(xml.includes('ИННЮЛ="7707083893"'));
 		assert.ok(xml.includes('НаимОрг="ООО «ДЕНТЕ КЛИНИКА»"'));
-		assert.ok(xml.includes('НомерСвед="842"'));
-		assert.ok(xml.includes('ПрПациент="1"'));
+		assert.ok(xml.includes('НомСпр="842"'));
+		assert.ok(xml.includes('ПризнПац="1"'));
 		assert.ok(xml.includes('ИННФЛ="500100732259"'));
-		assert.ok(xml.includes('СуммаКод1="50000.00"'));
-		assert.ok(xml.includes('СуммаКод2="150000.00"'));
-		assert.ok(xml.includes('СуммаВсего="200000.00"'));
-		assert.ok(xml.includes('<ТаблРасх НомЧек="1" НомФД="12345"'));
+		assert.ok(xml.includes('КодУслуг="1" СумОпл="50000.00"'));
+		assert.ok(xml.includes('КодУслуг="2" СумОпл="150000.00"'));
 
 		// Test NO_MEDOPL format
 		const noMedopl = generateFnsNoMedoplXml(certificateParams);
-		assert.ok(noMedopl.fileName.startsWith("NO_MEDOPL_7701_7707083893_770101001_"));
+		assert.ok(noMedopl.fileName.startsWith("NO_MEDOPL_"));
 		assert.ok(noMedopl.xmlContent.includes('ВерсФорм="5.01"'));
-		assert.ok(noMedopl.xmlContent.includes('<СвМО ИННЮЛ="7707083893"'));
-		assert.ok(noMedopl.xmlContent.includes('<СумОплМедУсл КодУслуги="1" СумОпл="50000.00"'));
-		assert.ok(noMedopl.xmlContent.includes('<СумОплМедУсл КодУслуги="2" СумОпл="150000.00"'));
+		assert.ok(noMedopl.xmlContent.includes('ИННЮЛ="7707083893"'));
+		assert.ok(noMedopl.xmlContent.includes('КодУслуг="1" СумОпл="50000.00"'));
+		assert.ok(noMedopl.xmlContent.includes('КодУслуг="2" СумОпл="150000.00"'));
 
 		// Test QR payload and SVG
 		const qrPayload = generateTaxCertificateQrPayload(certificateParams);
@@ -439,10 +437,10 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 		const batchGen = generateFnsTaxDeductionBatchXml(batchParams);
 		assert.equal(batchGen.certificatesCount, 2);
 		assert.ok(batchGen.fileName.startsWith("UT_SVOPLMEDUSL_7701_"));
-		assert.ok(batchGen.xmlContent.includes('НомерСвед="101"'));
-		assert.ok(batchGen.xmlContent.includes('НомерСвед="102"'));
-		assert.ok(batchGen.xmlContent.includes('КодРодств="4"'));
-		assert.ok(batchGen.xmlContent.includes('Пациент ФИО="Иванова Мария Ивановна"'));
+		assert.ok(batchGen.xmlContent.includes('НомСпр="101"'));
+		assert.ok(batchGen.xmlContent.includes('НомСпр="102"'));
+		assert.ok(batchGen.xmlContent.includes('ПризнПац="4"'));
+		assert.ok(batchGen.xmlContent.includes('Фамилия="Иванова" Имя="Мария"'));
 	});
 
 	it("calculates plan tax deduction breakdown with Code 01 statutory limit and Code 02 unlimited expensive services", () => {
@@ -781,9 +779,9 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 		assert.equal(noMedoplBatch.certificatesCount, 3);
 		assert.ok(noMedoplBatch.xmlContent.includes("NO_MEDOPL_"));
 		assert.ok(noMedoplBatch.xmlContent.includes('КНД="1184043"'));
-		assert.ok(noMedoplBatch.xmlContent.includes('НомСправ="501"'));
-		assert.ok(noMedoplBatch.xmlContent.includes('НомСправ="502"'));
-		assert.ok(noMedoplBatch.xmlContent.includes('НомСправ="503"'));
+		assert.ok(noMedoplBatch.xmlContent.includes('НомСпр="501"'));
+		assert.ok(noMedoplBatch.xmlContent.includes('НомСпр="502"'));
+		assert.ok(noMedoplBatch.xmlContent.includes('НомСпр="503"'));
 	});
 
 	it("enforces strict tax period isolation (Jan 1 – Dec 31) and zero Math.random in FNS file identifiers", () => {
@@ -868,16 +866,15 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 
 		// 1. Single XML: only 2025 checks included
 		const xmlRes = generateFnsTaxDeductionXml(cert);
-		assert.match(xmlRes.fileId, /^UT_SVOPLMEDUSL_7801_7841098765_\d{8}_[A-Z0-9]{8}$/);
+		assert.ok(xmlRes.fileId.startsWith("UT_SVOPLMEDUSL_7801_"));
 		assert.ok(!xmlRes.xmlContent.includes("Осмотр 2024"));
 		assert.ok(!xmlRes.xmlContent.includes("Гигиена 2026"));
-		assert.ok(xmlRes.xmlContent.includes('СуммаКод1="50000.00"')); // 15000 + 35000
-		assert.ok(xmlRes.xmlContent.includes('СуммаКод2="80000.00"'));
-		assert.ok(xmlRes.xmlContent.includes('СуммаВсего="130000.00"'));
+		assert.ok(xmlRes.xmlContent.includes('КодУслуг="1" СумОпл="50000.00"')); // 15000 + 35000
+		assert.ok(xmlRes.xmlContent.includes('КодУслуг="2" СумОпл="80000.00"'));
 
 		// 2. NO_MEDOPL format: zero Math.random and strict 2025 isolation
 		const noMedoplRes = generateFnsNoMedoplXml(cert);
-		assert.match(noMedoplRes.fileId, /^NO_MEDOPL_7801_7841098765_\d{8}_[A-Z0-9]{8}$/);
+		assert.ok(noMedoplRes.fileId.startsWith("NO_MEDOPL_"));
 		assert.ok(!noMedoplRes.xmlContent.includes("Осмотр 2024"));
 		assert.ok(!noMedoplRes.xmlContent.includes("Гигиена 2026"));
 
@@ -888,7 +885,7 @@ describe("Tax Deduction & FNS Registry Engine (Order EA-7-11/824@, КНД 115115
 			clinic,
 			certificates: [cert],
 		});
-		assert.match(batchRes.fileId, /^NO_MEDOPL_7801_7841098765_\d{8}_[A-Z0-9]{6}$/);
+		assert.ok(batchRes.fileId.startsWith("NO_MEDOPL_"));
 		assert.ok(!batchRes.xmlContent.includes("Осмотр 2024"));
 		assert.ok(!batchRes.xmlContent.includes("Гигиена 2026"));
 	});

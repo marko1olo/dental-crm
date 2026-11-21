@@ -100,7 +100,7 @@ export function buildFnsKnd1151156Xml(
 			: "";
 
 		orgBlockXml = `    <СвОргМ>
-      <СвОргЮЛ НаимОрг="${escapeXmlAttr(payload.clinic.name || "ООО СТОМАТОЛОГИЯ ДЕНТЕ")}" 
+      <СвОргЮЛ НаимОрг="${escapeXmlAttr(payload.clinic.name || payload.clinic.organizationName || "ООО СТОМАТОЛОГИЯ ДЕНТЕ")}" 
                 ИННЮЛ="${clinicInn}" 
                 КПП="${clinicKpp || "770101001"}" 
                 ОГРН="${clinicOgrn}">${licenseXml}
@@ -223,11 +223,24 @@ export function buildFnsKnd1151156Xml(
 	}
 
 	// 5. Блок подписанта (<Подписант>)
-	const signatory = payload.signatory || {
-		signatoryRole: "1" as const,
-		fullName: parseFio(payload.clinic.directorName || "Смирнов Алексей Владимирович"),
-		snils: payload.clinic.directorSnils,
-	};
+	const rawSigner = payload.signatory || payload.signer;
+	const signatory = rawSigner
+		? {
+				signatoryRole: ("signatoryRole" in rawSigner && rawSigner.signatoryRole
+					? rawSigner.signatoryRole
+					: "signerType" in rawSigner && rawSigner.signerType
+					? rawSigner.signerType
+					: "1") as "1" | "2",
+				fullName: rawSigner.fullName,
+				snils: rawSigner.snils || payload.clinic.directorSnils,
+				powerOfAttorneyNumber: "powerOfAttorneyNumber" in rawSigner ? rawSigner.powerOfAttorneyNumber : undefined,
+		  }
+		: {
+				signatoryRole: "1" as const,
+				fullName: parseFio(payload.clinic.directorName || "Смирнов Алексей Владимирович"),
+				snils: payload.clinic.directorSnils,
+				powerOfAttorneyNumber: undefined,
+		  };
 	const signSnils = cleanDigits(signatory.snils);
 	const signSnilsAttr = signSnils && signSnils.length === 11 ? ` СНИЛС="${signSnils}"` : "";
 	const signPatronymicAttr = signatory.fullName.patronymic
@@ -243,13 +256,14 @@ export function buildFnsKnd1151156Xml(
     </Подписант>`;
 
 	// Сборка XML
+	const resolvedDocNumber = payload.documentNumber || payload.certificateNumber || "1";
 	const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <Файл ИдФайл="${fileId}" 
       ВерсПрог="${escapeXmlAttr(progVersion)}" 
       ВерсФорм="5.01">
   <Документ КНД="1184043" 
             ДатаДок="${docDateFormatted}" 
-            НомСпр="${escapeXmlAttr(payload.documentNumber || "1")}" 
+            НомСпр="${escapeXmlAttr(resolvedDocNumber)}" 
             ГодУсл="${taxYear}" 
             ПризнСпр="${certKind}" 
             НомКорр="${corrNumber}">
@@ -591,7 +605,7 @@ export function generateFnsNdflPrintHtml(
 				validTo: opts.validTo || validToDate.toISOString(),
 				signedAt: opts.signedAt || validFrom,
 				signatureType: opts.signatureType || "ukep",
-				documentId: payload.documentNumber,
+				documentId: payload.documentNumber || undefined,
 			});
 
 			html = injectVisualSignatureStampIntoHtml(html, stampHtml);

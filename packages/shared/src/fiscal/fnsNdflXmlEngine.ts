@@ -5,5 +5,15 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export * from "../documents/fnsSchema1151156.js";
 export * from "../documents/ndflXmlGenerator.js";
+export {
+	fnsTaxPayloadSchema,
+	fnsClinicSchema,
+	fnsPersonSchema,
+	fnsPatientSchema,
+	fnsExpensesSchema,
+	fnsSignatorySchema,
+	fnsFiscalReceiptItemSchema,
+	fnsIdentityDocumentSchema,
+	fnsFullNameSchema,
+} from "../documents/fnsSchema1151156.js";

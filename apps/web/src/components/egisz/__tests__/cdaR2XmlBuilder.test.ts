@@ -8,6 +8,7 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { buildFnsKnd1151156Xml } from "@dental/shared";
 import {
 	canonicalizeCdaXml,
 	escapeXml,
@@ -15,7 +16,6 @@ import {
 	formatKopecksToRubles,
 	formatRuDate,
 	generateEgiszDentalCdaXml,
-	generateFnsTaxCertificateXml,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
 	parseRublesToKopecks,
@@ -267,13 +267,41 @@ describe("cdaR2XmlBuilder — HL7 CDA R2 Generation & Legal Standards", () => {
 			},
 		};
 
-		const xml = generateFnsTaxCertificateXml(fnsPayload);
+		const fnsResult = buildFnsKnd1151156Xml({
+			taxInspectionCode: "7701",
+			documentDate: fnsPayload.documentDate.toString(),
+			taxYear: fnsPayload.taxYear,
+			certificateNumber: fnsPayload.documentNumber,
+			clinic: {
+				inn: fnsPayload.clinic.inn,
+				kpp: fnsPayload.clinic.kpp,
+				ogrn: fnsPayload.clinic.ogrn,
+				organizationName: fnsPayload.clinic.name,
+			},
+			payer: {
+				fullName: { family: "Кузнецов", given: "Петр", patronymic: "Дмитриевич" },
+				inn: fnsPayload.taxpayer.inn,
+			},
+			patient: {
+				patientKinshipCode: "1",
+				fullName: { family: "Кузнецов", given: "Петр", patronymic: "Дмитриевич" },
+			},
+			expenses: {
+				code1AmountKopecks: 1500000,
+				code2AmountKopecks: 4500000,
+				totalAmountKopecks: 6000000,
+			},
+			signer: {
+				signerType: "1",
+				fullName: { family: "Иванов", given: "И.", patronymic: "И." },
+			},
+		});
+		const xml = fnsResult.xmlContent;
 		assert.ok(xml.includes("<Файл"));
-		assert.ok(xml.includes('КНД="1151156"'));
-		assert.ok(xml.includes('НомДок="СПР-043/2026"'));
-		assert.ok(xml.includes('Сумма="15000.00"'));
-		assert.ok(xml.includes('Сумма="45000.00"'));
-		assert.ok(xml.includes('ИтогоСумма="60000.00"'));
+		assert.ok(xml.includes('КНД="1184043"'));
+		assert.ok(xml.includes('НомСпр="СПР-043/2026"'));
+		assert.ok(xml.includes('КодУслуг="1" СумОпл="15000.00"'));
+		assert.ok(xml.includes('КодУслуг="2" СумОпл="45000.00"'));
 
 		const validation = validateXmlStructure(xml);
 		assert.equal(validation.isValid, true);

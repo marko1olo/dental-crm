@@ -53,6 +53,10 @@ export const TelegramPatientPortalCabinet: React.FC<TelegramPatientPortalCabinet
 				calculatedDeduction={c.calculatedDeduction}
 				totalYearExpense={c.totalYearExpense}
 				taxCopiedNotice={c.taxCopiedNotice}
+				clinicName={c.clinicName}
+				clinicInn={c.clinicInn}
+				clinicKpp={c.clinicKpp}
+				clinicLicense={c.clinicLicense}
 				onDownloadTaxCert={c.handleDownloadTaxCert}
 				onTriggerHaptic={c.triggerHaptic}
 			/>

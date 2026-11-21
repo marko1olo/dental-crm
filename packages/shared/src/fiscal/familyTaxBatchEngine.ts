@@ -25,6 +25,10 @@ import {
 } from "../finance/taxDeduction.js";
 import { renderOfficialTaxCertificateKnd1151156Html } from "./fnsTaxDeductionEngine.js";
 import { generateFnsRegistryFileSuffix } from "../utils/idGenerators.js";
+import {
+	buildFnsKnd1151156Xml,
+	mapCertificateParamsToFnsTaxPayload,
+} from "../documents/ndflXmlGenerator.js";
 
 export interface FamilyMemberPayerConfig {
 	readonly id: string;
@@ -456,6 +460,7 @@ export function renderOfficialTaxCertificateBatchKnd1151156Html(
 /**
  * Генерация электронного файла NO_MEDOPL (версия 5.01, КНД 1184043) для пакетной
  * отправки справок по нескольким налогоплательщикам/пациентам через ТКС.
+ * Реализует официальный канонический формат ФНС (Приказ ЕА-7-11/824@).
  */
 export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 	readonly fileName: string;
@@ -463,103 +468,38 @@ export function generateFnsBatchNoMedoplXml(batch: TaxDeductionBatchParams): {
 	readonly xmlContent: string;
 	readonly certificatesCount: number;
 } {
-	const clinicInn = batch.clinic.inn.replace(/\D/g, "");
-	const isIp = batch.clinic.isSoleProprietor === true || clinicInn.length === 12;
-	const clinicKppClean = isIp ? "" : (batch.clinic.kpp ? batch.clinic.kpp.replace(/[^A-Za-z0-9]/g, "") : "770101001");
-	const clinicOgrnClean = batch.clinic.ogrn ? batch.clinic.ogrn.replace(/\D/g, "") : "";
-	const safeKpp = !isIp && batch.clinic.kpp ? `_${batch.clinic.kpp.replace(/[^A-Za-z0-9]/g, "")}` : "";
-	const clinicId = `${clinicInn}${safeKpp}`;
-	const taxOfficeCode = (batch.taxOfficeCode || "7701").trim();
-	const now = new Date();
-	const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-	const randomSuffix = generateFnsRegistryFileSuffix(
-		6,
-		`${taxOfficeCode}_${clinicId}_${dateStr}_${batch.taxYear}_${batch.certificates.length}`,
-	);
-	const fileId = `NO_MEDOPL_${taxOfficeCode}_${clinicId}_${dateStr}_${randomSuffix}`;
-	const fileName = `${fileId}.xml`;
+	if (!batch.certificates || batch.certificates.length === 0) {
+		throw new Error("Пакет налоговых справок пуст");
+	}
+	const primaryCert = batch.certificates[0]!;
+	const primaryPayload = mapCertificateParamsToFnsTaxPayload(primaryCert, "NO_MEDOPL");
+	const firstRes = buildFnsKnd1151156Xml(primaryPayload);
 
-	const signerType = batch.signer?.signerType || "1";
-	const signerName = batch.signer?.fullName || batch.clinic.chiefDoctorName || "Главный врач";
+	if (batch.certificates.length === 1) {
+		return {
+			fileName: firstRes.fileName,
+			fileId: firstRes.fileId,
+			certificatesCount: 1,
+			xmlContent: firstRes.xmlContent,
+		};
+	}
 
-	const spravkiXml = batch.certificates
-		.map((cert) => {
-			const summary = calculateTaxDeductionSummary(cert.payments);
-			const targetYearSummary = summary.yearsSummary.find((y) => y.taxYear === batch.taxYear) || {
-				code01Kopecks: 0,
-				code02Kopecks: 0,
-				totalKopecks: 0,
-			};
+	const docBlocks: string[] = [];
+	for (const cert of batch.certificates) {
+		const payload = mapCertificateParamsToFnsTaxPayload(cert, "NO_MEDOPL");
+		const res = buildFnsKnd1151156Xml(payload);
+		const match = res.xmlContent.match(/<Документ[\s\S]*?<\/Документ>/);
+		if (match) {
+			docBlocks.push(match[0]);
+		}
+	}
 
-			const rel = TAX_DEDUCTION_RELATIONSHIP_MAP[cert.payer.relationship];
-			const code01Str = (targetYearSummary.code01Kopecks / 100).toFixed(2);
-			const code02Str = (targetYearSummary.code02Kopecks / 100).toFixed(2);
-			const totalStr = (targetYearSummary.totalKopecks / 100).toFixed(2);
-
-			const issueDate = cert.issueDateIso.slice(0, 10);
-			const payerBday = cert.payer.birthDate ? cert.payer.birthDate.slice(0, 10) : "";
-			const patientBday = cert.patient.birthDate ? cert.patient.birthDate.slice(0, 10) : "";
-
-			const yearPayments = normalizePaymentsForTaxCertificate(
-				cert.payments,
-				batch.taxYear,
-			);
-
-			const docSeriesNum = ((cert.payer.identityDocumentSeries || "") + " " + (cert.payer.identityDocumentNumber || "")).trim();
-			const docTag = docSeriesNum ? `\n        <УдЛичнФЛ КодВидДок="21" СерНомДок="${escapeXml(docSeriesNum)}" />` : "";
-
-			const patientDocSeriesNum = ((cert.patient.identityDocumentSeries || "") + " " + (cert.patient.identityDocumentNumber || "")).trim();
-			const patientDocTag = patientDocSeriesNum ? `\n        <УдЛичнФЛ КодВидДок="21" СерНомДок="${escapeXml(patientDocSeriesNum)}" />` : "";
-
-			const sumAttrs = [
-				targetYearSummary.code01Kopecks > 0 || targetYearSummary.code02Kopecks === 0 ? `СуммаКод1="${code01Str}"` : "",
-				targetYearSummary.code02Kopecks > 0 ? `СуммаКод2="${code02Str}"` : "",
-				`СуммаВсего="${totalStr}"`,
-			].filter(Boolean).join(" ");
-
-			return `    <СведСправка НомСправ="${escapeXml(cert.certificateNumber)}" ДатаСправ="${escapeXml(issueDate)}" ПрПациент="${escapeXml(rel.samePatientFlag)}">
-      <НППлатМедУсл ФИО="${escapeXml(cert.payer.fullName)}"${cert.payer.inn ? ` ИННФЛ="${escapeXml(cert.payer.inn)}"` : ""}${payerBday ? ` ДатаРожд="${escapeXml(payerBday)}"` : ""}>${docTag}
-      </НППлатМедУсл>
-      ${
-				rel.samePatientFlag === "0"
-					? (patientDocTag
-						? `<Пациент ФИО="${escapeXml(cert.patient.fullName)}"${patientBday ? ` ДатаРожд="${escapeXml(patientBday)}"` : ""}${cert.patient.inn ? ` ИННФЛ="${escapeXml(cert.patient.inn)}"` : ""} КодРодств="${escapeXml(rel.code)}"${cert.patient.snils ? ` СНИЛС="${escapeXml(cert.patient.snils.replace(/\D/g, ""))}"` : ""}>${patientDocTag}\n      </Пациент>`
-						: `<Пациент ФИО="${escapeXml(cert.patient.fullName)}"${patientBday ? ` ДатаРожд="${escapeXml(patientBday)}"` : ""}${cert.patient.inn ? ` ИННФЛ="${escapeXml(cert.patient.inn)}"` : ""} КодРодств="${escapeXml(rel.code)}"${cert.patient.snils ? ` СНИЛС="${escapeXml(cert.patient.snils.replace(/\D/g, ""))}"` : ""} />`)
-					: ""
-			}
-      <СуммаРасх ${sumAttrs}>
-        ${yearPayments
-					.map(
-						(pay, idx) =>
-							`<ТаблРасх НомЧек="${idx + 1}" НомФД="${escapeXml(pay.fiscalDocumentNumber || String(idx + 1))}" ФПД="${escapeXml(pay.fiscalSign || "")}" ДатаВремяЧек="${escapeXml(pay.dateIso.slice(0, 10))}" СуммаЧек="${pay.amountRub.toFixed(2)}" КодУсл="${escapeXml(pay.taxCode || "1")}" />`
-					)
-					.join("\n        ")}
-      </СуммаРасх>
-    </СведСправка>`;
-		})
-		.join("\n");
-
-	const licenseXml = batch.clinic.licenseNumber
-		? `\n      <Лицензия Номер="${escapeXml(batch.clinic.licenseNumber)}"${batch.clinic.licenseDate ? ` Дата="${escapeXml(batch.clinic.licenseDate)}"` : ""} />`
-		: "";
-
-	const orgBlockXml = isIp
-		? `    <СвНП ИННФЛ="${escapeXml(clinicInn)}" ОГРНИП="${escapeXml(clinicOgrnClean)}" НаимОрг="${escapeXml(batch.clinic.legalName)}">${licenseXml}\n    </СвНП>`
-		: `    <СвНП ИННЮЛ="${escapeXml(clinicInn)}" КПП="${escapeXml(clinicKppClean)}" НаимОрг="${escapeXml(batch.clinic.legalName)}" ОГРН="${escapeXml(clinicOgrnClean)}">${licenseXml}\n    </СвНП>`;
-
-	const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<Файл ИдФайл="${escapeXml(fileId)}" ВерсПрог="DENTE Dental CRM 2.0" ВерсФорм="5.01">
-  <Документ КНД="1184043" КодНО="${escapeXml(taxOfficeCode)}" ОтчГод="${escapeXml(String(batch.taxYear))}" НомКорр="0">
-${orgBlockXml}
-    <Подписант ПрПодп="${escapeXml(signerType)}" ФИО="${escapeXml(signerName)}"${batch.signer?.authorityDoc ? ` ДокумПодтв="${escapeXml(batch.signer.authorityDoc)}"` : ""} />
-${spravkiXml}
-  </Документ>
-</Файл>`;
+	const batchXml = `<?xml version="1.0" encoding="UTF-8"?>\n<Файл ИдФайл="${firstRes.fileId}" ВерсПрог="DentalMIS_FNS_Gateway_v2.4.0" ВерсФорм="5.01">\n${docBlocks.join("\n")}\n</Файл>`;
 
 	return {
-		fileName,
-		fileId,
+		fileName: firstRes.fileName,
+		fileId: firstRes.fileId,
 		certificatesCount: batch.certificates.length,
-		xmlContent,
+		xmlContent: batchXml,
 	};
 }

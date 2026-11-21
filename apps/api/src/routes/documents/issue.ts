@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto";
 import {
 	issueDocumentSchema,
 	publicGeneratedDocumentSchema,
+	type TaxXmlSnapshot,
 } from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalMutationAccess } from "../../accessGuard.js";
@@ -31,15 +33,21 @@ import {
 	repairMojibakeDeep,
 	repairMojibakeText,
 } from "../../text/repairMojibake.js";
+import { buildKnd1151156Xml } from "../../documents/taxXml.js";
 import {
 	apiError,
 	buildMedicalDocumentReleaseJournalEntry,
+	configuredTaxOfficeCode,
 	documentIssueChainBlockReason,
 	documentIssueValidationMessage,
 	findIssuedDuplicateTaxCertificate,
+	frozenTaxXmlClinicProfile,
+	frozenTaxXmlPatient,
+	frozenTaxXmlPayments,
 	resolveDocumentRenderContext,
 	taxSnapshotDocument,
 	taxXmlSourceSnapshotForIssue,
+	taxXmlSourceSnapshotSha256,
 } from "./shared.js";
 
 export async function register(app: FastifyInstance) {
@@ -225,6 +233,36 @@ export async function register(app: FastifyInstance) {
 			issuedAt,
 			renderContext?.clinicProfile,
 		);
+		let taxXmlSnapshot: TaxXmlSnapshot | null = null;
+		if (issueCandidate.kind === "tax_deduction_certificate" && taxXmlSourceSnapshot) {
+			const taxOfficeCode = configuredTaxOfficeCode();
+			const xmlPatient = frozenTaxXmlPatient(issueCandidate, patient);
+			const xmlClinicProfile = frozenTaxXmlClinicProfile(
+				issueCandidate,
+				renderContext?.clinicProfile ?? taxXmlSourceSnapshot.clinicProfile,
+			);
+			const xmlPayments = frozenTaxXmlPayments(
+				issueCandidate,
+				renderContext?.payments ?? [],
+			);
+			const xmlResult = buildKnd1151156Xml(issueCandidate, xmlPatient, {
+				clinicProfile: xmlClinicProfile,
+				payments: xmlPayments,
+				taxOfficeCode,
+			});
+			if (xmlResult.ok) {
+				const xmlSourceSha256 = taxXmlSourceSnapshotSha256(taxXmlSourceSnapshot);
+				taxXmlSnapshot = {
+					fileName: xmlResult.fileName,
+					xml: xmlResult.xml,
+					taxOfficeCode: (taxOfficeCode ?? "").replace(/\D+/g, ""),
+					sourceSnapshotSha256: xmlSourceSha256 ?? "",
+					createdAt: issuedAt,
+					sha256: createHash("sha256").update(xmlResult.xml).digest("hex"),
+				};
+			}
+		}
+
 		const issuedDocumentCandidate = {
 			...issueCandidate,
 			status: "issued" as const,
@@ -232,6 +270,7 @@ export async function register(app: FastifyInstance) {
 			signatureAttestation,
 			releaseJournalEntry,
 			taxXmlSourceSnapshot,
+			taxXmlSnapshot,
 		};
 		const issuedHtml = renderDocumentHtml(
 			issuedDocumentCandidate,
@@ -256,6 +295,7 @@ export async function register(app: FastifyInstance) {
 				signatureSvg: parsedIssueInput.data.signatureSvg ?? null,
 				taxPaymentSnapshot,
 				taxXmlSourceSnapshot,
+				taxXmlSnapshot,
 				totalAmountRub: issueCandidate.totalAmountRub,
 				tx,
 			});

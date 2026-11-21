@@ -51,6 +51,12 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 	const [totalYearExpense, setTotalYearExpense] = useState<number>(() => (isDemo ? 148500 : 0));
 	const [sessionToken, setSessionToken] = useState<string | null>(null);
 
+	// Реквизиты клиники (динамические)
+	const [clinicName, setClinicName] = useState<string>(() => (isDemo ? "Стоматология ДЕНТЕ" : "Стоматологическая клиника"));
+	const [clinicInn, setClinicInn] = useState<string>(() => (isDemo ? "7701234567" : ""));
+	const [clinicKpp, setClinicKpp] = useState<string>(() => (isDemo ? "770101001" : ""));
+	const [clinicLicense, setClinicLicense] = useState<string>(() => (isDemo ? "ЛО41-01137-77/00368142" : ""));
+
 	// Записи пациента
 	const [appointments, setAppointments] = useState<PatientAppointment[]>(() =>
 		isDemo ? DEMO_APPOINTMENTS : [],
@@ -148,6 +154,12 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 				}
 				if (data.patient?.fullName) {
 					setPayerFullName((prev) => prev || data.patient.fullName);
+				}
+				if (data.clinic) {
+					if (data.clinic.name) setClinicName(data.clinic.name);
+					if (data.clinic.inn) setClinicInn(data.clinic.inn);
+					if (data.clinic.kpp) setClinicKpp(data.clinic.kpp);
+					if (data.clinic.license) setClinicLicense(data.clinic.license);
 				}
 
 				const combinedAppointments: PatientAppointment[] = [];
@@ -269,8 +281,23 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		}
 	}, [propOrganizationId, propPatientId, isDemo, triggerHaptic]);
 
-	// Расчет налогового вычета (13% от общей суммы)
-	const calculatedDeduction = useMemo(() => Math.round(totalYearExpense * 0.13), [totalYearExpense]);
+	// Расчет налогового вычета (ст. 219 НК РФ): Код 01 лимитирован (150k с 2024 г., 120k ранее), Код 02 без лимита
+	const calculatedDeduction = useMemo(() => {
+		const totalKopBi = BigInt(Math.max(0, Math.trunc(totalYearExpense * 100)));
+		const limitRub = taxYear >= 2024 ? 150000 : 120000;
+		const limitKopBi = BigInt(limitRub) * 100n;
+
+		if (serviceCode === "2") {
+			// Дорогостоящее лечение (Код 02) — вычет со всей суммы без лимита
+			const refundKopBi = (totalKopBi * 13n) / 100n;
+			return Number(refundKopBi / 100n);
+		}
+
+		// Стандартное лечение (Код 01) — с учетом годового лимита ст. 219 НК РФ
+		const eligibleKopBi = totalKopBi < limitKopBi ? totalKopBi : limitKopBi;
+		const refundKopBi = (eligibleKopBi * 13n) / 100n;
+		return Number(refundKopBi / 100n);
+	}, [totalYearExpense, taxYear, serviceCode]);
 
 	// Обработка жалоб на зубы
 	const handleSaveToothComplaint = useCallback((complaint: ToothComplaint) => {
@@ -438,6 +465,10 @@ export function useTelegramPortalCabinet(options: UseTelegramPortalCabinetOption
 		handleSaveToothComplaint,
 		handleRemoveToothComplaint,
 		calculatedDeduction,
+		clinicName,
+		clinicInn,
+		clinicKpp,
+		clinicLicense,
 		triggerHaptic,
 		handleShareReferral,
 		handleDownloadTaxCert,

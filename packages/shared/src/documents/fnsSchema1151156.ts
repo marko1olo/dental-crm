@@ -22,10 +22,6 @@ import {
 	KND_REGISTRY_ELECTRONIC_FORMAT,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
 	type TaxDeductionRelationship,
-	validateRussianInn,
-	validateRussianKpp,
-	validateRussianOgrn,
-	validateRussianSnils,
 } from "../finance/taxDeduction.js";
 
 export {
@@ -38,10 +34,6 @@ export {
 	KND_REGISTRY_ELECTRONIC_FORMAT,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
 	type TaxDeductionRelationship,
-	validateRussianInn,
-	validateRussianKpp,
-	validateRussianOgrn,
-	validateRussianSnils,
 };
 
 /** Нормативные константы регламента ФНС РФ */
@@ -261,6 +253,7 @@ export interface FnsClinicInfo {
 	kpp?: string | null | undefined;
 	ogrn: string;
 	name?: string | null | undefined;
+	organizationName?: string | null | undefined;
 	isIndividualEntrepreneur?: boolean | undefined;
 	ipFullName?: FnsFullName | null | undefined;
 	license?: {
@@ -297,6 +290,7 @@ export interface FnsExpensesInfo {
 	code2AmountRub?: number | null | undefined;
 	code1AmountKopecks?: number | null | undefined;
 	code2AmountKopecks?: number | null | undefined;
+	totalAmountKopecks?: number | null | undefined;
 }
 
 export interface FnsSignatoryInfo {
@@ -318,7 +312,8 @@ export interface FnsFiscalReceiptItem {
 }
 
 export interface FnsTaxPayload {
-	documentNumber: string;
+	documentNumber?: string | null | undefined;
+	certificateNumber?: string | null | undefined;
 	documentDate: string | Date;
 	taxYear: number | string;
 	taxInspectionCode?: string | null | undefined;
@@ -331,6 +326,7 @@ export interface FnsTaxPayload {
 	patient: FnsPatientInfo;
 	expenses: FnsExpensesInfo;
 	signatory?: FnsSignatoryInfo | null | undefined;
+	signer?: { signerType?: "1" | "2" | undefined; fullName: FnsFullName; snils?: string | null | undefined } | null | undefined;
 	receipts?: FnsFiscalReceiptItem[] | null | undefined;
 }
 

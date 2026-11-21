@@ -7,7 +7,6 @@ import React from "react";
 import type { EgiszRemdModalBodyProps } from "./modalBodyTypes";
 import {
 	EgiszClinicalTab,
-	EgiszFnsTaxTab,
 	EgiszJournalTab,
 	EgiszPreflightTab,
 	EgiszSigningTab,
@@ -37,25 +36,6 @@ export const EgiszRemdModalBody: React.FC<EgiszRemdModalBodyProps> = ({
 					diagnoses={state.diagnoses} onAddDiagnosis={state.handleAddDiagnosis}
 					onRemoveDiagnosis={state.handleRemoveDiagnosis} procedures={state.procedures}
 					onAddProcedure={state.handleAddProcedure} onRemoveProcedure={state.handleRemoveProcedure}
-				/>
-			)}
-			{activeTab === "tax_deduction" && activeDocType === "fns_tax" && (
-				<EgiszFnsTaxTab
-					taxDocNumber={state.taxDocNumber} onTaxDocNumberChange={state.setTaxDocNumber}
-					taxYear={state.taxYear} onTaxYearChange={state.setTaxYear}
-					taxSignerName={state.taxSignerName} onTaxSignerNameChange={state.setTaxSignerName}
-					taxpayerName={state.taxpayerName} onTaxpayerNameChange={state.setTaxpayerName}
-					taxpayerInn={state.taxpayerInn} onTaxpayerInnChange={state.setTaxpayerInn}
-					taxpayerSnils={state.taxpayerSnils} onTaxpayerSnilsChange={state.setTaxpayerSnils}
-					taxPatientName={state.taxPatientName} onTaxPatientNameChange={state.setTaxPatientName}
-					taxRelCode={state.taxRelCode} onTaxRelCodeChange={state.setTaxRelCode}
-					taxPatientSnils={state.taxPatientSnils} onTaxPatientSnilsChange={state.setTaxPatientSnils}
-					taxPayments={state.taxPayments} onAddTaxPayment={state.handleAddTaxPayment}
-					onRemoveTaxPayment={state.handleRemoveTaxPayment}
-					onUpdateTaxPaymentDate={(idx, date) => state.setTaxPayments((prev) => prev.map((p, i) => (i === idx ? { ...p, date } : p)))}
-					onUpdateTaxPaymentServiceCode={(idx, code) => state.setTaxPayments((prev) => prev.map((p, i) => (i === idx ? { ...p, serviceCode: code } : p)))}
-					onUpdateTaxPaymentDescription={(idx, desc) => state.setTaxPayments((prev) => prev.map((p, i) => (i === idx ? { ...p, serviceDescription: desc } : p)))}
-					onUpdateTaxPaymentAmount={state.handleUpdateTaxPaymentAmount}
 				/>
 			)}
 			{activeTab === "preflight" && <EgiszPreflightTab preflightReport={state.activePreflight} />}

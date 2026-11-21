@@ -9,7 +9,7 @@ import type {
 	SupportedTaxYear,
 } from "../fnsSchema1151156.js";
 
-export type { FnsTaxPayload, SupportedTaxYear };
+export type { FnsTaxPayload, SupportedTaxYear, FnsPreflightIssue };
 
 /** Результат сборки XML и расчета вычета */
 export interface FnsNdflXmlResult {

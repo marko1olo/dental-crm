@@ -350,6 +350,7 @@ export async function issueGeneratedDocumentInDb(
 		signatureSvg?: string | null;
 		taxPaymentSnapshot?: TaxPaymentSnapshot | null;
 		taxXmlSourceSnapshot?: TaxXmlSourceSnapshot | null;
+		taxXmlSnapshot?: TaxXmlSnapshot | null;
 		totalAmountRub?: number | null;
 		tx?: any;
 	},
@@ -375,6 +376,7 @@ export async function issueGeneratedDocumentInDb(
 			signatureSvg: options.signatureSvg ?? inMemoryDocument.signatureSvg ?? null,
 			taxPaymentSnapshot: options.taxPaymentSnapshot || null,
 			taxXmlSourceSnapshot: options.taxXmlSourceSnapshot || null,
+			taxXmlSnapshot: options.taxXmlSnapshot !== undefined ? options.taxXmlSnapshot : inMemoryDocument.taxXmlSnapshot || null,
 			totalAmountRub: options.totalAmountRub ?? inMemoryDocument.totalAmountRub,
 			...(snapshot
 				? {
@@ -430,6 +432,10 @@ export async function issueGeneratedDocumentInDb(
 				: existing.taxPaymentSnapshotJson,
 			taxXmlSourceSnapshot:
 				options.taxXmlSourceSnapshot || existing.taxXmlSourceSnapshot,
+			taxXmlSnapshot:
+				options.taxXmlSnapshot !== undefined
+					? options.taxXmlSnapshot
+					: existing.taxXmlSnapshot,
 			totalAmountRub: options.totalAmountRub ?? existing.totalAmountRub,
 			...(snapshot
 				? {

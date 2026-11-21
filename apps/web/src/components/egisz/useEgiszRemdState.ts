@@ -4,11 +4,11 @@
  */
 
 import { useMemo } from "react";
+import { buildFnsKnd1151156Xml } from "@dental/shared";
 import {
 	type EgiszDentalCdaPayload,
 	generateEgiszDentalCdaXml,
 	generateFnsTaxCertificatePrintHtml,
-	generateFnsTaxCertificateXml,
 	generateForm043uPrintHtml,
 	validateXmlStructure,
 } from "./egiszRemdEngine";
@@ -35,7 +35,47 @@ export function useEgiszRemdState({
 		if (activeDocType === "cda_semd") {
 			return generateEgiszDentalCdaXml(clinical.semdPayload);
 		}
-		return generateFnsTaxCertificateXml(fns.fnsPayload);
+		const p = fns.fnsPayload;
+		const parseFio = (name: string) => {
+			const parts = (name || "").trim().split(/\s+/);
+			return { family: parts[0] || "", given: parts[1] || "", patronymic: parts.slice(2).join(" ") || undefined };
+		};
+		const code1Kop = p.payments.filter((x) => x.serviceCode !== "2").reduce((acc, x) => acc + (x.amountKopecks || 0), 0);
+		const code2Kop = p.payments.filter((x) => x.serviceCode === "2").reduce((acc, x) => acc + (x.amountKopecks || 0), 0);
+		const fnsResult = buildFnsKnd1151156Xml({
+			taxInspectionCode: "7701",
+			documentDate: typeof p.documentDate === "string" ? p.documentDate.slice(0, 10) : p.documentDate.toISOString().slice(0, 10),
+			taxYear: p.taxYear,
+			documentNumber: p.documentNumber,
+			clinic: {
+				inn: p.clinic.inn,
+				kpp: p.clinic.kpp,
+				ogrn: p.clinic.ogrn,
+				name: p.clinic.name,
+				isIndividualEntrepreneur: p.clinic.inn.replace(/\D/g, "").length === 12,
+			},
+			payer: {
+				fullName: parseFio(p.taxpayer.fullName),
+				inn: p.taxpayer.inn,
+				snils: p.taxpayer.snils,
+				birthDate: p.taxpayer.birthDate || "1980-01-01",
+			},
+			patient: {
+				patientKinshipCode: (p.patient.relationshipCode || "1") as any,
+				fullName: parseFio(p.patient.fullName),
+				birthDate: p.patient.birthDate,
+				snils: p.patient.snils,
+			},
+			expenses: {
+				code1AmountKopecks: code1Kop,
+				code2AmountKopecks: code2Kop,
+			},
+			signatory: {
+				signatoryRole: "1",
+				fullName: parseFio(p.signer.fullName),
+			},
+		});
+		return fnsResult.xmlContent;
 	}, [activeDocType, clinical.semdPayload, fns.fnsPayload]);
 
 	const xmlValidation = useMemo(() => validateXmlStructure(generatedXml), [generatedXml]);

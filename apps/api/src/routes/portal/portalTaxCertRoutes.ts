@@ -15,6 +15,7 @@ import {
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	generatedDocuments,
 	organizations,
 	patients,
 	payments,
@@ -252,8 +253,12 @@ async function buildTaxCertificatePayload(
 	const rawMappedPayments: TaxDeductionPaymentItem[] = [];
 
 	for (const p of yearPayments) {
-		const amtRub = Number(p.amountRub) || 0;
-		const amtKop = Math.round(amtRub * 100);
+		const rawAmountKopecks = "amountKopecks" in p ? (p as { amountKopecks?: unknown }).amountKopecks : undefined;
+		const amtKop = typeof rawAmountKopecks === "bigint"
+			? Number(rawAmountKopecks)
+			: typeof rawAmountKopecks === "number"
+				? Math.round(rawAmountKopecks)
+				: Math.round((Number(p.amountRub) || 0) * 100);
 		const isExpensive = Boolean(
 			p.taxDeductionCode === "2" ||
 			classifyTaxDeduction804n(p.note ?? undefined, p.note ?? undefined).categoryCode === "2" ||
@@ -283,6 +288,7 @@ async function buildTaxCertificatePayload(
 			fiscalSign,
 			serviceName: p.note || (isExpensive ? "Хирургическое стоматологическое лечение (Код 02)" : "Терапевтическое стоматологическое лечение (Код 01)"),
 			amountRub: amtKop / 100,
+			amountKopecks: amtKop,
 			taxCode: isExpensive ? ("2" as const) : ("1" as const),
 			isRefund: p.status === "refunded" || amtKop < 0,
 		});
@@ -290,20 +296,20 @@ async function buildTaxCertificatePayload(
 
 	const mappedPayments = normalizePaymentsForTaxCertificate(rawMappedPayments, targetYear);
 
-	let totalStandardKop = 0;
-	let totalExpensiveKop = 0;
+	let totalStandardKopBi = 0n;
+	let totalExpensiveKopBi = 0n;
 	for (const p of mappedPayments) {
-		const amtKop = Math.round(p.amountRub * 100);
+		const amtKop = BigInt(p.amountKopecks ?? Math.round(p.amountRub * 100));
 		if (p.taxCode === "2") {
-			totalExpensiveKop += amtKop;
+			totalExpensiveKopBi += amtKop;
 		} else {
-			totalStandardKop += amtKop;
+			totalStandardKopBi += amtKop;
 		}
 	}
 
-	const totalStandardRub = totalStandardKop / 100;
-	const totalExpensiveRub = totalExpensiveKop / 100;
-	const totalSumRub = (totalStandardKop + totalExpensiveKop) / 100;
+	const totalStandardRub = Number(totalStandardKopBi) / 100;
+	const totalExpensiveRub = Number(totalExpensiveKopBi) / 100;
+	const totalSumRub = Number(totalStandardKopBi + totalExpensiveKopBi) / 100;
 	const certificateNumber = `СПР-${targetYear}/${patientId.slice(0, 6).toUpperCase()}`;
 	const issueDateIso = new Date().toISOString();
 
@@ -359,9 +365,44 @@ async function buildTaxCertificatePayload(
 
 	const qrSvg = generateTaxCertificateQrSvg(certParams, { size: 160 });
 
+	// Атомарная фиксация справки в БД клиники (Мандат 8e, 8n): создаем черновик/заявку или возвращаем существующий
+	const [existingDoc] = await db
+		.select({ id: generatedDocuments.id, status: generatedDocuments.status })
+		.from(generatedDocuments)
+		.where(
+			and(
+				eq(generatedDocuments.organizationId, organizationId),
+				eq(generatedDocuments.patientId, patientId),
+				eq(generatedDocuments.kind, "tax_deduction_certificate"),
+				eq(generatedDocuments.taxYear, targetYear),
+			),
+		)
+		.limit(1);
+
+	let documentId = existingDoc?.id;
+	if (!existingDoc) {
+		const [newDoc] = await db
+			.insert(generatedDocuments)
+			.values({
+				organizationId,
+				patientId,
+				kind: "tax_deduction_certificate",
+				status: "draft",
+				title: `Справка для налогового вычета за ${targetYear} год (${effectivePayerFullName})`,
+				taxYear: targetYear,
+				taxPayerInn: effectivePayerInn || null,
+				totalAmountRub: totalSumRub,
+				taxPaymentSnapshotJson: JSON.stringify(mappedPayments),
+				payloadJson: JSON.stringify(certParams),
+			})
+			.returning({ id: generatedDocuments.id });
+		documentId = newDoc?.id;
+	}
+
 	return {
 		certParams,
 		certificate: {
+			documentId,
 			certificateNumber,
 			issueDateIso,
 			taxYear: targetYear,

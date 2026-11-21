@@ -9,4 +9,10 @@ export * from "./types.js";
 export * from "./classification.js";
 export * from "./calculation.js";
 export * from "./validators.js";
-export * from "./xmlGenerators.js";
+export * from "./qrGenerator.js";
+export {
+	generateFnsTaxDeductionXml,
+	generateFnsNoMedoplXml,
+	generateFnsTaxDeductionBatchXml,
+	mapCertificateParamsToFnsTaxPayload,
+} from "../../documents/ndflXmlGenerator.js";

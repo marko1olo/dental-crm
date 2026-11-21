@@ -13,8 +13,11 @@ import {
 	type FnsTaxPaymentItem,
 	type GostSignatureInfo,
 	parseRublesToKopecks,
-	runFnsTaxCertificatePreflight,
+	validateRussianInn,
+	validateRussianOgrn,
+	validateRussianSnils,
 } from "../egiszRemdEngine";
+import type { FnsTaxPreflightReport, EgiszPreflightCheckResult } from "../engine/engineTypes";
 
 export function useFnsTaxState(
 	initialFnsPayload: Partial<FnsTaxCertificatePayload> | undefined,
@@ -50,7 +53,38 @@ export function useFnsTaxState(
 		doctorSignature: doctorSig, moSignature: moSig,
 	}), [taxDocNumber, taxYear, clinic, doctor, taxpayerName, taxpayerInn, taxpayerSnils, taxpayerBirthDate, taxpayerPassport, taxPatientName, taxPatientSnils, taxRelCode, taxPayments, taxSignerName, taxSignerPos, doctorSig, moSig]);
 
-	const fnsPreflightReport = useMemo(() => runFnsTaxCertificatePreflight(fnsPayload), [fnsPayload]);
+	const fnsPreflightReport: FnsTaxPreflightReport = useMemo(() => {
+		const checks: EgiszPreflightCheckResult[] = [];
+		const innOk = validateRussianInn(fnsPayload.clinic.inn || "");
+		checks.push({
+			id: "fns_mo_inn", category: "clinic", title: "ИНН медицинской организации",
+			status: innOk ? "passed" : "failed", details: innOk ? `ИНН проверен: ${fnsPayload.clinic.inn}` : `Некорректный ИНН: "${fnsPayload.clinic.inn}"`,
+		});
+		const ogrnOk = validateRussianOgrn(fnsPayload.clinic.ogrn || "");
+		checks.push({
+			id: "fns_mo_ogrn", category: "clinic", title: "ОГРН организации",
+			status: ogrnOk ? "passed" : "failed", details: ogrnOk ? `ОГРН проверен: ${fnsPayload.clinic.ogrn}` : `Некорректный ОГРН: "${fnsPayload.clinic.ogrn}"`,
+		});
+		const tpInnOk = Boolean(fnsPayload.taxpayer.inn && validateRussianInn(fnsPayload.taxpayer.inn));
+		const tpSnilsOk = Boolean(fnsPayload.taxpayer.snils && validateRussianSnils(fnsPayload.taxpayer.snils).isValid);
+		checks.push({
+			id: "fns_tp_ident", category: "taxpayer", title: "Идентификатор налогоплательщика (ИНН/СНИЛС)",
+			status: tpInnOk || tpSnilsOk ? "passed" : "failed",
+			details: tpInnOk ? `ИНН проверен: ${fnsPayload.taxpayer.inn}` : tpSnilsOk ? `СНИЛС проверен: ${fnsPayload.taxpayer.snils}` : "Требуется ИНН или СНИЛС налогоплательщика",
+		});
+		const failedCount = checks.filter((c) => c.status === "failed").length;
+		const passedCount = checks.filter((c) => c.status === "passed").length;
+		const totalChecks = checks.length;
+		return {
+			isValid: failedCount === 0,
+			totalChecks,
+			passedCount,
+			failedCount,
+			warningCount: 0,
+			scorePercent: Math.round((passedCount / (totalChecks || 1)) * 100),
+			checks,
+		};
+	}, [fnsPayload]);
 	const handleAddTaxPayment = () => setTaxPayments((prev) => [...prev, { id: `PAY-${Date.now()}`, date: new Date().toISOString().slice(0, 10), serviceCode: "1", serviceDescription: "Терапевтический прием и лечение зуба", amountKopecks: 1000000 }]);
 	const handleRemoveTaxPayment = (index: number) => setTaxPayments((prev) => prev.filter((_, i) => i !== index));
 	const handleUpdateTaxPaymentAmount = (index: number, rublesStr: string) => {

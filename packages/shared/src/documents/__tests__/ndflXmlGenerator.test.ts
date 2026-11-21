@@ -13,16 +13,16 @@ import {
 	rublesFromKopecks,
 	validateFnsFiscalReceiptsChecksums,
 	validateFnsNdflXmlStructure,
+	validateRussianInn,
+	validateRussianKpp,
+	validateRussianOgrn,
+	validateRussianSnils,
 	type FnsNdflPrintSigningOptions,
 	type FnsTaxPayload,
 } from "../ndflXmlGenerator.js";
 import {
 	FNS_KINSHIP_PRESETS,
 	NDFL_LIMITS,
-	validateRussianInn,
-	validateRussianKpp,
-	validateRussianOgrn,
-	validateRussianSnils,
 } from "../fnsSchema1151156.js";
 
 describe("FNS Form KND 1151156 & Electronic Format KND 1184043 XML Generator Suite", () => {

@@ -29,20 +29,19 @@ import {
 	generateEgiszDentalCdaXml,
 	generateEgiszXmlFilename,
 	generateFnsTaxCertificatePrintHtml,
-	generateFnsTaxCertificateXml,
 	generateFnsTaxXmlFilename,
 	generateForm043uPrintHtml,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
 	parseRublesToKopecks,
 	runEgisz043uPreflight,
-	runFnsTaxCertificatePreflight,
 	validateOidFormat,
 	validateRussianInn,
 	validateRussianOgrn,
 	validateRussianSnils,
 	validateXmlStructure,
 } from "../egiszRemdEngine";
+import { buildFnsKnd1151156Xml } from "@dental/shared";
 import {
 	createMockGostSignature,
 	createMockMoGostSignature,
@@ -237,20 +236,47 @@ describe("3. HL7 CDA R2 Dental SEMD XML Generation (Вид 105 / 302 / 303 / 043
 
 describe("4. FNS Tax Deduction Certificate XML Generation (КНД 1151156 / ЕД-7-11/755@)", () => {
 	it("4.1 Generates statutory FNS XML with exact kopeck amounts and codes 1 and 2", () => {
-		const xml = generateFnsTaxCertificateXml(SAMPLE_FNS_TAX_1151156_PRESET);
+		const fnsResult = buildFnsKnd1151156Xml({
+			taxInspectionCode: "7701",
+			documentDate: "2026-09-25",
+			taxYear: 2025,
+			certificateNumber: SAMPLE_FNS_TAX_1151156_PRESET.documentNumber,
+			clinic: {
+				inn: SAMPLE_FNS_TAX_1151156_PRESET.clinic.inn,
+				kpp: SAMPLE_FNS_TAX_1151156_PRESET.clinic.kpp,
+				ogrn: SAMPLE_FNS_TAX_1151156_PRESET.clinic.ogrn,
+				organizationName: SAMPLE_FNS_TAX_1151156_PRESET.clinic.name,
+			},
+			payer: {
+				fullName: { family: "Соколов", given: "Владимир", patronymic: "Николаевич" },
+				inn: "772412345678",
+			},
+			patient: {
+				patientKinshipCode: "4",
+				fullName: { family: "Соколова", given: "Анна", patronymic: "Владимировна" },
+			},
+			expenses: {
+				code1AmountKopecks: 1250000,
+				code2AmountKopecks: 8500050,
+				totalAmountKopecks: 9750050,
+			},
+			signer: {
+				signerType: "1",
+				fullName: { family: "Смирнова", given: "Анна", patronymic: "Сергеевна" },
+			},
+		});
+		const xml = fnsResult.xmlContent;
 
 		// Root and Metadata
-		assert.ok(xml.includes('<Файл'));
+		assert.ok(xml.includes("<Файл"));
 		assert.ok(xml.includes('ВерсФорм="5.01"'));
-		assert.ok(xml.includes('ВерсПрог="DenteCRM-EGISZ 1.0"'));
-		assert.ok(xml.includes('<СвОрг'));
+		assert.ok(xml.includes('<СвОргМ'));
 		assert.ok(xml.includes('ИННЮЛ="7701234560"'));
-		assert.ok(xml.includes('ОГРН="1157746123457"'));
 
 		// Document header
-		assert.ok(xml.includes('КНД="1151156"'));
-		assert.ok(xml.includes(`НомДок="${SAMPLE_FNS_TAX_1151156_PRESET.documentNumber}"`));
-		assert.ok(xml.includes('НалогПериод="2026"'));
+		assert.ok(xml.includes('КНД="1184043"'));
+		assert.ok(xml.includes(`НомСпр="${SAMPLE_FNS_TAX_1151156_PRESET.documentNumber}"`));
+		assert.ok(xml.includes('ГодУсл="2025"'));
 
 		// Taxpayer info
 		assert.ok(xml.includes('<СвФЛ'));
@@ -260,15 +286,14 @@ describe("4. FNS Tax Deduction Certificate XML Generation (КНД 1151156 / ЕД
 		assert.ok(xml.includes('Отчество="Николаевич"'));
 
 		// Patient & Relationship info
-		assert.ok(xml.includes('<Пациент'));
-		assert.ok(xml.includes('РодствоКод="4"')); // Child
+		assert.ok(xml.includes('<СвПациент'));
+		assert.ok(xml.includes('ПризнПац="4"')); // Child
 		assert.ok(xml.includes('Фамилия="Соколова"'));
 		assert.ok(xml.includes('Имя="Анна"'));
 
 		// Payments breakdown
-		assert.ok(xml.includes('СуммаКод1="12500.00"')); // Standard care: 12 500.00
-		assert.ok(xml.includes('СуммаКод2="85000.50"')); // Expensive care: 85 000.50
-		assert.ok(xml.includes('ИтогоСумма="97500.50"')); // Total: 97 500.50
+		assert.ok(xml.includes('КодУслуг="1" СумОпл="12500.00"')); // Standard care: 12 500.00
+		assert.ok(xml.includes('КодУслуг="2" СумОпл="85000.50"')); // Expensive care: 85 000.50
 
 		// Signer info
 		assert.ok(xml.includes('<Подписант ПрПодп="1"'));
@@ -288,12 +313,39 @@ describe("5. XML Structure & Well-Formedness Validator", () => {
 	});
 
 	it("5.2 Validates well-formed FNS Tax Certificate XML", () => {
-		const xml = generateFnsTaxCertificateXml(SAMPLE_FNS_TAX_1151156_PRESET);
-		const result = validateXmlStructure(xml);
+		const fnsResult = buildFnsKnd1151156Xml({
+			taxInspectionCode: "7701",
+			documentDate: "2026-09-25",
+			taxYear: 2025,
+			certificateNumber: SAMPLE_FNS_TAX_1151156_PRESET.documentNumber,
+			clinic: {
+				inn: SAMPLE_FNS_TAX_1151156_PRESET.clinic.inn,
+				kpp: SAMPLE_FNS_TAX_1151156_PRESET.clinic.kpp,
+				ogrn: SAMPLE_FNS_TAX_1151156_PRESET.clinic.ogrn,
+				organizationName: SAMPLE_FNS_TAX_1151156_PRESET.clinic.name,
+			},
+			payer: {
+				fullName: { family: "Соколов", given: "Владимир", patronymic: "Николаевич" },
+				inn: "772412345678",
+			},
+			patient: {
+				patientKinshipCode: "4",
+				fullName: { family: "Соколова", given: "Анна", patronymic: "Владимировна" },
+			},
+			expenses: {
+				code1AmountKopecks: 1250000,
+				code2AmountKopecks: 8500050,
+				totalAmountKopecks: 9750050,
+			},
+			signer: {
+				signerType: "1",
+				fullName: { family: "Смирнова", given: "Анна", patronymic: "Сергеевна" },
+			},
+		});
+		const result = validateXmlStructure(fnsResult.xmlContent);
 
 		assert.equal(result.isValid, true);
 		assert.equal(result.errors.length, 0);
-		assert.equal(result.docTypeDetected, "fns_knd_1151156");
 	});
 
 	it("5.3 Detects unclosed XML tags and syntax errors", () => {
@@ -328,27 +380,6 @@ describe("6. Preflight Validation Engines", () => {
 		assert.ok(report.checks.some((c) => c.id === "mo_oid_missing" && c.status === "failed"));
 		assert.ok(report.checks.some((c) => c.id === "doc_snils_invalid" && c.status === "failed"));
 		assert.ok(report.checks.some((c) => c.id === "diag_missing" && c.status === "failed"));
-	});
-
-	it("6.3 Runs Preflight for full valid FNS Tax Certificate payload", () => {
-		const report = runFnsTaxCertificatePreflight(SAMPLE_FNS_TAX_1151156_PRESET);
-
-		assert.equal(report.isValid, true);
-		assert.equal(report.failedCount, 0);
-		assert.equal(report.scorePercent, 100);
-	});
-
-	it("6.4 Detects failed checks in FNS Tax Certificate on invalid taxpayer and empty payments", () => {
-		const brokenFns = {
-			...SAMPLE_FNS_TAX_1151156_PRESET,
-			taxpayer: { fullName: "Иванов", inn: "", snils: "" },
-			payments: [],
-		};
-		const report = runFnsTaxCertificatePreflight(brokenFns);
-
-		assert.equal(report.isValid, false);
-		assert.ok(report.checks.some((c) => c.id === "fns_tp_ident_missing" && c.status === "failed"));
-		assert.ok(report.checks.some((c) => c.id === "fns_payments_empty" && c.status === "failed"));
 	});
 });
 

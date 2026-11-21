@@ -20,4 +20,3 @@ export * from "./familyTaxBatchEngine.js";
 export * from "./idempotency.js";
 export * from "./sberPosTypes.js";
 export * from "./mixedFiscalReceipt.js";
-export * from "./fnsNdflXmlEngine.js";

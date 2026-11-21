@@ -20,7 +20,6 @@ export * from "./formsContractAndConsents.js";
 export * from "./fnsSchema1151156.js";
 export * from "./ndflXmlGenerator.js";
 export {
-	DEFAULT_FNS_CLINIC_PRESET,
 	FNS_IDENTITY_DOC_TYPES,
 	FNS_KINSHIP_PRESETS,
 	FNS_SERVICE_CODE_PRESETS,

@@ -38,6 +38,10 @@ export interface CabinetTaxSheetProps {
 	readonly calculatedDeduction: number;
 	readonly totalYearExpense: number;
 	readonly taxCopiedNotice: boolean;
+	readonly clinicName?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly clinicKpp?: string | undefined;
+	readonly clinicLicense?: string | undefined;
 	readonly onDownloadTaxCert: () => void;
 	readonly onTriggerHaptic?: (style?: "light" | "medium" | "heavy") => void;
 }
@@ -63,6 +67,10 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 	calculatedDeduction,
 	totalYearExpense,
 	taxCopiedNotice,
+	clinicName,
+	clinicInn,
+	clinicKpp,
+	clinicLicense,
 	onDownloadTaxCert,
 	onTriggerHaptic,
 }) => {
@@ -285,15 +293,15 @@ export const CabinetTaxSheet: React.FC<CabinetTaxSheetProps> = memo(({
 								<div className="tg-cert-details-card space-y-1.5 my-3">
 									<div className="flex justify-between">
 										<span className="text-slate-500 dark:text-slate-400">Клиника:</span>
-										<span className="font-bold text-slate-900 dark:text-slate-200">ООО «Стоматология ДЕНТЕ»</span>
+										<span className="font-bold text-slate-900 dark:text-slate-200">{clinicName || "Стоматологическая клиника"}</span>
 									</div>
 									<div className="flex justify-between">
 										<span className="text-slate-500 dark:text-slate-400">ИНН / КПП:</span>
-										<span className="font-mono text-slate-900 dark:text-slate-200">7701234567 / 770101001</span>
+										<span className="font-mono text-slate-900 dark:text-slate-200">{clinicInn ? `${clinicInn}${clinicKpp ? ` / ${clinicKpp}` : ""}` : "—"}</span>
 									</div>
 									<div className="flex justify-between">
 										<span className="text-slate-500 dark:text-slate-400">Лицензия:</span>
-										<span className="text-slate-900 dark:text-slate-200">ЛО41-01137-77/00368142</span>
+										<span className="text-slate-900 dark:text-slate-200">{clinicLicense || "—"}</span>
 									</div>
 									<div className="flex justify-between">
 										<span className="text-slate-500 dark:text-slate-400">Налогоплательщик:</span>

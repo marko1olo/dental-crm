@@ -1,9 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
-import {
-	getDocumentById,
-	storeTaxXmlSnapshotInDb,
-} from "../../db/documentQuery.js";
+import { getDocumentById } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
 import {
 	documentIssueBlockReason,
@@ -208,24 +205,12 @@ async function handleGetTaxXml(request: FastifyRequest, reply: FastifyReply) {
 	if (!result.ok) {
 		return reply.code(result.statusCode).send(apiError(result.error));
 	}
-	const storedDocument = await storeTaxXmlSnapshotInDb(orgId, document.id, {
-		fileName: result.fileName,
-		xml: result.xml,
-		taxOfficeCode: (taxOfficeCode ?? "").replace(/\D+/g, ""),
-		sourceSnapshotSha256: xmlSourceSnapshotSha256,
-	});
-	const snapshot = storedDocument?.taxXmlSnapshot;
-	if (!snapshot) {
-		return reply
-			.code(409)
-			.send(apiError("XML ФНС собран, но не сохранен как архивный снимок."));
-	}
 
 	return reply
 		.header(
 			"Content-Disposition",
-			`attachment; filename="${snapshot.fileName}.xml"`,
+			`attachment; filename="${result.fileName}.xml"`,
 		)
 		.type("application/xml; charset=utf-8")
-		.send(snapshot.xml);
+		.send(result.xml);
 }

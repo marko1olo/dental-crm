@@ -44,7 +44,6 @@ export {
 	formatKopecksToRubles,
 	formatRuDate,
 	generateEgiszDentalCdaXml,
-	generateFnsTaxCertificateXml,
 	generateGostSignatureStampHtml,
 	generateGostSignatureStampSvg,
 	parseRublesToKopecks,
@@ -63,7 +62,6 @@ export {
 } from "./engine/egiszFilenames";
 
 export { runEgisz043uPreflight } from "./engine/clinicalPreflightEngine";
-export { runFnsTaxCertificatePreflight } from "./engine/fnsTaxPreflightEngine";
 
 export {
 	generateForm043uPrintHtml,

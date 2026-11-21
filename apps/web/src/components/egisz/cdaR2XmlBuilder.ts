@@ -31,7 +31,6 @@ export type {
 } from "./cdaR2/cdaTypes";
 
 export { generateEgiszDentalCdaXml } from "./cdaR2/dentalCdaXmlGenerator";
-export { generateFnsTaxCertificateXml } from "./cdaR2/fnsTaxCertificateXmlGenerator";
 
 export {
 	validateXmlStructure,
