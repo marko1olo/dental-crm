@@ -215,19 +215,26 @@ export function useLoyaltyStudioState(params: UseLoyaltyStudioStateParams) {
 
 	const handleSendReferralInvite = async () => {
 		if (!refFriendName) { showToast("Укажите имя приглашенного друга", "warning"); return; }
-		const prevBalance = pointsBalance;
-		const entry: LoyaltyLedgerEntry = {
-			id: `ref-${Date.now().toString().slice(-4)}`, timestampIso: new Date().toLocaleString("ru-RU"), patientId: patientId || "", patientName, medicalCardNumber,
-			operationType: "referral_bonus", operationTypeRu: "Реферальный сертификат", invoiceAmountKop: 0, pointsDeltaRub: 1000, balanceAfterRub: pointsBalance + 1000,
-			paymentMethodRu: "Акция «Приведи друга»", staffNameRu: "Администратор", noteRu: `Приглашение друга: ${refFriendName} (${refFriendPhone || "телефон не указан"})`,
-		};
-		setLedger((prev) => [entry, ...prev]); setPointsBalance((b) => b + 1000);
+		if (!patientId) { showToast("Пациент не выбран", "warning"); return; }
 		try {
-			const res = await postLoyaltyJson("/api/loyalty/accrue", { patientId, amountPoints: 1000, description: `Реферальный бонус: ${refFriendName}` });
-			if (!res.ok) { const errJson = await res.json().catch(() => ({})); showToast(errJson.message || "Ошибка начисления реферального бонуса", "error"); setPointsBalance(prevBalance); return; }
-			showToast("Реферальное приглашение создано. Начислено 1 000 бонусов!", "success");
-			setRefFriendName(""); setRefFriendPhone("");
-		} catch (err) { console.error("[LoyaltyStudioModal] Referral accrue call failed:", err); showToast("Сетевой сбой при начислении реферального бонуса", "error"); setPointsBalance(prevBalance); }
+			const res = await postLoyaltyJson("/api/loyalty/referrals/register", {
+				referrerPatientId: patientId,
+				invitedPatientName: refFriendName,
+				invitedPatientPhone: refFriendPhone || undefined,
+				rewardRub: 1000,
+			});
+			if (!res.ok) {
+				const errJson = await res.json().catch(() => ({}));
+				showToast(errJson.message || "Ошибка регистрации реферального приглашения", "error");
+				return;
+			}
+			showToast("Реферальное приглашение создано. Бонус 1 000 ₽ будет начислен после первой оплаты лечения", "success");
+			setRefFriendName("");
+			setRefFriendPhone("");
+		} catch (err) {
+			console.error("[LoyaltyStudioModal] Referral register call failed:", err);
+			showToast("Сетевой сбой при регистрации реферального приглашения", "error");
+		}
 	};
 
 	const handleDownloadCsv = () => {

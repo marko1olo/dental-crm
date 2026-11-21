@@ -162,14 +162,16 @@ export interface DebitFamilySharedBalanceResult {
 
 export function debitFamilySharedBalance(input: DebitFamilySharedBalanceInput): DebitFamilySharedBalanceResult {
 	const invoiceAmountKop = Math.max(0, input.invoiceAmountKop), invoiceAmountRub = kopecksToRubles(invoiceAmountKop), availablePointsRub = Math.max(0, input.availableFamilyPointsRub);
-	const coveragePercent = input.allowFullCoverage ? 100 : (input.maxCoveragePercent ?? 30), maxCoverageRub = Math.floor((invoiceAmountRub * coveragePercent) / 100);
+	const coveragePercent = input.allowFullCoverage ? 100 : (input.maxCoveragePercent ?? 30);
+	const maxCoverageKop = Math.round(invoiceAmountKop * (coveragePercent * 0.01));
+	const maxCoverageRub = Math.floor(kopecksToRubles(maxCoverageKop));
 	const maxAllowedRedemptionRub = Math.min(availablePointsRub, maxCoverageRub), requestedRub = input.requestedPointsRub !== undefined ? Math.max(0, input.requestedPointsRub) : maxAllowedRedemptionRub;
 	const debitedPointsRub = Math.min(requestedRub, maxAllowedRedemptionRub), debitedPointsKop = rublesToKopecks(debitedPointsRub);
 	const remainingFamilyBalanceRub = Math.max(0, availablePointsRub - debitedPointsRub), remainingInvoiceDueKop = Math.max(0, invoiceAmountKop - debitedPointsKop);
 	const timestampIso = input.timestampIso ?? new Date().toLocaleString("ru-RU");
 	const fiscal54FzSplit: CashboxFiscalSplitResult = { tag1031CashKop: 0, tag1081ElectronicCardKop: remainingInvoiceDueKop, tag1215AdvancePrepaymentBonusKop: debitedPointsKop, tag1043DiscountKop: 0, totalGrossKop: invoiceAmountKop, totalNetPayableKop: remainingInvoiceDueKop };
 	const ledgerEntry: LoyaltyLedgerEntry = {
-		id: `fam-tx-${Date.now().toString().slice(-4)}`, timestampIso, patientId: input.targetPatientId, patientName: input.targetPatientName, medicalCardNumber: "", operationType: "redemption", operationTypeRu: "Оплата с семейного баланса", invoiceAmountKop, pointsDeltaRub: -debitedPointsRub, balanceAfterRub: remainingFamilyBalanceRub, paymentMethodRu: "Семейный баланс (1 кошелек)", staffNameRu: input.staffNameRu ?? "Администратор / Касса", noteRu: `Оплата лечения за: ${input.targetPatientName} (${input.targetRoleRu}) из семейного кошелька «${input.familyName}» (Плательщик: ${input.sponsorFullName})`,
+		id: `fam-tx-${Math.random().toString(36).slice(2, 8)}`, timestampIso, patientId: input.targetPatientId, patientName: input.targetPatientName, medicalCardNumber: "", operationType: "redemption", operationTypeRu: "Оплата с семейного баланса", invoiceAmountKop, pointsDeltaRub: -debitedPointsRub, balanceAfterRub: remainingFamilyBalanceRub, paymentMethodRu: "Семейный баланс (1 кошелек)", staffNameRu: input.staffNameRu ?? "Администратор / Касса", noteRu: `Оплата лечения за: ${input.targetPatientName} (${input.targetRoleRu}) из семейного кошелька «${input.familyName}» (Плательщик: ${input.sponsorFullName})`,
 	};
 	const messageRu = debitedPointsRub > 0 ? `Списано ${debitedPointsRub} бонусов с семейного баланса за пациента «${input.targetPatientName}». К доплате: ${(kopecksToRubles(remainingInvoiceDueKop)).toLocaleString("ru-RU")} ₽` : `Семейный баланс не списан (доступно 0 ₽ или счет оплачен).`;
 	return { success: debitedPointsRub > 0 || invoiceAmountKop === 0, familyGroupId: input.familyGroupId, sponsorPatientId: input.sponsorPatientId, sponsorFullName: input.sponsorFullName, targetPatientId: input.targetPatientId, targetPatientName: input.targetPatientName, targetRoleRu: input.targetRoleRu, invoiceAmountKop, invoiceAmountRub, maxAllowedRedemptionRub, debitedPointsRub, debitedPointsKop, remainingFamilyBalanceRub, remainingInvoiceDueKop, remainingInvoiceDueRub: kopecksToRubles(remainingInvoiceDueKop), isOneWalletTransferFree: true, fiscal54FzSplit, ledgerEntry, messageRu };
@@ -185,7 +187,7 @@ export interface CreditFamilySharedBalanceResult {
 export function creditFamilySharedBalance(input: CreditFamilySharedBalanceInput): CreditFamilySharedBalanceResult {
 	const amountToAddRub = Math.max(0, input.amountToAddRub), newFamilyBalanceRub = input.currentFamilyBalanceRub + amountToAddRub, timestampIso = new Date().toLocaleString("ru-RU");
 	const ledgerEntry: LoyaltyLedgerEntry = {
-		id: `fam-cr-${Date.now().toString().slice(-4)}`, timestampIso, patientId: input.payerPatientId, patientName: input.payerFullName, medicalCardNumber: "", operationType: "accrual", operationTypeRu: "Пополнение семейного баланса", invoiceAmountKop: 0, pointsDeltaRub: amountToAddRub, balanceAfterRub: newFamilyBalanceRub, paymentMethodRu: "Пополнение семейного кошелька", staffNameRu: input.staffNameRu ?? "Администратор", noteRu: input.reasonRu ?? `Пополнение общего семейного счета «${input.familyName}» плательщиком ${input.payerFullName}`,
+		id: `fam-cr-${Math.random().toString(36).slice(2, 8)}`, timestampIso, patientId: input.payerPatientId, patientName: input.payerFullName, medicalCardNumber: "", operationType: "accrual", operationTypeRu: "Пополнение семейного баланса", invoiceAmountKop: 0, pointsDeltaRub: amountToAddRub, balanceAfterRub: newFamilyBalanceRub, paymentMethodRu: "Пополнение семейного кошелька", staffNameRu: input.staffNameRu ?? "Администратор", noteRu: input.reasonRu ?? `Пополнение общего семейного счета «${input.familyName}» плательщиком ${input.payerFullName}`,
 	};
 	return { familyGroupId: input.familyGroupId, payerPatientId: input.payerPatientId, payerFullName: input.payerFullName, creditedPointsRub: amountToAddRub, newFamilyBalanceRub, ledgerEntry, messageRu: `Семейный баланс «${input.familyName}» пополнен на ${amountToAddRub.toLocaleString("ru-RU")} ₽. Доступно: ${newFamilyBalanceRub.toLocaleString("ru-RU")} ₽` };
 }
@@ -261,7 +263,7 @@ export function creditReferralBonus(paramsOrReferral: { readonly currentBalanceR
 	const timestampIso = new Date().toLocaleString("ru-RU"), friendName = referral.referredPatientName || referral.invitedPatientName || "Приглашенный пациент";
 	const updatedReferral: PatientReferralRecord = { ...referral, status: "reward_credited", statusRu: "Бонус начислен", isRewardCredited: true, rewardedAtIso: timestampIso };
 	const ledgerEntry: LoyaltyLedgerEntry = {
-		id: `ref-tx-${Date.now().toString().slice(-4)}`, timestampIso, patientId: referral.referrerPatientId, patientName: referral.referrerPatientName || "Пациент", medicalCardNumber: "", operationType: "referral_reward", operationTypeRu: "Бонус «Привёл друга»", invoiceAmountKop: referral.firstVisitInvoiceKop ?? 0, pointsDeltaRub: bonusRub, balanceAfterRub: updatedBalanceRub, paymentMethodRu: "Реферальная программа", staffNameRu: isObjectParam ? paramsOrReferral.staffNameRu ?? "Администратор" : "Администратор", noteRu: `Вознаграждение за рекомендацию: ${friendName}`,
+		id: `ref-tx-${Math.random().toString(36).slice(2, 8)}`, timestampIso, patientId: referral.referrerPatientId, patientName: referral.referrerPatientName || "Пациент", medicalCardNumber: "", operationType: "referral_reward", operationTypeRu: "Бонус «Привёл друга»", invoiceAmountKop: referral.firstVisitInvoiceKop ?? 0, pointsDeltaRub: bonusRub, balanceAfterRub: updatedBalanceRub, paymentMethodRu: "Реферальная программа", staffNameRu: isObjectParam ? paramsOrReferral.staffNameRu ?? "Администратор" : "Администратор", noteRu: `Вознаграждение за рекомендацию: ${friendName}`,
 	};
 	return { updatedBalanceRub, newBalanceRub: updatedBalanceRub, updatedReferral, ledgerEntry, bonusRub };
 }

@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -127,8 +128,10 @@ export async function registerLoyaltyReferralRoutes(app: FastifyInstance) {
 					.for("update");
 
 				if (!refCodeRecord) {
-					const code = `DENTE-${referrer.fullName.slice(0, 4).toUpperCase()}-${Date.now().toString().slice(-4)}`;
-					const token = Buffer.from(`${referrerPatientId}-${Date.now()}`).toString("base64url");
+					const sanitizedPrefix = referrer.fullName.trim().split(/\s+/)[0]?.slice(0, 4).toUpperCase() || "PATI";
+					const randSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
+					const code = `DENTE-${sanitizedPrefix}-${randSuffix}`;
+					const token = Buffer.from(`${referrerPatientId}-${crypto.randomUUID()}`).toString("base64url");
 					[refCodeRecord] = await tx
 						.insert(patientReferralCodes)
 						.values({

@@ -15,10 +15,11 @@ export const redeemPointsBodySchema = z.object({
 	amountKopecks: z.number().int().positive().optional(),
 	pointsToRedeem: z.number().positive().finite().multipleOf(0.01),
 	/**
-	 * [LOY-01] allowFullCoverage defaults strictly to FALSE.
-	 * 100% coverage requires an explicit doctor/executive override.
+	 * [LOY-01] allowFullCoverage: Doctor Autonomy (Mandate 8e).
+	 * Defaults to TRUE so doctor/clinic is never blocked from 100% coverage,
+	 * while still allowing false when strict tier limit is requested.
 	 */
-	allowFullCoverage: z.boolean().optional().default(false),
+	allowFullCoverage: z.boolean().optional().default(true),
 	clientMutationId: z.string().optional(),
 	description: z.string().default("Списание баллов в счет оплаты лечения"),
 });
@@ -71,7 +72,7 @@ export const holdPointsBodySchema = z.object({
 	invoiceId: z.string().uuid().optional().nullable(),
 	invoiceAmountRub: z.number().positive().finite().multipleOf(0.01),
 	pointsToHold: z.number().positive().finite().multipleOf(0.01),
-	allowFullCoverage: z.boolean().optional().default(false),
+	allowFullCoverage: z.boolean().optional().default(true),
 	clientMutationId: z.string().optional(),
 	description: z.string().default("Холдирование баллов для кассового чека"),
 });

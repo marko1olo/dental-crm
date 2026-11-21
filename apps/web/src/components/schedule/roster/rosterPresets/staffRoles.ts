@@ -20,7 +20,8 @@ export const MEDICAL_STAFF_ROLES: Record<MedicalStaffRole, StaffRoleDefinition> 
 		isDoctor: true,
 		isAssistant: false,
 		standardWeeklyHours: 33,
-		requiresAssistant: true, // Surgery strictly requires dedicated assistant
+		// MANDATE 8n: Соло-практика первична. Ассистент рекомендован, но не блокирует работу врача в соло.
+		requiresAssistant: false,
 	},
 	orthopedist: {
 		role: "orthopedist",
@@ -29,7 +30,7 @@ export const MEDICAL_STAFF_ROLES: Record<MedicalStaffRole, StaffRoleDefinition> 
 		isDoctor: true,
 		isAssistant: false,
 		standardWeeklyHours: 33,
-		requiresAssistant: true,
+		requiresAssistant: false,
 	},
 	orthodontist: {
 		role: "orthodontist",
@@ -47,7 +48,7 @@ export const MEDICAL_STAFF_ROLES: Record<MedicalStaffRole, StaffRoleDefinition> 
 		isDoctor: true,
 		isAssistant: false,
 		standardWeeklyHours: 33,
-		requiresAssistant: true,
+		requiresAssistant: false,
 	},
 	hygienist: {
 		role: "hygienist",

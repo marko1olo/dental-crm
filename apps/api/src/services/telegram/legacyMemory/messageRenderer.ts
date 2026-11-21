@@ -67,10 +67,16 @@ const staffDigestClinicWideRoles = new Set<StaffRole>([
 function staffRoleLabelForTelegramDigest(role: StaffRole): string {
 	const labels: Record<StaffRole, string> = {
 		owner: "владелец",
-		doctor: "врач",
-		administrator: "администратор",
-		assistant: "ассистент",
+		admin: "администратор системы",
+		head_doctor: "главный врач",
 		manager: "управляющий",
+		accountant: "бухгалтер",
+		senior_admin: "старший администратор",
+		administrator: "администратор",
+		registrar: "регистратор",
+		doctor: "врач",
+		senior_nurse: "старшая медсестра",
+		assistant: "ассистент",
 		curator: "куратор",
 	};
 	return labels[role];

@@ -15,10 +15,16 @@ import { isValidSnils } from "../utils/snils.js";
 
 export const staffRoleEnumValues = [
 	"owner",
-	"doctor",
-	"administrator",
-	"assistant",
+	"admin",
+	"head_doctor",
 	"manager",
+	"accountant",
+	"senior_admin",
+	"administrator",
+	"registrar",
+	"doctor",
+	"senior_nurse",
+	"assistant",
 	"curator",
 ] as const;
 export const staffRoleSchema = z.enum(staffRoleEnumValues);

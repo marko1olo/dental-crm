@@ -1,3 +1,4 @@
+import { staffRoleEnumValues } from "@dental/shared";
 import { z } from "zod";
 import {
 	clinicLoginBodySchema,
@@ -26,13 +27,10 @@ export {
  */
 export const staffSwitchRoleSchema = z.object({
 	targetRole: z.enum([
-		"doctor",
-		"administrator",
-		"owner",
-		"assistant",
+		...staffRoleEnumValues,
 		"hygienist",
 		"receptionist",
-	]),
+	] as const),
 	targetUserId: z.string().optional(),
 	pinCode: z.string().trim().min(1).max(16).optional(),
 });

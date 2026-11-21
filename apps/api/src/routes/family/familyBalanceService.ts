@@ -1,4 +1,4 @@
-import { kopecksToRub, parseKopecks } from "@dental/shared";
+import { kopecksToNumericString, kopecksToRub, parseKopecks } from "@dental/shared";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { familyGroups, patients, payments } from "../../db/schema.js";
@@ -12,7 +12,7 @@ export async function updateFamilyBalance(
 	organizationId: string,
 	deltaKopecks: number,
 ) {
-	const deltaRubStr = (deltaKopecks / 100).toFixed(2);
+	const deltaRubStr = kopecksToNumericString(deltaKopecks);
 	const [updated] = await tx
 		.update(familyGroups)
 		.set({

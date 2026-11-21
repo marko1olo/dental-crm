@@ -22,10 +22,3 @@ export const staffIdParamsSchema = z.object({
 });
 
 export type StaffIdParams = z.infer<typeof staffIdParamsSchema>;
-
-export const verifyStaffPinBodySchema = z.object({
-	staffId: z.string().uuid(),
-	pinCode: z.string().min(4).max(8),
-});
-
-export type VerifyStaffPinBody = z.infer<typeof verifyStaffPinBodySchema>;

@@ -68,11 +68,17 @@ export function WorkspaceShell({
 	children,
 }: WorkspaceShellProps) {
 	const defaultStaffRoleLabels: Record<StaffRole, string> = {
-		doctor: "Врач",
-		assistant: "Ассистент",
-		administrator: "Администратор",
-		manager: "Управляющий",
 		owner: "Владелец",
+		admin: "Администратор системы",
+		head_doctor: "Главный врач",
+		manager: "Управляющий",
+		accountant: "Бухгалтер",
+		senior_admin: "Старший администратор",
+		administrator: "Администратор",
+		registrar: "Регистратор",
+		doctor: "Врач",
+		senior_nurse: "Старшая медсестра",
+		assistant: "Ассистент",
 		curator: "Куратор",
 	};
 

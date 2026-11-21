@@ -90,10 +90,16 @@ export type ClinicMode = z.infer<typeof clinicModeSchema>;
 
 export const staffRoleSchema = z.enum([
 	"owner",
-	"doctor",
-	"administrator",
-	"assistant",
+	"admin",
+	"head_doctor",
 	"manager",
+	"accountant",
+	"senior_admin",
+	"administrator",
+	"registrar",
+	"doctor",
+	"senior_nurse",
+	"assistant",
 	"curator",
 ]);
 

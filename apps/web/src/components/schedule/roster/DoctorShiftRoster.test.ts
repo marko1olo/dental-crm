@@ -138,7 +138,7 @@ describe("DoctorShiftRoster — Statutory Production Calendar & Shift Archetypes
 
 		assert.equal(MEDICAL_STAFF_ROLES.therapist.standardWeeklyHours, 33);
 		assert.equal(MEDICAL_STAFF_ROLES.surgeon.standardWeeklyHours, 33);
-		assert.equal(MEDICAL_STAFF_ROLES.surgeon.requiresAssistant, true);
+		assert.equal(MEDICAL_STAFF_ROLES.surgeon.requiresAssistant, false);
 		assert.equal(MEDICAL_STAFF_ROLES.assistant.isAssistant, true);
 
 		assert.equal(CLINIC_CABINETS_CATALOG.length, 4);

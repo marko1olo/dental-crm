@@ -8,6 +8,7 @@ import {
 } from "@dental/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import {
@@ -77,6 +78,16 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			};
 		}
 		const created = await createStaffMemberInDb(orgId, input);
+		try {
+			await recordAuditEventInDb(orgId, {
+				entityType: "user",
+				entityId: created.id,
+				action: "STAFF_CREATED",
+				actorUserId: getRequestIdentity(request).userId,
+			});
+		} catch (auditErr) {
+			request.log.warn({ error: auditErr }, "Не удалось записать аудит создания сотрудника");
+		}
 		reply.code(201);
 		return staffMemberSchema.parse(created);
 	});
@@ -131,6 +142,16 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 
 			try {
 				await updateStaffCredentialsInDb(orgId, params.staffId, updates);
+				try {
+					await recordAuditEventInDb(orgId, {
+						entityType: "user",
+						entityId: params.staffId,
+						action: "STAFF_CREDENTIALS_UPDATED",
+						actorUserId: getRequestIdentity(request).userId,
+					});
+				} catch (auditErr) {
+					request.log.warn({ error: auditErr }, "Не удалось записать аудит доступов сотрудника");
+				}
 				/*
 				 * ИМЕННО ЭТОТ ОТВЕТ ЧИТАЕТСЯ СРАЗУ. SettingsStaffTab.tsx после успеха
 				 * перечитывает GET /api/dashboard. Пока здесь стоял
@@ -177,6 +198,16 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 			}
 			try {
 				await updateStaffWorkingHoursInDb(orgId, params.staffId, input);
+				try {
+					await recordAuditEventInDb(orgId, {
+						entityType: "user",
+						entityId: params.staffId,
+						action: "STAFF_WORKING_HOURS_UPDATED",
+						actorUserId: getRequestIdentity(request).userId,
+					});
+				} catch (auditErr) {
+					request.log.warn({ error: auditErr }, "Не удалось записать аудит графика сотрудника");
+				}
 				const settings = await getClinicSettingsFromDb(orgId);
 				const updated = settings.staff.find((s) => s.id === params.staffId);
 				if (!updated) throw new Error("Сотрудник не найден.");
@@ -231,6 +262,16 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		}
 		try {
 			await updateStaffMemberProfileInDb(orgId, params.staffId, input);
+			try {
+				await recordAuditEventInDb(orgId, {
+					entityType: "user",
+					entityId: params.staffId,
+					action: "STAFF_PROFILE_UPDATED",
+					actorUserId: getRequestIdentity(request).userId,
+				});
+			} catch (auditErr) {
+				request.log.warn({ error: auditErr }, "Не удалось записать аудит профиля сотрудника");
+			}
 			const settings = await getClinicSettingsFromDb(orgId);
 			const updated = settings.staff.find((s) => s.id === params.staffId);
 			if (!updated) throw new Error("Сотрудник не найден.");
@@ -265,6 +306,16 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 		}
 		try {
 			await deactivateStaffMemberInDb(orgId, params.staffId);
+			try {
+				await recordAuditEventInDb(orgId, {
+					entityType: "user",
+					entityId: params.staffId,
+					action: "STAFF_DEACTIVATED",
+					actorUserId: getRequestIdentity(request).userId,
+				});
+			} catch (auditErr) {
+				request.log.warn({ error: auditErr }, "Не удалось записать аудит деактивации сотрудника");
+			}
 			const settings = await getClinicSettingsFromDb(orgId);
 			const updated = settings.staff.find((s) => s.id === params.staffId);
 			if (!updated) throw new Error("Сотрудник не найден.");
@@ -336,6 +387,16 @@ export function registerStaffSettingsRoutes(app: FastifyInstance): void {
 					labCostDeductionPct: input.labCostDeductionPct,
 				},
 			);
+			try {
+				await recordAuditEventInDb(orgId, {
+					entityType: "doctor_commission",
+					entityId: params.staffId,
+					action: "STAFF_COMMISSION_UPDATED",
+					actorUserId: getRequestIdentity(request).userId,
+				});
+			} catch (auditErr) {
+				request.log.warn({ error: auditErr }, "Не удалось записать аудит комиссии врача");
+			}
 			return saved;
 		} catch (error) {
 			// Отключённое хранение — это не ошибка оператора: процент вводить некуда,

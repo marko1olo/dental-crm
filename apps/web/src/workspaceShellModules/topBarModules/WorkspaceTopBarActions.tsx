@@ -19,6 +19,7 @@ import {
 	Shield,
 	Sparkles,
 	User,
+	UserCheck,
 } from "lucide-react";
 import { NotificationBell } from "../../components/notifications/NotificationBell";
 import { togglePatientPrivacyShield } from "../../lib/chairsideErgonomics";
@@ -26,6 +27,7 @@ import { workspaceTopbarLabels } from "../../workspaceUiLabels";
 import type { WorkspaceTopBarActionsProps } from "./workspaceTopBarTypes";
 import { useTelephonyStore } from "../../store/telephonyStore";
 import { TelephonyHeaderCapsule } from "../../components/telephony/headerCapsule";
+import { ChairsideQuickSwitchModal } from "../../components/auth/ChairsideQuickSwitchModal";
 
 function toggleTheme(): void {
 	if (typeof document === "undefined") return;
@@ -67,6 +69,7 @@ export function WorkspaceTopBarActions({
 	onLockSession,
 }: WorkspaceTopBarActionsProps) {
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
+	const [isQuickSwitchOpen, setIsQuickSwitchOpen] = useState(false);
 	const profileRef = useRef<HTMLDivElement | null>(null);
 	const activeCall = useTelephonyStore((s) => s.activeCall);
 
@@ -85,7 +88,7 @@ export function WorkspaceTopBarActions({
 		<div className="top-actions">
 			{/* 1. Единственный Primary CTA всей клиники — «+ Запись» (на мобилках иконка 44x44px, скрыта на экране расписания по Мандату 8am) */}
 			<button
-				className={`primary-button min-h-[44px] min-w-[44px] px-2.5 sm:px-3 flex items-center justify-center gap-1.5 ${effectiveView === "schedule" ? "hidden" : ""}`}
+				className="primary-button min-h-[44px] min-w-[44px] px-2.5 sm:px-3 flex items-center justify-center gap-1.5"
 				style={effectiveView === "schedule" ? { display: "none" } : undefined}
 				data-hidden={effectiveView === "schedule" ? "true" : undefined}
 				type="button"
@@ -132,11 +135,8 @@ export function WorkspaceTopBarActions({
 				title={workspaceTopbarLabels.copilot.title}
 				onClick={() => {
 					if (typeof window !== "undefined") {
-						const win = window as Window & {
-							readonly __denteCopilot?: { readonly toggle: () => void } | undefined;
-						};
-						if (win.__denteCopilot) {
-							win.__denteCopilot.toggle();
+						if (window.__denteCopilot) {
+							window.__denteCopilot.toggle();
 						} else {
 							window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
 						}
@@ -160,7 +160,7 @@ export function WorkspaceTopBarActions({
 				}}
 			>
 				<AlertOctagon className="w-3.5 h-3.5 text-[var(--bad-fg)] shrink-0" aria-hidden="true" />
-				<span className="hidden md:inline font-bold">SOS</span>
+				<span className="hidden md:inline font-bold">{workspaceTopbarLabels.emergency.label}</span>
 			</button>
 
 			{/* 2.6. Единая Ambient Header Capsule телефонии и софтфона (Zero Floating Blobs) */}
@@ -265,6 +265,21 @@ export function WorkspaceTopBarActions({
 							</button>
 						) : null}
 
+						<button
+							className="secondary-button compact-top-button w-full text-left justify-start"
+							type="button"
+							id="topbar-switch-role-btn"
+							data-testid="topbar-switch-role-btn"
+							title={workspaceTopbarLabels.switchRole.title}
+							onClick={() => {
+								setIsProfileOpen(false);
+								setIsQuickSwitchOpen(true);
+							}}
+						>
+							<UserCheck className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" aria-hidden="true" />
+							{workspaceTopbarLabels.switchRole.label}
+						</button>
+
 						{onLockSession ? (
 							<button
 								className="secondary-button compact-top-button w-full text-left justify-start"
@@ -281,6 +296,12 @@ export function WorkspaceTopBarActions({
 					</div>
 				)}
 			</div>
+
+			{/* Модальное окно быстрой смены врача по PIN */}
+			<ChairsideQuickSwitchModal
+				isOpen={isQuickSwitchOpen}
+				onClose={() => setIsQuickSwitchOpen(false)}
+			/>
 		</div>
 	);
 }

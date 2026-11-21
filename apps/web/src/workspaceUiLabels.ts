@@ -367,10 +367,16 @@ export const clinicModeLabels: Record<
 
 export const staffRoleLabels: Record<StaffRole, string> = {
 	owner: "Владелец",
-	doctor: "Врач",
-	administrator: "Администратор",
-	assistant: "Ассистент",
+	admin: "Администратор системы",
+	head_doctor: "Главный врач",
 	manager: "Управляющий",
+	accountant: "Бухгалтер",
+	senior_admin: "Старший администратор",
+	administrator: "Администратор",
+	registrar: "Регистратор",
+	doctor: "Врач",
+	senior_nurse: "Старшая медсестра",
+	assistant: "Ассистент",
 	curator: "Куратор",
 };
 
@@ -388,6 +394,16 @@ export const staffRoleLabels: Record<StaffRole, string> = {
  * `title` остаётся, но только как дополнение к подписи, а не вместо неё.
  */
 export const workspaceTopbarLabels = {
+	/** Экстренная помощь у кресла (SOS). */
+	emergency: {
+		label: "SOS",
+		title: "Экстренная помощь у кресла (Ctrl+Alt+E)",
+	},
+	/** Быстрое переключение врача или ассистента по PIN у кресла. */
+	switchRole: {
+		label: "Сменить врача",
+		title: "Быстро сменить врача или ассистента по PIN у кресла (без блокировки экрана)",
+	},
 	/** Подпись выпадающего списка ролей. */
 	role: {
 		region: "Рабочий режим",
