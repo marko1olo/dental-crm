@@ -4441,6 +4441,45 @@ ead_file по 8 осям качества Хаммера:
 
 ---
 
+## 🏆 ВОЛНА 16: РАСПИСАНИЕ, СЕТКА ПРИЁМОВ И ЗАЩИТА ОТ КОЛЛИЗИЙ (APPOINTMENTS GRID & COLLISION GUARD)
+
+### 1. ДОМЕН: РАСПИСАНИЕ, DRAG & DROP ПЕРЕНОС СЛОТОВ, СЕТКА ПРИЁМОВ И ЗАЩИТА ОТ КОЛЛИЗИЙ
+- **Хирург:** Red Team Fixer Surgeon (`0f2be931-ab61-436b-94e8-2f40aa399fef`).
+- **Ликвидированные дефекты (5 из 5):**
+  1. **[SEV-1] Ликвидация сдвига на +3 часа при Drag & Drop переносе слотов на сетке расписания:**
+     - **Файлы:** [`apps/web/src/components/schedule/grid/gridSlotMath.ts:51-89`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/gridSlotMath.ts#L51-L89), [`apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/useAppointmentTrackController.ts:68-71, 182-185`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/useAppointmentTrackController.ts#L68-L71)
+     - **Первопричина:** Функция `safeBuildSlotIso(dateKey, hour, durationMinutes)` конкатенировала строку с `.000Z` без учета часового пояса клиники. При перетаскивании карточки на 14:00 в Москве (UTC+3) штамп улетал на сервер как 14:00 UTC и в сетке отображался со сдвигом на 17:00.
+     - **Исправление:** Сигнатура `safeBuildSlotIso` расширена параметром `timezone?: string | null`. Если передан часовой пояс клиники, используется канонический SSOT `fromDateTimeLocalValue(localDateTimeStr, timezone)`. В `useAppointmentTrackController.ts` передан `timezone` из пропсов контроллера сетки.
+  2. **[SEV-1] Ликвидация сдвига на +3 часа при клике на рекомендованный свободный слот (Apply Suggested Slot):**
+     - **Файл:** [`apps/web/src/hooks/domains/schedule/useAppointmentMutations.ts:640-715`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/schedule/useAppointmentMutations.ts#L640-L715)
+     - **Первопричина:** Сервер возвращает слоты в местном времени клиники (например, "14:30" MSK). В методе `applySuggestedSlot` вызывался `d.setUTCHours(hh, mm, 0, 0)`, ошибочно трактуя время клиники как UTC, что смещало приём на 17:30.
+     - **Исправление:** Время слота рассчитывается с использованием `toDateTimeLocalValue` и `fromDateTimeLocalValue` в таймзоне клиники `dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow"`, сохраняя идеальную точность времени как для редактируемых записей, так и для нового черновика.
+  3. **[SEV-1] Ликвидация залипания флага `isOverbooking: true` в PostgreSQL 18 при перемещении в свободный слот:**
+     - **Файл:** [`apps/api/src/db/appointmentsQueryModules/appointmentsUpdateQuery.ts:203-207`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/appointmentsQueryModules/appointmentsUpdateQuery.ts#L203-L207)
+     - **Первопричина:** В коде стояло `if (input.allowOverbooking || isEmergencyOverrideOverall) updateData.isOverbooking = true;` без сброса в `false`. Запись, созданная как овербукинг (острая боль), навсегда оставалась вне GIST exclusion защиты в базе данных при переносе в обычный пустой слот.
+     - **Исправление:** Добавлен явный сброс `updateData.isOverbooking = false`, если при переносе (`input.startsAt !== undefined || input.chairId !== undefined || input.doctorUserId !== undefined`) нет острой боли и овербукинг не запрошен повторно. Запись снова защищается PostgreSQL exclusion constraint.
+  4. **[SEV-2] Устранение утечки черновика и ghost storage (Мандат 8bn / 8zq):**
+     - **Файлы:** [`apps/web/src/components/schedule/useQuickBookingDraft.ts:36-64`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/useQuickBookingDraft.ts#L36-L64), [`apps/web/src/components/schedule/__tests__/quickBookingAutonomyWave50.test.tsx:1118-1140`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/__tests__/quickBookingAutonomyWave50.test.tsx#L1118-L1140)
+     - **Первопричина:** При закрытии шторки по Escape/Отмена/Backdrop данные записывались в `localStorage` под ключом `dente_quick_booking_draft`, который нигде в рантайме не восстанавливался, нарушая Мандат 8bn (Zero-Leak Draft: при закрытии по Escape/Отмена — обязательный полный сброс стейта черновика).
+     - **Исправление:** Удалена бесполезная запись мертвого ключа, при закрытии шторки по Escape, Отмена или Backdrop производится гарантированный сброс черновика (`safeLocalStorageRemoveItem("dente_quick_booking_draft"); onClose();`).
+  5. **Тестовое покрытие и валидация:**
+     - Написан строгий специализированный юнит-тест [`apps/web/src/tests/scheduleGridTimezoneAndOverbookingFixes.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/scheduleGridTimezoneAndOverbookingFixes.test.ts) (4 теста, 100% PASS):
+       * `safeBuildSlotIso` с часовым поясом `Europe/Moscow` (UTC+3) для 14:00 дает `11:00 UTC` и отображается обратно ровно как 14:00.
+       * `safeBuildSlotIso` с часовым поясом `Europe/Samara` (UTC+4) для 15:30 дает `11:30 UTC` и отображается как 15:30.
+       * Расчет подсказанного слота в таймзоне клиники без паразитного сдвига.
+       * Логика сброса флага `isOverbooking: false` при перемещении слота.
+- **Машинные гейты (Exit Code 0, ALL PASS):**
+  - `apps/web/src/tests/scheduleGridTimezoneAndOverbookingFixes.test.ts`: 4/4 PASS.
+  - `apps/web/src/components/schedule/__tests__/quickBookingAutonomyWave50.test.tsx`: 8/8 PASS.
+  - `apps/web/src/utils/scheduleCollisionUtils.test.ts`: 16/16 PASS.
+  - `apps/web/src/tests/scheduleStressAndSanitation.test.ts`: 7/7 PASS.
+  - `check:diff`: Exit Code 0 (0 запрещенных костылей, 0 any, 0 empty catch).
+  - `check:encoding`: Exit Code 0 (20 037 файлов, UTF-8 без BOM).
+  - TypeScript `tsc --noEmit`: 0 ошибок в целевых файлах API и Web.
+
+
+---
+
 ## 🏆 ВОЛНА 14: ЭНДОДОНТИЯ, КОРНЕВЫЕ КАНАЛЫ И ДЕТСКАЯ СТОМАТОЛОГИЯ (ДОМЕН 12)
 
 ### 1. ДОМЕН 12: КЛИНИЧЕСКИЙ ЭНДО-ПРОТОКОЛ, КОРНЕВЫЕ КАНАЛЫ, ВРЕМЕННЫЙ ПРИКУС И ПЕДИАТРИЯ
@@ -4463,3 +4502,47 @@ ead_file по 8 осям качества Хаммера:
   - Сборка `@dental/shared`: Exit Code 0.
   - TypeScript компиляция `tsc -p apps/api/tsconfig.json --noEmit` по измененным файлам: 0 ошибок.
   - Кодировка `npm run check:encoding`: проверено 20048 файлов, 0 замечаний.
+
+---
+
+## 🏆 ВОЛНА 15: ПАЦИЕНТСКИЙ ПОРТАЛ, TELEGRAM MINI APP, КИОСК И ЛИЧНЫЙ КАБИНЕТ (ДОМЕН 15)
+
+### 1. ДОМЕН 15: ПАЦИЕНТСКИЙ ПОРТАЛ PWA, TELEGRAM MINI APP, КИОСК САМОРЕГИСТРАЦИИ И ЛИЧНЫЙ КАБИНЕТ
+- **Хирург:** Red Team Fixer Surgeon (`7b883b28-6af5-410d-a4f2-0a99b7a8652a`).
+- **Коммит:** `5d118a0c0a` (`fix(portal): eliminate telegram session bola, resolve scan 404s, purge fake sbp requisites and enforce apple hig`).
+- **Ликвидированные дефекты (5 из 5):**
+  1. **SEV-1 BOLA / Account Takeover в Telegram WebApp**: В `telegramWebAppSessionHandlers.ts` устранена тихая привязка `telegramUserId` по произвольному телефону/ID. Внедрена строгая верификация через одноразовый SMS OTP (`portalOtpCodes` с проверкой срока годности и хэша), блокирующая доступ к чужой ЭМК.
+  2. **SEV-1 Устранение 404 при просмотре снимков в кабинете пациента**: В `portalAppointmentsRoutes.ts` внедрена функция `servePatientScan`, обеспечивающая поиск снимков в `imagingStudies` и `xrayScans` с валидацией путей на диске через `validateAndResolvePacsLocalFilePath` (защита от Path Traversal и multi-tenant изоляция по `organizationId`). Зарегистрирован эндпоинт `/scans/:scanId/view` (inline) и `/download` (attachment).
+  3. **SEV-1 Ликвидация фиктивных банковских реквизитов СБП**: В `patientCabinetSbpEngine.ts` полностью удален статический fallback на несуществующие реквизиты ООО «Стоматологическая клиника ДЕНТЕ». При отсутствии настроенных реквизитов организации выбрасывается строгая ошибка, предотвращающая отправку платежей в никуда.
+  4. **SEV-1 Копеечная финансовая точность (Мандат 8bm)**: В таблицу `payments` добавлена колонка `amountKopecks: bigint` с DDL-миграцией `0278_payments_amount_kopecks.sql` (0 drift). При оплате через портал в `portalPaymentsRoutes.ts` гарантированно сохраняется `amountKopecks: BigInt(invoiceTotalKop)`.
+  5. **SEV-2 Apple HIG и дизайн-токены**: В CSS стилях личного кабинета и Telegram Mini App хардкод `#0d9488` заменен на семантические токены `var(--primary)` и `var(--primary-hover)`. Высота интерактивных чипов `.tg-toggle-chip` и `.tg-family-pill` доведена до минимального сенсорного стандарта $\ge 44\text{px}$.
+- **Машинные гейты (Exit Code 0, 47/47 PASS):**
+  - `check:migration-drift`: Exit Code 0 (213 таблиц, 2945 колонок, 49 enum, 0 drift).
+  - `check:encoding`: Exit Code 0 (20 034 файлов, UTF-8 без BOM).
+  - Безопасность Telegram WebApp BOLA & Scans: 3/3 passed.
+  - Безопасность и 152-ФЗ портала: 11/11 passed.
+  - Киоск и PII защита: 7/7 passed.
+  - Мобильный кабинет и эргономика: 8/8 passed.
+  - Клиентский движок портала: 5/5 passed.
+  - Шторка и печатные формы личного кабинета: 9/9 passed.
+  - Сквозной e2e сценарий пациента: 7/7 passed.
+
+---
+
+## 🏆 ВОЛНА 16: ОРТОДОНТИЯ, ЭЛАЙНЕРЫ, ТРГ И ЦЕФАЛОМЕТРИЯ (ДОМЕН 16)
+
+### 1. ДОМЕН 16: ОРТОДОНТИЯ, ЭЛАЙНЕРЫ, ТРГ И ЦЕФАЛОМЕТРИЯ
+- **Хирург:** Red Team Fixer Surgeon (`2fed084f-7269-4f4c-9a01-2872c4f65262`).
+- **Коммит:** `1c243dd707` (`fix(ortho): eliminate silent failure, enforce integer kopecks billing, acid transactions and wits division guard`).
+- **Ликвидированные дефекты (6 из 6):**
+  1. **SEV-1 Ликвидация Silent Failure и ложных тостов успеха**: В `orthodonticsStudioPersistence.ts` внедрена валидация `postOrthoEndpoint` с проверкой `if (!res.ok) throw new Error(...)`. Тост успеха «✓ Активация этапа успешно зафиксирована в ЭМК» и событие `dente:emr-entry-added` вызываются строго при реальном 2xx успехе; при сбоях выводится понятный клинический тост ошибки с текстом ответа сервера.
+  2. **SEV-1 Перевод биллинга ортодонтии на целочисленные копейки `amountKopecks: bigint` (Мандат 8bm)**: В `orthoBillingService.ts` полностью исключена арифметика с плавающей точкой `Math.round((prevTotalRub + addedRub) * 100) / 100`. Суммы смет и этапов суммируются в `bigint` копейках через канонические утилиты `@dental/shared/src/money.ts` (`rublesToKopecks`, `kopecksToRubles`, `formatKopecksToRub`).
+  3. **SEV-1 Неделимость ACID-транзакций и Idempotency-Key**: В роуты `stageRoutes.ts`, `cephRoutes.ts` и `alignerRoutes.ts` добавлена валидация клиентского заголовка `Idempotency-Key` (UUIDv4/v7) с возвратом HTTP 400 при некорректном формате; все мутации обернуты в транзакции `await db.transaction(async (tx) => ...)`.
+  4. **SEV-2 Честная маркировка разметки ТРГ**: В `cephAiInferenceService.ts` снята вводящая в заблуждение этикетка «ИИ авторазметка» с жестко закодированного анатомического пресета нормы (`DEFAULT_CEPH_LANDMARKS_PRESET`), в интерфейсе закреплено точное клиническое описание: «Калиброванный анатомический шаблон нормы (требует ручной подгонки)».
+  5. **SEV-2 Структурированное логирование Fastify**: В `orthoPricelistResolver.ts` прямые вызовы `console.warn` заменены на вызовы логгера Fastify (`logger.warn({ err, organizationId }, "...")`).
+  6. **SEV-3 Защита расчета Wits appraisal от деления на 0**: В `cephalometricEngine.ts` добавлены guard-clauses `if (abLenSq <= 1e-12)` и проверки длины вектора окклюзионной плоскости, исключающие NaN и падение при вырождении масштаба или совпадении координат ориентиров.
+- **Машинные гейты (Exit Code 0, ALL PASS):**
+  - `check:diff`: Exit Code 0 (0 `as any`, 0 `!`, 0 float money, 0 suppressions).
+  - `check:encoding`: Exit Code 0 (20 037 файлов, UTF-8 без BOM).
+  - TypeScript `tsc --noEmit` API & Web: 0 ошибок в коде ортодонтии.
+  - Тесты ортодонтии (`orthodonticsSSOTSuite.test.tsx`): 26/26 passed (100% PASS).
