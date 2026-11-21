@@ -9,6 +9,7 @@ import {
 	text,
 	timestamp,
 	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { appointmentStatus } from "../_common.js";
 import { organizations, users } from "../auth.js";
@@ -46,9 +47,31 @@ export const appointments = pgTable(
 		toothNumber: integer("tooth_number"),
 		diagnosisMkb10: text("diagnosis_mkb10"),
 		isOverbooking: boolean("is_overbooking").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		rebookingSourceVisitId: uuid("rebooking_source_visit_id").references(
+			() => visits.id,
+			{ onDelete: "set null" },
+		),
+		rebookingDeltaMinutes: integer("rebooking_delta_minutes"),
+		attributedRole: varchar("attributed_role", { length: 32 }),
+		attributedUserId: uuid("attributed_user_id").references(() => users.id, {
+			onDelete: "set null",
+		}),
+		attributionReason: text("attribution_reason"),
 	},
 	(table) => {
 		return {
+			idxAppointmentsAttribution: index("idx_appointments_attribution").on(
+				table.organizationId,
+				table.attributedRole,
+				table.attributedUserId,
+			),
+			idxAppointmentsCreatedAt: index("idx_appointments_created_at").on(
+				table.organizationId,
+				table.createdAt,
+			),
 			idxAppointmentsOrgTime: index("idx_appointments_org_time").on(
 				table.organizationId,
 				table.startsAt,
@@ -82,11 +105,11 @@ export const appointments = pgTable(
 				"appointments_time_order_check",
 				sql`${table.startsAt} < ${table.endsAt}`,
 			),
-			// Note: 4D PostgreSQL GIST exclusion constraints managed in migrations (0154, 0170):
-			// - appointments_doctor_overlap_excl (doctor_user_id)
-			// - appointments_chair_overlap_excl (chair_id)
-			// - appointments_assistant_overlap_excl (assistant_user_id)
-			// - appointments_patient_overlap_excl (patient_id)
+			// Note: 4D PostgreSQL GIST exclusion constraints managed in migrations (0154, 0170, 0255):
+			// - appointments_doctor_overlap_excl (doctor_user_id, is_overbooking = false)
+			// - appointments_chair_overlap_excl (chair_id, is_overbooking = false)
+			// - appointments_assistant_overlap_excl (assistant_user_id, is_overbooking = false)
+			// - appointments_patient_overlap_excl (patient_id, is_overbooking = false)
 		};
 	},
 );
@@ -260,6 +283,16 @@ export const appointmentsRelations = relations(
 		chair: one(chairs, {
 			fields: [appointments.chairId],
 			references: [chairs.id],
+		}),
+		attributedUser: one(users, {
+			fields: [appointments.attributedUserId],
+			references: [users.id],
+			relationName: "attributedAppointments",
+		}),
+		rebookingSourceVisit: one(visits, {
+			fields: [appointments.rebookingSourceVisitId],
+			references: [visits.id],
+			relationName: "rebookingAppointments",
 		}),
 		visits: many(visits),
 	}),

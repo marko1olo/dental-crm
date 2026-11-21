@@ -833,12 +833,18 @@
 
 ---
 
-### 54. `кадры::справедливое_распределение_конверсии_повторной_записи` [НЕТ] / [DEBT] -> MUST-HAVE
+### 54. `кадры::справедливое_распределение_конверсии_повторной_записи` [ЕСТЬ] (100% Реализовано, 15-мин порог в БД, Fastify API, RebookingConversionPanel в ExecutiveDashboard, бейдж в DoctorShiftHeader, 4-State Proof)
 - **Бизнес-задача & Проблема**:
   В стоматологических клиниках распространен системный конфликт между врачами и администраторами за KPI повторной записи (Rebooking Conversion):
   1. Если пациент перезаписывается на следующий этап лечения непосредственно в кабинете у врача (или в первые 15 минут после приема при выходе на ресепшен) — это прямая заслуга **Врача**, качественно донесшего ценность плана лечения.
-  2. Если пациент ушел без записи, а администратор перезвонил ему через день/неделю (или пациент позвонил сам через несколько дней) — конверсия должна начисляться **Администратору**.
-  3. В текущей кодовой базе в `apps/api/src/routes/analytics.ts` и `apps/api/src/db/schema/schedule.ts` расчет дельты времени между закрытием визита и созданием повторной записи отсутствует.
+  2. Если пациент ушел без записи, а администратор перезвонил ему через день/неделю (или пациент позвонил сам через несколько дней) — конверсия начисляется **Администратору**.
+  3. В монорепозитории внедрён полноценный клинический движок атомарного разделения конверсий:
+     - Drizzle / PostgreSQL 18 схема: поля `createdAt`, `rebookingSourceVisitId`, `rebookingDeltaMinutes`, `attributedRole`, `attributedUserId`, `attributionReason` в таблице `appointments` с индексами `idx_appointments_attribution` и `idx_appointments_created_at`.
+     - Движок атрибуции: `computeRebookingAttribution` в `apps/api/src/db/appointmentsQueryModules/appointmentsCreateQuery.ts` (100% соло-врач по Мандату 8n, $\Delta t = 0$ во время приёма, $\le 15$ мин после завершения визита за 24ч $\to$ врач, $> 15$ мин $\to$ администратор, защита от отрицательной дельты `Math.max(0, ...)`).
+     - Fastify маршрут: `GET /api/analytics/rebooking-conversion` в `apps/api/src/routes/analytics/rebookingRoutes.ts` на персистентных полях БД без синтаксического анализа UUIDv7.
+     - Фронтенд: панель `RebookingConversionPanel.tsx`, смонтированная во вкладке «Повторная запись» в `ExecutiveDashboard.tsx` с KPI-карточками, порогом норматива клиники $\ge 70\%$, таблицей врачей, мобильными Grouped List Cards по Apple HIG и аудиторским журналом визитов.
+     - Бейдж удержания у кресла в шапке смены врача `DoctorShiftHeader.tsx`.
+     - 4-State Visual Proof: `docs/proofs/analytics/01_rebooking_conversion_pc_light_1440x900.png`, `02_rebooking_conversion_pc_dark_1440x900.png`, `03_rebooking_conversion_mobile_light_390x844.png`, `04_rebooking_conversion_mobile_dark_390x844.png`.
 - **Архитектурный план реализации**:
   1. **Схема данных PostgreSQL 18 (`apps/api/src/db/schema/schedule.ts`)**:
      - Добавление полей атрибуции в `appointments`:

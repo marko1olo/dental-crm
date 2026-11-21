@@ -161,7 +161,11 @@ export const createAppointmentHandler = async (
 		});
 	}
 	try {
-		const created = await createAppointmentInDb(orgId, input);
+		const identity = getRequestIdentity(request);
+		const created = await createAppointmentInDb(orgId, {
+			...input,
+			creatorUserId: identity.userId ?? null,
+		});
 
 		try {
 			const identity = getRequestIdentity(request);
@@ -281,11 +285,22 @@ export const updateAppointmentHandler = async (
 		}
 	}
 	try {
-		const updatedAppt = await updateAppointmentInDb(
-			orgId,
-			appointmentId,
-			input,
-		);
+		const updatedAppt = await db.transaction(async (tx) => {
+			const updated = await updateAppointmentInDb(
+				orgId,
+				appointmentId,
+				input,
+				tx,
+			);
+			await applyAppointmentStatusTransitions(
+				tx,
+				request,
+				orgId,
+				appointmentId,
+				input.status,
+			);
+			return updated;
+		});
 		const identity = getRequestIdentity(request);
 
 		try {
@@ -325,14 +340,6 @@ export const updateAppointmentHandler = async (
 				identity,
 			);
 		}
-
-		await applyAppointmentStatusTransitions(
-			db,
-			request,
-			orgId,
-			appointmentId,
-			input.status,
-		);
 
 		await invalidateAppointmentReminders(
 			orgId,
@@ -423,7 +430,11 @@ export const createNextStageAppointmentHandler = async (
 	}
 
 	try {
-		const created = await createAppointmentInDb(orgId, input);
+		const identity = getRequestIdentity(request);
+		const created = await createAppointmentInDb(orgId, {
+			...input,
+			creatorUserId: identity.userId ?? null,
+		});
 
 		try {
 			const identity = getRequestIdentity(request);

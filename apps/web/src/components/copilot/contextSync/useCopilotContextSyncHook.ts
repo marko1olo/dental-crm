@@ -38,11 +38,16 @@ export function useCopilotContextSync() {
 
 	const patientRecord = useMemo(() => {
 		if (!effectivePatientId || !dashboard?.patients) return null;
-		return (dashboard.patients as Array<{ id: string; fullName?: string; allergies?: string[] }>).find((p) => p.id === effectivePatientId) ?? null;
+		return dashboard.patients.find((p) => p.id === effectivePatientId) ?? null;
 	}, [effectivePatientId, dashboard?.patients]);
 
 	const patientName = patientRecord?.fullName ?? null;
-	const allergies = useMemo(() => (Array.isArray(patientRecord?.allergies) && patientRecord.allergies.length > 0 ? patientRecord.allergies : undefined), [patientRecord?.allergies]);
+	const allergies = useMemo(() => {
+		if (!patientRecord?.allergies) return undefined;
+		return Array.isArray(patientRecord.allergies)
+			? (patientRecord.allergies as string[])
+			: [String(patientRecord.allergies)];
+	}, [patientRecord?.allergies]);
 
 	const effectiveDoctor = useMemo(() => {
 		if (activeDoctorName) return activeDoctorName;

@@ -17,7 +17,7 @@ export type CanonicalSomaticProfile = CanonicalHealthySomaticProfile;
 export type DentalAllergenEntry = { id: string; nameRu: string; [key: string]: unknown };
 export type DentalSomaticStopFactorEntry = { id: string; nameRu: string; [key: string]: unknown };
 
-export interface IntakePatientExtended extends Omit<Partial<Patient>, "fullName"> {
+export interface IntakePatientExtended extends Omit<Partial<Patient>, "fullName" | "allergies"> {
 	readonly id: string;
 	readonly fullName?: string | null;
 	readonly name?: string | null;

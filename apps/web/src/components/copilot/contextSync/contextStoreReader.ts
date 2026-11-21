@@ -39,9 +39,13 @@ export function getCurrentCopilotUiContext(): CopilotUiContext {
 	let allergies: string[] | undefined = undefined;
 
 	if (patientId && appStore.dashboard?.patients) {
-		const found = (appStore.dashboard.patients as Array<{ id: string; fullName?: string; allergies?: string[] }>).find((p) => p.id === patientId);
+		const found = appStore.dashboard.patients.find((p) => p.id === patientId);
 		if (found?.fullName) patientName = found.fullName;
-		if (Array.isArray(found?.allergies) && found.allergies.length > 0) allergies = found.allergies;
+		if (found?.allergies) {
+			allergies = Array.isArray(found.allergies)
+				? (found.allergies as string[])
+				: [String(found.allergies)];
+		}
 	}
 
 	const activeTooth = patientId ? (appStore.activeTooth ?? visitStore.activeToothNumber ?? null) : null;

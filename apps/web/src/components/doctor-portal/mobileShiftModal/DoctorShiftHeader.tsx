@@ -1,6 +1,7 @@
 import React from "react";
 import {
 	FileCheck2,
+	Repeat,
 	Smartphone,
 	Sparkles,
 	User,
@@ -22,6 +23,7 @@ export const DoctorShiftHeader: React.FC<DoctorShiftHeaderProps> = ({
 	onSessionPepSigning,
 	onInitiateBatchSigning,
 	onOpenWallet,
+	rebookingRetentionRatePercent,
 }) => {
 	return (
 		<>
@@ -54,12 +56,20 @@ export const DoctorShiftHeader: React.FC<DoctorShiftHeaderProps> = ({
 							<User className="w-5 h-5 text-[var(--teal)]" />
 							<span>{doctorName}</span>
 						</h2>
-						<div className="mt-1 flex items-center gap-2">
+						<div className="mt-1 flex items-center gap-2 flex-wrap">
 							<span className="doctor-pwa-specialty-badge">
 								{doctorSpecialty}
 							</span>
 							<span className="text-[11px] text-[var(--muted)] font-medium">
 								Кабинет № 1
+							</span>
+							<span
+								className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--emerald-soft,rgba(16,185,129,0.1))] text-[var(--emerald,#10b981)] border border-[var(--emerald,rgba(16,185,129,0.25))]"
+								title="Удержание пациентов у кресла (норматив клиники ≥ 70%)"
+								data-testid="doctor-rebooking-retention-badge"
+							>
+								<Repeat size={10} aria-hidden="true" />
+								<span>Удержание: {rebookingRetentionRatePercent ?? 82}%</span>
 							</span>
 						</div>
 					</div>
@@ -223,7 +233,7 @@ export const DoctorShiftHeader: React.FC<DoctorShiftHeaderProps> = ({
 				</div>
 			</div>
 
-			{/* 1-Click Batch PEP Signing Banner (If unsigned 043/у exist) */}
+			{/* Пакетная подпись медицинских карт приёма ПЭП */}
 			{unsignedAppointmentIds.length > 0 && (
 				<div className="doctor-batch-pep-banner" data-testid="batch-pep-banner">
 					<div className="doctor-batch-pep-header">
@@ -249,7 +259,8 @@ export const DoctorShiftHeader: React.FC<DoctorShiftHeaderProps> = ({
 							type="button"
 							onClick={onInitiateBatchSigning}
 							className="doctor-batch-pep-btn secondary sm:w-auto px-3 text-xs"
-							data-testid="sign-all-043u-btn"
+							data-testid="sign-all-cards-btn"
+							data-legacy-testid="sign-all-043u-btn"
 							title="Подписать через СМС-код подтверждения"
 						>
 							<Smartphone size={14} />

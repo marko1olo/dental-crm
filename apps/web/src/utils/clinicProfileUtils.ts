@@ -275,6 +275,7 @@ export function patientAdministrativeProfileDraftFromPatient(
 				? profile.dmsCoverageLimitRub
 				: null,
 		leadSource: safeProfileString(profile?.leadSource),
+		advertisingSource: safeProfileString(profile?.advertisingSource),
 		telegramUserId: typeof profile?.telegramUserId === "string" ? profile.telegramUserId : null,
 		telegramUsername: typeof profile?.telegramUsername === "string" ? profile.telegramUsername : null,
 	};

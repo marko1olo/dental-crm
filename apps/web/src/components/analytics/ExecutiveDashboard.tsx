@@ -19,12 +19,14 @@ import {
 	DollarSign,
 	FileSpreadsheet,
 	Printer,
+	Repeat,
 	TrendingUp,
 	Users,
 } from "lucide-react";
 import { ChairOccupancyReport } from "./ChairOccupancyReport";
 import { DoctorPayrollReport } from "./DoctorPayrollReport";
 import { ExecutiveFinancialSummary } from "./ExecutiveFinancialSummary";
+import { RebookingConversionPanel } from "./RebookingConversionPanel";
 import {
 	CANONICAL_PERIOD_OPTIONS,
 	type ExecutiveDashboardProps,
@@ -40,7 +42,7 @@ const ManagerialPnlDashboardModal = lazy(() =>
 export { CANONICAL_PERIOD_OPTIONS };
 export type { ExecutiveDashboardProps, MobileAnalyticsPeriod };
 
-export type ExecutiveActiveTab = "financial" | "payroll" | "chairs";
+export type ExecutiveActiveTab = "financial" | "payroll" | "chairs" | "rebooking";
 
 export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => {
 	const {
@@ -55,7 +57,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 		if (initialTab) return initialTab;
 		if (typeof window !== "undefined") {
 			const savedTab = sessionStorage.getItem("dente_executive_tab") || localStorage.getItem("dente_executive_tab");
-			if (savedTab === "payroll" || savedTab === "chairs" || savedTab === "financial") {
+			if (savedTab === "payroll" || savedTab === "chairs" || savedTab === "financial" || savedTab === "rebooking") {
 				return savedTab;
 			}
 			const h = window.location.hash.toLowerCase();
@@ -72,6 +74,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 			}
 			if (h.includes("chairs") || s.includes("chairs")) {
 				return "chairs";
+			}
+			if (h.includes("rebooking") || s.includes("rebooking") || h.includes("retention") || s.includes("retention")) {
+				return "rebooking";
 			}
 		}
 		return "financial";
@@ -99,7 +104,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 			{/* Верхний лаконичный селектор режима (32-36px) — ровно 1 строка */}
 			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-1.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
 				<div
-					className="p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] inline-flex gap-1 overflow-x-auto py-0.5 no-scrollbar flex-nowrap"
+					className="p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] grid grid-cols-4 sm:flex sm:flex-nowrap gap-1 w-full sm:w-auto"
 					role="tablist"
 					aria-label="Вкладки финансового пульта"
 				>
@@ -109,14 +114,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-financial"
 						aria-selected={activeTab === "financial"}
 						onClick={() => setActiveTab("financial")}
-						className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
 							activeTab === "financial"
 								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
-						<CreditCard size={14} aria-hidden="true" />
-						<span className="sm:hidden">Финансы</span>
+						<CreditCard size={14} aria-hidden="true" className="shrink-0" />
+						<span className="sm:hidden text-[11px]">Финансы</span>
 						<span className="hidden sm:inline">Финансовый пульт</span>
 					</button>
 
@@ -126,14 +131,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-payroll"
 						aria-selected={activeTab === "payroll"}
 						onClick={() => setActiveTab("payroll")}
-						className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
 							activeTab === "payroll"
 								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
-						<Users size={14} aria-hidden="true" />
-						<span className="sm:hidden">Зарплаты</span>
+						<Users size={14} aria-hidden="true" className="shrink-0" />
+						<span className="sm:hidden text-[11px]">Зарплаты</span>
 						<span className="hidden sm:inline">Зарплаты врачей (Net)</span>
 					</button>
 
@@ -143,15 +148,32 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 						data-testid="executive-tab-chairs"
 						aria-selected={activeTab === "chairs"}
 						onClick={() => setActiveTab("chairs")}
-						className={`h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
 							activeTab === "chairs"
 								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
 								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
 						}`}
 					>
-						<Armchair size={14} aria-hidden="true" />
-						<span className="sm:hidden">Кресла</span>
+						<Armchair size={14} aria-hidden="true" className="shrink-0" />
+						<span className="sm:hidden text-[11px]">Кресла</span>
 						<span className="hidden sm:inline">Загрузка кресел</span>
+					</button>
+
+					<button
+						type="button"
+						role="tab"
+						data-testid="executive-tab-rebooking"
+						aria-selected={activeTab === "rebooking"}
+						onClick={() => setActiveTab("rebooking")}
+						className={`h-8 px-1.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 ${
+							activeTab === "rebooking"
+								? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
+								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<Repeat size={14} aria-hidden="true" className="shrink-0" />
+						<span className="sm:hidden text-[11px]">Повтор</span>
+						<span className="hidden sm:inline">Повторная запись</span>
 					</button>
 				</div>
 
@@ -201,6 +223,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 
 				{activeTab === "chairs" && (
 					<ChairOccupancyReport
+						period={currentPeriod}
+						onPeriodChange={handlePeriodSelect}
+						onPrint={handlePrint}
+					/>
+				)}
+
+				{activeTab === "rebooking" && (
+					<RebookingConversionPanel
 						period={currentPeriod}
 						onPeriodChange={handlePeriodSelect}
 						onPrint={handlePrint}

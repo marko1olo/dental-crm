@@ -21,7 +21,6 @@ import {
 } from "./types.js";
 import {
 	calculateRebookingDeltaMinutes,
-	extractCreatedAtFromUuidV7,
 	formatDoctorSpecialty,
 } from "./utils.js";
 
@@ -205,6 +204,12 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 								startsAt: appointments.startsAt,
 								endsAt: appointments.endsAt,
 								status: appointments.status,
+								createdAt: appointments.createdAt,
+								rebookingSourceVisitId: appointments.rebookingSourceVisitId,
+								rebookingDeltaMinutes: appointments.rebookingDeltaMinutes,
+								attributedRole: appointments.attributedRole,
+								attributedUserId: appointments.attributedUserId,
+								attributionReason: appointments.attributionReason,
 								doctorName: users.fullName,
 								doctorSpecialties: users.specialties,
 							})
@@ -240,8 +245,8 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 				let minDeltaMs = Number.POSITIVE_INFINITY;
 
 				for (const appt of patientAppts) {
-					const apptCreatedAt =
-						extractCreatedAtFromUuidV7(appt.id) ?? appt.startsAt;
+					// Честное поле createdAt из таблицы appointments без синтаксического анализа UUIDv7
+					const apptCreatedAt = appt.createdAt ?? appt.startsAt;
 					const deltaMs = apptCreatedAt.getTime() - completedAt.getTime();
 
 					// Запись у кресла может быть сделана прямо во время приёма (deltaMs <= 0)
@@ -254,10 +259,32 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 
 				if (candidateAppt) {
 					processedApptIds.add(candidateAppt.id);
-					const apptCreatedAt =
-						extractCreatedAtFromUuidV7(candidateAppt.id) ?? candidateAppt.startsAt;
-					const { deltaMinutes, creditedRole, attributionReason } =
-						calculateRebookingDeltaMinutes(apptCreatedAt, completedAt, isSoloDoctor);
+					const apptCreatedAt = candidateAppt.createdAt ?? candidateAppt.startsAt;
+					
+					// Используем персистентно сохраненную атрибуцию из БД, если она есть
+					let deltaMinutes: number;
+					let creditedRole: "doctor" | "administrator";
+					let attributionReason: string;
+
+					if (candidateAppt.attributedRole) {
+						creditedRole =
+							candidateAppt.attributedRole === "doctor"
+								? "doctor"
+								: "administrator";
+						deltaMinutes =
+							candidateAppt.rebookingDeltaMinutes ??
+							Math.max(0, Math.floor((apptCreatedAt.getTime() - completedAt.getTime()) / 60000));
+						attributionReason =
+							candidateAppt.attributionReason ??
+							(creditedRole === "doctor"
+								? "chairside_rebooking_under_15m"
+								: "frontdesk_rebooking_over_15m");
+					} else {
+						const calc = calculateRebookingDeltaMinutes(apptCreatedAt, completedAt, isSoloDoctor);
+						deltaMinutes = calc.deltaMinutes;
+						creditedRole = calc.creditedRole;
+						attributionReason = calc.attributionReason;
+					}
 
 					const doctorName = visit.doctorName || candidateAppt.doctorName || "Врач у кресла";
 					const rebookedBy =
@@ -274,7 +301,7 @@ export async function registerRebookingRoutes(app: FastifyInstance) {
 						appointmentDate: candidateAppt.startsAt.toISOString().slice(0, 10),
 						createdAt: apptCreatedAt,
 						attributionReason,
-						doctorId: visit.doctorUserId ?? candidateAppt.doctorUserId ?? null,
+						doctorId: candidateAppt.attributedUserId ?? visit.doctorUserId ?? candidateAppt.doctorUserId ?? null,
 						doctorName,
 						specialty: formatDoctorSpecialty(visit.doctorSpecialties ?? candidateAppt.doctorSpecialties),
 					});

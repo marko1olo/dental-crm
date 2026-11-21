@@ -79,6 +79,7 @@ export interface DoctorShiftHeaderProps {
 	readonly onSessionPepSigning: (targetIds: readonly string[]) => void;
 	readonly onInitiateBatchSigning: () => void;
 	readonly onOpenWallet?: (() => void) | undefined;
+	readonly rebookingRetentionRatePercent?: number | undefined;
 }
 
 export interface DoctorShiftTimelineProps {
