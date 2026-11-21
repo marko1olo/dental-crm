@@ -4,7 +4,10 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { eq } from "drizzle-orm";
+import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
+import { clinics, organizations } from "../../../db/schema.js";
 import { extractPortalPatient } from "../portalAuthStore.js";
 import type { HealthQuestionnaireBody } from "../types.js";
 import { fetchPatientAppointmentsAndDoctors } from "./portalProfileAppointments.js";
@@ -38,6 +41,37 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 			const { familyGroup: familyGroupData, familyMembers: familyMembersList } =
 				await fetchPatientFamilyData(auth.patientId, auth.organizationId, sanitizedPatient.familyGroupId);
 
+			const [org] = await db
+				.select({
+					name: organizations.name,
+					inn: organizations.inn,
+					kpp: organizations.kpp,
+					ogrn: organizations.ogrn,
+				})
+				.from(organizations)
+				.where(eq(organizations.id, auth.organizationId))
+				.limit(1);
+
+			const [clinic] = await db
+				.select({
+					name: clinics.name,
+					address: clinics.address,
+					phone: clinics.phone,
+				})
+				.from(clinics)
+				.where(eq(clinics.organizationId, auth.organizationId))
+				.limit(1);
+
+			const clinicInfo = {
+				nameRu: clinic?.name || org?.name || "Стоматологическая клиника ДЕНТЕ",
+				legalName: org?.name || "ООО «Стоматологическая клиника ДЕНТЕ»",
+				inn: org?.inn || "7701234567",
+				kpp: org?.kpp || undefined,
+				ogrn: org?.ogrn || undefined,
+				address: clinic?.address || "г. Москва, ул. Арбат, д. 24",
+				phone: clinic?.phone || "+7 (800) 200-55-40",
+			};
+
 			return {
 				patient: sanitizedPatient,
 				visits: medicalRecords.visits,
@@ -49,6 +83,7 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 				familyMembers: familyMembersList,
 				doctors: clinicDoctors,
 				scans: medicalRecords.scans,
+				clinicInfo,
 			};
 		});
 	};
@@ -85,8 +120,8 @@ export async function registerPortalPatientProfileRoutes(server: FastifyInstance
 		}
 
 		const body = request.body || {};
-		return withTenantCtx(auth.organizationId, async () => {
-			const result = await saveSomaticHealthQuestionnaire(auth.patientId, auth.organizationId, body);
+		return withTenantCtx(auth.organizationId, async (tx) => {
+			const result = await saveSomaticHealthQuestionnaire(auth.patientId, auth.organizationId, body, tx);
 			if (!result) {
 				reply.status(404);
 				return { error: "PatientNotFound" };

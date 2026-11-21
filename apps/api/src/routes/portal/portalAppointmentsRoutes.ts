@@ -168,6 +168,18 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			return { error: "Unauthorized" };
 		}
 
+		const rawIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined);
+		const idempotencyKey = rawIdempotencyKey?.trim();
+		if (idempotencyKey && !isValidUuid(idempotencyKey)) {
+			reply.status(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректный формат Idempotency-Key (ожидается UUID/UUIDv7).",
+			};
+		}
+
 		const doctorId =
 			typeof request.body?.doctorId === "string" ? request.body.doctorId.trim() : "";
 		const startsAtStr =
@@ -437,6 +449,9 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 					.returning();
 
 				reply.status(201);
+				if (idempotencyKey) {
+					reply.header("X-Idempotency-Key", idempotencyKey);
+				}
 				return { success: true, appointment: created };
 			});
 		});

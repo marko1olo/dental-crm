@@ -6,6 +6,8 @@
  * Генерация понятного текста счета для отправки пациенту в WhatsApp/SMS.
  */
 
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+
 // ============================================================================
 // TYPES & CONTRACTS
 // ============================================================================
@@ -66,6 +68,7 @@ export interface GenericInvoiceServiceItemInput {
 	readonly totalRub?: number | undefined;
 	readonly discountRub?: number | undefined;
 	readonly category?: string | undefined;
+	readonly isWarranty?: boolean | undefined;
 }
 
 // ============================================================================
@@ -275,7 +278,7 @@ export function translateMedicalTermToFriendly(
  * Разбивает массив услуг из счета на понятные пациенту смысловые блоки без латыни.
  */
 export function groupServicesIntoFriendlyBlocks(
-	items: readonly any[],
+	items: readonly GenericInvoiceServiceItemInput[],
 ): FriendlyBillingBreakdown {
 	const groupsMap = new Map<
 		FriendlyBillingCategory,
@@ -292,12 +295,14 @@ export function groupServicesIntoFriendlyBlocks(
 
 	for (let i = 0; i < items.length; i++) {
 		const it = items[i];
+		if (!it) continue;
 		const name = it.titleRu || it.name || "Стоматологическая услуга";
 		const toothNumber = it.toothFdi || it.toothNumber || null;
 		const quantity = Number(it.quantity) || 1;
-		const priceRub = Number(it.priceRub) || 0;
-		const discountRub = Number(it.discountRub) || 0;
-		const totalRub = Math.max(0, priceRub * quantity - discountRub);
+		const priceKop = rublesToKopecks(it.priceRub || 0);
+		const discountKop = rublesToKopecks(it.discountRub || 0);
+		const totalKop = Math.max(0, priceKop * quantity - discountKop);
+		const totalRub = kopecksToRubles(totalKop);
 
 		totalAmountRub += totalRub;
 
@@ -313,9 +318,9 @@ export function groupServicesIntoFriendlyBlocks(
 			plainDescriptionRu: friendlyMeta.plainDescriptionRu,
 			toothNumber,
 			quantity,
-			priceRub,
+			priceRub: it.priceRub,
 			totalRub,
-			isWarranty: !!it.isWarranty,
+			isWarranty: Boolean(it.isWarranty),
 		};
 
 		const existing = groupsMap.get(friendlyMeta.categoryGroup);

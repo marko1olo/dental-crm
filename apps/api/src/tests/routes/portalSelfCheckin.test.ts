@@ -172,4 +172,37 @@ test("Portal Kiosk Self-Checkin & 152-FZ Privacy Security Invariants", async (t)
 			resetKioskRateLimitsForTesting();
 		}
 	});
+
+	await t.test("6. BOLA & PII Protection: Unverified phoneLast4 checkin must NOT leak doctorName, cabinetName or appointmentTime", async () => {
+		resetKioskRateLimitsForTesting();
+
+		const server: FastifyInstance = fastify();
+		await registerPortalKioskRoutes(server);
+		await server.ready();
+
+		try {
+			const res = await server.inject({
+				method: "POST",
+				url: "/kiosk/checkin",
+				headers: { "x-forwarded-for": "10.0.0.53" },
+				payload: {
+					phoneLast4: "1234",
+				},
+			});
+
+			if (res.statusCode === 200) {
+				const json = JSON.parse(res.body);
+				if (json.requiresVerification) {
+					assert.equal(json.arrived, false);
+					assert.equal(json.doctorName, undefined, "doctorName must never leak without full phone verification");
+					assert.equal(json.cabinetName, undefined, "cabinetName must never leak without full phone verification");
+					assert.equal(json.appointmentTime, undefined, "appointmentTime must never leak without full phone verification");
+					assert.equal(json.queueTicket, undefined, "queueTicket must not be issued before verification");
+				}
+			}
+		} finally {
+			await server.close();
+			resetKioskRateLimitsForTesting();
+		}
+	});
 });

@@ -64,6 +64,14 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 	const complaintsCount = attachedComplaints?.length || 0;
 	const toothWord = complaintsCount === 1 ? "зуб" : complaintsCount < 5 ? "зуба" : "зубов";
 
+	const complaintsSummary = React.useMemo(() => {
+		if (!attachedComplaints || attachedComplaints.length === 0) return undefined;
+		const details = attachedComplaints.map(
+			(c) => `Зуб #${c.toothNumber}: ${c.symptomLabel}${c.cito ? " [CITO Срочно!]" : ""}`,
+		);
+		return `Жалобы пациента: ${details.join(", ")}`;
+	}, [attachedComplaints]);
+
 	return (
 		<div
 			className="tg-booking-container"
@@ -108,6 +116,7 @@ export const TelegramMiniAppBooking: React.FC<TelegramMiniAppBookingProps> = mem
 			<PublicBookingWidget
 				organizationId={organizationId}
 				patientId={patientId ?? undefined}
+				initialComment={complaintsSummary}
 				embedMode="telegram"
 				compact={true}
 				theme="auto"

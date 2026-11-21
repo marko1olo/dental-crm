@@ -146,8 +146,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = (props) =
 				patientInn={data.inn}
 				payments={taxDeductionPayments}
 				selectedYear={selectedTaxYear}
-				clinicName="Стоматология ДЕНТЕ"
-				clinicInn="7701234567"
+				clinicName={data.clinicInfo?.legalName || data.clinicInfo?.nameRu || "Стоматология ДЕНТЕ"}
+				clinicInn={data.clinicInfo?.inn || "7701234567"}
 			/>
 		);
 	}

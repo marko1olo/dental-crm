@@ -17,12 +17,46 @@ export function useCabinetSbpState(
 	const [sbpStatusMessage, setSbpStatusMessage] = useState<string | null>(null);
 	const inFlightSbpCheckRef = useRef(false);
 
-	const handleStartSbpPayment = useCallback((invoice: PatientInvoiceItem) => {
-		const payload = generateSbpQrPayload(invoice, { legalName: "Стоматология ДЕНТЕ", inn: "7701234567" });
+	const handleStartSbpPayment = useCallback(async (invoice: PatientInvoiceItem) => {
 		setActiveSbpInvoice(invoice);
-		setActiveSbpPayload(payload);
-		setSbpStatusMessage(null);
 		setIsCheckingSbpStatus(false);
+		setSbpStatusMessage("Генерация платёжного QR-кода СБП...");
+
+		const token = typeof window !== "undefined" ? localStorage.getItem("dente_portal_token") : null;
+		const headers: Record<string, string> = {
+			"Content-Type": "application/json",
+			Accept: "application/json",
+			"Idempotency-Key": crypto.randomUUID(),
+		};
+		if (token) headers.Authorization = `Bearer ${token}`;
+
+		try {
+			const res = await fetch("/api/portal/payments/create-sbp-qr", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					invoiceId: invoice.id,
+					amountRub: invoice.remainingAmountRub > 0 ? invoice.remainingAmountRub : invoice.totalAmountRub,
+				}),
+			});
+
+			if (res.ok) {
+				const json = await res.json().catch(() => null);
+				if (json?.sbpPayload) {
+					setActiveSbpPayload(json.sbpPayload);
+					setSbpStatusMessage(null);
+					return;
+				}
+			}
+			// Fallback if offline/demo or unconfigured bank details
+			const fallbackPayload = generateSbpQrPayload(invoice);
+			setActiveSbpPayload(fallbackPayload);
+			setSbpStatusMessage(null);
+		} catch {
+			const fallbackPayload = generateSbpQrPayload(invoice);
+			setActiveSbpPayload(fallbackPayload);
+			setSbpStatusMessage(null);
+		}
 	}, []);
 
 	const handleCheckSbpPaymentStatus = useCallback(async () => {

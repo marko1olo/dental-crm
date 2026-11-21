@@ -1,6 +1,6 @@
 import React from "react";
 import type { PatientBeforeAfterCase } from "../../patientCabinet/patientCabinetAppointments.js";
-import { calculateSplitClipPath } from "../../patientWebapp/patientWebappPhotoProtocol.js";
+import { calculateSplitClipPath } from "../../patientPortalEngine.js";
 import { PlanBeforeAfterWiperSeparator } from "./PlanBeforeAfterWiperSeparator";
 
 export interface PlanBeforeAfterWiperCanvasProps {

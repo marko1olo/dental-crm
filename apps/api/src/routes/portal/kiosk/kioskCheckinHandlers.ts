@@ -7,7 +7,7 @@
 
 import { createHash } from "node:crypto";
 import type { PatientAdministrativeProfile } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gte, isNull } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
 import { withTenantCtx } from "../../../db/rls.js";
@@ -17,7 +17,9 @@ import {
 	patientConsents,
 	patientDrugAllergies,
 	patients,
+	portalOtpCodes,
 } from "../../../db/schema.js";
+import { verifyCredential } from "../../../utils/cryptoHelper.js";
 import { wsBroker } from "../../../services/websocketBroker.js";
 import { checkKioskRateLimit, maskPatientName } from "./kioskRateLimiter.js";
 import {
@@ -164,11 +166,53 @@ export async function handleKioskCheckinRequest(
 			? `Первичный приём прямо сейчас (${cabinetName})`
 			: `Сегодня в ${appointment.startsAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} (${cabinetName})`;
 
-	// SEV-2: Защита от ложной явки при совпадении только 4 цифр телефона
-	// Требуем подтверждения: полный номер телефона, код подтверждения, либо экстренный/первичный поток
-	const hasFullPhone = Boolean(rawPhone && rawPhone.replace(/\D/g, "").length >= 10);
-	const hasCheckinCode = Boolean(rawCheckinCode && rawCheckinCode.length >= 4);
-	const isVerifiedIdentity = isEmergency || isFirstTime || Boolean(rawPatientId) || hasFullPhone || hasCheckinCode;
+	// SEV-1 BOLA & PII Protection: Защита от перебора 4 цифр телефона чужих пациентов
+	// При частичном совпадении (только 4 цифры) данные приёма (время, врач, кабинет) НЕ возвращаются.
+	// Требуется подтверждение: совпадение полного номера телефона с картой пациента, либо валидный SMS-код.
+	const targetPhoneDigits = (targetPatient.phone || "").replace(/\D/g, "");
+	const inputPhoneDigits = rawPhone.replace(/\D/g, "");
+	const isPhoneVerified = Boolean(
+		inputPhoneDigits.length >= 10 &&
+		targetPhoneDigits.length >= 10 &&
+		(targetPhoneDigits === inputPhoneDigits || targetPhoneDigits.endsWith(inputPhoneDigits.slice(-10)))
+	);
+
+	let isCheckinCodeVerified = false;
+	if (rawCheckinCode && rawCheckinCode.length >= 4) {
+		const now = new Date();
+		const [activeOtp] = await withTenantCtx(organizationId, async () => {
+			return db
+				.select({
+					id: portalOtpCodes.id,
+					codeHash: portalOtpCodes.codeHash,
+				})
+				.from(portalOtpCodes)
+				.where(
+					and(
+						eq(portalOtpCodes.organizationId, organizationId),
+						eq(portalOtpCodes.patientId, targetPatient.id),
+						isNull(portalOtpCodes.consumedAt),
+						gte(portalOtpCodes.expiresAt, now),
+					),
+				)
+				.orderBy(desc(portalOtpCodes.createdAt))
+				.limit(1);
+		});
+		if (activeOtp) {
+			const isMatch = await verifyCredential(rawCheckinCode, activeOtp.codeHash);
+			if (isMatch) {
+				isCheckinCodeVerified = true;
+				await withTenantCtx(organizationId, async (tx) => {
+					await tx
+						.update(portalOtpCodes)
+						.set({ consumedAt: now })
+						.where(eq(portalOtpCodes.id, activeOtp.id));
+				});
+			}
+		}
+	}
+
+	const isVerifiedIdentity = isEmergency || isFirstTime || isPhoneVerified || isCheckinCodeVerified;
 
 	if (!isVerifiedIdentity) {
 		return {
@@ -176,9 +220,6 @@ export async function handleKioskCheckinRequest(
 			arrived: false,
 			requiresVerification: true,
 			patientName: maskPatientName(targetPatient.fullName),
-			appointmentTime: apptTimeStr,
-			doctorName,
-			cabinetName,
 			message: "Для подтверждения явки введите полный номер телефона или 4-значный код записи из SMS.",
 		};
 	}
@@ -189,8 +230,8 @@ export async function handleKioskCheckinRequest(
 	const queueTicket = `Талон № ${ticketPrefix}-${ticketSuffix}`;
 
 	// 6. Обновление статуса визита на 'arrived' и оповещение WebSocket
-	await withTenantCtx(organizationId, async () => {
-		await db
+	await withTenantCtx(organizationId, async (tx) => {
+		await tx
 			.update(appointments)
 			.set({ status: "arrived" })
 			.where(
@@ -308,7 +349,7 @@ async function persistKioskConsents(
 	const nowConsent = new Date();
 	const nowConsentIso = nowConsent.toISOString();
 
-	await withTenantCtx(organizationId, async () => {
+	await withTenantCtx(organizationId, async (tx) => {
 		for (const consentKind of signedConsents) {
 			const docMeta = mapConsentKindToDocumentKindAndTitle(consentKind);
 			const integrityHash = createHash("sha256")
@@ -318,7 +359,7 @@ async function persistKioskConsents(
 			const signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ЭЛЕКТРОННО (ПЭП 63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Терминал саморегистрации • IP: ${clientIp}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${nowConsent.toLocaleString("ru-RU")}</text></svg>`;
 
 			// Физическая генерация документа в таблице generated_documents
-			const [createdDoc] = await db
+			const [createdDoc] = await tx
 				.insert(generatedDocuments)
 				.values({
 					organizationId,
@@ -343,7 +384,7 @@ async function persistKioskConsents(
 
 			const generatedDocId = createdDoc?.id ?? null;
 
-			const existing = await db
+			const existing = await tx
 				.select({ id: patientConsents.id })
 				.from(patientConsents)
 				.where(
@@ -356,7 +397,7 @@ async function persistKioskConsents(
 				.limit(1);
 
 			if (existing.length > 0 && existing[0]) {
-				await db
+				await tx
 					.update(patientConsents)
 					.set({ grantedAt: nowConsent, revokedAt: null, documentId: generatedDocId })
 					.where(
@@ -366,7 +407,7 @@ async function persistKioskConsents(
 						),
 					);
 			} else {
-				await db.insert(patientConsents).values({
+				await tx.insert(patientConsents).values({
 					organizationId,
 					patientId: targetPatient.id,
 					kind: consentKind,
@@ -377,7 +418,7 @@ async function persistKioskConsents(
 		}
 
 		// Обновление электронно-цифрового следа ПЭП в профиле
-		const [patientRow] = await db
+		const [patientRow] = await tx
 			.select({ administrativeProfile: patients.administrativeProfile })
 			.from(patients)
 			.where(
@@ -410,7 +451,7 @@ async function persistKioskConsents(
 			};
 		}
 
-		await db
+		await tx
 			.update(patients)
 			.set({
 				administrativeProfile: {
@@ -436,8 +477,8 @@ async function persistKioskAllergies(
 	const allergies = somaticProfile.allergies as Record<string, unknown> | undefined;
 	const detailsStr = typeof allergies?.details === "string" ? allergies.details.trim() : "";
 	if (allergies?.hasAllergies && detailsStr) {
-		await withTenantCtx(organizationId, async () => {
-			await db.insert(patientDrugAllergies).values({
+		await withTenantCtx(organizationId, async (tx) => {
+			await tx.insert(patientDrugAllergies).values({
 				organizationId,
 				patientId,
 				allergenGroup: "dental_anesthetics_or_antibiotics",

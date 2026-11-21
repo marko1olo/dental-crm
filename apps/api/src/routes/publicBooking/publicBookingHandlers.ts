@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointmentWaitlists, clinics, organizations, patientConsents, patients, users } from "../../db/schema.js";
@@ -272,7 +272,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		Body: BookAppointmentBody;
 	}>("/book", createAppointmentHandler);
 
-	// DEF-PB-03: Public waitlist intake handler
+	// DEF-PB-03: Public waitlist intake handler with ACID transaction & concurrency deduping
 	const publicWaitlistHandler = async (
 		request: FastifyRequest<{
 			Params?: { organizationId?: string };
@@ -303,6 +303,12 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 			});
 		}
 
+		const rawIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined) ||
+			body.idempotencyKey;
+		const idempotencyKey = rawIdempotencyKey?.trim();
+
 		const organizationId =
 			request.params?.organizationId ||
 			body.organizationId ||
@@ -313,7 +319,15 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 		const preferredDoctor = body.preferredDoctorId || body.doctorId || null;
 		const comment = body.comment || body.notes || "";
 
-		const waitlistResult = await withSuperuserBypass(async (tx) => {
+		const waitlistResult = await withTenantCtx(organizationId, async (tx) => {
+			// 1. Transaction-scoped advisory lock by phone digits to prevent concurrent double-booking races
+			const phoneDigits = cleanPhone.replace(/\D/g, "");
+			if (phoneDigits) {
+				await tx.execute(
+					sql`SELECT pg_advisory_xact_lock(hashtext(${phoneDigits}))`,
+				);
+			}
+
 			let patientId = body.patientId;
 			if (!patientId) {
 				const [existing] = await tx
@@ -345,6 +359,23 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 
 			if (!patientId) {
 				throw new Error("Не удалось создать профиль пациента для листа ожидания");
+			}
+
+			// 2. Double-Click & Idempotency check: deduplicate active waitlist entries for same patient
+			const [existingWaitlist] = await tx
+				.select()
+				.from(appointmentWaitlists)
+				.where(
+					and(
+						eq(appointmentWaitlists.organizationId, organizationId),
+						eq(appointmentWaitlists.patientId, patientId),
+						eq(appointmentWaitlists.status, "waiting"),
+					),
+				)
+				.limit(1);
+
+			if (existingWaitlist) {
+				return { waitlist: existingWaitlist, isReplayed: true };
 			}
 
 			if (body.hasAgreedToPrivacy) {
@@ -386,19 +417,29 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 				organizationId,
 				patientName: cleanName,
 				patientPhone: cleanPhone,
+				patientId,
 				source: "waitlist",
 				receiptStatus: "WAITLIST",
 				comment: `Заявка в лист ожидания на ${body.date || "ближайшее время"}: ${comment}`.trim(),
 				doctorId: preferredDoctor || undefined,
 			});
 
-			return waitlistEntry;
+			return { waitlist: waitlistEntry, isReplayed: false };
 		});
+
+		if (waitlistResult?.isReplayed) {
+			reply.header("idempotency-replayed", "true");
+		}
+		if (idempotencyKey) {
+			reply.header("X-Idempotency-Key", idempotencyKey);
+		}
 
 		return reply.send({
 			success: true,
-			waitlistId: waitlistResult?.id,
-			message: "Заявка в лист ожидания успешно принята. Администратор свяжется с вами.",
+			waitlistId: waitlistResult?.waitlist?.id,
+			message: waitlistResult?.isReplayed
+				? "Заявка в лист ожидания уже была зарегистрирована ранее. Администратор свяжется с вами."
+				: "Заявка в лист ожидания успешно принята. Администратор свяжется с вами.",
 		});
 	};
 

@@ -1,5 +1,5 @@
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
-import { and, eq, or, sql } from "drizzle-orm";
+import { kopecksToRubles, parseKopecks, rublesToKopecks } from "@dental/shared";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
@@ -52,6 +52,11 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			return { error: "Unauthorized" };
 		}
 
+		const rawIdempotencyKey =
+			(request.headers["idempotency-key"] as string | undefined) ||
+			(request.headers["x-idempotency-key"] as string | undefined);
+		const idempotencyKey = rawIdempotencyKey?.trim();
+
 		const invoiceId =
 			typeof request.body?.invoiceId === "string" ? request.body.invoiceId.trim() : "";
 		const stageId =
@@ -87,8 +92,8 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				}
 
 				invoiceNumber = `СЧ-${inv.id.slice(0, 8).toUpperCase()}`;
-				const invAmt = Number(inv.totalRub) || Number(inv.totalAmountRub) || 0;
-				amountRub = explicitAmount !== undefined ? explicitAmount : invAmt;
+				const invAmtKop = parseKopecks(inv.totalAmountRub || inv.totalRub || "0");
+				amountRub = explicitAmount !== undefined ? explicitAmount : kopecksToRubles(invAmtKop);
 			}
 
 			if (amountRub <= 0) {
@@ -128,20 +133,66 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 			const recipientInn = org?.inn || "";
 
 			const amountKopecks = rublesToKopecks(amountRub);
-			const qrId = `SBPA${Date.now().toString(36).toUpperCase()}${invoiceNumber.replace(/\D/g, "")}`;
+
+			// Idempotency check: Reuse existing pending SBP transaction if present
+			let existingTx: typeof sberbankTransactions.$inferSelect | undefined;
+			if (idempotencyKey) {
+				const [found] = await tx
+					.select()
+					.from(sberbankTransactions)
+					.where(
+						and(
+							eq(sberbankTransactions.organizationId, auth.organizationId),
+							eq(sberbankTransactions.patientId, auth.patientId),
+							eq(sberbankTransactions.orderId, idempotencyKey),
+						),
+					)
+					.limit(1);
+				existingTx = found;
+			}
+			if (!existingTx && invoiceId) {
+				const [foundByInv] = await tx
+					.select()
+					.from(sberbankTransactions)
+					.where(
+						and(
+							eq(sberbankTransactions.organizationId, auth.organizationId),
+							eq(sberbankTransactions.patientId, auth.patientId),
+							eq(sberbankTransactions.invoiceId, invoiceId),
+							eq(sberbankTransactions.status, "WAITING_FOR_CARD"),
+						),
+					)
+					.orderBy(desc(sberbankTransactions.createdAt))
+					.limit(1);
+				existingTx = foundByInv;
+			}
+
+			let qrId: string;
+			if (existingTx) {
+				qrId = existingTx.orderId;
+				reply.header("idempotency-replayed", "true");
+			} else {
+				qrId = idempotencyKey
+					? `SBPA${idempotencyKey.replace(/[^a-zA-Z0-9]/g, "").slice(0, 24)}`
+					: `SBPA${Date.now().toString(36).toUpperCase()}${invoiceNumber.replace(/\D/g, "")}`;
+
+				await tx.insert(sberbankTransactions).values({
+					organizationId: auth.organizationId,
+					patientId: auth.patientId,
+					invoiceId: invoiceId || null,
+					orderId: qrId,
+					amountKopecks: BigInt(amountKopecks),
+					status: "WAITING_FOR_CARD",
+				});
+			}
+
+			if (idempotencyKey) {
+				reply.header("X-Idempotency-Key", idempotencyKey);
+			}
+
 			const sbpNspkPayloadString = `https://qr.nspk.ru/${qrId}?type=02&bank=100000000111&sum=${amountKopecks}&cur=RUB&crc=84A2`;
 			const qrSvg = generateDeterministicQrSvg(sbpNspkPayloadString, 180);
 			const expiresAt = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
-
-			// Register pending transaction in sberbankTransactions for SBP audit trail within tenant transaction
-			await tx.insert(sberbankTransactions).values({
-				organizationId: auth.organizationId,
-				patientId: auth.patientId,
-				invoiceId: invoiceId || null,
-				orderId: qrId,
-				amountKopecks: BigInt(amountKopecks),
-				status: "WAITING_FOR_CARD",
-			});
 
 			const sbpPayload = {
 				qrId,
@@ -265,7 +316,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 				});
 			}
 
-			const invoiceTotalKop = rublesToKopecks(Number(inv.totalRub) || Number(inv.totalAmountRub) || 0);
+			const invoiceTotalKop = parseKopecks(inv.totalRub || inv.totalAmountRub || "0");
 
 			if (invoiceTotalKop <= 0) {
 				return reply.code(400).send({

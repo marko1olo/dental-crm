@@ -42,6 +42,7 @@ export function mapServerPortalMeToCabinetData(
 		doctors?: Array<{ id: string; fullName: string; specialties?: string[] | null }>;
 		scans?: Array<Record<string, unknown>>;
 		prescriptions?: Array<Record<string, unknown>>;
+		clinicInfo?: PatientPersonalCabinetData["clinicInfo"];
 	},
 	serverConsents?: Array<Record<string, unknown>>,
 ): PatientPersonalCabinetData {
@@ -53,6 +54,9 @@ export function mapServerPortalMeToCabinetData(
 	const invoices = Array.isArray(payload.invoices) ? payload.invoices : [];
 	const documents = Array.isArray(payload.documents) ? payload.documents : [];
 	const rawScans = Array.isArray(payload.scans) ? payload.scans : [];
+	const clinicInfo = payload.clinicInfo;
+	const resolvedClinicName = clinicInfo?.legalName || clinicInfo?.nameRu || "Стоматологическая клиника ДЕНТЕ";
+	const resolvedClinicAddress = clinicInfo?.address || "г. Москва, ул. Арбат, д. 24";
 
 	// Map real clinical scans (RVG / OPTG / CT / TRG)
 	const mappedScans: PatientDiagnosticScan[] = rawScans.map((s, index) => {
@@ -114,8 +118,8 @@ export function mapServerPortalMeToCabinetData(
 					"Лечащий врач",
 				doctorSpecialtyRu: (apt.doctorSpecialtyRu as string) || "Стоматолог-терапевт",
 				roomNumber: (apt.roomNumber as string) || "Кабинет 1",
-				clinicName: "Стоматологическая клиника ДЕНТЕ",
-				clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
+				clinicName: resolvedClinicName,
+				clinicAddressRu: resolvedClinicAddress,
 				titleRu:
 					(apt.reason as string) ||
 					(apt.titleRu as string) ||
@@ -170,8 +174,8 @@ export function mapServerPortalMeToCabinetData(
 				doctorName: (v.doctorName as string) || (adminProfile.curatorFullName as string) || "Врач-стоматолог",
 				doctorSpecialtyRu: "Терапевт-ортопед",
 				roomNumber: (v.roomNumber as string) || "Кабинет 3",
-				clinicName: "Стоматологическая клиника ДЕНТЕ",
-				clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
+				clinicName: resolvedClinicName,
+				clinicAddressRu: resolvedClinicAddress,
 				titleRu: (v.treatmentRendered as string) || (v.complaints as string) || "Приём стоматолога",
 				status,
 				priceRub: v.priceRub ? Number(v.priceRub) : undefined,
@@ -412,5 +416,6 @@ export function mapServerPortalMeToCabinetData(
 		documents: mappedDocuments,
 		prescriptions: mappedPrescriptions.length > 0 ? mappedPrescriptions : undefined,
 		scans: mappedScans,
+		clinicInfo,
 	};
 }

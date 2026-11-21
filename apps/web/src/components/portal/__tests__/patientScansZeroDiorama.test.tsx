@@ -10,7 +10,7 @@ import {
 } from "../PatientPlanView.js";
 import { PlanScanViewerModal } from "../scans/PlanScanViewerModal.js";
 import { PlanBeforeAfterGallery } from "../scans/PlanBeforeAfterGallery.js";
-import { getPresetBeforeAfterGalleries } from "../patientWebapp/patientWebappPhotoProtocol.js";
+import { getPresetBeforeAfterGalleries } from "../patientPortalEngine.js";
 
 describe("Radiology & Patient Portal Zero-Diorama Law (Mandate 11 & Core Route Rule 7)", () => {
 	it("DEFAULT_PATIENT_SCANS: Contains zero data:image/svg+xml and zero synthetic SVG dioramas", () => {

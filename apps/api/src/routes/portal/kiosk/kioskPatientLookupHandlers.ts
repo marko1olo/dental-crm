@@ -138,8 +138,8 @@ export async function lookupPatient(
 			if (p) targetPatient = p;
 		}
 
-		// Поиск по 4 последним цифрам телефона
-		if (!targetPatient && rawPhoneLast4.length === 4) {
+		// Поиск по 4 последним цифрам телефона (только если полный номер не был передан)
+		if (!targetPatient && !rawPhone && rawPhoneLast4.length === 4) {
 			const candidates = await db
 				.select({
 					id: patients.id,

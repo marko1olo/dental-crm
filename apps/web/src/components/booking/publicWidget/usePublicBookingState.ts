@@ -12,7 +12,7 @@ import type { BookingCategoryOption, BookingConfirmationData, BookingDoctorData,
 import type { PublicBookingWidgetProps } from "./types";
 
 export function usePublicBookingState(props: PublicBookingWidgetProps) {
-	const { organizationId = null, embedMode, customBranches = DEFAULT_BRANCHES, customDoctors = DEFAULT_DOCTORS, initialStep = 1, initialBranchId, initialCategoryId, initialDoctorId, onSuccess, onStepChange, showToast, apiBaseUrl = "/api/public/booking", requireSmsVerification = false, initialPatientName, initialPatientPhone, patientId } = props;
+	const { organizationId = null, embedMode, customBranches = DEFAULT_BRANCHES, customDoctors = DEFAULT_DOCTORS, initialStep = 1, initialBranchId, initialCategoryId, initialDoctorId, onSuccess, onStepChange, showToast, apiBaseUrl = "/api/public/booking", requireSmsVerification = false, initialPatientName, initialPatientPhone, initialComment, patientId } = props;
 	const widgetInstanceId = useId();
 	const [step, setStep] = useState<number>(initialStep);
 	const [isWaitlistMode, setIsWaitlistMode] = useState(false);
@@ -21,7 +21,7 @@ export function usePublicBookingState(props: PublicBookingWidgetProps) {
 	const [confirmationData, setConfirmationData] = useState<BookingConfirmationData | null>(null);
 
 	const cal = useBookingCalendarNavigation();
-	const form = useBookingFormState(initialPatientName, initialPatientPhone);
+	const form = useBookingFormState(initialPatientName, initialPatientPhone, initialComment);
 	const tg = useBookingTelegramContext(embedMode, form.patientName, form.setPatientName, form.patientPhone, form.setPatientPhone, showToast);
 	const sms = useBookingSmsState(organizationId, apiBaseUrl, form.patientPhone, requireSmsVerification, showToast);
 

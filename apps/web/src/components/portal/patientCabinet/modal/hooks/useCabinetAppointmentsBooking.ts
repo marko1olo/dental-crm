@@ -25,7 +25,11 @@ export function useCabinetAppointmentsBooking(
 					const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000);
 					const res = await fetch(`/api/portal/appointments/${encodeURIComponent(req.appointmentId)}/reschedule`, {
 						method: "PATCH",
-						headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+						headers: {
+							Authorization: `Bearer ${token}`,
+							"Content-Type": "application/json",
+							"Idempotency-Key": crypto.randomUUID(),
+						},
 						body: JSON.stringify({
 							startsAt: startDateTime.toISOString(),
 							endsAt: endDateTime.toISOString(),
@@ -86,7 +90,11 @@ export function useCabinetAppointmentsBooking(
 					if (targetDocId && !Number.isNaN(startDateTime.getTime())) {
 						const res = await fetch("/api/portal/appointments", {
 							method: "POST",
-							headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+							headers: {
+								Authorization: `Bearer ${token}`,
+								"Content-Type": "application/json",
+								"Idempotency-Key": crypto.randomUUID(),
+							},
 							body: JSON.stringify({
 								doctorId: targetDocId,
 								startsAt: startDateTime.toISOString(),
@@ -106,7 +114,7 @@ export function useCabinetAppointmentsBooking(
 								doctorSpecialtyRu: matchingDoc?.specialties?.[0] || "Стоматолог-терапевт",
 								roomNumber: "Кабинет 1",
 								clinicName: "Стоматологическая клиника ДЕНТЕ",
-								clinicAddressRu: "г. Москва, ул. Клиническая, д. 10",
+								clinicAddressRu: "г. Москва, ул. Арбат, д. 24",
 								titleRu: req.goalId,
 								status: "scheduled",
 								reminderSent: true,

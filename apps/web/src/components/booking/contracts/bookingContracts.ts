@@ -109,6 +109,7 @@ export interface PublicOnlineBookingWidgetProps {
 	readonly className?: string | undefined;
 	readonly initialPatientName?: string | undefined;
 	readonly initialPatientPhone?: string | undefined;
+	readonly initialComment?: string | undefined;
 	readonly patientId?: string | undefined;
 	readonly rapidFlow?: boolean | undefined;
 	readonly flowMode?: "standard" | "rapid_solo" | undefined;

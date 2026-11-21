@@ -61,18 +61,22 @@ test("Portal Domain SSOT Consolidation & Zero-Bloat Inquisition (Mandates 8s, 8d
 				"portal/index.ts must export PatientPortalTreatmentStageCard directly",
 			);
 			assert.ok(
-				portalIndexSource.includes('export * from "./patientWebapp/index.js"'),
-				"portal/index.ts must export patientWebapp directly",
+				!portalIndexSource.includes("./patientWebapp/"),
+				"portal/index.ts must not export dead patientWebapp",
 			);
 		},
 	);
 
 	await t.test(
-		"3. Legacy patient-portal/ directory is completely removed and physically forbidden (Mandates 8s, 8ag)",
+		"3. Legacy patient-portal/ and dead patientWebapp/ directories are completely removed and physically forbidden (Mandates 8s, 8ag, 8bj)",
 		() => {
 			assert.ok(
 				!fs.existsSync(patientPortalDir),
 				"Legacy components/patient-portal/ directory must NOT exist. It was unified into SSOT components/portal/",
+			);
+			assert.ok(
+				!fs.existsSync(path.join(portalDir, "patientWebapp")),
+				"Dead components/portal/patientWebapp/ directory must NOT exist (purged per Mandate 8bj)",
 			);
 		},
 	);

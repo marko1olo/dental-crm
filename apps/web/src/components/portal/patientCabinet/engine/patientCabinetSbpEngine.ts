@@ -1,4 +1,4 @@
-import { generateQrCodeSvg } from "@dental/shared";
+import { generateQrCodeSvg, rublesToKopecks } from "@dental/shared";
 import type { PatientInvoiceItem, SbpBankMember, SbpQrPayload } from "./patientCabinetTypes.js";
 
 export const SBP_POPULAR_BANKS: readonly SbpBankMember[] = [
@@ -18,7 +18,7 @@ export function generateSbpQrPayload(
 	const recipientAccount = clinicDetails?.account || "40702810938000123456";
 	const bankBic = clinicDetails?.bic || "044525225";
 	const amountRub = invoice.remainingAmountRub > 0 ? invoice.remainingAmountRub : invoice.totalAmountRub;
-	const amountKopecks = Math.round(amountRub * 100);
+	const amountKopecks = rublesToKopecks(amountRub);
 	const qrId = `SBPA${Date.now().toString(36).toUpperCase()}${invoice.invoiceNumber.replace(/\D/g, "")}`;
 	const paymentPurpose = `Оплата стоматологических услуг по счету № ${invoice.invoiceNumber} (НДС не облагается)`;
 

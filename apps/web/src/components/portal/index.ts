@@ -21,5 +21,4 @@ export * from "./patientOdontogram";
 export * from "./PatientToothDetailBox.js";
 export * from "./PatientPlanView.js";
 export * from "./PatientPortalTreatmentStageCard.js";
-export * from "./patientWebapp/index.js";
 export { default } from "./patientCabinet";
