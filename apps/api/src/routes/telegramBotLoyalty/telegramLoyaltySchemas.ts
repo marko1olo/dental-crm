@@ -10,6 +10,7 @@ export const webAppSessionSchema = z.object({
 	organizationId: z.string().min(1),
 	patientId: z.string().optional(),
 	phone: z.string().optional(),
+	verificationCode: z.string().optional(),
 });
 
 export const toothComplaintSchema = z.object({

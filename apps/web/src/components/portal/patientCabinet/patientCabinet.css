@@ -13,13 +13,13 @@
 .pc-next-visit-time {
 	font-size: 20px !important;
 	font-weight: 800 !important;
-	color: var(--pc-primary, #0d9488) !important;
+	color: var(--primary) !important;
 	letter-spacing: 0.02em;
 	line-height: 1.2;
 }
 
 .pc-reception-qr-card {
-	border: 2px solid var(--pc-primary, #0d9488);
+	border: 2px solid var(--primary);
 	background: var(--paper, var(--pc-surface, #ffffff));
 	border-radius: var(--pc-radius-md, 12px);
 	padding: 16px;

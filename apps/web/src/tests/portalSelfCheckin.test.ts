@@ -158,7 +158,18 @@ describe("3-Tier Treatment Plans & SBP QR Payments Engine", () => {
 		const invoice = PATIENT_CABINET_PRESET_ALEXEY.invoices[0];
 		assert.ok(invoice);
 
-		const sbp = generateSbpQrPayload(invoice);
+		assert.throws(
+			() => generateSbpQrPayload(invoice),
+			/Банковские реквизиты клиники для СБП не настроены/,
+		);
+
+		const clinicRequisites = {
+			legalName: "Стоматологическая клиника ДЕНТЕ",
+			inn: "7841098765",
+			account: "40702810938000123456",
+			bic: "044525225",
+		};
+		const sbp = generateSbpQrPayload(invoice, clinicRequisites);
 
 		assert.equal(sbp.amountRub, 35000);
 		assert.equal(sbp.amountKopecks, 3500000);

@@ -13,10 +13,16 @@ export function generateSbpQrPayload(
 	invoice: PatientInvoiceItem,
 	clinicDetails?: { legalName?: string; inn?: string; account?: string; bic?: string },
 ): SbpQrPayload {
-	const recipientLegalName = clinicDetails?.legalName || "ООО «Стоматологическая клиника ДЕНТЕ»";
-	const recipientInn = clinicDetails?.inn || "7704123456";
-	const recipientAccount = clinicDetails?.account || "40702810938000123456";
-	const bankBic = clinicDetails?.bic || "044525225";
+	const recipientLegalName = clinicDetails?.legalName?.trim();
+	const recipientInn = clinicDetails?.inn?.trim();
+	const recipientAccount = clinicDetails?.account?.trim() || "";
+	const bankBic = clinicDetails?.bic?.trim() || "";
+
+	if (!recipientLegalName || !recipientInn) {
+		throw new Error(
+			"Банковские реквизиты клиники для СБП не настроены. Обратитесь к администратору клиники.",
+		);
+	}
 	const amountRub = invoice.remainingAmountRub > 0 ? invoice.remainingAmountRub : invoice.totalAmountRub;
 	const amountKopecks = rublesToKopecks(amountRub);
 	const qrId = `SBPA${Date.now().toString(36).toUpperCase()}${invoice.invoiceNumber.replace(/\D/g, "")}`;
@@ -62,6 +68,6 @@ export function processSbpPayment(
 		paymentMethod: "sbp",
 		paidAtIso: nowIso,
 		fiscalReceiptNumber: receiptNum,
-		fiscalReceiptUrl: `https://receipt.nalog.ru/v1/check/${transactionId || invoice.id}`,
+		fiscalReceiptUrl: undefined,
 	};
 }

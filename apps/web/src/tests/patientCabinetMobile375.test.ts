@@ -87,7 +87,20 @@ test("Patient Personal Cabinet & 375px Mobile Ergonomics Suite", async (t) => {
 		const unpaidInvoice = demo.invoices.find((i) => i.status === "unpaid" || i.status === "partially_paid");
 		assert.ok(unpaidInvoice, "Unpaid invoice must exist in demo data");
 
-		const payload = generateSbpQrPayload(unpaidInvoice);
+		// Защита от муляжа: без реквизитов клиники генерация СБП QR обязана завершаться ошибкой
+		assert.throws(
+			() => generateSbpQrPayload(unpaidInvoice),
+			/Банковские реквизиты клиники для СБП не настроены/,
+			"Must reject SBP QR generation without configured clinic requisites",
+		);
+
+		const clinicRequisites = {
+			legalName: "Стоматологическая клиника ДЕНТЕ",
+			inn: "7841098765",
+			account: "40702810938000123456",
+			bic: "044525225",
+		};
+		const payload = generateSbpQrPayload(unpaidInvoice, clinicRequisites);
 		assert.equal(payload.amountRub, unpaidInvoice.remainingAmountRub);
 		assert.ok(payload.qrSvg.includes("<svg"));
 		assert.ok(payload.availableBanks.length >= 3);

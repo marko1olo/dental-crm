@@ -2,13 +2,13 @@
 .pc-next-visit-time {
 	font-size: 20px !important;
 	font-weight: 800 !important;
-	color: var(--pc-primary, #0d9488) !important;
+	color: var(--primary) !important;
 	letter-spacing: 0.02em;
 	line-height: 1.2;
 }
 
 .pc-reception-qr-card {
-	border: 2px solid var(--pc-primary, #0d9488);
+	border: 2px solid var(--primary);
 	background: var(--paper, var(--pc-surface, #ffffff));
 	border-radius: var(--pc-radius-md, 12px);
 	padding: 16px;
@@ -58,7 +58,7 @@
 
 .pc-cal-btn:hover {
 	background: var(--pc-hover, rgba(0, 0, 0, 0.04));
-	border-color: var(--pc-primary, #0d9488);
+	border-color: var(--primary);
 }
 
 .pc-year-btn {
@@ -73,8 +73,8 @@
 
 .pc-year-btn.active,
 .pc-year-btn:hover {
-	color: var(--pc-primary, #0d9488);
-	border-color: var(--pc-primary, #0d9488);
+	color: var(--primary);
+	border-color: var(--primary);
 	font-weight: 700;
 }
 
@@ -91,8 +91,8 @@
 }
 
 .pc-stage-chevron-btn:hover {
-	color: var(--pc-primary, #0d9488);
-	border-color: var(--pc-primary, #0d9488);
+	color: var(--primary);
+	border-color: var(--primary);
 }
 
 .pc-appointment-actions {

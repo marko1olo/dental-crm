@@ -118,7 +118,7 @@
 	}
 
 	.pc-mobile-tab-btn.active {
-		color: var(--pc-primary, #0d9488);
+		color: var(--primary);
 		font-weight: 700;
 	}
 

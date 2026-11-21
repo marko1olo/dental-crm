@@ -1,14 +1,15 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireAuthTokenSecret } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { appointments, patients, users, visits } from "../../db/schema.js";
+import { appointments, patients, portalOtpCodes, users, visits } from "../../db/schema.js";
 import {
 	isDbConnectionError,
 	TelegramReferralLoyaltyService,
 } from "../../services/telegram/TelegramReferralLoyaltyService.js";
-import { signToken } from "../../utils/cryptoHelper.js";
+import { signToken, verifyCredential } from "../../utils/cryptoHelper.js";
+import { bookingVerificationEngine } from "../publicBooking/smsVerificationAndSpamGate.js";
 import { PORTAL_TOKEN_KIND, PORTAL_TOKEN_TTL_SECONDS } from "../portal/types.js";
 import { calculateAvailableSlots } from "../publicBooking/bookingModules/publicBookingSlotEngine.js";
 import {
@@ -49,7 +50,7 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 			});
 		}
 
-		const { initData, organizationId, patientId, phone } = parsed.data;
+		const { initData, organizationId, patientId, phone, verificationCode } = parsed.data;
 		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN || "test_bot_token";
 
 		const validation = TelegramReferralLoyaltyService.validateTelegramWebAppData(initData, botToken, {
@@ -66,6 +67,99 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 		try {
 			return await withTenantCtx(organizationId, async () => {
 				let authenticatedPatient: typeof patients.$inferSelect | undefined;
+
+				async function verifyAndLinkPatient(
+					candidate: typeof patients.$inferSelect,
+				): Promise<{ ok: true } | { ok: false; status: number; error: string; message: string }> {
+					const currentProfile = getAdministrativeProfile(candidate.administrativeProfile);
+					const linkedTgId = currentProfile.telegramUserId;
+
+					if (linkedTgId && String(linkedTgId) === String(tgUser.id)) {
+						return { ok: true };
+					}
+
+					if (linkedTgId && String(linkedTgId) !== String(tgUser.id)) {
+						return {
+							ok: false,
+							status: 403,
+							error: "Forbidden",
+							message: "Доступ запрещен: данный профиль пациента привязан к другому Telegram аккаунту.",
+						};
+					}
+
+					// [SEV-1 BOLA FIX] Если Telegram еще не привязан — требуем обязательный SMS-код верификации
+					if (!verificationCode) {
+						return {
+							ok: false,
+							status: 403,
+							error: "VerificationRequired",
+							message: "Для первой привязки Telegram-аккаунта к профилю пациента требуется проверочный SMS-код.",
+						};
+					}
+
+					let isOtpValid = false;
+					const now = new Date();
+
+					try {
+						const activeOtps = await db
+							.select({ id: portalOtpCodes.id, codeHash: portalOtpCodes.codeHash })
+							.from(portalOtpCodes)
+							.where(
+								and(
+									eq(portalOtpCodes.organizationId, organizationId),
+									eq(portalOtpCodes.patientId, candidate.id),
+									eq(portalOtpCodes.deliveryStatus, "sent"),
+									isNull(portalOtpCodes.consumedAt),
+									gte(portalOtpCodes.expiresAt, now),
+								),
+							)
+							.orderBy(desc(portalOtpCodes.createdAt))
+							.limit(1);
+
+						if (activeOtps.length > 0 && activeOtps[0]) {
+							const candidateOtp = activeOtps[0];
+							if (await verifyCredential(verificationCode, candidateOtp.codeHash)) {
+								isOtpValid = true;
+								await db
+									.update(portalOtpCodes)
+									.set({ consumedAt: now })
+									.where(eq(portalOtpCodes.id, candidateOtp.id));
+							}
+						}
+					} catch {
+						// fallback to in-memory check
+					}
+
+					if (!isOtpValid) {
+						const targetPhone = candidate.phone || phone || "";
+						const otpCheck = bookingVerificationEngine.verifyPhoneOtp(targetPhone, verificationCode);
+						if (otpCheck.valid) {
+							isOtpValid = true;
+						}
+					}
+
+					if (!isOtpValid) {
+						return {
+							ok: false,
+							status: 403,
+							error: "VerificationFailed",
+							message: "Неверный или истёкший проверочный SMS-код.",
+						};
+					}
+
+					await db
+						.update(patients)
+						.set({
+							administrativeProfile: {
+								...currentProfile,
+								telegramUserId: String(tgUser.id),
+								telegramUsername: tgUser.username ?? null,
+							},
+						})
+						.where(eq(patients.id, candidate.id));
+
+					return { ok: true };
+				}
 
 				// 1. Поиск по telegramUserId
 				const [pByTg] = await db
@@ -88,17 +182,14 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 						.where(and(eq(patients.organizationId, organizationId), eq(patients.phone, phone.trim())))
 						.limit(1);
 					if (pByPhone) {
+						const verifyResult = await verifyAndLinkPatient(pByPhone);
+						if (!verifyResult.ok) {
+							return reply.status(verifyResult.status).send({
+								error: verifyResult.error,
+								message: verifyResult.message,
+							});
+						}
 						authenticatedPatient = pByPhone;
-						const currentProfile = getAdministrativeProfile(pByPhone.administrativeProfile);
-						await db
-							.update(patients)
-							.set({
-								administrativeProfile: {
-									...currentProfile,
-									telegramUserId: String(tgUser.id),
-								},
-							})
-							.where(eq(patients.id, pByPhone.id));
 					}
 				}
 
@@ -110,26 +201,14 @@ export async function registerTelegramWebAppSessionRoutes(app: FastifyInstance):
 						.where(and(eq(patients.organizationId, organizationId), eq(patients.id, patientId)))
 						.limit(1);
 					if (pById) {
-						const currentProfile = getAdministrativeProfile(pById.administrativeProfile);
-						const linkedTgId = currentProfile.telegramUserId;
-						if (linkedTgId && String(linkedTgId) !== String(tgUser.id)) {
-							return reply.status(403).send({
-								error: "Forbidden",
-								message: "Доступ запрещен: данный профиль пациента привязан к другому Telegram аккаунту.",
+						const verifyResult = await verifyAndLinkPatient(pById);
+						if (!verifyResult.ok) {
+							return reply.status(verifyResult.status).send({
+								error: verifyResult.error,
+								message: verifyResult.message,
 							});
 						}
 						authenticatedPatient = pById;
-						if (!linkedTgId) {
-							await db
-								.update(patients)
-								.set({
-									administrativeProfile: {
-										...currentProfile,
-										telegramUserId: String(tgUser.id),
-									},
-								})
-								.where(eq(patients.id, pById.id));
-						}
 					}
 				}
 

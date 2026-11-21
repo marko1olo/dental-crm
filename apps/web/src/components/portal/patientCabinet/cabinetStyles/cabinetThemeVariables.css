@@ -25,11 +25,11 @@
 	--pc-surface: var(--paper-strong, #f8fafc);
 	--pc-surface-hover: var(--surface-hover, #f1f5f9);
 	--pc-border: var(--border, #e2e8f0);
-	--pc-border-focus: var(--primary, #0d9488);
+	--pc-border-focus: var(--primary);
 	--pc-text-main: var(--ink, #0f172a);
 	--pc-text-muted: var(--muted, #64748b);
-	--pc-primary: var(--primary, #0d9488);
-	--pc-primary-hover: var(--primary-hover, #0f766e);
+	--pc-primary: var(--primary);
+	--pc-primary-hover: var(--primary-hover, var(--primary));
 	--pc-primary-light: var(--primary-light, rgba(13, 148, 136, 0.1));
 	--pc-surface-muted: var(--pc-primary-light, rgba(13, 148, 136, 0.1));
 	--pc-success: var(--success, #10b981);

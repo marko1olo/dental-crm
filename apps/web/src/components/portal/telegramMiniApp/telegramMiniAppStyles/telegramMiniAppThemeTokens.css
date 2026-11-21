@@ -10,8 +10,8 @@
 	--tg-text: #f8fafc;
 	--tg-text-muted: #94a3b8;
 	--tg-border: rgba(255, 255, 255, 0.12);
-	--tg-accent: #0d9488;
-	--tg-accent-hover: #14b8a6;
+	--tg-accent: var(--primary);
+	--tg-accent-hover: var(--primary-hover, var(--primary));
 	--tg-accent-text: #ffffff;
 }
 
@@ -24,8 +24,8 @@ html[data-theme="light"] {
 	--tg-text: #0f172a;
 	--tg-text-muted: #64748b;
 	--tg-border: #e2e8f0;
-	--tg-accent: #0d9488;
-	--tg-accent-hover: #0f766e;
+	--tg-accent: var(--primary);
+	--tg-accent-hover: var(--primary-hover, var(--primary));
 	--tg-accent-text: #ffffff;
 }
 

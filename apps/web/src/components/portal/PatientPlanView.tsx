@@ -431,9 +431,9 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				className="pc-card odontogram-container-card"
 				data-testid="interactive-odontogram-card"
 				style={{
-					backgroundColor: "var(--pc-surface, #1e293b)",
+					backgroundColor: "var(--paper)",
 					borderRadius: "12px",
-					border: "1px solid var(--pc-border, #334155)",
+					border: "1px solid var(--line)",
 					padding: "16px",
 					display: "flex",
 					flexDirection: "column",
@@ -442,10 +442,10 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 			>
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
 					<div>
-						<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+						<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--ink)" }}>
 							Интерактивная зубная формула и индекс санации
 						</h4>
-						<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+						<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--ink-muted)" }}>
 							Нажмите на любой зуб для расшифровки диагноза, проведенного лечения и гарантийного сертификата:
 						</p>
 					</div>

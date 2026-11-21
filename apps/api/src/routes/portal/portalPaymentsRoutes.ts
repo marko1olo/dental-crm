@@ -430,6 +430,7 @@ export async function registerPortalPaymentsRoutes(server: FastifyInstance): Pro
 					organizationId: auth.organizationId,
 					patientId: auth.patientId,
 					amountRub: totalAmount,
+					amountKopecks: BigInt(invoiceTotalKop),
 					method: "online",
 					status: "paid",
 					paidAt: now,

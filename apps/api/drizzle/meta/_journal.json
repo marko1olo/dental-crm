@@ -491,6 +491,20 @@
       "when": 1787400090000,
       "tag": "0221_treatment_items_treatment_plan_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1787400100000,
+      "tag": "0222_communication_events_idempotency_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1787400110000,
+      "tag": "0278_payments_amount_kopecks",
+      "breakpoints": true
     }
   ]
 }

@@ -41,7 +41,20 @@ describe("Patient Portal Client Engine & Telemedicine Suite", () => {
 
 	test("3. generateSbpQrPayload: produces valid NSPK payload string and banking deep links", () => {
 		const invoice = DEMO_PATIENT_CABINET.invoices[0]!;
-		const sbp = generateSbpQrPayload(invoice);
+
+		// Проверка отсечения фейковых реквизитов: без реквизитов генерация запрещена
+		assert.throws(
+			() => generateSbpQrPayload(invoice),
+			/Банковские реквизиты клиники для СБП не настроены/,
+		);
+
+		const clinicRequisites = {
+			legalName: "Стоматологическая клиника ДЕНТЕ",
+			inn: "7841098765",
+			account: "40702810938000123456",
+			bic: "044525225",
+		};
+		const sbp = generateSbpQrPayload(invoice, clinicRequisites);
 
 		assert.ok(sbp.qrId);
 		assert.ok(sbp.sbpNspkPayloadString.startsWith("https://qr.nspk.ru/"));

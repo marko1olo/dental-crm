@@ -1,15 +1,18 @@
+import { createReadStream, existsSync, statSync } from "node:fs";
 import { and, desc, eq, gt, lt, ne, notInArray, or } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
 	appointments,
 	chairs,
+	imagingStudies,
 	organizations,
 	patients,
 	users,
 	xrayScans,
 } from "../../db/schema.js";
+import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 import { DEFAULT_TIMEZONE } from "../publicBooking/types.js";
 import {
 	intersectWorkingWindows,
@@ -84,7 +87,107 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 		});
 	});
 
-	// [DEF-PORTAL-01] Безопасная выгрузка снимков без утечки физического пути хоста
+	/**
+	 * [DEF-PORTAL-01 / SEV-2 FIX] Безопасная отдача снимков из imagingStudies и xrayScans
+	 * Поддерживает как base64 data-uri, так и файлы на диске storagePath в песочнице клиники.
+	 */
+	async function servePatientScan(
+		scanId: string,
+		auth: { patientId: string; organizationId: string },
+		isView: boolean,
+		reply: FastifyReply,
+	) {
+		// 1. Поиск в imagingStudies (КТ, ОПТГ, визиография)
+		const [study] = await db
+			.select()
+			.from(imagingStudies)
+			.where(
+				and(
+					eq(imagingStudies.id, scanId),
+					eq(imagingStudies.patientId, auth.patientId),
+					eq(imagingStudies.organizationId, auth.organizationId),
+				),
+			)
+			.limit(1);
+
+		if (study?.storagePath) {
+			try {
+				const resolved = validateAndResolvePacsLocalFilePath(auth.organizationId, study.storagePath);
+				if (existsSync(resolved)) {
+					const fileStat = statSync(resolved);
+					let mime = "application/octet-stream";
+					const lower = resolved.toLowerCase();
+					if (lower.endsWith(".png")) mime = "image/png";
+					else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) mime = "image/jpeg";
+					else if (lower.endsWith(".dcm")) mime = "application/dicom";
+					else if (lower.endsWith(".heic") || lower.endsWith(".heif")) mime = "image/heic";
+
+					const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".")) : ".bin";
+					reply.header("Content-Type", mime);
+					reply.header("Content-Length", fileStat.size);
+					reply.header(
+						"Content-Disposition",
+						isView ? `inline; filename="scan-${scanId}${ext}"` : `attachment; filename="scan-${scanId}${ext}"`,
+					);
+					return reply.send(createReadStream(resolved));
+				}
+			} catch {
+				// Fallback to xrayScans
+			}
+		}
+
+		// 2. Поиск в xrayScans (прицельные снимки визиографа)
+		const [xray] = await db
+			.select()
+			.from(xrayScans)
+			.where(
+				and(
+					eq(xrayScans.id, scanId),
+					eq(xrayScans.patientId, auth.patientId),
+					eq(xrayScans.organizationId, auth.organizationId),
+				),
+			)
+			.limit(1);
+
+		if (xray?.imageDataUri) {
+			const matches = xray.imageDataUri.match(/^data:([^;]+);base64,(.+)$/);
+			if (matches && matches[1] && matches[2]) {
+				const buffer = Buffer.from(matches[2], "base64");
+				reply.type(matches[1]);
+				reply.header(
+					"Content-Disposition",
+					isView ? `inline; filename="scan-${scanId}"` : `attachment; filename="scan-${scanId}"`,
+				);
+				return reply.send(buffer);
+			}
+		}
+
+		if (xray?.storagePath) {
+			try {
+				const resolved = validateAndResolvePacsLocalFilePath(auth.organizationId, xray.storagePath);
+				if (existsSync(resolved)) {
+					const fileStat = statSync(resolved);
+					const mime = xray.mimeType || "image/png";
+					const lower = resolved.toLowerCase();
+					const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".")) : ".png";
+					reply.header("Content-Type", mime);
+					reply.header("Content-Length", fileStat.size);
+					reply.header(
+						"Content-Disposition",
+						isView ? `inline; filename="scan-${scanId}${ext}"` : `attachment; filename="scan-${scanId}${ext}"`,
+					);
+					return reply.send(createReadStream(resolved));
+				}
+			} catch {
+				// not found
+			}
+		}
+
+		reply.status(404);
+		return { error: "ScanNotFound" };
+	}
+
+	// [DEF-PORTAL-01] Скачивание снимка (attachment)
 	server.get<{ Params: { scanId: string } }>("/scans/:scanId/download", async (request, reply) => {
 		const auth = extractPortalPatient(request);
 		if (!auth) {
@@ -92,36 +195,33 @@ export async function registerPortalAppointmentsRoutes(server: FastifyInstance):
 			return { error: "Unauthorized" };
 		}
 
+		const scanId = request.params.scanId?.trim();
+		if (!scanId || !isValidUuid(scanId)) {
+			reply.status(400);
+			return { error: "InvalidScanId" };
+		}
+
 		return withTenantCtx(auth.organizationId, async () => {
-			const scanId = request.params.scanId?.trim();
-			if (!scanId || !isValidUuid(scanId)) {
-				reply.status(400);
-				return { error: "InvalidScanId" };
-			}
+			return servePatientScan(scanId, auth, false, reply);
+		});
+	});
 
-			const [xray] = await db
-				.select()
-				.from(xrayScans)
-				.where(
-					and(
-						eq(xrayScans.id, scanId),
-						eq(xrayScans.patientId, auth.patientId),
-						eq(xrayScans.organizationId, auth.organizationId),
-					),
-				)
-				.limit(1);
+	// [DEF-PORTAL-01] Просмотр снимка в браузере (inline)
+	server.get<{ Params: { scanId: string } }>("/scans/:scanId/view", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
 
-			if (xray?.imageDataUri) {
-				const matches = xray.imageDataUri.match(/^data:([^;]+);base64,(.+)$/);
-				if (matches && matches[1] && matches[2]) {
-					const buffer = Buffer.from(matches[2], "base64");
-					reply.type(matches[1]);
-					return reply.send(buffer);
-				}
-			}
+		const scanId = request.params.scanId?.trim();
+		if (!scanId || !isValidUuid(scanId)) {
+			reply.status(400);
+			return { error: "InvalidScanId" };
+		}
 
-			reply.status(404);
-			return { error: "ScanNotFound" };
+		return withTenantCtx(auth.organizationId, async () => {
+			return servePatientScan(scanId, auth, true, reply);
 		});
 	});
 
