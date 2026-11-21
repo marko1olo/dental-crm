@@ -21,14 +21,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-	attachKraftPackageTo043Diary,
 	calculateProcedureAutoDeduction,
+	type ProcedureDeductionRequest,
+	type ProcedureDeductionResult,
+} from "../sanpin/procedureMaterialDeductionEngine.js";
+import {
 	format043SterilizationRecord,
 	parseAndValidateKraftBarcode,
 	type ParsedKraftBarcode,
-	type ProcedureDeductionRequest,
-	type ProcedureDeductionResult,
-} from "../sanpin/kraftPackageProtocolLink.js";
+} from "../sanpin/kraftBarcodeParser.js";
 import {
 	KRAFT_PACKAGE_MATERIALS,
 	getKraftMaterialDefinition,
@@ -175,20 +176,20 @@ describe("SANPIN 3.3686-21 STERILIZATION ROUTING & CONSUMABLES DEDUCTION (ROUND 
 				formattedSterilizationDiaryRecord: "Стерилизация СанПиН 3.3686-21: Автоклав АК-01 (цикл №1 от 2026-08-25), крафт-пакет KB-20260825-01#1.",
 			};
 
-			const initialDiary = {
-				statusLocalis: "Зуб 4.6: кариозная полость I класс по Блэку.",
-				appliedMaterials: "Filtek Z250 0.4г, бонд Single Bond Universal 0.1мл.",
-			};
-
-			// Первое прикрепление
-			const updated = attachKraftPackageTo043Diary(initialDiary, parsed);
-			assert.ok(updated.appliedMaterials.includes("Filtek Z250"));
-			assert.ok(updated.appliedMaterials.includes("Стерилизация СанПиН 3.3686-21: Автоклав АК-01"));
-
-			// Повторное прикрепление того же пакета — текст не должен дублироваться
-			const reUpdated = attachKraftPackageTo043Diary(updated, parsed);
-			const count = (reUpdated.appliedMaterials.match(/Стерилизация СанПиН/g) || []).length;
-			assert.equal(count, 1, "Запись стерилизации должна присутствовать строго в 1 экземпляре");
+			// Формирование записи стерилизации для журнала ЦСО (Мандат 8e: ноль загрязнения ЭМК 043/у)
+			const record = format043SterilizationRecord({
+				autoclaveId: parsed.autoclaveId,
+				cycleNumber: parsed.cycleNumber,
+				packDateIso: parsed.packDateIso,
+				expDateIso: parsed.expDateIso,
+				barcode: parsed.batchId,
+				operatorName: parsed.operatorName,
+				toolSetNameRu: parsed.toolSetNameRu,
+				isExpired: parsed.isExpired,
+			});
+			assert.ok(record.includes("АК-01"));
+			assert.ok(record.includes("KB-20260825-01"));
+			assert.ok(record.includes("Медсестра ЦСО Смирнова А.В."));
 		});
 	});
 

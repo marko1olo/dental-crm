@@ -1,5 +1,6 @@
 /**
  * quickWriteoffPresets.ts — Layer 1: Kit definitions for nurse quick write-offs.
+ * Mandate 8bm: No fractional rubles/float money. Integer rubles/kopecks SSOT.
  */
 
 import type { UnifiedStockItemDefinition } from "../unifiedStockDeductionTypes.js";
@@ -8,9 +9,9 @@ export function getStandardKitDefinitions(): UnifiedStockItemDefinition[] {
 	return [
 		{ patterns: ["перчатк", "gloves"], defaultName: "Перчатки нитриловые неопудренные (пара)", category: "ppe", unit: "пары", qty: 2, defaultCost: "35" },
 		{ patterns: ["маск", "mask"], defaultName: "Маска медицинская защитная трехслойная", category: "ppe", unit: "шт.", qty: 2, defaultCost: "15" },
-		{ patterns: ["слюноотсос", "saliva"], defaultName: "Слюноотсос одноразовый с гибким наконечником", category: "ppe", unit: "шт.", qty: 1, defaultCost: "12.5" },
+		{ patterns: ["слюноотсос", "saliva"], defaultName: "Слюноотсос одноразовый с гибким наконечником", category: "ppe", unit: "шт.", qty: 1, defaultCost: "13" },
 		{ patterns: ["нагрудник", "салфетка нагрудная", "bib"], defaultName: "Нагрудник стоматологический (салфетка двухслойная)", category: "ppe", unit: "шт.", qty: 1, defaultCost: "18" },
-		{ patterns: ["валик", "ватные валики", "cotton"], defaultName: "Валики ватные стоматологические стерильные", category: "ppe", unit: "шт.", qty: 6, defaultCost: "3.5" },
+		{ patterns: ["валик", "ватные валики", "cotton"], defaultName: "Валики ватные стоматологические стерильные", category: "ppe", unit: "шт.", qty: 6, defaultCost: "4" },
 	];
 }
 

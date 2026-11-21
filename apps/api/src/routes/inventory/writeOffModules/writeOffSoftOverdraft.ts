@@ -9,11 +9,7 @@ import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.
 import { inventoryItems } from "../../../db/schema.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import { fefoStockService } from "../../../services/inventory/fefoStockService.js";
-import {
-	executeQuickCarpuleDisposal,
-	quickCarpuleDisposalSchema,
-	softOverdraftDeductSchema,
-} from "../../../services/warehouse/warehouseOperations.js";
+import { softOverdraftDeductSchema } from "../../../services/warehouse/warehouseOperations.js";
 import { handleDeductRequest } from "./writeOffFefoParties.js";
 
 async function resolveOrg(req: FastifyRequest, rep: FastifyReply, tag: string): Promise<string | null> {
@@ -150,24 +146,4 @@ export async function registerSoftOverdraftRoutes(server: FastifyInstance): Prom
 
 	server.post<{ Params?: { organizationId?: string } }>("/:organizationId/soft-overdraft-deduct", handleSoftOverdraft);
 	server.post("/soft-overdraft-deduct", handleSoftOverdraft);
-
-	const handleCarpuleDisposal = async (request: FastifyRequest, reply: FastifyReply) => {
-		const targetOrgId = await resolveOrg(request, reply, "inventory quick carpule disposal");
-		if (!targetOrgId) return;
-
-		const parsed = quickCarpuleDisposalSchema.safeParse(request.body ?? {});
-		if (!parsed.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: parsed.error.errors[0]?.message ?? "Неверные параметры списания",
-			});
-		}
-
-		const userId = (request.user as { id?: string } | undefined)?.id ?? null;
-		const response = await executeQuickCarpuleDisposal(targetOrgId, parsed.data, userId);
-		return reply.status(200).send(response);
-	};
-
-	server.post<{ Params?: { organizationId?: string } }>("/:organizationId/quick-carpule-disposal", handleCarpuleDisposal);
-	server.post("/quick-carpule-disposal", handleCarpuleDisposal);
 }

@@ -5,10 +5,10 @@
 
 import { and, eq, or, sql } from "drizzle-orm";
 import { inventoryItems } from "../../../db/schema/inventory.js";
-import { DEFAULT_804N_CONSUMABLE_LINKS } from "@dental/shared";
+import { DEFAULT_804N_CONSUMABLE_LINKS, kopecksToRubles } from "@dental/shared";
 import { DEFAULT_804N_BOM_SEEDS } from "../bomSeeds/registry.js";
 import type { DbTransaction } from "./types.js";
-import type { ServiceMeta } from "./procedureBomDbResolver.js";
+import type { ServiceMeta } from "./procedureBomResolver.js";
 
 const UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -100,7 +100,7 @@ export async function resolveDefaultFallbackItems(
 					stockQuantity: "0",
 					currentQty: "0",
 					criticalThreshold: "5",
-					unitCostRub: String((link.costPriceKopecks / 100).toFixed(2)),
+					unitCostRub: String(kopecksToRubles(link.costPriceKopecks)),
 				})
 				.returning({ id: inventoryItems.id });
 			targetItemId = created?.id;

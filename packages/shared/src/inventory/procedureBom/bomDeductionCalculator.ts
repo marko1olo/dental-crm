@@ -14,6 +14,7 @@ import type {
 } from "./types.js";
 import { getStandardBOMForProcedure } from "./bomItemMatcher.js";
 import { generateSupplierPurchaseOrder } from "./bomStockValidator.js";
+import { formatKopecksToRub } from "../../money.js";
 
 /**
  * Pure function: Resolves total material requirements for a set of completed 804n procedures.
@@ -308,10 +309,7 @@ export function executeVisitAutoBomDeduction(
 	);
 
 	const totalCostKopecks = deductionResult.totalDeductionCostKopecks;
-	const totalCostFormattedRu = `${(totalCostKopecks / 100).toLocaleString("ru-RU", {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	})} ₽`;
+	const totalCostFormattedRu = formatKopecksToRub(totalCostKopecks);
 
 	let statusMessageRu = "Списание материалов по техкартам 804н выполнено успешно.";
 	if (deductionResult.hasShortfall) {

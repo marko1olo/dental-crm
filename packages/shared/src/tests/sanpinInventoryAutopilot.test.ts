@@ -9,13 +9,14 @@
 import assert from "node:assert/strict";
 import test, { describe, it } from "node:test";
 import {
-	attachKraftPackageTo043Diary,
 	calculateProcedureAutoDeduction,
+	type ProcedureDeductionRequest,
+} from "../sanpin/procedureMaterialDeductionEngine.js";
+import {
 	format043SterilizationRecord,
 	parseAndValidateKraftBarcode,
 	type ParsedKraftBarcode,
-	type ProcedureDeductionRequest,
-} from "../sanpin/kraftPackageProtocolLink.js";
+} from "../sanpin/kraftBarcodeParser.js";
 import { parseKopecks } from "../utils/money.js";
 
 describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
@@ -174,22 +175,22 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 				formattedProtocolRecord043: "Стерилизация инструментария: Автоклав АК-01 (цикл №1 от 2026-08-25), крафт-пакет KB-20260825-01#1.",
 			};
 
-			const initialDiary = {
-				statusLocalis: "Зуб 1.6: кариозная полость на окклюзионной поверхности.",
-				appliedMaterials: "Filtek Z250 A2 0.4г, бонд Single Bond Universal 0.1мл.",
-			};
-
-			const updated = attachKraftPackageTo043Diary(initialDiary, parsed);
-			assert.ok(updated.appliedMaterials.includes("Filtek Z250"));
-			assert.ok(updated.appliedMaterials.includes("Стерилизация инструментария: Автоклав АК-01"));
-
-			// Повторное добавление того же пакета не должно дублировать текст
-			const reUpdated = attachKraftPackageTo043Diary(updated, parsed);
-			const count = (reUpdated.appliedMaterials.match(/Стерилизация инструментария/g) || []).length;
-			assert.equal(count, 1, "Запись не должна дублироваться при повторном сканировании");
+			const record = format043SterilizationRecord({
+				autoclaveId: parsed.autoclaveId,
+				cycleNumber: parsed.cycleNumber,
+				packDateIso: parsed.packDateIso,
+				expDateIso: parsed.expDateIso,
+				barcode: parsed.batchId,
+				operatorName: parsed.operatorName,
+				toolSetNameRu: parsed.toolSetNameRu,
+				isExpired: parsed.isExpired,
+			});
+			assert.ok(record.includes("АК-01"));
+			assert.ok(record.includes("KB-20260825-01"));
+			assert.ok(record.includes("Медсестра ЦСО Смирнова А.В."));
 		});
 
-		it("позволяет свободную фиксацию смены и 1-клик внесение стерилизации в дневник приёма без обязательного сканирования пакета (Мандаты 8e, 8n)", () => {
+		it("позволяет свободную фиксацию смены и 1-клик внесение стерилизации без обязательного сканирования пакета (Мандаты 8e, 8n)", () => {
 			// Врач у кресла не сканирует пакет — при фиксации смены берется пакетная норма регламента клиники
 			const shiftBatchParsed = parseAndValidateKraftBarcode("BATCH-SHIFT-20260825", {
 				referenceDate: "2026-08-25",
@@ -199,15 +200,6 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 			assert.equal(shiftBatchParsed.isValid, true);
 			assert.equal(shiftBatchParsed.isExpired, false);
 			assert.ok(shiftBatchParsed.formattedProtocolRecord043.includes("Стерилизация"));
-
-			const diary = {
-				statusLocalis: "Зуб 2.4: средний кариес.",
-				appliedMaterials: "Эмаль-герметик 0.1мл.",
-			};
-
-			const linkedDiary = attachKraftPackageTo043Diary(diary, shiftBatchParsed);
-			assert.ok(linkedDiary.appliedMaterials.includes("Стерилизация инструментария"));
-			assert.ok(linkedDiary.appliedMaterials.includes("BATCH-SHIFT-20260825"));
 		});
 	});
 

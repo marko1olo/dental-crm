@@ -4,7 +4,6 @@ import type { TenantDb } from "../../db/rls.js";
 import {
 	inventoryItems,
 	inventoryTransactions,
-	medicalWasteLogs,
 	procedureMaterialRules,
 	treatmentItems,
 } from "../../db/schema.js";
@@ -160,8 +159,6 @@ export async function deductMaterialsForVisit(
 			}
 		}
 
-		await recordSanpinWasteIfApplicable(tx, organizationId, visitId, userId, deductions);
-
 		return {
 			completedTreatmentItems: 0,
 			deductions,
@@ -308,8 +305,6 @@ export async function deductMaterialsForVisit(
 		}
 	}
 
-	await recordSanpinWasteIfApplicable(tx, organizationId, visitId, userId, deductions);
-
 	return {
 		completedTreatmentItems: uncompletedItems.length,
 		deductions,
@@ -318,34 +313,3 @@ export async function deductMaterialsForVisit(
 		...(hasOverdraft ? { warning: "soft_overdraft" } : {}),
 	};
 }
-
-async function recordSanpinWasteIfApplicable(
-	tx: DbTransaction,
-	organizationId: string,
-	visitId: string,
-	userId: string | null,
-	deductions: StockDeductionRecord[],
-): Promise<void> {
-	if (deductions.length === 0) return;
-	const hasHazardous = deductions.some((d) =>
-		/анесте|карпул|шовн|перчат|игл|хирург|альвостаз|лезвие|вата|марл/i.test(
-			d.inventoryItemName,
-		),
-	);
-	if (hasHazardous) {
-		await tx.insert(medicalWasteLogs).values({
-			organizationId,
-			operationType: "accumulation",
-			wasteClass: "class_B",
-			wasteDescription: `Медицинские отходы класса Б после приёма: отработанные карпулы, иглы, перевязочный материал, перчатки`,
-			packageType: "yellow_bag",
-			packageCount: 1,
-			weightKg: "0.150",
-			disinfectionMethod: "chemical_soaking",
-			disinfectantUsed: "Аламинол 5%",
-			responsibleStaffId: userId,
-			notes: `Автоматическая фиксация по списанию расходников визита ${visitId} (СанПиН 2.1.3684-21)`,
-		});
-	}
-}
-

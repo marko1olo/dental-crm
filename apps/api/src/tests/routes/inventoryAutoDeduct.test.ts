@@ -49,7 +49,7 @@ describe("Inventory Clinical Material BOM Auto-Deduction Engine", () => {
 
 	it("гарантирует положительные нормы расхода и валидные единицы измерения", () => {
 		for (const procedure of DEFAULT_804N_BOM_SEEDS) {
-			assert.ok(procedure.serviceCode.startsWith("A16.07."), `Неверный код 804н: ${procedure.serviceCode}`);
+			assert.ok(/^(A16\.07\.|A02\.07\.)/.test(procedure.serviceCode), `Неверный код 804н: ${procedure.serviceCode}`);
 			assert.ok(procedure.serviceTitle.length > 5, `Слишком короткое название: ${procedure.serviceTitle}`);
 			assert.ok(procedure.materials.length > 0, `Процедура ${procedure.serviceCode} не содержит материалов`);
 

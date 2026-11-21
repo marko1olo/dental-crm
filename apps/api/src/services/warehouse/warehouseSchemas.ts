@@ -4,17 +4,6 @@
 
 import { z } from "zod";
 
-export const quickCarpuleDisposalSchema = z.object({
-	drugName: z.string().min(1, "Название анестетика обязательно").default("Артикаин 4%"),
-	carpulesCount: z.number().int().positive("Количество карпул должно быть > 0").default(1),
-	nurseName: z.string().min(1).default("Дежурная медсестра"),
-	doctorName: z.string().min(1).default("Лечащий врач"),
-	anestheticItemId: z.string().optional(),
-	visitId: z.string().nullable().optional(),
-	notes: z.string().nullable().optional(),
-	organizationId: z.string().optional(),
-});
-
 export const softOverdraftDeductSchema = z.object({
 	itemId: z.string().optional(),
 	inventoryItemId: z.string().optional(),

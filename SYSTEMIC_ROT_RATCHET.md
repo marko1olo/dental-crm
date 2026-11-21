@@ -49,7 +49,9 @@
   - `treatmentRecordTool.ts` — ✅ FIXED (2026-11-21, целочисленный расчет `rubToKopecks` * qty и `kopecksToRub`)
   - `dbTypes.ts` — ✅ FIXED (2026-11-21, делегирует в `@dental/shared/src/money.ts`)
   - `mcpFiscalHandlers.ts` — 3 места
-  - `materialDeduction.ts` — 1 место
+  - `materialDeduction.ts` — ✅ FIXED (2026-11-21, снос симулятора отходов класса Б 150г, безопасное списание)
+  - `quickWriteoffPresets.ts` & `statutoryBomResolver.ts` — ✅ FIXED (2026-11-21, устранение дробных рублей и деления на 100, перевод на kopecksToRubles)
+  - `procedureBomDefaultFallback.ts` & `bomDeductionCalculator.ts` — ✅ FIXED (2026-11-21, ликвидация float деления на 100, внедрение formatKopecksToRub)
   - `paymentRecordExecutor.ts` — 1 место
   - `financialArgumentation.ts` — 4 места
 - **Эталон:** `@dental/shared/src/money.ts` → `formatKopecksToRub`, `rublesToKopecks`
@@ -154,4 +156,4 @@
 | 2026-11-21 | **ROT-006 (part)** | Атомарные транзакции `withTenantCtx`: стерилизация и списание расходников (`sterilizationShiftBatchHandler.ts`), кадры и комиссии (`staffMutationRoutes.ts`), профиль клиники (`workspaceProfileHandlers.ts`), этапы планов (`stageTransitionHandler.ts`), аудит (`auditQuery.ts`). | `verified` |
 | 2026-11-21 | **ROT-005 (part)** | Обязательная fail-closed валидация `Idempotency-Key` (UUIDv7) в траншах рассрочки (`cashInstallmentsRoutes.ts`), защита от Double-Spend и дедупликация, настройка `enforceForPaths` в `idempotencyPlugin.ts`. | `verified` |
 | 2026-11-21 | **ROT-007** | Устранены IDOR/BOLA дыры: добавлены фильтры `eq(organizationId)` в `priceFreezeTokensQuery.ts` (планы, токен, позиции) и `doctorPreferencesQuery.ts`. | `verified` |
-| 2026-11-21 | **ROT-007** | Устранены IDOR/BOLA дыры: добавлены фильтры `eq(organizationId)` в `priceFreezeTokensQuery.ts` (планы, токен, позиции) и `doctorPreferencesQuery.ts`. | `verified` |
+| 2026-11-21 | **WAREHOUSE-BOM** | Устранено троевластие техкарт: утвержден канонический SSOT `procedure_tech_cards` и `procedure_tech_card_items`, все списания переведены на `inventory_transactions` строго внутри `withTenantCtx`, ликвидирован float math (`kopecksToRubles`, `formatKopecksToRub`), через `git rm` снесены мертвые симуляторы (`quickCarpuleDisposal.ts`, `kraftDiaryLink.ts`, `kraftPackageProtocolLink.ts`, `procedureBomDbResolver.ts`), удален микро-эндпоинт списания на отдельный зуб и фейковые отходы класса Б 150г в `materialDeduction.ts`. | `verified` |

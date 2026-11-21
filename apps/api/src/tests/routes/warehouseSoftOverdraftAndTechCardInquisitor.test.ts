@@ -289,33 +289,28 @@ describe("Warehouse & Tech-Card Red Team Inquisitor (Mandates 8e, 8n, 8v)", () =
 		assert.equal(Number(createdItem.stockQuantity), -3);
 	});
 
-	it("3. Mandate 8e: 1-клик утилизация пустых карпул (СанПиН 3.3686-21, подпись 1 медсестры)", async () => {
+	it("3. Mandate 8e: 1-клик списание анестетика с мягким овердрафтом (без блокировки врача)", async () => {
 		if (!databaseReady) return;
 
 		// Списываем 5 карпул при остатке 2 (перерасход на 3 шт.)
 		const res = await app.inject({
 			method: "POST",
-			url: "/api/warehouse/quick-carpule-disposal",
+			url: "/api/warehouse/soft-overdraft-deduct",
 			headers: authHeaders({
 				"Content-Type": "application/json",
 			}),
 			payload: {
-				drugName: "Артикаин с эпинефрином 1:100000",
-				carpulesCount: 5,
-				nurseName: "Медсестра Иванова Е.А.",
-				doctorName: "Доктор Смирнов А.В.",
+				itemId: ITEM_ANESTHETIC_ID,
+				quantity: 5,
+				reason: "Плановое списание анестезии на приём",
 			},
 		});
 
 		assert.equal(res.statusCode, 200);
 		const body = res.json();
 		assert.equal(body.success, true);
-		assert.ok(body.actNumber.startsWith("АКТ-КП-"));
-		assert.equal(body.singleSigner, true);
-		assert.equal(body.sanpinClause, "СанПиН 3.3686-21 п. 3630");
-		assert.equal(body.wasteClass, "class_b_hazardous");
 		assert.equal(body.isOverdraft, true);
-		assert.equal(body.deficitCount, 3);
+		assert.equal(body.deficit, 3);
 	});
 
 	it("4. Mandate 8v: вызов deductForProcedure с кодом 804н не падает с ошибкой синтаксиса UUID", async () => {

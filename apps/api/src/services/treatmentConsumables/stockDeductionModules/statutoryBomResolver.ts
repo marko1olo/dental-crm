@@ -1,10 +1,12 @@
 /**
  * statutoryBomResolver.ts — Tier 4 Statutory defaults & Turnkey Recipes.
+ * Mandate 8bm: Canonical money conversion via kopecksToRubles SSOT.
  */
 
 import {
 	CANONICAL_PROCEDURE_RECIPES,
 	DEFAULT_804N_CONSUMABLE_LINKS,
+	kopecksToRubles,
 } from "@dental/shared";
 import { DEFAULT_SERVICE_BOM_SEEDS } from "../../inventory/defaultBomSeeds.js";
 import type { RawRequiredMaterial, ServiceDescriptor } from "./stockDeductionTypes.js";
@@ -36,7 +38,7 @@ export function resolveStatutoryBomForService(
 				name: item.nameRu,
 				quantity: item.standardQuantity * srvQty,
 				unit: item.unit,
-				defaultCostRub: Number((item.estimatedUnitCostKopecks / 100).toFixed(2)),
+				defaultCostRub: kopecksToRubles(item.estimatedUnitCostKopecks),
 			});
 		}
 		return materials;
@@ -84,7 +86,7 @@ export function resolveStatutoryBomForService(
 				name: link.itemName || "Расходник",
 				quantity: Number(link.quantityPerService ?? 1) * srvQty,
 				unit: link.unit,
-				defaultCostRub: Number((link.costPriceKopecks / 100).toFixed(2)),
+				defaultCostRub: kopecksToRubles(link.costPriceKopecks),
 			});
 		}
 	}

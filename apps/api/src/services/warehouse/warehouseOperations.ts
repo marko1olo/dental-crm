@@ -4,10 +4,7 @@
  */
 
 export {
-	quickCarpuleDisposalSchema,
 	softOverdraftDeductSchema,
 	warehouseDeductBatchBodySchema,
 	warehouseDeductItemSchema,
 } from "./warehouseSchemas.js";
-
-export { executeQuickCarpuleDisposal } from "./quickCarpuleDisposal.js";

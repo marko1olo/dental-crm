@@ -6,10 +6,35 @@
  */
 
 import { getDentalToolSetDefinition } from "./kraftCatalogs.js";
-import { formatSterilizationDiaryRecord } from "./kraftDiaryLink.js";
 import type { ParsedKraftBarcode, ParseKraftBarcodeOptions } from "./kraftBarcodeTypes.js";
 
 export * from "./kraftBarcodeTypes.js";
+
+export interface FormatSterilizationRecordParams {
+	readonly autoclaveId: string;
+	readonly cycleNumber: number;
+	readonly packDateIso: string;
+	readonly expDateIso: string;
+	readonly barcode: string;
+	readonly operatorName: string;
+	readonly indicatorClassRu?: string | undefined;
+	readonly toolSetNameRu?: string | undefined;
+	readonly isExpired?: boolean | undefined;
+}
+
+export function formatSterilizationDiaryRecord(params: FormatSterilizationRecordParams): string {
+	const indicatorText = params.indicatorClassRu || "Химический интегратор 5 класса (пар 134°C, 5 мин)";
+	const toolText = params.toolSetNameRu ? ` [${params.toolSetNameRu}]` : "";
+
+	if (params.isExpired) {
+		return `[ВНИМАНИЕ: СРОК СТЕРИЛИЗАЦИИ ИСТЁК] Стерилизация инструментария: Автоклав ${params.autoclaveId} (цикл №${params.cycleNumber} от ${params.packDateIso}), пакет ${params.barcode} истёк ${params.expDateIso}. Ответственная медсестра: ${params.operatorName}.`;
+	}
+
+	return `Стерилизация инструментария: Автоклав ${params.autoclaveId} (цикл №${params.cycleNumber} от ${params.packDateIso}), ${indicatorText}, крафт-пакет ${params.barcode}${toolText} годен до ${params.expDateIso}. Ответственная медсестра ЦСО: ${params.operatorName}. Целостность упаковки сохранена.`;
+}
+
+export const formatSterilizationRecord = formatSterilizationDiaryRecord;
+export const format043SterilizationRecord = formatSterilizationDiaryRecord;
 
 function normalizeDate(d: string | Date | undefined, fallback: string): string {
 	if (!d) return fallback;
@@ -123,7 +148,7 @@ export function parseAndValidateKraftBarcode(
 		};
 	}
 
-	// Простой штрихкод или номер партии: честное динамическое извлечение даты стерилизации
+	// Простой штрихкод или номер партии: динамическое извлечение даты стерилизации
 	const clean = trimmed.toUpperCase();
 	let packDateIso = refDate;
 	const isoMatch = clean.match(/\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
@@ -132,13 +157,17 @@ export function parseAndValidateKraftBarcode(
 	const yymmddMatch = clean.match(/(?:^|[^0-9])([23]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
 
 	if (isoMatch?.[1] && isoMatch[2] && isoMatch[3]) {
-		packDateIso = `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+		const [, y, m, d] = isoMatch;
+		if (y && m && d) packDateIso = `${y}-${m}-${d}`;
 	} else if (kbMatch?.[1] && kbMatch[2] && kbMatch[3]) {
-		packDateIso = `20${kbMatch[1]}-${kbMatch[2]}-${kbMatch[3]}`;
+		const [, y, m, d] = kbMatch;
+		if (y && m && d) packDateIso = `20${y}-${m}-${d}`;
 	} else if (yyyymmddMatch?.[1] && yyyymmddMatch[2] && yyyymmddMatch[3]) {
-		packDateIso = `${yyyymmddMatch[1]}-${yyyymmddMatch[2]}-${yyyymmddMatch[3]}`;
+		const [, y, m, d] = yyyymmddMatch;
+		if (y && m && d) packDateIso = `${y}-${m}-${d}`;
 	} else if (yymmddMatch?.[1] && yymmddMatch[2] && yymmddMatch[3]) {
-		packDateIso = `20${yymmddMatch[1]}-${yymmddMatch[2]}-${yymmddMatch[3]}`;
+		const [, y, m, d] = yymmddMatch;
+		if (y && m && d) packDateIso = `20${y}-${m}-${d}`;
 	}
 
 	const expDateIso = addDaysToIso(packDateIso, 50);

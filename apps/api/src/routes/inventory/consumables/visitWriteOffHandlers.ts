@@ -1,6 +1,7 @@
 /**
  * visitWriteOffHandlers.ts — Layer 2: Fastify route handlers for atomic consumable write-offs
- * on visit/tooth treatment completion, stock sufficiency checks, alerts, and 1-click bundles.
+ * on visit completion, stock sufficiency checks, alerts, and 1-click bundles.
+ * All mutations run inside withTenantCtx fail-closed RLS context.
  */
 
 import type { FastifyInstance } from "fastify";
@@ -8,7 +9,7 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../../accessGuard.js";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import { TreatmentConsumablesService } from "../../../services/treatmentConsumablesService.js";
 import {
@@ -19,7 +20,6 @@ import {
 	alertsQuerySchema,
 	emergencyWriteoffSchema,
 	stockAvailabilityCheckRequestSchema,
-	toothTreatmentStockDeductionRequestSchema,
 	treatmentConsumableDeductionRequestSchema,
 	visitStockDeductionRequestSchema,
 } from "./types.js";
@@ -47,10 +47,13 @@ export async function registerVisitWriteOffHandlers(
 			});
 		}
 
-		const result = await TreatmentConsumablesService.applyDeduction(
-			orgId,
-			parsed.data,
-		);
+		const result = await withTenantCtx(orgId, async (tx) => {
+			return TreatmentConsumablesService.applyDeduction(
+				orgId,
+				parsed.data,
+				tx,
+			);
+		});
 		return reply.status(200).send(result);
 	});
 
@@ -90,7 +93,7 @@ export async function registerVisitWriteOffHandlers(
 		}
 
 		try {
-			const result = await db.transaction(async (tx) => {
+			const result = await withTenantCtx(organizationId, async (tx) => {
 				return TreatmentConsumablesService.deductForVisit(tx, {
 					organizationId,
 					visitId: parsedBody.data.visitId,
@@ -135,85 +138,6 @@ export async function registerVisitWriteOffHandlers(
 		}
 	});
 
-	// POST /:organizationId/deduct/tooth-treatment — Deduct consumables for tooth procedure
-	server.post<{
-		Params: { organizationId: string };
-		Body: {
-			treatmentItemId: string;
-			serviceId: string;
-			toothNumber?: number | null;
-			quantity?: number;
-			visitId?: string | null;
-			userId?: string | null;
-			transactionType?: "auto_deduct" | "manual_writeoff";
-			clientMutationId?: string | null;
-		};
-	}>("/:organizationId/deduct/tooth-treatment", async (request, reply) => {
-		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"treatment consumables deduct tooth treatment",
-		);
-		if (!resolvedOrgId) return;
-
-		const { organizationId } = request.params;
-		if (resolvedOrgId !== organizationId) {
-			return reply.code(403).send({ error: "Forbidden" });
-		}
-
-		const parsedBody = toothTreatmentStockDeductionRequestSchema.safeParse(
-			request.body,
-		);
-		if (!parsedBody.success) {
-			return reply.status(400).send({
-				error: "ValidationError",
-				message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
-			});
-		}
-
-		const clientMutationId =
-			(request.headers["idempotency-key"] as string) ||
-			(request.headers["x-client-mutation-id"] as string) ||
-			parsedBody.data.clientMutationId ||
-			null;
-
-		try {
-			const result = await db.transaction(async (tx) => {
-				return TreatmentConsumablesService.deductForToothTreatment(tx, {
-					organizationId,
-					treatmentItemId: parsedBody.data.treatmentItemId,
-					serviceId: parsedBody.data.serviceId,
-					clientMutationId,
-					...(parsedBody.data.toothNumber !== undefined
-						? { toothNumber: parsedBody.data.toothNumber }
-						: {}),
-					...(parsedBody.data.quantity !== undefined
-						? { quantity: parsedBody.data.quantity }
-						: {}),
-					...(parsedBody.data.visitId !== undefined
-						? { visitId: parsedBody.data.visitId }
-						: {}),
-					...(parsedBody.data.userId !== undefined
-						? { userId: parsedBody.data.userId }
-						: { userId: getRequestIdentity(request).userId }),
-					...(parsedBody.data.transactionType !== undefined
-						? { transactionType: parsedBody.data.transactionType }
-						: {}),
-				});
-			});
-			return result;
-		} catch (err: unknown) {
-			if (isInsufficientStockError(err)) {
-				// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и лечение зуба.
-				// Мягкий овердрафт: отдаем 200 OK с предупреждением о дефиците партии вместо блокирующего 409.
-				return reply
-					.status(200)
-					.send(buildSoftOverdraftResponse(err, "tooth_treatment"));
-			}
-			throw err;
-		}
-	});
-
 	// POST /:organizationId/check-availability — Pre-flight check stock sufficiency
 	server.post<{
 		Params: { organizationId: string };
@@ -243,11 +167,13 @@ export async function registerVisitWriteOffHandlers(
 			});
 		}
 
-		const result = await TreatmentConsumablesService.checkStockSufficiency(
-			db,
-			organizationId,
-			parsedBody.data.items,
-		);
+		const result = await withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.checkStockSufficiency(
+				tx,
+				organizationId,
+				parsedBody.data.items,
+			);
+		});
 		return result;
 	});
 
@@ -281,11 +207,13 @@ export async function registerVisitWriteOffHandlers(
 			? parsedQuery.data.expiringWithinDays
 			: 30;
 
-		const alerts = await TreatmentConsumablesService.getInventoryAlerts(
-			db,
-			organizationId,
-			...(expiringWithinDays !== undefined ? [{ expiringWithinDays }] : []),
-		);
+		const alerts = await withTenantCtx(organizationId, async (tx) => {
+			return TreatmentConsumablesService.getInventoryAlerts(
+				tx,
+				organizationId,
+				...(expiringWithinDays !== undefined ? [{ expiringWithinDays }] : []),
+			);
+		});
 		return alerts;
 	});
 
@@ -324,7 +252,7 @@ export async function registerVisitWriteOffHandlers(
 		}
 
 		try {
-			const result = await db.transaction(async (tx) => {
+			const result = await withTenantCtx(organizationId, async (tx) => {
 				return TreatmentConsumablesService.deductManualItems(tx, {
 					organizationId,
 					items: parsedBody.data.items,
@@ -349,10 +277,6 @@ export async function registerVisitWriteOffHandlers(
 	// MANDATE 8s (CANONICAL AUTHORITY & ANTI-BLOAT LAW):
 	// Canonical master route: `apps/api/src/routes/inventory.ts`
 	// (POST /api/inventory/:organizationId/quick-writeoff-carpules).
-	// This endpoint is maintained as a transparent alias under /api/treatment-consumables
-	// to preserve backward compatibility for existing consumers.
-	// Both routes delegate execution to the canonical TreatmentConsumablesService.quickWriteoffCarpules
-	// with identical transaction semantics, preventing any logic desynchronization.
 	// =========================================================================
 	// POST /:organizationId/quick-writeoff-carpules — 1-Click carpules writeoff by nurse
 	server.post<{
@@ -378,7 +302,7 @@ export async function registerVisitWriteOffHandlers(
 		}
 
 		const body = request.body ?? {};
-		const result = await db.transaction(async (tx) => {
+		const result = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
 				organizationId,
 				carpulesCount: body.carpulesCount,
@@ -396,10 +320,6 @@ export async function registerVisitWriteOffHandlers(
 	// MANDATE 8s (CANONICAL AUTHORITY & ANTI-BLOAT LAW):
 	// Canonical master route: `apps/api/src/routes/inventory.ts`
 	// (POST /api/inventory/:organizationId/quick-writeoff-visit-bundle).
-	// This endpoint is maintained as a transparent alias under /api/treatment-consumables
-	// to preserve backward compatibility for existing consumers.
-	// Both routes delegate execution to the canonical TreatmentConsumablesService.quickWriteoffVisitBundle
-	// with identical transaction semantics, preventing any logic desynchronization.
 	// =========================================================================
 	// POST /:organizationId/quick-writeoff-visit-bundle — 1-клик списание набора клинического приёма
 	server.post<{
@@ -424,7 +344,7 @@ export async function registerVisitWriteOffHandlers(
 		}
 
 		const body = request.body ?? {};
-		const result = await db.transaction(async (tx) => {
+		const result = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
 				organizationId,
 				visitType: body.visitType || "therapy",
@@ -460,7 +380,7 @@ export async function registerVisitWriteOffHandlers(
 		}
 
 		const body = request.body ?? {};
-		const result = await db.transaction(async (tx) => {
+		const result = await withTenantCtx(organizationId, async (tx) => {
 			return TreatmentConsumablesService.quickWriteoffEmergencyAntishock(tx, {
 				organizationId,
 				visitId: body.visitId ?? null,

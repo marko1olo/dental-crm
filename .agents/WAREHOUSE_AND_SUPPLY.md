@@ -355,6 +355,53 @@
     * 📱 Mobile Light (390×844, 166 KB): `03_sanpin_studio_mobile_light_390x844.png`
     * 🌙 Mobile Dark (390×844, 175 KB): `04_sanpin_studio_mobile_dark_390x844.png`
 
+---
+
+## 🔒 16. Red Team Fixer Surgeon: Ликвидация угроз дедлоков PostgreSQL (40P01), транзакционность каталога и копеечный расчет по Мандату 8bm (Мандаты 8e, 8n, 8v, 8bm, 8be)
+
+* **ДЕФЕКТ №1: Предотвращение дедлоков PostgreSQL (40P01) при параллельных списаниях и сторно**:
+  * В `apps/api/src/routes/inventory/writeOffModules/writeOffFefoExecution.ts`: перед выполнением цикла списания партий внедрена детерминированная сортировка позиций по `itemId` (`const sortedItems = [...items].sort((a, b) => (a.itemId || a.inventoryItemId || a.id || a.name || '').localeCompare(b.itemId || b.inventoryItemId || b.id || b.name || ''));`). Это исключает взаимные блокировки при параллельных `SELECT ... FOR UPDATE`.
+  * В `apps/api/src/routes/inventory/storno/stornoOperationHandlers.ts`: внедрена сортировка `materialsToRestore` по `itemId` перед локом `SELECT ... FOR UPDATE` и восстановлением партий.
+* **ДЕФЕКТ №2: Транзакционность и изоляция каталога номенклатуры и технологических карт**:
+  * В `apps/api/src/routes/inventory/itemCatalog/itemCatalogMutations.ts`: мутации `handleUpdateInventoryItem`, `handlePatchInventoryItem`, `handleDeleteInventoryItem` обернуты в атомарные транзакции `await db.transaction(async (tx) => ...)`, блокирующие запись через `tx.select()...for("update")` и исключающие гонки данных (race conditions) при одновременном списании и модификации.
+  * В `apps/api/src/routes/inventory/procedureRuleRoutes.ts`: создание и обновление технологических правил списания (BOM) обернуты в единый атомарный блок `await db.transaction(async (tx) => ...)`.
+* **ДЕФЕКТ №3: Канонический копеечный расчет и ликвидация кустарных округлений (Мандат 8bm)**:
+  * В `apps/api/src/routes/inventory/supplierInvoices/invoiceDraftAndItems.ts` и `invoiceStatusAndApproval.ts`: кустарные вычисления `Math.round(rub * 100)` и `Number((kop / 100).toFixed(2))` заменены на канонические функции из `@dental/shared` (`rublesToKopecks`, `kopecksToRubles`).
+* **ДЕФЕКТ №4: Ликвидация blind cast `any` в патче номенклатуры (Мандат 8be)**:
+  * В `apps/api/src/routes/inventory/itemCatalog/itemCatalogMutations.ts`: `const patchData: Record<string, any>` заменено на строгий интерфейс Drizzle `const patchData: Partial<typeof inventoryItems.$inferInsert>`.
+* **Машинные гейты**:
+  * Юнит-тест `apps/api/src/tests/routes/inventoryIntegrityAndDeadlockDefense.test.ts`: 3 из 3 тестов — 100% PASS (Exit Code 0).
+  * `npm run check:encoding`: 0 ошибок (19 980 файлов проверено).
+  * Проверка TypeScript в затронутых модулях инвентаря: 0 ошибок компилятора.
+
+---
+
+## 🏥 17. Red Team Fixer Surgeon: Канонический SSOT техкарт процедур (BOM), ликвидация float-арифметики и снос симуляторов физического мира (Мандаты 8bd, 8e, 8n, 8v, 8bm, 8bj, 8bf)
+
+* **ДЕФЕКТ №1: Устранение троевластия техкарт (BOM) в пользу канонического SSOT**:
+  * Каноническим SSOT техкарт процедур в PostgreSQL 18 утверждены таблицы `procedure_tech_cards` и `procedure_tech_card_items`.
+  * В `apps/api/src/services/treatmentConsumables/applyProcedureConsumablesDeduction.ts` логика переведена на первоочередной опрос `procedure_tech_cards`.
+  * В `apps/api/src/services/inventory/fefoModules/procedureBomResolver.ts` внедрен прямой поиск по `procedure_tech_cards` и `procedure_tech_card_items` с fallback на эталонный справочник 804н.
+* **ДЕФЕКТ №2: Полная изоляция multi-tenant RLS через `withTenantCtx`**:
+  * В `applyProcedureConsumablesDeduction.ts` и `visitWriteOffHandlers.ts`: устранены все утечки сырых запросов через глобальный `db` снаружи контекста тенанта. Все проверки идемпотентности, выборки техкарт, блокировки `FOR UPDATE` и списания выполняются строго внутри `withTenantCtx(organizationId, async (tx) => ...)`.
+* **ДЕФЕКТ №3: Физический снос (`git rm`) мертвых симуляторов физического мира**:
+  * Удален `quickCarpuleDisposal.ts` (поштучный симулятор актов списания карпул снаружи RLS).
+  * Удален `procedureBomDbResolver.ts` (дублирующий модуль резолвера).
+  * Удалены `kraftDiaryLink.ts` и `kraftPackageProtocolLink.ts` (засорение SOAP 043/у номерами крафт-пакетов; инструменты стерильны по умолчанию).
+  * В `apps/api/src/routes/inventory/consumables/visitWriteOffHandlers.ts` удален мертвый эндпоинт `POST /:organizationId/deduct/tooth-treatment`.
+  * В `apps/api/src/services/inventory/materialDeduction.ts` удален `recordSanpinWasteIfApplicable` (генерация 150г отходов класса Б регуляркой по слову «вата/марля»).
+* **ДЕФЕКТ №4: Ликвидация float-арифметики и кустарного деления на 100**:
+  * В `quickWriteoffPresets.ts`: устранены дробные рубли `"12.5"`, `"3.5"`.
+  * В `statutoryBomResolver.ts` и `procedureBomDefaultFallback.ts`: кустарные вычисления `(kopecks / 100).toFixed(2)` заменены на канонический `kopecksToRubles` из `@dental/shared`.
+  * В `bomDeductionCalculator.ts`: ручной расчет форматирования заменен на `formatKopecksToRub`.
+* **Машинные гейты**:
+  * 47 из 47 тестов склада и стерилизации (100% PASS): `sanpinAutoInventory.test.ts`, `sanpinInventoryAutopilot.test.ts`, `carpuleQueue.test.ts`, `warehouseSoftOverdraftAndTechCardInquisitor.test.ts`, `inventoryAutoDeduct.test.ts`, `materialDeductionDeadlockFree.test.ts`.
+  * `packages/shared` typecheck: 0 ошибок (Exit Code 0).
+  * `apps/api` typecheck: 0 ошибок в складских и BOM модулях.
+  * `npm run check:encoding`: 0 ошибок (19 996 файлов).
+
+
+
 
 
 
