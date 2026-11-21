@@ -22,6 +22,7 @@
  */
 
 import { z } from "zod";
+import { kopecksToNumericString } from "../money.js";
 
 // ─── 1. Relationship Kinds & Inverse Mapping ──────────────────────────────────
 
@@ -412,7 +413,7 @@ export function validateFamilyWalletSpend(params: {
 		return {
 			isAuthorized: false,
 			remainingBalanceKopecks: currentBalanceKopecks,
-			failureReason: `Превышен индивидуальный лимит списания с семейного кошелька (лимит: ${(spendLimitKop / 100).toFixed(2)} ₽, требуется: ${(requiredAmountKopecks / 100).toFixed(2)} ₽)`,
+			failureReason: `Превышен индивидуальный лимит списания с семейного кошелька (лимит: ${kopecksToNumericString(spendLimitKop)} ₽, требуется: ${kopecksToNumericString(requiredAmountKopecks)} ₽)`,
 		};
 	}
 
@@ -446,4 +447,34 @@ export function validateFamilyWalletSpend(params: {
 		isAuthorized: true,
 		remainingBalanceKopecks: currentBalanceKopecks - requiredAmountKopecks,
 	};
+}
+
+/**
+ * Справочник соответствия видов родственных связей кодам ФНС РФ
+ * (Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@, КНД 1151156).
+ *
+ * 1 — налогоплательщик лично
+ * 2 — супруг (супруга)
+ * 3 — родитель (отец / мать)
+ * 4 — ребенок (в т.ч. усыновленный) / подопечный
+ * 5 — иной подопечный
+ */
+export const RELATIONSHIP_TO_FNS_TAX_CODE_MAP: Record<
+	PatientRelationshipKind,
+	"1" | "2" | "3" | "4" | "5"
+> = {
+	spouse: "2",
+	parent: "3",
+	child: "4",
+	ward: "4",
+	guardian: "4",
+	trustee: "4",
+	sibling: "1",
+	other: "1",
+};
+
+export function mapRelationshipKindToFnsTaxCode(
+	kind: PatientRelationshipKind,
+): "1" | "2" | "3" | "4" | "5" {
+	return RELATIONSHIP_TO_FNS_TAX_CODE_MAP[kind] ?? "1";
 }

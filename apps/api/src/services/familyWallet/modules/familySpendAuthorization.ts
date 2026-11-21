@@ -118,14 +118,17 @@ export async function verifyFamilySpendAuthorization(params: {
 		);
 	}
 
-	// Защита от BOLA/IDOR [LOY-05]: Списание со счета другого лица (patientId !== walletOwnerId)
-	// требует подтверждения полномочий в patient_relationships (canSpendFamilyWallet === true или isLegalRepresentative === true).
-	if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
-		throw new FamilyWalletError(
-			"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
-			403,
-			"UNAUTHORIZED_FAMILY_SPEND",
-		);
+	// Защита от BOLA/IDOR [LOY-05]: Члены подтвержденной семейной группы авторизованы по умолчанию (Мандат 8n).
+	// Если пациент НЕ является прямым членом семьи, списание со счета другого лица требует явного
+	// подтверждения полномочий в patient_relationships (canSpendFamilyWallet === true или isLegalRepresentative === true).
+	if (!isDirectFamilyMember) {
+		if (!rel || (rel.canSpendFamilyWallet !== true && rel.isLegalRepresentative !== true)) {
+			throw new FamilyWalletError(
+				"Пациент не имеет полномочий на списание средств с семейного кошелька (canSpendFamilyWallet = false)",
+				403,
+				"UNAUTHORIZED_FAMILY_SPEND",
+			);
+		}
 	}
 
 	// 2. Check individual spend limit if configured on the relationship (Mandates 8ap, 8bm)

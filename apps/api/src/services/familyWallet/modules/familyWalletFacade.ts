@@ -108,6 +108,8 @@ export class FamilyWalletService {
 				clientMutationId: params.clientMutationId.trim(),
 				invoiceId: params.documentId,
 				visitId: params.visitId,
+				taxCategory: params.taxCategory,
+				taxDeductionCode: params.taxCategory,
 				note: params.notes?.trim() || "Оплата стоматологических услуг с семейного счета",
 			},
 			params.clientMutationId.trim(),

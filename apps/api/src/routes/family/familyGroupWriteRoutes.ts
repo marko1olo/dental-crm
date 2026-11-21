@@ -1,5 +1,5 @@
 import { kopecksToNumericString, parseKopecks } from "@dental/shared";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
@@ -103,6 +103,22 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 			if (head.familyGroupId) return reply.code(409).send({ error: "PatientAlreadyInFamily", message: "Пациент уже в другой семье" });
 		}
 
+		if (Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
+			const memberIds = Array.from(new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)));
+			if (memberIds.length > 0) {
+				const orgMembers = await db
+					.select({ id: patients.id })
+					.from(patients)
+					.where(and(inArray(patients.id, memberIds), eq(patients.organizationId, organizationId)));
+				if (orgMembers.length !== memberIds.length) {
+					return reply.code(400).send({
+						error: "InvalidMemberPatientId",
+						message: "Один или несколько пациентов не найдены в клинике (IDOR защита)",
+					});
+				}
+			}
+		}
+
 		const family = await db.transaction(async (tx) => {
 			const [created] = await tx.insert(familyGroups).values({
 				organizationId, name: data.name, headPatientId: data.headPatientId || null, balance: kopecksToNumericString(0),
@@ -149,6 +165,22 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 			if (!head) return reply.code(403).send({ error: "Forbidden", message: "Пациент не найден в клинике" });
 			if (head.familyGroupId && head.familyGroupId !== id) {
 				return reply.code(409).send({ error: "PatientAlreadyInFamily", message: "Пациент уже в другой семье" });
+			}
+		}
+
+		if (Array.isArray(data.memberPatientIds) && data.memberPatientIds.length > 0) {
+			const memberIds = Array.from(new Set(data.memberPatientIds.filter((m): m is string => Boolean(m) && m !== data.headPatientId)));
+			if (memberIds.length > 0) {
+				const orgMembers = await db
+					.select({ id: patients.id })
+					.from(patients)
+					.where(and(inArray(patients.id, memberIds), eq(patients.organizationId, organizationId)));
+				if (orgMembers.length !== memberIds.length) {
+					return reply.code(400).send({
+						error: "InvalidMemberPatientId",
+						message: "Один или несколько пациентов не найдены в клинике (IDOR защита)",
+					});
+				}
 			}
 		}
 
@@ -249,6 +281,32 @@ export function registerFamilyGroupWriteRoutes(app: FastifyInstance) {
 
 			await tx.update(patients).set({ familyGroupId: null, updatedAt: new Date() })
 				.where(and(eq(patients.id, patientId), eq(patients.organizationId, organizationId)));
+
+			const headId = family.headPatientId || family.primaryPatientId;
+			if (headId) {
+				await tx
+					.update(patientRelationships)
+					.set({
+						canSpendFamilyWallet: false,
+						isPrimaryPayer: false,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(patientRelationships.organizationId, organizationId),
+							or(
+								and(
+									eq(patientRelationships.patientId, headId),
+									eq(patientRelationships.relatedPatientId, patientId),
+								),
+								and(
+									eq(patientRelationships.patientId, patientId),
+									eq(patientRelationships.relatedPatientId, headId),
+								),
+							),
+						),
+					);
+			}
 
 			const isHead = family.headPatientId === patientId || family.primaryPatientId === patientId;
 			if (isHead) {

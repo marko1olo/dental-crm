@@ -57,7 +57,7 @@ export interface FamilyDebitParams {
 	readonly clientMutationId: string;
 	readonly documentId?: string | undefined;
 	readonly visitId?: string | undefined;
-	readonly taxCategory?: "1" | "2" | undefined; // 1 = Standard, 2 = Expensive
+	readonly taxCategory?: "1" | "2" | "01" | "02" | undefined; // 1/01 = Standard, 2/02 = Expensive
 	readonly notes?: string | undefined;
 	readonly payerPatientId?: string | undefined; // Head of family authorizing spend
 }

@@ -1,7 +1,7 @@
 import { kopecksToNumericString, kopecksToRub, parseKopecks } from "@dental/shared";
 import { Decimal } from "decimal.js";
 import { and, eq } from "drizzle-orm";
-import { db } from "../../../db/client.js";
+import { withTenantCtx } from "../../../db/rls.js";
 import { cashBoxes, cashOperations, familyGroups, payments } from "../../../db/schema.js";
 import { wsBroker } from "../../websocketBroker.js";
 import { FamilyWalletError, type FamilyRefundParams, type FamilyRefundResult } from "../familyWalletTypes.js";
@@ -21,7 +21,7 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 	const refundKopecks = parseKopecks(amountRub);
 	if (refundKopecks <= 0) throw new FamilyWalletError("Сумма возврата должна быть больше 0 ₽", 400, "INVALID_AMOUNT");
 
-	return await db.transaction(async (tx) => {
+	return await withTenantCtx(organizationId, async (tx) => {
 		const [family] = await tx.select().from(familyGroups).where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId))).limit(1).for("update");
 		if (!family) throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
 

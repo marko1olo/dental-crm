@@ -10,9 +10,11 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	advanceDepositTaggings,
 	cashBoxes,
 	cashBoxShifts,
 	cashOperations,
+	familyGroups,
 	fiscalReceiptQueue,
 	patientInvoices,
 	payments,
@@ -28,7 +30,7 @@ import { cashRefundBodySchema } from "./cashboxSchemas.js";
 export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise<void> {
 	/**
 	 * 1. POST /api/cash/refund & POST /api/cashbox/refund
-	 * Возврат денежных средств из кассы клиники (54-ФЗ возврат прихода / выдача наличных).
+	 * Возврат денежных средств из кассы клиники (54-ФЗ возврат прихода / выдача наличных / возврат на депозит).
 	 */
 	const handleCashRefund = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -50,163 +52,80 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 
 		const { cashBoxId, amountRub, reasonText, operatorId, invoiceId, paymentId, patientId } = parsed.data;
 
+		// [SEV-2.2] Обязательный заголовок Idempotency-Key для защиты от гонок и повторных возвратов
 		const rawIdempHeader =
 			request.headers["idempotency-key"] ??
 			request.headers["x-idempotency-key"];
 		const effectiveMutationId =
 			typeof rawIdempHeader === "string" && rawIdempHeader.trim()
 				? rawIdempHeader.trim()
-				: undefined;
+				: typeof parsed.data.clientMutationId === "string" && parsed.data.clientMutationId.trim()
+					? parsed.data.clientMutationId.trim()
+					: typeof parsed.data.idempotencyKey === "string" && parsed.data.idempotencyKey.trim()
+						? parsed.data.idempotencyKey.trim()
+						: undefined;
+
+		if (!effectiveMutationId) {
+			return reply.code(400).send({
+				error: "IdempotencyKeyRequired",
+				message:
+					"Для проведения возврата обязателен заголовок Idempotency-Key или поле clientMutationId.",
+			});
+		}
 
 		const result = await withTenantCtx(orgId, async (tx) => {
-			if (effectiveMutationId) {
-				await tx.execute(
-					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cashbox_refund:' || ${effectiveMutationId}))`,
-				);
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':cashbox_refund:' || ${effectiveMutationId}))`,
+			);
 
-				// [DEF-REFUND-01] Идемпотентность: защита от повторного списания при ретраях
-				const [existingRefund] = await tx
+			// [DEF-REFUND-01] Идемпотентность: защита от повторного списания при ретраях
+			const [existingRefund] = await tx
+				.select()
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.clientMutationId, effectiveMutationId),
+					),
+				)
+				.limit(1);
+
+			if (existingRefund) {
+				const [existingOp] = await tx
 					.select()
-					.from(payments)
+					.from(cashOperations)
 					.where(
 						and(
-							eq(payments.organizationId, orgId),
-							eq(payments.clientMutationId, effectiveMutationId),
+							eq(cashOperations.organizationId, orgId),
+							eq(cashOperations.reasonText, existingRefund.note || ""),
 						),
 					)
 					.limit(1);
 
-				if (existingRefund) {
-					const [existingOp] = await tx
-						.select()
-						.from(cashOperations)
-						.where(
-							and(
-								eq(cashOperations.organizationId, orgId),
-								eq(cashOperations.reasonText, existingRefund.note || ""),
-							),
-						)
-						.limit(1);
-
-					const [currentBox] = await tx
-						.select()
-						.from(cashBoxes)
-						.where(
-							and(
-								eq(cashBoxes.organizationId, orgId),
-								eq(cashBoxes.id, existingOp?.cashBoxId || cashBoxId || ""),
-							),
-						)
-						.limit(1);
-
-					return {
-						kind: "replay" as const,
-						operation: existingOp,
-						cashBox: currentBox,
-						refundPaymentId: existingRefund.id,
-						fiscalReceiptNumber: existingRefund.fiscalReceiptNumber,
-					};
-				}
-			}
-
-			await ensureOrganizationCashBoxes(tx, orgId);
-
-			let targetBox: typeof cashBoxes.$inferSelect | undefined;
-			if (cashBoxId) {
-				const [box] = await tx
+				const [currentBox] = await tx
 					.select()
 					.from(cashBoxes)
-					.where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, orgId)))
-					.for("update")
+					.where(
+						and(
+							eq(cashBoxes.organizationId, orgId),
+							eq(cashBoxes.id, existingOp?.cashBoxId || cashBoxId || ""),
+						),
+					)
 					.limit(1);
-				targetBox = box;
-			} else {
-				const [box] = await tx
-					.select()
-					.from(cashBoxes)
-					.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.type, "main")))
-					.for("update")
-					.limit(1);
-				targetBox = box;
-			}
 
-			if (!targetBox) {
-				return { kind: "box_not_found" as const };
-			}
-
-			const balanceBeforeKop =
-				targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
-					? Number(targetBox.balanceKopecks)
-					: rublesToKopecks(Number(targetBox.balanceRub || 0));
-			const refundKop = rublesToKopecks(amountRub);
-
-			if (balanceBeforeKop < refundKop) {
 				return {
-					kind: "insufficient_funds" as const,
-					balanceBefore: targetBox.balanceRub,
-					requestedAmount: amountRub,
+					kind: "replay" as const,
+					operation: existingOp,
+					cashBox: currentBox,
+					refundPaymentId: existingRefund.id,
+					fiscalReceiptNumber: existingRefund.fiscalReceiptNumber,
 				};
 			}
 
-			const balanceAfterKop = balanceBeforeKop - refundKop;
-			const balanceBefore = Number(targetBox.balanceRub);
-			const balanceAfter = calculateBalanceSubtract(balanceBefore, amountRub);
-
-			// Находим активную кассовую смену
-			const [activeShift] = await tx
-				.select()
-				.from(cashBoxShifts)
-				.where(
-					and(
-						eq(cashBoxShifts.organizationId, orgId),
-						eq(cashBoxShifts.cashBoxId, targetBox.id),
-						eq(cashBoxShifts.status, "open"),
-					),
-				)
-				.for("update")
-				.limit(1);
-
-			// Обновляем баланс кассы (рубли и точные копейки)
-			const [updatedBox] = await tx
-				.update(cashBoxes)
-				.set({
-					balanceRub: balanceAfter,
-					balanceKopecks: balanceAfterKop,
-					updatedAt: new Date(),
-				})
-				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)))
-				.returning();
-
-			// Обновляем расход активной смены
-			if (activeShift) {
-				const updatedExpense = calculateBalanceAdd(activeShift.expenseTotalRub, amountRub);
-				await tx
-					.update(cashBoxShifts)
-					.set({
-						expenseTotalRub: updatedExpense,
-						updatedAt: new Date(),
-					})
-					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
-			}
-
-			// Регистрируем кассовую проводку возврата
-			const [operation] = await tx
-				.insert(cashOperations)
-				.values({
-					organizationId: orgId,
-					cashBoxId: targetBox.id,
-					shiftId: activeShift?.id ?? null,
-					operationType: "withdrawal",
-					amountRub,
-					balanceBeforeRub: balanceBefore,
-					balanceAfterRub: balanceAfter,
-					reasonText: reasonText || "Возврат денежных средств покупателю",
-					operatorId: operatorId ?? null,
-				})
-				.returning();
-
 			// Поиск связанного платежа или счёта для фискального возврата (54-ФЗ Возврат прихода / Tag 1054 = 2)
 			let linkedPayment: typeof payments.$inferSelect | undefined;
+			const refundKop = rublesToKopecks(amountRub);
+
 			if (paymentId) {
 				const [p] = await tx
 					.select()
@@ -289,18 +208,187 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 				}
 			}
 
-			// Определяем пациента для проводки в payments
+			await ensureOrganizationCashBoxes(tx, orgId);
+
+			let targetBox: typeof cashBoxes.$inferSelect | undefined;
+			if (cashBoxId) {
+				const [box] = await tx
+					.select()
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.id, cashBoxId), eq(cashBoxes.organizationId, orgId)))
+					.for("update")
+					.limit(1);
+				targetBox = box;
+			} else {
+				const [box] = await tx
+					.select()
+					.from(cashBoxes)
+					.where(and(eq(cashBoxes.organizationId, orgId), eq(cashBoxes.type, "main")))
+					.for("update")
+					.limit(1);
+				targetBox = box;
+			}
+
+			if (!targetBox) {
+				return { kind: "box_not_found" as const };
+			}
+
+			// [SEV-2.3] Защита кассы от утечки наличных при возврате с депозита/аванса
+			const isDepositRefund =
+				linkedPayment?.method === "family_wallet" ||
+				(linkedPayment?.method as string) === "deposit" ||
+				(typeof linkedPayment?.note === "string" &&
+					linkedPayment.note.toLowerCase().includes("депозит"));
+
+			const balanceBeforeKop =
+				targetBox.balanceKopecks !== undefined && targetBox.balanceKopecks !== null
+					? Number(targetBox.balanceKopecks)
+					: rublesToKopecks(Number(targetBox.balanceRub || 0));
+			const balanceBefore = Number(targetBox.balanceRub || 0);
+
+			if (!isDepositRefund && !targetBox.isCashless && balanceBeforeKop < refundKop) {
+				return {
+					kind: "insufficient_funds" as const,
+					balanceBefore: targetBox.balanceRub,
+					requestedAmount: amountRub,
+				};
+			}
+
+			// Находим активную кассовую смену
+			const [activeShift] = await tx
+				.select()
+				.from(cashBoxShifts)
+				.where(
+					and(
+						eq(cashBoxShifts.organizationId, orgId),
+						eq(cashBoxShifts.cashBoxId, targetBox.id),
+						eq(cashBoxShifts.status, "open"),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			let updatedBox = targetBox;
+			let balanceAfter = balanceBefore;
+			let balanceAfterKop = balanceBeforeKop;
+
+			if (!isDepositRefund) {
+				balanceAfterKop = balanceBeforeKop - refundKop;
+				balanceAfter = calculateBalanceSubtract(balanceBefore, amountRub);
+
+				// Обновляем баланс кассы (рубли и точные копейки)
+				const [savedBox] = await tx
+					.update(cashBoxes)
+					.set({
+						balanceRub: balanceAfter,
+						balanceKopecks: balanceAfterKop,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)))
+					.returning();
+				if (savedBox) updatedBox = savedBox;
+
+				// Обновляем расход активной смены
+				if (activeShift) {
+					const updatedExpense = calculateBalanceAdd(activeShift.expenseTotalRub, amountRub);
+					await tx
+						.update(cashBoxShifts)
+						.set({
+							expenseTotalRub: updatedExpense,
+							updatedAt: new Date(),
+						})
+						.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
+				}
+			}
+
+			// Регистрируем кассовую проводку возврата
+			const [operation] = await tx
+				.insert(cashOperations)
+				.values({
+					organizationId: orgId,
+					cashBoxId: targetBox.id,
+					shiftId: activeShift?.id ?? null,
+					operationType: isDepositRefund ? "expense" : "withdrawal",
+					amountRub,
+					balanceBeforeRub: balanceBefore,
+					balanceAfterRub: balanceAfter,
+					reasonText:
+						reasonText ||
+						(isDepositRefund
+							? "Возврат средств на депозит пациента (без выдачи наличных)"
+							: "Возврат денежных средств покупателю"),
+					operatorId: operatorId ?? null,
+				})
+				.returning();
+
+			// Определяем пациента для проводки в payments и пополнения депозита
 			let effectivePatientId = patientId || linkedPayment?.patientId || linkedInvoice?.patientId || null;
 			let patientName = "Розничный покупатель";
 
 			if (effectivePatientId) {
 				const [pat] = await tx
-					.select({ id: patients.id, fullName: patients.fullName })
+					.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
 					.from(patients)
 					.where(and(eq(patients.id, effectivePatientId), eq(patients.organizationId, orgId)))
 					.limit(1);
 				if (pat?.fullName) {
 					patientName = pat.fullName;
+				}
+
+				// [SEV-2.3] Восстановление виртуального баланса при возврате депозита/семейного кошелька
+				if (isDepositRefund) {
+					if (linkedPayment?.method === "family_wallet") {
+						let targetFamilyGroupId = pat?.familyGroupId || null;
+						if (!targetFamilyGroupId) {
+							const [headFg] = await tx
+								.select({ id: familyGroups.id })
+								.from(familyGroups)
+								.where(
+									and(
+										eq(familyGroups.headPatientId, effectivePatientId),
+										eq(familyGroups.organizationId, orgId),
+									),
+								)
+								.limit(1);
+							if (headFg) targetFamilyGroupId = headFg.id;
+						}
+
+						if (targetFamilyGroupId) {
+							await tx
+								.update(familyGroups)
+								.set({
+									balance: sql`(${familyGroups.balance}::numeric + ${amountRub})::numeric(12,2)`,
+									updatedAt: new Date(),
+								})
+								.where(
+									and(
+										eq(familyGroups.id, targetFamilyGroupId),
+										eq(familyGroups.organizationId, orgId),
+									),
+								);
+						} else {
+							await tx.insert(advanceDepositTaggings).values({
+								organizationId: orgId,
+								patientId: effectivePatientId,
+								patientName,
+								depositAmountRub: amountRub.toFixed(2),
+								taggedTargetType: "family_wallet_refund",
+								taggedTargetName: `Возврат средств на семейный кошелек (${linkedInvoice?.id || linkedPayment?.id || "б/н"})`,
+								allocationStatus: "unallocated",
+							});
+						}
+					} else {
+						// Обычный авансовый депозит
+						await tx.insert(advanceDepositTaggings).values({
+							organizationId: orgId,
+							patientId: effectivePatientId,
+							patientName,
+							depositAmountRub: amountRub.toFixed(2),
+							taggedTargetType: "deposit_refund",
+							taggedTargetName: `Возврат средств на авансовый депозит (${linkedInvoice?.id || linkedPayment?.id || "б/н"})`,
+							allocationStatus: "unallocated",
+						});
+					}
 				}
 			} else {
 				const [existingRetail] = await tx
@@ -325,7 +413,11 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 
 			// [DEF-FIN-13] До подтверждения от ККТ номер ФД строго null
 			const refundReceiptNumber = null;
-			const refundMethod = targetBox.isCashless ? "card" : (linkedPayment?.method || "cash");
+			const refundMethod = isDepositRefund
+				? "family_wallet"
+				: targetBox.isCashless
+					? "card"
+					: (linkedPayment?.method || "cash");
 
 			let refundPaymentId: string | undefined;
 			let queuedReceiptId: string | undefined;
@@ -346,7 +438,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 						fiscalReceiptNumber: refundReceiptNumber,
 						fiscalReceiptIssuedAt: null,
 						payerFullName: operatorId ? "Кассир" : (linkedPayment?.payerFullName || "Кассир"),
-						note: reasonText || `Возврат денежных средств (54-ФЗ возврат прихода) на сумму -${amountRub} ₽`,
+						note: reasonText || (isDepositRefund ? `Возврат на депозит на сумму -${amountRub} ₽` : `Возврат денежных средств (54-ФЗ возврат прихода) на сумму -${amountRub} ₽`),
 					})
 					.returning({ id: payments.id });
 
@@ -368,8 +460,9 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 								amountRub,
 								amountKopecks: rublesToKopecks(amountRub),
 								method: refundMethod,
-								cashRub: targetBox.isCashless ? 0 : amountRub,
-								electronicRub: targetBox.isCashless ? amountRub : 0,
+								cashRub: isDepositRefund || targetBox.isCashless ? 0 : amountRub,
+								electronicRub: !isDepositRefund && targetBox.isCashless ? amountRub : 0,
+								advanceOffsetRub: isDepositRefund ? amountRub : 0,
 								fiscalReceiptNumber: null,
 								originalFiscalReceiptNumber: linkedPayment?.fiscalReceiptNumber || null,
 								originalPaymentId: linkedPayment?.id || null,
@@ -377,7 +470,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 								patientName,
 								cashierFullName: "Кассир",
 								invoiceId: linkedInvoice?.id || null,
-								reasonText: reasonText || "Возврат денежных средств покупателю",
+								reasonText: reasonText || (isDepositRefund ? "Возврат на депозит покупателя" : "Возврат денежных средств покупателю"),
 							},
 							retryCount: 0,
 						})

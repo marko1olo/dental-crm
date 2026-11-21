@@ -1149,6 +1149,11 @@ export async function processCashboxPayment(
 			(requiredCertificateKopecks > 0n ? 1 : 0) +
 			(requiredDmsKopecks > 0n ? 1 : 0);
 
+		const rawTaxCode = body.taxDeductionCode || body.taxCategory;
+		const effectiveTaxCode = rawTaxCode
+			? (rawTaxCode === "2" || rawTaxCode === "02" ? "2" : "1")
+			: null;
+
 		if (splitTenderCount > 1 && !isWarrantyPayment) {
 			let elecPayment: typeof payments.$inferSelect | undefined;
 			let cashPayment: typeof payments.$inferSelect | undefined;
@@ -1177,7 +1182,7 @@ export async function processCashboxPayment(
 						payerBirthDate: body.payerBirthDate || null,
 						payerIdentityDocument: body.payerIdentityDocument || null,
 						payerRelationship: body.payerRelationship || null,
-						taxDeductionCode: body.taxDeductionCode || null,
+						taxDeductionCode: effectiveTaxCode,
 						note: body.note ? `${body.note} (безналичные)` : "Сплит-оплата (безналичные)",
 					})
 					.returning();
@@ -1204,7 +1209,7 @@ export async function processCashboxPayment(
 						payerBirthDate: body.payerBirthDate || null,
 						payerIdentityDocument: body.payerIdentityDocument || null,
 						payerRelationship: body.payerRelationship || null,
-						taxDeductionCode: body.taxDeductionCode || null,
+						taxDeductionCode: effectiveTaxCode,
 						note: body.note ? `${body.note} (наличные)` : "Сплит-оплата (наличные)",
 					})
 					.returning();
@@ -1231,7 +1236,7 @@ export async function processCashboxPayment(
 						payerBirthDate: body.payerBirthDate || null,
 						payerIdentityDocument: body.payerIdentityDocument || null,
 						payerRelationship: body.payerRelationship || null,
-						taxDeductionCode: body.taxDeductionCode || null,
+						taxDeductionCode: effectiveTaxCode,
 						note: body.note ? `${body.note} (депозит)` : "Сплит-оплата (депозит)",
 					})
 					.returning();
@@ -1312,7 +1317,7 @@ export async function processCashboxPayment(
 						payerBirthDate: body.payerBirthDate || null,
 						payerIdentityDocument: body.payerIdentityDocument || null,
 						payerRelationship: body.payerRelationship || null,
-						taxDeductionCode: body.taxDeductionCode || null,
+						taxDeductionCode: effectiveTaxCode,
 						note: body.note ? `${body.note} (ДМС)` : "Сплит-оплата (ДМС)",
 					})
 					.returning();
@@ -1344,7 +1349,7 @@ export async function processCashboxPayment(
 					payerBirthDate: body.payerBirthDate || null,
 					payerIdentityDocument: body.payerIdentityDocument || null,
 					payerRelationship: body.payerRelationship || null,
-					taxDeductionCode: body.taxDeductionCode || null,
+					taxDeductionCode: effectiveTaxCode,
 					note:
 						body.note ||
 						(isWarrantyPayment

@@ -115,6 +115,9 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 	const familyPayments = allPayments.filter((p) => {
 		if (!memberIds.includes(p.patientId)) return false;
 		if (p.status !== "paid" && p.status !== "refunded") return false;
+		// Исключаем транзакции пополнения/возврата авансового баланса семейного счета,
+		// чтобы исключить двойной учет (ст. 219 НК РФ: вычет строго за фактически оказанные медуслуги)
+		if (p.documentId === familyGroupId && p.method !== "family_wallet") return false;
 		const dateStr = p.paidAt ? p.paidAt.toISOString() : p.createdAt ? p.createdAt.toISOString() : "";
 		return extractTaxYearFromDate(dateStr) === targetYear;
 	});
@@ -334,8 +337,11 @@ export async function generateFnsTaxCertificatesForFamilyLogic(params: {
 		// Статутный расчет вычета по ст. 219 НК РФ:
 		// 150 000 ₽ с 2024 года, 120 000 ₽ до 2024 года. Код 02 без ограничений!
 		const statutoryLimitRub = targetYear >= 2024 ? ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024 : ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024;
-		const code01EligibleRub = Math.min(code01AmountRub, statutoryLimitRub);
-		const estimated13PercentRefundRub = Math.round((code01EligibleRub + code02AmountRub) * 0.13);
+		const statutoryLimitKopecks = rublesToKopecks(statutoryLimitRub);
+		const code01EligibleKopecks = Math.min(code1Kopecks, statutoryLimitKopecks);
+		const totalEligibleKopecks = code01EligibleKopecks + code2Kopecks;
+		const estimatedRefundKopecks = Math.round((totalEligibleKopecks * 13) / 100);
+		const estimated13PercentRefundRub = kopecksToRubles(estimatedRefundKopecks);
 
 		const signatoryFullName = signatory?.fullName
 			? [signatory.fullName.family, signatory.fullName.given, signatory.fullName.patronymic].filter(Boolean).join(" ")
