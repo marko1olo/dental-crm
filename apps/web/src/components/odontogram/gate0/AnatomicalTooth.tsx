@@ -97,8 +97,9 @@ export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props
 	if (!Component) return null;
 
 	const isFlipped = isFlippedProp ?? ((toothNumber >= 21 && toothNumber <= 38) || (toothNumber >= 61 && toothNumber <= 75));
+	const isUpper = toothNumber < 30 || (toothNumber >= 50 && toothNumber < 70);
 	const effectiveBadgeRadius = badgeRadius ?? 14;
-	const effectiveBadgeCy = badgeCy ?? (effectiveBadgeRadius > 14 ? 194.5 : (effectiveBadgeRadius > 10 ? 176.0 : 160));
+	const effectiveBadgeCy = badgeCy ?? (isUpper ? (effectiveBadgeRadius > 10 ? 24.0 : 20.0) : (effectiveBadgeRadius > 14 ? 194.5 : (effectiveBadgeRadius > 10 ? 176.0 : 160.0)));
 	const handleClick = onClick ? (e: React.MouseEvent<SVGSVGElement>) => onClick(e, toothNumber) : undefined;
 	return (
 		<Component

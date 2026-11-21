@@ -42,9 +42,10 @@ export const Tooth13Container: React.FC<Tooth13ContainerProps> = ({
 	const isEndo = Boolean(a.canals || a.pulp);
 	const noCrown = Boolean(a.implant && (a.implantStage === "pure" || a.implantStage === "healing_abutment"));
 	const r = badgeRadius ?? 8.5;
-	const cy = badgeCy ?? (r > 10 ? 194.5 : 160);
-	const baseHeight = r > 10 ? 218 : 170;
-	const viewBox = r > 10 ? `0 0 100 ${baseHeight}` : TOOTH13_GEOMETRY.viewBox;
+	const isUpper = num < 30 || (num >= 50 && num < 70);
+	const cy = badgeCy ?? (isUpper ? (r > 10 ? 24.0 : 20.0) : (r > 14 ? 194.5 : (r > 10 ? 176.0 : 160.0)));
+	const baseHeight = 218;
+	const viewBox = "0 0 100 218";
 
 	return (
 		<svg

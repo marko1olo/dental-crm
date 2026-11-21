@@ -92,6 +92,8 @@ export function useOdontogramSync({
 	const [lastSavedAt, setLastSavedAt] = useState<string>(() =>
 		new Date().toLocaleTimeString("ru-RU"),
 	);
+	const soapDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const pendingSoapFindingsRef = useRef<Array<{ toothNumber: number; state: ToothState; surfaces?: string[] | undefined }>>([]);
 
 	const { lastMessage } = useWebsocket(
 		import.meta.env?.VITE_WS_URL ?? "ws://localhost:4100/api/ws/schedule",
@@ -141,23 +143,41 @@ export function useOdontogramSync({
 
 			if (typeof window !== "undefined") {
 				if (toothNumbers.length === 1 && state !== "Healthy") {
-					window.dispatchEvent(
-						new CustomEvent("dente-apply-soap-protocol", {
-							detail: {
-								finding: {
-									toothNumber: toothNumbers[0],
-									state,
-									surfaces: apiSurfaces,
-								},
-								mode: "smart_append",
-								immediate: true,
-							},
-						}),
-					);
+					pendingSoapFindingsRef.current.push({
+						toothNumber: toothNumbers[0]!,
+						state,
+						...(apiSurfaces ? { surfaces: apiSurfaces } : {}),
+					});
+					if (soapDebounceTimerRef.current) {
+						clearTimeout(soapDebounceTimerRef.current);
+					}
+					soapDebounceTimerRef.current = setTimeout(() => {
+						const batch = [...pendingSoapFindingsRef.current];
+						pendingSoapFindingsRef.current = [];
+						if (typeof window === "undefined" || batch.length === 0) return;
+						for (const finding of batch) {
+							window.dispatchEvent(
+								new CustomEvent("dente-apply-soap-protocol", {
+									detail: {
+										patientId,
+										finding,
+										mode: "smart_append",
+										immediate: true,
+									},
+								}),
+							);
+						}
+					}, 250);
 				} else if (toothNumbers.length >= 20 && state === "Healthy") {
+					if (soapDebounceTimerRef.current) {
+						clearTimeout(soapDebounceTimerRef.current);
+						soapDebounceTimerRef.current = null;
+					}
+					pendingSoapFindingsRef.current = [];
 					window.dispatchEvent(
 						new CustomEvent("dente-apply-soap-protocol", {
 							detail: {
+								patientId,
 								soap: {
 									objective:
 										"Полость рта санирована. Слизистая оболочка бледно-розовая, умеренно увлажнена. Зубные ряды интактные, прикус физиологический. Патологических изменений пародонта и твердых тканей зубов не выявлено.",
@@ -289,6 +309,10 @@ export function useOdontogramSync({
 			cancelled = true;
 			controller.abort();
 			detachListeners();
+			if (soapDebounceTimerRef.current) {
+				clearTimeout(soapDebounceTimerRef.current);
+				soapDebounceTimerRef.current = null;
+			}
 			if (typeof window !== "undefined") {
 				window.removeEventListener("online", handleOnline);
 			}

@@ -9,12 +9,13 @@ export interface LiveInvoiceFiscalBridgeProps {
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly netTotalPrice: number;
+	readonly netTotalKopecks?: bigint | number | undefined;
 	readonly onClose: () => void;
 }
 
 export const LiveInvoiceFiscalBridge: React.FC<
 	LiveInvoiceFiscalBridgeProps
-> = ({ isOpen, baseItems, patientId, patientName, netTotalPrice, onClose }) => {
+> = ({ isOpen, baseItems, patientId, patientName, netTotalPrice, netTotalKopecks, onClose }) => {
 	if (!isOpen) return null;
 
 	if (!patientId) {
@@ -27,13 +28,20 @@ export const LiveInvoiceFiscalBridge: React.FC<
 		? baseItems.map((b) => b.title).join(", ")
 		: undefined;
 
+	const effectiveKopecks =
+		netTotalKopecks !== undefined
+			? BigInt(netTotalKopecks)
+			: BigInt(Math.round(netTotalPrice * 100));
+
 	return (
 		<CashRegisterStudioModal
 			isOpen={isOpen}
 			mode="checkout"
 			initialTab="checkout"
 			totalDueRub={netTotalPrice}
+			totalDueKopecks={effectiveKopecks}
 			amountRub={netTotalPrice}
+			amountKopecks={effectiveKopecks}
 			patientId={patientId}
 			patientName={patientName || "Пациент"}
 			serviceTitle={serviceTitle}

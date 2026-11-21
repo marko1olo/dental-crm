@@ -47,6 +47,7 @@ export function mapSurfacesToCariesType(
 	if (set.has("V") || set.has("C")) {
 		if (!set.has("O") && !set.has("M") && !set.has("D")) return "class5";
 	}
+	if (set.has("L") && !set.has("M") && !set.has("D") && !set.has("O")) return "class1";
 	if (set.has("M") && set.has("D") && set.has("O")) return "class2_mod";
 	if (set.has("M") && set.has("O")) return anterior ? "class4" : "class2_mo";
 	if (set.has("D") && set.has("O")) return anterior ? "class4" : "class2_do";

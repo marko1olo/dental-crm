@@ -91,6 +91,7 @@ export const OdontogramLiveInvoice: React.FC<OdontogramLiveInvoiceProps> = ({
 				patientId={patientId}
 				patientName={patientName}
 				netTotalPrice={invoice.netTotalPrice}
+				netTotalKopecks={BigInt(Math.round(invoice.netTotalPrice * 100))}
 				onClose={() => invoice.setIsFiscalModalOpen(false)}
 			/>
 		</aside>

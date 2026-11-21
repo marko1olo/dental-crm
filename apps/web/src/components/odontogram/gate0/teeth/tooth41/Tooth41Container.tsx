@@ -15,7 +15,7 @@ import { TOOTH41_GEOMETRY } from "./tooth41Geometry";
 
 export const Tooth41Container: React.FC<Tooth46ContainerProps> = ({
 	isDark = false, zoom = 1, layers = DEFAULT_TOOTH46_LAYERS,
-	presetId, className, style, badgeRadius = 18.5, badgeCy, showBadge = true,
+	presetId, className, style, badgeRadius = 14, badgeCy, showBadge = true,
 	toothNumber, isFlipped: isFlippedProp,
 }) => {
 	const a = { ...DEFAULT_TOOTH46_LAYERS, ...layers };
@@ -29,10 +29,11 @@ export const Tooth41Container: React.FC<Tooth46ContainerProps> = ({
 	const cariesDepth = layers.cariesDepth ?? "media";
 	a.cariesType = cariesType; a.cariesDepth = cariesDepth;
 	const isDestruct = Boolean(a.caries && cariesDepth === "destructive");
-	const r = badgeRadius ?? 18.5;
-	const cy = badgeCy ?? (r > 10 ? 194.5 : 160);
-	const baseHeight = r > 10 ? 218 : 170;
-	const viewBox = `0 0 100 ${baseHeight}`;
+	const r = badgeRadius ?? 14;
+	const isUpper = num < 30 || (num >= 50 && num < 70);
+	const cy = badgeCy ?? (isUpper ? (r > 10 ? 24.0 : 20.0) : (r > 14 ? 194.5 : (r > 10 ? 176.0 : 160.0)));
+	const baseHeight = 218;
+	const viewBox = "0 0 100 218";
 
 	return (
 		<svg
