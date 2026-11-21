@@ -449,6 +449,40 @@ export async function fetchDoctorPayrollDataset(params: {
 		matCostByVisit.set(inv.visitId, (matCostByVisit.get(inv.visitId) || 0) + cKop);
 	}
 
+	// Детерминированное пропорциональное распределение затрат материалов по услугам визита
+	const matCostByTreatmentId = new Map<string, number>();
+	const treatsByVisit = new Map<string, typeof treats>();
+	for (const t of treats) {
+		if (t.visitId) {
+			const list = treatsByVisit.get(t.visitId) ?? [];
+			list.push(t);
+			treatsByVisit.set(t.visitId, list);
+		}
+	}
+
+	for (const [vId, vTreats] of treatsByVisit) {
+		const totalMatKop = matCostByVisit.get(vId) || 0;
+		const totalGrossKop = totalGrossByVisit.get(vId) || 0;
+		if (totalMatKop <= 0 || totalGrossKop <= 0) continue;
+
+		let remainingMatKop = totalMatKop;
+		for (let i = 0; i < vTreats.length; i++) {
+			const treat = vTreats[i]!;
+			const qty = Math.max(1, Number(treat.quantity || 1));
+			const gKop = rublesToKopecks(Number(treat.priceRub || 0) * qty);
+
+			let allocatedMat = 0;
+			if (i === vTreats.length - 1) {
+				allocatedMat = Math.min(gKop, remainingMatKop);
+			} else {
+				const proportional = Math.round((totalMatKop * gKop) / totalGrossKop);
+				allocatedMat = Math.min(gKop, Math.min(proportional, remainingMatKop));
+			}
+			remainingMatKop = Math.max(0, remainingMatKop - allocatedMat);
+			matCostByTreatmentId.set(treat.id, allocatedMat);
+		}
+	}
+
 	for (const t of treats) {
 		const qty = Math.max(1, Number(t.quantity || 1));
 		const grossKop = rublesToKopecks(Number(t.priceRub || 0) * qty);
@@ -508,11 +542,7 @@ export async function fetchDoctorPayrollDataset(params: {
 			}
 		}
 
-		const visitMatTotal = t.visitId ? (matCostByVisit.get(t.visitId) || 0) : 0;
-		const matKop = Math.min(visitMatTotal, grossKop);
-		if (t.visitId && matKop > 0) {
-			matCostByVisit.set(t.visitId, Math.max(0, visitMatTotal - matKop));
-		}
+		const matKop = matCostByTreatmentId.get(t.id) ?? 0;
 
 		completedServices.push({
 			id: t.id,
@@ -556,6 +586,87 @@ export async function fetchDoctorPayrollDataset(params: {
 			isPaid54Fz,
 			paidKopecks: actuallyPaidGrossKop > 0 ? actuallyPaidGrossKop : (isPaid54Fz ? grossKop : 0),
 		});
+	}
+
+	// Учет нераспределенного остатка заказов лаборатории врача за период (DEF-PAY-LAB-01)
+	let remainingUnallocatedLabKop = trackedLabOrders.reduce((sum, lo) => sum + Math.max(0, lo.remainingCostKop), 0);
+
+	if (remainingUnallocatedLabKop > 0) {
+		// 1. Приоритетно дораспределяем по ортопедическим услугам доктора за период
+		for (let i = 0; i < completedServices.length && remainingUnallocatedLabKop > 0; i++) {
+			const cs = completedServices[i]!;
+			if (cs.category === "orthopedics") {
+				const availableMargin = Math.max(0, cs.grossRevenueKop - cs.labCostKop - cs.materialCostKop);
+				const toDeduct = Math.min(availableMargin, remainingUnallocatedLabKop);
+				if (toDeduct > 0) {
+					const updatedLabKop = cs.labCostKop + toDeduct;
+					completedServices[i] = {
+						...cs,
+						labCostKop: updatedLabKop,
+					};
+					const ord = orders.find((o) => o.id === cs.id);
+					if (ord) ord.labCostKopecks = updatedLabKop;
+					remainingUnallocatedLabKop -= toDeduct;
+				}
+			}
+		}
+
+		// 2. Если остаток все еще есть — дораспределяем по остальным услугам доктора за период
+		for (let i = 0; i < completedServices.length && remainingUnallocatedLabKop > 0; i++) {
+			const cs = completedServices[i]!;
+			const availableMargin = Math.max(0, cs.grossRevenueKop - cs.labCostKop - cs.materialCostKop);
+			const toDeduct = Math.min(availableMargin, remainingUnallocatedLabKop);
+			if (toDeduct > 0) {
+				const updatedLabKop = cs.labCostKop + toDeduct;
+				completedServices[i] = {
+					...cs,
+					labCostKop: updatedLabKop,
+				};
+				const ord = orders.find((o) => o.id === cs.id);
+				if (ord) ord.labCostKopecks = updatedLabKop;
+				remainingUnallocatedLabKop -= toDeduct;
+			}
+		}
+
+		// 3. Если у доктора не было услуг или маржи не хватило — создаем балансовую запись расходов ЗТЛ периода
+		if (remainingUnallocatedLabKop > 0) {
+			const labItemDateIso = toStr.slice(0, 10);
+			const labItemId = `lab-balance-${resolvedDocId}-${labItemDateIso}`;
+			completedServices.push({
+				id: labItemId,
+				dateIso: labItemDateIso,
+				patientName: "Зуботехническая лаборатория",
+				medicalCardNumber: "ЗТЛ",
+				serviceNameRu: "Нераспределенные затраты зуботехнической лаборатории за период",
+				category: "orthopedics",
+				grossRevenueKop: 0,
+				labCostKop: remainingUnallocatedLabKop,
+				materialCostKop: 0,
+				doctorId: resolvedDocId,
+				isPaid: true,
+				isDebt: false,
+				invoiceStatus: "paid",
+				paidAmountKop: 0,
+				actuallyPaidGrossKop: 0,
+			});
+
+			orders.push({
+				id: labItemId,
+				orderNumber: "ЗТЛ-БАЛАНС",
+				dateIso: labItemDateIso,
+				patientName: "Зуботехническая лаборатория",
+				medicalCardNumber: "ЗТЛ",
+				serviceNameRu: "Нераспределенные затраты зуботехнической лаборатории за период",
+				category: "orthopedics",
+				categoryLabelRu: "Ортопедия",
+				grossKopecks: 0,
+				labCostKopecks: remainingUnallocatedLabKop,
+				materialCostKopecks: 0,
+				doctorId: resolvedDocId,
+				isPaid54Fz: true,
+				paidKopecks: 0,
+			});
+		}
 	}
 
 	return { shiftsCount, orders, completedServices };

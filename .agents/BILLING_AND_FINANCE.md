@@ -496,4 +496,42 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
    - В `referralRewardsEngine.ts` и `familyAndChurnManager.ts` ликвидированы фиктивные fallback-заглушки («Иван», «Семья Ивановых») в блоках `catch`.
    - Починены тесты `cashInstallmentsPartialPay.test.ts` и `cashboxInstallmentsAndBalanceIntegrity.test.ts` (100% PASS).
 
+---
+
+## 🦷 13. Реестр устранённых дефектов расчета зарплаты, комиссий и чистого дохода врачей (Doctor Commission & Net Revenue, DEF-PAYROLL-01...07)
+
+В рамках рейда Red Team по домену «Зарплаты врачей, сдельная оплата, комиссии и чистый доход (Net Revenue = Выручка минус Материалы BOM минус ЗТЛ)» устранены 7 дефектов:
+1. **DEF-PAYROLL-01 [SEV-1 КРИТИЧЕСКИЙ] (Specialty ID Mismatch сбрасывал специальности клиники в general_dentist — 25% вместо 30%)**:
+   - В `packages/shared/src/finance/payrollModules/doctorFilterAndResolver.ts` в `resolveDoctorPreset` внедрен словарь канонических алиасов `SPECIALTY_ALIAS_MAP`:
+     * `therapy` -> `therapist` (30%, удержание материалов BOM)
+     * `orthopedics` -> `orthopedist` (30%, удержание ЗТЛ)
+     * `surgery` -> `surgeon_implantologist` (20%)
+     * `hygiene` -> `hygienist` (30%)
+     * `pediatric` -> `pediatric_dentist` (25%)
+     * `solo-doctor` -> `general_dentist` (25%)
+     * `solo_rental` -> `solo_practitioner` (100%)
+   - Ликвидировано несправедливое занижение ставки терапевтов и ортопедов клиники.
+2. **DEF-PAYROLL-02 [SEV-1 КРИТИЧЕСКИЙ] (Утечка и «испарение» затрат ЗТЛ — Dental Lab Cost Evaporation)**:
+   - В `apps/api/src/routes/doctorPayrollDbQueries.ts` ликвидирована потеря затрат ЗТЛ: после сопоставления услуг с заказами ЗТЛ нераспределенный остаток `remainingUnallocatedLabKop` гарантированно дораспределяется по услугам ортопедии врача, затем по остальным услугам, либо формирует балансовую строку ЗТЛ периода. 100% затрат ЗТЛ вычитаются из Net Revenue, предотвращая кассовые убытки клиники.
+3. **DEF-PAYROLL-03 [SEV-2] (Списание материалов BOM искажалось порядком обхода услуг визита)**:
+   - В `apps/api/src/routes/doctorPayrollDbQueries.ts` внедрено детерминированное пропорциональное распределение затрат на материалы визита `matCostByVisit` по выручке услуг визита (по аналогии с кассовым распределением сплитов). Результат стал строго воспроизводимым и независимым от порядка обхода услуг в массиве.
+4. **DEF-PAYROLL-04 [SEV-1 КРИТИЧЕСКИЙ] (Закрытие расчетного периода markPaid: true НЕ создавало проводку в кассе)**:
+   - В `apps/api/src/routes/payrollSettlementDbQueries.ts` внутри ACID-транзакции закрытия периода при `markPaid: true` и наличии `rkoNumber`:
+     * Создается расходная операция в `cash_operations` (`operationType: 'expense'`, `reasonCode: 1` — Зарплата персонала, сумма `payoutKop`, ссылка на `statementId`, `rkoNumber`).
+     * Списывается сумма с баланса кассового ящика `cash_boxes.balance_kopecks` и `balance_rub`. Полное соблюдение 54-ФЗ и кассовой дисциплины.
+5. **DEF-PAYROLL-05 [SEV-2] (Ручные float-деления / 100 и Math.round в финансовом отчете)**:
+   - В `apps/api/src/services/reports/managerReports/financialExecutiveReports.ts` ручные деления `/ 100` и `Math.round` заменены на канонический `kopecksToRubles` из `@dental/shared/src/money.ts`.
+6. **DEF-PAYROLL-06 & 07 [SEV-2/SEV-3] (Мобильный кошелек врача игнорировал Net Revenue и синтетически угадывал часы)**:
+   - В `apps/web/src/components/finance/doctorPayoutWallet/doctorShiftsComputer.ts`:
+     * Вычисление заработка смены переведено на чистую базу Net Revenue (Выручка минус Материалы смены минус ЗТЛ смены).
+     * Устранена синтетическая эвристика `vList.length * 1.5`: длительность смены берется из фактического интервала приемов (от 4 до 12 ч.) либо клинического стандарта 6 часов (ст. 350 ТК РФ).
+7. **Тестовое покрытие и валидация**:
+   - Интеграционные тесты `apps/api/src/tests/routes/doctorPayroll.test.ts` (7/7 PASS):
+     * Проверка нормализации алиасов специальностей (DEF-PAYROLL-01).
+     * Проверка детерминированного распределения материалов визита (DEF-PAYROLL-03).
+     * Проверка сохранения 100% затрат ЗТЛ без испарения (DEF-PAYROLL-02).
+     * Проверка создания расходной операции в кассе и списания баланса кассы по РКО (DEF-PAYROLL-04).
+   - Юнит-тесты мобильного кошелька `DoctorPayoutMobileWallet.test.ts` (10/10 PASS).
+   - Санитарный храповик `npm run check:ratchet` — Exit Code 0 (0 новых `any`, 0 новых супрессий).
+
 

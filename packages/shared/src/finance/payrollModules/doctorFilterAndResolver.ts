@@ -32,19 +32,26 @@ export function filterServicesForDoctor(
 	});
 }
 
+const SPECIALTY_ALIAS_MAP: Record<string, string> = {
+	therapy: "therapist",
+	orthopedics: "orthopedist",
+	surgery: "surgeon_implantologist",
+	hygiene: "hygienist",
+	pediatric: "pediatric_dentist",
+	"solo-doctor": "general_dentist",
+	solo_rental: "solo_practitioner",
+};
+
 export function resolveDoctorPreset(specialtyId: string): DoctorSpecialtyCommissionRule {
 	const defaultPreset =
 		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "general_dentist") ??
 		DOCTOR_SPECIALTY_PAYROLL_PRESETS[0]!;
 
+	const normalizedSpecialty = SPECIALTY_ALIAS_MAP[specialtyId] ?? specialtyId;
+
 	return (
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === normalizedSpecialty) ??
 		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === specialtyId) ??
-		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find(
-			(p) =>
-				(specialtyId === "solo-doctor" && p.specialtyId === "general_dentist") ||
-				(specialtyId === "surgeon" && p.specialtyId === "surgeon_implantologist") ||
-				(specialtyId === "pediatric" && p.specialtyId === "pediatric_dentist")
-		) ??
 		defaultPreset
 	);
 }

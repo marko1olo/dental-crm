@@ -8,7 +8,7 @@ import { and, eq, gte, lte, or, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { withTenantCtx, type TenantDb } from "../db/rls.js";
-import { appointments, doctorPayrollStatements, users } from "../db/schema.js";
+import { appointments, cashBoxes, cashOperations, doctorPayrollStatements, users } from "../db/schema.js";
 
 export interface SettlementPeriodCloseParams {
 	readonly organizationId: string;
@@ -194,6 +194,9 @@ export async function closeSettlementPeriodInDb(
 				)
 				.returning();
 			statementRow = updated[0];
+			if (!statementRow) {
+				throw new Error("Не удалось обновить ведомость начисления");
+			}
 		} else {
 			const tempId = crypto.randomUUID();
 			const rkoNumber = params.rkoNumber || `РКО-${tempId.slice(0, 8).toUpperCase()}`;
@@ -241,6 +244,73 @@ export async function closeSettlementPeriodInDb(
 				throw new Error("Не удалось создать ведомость начисления");
 			}
 			statementId = statementRow.id;
+		}
+
+		// Кассовая дисциплина 54-ФЗ: при markPaid: true создаем проводку в cash_operations (DEF-PAYROLL-RKO-01)
+		const effectiveRkoNumber = statementRow.rkoNumber || params.rkoNumber || `РКО-${statementId.slice(0, 8).toUpperCase()}`;
+		if (params.markPaid && payoutKop > 0) {
+			const existingCashOp = await tx
+				.select({ id: cashOperations.id })
+				.from(cashOperations)
+				.where(
+					and(
+						eq(cashOperations.organizationId, organizationId),
+						sql`${cashOperations.metadata}->>'statementId' = ${statementId}`,
+					),
+				)
+				.limit(1);
+
+			if (existingCashOp.length === 0) {
+				const [box] = await tx
+					.select()
+					.from(cashBoxes)
+					.where(
+						and(
+							eq(cashBoxes.organizationId, organizationId),
+							eq(cashBoxes.isLocked, false),
+						),
+					)
+					.orderBy(sql`${cashBoxes.isMain} desc, ${cashBoxes.displayOrder} asc`)
+					.limit(1);
+
+				if (box) {
+					const curBalanceKop = box.balanceKopecks != null
+						? Number(box.balanceKopecks)
+						: rublesToKopecks(Number(box.balanceRub || 0));
+					const newBalanceKop = curBalanceKop - payoutKop;
+					const newBalanceRub = kopecksToRubles(newBalanceKop);
+
+					await tx
+						.update(cashBoxes)
+						.set({
+							balanceKopecks: newBalanceKop,
+							balanceRub: newBalanceRub,
+							updatedAt: now,
+						})
+						.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, organizationId)));
+
+					await tx.insert(cashOperations).values({
+						organizationId,
+						cashBoxId: box.id,
+						operationType: "expense",
+						amountRub: payoutRub,
+						amountKopecks: payoutKop,
+						balanceBeforeRub: kopecksToRubles(curBalanceKop),
+						balanceAfterRub: newBalanceRub,
+						reasonCode: 1, // Зарплата персонала
+						reasonText: `Выплата заработной платы по ведомости ${statementRow.period || periodKey} (${effectiveRkoNumber})`,
+						operatorId: null,
+						operatorName: "Система начисления заработной платы",
+						metadata: {
+							category: "payroll",
+							statementId: statementId,
+							rkoNumber: effectiveRkoNumber,
+							doctorId: doctorId,
+							period: periodKey,
+						},
+					});
+				}
+			}
 		}
 
 		// Подсчет завершенных приемов врача за период

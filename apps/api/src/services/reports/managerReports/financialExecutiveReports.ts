@@ -35,6 +35,7 @@ import {
 	DEFAULT_CATEGORY_COMMISSION_PERCENT,
 	calculateDoctorPeriodPayroll,
 	type DoctorCompletedServiceItem,
+	kopecksToRubles,
 } from "@dental/shared";
 import {
 	fetchActiveDoctorProfiles,
@@ -346,15 +347,15 @@ export async function doctorPayrollReport(
 			});
 
 			const servicesRenderedKopecks = payrollResult.totalGrossRevenueKop;
-			const servicesRenderedRub = Math.round(servicesRenderedKopecks / 100);
+			const servicesRenderedRub = kopecksToRubles(servicesRenderedKopecks);
 			const materialsCostKopecks = payrollResult.totalMaterialDeductionsKop;
-			const materialsCostRub = Math.round(materialsCostKopecks / 100);
+			const materialsCostRub = kopecksToRubles(materialsCostKopecks);
 			const labCostKopecks = payrollResult.totalLabDeductionsKop;
-			const labCostRub = Math.round(labCostKopecks / 100);
+			const labCostRub = kopecksToRubles(labCostKopecks);
 			const netRevenueKopecks = payrollResult.totalNetBaseKop;
-			const netRevenueRub = Math.round(netRevenueKopecks / 100);
+			const netRevenueRub = kopecksToRubles(netRevenueKopecks);
 			const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;
-			const payoutRub = Math.round(payoutKopecks / 100);
+			const payoutRub = kopecksToRubles(payoutKopecks);
 
 			totalServicesRenderedKopecks += servicesRenderedKopecks;
 			totalMaterialsCostKopecks += materialsCostKopecks;
@@ -398,21 +399,21 @@ export async function doctorPayrollReport(
 			rows,
 			assistantRows: assistantReport.rows,
 			totals: {
-				totalServicesRenderedRub: Math.round(totalServicesRenderedKopecks / 100),
+				totalServicesRenderedRub: kopecksToRubles(totalServicesRenderedKopecks),
 				totalServicesRenderedKopecks,
-				totalMaterialsCostRub: Math.round(totalMaterialsCostKopecks / 100),
+				totalMaterialsCostRub: kopecksToRubles(totalMaterialsCostKopecks),
 				totalMaterialsCostKopecks,
-				totalLabCostRub: Math.round(totalLabCostKopecks / 100),
+				totalLabCostRub: kopecksToRubles(totalLabCostKopecks),
 				totalLabCostKopecks,
-				totalNetRevenueRub: Math.round(totalNetRevenueKopecks / 100),
+				totalNetRevenueRub: kopecksToRubles(totalNetRevenueKopecks),
 				totalNetRevenueKopecks,
-				totalPayoutRub: Math.round(totalPayoutKopecks / 100),
+				totalPayoutRub: kopecksToRubles(totalPayoutKopecks),
 				totalPayoutKopecks,
 				totalAppointmentsCompleted,
 				totalAssistantPayoutRub: assistantReport.totals.totalPayoutRub,
 				totalAssistantPayoutKopecks: assistantReport.totals.totalPayoutKopecks,
-				totalClinicPayrollRub: Math.round(
-					(totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks) / 100,
+				totalClinicPayrollRub: kopecksToRubles(
+					totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks,
 				),
 				totalClinicPayrollKopecks:
 					totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks,
