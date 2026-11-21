@@ -32,7 +32,7 @@ const clipboardPasteValidationMessage =
 const clipboardCopyValidationMessage =
 	"В буфер не скопировано: выберите запись расписания.";
 const clipboardPasteResourcesMissingMessage =
-	"Вставка не выполнена: у исходной записи нет пациента, врача или кресла. Откройте карточку и заполните их, затем скопируйте снова.";
+	"Вставка не выполнена: у исходной записи не назначен врач или кресло.";
 
 const clipboardCopySchema = z.object({
 	appointmentId: z.string().uuid({ message: clipboardCopyValidationMessage }),
@@ -344,8 +344,8 @@ export async function registerScheduleClipboardRoutes(app: FastifyInstance) {
 				}
 			}
 
-			const patientId = original.patientId;
-			if (!patientId || !doctorUserId || !chairId) {
+			const patientId = original.patientId ?? null;
+			if (!doctorUserId || !chairId) {
 				return reply.code(409).send({
 					code: "ClipboardPasteRejected",
 					message: clipboardPasteResourcesMissingMessage,

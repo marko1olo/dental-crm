@@ -120,7 +120,6 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 					);
 				await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 				await db.delete(familyGroups).where(eq(familyGroups.organizationId, ORG_ID));
-				await db.delete(users).where(eq(users.organizationId, ORG_ID));
 
 				await db
 					.insert(organizations)
@@ -320,7 +319,6 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 						);
 					await db.delete(patients).where(eq(patients.organizationId, ORG_ID));
 					await db.delete(familyGroups).where(eq(familyGroups.organizationId, ORG_ID));
-					await db.delete(users).where(eq(users.organizationId, ORG_ID));
 				});
 			} catch {
 				// cleanup ignore

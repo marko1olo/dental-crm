@@ -244,8 +244,8 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
             updates.doctorUserId ?? "",
           );
         return await saveAppointmentSchedule(appointmentId, {
-          allowOverbooking: updates.allowOverbooking ?? true,
-          allowEmergencyOverride: true,
+          allowOverbooking: updates.allowOverbooking ?? false,
+          allowEmergencyOverride: Boolean(updates.allowEmergencyOverride),
         });
       } finally {
         inFlightMoveRef.current[appointmentId] = false;

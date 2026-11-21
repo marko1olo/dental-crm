@@ -73,7 +73,7 @@ export function useAppointmentReassignAndWaitlist(
         : "Без кресла";
 
       if (typeof onAppointmentMove === "function") {
-        void Promise.resolve(onAppointmentMove(appt.id, { chairId: targetChairId, allowOverbooking: true })).then((result) => {
+        void Promise.resolve(onAppointmentMove(appt.id, { chairId: targetChairId, allowOverbooking: false })).then((result) => {
           if (result !== false) {
             showToast(`Прием ${pName} перенесен на ${chairName}`, "success", 3000);
           }
@@ -94,7 +94,7 @@ export function useAppointmentReassignAndWaitlist(
       const docName = dashboard?.clinicSettings?.staff?.find((s) => s.id === targetDoctorUserId)?.fullName || "Врач";
 
       if (typeof onAppointmentMove === "function") {
-        void Promise.resolve(onAppointmentMove(appt.id, { doctorUserId: targetDoctorUserId, allowOverbooking: true })).then((result) => {
+        void Promise.resolve(onAppointmentMove(appt.id, { doctorUserId: targetDoctorUserId, allowOverbooking: false })).then((result) => {
           if (result !== false) {
             showToast(`Врач приема ${pName} изменен на ${formatDoctorShortName(docName)}`, "success", 3000);
           }

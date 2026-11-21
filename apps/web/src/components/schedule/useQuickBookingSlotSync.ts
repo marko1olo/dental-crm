@@ -82,6 +82,7 @@ export function useQuickBookingSlotSync({
   useEffect(() => {
     if (!isOpen) return;
     setDoctorUserId(initialValues.initDoctor);
+    setAssistantUserId(null);
     setChairId(initialValues.initChair);
     setStartsAtLocal(initialValues.initStartsAtLocal);
     setDurationMinutes(initialValues.initDuration);

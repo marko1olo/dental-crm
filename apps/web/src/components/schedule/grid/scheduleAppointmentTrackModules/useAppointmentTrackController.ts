@@ -120,7 +120,8 @@ export function useAppointmentTrackController(
               endsAt: targetEndIso,
               chairId: targetChairId,
               doctorUserId: targetDoctorId,
-              allowOverbooking: true,
+              allowOverbooking: Boolean(collisionCheck.isCitoOverbooking),
+              allowEmergencyOverride: isSourceCito,
             }),
           ).then((result) => {
             if (result !== false) {

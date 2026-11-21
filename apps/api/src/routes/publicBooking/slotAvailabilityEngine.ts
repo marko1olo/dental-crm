@@ -192,8 +192,7 @@ export function timezoneOffsetMinutes(instant: Date, timeZone: string): number {
 		const hours = Number.parseInt(match[2] as string, 10);
 		const minutes = match[3] ? Number.parseInt(match[3], 10) : 0;
 		return sign * (hours * 60 + minutes);
-	} catch (err) {
-		console.error("[Dente] timezoneOffsetMinutes failed:", err);
+	} catch (_err) {
 		return 0;
 	}
 }

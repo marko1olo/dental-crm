@@ -243,8 +243,7 @@ export function useScheduleGridData({
         patientId: a.patientId || "pat-1",
         startTime: a.startsAt,
         endTime: a.endsAt,
-        status: (a.status === "cancelled" ? "cancelled" : "scheduled") as
-          "cancelled" | "scheduled",
+        status: a.status ?? "planned",
         isEmergency: Boolean(ext.isCito || ext.isEmergency),
       };
     });

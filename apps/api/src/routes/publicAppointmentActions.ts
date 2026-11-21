@@ -23,7 +23,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { escapeHtml } from "@dental/shared";
@@ -125,7 +125,11 @@ async function clinicTitle(organizationId: string): Promise<string> {
 	return organization?.name ?? "Клиника";
 }
 
-function formatAppointmentMoment(startsAt: Date, timezone: string): string {
+function formatAppointmentMoment(
+	startsAt: Date,
+	timezone: string,
+	logger?: FastifyBaseLogger,
+): string {
 	try {
 		return new Intl.DateTimeFormat("ru-RU", {
 			timeZone: timezone,
@@ -135,7 +139,10 @@ function formatAppointmentMoment(startsAt: Date, timezone: string): string {
 			minute: "2-digit",
 		}).format(startsAt);
 	} catch (err) {
-		console.error("[Dente] formatAppointmentMoment failed:", err);
+		logger?.warn(
+			{ err, timezone },
+			"[publicAppointmentActions] formatAppointmentMoment failed, using default timezone",
+		);
 		return new Intl.DateTimeFormat("ru-RU", {
 			day: "numeric",
 			month: "long",
@@ -233,6 +240,7 @@ export async function registerPublicAppointmentActionRoutes(
 			const moment = formatAppointmentMoment(
 				appointment.startsAt,
 				clinic?.timezone ?? "Europe/Moscow",
+				request.log,
 			);
 
 			// Прошедший приём подтверждать и отменять нечего, а сообщение об этом
@@ -327,47 +335,49 @@ export async function registerPublicAppointmentActionRoutes(
 					? `${appointment.comment}\n[Запрос переноса пациентом]`
 					: "[Запрос переноса пациентом]";
 
-				await db
-					.update(appointments)
-					.set({ comment: updatedComment })
-					.where(
-						and(
-							eq(appointments.id, appointment.id),
-							eq(appointments.organizationId, payload.organizationId),
-						),
-					);
-
-				await markActionCodeUsed(resolved.code);
-
-				if (appointment.patientId) {
-					const [patient] = await db
-						.select({ fullName: patients.fullName })
-						.from(patients)
+				await db.transaction(async (tx) => {
+					await tx
+						.update(appointments)
+						.set({ comment: updatedComment })
 						.where(
 							and(
-								eq(patients.id, appointment.patientId),
-								eq(patients.organizationId, payload.organizationId),
+								eq(appointments.id, appointment.id),
+								eq(appointments.organizationId, payload.organizationId),
 							),
-						)
-						.limit(1);
+						);
 
-					await db.insert(communicationTasks).values({
-						organizationId: payload.organizationId,
-						patientId: appointment.patientId,
-						appointmentId: appointment.id,
-						assignedRole: "administrator",
-						channel: "phone",
-						intent: "appointment_confirmation",
-						status: "queued",
-						priority: "high",
-						dueAt: new Date(),
-						title: "Запрос переноса приёма по ссылке",
-						body:
-							`${patient?.fullName ?? "Пациент"} запросил перенос приёма ${moment} через ссылку в сообщении. ` +
-							"Свяжитесь с пациентом для выбора удобного времени.",
-						workflowCode: "appointment_reschedule_followup",
-					});
-				}
+					if (appointment.patientId) {
+						const [patient] = await tx
+							.select({ fullName: patients.fullName })
+							.from(patients)
+							.where(
+								and(
+									eq(patients.id, appointment.patientId),
+									eq(patients.organizationId, payload.organizationId),
+								),
+							)
+							.limit(1);
+
+						await tx.insert(communicationTasks).values({
+							organizationId: payload.organizationId,
+							patientId: appointment.patientId,
+							appointmentId: appointment.id,
+							assignedRole: "administrator",
+							channel: "phone",
+							intent: "appointment_confirmation",
+							status: "queued",
+							priority: "high",
+							dueAt: new Date(),
+							title: "Запрос переноса приёма по ссылке",
+							body:
+								`${patient?.fullName ?? "Пациент"} запросил перенос приёма ${moment} через ссылку в сообщении. ` +
+								"Свяжитесь с пациентом для выбора удобного времени.",
+							workflowCode: "appointment_reschedule_followup",
+						});
+					}
+				});
+
+				await markActionCodeUsed(resolved.code);
 
 				wsBroker.broadcastToOrganization(payload.organizationId, {
 					type: "APPOINTMENT_UPDATED",
@@ -409,20 +419,58 @@ export async function registerPublicAppointmentActionRoutes(
 			}
 
 			/*
-			 * БЫЛО: UPDATE status='cancelled' WHERE id only (см. confirm выше).
-			 * СТАЛО: organizationId + id + RETURNING; иначе код ссылки сжигался бы
-			 * без реальной отмены.
+			 * organizationId + id + RETURNING внутри единой транзакции с communicationTasks;
+			 * если создание задачи администратору упадет, отмена не повиснет незамеченной.
 			 */
-			const [cancelled] = await db
-				.update(appointments)
-				.set({ status: "cancelled" })
-				.where(
-					and(
-						eq(appointments.id, appointment.id),
-						eq(appointments.organizationId, payload.organizationId),
-					),
-				)
-				.returning({ id: appointments.id });
+			const cancelled = await db.transaction(async (tx) => {
+				const [res] = await tx
+					.update(appointments)
+					.set({ status: "cancelled" })
+					.where(
+						and(
+							eq(appointments.id, appointment.id),
+							eq(appointments.organizationId, payload.organizationId),
+						),
+					)
+					.returning({ id: appointments.id });
+
+				if (!res) {
+					return null;
+				}
+
+				if (appointment.patientId) {
+					const [patient] = await tx
+						.select({ fullName: patients.fullName })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.id, appointment.patientId),
+								eq(patients.organizationId, payload.organizationId),
+							),
+						)
+						.limit(1);
+
+					await tx.insert(communicationTasks).values({
+						organizationId: payload.organizationId,
+						patientId: appointment.patientId,
+						appointmentId: appointment.id,
+						assignedRole: "administrator",
+						channel: "phone",
+						intent: "appointment_confirmation",
+						status: "queued",
+						priority: "high",
+						dueAt: new Date(),
+						title: "Пациент отменил приём по ссылке",
+						body:
+							`${patient?.fullName ?? "Пациент"} отменил приём ${moment} через ссылку в сообщении. ` +
+							"Слот освободился: предложите время другому пациенту из листа ожидания и уточните, нужен ли перенос.",
+						workflowCode: "appointment_reschedule_followup",
+					});
+				}
+
+				return res;
+			});
+
 			if (!cancelled) {
 				return sendPage(
 					reply,
@@ -441,38 +489,6 @@ export async function registerPublicAppointmentActionRoutes(
 				appointment.id,
 				"Приём отменён пациентом по ссылке",
 			);
-
-			// Отмена не должна проходить молча: администратор обязан узнать об
-			// освободившемся слоте и попробовать переставить пациента.
-			if (appointment.patientId) {
-				const [patient] = await db
-					.select({ fullName: patients.fullName })
-					.from(patients)
-					.where(
-						and(
-							eq(patients.id, appointment.patientId),
-							eq(patients.organizationId, payload.organizationId),
-						),
-					)
-					.limit(1);
-
-				await db.insert(communicationTasks).values({
-					organizationId: payload.organizationId,
-					patientId: appointment.patientId,
-					appointmentId: appointment.id,
-					assignedRole: "administrator",
-					channel: "phone",
-					intent: "appointment_confirmation",
-					status: "queued",
-					priority: "high",
-					dueAt: new Date(),
-					title: "Пациент отменил приём по ссылке",
-					body:
-						`${patient?.fullName ?? "Пациент"} отменил приём ${moment} через ссылку в сообщении. ` +
-						"Слот освободился: предложите время другому пациенту из листа ожидания и уточните, нужен ли перенос.",
-					workflowCode: "appointment_reschedule_followup",
-				});
-			}
 
 			wsBroker.broadcastToOrganization(payload.organizationId, {
 				type: "APPOINTMENT_UPDATED",

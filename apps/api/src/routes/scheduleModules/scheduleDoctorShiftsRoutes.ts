@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -97,8 +96,8 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 	app.get("/api/schedule/shifts", async (req, reply) => {
 		const orgId =
 			(await requireOrganizationContext(req, reply)) ||
-			requireClinicOrganizationId(req, reply) ||
-			DEMO_SHOWCASE_ORG_ID;
+			requireClinicOrganizationId(req, reply);
+		if (!orgId) return;
 		const rows = await db
 			.select()
 			.from(doctorShiftRosters)
@@ -122,8 +121,8 @@ export async function registerScheduleDoctorShiftsRoutes(app: FastifyInstance) {
 		if (!(await requireScheduleMutationAccess(req, reply, "schedule shifts update"))) return;
 		const orgId =
 			(await requireOrganizationContext(req, reply)) ||
-			requireClinicOrganizationId(req, reply) ||
-			DEMO_SHOWCASE_ORG_ID;
+			requireClinicOrganizationId(req, reply);
+		if (!orgId) return;
 		const parsed = scheduleShiftsSchema.safeParse(req.body);
 		if (!parsed.success) {
 			return reply.code(400).send({

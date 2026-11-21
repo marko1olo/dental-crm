@@ -11,20 +11,15 @@
  */
 
 import { z } from "zod";
+import {
+	appointmentStatusSchema,
+	type AppointmentStatus,
+} from "./appointmentSchemas.js";
 
 // ─── 1. SCHEMAS & TYPES ──────────────────────────────────────────────────────
 
-export const appointmentScheduleStatusSchema = z.enum([
-	"planned",
-	"scheduled",
-	"confirmed",
-	"checked_in",
-	"in_treatment",
-	"completed",
-	"cancelled",
-	"no_show",
-]);
-export type AppointmentScheduleStatus = z.infer<typeof appointmentScheduleStatusSchema>;
+export const appointmentScheduleStatusSchema = appointmentStatusSchema;
+export type AppointmentScheduleStatus = AppointmentStatus;
 
 export const scheduleCollisionTypeSchema = z.enum([
 	"doctor_overlap",
