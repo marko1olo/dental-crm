@@ -9,6 +9,7 @@ import { safeLocalStorageSetItem } from "../../../lib/safeLocalStorage";
 import { TopBarDraftStrips } from "./TopBarDraftStrips";
 import type { Dispatch, SetStateAction } from "react";
 import type { OnboardingStepItem } from "../../onboarding/wizard/types";
+import type { AppView } from "../../../utils/routeUtils";
 
 export interface TopBarOnboardingStripsProps {
 	onboardingDismissed: boolean;
@@ -16,7 +17,7 @@ export interface TopBarOnboardingStripsProps {
 	isLocalOnboardingDismissed: boolean;
 	isStripDismissedLocally: boolean;
 	setIsStripDismissedLocally: Dispatch<SetStateAction<boolean>>;
-	currentView: string;
+	currentView: AppView;
 	currentOnboardingIndex: number;
 	onboardingSteps: readonly OnboardingStepItem[];
 	legalReadinessPercent: number;
@@ -29,7 +30,7 @@ export interface TopBarOnboardingStripsProps {
 	onboardingDocumentsReady: boolean;
 	onboardingDocumentReadinessIssues: readonly string[];
 	reopenOnboarding: () => void;
-	setCurrentView: (view: string) => void;
+	setCurrentView: (view: AppView) => void;
 	setSettingsTab: (tab: string) => void;
 }
 

@@ -20,6 +20,7 @@ import {
 	appointments,
 	bonusTransactions,
 	cashBoxes,
+	cashBoxShifts,
 	cashOperations,
 	dmsGuaranteeLetters,
 	familyGroups,
@@ -37,6 +38,7 @@ import { buildPatientLedger, chargeLineKopecks, clinicOwesPatientKopecks } from 
 import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
 import { normalizePatientAdministrativeProfile } from "../../utils/patientAdministrativeProfile.js";
 import { deductMaterialsForVisit } from "../../services/inventory/materialDeduction.js";
+import { wsBroker } from "../../services/websocketBroker.js";
 import { deductUnspentPointsFifo, processPatientExpiredBonuses } from "../loyaltyModules/bonusBalanceService.js";
 import { cashboxPaymentRequestSchema } from "./cashboxSchemas.js";
 
@@ -398,19 +400,39 @@ export async function processCashboxPayment(
 		if (matchedExistingPayments.length > 0) {
 			const existingPayment = matchedExistingPayments[0]!;
 			const isSplitReplay = matchedExistingPayments.length > 1;
-			const totalExistingRub = isSplitReplay
-				? matchedExistingPayments.reduce((acc, p) => acc + Number(p.amountRub), 0)
-				: Number(existingPayment.amountRub);
+			const totalExistingKop = isSplitReplay
+				? sumKopecks(matchedExistingPayments.map((p) => parseKopecks(p.amountRub ?? 0)))
+				: parseKopecks(existingPayment.amountRub ?? 0);
+			const totalExistingRub = kopecksToRubles(totalExistingKop);
+
+			let replayFamilyPrevBal = 0;
+			let replayFamilyNewBal = 0;
+			if (body.familyGroupId || existingPayment.documentId) {
+				const targetFgId = body.familyGroupId || existingPayment.documentId;
+				const [fg] = await tx
+					.select({ balance: familyGroups.balance })
+					.from(familyGroups)
+					.where(and(eq(familyGroups.id, targetFgId!), eq(familyGroups.organizationId, orgId)))
+					.limit(1);
+				if (fg) {
+					replayFamilyPrevBal = parseKopecks(fg.balance ?? 0);
+					replayFamilyNewBal = replayFamilyPrevBal;
+				}
+			}
 
 			return {
 				id: existingPayment.id,
-				amountKopecks: rublesToKopecks(totalExistingRub),
+				amountKopecks: totalExistingKop,
 				amountRub: totalExistingRub,
 				method: isSplitReplay ? "split" : existingPayment.method,
 				status: existingPayment.status,
 				fiscalReceiptNumber: existingPayment.fiscalReceiptNumber,
 				clientMutationId: effectiveMutationId,
 				isReplay: true,
+				previousFamilyBalanceRub: kopecksToRubles(replayFamilyPrevBal),
+				newFamilyBalanceRub: kopecksToRubles(replayFamilyNewBal),
+				previousFamilyBalanceKopecks: replayFamilyPrevBal,
+				newFamilyBalanceKopecks: replayFamilyNewBal,
 			};
 		}
 
@@ -479,6 +501,57 @@ export async function processCashboxPayment(
 		}
 
 		// [FIN-05] Проверка и блокировка несанкционированного списания с несуществующего депозита
+		let lockedTopupFamilyGroup: typeof familyGroups.$inferSelect | null = null;
+		let topupPrevBalKop = 0n;
+		let topupNewBalKop = 0n;
+
+		if (body.isAdvanceDeposit === true && !isWarrantyPayment) {
+			if (body.familyGroupId) {
+				const [fg] = await tx
+					.select()
+					.from(familyGroups)
+					.where(and(eq(familyGroups.id, body.familyGroupId), eq(familyGroups.organizationId, orgId)))
+					.for("update")
+					.limit(1);
+
+				if (!fg) {
+					return { kind: "family_wallet_not_found" as const };
+				}
+
+				lockedTopupFamilyGroup = fg;
+				topupPrevBalKop = BigInt(parseKopecks(fg.balance ?? 0));
+				topupNewBalKop = topupPrevBalKop + totalKopecks;
+				const newBalanceStr = kopecksToNumericString(Number(topupNewBalKop));
+
+				await tx
+					.update(familyGroups)
+					.set({
+						balance: newBalanceStr,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(familyGroups.id, fg.id), eq(familyGroups.organizationId, orgId)));
+
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "FAMILY_BALANCE_UPDATED",
+					payload: {
+						organizationId: orgId,
+						familyGroupId: fg.id,
+						balance: newBalanceStr,
+					},
+				});
+			} else if (resolvedPatientId) {
+				await tx.insert(advanceDepositTaggings).values({
+					organizationId: orgId,
+					patientId: resolvedPatientId,
+					patientName: patientRow?.fullName || patientName,
+					depositAmountRub: kopecksToNumericString(Number(totalKopecks)),
+					taggedTargetType: "patient_deposit",
+					taggedTargetName: body.note?.trim() || "Внесение авансового депозита",
+					allocationStatus: "unallocated",
+				});
+			}
+		}
+
 		let lockedFamilyGroup: typeof familyGroups.$inferSelect | null = null;
 		let advanceRows: (typeof advanceDepositTaggings.$inferSelect)[] = [];
 		let familyBalanceKop = 0n;
@@ -528,14 +601,9 @@ export async function processCashboxPayment(
 				if (relHead) {
 					targetFamilyGroupId = relHead.familyGroupId;
 				} else {
-					const [anyFam] = await tx
-						.select({ id: familyGroups.id })
-						.from(familyGroups)
-						.where(eq(familyGroups.organizationId, orgId))
-						.limit(1);
-					if (anyFam) {
-						targetFamilyGroupId = anyFam.id;
-					}
+					return {
+						kind: "family_wallet_not_found" as const,
+					};
 				}
 			}
 
@@ -553,8 +621,14 @@ export async function processCashboxPayment(
 					.limit(1);
 				lockedFamilyGroup = fg ?? null;
 			}
+
+			if (!lockedFamilyGroup && (body.method === "family_wallet" || body.familyDepositAmountRub || body.familyDepositAmountKopecks)) {
+				return {
+					kind: "family_wallet_not_found" as const,
+				};
+			}
 			familyBalanceKop = lockedFamilyGroup
-				? BigInt(rubToKopecks(Number(lockedFamilyGroup.balance || 0)))
+				? BigInt(parseKopecks(lockedFamilyGroup.balance ?? 0))
 				: 0n;
 
 			// 2. Поиск и блокировка целевых авансов advanceDepositTaggings (реляционная привязка по patientId с fallback по patientName)
@@ -582,7 +656,7 @@ export async function processCashboxPayment(
 
 			let advanceTotalKop = 0n;
 			for (const adv of advanceRows) {
-				advanceTotalKop += BigInt(rubToKopecks(Number(adv.depositAmountRub || 0)));
+				advanceTotalKop += BigInt(parseKopecks(adv.depositAmountRub ?? 0));
 			}
 
 			// 3. Расчёт фактического сальдо лицевого счета (переплата / авансы по леджеру)
@@ -754,6 +828,15 @@ export async function processCashboxPayment(
 							eq(familyGroups.organizationId, orgId),
 						),
 					);
+
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "FAMILY_BALANCE_UPDATED",
+					payload: {
+						organizationId: orgId,
+						familyGroupId: lockedFamilyGroup.id,
+						balance: kopecksToNumericString(Number(newFamilyBalKop)),
+					},
+				});
 			}
 		}
 
@@ -1011,9 +1094,16 @@ export async function processCashboxPayment(
 			}
 		}
 
-		// До подтверждения от ККТ сохраняем null: реальный номер ФД присваивается только после фактической печати чека
-		const receiptNumber = null;
-		const issuedAt = null;
+		// Если номер фискального чека передан явно (печать на автономной ККТ или повторный ввод), сохраняем его.
+		// В противном случае до подтверждения от онлайн-ККТ сохраняем null.
+		const receiptNumber =
+			typeof body.fiscalReceiptNumber === "string" && body.fiscalReceiptNumber.trim()
+				? body.fiscalReceiptNumber.trim()
+				: null;
+		const issuedAt =
+			typeof body.fiscalReceiptIssuedAt === "string" && body.fiscalReceiptIssuedAt.trim()
+				? body.fiscalReceiptIssuedAt.trim()
+				: null;
 
 		let resolvedCashKop = 0;
 		let resolvedElecKop = 0;
@@ -1076,7 +1166,11 @@ export async function processCashboxPayment(
 						fiscalReceiptNumber: receiptNumber,
 						fiscalReceiptIssuedAt: issuedAt,
 						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
-						payerInn: body.buyerInn || null,
+						payerInn: body.payerInn || body.buyerInn || null,
+						payerBirthDate: body.payerBirthDate || null,
+						payerIdentityDocument: body.payerIdentityDocument || null,
+						payerRelationship: body.payerRelationship || null,
+						taxDeductionCode: body.taxDeductionCode || null,
 						note: body.note ? `${body.note} (безналичные)` : "Сплит-оплата (безналичные)",
 					})
 					.returning();
@@ -1099,7 +1193,11 @@ export async function processCashboxPayment(
 						fiscalReceiptNumber: receiptNumber,
 						fiscalReceiptIssuedAt: issuedAt,
 						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
-						payerInn: body.buyerInn || null,
+						payerInn: body.payerInn || body.buyerInn || null,
+						payerBirthDate: body.payerBirthDate || null,
+						payerIdentityDocument: body.payerIdentityDocument || null,
+						payerRelationship: body.payerRelationship || null,
+						taxDeductionCode: body.taxDeductionCode || null,
 						note: body.note ? `${body.note} (наличные)` : "Сплит-оплата (наличные)",
 					})
 					.returning();
@@ -1122,7 +1220,11 @@ export async function processCashboxPayment(
 						fiscalReceiptNumber: receiptNumber,
 						fiscalReceiptIssuedAt: issuedAt,
 						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
-						payerInn: body.buyerInn || null,
+						payerInn: body.payerInn || body.buyerInn || null,
+						payerBirthDate: body.payerBirthDate || null,
+						payerIdentityDocument: body.payerIdentityDocument || null,
+						payerRelationship: body.payerRelationship || null,
+						taxDeductionCode: body.taxDeductionCode || null,
 						note: body.note ? `${body.note} (депозит)` : "Сплит-оплата (депозит)",
 					})
 					.returning();
@@ -1145,7 +1247,11 @@ export async function processCashboxPayment(
 						fiscalReceiptNumber: receiptNumber,
 						fiscalReceiptIssuedAt: issuedAt,
 						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
-						payerInn: body.buyerInn || null,
+						payerInn: body.payerInn || body.buyerInn || null,
+						payerBirthDate: body.payerBirthDate || null,
+						payerIdentityDocument: body.payerIdentityDocument || null,
+						payerRelationship: body.payerRelationship || null,
+						taxDeductionCode: body.taxDeductionCode || null,
 						note: body.note ? `${body.note} (бонусы)` : "Сплит-оплата (бонусы)",
 					})
 					.returning();
@@ -1168,7 +1274,11 @@ export async function processCashboxPayment(
 						fiscalReceiptNumber: receiptNumber,
 						fiscalReceiptIssuedAt: issuedAt,
 						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
-						payerInn: body.buyerInn || null,
+						payerInn: body.payerInn || body.buyerInn || null,
+						payerBirthDate: body.payerBirthDate || null,
+						payerIdentityDocument: body.payerIdentityDocument || null,
+						payerRelationship: body.payerRelationship || null,
+						taxDeductionCode: body.taxDeductionCode || null,
 						note: body.note ? `${body.note} (сертификат)` : "Сплит-оплата (сертификат)",
 					})
 					.returning();
@@ -1191,7 +1301,11 @@ export async function processCashboxPayment(
 						fiscalReceiptNumber: receiptNumber,
 						fiscalReceiptIssuedAt: issuedAt,
 						payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
-						payerInn: body.buyerInn || null,
+						payerInn: body.payerInn || body.buyerInn || null,
+						payerBirthDate: body.payerBirthDate || null,
+						payerIdentityDocument: body.payerIdentityDocument || null,
+						payerRelationship: body.payerRelationship || null,
+						taxDeductionCode: body.taxDeductionCode || null,
 						note: body.note ? `${body.note} (ДМС)` : "Сплит-оплата (ДМС)",
 					})
 					.returning();
@@ -1210,7 +1324,7 @@ export async function processCashboxPayment(
 					organizationId: orgId,
 					patientId: resolvedPatientId,
 					visitId: effectiveVisitId,
-					documentId: body.invoiceId || null,
+					documentId: body.invoiceId || body.familyGroupId || null,
 					clientMutationId: effectiveMutationId,
 					amountRub: amountRubNumber,
 					method: normalizePaymentMethod(body.method),
@@ -1219,12 +1333,18 @@ export async function processCashboxPayment(
 					fiscalReceiptNumber: receiptNumber,
 					fiscalReceiptIssuedAt: issuedAt,
 					payerFullName: body.payerFullName || body.cashierFullName || "Кассир",
-					payerInn: body.buyerInn || null,
+					payerInn: body.payerInn || body.buyerInn || null,
+					payerBirthDate: body.payerBirthDate || null,
+					payerIdentityDocument: body.payerIdentityDocument || null,
+					payerRelationship: body.payerRelationship || null,
+					taxDeductionCode: body.taxDeductionCode || null,
 					note:
 						body.note ||
 						(isWarrantyPayment
 							? "Гарантийный расчёт (скидка 100%)"
-							: `Оплата через кассу (${body.method || "card"})`),
+							: body.isAdvanceDeposit
+								? (body.familyGroupId ? "Внесение аванса (семейный депозит)" : "Внесение авансового депозита")
+								: `Оплата через кассу (${body.method || "card"})`),
 				})
 				.returning();
 
@@ -1297,9 +1417,9 @@ export async function processCashboxPayment(
 						eq(payments.status, "paid"),
 					),
 				);
-			const invoiceTotalRub = Number(lockedInvoice?.totalAmountRub || lockedInvoice?.totalRub || 0);
-			const totalPaidRub = Number(invoicePayments?.totalPaidRub || 0);
-			const nextStatus = totalPaidRub >= invoiceTotalRub ? "paid" : "partially_paid";
+			const invoiceTotalKop = parseKopecks(lockedInvoice?.totalAmountRub ?? lockedInvoice?.totalRub ?? 0);
+			const totalPaidKop = parseKopecks(invoicePayments?.totalPaidRub ?? 0);
+			const nextStatus = totalPaidKop >= invoiceTotalKop ? "paid" : "partially_paid";
 
 			await tx
 				.update(patientInvoices)
@@ -1336,9 +1456,9 @@ export async function processCashboxPayment(
 							eq(payments.status, "paid"),
 						),
 					);
-				const totalDue = Number(inv.totalRub || 0);
-				const totalPaid = Number(invPaid?.totalPaidRub || 0);
-				const invStatus = totalPaid >= totalDue ? "paid" : totalPaid > 0 ? "partially_paid" : inv.status;
+				const totalDueKop = parseKopecks(inv.totalRub ?? 0);
+				const totalPaidKop = parseKopecks(invPaid?.totalPaidRub ?? 0);
+				const invStatus = totalPaidKop >= totalDueKop ? "paid" : totalPaidKop > 0 ? "partially_paid" : inv.status;
 				await tx
 					.update(patientInvoices)
 					.set({
@@ -1626,6 +1746,44 @@ export async function processCashboxPayment(
 			boxes.find((b) => b.type === "dms" || b.type === "insurance") ||
 			cashlessBox;
 
+		// [SEV-1.4] Поиск активных кассовых смен и проверка лимита 24ч (п. 1 ст. 4.3 54-ФЗ)
+		const openShifts = await tx
+			.select()
+			.from(cashBoxShifts)
+			.where(
+				and(
+					eq(cashBoxShifts.organizationId, orgId),
+					eq(cashBoxShifts.status, "open"),
+				),
+			)
+			.for("update");
+
+		const nowForShiftCheck = new Date();
+		for (const shift of openShifts) {
+			if (shift.openedAt) {
+				const durationMs = nowForShiftCheck.getTime() - new Date(shift.openedAt).getTime();
+				if (durationMs > 24 * 60 * 60 * 1000) {
+					return {
+						kind: "shift_expired" as const,
+						shiftNumber: shift.shiftNumber,
+						openedAt: shift.openedAt,
+					};
+				}
+			}
+		}
+
+		const cashDeskShift =
+			openShifts.find((s) => s.cashBoxId === cashDeskBox?.id) ||
+			openShifts[0] ||
+			null;
+		const cashlessShift =
+			openShifts.find((s) => s.cashBoxId === cashlessBox?.id) ||
+			openShifts.find((s) => s.id !== cashDeskShift?.id) ||
+			cashDeskShift;
+		const dmsShift =
+			openShifts.find((s) => s.cashBoxId === dmsBox?.id) ||
+			cashlessShift;
+
 		// 4. Кассовые проводки в cashOperations
 		if (resolvedCashKop > 0 && cashDeskBox) {
 			const curBalKop =
@@ -1637,18 +1795,22 @@ export async function processCashboxPayment(
 			const addRub = kopecksToRub(resolvedCashKop);
 			const newBal = kopecksToRub(newBalKop);
 
+			const reasonTextCash = body.isAdvanceDeposit
+				? (body.familyGroupId ? "Приход наличных: внесение семейного депозита" : "Приход наличных: внесение аванса пациента")
+				: (receiptNumber ? `Приход наличных в кассу: оплата стоматологических услуг (${receiptNumber})` : "Приход наличных в кассу: оплата стоматологических услуг");
+
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashDeskBox.id,
+				shiftId: cashDeskShift?.id ?? null,
 				operationType: "income",
 				amountRub: addRub,
+				amountKopecks: resolvedCashKop,
 				balanceBeforeRub: curBal,
 				balanceAfterRub: newBal,
 				patientId: resolvedPatientId,
 				kkmDocNumber: receiptNumber,
-				reasonText: receiptNumber
-					? `Приход наличных в кассу: оплата стоматологических услуг (${receiptNumber})`
-					: "Приход наличных в кассу: оплата стоматологических услуг",
+				reasonText: reasonTextCash,
 				operatorName: body.cashierFullName || "Кассир",
 				metadata: {
 					clientMutationId: effectiveMutationId,
@@ -1669,6 +1831,21 @@ export async function processCashboxPayment(
 						eq(cashBoxes.organizationId, orgId),
 					),
 				);
+
+			if (cashDeskShift && addRub > 0) {
+				await tx
+					.update(cashBoxShifts)
+					.set({
+						incomeTotalRub: sql`ROUND((${cashBoxShifts.incomeTotalRub}::numeric + ${addRub}::numeric), 2)`,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(cashBoxShifts.id, cashDeskShift.id),
+							eq(cashBoxShifts.organizationId, orgId),
+						),
+					);
+			}
 		}
 
 		if (resolvedElecKop > 0 && cashlessBox) {
@@ -1681,18 +1858,22 @@ export async function processCashboxPayment(
 			const addRub = kopecksToRub(resolvedElecKop);
 			const newBal = kopecksToRub(newBalKop);
 
+			const reasonTextElec = body.isAdvanceDeposit
+				? (body.familyGroupId ? "Безналичное поступление: внесение семейного депозита" : "Безналичное поступление: внесение аванса пациента")
+				: (receiptNumber ? `Безналичное поступление: оплата стоматологических услуг (${receiptNumber})` : "Безналичное поступление: оплата стоматологических услуг");
+
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashlessBox.id,
+				shiftId: cashlessShift?.id ?? null,
 				operationType: "income",
 				amountRub: addRub,
+				amountKopecks: resolvedElecKop,
 				balanceBeforeRub: curBal,
 				balanceAfterRub: newBal,
 				patientId: resolvedPatientId,
 				kkmDocNumber: receiptNumber,
-				reasonText: receiptNumber
-					? `Безналичное поступление: оплата стоматологических услуг (${receiptNumber})`
-					: "Безналичное поступление: оплата стоматологических услуг",
+				reasonText: reasonTextElec,
 				operatorName: body.cashierFullName || "Кассир",
 				metadata: {
 					clientMutationId: effectiveMutationId,
@@ -1713,6 +1894,21 @@ export async function processCashboxPayment(
 						eq(cashBoxes.organizationId, orgId),
 					),
 				);
+
+			if (cashlessShift && addRub > 0) {
+				await tx
+					.update(cashBoxShifts)
+					.set({
+						incomeTotalRub: sql`ROUND((${cashBoxShifts.incomeTotalRub}::numeric + ${addRub}::numeric), 2)`,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(cashBoxShifts.id, cashlessShift.id),
+							eq(cashBoxShifts.organizationId, orgId),
+						),
+					);
+			}
 		}
 
 		if (requiredDepositKopecks > 0n && cashDeskBox) {
@@ -1720,8 +1916,10 @@ export async function processCashboxPayment(
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashDeskBox.id,
+				shiftId: cashDeskShift?.id ?? null,
 				operationType: "income",
 				amountRub: depositRub,
+				amountKopecks: Number(requiredDepositKopecks),
 				balanceBeforeRub: cashDeskBox.balanceRub || 0,
 				balanceAfterRub: cashDeskBox.balanceRub || 0,
 				patientId: resolvedPatientId,
@@ -1736,8 +1934,10 @@ export async function processCashboxPayment(
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashDeskBox.id,
+				shiftId: cashDeskShift?.id ?? null,
 				operationType: "income",
 				amountRub: bonusRub,
+				amountKopecks: Number(requiredBonusKopecks),
 				balanceBeforeRub: cashDeskBox.balanceRub || 0,
 				balanceAfterRub: cashDeskBox.balanceRub || 0,
 				patientId: resolvedPatientId,
@@ -1752,8 +1952,10 @@ export async function processCashboxPayment(
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: cashDeskBox.id,
+				shiftId: cashDeskShift?.id ?? null,
 				operationType: "income",
 				amountRub: certRub,
+				amountKopecks: Number(requiredCertificateKopecks),
 				balanceBeforeRub: cashDeskBox.balanceRub || 0,
 				balanceAfterRub: cashDeskBox.balanceRub || 0,
 				patientId: resolvedPatientId,
@@ -1768,8 +1970,10 @@ export async function processCashboxPayment(
 			await tx.insert(cashOperations).values({
 				organizationId: orgId,
 				cashBoxId: dmsBox.id,
+				shiftId: dmsShift?.id ?? null,
 				operationType: "income",
 				amountRub: dmsRub,
+				amountKopecks: Number(requiredDmsKopecks),
 				balanceBeforeRub: dmsBox.balanceRub || 0,
 				balanceAfterRub: dmsBox.balanceRub || 0,
 				patientId: resolvedPatientId,
@@ -1796,6 +2000,12 @@ export async function processCashboxPayment(
 						amountRub: amountRubNumber,
 						amountKopecks: Number(totalKopecks),
 						method: normalizePaymentMethod(body.method),
+						isAdvanceDeposit: body.isAdvanceDeposit ?? false,
+						calculationMethodTag1214: body.isAdvanceDeposit ? 3 : undefined,
+						calculationSubjectTag1212: body.isAdvanceDeposit ? 10 : undefined,
+						advanceDepositTarget: body.advanceDepositTarget || (body.familyGroupId ? "family" : "patient"),
+						advancePaymentRub: body.isAdvanceDeposit ? amountRubNumber : undefined,
+						advancePaymentKopecks: body.isAdvanceDeposit ? Number(totalKopecks) : undefined,
 						cashRub: kopecksToRub(resolvedCashKop),
 						cashKopecks: resolvedCashKop,
 						electronicRub: kopecksToRub(resolvedElecKop),
@@ -1857,6 +2067,13 @@ export async function processCashboxPayment(
 			note: newPayment.note,
 			fiscalReceiptQueueId: enqueuedReceiptId,
 			clientMutationId: effectiveMutationId,
+			isAdvanceDeposit: body.isAdvanceDeposit ?? false,
+			previousFamilyBalanceRub: lockedTopupFamilyGroup ? kopecksToRubles(Number(topupPrevBalKop)) : undefined,
+			newFamilyBalanceRub: lockedTopupFamilyGroup ? kopecksToRubles(Number(topupNewBalKop)) : undefined,
+			previousFamilyBalanceKopecks: lockedTopupFamilyGroup ? Number(topupPrevBalKop) : undefined,
+			newFamilyBalanceKopecks: lockedTopupFamilyGroup ? Number(topupNewBalKop) : undefined,
+			creditedRub: lockedTopupFamilyGroup ? amountRubNumber : undefined,
+			creditedKopecks: lockedTopupFamilyGroup ? Number(totalKopecks) : undefined,
 		};
 	});
 
@@ -1888,6 +2105,16 @@ export async function processCashboxPayment(
 				error: "InvoiceAlreadyPaidConflict",
 				message: `Счёт ${result.invoiceId} уже был полностью оплачен. Повторное списание средств отклонено для исключения задвоения чеков.`,
 				invoiceId: result.invoiceId,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "family_wallet_not_found") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "FamilyWalletNotFound",
+				message: "FAMILY_WALLET_NOT_FOUND: Пациент не состоит в семейной группе",
 			},
 		};
 	}
@@ -1991,6 +2218,16 @@ export async function processCashboxPayment(
 			body: {
 				error: "InsufficientDmsCoverage",
 				message: `Превышен лимит покрытия по гарантийному письму ДМС «${result.letterNumber}». Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "shift_expired") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "ShiftExpiredError",
+				message: `Кассовая смена №${result.shiftNumber} длится более 24 часов (п. 1 ст. 4.3 54-ФЗ). Закройте смену и снимите Z-отчёт перед проведением новых платежей.`,
 			},
 		};
 	}

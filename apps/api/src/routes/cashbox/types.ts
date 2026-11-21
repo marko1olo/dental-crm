@@ -74,6 +74,13 @@ export interface CloseShiftRequestBody {
 	idempotencyKey?: string | undefined;
 	clientMutationId?: string | undefined;
 	reconciliation?: Record<string, unknown> | undefined;
+	isKktConnected?: boolean | undefined;
+	kktReportData?: {
+		fnSerial?: string | null | undefined;
+		fiscalDocNumber?: string | null | undefined;
+		fiscalSign?: string | null | undefined;
+		qrString?: string | null | undefined;
+	} | undefined;
 }
 
 export interface CloseShiftResponseBody {

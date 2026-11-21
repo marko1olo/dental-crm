@@ -79,7 +79,7 @@ export function AppTopBar(props: AppTopBarProps) {
 				onLockSession={handleLockSession}
 				onOpenDoctorShiftCockpit={openDoctorShiftCockpit}
 				onOpenCbctDemo={() => setIsCbctDirectModalOpen(true)}
-				currentView={currentView as any}
+				currentView={currentView}
 			/>
 
 			<TopBarEmergencyBell

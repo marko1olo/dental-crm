@@ -37,6 +37,15 @@ export const closeShiftBodySchema = z.object({
 	idempotencyKey: z.string().trim().max(128).optional(),
 	clientMutationId: z.string().trim().max(128).optional(),
 	reconciliation: z.record(z.unknown()).optional(),
+	isKktConnected: z.boolean().optional(),
+	kktReportData: z
+		.object({
+			fnSerial: z.string().nullable().optional(),
+			fiscalDocNumber: z.string().nullable().optional(),
+			fiscalSign: z.string().nullable().optional(),
+			qrString: z.string().nullable().optional(),
+		})
+		.optional(),
 });
 
 export const cashIntroductionBodySchema = z.object({
@@ -84,6 +93,8 @@ export const cashRefundBodySchema = z.object({
 	operatorId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
 	patientId: z.preprocess((val) => (typeof val === "string" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ? undefined : val), z.string().uuid().optional()),
 	cashierFullName: z.string().trim().optional(),
+	idempotencyKey: z.string().trim().max(128).optional(),
+	clientMutationId: z.string().trim().max(128).optional(),
 });
 
 export const retryFiscalizeParamsSchema = z.object({
@@ -127,6 +138,22 @@ export const cashboxPaymentRequestSchema = z.object({
 		z.string().trim().max(128).optional().nullable(),
 	),
 	payerFullName: z.string().trim().max(256).optional(),
+	payerInn: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+		z.string().trim().optional().nullable(),
+	),
+	payerBirthDate: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+		z.string().trim().optional().nullable(),
+	),
+	payerIdentityDocument: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+		z.string().trim().optional().nullable(),
+	),
+	payerRelationship: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+		z.string().trim().optional().nullable(),
+	),
 	guaranteeLetterId: z.string().trim().optional(),
 	allowOverdraft: z.boolean().optional(),
 	isUrgentCare: z.boolean().optional(),
@@ -162,15 +189,27 @@ export const cashboxPaymentRequestSchema = z.object({
 	).optional(),
 	clientMutationId: z.string().trim().max(128).optional(),
 	idempotencyKey: z.string().trim().max(128).optional(),
+	taxCategory: z.enum(["1", "2", "01", "02"]).optional(),
+	taxDeductionCode: z.enum(["1", "2", "01", "02"]).optional(),
 	cashierFullName: z.string().trim().max(256).optional(),
 	note: z.string().trim().max(500).optional(),
 	isElectronicReceiptOnly: z.boolean().optional(),
 	customerContact: z.string().trim().max(128).optional(),
+	isAdvanceDeposit: z.boolean().optional(),
+	advanceDepositTarget: z.enum(["family", "patient"]).optional(),
 	clientType: z.preprocess(
 		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
 		z.string().trim().optional().nullable(),
 	),
 	buyerInn: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+		z.string().trim().optional().nullable(),
+	),
+	fiscalReceiptNumber: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+		z.string().trim().optional().nullable(),
+	),
+	fiscalReceiptIssuedAt: z.preprocess(
 		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
 		z.string().trim().optional().nullable(),
 	),

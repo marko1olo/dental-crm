@@ -4,6 +4,7 @@ import type { BrowserContinuityStatus } from "../../../browserContinuity";
 import type { NetworkState } from "../../../utils/networkConnectivity";
 import type { ActiveCitoAlert } from "../../../hooks/useLanP2P";
 import type { DenteTelegramHandoffTarget } from "../../../AppConstants";
+import type { AppView } from "../../../utils/routeUtils";
 
 export interface ActiveDoctorInfo {
 	id?: string;
@@ -30,8 +31,8 @@ export interface TopBarCoreProps {
 	handleLockSession: () => void;
 	openDoctorShiftCockpit: () => void;
 	setIsCbctDirectModalOpen: (open: boolean) => void;
-	currentView: string;
-	setCurrentView: (view: string) => void;
+	currentView: AppView;
+	setCurrentView: (view: AppView) => void;
 	setSettingsTab: (tab: string) => void;
 	isDoctorShiftCockpitOpen: boolean;
 	closeDoctorShiftCockpit: () => void;

@@ -69,7 +69,7 @@ export function WizardDoneStep({
 					{onboardingDocumentReadinessIssues.join(", ")}.
 				</p>
 			) : null}
-			{onboardingTelegramRecommendations.length ? (
+			{onboardingTelegramRecommendations && onboardingTelegramRecommendations.length ? (
 				<p className="onboarding-blocker onboarding-advisory">
 					Telegram можно включить позже:{" "}
 					{onboardingTelegramRecommendations.join(", ")}.

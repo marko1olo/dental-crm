@@ -79,8 +79,8 @@ export interface OnboardingWizardModalProps {
 	onboardingSteps: readonly OnboardingStepItem[];
 	legalReadinessPercent: number;
 	continueOnboardingInDraftMode: (targetView?: string) => Promise<void> | void;
-	moveOnboardingTo: (step: string) => Promise<void> | void;
-	onboardingStep: string;
+	moveOnboardingTo: (step: string | number) => Promise<void> | void;
+	onboardingStep: string | number;
 	onboardingReadyToFinish: boolean;
 	onboardingFinishGuidanceId: string;
 	onboardingRoleChoices: readonly StaffRole[];
@@ -90,16 +90,19 @@ export interface OnboardingWizardModalProps {
 	specialtyLabels: Record<DentalSpecialty, string>;
 	selectedSpecialty: DentalSpecialty;
 	setSelectedSpecialty: (specialty: DentalSpecialty) => void;
-	dashboard: Dashboard | null;
+	dashboard: Dashboard | null | undefined;
 	clinicModeLabels: Record<ClinicMode, { title: string; detail: string }>;
 	changeClinicMode: (mode: ClinicMode) => void;
 	clinicProfileDraft: ClinicProfileDraft;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	updateClinicProfileDraft: (
+		patch: Partial<ClinicProfileDraft> | string,
+		value?: unknown,
+	) => void;
 	uiLanguage: string;
 	setUiLanguage: (lang: string) => void;
 	normalizeUiLanguageInput: (val: string) => string;
 	uiLanguageOptions: readonly UiLanguageOption[];
-	selectedUiLanguageOption: UiLanguageOption;
+	selectedUiLanguageOption: UiLanguageOption | null;
 	weekdayOptions: readonly WeekdayOption[];
 	toggleClinicWorkingDay: (day: number) => void;
 	legalMissingFields: readonly string[];
@@ -227,7 +230,7 @@ export interface OnboardingWizardModalProps {
 	onboardingDocumentsReady: boolean;
 	onboardingBlockingIssues: readonly string[];
 	onboardingDocumentReadinessIssues: readonly string[];
-	onboardingTelegramRecommendations: readonly string[];
+	onboardingTelegramRecommendations?: readonly string[] | undefined;
 	dismissOnboarding: () => void;
 	saveClinicProfileFromDraft: () => Promise<void> | void;
 	clinicProfileSaveState: string;
@@ -252,26 +255,32 @@ export interface WizardRoleStepProps {
 
 export interface WizardClinicStepProps {
 	clinicProfileDraft: ClinicProfileDraft;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	updateClinicProfileDraft: (
+		patch: Partial<ClinicProfileDraft> | string,
+		value?: unknown,
+	) => void;
 	changeClinicMode: (mode: ClinicMode) => void;
 	uiLanguage: string;
 	setUiLanguage: (lang: string) => void;
 	normalizeUiLanguageInput: (val: string) => string;
 	uiLanguageOptions: readonly UiLanguageOption[];
-	selectedUiLanguageOption: UiLanguageOption;
+	selectedUiLanguageOption: UiLanguageOption | null;
 	weekdayOptions: readonly WeekdayOption[];
 	toggleClinicWorkingDay: (day: number) => void;
 }
 
 export interface WizardLegalStepProps {
 	clinicProfileDraft: ClinicProfileDraft;
-	updateClinicProfileDraft: (field: string, value: any) => void;
+	updateClinicProfileDraft: (
+		patch: Partial<ClinicProfileDraft> | string,
+		value?: unknown,
+	) => void;
 	legalReadinessPercent: number;
 	legalMissingFields: readonly string[];
 }
 
 export interface WizardTeamStepProps {
-	dashboard: Dashboard | null;
+	dashboard: Dashboard | null | undefined;
 	newStaffName: string;
 	setNewStaffName: (name: string) => void;
 	newStaffRole: StaffRole;
@@ -406,7 +415,7 @@ export interface WizardTelegramStepProps {
 
 export interface WizardDoneStepProps {
 	legalReadinessPercent: number;
-	dashboard: Dashboard | null;
+	dashboard: Dashboard | null | undefined;
 	clinicModeLabels: Record<ClinicMode, { title: string; detail: string }>;
 	staffRoleLabels: Record<StaffRole, string>;
 	selectedWorkspaceRole: StaffRole;
@@ -419,14 +428,14 @@ export interface WizardDoneStepProps {
 	onboardingReadyToFinish: boolean;
 	onboardingBlockingIssues: readonly string[];
 	onboardingDocumentReadinessIssues: readonly string[];
-	onboardingTelegramRecommendations: readonly string[];
+	onboardingTelegramRecommendations?: readonly string[] | undefined;
 }
 
 export interface WizardStepperNavProps {
 	onboardingSteps: readonly OnboardingStepItem[];
-	onboardingStep: string;
+	onboardingStep: string | number;
 	currentOnboardingIndex: number;
-	moveOnboardingTo: (step: string) => Promise<void> | void;
+	moveOnboardingTo: (step: string | number) => Promise<void> | void;
 }
 
 export const ONBOARDING_WIZARD_ACCESSIBILITY_LABELS = {

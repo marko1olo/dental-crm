@@ -128,7 +128,7 @@ describe("Cashbox Installments & Patient Balance Segregation Integrity", () => {
 			// Общая сумма 100 000 ₽, первый взнос 30 000 ₽, 3 месяца рассрочки
 			const createContractRes = await app.inject({
 				method: "POST",
-				url: "/api/installments/contracts",
+				url: "/api/installments",
 				headers,
 				payload: {
 					patientId,

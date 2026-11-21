@@ -42,6 +42,12 @@ import { type StaffProfileExtended, staffProfileExtendedSchema } from "@dental/s
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
 
+declare global {
+	interface Window {
+		__denteCopilot?: { open: () => void };
+	}
+}
+
 function DirectSettingsTransition(): null {
 	React.useEffect(() => {
 		import("../../../../store/appStore").then((m) => {
@@ -297,8 +303,8 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			tokens: ["copilot", "ai=1", "ai-assistant", "chairside-copilot", "copilot_standalone", "copilot-standalone", "copilot_drawer", "copilot-drawer", "copilot_proof", "copilot-proof"],
 		},
 		render: () => {
-			if (typeof window !== "undefined" && (window as any).__denteCopilot) {
-				(window as any).__denteCopilot.open();
+			if (typeof window !== "undefined" && window.__denteCopilot) {
+				window.__denteCopilot.open();
 			}
 			return null;
 		},

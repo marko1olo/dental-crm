@@ -25,6 +25,12 @@ import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
 import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
 
+declare global {
+	interface Window {
+		__denteCopilot?: { open: () => void };
+	}
+}
+
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
 ): React.ReactElement | null {
@@ -93,8 +99,8 @@ export function renderSpecializedAdministrativeLaunchers(
 			window.location.search.includes("ai=1") ||
 			window.location.search.includes("assistant=1"))
 	) {
-		if (typeof window !== "undefined" && (window as any).__denteCopilot) {
-			(window as any).__denteCopilot.open();
+		if (typeof window !== "undefined" && window.__denteCopilot) {
+			window.__denteCopilot.open();
 		}
 		return null;
 	}

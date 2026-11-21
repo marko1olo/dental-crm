@@ -3,6 +3,7 @@
  */
 
 import React from "react";
+import type { AppView } from "../../../utils/routeUtils";
 
 export interface TopBarDraftStripsProps {
 	onboardingDismissed: boolean;
@@ -12,7 +13,7 @@ export interface TopBarDraftStripsProps {
 	onboardingDocumentsReady: boolean;
 	onboardingDocumentReadinessIssues: readonly string[];
 	reopenOnboarding: () => void;
-	setCurrentView: (view: string) => void;
+	setCurrentView: (view: AppView) => void;
 	setSettingsTab: (tab: string) => void;
 }
 

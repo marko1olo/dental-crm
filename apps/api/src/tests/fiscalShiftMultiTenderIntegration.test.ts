@@ -94,17 +94,42 @@ describe("RED TEAM INQUISITION: Cashier, Shift & Multi-Tender Pipeline", () => {
 
 	it("5. generates statutory 54-FZ fiscal metadata with balanced total", () => {
 		const closedAt = new Date("2026-10-12T18:00:00Z");
-		const meta = generateShiftFiscalMetadata({
-			orgId: "550e8400-e29b-41d4-a716-446655440000",
+		const orgId = "550e8400-e29b-41d4-a716-446655440000";
+
+		// 5.1 Offline / non-connected KKT returns honest null fiscal records (no fake attributes)
+		const offlineMeta = generateShiftFiscalMetadata({
+			orgId,
 			shiftNumber: 15,
 			totalRevenueRub: 45200.75,
 			closedAt,
+			isKktConnected: false,
 		});
 
-		assert.ok(meta.fiscalDocNumber.length > 0);
-		assert.ok(meta.fiscalSign.length >= 8);
-		assert.ok(meta.qrString.includes("s=45200.75"));
-		assert.ok(meta.qrString.includes("i="));
+		assert.equal(offlineMeta.fiscalDocNumber, null);
+		assert.equal(offlineMeta.fiscalSign, null);
+		assert.equal(offlineMeta.qrString, null);
+		assert.equal(offlineMeta.isOfflineKkt, true);
+
+		// 5.2 Online KKT with real hardware report data produces valid 54-FZ metadata and QR string
+		const onlineMeta = generateShiftFiscalMetadata({
+			orgId,
+			shiftNumber: 15,
+			totalRevenueRub: 45200.75,
+			closedAt,
+			isKktConnected: true,
+			kktReportData: {
+				fnSerial: "9960440300123456",
+				fiscalDocNumber: "1501",
+				fiscalSign: "1234567890",
+			},
+		});
+
+		assert.equal(onlineMeta.fiscalDocNumber, "1501");
+		assert.equal(onlineMeta.fiscalSign, "1234567890");
+		assert.equal(onlineMeta.fnSerial, "9960440300123456");
+		assert.equal(onlineMeta.isOfflineKkt, false);
+		assert.ok(onlineMeta.qrString?.includes("s=45200.75"));
+		assert.ok(onlineMeta.qrString?.includes("i=1501"));
 	});
 
 	it("6. verifies normalizeTenderType maps statutory aliases", () => {

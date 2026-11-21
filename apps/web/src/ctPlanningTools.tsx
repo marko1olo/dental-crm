@@ -81,7 +81,10 @@ type CtPlanningToolsPanelProps = {
 	selectedImplantPlan?: ImagingViewerImplantPlan | null | undefined;
 	onSelectImplant?: ((implant: CtImplantLibraryItem) => void) | undefined;
 	localAnnotations?: ImagingViewerAnnotation[] | undefined;
-	annotationRefs?: CtPlanningArtifactAnnotationRef[] | undefined;
+	annotationRefs?:
+		| CtPlanningArtifactAnnotationRef[]
+		| { current?: CtPlanningArtifactAnnotationRef[] | null | undefined }
+		| undefined;
 	onCreateArtifact?: ((command: CtPlanningArtifactCommand) => void) | undefined;
 	toolStateBundle?: DicomViewerToolStateBundleResponse | null | undefined;
 	dentalModelWorkbenchManifest?: DentalModelWorkbenchManifest | null | undefined;
@@ -178,7 +181,13 @@ export function CtPlanningToolsPanel({
 	);
 	const safeAnnotationRefs = useMemo(() => {
 		if (Array.isArray(annotationRefs)) return annotationRefs;
-		if (Array.isArray((annotationRefs as any)?.current)) return (annotationRefs as any).current;
+		if (
+			annotationRefs &&
+			"current" in annotationRefs &&
+			Array.isArray(annotationRefs.current)
+		) {
+			return annotationRefs.current;
+		}
 		return [];
 	}, [annotationRefs]);
 

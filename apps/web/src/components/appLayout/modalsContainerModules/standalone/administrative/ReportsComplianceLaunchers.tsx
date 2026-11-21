@@ -8,12 +8,26 @@
  */
 
 import React, { Suspense, useMemo } from "react";
+import { z } from "zod";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import type { StandaloneLaunchersProps } from "../../modalsContainerTypes";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 import { readPatientIdFromUrl } from "../useLauncherPatientDebt";
 import { useDmsPatientLoader } from "./useDmsPatientLoader";
+
+const egiszTabSchema = z
+	.enum([
+		"clinical",
+		"tax_deduction",
+		"preflight",
+		"signature",
+		"xml_preview",
+		"journal",
+		"xml",
+		"signing",
+	])
+	.catch("signature");
 
 const EgiszRemdHubModal = lazyWithRetry(() =>
 	import("../../../../egisz/EgiszRemdHubModal").then((m) => ({ default: m.EgiszRemdHubModal })),
@@ -28,7 +42,7 @@ export function renderReportsComplianceLaunchers(props: StandaloneLaunchersProps
 	const s = window.location.search || "";
 
 	if (isEgiszRemdModalOpen) {
-		const tab = (new URLSearchParams(s).get("tab") as any) ?? "signature";
+		const tab = egiszTabSchema.parse(new URLSearchParams(s).get("tab"));
 		return (
 			<Suspense fallback={<AppLoadingState message="Загрузка хаба ЕГИСЗ РЭМД..." />}>
 				<EgiszRemdHubModal

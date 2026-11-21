@@ -21,7 +21,8 @@ import {
 	ensureOrganizationExpenseReasons,
 } from "../../db/seeds/seed_cash_and_reasons.js";
 import { FiscalResilienceService } from "../../services/fiscalResilienceService.js";
-import { registerCashInstallmentsRoutes } from "../cashInstallmentsRoutes.js";
+import { registerCashInstallmentsRoutes } from "./cashInstallmentsRoutes.js";
+import { registerPatientBalanceRoutes } from "./patientBalanceService.js";
 import { registerCashLabPaymentRoutes } from "../lab/index.js";
 import { processCashboxPayment } from "./cashboxPaymentProcessor.js";
 import { cashOperationListQuerySchema } from "./cashboxSchemas.js";
@@ -160,6 +161,9 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 
 	// 4. Регистрация модульных маршрутов рассрочки и траншей (Feature #37)
 	await registerCashInstallmentsRoutes(app);
+
+	// 4b. Регистрация модульных маршрутов баланса пациента и авансов (Feature #38)
+	await registerPatientBalanceRoutes(app);
 
 	/**
 	 * 5. GET /api/cash/operation-list

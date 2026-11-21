@@ -10,3 +10,5 @@ export * from "./cashboxHelpers.js";
 export * from "./cashboxShiftRoutes.js";
 export * from "./cashboxPaymentRoutes.js";
 export * from "./cashboxRefundRoutes.js";
+export * from "./cashInstallmentsRoutes.js";
+export * from "./patientBalanceService.js";

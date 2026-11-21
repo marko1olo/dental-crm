@@ -86,7 +86,7 @@ export function WizardClinicStep({
 						))}
 					</select>
 					<small className="field-note">
-						{selectedUiLanguageOption.detail}
+						{selectedUiLanguageOption?.detail ?? ""}
 					</small>
 				</label>
 				<label>

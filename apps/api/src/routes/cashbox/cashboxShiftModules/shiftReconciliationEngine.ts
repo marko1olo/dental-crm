@@ -146,29 +146,33 @@ export async function calculateShiftTenderTotals(
 			const canonicalTender = normalizeTenderType(p.method);
 
 			if (canonicalTender === "cash") {
-				// Наличные учитываются только в кассе main или если это операции по кассе
+				// Наличные учитываются ТОЛЬКО в кассе main
 				if (isMainBox) {
 					cashKop += amtKop;
 				}
 			} else if (canonicalTender === "sbp") {
-				if (isCashlessBox || isMainBox) {
+				// Безналичные СБП учитываются ТОЛЬКО в безналичной кассе
+				if (isCashlessBox) {
 					sbpKop += amtKop;
 				}
 			} else if (canonicalTender === "deposit" || canonicalTender === "family_wallet") {
-				if (isCashlessBox || isMainBox) {
+				// Зачёт аванса учитывается ТОЛЬКО в безналичной кассе
+				if (isCashlessBox) {
 					advanceKop += amtKop;
 				}
 			} else if (canonicalTender === "insurance") {
-				if (isDmsBox || isMainBox) {
+				// Страховые выплаты ДМС учитываются в кассе ДМС
+				if (isDmsBox) {
 					insuranceKop += amtKop;
 				}
 			} else if (canonicalTender === "bank_transfer") {
-				if (isAccountBox || isCashlessBox || isMainBox) {
+				// Банковский перевод на р/с
+				if (isAccountBox || isCashlessBox) {
 					cardKop += amtKop;
 				}
 			} else {
-				// card / other
-				if (isCashlessBox || isMainBox) {
+				// Эквайринг карты / прочие электронные платежи
+				if (isCashlessBox) {
 					cardKop += amtKop;
 				}
 			}
@@ -233,12 +237,7 @@ export function generateShiftFiscalMetadata(params: {
 	totalRevenueRub: number;
 	closedAt: Date;
 	isKktConnected?: boolean | undefined;
-	kktReportData?: {
-		fnSerial?: string | null;
-		fiscalDocNumber?: string | null;
-		fiscalSign?: string | null;
-		qrString?: string | null;
-	} | undefined;
+	kktReportData?: CloseShiftRequestBody["kktReportData"];
 }): ShiftFiscalMetadataResult {
 	const isDemo = isDemoOrganizationId(params.orgId);
 	if (isDemo) {
@@ -268,32 +267,17 @@ export function generateShiftFiscalMetadata(params: {
 	}
 
 	if (params.kktReportData?.fiscalDocNumber && params.kktReportData?.fiscalSign) {
-		return {
-			fiscalDocNumber: params.kktReportData.fiscalDocNumber,
-			fiscalSign: params.kktReportData.fiscalSign,
-			fnSerial: params.kktReportData.fnSerial ?? process.env.KKM_FN_SERIAL ?? null,
-			qrString: params.kktReportData.qrString ?? null,
-			isOfflineKkt: false,
-			statusDescription: "Фискальный Z-отчет (ККТ онлайн)",
-		};
-	}
-
-	// Если ККТ подключена онлайн, формируем фискальную последовательность
-	if (params.isKktConnected === true) {
-		const fnSerial = params.kktReportData?.fnSerial || process.env.KKM_FN_SERIAL || "9960440300123456";
-		const fdNum = params.shiftNumber * 100 + 1;
-		const fiscalDocNumber = params.kktReportData?.fiscalDocNumber || String(fdNum);
-		const fpdNum = 1000000000 + ((params.shiftNumber * 1234567) % 900000000);
-		const fiscalSign = params.kktReportData?.fiscalSign || String(fpdNum);
-
-		const qrString = params.kktReportData?.qrString || Fiscal54FzService.generate54FzQrString({
+		const fnSerial = params.kktReportData.fnSerial ?? process.env.KKM_FN_SERIAL ?? null;
+		const fiscalDocNumber = params.kktReportData.fiscalDocNumber;
+		const fiscalSign = params.kktReportData.fiscalSign;
+		const qrString = params.kktReportData.qrString || (fnSerial ? Fiscal54FzService.generate54FzQrString({
 			issuedAt: params.closedAt,
 			totalRub: params.totalRevenueRub,
 			fnSerial,
 			fiscalDocNumber,
 			fiscalSign,
 			operationType: 1,
-		});
+		}) : null);
 
 		return {
 			fiscalDocNumber,
@@ -305,12 +289,14 @@ export function generateShiftFiscalMetadata(params: {
 		};
 	}
 
+	// [SEV-1.1] Честный учет без фабрикации фискальных реквизитов:
+	// Если реальная ККТ не вернула ФД и ФП, не подделываем государственные реквизиты.
 	return {
 		fiscalDocNumber: null,
 		fiscalSign: null,
-		fnSerial: process.env.KKM_FN_SERIAL ?? null,
+		fnSerial: params.kktReportData?.fnSerial ?? (process.env.KKM_FN_SERIAL || null),
 		qrString: null,
-		isOfflineKkt: !params.isKktConnected,
+		isOfflineKkt: true,
 		statusDescription: params.isKktConnected
 			? "Z-отчет ожидает подтверждения аппаратной ККТ"
 			: "Локальный учетный Z-отчет (ККТ оффлайн)",
@@ -375,6 +361,8 @@ export async function reconcileSingleShift(
 		shiftNumber: shift.shiftNumber,
 		totalRevenueRub: netRevenueRub,
 		closedAt: now,
+		isKktConnected: input.isKktConnected,
+		kktReportData: input.kktReportData,
 	});
 
 	const zReportNumber = formatZReportNumber(

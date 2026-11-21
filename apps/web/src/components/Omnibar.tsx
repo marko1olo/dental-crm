@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import type { Patient } from "@dental/shared";
 import { useAppStore } from "../store/appStore";
 import { useUnifiedDictation } from "../hooks/useUnifiedDictation";
 import { searchPatientsQuick } from "./patients/patientSearchFuzzy";
@@ -30,7 +31,7 @@ export function Omnibar() {
 	const { isOmnibarOpen, setOmnibarOpen, setCurrentView, dashboard, setActivePatientId } = useAppStore();
 	const [query, setQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
-	const [remotePatients, setRemotePatients] = useState<any[]>([]);
+	const [remotePatients, setRemotePatients] = useState<Patient[]>([]);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const {
@@ -118,14 +119,14 @@ export function Omnibar() {
 		};
 	}, [query]);
 
-	const mergedPatients = useMemo(() => {
-		const local = dashboard?.patients ?? [];
-		const map = new Map<string, any>();
+	const mergedPatients = useMemo<Patient[]>(() => {
+		const local = (dashboard?.patients ?? []) as unknown as Patient[];
+		const map = new Map<string, Patient>();
 		for (const p of local) {
 			if (p?.id) map.set(p.id, p);
 		}
 		for (const p of remotePatients) {
-			if (p?.id) map.set(p.id, { ...map.get(p.id), ...p });
+			if (p?.id) map.set(p.id, { ...map.get(p.id), ...p } as Patient);
 		}
 		return Array.from(map.values());
 	}, [dashboard?.patients, remotePatients]);
@@ -557,11 +558,9 @@ export function Omnibar() {
 															<div
 																className={`flex items-center justify-center w-8 h-8 rounded-lg ${idx === selectedIndex ? "bg-[var(--teal-soft)] text-[var(--teal-dark)]" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}
 															>
-																{React.cloneElement(
-																	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-																	cmd.icon as React.ReactElement<any>,
-																	{ size: 16 },
-																)}
+																{React.isValidElement<{ size?: number }>(cmd.icon)
+																	? React.cloneElement(cmd.icon, { size: 16 })
+																	: cmd.icon}
 															</div>
 															<span className="font-medium">{cmd.title}</span>
 

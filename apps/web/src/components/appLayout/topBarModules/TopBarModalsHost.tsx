@@ -36,7 +36,7 @@ export function TopBarModalsHost(props: AppTopBarProps) {
 
 			{showFullOnboardingGuide && (
 				<Suspense fallback={null}>
-					<OnboardingWizardModal {...(props as any)} />
+					<OnboardingWizardModal {...props} />
 				</Suspense>
 			)}
 		</>

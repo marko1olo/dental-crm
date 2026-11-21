@@ -113,19 +113,39 @@ describe("Cashbox Shift & Fiscal Ledger Engine (SSOT & 54-FZ)", () => {
 		assert.equal(isDemoOrganizationId(prodOrgId), false);
 
 		const closeDate = new Date("2026-11-06T18:45:00Z");
-		const meta = generateShiftFiscalMetadata({
+
+		// [SEV-1.1] При отсутствии ответа ККТ государственные реквизиты НЕ фабрикуются
+		const offlineMeta = generateShiftFiscalMetadata({
 			orgId: prodOrgId,
 			shiftNumber: 105,
 			totalRevenueRub: 98750.25,
 			closedAt: closeDate,
+			isKktConnected: false,
 		});
 
-		assert.ok(meta.fnSerial.length >= 10, "FN serial must be populated");
-		assert.equal(meta.fiscalDocNumber, "10501");
-		assert.ok(meta.fiscalSign.length >= 8, "FPD must be at least 8 digits");
-		assert.ok(meta.qrString.startsWith("t="), "QR string must start with timestamp tag");
-		assert.ok(meta.qrString.includes("s=98750.25"), "QR string must contain exact revenue");
-		assert.ok(meta.qrString.includes(`fn=${meta.fnSerial}`), "QR string must include FN");
-		assert.ok(meta.qrString.includes("i=10501"), "QR string must include FD number");
+		assert.equal(offlineMeta.fiscalDocNumber, null);
+		assert.equal(offlineMeta.fiscalSign, null);
+		assert.equal(offlineMeta.qrString, null);
+		assert.equal(offlineMeta.isOfflineKkt, true);
+
+		// При наличии ответа ККТ реквизиты передаются строго из ККТ
+		const onlineMeta = generateShiftFiscalMetadata({
+			orgId: prodOrgId,
+			shiftNumber: 105,
+			totalRevenueRub: 98750.25,
+			closedAt: closeDate,
+			isKktConnected: true,
+			kktReportData: {
+				fnSerial: "9960440300123456",
+				fiscalDocNumber: "10501",
+				fiscalSign: "1234567890",
+				qrString: "t=20261106T1845&s=98750.25&fn=9960440300123456&i=10501&fp=1234567890&n=1",
+			},
+		});
+
+		assert.equal(onlineMeta.fnSerial, "9960440300123456");
+		assert.equal(onlineMeta.fiscalDocNumber, "10501");
+		assert.equal(onlineMeta.fiscalSign, "1234567890");
+		assert.ok(onlineMeta.qrString?.startsWith("t="));
 	});
 });
