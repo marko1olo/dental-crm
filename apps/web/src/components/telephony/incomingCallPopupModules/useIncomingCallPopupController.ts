@@ -242,7 +242,7 @@ export function useIncomingCallPopupController(
 				});
 			}
 			if (ctx?.setDashboard && createdPatient) {
-				ctx.setDashboard((curr: Dashboard | null | undefined) =>
+				ctx.setDashboard((curr: Dashboard | null) =>
 					curr
 						? {
 								...curr,
@@ -251,7 +251,7 @@ export function useIncomingCallPopupController(
 									...curr.patients.filter((p: Patient) => p.id !== createdPatient.id),
 								],
 							}
-						: curr,
+						: null,
 				);
 			}
 			showToast(`Создана амбулаторная карта: ${createdName} (${formattedPhone})`, "success");

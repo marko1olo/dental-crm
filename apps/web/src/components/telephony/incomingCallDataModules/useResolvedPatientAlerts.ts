@@ -21,7 +21,7 @@ export function useResolvedPatientAlerts(
 	serverLookup: CallerLookupResult | null,
 	resolvedPatient: TelephonyPatientLike | null,
 	patientInsight: TelephonyPatientInsightLike | null | undefined,
-	dashboard: Dashboard | undefined,
+	dashboard?: Dashboard | null | undefined,
 ): ResolvedPatientAlertsResult {
 	const somaticAlerts: PatientSomaticAlert[] = useMemo(() => {
 		if (

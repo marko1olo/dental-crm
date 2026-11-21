@@ -49,7 +49,17 @@ export function useDrawerPatientIntake(params: {
 			const active = useTelephonyStore.getState().activeCall;
 			if (active) triggerIncomingCall({ ...active, patientId: createdPatient.id, patientName: createdPatient.fullName });
 			if (ctx?.setDashboard) {
-				ctx.setDashboard((curr: Dashboard | null | undefined) => curr ? { ...curr, patients: [createdPatient, ...curr.patients.filter((p: Patient) => p.id !== createdPatient.id)] } : curr);
+				ctx.setDashboard((curr: Dashboard | null) =>
+					curr
+						? {
+								...curr,
+								patients: [
+									createdPatient,
+									...curr.patients.filter((p: Patient) => p.id !== createdPatient.id),
+								],
+							}
+						: null,
+				);
 			}
 			showToast(`Создана амбулаторная карта: ${createdPatient.fullName} (${callData.formattedPhone})`, "success");
 		} catch (err: unknown) {

@@ -278,4 +278,26 @@ describe("Red Team Inquisition: Staff Payroll, Doctor Shifts & Net Revenue SSOT"
 		assert.equal(data2.statementId, data1.statementId);
 		assert.equal(data2.ok, true);
 	});
+
+	test("11. DEF-PAYROLL-09: POST /api/v1/payroll/close-settlement отклоняет невалидный не-UUID Idempotency-Key с кодом 400", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/payroll/close-settlement",
+			headers: {
+				...authHeaders(DOCTOR_ID, "owner"),
+				"Content-Type": "application/json",
+				"Idempotency-Key": "invalid-non-uuid-key-12345",
+			},
+			payload: {
+				doctorId: DOCTOR_ID,
+				periodStart: "2026-10-01",
+				periodEnd: "2026-10-31",
+			},
+		});
+
+		assert.equal(res.statusCode, 400);
+		const data = JSON.parse(res.body);
+		assert.equal(data.error, "ValidationError");
+		assert.ok(data.message.includes("Idempotency-Key"));
+	});
 });

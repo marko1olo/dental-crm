@@ -4,7 +4,10 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { withTenantCtx } from "../../db/rls.js";
+import { users } from "../../db/schema.js";
 import {
 	assistantPayrollReport,
 	clinicTimeZone,
@@ -90,7 +93,30 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 		} else {
 			const queryDoctorId = parsed.data.doctorId;
 			if (queryDoctorId && queryDoctorId !== "all") {
-				filterDoctorId = queryDoctorId;
+				const [existingDoctor] = await withTenantCtx(payoutAccess.organizationId, async (tx) => {
+					return await tx
+						.select({ id: users.id })
+						.from(users)
+						.where(
+							and(
+								eq(users.id, queryDoctorId),
+								eq(users.organizationId, payoutAccess.organizationId),
+							),
+						)
+						.limit(1);
+				});
+
+				if (!existingDoctor) {
+					request.log.warn(
+						{ queryDoctorId, organizationId: payoutAccess.organizationId },
+						"Security probe: doctor not found or does not belong to organization",
+					);
+					return reply.code(404).send({
+						error: "DoctorNotFound",
+						message: "Врач не найден в штате текущей клиники",
+					});
+				}
+				filterDoctorId = existingDoctor.id;
 			}
 		}
 

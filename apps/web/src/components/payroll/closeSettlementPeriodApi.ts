@@ -4,6 +4,8 @@
  * Mandate 8b: строго <= 120 строк на файл.
  */
 
+import { generateUuidV7 } from "@dental/shared";
+
 export interface CloseSettlementPeriodParams {
 	readonly doctorId: string;
 	readonly periodStart: string;
@@ -47,11 +49,7 @@ export interface CloseSettlementPeriodResult {
 export async function closeSettlementPeriodApi(
 	params: CloseSettlementPeriodParams,
 ): Promise<CloseSettlementPeriodResult> {
-	const idempotencyKey =
-		params.idempotencyKey ||
-		(typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-			? crypto.randomUUID()
-			: `idem-settle-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+	const idempotencyKey = params.idempotencyKey || generateUuidV7();
 
 	const res = await fetch("/api/doctor/close-settlement-period", {
 		method: "POST",

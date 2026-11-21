@@ -8,7 +8,7 @@ import { getOrCreatePatientFastIndex } from "./patientFastPhoneIndex";
 export function useResolvedPatient(
 	serverLookup: CallerLookupResult | null,
 	currentCall: IncomingCallPayload | null,
-	dashboard: Dashboard | undefined,
+	dashboard?: Dashboard | null | undefined,
 ): TelephonyPatientLike | null {
 	return useMemo(() => {
 		if (serverLookup?.found && serverLookup.patient) {

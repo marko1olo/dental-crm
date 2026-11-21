@@ -292,7 +292,7 @@
 	min-height: 44px;
 	padding: 0 20px;
 	border-radius: 12px;
-	background: var(--teal);
+	background: var(--primary);
 	color: #ffffff;
 	font-size: 14px;
 	font-weight: 700;
@@ -304,9 +304,10 @@
 	gap: 8px;
 	white-space: nowrap;
 	transition: all 0.15s ease;
-	box-shadow: 0 2px 8px color-mix(in srgb, var(--teal) 35%, transparent);
+	box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 .payroll-studio-primary-cta:hover {
+	background: var(--primary-hover, var(--primary));
 	opacity: 0.95;
 	transform: translateY(-1px);
 }

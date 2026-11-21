@@ -215,7 +215,7 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 			const content = fs.readFileSync(studioPath, "utf8");
 
 			assert.ok(content.includes('data-testid="payroll-studio-primary-cta"'));
-			assert.ok(content.includes("bg-[var(--teal,#0d9488)]"));
+			assert.ok(content.includes("bg-[var(--primary)]"));
 			assert.ok(!content.includes("disabled={true}"));
 			assert.ok(!content.includes("disabled={!"));
 		});

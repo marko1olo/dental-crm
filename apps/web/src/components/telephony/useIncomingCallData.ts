@@ -42,8 +42,8 @@ export interface UseIncomingCallDataResult {
 
 export function useIncomingCallData(
 	activeCall: IncomingCallPayload | null,
-	dashboard: Dashboard | undefined,
-	dismissCall: () => void,
+	dashboard?: Dashboard | null | undefined,
+	dismissCall?: () => void,
 ): UseIncomingCallDataResult {
 	const lastCallRef = useRef<IncomingCallPayload | null>(activeCall);
 	useEffect(() => {

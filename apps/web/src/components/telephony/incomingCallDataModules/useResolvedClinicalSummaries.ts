@@ -25,7 +25,7 @@ export interface ResolvedClinicalSummaries {
 export function useResolvedClinicalSummaries(
 	serverLookup: CallerLookupResult | null,
 	resolvedPatient: TelephonyPatientLike | null,
-	dashboard: Dashboard | undefined,
+	dashboard?: Dashboard | null | undefined,
 ): ResolvedClinicalSummaries {
 	const patientInsight = useMemo(() => {
 		if (!resolvedPatient || !dashboard?.patientInsights) return null;

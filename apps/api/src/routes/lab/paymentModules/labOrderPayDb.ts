@@ -94,13 +94,19 @@ export async function executeLabOrderPayment(
 			.limit(1);
 
 		const amountToPayRub = kopecksToRub(amountToPayKopecks);
-		const balanceBeforeKop = rubToKopecks(targetBox.balanceRub);
-		const balanceAfterKop = balanceBeforeKop - amountToPayKopecks;
-		const balanceAfterRub = kopecksToRub(balanceAfterKop);
+		const currentBalanceKopecks = typeof targetBox.balanceKopecks === "number" && targetBox.balanceKopecks !== 0
+			? targetBox.balanceKopecks
+			: rubToKopecks(targetBox.balanceRub);
+		const balanceAfterKopecks = currentBalanceKopecks - amountToPayKopecks;
+		const balanceAfterRub = kopecksToRub(balanceAfterKopecks);
 
 		await tx
 			.update(cashBoxes)
-			.set({ balanceRub: balanceAfterRub, updatedAt: new Date() })
+			.set({
+				balanceRub: balanceAfterRub,
+				balanceKopecks: balanceAfterKopecks,
+				updatedAt: new Date(),
+			})
 			.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)));
 
 		const [operation] = await tx
@@ -110,6 +116,7 @@ export async function executeLabOrderPayment(
 				cashBoxId: targetBox.id,
 				operationType: "expense",
 				amountRub: amountToPayRub,
+				amountKopecks: amountToPayKopecks,
 				balanceBeforeRub: targetBox.balanceRub,
 				balanceAfterRub,
 				reasonId: reason11?.id ?? null,

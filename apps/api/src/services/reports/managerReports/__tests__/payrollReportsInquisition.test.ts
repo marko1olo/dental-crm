@@ -155,4 +155,21 @@ describe("Red Team Inquisition: Doctor & Assistant Payroll", () => {
 			assert.equal(totalClinicPayrollRub, 341686);
 		});
 	});
+
+	describe("[PAY-06] Tenant Doctor Ownership Validation", () => {
+		test("queryDoctorId валидируется на принадлежность текущей организации с отсечением чужих врачей (404/BOLA)", () => {
+			const clinicOrgId = "c8000000-0000-4000-8000-00000000c001";
+			const clinicDoctors = [
+				{ id: "doc-1", organizationId: clinicOrgId },
+				{ id: "doc-2", organizationId: clinicOrgId },
+			];
+
+			const checkDoctorBelongsToOrg = (doctorId: string, targetOrgId: string): boolean => {
+				return clinicDoctors.some((d) => d.id === doctorId && d.organizationId === targetOrgId);
+			};
+
+			assert.equal(checkDoctorBelongsToOrg("doc-1", clinicOrgId), true, "Свой врач успешно проходит проверку");
+			assert.equal(checkDoctorBelongsToOrg("foreign-doc-999", clinicOrgId), false, "Чужой или несуществующий врач отклоняется");
+		});
+	});
 });

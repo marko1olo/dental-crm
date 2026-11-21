@@ -203,8 +203,8 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 			// Must contain primary CTA data-testid
 			assert.ok(studioContent.includes("payroll-studio-primary-cta"), "Must include data-testid payroll-studio-primary-cta");
 
-			// Must use teal design token
-			assert.ok(studioContent.includes("bg-[var(--teal,#0d9488)]"), "Primary CTA must use var(--teal,#0d9488)");
+			// Must use primary design token
+			assert.ok(studioContent.includes("bg-[var(--primary)]"), "Primary CTA must use var(--primary)");
 
 			// Primary CTA button must NOT be disabled due to secondary fields (Mandate 8e: Doctor Autonomy)
 			assert.ok(!studioContent.includes("disabled={!"), "Primary CTA must never be permanently disabled by inputs");
