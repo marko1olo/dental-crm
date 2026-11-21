@@ -204,6 +204,8 @@ export const treatmentPlanItemSchema = z.object({
 export const treatmentPlanUpsertSchema = z.object({
 	id: z.string().uuid().optional().nullable(),
 	name: z.string().trim().min(1).max(300).default("Комплексный план лечения"),
+	diagnosisIcd10: z.string().trim().max(50).optional().nullable(),
+	diagnosisTitle: z.string().trim().max(500).optional().nullable(),
 	status: z
 		.enum(["Draft", "Active", "Approved", "Completed", "Rejected"])
 		.optional(),

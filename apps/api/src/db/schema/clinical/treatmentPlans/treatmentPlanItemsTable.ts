@@ -56,6 +56,12 @@ export const serviceCatalogItems = pgTable(
 			scale: 2,
 			mode: "number",
 		}).notNull(),
+		priceKopecks: bigint("price_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
+		basePriceKopecks: bigint("base_price_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		durationMinutes: integer("duration_minutes").notNull().default(30),
 		taxDeductible: boolean("tax_deductible").notNull().default(true),
 		taxDeductionCode: text("tax_deduction_code"),
@@ -80,6 +86,12 @@ export const serviceCatalogItems = pgTable(
 			scale: 2,
 			mode: "number",
 		}).default(0),
+		materialsCostKopecks: bigint("materials_cost_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
+		labCostKopecks: bigint("lab_cost_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		tierPrices: jsonb("tier_prices").default(sql`'{}'::jsonb`),
 		isActive: boolean("is_active").notNull().default(true),
 	},
@@ -146,6 +158,15 @@ export const treatmentItems = pgTable(
 		})
 			.notNull()
 			.default(0),
+		priceKopecks: bigint("price_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
+		unitPriceKopecks: bigint("unit_price_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
+		discountKopecks: bigint("discount_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		status: treatmentPlanItemStatus("status").notNull().default("proposed"),
 		plannedDoctorUserId: uuid("planned_doctor_user_id").references(
 			() => users.id,
@@ -208,13 +229,16 @@ export const treatmentPlanItemsNew = pgTable(
 		discount: numeric("discount", { precision: 12, scale: 2 })
 			.notNull()
 			.default("0"),
-		priceKopecks: bigint("price_kopecks", { mode: "number" }).notNull().default(0),
-		discountKopecks: bigint("discount_kopecks", { mode: "number" }).notNull().default(0),
+		priceKopecks: bigint("price_kopecks", { mode: "bigint" }).notNull().default(sql`0`),
+		discountKopecks: bigint("discount_kopecks", { mode: "bigint" }).notNull().default(sql`0`),
 		phase: integer("phase").notNull().default(1),
 		isBundle: boolean("is_bundle").notNull().default(false),
 		commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 })
 			.notNull()
 			.default("0"),
+		commissionKopecks: bigint("commission_kopecks", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
 		doctorId: uuid("doctor_id").references(() => users.id),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -264,6 +288,9 @@ export const portalBudgetTokens = pgTable(
 		totalPriceRub: numeric("total_price_rub", { precision: 12, scale: 2 }).notNull().default("0"),
 		discountRub: numeric("discount_rub", { precision: 12, scale: 2 }).notNull().default("0"),
 		netTotalRub: numeric("net_total_rub", { precision: 12, scale: 2 }).notNull().default("0"),
+		totalPriceKopecks: bigint("total_price_kopecks", { mode: "bigint" }).notNull().default(sql`0`),
+		discountKopecks: bigint("discount_kopecks", { mode: "bigint" }).notNull().default(sql`0`),
+		netTotalKopecks: bigint("net_total_kopecks", { mode: "bigint" }).notNull().default(sql`0`),
 		currency: varchar("currency", { length: 8 }).notNull().default("RUB"),
 		failedAttempts: integer("failed_attempts").notNull().default(0),
 		totalFailures: integer("total_failures").notNull().default(0),

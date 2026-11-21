@@ -77,32 +77,35 @@ export async function syncUpsertPlanLedgerItems(
 			),
 		);
 
-	const rewritableIds = ownedRows
-		.filter(
-			(row) =>
-				row.visitId === null &&
-				LEDGER_STATUSES_OWNED_BY_PLAN.has(row.status),
-		)
-		.map((row) => row.id);
-
-	if (rewritableIds.length > 0) {
-		await tx
-			.delete(treatmentItems)
-			.where(
-				and(
-					eq(treatmentItems.organizationId, organizationId),
-					inArray(treatmentItems.id, rewritableIds),
-				),
-			);
-	}
-
-	const keptSlots = new Set(
-		ownedRows
-			.filter((row) => !rewritableIds.includes(row.id))
-			.map((row) => row.id.toLowerCase()),
+	const ownedRowsById = new Map<string, (typeof ownedRows)[0]>(
+		ownedRows.map((r) => [r.id.toLowerCase(), r]),
 	);
 
+	const existingByPlanItemId = new Map<string, (typeof ownedRows)[0]>();
+	for (const row of ownedRows) {
+		if (row.treatmentPlanItemId && row.status !== "cancelled") {
+			existingByPlanItemId.set(row.treatmentPlanItemId.toLowerCase(), row);
+		}
+	}
+
+	const usedRowIds = new Set<string>();
+
 	if (items.length === 0) {
+		// Аннулируем все незавершенные позиции пустого плана
+		const obsoleteRows = ownedRows.filter(
+			(row) => row.visitId === null && LEDGER_STATUSES_OWNED_BY_PLAN.has(row.status),
+		);
+		if (obsoleteRows.length > 0) {
+			await tx
+				.update(treatmentItems)
+				.set({ status: "cancelled" })
+				.where(
+					and(
+						eq(treatmentItems.organizationId, organizationId),
+						inArray(treatmentItems.id, obsoleteRows.map((r) => r.id)),
+					),
+				);
+		}
 		return;
 	}
 
@@ -204,22 +207,11 @@ export async function syncUpsertPlanLedgerItems(
 
 	const ledgerStatus = patientSignature ? "approved" : "proposed";
 
+	const toInsert: (typeof treatmentItems.$inferInsert)[] = [];
 	let slot = 0;
-	const ledgerValues = items.map((item, index) => {
-		while (
-			slot <= LEDGER_MAX_SLOT &&
-			keptSlots.has(ledgerRowId(savedPlanId, slot).toLowerCase())
-		) {
-			slot += 1;
-		}
-		if (slot > LEDGER_MAX_SLOT) {
-			throw new Error(
-				`Позиции плана лечения некуда записать: свободных слотов книги лечения не осталось (позиция ${index + 1}).`,
-			);
-		}
-		const id = ledgerRowId(savedPlanId, slot);
-		slot += 1;
 
+	for (let index = 0; index < items.length; index++) {
+		const item = items[index]!;
 		const lineTotalRub = rublesFromKopecks(
 			chargeLineKopecks({
 				patientId,
@@ -243,38 +235,139 @@ export async function syncUpsertPlanLedgerItems(
 			(item.name ? serviceLookup.get(item.name.trim().toLowerCase()) : null) ||
 			(item.priceId && knownServiceIds.has(item.priceId) ? item.priceId : null);
 
-		return {
-			id,
-			organizationId,
-			patientId,
-			treatmentPlanId: savedPlanId,
-			treatmentPlanItemId: item.treatmentPlanItemId ?? null,
-			visitId: null,
-			serviceId: resolvedServiceId,
-			toothCode:
-				item.toothNumber === null || item.toothNumber === undefined
-					? null
-					: String(item.toothNumber),
-			title: item.name?.trim() || item.priceId || "Индивидуальная услуга",
-			quantity: String(item.quantity),
-			priceRub: lineTotalRub,
-			unitPriceRub,
-			discountRub: rublesFromKopecks(
-				chargeLineKopecks({
-					patientId,
-					status: ledgerStatus,
-					unitPriceRub: item.discount,
-					quantity: 1,
-					discountRub: 0,
-				}),
-			),
-			status: ledgerStatus as "proposed" | "approved",
-			plannedDoctorUserId: item.doctorId ?? null,
-			notes: null,
-		};
-	});
+		let existingRow: (typeof ownedRows)[0] | undefined;
+		let rowId: string | undefined;
 
-	await tx.insert(treatmentItems).values(ledgerValues);
+		const planItemIdKey = item.treatmentPlanItemId ? item.treatmentPlanItemId.toLowerCase() : null;
+		if (planItemIdKey) {
+			const candidate = existingByPlanItemId.get(planItemIdKey);
+			if (candidate && candidate.visitId === null && LEDGER_STATUSES_OWNED_BY_PLAN.has(candidate.status)) {
+				existingRow = candidate;
+				rowId = candidate.id;
+			}
+		}
+
+		if (!rowId) {
+			while (slot <= LEDGER_MAX_SLOT) {
+				const candidateId = ledgerRowId(savedPlanId, slot);
+				const candidateLower = candidateId.toLowerCase();
+				const existingAtSlot = ownedRowsById.get(candidateLower);
+				if (existingAtSlot && (existingAtSlot.visitId !== null || !LEDGER_STATUSES_OWNED_BY_PLAN.has(existingAtSlot.status))) {
+					slot += 1;
+					continue;
+				}
+				if (usedRowIds.has(candidateLower)) {
+					slot += 1;
+					continue;
+				}
+				rowId = candidateId;
+				existingRow = existingAtSlot;
+				slot += 1;
+				break;
+			}
+		}
+
+		if (!rowId) {
+			throw new Error(
+				`Позиции плана лечения некуда записать: свободных слотов книги лечения не осталось (позиция ${index + 1}).`,
+			);
+		}
+
+		usedRowIds.add(rowId.toLowerCase());
+
+		if (existingRow && existingRow.visitId === null && LEDGER_STATUSES_OWNED_BY_PLAN.has(existingRow.status)) {
+			// Обновляем существующую незавершенную строку в книге лечения вместо слепого пересоздания / конфликта pkey
+			await tx
+				.update(treatmentItems)
+				.set({
+					serviceId: resolvedServiceId,
+					toothCode:
+						item.toothNumber === null || item.toothNumber === undefined
+							? null
+							: String(item.toothNumber),
+					title: item.name?.trim() || item.priceId || "Индивидуальная услуга",
+					quantity: String(item.quantity),
+					priceRub: lineTotalRub,
+					unitPriceRub,
+					discountRub: rublesFromKopecks(
+						chargeLineKopecks({
+							patientId,
+							status: ledgerStatus,
+							unitPriceRub: item.discount,
+							quantity: 1,
+							discountRub: 0,
+						}),
+					),
+					status: ledgerStatus as "proposed" | "approved",
+					plannedDoctorUserId: item.doctorId ?? null,
+					treatmentPlanItemId: item.treatmentPlanItemId ?? null,
+				})
+				.where(
+					and(
+						eq(treatmentItems.organizationId, organizationId),
+						eq(treatmentItems.id, existingRow.id),
+					),
+				);
+		} else {
+			toInsert.push({
+				id: rowId,
+				organizationId,
+				patientId,
+				treatmentPlanId: savedPlanId,
+				treatmentPlanItemId: item.treatmentPlanItemId ?? null,
+				visitId: null,
+				serviceId: resolvedServiceId,
+				toothCode:
+					item.toothNumber === null || item.toothNumber === undefined
+						? null
+						: String(item.toothNumber),
+				title: item.name?.trim() || item.priceId || "Индивидуальная услуга",
+				quantity: String(item.quantity),
+				priceRub: lineTotalRub,
+				unitPriceRub,
+				discountRub: rublesFromKopecks(
+					chargeLineKopecks({
+						patientId,
+						status: ledgerStatus,
+						unitPriceRub: item.discount,
+						quantity: 1,
+						discountRub: 0,
+					}),
+				),
+				status: ledgerStatus as "proposed" | "approved",
+				plannedDoctorUserId: item.doctorId ?? null,
+				notes: null,
+			});
+		}
+	}
+
+	if (toInsert.length > 0) {
+		await tx.insert(treatmentItems).values(toInsert);
+	}
+
+	// DEF-PLAN-03 / Red Team: Ликвидация слепого DELETE в книге лечения.
+	// Аннулируем (status: "cancelled") все строки плана, удаленные из сметы, с сохранением истории.
+	const obsoleteRows = ownedRows.filter(
+		(row) =>
+			row.visitId === null &&
+			LEDGER_STATUSES_OWNED_BY_PLAN.has(row.status) &&
+			!usedRowIds.has(row.id.toLowerCase()),
+	);
+
+	if (obsoleteRows.length > 0) {
+		const obsoleteIds = obsoleteRows.map((r) => r.id);
+		await tx
+			.update(treatmentItems)
+			.set({
+				status: "cancelled",
+			})
+			.where(
+				and(
+					eq(treatmentItems.organizationId, organizationId),
+					inArray(treatmentItems.id, obsoleteIds),
+				),
+			);
+	}
 }
 
 export interface CancelRejectedPlanTierLedgerParams {

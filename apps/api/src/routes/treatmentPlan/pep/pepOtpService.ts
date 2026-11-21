@@ -24,41 +24,43 @@ export async function handleOtpRequest(
 			const codeHash = await hashCredential(generatedCode);
 			const now = new Date();
 
-			// Погасить старые неиспользованные коды пациента
-			await db
-				.update(portalOtpCodes)
-				.set({ consumedAt: now })
-				.where(
-					and(
-						eq(portalOtpCodes.organizationId, organizationId),
-						eq(portalOtpCodes.patientId, patientId),
-						isNull(portalOtpCodes.consumedAt),
-					),
-				);
+			await db.transaction(async (tx) => {
+				// Погасить старые неиспользованные коды пациента
+				await tx
+					.update(portalOtpCodes)
+					.set({ consumedAt: now })
+					.where(
+						and(
+							eq(portalOtpCodes.organizationId, organizationId),
+							eq(portalOtpCodes.patientId, patientId),
+							isNull(portalOtpCodes.consumedAt),
+						),
+					);
 
-			await db.insert(portalOtpCodes).values({
-				organizationId,
-				patientId,
-				codeHash,
-				channel: "sms",
-				deliveryStatus: "sent",
-				expiresAt,
-			});
-
-			// Постановка СМС-сообщения с кодом в реальную очередь отправки communication_outbox
-			if (targetPhone) {
-				await db.insert(communicationOutbox).values({
+				await tx.insert(portalOtpCodes).values({
 					organizationId,
 					patientId,
+					codeHash,
 					channel: "sms",
-					intent: "transactional_reply",
-					scope: "service",
-					recipientAddress: targetPhone,
-					body: `Код подтверждения плана лечения DENTE: ${generatedCode}. Действителен 10 минут.`,
-					status: "queued",
-					dedupeKey: `pep:otp:${planId}:${Date.now()}`,
+					deliveryStatus: "sent",
+					expiresAt,
 				});
-			}
+
+				// Постановка СМС-сообщения с кодом в реальную очередь отправки communication_outbox
+				if (targetPhone) {
+					await tx.insert(communicationOutbox).values({
+						organizationId,
+						patientId,
+						channel: "sms",
+						intent: "transactional_reply",
+						scope: "service",
+						recipientAddress: targetPhone,
+						body: `Код подтверждения плана лечения DENTE: ${generatedCode}. Действителен 10 минут.`,
+						status: "queued",
+						dedupeKey: `pep:otp:${planId}:${Date.now()}`,
+					});
+				}
+			});
 		} catch (dbErr) {
 			request.log.error({ err: dbErr }, "[PEP-SMS] Ошибка записи OTP кода в portal_otp_codes");
 		}

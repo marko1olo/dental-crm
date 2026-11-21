@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { kopecksToRubles } from "@dental/shared";
+import type { FastifyBaseLogger } from "fastify";
+import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { invoiceItems, patientInvoices } from "../../db/schema.js";
 
@@ -11,6 +12,8 @@ export interface LinkOrthoBillingParams {
 	serviceName: string;
 	priceRub?: number | undefined;
 	priceKopecks: bigint;
+	tx?: any;
+	logger?: FastifyBaseLogger | undefined;
 }
 
 export interface OrthoBillingResult {
@@ -26,11 +29,13 @@ export interface OrthoBillingResult {
 /**
  * DEF-ORTHO-05 / Red Team Досье: Связка ортодонтических активаций с прейскурантом и кассовым чеком.
  * DEF-ORTHO-API-01: priceKopecks — единственный источник правды (SSOT); priceRub рассчитывается автоматически из priceKopecks.
+ * Мандат 8bm: Сложение сметы счёта ведётся строго в целочисленных копейках (BigInt / Zero Float Drift).
  * Если передан visitId, автоматически добавляет медицинскую услугу активации в черновик счета пациента.
  */
 export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingParams): Promise<OrthoBillingResult> {
 	const { organizationId, patientId, visitId, serviceCode, serviceName, priceKopecks } = params;
-	const priceRub = kopecksToRubles(Number(priceKopecks));
+	const itemKopecks = BigInt(priceKopecks);
+	const priceRub = kopecksToRubles(Number(itemKopecks));
 
 	if (!visitId) {
 		return {
@@ -38,12 +43,12 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 			serviceCode,
 			serviceName,
 			priceRub,
-			priceKopecks: Number(priceKopecks),
+			priceKopecks: Number(itemKopecks),
 		};
 	}
 
 	try {
-		return await db.transaction(async (tx) => {
+		const runWithTx = async (tx: any) => {
 			let invoice = (
 				await tx
 					.select()
@@ -66,7 +71,10 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 					.returning();
 				invoice = created;
 			} else {
-				const newTotalRub = Number(invoice.totalAmountRub ?? invoice.totalRub ?? 0) + priceRub;
+				// Мандат 8bm: Zero-Float Drift — сложение строго в целочисленных копейках
+				const existingKopecks = BigInt(rublesToKopecks(Number(invoice.totalAmountRub ?? invoice.totalRub ?? 0)));
+				const newTotalKopecks = existingKopecks + itemKopecks;
+				const newTotalRub = kopecksToRubles(Number(newTotalKopecks));
 				await tx
 					.update(patientInvoices)
 					.set({
@@ -83,8 +91,8 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 					name: serviceName,
 					serviceCode,
 					quantity: "1",
-					unitPriceKopecks: Number(priceKopecks),
-					totalPriceKopecks: Number(priceKopecks),
+					unitPriceKopecks: Number(itemKopecks),
+					totalPriceKopecks: Number(itemKopecks),
 					discountPercent: "0",
 				});
 			}
@@ -95,17 +103,21 @@ export async function linkOrthoServiceToBillingSafely(params: LinkOrthoBillingPa
 				serviceCode,
 				serviceName,
 				priceRub,
-				priceKopecks: Number(priceKopecks),
+				priceKopecks: Number(itemKopecks),
 			};
-		});
+		};
+
+		return params.tx ? await runWithTx(params.tx) : await db.transaction(runWithTx);
 	} catch (err) {
-		console.warn("[OrthoBilling] Error adding service to invoice:", err);
+		if (params.logger) {
+			params.logger.warn({ err, organizationId, patientId, visitId }, "[OrthoBilling] Error adding service to invoice");
+		}
 		return {
 			serviceAdded: false,
 			serviceCode,
 			serviceName,
 			priceRub,
-			priceKopecks: Number(priceKopecks),
+			priceKopecks: Number(itemKopecks),
 			error: err instanceof Error ? err.message : String(err),
 		};
 	}

@@ -15,6 +15,7 @@ export interface TreatmentPlanItemInput {
 	readonly categoryRu: string;
 	readonly stageKind: PlanStageKind;
 	readonly tierKey?: PlanTierKey;
+	readonly tierPrices?: Partial<Record<PlanTierKey, Kopecks>> | undefined;
 	readonly unitPriceKopecks: Kopecks;
 	readonly quantity?: number;
 	readonly discountKopecks?: Kopecks;

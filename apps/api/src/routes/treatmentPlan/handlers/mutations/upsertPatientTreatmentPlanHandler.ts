@@ -171,6 +171,12 @@ export async function handleUpsertPatientTreatmentPlan(
 						...(input.declinedReason !== undefined
 							? { declinedReason: input.declinedReason }
 							: {}),
+						...(input.diagnosisIcd10 !== undefined
+							? { diagnosisIcd10: input.diagnosisIcd10 }
+							: {}),
+						...(input.diagnosisTitle !== undefined
+							? { diagnosisTitle: input.diagnosisTitle }
+							: {}),
 						...(input.priceFreezePolicy !== undefined
 							? { priceFreezePolicy: input.priceFreezePolicy }
 							: {}),
@@ -227,6 +233,8 @@ export async function handleUpsertPatientTreatmentPlan(
 						organizationId,
 						patientId,
 						name: input.name,
+						diagnosisIcd10: input.diagnosisIcd10 ?? null,
+						diagnosisTitle: input.diagnosisTitle ?? null,
 						status: input.status ?? "Draft",
 						totalPrice: effectiveTotalPriceText,
 						totalPriceRub: debtNumericText(totalPriceKopecks),
@@ -387,8 +395,9 @@ export async function handleUpsertPatientTreatmentPlan(
 					quantity: item.quantity,
 					price: item.price.toString(),
 					discount: item.discount.toString(),
-					priceKopecks: itemPriceKopecks,
-					discountKopecks: itemDiscountKopecks,
+					priceKopecks: BigInt(itemPriceKopecks),
+					discountKopecks: BigInt(itemDiscountKopecks),
+					commissionKopecks: 0n,
 					phase: phaseNum,
 					isBundle: Boolean(item.isAuto),
 					doctorId: item.doctorId ?? null,

@@ -21,6 +21,7 @@ export interface DeductOrthoMaterialParams {
 	visitId?: string | null | undefined;
 	userId?: string | null | undefined;
 	logger?: FastifyBaseLogger | undefined;
+	tx?: any;
 }
 
 export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParams): Promise<OrthoMaterialDeductionResult> {
@@ -49,7 +50,7 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 				: null;
 
 	try {
-		return await db.transaction(async (tx) => {
+		const runWithTx = async (tx: any) => {
 			const found = await tx.select().from(inventoryItems).where(and(
 				eq(inventoryItems.organizationId, organizationId),
 				or(ilike(inventoryItems.name, `%${itemNamePattern}%`), ilike(inventoryItems.name, `%${defaultItemName}%`)),
@@ -115,7 +116,9 @@ export async function deductOrthoMaterialSafely(params: DeductOrthoMaterialParam
 				isOverdraft,
 				unitCostKopecks: Number(effectiveKopecks),
 			};
-		});
+		};
+
+		return params.tx ? await runWithTx(params.tx) : await db.transaction(runWithTx);
 	} catch (err) {
 		params.logger?.warn(
 			{ err, organizationId, patientId, itemNamePattern },

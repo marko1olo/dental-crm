@@ -16,6 +16,12 @@ import * as schema from "./schema.js";
  */
 loadAdditionalServerEnv();
 
+if (typeof (BigInt.prototype as any).toJSON !== "function") {
+	(BigInt.prototype as any).toJSON = function () {
+		return Number(this);
+	};
+}
+
 /**
  * Адрес базы берётся только из окружения.
  *

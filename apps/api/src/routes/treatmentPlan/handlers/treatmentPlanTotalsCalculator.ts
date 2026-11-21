@@ -1,4 +1,10 @@
-import { sumKopecks, rublesToKopecks, kopecksToRubles } from "@dental/shared";
+import {
+	sumKopecks,
+	rublesToKopecks,
+	kopecksToRubles,
+	percentageOfKopecks,
+	toExactKopecks,
+} from "@dental/shared";
 import {
 	chargeLineKopecks,
 	debtNumericText,
@@ -149,7 +155,8 @@ export function calculateEffectivePlanDiscount(params: {
 	let discountKopecks = 0;
 	if (planDiscountPercent > 0) {
 		const clampedPercent = Math.min(100, Math.max(0, planDiscountPercent));
-		discountKopecks = Math.round((baseTotalKopecks * clampedPercent) / 100);
+		const basisPoints = Math.round(clampedPercent * 100);
+		discountKopecks = percentageOfKopecks(toExactKopecks(baseTotalKopecks), basisPoints);
 	} else if (planDiscountRub > 0) {
 		discountKopecks = Math.min(baseTotalKopecks, rublesToKopecks(planDiscountRub));
 	}

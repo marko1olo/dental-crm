@@ -48,8 +48,13 @@ export function buildMultiOptionTreatmentPlan(
 		premium: calculateSingleTierEstimate("premium", processedItems),
 	};
 
-	const availableTierKeys: PlanTierKey[] = ["economy", "optimum", "premium"];
-	const selectedTierKey = input.selectedTierKey || "optimum";
+	// DEF-PLAN-05 / Red Team: Честное разделение тарифов.
+	// Если у позиций нет раздельных тарифов (tierKey), честно выводим 1 базовый вариант, а не дублируем одинаковые суммы с разными ярлыками.
+	const hasExplicitTierItems = input.items.some((it) => Boolean(it.tierKey) || Boolean(it.tierPrices));
+	const availableTierKeys: PlanTierKey[] = hasExplicitTierItems
+		? ["economy", "optimum", "premium"]
+		: [input.selectedTierKey || "optimum"];
+	const selectedTierKey = input.selectedTierKey || (hasExplicitTierItems ? "optimum" : availableTierKeys[0]!);
 	const selectedTier = tiers[selectedTierKey];
 	const isPennyExact = Object.values(tiers).every((t) => t.isPennyExact);
 

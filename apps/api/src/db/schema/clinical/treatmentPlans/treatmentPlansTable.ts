@@ -12,8 +12,6 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import {
-	treatmentPlanScenarioPriority,
-	treatmentPlanScenarioStrategy,
 	treatmentPlanStatus,
 } from "../../_common.js";
 import { organizations, users } from "../../auth.js";
@@ -198,85 +196,5 @@ export const treatmentPlanPriceFreezeTokens = pgTable(
 		patientIdIdx: index("price_freeze_tokens_patient_idx").on(t.patientId),
 		planIdIdx: index("price_freeze_tokens_plan_idx").on(t.planId),
 		tokenIdx: index("price_freeze_tokens_token_idx").on(t.token),
-	}),
-);
-
-export const treatmentScenarios = pgTable(
-	"treatment_scenarios",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		patientId: uuid("patient_id")
-			.notNull()
-			.references(() => patients.id),
-		title: text("title").notNull(),
-		strategy: treatmentPlanScenarioStrategy("strategy")
-			.notNull()
-			.default("standard"),
-		priority: treatmentPlanScenarioPriority("priority")
-			.notNull()
-			.default("balanced"),
-		totalRub: numeric("total_rub", {
-			precision: 12,
-			scale: 2,
-			mode: "number",
-		}).notNull(),
-		totalKopecks: bigint("total_kopecks", { mode: "bigint" })
-			.notNull()
-			.default(sql`0`),
-		durationMonths: integer("duration_months").notNull().default(0),
-		visitCount: integer("visit_count").notNull().default(1),
-		includedServiceIdsJson: text("included_service_ids_json")
-			.notNull()
-			.default("[]"),
-		phasesJson: text("phases_json").notNull().default("[]"),
-		prosJson: text("pros_json").notNull().default("[]"),
-		tradeoffsJson: text("tradeoffs_json").notNull().default("[]"),
-		clinicalWarningsJson: text("clinical_warnings_json")
-			.notNull()
-			.default("[]"),
-		isActive: boolean("is_active").notNull().default(true),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index("treatment_scenarios_organization_id_idx").on(
-			t.organizationId,
-		),
-		patientIdIdx: index("treatment_scenarios_patient_id_idx").on(t.patientId),
-		orgPatientIdx: index("treatment_scenarios_org_patient_idx").on(
-			t.organizationId,
-			t.patientId,
-		),
-	}),
-);
-
-// #52 — план_лечения::конструктор_планов_лечения_2_0
-export const treatmentPlanLockTokens = pgTable(
-	"treatment_plan_lock_tokens",
-	{
-		id: uuid("id").primaryKey().default(sql`uuidv7()`),
-		organizationId: uuid("organization_id")
-			.notNull()
-			.references(() => organizations.id),
-		treatmentPlanId: uuid("treatment_plan_id").notNull(),
-		lockedByDoctorName: text("locked_by_doctor_name").notNull(),
-		lockToken: text("lock_token").notNull(),
-		autoSaveDraftJson: text("auto_save_draft_json").notNull(),
-		isActiveLock: boolean("is_active_lock").default(true).notNull(),
-		lockedAt: timestamp("locked_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-	},
-	(t) => ({
-		organizationIdIdx: index(
-			"treatment_plan_lock_tokens_organizationId_idx",
-		).on(t.organizationId),
 	}),
 );

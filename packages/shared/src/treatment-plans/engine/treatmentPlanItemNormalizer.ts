@@ -23,7 +23,8 @@ export function normalizeTreatmentPlanItem(
 ): TreatmentPlanItem {
 	const id = input.id || `item_${tierKey}_${index + 1}_${Date.now()}`;
 	const quantity = Number.isInteger(input.quantity) && (input.quantity ?? 1) > 0 ? (input.quantity ?? 1) : 1;
-	const unitPriceKopecks = Math.max(0, Math.round(input.unitPriceKopecks || 0));
+	const configuredPrice = input.tierPrices?.[tierKey] ?? input.unitPriceKopecks;
+	const unitPriceKopecks = Math.max(0, Math.round(configuredPrice || 0));
 	const grossCostKopecks = multiplyKopecks(unitPriceKopecks, quantity);
 	const discountKopecks = Math.min(grossCostKopecks, Math.max(0, Math.round(input.discountKopecks || 0)));
 	const netCostKopecks = grossCostKopecks - discountKopecks;

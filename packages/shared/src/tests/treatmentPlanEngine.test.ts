@@ -311,6 +311,11 @@ describe("Wave 19: Multi-Option Treatment Plan & Phased Clinical Estimate Engine
 				categoryRu: "Хирургия",
 				stageKind: "stage_2_surgery",
 				unitPriceKopecks: 4500000, // 45,000 ₽
+				tierPrices: {
+					economy: 2500000,
+					optimum: 4500000,
+					premium: 7000000,
+				},
 				quantity: 1,
 				materialNameRu: "Дентальный имплантат Straumann",
 				isHighCostCode02: true,
@@ -385,6 +390,10 @@ describe("Wave 19: Multi-Option Treatment Plan & Phased Clinical Estimate Engine
 			assert.strictEqual(plan.tiers.optimum.isRecommended, true);
 			assert.strictEqual(plan.tiers.economy.isRecommended, false);
 			assert.strictEqual(plan.tiers.premium.isRecommended, false);
+
+			// Honest price differentiation: Economy is cheaper, Premium is higher
+			assert.ok(plan.tiers.economy.totalCostKopecks < plan.tiers.optimum.totalCostKopecks);
+			assert.ok(plan.tiers.optimum.totalCostKopecks < plan.tiers.premium.totalCostKopecks);
 		});
 
 		it("4.2 calculates accurate stage subtotals, item counts, and tooth mappings", () => {
@@ -433,6 +442,28 @@ describe("Wave 19: Multi-Option Treatment Plan & Phased Clinical Estimate Engine
 			assert.strictEqual(optimum.discountKopecks, expectedDiscount);
 			assert.strictEqual(optimum.totalCostKopecks, expectedNet);
 			assert.strictEqual(optimum.isPennyExact, true);
+		});
+
+		it("4.4 honestly avoids fake identical tiers when plan items lack tier-specific differentiation", () => {
+			const uniformItems: TreatmentPlanItemInput[] = [
+				{
+					toothNumber: 16,
+					code804n: "A16.07.002.001",
+					nameRu: "Лечение кариеса",
+					categoryRu: "Терапия",
+					stageKind: "stage_1_therapy",
+					unitPriceKopecks: 500000,
+					quantity: 1,
+				},
+			];
+
+			const plan = buildMultiOptionTreatmentPlan({
+				...samplePatient,
+				items: uniformItems,
+			});
+
+			assert.strictEqual(plan.availableTierKeys.length, 1);
+			assert.deepStrictEqual(plan.availableTierKeys, ["optimum"]);
 		});
 	});
 

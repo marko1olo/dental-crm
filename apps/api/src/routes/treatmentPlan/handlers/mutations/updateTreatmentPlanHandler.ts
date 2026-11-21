@@ -42,6 +42,8 @@ export async function handleUpdateTreatmentPlan(
 	};
 	if (data.name !== undefined) updatePayload.name = data.name;
 	if (data.title !== undefined) updatePayload.title = data.title;
+	if (data.diagnosisIcd10 !== undefined) updatePayload.diagnosisIcd10 = data.diagnosisIcd10;
+	if (data.diagnosisTitle !== undefined) updatePayload.diagnosisTitle = data.diagnosisTitle;
 	if (data.status !== undefined) updatePayload.status = data.status;
 	if (data.discountMode !== undefined) updatePayload.discountMode = data.discountMode;
 	if (data.planDiscountPercent !== undefined) updatePayload.planDiscountPercent = data.planDiscountPercent;

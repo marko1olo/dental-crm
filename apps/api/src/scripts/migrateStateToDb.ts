@@ -168,7 +168,6 @@ const tenantScopedTablesInDeletionOrder: ReadonlyArray<{
 	{ name: "payments", table: schema.payments },
 	{ name: "generated_documents", table: schema.generatedDocuments },
 	{ name: "clinical_rules", table: schema.clinicalRules },
-	{ name: "treatment_scenarios", table: schema.treatmentScenarios },
 	{ name: "treatment_items", table: schema.treatmentItems },
 	{ name: "service_catalog_items", table: schema.serviceCatalogItems },
 	{ name: "visits", table: schema.visits },

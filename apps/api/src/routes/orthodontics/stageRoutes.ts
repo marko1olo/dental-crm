@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
@@ -6,6 +7,7 @@ import { deductOrthoMaterialSafely } from "./materialDeduction.js";
 import { deductOrthoMaterialsSchema, patientParamsSchema, rebracketSchema, stageAdvanceSchema, type OrthodonticProgressRecord } from "./types.js";
 
 import { resolveMaterialParams } from "./materialParamsResolver.js";
+import { resolveOrthoMaterialCost } from "./orthoPricelistResolver.js";
 
 export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
 	app.post<{ Params: { patientId: string } }>(`${prefix}/:patientId/deduct-materials`, async (request, reply) => {
@@ -16,7 +18,7 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 		const patient = await getPatientByIdFromDb(orgId, patientId);
 		if (!patient) return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден" });
 
-		const resolved = resolveMaterialParams(body);
+		const resolved = await resolveMaterialParams(body, orgId);
 		const deduction = await deductOrthoMaterialSafely({
 			organizationId: orgId, patientId, itemNamePattern: resolved.pattern, defaultItemName: resolved.defaultName,
 			category: resolved.category, quantity: body.quantity, unit: resolved.unit,
@@ -74,11 +76,31 @@ export function registerStageAndMaterialRoutes(app: FastifyInstance, prefix = "/
 			...currentProgress, lastActionDate: new Date().toISOString(), lastActionSummary: actionSummary,
 		};
 
-		// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
-		await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress });
-		const deduction = await deductOrthoMaterialSafely({
-			organizationId: orgId, patientId, itemNamePattern: "брекет", defaultItemName: `Брекет ортодонтический ${body.bracketType}`,
-			category: "ortho_bracket", quantity: 1, unit: "шт.", unitCostKopecks: 120_000n, unitCostRub: 1200, notes: actionSummary,
+		// DEF-ORTHO-02: Выбор стоимости из складских остатков клиники
+		const rebracketCost = await resolveOrthoMaterialCost({
+			organizationId: orgId,
+			itemNamePattern: "брекет",
+			fallbackCostRub: 1200,
+		});
+
+		const deduction = await db.transaction(async (tx) => {
+			// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
+			await updatePatientAdministrativeProfileInDb(orgId, patientId, { ...adminProfile, orthodonticProgress: updatedProgress });
+
+			return await deductOrthoMaterialSafely({
+				organizationId: orgId,
+				patientId,
+				itemNamePattern: "брекет",
+				defaultItemName: `Брекет ортодонтический ${body.bracketType}`,
+				category: "ortho_bracket",
+				quantity: 1,
+				unit: "шт.",
+				unitCostKopecks: rebracketCost.unitCostKopecks,
+				unitCostRub: rebracketCost.unitCostRub,
+				notes: actionSummary,
+				tx,
+				logger: request.log,
+			});
 		});
 
 		return reply.send({ success: true, actionSummary, toothNumber: body.toothNumber, progress: updatedProgress, deduction });

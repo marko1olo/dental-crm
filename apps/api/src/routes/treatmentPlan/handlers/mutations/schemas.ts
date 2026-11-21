@@ -10,6 +10,8 @@ export const createTreatmentPlanSchema = z.object({
 	doctorId: z.string().uuid().optional().nullable(),
 	name: z.string().trim().min(1).default("План комплексного лечения"),
 	title: z.string().trim().optional().default(""),
+	diagnosisIcd10: z.string().trim().max(50).optional().nullable(),
+	diagnosisTitle: z.string().trim().max(500).optional().nullable(),
 	totalPriceRub: z.number().nonnegative().optional(),
 	planDiscountPercent: z.number().min(0).max(100).optional().default(0),
 	planDiscountRub: z.number().nonnegative().optional().default(0),
@@ -61,6 +63,8 @@ export const listTreatmentPlansQuerySchema = z.object({
 export const updateTreatmentPlanSchema = z.object({
 	name: z.string().trim().min(1).optional(),
 	title: z.string().trim().optional(),
+	diagnosisIcd10: z.string().trim().max(50).nullable().optional(),
+	diagnosisTitle: z.string().trim().max(500).nullable().optional(),
 	status: z.enum(["Draft", "Active", "Approved", "Completed", "Rejected"]).optional(),
 	discountMode: z.string().optional(),
 	planDiscountPercent: z.number().min(0).max(100).optional(),

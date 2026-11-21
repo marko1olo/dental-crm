@@ -151,8 +151,12 @@ export async function createInvoiceForApprovedPlan(
 			const qty = Math.max(1, it.quantity || 1);
 			const unitPrice = Number(it.price || 0);
 			const lineDiscountRub = Number(it.discount || 0);
-			const unitPriceKopecks = rublesToKopecks(unitPrice);
-			const lineDiscountKopecks = rublesToKopecks(lineDiscountRub);
+			const unitPriceKopecks = it.priceKopecks != null && Number(it.priceKopecks) > 0
+				? Number(it.priceKopecks)
+				: rublesToKopecks(unitPrice);
+			const lineDiscountKopecks = it.discountKopecks != null && Number(it.discountKopecks) > 0
+				? Number(it.discountKopecks)
+				: rublesToKopecks(lineDiscountRub);
 			const lineBaseKopecks = Math.max(0, unitPriceKopecks * qty - lineDiscountKopecks);
 			return {
 				it,

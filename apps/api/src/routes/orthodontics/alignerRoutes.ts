@@ -1,8 +1,10 @@
 import type { FastifyInstance } from "fastify";
+import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { calculateNextDate, createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { linkOrthoServiceToBillingSafely } from "./orthoBillingService.js";
+import { resolveOrthoServicePrice } from "./orthoPricelistResolver.js";
 import { issueAlignerSetSchema, patientParamsSchema, type OrthodonticProgressRecord } from "./types.js";
 
 export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
@@ -87,21 +89,32 @@ export function registerAlignerRoutes(app: FastifyInstance, prefix = "/api/ortho
 				nextVisitRecommendedDate: nextDate,
 			};
 
-			// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
-			await updatePatientAdministrativeProfileInDb(orgId, patientId, {
-				...adminProfile,
-				orthodonticProgress: updatedProgress,
+			// DEF-ORTHO-02 / DEF-ORTHO-05 / Red Team: Выбор стоимости из прейскуранта клиники (A16.07.046) с фоллбеком
+			const resolvedPrice = await resolveOrthoServicePrice({
+				organizationId: orgId,
+				serviceCode: "A16.07.046",
+				defaultServiceName: `Ортодонтическая коррекция с применением элайнеров (выдача сета №${fromAligner}–${toAligner})`,
+				fallbackPriceRub: 3000,
 			});
 
-			// DEF-ORTHO-05 / Red Team: Связка выдачи элайнеров с прейскурантом (A16.07.046)
-			const billing = await linkOrthoServiceToBillingSafely({
-				organizationId: orgId,
-				patientId,
-				visitId: body.visitId,
-				serviceCode: "A16.07.046",
-				serviceName: `Ортодонтическая коррекция с применением элайнеров (выдача сета №${fromAligner}–${toAligner})`,
-				priceRub: 3000,
-				priceKopecks: 300_000n,
+			const billing = await db.transaction(async (tx) => {
+				// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
+				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
+					...adminProfile,
+					orthodonticProgress: updatedProgress,
+				});
+
+				return await linkOrthoServiceToBillingSafely({
+					organizationId: orgId,
+					patientId,
+					visitId: body.visitId,
+					serviceCode: resolvedPrice.serviceCode,
+					serviceName: resolvedPrice.serviceName,
+					priceRub: resolvedPrice.priceRub,
+					priceKopecks: resolvedPrice.priceKopecks,
+					tx,
+					logger: request.log,
+				});
 			});
 
 			return reply.send({

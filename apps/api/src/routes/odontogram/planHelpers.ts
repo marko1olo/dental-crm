@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
@@ -14,10 +15,24 @@ import {
 	type TreatmentPlanRow,
 } from "./types.js";
 
+/**
+ * Валидный детерминированный UUID для позиций книги лечения (Мандат 8e, 8b: исключает синтез невалидных строк).
+ * Если planId — стандартный 36-значный UUIDv4/v7 (8-4-4-4-12), детерминированно формирует валидный UUID
+ * заменой последних 4 символов 12-символьного хвоста, гарантируя строгое соблюдение RFC 4122.
+ */
 export function ledgerRowId(planId: string, slot: number): string {
-	return `${planId.slice(0, LEDGER_ID_PREFIX_LENGTH)}${slot
-		.toString(16)
-		.padStart(4, "0")}`;
+	if (
+		typeof planId === "string" &&
+		planId.length === 36 &&
+		planId.charAt(8) === "-" &&
+		planId.charAt(13) === "-" &&
+		planId.charAt(18) === "-" &&
+		planId.charAt(23) === "-"
+	) {
+		const slotHex = slot.toString(16).padStart(4, "0").slice(-4);
+		return `${planId.slice(0, 32)}${slotHex}`;
+	}
+	return randomUUID();
 }
 
 export async function ensurePatientInOrganization(
@@ -64,6 +79,8 @@ export function serializeTreatmentPlan(
 		id: plan.id,
 		patientId: plan.patientId,
 		name: plan.name,
+		diagnosisIcd10: plan.diagnosisIcd10 ?? null,
+		diagnosisTitle: plan.diagnosisTitle ?? null,
 		status: plan.status,
 		totalPrice: numeric(plan.totalPrice),
 		patientSignature: plan.patientSignature ?? null,

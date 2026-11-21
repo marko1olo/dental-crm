@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { kopecksToRubles, rublesToKopecks } from "@dental/shared";
+import { kopecksToRubles, rublesToKopecks, percentageOfKopecks, toExactKopecks } from "@dental/shared";
 import { db } from "../../../../db/client.js";
 import {
 	auditEvents,
@@ -60,16 +60,18 @@ export async function handleCreateTreatmentPlan(
 	}
 
 	let totalKopecks: number;
+	let computedPlanDiscountKopecks = 0;
 	if (typeof data.totalPriceRub === "number" && data.totalPriceRub > 0) {
 		totalKopecks = rublesToKopecks(data.totalPriceRub);
 	} else {
 		let discountedKopecks = itemsTotalKopecks;
 		if (typeof data.planDiscountRub === "number" && data.planDiscountRub > 0) {
-			const planDiscountKopecks = rublesToKopecks(data.planDiscountRub);
-			discountedKopecks = Math.max(0, discountedKopecks - planDiscountKopecks);
+			computedPlanDiscountKopecks = rublesToKopecks(data.planDiscountRub);
+			discountedKopecks = Math.max(0, discountedKopecks - computedPlanDiscountKopecks);
 		} else if (typeof data.planDiscountPercent === "number" && data.planDiscountPercent > 0) {
-			const percentDiscountKopecks = Math.round((discountedKopecks * data.planDiscountPercent) / 100);
-			discountedKopecks = Math.max(0, discountedKopecks - percentDiscountKopecks);
+			const basisPoints = Math.round(data.planDiscountPercent * 100);
+			computedPlanDiscountKopecks = percentageOfKopecks(toExactKopecks(discountedKopecks), basisPoints);
+			discountedKopecks = Math.max(0, discountedKopecks - computedPlanDiscountKopecks);
 		}
 		totalKopecks = discountedKopecks;
 	}
@@ -84,9 +86,13 @@ export async function handleCreateTreatmentPlan(
 				doctorId: data.doctorId || null,
 				name: data.name,
 				title: data.title || data.name,
+				diagnosisIcd10: data.diagnosisIcd10 || null,
+				diagnosisTitle: data.diagnosisTitle || null,
 				status: "Draft",
 				totalPriceRub: debtNumericText(totalKopecks),
 				totalPrice: debtNumericText(totalKopecks),
+				totalPriceKopecks: BigInt(totalKopecks),
+				planDiscountKopecks: BigInt(computedPlanDiscountKopecks),
 				discountMode: data.discountMode,
 				planDiscountPercent: data.planDiscountPercent,
 				planDiscountRub: data.planDiscountRub,
@@ -135,8 +141,9 @@ export async function handleCreateTreatmentPlan(
 						quantity: item.quantity,
 						price: item.price.toFixed(2),
 						discount: item.discount.toFixed(2),
-						priceKopecks: itemPriceKopecks,
-						discountKopecks: itemDiscountKopecks,
+						priceKopecks: BigInt(itemPriceKopecks),
+						discountKopecks: BigInt(itemDiscountKopecks),
+						commissionKopecks: 0n,
 						phase: st.stageOrder,
 						isBundle: item.isBundle,
 						doctorId: item.doctorId || data.doctorId || null,

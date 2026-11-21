@@ -1,10 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { rublesToKopecks } from "@dental/shared";
+import { db } from "../../db/client.js";
 import { getPatientByIdFromDb, updatePatientAdministrativeProfileInDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
 import { createInitialOrthoRecord, parseOrthoData } from "./helpers.js";
 import { deductOrthoMaterialSafely } from "./materialDeduction.js";
 import { linkOrthoServiceToBillingSafely } from "./orthoBillingService.js";
+import { resolveOrthoMaterialCost, resolveOrthoServicePrice } from "./orthoPricelistResolver.js";
 import { archwireChangeSchema, ligatureActivateSchema, patientParamsSchema, type OrthodonticProgressRecord } from "./types.js";
 
 export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orthodontics") {
@@ -63,51 +65,71 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				...(body.soapSummary ? { lastSoapSummary: body.soapSummary } : {}),
 			};
 
-			// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
-			await updatePatientAdministrativeProfileInDb(orgId, patientId, {
-				...adminProfile,
-				orthodonticProgress: updatedProgress,
-			});
-
 			const isPlate = body.applianceCategory === "plate";
 			const shouldDeductWire = Boolean(body.isWireChange && !isPlate);
 
 			const archwireQty = body.arch === "both" ? 2 : 1;
-			// DEF-ORTHO-06 / DEF-ORTHO-10: Расчет стоимости в копейках BIGINT, списание только если не съемная пластинка и isWireChange === true
-			const deduction = shouldDeductWire
-				? await deductOrthoMaterialSafely({
-						organizationId: orgId,
-						patientId,
-						itemNamePattern: body.material,
-						defaultItemName: `Дуга ортодонтическая ${body.material} ${body.section}"`,
-						category: "ortho_archwire",
-						quantity: archwireQty,
-						unit: "шт.",
-						unitCostKopecks: 120_000n,
-						unitCostRub: 1200,
-						notes: `Смена дуги: ${archwireStr}`,
-						visitId: body.visitId,
-				  })
-				: null;
+			// DEF-ORTHO-02 / DEF-ORTHO-06 / DEF-ORTHO-10: Расчет стоимости из остатков склада, списание только если не съемная пластинка и isWireChange === true
+			const archwireCost = await resolveOrthoMaterialCost({
+				organizationId: orgId,
+				itemNamePattern: body.material,
+				fallbackCostRub: 1200,
+			});
 
-			// DEF-ORTHO-05 / Red Team: Связка активации дуги с прейскурантом услуг
+			// DEF-ORTHO-02 / DEF-ORTHO-05 / Red Team: Выбор цены услуги из прейскуранта клиники
 			const serviceName = isPlate
 				? "Активация съемного ортодонтического аппарата (пластинки)"
 				: body.arch === "both"
 					? "Активация брекет-системы и замена ортодонтических дуг (ВЧ + НЧ)"
 					: `Активация брекет-системы и замена ортодонтической дуги (${archLabel})`;
 			const serviceCode = isPlate ? "A16.07.047" : "A16.07.048.002";
-			const priceRub = isPlate ? 2500 : body.arch === "both" ? 4000 : 3500;
-			const priceKopecks = BigInt(rublesToKopecks(priceRub));
+			const fallbackPriceRub = isPlate ? 2500 : body.arch === "both" ? 4000 : 3500;
 
-			const billing = await linkOrthoServiceToBillingSafely({
+			const resolvedPrice = await resolveOrthoServicePrice({
 				organizationId: orgId,
-				patientId,
-				visitId: body.visitId,
 				serviceCode,
-				serviceName,
-				priceRub,
-				priceKopecks,
+				defaultServiceName: serviceName,
+				fallbackPriceRub,
+			});
+
+			const { deduction, billing } = await db.transaction(async (tx) => {
+				// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
+				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
+					...adminProfile,
+					orthodonticProgress: updatedProgress,
+				});
+
+				const deductionRes = shouldDeductWire
+					? await deductOrthoMaterialSafely({
+							organizationId: orgId,
+							patientId,
+							itemNamePattern: body.material,
+							defaultItemName: `Дуга ортодонтическая ${body.material} ${body.section}"`,
+							category: "ortho_archwire",
+							quantity: archwireQty,
+							unit: "шт.",
+							unitCostKopecks: archwireCost.unitCostKopecks,
+							unitCostRub: archwireCost.unitCostRub,
+							notes: `Смена дуги: ${archwireStr}`,
+							visitId: body.visitId,
+							tx,
+							logger: request.log,
+					  })
+					: null;
+
+				const billingRes = await linkOrthoServiceToBillingSafely({
+					organizationId: orgId,
+					patientId,
+					visitId: body.visitId,
+					serviceCode: resolvedPrice.serviceCode,
+					serviceName: resolvedPrice.serviceName,
+					priceRub: resolvedPrice.priceRub,
+					priceKopecks: resolvedPrice.priceKopecks,
+					tx,
+					logger: request.log,
+				});
+
+				return { deduction: deductionRes, billing: billingRes };
 			});
 
 			return reply.send({
@@ -147,33 +169,43 @@ export function registerArchwireRoutes(app: FastifyInstance, prefix = "/api/orth
 				lastActionSummary: actionSummary,
 			};
 
-			// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
-			await updatePatientAdministrativeProfileInDb(orgId, patientId, {
-				...adminProfile,
-				orthodonticProgress: updatedProgress,
-			});
-
 			const isPlate = body.applianceCategory === "plate";
 			const shouldDeductLigatures = !isPlate;
 
-			// DEF-ORTHO-06: Стоимость в копейках BIGINT (Power Chain: 8 000 коп = 80 руб; лигатуры: 1 500 коп = 15 руб)
-			// Списание материалов отключается для съемных пластинок (plate)
-			const deduction = shouldDeductLigatures
-				? await deductOrthoMaterialSafely({
-						organizationId: orgId,
-						patientId,
-						itemNamePattern: body.powerChain ? "Power Chain" : "лигатур",
-						defaultItemName: body.powerChain
-							? "Эластическая цепочка Power Chain"
-							: "Эластические лигатуры цветные/прозрачные",
-						category: body.powerChain ? "ortho_archwire" : "other",
-						quantity: body.powerChain ? 1 : 10,
-						unit: body.powerChain ? "см" : "шт.",
-						unitCostKopecks: body.powerChain ? 8_000n : 1_500n,
-						unitCostRub: body.powerChain ? 80 : 15,
-						notes: actionSummary,
-				  })
-				: null;
+			// DEF-ORTHO-02 / DEF-ORTHO-06: Расчет стоимости из складских остатков клиники
+			const ligatureCost = await resolveOrthoMaterialCost({
+				organizationId: orgId,
+				itemNamePattern: body.powerChain ? "Power Chain" : "лигатур",
+				fallbackCostRub: body.powerChain ? 80 : 15,
+			});
+
+			const deduction = await db.transaction(async (tx) => {
+				// DEF-ORTHO-01: Сохраняем структурированный JSONB объект вместо JSON-строки
+				await updatePatientAdministrativeProfileInDb(orgId, patientId, {
+					...adminProfile,
+					orthodonticProgress: updatedProgress,
+				});
+
+				// Списание материалов отключается для съемных пластинок (plate)
+				return shouldDeductLigatures
+					? await deductOrthoMaterialSafely({
+							organizationId: orgId,
+							patientId,
+							itemNamePattern: body.powerChain ? "Power Chain" : "лигатур",
+							defaultItemName: body.powerChain
+								? "Эластическая цепочка Power Chain"
+								: "Эластические лигатуры цветные/прозрачные",
+							category: body.powerChain ? "ortho_archwire" : "other",
+							quantity: body.powerChain ? 1 : 10,
+							unit: body.powerChain ? "см" : "шт.",
+							unitCostKopecks: ligatureCost.unitCostKopecks,
+							unitCostRub: ligatureCost.unitCostRub,
+							notes: actionSummary,
+							tx,
+							logger: request.log,
+					  })
+					: null;
+			});
 
 			return reply.send({ success: true, actionSummary, progress: updatedProgress, deduction });
 		},

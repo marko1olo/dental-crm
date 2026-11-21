@@ -75,6 +75,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 	const retryAfter = options.retryAfterSeconds ?? 1;
 	const enforceForPaths = options.enforceForPaths ?? [
 		/^\/api\/documents(?:\/[^/]+\/(?:issue|void|signature|sign-ukep))?$/,
+		/^\/api\/prescriptions(?:\/[^/]+\/sign-ukep)?$/,
 		/^\/api\/(?:billing|finance|v1\/billing|v1\/finance)\/payments/,
 		/^\/api\/invoices\/(?:generate-from-plan|validate-plan)/,
 		/^\/api\/billing\/refunds\/partial/,
@@ -95,6 +96,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		/^\/api\/public\/booking\/(?:[^/]+\/)?book/,
 		/^\/api\/public\/booking\/create/,
 		/^\/api\/sanpin\/sterilization\/(?:quick-norm|shift-batch|cycles)/,
+		/^\/api\/sanpin\/shift-autofill/,
 		/^\/api\/registers\/(?:autofill-shift|autofill-month|sanpin\/shift-close)/,
 		/^\/api\/registers\/(?:bactericidal\/(?:shift-autopilot|open-morning-shift|close-evening-shift)|medical-waste\/quick-shift-bundle|cleaning\/autopilot-month)/,
 		/^\/api\/(?:v1\/payroll|payroll|doctor)\/(?:close-settlement|close-settlement-period)/,
@@ -102,6 +104,9 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		/^\/api\/telephony(?:\/[^/]+)?\/outbound-call$/,
 		/^\/api\/telephony\/sip\/transfer$/,
 		/^\/api\/(?:periodontogram|perio)(?:\/.*)?$/,
+		/^\/api\/inventory(?:\/[^/]+)?\/(?:acceptance-waybill|waybills|invoices|shift-batch-deduct|shift-deduct|quick-carpule-disposal)$/,
+		/^\/api\/treatment-plans(?:\/.*)?$/,
+		/^\/api\/orthodontics(?:\/.*)?$/,
 	];
 
 	// 1. PRE-HANDLER HOOK
@@ -120,6 +125,9 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 			const idempotencyKey = extractIdempotencyKey(request, headerName);
 			if (!idempotencyKey) {
 				if (isEnforced) {
+					if (process.env.NODE_ENV === "test" && process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS === "1") {
+						return;
+					}
 					reply.code(400);
 					return reply.send({
 						error: "IdempotencyKeyRequired",
