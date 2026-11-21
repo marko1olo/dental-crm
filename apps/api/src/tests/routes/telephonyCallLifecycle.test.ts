@@ -176,7 +176,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		}
 	});
 
-	test("PATCH /calls/:id persists clinical note in communicationEvents", async () => {
+	test("PATCH /calls/:id persists clinical note in communicationEvents and preserves call_id metadata", async () => {
 		const app = Fastify();
 		await app.register(telephonyRoutes);
 		await app.ready();
@@ -198,6 +198,71 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		assert.equal(json.success, true);
 		assert.equal(json.callId, "call-catalog-1");
 		assert.equal(json.note, "Пациент записан на консультацию к ортодонту в субботу");
+		assert.ok(
+			json.call.message.includes("[call_id: call-catalog-1]"),
+			"communicationEvents.message must preserve [call_id: call-catalog-1] for webhook deduplication",
+		);
+
+		// Update note a second time: ensure [call_id: call-catalog-1] is not wiped
+		const res2 = await app.inject({
+			method: "PATCH",
+			url: `/calls/${json.call.id}`,
+			headers: {
+				"x-dente-clinic-token": "demo-showcase-clinic-token",
+				"x-dente-staff-token": "demo-showcase-staff-token",
+			},
+			payload: {
+				note: "Пациент подтвердил приём и перенёс на 15:00",
+			},
+		});
+
+		assert.equal(res2.statusCode, 200);
+		const json2 = res2.json();
+		assert.equal(json2.success, true);
+		assert.ok(
+			json2.call.message.includes("[call_id: call-catalog-1]"),
+			"Second note update must preserve original call_id marker",
+		);
+
+		await app.close();
+	});
+
+	test("POST /:organizationId/outbound-call blocks BOLA/IDOR when rawOrgId does not match auth context", async () => {
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		const fakeAlienOrgId = "a0000000-0000-4000-8000-000000000099";
+
+		// Request without authentication: rejected by accessGuard
+		const unauthRes = await app.inject({
+			method: "POST",
+			url: `/${fakeAlienOrgId}/outbound-call`,
+			payload: {
+				phone: "+79991234567",
+			},
+		});
+		assert.ok(
+			unauthRes.statusCode === 401 || unauthRes.statusCode === 403,
+			"Unauthenticated outbound call must be rejected",
+		);
+
+		// Request with demo token (which resolves to demo clinic org): mismatched with alien UUID in URL -> 403 OrganizationMismatch
+		const mismatchedRes = await app.inject({
+			method: "POST",
+			url: `/${fakeAlienOrgId}/outbound-call`,
+			headers: {
+				"x-dente-clinic-token": "demo-showcase-clinic-token",
+				"x-dente-staff-token": "demo-showcase-staff-token",
+			},
+			payload: {
+				phone: "+79991234567",
+			},
+		});
+		assert.equal(mismatchedRes.statusCode, 403);
+		const mismatchJson = mismatchedRes.json();
+		assert.equal(mismatchJson.error, "OrganizationMismatch");
+
 		await app.close();
 	});
 });

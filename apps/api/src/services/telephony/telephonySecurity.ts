@@ -153,23 +153,51 @@ export async function authenticatePbxWebhook(
 	if (payload.api_key) candidateTokens.push(payload.api_key);
 	if (payload.vpbx_api_key) candidateTokens.push(payload.vpbx_api_key);
 
-	// Mango Office Check: sign = sha256(api_key + json + api_salt)
+	// Mango Office Check: sign = sha256(vpbx_api_key + json + api_salt)
 	const mangoSign =
 		payload.sign || extractHeader(request, "x-mango-signature") || qSignature;
 	const mangoKey = payload.vpbx_api_key || payload.api_key;
 	const mangoSalt = process.env.MANGO_API_SALT?.trim() || primarySecret;
 
 	if (mangoSign && mangoKey && mangoSalt) {
-		const rawBodyStr =
-			typeof request.body === "string"
-				? request.body
-				: JSON.stringify(request.body);
-		const expectedMangoSign = createHash("sha256")
-			.update(`${mangoKey}${rawBodyStr}${mangoSalt}`)
-			.digest("hex");
+		let rawJsonStr: string | null = null;
+		const reqBody = request.body as Record<string, unknown> | string | undefined;
 
-		if (timingSafeSecretEqual(mangoSign, expectedMangoSign)) {
-			return true;
+		if (typeof reqBody === "string") {
+			try {
+				const params = new URLSearchParams(reqBody);
+				rawJsonStr = params.get("json");
+			} catch {
+				// not urlencoded
+			}
+			if (!rawJsonStr) {
+				rawJsonStr = reqBody;
+			}
+		} else if (reqBody && typeof reqBody === "object") {
+			if (typeof (reqBody as { json?: unknown }).json === "string") {
+				rawJsonStr = (reqBody as { json: string }).json;
+			} else if ((reqBody as { json?: unknown }).json && typeof (reqBody as { json?: unknown }).json === "object") {
+				rawJsonStr = JSON.stringify((reqBody as { json: object }).json);
+			} else {
+				// If body has no explicit .json field, but has sign/vpbx_api_key mixed with fields,
+				// exclude sign, signature, vpbx_api_key, api_key from the json object
+				const clone = { ...reqBody };
+				delete (clone as Record<string, unknown>).sign;
+				delete (clone as Record<string, unknown>).signature;
+				delete (clone as Record<string, unknown>).vpbx_api_key;
+				delete (clone as Record<string, unknown>).api_key;
+				rawJsonStr = JSON.stringify(clone);
+			}
+		}
+
+		if (rawJsonStr) {
+			const expectedMangoSign = createHash("sha256")
+				.update(`${mangoKey}${rawJsonStr}${mangoSalt}`)
+				.digest("hex");
+
+			if (timingSafeSecretEqual(mangoSign, expectedMangoSign)) {
+				return true;
+			}
 		}
 	}
 

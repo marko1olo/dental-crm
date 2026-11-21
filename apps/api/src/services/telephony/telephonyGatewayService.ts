@@ -18,6 +18,7 @@ import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { communicationEvents, crmLeads, patients } from "../../db/schema.js";
+import { maskPhoneDisplay } from "@dental/shared";
 import { wsBroker } from "../websocketBroker.js";
 
 export type TelephonyMode = "local_webrtc_sip" | "cloud_webhooks" | "hybrid_active_fallback";
@@ -150,6 +151,15 @@ export class TelephonyGatewayService {
 	): Promise<TelephonyGatewayStatus> {
 		const cfg = { ...this.getDefaultAsteriskConfig(), ...config };
 		const now = new Date().toISOString();
+		const resolvedFallbackProvider: CloudProviderType =
+			(process.env.TELEPHONY_PROVIDER as CloudProviderType) ||
+			(process.env.MANGO_API_KEY || process.env.MANGO_VPBX_API_KEY
+				? "mango"
+				: process.env.ZADARMA_API_KEY
+					? "zadarma"
+					: process.env.UIS_API_KEY || process.env.COMAGIC_API_KEY
+						? "uis"
+						: "mango");
 
 		const isForcedFailover = this.forcedFailoverMap.get(organizationId) || false;
 		if (isForcedFailover || process.env.PBX_FORCE_OFFLINE === "1") {
@@ -157,7 +167,7 @@ export class TelephonyGatewayService {
 				organizationId,
 				activeMode: "cloud_webhooks",
 				primaryProvider: "asterisk_local",
-				fallbackProvider: (process.env.TELEPHONY_PROVIDER as CloudProviderType) || "mango",
+				fallbackProvider: resolvedFallbackProvider,
 				localPbxOnline: false,
 				localPbxLatencyMs: 0,
 				cloudWebhookActive: true,
@@ -200,7 +210,7 @@ export class TelephonyGatewayService {
 			organizationId,
 			activeMode,
 			primaryProvider: "asterisk_local",
-			fallbackProvider: "mango",
+			fallbackProvider: resolvedFallbackProvider,
 			localPbxOnline,
 			localPbxLatencyMs: latencyMs,
 			cloudWebhookActive: true, // Cloud fallback listener is always armed
@@ -479,6 +489,49 @@ export class TelephonyGatewayService {
 	}
 
 	/**
+	 * Dispatches real HTTP Callback command to UIS / CoMagic Data API:
+	 * POST https://dataapi.uiscom.ru/v2.0
+	 * JSON-RPC 2.0 start_employee_call
+	 */
+	public static async dispatchUisCallback(params: {
+		callId: string;
+		apiKey: string;
+		phone: string;
+		extension: string;
+	}): Promise<{ success: boolean; data?: unknown }> {
+		const payload = {
+			jsonrpc: "2.0",
+			id: params.callId,
+			method: "start_employee_call",
+			params: {
+				access_token: params.apiKey,
+				contact: params.phone,
+				employee_phone: params.extension,
+			},
+		};
+
+		const response = await fetch("https://dataapi.uiscom.ru/v2.0", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(payload),
+			signal: AbortSignal.timeout(5000),
+		});
+
+		if (!response.ok) {
+			const text = await response.text().catch(() => "");
+			throw new Error(`UIS HTTP ${response.status}: ${text || response.statusText}`);
+		}
+
+		const data = (await response.json().catch(() => ({}))) as { error?: { message?: string } };
+		if (data?.error) {
+			throw new Error(`UIS API error: ${data.error.message || JSON.stringify(data.error)}`);
+		}
+		return { success: true, data };
+	}
+
+	/**
 	 * Dispatches real Asterisk AMI Originate command via TCP socket:
 	 * Action: Originate
 	 */
@@ -553,9 +606,10 @@ export class TelephonyGatewayService {
 	public static async initiateOutboundCall(params: {
 		organizationId: string;
 		callerPhone: { e164: string; national10: string };
-		patientId?: string | null;
-		patientName?: string;
-		staffUserId?: string | null;
+		patientId?: string | null | undefined;
+		patientName?: string | undefined;
+		staffUserId?: string | null | undefined;
+		logger?: { warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void } | undefined;
 	}): Promise<{
 		dispatched: boolean;
 		callId: string;
@@ -588,10 +642,13 @@ export class TelephonyGatewayService {
 		if (
 			provider === "mango" &&
 			!process.env.MANGO_API_KEY &&
-			!process.env.MANGO_VPBX_API_KEY &&
-			process.env.ZADARMA_API_KEY
+			!process.env.MANGO_VPBX_API_KEY
 		) {
-			provider = "zadarma";
+			if (process.env.ZADARMA_API_KEY) {
+				provider = "zadarma";
+			} else if (process.env.UIS_API_KEY || process.env.COMAGIC_API_KEY) {
+				provider = "uis";
+			}
 		}
 
 		const forceLive = process.env.TELEPHONY_FORCE_LIVE_DISPATCH === "1";
@@ -621,7 +678,11 @@ export class TelephonyGatewayService {
 					});
 				} catch (err) {
 					const errMsg = err instanceof Error ? err.message : String(err);
-					console.error(`[Telephony:Mango] Outbound call error: ${errMsg}`);
+					if (params.logger) {
+						params.logger.error({ err, provider: "mango" }, `[Telephony:Mango] Outbound call error: ${errMsg}`);
+					} else {
+						process.stderr.write(`[Telephony:Mango] Outbound call error: ${errMsg}\n`);
+					}
 					return {
 						dispatched: false,
 						callId,
@@ -654,12 +715,51 @@ export class TelephonyGatewayService {
 					});
 				} catch (err) {
 					const errMsg = err instanceof Error ? err.message : String(err);
-					console.error(`[Telephony:Zadarma] Outbound call error: ${errMsg}`);
+					if (params.logger) {
+						params.logger.error({ err, provider: "zadarma" }, `[Telephony:Zadarma] Outbound call error: ${errMsg}`);
+					} else {
+						process.stderr.write(`[Telephony:Zadarma] Outbound call error: ${errMsg}\n`);
+					}
 					return {
 						dispatched: false,
 						callId,
 						provider: "zadarma",
 						error: `Ошибка вызова Zadarma: ${errMsg}`,
+					};
+				}
+			}
+		} else if (provider === "uis") {
+			const uisKey = process.env.UIS_API_KEY?.trim() || process.env.COMAGIC_API_KEY?.trim();
+
+			if (!uisKey) {
+				return {
+					dispatched: false,
+					callId,
+					provider: "uis",
+					error: "АТС телефонии не подключена в клинике",
+				};
+			}
+
+			if (!isTestEnv) {
+				try {
+					await this.dispatchUisCallback({
+						callId,
+						apiKey: uisKey,
+						phone: params.callerPhone.e164,
+						extension: process.env.UIS_DEFAULT_EXTENSION || process.env.COMAGIC_DEFAULT_EXTENSION || "101",
+					});
+				} catch (err) {
+					const errMsg = err instanceof Error ? err.message : String(err);
+					if (params.logger) {
+						params.logger.error({ err, provider: "uis" }, `[Telephony:UIS] Outbound call error: ${errMsg}`);
+					} else {
+						process.stderr.write(`[Telephony:UIS] Outbound call error: ${errMsg}\n`);
+					}
+					return {
+						dispatched: false,
+						callId,
+						provider: "uis",
+						error: `Ошибка вызова UIS/CoMagic: ${errMsg}`,
 					};
 				}
 			}
@@ -690,7 +790,11 @@ export class TelephonyGatewayService {
 					});
 				} catch (err) {
 					const errMsg = err instanceof Error ? err.message : String(err);
-					console.error(`[Telephony:Asterisk] Outbound call error: ${errMsg}`);
+					if (params.logger) {
+						params.logger.error({ err, provider: "asterisk" }, `[Telephony:Asterisk] Outbound call error: ${errMsg}`);
+					} else {
+						process.stderr.write(`[Telephony:Asterisk] Outbound call error: ${errMsg}\n`);
+					}
 					return {
 						dispatched: false,
 						callId,

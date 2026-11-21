@@ -85,6 +85,7 @@ export class CallerLookupService {
 		organizationId: string;
 		phone?: string | null | undefined;
 		patientId?: string | null | undefined;
+		logger?: { warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void } | undefined;
 	}): Promise<CallerLookupResult> {
 		const { organizationId, phone, patientId } = params;
 
@@ -201,7 +202,11 @@ export class CallerLookupService {
 			]);
 			balanceRub = balances.get(matchedPatient.id) ?? 0;
 		} catch (err) {
-			console.warn("[CallerLookupService] Balance calculation warning:", err);
+			if (params.logger) {
+				params.logger.warn({ err, organizationId, patientId: matchedPatient.id }, "[CallerLookupService] Balance calculation warning");
+			} else {
+				process.stderr.write(`[CallerLookupService] Balance calculation warning: ${String(err)}\n`);
+			}
 		}
 
 		const debtRub = Math.max(0, -balanceRub);
@@ -400,7 +405,11 @@ export class CallerLookupService {
 				};
 			}
 		} catch (planErr) {
-			console.warn("[CallerLookupService] Treatment plan query warning:", planErr);
+			if (params.logger) {
+				params.logger.warn({ planErr, organizationId, patientId: matchedPatient.id }, "[CallerLookupService] Treatment plan query warning");
+			} else {
+				process.stderr.write(`[CallerLookupService] Treatment plan query warning: ${String(planErr)}\n`);
+			}
 		}
 
 		// 7. Resolve Patient Category

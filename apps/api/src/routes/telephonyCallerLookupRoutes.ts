@@ -38,6 +38,7 @@ export const telephonyCallerLookupRoutes: FastifyPluginAsync = async (server) =>
 				organizationId: resolvedOrgId,
 				phone,
 				patientId,
+				logger: request.log,
 			});
 		});
 

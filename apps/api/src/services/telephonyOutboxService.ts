@@ -30,6 +30,7 @@ import {
 	parseTelephonyCallEvent,
 	resolveWebhookOrgId,
 } from "../routes/telephony/telephonyEngine.js";
+import { handleEndedEvent } from "../routes/telephony/telephonyWebhookEndedService.js";
 import {
 	persistentOutboxService,
 	type OutboxItem,
@@ -99,9 +100,14 @@ export interface InstantAckResult {
 
 export class TelephonyOutboxService {
 	private readonly outbox: PersistentOutboxService;
+	public logger?: { info: (obj: unknown, msg?: string) => void; warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void } | undefined;
 
-	constructor(outboxInstance: PersistentOutboxService = persistentOutboxService) {
+	constructor(
+		outboxInstance: PersistentOutboxService = persistentOutboxService,
+		logger?: { info: (obj: unknown, msg?: string) => void; warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void },
+	) {
 		this.outbox = outboxInstance;
+		this.logger = logger;
 		this.registerOutboxWorker();
 	}
 
@@ -504,115 +510,37 @@ export class TelephonyOutboxService {
 				return;
 			}
 
-			// 4. Handle ENDED / CDR Event: Audio Attachment & Communication History
+			// 4. Handle ENDED / CDR Event: Audio Attachment & Communication History (Delegated to canonical SSOT)
 			if (event === "ended") {
-				if (callId || recordingUrl) {
-					const dedupeConditions: SQL[] = [];
-					if (callId) {
-						dedupeConditions.push(
-							ilike(communicationEvents.message, `%${callId}%`),
-						);
-					}
-					if (recordingUrl) {
-						dedupeConditions.push(
-							eq(communicationEvents.recordingUrl, recordingUrl),
-						);
-					}
-
-					const existingEvent = await db
-						.select({ id: communicationEvents.id })
-						.from(communicationEvents)
-						.where(
-							and(
-								eq(communicationEvents.organizationId, organizationId),
-								or(...dedupeConditions),
-							),
-						)
-						.limit(1);
-
-					if (existingEvent.length > 0) {
-						return; // Idempotent skip
-					}
-				}
-
-				let verifiedRecUrl: string | null = null;
-				if (recordingUrl) {
-					const ssrfCheck = await validateSsrfSafeRecordingUrl(recordingUrl);
-					if (ssrfCheck.valid) {
-						verifiedRecUrl = recordingUrl;
-					}
-				}
-
-				await db.transaction(async (tx) => {
-					await tx.insert(communicationEvents).values({
-						organizationId,
-						patientId: matchedPatient?.id || null,
-						callerPhone: callerPhone.e164,
-						channel: "phone",
-						direction: "inbound",
-						status: "completed",
-						message: callId
-							? `Звонок завершён (call_id: ${callId}${!matchedPatient ? ", первичный звонок" : ""})`
-							: `Звонок завершён (запись приложена${!matchedPatient ? ", первичный звонок" : ""})`,
-						recordingUrl: verifiedRecUrl,
-						durationSeconds: durationSeconds > 0 ? durationSeconds : null,
-					});
-
-					if (!matchedPatient && callerPhone.national10.length >= 7) {
-						try {
-							const existingLead = await tx
-								.select({ id: crmLeads.id })
-								.from(crmLeads)
-								.where(
-									and(
-										eq(crmLeads.organizationId, organizationId),
-										or(
-											eq(crmLeads.phone, callerPhone.e164),
-											ilike(crmLeads.phone, `%${callerPhone.national10}%`),
-										),
-									),
-								)
-								.limit(1);
-
-							if (existingLead.length === 0) {
-								await tx.insert(crmLeads).values({
-									organizationId,
-									name: `Входящий звонок ${callerPhone.e164}`,
-									patientName: `Первичный звонок ${callerPhone.e164}`,
-									phone: callerPhone.e164,
-									source: detectedMarketingChannel || "telephony",
-									status: "new",
-									notes: `Автоматический лид из входящего звонка телефонии (${detectedProvider}). ${callId ? `call_id: ${callId}.` : ""}${durationSeconds > 0 ? ` Длительность: ${durationSeconds}с.` : ""}`,
-									audioRecordUrl: verifiedRecUrl || null,
-									transcriptionSnippet: transcriptionSnippet || null,
-									stageEnteredAt: new Date(),
-									priority: "normal",
-								});
-							}
-						} catch (leadErr) {
-							console.warn("[TelephonyOutbox] Auto lead creation warning:", leadErr);
-						}
-					}
-
-					if (verifiedRecUrl || transcriptionSnippet) {
-						await tx
-							.update(crmLeads)
-							.set({
-								...(verifiedRecUrl ? { audioRecordUrl: verifiedRecUrl } : {}),
-								...(transcriptionSnippet ? { transcriptionSnippet } : {}),
-								lastContactedAt: new Date(),
-							})
-							.where(
-								and(
-									eq(crmLeads.organizationId, organizationId),
-									or(
-										eq(crmLeads.phone, callerPhone.e164),
-										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
-									),
-								),
-							);
-					}
+				await handleEndedEvent({
+					request: {
+						log: {
+							info: (_obj: unknown, _msg?: string) => {},
+							warn: (obj: unknown, msg?: string) => {
+								if (this.logger) {
+									this.logger.warn({ obj }, msg || "[TelephonyOutbox] Warning");
+								} else {
+									process.stderr.write(`[TelephonyOutbox] Warning: ${msg || ""} ${JSON.stringify(obj)}\n`);
+								}
+							},
+							error: (obj: unknown, msg?: string) => {
+								if (this.logger) {
+									this.logger.error({ obj }, msg || "[TelephonyOutbox] Error");
+								} else {
+									process.stderr.write(`[TelephonyOutbox] Error: ${msg || ""} ${JSON.stringify(obj)}\n`);
+								}
+							},
+						},
+					},
+					resolvedOrgId: organizationId,
+					callerPhone,
+					callId: callId || "",
+					recordingUrl: recordingUrl || "",
+					durationSeconds,
+					transcriptionSnippet: transcriptionSnippet || null,
+					matchedPatient: matchedPatient || null,
 				});
+				return;
 			}
 		});
 	}
@@ -635,10 +563,16 @@ export class TelephonyOutboxService {
 				});
 			});
 		} catch (auditErr) {
-			console.error(
-				`[TelephonyOutboxService] Failed to insert audit alert for DLQ item ${item.id}:`,
-				auditErr,
-			);
+			if (this.logger) {
+				this.logger.error(
+					{ auditErr, itemId: item.id },
+					`[TelephonyOutboxService] Failed to insert audit alert for DLQ item ${item.id}`,
+				);
+			} else {
+				process.stderr.write(
+					`[TelephonyOutboxService] Failed to insert audit alert for DLQ item ${item.id}: ${String(auditErr)}\n`,
+				);
+			}
 		}
 	}
 

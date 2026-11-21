@@ -1,16 +1,14 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { requireClinicalReadAccess, requireResolvedOrganizationId } from "../../../accessGuard.js";
+import { requireClinicalMutationContext, requireClinicalReadContext } from "../../../accessGuard.js";
 import { TelephonyGatewayService } from "../../../services/telephony/telephonyGatewayService.js";
 
 export async function handleSipStatus(
 	request: FastifyRequest<{ Params: { organizationId?: string } }>,
 	reply: FastifyReply,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, "get telephony gateway status"))) {
-		return;
-	}
-	const orgId = await requireResolvedOrganizationId(request, reply, "get telephony gateway status");
-	if (!orgId) return;
+	const context = await requireClinicalReadContext(request, reply, "get telephony gateway status");
+	if (!context) return;
+	const orgId = context.organizationId;
 
 	const status = await TelephonyGatewayService.evaluateTelephonyGatewayStatus(orgId);
 	return reply.status(200).send({ success: true, status });
@@ -23,11 +21,9 @@ export async function handleSipFailover(
 	}>,
 	reply: FastifyReply,
 ) {
-	if (!(await requireClinicalReadAccess(request, reply, "set telephony failover"))) {
-		return;
-	}
-	const orgId = await requireResolvedOrganizationId(request, reply, "set telephony failover");
-	if (!orgId) return;
+	const context = await requireClinicalMutationContext(request, reply, "set telephony failover");
+	if (!context) return;
+	const orgId = context.organizationId;
 
 	const body = (request.body || {}) as { forceCloudFallback?: boolean };
 	const force = Boolean(body.forceCloudFallback);

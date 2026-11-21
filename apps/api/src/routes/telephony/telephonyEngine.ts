@@ -1,4 +1,5 @@
 import { eq, ilike, or, sql } from "drizzle-orm";
+import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import { withSuperuserBypass } from "../../db/rls.js";
 import { clinics } from "../../db/schema.js";
 import {
@@ -94,15 +95,25 @@ export function checkReplayTimestamp(
 					: startNum + durationSec
 				: data.call_start;
 	}
-	if (rawTs == null) return { valid: true };
+	if (rawTs == null) {
+		if (namedDevelopmentModeActive()) {
+			return { valid: true };
+		}
+		return { valid: false, reason: "Missing timestamp in production webhook payload" };
+	}
 
 	const numTs = typeof rawTs === "number" ? rawTs : Number.parseInt(String(rawTs), 10);
-	if (!Number.isNaN(numTs) && numTs > 0) {
-		const msgTsSec = numTs > 1e11 ? Math.floor(numTs / 1000) : numTs;
-		const nowSec = Math.floor(Date.now() / 1000);
-		if (Math.abs(nowSec - msgTsSec) > 300) {
-			return { valid: false, reason: "Timestamp drift window exceeded (>300s)" };
+	if (Number.isNaN(numTs) || numTs <= 0) {
+		if (namedDevelopmentModeActive()) {
+			return { valid: true };
 		}
+		return { valid: false, reason: "Invalid or non-positive timestamp in production webhook payload" };
+	}
+
+	const msgTsSec = numTs > 1e11 ? Math.floor(numTs / 1000) : numTs;
+	const nowSec = Math.floor(Date.now() / 1000);
+	if (Math.abs(nowSec - msgTsSec) > 300) {
+		return { valid: false, reason: "Timestamp drift window exceeded (>300s)" };
 	}
 	return { valid: true };
 }

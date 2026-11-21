@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { describe, test } from "node:test";
 import {
+	authenticatePbxWebhook,
 	isForbiddenPrivateIp,
 	normalizePhoneNumber,
 	validateSsrfSafeRecordingUrl,
 } from "../../routes/telephony.js";
+import { checkReplayTimestamp } from "../../routes/telephony/telephonyEngine.js";
 
 describe("IP Telephony Phone Normalization & E.164 Standards", () => {
 	test("normalizes standard Russian 11-digit mobile numbers with +7 and 8", () => {
@@ -64,5 +67,145 @@ describe("Telephony Audio Recording SSRF Mitigation & Private IP Defense", () =>
 
 		const dataUrl = await validateSsrfSafeRecordingUrl("data:text/html,evil");
 		assert.equal(dataUrl.valid, false);
+	});
+});
+
+describe("Mango Office PBX Signature Verification", () => {
+	test("verifies Mango HMAC-SHA256 signature calculated from vpbx_api_key + json + api_salt", async () => {
+		const vpbxApiKey = "test-vpbx-api-key-12345";
+		const apiSalt = "test-api-salt-secret-999";
+		const jsonStr = JSON.stringify({ entry_id: "entry-001", call_id: "mango-call-123" });
+		const sign = createHash("sha256").update(`${vpbxApiKey}${jsonStr}${apiSalt}`).digest("hex");
+
+		const prevSalt = process.env.MANGO_API_SALT;
+		process.env.MANGO_API_SALT = apiSalt;
+
+		try {
+			const mockReq = {
+				headers: {},
+				query: {},
+				body: {
+					vpbx_api_key: vpbxApiKey,
+					sign,
+					json: jsonStr,
+				},
+				log: { warn: () => {}, error: () => {} },
+				ip: "127.0.0.1",
+				url: "/telephony/webhook",
+			} as unknown as Parameters<typeof authenticatePbxWebhook>[0];
+
+			const mockReply = {
+				status: () => mockReply,
+				send: () => mockReply,
+			} as unknown as Parameters<typeof authenticatePbxWebhook>[1];
+
+			const payload = {
+				vpbx_api_key: vpbxApiKey,
+				sign,
+			};
+
+			const isValid = await authenticatePbxWebhook(mockReq, mockReply, "00000000-0000-0000-0000-000000000001", payload);
+			assert.equal(isValid, true);
+		} finally {
+			if (prevSalt !== undefined) process.env.MANGO_API_SALT = prevSalt;
+			else delete process.env.MANGO_API_SALT;
+		}
+	});
+
+	test("verifies Mango signature when body is urlencoded string", async () => {
+		const vpbxApiKey = "test-vpbx-api-key-12345";
+		const apiSalt = "test-api-salt-secret-999";
+		const jsonStr = JSON.stringify({ entry_id: "entry-002", call_id: "mango-call-456" });
+		const sign = createHash("sha256").update(`${vpbxApiKey}${jsonStr}${apiSalt}`).digest("hex");
+
+		const prevSalt = process.env.MANGO_API_SALT;
+		process.env.MANGO_API_SALT = apiSalt;
+
+		try {
+			const bodyStr = `vpbx_api_key=${encodeURIComponent(vpbxApiKey)}&sign=${sign}&json=${encodeURIComponent(jsonStr)}`;
+
+			const mockReq = {
+				headers: {},
+				query: {},
+				body: bodyStr,
+				log: { warn: () => {}, error: () => {} },
+				ip: "127.0.0.1",
+				url: "/telephony/webhook",
+			} as unknown as Parameters<typeof authenticatePbxWebhook>[0];
+
+			const mockReply = {
+				status: () => mockReply,
+				send: () => mockReply,
+			} as unknown as Parameters<typeof authenticatePbxWebhook>[1];
+
+			const payload = {
+				vpbx_api_key: vpbxApiKey,
+				sign,
+			};
+
+			const isValid = await authenticatePbxWebhook(mockReq, mockReply, "00000000-0000-0000-0000-000000000001", payload);
+			assert.equal(isValid, true);
+		} finally {
+			if (prevSalt !== undefined) process.env.MANGO_API_SALT = prevSalt;
+			else delete process.env.MANGO_API_SALT;
+		}
+	});
+
+	test("rejects forged or tampered Mango signature", async () => {
+		const vpbxApiKey = "test-vpbx-api-key-12345";
+		const apiSalt = "test-api-salt-secret-999";
+		const jsonStr = JSON.stringify({ entry_id: "entry-001", call_id: "mango-call-123" });
+		const forgedSign = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+
+		const prevSalt = process.env.MANGO_API_SALT;
+		process.env.MANGO_API_SALT = apiSalt;
+
+		try {
+			let statusSent = 0;
+			const mockReq = {
+				headers: {},
+				query: {},
+				body: {
+					vpbx_api_key: vpbxApiKey,
+					sign: forgedSign,
+					json: jsonStr,
+				},
+				log: { warn: () => {}, error: () => {} },
+				ip: "127.0.0.1",
+				url: "/telephony/webhook",
+			} as unknown as Parameters<typeof authenticatePbxWebhook>[0];
+
+			const mockReply = {
+				status: (code: number) => { statusSent = code; return mockReply; },
+				send: () => mockReply,
+			} as unknown as Parameters<typeof authenticatePbxWebhook>[1];
+
+			const payload = {
+				vpbx_api_key: vpbxApiKey,
+				sign: forgedSign,
+			};
+
+			const isValid = await authenticatePbxWebhook(mockReq, mockReply, "00000000-0000-0000-0000-000000000001", payload);
+			assert.equal(isValid, false);
+			assert.equal(statusSent, 401);
+		} finally {
+			if (prevSalt !== undefined) process.env.MANGO_API_SALT = prevSalt;
+			else delete process.env.MANGO_API_SALT;
+		}
+	});
+});
+
+describe("Telephony Webhook Replay Protection", () => {
+	test("rejects timestamps older than 300 seconds", () => {
+		const oldTimestamp = Math.floor(Date.now() / 1000) - 350;
+		const result = checkReplayTimestamp({ timestamp: oldTimestamp });
+		assert.equal(result.valid, false);
+		assert.match(result.reason || "", /drift window exceeded/i);
+	});
+
+	test("accepts timestamps within 300-second window", () => {
+		const freshTimestamp = Math.floor(Date.now() / 1000) - 5;
+		const result = checkReplayTimestamp({ timestamp: freshTimestamp });
+		assert.equal(result.valid, true);
 	});
 });

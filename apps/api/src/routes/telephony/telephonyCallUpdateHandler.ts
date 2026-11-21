@@ -70,10 +70,27 @@ export async function telephonyCallUpdateHandler(
 
 	if (UUID_REGEX.test(callId)) {
 		updatedCall = await withTenantCtx(orgId, async () => {
+			const existing = await db
+				.select({ message: communicationEvents.message })
+				.from(communicationEvents)
+				.where(
+					and(
+						eq(communicationEvents.id, callId),
+						eq(communicationEvents.organizationId, orgId),
+					),
+				)
+				.limit(1);
+
+			const match = existing[0]?.message?.match(/\[call_id:\s*([^\]]+)\]/i);
+			const preservedCallId = match ? match[1]?.trim() : callId;
+			const updatedMessage = noteText.includes("[call_id:")
+				? noteText
+				: `${noteText} [call_id: ${preservedCallId}]`;
+
 			const res = await db
 				.update(communicationEvents)
 				.set({
-					message: noteText,
+					message: updatedMessage,
 				})
 				.where(
 					and(
@@ -131,10 +148,27 @@ export async function telephonyCallUpdateHandler(
 			}
 
 			if (targetEventId) {
+				const existing = await db
+					.select({ message: communicationEvents.message })
+					.from(communicationEvents)
+					.where(
+						and(
+							eq(communicationEvents.id, targetEventId),
+							eq(communicationEvents.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				const match = existing[0]?.message?.match(/\[call_id:\s*([^\]]+)\]/i);
+				const preservedCallId = match ? match[1]?.trim() : callId;
+				const updatedMessage = noteText.includes("[call_id:")
+					? noteText
+					: `${noteText} [call_id: ${preservedCallId}]`;
+
 				const res = await db
 					.update(communicationEvents)
 					.set({
-						message: noteText,
+						message: updatedMessage,
 					})
 					.where(
 						and(
