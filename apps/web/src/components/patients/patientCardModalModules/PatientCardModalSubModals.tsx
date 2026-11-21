@@ -7,9 +7,9 @@ import { showToast } from "../../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import type { PatientGeneralInfo, PatientGeneralInfoFieldValue } from "../tabs/PatientGeneralInfoTab";
 
-const DmsGuaranteeLetterModal = React.lazy(() =>
-	import("../../insurance/DmsGuaranteeLetterModal").then((m) => ({
-		default: m.DmsGuaranteeLetterModal,
+const DmsStudioModal = React.lazy(() =>
+	import("../../insurance/DmsStudioModal").then((m) => ({
+		default: m.DmsStudioModal,
 	})),
 );
 
@@ -58,41 +58,16 @@ export const PatientCardModalSubModals: React.FC<PatientCardModalSubModalsProps>
 		)}
 		{isDmsLetterModalOpen && (
 			<React.Suspense fallback={null}>
-				<DmsGuaranteeLetterModal
+				<DmsStudioModal
 					isOpen={isDmsLetterModalOpen}
 					onClose={() => setIsDmsLetterModalOpen(false)}
+					initialTab="policies"
 					patient={{
 						id: patientData.id || "",
 						fullName: patientData.fullName || "",
 						birthDate: patientData.birthDate || undefined,
 						policyNumber: patientData.dmsPolicyNumber || undefined,
 						cardNumber: patientData.cardNumber || undefined,
-					}}
-					onSave={async (letter) => {
-						if (letter.policyNumber && !patientData.dmsPolicyNumber) {
-							onUpdatePatientField("dmsPolicyNumber", letter.policyNumber);
-						}
-						if (letter.insurerName && !patientData.dmsInsuranceCompany) {
-							onUpdatePatientField("dmsInsuranceCompany", letter.insurerName);
-						}
-						if (letter.letterNumber && !patientData.dmsGuaranteeLetterNumber) {
-							onUpdatePatientField("dmsGuaranteeLetterNumber", letter.letterNumber);
-						}
-						if (letter.maxCoverageRub && !patientData.dmsCoverageLimitRub) {
-							onUpdatePatientField("dmsCoverageLimitRub", letter.maxCoverageRub);
-							onUpdatePatientField("dmsCoverageLimitKopecks", Math.round(letter.maxCoverageRub * 100));
-						}
-						if (patientData.id) {
-							try {
-								await fetch("/api/insurance/guarantee-letters", {
-									method: "POST",
-									headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-									body: JSON.stringify({ ...letter, patientId: patientData.id }),
-								});
-							} catch {
-								// Offline fallback
-							}
-						}
 					}}
 				/>
 			</React.Suspense>

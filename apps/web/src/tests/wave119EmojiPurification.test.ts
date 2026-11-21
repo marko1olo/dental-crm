@@ -17,17 +17,12 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 
 	const RAW_EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}]|⚡|🦷|⚠️|❌|✅|🚨|🔥|✓/u;
 
-	it("1. DmsGuaranteeLetterModal: zero raw emojis, uses Lucide Zap vector icon", () => {
+	it("1. DmsGuaranteeLetterModal: duplicate modal eradicated per Mandate 8bf", () => {
 		const filePath = path.join(
 			repoRoot,
 			"apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx",
 		);
-		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert.ok(!content.includes("⚡"), "DmsGuaranteeLetterModal must not contain raw ⚡ emoji");
-		assert.ok(!content.includes("✓"), "DmsGuaranteeLetterModal must not contain raw ✓ symbol");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsGuaranteeLetterModal must be free of raw emojis");
-		assert.ok(content.includes("<Zap"), "DmsGuaranteeLetterModal must render Lucide Zap vector icon");
+		assert.ok(!fs.existsSync(filePath), "DmsGuaranteeLetterModal.tsx must be eradicated per Mandate 8bf");
 	});
 
 	it("2. InsuranceContractsPanel: zero raw emojis, uses Lucide ShieldCheck vector icon", () => {
@@ -42,29 +37,28 @@ describe("Wave 119: Raw Emoji Eradication (Mandates 8a–8q)", () => {
 		assert.ok(content.includes("<ShieldCheck"), "InsuranceContractsPanel must render Lucide ShieldCheck vector icon");
 	});
 
-	it("3. DmsGuaranteeLetterModal: zero raw emojis, uses Lucide Zap vector icon", () => {
+	it("3. DmsStudioModal: zero raw emojis, uses Lucide Zap vector icon", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx",
+			"apps/web/src/components/insurance/DmsStudioModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
-		assert.ok(!content.includes("⚡"), "DmsGuaranteeLetterModal must not contain raw ⚡ emoji");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsGuaranteeLetterModal must be free of raw emojis");
-		assert.ok(content.includes("<Zap"), "DmsGuaranteeLetterModal must render Lucide Zap vector icon");
+		assert.ok(!content.includes("⚡"), "DmsStudioModal must not contain raw ⚡ emoji");
+		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsStudioModal must be free of raw emojis");
+		assert.ok(content.includes("<Zap"), "DmsStudioModal must render Lucide Zap vector icon");
 	});
 
-	it("4. DmsGuaranteeLetterModal: zero raw emojis, uses Lucide Zap vector icon", () => {
+	it("4. DmsStudioModal: zero raw emojis, free of checkmark symbol", () => {
 		const filePath = path.join(
 			repoRoot,
-			"apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx",
+			"apps/web/src/components/insurance/DmsStudioModal.tsx",
 		);
 		const content = fs.readFileSync(filePath, "utf-8");
 
-		assert.ok(!content.includes("⚡"), "DmsGuaranteeLetterModal must not contain raw ⚡ emoji");
-		assert.ok(!content.includes("✓"), "DmsGuaranteeLetterModal must not contain raw ✓ symbol");
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsGuaranteeLetterModal must be free of raw emojis");
-		assert.ok(content.includes("<Zap"), "DmsGuaranteeLetterModal must render Lucide Zap vector icon");
+		assert.ok(!content.includes("⚡"), "DmsStudioModal must not contain raw ⚡ emoji");
+		assert.ok(!content.includes("✓"), "DmsStudioModal must not contain raw ✓ symbol");
+		assert.ok(!RAW_EMOJI_REGEX.test(content), "DmsStudioModal must be free of raw emojis");
 	});
 
 	it("5. PatientRecallsHubModal: zero raw emojis, uses Lucide Phone & Lightbulb icons", () => {

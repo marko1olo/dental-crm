@@ -6,4 +6,3 @@
 
 export * from "./DmsStudioModal.js";
 export * from "./DirectInsuranceLauncher.js";
-export { DmsGuaranteeLetterModal } from "./DmsGuaranteeLetterModal.js";

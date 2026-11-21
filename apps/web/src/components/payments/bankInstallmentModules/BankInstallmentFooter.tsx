@@ -1,6 +1,6 @@
 import { formatKopecksRu, type Kopecks } from "@dental/shared";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface BankInstallmentFooterProps {
 	readonly isApprovedState: boolean;

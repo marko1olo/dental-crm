@@ -905,30 +905,50 @@ export interface DmsCoPaymentSplitItemResult {
 }
 
 export interface DmsCoPaymentSplitResult {
-	readonly splitResults: readonly DmsCoPaymentSplitItemResult[];
-	readonly items: readonly DmsCoPaymentSplitItemResult[];
-	readonly lineItems: readonly DmsCoPaymentSplitItemResult[];
-	readonly lines: readonly DmsCoPaymentSplitItemResult[];
-	readonly totalKopecks: number;
-	readonly totalAmountKopecks: number;
 	readonly totalBillKopecks: number;
-	readonly totalBillRubles: number;
-	readonly insuranceCoveredKopecks: number;
-	readonly totalCoveredByDmsKopecks: number;
-	readonly totalInsuranceCoveredKopecks: number;
 	readonly dmsCoveredKopecks: number;
-	readonly insuranceCoveredRubles: number;
-	readonly totalInsuranceCoveredRubles: number;
-	readonly patientOutOfPocketKopecks: number;
-	readonly totalPatientOutOfPocketKopecks: number;
-	readonly totalPatientCoPayKopecks: number;
-	readonly patientTotalKopecks: number;
-	readonly patientOutOfPocketRubles: number;
-	readonly totalPatientOutOfPocketRubles: number;
+	readonly patientCoPayKopecks: number;
+	readonly lineItems: readonly DmsCoPaymentSplitItemResult[];
 	readonly isFullyCovered: boolean;
 	readonly hasExcludedServices: boolean;
 	readonly remainingLetterLimitKopecks: number | null;
 	readonly remainingLimitKopecks: number;
+
+	// Backward compatibility aliases (deprecated)
+	/** @deprecated Use lineItems */
+	readonly splitResults?: readonly DmsCoPaymentSplitItemResult[] | undefined;
+	/** @deprecated Use lineItems */
+	readonly items?: readonly DmsCoPaymentSplitItemResult[] | undefined;
+	/** @deprecated Use lineItems */
+	readonly lines?: readonly DmsCoPaymentSplitItemResult[] | undefined;
+	/** @deprecated Use totalBillKopecks */
+	readonly totalKopecks?: number | undefined;
+	/** @deprecated Use totalBillKopecks */
+	readonly totalAmountKopecks?: number | undefined;
+	/** @deprecated Use dmsCoveredKopecks */
+	readonly insuranceCoveredKopecks?: number | undefined;
+	/** @deprecated Use dmsCoveredKopecks */
+	readonly totalCoveredByDmsKopecks?: number | undefined;
+	/** @deprecated Use dmsCoveredKopecks */
+	readonly totalInsuranceCoveredKopecks?: number | undefined;
+	/** @deprecated Use patientCoPayKopecks */
+	readonly patientOutOfPocketKopecks?: number | undefined;
+	/** @deprecated Use patientCoPayKopecks */
+	readonly totalPatientOutOfPocketKopecks?: number | undefined;
+	/** @deprecated Use patientCoPayKopecks */
+	readonly totalPatientCoPayKopecks?: number | undefined;
+	/** @deprecated Use patientCoPayKopecks */
+	readonly patientTotalKopecks?: number | undefined;
+	/** @deprecated Format via formatKopecksToRub */
+	readonly totalBillRubles?: number | undefined;
+	/** @deprecated Format via formatKopecksToRub */
+	readonly insuranceCoveredRubles?: number | undefined;
+	/** @deprecated Format via formatKopecksToRub */
+	readonly totalInsuranceCoveredRubles?: number | undefined;
+	/** @deprecated Format via formatKopecksToRub */
+	readonly patientOutOfPocketRubles?: number | undefined;
+	/** @deprecated Format via formatKopecksToRub */
+	readonly totalPatientOutOfPocketRubles?: number | undefined;
 }
 
 /**
@@ -1055,26 +1075,10 @@ export function calculateDmsCoPaymentSplit(
 	const totalPatientKop = totalKop - totalDmsKop;
 
 	return {
-		splitResults,
-		items: splitResults,
-		lineItems: splitResults,
-		lines: splitResults,
-		totalKopecks: totalKop,
-		totalAmountKopecks: totalKop,
 		totalBillKopecks: totalKop,
-		totalBillRubles: kopecksToRubles(totalKop),
-		insuranceCoveredKopecks: totalDmsKop,
-		totalCoveredByDmsKopecks: totalDmsKop,
-		totalInsuranceCoveredKopecks: totalDmsKop,
 		dmsCoveredKopecks: totalDmsKop,
-		insuranceCoveredRubles: kopecksToRubles(totalDmsKop),
-		totalInsuranceCoveredRubles: kopecksToRubles(totalDmsKop),
-		patientOutOfPocketKopecks: totalPatientKop,
-		totalPatientOutOfPocketKopecks: totalPatientKop,
-		totalPatientCoPayKopecks: totalPatientKop,
-		patientTotalKopecks: totalPatientKop,
-		patientOutOfPocketRubles: kopecksToRubles(totalPatientKop),
-		totalPatientOutOfPocketRubles: kopecksToRubles(totalPatientKop),
+		patientCoPayKopecks: totalPatientKop,
+		lineItems: splitResults,
 		isFullyCovered: totalPatientKop === 0,
 		hasExcludedServices,
 		remainingLetterLimitKopecks: Number.isFinite(remainingLimitKopecks)
@@ -1083,5 +1087,24 @@ export function calculateDmsCoPaymentSplit(
 		remainingLimitKopecks: Number.isFinite(remainingLimitKopecks)
 			? remainingLimitKopecks
 			: 0,
+
+		// Backward-compatible accessors
+		splitResults,
+		items: splitResults,
+		lines: splitResults,
+		totalKopecks: totalKop,
+		totalAmountKopecks: totalKop,
+		totalBillRubles: kopecksToRubles(totalKop),
+		insuranceCoveredKopecks: totalDmsKop,
+		totalCoveredByDmsKopecks: totalDmsKop,
+		totalInsuranceCoveredKopecks: totalDmsKop,
+		insuranceCoveredRubles: kopecksToRubles(totalDmsKop),
+		totalInsuranceCoveredRubles: kopecksToRubles(totalDmsKop),
+		patientOutOfPocketKopecks: totalPatientKop,
+		totalPatientOutOfPocketKopecks: totalPatientKop,
+		totalPatientCoPayKopecks: totalPatientKop,
+		patientTotalKopecks: totalPatientKop,
+		patientOutOfPocketRubles: kopecksToRubles(totalPatientKop),
+		totalPatientOutOfPocketRubles: kopecksToRubles(totalPatientKop),
 	};
 }

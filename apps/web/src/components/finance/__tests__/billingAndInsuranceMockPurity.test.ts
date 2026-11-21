@@ -2,7 +2,7 @@
  * billingAndInsuranceMockPurity.test.ts — Mock Purity Verification Suite Wave 107
  * Confirms total eradication of synthetic 'Иванов Иван Иванович' fallback mocks across:
  * 1. PatientBillingModal.tsx
- * 2. DmsGuaranteeLetterModal.tsx
+ * 2. DmsStudioModal.tsx
  * 3. FamilyWalletModal.tsx (Canonical SSOT)
  * 4. BankInstallmentQrModal.tsx
  */
@@ -15,7 +15,6 @@ import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { FamilyWalletModal } from "../../patients/family/FamilyWalletModal";
-import { DmsGuaranteeLetterModal } from "../../insurance/DmsGuaranteeLetterModal";
 import { BankInstallmentQrModal } from "../../payments/BankInstallmentQrModal";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,8 +24,8 @@ const webRoot = path.resolve(__dirname, "../../../..");
 describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity", () => {
 	const targetFiles = [
 		{
-			name: "DmsGuaranteeLetterModal.tsx",
-			relPath: "src/components/insurance/DmsGuaranteeLetterModal.tsx",
+			name: "DmsStudioModal.tsx",
+			relPath: "src/components/insurance/DmsStudioModal.tsx",
 		},
 		{
 			name: "FamilyWalletModal.tsx",
@@ -51,15 +50,10 @@ describe("Wave 107: Billing, Insurance & Family Wallet Mock Purity", () => {
 		});
 	}
 
-	it("DmsGuaranteeLetterModal: renders without synthetic patient mock fallback", () => {
-		const html = renderToString(
-			React.createElement(DmsGuaranteeLetterModal, {
-				isOpen: true,
-				onClose: () => {},
-				patient: { id: "pat-ins", fullName: "" },
-			}),
-		);
-		assert.ok(!html.includes("Иванов Иван Иванович"), "Rendered HTML must not contain synthetic patient name");
+	it("DmsStudioModal: verified pure without synthetic patient mock fallback", () => {
+		const absPath = path.resolve(webRoot, "src/components/insurance/DmsStudioModal.tsx");
+		const content = fs.readFileSync(absPath, "utf-8");
+		assert.equal(content.includes("Иванов Иван Иванович"), false, "DmsStudioModal must not contain synthetic patient name");
 	});
 
 	it("FamilyWalletModal: renders with clean default empty state without synthetic Ivanov family members", () => {

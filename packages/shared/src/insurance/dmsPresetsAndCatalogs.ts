@@ -27,6 +27,7 @@ import {
 	generateDmsLegacyRegistryXml,
 	generateDmsLegacyRegistryCsv,
 } from "./registryModules/index.js";
+import * as dmsNomenclature from "./catalogs/dmsServiceNomenclature.js";
 import type { ClinicLegalInfo } from "../sanpin/index.js";
 import type {
 	DmsSplitCalculationResult,
@@ -36,6 +37,32 @@ import type {
 // Re-export shared types for callers
 export type { ClinicLegalInfo };
 export type { DmsSplitCalculationResult, DmsSplitLineResult };
+
+// Re-export clinical service nomenclature & statutory exclusion rules SSOT
+export {
+	type DmsExclusionRule,
+	type DmsServiceNomenclatureItem,
+	type Nomenclature804nItem,
+	DMS_STANDARD_EXCLUSIONS,
+	STATUTORY_DMS_EXCLUSION_RULES,
+	DMS_EXCLUSION_RULES,
+	DMS_SERVICE_CATALOG,
+	NOMENCLATURE_804N_CATALOG,
+	STATUTORY_804N_NOMENCLATURE,
+	COMMON_DENTAL_ICD10_DIAGNOSES,
+	FDI_ADULT_TEETH_UPPER,
+	FDI_ADULT_TEETH_LOWER,
+	DEFAULT_BILL_ITEMS_TO_SPLIT,
+	EXPRESS_GUARANTEE_LETTER_PRESETS,
+	searchDmsServices,
+	search804nServices,
+	getDmsServiceByCode,
+	getNomenclature804nByCode,
+	normalizeToothFdi,
+	isToothApprovedByLetter,
+	isServiceCodeApprovedByLetter,
+	isServiceExcludedByDmsRules,
+} from "./catalogs/dmsServiceNomenclature.js";
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -197,28 +224,6 @@ export interface DmsStatutoryRegistry {
 	readonly grandTotalPatientKopecks: number;
 }
 
-export interface DmsExclusionRule {
-	readonly code: string;
-	readonly titleRu: string;
-	readonly descriptionRu?: string | undefined;
-	readonly isDefaultExcluded?: boolean | undefined;
-	readonly typicalCopayPercent?: number | undefined;
-	readonly matchingNomenclatureCodes?: readonly string[] | undefined;
-	readonly matchingKeywords?: readonly string[] | undefined;
-	readonly allowsPreAuthOverride?: boolean | undefined;
-}
-
-export interface Nomenclature804nItem {
-	readonly code: string;
-	readonly name: string;
-	readonly category: "therapy" | "surgery" | "diagnostics" | "hygiene" | "orthopedics" | "orthodontics";
-	readonly categoryTitleRu: string;
-	readonly defaultPriceRub: number;
-	readonly standardCoveredDms: boolean;
-	readonly isBaseDmsCovered?: boolean | undefined;
-	readonly uet?: number | undefined;
-}
-
 export interface StatutoryInsuranceContract {
 	readonly insurerKey: string;
 	readonly insurerShortName: string;
@@ -268,99 +273,6 @@ export const TOP_6_DMS_INSURER_CHIPS = RUSSIAN_DMS_INSURERS.slice(0, 6);
 export const STATUTORY_DMS_INSURERS = RUSSIAN_DMS_INSURERS;
 export const RUSSIAN_TOP_DMS_INSURERS = RUSSIAN_DMS_INSURERS;
 export const STANDARD_DMS_LIMITS_RUB = [30000, 50000, 100000, 150000] as const;
-
-// ============================================================================
-// EXCLUSIONS & NOMENCLATURE 804N CATALOG
-// ============================================================================
-
-export const DMS_STANDARD_EXCLUSIONS: readonly DmsExclusionRule[] = [
-	{ code: "orthodontics", titleRu: "Ортодонтия (брекеты, элайнеры)", descriptionRu: "Исправление прикуса не покрывается базовым полисом", isDefaultExcluded: true, typicalCopayPercent: 100, matchingNomenclatureCodes: ["A16.07.048", "A16.07.049"], matchingKeywords: ["брекет", "элайнер", "ортодонт"], allowsPreAuthOverride: false },
-	{ code: "implantology", titleRu: "Имплантация и костная пластика", descriptionRu: "Установка имплантатов и синус-лифтинг", isDefaultExcluded: true, typicalCopayPercent: 100, matchingNomenclatureCodes: ["A16.07.054", "A16.07.055"], matchingKeywords: ["имплант", "синус-лифтинг"], allowsPreAuthOverride: true },
-	{ code: "whitening", titleRu: "Эстетическое отбеливание", descriptionRu: "Кабинетное и домашнее отбеливание зубов", isDefaultExcluded: true, typicalCopayPercent: 100, matchingNomenclatureCodes: ["A16.07.050"], matchingKeywords: ["отбеливание", "zoom"], allowsPreAuthOverride: false },
-	{ code: "veneers", titleRu: "Виниры и эстетическая реставрация", descriptionRu: "Керамические и композитные виниры", isDefaultExcluded: true, typicalCopayPercent: 100, matchingNomenclatureCodes: ["A16.07.003", "A16.07.003.001"], matchingKeywords: ["винир", "люминир"], allowsPreAuthOverride: false },
-	{ code: "prosthetics_planned", titleRu: "Плановое протезирование", descriptionRu: "Ортопедическое восстановление зубов требует согласования", isDefaultExcluded: false, typicalCopayPercent: 50, matchingNomenclatureCodes: ["A16.07.004"], matchingKeywords: ["коронка", "мост"], allowsPreAuthOverride: true },
-	{ code: "general_anesthesia", titleRu: "Седация и наркоз", descriptionRu: "Лечение во сне без витальных показаний", isDefaultExcluded: true, typicalCopayPercent: 100, matchingNomenclatureCodes: ["B01.003.004"], matchingKeywords: ["наркоз", "седация"], allowsPreAuthOverride: false },
-];
-
-export const STATUTORY_DMS_EXCLUSION_RULES = DMS_STANDARD_EXCLUSIONS;
-export const DMS_EXCLUSION_RULES = STATUTORY_DMS_EXCLUSION_RULES;
-
-export const NOMENCLATURE_804N_CATALOG: readonly Nomenclature804nItem[] = [
-	{ code: "A16.07.002.001", name: "Восстановление зуба пломбой (световой композит)", category: "therapy", categoryTitleRu: "Терапевтическая стоматология", defaultPriceRub: 4500, standardCoveredDms: true, isBaseDmsCovered: true, uet: 1.0 },
-	{ code: "A16.07.002.002", name: "Восстановление зуба пломбой (II, III класс)", category: "therapy", categoryTitleRu: "Терапевтическая стоматология", defaultPriceRub: 5600, standardCoveredDms: true, isBaseDmsCovered: true, uet: 1.5 },
-	{ code: "A16.07.030.001", name: "Обработка корневого канала (1 канал)", category: "therapy", categoryTitleRu: "Эндодонтия", defaultPriceRub: 3500, standardCoveredDms: true, isBaseDmsCovered: true, uet: 1.25 },
-	{ code: "A16.07.030.002", name: "Обработка корневых каналов (2 канала)", category: "therapy", categoryTitleRu: "Эндодонтия", defaultPriceRub: 5800, standardCoveredDms: true, isBaseDmsCovered: true, uet: 2.0 },
-	{ code: "A11.07.010", name: "Местная анестезия (проводниковая/инфильтрационная)", category: "therapy", categoryTitleRu: "Анестезиология", defaultPriceRub: 950, standardCoveredDms: true, isBaseDmsCovered: true, uet: 0.5 },
-	{ code: "A06.07.012", name: "Внутриротовая прицельная радиовизиография", category: "diagnostics", categoryTitleRu: "Рентгенодиагностика", defaultPriceRub: 800, standardCoveredDms: true, isBaseDmsCovered: true, uet: 0.4 },
-	{ code: "A16.07.051", name: "Профессиональная гигиена полости рта (Air-Flow)", category: "hygiene", categoryTitleRu: "Профилактика и гигиена", defaultPriceRub: 6500, standardCoveredDms: true, isBaseDmsCovered: true, uet: 2.0 },
-	{ code: "A16.07.001.001", name: "Удаление постоянного зуба (простое)", category: "surgery", categoryTitleRu: "Хирургия", defaultPriceRub: 3800, standardCoveredDms: true, isBaseDmsCovered: true, uet: 1.0 },
-	{ code: "A16.07.004", name: "Восстановление зуба коронкой металлокерамика", category: "orthopedics", categoryTitleRu: "Ортопедия", defaultPriceRub: 14500, standardCoveredDms: false, isBaseDmsCovered: false, uet: 3.5 },
-	{ code: "A16.07.050", name: "Профессиональное отбеливание зубов", category: "therapy", categoryTitleRu: "Эстетика", defaultPriceRub: 26000, standardCoveredDms: false, isBaseDmsCovered: false, uet: 4.0 },
-];
-
-export const STATUTORY_804N_NOMENCLATURE = NOMENCLATURE_804N_CATALOG;
-
-// ============================================================================
-// CLINICAL PRESETS (DIAGNOSES, FDI TEETH, BILL ITEMS)
-// ============================================================================
-
-export const COMMON_DENTAL_ICD10_DIAGNOSES = [
-	{ code: "K02.1", label: "K02.1 Кариес дентина" },
-	{ code: "K04.0", label: "K04.0 Пульпит" },
-	{ code: "K05.1", label: "K05.1 Хронический гингивит" },
-	{ code: "K04.4", label: "K04.4 Периодонтит" },
-] as const;
-
-export const FDI_ADULT_TEETH_UPPER = [
-	"1.8", "1.7", "1.6", "1.5", "1.4", "1.3", "1.2", "1.1",
-	"2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8",
-] as const;
-
-export const FDI_ADULT_TEETH_LOWER = [
-	"4.8", "4.7", "4.6", "4.5", "4.4", "4.3", "4.2", "4.1",
-	"3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8",
-] as const;
-
-export const DEFAULT_BILL_ITEMS_TO_SPLIT: readonly DmsBillableItem[] = [
-	{ id: "def-1", serviceCode: "A16.07.002.001", serviceCode804n: "A16.07.002.001", serviceName: "Восстановление зуба пломбой", quantity: 1, unitPriceKopecks: 450000 },
-	{ id: "def-2", serviceCode: "A16.07.030.002", serviceCode804n: "A16.07.030.002", serviceName: "Эндодонтическое лечение", quantity: 1, unitPriceKopecks: 580000 },
-	{ id: "def-3", serviceCode: "A11.07.010", serviceCode804n: "A11.07.010", serviceName: "Анестезия проводниковая", quantity: 1, unitPriceKopecks: 95000 },
-];
-
-export const EXPRESS_GUARANTEE_LETTER_PRESETS = [
-	{
-		id: "express_sogaz_therapy",
-		insurerKey: "sogaz",
-		title: "СОГАЗ Терапия и Профгигиена",
-		maxCoverageRub: 35000,
-		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.051", "A11.07.010"],
-		approvedDiagnosisMkb10: ["K02.1", "K04.0"],
-	},
-	{
-		id: "express_ingos_complex",
-		insurerKey: "ingosstrakh",
-		title: "Ингосстрах Комплекс",
-		maxCoverageRub: 50000,
-		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.030.002", "A11.07.010"],
-		approvedDiagnosisMkb10: ["K02.1", "K04.4"],
-	},
-	{
-		id: "express_alfa_therapy",
-		insurerKey: "alfastrakhovanie",
-		title: "АльфаСтрахование Базовый",
-		maxCoverageRub: 40000,
-		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.051", "A11.07.010"],
-		approvedDiagnosisMkb10: ["K02.1", "K05.1"],
-	},
-	{
-		id: "express_reso_full",
-		insurerKey: "reso_garantiya",
-		title: "РЕСО-Гарантия Полный",
-		maxCoverageRub: 75000,
-		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.030.002", "A16.07.051", "A11.07.010"],
-		approvedDiagnosisMkb10: ["K02.1", "K04.0", "K04.4"],
-	},
-] as const;
 
 const STANDARD_THERAPY: DmsProgramDefinition = {
 	key: "standard_therapy",
@@ -585,11 +497,6 @@ export function validateRegistryKopeckBalance(totalBillKop: number, dmsKop: numb
 // CATALOG QUERY & LOOKUP FUNCTIONS
 // ============================================================================
 
-export function search804nServices(query: string): Nomenclature804nItem[] {
-	const q = (query || "").trim().toLowerCase();
-	return q ? NOMENCLATURE_804N_CATALOG.filter((i) => i.code.toLowerCase().includes(q) || i.name.toLowerCase().includes(q) || i.categoryTitleRu.toLowerCase().includes(q)) : [...NOMENCLATURE_804N_CATALOG];
-}
-
 export function getDmsInsurerById(id: string): DmsInsurer | undefined {
 	const norm = (id || "").toLowerCase().replace(/_/g, "");
 	return RUSSIAN_DMS_INSURERS.find((i) => {
@@ -620,58 +527,6 @@ export function getStatutoryProgramByKey(key: string): DmsProgramDefinition {
 	return DEFAULT_DMS_PROGRAM_FALLBACK;
 }
 
-export function getNomenclature804nByCode(code: string): Nomenclature804nItem | undefined {
-	return STATUTORY_804N_NOMENCLATURE.find((i) => i.code === code);
-}
-
-export function normalizeToothFdi(tooth: string | number | undefined): string {
-	return tooth ? String(tooth).trim().replace(/\D/g, "") : "";
-}
-
-export function isToothApprovedByLetter(
-	tooth: string | undefined,
-	letter?: (DmsGuaranteeLetter & { approvedTeethFdi?: readonly (string | number)[] }) | undefined,
-): boolean {
-	if (!tooth || !letter?.approvedTeethFdi?.length) return true;
-	const norm = normalizeToothFdi(tooth);
-	return letter.approvedTeethFdi.some((t: string | number) => normalizeToothFdi(t) === norm);
-}
-
-export function isServiceCodeApprovedByLetter(
-	code: string | undefined,
-	letter?: (DmsGuaranteeLetter & { approvedServiceCodes?: readonly string[]; approvedServiceCodes804n?: readonly string[] }) | undefined,
-): boolean {
-	if (!code || !letter) return true;
-	const codes = letter.allowed804nPrefixes || letter.approvedServiceCodes || letter.approvedServiceCodes804n;
-	return !codes?.length || codes.some((c: string) => code.startsWith(c) || c.startsWith(code));
-}
-
-export function isServiceExcludedByDmsRules(
-	code: string,
-	_name: string,
-	_program = "base",
-	context?: { lastHygieneDate?: string | undefined; currentVisitDate?: string | undefined } | undefined,
-): { isExcluded: boolean; reason?: string | undefined } {
-	const normCode = (code || "").trim();
-	const excludedMatch = STANDARD_DMS_EXCLUDED_804N_SERVICES.find(
-		(ex) => normCode === ex.code804n || normCode.startsWith(ex.code804n),
-	);
-	if (excludedMatch) {
-		return { isExcluded: true, reason: excludedMatch.reasonRu };
-	}
-	if (normCode.startsWith("A16.07.051")) {
-		if (context?.lastHygieneDate && context?.currentVisitDate) {
-			const d1 = new Date(context.lastHygieneDate).getTime();
-			const d2 = new Date(context.currentVisitDate).getTime();
-			const diffDays = Math.abs(d2 - d1) / (1000 * 60 * 60 * 24);
-			if (diffDays < 180) {
-				return { isExcluded: true, reason: "Профессиональная гигиена полости рта по ДМС проводится не чаще 1 раза в 6 месяцев" };
-			}
-		}
-	}
-	return { isExcluded: false };
-}
-
 export function validateDmsPolicy(policy: Partial<DmsPolicy>, checkDateStr = "2026-08-22"): { isValid: boolean; errors: string[] } {
 	const errors: string[] = [];
 	if (!policy.insurerId || !RUSSIAN_DMS_INSURERS.some((i) => i.id === policy.insurerId || i.key === policy.insurerId)) {
@@ -690,42 +545,6 @@ export function validateDmsPolicy(policy: Partial<DmsPolicy>, checkDateStr = "20
 // ============================================================================
 // SPLIT & DISTRIBUTION HELPERS
 // ============================================================================
-
-export function calculateServiceDmsDistribution(input: {
-	priceRub?: number | undefined;
-	priceKopecks?: number | undefined;
-	quantity: number;
-	isExcluded?: boolean | undefined;
-	isExplicitlyApproved?: boolean | undefined;
-	franchisePercent?: number | undefined;
-	franchisePct?: number | undefined;
-	franchiseFixedRub?: number | undefined;
-	availableLetterLimitRub?: number | undefined;
-	remainingLetterLimitRub?: number | undefined;
-}) {
-	const priceRub = input.priceRub ?? (input.priceKopecks ? kopecksToRub(input.priceKopecks) : 0);
-	const lineTotalKopecks = rubToKopecks(priceRub * Math.max(1, input.quantity || 1));
-	if (input.isExcluded && !input.isExplicitlyApproved) {
-		return { lineTotalRub: kopecksToRub(lineTotalKopecks), dmsCoveredRub: 0, patientPaidRub: kopecksToRub(lineTotalKopecks), effectiveCoveragePct: 0, reason: "Не входит в программу" };
-	}
-	let dmsKop = lineTotalKopecks;
-	let reason = "Покрыто страховой компанией 100%";
-	const franchisePct = input.franchisePct ?? input.franchisePercent;
-	if (franchisePct && franchisePct > 0) {
-		dmsKop = Math.max(0, lineTotalKopecks - Math.round((lineTotalKopecks * franchisePct) / 100));
-		reason = `Применена франшиза ${franchisePct}%`;
-	}
-	if (input.franchiseFixedRub && input.franchiseFixedRub > 0) {
-		dmsKop = Math.max(0, dmsKop - rubToKopecks(input.franchiseFixedRub));
-		reason = `Фиксированная франшиза ${input.franchiseFixedRub} ₽`;
-	}
-	const remLimit = input.remainingLetterLimitRub ?? input.availableLetterLimitRub;
-	if (remLimit !== undefined && dmsKop > rubToKopecks(remLimit)) {
-		dmsKop = Math.max(0, rubToKopecks(remLimit));
-		reason = "Покрытие ограничено остатком гарантийного письма";
-	}
-	return { lineTotalRub: kopecksToRub(lineTotalKopecks), dmsCoveredRub: kopecksToRub(dmsKop), patientPaidRub: kopecksToRub(lineTotalKopecks - dmsKop), effectiveCoveragePct: lineTotalKopecks > 0 ? Math.round((dmsKop / lineTotalKopecks) * 100) : 100, reason };
-}
 
 export function calculatePatientPaymentSplit(totalPatientKopecks: number, paymentMethod: PatientPaymentMethod = "card", cashKopecksInput = 0): PatientPaymentSplit {
 	const totKop = Math.max(0, totalPatientKopecks);
@@ -770,7 +589,7 @@ export function calculateDmsCoPaymentSplitWithPayment(
 	return {
 		...split,
 		patientPaymentSplit: calculatePatientPaymentSplit(
-			split.patientOutOfPocketKopecks,
+			split.patientOutOfPocketKopecks ?? 0,
 			options.paymentMethod || "card",
 			options.mixedCashKopecks || 0,
 		),
@@ -808,9 +627,9 @@ export function calculateDmsSplitInvoice(
 		}
 	}
 	const res = calculateDmsCoPaymentSplit(items, { franchisePercent });
-	const totalBillKopecks = res.totalBillKopecks;
-	let insuranceCoveredKopecks = res.insuranceCoveredKopecks;
-	let patientOutOfPocketKopecks = res.patientOutOfPocketKopecks;
+	const totalBillKopecks = res.totalBillKopecks ?? 0;
+	let insuranceCoveredKopecks = res.dmsCoveredKopecks ?? res.insuranceCoveredKopecks ?? 0;
+	let patientOutOfPocketKopecks = res.patientCoPayKopecks ?? res.patientOutOfPocketKopecks ?? 0;
 
 	if (extraOptions?.franchiseFixedKopecks) {
 		const fixed = extraOptions.franchiseFixedKopecks;
@@ -818,7 +637,8 @@ export function calculateDmsSplitInvoice(
 		patientOutOfPocketKopecks = totalBillKopecks - insuranceCoveredKopecks;
 	}
 
-	const lineItems: DmsSplitLineResult[] = res.splitResults.map((r) => ({
+	const splitItems = res.lineItems || res.splitResults || [];
+	const lineItems: DmsSplitLineResult[] = splitItems.map((r) => ({
 		serviceId: r.lineItemId,
 		category: "therapy",
 		serviceCode: r.serviceCode804n,
@@ -903,7 +723,7 @@ export function verifyServiceForDms(
 ): boolean | DmsServiceVerificationResult {
 	if (typeof paramsOrCode === "string") {
 		const targetLetter = typeof letter === "object" && letter !== null ? letter : undefined;
-		return isServiceCodeApprovedByLetter(paramsOrCode, targetLetter);
+		return dmsNomenclature.isServiceCodeApprovedByLetter(paramsOrCode, targetLetter);
 	}
 
 	const code = paramsOrCode.serviceCode804n || paramsOrCode.serviceCode || "";

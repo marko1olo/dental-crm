@@ -1,9 +1,10 @@
 /**
  * apps/web/src/components/settings/insuranceModules/InsuranceDmsTariffTable.tsx
  *
- * Tariff coefficients and discounts table for DMS Insurance Contracts relative to 804n statutory pricelist.
+ * Tariff coefficients and discounts table for DMS Insurance Contracts relative to clinical service catalog.
  * Allows clinics to configure insurance price multipliers and category-specific co-pay rates.
- * Governed by Mandate 8b (<= 500 lines), Mandate 8e (Doctor Autonomy: non-blocking inline editing).
+ * Governed by Mandate 8b (<= 500 lines), Mandate 8e (Doctor Autonomy: non-blocking inline editing),
+ * Mandate 8x (Clinical Terminology, No Bureaucratic Slang).
  */
 
 import { Calculator, Percent } from "lucide-react";
@@ -19,14 +20,14 @@ interface InsuranceDmsTariffTableProps {
 interface DefaultTariffRule {
 	category: string;
 	defaultCoveragePct: number;
-	statutoryOrder804nSection: string;
+	procedureSection: string;
 }
 
-const STATUTORY_804N_CATEGORIES: DefaultTariffRule[] = [
-	{ category: "Терапевтическая стоматология (А16.07.002)", defaultCoveragePct: 100, statutoryOrder804nSection: "Кариес, пульпит, периодонтит" },
-	{ category: "Хирургическая стоматология (А16.07.001)", defaultCoveragePct: 80, statutoryOrder804nSection: "Удаление, резекция, цистэктомия" },
-	{ category: "Ортопедическая помощь (А16.07.004)", defaultCoveragePct: 50, statutoryOrder804nSection: "Коронки, вкладки, протезирование" },
-	{ category: "Профессиональная гигиена (А16.07.051)", defaultCoveragePct: 100, statutoryOrder804nSection: "Air-Flow, ультразвук, фторирование" },
+const DMS_TARIFF_CATEGORIES: DefaultTariffRule[] = [
+	{ category: "Терапевтическая стоматология (А16.07.002)", defaultCoveragePct: 100, procedureSection: "Кариес, пульпит, периодонтит" },
+	{ category: "Хирургическая стоматология (А16.07.001)", defaultCoveragePct: 80, procedureSection: "Удаление, резекция, цистэктомия" },
+	{ category: "Ортопедическая помощь (А16.07.004)", defaultCoveragePct: 50, procedureSection: "Коронки, вкладки, протезирование" },
+	{ category: "Профессиональная гигиена (А16.07.051)", defaultCoveragePct: 100, procedureSection: "Air-Flow, ультразвук, фторирование" },
 ];
 
 export const InsuranceDmsTariffTable: React.FC<InsuranceDmsTariffTableProps> = ({
@@ -94,14 +95,14 @@ export const InsuranceDmsTariffTable: React.FC<InsuranceDmsTariffTableProps> = (
 							className="border-b text-[11px] font-semibold text-[var(--muted)]"
 							style={{ borderColor: "var(--line)" }}
 						>
-							<th className="py-2 pr-3">Категория медпомощи</th>
-							<th className="py-2 px-3">Раздел процедур</th>
+							<th className="py-2 pr-3">Каталог процедур</th>
+							<th className="py-2 px-3">Код услуги и раздел</th>
 							<th className="py-2 px-3 text-center">Франшиза</th>
 							<th className="py-2 pl-3 text-right">Покрытие ДМС</th>
 						</tr>
 					</thead>
 					<tbody className="divide-y" style={{ borderColor: "var(--line)" }}>
-						{STATUTORY_804N_CATEGORIES.map((cat, idx) => {
+						{DMS_TARIFF_CATEGORIES.map((cat, idx) => {
 							const coveragePct =
 								idx === 0
 									? selectedContract.coverageTherapyPct
@@ -119,7 +120,7 @@ export const InsuranceDmsTariffTable: React.FC<InsuranceDmsTariffTableProps> = (
 										{cat.category}
 									</td>
 									<td className="py-2.5 px-3 text-[var(--muted)]">
-										{cat.statutoryOrder804nSection}
+										{cat.procedureSection}
 									</td>
 									<td className="py-2.5 px-3 text-center">
 										{franchise > 0 ? (

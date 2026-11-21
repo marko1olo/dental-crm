@@ -9,5 +9,8 @@
 
 export * from "./dmsFranchiseEngine.js";
 export * from "./dmsGuaranteeLetters.js";
+export * from "./guaranteeLetters.js";
 export * from "./dmsRegistryExport.js";
+export * from "./claimsRegistry.js";
 export * from "./dmsPresetsAndCatalogs.js";
+export * from "./catalogs/dmsServiceNomenclature.js";

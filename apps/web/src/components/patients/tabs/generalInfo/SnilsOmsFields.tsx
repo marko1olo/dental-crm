@@ -1,6 +1,6 @@
 import React from "react";
 import { ExternalLink } from "lucide-react";
-import { formatOmsPolicy, formatSnils, formatTaxpayerInn } from "../../../../utils/inputSanitation";
+import { formatSnils, formatTaxpayerInn } from "../../../../utils/inputSanitation";
 import type { PatientGeneralInfo, PatientGeneralInfoUpdateFn } from "./types";
 
 interface SnilsOmsFieldsProps {
@@ -14,17 +14,17 @@ export const SnilsOmsFields: React.FC<SnilsOmsFieldsProps> = ({
 	patient, onUpdatePatient, disabled = false, onOpenTaxCertificate,
 }) => {
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+		<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 			<div className="flex flex-col gap-1">
 				<label className="text-[11px] font-bold text-[var(--muted)] flex items-center justify-between">
 					<span>СНИЛС (по желанию)</span>
 					<span className="flex items-center gap-1.5">
-						<span className="text-[9px] text-teal-600 font-bold uppercase">Для вычета 13%</span>
+						<span className="text-[9px] text-[var(--teal, #0d9488)] font-semibold">Для вычета 13%</span>
 						{onOpenTaxCertificate && (
 							<button
 								type="button"
 								onClick={onOpenTaxCertificate}
-								className="text-[10px] text-teal-600 hover:underline font-bold cursor-pointer inline-flex items-center gap-0.5"
+								className="text-[10px] text-[var(--teal, #0d9488)] hover:underline font-bold cursor-pointer inline-flex items-center gap-0.5"
 								title="Оформить справку для налогового вычета (13%)"
 								data-testid="link-order-tax-certificate"
 							>
@@ -60,19 +60,6 @@ export const SnilsOmsFields: React.FC<SnilsOmsFieldsProps> = ({
 					disabled={disabled}
 					data-testid="input-inn"
 					title="ИНН пациента (заполняется добровольно при наличии)"
-				/>
-			</div>
-
-			<div className="flex flex-col gap-1">
-				<label className="text-[11px] font-bold text-[var(--muted)]">Полис ОМС (ЕНП)</label>
-				<input
-					type="text"
-					className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] text-[var(--ink)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--teal)] transition-colors"
-					value={patient?.omsPolicyNumber ?? ""}
-					onChange={(e) => onUpdatePatient?.("omsPolicyNumber", formatOmsPolicy(e.target.value))}
-					placeholder="16 цифр полиса ОМС"
-					disabled={disabled}
-					data-testid="input-oms-policy"
 				/>
 			</div>
 		</div>

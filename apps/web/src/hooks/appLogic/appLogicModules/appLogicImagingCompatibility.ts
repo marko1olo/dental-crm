@@ -1,7 +1,11 @@
 import type {
 	Dashboard,
 	ImagingStudyKind,
+	DicomMprTool,
+	ImagingViewerTool,
 } from "@dental/shared";
+import type { MprProjection } from "../../../imagingUiLabels";
+import type { DicomFirstFrameViewerState } from "../../settingsDerivations/types";
 import {
 	type ImagingViewerSaveState,
 	defaultDicomFirstFrameViewerState,
@@ -31,8 +35,33 @@ import {
 } from "../../../utils/math/mprMath";
 import { dicomFolderWorkupPathLabels } from "../../../workspaceUiLabels";
 
-// biome-ignore lint/suspicious/noExplicitAny: imaging & DICOM compatibility builder
-export function buildAppLogicImagingCompatibility(params: any): any {
+export interface AppLogicImagingCompatibilityParams {
+	offlineSync: { isOnline: boolean; [key: string]: unknown };
+	settingsAndIntegrations: {
+		visibleImagingStudies: Dashboard["imagingStudies"];
+		dicomWorkbenchModule: { selectedImagingStudy?: Dashboard["imagingStudies"][number] | null; [key: string]: unknown };
+		mprAxisDeg?: number;
+		mprAxisGuidance?: unknown;
+		mprCrosshairEnabled?: boolean;
+		mprLinkedPlanesEnabled?: boolean;
+		mprProjection?: "axial" | "coronal" | "sagittal" | "panoramic" | "3d_reconstruction" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip";
+		mprProjectionCompass?: unknown;
+		mprSlabMm?: number;
+		mprSliceIndex?: number;
+		mprWindowPreset?: string;
+		setMprAxisDeg?: (deg: number) => void;
+		setMprCrosshairEnabled?: (enabled: boolean) => void;
+		setMprLinkedPlanesEnabled?: (enabled: boolean) => void;
+		setMprProjection?: (projection: "axial" | "coronal" | "sagittal" | "panoramic" | "3d_reconstruction" | "oblique" | "panoramic_reconstruction" | "three_d_volume" | "mip") => void;
+		setMprSlabMm?: (mm: number) => void;
+		setMprSliceIndex?: (index: number) => void;
+		setMprWindowPreset?: (preset: string) => void;
+		[key: string]: unknown;
+	};
+	appLogicBag: Record<string, unknown>;
+}
+
+export function buildAppLogicImagingCompatibility(params: AppLogicImagingCompatibilityParams) {
 	const {
 		offlineSync,
 		settingsAndIntegrations,
@@ -62,7 +91,7 @@ export function buildAppLogicImagingCompatibility(params: any): any {
 		if (!study) return undefined;
 		return (
 			study.previewUrl ||
-			(study as any).imageUrl ||
+			(study as { imageUrl?: string }).imageUrl ||
 			`/api/imaging/studies/${study.id}/preview.svg`
 		);
 	};
@@ -230,7 +259,7 @@ export function buildAppLogicImagingCompatibility(params: any): any {
 		defaultDicomFirstFrameViewerState,
 		defaultImagingViewerState,
 		describeMprClinicalPresetProjectionFallback,
-		handleMprKeyboardNavigation: async (..._args: any[]) => {},
+		handleMprKeyboardNavigation: async (..._args: unknown[]) => {},
 		imagingComparisonCandidates: [],
 		setCtPlanningActiveQuickActionId: appLogicBag.setCtPlanningActiveQuickActionId ?? (() => {}),
 		setCtPlanningImplantPlan: appLogicBag.setCtPlanningImplantPlan ?? (() => {}),
@@ -276,3 +305,5 @@ export function buildAppLogicImagingCompatibility(params: any): any {
 		formatSignedMprStep,
 	};
 }
+
+export type AppLogicImagingCompatibilitySlice = ReturnType<typeof buildAppLogicImagingCompatibility>;

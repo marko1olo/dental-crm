@@ -1,6 +1,6 @@
 import { formatKopecksRu, type Kopecks } from "@dental/shared";
 import { CreditCard, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface BankInstallmentHeaderProps {
 	readonly stageTitle?: string | undefined;

@@ -7,12 +7,12 @@
 import React from "react";
 import { CashRegisterStudioModal } from "../cashbox/CashRegisterStudioModal.js";
 import { ConsumablesBatchWriteoffModal } from "../inventory/ConsumablesBatchWriteoffModal.js";
-import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal.js";
+import { DmsStudioModal } from "../insurance/DmsStudioModal.js";
 import { PricelistStudioModal } from "../catalog/PricelistStudioModal.js";
 import type { PricelistClinicalBundle, PricelistStudioItem } from "../catalog/pricelistCatalogData.js";
 import { showToast } from "../GlobalToast.js";
 import type { VisitBillingServiceItem, VisitBillingTotals } from "./visitBillingTypes.js";
-import type { DmsGuaranteeLetter, PatientPaymentMethod } from "@dental/shared";
+import { rublesToKopecks, type DmsGuaranteeLetter, type PatientPaymentMethod } from "@dental/shared";
 
 export interface VisitBillingModalsProps {
 	isPaymentModalOpen: boolean;
@@ -152,13 +152,13 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 
 			{/* Chairside DMS Guarantee Letter Modal (Mandates 8e, 8n) */}
 			{isDmsModalOpen && (
-				<DmsGuaranteeLetterModal
+				<DmsStudioModal
 					isOpen={isDmsModalOpen}
 					onClose={onCloseDmsModal}
+					initialTab="policies"
 					patient={{
 						id: patientId,
 						fullName: patientName,
-						phone: patientPhone,
 					}}
 					billItems={services.map((s, idx) => ({
 						id: s.id || `item-${idx}`,
@@ -166,12 +166,9 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 						serviceName: s.title,
 						toothNumber: s.toothCode ? String(s.toothCode) : undefined,
 						quantity: s.quantity || 1,
-						unitPriceKopecks: Math.round((s.unitPriceRub || 0) * 100),
+						unitPriceKopecks: rublesToKopecks(s.unitPriceRub || 0),
 						discountPercent: s.discountPercent,
 					}))}
-					onSave={(savedLetter) => {
-						onSaveDmsLetter(savedLetter);
-					}}
 					onApplySplitToCashbox={(splitData) => {
 						onApplySplitToCashbox?.(splitData);
 						onCloseDmsModal();

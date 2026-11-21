@@ -202,7 +202,7 @@ export async function handleRecordGuaranteeLetterUsage(
 		const remainingBeforeKop = Math.max(0, maxCoverageKop - currentUsedKop);
 		const remainingBeforeRub = kopecksToRubles(remainingBeforeKop);
 
-		if (amountKop > remainingBeforeKop) {
+		if (letter.status === "exhausted" || remainingBeforeKop <= 0) {
 			if (isUrgentCare) {
 				// Мандат 8e: при острой боли превышение лимита не блокирует приём
 				const newUsedAmountKop = currentUsedKop + amountKop;
@@ -267,12 +267,86 @@ export async function handleRecordGuaranteeLetterUsage(
 					data: overdraftData,
 				};
 			}
+
 			return {
 				status: 400,
 				error: {
-					error: "LimitExceeded",
-					message: `Сумма списания (${amountRub} ₽) превышает остаток по гарантийному письму (${remainingBeforeRub} ₽).`,
+					error: "LetterExhausted",
+					message: "Лимит гарантийного письма уже полностью исчерпан.",
 				},
+			};
+		}
+
+		if (amountKop > remainingBeforeKop) {
+			// Мандат 8e (Автономия врача): если сумма списания превышает остаток по письму,
+			// тихо списываем доступный остаток на СК, переводим письмо в "exhausted",
+			// а разницу переносим в сооплату пациента в кассу (patientCoPayKopecks) без блокировки приёма.
+			const debitedDmsKop = remainingBeforeKop;
+			const patientCoPayKop = amountKop - remainingBeforeKop;
+			const newUsedAmountKop = currentUsedKop + debitedDmsKop;
+			const newUsedAmount = kopecksToRubles(newUsedAmountKop);
+
+			const [updated] = await tx
+				.update(dmsGuaranteeLetters)
+				.set({
+					usedAmountRub: newUsedAmount,
+					status: "exhausted",
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(dmsGuaranteeLetters.id, letterId),
+						eq(dmsGuaranteeLetters.organizationId, orgId),
+					),
+				)
+				.returning();
+
+			if (!updated) {
+				return {
+					status: 404,
+					error: {
+						error: "guarantee_letter_not_found",
+						message: "Гарантийное письмо не найдено в транзакции",
+					},
+				};
+			}
+
+			const softSplitData = {
+				success: true,
+				letterId: updated.id,
+				debitedAmountRub: kopecksToRubles(debitedDmsKop),
+				debitedDmsKopecks: debitedDmsKop,
+				patientCoPayRub: kopecksToRubles(patientCoPayKop),
+				patientCoPayKopecks: patientCoPayKop,
+				usedAmountRub: Number(updated.usedAmountRub),
+				remainingCoverageRub: 0,
+				remainingCoverageKopecks: 0,
+				status: "exhausted",
+				warning: "Лимит гарантийного письма исчерпан. Оставшаяся сумма перенесена в сооплату пациента.",
+			};
+
+			await tx
+				.insert(idempotencyKeys)
+				.values({
+					clinicId: orgId,
+					key: idempotencyKey,
+					status: "completed",
+					payloadHash: computePayloadHash(request.body ?? {}),
+					responseBody: softSplitData,
+					responseCode: 200,
+				})
+				.onConflictDoUpdate({
+					target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+					set: {
+						status: "completed",
+						responseBody: softSplitData,
+						responseCode: 200,
+					},
+				});
+
+			return {
+				status: 200,
+				data: softSplitData,
 			};
 		}
 

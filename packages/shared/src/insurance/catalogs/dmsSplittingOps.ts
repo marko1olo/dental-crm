@@ -8,7 +8,7 @@ import { formatCurrencyKopecks } from "../dmsFranchiseEngine.js";
 import type { DmsGuaranteeLetter } from "../guaranteeModules/guaranteeTypes.js";
 import { STANDARD_DMS_EXCLUDED_804N_SERVICES } from "../guaranteeModules/guaranteeMatcher.js";
 import type { DmsGuaranteeLetterRecord } from "./dmsInsurersCatalog.js";
-import { isServiceCodeApprovedByLetter } from "./dmsNomenclature804n.js";
+import { isServiceCodeApprovedByLetter } from "./dmsServiceNomenclature.js";
 
 // ============================================================================
 // KOPECK AND CURRENCY HELPERS
@@ -124,10 +124,10 @@ export function verifyServiceForDms(
 	}
 
 	return {
-		status: "approved",
-		isCovered: true,
-		requiresPreAuth: false,
-		dmsPayableKopecks: price,
-		patientPayableKopecks: 0,
+		status: "requires_letter",
+		isCovered: false,
+		requiresPreAuth: true,
+		dmsPayableKopecks: 0,
+		patientPayableKopecks: price,
 	};
 }

@@ -91,10 +91,8 @@ export const DirectInsuranceLauncher: React.FC = () => {
 		}
 	};
 
-	// Мандат 8wy: демо-пациент Соколова Анна Викторовна СТРОГО за isDemoShowcaseMode()
-	const targetPatient = isDemoShowcaseMode()
-		? DEMO_INSURANCE_PATIENT
-		: activePatient;
+	// Мандат 8wy: демо-пациент Соколова Анна Викторовна СТРОГО за isDemoShowcaseMode(), если в CRM не выбран активный пациент
+	const targetPatient = activePatient ?? (isDemoShowcaseMode() ? DEMO_INSURANCE_PATIENT : undefined);
 
 	return (
 		<DmsStudioModal

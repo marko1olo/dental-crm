@@ -32,8 +32,8 @@ const egiszTabSchema = z
 const EgiszRemdHubModal = lazyWithRetry(() =>
 	import("../../../../egisz/EgiszRemdHubModal").then((m) => ({ default: m.EgiszRemdHubModal })),
 );
-const DmsGuaranteeLetterModal = lazyWithRetry(() =>
-	import("../../../../insurance/DmsGuaranteeLetterModal").then((m) => ({ default: m.DmsGuaranteeLetterModal })),
+const DmsStudioModal = lazyWithRetry(() =>
+	import("../../../../insurance/DmsStudioModal").then((m) => ({ default: m.DmsStudioModal })),
 );
 
 export function renderReportsComplianceLaunchers(props: StandaloneLaunchersProps): React.ReactElement | null {
@@ -87,10 +87,11 @@ function StandaloneDmsHost({ onClose }: { onClose: () => void }) {
 
 	return (
 		<Suspense fallback={<AppLoadingState message="Загрузка гарантийного письма ДМС..." />}>
-			<DmsGuaranteeLetterModal
+			<DmsStudioModal
 				isOpen={true}
 				onClose={onClose}
 				patient={patient ?? undefined}
+				initialTab="policies"
 			/>
 		</Suspense>
 	);

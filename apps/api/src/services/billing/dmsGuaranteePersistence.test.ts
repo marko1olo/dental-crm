@@ -4,6 +4,7 @@
  * FDI tooth mapping, ACID transaction usage recording, and limit overflow protection.
  */
 
+import { randomUUID } from "node:crypto";
 import { strict as assert } from "node:assert";
 import { after, before, describe, it } from "node:test";
 import Fastify from "fastify";
@@ -141,7 +142,10 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		const usage1Res = await app.inject({
 			method: "POST",
 			url: `/api/insurance/guarantee-letters/${letterId}/record-usage`,
-			headers,
+			headers: {
+				...headers,
+				"idempotency-key": randomUUID(),
+			},
 			payload: {
 				amountRub: 40000.0,
 				reason: "Лечение кариеса 16 зуба по ДМС",
@@ -155,44 +159,39 @@ describe("DMS Guarantee Letters — PostgreSQL Persistence & ACID Limits", () =>
 		assert.equal(usage1Json.remainingCoverageRub, 60000);
 		assert.equal(usage1Json.status, "active");
 
-		// 5. Attempt usage that exceeds remaining coverage (70,000 > 60,000)
+		// 5. Usage that exceeds remaining coverage (70,000 > 60,000) under Mandate 8e:
+		// Quietly debits remaining 60,000, transfers 10,000 difference to patient co-pay, auto-transitions to "exhausted"
 		const overflowRes = await app.inject({
 			method: "POST",
 			url: `/api/insurance/guarantee-letters/${letterId}/record-usage`,
-			headers,
+			headers: {
+				...headers,
+				"idempotency-key": randomUUID(),
+			},
 			payload: {
 				amountRub: 70000.0,
 				reason: "Превышение лимита гарантийного письма",
 			},
 		});
 
-		assert.equal(overflowRes.statusCode, 400, "Overflow usage must be rejected");
+		assert.equal(overflowRes.statusCode, 200, "Overflow usage must not block doctor (Mandate 8e)");
 		const overflowJson = overflowRes.json();
-		assert.equal(overflowJson.error, "LimitExceeded");
-
-		// 6. Record remaining exact usage of 60,000 RUB -> should auto-transition to "exhausted"
-		const usage2Res = await app.inject({
-			method: "POST",
-			url: `/api/insurance/guarantee-letters/${letterId}/record-usage`,
-			headers,
-			payload: {
-				amountRub: 60000.0,
-				reason: "Эндодонтическое лечение 26 зуба (завершение лимита)",
-			},
-		});
-
-		assert.equal(usage2Res.statusCode, 200);
-		const usage2Json = usage2Res.json();
-		assert.equal(usage2Json.success, true);
-		assert.equal(usage2Json.usedAmountRub, 100000);
-		assert.equal(usage2Json.remainingCoverageRub, 0);
-		assert.equal(usage2Json.status, "exhausted");
+		assert.equal(overflowJson.success, true);
+		assert.equal(overflowJson.debitedAmountRub, 60000);
+		assert.equal(overflowJson.patientCoPayRub, 10000);
+		assert.equal(overflowJson.patientCoPayKopecks, 1000000);
+		assert.equal(overflowJson.usedAmountRub, 100000);
+		assert.equal(overflowJson.remainingCoverageRub, 0);
+		assert.equal(overflowJson.status, "exhausted");
 
 		// 7. Any further usage on exhausted letter must fail
 		const postExhaustRes = await app.inject({
 			method: "POST",
 			url: `/api/insurance/guarantee-letters/${letterId}/record-usage`,
-			headers,
+			headers: {
+				...headers,
+				"idempotency-key": randomUUID(),
+			},
 			payload: {
 				amountRub: 1000.0,
 			},

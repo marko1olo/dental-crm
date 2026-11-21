@@ -45,7 +45,7 @@ export const PatientInsuranceSection: React.FC<PatientInsuranceSectionProps> = R
 						</div>
 						<div className="min-w-0">
 							<span className="text-xs sm:text-sm font-bold text-[var(--ink)] block truncate">
-								{showDms ? "Страхование и СНИЛС (ОМС, ДМС)" : "Страхование и СНИЛС (ОМС)"}
+								{showDms ? "Страхование ДМС и СНИЛС для вычета 13%" : "СНИЛС для налогового вычета 13%"}
 							</span>
 							<span className="text-[11px] text-[var(--muted)] block truncate font-normal sm:hidden">
 								{summary}

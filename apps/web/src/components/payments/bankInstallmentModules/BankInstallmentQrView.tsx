@@ -1,5 +1,5 @@
 import { Check, Copy, QrCode, Send } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { TreatmentPlanQrCode } from "../../treatment-plans/qr/TreatmentPlanQrCode";
 import type { BankInstallmentProviderConfig } from "../bankInstallmentEngine";
 

@@ -71,7 +71,7 @@ export const insuranceUpdateBodySchema = z.object({
 export type InsuranceUpdateBody = z.infer<typeof insuranceUpdateBodySchema>;
 
 export const guaranteeLetterQuerySchema = z.object({
-	patientId: z.string().uuid().optional(),
+	patientId: z.string().min(1).optional(),
 	status: z.string().optional(),
 	search: z.string().optional(),
 });
@@ -80,8 +80,8 @@ export type GuaranteeLetterQuery = z.infer<typeof guaranteeLetterQuerySchema>;
 
 export const registryQuerySchema = z.object({
 	insurerKey: z.string().optional(),
-	contractId: z.string().uuid().optional(),
-	patientId: z.string().uuid().optional(),
+	contractId: z.string().uuid("Некорректный ID договора ДМС").optional(),
+	patientId: z.string().uuid("Некорректный ID пациента").optional(),
 	period: z.enum(["current_month", "prev_month", "quarter", "custom"]).optional().default("current_month"),
 	periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 	periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),

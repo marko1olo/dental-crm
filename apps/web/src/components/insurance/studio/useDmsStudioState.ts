@@ -24,11 +24,13 @@ import {
 	DEFAULT_CLINIC_PROFILE,
 	exportRegistryToCsv,
 	generateBilateralAcceptanceActHtml,
+	generateUuidV7,
 	kopecksToRubles,
 } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { showToast } from "../../GlobalToast.js";
+import { printHtmlViaIframe } from "../../documents/printHtmlViaIframe.js";
 
 export interface UseDmsStudioStateOptions {
 	readonly isOpen: boolean;
@@ -306,9 +308,10 @@ export function useDmsStudioState({
 		const company = availableInsurers.find((i) => i.id === selectedInsurerId) ?? availableInsurers[0] ?? fallbackCompany;
 		const limitRub = Number(newLetterLimitRub || 50000);
 		const letNum = newLetterNumber.trim() || `ГП-${Date.now().toString().slice(-5)}`;
+		const letterUuid = generateUuidV7();
 
 		const newLetterItem: DmsGuaranteeLetter = {
-			id: `let-${Date.now()}`,
+			id: letterUuid,
 			letterNumber: letNum,
 			patientId: patient.id,
 			patientFullName: patient.fullName,
@@ -339,10 +342,14 @@ export function useDmsStudioState({
 		setNewLetterNumber(`ГП-${Date.now().toString().slice(-4)}`);
 
 		try {
-			await fetch("/api/insurance/guarantee-letters", {
+			const res = await fetch("/api/insurance/guarantee-letters", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+					"Idempotency-Key": generateUuidV7(),
+				}),
 				body: JSON.stringify({
+					id: letterUuid,
 					patientId: patient.id,
 					patientFullName: patient.fullName,
 					patientBirthDate: patient.birthDate || new Date().toISOString().slice(0, 10),
@@ -360,7 +367,17 @@ export function useDmsStudioState({
 					status: "active",
 				}),
 			});
-			showToast("Гарантийное письмо сохранено в системе", "success");
+			if (res.ok) {
+				const saved = await res.json();
+				const savedId = (saved as { id?: string; data?: { id?: string } })?.data?.id || (saved as { id?: string })?.id;
+				if (savedId && savedId !== letterUuid) {
+					setLetters((prev) => prev.map((l) => (l.id === letterUuid ? { ...l, id: savedId } : l)));
+					setActiveLetterId(savedId);
+				}
+				showToast("Гарантийное письмо сохранено в системе", "success");
+			} else {
+				showToast("Гарантийное письмо прикреплено локально", "info");
+			}
 		} catch {
 			showToast("Гарантийное письмо прикреплено локально", "info");
 		}
@@ -399,12 +416,7 @@ export function useDmsStudioState({
 			actNumber: `АКТ-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}`,
 			actDate,
 		});
-		const w = window.open("", "_blank");
-		if (w) {
-			w.document.write(html);
-			w.document.close();
-			w.print();
-		}
+		printHtmlViaIframe(html, "dms-bilateral-act-print-iframe");
 	};
 
 	const handleApplySplit = () => {
