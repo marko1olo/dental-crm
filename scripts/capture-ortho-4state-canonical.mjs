@@ -96,7 +96,11 @@ await page.goto("http://127.0.0.1:5173/?demo=true&patientId=pat-1#orthodontics",
 }).catch((err) => console.log("[WARN] Navigation wait:", err.message));
 
 console.log("[WAIT] Waiting for .boot-state detachment...");
-await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
+await page.waitForFunction(() => {
+	const boot = document.querySelector(".boot-state");
+	const text = document.body ? document.body.innerText : "";
+	return (!boot || boot.clientHeight === 0) && !text.includes("Загрузка системы");
+}, { timeout: 35000 }).catch(() => {});
 
 console.log("[WAIT] Waiting for orthodontic studio modal...");
 try {
@@ -118,7 +122,8 @@ await page.addStyleTag({
 		.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone,
 		.coachmark-tooltip-container, .guide-tour-floating-launcher, .clinical-quest-modal,
 		[data-testid="interactive-guide-tour-card"], [data-testid="clinical-quest-banner"],
-		.notification-toast, .global-toast, .toast-container, [data-toast], vite-error-overlay {
+		.notification-toast, .global-toast, .toast-container, [data-toast], vite-error-overlay,
+		.sa-toast, [data-testid="global-toast"] {
 			display: none !important;
 			pointer-events: none !important;
 		}

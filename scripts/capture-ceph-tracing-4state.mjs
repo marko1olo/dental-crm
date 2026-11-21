@@ -74,7 +74,8 @@ await page.addStyleTag({
 		.tour-spotlight-root, [data-testid="guided-tour-spotlight-overlay"], .tour-backdrop-clickable-zone,
 		.coachmark-tooltip-container, .guide-tour-floating-launcher, .clinical-quest-modal,
 		[data-testid="interactive-guide-tour-card"], [data-testid="clinical-quest-banner"],
-		.notification-toast, .global-toast, .toast-container, [data-toast], vite-error-overlay {
+		.notification-toast, .global-toast, .toast-container, [data-toast], vite-error-overlay,
+		.sa-toast, [data-testid="global-toast"] {
 			display: none !important;
 			pointer-events: none !important;
 		}

@@ -312,7 +312,7 @@ export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 					</div>
 					{tranches.length > 0 && (
 						<div className="text-[11px] text-[var(--ink-muted)]">
-							Оплачено: <strong className="text-[var(--primary)]">{formatKopecksToRub(Number(paidKopecks))}</strong> из {formatKopecksToRub(Number(totalKopecks))}
+							Оплачено: <strong className="text-[var(--primary)]">{formatKopecksToRub(paidKopecks)}</strong> из {formatKopecksToRub(totalKopecks)}
 						</div>
 					)}
 				</div>
@@ -358,7 +358,7 @@ export const AlignerCaseTracker: React.FC<AlignerCaseTrackerProps> = ({
 
 									<div className="flex items-baseline justify-between">
 										<span className="text-sm font-extrabold text-[var(--ink)]">
-											{formatKopecksToRub(Number(t.amountKopecks))}
+											{formatKopecksToRub(t.amountKopecks)}
 										</span>
 										<span className="text-[10px] text-[var(--ink-muted)]">{t.dueDateText}</span>
 									</div>
