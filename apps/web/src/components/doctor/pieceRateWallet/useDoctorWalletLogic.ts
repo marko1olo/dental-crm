@@ -4,9 +4,10 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { generateDoctorEarningsPayslipHtml } from "@dental/shared";
+import { generateDoctorEarningsPayslipHtml, kopecksToRubles, rublesToKopecks } from "@dental/shared";
 import { showToast } from "../../GlobalToast.js";
 import { useDocumentBrandingStore } from "../../../store/documentBrandingStore";
+import { closeSettlementPeriodApi } from "../../payroll/closeSettlementPeriodApi.js";
 import type { EarningsDataState } from "./types.js";
 
 export function useDoctorWalletLogic(
@@ -14,7 +15,7 @@ export function useDoctorWalletLogic(
 	initialDateIso: string,
 	onPrintPayslipProp?: (() => void) | undefined,
 ) {
-	const initialTargetDate = initialDateIso.split("T")[0]!;
+	const initialTargetDate = initialDateIso.split("T")[0] ?? initialDateIso;
 	const [selectedDate, setSelectedDate] = useState<string>(initialTargetDate);
 	const [activePeriodFilter, setActivePeriodFilter] = useState<"today" | "yesterday" | "custom">("today");
 	const [data, setData] = useState<EarningsDataState | null>(null);
@@ -41,9 +42,10 @@ export function useDoctorWalletLogic(
 			}
 			const json = await lastRes.json();
 			setData(json);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error("[DoctorWalletLogic] Fetch error:", err);
-			setError(err?.message || "Не удалось загрузить начисления врача");
+			const message = err instanceof Error ? err.message : "Не удалось загрузить начисления врача";
+			setError(message);
 		} finally {
 			setIsLoading(false);
 		}
@@ -54,7 +56,7 @@ export function useDoctorWalletLogic(
 	}, [selectedDate, fetchEarnings]);
 
 	const handleSelectToday = () => {
-		const today = new Date().toISOString().split("T")[0]!;
+		const today = new Date().toISOString().split("T")[0] ?? "";
 		setSelectedDate(today);
 		setActivePeriodFilter("today");
 	};
@@ -62,7 +64,7 @@ export function useDoctorWalletLogic(
 	const handleSelectYesterday = () => {
 		const d = new Date();
 		d.setDate(d.getDate() - 1);
-		setSelectedDate(d.toISOString().split("T")[0]!);
+		setSelectedDate(d.toISOString().split("T")[0] ?? "");
 		setActivePeriodFilter("yesterday");
 	};
 
@@ -74,6 +76,10 @@ export function useDoctorWalletLogic(
 		if (!data) return;
 
 		try {
+			const earnedKop = data.summary.totalDoctorEarnedKop ?? rublesToKopecks(data.summary.totalDoctorEarnedRub);
+			const ndflKop = Math.round(earnedKop * 0.13);
+			const netPayoutKop = Math.max(0, earnedKop - ndflKop);
+
 			const clinicName = useDocumentBrandingStore.getState().clinicName || "Стоматологическая клиника";
 			const html = generateDoctorEarningsPayslipHtml({
 				organizationName: clinicName,
@@ -85,10 +91,10 @@ export function useDoctorWalletLogic(
 				netBaseRevenueRub: data.summary.netBaseRevenueRub,
 				pieceworkAccruedRub: data.summary.totalDoctorEarnedRub,
 				totalAccruedRub: data.summary.totalDoctorEarnedRub,
-				ndflTaxRub: Math.round(data.summary.totalDoctorEarnedRub * 0.13),
+				ndflTaxRub: kopecksToRubles(ndflKop),
 				withheldLabRub: data.summary.totalLabDeductionsRub,
 				withheldMaterialRub: 0,
-				netPayoutRub: Math.round(data.summary.totalDoctorEarnedRub * 0.87),
+				netPayoutRub: kopecksToRubles(netPayoutKop),
 			});
 
 			const printWindow = window.open("", "_blank");
@@ -100,16 +106,43 @@ export function useDoctorWalletLogic(
 			} else {
 				showToast("Всплывающее окно заблокировано браузером", "error");
 			}
-		} catch (e) {
+		} catch (e: unknown) {
 			console.error("Print error:", e);
 			showToast("Ошибка формирования ведомости зарплаты", "error");
 		}
 	};
 
-	const handleConfirmReconciliation = () => {
-		setIsReconciledConfirmed(true);
-		setIsReconciliationModalOpen(false);
-		showToast("Акт сверки направлен в финансовый отдел. Контрольная сумма зафиксирована.", "success");
+	const handleConfirmReconciliation = async () => {
+		if (!data) return;
+		try {
+			const earnedKop = data.summary.totalDoctorEarnedKop ?? rublesToKopecks(data.summary.totalDoctorEarnedRub);
+			const ndflKop = Math.round(earnedKop * 0.13);
+			const netPayoutKop = Math.max(0, earnedKop - ndflKop);
+
+			await closeSettlementPeriodApi({
+				doctorId: data.doctorId || doctorId,
+				periodStart: data.period.from || selectedDate,
+				periodEnd: data.period.to || selectedDate,
+				payoutModel: "percentage",
+				grossRevenueKop: data.summary.totalGrossRevenueKop ?? rublesToKopecks(data.summary.totalGrossRevenueRub),
+				labCostKop: data.summary.totalLabDeductionsKop ?? rublesToKopecks(data.summary.totalLabDeductionsRub),
+				materialCostKop: data.summary.totalMaterialDeductionsKop ?? rublesToKopecks(data.summary.totalMaterialDeductionsRub),
+				netBaseKop: data.summary.netBaseRevenueKop ?? rublesToKopecks(data.summary.netBaseRevenueRub),
+				categoryPercent: data.summary.averageCommissionPercent || 25,
+				totalAccruedKop: earnedKop,
+				ndflKop,
+				netPayoutKop,
+			});
+
+			setIsReconciledConfirmed(true);
+			setIsReconciliationModalOpen(false);
+			showToast("Акт сверки зафиксирован и направлен в финансовый отдел.", "success");
+			await fetchEarnings(selectedDate);
+		} catch (err: unknown) {
+			console.error("[DoctorWalletLogic] Settle period error:", err);
+			const message = err instanceof Error ? err.message : "Не удалось зафиксировать акт сверки";
+			showToast(message, "error");
+		}
 	};
 
 	return {

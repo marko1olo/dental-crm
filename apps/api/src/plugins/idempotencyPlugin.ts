@@ -94,6 +94,7 @@ const idempotencyPluginAsync: FastifyPluginAsync<IdempotencyPluginOptions> = asy
 		/^\/api\/sanpin\/sterilization\/(?:quick-norm|shift-batch|cycles)/,
 		/^\/api\/registers\/(?:autofill-shift|autofill-month|sanpin\/shift-close)/,
 		/^\/api\/registers\/(?:bactericidal\/(?:shift-autopilot|open-morning-shift|close-evening-shift)|medical-waste\/quick-shift-bundle|cleaning\/autopilot-month)/,
+		/^\/api\/(?:v1\/payroll|payroll|doctor)\/(?:close-settlement|close-settlement-period)/,
 	];
 
 	// 1. PRE-HANDLER HOOK

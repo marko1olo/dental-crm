@@ -4,6 +4,7 @@
  * Mandate 8b (<= 120 lines), Mandate 8wy (100% честные цифры из PostgreSQL без float-дрифта).
  */
 
+import { kopecksToRubles } from "@dental/shared";
 import type {
 	DoctorPayoutReport,
 	DoctorPayoutRow,
@@ -65,7 +66,7 @@ export function canonicalPayrollToWalletReport(
 		patientId: o.id,
 		patientName: o.patientName,
 		medicalCardNumber: o.medicalCardNumber,
-		revenueRub: Math.round(o.grossKopecks / 100),
+		revenueRub: kopecksToRubles(o.grossKopecks),
 		paymentCount: 1,
 		services: [
 			{
@@ -73,7 +74,7 @@ export function canonicalPayrollToWalletReport(
 				title: o.serviceNameRu,
 				order804nCode: null,
 				toothCode: null,
-				priceRub: Math.round(o.grossKopecks / 100),
+				priceRub: kopecksToRubles(o.grossKopecks),
 				quantity: 1,
 			},
 		],
@@ -85,8 +86,8 @@ export function canonicalPayrollToWalletReport(
 							name: "Расходные материалы",
 							quantity: 1,
 							unit: "компл",
-							unitCostRub: Math.round(o.materialCostKopecks / 100),
-							totalCostRub: Math.round(o.materialCostKopecks / 100),
+							unitCostRub: kopecksToRubles(o.materialCostKopecks),
+							totalCostRub: kopecksToRubles(o.materialCostKopecks),
 						},
 					]
 				: [],
@@ -103,19 +104,19 @@ export function canonicalPayrollToWalletReport(
 			patientName: o.patientName,
 			status: "completed",
 			completedAt: `${o.dateIso}T12:00:00.000Z`,
-			priceRub: Math.round(o.labCostKopecks / 100),
-			withheldRub: Math.round(o.labCostKopecks / 100),
+			priceRub: kopecksToRubles(o.labCostKopecks),
+			withheldRub: kopecksToRubles(o.labCostKopecks),
 			deductionPct: 100,
 		}));
 
-	const revRub = Math.round((s?.totalGrossKopecks ?? 0) / 100);
-	const matRub = Math.round((s?.totalMaterialCostKopecks ?? 0) / 100);
-	const labRub = Math.round((s?.totalLabCostKopecks ?? 0) / 100);
-	const accRub = Math.round((s?.doctorAccruedKopecks ?? 0) / 100);
-	const payRub = Math.round((s?.payoutKopecks ?? 0) / 100);
+	const revRub = kopecksToRubles(s?.totalGrossKopecks ?? 0);
+	const matRub = kopecksToRubles(s?.totalMaterialCostKopecks ?? 0);
+	const labRub = kopecksToRubles(s?.totalLabCostKopecks ?? 0);
+	const accRub = kopecksToRubles(s?.doctorAccruedKopecks ?? 0);
+	const payRub = kopecksToRubles(s?.payoutKopecks ?? 0);
 
 	const row: DoctorPayoutRow = {
-		doctorUserId: s?.doctorId || "doc-1",
+		doctorUserId: s?.doctorId || "",
 		doctorName: s?.doctorName || "Врач-стоматолог",
 		role: "doctor",
 		isActive: true,

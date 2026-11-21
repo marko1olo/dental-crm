@@ -5,8 +5,9 @@
  */
 
 import { and, eq, gte, lte, or, sql } from "drizzle-orm";
+import type { FastifyBaseLogger } from "fastify";
 import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
-import { withTenantCtx } from "../db/rls.js";
+import { withTenantCtx, type TenantDb } from "../db/rls.js";
 import { appointments, doctorPayrollStatements, users } from "../db/schema.js";
 
 export interface SettlementPeriodCloseParams {
@@ -71,7 +72,12 @@ export async function resolveDoctorUserUuid(orgId: string, doctorIdOrSolo: strin
 	}
 }
 
-export async function findPayrollStatement(orgId: string, doctorId: string, periodKey: string) {
+export async function findPayrollStatement(
+	orgId: string,
+	doctorId: string,
+	periodKey: string,
+	logger?: FastifyBaseLogger,
+) {
 	try {
 		return await withTenantCtx(orgId, async (tx) => {
 			const rows = await tx
@@ -88,15 +94,21 @@ export async function findPayrollStatement(orgId: string, doctorId: string, peri
 			return rows[0] ?? null;
 		});
 	} catch (err) {
-		console.warn("[settlementPeriodDb] findPayrollStatement error:", err);
+		logger?.warn(
+			{ err, orgId, doctorId, periodKey },
+			"[settlementPeriodDb] findPayrollStatement error",
+		);
 		return null;
 	}
 }
 
-export async function closeSettlementPeriodInDb(params: SettlementPeriodCloseParams) {
+export async function closeSettlementPeriodInDb(
+	params: SettlementPeriodCloseParams,
+	externalTx?: TenantDb,
+) {
 	const { organizationId, doctorId, periodKey, fromDate, toDate } = params;
 
-	return await withTenantCtx(organizationId, async (tx) => {
+	const executeWithTx = async (tx: TenantDb) => {
 		const existingRows = await tx
 			.select()
 			.from(doctorPayrollStatements)
@@ -174,7 +186,12 @@ export async function closeSettlementPeriodInDb(params: SettlementPeriodClosePar
 					paidAt: params.markPaid ? now : existingRows[0].paidAt,
 					updatedAt: now,
 				})
-				.where(eq(doctorPayrollStatements.id, statementId))
+				.where(
+					and(
+						eq(doctorPayrollStatements.id, statementId),
+						eq(doctorPayrollStatements.organizationId, organizationId),
+					),
+				)
 				.returning();
 			statementRow = updated[0];
 		} else {
@@ -244,7 +261,12 @@ export async function closeSettlementPeriodInDb(params: SettlementPeriodClosePar
 			statementId,
 			closedAppointmentsCount: closedAppts.length,
 		};
-	});
+	};
+
+	if (externalTx) {
+		return await executeWithTx(externalTx);
+	}
+	return await withTenantCtx(organizationId, executeWithTx);
 }
 
 export async function reopenSettlementPeriodInDb(orgId: string, doctorId: string, periodKey: string) {

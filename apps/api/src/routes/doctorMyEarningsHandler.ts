@@ -14,8 +14,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { doctorCommissions, users } from "../db/schema.js";
-import { calculateDoctorPeriodPayroll } from "@dental/shared";
-import { getRequestIdentity } from "../security/identity.js";
+import { calculateDoctorPeriodPayroll, kopecksToRubles } from "@dental/shared";
+import { requirePayoutAccess } from "./billingRoutes/payoutAccessService.js";
 import { resolveDoctorUserUuid } from "./payrollSettlementDbQueries.js";
 import {
 	fetchDoctorPayrollDataset,
@@ -35,13 +35,28 @@ export async function handleGetDoctorMyEarnings(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ): Promise<void> {
+	const payoutAccess = await requirePayoutAccess(request, reply);
+	if (!payoutAccess) return;
+
 	const parsed = doctorMyEarningsQuerySchema.safeParse(request.query);
 	const q = parsed.success ? parsed.data : {};
-	const identity = getRequestIdentity(request);
-	const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-	const rawDocId = q.doctorId || identity.userId || "";
+	const orgId = payoutAccess.organizationId;
+	let rawDocId = q.doctorId || payoutAccess.userId || "";
 
-	const resolvedDocId = await resolveDoctorUserUuid(orgId, rawDocId, identity.userId ?? undefined);
+	if (payoutAccess.scope === "own") {
+		const resolvedTargetId = await resolveDoctorUserUuid(orgId, rawDocId, payoutAccess.userId);
+		if (resolvedTargetId && resolvedTargetId !== payoutAccess.userId) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "payroll.read",
+				role: payoutAccess.role,
+				message: "Врач может просматривать начисления только по собственному кошельку",
+			});
+		}
+		rawDocId = payoutAccess.userId;
+	}
+
+	const resolvedDocId = await resolveDoctorUserUuid(orgId, rawDocId, payoutAccess.userId ?? undefined);
 	if (!resolvedDocId) {
 		return reply.code(404).send({ error: "DoctorNotFound", message: "Врач не найден" });
 	}
@@ -203,14 +218,14 @@ export async function handleGetDoctorMyEarnings(
 			nameRu: ord.serviceNameRu,
 			category: ord.category,
 			categoryRu: ord.categoryLabelRu,
-			priceRub: Math.round(ord.grossKopecks / 100),
+			priceRub: kopecksToRubles(ord.grossKopecks),
 			priceKop: ord.grossKopecks,
-			labCostRub: Math.round(ord.labCostKopecks / 100),
+			labCostRub: kopecksToRubles(ord.labCostKopecks),
 			labCostKop: ord.labCostKopecks,
-			materialCostRub: Math.round(ord.materialCostKopecks / 100),
+			materialCostRub: kopecksToRubles(ord.materialCostKopecks),
 			materialCostKop: ord.materialCostKopecks,
 			commissionPercent: basePercent,
-			earnedRub: Math.round(earnedItemKop / 100),
+			earnedRub: kopecksToRubles(earnedItemKop),
 			earnedKop: earnedItemKop,
 			isPaid: ord.isPaid54Fz,
 		});
@@ -222,7 +237,7 @@ export async function handleGetDoctorMyEarnings(
 				material: null,
 				status: "completed",
 				statusRu: "Готов",
-				costRub: Math.round(ord.labCostKopecks / 100),
+				costRub: kopecksToRubles(ord.labCostKopecks),
 				costKop: ord.labCostKopecks,
 				dueDate: ord.dateIso,
 			});
@@ -231,11 +246,11 @@ export async function handleGetDoctorMyEarnings(
 
 	const appointments = Array.from(apptMap.values()).map((a) => ({
 		...a,
-		grossRevenueRub: Math.round(a.grossRevenueKop / 100),
-		labCostRub: Math.round(a.labCostKop / 100),
-		materialsCostRub: Math.round(a.materialsCostKop / 100),
-		netBaseRub: Math.round(a.netBaseKop / 100),
-		doctorEarnedRub: Math.round(a.doctorEarnedKop / 100),
+		grossRevenueRub: kopecksToRubles(a.grossRevenueKop),
+		labCostRub: kopecksToRubles(a.labCostKop),
+		materialsCostRub: kopecksToRubles(a.materialsCostKop),
+		netBaseRub: kopecksToRubles(a.netBaseKop),
+		doctorEarnedRub: kopecksToRubles(a.doctorEarnedKop),
 	}));
 
 	// Категориальная разбивка specialtyBreakdown
@@ -280,10 +295,10 @@ export async function handleGetDoctorMyEarnings(
 		category: c.category,
 		categoryRu: c.categoryRu,
 		commissionPercent: c.commissionPercent,
-		grossRevenueRub: Math.round(c.grossRevenueKop / 100),
-		labDeductionsRub: Math.round(c.labDeductionsKop / 100),
-		netBaseRub: Math.round(c.netBaseKop / 100),
-		doctorEarnedRub: Math.round(c.doctorEarnedKop / 100),
+		grossRevenueRub: kopecksToRubles(c.grossRevenueKop),
+		labDeductionsRub: kopecksToRubles(c.labDeductionsKop),
+		netBaseRub: kopecksToRubles(c.netBaseKop),
+		doctorEarnedRub: kopecksToRubles(c.doctorEarnedKop),
 		servicesCount: c.servicesCount,
 	}));
 
@@ -299,23 +314,23 @@ export async function handleGetDoctorMyEarnings(
 	const unpaidAmountKop = unpaidOrders.reduce((acc, o) => acc + o.grossKopecks, 0);
 
 	const summary = {
-		totalGrossRevenueRub: Math.round(totalGrossRevenueKop / 100),
+		totalGrossRevenueRub: kopecksToRubles(totalGrossRevenueKop),
 		totalGrossRevenueKop,
-		totalLabDeductionsRub: Math.round(totalLabDeductionsKop / 100),
+		totalLabDeductionsRub: kopecksToRubles(totalLabDeductionsKop),
 		totalLabDeductionsKop,
-		totalMaterialDeductionsRub: Math.round(totalMaterialDeductionsKop / 100),
+		totalMaterialDeductionsRub: kopecksToRubles(totalMaterialDeductionsKop),
 		totalMaterialDeductionsKop,
-		netBaseRevenueRub: Math.round(netBaseRevenueKop / 100),
+		netBaseRevenueRub: kopecksToRubles(netBaseRevenueKop),
 		netBaseRevenueKop,
-		totalDoctorEarnedRub: Math.round(totalDoctorEarnedKop / 100),
+		totalDoctorEarnedRub: kopecksToRubles(totalDoctorEarnedKop),
 		totalDoctorEarnedKop,
 		averageCommissionPercent: basePercent,
 		completedAppointmentsCount: appointments.length,
 		inChairAppointmentsCount: 0,
 		totalAppointmentsCount: appointments.length,
 		totalServicesCount: orders.length,
-		paidAmountRub: Math.round(paidAmountKop / 100),
-		unpaidAmountRub: Math.round(unpaidAmountKop / 100),
+		paidAmountRub: kopecksToRubles(paidAmountKop),
+		unpaidAmountRub: kopecksToRubles(unpaidAmountKop),
 		paymentReconciliationStatus: (unpaidOrders.length === 0 ? "fully_reconciled" : "pending_cashier") as
 			| "fully_reconciled"
 			| "discrepancy_found"

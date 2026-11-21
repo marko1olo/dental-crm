@@ -333,12 +333,13 @@ export async function fetchDoctorPayrollDataset(params: {
 		}
 	}
 
-	// Услуги с категориями из каталога
+	// Услуги с категориями из каталога и номером зуба
 	const treats = visitIds.length > 0
 		? await db
 			.select({
 				id: treatmentItems.id,
 				visitId: treatmentItems.visitId,
+				toothCode: treatmentItems.toothCode,
 				priceRub: treatmentItems.priceRub,
 				quantity: treatmentItems.quantity,
 				title: treatmentItems.title,
@@ -363,11 +364,15 @@ export async function fetchDoctorPayrollDataset(params: {
 	}
 	const remainingPaidKopByVisit = new Map<string, number>(paidKopByVisit);
 
-	// Заказы ЗТЛ для доктора за период (исключая гарантии)
+	// Заказы ЗТЛ для доктора за период (исключая гарантии, с чтением labCostKopecks Мандат 8bm)
 	const docLabOrders = await db
 		.select({
 			id: labOrders.id,
 			patientId: labOrders.patientId,
+			toothFdi: labOrders.toothFdi,
+			appointmentId: labOrders.appointmentId,
+			treatmentPlanId: labOrders.treatmentPlanId,
+			labCostKopecks: labOrders.labCostKopecks,
 			labCostRub: labOrders.labCostRub,
 		})
 		.from(labOrders)
@@ -382,16 +387,25 @@ export async function fetchDoctorPayrollDataset(params: {
 			),
 		);
 
-	const labCostPoolByPatient = new Map<string, number>();
-	for (const lo of docLabOrders) {
-		const costKop = rublesToKopecks(Number(lo.labCostRub || 0));
-		if (costKop > 0) {
-			labCostPoolByPatient.set(
-				lo.patientId,
-				(labCostPoolByPatient.get(lo.patientId) || 0) + costKop,
-			);
-		}
+	interface TrackedDoctorLabOrder {
+		id: string;
+		patientId: string;
+		toothFdi: string | null;
+		appointmentId: string | null;
+		treatmentPlanId: string | null;
+		remainingCostKop: number;
 	}
+
+	const trackedLabOrders: TrackedDoctorLabOrder[] = docLabOrders.map((lo) => ({
+		id: lo.id,
+		patientId: lo.patientId,
+		toothFdi: lo.toothFdi,
+		appointmentId: lo.appointmentId,
+		treatmentPlanId: lo.treatmentPlanId,
+		remainingCostKop: lo.labCostKopecks != null
+			? Number(lo.labCostKopecks)
+			: (lo.labCostRub != null ? rublesToKopecks(lo.labCostRub) : 0),
+	}));
 
 	// Списание материалов (только списываемые на пациента, без общеклинических накладных)
 	const invDeductions = visitIds.length > 0
@@ -468,11 +482,30 @@ export async function fetchDoctorPayrollDataset(params: {
 		const appt = appts.find((a) => a.id === linkedApptId);
 		const patientId = appt?.patientId;
 
+		const cat = normalizeClinicalCategory(t.category, t.specialty);
+		const catLabelRu = CATEGORY_LABELS_RU[cat] || "Терапия";
+		const serviceTitle = t.title || "Стоматологическая услуга";
+		const isOrthoService = cat === "orthopedics" || /коронк|протез|вкладк|винир|мостовид|абтмент|зтл/i.test(serviceTitle);
+
+		// Ликвидация Payroll Vampire Bug: себестоимость ЗТЛ вычитается СТРОГО из ортопедических услуг
+		// или услуг с совпадающим номером зуба, исключая каннибализацию консультаций, гигиены и терапии
 		let labKop = 0;
-		if (patientId && (labCostPoolByPatient.get(patientId) || 0) > 0) {
-			const pool = labCostPoolByPatient.get(patientId)!;
-			labKop = Math.min(pool, grossKop);
-			labCostPoolByPatient.set(patientId, pool - labKop);
+		if (patientId) {
+			const candidateOrder = trackedLabOrders.find((lo) => {
+				if (lo.patientId !== patientId || lo.remainingCostKop <= 0) return false;
+				if (t.toothCode && lo.toothFdi && lo.toothFdi.split(/[\s,;-]+/).includes(t.toothCode)) {
+					return true;
+				}
+				if (lo.appointmentId && lo.appointmentId === linkedApptId && isOrthoService) {
+					return true;
+				}
+				return isOrthoService;
+			});
+
+			if (candidateOrder) {
+				labKop = Math.min(candidateOrder.remainingCostKop, grossKop);
+				candidateOrder.remainingCostKop -= labKop;
+			}
 		}
 
 		const visitMatTotal = t.visitId ? (matCostByVisit.get(t.visitId) || 0) : 0;
@@ -480,10 +513,6 @@ export async function fetchDoctorPayrollDataset(params: {
 		if (t.visitId && matKop > 0) {
 			matCostByVisit.set(t.visitId, Math.max(0, visitMatTotal - matKop));
 		}
-
-		const cat = normalizeClinicalCategory(t.category, t.specialty);
-		const catLabelRu = CATEGORY_LABELS_RU[cat] || "Терапия";
-		const serviceTitle = t.title || "Стоматологическая услуга";
 
 		completedServices.push({
 			id: t.id,
@@ -557,11 +586,11 @@ export async function fetchClosedPayrollStatements(
 		dateClosedIso: s.createdAt.toISOString().slice(0, 10),
 		doctorName,
 		rkoReceiptNumber: s.rkoNumber || `РКО-${s.id.slice(0, 8).toUpperCase()}`,
-		grossKopecks: Number(s.grossRevenueKopecks || rublesToKopecks(Number(s.grossRevenueRub || 0))),
-		labCostKopecks: Number(s.labCostKopecks || rublesToKopecks(Number(s.labCostRub || 0))),
-		materialCostKopecks: Number(s.materialsCostKopecks || rublesToKopecks(Number(s.materialsCostRub || 0))),
-		netBaseKopecks: rublesToKopecks(Number(s.netBaseRevenueRub || 0)),
-		payoutKopecks: Number(s.netPayoutKopecks || rublesToKopecks(Number(s.netPayoutRub || 0))),
+		grossKopecks: Number(s.grossRevenueKopecks != null ? s.grossRevenueKopecks : rublesToKopecks(Number(s.grossRevenueRub || 0))),
+		labCostKopecks: Number(s.labCostKopecks != null ? s.labCostKopecks : rublesToKopecks(Number(s.labCostRub || 0))),
+		materialCostKopecks: Number(s.materialsCostKopecks != null ? s.materialsCostKopecks : rublesToKopecks(Number(s.materialsCostRub || 0))),
+		netBaseKopecks: Number(s.netBaseRevenueKopecks != null ? s.netBaseRevenueKopecks : rublesToKopecks(Number(s.netBaseRevenueRub || 0))),
+		payoutKopecks: Number(s.netPayoutKopecks != null ? s.netPayoutKopecks : rublesToKopecks(Number(s.netPayoutRub || 0))),
 		isPaidRko: Boolean(s.paidAt),
 	}));
 

@@ -23,6 +23,7 @@ export interface CloseSettlementPeriodParams {
 	readonly ndflKop: number;
 	readonly netPayoutKop: number;
 	readonly markPaid?: boolean;
+	readonly idempotencyKey?: string;
 }
 
 export interface SettlementStatementPayload {
@@ -46,12 +47,23 @@ export interface CloseSettlementPeriodResult {
 export async function closeSettlementPeriodApi(
 	params: CloseSettlementPeriodParams,
 ): Promise<CloseSettlementPeriodResult> {
+	const idempotencyKey =
+		params.idempotencyKey ||
+		(typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+			? crypto.randomUUID()
+			: `idem-settle-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
 	const res = await fetch("/api/doctor/close-settlement-period", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
+			"Idempotency-Key": idempotencyKey,
+			"X-Idempotency-Key": idempotencyKey,
 		},
-		body: JSON.stringify(params),
+		body: JSON.stringify({
+			...params,
+			idempotencyKey,
+		}),
 	});
 
 	if (!res.ok) {

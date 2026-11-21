@@ -10,6 +10,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { rublesToKopecks, kopecksToRubles } from "@dental/shared";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { doctorCommissions, users } from "../db/schema.js";
 import { calculateDoctorPeriodPayroll } from "@dental/shared";
 import { getRequestIdentity } from "../security/identity.js";
@@ -49,6 +50,7 @@ const payrollCalculationsQuerySchema = z.object({
 type PayrollCalculationsQuery = z.infer<typeof payrollCalculationsQuerySchema>;
 
 const closeSettlementSchema = z.object({
+	idempotencyKey: z.string().optional(),
 	doctorId: z.string().min(1),
 	periodStart: z.string().min(1),
 	periodEnd: z.string().min(1),
@@ -403,73 +405,82 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		const orgId = payoutAccess.organizationId;
 		const body = parsed.data;
 
+		const rawIdemKey = request.headers["idempotency-key"] || request.headers["x-idempotency-key"] || body.idempotencyKey;
+		const idempotencyKey = typeof rawIdemKey === "string" ? rawIdemKey : undefined;
+
 		const fromDate = new Date(`${body.periodStart.slice(0, 10)}T00:00:00.000Z`);
 		const toDate = new Date(`${body.periodEnd.slice(0, 10)}T23:59:59.999Z`);
 		const periodKey = body.periodStart.slice(0, 7) === body.periodEnd.slice(0, 7)
 			? body.periodStart.slice(0, 7)
 			: `${body.periodStart.slice(0, 10)}..${body.periodEnd.slice(0, 10)}`;
 
-		// DEF-PAYROLL-04: Пакетный макро-поток в 1 клик для закрытия ведомостей всех врачей клиники
+		// DEF-PAYROLL-04: Пакетный макро-поток в 1 клик для закрытия ведомостей всех врачей клиники в ACID-транзакции
 		if (body.doctorId === "all") {
 			const activeDoctors = await fetchActiveDoctorProfiles(orgId);
 			const batchStatements: NonNullable<Awaited<ReturnType<typeof closeSettlementPeriodInDb>>["statement"]>[] = [];
 			let totalClosedAppts = 0;
 
-			for (const doc of activeDoctors) {
-				const { shiftsCount, completedServices } = await fetchDoctorPayrollDataset({
-					orgId,
-					resolvedDocId: doc.id,
-					fromStr: body.periodStart,
-					toStr: body.periodEnd,
-					fromDate,
-					toDate,
-				});
+			await withTenantCtx(orgId, async (tx) => {
+				for (const doc of activeDoctors) {
+					const { shiftsCount, completedServices } = await fetchDoctorPayrollDataset({
+						orgId,
+						resolvedDocId: doc.id,
+						fromStr: body.periodStart,
+						toStr: body.periodEnd,
+						fromDate,
+						toDate,
+					});
 
-				const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
-				const isRental = docPayoutModel === "chair_rental";
+					const docPayoutModel = doc.payoutModel as "percentage" | "chair_rental";
+					const isRental = docPayoutModel === "chair_rental";
 
-				const payrollResult = calculateDoctorPeriodPayroll({
-					doctorId: doc.id,
-					doctorName: doc.name,
-					specialtyId: doc.specialtyId,
-					periodStartIso: body.periodStart.slice(0, 10),
-					periodEndIso: body.periodEnd.slice(0, 10),
-					services: completedServices,
-					customBasePercentage: doc.commissionPercent,
-					payoutModel: docPayoutModel,
-					chairRentalKop: isRental ? Math.round(shiftsCount * doc.defaultShiftRateKop) : 0,
-					advancePayoutKop: 0,
-					taxRegime: doc.taxRegime,
-				});
+					const payrollResult = calculateDoctorPeriodPayroll({
+						doctorId: doc.id,
+						doctorName: doc.name,
+						specialtyId: doc.specialtyId,
+						periodStartIso: body.periodStart.slice(0, 10),
+						periodEndIso: body.periodEnd.slice(0, 10),
+						services: completedServices,
+						customBasePercentage: doc.commissionPercent,
+						payoutModel: docPayoutModel,
+						chairRentalKop: isRental ? Math.round(shiftsCount * doc.defaultShiftRateKop) : 0,
+						advancePayoutKop: 0,
+						taxRegime: doc.taxRegime,
+					});
 
-				const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;
-				const rkoNumber = body.rkoNumber || `РКО-${doc.id.slice(0, 4).toUpperCase()}-${periodKey}`;
+					const payoutKopecks = payrollResult.mainPayoutKop ?? payrollResult.netPayoutToDoctorKop;
+					const rkoNumber = body.rkoNumber || `РКО-${doc.id.slice(0, 4).toUpperCase()}-${periodKey}`;
 
-				const res = await closeSettlementPeriodInDb({
-					organizationId: orgId,
-					doctorId: doc.id,
-					periodKey,
-					fromDate,
-					toDate,
-					payoutModel: docPayoutModel,
-					grossRevenueKopecks: payrollResult.totalGrossRevenueKop,
-					labCostKopecks: payrollResult.totalLabDeductionsKop,
-					materialsCostKopecks: payrollResult.totalMaterialDeductionsKop,
-					netBaseRevenueKopecks: payrollResult.totalNetBaseKop,
-					categoryPercent: doc.commissionPercent,
-					calculatedPieceworkKopecks: payrollResult.grossPayoutBeforeTaxKop,
-					fixedSalaryKopecks: payrollResult.chairRentalKop || 0,
-					bonusesTotalKopecks: 0,
-					penaltiesTotalKopecks: 0,
-					totalAccruedKopecks: payrollResult.grossPayoutBeforeTaxKop,
-					ndfl13Kopecks: payrollResult.ndfl13TaxKop || 0,
-					netPayoutKopecks: payoutKopecks,
-					rkoNumber,
-					markPaid: body.markPaid ?? true,
-				});
+					const res = await closeSettlementPeriodInDb({
+						organizationId: orgId,
+						doctorId: doc.id,
+						periodKey,
+						fromDate,
+						toDate,
+						payoutModel: docPayoutModel,
+						grossRevenueKopecks: payrollResult.totalGrossRevenueKop,
+						labCostKopecks: payrollResult.totalLabDeductionsKop,
+						materialsCostKopecks: payrollResult.totalMaterialDeductionsKop,
+						netBaseRevenueKopecks: payrollResult.totalNetBaseKop,
+						categoryPercent: doc.commissionPercent,
+						calculatedPieceworkKopecks: payrollResult.grossPayoutBeforeTaxKop,
+						fixedSalaryKopecks: payrollResult.chairRentalKop || 0,
+						bonusesTotalKopecks: 0,
+						penaltiesTotalKopecks: 0,
+						totalAccruedKopecks: payrollResult.grossPayoutBeforeTaxKop,
+						ndfl13Kopecks: payrollResult.ndfl13TaxKop || 0,
+						netPayoutKopecks: payoutKopecks,
+						rkoNumber,
+						markPaid: body.markPaid ?? true,
+					}, tx);
 
-				if (res.statement) batchStatements.push(res.statement);
-				totalClosedAppts += res.closedAppointmentsCount;
+					if (res.statement) batchStatements.push(res.statement);
+					totalClosedAppts += res.closedAppointmentsCount;
+				}
+			});
+
+			if (idempotencyKey) {
+				reply.header("X-Idempotency-Key", idempotencyKey);
 			}
 
 			return reply.send({
@@ -544,6 +555,10 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			rkoNumber: body.rkoNumber,
 			markPaid: body.markPaid ?? true,
 		});
+
+		if (idempotencyKey) {
+			reply.header("X-Idempotency-Key", idempotencyKey);
+		}
 
 		return reply.send({
 			ok: true,
