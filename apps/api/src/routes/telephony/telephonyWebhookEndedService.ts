@@ -47,7 +47,7 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 	// Атомарный UPSERT (onConflictDoUpdate) по (organization_id, provider_call_id)
 	if (cleanCallId) {
 		await db.transaction(async (tx) => {
-			const callMessage = `Звонок завершён (call_id: ${cleanCallId}${!p.matchedPatient ? ", первичный звонок" : ""})`;
+			const callMessage = `Звонок завершён${!p.matchedPatient ? " (первичный звонок)" : ""}`;
 			const [savedEvent] = await tx
 				.insert(communicationEvents)
 				.values({

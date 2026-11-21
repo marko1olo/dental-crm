@@ -19,7 +19,6 @@ import {
 } from "../../db/schema.js";
 import { maskPhoneDisplay } from "@dental/shared";
 import { normalizePhoneNumber } from "../../routes/telephony.js";
-import { defaultCopilotStreamManager } from "../agent/copilotService.js";
 import { wsBroker } from "../websocketBroker.js";
 
 export interface MissedCallEventParams {
@@ -87,7 +86,10 @@ export class MissedCallService {
 								eq(communicationEvents.status, "needs_call"),
 								eq(communicationEvents.status, "failed"),
 							),
-							ilike(communicationEvents.message, `%${callId}%`),
+							or(
+								eq(communicationEvents.providerCallId, callId),
+								ilike(communicationEvents.message, `%${callId}%`),
+							),
 						),
 					)
 					.limit(1);
@@ -340,18 +342,18 @@ export class MissedCallService {
 			// 4. Insert into communicationEvents (patientId is null for unknown leads, callerPhone is preserved)
 			await tx.insert(communicationEvents).values({
 				organizationId,
+				providerCallId: callId || null,
+				providerName: params.provider || "telephony",
 				patientId,
 				callerPhone: callerPhoneE164,
 				channel: "phone",
 				direction: "inbound",
 				status: "needs_call",
-				message: callId
-					? `🚨 Пропущенный звонок от ${callerPhoneE164} (call_id: ${callId})`
-					: `🚨 Пропущенный звонок от ${callerPhoneE164}`,
+				message: `🚨 Пропущенный звонок от ${callerPhoneE164}`,
 				durationSeconds: 0,
 			});
 
-			// 6. WebSocket Broadcast for Reception Desk
+			// 6. WebSocket Broadcast for Reception Desk (Quiet Backoffice & Zero Chairside Distraction — Mandate 8v & 8e)
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "TELEPHONY_MISSED_CALL",
 				payload: {
@@ -376,33 +378,8 @@ export class MissedCallService {
 				});
 			}
 
-			// 7. Copilot SSE Proactive Alert Broadcast
-			const alertCardId = `alert_missed_${Date.now()}_${randomUUID().slice(0, 8)}`;
-			defaultCopilotStreamManager.broadcastProactiveAlert(organizationId, {
-				id: alertCardId,
-				urgency: "CRITICAL",
-				title: "🚨 Пропущенный входящий вызов",
-				subtitle: `${patientDisplayName} • ${callerPhoneE164}`,
-				description: `Входящий звонок от ${callerPhoneE164} был сброшен или остался без ответа. Норматив перезвона: 60 секунд!`,
-				timestamp: new Date().toISOString(),
-				...(patientId ? { patientId } : {}),
-				patientName: patientDisplayName,
-				patientPhone: callerPhoneE164,
-				category: "clinical_alert",
-				actions: [
-					{
-						id: "call_back_urgent",
-						label: "📞 Перезвонить за 60 сек",
-						kind: "danger",
-						actionType: "call_patient",
-						payload: {
-							phone: callerPhoneE164,
-							...(patientId ? { patientId } : {}),
-							...(taskId ? { taskId } : {}),
-						},
-					},
-				],
-			});
+			// Doctor Sterile Zone & Quiet Backoffice (Mandates 8e & 8v):
+			// Missed calls are operational reception tasks, NEVER clinical emergencies in doctor copilot!
 
 			return {
 				success: true,
@@ -411,7 +388,6 @@ export class MissedCallService {
 				patientName: patientDisplayName,
 				phone: callerPhoneE164,
 				isNewLead,
-				alertCardId,
 			};
 		});
 	}

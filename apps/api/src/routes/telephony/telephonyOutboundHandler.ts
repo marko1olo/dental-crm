@@ -32,7 +32,21 @@ export async function telephonyOutboundCallHandler(
 	const orgId = resolvedOrgId;
 
 	const body = request.body || ({} as { phone?: string; patientId?: string; patientName?: string });
-	const callerPhone = normalizePhoneNumber(body.phone);
+	const rawPhone = (body.phone || "").trim();
+	const cleanDigits = rawPhone.replace(/\D/g, "");
+	const isSipExtension = cleanDigits.length === 3 && /^\d{3}$/.test(rawPhone);
+
+	let callerPhone = normalizePhoneNumber(body.phone);
+	if (!callerPhone.isValid && isSipExtension) {
+		callerPhone = {
+			raw: rawPhone,
+			cleanDigits,
+			e164: cleanDigits,
+			national10: cleanDigits,
+			isValid: true,
+		};
+	}
+
 	if (!callerPhone.isValid) {
 		return reply.status(400).send({
 			error: "InvalidPhoneNumber",

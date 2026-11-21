@@ -73,5 +73,7 @@ export function normalizePhoneRu(value: string | null | undefined): string {
 export function isValidRussianPhone(value: string | null | undefined): boolean {
 	if (!value) return false;
 	const nat = getNationalPhoneDigits(value);
-	return nat.length === 10 && nat.startsWith("9");
+	if (nat.length !== 10) return false;
+	const firstDigit = nat[0];
+	return firstDigit === "9" || firstDigit === "3" || firstDigit === "4" || firstDigit === "8";
 }

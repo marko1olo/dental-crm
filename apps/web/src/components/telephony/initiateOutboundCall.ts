@@ -24,26 +24,29 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 	}
 
 	const digits = normalizePhoneDigits(rawPhone);
-	if (digits.length < 4) {
+	if (digits.length < 3) {
 		showToast("Некорректный номер телефона для вызова", "warning");
 		return false;
 	}
 
-	const e164 = digits.startsWith("7")
-		? `+${digits}`
-		: digits.startsWith("8")
-			? `+7${digits.slice(1)}`
-			: `+7${digits}`;
+	const isSipExtension = digits.length === 3;
+	const targetPhone = isSipExtension
+		? digits
+		: digits.startsWith("7")
+			? `+${digits}`
+			: digits.startsWith("8")
+				? `+7${digits.slice(1)}`
+				: `+7${digits}`;
 
 	const store = useTelephonyStore.getState();
 	const callId = `outbound-${Date.now()}`;
-	const patientName = req.patientName || "Пациент";
+	const patientName = req.patientName || (isSipExtension ? `Внутренний абонент ${digits}` : "Пациент");
 
 	// 1. Immediately activate softphone header capsule / drawer with active outgoing call in ringing state
 	store.startOutboundCall({
 		id: callId,
 		callId,
-		phone: e164,
+		phone: targetPhone,
 		patientId: req.patientId || null,
 		patientName,
 		provider: "sip",
@@ -56,7 +59,12 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 	// Open drawer / HUD
 	store.openCallDrawer();
 
-	showToast(`Звонок на номер ${formatPhoneDisplay(e164)}...`, "info");
+	showToast(
+		isSipExtension
+			? `Вызов внутреннего номера ${digits}...`
+			: `Звонок на номер ${formatPhoneDisplay(targetPhone)}...`,
+		"info",
+	);
 
 	// 2. Dispatch call request to backend API
 	try {
@@ -73,7 +81,7 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 			method: "POST",
 			headers,
 			body: JSON.stringify({
-				phone: e164,
+				phone: targetPhone,
 				patientId: req.patientId || undefined,
 				patientName,
 			}),
@@ -93,7 +101,12 @@ export async function initiateOutboundCall(req: OutboundCallRequest): Promise<bo
 		}
 
 		// Call remains in dialing/ringing state until remote party answers
-		showToast(`Вызов направлен на ${formatPhoneDisplay(e164)}. Ожидание ответа абонента...`, "info");
+		showToast(
+			isSipExtension
+				? `Вызов направлен на внутренний номер ${digits}. Ожидание ответа...`
+				: `Вызов направлен на ${formatPhoneDisplay(targetPhone)}. Ожидание ответа абонента...`,
+			"info",
+		);
 		return true;
 	} catch {
 		store.endCall();

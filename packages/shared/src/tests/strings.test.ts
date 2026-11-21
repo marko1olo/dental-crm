@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
-import { isValidRussianInn, splitLine } from "../utils/strings.js";
+import { isValidRussianInn, isValidRussianPhone, splitLine } from "../utils/strings.js";
 
 describe("isValidRussianInn", () => {
 	test("returns true for null, undefined, or empty string", () => {
@@ -153,5 +153,30 @@ describe("splitLine", () => {
 
 	test("handles quotes adjacent to characters without delimiters", () => {
 		assert.deepStrictEqual(splitLine('a,"b""c",d', ","), ["a", "bc", "d"]);
+	});
+});
+
+describe("isValidRussianPhone — Mobile & Geographic Urban Codes (DEF / ABC)", () => {
+	test("validates Russian mobile numbers (prefix 9)", () => {
+		assert.strictEqual(isValidRussianPhone("+7 (916) 123-45-67"), true);
+		assert.strictEqual(isValidRussianPhone("89260001122"), true);
+		assert.strictEqual(isValidRussianPhone("9991234567"), true);
+	});
+
+	test("validates Russian geographic urban numbers (Moscow 495, 499, SPb 812, Ekaterinburg 343)", () => {
+		assert.strictEqual(isValidRussianPhone("+7 (495) 123-45-67"), true, "Moscow 495 must be valid");
+		assert.strictEqual(isValidRussianPhone("8 (499) 765-43-21"), true, "Moscow 499 must be valid");
+		assert.strictEqual(isValidRussianPhone("+7 (812) 555-44-33"), true, "SPb 812 must be valid");
+		assert.strictEqual(isValidRussianPhone("+7 (343) 200-11-22"), true, "Ekaterinburg 343 must be valid");
+		assert.strictEqual(isValidRussianPhone("8432001122"), true, "Kazan 843 must be valid");
+	});
+
+	test("rejects invalid, short, or foreign phone formats", () => {
+		assert.strictEqual(isValidRussianPhone(null), false);
+		assert.strictEqual(isValidRussianPhone(undefined), false);
+		assert.strictEqual(isValidRussianPhone(""), false);
+		assert.strictEqual(isValidRussianPhone("123"), false);
+		assert.strictEqual(isValidRussianPhone("+7 (123) 456-78-90"), false, "Prefix 1 is not valid in Russia");
+		assert.strictEqual(isValidRussianPhone("+7 (012) 345-67-89"), false, "Prefix 0 is not valid in Russia");
 	});
 });

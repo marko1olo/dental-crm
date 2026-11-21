@@ -27,7 +27,13 @@ export async function handleListMissedCalls(
 			eq(communicationEvents.channel, "phone"),
 		];
 		if (onlyOpen) {
-			conditions.push(or(eq(communicationEvents.status, "needs_call"), eq(communicationEvents.status, "failed"))!);
+			const openStatusCondition = or(
+				eq(communicationEvents.status, "needs_call"),
+				eq(communicationEvents.status, "failed"),
+			);
+			if (openStatusCondition) {
+				conditions.push(openStatusCondition);
+			}
 		}
 		return db
 			.select()

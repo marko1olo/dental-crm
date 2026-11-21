@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { describe, test } from "node:test";
-import { and, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike, or } from "drizzle-orm";
 import Fastify from "fastify";
 import { db } from "../../db/client.js";
 import { communicationEvents, crmLeads, organizations, patients } from "../../db/schema.js";
 import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { telephonyCallLifecycleRoutes } from "../../routes/telephony/telephonyCallLifecycleHandler.js";
+import { getAudioCachePath } from "../../routes/telephony/telephonyRecordingStreamHandler.js";
 import { telephonyRoutes } from "../../routes/telephony.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 
@@ -178,7 +181,7 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		}
 	});
 
-	test("PATCH /calls/:id persists clinical note in communicationEvents and preserves call_id metadata", async () => {
+	test("PATCH /calls/:id persists clinical note in communicationEvents and providerCallId column", async () => {
 		const app = Fastify();
 		await app.register(telephonyRoutes);
 		await app.ready();
@@ -200,12 +203,18 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		assert.equal(json.success, true);
 		assert.equal(json.callId, "call-catalog-1");
 		assert.equal(json.note, "Пациент записан на консультацию к ортодонту в субботу");
-		assert.ok(
-			json.call.message.includes("[call_id: call-catalog-1]"),
-			"communicationEvents.message must preserve [call_id: call-catalog-1] for webhook deduplication",
+		assert.equal(
+			json.call.message,
+			"Пациент записан на консультацию к ортодонту в субботу",
+			"communicationEvents.message must store pure human note without service tokens",
+		);
+		assert.equal(
+			json.call.providerCallId,
+			"call-catalog-1",
+			"communicationEvents.providerCallId must store indexed external call ID",
 		);
 
-		// Update note a second time: ensure [call_id: call-catalog-1] is not wiped
+		// Update note a second time: ensure providerCallId is preserved and note updated cleanly
 		const res2 = await app.inject({
 			method: "PATCH",
 			url: `/calls/${json.call.id}`,
@@ -221,9 +230,15 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		assert.equal(res2.statusCode, 200);
 		const json2 = res2.json();
 		assert.equal(json2.success, true);
-		assert.ok(
-			json2.call.message.includes("[call_id: call-catalog-1]"),
-			"Second note update must preserve original call_id marker",
+		assert.equal(
+			json2.call.message,
+			"Пациент подтвердил приём и перенёс на 15:00",
+			"Second note update must cleanly update note text",
+		);
+		assert.equal(
+			json2.call.providerCallId,
+			"call-catalog-1",
+			"Second note update must preserve providerCallId",
 		);
 
 		await app.close();
@@ -325,7 +340,10 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 				.where(
 					and(
 						eq(communicationEvents.organizationId, testOrgId),
-						ilike(communicationEvents.message, `%${callId}%`),
+						or(
+							eq(communicationEvents.providerCallId, callId),
+							ilike(communicationEvents.message, `%${callId}%`),
+						),
 					),
 				);
 
@@ -399,7 +417,10 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 				.where(
 					and(
 						eq(communicationEvents.organizationId, testOrgId),
-						ilike(communicationEvents.message, `%${callId}%`),
+						or(
+							eq(communicationEvents.providerCallId, callId),
+							ilike(communicationEvents.message, `%${callId}%`),
+						),
 					),
 				);
 
@@ -630,6 +651,122 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 			assert.ok(createdNewCall, "New call record must be created for the new callId");
 			assert.ok(createdNewCall?.message.includes("Свежая заметка: Пациент хочет записаться завтра"));
 		} finally {
+			await app.close();
+		}
+	});
+
+	test("AUDIO STREAM & RANGE: Serves cached recording with 206 Partial Content, Range headers, and 304 ETag", async () => {
+		const testOrgId = DEMO_SHOWCASE_ORG_ID;
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		const [event] = await db
+			.insert(communicationEvents)
+			.values({
+				organizationId: testOrgId,
+				providerCallId: `call-stream-test-${Date.now()}`,
+				providerName: "telephony",
+				callerPhone: "+79031234567",
+				channel: "phone",
+				direction: "inbound",
+				status: "completed",
+				message: "Тестовый звонок для потоковой передачи",
+				recordingUrl: "https://cloud-pbx.example.com/recordings/test.mp3",
+				audioFormat: "audio/mpeg",
+				durationSeconds: 15,
+			})
+			.returning();
+
+		assert.ok(event);
+
+		// Seed local disk cache file with 100 bytes of dummy audio data
+		const cachePath = getAudioCachePath(testOrgId, event.id);
+		const orgCacheDir = path.dirname(cachePath);
+		await fs.promises.mkdir(orgCacheDir, { recursive: true });
+		const dummyAudio = Buffer.alloc(100, 0xaa);
+		await fs.promises.writeFile(cachePath, dummyAudio);
+
+		try {
+			// 1. Full 200 OK stream from cache
+			const resFull = await app.inject({
+				method: "GET",
+				url: `/recordings/${event.id}/stream`,
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+				},
+			});
+
+			assert.equal(resFull.statusCode, 200);
+			assert.equal(resFull.headers["content-type"], "audio/mpeg");
+			assert.equal(resFull.headers["content-length"], "100");
+			assert.equal(resFull.headers["accept-ranges"], "bytes");
+			assert.equal(resFull.headers["x-audio-cache"], "HIT");
+			assert.ok(resFull.headers.etag);
+
+			// 2. HTTP Range request (bytes=0-9) -> 206 Partial Content
+			const resRange = await app.inject({
+				method: "GET",
+				url: `/recordings/${event.id}/stream`,
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					range: "bytes=0-9",
+				},
+			});
+
+			assert.equal(resRange.statusCode, 206);
+			assert.equal(resRange.headers["content-range"], "bytes 0-9/100");
+			assert.equal(resRange.headers["content-length"], "10");
+			assert.equal(resRange.headers["accept-ranges"], "bytes");
+			assert.equal(resRange.headers["x-audio-cache"], "HIT");
+			assert.equal(resRange.rawPayload.length, 10);
+
+			// 3. HTTP Range with open end (bytes=50-) -> 206 Partial Content (50 bytes)
+			const resOpenRange = await app.inject({
+				method: "GET",
+				url: `/recordings/${event.id}/stream`,
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					range: "bytes=50-",
+				},
+			});
+
+			assert.equal(resOpenRange.statusCode, 206);
+			assert.equal(resOpenRange.headers["content-range"], "bytes 50-99/100");
+			assert.equal(resOpenRange.headers["content-length"], "50");
+			assert.equal(resOpenRange.rawPayload.length, 50);
+
+			// 4. Invalid out of bounds Range -> 416 Range Not Satisfiable
+			const resInvalidRange = await app.inject({
+				method: "GET",
+				url: `/recordings/${event.id}/stream`,
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					range: "bytes=150-200",
+				},
+			});
+
+			assert.equal(resInvalidRange.statusCode, 416);
+			assert.equal(resInvalidRange.headers["content-range"], "bytes */100");
+
+			// 5. If-None-Match ETag check -> 304 Not Modified
+			const resEtag = await app.inject({
+				method: "GET",
+				url: `/recordings/${event.id}/stream`,
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+					"x-dente-staff-token": "demo-showcase-staff-token",
+					"if-none-match": resFull.headers.etag as string,
+				},
+			});
+
+			assert.equal(resEtag.statusCode, 304);
+		} finally {
+			try { await fs.promises.unlink(cachePath); } catch {}
 			await app.close();
 		}
 	});

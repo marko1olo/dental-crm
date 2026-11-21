@@ -1,5 +1,8 @@
+import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../../../accessGuard.js";
+import { withTenantCtx } from "../../../db/rls.js";
+import { treatmentPlans } from "../../../db/schema.js";
 import {
 	CANONICAL_DENTAL_LAB_PRESETS,
 	checkPlanContinuitySchema,
@@ -34,19 +37,64 @@ export async function handleCheckPlanContinuity(request: FastifyRequest, reply: 
 		});
 	}
 
-	const { planAgeDays } = parsed.data;
-	const isPlanExpired = planAgeDays > 30;
+	const { patientId, treatmentPlanId } = parsed.data;
+	let computedPlanAgeDays = parsed.data.planAgeDays ?? 0;
+	let planTitle: string | null = null;
+	let planFound = false;
+
+	if (treatmentPlanId) {
+		const plan = await withTenantCtx(orgId, async (tx) => {
+			const [found] = await tx
+				.select({
+					id: treatmentPlans.id,
+					name: treatmentPlans.name,
+					status: treatmentPlans.status,
+					createdAt: treatmentPlans.createdAt,
+					approvedAt: treatmentPlans.approvedAt,
+				})
+				.from(treatmentPlans)
+				.where(
+					and(
+						eq(treatmentPlans.id, treatmentPlanId),
+						eq(treatmentPlans.organizationId, orgId),
+						eq(treatmentPlans.patientId, patientId),
+					),
+				)
+				.limit(1);
+			return found;
+		});
+
+		if (!plan) {
+			return reply.code(404).send({
+				error: "TreatmentPlanNotFound",
+				message: "План лечения не найден для указанного пациента и организации.",
+			});
+		}
+
+		planFound = true;
+		planTitle = plan.name;
+		const baseDate = plan.approvedAt ?? plan.createdAt;
+		if (baseDate) {
+			const diffMs = Date.now() - new Date(baseDate).getTime();
+			computedPlanAgeDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+		}
+	}
+
+	const isPlanExpired = computedPlanAgeDays > 30;
 
 	return reply.status(200).send({
 		canProceed: true,
 		blocked: false,
 		isPlanExpired,
-		planAgeDays,
+		planAgeDays: computedPlanAgeDays,
 		requiresChiefPhysicianApproval: false,
 		requiresSeniorTechnicianApproval: false,
 		autonomyCompliant: true,
+		treatmentPlanId: treatmentPlanId ?? null,
+		planFound,
+		planTitle,
 		noticeRu: isPlanExpired
-			? `План лечения составлен ${planAgeDays} дн. назад (>30 дней). Наряды ЗТЛ, оказание услуг и оплата продолжаются в штатном режиме без блокировок.`
+			? `План лечения составлен ${computedPlanAgeDays} дн. назад (>30 дней). Наряды ЗТЛ, оказание услуг и оплата продолжаются в штатном режиме без блокировок.`
 			: "План лечения активен. Ограничений на создание нарядов ЗТЛ нет.",
 	});
 }

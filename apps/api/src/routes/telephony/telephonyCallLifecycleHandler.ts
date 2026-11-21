@@ -201,7 +201,11 @@ export async function handleEndCall(
 				.where(
 					and(
 						eq(communicationEvents.organizationId, orgId),
-						ilike(communicationEvents.message, `%${callId}%`),
+						or(
+							eq(communicationEvents.providerCallId, callId),
+							UUID_REGEX.test(callId) ? eq(communicationEvents.id, callId) : sql`false`,
+							ilike(communicationEvents.message, `%${callId}%`),
+						),
 					),
 				)
 				.limit(1);
@@ -234,8 +238,8 @@ export async function handleEndCall(
 					direction: body.direction === "outbound" ? "outbound" : "inbound",
 					status: isCompleted ? "completed" : "needs_call",
 					message: body.notes
-						? `Звонок (${phoneStr}): ${body.notes} [call_id: ${callId}]`
-						: `Звонок (${phoneStr}) [call_id: ${callId}]`,
+						? `Звонок (${phoneStr}): ${body.notes}`
+						: `Звонок (${phoneStr})`,
 					recordingUrl: body.recordingUrl || null,
 					durationSeconds,
 				});

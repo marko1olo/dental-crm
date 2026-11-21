@@ -23,18 +23,20 @@ export interface UpdateCallNoteBody {
 	phone?: string;
 }
 
-export function preserveCallIdMarker(
+export function extractCallIdMarker(
 	existingMessage: string | null | undefined,
-	newNote: string,
 	fallbackCallId?: string,
-): string {
+): string | undefined {
 	const match = existingMessage?.match(/\[call_id:\s*([^\]]+)\]/i);
-	const preservedCallId = match ? match[1]?.trim() : fallbackCallId;
-	return newNote.includes("[call_id:")
-		? newNote
-		: preservedCallId
-			? `${newNote} [call_id: ${preservedCallId}]`
-			: newNote;
+	return match ? match[1]?.trim() : fallbackCallId;
+}
+
+export function preserveCallIdMarker(
+	_existingMessage: string | null | undefined,
+	newNote: string,
+	_fallbackCallId?: string,
+): string {
+	return newNote.trim();
 }
 
 export async function telephonyCallUpdateHandler(
@@ -75,6 +77,7 @@ export async function telephonyCallUpdateHandler(
 
 	let updatedCall: {
 		id: string;
+		providerCallId?: string | null;
 		patientId: string | null;
 		callerPhone: string | null;
 		message: string;
@@ -85,7 +88,10 @@ export async function telephonyCallUpdateHandler(
 	if (UUID_REGEX.test(callId)) {
 		updatedCall = await withTenantCtx(orgId, async () => {
 			const existing = await db
-				.select({ message: communicationEvents.message })
+				.select({
+					message: communicationEvents.message,
+					providerCallId: communicationEvents.providerCallId,
+				})
 				.from(communicationEvents)
 				.where(
 					and(
@@ -95,12 +101,16 @@ export async function telephonyCallUpdateHandler(
 				)
 				.limit(1);
 
-			const updatedMessage = preserveCallIdMarker(existing[0]?.message, noteText, callId);
+			const existingRow = existing[0];
+			const inferredProviderCallId =
+				existingRow?.providerCallId ||
+				extractCallIdMarker(existingRow?.message, undefined);
 
 			const res = await db
 				.update(communicationEvents)
 				.set({
-					message: updatedMessage,
+					message: noteText,
+					...(inferredProviderCallId ? { providerCallId: inferredProviderCallId } : {}),
 				})
 				.where(
 					and(
@@ -110,6 +120,7 @@ export async function telephonyCallUpdateHandler(
 				)
 				.returning({
 					id: communicationEvents.id,
+					providerCallId: communicationEvents.providerCallId,
 					patientId: communicationEvents.patientId,
 					callerPhone: communicationEvents.callerPhone,
 					message: communicationEvents.message,
@@ -121,13 +132,16 @@ export async function telephonyCallUpdateHandler(
 		});
 	} else {
 		// Non-UUID call identifier (e.g. Mango, Zadarma, UIS, Asterisk string tokens)
-		// Search in communicationEvents by callId in message or by callerPhone
+		// Search in communicationEvents by providerCallId (relational column)
 		const callerPhone = body.callerPhone ?? body.phone ?? null;
 
 		updatedCall = await withTenantCtx(orgId, async () => {
-			// 1. Точный поиск события звонка по providerCallId или маркеру callId в сообщении
+			// 1. Точный поиск события звонка строго по providerCallId (индексированная колонка)
 			const matchedEvents = await db
-				.select({ id: communicationEvents.id })
+				.select({
+					id: communicationEvents.id,
+					providerCallId: communicationEvents.providerCallId,
+				})
 				.from(communicationEvents)
 				.where(
 					and(
@@ -141,39 +155,24 @@ export async function telephonyCallUpdateHandler(
 				.orderBy(desc(communicationEvents.createdAt))
 				.limit(1);
 
-			const targetEventId: string | null = matchedEvents[0]?.id ?? null;
+			const targetEvent = matchedEvents[0];
 
-			// Опасный фолбэк с перезаписью последнего исторического звонка по номеру телефона удалён:
-			// перезапись чужого разговора недопустима!
-
-			if (targetEventId) {
-				const existing = await db
-					.select({ message: communicationEvents.message, providerCallId: communicationEvents.providerCallId })
-					.from(communicationEvents)
-					.where(
-						and(
-							eq(communicationEvents.id, targetEventId),
-							eq(communicationEvents.organizationId, orgId),
-						),
-					)
-					.limit(1);
-
-				const updatedMessage = preserveCallIdMarker(existing[0]?.message, noteText, callId);
-
+			if (targetEvent) {
 				const res = await db
 					.update(communicationEvents)
 					.set({
-						message: updatedMessage,
-						providerCallId: existing[0]?.providerCallId || callId,
+						message: noteText,
+						providerCallId: targetEvent.providerCallId || callId,
 					})
 					.where(
 						and(
-							eq(communicationEvents.id, targetEventId),
+							eq(communicationEvents.id, targetEvent.id),
 							eq(communicationEvents.organizationId, orgId),
 						),
 					)
 					.returning({
 						id: communicationEvents.id,
+						providerCallId: communicationEvents.providerCallId,
 						patientId: communicationEvents.patientId,
 						callerPhone: communicationEvents.callerPhone,
 						message: communicationEvents.message,
@@ -196,10 +195,11 @@ export async function telephonyCallUpdateHandler(
 					channel: "phone",
 					direction: "inbound",
 					status: "completed",
-					message: `${noteText} [call_id: ${callId}]`,
+					message: noteText,
 				})
 				.returning({
 					id: communicationEvents.id,
+					providerCallId: communicationEvents.providerCallId,
 					patientId: communicationEvents.patientId,
 					callerPhone: communicationEvents.callerPhone,
 					message: communicationEvents.message,

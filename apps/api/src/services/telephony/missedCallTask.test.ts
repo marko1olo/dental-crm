@@ -70,17 +70,12 @@ describe("MissedCallService — Telecom Interception & Urgent Task Engine", () =
 			assert.strictEqual(result.isNewLead, false, "Known patient is not a new lead");
 			assert.strictEqual(result.phone, testPhone, "Should normalize phone");
 
-			// Verify alert generation
-			assert.ok(capturedAlert, "Proactive alert must be broadcast to Copilot SSE stream");
-			const alert = capturedAlert as {
-				urgency: string;
-				title: string;
-				category: string;
-				actions: Array<{ id: string; kind: string }>;
-			};
-			assert.strictEqual(alert.urgency, "CRITICAL", "Alert urgency must be CRITICAL");
-			assert.match(alert.title, /Пропущенный/i, "Alert title must mention missed call");
-			assert.strictEqual(alert.actions[0]?.id, "call_back_urgent", "Action must offer 60s callback");
+			// Mandate 8e & 8v: Missed calls must NEVER spam chairside doctor copilot with clinical alerts!
+			assert.strictEqual(
+				capturedAlert,
+				null,
+				"Missed call is an operational reception task and must NEVER spam doctor copilot with CRITICAL alerts",
+			);
 		} finally {
 			defaultCopilotStreamManager.broadcastProactiveAlert = originalBroadcast;
 		}

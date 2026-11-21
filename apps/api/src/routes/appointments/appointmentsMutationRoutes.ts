@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { and, eq, notInArray } from "drizzle-orm";
+import { computePayloadHash } from "@dental/shared";
 import {
 	createAppointmentInDb,
 	getAppointmentByIdInDb,
@@ -8,6 +9,7 @@ import {
 import { recordAuditEventInDb } from "../../db/auditQuery.js";
 import { db } from "../../db/client.js";
 import { labOrders } from "../../db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { invalidateAppointmentReminders } from "../../services/communications/appointmentReminders.js";
 import { syncRecallOnAppointmentCreated } from "../../services/patients/recallSyncService.js";
@@ -120,6 +122,48 @@ export const createAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.body && typeof request.body === "object"
+			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+			  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+			: undefined);
+	const idempotencyKey =
+		typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+		const [existingRecord] = await db
+			.select()
+			.from(idempotencyKeys)
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, orgId),
+					eq(idempotencyKeys.key, idempotencyKey),
+				),
+			)
+			.limit(1);
+
+		if (existingRecord) {
+			if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply
+					.code(existingRecord.responseCode || 201)
+					.send(existingRecord.responseBody);
+			}
+			if (existingRecord.status === "in_flight") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					code: "IdempotencyConflict",
+					message:
+						"Операция создания записи расписания с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
+	}
+
 	const rawBody = await prepareCreateAppointmentRawBody(
 		orgId,
 		request.body,
@@ -203,6 +247,40 @@ export const createAppointmentHandler = async (
 			reason: input.reason,
 		});
 
+		if (idempotencyKey) {
+			try {
+				await db
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: {
+							success: true,
+							appointment: created,
+						},
+						responseCode: 201,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: {
+								success: true,
+								appointment: created,
+							},
+							responseCode: 201,
+						},
+					});
+			} catch (idemErr) {
+				request.log.warn(
+					{ err: idemErr, idempotencyKey },
+					"[appointments] Failed to persist create idempotency key",
+				);
+			}
+		}
+
 		return await sendDashboardResponseAfterCreate(
 			request,
 			reply,
@@ -242,6 +320,48 @@ export const updateAppointmentHandler = async (
 	if (!context) return reply;
 	const orgId = context.organizationId;
 
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.body && typeof request.body === "object"
+			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+			  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+			: undefined);
+	const idempotencyKey =
+		typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+		const [existingRecord] = await db
+			.select()
+			.from(idempotencyKeys)
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, orgId),
+					eq(idempotencyKeys.key, idempotencyKey),
+				),
+			)
+			.limit(1);
+
+		if (existingRecord) {
+			if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply
+					.code(existingRecord.responseCode || 200)
+					.send(existingRecord.responseBody);
+			}
+			if (existingRecord.status === "in_flight") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					code: "IdempotencyConflict",
+					message:
+						"Операция обновления расписания с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
+	}
+
 	const rawBody =
 		(await prepareUpdateAppointmentRawBody(orgId, request.body, db)) ??
 		normalizeAppointmentUpdateRawBody(request.body);
@@ -257,9 +377,17 @@ export const updateAppointmentHandler = async (
 		});
 	}
 
+	const existingAppt = await getAppointmentByIdInDb(orgId, appointmentId);
+	if (!existingAppt) {
+		return reply.code(404).send({
+			code: "AppointmentNotFound",
+			message: "Запись расписания не найдена.",
+		});
+	}
+	const previousStatus = existingAppt.status;
+
 	if (input.startsAt) {
-		const existingAppt = await getAppointmentByIdInDb(orgId, appointmentId);
-		const effectivePatientId = input.patientId ?? existingAppt?.patientId;
+		const effectivePatientId = input.patientId ?? existingAppt.patientId;
 		const allowOverride = Boolean(
 			(input as { allowLabCollisionOverride?: boolean }).allowLabCollisionOverride ||
 			input.allowEmergencyOverride ||
@@ -330,7 +458,8 @@ export const updateAppointmentHandler = async (
 		}
 
 		// Realtime Schedule Bar: при прибытии пациента ("arrived") шлем сигнал в #ресепшен и #интерком-ассистенты
-		if (input.status === "arrived") {
+		// только при ПЕРВИЧНОМ переходе в статус arrived, исключая спам-шторм интеркома
+		if (input.status === "arrived" && previousStatus !== "arrived") {
 			await dispatchPatientArrivedIntercom(
 				db,
 				request,
@@ -367,6 +496,40 @@ export const updateAppointmentHandler = async (
 			input.status,
 		);
 
+		if (idempotencyKey) {
+			try {
+				await db
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: {
+							success: true,
+							appointment: updatedAppt,
+						},
+						responseCode: 200,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: {
+								success: true,
+								appointment: updatedAppt,
+							},
+							responseCode: 200,
+						},
+					});
+			} catch (idemErr) {
+				request.log.warn(
+					{ err: idemErr, idempotencyKey },
+					"[appointments] Failed to persist update idempotency key",
+				);
+			}
+		}
+
 		return await buildDashboardResponseAfterUpdate(
 			request,
 			orgId,
@@ -396,6 +559,48 @@ export const createNextStageAppointmentHandler = async (
 	);
 	if (!context) return reply;
 	const orgId = context.organizationId;
+
+	const rawIdempotencyKey =
+		(request.headers?.["idempotency-key"] as string | undefined) ??
+		(request.headers?.["x-idempotency-key"] as string | undefined) ??
+		(request.body && typeof request.body === "object"
+			? ((request.body as Record<string, unknown>).idempotencyKey as string | undefined) ??
+			  ((request.body as Record<string, unknown>).clientMutationId as string | undefined)
+			: undefined);
+	const idempotencyKey =
+		typeof rawIdempotencyKey === "string" ? rawIdempotencyKey.trim() : undefined;
+
+	if (idempotencyKey) {
+		reply.header("Idempotency-Key", idempotencyKey);
+		const [existingRecord] = await db
+			.select()
+			.from(idempotencyKeys)
+			.where(
+				and(
+					eq(idempotencyKeys.clinicId, orgId),
+					eq(idempotencyKeys.key, idempotencyKey),
+				),
+			)
+			.limit(1);
+
+		if (existingRecord) {
+			if (existingRecord.status === "completed" && existingRecord.responseBody) {
+				reply.header("idempotency-replayed", "true");
+				reply.header("x-idempotency-replayed", "true");
+				return reply
+					.code(existingRecord.responseCode || 201)
+					.send(existingRecord.responseBody);
+			}
+			if (existingRecord.status === "in_flight") {
+				return reply.code(409).header("Retry-After", "1").send({
+					error: "Conflict",
+					code: "IdempotencyConflict",
+					message:
+						"Операция создания след. этапа приёма с данным Idempotency-Key уже выполняется.",
+				});
+			}
+		}
+	}
 
 	const params = request.params;
 	const appointmentId = params?.appointmentId || params?.id;
@@ -481,11 +686,41 @@ export const createNextStageAppointmentHandler = async (
 			created.id,
 		);
 
-		return reply.code(201).send({
+		const responsePayload: Record<string, unknown> = {
 			success: true,
 			appointment: created,
 			dashboard: dashboard ?? undefined,
-		});
+		};
+
+		if (idempotencyKey) {
+			try {
+				await db
+					.insert(idempotencyKeys)
+					.values({
+						clinicId: orgId,
+						key: idempotencyKey,
+						status: "completed",
+						payloadHash: computePayloadHash(request.body ?? {}),
+						responseBody: responsePayload,
+						responseCode: 201,
+					})
+					.onConflictDoUpdate({
+						target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+						set: {
+							status: "completed",
+							responseBody: responsePayload,
+							responseCode: 201,
+						},
+					});
+			} catch (idemErr) {
+				request.log.warn(
+					{ err: idemErr, idempotencyKey },
+					"[appointments] Failed to persist next-stage idempotency key",
+				);
+			}
+		}
+
+		return reply.code(201).send(responsePayload);
 	} catch (error) {
 		const conflictContext = buildConflictContext(orgId, input);
 		return sendAppointmentRejection(

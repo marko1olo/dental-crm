@@ -166,6 +166,11 @@
 * **DEF-TEL-11 [ЗАКРЫТО]**: В `telephonyCallUpdateHandler.ts` устранен опасный фолбэк (бывшие строки 143-159), перезаписывавший последний звонок по номеру телефона при несовпадении ID. Обеспечена строгая изоляция клинических заметок регистратора.
 * **DEF-TEL-12 [ЗАКРЫТО]**: В `callerLookupService.ts` реализован сквозной CTI-поиск по E.164, последним 10 цифрам и городским 7-значным номерам для таблиц `patients` и `crmLeads`.
 * **DEF-TEL-13 [ЗАКРЫТО]**: В `telephonyWebhookHandler.ts` внедрено обязательное маскирование номеров телефонов в логах (`maskPhoneDisplay`) согласно требованиям 152-ФЗ.
+* **DEF-TEL-14 [ЗАКРЫТО]**: Полная ликвидация спама в Копилот врача (`missedCallService.ts`). Изъят вызов `defaultCopilotStreamManager.broadcastProactiveAlert` с `urgency: "CRITICAL"` и категорией `clinical_alert` при пропущенных звонках АТС (Мандаты 8e, 8v: пропущенный вызов — операционная задача регистратора со SLA 60с, а не клиническая тревога у кресла). Переписан тест-саботажник `missedCallTask.test.ts`.
+* **DEF-TEL-15 [ЗАКРЫТО]**: Ликвидирован парсинг заметок регулярками `[call_id: ...]` и `ilike` в `telephonyCallUpdateHandler.ts`, `telephonyCallLifecycleHandler.ts`, `telephonyGatewayService.ts`, `telephonyWebhookEndedService.ts`. Поле `message` в `communication_events` очищено от служебного мусора и хранит только чистый человеческий текст. Идентификация и дедупликация звонков переведены строго на индексированную колонку `providerCallId`.
+* **DEF-TEL-16 [ЗАКРЫТО]**: В `phoneNormalization.ts` функция `isValidRussianPhone` доработана для полной поддержки географических городских кодов РФ (ABC зоны 3xx, 4xx, 8xx: Москва 495/499, СПб 812, Екатеринбург 343, Казань 843 и др.) наряду с мобильными кодами DEF (9xx). Покрыто тестами в `strings.test.ts`.
+* **DEF-TEL-17 [ЗАКРЫТО]**: В `initiateOutboundCall.ts` и `telephonyOutboundHandler.ts` снята блокировка набора коротких внутренних номеров персонала: разрешен исходящий вызов на 3-значные SIP Extensions (100–999).
+* **DEF-TEL-18 [ЗАКРЫТО]**: В `telephonyMissedCallsHandler.ts:30` ликвидирован non-null assertion `!` при составлении фильтра статусов звонков (Мандат 8be).
 
 
 

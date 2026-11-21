@@ -331,7 +331,10 @@ export class TelephonyGatewayService {
 						.where(
 							and(
 								eq(communicationEvents.organizationId, organizationId),
-								ilike(communicationEvents.message, `%ID: ${callId}%`),
+								or(
+									eq(communicationEvents.providerCallId, callId),
+									ilike(communicationEvents.message, `%ID: ${callId}%`),
+								),
 							),
 						)
 						.limit(1);
@@ -343,12 +346,14 @@ export class TelephonyGatewayService {
 
 					await db.insert(communicationEvents).values({
 						organizationId,
+						providerCallId: callId || null,
+						providerName: "asterisk",
 						patientId: patient?.id || null,
 						callerPhone: e164,
 						channel: "phone",
 						direction: "inbound",
 						status: "completed",
-						message: `Локальный звонок Asterisk завершён (${callId ? `ID: ${callId}` : "прямой вызов"}${!patient ? ", первичный абонент" : ""})`,
+						message: `Локальный звонок Asterisk завершён${!patient ? " (первичный абонент)" : ""}`,
 						durationSeconds: duration > 0 ? duration : null,
 						recordingUrl: payload.recordingUrl || null,
 					});
