@@ -110,14 +110,20 @@ export async function handleCreatePayment(
 			});
 		}
 
+		const isSplit =
+			paymentInput.method === "split" ||
+			paymentInput.method === "mixed" ||
+			resultData.method === "split" ||
+			paymentRow.method === "split";
+
 		const formattedPayment = {
 			id: paymentRow.id,
 			organizationId: paymentRow.organizationId,
 			patientId: paymentRow.patientId,
 			visitId: paymentRow.visitId,
 			documentId: paymentRow.documentId,
-			amountRub: Number(paymentRow.amountRub),
-			method: paymentRow.method === "split" ? "card" : paymentRow.method,
+			amountRub: Number(resultData.amountRub ?? (paymentInput.amountRub ?? paymentRow.amountRub)),
+			method: (isSplit ? "split" : paymentRow.method) as typeof paymentRow.method,
 			status: paymentRow.status,
 			paidAt: paymentRow.paidAt ? paymentRow.paidAt.toISOString() : null,
 			createdAt: paymentRow.createdAt ? paymentRow.createdAt.toISOString() : new Date().toISOString(),
@@ -125,7 +131,7 @@ export async function handleCreatePayment(
 			fiscalReceiptIssuedAt: paymentRow.fiscalReceiptIssuedAt,
 			fiscalReceiptUrl: paymentRow.fiscalReceiptUrl,
 			fiscalReceipt: paymentRow.fiscalReceipt,
-			clientMutationId: paymentRow.clientMutationId,
+			clientMutationId: effectiveMutationId,
 			payerFullName: paymentRow.payerFullName,
 			payerInn: paymentRow.payerInn,
 			payerBirthDate: paymentRow.payerBirthDate,

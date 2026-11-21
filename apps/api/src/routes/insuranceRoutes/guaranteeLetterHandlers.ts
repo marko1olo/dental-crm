@@ -1,7 +1,10 @@
 import {
 	type DmsGuaranteeLetter,
+	computePayloadHash,
 	dmsGuaranteeLetterCreateSchema,
 	dmsGuaranteeLetterUpdateSchema,
+	kopecksToRubles,
+	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq, ilike, or, type SQL } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -11,6 +14,7 @@ import {
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { dmsGuaranteeLetters } from "../../db/schema.js";
+import { idempotencyKeys } from "../../db/schema/idempotency.js";
 import { guaranteeLetterQuerySchema, recordUsageBodySchema } from "./types.js";
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -95,8 +99,8 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			}
 			const maxRub = Number(l.maxCoverageRub);
 			const usedRub = Number(l.usedAmountRub);
-			const limitKop = Math.round(maxRub * 100);
-			const usedKop = Math.round(usedRub * 100);
+			const limitKop = rublesToKopecks(maxRub);
+			const usedKop = rublesToKopecks(usedRub);
 			const remainingLimitKop = Math.max(0, limitKop - usedKop);
 			return {
 				...l,
@@ -171,8 +175,8 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 
 			const maxRub = Number(letter.maxCoverageRub);
 			const usedRub = Number(letter.usedAmountRub);
-			const limitKop = Math.round(maxRub * 100);
-			const usedKop = Math.round(usedRub * 100);
+			const limitKop = rublesToKopecks(maxRub);
+			const usedKop = rublesToKopecks(usedRub);
 			const remainingLimitKop = Math.max(0, limitKop - usedKop);
 
 			return reply.code(200).send({
@@ -220,7 +224,7 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 		const data = parsed.data;
 		const effectiveMaxRub = data.maxCoverageRub > 0
 			? data.maxCoverageRub
-			: (data.limitKopecks ? data.limitKopecks / 100 : (data.maxCoverageKopecks ? data.maxCoverageKopecks / 100 : 0));
+			: (data.limitKopecks ? kopecksToRubles(data.limitKopecks) : (data.maxCoverageKopecks ? kopecksToRubles(data.maxCoverageKopecks) : 0));
 
 		if (effectiveMaxRub <= 0) {
 			return reply.code(400).send({
@@ -239,37 +243,41 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 
 		const validLetterId = isValidUuid(data.id) ? data.id : undefined;
 
-		const [created] = await db
-			.insert(dmsGuaranteeLetters)
-			.values({
-				...(validLetterId ? { id: validLetterId } : {}),
-				organizationId: orgId,
-				contractId: data.contractId ?? null,
-				patientId: data.patientId,
-				patientFullName: data.patientFullName.trim(),
-				patientBirthDate: data.patientBirthDate ?? null,
-				policyNumber: data.policyNumber.trim(),
-				insurerKey: data.insurerKey || "custom",
-				insurerName: data.insurerName.trim(),
-				letterNumber: data.letterNumber.trim(),
-				issueDate: data.issueDate,
-				validFrom: data.validFrom,
-				validUntil: effectiveValidUntil,
-				maxCoverageRub: effectiveMaxRub,
-				usedAmountRub: data.usedAmountRub ?? (data.usedKopecks ? data.usedKopecks / 100 : 0),
-				franchisePct: data.franchisePct ?? 0,
-				franchiseType: data.franchiseType ?? "percent",
-				franchiseFixedRub: data.franchiseFixedRub ?? 0,
-				programExclusions: data.programExclusions ?? [],
-				approvedServiceCodes: data.approvedServiceCodes ?? [],
-				approvedTeethFdi: data.approvedTeethFdi ?? [],
-				approvedDiagnosisCodes: data.approvedDiagnosisCodes ?? [],
-				curatorFullName: data.curatorFullName ?? null,
-				curatorPhone: data.curatorPhone ?? null,
-				notes: data.notes ?? "",
-				status: data.status ?? "active",
-			})
-			.returning();
+		const created = await db.transaction(async (tx) => {
+			const [inserted] = await tx
+				.insert(dmsGuaranteeLetters)
+				.values({
+					...(validLetterId ? { id: validLetterId } : {}),
+					organizationId: orgId,
+					contractId: data.contractId ?? null,
+					patientId: data.patientId,
+					patientFullName: data.patientFullName.trim(),
+					patientBirthDate: data.patientBirthDate ?? null,
+					policyNumber: data.policyNumber.trim(),
+					insurerKey: data.insurerKey || "custom",
+					insurerName: data.insurerName.trim(),
+					letterNumber: data.letterNumber.trim(),
+					issueDate: data.issueDate,
+					validFrom: data.validFrom,
+					validUntil: effectiveValidUntil,
+					maxCoverageRub: effectiveMaxRub,
+					usedAmountRub: data.usedAmountRub ?? (data.usedKopecks ? kopecksToRubles(data.usedKopecks) : 0),
+					franchisePct: data.franchisePct ?? 0,
+					franchiseType: data.franchiseType ?? "percent",
+					franchiseFixedRub: data.franchiseFixedRub ?? 0,
+					programExclusions: data.programExclusions ?? [],
+					approvedServiceCodes: data.approvedServiceCodes ?? [],
+					approvedTeethFdi: data.approvedTeethFdi ?? [],
+					approvedDiagnosisCodes: data.approvedDiagnosisCodes ?? [],
+					curatorFullName: data.curatorFullName ?? null,
+					curatorPhone: data.curatorPhone ?? null,
+					notes: data.notes ?? "",
+					status: data.status ?? "active",
+				})
+				.returning();
+
+			return inserted;
+		});
 
 		if (!created) {
 			return reply.code(500).send({
@@ -280,8 +288,8 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 
 		const createdMaxRub = Number(created.maxCoverageRub);
 		const createdUsedRub = Number(created.usedAmountRub);
-		const createdLimitKop = Math.round(createdMaxRub * 100);
-		const createdUsedKop = Math.round(createdUsedRub * 100);
+		const createdLimitKop = rublesToKopecks(createdMaxRub);
+		const createdUsedKop = rublesToKopecks(createdUsedRub);
 
 		return reply.code(201).send({
 			...created,
@@ -325,24 +333,6 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const [existing] = await db
-				.select()
-				.from(dmsGuaranteeLetters)
-				.where(
-					and(
-						eq(dmsGuaranteeLetters.id, letterId),
-						eq(dmsGuaranteeLetters.organizationId, orgId),
-					),
-				)
-				.limit(1);
-
-			if (!existing) {
-				return reply.code(404).send({
-					error: "LetterNotFound",
-					message: "Гарантийное письмо ДМС не найдено в вашей клинике.",
-				});
-			}
-
 			const parsed = dmsGuaranteeLetterUpdateSchema.safeParse(request.body);
 			if (!parsed.success) {
 				const msg = parsed.error.issues[0]?.message ?? "Проверьте правильность обновления гарантийного письма.";
@@ -353,68 +343,97 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			}
 
 			const d = parsed.data;
-			const updateData: Partial<typeof dmsGuaranteeLetters.$inferInsert> = {
-				updatedAt: new Date(),
-			};
 
-			if (d.contractId !== undefined) updateData.contractId = d.contractId ?? null;
-			if (d.patientId !== undefined) updateData.patientId = d.patientId;
-			if (d.patientFullName !== undefined) updateData.patientFullName = d.patientFullName.trim();
-			if (d.patientBirthDate !== undefined) updateData.patientBirthDate = d.patientBirthDate ?? null;
-			if (d.policyNumber !== undefined) updateData.policyNumber = d.policyNumber.trim();
-			if (d.insurerKey !== undefined) updateData.insurerKey = d.insurerKey;
-			if (d.insurerName !== undefined) updateData.insurerName = d.insurerName.trim();
-			if (d.letterNumber !== undefined) updateData.letterNumber = d.letterNumber.trim();
-			if (d.issueDate !== undefined) updateData.issueDate = d.issueDate;
-			if (d.validFrom !== undefined) updateData.validFrom = d.validFrom;
-			if (d.validUntil !== undefined) updateData.validUntil = d.validUntil;
-			else if (d.validTo !== undefined) updateData.validUntil = d.validTo;
-			if (d.maxCoverageRub !== undefined) updateData.maxCoverageRub = d.maxCoverageRub;
-			else if (d.limitKopecks !== undefined) updateData.maxCoverageRub = d.limitKopecks / 100;
-			else if (d.maxCoverageKopecks !== undefined) updateData.maxCoverageRub = d.maxCoverageKopecks / 100;
-			if (d.usedAmountRub !== undefined) updateData.usedAmountRub = d.usedAmountRub;
-			else if (d.usedKopecks !== undefined) updateData.usedAmountRub = d.usedKopecks / 100;
-			else if (d.usedAmountKopecks !== undefined) updateData.usedAmountRub = d.usedAmountKopecks / 100;
-			if (d.franchisePct !== undefined) updateData.franchisePct = d.franchisePct;
-			if (d.franchiseType !== undefined) updateData.franchiseType = d.franchiseType;
-			if (d.franchiseFixedRub !== undefined) updateData.franchiseFixedRub = d.franchiseFixedRub;
-			if (d.programExclusions !== undefined) updateData.programExclusions = d.programExclusions;
-			if (d.approvedServiceCodes !== undefined) updateData.approvedServiceCodes = d.approvedServiceCodes;
-			if (d.approvedTeethFdi !== undefined) updateData.approvedTeethFdi = d.approvedTeethFdi;
-			if (d.approvedDiagnosisCodes !== undefined) updateData.approvedDiagnosisCodes = d.approvedDiagnosisCodes;
-			if (d.curatorFullName !== undefined) updateData.curatorFullName = d.curatorFullName ?? null;
-			if (d.curatorPhone !== undefined) updateData.curatorPhone = d.curatorPhone ?? null;
-			if (d.notes !== undefined) updateData.notes = d.notes;
-			if (d.status !== undefined) updateData.status = d.status;
+			const txResult = await db.transaction(async (tx) => {
+				const [existing] = await tx
+					.select()
+					.from(dmsGuaranteeLetters)
+					.where(
+						and(
+							eq(dmsGuaranteeLetters.id, letterId),
+							eq(dmsGuaranteeLetters.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
 
-			const finalMax = updateData.maxCoverageRub !== undefined ? Number(updateData.maxCoverageRub) : Number(existing.maxCoverageRub);
-			const finalUsed = updateData.usedAmountRub !== undefined ? Number(updateData.usedAmountRub) : Number(existing.usedAmountRub);
-			if (finalUsed >= finalMax && updateData.status === undefined) {
-				updateData.status = "exhausted";
+				if (!existing) {
+					return { status: 404, error: { error: "LetterNotFound", message: "Гарантийное письмо ДМС не найдено в вашей клинике." } };
+				}
+
+				const updateData: Partial<typeof dmsGuaranteeLetters.$inferInsert> = {
+					updatedAt: new Date(),
+				};
+
+				if (d.contractId !== undefined) updateData.contractId = d.contractId ?? null;
+				if (d.patientId !== undefined) updateData.patientId = d.patientId;
+				if (d.patientFullName !== undefined) updateData.patientFullName = d.patientFullName.trim();
+				if (d.patientBirthDate !== undefined) updateData.patientBirthDate = d.patientBirthDate ?? null;
+				if (d.policyNumber !== undefined) updateData.policyNumber = d.policyNumber.trim();
+				if (d.insurerKey !== undefined) updateData.insurerKey = d.insurerKey;
+				if (d.insurerName !== undefined) updateData.insurerName = d.insurerName.trim();
+				if (d.letterNumber !== undefined) updateData.letterNumber = d.letterNumber.trim();
+				if (d.issueDate !== undefined) updateData.issueDate = d.issueDate;
+				if (d.validFrom !== undefined) updateData.validFrom = d.validFrom;
+				if (d.validUntil !== undefined) updateData.validUntil = d.validUntil;
+				else if (d.validTo !== undefined) updateData.validUntil = d.validTo;
+				if (d.maxCoverageRub !== undefined) updateData.maxCoverageRub = d.maxCoverageRub;
+				else if (d.limitKopecks !== undefined) updateData.maxCoverageRub = kopecksToRubles(d.limitKopecks);
+				else if (d.maxCoverageKopecks !== undefined) updateData.maxCoverageRub = kopecksToRubles(d.maxCoverageKopecks);
+				if (d.usedAmountRub !== undefined) updateData.usedAmountRub = d.usedAmountRub;
+				else if (d.usedKopecks !== undefined) updateData.usedAmountRub = kopecksToRubles(d.usedKopecks);
+				else if (d.usedAmountKopecks !== undefined) updateData.usedAmountRub = kopecksToRubles(d.usedAmountKopecks);
+				if (d.franchisePct !== undefined) updateData.franchisePct = d.franchisePct;
+				if (d.franchiseType !== undefined) updateData.franchiseType = d.franchiseType;
+				if (d.franchiseFixedRub !== undefined) updateData.franchiseFixedRub = d.franchiseFixedRub;
+				if (d.programExclusions !== undefined) updateData.programExclusions = d.programExclusions;
+				if (d.approvedServiceCodes !== undefined) updateData.approvedServiceCodes = d.approvedServiceCodes;
+				if (d.approvedTeethFdi !== undefined) updateData.approvedTeethFdi = d.approvedTeethFdi;
+				if (d.approvedDiagnosisCodes !== undefined) updateData.approvedDiagnosisCodes = d.approvedDiagnosisCodes;
+				if (d.curatorFullName !== undefined) updateData.curatorFullName = d.curatorFullName ?? null;
+				if (d.curatorPhone !== undefined) updateData.curatorPhone = d.curatorPhone ?? null;
+				if (d.notes !== undefined) updateData.notes = d.notes;
+				if (d.status !== undefined) updateData.status = d.status;
+
+				const finalMax = updateData.maxCoverageRub !== undefined ? Number(updateData.maxCoverageRub) : Number(existing.maxCoverageRub);
+				const finalUsed = updateData.usedAmountRub !== undefined ? Number(updateData.usedAmountRub) : Number(existing.usedAmountRub);
+				if (finalUsed >= finalMax && updateData.status === undefined) {
+					updateData.status = "exhausted";
+				}
+
+				const [updated] = await tx
+					.update(dmsGuaranteeLetters)
+					.set(updateData)
+					.where(
+						and(
+							eq(dmsGuaranteeLetters.id, letterId),
+							eq(dmsGuaranteeLetters.organizationId, orgId),
+						),
+					)
+					.returning();
+
+				if (!updated) {
+					return {
+						status: 404,
+						error: {
+							error: "guarantee_letter_not_found",
+							message: "Гарантийное письмо не найдено или не принадлежит организации",
+						},
+					};
+				}
+
+				return { status: 200, data: updated };
+			});
+
+			if (txResult.status !== 200 || !txResult.data) {
+				return reply.code(txResult.status).send(txResult.error);
 			}
 
-			const [updated] = await db
-				.update(dmsGuaranteeLetters)
-				.set(updateData)
-				.where(
-					and(
-						eq(dmsGuaranteeLetters.id, letterId),
-						eq(dmsGuaranteeLetters.organizationId, orgId),
-					),
-				)
-				.returning();
-
-			if (!updated) {
-				return reply.code(404).send({
-					error: "guarantee_letter_not_found",
-					message: "Гарантийное письмо не найдено или не принадлежит организации",
-				});
-			}
-
+			const updated = txResult.data;
 			const updatedMaxRub = Number(updated.maxCoverageRub);
 			const updatedUsedRub = Number(updated.usedAmountRub);
-			const updatedLimitKop = Math.round(updatedMaxRub * 100);
-			const updatedUsedKop = Math.round(updatedUsedRub * 100);
+			const updatedLimitKop = rublesToKopecks(updatedMaxRub);
+			const updatedUsedKop = rublesToKopecks(updatedUsedRub);
 
 			return reply.code(200).send({
 				...updated,
@@ -459,33 +478,39 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const [existing] = await db
-				.select({ id: dmsGuaranteeLetters.id })
-				.from(dmsGuaranteeLetters)
-				.where(
-					and(
-						eq(dmsGuaranteeLetters.id, letterId),
-						eq(dmsGuaranteeLetters.organizationId, orgId),
-					),
-				)
-				.limit(1);
+			const deleteResult = await db.transaction(async (tx) => {
+				const [existing] = await tx
+					.select({ id: dmsGuaranteeLetters.id })
+					.from(dmsGuaranteeLetters)
+					.where(
+						and(
+							eq(dmsGuaranteeLetters.id, letterId),
+							eq(dmsGuaranteeLetters.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
 
-			if (!existing) {
-				return reply.code(404).send({
-					error: "LetterNotFound",
-					message: "Гарантийное письмо ДМС не найдено в вашей клинике.",
-				});
+				if (!existing) {
+					return { status: 404, error: { error: "LetterNotFound", message: "Гарантийное письмо ДМС не найдено в вашей клинике." } };
+				}
+
+				await tx
+					.update(dmsGuaranteeLetters)
+					.set({ status: "cancelled", updatedAt: new Date() })
+					.where(
+						and(
+							eq(dmsGuaranteeLetters.id, letterId),
+							eq(dmsGuaranteeLetters.organizationId, orgId),
+						),
+					);
+
+				return { status: 200 };
+			});
+
+			if (deleteResult.status !== 200) {
+				return reply.code(deleteResult.status).send(deleteResult.error);
 			}
-
-			await db
-				.update(dmsGuaranteeLetters)
-				.set({ status: "cancelled", updatedAt: new Date() })
-				.where(
-					and(
-						eq(dmsGuaranteeLetters.id, letterId),
-						eq(dmsGuaranteeLetters.organizationId, orgId),
-					),
-				);
 
 			return reply.code(200).send({
 				success: true,
@@ -519,9 +544,47 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 			const { amountRub } = parsed.data;
 			const isUrgentCare = Boolean(parsed.data.isEmergency || parsed.data.hasAcutePain || parsed.data.allowOverdraft);
 
+			const rawBodyMutationId = (request.body as { clientMutationId?: unknown })?.clientMutationId;
+			const rawIdemKey =
+				(request.headers["idempotency-key"] as string | undefined) ||
+				(request.headers["x-idempotency-key"] as string | undefined) ||
+				(typeof rawBodyMutationId === "string" ? rawBodyMutationId : undefined);
+			const idempotencyKey =
+				typeof rawIdemKey === "string" && rawIdemKey.trim().length > 0
+					? rawIdemKey.trim()
+					: undefined;
+
+			if (idempotencyKey) {
+				const [existingRecord] = await db
+					.select()
+					.from(idempotencyKeys)
+					.where(
+						and(
+							eq(idempotencyKeys.clinicId, orgId),
+							eq(idempotencyKeys.key, idempotencyKey),
+						),
+					)
+					.limit(1);
+
+				if (existingRecord) {
+					if (existingRecord.status === "completed" && existingRecord.responseBody) {
+						reply.header("Idempotency-Key", idempotencyKey);
+						reply.header("idempotency-replayed", "true");
+						reply.header("x-idempotency-replayed", "true");
+						return reply.code(existingRecord.responseCode || 200).send(existingRecord.responseBody);
+					}
+					if (existingRecord.status === "in_flight") {
+						return reply.code(409).header("Retry-After", "1").send({
+							error: "Conflict",
+							message: "Операция списания по гарантийному письму с данным Idempotency-Key уже выполняется.",
+						});
+					}
+				}
+			}
+
 			// Мандат 8e: если списание производится для экстренного визита без ГП
 			if (letterId === "emergency" || letterId === "emergency_pending_letter" || letterId === "none" || letterId === "acute-pain") {
-				return reply.code(200).send({
+				const emergencyPayload = {
 					success: true,
 					letterId,
 					debitedAmountRub: amountRub,
@@ -530,7 +593,11 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 					status: "pending_letter",
 					warning: "Требуется досылка гарантийного письма ДМС",
 					isEmergency: true,
-				});
+				};
+				if (idempotencyKey) {
+					reply.header("Idempotency-Key", idempotencyKey);
+				}
+				return reply.code(200).send(emergencyPayload);
 			}
 
 			if (!isValidUuid(letterId)) {
@@ -555,18 +622,19 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 
 				if (!letter) {
 					if (isUrgentCare) {
+						const emergencyData = {
+							success: true,
+							letterId,
+							debitedAmountRub: amountRub,
+							usedAmountRub: amountRub,
+							remainingCoverageRub: 0,
+							status: "pending_letter",
+							warning: "Требуется досылка гарантийного письма ДМС",
+							isEmergency: true,
+						};
 						return {
 							status: 200,
-							data: {
-								success: true,
-								letterId,
-								debitedAmountRub: amountRub,
-								usedAmountRub: amountRub,
-								remainingCoverageRub: 0,
-								status: "pending_letter",
-								warning: "Требуется досылка гарантийного письма ДМС",
-								isEmergency: true,
-							},
+							data: emergencyData,
 						};
 					}
 					return {
@@ -580,18 +648,19 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 
 				if (letter.status === "cancelled") {
 					if (isUrgentCare) {
+						const emergencyData = {
+							success: true,
+							letterId: letter.id,
+							debitedAmountRub: amountRub,
+							usedAmountRub: Number(letter.usedAmountRub),
+							remainingCoverageRub: 0,
+							status: letter.status,
+							warning: "Требуется досылка гарантийного письма ДМС",
+							isEmergency: true,
+						};
 						return {
 							status: 200,
-							data: {
-								success: true,
-								letterId: letter.id,
-								debitedAmountRub: amountRub,
-								usedAmountRub: Number(letter.usedAmountRub),
-								remainingCoverageRub: 0,
-								status: letter.status,
-								warning: "Требуется досылка гарантийного письма ДМС",
-								isEmergency: true,
-							},
+							data: emergencyData,
 						};
 					}
 					return {
@@ -606,18 +675,19 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				const todayIso = new Date().toISOString().slice(0, 10);
 				if (letter.validUntil && letter.validUntil < todayIso) {
 					if (isUrgentCare) {
+						const emergencyData = {
+							success: true,
+							letterId: letter.id,
+							debitedAmountRub: amountRub,
+							usedAmountRub: Number(letter.usedAmountRub),
+							remainingCoverageRub: 0,
+							status: letter.status,
+							warning: "Требуется досылка гарантийного письма ДМС",
+							isEmergency: true,
+						};
 						return {
 							status: 200,
-							data: {
-								success: true,
-								letterId: letter.id,
-								debitedAmountRub: amountRub,
-								usedAmountRub: Number(letter.usedAmountRub),
-								remainingCoverageRub: 0,
-								status: letter.status,
-								warning: "Требуется досылка гарантийного письма ДМС",
-								isEmergency: true,
-							},
+							data: emergencyData,
 						};
 					}
 					return {
@@ -629,17 +699,17 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 					};
 				}
 
-				const maxCoverageKop = Math.round(Number(letter.maxCoverageRub) * 100);
-				const currentUsedKop = Math.round(Number(letter.usedAmountRub) * 100);
-				const amountKop = Math.round(amountRub * 100);
+				const maxCoverageKop = rublesToKopecks(Number(letter.maxCoverageRub));
+				const currentUsedKop = rublesToKopecks(Number(letter.usedAmountRub));
+				const amountKop = rublesToKopecks(amountRub);
 				const remainingBeforeKop = Math.max(0, maxCoverageKop - currentUsedKop);
-				const remainingBeforeRub = remainingBeforeKop / 100;
+				const remainingBeforeRub = kopecksToRubles(remainingBeforeKop);
 
 				if (amountKop > remainingBeforeKop) {
 					if (isUrgentCare) {
 						// Мандат 8e: при острой боли превышение лимита не блокирует приём
 						const newUsedAmountKop = currentUsedKop + amountKop;
-						const newUsedAmount = newUsedAmountKop / 100;
+						const newUsedAmount = kopecksToRubles(newUsedAmountKop);
 						const [updated] = await tx
 							.update(dmsGuaranteeLetters)
 							.set({
@@ -665,18 +735,41 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 							};
 						}
 
+						const overdraftData = {
+							success: true,
+							letterId: updated.id,
+							debitedAmountRub: amountRub,
+							usedAmountRub: Number(updated.usedAmountRub),
+							remainingCoverageRub: 0,
+							status: updated.status,
+							warning: "Требуется досылка гарантийного письма ДМС",
+							isEmergency: true,
+						};
+
+						if (idempotencyKey) {
+							await tx
+								.insert(idempotencyKeys)
+								.values({
+									clinicId: orgId,
+									key: idempotencyKey,
+									status: "completed",
+									payloadHash: computePayloadHash(request.body ?? {}),
+									responseBody: overdraftData,
+									responseCode: 200,
+								})
+								.onConflictDoUpdate({
+									target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+									set: {
+										status: "completed",
+										responseBody: overdraftData,
+										responseCode: 200,
+									},
+								});
+						}
+
 						return {
 							status: 200,
-							data: {
-								success: true,
-								letterId: updated.id,
-								debitedAmountRub: amountRub,
-								usedAmountRub: Number(updated.usedAmountRub),
-								remainingCoverageRub: 0,
-								status: updated.status,
-								warning: "Требуется досылка гарантийного письма ДМС",
-								isEmergency: true,
-							},
+							data: overdraftData,
 						};
 					}
 					return {
@@ -689,7 +782,7 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 				}
 
 				const newUsedAmountKop = currentUsedKop + amountKop;
-				const newUsedAmount = newUsedAmountKop / 100;
+				const newUsedAmount = kopecksToRubles(newUsedAmountKop);
 				let newStatus = letter.status;
 				if (newUsedAmountKop >= maxCoverageKop) {
 					newStatus = "exhausted";
@@ -722,21 +815,47 @@ export async function registerGuaranteeLetterRoutes(app: FastifyInstance) {
 
 				const remainingCoverageKop = Math.max(0, maxCoverageKop - newUsedAmountKop);
 
+				const successData = {
+					success: true,
+					letterId: updated.id,
+					debitedAmountRub: amountRub,
+					usedAmountRub: Number(updated.usedAmountRub),
+					remainingCoverageRub: kopecksToRubles(remainingCoverageKop),
+					status: updated.status,
+				};
+
+				if (idempotencyKey) {
+					await tx
+						.insert(idempotencyKeys)
+						.values({
+							clinicId: orgId,
+							key: idempotencyKey,
+							status: "completed",
+							payloadHash: computePayloadHash(request.body ?? {}),
+							responseBody: successData,
+							responseCode: 200,
+						})
+						.onConflictDoUpdate({
+							target: [idempotencyKeys.clinicId, idempotencyKeys.key],
+							set: {
+								status: "completed",
+								responseBody: successData,
+								responseCode: 200,
+							},
+						});
+				}
+
 				return {
 					status: 200,
-					data: {
-						success: true,
-						letterId: updated.id,
-						debitedAmountRub: amountRub,
-						usedAmountRub: Number(updated.usedAmountRub),
-						remainingCoverageRub: remainingCoverageKop / 100,
-						status: updated.status,
-					},
+					data: successData,
 				};
 			});
 
 			if (result.status !== 200) {
 				return reply.code(result.status).send(result.error);
+			}
+			if (idempotencyKey) {
+				reply.header("Idempotency-Key", idempotencyKey);
 			}
 			return reply.code(200).send(result.data);
 		},

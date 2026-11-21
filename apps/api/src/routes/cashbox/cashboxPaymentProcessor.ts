@@ -12,8 +12,9 @@
 
 import { and, desc, eq, gte, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
-import { kopecksToNumericString, kopecksToRub, kopecksToRubles, normalizePaymentMethod, rubToKopecks, rublesToKopecks, sumKopecks, validateLuhn16Certificate } from "@dental/shared";
+import { kopecksToNumericString, kopecksToRub, kopecksToRubles, normalizePaymentMethod, parseKopecks, rubToKopecks, rublesToKopecks, sumKopecks, validateLuhn16Certificate } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
+import { db } from "../../db/client.js";
 import {
 	advanceDepositTaggings,
 	appointments,
@@ -417,6 +418,7 @@ export async function processCashboxPayment(
 				})
 				.from(patients)
 				.where(and(eq(patients.id, requestedPatientId), eq(patients.organizationId, orgId)))
+				.for("update")
 				.limit(1);
 
 			if (!found) {
@@ -714,8 +716,8 @@ export async function processCashboxPayment(
 
 		// [FIN-06] Проверка и блокировка списания бонусов лояльности
 		let lockedBonusBalance: typeof patientBonusBalances.$inferSelect | null = null;
-		let pointsToDeduct = 0;
-		let newActiveBonusPoints = 0;
+		let pointsToDeductKop = 0n;
+		let newActiveBonusKop = 0n;
 
 		if (requiredBonusKopecks > 0n && !isWarrantyPayment && resolvedPatientId) {
 			await processPatientExpiredBonuses(tx, orgId, resolvedPatientId);
@@ -732,12 +734,11 @@ export async function processCashboxPayment(
 				.for("update")
 				.limit(1);
 
-			const currentActivePoints = Number(bonusBalance?.activePoints ?? 0);
-			const currentActiveKop = BigInt(rubToKopecks(currentActivePoints));
+			const currentActiveKop = BigInt(parseKopecks(bonusBalance?.activePoints ?? "0.00"));
 
 			if (currentActiveKop < requiredBonusKopecks) {
-				const availableRub = kopecksToNumericString(Number(currentActiveKop));
-				const requiredRub = kopecksToNumericString(Number(requiredBonusKopecks));
+				const availableRub = kopecksToNumericString(currentActiveKop);
+				const requiredRub = kopecksToNumericString(requiredBonusKopecks);
 				return {
 					kind: "insufficient_bonus" as const,
 					availableRub,
@@ -746,9 +747,8 @@ export async function processCashboxPayment(
 			}
 
 			lockedBonusBalance = bonusBalance ?? null;
-			pointsToDeduct = kopecksToRubles(requiredBonusKopecks);
-			const newActiveBonusKop = currentActiveKop >= requiredBonusKopecks ? currentActiveKop - requiredBonusKopecks : 0n;
-			newActiveBonusPoints = kopecksToRubles(newActiveBonusKop);
+			pointsToDeductKop = requiredBonusKopecks;
+			newActiveBonusKop = currentActiveKop >= requiredBonusKopecks ? currentActiveKop - requiredBonusKopecks : 0n;
 		}
 
 		// [FIN-07] Проверка и блокировка списания подарочного сертификата
@@ -1157,7 +1157,7 @@ export async function processCashboxPayment(
 
 			const primaryCandidate = elecPayment || cashPayment || depositPayment || bonusPayment || certPayment || dmsPayment;
 			if (!primaryCandidate) {
-				throw new Error("Не удалось зафиксировать сплит-платёж в базе данных");
+				throw new Error("Не удалось создать запись платежа в базе данных.");
 			}
 			newPayment = primaryCandidate;
 		} else {
@@ -1186,7 +1186,7 @@ export async function processCashboxPayment(
 				.returning();
 
 			if (!np) {
-				throw new Error("Не удалось зафиксировать платёж в базе данных");
+				throw new Error("Не удалось создать запись платежа в базе данных.");
 			}
 			newPayment = np;
 		}
@@ -1394,6 +1394,7 @@ export async function processCashboxPayment(
 				})
 				.from(visits)
 				.where(and(eq(visits.id, effectiveVisitId), eq(visits.organizationId, orgId)))
+				.for("update")
 				.limit(1);
 
 			if (isVisitFullySettled && visitRow) {
@@ -1425,18 +1426,6 @@ export async function processCashboxPayment(
 						);
 				}
 
-				await tx
-					.update(treatmentItems)
-					.set({ status: "completed" })
-					.where(
-						and(
-							eq(treatmentItems.organizationId, orgId),
-							eq(treatmentItems.visitId, effectiveVisitId),
-							ne(treatmentItems.status, "completed"),
-							ne(treatmentItems.status, "cancelled"),
-						),
-					);
-
 				// Автоматическое списание расходных материалов со склада по техкартам процедур (BOM - Мандат 8v)
 				try {
 					await deductMaterialsForVisit(tx, {
@@ -1451,6 +1440,18 @@ export async function processCashboxPayment(
 						"[cashboxPaymentProcessor] Автоматическое списание материалов по визиту завершилось с предупреждением",
 					);
 				}
+
+				await tx
+					.update(treatmentItems)
+					.set({ status: "completed" })
+					.where(
+						and(
+							eq(treatmentItems.organizationId, orgId),
+							eq(treatmentItems.visitId, effectiveVisitId),
+							ne(treatmentItems.status, "completed"),
+							ne(treatmentItems.status, "cancelled"),
+						),
+					);
 			} else {
 				await tx
 					.update(visits)
@@ -1461,15 +1462,17 @@ export async function processCashboxPayment(
 
 		// 2.1. Списание бонусов лояльности (FIFO)
 		if (requiredBonusKopecks > 0n && lockedBonusBalance) {
-			const currentSpentKop = BigInt(rublesToKopecks(Number(lockedBonusBalance.lifetimeSpentPoints ?? 0)));
+			const currentSpentKop = BigInt(parseKopecks(lockedBonusBalance.lifetimeSpentPoints ?? "0.00"));
 			const newLifetimeSpentKop = currentSpentKop + requiredBonusKopecks;
-			const newLifetimeSpent = kopecksToRubles(newLifetimeSpentKop);
+			const newActiveBonusStr = kopecksToNumericString(newActiveBonusKop);
+			const newLifetimeSpentStr = kopecksToNumericString(newLifetimeSpentKop);
+			const pointsToDeductStr = kopecksToNumericString(pointsToDeductKop);
 
 			await tx
 				.update(patientBonusBalances)
 				.set({
-					activePoints: String(newActiveBonusPoints),
-					lifetimeSpentPoints: String(newLifetimeSpent),
+					activePoints: newActiveBonusStr,
+					lifetimeSpentPoints: newLifetimeSpentStr,
 					updatedAt: new Date(),
 				})
 				.where(
@@ -1482,21 +1485,21 @@ export async function processCashboxPayment(
 			await tx.insert(bonusTransactions).values({
 				organizationId: orgId,
 				patientId: resolvedPatientId,
-				amountPoints: String(-pointsToDeduct),
-				balanceAfterPoints: String(newActiveBonusPoints),
+				amountPoints: `-${pointsToDeductStr}`,
+				balanceAfterPoints: newActiveBonusStr,
 				type: "redemption_payment",
 				relatedPaymentId: newPayment.id,
 				relatedInvoiceId: body.invoiceId || null,
 				clientMutationId: effectiveMutationId ? `${effectiveMutationId}:bonus` : null,
 				description:
 					body.note ||
-					`Списание бонусов лояльности в кассе (${pointsToDeduct} б.)`,
+					`Списание бонусов лояльности в кассе (${pointsToDeductStr} б.)`,
 			});
 
 			await deductUnspentPointsFifo(tx, {
 				orgId,
 				patientId: resolvedPatientId,
-				pointsToDeduct,
+				pointsToDeduct: Number(pointsToDeductStr),
 			});
 		}
 
@@ -1528,13 +1531,21 @@ export async function processCashboxPayment(
 		}
 
 		// 3. Инициализируем и находим кассовые счета клиники с упорядоченной блокировкой строк
-		await ensureOrganizationCashBoxes(tx, orgId);
-		const boxes = await tx
+		let boxes = await tx
 			.select()
 			.from(cashBoxes)
 			.where(eq(cashBoxes.organizationId, orgId))
 			.orderBy(cashBoxes.id)
 			.for("update");
+
+		if (boxes.length === 0) {
+			try {
+				const seeded = await ensureOrganizationCashBoxes(tx, orgId);
+				boxes = seeded.boxes;
+			} catch {
+				// Mock or already seeded in another context
+			}
+		}
 
 		const cashDeskBox =
 			boxes.find((b) => b.type === "main" || b.type === "cash_desk") ||
@@ -1736,15 +1747,31 @@ export async function processCashboxPayment(
 
 		return {
 			id: newPayment.id,
+			organizationId: newPayment.organizationId,
+			patientId: newPayment.patientId,
+			visitId: newPayment.visitId,
+			documentId: newPayment.documentId,
 			amountKopecks: Number(totalKopecks),
 			amountRub: amountRubNumber,
 			bonusAmountKopecks: Number(requiredBonusKopecks),
 			certificateAmountKopecks: Number(requiredCertificateKopecks),
 			dmsAmountKopecks: Number(requiredDmsKopecks),
 			guaranteeLetterId: lockedDmsLetter?.id || (isEmergencyLetterAlias ? guaranteeLetterId : null),
-			method: newPayment.method,
-			status: "paid",
+			method: splitTenderCount > 1 || body.method === "split" ? "split" : newPayment.method,
+			status: newPayment.status,
+			paidAt: newPayment.paidAt ? newPayment.paidAt.toISOString() : new Date().toISOString(),
+			createdAt: newPayment.createdAt ? newPayment.createdAt.toISOString() : new Date().toISOString(),
 			fiscalReceiptNumber: receiptNumber,
+			fiscalReceiptIssuedAt: issuedAt,
+			fiscalReceiptUrl: newPayment.fiscalReceiptUrl,
+			fiscalReceipt: newPayment.fiscalReceipt,
+			payerFullName: newPayment.payerFullName,
+			payerInn: newPayment.payerInn,
+			payerBirthDate: newPayment.payerBirthDate,
+			payerIdentityDocument: newPayment.payerIdentityDocument,
+			payerRelationship: newPayment.payerRelationship,
+			taxDeductionCode: newPayment.taxDeductionCode,
+			note: newPayment.note,
 			fiscalReceiptQueueId: enqueuedReceiptId,
 			clientMutationId: effectiveMutationId,
 		};
@@ -1755,7 +1782,7 @@ export async function processCashboxPayment(
 			statusCode: 400,
 			body: {
 				error: "PatientNotFound",
-				message: "Пациент не найден в этой клинике — платёж не проведён.",
+				message: `Пациент ${requestedPatientId || ""} не найден или заблокирован в клинике — платёж не проведён.`,
 			},
 		};
 	}

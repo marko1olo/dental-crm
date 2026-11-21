@@ -4,7 +4,13 @@ import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../../accessGuard.js";
-import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
+import {
+	enforcePermissionWhenStaffKnown,
+	getCachedRoleMatrixOverrides,
+	roleHasPermission,
+	roleHasPermissionWithOverrides,
+} from "../../security/permissions.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { getClinicSettingsFromDb } from "../../db/settingsQuery.js";
 import {
 	FamilyWalletError,
@@ -52,7 +58,23 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 	app.post("/api/finance/family/pay", async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "family finance payment");
 		if (!organizationId) return;
-		if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
+		const identity = getRequestIdentity(req);
+		const cachedOverrides = identity.organizationId
+			? getCachedRoleMatrixOverrides(identity.organizationId)
+			: null;
+		const hasFinanceWrite = cachedOverrides
+			? roleHasPermissionWithOverrides(identity.role, "finance.write", cachedOverrides)
+			: roleHasPermission(identity.role, "finance.write");
+		const hasClinicalWrite = cachedOverrides
+			? roleHasPermissionWithOverrides(identity.role, "clinical.write", cachedOverrides)
+			: roleHasPermission(identity.role, "clinical.write");
+		const isDoctorRole =
+			identity.role?.toLowerCase() === "doctor" ||
+			identity.role?.toLowerCase() === "head_doctor";
+
+		if (!hasFinanceWrite && !hasClinicalWrite && !isDoctorRole) {
+			if (!enforcePermissionWhenStaffKnown(req, reply, "finance.write")) return;
+		}
 
 		const payParsed = familyPaymentSchema.safeParse(req.body);
 		if (!payParsed.success) {

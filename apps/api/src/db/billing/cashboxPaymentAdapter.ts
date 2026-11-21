@@ -22,6 +22,7 @@ export async function createPaymentInDb(
 	organizationId: string,
 	input: CreatePaymentInput,
 ): Promise<PaymentWithReplay> {
+	validateAndResolvePaymentSplit(input);
 	const effectiveMutationId = input.clientMutationId?.trim();
 	const inputWithInvoice = input as CreatePaymentInput & { invoiceId?: string };
 	const outcome = await processCashboxPayment(
@@ -41,44 +42,30 @@ export async function createPaymentInDb(
 	const responseData = outcome.body.data as Record<string, unknown>;
 	const paymentId = typeof responseData.id === "string" ? responseData.id : "";
 	const isReplay = typeof responseData.isReplay === "boolean" ? responseData.isReplay : undefined;
-	const [row] = await db
-		.select()
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, organizationId),
-				eq(payments.id, paymentId),
-			),
-		)
-		.limit(1);
-
-	if (!row) {
-		throw new Error(`Платеж ${paymentId} не найден после проведения`);
-	}
 
 	return {
-		id: row.id,
-		organizationId: row.organizationId,
-		patientId: row.patientId,
-		visitId: row.visitId,
-		documentId: row.documentId,
-		amountRub: Number(row.amountRub),
-		method: row.method === "split" ? "card" : (row.method as Payment["method"]),
-		clientMutationId: row.clientMutationId,
-		fiscalReceiptNumber: row.fiscalReceiptNumber,
-		fiscalReceiptIssuedAt: row.fiscalReceiptIssuedAt,
-		fiscalReceiptUrl: row.fiscalReceiptUrl,
-		fiscalReceipt: row.fiscalReceipt as Payment["fiscalReceipt"],
-		payerFullName: row.payerFullName,
-		payerInn: row.payerInn,
-		payerBirthDate: row.payerBirthDate,
-		payerIdentityDocument: row.payerIdentityDocument,
-		payerRelationship: row.payerRelationship,
-		taxDeductionCode: narrowTaxDeductionCode(row.taxDeductionCode),
-		note: row.note,
-		createdAt: row.createdAt.toISOString(),
-		paidAt: row.paidAt.toISOString(),
-		status: row.status as Payment["status"],
+		id: paymentId,
+		organizationId: (responseData.organizationId as string) || organizationId,
+		patientId: (responseData.patientId as string) || (input.patientId ?? ""),
+		visitId: (responseData.visitId as string) ?? input.visitId ?? null,
+		documentId: (responseData.documentId as string) ?? input.documentId ?? inputWithInvoice.invoiceId ?? null,
+		amountRub: Number(responseData.amountRub ?? (input.amountRub ?? 0)),
+		method: (input.method === "split" || responseData.method === "split" ? "split" : responseData.method) as Payment["method"],
+		clientMutationId: (responseData.clientMutationId as string) || effectiveMutationId || null,
+		fiscalReceiptNumber: (responseData.fiscalReceiptNumber as string) || null,
+		fiscalReceiptIssuedAt: (responseData.fiscalReceiptIssuedAt as string) || null,
+		fiscalReceiptUrl: (responseData.fiscalReceiptUrl as string) || null,
+		fiscalReceipt: (responseData.fiscalReceipt as Payment["fiscalReceipt"]) || null,
+		payerFullName: (responseData.payerFullName as string) || input.payerFullName || null,
+		payerInn: (responseData.payerInn as string) || input.payerInn || null,
+		payerBirthDate: (responseData.payerBirthDate as string) || input.payerBirthDate || null,
+		payerIdentityDocument: (responseData.payerIdentityDocument as string) || input.payerIdentityDocument || null,
+		payerRelationship: (responseData.payerRelationship as string) || input.payerRelationship || null,
+		taxDeductionCode: narrowTaxDeductionCode(typeof responseData.taxDeductionCode === "string" ? responseData.taxDeductionCode : null) ?? narrowTaxDeductionCode(typeof input.taxDeductionCode === "string" ? input.taxDeductionCode : null),
+		note: (responseData.note as string) || input.note || null,
+		createdAt: (responseData.createdAt as string) || new Date().toISOString(),
+		paidAt: (responseData.paidAt as string) || new Date().toISOString(),
+		status: (responseData.status as Payment["status"]) || "paid",
 		isReplay,
 	};
 }

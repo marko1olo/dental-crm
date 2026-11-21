@@ -308,7 +308,7 @@ test("CLI integration: quality-ratchet.mjs runs cleanly on repository baseline",
 
 	assert.equal(res.status, 0, `Expected CLI to exit with code 0. Stderr: ${res.stderr}\nStdout: ${res.stdout}`);
 	assert.match(res.stdout, /САНИТАРНЫЙ ХРАПОВИК КАЧЕСТВА/);
-	assert.match(res.stdout, /САНИТАРНЫЙ ХРАПОВИК ЧИСТ/);
+	assert.match(res.stdout, /(?:САНИТАРНЫЙ ХРАПОВИК ЧИСТ|АВТО-ХРАПОВИК ЗАКРУЧЕН)/);
 });
 
 test("Current sanitary-baseline.json contains valid non-negative integer limits", () => {

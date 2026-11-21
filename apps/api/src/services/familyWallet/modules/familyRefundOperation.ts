@@ -25,7 +25,10 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 		const [family] = await tx.select().from(familyGroups).where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId))).limit(1).for("update");
 		if (!family) throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
 
-		const walletOwnerId = family.headPatientId || family.primaryPatientId;
+		let walletOwnerId = family.headPatientId || family.primaryPatientId;
+		if (!walletOwnerId && params.patientId) {
+			walletOwnerId = params.patientId;
+		}
 		if (!walletOwnerId) {
 			throw new FamilyWalletError("Семейный кошелек не имеет назначенного владельца (headPatientId)", 400, "MISSING_WALLET_OWNER");
 		}
@@ -83,6 +86,7 @@ export async function processFamilyRefund(params: FamilyRefundParams): Promise<F
 		const [payment] = await tx.insert(payments).values({
 			organizationId, patientId: targetPatientId, amountRub: kopecksToRub(refundKopecks), method,
 			status: "refunded", clientMutationId: clientMutationId.trim(),
+			documentId: familyGroupId,
 			note: reasonText?.trim() ? `Возврат с семейного депозита: ${reasonText.trim()}` : "Возврат с семейного депозита",
 		}).returning();
 		if (!payment) throw new FamilyWalletError("Не удалось создать запись возврата", 500, "REFUND_PAYMENT_CREATION_FAILED");

@@ -73,22 +73,31 @@ export async function getFamilyHistoryRecords(
 		.where(
 			and(
 				eq(payments.organizationId, organizationId),
-				inArray(payments.patientId, memberIds),
 				or(
-					eq(payments.method, "family_wallet"),
-					eq(payments.status, "refunded"),
-					sql`${payments.amountRub} < 0`,
+					// Реляционная привязка пополнений и возвратов к семейной группе через documentId
+					eq(payments.documentId, familyGroupId),
+					// Операции членов семейной группы
 					and(
-						ne(payments.method, "family_wallet"),
-						eq(payments.status, "paid"),
+						inArray(payments.patientId, memberIds),
 						or(
-							ilike(payments.clientMutationId, "%fam-topup%"),
-							ilike(payments.clientMutationId, "%family-topup%"),
-							ilike(payments.note, "%семейного депозита%"),
-							ilike(payments.note, "%семейный депозит%"),
-							ilike(payments.note, "%семейного сч%"),
-							ilike(payments.note, "%пополнение семейного%"),
-							ilike(payments.note, "%внесение семейного%"),
+							eq(payments.method, "family_wallet"),
+							eq(payments.status, "refunded"),
+							sql`${payments.amountRub} < 0`,
+							and(
+								ne(payments.method, "family_wallet"),
+								eq(payments.status, "paid"),
+								or(
+									ilike(payments.note, "%семейн%депозит%"),
+									ilike(payments.note, "%семейн%счет%"),
+									ilike(payments.note, "%семейн%счёт%"),
+									ilike(payments.note, "%пополнен%семейн%"),
+									ilike(payments.note, "%family%topup%"),
+									ilike(payments.clientMutationId, "%fam-topup%"),
+									ilike(payments.clientMutationId, "%family-topup%"),
+									ilike(payments.clientMutationId, "%family_topup%"),
+									ilike(payments.clientMutationId, "%topup%"),
+								),
+							),
 						),
 					),
 				),
@@ -99,19 +108,9 @@ export async function getFamilyHistoryRecords(
 
 	return paymentRows.map((p) => {
 		const isRefund = p.status === "refunded" || parseKopecks(p.amountRub) < 0;
-		const isTopup =
-			!isRefund &&
-			p.method !== "family_wallet" &&
-			p.status === "paid" &&
-			Boolean(
-				(p.clientMutationId &&
-					(p.clientMutationId.includes("fam-topup") || p.clientMutationId.includes("family-topup"))) ||
-					(p.note &&
-						/семейного депозита|семейный депозит|семейного сч|пополнение семейного|внесение семейного/i.test(
-							p.note,
-						)),
-			);
-		const operationType: "topup" | "spend" | "refund" = isRefund ? "refund" : isTopup ? "topup" : "spend";
+		const isSpend = p.method === "family_wallet";
+		const isTopup = !isRefund && !isSpend && p.status === "paid";
+		const operationType: "topup" | "spend" | "refund" = isRefund ? "refund" : isSpend ? "spend" : "topup";
 		const patientName = memberMap.get(p.patientId) || p.payerFullName || "Член семьи";
 		const headName = (family.headPatientId && memberMap.get(family.headPatientId)) || "Семейный счёт";
 

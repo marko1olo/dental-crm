@@ -408,17 +408,27 @@ export function evaluateRatchet(currentCounts, baseline) {
 export function checkRatchet(options = {}) {
 	const repoRoot = options.repoRoot || DEFAULT_REPO_ROOT;
 	const baselinePath = options.baselinePath || DEFAULT_BASELINE_PATH;
-	const update = options.update || false;
+	const autoRatchet = options.autoRatchet ?? false;
 
 	const baseline = getBaseline(baselinePath);
 	const { counts, matches, stats } = countSanitaryMetrics({ repoRoot });
 	const result = evaluateRatchet(counts, baseline);
 
+	let updated = false;
+	if (result.improvements.length > 0 && autoRatchet) {
+		const newBaseline = { ...baseline };
+		for (const imp of result.improvements) {
+			newBaseline[imp.metric] = imp.current;
+		}
+		saveBaseline(baselinePath, newBaseline);
+		updated = true;
+	}
+
 	return {
 		...result,
 		matches,
 		stats,
-		updated: false,
+		updated,
 	};
 }
 
@@ -445,7 +455,8 @@ function formatMetricLabel(metric) {
  */
 function runCli() {
 	const args = process.argv.slice(2);
-	const shouldUpdate = args.includes("--update") || args.includes("--ratchet");
+	const noAutoRatchet = args.includes("--no-auto-ratchet") || args.includes("--dry-run");
+	const autoRatchet = !noAutoRatchet;
 	const jsonOutput = args.includes("--json");
 
 	const startTime = Date.now();
@@ -467,7 +478,7 @@ function runCli() {
 	console.log("================================================================================");
 	console.log(`Базовый снимок:       scripts/config/sanitary-baseline.json`);
 	console.log(`Боевых файлов ядра:   ${stats.prodCodeFilesCount} (UI: ${stats.webCodeFilesCount}, CSS: ${stats.webCssFilesCount})`);
-	console.log(`Время проверки:       ${elapsed}s`);
+	console.log(`Время проверки:       ${elapsed}s | Режим: ${autoRatchet ? "Авто-подгонка (Monotonic Auto-Ratchet)" : "Без авто-подгонки"}`);
 	console.log("--------------------------------------------------------------------------------");
 	console.log(
 		"Метрика                                  | Факт | Лимит | Статус                 ",
@@ -493,7 +504,7 @@ function runCli() {
 		if (delta > 0) {
 			status = `❌ РЕГРЕССИЯ (+${delta})`;
 		} else if (delta < 0) {
-			status = `✨ ЧИЩЕ НА ${Math.abs(delta)} (храповик готов)`;
+			status = `✨ ЧИЩЕ НА ${Math.abs(delta)} (авто-подгонка)`;
 		} else {
 			status = `✓ В НОРМЕ (0)`;
 		}
@@ -522,22 +533,21 @@ function runCli() {
 		process.exit(1);
 	}
 
-	// If improvements occurred and --update flag is provided, ratchet down the baseline
+	// If improvements occurred, automatically ratchet down the baseline
 	if (evaluation.improvements.length > 0) {
-		if (shouldUpdate) {
+		if (autoRatchet) {
 			const newBaseline = { ...baseline, ...counts };
 			saveBaseline(DEFAULT_BASELINE_PATH, newBaseline);
-			console.log("\n🔒 ХРАПОВИК ЗАКРУЧЕН: Базовые лимиты снижены и навечно зафиксированы:");
+			console.log("\n🔒 АВТО-ХРАПОВИК ЗАКРУЧЕН: Базовые лимиты автоматически снижены и навечно зафиксированы:");
 			for (const imp of evaluation.improvements) {
 				console.log(`   ✓ ${imp.metric}: ${imp.limit} ➔ ${imp.current} (-${Math.abs(imp.delta)})`);
 			}
 			console.log(`Обновлён файл: ${DEFAULT_BASELINE_PATH}\n`);
 		} else {
-			console.log("\n💡 ЗАМЕЧЕН ПРОГРЕСС: Кодовая база стала чище!");
+			console.log("\n💡 ЗАМЕЧЕН ПРОГРЕСС: Кодовая база стала чище (auto-ratchet отключен):");
 			for (const imp of evaluation.improvements) {
 				console.log(`   - ${imp.metric}: ${imp.current} < ${imp.limit} (чище на ${Math.abs(imp.delta)})`);
 			}
-			console.log("Запустите с флагом --update, чтобы закрутить храповик на новом уровне:\n  npm run check:ratchet -- --update\n");
 		}
 	} else {
 		console.log("\n✅ САНИТАРНЫЙ ХРАПОВИК ЧИСТ: Регрессий нет, лимиты строго соблюдены (Exit Code 0).\n");
