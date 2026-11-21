@@ -24,6 +24,7 @@ export function renderDicomPreviewImage(
 		rows,
 		columns,
 		bitsAllocated,
+		bitsStored,
 		pixelRepresentation,
 		rescaleIntercept,
 		rescaleSlope,
@@ -49,6 +50,7 @@ export function renderDicomPreviewImage(
 		pixelRepresentation,
 		rescaleSlope,
 		rescaleIntercept,
+		bitsStored,
 	);
 
 	let minValue = Number.POSITIVE_INFINITY;

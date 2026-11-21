@@ -49,12 +49,6 @@ export function useCbctStudioLifecycle({
 	const isExternalVolume = useCallback((vol: CbctVoxelVolume | null): boolean => {
 		if (!vol) return false;
 		if (initialVolume && vol === initialVolume) return true;
-		if (typeof window !== "undefined") {
-			const win = window as typeof window & CbctWindowVolumeExtensions;
-			if (win.__cbctDemoVolume && vol === win.__cbctDemoVolume) return true;
-			if (win.__cbctActiveVolume && vol === win.__cbctActiveVolume) return true;
-			if (win.__cbctSharedVolume && vol === win.__cbctSharedVolume) return true;
-		}
 		return false;
 	}, [initialVolume]);
 
@@ -64,29 +58,46 @@ export function useCbctStudioLifecycle({
 		}
 		disposeSharedCbctGlContext();
 		if (state.volume) {
-			if (!isExternalVolume(state.volume)) {
+			if (!initialVolume || state.volume !== initialVolume) {
 				disposeCbctVolume(state.volume);
+			}
+			if (typeof window !== "undefined") {
+				const win = window as typeof window & CbctWindowVolumeExtensions;
+				if (win.__cbctActiveVolume === state.volume) win.__cbctActiveVolume = undefined;
+				if (win.__cbctSharedVolume === state.volume) win.__cbctSharedVolume = undefined;
 			}
 			state.setVolume(null);
 		}
 		onClose();
-	}, [state, onClose, isExternalVolume, modalContainerRef]);
+	}, [state, onClose, initialVolume, modalContainerRef]);
 
 	useEffect(() => {
 		if (!isOpen) {
 			if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
 			disposeSharedCbctGlContext();
 			if (state.volume) {
-				if (!isExternalVolume(state.volume)) disposeCbctVolume(state.volume);
+				if (!initialVolume || state.volume !== initialVolume) disposeCbctVolume(state.volume);
+				if (typeof window !== "undefined") {
+					const win = window as typeof window & CbctWindowVolumeExtensions;
+					if (win.__cbctActiveVolume === state.volume) win.__cbctActiveVolume = undefined;
+					if (win.__cbctSharedVolume === state.volume) win.__cbctSharedVolume = undefined;
+				}
 				state.setVolume(null);
 			}
 		}
 		return () => {
 			if (modalContainerRef.current) teardownViewportCanvases(modalContainerRef.current);
 			disposeSharedCbctGlContext();
-			if (state.volume && !isExternalVolume(state.volume)) disposeCbctVolume(state.volume);
+			if (state.volume && (!initialVolume || state.volume !== initialVolume)) {
+				disposeCbctVolume(state.volume);
+				if (typeof window !== "undefined") {
+					const win = window as typeof window & CbctWindowVolumeExtensions;
+					if (win.__cbctActiveVolume === state.volume) win.__cbctActiveVolume = undefined;
+					if (win.__cbctSharedVolume === state.volume) win.__cbctSharedVolume = undefined;
+				}
+			}
 		};
-	}, [isOpen, state.volume, isExternalVolume, modalContainerRef]);
+	}, [isOpen, state.volume, initialVolume, modalContainerRef]);
 
 	useEffect(() => {
 		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);

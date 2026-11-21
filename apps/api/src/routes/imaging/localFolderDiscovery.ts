@@ -38,24 +38,29 @@ import {
 	isDicomHeaderCandidatePath,
 	hasDicomMagic,
 } from "./dicomParsing.js";
+import {
+	getAllowedTenantPacsDirectories,
+	validateAndResolvePacsLocalFilePath,
+} from "../../services/imaging/localPacsSanitizer.js";
 
-export function defaultDicomDiscoveryRoots() {
+export function defaultDicomDiscoveryRoots(organizationId?: string) {
 	const configured =
 		process.env.DENTAL_DICOM_DISCOVERY_ROOTS?.split(/[;|]/)
 			.map((root) => root.trim())
 			.filter(Boolean) ?? [];
-	const home = os.homedir();
-	const oneDrive = path.join(home, "OneDrive");
-	const roots = [
-		...configured,
-		path.join(home, "Downloads"),
-		path.join(home, "Desktop"),
-		path.join(home, "Documents"),
-		path.join(home, "Pictures"),
-		path.join(oneDrive, "Downloads"),
-		path.join(oneDrive, "Documents"),
-		path.join(oneDrive, "Pictures"),
-	];
+
+	const roots: string[] = [...configured];
+
+	if (organizationId) {
+		roots.push(...getAllowedTenantPacsDirectories(organizationId));
+	} else {
+		roots.push(
+			path.resolve(process.cwd(), "uploads", "pacs"),
+			path.resolve(process.cwd(), "uploads", "dicom"),
+			path.resolve(process.cwd(), "uploads", "xray"),
+		);
+	}
+
 	return Array.from(
 		new Set(
 			roots
@@ -152,11 +157,28 @@ export function shouldSkipDicomDiscoveryDirectory(directoryName: string) {
 export async function discoverLocalDicomFolders(
 	input: DicomLocalFolderDiscoveryRequest,
 	options: ApiDicomScanOptions = {},
+	organizationId?: string,
 ) {
 	const fromManualRoot = Boolean(input.rootPaths?.length);
-	const rawRoots = (
-		input.rootPaths?.length ? input.rootPaths : defaultDicomDiscoveryRoots()
-	).map((root) => path.resolve(root));
+	const resolvedRoots: string[] = [];
+	if (input.rootPaths?.length) {
+		for (const candidate of input.rootPaths) {
+			if (organizationId) {
+				resolvedRoots.push(
+					validateAndResolvePacsLocalFilePath(organizationId, candidate),
+				);
+			} else {
+				const resolved = path.resolve(candidate);
+				if (resolved.includes("..")) {
+					throw new Error("Недопустимый путь к папке поиска.");
+				}
+				resolvedRoots.push(resolved);
+			}
+		}
+	} else {
+		resolvedRoots.push(...defaultDicomDiscoveryRoots(organizationId));
+	}
+	const rawRoots = resolvedRoots.map((root) => path.resolve(root));
 
 	const uniqueRoots = Array.from(new Set(rawRoots));
 	const existsChecks = await Promise.all(

@@ -20,6 +20,7 @@ import { db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { and, eq, inArray, desc, ne } from "drizzle-orm";
 import { getImagingOrganizationId } from "./imagingHelpers.js";
+import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 
 export async function registerDicomRoutes(app: FastifyInstance) {
 	/**
@@ -63,11 +64,27 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	app.post("/api/imaging/daemon/scan-now", async (request, reply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "manual dicom scan"))) return;
 
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
+
 		const bodySchema = z.object({
 			paths: z.array(z.string()).optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body ?? {});
-		const explicitPaths = parsed.success ? parsed.data.paths : undefined;
+		const rawPaths = parsed.success ? parsed.data.paths : undefined;
+
+		let explicitPaths: string[] | undefined;
+		if (rawPaths && rawPaths.length > 0) {
+			try {
+				explicitPaths = rawPaths.map((p) => validateAndResolvePacsLocalFilePath(orgId, p));
+			} catch (err: unknown) {
+				const message = err instanceof Error ? err.message : "Недопустимый путь к папке КТ.";
+				return reply.code(400).send({
+					error: "PathValidationError",
+					message,
+				});
+			}
+		}
 
 		const result = await dicomCrawlerDaemon.scanNow(explicitPaths);
 		return reply.send({
@@ -83,6 +100,9 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 	 */
 	app.post("/api/imaging/daemon/config", async (request, reply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "configure dicom daemon"))) return;
+
+		const orgId = getImagingOrganizationId(request, reply);
+		if (!orgId) return;
 
 		const configSchema = z.object({
 			watchPaths: z.array(z.string()).optional(),
@@ -102,7 +122,19 @@ export async function registerDicomRoutes(app: FastifyInstance) {
 		}
 
 		const updatePayload: Partial<DicomCrawlerDaemonConfig> = {};
-		if (parsed.data.watchPaths !== undefined) updatePayload.watchPaths = parsed.data.watchPaths;
+		if (parsed.data.watchPaths !== undefined) {
+			try {
+				updatePayload.watchPaths = parsed.data.watchPaths.map((p) =>
+					validateAndResolvePacsLocalFilePath(orgId, p),
+				);
+			} catch (err: unknown) {
+				const message = err instanceof Error ? err.message : "Недопустимый путь для мониторинга КТ.";
+				return reply.code(400).send({
+					error: "PathValidationError",
+					message,
+				});
+			}
+		}
 		if (parsed.data.autoUnpack !== undefined) updatePayload.autoUnpack = parsed.data.autoUnpack;
 		if (parsed.data.enabled !== undefined) updatePayload.enabled = parsed.data.enabled;
 		if (parsed.data.pollIntervalMinutes !== undefined) {

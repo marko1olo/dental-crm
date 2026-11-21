@@ -133,21 +133,40 @@ export function createDicomPixelSampler(
 	pixelRepresentation: number | null | undefined,
 	rescaleSlope: number,
 	rescaleIntercept: number,
+	bitsStored?: number | null,
 ): (index: number) => number {
+	const needed = bitsAllocated === 16 ? 2 : 1;
+	const bufLen = buffer.length;
+	const stored =
+		bitsStored && bitsStored > 0 && bitsStored <= bitsAllocated
+			? bitsStored
+			: bitsAllocated;
+	const mask = (1 << stored) - 1;
+	const signBit = 1 << (stored - 1);
+
 	return (index: number) => {
 		const offset = pixelDataOffset + index * bytesPerPixel;
-		const needed = bitsAllocated === 16 ? 2 : 1;
-		if (offset < 0 || offset + needed > buffer.length) {
+		if (offset < 0 || offset + needed > bufLen) {
 			return 0;
 		}
-		const raw =
-			bitsAllocated === 16
-				? pixelRepresentation === 1
-					? buffer.readInt16LE(offset)
-					: buffer.readUInt16LE(offset)
-				: pixelRepresentation === 1
-					? buffer.readInt8(offset)
-					: buffer.readUInt8(offset);
+		let raw: number;
+		if (bitsAllocated === 16) {
+			const uval = buffer.readUInt16LE(offset);
+			if (pixelRepresentation === 1) {
+				const masked = uval & mask;
+				raw = masked & signBit ? masked - (1 << stored) : masked;
+			} else {
+				raw = uval & mask;
+			}
+		} else {
+			const uval = buffer.readUInt8(offset);
+			if (pixelRepresentation === 1) {
+				const masked = uval & mask;
+				raw = masked & signBit ? masked - (1 << stored) : masked;
+			} else {
+				raw = uval & mask;
+			}
+		}
 		return raw * rescaleSlope + rescaleIntercept;
 	};
 }
@@ -171,6 +190,7 @@ export function renderDicomPreviewImage(
 		rows,
 		columns,
 		bitsAllocated,
+		bitsStored,
 		pixelRepresentation,
 		rescaleIntercept,
 		rescaleSlope,
@@ -197,6 +217,7 @@ export function renderDicomPreviewImage(
 		pixelRepresentation,
 		rescaleSlope,
 		rescaleIntercept,
+		bitsStored,
 	);
 
 	let minValue = Number.POSITIVE_INFINITY;

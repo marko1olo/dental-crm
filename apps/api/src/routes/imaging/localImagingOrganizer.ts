@@ -38,6 +38,7 @@ import {
 import {
 	buildDicomRenderCachePlan
 } from "./renderCachePlan.js";
+import { validateAndResolvePacsLocalFilePath } from "../../services/imaging/localPacsSanitizer.js";
 import path from "node:path";
 import type {
 	LocalImagingOrganizerCase,
@@ -75,13 +76,29 @@ import {
 export async function organizeLocalImagingSources(
 	input: LocalImagingOrganizerRequest,
 	options: ApiDicomScanOptions = {},
+	organizationId?: string,
 ) {
 	const fromManualRoot = Boolean(input.rootPaths?.length);
-	const rawRoots = input.rootPaths?.length
-		? input.rootPaths
-		: defaultDicomDiscoveryRoots();
+	const resolvedRoots: string[] = [];
+	if (input.rootPaths?.length) {
+		for (const candidate of input.rootPaths) {
+			if (organizationId) {
+				resolvedRoots.push(
+					validateAndResolvePacsLocalFilePath(organizationId, candidate),
+				);
+			} else {
+				const resolved = path.resolve(candidate);
+				if (resolved.includes("..")) {
+					throw new Error("Недопустимый путь к папке поиска.");
+				}
+				resolvedRoots.push(resolved);
+			}
+		}
+	} else {
+		resolvedRoots.push(...defaultDicomDiscoveryRoots(organizationId));
+	}
 	const uniqueRoots = Array.from(
-		new Set(rawRoots.map((root) => path.resolve(root))),
+		new Set(resolvedRoots.map((root) => path.resolve(root))),
 	);
 	const roots: string[] = [];
 	const BATCH_SIZE = 50;
@@ -454,8 +471,13 @@ export async function buildDicomFolderSeriesPreview(
 	// Организация ПЕРЕДАЁТСЯ вызывающим обработчиком: раньше функция сама брала
 	// «первую строку таблицы organizations» и в мультиклинике разбирала папку
 	// от имени чужой клиники.
+	const orgId = organizationId;
+	const safeFolderPath = orgId
+		? validateAndResolvePacsLocalFilePath(orgId, input.folderPath)
+		: path.resolve(input.folderPath);
+
 	const scan = await collectDicomHeaderFiles(
-		input.folderPath,
+		safeFolderPath,
 		input.recursive,
 		input.maxFiles,
 		options,
@@ -472,7 +494,6 @@ export async function buildDicomFolderSeriesPreview(
 		},
 		options,
 	);
-	const orgId = organizationId;
 	const preview = await parseDicomSeriesManifest(orgId, {
 		sourceName: input.sourceName,
 		sourceKind: "dicom_file",
@@ -480,7 +501,7 @@ export async function buildDicomFolderSeriesPreview(
 	});
 
 	return dicomFolderSeriesPreviewResponseSchema.parse({
-		folderPath: path.resolve(input.folderPath),
+		folderPath: safeFolderPath,
 		recursive: input.recursive,
 		filesFound: scan.files.length,
 		filesParsed: manifest.filesParsed,

@@ -443,6 +443,12 @@ export function sampleVoxelHU(
 
 	const index = z * (w * h) + y * w + x;
 	const raw = volume.data[index] ?? -1000;
+	if (volume.isCalibrated === false) {
+		const slope = volume.rescaleSlope ?? 1;
+		const intercept = volume.rescaleIntercept ?? 0;
+		const val = raw * slope + intercept;
+		return Math.max(-32768, Math.min(32767, Math.round(val)));
+	}
 	return Math.max(-32768, Math.min(32767, raw));
 }
 

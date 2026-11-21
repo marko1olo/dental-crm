@@ -76,13 +76,13 @@ export const CbctMprImplantStudioModal: React.FC<
 			data-cbct-cockpit="true"
 			data-theme="dark"
 			style={{ colorScheme: "dark" }}
-			className={`fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-300 font-sans select-none overflow-hidden cbct-dark-cockpit ${
-				state.isFullscreen ? "p-0" : "p-1 sm:p-2 bg-black/80 backdrop-blur-sm"
+			className={`fixed inset-0 z-50 flex flex-col bg-[var(--paper)] text-[var(--ink)] font-sans select-none overflow-hidden cbct-dark-cockpit ${
+				state.isFullscreen ? "p-0" : "p-1 sm:p-2 bg-[var(--paper-soft)]/80 backdrop-blur-sm"
 			}`}
 		>
 			<div
 				ref={modalContainerRef}
-				className="flex-1 flex flex-col w-full h-full min-h-0 bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden shadow-2xl relative"
+				className="flex-1 flex flex-col w-full h-full min-h-0 bg-[var(--paper)] border border-[var(--line)] rounded-lg overflow-hidden shadow-2xl relative"
 				onDragOver={(e) => {
 					e.preventDefault();
 					ctrl.dicomLoader.setIsDragOverWindow(true);

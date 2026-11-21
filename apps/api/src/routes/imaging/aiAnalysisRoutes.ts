@@ -27,6 +27,40 @@ import {
 import { saveImagingAiAnnotationsForStudy } from "../../db/imagingMeasurementsQuery.js";
 import { getPatientsFromDb } from "../../db/patientsQuery.js";
 import { requireOrganizationId } from "../../security/identity.js";
+import { parseDicomFirstFramePixel } from "./previewModules/firstFramePixelParser.js";
+
+function convertBufferToVisionDataUrl(buf: Buffer, filePath?: string): string {
+	const isJpeg =
+		buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+	const isPng =
+		buf.length > 4 &&
+		buf[0] === 0x89 &&
+		buf[1] === 0x50 &&
+		buf[2] === 0x4e &&
+		buf[3] === 0x47;
+	if (isJpeg) {
+		return `data:image/jpeg;base64,${buf.toString("base64")}`;
+	}
+	if (isPng) {
+		return `data:image/png;base64,${buf.toString("base64")}`;
+	}
+
+	const isDicom =
+		(buf.length >= 132 && buf.toString("latin1", 128, 132) === "DICM") ||
+		(filePath ? /\.dcm$/i.test(filePath) : false);
+
+	if (isDicom) {
+		const parsed = parseDicomFirstFramePixel(buf, 1024);
+		if (parsed.status === "ready" && parsed.imageDataUrl) {
+			return parsed.imageDataUrl;
+		}
+		throw new Error(
+			"Не удалось декодировать срез DICOM для ИИ-анализа. Формат требует конвертации или внешнего просмотрщика.",
+		);
+	}
+
+	return `data:image/jpeg;base64,${buf.toString("base64")}`;
+}
 
 export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 	const aiAnalysisHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -63,7 +97,7 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 						const resolved = LocalPacsStorageService.validateAndResolveLocalFilePath(orgId, study.storagePath);
 						if (existsSync(resolved)) {
 							const buf = await readFile(resolved);
-							imageBase64 = `data:image/jpeg;base64,${buf.toString("base64")}`;
+							imageBase64 = convertBufferToVisionDataUrl(buf, resolved);
 						}
 					} catch (readErr) {
 						request.log.warn({ readErr, studyId }, "Could not read study storage file for AI analysis");
@@ -229,7 +263,7 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 				});
 			}
 			const buf = await readFile(resolvedStoragePath);
-			imageBase64 = buf.toString("base64");
+			imageBase64 = convertBufferToVisionDataUrl(buf, resolvedStoragePath);
 		} catch (readError) {
 			request.log.error(
 				{ err: readError, storagePath: resolvedStoragePath },

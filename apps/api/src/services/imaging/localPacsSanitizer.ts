@@ -169,9 +169,38 @@ export function resolvePacsTenantStoragePath(organizationId: string, candidatePa
 }
 
 /**
+ * Returns strictly allowed directory roots for the tenant's PACS and radiology files.
+ * Enforces a strict sandbox whitelist per Mandate 8b, 8n and 152-FZ.
+ */
+export function getAllowedTenantPacsDirectories(organizationId: string): string[] {
+	const tenantDir = getPacsTenantStorageDir(organizationId);
+	const allowed = [tenantDir];
+
+	// Configured equipment scan roots for this tenant
+	const configuredRoots = process.env.DENTE_EQUIPMENT_SCAN_ROOTS?.split(/[;|]/)
+		.map((r) => r.trim())
+		.filter(Boolean) ?? [];
+	for (const root of configuredRoots) {
+		const resolvedRoot = path.resolve(root);
+		allowed.push(path.resolve(resolvedRoot, organizationId));
+	}
+
+	// Authorized system equipment storage for DenteDental
+	allowed.push(path.resolve("C:\\ProgramData\\DenteDental", organizationId));
+	allowed.push(path.resolve("/Library/Application Support/DenteDental", organizationId));
+
+	// Project uploads directories for this tenant
+	allowed.push(path.resolve(process.cwd(), "uploads", "pacs", organizationId));
+	allowed.push(path.resolve(process.cwd(), "uploads", "dicom", organizationId));
+	allowed.push(path.resolve(process.cwd(), "uploads", "xray", organizationId));
+
+	return Array.from(new Set(allowed.map((d) => path.normalize(d))));
+}
+
+/**
  * Validates and resolves local workstation radiology file path for offline PACS registration.
- * Allows legitimate workstation storage paths while strictly blocking Path Traversal (../, null bytes)
- * and forbidden OS system directories.
+ * Allows legitimate workstation storage paths while strictly enforcing sandbox whitelist by tenant
+ * and blocking Path Traversal (../, null bytes).
  */
 export function validateAndResolvePacsLocalFilePath(organizationId: string, candidatePath: string): string {
 	if (!candidatePath || typeof candidatePath !== "string") {
@@ -195,46 +224,36 @@ export function validateAndResolvePacsLocalFilePath(organizationId: string, cand
 		throw new PathTraversalError("Недопустимый путь к файлу: обнаружена последовательность выхода из каталога (..).");
 	}
 
+	const storageRoot = getPacsStorageRoot();
+	const tenantDir = getPacsTenantStorageDir(organizationId);
+	const allowedRoots = getAllowedTenantPacsDirectories(organizationId);
+
 	if (path.isAbsolute(decoded)) {
 		const normalized = path.normalize(decoded);
 		if (normalized.includes("..")) {
 			throw new PathTraversalError("Недопустимый путь к файлу: обнаружена последовательность выхода из каталога (..).");
 		}
 
-		// Strict cross-tenant isolation if path is inside PACS storage root
-		const storageRoot = getPacsStorageRoot();
-		const tenantDir = getPacsTenantStorageDir(organizationId);
+		// Cross-tenant protection inside general PACS storage root
 		if (normalized.startsWith(storageRoot + path.sep) && !normalized.startsWith(tenantDir + path.sep) && normalized !== tenantDir) {
 			throw new TenantIsolationError("Доступ к файлам другой организации запрещен.");
 		}
 
+		// Strict sandbox whitelist: path MUST be inside one of the allowed tenant directories
 		const lower = normalized.toLowerCase();
-		const forbiddenPrefixes = [
-			"c:\\windows",
-			"c:\\program files",
-			"c:\\program files (x86)",
-			"c:\\programdata",
-			"/etc",
-			"/sys",
-			"/proc",
-			"/root",
-			"/var/run",
-			"/bin",
-			"/sbin",
-			"/boot",
-			"/dev",
-		];
+		const isWhitelisted = allowedRoots.some((allowedRoot) => {
+			const lowerAllowed = allowedRoot.toLowerCase();
+			return lower === lowerAllowed || lower.startsWith(lowerAllowed + path.sep);
+		});
 
-		// Разрешаем авторизованное системное хранилище клиники DenteDental
-		const isDenteSystemStorage =
-			lower.startsWith("c:\\programdata\\dentedental") ||
-			lower.startsWith("/library/application support/dentedental");
-
-		if (!isDenteSystemStorage) {
-			for (const prefix of forbiddenPrefixes) {
-				if (lower.startsWith(prefix)) {
-					throw new PathTraversalError(`Запрещен доступ к системным директориям операционной системы: ${candidatePath}`);
-				}
+		if (!isWhitelisted) {
+			// For relative-like uploads paths passed as absolute (e.g. C:\Clinic_MVP\dental-crm\uploads\pacs\<orgId>\...)
+			const cwd = process.cwd().toLowerCase();
+			const isInsideTenantUploads = lower.startsWith(path.join(cwd, "uploads").toLowerCase()) && lower.includes(organizationId.toLowerCase());
+			if (!isInsideTenantUploads) {
+				throw new PathTraversalError(
+					`Доступ запрещен: путь ${candidatePath} находится вне разрешенного хранилища организации (sandbox whitelist).`,
+				);
 			}
 		}
 
@@ -251,13 +270,16 @@ export function validateAndResolvePacsLocalFilePath(organizationId: string, cand
 	const normalizedRel = decoded.replaceAll("\\", "/");
 	if (normalizedRel.startsWith("uploads/") || normalizedRel.startsWith(".data/")) {
 		const resolved = path.resolve(process.cwd(), normalizedRel);
-		const storageRoot = getPacsStorageRoot();
-		const tenantDir = getPacsTenantStorageDir(organizationId);
 		if (
 			resolved.startsWith(storageRoot + path.sep) &&
 			!resolved.startsWith(tenantDir + path.sep) &&
 			resolved !== tenantDir
 		) {
+			throw new TenantIsolationError("Доступ к файлам другой организации запрещен.");
+		}
+		// Strict tenant isolation for relative uploads
+		const lowerResolved = resolved.toLowerCase();
+		if (!lowerResolved.includes(organizationId.toLowerCase()) && !lowerResolved.startsWith(tenantDir.toLowerCase())) {
 			throw new TenantIsolationError("Доступ к файлам другой организации запрещен.");
 		}
 		return resolved;

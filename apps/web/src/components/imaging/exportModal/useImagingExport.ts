@@ -69,7 +69,12 @@ export function useImagingExport(props: ImagingExportModalProps) {
 			return;
 		}
 		const a = document.createElement("a");
-		a.href = previewUrl;
+		let targetUrl = previewUrl;
+		if (isAnonymized) {
+			const separator = targetUrl.includes("?") ? "&" : "?";
+			targetUrl = `${targetUrl}${separator}anonymize=true`;
+		}
+		a.href = targetUrl;
 		const ext = isArchive ? "zip" : options.format;
 		const prefix = isAnonymized ? "dente_152fz_anonymized" : "dente_scan";
 		a.download = `${prefix}_${effectiveStudy.title || "study"}_${(effectiveStudy.capturedAt || new Date().toISOString()).slice(0, 10)}.${ext}`;

@@ -435,13 +435,17 @@ export function distancePointToSpline(p: vec3, spline: vec3[]): number {
 }
 
 /**
- * Classifies Bone Density (HU) into D1-D4 scale (Misch bone density classification).
+ * Classifies Bone Density (HU) into Carl Misch scale (D1-D5) with anatomical cavity detection (<0 HU).
  */
-export function classifyBoneDensity(hu: number): "D1" | "D2" | "D3" | "D4" {
+export type BoneDensityClass = "D1" | "D2" | "D3" | "D4" | "D5" | "AIR_CAVITY";
+
+export function classifyBoneDensity(hu: number): BoneDensityClass {
+	if (hu < 0) return "AIR_CAVITY";
 	if (hu > 1250) return "D1";
 	if (hu >= 850) return "D2";
 	if (hu >= 350) return "D3";
-	return "D4";
+	if (hu >= 150) return "D4";
+	return "D5";
 }
 
 /**

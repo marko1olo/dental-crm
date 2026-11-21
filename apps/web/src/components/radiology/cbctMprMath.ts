@@ -86,6 +86,7 @@ export interface CbctVoxelVolume {
 	readonly maxHU: number;
 	readonly rescaleSlope?: number;
 	readonly rescaleIntercept?: number;
+	readonly isCalibrated?: boolean | undefined;
 	readonly defaultWindowWidth?: number;
 	readonly defaultWindowLevel?: number;
 	readonly isDisposed: boolean;

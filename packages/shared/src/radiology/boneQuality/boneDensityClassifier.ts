@@ -56,13 +56,24 @@ export function classifyMisch(avgHU: number): MischClass {
 }
 
 /**
- * Extended bone density classification supporting D5 (<150 HU) with clinical recommendation.
+ * Extended bone density classification supporting D5 (<150 HU) with clinical recommendation
+ * and anatomical sinus/cavity detection (<0 HU).
  */
 export function classifyExtendedBoneDensity(hu: number): {
 	mischClass: ExtendedMischClass;
 	label: string;
 	drillingRecommendation: string;
+	isAirCavity?: boolean;
 } {
+	if (hu < 0) {
+		return {
+			mischClass: "D5",
+			label: "Анатомическая полость / Воздух (<0 HU) — Гайморова пазуха или остеолитический дефект",
+			drillingRecommendation:
+				"ВНИМАНИЕ: Зона анатомической полости / воздуха (<0 HU)! Сверление запрещено без синус-лифтинга (критический риск перфорации гайморовой пазухи).",
+			isAirCavity: true,
+		};
+	}
 	if (hu > 1250) {
 		return {
 			mischClass: "D1",

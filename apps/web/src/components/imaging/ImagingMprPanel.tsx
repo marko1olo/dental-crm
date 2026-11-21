@@ -69,7 +69,7 @@ export function ImagingMprPanel(props: ImagingMprPanelProps) {
 				<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-sm">
 					<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
 						<div className="flex items-center gap-2.5">
-							<div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
+							<div className="w-9 h-9 rounded-lg bg-[var(--primary-soft)] text-[var(--primary)] flex items-center justify-center shrink-0">
 								<Layers className="w-5 h-5" />
 							</div>
 							<div>
@@ -119,14 +119,14 @@ export function ImagingMprPanel(props: ImagingMprPanelProps) {
 				</summary>
 				{!mprControlsReady && (
 					<div
-						className="mpr-dropzone-notice p-4 mb-4 rounded-lg border border-teal-200 dark:border-teal-800/60 bg-teal-50/50 dark:bg-teal-950/20"
+						className="mpr-dropzone-notice p-4 mb-4 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary-soft)]/20"
 						data-testid="mpr-dicom-load-dropzone-notice"
 					>
-						<div className="flex items-center gap-2 mb-2 text-teal-800 dark:text-teal-200">
+						<div className="flex items-center gap-2 mb-2 text-[var(--primary)]">
 							<UploadCloud size={18} />
 							<strong className="text-sm font-semibold">Для управления КТ-срезами и осями загрузите файлы DICOM</strong>
 						</div>
-						<p className="text-xs text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
+						<p className="text-xs text-[var(--ink-muted)] mb-3 leading-relaxed">
 							Инструменты мультипланарной реконструкции (MPR) активируются при наличии срезов в памяти. Выберите папку с исследованием или ZIP-архив срезов:
 						</p>
 						<Suspense fallback={null}>

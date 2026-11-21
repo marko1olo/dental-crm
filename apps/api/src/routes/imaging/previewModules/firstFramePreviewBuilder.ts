@@ -1,4 +1,5 @@
 import { stat } from "node:fs/promises";
+import path from "node:path";
 import type { DicomFirstFramePreviewResponse } from "@dental/shared";
 import { emptyDicomFirstFramePreview, isDicomPixelPath } from "../dicomParsing.js";
 import { isZipArchivePath } from "../dicomParsing.js";
@@ -11,6 +12,7 @@ import {
 } from "../imagingHelpers.js";
 import { dicomFirstFrameReadyResponse, parseDicomFirstFramePixel } from "./firstFramePixelParser.js";
 import { readDicomFirstFramePreviewBuffer } from "./pixelDataLocator.js";
+import { validateAndResolvePacsLocalFilePath } from "../../../services/imaging/localPacsSanitizer.js";
 
 export async function buildDicomFirstFramePreview(
 	input: {
@@ -24,8 +26,13 @@ export async function buildDicomFirstFramePreview(
 		preferredFileIndex?: number | undefined;
 	},
 	options: ApiDicomScanOptions = {},
+	organizationId?: string,
 ): Promise<DicomFirstFramePreviewResponse> {
-	const scan = await collectDicomHeaderFiles(input.folderPath, input.recursive, input.maxFiles, options, {
+	const safeFolderPath = organizationId
+		? validateAndResolvePacsLocalFilePath(organizationId, input.folderPath)
+		: path.resolve(input.folderPath);
+
+	const scan = await collectDicomHeaderFiles(safeFolderPath, input.recursive, input.maxFiles, options, {
 		maxFolders: input.maxFolders, maxEntriesPerFolder: input.maxEntriesPerFolder,
 	});
 	const files = scan.files.filter((fp) => !isZipArchivePath(fp) && isDicomPixelPath(fp));

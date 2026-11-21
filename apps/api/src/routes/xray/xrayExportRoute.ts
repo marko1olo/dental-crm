@@ -13,6 +13,7 @@ import { getRequestIdentity, requireOrganizationId } from "../../security/identi
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { startDetachedXrayAnalysis, UUID_REGEX, xrayAnalysisStaleMs } from "../xraySchemas.js";
+import { anonymizeDicomBuffer } from "../../services/imaging/dicomAnonymizer.js";
 
 export async function registerXrayExportRoute(app: FastifyInstance): Promise<void> {
 	app.get("/api/xray/scans/:id/file", async (request, reply) => {
@@ -70,15 +71,23 @@ export async function registerXrayExportRoute(app: FastifyInstance): Promise<voi
 
 		await auditMedicalAccessFromRequest(request, { organizationId, patientId: scan.patientId, action: "VIEW_XRAY_SCAN_FILE", diagnosis: scan.aiReport ?? "Файл снимка" });
 
+		const query = request.query as { anonymize?: string | boolean | undefined };
+		const shouldAnonymize = query?.anonymize === "true" || query?.anonymize === true;
+
 		if (scan.storagePath && existsSync(scan.storagePath)) {
 			try {
-				const buffer = await fs.readFile(scan.storagePath);
+				const fileBuffer = await fs.readFile(scan.storagePath);
+				const processedBuffer =
+					shouldAnonymize && fileBuffer.length >= 132 && fileBuffer.toString("latin1", 128, 132) === "DICM"
+						? anonymizeDicomBuffer(fileBuffer, { patientId: `ANON-${scan.patientId.slice(0, 8)}` })
+						: fileBuffer;
+				const outputBuffer = Buffer.from(processedBuffer);
 				reply.type(scan.mimeType || "image/jpeg");
-				reply.header("Content-Length", buffer.length);
-				return buffer;
+				reply.header("Content-Length", outputBuffer.length);
+				return reply.send(outputBuffer);
 			} catch {
 				reply.code(500);
-				return { error: "FileReadError", message: "Не удалось прочитать файл снимка с диска." };
+				return reply.send({ error: "FileReadError", message: "Не удалось прочитать файл снимка с диска." });
 			}
 		}
 
@@ -86,10 +95,15 @@ export async function registerXrayExportRoute(app: FastifyInstance): Promise<voi
 			const dataUri = scan.imageDataUri;
 			const commaIndex = dataUri.indexOf(",");
 			const base64Data = commaIndex >= 0 ? dataUri.slice(commaIndex + 1) : dataUri;
-			const buffer = Buffer.from(base64Data, "base64");
+			const dataBuffer = Buffer.from(base64Data, "base64");
+			const processedBuffer =
+				shouldAnonymize && dataBuffer.length >= 132 && dataBuffer.toString("latin1", 128, 132) === "DICM"
+					? anonymizeDicomBuffer(dataBuffer, { patientId: `ANON-${scan.patientId.slice(0, 8)}` })
+					: dataBuffer;
+			const outputBuffer = Buffer.from(processedBuffer);
 			reply.type(scan.mimeType || "image/jpeg");
-			reply.header("Content-Length", buffer.length);
-			return buffer;
+			reply.header("Content-Length", outputBuffer.length);
+			return reply.send(outputBuffer);
 		}
 
 		reply.code(404);
@@ -166,10 +180,11 @@ export async function registerXrayExportRoute(app: FastifyInstance): Promise<voi
 		await db.update(xrayScans).set({ status: "analyzing", aiError: null, updatedAt: new Date() })
 			.where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)));
 
-		startDetachedXrayAnalysis(
-			{ scanId: id, organizationId, imageDataUri: analysisImageDataUri },
-			request.log,
-		);
+		startDetachedXrayAnalysis({
+			scanId: id,
+			organizationId,
+			imageDataUri: analysisImageDataUri,
+		});
 		reply.code(202);
 		return { status: "analyzing", id };
 	});

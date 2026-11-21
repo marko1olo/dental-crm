@@ -238,9 +238,11 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				"Поиск папок снимков не запущен: проверьте корни поиска и лимиты обхода.",
 			);
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const discoveryOrgId = getImagingOrganizationId(request, reply);
+			if (!discoveryOrgId) return;
 			const input = parsed.data;
 			return runAbortableImagingScan(request, reply, (options) =>
-				discoverLocalDicomFolders(input, options),
+				discoverLocalDicomFolders(input, options, discoveryOrgId),
 			);
 		},
 	);
@@ -262,9 +264,11 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 				"Разбор локальных снимков не запущен: проверьте корни поиска и лимиты обхода.",
 			);
 			if (!parsed.ok) return reply.code(400).send(parsed.response);
+			const previewOrgId = getImagingOrganizationId(request, reply);
+			if (!previewOrgId) return;
 			const input = parsed.data;
 			return runAbortableImagingScan(request, reply, (options) =>
-				organizeLocalImagingSources(input, options),
+				organizeLocalImagingSources(input, options, previewOrgId),
 			);
 		},
 	);
@@ -311,9 +315,11 @@ export async function registerCbctRoutes(app: FastifyInstance) {
 			"Первый кадр DICOM не построен: выберите папку снимков и безопасные лимиты чтения.",
 		);
 		if (!parsed.ok) return reply.code(400).send(parsed.response);
+		const firstFrameOrgId = getImagingOrganizationId(request, reply);
+		if (!firstFrameOrgId) return;
 		const input = parsed.data;
 		return runAbortableImagingScan(request, reply, (options) =>
-			buildDicomFirstFramePreview(input, options),
+			buildDicomFirstFramePreview(input, options, firstFrameOrgId),
 		);
 	});
 

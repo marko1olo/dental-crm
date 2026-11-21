@@ -80,9 +80,9 @@ export function ClinicalImageViewer({
 			} as CSSProperties}
 		>
 			{(toothCode || studyTitle) && (
-				<div className="absolute top-2 left-2 z-20 pointer-events-none px-2.5 py-1 rounded-md bg-slate-900/85 backdrop-blur-xs border border-teal-500/30 text-white text-xs font-semibold flex items-center gap-2 shadow-xs">
-					{toothCode && <span className="text-teal-400 font-mono font-bold">Зуб #{toothCode}</span>}
-					<span className="text-slate-300 font-normal truncate max-w-[220px]">{studyTitle || "Рентген-снимок"}</span>
+				<div className="absolute top-2 left-2 z-20 pointer-events-none px-2.5 py-1 rounded-md bg-[var(--paper-strong)]/90 backdrop-blur-xs border border-[var(--primary)]/30 text-[var(--ink)] text-xs font-semibold flex items-center gap-2 shadow-xs">
+					{toothCode && <span className="text-[var(--primary)] font-mono font-bold">Зуб #{toothCode}</span>}
+					<span className="text-[var(--ink-muted)] font-normal truncate max-w-[220px]">{studyTitle || "Рентген-снимок"}</span>
 				</div>
 			)}
 
